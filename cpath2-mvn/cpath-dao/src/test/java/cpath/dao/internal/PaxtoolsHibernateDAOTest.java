@@ -32,26 +32,19 @@ package cpath.dao.internal;
 import cpath.dao.PaxtoolsDAO;
 
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.proxy.level3.BioPAXElementProxy;
-import org.biopax.paxtools.proxy.level3.ProteinProxy;
-import org.biopax.paxtools.proxy.level3.PathwayProxy;
-import org.biopax.paxtools.proxy.level3.SmallMoleculeProxy;
-import org.biopax.paxtools.proxy.level3.ChemicalStructureProxy;
-import org.biopax.paxtools.proxy.level3.BiochemicalReactionProxy;
-import org.biopax.paxtools.proxy.level3.SmallMoleculeReferenceProxy;
+import org.biopax.paxtools.proxy.level3.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import org.apache.commons.logging.*;
 
 import java.io.File;
-import java.util.Set;
-import java.util.List;
-import java.util.ArrayList; 
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -80,7 +73,7 @@ public class PaxtoolsHibernateDAOTest {
 	private List<Class> GET_BY_QUERY_RETURN_CLASSES = new ArrayList<Class>();
 
 	@Before
-	public void setUp() {
+	public void setUp() throws Exception {
 		PATHWAY_TEST_VALUES.add("glycolysis");
 		PATHWAY_TEST_VALUES.add("Glycolysis Pathway");
 		PATHWAY_TEST_VALUES.add("Embden-Meyerhof pathway");
@@ -105,12 +98,11 @@ public class PaxtoolsHibernateDAOTest {
 		GET_BY_QUERY_RETURN_CLASSES.add(BiochemicalReactionProxy.class);
 		GET_BY_QUERY_RETURN_CLASSES.add(SmallMoleculeReferenceProxy.class);
 		
-		
 	}
 
 	@Test
-	public void run() throws Exception {
-
+	@Transactional
+	public void testRun() throws Exception {
 		// verify a call to importModel
 		log.info("Testing call to paxtoolsDAO.importModel()...");
 		String cpathHome = System.getProperty("CPATH2_HOME");
@@ -119,11 +111,14 @@ public class PaxtoolsHibernateDAOTest {
 				.getResource("/biopax-level3-test.owl").getFile());
 		paxtoolsDAO.importModel(biopaxFile);
 		log.info("paxtoolsDAO.importModel() succeeded!");
-
-		// verify a call to getByID(String id)
+		
+		
 		log.info("Testing call to paxtoolsDAO.getByID()...");
-		BioPAXElement bpe = paxtoolsDAO.getByID("http://www.biopax.org/examples/myExample#Pathway50");
+		
+		BioPAXElementProxy bpe = (BioPAXElementProxy) paxtoolsDAO.getByID("http://www.biopax.org/examples/myExample#Pathway50");
+		
 		assertTrue(bpe != null && bpe instanceof PathwayProxy);
+		
 		Set<String> pathwayNames = ((PathwayProxy)bpe).getName();
 		assertTrue(pathwayNames.size() == PATHWAY_TEST_VALUES.size());
 		for (String name : pathwayNames) {

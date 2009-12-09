@@ -37,11 +37,8 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.proxy.level3.BioPAXElementProxy;
 import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
-import org.hibernate.Query;
 import org.hibernate.Session;
-import org.springframework.orm.hibernate3.HibernateCallback;
-import org.springframework.orm.hibernate3.HibernateTemplate;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -59,18 +56,27 @@ import java.io.FileNotFoundException;
  * Class which implements PaxtoolsModelQuery interface via persistence.
  */
 @Repository
-public class PaxtoolsHibernateDAO extends HibernateDaoSupport implements PaxtoolsDAO {
+public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
 	private LuceneQuery luceneQuery;
+	private SessionFactory sessionFactory;
 
+	public SessionFactory getSessionFactory() {
+		return sessionFactory;
+	}
+	
+	public void setSessionFactory(SessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
+	}
+	
 	// get/set methods used by spring
 	public LuceneQuery getLuceneQuery() { return luceneQuery; }
 	
 	public void setLuceneQuery(LuceneQuery luceneQuery) {
 		this.luceneQuery = luceneQuery;
 	}
-
+	
 	/**
 	 * Persists the given model to the db.
 	 *
@@ -79,11 +85,13 @@ public class PaxtoolsHibernateDAO extends HibernateDaoSupport implements Paxtool
 	@Transactional
 	public void importModel(final Model model) {
 		// indexing will not kick off until a commit occurs
-		Session session = getSessionFactory().openSession();
+		Session session = getSession();
 		for (BioPAXElement bpe : model.getObjects()) {
 			log.info("Saving biopax element, rdfID: " + bpe.getRDFId());
+			//session.persist(bpe);
 			session.merge(bpe);
 		}
+		session.flush();
 	}
 
 	/**
@@ -114,9 +122,9 @@ public class PaxtoolsHibernateDAO extends HibernateDaoSupport implements Paxtool
      * @param id String
      * @return BioPAXElement
      */
-    public <T extends BioPAXElement> T getByID(final String id) {
-
-		return (T)getHibernateTemplate().get(BioPAXElementProxy.class, id);
+	@Transactional(readOnly=true) // a hint to the driver to eventually optimize :)
+    public BioPAXElement getByID(final String id) {
+		return (BioPAXElement)getSession().get(BioPAXElementProxy.class, id);
 	}
 
     /**
@@ -126,9 +134,9 @@ public class PaxtoolsHibernateDAO extends HibernateDaoSupport implements Paxtool
      * @param filterBy class to be used as a filter.
      * @return an unmodifiable set of objects of the given class.
      */
+	@Transactional(readOnly=true)
     public <T extends BioPAXElement> Set<T> getObjects(final Class<T> filterBy) {
-
-		List results = getHibernateTemplate().loadAll(filterBy);
+		List results = getSession().createQuery("from " + filterBy.getCanonicalName()).list();
 		return (results.size() > 0) ? new HashSet(results) : new HashSet();
 	}
 
@@ -180,8 +188,12 @@ public class PaxtoolsHibernateDAO extends HibernateDaoSupport implements Paxtool
 	 * @return an unmodifiable set of objects that match the query.
 	 */
 	public <T extends BioPAXElement> Set<T> getByQueryString(String query, Class<T> filterBy) {
-
 		// outta here
 		return luceneQuery.search(query, filterBy);
+	}
+	
+	
+	private Session getSession() {
+		return getSessionFactory().getCurrentSession();
 	}
 }

@@ -36,12 +36,11 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryParser.ParseException;
-import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.search.Search;
 import org.hibernate.search.FullTextQuery;
 import org.hibernate.search.FullTextSession;
-import org.springframework.orm.hibernate3.HibernateCallback;
-import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
+import org.springframework.transaction.annotation.Transactional;
 
 import cpath.dao.LuceneQuery;
 
@@ -52,7 +51,7 @@ import java.util.HashSet;
 /**
  * Class used to manage lucene queries.
  */
-public class LuceneHibernateQuery extends HibernateDaoSupport implements LuceneQuery {
+public class LuceneHibernateQuery implements LuceneQuery {
 
     private static Log log = LogFactory.getLog(LuceneHibernateQuery.class);
 
@@ -71,6 +70,18 @@ public class LuceneHibernateQuery extends HibernateDaoSupport implements LuceneQ
 												SEARCH_FIELD_XREF_DB,
 												SEARCH_FIELD_XREF_ID};
 
+	private SessionFactory sessionFactory;
+	
+	
+	public void setSessionFactory(SessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
+	}
+	
+	public SessionFactory getSessionFactory() {
+		return sessionFactory;
+	}
+	
+	
     /**
      * Search the lucene index for given string and returns
 	 * and returns a set of objects in the model of the given class
@@ -79,6 +90,7 @@ public class LuceneHibernateQuery extends HibernateDaoSupport implements LuceneQ
      * @param filterBy class to be used as a filter.
      * @return Set<BioPAXElement>
      */
+	@Transactional(readOnly=true)
     public <T extends BioPAXElement> Set<T> search(String query, final Class<T> filterBy) {
 
 		log.info("query: " + query + ", filterBy: " + filterBy);
@@ -96,18 +108,14 @@ public class LuceneHibernateQuery extends HibernateDaoSupport implements LuceneQ
 			log.info("parse exception: " + e.getMessage());
 			return toReturn;
 		}
-		final org.apache.lucene.search.Query luceneQueryFinal = luceneQuery;
-
-		List results = (List)getHibernateTemplate().execute(new HibernateCallback() {
-			public Object doInHibernate(Session session) {
-				// get full text session
-				FullTextSession fullTextSession = Search.getFullTextSession(session);
-				// wrap Lucene query in a org.hibernate.Query
-				FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQueryFinal, filterBy);
-				// execute search
-				return (List)hibQuery.list();
-			}
-		}, true);
+		
+		// get full text session
+		FullTextSession fullTextSession = Search.getFullTextSession(getSessionFactory().getCurrentSession());
+		// wrap Lucene query in a org.hibernate.Query
+		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterBy);
+		// execute search
+		List results = (List)hibQuery.list();
+		
 		if (results != null) {
 			log.info("we have " + results.size() + " results.");
 			toReturn.addAll(results);

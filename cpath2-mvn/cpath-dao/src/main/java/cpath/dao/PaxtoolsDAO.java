@@ -29,8 +29,8 @@
 package cpath.dao;
 
 // imports
-import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.UnificationXref;
 
 import java.util.Set;
@@ -65,7 +65,7 @@ public interface PaxtoolsDAO {
      * @param id of the object to be retrieved.
      * @return BioPAXElement
      */
-    <T extends BioPAXElement> T getByID(String id);
+    BioPAXElement getByID(String id);
 
     /**
      * This method returns a set of objects in the model of the given class.
