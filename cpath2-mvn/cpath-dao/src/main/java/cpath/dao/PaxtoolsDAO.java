@@ -85,12 +85,12 @@ public interface PaxtoolsDAO {
 	<T extends BioPAXElement> T getByUnificationXref(UnificationXref unificationXref);
 
 	/**
-	 * Given a query string, returns a set of objects in the model that
-	 * match the string.
-	 *
-	 * @param query String
+     * Search the lucene index for given string and returns
+	 * and returns a set of objects in the model of the given class
+	 * 
+     * @param query String
      * @param filterBy class to be used as a filter.
-	 * @return an unmodifiable set of objects that match the query.
-	 */
-	public <T extends BioPAXElement> Set<T> getByQueryString(String query, Class<T> filterBy);
+     * @return List<BioPAXElement>
+     */
+    <T extends BioPAXElement> Set<T> search(String query, Class<T> filterBy);
 }

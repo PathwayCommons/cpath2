@@ -39,6 +39,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.transaction.TransactionConfiguration;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.apache.commons.logging.*;
@@ -52,13 +54,15 @@ import static org.junit.Assert.*;
  * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:test-dao-context.xml"})
+@ContextConfiguration(locations = {"classpath:test-dao-context.xml", "classpath:cpath-dao-context.xml"})
+//@TransactionConfiguration(transactionManager="transactionManager")
+//@Transactional
 public class PaxtoolsHibernateDAOTest {
 
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
 
     @Autowired
-    private PaxtoolsDAO paxtoolsDAO;
+    PaxtoolsDAO paxtoolsDAO;
 
 	//
 	// used to test getByID
@@ -101,7 +105,7 @@ public class PaxtoolsHibernateDAOTest {
 	}
 
 	@Test
-	@Transactional
+	@Transactional(propagation=Propagation.SUPPORTS)
 	public void testRun() throws Exception {
 		// verify a call to importModel
 		log.info("Testing call to paxtoolsDAO.importModel()...");
@@ -112,9 +116,7 @@ public class PaxtoolsHibernateDAOTest {
 		paxtoolsDAO.importModel(biopaxFile);
 		log.info("paxtoolsDAO.importModel() succeeded!");
 		
-		
 		log.info("Testing call to paxtoolsDAO.getByID()...");
-		
 		BioPAXElementProxy bpe = (BioPAXElementProxy) paxtoolsDAO.getByID("http://www.biopax.org/examples/myExample#Pathway50");
 		
 		assertTrue(bpe != null && bpe instanceof PathwayProxy);
@@ -152,7 +154,7 @@ public class PaxtoolsHibernateDAOTest {
 
 		// verify a call to getByQueryString - filter by BioPAXElementProxy
 		log.info("Testing first call to paxtoolsDAO.getByQueryString()...");
-		Set<BioPAXElementProxy> returnClasses = paxtoolsDAO.getByQueryString(GET_BY_QUERY_TEST_VALUE, BioPAXElementProxy.class);
+		Set<BioPAXElementProxy> returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, BioPAXElementProxy.class);
 		assertTrue(returnClasses.size() == GET_BY_QUERY_RETURN_CLASSES.size());
 		for (BioPAXElement returnClass : returnClasses) {
 			assertTrue(GET_BY_QUERY_RETURN_CLASSES.contains(returnClass.getClass()));
@@ -160,7 +162,7 @@ public class PaxtoolsHibernateDAOTest {
 		log.info("paxtoolsDAO.getByQueryString() first call succeeded!");
 		log.info("Testing second call to paxtoolsDAO.getByQueryString()...");
 		// verify a call to getByQueryString - filter by GET_BY_QUERY_RETURN_TEST_CLASS
-		returnClasses = paxtoolsDAO.getByQueryString(GET_BY_QUERY_TEST_VALUE, GET_BY_QUERY_RETURN_TEST_CLASS);
+		returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, GET_BY_QUERY_RETURN_TEST_CLASS);
 		assertTrue(returnClasses.size() == 1);
 		for (BioPAXElement returnClass : returnClasses) {
 			assertTrue(returnClass.getClass() == GET_BY_QUERY_RETURN_TEST_CLASS);

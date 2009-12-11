@@ -98,7 +98,7 @@ public class SearchController {
      */
     @RequestMapping(method= RequestMethod.POST)
     public ModelAndView search(@RequestParam String queryString) {
-		ModelMap modelMap = processSearch(paxtoolsDAO.getByQueryString(queryString, BioPAXElementProxy.class));
+		ModelMap modelMap = processSearch(paxtoolsDAO.search(queryString, BioPAXElementProxy.class));
 		return new ModelAndView("search-results", modelMap);
 	}
 

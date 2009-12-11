@@ -18,7 +18,7 @@
         <property name="dataSource" ref="dataSource"/>
         <property name="hibernateProperties">
 		  <props>
-			<prop key="hibernate.hbm2ddl.auto">create-drop</prop>
+			<prop key="hibernate.hbm2ddl.auto">${hbm2ddl.mode}</prop>
 			<prop key="hibernate.show_sql">true</prop>
 			<prop key="hibernate.format_sql">true</prop>
 
@@ -130,13 +130,8 @@
         <property name="sessionFactory" ref="sessionFactory" />
     </bean>
 
-    <bean id="luceneQuery" class="cpath.dao.internal.LuceneHibernateQuery">
+    <bean id="paxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO" dependency-check="objects">
         <property name="sessionFactory" ref="sessionFactory"/>
-    </bean>
-
-    <bean id="paxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
-        <property name="sessionFactory" ref="sessionFactory"/>
-        <property name="luceneQuery" ref="luceneQuery"/>
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>

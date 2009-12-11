@@ -30,6 +30,9 @@ package cpath.dao.internal;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.queryParser.MultiFieldQueryParser;
+import org.apache.lucene.queryParser.ParseException;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -39,10 +42,14 @@ import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.search.FullTextQuery;
+import org.hibernate.search.FullTextSession;
+import org.hibernate.search.Search;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import cpath.dao.LuceneQuery;
 import cpath.dao.PaxtoolsDAO;
 
 import java.util.Set;
@@ -57,11 +64,26 @@ import java.io.FileNotFoundException;
  */
 @Repository
 public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
-
+	private final static String SEARCH_FIELD_AVAILABILITY = "availability";
+	private final static String SEARCH_FIELD_COMMENT = "comment";
+	private final static String SEARCH_FIELD_KEYWORD = "keyword";
+	private final static String SEARCH_FIELD_NAME = "name";
+	private final static String SEARCH_FIELD_TERM = "term";
+	private final static String SEARCH_FIELD_XREF_DB = "xref_db";
+	private final static String SEARCH_FIELD_XREF_ID = "xref_id";
+	private final static String[] ALL_FIELDS = {SEARCH_FIELD_AVAILABILITY,
+												SEARCH_FIELD_COMMENT,
+												SEARCH_FIELD_KEYWORD,
+												SEARCH_FIELD_NAME,
+												SEARCH_FIELD_TERM,
+												SEARCH_FIELD_XREF_DB,
+												SEARCH_FIELD_XREF_ID};
+	
+	
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
-	private LuceneQuery luceneQuery;
 	private SessionFactory sessionFactory;
 
+	// get/set methods used by spring
 	public SessionFactory getSessionFactory() {
 		return sessionFactory;
 	}
@@ -70,28 +92,34 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		this.sessionFactory = sessionFactory;
 	}
 	
-	// get/set methods used by spring
-	public LuceneQuery getLuceneQuery() { return luceneQuery; }
-	
-	public void setLuceneQuery(LuceneQuery luceneQuery) {
-		this.luceneQuery = luceneQuery;
+	// a shortcut to get current session
+	private Session getSession() {
+		return getSessionFactory().getCurrentSession();
 	}
 	
 	/**
 	 * Persists the given model to the db.
+	 * 
+	 * TODO take care of Model, as, in fact, now persisted and indexed here are individual objects
 	 *
 	 * @param model Model
 	 */
-	@Transactional
+	@Transactional(propagation=Propagation.NESTED)
 	public void importModel(final Model model) {
 		// indexing will not kick off until a commit occurs
 		Session session = getSession();
+		FullTextSession fullTextSession = Search.getFullTextSession(session);
+		//explicit transaction is NOT required :-)
+		//Transaction tx = session.beginTransaction(); // or, tx = fullTextSession.beginTransaction();
 		for (BioPAXElement bpe : model.getObjects()) {
-			log.info("Saving biopax element, rdfID: " + bpe.getRDFId());
-			//session.persist(bpe);
-			session.merge(bpe);
+			if(log.isInfoEnabled())
+				log.info("Saving biopax element, rdfID: " + bpe.getRDFId());
+			//not re-assigning 'bpe' below throws a TransientSessionException (object is not associated with any session)
+			bpe = (BioPAXElementProxy) session.merge(bpe); 
+			fullTextSession.index((BioPAXElementProxy)bpe);
 		}
-		session.flush();
+		session.flush(); // (is required for tests to pass)
+		//tx.commit();
 	}
 
 	/**
@@ -122,7 +150,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
      * @param id String
      * @return BioPAXElement
      */
-	@Transactional(readOnly=true) // a hint to the driver to eventually optimize :)
+	//@Transactional(readOnly=true) // a hint to the driver to eventually optimize :)
     public BioPAXElement getByID(final String id) {
 		return (BioPAXElement)getSession().get(BioPAXElementProxy.class, id);
 	}
@@ -134,7 +162,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
      * @param filterBy class to be used as a filter.
      * @return an unmodifiable set of objects of the given class.
      */
-	@Transactional(readOnly=true)
+	//@Transactional(readOnly=true)
     public <T extends BioPAXElement> Set<T> getObjects(final Class<T> filterBy) {
 		List results = getSession().createQuery("from " + filterBy.getCanonicalName()).list();
 		return (results.size() > 0) ? new HashSet(results) : new HashSet();
@@ -146,6 +174,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 * @param unificationXref UnificationXref
 	 * @return BioPAXElement
 	 */
+	//@Transactional(readOnly=true)
 	public <T extends BioPAXElement> T getByUnificationXref(UnificationXref unificationXref) {
 
 		// setup the query
@@ -179,21 +208,53 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		return null;
 	}
 
-	/**
-	 * Given a query string, returns a set of objects in the model that
-	 * match the string.
-	 *
-	 * @param query String
+
+	 /**
+	 * Searches the lucene index 
+	 * and returns a set of objects 
+	 * of the given class in the model that
+	 * match the given query string, 
+	 * 
+     * @param query String
      * @param filterBy class to be used as a filter.
-	 * @return an unmodifiable set of objects that match the query.
-	 */
-	public <T extends BioPAXElement> Set<T> getByQueryString(String query, Class<T> filterBy) {
+     * @return Set<BioPAXElement>
+     */
+	//@Transactional(readOnly=true)
+    public <T extends BioPAXElement> Set<T> search(String query, Class<T> filterBy) {
+
+		log.info("query: " + query + ", filterBy: " + filterBy);
+
+		// set to return
+		Set toReturn = new HashSet();
+
+        // create native lucene query
+		MultiFieldQueryParser parser = new MultiFieldQueryParser(ALL_FIELDS, new StandardAnalyzer());
+		org.apache.lucene.search.Query luceneQuery = null;
+		try {
+			luceneQuery = parser.parse(query);
+		} catch (ParseException e) {
+			log.info("parse exception: " + e.getMessage());
+			return toReturn;
+		}
+		
+		// get full text session
+		FullTextSession fullTextSession = Search.getFullTextSession(getSessionFactory().getCurrentSession());
+		// wrap Lucene query in a org.hibernate.Query
+		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterBy);
+		// execute search
+		List results = (List)hibQuery.list();
+		
+		if (results != null) {
+			log.info("we have " + results.size() + " results.");
+			toReturn.addAll(results);
+		}
+		else {
+			log.info("we have no results");
+		}
+  
 		// outta here
-		return luceneQuery.search(query, filterBy);
+		return toReturn;
 	}
-	
-	
-	private Session getSession() {
-		return getSessionFactory().getCurrentSession();
-	}
+
 }
+
