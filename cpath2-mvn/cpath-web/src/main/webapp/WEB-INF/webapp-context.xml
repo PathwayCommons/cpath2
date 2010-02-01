@@ -8,18 +8,6 @@
 							http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd">
 
 	<context:annotation-config/>
-    
-	<!-- Enables /[resource]/[action] to [Resource]Controller class mapping -->
-	<!-- 
-    <bean id="classnameControllerMappings" 
-          class="org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping"
-          p:interceptors-ref="localeChangeInterceptor" 
-          p:caseSensitive="true">
-        <property name="defaultHandler">
-            <bean class="org.springframework.web.servlet.mvc.UrlFilenameViewController" />
-        </property>
-    </bean>
-	-->
 	
 	<bean class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping" />
 
