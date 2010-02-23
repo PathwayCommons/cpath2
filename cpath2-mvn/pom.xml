@@ -22,6 +22,7 @@
 		<module>cpath-web</module>
 		<module>cpath-warehouse</module>
 		<module>cpath-fetcher</module>
+		<module>cpath-admin</module>
 	</modules>
 
 	<build>
@@ -102,7 +103,6 @@
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 			<version>1.2.13</version>
-			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
