@@ -24,35 +24,35 @@ public final class MetadataHibernateDAO  implements MetadataDAO {
     // log
     private static Log log = LogFactory.getLog(MetadataHibernateDAO.class);
 
-	// session factory prop/methods used by spring
-	private SessionFactory sessionFactory;
-	public SessionFactory getSessionFactory() { return sessionFactory; }
-	public void setSessionFactory(SessionFactory sessionFactory) {
-		this.sessionFactory = sessionFactory;
-	}
+    // session factory prop/methods used by spring
+    private SessionFactory sessionFactory;
+    public SessionFactory getSessionFactory() { return sessionFactory; }
+    public void setSessionFactory(SessionFactory sessionFactory) {
+	this.sessionFactory = sessionFactory;
+    }
 	
-	// a shortcut to get current session
-	private Session getSession() {
-		return getSessionFactory().getCurrentSession();
-	}
+    // a shortcut to get current session
+    private Session getSession() {
+	return getSessionFactory().getCurrentSession();
+    }
 	
     /**
      * (non-Javadoc)
      * @see cpath.warehouse.metadata.MetadataDAO#importMetadata;
      */
-	@Transactional(propagation=Propagation.NESTED)
+    @Transactional(propagation=Propagation.NESTED)
 	public void importMetadata(final Metadata metadata) {
 
-		Session session = getSession();
-        log.info("Saving metadata object, CV: " + metadata.getCV());
+	Session session = getSession();
+        log.info("Saving metadata object, ID: " + metadata.getID());
         session.save(metadata);
-	}
+    }
 
     /**
      * (non-Javadoc)
-     * @see cpath.warehouse.metadata.MetadataDAO#getByCV
+     * @see cpath.warehouse.metadata.MetadataDAO#getByID
      */
-    public Metadata getByCV(final String cv) {
-		return (Metadata)getSession().get(Metadata.class, cv);
-	}
+    public Metadata getByID(final String id) {
+	return (Metadata)getSession().get(Metadata.class, id);
+    }
 }

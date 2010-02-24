@@ -57,7 +57,7 @@ import java.util.Collection;
 public final class ProviderMetadataServiceImpl implements ProviderMetadataService {
 
     // some bits for metadata reading
-    private static final int METADATA_CV_INDEX = 0;
+    private static final int METADATA_ID_INDEX = 0;
     private static final int METADATA_NAME_INDEX = 1;
     private static final int METADATA_VERSION_INDEX = 2;
     private static final int METADATA_RELEASE_DATA_INDEX = 3;
@@ -140,10 +140,10 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
                     if (iconData != null) {
 
                         // create a metadata bean
-                        Metadata metadata = new Metadata(tokens[METADATA_CV_INDEX], tokens[METADATA_NAME_INDEX],
+                        Metadata metadata = new Metadata(tokens[METADATA_ID_INDEX], tokens[METADATA_NAME_INDEX],
                                                          tokens[METADATA_VERSION_INDEX], tokens[METADATA_RELEASE_DATA_INDEX],
                                                          tokens[METADATA_DATA_URL_INDEX], iconData);
-                        log.info(metadata.getCV());
+                        log.info(metadata.getID());
                         log.info(metadata.getName());
                         log.info(metadata.getVersion());
                         log.info(metadata.getReleaseDate());

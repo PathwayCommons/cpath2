@@ -13,7 +13,7 @@ import javax.persistence.Entity;
 public final class Metadata {
 
     // some members
-    private final String cv;
+    private final String id;
     private final String name;
     private final String version;
     private final String releaseDate;
@@ -24,20 +24,20 @@ public final class Metadata {
     /**
      * Create a Metadata obj with the specified properties;
      *
-     * @param cv String (string used in web service calls)
+     * @param id String
      * @param name String
      * @param version String
      * @param releaseDate String
      * @param urlToPathwayData String
      * @param icon byte[]
      */
-    public Metadata(final String cv, final String name, final String version,
+    public Metadata(final String id, final String name, final String version,
                     final String releaseDate, final String urlToPathwayData, final byte[] icon) {
 
-        if (cv == null) {
-            throw new IllegalArgumentException("cv must not be null");
+        if (id == null) {
+            throw new IllegalArgumentException("id must not be null");
         }
-        this.cv = cv;
+        this.id = id;
 
         if (name == null) {
             throw new IllegalArgumentException("name must not be null");
@@ -66,13 +66,13 @@ public final class Metadata {
     }
 
     /**
-     * Return the data provider CV.
+     * Return the data provider ID.
      *
      * @return String
      */
     @Id
-    public String getCV() {
-        return cv;
+    public String getID() {
+        return id;
     }
 
     /**

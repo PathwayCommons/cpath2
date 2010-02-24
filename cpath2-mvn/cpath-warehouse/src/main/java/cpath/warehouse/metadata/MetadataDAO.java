@@ -8,18 +8,18 @@ import cpath.warehouse.beans.Metadata;
  */
 public interface MetadataDAO {
 
-	/**
-	 * Persists the given metadata object to the db.
-	 *
-	 * @param metadata Metadata
-	 */
-	void importMetadata(final Metadata metadata);
+    /**
+     * Persists the given metadata object to the db.
+     *
+     * @param metadata Metadata
+     */
+    void importMetadata(final Metadata metadata);
 
     /**
-     * This method returns the metadata object with the given cv.
+     * This method returns the metadata object with the given ID.
 	 *
-     * @param cv String
+     * @param id String
      * @return Metadata
      */
-    Metadata getByCV(final String cv);
+    Metadata getByID(final String id);
 }
