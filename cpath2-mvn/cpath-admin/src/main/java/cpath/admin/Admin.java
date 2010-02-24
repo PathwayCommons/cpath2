@@ -30,7 +30,7 @@ package cpath.admin;
 
 // imports
 import cpath.fetcher.CPathFetcher;
-import cpath.fetcher.metadata.Metadata;
+import cpath.warehouse.beans.Metadata;
 
 import org.apache.log4j.PropertyConfigurator;
 
