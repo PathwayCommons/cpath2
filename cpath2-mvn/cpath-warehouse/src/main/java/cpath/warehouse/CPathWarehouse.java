@@ -1,9 +1,6 @@
 package cpath.warehouse;
 
 // imports
-import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.metadata.MetadataDAO;
-
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.UtilityClass;
 
@@ -16,7 +13,7 @@ import java.util.Set;
  *
  * TODO define warehouse methods
  */
-public interface CPathWarehouse extends MetadataDAO {
+public interface CPathWarehouse {
 
     /* utility class methods */
 	
@@ -76,18 +73,4 @@ public interface CPathWarehouse extends MetadataDAO {
 	Set<String> getAllChildrenOfCv(String urn);
 	Set<String> getDirectChildrenOfCv(String urn);
 	Set<String> getParentsOfCv(String urn);
-
-	/* MetadataDAO methods */
-
-    /**
-     * (non-Javadoc)
-     * @see cpath.warehouse.metadata.MetadataDAO#importMetadata;
-     */
-	void importMetadata(final Metadata metadata);
-
-    /**
-     * (non-Javadoc)
-     * @see cpath.warehouse.metadata.MetadataDAO#getByCV
-     */
-    Metadata getByCV(final String cv);
 }

@@ -1,9 +1,7 @@
 package cpath.warehouse.internal;
 
 // imports
-import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.CPathWarehouse;
-import cpath.warehouse.metadata.MetadataDAO;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.UtilityClass;
@@ -89,22 +87,4 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	/* MetadataDAO methods */
-
-    /**
-     * (non-Javadoc)
-     * @see cpath.warehouse.metadata.MetadataDAO#importMetadata;
-     */
-	public void importMetadata(final Metadata metadata) {
-        metadataDAO.importMetadata(metadata);
-    }
-
-    /**
-     * (non-Javadoc)
-     * @see cpath.warehouse.metadata.MetadataDAO#getByCV
-     */
-    public Metadata getByCV(final String cv) {
-        return metadataDAO.getByCV(cv);
-    }
 }
