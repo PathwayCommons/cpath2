@@ -53,7 +53,7 @@ public final class Metadata {
      * @param icon byte[]
      */
     public Metadata(final String cv, final String name, final String version,
-                    final String releaseDate, final String urlToPathwayData, byte[] icon) {
+                    final String releaseDate, final String urlToPathwayData, final byte[] icon) {
 
         if (cv == null) {
             throw new IllegalArgumentException("cv must not be null");

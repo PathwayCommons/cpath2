@@ -35,8 +35,9 @@ import cpath.fetcher.metadata.ProviderMetadataService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.NameValuePair;
+import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.commons.httpclient.params.HttpMethodParams;
 
 import org.springframework.stereotype.Service;
 
@@ -55,6 +56,15 @@ import java.util.Collection;
 @Service
 public final class ProviderMetadataServiceImpl implements ProviderMetadataService {
 
+    // some bits for metadata reading
+    private static final int METADATA_CV_INDEX = 0;
+    private static final int METADATA_NAME_INDEX = 1;
+    private static final int METADATA_VERSION_INDEX = 2;
+    private static final int METADATA_RELEASE_DATA_INDEX = 3;
+    private static final int METADATA_DATA_URL_INDEX = 4;
+    private static final int METADATA_ICON_URL_INDEX = 5;
+    private static final int NUMBER_METADATA_ITEMS = 6;
+
     private static Log log = LogFactory.getLog(ProviderMetadataServiceImpl.class);
 
     /**
@@ -64,45 +74,127 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
     @Override
     public Collection<Metadata> getProviderMetadata(final String url) throws IOException {
 
+        Collection<Metadata> toReturn = new HashSet<Metadata>();
+
         // check args
         if (url == null) {
             throw new IllegalArgumentException("url must not be null");
         }
 
-        // setup httpclient and execute method
+        // setup httpclient and method
         HttpClient httpClient = new HttpClient();
         GetMethod method = new GetMethod(url);
-        httpClient.executeMethod(method);
+        method.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, 
+                                        new DefaultHttpMethodRetryHandler());
+        try {
 
-        // parse the output
-        return readFromMetadataService(method.getResponseBodyAsStream());
+            // execute
+            int statusCode = httpClient.executeMethod(method);
+
+            // get the output
+            if (statusCode == 200) {
+                toReturn = readFromMetadataService(method.getResponseBodyAsStream());
+            }
+        }
+        finally {
+            method.releaseConnection();
+        }
+
+        // outta here
+        return toReturn;
     }
 
     /**
      * Method which parses metadata.
      *
-     * @param in InputStream
+     * @param inputStream InputStream
      * @return Collection<Metadata>
      * @throws IOException
      */
-    private Collection<Metadata> readFromMetadataService(InputStream in) throws IOException {
+    private Collection<Metadata> readFromMetadataService(final InputStream inputStream) throws IOException {
 
         HashSet<Metadata> toReturn = new HashSet<Metadata>();
 
         BufferedReader reader = null;
         try {
-            reader = new BufferedReader(new InputStreamReader(in));
+
+            // we'd like to read lines at a time
+            reader = new BufferedReader(new InputStreamReader(inputStream));
+
+            // are we ready to read?
             while (reader.ready()) {
+
+                // grab a line
                 String line = reader.readLine();
-                // TODO, parse the page
-                System.out.println(line);
+                log.info("readFromMetadataService(), line: " + line);
+
+                // for now assume line is delimited by '<br>'
+                // TODO: update when data moved to wiki page
+                String[] tokens = line.split("<br>");
+
+                // we must have 4 pieces of data
+                if (tokens.length == NUMBER_METADATA_ITEMS) {
+
+                    // grab icon data
+                    byte[] iconData = getIconData(tokens[METADATA_ICON_URL_INDEX]);
+
+                    if (iconData != null) {
+
+                        // create a metadata bean
+                        Metadata metadata = new Metadata(tokens[METADATA_CV_INDEX], tokens[METADATA_NAME_INDEX],
+                                                         tokens[METADATA_VERSION_INDEX], tokens[METADATA_RELEASE_DATA_INDEX],
+                                                         tokens[METADATA_DATA_URL_INDEX], iconData);
+                        log.info(metadata.getCV());
+                        log.info(metadata.getName());
+                        log.info(metadata.getVersion());
+                        log.info(metadata.getReleaseDate());
+                        log.info(metadata.getURLToPathwayData());
+                        log.info(tokens[METADATA_ICON_URL_INDEX]);
+
+                        // add metadata object toc collection we return
+                        toReturn.add(metadata);
+                    }
+                }
             }
+        }
+        catch (java.io.UnsupportedEncodingException e) {
         }
         catch (IOException e) {
             throw e;
         }
         finally {
             closeQuietly(reader);
+        }
+
+        // outta here
+        return toReturn;
+    }
+
+    /**
+     * Given url, fetches byte data for icon
+     */
+    private byte[] getIconData(final String url) throws IOException {
+
+        byte[] toReturn = null;
+
+        // setup httpclient and method
+        HttpClient httpClient = new HttpClient();
+        GetMethod method = new GetMethod(url);
+        method.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, 
+                                        new DefaultHttpMethodRetryHandler());
+
+        try {
+
+            // execute
+            int statusCode = httpClient.executeMethod(method);
+
+            // get the output
+            if (statusCode == 200) {
+                toReturn =  method.getResponseBody();
+            }
+        }
+        finally {
+            method.releaseConnection();
         }
 
         // outta here
