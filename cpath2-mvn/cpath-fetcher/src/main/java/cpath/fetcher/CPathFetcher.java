@@ -29,7 +29,7 @@
 package cpath.fetcher;
 
 // imports
-import cpath.fetcher.metadata.Metadata;
+import cpath.warehouse.beans.Metadata;
 
 import java.io.IOException;
 import java.util.Collection;

@@ -31,7 +31,7 @@ package cpath.fetcher.internal;
 // imports
 import cpath.fetcher.CPathFetcher;
 
-import cpath.fetcher.metadata.Metadata;
+import cpath.warehouse.beans.Metadata;
 import cpath.fetcher.metadata.ProviderMetadataService;
 
 import org.springframework.beans.factory.annotation.Autowired;

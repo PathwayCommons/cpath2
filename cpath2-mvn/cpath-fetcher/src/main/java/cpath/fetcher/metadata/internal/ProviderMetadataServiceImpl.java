@@ -29,7 +29,7 @@
 package cpath.fetcher.metadata.internal;
 
 // imports
-import cpath.fetcher.metadata.Metadata;
+import cpath.warehouse.beans.Metadata;
 import cpath.fetcher.metadata.ProviderMetadataService;
 
 import org.apache.commons.logging.Log;

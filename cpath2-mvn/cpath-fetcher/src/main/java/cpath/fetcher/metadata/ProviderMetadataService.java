@@ -29,6 +29,8 @@
 package cpath.fetcher.metadata;
 
 // imports
+import cpath.warehouse.beans.Metadata;
+
 import java.io.IOException;
 import java.util.Collection;
 
