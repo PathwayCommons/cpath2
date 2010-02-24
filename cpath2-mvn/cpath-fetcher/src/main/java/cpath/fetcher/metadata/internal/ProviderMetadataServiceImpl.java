@@ -132,7 +132,6 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
                 // TODO: update when data moved to wiki page
                 String[] tokens = line.split("<br>");
 
-                // we must have 4 pieces of data
                 if (tokens.length == NUMBER_METADATA_ITEMS) {
 
                     // grab icon data
