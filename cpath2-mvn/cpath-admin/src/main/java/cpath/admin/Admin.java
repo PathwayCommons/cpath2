@@ -41,7 +41,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 /**
- * An interface which provides methods to query a Paxtools model.
+ * Class which provides command line admin capabilities.
  */
 public class Admin implements Runnable {
 
