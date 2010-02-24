@@ -1,9 +1,13 @@
 package cpath.warehouse;
 
-import java.util.Set;
+// imports
+import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.metadata.MetadataDAO;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.UtilityClass;
+
+import java.util.Set;
 
 /**
  * cPathSquared Warehouse Interface
@@ -12,7 +16,9 @@ import org.biopax.paxtools.model.level3.UtilityClass;
  *
  * TODO define warehouse methods
  */
-public interface CPathWarehouse {
+public interface CPathWarehouse extends MetadataDAO {
+
+    /* utility class methods */
 	
 	/**
 	 * Creates a new standard reference BioPAX object 
@@ -26,7 +32,6 @@ public interface CPathWarehouse {
 	 * TODO maybe, remove this one
 	 */
 	<T extends UtilityClass> T createUtilityClass(String primaryUrn, Class<T> utilityClazz);
-	
 	
 	/**
 	 * Creates a new standard reference BioPAX object 
@@ -49,8 +54,8 @@ public interface CPathWarehouse {
 	 */
 	<T extends UtilityClass> T createUtilityClass(String primaryUrn, Class<? extends BioPAXElement> domain, String property);
 	
-	
-	
+	/* miriam methods */
+
 	/**
 	 * Gets the primary ID (URN) of the BioPAX element, given its current URN.
 	 * 
@@ -58,14 +63,6 @@ public interface CPathWarehouse {
 	 * @return
 	 */
 	String getPrimaryURI(String urn); // uses ID mapper
-	
-
-	
-	/* TODO add insert methods here */
-	
-	
-	
-	
 	
 	/* controlled vocabularies methods */
 	
@@ -77,12 +74,20 @@ public interface CPathWarehouse {
 	 * @return set of ControlledVocabulary URNs
 	 */
 	Set<String> getAllChildrenOfCv(String urn);
-	
-
 	Set<String> getDirectChildrenOfCv(String urn);
-	
-
 	Set<String> getParentsOfCv(String urn);
-	
-	
+
+	/* MetadataDAO methods */
+
+    /**
+     * (non-Javadoc)
+     * @see cpath.warehouse.metadata.MetadataDAO#importMetadata;
+     */
+	void importMetadata(final Metadata metadata);
+
+    /**
+     * (non-Javadoc)
+     * @see cpath.warehouse.metadata.MetadataDAO#getByCV
+     */
+    Metadata getByCV(final String cv);
 }

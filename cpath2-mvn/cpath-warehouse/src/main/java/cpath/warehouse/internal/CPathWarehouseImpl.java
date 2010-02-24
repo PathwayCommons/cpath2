@@ -1,16 +1,17 @@
-/**
- * 
- */
 package cpath.warehouse.internal;
 
-import java.util.Set;
+// imports
+import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.CPathWarehouse;
+import cpath.warehouse.metadata.MetadataDAO;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.UtilityClass;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import cpath.warehouse.CPathWarehouse;
+import java.util.Set;
 
 /**
  * @author rodch
@@ -22,6 +23,8 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
 	/*
 	 * TODO inject dependencies (e.g. several repositories)
 	 */
+    @Autowired
+    private MetadataDAO metadataDAO;
 	
 	
 	@Autowired
@@ -87,4 +90,21 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
 		return null;
 	}
 
+	/* MetadataDAO methods */
+
+    /**
+     * (non-Javadoc)
+     * @see cpath.warehouse.metadata.MetadataDAO#importMetadata;
+     */
+	public void importMetadata(final Metadata metadata) {
+        metadataDAO.importMetadata(metadata);
+    }
+
+    /**
+     * (non-Javadoc)
+     * @see cpath.warehouse.metadata.MetadataDAO#getByCV
+     */
+    public Metadata getByCV(final String cv) {
+        return metadataDAO.getByCV(cv);
+    }
 }
