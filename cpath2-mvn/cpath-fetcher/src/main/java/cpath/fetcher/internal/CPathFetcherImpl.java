@@ -52,16 +52,16 @@ import java.util.Set;
 public final class CPathFetcherImpl implements CPathFetcher {
 
     private static Log log = LogFactory.getLog(CPathFetcherImpl.class);
-
+    
+    @Autowired
     private ProviderMetadataService providerMetadataService;
+    
+    @Autowired
     private CvFetcher cvFetcher;
 
     @Autowired
-	public CPathFetcherImpl(ProviderMetadataService providerMetadataService, CvFetcher cvFetcher) 
-	{
-		this.providerMetadataService = providerMetadataService;
-		this.cvFetcher = cvFetcher;
-	}
+	public CPathFetcherImpl() {
+    }
     
     /*
      * (non-Javadoc)

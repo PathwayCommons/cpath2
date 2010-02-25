@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.fetcher.identity;
+package cpath.identity;
 
 import uk.ac.ebi.miriam.lib.MiriamLink;
 

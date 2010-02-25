@@ -32,13 +32,11 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.validator.impl.AbstractCvRule;
-
 import org.biopax.validator.utils.CvTermsFetcher;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import cpath.fetcher.identity.BiopaxIdUtils;
+import cpath.identity.BiopaxIdUtils;
 import cpath.warehouse.beans.Cv;
 
 
@@ -54,7 +52,10 @@ import cpath.warehouse.beans.Cv;
 public final class CvFetcher {
 	private final static Log log = LogFactory.getLog(CvFetcher.class);
 	
+	@Autowired
 	private CvTermsFetcher cvTermsFetcher;
+	
+	@Autowired
 	private BiopaxIdUtils biopaxIdUtils;
 	
 	/*
@@ -73,10 +74,7 @@ public final class CvFetcher {
 	 * @param cvTermsFetcher
 	 * @throws Exception
 	 */
-	public CvFetcher(CvTermsFetcher cvTermsFetcher, BiopaxIdUtils biopaxIdUtils)
-	{
-		this.cvTermsFetcher = cvTermsFetcher;
-		this.biopaxIdUtils = biopaxIdUtils;
+	public CvFetcher() {
 	}
 
 	/**
@@ -91,21 +89,6 @@ public final class CvFetcher {
 	
 	/**
 	 * Fetches CPathWarehouse's controlled vocabulary beans 
-	 * that that are relevant to the BioPAX property.
-	 * 
-	 * @param domain
-	 * @param property
-	 * @return
-	 */
-	public Set<Cv> fetchBiopaxCVs(Class<? extends BioPAXElement> domain, String property) {
-		//TODO get the set of ontology terms
-		//TODO convert each one ant its synonyms to the Cv bean; find and use URN as RDFId
-		return null;
-	}
-	
-	
-	/**
-	 * Fetches CPathWarehouse's controlled vocabulary beans 
 	 * using constraints defined by the specific validation rule.
 	 * 
 	 * @param domain
@@ -113,7 +96,9 @@ public final class CvFetcher {
 	 * @return
 	 */
 	public Set<Cv> fetchBiopaxCVs(AbstractCvRule cvRule) {
-		return fetchBiopaxCVs(cvRule.getDomain(), cvRule.getProperty());
+		//TODO get the restrictions, then, restricted set of ontology terms
+		//TODO convert each one ant its synonyms to the Cv bean; find and use URN as RDFId
+		return null;
 	}
 		
 }

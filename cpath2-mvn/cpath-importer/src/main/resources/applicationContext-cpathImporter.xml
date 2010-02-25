@@ -12,17 +12,6 @@
 
     <context:annotation-config/>
 
-    <bean id="providerMetadataService" class="cpath.fetcher.metadata.internal.ProviderMetadataServiceImpl"/>
-
-	<bean id="cvTermsFetcher" class="org.biopax.validator.utils.CvTermsFetcher">
-		<constructor-arg value="classpath:ontologies.xml"/>
-	</bean>
-
-	<bean id="cvFetcher" class="cpath.fetcher.cv.CvFetcher" />
-	
-	<!-- all AbstractCvRule beans are required to inject into the cvFetcher -->
-	<context:component-scan base-package="org.biopax.validator.rules">
-		<context:include-filter type="assignable" expression="org.biopax.validator.impl.AbstractCvRule"/>
-	</context:component-scan>
+	<bean id="biopaxIdUtils" class="cpath.identity.BiopaxIdUtils" />
 	
 </beans>

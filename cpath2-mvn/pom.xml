@@ -46,6 +46,8 @@
 			</plugins>
 		</pluginManagement>
 	</build>
+	
+	
 	<repositories>
 		<repository>
 			<id>biopax.snapshots</id>
@@ -137,6 +139,4 @@
 			<version>2.5.6.SEC01</version>
 		</dependency>
 	</dependencies>
-
-
 </project>
