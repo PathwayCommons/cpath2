@@ -90,4 +90,14 @@ public class CvHibernateRepository implements CvRepository {
 
 	}
 
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.cv.CvRepository#getByRDFId(java.lang.String)
+	 */
+	@Override
+	public Cv getByRDFId(String urn) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }
