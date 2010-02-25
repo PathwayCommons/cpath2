@@ -23,6 +23,7 @@
 		<module>cpath-warehouse</module>
 		<module>cpath-fetcher</module>
 		<module>cpath-admin</module>
+		<module>cpath-importer</module>
 	</modules>
 
 	<build>
@@ -69,14 +70,6 @@
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>
-		</repository>
-		<repository>
-			<id>ebi-repo-snapshots</id>
-			<name>The EBI internal repository</name>
-			<url>http://www.ebi.ac.uk/~maven/m2repo_snapshots</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
 		</repository>
 	</repositories>
 

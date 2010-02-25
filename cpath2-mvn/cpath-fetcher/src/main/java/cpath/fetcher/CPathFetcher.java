@@ -29,10 +29,12 @@
 package cpath.fetcher;
 
 // imports
+import cpath.warehouse.beans.Cv;
 import cpath.warehouse.beans.Metadata;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * Provides warehouse & pathway data fetching service
@@ -46,5 +48,16 @@ public interface CPathFetcher {
      * @return Collection<Metadata>
      * @throws IOException if an IO error occurs
      */
-    public Collection<Metadata> getProviderMetadata(final String url) throws IOException;
+    Collection<Metadata> getProviderMetadata(final String url) throws IOException;
+    
+    
+	/**
+	 * Fetches controlled vocabulary (warehouse's beans) using 
+	 * known BioPAX CV validation rules.
+	 * 
+	 * @param domain
+	 * @param property
+	 * @return
+	 */
+	Set<Cv> fetchBiopaxCVs();
 }

@@ -28,6 +28,7 @@
         <property name="annotatedClasses">
             <list>
 			  <value>cpath.warehouse.beans.Metadata</value>
+			  <value>cpath.warehouse.beans.Cv</value>
 			</list>
         </property>
     </bean>
@@ -49,6 +50,10 @@
     </bean>
 
     <bean id="metadataDAO" class="cpath.warehouse.metadata.internal.MetadataHibernateDAO" dependency-check="objects">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="cvRepository" class="cpath.warehouse.cv.internal.CvHibernateRepository" dependency-check="objects">
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 

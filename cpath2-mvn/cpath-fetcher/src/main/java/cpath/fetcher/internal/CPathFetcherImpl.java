@@ -31,16 +31,20 @@ package cpath.fetcher.internal;
 // imports
 import cpath.fetcher.CPathFetcher;
 
+import cpath.warehouse.beans.Cv;
 import cpath.warehouse.beans.Metadata;
+import cpath.fetcher.cv.CvFetcher;
 import cpath.fetcher.metadata.ProviderMetadataService;
-
-import org.springframework.beans.factory.annotation.Autowired;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.validator.impl.AbstractCvRule;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Implementation of CPathFetcher interface.
@@ -49,10 +53,17 @@ public final class CPathFetcherImpl implements CPathFetcher {
 
     private static Log log = LogFactory.getLog(CPathFetcherImpl.class);
 
-    @Autowired
     private ProviderMetadataService providerMetadataService;
+    private CvFetcher cvFetcher;
 
-    /**
+    @Autowired
+	public CPathFetcherImpl(ProviderMetadataService providerMetadataService, CvFetcher cvFetcher) 
+	{
+		this.providerMetadataService = providerMetadataService;
+		this.cvFetcher = cvFetcher;
+	}
+    
+    /*
      * (non-Javadoc)
      * @see cpath.fetcher.CPathFetcher#getProviderMetadata(java.lang.String)
      */
@@ -62,4 +73,18 @@ public final class CPathFetcherImpl implements CPathFetcher {
 		log.info("CPathFetcherImpl.getProviderMetadata(), redirecting to ProviderMetadata.getProviderMetadata()");
         return providerMetadataService.getProviderMetadata(url);
     }
+
+	/* (non-Javadoc)
+	 * @see cpath.fetcher.CPathFetcher#fetchBiopaxCVs()
+	 */
+	@Override
+	public Set<Cv> fetchBiopaxCVs() {
+		Set<Cv> allCv = new HashSet<Cv>();
+		
+		for(AbstractCvRule cvRule : cvFetcher.getCvRules()) {
+			allCv.addAll(cvFetcher.fetchBiopaxCVs(cvRule));
+		}
+		
+		return allCv;
+	}
 }

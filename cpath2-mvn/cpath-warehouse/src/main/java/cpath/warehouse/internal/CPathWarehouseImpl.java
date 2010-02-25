@@ -1,13 +1,14 @@
 package cpath.warehouse.internal;
 
 // imports
-import cpath.warehouse.CPathWarehouse;
-
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.UtilityClass;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import cpath.warehouse.CPathWarehouse;
+import cpath.warehouse.cv.CvRepository;
+import cpath.warehouse.metadata.MetadataDAO;
 
 import java.util.Set;
 
@@ -18,16 +19,15 @@ import java.util.Set;
 @Service
 public final class CPathWarehouseImpl implements CPathWarehouse {
 
-	/*
-	 * TODO inject dependencies (e.g. several repositories)
-	 */
-    @Autowired
     private MetadataDAO metadataDAO;
+    private CvRepository cvRepository;
 	
 	
 	@Autowired
-	public CPathWarehouseImpl() {
-		// TODO Auto-generated constructor stub
+	public CPathWarehouseImpl(MetadataDAO metadataDAO,
+			CvRepository cvRepository) {
+		this.metadataDAO = metadataDAO;
+		this.cvRepository = cvRepository;
 	}
 
 	/* (non-Javadoc)
@@ -87,4 +87,5 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 }
