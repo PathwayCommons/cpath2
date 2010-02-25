@@ -42,5 +42,6 @@ public interface CvRepository {
 	
 	void removeCV(Cv cv);
 	
+	Cv getByRDFId(String urn);
 	
 }
