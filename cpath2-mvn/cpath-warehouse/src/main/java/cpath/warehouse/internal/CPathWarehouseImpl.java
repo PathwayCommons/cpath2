@@ -3,7 +3,6 @@ package cpath.warehouse.internal;
 // imports
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.UtilityClass;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import cpath.warehouse.CPathWarehouse;
@@ -23,7 +22,6 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
     private CvRepository cvRepository;
 	
 	
-	@Autowired
 	public CPathWarehouseImpl(MetadataDAO metadataDAO,
 			CvRepository cvRepository) {
 		this.metadataDAO = metadataDAO;
