@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
+    
+    <context:annotation-config/>
+    <context:property-placeholder location="classpath:dao.properties"/>
+    
+    <bean id="sessionFactory"
+        class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="hibernateProperties">
+		  <props>
+			<prop key="hibernate.hbm2ddl.auto">${hbm2ddl.mode}</prop>
+			<prop key="hibernate.show_sql">true</prop>
+			<prop key="hibernate.format_sql">true</prop>
+
+			<!-- the following is configured via the dataSource bean et al.-->
+		  <!-- 
+		    <prop key="hibernate.transaction.factory_class">org.hibernate.transaction.JDBCTransactionFactory</prop>
+            <prop key="hibernate.connection.pool_size">1</prop>
+      		<prop key="hibernate.connection.driver_class">com.mysql.jdbc.Driver</prop>
+      		<prop key="hibernate.connection.url">jdbc:mysql://localhost/cpath2</prop>
+       		<prop key="hibernate.connection.username">${db.user}</prop>
+       	    <prop key="hibernate.connection.password">${db.password}</prop>
+       	    <prop key="hibernate.jdbc.batch_size">0</prop>
+		  -->
+
+			<prop key="hibernate.dialect">org.hibernate.dialect.MySQL5Dialect</prop>
+			<prop key="hibernate.cache.provider_class">org.hibernate.cache.NoCacheProvider</prop>
+			<prop key="hibernate.search.default.directory_provider">org.hibernate.search.store.FSDirectoryProvider</prop>
+			<prop key="hibernate.search.default.indexBase">${lucene.index-path}</prop>
+		  </props>
+        </property>
+        <property name="annotatedClasses">
+            <list>
+			  <value>org.biopax.paxtools.proxy.level3.BindingFeatureProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.BiochemicalPathwayStepProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.BiochemicalReactionProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.BioPAXElementProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.BioSourceProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.CatalysisProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.CellularLocationVocabularyProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.CellVocabularyProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ChemicalStructureProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ComplexAssemblyProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ComplexProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ControlledVocabularyProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ControlProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ConversionProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.CovalentBindingFeatureProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.DegradationProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.DeltaGProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.DnaProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.DnaReferenceProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.DnaRegionProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.DnaRegionReferenceProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.EntityFeatureProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.EntityProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.EntityReferenceProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.EntityReferenceTypeVocabularyProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.EvidenceCodeVocabularyProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.EvidenceProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ExperimentalFormProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ExperimentalFormVocabularyProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.FragmentFeatureProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.GeneProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.GeneReferenceProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.GeneticInteractionProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.InteractionProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.InteractionVocabularyProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.KPrimeProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.Level3ElementProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ModificationFeatureProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ModulationProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.MolecularInteractionProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.PathwayProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.PathwayStepProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.PhenotypeVocabularyProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.PhysicalEntityProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ProcessProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ProteinProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ProteinReferenceProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ProvenanceProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.PublicationXrefProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.RelationshipTypeVocabularyProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.RelationshipXrefProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.RnaProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.RnaReferenceProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.RnaRegionProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.RnaRegionReferenceProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.ScoreProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.SequenceEntityReferenceProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.SequenceIntervalProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.SequenceLocationGroupProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.SequenceLocationProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.SequenceModificationVocabularyProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.SequenceRegionVocabularyProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.SequenceSiteProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.SimplePhysicalEntityProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.SmallMoleculeProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.SmallMoleculeReferenceProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.StoichiometryProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.TemplateReactionProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.TemplateReactionRegulationProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.TissueVocabularyProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.TransportProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.TransportWithBiochemicalReactionProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.UnificationXrefProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.XrefProxy</value>
+			  <value>org.biopax.paxtools.proxy.level3.RestrictedInteractionAdapterProxy</value>
+			</list>
+        </property>
+    </bean>
+
+    <!-- enable the configuration of transactional behavior based on annotations -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+    
+	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
+    
+    <bean id="transactionManager"
+        class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory" />
+    </bean>
+
+    <bean id="paxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO" dependency-check="objects">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
+
+</beans>
