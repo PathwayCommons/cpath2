@@ -43,8 +43,8 @@ public final class BiopaxIdUtils {
 	
 	private MiriamLink miriamLink;
 	
-	public BiopaxIdUtils(MiriamLink miriamLink) {
-		this.miriamLink = miriamLink;
+	public BiopaxIdUtils() {
+		this.miriamLink = new MiriamLink();
 	}
 		
 	/**

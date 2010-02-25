@@ -46,5 +46,5 @@ public interface ProviderMetadataService {
      * @return Collection<Metadata>
      * @throws IOException if an IO error occurs
      */
-    public Collection<Metadata> getProviderMetadata(final String url) throws IOException;
+    Collection<Metadata> getProviderMetadata(final String url) throws IOException;
 }

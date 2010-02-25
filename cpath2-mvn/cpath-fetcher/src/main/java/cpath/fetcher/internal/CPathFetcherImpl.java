@@ -39,7 +39,6 @@ import cpath.fetcher.metadata.ProviderMetadataService;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.validator.impl.AbstractCvRule;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -53,14 +52,19 @@ public final class CPathFetcherImpl implements CPathFetcher {
 
     private static Log log = LogFactory.getLog(CPathFetcherImpl.class);
     
-    @Autowired
     private ProviderMetadataService providerMetadataService;
-    
-    @Autowired
     private CvFetcher cvFetcher;
 
-    @Autowired
-	public CPathFetcherImpl() {
+    /**
+     * Constructor
+     * 
+     * @param providerMetadataService
+     * @param cvFetcher
+     */
+	public CPathFetcherImpl(ProviderMetadataService providerMetadataService,
+			CvFetcher cvFetcher) {
+		this.providerMetadataService = providerMetadataService;
+		this.cvFetcher = cvFetcher;
     }
     
     /*

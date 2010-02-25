@@ -34,12 +34,11 @@ import org.biopax.paxtools.model.Model;
  * @author rodch
  *
  */
-public class IdNormalizer implements ModelFilter{
+public class IdNormalizer implements ModelFilter {
 
 	/* (non-Javadoc)
 	 * @see org.biopax.paxtools.controller.ModelFilter#filter(org.biopax.paxtools.model.Model)
 	 */
-	@Override
 	public Model filter(Model model) {
 		// TODO Auto-generated method stub
 		return null;

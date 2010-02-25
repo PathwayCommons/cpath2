@@ -52,10 +52,7 @@ import cpath.warehouse.beans.Cv;
 public final class CvFetcher {
 	private final static Log log = LogFactory.getLog(CvFetcher.class);
 	
-	@Autowired
 	private CvTermsFetcher cvTermsFetcher;
-	
-	@Autowired
 	private BiopaxIdUtils biopaxIdUtils;
 	
 	/*
@@ -72,9 +69,12 @@ public final class CvFetcher {
 	 * Constructor
 	 * 
 	 * @param cvTermsFetcher
+	 * @param biopaxIdUtils
 	 * @throws Exception
 	 */
-	public CvFetcher() {
+	public CvFetcher(CvTermsFetcher cvTermsFetcher, BiopaxIdUtils biopaxIdUtils) {
+		this.biopaxIdUtils = biopaxIdUtils;
+		this.cvTermsFetcher = cvTermsFetcher;
 	}
 
 	/**
