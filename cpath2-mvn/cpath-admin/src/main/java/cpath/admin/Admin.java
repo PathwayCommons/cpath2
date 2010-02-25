@@ -31,6 +31,7 @@ package cpath.admin;
 // imports
 import cpath.fetcher.CPathFetcher;
 import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.metadata.MetadataDAO;
 
 import org.apache.log4j.PropertyConfigurator;
 
@@ -63,6 +64,8 @@ public class Admin implements Runnable {
 
     // ref to fetcher
     private CPathFetcher cpathFetcher;
+    // ref to metadata dao
+    private MetadataDAO metadataDAO;
 
     // command, command parameter
     private COMMAND command;
@@ -73,11 +76,13 @@ public class Admin implements Runnable {
      *
      * @param args String[]
      * @param cpathFetcher CPathFetcher
+     * @param metadataDAO MetadataDAO
      */
-    public Admin(final String[] args, final CPathFetcher cpathFetcher) {
+    public Admin(final String[] args, final CPathFetcher cpathFetcher, final MetadataDAO metadataDAO) {
         
         // init members
         this.cpathFetcher = cpathFetcher;
+        this.metadataDAO = metadataDAO;
 
         // parse args
         parseArgs(args);
@@ -133,7 +138,10 @@ public class Admin implements Runnable {
         // grab the data
         Collection<Metadata> metadata = cpathFetcher.getProviderMetadata(url);
         
-        // TODO: process metadata
+        // process metadata
+        for (Metadata mdata : metadata) {
+            metadataDAO.importMetadata(mdata);
+        }
     }
 
     /**
@@ -160,7 +168,8 @@ public class Admin implements Runnable {
 
         // TODO: inject
         CPathFetcher cpathFetcher = (CPathFetcher)context.getBean("cpathFetcher");
-        Admin admin = new Admin(args, cpathFetcher);
+        MetadataDAO metadataDAO = (MetadataDAO)context.getBean("metadataDAO");
+        Admin admin = new Admin(args, cpathFetcher, metadataDAO);
         admin.run();
     }
 }
