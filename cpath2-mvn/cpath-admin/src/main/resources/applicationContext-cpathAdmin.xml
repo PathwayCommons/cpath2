@@ -13,5 +13,6 @@
     <context:annotation-config/>
 
     <bean id="cpathFetcher" class="cpath.fetcher.internal.CPathFetcherImpl"/>
+    <bean id="metadataDAO" class="cpath.warehouse.metadata.internal.MetadataHibernateDAO"/>
 
 </beans>
