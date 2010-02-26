@@ -7,6 +7,7 @@ import cpath.warehouse.metadata.MetadataDAO;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -43,16 +44,34 @@ public final class MetadataHibernateDAO  implements MetadataDAO {
     @Transactional(propagation=Propagation.NESTED)
 	public void importMetadata(final Metadata metadata) {
 
-	Session session = getSession();
-        log.info("Saving metadata object, ID: " + metadata.getID());
-        session.save(metadata);
+		Session session = getSession();
+		// check for existing object
+		Metadata existing = getByIdentifier(metadata.getIdentifier());
+		if (existing != null) {
+			log.info("Metadata object with identifier: " + metadata.getIdentifier() + " already exists, manually merging.");
+			existing.setVersion(metadata.getVersion());
+			existing.setReleaseDate(metadata.getReleaseDate());
+			existing.setURLToPathwayData(metadata.getURLToPathwayData());
+			existing.setIcon(metadata.getIcon());
+			existing.setIsPSI(metadata.isPSI());
+			session.update(existing);
+		}
+		else {
+			log.info("Metadata object with identifier: " + metadata.getIdentifier() + " does not exist, saving.");
+			session.save(metadata);
+		}
+		log.info("metadata object has been sucessessfully saved or merged.");
     }
 
     /**
      * (non-Javadoc)
      * @see cpath.warehouse.metadata.MetadataDAO#getByID
      */
-    public Metadata getByID(final String id) {
-	return (Metadata)getSession().get(Metadata.class, id);
+    public Metadata getByIdentifier(final String identifier) {
+
+		Session session = getSession();
+		Query query = session.getNamedQuery("cpath.warehouse.beans.providerByIdentifier");
+		query.setParameter("identifier", identifier);
+		return (Metadata)query.uniqueResult();
     }
 }

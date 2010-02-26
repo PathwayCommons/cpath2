@@ -16,10 +16,10 @@ public interface MetadataDAO {
     void importMetadata(final Metadata metadata);
 
     /**
-     * This method returns the metadata object with the given ID.
+     * This method returns the metadata object with the given Identifier.
 	 *
-     * @param id String
+     * @param identifier String
      * @return Metadata
      */
-    Metadata getByID(final String id);
+    Metadata getByIdentifier(final String identifier);
 }
