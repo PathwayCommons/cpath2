@@ -1,43 +1,65 @@
 package cpath.warehouse.beans;
 
 // imports
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.Entity;
+import javax.persistence.*;
+import org.hibernate.Query;
 
 /**
  * Data Provider Metadata.
  */
 @Entity
-@Table(name="METADATA")
+@Table(name="metadata")
+@NamedQueries({
+		@NamedQuery(name="cpath.warehouse.beans.providerByIdentifier",
+					query="from Metadata as metadata where upper(metadata.identifier) = upper(:identifier)")
+})
 public final class Metadata {
 
-    // some members
-    private final String id;
-    private final String name;
-    private final String version;
-    private final String releaseDate;
-    private final String urlToPathwayData;
-    private final byte[] icon;
+	@Id
+	@Column(name="provider_id")
+	@GeneratedValue(strategy=GenerationType.AUTO)
+	private Integer id;
+	@Column(nullable=false, unique=true)
+    private String identifier;
+	@Column(nullable=false)
+    private String name;
+	@Column(nullable=false)
+    private Float version;
+	@Column(nullable=false)
+	private Float persistedVersion; // version that was persisted
+	@Column(nullable=false)
+    private String releaseDate;
+	@Column(nullable=false)
+    private String urlToPathwayData;
+	@Lob
+	@Column(nullable=false)
+    private byte[] icon;
+	@Column(nullable=false)
+    private Boolean isPSI;
 
+	/**
+	 * Default Constructor.
+	 */
+	public Metadata() {}
 
     /**
      * Create a Metadata obj with the specified properties;
      *
-     * @param id String
+     * @param identifier String (string used in web service calls)
      * @param name String
      * @param version String
      * @param releaseDate String
      * @param urlToPathwayData String
      * @param icon byte[]
+     * @param isPSI Boolean
      */
-    public Metadata(final String id, final String name, final String version,
-                    final String releaseDate, final String urlToPathwayData, final byte[] icon) {
+    public Metadata(final String identifier, final String name, final Float version, final String releaseDate,
+                    final String urlToPathwayData, final byte[] icon, final Boolean isPSI) {
 
-        if (id == null) {
-            throw new IllegalArgumentException("id must not be null");
+        if (identifier == null) {
+            throw new IllegalArgumentException("identifier must not be null");
         }
-        this.id = id;
+        this.identifier = identifier;
 
         if (name == null) {
             throw new IllegalArgumentException("name must not be null");
@@ -48,6 +70,7 @@ public final class Metadata {
             throw new IllegalArgumentException("version must not be null");
         }
         this.version = version;
+		this.persistedVersion = 0.0f;
 
         if (releaseDate == null) {
             throw new IllegalArgumentException("release data must not be null");
@@ -63,62 +86,57 @@ public final class Metadata {
             throw new IllegalArgumentException("icon must not be null");
         }
         this.icon = icon;
+
+        if (isPSI == null) {
+            throw new IllegalArgumentException("isPSI must not be null");
+        }
+        this.isPSI = isPSI;
     }
 
-    /**
-     * Return the data provider ID.
-     *
-     * @return String
-     */
-    @Id
-    public String getID() {
-        return id;
-    }
+	public void setId(Integer id) {
+		this.id = id;
+	}
+    public Integer getId() { return id; }
 
-    /**
-     * Return the data provider name.
-     *
-     * @return String
-     */
-    public String getName() {
-        return name;
-    }
+	public void setIdentifier(String identifier) {
+		this.identifier = identifier;
+	}
+    public String getIdentifier() { return identifier; }
 
-    /**
-     * Returns the version of the current release.
-     *
-     * @return String
-     */
-    public String getVersion() {
-        return version;
-    }
+	public void setName(String name) {
+		this.name = name;
+	}
+    public String getName() { return name; }
 
-    /**
-     * Returns the release data of the current release.
-     *
-     * @return String
-     */
-    public String getReleaseDate() {
-        return releaseDate;
-    }
+	public void setVersion(Float version) {
+		this.version = version;
+	}
+    public Float getVersion() { return version; }
 
-    /**
-     * Returns the url to the provider pathway data.
-     *
-     * @return String
-     */
-    public String getURLToPathwayData() {
-        return urlToPathwayData;
-    }
+	public void setPersistedVersion(Float persistedVersion) {
+		this.persistedVersion = persistedVersion;
+	}
+    public Float getPersistedVersion() { return persistedVersion; }
 
-    /**
-     * Returns the icon data.
-     *
-     * @return byte[]
-     */
-    public byte[] getIcon() {
-        return icon;
-    }
+	public void setReleaseDate(String releaseData) {
+		this.releaseDate = releaseDate;
+	}
+    public String getReleaseDate() { return releaseDate; }
+
+	public void setURLToPathwayData(String urlToPathwayData) {
+		this.urlToPathwayData = urlToPathwayData;
+	}
+    public String getURLToPathwayData() { return urlToPathwayData; }
+
+	public void setIcon(byte[] icon) {
+		this.icon = icon;
+	}
+    public byte[] getIcon() { return icon; }
+
+	public void setIsPSI(Boolean isPSI) {
+		this.isPSI = isPSI;
+	}
+    public Boolean isPSI() { return isPSI; }
 
     @Override
     public String toString() {

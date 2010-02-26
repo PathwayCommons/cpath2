@@ -11,12 +11,54 @@
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
 
     <context:annotation-config/>
+    <context:property-placeholder location="classpath:admin-test.properties"/>
 
-    <bean id="metadataDAO" class="cpath.warehouse.metadata.internal.MetadataHibernateDAO"/>
+    <bean id="sessionFactory"
+        class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="hibernateProperties">
+		  <props>
+			<!--<prop key="hibernate.hbm2ddl.auto">${hbm2ddl.mode}</prop>-->
+			<prop key="hibernate.show_sql">true</prop>
+			<prop key="hibernate.format_sql">true</prop>
+			<prop key="hibernate.dialect">org.hibernate.dialect.MySQL5Dialect</prop>
+			<prop key="hibernate.cache.provider_class">org.hibernate.cache.NoCacheProvider</prop>
+		  </props>
+        </property>
+        <property name="annotatedClasses">
+            <list>
+			  <value>cpath.warehouse.beans.Metadata</value>
+			</list>
+        </property>
+    </bean>
+
+    <bean id="dataSource" class="com.mysql.jdbc.jdbc2.optional.MysqlDataSource">
+      <property name="url" value="jdbc:mysql://localhost/${db.name}" />
+      <property name="user" value="${db.user}" />
+      <property name="password" value="${db.password}" />
+    </bean>
+
+    <!-- enable the configuration of transactional behavior based on annotations -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+    
+	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
+    
+    <bean id="transactionManager"
+        class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory" />
+    </bean>
+
+    <bean id="metadataDAO" class="cpath.warehouse.metadata.internal.MetadataHibernateDAO" dependency-check="objects">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
     <bean id="providerMetadataService" class="cpath.fetcher.metadata.internal.ProviderMetadataServiceImpl"/>
+
     <bean id="cpathFetcher" class="cpath.fetcher.internal.CPathFetcherImpl">
        <constructor-arg ref="providerMetadataService"/>
        <constructor-arg><null/></constructor-arg>
     </bean>
+
+	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
 
 </beans>

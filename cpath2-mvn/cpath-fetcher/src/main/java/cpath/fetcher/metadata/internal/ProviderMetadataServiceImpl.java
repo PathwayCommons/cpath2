@@ -57,13 +57,14 @@ import java.util.Collection;
 public final class ProviderMetadataServiceImpl implements ProviderMetadataService {
 
     // some bits for metadata reading
-    private static final int METADATA_ID_INDEX = 0;
+    private static final int METADATA_IDENTIFIER_INDEX = 0;
     private static final int METADATA_NAME_INDEX = 1;
     private static final int METADATA_VERSION_INDEX = 2;
-    private static final int METADATA_RELEASE_DATA_INDEX = 3;
+    private static final int METADATA_RELEASE_DATE_INDEX = 3;
     private static final int METADATA_DATA_URL_INDEX = 4;
     private static final int METADATA_ICON_URL_INDEX = 5;
-    private static final int NUMBER_METADATA_ITEMS = 6;
+    private static final int METADATA_IS_PSI_INDEX = 6;
+    private static final int NUMBER_METADATA_ITEMS = 7;
 
     private static Log log = LogFactory.getLog(ProviderMetadataServiceImpl.class);
 
@@ -134,21 +135,33 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
 
                 if (tokens.length == NUMBER_METADATA_ITEMS) {
 
+					// convert version string to float
+					Float version = null;
+					try {
+						version = new Float(tokens[METADATA_VERSION_INDEX]);
+					}
+					catch (NumberFormatException e) {
+						log.info("number format exception caught for provider: " + tokens[METADATA_IDENTIFIER_INDEX] + " skipping");
+						continue;
+					}
+
                     // grab icon data
                     byte[] iconData = getIconData(tokens[METADATA_ICON_URL_INDEX]);
 
                     if (iconData != null) {
 
                         // create a metadata bean
-                        Metadata metadata = new Metadata(tokens[METADATA_ID_INDEX], tokens[METADATA_NAME_INDEX],
-                                                         tokens[METADATA_VERSION_INDEX], tokens[METADATA_RELEASE_DATA_INDEX],
-                                                         tokens[METADATA_DATA_URL_INDEX], iconData);
-                        log.info(metadata.getID());
+                        Metadata metadata = new Metadata(tokens[METADATA_IDENTIFIER_INDEX], tokens[METADATA_NAME_INDEX],
+                                                         version, tokens[METADATA_RELEASE_DATE_INDEX],
+                                                         tokens[METADATA_DATA_URL_INDEX], iconData,
+                                                         new Boolean(tokens[METADATA_IS_PSI_INDEX]));
+                        log.info(metadata.getIdentifier());
                         log.info(metadata.getName());
                         log.info(metadata.getVersion());
                         log.info(metadata.getReleaseDate());
                         log.info(metadata.getURLToPathwayData());
                         log.info(tokens[METADATA_ICON_URL_INDEX]);
+                        log.info(metadata.isPSI());
 
                         // add metadata object toc collection we return
                         toReturn.add(metadata);

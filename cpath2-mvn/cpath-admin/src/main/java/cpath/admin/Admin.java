@@ -164,6 +164,7 @@ public class Admin implements Runnable {
         ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { "classpath:applicationContext-cpathFetcher.xml",
                                                                "classpath:applicationContext-cpathImporter.xml",
+															   "classpath:applicationContext-cpathWarehouse.xml",
                                                                "classpath:applicationContext-cpathAdmin.xml"});
 
         // TODO: inject
