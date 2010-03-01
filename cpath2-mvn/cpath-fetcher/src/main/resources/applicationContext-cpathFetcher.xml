@@ -12,14 +12,17 @@
 
     <context:annotation-config/>
 
-    <bean id="providerMetadataService" class="cpath.fetcher.metadata.internal.ProviderMetadataServiceImpl"/>
+	<bean id="fetcherHTTPClient" class="cpath.fetcher.common.internal.FetcherHTTPClientImpl"/>
 
-	<bean id="cvTermsFetcher" class="org.biopax.validator.utils.CvTermsFetcher">
-		<constructor-arg value="classpath:ontologies.xml"/>
+	<bean id="providerMetadataService" class="cpath.fetcher.metadata.internal.ProviderMetadataServiceImpl">
+	  <contructor-arg ref="fetcherHTTPClient"/>
+	</bean>
+
+	<bean id="providerPathwayDataService" class="cpath.fetcher.pathway.internal.ProviderPathwayDataServiceImpl">
+	  <contructor-arg ref="fetcherHTTPClient"/>
 	</bean>
 
 	<bean id="cvFetcher" class="cpath.fetcher.cv.CvFetcher">
-		<constructor-arg ref="cvTermsFetcher"/>
 		<constructor-arg ref="biopaxIdUtils"/>
 	</bean>
 	

@@ -30,14 +30,12 @@ package cpath.fetcher.metadata.internal;
 
 // imports
 import cpath.warehouse.beans.Metadata;
+import cpath.fetcher.common.ServiceReader;
+import cpath.fetcher.common.FetcherHTTPClient;
 import cpath.fetcher.metadata.ProviderMetadataService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.params.HttpMethodParams;
 
 import org.springframework.stereotype.Service;
 
@@ -54,7 +52,7 @@ import java.util.Collection;
  * Provider Metadata service.  Retrieves provider metadata.
  */
 @Service
-public final class ProviderMetadataServiceImpl implements ProviderMetadataService {
+public final class ProviderMetadataServiceImpl implements ProviderMetadataService, ServiceReader {
 
     // some bits for metadata reading
     private static final int METADATA_IDENTIFIER_INDEX = 0;
@@ -66,7 +64,20 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
     private static final int METADATA_IS_PSI_INDEX = 6;
     private static final int NUMBER_METADATA_ITEMS = 7;
 
+	// logger
     private static Log log = LogFactory.getLog(ProviderMetadataServiceImpl.class);
+
+	// ref to FetcherHTTPClient
+    private FetcherHTTPClient fetcherHTTPClient;
+
+	/**
+     * Constructor.
+     * 
+     * @param fetcherHTTPClient FetcherHTTPClient
+     */
+	public ProviderMetadataServiceImpl(FetcherHTTPClient fetcherHTTPClient) {
+		this.fetcherHTTPClient = fetcherHTTPClient;
+	}
 
     /**
      * (non-Javadoc)
@@ -82,39 +93,18 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
             throw new IllegalArgumentException("url must not be null");
         }
 
-        // setup httpclient and method
-        HttpClient httpClient = new HttpClient();
-        GetMethod method = new GetMethod(url);
-        method.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, 
-                                        new DefaultHttpMethodRetryHandler());
-        try {
-
-            // execute
-            int statusCode = httpClient.executeMethod(method);
-
-            // get the output
-            if (statusCode == 200) {
-                toReturn = readFromMetadataService(method.getResponseBodyAsStream());
-            }
-        }
-        finally {
-            method.releaseConnection();
-        }
+        // get data from service
+		fetcherHTTPClient.getDataFromService(url, this, toReturn);
 
         // outta here
         return toReturn;
     }
 
     /**
-     * Method which parses metadata.
-     *
-     * @param inputStream InputStream
-     * @return Collection<Metadata>
-     * @throws IOException
+     * (non-Javadoc)
+     * @see cpath.fetcher.common.ServiceReader#readFromService(java.io.InputStream, java.util.Collection<T>)
      */
-    private Collection<Metadata> readFromMetadataService(final InputStream inputStream) throws IOException {
-
-        HashSet<Metadata> toReturn = new HashSet<Metadata>();
+    public <T> void readFromService(final InputStream inputStream, final Collection<T> toReturn) throws IOException {
 
         BufferedReader reader = null;
         try {
@@ -127,7 +117,7 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
 
                 // grab a line
                 String line = reader.readLine();
-                log.info("readFromMetadataService(), line: " + line);
+                log.info("readFromService(), line: " + line);
 
                 // for now assume line is delimited by '<br>'
                 // TODO: update when data moved to wiki page
@@ -145,8 +135,8 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
 						continue;
 					}
 
-                    // grab icon data
-                    byte[] iconData = getIconData(tokens[METADATA_ICON_URL_INDEX]);
+					// get data from service
+					byte[] iconData = fetcherHTTPClient.getDataFromService(tokens[METADATA_ICON_URL_INDEX]);
 
                     if (iconData != null) {
 
@@ -164,7 +154,7 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
                         log.info(metadata.isPSI());
 
                         // add metadata object toc collection we return
-                        toReturn.add(metadata);
+                        toReturn.add((T)metadata);
                     }
                 }
             }
@@ -177,40 +167,6 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
         finally {
             closeQuietly(reader);
         }
-
-        // outta here
-        return toReturn;
-    }
-
-    /**
-     * Given url, fetches byte data for icon
-     */
-    private byte[] getIconData(final String url) throws IOException {
-
-        byte[] toReturn = null;
-
-        // setup httpclient and method
-        HttpClient httpClient = new HttpClient();
-        GetMethod method = new GetMethod(url);
-        method.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, 
-                                        new DefaultHttpMethodRetryHandler());
-
-        try {
-
-            // execute
-            int statusCode = httpClient.executeMethod(method);
-
-            // get the output
-            if (statusCode == 200) {
-                toReturn =  method.getResponseBody();
-            }
-        }
-        finally {
-            method.releaseConnection();
-        }
-
-        // outta here
-        return toReturn;
     }
 
    /**
