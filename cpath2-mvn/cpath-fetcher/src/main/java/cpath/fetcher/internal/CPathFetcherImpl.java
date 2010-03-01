@@ -33,8 +33,11 @@ import cpath.fetcher.CPathFetcher;
 
 import cpath.warehouse.beans.Cv;
 import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.beans.PathwayData;
+
 import cpath.fetcher.cv.CvFetcher;
 import cpath.fetcher.metadata.ProviderMetadataService;
+import cpath.fetcher.pathway.ProviderPathwayDataService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -53,17 +56,21 @@ public final class CPathFetcherImpl implements CPathFetcher {
     private static Log log = LogFactory.getLog(CPathFetcherImpl.class);
     
     private ProviderMetadataService providerMetadataService;
+    private ProviderPathwayDataService providerPathwayDataService;
     private CvFetcher cvFetcher;
 
     /**
      * Constructor
      * 
      * @param providerMetadataService
+     * @param providerPathwayDataService
      * @param cvFetcher
      */
 	public CPathFetcherImpl(ProviderMetadataService providerMetadataService,
-			CvFetcher cvFetcher) {
+							ProviderPathwayDataService providerPathwayDataService,
+							CvFetcher cvFetcher) {
 		this.providerMetadataService = providerMetadataService;
+		this.providerPathwayDataService = providerPathwayDataService;
 		this.cvFetcher = cvFetcher;
     }
     
@@ -76,6 +83,17 @@ public final class CPathFetcherImpl implements CPathFetcher {
 
 		log.info("CPathFetcherImpl.getProviderMetadata(), redirecting to ProviderMetadata.getProviderMetadata()");
         return providerMetadataService.getProviderMetadata(url);
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see cpath.fetcher.CPathFetcher#getProviderPathwayData(cpath.warehouse.beans.Metadata)
+     */
+    @Override
+    public Collection<PathwayData> getProviderPathwayData(final Metadata metadata) throws IOException {
+
+		log.info("CPathFetcherImpl.getProviderPathwayData(), redirecting to ProviderPathwayData.getProviderPathwayData()");
+        return providerPathwayDataService.getProviderPathwayData(metadata);
     }
 
 	/* (non-Javadoc)

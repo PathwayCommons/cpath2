@@ -31,7 +31,9 @@ package cpath.admin;
 // imports
 import cpath.fetcher.CPathFetcher;
 import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.metadata.MetadataDAO;
+import cpath.warehouse.pathway.PathwayDataDAO;
 
 import org.apache.log4j.PropertyConfigurator;
 
@@ -50,7 +52,8 @@ public class Admin implements Runnable {
     public static enum COMMAND {
 
         // command types
-        FETCH_METADATA("-fetch-metadata");
+        FETCH_METADATA("-fetch-metadata"),
+		FETCH_PATHWAY_DATA("-fetch-pathwaydata");
 
         // string ref for readable name
         private String command;
@@ -64,12 +67,14 @@ public class Admin implements Runnable {
 
     // ref to fetcher
     private CPathFetcher cpathFetcher;
-    // ref to metadata dao
-    private MetadataDAO metadataDAO;
+    // ref to metadata dao 
+	private MetadataDAO metadataDAO;
+	// ref to pathway data dao
+	private PathwayDataDAO pathwayDataDAO;
 
     // command, command parameter
     private COMMAND command;
-    private String commandParameter;
+    private String[] commandParameters;
 
     /**
      * Constructor.
@@ -99,14 +104,29 @@ public class Admin implements Runnable {
 
         // TODO: use gnu getopt or some variant        
         if (args[0].equals(COMMAND.FETCH_METADATA.toString())) {
-            this.command = COMMAND.FETCH_METADATA;
-            this.commandParameter = args[1];
+			if (args.length != 2) {
+				validArgs = false;
+			}
+			else {
+				this.command = COMMAND.FETCH_METADATA;
+				this.commandParameters = new String[] { args[1] };
+			}
         }
+		else if (args[0].equals(COMMAND.FETCH_PATHWAY_DATA.toString())) {
+			if (args.length != 2) {
+				validArgs = false;
+			}
+			else {
+				this.command = COMMAND.FETCH_PATHWAY_DATA;
+				this.commandParameters = new String[] { args[1] };
+			}
+		}
         else {
             validArgs = false;
         }
 
         if (!validArgs) {
+			System.err.println(usage());
             throw new IllegalArgumentException("Invalid command passed to Admin.");
         }
     }
@@ -117,8 +137,11 @@ public class Admin implements Runnable {
         try {
             switch (command) {
             case FETCH_METADATA:
-                fetchMetadata(commandParameter);                
+                fetchMetadata(commandParameters[0]);                
                 break;
+			case FETCH_PATHWAY_DATA:
+				fetchPathwayData(commandParameters[0]);
+				break;
             }
         }
         catch (IOException e) {
@@ -145,6 +168,44 @@ public class Admin implements Runnable {
     }
 
     /**
+     * Helper function to get provider metadata.
+     *
+     * @param url String
+     * @throws IOException
+     */
+    private void fetchPathwayData(final String provider) throws IOException {
+
+		// get metadata
+		Metadata metadata = metadataDAO.getByIdentifier(provider);
+
+		if (metadata == null) {
+			System.err.println("Unknown provider: " + provider);
+			return;
+		}
+
+        // grab the data
+        Collection<PathwayData> pathwayData =
+			cpathFetcher.getProviderPathwayData(metadata);
+        
+        // process metadata
+        for (PathwayData pwData : pathwayData) {
+            pathwayDataDAO.importPathwayData(pwData);
+        }
+    }
+
+	public static String usage() {
+
+		StringBuffer toReturn = new StringBuffer();
+		toReturn.append("cpath.Admin <command> <one or more args>");
+		toReturn.append("commands:");
+		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>");
+		toReturn.append(COMMAND.FETCH_PATHWAY_DATA.toString() + " <provider>");
+
+		// outta here
+		return toReturn.toString();
+	}
+
+    /**
      * The big deal main.
      * 
      * @param args String[]
@@ -154,6 +215,7 @@ public class Admin implements Runnable {
         // sanity check
         if (args.length == 0) {
             System.err.println("Missing args to Admin.");
+			System.err.println(Admin.usage());
             System.exit(-1);
         }
 

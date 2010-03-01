@@ -52,6 +52,10 @@
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
+    <bean id="pathwayDataDAO" class="cpath.warehouse.pathway.internal.PathwayDataHibernateDAO" dependency-check="objects">
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
     <bean id="providerMetadataService" class="cpath.fetcher.metadata.internal.ProviderMetadataServiceImpl"/>
 
     <bean id="cpathFetcher" class="cpath.fetcher.internal.CPathFetcherImpl">

@@ -3,7 +3,9 @@ package cpath.admin;
 // imports
 import cpath.fetcher.CPathFetcher;
 import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.metadata.MetadataDAO;
+import cpath.warehouse.pathway.PathwayDataDAO;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -33,6 +35,9 @@ public class AdminTest {
     @Autowired
     private MetadataDAO metadataDAO;
 
+	@Autowired
+	private PathwayDataDAO pathwayDataDAO;
+
 	Admin admin;
 
 	@Before
@@ -47,6 +52,7 @@ public class AdminTest {
 
         //admin.run();
 		fetchMetadataTest();
+		fetchPathwayDataTest();
     }
 
 	private void fetchMetadataTest() throws Exception {
@@ -65,5 +71,24 @@ public class AdminTest {
 		Metadata reactomeMetadata = metadataDAO.getByIdentifier("REACTOME");
 		assertTrue(reactomeMetadata != null);
 		assertTrue(reactomeMetadata.getIdentifier().equals("REACTOME"));
+	}
+
+	private void fetchPathwayDataTest() throws Exception {
+
+		// get the metadata arg to pathway data fetcher
+		Metadata reactomeMetadata = metadataDAO.getByIdentifier("REACTOME");
+
+        // grab the data
+        Collection<PathwayData> pathwayData = cpathFetcher.getProviderPathwayData(reactomeMetadata);
+		assertTrue(pathwayData.size() == 1);
+
+        // process metadata
+        for (PathwayData pwData : pathwayData) {
+            pathwayDataDAO.importPathwayData(pwData);
+        }
+
+		Collection<PathwayData> reactomePathwayData = pathwayDataDAO.getByIdentifier("REACTOME");
+		assertTrue(reactomePathwayData != null);
+		assertTrue(reactomePathwayData.size() == 1);
 	}
 }

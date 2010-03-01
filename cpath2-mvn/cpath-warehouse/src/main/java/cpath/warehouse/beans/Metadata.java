@@ -47,7 +47,7 @@ public final class Metadata {
      *
      * @param identifier String (string used in web service calls)
      * @param name String
-     * @param version String
+     * @param version Float
      * @param releaseDate String
      * @param urlToPathwayData String
      * @param icon byte[]
@@ -140,6 +140,6 @@ public final class Metadata {
 
     @Override
     public String toString() {
-        return name;
+        return identifier;
     }
 }

@@ -31,6 +31,7 @@ package cpath.fetcher;
 // imports
 import cpath.warehouse.beans.Cv;
 import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.beans.PathwayData;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -49,7 +50,15 @@ public interface CPathFetcher {
      * @throws IOException if an IO error occurs
      */
     Collection<Metadata> getProviderMetadata(final String url) throws IOException;
-    
+
+    /**
+     *  For the given url, returns a collection of Metadata Objects.
+     *
+	 * @param metadata Metadata
+     * @return Collection<Metadata>
+     * @throws IOException if an IO error occurs
+     */
+    Collection<PathwayData> getProviderPathwayData(final Metadata metadata) throws IOException;
     
 	/**
 	 * Fetches controlled vocabulary (warehouse's beans) using 
