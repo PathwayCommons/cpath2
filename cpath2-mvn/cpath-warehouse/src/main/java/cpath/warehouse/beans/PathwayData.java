@@ -10,12 +10,12 @@ import org.hibernate.Query;
 @Entity
 @Table(name="pathway")
 @NamedQueries({
-		@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifier",
-					query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier)"),
-		@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersion",
-					query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and pathwaydata.version = :version"),
-		@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersionAndDigest",
-					query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and pathwaydata.version = :version and upper(pathwaydata.digest) = upper(:digest)")
+	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifier",
+				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier)"),
+	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersion",
+				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and pathwaydata.version = :version"),
+	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersionAndDigest",
+				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and pathwaydata.version = :version and upper(pathwaydata.digest) = upper(:digest)")
 })
 public final class PathwayData {
 
@@ -27,7 +27,8 @@ public final class PathwayData {
     private String identifier;
 	@Column(nullable=false)
     private Float version;
-	@Lob
+	@Column(nullable=false, unique=true)
+    private String filename;
 	@Column(nullable=false)
     private String pathwayData;
 	@Column(nullable=false, unique=true)
@@ -43,9 +44,11 @@ public final class PathwayData {
      *
      * @param identifier String (string used in web service calls)
 	 * @param version Float
-     * @param pathwayData byte[]
+	 * @param filename String
+	 * @param digest String
+     * @param pathwayData String
      */
-    public PathwayData(final String identifier, final Float version, final String digest, final String pathwayData) {
+    public PathwayData(final String identifier, final Float version, final String filename, final String digest, final String pathwayData) {
 
         if (identifier == null) {
             throw new IllegalArgumentException("identifier must not be null");
@@ -56,6 +59,11 @@ public final class PathwayData {
             throw new IllegalArgumentException("version must not be null");
         }
         this.version = version;
+
+        if (filename == null) {
+            throw new IllegalArgumentException("filename must not be null");
+        }
+        this.digest = digest;
 
         if (digest == null) {
             throw new IllegalArgumentException("digest must not be null");
@@ -82,6 +90,11 @@ public final class PathwayData {
 		this.version = version;
 	}
     public Float getVersion() { return version; }
+
+	public void setFileName(String filename) {
+		this.filename = filename;
+	}
+    public String getFileName() { return filename; }
 
 	public void setPathwayData(String pathwayData) {
 		this.pathwayData = pathwayData;

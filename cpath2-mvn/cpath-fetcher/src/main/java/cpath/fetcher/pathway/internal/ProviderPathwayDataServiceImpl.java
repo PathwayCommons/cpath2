@@ -31,6 +31,14 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
 	// used in unzip method
 	private static final int BUFFER = 2048;
 
+	// used for md5sum display
+	static final byte[] HEX_CHAR_TABLE = {
+		(byte)'0', (byte)'1', (byte)'2', (byte)'3',
+		(byte)'4', (byte)'5', (byte)'6', (byte)'7',
+		(byte)'8', (byte)'9', (byte)'a', (byte)'b',
+		(byte)'c', (byte)'d', (byte)'e', (byte)'f'
+    }; 
+
 	// logger
     private static Log log = LogFactory.getLog(ProviderPathwayDataServiceImpl.class);
 
@@ -74,8 +82,9 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
 		// pathway data is either owl or zip/gz
 		if (isOWL && fetchedData != null) {
 			log.info("getProviderPathwayData(), data is owl, directly returning.");
+			String filename = url.substring(url.lastIndexOf("/"));
 			String digest = getDigest(fetchedData);
-			PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), metadata.getVersion(), digest, new String(fetchedData));
+			PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), metadata.getVersion(), filename, digest, new String(fetchedData));
 			toReturn.add(pathwayData);
 		}
 		else {
@@ -108,6 +117,8 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
 			ZipEntry entry = null;
             while ((entry = zis.getNextEntry()) != null) {
 
+				log.info("Processing zip entry: " + entry.getName());
+
 				// write file to buffered outputstream
 				int count;
 				byte data[] = new byte[BUFFER];
@@ -125,10 +136,11 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
 				if (digest != null) {
 
 					// create pathway data object
-					log.info("unzip(), creating pathway data object, provider: " + metadata.getIdentifier() +
+					log.info("unzip(), creating pathway data object, zip entry: " + entry.getName() +
+							 " provider: " + metadata.getIdentifier() +
 							 " version: " + metadata.getVersion() +
 							 " digest: " + digest);
-					PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), metadata.getVersion(), digest, bos.toString());
+					PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), metadata.getVersion(), entry.getName(), digest, new String(bos.toByteArray()));
 				
 					// add object to return collection
 					toReturn.add(pathwayData);
@@ -169,10 +181,33 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
 		java.security.MessageDigest digest = null;
 		try {
 			digest = java.security.MessageDigest.getInstance("MD5");
-			return new String(digest.digest());
+			digest.reset();
+			return getHexString(digest.digest(data));
 		}
 		catch (java.security.NoSuchAlgorithmException e) {
 			return null;
 		}
+		catch (java.io.UnsupportedEncodingException e) {
+			return null;
+		}
+	}
+
+	/**
+	 * Converts byte[] to displayable string.
+	 *
+	 * @param raw byte[]
+	 * @return String
+	 * @throws java.io.UnsupportedEncodingException
+	 */
+	public static String getHexString(byte[] raw) throws java.io.UnsupportedEncodingException {
+
+        byte[] hex = new byte[2 * raw.length];
+        int index = 0;
+        for (byte b : raw) {
+            int v = b & 0xFF;
+            hex[index++] = HEX_CHAR_TABLE[v >>> 4];
+            hex[index++] = HEX_CHAR_TABLE[v & 0xF];
+        }
+        return new String(hex, "ASCII").toUpperCase();
 	}
 }

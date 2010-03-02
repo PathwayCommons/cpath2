@@ -53,15 +53,15 @@ public final class PathwayDataHibernateDAO implements PathwayDataDAO {
 		PathwayData existing = getByIdentifierAndVersionAndDigest(pathwayData.getIdentifier(), pathwayData.getVersion(), pathwayData.getDigest());
 		if (existing == null) {
 			log.info("PathwayData object with identifier: " + pathwayData.getIdentifier() +
-					 "and version: " + pathwayData.getVersion() +
-					 "and digest: " + pathwayData.getDigest() +
+					 " and version: " + pathwayData.getVersion() +
+					 " and digest: " + pathwayData.getDigest() +
 					 " does not exist, saving.");
 			session.save(pathwayData);
 		}
 		else {
 			log.info("PathwayData object with identifier: " + pathwayData.getIdentifier() +
-					 "and version: " + pathwayData.getVersion() + 
-					 "and digest: " + pathwayData.getDigest() +
+					 " and version: " + pathwayData.getVersion() + 
+					 " and digest: " + pathwayData.getDigest() +
 					 " already exists, skipping.");
 		}
 		log.info("metadata object has been sucessessfully saved or merged.");
