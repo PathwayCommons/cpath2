@@ -23,12 +23,13 @@
 	</bean>
 
 	<bean id="cvFetcher" class="cpath.fetcher.cv.CvFetcher">
-		<constructor-arg ref="biopaxIdUtils"/>
+		<constructor-arg value="classpath:ontologies.xml"/>
+		<constructor-arg ref="miriamAdapter"/>
 	</bean>
 	
 	<!-- all AbstractCvRule beans are required to inject into the cvFetcher -->
 	<context:component-scan base-package="org.biopax.validator.rules">
-		<context:include-filter type="assignable" expression="org.biopax.validator.impl.AbstractCvRule"/>
+		<context:include-filter type="assignable" expression="org.biopax.validator.impl.CvTermsRule"/>
 	</context:component-scan>
 	
 </beans>

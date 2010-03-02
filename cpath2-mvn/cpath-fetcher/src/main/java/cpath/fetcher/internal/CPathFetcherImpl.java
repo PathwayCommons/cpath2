@@ -41,7 +41,7 @@ import cpath.fetcher.pathway.ProviderPathwayDataService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.validator.impl.AbstractCvRule;
+import org.biopax.validator.impl.CvTermsRule;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -103,7 +103,7 @@ public final class CPathFetcherImpl implements CPathFetcher {
 	public Set<Cv> fetchBiopaxCVs() {
 		Set<Cv> allCv = new HashSet<Cv>();
 		
-		for(AbstractCvRule cvRule : cvFetcher.getCvRules()) {
+		for(CvTermsRule cvRule : cvFetcher.getCvRules()) {
 			allCv.addAll(cvFetcher.fetchBiopaxCVs(cvRule));
 		}
 		

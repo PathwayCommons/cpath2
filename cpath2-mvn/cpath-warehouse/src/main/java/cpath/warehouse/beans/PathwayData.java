@@ -2,7 +2,6 @@ package cpath.warehouse.beans;
 
 // imports
 import javax.persistence.*;
-import org.hibernate.Query;
 
 /**
  * Data Provider Metadata.
