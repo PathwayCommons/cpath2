@@ -77,10 +77,11 @@ public class AdminTest {
 
 		// get the metadata arg to pathway data fetcher
 		Metadata reactomeMetadata = metadataDAO.getByIdentifier("REACTOME");
+		assertTrue(reactomeMetadata != null);
 
         // grab the data
         Collection<PathwayData> pathwayData = cpathFetcher.getProviderPathwayData(reactomeMetadata);
-		assertTrue(pathwayData.size() == 1);
+		assertTrue(pathwayData.size() == 38);
 
         // process metadata
         for (PathwayData pwData : pathwayData) {
@@ -89,6 +90,6 @@ public class AdminTest {
 
 		Collection<PathwayData> reactomePathwayData = pathwayDataDAO.getByIdentifier("REACTOME");
 		assertTrue(reactomePathwayData != null);
-		assertTrue(reactomePathwayData.size() == 1);
+		assertTrue(reactomePathwayData.size() == 38);
 	}
 }

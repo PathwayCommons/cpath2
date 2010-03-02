@@ -183,14 +183,18 @@ public class Admin implements Runnable {
 			return;
 		}
 
-        // grab the data
-        Collection<PathwayData> pathwayData =
-			cpathFetcher.getProviderPathwayData(metadata);
+		// lets not fetch data if its the same version we have already persisted
+		if (metadata.getVersion() > metadata.getPersistedVersion()) {
+
+			// grab the data
+			Collection<PathwayData> pathwayData =
+				cpathFetcher.getProviderPathwayData(metadata);
         
-        // process metadata
-        for (PathwayData pwData : pathwayData) {
-            pathwayDataDAO.importPathwayData(pwData);
-        }
+			// process pathway data
+			for (PathwayData pwData : pathwayData) {
+				pathwayDataDAO.importPathwayData(pwData);
+			}
+		}
     }
 
 	public static String usage() {
