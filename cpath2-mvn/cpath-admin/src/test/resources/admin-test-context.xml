@@ -58,8 +58,11 @@
 
     <bean id="providerMetadataService" class="cpath.fetcher.metadata.internal.ProviderMetadataServiceImpl"/>
 
+    <bean id="providerPathwayDataService" class="cpath.fetcher.pathway.internal.ProviderPathwayDataServiceImpl"/>
+
     <bean id="cpathFetcher" class="cpath.fetcher.internal.CPathFetcherImpl">
        <constructor-arg ref="providerMetadataService"/>
+       <constructor-arg ref="providerPathwayDataService"/>
        <constructor-arg><null/></constructor-arg>
     </bean>
 
