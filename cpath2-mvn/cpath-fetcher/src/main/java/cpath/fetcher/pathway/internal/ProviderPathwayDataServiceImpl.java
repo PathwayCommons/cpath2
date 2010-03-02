@@ -40,6 +40,11 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
 	// are we fetching an owl file (as opposed to zip/gz)
 	private boolean isOWL;
 
+    /**
+	 * Default Constructor.
+	 */
+	public ProviderPathwayDataServiceImpl() {}
+
 	/**
      * Constructor.
      * 

@@ -70,6 +70,11 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
 	// ref to FetcherHTTPClient
     private FetcherHTTPClient fetcherHTTPClient;
 
+    /**
+	 * Default Constructor.
+	 */
+	public ProviderMetadataServiceImpl() {}
+
 	/**
      * Constructor.
      * 
