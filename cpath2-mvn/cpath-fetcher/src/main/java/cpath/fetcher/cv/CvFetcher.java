@@ -27,33 +27,36 @@
 
 package cpath.fetcher.cv;
 
+import java.util.HashSet;
 import java.util.Set;
 
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.validator.impl.AbstractCvRule;
-import org.biopax.validator.utils.CvTermsFetcher;
+import org.biopax.validator.impl.CvTermsRule;
+import org.biopax.validator.utils.OntologyManagerAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 
-import cpath.identity.BiopaxIdUtils;
+import psidev.psi.tools.ontology_manager.interfaces.OntologyTermI;
+
+import cpath.identity.MiriamAdapter;
 import cpath.warehouse.beans.Cv;
 
 
 
 /**
  * This is to access OBO Cvs:
- * TODO - uses PSIDEV's OntologyManager (via Validator's CvTermsFetcher)
+ * TODO - uses PSIDEV's OntologyManager (via Validator's OntologyManagerAdapter)
  * TODO - re-uses BioPAX Validator's classes to extract only required by BioPAX CVs (though with synonyms and hierarchy)
  * 
  * @author rodch
  *
  */
-public final class CvFetcher {
+public final class CvFetcher extends OntologyManagerAdapter {
 	private final static Log log = LogFactory.getLog(CvFetcher.class);
 	
-	private CvTermsFetcher cvTermsFetcher;
-	private BiopaxIdUtils biopaxIdUtils;
+	private MiriamAdapter miriamAdapter;
 	
 	/*
 	 * Injects Validator's CV rules that
@@ -62,19 +65,19 @@ public final class CvFetcher {
 	 * 
 	 */
 	@Autowired
-	private Set<AbstractCvRule> cvRules;
+	private Set<CvTermsRule> cvRules;
 	
 	
 	/**
 	 * Constructor
 	 * 
-	 * @param cvTermsFetcher
-	 * @param biopaxIdUtils
+	 * @param ontologies ontology config XML resource (for OntologyManager)
+	 * @param miriam
 	 * @throws Exception
 	 */
-	public CvFetcher(CvTermsFetcher cvTermsFetcher, BiopaxIdUtils biopaxIdUtils) {
-		this.biopaxIdUtils = biopaxIdUtils;
-		this.cvTermsFetcher = cvTermsFetcher;
+	public CvFetcher(Resource ontologies, MiriamAdapter miriamAdapter) {
+		super(ontologies);
+		this.miriamAdapter = miriamAdapter;
 	}
 
 	/**
@@ -82,7 +85,7 @@ public final class CvFetcher {
 	 * 
 	 * @return
 	 */
-	public Set<AbstractCvRule> getCvRules() {
+	public Set<CvTermsRule> getCvRules() {
 		return cvRules;
 	}
 	
@@ -95,10 +98,46 @@ public final class CvFetcher {
 	 * @param property
 	 * @return
 	 */
-	public Set<Cv> fetchBiopaxCVs(AbstractCvRule cvRule) {
-		//TODO get the restrictions, then, restricted set of ontology terms
-		//TODO convert each one ant its synonyms to the Cv bean; find and use URN as RDFId
-		return null;
-	}
+	public Set<Cv> fetchBiopaxCVs(CvTermsRule cvRule) {
+		Set<Cv> beans = new HashSet<Cv>();
 		
+		// find the CV class name
+		String cvClassName = (cvRule.getEditor() == null) 
+			? cvRule.getDomain().getSimpleName()
+			: cvRule.getEditor().getRange().getSimpleName();
+		
+		Set<OntologyTermI> terms = getValidTerms(cvRule);
+		// create Cv beans hierarchy (recursively)
+		for(OntologyTermI term : terms) {
+			Cv bean = createBean(beans, terms, term, cvClassName);
+			beans.add(bean);
+		}
+		
+		return beans;
+	}
+
+
+	private Cv createBean(final Set<Cv> beans, final Set<OntologyTermI> terms, final OntologyTermI term, final String type) {
+		// get allowed terms
+		String ontology = term.getOntologyName();
+		String accession = term.getTermAccession();
+		String urn = miriamAdapter.getURI(ontology, accession);
+		Cv bean = new Cv(type, urn, ontology, accession, term.getPreferredName());
+		
+		if (!beans.contains(bean)) {
+			bean.getSynonyms().addAll(term.getNameSynonyms());
+			for (OntologyTermI childTerm : getOntologyAccess(ontology).getDirectChildren(term)) 
+			{
+				// sure, we use only valid children terms (remember the CV Rule)
+				if (terms.contains(childTerm)) {
+					Cv childBean = createBean(beans, terms, childTerm, type);
+					bean.addMember(childBean);
+					beans.add(childBean);
+				}
+			}
+		}
+		
+		return bean;
+	}
+			
 }

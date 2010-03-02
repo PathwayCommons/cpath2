@@ -6,7 +6,7 @@ import org.biopax.paxtools.model.level3.UtilityClass;
 import org.springframework.stereotype.Service;
 
 import cpath.warehouse.CPathWarehouse;
-import cpath.warehouse.cv.CvRepository;
+import cpath.warehouse.CvRepository;
 import cpath.warehouse.metadata.MetadataDAO;
 
 import java.util.Set;

@@ -25,79 +25,81 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.warehouse.cv.internal;
+package cpath.identity;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.springframework.stereotype.Repository;
 
-import cpath.warehouse.beans.Cv;
-import cpath.warehouse.cv.CvRepository;
+import uk.ac.ebi.miriam.lib.MiriamLink;
 
 /**
+ * This helps generate proper RDF IDs.
+ * 
  * @author rodch
  *
  */
-@Repository
-public class CvHibernateRepository implements CvRepository {
+public final class MiriamAdapter {
+	private final static Log log = LogFactory.getLog(MiriamAdapter.class);
+	
+	private MiriamLink miriamLink;
 
-    // log
-    private static Log log = LogFactory.getLog(CvHibernateRepository.class);
+	
+	public MiriamAdapter() {
+		this.miriamLink = new MiriamLink();
+		
+		if(!miriamLink.isLibraryUpdated() && log.isInfoEnabled()) {
+			log.info("There is a new version of the MiriamLink available!");
+		}
+		
+	}
 
-	// session factory prop/methods used by spring
-	private SessionFactory sessionFactory;
 	
-	
-	public SessionFactory getSessionFactory() { return sessionFactory; }
-	
-	
-	public void setSessionFactory(SessionFactory sessionFactory) {
-		this.sessionFactory = sessionFactory;
-	}
-	
-	// a shortcut to get current session
-	private Session getSession() {
-		return getSessionFactory().getCurrentSession();
-	}
-	
-	
-	/* (non-Javadoc)
-	 * @see cpath.warehouse.cv.CvRepository#addCV(cpath.warehouse.beans.Cv)
+	/**
+	 * Looks up URN by (xref's) db and id.
+	 * 
+	 * @param db name or synonym of a (Miriam) data type
+	 * @param id entity identifier within the data type
+	 * @return
 	 */
-	@Override
-	public void addCV(Cv cv) {
-		// TODO Auto-generated method stub
-
+	public String getURI(String db, String id) {
+		String urn = null;
+		
+		try{
+			if(miriamLink.checkRegExp(id, db)) {
+				urn = miriamLink.getURI(db, id);
+			} else {
+				log.fatal("Invalid Id : " +
+					id + " for " + db + "; pattern=" 
+					+ miriamLink.getDataTypePattern(db));
+			}
+		} catch (Exception e) {
+			log.fatal("Cannot get URN by : " +
+				db + " and " + id , e);
+		}
+		
+		return (urn==null || "".equals(urn)) ? null : urn; 
 	}
-
-	/* (non-Javadoc)
-	 * @see cpath.warehouse.cv.CvRepository#removeAllCVs()
+	
+	
+	/**
+	 * 
+	 * @param name deprecated URI, name, or synonym of a data type
+	 * @return 
 	 */
-	@Override
-	public void removeAllCVs() {
-		// TODO Auto-generated method stub
-
+	public String getDataTypeURN(String name) {
+		String urn = null;
+		
+		try{
+			urn = miriamLink.getDataTypeURI(name);
+			if(urn == null || "".equals(urn)) {
+				urn = miriamLink.getOfficialDataTypeURI(name);
+			}
+		} catch (Exception e) {
+			log.error("Cannot get URN by : " +
+				name , e);
+		}
+		
+		return (urn==null || "".equals(urn)) ? null : urn; 
 	}
-
-	/* (non-Javadoc)
-	 * @see cpath.warehouse.cv.CvRepository#removeCV(cpath.warehouse.beans.Cv)
-	 */
-	@Override
-	public void removeCV(Cv cv) {
-		// TODO Auto-generated method stub
-
-	}
-
-
-	/* (non-Javadoc)
-	 * @see cpath.warehouse.cv.CvRepository#getByRDFId(java.lang.String)
-	 */
-	@Override
-	public Cv getByRDFId(String urn) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+	
 }
