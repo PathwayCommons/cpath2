@@ -30,7 +30,6 @@ package cpath.fetcher.metadata.internal;
 
 // imports
 import cpath.warehouse.beans.Metadata;
-import cpath.fetcher.common.ServiceReader;
 import cpath.fetcher.common.FetcherHTTPClient;
 import cpath.fetcher.metadata.ProviderMetadataService;
 
@@ -52,7 +51,7 @@ import java.util.Collection;
  * Provider Metadata service.  Retrieves provider metadata.
  */
 @Service
-public final class ProviderMetadataServiceImpl implements ProviderMetadataService, ServiceReader {
+public final class ProviderMetadataServiceImpl implements ProviderMetadataService {
 
     // some bits for metadata reading
     private static final int METADATA_IDENTIFIER_INDEX = 0;
@@ -99,17 +98,21 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
         }
 
         // get data from service
-		fetcherHTTPClient.getDataFromService(url, this, toReturn);
+		readFromService(fetcherHTTPClient.getDataFromServiceAsStream(url), toReturn);
+		fetcherHTTPClient.releaseConnection();
 
         // outta here
         return toReturn;
     }
 
     /**
-     * (non-Javadoc)
-     * @see cpath.fetcher.common.ServiceReader#readFromService(java.io.InputStream, java.util.Collection<T>)
+     * Populates a collection of metadata objects given an input stream
+	 *
+     * @param inputStream InputStream
+	 * @param toReturn Collection<Metadata>
+	 * @param throws IOException
      */
-    public <T> void readFromService(final InputStream inputStream, final Collection<T> toReturn) throws IOException {
+    private void readFromService(final InputStream inputStream, final Collection<Metadata> toReturn) throws IOException {
 
         BufferedReader reader = null;
         try {
@@ -159,7 +162,7 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
                         log.info(metadata.isPSI());
 
                         // add metadata object toc collection we return
-                        toReturn.add((T)metadata);
+                        toReturn.add(metadata);
                     }
                 }
             }

@@ -50,9 +50,10 @@ public final class PathwayDataHibernateDAO implements PathwayDataDAO {
 
 		Session session = getSession();
 		// check for existing object
-		PathwayData existing = getByIdentifierAndVersionAndDigest(pathwayData.getIdentifier(), pathwayData.getVersion(), pathwayData.getDigest());
+		PathwayData existing = getByIdentifierAndVersionAndFilenameAndDigest(pathwayData.getIdentifier(), pathwayData.getVersion(), pathwayData.getFilename(), pathwayData.getDigest());
 		if (existing == null) {
 			log.info("PathwayData object with identifier: " + pathwayData.getIdentifier() +
+					 " and file: " + pathwayData.getFilename() +
 					 " and version: " + pathwayData.getVersion() +
 					 " and digest: " + pathwayData.getDigest() +
 					 " does not exist, saving.");
@@ -60,6 +61,7 @@ public final class PathwayDataHibernateDAO implements PathwayDataDAO {
 		}
 		else {
 			log.info("PathwayData object with identifier: " + pathwayData.getIdentifier() +
+					 " and file: " + pathwayData.getFilename() +
 					 " and version: " + pathwayData.getVersion() + 
 					 " and digest: " + pathwayData.getDigest() +
 					 " already exists, skipping.");
@@ -96,14 +98,15 @@ public final class PathwayDataHibernateDAO implements PathwayDataDAO {
 
     /**
      * (non-Javadoc)
-     * @see cpath.warehouse.pathway.PathwayDataDAO#getByIdentifierAndVersionAndDigest(java.lang.String, java.lang.Float, java.lang.String);
+     * @see cpath.warehouse.pathway.PathwayDataDAO#getByIdentifierAndVersionAndDigest(java.lang.String, java.lang.Float, java.lang.String, java.lang.String);
      */
-    public PathwayData getByIdentifierAndVersionAndDigest(final String identifier, final Float version, final String digest) {
+    public PathwayData getByIdentifierAndVersionAndFilenameAndDigest(final String identifier, final Float version, final String filename, final String digest) {
 
 		Session session = getSession();
-		Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayByIdentifierAndVersionAndDigest");
+		Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayByIdentifierAndVersionAndFilenameAndDigest");
 		query.setParameter("identifier", identifier);
 		query.setParameter("version", version);
+		query.setParameter("filename", filename);
 		query.setParameter("digest", digest);
 		return (PathwayData)query.uniqueResult();
     }

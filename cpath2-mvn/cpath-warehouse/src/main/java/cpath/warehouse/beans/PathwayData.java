@@ -14,8 +14,8 @@ import org.hibernate.Query;
 				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier)"),
 	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersion",
 				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and pathwaydata.version = :version"),
-	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersionAndDigest",
-				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and pathwaydata.version = :version and upper(pathwaydata.digest) = upper(:digest)")
+	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersionAndFilenameAndDigest",
+				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and pathwaydata.version = :version and upper(pathwaydata.filename) = upper(:filename) and upper(pathwaydata.digest) = upper(:digest)")
 })
 public final class PathwayData {
 
@@ -29,9 +29,11 @@ public final class PathwayData {
     private Float version;
 	@Column(nullable=false, unique=true)
     private String filename;
+	@Lob
 	@Column(nullable=false)
     private String pathwayData;
-	@Column(nullable=false, unique=true)
+	// digest is not unique - at least some reactome pw have different names but are identical
+	@Column(nullable=false)
     private String digest;
 
 	/**
@@ -63,7 +65,7 @@ public final class PathwayData {
         if (filename == null) {
             throw new IllegalArgumentException("filename must not be null");
         }
-        this.digest = digest;
+        this.filename = filename;
 
         if (digest == null) {
             throw new IllegalArgumentException("digest must not be null");
@@ -91,10 +93,10 @@ public final class PathwayData {
 	}
     public Float getVersion() { return version; }
 
-	public void setFileName(String filename) {
+	public void setFilename(String filename) {
 		this.filename = filename;
 	}
-    public String getFileName() { return filename; }
+    public String getFilename() { return filename; }
 
 	public void setPathwayData(String pathwayData) {
 		this.pathwayData = pathwayData;

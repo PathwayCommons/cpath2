@@ -12,7 +12,7 @@ import org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.Collection;
+import java.io.InputStream;
 
 /**
  * FetcherHTTPClient implementation.
@@ -20,13 +20,16 @@ import java.util.Collection;
 @Service
 public final class FetcherHTTPClientImpl implements FetcherHTTPClient {
 
+	// made a property to be closed
+	private GetMethod method;
+
     /**
      * (non-Javadoc)
-     * @see cpath.fetcher.common.FetcherHTTPClient#getDataFromService(java.lang.String, cpath.fetcher.common.ServiceReader)
+     * @see cpath.fetcher.common.FetcherHTTPClient#getDataFromService(java.lang.String)
      */
     @Override
-	public <T> void getDataFromService(final String url, final ServiceReader serviceReader, final Collection<T> toReturn) throws IOException {
-
+	public byte[] getDataFromService(final String url) throws IOException {
+		
         // setup httpclient and method
         HttpClient httpClient = new HttpClient();
         GetMethod method = new GetMethod(url);
@@ -38,44 +41,54 @@ public final class FetcherHTTPClientImpl implements FetcherHTTPClient {
 
             // get the output
             if (statusCode == 200) {
-                serviceReader.readFromService(method.getResponseBodyAsStream(), toReturn);
+				return method.getResponseBody();
             }
         }
         finally {
             method.releaseConnection();
         }
+
+		// should not get here
+		return null;
     }
 
     /**
      * (non-Javadoc)
      * @see cpath.fetcher.common.FetcherHTTPClient#getDataFromService(java.lang.String)
      */
-	@Override
-	public byte[] getDataFromService(final String url) throws IOException {
+    @Override
+	public InputStream getDataFromServiceAsStream(final String url) throws IOException {
 
-        byte[] toReturn = null;
+		InputStream toReturn = null;
 
         // setup httpclient and method
         HttpClient httpClient = new HttpClient();
-        GetMethod method = new GetMethod(url);
+        method = new GetMethod(url);
         method.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, 
                                         new DefaultHttpMethodRetryHandler());
 
-        try {
+		// execute
+		int statusCode = httpClient.executeMethod(method);
 
-            // execute
-            int statusCode = httpClient.executeMethod(method);
+		// get the output
+		if (statusCode == 200) {
+			toReturn = method.getResponseBodyAsStream();
+		}
 
-            // get the output
-            if (statusCode == 200) {
-                toReturn =  method.getResponseBody();
-            }
-        }
-        finally {
-            method.releaseConnection();
-        }
-
-        // outta here
-        return toReturn;
+		// outta here
+		return toReturn;
     }
+
+    /**
+     * (non-Javadoc)
+     * @see cpath.fetcher.common.FetcherHTTPClient#releaseConnection
+     */
+    @Override
+	public void releaseConnection() {
+
+		if (method != null) {
+			method.releaseConnection();
+		}
+	}
+	
 }
