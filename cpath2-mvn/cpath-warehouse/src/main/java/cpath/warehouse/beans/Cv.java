@@ -27,36 +27,75 @@
 
 package cpath.warehouse.beans;
 
+import java.io.Serializable;
+import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.Transient;
+import javax.persistence.*;
 
-import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.level3.ControlledVocabulary;
-import org.biopax.paxtools.proxy.level3.ControlledVocabularyProxy;
+import org.biopax.paxtools.proxy.StringSetBridge;
+import org.hibernate.annotations.CollectionOfElements;
+import org.hibernate.search.annotations.Field;
+import org.hibernate.search.annotations.FieldBridge;
+import org.hibernate.search.annotations.Index;
 import org.hibernate.search.annotations.Indexed;
+
+import cpath.warehouse.CPathWarehouse;
 
 /**
  * Managed by CPathWarehouse BioPAX Controlled Vocabulary
  * (CV's hierarchy is also available)
  * 
- * @author rodch
+ * @author rodche
  *
  */
 @Entity(name = "cv")
-@Indexed(index = "cv")
-public class Cv extends ControlledVocabularyProxy {
+@Indexed(index=CPathWarehouse.SEARCH_INDEX_NAME)
+public class Cv implements Serializable {
 
+	private static final long serialVersionUID = 1L;
+
+	private Integer id = 0;
 	private Set<Cv> members;
+	private String urn;
+	private String type;
+	private String ontology;
+	private String accession;
+	private String name;
+	private Set<String> synonyms;
 	
-	public Cv() {}
+	@Id
+    @GeneratedValue
+    @Column(name="cv_id")
+	public Integer getId() {
+		return id;
+	}
 
+	public void setId(Integer value) {
+		id = value;
+	}
+	
+	public Cv() {
+		synonyms = new HashSet<String>();
+		members = new HashSet<Cv>();
+	}
+
+	public Cv(String type, 
+			String urn, String ontology, 
+			String accession, String name) {
+		this();
+		this.type = type;
+		this.ontology = ontology;
+		this.accession = accession;
+		this.name = name;
+	}
+	
+	
+	/**
+	 * many-to-many: another Cv can have common children/members with this
+	 */
 	@ManyToMany(cascade = {CascadeType.ALL}, targetEntity = Cv.class)
-	@JoinTable(name = "cv_relationship")
+	@JoinTable(name = "cv_member")
 	public Set<Cv> getMembers() {
 		return members;
 	}
@@ -72,21 +111,74 @@ public class Cv extends ControlledVocabularyProxy {
 	public void removeMember(Cv member) {
 		this.members.remove(member);
 	}
+
+	@Column(length = 50, nullable = false)
+	public String getOntology() {
+		return ontology;
+	}
+
+	public void setOntology(String ontology) {
+		this.ontology = ontology;
+	}
+
+	@Column(length = 50, nullable = false)
+	public String getAccession() {
+		return accession;
+	}
+
+	public void setAccession(String accession) {
+		this.accession = accession;
+	}
+
+	@Column(length = 50)
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
 	
-	/**
-	 * Creates an "ordinary", non-persistent,
-	 * BioPAX Controlled Vocabulary copy
-	 * 
-	 * @param <T> extends ControlledVocabulary
-	 * @return
-	 */
-	@Transient
-	public <T extends ControlledVocabulary> T clone() {
-		T cv = (T) BioPAXLevel.L3.getDefaultFactory().reflectivelyCreate(this.getModelInterface());
-		cv.setRDFId(getRDFId());
-		cv.setTerm(getTerm());
-		cv.setXref(getXref());
-		return cv;
+	@CollectionOfElements
+	@Column(name = "synonyms_x", columnDefinition = "text")
+	@FieldBridge(impl = StringSetBridge.class)
+	@Field(name = "synonyms", index = Index.TOKENIZED)
+	public Set<String> getSynonyms() {
+		return synonyms;
+	}
+
+	public void setSynonyms(Set<String> synonyms) {
+		this.synonyms = synonyms;
+	}
+
+	
+	@Column(length = 500, nullable=false, unique=true)
+	public String getUrn() {
+		return urn;
+	}
+
+	public void setUrn(String urn) {
+		this.urn = urn;
+	}
+
+	@Column(length = 50, nullable=false)
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
 	}
 	
+
+	@Override
+	public boolean equals(Object obj) {
+		return obj instanceof Cv && getUrn().equals(((Cv)obj).getUrn());
+	}
+	
+	@Override
+	public int hashCode() {
+		return urn.hashCode();
+	}
 }

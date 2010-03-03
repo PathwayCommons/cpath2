@@ -102,16 +102,6 @@
     <bp:physicalEntity>
       <bp:SmallMolecule rdf:ID="alpha-D-glucose_6-phosphate">
         <bp:dataSource rdf:resource="#aMAZE"/>
-        <bp:xref>
-          <bp:UnificationXref rdf:ID="KEGG_C00668">
-            <bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-            >C00668</bp:id>
-            <bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-            >KEGG compound</bp:db>
-            <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-            >PMID: 9847135</bp:comment>
-          </bp:UnificationXref>
-        </bp:xref>
         <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
         >b-D-glucose-6-phoshate</bp:name>
         <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
@@ -138,7 +128,13 @@
             </bp:structure>
             <bp:standardName rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
             >b-D-glu-6-p</bp:standardName>
-            <bp:xref rdf:resource="#KEGG_C00668"/>
+            <bp:xref>
+              <bp:UnificationXref rdf:ID="KEGG_C00668">
+                <bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string">C00668</bp:id>
+                <bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string">KEGG compound</bp:db>
+                <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string">PMID: 9847135</bp:comment>
+              </bp:UnificationXref>
+            </bp:xref>
           </bp:SmallMoleculeReference>
         </bp:entityReference>
         <bp:name rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
