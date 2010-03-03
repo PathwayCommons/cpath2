@@ -25,7 +25,9 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.warehouse.cv;
+package cpath.warehouse;
+
+import org.biopax.paxtools.model.level3.ControlledVocabulary;
 
 import cpath.warehouse.beans.Cv;
 
@@ -35,13 +37,14 @@ import cpath.warehouse.beans.Cv;
  */
 public interface CvRepository {
 	
+	void removeAll(); // clear the CV warehouse
 	
-	void removeAllCVs(); // clear the CV warehouse
+	void add(Cv cv);
 	
-	void addCV(Cv cv);
+	boolean contains(String urn);
 	
-	void removeCV(Cv cv);
+	void remove(String urn);
 	
-	Cv getByRDFId(String urn);
+	<T extends ControlledVocabulary> T getByRDFId(String urn, Class<T> clazz);
 	
 }

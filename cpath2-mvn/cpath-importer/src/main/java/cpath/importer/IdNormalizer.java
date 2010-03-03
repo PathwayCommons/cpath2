@@ -27,21 +27,128 @@
 
 package cpath.importer;
 
+import java.util.*;
+
 import org.biopax.paxtools.controller.ModelFilter;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.ControlledVocabulary;
+import org.biopax.paxtools.model.level3.EntityReference;
+import org.biopax.paxtools.model.level3.UnificationXref;
+import org.biopax.paxtools.model.level3.XReferrable;
+import org.biopax.paxtools.util.ClassFilterSet;
+
+import cpath.identity.MiriamAdapter;
 
 /**
  * @author rodch
  *
  */
 public class IdNormalizer implements ModelFilter {
+	
+	private MiriamAdapter miriam;
+	
+	/**
+	 * Constructor
+	 */
+	public IdNormalizer(MiriamAdapter miriamAdapter) {
+		this.miriam = miriamAdapter;
+	}
+	
 
-	/* (non-Javadoc)
+	/** 
+	 * This will modify the original model, so that
+	 * controlled vocabulary (CV) and entity reference (ER) 
+	 * will have got standard unique resource identifiers (defined by Miriam). 
+	 * For example, the official URI for UniProt is "urn:miriam:uniprot", 
+	 * and a protein can be referred as "urn:miriam:uniprot:P62158". 
+	 * So, if an ER or CV does not have such RDFId, it will be "normalized": 
+	 * one of unification xrefs will be used to create the new, standard, URN. 
+	 * It is not guaranteed, however, that the best URI id generated 
+	 * (if required, converting to the best one may be done separately)
+	 * 
+	 * @param model a BioPAX Paxtools Model 
+	 * 
 	 * @see org.biopax.paxtools.controller.ModelFilter#filter(org.biopax.paxtools.model.Model)
 	 */
 	public Model filter(Model model) {
-		// TODO Auto-generated method stub
-		return null;
+
+		for(XReferrable bpe : model.getObjects(XReferrable.class)) {
+			
+			List<UnificationXref> urefs = getUnificationXrefsSorted(bpe);
+			UnificationXref uref = null;
+			
+			if(bpe instanceof ControlledVocabulary) {
+				uref = getFirstUnificationXrefOfCv(urefs);
+			} else if(bpe instanceof EntityReference) {
+				uref = getFirstUnificationXrefOfEr(urefs);
+			} else {
+				//TODO can we also normalize Provenance, Score, and Evidence?..
+				continue;
+			}
+			
+			if(uref != null) {
+				String urn = miriam.getURI(uref.getDb(), uref.getId());
+				if(urn != null) {
+					model.updateID(bpe.getRDFId(), urn);
+				} else {
+					throw new IllegalArgumentException(
+							"Cannot find Miriam URN for CV : " 
+							+ bpe + ", using xref : " + uref);
+				}
+			} else {
+				throw new IllegalArgumentException(
+					"Cannot find a unification xrefs of CV : " + bpe);
+			}
+		}
+		
+		return model;
+	}
+
+	
+	private List<UnificationXref> getUnificationXrefsSorted(XReferrable referrable) {
+		
+		List<UnificationXref> urefs = new ArrayList<UnificationXref>(
+			new ClassFilterSet<UnificationXref>(referrable.getXref(), UnificationXref.class)
+		);	
+		
+		Comparator<UnificationXref> comparator = new Comparator<UnificationXref>() {
+			@Override
+			public int compare(UnificationXref o1, UnificationXref o2) {
+				String s1 = o1.getDb() + o1.getId();
+				String s2 = o2.getDb() + o2.getId();
+				return s1.compareTo(s2);
+			}
+		};
+		
+		Collections.sort(urefs, comparator);
+		
+		return urefs;
+	}
+
+	
+	/*
+	 * Gets the first one, the set is not empty, or null.
+	 */
+	private UnificationXref getFirstUnificationXrefOfCv(List<UnificationXref> urefs) {
+		return (urefs.isEmpty()) ? null : urefs.get(0);
+	}
+
+	/*
+	 * The first uniprot or enterz gene xref, if exists, will be returned;
+	 * otherwise, the first one of any kind is the answer.
+	 */
+	private UnificationXref getFirstUnificationXrefOfEr(List<UnificationXref> urefs) {
+		UnificationXref ret = null;
+
+		for(UnificationXref uref : urefs) {
+			if(uref.getDb().toLowerCase().startsWith("uniprot") 
+				|| uref.getDb().toLowerCase().startsWith("entrez")) {
+				return uref;
+			}
+		}
+		
+		// otherwise, take the first one
+		return (urefs.isEmpty()) ? null : urefs.get(0);
 	}
 
 }

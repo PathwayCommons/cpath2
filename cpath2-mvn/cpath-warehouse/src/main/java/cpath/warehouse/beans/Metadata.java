@@ -2,7 +2,9 @@ package cpath.warehouse.beans;
 
 // imports
 import javax.persistence.*;
-import org.hibernate.Query;
+import org.hibernate.search.annotations.Indexed;
+
+import cpath.warehouse.CPathWarehouse;
 
 /**
  * Data Provider Metadata.
@@ -13,6 +15,7 @@ import org.hibernate.Query;
 		@NamedQuery(name="cpath.warehouse.beans.providerByIdentifier",
 					query="from Metadata as metadata where upper(metadata.identifier) = upper(:identifier)")
 })
+@Indexed(index=CPathWarehouse.SEARCH_INDEX_NAME)
 public final class Metadata {
 
 	@Id

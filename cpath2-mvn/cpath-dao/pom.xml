@@ -44,24 +44,14 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-    	<groupId>org.hibernate</groupId>
-    	<artifactId>hibernate-annotations</artifactId>
-    	<version>3.4.0.GA</version>
-    </dependency>
-    <dependency>
-    	<groupId>org.hibernate</groupId>
-    	<artifactId>hibernate-commons-annotations</artifactId>
-    	<version>3.1.0.GA</version>
-    </dependency>
-    <dependency>
     	<groupId>org.biopax.paxtools</groupId>
     	<artifactId>paxtools-simple-io</artifactId>
     	<version>2.0-SNAPSHOT</version>
     </dependency>
     <dependency>
     	<groupId>org.springframework</groupId>
-    	<artifactId>spring-hibernate3</artifactId>
-    	<version>2.0.8</version>
+    	<artifactId>spring-orm</artifactId>
+    	<version>2.5.6.SEC01</version>
     </dependency>
 	<dependency>
     	<groupId>commons-collections</groupId>
@@ -111,9 +101,25 @@
 		<version>3.3.2.GA</version>
 	</dependency>
 	<dependency>
-	  <groupId>javax.persistence</groupId>
-	  <artifactId>persistence-api</artifactId>
-	  <version>1.0</version>
+		<groupId>org.springframework</groupId>
+		<artifactId>spring-jdbc</artifactId>
+		<version>2.5.6.SEC01</version>
+		<type>jar</type>
+		<scope>compile</scope>
+	</dependency>
+	<dependency>
+		<groupId>cglib</groupId>
+		<artifactId>cglib</artifactId>
+		<version>2.2</version>
+		<type>jar</type>
+		<scope>runtime</scope>
+	</dependency>
+	<dependency>
+		<groupId>javax.persistence</groupId>
+		<artifactId>persistence-api</artifactId>
+		<version>1.0</version>
+		<type>jar</type>
+		<scope>compile</scope>
 	</dependency>
   </dependencies>
   

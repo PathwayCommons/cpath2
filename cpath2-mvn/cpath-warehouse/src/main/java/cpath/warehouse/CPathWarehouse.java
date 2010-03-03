@@ -27,7 +27,6 @@
 
 package cpath.warehouse;
 
-// imports
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.UtilityClass;
 
@@ -43,7 +42,7 @@ import java.util.Set;
  */
 public interface CPathWarehouse {
 
-    /* utility class methods */
+	static final String SEARCH_INDEX_NAME = "cpathwarehouse";
 	
 	/**
 	 * Creates a new standard reference BioPAX object 
@@ -68,6 +67,7 @@ public interface CPathWarehouse {
 	 * @return
 	 */
 	<T extends UtilityClass> T createUtilityClass(String primaryUrn);
+
 	
 	/**
 	 * Creates a new standard BioPAX element within the given context.
@@ -78,24 +78,22 @@ public interface CPathWarehouse {
 	 * @return
 	 */
 	<T extends UtilityClass> T createUtilityClass(String primaryUrn, Class<? extends BioPAXElement> domain, String property);
-	
-	/* miriam methods */
 
+	
 	/**
-	 * Gets the primary ID (URN) of the BioPAX element, given its current URN.
+	 * Gets the primary URN of the (BioPAX utility class) element by ID.
 	 * 
-	 * @param urn
+	 * @param id
 	 * @return
 	 */
-	String getPrimaryURI(String urn); // uses ID mapper
+	String getPrimaryURI(String id);
 	
-	/* controlled vocabularies methods */
 	
 	/**
 	 * Gets primary IDs (URNs) of all the controlled vocabularies that
 	 * are either indirect or direct children of the one identified by its URN.
 	 * 
-	 * @param urn a ControlledVocabulary Id
+	 * @param urn id of a ControlledVocabulary
 	 * @return set of ControlledVocabulary URNs
 	 */
 	Set<String> getAllChildrenOfCv(String urn);

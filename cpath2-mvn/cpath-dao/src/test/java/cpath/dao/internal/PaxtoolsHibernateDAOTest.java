@@ -39,7 +39,6 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.transaction.TransactionConfiguration;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,8 +54,6 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:test-dao-context.xml", "classpath:cpath-dao-context.xml"})
-//@TransactionConfiguration(transactionManager="transactionManager")
-//@Transactional
 public class PaxtoolsHibernateDAOTest {
 
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
@@ -105,7 +102,7 @@ public class PaxtoolsHibernateDAOTest {
 	}
 
 	@Test
-	@Transactional(propagation=Propagation.SUPPORTS)
+	@Transactional//(propagation=Propagation.SUPPORTS)
 	public void testRun() throws Exception {
 		// verify a call to importModel
 		log.info("Testing call to paxtoolsDAO.importModel()...");
@@ -160,6 +157,7 @@ public class PaxtoolsHibernateDAOTest {
 			assertTrue(GET_BY_QUERY_RETURN_CLASSES.contains(returnClass.getClass()));
 		}
 		log.info("paxtoolsDAO.getByQueryString() first call succeeded!");
+		
 		log.info("Testing second call to paxtoolsDAO.getByQueryString()...");
 		// verify a call to getByQueryString - filter by GET_BY_QUERY_RETURN_TEST_CLASS
 		returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, GET_BY_QUERY_RETURN_TEST_CLASS);

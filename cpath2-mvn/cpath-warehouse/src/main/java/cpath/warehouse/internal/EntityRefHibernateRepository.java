@@ -25,52 +25,52 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.identity;
+package cpath.warehouse.internal;
 
-import uk.ac.ebi.miriam.lib.MiriamLink;
+import org.biopax.paxtools.model.level3.EntityReference;
+
+import cpath.warehouse.EntityRefRepository;
 
 /**
- * This service object helps 
- * generate RDF IDs (for BioPAX UtilityClass elements),
- * TODO create standard external data URLs,
- * TODO find the primary ID, and
- * TODO map between different types of ID, etc.
- * 
  * @author rodch
  *
  */
-public final class BiopaxIdUtils {
-	
-	private MiriamLink miriamLink;
-	
-	public BiopaxIdUtils() {
-		this.miriamLink = new MiriamLink();
-	}
-		
-	/**
-	 * Looks up URN by (xref's) db and id.
-	 * 
-	 * @param db name or synonym of a (Miriam) data type
-	 * @param id entity identifier within the data type
-	 * @return
+public class EntityRefHibernateRepository implements EntityRefRepository {
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.EntityRefRepository#add(org.biopax.paxtools.model.level3.EntityReference)
 	 */
-	public String getURI(String db, String id) {
-		return miriamLink.getURI(db, id);
+	@Override
+	public void add(EntityReference er) {
+		// TODO Auto-generated method stub
+
 	}
-	
-	
-	/**
-	 * 
-	 * @param name deprecated URI, name, or synonym of a data type
-	 * @return 
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.EntityRefRepository#getByRDFId(java.lang.String)
 	 */
-	public String getDataTypeURN(String name) {
-		return miriamLink.getOfficialDataTypeURI(name);
-	}
-	
-	
-	public String getPrimaryId() {
-		// TODO add implementation
+	@Override
+	public EntityReference getByRDFId(String urn) {
+		// TODO Auto-generated method stub
 		return null;
 	}
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.EntityRefRepository#remove(org.biopax.paxtools.model.level3.EntityReference)
+	 */
+	@Override
+	public void remove(EntityReference er) {
+		// TODO Auto-generated method stub
+
+	}
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.EntityRefRepository#removeAll()
+	 */
+	@Override
+	public void removeAll() {
+		// TODO Auto-generated method stub
+
+	}
+
 }

@@ -40,6 +40,7 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.proxy.level3.BioPAXElementProxy;
 import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
+import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -109,17 +110,16 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		// indexing will not kick off until a commit occurs
 		Session session = getSession();
 		FullTextSession fullTextSession = Search.getFullTextSession(session);
-		//explicit transaction is NOT required :-)
-		//Transaction tx = session.beginTransaction(); // or, tx = fullTextSession.beginTransaction();
 		for (BioPAXElement bpe : model.getObjects()) {
 			if(log.isInfoEnabled())
 				log.info("Saving biopax element, rdfID: " + bpe.getRDFId());
-			//not re-assigning 'bpe' below throws a TransientSessionException (object is not associated with any session)
-			bpe = (BioPAXElementProxy) session.merge(bpe); 
-			fullTextSession.index((BioPAXElementProxy)bpe);
+			session.save(bpe);
+			//not re-assigning 'bpe' below throws a TransientSessionException (object is not associated)
+			//bpe = (BioPAXElementProxy) session.merge(bpe); // can violate unique constraints (so, must check first if contains...)
+			//fullTextSession.index((BioPAXElementProxy)bpe);
 		}
-		session.flush(); // (is required for tests to pass)
-		//tx.commit();
+		//session.flush();
+		fullTextSession.flushToIndexes();
 	}
 
 	/**
@@ -152,7 +152,21 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
      */
 	//@Transactional(readOnly=true) // a hint to the driver to eventually optimize :)
     public BioPAXElement getByID(final String id) {
-		return (BioPAXElement)getSession().get(BioPAXElementProxy.class, id);
+		// TODO 26-FEB-2010  BioPAXElementProxy changed to use auto-generated id instead of RDFId! Will wse session.getNamedQuery(..) for this!
+    	Session session = getSession();
+		Query query = session.getNamedQuery("org.biopax.paxtools.proxy.level3.elementByRdfId");
+		query.setString("rdfid", id);
+		return (BioPAXElement)query.uniqueResult();
+
+    	/*
+		Set<BioPAXElementProxy> returnClasses = search(id, BioPAXElementProxy.class);
+		if(!returnClasses.isEmpty()) {
+			return null;
+		} else {
+			return returnClasses.iterator().next();
+		}
+		*/
+		
 	}
 
     /**
