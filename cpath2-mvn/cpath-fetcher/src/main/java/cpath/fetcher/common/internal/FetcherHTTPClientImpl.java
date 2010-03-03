@@ -1,7 +1,6 @@
 package cpath.fetcher.common.internal;
 
 // imports
-import cpath.fetcher.common.ServiceReader;
 import cpath.fetcher.common.FetcherHTTPClient;
 
 import org.apache.commons.httpclient.HttpClient;
