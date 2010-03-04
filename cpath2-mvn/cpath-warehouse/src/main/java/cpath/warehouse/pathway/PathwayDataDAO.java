@@ -1,7 +1,10 @@
 package cpath.warehouse.pathway;
 
 // imports
+import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
+
+import org.biopax.paxtools.model.Model;
 
 import java.util.Collection;
 
@@ -11,11 +14,21 @@ import java.util.Collection;
 public interface PathwayDataDAO {
 
     /**
-     * Persists the given pathway data object to the db.
+     * Persists the pathway data stored in the given pathway data object to the ware house db.
      *
      * @param pathwayData PathwayData
      */
     void importPathwayData(final PathwayData pathwayData);
+
+    /**
+     * Persists the given biopax model to a unique provider db.
+	 * Drop indicates if db should be dropped first.
+     *
+     * @param metadata Metadata
+	 * @param model Model
+	 * @param drop boolean
+     */
+    void importPathwayData(final Metadata metadata, final Model model, final boolean drop);
 
     /**
      * This method returns the pathway data objects with the given Identifier.
