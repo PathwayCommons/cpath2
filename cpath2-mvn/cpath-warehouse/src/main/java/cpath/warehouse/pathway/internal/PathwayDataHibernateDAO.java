@@ -1,8 +1,11 @@
 package cpath.warehouse.pathway.internal;
 
 // imports
+import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.pathway.PathwayDataDAO;
+
+import org.biopax.paxtools.model.Model;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -68,6 +71,27 @@ public final class PathwayDataHibernateDAO implements PathwayDataDAO {
 		}
 		log.info("metadata object has been sucessessfully saved or merged.");
     }
+
+    /**
+     * (non-Javadoc)
+     * @see cpath.warehouse.pathway.PathwayDataDAO#importPathwayData(cpath.warehouse.beans.MetaData, org.biopax.paxtools.model.Model, java.lang.boolean);
+     */
+    @Transactional(propagation=Propagation.NESTED)
+    public void importPathwayData(final Metadata metadata, final Model model, final boolean drop) {
+
+		// first create the database
+		PathwayDataJDBCServices jdbcServices = null;
+		try {
+			jdbcServices = new PathwayDataJDBCServices();
+		}
+		// thrown when warehouse props not found
+		catch (Exception e) {
+			return;
+		}
+
+		// maybe drop and create the database
+		jdbcServices.createProviderDatabase(metadata, drop);
+	}
 
     /**
      * (non-Javadoc)
