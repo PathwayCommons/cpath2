@@ -39,6 +39,9 @@ public final class Metadata {
     private byte[] icon;
 	@Column(nullable=false)
     private Boolean isPSI;
+	@Lob
+	@Column(nullable=false)
+    private byte[] cleaner;
 
 	/**
 	 * Default Constructor.
@@ -55,9 +58,10 @@ public final class Metadata {
      * @param urlToPathwayData String
      * @param icon byte[]
      * @param isPSI Boolean
+	 * @param cleaner byte[]
      */
     public Metadata(final String identifier, final String name, final Float version, final String releaseDate,
-                    final String urlToPathwayData, final byte[] icon, final Boolean isPSI) {
+                    final String urlToPathwayData, final byte[] icon, final Boolean isPSI, final byte[] cleaner) {
 
         if (identifier == null) {
             throw new IllegalArgumentException("identifier must not be null");
@@ -94,6 +98,10 @@ public final class Metadata {
             throw new IllegalArgumentException("isPSI must not be null");
         }
         this.isPSI = isPSI;
+
+		if (cleaner == null) {
+			throw new IllegalArgumentException("cleaner must not be null");
+		}
     }
 
 	public void setId(Integer id) {
@@ -140,6 +148,11 @@ public final class Metadata {
 		this.isPSI = isPSI;
 	}
     public Boolean isPSI() { return isPSI; }
+
+	public void setCleaner(byte[] cleaner) {
+		this.cleaner = cleaner;
+	}
+    public byte[] getCleaner() { return cleaner; }
 
     @Override
     public String toString() {
