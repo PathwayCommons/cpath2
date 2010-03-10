@@ -30,6 +30,9 @@ package cpath.warehouse;
 import java.util.Set;
 
 /**
+ * TODO re-factoring! (define get/insert/search methods)
+ * 
+ * 
  * @author rodch
  *
  */

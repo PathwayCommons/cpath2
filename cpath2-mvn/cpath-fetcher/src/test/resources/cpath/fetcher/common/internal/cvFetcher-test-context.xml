@@ -12,16 +12,6 @@
 
     <context:annotation-config/>
 
-	<bean id="fetcherHTTPClient" class="cpath.fetcher.common.internal.FetcherHTTPClientImpl"/>
-
-	<bean id="providerMetadataService" class="cpath.fetcher.metadata.internal.ProviderMetadataServiceImpl">
-	  <constructor-arg ref="fetcherHTTPClient"/>
-	</bean>
-
-	<bean id="providerPathwayDataService" class="cpath.fetcher.pathway.internal.ProviderPathwayDataServiceImpl">
-	  <constructor-arg ref="fetcherHTTPClient"/>
-	</bean>
-
 	<bean id="cvFetcher" class="cpath.fetcher.cv.CvFetcher">
 		<constructor-arg value="classpath:ontologies.xml"/>
 		<constructor-arg ref="miriamAdapter"/>

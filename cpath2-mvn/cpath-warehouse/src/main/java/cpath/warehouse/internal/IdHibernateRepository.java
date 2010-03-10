@@ -29,6 +29,9 @@ package cpath.warehouse.internal;
 
 import java.util.Set;
 
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+
 import cpath.warehouse.IdRepository;
 
 /**
@@ -37,6 +40,23 @@ import cpath.warehouse.IdRepository;
  */
 public class IdHibernateRepository implements IdRepository {
 
+	// session factory prop/methods used by spring
+	private SessionFactory sessionFactory;
+	
+	
+	public SessionFactory getSessionFactory() { return sessionFactory; }
+	
+	
+	public void setSessionFactory(SessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
+	}
+	
+	// a shortcut to get current session
+	private Session getSession() {
+		return getSessionFactory().getCurrentSession();
+	}
+	
+	
 	/* (non-Javadoc)
 	 * @see cpath.warehouse.IdRepository#add(java.lang.String, java.lang.String)
 	 */

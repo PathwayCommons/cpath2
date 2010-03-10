@@ -28,6 +28,9 @@
 package cpath.importer;
 
 /**
+ * Validates a BioPAX (Paxtools) Model
+ * 
+ * 
  * @author rodch
  *
  */

@@ -28,7 +28,10 @@
 package cpath.warehouse.beans;
 
 import java.io.Serializable;
+import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.persistence.*;
@@ -49,24 +52,90 @@ import cpath.warehouse.CPathWarehouse;
  * @author rodche
  *
  */
-@Entity(name = "cv")
+@Entity
+@Table(name = "cv")
 @Indexed(index=CPathWarehouse.SEARCH_INDEX_NAME)
+@NamedQueries({
+  @NamedQuery(
+    name="cpath.warehouse.beans.cvByUrn",
+    query="from cpath.warehouse.beans.Cv as vocab where upper(vocab.urn) = upper(:urn)"
+  )
+})
 public class Cv implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	private Integer id = 0;
-	private Set<Cv> members;
-	private String urn;
-	private String type;
-	private String ontology;
-	private String accession;
-	private String name;
-	private Set<String> synonyms;
+	public static final String URN_OBO_PREFIX = "urn:miriam:obo.";
+	
+	public static final String SEARCH_FIELD_PARENTS="parents";
+	public static final String SEARCH_FIELD_CHILDREN="children";
+	public static final String SEARCH_FIELD_URN="urn";
+	public static final String SEARCH_FIELD_TYPE="cvtype";
+	public static final String SEARCH_FIELD_NAMES="name";
 	
 	@Id
     @GeneratedValue
     @Column(name="cv_id")
+	private Integer id = 0;
+	
+	@Column(name="urn", length = 500, nullable=false, unique=true)
+	@Field(name = SEARCH_FIELD_URN)
+	private String urn;
+	
+	@Column(length = 50, nullable=false)
+	@Field(name = SEARCH_FIELD_TYPE)
+	private String type;
+	
+	@CollectionOfElements
+	@Column(name = "children_x", columnDefinition = "text")
+	@FieldBridge(impl = StringSetBridge.class)
+	@Field(name = SEARCH_FIELD_CHILDREN, index = Index.TOKENIZED)
+	private Set<String> children;
+	
+	@CollectionOfElements
+	@Column(name = "parents_x", columnDefinition = "text")
+	@FieldBridge(impl = StringSetBridge.class)
+	@Field(name = SEARCH_FIELD_PARENTS, index = Index.TOKENIZED)
+	private Set<String> parents;
+	
+	@Transient
+	private String accession;
+	@Transient
+	private String ontologyId;
+	
+	@CollectionOfElements
+	@Column(name = "names_x", columnDefinition = "text")
+	@FieldBridge(impl = StringSetBridge.class)
+	@Field(name = SEARCH_FIELD_NAMES, index = Index.TOKENIZED)
+	private List<String> names;
+	
+
+	public Cv() {
+		children = new HashSet<String>();
+		parents = new HashSet<String>();
+		names = new ArrayList<String>();
+	}
+	
+	public Cv(String urn, String type) {
+		this();
+		this.urn = urn;
+		this.type = type;
+		
+		if(urn.startsWith(URN_OBO_PREFIX)) {
+			int l = URN_OBO_PREFIX.length();
+			int indexOfTheColon = urn.indexOf(':', l);
+			String ont = urn.substring(l, indexOfTheColon);
+			String acc = urn.substring(indexOfTheColon+1);
+			acc=URLDecoder.decode(acc);
+			this.accession = acc;
+			this.ontologyId = ont;
+		} else {
+			throw new IllegalArgumentException(
+					"Not a CV URN : " + urn);
+		}
+		
+	}
+	
 	public Integer getId() {
 		return id;
 	}
@@ -75,85 +144,24 @@ public class Cv implements Serializable {
 		id = value;
 	}
 	
-	public Cv() {
-		synonyms = new HashSet<String>();
-		members = new HashSet<Cv>();
+	
+	public Set<String> getParents() {
+		return parents;
 	}
-
-	public Cv(String type, 
-			String urn, String ontology, 
-			String accession, String name) {
-		this();
-		this.type = type;
-		this.ontology = ontology;
-		this.accession = accession;
-		this.name = name;
+	
+	public void setParents(Set<String> parents) {
+		this.parents = parents;
 	}
 	
 	
-	/**
-	 * many-to-many: another Cv can have common children/members with this
-	 */
-	@ManyToMany(cascade = {CascadeType.ALL}, targetEntity = Cv.class)
-	@JoinTable(name = "cv_member")
-	public Set<Cv> getMembers() {
-		return members;
+	public Set<String> getChildren() {
+		return children;
 	}
 
-	public void setMembers(Set<Cv> members) {
-		this.members = members;
+	public void setChildren(Set<String> children) {
+		this.children = children;
 	}
 
-	public void addMember(Cv member) {
-		this.members.add(member);
-	}
-	
-	public void removeMember(Cv member) {
-		this.members.remove(member);
-	}
-
-	@Column(length = 50, nullable = false)
-	public String getOntology() {
-		return ontology;
-	}
-
-	public void setOntology(String ontology) {
-		this.ontology = ontology;
-	}
-
-	@Column(length = 50, nullable = false)
-	public String getAccession() {
-		return accession;
-	}
-
-	public void setAccession(String accession) {
-		this.accession = accession;
-	}
-
-	@Column(length = 50)
-	public String getName() {
-		return name;
-	}
-
-	public void setName(String name) {
-		this.name = name;
-	}
-
-	
-	@CollectionOfElements
-	@Column(name = "synonyms_x", columnDefinition = "text")
-	@FieldBridge(impl = StringSetBridge.class)
-	@Field(name = "synonyms", index = Index.TOKENIZED)
-	public Set<String> getSynonyms() {
-		return synonyms;
-	}
-
-	public void setSynonyms(Set<String> synonyms) {
-		this.synonyms = synonyms;
-	}
-
-	
-	@Column(length = 500, nullable=false, unique=true)
 	public String getUrn() {
 		return urn;
 	}
@@ -162,7 +170,6 @@ public class Cv implements Serializable {
 		this.urn = urn;
 	}
 
-	@Column(length = 50, nullable=false)
 	public String getType() {
 		return type;
 	}
@@ -170,7 +177,7 @@ public class Cv implements Serializable {
 	public void setType(String type) {
 		this.type = type;
 	}
-	
+
 
 	@Override
 	public boolean equals(Object obj) {
@@ -180,5 +187,27 @@ public class Cv implements Serializable {
 	@Override
 	public int hashCode() {
 		return urn.hashCode();
+	}
+
+	@Transient
+	public String getAccession() {
+		return accession;
+	}
+
+	@Transient
+	public String getOntologyId() {
+		return ontologyId;
+	}
+
+	public List<String> getNames() {
+		return names;
+	}
+
+	public void setNames(List<String> names) {
+		this.names = names;
+	}
+
+	public void addName(String name) {
+		this.names.add(name);
 	}
 }

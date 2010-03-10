@@ -27,24 +27,28 @@
 
 package cpath.warehouse;
 
-import org.biopax.paxtools.model.level3.ControlledVocabulary;
+import java.util.Set;
 
 import cpath.warehouse.beans.Cv;
 
 /**
+ * 
  * @author rodch
  *
  */
 public interface CvRepository {
 	
-	void removeAll(); // clear the CV warehouse
-	
 	void add(Cv cv);
 	
-	boolean contains(String urn);
+	Cv getById(String urn);
 	
-	void remove(String urn);
+	Set<String> getDirectChildren(String urn);
 	
-	<T extends ControlledVocabulary> T getByRDFId(String urn, Class<T> clazz);
+	Set<String> getDirectParents(String urn);
 	
+	Set<String> getAllChildren(String urn);
+	
+	Set<String> getAllParents(String urn);
+	
+	boolean isChild(String parentUrn, String urn);
 }

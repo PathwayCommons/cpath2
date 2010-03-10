@@ -11,8 +11,6 @@
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
 
     <context:annotation-config/>
-
-	<bean id="miriamAdapter" class="cpath.identity.MiriamAdapter" />
 	
 	<bean id="idNormalizer" class="cpath.importer.IdNormalizer">
 		<constructor-arg ref="miriamAdapter"/>

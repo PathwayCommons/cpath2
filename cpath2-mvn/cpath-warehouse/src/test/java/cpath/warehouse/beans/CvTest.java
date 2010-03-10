@@ -27,64 +27,34 @@
 
 package cpath.warehouse.beans;
 
-import java.io.Serializable;
+import static org.junit.Assert.*;
 
-import javax.persistence.*;
-
-import org.hibernate.search.annotations.Indexed;
-
-import cpath.warehouse.CPathWarehouse;
-
+import org.junit.Before;
+import org.junit.Test;
 
 /**
- * This is to make a URN-to-primaryURN 
- * id-map (for CV's and ER's identifiers)
- * 
- * @author rodch
+ * @author rodche
  *
  */
-@Entity(name = "identity")
-@Indexed(index=CPathWarehouse.SEARCH_INDEX_NAME)
-public class Identity implements Serializable {
+public class CvTest {
 
-	private static final long serialVersionUID = 1L;
-
-	private Integer id = 0;
-	
-	@Id
-    @GeneratedValue
-    @Column(name="urn_id")
-	public Integer getId() {
-		return id;
+	/**
+	 * @throws java.lang.Exception
+	 */
+	@Before
+	public void setUp() throws Exception {
 	}
 
-	public void setId(Integer value) {
-		id = value;
-	}
-	
-	private String urn;
-	private Identity primaryUrn;
-	
-	public Identity() {}
-
-	@Column(nullable=false, unique=true)
-	public String getUrn() {
-		return urn;
+	/**
+	 * Test method for {@link cpath.warehouse.beans.Cv#Cv(java.lang.String, java.lang.String)}.
+	 */
+	@Test
+	public final void testCvStringString() {
+		Cv cv = new Cv("urn:miriam:obo.go:GO%3A0005654", "CellularLocationVocabulary");
+		assertNotNull(cv);
+		System.out.println("accession : " + cv.getAccession());
+		assertEquals("GO:0005654", cv.getAccession().toUpperCase());
+		assertEquals("go", cv.getOntologyId().toLowerCase());
 	}
 
-	public void setUrn(String urn) {
-		this.urn = urn;
-	}
-
-	@ManyToOne(cascade = {CascadeType.ALL})
-	@JoinColumn(name="primary_urn")
-	public Identity getPrimaryUrn() {
-		return primaryUrn;
-	}
-
-	public void setPrimaryUrn(Identity primaryUrn) {
-		this.primaryUrn = primaryUrn;
-	}
-
-	
 }

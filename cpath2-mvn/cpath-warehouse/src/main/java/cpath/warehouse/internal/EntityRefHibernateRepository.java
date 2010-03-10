@@ -28,6 +28,8 @@
 package cpath.warehouse.internal;
 
 import org.biopax.paxtools.model.level3.EntityReference;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 
 import cpath.warehouse.EntityRefRepository;
 
@@ -37,6 +39,22 @@ import cpath.warehouse.EntityRefRepository;
  */
 public class EntityRefHibernateRepository implements EntityRefRepository {
 
+	// session factory prop/methods used by spring
+	private SessionFactory sessionFactory;
+	
+	
+	public SessionFactory getSessionFactory() { return sessionFactory; }
+	
+	
+	public void setSessionFactory(SessionFactory sessionFactory) {
+		this.sessionFactory = sessionFactory;
+	}
+	
+	// a shortcut to get current session
+	private Session getSession() {
+		return getSessionFactory().getCurrentSession();
+	}
+	
 	/* (non-Javadoc)
 	 * @see cpath.warehouse.EntityRefRepository#add(org.biopax.paxtools.model.level3.EntityReference)
 	 */
