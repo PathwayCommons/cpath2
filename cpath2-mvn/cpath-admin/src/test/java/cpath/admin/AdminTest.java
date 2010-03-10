@@ -42,10 +42,16 @@ public class AdminTest {
 
 	@Before
 	public void setUp() throws Exception {
-        //String[] args = { "-fetch-metadata", "http://cbio.mskcc.org/~grossb/DataProviderPage.html"};
+        //String[] args = { "-fetch-metadata", "http://cbio.mskcc.org/~grossb/cpath2/DataProviderPage.html"};
         //admin = new Admin(args, cpathFetcher, metadataDAO);
     }
 
+	@Test
+	public void foo() {
+		
+	}
+	
+	
 	@Test
 	@Transactional(propagation=Propagation.SUPPORTS)
 	public void testRun() throws Exception {
@@ -57,7 +63,7 @@ public class AdminTest {
 
 	private void fetchMetadataTest() throws Exception {
 
-		String url = "http://cbio.mskcc.org/~grossb/DataProviderPage.html";
+		String url = "http://cbio.mskcc.org/~grossb/cpath2/DataProviderPage.html";
 
         // grab the data
         Collection<Metadata> metadata = cpathFetcher.getProviderMetadata(url);

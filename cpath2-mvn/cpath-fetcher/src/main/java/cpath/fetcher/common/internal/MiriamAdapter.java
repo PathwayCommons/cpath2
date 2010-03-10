@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.identity;
+package cpath.fetcher.common.internal;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -38,21 +38,16 @@ import uk.ac.ebi.miriam.lib.MiriamLink;
  * @author rodch
  *
  */
-public final class MiriamAdapter {
+public final class MiriamAdapter extends MiriamLink {
 	private final static Log log = LogFactory.getLog(MiriamAdapter.class);
 	
-	private MiriamLink miriamLink;
-
-	
 	public MiriamAdapter() {
-		this.miriamLink = new MiriamLink();
-		
-		if(!miriamLink.isLibraryUpdated() && log.isInfoEnabled()) {
+		if(!isLibraryUpdated() && log.isInfoEnabled()) {
 			log.info("There is a new version of the MiriamLink available!");
 		}
-		
 	}
 
+	
 	
 	/**
 	 * Looks up URN by (xref's) db and id.
@@ -61,16 +56,17 @@ public final class MiriamAdapter {
 	 * @param id entity identifier within the data type
 	 * @return
 	 */
+	@Override
 	public String getURI(String db, String id) {
 		String urn = null;
 		
 		try{
-			if(miriamLink.checkRegExp(id, db)) {
-				urn = miriamLink.getURI(db, id);
+			if(checkRegExp(id, db)) {
+				urn = super.getURI(db, id);
 			} else {
 				log.fatal("Invalid Id : " +
 					id + " for " + db + "; pattern=" 
-					+ miriamLink.getDataTypePattern(db));
+					+ getDataTypePattern(db));
 			}
 		} catch (Exception e) {
 			log.fatal("Cannot get URN by : " +
@@ -90,9 +86,9 @@ public final class MiriamAdapter {
 		String urn = null;
 		
 		try{
-			urn = miriamLink.getDataTypeURI(name);
+			urn = super.getDataTypeURI(name);
 			if(urn == null || "".equals(urn)) {
-				urn = miriamLink.getOfficialDataTypeURI(name);
+				urn = super.getOfficialDataTypeURI(name);
 			}
 		} catch (Exception e) {
 			log.error("Cannot get URN by : " +
@@ -101,5 +97,7 @@ public final class MiriamAdapter {
 		
 		return (urn==null || "".equals(urn)) ? null : urn; 
 	}
+	
+	
 	
 }

@@ -60,13 +60,5 @@ public interface CPathFetcher {
      */
     Collection<PathwayData> getProviderPathwayData(final Metadata metadata) throws IOException;
     
-	/**
-	 * Fetches controlled vocabulary (warehouse's beans) using 
-	 * known BioPAX CV validation rules.
-	 * 
-	 * @param domain
-	 * @param property
-	 * @return
-	 */
-	Set<Cv> fetchBiopaxCVs();
+    // TODO add CV methods...
 }

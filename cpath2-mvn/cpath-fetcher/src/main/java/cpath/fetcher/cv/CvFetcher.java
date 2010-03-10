@@ -27,46 +27,33 @@
 
 package cpath.fetcher.cv;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.validator.impl.CvTermsRule;
 import org.biopax.validator.utils.OntologyManagerAdapter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 
 import psidev.psi.tools.ontology_manager.interfaces.OntologyTermI;
 
-import cpath.identity.MiriamAdapter;
+import cpath.fetcher.common.internal.MiriamAdapter;
+import cpath.warehouse.CvRepository;
 import cpath.warehouse.beans.Cv;
 
 
 
 /**
  * This is to access OBO Cvs:
- * TODO - uses PSIDEV's OntologyManager (via Validator's OntologyManagerAdapter)
- * TODO - re-uses BioPAX Validator's classes to extract only required by BioPAX CVs (though with synonyms and hierarchy)
  * 
  * @author rodch
  *
  */
-public final class CvFetcher extends OntologyManagerAdapter {
+public final class CvFetcher extends OntologyManagerAdapter implements CvRepository {
 	private final static Log log = LogFactory.getLog(CvFetcher.class);
 	
 	private MiriamAdapter miriamAdapter;
-	
-	/*
-	 * Injects Validator's CV rules that
-	 * contain CV term restrictions for the 
-	 * corresponding domain and property
-	 * 
-	 */
-	@Autowired
-	private Set<CvTermsRule> cvRules;
-	
 	
 	/**
 	 * Constructor
@@ -79,25 +66,98 @@ public final class CvFetcher extends OntologyManagerAdapter {
 		super(ontologies);
 		this.miriamAdapter = miriamAdapter;
 	}
-
-	/**
-	 * Gets all the existing CV rules
-	 * 
-	 * @return
-	 */
-	public Set<CvTermsRule> getCvRules() {
-		return cvRules;
+	
+	
+	public Set<String> getDirectChildren(String urn) {
+		Set<String> dchildren = new HashSet<String>();
+		
+		
+		
+		return dchildren;
+	}
+	
+	public Set<String> getDirectParents(String urn) {
+		return null;
+	}
+	
+	public Set<String> getAllChildren(String urn) {
+		return null;
+	}
+	
+	public Set<String> getAllParents(String urn) {
+		return null;
 	}
 	
 	
-	/**
-	 * Fetches CPathWarehouse's controlled vocabulary beans 
-	 * using constraints defined by the specific validation rule.
-	 * 
-	 * @param domain
-	 * @param property
-	 * @return
+	OntologyTermI searchForTermByAccession(String acc) {
+		OntologyTermI term = null;
+		
+		for(String ontologyId : getOntologyIDs()) {
+			term = getOntologyAccess(ontologyId).getTermForAccession(acc);
+			if(term != null) 
+				break;
+		}
+		
+		return term;
+	}
+	
+	
+	
+	/* CvRepository interface implementation */
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.CvRepository#add(cpath.warehouse.beans.Cv)
 	 */
+	public void add(Cv cv) {
+		throw new UnsupportedOperationException("'add' " +
+				"operation is not supported in this implementation!");
+	}
+
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.CvRepository#getById(java.lang.String)
+	 */
+	public Cv getById(String urn) {
+		// TODO Auto-generated method stub
+		
+		return null;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.CvRepository#isChild(java.lang.String, java.lang.String)
+	 */
+	public boolean isChild(String parentUrn, String urn) {
+		
+		return false;
+	}
+	
+	
+	Set<String> ontologyTermsToUrns(Collection<OntologyTermI> terms) {
+		Set<String> urns = new HashSet<String>();
+		
+		for(OntologyTermI term : terms) {
+			String ontologyID = term.getOntologyName();
+			String accession = term.getTermAccession();
+			String urn = miriamAdapter.getURI(ontologyID, accession);
+			if(urn != null) {
+				urns.add(urn);
+			} else {
+				throw new IllegalArgumentException(
+						"Cannot find Miriam URN for the CV : " 
+						+ accession + " (" + ontologyID + ")");
+			}
+		}
+		
+		return urns;
+	}
+	
+	
+/*
+ * TODO Methods below would guarantee to work with BioPAX-recommended CVs...
+ */
+
+/*
 	public Set<Cv> fetchBiopaxCVs(CvTermsRule cvRule) {
 		Set<Cv> beans = new HashSet<Cv>();
 		
@@ -139,5 +199,6 @@ public final class CvFetcher extends OntologyManagerAdapter {
 		
 		return bean;
 	}
-			
+*/
+	
 }

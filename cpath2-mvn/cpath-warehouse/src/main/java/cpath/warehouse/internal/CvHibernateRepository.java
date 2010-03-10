@@ -27,12 +27,14 @@
 
 package cpath.warehouse.internal;
 
+import java.util.Set;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import cpath.warehouse.CvRepository;
 import cpath.warehouse.beans.Cv;
@@ -45,8 +47,6 @@ import cpath.warehouse.beans.Cv;
  */
 @Repository
 public class CvHibernateRepository implements CvRepository {
-
-    // log
     private static Log log = LogFactory.getLog(CvHibernateRepository.class);
 
 	// session factory prop/methods used by spring
@@ -69,48 +69,66 @@ public class CvHibernateRepository implements CvRepository {
 	/* (non-Javadoc)
 	 * @see cpath.warehouse.CvRepository#add(cpath.warehouse.beans.Cv)
 	 */
-	@Override
+	@Transactional
 	public void add(Cv cv) {
-		// TODO Auto-generated method stub
-		
+		getSession().save(cv);
 	}
 
 	
 	/* (non-Javadoc)
-	 * @see cpath.warehouse.cv.CvRepository#getByRDFId(java.lang.String)
+	 * @see cpath.warehouse.CvRepository#getAllChildren(java.lang.String)
 	 */
 	@Override
-	public <T extends ControlledVocabulary> T getByRDFId(String urn, Class<T> clazz) {
+	public Set<String> getAllChildren(String urn) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 
 	/* (non-Javadoc)
-	 * @see cpath.warehouse.cv.CvRepository#remove(org.biopax.paxtools.model.level3.ControlledVocabulary)
+	 * @see cpath.warehouse.CvRepository#getAllParents(java.lang.String)
 	 */
 	@Override
-	public void remove(String urn) {
+	public Set<String> getAllParents(String urn) {
 		// TODO Auto-generated method stub
-		
+		return null;
 	}
 
 
 	/* (non-Javadoc)
-	 * @see cpath.warehouse.cv.CvRepository#removeAll()
+	 * @see cpath.warehouse.CvRepository#getById(java.lang.String)
 	 */
 	@Override
-	public void removeAll() {
+	public Cv getById(String urn) {
 		// TODO Auto-generated method stub
-		
+		return null;
+	}
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.CvRepository#getDirectChildren(java.lang.String)
+	 */
+	@Override
+	public Set<String> getDirectChildren(String urn) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 
 	/* (non-Javadoc)
-	 * @see cpath.warehouse.CvRepository#contains(java.lang.String)
+	 * @see cpath.warehouse.CvRepository#getDirectParents(java.lang.String)
 	 */
 	@Override
-	public boolean contains(String urn) {
+	public Set<String> getDirectParents(String urn) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.CvRepository#isChild(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public boolean isChild(String parentUrn, String urn) {
 		// TODO Auto-generated method stub
 		return false;
 	}

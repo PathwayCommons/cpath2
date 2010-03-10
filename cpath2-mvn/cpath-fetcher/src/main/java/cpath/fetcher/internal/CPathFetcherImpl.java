@@ -31,7 +31,6 @@ package cpath.fetcher.internal;
 // imports
 import cpath.fetcher.CPathFetcher;
 
-import cpath.warehouse.beans.Cv;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
@@ -41,12 +40,9 @@ import cpath.fetcher.pathway.ProviderPathwayDataService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.validator.impl.CvTermsRule;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Implementation of CPathFetcher interface.
@@ -78,7 +74,6 @@ public final class CPathFetcherImpl implements CPathFetcher {
      * (non-Javadoc)
      * @see cpath.fetcher.CPathFetcher#getProviderMetadata(java.lang.String)
      */
-    @Override
     public Collection<Metadata> getProviderMetadata(final String url) throws IOException {
 
 		log.info("CPathFetcherImpl.getProviderMetadata(), redirecting to ProviderMetadata.getProviderMetadata()");
@@ -89,24 +84,12 @@ public final class CPathFetcherImpl implements CPathFetcher {
      * (non-Javadoc)
      * @see cpath.fetcher.CPathFetcher#getProviderPathwayData(cpath.warehouse.beans.Metadata)
      */
-    @Override
     public Collection<PathwayData> getProviderPathwayData(final Metadata metadata) throws IOException {
 
 		log.info("CPathFetcherImpl.getProviderPathwayData(), redirecting to ProviderPathwayData.getProviderPathwayData()");
         return providerPathwayDataService.getProviderPathwayData(metadata);
     }
 
-	/* (non-Javadoc)
-	 * @see cpath.fetcher.CPathFetcher#fetchBiopaxCVs()
-	 */
-	@Override
-	public Set<Cv> fetchBiopaxCVs() {
-		Set<Cv> allCv = new HashSet<Cv>();
-		
-		for(CvTermsRule cvRule : cvFetcher.getCvRules()) {
-			allCv.addAll(cvFetcher.fetchBiopaxCVs(cvRule));
-		}
-		
-		return allCv;
-	}
+    // TODO implement CV methods...
+    
 }

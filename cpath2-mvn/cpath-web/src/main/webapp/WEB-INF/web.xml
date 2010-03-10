@@ -20,6 +20,7 @@
 		<param-value>
 			classpath:test-dao-context.xml
 			<!-- classpath:dao-context.xml -->
+			classpath:applicationContext-cpathWarehouse.xml
 			<!-- /WEB-INF/security-config.xml -->
 	</param-value>
 	</context-param>

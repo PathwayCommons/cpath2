@@ -37,7 +37,7 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.util.ClassFilterSet;
 
-import cpath.identity.MiriamAdapter;
+import cpath.fetcher.common.internal.MiriamAdapter;
 
 /**
  * @author rodch

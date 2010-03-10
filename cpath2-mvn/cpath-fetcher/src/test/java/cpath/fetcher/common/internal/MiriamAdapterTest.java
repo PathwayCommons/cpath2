@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.identity;
+package cpath.fetcher.common.internal;
 
 import static org.junit.Assert.*;
 
@@ -37,24 +37,21 @@ import org.junit.Test;
  */
 public class MiriamAdapterTest {
 
-	MiriamAdapter miriam;
-	
-	/**
-	 * 
-	 */
-	public MiriamAdapterTest() {
-		super();
-		miriam = new MiriamAdapter();
-	}
-	
+	static MiriamAdapter miriam = new MiriamAdapter();;
 
 	/**
-	 * Test method for {@link cpath.identity.MiriamAdapter#getURI(java.lang.String, java.lang.String)}.
+	 * Test method for {@link cpath.fetcher.common.internal.MiriamAdapter#getURI(java.lang.String, java.lang.String)}.
 	 */
 	@Test
 	public final void testGetURI() {
 		String urn = miriam.getURI("uniprot", "P62158");
 		assertEquals("urn:miriam:uniprot:P62158", urn);
+	}
+	
+	@Test
+	public final void testGetURI_CV() {
+		String urn = miriam.getURI("GO", "GO:0005654");
+		assertEquals("urn:miriam:obo.go:GO%3A0005654", urn);
 	}
 	
 	
@@ -66,7 +63,7 @@ public class MiriamAdapterTest {
 	
 
 	/**
-	 * Test method for {@link cpath.identity.MiriamAdapter#getDataTypeURN(java.lang.String)}.
+	 * Test method for {@link cpath.fetcher.common.internal.MiriamAdapter#getDataTypeURN(java.lang.String)}.
 	 */
 	@Test
 	public final void testGetDataTypeURN_byId() {
@@ -82,7 +79,7 @@ public class MiriamAdapterTest {
 	}
 
 	/**
-	 * Test method for {@link cpath.identity.MiriamAdapter#getPrimaryId(java.lang.String)}.
+	 * Test method for {@link cpath.fetcher.common.internal.MiriamAdapter#getPrimaryId(java.lang.String)}.
 	 */
 	//@Test
 	public final void testGetPrimaryId() {

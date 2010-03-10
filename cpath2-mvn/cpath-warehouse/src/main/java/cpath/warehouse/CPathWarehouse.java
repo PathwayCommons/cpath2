@@ -27,7 +27,6 @@
 
 package cpath.warehouse;
 
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.UtilityClass;
 
 import java.util.Set;
@@ -57,28 +56,6 @@ public interface CPathWarehouse {
 	 */
 	<T extends UtilityClass> T createUtilityClass(String primaryUrn, Class<T> utilityClazz);
 	
-	/**
-	 * Creates a new standard reference BioPAX object 
-	 * (e.g., CellVocabulary or ProteinReference),
-	 * auto-resolving URN to the proper UtilityClass
-	 * 
-	 * @param <T> UtilityClass or its subclass (e.g., ProteinReference)
-	 * @param urn
-	 * @return
-	 */
-	<T extends UtilityClass> T createUtilityClass(String primaryUrn);
-
-	
-	/**
-	 * Creates a new standard BioPAX element within the given context.
-	 * 
-	 * @param <T> EntityReference or subclass
-	 * @param primaryUrn
-	 * @param EntityReference
-	 * @return
-	 */
-	<T extends UtilityClass> T createUtilityClass(String primaryUrn, Class<? extends BioPAXElement> domain, String property);
-
 	
 	/**
 	 * Gets the primary URN of the (BioPAX utility class) element by ID.
@@ -99,4 +76,5 @@ public interface CPathWarehouse {
 	Set<String> getAllChildrenOfCv(String urn);
 	Set<String> getDirectChildrenOfCv(String urn);
 	Set<String> getParentsOfCv(String urn);
+	Set<String> getDirectParentsOfCv(String urn);
 }
