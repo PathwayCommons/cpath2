@@ -2,7 +2,7 @@ package cpath.importer.cleaner.internal;
 
 // imports
 import cpath.importer.cleaner.Cleaner;
-import cpath.fetcher.common.FetcherHTTPClient;
+import cpath.importer.cleaner.CleanerLoader;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -10,13 +10,10 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Retrieves cleaner interface/cleaner class code.
  */
-public final class CleanerLoaderImpl extends ClassLoader {
+public final class CleanerLoaderImpl extends ClassLoader implements CleanerLoader {
 
 	// logger
     private static Log log = LogFactory.getLog(CleanerLoaderImpl.class);
-
-	// ref to FetcherHTTPClient
-    private FetcherHTTPClient fetcherHTTPClient;
 
     /**
 	 * Default Constructor.
@@ -24,19 +21,10 @@ public final class CleanerLoaderImpl extends ClassLoader {
 	public CleanerLoaderImpl() {}
 
 	/**
-     * Constructor.
-     * 
-     * @param fetcherHTTPClient FetcherHTTPClient
-     */
-	public CleanerLoaderImpl(FetcherHTTPClient fetcherHTTPClient) {
-		this.fetcherHTTPClient = fetcherHTTPClient;
-	}
-
-	/**
 	 * (non-Javadoc)
 	 * @see cpath.importer.cleaner.CleanerLoader#getCleaner(java.lang.byte[])
 	 */
-	Cleaner getCleaner(final byte[] cleanerData) {
+	public Cleaner getCleaner(final byte[] cleanerData) {
 
 		try {
 			Class cleanerClass = getClass(cleanerData);
