@@ -30,7 +30,7 @@ package cpath.fetcher.common.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import uk.ac.ebi.miriam.lib.MiriamLink;
+import org.biopax.miriam.MiriamLink;
 
 /**
  * This helps generate proper RDF IDs.
@@ -40,13 +40,6 @@ import uk.ac.ebi.miriam.lib.MiriamLink;
  */
 public final class MiriamAdapter extends MiriamLink {
 	private final static Log log = LogFactory.getLog(MiriamAdapter.class);
-	
-	public MiriamAdapter() {
-		if(!isLibraryUpdated() && log.isInfoEnabled()) {
-			log.info("There is a new version of the MiriamLink available!");
-		}
-	}
-
 	
 	
 	/**
