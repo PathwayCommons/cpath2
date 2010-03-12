@@ -43,7 +43,7 @@
     	<scope>compile</scope>
     </dependency>
     <dependency>
-    	<groupId>uk.ac.ebi</groupId>
+    	<groupId>org.biopax</groupId>
     	<artifactId>miriam-lib</artifactId>
     	<version>1.1.1-SNAPSHOT</version>
     </dependency>
