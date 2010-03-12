@@ -10,9 +10,6 @@ import org.biopax.validator.Rule;
 import org.biopax.validator.result.ErrorType;
 import org.biopax.validator.utils.BiopaxValidatorException;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Configurable;
-import org.springframework.core.annotation.Order;
 
 /**
  * This is a behavior aspect to let go or skip
@@ -24,13 +21,16 @@ import org.springframework.core.annotation.Order;
  * @author rodche
  */
 @Aspect
-@Configurable
-@Order(10) // must be the highest priority among other aspects
 public class ValidationAspect {
     private static final Log logger  = LogFactory.getLog(ValidationAspect.class);
     
-    @Autowired
+
     private BiopaxValidatorUtils utils;
+    
+	public ValidationAspect(BiopaxValidatorUtils biopaxValidatorUtils) {
+		this.utils = biopaxValidatorUtils;
+	}
+    
     
     @Around("execution(public void org.biopax.validator.Rule*+.check(*)) && args(thing)")
     public void checkBehavior(ProceedingJoinPoint jp, Object thing) throws Throwable {
@@ -51,6 +51,7 @@ public class ValidationAspect {
         }
     }
 
+    
     @Around("execution(public void org.biopax.validator.Rule*+.fix(..))")
     public void checkFixBehavior(ProceedingJoinPoint jp) throws Throwable {
     	Rule<?> r = (Rule<?>) jp.getTarget();

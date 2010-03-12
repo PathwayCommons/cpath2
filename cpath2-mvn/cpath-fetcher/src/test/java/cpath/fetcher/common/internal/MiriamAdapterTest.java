@@ -78,12 +78,4 @@ public class MiriamAdapterTest {
 		assertEquals("urn:miriam:uniprot", urn);
 	}
 
-	/**
-	 * Test method for {@link cpath.fetcher.common.internal.MiriamAdapter#getPrimaryId(java.lang.String)}.
-	 */
-	//@Test
-	public final void testGetPrimaryId() {
-		fail("Not yet implemented"); // TODO
-	}
-
 }

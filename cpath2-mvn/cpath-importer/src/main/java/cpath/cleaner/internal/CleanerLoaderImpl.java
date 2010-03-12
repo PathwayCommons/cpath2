@@ -1,8 +1,8 @@
-package cpath.importer.cleaner.internal;
+package cpath.cleaner.internal;
 
 // imports
-import cpath.importer.cleaner.Cleaner;
-import cpath.importer.cleaner.CleanerLoader;
+import cpath.cleaner.Cleaner;
+import cpath.cleaner.CleanerLoader;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

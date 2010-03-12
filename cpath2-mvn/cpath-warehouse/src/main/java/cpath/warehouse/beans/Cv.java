@@ -70,7 +70,6 @@ public class Cv implements Serializable {
 	public static final String SEARCH_FIELD_PARENTS="parents";
 	public static final String SEARCH_FIELD_CHILDREN="children";
 	public static final String SEARCH_FIELD_URN="urn";
-	public static final String SEARCH_FIELD_TYPE="cvtype";
 	public static final String SEARCH_FIELD_NAMES="name";
 	
 	@Id
@@ -81,10 +80,6 @@ public class Cv implements Serializable {
 	@Column(name="urn", length = 500, nullable=false, unique=true)
 	@Field(name = SEARCH_FIELD_URN)
 	private String urn;
-	
-	@Column(length = 50, nullable=false)
-	@Field(name = SEARCH_FIELD_TYPE)
-	private String type;
 	
 	@CollectionOfElements
 	@Column(name = "children_x", columnDefinition = "text")
@@ -116,10 +111,9 @@ public class Cv implements Serializable {
 		names = new ArrayList<String>();
 	}
 	
-	public Cv(String urn, String type) {
+	public Cv(String urn) {
 		this();
 		this.urn = urn;
-		this.type = type;
 		
 		if(urn.startsWith(URN_OBO_PREFIX)) {
 			int l = URN_OBO_PREFIX.length();
@@ -168,14 +162,6 @@ public class Cv implements Serializable {
 
 	public void setUrn(String urn) {
 		this.urn = urn;
-	}
-
-	public String getType() {
-		return type;
-	}
-
-	public void setType(String type) {
-		this.type = type;
 	}
 
 

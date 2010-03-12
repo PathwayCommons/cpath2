@@ -1,8 +1,6 @@
 package cpath.cleaner;
 
 // imports
-import cpath.importer.cleaner.Cleaner;
-import cpath.importer.cleaner.CleanerLoader;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -15,7 +13,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.InputStream;
-import java.io.FileInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.BufferedOutputStream;
 

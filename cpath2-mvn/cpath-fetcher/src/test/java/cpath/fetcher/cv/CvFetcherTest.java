@@ -29,10 +29,9 @@ package cpath.fetcher.cv;
 
 import static org.junit.Assert.*;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,6 +40,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import psidev.psi.tools.ontology_manager.impl.OntologyTermImpl;
+import psidev.psi.tools.ontology_manager.impl.local.LocalOntology;
+import psidev.psi.tools.ontology_manager.interfaces.OntologyAccess;
 import psidev.psi.tools.ontology_manager.interfaces.OntologyTermI;
 
 /**
@@ -62,6 +63,29 @@ public class CvFetcherTest {
 	public void setUp() throws Exception {
 	}
 
+	
+    @Test
+    public void ontologyLoading() {
+        Collection<String> ontologyIDs = cvFetcher.getOntologyIDs();
+        Assert.assertEquals( "ontologies.xml specifies 6 ontologies.", 6, ontologyIDs.size() );
+        Assert.assertTrue( ontologyIDs.contains( "GO" ) );
+        Assert.assertTrue( ontologyIDs.contains( "SO" ) );
+        Assert.assertTrue( ontologyIDs.contains( "MI" ) );
+
+        OntologyAccess oa2 = cvFetcher.getOntologyAccess( "GO" );
+        Assert.assertNotNull( oa2 );
+        Assert.assertTrue( oa2 instanceof LocalOntology);
+        
+        oa2 = cvFetcher.getOntologyAccess( "SO" );
+        Assert.assertNotNull( oa2 );
+        Assert.assertTrue( oa2 instanceof LocalOntology);
+        
+        oa2 = cvFetcher.getOntologyAccess( "MI" );
+        Assert.assertNotNull( oa2 );
+        Assert.assertTrue( oa2 instanceof LocalOntology);
+    }
+	
+	
 	/**
 	 * Test method for {@link cpath.fetcher.cv.CvFetcher#ontologyTermsToUrns(java.util.Collection)}.
 	 */
@@ -86,5 +110,25 @@ public class CvFetcherTest {
 		OntologyTermI term = cvFetcher.searchForTermByAccession("GO:0005654");
 		assertNotNull(term);
 		assertEquals("nucleoplasm", term.getPreferredName());
+	}
+	
+	@Test
+	public final void testGetDirectChildren() {
+		
+	}
+	
+	@Test
+	public final void testGetDirectAllChildren() {
+		
+	}
+	
+	@Test
+	public final void testGetDirectParents() {
+		
+	}
+	
+	@Test
+	public final void testGetAllParents() {
+		
 	}
 }

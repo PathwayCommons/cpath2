@@ -22,6 +22,7 @@
 	  <constructor-arg ref="fetcherHTTPClient"/>
 	</bean>
 
+	<!-- info: CvFetcher extends OntologyManager(Adapter) and also implements CvRepository interface -->
 	<bean id="cvFetcher" class="cpath.fetcher.cv.CvFetcher">
 		<constructor-arg value="classpath:ontologies.xml"/>
 		<constructor-arg ref="miriamAdapter"/>
