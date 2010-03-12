@@ -1,7 +1,7 @@
-package cpath.importer.cleaner.internal;
+package cpath.cleaner.internal;
 
 // imports
-import cpath.importer.cleaner.Cleaner;
+import cpath.cleaner.Cleaner;
 
 /**
  * Implementation of Cleaner class for Reactome pathway data.

@@ -27,15 +27,17 @@
 
 package cpath.fetcher.cv;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+//import java.io.IOException;
+import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.validator.utils.OntologyManagerAdapter;
 import org.springframework.core.io.Resource;
 
+//import psidev.psi.tools.ontology_manager.OntologyManagerContext;
+import psidev.psi.tools.ontology_manager.impl.OntologyTermImpl;
+import psidev.psi.tools.ontology_manager.interfaces.OntologyAccess;
 import psidev.psi.tools.ontology_manager.interfaces.OntologyTermI;
 
 import cpath.fetcher.common.internal.MiriamAdapter;
@@ -65,27 +67,45 @@ public final class CvFetcher extends OntologyManagerAdapter implements CvReposit
 	public CvFetcher(Resource ontologies, MiriamAdapter miriamAdapter) {
 		super(ontologies);
 		this.miriamAdapter = miriamAdapter;
+		/*
+		try {
+			OntologyManagerContext.getInstance().setOntologyDirectory(file);
+		} catch (IOException e) {
+			log.error("Cannot set a temporary ontologies directory.", e);
+		}
+		*/
 	}
 	
 	
 	public Set<String> getDirectChildren(String urn) {
-		Set<String> dchildren = new HashSet<String>();
-		
-		
-		
-		return dchildren;
+		OntologyTermI term = getTermByUrn(urn);
+		OntologyAccess ontologyAccess = getOntologyAccess(term.getOntologyName());
+		Collection<OntologyTermI> terms = ontologyAccess.getDirectChildren(term);
+		return ontologyTermsToUrns(terms);
 	}
+
 	
 	public Set<String> getDirectParents(String urn) {
-		return null;
+		OntologyTermI term = getTermByUrn(urn);
+		OntologyAccess ontologyAccess = getOntologyAccess(term.getOntologyName());
+		Collection<OntologyTermI> terms = ontologyAccess.getDirectParents(term);
+		return ontologyTermsToUrns(terms);
 	}
+
 	
 	public Set<String> getAllChildren(String urn) {
-		return null;
+		OntologyTermI term = getTermByUrn(urn);
+		OntologyAccess ontologyAccess = getOntologyAccess(term.getOntologyName());
+		Collection<OntologyTermI> terms = ontologyAccess.getAllChildren(term);
+		return ontologyTermsToUrns(terms);
 	}
+
 	
 	public Set<String> getAllParents(String urn) {
-		return null;
+		OntologyTermI term = getTermByUrn(urn);
+		OntologyAccess ontologyAccess = getOntologyAccess(term.getOntologyName());
+		Collection<OntologyTermI> terms = ontologyAccess.getAllParents(term);
+		return ontologyTermsToUrns(terms);
 	}
 	
 	
@@ -118,9 +138,18 @@ public final class CvFetcher extends OntologyManagerAdapter implements CvReposit
 	 * @see cpath.warehouse.CvRepository#getById(java.lang.String)
 	 */
 	public Cv getById(String urn) {
-		// TODO Auto-generated method stub
-		
-		return null;
+		Cv cv = new Cv(urn); // parse urn
+
+		OntologyTermI term = getTermByUrn(urn);
+		// set children
+		cv.setChildren(getDirectChildren(urn));
+		// set parents
+		cv.setParents(getDirectParents(urn));
+		// add names
+		cv.addName(term.getPreferredName());
+		cv.getNames().addAll(term.getNameSynonyms());
+
+		return cv;
 	}
 
 
@@ -128,10 +157,27 @@ public final class CvFetcher extends OntologyManagerAdapter implements CvReposit
 	 * @see cpath.warehouse.CvRepository#isChild(java.lang.String, java.lang.String)
 	 */
 	public boolean isChild(String parentUrn, String urn) {
-		
-		return false;
+		return getAllParents(urn).contains(parentUrn)
+			|| getAllChildren(parentUrn).contains(urn);
 	}
 	
+	
+	
+	
+	OntologyTermI getTermByUrn(String urn) {
+		Cv cv = new Cv(urn); // parse urn
+		OntologyTermI term = new OntologyTermImpl(cv.getAccession());
+		
+		OntologyAccess ontologyAccess = getOntologyAccess(cv.getOntologyId());
+		if(ontologyAccess != null) {
+			term = ontologyAccess.getTermForAccession(cv.getAccession());
+		} else {
+			term = searchForTermByAccession(cv.getAccession());
+		}
+		
+		return term;
+	}
+
 	
 	Set<String> ontologyTermsToUrns(Collection<OntologyTermI> terms) {
 		Set<String> urns = new HashSet<String>();
@@ -158,7 +204,7 @@ public final class CvFetcher extends OntologyManagerAdapter implements CvReposit
  */
 
 /*
-	public Set<Cv> fetchBiopaxCVs(CvTermsRule cvRule) {
+	public Set<Cv> fetchBiopaxCVs(Level3CvTermsRule cvRule) {
 		Set<Cv> beans = new HashSet<Cv>();
 		
 		// find the CV class name

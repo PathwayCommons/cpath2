@@ -50,7 +50,7 @@ public class CvTest {
 	 */
 	@Test
 	public final void testCvStringString() {
-		Cv cv = new Cv("urn:miriam:obo.go:GO%3A0005654", "CellularLocationVocabulary");
+		Cv cv = new Cv("urn:miriam:obo.go:GO%3A0005654");
 		assertNotNull(cv);
 		System.out.println("accession : " + cv.getAccession());
 		assertEquals("GO:0005654", cv.getAccession().toUpperCase());

@@ -1,4 +1,4 @@
-package cpath.importer.cleaner;
+package cpath.cleaner;
 
 // imports
 

@@ -12,7 +12,9 @@
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd
        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd">
     
-    <!-- for the ValidationAspect to be auto-created and wired -->   
+    <!-- for the ValidationAspect to be auto-created and wired -->  
+    <context:annotation-config/>
+     
     <aop:aspectj-autoproxy/>
     
     <context:spring-configured/>
@@ -44,11 +46,15 @@
 		<property name="messageSource" ref="messageSource" />
 		<property name="marshaller" ref="resultsMarshaller" />
 		<property name="locale" value="en" />
-		<property name="maxErrors" value="${max.errors}" />
+		<property name="maxErrors" value="50" />
 	</bean>
 
 	<bean id="editorMap3" class="org.biopax.paxtools.io.simpleIO.SimpleEditorMap">
 		<constructor-arg type="org.biopax.paxtools.model.BioPAXLevel" value="L3"/>
+	</bean>
+
+	<bean id="editorMap2" class="org.biopax.paxtools.io.simpleIO.SimpleEditorMap">
+		<constructor-arg type="org.biopax.paxtools.model.BioPAXLevel" value="L2"/>
 	</bean>
 
 	<!-- a helper and a proxy to access MIRIAM and MI database citation and regexps 
@@ -56,7 +62,15 @@
     <bean id="xrefHelper" class="org.biopax.validator.utils.XrefHelper">
 		<constructor-arg ref="extraDbSynonyms"/>
         <constructor-arg ref="cvFetcher" />
+        <constructor-arg ref="miriamAdapter"/>
     </bean>
+	
+	
+	<bean id="biopaxValidator" class="cpath.importer.BiopaxValidator" />
+	
+	<bean id="validationAspect" class="cpath.importer.aop.ValidationAspect">
+		<constructor-arg ref="utils"/>
+	</bean>
 	
 	<context:component-scan base-package="org.biopax.validator.rules"/>
 </beans>

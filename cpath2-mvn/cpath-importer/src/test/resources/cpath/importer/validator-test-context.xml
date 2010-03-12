@@ -12,7 +12,12 @@
 
     <context:annotation-config/>
 
-	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
-    
-	<bean id="cleanerLoader" class="cpath.cleaner.internal.CleanerLoaderImpl"/>
+	<bean id="miriamAdapter" class="cpath.fetcher.common.internal.MiriamAdapter" />
+
+	<!-- info: CvFetcher extends OntologyManager(Adapter) and also implements CvRepository interface -->
+	<bean id="cvFetcher" class="cpath.fetcher.cv.CvFetcher">
+		<constructor-arg value="classpath:ontologies.xml"/>
+		<constructor-arg ref="miriamAdapter"/>
+	</bean>
+	
 </beans>

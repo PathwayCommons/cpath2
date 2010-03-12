@@ -27,6 +27,16 @@
 
 package cpath.importer;
 
+import java.util.Set;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.Model;
+import org.biopax.validator.Rule;
+import org.biopax.validator.result.Validation;
+import org.springframework.beans.factory.annotation.Autowired;
+
 /**
  * Validates a BioPAX (Paxtools) Model
  * 
@@ -35,5 +45,44 @@ package cpath.importer;
  *
  */
 public class BiopaxValidator {
+	private static final Log log = LogFactory.getLog(BiopaxValidator.class);
+	
+	
+    @Autowired
+	private Set<Rule<?>> rules;
+    
 
+    public BiopaxValidator() {
+		// TODO Auto-generated constructor stub
+	}
+    
+	
+	public Validation validate(Model model) {
+			
+		if (model != null) {
+			if (log.isDebugEnabled()) {
+				log.debug("validating model: " + model + " that has "
+						+ model.getObjects().size() + " objects");
+			}
+			
+			for (Rule rule : rules) {
+				// rules can check the model or specific elements
+				if (rule.canCheck(model)) {
+					rule.check(model);
+				} else {
+					for (BioPAXElement el : model.getObjects()) {
+						if (rule.canCheck(el)) {
+							rule.check(el);
+						}
+					}
+				}
+			}
+			
+		} else {
+			log.warn("Model is null");
+		}
+		
+		return null;
+		
+	}
 }
