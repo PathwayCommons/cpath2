@@ -50,11 +50,11 @@ import cpath.warehouse.CPathWarehouse;
 @NamedQueries({
   @NamedQuery(
     name="cpath.warehouse.beans.searchLeft",
-    query="from cpath.warehouse.beans.Mapping as mapp where upper(mapp.left) = upper(:urn)"
+    query="from cpath.warehouse.beans.Mapping as mapp where upper(mapp.leftUrn) = upper(:urn)"
   ),
   @NamedQuery(
     name="cpath.warehouse.beans.searchRight",
-    query="from cpath.warehouse.beans.Mapping as mapp where upper(mapp.right) = upper(:urn)"
+    query="from cpath.warehouse.beans.Mapping as mapp where upper(mapp.rightUrn) = upper(:urn)"
   ),
   @NamedQuery(
     name="cpath.warehouse.beans.searchByMappingType",
@@ -86,11 +86,11 @@ public class Mapping implements Serializable {
 	
 	@Column(nullable=false)
 	@Field(name=SEARCH_FIELD_THIS)
-	private String left;
+	private String leftUrn;
 	
 	@Column(nullable=false)
 	@Field(name=SEARCH_FIELD_THAT)
-	private String right;
+	private String rightUrn;
 	
 	@Column(nullable=false)
 	@Field(name=SEARCH_FIELD_TYPE)
@@ -111,25 +111,25 @@ public class Mapping implements Serializable {
 	
 	
 	public Mapping(String left, String right, MappingType mappingType) {
-		this.left = left;
-		this.right = right;
+		this.leftUrn = left;
+		this.rightUrn = right;
 		this.mappingType = mappingType;
 	}
 
-	public String getLeft() {
-		return left;
+	public String getLeftUrn() {
+		return leftUrn;
 	}
 
-	public void setLeft(String left) {
-		this.left = left;
+	public void setLeftUrn(String left) {
+		this.leftUrn = left;
 	}
 
-	public String getRight() {
-		return right;
+	public String getRightUrn() {
+		return rightUrn;
 	}
 
-	public void setRight(String right) {
-		this.right = right;
+	public void setRightUrn(String right) {
+		this.rightUrn = right;
 	}
 
 	public MappingType getMappingType() {
