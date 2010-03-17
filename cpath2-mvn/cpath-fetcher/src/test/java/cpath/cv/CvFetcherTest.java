@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.fetcher.cv;
+package cpath.cv;
 
 import static org.junit.Assert.*;
 
@@ -38,6 +38,8 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import cpath.cv.CvFetcher;
 
 import psidev.psi.tools.ontology_manager.impl.OntologyTermImpl;
 import psidev.psi.tools.ontology_manager.impl.local.LocalOntology;
@@ -87,7 +89,7 @@ public class CvFetcherTest {
 	
 	
 	/**
-	 * Test method for {@link cpath.fetcher.cv.CvFetcher#ontologyTermsToUrns(java.util.Collection)}.
+	 * Test method for {@link cpath.cv.CvFetcher#ontologyTermsToUrns(java.util.Collection)}.
 	 */
 	@Test
 	public final void testOntologyTermsToUrns() {
@@ -103,7 +105,7 @@ public class CvFetcherTest {
 
 	
 	/**
-	 * Test method for {@link cpath.fetcher.cv.CvFetcher#ontologyTermsToUrns(java.util.Collection)}.
+	 * Test method for {@link cpath.cv.CvFetcher#ontologyTermsToUrns(java.util.Collection)}.
 	 */
 	@Test
 	public final void testSearchForTermByAccession() {

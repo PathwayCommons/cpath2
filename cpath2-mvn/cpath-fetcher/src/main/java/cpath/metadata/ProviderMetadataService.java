@@ -26,21 +26,18 @@
  ** along with this library; if not, write to the Free Software Foundation,
  ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
  **/
-package cpath.fetcher;
+package cpath.metadata;
 
 // imports
-import cpath.warehouse.beans.Cv;
 import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.PathwayData;
 
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Set;
 
 /**
- * Provides warehouse & pathway data fetching service
+ * Provider Metadata service.  Retrieves provider metadata.
  */
-public interface CPathFetcher {
+public interface ProviderMetadataService {
 
     /**
      *  For the given url, returns a collection of Metadata Objects.
@@ -50,15 +47,4 @@ public interface CPathFetcher {
      * @throws IOException if an IO error occurs
      */
     Collection<Metadata> getProviderMetadata(final String url) throws IOException;
-
-    /**
-     *  For the given url, returns a collection of Metadata Objects.
-     *
-	 * @param metadata Metadata
-     * @return Collection<Metadata>
-     * @throws IOException if an IO error occurs
-     */
-    Collection<PathwayData> getProviderPathwayData(final Metadata metadata) throws IOException;
-    
-    // TODO add CV methods...
 }

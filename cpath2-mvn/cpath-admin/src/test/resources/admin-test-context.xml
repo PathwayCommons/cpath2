@@ -55,13 +55,13 @@
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
-	<bean id="fetcherHTTPClient" class="cpath.fetcher.common.internal.FetcherHTTPClientImpl"/>
+	<bean id="fetcherHTTPClient" class="cpath.common.internal.FetcherHTTPClientImpl"/>
 
-	<bean id="providerMetadataService" class="cpath.fetcher.metadata.internal.ProviderMetadataServiceImpl">
+	<bean id="providerMetadataService" class="cpath.metadata.internal.ProviderMetadataServiceImpl">
 	  <constructor-arg ref="fetcherHTTPClient"/>
 	</bean>
 
-	<bean id="providerPathwayDataService" class="cpath.fetcher.pathway.internal.ProviderPathwayDataServiceImpl">
+	<bean id="providerPathwayDataService" class="cpath.pathway.internal.ProviderPathwayDataServiceImpl">
 	  <constructor-arg ref="fetcherHTTPClient"/>
 	</bean>
 

@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.fetcher.cv;
+package cpath.cv;
 
 //import java.io.IOException;
 import java.util.*;
@@ -40,7 +40,7 @@ import psidev.psi.tools.ontology_manager.impl.OntologyTermImpl;
 import psidev.psi.tools.ontology_manager.interfaces.OntologyAccess;
 import psidev.psi.tools.ontology_manager.interfaces.OntologyTermI;
 
-import cpath.fetcher.common.internal.MiriamAdapter;
+import cpath.common.internal.MiriamAdapter;
 import cpath.warehouse.CvRepository;
 import cpath.warehouse.beans.Cv;
 
