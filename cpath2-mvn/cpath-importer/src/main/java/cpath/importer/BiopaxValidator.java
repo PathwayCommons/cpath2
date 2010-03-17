@@ -27,15 +27,12 @@
 
 package cpath.importer;
 
-import java.util.Set;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
-import org.biopax.validator.Rule;
+import org.biopax.validator.impl.ValidatorImpl;
 import org.biopax.validator.result.Validation;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 
 /**
  * Validates a BioPAX (Paxtools) Model
@@ -44,45 +41,34 @@ import org.springframework.beans.factory.annotation.Autowired;
  * @author rodch
  *
  */
-public class BiopaxValidator {
+@Configurable
+public class BiopaxValidator extends ValidatorImpl {
 	private static final Log log = LogFactory.getLog(BiopaxValidator.class);
-	
-	
-    @Autowired
-	private Set<Rule<?>> rules;
-    
-
-    public BiopaxValidator() {
-		// TODO Auto-generated constructor stub
-	}
     
 	
+    /**
+     * Validates the BioPAX model.
+     * 
+     * @param model
+     * @return report object
+     */
 	public Validation validate(Model model) {
-			
+		Validation validation = new Validation();
+		
 		if (model != null) {
 			if (log.isDebugEnabled()) {
 				log.debug("validating model: " + model + " that has "
 						+ model.getObjects().size() + " objects");
 			}
 			
-			for (Rule rule : rules) {
-				// rules can check the model or specific elements
-				if (rule.canCheck(model)) {
-					rule.check(model);
-				} else {
-					for (BioPAXElement el : model.getObjects()) {
-						if (rule.canCheck(el)) {
-							rule.check(el);
-						}
-					}
-				}
-			}
+			associate(model, validation);
+			validate(validation);
 			
 		} else {
 			log.warn("Model is null");
 		}
 		
-		return null;
+		return validation;
 		
 	}
 }
