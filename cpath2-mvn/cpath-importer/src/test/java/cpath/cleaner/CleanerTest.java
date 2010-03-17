@@ -40,7 +40,7 @@ public class CleanerTest {
 
 	private void cleanerLoaderTest() throws Exception {
 
-		String byteCodeFile = "/cpath/cleaner/CleanerImpl.class";
+		String byteCodeFile = "CleanerImpl.class";
 
         // grab the data
 		byte[] cleanerData = loadCleanerData(byteCodeFile);

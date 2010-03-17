@@ -12,7 +12,7 @@
 
     <context:annotation-config/>
 	
-	<bean id="idNormalizer" class="cpath.importer.IdNormalizer">
+	<bean id="idNormalizer" class="cpath.normalizer.IdNormalizer">
 		<constructor-arg ref="miriamAdapter"/>
 	</bean>
 	

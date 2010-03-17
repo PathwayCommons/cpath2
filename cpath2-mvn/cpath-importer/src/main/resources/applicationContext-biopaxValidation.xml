@@ -76,7 +76,7 @@
     </bean>
 	
 	
-	<bean id="validator" class="cpath.importer.BiopaxValidator"/>
+	<bean id="validator" class="cpath.validator.BiopaxValidator"/>
 	
 	<bean id="messenger" class="org.biopax.validator.impl.SimplyThrowExceptionMessenger"/>
 	

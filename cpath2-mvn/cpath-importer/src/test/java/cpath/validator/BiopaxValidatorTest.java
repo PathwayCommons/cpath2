@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.importer;
+package cpath.validator;
 
 import static org.junit.Assert.*;
 
@@ -48,13 +48,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import cpath.validator.BiopaxValidator;
+
 /**
  * @author rodche
  *
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
-		"classpath:cpath/importer/validator-test-context.xml", 
+		"classpath:cpathValidator-test-context.xml", 
 		"classpath:applicationContext-biopaxValidation.xml"
 	})
 public class BiopaxValidatorTest {
@@ -66,7 +68,7 @@ public class BiopaxValidatorTest {
 
 
 	/**
-	 * Test method for {@link cpath.importer.BiopaxValidator#validate(org.biopax.paxtools.model.Model)}.
+	 * Test method for {@link cpath.validator.BiopaxValidator#validate(org.biopax.paxtools.model.Model)}.
 	 */
 	@Test
 	public final void testCheckRule() {

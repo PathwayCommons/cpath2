@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.importer;
+package cpath.normalizer;
 
 import static org.junit.Assert.*;
 
@@ -41,6 +41,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import cpath.normalizer.IdNormalizer;
+
 
 /**
  * uses idNormalizer-test-context.xml
@@ -48,7 +50,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  * @author rodch
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:cpath/importer/idNormalizer-test-context.xml"})
+@ContextConfiguration(locations = {"classpath:idNormalizer-test-context.xml"})
 public class IdNormalizerTest {
 
 	@Autowired
@@ -58,7 +60,7 @@ public class IdNormalizerTest {
 	
 
 	/**
-	 * Test method for {@link cpath.importer.IdNormalizer#filter(org.biopax.paxtools.model.Model)}.
+	 * Test method for {@link cpath.normalizer.IdNormalizer#filter(org.biopax.paxtools.model.Model)}.
 	 */
 	@Test
 	public final void testFilter() {
