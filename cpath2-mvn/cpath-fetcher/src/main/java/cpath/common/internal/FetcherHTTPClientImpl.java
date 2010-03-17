@@ -1,7 +1,7 @@
-package cpath.fetcher.common.internal;
+package cpath.common.internal;
 
 // imports
-import cpath.fetcher.common.FetcherHTTPClient;
+import cpath.common.FetcherHTTPClient;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -24,7 +24,7 @@ public final class FetcherHTTPClientImpl implements FetcherHTTPClient {
 
     /**
      * (non-Javadoc)
-     * @see cpath.fetcher.common.FetcherHTTPClient#getDataFromService(java.lang.String)
+     * @see cpath.common.FetcherHTTPClient#getDataFromService(java.lang.String)
      */
     @Override
 	public byte[] getDataFromService(final String url) throws IOException {
@@ -53,7 +53,7 @@ public final class FetcherHTTPClientImpl implements FetcherHTTPClient {
 
     /**
      * (non-Javadoc)
-     * @see cpath.fetcher.common.FetcherHTTPClient#getDataFromService(java.lang.String)
+     * @see cpath.common.FetcherHTTPClient#getDataFromService(java.lang.String)
      */
     @Override
 	public InputStream getDataFromServiceAsStream(final String url) throws IOException {
@@ -80,7 +80,7 @@ public final class FetcherHTTPClientImpl implements FetcherHTTPClient {
 
     /**
      * (non-Javadoc)
-     * @see cpath.fetcher.common.FetcherHTTPClient#releaseConnection
+     * @see cpath.common.FetcherHTTPClient#releaseConnection
      */
     @Override
 	public void releaseConnection() {

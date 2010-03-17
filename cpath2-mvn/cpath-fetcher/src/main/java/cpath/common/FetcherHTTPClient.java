@@ -1,4 +1,4 @@
-package cpath.fetcher.common;
+package cpath.common;
 
 // imports
 import java.io.IOException;

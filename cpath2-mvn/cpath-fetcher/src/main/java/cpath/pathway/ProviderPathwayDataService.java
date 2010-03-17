@@ -1,4 +1,4 @@
-package cpath.fetcher.pathway;
+package cpath.pathway;
 
 // imports
 import cpath.warehouse.beans.Metadata;

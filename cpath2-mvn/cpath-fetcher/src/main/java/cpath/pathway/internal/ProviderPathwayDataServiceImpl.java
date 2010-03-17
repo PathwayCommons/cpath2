@@ -1,10 +1,10 @@
-package cpath.fetcher.pathway.internal;
+package cpath.pathway.internal;
 
 // imports
+import cpath.pathway.ProviderPathwayDataService;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
-import cpath.fetcher.common.FetcherHTTPClient;
-import cpath.fetcher.pathway.ProviderPathwayDataService;
+import cpath.common.FetcherHTTPClient;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -66,7 +66,7 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
 
     /**
      * (non-Javadoc)
-     * @see cpath.fetcher.pathway.ProviderPathwayDataService#getProviderPathwayData(cpath.warehouse.beans.Metadata)
+     * @see cpath.pathway.ProviderPathwayDataService#getProviderPathwayData(cpath.warehouse.beans.Metadata)
      */
     @Override
     public Collection<PathwayData> getProviderPathwayData(final Metadata metadata) throws IOException {

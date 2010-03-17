@@ -25,11 +25,13 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.fetcher.common.internal;
+package cpath.common.internal;
 
 import static org.junit.Assert.*;
 
 import org.junit.Test;
+
+import cpath.common.internal.MiriamAdapter;
 
 /**
  * @author rodch
@@ -40,7 +42,7 @@ public class MiriamAdapterTest {
 	static MiriamAdapter miriam = new MiriamAdapter();;
 
 	/**
-	 * Test method for {@link cpath.fetcher.common.internal.MiriamAdapter#getURI(java.lang.String, java.lang.String)}.
+	 * Test method for {@link cpath.common.internal.MiriamAdapter#getURI(java.lang.String, java.lang.String)}.
 	 */
 	@Test
 	public final void testGetURI() {
@@ -63,7 +65,7 @@ public class MiriamAdapterTest {
 	
 
 	/**
-	 * Test method for {@link cpath.fetcher.common.internal.MiriamAdapter#getDataTypeURN(java.lang.String)}.
+	 * Test method for {@link cpath.common.internal.MiriamAdapter#getDataTypeURN(java.lang.String)}.
 	 */
 	@Test
 	public final void testGetDataTypeURN_byId() {

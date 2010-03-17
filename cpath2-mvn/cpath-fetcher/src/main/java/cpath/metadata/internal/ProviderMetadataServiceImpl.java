@@ -26,12 +26,12 @@
  ** along with this library; if not, write to the Free Software Foundation,
  ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
  **/
-package cpath.fetcher.metadata.internal;
+package cpath.metadata.internal;
 
 // imports
 import cpath.warehouse.beans.Metadata;
-import cpath.fetcher.common.FetcherHTTPClient;
-import cpath.fetcher.metadata.ProviderMetadataService;
+import cpath.common.FetcherHTTPClient;
+import cpath.metadata.ProviderMetadataService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -86,7 +86,7 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
 
     /**
      * (non-Javadoc)
-     * @see cpath.fetcher.metadata.ProviderMetadataService#getProviderMetadata(java.lang.String)
+     * @see cpath.metadata.ProviderMetadataService#getProviderMetadata(java.lang.String)
      */
     @Override
     public Collection<Metadata> getProviderMetadata(final String url) throws IOException {

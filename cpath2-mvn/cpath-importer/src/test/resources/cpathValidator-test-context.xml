@@ -12,10 +12,10 @@
 
     <context:annotation-config/>
 
-	<bean id="miriamAdapter" class="cpath.fetcher.common.internal.MiriamAdapter" />
+	<bean id="miriamAdapter" class="cpath.common.internal.MiriamAdapter" />
 
 	<!-- info: CvFetcher extends OntologyManager(Adapter) and also implements CvRepository interface -->
-	<bean id="cvFetcher" class="cpath.fetcher.cv.CvFetcher">
+	<bean id="cvFetcher" class="cpath.cv.CvFetcher">
 		<constructor-arg value="classpath:ontologies.xml"/>
 		<constructor-arg ref="miriamAdapter"/>
 	</bean>
