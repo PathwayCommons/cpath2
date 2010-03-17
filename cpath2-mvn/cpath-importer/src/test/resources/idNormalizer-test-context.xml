@@ -14,7 +14,7 @@
 
 	<bean id="miriamAdapter" class="cpath.fetcher.common.internal.MiriamAdapter" />
 	
-	<bean id="idNormalizer" class="cpath.importer.IdNormalizer">
+	<bean id="idNormalizer" class="cpath.normalizer.IdNormalizer">
 		<constructor-arg ref="miriamAdapter"/>
 	</bean>
 	

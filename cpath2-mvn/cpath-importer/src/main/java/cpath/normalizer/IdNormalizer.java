@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.importer;
+package cpath.normalizer;
 
 import java.util.*;
 
