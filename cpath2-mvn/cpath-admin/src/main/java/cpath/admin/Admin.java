@@ -231,7 +231,8 @@ public class Admin implements Runnable {
             new ClassPathXmlApplicationContext(new String [] { "classpath:applicationContext-cpathFetcher.xml",
                                                                "classpath:applicationContext-cpathImporter.xml",
 															   "classpath:applicationContext-cpathWarehouse.xml",
-                                                               "classpath:applicationContext-cpathAdmin.xml"});
+                                                               "classpath:applicationContext-cpathAdmin.xml",
+                                                               "classpath:applicationContext-biopaxValidation.xml"});
 
         // TODO: inject
         CPathFetcher cpathFetcher = (CPathFetcher)context.getBean("cpathFetcher");
