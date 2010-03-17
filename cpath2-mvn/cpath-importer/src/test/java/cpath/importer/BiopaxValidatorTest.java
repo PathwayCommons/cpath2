@@ -55,7 +55,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
 		"classpath:cpath/importer/validator-test-context.xml", 
-		"classpath:validator-context.xml"
+		"classpath:applicationContext-biopaxValidation.xml"
 	})
 public class BiopaxValidatorTest {
 
@@ -135,12 +135,10 @@ public class BiopaxValidatorTest {
 		assertTrue(error.getErrorCase().size()==2);
 		assertEquals("range.violated",error.getCode());
 		System.out.println(error);
-		ErrorCaseType errorCase = error.getErrorCase().iterator().next();
-		assertNotNull(errorCase.getObject());
-		System.out.println(errorCase);
-		errorCase = error.getErrorCase().iterator().next();
-		assertNotNull(errorCase.getObject());
-		System.out.println(errorCase);
+		for(ErrorCaseType errorCase : error.getErrorCase()) {
+			assertNotNull(errorCase.getObject());
+			System.out.println(errorCase);
+		}
 
 	}
 }
