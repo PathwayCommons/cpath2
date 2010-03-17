@@ -37,10 +37,11 @@ import org.biopax.paxtools.model.level3.Level3Factory;
 import org.biopax.paxtools.model.level3.TemplateReactionRegulation;
 import org.biopax.validator.Behavior;
 import org.biopax.validator.Rule;
+import org.biopax.validator.result.ErrorCaseType;
+import org.biopax.validator.result.ErrorType;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.rules.ControlTypeRule;
 import org.biopax.validator.utils.BiopaxValidatorException;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,16 +63,13 @@ public class BiopaxValidatorTest {
 	BiopaxValidator validator;
 	
 	Level3Factory level3 = (Level3Factory) BioPAXLevel.L3.getDefaultFactory();
-	
-	@Before
-	public void setUp() throws Exception {
-	}
+
 
 	/**
 	 * Test method for {@link cpath.importer.BiopaxValidator#validate(org.biopax.paxtools.model.Model)}.
 	 */
 	@Test
-	public final void testValidate() {
+	public final void testCheckRule() {
 		Rule rule = new ControlTypeRule();	
 		Catalysis ca = level3.createCatalysis();
 		ca.setRDFId("catalysis1");
@@ -98,18 +96,51 @@ public class BiopaxValidatorTest {
 			fail("must throw BiopaxValidatorException");
 		} catch(BiopaxValidatorException e) {
 		}
+	}
+
+	
+	@Test
+	public final void testValidateModel() {
+		//make sure the rule's behavior, we're interested in this test, is not 'IGNORED' 
+		// (otherwise this test should fail at the last line)
 		
-		// write the example XML
+		System.out.println("testValidateModel");
+		
+		Rule rule = null;
+		for(Rule r : validator.getRules()) {
+			if(r.getName().equals("controlTypeRule")) {
+				rule = r;
+				break;
+			}
+		}
+		rule.setBehavior(Behavior.ERROR); 
+		
+		Catalysis ca = level3.createCatalysis();
+		ca.setControlType(ControlType.INHIBITION);
+		ca.addComment("error: illegal controlType");	
+		ca.setRDFId("catalysis1");
+		TemplateReactionRegulation tr = level3.createTemplateReactionRegulation();
+		tr.setRDFId("regulation1");
+		tr.setControlType(ControlType.ACTIVATION_ALLOSTERIC);
+		tr.addComment("error: illegal controlType");
 		Model m = level3.createModel();
-		ca.setControlType(ControlType.INHIBITION); // set wrong
-		tr.setControlType(ControlType.ACTIVATION_ALLOSTERIC); // set bad
 		m.add(ca);
 		m.add(tr);
 		
-		
-		rule.setBehavior(Behavior.ERROR);
 		Validation result = validator.validate(m);
+		assertNotNull(result);
+		assertFalse(result.getError().isEmpty());
+		assertTrue(result.getError().size()==1);
+		ErrorType error = result.getError().iterator().next();
+		assertTrue(error.getErrorCase().size()==2);
+		assertEquals("range.violated",error.getCode());
+		System.out.println(error);
+		ErrorCaseType errorCase = error.getErrorCase().iterator().next();
+		assertNotNull(errorCase.getObject());
+		System.out.println(errorCase);
+		errorCase = error.getErrorCase().iterator().next();
+		assertNotNull(errorCase.getObject());
+		System.out.println(errorCase);
 
 	}
-
 }

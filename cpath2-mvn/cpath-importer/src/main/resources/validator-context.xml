@@ -66,11 +66,13 @@
     </bean>
 	
 	
-	<bean id="biopaxValidator" class="cpath.importer.BiopaxValidator" />
+	<bean id="validator" class="cpath.importer.BiopaxValidator"/>
 	
-	<bean id="validationAspect" class="cpath.importer.aop.ValidationAspect">
-		<constructor-arg ref="utils"/>
-	</bean>
+	<bean id="messenger" class="org.biopax.validator.impl.Messenger"/>
+	
+	<bean id="behaviorAspect" class="org.biopax.validator.impl.BehaviorAspect"/>
+	
+	<bean id="exceptionsAspect" class="org.biopax.validator.impl.ExceptionsAspect"/>
 	
 	<context:component-scan base-package="org.biopax.validator.rules"/>
 </beans>
