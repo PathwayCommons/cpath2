@@ -12,7 +12,14 @@
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd
        http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd">
     
-    <!-- for the ValidationAspect to be auto-created and wired -->  
+    <!-- 
+    	Integration of BioPAX Validator into the cPathSquared (cPath^2) import pipeline
+    	is implemented by simply using the required biopax-validator modules/classes in this
+    	application. However, (IMPORTANT thing is) unlike the stand-alone BioPAX Validator, 
+    	AspectJ Load-Time Weaving (LTW) is NOT used here; instead, Spring's default 
+    	proxy-based AOP is used (thus there is no need in the  -javaagent JVM argument).
+    -->  
+    
     <context:annotation-config/>
      
     <aop:aspectj-autoproxy/>
@@ -21,6 +28,7 @@
        
     <context:property-placeholder location="classpath:validation.properties"/>
     
+    <!-- Use BioPAX Rules's Configuration -->
     <import resource="classpath:rules-context.xml"/>
     
 	<!-- BiopaxValidatorUtils configuration -->
@@ -30,9 +38,11 @@
 		<oxm:class-to-be-bound name="org.biopax.validator.result.ValidatorResponse"/>
 	</oxm:jaxb2-marshaller>
 
+ 	<!-- This is for the rules's and error messages's auto-configuration -->
 	<bean id="messageSource"
 		class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
 		<property name="basenames">
+		 	<!-- note: values in the list are, in fact, translated as classpath:name.properties -->
 			<list>
 				<value>rule-descriptions</value>
 				<value>error-codes</value>
@@ -68,7 +78,7 @@
 	
 	<bean id="validator" class="cpath.importer.BiopaxValidator"/>
 	
-	<bean id="messenger" class="org.biopax.validator.impl.Messenger"/>
+	<bean id="messenger" class="org.biopax.validator.impl.SimplyThrowExceptionMessenger"/>
 	
 	<bean id="behaviorAspect" class="org.biopax.validator.impl.BehaviorAspect"/>
 	
