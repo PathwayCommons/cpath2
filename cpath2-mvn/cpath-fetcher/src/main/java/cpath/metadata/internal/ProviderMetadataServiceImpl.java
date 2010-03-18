@@ -61,7 +61,7 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
     private static final int METADATA_PATHWAY_DATA_URL_INDEX = 4;
     private static final int METADATA_ICON_URL_INDEX = 5;
     private static final int METADATA_IS_PSI_INDEX = 6;
-	private static final int METADATA_CLEANER_URL_INDEX = 7;
+	private static final int METADATA_CLEANER_CLASS_NAME_INDEX = 7;
     private static final int NUMBER_METADATA_ITEMS = 8;
 
 	// logger
@@ -145,18 +145,19 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
 					}
 
 					// get icon data from service
+					log.info("fetching icon data from: " + tokens[METADATA_ICON_URL_INDEX]);
 					byte[] iconData = fetcherHTTPClient.getDataFromService(tokens[METADATA_ICON_URL_INDEX]);
 
-					// get cleaner data from service
-					byte[] cleanerData = fetcherHTTPClient.getDataFromService(tokens[METADATA_CLEANER_URL_INDEX]);
+                    if (iconData != null) {
 
-                    if (iconData != null && cleanerData != null) {
+						log.info("readFromService(), we have enough data to make a Metadata bean.");
 
                         // create a metadata bean
                         Metadata metadata = new Metadata(tokens[METADATA_IDENTIFIER_INDEX], tokens[METADATA_NAME_INDEX],
                                                          version, tokens[METADATA_RELEASE_DATE_INDEX],
                                                          tokens[METADATA_PATHWAY_DATA_URL_INDEX], iconData,
-                                                         new Boolean(tokens[METADATA_IS_PSI_INDEX]), cleanerData);
+                                                         new Boolean(tokens[METADATA_IS_PSI_INDEX]),
+														 tokens[METADATA_CLEANER_CLASS_NAME_INDEX]);
                         log.info(metadata.getIdentifier());
                         log.info(metadata.getName());
                         log.info(metadata.getVersion());
@@ -164,11 +165,14 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
                         log.info(metadata.getURLToPathwayData());
                         log.info(tokens[METADATA_ICON_URL_INDEX]);
                         log.info(metadata.isPSI());
-						log.info(tokens[METADATA_CLEANER_URL_INDEX]);
+						log.info(metadata.getCleanerClassname());
 
                         // add metadata object toc collection we return
                         toReturn.add(metadata);
                     }
+					else {
+						log.info("readFromService(), missing data (icon) to create Metadata bean: iconData.");
+					}
                 }
             }
         }

@@ -14,7 +14,6 @@ import cpath.warehouse.CPathWarehouse;
 import cpath.warehouse.CvRepository;
 import cpath.warehouse.IdRepository;
 import cpath.warehouse.beans.Cv;
-import cpath.warehouse.metadata.MetadataDAO;
 
 import java.util.Set;
 
@@ -28,14 +27,11 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
 	
 	private static Level3Factory level3Factory = new BioPAXFactoryForPersistence();
 	
-    private MetadataDAO metadataDAO;
     private CvRepository cvRepository;
     private IdRepository idRepository;
 	
 	
-	public CPathWarehouseImpl(MetadataDAO metadataDAO,
-			CvRepository cvRepository, IdRepository idRepository) {
-		this.metadataDAO = metadataDAO;
+	public CPathWarehouseImpl(CvRepository cvRepository, IdRepository idRepository) {
 		this.cvRepository = cvRepository;
 		this.idRepository = idRepository;
 	}

@@ -16,6 +16,10 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.HashSet;
+import java.util.Collection;
+
 /**
  * Implemenation of MetadatDAO interface.
  */
@@ -74,4 +78,17 @@ public final class MetadataHibernateDAO  implements MetadataDAO {
 		query.setParameter("identifier", identifier);
 		return (Metadata)query.uniqueResult();
     }
+
+    /**
+     * This method returns all Metadata objects in warehouse.
+	 *
+     * @return Collection<Metadata>
+     */
+    public Collection<Metadata> getAll() {
+		
+		Session session = getSession();
+		Query query = session.getNamedQuery("cpath.warehouse.beans.allProvider");
+		List toReturn = query.list();
+		return (toReturn.size() > 0) ? new HashSet(toReturn) : new HashSet();
+	}
 }

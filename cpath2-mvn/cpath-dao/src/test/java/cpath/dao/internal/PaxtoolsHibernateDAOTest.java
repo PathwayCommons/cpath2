@@ -110,7 +110,7 @@ public class PaxtoolsHibernateDAOTest {
 		String separator = System.getProperty("file.separator");
 		File biopaxFile = new File(getClass()
 				.getResource("/biopax-level3-test.owl").getFile());
-		paxtoolsDAO.importModel(biopaxFile);
+		paxtoolsDAO.importModel(biopaxFile,true);
 		log.info("paxtoolsDAO.importModel() succeeded!");
 		
 		log.info("Testing call to paxtoolsDAO.getByID()...");

@@ -6,4 +6,4 @@ import cpath.cleaner.Cleaner;
 /**
  * Implementation of Cleaner class for Reactome pathway data.
  */
-public final class ReactomeCleanerImpl extends CleanerImpl implements Cleaner {}
+public final class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {}

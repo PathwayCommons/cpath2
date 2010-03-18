@@ -21,28 +21,27 @@ public final class PathwayDataJDBCServices {
     // log
     private static Log log = LogFactory.getLog(PathwayDataJDBCServices.class);
 
-	// ref to warehouse properties
-	private Properties dbProperties;
+	// ref to some db props - set via spring
+	private String dbUser;
+	public void setDbUser(String dbUser) { this.dbUser = dbUser; }
+	public String getDbUser() { return dbUser; }
+
+	private String dbPassword;
+	public void setDbPassword(String dbPassword) { this.dbPassword = dbPassword; }
+	public String getDbPassword() { return dbPassword; }
+
+	private String dbDataSource;
+	public void setDbDataSource(String dbDataSource) { this.dbDataSource = dbDataSource; }
+	public String getDbDataSource() { return dbDataSource; }
+
+	private String dbConnection;
+	public void setDbConnection(String dbConnection) { this.dbConnection = dbConnection; }
+	public String getDbConnection() { return dbConnection; }
 
 	/**
-	 * Constructor.
+	 * Default Constructor.
 	 */
-	public PathwayDataJDBCServices() throws Exception {
-
-		// load up properties
-		this.dbProperties = new Properties();
-		this.dbProperties.load(this.getClass().getResourceAsStream("/warehouse.properties"));
-
-		if (dbProperties == null) {
-			throw new Exception("Cannot find warehouse.properties file.");
-		}
-		else {
-			log.info("user: " + dbProperties.getProperty("db.user"));
-			log.info("user: " + dbProperties.getProperty("db.password"));
-			log.info("datasource: " + dbProperties.getProperty("db.datasource"));
-			log.info("connection (url): " + dbProperties.getProperty("db.connection"));
-		}
-	}
+	public PathwayDataJDBCServices() {}
 
     /**
      * Persists the given biopax model to a unique provider db.
@@ -56,14 +55,17 @@ public final class PathwayDataJDBCServices {
 		boolean toReturn = true;
 		Statement statement = null;
 		Connection connection = null;
+
+		log.info("createProviderDatabase(), user: " + dbUser);
+		log.info("createProviderDatabase(), password: " + dbPassword);
+		log.info("createProviderDatabase(), dbDataSource: " + dbDataSource);
+		log.info("createProviderDatabase(), dbConnection (url): " + dbConnection);
 		
 		try {
 			// setup a connection
 			log.info("createProviderDatabase(), creating a connection.");
-			Class.forName(dbProperties.getProperty("db.datasource")).newInstance();
-			connection = DriverManager.getConnection(dbProperties.getProperty("db.connection"),
-													 dbProperties.getProperty("db.user"),
-													 dbProperties.getProperty("db.password"));
+			Class.forName(dbDataSource).newInstance();
+			connection = DriverManager.getConnection(dbConnection, dbUser, dbPassword);
 
 			// drop database if desired and if it exists
 			if (drop) {
