@@ -22,9 +22,6 @@
 
 	<bean id="premerge" class="cpath.premerge.PremergeDispatcher">
 	  <constructor-arg ref="metadataDAO"/>
-	  <constructor-arg ref="pathwayDataDAO"/>
-	  <constructor-arg ref="paxtoolsDAO"/>
-	  <constructor-arg ref="pathwayDataJDBCServices"/>
 	</bean>
 	
 </beans>
