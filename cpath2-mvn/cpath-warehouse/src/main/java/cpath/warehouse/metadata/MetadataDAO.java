@@ -3,6 +3,8 @@ package cpath.warehouse.metadata;
 // imports
 import cpath.warehouse.beans.Metadata;
 
+import java.util.Collection;
+
 /**
  * An interface which provides methods to persist and query provider metadata.
  */
@@ -22,4 +24,11 @@ public interface MetadataDAO {
      * @return Metadata
      */
     Metadata getByIdentifier(final String identifier);
+
+    /**
+     * This method returns all metadata objects in warehouse.
+	 *
+     * @return Collection<Metadata>
+     */
+    Collection<Metadata> getAll();
 }

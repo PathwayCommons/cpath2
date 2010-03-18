@@ -13,7 +13,9 @@ import cpath.warehouse.CPathWarehouse;
 @Table(name="metadata")
 @NamedQueries({
 		@NamedQuery(name="cpath.warehouse.beans.providerByIdentifier",
-					query="from Metadata as metadata where upper(metadata.identifier) = upper(:identifier)")
+					query="from Metadata as metadata where upper(metadata.identifier) = upper(:identifier)"),
+		@NamedQuery(name="cpath.warehouse.beans.allProvider", 
+					query="from Metadata as metadata")
 })
 @Indexed(index=CPathWarehouse.SEARCH_INDEX_NAME)
 public final class Metadata {
@@ -39,9 +41,8 @@ public final class Metadata {
     private byte[] icon;
 	@Column(nullable=false)
     private Boolean isPSI;
-	@Lob
 	@Column(nullable=false)
-    private byte[] cleaner;
+    private String cleanerClassname;
 
 	/**
 	 * Default Constructor.
@@ -58,10 +59,10 @@ public final class Metadata {
      * @param urlToPathwayData String
      * @param icon byte[]
      * @param isPSI Boolean
-	 * @param cleaner byte[]
+	 * @param cleanerClassname String
      */
     public Metadata(final String identifier, final String name, final Float version, final String releaseDate,
-                    final String urlToPathwayData, final byte[] icon, final Boolean isPSI, final byte[] cleaner) {
+                    final String urlToPathwayData, final byte[] icon, final Boolean isPSI, final String cleanerClassname) {
 
         if (identifier == null) {
             throw new IllegalArgumentException("identifier must not be null");
@@ -99,9 +100,10 @@ public final class Metadata {
         }
         this.isPSI = isPSI;
 
-		if (cleaner == null) {
-			throw new IllegalArgumentException("cleaner must not be null");
+		if (cleanerClassname == null) {
+			throw new IllegalArgumentException("cleaner class name not be null");
 		}
+		this.cleanerClassname = cleanerClassname;
     }
 
 	public void setId(Integer id) {
@@ -149,10 +151,10 @@ public final class Metadata {
 	}
     public Boolean isPSI() { return isPSI; }
 
-	public void setCleaner(byte[] cleaner) {
-		this.cleaner = cleaner;
+	public void setCleanerClassname(String cleanerClassname) {
+		this.cleanerClassname = cleanerClassname;
 	}
-    public byte[] getCleaner() { return cleaner; }
+    public String getCleanerClassname() { return cleanerClassname; }
 
     @Override
     public String toString() {

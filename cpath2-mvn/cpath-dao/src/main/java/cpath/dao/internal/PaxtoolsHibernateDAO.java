@@ -104,9 +104,10 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 * TODO take care of Model, as, in fact, now persisted and indexed here are individual objects
 	 *
 	 * @param model Model
+	 * @param createIndex boolean
 	 */
 	@Transactional(propagation=Propagation.NESTED)
-	public void importModel(final Model model) {
+	public void importModel(final Model model, final boolean createIndex) {
 		// indexing will not kick off until a commit occurs
 		Session session = getSession();
 		FullTextSession fullTextSession = Search.getFullTextSession(session);
@@ -119,16 +120,19 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 			//fullTextSession.index((BioPAXElementProxy)bpe);
 		}
 		//session.flush();
-		fullTextSession.flushToIndexes();
+		if (createIndex) {
+			fullTextSession.flushToIndexes();
+		}
 	}
 
 	/**
 	 * Persists the given model to the db.
 	 *
 	 * @param biopaxFile File
+	 * @param createIndex boolean
 	 * @throws FileNoteFoundException
 	 */
-	public void importModel(File biopaxFile) throws FileNotFoundException {
+	public void importModel(File biopaxFile, final boolean createIndex) throws FileNotFoundException {
 
 		log.info("Creating biopax model using: " + biopaxFile.getAbsolutePath());
 
@@ -139,7 +143,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		Model model = simple.convertFromOWL(new FileInputStream(biopaxFile));
 
 		// import the model
-		importModel(model);
+		importModel(model, createIndex);
 	}
 
     /**

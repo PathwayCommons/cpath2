@@ -29,11 +29,13 @@
 package cpath.admin;
 
 // imports
-import cpath.fetcher.CPathFetcher;
+import cpath.metadata.ProviderMetadataService;
+import cpath.pathway.ProviderPathwayDataService;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.metadata.MetadataDAO;
 import cpath.warehouse.pathway.PathwayDataDAO;
+import cpath.premerge.PremergeDispatcher;
 
 import org.apache.log4j.PropertyConfigurator;
 
@@ -53,7 +55,8 @@ public class Admin implements Runnable {
 
         // command types
         FETCH_METADATA("-fetch-metadata"),
-		FETCH_PATHWAY_DATA("-fetch-pathwaydata");
+		FETCH_PATHWAY_DATA("-fetch-pathwaydata"),
+		PREMERGE("-premerge");
 
         // string ref for readable name
         private String command;
@@ -65,12 +68,16 @@ public class Admin implements Runnable {
         public String toString() { return command; }
     }
 
-    // ref to fetcher
-    private CPathFetcher cpathFetcher;
+    // ref to metadata service
+	private ProviderMetadataService providerMetadataService;
+	// ref to pathway data service
+	private ProviderPathwayDataService providerPathwayDataService;
     // ref to metadata dao 
 	private MetadataDAO metadataDAO;
 	// ref to pathway data dao
 	private PathwayDataDAO pathwayDataDAO;
+	// ref to premerge dispatcher
+	private PremergeDispatcher premergeDispatcher;
 
     // command, command parameter
     private COMMAND command;
@@ -80,14 +87,24 @@ public class Admin implements Runnable {
      * Constructor.
      *
      * @param args String[]
-     * @param cpathFetcher CPathFetcher
      * @param metadataDAO MetadataDAO
+     * @param pathwayDataDAO PathwayDataDAO
+	 * @param providerMetadataService ProviderMetadataService
+	 * @param providerPathwayDataService ProviderPathwayDataService
      */
-    public Admin(final String[] args, final CPathFetcher cpathFetcher, final MetadataDAO metadataDAO) {
+    public Admin(final String[] args,
+				 final MetadataDAO metadataDAO,
+				 final PathwayDataDAO pathwayDataDAO,
+				 final ProviderMetadataService providerMetadataService,
+				 final ProviderPathwayDataService providerPathwayDataService,
+				 final PremergeDispatcher premergeDispatcher) {
         
         // init members
-        this.cpathFetcher = cpathFetcher;
         this.metadataDAO = metadataDAO;
+        this.pathwayDataDAO = pathwayDataDAO;
+		this.providerMetadataService = providerMetadataService;
+		this.providerPathwayDataService = providerPathwayDataService;
+		this.premergeDispatcher = premergeDispatcher;
 
         // parse args
         parseArgs(args);
@@ -121,6 +138,11 @@ public class Admin implements Runnable {
 				this.commandParameters = new String[] { args[1] };
 			}
 		}
+		else if (args[0].equals(COMMAND.PREMERGE.toString())) {
+			this.command = COMMAND.PREMERGE;
+			// takes no args
+			this.commandParameters = new String[] { "" };
+		}
         else {
             validArgs = false;
         }
@@ -142,6 +164,9 @@ public class Admin implements Runnable {
 			case FETCH_PATHWAY_DATA:
 				fetchPathwayData(commandParameters[0]);
 				break;
+			case PREMERGE:
+				premergeDispatcher.run();
+				break;
             }
         }
         catch (IOException e) {
@@ -159,7 +184,7 @@ public class Admin implements Runnable {
     private void fetchMetadata(final String url) throws IOException {
 
         // grab the data
-        Collection<Metadata> metadata = cpathFetcher.getProviderMetadata(url);
+        Collection<Metadata> metadata = providerMetadataService.getProviderMetadata(url);
         
         // process metadata
         for (Metadata mdata : metadata) {
@@ -188,7 +213,7 @@ public class Admin implements Runnable {
 
 			// grab the data
 			Collection<PathwayData> pathwayData =
-				cpathFetcher.getProviderPathwayData(metadata);
+				providerPathwayDataService.getProviderPathwayData(metadata);
         
 			// process pathway data
 			for (PathwayData pwData : pathwayData) {
@@ -204,6 +229,7 @@ public class Admin implements Runnable {
 		toReturn.append("commands:");
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>");
 		toReturn.append(COMMAND.FETCH_PATHWAY_DATA.toString() + " <provider>");
+		toReturn.append(COMMAND.PREMERGE.toString());
 
 		// outta here
 		return toReturn.toString();
@@ -228,16 +254,19 @@ public class Admin implements Runnable {
 
         // setup context
         ApplicationContext context =
-            new ClassPathXmlApplicationContext(new String [] { "classpath:applicationContext-cpathFetcher.xml",
-                                                               "classpath:applicationContext-cpathImporter.xml",
+            new ClassPathXmlApplicationContext(new String [] { "classpath:applicationContext-cpathAdmin.xml",
 															   "classpath:applicationContext-cpathWarehouse.xml",
-                                                               "classpath:applicationContext-cpathAdmin.xml",
+															   "classpath:applicationContext-cpathFetcher.xml",
+                                                               "classpath:applicationContext-cpathImporter.xml",
                                                                "classpath:applicationContext-biopaxValidation.xml"});
 
         // TODO: inject
-        CPathFetcher cpathFetcher = (CPathFetcher)context.getBean("cpathFetcher");
         MetadataDAO metadataDAO = (MetadataDAO)context.getBean("metadataDAO");
-        Admin admin = new Admin(args, cpathFetcher, metadataDAO);
+		PathwayDataDAO pathwayDataDAO = (PathwayDataDAO)context.getBean("pathwayDataDAO");
+		ProviderMetadataService providerMetadataService = (ProviderMetadataService)context.getBean("providerMetadataService");
+		ProviderPathwayDataService providerPathwayDataService = (ProviderPathwayDataService)context.getBean("providerPathwayDataService");
+		PremergeDispatcher premergeDispatcher = (PremergeDispatcher)context.getBean("premergeDispatcher");
+        Admin admin = new Admin(args, metadataDAO, pathwayDataDAO, providerMetadataService, providerPathwayDataService, premergeDispatcher);
         admin.run();
     }
 }

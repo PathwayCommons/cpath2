@@ -46,16 +46,18 @@ public interface PaxtoolsDAO {
 	 * Persists the given model to the db.
 	 *
 	 * @param model Model
+	 * @param createIndex boolean
 	 */
-	void importModel(Model model);
+	void importModel(Model model, boolean createIndex);
 
 	/**
 	 * Persists the given model to the db.
 	 *
 	 * @param biopaxFile File
+	 * @param createIndex boolean
 	 * @throws FileNoteFoundException
 	 */
-	void importModel(File biopaxFile) throws FileNotFoundException;
+	void importModel(File biopaxFile, boolean createIndex) throws FileNotFoundException;
 
     /**
      * This method returns the biopax element with the given id,

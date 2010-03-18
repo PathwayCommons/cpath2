@@ -3,7 +3,7 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:util="http://www.springframework.org/schema/util"
+	   xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="
        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
@@ -14,6 +14,17 @@
 	
 	<bean id="idNormalizer" class="cpath.normalizer.IdNormalizer">
 		<constructor-arg ref="miriamAdapter"/>
+	</bean>
+
+	<bean id="premergeDispatcher" class="cpath.premerge.PremergeDispatcher">
+		<constructor-arg ref="metadataDAO"/>
+	</bean>
+
+	<bean id="premerge" class="cpath.premerge.PremergeDispatcher">
+	  <constructor-arg ref="metadataDAO"/>
+	  <constructor-arg ref="pathwayDataDAO"/>
+	  <constructor-arg ref="paxtoolsDAO"/>
+	  <constructor-arg ref="pathwayDataJDBCServices"/>
 	</bean>
 	
 </beans>

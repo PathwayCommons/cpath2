@@ -74,27 +74,6 @@ public final class PathwayDataHibernateDAO implements PathwayDataDAO {
 
     /**
      * (non-Javadoc)
-     * @see cpath.warehouse.pathway.PathwayDataDAO#importPathwayData(cpath.warehouse.beans.MetaData, org.biopax.paxtools.model.Model, java.lang.boolean);
-     */
-    @Transactional(propagation=Propagation.NESTED)
-    public void importPathwayData(final Metadata metadata, final Model model, final boolean drop) {
-
-		// first create the database
-		PathwayDataJDBCServices jdbcServices = null;
-		try {
-			jdbcServices = new PathwayDataJDBCServices();
-		}
-		// thrown when warehouse props not found
-		catch (Exception e) {
-			return;
-		}
-
-		// maybe drop and create the database
-		jdbcServices.createProviderDatabase(metadata, drop);
-	}
-
-    /**
-     * (non-Javadoc)
      * @see cpath.warehouse.pathway.PathwayDataDAO#getByIdentifier(java.lang.String);
      */
     public Collection<PathwayData> getByIdentifier(final String identifier) {

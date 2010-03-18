@@ -21,16 +21,6 @@ public interface PathwayDataDAO {
     void importPathwayData(final PathwayData pathwayData);
 
     /**
-     * Persists the given biopax model to a unique provider db.
-	 * Drop indicates if db should be dropped first.
-     *
-     * @param metadata Metadata
-	 * @param model Model
-	 * @param drop boolean
-     */
-    void importPathwayData(final Metadata metadata, final Model model, final boolean drop);
-
-    /**
      * This method returns the pathway data objects with the given Identifier.
 	 *
      * @param identifier String
