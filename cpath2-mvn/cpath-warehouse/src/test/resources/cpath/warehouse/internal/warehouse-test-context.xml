@@ -58,7 +58,6 @@
     </bean>
 
 	<bean id="cPathWarehouse" class="cpath.warehouse.internal.CPathWarehouseImpl">
-		<constructor-arg><null/></constructor-arg>
 		<constructor-arg ref="cvRepository"/>
 		<constructor-arg ref="idRepository"/>
 	</bean>
