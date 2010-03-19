@@ -30,6 +30,8 @@
     
     <!-- Use BioPAX Rules's Configuration -->
     <import resource="classpath:rules-context.xml"/>
+     <!-- Use CV Fetcher's Configuration -->
+    <import resource="classpath:applicationContext-cvFetcher.xml"/>
     
 	<!-- BiopaxValidatorUtils configuration -->
 	

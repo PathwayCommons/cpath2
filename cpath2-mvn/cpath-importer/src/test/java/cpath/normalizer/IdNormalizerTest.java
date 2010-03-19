@@ -29,6 +29,9 @@ package cpath.normalizer;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
+
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
@@ -92,9 +95,17 @@ public class IdNormalizerTest {
 		assertNotNull(bpe);
 		assertTrue(bpe instanceof ProteinReference);
 		
+		/*
 		for(BioPAXElement e : model.getObjects()) {
 			System.out.println(e);
 		}
+		
+		SimpleExporter exporter = new SimpleExporter(BioPAXLevel.L3);
+		try {
+			exporter.convertToOWL(model, System.out);
+		} catch (IOException e1) {
+		}
+		*/
 		
 	}
 

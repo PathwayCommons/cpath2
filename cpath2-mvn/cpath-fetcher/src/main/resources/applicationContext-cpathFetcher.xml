@@ -21,13 +21,5 @@
 	<bean id="providerPathwayDataService" class="cpath.pathway.internal.ProviderPathwayDataServiceImpl">
 	  <constructor-arg ref="fetcherHTTPClient"/>
 	</bean>
-
-	<!-- info: CvFetcher extends OntologyManager(Adapter) and also implements CvRepository interface -->
-	<bean id="cvFetcher" class="cpath.cv.CvFetcher">
-		<constructor-arg value="classpath:ontologies.xml"/>
-		<constructor-arg ref="miriamAdapter"/>
-	</bean>
-		
-	<bean id="miriamAdapter" class="cpath.common.internal.MiriamAdapter" />
 		
 </beans>

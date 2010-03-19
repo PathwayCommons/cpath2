@@ -19,13 +19,19 @@
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
           <descriptorRefs>
-          <descriptorRef>jar-with-dependencies</descriptorRef>
+          	<descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
 		  <archive>
 			<manifest>
 			  <mainClass>cpath.admin.Admin</mainClass>
 			</manifest>
 		  </archive>
+		  <!--
+		  <descriptors>
+            <descriptor>src/main/assembly/assembly.xml</descriptor>
+          </descriptors>
+          <finalName>cpath-${project.version}</finalName>
+          -->
         </configuration>
       </plugin>
     </plugins>

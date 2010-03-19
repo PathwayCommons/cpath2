@@ -39,7 +39,6 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.apache.commons.logging.*;
@@ -53,7 +52,7 @@ import static org.junit.Assert.*;
  * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:test-dao-context.xml", "classpath:cpath-dao-context.xml"})
+@ContextConfiguration(locations = {"classpath:applicationContext-cpathDAO.xml"})
 public class PaxtoolsHibernateDAOTest {
 
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);

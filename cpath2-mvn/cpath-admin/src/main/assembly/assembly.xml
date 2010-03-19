@@ -1,0 +1,43 @@
+<!--
+ ! 
+ -->
+<assembly>
+  <formats>    
+    <format>zip</format>
+  </formats>   
+  
+  <dependencySets>    
+    <dependencySet>   
+      <useTransitiveDependencies>false</useTransitiveDependencies>
+      <outputDirectory>/lib</outputDirectory>
+      <!-- TODO
+      <includes>
+        <include>*:*</include>
+      </includes>
+      <excludes>
+        <exclude>org.eclipse:*</exclude>
+      </excludes>
+      -->
+    </dependencySet>  
+  </dependencySets>    
+  
+  <repositories>    
+    <repository>
+      <!-- 
+      <outputDirectory>local-repo</outputDirectory>
+      <includes>
+        <include>org.eclipse:*</include>
+      </includes>
+      -->
+    </repository>
+  </repositories>   
+  
+  <fileSets>       
+    <fileSet>
+      <directory>src/main/etc</directory>
+      <fileMode>0755</fileMode>
+      <outputDirectory></outputDirectory>
+    </fileSet>
+  </fileSets>
+   
+</assembly>

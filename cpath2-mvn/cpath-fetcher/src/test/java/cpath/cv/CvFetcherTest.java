@@ -51,7 +51,7 @@ import psidev.psi.tools.ontology_manager.interfaces.OntologyTermI;
  *
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:cvFetcher-test-context.xml"})
+@ContextConfiguration(locations = {"classpath:applicationContext-cvFetcher.xml"})
 public class CvFetcherTest {
 
 	@Autowired
