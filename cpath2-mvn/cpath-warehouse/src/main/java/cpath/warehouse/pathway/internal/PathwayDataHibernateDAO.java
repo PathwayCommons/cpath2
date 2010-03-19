@@ -76,6 +76,7 @@ public final class PathwayDataHibernateDAO implements PathwayDataDAO {
      * (non-Javadoc)
      * @see cpath.warehouse.pathway.PathwayDataDAO#getByIdentifier(java.lang.String);
      */
+    @Transactional(propagation=Propagation.NESTED)
     public Collection<PathwayData> getByIdentifier(final String identifier) {
 
 		Session session = getSession();
@@ -89,6 +90,7 @@ public final class PathwayDataHibernateDAO implements PathwayDataDAO {
      * (non-Javadoc)
      * @see cpath.warehouse.pathway.PathwayDataDAO#getByIdentifierAndVersion(java.lang.String, java.lang.Float);
      */
+    @Transactional(propagation=Propagation.NESTED)
     public Collection<PathwayData> getByIdentifierAndVersion(final String identifier, final Float version) {
 
 		Session session = getSession();
@@ -103,6 +105,7 @@ public final class PathwayDataHibernateDAO implements PathwayDataDAO {
      * (non-Javadoc)
      * @see cpath.warehouse.pathway.PathwayDataDAO#getByIdentifierAndVersionAndDigest(java.lang.String, java.lang.Float, java.lang.String, java.lang.String);
      */
+    @Transactional(propagation=Propagation.NESTED)
     public PathwayData getByIdentifierAndVersionAndFilenameAndDigest(final String identifier, final Float version, final String filename, final String digest) {
 
 		Session session = getSession();

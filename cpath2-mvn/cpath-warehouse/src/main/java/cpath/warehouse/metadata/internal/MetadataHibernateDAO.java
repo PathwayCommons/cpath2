@@ -71,6 +71,7 @@ public final class MetadataHibernateDAO  implements MetadataDAO {
      * (non-Javadoc)
      * @see cpath.warehouse.metadata.MetadataDAO#getByID
      */
+    @Transactional(propagation=Propagation.NESTED)
     public Metadata getByIdentifier(final String identifier) {
 
 		Session session = getSession();
@@ -84,6 +85,7 @@ public final class MetadataHibernateDAO  implements MetadataDAO {
 	 *
      * @return Collection<Metadata>
      */
+    @Transactional(propagation=Propagation.NESTED)
     public Collection<Metadata> getAll() {
 		
 		Session session = getSession();
