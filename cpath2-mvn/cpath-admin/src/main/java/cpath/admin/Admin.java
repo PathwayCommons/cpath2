@@ -252,13 +252,12 @@ public class Admin implements Runnable {
         // configure log4j
         PropertyConfigurator.configure(Admin.class.getClassLoader().getResource("log4j.properties"));
 
-        // setup context
+        // setup context 
+        // TODO use different contexts for different commands (in the admin.run() method)! E.g., "-fetch-pathwaydata" does not require normalization and validation...
         ApplicationContext context =
-            new ClassPathXmlApplicationContext(new String [] { "classpath:applicationContext-cpathAdmin.xml",
-															   "classpath:applicationContext-cpathWarehouse.xml",
-															   "classpath:applicationContext-cpathFetcher.xml",
-                                                               "classpath:applicationContext-cpathImporter.xml",
-                                                               "classpath:applicationContext-biopaxValidation.xml"});
+            new ClassPathXmlApplicationContext(new String [] { "classpath:applicationContext-cpathWarehouse.xml",
+															   "classpath:applicationContext-cpathImporter.xml",
+															   "classpath:applicationContext-cpathFetcher.xml"});
 
         // TODO: inject
         MetadataDAO metadataDAO = (MetadataDAO)context.getBean("metadataDAO");
@@ -268,5 +267,7 @@ public class Admin implements Runnable {
 		PremergeDispatcher premergeDispatcher = (PremergeDispatcher)context.getBean("premergeDispatcher");
         Admin admin = new Admin(args, metadataDAO, pathwayDataDAO, providerMetadataService, providerPathwayDataService, premergeDispatcher);
         admin.run();
+	
+	System.exit(0);
     }
 }

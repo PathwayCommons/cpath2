@@ -11,11 +11,7 @@
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
 
     <context:annotation-config/>
-	
-	<bean id="idNormalizer" class="cpath.normalizer.IdNormalizer">
-		<constructor-arg ref="miriamAdapter"/>
-	</bean>
-
+    
 	<bean id="premergeDispatcher" class="cpath.premerge.PremergeDispatcher">
 		<constructor-arg ref="metadataDAO"/>
 	</bean>

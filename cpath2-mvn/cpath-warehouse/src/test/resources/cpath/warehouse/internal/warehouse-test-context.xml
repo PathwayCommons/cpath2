@@ -11,11 +11,11 @@
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
     
     <context:annotation-config/>
-    <context:property-placeholder location="classpath:warehouse.properties"/>
+    <context:property-placeholder location="cpath.properties"/>
     
     <bean id="whouseSessionFactory"
         class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-        <property name="dataSource" ref="dataSource"/>
+        <property name="dataSource" ref="whouseDataSource"/>
         <property name="hibernateProperties">
 		  <props>
 			<prop key="hibernate.hbm2ddl.auto">${hbm2ddl.mode}</prop>
@@ -38,8 +38,8 @@
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
 
-    <bean id="dataSource" class="com.mysql.jdbc.jdbc2.optional.MysqlDataSource">
-      <property name="url" value="jdbc:mysql://localhost/${db.name}" />
+    <bean id="whouseDataSource" class="com.mysql.jdbc.jdbc2.optional.MysqlDataSource">
+      <property name="url" value="jdbc:mysql://localhost/${wdb.name}" />
       <property name="user" value="${db.user}" />
       <property name="password" value="${db.password}" />
     </bean>
