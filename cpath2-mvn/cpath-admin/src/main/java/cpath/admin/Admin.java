@@ -255,11 +255,12 @@ public class Admin implements Runnable {
         // setup context 
         // TODO use different contexts for different commands (in the admin.run() method)! E.g., "-fetch-pathwaydata" does not require normalization and validation...
         ApplicationContext context =
-            new ClassPathXmlApplicationContext(new String [] { "classpath:applicationContext-cpathWarehouse.xml",
-															   "classpath:applicationContext-cpathImporter.xml",
-															   "classpath:applicationContext-cpathFetcher.xml"});
+            new ClassPathXmlApplicationContext(new String [] { 	
+            		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files) !!!
+            		"classpath:applicationContext-cpathWarehouse.xml",
+            		"classpath:applicationContext-cpathImporter.xml",
+					"classpath:applicationContext-cpathFetcher.xml"});
 
-        // TODO: inject
         MetadataDAO metadataDAO = (MetadataDAO)context.getBean("metadataDAO");
 		PathwayDataDAO pathwayDataDAO = (PathwayDataDAO)context.getBean("pathwayDataDAO");
 		ProviderMetadataService providerMetadataService = (ProviderMetadataService)context.getBean("providerMetadataService");
@@ -268,6 +269,6 @@ public class Admin implements Runnable {
         Admin admin = new Admin(args, metadataDAO, pathwayDataDAO, providerMetadataService, providerPathwayDataService, premergeDispatcher);
         admin.run();
 	
-	System.exit(0);
+        System.exit(0);
     }
 }
