@@ -43,12 +43,16 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Collection;
 
 /**
  * Class which provides command line admin capabilities.
  */
 public class Admin implements Runnable {
+
+	// used as a argument to fetch-pathwaydata
+	private static final String FETCH_ALL = "all";
 
     // COMMAND Enum
     public static enum COMMAND {
@@ -159,13 +163,13 @@ public class Admin implements Runnable {
         try {
             switch (command) {
             case FETCH_METADATA:
-                fetchMetadata(commandParameters[0]);                
-                break;
+                fetchMetadata(commandParameters[0]);
+				System.exit(0);
 			case FETCH_PATHWAY_DATA:
 				fetchPathwayData(commandParameters[0]);
-				break;
+				System.exit(0);
 			case PREMERGE:
-				premergeDispatcher.run();
+				premergeDispatcher.start();
 				break;
             }
         }
@@ -201,23 +205,35 @@ public class Admin implements Runnable {
     private void fetchPathwayData(final String provider) throws IOException {
 
 		// get metadata
-		Metadata metadata = metadataDAO.getByIdentifier(provider);
+		Collection<Metadata> metadataCollection = null;
+		if (provider == FETCH_ALL) {
+			metadataCollection = metadataDAO.getAll();
+		}
+		else {
+			metadataCollection = new HashSet<Metadata>();
+			metadataCollection.add(metadataDAO.getByIdentifier(provider));
+		}
 
-		if (metadata == null) {
+		// sanity check
+		if (metadataCollection == null || metadataCollection.size() == 0) {
 			System.err.println("Unknown provider: " + provider);
 			return;
 		}
 
-		// lets not fetch data if its the same version we have already persisted
-		if (metadata.getVersion() > metadata.getPersistedVersion()) {
+		// interate over all metadata
+		for (Metadata metadata : metadataCollection) {
 
-			// grab the data
-			Collection<PathwayData> pathwayData =
-				providerPathwayDataService.getProviderPathwayData(metadata);
+			// lets not fetch data if its the same version we have already persisted
+			if (metadata.getVersion() > metadata.getPersistedVersion()) {
+
+				// grab the data
+				Collection<PathwayData> pathwayData =
+					providerPathwayDataService.getProviderPathwayData(metadata);
         
-			// process pathway data
-			for (PathwayData pwData : pathwayData) {
-				pathwayDataDAO.importPathwayData(pwData);
+				// process pathway data
+				for (PathwayData pwData : pathwayData) {
+					pathwayDataDAO.importPathwayData(pwData);
+				}
 			}
 		}
     }
@@ -257,7 +273,11 @@ public class Admin implements Runnable {
         ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files) !!!
+					"classpath:applicationContext-cpathDAO.xml",
             		"classpath:applicationContext-cpathWarehouse.xml",
+					"classpath:applicationContext-idNormalizer.xml",
+					"classpath:applicationContext-biopaxValidation.xml",
+					"classpath:applicationContext-paxtools.xml",
             		"classpath:applicationContext-cpathImporter.xml",
 					"classpath:applicationContext-cpathFetcher.xml"});
 
@@ -268,7 +288,5 @@ public class Admin implements Runnable {
 		PremergeDispatcher premergeDispatcher = (PremergeDispatcher)context.getBean("premergeDispatcher");
         Admin admin = new Admin(args, metadataDAO, pathwayDataDAO, providerMetadataService, providerPathwayDataService, premergeDispatcher);
         admin.run();
-	
-        System.exit(0);
     }
 }

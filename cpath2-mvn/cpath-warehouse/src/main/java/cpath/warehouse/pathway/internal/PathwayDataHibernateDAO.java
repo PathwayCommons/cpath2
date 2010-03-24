@@ -67,7 +67,11 @@ public final class PathwayDataHibernateDAO implements PathwayDataDAO {
 					 " and file: " + pathwayData.getFilename() +
 					 " and version: " + pathwayData.getVersion() + 
 					 " and digest: " + pathwayData.getDigest() +
-					 " already exists, skipping.");
+					 " already exists, manually merging.");
+			existing.setPathwayData(pathwayData.getPathwayData());
+			existing.setPremergedPathwayData(pathwayData.getPremergedPathwayData());
+			existing.setValidationResults(pathwayData.getValidationResults());
+			session.update(existing);
 		}
 		log.info("metadata object has been sucessessfully saved or merged.");
     }
