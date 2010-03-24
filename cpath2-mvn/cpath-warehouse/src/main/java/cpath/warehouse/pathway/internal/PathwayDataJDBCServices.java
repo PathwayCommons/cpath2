@@ -56,16 +56,19 @@ public final class PathwayDataJDBCServices {
 		Statement statement = null;
 		Connection connection = null;
 
+		// create connection string - tack on provider id
+		String dbConnectionStr = dbConnection + "//localhost/mysql";
+
 		log.info("createProviderDatabase(), user: " + dbUser);
 		log.info("createProviderDatabase(), password: " + dbPassword);
 		log.info("createProviderDatabase(), dbDataSource: " + dbDataSource);
-		log.info("createProviderDatabase(), dbConnection (url): " + dbConnection);
+		log.info("createProviderDatabase(), dbConnection (url): " + dbConnectionStr);
 		
 		try {
 			// setup a connection
 			log.info("createProviderDatabase(), creating a connection.");
 			Class.forName(dbDataSource).newInstance();
-			connection = DriverManager.getConnection(dbConnection, dbUser, dbPassword);
+			connection = DriverManager.getConnection(dbConnectionStr, dbUser, dbPassword);
 
 			// drop database if desired and if it exists
 			if (drop) {
@@ -83,6 +86,7 @@ public final class PathwayDataJDBCServices {
 			// note, we can catch mysql SQLException code 1007, database already exists,
 			// but if that occurs, it means our drop flag was incorrect,
 			// so we shouldn't silently fail, so all exceptions return a false value
+			e.printStackTrace();
 			toReturn = false;
 		}
 		finally {

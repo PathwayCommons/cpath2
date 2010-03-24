@@ -10,18 +10,12 @@
        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd">
 
+
     <context:annotation-config/>
 
-	<bean id="premergeDispatcher" class="cpath.premerge.PremergeDispatcher">
-		<constructor-arg ref="metadataDAO"/>
+	<bean id="biopaxReaderL3" class="org.biopax.paxtools.io.simpleIO.SimpleReader">
+	  <constructor-arg><bean class="org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence"/></constructor-arg>
+	  <constructor-arg type="org.biopax.paxtools.model.BioPAXLevel" value="L3"/>
 	</bean>
 
-	<bean id="premerge" class="cpath.premerge.internal.PremergeImpl" scope="prototype">
-	  <constructor-arg ref="metadataDAO"/>
-	  <constructor-arg ref="pathwayDataDAO"/>
-	  <constructor-arg ref="idNormalizer"/>
-	  <constructor-arg ref="validator"/>
-	  <constructor-arg ref="biopaxReaderL3"/>
-	  <constructor-arg ref="utils"/>
-	</bean>
 </beans>
