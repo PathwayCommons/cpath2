@@ -32,6 +32,7 @@ import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.miriam.MiriamLink;
 import org.biopax.validator.utils.OntologyManagerAdapter;
 import org.springframework.core.io.Resource;
 
@@ -40,7 +41,6 @@ import psidev.psi.tools.ontology_manager.impl.OntologyTermImpl;
 import psidev.psi.tools.ontology_manager.interfaces.OntologyAccess;
 import psidev.psi.tools.ontology_manager.interfaces.OntologyTermI;
 
-import cpath.common.internal.MiriamAdapter;
 import cpath.warehouse.CvRepository;
 import cpath.warehouse.beans.Cv;
 
@@ -55,7 +55,7 @@ import cpath.warehouse.beans.Cv;
 public final class CvFetcher extends OntologyManagerAdapter implements CvRepository {
 	private final static Log log = LogFactory.getLog(CvFetcher.class);
 	
-	private MiriamAdapter miriamAdapter;
+	private MiriamLink miriam;
 	
 	/**
 	 * Constructor
@@ -64,9 +64,9 @@ public final class CvFetcher extends OntologyManagerAdapter implements CvReposit
 	 * @param miriam
 	 * @throws Exception
 	 */
-	public CvFetcher(Resource ontologies, MiriamAdapter miriamAdapter) {
+	public CvFetcher(Resource ontologies, MiriamLink miriam) {
 		super(ontologies);
-		this.miriamAdapter = miriamAdapter;
+		this.miriam = miriam;
 		/*
 		try {
 			OntologyManagerContext.getInstance().setOntologyDirectory(file);
@@ -185,14 +185,8 @@ public final class CvFetcher extends OntologyManagerAdapter implements CvReposit
 		for(OntologyTermI term : terms) {
 			String ontologyID = term.getOntologyName();
 			String accession = term.getTermAccession();
-			String urn = miriamAdapter.getURI(ontologyID, accession);
-			if(urn != null) {
-				urns.add(urn);
-			} else {
-				throw new IllegalArgumentException(
-						"Cannot find Miriam URN for the CV : " 
-						+ accession + " (" + ontologyID + ")");
-			}
+			String urn = miriam.getURI(ontologyID, accession);
+			urns.add(urn);
 		}
 		
 		return urns;
@@ -227,7 +221,7 @@ public final class CvFetcher extends OntologyManagerAdapter implements CvReposit
 		// get allowed terms
 		String ontology = term.getOntologyName();
 		String accession = term.getTermAccession();
-		String urn = miriamAdapter.getURI(ontology, accession);
+		String urn = miriam.getURI(ontology, accession);
 		Cv bean = new Cv(type, urn, ontology, accession, term.getPreferredName());
 		
 		if (!beans.contains(bean)) {

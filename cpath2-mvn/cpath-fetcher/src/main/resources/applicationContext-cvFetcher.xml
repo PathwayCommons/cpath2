@@ -11,9 +11,9 @@
 	<!-- info: CvFetcher extends OntologyManager(Adapter) and also implements CvRepository interface -->
 	<bean id="cvFetcher" class="cpath.cv.CvFetcher">
 		<constructor-arg value="classpath:ontologies.xml"/>
-		<constructor-arg ref="miriamAdapter"/>
+		<constructor-arg ref="miriam"/>
 	</bean>
 	
-	<bean id="miriamAdapter" class="cpath.common.internal.MiriamAdapter" />
+	<bean id="miriam" class="org.biopax.miriam.MiriamLink" />
 	
 </beans>

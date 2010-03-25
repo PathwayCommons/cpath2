@@ -18,4 +18,12 @@
 	  <constructor-arg type="org.biopax.paxtools.model.BioPAXLevel" value="L3"/>
 	</bean>
 
+	<bean id="editorMap3" class="org.biopax.paxtools.io.simpleIO.SimpleEditorMap">
+		<constructor-arg type="org.biopax.paxtools.model.BioPAXLevel" value="L3"/>
+	</bean>
+
+	<bean id="editorMap2" class="org.biopax.paxtools.io.simpleIO.SimpleEditorMap">
+		<constructor-arg type="org.biopax.paxtools.model.BioPAXLevel" value="L2"/>
+	</bean>
+
 </beans>

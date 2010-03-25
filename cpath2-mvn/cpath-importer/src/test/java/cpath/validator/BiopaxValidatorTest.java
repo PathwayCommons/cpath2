@@ -29,14 +29,14 @@ package cpath.validator;
 
 import static org.junit.Assert.*;
 
-import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Catalysis;
 import org.biopax.paxtools.model.level3.ControlType;
-import org.biopax.paxtools.model.level3.Level3Factory;
 import org.biopax.paxtools.model.level3.TemplateReactionRegulation;
+import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.biopax.validator.Behavior;
 import org.biopax.validator.Rule;
+import org.biopax.validator.Validator;
 import org.biopax.validator.result.ErrorCaseType;
 import org.biopax.validator.result.ErrorType;
 import org.biopax.validator.result.Validation;
@@ -48,7 +48,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import cpath.validator.BiopaxValidator;
 
 /**
  * @author rodche
@@ -56,16 +55,17 @@ import cpath.validator.BiopaxValidator;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
-		"classpath:cpathValidator-test-context.xml", 
-		"classpath:applicationContext-biopaxValidation.xml"
+		"classpath:applicationContext-biopaxValidation.xml",
+		"classpath:applicationContext-paxtools.xml",
+		"classpath:applicationContext-cvFetcher.xml"
 	})
 public class BiopaxValidatorTest {
 
 	@Autowired
-	BiopaxValidator validator;
+	Validator validator;
 	
-	Level3Factory level3 = (Level3Factory) BioPAXLevel.L3.getDefaultFactory();
-
+	//Level3Factory level3 = (Level3Factory) BioPAXLevel.L3.getDefaultFactory();
+	BioPAXFactoryForPersistence level3 = new BioPAXFactoryForPersistence();
 
 	/**
 	 * Test method for {@link cpath.validator.BiopaxValidator#validate(org.biopax.paxtools.model.Model)}.
@@ -129,7 +129,10 @@ public class BiopaxValidatorTest {
 		m.add(ca);
 		m.add(tr);
 		
-		Validation result = validator.validate(m);
+		Validation result = new Validation("test");
+		validator.associate(m, result);
+		validator.validate(result);
+		
 		assertNotNull(result);
 		assertFalse(result.getError().isEmpty());
 		assertTrue(result.getError().size()==1);
