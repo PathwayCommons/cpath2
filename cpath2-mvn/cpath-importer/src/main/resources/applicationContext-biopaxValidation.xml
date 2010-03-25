@@ -30,8 +30,6 @@
     
     <!-- Use BioPAX Rules's Configuration -->
     <import resource="classpath:rules-context.xml"/>
-     <!-- Use CV Fetcher's Configuration -->
-    <import resource="classpath:applicationContext-cvFetcher.xml"/>
     
 	<!-- BiopaxValidatorUtils configuration -->
 	
@@ -61,24 +59,16 @@
 		<property name="maxErrors" value="50" />
 	</bean>
 
-	<bean id="editorMap3" class="org.biopax.paxtools.io.simpleIO.SimpleEditorMap">
-		<constructor-arg type="org.biopax.paxtools.model.BioPAXLevel" value="L3"/>
-	</bean>
-
-	<bean id="editorMap2" class="org.biopax.paxtools.io.simpleIO.SimpleEditorMap">
-		<constructor-arg type="org.biopax.paxtools.model.BioPAXLevel" value="L2"/>
-	</bean>
-
 	<!-- a helper and a proxy to access MIRIAM and MI database citation and regexps 
    		to validate their corresponding IDs -->
     <bean id="xrefHelper" class="org.biopax.validator.utils.XrefHelper">
 		<constructor-arg ref="extraDbSynonyms"/>
         <constructor-arg ref="cvFetcher" />
-        <constructor-arg ref="miriamAdapter"/>
+        <constructor-arg ref="miriam"/>
     </bean>
 	
 	
-	<bean id="validator" class="cpath.validator.BiopaxValidator"/>
+	<bean id="validator" class="org.biopax.validator.impl.ValidatorImpl"/>
 	
 	<bean id="messenger" class="org.biopax.validator.impl.SimplyThrowExceptionMessenger"/>
 	

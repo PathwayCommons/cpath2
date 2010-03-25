@@ -25,59 +25,14 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.common.internal;
-
-import static org.junit.Assert.*;
-
-import org.junit.Test;
-
-import cpath.common.internal.MiriamAdapter;
+package cpath.mapper;
 
 /**
- * @author rodch
+ * @author rodche
  *
  */
-public class MiriamAdapterTest {
-
-	static MiriamAdapter miriam = new MiriamAdapter();;
-
-	/**
-	 * Test method for {@link cpath.common.internal.MiriamAdapter#getURI(java.lang.String, java.lang.String)}.
-	 */
-	@Test
-	public final void testGetURI() {
-		String urn = miriam.getURI("uniprot", "P62158");
-		assertEquals("urn:miriam:uniprot:P62158", urn);
-	}
+public interface CPathIdMapper {
 	
-	@Test
-	public final void testGetURI_CV() {
-		String urn = miriam.getURI("GO", "GO:0005654");
-		assertEquals("urn:miriam:obo.go:GO%3A0005654", urn);
-	}
-	
-	
-	@Test
-	public final void testGetURI_wrong() {
-		String urn = miriam.getURI("uniprotkb", "A62158");
-		assertEquals(null, urn);
-	}
-	
-
-	/**
-	 * Test method for {@link cpath.common.internal.MiriamAdapter#getDataTypeURN(java.lang.String)}.
-	 */
-	@Test
-	public final void testGetDataTypeURN_byId() {
-		String urn = miriam.getDataTypeURN("urn:miriam:uniprot");
-		assertEquals("urn:miriam:uniprot", urn);
-	}
-	
-
-	@Test
-	public final void testGetDataTypeURN_byName() {
-		String urn = miriam.getDataTypeURN("uniprotkb");
-		assertEquals("urn:miriam:uniprot", urn);
-	}
+	String getPrimaryUrn(String urn);
 
 }

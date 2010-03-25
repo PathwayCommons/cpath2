@@ -25,50 +25,60 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.validator;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.Model;
-import org.biopax.validator.impl.ValidatorImpl;
-import org.biopax.validator.result.Validation;
-import org.springframework.beans.factory.annotation.Configurable;
+import static org.junit.Assert.*;
+
+import org.biopax.miriam.MiriamLink;
+import org.junit.Test;
 
 /**
- * Validates a BioPAX (Paxtools) Model
- * 
- * 
  * @author rodch
  *
  */
-@Configurable
-public class BiopaxValidator extends ValidatorImpl {
-	private static final Log log = LogFactory.getLog(BiopaxValidator.class);
-    
-	
-    /**
-     * Validates the BioPAX model.
-     * 
-     * @param model
-     * @return report object
-     */
-	public Validation validate(Model model) {
-		Validation validation = new Validation();
-		
-		if (model != null) {
-			if (log.isDebugEnabled()) {
-				log.debug("validating model: " + model + " that has "
-						+ model.getObjects().size() + " objects");
-			}
-			
-			associate(model, validation);
-			validate(validation);
-			
-		} else {
-			log.warn("Model is null");
-		}
-		
-		return validation;
-		
+public class MiriamTest {
+
+	static MiriamLink miriam = new MiriamLink();
+
+	/**
+	 * Test method for {@link cpath.common.internal.MiriamAdapter#getURI(java.lang.String, java.lang.String)}.
+	 */
+	@Test
+	public final void testGetURI() {
+		String urn = miriam.getURI("uniprot", "P62158");
+		assertEquals("urn:miriam:uniprot:P62158", urn);
 	}
+	
+	@Test
+	public final void testGetURI_CV() {
+		String urn = miriam.getURI("GO", "GO:0005654");
+		assertEquals("urn:miriam:obo.go:GO%3A0005654", urn);
+	}
+	
+	
+	@Test
+	public final void testGetURI_wrong() {
+		try {
+			String urn = miriam.getURI("uniprotkb", "A62158");
+			fail("must throw the IllegalArgumentException!");
+		} catch (IllegalArgumentException e) {
+		}
+	}
+	
+
+	/**
+	 * Test method for {@link cpath.common.internal.MiriamAdapter#getDataTypeURN(java.lang.String)}.
+	 */
+	@Test
+	public final void testGetDataTypeURN_byId() {
+		String urn = miriam.getDataTypeURI("urn:miriam:uniprot");
+		assertEquals("urn:miriam:uniprot", urn);
+	}
+	
+
+	@Test
+	public final void testGetDataTypeURN_byName() {
+		String urn = miriam.getDataTypeURI("uniprotkb");
+		assertEquals("urn:miriam:uniprot", urn);
+	}
+
 }

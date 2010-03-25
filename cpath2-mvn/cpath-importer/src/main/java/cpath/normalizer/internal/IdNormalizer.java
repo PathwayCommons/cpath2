@@ -25,11 +25,16 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.normalizer;
+package cpath.normalizer.internal;
 
+import java.io.*;
 import java.util.*;
 
-import org.biopax.paxtools.controller.ModelFilter;
+import org.biopax.miriam.MiriamLink;
+import org.biopax.paxtools.io.BioPAXIOHandler;
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.io.simpleIO.SimpleReader;
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.EntityReference;
@@ -37,21 +42,24 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.util.ClassFilterSet;
 
-import cpath.common.internal.MiriamAdapter;
+import cpath.normalizer.Normalizer;
 
 /**
  * @author rodch
  *
  */
-public class IdNormalizer implements ModelFilter {
+public class IdNormalizer implements Normalizer {
 	
-	private MiriamAdapter miriam;
+	
+	private MiriamLink miriam;
+	private BioPAXIOHandler biopaxReader;
 	
 	/**
 	 * Constructor
 	 */
-	public IdNormalizer(MiriamAdapter miriamAdapter) {
-		this.miriam = miriamAdapter;
+	public IdNormalizer(MiriamLink miriam) {
+		this.miriam = miriam;
+		this.biopaxReader = new SimpleReader(); //biopaxReader; // BUG - with factoryForPersistence, it allows duplicate RDFId!
 	}
 	
 
@@ -70,10 +78,15 @@ public class IdNormalizer implements ModelFilter {
 	 * 
 	 * @see org.biopax.paxtools.controller.ModelFilter#filter(org.biopax.paxtools.model.Model)
 	 */
-	public Model filter(Model model) {
-
+	public String normalize(String owl) {
+		
+		// build the model
+		Model model = biopaxReader.convertFromOWL(new ByteArrayInputStream(owl.getBytes()));
+		if(model == null || model.getLevel() != BioPAXLevel.L3) {
+			throw new IllegalArgumentException(model.getLevel() + " is not supported!");
+		}
+		
 		for(XReferrable bpe : model.getObjects(XReferrable.class)) {
-			
 			List<UnificationXref> urefs = getUnificationXrefsSorted(bpe);
 			UnificationXref uref = null;
 			
@@ -88,20 +101,21 @@ public class IdNormalizer implements ModelFilter {
 			
 			if(uref != null) {
 				String urn = miriam.getURI(uref.getDb(), uref.getId());
-				if(urn != null) {
-					model.updateID(bpe.getRDFId(), urn);
-				} else {
-					throw new IllegalArgumentException(
-							"Cannot find Miriam URN for CV : " 
-							+ bpe + ", using xref : " + uref);
-				}
+				model.updateID(bpe.getRDFId(), urn);
 			} else {
 				throw new IllegalArgumentException(
 					"Cannot find a unification xrefs of CV : " + bpe);
 			}
 		}
 		
-		return model;
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		try {
+			(new SimpleExporter(model.getLevel())).convertToOWL(model, out);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		
+		return out.toString();
 	}
 
 	

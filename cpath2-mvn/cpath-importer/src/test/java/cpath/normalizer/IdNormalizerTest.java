@@ -29,8 +29,11 @@ package cpath.normalizer;
 
 import static org.junit.Assert.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -44,7 +47,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import cpath.normalizer.IdNormalizer;
+import cpath.normalizer.internal.IdNormalizer;
 
 
 /**
@@ -53,20 +56,24 @@ import cpath.normalizer.IdNormalizer;
  * @author rodch
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:idNormalizer-test-context.xml"})
+@ContextConfiguration(locations = {
+		"classpath:applicationContext-idNormalizer.xml",
+		"classpath:applicationContext-paxtools.xml"})
 public class IdNormalizerTest {
 
 	@Autowired
 	IdNormalizer idNormalizer;
 	
+	@Autowired
+	BioPAXIOHandler biopaxReader;
+	
 	Level3Factory factory = (Level3Factory) BioPAXLevel.L3.getDefaultFactory();
 	
-
 	/**
-	 * Test method for {@link cpath.normalizer.IdNormalizer#filter(org.biopax.paxtools.model.Model)}.
+	 * Test method for {@link cpath.normalizer.internal.IdNormalizer#filter(org.biopax.paxtools.model.Model)}.
 	 */
 	@Test
-	public final void testFilter() {
+	public final void testNormalize() {
 		Model model = factory.createModel();
     	UnificationXref ref = factory.createUnificationXref();
     	ref.setDb("uniprotkb");
@@ -76,37 +83,34 @@ public class IdNormalizerTest {
     	pr.setRDFId("http://www.pathwaycommons.org/import#ProteinReference1");
     	pr.setDisplayName("ProteinReference1");
     	pr.addXref(ref);
-    	
-    	//TODO test when uniprot's is not the first xref
-
-    	//TODO test illegal 'id', 'db', etc.
-    	
-    	//TODO add to test CV (and use a MI term)
-    	
-    	
 		model.add(pr);
 		model.add(ref);
-
 		model.getNameSpacePrefixMap().put("", "http://www.pathwaycommons.org/import#");
 		
-		idNormalizer.filter(model);
+		// normalize		
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		try {
+			(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, out);
+		} catch (IOException e1) {
+			fail(e1.toString());
+		}
+		
+		String xml = idNormalizer.normalize(out.toString());
+		System.out.println(xml);
+		
+		// check the result
+		model = biopaxReader.convertFromOWL(new ByteArrayInputStream(xml.getBytes()));
 		
 		BioPAXElement bpe = model.getByID("urn:miriam:uniprot:P62158");
-		assertNotNull(bpe);
 		assertTrue(bpe instanceof ProteinReference);
 		
-		/*
 		for(BioPAXElement e : model.getObjects()) {
 			System.out.println(e);
 		}
-		
-		SimpleExporter exporter = new SimpleExporter(BioPAXLevel.L3);
-		try {
-			exporter.convertToOWL(model, System.out);
-		} catch (IOException e1) {
-		}
-		*/
-		
+
+    	//TODO test when uniprot's is not the first xref
+    	//TODO test illegal 'id', 'db', etc.
+    	//TODO add to test CV (and use a MI term)
 	}
 
 }

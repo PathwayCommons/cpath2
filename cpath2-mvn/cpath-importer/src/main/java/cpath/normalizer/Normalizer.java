@@ -25,72 +25,12 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.common.internal;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
-import org.biopax.miriam.MiriamLink;
+package cpath.normalizer;
 
 /**
- * This helps generate proper RDF IDs.
- * 
- * @author rodch
+ * @author rodche
  *
  */
-public final class MiriamAdapter extends MiriamLink {
-	private final static Log log = LogFactory.getLog(MiriamAdapter.class);
-	
-	
-	/**
-	 * Looks up URN by (xref's) db and id.
-	 * 
-	 * @param db name or synonym of a (Miriam) data type
-	 * @param id entity identifier within the data type
-	 * @return
-	 */
-	@Override
-	public String getURI(String db, String id) {
-		String urn = null;
-		
-		try{
-			if(checkRegExp(id, db)) {
-				urn = super.getURI(db, id);
-			} else {
-				log.fatal("Invalid Id : " +
-					id + " for " + db + "; pattern=" 
-					+ getDataTypePattern(db));
-			}
-		} catch (Exception e) {
-			log.fatal("Cannot get URN by : " +
-				db + " and " + id , e);
-		}
-		
-		return (urn==null || "".equals(urn)) ? null : urn; 
-	}
-	
-	
-	/**
-	 * 
-	 * @param name deprecated URI, name, or synonym of a data type
-	 * @return 
-	 */
-	public String getDataTypeURN(String name) {
-		String urn = null;
-		
-		try{
-			urn = super.getDataTypeURI(name);
-			if(urn == null || "".equals(urn)) {
-				urn = super.getOfficialDataTypeURI(name);
-			}
-		} catch (Exception e) {
-			log.error("Cannot get URN by : " +
-				name , e);
-		}
-		
-		return (urn==null || "".equals(urn)) ? null : urn; 
-	}
-	
-	
-	
+public interface Normalizer {
+	String normalize(String data);
 }

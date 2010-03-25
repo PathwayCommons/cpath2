@@ -5,8 +5,7 @@ import cpath.cleaner.Cleaner;
 import cpath.dao.PaxtoolsDAO;
 import cpath.premerge.Premerge;
 import cpath.premerge.PremergeDispatcher;
-import cpath.normalizer.IdNormalizer;
-import cpath.validator.BiopaxValidator;
+import cpath.normalizer.Normalizer;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.metadata.MetadataDAO;
@@ -20,6 +19,7 @@ import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 //import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 
+import org.biopax.validator.Validator;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
 
@@ -58,10 +58,10 @@ public final class PremergeImpl extends Thread implements Premerge {
     private PathwayDataDAO pathwayDataDAO;
 
 	// ref to normalizer
-	private IdNormalizer idNormalizer;
+	private Normalizer idNormalizer;
 
 	// ref to validator
-	private BiopaxValidator validator;
+	private Validator validator;
 
 	// ref to validator utils
 	private BiopaxValidatorUtils validatorUtils;
@@ -85,14 +85,14 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 * @param metadata Metadata
 	 * @param pathwayDataDAO PathwayDataDAO
 	 * @param idNormalizer IdNormalizer
-	 * @param validator BiopaxValidator
+	 * @param validator Biopax Validator
 	 * @param simpleReader BioPAXIOHandler
 	 * @param validatorUtils BiopaxValidatorUtils
 	 */
 	public PremergeImpl(final MetadataDAO metadataDAO,
 						final PathwayDataDAO pathwayDataDAO,
-						final IdNormalizer idNormalizer,
-						final BiopaxValidator validator,
+						final Normalizer idNormalizer,
+						final Validator validator,
 						final BioPAXIOHandler simpleReader,
 						final BiopaxValidatorUtils validatorUtils) {
 
@@ -200,27 +200,29 @@ public final class PremergeImpl extends Thread implements Premerge {
 			return;
 		}
 
-		// create paxtools model from pathway data (owl)
-		log.info("run(), creating paxtools model from pathway data.");
-		//SimpleReader simple = new SimpleReader(new BioPAXFactoryForPersistence(), BioPAXLevel.L3);
-		Model model = simpleReader.convertFromOWL(new ByteArrayInputStream(pathwayDataStr.getBytes()));
-		
 		// normalize
 		log.info("pipeline(), normalizing pathway data.");
-		if(!normalizePathway(model)) {
+		try {
+			pathwayDataStr = idNormalizer.normalize(pathwayDataStr);
+		} catch (RuntimeException e) {
 			// TBD: report failure
-			log.info("pipeline(), error normalizing pathway data: " + pathwayDataDescription);
+			log.info("pipeline(), error normalizing pathway data: " + pathwayDataDescription, e);
 			return;
 		}
 
 		// validate
+		// TODO due to possible syntax errors, it may worth validating both before and after the normalization...
 		log.info("pipeline(), validating pathway data.");
-		if(!validatePathway(pathwayData, model)) {
+		if(!validatePathway(pathwayData, pathwayDataStr)) {
 			// TBD: report failure
 			log.info("pipeline(), error validating pathway data: " + pathwayDataDescription);
 			return;
 		}
 
+		// create paxtools model from pathway data (owl)
+		log.info("run(), creating paxtools model from pathway data.");
+		//SimpleReader simple = new SimpleReader(new BioPAXFactoryForPersistence(), BioPAXLevel.L3);
+		Model model = simpleReader.convertFromOWL(new ByteArrayInputStream(pathwayDataStr.getBytes()));
 		// persist paxtools model
 		log.info("pipeline(), persisting pathway data.");
 		if (!persistPathway(pathwayData, model)) {
@@ -287,35 +289,27 @@ public final class PremergeImpl extends Thread implements Premerge {
 	}
 
 	/**
-	 * Normalizes the given pathway data.
-	 *
-	 * @param model Model
-	 * @return boolean
-	 */
-	private boolean normalizePathway(Model model) {
-
-		boolean toReturn = true;
-
-		idNormalizer.filter(model);
-
-		// outta here 
-		return toReturn;
-	}
-
-	/**
 	 * Validates the given pathway data.
 	 *
-	 * @param model Model
-	 * @param validation Validation
+	 * @param pathwayData
+	 * @param pathwayDataStr OWL content; may be different from original one (e.g., normalized)
 	 * @return boolean
 	 */
-	private boolean validatePathway(PathwayData pathwayData, Model model) {
+	private boolean validatePathway(PathwayData pathwayData, String pathwayDataStr) {
 
 		boolean toReturn = true;
 
 		// get result and marshall to xml string to store
 		StringWriter writer = new StringWriter();
-		validatorUtils.write(validator.validate(model), writer);
+		// the following is 
+		// create a new empty validation and associate with the model data
+		Validation validation = new Validation(pathwayData.getIdentifier());
+		// because errors are reported during the import (e.g., syntax)
+		validator.importModel(validation, new ByteArrayInputStream(pathwayDataStr.getBytes()));
+		// now post-validate
+		validator.validate(validation);
+		// serialize
+		validatorUtils.write(validation, writer);
 		pathwayData.setValidationResults(writer.toString());
 
 		// outta here 

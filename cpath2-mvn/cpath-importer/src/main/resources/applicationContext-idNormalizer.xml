@@ -12,10 +12,10 @@
 
     <context:annotation-config/>
     
-    <bean id="miriamAdapter" class="cpath.common.internal.MiriamAdapter" />
+    <bean id="miriam" class="org.biopax.miriam.MiriamLink" />
 	
-	<bean id="idNormalizer" class="cpath.normalizer.IdNormalizer">
-		<constructor-arg ref="miriamAdapter"/>
+	<bean id="idNormalizer" class="cpath.normalizer.internal.IdNormalizer">
+		<constructor-arg ref="miriam"/>
 	</bean>
 	
 </beans>
