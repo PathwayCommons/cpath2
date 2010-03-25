@@ -69,7 +69,6 @@ public final class PathwayDataHibernateDAO implements PathwayDataDAO {
 					 " and digest: " + pathwayData.getDigest() +
 					 " already exists, manually merging.");
 			existing.setPathwayData(pathwayData.getPathwayData());
-			existing.setPremergedPathwayData(pathwayData.getPremergedPathwayData());
 			existing.setValidationResults(pathwayData.getValidationResults());
 			session.update(existing);
 		}

@@ -277,6 +277,7 @@ public class Admin implements Runnable {
             		"classpath:applicationContext-cpathWarehouse.xml",
 					"classpath:applicationContext-idNormalizer.xml",
 					"classpath:applicationContext-biopaxValidation.xml",
+					"classpath:applicationContext-cvFetcher.xml",
 					"classpath:applicationContext-paxtools.xml",
             		"classpath:applicationContext-cpathImporter.xml",
 					"classpath:applicationContext-cpathFetcher.xml"});

@@ -56,14 +56,12 @@
         <property name="sessionFactory" ref="whouseSessionFactory" />
     </bean>
 
-	<!--
-	<bean id="pathwayDataJDBCServices" class="cpath.warehouse.pathway.internal.PathwayDataJDBCServices" dependency-check="objects">
+	<bean id="pathwayDataJDBCServices" class="cpath.warehouse.pathway.internal.PathwayDataJDBCServicesImpl" dependency-check="objects">
         <property name="dbUser" value="${db.user}"/>
         <property name="dbPassword" value="${db.password}"/>
         <property name="dbDataSource" value="${wdb.datasource}"/>
         <property name="dbConnection" value="${wdb.connection}"/>
     </bean>
-	-->
  
     <bean id="metadataDAO" class="cpath.warehouse.metadata.internal.MetadataHibernateDAO" dependency-check="objects">
         <property name="sessionFactory" ref="whouseSessionFactory"/>

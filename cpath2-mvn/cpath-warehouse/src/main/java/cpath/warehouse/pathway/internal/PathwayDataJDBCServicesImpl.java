@@ -2,6 +2,7 @@ package cpath.warehouse.pathway.internal;
 
 // imports
 import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.pathway.PathwayDataJDBCServices;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -16,7 +17,7 @@ import java.sql.Statement;
 /**
  * Class which provides services to create provider database to persist pathway data.
  */
-public final class PathwayDataJDBCServices {
+public final class PathwayDataJDBCServicesImpl implements PathwayDataJDBCServices {
 
     // log
     private static Log log = LogFactory.getLog(PathwayDataJDBCServices.class);
@@ -41,14 +42,11 @@ public final class PathwayDataJDBCServices {
 	/**
 	 * Default Constructor.
 	 */
-	public PathwayDataJDBCServices() {}
+	public PathwayDataJDBCServicesImpl() {}
 
     /**
-     * Persists the given biopax model to a unique provider db.
-     *
-     * @param metadata Metadata
-	 * @param drop boolean
-	 * @return boolean (true - success, false - failure)
+	 * (non-Javadoc)
+	 * @see cpath.warehouse.pathway.PathwayDataJDBCServices#createProviderDatabase(cpath.warehouse.beans.Metadata, java.lang.boolean)
      */
     public boolean createProviderDatabase(final Metadata metadata, final boolean drop) {
 
@@ -57,7 +55,8 @@ public final class PathwayDataJDBCServices {
 		Connection connection = null;
 
 		// create connection string - tack on provider id
-		String dbConnectionStr = dbConnection + "//localhost/mysql";
+		//String dbConnectionStr = dbConnection + "//localhost/mysql";
+		String dbConnectionStr = dbConnection + "mysql";
 
 		log.info("createProviderDatabase(), user: " + dbUser);
 		log.info("createProviderDatabase(), password: " + dbPassword);
