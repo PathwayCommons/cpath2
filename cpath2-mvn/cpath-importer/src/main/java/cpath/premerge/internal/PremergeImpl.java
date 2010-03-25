@@ -10,14 +10,11 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.metadata.MetadataDAO;
 import cpath.warehouse.pathway.PathwayDataDAO;
+import cpath.warehouse.pathway.PathwayDataJDBCServices;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.io.BioPAXIOHandler;
-//import org.biopax.paxtools.io.simpleIO.SimpleReader;
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
-//import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 
 import org.biopax.validator.Validator;
 import org.biopax.validator.result.Validation;
@@ -28,12 +25,14 @@ import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 
 import java.util.Collection;
 
@@ -56,6 +55,9 @@ public final class PremergeImpl extends Thread implements Premerge {
 
 	// ref to PathwayDataDAO
     private PathwayDataDAO pathwayDataDAO;
+
+	// ref to jdbc services
+	private PathwayDataJDBCServices pathwayDataJDBCServices;
 
 	// ref to normalizer
 	private Normalizer idNormalizer;
@@ -84,6 +86,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 *
 	 * @param metadata Metadata
 	 * @param pathwayDataDAO PathwayDataDAO
+	 * @param pathwaydDataJDBCServices
 	 * @param idNormalizer IdNormalizer
 	 * @param validator Biopax Validator
 	 * @param simpleReader BioPAXIOHandler
@@ -91,6 +94,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 */
 	public PremergeImpl(final MetadataDAO metadataDAO,
 						final PathwayDataDAO pathwayDataDAO,
+						final PathwayDataJDBCServices pathwayDataJDBCServices,
 						final Normalizer idNormalizer,
 						final Validator validator,
 						final BioPAXIOHandler simpleReader,
@@ -99,6 +103,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 		// init members
 		this.metadataDAO = metadataDAO;
 		this.pathwayDataDAO = pathwayDataDAO;
+		this.pathwayDataJDBCServices = pathwayDataJDBCServices;
 		this.idNormalizer = idNormalizer;
 		this.validator = validator;
 		this.simpleReader = simpleReader;
@@ -147,6 +152,9 @@ public final class PremergeImpl extends Thread implements Premerge {
 			return;
 		}
 
+		// create db
+		//pathwayDataJDBCServices.createProviderDatabase(metadata, true);
+
 		// get pathway data
 		log.info("run(), getting pathway data for provider.");
 		Collection<PathwayData> pathwayDataCollection =
@@ -176,7 +184,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 *
 	 * @param pathwayData PathwayData
 	 */
-	private void pipeline(PathwayData pathwayData) {
+	private void pipeline(final PathwayData pathwayData) {
 
 		String pathwayDataStr = "";
 		String pathwayDataDescription = (pathwayData.getIdentifier() + ", " +
@@ -221,7 +229,6 @@ public final class PremergeImpl extends Thread implements Premerge {
 
 		// create paxtools model from pathway data (owl)
 		log.info("run(), creating paxtools model from pathway data.");
-		//SimpleReader simple = new SimpleReader(new BioPAXFactoryForPersistence(), BioPAXLevel.L3);
 		Model model = simpleReader.convertFromOWL(new ByteArrayInputStream(pathwayDataStr.getBytes()));
 		// persist paxtools model
 		log.info("pipeline(), persisting pathway data.");
@@ -258,7 +265,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 *
 	 * @param psimiData String
 	 */
-	private String convertToBioPAX(String psimiData) {
+	private String convertToBioPAX(final String psimiData) {
 
 		String toReturn = "";
 				
@@ -295,10 +302,10 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 * @param pathwayDataStr OWL content; may be different from original one (e.g., normalized)
 	 * @return boolean
 	 */
-	private boolean validatePathway(PathwayData pathwayData, String pathwayDataStr) {
+	private boolean validatePathway(final PathwayData pathwayData, final String pathwayDataStr) {
 
 		boolean toReturn = true;
-
+		
 		// get result and marshall to xml string to store
 		StringWriter writer = new StringWriter();
 		// the following is 
@@ -323,25 +330,30 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 * @param model Model
 	 * @return boolean
 	 */
-	private boolean persistPathway(PathwayData pathwayData, Model model) {
+	@Transactional(propagation=Propagation.NESTED)
+	private boolean persistPathway(final PathwayData pathwayData, final Model model) {
 
-		boolean toReturn = true;
-
-		// write out the file
-		try {
-			// use simple exporter to create string from paxtools model
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			SimpleExporter simpleExporter = new SimpleExporter(BioPAXLevel.L3);
-			simpleExporter.convertToOWL(model, bos);
-			pathwayData.setPremergedPathwayData(bos.toString());
-			pathwayDataDAO.importPathwayData(pathwayData);
-		}
-		catch(Exception e) {
-			e.printStackTrace();
+		// 8create db
+		if (!pathwayDataJDBCServices.createProviderDatabase(metadata, true)) {
 			return false;
 		}
 
+		// create data source
+		MysqlDataSource mysqlDataSource = new MysqlDataSource();
+		mysqlDataSource.setURL(pathwayDataJDBCServices.getDbConnection() + metadata.getIdentifier());
+		mysqlDataSource.setUser(pathwayDataJDBCServices.getDbUser());
+		mysqlDataSource.setPassword(pathwayDataJDBCServices.getDbPassword());
+
+		// get application context after setting custom datasource
+		PremergeDataSource.beansByName.put("premergeDataSource", mysqlDataSource);
+		ApplicationContext context = 
+			new ClassPathXmlApplicationContext("classpath:applicationContext-cpathPremerge.xml");
+
+		// get a ref to PaxtoolsDAO
+		PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
+		paxtoolsDAO.importModel(model, false);
+
 		// outta here
-		return toReturn;
+		return true;
 	}
 }
