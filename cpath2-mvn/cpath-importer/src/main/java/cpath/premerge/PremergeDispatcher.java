@@ -76,16 +76,26 @@ public final class PremergeDispatcher extends Thread implements ApplicationConte
 		Collection<Metadata> metadataCollection = metadataDAO.getAll();
 
 		// set number of premerges to dispatch
-		numPremerges = metadataCollection.size();
+		for (Metadata metadata : metadataCollection) {
+			if (metadata.getType().equals(Metadata.TYPE.PSI_MI) ||
+				metadata.getType().equals(Metadata.TYPE.BIOPAX)) {
+				++numPremerges;
+			}
+		}
 		log.info("run(), Spawning " + numPremerges + " Premerge instances.");
 
 		// iterate over all metadata
 		for (Metadata metadata : metadataCollection) {
-			log.info("run(), spawning Premerge for provider " + metadata.getIdentifier());
-			Premerge premerge = (Premerge)applicationContext.getBean("premerge");
-			premerge.setDispatcher(this);
-			premerge.setMetadata(metadata);
-			premerge.premerge();
+
+			// only process interaction or pathway data
+			if (metadata.getType().equals(Metadata.TYPE.PSI_MI) ||
+				metadata.getType().equals(Metadata.TYPE.BIOPAX)) {
+				log.info("run(), spawning Premerge for provider " + metadata.getIdentifier());
+				Premerge premerge = (Premerge)applicationContext.getBean("premerge");
+				premerge.setDispatcher(this);
+				premerge.setMetadata(metadata);
+				premerge.premerge();
+			}
 		}
 
 		// wait for premerges to complete

@@ -20,6 +20,25 @@ import cpath.warehouse.CPathWarehouse;
 @Indexed(index=CPathWarehouse.SEARCH_INDEX_NAME)
 public final class Metadata {
 
+    // TYPE Enum
+    public static enum TYPE {
+
+        // command types
+        PSI_MI("PSI-MI"),
+		BIOPAX("BIOPAX"),
+		UNIPROT("UNIPROT"),
+		SMALL_MOLECULE("SMALL-MOLECULE");
+
+        // string ref for readable name
+        private String type;
+        
+        // contructor
+        TYPE(String type) { this.type = type; }
+
+        // method to get enum readable name
+        public String toString() { return type; }
+    }
+
 	@Id
 	@Column(name="provider_id")
 	@GeneratedValue(strategy=GenerationType.AUTO)
@@ -40,7 +59,8 @@ public final class Metadata {
 	@Column(nullable=false)
     private byte[] icon;
 	@Column(nullable=false)
-    private Boolean isPSI;
+	@Enumerated(EnumType.STRING)
+    private TYPE type;
 	@Column(nullable=false)
     private String cleanerClassname;
 
@@ -62,7 +82,7 @@ public final class Metadata {
 	 * @param cleanerClassname String
      */
     public Metadata(final String identifier, final String name, final Float version, final String releaseDate,
-                    final String urlToPathwayData, final byte[] icon, final Boolean isPSI, final String cleanerClassname) {
+                    final String urlToPathwayData, final byte[] icon, final TYPE type, final String cleanerClassname) {
 
         if (identifier == null) {
             throw new IllegalArgumentException("identifier must not be null");
@@ -95,10 +115,10 @@ public final class Metadata {
         }
         this.icon = icon;
 
-        if (isPSI == null) {
-            throw new IllegalArgumentException("isPSI must not be null");
+        if (type == null) {
+            throw new IllegalArgumentException("type must not be null");
         }
-        this.isPSI = isPSI;
+        this.type = type;
 
 		if (cleanerClassname == null) {
 			throw new IllegalArgumentException("cleaner class name not be null");
@@ -146,10 +166,10 @@ public final class Metadata {
 	}
     public byte[] getIcon() { return icon; }
 
-	public void setIsPSI(Boolean isPSI) {
-		this.isPSI = isPSI;
+	public void setType(TYPE type) {
+		this.type = type;
 	}
-    public Boolean isPSI() { return isPSI; }
+    public TYPE getType() { return type; }
 
 	public void setCleanerClassname(String cleanerClassname) {
 		this.cleanerClassname = cleanerClassname;

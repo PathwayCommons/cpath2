@@ -60,7 +60,7 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
     private static final int METADATA_RELEASE_DATE_INDEX = 3;
     private static final int METADATA_PATHWAY_DATA_URL_INDEX = 4;
     private static final int METADATA_ICON_URL_INDEX = 5;
-    private static final int METADATA_IS_PSI_INDEX = 6;
+    private static final int METADATA_TYPE_INDEX = 6;
 	private static final int METADATA_CLEANER_CLASS_NAME_INDEX = 7;
     private static final int NUMBER_METADATA_ITEMS = 8;
 
@@ -144,6 +144,9 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
 						continue;
 					}
 
+					// get metadata type
+					Metadata.TYPE metadataType = Metadata.TYPE.valueOf(tokens[METADATA_TYPE_INDEX]);
+
 					// get icon data from service
 					log.info("fetching icon data from: " + tokens[METADATA_ICON_URL_INDEX]);
 					byte[] iconData = fetcherHTTPClient.getDataFromService(tokens[METADATA_ICON_URL_INDEX]);
@@ -156,15 +159,14 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
                         Metadata metadata = new Metadata(tokens[METADATA_IDENTIFIER_INDEX], tokens[METADATA_NAME_INDEX],
                                                          version, tokens[METADATA_RELEASE_DATE_INDEX],
                                                          tokens[METADATA_PATHWAY_DATA_URL_INDEX], iconData,
-                                                         new Boolean(tokens[METADATA_IS_PSI_INDEX]),
-														 tokens[METADATA_CLEANER_CLASS_NAME_INDEX]);
+														 metadataType, tokens[METADATA_CLEANER_CLASS_NAME_INDEX]);
                         log.info(metadata.getIdentifier());
                         log.info(metadata.getName());
                         log.info(metadata.getVersion());
                         log.info(metadata.getReleaseDate());
                         log.info(metadata.getURLToPathwayData());
                         log.info(tokens[METADATA_ICON_URL_INDEX]);
-                        log.info(metadata.isPSI());
+                        log.info(metadata.getType());
 						log.info(metadata.getCleanerClassname());
 
                         // add metadata object toc collection we return
