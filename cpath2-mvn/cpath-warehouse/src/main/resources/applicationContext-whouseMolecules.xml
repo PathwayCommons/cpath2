@@ -11,20 +11,26 @@
        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.5.xsd
        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
-
-	<context:annotation-config />
-
-	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+    
+    <context:annotation-config/>
+    
+   	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
 		<property name="ignoreUnresolvablePlaceholders" value="true" />
 		<property name="ignoreResourceNotFound" value="true"/>
 		<property name="locations">
 			<value>classpath:cpath.properties</value>
 		</property>
 	</bean>
+       
 
-	<bean id="mainSessionFactory"
+    <!-- enable the configuration of transactional behavior based on annotations -->
+    <tx:annotation-driven transaction-manager="moleculesTransactionManager"/>
+    
+	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
+
+	<bean id="moleculesSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-        <property name="dataSource" ref="mainDataSource"/>
+        <property name="dataSource" ref="moleculesDataSource"/>
         <property name="hibernateProperties">
 		  <props>
 			<prop key="hibernate.hbm2ddl.auto">${hbm2ddl.mode}</prop>
@@ -33,33 +39,28 @@
 			<prop key="hibernate.dialect">org.hibernate.dialect.MySQL5Dialect</prop>
 			<prop key="hibernate.cache.provider_class">org.hibernate.cache.NoCacheProvider</prop>
 			<prop key="hibernate.search.default.directory_provider">org.hibernate.search.store.FSDirectoryProvider</prop>
-			<prop key="hibernate.search.default.indexBase">${lucene.index-path}</prop>
+			<prop key="hibernate.search.default.indexBase">${lucene.index-path.molecules}</prop>
 		  </props>
         </property>
         <property name="configurationClass" value="org.hibernate.cfg.AnnotationConfiguration"/>
 		<property name="packagesToScan" value="org.biopax.paxtools.proxy.level3" />        
     </bean>
 
-    <!-- enable the configuration of transactional behavior based on annotations -->
-    <tx:annotation-driven transaction-manager="mainTransactionManager"/>
-    
-	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
-    
-    <bean id="mainTransactionManager"
+    <bean id="moleculesTransactionManager"
         class="org.springframework.orm.hibernate3.HibernateTransactionManager">
-        <property name="sessionFactory" ref="mainSessionFactory" />
+        <property name="sessionFactory" ref="moleculesSessionFactory" />
     </bean>
 
-    <bean id="paxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO" dependency-check="objects">
-        <property name="sessionFactory" ref="mainSessionFactory"/>
+    <bean id="moleculesDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO" dependency-check="objects">
+        <property name="sessionFactory" ref="moleculesSessionFactory"/>
+    </bean>
+
+    <bean id="moleculesDataSource" class="com.mysql.jdbc.jdbc2.optional.MysqlDataSource">
+      <property name="url" value="jdbc:mysql://localhost/${smdb.name}" />
+      <property name="user" value="${smdb.user}" />
+      <property name="password" value="${smdb.password}" />
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
-
-	<bean id="mainDataSource" class="com.mysql.jdbc.jdbc2.optional.MysqlDataSource">
-		<property name="url" value="jdbc:mysql://localhost/${db.name}" />
-		<property name="user" value="${db.user}" />
-		<property name="password" value="${db.password}" />
-	</bean>
-
+	
 </beans>

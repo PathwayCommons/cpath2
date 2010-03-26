@@ -29,6 +29,7 @@
 package cpath.admin;
 
 // imports
+import cpath.dao.PaxtoolsDAO;
 import cpath.metadata.ProviderMetadataService;
 import cpath.pathway.ProviderPathwayDataService;
 import cpath.protein.ProviderProteinDataService;
@@ -36,10 +37,11 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.metadata.MetadataDAO;
 import cpath.warehouse.pathway.PathwayDataDAO;
-import cpath.warehouse.EntityRefRepository;
 import cpath.premerge.PremergeDispatcher;
 
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.EntityReference;
+import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 
 import org.apache.log4j.PropertyConfigurator;
 
@@ -87,8 +89,10 @@ public class Admin implements Runnable {
 	private MetadataDAO metadataDAO;
 	// ref to pathway data dao
 	private PathwayDataDAO pathwayDataDAO;
-	// ref to entity reference repository
-	private EntityRefRepository entityReferenceRepository;
+	// ref to protein reference repository
+	private PaxtoolsDAO proteinsRepository;
+	// ref to molecule reference repository
+	private PaxtoolsDAO moleculesRepository;
 	// ref to premerge dispatcher
 	private PremergeDispatcher premergeDispatcher;
 
@@ -281,17 +285,20 @@ public class Admin implements Runnable {
 		// interate over all metadata
 		for (Metadata metadata : metadataCollection) {
 
-			// only process interaction or pathway data
+			// only process protein references data
 			if (metadata.getType() == Metadata.TYPE.PROTEIN) {
 
-				// grab the data
+				// grab the data (actually, a set of ProteinReferenceProxy !)
 				Collection<EntityReference> proteinData =
 					providerProteinDataService.getProviderProteinData(metadata);
         
-				// process pathway data
+				// process protein references
+				// PaxtoolsDAO can import models; it does not have methods to add one entity reference
+				Model model = (new BioPAXFactoryForPersistence()).createModel();
 				for (EntityReference entityReference : proteinData) {
-					entityReferenceRepository.add(entityReference);
+					model.add(entityReference);
 				}
+				proteinsRepository.importModel(model, true);
 			}
 		}
 

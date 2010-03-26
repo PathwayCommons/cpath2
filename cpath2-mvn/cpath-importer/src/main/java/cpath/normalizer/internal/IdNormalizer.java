@@ -40,6 +40,7 @@ import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.EntityReference;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.XReferrable;
+import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.biopax.paxtools.util.ClassFilterSet;
 
 import cpath.normalizer.Normalizer;
@@ -59,7 +60,7 @@ public class IdNormalizer implements Normalizer {
 	 */
 	public IdNormalizer(MiriamLink miriam) {
 		this.miriam = miriam;
-		this.biopaxReader = new SimpleReader(); //biopaxReader; // BUG - with factoryForPersistence, it allows duplicate RDFId!
+		this.biopaxReader = new SimpleReader(); //may be to use 'biopaxReader' bean that uses (new BioPAXFactoryForPersistence(), BioPAXLevel.L3);
 	}
 	
 
