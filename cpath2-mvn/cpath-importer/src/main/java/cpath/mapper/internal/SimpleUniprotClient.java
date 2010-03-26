@@ -54,30 +54,24 @@ public class SimpleUniprotClient {
      * @return primary id (accession)
      */
     public String getPrimaryId(String id) {
-    	String accession = null;
         String query = QUERYBASE + "columns=id&query=accession:" + id;
         
         try {
         	InputStream inputStream = client.getDataFromServiceAsStream(query);
             BufferedReader in = new BufferedReader(new InputStreamReader(inputStream));
             // primary ID always appears first in the returned table
-            StringBuffer sb = new StringBuffer();
             String line;
-            while((line = in.readLine()) != null) {
-            	sb.append(line);
-            }
-            String resultTxt = sb.toString();
-            Matcher matcher = PATTERN.matcher(resultTxt);
-            if(matcher.find()) {
-            	accession = matcher.group();
-            } else {
-            	throw new IllegalArgumentException("UniProt returned no results for " + id);
-            }
+            in.readLine(); // skip title
+            line = in.readLine();
+            Matcher matcher = PATTERN.matcher(line.trim());
+	        if(matcher.find()) {
+	        	return matcher.group();
+	        }
         } catch (IOException ex) {
             throw new RuntimeException("Cannot get result from " + query, ex);
         }
         
-        return accession;
+        return null;
     }
 	
 }

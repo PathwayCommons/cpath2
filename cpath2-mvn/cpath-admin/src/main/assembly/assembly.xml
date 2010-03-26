@@ -6,14 +6,37 @@
     <format>zip</format>
   </formats>   
   
+  <moduleSets>
+    <moduleSet>
+      <includes>
+        <include>pathwaycommons.cpath:cpath-dao</include>
+        <include>pathwaycommons.cpath:cpath-warehouse</include>
+        <include>pathwaycommons.cpath:cpath-fetcher</include>
+        <include>pathwaycommons.cpath:cpath-importer</include>
+      </includes>
+      <binaries>
+        <outputDirectory>modules/${artifactId}</outputDirectory>
+        <unpack>false</unpack>
+      </binaries>
+    </moduleSet>
+    <moduleSet>
+      <includes>
+        <include>pathwaycommons.cpath:cpath-admin</include>
+      </includes>
+      <binaries>
+        <outputDirectory></outputDirectory>
+        <unpack>false</unpack>
+      </binaries>
+    </moduleSet>
+  </moduleSets>
+  
   <dependencySets>    
     <dependencySet>   
-      <useTransitiveDependencies>false</useTransitiveDependencies>
       <outputDirectory>/lib</outputDirectory>
-      <!-- TODO
       <includes>
         <include>*:*</include>
       </includes>
+      <!--
       <excludes>
         <exclude>org.eclipse:*</exclude>
       </excludes>
