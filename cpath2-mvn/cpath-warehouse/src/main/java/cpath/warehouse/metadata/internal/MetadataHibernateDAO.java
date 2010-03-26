@@ -57,7 +57,7 @@ public final class MetadataHibernateDAO  implements MetadataDAO {
 			existing.setReleaseDate(metadata.getReleaseDate());
 			existing.setURLToPathwayData(metadata.getURLToPathwayData());
 			existing.setIcon(metadata.getIcon());
-			existing.setIsPSI(metadata.isPSI());
+			existing.setType(metadata.getType());
 			session.update(existing);
 		}
 		else {

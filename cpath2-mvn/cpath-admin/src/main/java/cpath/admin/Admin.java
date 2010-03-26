@@ -223,16 +223,21 @@ public class Admin implements Runnable {
 		// interate over all metadata
 		for (Metadata metadata : metadataCollection) {
 
-			// lets not fetch data if its the same version we have already persisted
-			if (metadata.getVersion() > metadata.getPersistedVersion()) {
+			// only process interaction or pathway data
+			if (metadata.getType().equals(Metadata.TYPE.PSI_MI) ||
+				metadata.getType().equals(Metadata.TYPE.BIOPAX)) {
 
-				// grab the data
-				Collection<PathwayData> pathwayData =
-					providerPathwayDataService.getProviderPathwayData(metadata);
+				// lets not fetch data if its the same version we have already persisted
+				if (metadata.getVersion() > metadata.getPersistedVersion()) {
+
+					// grab the data
+					Collection<PathwayData> pathwayData =
+						providerPathwayDataService.getProviderPathwayData(metadata);
         
-				// process pathway data
-				for (PathwayData pwData : pathwayData) {
-					pathwayDataDAO.importPathwayData(pwData);
+					// process pathway data
+					for (PathwayData pwData : pathwayData) {
+						pathwayDataDAO.importPathwayData(pwData);
+					}
 				}
 			}
 		}
