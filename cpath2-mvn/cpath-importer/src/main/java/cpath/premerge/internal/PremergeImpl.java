@@ -196,7 +196,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 		pathwayDataStr = cleaner.clean(pathwayData.getPathwayData());
 
 		// if psi-mi, convert to biopax
-		if (metadata.getType().equals(Metadata.TYPE.PSI_MI)) {
+		if (metadata.getType() == Metadata.TYPE.PSI_MI) {
 			log.info("pipeline(), converting psi-mi data.");
 			pathwayDataStr = convertToBioPAX(pathwayDataStr);
 		}
