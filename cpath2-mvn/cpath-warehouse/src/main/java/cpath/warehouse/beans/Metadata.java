@@ -26,7 +26,7 @@ public final class Metadata {
         // command types
         PSI_MI("PSI-MI"),
 		BIOPAX("BIOPAX"),
-		UNIPROT("UNIPROT"),
+		PROTEIN("PROTEIN"),
 		SMALL_MOLECULE("SMALL-MOLECULE");
 
         // string ref for readable name

@@ -77,8 +77,8 @@ public final class PremergeDispatcher extends Thread implements ApplicationConte
 
 		// set number of premerges to dispatch
 		for (Metadata metadata : metadataCollection) {
-			if (metadata.getType().equals(Metadata.TYPE.PSI_MI) ||
-				metadata.getType().equals(Metadata.TYPE.BIOPAX)) {
+			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
+				metadata.getType() == Metadata.TYPE.BIOPAX) {
 				++numPremerges;
 			}
 		}
@@ -88,8 +88,8 @@ public final class PremergeDispatcher extends Thread implements ApplicationConte
 		for (Metadata metadata : metadataCollection) {
 
 			// only process interaction or pathway data
-			if (metadata.getType().equals(Metadata.TYPE.PSI_MI) ||
-				metadata.getType().equals(Metadata.TYPE.BIOPAX)) {
+			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
+				metadata.getType() == Metadata.TYPE.BIOPAX) {
 				log.info("run(), spawning Premerge for provider " + metadata.getIdentifier());
 				Premerge premerge = (Premerge)applicationContext.getBean("premerge");
 				premerge.setDispatcher(this);

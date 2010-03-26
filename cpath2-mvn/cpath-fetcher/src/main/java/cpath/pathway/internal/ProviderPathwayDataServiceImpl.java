@@ -25,7 +25,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
- * Provider Metadata service.  Retrieves provider metadata.
+ * Provider PathwayData service.  Retrieves provider pathway data.
  */
 @Service
 public final class ProviderPathwayDataServiceImpl implements ProviderPathwayDataService {
@@ -46,9 +46,6 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
 
 	// ref to FetcherHTTPClient
     private FetcherHTTPClient fetcherHTTPClient;
-
-	// are we fetching an owl file (as opposed to zip/gz)
-	private boolean isOWL;
 
     /**
 	 * Default Constructor.
@@ -76,7 +73,7 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
 		String url = metadata.getURLToPathwayData();
 
 		// set isOWL
-		isOWL = (url.endsWith(".owl") || url.endsWith(".OWL"));
+		boolean isOWL = (url.endsWith(".owl") || url.endsWith(".OWL"));
 
 		// pathway data is either owl or zip/gz
 		if (isOWL) {

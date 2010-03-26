@@ -21,5 +21,9 @@
 	<bean id="providerPathwayDataService" class="cpath.pathway.internal.ProviderPathwayDataServiceImpl">
 	  <constructor-arg ref="fetcherHTTPClient"/>
 	</bean>
+
+	<bean id="providerProteinDataService" class="cpath.protein.internal.ProviderProteinDataServiceImpl">
+	  <constructor-arg ref="fetcherHTTPClient"/>
+	</bean>
 		
 </beans>

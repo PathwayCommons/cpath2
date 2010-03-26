@@ -31,11 +31,15 @@ package cpath.admin;
 // imports
 import cpath.metadata.ProviderMetadataService;
 import cpath.pathway.ProviderPathwayDataService;
+import cpath.protein.ProviderProteinDataService;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.metadata.MetadataDAO;
 import cpath.warehouse.pathway.PathwayDataDAO;
+import cpath.warehouse.EntityRefRepository;
 import cpath.premerge.PremergeDispatcher;
+
+import org.biopax.paxtools.model.level3.EntityReference;
 
 import org.apache.log4j.PropertyConfigurator;
 
@@ -60,6 +64,7 @@ public class Admin implements Runnable {
         // command types
         FETCH_METADATA("-fetch-metadata"),
 		FETCH_PATHWAY_DATA("-fetch-pathwaydata"),
+		FETCH_PROTEIN_DATA("-fetch-proteindata"),
 		PREMERGE("-premerge");
 
         // string ref for readable name
@@ -76,10 +81,14 @@ public class Admin implements Runnable {
 	private ProviderMetadataService providerMetadataService;
 	// ref to pathway data service
 	private ProviderPathwayDataService providerPathwayDataService;
+	// ref to protein data service
+	private ProviderProteinDataService providerProteinDataService;
     // ref to metadata dao 
 	private MetadataDAO metadataDAO;
 	// ref to pathway data dao
 	private PathwayDataDAO pathwayDataDAO;
+	// ref to entity reference repository
+	private EntityRefRepository entityReferenceRepository;
 	// ref to premerge dispatcher
 	private PremergeDispatcher premergeDispatcher;
 
@@ -95,12 +104,15 @@ public class Admin implements Runnable {
      * @param pathwayDataDAO PathwayDataDAO
 	 * @param providerMetadataService ProviderMetadataService
 	 * @param providerPathwayDataService ProviderPathwayDataService
+	 * @param providerProteinDataService ProviderProteinDataService
+	 * @param premergeDispatcher PremergeDispatcher
      */
     public Admin(final String[] args,
 				 final MetadataDAO metadataDAO,
 				 final PathwayDataDAO pathwayDataDAO,
 				 final ProviderMetadataService providerMetadataService,
 				 final ProviderPathwayDataService providerPathwayDataService,
+				 final ProviderProteinDataService providerProteinDataService,
 				 final PremergeDispatcher premergeDispatcher) {
         
         // init members
@@ -108,6 +120,7 @@ public class Admin implements Runnable {
         this.pathwayDataDAO = pathwayDataDAO;
 		this.providerMetadataService = providerMetadataService;
 		this.providerPathwayDataService = providerPathwayDataService;
+		this.providerProteinDataService = providerProteinDataService;
 		this.premergeDispatcher = premergeDispatcher;
 
         // parse args
@@ -142,6 +155,15 @@ public class Admin implements Runnable {
 				this.commandParameters = new String[] { args[1] };
 			}
 		}
+		else if (args[0].equals(COMMAND.FETCH_PROTEIN_DATA.toString())) {
+			if (args.length != 2) {
+				validArgs = false;
+			}
+			else {
+				this.command = COMMAND.FETCH_PROTEIN_DATA;
+				this.commandParameters = new String[] { args[1] };
+			}
+		}
 		else if (args[0].equals(COMMAND.PREMERGE.toString())) {
 			this.command = COMMAND.PREMERGE;
 			// takes no args
@@ -167,6 +189,9 @@ public class Admin implements Runnable {
 				System.exit(0);
 			case FETCH_PATHWAY_DATA:
 				fetchPathwayData(commandParameters[0]);
+				System.exit(0);
+			case FETCH_PROTEIN_DATA:
+				fetchProteinData(commandParameters[0]);
 				System.exit(0);
 			case PREMERGE:
 				premergeDispatcher.start();
@@ -197,22 +222,15 @@ public class Admin implements Runnable {
     }
 
     /**
-     * Helper function to get provider metadata.
+     * Helper function to get provider pathway data.
      *
-     * @param url String
+     * @param provider String
      * @throws IOException
      */
     private void fetchPathwayData(final String provider) throws IOException {
 
 		// get metadata
-		Collection<Metadata> metadataCollection = null;
-		if (provider == FETCH_ALL) {
-			metadataCollection = metadataDAO.getAll();
-		}
-		else {
-			metadataCollection = new HashSet<Metadata>();
-			metadataCollection.add(metadataDAO.getByIdentifier(provider));
-		}
+		Collection<Metadata> metadataCollection = getMetadata(provider);
 
 		// sanity check
 		if (metadataCollection == null || metadataCollection.size() == 0) {
@@ -224,8 +242,8 @@ public class Admin implements Runnable {
 		for (Metadata metadata : metadataCollection) {
 
 			// only process interaction or pathway data
-			if (metadata.getType().equals(Metadata.TYPE.PSI_MI) ||
-				metadata.getType().equals(Metadata.TYPE.BIOPAX)) {
+			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
+				metadata.getType() == Metadata.TYPE.BIOPAX) {
 
 				// lets not fetch data if its the same version we have already persisted
 				if (metadata.getVersion() > metadata.getPersistedVersion()) {
@@ -243,13 +261,73 @@ public class Admin implements Runnable {
 		}
     }
 
-	public static String usage() {
+    /**
+     * Helper function to get protein data.
+	 *
+     * @param provider String
+     * @throws IOException
+     */
+    private void fetchProteinData(final String provider) throws IOException {
+
+		// get metadata
+		Collection<Metadata> metadataCollection = getMetadata(provider);
+
+		// sanity check
+		if (metadataCollection == null || metadataCollection.size() == 0) {
+			System.err.println("Unknown provider: " + provider);
+			return;
+		}
+
+		// interate over all metadata
+		for (Metadata metadata : metadataCollection) {
+
+			// only process interaction or pathway data
+			if (metadata.getType() == Metadata.TYPE.PROTEIN) {
+
+				// grab the data
+				Collection<EntityReference> proteinData =
+					providerProteinDataService.getProviderProteinData(metadata);
+        
+				// process pathway data
+				for (EntityReference entityReference : proteinData) {
+					entityReferenceRepository.add(entityReference);
+				}
+			}
+		}
+
+	}
+
+	/**
+	 * Given a provider, returns a collection of Metadata.
+	 *
+	 * @param provider String
+	 * @return Collection<Metadata>
+	 */
+	private Collection<Metadata> getMetadata(final String provider) {
+
+		Collection<Metadata> toReturn = null;
+
+		// get metadata
+		if (provider == FETCH_ALL) {
+			toReturn = metadataDAO.getAll();
+		}
+		else {
+			toReturn = new HashSet<Metadata>();
+			toReturn.add(metadataDAO.getByIdentifier(provider));
+		}
+
+		// outta here
+		return toReturn;
+	}
+
+	private static String usage() {
 
 		StringBuffer toReturn = new StringBuffer();
 		toReturn.append("cpath.Admin <command> <one or more args>");
 		toReturn.append("commands:");
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>");
-		toReturn.append(COMMAND.FETCH_PATHWAY_DATA.toString() + " <provider>");
+		toReturn.append(COMMAND.FETCH_PATHWAY_DATA.toString() + " <provider-name or all>");
+		toReturn.append(COMMAND.FETCH_PROTEIN_DATA.toString() + " <provider-name or all>");
 		toReturn.append(COMMAND.PREMERGE.toString());
 
 		// outta here
@@ -289,10 +367,14 @@ public class Admin implements Runnable {
 
         MetadataDAO metadataDAO = (MetadataDAO)context.getBean("metadataDAO");
 		PathwayDataDAO pathwayDataDAO = (PathwayDataDAO)context.getBean("pathwayDataDAO");
-		ProviderMetadataService providerMetadataService = (ProviderMetadataService)context.getBean("providerMetadataService");
-		ProviderPathwayDataService providerPathwayDataService = (ProviderPathwayDataService)context.getBean("providerPathwayDataService");
+		ProviderMetadataService providerMetadataService =
+			(ProviderMetadataService)context.getBean("providerMetadataService");
+		ProviderPathwayDataService providerPathwayDataService =
+			(ProviderPathwayDataService)context.getBean("providerPathwayDataService");
+		ProviderProteinDataService providerProteinDataService = (ProviderProteinDataService)context.getBean("providerProteinDataService");
 		PremergeDispatcher premergeDispatcher = (PremergeDispatcher)context.getBean("premergeDispatcher");
-        Admin admin = new Admin(args, metadataDAO, pathwayDataDAO, providerMetadataService, providerPathwayDataService, premergeDispatcher);
+        Admin admin = new Admin(args, metadataDAO, pathwayDataDAO, providerMetadataService,
+								providerPathwayDataService, providerProteinDataService, premergeDispatcher);
         admin.run();
     }
 }
