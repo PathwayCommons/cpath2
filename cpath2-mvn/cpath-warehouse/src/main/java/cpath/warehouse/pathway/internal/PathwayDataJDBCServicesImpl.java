@@ -7,12 +7,9 @@ import cpath.warehouse.pathway.PathwayDataJDBCServices;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.Properties;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 /**
  * Class which provides services to create provider database to persist pathway data.
@@ -20,7 +17,7 @@ import java.sql.Statement;
 public final class PathwayDataJDBCServicesImpl implements PathwayDataJDBCServices {
 
     // log
-    private static Log log = LogFactory.getLog(PathwayDataJDBCServices.class);
+    private static Log log = LogFactory.getLog(PathwayDataJDBCServicesImpl.class);
 
 	// ref to some db props - set via spring
 	private String dbUser;
@@ -39,6 +36,9 @@ public final class PathwayDataJDBCServicesImpl implements PathwayDataJDBCService
 	public void setDbConnection(String dbConnection) { this.dbConnection = dbConnection; }
 	public String getDbConnection() { return dbConnection; }
 
+	// ref to jdbc template
+	private JdbcTemplate jdbcTemplate;
+
 	/**
 	 * Default Constructor.
 	 */
@@ -49,62 +49,31 @@ public final class PathwayDataJDBCServicesImpl implements PathwayDataJDBCService
 	 * @see cpath.warehouse.pathway.PathwayDataJDBCServices#createProviderDatabase(cpath.warehouse.beans.Metadata, java.lang.boolean)
      */
     public boolean createProviderDatabase(final Metadata metadata, final boolean drop) {
-
-		boolean toReturn = true;
-		Statement statement = null;
-		Connection connection = null;
-
-		// create connection string - tack on provider id
-		//String dbConnectionStr = dbConnection + "//localhost/mysql";
-		String dbConnectionStr = dbConnection + "mysql";
-
-		log.info("createProviderDatabase(), user: " + dbUser);
-		log.info("createProviderDatabase(), password: " + dbPassword);
-		log.info("createProviderDatabase(), dbDataSource: " + dbDataSource);
-		log.info("createProviderDatabase(), dbConnection (url): " + dbConnectionStr);
 		
-		try {
-			// setup a connection
-			log.info("createProviderDatabase(), creating a connection.");
-			Class.forName(dbDataSource).newInstance();
-			connection = DriverManager.getConnection(dbConnectionStr, dbUser, dbPassword);
+		boolean toReturn = true;
 
-			// drop database if desired and if it exists
-			if (drop) {
-				log.info("createProviderDatabase(), executing drop statement for provider: " + metadata.getIdentifier());
-				statement = connection.createStatement();
-				statement.executeUpdate("DROP DATABASE IF EXISTS " + metadata.getIdentifier());
-			}
-			
-			// create new database
-			log.info("createProviderDatabase(), executing create statement for provider: " + metadata.getIdentifier());
-			statement = connection.createStatement();
-			statement.executeUpdate("CREATE DATABASE " + metadata.getIdentifier());
+		// create simplet JdbcTemplate if necessary
+		if (jdbcTemplate == null) {
+			DriverManagerDataSource dataSource = new DriverManagerDataSource();
+			dataSource.setDriverClassName(dbDataSource);
+			dataSource.setUrl(dbConnection + "mysql");
+			dataSource.setUsername(dbUser);
+			dataSource.setPassword(dbPassword);
+			jdbcTemplate = new JdbcTemplate(dataSource);
 		}
-		catch (Exception e) {
-			// note, we can catch mysql SQLException code 1007, database already exists,
-			// but if that occurs, it means our drop flag was incorrect,
-			// so we shouldn't silently fail, so all exceptions return a false value
+
+		try {
+			// drop if desired
+			if (drop) {
+				jdbcTemplate.execute("DROP DATABASE IF EXISTS " + metadata.getIdentifier());
+			}
+
+			// create
+			jdbcTemplate.execute("CREATE DATABASE " + metadata.getIdentifier());
+		}
+		catch (DataAccessException e) {
 			e.printStackTrace();
 			toReturn = false;
-		}
-		finally {
-			if (statement != null) {
-				try {
-					statement.close();
-				}
-				catch (SQLException e) {
-					// ignore
-				}
-			}
-			if (connection != null) {
-				try {
-					connection.close();
-				}
-				catch (SQLException e) {
-					// ignore
-				}
-			}
 		}
 
 		// outta here
