@@ -289,19 +289,15 @@ public class Admin implements Runnable {
 			if (metadata.getType() == Metadata.TYPE.PROTEIN) {
 
 				// grab the data (actually, a set of ProteinReferenceProxy !)
-				Collection<EntityReference> proteinData =
-					providerProteinDataService.getProviderProteinData(metadata);
-        
-				// process protein references
-				// PaxtoolsDAO can import models; it does not have methods to add one entity reference
-				Model model = (new BioPAXFactoryForPersistence()).createModel();
-				for (EntityReference entityReference : proteinData) {
-					model.add(entityReference);
+				Model model = providerProteinDataService.getProviderProteinData(metadata);
+				if (model != null) {
+					proteinsRepository.importModel(model, true);
 				}
-				proteinsRepository.importModel(model, true);
-			}
+				else {
+					System.err.println("Model created from protein annotation data is null, aborting.");
+				}
+        	}
 		}
-
 	}
 
 	/**

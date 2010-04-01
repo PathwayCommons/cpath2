@@ -58,11 +58,12 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
     private static final int METADATA_NAME_INDEX = 1;
     private static final int METADATA_VERSION_INDEX = 2;
     private static final int METADATA_RELEASE_DATE_INDEX = 3;
-    private static final int METADATA_PATHWAY_DATA_URL_INDEX = 4;
+    private static final int METADATA_DATA_URL_INDEX = 4;
     private static final int METADATA_ICON_URL_INDEX = 5;
     private static final int METADATA_TYPE_INDEX = 6;
 	private static final int METADATA_CLEANER_CLASS_NAME_INDEX = 7;
-    private static final int NUMBER_METADATA_ITEMS = 8;
+	private static final int METADATA_CONVERTER_CLASS_NAME_INDEX = 8;
+    private static final int NUMBER_METADATA_ITEMS = 9;
 
 	// logger
     private static Log log = LogFactory.getLog(ProviderMetadataServiceImpl.class);
@@ -131,6 +132,10 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
                 // for now assume line is delimited by '<br>'
                 // TODO: update when data moved to wiki page
                 String[] tokens = line.split("<br>");
+				log.info("readFromService(), token size: " + tokens.length);
+				for (String token : tokens) {
+					log.info("readFromService(), token: " + token);
+				}
 
                 if (tokens.length == NUMBER_METADATA_ITEMS) {
 
@@ -140,7 +145,7 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
 						version = new Float(tokens[METADATA_VERSION_INDEX]);
 					}
 					catch (NumberFormatException e) {
-						log.info("number format exception caught for provider: " + tokens[METADATA_IDENTIFIER_INDEX] + " skipping");
+						log.info("readFromService(), number format exception caught for provider: " + tokens[METADATA_IDENTIFIER_INDEX] + " skipping");
 						continue;
 					}
 
@@ -158,8 +163,9 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
                         // create a metadata bean
                         Metadata metadata = new Metadata(tokens[METADATA_IDENTIFIER_INDEX], tokens[METADATA_NAME_INDEX],
                                                          version, tokens[METADATA_RELEASE_DATE_INDEX],
-                                                         tokens[METADATA_PATHWAY_DATA_URL_INDEX], iconData,
-														 metadataType, tokens[METADATA_CLEANER_CLASS_NAME_INDEX]);
+                                                         tokens[METADATA_DATA_URL_INDEX], iconData, metadataType,
+														 tokens[METADATA_CLEANER_CLASS_NAME_INDEX],
+														 tokens[METADATA_CONVERTER_CLASS_NAME_INDEX]);
                         log.info(metadata.getIdentifier());
                         log.info(metadata.getName());
                         log.info(metadata.getVersion());
@@ -167,7 +173,13 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
                         log.info(metadata.getURLToPathwayData());
                         log.info(tokens[METADATA_ICON_URL_INDEX]);
                         log.info(metadata.getType());
-						log.info(metadata.getCleanerClassname());
+						if (metadata.getType() == Metadata.TYPE.PSI_MI ||
+							metadata.getType() == Metadata.TYPE.BIOPAX) {
+							log.info(metadata.getCleanerClassname());
+						}
+						else if (metadata.getType() == Metadata.TYPE.PROTEIN) {
+							log.info(metadata.getConverterClassname());
+						}
 
                         // add metadata object toc collection we return
                         toReturn.add(metadata);
