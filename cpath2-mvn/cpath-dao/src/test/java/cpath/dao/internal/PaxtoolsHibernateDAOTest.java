@@ -55,6 +55,7 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:applicationContext-cpathDAO.xml"})
 @TransactionConfiguration(transactionManager="mainTransactionManager")
+@Transactional
 public class PaxtoolsHibernateDAOTest {
 
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
@@ -103,7 +104,7 @@ public class PaxtoolsHibernateDAOTest {
 	}
 
 	@Test
-	@Transactional//(propagation=Propagation.SUPPORTS)
+	@Transactional
 	public void testRun() throws Exception {
 		// verify a call to importModel
 		log.info("Testing call to paxtoolsDAO.importModel()...");

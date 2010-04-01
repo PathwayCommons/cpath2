@@ -26,6 +26,10 @@
 		<module>cpath-importer</module>
 	</modules>
 
+	<properties>
+    	<spring.version>3.0.1.RELEASE</spring.version>
+	</properties>
+
 	<build>
 		<pluginManagement>
 			<plugins>
@@ -86,19 +90,20 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.4</version>
+			<version>4.7</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
-			<version>2.5.6.SEC01</version>
+			<version>${spring.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 			<version>1.2.13</version>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -106,43 +111,35 @@
 			<version>1.5.6</version>
 			<scope>runtime</scope>
 		</dependency>
-		<!--
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-jcl</artifactId>
-			<version>1.5.6</version>
-			<scope>runtime</scope>
-		</dependency>
-		-->
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
-			<version>2.5.6.SEC01</version>
+			<version>${spring.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
-			<version>2.5.6.SEC01</version>
+			<version>${spring.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context-support</artifactId>
-			<version>2.5.6.SEC01</version>
+			<version>${spring.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-beans</artifactId>
-			<version>2.5.6.SEC01</version>
+			<version>${spring.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-aop</artifactId>
-			<version>2.5.6.SEC01</version>
+			<version>${spring.version}</version>
 		</dependency>
     <dependency>
     	<groupId>org.springframework</groupId>
     	<artifactId>spring-orm</artifactId>
-    	<version>2.5.6.SEC01</version>
+    	<version>${spring.version}</version>
     </dependency>
    <dependency>
     	<groupId>mysql</groupId>
@@ -153,7 +150,7 @@
 	<dependency>
     	<groupId>org.springframework</groupId>
     	<artifactId>spring-tx</artifactId>
-    	<version>2.5.6.SEC01</version>
+    	<version>${spring.version}</version>
     </dependency>
 	<dependency>
 		<groupId>org.hibernate</groupId>
@@ -179,7 +176,7 @@
 	<dependency>
 		<groupId>org.springframework</groupId>
 		<artifactId>spring-jdbc</artifactId>
-		<version>2.5.6.SEC01</version>
+		<version>${spring.version}</version>
 		<type>jar</type>
 		<scope>compile</scope>
 	</dependency>
@@ -191,18 +188,11 @@
 		<scope>compile</scope>
 	</dependency>
 	    <dependency>
-    	<groupId>cglib</groupId>
-    	<artifactId>cglib</artifactId>
-    	<version>2.2</version>
-    	<type>jar</type>
-    	<scope>runtime</scope>
-    </dependency>
-	    <dependency>
 	    	<groupId>org.slf4j</groupId>
 	    	<artifactId>slf4j-log4j12</artifactId>
 	    	<version>1.5.6</version>
 	    	<type>jar</type>
-	    	<scope>compile</scope>
+	    	<scope>runtime</scope>
 	    </dependency>
 	</dependencies>
 </project>

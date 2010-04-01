@@ -37,13 +37,11 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.paxtools.proxy.level3.BioPAXElementProxy;
 import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 import org.hibernate.search.FullTextQuery;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
@@ -64,6 +62,7 @@ import java.io.FileNotFoundException;
  * Class which implements PaxtoolsModelQuery interface via persistence.
  */
 @Repository
+@Transactional
 public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	private final static String SEARCH_FIELD_AVAILABILITY = "availability";
 	private final static String SEARCH_FIELD_COMMENT = "comment";
@@ -102,11 +101,13 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 * Persists the given model to the db.
 	 * 
 	 * TODO take care of Model, as, in fact, now persisted and indexed here are individual objects
+	 * 
+	 * TODO Use StatelessSession here and still find a way to create lucene indexes!
 	 *
 	 * @param model Model
 	 * @param createIndex boolean
 	 */
-	@Transactional(propagation=Propagation.NESTED)
+	@Transactional
 	public void importModel(final Model model, final boolean createIndex) {
 		// indexing will not kick off until a commit occurs
 		Session session = getSession();
@@ -154,7 +155,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
      * @param id String
      * @return BioPAXElement
      */
-	//@Transactional(readOnly=true) // a hint to the driver to eventually optimize :)
+	@Transactional(readOnly=true) // a hint to the driver to eventually optimize :)
     public BioPAXElement getByID(final String id) {
 		// TODO 26-FEB-2010  BioPAXElementProxy changed to use auto-generated id instead of RDFId! Will wse session.getNamedQuery(..) for this!
     	Session session = getSession();
@@ -180,7 +181,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
      * @param filterBy class to be used as a filter.
      * @return an unmodifiable set of objects of the given class.
      */
-	//@Transactional(readOnly=true)
+	@Transactional(readOnly=true)
     public <T extends BioPAXElement> Set<T> getObjects(final Class<T> filterBy) {
 		List results = getSession().createQuery("from " + filterBy.getCanonicalName()).list();
 		return (results.size() > 0) ? new HashSet(results) : new HashSet();
@@ -192,7 +193,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 * @param unificationXref UnificationXref
 	 * @return BioPAXElement
 	 */
-	//@Transactional(readOnly=true)
+	@Transactional(readOnly=true)
 	public <T extends BioPAXElement> T getByUnificationXref(UnificationXref unificationXref) {
 
 		// setup the query
@@ -237,7 +238,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
      * @param filterBy class to be used as a filter.
      * @return Set<BioPAXElement>
      */
-	//@Transactional(readOnly=true)
+	@Transactional(readOnly=true)
     public <T extends BioPAXElement> Set<T> search(String query, Class<T> filterBy) {
 
 		log.info("query: " + query + ", filterBy: " + filterBy);

@@ -8,7 +8,6 @@ import cpath.protein.ProviderProteinDataService;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.level3.EntityReference;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -18,14 +17,11 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.BufferedOutputStream;
 
-import java.util.HashSet;
-import java.util.Collection;
 import java.util.zip.GZIPInputStream;
 import java.net.URL;
 

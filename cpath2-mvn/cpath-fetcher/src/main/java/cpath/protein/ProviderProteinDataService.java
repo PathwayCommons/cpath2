@@ -4,7 +4,6 @@ package cpath.protein;
 import cpath.warehouse.beans.Metadata;
 
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.EntityReference;
 
 import java.io.IOException;
 
