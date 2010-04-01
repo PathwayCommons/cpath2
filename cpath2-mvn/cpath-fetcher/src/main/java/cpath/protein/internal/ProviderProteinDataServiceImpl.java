@@ -1,10 +1,13 @@
 package cpath.protein.internal;
 
 // imports
+import cpath.converter.Converter;
 import cpath.warehouse.beans.Metadata;
 import cpath.common.FetcherHTTPClient;
 import cpath.protein.ProviderProteinDataService;
 
+import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.EntityReference;
 
 import org.apache.commons.logging.Log;
@@ -17,13 +20,14 @@ import java.io.InputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.BufferedOutputStream;
 
 import java.util.HashSet;
 import java.util.Collection;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.GZIPInputStream;
+import java.net.URL;
 
 /**
  * Provider Protein Data service.  Retrieves provider protein data.
@@ -59,16 +63,22 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
      * @see cpath.protein.ProviderProteinDataService#getProviderProteinData(cpath.warehouse.beans.Metadata)
      */
     @Override
-    public Collection<EntityReference> getProviderProteinData(final Metadata metadata) throws IOException {
+    public Model getProviderProteinData(final Metadata metadata) throws IOException {
 
-        Collection<EntityReference> toReturn = new HashSet<EntityReference>();
+        Model toReturn = null;
 
-		String url = metadata.getURLToPathwayData();
+		String urlStr = metadata.getURLToPathwayData();
 
 		// protein data comes zipped
 		log.info("getProviderPathwayData(), data is zip/gz, unzipping.");
-		unzip(metadata, fetcherHTTPClient.getDataFromServiceAsStream(url), toReturn);
-		fetcherHTTPClient.releaseConnection();
+		if (urlStr.startsWith("ftp://")) {
+			URL url = new URL(urlStr);
+			unzip(metadata, url.openConnection().getInputStream(), toReturn);
+		}
+		else {
+			unzip(metadata, fetcherHTTPClient.getDataFromServiceAsStream(urlStr), toReturn);
+			fetcherHTTPClient.releaseConnection();
+		}
 
         // outta here
         return toReturn;
@@ -76,46 +86,51 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
 
     /**
      * Given an InputStream, unzip into individual files and create EntityReference objects from each
+	 * and place in model.
 	 *
 	 * @param metadata Metadata
      * @param fetchedData InputStream
-	 * @param toReturn Collection<PathwayData> 
+	 * @param model Model
      */
-    private void unzip(final Metadata metadata, final InputStream fetchedData, final Collection<EntityReference> toReturn) throws IOException {
+    private void unzip(final Metadata metadata, final InputStream fetchedData, Model model) throws IOException {
 
-        ZipInputStream zis = null;
+        GZIPInputStream zis = null;
+
+		// create converter
+		log.info("unzip(), getting a converter with name: " + metadata.getConverterClassname());
+		Converter converter = getConverter(metadata.getConverterClassname());
+		if (converter == null) {
+			// TDB: report failure
+			log.info("unzip(), could not create converter class " + metadata.getConverterClassname());
+			return;
+		}
 
         try {
 
-            // create a zip intput stream
-			zis = new ZipInputStream(new BufferedInputStream(fetchedData));
+            // create a zip input stream
+			zis = new GZIPInputStream(new BufferedInputStream(fetchedData));
+			log.info("unzip(), created gzip input stream: " + zis);
 
-			// interate over zip entries
-			ZipEntry entry = null;
-            while ((entry = zis.getNextEntry()) != null) {
-
-				log.info("Processing zip entry: " + entry.getName());
-
-				// write file to buffered outputstream
-				int count;
-				byte data[] = new byte[BUFFER];
-				ByteArrayOutputStream bos = new ByteArrayOutputStream();
-				BufferedOutputStream dest = new BufferedOutputStream(bos, BUFFER);
-				while ((count = zis.read(data, 0, BUFFER)) != -1) {
-					dest.write(data, 0, count);
-				}
-				dest.flush();
-				dest.close();
-
-				// create entity reference objects
-				log.info("unzip(), creating EntityReference objects, zip entry: " + entry.getName() +
-						 " provider: " + metadata.getIdentifier() + " version: " + metadata.getVersion());
-
-				// hook into biopax converter for given provider
-				
-				// add object to return collection
-				//toReturn.add();
+			// write file to buffered outputstream
+			int count;
+			byte data[] = new byte[BUFFER];
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			BufferedOutputStream dest = new BufferedOutputStream(bos, BUFFER);
+			int total=0;
+			while ((count = zis.read(data, 0, BUFFER)) != -1) {
+				total+= count;
+				log.info("unzip(), read " + total + " bytes so far.");
+				dest.write(data, 0, count);
 			}
+			dest.flush();
+			dest.close();
+
+			// create entity reference objects
+			log.info("unzip(), creating EntityReference objects, provider: " +
+					 metadata.getIdentifier() + " version: " + metadata.getVersion());
+
+			// hook into biopax converter for given provider
+			converter.convert(new ByteArrayInputStream(bos.toByteArray()), BioPAXLevel.L3, model);
         }
         catch (IOException e) {
             throw e;
@@ -130,7 +145,7 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
     *
     * @param zis ZipInputStream
     */
-    private static void closeQuietly(final ZipInputStream zis) {
+    private static void closeQuietly(final GZIPInputStream zis) {
     
         try {
             zis.close();
@@ -154,4 +169,25 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
             // ignore
         }
     }
+
+	/**
+	 * For the given converter class name,
+	 * returns an instance of a class which
+	 * implements the converter interface.
+	 *
+	 * @param converterClassName String
+	 * @return Converter
+	 */
+	private Converter getConverter(final String converterClassName) {
+
+		try {
+			Class converterClass = getClass().forName(converterClassName);
+			return (converterClass == null) ?
+				null : (Converter)converterClass.newInstance();
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 }

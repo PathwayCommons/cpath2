@@ -54,15 +54,15 @@ public final class Metadata {
 	@Column(nullable=false)
     private String releaseDate;
 	@Column(nullable=false)
-    private String urlToPathwayData;
+    private String urlToData;
 	@Lob
 	@Column(nullable=false)
     private byte[] icon;
 	@Column(nullable=false)
 	@Enumerated(EnumType.STRING)
     private TYPE type;
-	@Column(nullable=false)
     private String cleanerClassname;
+    private String converterClassname;
 
 	/**
 	 * Default Constructor.
@@ -76,13 +76,14 @@ public final class Metadata {
      * @param name String
      * @param version Float
      * @param releaseDate String
-     * @param urlToPathwayData String
+     * @param urlToData String
      * @param icon byte[]
      * @param isPSI Boolean
 	 * @param cleanerClassname String
+	 * @param converterClassname String
      */
-    public Metadata(final String identifier, final String name, final Float version, final String releaseDate,
-                    final String urlToPathwayData, final byte[] icon, final TYPE type, final String cleanerClassname) {
+    public Metadata(final String identifier, final String name, final Float version, final String releaseDate, final String urlToData,
+					final byte[] icon, final TYPE type, final String cleanerClassname, final String converterClassname) {
 
         if (identifier == null) {
             throw new IllegalArgumentException("identifier must not be null");
@@ -105,10 +106,10 @@ public final class Metadata {
         }
         this.releaseDate = releaseDate;
 
-        if (urlToPathwayData == null) {
-            throw new IllegalArgumentException("URL to pathway data must not be null");
+        if (urlToData == null) {
+            throw new IllegalArgumentException("URL to data must not be null");
         }
-        this.urlToPathwayData = urlToPathwayData;
+        this.urlToData = urlToData;
 
         if (icon == null) {
             throw new IllegalArgumentException("icon must not be null");
@@ -121,9 +122,15 @@ public final class Metadata {
         this.type = type;
 
 		if (cleanerClassname == null) {
-			throw new IllegalArgumentException("cleaner class name not be null");
+			throw new IllegalArgumentException("cleaner class name cannot be null");
 		}
 		this.cleanerClassname = cleanerClassname;
+
+		
+		if (converterClassname == null) {
+			throw new IllegalArgumentException("converter class name cannot be null");
+		}
+		this.converterClassname = converterClassname;
     }
 
 	public void setId(Integer id) {
@@ -156,10 +163,10 @@ public final class Metadata {
 	}
     public String getReleaseDate() { return releaseDate; }
 
-	public void setURLToPathwayData(String urlToPathwayData) {
-		this.urlToPathwayData = urlToPathwayData;
+	public void setURLToPathwayData(String urlToData) {
+		this.urlToData = urlToData;
 	}
-    public String getURLToPathwayData() { return urlToPathwayData; }
+    public String getURLToPathwayData() { return urlToData; }
 
 	public void setIcon(byte[] icon) {
 		this.icon = icon;
@@ -175,6 +182,11 @@ public final class Metadata {
 		this.cleanerClassname = cleanerClassname;
 	}
     public String getCleanerClassname() { return cleanerClassname; }
+
+	public void setConverterClassname(String converterClassname) {
+		this.converterClassname = converterClassname;
+	}
+    public String getConverterClassname() { return converterClassname; }
 
     @Override
     public String toString() {

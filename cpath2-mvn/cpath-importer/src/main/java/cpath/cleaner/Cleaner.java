@@ -3,7 +3,7 @@ package cpath.cleaner;
 // imports
 
 /**
- * Cleaners clean original biopax:
+ * Cleaners clean original biopax or psimi:
  * - remove or replace short labels
  * - update refTypeValues
  */
