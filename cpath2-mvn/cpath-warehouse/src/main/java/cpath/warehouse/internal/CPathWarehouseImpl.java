@@ -5,11 +5,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.Level3Factory;
+import org.biopax.paxtools.model.level3.ProteinReference;
+import org.biopax.paxtools.model.level3.SmallMolecule;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.springframework.stereotype.Service;
 
+import cpath.dao.PaxtoolsDAO;
 import cpath.warehouse.CPathWarehouse;
 import cpath.warehouse.CvRepository;
 import cpath.warehouse.IdRepository;
@@ -29,11 +32,16 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
 	
     private CvRepository cvRepository;
     private IdRepository idRepository;
+    private PaxtoolsDAO moleculesDAO;
+    private PaxtoolsDAO proteinsDAO;
 	
 	
-	public CPathWarehouseImpl(CvRepository cvRepository, IdRepository idRepository) {
+	public CPathWarehouseImpl(CvRepository cvRepository, IdRepository idRepository,
+			PaxtoolsDAO moleculesDAO, PaxtoolsDAO proteinsDAO) {
 		this.cvRepository = cvRepository;
 		this.idRepository = idRepository;
+		this.moleculesDAO = moleculesDAO;
+		this.proteinsDAO = proteinsDAO;
 	}
 
 	/* (non-Javadoc)
@@ -42,7 +50,14 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
 	@Override
 	public <T extends UtilityClass> T createUtilityClass(String primaryUrn,
 			Class<T> utilityClazz) {
-		// TODO Auto-generated method stub
+		if(SmallMolecule.class.isAssignableFrom(utilityClazz)) {
+			return (T) moleculesDAO.getByID(primaryUrn);
+		} else if(ProteinReference.class.isAssignableFrom(utilityClazz)) {
+			return (T) proteinsDAO.getByID(primaryUrn);
+		} else if(ControlledVocabulary.class.isAssignableFrom(utilityClazz)) {
+			// TODO create proper CV
+		}
+		
 		return null;
 	}
 

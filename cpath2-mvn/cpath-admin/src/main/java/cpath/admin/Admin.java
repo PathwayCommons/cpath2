@@ -366,7 +366,9 @@ public class Admin implements Runnable {
 					"classpath:applicationContext-cvFetcher.xml",
 					"classpath:applicationContext-paxtools.xml",
             		"classpath:applicationContext-cpathImporter.xml",
-					"classpath:applicationContext-cpathFetcher.xml"});
+					"classpath:applicationContext-cpathFetcher.xml",
+					"classpath:applicationContext-whouseMolecules.xml",
+					"classpath:applicationContext-whouseProteins.xml"});
 
         MetadataDAO metadataDAO = (MetadataDAO)context.getBean("metadataDAO");
 		PathwayDataDAO pathwayDataDAO = (PathwayDataDAO)context.getBean("pathwayDataDAO");
