@@ -211,7 +211,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 		// normalize
 		log.info("pipeline(), normalizing pathway data.");
 		try {
-			//pathwayDataStr = idNormalizer.normalize(pathwayDataStr);
+			pathwayDataStr = idNormalizer.normalize(pathwayDataStr);
 		} catch (RuntimeException e) {
 			// TBD: report failure
 			log.info("pipeline(), error normalizing pathway data: " + pathwayDataDescription, e);
