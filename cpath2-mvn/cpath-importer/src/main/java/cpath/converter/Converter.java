@@ -22,5 +22,5 @@ public interface Converter {
 	 * @praam level BioPAXLevel
 	 * @return Model
 	 */
-	void convert(InputStream is, BioPAXLevel level, Model model);
+	Model convert(InputStream is, BioPAXLevel level);
 }
