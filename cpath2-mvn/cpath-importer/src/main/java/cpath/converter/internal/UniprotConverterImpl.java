@@ -10,6 +10,9 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import java.util.Map;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -23,6 +26,9 @@ import java.io.IOException;
  */
 public class UniprotConverterImpl implements Converter {
 
+	// logger
+    private static Log log = LogFactory.getLog(UniprotConverterImpl.class);
+
 	// ref to bp model
 	private Model bpModel;
 
@@ -31,9 +37,9 @@ public class UniprotConverterImpl implements Converter {
 
 	/**
 	 * (non-Javadoc>
-	 * @see cpath.converter.Converter#convert(java.io.InputStream, org.biopax.paxtools.model.BioPXLevel, org.biopax.paxtools.model.Model)
+	 * @see cpath.converter.Converter#convert(java.io.InputStream, org.biopax.paxtools.model.BioPXLevel)
 	 */
-	public void convert(final InputStream is, BioPAXLevel level, Model model) {
+	public Model convert(final InputStream is, BioPAXLevel level) {
 
 		// init args
 		this.bpLevel = level;
@@ -43,13 +49,17 @@ public class UniprotConverterImpl implements Converter {
         InputStreamReader reader= null;
 
 		// create a model
-		model = createBPModel();
+		log.info("convert(), creating Biopax Model.");
+		createBPModel();
+		log.info("convert(), model: " + bpModel);
 
         try {
+			log.info("convert(), creating buffered reader.");
             reader = new InputStreamReader (is);
             BufferedReader bufferedReader = new BufferedReader(reader);
             String line = bufferedReader.readLine();
             HashMap dataElements = new HashMap();
+			log.info("convert(), starting to read data...");
             while (line != null) {
                 if (line.startsWith ("//")) {
                     StringBuffer deField = (StringBuffer) dataElements.get("DE");
@@ -65,7 +75,6 @@ public class UniprotConverterImpl implements Converter {
                     String idParts[] = id.toString().split("\\s");
                     String shortName = idParts[0];
                     BioPAXElement currentProteinOrER = getPhysicalEntity(shortName);
-
                     setNameAndSynonyms(currentProteinOrER, deField.toString());
                     setOrganism(organismName.toString(), organismTaxId.toString(), currentProteinOrER);
                     String geneSyns = null;
@@ -104,6 +113,7 @@ public class UniprotConverterImpl implements Converter {
 			e.printStackTrace();
 		}
 		finally {
+			log.info("convert(), closing reader.");
             if (reader != null) {
 				try {
 					reader.close();
@@ -113,6 +123,10 @@ public class UniprotConverterImpl implements Converter {
 				}
             }
         }
+        log.info("convert(), exiting.");
+
+		// outta here
+		return bpModel;
     }
 
     private void setNameAndSynonyms (BioPAXElement currentProteinOrER, String deField) {
@@ -397,7 +411,7 @@ public class UniprotConverterImpl implements Converter {
 		return null;
 	}
 
-	private Model createBPModel() {
+	private void createBPModel() {
 
 		if (bpLevel == BioPAXLevel.L2) {
 			bpModel = BioPAXLevel.L2.getDefaultFactory().createModel();
@@ -409,8 +423,5 @@ public class UniprotConverterImpl implements Converter {
 		// setup base
 		Map<String, String> nsMap = bpModel.getNameSpacePrefixMap();
 		nsMap.put("", "http://uniprot.org#");
-
-		// outta here
-		return bpModel;
 	}
 }

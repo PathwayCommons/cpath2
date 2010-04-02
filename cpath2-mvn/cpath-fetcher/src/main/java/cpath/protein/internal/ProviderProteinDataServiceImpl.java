@@ -69,12 +69,14 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
 		log.info("getProviderPathwayData(), data is zip/gz, unzipping.");
 		if (urlStr.startsWith("ftp://")) {
 			URL url = new URL(urlStr);
-			unzip(metadata, url.openConnection().getInputStream(), toReturn);
+			toReturn = unzip(metadata, url.openConnection().getInputStream());
 		}
 		else {
-			unzip(metadata, fetcherHTTPClient.getDataFromServiceAsStream(urlStr), toReturn);
+			toReturn = unzip(metadata, fetcherHTTPClient.getDataFromServiceAsStream(urlStr));
 			fetcherHTTPClient.releaseConnection();
 		}
+
+		log.info("getProviderPathwayData(), return model: " + toReturn);
 
         // outta here
         return toReturn;
@@ -86,10 +88,11 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
 	 *
 	 * @param metadata Metadata
      * @param fetchedData InputStream
-	 * @param model Model
+	 * @return model Model
      */
-    private void unzip(final Metadata metadata, final InputStream fetchedData, Model model) throws IOException {
+    private Model unzip(final Metadata metadata, final InputStream fetchedData) throws IOException {
 
+        Model toReturn = null;
         GZIPInputStream zis = null;
 
 		// create converter
@@ -98,7 +101,7 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
 		if (converter == null) {
 			// TDB: report failure
 			log.info("unzip(), could not create converter class " + metadata.getConverterClassname());
-			return;
+			return null;
 		}
 
         try {
@@ -126,7 +129,7 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
 					 metadata.getIdentifier() + " version: " + metadata.getVersion());
 
 			// hook into biopax converter for given provider
-			converter.convert(new ByteArrayInputStream(bos.toByteArray()), BioPAXLevel.L3, model);
+			toReturn = converter.convert(new ByteArrayInputStream(bos.toByteArray()), BioPAXLevel.L3);
         }
         catch (IOException e) {
             throw e;
@@ -134,6 +137,8 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
         finally {
             closeQuietly(zis);
         }
+		// outta here
+		return toReturn;
     }
 
    /**
