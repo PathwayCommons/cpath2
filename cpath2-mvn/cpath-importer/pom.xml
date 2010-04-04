@@ -9,7 +9,7 @@
   <artifactId>cpath-importer</artifactId>
   <name>cPathSquared Importer</name>
   <version>1.0-SNAPSHOT</version>
-  <description>cPath^2 Import Pipeline</description>
+  <description>cPath^2 Import Pipeline. It also helps fetch various data from Internet, including provider's metadata and pathway data, OBO terms, and Miriam.</description>
   <dependencies>
   	<dependency>
   		<groupId>pathwaycommons.cpath</groupId>
@@ -43,6 +43,54 @@
         <artifactId>cpath-dao</artifactId>
         <version>1.0-SNAPSHOT</version>
         <scope>compile</scope>
+    </dependency>
+       <dependency>
+    	<groupId>org.biopax.paxtools</groupId>
+    	<artifactId>paxtools-core</artifactId>
+    	<version>2.0-SNAPSHOT</version>
+    	<type>jar</type>
+    	<scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>commons-httpclient</groupId>
+      <artifactId>commons-httpclient</artifactId>
+      <version>3.1</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+		<groupId>org.biopax.validator</groupId>
+    	<artifactId>biopax-validator-core</artifactId>
+    	<version>2.0-SNAPSHOT</version>
+    	<scope>compile</scope>
+    </dependency>
+    <dependency>
+    	<groupId>org.biopax.validator</groupId>
+    	<artifactId>biopax-rules</artifactId>
+    	<version>2.0-SNAPSHOT</version>
+    	<scope>compile</scope>
+    </dependency>
+    <dependency>
+    	<groupId>org.biopax</groupId>
+    	<artifactId>miriam-lib</artifactId>
+    	<version>1.1.1-SNAPSHOT</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.bridgedb</groupId>
+    	<artifactId>org.bridgedb</artifactId>
+    	<version>1.0-SNAPSHOT</version>
+    	<scope>compile</scope>
+    </dependency>
+    <dependency>
+    	<groupId>org.bridgedb</groupId>
+    	<artifactId>org.bridgedb.bio</artifactId>
+    	<version>1.0-SNAPSHOT</version>
+    	<scope>compile</scope>
+    </dependency>
+    <dependency>
+    	<groupId>org.bridgedb.webservice</groupId>
+    	<artifactId>org.bridgedb.webservice.bridgerest</artifactId>
+    	<version>1.0-SNAPSHOT</version>
+    	<scope>compile</scope>
     </dependency>
   </dependencies>
 </project>

@@ -12,17 +12,20 @@
 
     <context:annotation-config/>
 
-	<bean id="premergeDispatcher" class="cpath.premerge.PremergeDispatcher">
+	<bean id="premergeDispatcher" class="cpath.premerge.internal.PremergeDispatcher">
 		<constructor-arg ref="metadataDAO"/>
 	</bean>
 
 	<bean id="premerge" class="cpath.premerge.internal.PremergeImpl" scope="prototype">
-	  <constructor-arg ref="metadataDAO"/>
 	  <constructor-arg ref="pathwayDataDAO"/>
 	  <constructor-arg ref="pathwayDataJDBCServices"/>
 	  <constructor-arg ref="idNormalizer"/>
 	  <constructor-arg ref="validator"/>
 	  <constructor-arg ref="biopaxReaderL3"/>
 	  <constructor-arg ref="utils"/>
+	</bean>
+	
+	<bean id="idNormalizer" class="cpath.normalizer.internal.IdNormalizer">
+		<constructor-arg ref="miriam"/>
 	</bean>
 </beans>

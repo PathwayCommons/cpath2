@@ -37,11 +37,9 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.metadata.MetadataDAO;
 import cpath.warehouse.pathway.PathwayDataDAO;
-import cpath.premerge.PremergeDispatcher;
+import cpath.premerge.internal.PremergeDispatcher;
 
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.EntityReference;
-import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 
 import org.apache.log4j.PropertyConfigurator;
 
@@ -90,9 +88,9 @@ public class Admin implements Runnable {
 	// ref to pathway data dao
 	private PathwayDataDAO pathwayDataDAO;
 	// ref to protein reference repository
-	private PaxtoolsDAO proteinsRepository;
+	private PaxtoolsDAO proteinsDAO;
 	// ref to molecule reference repository
-	private PaxtoolsDAO moleculesRepository;
+	private PaxtoolsDAO moleculesDAO;
 	// ref to premerge dispatcher
 	private PremergeDispatcher premergeDispatcher;
 
@@ -110,14 +108,17 @@ public class Admin implements Runnable {
 	 * @param providerPathwayDataService ProviderPathwayDataService
 	 * @param providerProteinDataService ProviderProteinDataService
 	 * @param premergeDispatcher PremergeDispatcher
+	 * @param proteinsDAO
+	 * @param moleculesDAO
      */
-    public Admin(final String[] args,
-				 final MetadataDAO metadataDAO,
+    public Admin(final MetadataDAO metadataDAO,
 				 final PathwayDataDAO pathwayDataDAO,
 				 final ProviderMetadataService providerMetadataService,
 				 final ProviderPathwayDataService providerPathwayDataService,
 				 final ProviderProteinDataService providerProteinDataService,
-				 final PremergeDispatcher premergeDispatcher) {
+				 final PremergeDispatcher premergeDispatcher,
+				 final PaxtoolsDAO proteinsDAO,
+				 final PaxtoolsDAO moleculesDAO) {
         
         // init members
         this.metadataDAO = metadataDAO;
@@ -126,11 +127,16 @@ public class Admin implements Runnable {
 		this.providerPathwayDataService = providerPathwayDataService;
 		this.providerProteinDataService = providerProteinDataService;
 		this.premergeDispatcher = premergeDispatcher;
-
-        // parse args
-        parseArgs(args);
+		this.proteinsDAO = proteinsDAO;
+		this.moleculesDAO = moleculesDAO;
     }
 
+    public void setCommandParameters(String[] args) {
+		this.commandParameters = args;
+        // parse args
+        parseArgs(args);
+	}
+    
     /**
      * Helper function to parse args.
      *
@@ -291,7 +297,7 @@ public class Admin implements Runnable {
 				// grab the data (actually, a set of ProteinReferenceProxy !)
 				Model model = providerProteinDataService.getProviderProteinData(metadata);
 				if (model != null) {
-					proteinsRepository.importModel(model, true);
+					proteinsDAO.importModel(model, true);
 				}
 				else {
 					System.err.println("Model created from protein annotation data is null, aborting.");
@@ -359,27 +365,19 @@ public class Admin implements Runnable {
         ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files) !!!
-					"classpath:applicationContext-cpathDAO.xml",
-            		"classpath:applicationContext-cpathWarehouse.xml",
-					"classpath:applicationContext-idNormalizer.xml",
-					"classpath:applicationContext-biopaxValidation.xml",
-					"classpath:applicationContext-cvFetcher.xml",
-					"classpath:applicationContext-paxtools.xml",
-            		"classpath:applicationContext-cpathImporter.xml",
-					"classpath:applicationContext-cpathFetcher.xml",
+					"classpath:applicationContext-cpathDAO.xml", // biopax hibernate configuration
+					"classpath:applicationContext-cpathImporter.xml", // premerge, idNormalizer, etc.
+            		"classpath:applicationContext-cpathWarehouse.xml", // warehouse hibernate config.
+					"classpath:applicationContext-biopaxValidation.xml", // biopax validator, rules, etc.
+					"classpath:applicationContext-cvFetcher.xml", // OBO ontologies manager config.
+					"classpath:applicationContext-miriam.xml", // miriam library bean (validator, cvFetcher, and normalizer depend on this)
+					"classpath:applicationContext-paxtools.xml", // biopax reader, editor map, etc.
+					"classpath:applicationContext-cpathFetcher.xml", // 
 					"classpath:applicationContext-whouseMolecules.xml",
 					"classpath:applicationContext-whouseProteins.xml"});
-
-        MetadataDAO metadataDAO = (MetadataDAO)context.getBean("metadataDAO");
-		PathwayDataDAO pathwayDataDAO = (PathwayDataDAO)context.getBean("pathwayDataDAO");
-		ProviderMetadataService providerMetadataService =
-			(ProviderMetadataService)context.getBean("providerMetadataService");
-		ProviderPathwayDataService providerPathwayDataService =
-			(ProviderPathwayDataService)context.getBean("providerPathwayDataService");
-		ProviderProteinDataService providerProteinDataService = (ProviderProteinDataService)context.getBean("providerProteinDataService");
-		PremergeDispatcher premergeDispatcher = (PremergeDispatcher)context.getBean("premergeDispatcher");
-        Admin admin = new Admin(args, metadataDAO, pathwayDataDAO, providerMetadataService,
-								providerPathwayDataService, providerProteinDataService, premergeDispatcher);
+       
+		Admin admin = (Admin) context.getBean("cpathAdmin");
+		admin.setCommandParameters(args);
         admin.run();
     }
 }

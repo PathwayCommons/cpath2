@@ -33,6 +33,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -57,12 +58,8 @@ import cpath.normalizer.internal.IdNormalizer;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
-		"classpath:applicationContext-idNormalizer.xml",
 		"classpath:applicationContext-paxtools.xml"})
 public class IdNormalizerTest {
-
-	@Autowired
-	IdNormalizer idNormalizer;
 	
 	@Autowired
 	BioPAXIOHandler biopaxReader;
@@ -95,6 +92,7 @@ public class IdNormalizerTest {
 			fail(e1.toString());
 		}
 		
+		IdNormalizer idNormalizer = new IdNormalizer(new MiriamLink());
 		String xml = idNormalizer.normalize(out.toString());
 		System.out.println(xml);
 		

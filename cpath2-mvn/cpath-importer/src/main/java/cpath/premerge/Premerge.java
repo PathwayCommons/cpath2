@@ -1,7 +1,7 @@
 package cpath.premerge;
 
 // imports
-import cpath.premerge.PremergeDispatcher;
+import cpath.premerge.internal.PremergeDispatcher;
 import cpath.warehouse.beans.Metadata;
 
 
