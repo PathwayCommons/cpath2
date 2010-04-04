@@ -14,6 +14,4 @@
 		<constructor-arg ref="miriam"/>
 	</bean>
 	
-	<bean id="miriam" class="org.biopax.miriam.MiriamLink" />
-	
 </beans>

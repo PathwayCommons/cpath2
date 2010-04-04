@@ -1,11 +1,12 @@
-package cpath.premerge;
+package cpath.premerge.internal;
 
 // imports
+import cpath.premerge.Premerge;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.metadata.MetadataDAO;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -15,7 +16,7 @@ import java.util.Collection;
 /**
  * Provides Premerge dispatch services.
  */
-public final class PremergeDispatcher extends Thread implements ApplicationContextAware {
+public final class PremergeDispatcher extends Thread {
 
     // log
     private static Log log = LogFactory.getLog(PremergeDispatcher.class);
@@ -32,13 +33,10 @@ public final class PremergeDispatcher extends Thread implements ApplicationConte
 	// number of premerges complete
 	private int premergesComplete;
 
-	// ref to application context
+	// application context is auto-set (see spring ref. - 3.4.5 Autowiring collaborators)
+	@Autowired
 	private ApplicationContext applicationContext;
 
-	// this allows spring to inject it
-	public void setApplicationContext(ApplicationContext applicationContext){
-		this.applicationContext = applicationContext;
-	}
 
 	/**
      * Constructor.

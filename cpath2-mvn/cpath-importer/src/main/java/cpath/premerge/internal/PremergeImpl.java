@@ -4,11 +4,9 @@ package cpath.premerge.internal;
 import cpath.cleaner.Cleaner;
 import cpath.dao.PaxtoolsDAO;
 import cpath.premerge.Premerge;
-import cpath.premerge.PremergeDispatcher;
 import cpath.normalizer.Normalizer;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
-import cpath.warehouse.metadata.MetadataDAO;
 import cpath.warehouse.pathway.PathwayDataDAO;
 import cpath.warehouse.pathway.PathwayDataJDBCServices;
 
@@ -50,9 +48,6 @@ public final class PremergeImpl extends Thread implements Premerge {
 	// log
     private static Log log = LogFactory.getLog(PremergeImpl.class);
 
-	// ref to MetadataDAO
-	private MetadataDAO metadataDAO;
-
 	// ref to PathwayDataDAO
     private PathwayDataDAO pathwayDataDAO;
 
@@ -87,21 +82,18 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 * @param metadata Metadata
 	 * @param pathwayDataDAO PathwayDataDAO
 	 * @param pathwaydDataJDBCServices
-	 * @param idNormalizer IdNormalizer
+	 * @param idNormalizer Normalizer
 	 * @param validator Biopax Validator
 	 * @param simpleReader BioPAXIOHandler
 	 * @param validatorUtils BiopaxValidatorUtils
 	 */
-	public PremergeImpl(final MetadataDAO metadataDAO,
-						final PathwayDataDAO pathwayDataDAO,
+	public PremergeImpl(final PathwayDataDAO pathwayDataDAO,
 						final PathwayDataJDBCServices pathwayDataJDBCServices,
 						final Normalizer idNormalizer,
 						final Validator validator,
 						final BioPAXIOHandler simpleReader,
 						final BiopaxValidatorUtils validatorUtils) {
-
 		// init members
-		this.metadataDAO = metadataDAO;
 		this.pathwayDataDAO = pathwayDataDAO;
 		this.pathwayDataJDBCServices = pathwayDataJDBCServices;
 		this.idNormalizer = idNormalizer;
@@ -112,7 +104,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 
     /**
 	 * (non-Javadoc)
-	 * @see cpath.premerge.Premerge#setDispatcher(cpath.premerge.PremergeDispatcher)
+	 * @see cpath.premerge.Premerge#setDispatcher(cpath.premerge.internal.PremergeDispatcher)
 	 */
 	@Override
 	public void setDispatcher(final PremergeDispatcher premergeDispatcher) {

@@ -21,7 +21,6 @@
 		<module>cpath-dao</module>
 		<module>cpath-web</module>
 		<module>cpath-warehouse</module>
-		<module>cpath-fetcher</module>
 		<module>cpath-admin</module>
 		<module>cpath-importer</module>
 	</modules>
