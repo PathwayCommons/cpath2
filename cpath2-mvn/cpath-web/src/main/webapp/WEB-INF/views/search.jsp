@@ -3,13 +3,13 @@
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
-<h1>Search Paxtools</h1>
+<h1>Search Pathway Commons</h1>
 
 <c:if test="${not empty statusMessageKey}">
     <p><fmt:message key="${statusMessageKey}"/></p>
 </c:if>
 
-<c:url var="url" value="/cpath/search" />
+<c:url var="url" value="/search" />
 <form:form action="${url}">
   <table>
     <tr>

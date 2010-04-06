@@ -30,19 +30,20 @@ package cpath.web.mvc;
 
 // imports
 import cpath.dao.PaxtoolsDAO;
-import org.biopax.paxtools.proxy.level3.PathwayProxy;
-import org.biopax.paxtools.proxy.level3.ProteinProxy;
-import org.biopax.paxtools.proxy.level3.InteractionProxy;
+
+import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.level3.Interaction;
+import org.biopax.paxtools.model.level3.Named;
+import org.biopax.paxtools.model.level3.Pathway;
+import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.proxy.level3.BioPAXElementProxy;
-import org.biopax.paxtools.proxy.level3.PhysicalEntityProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.ModelMap;
-//import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.ModelAndView;
 
 import org.apache.commons.logging.*;
 
@@ -56,13 +57,12 @@ import java.util.*;
 public class SearchController {
     private static final Log log = LogFactory.getLog(SearchController.class);
 
-	// inject paxtools dao
 	private PaxtoolsDAO paxtoolsDAO;
 
-	// the set of biopax element - names to display on page
 	private final Set<String> pathwayNames;
 	private final Set<String> interactionNames;
 	private final Set<String> proteinNames;
+	private final Set<String> otherNames;
 
 	@Autowired
 	public SearchController(PaxtoolsDAO paxtoolsDAO) {
@@ -70,12 +70,17 @@ public class SearchController {
 		pathwayNames = new HashSet<String>();
 		proteinNames = new HashSet<String>();
 		interactionNames = new HashSet<String>();
+		otherNames = new HashSet<String>();
 	}
 
 
 	// simply shows form
 	@RequestMapping(method = RequestMethod.GET)
-    public void newRequest() {
+    public void showForm() {
+    }
+	
+	@RequestMapping("/")
+    public void alsoShowForm() {
     }
 	
     /**
@@ -85,21 +90,29 @@ public class SearchController {
 	 *
      * @return a forward to the listBy() method of this class
      */
-    @RequestMapping(method = RequestMethod.POST)
-    public ModelAndView listElements() {
-		ModelMap modelMap = processSearch(paxtoolsDAO.getObjects(BioPAXElementProxy.class));
-        return new ModelAndView("search-results", modelMap);
+    @RequestMapping("/all")
+    public String listAllElements(Model model) {
+		processSearch(paxtoolsDAO.getObjects(BioPAXElementProxy.class), model);
+        return "search-results";
     }
 
+    @RequestMapping("/{id}")
+    public String getElement(@PathVariable Long id, Model model) {
+		BioPAXElement element = paxtoolsDAO.getByID(id);
+		model.addAttribute("element", element);
+        return "element";
+    }
+    
+    
     /**
      * The event handler for searching.
 	 *
      * @return the search-results
      */
     @RequestMapping(method= RequestMethod.POST)
-    public ModelAndView search(@RequestParam String queryString) {
-		ModelMap modelMap = processSearch(paxtoolsDAO.search(queryString, BioPAXElementProxy.class));
-		return new ModelAndView("search-results", modelMap);
+    public String search(@RequestParam String queryString, Model model) {
+		processSearch(paxtoolsDAO.search(queryString, BioPAXElementProxy.class), model);
+		return "search-results";
 	}
 
 	/**
@@ -107,31 +120,29 @@ public class SearchController {
 	 *
 	 * @param bpes Set<BioPAXElementProxy>
 	 */
-	private ModelMap processSearch(Set<BioPAXElementProxy> bpes) {
+	private void processSearch(Set<? extends BioPAXElement> bpes, Model model) {
 		pathwayNames.clear();
 		interactionNames.clear();
 		proteinNames.clear();
-		ModelMap map = new ModelMap();
+		otherNames.clear();
 		
-		for (BioPAXElementProxy bpe : bpes) {
+		for (BioPAXElement bpe : bpes) {
 			// limit display to Interaction or PhysicalEntity
-			if (bpe instanceof InteractionProxy) {
-				interactionNames.add(((InteractionProxy)bpe).getDisplayName());
+			if (bpe instanceof Interaction) {
+				interactionNames.add(((Interaction)bpe).getDisplayName());
+			} else if (bpe instanceof Protein) {
+				proteinNames.add(((Protein)bpe).getDisplayName());
+			} else if (bpe instanceof Pathway) {
+				pathwayNames.add(((Pathway)bpe).getDisplayName());
+			} else if (bpe instanceof Named) {
+				otherNames.add(((Named)bpe).getDisplayName());
 			}
-			else if (bpe instanceof PhysicalEntityProxy) {
-				if (bpe instanceof PathwayProxy) {
-					pathwayNames.add(((ProteinProxy)bpe).getDisplayName());
-				}
-				else if (bpe instanceof ProteinProxy) {
-					proteinNames.add(((ProteinProxy)bpe).getDisplayName());
-				}
-			}
+			
 		}
 		
-		map.put("pathwayNames", pathwayNames);
-		map.put("proteinNames",proteinNames);
-		map.put("interactionNames",interactionNames);
-		
-		return map;
+		model.addAttribute("pathwayNames", pathwayNames);
+		model.addAttribute("proteinNames",proteinNames);
+		model.addAttribute("interactionNames",interactionNames);
+		model.addAttribute("otherNames", otherNames);
 	}
 }
