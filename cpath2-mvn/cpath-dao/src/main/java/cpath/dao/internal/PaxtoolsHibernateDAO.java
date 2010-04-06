@@ -37,6 +37,7 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.UnificationXref;
+import org.biopax.paxtools.proxy.level3.BioPAXElementProxy;
 import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.hibernate.Query;
@@ -46,7 +47,6 @@ import org.hibernate.search.FullTextQuery;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import cpath.dao.PaxtoolsDAO;
@@ -78,6 +78,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 												SEARCH_FIELD_TERM,
 												SEARCH_FIELD_XREF_DB,
 												SEARCH_FIELD_XREF_ID};
+	private final static int BATCH_SIZE = 100;
 	
 	
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
@@ -102,27 +103,34 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 * 
 	 * TODO take care of Model, as, in fact, now persisted and indexed here are individual objects
 	 * 
-	 * TODO Use StatelessSession here and still find a way to create lucene indexes!
+	 * TODO Use either manual "batch" inserts or StatelessSession (less convenient); still must create lucene indexes!
 	 *
 	 * @param model Model
 	 * @param createIndex boolean
 	 */
 	@Transactional
 	public void importModel(final Model model, final boolean createIndex) {
-		// indexing will not kick off until a commit occurs
-		Session session = getSession();
+		Session session = getSessionFactory().getCurrentSession();
 		FullTextSession fullTextSession = Search.getFullTextSession(session);
+
+		int index = 0;
 		for (BioPAXElement bpe : model.getObjects()) {
-			if(log.isInfoEnabled())
+			if (log.isInfoEnabled())
 				log.info("Saving biopax element, rdfID: " + bpe.getRDFId());
+			index++;
 			session.save(bpe);
-			//not re-assigning 'bpe' below throws a TransientSessionException (object is not associated)
-			//bpe = (BioPAXElementProxy) session.merge(bpe); // can violate unique constraints (so, must check first if contains...)
-			//fullTextSession.index((BioPAXElementProxy)bpe);
-		}
-		//session.flush();
-		if (createIndex) {
-			fullTextSession.flushToIndexes();
+			if (index % BATCH_SIZE == 0) {
+				session.flush();
+				session.clear();
+				if (createIndex) {
+					fullTextSession.flushToIndexes(); // apply changes to indexes
+					fullTextSession.clear(); // clear since the queue is processed
+				}
+			}
+
+			if (createIndex) {
+				fullTextSession.flushToIndexes();
+			}
 		}
 	}
 
@@ -175,6 +183,11 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		}
 		*/
 		
+	}
+	
+	@Transactional(readOnly=true) // a hint to the driver to eventually optimize :)
+    public BioPAXElement getByID(final Long id) {
+		return (BioPAXElement)getSession().get(BioPAXElementProxy.class, id);
 	}
 
     /**
