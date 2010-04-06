@@ -29,7 +29,7 @@
 	  <constructor-arg ref="utils"/>
 	</bean>
 
-	<bean id="merge" class="cpath.merge.internal.MergeImpl" scope="prototype">
+	<bean id="merge" class="cpath.merge.internal.MergerImpl" scope="prototype">
 	  <constructor-arg ref="paxtoolsDAO"/>
 	  <constructor-arg ref="metadataDAO"/>
 	  <constructor-arg ref="cPathWarehouse"/>
