@@ -9,6 +9,7 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.pathway.PathwayDataDAO;
 import cpath.warehouse.pathway.PathwayDataJDBCServices;
+import cpath.common.DataSource;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -337,7 +338,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 		mysqlDataSource.setPassword(pathwayDataJDBCServices.getDbPassword());
 
 		// get application context after setting custom datasource
-		PremergeDataSource.beansByName.put("premergeDataSource", mysqlDataSource);
+		DataSource.beansByName.put("premergeDataSource", mysqlDataSource);
 		ApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:applicationContext-cpathPremerge.xml");
 
