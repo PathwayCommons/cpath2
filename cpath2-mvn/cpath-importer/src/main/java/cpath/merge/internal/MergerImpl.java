@@ -1,4 +1,4 @@
-package cpath.premerge.internal;
+package cpath.merge.internal;
 
 // imports
 import cpath.merge.Merger;
