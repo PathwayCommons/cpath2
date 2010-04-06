@@ -32,11 +32,14 @@ package cpath.dao.internal;
 import cpath.dao.PaxtoolsDAO;
 
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.level3.SmallMoleculeReference;
+import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.proxy.level3.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.transaction.TransactionConfiguration;
@@ -55,7 +58,6 @@ import static org.junit.Assert.*;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:applicationContext-cpathDAO.xml"})
 @TransactionConfiguration(transactionManager="mainTransactionManager")
-@Transactional
 public class PaxtoolsHibernateDAOTest {
 
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
@@ -105,6 +107,7 @@ public class PaxtoolsHibernateDAOTest {
 
 	@Test
 	@Transactional
+	//@Rollback(false) // once used - e.g., to dump/re-use the data in the cpath-web (import.sql) :)
 	public void testRun() throws Exception {
 		// verify a call to importModel
 		log.info("Testing call to paxtoolsDAO.importModel()...");
@@ -168,5 +171,14 @@ public class PaxtoolsHibernateDAOTest {
 			assertTrue(returnClass.getClass() == GET_BY_QUERY_RETURN_TEST_CLASS);
 		}
 		log.info("paxtoolsDAO.getByQueryString() second call succeeded!");
+		
+		
+		// verify object property is set
+		SmallMoleculeReference smr = (SmallMoleculeReference) paxtoolsDAO.getByID("http://www.biopax.org/examples/myExample#SmallMoleculeReference_10");
+		Set<Xref> xs = smr.getXref();
+		assertFalse(xs.isEmpty());
+		assertTrue(xs.size()==1);
+		Xref x = xs.iterator().next();
+		assertEquals("C00008", x.getId());
 	}
 }

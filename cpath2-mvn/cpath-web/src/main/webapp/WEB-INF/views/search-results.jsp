@@ -40,3 +40,16 @@
   </c:forEach>
 </table>
 </c:if>
+
+<c:if test="${fn:length(otherNames) > 0}">
+<table> 
+  <tr>
+    <th>Other (Named) Entities</th>
+  </tr>
+  <c:forEach items="${otherNames}" var="name">
+    <tr>
+	  <td>${name}</td>
+	</tr>
+  </c:forEach>
+</table>
+</c:if>

@@ -70,6 +70,14 @@ public interface PaxtoolsDAO {
     BioPAXElement getByID(String id);
 
     /**
+     * (Experimental) By internal 'proxy_id'
+     * 
+     * @param id
+     * @return
+     */
+    BioPAXElement getByID(Long id);
+    
+    /**
      * This method returns a set of objects in the model of the given class.
      * Contents of this set should not be modified.
 	 *
