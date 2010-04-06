@@ -28,6 +28,14 @@
 	  <constructor-arg ref="biopaxReaderL3"/>
 	  <constructor-arg ref="utils"/>
 	</bean>
+
+	<bean id="merge" class="cpath.merge.internal.MergeImpl" scope="prototype">
+	  <constructor-arg ref="paxtoolsDAO"/>
+	  <constructor-arg ref="metadataDAO"/>
+	  <constructor-arg ref="cPathWarehouse"/>
+	  <constructor-arg ref="pathwayDataJDBCServices"/>
+	  <constructor-arg ref="simpleMerger"/>
+	</bean>
 	
 	<bean id="pathwayDataJDBCServices" class="cpath.warehouse.pathway.internal.PathwayDataJDBCServicesImpl">
         <property name="dbUser" value="${db.user}"/>

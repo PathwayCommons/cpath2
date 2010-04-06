@@ -65,18 +65,20 @@ public interface PaxtoolsDAO {
      * in this model.
 	 *
      * @param id of the object to be retrieved.
+	 * @param eager boolean indicating eager (as opposed to lazy) fetching
      * @return BioPAXElement
      */
-    BioPAXElement getByID(String id);
+    BioPAXElement getByID(String id, boolean eager);
 
     /**
      * This method returns a set of objects in the model of the given class.
      * Contents of this set should not be modified.
 	 *
      * @param filterBy class to be used as a filter.
+	 * @param eager boolean indicating eager (as opposed to lazy) fetching
      * @return an unmodifiable set of objects of the given class.
      */
-    <T extends BioPAXElement> Set<T> getObjects(Class<T> filterBy);
+    <T extends BioPAXElement> Set<T> getObjects(Class<T> filterBy, boolean eager);
 
 	/**
 	 * Given a unification xref, returns a matching biopax element.

@@ -153,13 +153,16 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
      * in this model.
 	 *
      * @param id String
+	 * @param eager boolean indicating eager (as opposed to lazy) fetching
      * @return BioPAXElement
      */
 	@Transactional(readOnly=true) // a hint to the driver to eventually optimize :)
-    public BioPAXElement getByID(final String id) {
+    public BioPAXElement getByID(final String id, final boolean eager) {
 		// TODO 26-FEB-2010  BioPAXElementProxy changed to use auto-generated id instead of RDFId! Will wse session.getNamedQuery(..) for this!
     	Session session = getSession();
-		Query query = session.getNamedQuery("org.biopax.paxtools.proxy.level3.elementByRdfId");
+		String namedQuery = (eager) ? "org.biopax.paxtools.proxy.level3.elementByRdfId" :
+			"org.biopax.paxtools.proxy.level3.elementByRdfIdEager";
+		Query query = session.getNamedQuery(namedQuery);
 		query.setString("rdfid", id);
 		return (BioPAXElement)query.uniqueResult();
 
@@ -179,11 +182,19 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
      * Contents of this set should not be modified.
 	 *
      * @param filterBy class to be used as a filter.
+	 * @param eager boolean indicating eager (as opposed to lazy) fetching
      * @return an unmodifiable set of objects of the given class.
      */
 	@Transactional(readOnly=true)
-    public <T extends BioPAXElement> Set<T> getObjects(final Class<T> filterBy) {
-		List results = getSession().createQuery("from " + filterBy.getCanonicalName()).list();
+    public <T extends BioPAXElement> Set<T> getObjects(final Class<T> filterBy, boolean eager) {
+
+		List results = null;
+		if (eager) {
+			results = getSession().createQuery("from " + filterBy.getCanonicalName() + " fetch all properties").list();
+		}
+		else {
+			results = getSession().createQuery("from " + filterBy.getCanonicalName()).list();
+		}
 		return (results.size() > 0) ? new HashSet(results) : new HashSet();
 	}
 

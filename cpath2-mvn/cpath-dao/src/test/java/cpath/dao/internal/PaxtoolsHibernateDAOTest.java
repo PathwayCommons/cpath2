@@ -116,7 +116,7 @@ public class PaxtoolsHibernateDAOTest {
 		log.info("paxtoolsDAO.importModel() succeeded!");
 		
 		log.info("Testing call to paxtoolsDAO.getByID()...");
-		BioPAXElementProxy bpe = (BioPAXElementProxy) paxtoolsDAO.getByID("http://www.biopax.org/examples/myExample#Pathway50");
+		BioPAXElementProxy bpe = (BioPAXElementProxy) paxtoolsDAO.getByID("http://www.biopax.org/examples/myExample#Pathway50", false);
 		
 		assertTrue(bpe != null && bpe instanceof PathwayProxy);
 		
@@ -129,7 +129,7 @@ public class PaxtoolsHibernateDAOTest {
 
 		// verify a call to getObjects(Class<T> filterBy)
 		log.info("Testing call to paxtoolsDAO.getObjects()...");
-		Set<ProteinProxy> proteins = paxtoolsDAO.getObjects(ProteinProxy.class);
+		Set<ProteinProxy> proteins = paxtoolsDAO.getObjects(ProteinProxy.class, false);
 		assertTrue(proteins != null && proteins.size() == PROTEIN_TEST_VALUES.size());
 		int lc = 0;
 		for (ProteinProxy protein : proteins) {

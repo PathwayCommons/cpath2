@@ -1,4 +1,4 @@
-package cpath.premerge.internal;
+package cpath.common;
 
 // imports
 import org.springframework.beans.factory.FactoryBean;
@@ -7,7 +7,7 @@ import org.springframework.beans.factory.BeanNameAware;
 import java.util.Map;
 import java.util.HashMap;
 
-public class PremergeDataSource implements BeanNameAware, FactoryBean {
+public class DataSource implements BeanNameAware, FactoryBean {
 
     public static Map<String, Object> beansByName = new HashMap<String, Object>();
 

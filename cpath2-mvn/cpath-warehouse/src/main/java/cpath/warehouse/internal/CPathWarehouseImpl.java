@@ -6,7 +6,7 @@ import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.Level3Factory;
 import org.biopax.paxtools.model.level3.ProteinReference;
-import org.biopax.paxtools.model.level3.SmallMolecule;
+import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
@@ -50,10 +50,10 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
 	@Override
 	public <T extends UtilityClass> T createUtilityClass(String primaryUrn,
 			Class<T> utilityClazz) {
-		if(SmallMolecule.class.isAssignableFrom(utilityClazz)) {
-			return (T) moleculesDAO.getByID(primaryUrn);
+		if(SmallMoleculeReference.class.isAssignableFrom(utilityClazz)) {
+			return (T) moleculesDAO.getByID(primaryUrn, false);
 		} else if(ProteinReference.class.isAssignableFrom(utilityClazz)) {
-			return (T) proteinsDAO.getByID(primaryUrn);
+			return (T) proteinsDAO.getByID(primaryUrn, false);
 		} else if(ControlledVocabulary.class.isAssignableFrom(utilityClazz)) {
 			// TODO create proper CV
 		}

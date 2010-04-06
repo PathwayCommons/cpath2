@@ -22,4 +22,8 @@
 		<constructor-arg type="org.biopax.paxtools.model.BioPAXLevel" value="L2"/>
 	</bean>
 
+	<bean id="simpleMerger" class="org.biopax.paxtools.controller.SimpleMerger">
+		<constructor-arg ref="editorMap3"/>
+	</bean>
+
 </beans>

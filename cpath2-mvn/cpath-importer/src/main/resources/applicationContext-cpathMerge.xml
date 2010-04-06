@@ -18,9 +18,9 @@
 		</property>
 	</bean>
 
-    <bean id="premergeSessionFactory"
+    <bean id="mergeSessionFactory"
         class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-        <property name="dataSource" ref="premergeDataSource"/>
+        <property name="dataSource" ref="mergeDataSource"/>
         <property name="hibernateProperties">
 		  <props>
 			<prop key="hibernate.hbm2ddl.auto">create</prop>
@@ -32,9 +32,9 @@
         </property>
         <property name="configurationClass" value="org.hibernate.cfg.AnnotationConfiguration"/>
 		<property name="packagesToScan" value="org.biopax.paxtools.proxy.level3" /> 
-    </bean>
+	</bean>
 
-	<bean id="premergeDataSource" class="cpath.common.DataSource"/>
+	<bean id="mergeDataSource" class="cpath.common.DataSource"/>
 
     <!-- enable the configuration of transactional behavior based on annotations -->
     <tx:annotation-driven transaction-manager="transactionManager"/>
@@ -43,11 +43,11 @@
 
     <bean id="transactionManager"
         class="org.springframework.orm.hibernate3.HibernateTransactionManager">
-        <property name="sessionFactory" ref="premergeSessionFactory" />
+        <property name="sessionFactory" ref="mergeSessionFactory" />
     </bean>
 
-    <bean id="premergePaxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
-        <property name="sessionFactory" ref="premergeSessionFactory"/>
+    <bean id="mergePaxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
+        <property name="sessionFactory" ref="mergeSessionFactory"/>
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
