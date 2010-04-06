@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+    <context:annotation-config/>
+
+   	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="ignoreUnresolvablePlaceholders" value="false" />
+		<property name="ignoreResourceNotFound" value="true"/>
+		<property name="locations">
+			<value>classpath:cpath.properties</value>
+		</property>
+	</bean>
+
+	<bean id="premergeDispatcher" class="cpath.premerge.internal.PremergeDispatcher">
+		<constructor-arg ref="metadataDAO"/>
+	</bean>
+
+	<bean id="premerge" class="cpath.premerge.internal.PremergeImpl" scope="prototype">
+	  <constructor-arg ref="pathwayDataDAO"/>
+	  <constructor-arg ref="pathwayDataJDBCServices"/>
+	  <constructor-arg ref="idNormalizer"/>
+	  <constructor-arg ref="validator"/>
+	  <constructor-arg ref="biopaxReaderL3"/>
+	  <constructor-arg ref="utils"/>
+	</bean>
+
+	<bean id="merge" class="cpath.merge.internal.MergeImpl" scope="prototype">
+	  <constructor-arg ref="paxtoolsDAO"/>
+	  <constructor-arg ref="metadataDAO"/>
+	  <constructor-arg ref="cPathWarehouse"/>
+	  <constructor-arg ref="pathwayDataJDBCServices"/>
+	  <constructor-arg ref="simpleMerger"/>
+	</bean>
+	
+	<bean id="pathwayDataJDBCServices" class="cpath.warehouse.pathway.internal.PathwayDataJDBCServicesImpl">
+        <property name="dbUser" value="${db.user}"/>
+        <property name="dbPassword" value="${db.password}"/>
+        <property name="dbDataSource" value="${wdb.datasource}"/>
+        <property name="dbConnection" value="${wdb.connection}"/>
+    </bean>
+	
+	<bean id="idNormalizer" class="cpath.normalizer.internal.IdNormalizer">
+		<constructor-arg ref="miriam"/>
+	</bean>
+</beans>

@@ -1,0 +1,66 @@
+<!--
+ ! 
+ -->
+<assembly>
+  <formats>    
+    <format>zip</format>
+  </formats>   
+  
+  <moduleSets>
+    <moduleSet>
+      <includes>
+        <include>pathwaycommons.cpath:cpath-dao</include>
+        <include>pathwaycommons.cpath:cpath-warehouse</include>
+        <include>pathwaycommons.cpath:cpath-fetcher</include>
+        <include>pathwaycommons.cpath:cpath-importer</include>
+      </includes>
+      <binaries>
+        <outputDirectory>modules/${artifactId}</outputDirectory>
+        <unpack>false</unpack>
+      </binaries>
+    </moduleSet>
+    <moduleSet>
+      <includes>
+        <include>pathwaycommons.cpath:cpath-admin</include>
+      </includes>
+      <binaries>
+        <outputDirectory></outputDirectory>
+        <unpack>false</unpack>
+      </binaries>
+    </moduleSet>
+  </moduleSets>
+  
+  <dependencySets>    
+    <dependencySet>   
+      <outputDirectory>/lib</outputDirectory>
+      <includes>
+        <include>*:*</include>
+      </includes>
+      <!--
+      <excludes>
+        <exclude>org.eclipse:*</exclude>
+      </excludes>
+      -->
+    </dependencySet>  
+  </dependencySets>    
+  
+  <repositories>    
+    <repository>
+      <!-- 
+      <outputDirectory>local-repo</outputDirectory>
+      <includes>
+        <include>org.eclipse:*</include>
+      </includes>
+      -->
+    </repository>
+  </repositories>   
+  
+  <fileSets>       
+    <fileSet>
+      <directory>src/main/etc</directory>
+      <fileMode>0755</fileMode>
+      <outputDirectory></outputDirectory>
+    </fileSet>
+  </fileSets>
+   
+</assembly>

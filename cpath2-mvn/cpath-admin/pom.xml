@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><project>
+	<description>CPath2 Admin Module</description>
+	<url>http://www.pathwaycommons.org</url>
+  <parent>
+    <artifactId>cpath2</artifactId>
+    <groupId>pathwaycommons.cpath</groupId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>pathwaycommons.cpath</groupId>
+  <artifactId>cpath-admin</artifactId>
+  <name>cPath2 Admin</name>
+  <version>1.0-SNAPSHOT</version>
+
+  <build>
+    <finalName>${project.artifactId}</finalName>
+    <plugins>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <configuration>
+          <descriptorRefs>
+          	<descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+		  <archive>
+			<manifest>
+			  <mainClass>cpath.admin.Admin</mainClass>
+			</manifest>
+		  </archive>
+		  <!--
+		  <descriptors>
+            <descriptor>src/main/assembly/assembly.xml</descriptor>
+          </descriptors>
+          -->
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+  	<dependency>
+  		<groupId>pathwaycommons.cpath</groupId>
+  		<artifactId>cpath-warehouse</artifactId>
+  		<version>1.0-SNAPSHOT</version>
+  		<scope>compile</scope>
+  	</dependency>
+  	<dependency>
+  		<groupId>pathwaycommons.cpath</groupId>
+  		<artifactId>cpath-importer</artifactId>
+  		<version>1.0-SNAPSHOT</version>
+  		<scope>compile</scope>
+  	</dependency>
+  	<dependency>
+  		<groupId>log4j</groupId>
+  		<artifactId>log4j</artifactId>
+  		<version>1.2.13</version>
+  		<type>jar</type>
+  		<scope>compile</scope>
+  	</dependency>
+  </dependencies>
+</project>
