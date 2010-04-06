@@ -12,6 +12,7 @@
     <!-- JSR-303 support will be detected on classpath and enabled automatically -->
     <mvc:annotation-driven/>
 	
+	<!-- (new in Spring 3.0) go directly to the 'hello' view -->
 	<mvc:view-controller path="/hello" view-name="hello"/>
 
 	<bean id="viewResolver"
@@ -31,6 +32,10 @@
 		<property name="defaultErrorView" value="error" />
 		<property name="defaultStatusCode"><value>500</value></property>
 		<property name="exceptionAttribute"><value>exception</value></property>
+	</bean>
+	
+	<bean id="searchController" class="cpath.web.mvc.SearchController">
+		<constructor-arg ref="paxtoolsDAO"/>
 	</bean>
 	
 </beans>
