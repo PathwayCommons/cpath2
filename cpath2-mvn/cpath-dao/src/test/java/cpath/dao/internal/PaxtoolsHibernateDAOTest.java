@@ -32,8 +32,12 @@ package cpath.dao.internal;
 import cpath.dao.PaxtoolsDAO;
 
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.level3.BiochemicalReaction;
+import org.biopax.paxtools.model.level3.ChemicalStructure;
+import org.biopax.paxtools.model.level3.SmallMolecule;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.proxy.BioPAXElementProxy;
 import org.biopax.paxtools.proxy.level3.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -98,10 +102,11 @@ public class PaxtoolsHibernateDAOTest {
 		PROTEIN_TEST_VALUES.add(PROTEIN_A_TEST_VALUES);
 		PROTEIN_TEST_VALUES.add(PROTEIN_B_TEST_VALUES);
 		
-		GET_BY_QUERY_RETURN_CLASSES.add(SmallMoleculeProxy.class);
-		GET_BY_QUERY_RETURN_CLASSES.add(ChemicalStructureProxy.class);
-		GET_BY_QUERY_RETURN_CLASSES.add(BiochemicalReactionProxy.class);
-		GET_BY_QUERY_RETURN_CLASSES.add(SmallMoleculeReferenceProxy.class);
+		// model interfaces
+		GET_BY_QUERY_RETURN_CLASSES.add(SmallMolecule.class);
+		GET_BY_QUERY_RETURN_CLASSES.add(ChemicalStructure.class);
+		GET_BY_QUERY_RETURN_CLASSES.add(BiochemicalReaction.class);
+		GET_BY_QUERY_RETURN_CLASSES.add(SmallMoleculeReference.class);
 		
 	}
 
@@ -124,7 +129,9 @@ public class PaxtoolsHibernateDAOTest {
 		assertTrue(bpe != null && bpe instanceof PathwayProxy);
 		
 		Set<String> pathwayNames = ((PathwayProxy)bpe).getName();
+		
 		assertTrue(pathwayNames.size() == PATHWAY_TEST_VALUES.size());
+		
 		for (String name : pathwayNames) {
 			assertTrue(PATHWAY_TEST_VALUES.contains(name));
 		}
@@ -133,40 +140,44 @@ public class PaxtoolsHibernateDAOTest {
 		// verify a call to getObjects(Class<T> filterBy)
 		log.info("Testing call to paxtoolsDAO.getObjects()...");
 		Set<ProteinProxy> proteins = paxtoolsDAO.getObjects(ProteinProxy.class, false);
+		
 		assertTrue(proteins != null && proteins.size() == PROTEIN_TEST_VALUES.size());
+		
 		int lc = 0;
 		for (ProteinProxy protein : proteins) {
 			Set<String> names = protein.getName();
 			List<String> proteinTestValues = PROTEIN_TEST_VALUES.get(lc++);
+			
 			assertTrue(names.size() == proteinTestValues.size());
+			
 			for (String name : names) {
 				assertTrue(proteinTestValues.contains(name));
 			}
 		}
 		log.info("paxtoolsDAO.getObjects() succeeded!");
 
-		// verify a call to getElementByUnificationXref
-		//log.info("Testing call to paxtoolsDAO.getByUnificationXref()...");
-		//UnificationXref unificationXref = new Level3FactoryImpl().reflectivelyCreate(UnificationXref.class);
-		//unificationXref.setDb(UNIFICATION_TEST_VALUES[0]);
-		//unificationXref.setId(UNIFICATION_TEST_VALUES[1]);
-		//bpe = paxtoolsDAO.getByUnificationXref(unificationXref);
-		//Assert.assertTrue(bpe != null);
-		//log.info("paxtoolsDAO.getByUnificationXref() succeeded!");
-
 		// verify a call to getByQueryString - filter by BioPAXElementProxy
 		log.info("Testing first call to paxtoolsDAO.getByQueryString()...");
-		Set<BioPAXElementProxy> returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, BioPAXElementProxy.class);
-		assertTrue(returnClasses.size() == GET_BY_QUERY_RETURN_CLASSES.size());
+		Set<Level3ElementProxy> returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, Level3ElementProxy.class);
+		Set<Class<? extends BioPAXElement>> uniqueClasses = new HashSet<Class<? extends BioPAXElement>>();
 		for (BioPAXElement returnClass : returnClasses) {
-			assertTrue(GET_BY_QUERY_RETURN_CLASSES.contains(returnClass.getClass()));
+			uniqueClasses.add(returnClass.getModelInterface());
+			System.out.println(returnClass.toString() + " is " + returnClass.getModelInterface().getSimpleName());
+		}
+		
+		assertEquals(GET_BY_QUERY_RETURN_CLASSES.size(), uniqueClasses.size());
+		
+		for (Class<? extends BioPAXElement> returnClass : uniqueClasses) {
+			assertTrue(GET_BY_QUERY_RETURN_CLASSES.contains(returnClass));
 		}
 		log.info("paxtoolsDAO.getByQueryString() first call succeeded!");
 		
 		log.info("Testing second call to paxtoolsDAO.getByQueryString()...");
 		// verify a call to getByQueryString - filter by GET_BY_QUERY_RETURN_TEST_CLASS
 		returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, GET_BY_QUERY_RETURN_TEST_CLASS);
+		
 		assertTrue(returnClasses.size() == 1);
+		
 		for (BioPAXElement returnClass : returnClasses) {
 			assertTrue(returnClass.getClass() == GET_BY_QUERY_RETURN_TEST_CLASS);
 		}
@@ -174,7 +185,8 @@ public class PaxtoolsHibernateDAOTest {
 		
 		
 		// verify object property is set
-		SmallMoleculeReference smr = (SmallMoleculeReference) paxtoolsDAO.getByID("http://www.biopax.org/examples/myExample#SmallMoleculeReference_10");
+		SmallMoleculeReference smr = (SmallMoleculeReference) paxtoolsDAO
+			.getByID("http://www.biopax.org/examples/myExample#SmallMoleculeReference_10", false);
 		Set<Xref> xs = smr.getXref();
 		assertFalse(xs.isEmpty());
 		assertTrue(xs.size()==1);

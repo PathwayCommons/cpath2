@@ -37,11 +37,11 @@
 	<bean id="mergeDataSource" class="cpath.common.DataSource"/>
 
     <!-- enable the configuration of transactional behavior based on annotations -->
-    <tx:annotation-driven transaction-manager="transactionManager"/>
+    <tx:annotation-driven transaction-manager="mergeTransactionManager"/>
 
 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
 
-    <bean id="transactionManager"
+    <bean id="mergeTransactionManager"
         class="org.springframework.orm.hibernate3.HibernateTransactionManager">
         <property name="sessionFactory" ref="mergeSessionFactory" />
     </bean>

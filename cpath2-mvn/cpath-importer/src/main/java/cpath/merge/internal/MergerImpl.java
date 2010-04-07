@@ -159,9 +159,7 @@ public final class MergerImpl implements Merger {
 	 *
 	 * @param model Model
 	 */
-	@Transactional
 	public void importModel(Model model) {
-
 		// persist pc
 		pcDAO.importModel(model, true);
 	}

@@ -2,6 +2,7 @@ package cpath.premerge.internal;
 
 // imports
 import cpath.cleaner.Cleaner;
+import cpath.common.DataSource;
 import cpath.dao.PaxtoolsDAO;
 import cpath.premerge.Premerge;
 import cpath.normalizer.Normalizer;
