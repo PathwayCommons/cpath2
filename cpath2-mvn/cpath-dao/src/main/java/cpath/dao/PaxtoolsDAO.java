@@ -31,7 +31,6 @@ package cpath.dao;
 // imports
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.UnificationXref;
 
 import java.util.Set;
 import java.io.File;
@@ -50,6 +49,7 @@ public interface PaxtoolsDAO {
 	 */
 	void importModel(Model model, boolean createIndex);
 
+	
 	/**
 	 * Persists the given model to the db.
 	 *
@@ -59,6 +59,7 @@ public interface PaxtoolsDAO {
 	 */
 	void importModel(File biopaxFile, boolean createIndex) throws FileNotFoundException;
 
+	
     /**
      * This method returns the biopax element with the given id,
      * returns null if the object with the given id does not exist
@@ -70,13 +71,16 @@ public interface PaxtoolsDAO {
      */
     BioPAXElement getByID(String id, boolean eager);
 
+    
     /**
      * (Experimental) By internal 'proxy_id'
      * 
      * @param id
+     * @param eager
      * @return
      */
-    BioPAXElement getByID(Long id);
+    BioPAXElement getByID(Long id, boolean eager);
+
     
     /**
      * This method returns a set of objects in the model of the given class.
@@ -88,13 +92,6 @@ public interface PaxtoolsDAO {
      */
     <T extends BioPAXElement> Set<T> getObjects(Class<T> filterBy, boolean eager);
 
-	/**
-	 * Given a unification xref, returns a matching biopax element.
-	 *
-	 * @param unificationXref UnificationXref
-	 * @return BioPAXElement
-	 */
-	<T extends BioPAXElement> T getByUnificationXref(UnificationXref unificationXref);
 
 	/**
      * Search the lucene index for given string and returns
@@ -105,4 +102,5 @@ public interface PaxtoolsDAO {
      * @return List<BioPAXElement>
      */
     <T extends BioPAXElement> Set<T> search(String query, Class<T> filterBy);
+    
 }

@@ -1,7 +1,5 @@
 package cpath.merge;
 
-// imports
-import cpath.warehouse.beans.Metadata;
 
 /**
  * Merger interface.  Class implementing this 

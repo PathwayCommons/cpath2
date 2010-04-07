@@ -36,9 +36,8 @@ import org.apache.lucene.queryParser.ParseException;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.paxtools.proxy.level3.BioPAXElementProxy;
 import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
+import org.biopax.paxtools.proxy.level3.Level3ElementProxy;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -51,9 +50,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import cpath.dao.PaxtoolsDAO;
 
-import java.util.Set;
-import java.util.List;
-import java.util.HashSet;
+import java.util.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -134,6 +131,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		}
 	}
 
+	
 	/**
 	 * Persists the given model to the db.
 	 *
@@ -155,6 +153,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		importModel(model, createIndex);
 	}
 
+	
     /**
      * This method returns the biopax element with the given id,
      * returns null if the object with the given id does not exist
@@ -173,82 +172,31 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		Query query = session.getNamedQuery(namedQuery);
 		query.setString("rdfid", id);
 		return (BioPAXElement)query.uniqueResult();
-
-    	/*
-		Set<BioPAXElementProxy> returnClasses = search(id, BioPAXElementProxy.class);
-		if(!returnClasses.isEmpty()) {
-			return null;
-		} else {
-			return returnClasses.iterator().next();
-		}
-		*/
-		
 	}
 	
-	@Transactional(readOnly=true) // a hint to the driver to eventually optimize :)
-    public BioPAXElement getByID(final Long id) {
-		return (BioPAXElement)getSession().get(BioPAXElementProxy.class, id);
+	
+	@Transactional(readOnly=true)
+    public BioPAXElement getByID(final Long id, boolean eager) {
+		if(eager) {
+			return (BioPAXElement)getSession().load(Level3ElementProxy.class, id);
+		} else {
+			return (BioPAXElement)getSession().get(Level3ElementProxy.class, id);
+		}
 	}
 
-    /**
-     * This method returns a set of objects in the model of the given class.
-     * Contents of this set should not be modified.
-	 *
-     * @param filterBy class to be used as a filter.
-	 * @param eager boolean indicating eager (as opposed to lazy) fetching
-     * @return an unmodifiable set of objects of the given class.
-     */
+
 	@Transactional(readOnly=true)
     public <T extends BioPAXElement> Set<T> getObjects(final Class<T> filterBy, boolean eager) {
-
 		List results = null;
+		
 		if (eager) {
 			results = getSession().createQuery("from " + filterBy.getCanonicalName() + " fetch all properties").list();
 		}
 		else {
 			results = getSession().createQuery("from " + filterBy.getCanonicalName()).list();
 		}
+		
 		return (results.size() > 0) ? new HashSet(results) : new HashSet();
-	}
-
-	/**
-	 * Given a unification xref, returns a matching biopax element.
-	 *
-	 * @param unificationXref UnificationXref
-	 * @return BioPAXElement
-	 */
-	@Transactional(readOnly=true)
-	public <T extends BioPAXElement> T getByUnificationXref(UnificationXref unificationXref) {
-
-		// setup the query
-		//Query query = session.createQuery("from org.biopax.paxtools.proxy.level3.UnificationXrefProxy as ux where ux.db = ? and ux.id = ?");
-		//query.setParameter(0, unificationXref.getDb());
-		//query.setParameter(1, unificationXref.getId());
-
-		// get the result
-		//UnificationXrefProxy uXref= (UnificationXrefProxy)query.uniqueResult();
-
-	 	// no match, bail
-		//if (uXref == null) {
-		//	log.info("We cannot find a match for UnificationXref, DB: " + unificationXref.getDb() +
-		//			 ", ID: " + unificationXref.getId());
-		//	return null;
-		//}
-		// we have a match
-		//else {
-		//	log.info("We found a match for UnificationXref, DB: " + unificationXref.getDb() +
-		//			 ", ID: " + unificationXref.getId());
-			// get set of matches to the given unification xref
-		//	Set<XReferrable> match = uXref.isXrefOf();
-			// this has to be size one or db is corrupt
-		//	log.info("UnificationXref.isXRefOf() returns + " + match.size() + "BioPAXElements");
-		//	assert match.size() == 1;
-		//	// outta here
-		//	return (BioPAXElement)(match.toArray())[0];
-		//	//return match.toArray(new BioPAXElement[match.size()])[0];
-		//}
-
-		return null;
 	}
 
 
