@@ -109,6 +109,8 @@ public class IdNormalizerTest {
     	//TODO test when uniprot's is not the first xref
     	//TODO test illegal 'id', 'db', etc.
     	//TODO add to test CV (and use a MI term)
+		//TODO test BioSource
+		//TODO test Provenance
 	}
 
 }
