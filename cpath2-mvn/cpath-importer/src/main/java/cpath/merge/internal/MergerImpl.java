@@ -159,7 +159,7 @@ public final class MergerImpl implements Merger {
 	 *
 	 * @param model Model
 	 */
-	public void importModel(Model model) {
+	private void importModel(Model model) {
 		// persist pc
 		pcDAO.importModel(model, true);
 	}
