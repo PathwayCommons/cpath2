@@ -36,11 +36,13 @@ import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.EntityReference;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.UnificationXref;
+import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.model.level3.XReferrable;
-import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.biopax.paxtools.util.ClassFilterSet;
 
 import cpath.normalizer.Normalizer;
@@ -87,16 +89,21 @@ public class IdNormalizer implements Normalizer {
 			throw new IllegalArgumentException(model.getLevel() + " is not supported!");
 		}
 		
-		for(XReferrable bpe : model.getObjects(XReferrable.class)) {
-			List<UnificationXref> urefs = getUnificationXrefsSorted(bpe);
+		for(UtilityClass bpe : model.getObjects(UtilityClass.class)) {
 			UnificationXref uref = null;
 			
 			if(bpe instanceof ControlledVocabulary) {
-				uref = getFirstUnificationXrefOfCv(urefs);
+				uref = getFirstUnificationXref((XReferrable) bpe);
 			} else if(bpe instanceof EntityReference) {
-				uref = getFirstUnificationXrefOfEr(urefs);
+				uref = getFirstUnificationXrefOfEr((EntityReference) bpe);
+			} else if(bpe instanceof BioSource) {
+				uref = ((BioSource)bpe).getTaxonXref();
+			} else if(bpe instanceof Provenance) {
+				Provenance pro = (Provenance) bpe;
+				String urn = miriam.getDataTypeURI(pro.getStandardName());
+				model.updateID(pro.getRDFId(), urn);
+				continue;
 			} else {
-				//TODO can we also normalize Provenance, Score, and Evidence?..
 				continue;
 			}
 			
@@ -121,7 +128,6 @@ public class IdNormalizer implements Normalizer {
 
 	
 	private List<UnificationXref> getUnificationXrefsSorted(XReferrable referrable) {
-		
 		List<UnificationXref> urefs = new ArrayList<UnificationXref>(
 			new ClassFilterSet<UnificationXref>(referrable.getXref(), UnificationXref.class)
 		);	
@@ -144,24 +150,24 @@ public class IdNormalizer implements Normalizer {
 	/*
 	 * Gets the first one, the set is not empty, or null.
 	 */
-	private UnificationXref getFirstUnificationXrefOfCv(List<UnificationXref> urefs) {
+	private UnificationXref getFirstUnificationXref(XReferrable xr) {
+		List<UnificationXref> urefs = getUnificationXrefsSorted(xr);
 		return (urefs.isEmpty()) ? null : urefs.get(0);
 	}
 
+	
 	/*
 	 * The first uniprot or enterz gene xref, if exists, will be returned;
 	 * otherwise, the first one of any kind is the answer.
 	 */
-	private UnificationXref getFirstUnificationXrefOfEr(List<UnificationXref> urefs) {
-		UnificationXref ret = null;
-
+	private UnificationXref getFirstUnificationXrefOfEr(EntityReference er) {
+		List<UnificationXref> urefs = getUnificationXrefsSorted(er);
 		for(UnificationXref uref : urefs) {
 			if(uref.getDb().toLowerCase().startsWith("uniprot") 
 				|| uref.getDb().toLowerCase().startsWith("entrez")) {
 				return uref;
 			}
 		}
-		
 		// otherwise, take the first one
 		return (urefs.isEmpty()) ? null : urefs.get(0);
 	}
