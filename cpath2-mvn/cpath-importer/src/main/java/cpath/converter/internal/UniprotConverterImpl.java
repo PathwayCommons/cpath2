@@ -8,18 +8,12 @@ import org.biopax.paxtools.model.level2.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.io.InputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
+import java.util.*;
+import java.io.*;
 
 /**
  * Implementation of Converter interface for Uniprot data.
@@ -175,7 +169,8 @@ public class UniprotConverterImpl implements Converter {
         String taxId = parts[1];
         parts = organismName.split("\\(");
         String name = parts[0].trim();
-        String rdfId = "BIO_SOURCE_NCBI_" + taxId;
+        //String rdfId = "BIO_SOURCE_NCBI_" + taxId;
+        String rdfId = "urn:miriam:taxonomy:" + taxId;
 		BioPAXElement bpSource = getBioSource(rdfId, taxId, name);
 		if (bpLevel == BioPAXLevel.L2) {
 			((protein)currentProteinOrER).setORGANISM((bioSource)bpSource);
@@ -232,7 +227,8 @@ public class UniprotConverterImpl implements Converter {
 				String ac = acEntry.trim();
 				setUnificationXRef("UNIPROT", ac, currentProteinOrER);
 				if (createRDFId) {
-					currentProteinOrER.setRDFId("http://uniprot.org#urn%3Amiriam%3Auniprot%3A" + acEntry);
+					//currentProteinOrER.setRDFId("http://uniprot.org#urn%3Amiriam%3Auniprot%3A" + acEntry);
+					currentProteinOrER.setRDFId("urn.miriam.uniprot:" + acEntry);
 					createRDFId = false;
 				}
 			}
@@ -293,15 +289,14 @@ public class UniprotConverterImpl implements Converter {
      */
     private void setRelationshipXRef(String dbName, String id, BioPAXElement currentProteinOrER) {
         id = id.trim();
-        Map<String, BioPAXElement> bpMap = bpModel.getIdMap();
         String rdfId = dbName + "_" +  id;
-        if (bpMap.containsKey(rdfId)) {
+        if (bpModel.containsID(rdfId)) {
 			if (bpLevel == BioPAXLevel.L2) {
-				relationshipXref rXRef = (relationshipXref) bpMap.get(rdfId);
+				relationshipXref rXRef = (relationshipXref) bpModel.getByID(rdfId);
 				((physicalEntity)currentProteinOrER).addXREF(rXRef);
 			}
 			else if (bpLevel == BioPAXLevel.L3) {
-				RelationshipXref rXRef = (RelationshipXref) bpMap.get(rdfId);
+				RelationshipXref rXRef = (RelationshipXref) bpModel.getByID(rdfId);
 				((EntityReference)currentProteinOrER).addXref(rXRef);
 			}
         } else {
@@ -325,15 +320,14 @@ public class UniprotConverterImpl implements Converter {
      */
     private void setUnificationXRef(String dbName, String id, BioPAXElement currentProteinOrER) {
         id = id.trim();
-        Map<String, BioPAXElement> bpMap = bpModel.getIdMap();
         String rdfId = dbName + "_" +  id;
-        if (bpMap.containsKey(rdfId)) {
+        if (bpModel.containsID(rdfId)) {
 			if (bpLevel == BioPAXLevel.L2) {
-				unificationXref rXRef = (unificationXref) bpMap.get(rdfId);
+				unificationXref rXRef = (unificationXref) bpModel.getByID(rdfId);
 				((physicalEntity)currentProteinOrER).addXREF(rXRef);
 			}
 			else if (bpLevel == BioPAXLevel.L3) {
-				UnificationXref rXRef = (UnificationXref) bpMap.get(rdfId);
+				UnificationXref rXRef = (UnificationXref) bpModel.getByID(rdfId);
 				((EntityReference)currentProteinOrER).addXref(rXRef);
 			}
         } else {
@@ -383,9 +377,8 @@ public class UniprotConverterImpl implements Converter {
 	private <T extends BioPAXElement> T getBioSource(String rdfId, String taxId, String name) {
 
 		// check if biosource already exists
-        Map<String, BioPAXElement> bpMap = bpModel.getIdMap();
-		if (bpMap.containsKey(rdfId)) {
-			return (T)bpMap.get(rdfId);
+		if (bpModel.containsID(rdfId)) {
+			return (T)bpModel.getByID(rdfId);
 		}
 
 		if (bpLevel == BioPAXLevel.L2) {
@@ -421,7 +414,7 @@ public class UniprotConverterImpl implements Converter {
 		}
 
 		// setup base
-		Map<String, String> nsMap = bpModel.getNameSpacePrefixMap();
-		nsMap.put("", "http://uniprot.org#");
+		//Map<String, String> nsMap = bpModel.getNameSpacePrefixMap();
+		//nsMap.put("", "http://uniprot.org#");
 	}
 }

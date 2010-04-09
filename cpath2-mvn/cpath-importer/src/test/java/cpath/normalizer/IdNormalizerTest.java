@@ -33,18 +33,17 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import javax.annotation.Resource;
+
 import org.biopax.miriam.MiriamLink;
-import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.Level3Factory;
 import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -61,22 +60,22 @@ import cpath.normalizer.internal.IdNormalizer;
 		"classpath:applicationContext-paxtools.xml"})
 public class IdNormalizerTest {
 	
-	@Autowired
-	BioPAXIOHandler biopaxReader;
-	
-	Level3Factory factory = (Level3Factory) BioPAXLevel.L3.getDefaultFactory();
+	@Resource
+	SimpleReader simpleReader;
+	@Resource
+	SimpleExporter simpleExporter;
 	
 	/**
 	 * Test method for {@link cpath.normalizer.internal.IdNormalizer#filter(org.biopax.paxtools.model.Model)}.
 	 */
 	@Test
 	public final void testNormalize() {
-		Model model = factory.createModel();
-    	UnificationXref ref = factory.createUnificationXref();
+		Model model = simpleReader.getFactory().createModel();
+    	UnificationXref ref = simpleReader.getFactory().reflectivelyCreate(UnificationXref.class);
     	ref.setDb("uniprotkb");
     	ref.setRDFId("http://www.pathwaycommons.org/import#UnificationXref1");
     	ref.setId("P62158");
-    	ProteinReference pr = factory.createProteinReference();
+    	ProteinReference pr = simpleReader.getFactory().reflectivelyCreate(ProteinReference.class);
     	pr.setRDFId("http://www.pathwaycommons.org/import#ProteinReference1");
     	pr.setDisplayName("ProteinReference1");
     	pr.addXref(ref);
@@ -87,7 +86,7 @@ public class IdNormalizerTest {
 		// normalize		
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {
-			(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, out);
+			simpleExporter.convertToOWL(model, out);
 		} catch (IOException e1) {
 			fail(e1.toString());
 		}
@@ -97,7 +96,7 @@ public class IdNormalizerTest {
 		System.out.println(xml);
 		
 		// check the result
-		model = biopaxReader.convertFromOWL(new ByteArrayInputStream(xml.getBytes()));
+		model = simpleReader.convertFromOWL(new ByteArrayInputStream(xml.getBytes()));
 		
 		BioPAXElement bpe = model.getByID("urn:miriam:uniprot:P62158");
 		assertTrue(bpe instanceof ProteinReference);

@@ -10,7 +10,6 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.pathway.PathwayDataDAO;
 import cpath.warehouse.pathway.PathwayDataJDBCServices;
-import cpath.common.DataSource;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -25,7 +24,6 @@ import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +42,6 @@ import java.io.ByteArrayOutputStream;
 /**
  * Class responsible for premerging pathway data.
  */
-@Repository
 public final class PremergeImpl extends Thread implements Premerge {
 
 	// log
@@ -324,7 +321,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 * @param model Model
 	 * @return boolean
 	 */
-	@Transactional(propagation=Propagation.NESTED)
+	@Transactional
 	private boolean persistPathway(final PathwayData pathwayData, final Model model) {
 
 		// 8create db

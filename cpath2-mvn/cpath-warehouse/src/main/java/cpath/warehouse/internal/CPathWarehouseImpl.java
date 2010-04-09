@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import cpath.dao.PaxtoolsDAO;
 import cpath.warehouse.CPathWarehouse;
 import cpath.warehouse.CvRepository;
-import cpath.warehouse.IdRepository;
 import cpath.warehouse.beans.Cv;
 
 import java.util.Set;
@@ -31,15 +30,13 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
 	private static Level3Factory level3Factory = new BioPAXFactoryForPersistence();
 	
     private CvRepository cvRepository;
-    private IdRepository idRepository;
     private PaxtoolsDAO moleculesDAO;
     private PaxtoolsDAO proteinsDAO;
 	
 	
-	public CPathWarehouseImpl(CvRepository cvRepository, IdRepository idRepository,
+	public CPathWarehouseImpl(CvRepository cvRepository,
 			PaxtoolsDAO moleculesDAO, PaxtoolsDAO proteinsDAO) {
 		this.cvRepository = cvRepository;
-		this.idRepository = idRepository;
 		this.moleculesDAO = moleculesDAO;
 		this.proteinsDAO = proteinsDAO;
 	}
@@ -102,8 +99,8 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
 	 */
 	@Override
 	public String getPrimaryURI(String urn) {
-		String primary = idRepository.getPrimaryUrn(urn);
-		return primary;
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	

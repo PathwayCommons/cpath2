@@ -46,8 +46,8 @@ import cpath.warehouse.beans.Cv;
  *
  */
 @Repository
-public class CvHibernateRepository implements CvRepository {
-    private static Log log = LogFactory.getLog(CvHibernateRepository.class);
+public class HibernateCvRepository implements CvRepository {
+    private static Log log = LogFactory.getLog(HibernateCvRepository.class);
 
 	// session factory prop/methods used by spring
 	private SessionFactory sessionFactory;
