@@ -25,7 +25,7 @@
 	  <constructor-arg ref="pathwayDataJDBCServices"/>
 	  <constructor-arg ref="idNormalizer"/>
 	  <constructor-arg ref="validator"/>
-	  <constructor-arg ref="biopaxReaderL3"/>
+	  <constructor-arg ref="simpleReader"/>
 	  <constructor-arg ref="utils"/>
 	</bean>
 

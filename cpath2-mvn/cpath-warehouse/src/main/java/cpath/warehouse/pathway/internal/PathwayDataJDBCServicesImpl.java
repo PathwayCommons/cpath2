@@ -10,10 +10,12 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.stereotype.Repository;
 
 /**
  * Class which provides services to create provider database to persist pathway data.
  */
+@Repository
 public final class PathwayDataJDBCServicesImpl implements PathwayDataJDBCServices {
 
     // log

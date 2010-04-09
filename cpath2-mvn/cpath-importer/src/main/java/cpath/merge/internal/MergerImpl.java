@@ -16,12 +16,11 @@ import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.UtilityClass;
+import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.biopax.paxtools.controller.SimpleMerger;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.stereotype.Repository;
 
 import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
 
@@ -34,7 +33,6 @@ import java.util.Set;
 /**
  * Class responsible for Merging pathway data.
  */
-@Repository
 public final class MergerImpl implements Merger {
 
 	// log
@@ -87,7 +85,7 @@ public final class MergerImpl implements Merger {
 	public void merge() {
 
 		// create pc model
-		Model pcModel= BioPAXLevel.L3.getDefaultFactory().createModel();
+		Model pcModel= (new BioPAXFactoryForPersistence()).createModel();
 
 		// iterate over all providers
 		for (Metadata metadata : metadataDAO.getAll()) {
@@ -114,10 +112,7 @@ public final class MergerImpl implements Merger {
 			simpleMerger.merge(pcModel, pathwayModel);
 		}
 
-		// persist pc - placed in separate
-		// method so this method is non-transactional
-		// (which detaches pathwayModel from session)
-		importModel(pcModel);
+		pcDAO.importModel(pcModel, true);
 	}
 
 	/**
@@ -126,7 +121,6 @@ public final class MergerImpl implements Merger {
 	 * @param metadata Metadata
 	 * @return Model
 	 */
-	@Transactional
 	private Model getModel(final Metadata metadata) {
 
 		// create data source
@@ -154,15 +148,6 @@ public final class MergerImpl implements Merger {
 		return toReturn;
 	}
 
-	/**
-	 * Method used to persist pc model.
-	 *
-	 * @param model Model
-	 */
-	private void importModel(Model model) {
-		// persist pc
-		pcDAO.importModel(model, true);
-	}
 
 	/**
 	 * Given a BioPAXElement, returns the proper utility class

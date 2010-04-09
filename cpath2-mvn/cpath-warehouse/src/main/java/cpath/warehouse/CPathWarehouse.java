@@ -36,25 +36,22 @@ import java.util.Set;
  * cPathSquared Warehouse Interface
  * 
  * @author rodch
- *
- * TODO define warehouse methods
  */
 public interface CPathWarehouse {
 
 	static final String SEARCH_INDEX_NAME = "cpathwarehouse";
 	
 	/**
-	 * Creates a new standard reference BioPAX object 
-	 * (e.g., CellVocabulary or ProteinReference)
+	 * Gets the standard BioPAX utility class object from cPath Warehouse
+	 * (e.g., CellVocabulary or ProteinReference); if required, 
+	 * it performs URI mapping (e.g., to primary uniprot id for protein references)
 	 * 
 	 * @param <T> UtilityClass or its subclass (e.g., ProteinReference)
 	 * @param urn
 	 * @param clazz
 	 * @return
-	 * 
-	 * TODO maybe, remove this one
 	 */
-	<T extends UtilityClass> T createUtilityClass(String primaryUrn, Class<T> utilityClazz);
+	<T extends UtilityClass> T createUtilityClass(String urn, Class<T> utilityClazz);
 	
 	
 	/**

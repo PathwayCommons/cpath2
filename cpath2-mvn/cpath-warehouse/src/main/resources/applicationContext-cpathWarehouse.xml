@@ -60,11 +60,7 @@
         <property name="sessionFactory" ref="whouseSessionFactory"/>
     </bean>
 
-    <bean id="cvRepository" class="cpath.warehouse.internal.CvHibernateRepository">
-        <property name="sessionFactory" ref="whouseSessionFactory"/>
-    </bean>
-    
-    <bean id="idRepository" class="cpath.warehouse.internal.IdHibernateRepository">
+    <bean id="cvRepository" class="cpath.warehouse.internal.HibernateCvRepository">
         <property name="sessionFactory" ref="whouseSessionFactory"/>
     </bean>
 
@@ -72,7 +68,6 @@
 
 	<bean id="cPathWarehouse" class="cpath.warehouse.internal.CPathWarehouseImpl">
 		<constructor-arg ref="cvRepository"/>
-		<constructor-arg ref="idRepository"/>
 		<constructor-arg ref="moleculesDAO"/>
 		<constructor-arg ref="proteinsDAO"/>
 	</bean>

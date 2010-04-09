@@ -36,7 +36,6 @@ import org.biopax.paxtools.model.level3.Interaction;
 import org.biopax.paxtools.model.level3.Named;
 import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.Protein;
-import org.biopax.paxtools.proxy.BioPAXElementProxy;
 import org.biopax.paxtools.proxy.level3.Level3ElementProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -54,7 +53,6 @@ import java.util.*;
  * Search/Search Results "Controller" (in MVC terms)
  */
 @Controller
-@RequestMapping("/search")
 public class SearchController {
     private static final Log log = LogFactory.getLog(SearchController.class);
 
@@ -76,12 +74,8 @@ public class SearchController {
 
 
 	// simply shows form
-	@RequestMapping(method = RequestMethod.GET)
+	@RequestMapping(value="/search", method = RequestMethod.GET)
     public void showForm() {
-    }
-	
-	@RequestMapping("/")
-    public void alsoShowForm() {
     }
 	
     /**
@@ -91,14 +85,14 @@ public class SearchController {
 	 *
      * @return a forward to the listBy() method of this class
      */
-    @RequestMapping("/all")
+    @RequestMapping("/search/all")
     public String listAllElements(Model model) {
 		processSearch(paxtoolsDAO.getObjects(Level3ElementProxy.class, false), model);
         return "search-results";
     }
 
-    @RequestMapping("/{id}")
-    public String getElement(@PathVariable Long id, Model model) {
+    @RequestMapping("/search/{id}")
+    public String getElement(@PathVariable("id") Long id, Model model) {
 		BioPAXElement element = paxtoolsDAO.getByID(id, true);
 		model.addAttribute("element", element);
         return "element";
@@ -110,8 +104,8 @@ public class SearchController {
 	 *
      * @return the search-results
      */
-    @RequestMapping(method= RequestMethod.POST)
-    public String search(@RequestParam String queryString, Model model) {
+    @RequestMapping(value="/search", method= RequestMethod.POST)
+    public String search(@RequestParam("queryString") String queryString, Model model) {
 		processSearch(paxtoolsDAO.search(queryString, Level3ElementProxy.class), model);
 		return "search-results";
 	}
