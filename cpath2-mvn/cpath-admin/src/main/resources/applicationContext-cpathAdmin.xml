@@ -23,8 +23,9 @@
 		<constructor-arg ref="providerPathwayDataService"/>
 		<constructor-arg ref="providerProteinDataService"/>
 		<constructor-arg ref="premergeDispatcher"/>
-		<constructor-arg ref="proteinsDAO" index="6"/>
-		<constructor-arg ref="moleculesDAO" index="7"/>
+		<constructor-arg ref="merge"/>
+		<constructor-arg ref="proteinsDAO" index="7"/>
+		<constructor-arg ref="moleculesDAO" index="8"/>
 	</bean>
   
 </beans>
