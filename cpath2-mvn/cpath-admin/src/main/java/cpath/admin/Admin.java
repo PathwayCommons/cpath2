@@ -38,6 +38,7 @@ import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.metadata.MetadataDAO;
 import cpath.warehouse.pathway.PathwayDataDAO;
 import cpath.premerge.internal.PremergeDispatcher;
+import cpath.merge.Merger;
 
 import org.biopax.paxtools.model.Model;
 
@@ -65,7 +66,8 @@ public class Admin implements Runnable {
         FETCH_METADATA("-fetch-metadata"),
 		FETCH_PATHWAY_DATA("-fetch-pathwaydata"),
 		FETCH_PROTEIN_DATA("-fetch-proteindata"),
-		PREMERGE("-premerge");
+		PREMERGE("-premerge"),
+		MERGE("-merge");
 
         // string ref for readable name
         private String command;
@@ -93,6 +95,8 @@ public class Admin implements Runnable {
 	private PaxtoolsDAO moleculesDAO;
 	// ref to premerge dispatcher
 	private PremergeDispatcher premergeDispatcher;
+	// ref to mergere
+	private Merger merger;
 
     // command, command parameter
     private COMMAND command;
@@ -108,6 +112,7 @@ public class Admin implements Runnable {
 	 * @param providerPathwayDataService ProviderPathwayDataService
 	 * @param providerProteinDataService ProviderProteinDataService
 	 * @param premergeDispatcher PremergeDispatcher
+	 * @param merger Merger
 	 * @param proteinsDAO
 	 * @param moleculesDAO
      */
@@ -117,6 +122,7 @@ public class Admin implements Runnable {
 				 final ProviderPathwayDataService providerPathwayDataService,
 				 final ProviderProteinDataService providerProteinDataService,
 				 final PremergeDispatcher premergeDispatcher,
+				 final Merger merger,
 				 final PaxtoolsDAO proteinsDAO,
 				 final PaxtoolsDAO moleculesDAO) {
         
@@ -127,6 +133,7 @@ public class Admin implements Runnable {
 		this.providerPathwayDataService = providerPathwayDataService;
 		this.providerProteinDataService = providerProteinDataService;
 		this.premergeDispatcher = premergeDispatcher;
+		this.merger = merger;
 		this.proteinsDAO = proteinsDAO;
 		this.moleculesDAO = moleculesDAO;
     }
@@ -179,6 +186,11 @@ public class Admin implements Runnable {
 			// takes no args
 			this.commandParameters = new String[] { "" };
 		}
+		else if (args[0].equals(COMMAND.MERGE.toString())) {
+			this.command = COMMAND.MERGE;
+			// takes no args
+			this.commandParameters = new String[] { "" };
+		}
         else {
             validArgs = false;
         }
@@ -206,6 +218,9 @@ public class Admin implements Runnable {
 			case PREMERGE:
 				premergeDispatcher.start();
 				break;
+			case MERGE:
+				merger.merge();
+				System.exit(0);
             }
         }
         catch (IOException e) {
@@ -338,6 +353,7 @@ public class Admin implements Runnable {
 		toReturn.append(COMMAND.FETCH_PATHWAY_DATA.toString() + " <provider-name or all>");
 		toReturn.append(COMMAND.FETCH_PROTEIN_DATA.toString() + " <provider-name or all>");
 		toReturn.append(COMMAND.PREMERGE.toString());
+		toReturn.append(COMMAND.MERGE.toString());
 
 		// outta here
 		return toReturn.toString();
@@ -366,7 +382,7 @@ public class Admin implements Runnable {
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files) !!!
 					"classpath:applicationContext-cpathDAO.xml", // biopax hibernate configuration
-					"classpath:applicationContext-cpathImporter.xml", // premerge, idNormalizer, etc.
+					"classpath:applicationContext-cpathImporter.xml", // premerge, merge, idNormalizer, etc.
             		"classpath:applicationContext-cpathWarehouse.xml", // warehouse hibernate config.
 					"classpath:applicationContext-biopaxValidation.xml", // biopax validator, rules, etc.
 					"classpath:applicationContext-cvFetcher.xml", // OBO ontologies manager config.
