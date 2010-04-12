@@ -95,7 +95,7 @@ public class Admin implements Runnable {
 	private PaxtoolsDAO moleculesDAO;
 	// ref to premerge dispatcher
 	private PremergeDispatcher premergeDispatcher;
-	// ref to mergere
+	// ref to merger
 	private Merger merger;
 
     // command, command parameter
@@ -208,22 +208,24 @@ public class Admin implements Runnable {
             switch (command) {
             case FETCH_METADATA:
                 fetchMetadata(commandParameters[0]);
-				System.exit(0);
+				break;
 			case FETCH_PATHWAY_DATA:
 				fetchPathwayData(commandParameters[0]);
-				System.exit(0);
+				break;
 			case FETCH_PROTEIN_DATA:
 				fetchProteinData(commandParameters[0]);
-				System.exit(0);
+				break;
 			case PREMERGE:
 				premergeDispatcher.start();
+				// sleep until premerge is complete, this is required so we can call System.exit(...) below
+				premergeDispatcher.join();
 				break;
 			case MERGE:
 				merger.merge();
-				System.exit(0);
+				break;
             }
         }
-        catch (IOException e) {
+        catch (Exception e) {
             e.printStackTrace();
             System.exit(-1);
         }
@@ -395,5 +397,7 @@ public class Admin implements Runnable {
 		Admin admin = (Admin) context.getBean("cpathAdmin");
 		admin.setCommandParameters(args);
         admin.run();
+		// required because MySQL Statement Cancellation Timer thread is still running
+		System.exit(0);
     }
 }

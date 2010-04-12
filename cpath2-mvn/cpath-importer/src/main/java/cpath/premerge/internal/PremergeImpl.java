@@ -168,6 +168,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 
 		// outta here
 		premergeDispatcher.premergeComplete(metadata);
+		log.info("run(), exiting...");
 	}
 
 	/**
