@@ -4,6 +4,8 @@ package cpath.common;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.httpclient.NameValuePair;
+
 public interface FetcherHTTPClient {
 
 	/**
@@ -29,4 +31,15 @@ public interface FetcherHTTPClient {
 	 * Required after a call to getDataFromServiceAsStream is made and processed.
 	 */
 	void releaseConnection();
+
+	/**
+	 * Fetches data using POST query
+	 * 
+	 * @param url
+	 * @param params
+	 * @return
+	 * @throws IOException
+	 */
+	InputStream getDataFromService(String url, NameValuePair[] params)
+			throws IOException;
 }
