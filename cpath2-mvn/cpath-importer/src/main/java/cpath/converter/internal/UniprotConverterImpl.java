@@ -1,6 +1,5 @@
 package cpath.converter.internal;
 
-// imports
 import cpath.converter.Converter;
 
 import org.biopax.paxtools.model.Model;
@@ -14,6 +13,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.util.*;
 import java.io.*;
+import java.net.URLEncoder;
 
 /**
  * Implementation of Converter interface for Uniprot data.
@@ -28,6 +28,10 @@ public class UniprotConverterImpl implements Converter {
 
 	// ref to bp level
 	private BioPAXLevel bpLevel;
+	
+	
+	public static final String MODEL_NAMESPACE_PREFIX = "http://uniprot.org#";
+	
 
 	/**
 	 * (non-Javadoc>
@@ -43,21 +47,26 @@ public class UniprotConverterImpl implements Converter {
         InputStreamReader reader= null;
 
 		// create a model
-		log.info("convert(), creating Biopax Model.");
+        if(log.isInfoEnabled())
+        	log.info("convert(), creating Biopax Model.");
+        
 		createBPModel();
-		log.info("convert(), model: " + bpModel);
+		
+		if(log.isInfoEnabled())
+			log.info("convert(), model: " + bpModel);
 
         try {
-			log.info("convert(), creating buffered reader.");
+        	if(log.isInfoEnabled())
+        		log.info("convert(), creating buffered reader.");
             reader = new InputStreamReader (is);
             BufferedReader bufferedReader = new BufferedReader(reader);
             String line = bufferedReader.readLine();
-            HashMap dataElements = new HashMap();
-			log.info("convert(), starting to read data...");
+            HashMap<String, StringBuffer> dataElements = new HashMap<String, StringBuffer>();
+            if(log.isInfoEnabled())
+            	log.info("convert(), starting to read data...");
             while (line != null) {
                 if (line.startsWith ("//")) {
                     StringBuffer deField = (StringBuffer) dataElements.get("DE");
-
                     StringBuffer id = (StringBuffer) dataElements.get("ID");
                     StringBuffer organismName = (StringBuffer) dataElements.get("OS");
                     StringBuffer organismTaxId = (StringBuffer) dataElements.get("OX");
@@ -65,26 +74,26 @@ public class UniprotConverterImpl implements Converter {
                     StringBuffer geneName = (StringBuffer) dataElements.get("GN");
                     StringBuffer acNames = (StringBuffer) dataElements.get("AC");
                     StringBuffer xrefs = (StringBuffer) dataElements.get("DR");
-
                     String idParts[] = id.toString().split("\\s");
                     String shortName = idParts[0];
-                    BioPAXElement currentProteinOrER = getPhysicalEntity(shortName);
+                    
+                    BioPAXElement currentProteinOrER = newUniProtWithXrefs(shortName, acNames, xrefs);
+                    
                     setNameAndSynonyms(currentProteinOrER, deField.toString());
+                    
                     setOrganism(organismName.toString(), organismTaxId.toString(), currentProteinOrER);
+                    
                     String geneSyns = null;
                     if (geneName != null) {
-                        geneSyns= setGeneSymbolAndSynonyms(geneName.toString(), currentProteinOrER);
+                        geneSyns= setGeneSymbolAndSynonyms(geneName, currentProteinOrER);
                     }
+                    
                     if (comments != null) {
                         setComments (comments.toString(), geneSyns, currentProteinOrER);
                     }
-                    setUniProtAccessionNumbers(acNames.toString(), currentProteinOrER);
-                    if (xrefs != null) {
-                        setXRefs (xrefs.toString(), currentProteinOrER);
-                    }
-                    dataElements = new HashMap();
-                }
-				else {
+                    
+                    dataElements = new HashMap<String, StringBuffer>();
+                } else {
                     String key = line.substring (0, 2);
                     String data = line.substring(5);
                     if (data.startsWith("-------") ||
@@ -102,12 +111,15 @@ public class UniprotConverterImpl implements Converter {
                 }
                 line = bufferedReader.readLine();
             }
+            if(log.isInfoEnabled()) 
+            	log.info("convert(), no. of elements created: " 
+            			+ bpModel.getObjects().size());
         }
 		catch(IOException e) {
-			e.printStackTrace();
+			log.error("Failed", e);
 		}
 		finally {
-			log.info("convert(), closing reader.");
+			if(log.isInfoEnabled()) log.info("convert(), closing reader.");
             if (reader != null) {
 				try {
 					reader.close();
@@ -117,7 +129,7 @@ public class UniprotConverterImpl implements Converter {
 				}
             }
         }
-        log.info("convert(), exiting.");
+		if(log.isInfoEnabled()) log.info("convert(), exiting.");
 
 		// outta here
 		return bpModel;
@@ -131,7 +143,6 @@ public class UniprotConverterImpl implements Converter {
         //  DE            Short=KCIP-1;
         //  DE   AltName: Full=Protein 1054;
         //  We only want DE:  RecName:Full
-        String name = null;
         if (deField != null && deField.length() > 0) {
             String deTemp = deField.toString();
             String fields[] = deTemp.split(";");
@@ -169,9 +180,7 @@ public class UniprotConverterImpl implements Converter {
         String taxId = parts[1];
         parts = organismName.split("\\(");
         String name = parts[0].trim();
-        //String rdfId = "BIO_SOURCE_NCBI_" + taxId;
-        String rdfId = "urn:miriam:taxonomy:" + taxId;
-		BioPAXElement bpSource = getBioSource(rdfId, taxId, name);
+		BioPAXElement bpSource = getBioSource("urn:miriam:taxonomy:" + taxId, taxId, name);
 		if (bpLevel == BioPAXLevel.L2) {
 			((protein)currentProteinOrER).setORGANISM((bioSource)bpSource);
 		}
@@ -204,7 +213,7 @@ public class UniprotConverterImpl implements Converter {
                     + "UniProt Consortium (http://www.uniprot.org/).  Distributed under "
                     + "the Creative Commons Attribution-NoDerivs License.");
         }
-        HashSet <String> commentSet = new HashSet();
+        HashSet<String> commentSet = new HashSet<String>();
         commentSet.add(reducedComments.toString());
 		if (bpLevel == BioPAXLevel.L2) {
 			((Level2Element)currentProteinOrER).setCOMMENT(commentSet);
@@ -214,26 +223,6 @@ public class UniprotConverterImpl implements Converter {
 		}
     }
 
-    /**
-     * Sets UniProt Accession Numbers (can be 0, 1 or N).
-     * However, we only take the 0th element, which is referred in UniProt as the
-     * "Primary Accession Number".
-     */
-    private void setUniProtAccessionNumbers (String acNames, BioPAXElement currentProteinOrER) {
-        String acList[] = acNames.split(";");
-        if (acList.length > 0) {
-			boolean createRDFId = true; // first id in list is primary
-			for (String acEntry : acList) {
-				String ac = acEntry.trim();
-				setUnificationXRef("UNIPROT", ac, currentProteinOrER);
-				if (createRDFId) {
-					//currentProteinOrER.setRDFId("http://uniprot.org#urn%3Amiriam%3Auniprot%3A" + acEntry);
-					currentProteinOrER.setRDFId("urn.miriam.uniprot:" + acEntry);
-					createRDFId = false;
-				}
-			}
-        }
-    }
 
     /**
      * Sets Multiple Types of XRefs, e.g. Entrez Gene ID and RefSeq.
@@ -261,18 +250,18 @@ public class UniprotConverterImpl implements Converter {
         }
     }
 
+    
     /**
      * Sets the HUGO Gene Symbol and Synonyms.
      */
-    private String setGeneSymbolAndSynonyms(String geneName, BioPAXElement currentProteinOrER) {
+    private String setGeneSymbolAndSynonyms(StringBuffer geneName, BioPAXElement currentProteinOrER) {
         StringBuffer synBuffer = new StringBuffer();
-        String parts[] = geneName.split(";");
+        String parts[] = geneName.toString().split(";");
         for (int i=0; i<parts.length; i++) {
             String subParts[] = parts[i].split("=");
             // Set HUGO Gene Name
             if (subParts[0].trim().equals("Name")) {
-                geneName = subParts[1];
-                setRelationshipXRef("NGNC", geneName, currentProteinOrER);
+                setRelationshipXRef("NGNC", subParts[1], currentProteinOrER);
             } else if (subParts[0].trim().equals("Synonyms")) {
                 String synList[] = subParts[1].split(",");
                 for (int j=0; j<synList.length; j++) {
@@ -289,7 +278,7 @@ public class UniprotConverterImpl implements Converter {
      */
     private void setRelationshipXRef(String dbName, String id, BioPAXElement currentProteinOrER) {
         id = id.trim();
-        String rdfId = dbName + "_" +  id;
+        String rdfId = MODEL_NAMESPACE_PREFIX + URLEncoder.encode(dbName + "_" +  id);
         if (bpModel.containsID(rdfId)) {
 			if (bpLevel == BioPAXLevel.L2) {
 				relationshipXref rXRef = (relationshipXref) bpModel.getByID(rdfId);
@@ -320,7 +309,7 @@ public class UniprotConverterImpl implements Converter {
      */
     private void setUnificationXRef(String dbName, String id, BioPAXElement currentProteinOrER) {
         id = id.trim();
-        String rdfId = dbName + "_" +  id;
+        String rdfId = MODEL_NAMESPACE_PREFIX + URLEncoder.encode(dbName + "_" +  id);
         if (bpModel.containsID(rdfId)) {
 			if (bpLevel == BioPAXLevel.L2) {
 				unificationXref rXRef = (unificationXref) bpModel.getByID(rdfId);
@@ -347,76 +336,101 @@ public class UniprotConverterImpl implements Converter {
     }
 
 	/**
-	 * Gets a physical entity (or Entity Reference in L3)
+	 * Gets a protein (or ProteinReference in L3);
+	 * set its RDFId and all the xrefs.
 	 *
-	 * @param shortName String
-	 * @return <T extends BioPAXElement>
+	 * @param shortName
+	 * @param accessions AC field values
+	 * @param dbRefs DR field values
+	 * @return
 	 */
-	private <T extends BioPAXElement> T getPhysicalEntity(String shortName) {
-
+	private BioPAXElement newUniProtWithXrefs(String shortName, StringBuffer accessions, StringBuffer dbRefs) {
+		BioPAXElement element = null;
+		
+		// accession numbers as array
+		String acList[] = accessions.toString().split(";");
+		// the first one, primary id, becomes the RDFId
+		String id = "urn.miriam.uniprot:" + acList[0].trim();
+		
 		if (bpLevel == BioPAXLevel.L2) {
-			physicalEntity toReturn = (physicalEntity)bpModel.addNew(protein.class, shortName);
-			toReturn.setSHORT_NAME(shortName);
-			return (T)toReturn;
-		}
-		else if (bpLevel == BioPAXLevel.L3) {
-			SequenceEntityReference toReturn = (SequenceEntityReference)bpModel.addNew(ProteinReference.class, shortName + "_ER");
-			toReturn.setDisplayName(shortName);
-			return (T)toReturn;
+			protein p = bpModel.addNew(protein.class, id);
+			p.setSHORT_NAME(shortName);
+			element = p;
+		} else if (bpLevel == BioPAXLevel.L3) {
+			ProteinReference p = bpModel.addNew(ProteinReference.class, id);
+			p.setDisplayName(shortName);
+			element = p;
+		} else {
+			throw new IllegalAccessError("Unsupported BioPAX Level : "
+					+ bpLevel);
 		}
 
-		// should not get here
-		return null;
+		// add all unification xrefs
+		for (String acEntry : acList) {
+			String ac = acEntry.trim();
+			setUnificationXRef("UNIPROT", ac, element);
+		}
+		
+		// add other xrefs
+        if (dbRefs != null) {
+            setXRefs (dbRefs.toString(), element);
+        }
+		
+		return element;
 	}
 
 	/**
 	 * Gets a biosource
 	 *
-	 * @return <T extends BioPAXElement>
+	 * @return 
 	 */
-	private <T extends BioPAXElement> T getBioSource(String rdfId, String taxId, String name) {
+	private BioPAXElement getBioSource(String rdfId, String taxId, String name) {
 
 		// check if biosource already exists
 		if (bpModel.containsID(rdfId)) {
-			return (T)bpModel.getByID(rdfId);
+			return bpModel.getByID(rdfId);
 		}
 
 		if (bpLevel == BioPAXLevel.L2) {
 			bioSource toReturn = (bioSource)bpModel.addNew(bioSource.class, rdfId);
 			toReturn.setNAME(name);
-			unificationXref taxonXref = (unificationXref)bpModel.addNew(unificationXref.class, "TAXON_NCBI_" + taxId);
-            taxonXref.setDB("NCBI_taxonomy");
+			unificationXref taxonXref = (unificationXref)bpModel
+				.addNew(unificationXref.class, MODEL_NAMESPACE_PREFIX + "TAXONOMY_" + taxId);
+            taxonXref.setDB("TAXONOMY");
             taxonXref.setID(taxId);
 			toReturn.setTAXON_XREF(taxonXref);
-			return (T)toReturn;
+			return toReturn;
 		}
 		else if (bpLevel == BioPAXLevel.L3) {
 			BioSource toReturn = (BioSource)bpModel.addNew(BioSource.class, rdfId);
 			toReturn.setStandardName(name);
-			UnificationXref taxonXref = (UnificationXref)bpModel.addNew(UnificationXref.class, "TAXON_NCBI_" + taxId);
-			taxonXref.setDb("NCBI_taxonomy");
+			UnificationXref taxonXref = (UnificationXref)bpModel
+				.addNew(UnificationXref.class, MODEL_NAMESPACE_PREFIX + "TAXONOMY_" + taxId);
+			taxonXref.setDb("TAXONOMY");
             taxonXref.setId(taxId);
 			toReturn.setTaxonXref((UnificationXref)taxonXref);
-			return (T)toReturn;
+			return toReturn;
 		}
 
 		// should not get here
 		return null;
 	}
 
+	
 	private void createBPModel() {
-
 		if (bpLevel == BioPAXLevel.L2) {
-			bpModel = BioPAXLevel.L2.getDefaultFactory().createModel();
-			bpModel.setFactory(new org.biopax.paxtools.proxy.level2.BioPAXFactoryForPersistence());
+			//bpModel = BioPAXLevel.L2.getDefaultFactory().createModel();
+			//bpModel.setFactory(new org.biopax.paxtools.proxy.level2.BioPAXFactoryForPersistence());
+			bpModel = (new org.biopax.paxtools.proxy.level2.BioPAXFactoryForPersistence()).createModel();
 		}
 		else if (bpLevel == BioPAXLevel.L3) {
-			bpModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-			bpModel.setFactory(new org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence());
+			//bpModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+			//bpModel.setFactory(new org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence());
+			bpModel = (new org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence()).createModel();
 		}
 
 		// setup base
-		//Map<String, String> nsMap = bpModel.getNameSpacePrefixMap();
-		//nsMap.put("", "http://uniprot.org#");
+		Map<String, String> nsMap = bpModel.getNameSpacePrefixMap();
+		nsMap.put("", MODEL_NAMESPACE_PREFIX);
 	}
 }
