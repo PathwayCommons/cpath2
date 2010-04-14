@@ -247,7 +247,7 @@ public class UniprotConverterImpl implements Converter {
                 xref = xref.replaceAll("; -.", "");
                 String parts[] = xref.split(";");
                 String entrezGeneId = parts[1];
-                setRelationshipXRef("ENTREZ_GENE", entrezGeneId, currentProteinOrER);
+                setRelationshipXRef("ENTREZ GENE", entrezGeneId, currentProteinOrER);
             } else if (xref.startsWith("RefSeq")) {
                 xref = xref.replaceAll("; -.", "");
                 String parts[] = xref.split(";");
@@ -256,7 +256,7 @@ public class UniprotConverterImpl implements Converter {
                     parts = refSeqId.split("\\.");
                     refSeqId = parts[0];
                 }
-                setRelationshipXRef("REF_SEQ", refSeqId, currentProteinOrER);
+                setRelationshipXRef("REFSEQ", refSeqId, currentProteinOrER);
             }
         }
     }
@@ -272,7 +272,7 @@ public class UniprotConverterImpl implements Converter {
             // Set HUGO Gene Name
             if (subParts[0].trim().equals("Name")) {
                 geneName = subParts[1];
-                setRelationshipXRef("GENE_SYMBOL", geneName, currentProteinOrER);
+                setRelationshipXRef("NGNC", geneName, currentProteinOrER);
             } else if (subParts[0].trim().equals("Synonyms")) {
                 String synList[] = subParts[1].split(",");
                 for (int j=0; j<synList.length; j++) {
@@ -408,9 +408,11 @@ public class UniprotConverterImpl implements Converter {
 
 		if (bpLevel == BioPAXLevel.L2) {
 			bpModel = BioPAXLevel.L2.getDefaultFactory().createModel();
+			bpModel.setFactory(new org.biopax.paxtools.proxy.level2.BioPAXFactoryForPersistence());
 		}
 		else if (bpLevel == BioPAXLevel.L3) {
 			bpModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+			bpModel.setFactory(new org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence());
 		}
 
 		// setup base
