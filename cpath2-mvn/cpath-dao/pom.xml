@@ -7,7 +7,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>pathwaycommons.cpath</groupId>
   <artifactId>cpath-dao</artifactId>
-  <name>cPath DAO</name>
+  <name>cPath2 DAO</name>
   <version>1.0-SNAPSHOT</version>
   <description>cPath data access components, including for hibernate and lucene.</description>
 

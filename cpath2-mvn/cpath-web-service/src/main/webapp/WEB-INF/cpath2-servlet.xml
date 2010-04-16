@@ -34,6 +34,9 @@
 		<property name="exceptionAttribute"><value>exception</value></property>
 	</bean>
 	
-	<bean id="searchController" class="cpath.web.mvc.SearchController"/>
+	<bean id="wsController" class="cpath.webservice.WebserviceController">
+		<constructor-arg ref="paxtoolsDAO"/>
+		<constructor-arg ref="cPathWarehouse"/>
+	</bean>
 	
 </beans>
