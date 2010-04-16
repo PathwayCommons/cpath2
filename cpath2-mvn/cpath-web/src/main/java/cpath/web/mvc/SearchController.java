@@ -29,18 +29,15 @@
 package cpath.web.mvc;
 
 // imports
-import cpath.dao.PaxtoolsDAO;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.Interaction;
 import org.biopax.paxtools.model.level3.Named;
 import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.Protein;
-import org.biopax.paxtools.proxy.level3.Level3ElementProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -56,16 +53,13 @@ import java.util.*;
 public class SearchController {
     private static final Log log = LogFactory.getLog(SearchController.class);
 
-	private PaxtoolsDAO paxtoolsDAO;
-
 	private final Set<String> pathwayNames;
 	private final Set<String> interactionNames;
 	private final Set<String> proteinNames;
 	private final Set<String> otherNames;
 
 	@Autowired
-	public SearchController(PaxtoolsDAO paxtoolsDAO) {
-		this.paxtoolsDAO = paxtoolsDAO;
+	public SearchController() {		
 		pathwayNames = new HashSet<String>();
 		proteinNames = new HashSet<String>();
 		interactionNames = new HashSet<String>();
@@ -73,40 +67,21 @@ public class SearchController {
 	}
 
 
-	// simply shows form
+	// shows form
 	@RequestMapping(value="/search", method = RequestMethod.GET)
     public void showForm() {
     }
 	
-    /**
-     * The default event handler that displays a list of Search Results.
-	 *
-	 * TODO: display a form instead?
-	 *
-     * @return a forward to the listBy() method of this class
-     */
-    @RequestMapping("/search/all")
+
+	@RequestMapping("/home")
     public String listAllElements(Model model) {
-		processSearch(paxtoolsDAO.getObjects(Level3ElementProxy.class, false), model);
         return "search-results";
     }
 
-    @RequestMapping("/search/{id}")
-    public String getElement(@PathVariable("id") Long id, Model model) {
-		BioPAXElement element = paxtoolsDAO.getByID(id, true);
-		model.addAttribute("element", element);
-        return "element";
-    }
     
-    
-    /**
-     * The event handler for searching.
-	 *
-     * @return the search-results
-     */
     @RequestMapping(value="/search", method= RequestMethod.POST)
     public String search(@RequestParam("queryString") String queryString, Model model) {
-		processSearch(paxtoolsDAO.search(queryString, Level3ElementProxy.class), model);
+		// TODO process
 		return "search-results";
 	}
 

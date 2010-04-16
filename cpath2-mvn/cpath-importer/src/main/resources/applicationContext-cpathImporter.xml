@@ -16,11 +16,11 @@
 		</property>
 	</bean>
 
-	<bean id="premergeDispatcher" class="cpath.premerge.internal.PremergeDispatcher">
+	<bean id="premergeDispatcher" class="cpath.importer.internal.PremergeDispatcher">
 		<constructor-arg ref="metadataDAO"/>
 	</bean>
 
-	<bean id="premerge" class="cpath.premerge.internal.PremergeImpl" scope="prototype">
+	<bean id="premerge" class="cpath.importer.internal.PremergeImpl" scope="prototype">
 	  <constructor-arg ref="pathwayDataDAO"/>
 	  <constructor-arg ref="pathwayDataJDBCServices"/>
 	  <constructor-arg ref="idNormalizer"/>
@@ -29,7 +29,7 @@
 	  <constructor-arg ref="utils"/>
 	</bean>
 
-	<bean id="merge" class="cpath.merge.internal.MergerImpl" scope="prototype">
+	<bean id="merge" class="cpath.importer.internal.MergerImpl" scope="prototype">
 	  <constructor-arg ref="paxtoolsDAO"/>
 	  <constructor-arg ref="metadataDAO"/>
 	  <constructor-arg ref="cPathWarehouse"/>
@@ -37,14 +37,14 @@
 	  <constructor-arg ref="simpleMerger"/>
 	</bean>
 	
-	<bean id="pathwayDataJDBCServices" class="cpath.warehouse.pathway.internal.PathwayDataJDBCServicesImpl">
+	<bean id="pathwayDataJDBCServices" class="cpath.warehouse.internal.PathwayDataJDBCServicesImpl">
         <property name="dbUser" value="${db.user}"/>
         <property name="dbPassword" value="${db.password}"/>
         <property name="dbDataSource" value="${wdb.datasource}"/>
         <property name="dbConnection" value="${wdb.connection}"/>
     </bean>
 	
-	<bean id="idNormalizer" class="cpath.normalizer.internal.IdNormalizer">
+	<bean id="idNormalizer" class="cpath.importer.internal.IdNormalizer">
 		<constructor-arg ref="miriam"/>
 	</bean>
 </beans>

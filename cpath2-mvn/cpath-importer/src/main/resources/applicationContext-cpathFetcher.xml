@@ -8,17 +8,17 @@
 
     <context:annotation-config/>
 
-	<bean id="fetcherHTTPClient" class="cpath.common.internal.FetcherHTTPClientImpl"/>
+	<bean id="fetcherHTTPClient" class="cpath.fetcher.internal.FetcherHTTPClientImpl"/>
 
-	<bean id="providerMetadataService" class="cpath.metadata.internal.ProviderMetadataServiceImpl">
+	<bean id="providerMetadataService" class="cpath.fetcher.internal.ProviderMetadataServiceImpl">
 	  <constructor-arg ref="fetcherHTTPClient"/>
 	</bean>
 
-	<bean id="providerPathwayDataService" class="cpath.pathway.internal.ProviderPathwayDataServiceImpl">
+	<bean id="providerPathwayDataService" class="cpath.fetcher.internal.ProviderPathwayDataServiceImpl">
 	  <constructor-arg ref="fetcherHTTPClient"/>
 	</bean>
 
-	<bean id="providerProteinDataService" class="cpath.protein.internal.ProviderProteinDataServiceImpl">
+	<bean id="providerProteinDataService" class="cpath.fetcher.internal.ProviderProteinDataServiceImpl">
 	  <constructor-arg ref="fetcherHTTPClient"/>
 	</bean>
 		

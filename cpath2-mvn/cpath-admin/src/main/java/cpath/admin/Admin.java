@@ -30,15 +30,15 @@ package cpath.admin;
 
 // imports
 import cpath.dao.PaxtoolsDAO;
-import cpath.metadata.ProviderMetadataService;
-import cpath.pathway.ProviderPathwayDataService;
-import cpath.protein.ProviderProteinDataService;
+import cpath.fetcher.ProviderMetadataService;
+import cpath.fetcher.ProviderPathwayDataService;
+import cpath.fetcher.ProviderProteinDataService;
+import cpath.importer.Merger;
+import cpath.importer.internal.PremergeDispatcher;
+import cpath.warehouse.MetadataDAO;
+import cpath.warehouse.PathwayDataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
-import cpath.warehouse.metadata.MetadataDAO;
-import cpath.warehouse.pathway.PathwayDataDAO;
-import cpath.premerge.internal.PremergeDispatcher;
-import cpath.merge.Merger;
 
 import org.biopax.paxtools.model.Model;
 
@@ -79,64 +79,10 @@ public class Admin implements Runnable {
         public String toString() { return command; }
     }
 
-    // ref to metadata service
-	private ProviderMetadataService providerMetadataService;
-	// ref to pathway data service
-	private ProviderPathwayDataService providerPathwayDataService;
-	// ref to protein data service
-	private ProviderProteinDataService providerProteinDataService;
-    // ref to metadata dao 
-	private MetadataDAO metadataDAO;
-	// ref to pathway data dao
-	private PathwayDataDAO pathwayDataDAO;
-	// ref to protein reference repository
-	private PaxtoolsDAO proteinsDAO;
-	// ref to molecule reference repository
-	private PaxtoolsDAO moleculesDAO;
-	// ref to premerge dispatcher
-	private PremergeDispatcher premergeDispatcher;
-	// ref to merger
-	private Merger merger;
-
     // command, command parameter
     private COMMAND command;
     private String[] commandParameters;
 
-    /**
-     * Constructor.
-     *
-     * @param args String[]
-     * @param metadataDAO MetadataDAO
-     * @param pathwayDataDAO PathwayDataDAO
-	 * @param providerMetadataService ProviderMetadataService
-	 * @param providerPathwayDataService ProviderPathwayDataService
-	 * @param providerProteinDataService ProviderProteinDataService
-	 * @param premergeDispatcher PremergeDispatcher
-	 * @param merger Merger
-	 * @param proteinsDAO
-	 * @param moleculesDAO
-     */
-    public Admin(final MetadataDAO metadataDAO,
-				 final PathwayDataDAO pathwayDataDAO,
-				 final ProviderMetadataService providerMetadataService,
-				 final ProviderPathwayDataService providerPathwayDataService,
-				 final ProviderProteinDataService providerProteinDataService,
-				 final PremergeDispatcher premergeDispatcher,
-				 final Merger merger,
-				 final PaxtoolsDAO proteinsDAO,
-				 final PaxtoolsDAO moleculesDAO) {
-        
-        // init members
-        this.metadataDAO = metadataDAO;
-        this.pathwayDataDAO = pathwayDataDAO;
-		this.providerMetadataService = providerMetadataService;
-		this.providerPathwayDataService = providerPathwayDataService;
-		this.providerProteinDataService = providerProteinDataService;
-		this.premergeDispatcher = premergeDispatcher;
-		this.merger = merger;
-		this.proteinsDAO = proteinsDAO;
-		this.moleculesDAO = moleculesDAO;
-    }
 
     public void setCommandParameters(String[] args) {
 		this.commandParameters = args;
@@ -203,7 +149,6 @@ public class Admin implements Runnable {
 
     @Override
     public void run() {
-
         try {
             switch (command) {
             case FETCH_METADATA:
@@ -216,11 +161,29 @@ public class Admin implements Runnable {
 				fetchProteinData(commandParameters[0]);
 				break;
 			case PREMERGE:
+				ApplicationContext context =
+                    new ClassPathXmlApplicationContext(new String [] { 	
+                    		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
+                    		"classpath:applicationContext-whouseDAO.xml", 
+                    		"classpath:applicationContext-paxtools.xml",
+                    		"classpath:applicationContext-biopaxValidation.xml",
+                    		"classpath:applicationContext-miriam.xml", 
+        					"classpath:applicationContext-cpathImporter.xml"});
+                PremergeDispatcher premergeDispatcher = (PremergeDispatcher) context.getBean("premergeDispatcher");
 				premergeDispatcher.start();
 				// sleep until premerge is complete, this is required so we can call System.exit(...) below
 				premergeDispatcher.join();
 				break;
 			case MERGE:
+				context =
+                    new ClassPathXmlApplicationContext(new String [] { 	
+                    		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
+                    		"classpath:applicationContext-whouseDAO.xml", 
+                    		"classpath:applicationContext-cpathWarehouse.xml", 
+                    		"classpath:applicationContext-paxtools.xml",
+                    		"classpath:applicationContext-cpathDAO.xml", 
+        					"classpath:applicationContext-cpathImporter.xml"});
+				Merger merger = (Merger) context.getBean("merge");
 				merger.merge();
 				break;
             }
@@ -238,7 +201,14 @@ public class Admin implements Runnable {
      * @throws IOException
      */
     private void fetchMetadata(final String url) throws IOException {
-
+        ApplicationContext context =
+            new ClassPathXmlApplicationContext(new String [] { 	
+            		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
+            		"classpath:applicationContext-whouseDAO.xml", 
+					"classpath:applicationContext-cpathFetcher.xml"});
+        MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
+        ProviderMetadataService providerMetadataService = (ProviderMetadataService) context.getBean("providerMetadataService");
+    	
         // grab the data
         Collection<Metadata> metadata = providerMetadataService.getProviderMetadata(url);
         
@@ -256,8 +226,17 @@ public class Admin implements Runnable {
      */
     private void fetchPathwayData(final String provider) throws IOException {
 
+    	ApplicationContext context =
+            new ClassPathXmlApplicationContext(new String [] { 	
+            		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
+            		"classpath:applicationContext-whouseDAO.xml", 
+					"classpath:applicationContext-cpathFetcher.xml"});
+        MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
+        PathwayDataDAO pathwayDataDAO = (PathwayDataDAO) context.getBean("pathwayDataDAO");
+        ProviderPathwayDataService providerPathwayDataService = (ProviderPathwayDataService) context.getBean("providerPathwayDataService");
+    	
 		// get metadata
-		Collection<Metadata> metadataCollection = getMetadata(provider);
+		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
 
 		// sanity check
 		if (metadataCollection == null || metadataCollection.size() == 0) {
@@ -295,9 +274,18 @@ public class Admin implements Runnable {
      * @throws IOException
      */
     private void fetchProteinData(final String provider) throws IOException {
-
+		ApplicationContext context =
+            new ClassPathXmlApplicationContext(new String [] { 	
+            		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
+            		"classpath:applicationContext-whouseDAO.xml", 
+            		"classpath:applicationContext-whouseProteins.xml", 
+					"classpath:applicationContext-cpathFetcher.xml"});
+        MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
+        PaxtoolsDAO proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
+        ProviderProteinDataService providerProteinDataService = (ProviderProteinDataService) context.getBean("providerProteinDataService");
+    	
 		// get metadata
-		Collection<Metadata> metadataCollection = getMetadata(provider);
+		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
 
 		// sanity check
 		if (metadataCollection == null || metadataCollection.size() == 0) {
@@ -329,7 +317,7 @@ public class Admin implements Runnable {
 	 * @param provider String
 	 * @return Collection<Metadata>
 	 */
-	private Collection<Metadata> getMetadata(final String provider) {
+	private Collection<Metadata> getMetadata(final MetadataDAO metadataDAO, final String provider) {
 
 		Collection<Metadata> toReturn = null;
 
@@ -377,27 +365,11 @@ public class Admin implements Runnable {
 
         // configure log4j
         PropertyConfigurator.configure(Admin.class.getClassLoader().getResource("log4j.properties"));
-
-        // setup context 
-        // TODO use different contexts for different commands (in the admin.run() method)! E.g., "-fetch-pathwaydata" does not require normalization and validation...
-        ApplicationContext context =
-            new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files) !!!
-					"classpath:applicationContext-cpathDAO.xml", // biopax hibernate configuration
-					"classpath:applicationContext-cpathImporter.xml", // premerge, merge, idNormalizer, etc.
-            		"classpath:applicationContext-cpathWarehouse.xml", // warehouse hibernate config.
-					"classpath:applicationContext-biopaxValidation.xml", // biopax validator, rules, etc.
-					"classpath:applicationContext-cvFetcher.xml", // OBO ontologies manager config.
-					"classpath:applicationContext-miriam.xml", // miriam library bean (validator, cvFetcher, and normalizer depend on this)
-					"classpath:applicationContext-paxtools.xml", // biopax reader, editor map, etc.
-					"classpath:applicationContext-cpathFetcher.xml", // 
-					"classpath:applicationContext-whouseMolecules.xml",
-					"classpath:applicationContext-whouseProteins.xml"});
-       
-		Admin admin = (Admin) context.getBean("cpathAdmin");
+		Admin admin = new Admin();
 		admin.setCommandParameters(args);
         admin.run();
 		// required because MySQL Statement Cancellation Timer thread is still running
 		System.exit(0);
     }
+    
 }

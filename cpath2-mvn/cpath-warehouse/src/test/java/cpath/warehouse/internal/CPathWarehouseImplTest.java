@@ -47,6 +47,7 @@ import cpath.warehouse.CPathWarehouse;
 @ContextConfiguration(locations = {
 		"classpath:applicationContext-whouseMolecules.xml",
 		"classpath:applicationContext-whouseProteins.xml",
+		"classpath:applicationContext-whouseDAO.xml",
 		"classpath:applicationContext-cpathWarehouse.xml"})
 public class CPathWarehouseImplTest {
 

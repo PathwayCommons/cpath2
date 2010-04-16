@@ -2,8 +2,8 @@
 <web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
-	id="cPathSquaredUI" version="2.5">
-	<display-name>cPath^2 Web UI</display-name>
+	id="cPathSquaredWs" version="2.5">
+	<display-name>cPath^2 Webservices</display-name>
 
 	<listener>
 		<listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
@@ -21,9 +21,13 @@
 	<context-param>
 		<param-name>contextConfigLocation</param-name>
 		<param-value>
-			<!-- 
-			/WEB-INF/security-config.xml 
-			-->
+			classpath:applicationContext-wsExtras.xml
+			classpath:applicationContext-cpathDAO.xml
+			classpath:applicationContext-cpathWarehouse.xml
+			classpath:applicationContext-whouseDAO.xml
+			classpath:applicationContext-whouseMolecules.xml
+			classpath:applicationContext-whouseProteins.xml
+			classpath:applicationContext-paxtools.xml
 		</param-value>
 	</context-param>
 
