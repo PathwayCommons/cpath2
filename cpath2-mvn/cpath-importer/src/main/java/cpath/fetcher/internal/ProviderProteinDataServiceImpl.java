@@ -40,11 +40,6 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
 	// ref to FetcherHTTPClient
     private FetcherHTTPClient fetcherHTTPClient;
 
-    /**
-	 * Default Constructor.
-	 */
-	public ProviderProteinDataServiceImpl() {}
-
 	/**
      * Constructor.
      * 
@@ -96,11 +91,15 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
         GZIPInputStream zis = null;
 
 		// create converter
-		log.info("unzip(), getting a converter with name: " + metadata.getConverterClassname());
+        if(log.isInfoEnabled())
+        	log.info("unzip(), getting a converter with name: " 
+				+ metadata.getConverterClassname());
+        
 		Converter converter = getConverter(metadata.getConverterClassname());
 		if (converter == null) {
 			// TDB: report failure
-			log.info("unzip(), could not create converter class " + metadata.getConverterClassname());
+			log.fatal("unzip(), could not create converter class " 
+					+ metadata.getConverterClassname());
 			return null;
 		}
 
@@ -108,9 +107,10 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
 
             // create a zip input stream
 			zis = new GZIPInputStream(new BufferedInputStream(fetchedData));
-			log.info("unzip(), created gzip input stream: " + zis);
+			if(log.isInfoEnabled()	)
+				log.info("unzip(), created gzip input stream: " + zis);
 
-			// write file to buffered outputstream
+			// write file to buffered output stream
 			int count;
 			byte data[] = new byte[BUFFER];
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -118,14 +118,16 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
 			int total=0;
 			while ((count = zis.read(data, 0, BUFFER)) != -1) {
 				total+= count;
-				log.info("unzip(), read " + total + " bytes so far.");
+				if(log.isInfoEnabled()	)
+					log.info("unzip(), read " + total + " bytes so far.");
 				dest.write(data, 0, count);
 			}
 			dest.flush();
 			dest.close();
 
 			// create entity reference objects
-			log.info("unzip(), creating EntityReference objects, provider: " +
+			if(log.isInfoEnabled()	)
+				log.info("unzip(), creating EntityReference objects, provider: " +
 					 metadata.getIdentifier() + " version: " + metadata.getVersion());
 
 			// hook into biopax converter for given provider
@@ -180,15 +182,14 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
 	 * @return Converter
 	 */
 	private Converter getConverter(final String converterClassName) {
-
 		try {
-			Class converterClass = getClass().forName(converterClassName);
-			return (converterClass == null) ?
-				null : (Converter)converterClass.newInstance();
+			Class<?> converterClass = Class.forName(converterClassName);
+			return (Converter)converterClass.newInstance();
 		}
 		catch (Exception e) {
-			e.printStackTrace();
-			return null;
+			log.error("unzip(), could not create converter class " 
+					+ converterClassName, e);
 		}
+		return null;
 	}
 }
