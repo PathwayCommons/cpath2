@@ -41,6 +41,7 @@ import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.transaction.TransactionConfiguration;
@@ -66,14 +67,16 @@ public class UniprotConverterImplTest {
 	 * @throws IOException 
 	 */
 	@Test
-	//@Transactional
-	public final void testConvert() throws IOException {
+	@Transactional
+	@Rollback
+	public void testConvert() throws IOException {
 		Converter converter = new UniprotConverterImpl();
 		InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_uniprot_data.dat");
 		Model model = converter.convert(is, BioPAXLevel.L3);
 		
 		Set<ProteinReference> proteinReferences = model.getObjects(ProteinReference.class);
 		assertTrue(proteinReferences.size()==2);
+		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
 		
 		//(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
 		
