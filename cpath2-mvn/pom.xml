@@ -45,7 +45,7 @@
 					<artifactId>maven-surefire-plugin</artifactId>
 					<configuration>
 						<testFailureIgnore>false</testFailureIgnore>
-						<argLine>-Xmx1024M -Dhbm2ddl.mode=create-drop</argLine>
+						<argLine>-Xmx1024M -Dhbm2ddl.mode=create</argLine>
 					</configuration>
 				</plugin>
 			</plugins>

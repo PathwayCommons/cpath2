@@ -42,6 +42,7 @@ import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.StatelessSession;
 import org.hibernate.search.FullTextQuery;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
@@ -59,7 +60,6 @@ import java.io.FileNotFoundException;
  * Class which implements PaxtoolsModelQuery interface via persistence.
  */
 @Repository
-@Transactional
 public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	private final static String SEARCH_FIELD_AVAILABILITY = "availability";
 	private final static String SEARCH_FIELD_COMMENT = "comment";
@@ -107,15 +107,16 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 */
 	@Transactional
 	public void importModel(final Model model, final boolean createIndex) {
+		/*
 		Session session = getSessionFactory().getCurrentSession();
 		FullTextSession fullTextSession = Search.getFullTextSession(session);
-
 		int index = 0;
 		for (BioPAXElement bpe : model.getObjects()) {
 			if (log.isInfoEnabled())
 				log.info("Saving biopax element, rdfID: " + bpe.getRDFId());
 			index++;
-			session.save(bpe);
+			session.saveOrUpdate(bpe);
+			//session.save(bpe);
 			if (index % BATCH_SIZE == 0) {
 				session.flush();
 				session.clear();
@@ -124,11 +125,25 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 					fullTextSession.clear(); // clear since the queue is processed
 				}
 			}
-
+			session.flush();
+			session.clear();
 			if (createIndex) {
 				fullTextSession.flushToIndexes();
+				fullTextSession.clear();
 			}
 		}
+		*/
+	
+		Session session = getSession();
+		FullTextSession fullTextSession = Search.getFullTextSession(session);
+		session.save(model);
+		fullTextSession.flushToIndexes();
+	
+		//StatelessSession session = getSessionFactory().openStatelessSession();
+		//session.insert(model);
+		//session.close();
+		//FullTextSession fullTextSession = Search.getFullTextSession(getSession());
+		//fullTextSession.index(model);
 	}
 
 	
