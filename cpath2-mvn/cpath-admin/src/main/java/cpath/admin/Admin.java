@@ -166,6 +166,7 @@ public class Admin implements Runnable {
                     		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
                     		"classpath:applicationContext-whouseDAO.xml", 
                     		"classpath:applicationContext-paxtools.xml",
+                    		"classpath:applicationContext-cvFetcher.xml",
                     		"classpath:applicationContext-biopaxValidation.xml",
                     		"classpath:applicationContext-miriam.xml", 
         					"classpath:applicationContext-cpathImporter.xml"});
