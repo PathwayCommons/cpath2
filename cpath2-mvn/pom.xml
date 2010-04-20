@@ -145,7 +145,6 @@
     	<groupId>mysql</groupId>
     	<artifactId>mysql-connector-java</artifactId>
     	<version>5.1.10</version>
-    	<scope>compile</scope>
     </dependency>
 	<dependency>
     	<groupId>org.springframework</groupId>
@@ -178,14 +177,12 @@
 		<artifactId>spring-jdbc</artifactId>
 		<version>${spring.version}</version>
 		<type>jar</type>
-		<scope>compile</scope>
 	</dependency>
 	<dependency>
 		<groupId>javax.persistence</groupId>
 		<artifactId>persistence-api</artifactId>
 		<version>1.0</version>
 		<type>jar</type>
-		<scope>compile</scope>
 	</dependency>
 	    <dependency>
 	    	<groupId>org.slf4j</groupId>

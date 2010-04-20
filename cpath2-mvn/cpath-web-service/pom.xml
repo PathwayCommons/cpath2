@@ -42,7 +42,6 @@
 			<groupId>pathwaycommons.cpath</groupId>
 			<artifactId>cpath-warehouse</artifactId>
 			<version>1.0-SNAPSHOT</version>
-			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>
