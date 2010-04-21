@@ -82,16 +82,6 @@ INSERT INTO `l3control_controller` VALUES (35,38),(48,46);
 UNLOCK TABLES;
 
 --
--- Dumping data for table `l3controlledvocabulary_xref`
---
-
-LOCK TABLES `l3controlledvocabulary_xref` WRITE;
-/*!40000 ALTER TABLE `l3controlledvocabulary_xref` DISABLE KEYS */;
-INSERT INTO `l3controlledvocabulary_xref` VALUES (11,12);
-/*!40000 ALTER TABLE `l3controlledvocabulary_xref` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Dumping data for table `l3conversion_left_x`
 --
 
@@ -189,6 +179,15 @@ LOCK TABLES `l3element_deltaS_x` WRITE;
 UNLOCK TABLES;
 
 --
+-- Dumping data for table `l3element_l3element`
+--
+
+LOCK TABLES `l3element_l3element` WRITE;
+/*!40000 ALTER TABLE `l3element_l3element` DISABLE KEYS */;
+/*!40000 ALTER TABLE `l3element_l3element` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Dumping data for table `l3element_name`
 --
 
@@ -251,7 +250,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `l3entity_xref` WRITE;
 /*!40000 ALTER TABLE `l3entity_xref` DISABLE KEYS */;
-INSERT INTO `l3entity_xref` VALUES (10,7),(20,19),(24,23),(27,26),(33,1),(38,8),(39,40),(46,34),(47,45);
+INSERT INTO `l3entity_xref` VALUES (10,7),(11,12),(14,15),(18,19),(20,19),(22,23),(24,23),(25,26),(27,26),(32,1),(33,1),(37,8),(38,8),(39,40),(44,34),(46,34),(47,45);
 /*!40000 ALTER TABLE `l3entity_xref` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -283,15 +282,6 @@ LOCK TABLES `l3entityfeature_member_feature` WRITE;
 UNLOCK TABLES;
 
 --
--- Dumping data for table `l3entityref_entity_feature`
---
-
-LOCK TABLES `l3entityref_entity_feature` WRITE;
-/*!40000 ALTER TABLE `l3entityref_entity_feature` DISABLE KEYS */;
-/*!40000 ALTER TABLE `l3entityref_entity_feature` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Dumping data for table `l3entityref_entity_ref_type`
 --
 
@@ -319,16 +309,6 @@ LOCK TABLES `l3entityref_member_entity_ref` WRITE;
 UNLOCK TABLES;
 
 --
--- Dumping data for table `l3entityref_xref`
---
-
-LOCK TABLES `l3entityref_xref` WRITE;
-/*!40000 ALTER TABLE `l3entityref_xref` DISABLE KEYS */;
-INSERT INTO `l3entityref_xref` VALUES (14,15),(18,19),(22,23),(25,26),(32,1),(37,8),(44,34);
-/*!40000 ALTER TABLE `l3entityref_xref` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Dumping data for table `l3evidence_confidence`
 --
 
@@ -353,15 +333,6 @@ UNLOCK TABLES;
 LOCK TABLES `l3evidence_experimental_form` WRITE;
 /*!40000 ALTER TABLE `l3evidence_experimental_form` DISABLE KEYS */;
 /*!40000 ALTER TABLE `l3evidence_experimental_form` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Dumping data for table `l3evidence_xref`
---
-
-LOCK TABLES `l3evidence_xref` WRITE;
-/*!40000 ALTER TABLE `l3evidence_xref` DISABLE KEYS */;
-/*!40000 ALTER TABLE `l3evidence_xref` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -407,6 +378,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `l3model` WRITE;
 /*!40000 ALTER TABLE `l3model` DISABLE KEYS */;
+INSERT INTO `l3model` VALUES (1);
 /*!40000 ALTER TABLE `l3model` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -416,6 +388,7 @@ UNLOCK TABLES;
 
 LOCK TABLES `l3model_l3element` WRITE;
 /*!40000 ALTER TABLE `l3model_l3element` DISABLE KEYS */;
+INSERT INTO `l3model_l3element` VALUES (1,1),(1,2),(1,3),(1,4),(1,5),(1,6),(1,7),(1,8),(1,9),(1,10),(1,11),(1,12),(1,13),(1,14),(1,15),(1,16),(1,17),(1,18),(1,19),(1,20),(1,21),(1,22),(1,23),(1,24),(1,25),(1,26),(1,27),(1,28),(1,29),(1,30),(1,31),(1,32),(1,33),(1,34),(1,35),(1,36),(1,37),(1,38),(1,39),(1,40),(1,41),(1,42),(1,43),(1,44),(1,45),(1,46),(1,47),(1,48),(1,49),(1,50);
 /*!40000 ALTER TABLE `l3model_l3element` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -505,15 +478,6 @@ LOCK TABLES `l3physicalentity_not_mod_at` WRITE;
 UNLOCK TABLES;
 
 --
--- Dumping data for table `l3score_xref`
---
-
-LOCK TABLES `l3score_xref` WRITE;
-/*!40000 ALTER TABLE `l3score_xref` DISABLE KEYS */;
-/*!40000 ALTER TABLE `l3score_xref` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Dumping data for table `l3seqloc_region_type`
 --
 
@@ -549,4 +513,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2010-04-07  1:17:10
+-- Dump completed on 2010-04-20 18:31:41

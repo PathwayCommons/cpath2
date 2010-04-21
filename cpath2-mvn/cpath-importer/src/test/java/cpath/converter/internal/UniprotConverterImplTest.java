@@ -68,7 +68,7 @@ public class UniprotConverterImplTest {
 	 */
 	@Test
 	@Transactional
-	@Rollback
+	//@Rollback(false)
 	public void testConvert() throws IOException {
 		Converter converter = new UniprotConverterImpl();
 		InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_uniprot_data.dat");
