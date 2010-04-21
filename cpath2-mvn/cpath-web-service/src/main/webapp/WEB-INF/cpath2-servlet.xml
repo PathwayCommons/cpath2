@@ -15,6 +15,7 @@
     <mvc:annotation-driven/>
     
     <context:annotation-config/>
+    
     <context:component-scan base-package="cpath.webservice"/>
     
     <!-- this is temporary - for test forms -->
@@ -23,4 +24,5 @@
 		<property name="prefix" value="/WEB-INF/views/" />
 		<property name="suffix" value=".jsp" />
 	</bean>
+
 </beans>

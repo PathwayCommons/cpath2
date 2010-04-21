@@ -16,6 +16,11 @@
 		<param-value>/WEB-INF/log4j.properties</param-value>
 	</context-param>
 
+	<context-param>
+		<param-name>webAppRootKey</param-name>
+		<param-value>webappRoot</param-value>
+	</context-param>
+
 	<listener>
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
 	</listener>

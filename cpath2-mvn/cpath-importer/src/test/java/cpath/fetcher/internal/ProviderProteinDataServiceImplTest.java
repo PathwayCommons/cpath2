@@ -3,6 +3,7 @@ package cpath.fetcher.internal;
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 import org.biopax.paxtools.model.Model;
@@ -49,7 +50,7 @@ public class ProviderProteinDataServiceImplTest {
 		
 		proteinsDAO.importModel(m, true);
 		
-		Set<RelationshipXref> returnClasses = proteinsDAO
+		List<RelationshipXref> returnClasses = proteinsDAO
 			.search("ngnc", RelationshipXref.class);
 
 	}

@@ -31,6 +31,7 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Set;
 
 //import org.biopax.paxtools.io.simpleIO.SimpleExporter;
@@ -82,7 +83,7 @@ public class UniprotConverterImplTest {
 		
 		proteinsDAO.importModel(model, true);
 		
-		Set<RelationshipXref> returnClasses = proteinsDAO.search("entrez gene", RelationshipXref.class);
+		List<RelationshipXref> returnClasses = proteinsDAO.search("entrez gene", RelationshipXref.class);
 		assertTrue(returnClasses.size()==4);
 	}
 

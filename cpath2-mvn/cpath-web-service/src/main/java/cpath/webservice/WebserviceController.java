@@ -134,27 +134,30 @@ public class WebserviceController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(Format.class, new FormatEditor());
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
-        binder.registerCustomEditor(BioPAXElement.class, new BiopaxTypeEditor());
+        binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
 	
 	
     @RequestMapping("/formats")
-    public void getFormats(Writer writer) throws IOException {
+    @ExceptionHandler
+    @ResponseBody
+    public String getFormats() {
     	StringBuffer toReturn = new StringBuffer();
     	for(Format f : Format.values()) {
     		toReturn.append(f.toString().toLowerCase()).append(newline);
     	}
-    	writer.write(toReturn.toString());
+    	return toReturn.toString();
     }
     
 	
     @RequestMapping("/types")
-    public void getBiopaxTypes(Writer writer) throws IOException {
+    @ResponseBody
+    public String getBiopaxTypes() {
     	StringBuffer toReturn = new StringBuffer();
     	for(String type : BiopaxTypeEditor.getTypeByName().keySet()) {
     		toReturn.append(type).append(newline);
     	}
-    	writer.write(toReturn.toString());
+    	return toReturn.toString();
     }
 
     
@@ -163,7 +166,6 @@ public class WebserviceController {
      */
     @Deprecated
     @RequestMapping("/elements")
-    //@ResponseBody // not required unless we want to use http message to type converters!..
     public void getElements(Writer writer) throws IOException {
     	StringBuffer toReturn = new StringBuffer();
     	for(BioPAXElement e : paxtoolsDAO.getObjects(BioPAXElement.class, false)) {
@@ -181,56 +183,25 @@ public class WebserviceController {
 
     
     @RequestMapping("/format/{format}/elements/{uri}")
+    @ResponseBody
     public String getElementById(@PathVariable("format") Format format, 
     		@PathVariable("uri") String uri) {
 		BioPAXElement element = paxtoolsDAO.getByID(uri.trim(), true); // (uses HQL saved query)
-		// TODO create/use a query format enumeration; process other 'format'
 		if(log.isInfoEnabled()) log.info("Query - format:" + format + 
 				", urn:" + uri + ", returned:" + element);
 		String owl = toOWL(element);
 		return owl;
     }
-
-/*    
-	@RequestMapping(value="/parentsof/{uri}")
-    public void fulltextSearchParent(@PathVariable("uri") String urn, 
-    		Writer writer) throws IOException {
-		StringBuffer toReturn = new StringBuffer("Not Implemented Yet :)");
-		writer.write(toReturn.toString());
-	}
     
-    
-	@RequestMapping(value="/types/{type}/parentsof/{uri}")
-    public String fulltextSearchParentOfType(@PathVariable("type") String type, 
-    		@PathVariable("uri") String uri, Writer writer) {
-		StringBuffer toReturn = new StringBuffer("Not Implemented Yet :)");
-		return toReturn.toString(); 
-	}
-	
-	
-	@RequestMapping(value="/childrenof/{uri}")
-    public String fulltextSearchChild(@PathVariable("uri") String urn, Writer writer) {
-		StringBuffer toReturn = new StringBuffer("Not Implemented Yet :)");
-		return toReturn.toString(); 
-	}
-    
-	
-	@RequestMapping(value="/types/{type}/childrenof/{uri}")
-    public String fulltextSearchChildOfType(@PathVariable("type") String type, 
-    		@PathVariable("uri") String urn, Writer writer) {
-		StringBuffer toReturn = new StringBuffer("Not Implemented Yet :)");
-		return toReturn.toString(); 
-	}
-*/    
     
 	@RequestMapping(value="/find/{query}")
-    public String fulltextSearch(@PathVariable("query") String query, Writer writer) {
-		Collection<? extends Level3ElementProxy> resultSet = 
-			paxtoolsDAO.search(query, Level3ElementProxy.class);
-		
+	@ResponseBody
+    public String fulltextSearch(@PathVariable("query") String query) {
+		List<String> results = 
+			paxtoolsDAO.searchForIds(query, Level3ElementProxy.class);
 		StringBuffer toReturn = new StringBuffer();
-		for(BioPAXElement el : resultSet) {
-			toReturn.append(el.getRDFId()).append(newline);
+		for(String id : results) {
+			toReturn.append(id).append(newline);
 		}
 		
 		return toReturn.toString(); 
@@ -238,12 +209,12 @@ public class WebserviceController {
         
 
     @RequestMapping(value="/types/{type}/find/{query}")
-    public String fulltextSearchForType(@PathVariable("type") String type, 
-    		@PathVariable("query") String query, Writer writer) {
-    	Class<? extends Level3ElementProxy> classToSearch;
+    @ResponseBody
+    public String fulltextSearchForType(@PathVariable("type") Class<? extends BioPAXElement> type, 
+    		@PathVariable("query") String query) {
+    	Class<? extends Level3Element> classToSearch;
 		try {
-			classToSearch = (Class<? extends Level3ElementProxy>) Class
-				.forName("org.biopax.paxtools.model.level3." + type + "Proxy");
+			classToSearch = (Class<? extends Level3Element>) Class.forName(type + "Proxy");
 		} catch (ClassNotFoundException e) {
 			return "";
 		}
@@ -260,9 +231,10 @@ public class WebserviceController {
     
 	
 	@RequestMapping(value="/graph", method = RequestMethod.POST)
+	@ResponseBody
     public String graphQuery(@RequestParam("kind") GraphType kind,  
     		@RequestParam("format") Format format, @RequestParam("source") String source,
-    		@RequestParam("dest") String dest, Writer writer) {
+    		@RequestParam("dest") String dest) {
 		if(log.isInfoEnabled()) log.info("GraphQuery format:" + format + 
 				", kind:" + kind + ", source:" + source + ", dest:" + dest);
 		StringBuffer toReturn = new StringBuffer("Not Implemented Yet :)" 
@@ -273,9 +245,9 @@ public class WebserviceController {
 	
 	
 	@RequestMapping(value="/graph", method = RequestMethod.GET)
-    public String testForm() {
-		return "graph";
+    public void testForm() {
 	}
+	
 	
 	private String toOWL(BioPAXElement element) {
 		if(element == null) return "NOTFOUND"; // temporary

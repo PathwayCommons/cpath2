@@ -11,13 +11,7 @@
     
     <context:annotation-config/>
     
-   	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-		<property name="ignoreUnresolvablePlaceholders" value="false" />
-		<property name="ignoreResourceNotFound" value="true"/>
-		<property name="locations">
-			<value>file:../cpath.properties</value>
-		</property>
-	</bean>
+ 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
        
     <!-- enable the configuration of transactional behavior based on annotations -->
     <tx:annotation-driven transaction-manager="proteinsTransactionManager"/>
