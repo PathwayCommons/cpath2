@@ -45,7 +45,7 @@
 					<artifactId>maven-surefire-plugin</artifactId>
 					<configuration>
 						<testFailureIgnore>false</testFailureIgnore>
-						<argLine>-Xmx1024M -Dhbm2ddl.mode=create-drop</argLine>
+						<argLine>-Xmx1024M -DCPATH2_HOME=${basedir}/.. -Dhbm2ddl.mode.db=create-drop -Dhbm2ddl.mode.wdb=create-drop -Dhbm2ddl.mode.prdb=create-drop -Dhbm2ddl.mode.smdb=create-drop</argLine>
 					</configuration>
 				</plugin>
 			</plugins>

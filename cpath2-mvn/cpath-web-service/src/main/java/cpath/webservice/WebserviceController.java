@@ -30,6 +30,8 @@ package cpath.webservice;
 
 import cpath.dao.PaxtoolsDAO;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -40,8 +42,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
-
-import org.apache.commons.logging.*;
 
 import java.io.*;
 import java.util.*;
@@ -134,6 +134,7 @@ public class WebserviceController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(Format.class, new FormatEditor());
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
+        binder.registerCustomEditor(BioPAXElement.class, new BiopaxTypeEditor());
     }
 	
 	
@@ -143,7 +144,6 @@ public class WebserviceController {
     	for(Format f : Format.values()) {
     		toReturn.append(f.toString().toLowerCase()).append(newline);
     	}
-    	
     	writer.write(toReturn.toString());
     }
     
@@ -151,12 +151,12 @@ public class WebserviceController {
     @RequestMapping("/types")
     public void getBiopaxTypes(Writer writer) throws IOException {
     	StringBuffer toReturn = new StringBuffer();
-    	// TODO list all L3 classes (use SimpleEditorMap)  
-    	toReturn.append("ProteinReference").append(newline);
-    	toReturn.append("Pathway").append(newline);
-    	toReturn.append("BioSource").append(newline);
+    	for(String type : BiopaxTypeEditor.getTypeByName().keySet()) {
+    		toReturn.append(type).append(newline);
+    	}
     	writer.write(toReturn.toString());
     }
+
     
     /*
      * TODO all objects?.. This might be too much to ask :)
@@ -174,20 +174,21 @@ public class WebserviceController {
     
     
     @RequestMapping("/elements/{uri}")
-    public void getElementById(@PathVariable("uri") String uri, Writer writer) throws IOException {
-    	getElementById(Format.BIOPAX, uri, writer);
+    @ResponseBody
+    public String getElementById(@PathVariable("uri") String uri) throws IOException {
+    	return getElementById(Format.BIOPAX, uri);
     }
 
     
     @RequestMapping("/format/{format}/elements/{uri}")
-    public void getElementById(@PathVariable("format") Format format, 
-    		@PathVariable("uri") String uri, Writer writer) throws IOException {
+    public String getElementById(@PathVariable("format") Format format, 
+    		@PathVariable("uri") String uri) {
 		BioPAXElement element = paxtoolsDAO.getByID(uri.trim(), true); // (uses HQL saved query)
 		// TODO create/use a query format enumeration; process other 'format'
 		if(log.isInfoEnabled()) log.info("Query - format:" + format + 
 				", urn:" + uri + ", returned:" + element);
 		String owl = toOWL(element);
-		writer.write(owl);
+		return owl;
     }
 
 /*    
@@ -271,8 +272,13 @@ public class WebserviceController {
 	}
 	
 	
+	@RequestMapping(value="/graph", method = RequestMethod.GET)
+    public String testForm() {
+		return "graph";
+	}
+	
 	private String toOWL(BioPAXElement element) {
-		if(element == null) return null;
+		if(element == null) return "NOTFOUND"; // temporary
 		
 		StringWriter writer = new StringWriter();
 		try {

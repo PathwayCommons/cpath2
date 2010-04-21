@@ -23,7 +23,7 @@
         <property name="dataSource" ref="whouseDataSource"/>
         <property name="hibernateProperties">
 		  <props>
-			<prop key="hibernate.hbm2ddl.auto">${hbm2ddl.mode}</prop>
+			<prop key="hibernate.hbm2ddl.auto">${hbm2ddl.mode.wdb}</prop>
 			<prop key="hibernate.show_sql">true</prop>
 			<prop key="hibernate.format_sql">true</prop>
 			<prop key="hibernate.dialect">org.hibernate.dialect.MySQL5Dialect</prop>

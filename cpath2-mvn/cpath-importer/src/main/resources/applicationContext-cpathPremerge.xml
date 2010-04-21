@@ -9,14 +9,8 @@
        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
     <context:annotation-config/>
-
-   	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-		<property name="ignoreUnresolvablePlaceholders" value="false" />
-		<property name="ignoreResourceNotFound" value="true"/>
-		<property name="locations">
-			<value>file:../cpath.properties</value>
-		</property>
-	</bean>
+    
+	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
     <bean id="premergeSessionFactory"
         class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
