@@ -12,9 +12,7 @@
   <packaging>war</packaging>
   <name>cPath2 Web UI (prototype)</name>
   <version>1.0-SNAPSHOT</version>
-  <build>
-    <finalName>cpath-web</finalName>
-  </build>
+
   <dependencies>
   	<dependency>
   		<groupId>org.springframework</groupId>

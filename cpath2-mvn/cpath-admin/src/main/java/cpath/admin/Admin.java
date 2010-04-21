@@ -169,7 +169,8 @@ public class Admin implements Runnable {
                     		"classpath:applicationContext-cvFetcher.xml",
                     		"classpath:applicationContext-biopaxValidation.xml",
                     		"classpath:applicationContext-miriam.xml", 
-        					"classpath:applicationContext-cpathImporter.xml"});
+        					"classpath:applicationContext-cpathImporter.xml",
+        					"classpath:applicationContext-cvFetcher.xml"});
                 PremergeDispatcher premergeDispatcher = (PremergeDispatcher) context.getBean("premergeDispatcher");
 				premergeDispatcher.start();
 				// sleep until premerge is complete, this is required so we can call System.exit(...) below

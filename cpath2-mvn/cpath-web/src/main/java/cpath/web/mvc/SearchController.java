@@ -67,6 +67,12 @@ public class SearchController {
 	}
 
 
+
+	@RequestMapping(value="/graph", method = RequestMethod.GET)
+    public void graphForm(){
+	}
+	
+	
 	// shows form
 	@RequestMapping(value="/search", method = RequestMethod.GET)
     public void showForm() {

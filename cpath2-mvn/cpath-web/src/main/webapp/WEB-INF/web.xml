@@ -28,12 +28,12 @@
 	</context-param>
 
 	<servlet>
-		<servlet-name>cpath2</servlet-name>
+		<servlet-name>cpathweb</servlet-name>
 		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
 	</servlet>
 
 	<servlet-mapping>
-		<servlet-name>cpath2</servlet-name>
+		<servlet-name>cpathweb</servlet-name>
 		<url-pattern>/*</url-pattern>
 	</servlet-mapping>
 

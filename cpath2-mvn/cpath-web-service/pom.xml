@@ -14,9 +14,6 @@
 	<version>1.0-SNAPSHOT</version>
 	<description>cPath Web Services</description>
 
-	<build>
-		<finalName>cpath2</finalName>
-	</build>
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -49,6 +46,12 @@
 			<version>2.5</version>
 			<type>jar</type>
 			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>pathwaycommons.cpath</groupId>
+			<artifactId>cpath-importer</artifactId>
+			<version>1.0-SNAPSHOT</version>
+			<scope>runtime</scope>
 		</dependency>
 	</dependencies>
 </project>
