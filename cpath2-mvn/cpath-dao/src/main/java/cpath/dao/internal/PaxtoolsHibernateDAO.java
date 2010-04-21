@@ -59,6 +59,7 @@ import java.io.FileNotFoundException;
 /**
  * Class which implements PaxtoolsModelQuery interface via persistence.
  */
+@Transactional
 @Repository
 public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	private final static String SEARCH_FIELD_AVAILABILITY = "availability";
@@ -226,12 +227,12 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
      * @return Set<BioPAXElement>
      */
 	@Transactional(readOnly=true)
-    public <T extends BioPAXElement> Set<T> search(String query, Class<T> filterBy) {
+    public <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy) {
 
 		log.info("query: " + query + ", filterBy: " + filterBy);
 
 		// set to return
-		Set toReturn = new HashSet();
+		List<T> toReturn = new ArrayList<T>();
 
         // create native lucene query
 		MultiFieldQueryParser parser = new MultiFieldQueryParser(ALL_FIELDS, new StandardAnalyzer());
@@ -248,18 +249,34 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		// wrap Lucene query in a org.hibernate.Query
 		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterBy);
 		// execute search
-		List results = (List)hibQuery.list();
+		List<T> results = hibQuery.list();
 		
-		if (results != null) {
-			log.info("we have " + results.size() + " results.");
-			toReturn.addAll(results);
+		if(results != null && !results.isEmpty()) {
+			if(log.isInfoEnabled())	
+				log.info("we have " + results.size() + " results.");
+		 	toReturn = Collections.synchronizedList(results);
+		} else {
+			if(log.isInfoEnabled())	
+			 	log.info("we have no results");
 		}
-		else {
-			log.info("we have no results");
-		}
-  
-		// outta here
+  	
 		return toReturn;
+	}
+
+	/* (non-Javadoc)
+	 * @see cpath.dao.PaxtoolsDAO#search(java.lang.String, java.lang.Class)
+	 */
+	@Override
+	@Transactional(readOnly=true)
+	public List<String> searchForIds(String query,
+			Class<? extends BioPAXElement> filterBy) {
+		List<String> ids = new ArrayList<String>();
+		List<? extends BioPAXElement> results = search(query, filterBy);
+		for(BioPAXElement e : results) {
+			ids.add(e.getRDFId());
+		}
+		
+		return ids;
 	}
 
 }

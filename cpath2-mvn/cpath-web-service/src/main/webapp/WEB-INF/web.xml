@@ -16,6 +16,11 @@
 		<param-value>/WEB-INF/log4j.properties</param-value>
 	</context-param>
 
+	<context-param>
+		<param-name>webAppRootKey</param-name>
+		<param-value>CPATH2_HOME</param-value>
+	</context-param>
+
 	<listener>
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
 	</listener>
@@ -23,7 +28,6 @@
 	<context-param>
 		<param-name>contextConfigLocation</param-name>
 		<param-value>
-			classpath:applicationContext-wsExtras.xml
 			classpath:applicationContext-cpathDAO.xml
 			classpath:applicationContext-cpathWarehouse.xml
 			classpath:applicationContext-whouseDAO.xml

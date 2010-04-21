@@ -158,7 +158,7 @@ public class PaxtoolsHibernateDAOTest {
 
 		// verify a call to getByQueryString - filter by BioPAXElementProxy
 		log.info("Testing first call to paxtoolsDAO.getByQueryString()...");
-		Set<Level3ElementProxy> returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, Level3ElementProxy.class);
+		List<Level3ElementProxy> returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, Level3ElementProxy.class);
 		Set<Class<? extends BioPAXElement>> uniqueClasses = new HashSet<Class<? extends BioPAXElement>>();
 		for (BioPAXElement returnClass : returnClasses) {
 			uniqueClasses.add(returnClass.getModelInterface());
@@ -176,7 +176,7 @@ public class PaxtoolsHibernateDAOTest {
 		// verify a call to getByQueryString - filter by GET_BY_QUERY_RETURN_TEST_CLASS
 		returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, GET_BY_QUERY_RETURN_TEST_CLASS);
 		
-		assertTrue(returnClasses.size() == 1);
+		assertEquals(returnClasses.size(), 1);
 		
 		for (BioPAXElement returnClass : returnClasses) {
 			assertTrue(returnClass.getClass() == GET_BY_QUERY_RETURN_TEST_CLASS);

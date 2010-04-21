@@ -32,6 +32,7 @@ package cpath.dao;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
+import java.util.List;
 import java.util.Set;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -101,6 +102,17 @@ public interface PaxtoolsDAO {
      * @param filterBy class to be used as a filter.
      * @return List<BioPAXElement>
      */
-    <T extends BioPAXElement> Set<T> search(String query, Class<T> filterBy);
+    <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy);
+    
+
+    /**
+     * Search the lucene index for given string and returns
+	 * and returns a ordered list of objects in the model.
+	 * 
+     * @param query
+     * @param filterBy BioPAX class
+     * @return
+     */
+    List<String> searchForIds(String query, Class<? extends BioPAXElement> filterBy);
     
 }
