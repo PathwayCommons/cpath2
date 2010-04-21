@@ -9,10 +9,10 @@
   
   	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
 		<property name="ignoreUnresolvablePlaceholders" value="true" />
-		<property name="ignoreResourceNotFound" value="true"/>
-		<!-- <property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/> -->
+		<property name="ignoreResourceNotFound" value="false"/>
+		<property name="systemPropertiesModeName" value="SYSTEM_PROPERTIES_MODE_OVERRIDE"/>
 		<property name="locations">
-			<value>file:../cpath.properties</value>
+			<value>file:${CPATH2_HOME}/cpath.properties</value>
 		</property>
 	</bean>
   

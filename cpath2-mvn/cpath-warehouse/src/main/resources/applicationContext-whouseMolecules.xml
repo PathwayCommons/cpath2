@@ -10,14 +10,7 @@
     
     <context:annotation-config/>
     
-   	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-		<property name="ignoreUnresolvablePlaceholders" value="false" />
-		<property name="ignoreResourceNotFound" value="true"/>
-		<property name="locations">
-			<value>file:../cpath.properties</value>
-		</property>
-	</bean>
-       
+    <context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
     <!-- enable the configuration of transactional behavior based on annotations -->
     <tx:annotation-driven transaction-manager="moleculesTransactionManager"/>
@@ -29,7 +22,7 @@
         <property name="dataSource" ref="moleculesDataSource"/>
         <property name="hibernateProperties">
 		  <props>
-			<prop key="hibernate.hbm2ddl.auto">${hbm2ddl.mode}</prop>
+			<prop key="hibernate.hbm2ddl.auto">${hbm2ddl.mode.smdb}</prop>
 			<prop key="hibernate.show_sql">true</prop>
 			<prop key="hibernate.format_sql">true</prop>
 			<prop key="hibernate.dialect">org.hibernate.dialect.MySQL5Dialect</prop>

@@ -1,9 +1,9 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java"%>
 <%@ taglib prefix="form" uri="http://www.springframework.org/tags/form"%>
 
-<h1>Test Graph Query</h1>
+<h1>Graph Query</h1>
 
-<form:form action="/cpath-web-service/graph">
+<form:form>
     <table>
     <tr>
       <td>Graph</td>
