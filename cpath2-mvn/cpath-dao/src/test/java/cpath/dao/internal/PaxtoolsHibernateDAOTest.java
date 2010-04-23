@@ -34,6 +34,7 @@ import cpath.dao.PaxtoolsDAO;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.BiochemicalReaction;
 import org.biopax.paxtools.model.level3.ChemicalStructure;
+import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.SmallMolecule;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.Xref;
@@ -120,15 +121,16 @@ public class PaxtoolsHibernateDAOTest {
 		String separator = System.getProperty("file.separator");
 		File biopaxFile = new File(getClass()
 				.getResource("/biopax-level3-test.owl").getFile());
-		paxtoolsDAO.importModel(biopaxFile,true);
+		paxtoolsDAO.importModel(biopaxFile, true);
 		log.info("paxtoolsDAO.importModel() succeeded!");
 		
 		log.info("Testing call to paxtoolsDAO.getByID()...");
-		BioPAXElementProxy bpe = (BioPAXElementProxy) paxtoolsDAO.getByID("http://www.biopax.org/examples/myExample#Pathway50", false);
+		BioPAXElementProxy bpe = (BioPAXElementProxy) paxtoolsDAO
+			.getByID("http://www.biopax.org/examples/myExample#Pathway50", false, false);
 		
-		assertTrue(bpe != null && bpe instanceof PathwayProxy);
+		assertTrue(bpe != null && bpe instanceof Pathway);
 		
-		Set<String> pathwayNames = ((PathwayProxy)bpe).getName();
+		Set<String> pathwayNames = ((Pathway)bpe).getName();
 		
 		assertTrue(pathwayNames.size() == PATHWAY_TEST_VALUES.size());
 		
@@ -139,7 +141,7 @@ public class PaxtoolsHibernateDAOTest {
 
 		// verify a call to getObjects(Class<T> filterBy)
 		log.info("Testing call to paxtoolsDAO.getObjects()...");
-		Set<ProteinProxy> proteins = paxtoolsDAO.getObjects(ProteinProxy.class, false);
+		Set<ProteinProxy> proteins = paxtoolsDAO.getObjects(ProteinProxy.class, false, false);
 		
 		assertTrue(proteins != null && proteins.size() == PROTEIN_TEST_VALUES.size());
 		
@@ -186,7 +188,7 @@ public class PaxtoolsHibernateDAOTest {
 		
 		// verify object property is set
 		SmallMoleculeReference smr = (SmallMoleculeReference) paxtoolsDAO
-			.getByID("http://www.biopax.org/examples/myExample#SmallMoleculeReference_10", false);
+			.getByID("http://www.biopax.org/examples/myExample#SmallMoleculeReference_10", false, false);
 		Set<Xref> xs = smr.getXref();
 		assertFalse(xs.isEmpty());
 		assertTrue(xs.size()==1);

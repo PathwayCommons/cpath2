@@ -36,14 +36,15 @@ import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.proxy.level3.Level3ElementProxy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
+import java.net.URLDecoder;
 import java.util.*;
 
 @Controller
@@ -139,7 +140,6 @@ public class WebserviceController {
 	
 	
     @RequestMapping("/formats")
-    @ExceptionHandler
     @ResponseBody
     public String getFormats() {
     	StringBuffer toReturn = new StringBuffer();
@@ -154,7 +154,7 @@ public class WebserviceController {
     @ResponseBody
     public String getBiopaxTypes() {
     	StringBuffer toReturn = new StringBuffer();
-    	for(String type : BiopaxTypeEditor.getTypeByName().keySet()) {
+    	for(String type : BiopaxTypeEditor.getTypesByName().keySet()) {
     		toReturn.append(type).append(newline);
     	}
     	return toReturn.toString();
@@ -165,31 +165,62 @@ public class WebserviceController {
      * TODO all objects?.. This might be too much to ask :)
      */
     @Deprecated
-    @RequestMapping("/elements")
-    public void getElements(Writer writer) throws IOException {
-    	StringBuffer toReturn = new StringBuffer();
-    	for(BioPAXElement e : paxtoolsDAO.getObjects(BioPAXElement.class, false)) {
-    		toReturn.append(e.getRDFId()).append(newline);
-    	}
-    	writer.write(toReturn.toString());
-    }
-    
-    
-    @RequestMapping("/elements/{uri}")
+    @RequestMapping(value="/elements/all", method=RequestMethod.GET)
     @ResponseBody
-    public String getElementById(@PathVariable("uri") String uri) throws IOException {
-    	return getElementById(Format.BIOPAX, uri);
+    public String getElements() throws IOException {
+    	return getElementsOfType(BioPAXElement.class);
     }
 
     
-    @RequestMapping("/format/{format}/elements/{uri}")
+    @Deprecated
+    @RequestMapping(value="/types/{type}/elements", method=RequestMethod.GET)
     @ResponseBody
-    public String getElementById(@PathVariable("format") Format format, 
-    		@PathVariable("uri") String uri) {
-		BioPAXElement element = paxtoolsDAO.getByID(uri.trim(), true); // (uses HQL saved query)
+    public String getElementsOfType(@PathVariable("type") Class<? extends BioPAXElement> type) {
+    	StringBuffer toReturn = new StringBuffer();
+    	Set<? extends BioPAXElement> results = paxtoolsDAO.getObjects(type, false, false);
+    	for(BioPAXElement e : results)
+    	{
+    		toReturn.append(e.getRDFId()).append(newline);
+    	}
+    	return toReturn.toString();
+    }
+    
+    
+    @RequestMapping(value="/elements", method = RequestMethod.POST)
+    @ResponseBody
+    public String postElementById(@RequestParam("uri") String uri) {
+    	if(log.isInfoEnabled()) log.info("POST Query /elements");
+    	return elementById(Format.BIOPAX, uri);
+    }
+
+    
+    @RequestMapping(value="/elements", method = RequestMethod.GET)
+    @ResponseBody
+    public String getElementById(@RequestParam("id") String id) {
+    	if(log.isInfoEnabled()) log.info("GET Query /elements?id=" + id);
+    	return elementById(Format.BIOPAX, id);
+    }
+    
+    
+    @Transactional
+    @RequestMapping(value="/format/{format}/elements", method= RequestMethod.POST)
+    @ResponseBody
+    public String elementById(@PathVariable("format") Format format, 
+    		@RequestParam("uri") String uri) 
+    {
+    	BioPAXElement element = paxtoolsDAO.getByID(uri, false, false);
 		if(log.isInfoEnabled()) log.info("Query - format:" + format + 
 				", urn:" + uri + ", returned:" + element);
+		/*
+		 * using paxtoolsDAO.getByID(uri, true, true) above 
+		 * causes org.hibernate.LazyInitializationException: 
+		 *  failed to lazily initialize a collection of role: org.biopax.paxtools.proxy.level3.PathwayProxy.pathwayComponent, 
+		 *  no session or session was closed
 		String owl = toOWL(element);
+		*/
+		// TODO how to get complete BioPAX element (or its serialization) from the DAO...
+		String owl = element.getRDFId();
+		
 		return owl;
     }
     
@@ -197,33 +228,22 @@ public class WebserviceController {
 	@RequestMapping(value="/find/{query}")
 	@ResponseBody
     public String fulltextSearch(@PathVariable("query") String query) {
-		List<String> results = 
-			paxtoolsDAO.searchForIds(query, Level3ElementProxy.class);
-		StringBuffer toReturn = new StringBuffer();
-		for(String id : results) {
-			toReturn.append(id).append(newline);
-		}
-		
-		return toReturn.toString(); 
+		return fulltextSearchForType(BioPAXElement.class, query);
 	}
         
 
     @RequestMapping(value="/types/{type}/find/{query}")
     @ResponseBody
     public String fulltextSearchForType(@PathVariable("type") Class<? extends BioPAXElement> type, 
-    		@PathVariable("query") String query) {
-    	Class<? extends Level3Element> classToSearch;
-		try {
-			classToSearch = (Class<? extends Level3Element>) Class.forName(type + "Proxy");
-		} catch (ClassNotFoundException e) {
-			return "";
-		}
-		
-		Collection<? extends Level3Element> resultSet = paxtoolsDAO.search(query, classToSearch);
-		
+    		@PathVariable("query") String query) {	
+    	
+    	if(log.isInfoEnabled()) log.info("Fulltext Search for type:" 
+				+ type.getCanonicalName() + ", query:" + query);
+    	
+		List<BioPAXElement> results = (List<BioPAXElement>) paxtoolsDAO.search(query, type);
 		StringBuffer toReturn = new StringBuffer();
-		for(BioPAXElement el : resultSet) {
-			toReturn.append(el.getRDFId()).append(newline);
+		for(BioPAXElement e : results) {
+			toReturn.append(e.getRDFId()).append(newline);
 		}
 		
 		return toReturn.toString(); 
@@ -232,21 +252,26 @@ public class WebserviceController {
 	
 	@RequestMapping(value="/graph", method = RequestMethod.POST)
 	@ResponseBody
-    public String graphQuery(@RequestParam("kind") GraphType kind,  
-    		@RequestParam("format") Format format, @RequestParam("source") String source,
-    		@RequestParam("dest") String dest) {
-		if(log.isInfoEnabled()) log.info("GraphQuery format:" + format + 
-				", kind:" + kind + ", source:" + source + ", dest:" + dest);
+    public String graphQuery(@RequestBody MultiValueMap<String, String> formData)
+    {
+		if(log.isInfoEnabled()) log.info("GraphQuery format:" 
+				+ formData.get("format") + ", kind:" + formData.get("kind") 
+				+ ", source:" + formData.get("source") 
+				+ ", dest:" + formData.get("dest"));
+		
 		StringBuffer toReturn = new StringBuffer("Not Implemented Yet :)" 
-				+ "GraphQuery format:" + format + 
-				", kind:" + kind + ", source:" + source + ", dest:" + dest);
+				+ "GraphQuery format:" + formData.get("format") + 
+				", kind:" + formData.get("kind") + ", source:" 
+				+ formData.get("source") + ", dest:" 
+				+ formData.get("dest"));
+		
 		return toReturn.toString(); 
 	}
 	
 	
+	@ExceptionHandler
 	@RequestMapping(value="/graph", method = RequestMethod.GET)
-    public void testForm() {
-	}
+    public void testForm() {}
 	
 	
 	private String toOWL(BioPAXElement element) {
