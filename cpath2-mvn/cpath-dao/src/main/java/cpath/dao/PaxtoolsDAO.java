@@ -48,7 +48,7 @@ public interface PaxtoolsDAO {
 	 * @param model Model
 	 * @param createIndex boolean
 	 */
-	void importModel(Model model, boolean createIndex);
+	void importModel(Model model, boolean index);
 
 	
 	/**
@@ -58,8 +58,14 @@ public interface PaxtoolsDAO {
 	 * @param createIndex boolean
 	 * @throws FileNoteFoundException
 	 */
-	void importModel(File biopaxFile, boolean createIndex) throws FileNotFoundException;
+	void importModel(File biopaxFile, boolean index) throws FileNotFoundException;
 
+	
+	/**
+	 * Builds lucene index.
+	 * 
+	 */
+	void createIndex();
 	
     /**
      * This method returns the biopax element with the given id,
@@ -68,30 +74,23 @@ public interface PaxtoolsDAO {
 	 *
      * @param id of the object to be retrieved.
 	 * @param eager boolean indicating eager (as opposed to lazy) fetching
+	 * @param stateless
      * @return BioPAXElement
      */
-    BioPAXElement getByID(String id, boolean eager);
+    BioPAXElement getByID(String id, boolean eager, boolean stateless);
 
-    
-    /**
-     * (Experimental) By internal 'proxy_id'
-     * 
-     * @param id
-     * @param eager
-     * @return
-     */
-    BioPAXElement getByID(Long id, boolean eager);
 
-    
+   
     /**
      * This method returns a set of objects in the model of the given class.
      * Contents of this set should not be modified.
 	 *
      * @param filterBy class to be used as a filter.
 	 * @param eager boolean indicating eager (as opposed to lazy) fetching
+	 * @param stateless
      * @return an unmodifiable set of objects of the given class.
      */
-    <T extends BioPAXElement> Set<T> getObjects(Class<T> filterBy, boolean eager);
+    <T extends BioPAXElement> Set<T> getObjects(Class<T> filterBy, boolean eager, boolean stateless);
 
 
 	/**
@@ -103,16 +102,5 @@ public interface PaxtoolsDAO {
      * @return List<BioPAXElement>
      */
     <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy);
-    
-
-    /**
-     * Search the lucene index for given string and returns
-	 * and returns a ordered list of objects in the model.
-	 * 
-     * @param query
-     * @param filterBy BioPAX class
-     * @return
-     */
-    List<String> searchForIds(String query, Class<? extends BioPAXElement> filterBy);
-    
+       
 }

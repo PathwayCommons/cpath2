@@ -33,7 +33,9 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 
 
 /**
@@ -43,19 +45,23 @@ import org.biopax.paxtools.model.BioPAXLevel;
  *
  */
 public class BiopaxTypeEditor extends PropertyEditorSupport {
-	private static final Map<String, Class<? extends BioPAXElement>> typeByName;
+	private static final Map<String, Class<? extends BioPAXElement>> typesByName;
+	private static BioPAXFactory bioPAXFactory;
 	
 	static {
-		typeByName = new TreeMap<String, Class<? extends BioPAXElement>>(); // want it sorted
+		typesByName = new TreeMap<String, Class<? extends BioPAXElement>>(); // want it sorted
 		for (Method method : BioPAXLevel.L3.getDefaultFactory().getClass().getMethods())
 		{
 			if (method.getName().startsWith("create"))
 			{
 				Class<? extends BioPAXElement> clazz =
 					(Class<? extends BioPAXElement>) method.getReturnType();
-				typeByName.put(clazz.getSimpleName(), clazz);
+				
+				typesByName.put(clazz.getSimpleName(), clazz);
 			}
 		}
+		
+		bioPAXFactory = new BioPAXFactoryForPersistence();
 	}
 	
 	
@@ -64,26 +70,32 @@ public class BiopaxTypeEditor extends PropertyEditorSupport {
 	 */
 	@Override
 	public void setAsText(String type) {
-		setValue(getBiopaxClassByName(type));
+		setValue(getSearchableBiopaxClassByName(type));
 	}
 	
 	
 	/*
-	 * enables using arguments, BioPAX class names, in any case: 
+	 * Enables using arguments, BioPAX class names, in any case: 
 	 *     ProteinReference, PROTEINREFERENCE, proteinreference, etc.
+	 * 
 	 */
-	private static Class<? extends BioPAXElement> getBiopaxClassByName(String type) {
-		for(String key : typeByName.keySet()) {
+	private static Class<? extends BioPAXElement> getSearchableBiopaxClassByName(String type) {
+		for(String key : typesByName.keySet()) {
 			if(key.equalsIgnoreCase(type)) {
-				return typeByName.get(key);
+				/*
+				Class<? extends BioPAXElement> persistentClass 
+					= bioPAXFactory.reflectivelyCreate(typesByName.get(key)).getClass();
+				return persistentClass;
+				*/
+				return typesByName.get(key);
 			}
 		}
 		return null;
 	}
 	
 	
-	public static Map<String, Class<? extends BioPAXElement>> getTypeByName() {
-		return typeByName;
+	public static Map<String, Class<? extends BioPAXElement>> getTypesByName() {
+		return typesByName;
 	}
 	
 }

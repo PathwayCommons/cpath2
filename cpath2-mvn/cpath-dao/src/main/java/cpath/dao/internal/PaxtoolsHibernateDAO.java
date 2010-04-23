@@ -37,7 +37,7 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
-import org.biopax.paxtools.proxy.level3.Level3ElementProxy;
+import org.biopax.paxtools.proxy.level3.ModelProxy;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -47,7 +47,7 @@ import org.hibernate.search.FullTextQuery;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.*;
 
 import cpath.dao.PaxtoolsDAO;
 
@@ -91,11 +91,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		this.sessionFactory = sessionFactory;
 	}
 	
-	// a shortcut to get current session
-	private Session getSession() {
-		return getSessionFactory().getCurrentSession();
-	}
-	
+
 	/**
 	 * Persists the given model to the db.
 	 * 
@@ -107,46 +103,72 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 * @param createIndex boolean
 	 */
 	@Transactional
-	public void importModel(final Model model, final boolean createIndex) {
+	public void importModel(final Model model, final boolean index) {
 		/*
 		Session session = getSessionFactory().getCurrentSession();
 		FullTextSession fullTextSession = Search.getFullTextSession(session);
+		fullTextSession.setFlushMode(FlushMode.MANUAL);
 		int index = 0;
 		for (BioPAXElement bpe : model.getObjects()) {
 			if (log.isInfoEnabled())
 				log.info("Saving biopax element, rdfID: " + bpe.getRDFId());
 			index++;
-			session.saveOrUpdate(bpe);
-			//session.save(bpe);
+			//session.saveOrUpdate(bpe);
+			session.save(bpe);
 			if (index % BATCH_SIZE == 0) {
 				session.flush();
 				session.clear();
-				if (createIndex) {
-					fullTextSession.flushToIndexes(); // apply changes to indexes
-					fullTextSession.clear(); // clear since the queue is processed
-				}
+				fullTextSession.flushToIndexes(); // apply changes to indexes
+				fullTextSession.clear(); // clear since the queue is processed
 			}
 			session.flush();
 			session.clear();
-			if (createIndex) {
-				fullTextSession.flushToIndexes();
-				fullTextSession.clear();
-			}
+			fullTextSession.flushToIndexes();
+			fullTextSession.clear();
 		}
 		*/
-	
-		Session session = getSession();
-		FullTextSession fullTextSession = Search.getFullTextSession(session);
-		session.save(model);
-		fullTextSession.flushToIndexes();
-	
-		//StatelessSession session = getSessionFactory().openStatelessSession();
-		//session.insert(model);
-		//session.close();
-		//FullTextSession fullTextSession = Search.getFullTextSession(getSession());
-		//fullTextSession.index(model);
+		
+		Session session = getSessionFactory().getCurrentSession();
+		if(!index) {
+			session.save(model);
+		} else {
+			FullTextSession fullTextSession = Search.getFullTextSession(session);
+			fullTextSession.save(model);
+			fullTextSession.flushToIndexes();
+		}
+		
+		/*
+		 * did not work (saves model only, no objects)
+		StatelessSession stlsession = getSessionFactory().openStatelessSession();
+		stlsession.beginTransaction();
+		stlsession.insert(model);
+		// throws - org.hibernate.TransientObjectException: object references an unsaved transient instance...
+		//for(BioPAXElement e : model.getObjects()) {
+		//	stlsession.insert(e);
+		//}
+		stlsession.getTransaction().commit();
+		stlsession.close();
+		*/
 	}
 
+	
+	/* (non-Javadoc)
+	 * @see cpath.dao.PaxtoolsDAO#createIndex()
+	 */
+	@Override
+	@Transactional
+	public void createIndex() {
+		Session session = getSessionFactory().getCurrentSession();
+		FullTextSession fullTextSession = Search.getFullTextSession(session);
+		Model m = (Model) session.get(ModelProxy.class, new Long(1));
+		//if(log.isInfoEnabled())
+			log.info("Indexing Model; no. objects: " + m.getObjects().size());
+		fullTextSession.index(m);
+		for(BioPAXElement e : m.getObjects()) {
+			fullTextSession.index(e);
+		}
+		fullTextSession.flushToIndexes();
+	}
 	
 	/**
 	 * Persists the given model to the db.
@@ -155,7 +177,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 * @param createIndex boolean
 	 * @throws FileNoteFoundException
 	 */
-	public void importModel(File biopaxFile, final boolean createIndex) throws FileNotFoundException {
+	public void importModel(File biopaxFile, final boolean index) throws FileNotFoundException {
 
 		log.info("Creating biopax model using: " + biopaxFile.getAbsolutePath());
 
@@ -166,7 +188,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		Model model = simple.convertFromOWL(new FileInputStream(biopaxFile));
 
 		// import the model
-		importModel(model, createIndex);
+		importModel(model, index);
 	}
 
 	
@@ -180,39 +202,57 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
      * @return BioPAXElement
      */
 	@Transactional(readOnly=true) // a hint to the driver to eventually optimize :)
-    public BioPAXElement getByID(final String id, final boolean eager) {
+    public BioPAXElement getByID(final String id, final boolean eager, boolean stateless) {
 		// TODO 26-FEB-2010  BioPAXElementProxy changed to use auto-generated id instead of RDFId! Will wse session.getNamedQuery(..) for this!
-    	Session session = getSession();
-		String namedQuery = (eager) ? "org.biopax.paxtools.proxy.level3.elementByRdfId" :
-			"org.biopax.paxtools.proxy.level3.elementByRdfIdEager";
-		Query query = session.getNamedQuery(namedQuery);
-		query.setString("rdfid", id);
-		return (BioPAXElement)query.uniqueResult();
-	}
-	
-	
-	@Transactional(readOnly=true)
-    public BioPAXElement getByID(final Long id, boolean eager) {
-		if(eager) {
-			return (BioPAXElement)getSession().load(Level3ElementProxy.class, id);
-		} else {
-			return (BioPAXElement)getSession().get(Level3ElementProxy.class, id);
-		}
-	}
-
-
-	@Transactional(readOnly=true)
-    public <T extends BioPAXElement> Set<T> getObjects(final Class<T> filterBy, boolean eager) {
-		List results = null;
+  
+		BioPAXElement toReturn = null;
 		
-		if (eager) {
-			results = getSession().createQuery("from " + filterBy.getCanonicalName() + " fetch all properties").list();
+		String namedQuery = (eager) 
+			? "org.biopax.paxtools.proxy.level3.elementByRdfId"
+				:	"org.biopax.paxtools.proxy.level3.elementByRdfIdEager";
+		
+		/*
+		 * does not work - org.hibernate.SessionException: collections cannot be fetched by a stateless session...
+		 * 
+		 * alternative - copy to a new element (traverse), or use SinpleExporter then SimpleReader - to/from OWL ;)
+		 * 
+		if(stateless) {
+			StatelessSession session = getSessionFactory().openStatelessSession();
+			Query query = session.getNamedQuery(namedQuery);
+			query.setString("rdfid", id);
+			toReturn =  (BioPAXElement)query.uniqueResult();
+			session.close(); // !
+		} else {
+		*/
+			Session session = getSessionFactory().getCurrentSession();
+			Query query = session.getNamedQuery(namedQuery);
+			query.setString("rdfid", id);
+			toReturn = (BioPAXElement)query.uniqueResult();
+		//}
+		
+		return toReturn;
+	}
+	
+
+	@Transactional(readOnly=true)
+    public <T extends BioPAXElement> Set<T> getObjects(
+    		final Class<T> filterBy, final boolean eager, final boolean stateless) {
+		List<T> results = null;
+		String query = "from " + filterBy.getCanonicalName();
+		if(eager) 
+			query += " fetch all properties";
+		
+		if (stateless) {
+			StatelessSession session = getSessionFactory().openStatelessSession();
+			results = session.createQuery(query).list();
+			session.close();
 		}
 		else {
-			results = getSession().createQuery("from " + filterBy.getCanonicalName()).list();
+			Session session = getSessionFactory().getCurrentSession();
+			results = session.createQuery(query).list();
 		}
 		
-		return (results.size() > 0) ? new HashSet(results) : new HashSet();
+		return (results.size() > 0) ? new HashSet<T>(results) : new HashSet<T>();
 	}
 
 
@@ -254,29 +294,19 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		if(results != null && !results.isEmpty()) {
 			if(log.isInfoEnabled())	
 				log.info("we have " + results.size() + " results.");
-		 	toReturn = Collections.synchronizedList(results);
+
+			for(BioPAXElement element : results) {
+				T detached = (T) getByID(element.getRDFId(), false, false);
+				toReturn.add(detached);
+			}
+			
+		 	toReturn = results;
 		} else {
 			if(log.isInfoEnabled())	
 			 	log.info("we have no results");
 		}
   	
 		return toReturn;
-	}
-
-	/* (non-Javadoc)
-	 * @see cpath.dao.PaxtoolsDAO#search(java.lang.String, java.lang.Class)
-	 */
-	@Override
-	@Transactional(readOnly=true)
-	public List<String> searchForIds(String query,
-			Class<? extends BioPAXElement> filterBy) {
-		List<String> ids = new ArrayList<String>();
-		List<? extends BioPAXElement> results = search(query, filterBy);
-		for(BioPAXElement e : results) {
-			ids.add(e.getRDFId());
-		}
-		
-		return ids;
 	}
 
 }
