@@ -139,6 +139,11 @@ public class WebserviceController {
     }
 	
 	
+	/**
+	 * List of formats that web methods return
+	 * 
+	 * @return
+	 */
     @RequestMapping("/formats")
     @ResponseBody
     public String getFormats() {
@@ -149,7 +154,14 @@ public class WebserviceController {
     	return toReturn.toString();
     }
     
-	
+    
+    //=== Web methods that help understand BioPAX model (and rules) ===
+    
+	/**
+	 * List of BioPAX L3 Classes
+	 * 
+	 * @return
+	 */
     @RequestMapping("/types")
     @ResponseBody
     public String getBiopaxTypes() {
@@ -161,18 +173,18 @@ public class WebserviceController {
     }
 
     
+    //=== Web methods that list all BioPAX element or - by type ===
+    
     /*
      * TODO all objects?.. This might be too much to ask :)
      */
-    @Deprecated
-    @RequestMapping(value="/elements/all", method=RequestMethod.GET)
+    @RequestMapping(value="/all/elements", method=RequestMethod.GET)
     @ResponseBody
     public String getElements() throws IOException {
     	return getElementsOfType(BioPAXElement.class);
     }
 
     
-    @Deprecated
     @RequestMapping(value="/types/{type}/elements", method=RequestMethod.GET)
     @ResponseBody
     public String getElementsOfType(@PathVariable("type") Class<? extends BioPAXElement> type) {
@@ -186,6 +198,8 @@ public class WebserviceController {
     }
     
     
+    //=== Most critical web methods that get one element by ID
+    
     @RequestMapping(value="/elements", method = RequestMethod.POST)
     @ResponseBody
     public String postElementById(@RequestParam("uri") String uri) {
@@ -193,12 +207,19 @@ public class WebserviceController {
     	return elementById(Format.BIOPAX, uri);
     }
 
+    // problem seen: using this mapping and PathVariable, {uri} gets cut!
+    @RequestMapping(value="/elements/{uri}/get", method = RequestMethod.GET)
+    @ResponseBody
+    public String elementById(@PathVariable("uri") String uri) {
+    	if(log.isInfoEnabled()) log.info("GET Query /elements/"+ uri);
+    	return elementById(Format.BIOPAX, uri);
+    }
     
     @RequestMapping(value="/elements", method = RequestMethod.GET)
     @ResponseBody
-    public String getElementById(@RequestParam("id") String id) {
-    	if(log.isInfoEnabled()) log.info("GET Query /elements?id=" + id);
-    	return elementById(Format.BIOPAX, id);
+    public String getElementById(@RequestParam("uri") String uri) {
+    	if(log.isInfoEnabled()) log.info("GET Query /elements?id=" + uri);
+    	return elementById(Format.BIOPAX, uri);
     }
     
     

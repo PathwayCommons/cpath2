@@ -130,6 +130,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		
 		Session session = getSessionFactory().getCurrentSession();
 		if(!index) {
+			// TODO not sure it does not create lucene index here as well...
 			session.save(model);
 		} else {
 			FullTextSession fullTextSession = Search.getFullTextSession(session);
@@ -161,8 +162,8 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		Session session = getSessionFactory().getCurrentSession();
 		FullTextSession fullTextSession = Search.getFullTextSession(session);
 		Model m = (Model) session.get(ModelProxy.class, new Long(1));
-		//if(log.isInfoEnabled())
-			log.info("Indexing Model; no. objects: " + m.getObjects().size());
+		if(log.isInfoEnabled())
+			log.info("Indexing Model; objects: " + m.getObjects().size());
 		fullTextSession.index(m);
 		for(BioPAXElement e : m.getObjects()) {
 			fullTextSession.index(e);
@@ -287,6 +288,12 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		// get full text session
 		FullTextSession fullTextSession = Search.getFullTextSession(getSessionFactory().getCurrentSession());
 		// wrap Lucene query in a org.hibernate.Query
+		/*
+		 * TODO enable filtering by interface class
+		 * Despite lucene search accepts concrete proxy/impl of BioPAX classes, this can be overridden as follows:
+		 * - first, search in basic impl. class, i.e., fullTextSession.createFullTextQuery(luceneQuery, Level3ElementProxy.class)
+		 * - finally, apply filter results using BioPAX interface and org.biopax.paxtools.util.ClassFilterSet
+		 */
 		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterBy);
 		// execute search
 		List<T> results = hibQuery.list();

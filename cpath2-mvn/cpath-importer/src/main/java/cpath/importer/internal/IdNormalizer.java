@@ -28,8 +28,11 @@
 package cpath.importer.internal;
 
 import java.io.*;
+import java.net.URLEncoder;
 import java.util.*;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
@@ -43,6 +46,7 @@ import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.model.level3.XReferrable;
+import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.util.ClassFilterSet;
 
 import cpath.importer.Normalizer;
@@ -52,11 +56,14 @@ import cpath.importer.Normalizer;
  *
  */
 public class IdNormalizer implements Normalizer {
+	private static final Log log = LogFactory.getLog(IdNormalizer.class);
+	public static final String BIOPAX_URI_PREFIX = "http://biopax.org/"; // for xrefs
 	
 	
 	private MiriamLink miriam;
 	private BioPAXIOHandler biopaxReader;
 	
+
 	/**
 	 * Constructor
 	 */
@@ -64,40 +71,33 @@ public class IdNormalizer implements Normalizer {
 		this.miriam = miriam;
 		this.biopaxReader = new SimpleReader(); //may be to use 'biopaxReader' bean that uses (new BioPAXFactoryForPersistence(), BioPAXLevel.L3);
 	}
-	
 
-	/** 
-	 * This will modify the original model, so that
-	 * controlled vocabulary (CV) and entity reference (ER) 
-	 * will have got standard unique resource identifiers (defined by Miriam). 
-	 * For example, the official URI for UniProt is "urn:miriam:uniprot", 
-	 * and a protein can be referred as "urn:miriam:uniprot:P62158". 
-	 * So, if an ER or CV does not have such RDFId, it will be "normalized": 
-	 * one of unification xrefs will be used to create the new, standard, URN. 
-	 * It is not guaranteed, however, that the best URI id generated 
-	 * (if required, converting to the best one may be done separately)
-	 * 
-	 * @param model a BioPAX Paxtools Model 
-	 * 
-	 * @see org.biopax.paxtools.controller.ModelFilter#filter(org.biopax.paxtools.model.Model)
+	
+	/* (non-Javadoc)
+	 * @see cpath.importer.Normalizer#normalize(String)
 	 */
-	public String normalize(String owl) {
-		
+	public String normalize(String biopaxOwlData) {
 		// build the model
-		Model model = biopaxReader.convertFromOWL(new ByteArrayInputStream(owl.getBytes()));
+		Model model = biopaxReader.convertFromOWL(new ByteArrayInputStream(biopaxOwlData.getBytes()));
 		if(model == null || model.getLevel() != BioPAXLevel.L3) {
 			throw new IllegalArgumentException(model.getLevel() + " is not supported!");
 		}
 		
-		for(UtilityClass bpe : model.getObjects(UtilityClass.class)) {
+		// clean/normalize xrefs first!
+		normalizeXrefs(model);
+		
+		// copy
+		Set<? extends UtilityClass> objects = 
+			new HashSet<UtilityClass>(model.getObjects(UtilityClass.class));
+		// process the rest of utility classes (selectively though)
+		for(UtilityClass bpe : objects) {
 			UnificationXref uref = null;
-			
 			if(bpe instanceof ControlledVocabulary) {
 				uref = getFirstUnificationXref((XReferrable) bpe);
 			} else if(bpe instanceof EntityReference) {
 				uref = getFirstUnificationXrefOfEr((EntityReference) bpe);
 			} else if(bpe instanceof BioSource) {
-				uref = ((BioSource)bpe).getTaxonXref();
+				uref = ((BioSource)bpe).getTaxonXref(); // taxonXref is deprecated; BioSource will become Xreferrable
 			} else if(bpe instanceof Provenance) {
 				Provenance pro = (Provenance) bpe;
 				String urn = miriam.getDataTypeURI(pro.getStandardName());
@@ -107,26 +107,84 @@ public class IdNormalizer implements Normalizer {
 				continue;
 			}
 			
-			if(uref != null) {
-				String urn = miriam.getURI(uref.getDb(), uref.getId());
-				model.updateID(bpe.getRDFId(), urn);
-			} else {
+			if (uref == null) {
 				throw new IllegalArgumentException(
-					"Cannot find a unification xrefs of CV : " + bpe);
+						"Cannot find a unification xrefs of : " + bpe);
 			}
+
+			String urn = miriam.getURI(uref.getDb(), uref.getId());
+			model.updateID(bpe.getRDFId(), urn);
 		}
 		
+		// return as BioPAX OWL
+		String owl = convertToOWL(model);
+		return owl;
+	}
+
+	
+	private String convertToOWL(Model model) {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {
 			(new SimpleExporter(model.getLevel())).convertToOWL(model, out);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-		
 		return out.toString();
 	}
 
-	
+	/* (non-Javadoc)
+	 * @see cpath.importer.Normalizer#normalizeXrefs(org.biopax.paxtools.model.Model)
+	 */
+	public void normalizeXrefs(Model model) {
+		// normalize xrefs first: set db name as in Miriam and rdfid as db_id
+		
+		// make a copy (to safely remove duplicates)
+		Set<? extends Xref> xrefs = new HashSet<Xref>(model.getObjects(Xref.class));
+		for(Xref ref : xrefs) {
+			// get database official urn
+			Xref x = ref; // can be replaced below...
+			String name = x.getDb();
+			try {
+				String urn = miriam.getDataTypeURI(x.getDb());
+				// update name to the primary one
+				name = miriam.getName(urn);
+				x.setDb(name);
+			} catch (IllegalArgumentException e) {
+				log.error("Unknown or misspelled datanase name! Won't fix this now... " + e);
+			}
+			String rdfid =  BIOPAX_URI_PREFIX + x.getModelInterface().getSimpleName() 
+				+ "#" + URLEncoder.encode(name + "_" + x.getId());
+			if(model.containsID(rdfid) 
+					&& model.getByID(rdfid).getModelInterface().equals(x.getModelInterface())) {
+				log.warn("Model has 'equivalent' xrefs. This one: " 
+							+ model.getByID(rdfid) + " (" + rdfid + ") refers to the same thing as " 
+							+ x + " (" + x.getRDFId() + ")! Re-wiring...");
+				Xref existingXref = (Xref) model.getByID(rdfid);
+				// copy parents (because replacing the xref would change this set as well)
+				Set<? extends XReferrable> elementsThatUseThisRef = new HashSet<XReferrable>(x.getXrefOf());
+				// replace xref
+				for(XReferrable bpe : elementsThatUseThisRef) {
+					bpe.removeXref(x);
+					bpe.addXref(existingXref);
+				}
+				assert(x.getXrefOf().isEmpty());
+				model.remove(x); // for this reason, the xref set is a copy of that in model
+				x = existingXref;
+			} else {
+				model.updateID(x.getRDFId(), rdfid);
+			}
+			
+			// warn if two elements reference the same unif. xref!
+			if(x instanceof UnificationXref && x.getXrefOf().size()>1) {
+				log.warn("UnificationXref " + x + 
+						" is used by several elements : " + x.getXrefOf().toString() + 
+						". (It's either a BioPAX error or those utility classes " +
+						"are the same and should be merged!");
+			}
+		}
+	}
+
+
 	private List<UnificationXref> getUnificationXrefsSorted(XReferrable referrable) {
 		List<UnificationXref> urefs = new ArrayList<UnificationXref>(
 			new ClassFilterSet<UnificationXref>(referrable.getXref(), UnificationXref.class)
@@ -170,6 +228,15 @@ public class IdNormalizer implements Normalizer {
 		}
 		// otherwise, take the first one
 		return (urefs.isEmpty()) ? null : urefs.get(0);
+	}
+
+
+	/* (non-Javadoc)
+	 * @see cpath.importer.Normalizer#normalize(org.biopax.paxtools.model.Model)
+	 */
+	public String normalize(Model model) {
+		String owl = convertToOWL(model);
+		return normalize(owl);
 	}
 
 }

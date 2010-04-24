@@ -23,9 +23,7 @@
     <aop:aspectj-autoproxy/>
     
     <context:spring-configured/>
-       
-    <context:property-placeholder location="classpath:validation.properties"/>
-    
+          
     <!-- Use BioPAX Rules's Configuration -->
     <import resource="classpath:rules-context.xml"/>
     

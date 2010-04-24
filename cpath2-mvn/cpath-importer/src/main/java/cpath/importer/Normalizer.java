@@ -27,10 +27,52 @@
 
 package cpath.importer;
 
+import org.biopax.paxtools.model.Model;
+
 /**
  * @author rodche
  *
  */
 public interface Normalizer {
-	String normalize(String data);
+	/** 
+	 * This will modify the original model, so that
+	 * controlled vocabulary (CV) and entity reference (ER) 
+	 * will have got standard unique resource identifiers (defined by Miriam). 
+	 * For example, the official URI for UniProt is "urn:miriam:uniprot", 
+	 * and a protein can be referred as "urn:miriam:uniprot:P62158". 
+	 * So, if an ER or CV does not have such RDFId, it will be "normalized": 
+	 * one of unification xrefs will be used to create the new, standard, URN. 
+	 * It is not guaranteed, however, that the best URI id generated 
+	 * (if required, converting to the best one may be done separately)
+	 * 
+	 * @param biopaxOwlData a BioPAX OWL string
+	 * 
+	 * @see org.biopax.paxtools.controller.ModelFilter#filter(org.biopax.paxtools.model.Model)
+	 */
+	String normalize(String biopaxOwlData);
+	
+	/** 
+	 * This will modify the original model, so that
+	 * controlled vocabulary (CV), entity reference (ER), etc. 
+	 * will have standard unique resource identifiers (defined by Miriam). 
+	 * For example, the official URI for UniProt is "urn:miriam:uniprot", 
+	 * and a protein can be referred as "urn:miriam:uniprot:P62158". 
+	 * So, if an ER or CV does not have such RDFId, it will be "normalized": 
+	 * one of unification xrefs will be used to create the new, standard, URN. 
+	 * It is not guaranteed, however, that the best URI id generated 
+	 * (if required, converting to the best one may be done separately)
+	 * 
+	 * @param model a BioPAX Paxtools Model 
+	 * 
+	 * @see org.biopax.paxtools.controller.ModelFilter#filter(org.biopax.paxtools.model.Model)
+	 */
+	String normalize(final Model model);
+	
+	
+	/**
+	 * Normalize Xrefs's IDs and remove/re-wire duplicates
+	 * 
+	 * @param model
+	 */
+	void normalizeXrefs(Model model);
 }

@@ -55,7 +55,7 @@
         <bp:xref>
           <bp:UnificationXref rdf:ID="SwissProtTrEMBL_P46880">
             <bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-            >uniprotkb</bp:db>
+            >uniprot</bp:db>
             <bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
             >P46880</bp:id>
             <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
@@ -231,7 +231,7 @@
     <bp:xref>
       <bp:UnificationXref rdf:ID="KEGG_R02740">
         <bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-        >kegg</bp:db>
+        >kegg compound</bp:db>
         <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
         >PMID: 9847135 </bp:comment>
         <bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
