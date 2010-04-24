@@ -42,7 +42,7 @@ public class WebserviceTest {
 
 	@Test
 	public void testGetAllElements() {
-		String result = template.getForObject("http://localhost:8080/cpath-web-service/elements/all", String.class);
+		String result = template.getForObject("http://localhost:8080/cpath-web-service/all/elements", String.class);
 		assertNotNull(result);
 		System.out.println(result);
 	}
@@ -60,7 +60,7 @@ public class WebserviceTest {
 
 	@Test
 	public void testGetQueryById1() {
-		String result = template.getForObject("http://localhost:8080/cpath-web-service/elements/?id={id}", 
+		String result = template.getForObject("http://localhost:8080/cpath-web-service/elements/?uri={uri}", 
 				String.class, "http://www.biopax.org/examples/myExample#Pathway50");
 		// http%3A%2F%2Fwww.biopax.org%2Fexamples%2FmyExample%23Pathway50 
 		//? potential URL encoding/decoding problem here (may break NCName): - what if 'GO:12345' used instead 'Pathway50'?
@@ -69,7 +69,18 @@ public class WebserviceTest {
 		
 	}
 	
-
+	@Test
+	public void testGetQueryById2() {
+		String result = template.getForObject("http://localhost:8080/cpath-web-service//elements/{uri}/get", 
+				String.class, "http://www.biopax.org/examples/myExample#Pathway50");
+		// http%3A%2F%2Fwww.biopax.org%2Fexamples%2FmyExample%23Pathway50 
+		//? potential URL encoding/decoding problem here (may break NCName): - what if 'GO:12345' used instead 'Pathway50'?
+		assertNotNull(result);
+		System.out.println(result);
+		
+	}
+	
+	
 	@Test
 	public void testPostQueryById() {
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();

@@ -1,7 +1,5 @@
 package cpath.converter.internal;
 
-import cpath.converter.Converter;
-
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level2.*;
 import org.biopax.paxtools.model.level3.*;
@@ -18,8 +16,7 @@ import java.net.URLEncoder;
 /**
  * Implementation of Converter interface for Uniprot data.
  */
-public class UniprotConverterImpl implements Converter {
-
+public class UniprotConverterImpl extends BaseConverterImpl {
 	// logger
     private static Log log = LogFactory.getLog(UniprotConverterImpl.class);
 
@@ -28,15 +25,15 @@ public class UniprotConverterImpl implements Converter {
 
 	// ref to bp level
 	private BioPAXLevel bpLevel;
-	
-	
-	public static final String MODEL_NAMESPACE_PREFIX = "http://uniprot.org#";
-	
+		
+	public static final String UNIPROT_NAMESPACE_PREFIX = "http://uniprot.org#";
 
+	
 	/**
 	 * (non-Javadoc>
 	 * @see cpath.converter.Converter#convert(java.io.InputStream, org.biopax.paxtools.model.BioPXLevel)
 	 */
+	@Override
 	public Model convert(final InputStream is, BioPAXLevel level) {
 
 		// init args
@@ -236,7 +233,7 @@ public class UniprotConverterImpl implements Converter {
                 xref = xref.replaceAll("; -.", "");
                 String parts[] = xref.split(";");
                 String entrezGeneId = parts[1];
-                setRelationshipXRef("ENTREZ GENE", entrezGeneId, currentProteinOrER);
+                setRelationshipXRef("Entrez Gene", entrezGeneId, currentProteinOrER);
             } else if (xref.startsWith("RefSeq")) {
                 xref = xref.replaceAll("; -.", "");
                 String parts[] = xref.split(";");
@@ -245,7 +242,7 @@ public class UniprotConverterImpl implements Converter {
                     parts = refSeqId.split("\\.");
                     refSeqId = parts[0];
                 }
-                setRelationshipXRef("REFSEQ", refSeqId, currentProteinOrER);
+                setRelationshipXRef("RefSeq", refSeqId, currentProteinOrER);
             }
         }
     }
@@ -278,24 +275,23 @@ public class UniprotConverterImpl implements Converter {
      */
     private void setRelationshipXRef(String dbName, String id, BioPAXElement currentProteinOrER) {
         id = id.trim();
-        String rdfId = MODEL_NAMESPACE_PREFIX + URLEncoder.encode(dbName + "_" +  id);
-        if (bpModel.containsID(rdfId)) {
-			if (bpLevel == BioPAXLevel.L2) {
+        if (bpLevel == BioPAXLevel.L2) {
+        	String rdfId = L2_RELATIONSHIPXREF_URI + URLEncoder.encode(dbName + "_" +  id);
+			if (bpModel.containsID(rdfId)) {
 				relationshipXref rXRef = (relationshipXref) bpModel.getByID(rdfId);
 				((physicalEntity)currentProteinOrER).addXREF(rXRef);
-			}
-			else if (bpLevel == BioPAXLevel.L3) {
-				RelationshipXref rXRef = (RelationshipXref) bpModel.getByID(rdfId);
-				((EntityReference)currentProteinOrER).addXref(rXRef);
-			}
-        } else {
-			if (bpLevel == BioPAXLevel.L2) {
+			} else {
 				relationshipXref rXRef = (relationshipXref)bpModel.addNew(relationshipXref.class, rdfId);
 				rXRef.setDB(dbName);
 				rXRef.setID(id);
 				((physicalEntity)currentProteinOrER).addXREF(rXRef);
 			}
-			else if (bpLevel == BioPAXLevel.L3) {
+        } else if (bpLevel == BioPAXLevel.L3) {
+        	String rdfId = L3_RELATIONSHIPXREF_URI + URLEncoder.encode(dbName + "_" +  id);
+			if (bpModel.containsID(rdfId)) {
+				RelationshipXref rXRef = (RelationshipXref) bpModel.getByID(rdfId);
+				((EntityReference)currentProteinOrER).addXref(rXRef);
+			} else {
 				RelationshipXref rXRef = (RelationshipXref)bpModel.addNew(RelationshipXref.class, rdfId);
 				rXRef.setDb(dbName);
 				rXRef.setId(id);
@@ -309,24 +305,25 @@ public class UniprotConverterImpl implements Converter {
      */
     private void setUnificationXRef(String dbName, String id, BioPAXElement currentProteinOrER) {
         id = id.trim();
-        String rdfId = MODEL_NAMESPACE_PREFIX + URLEncoder.encode(dbName + "_" +  id);
-        if (bpModel.containsID(rdfId)) {
-			if (bpLevel == BioPAXLevel.L2) {
+        if (bpLevel == BioPAXLevel.L2) {
+        	String rdfId = L2_UNIFICATIONXREF_URI + URLEncoder.encode(dbName + "_" +  id);
+			if (bpModel.containsID(rdfId)) {
 				unificationXref rXRef = (unificationXref) bpModel.getByID(rdfId);
 				((physicalEntity)currentProteinOrER).addXREF(rXRef);
 			}
-			else if (bpLevel == BioPAXLevel.L3) {
-				UnificationXref rXRef = (UnificationXref) bpModel.getByID(rdfId);
-				((EntityReference)currentProteinOrER).addXref(rXRef);
-			}
-        } else {
-			if (bpLevel == BioPAXLevel.L2) {
+			else {
 				unificationXref rXRef = (unificationXref)bpModel.addNew(unificationXref.class, rdfId);
 				rXRef.setDB(dbName);
 				rXRef.setID(id);
 				((physicalEntity)currentProteinOrER).addXREF(rXRef);
 			}
-			else if (bpLevel == BioPAXLevel.L3) {
+        } else if (bpLevel == BioPAXLevel.L3) {
+        	String rdfId = L3_UNIFICATIONXREF_URI + URLEncoder.encode(dbName + "_" +  id);
+			if (bpModel.containsID(rdfId)) {
+				UnificationXref rXRef = (UnificationXref) bpModel.getByID(rdfId);
+				((EntityReference)currentProteinOrER).addXref(rXRef);
+			}
+			else {
 				UnificationXref rXRef = (UnificationXref)bpModel.addNew(UnificationXref.class, rdfId);
 				rXRef.setDb(dbName);
 				rXRef.setId(id);
@@ -368,7 +365,7 @@ public class UniprotConverterImpl implements Converter {
 		// add all unification xrefs
 		for (String acEntry : acList) {
 			String ac = acEntry.trim();
-			setUnificationXRef("UNIPROT", ac, element);
+			setUnificationXRef("uniprot", ac, element);
 		}
 		
 		// add other xrefs
@@ -392,22 +389,25 @@ public class UniprotConverterImpl implements Converter {
 		}
 
 		if (bpLevel == BioPAXLevel.L2) {
-			bioSource toReturn = (bioSource)bpModel.addNew(bioSource.class, rdfId);
+			bioSource toReturn = (bioSource) bpModel.addNew(bioSource.class, rdfId);
 			toReturn.setNAME(name);
 			unificationXref taxonXref = (unificationXref)bpModel
-				.addNew(unificationXref.class, MODEL_NAMESPACE_PREFIX + "TAXONOMY_" + taxId);
-            taxonXref.setDB("TAXONOMY");
+				.addNew(unificationXref.class, L2_UNIFICATIONXREF_URI 
+						+ "taxonomy_" + taxId);
+            taxonXref.setDB("taxonomy");
             taxonXref.setID(taxId);
 			toReturn.setTAXON_XREF(taxonXref);
 			return toReturn;
 		}
 		else if (bpLevel == BioPAXLevel.L3) {
-			BioSource toReturn = (BioSource)bpModel.addNew(BioSource.class, rdfId);
+			BioSource toReturn = (BioSource) bpModel.addNew(BioSource.class, rdfId);
 			toReturn.setStandardName(name);
-			UnificationXref taxonXref = (UnificationXref)bpModel
-				.addNew(UnificationXref.class, MODEL_NAMESPACE_PREFIX + "TAXONOMY_" + taxId);
-			taxonXref.setDb("TAXONOMY");
+			UnificationXref taxonXref = (UnificationXref) bpModel
+			.addNew(UnificationXref.class, L3_UNIFICATIONXREF_URI 
+					+ "taxonomy_" + taxId);
+			taxonXref.setDb("taxonomy");
             taxonXref.setId(taxId);
+            // TODO update when taxonXref is removed (deprecated property)
 			toReturn.setTaxonXref((UnificationXref)taxonXref);
 			return toReturn;
 		}
@@ -431,6 +431,6 @@ public class UniprotConverterImpl implements Converter {
 
 		// setup base
 		Map<String, String> nsMap = bpModel.getNameSpacePrefixMap();
-		nsMap.put("", MODEL_NAMESPACE_PREFIX);
+		nsMap.put("", UNIPROT_NAMESPACE_PREFIX);
 	}
 }

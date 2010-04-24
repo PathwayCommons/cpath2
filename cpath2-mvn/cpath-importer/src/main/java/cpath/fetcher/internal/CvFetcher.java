@@ -28,6 +28,7 @@
 package cpath.fetcher.internal;
 
 //import java.io.IOException;
+import java.io.File;
 import java.util.*;
 
 import org.apache.commons.logging.Log;
@@ -37,6 +38,7 @@ import org.biopax.validator.utils.OntologyManagerAdapter;
 import org.springframework.core.io.Resource;
 
 //import psidev.psi.tools.ontology_manager.OntologyManagerContext;
+import psidev.psi.tools.ontology_manager.OntologyManagerContext;
 import psidev.psi.tools.ontology_manager.impl.OntologyTermImpl;
 import psidev.psi.tools.ontology_manager.interfaces.OntologyAccess;
 import psidev.psi.tools.ontology_manager.interfaces.OntologyTermI;
@@ -62,18 +64,17 @@ public final class CvFetcher extends OntologyManagerAdapter implements CvReposit
 	 * 
 	 * @param ontologies ontology config XML resource (for OntologyManager)
 	 * @param miriam
+	 * @param ontTmpDir TODO
 	 * @throws Exception
 	 */
-	public CvFetcher(Resource ontologies, MiriamLink miriam) {
+	public CvFetcher(Resource ontologies, MiriamLink miriam, String ontTmpDir) {
 		super(ontologies);
 		this.miriam = miriam;
-		/*
-		try {
-			OntologyManagerContext.getInstance().setOntologyDirectory(file);
-		} catch (IOException e) {
-			log.error("Cannot set a temporary ontologies directory.", e);
-		}
-		*/
+		OntologyManagerContext.getInstance()
+			.setOntologyDirectory(new File(ontTmpDir));
+		if(log.isInfoEnabled())
+			log.info("Using ontologies cache directory : " + ontTmpDir);
+		
 	}
 	
 	
