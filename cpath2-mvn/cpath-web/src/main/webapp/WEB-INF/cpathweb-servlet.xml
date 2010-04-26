@@ -11,6 +11,20 @@
 
     <!-- JSR-303 support will be detected on classpath and enabled automatically -->
     <mvc:annotation-driven/>
+
+	<bean id="log4jConfigurer" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+		<property name="targetClass">
+			<value>org.springframework.util.Log4jConfigurer</value>
+		</property>
+		<property name="targetMethod">
+			<value>initLogging</value>
+		</property>
+		<property name="arguments">
+			<list>
+				<value>file:${CPATH2_HOME}/log4j.properties</value>
+			</list>
+		</property>
+	</bean>
 	
 	<!-- (new in Spring 3.0) go directly to the 'hello' view -->
 	<mvc:view-controller path="/hello" view-name="hello"/>
