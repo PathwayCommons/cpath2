@@ -83,7 +83,7 @@ public class UniprotConverterImplTest {
 		
 		proteinsDAO.importModel(model, true);
 		
-		List<RelationshipXref> returnClasses = proteinsDAO.search("entrez gene", RelationshipXref.class);
+		List<RelationshipXref> returnClasses = proteinsDAO.search("entrez gene", RelationshipXref.class, false);
 		assertTrue(returnClasses.size()==4);
 	}
 

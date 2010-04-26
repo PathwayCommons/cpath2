@@ -101,6 +101,6 @@ public interface PaxtoolsDAO {
      * @param filterBy class to be used as a filter.
      * @return List<BioPAXElement>
      */
-    <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy);
+    <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy, boolean stateless);
        
 }

@@ -28,7 +28,7 @@
 		<property name="packagesToScan" value="org.biopax.paxtools.proxy.level3" /> 
 	</bean>
 
-	<bean id="mergeDataSource" class="cpath.common.DataSource"/>
+	<bean id="mergeDataSource" class="cpath.importer.internal.DataSource"/>
 
     <tx:annotation-driven transaction-manager="mergeTransactionManager"/>
 

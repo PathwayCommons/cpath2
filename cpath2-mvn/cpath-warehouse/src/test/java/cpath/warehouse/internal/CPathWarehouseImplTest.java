@@ -65,7 +65,6 @@ public class CPathWarehouseImplTest {
 	 * Test method for {@link cpath.warehouse.internal.CPathWarehouseImpl#createUtilityClass(java.lang.String, java.lang.Class)}.
 	 */
 	@Test
-	//@Transactional(readOnly=true)
 	public final void testCreateUtilityClass() {
 		ProteinReference pr = warehouse.createUtilityClass("urn:miriam:uniprot:P62158", ProteinReference.class);
 		//assertNotNull(pr);

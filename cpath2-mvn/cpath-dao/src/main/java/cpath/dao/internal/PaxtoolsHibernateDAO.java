@@ -38,6 +38,11 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.biopax.paxtools.proxy.level3.ModelProxy;
+import org.biopax.paxtools.controller.AbstractTraverser;
+import org.biopax.paxtools.controller.EditorMap;
+import org.biopax.paxtools.controller.PropertyEditor;
+import org.biopax.paxtools.controller.PropertyFilter;
+import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -78,7 +83,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 												SEARCH_FIELD_XREF_ID};
 	private final static int BATCH_SIZE = 100;
 	
-	
+	private static EditorMap editorMap3 = new SimpleEditorMap(BioPAXLevel.L3);
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
 	private SessionFactory sessionFactory;
 
@@ -225,13 +230,13 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 			session.close(); // !
 		} else {
 		*/
-			Session session = getSessionFactory().getCurrentSession();
-			Query query = session.getNamedQuery(namedQuery);
-			query.setString("rdfid", id);
-			toReturn = (BioPAXElement)query.uniqueResult();
+		Session session = getSessionFactory().getCurrentSession();
+		Query query = session.getNamedQuery(namedQuery);
+		query.setString("rdfid", id);
+		toReturn = (BioPAXElement)query.uniqueResult();
 		//}
 		
-		return toReturn;
+		return (stateless) ? detach(toReturn) : toReturn;
 	}
 	
 
@@ -253,7 +258,16 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 			results = session.createQuery(query).list();
 		}
 		
-		return (results.size() > 0) ? new HashSet<T>(results) : new HashSet<T>();
+		//return (results.size() > 0) ? new HashSet<T>(results) : new HashSet<T>();
+		Set<T> toReturn = new HashSet<T>();
+		
+		if(stateless) {
+			toReturn.addAll(detach(results));
+		} else {
+			toReturn.addAll(results);
+		}
+		
+		return toReturn;
 	}
 
 
@@ -268,7 +282,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
      * @return Set<BioPAXElement>
      */
 	@Transactional(readOnly=true)
-    public <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy) {
+    public <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy, boolean stateless) {
 
 		log.info("query: " + query + ", filterBy: " + filterBy);
 
@@ -286,7 +300,8 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		}
 		
 		// get full text session
-		FullTextSession fullTextSession = Search.getFullTextSession(getSessionFactory().getCurrentSession());
+		FullTextSession fullTextSession = Search
+			.getFullTextSession(getSessionFactory().getCurrentSession());
 		// wrap Lucene query in a org.hibernate.Query
 		/*
 		 * TODO enable filtering by interface class
@@ -301,20 +316,78 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		if(results != null && !results.isEmpty()) {
 			if(log.isInfoEnabled())	
 				log.info("we have " + results.size() + " results.");
-
 			for(BioPAXElement element : results) {
 				T detached = (T) getByID(element.getRDFId(), false, false);
 				toReturn.add(detached);
 			}
-			
 		 	toReturn = results;
 		} else {
 			if(log.isInfoEnabled())	
 			 	log.info("we have no results");
 		}
   	
+		return ((stateless && toReturn.size()>0) ? detach(toReturn) : toReturn);
+	}
+
+    
+    /**
+     * Returns a copy of the BioPAX element with all 
+     * its data properties set, but object properties -
+     * stubbed with corresponding elements having only RDFID 
+     * not empty.
+     * 
+     * TODO another method, such as detach(bpe, depth), may be also required
+     * 
+     * @param bpe
+     * @return
+     */
+	@Transactional(readOnly=true)
+	private BioPAXElement detach(BioPAXElement bpe) {
+		
+		if(bpe == null) return null;
+		
+		final BioPAXElement toReturn = BioPAXLevel.L3.getDefaultFactory()
+			.reflectivelyCreate(bpe.getModelInterface());
+		toReturn.setRDFId(bpe.getRDFId());
+		AbstractTraverser traverser = new AbstractTraverser(
+				editorMap3, 
+				new PropertyFilter() {
+					@Override
+					public boolean filter(PropertyEditor editor) {
+						return (!editor.getProperty().equals("nextStep"));
+					}
+				}) 
+		{	
+			@Override
+			protected void visit(Object value, BioPAXElement bpe, Model m,
+					PropertyEditor editor) 
+			{
+				editor.setPropertyToBean(toReturn, value);
+			}
+		};
+		
+		traverser.traverse(bpe, null);
+		
 		return toReturn;
 	}
 
+	/**
+	 * Detaches a collection of BioPAX elements.
+	 * 
+	 * @see #detach(BioPAXElement)
+	 * 
+	 * @param <T> a BioPAX element subclass
+	 * @param elements collection or persistent elements
+	 * @return
+	 */
+	@Transactional(readOnly=true)
+	private <T extends BioPAXElement> List<T> detach(Collection<T> elements) {
+		List<T> toReturn = new ArrayList<T>();
+		for(T el : elements) {
+			toReturn.add((T) detach(el));
+		}
+		return toReturn;
+	}
+	
 }
 
