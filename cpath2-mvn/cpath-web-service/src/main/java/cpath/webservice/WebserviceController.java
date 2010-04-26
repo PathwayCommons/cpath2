@@ -199,18 +199,19 @@ public class WebserviceController {
     public String elementById(@PathVariable("format") Format format, 
     		@RequestParam("uri") String uri) 
     {
-    	BioPAXElement element = pcDAO.getByID(uri, false, false);
+    	BioPAXElement element = pcDAO.getByID(uri, true, true);
 		if(log.isInfoEnabled()) log.info("Query - format:" + format + 
 				", urn:" + uri + ", returned:" + element);
+		// TODO how to get complete BioPAX element (or its serialization) from the DAO...
+		//String owl = element.getRDFId();
+		
 		/*
 		 * using pcDAO.getByID(uri, true, true) above 
 		 * causes org.hibernate.LazyInitializationException: 
 		 *  failed to lazily initialize a collection of role: org.biopax.paxtools.proxy.level3.PathwayProxy.pathwayComponent, 
 		 *  no session or session was closed
-		String owl = toOWL(element);
 		*/
-		// TODO how to get complete BioPAX element (or its serialization) from the DAO...
-		String owl = element.getRDFId();
+		String owl = toOWL(element);
 		
 		return owl;
     }
@@ -233,7 +234,8 @@ public class WebserviceController {
     	if(log.isInfoEnabled()) log.info("Fulltext Search for type:" 
 				+ type.getCanonicalName() + ", query:" + query);
     	
-		List<BioPAXElement> results = (List<BioPAXElement>) pcDAO.search(query, type);
+    	// do search
+		List<BioPAXElement> results = (List<BioPAXElement>) pcDAO.search(query, type, true);
 		StringBuffer toReturn = new StringBuffer();
 		for(BioPAXElement e : results) {
 			toReturn.append(e.getRDFId()).append(newline);

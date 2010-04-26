@@ -125,8 +125,8 @@ public class PaxtoolsHibernateDAOTest {
 		log.info("paxtoolsDAO.importModel() succeeded!");
 		
 		log.info("Testing call to paxtoolsDAO.getByID()...");
-		BioPAXElementProxy bpe = (BioPAXElementProxy) paxtoolsDAO
-			.getByID("http://www.biopax.org/examples/myExample#Pathway50", false, false);
+		BioPAXElement bpe = (BioPAXElement) paxtoolsDAO
+			.getByID("http://www.biopax.org/examples/myExample#Pathway50", false, true); // get detached!
 		
 		assertTrue(bpe != null && bpe instanceof Pathway);
 		
@@ -160,7 +160,8 @@ public class PaxtoolsHibernateDAOTest {
 
 		// verify a call to getByQueryString - filter by BioPAXElementProxy
 		log.info("Testing first call to paxtoolsDAO.getByQueryString()...");
-		List<Level3ElementProxy> returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, Level3ElementProxy.class);
+		List<Level3ElementProxy> returnClasses = paxtoolsDAO
+			.search(GET_BY_QUERY_TEST_VALUE, Level3ElementProxy.class, false);
 		Set<Class<? extends BioPAXElement>> uniqueClasses = new HashSet<Class<? extends BioPAXElement>>();
 		for (BioPAXElement returnClass : returnClasses) {
 			uniqueClasses.add(returnClass.getModelInterface());
@@ -176,7 +177,7 @@ public class PaxtoolsHibernateDAOTest {
 		
 		log.info("Testing second call to paxtoolsDAO.getByQueryString()...");
 		// verify a call to getByQueryString - filter by GET_BY_QUERY_RETURN_TEST_CLASS
-		returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, GET_BY_QUERY_RETURN_TEST_CLASS);
+		returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, GET_BY_QUERY_RETURN_TEST_CLASS, false);
 		
 		assertEquals(returnClasses.size(), 1);
 		
