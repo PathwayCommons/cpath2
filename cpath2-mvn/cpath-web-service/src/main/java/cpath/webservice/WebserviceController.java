@@ -32,29 +32,22 @@ import cpath.dao.PaxtoolsDAO;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
-import java.net.URLDecoder;
 import java.util.*;
 
 @Controller
 public class WebserviceController {
     private static final Log log = LogFactory.getLog(WebserviceController.class);
     private static String newline = System.getProperty("line.separator");
-	private PaxtoolsDAO paxtoolsDAO;
-	//private CPathWarehouse warehouse; // for graph queries, "second query", and hierarchical CV queries...
-	//private PaxtoolsDAO proteinsDAO;
-	//private PaxtoolsDAO moleculesDAO;
+	private PaxtoolsDAO pcDAO;
 	private SimpleExporter exporter;
 
     // TODO move Format definition outta here?..
@@ -109,18 +102,10 @@ public class WebserviceController {
     	}
     }
 	
-	/**
-	 * Constructor
-	 * 
-	 * @param paxtoolsDAO
-	 * @param reader
-	 * @param exporter
-	 */
-	@Autowired
-	public WebserviceController(PaxtoolsDAO paxtoolsDAO, //CPathWarehouse warehouse,
-			BioPAXIOHandler reader, SimpleExporter exporter) {
-		this.paxtoolsDAO = paxtoolsDAO;
-		//this.warehouse = warehouse;
+
+	//@Autowired
+	public WebserviceController(PaxtoolsDAO mainDAO, SimpleExporter exporter) {
+		this.pcDAO = mainDAO;
 		this.exporter = exporter;
 	}
 
@@ -178,18 +163,18 @@ public class WebserviceController {
     /*
      * TODO all objects?.. This might be too much to ask :)
      */
-    @RequestMapping(value="/all/elements", method=RequestMethod.GET)
+    @RequestMapping(value="/all/elements")
     @ResponseBody
     public String getElements() throws IOException {
     	return getElementsOfType(BioPAXElement.class);
     }
 
     
-    @RequestMapping(value="/types/{type}/elements", method=RequestMethod.GET)
+    @RequestMapping(value="/types/{type}/elements")
     @ResponseBody
     public String getElementsOfType(@PathVariable("type") Class<? extends BioPAXElement> type) {
     	StringBuffer toReturn = new StringBuffer();
-    	Set<? extends BioPAXElement> results = paxtoolsDAO.getObjects(type, false, false);
+    	Set<? extends BioPAXElement> results = pcDAO.getObjects(type, false, false);
     	for(BioPAXElement e : results)
     	{
     		toReturn.append(e.getRDFId()).append(newline);
@@ -197,43 +182,28 @@ public class WebserviceController {
     	return toReturn.toString();
     }
     
+     
+    //=== Most critical web methods that get one element by ID (URI) ===//
+
     
-    //=== Most critical web methods that get one element by ID
-    
-    @RequestMapping(value="/elements", method = RequestMethod.POST)
+    @RequestMapping(value="/elements")
     @ResponseBody
-    public String postElementById(@RequestParam("uri") String uri) {
+    public String elementById(@RequestParam("uri") String uri) {
     	if(log.isInfoEnabled()) log.info("POST Query /elements");
     	return elementById(Format.BIOPAX, uri);
     }
 
-    // problem seen: using this mapping and PathVariable, {uri} gets cut!
-    @RequestMapping(value="/elements/{uri}/get", method = RequestMethod.GET)
-    @ResponseBody
-    public String elementById(@PathVariable("uri") String uri) {
-    	if(log.isInfoEnabled()) log.info("GET Query /elements/"+ uri);
-    	return elementById(Format.BIOPAX, uri);
-    }
     
-    @RequestMapping(value="/elements", method = RequestMethod.GET)
-    @ResponseBody
-    public String getElementById(@RequestParam("uri") String uri) {
-    	if(log.isInfoEnabled()) log.info("GET Query /elements?id=" + uri);
-    	return elementById(Format.BIOPAX, uri);
-    }
-    
-    
-    @Transactional
-    @RequestMapping(value="/format/{format}/elements", method= RequestMethod.POST)
+    @RequestMapping(value="/format/{format}/elements")
     @ResponseBody
     public String elementById(@PathVariable("format") Format format, 
     		@RequestParam("uri") String uri) 
     {
-    	BioPAXElement element = paxtoolsDAO.getByID(uri, false, false);
+    	BioPAXElement element = pcDAO.getByID(uri, false, false);
 		if(log.isInfoEnabled()) log.info("Query - format:" + format + 
 				", urn:" + uri + ", returned:" + element);
 		/*
-		 * using paxtoolsDAO.getByID(uri, true, true) above 
+		 * using pcDAO.getByID(uri, true, true) above 
 		 * causes org.hibernate.LazyInitializationException: 
 		 *  failed to lazily initialize a collection of role: org.biopax.paxtools.proxy.level3.PathwayProxy.pathwayComponent, 
 		 *  no session or session was closed
@@ -245,6 +215,8 @@ public class WebserviceController {
 		return owl;
     }
     
+    
+    //=== Fulltext search web methods ===//
     
 	@RequestMapping(value="/find/{query}")
 	@ResponseBody
@@ -261,7 +233,7 @@ public class WebserviceController {
     	if(log.isInfoEnabled()) log.info("Fulltext Search for type:" 
 				+ type.getCanonicalName() + ", query:" + query);
     	
-		List<BioPAXElement> results = (List<BioPAXElement>) paxtoolsDAO.search(query, type);
+		List<BioPAXElement> results = (List<BioPAXElement>) pcDAO.search(query, type);
 		StringBuffer toReturn = new StringBuffer();
 		for(BioPAXElement e : results) {
 			toReturn.append(e.getRDFId()).append(newline);
@@ -271,6 +243,7 @@ public class WebserviceController {
 	}
     
 	
+    // TODO later, remove "method = RequestMethod.POST" and the test form method below
 	@RequestMapping(value="/graph", method = RequestMethod.POST)
 	@ResponseBody
     public String graphQuery(@RequestBody MultiValueMap<String, String> formData)
@@ -290,7 +263,7 @@ public class WebserviceController {
 	}
 	
 	
-	@ExceptionHandler
+	// temporary - for testing
 	@RequestMapping(value="/graph", method = RequestMethod.GET)
     public void testForm() {}
 	
