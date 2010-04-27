@@ -166,10 +166,9 @@ public class Admin implements Runnable {
                     		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
                     		"classpath:applicationContext-whouseDAO.xml", 
                     		"classpath:applicationContext-paxtools.xml",
-                    		"classpath:applicationContext-cvFetcher.xml",
                     		"classpath:applicationContext-biopaxValidation.xml",
                     		"classpath:applicationContext-miriam.xml", 
-        					"classpath:applicationContext-cpathImporter.xml",
+        					"classpath:applicationContext-cpathPremerger.xml",
         					"classpath:applicationContext-cvFetcher.xml"});
                 PremergeDispatcher premergeDispatcher = (PremergeDispatcher) context.getBean("premergeDispatcher");
 				premergeDispatcher.start();
@@ -184,7 +183,7 @@ public class Admin implements Runnable {
                     		"classpath:applicationContext-cpathWarehouse.xml", 
                     		"classpath:applicationContext-paxtools.xml",
                     		"classpath:applicationContext-cpathDAO.xml", 
-        					"classpath:applicationContext-cpathImporter.xml"});
+        					"classpath:applicationContext-cpathMerger.xml"});
 				Merger merger = (Merger) context.getBean("merge");
 				merger.merge();
 				break;

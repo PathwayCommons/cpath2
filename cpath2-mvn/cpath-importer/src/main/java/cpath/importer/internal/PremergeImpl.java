@@ -23,7 +23,6 @@ import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.springframework.context.ApplicationContext;
@@ -335,10 +334,15 @@ public final class PremergeImpl extends Thread implements Premerge {
 		mysqlDataSource.setUser(pathwayDataJDBCServices.getDbUser());
 		mysqlDataSource.setPassword(pathwayDataJDBCServices.getDbPassword());
 
-		// get application context after setting custom datasource
+		// get application context after setting custom datasource (it replaces former one)
+		/* 
+		 * TODO TEST if different threads, each modifying the following datasource, do not conflict!
+		 * Seems, although 'beansByName' is static, they don't conflict; because the following 'context' is thread-local.
+		 * Not sure...
+		 */
 		DataSource.beansByName.put("premergeDataSource", mysqlDataSource);
 		ApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:applicationContext-cpathPremerge.xml");
+			new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");
 
 		// get a ref to PaxtoolsDAO
 		PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");

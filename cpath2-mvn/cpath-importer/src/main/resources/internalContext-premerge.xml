@@ -8,6 +8,9 @@
        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
+    <!-- This context is to be loaded dynamically; 
+    	it is only used from the cpath.importer.internal.PremergeImpl ('premerge') bean! -->
+
     <context:annotation-config/>
     
 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
@@ -28,6 +31,7 @@
 		<property name="packagesToScan" value="org.biopax.paxtools.proxy.level3" /> 
     </bean>
 
+	<!-- This is a special data source - BeanNameAware, FactoryBean -->
 	<bean id="premergeDataSource" class="cpath.importer.internal.DataSource"/>
 
     <!-- enable the configuration of transactional behavior based on annotations -->

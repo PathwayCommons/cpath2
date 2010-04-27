@@ -10,19 +10,6 @@
 
 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
-	<bean id="premergeDispatcher" class="cpath.importer.internal.PremergeDispatcher">
-		<constructor-arg ref="metadataDAO"/>
-	</bean>
-
-	<bean id="premerge" class="cpath.importer.internal.PremergeImpl" scope="prototype">
-	  <constructor-arg ref="pathwayDataDAO"/>
-	  <constructor-arg ref="pathwayDataJDBCServices"/>
-	  <constructor-arg ref="idNormalizer"/>
-	  <constructor-arg ref="validator"/>
-	  <constructor-arg ref="simpleReader"/>
-	  <constructor-arg ref="utils"/>
-	</bean>
-
 	<bean id="merge" class="cpath.importer.internal.MergerImpl" scope="prototype">
 	  <constructor-arg ref="paxtoolsDAO"/>
 	  <constructor-arg ref="metadataDAO"/>
@@ -37,8 +24,5 @@
         <property name="dbDataSource" value="${wdb.datasource}"/>
         <property name="dbConnection" value="${wdb.connection}"/>
     </bean>
-	
-	<bean id="idNormalizer" class="cpath.importer.internal.IdNormalizer">
-		<constructor-arg ref="miriam"/>
-	</bean>
+
 </beans>
