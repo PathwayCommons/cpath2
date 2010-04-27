@@ -128,10 +128,10 @@ public final class MergerImpl implements Merger {
 		mysqlDataSource.setUser(pathwayDataJDBCServices.getDbUser());
 		mysqlDataSource.setPassword(pathwayDataJDBCServices.getDbPassword());
 
-		// get application context after setting custom datasource
+		// get application context after setting the new, custom, datasource (replaces former one)
 		DataSource.beansByName.put("mergeDataSource", mysqlDataSource);
 		ApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:applicationContext-cpathMerge.xml");
+			new ClassPathXmlApplicationContext("classpath:internalContext-merge.xml");
 
 		// get a ref to PaxtoolsDAO
 		PaxtoolsDAO mergePaxtoolsDAO = (PaxtoolsDAO)context.getBean("mergePaxtoolsDAO");
