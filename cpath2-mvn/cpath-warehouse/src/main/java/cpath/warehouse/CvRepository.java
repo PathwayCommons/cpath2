@@ -29,7 +29,7 @@ package cpath.warehouse;
 
 import java.util.Set;
 
-import cpath.warehouse.beans.Cv;
+import org.biopax.paxtools.model.level3.ControlledVocabulary;
 
 /**
  * 
@@ -38,9 +38,32 @@ import cpath.warehouse.beans.Cv;
  */
 public interface CvRepository {
 	
-	void add(Cv cv);
+	/**
+	 * Gets a CV
+	 * 
+	 * @param <T>
+	 * @param urn e.g., urn:miriam:obo.go:GO%3A0005654 (corresponds to GO:0005654)
+	 * @param cvClass
+	 * @return
+	 */
+	<T extends ControlledVocabulary> T getControlledVocabulary(String urn, Class<T> cvClass);
 	
-	Cv getById(String urn);
+	/**
+	 * Gets a CV
+	 * 
+	 * @param <T>
+	 * @param db "database" name, like in Xrefs, i.e., OBO ontology name or synonym (e.g., "Gene Ontology", "go", or "urn:miriam:obo.go")
+	 * @param id term accession number (identifier)
+	 * @param cvClass
+	 * @return
+	 */
+	<T extends ControlledVocabulary> T getControlledVocabulary(String db, String id, Class<T> cvClass);
+
+	
+	
+	/*
+	 * CVs Hierarchy Access
+	 */
 	
 	Set<String> getDirectChildren(String urn);
 	
@@ -51,4 +74,5 @@ public interface CvRepository {
 	Set<String> getAllParents(String urn);
 	
 	boolean isChild(String parentUrn, String urn);
+	
 }

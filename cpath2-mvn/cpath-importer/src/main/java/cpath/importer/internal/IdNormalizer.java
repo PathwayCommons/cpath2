@@ -60,15 +60,13 @@ public class IdNormalizer implements Normalizer {
 	public static final String BIOPAX_URI_PREFIX = "http://biopax.org/"; // for xrefs
 	
 	
-	private MiriamLink miriam;
 	private BioPAXIOHandler biopaxReader;
 	
 
 	/**
 	 * Constructor
 	 */
-	public IdNormalizer(MiriamLink miriam) {
-		this.miriam = miriam;
+	public IdNormalizer() {
 		this.biopaxReader = new SimpleReader(); //may be to use 'biopaxReader' bean that uses (new BioPAXFactoryForPersistence(), BioPAXLevel.L3);
 	}
 
@@ -100,7 +98,7 @@ public class IdNormalizer implements Normalizer {
 				uref = ((BioSource)bpe).getTaxonXref(); // taxonXref is deprecated; BioSource will become Xreferrable
 			} else if(bpe instanceof Provenance) {
 				Provenance pro = (Provenance) bpe;
-				String urn = miriam.getDataTypeURI(pro.getStandardName());
+				String urn = MiriamLink.getDataTypeURI(pro.getStandardName());
 				model.updateID(pro.getRDFId(), urn);
 				continue;
 			} else {
@@ -112,7 +110,7 @@ public class IdNormalizer implements Normalizer {
 						"Cannot find a unification xrefs of : " + bpe);
 			}
 
-			String urn = miriam.getURI(uref.getDb(), uref.getId());
+			String urn = MiriamLink.getURI(uref.getDb(), uref.getId());
 			model.updateID(bpe.getRDFId(), urn);
 		}
 		
@@ -145,9 +143,9 @@ public class IdNormalizer implements Normalizer {
 			Xref x = ref; // can be replaced below...
 			String name = x.getDb();
 			try {
-				String urn = miriam.getDataTypeURI(x.getDb());
+				String urn = MiriamLink.getDataTypeURI(x.getDb());
 				// update name to the primary one
-				name = miriam.getName(urn);
+				name = MiriamLink.getName(urn);
 				x.setDb(name);
 			} catch (IllegalArgumentException e) {
 				log.error("Unknown or misspelled datanase name! Won't fix this now... " + e);

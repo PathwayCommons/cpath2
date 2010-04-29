@@ -166,10 +166,9 @@ public class Admin implements Runnable {
                     		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
                     		"classpath:applicationContext-whouseDAO.xml", 
                     		"classpath:applicationContext-paxtools.xml",
-                    		"classpath:applicationContext-biopaxValidation.xml",
-                    		"classpath:applicationContext-miriam.xml", 
+                    		"classpath:applicationContext-biopaxValidation.xml", 
         					"classpath:applicationContext-cpathPremerger.xml",
-        					"classpath:applicationContext-cvFetcher.xml"});
+        					"classpath:applicationContext-cvRepository.xml"});
                 PremergeDispatcher premergeDispatcher = (PremergeDispatcher) context.getBean("premergeDispatcher");
 				premergeDispatcher.start();
 				// sleep until premerge is complete, this is required so we can call System.exit(...) below
@@ -180,8 +179,11 @@ public class Admin implements Runnable {
                     new ClassPathXmlApplicationContext(new String [] { 	
                     		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
                     		"classpath:applicationContext-whouseDAO.xml", 
-                    		"classpath:applicationContext-cpathWarehouse.xml", 
                     		"classpath:applicationContext-paxtools.xml",
+                    		"classpath:applicationContext-cpathWarehouse.xml",
+                    		"classpath:applicationContext-cvRepository.xml",
+                    		"classpath:applicationContext-whouseMolecules.xml",
+                    		"classpath:applicationContext-whouseProteins.xml", 
                     		"classpath:applicationContext-cpathDAO.xml", 
         					"classpath:applicationContext-cpathMerger.xml"});
 				Merger merger = (Merger) context.getBean("merge");

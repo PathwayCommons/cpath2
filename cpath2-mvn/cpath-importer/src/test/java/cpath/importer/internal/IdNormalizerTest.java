@@ -33,7 +33,6 @@ import java.io.*;
 
 import javax.annotation.Resource;
 
-import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -149,7 +148,7 @@ public class IdNormalizerTest {
 			fail(e1.toString());
 		}
 		
-		IdNormalizer idNormalizer = new IdNormalizer(new MiriamLink());
+		IdNormalizer idNormalizer = new IdNormalizer();
 		String xml = idNormalizer.normalize(out.toString());
 		
 		System.out.println(xml);
@@ -189,7 +188,7 @@ public class IdNormalizerTest {
 	// TODO fix/clean the input file - it has biopax errors!
 	//@Test
 	public final void testNormalizeTestFile() throws IOException {
-		IdNormalizer idNormalizer = new IdNormalizer(new MiriamLink());
+		IdNormalizer idNormalizer = new IdNormalizer();
 		Model m = simpleReader.convertFromOWL(getClass()
 				.getResourceAsStream(File.separator + "biopax-level3-test.owl"));
 		String xml = idNormalizer.normalize(m);

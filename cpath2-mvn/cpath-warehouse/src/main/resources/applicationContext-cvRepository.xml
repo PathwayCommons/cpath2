@@ -11,9 +11,8 @@
     <context:annotation-config/>
 
 	<!-- info: CvFetcher extends OntologyManager(Adapter) and also implements CvRepository interface -->
-	<bean id="cvFetcher" class="cpath.fetcher.internal.CvFetcher">
+	<bean id="cvFetcher" class="cpath.warehouse.internal.OntologyManagerCvRepository">
 		<constructor-arg value="classpath:ontologies.xml"/>
-		<constructor-arg ref="miriam"/>
 		<constructor-arg value="${CPATH2_HOME}/ontologies"/>
 	</bean>
 	

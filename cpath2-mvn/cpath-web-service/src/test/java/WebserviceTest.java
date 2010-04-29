@@ -69,19 +69,6 @@ public class WebserviceTest {
 		
 	}
 	
-	/* 
-	 * mapping "/elements/{uri}/get" has been deleted
-	@Test
-	public void testGetQueryById2() {
-		String result = template.getForObject("http://localhost:8080/cpath-web-service/elements/{uri}/get", 
-		//		String.class, "http://www.biopax.org/examples/myExample#Pathway50"); // results in not valid HTTP URL!
-				String.class, "http%3A%2F%2Fwww.biopax.org%2Fexamples%2FmyExample%23Pathway50");
-		//works, but there is potential URL encoding/decoding issue that requires extra actions to be taken and may also break NCName: - what if 'GO:12345' used instead 'Pathway50'?
-		assertNotNull(result);
-		System.out.println(result);
-	}
-	*/
-	
 	
 	@Test
 	public void testPostQueryById() {

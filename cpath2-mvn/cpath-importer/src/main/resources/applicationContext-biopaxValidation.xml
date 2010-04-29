@@ -60,7 +60,6 @@
     <bean id="xrefHelper" class="org.biopax.validator.utils.XrefHelper">
 		<constructor-arg ref="extraDbSynonyms"/>
         <constructor-arg ref="cvFetcher" />
-        <constructor-arg ref="miriam"/>
     </bean>
 	
 	

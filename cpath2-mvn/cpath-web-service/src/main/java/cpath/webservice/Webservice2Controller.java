@@ -42,6 +42,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
 
+import javax.annotation.PostConstruct;
+
 /**
  * The "Second Query" web controller.
  * 
@@ -63,6 +65,10 @@ public class Webservice2Controller {
 		this.exporter = exporter;
 	}
 
+	@PostConstruct
+	void init() {
+		warehouse.createIndex();
+	}
 	
 	/**
 	 * Customizes request strings conversion to internal types,
@@ -93,7 +99,7 @@ public class Webservice2Controller {
     			+ ", urn:" + urn);
     	StringBuffer toReturn = new StringBuffer();
 		if (UtilityClass.class.isAssignableFrom(type)) {
-			UtilityClass el = warehouse.createUtilityClass(urn, type);
+			UtilityClass el = warehouse.getObject(urn, type);
 			if(el != null) {
 				toReturn.append(el.getRDFId()).append(newline);
 			}

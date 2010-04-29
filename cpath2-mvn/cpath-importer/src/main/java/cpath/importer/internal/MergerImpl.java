@@ -159,13 +159,13 @@ public final class MergerImpl implements Merger {
 	private <T extends UtilityClass> T getUtilityClass(BioPAXElement bpe) {
 
 		if (bpe instanceof ProteinReference) {
-			return (T)cpathWarehouse.createUtilityClass(bpe.getRDFId(), ProteinReference.class);
+			return (T)cpathWarehouse.getObject(bpe.getRDFId(), ProteinReference.class);
 		}
 		else if (bpe instanceof SmallMoleculeReference) {
-			return (T)cpathWarehouse.createUtilityClass(bpe.getRDFId(), SmallMoleculeReference.class);
+			return (T)cpathWarehouse.getObject(bpe.getRDFId(), SmallMoleculeReference.class);
 		}
 		else if (bpe instanceof ControlledVocabulary) {
-			return (T)cpathWarehouse.createUtilityClass(bpe.getRDFId(), ControlledVocabulary.class);
+			return (T)cpathWarehouse.getObject(bpe.getRDFId(), ControlledVocabulary.class);
 		}
 
 		// should not get here

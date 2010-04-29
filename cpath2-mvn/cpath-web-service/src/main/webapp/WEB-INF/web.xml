@@ -5,8 +5,6 @@
 	id="cPathSquaredWs" version="2.5">
 	<display-name>cPath^2 Webservices</display-name>
 
-	<!-- using this allows for relative paths in the log4j.properties file, 
-	i.e., ${webappRoot}/WEB-INF/log/app.out  -->
 	<listener>
 		<listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
 	</listener>
@@ -24,6 +22,7 @@
 			classpath:applicationContext-whouseMolecules.xml
 			classpath:applicationContext-whouseProteins.xml
 			classpath:applicationContext-paxtools.xml
+			classpath:applicationContext-cvRepository.xml
 		</param-value>
 	</context-param>
 

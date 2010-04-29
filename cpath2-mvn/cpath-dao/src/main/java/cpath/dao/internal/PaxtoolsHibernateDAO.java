@@ -134,13 +134,11 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		*/
 		
 		Session session = getSessionFactory().getCurrentSession();
-		if(!index) {
-			// TODO not sure it does not create lucene index here as well...
-			session.save(model);
-		} else {
-			FullTextSession fullTextSession = Search.getFullTextSession(session);
-			fullTextSession.save(model);
-			fullTextSession.flushToIndexes();
+		session.save(model);
+		
+
+		if(index) {
+			createIndex();
 		}
 		
 		/*
@@ -166,6 +164,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	public void createIndex() {
 		Session session = getSessionFactory().getCurrentSession();
 		FullTextSession fullTextSession = Search.getFullTextSession(session);
+		/* also works without bunch of the following!
 		Model m = (Model) session.get(ModelProxy.class, new Long(1));
 		if(log.isInfoEnabled())
 			log.info("Indexing Model; objects: " + m.getObjects().size());
@@ -173,6 +172,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		for(BioPAXElement e : m.getObjects()) {
 			fullTextSession.index(e);
 		}
+		*/
 		fullTextSession.flushToIndexes();
 	}
 	
@@ -214,8 +214,8 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		BioPAXElement toReturn = null;
 		
 		String namedQuery = (eager) 
-			? "org.biopax.paxtools.proxy.level3.elementByRdfId"
-				:	"org.biopax.paxtools.proxy.level3.elementByRdfIdEager";
+			? "org.biopax.paxtools.proxy.level3.elementByRdfIdEager"
+				: "org.biopax.paxtools.proxy.level3.elementByRdfId";
 		
 		/*
 		 * does not work - org.hibernate.SessionException: collections cannot be fetched by a stateless session...
@@ -258,7 +258,6 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 			results = session.createQuery(query).list();
 		}
 		
-		//return (results.size() > 0) ? new HashSet<T>(results) : new HashSet<T>();
 		Set<T> toReturn = new HashSet<T>();
 		
 		if(stateless) {
@@ -313,20 +312,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		// execute search
 		List<T> results = hibQuery.list();
 		
-		if(results != null && !results.isEmpty()) {
-			if(log.isInfoEnabled())	
-				log.info("we have " + results.size() + " results.");
-			for(BioPAXElement element : results) {
-				T detached = (T) getByID(element.getRDFId(), false, false);
-				toReturn.add(detached);
-			}
-		 	toReturn = results;
-		} else {
-			if(log.isInfoEnabled())	
-			 	log.info("we have no results");
-		}
-  	
-		return ((stateless && toReturn.size()>0) ? detach(toReturn) : toReturn);
+		return ((stateless && results.size()>0) ? detach(results) : results); // force detach
 	}
 
     

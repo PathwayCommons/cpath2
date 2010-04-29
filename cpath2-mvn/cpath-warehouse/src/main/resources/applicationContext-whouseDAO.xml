@@ -54,10 +54,6 @@
         <property name="sessionFactory" ref="whouseSessionFactory"/>
     </bean>
 
-    <bean id="cvRepository" class="cpath.warehouse.internal.HibernateCvRepository">
-        <property name="sessionFactory" ref="whouseSessionFactory"/>
-    </bean>
-
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
 	
 </beans>
