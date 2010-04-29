@@ -48,7 +48,6 @@
 	</bean>
       
 	<bean id="utils" class="org.biopax.validator.utils.BiopaxValidatorUtils">
-		<property name="xsltResource" value="classpath:default-result.xsl"/>
 		<property name="messageSource" ref="messageSource" />
 		<property name="marshaller" ref="resultsMarshaller" />
 		<property name="locale" value="en" />

@@ -20,7 +20,6 @@
 	  <constructor-arg ref="idNormalizer"/>
 	  <constructor-arg ref="validator"/>
 	  <constructor-arg ref="simpleReader"/>
-	  <constructor-arg ref="utils"/>
 	</bean>
 
 	<bean id="pathwayDataJDBCServices" class="cpath.warehouse.internal.PathwayDataJDBCServicesImpl">

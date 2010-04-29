@@ -57,9 +57,6 @@ public final class PremergeImpl extends Thread implements Premerge {
 	// ref to validator
 	private Validator validator;
 
-	// ref to validator utils
-	private BiopaxValidatorUtils validatorUtils;
-
 	// ref to paxtools reader
 	private BioPAXIOHandler simpleReader;
 	
@@ -88,15 +85,13 @@ public final class PremergeImpl extends Thread implements Premerge {
 						final PathwayDataJDBCServices pathwayDataJDBCServices,
 						final Normalizer idNormalizer,
 						final Validator validator,
-						final BioPAXIOHandler simpleReader,
-						final BiopaxValidatorUtils validatorUtils) {
+						final BioPAXIOHandler simpleReader) {
 		// init members
 		this.pathwayDataDAO = pathwayDataDAO;
 		this.pathwayDataJDBCServices = pathwayDataJDBCServices;
 		this.idNormalizer = idNormalizer;
 		this.validator = validator;
 		this.simpleReader = simpleReader;
-		this.validatorUtils = validatorUtils;
 	}
 
     /**
@@ -306,7 +301,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 		// now post-validate
 		validator.validate(validation);
 		// serialize
-		validatorUtils.write(validation, writer);
+		BiopaxValidatorUtils.write(validation, writer, null);
 		pathwayData.setValidationResults(writer.toString());
 
 		// outta here 
