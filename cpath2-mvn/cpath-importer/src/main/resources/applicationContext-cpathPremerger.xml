@@ -30,7 +30,6 @@
         <property name="dbConnection" value="${wdb.connection}"/>
     </bean>
 	
-	<bean id="idNormalizer" class="cpath.importer.internal.IdNormalizer">
-		<constructor-arg ref="miriam"/>
-	</bean>
+	<bean id="idNormalizer" class="cpath.importer.internal.IdNormalizer"/>
+
 </beans>

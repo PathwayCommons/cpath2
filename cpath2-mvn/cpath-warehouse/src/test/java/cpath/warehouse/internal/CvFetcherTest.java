@@ -1,4 +1,4 @@
-package cpath.fetcher.internal;
+package cpath.warehouse.internal;
 /**
  ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
  ** and University of Toronto (UofT).
@@ -39,10 +39,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import psidev.psi.tools.ontology_manager.impl.OntologyTermImpl;
-import psidev.psi.tools.ontology_manager.impl.local.LocalOntology;
-import psidev.psi.tools.ontology_manager.interfaces.OntologyAccess;
-import psidev.psi.tools.ontology_manager.interfaces.OntologyTermI;
+import cpath.warehouse.internal.OntologyManagerCvRepository;
+
+import psidev.ontology_manager.impl.OntologyTermImpl;
+import psidev.ontology_manager.impl.OntologyImpl;
+import psidev.ontology_manager.Ontology;
+import psidev.ontology_manager.OntologyTermI;
 
 /**
  * @author rodche
@@ -50,12 +52,11 @@ import psidev.psi.tools.ontology_manager.interfaces.OntologyTermI;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
-		"classpath:applicationContext-cvFetcher.xml",
-		"classpath:applicationContext-miriam.xml"})
+		"classpath:applicationContext-cvRepository.xml"})
 public class CvFetcherTest {
 
 	@Autowired
-	private CvFetcher cvFetcher;
+	private OntologyManagerCvRepository cvFetcher;
 	
 	
 	/**
@@ -69,27 +70,26 @@ public class CvFetcherTest {
     @Test
     public void ontologyLoading() {
         Collection<String> ontologyIDs = cvFetcher.getOntologyIDs();
-        Assert.assertEquals( "ontologies.xml specifies 6 ontologies.", 6, ontologyIDs.size() );
         Assert.assertTrue( ontologyIDs.contains( "GO" ) );
         Assert.assertTrue( ontologyIDs.contains( "SO" ) );
         Assert.assertTrue( ontologyIDs.contains( "MI" ) );
 
-        OntologyAccess oa2 = cvFetcher.getOntologyAccess( "GO" );
+        Ontology oa2 = cvFetcher.getOntology( "GO" );
         Assert.assertNotNull( oa2 );
-        Assert.assertTrue( oa2 instanceof LocalOntology);
+        Assert.assertTrue( oa2 instanceof OntologyImpl);
         
-        oa2 = cvFetcher.getOntologyAccess( "SO" );
+        oa2 = cvFetcher.getOntology( "SO" );
         Assert.assertNotNull( oa2 );
-        Assert.assertTrue( oa2 instanceof LocalOntology);
+        Assert.assertTrue( oa2 instanceof OntologyImpl);
         
-        oa2 = cvFetcher.getOntologyAccess( "MI" );
+        oa2 = cvFetcher.getOntology( "MI" );
         Assert.assertNotNull( oa2 );
-        Assert.assertTrue( oa2 instanceof LocalOntology);
+        Assert.assertTrue( oa2 instanceof OntologyImpl);
     }
 	
 	
 	/**
-	 * Test method for {@link cpath.fetcher.internal.CvFetcher#ontologyTermsToUrns(java.util.Collection)}.
+	 * Test method for {@link cpath.warehouse.internal.OntologyManagerCvRepository#ontologyTermsToUrns(java.util.Collection)}.
 	 */
 	@Test
 	public final void testOntologyTermsToUrns() {
@@ -105,11 +105,11 @@ public class CvFetcherTest {
 
 	
 	/**
-	 * Test method for {@link cpath.fetcher.internal.CvFetcher#ontologyTermsToUrns(java.util.Collection)}.
+	 * Test method for {@link cpath.warehouse.internal.OntologyManagerCvRepository#ontologyTermsToUrns(java.util.Collection)}.
 	 */
 	@Test
 	public final void testSearchForTermByAccession() {
-		OntologyTermI term = cvFetcher.searchForTermByAccession("GO:0005654");
+		OntologyTermI term = cvFetcher.findTermByAccession("GO:0005654");
 		assertNotNull(term);
 		assertEquals("nucleoplasm", term.getPreferredName());
 	}

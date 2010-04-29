@@ -43,6 +43,8 @@ import org.springframework.web.bind.annotation.*;
 import java.io.*;
 import java.util.*;
 
+import javax.annotation.PostConstruct;
+
 @Controller
 public class WebserviceController {
     private static final Log log = LogFactory.getLog(WebserviceController.class);
@@ -101,7 +103,13 @@ public class WebserviceController {
     		return null;
     	}
     }
-	
+
+    
+    @PostConstruct
+    void init() {
+    	pcDAO.createIndex();
+    }
+    
 
 	//@Autowired
 	public WebserviceController(PaxtoolsDAO mainDAO, SimpleExporter exporter) {
@@ -174,7 +182,10 @@ public class WebserviceController {
     @ResponseBody
     public String getElementsOfType(@PathVariable("type") Class<? extends BioPAXElement> type) {
     	StringBuffer toReturn = new StringBuffer();
-    	Set<? extends BioPAXElement> results = pcDAO.getObjects(type, false, false);
+    	/* getObjects with eager=false, statless=false is ok for RDFIds only...
+    	 * - no need to detach elements from the DAA session
+    	 */
+    	Set<? extends BioPAXElement> results = pcDAO.getObjects(type, false, false); 
     	for(BioPAXElement e : results)
     	{
     		toReturn.append(e.getRDFId()).append(newline);
@@ -199,20 +210,15 @@ public class WebserviceController {
     public String elementById(@PathVariable("format") Format format, 
     		@RequestParam("uri") String uri) 
     {
-    	BioPAXElement element = pcDAO.getByID(uri, true, true);
+    	BioPAXElement element = pcDAO.getByID(uri, true, true); 
+    	/* - checked if eager=true (the first boolean) works regardless of 'stateless' (the second arg.)...
+    	 * Answer: no (toOWL(element) fails with "...no session or session was closed")
+    	 * So, we do need to use force detach (stateless=true)
+    	 */
 		if(log.isInfoEnabled()) log.info("Query - format:" + format + 
 				", urn:" + uri + ", returned:" + element);
-		// TODO how to get complete BioPAX element (or its serialization) from the DAO...
-		//String owl = element.getRDFId();
-		
-		/*
-		 * using pcDAO.getByID(uri, true, true) above 
-		 * causes org.hibernate.LazyInitializationException: 
-		 *  failed to lazily initialize a collection of role: org.biopax.paxtools.proxy.level3.PathwayProxy.pathwayComponent, 
-		 *  no session or session was closed
-		*/
-		String owl = toOWL(element);
-		
+
+		String owl = toOWL(element);		
 		return owl;
     }
     
@@ -235,7 +241,7 @@ public class WebserviceController {
 				+ type.getCanonicalName() + ", query:" + query);
     	
     	// do search
-		List<BioPAXElement> results = (List<BioPAXElement>) pcDAO.search(query, type, true);
+		List<BioPAXElement> results = (List<BioPAXElement>) pcDAO.search(query, type, false);
 		StringBuffer toReturn = new StringBuffer();
 		for(BioPAXElement e : results) {
 			toReturn.append(e.getRDFId()).append(newline);

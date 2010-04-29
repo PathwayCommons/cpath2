@@ -56,8 +56,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @ContextConfiguration(locations = {
 		"classpath:applicationContext-biopaxValidation.xml",
 		"classpath:applicationContext-paxtools.xml",
-		"classpath:applicationContext-cvFetcher.xml",
-		"classpath:applicationContext-miriam.xml"
+		"classpath:applicationContext-cvRepository.xml"
 	})
 public class BiopaxValidatorTest {
 

@@ -25,26 +25,27 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.fetcher.internal;
+package cpath.warehouse.internal;
 
 //import java.io.IOException;
-import java.io.File;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.miriam.MiriamLink;
-import org.biopax.validator.utils.OntologyManagerAdapter;
+import org.biopax.paxtools.model.BioPAXFactory;
+import org.biopax.paxtools.model.level3.ControlledVocabulary;
+import org.biopax.paxtools.model.level3.UnificationXref;
+import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
+import org.biopax.validator.utils.BiopaxOntologyManager;
 import org.springframework.core.io.Resource;
 
-//import psidev.psi.tools.ontology_manager.OntologyManagerContext;
-import psidev.psi.tools.ontology_manager.OntologyManagerContext;
-import psidev.psi.tools.ontology_manager.impl.OntologyTermImpl;
-import psidev.psi.tools.ontology_manager.interfaces.OntologyAccess;
-import psidev.psi.tools.ontology_manager.interfaces.OntologyTermI;
+import psidev.ontology_manager.Ontology;
+import psidev.ontology_manager.OntologyTermI;
 
 import cpath.warehouse.CvRepository;
-import cpath.warehouse.beans.Cv;
 
 
 
@@ -54,10 +55,10 @@ import cpath.warehouse.beans.Cv;
  * @author rodch
  *
  */
-public final class CvFetcher extends OntologyManagerAdapter implements CvRepository {
-	private final static Log log = LogFactory.getLog(CvFetcher.class);
-	
-	private MiriamLink miriam;
+public final class OntologyManagerCvRepository extends BiopaxOntologyManager implements CvRepository {
+	private static final Log log = LogFactory.getLog(OntologyManagerCvRepository.class);
+	private static final String URN_OBO_PREFIX = "urn:miriam:obo.";
+	private static BioPAXFactory biopaxFactory = new BioPAXFactoryForPersistence();
 	
 	/**
 	 * Constructor
@@ -67,126 +68,139 @@ public final class CvFetcher extends OntologyManagerAdapter implements CvReposit
 	 * @param ontTmpDir TODO
 	 * @throws Exception
 	 */
-	public CvFetcher(Resource ontologies, MiriamLink miriam, String ontTmpDir) {
-		super(ontologies);
-		this.miriam = miriam;
-		OntologyManagerContext.getInstance()
-			.setOntologyDirectory(new File(ontTmpDir));
-		if(log.isInfoEnabled())
-			log.info("Using ontologies cache directory : " + ontTmpDir);
+	public OntologyManagerCvRepository(Resource ontologies, String ontTmpDir) {
+		super(ontologies, ontTmpDir);
 		
+		/* Normalize (for safety :)) ontology names using ID naming convention in ontologies.xml
+		 * This is also a good check that everything's ok...
+		 */
+		for(String id : getOntologyIDs()) {
+			String officialName = MiriamLink.getName(id); 
+			Ontology o = getOntology(id);
+			o.setName(officialName);
+		}
+	}
+	
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.CvRepository#getByDbAndId(java.lang.String, java.lang.String, java.lang.Class)
+	 */
+	@Override
+	public <T extends ControlledVocabulary> T getControlledVocabulary(String db,
+			String id, Class<T> cvClass) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.CvRepository#getById(java.lang.String, java.lang.Class)
+	 */
+	@Override
+	public <T extends ControlledVocabulary> T getControlledVocabulary(String urn,
+			Class<T> cvClass) 
+	{
+		OntologyTermI term = getTermByUrn(urn);
+		
+		T cv = biopaxFactory.reflectivelyCreate(cvClass);
+		cv.setRDFId(urn);
+		cv.addTerm(term.getPreferredName());
+		
+		UnificationXref uref = biopaxFactory.reflectivelyCreate(UnificationXref.class);
+		String ontId = term.getOntologyId(); // like "GO" 
+		String db = getOntology(ontId).getName(); // names were fixed in the constructor!
+		uref.setDb(db); 
+		String rdfid = "http://biopax.org/UnificationXref#" + 
+			URLEncoder.encode(uref.getDb() + "_" + term.getTermAccession());
+		uref.setRDFId(rdfid);
+		uref.setId(term.getTermAccession());
+		cv.addXref(uref);
+		
+		return cv;
 	}
 	
 	
 	public Set<String> getDirectChildren(String urn) {
 		OntologyTermI term = getTermByUrn(urn);
-		OntologyAccess ontologyAccess = getOntologyAccess(term.getOntologyName());
-		Collection<OntologyTermI> terms = ontologyAccess.getDirectChildren(term);
+		Ontology ontology = getOntology(term.getOntologyId());
+		Collection<OntologyTermI> terms = ontology.getDirectChildren(term);
 		return ontologyTermsToUrns(terms);
 	}
 
 	
 	public Set<String> getDirectParents(String urn) {
 		OntologyTermI term = getTermByUrn(urn);
-		OntologyAccess ontologyAccess = getOntologyAccess(term.getOntologyName());
-		Collection<OntologyTermI> terms = ontologyAccess.getDirectParents(term);
+		Ontology ontology = getOntology(term.getOntologyId());
+		Collection<OntologyTermI> terms = ontology.getDirectParents(term);
 		return ontologyTermsToUrns(terms);
 	}
 
 	
 	public Set<String> getAllChildren(String urn) {
 		OntologyTermI term = getTermByUrn(urn);
-		OntologyAccess ontologyAccess = getOntologyAccess(term.getOntologyName());
-		Collection<OntologyTermI> terms = ontologyAccess.getAllChildren(term);
+		Ontology ontology = getOntology(term.getOntologyId());
+		Collection<OntologyTermI> terms = ontology.getAllChildren(term);
 		return ontologyTermsToUrns(terms);
 	}
 
 	
 	public Set<String> getAllParents(String urn) {
 		OntologyTermI term = getTermByUrn(urn);
-		OntologyAccess ontologyAccess = getOntologyAccess(term.getOntologyName());
-		Collection<OntologyTermI> terms = ontologyAccess.getAllParents(term);
+		Ontology ontology = getOntology(term.getOntologyId());
+		Collection<OntologyTermI> terms = ontology.getAllParents(term);
 		return ontologyTermsToUrns(terms);
 	}
 	
 	
-	OntologyTermI searchForTermByAccession(String acc) {
-		OntologyTermI term = null;
-		
-		for(String ontologyId : getOntologyIDs()) {
-			term = getOntologyAccess(ontologyId).getTermForAccession(acc);
-			if(term != null) 
-				break;
-		}
-		
-		return term;
-	}
-	
-	
-	
-	/* CvRepository interface implementation */
-
-	/* (non-Javadoc)
-	 * @see cpath.warehouse.CvRepository#add(cpath.warehouse.beans.Cv)
-	 */
-	public void add(Cv cv) {
-		throw new UnsupportedOperationException("'add' " +
-				"operation is not supported in this implementation!");
-	}
-
-
-	/* (non-Javadoc)
-	 * @see cpath.warehouse.CvRepository#getById(java.lang.String)
-	 */
-	public Cv getById(String urn) {
-		Cv cv = new Cv(urn); // parse urn
-
-		OntologyTermI term = getTermByUrn(urn);
-		// set children
-		cv.setChildren(getDirectChildren(urn));
-		// set parents
-		cv.setParents(getDirectParents(urn));
-		// add names
-		cv.addName(term.getPreferredName());
-		cv.getNames().addAll(term.getNameSynonyms());
-
-		return cv;
-	}
-
-
-	/* (non-Javadoc)
-	 * @see cpath.warehouse.CvRepository#isChild(java.lang.String, java.lang.String)
-	 */
 	public boolean isChild(String parentUrn, String urn) {
 		return getAllParents(urn).contains(parentUrn)
 			|| getAllChildren(parentUrn).contains(urn);
 	}
 	
 	
+	/* ==========================================================================*
+	 *        Internal Methods (package-private - for easy testing)              *
+	 * ==========================================================================*/
 	
-	
-	OntologyTermI getTermByUrn(String urn) {
-		Cv cv = new Cv(urn); // parse urn
-		OntologyTermI term = new OntologyTermImpl(cv.getAccession());
-		
-		OntologyAccess ontologyAccess = getOntologyAccess(cv.getOntologyId());
-		if(ontologyAccess != null) {
-			term = ontologyAccess.getTermForAccession(cv.getAccession());
-		} else {
-			term = searchForTermByAccession(cv.getAccession());
-		}
-		
-		return term;
-	}
 
+	OntologyTermI getTermByUrn(String urn) {
+		if(urn.startsWith(URN_OBO_PREFIX)) {
+			int l = URN_OBO_PREFIX.length();
+			int indexOfTheColon = urn.indexOf(':', l);
+			String acc = urn.substring(indexOfTheColon+1);
+			acc=URLDecoder.decode(acc);
+			String dtUrn = urn.substring(0, indexOfTheColon);				
+			OntologyTermI term = findTermByAccession(acc); // acc. is globally unique in OntologyManager!..
+			return term;
+		} else {
+			log.error("Cannot Decode not a Controlled Vocabulary's URI : " + urn);
+			return null;
+		}
+	}
+	
+	
+	/*
+	 * Gets Ontology by (Miriam's) datatype URI
+	 */
+	Ontology getOntologyByUrn(String dtUrn) {
+		for (String id : getOntologyIDs()) {
+			Ontology ont = getOntology(id);
+			String urn = MiriamLink.getDataTypeURI(id);
+			if(dtUrn.equalsIgnoreCase(urn)) {
+				return ont;
+			}
+		}
+		return null;
+	}
+	
 	
 	Set<String> ontologyTermsToUrns(Collection<OntologyTermI> terms) {
 		Set<String> urns = new HashSet<String>();
 		
 		for(OntologyTermI term : terms) {
-			String ontologyID = term.getOntologyName();
+			String ontologyID = term.getOntologyId();
 			String accession = term.getTermAccession();
-			String urn = miriam.getURI(ontologyID, accession);
+			String urn = MiriamLink.getURI(ontologyID, accession);
 			urns.add(urn);
 		}
 		
@@ -195,7 +209,7 @@ public final class CvFetcher extends OntologyManagerAdapter implements CvReposit
 	
 	
 /*
- * TODO Methods below would guarantee to work with BioPAX-recommended CVs...
+ * TODO Methods below would guarantee working only with BioPAX-recommended CVs...
  */
 
 /*

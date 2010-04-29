@@ -48,7 +48,8 @@ import cpath.warehouse.CPathWarehouse;
 		"classpath:applicationContext-whouseMolecules.xml",
 		"classpath:applicationContext-whouseProteins.xml",
 		"classpath:applicationContext-whouseDAO.xml",
-		"classpath:applicationContext-cpathWarehouse.xml"})
+		"classpath:applicationContext-cpathWarehouse.xml",
+		"classpath:applicationContext-cvRepository.xml"})
 public class CPathWarehouseImplTest {
 
 	@Autowired
@@ -62,11 +63,11 @@ public class CPathWarehouseImplTest {
 	}
 
 	/**
-	 * Test method for {@link cpath.warehouse.internal.CPathWarehouseImpl#createUtilityClass(java.lang.String, java.lang.Class)}.
+	 * Test method for {@link cpath.warehouse.internal.CPathWarehouseImpl#getObject(java.lang.String, java.lang.Class)}.
 	 */
 	@Test
 	public final void testCreateUtilityClass() {
-		ProteinReference pr = warehouse.createUtilityClass("urn:miriam:uniprot:P62158", ProteinReference.class);
+		ProteinReference pr = warehouse.getObject("urn:miriam:uniprot:P62158", ProteinReference.class);
 		//assertNotNull(pr);
 	}
 

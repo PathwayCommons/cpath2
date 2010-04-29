@@ -37,20 +37,18 @@ import org.junit.Test;
  */
 public class MiriamTest {
 
-	static MiriamLink miriam = new MiriamLink();
-
 	/**
 	 * Test method for {@link cpath.common.internal.MiriamAdapter#getURI(java.lang.String, java.lang.String)}.
 	 */
 	@Test
 	public final void testGetURI() {
-		String urn = miriam.getURI("uniprot", "P62158");
+		String urn = MiriamLink.getURI("uniprot", "P62158");
 		assertEquals("urn:miriam:uniprot:P62158", urn);
 	}
 	
 	@Test
 	public final void testGetURI_CV() {
-		String urn = miriam.getURI("GO", "GO:0005654");
+		String urn = MiriamLink.getURI("GO", "GO:0005654");
 		assertEquals("urn:miriam:obo.go:GO%3A0005654", urn);
 	}
 	
@@ -58,7 +56,7 @@ public class MiriamTest {
 	@Test
 	public final void testGetURI_wrong() {
 		try {
-			String urn = miriam.getURI("uniprotkb", "A62158");
+			String urn = MiriamLink.getURI("uniprotkb", "A62158");
 			fail("must throw the IllegalArgumentException!");
 		} catch (IllegalArgumentException e) {
 		}
@@ -70,14 +68,14 @@ public class MiriamTest {
 	 */
 	@Test
 	public final void testGetDataTypeURN_byId() {
-		String urn = miriam.getDataTypeURI("urn:miriam:uniprot");
+		String urn = MiriamLink.getDataTypeURI("urn:miriam:uniprot");
 		assertEquals("urn:miriam:uniprot", urn);
 	}
 	
 
 	@Test
 	public final void testGetDataTypeURN_byName() {
-		String urn = miriam.getDataTypeURI("uniprotkb");
+		String urn = MiriamLink.getDataTypeURI("uniprotkb");
 		assertEquals("urn:miriam:uniprot", urn);
 	}
 

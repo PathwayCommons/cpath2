@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<cvSourceList xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:noNamespaceSchemaLocation="http://www.psidev.info/files/validator/CvSourceList.xsd">
+	<!-- Only source="file" (that also means URI) supported 
+		in the modified (BioPAX Validator's) OntologyManager version -->
+
+    <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/genomic-proteomic/so.obo"
+              format="OBO" name="Sequence Ontology" identifier="SO"/>
+
+    <cvSource source="file" uri="http://psidev.cvs.sourceforge.net/viewvc/*checkout*/psidev/psi/mi/rel25/data/psi-mi25.obo"
+              format="OBO" name="Molecular Interactions Ontology" identifier="MI"/>
+
+    <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/anatomy/cell_type/cell.obo"
+              format="OBO" name="Cell Ontology" identifier="CL"/>
+
+    <cvSource source="file" uri="http://www.brenda-enzymes.info/ontology/tissue/tree/update/update_files/BrendaTissueOBO"
+              format="OBO" name="Brenda Tissue Ontology" identifier="BTO"/>
+
+    <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/phenotype/quality.obo"
+              format="OBO" name="PATO" identifier="PATO"/>
+              
+    <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/genomic-proteomic/gene_ontology_edit.obo"
+              format="OBO" name="Gene Ontology" identifier="GO"/>
+              
+   	<cvSource source="file" uri="http://psidev.sourceforge.net/mod/data/PSI-MOD.obo"
+              format="OBO" name="Protein Modification Ontology" identifier="MOD"/>
+             
+    <!-- chebi.obo has error or incompatibility with OntologyManager's OBOEdit lib. It works when onle line that causes the issue is manually edited; so now waiting for CHEBI to fix or confirm...
+    <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/chemical/chebi.obo"
+              format="OBO" name="ChEBI" identifier="ChEBI"/>   
+    -->
+</cvSourceList>
+

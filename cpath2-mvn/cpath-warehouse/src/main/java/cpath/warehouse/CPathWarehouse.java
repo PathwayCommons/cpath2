@@ -29,15 +29,13 @@ package cpath.warehouse;
 
 import org.biopax.paxtools.model.level3.UtilityClass;
 
-import java.util.Set;
-
 
 /**
  * cPathSquared Warehouse Interface
  * 
  * @author rodch
  */
-public interface CPathWarehouse {
+public interface CPathWarehouse extends CvRepository {
 
 	static final String SEARCH_INDEX_NAME = "cpathwarehouse";
 	
@@ -51,27 +49,23 @@ public interface CPathWarehouse {
 	 * @param clazz
 	 * @return
 	 */
-	<T extends UtilityClass> T createUtilityClass(String urn, Class<T> utilityClazz);
+	<T extends UtilityClass> T getObject(String urn, Class<T> utilityClazz);
 	
 	
 	/**
-	 * Gets the primary URN of the (BioPAX utility class) element by ID.
+	 * Gets the primary URN of the (BioPAX utility class) element by another identifier.
+	 * This method's implementation will guess the identifier type and search in Warehouse.
 	 * 
-	 * @param id
-	 * @return
+	 * @param id any identifier
+	 * @param utilityClass 
+	 * @return URI of the matching object in the Warehouse
 	 */
-	String getPrimaryURI(String id);
-	
-	
+	String getPrimaryURI(String id, Class<? extends UtilityClass> utilityClass);
+
+
 	/**
-	 * Gets primary IDs (URNs) of all the controlled vocabularies that
-	 * are either indirect or direct children of the one identified by its URN.
-	 * 
-	 * @param urn id of a ControlledVocabulary
-	 * @return set of ControlledVocabulary URNs
+	 * Create Lucene Index
 	 */
-	Set<String> getAllChildrenOfCv(String urn);
-	Set<String> getDirectChildrenOfCv(String urn);
-	Set<String> getParentsOfCv(String urn);
-	Set<String> getDirectParentsOfCv(String urn);
+	void createIndex();
+		
 }

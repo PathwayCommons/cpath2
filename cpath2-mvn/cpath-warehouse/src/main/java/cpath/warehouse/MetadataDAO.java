@@ -31,4 +31,5 @@ public interface MetadataDAO {
      * @return Collection<Metadata>
      */
     Collection<Metadata> getAll();
+
 }
