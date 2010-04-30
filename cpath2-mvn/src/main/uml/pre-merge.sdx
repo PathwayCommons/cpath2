@@ -15,16 +15,18 @@ For CV's and ER's RDFId
 to be a Miriam URN
 *2
 *3 warehouse
-warehouse contains: 
+Warehouse contains: 
+Metadata, 
+cleaned original PathwayData
 Entity References, 
-CV-hierarchy, ID-mapping, 
-PathwayData(coocked)
-and Metatada
+CVs with relationships, 
+ID-mapping (by ER searching)
 *3
 *4 models
-coocked, normalized, 
-and validated BioPAX models
-(one DB per datasource)
+cleaned, normalized and validated 
+pathway data, one physical database 
+(several BioPAX models allowed)
+per datasource
 *4
 *5 importer
 Using Ontology Manager as a CV Repository
@@ -81,13 +83,6 @@ importer:validation=validate(owl)
 (4)importer:models.importModel(owl)
 [/c]
 [/c]
-[/c]
-builder:importer.buildCvHierarchy()
-importer:biopaxCvs=models.getAllCVs()
-[c:loop for each ControlledVocabulary, cv]
-(5)importer:parentUrns=warehouse.getParents(urn)
-(5)importer:childUrns=warehouse.getChildren(urn)
-importer:warehouse.addCvRelationship(urn, type, parents, children)
 [/c]]]></source>
 <configuration>
 <property name="actorWidth" value="25"/>

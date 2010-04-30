@@ -15,7 +15,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 @Ignore
-public class WebserviceTest {
+public class CPathSquaredWebserviceTest {
 	
 	static RestTemplate template;
 	
