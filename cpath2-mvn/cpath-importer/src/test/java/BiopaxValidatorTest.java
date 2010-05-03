@@ -28,11 +28,12 @@
 
 import static org.junit.Assert.*;
 
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Catalysis;
 import org.biopax.paxtools.model.level3.ControlType;
+import org.biopax.paxtools.model.level3.Level3Factory;
 import org.biopax.paxtools.model.level3.TemplateReactionRegulation;
-import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.biopax.validator.Behavior;
 import org.biopax.validator.Rule;
 import org.biopax.validator.Validator;
@@ -63,8 +64,7 @@ public class BiopaxValidatorTest {
 	@Autowired
 	Validator validator;
 	
-	//Level3Factory level3 = (Level3Factory) BioPAXLevel.L3.getDefaultFactory();
-	BioPAXFactoryForPersistence level3 = new BioPAXFactoryForPersistence();
+	Level3Factory level3 = (Level3Factory) BioPAXLevel.L3.getDefaultFactory();
 
 	/**
 	 * Test method for {@link cpath.validator.BiopaxValidator#validate(org.biopax.paxtools.model.Model)}.

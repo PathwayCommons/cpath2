@@ -36,9 +36,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.model.BioPAXFactory;
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.biopax.validator.utils.BiopaxOntologyManager;
 import org.springframework.core.io.Resource;
 
@@ -58,7 +58,7 @@ import cpath.warehouse.CvRepository;
 public final class OntologyManagerCvRepository extends BiopaxOntologyManager implements CvRepository {
 	private static final Log log = LogFactory.getLog(OntologyManagerCvRepository.class);
 	private static final String URN_OBO_PREFIX = "urn:miriam:obo.";
-	private static BioPAXFactory biopaxFactory = new BioPAXFactoryForPersistence();
+	private static BioPAXFactory biopaxFactory = BioPAXLevel.L3.getDefaultFactory();
 	
 	/**
 	 * Constructor

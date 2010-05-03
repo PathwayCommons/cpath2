@@ -35,7 +35,6 @@ import java.util.TreeMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 
 
 /**
@@ -61,7 +60,7 @@ public class BiopaxTypeEditor extends PropertyEditorSupport {
 			}
 		}
 		
-		bioPAXFactory = new BioPAXFactoryForPersistence();
+		bioPAXFactory = BioPAXLevel.L3.getDefaultFactory();
 	}
 	
 	

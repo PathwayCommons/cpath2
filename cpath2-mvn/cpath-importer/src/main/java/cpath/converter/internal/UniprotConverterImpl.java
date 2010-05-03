@@ -216,7 +216,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 			((Level2Element)currentProteinOrER).setCOMMENT(commentSet);
 		}
 		else if (bpLevel == BioPAXLevel.L3) {
-			((Level3Element)currentProteinOrER).setComment(commentSet);
+			((Level3Element)currentProteinOrER).getComment().addAll(commentSet);
 		}
     }
 
@@ -408,7 +408,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 			taxonXref.setDb("taxonomy");
             taxonXref.setId(taxId);
             // TODO update when taxonXref is removed (deprecated property)
-			toReturn.setTaxonXref((UnificationXref)taxonXref);
+			toReturn.addXref((UnificationXref)taxonXref);
 			return toReturn;
 		}
 
@@ -419,14 +419,10 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 	
 	private void createBPModel() {
 		if (bpLevel == BioPAXLevel.L2) {
-			//bpModel = BioPAXLevel.L2.getDefaultFactory().createModel();
-			//bpModel.setFactory(new org.biopax.paxtools.proxy.level2.BioPAXFactoryForPersistence());
-			bpModel = (new org.biopax.paxtools.proxy.level2.BioPAXFactoryForPersistence()).createModel();
+			bpModel = BioPAXLevel.L2.getDefaultFactory().createModel();
 		}
 		else if (bpLevel == BioPAXLevel.L3) {
-			//bpModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-			//bpModel.setFactory(new org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence());
-			bpModel = (new org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence()).createModel();
+			bpModel = BioPAXLevel.L3.getDefaultFactory().createModel();
 		}
 
 		// setup base

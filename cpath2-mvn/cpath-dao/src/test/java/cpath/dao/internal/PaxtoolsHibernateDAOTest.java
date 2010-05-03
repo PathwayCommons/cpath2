@@ -32,14 +32,8 @@ package cpath.dao.internal;
 import cpath.dao.PaxtoolsDAO;
 
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.level3.BiochemicalReaction;
-import org.biopax.paxtools.model.level3.ChemicalStructure;
-import org.biopax.paxtools.model.level3.Pathway;
-import org.biopax.paxtools.model.level3.SmallMolecule;
-import org.biopax.paxtools.model.level3.SmallMoleculeReference;
-import org.biopax.paxtools.model.level3.Xref;
-import org.biopax.paxtools.proxy.BioPAXElementProxy;
-import org.biopax.paxtools.proxy.level3.*;
+import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.impl.level3.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -79,7 +73,7 @@ public class PaxtoolsHibernateDAOTest {
 	private List<List<String>> PROTEIN_TEST_VALUES = new ArrayList<List<String>>();
 	private String[] UNIFICATION_TEST_VALUES = { "Gene Ontology", "GO:0005737" };
 	private String GET_BY_QUERY_TEST_VALUE = "ATP";
-	private Class GET_BY_QUERY_RETURN_TEST_CLASS = ChemicalStructureProxy.class;
+	private Class GET_BY_QUERY_RETURN_TEST_CLASS = ChemicalStructure.class;
 	private List<Class> GET_BY_QUERY_RETURN_CLASSES = new ArrayList<Class>();
 
 	@Before
@@ -141,12 +135,12 @@ public class PaxtoolsHibernateDAOTest {
 
 		// verify a call to getObjects(Class<T> filterBy)
 		log.info("Testing call to paxtoolsDAO.getObjects()...");
-		Set<ProteinProxy> proteins = paxtoolsDAO.getObjects(ProteinProxy.class, false, false);
+		Set<Protein> proteins = paxtoolsDAO.getObjects(Protein.class, false, false);
 		
 		assertTrue(proteins != null && proteins.size() == PROTEIN_TEST_VALUES.size());
 		
 		int lc = 0;
-		for (ProteinProxy protein : proteins) {
+		for (Protein protein : proteins) {
 			Set<String> names = protein.getName();
 			List<String> proteinTestValues = PROTEIN_TEST_VALUES.get(lc++);
 			
@@ -160,8 +154,8 @@ public class PaxtoolsHibernateDAOTest {
 
 		// verify a call to getByQueryString - filter by BioPAXElementProxy
 		log.info("Testing first call to paxtoolsDAO.getByQueryString()...");
-		List<Level3ElementProxy> returnClasses = paxtoolsDAO
-			.search(GET_BY_QUERY_TEST_VALUE, Level3ElementProxy.class, false);
+		List<Level3Element> returnClasses = paxtoolsDAO
+			.search(GET_BY_QUERY_TEST_VALUE, Level3Element.class, false);
 		Set<Class<? extends BioPAXElement>> uniqueClasses = new HashSet<Class<? extends BioPAXElement>>();
 		for (BioPAXElement returnClass : returnClasses) {
 			uniqueClasses.add(returnClass.getModelInterface());

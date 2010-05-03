@@ -11,9 +11,6 @@
 
 	<!-- BioPAX reader has got a special BioPAXFactoryForPersistence (not the default L3 one)! -->
 	<bean id="simpleReader" class="org.biopax.paxtools.io.simpleIO.SimpleReader">
-	  <constructor-arg>
-	  	<bean class="org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence"/>
-	  </constructor-arg>
 	  <constructor-arg type="org.biopax.paxtools.model.BioPAXLevel" value="L3"/>
 	</bean>
 

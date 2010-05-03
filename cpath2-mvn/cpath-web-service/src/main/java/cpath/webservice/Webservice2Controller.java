@@ -34,8 +34,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.level3.Level3Element;
 import org.biopax.paxtools.model.level3.UtilityClass;
-import org.biopax.paxtools.proxy.level3.Level3ElementProxy;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -111,7 +111,7 @@ public class Webservice2Controller {
 	@RequestMapping(value="/find/{query}")
 	@ResponseBody
     public String fulltextSearch(@PathVariable("query") String query) {
-		return fulltextSearchForType(Level3ElementProxy.class, query);
+		return fulltextSearchForType(Level3Element.class, query);
 	}
         
 
