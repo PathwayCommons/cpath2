@@ -90,12 +90,11 @@ public class IdNormalizer implements Normalizer {
 		// process the rest of utility classes (selectively though)
 		for(UtilityClass bpe : objects) {
 			UnificationXref uref = null;
-			if(bpe instanceof ControlledVocabulary) {
+			if(bpe instanceof ControlledVocabulary 
+					|| bpe instanceof BioSource) {
 				uref = getFirstUnificationXref((XReferrable) bpe);
 			} else if(bpe instanceof EntityReference) {
 				uref = getFirstUnificationXrefOfEr((EntityReference) bpe);
-			} else if(bpe instanceof BioSource) {
-				uref = ((BioSource)bpe).getTaxonXref(); // taxonXref is deprecated; BioSource will become Xreferrable
 			} else if(bpe instanceof Provenance) {
 				Provenance pro = (Provenance) bpe;
 				String urn = MiriamLink.getDataTypeURI(pro.getStandardName());

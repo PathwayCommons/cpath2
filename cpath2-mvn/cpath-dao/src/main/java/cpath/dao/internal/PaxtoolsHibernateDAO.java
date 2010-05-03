@@ -36,8 +36,6 @@ import org.apache.lucene.queryParser.ParseException;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
-import org.biopax.paxtools.proxy.level3.ModelProxy;
 import org.biopax.paxtools.controller.AbstractTraverser;
 import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.PropertyEditor;
@@ -61,28 +59,23 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
+import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
+
 /**
  * Class which implements PaxtoolsModelQuery interface via persistence.
  */
 @Transactional
 @Repository
 public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
-	private final static String SEARCH_FIELD_AVAILABILITY = "availability";
-	private final static String SEARCH_FIELD_COMMENT = "comment";
-	private final static String SEARCH_FIELD_KEYWORD = "keyword";
-	private final static String SEARCH_FIELD_NAME = "name";
-	private final static String SEARCH_FIELD_TERM = "term";
-	private final static String SEARCH_FIELD_XREF_DB = "xref_db";
-	private final static String SEARCH_FIELD_XREF_ID = "xref_id";
 	private final static String[] ALL_FIELDS = {SEARCH_FIELD_AVAILABILITY,
 												SEARCH_FIELD_COMMENT,
 												SEARCH_FIELD_KEYWORD,
 												SEARCH_FIELD_NAME,
 												SEARCH_FIELD_TERM,
 												SEARCH_FIELD_XREF_DB,
-												SEARCH_FIELD_XREF_ID};
-	private final static int BATCH_SIZE = 100;
-	
+												SEARCH_FIELD_XREF_ID,
+												};
+	//private final static int BATCH_SIZE = 100;
 	private static EditorMap editorMap3 = new SimpleEditorMap(BioPAXLevel.L3);
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
 	private SessionFactory sessionFactory;
@@ -136,7 +129,6 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		Session session = getSessionFactory().getCurrentSession();
 		session.save(model);
 		
-
 		if(index) {
 			createIndex();
 		}
@@ -188,7 +180,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		log.info("Creating biopax model using: " + biopaxFile.getAbsolutePath());
 
 		// create a simple reader
-		SimpleReader simple = new SimpleReader(new BioPAXFactoryForPersistence(), BioPAXLevel.L3);
+		SimpleReader simple = new SimpleReader(BioPAXLevel.L3);
 		
 		// convert file to model
 		Model model = simple.convertFromOWL(new FileInputStream(biopaxFile));
@@ -214,8 +206,8 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		BioPAXElement toReturn = null;
 		
 		String namedQuery = (eager) 
-			? "org.biopax.paxtools.proxy.level3.elementByRdfIdEager"
-				: "org.biopax.paxtools.proxy.level3.elementByRdfId";
+			? "org.biopax.paxtools.impl.level3.elementByRdfIdEager"
+				: "org.biopax.paxtools.impl.level3.elementByRdfId";
 		
 		/*
 		 * does not work - org.hibernate.SessionException: collections cannot be fetched by a stateless session...

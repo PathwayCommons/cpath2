@@ -133,7 +133,7 @@ public class IdNormalizerTest {
     	ref.setId("10090"); // the same id
 		BioSource bioSource = simpleReader.getFactory().reflectivelyCreate(BioSource.class);
 		bioSource.setRDFId("BioSource_Mouse_Tissue");
-		bioSource.setTaxonXref((UnificationXref)ref);
+		bioSource.addXref((UnificationXref)ref);
 		model.add(ref);
 		model.add(bioSource);
 		
@@ -176,7 +176,6 @@ public class IdNormalizerTest {
 		//test BioSource
 		bpe = model.getByID("urn:miriam:taxonomy:10090");
 		assertTrue(bpe instanceof BioSource);
-		assertNotNull(((BioSource)bpe).getTaxonXref());
 		bpe = model.getByID("http://biopax.org/UnificationXref#Taxonomy_10090");
 		assertTrue(bpe instanceof UnificationXref);
 		

@@ -15,7 +15,6 @@ import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.UtilityClass;
-import org.biopax.paxtools.proxy.level3.BioPAXFactoryForPersistence;
 import org.biopax.paxtools.controller.SimpleMerger;
 
 import org.springframework.context.ApplicationContext;
@@ -84,7 +83,7 @@ public final class MergerImpl implements Merger {
 	public void merge() {
 
 		// create pc model
-		Model pcModel= (new BioPAXFactoryForPersistence()).createModel();
+		Model pcModel= BioPAXLevel.L3.getDefaultFactory().createModel();
 
 		// iterate over all providers
 		for (Metadata metadata : metadataDAO.getAll()) {
