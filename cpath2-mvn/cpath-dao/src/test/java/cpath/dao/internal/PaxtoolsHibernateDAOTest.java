@@ -107,7 +107,7 @@ public class PaxtoolsHibernateDAOTest {
 
 	@Test
 	@Transactional
-	//@Rollback(false) // once used - e.g., to dump/re-use the data in the cpath-web (import.sql) :)
+	@Rollback(false) // once used - e.g., to dump/re-use the data in the cpath-web (import.sql) :)
 	public void testRun() throws Exception {
 		// verify a call to importModel
 		log.info("Testing call to paxtoolsDAO.importModel()...");
