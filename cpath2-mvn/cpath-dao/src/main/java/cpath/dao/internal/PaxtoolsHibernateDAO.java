@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.ParseException;
+import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -40,6 +41,8 @@ import org.biopax.paxtools.controller.AbstractTraverser;
 import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.controller.PropertyFilter;
+import org.biopax.paxtools.controller.SimpleMerger;
+import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.hibernate.Query;
@@ -67,19 +70,47 @@ import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
 @Transactional
 @Repository
 public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
-	private final static String[] ALL_FIELDS = {SEARCH_FIELD_AVAILABILITY,
-												SEARCH_FIELD_COMMENT,
-												SEARCH_FIELD_KEYWORD,
-												SEARCH_FIELD_NAME,
-												SEARCH_FIELD_TERM,
-												SEARCH_FIELD_XREF_DB,
-												SEARCH_FIELD_XREF_ID,
-												};
+	private final static String[] ALL_FIELDS = 
+	{
+		SEARCH_FIELD_AVAILABILITY,
+		SEARCH_FIELD_COMMENT,
+		SEARCH_FIELD_KEYWORD,
+		SEARCH_FIELD_NAME,
+		SEARCH_FIELD_TERM,
+		SEARCH_FIELD_XREF_DB,
+		SEARCH_FIELD_XREF_ID,
+	};
+	
 	//private final static int BATCH_SIZE = 100;
 	private static EditorMap editorMap3 = new SimpleEditorMap(BioPAXLevel.L3);
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
 	private SessionFactory sessionFactory;
+	private SimpleMerger merger;
+	
+	@Transactional(propagation=Propagation.NESTED)
+	public void init() {
+		if(getModel()==null)  {
+			if(log.isDebugEnabled())
+				log.debug("Creating initial persistent model...");
+			Session session = getSessionFactory().getCurrentSession();	
+			Model model = new ModelImpl(BioPAXLevel.L3.getDefaultFactory());
+			model.getNameSpacePrefixMap().put("", "http://pathwaycommons.org#");
+			Long id = (Long) session.save(model);
+			if(log.isDebugEnabled())
+				log.debug("Model saved; id=" + id);
+		}
+		//List<?> list = session.createQuery("from ModelImpl").list();
+	}
 
+	
+	/**
+	 * @param simpleMerger the simpleMerger to set
+	 */
+	public void setMerger(SimpleMerger simpleMerger) {
+		this.merger = simpleMerger;
+	}
+	
+	
 	// get/set methods used by spring
 	public SessionFactory getSessionFactory() {
 		return sessionFactory;
@@ -89,62 +120,25 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		this.sessionFactory = sessionFactory;
 	}
 	
-
+	
+	private Model getModel() {
+		Session session = getSessionFactory().getCurrentSession();
+		Model model = (Model) session.get(ModelImpl.class, 1L);
+		return model;
+	}
+	
+	
 	/**
 	 * Persists the given model to the db.
-	 * 
-	 * TODO take care of Model, as, in fact, now persisted and indexed here are individual objects
-	 * 
-	 * TODO Use either manual "batch" inserts or StatelessSession (less convenient); still must create lucene indexes!
 	 *
 	 * @param model Model
-	 * @param createIndex boolean
 	 */
-	@Transactional
-	public void importModel(final Model model, final boolean index) {
-		/*
+	@Transactional(propagation=Propagation.REQUIRES_NEW)
+	public void importModel(final Model model) {
 		Session session = getSessionFactory().getCurrentSession();
-		FullTextSession fullTextSession = Search.getFullTextSession(session);
-		fullTextSession.setFlushMode(FlushMode.MANUAL);
-		int index = 0;
-		for (BioPAXElement bpe : model.getObjects()) {
-			if (log.isInfoEnabled())
-				log.info("Saving biopax element, rdfID: " + bpe.getRDFId());
-			index++;
-			//session.saveOrUpdate(bpe);
-			session.save(bpe);
-			if (index % BATCH_SIZE == 0) {
-				session.flush();
-				session.clear();
-				fullTextSession.flushToIndexes(); // apply changes to indexes
-				fullTextSession.clear(); // clear since the queue is processed
-			}
-			session.flush();
-			session.clear();
-			fullTextSession.flushToIndexes();
-			fullTextSession.clear();
-		}
-		*/
-		
-		Session session = getSessionFactory().getCurrentSession();
-		session.save(model);
-		
-		if(index) {
-			createIndex();
-		}
-		
-		/*
-		 * did not work (saves model only, no objects)
-		StatelessSession stlsession = getSessionFactory().openStatelessSession();
-		stlsession.beginTransaction();
-		stlsession.insert(model);
-		// throws - org.hibernate.TransientObjectException: object references an unsaved transient instance...
-		//for(BioPAXElement e : model.getObjects()) {
-		//	stlsession.insert(e);
-		//}
-		stlsession.getTransaction().commit();
-		stlsession.close();
-		*/
+		Model mainModel = (Model) session.get(ModelImpl.class, 1L);
+		merger.merge(mainModel, model);
+		session.update(mainModel);
 	}
 
 	
@@ -152,20 +146,14 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 * @see cpath.dao.PaxtoolsDAO#createIndex()
 	 */
 	@Override
-	@Transactional
 	public void createIndex() {
 		Session session = getSessionFactory().getCurrentSession();
 		FullTextSession fullTextSession = Search.getFullTextSession(session);
-		/* also works without bunch of the following!
-		Model m = (Model) session.get(ModelProxy.class, new Long(1));
-		if(log.isInfoEnabled())
-			log.info("Indexing Model; objects: " + m.getObjects().size());
-		fullTextSession.index(m);
-		for(BioPAXElement e : m.getObjects()) {
-			fullTextSession.index(e);
+		try {
+			fullTextSession.createIndexer().startAndWait();
+		} catch (InterruptedException e) {
+			throw new RuntimeException("Faild to re-build index.");
 		}
-		*/
-		fullTextSession.flushToIndexes();
 	}
 	
 	/**
@@ -175,8 +163,9 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 * @param createIndex boolean
 	 * @throws FileNoteFoundException
 	 */
-	public void importModel(File biopaxFile, final boolean index) throws FileNotFoundException {
+	public void importModel(File biopaxFile) throws FileNotFoundException {
 
+		if(log.isInfoEnabled())
 		log.info("Creating biopax model using: " + biopaxFile.getAbsolutePath());
 
 		// create a simple reader
@@ -185,8 +174,13 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		// convert file to model
 		Model model = simple.convertFromOWL(new FileInputStream(biopaxFile));
 
-		// import the model
-		importModel(model, index);
+		if(log.isInfoEnabled())
+			log.info("Model converted from OWL contains " + 
+					model.getObjects().size() + " objects.");
+		
+		// save model
+		importModel(model);
+
 	}
 
 	
@@ -201,32 +195,21 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
      */
 	@Transactional(readOnly=true) // a hint to the driver to eventually optimize :)
     public BioPAXElement getByID(final String id, final boolean eager, boolean stateless) {
-		// TODO 26-FEB-2010  BioPAXElementProxy changed to use auto-generated id instead of RDFId! Will wse session.getNamedQuery(..) for this!
-  
 		BioPAXElement toReturn = null;
 		
 		String namedQuery = (eager) 
-			? "org.biopax.paxtools.impl.level3.elementByRdfIdEager"
-				: "org.biopax.paxtools.impl.level3.elementByRdfId";
+			? "org.biopax.paxtools.impl.elementByRdfIdEager"
+				: "org.biopax.paxtools.impl.elementByRdfId";
 		
 		/*
-		 * does not work - org.hibernate.SessionException: collections cannot be fetched by a stateless session...
-		 * 
-		 * alternative - copy to a new element (traverse), or use SinpleExporter then SimpleReader - to/from OWL ;)
-		 * 
-		if(stateless) {
-			StatelessSession session = getSessionFactory().openStatelessSession();
-			Query query = session.getNamedQuery(namedQuery);
-			query.setString("rdfid", id);
-			toReturn =  (BioPAXElement)query.uniqueResult();
-			session.close(); // !
-		} else {
+		 * if(stateless) { StatelessSession session=...} did not work - 
+		 * org.hibernate.SessionException: collections cannot be fetched by a stateless session...
 		*/
+		
 		Session session = getSessionFactory().getCurrentSession();
 		Query query = session.getNamedQuery(namedQuery);
 		query.setString("rdfid", id);
 		toReturn = (BioPAXElement)query.uniqueResult();
-		//}
 		
 		return (stateless) ? detach(toReturn) : toReturn;
 	}
@@ -358,13 +341,139 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 * @param elements collection or persistent elements
 	 * @return
 	 */
-	@Transactional(readOnly=true)
 	private <T extends BioPAXElement> List<T> detach(Collection<T> elements) {
 		List<T> toReturn = new ArrayList<T>();
 		for(T el : elements) {
 			toReturn.add((T) detach(el));
 		}
 		return toReturn;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#add(org.biopax.paxtools.model.BioPAXElement)
+	 */
+	@Override
+	public void add(BioPAXElement aBioPAXElement) {
+		getModel().add(aBioPAXElement);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#addNew(java.lang.Class, java.lang.String)
+	 */
+	@Override
+	public <T extends BioPAXElement> T addNew(Class<T> aClass, String id) {
+		return getModel().addNew(aClass, id);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#contains(org.biopax.paxtools.model.BioPAXElement)
+	 */
+	@Override
+	@Transactional(readOnly=true)
+	public boolean contains(BioPAXElement aBioPAXElement) {
+		return getModel().contains(aBioPAXElement);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#containsID(java.lang.String)
+	 */
+	@Override
+	@Transactional(readOnly=true)
+	public boolean containsID(String id) {
+		return getModel().containsID(id);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#getByID(java.lang.String)
+	 */
+	@Override
+	@Transactional(readOnly=true)
+	public BioPAXElement getByID(String id) {
+		return getModel().getByID(id);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#getIdMap()
+	 */
+	@Override
+	public Map<String, BioPAXElement> getIdMap() {
+		throw new UnsupportedOperationException("Deprecated and removed method");
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#getLevel()
+	 */
+	@Override
+	@Transactional(readOnly=true)
+	public BioPAXLevel getLevel() {
+		return getModel().getLevel();
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#getNameSpacePrefixMap()
+	 */
+	@Override
+	public Map<String, String> getNameSpacePrefixMap() {
+		return getModel().getNameSpacePrefixMap();
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#getObjects()
+	 */
+	@Override
+	@Transactional(readOnly=true)
+	public Set<BioPAXElement> getObjects() {
+		return getModel().getObjects();
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#getObjects(java.lang.Class)
+	 */
+	@Override
+	@Transactional(readOnly=true)
+	public <T extends BioPAXElement> Set<T> getObjects(Class<T> filterBy) {
+		return getModel().getObjects(filterBy);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#isAddDependencies()
+	 */
+	@Override
+	@Transactional(readOnly=true)
+	public boolean isAddDependencies() {
+		return getModel().isAddDependencies();
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#remove(org.biopax.paxtools.model.BioPAXElement)
+	 */
+	@Override
+	public void remove(BioPAXElement aBioPAXElement) {
+		getModel().remove(aBioPAXElement);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#setAddDependencies(boolean)
+	 */
+	@Override
+	public void setAddDependencies(boolean value) {
+		getModel().setAddDependencies(value);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#setFactory(org.biopax.paxtools.model.BioPAXFactory)
+	 */
+	@Override
+	public void setFactory(BioPAXFactory factory) {
+		getModel().setFactory(factory);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.biopax.paxtools.model.Model#updateID(java.lang.String, java.lang.String)
+	 */
+	@Override
+	public void updateID(String oldID, String newID) {
+		getModel().updateID(oldID, newID);
 	}
 	
 }

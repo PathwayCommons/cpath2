@@ -40,15 +40,24 @@ import java.io.FileNotFoundException;
 /**
  * An interface which provides methods to query a Paxtools model.
  */
-public interface PaxtoolsDAO {
+public interface PaxtoolsDAO extends Model {
 
+	void init();
+	
+	/**
+	 * Builds lucene index.
+	 * 
+	 */
+	void createIndex();
+	
+	
 	/**
 	 * Persists the given model to the db.
 	 *
 	 * @param model Model
 	 * @param createIndex boolean
 	 */
-	void importModel(Model model, boolean index);
+	void importModel(Model model);
 
 	
 	/**
@@ -58,14 +67,8 @@ public interface PaxtoolsDAO {
 	 * @param createIndex boolean
 	 * @throws FileNoteFoundException
 	 */
-	void importModel(File biopaxFile, boolean index) throws FileNotFoundException;
+	void importModel(File biopaxFile) throws FileNotFoundException;
 
-	
-	/**
-	 * Builds lucene index.
-	 * 
-	 */
-	void createIndex();
 	
     /**
      * This method returns the biopax element with the given id,

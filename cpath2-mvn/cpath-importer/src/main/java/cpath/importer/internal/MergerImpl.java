@@ -105,12 +105,12 @@ public final class MergerImpl implements Merger {
 					pcModel.add(getUtilityClass(bpe));
 				}
 			}
-
-			// merge
+			
+			// merge!
 			simpleMerger.merge(pcModel, pathwayModel);
 		}
-
-		pcDAO.importModel(pcModel, true);
+		
+		pcDAO.importModel(pcModel);
 	}
 
 	/**
