@@ -25,7 +25,7 @@
 			<prop key="hibernate.hbm2ddl.auto">${hbm2ddl.mode.smdb}</prop>
 			<prop key="hibernate.show_sql">true</prop>
 			<prop key="hibernate.format_sql">true</prop>
-			<prop key="hibernate.dialect">org.hibernate.dialect.MySQL5Dialect</prop>
+			<prop key="hibernate.dialect">org.hibernate.dialect.MySQLInnoDBDialect</prop>
 			<prop key="hibernate.cache.provider_class">org.hibernate.cache.NoCacheProvider</prop>
 			<prop key="hibernate.search.default.directory_provider">org.hibernate.search.store.FSDirectoryProvider</prop>
 			<prop key="hibernate.search.default.indexBase">${lucene.index-path.molecules}</prop>
@@ -47,6 +47,7 @@
 
     <bean id="moleculesDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="moleculesSessionFactory"/>
+        <property name="merger" ref="simpleMerger"/>
     </bean>
 
     <bean id="moleculesDataSource" class="com.mysql.jdbc.jdbc2.optional.MysqlDataSource">

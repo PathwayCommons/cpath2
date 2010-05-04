@@ -33,7 +33,6 @@ import cpath.dao.PaxtoolsDAO;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.impl.level3.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,7 +54,9 @@ import static org.junit.Assert.*;
  * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:applicationContext-cpathDAO.xml"})
+@ContextConfiguration(locations = {
+		"classpath:applicationContext-cpathDAO.xml", 
+		"classpath:applicationContext-paxtools.xml"})
 @TransactionConfiguration(transactionManager="mainTransactionManager")
 public class PaxtoolsHibernateDAOTest {
 
@@ -102,20 +103,20 @@ public class PaxtoolsHibernateDAOTest {
 		GET_BY_QUERY_RETURN_CLASSES.add(ChemicalStructure.class);
 		GET_BY_QUERY_RETURN_CLASSES.add(BiochemicalReaction.class);
 		GET_BY_QUERY_RETURN_CLASSES.add(SmallMoleculeReference.class);
-		
 	}
 
 	@Test
-	@Transactional
-	@Rollback(false) // once used - e.g., to dump/re-use the data in the cpath-web (import.sql) :)
+	//@Transactional
+	//@Rollback(false) // once used - e.g., to dump/re-use the data in the cpath-web (import.sql) :)
 	public void testRun() throws Exception {
 		// verify a call to importModel
 		log.info("Testing call to paxtoolsDAO.importModel()...");
-		String cpathHome = System.getProperty("CPATH2_HOME");
-		String separator = System.getProperty("file.separator");
 		File biopaxFile = new File(getClass()
 				.getResource("/biopax-level3-test.owl").getFile());
-		paxtoolsDAO.importModel(biopaxFile, true);
+		
+		paxtoolsDAO.init();
+		paxtoolsDAO.importModel(biopaxFile);
+		
 		log.info("paxtoolsDAO.importModel() succeeded!");
 		
 		log.info("Testing call to paxtoolsDAO.getByID()...");

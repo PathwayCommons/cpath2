@@ -51,7 +51,7 @@
 								<value>file:${CPATH2_HOME}/log4j.properties</value>
 							</property>
 						</systemProperties>
-						<argLine>-Xmx2024M -DCPATH2_HOME=${CPATH2_HOME} \
+						<argLine>-Xmx2024M -DCPATH2_HOME=${CPATH2_HOME} -DBIOPAX_HOME=${CPATH2_HOME}\
 							-Dhbm2ddl.mode.db=create \
 							-Dhbm2ddl.mode.wdb=create-drop \
 							-Dhbm2ddl.mode.prdb=create-drop \
@@ -189,20 +189,10 @@
 			<artifactId>paxtools-core</artifactId>
 			<version>2.0-SNAPSHOT</version>
 		</dependency>
-      <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-core</artifactId>
-            <version>3.5.1-Final</version>
-        </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-annotations</artifactId>
             <version>3.5.1-Final</version>
-        </dependency>
-        <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-commons-annotations</artifactId>
-            <version>3.2.0.Final</version>
         </dependency>
         <dependency>
             <groupId>org.hibernate</groupId>
@@ -223,7 +213,6 @@
 			<groupId>org.hibernate.java-persistence</groupId>
 			<artifactId>jpa-api</artifactId>
 			<version>2.0-cr-1</version>
-			<scope>runtime</scope>
 		</dependency>
 	</dependencies>
 </project>
