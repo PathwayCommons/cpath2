@@ -347,7 +347,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 		// accession numbers as array
 		String acList[] = accessions.toString().split(";");
 		// the first one, primary id, becomes the RDFId
-		String id = "urn.miriam.uniprot:" + acList[0].trim();
+		String id = "urn:miriam:uniprot:" + acList[0].trim();
 		
 		if (bpLevel == BioPAXLevel.L2) {
 			protein p = bpModel.addNew(protein.class, id);
