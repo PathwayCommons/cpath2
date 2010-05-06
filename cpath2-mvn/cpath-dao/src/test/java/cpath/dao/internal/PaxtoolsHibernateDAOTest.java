@@ -29,9 +29,9 @@
 package cpath.dao.internal;
 
 // imports
-import cpath.dao.PaxtoolsDAO;
-
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,6 +44,8 @@ import org.springframework.test.context.transaction.TransactionConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 import org.apache.commons.logging.*;
+
+import cpath.dao.PaxtoolsDAO;
 
 import java.io.File;
 import java.util.*;
@@ -107,37 +109,41 @@ public class PaxtoolsHibernateDAOTest {
 
 	@Test
 	//@Transactional
-	//@Rollback(false) // once used - e.g., to dump/re-use the data in the cpath-web (import.sql) :)
+	//@Rollback(false)
 	public void testRun() throws Exception {
-		// verify a call to importModel
-		log.info("Testing call to paxtoolsDAO.importModel()...");
-		File biopaxFile = new File(getClass()
-				.getResource("/biopax-level3-test.owl").getFile());
-		
+		// init DAO (loads Model)
 		paxtoolsDAO.init();
+		assertTrue(((Model)paxtoolsDAO).getIdMap().isEmpty());
+		assertTrue(((Model)paxtoolsDAO).getNameSpacePrefixMap()
+				.containsValue("http://pathwaycommons.org#"));
+		log.info("PaxtoolsDAO.init() succeeded!");
+		
+		log.info("Testing importModel...");
+		File biopaxFile = new File(getClass().getResource("/biopax-level3-test.owl").getFile());
 		paxtoolsDAO.importModel(biopaxFile);
+		assertFalse(((Model)paxtoolsDAO).getIdMap().isEmpty());
+		assertFalse(((Model)paxtoolsDAO).getObjects().isEmpty());
 		
-		log.info("paxtoolsDAO.importModel() succeeded!");
+		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
+		BioPAXElement bpe = ((Model)paxtoolsDAO).getByID("http://www.biopax.org/examples/myExample#Pathway50");
+		assertTrue(bpe != null && bpe instanceof Pathway);
 		
-		log.info("Testing call to paxtoolsDAO.getByID()...");
-		BioPAXElement bpe = (BioPAXElement) paxtoolsDAO
-			.getByID("http://www.biopax.org/examples/myExample#Pathway50", false, true); // get detached!
-		
+		 // again, but now get element detached
+		log.info("Testing call to paxtoolsDAO.getElement(..) detached");
+		bpe = paxtoolsDAO.getElement("http://www.biopax.org/examples/myExample#Pathway50", false, true);
 		assertTrue(bpe != null && bpe instanceof Pathway);
 		
 		Set<String> pathwayNames = ((Pathway)bpe).getName();
-		
 		assertTrue(pathwayNames.size() == PATHWAY_TEST_VALUES.size());
 		
 		for (String name : pathwayNames) {
 			assertTrue(PATHWAY_TEST_VALUES.contains(name));
 		}
-		log.info("paxtoolsDAO.getByID() succeeded!");
+		log.info("paxtoolsDAO.getElement(..) succeeded!");
 
 		// verify a call to getObjects(Class<T> filterBy)
-		log.info("Testing call to paxtoolsDAO.getObjects()...");
-		Set<Protein> proteins = paxtoolsDAO.getObjects(Protein.class, false, false);
-		
+		log.info("Testing call to paxtoolsDAO.getElements()...");
+		Set<Protein> proteins = paxtoolsDAO.getElements(Protein.class, false, false);
 		assertTrue(proteins != null && proteins.size() == PROTEIN_TEST_VALUES.size());
 		
 		int lc = 0;
@@ -151,7 +157,7 @@ public class PaxtoolsHibernateDAOTest {
 				assertTrue(proteinTestValues.contains(name));
 			}
 		}
-		log.info("paxtoolsDAO.getObjects() succeeded!");
+		log.info("paxtoolsDAO.getElements() succeeded!");
 
 		// verify a call to getByQueryString - filter by BioPAXElementProxy
 		log.info("Testing first call to paxtoolsDAO.getByQueryString()...");
@@ -184,11 +190,12 @@ public class PaxtoolsHibernateDAOTest {
 		
 		// verify object property is set
 		SmallMoleculeReference smr = (SmallMoleculeReference) paxtoolsDAO
-			.getByID("http://www.biopax.org/examples/myExample#SmallMoleculeReference_10", false, false);
+			.getElement("http://www.biopax.org/examples/myExample#SmallMoleculeReference_10", false, false);
 		Set<Xref> xs = smr.getXref();
 		assertFalse(xs.isEmpty());
 		assertTrue(xs.size()==1);
 		Xref x = xs.iterator().next();
 		assertEquals("C00008", x.getId());
 	}
+
 }
