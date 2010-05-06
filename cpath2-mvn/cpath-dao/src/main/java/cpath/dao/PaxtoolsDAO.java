@@ -40,7 +40,7 @@ import java.io.FileNotFoundException;
 /**
  * An interface which provides methods to query a Paxtools model.
  */
-public interface PaxtoolsDAO extends Model {
+public interface PaxtoolsDAO {
 
 	void init();
 	
@@ -80,7 +80,7 @@ public interface PaxtoolsDAO extends Model {
 	 * @param stateless
      * @return BioPAXElement
      */
-    BioPAXElement getByID(String id, boolean eager, boolean stateless);
+    BioPAXElement getElement(String id, boolean eager, boolean stateless);
 
 
    
@@ -93,7 +93,7 @@ public interface PaxtoolsDAO extends Model {
 	 * @param stateless
      * @return an unmodifiable set of objects of the given class.
      */
-    <T extends BioPAXElement> Set<T> getObjects(Class<T> filterBy, boolean eager, boolean stateless);
+    <T extends BioPAXElement> Set<T> getElements(Class<T> filterBy, boolean eager, boolean stateless);
 
 
 	/**

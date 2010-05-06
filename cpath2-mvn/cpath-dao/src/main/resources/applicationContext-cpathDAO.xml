@@ -30,7 +30,10 @@
         <property name="configurationClass" value="org.hibernate.cfg.AnnotationConfiguration"/>
 		<property name="packagesToScan">
 			<list>
-				<value>org.biopax.paxtools.impl</value>
+				<!-- Won't persist ModelImpl anymore; PaxtoolsHibernateDAO now extends ModelImpl 
+				and uses Session to manage persistent BioPAX elements. 
+				<value>org.biopax.paxtools.impl</value> 
+				-->
 				<value>org.biopax.paxtools.impl.level3</value>
 			</list>
 		</property>        
