@@ -47,13 +47,16 @@
 
     <bean id="proteinsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="proteinsSessionFactory"/>
-        <property name="merger" ref="simpleMerger"/>
     </bean>
 
-    <bean id="proteinsDataSource" class="com.mysql.jdbc.jdbc2.optional.MysqlDataSource">
-      <property name="url" value="jdbc:mysql://localhost/${prdb.name}" />
-      <property name="user" value="${prdb.user}" />
-      <property name="password" value="${prdb.password}" />
+	<!-- using the static factory-method of the class to create the (DataSource) bean -->
+    <bean id="proteinsDataSource" class="cpath.warehouse.internal.DataSourceFactory" 
+    	factory-method="createDataSource">
+      <constructor-arg index="0" value="${prdb.user}"/>
+      <constructor-arg index="1" value="${prdb.password}"/>
+      <constructor-arg index="2" value="${prdb.driver}"/>
+      <constructor-arg index="3" value="${prdb.connection}"/>
+      <constructor-arg index="4" value="${prdb.name}"/>
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>

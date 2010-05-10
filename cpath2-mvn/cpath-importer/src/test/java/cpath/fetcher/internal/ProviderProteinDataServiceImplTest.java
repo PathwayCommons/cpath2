@@ -4,7 +4,6 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.RelationshipXref;
@@ -48,7 +47,7 @@ public class ProviderProteinDataServiceImplTest {
 		
 		assertTrue(m.containsID("http://uniprot.org#NGNC_TOP1MT"));
 		
-		proteinsDAO.importModel(m, true);
+		proteinsDAO.importModel(m);
 		
 		List<RelationshipXref> returnClasses = proteinsDAO
 			.search("ngnc", RelationshipXref.class, false);

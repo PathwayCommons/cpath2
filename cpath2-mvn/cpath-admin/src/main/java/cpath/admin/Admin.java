@@ -165,7 +165,6 @@ public class Admin implements Runnable {
                     new ClassPathXmlApplicationContext(new String [] { 	
                     		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
                     		"classpath:applicationContext-whouseDAO.xml", 
-                    		"classpath:applicationContext-paxtools.xml",
                     		"classpath:applicationContext-biopaxValidation.xml", 
         					"classpath:applicationContext-cpathPremerger.xml",
         					"classpath:applicationContext-cvRepository.xml"});
@@ -179,7 +178,6 @@ public class Admin implements Runnable {
                     new ClassPathXmlApplicationContext(new String [] { 	
                     		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
                     		"classpath:applicationContext-whouseDAO.xml", 
-                    		"classpath:applicationContext-paxtools.xml",
                     		"classpath:applicationContext-cpathWarehouse.xml",
                     		"classpath:applicationContext-cvRepository.xml",
                     		"classpath:applicationContext-whouseMolecules.xml",
@@ -298,14 +296,12 @@ public class Admin implements Runnable {
 
 		// interate over all metadata
 		for (Metadata metadata : metadataCollection) {
-
 			// only process protein references data
 			if (metadata.getType() == Metadata.TYPE.PROTEIN) {
-
 				// grab the data (actually, a set of ProteinReferenceProxy !)
 				Model model = providerProteinDataService.getProviderProteinData(metadata);
 				if (model != null) {
-					proteinsDAO.importModel(model, true);
+					proteinsDAO.importModel(model);
 				}
 				else {
 					System.err.println("Model created from protein annotation data is null, aborting.");

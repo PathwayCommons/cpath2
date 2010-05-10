@@ -1,10 +1,7 @@
 package cpath.warehouse;
 
 // imports
-import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
-
-import org.biopax.paxtools.model.Model;
 
 import java.util.Collection;
 

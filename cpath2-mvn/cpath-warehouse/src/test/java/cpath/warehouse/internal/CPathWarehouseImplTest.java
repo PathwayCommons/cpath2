@@ -49,8 +49,7 @@ import cpath.warehouse.CPathWarehouse;
 		"classpath:applicationContext-whouseProteins.xml",
 		"classpath:applicationContext-whouseDAO.xml",
 		"classpath:applicationContext-cpathWarehouse.xml",
-		"classpath:applicationContext-cvRepository.xml",
-		"classpath:applicationContext-paxtools.xml"})
+		"classpath:applicationContext-cvRepository.xml"})
 public class CPathWarehouseImplTest {
 
 	@Autowired

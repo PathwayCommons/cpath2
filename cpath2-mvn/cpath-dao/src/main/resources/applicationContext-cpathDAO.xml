@@ -51,7 +51,6 @@
 
     <bean id="paxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="mainSessionFactory"/>
-        <property name="merger" ref="simpleMerger"/>
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
@@ -61,7 +60,5 @@
 		<property name="user" value="${db.user}" />
 		<property name="password" value="${db.password}" />
 	</bean>
-
-
 
 </beans>

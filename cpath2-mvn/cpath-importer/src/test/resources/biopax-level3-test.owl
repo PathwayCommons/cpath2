@@ -7,7 +7,7 @@
     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns:owl="http://www.w3.org/2002/07/owl#"
     xmlns:p1="http://www.owl-ontologies.com/assert.owl#"
-  xml:base="http://www.biopax.org/examples/myExample">
+  xml:base="http://www.biopax.org/examples/myExample#">
   <owl:Ontology rdf:about="">
     <owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl#"/>
   </owl:Ontology>
@@ -43,7 +43,7 @@
                 <bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
                 >562</bp:id>
                 <bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-                >taxon</bp:db>
+                >taxonomy</bp:db>
               </bp:UnificationXref>
             </bp:xref>
             <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
@@ -143,7 +143,7 @@
         <bp:dataSource>
           <bp:Provenance rdf:ID="KEGG">
             <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-            >KEGG</bp:displayName>
+            >kegg</bp:displayName>
             <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
             ></bp:comment>
             <bp:standardName rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
@@ -165,7 +165,7 @@
     <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
     >PMID: 9847135 </bp:comment>
     <bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-    >kegg</bp:db>
+    >kegg reaction</bp:db>
   </bp:UnificationXref>
   <bp:BiochemicalReaction rdf:ID="phosphoglucoisomerase">
     <bp:eCNumber rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
@@ -186,7 +186,7 @@
                 <bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
                 >C05345</bp:id>
                 <bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-                >kegg</bp:db>
+                >kegg compound</bp:db>
               </bp:UnificationXref>
             </bp:xref>
             <bp:standardName rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
@@ -231,7 +231,7 @@
     <bp:xref>
       <bp:UnificationXref rdf:ID="KEGG_R02740">
         <bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-        >kegg compound</bp:db>
+        >kegg reaction</bp:db>
         <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
         >PMID: 9847135 </bp:comment>
         <bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
@@ -282,7 +282,7 @@
     <bp:xref>
       <bp:UnificationXref rdf:ID="KEGG_C00008">
         <bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-        >kegg</bp:db>
+        >kegg compound</bp:db>
         <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
         >PMID: 9847135 </bp:comment>
         <bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
@@ -315,7 +315,7 @@
         <bp:comment rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
         >PMID: 9847135 </bp:comment>
         <bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-        >kegg</bp:db>
+        >kegg compound</bp:db>
         <bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
         >C00002</bp:id>
       </bp:UnificationXref>
@@ -422,7 +422,7 @@
             <bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
             >C00267</bp:id>
             <bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-            >kegg</bp:db>
+            >kegg compound</bp:db>
           </bp:UnificationXref>
         </bp:xref>
         <bp:entityReference>
@@ -481,7 +481,7 @@
   </bp:Stoichiometry>
   <bp:BiochemicalReaction rdf:ID="glucokinase">
     <bp:conversionDirection rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
-    >LEFT-TO-RIGHT</bp:conversionDirection>
+    >REVERSIBLE</bp:conversionDirection>
     <bp:xref rdf:resource="#KEGG_R01786"/>
     <bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string"
     >beta-D-glu + ATP =&gt; beta-D-glu-6-p + ADP</bp:displayName>
@@ -564,6 +564,7 @@
         <bp:nextStep rdf:resource="#BiochemicalPathwayStep_3"/>
       </bp:BiochemicalPathwayStep>
     </bp:pathwayOrder>
+    <bp:pathwayComponent rdf:resource="#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p"/>
   </bp:Pathway>
 </rdf:RDF>
 

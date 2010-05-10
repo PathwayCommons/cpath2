@@ -39,14 +39,7 @@ import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.BioSource;
-import org.biopax.paxtools.model.level3.ControlledVocabulary;
-import org.biopax.paxtools.model.level3.EntityReference;
-import org.biopax.paxtools.model.level3.Provenance;
-import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.paxtools.model.level3.UtilityClass;
-import org.biopax.paxtools.model.level3.XReferrable;
-import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.ClassFilterSet;
 
 import cpath.importer.Normalizer;
@@ -96,11 +89,23 @@ public class IdNormalizer implements Normalizer {
 			} else if(bpe instanceof EntityReference) {
 				uref = getFirstUnificationXrefOfEr((EntityReference) bpe);
 			} else if(bpe instanceof Provenance) {
+				/*
+				 * TODO do we want normalizing Provenance?..
+				 */
 				Provenance pro = (Provenance) bpe;
-				String urn = MiriamLink.getDataTypeURI(pro.getStandardName());
-				model.updateID(pro.getRDFId(), urn);
+				try {
+					//TODO also try look in Miriam 'resources' (getDataTypeURI looks for 'datatypes')
+					String urn = MiriamLink.getDataTypeURI(
+							pro.getStandardName());
+					model.updateID(pro.getRDFId(), urn);
+				} catch (Exception e) {
+					log.error("Cannot normalize Provenance " + 
+							pro + " - " + e);
+				}
+				// done.
 				continue;
 			} else {
+				// skip other utility classes
 				continue;
 			}
 			
@@ -108,9 +113,13 @@ public class IdNormalizer implements Normalizer {
 				throw new IllegalArgumentException(
 						"Cannot find a unification xrefs of : " + bpe);
 			}
-
-			String urn = MiriamLink.getURI(uref.getDb(), uref.getId());
-			model.updateID(bpe.getRDFId(), urn);
+			try {
+				String urn = MiriamLink.getURI(uref.getDb(), uref.getId());
+				model.updateID(bpe.getRDFId(), urn);
+			} catch (Exception e) {
+				log.error("Cannot normalize Xref " +
+						uref + " - " + e);
+			}
 		}
 		
 		// return as BioPAX OWL

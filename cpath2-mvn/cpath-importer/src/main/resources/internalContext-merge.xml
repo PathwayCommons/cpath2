@@ -14,8 +14,6 @@
 
     <context:annotation-config/>
 
-	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
-
     <bean id="mergeSessionFactory"
         class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="mergeDataSource"/>
@@ -37,7 +35,7 @@
 	</bean>
 
 	<!-- This is a special data source - BeanNameAware, FactoryBean -->
-	<bean id="mergeDataSource" class="cpath.importer.internal.DataSource"/>
+	<bean id="mergeDataSource" class="cpath.warehouse.internal.DataSourceFactory"/>
 
     <tx:annotation-driven transaction-manager="mergeTransactionManager"/>
 
@@ -50,7 +48,6 @@
 
     <bean id="mergePaxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="mergeSessionFactory"/>
-        <property name="merger" ref="simpleMerger"/>
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>

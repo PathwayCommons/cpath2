@@ -46,13 +46,16 @@
 
     <bean id="moleculesDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="moleculesSessionFactory"/>
-        <property name="merger" ref="simpleMerger"/>
     </bean>
 
-    <bean id="moleculesDataSource" class="com.mysql.jdbc.jdbc2.optional.MysqlDataSource">
-      <property name="url" value="jdbc:mysql://localhost/${smdb.name}" />
-      <property name="user" value="${smdb.user}" />
-      <property name="password" value="${smdb.password}" />
+	<!-- using the static factory-method of the class to create the (DataSource) bean -->
+   <bean id="moleculesDataSource" class="cpath.warehouse.internal.DataSourceFactory" 
+   	factory-method="createDataSource">
+      <constructor-arg index="0" value="${smdb.user}"/>
+      <constructor-arg index="1" value="${smdb.password}"/>
+      <constructor-arg index="2" value="${smdb.driver}"/>
+      <constructor-arg index="3" value="${smdb.connection}"/>
+      <constructor-arg index="4" value="${smdb.name}"/>
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>

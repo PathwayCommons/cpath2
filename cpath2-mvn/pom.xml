@@ -54,7 +54,7 @@
 							</property>
 						</systemProperties>
 						<argLine>-Xmx2024M -DCPATH2_HOME=${CPATH2_HOME} -DBIOPAX_HOME=${CPATH2_HOME}\
-							-Dhbm2ddl.mode.db=create \
+							-Dhbm2ddl.mode.db=create-drop \
 							-Dhbm2ddl.mode.wdb=create-drop \
 							-Dhbm2ddl.mode.prdb=create-drop \
 							-Dhbm2ddl.mode.smdb=create-drop</argLine>
@@ -170,6 +170,7 @@
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
 			<version>5.1.10</version>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
