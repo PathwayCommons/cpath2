@@ -1,19 +1,44 @@
+/**
+ ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** and University of Toronto (UofT).
+ **
+ ** This is free software; you can redistribute it and/or modify it
+ ** under the terms of the GNU Lesser General Public License as published
+ ** by the Free Software Foundation; either version 2.1 of the License, or
+ ** any later version.
+ **
+ ** This library is distributed in the hope that it will be useful, but
+ ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
+ ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
+ ** documentation provided hereunder is on an "as is" basis, and
+ ** both UofT and MSKCC have no obligations to provide maintenance, 
+ ** support, updates, enhancements or modifications.  In no event shall
+ ** UofT or MSKCC be liable to any party for direct, indirect, special,
+ ** incidental or consequential damages, including lost profits, arising
+ ** out of the use of this software and its documentation, even if
+ ** UofT or MSKCC have been advised of the possibility of such damage.  
+ ** See the GNU Lesser General Public License for more details.
+ **
+ ** You should have received a copy of the GNU Lesser General Public License
+ ** along with this software; if not, write to the Free Software Foundation,
+ ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
+ ** or find it at http://www.fsf.org/ or http://www.gnu.org.
+ **/
 package cpath.importer.internal;
 
 // imports
 import cpath.cleaner.Cleaner;
 import cpath.dao.PaxtoolsDAO;
-import cpath.importer.Normalizer;
 import cpath.importer.Premerge;
 import cpath.warehouse.PathwayDataDAO;
 import cpath.warehouse.PathwayDataJDBCServices;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
+import cpath.warehouse.internal.DataSourceFactory;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.io.BioPAXIOHandler;
-
+import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.validator.Validator;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
@@ -24,18 +49,14 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.transaction.annotation.Transactional;
-
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import com.mysql.jdbc.jdbc2.optional.MysqlDataSource;
-
 import java.util.Collection;
 
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.*;
+
+import javax.sql.DataSource;
 
 /**
  * Class responsible for premerging pathway data.
@@ -51,14 +72,8 @@ public final class PremergeImpl extends Thread implements Premerge {
 	// ref to jdbc services
 	private PathwayDataJDBCServices pathwayDataJDBCServices;
 
-	// ref to normalizer
-	private Normalizer idNormalizer;
-
 	// ref to validator
 	private Validator validator;
-
-	// ref to paxtools reader
-	private BioPAXIOHandler simpleReader;
 	
 	// ref to dispatcher
 	private PremergeDispatcher premergeDispatcher;
@@ -76,22 +91,15 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 * @param metadata Metadata
 	 * @param pathwayDataDAO PathwayDataDAO
 	 * @param pathwaydDataJDBCServices
-	 * @param idNormalizer Normalizer
 	 * @param validator Biopax Validator
-	 * @param simpleReader BioPAXIOHandler
-	 * @param validatorUtils BiopaxValidatorUtils
 	 */
 	public PremergeImpl(final PathwayDataDAO pathwayDataDAO,
 						final PathwayDataJDBCServices pathwayDataJDBCServices,
-						final Normalizer idNormalizer,
-						final Validator validator,
-						final BioPAXIOHandler simpleReader) {
-		// init members
+						final Validator validator) 
+	{
 		this.pathwayDataDAO = pathwayDataDAO;
 		this.pathwayDataJDBCServices = pathwayDataJDBCServices;
-		this.idNormalizer = idNormalizer;
 		this.validator = validator;
-		this.simpleReader = simpleReader;
 	}
 
     /**
@@ -170,7 +178,6 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 * @param pathwayData PathwayData
 	 */
 	private void pipeline(final PathwayData pathwayData) {
-
 		String pathwayDataStr = "";
 		String pathwayDataDescription = (pathwayData.getIdentifier() + ", " +
 										 pathwayData.getVersion() + ", " +
@@ -196,7 +203,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 		// normalize
 		log.info("pipeline(), normalizing pathway data.");
 		try {
-			pathwayDataStr = idNormalizer.normalize(pathwayDataStr);
+			pathwayDataStr = (new IdNormalizer()).normalize(pathwayDataStr);
 		} catch (RuntimeException e) {
 			// TBD: report failure
 			log.info("pipeline(), error normalizing pathway data: " + pathwayDataDescription, e);
@@ -214,7 +221,8 @@ public final class PremergeImpl extends Thread implements Premerge {
 
 		// create paxtools model from pathway data (owl)
 		log.info("run(), creating paxtools model from pathway data.");
-		Model model = simpleReader.convertFromOWL(new ByteArrayInputStream(pathwayDataStr.getBytes()));
+		Model model = (new SimpleReader()).convertFromOWL(
+				new ByteArrayInputStream(pathwayDataStr.getBytes()));
 		// persist paxtools model
 		log.info("pipeline(), persisting pathway data.");
 		if (!persistPathway(pathwayData, model)) {
@@ -233,7 +241,6 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 * @return Cleaner
 	 */
 	private Cleaner getCleaner(final String cleanerClassName) {
-
 		try {
 			Class cleanerClass = getClass().forName(cleanerClassName);
 			return (cleanerClass == null) ?
@@ -324,24 +331,23 @@ public final class PremergeImpl extends Thread implements Premerge {
 		}
 
 		// create data source
-		MysqlDataSource mysqlDataSource = new MysqlDataSource();
-		mysqlDataSource.setURL(pathwayDataJDBCServices.getDbConnection() + metadata.getIdentifier());
-		mysqlDataSource.setUser(pathwayDataJDBCServices.getDbUser());
-		mysqlDataSource.setPassword(pathwayDataJDBCServices.getDbPassword());
+		DataSource premergeDataSource = pathwayDataJDBCServices
+				.getDataSource(metadata.getIdentifier());
 
-		// get application context after setting custom datasource (it replaces former one)
 		/* 
-		 * TODO TEST if different threads, each modifying the following datasource, do not conflict!
-		 * Seems, although 'beansByName' is static, they don't conflict; because the following 'context' is thread-local.
-		 * Not sure...
+		 * get application context after setting custom datasource 
+		 * (it replaces former one)
+		 * DataSourceFactory.getDataSourceMap() returns the thread-local 
+		 * instance of the map; so, should work...
+		 * TODO test DataSourceFactory works as expected
 		 */
-		DataSource.beansByName.put("premergeDataSource", mysqlDataSource);
+		DataSourceFactory.getDataSourceMap().put("premergeDataSource", premergeDataSource);
 		ApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");
 
 		// get a ref to PaxtoolsDAO
 		PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
-		paxtoolsDAO.importModel(model, false);
+		paxtoolsDAO.importModel(model);
 
 		// outta here
 		return true;

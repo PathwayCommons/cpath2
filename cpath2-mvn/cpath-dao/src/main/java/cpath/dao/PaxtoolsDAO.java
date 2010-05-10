@@ -28,7 +28,6 @@
  **/
 package cpath.dao;
 
-// imports
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
@@ -38,11 +37,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 /**
- * An interface which provides methods to query a Paxtools model.
+ * BioPAX data access (both model and repository).
  */
-public interface PaxtoolsDAO {
-
-	void init();
+public interface PaxtoolsDAO extends Model {
 	
 	/**
 	 * Builds lucene index.
@@ -77,10 +74,10 @@ public interface PaxtoolsDAO {
 	 *
      * @param id of the object to be retrieved.
 	 * @param eager boolean indicating eager (as opposed to lazy) fetching
-	 * @param stateless
+	 * @param forceDetach
      * @return BioPAXElement
      */
-    BioPAXElement getElement(String id, boolean eager, boolean stateless);
+    BioPAXElement getElement(String id, boolean eager, boolean forceDetach);
 
 
    
@@ -90,20 +87,20 @@ public interface PaxtoolsDAO {
 	 *
      * @param filterBy class to be used as a filter.
 	 * @param eager boolean indicating eager (as opposed to lazy) fetching
-	 * @param stateless
+	 * @param forceDetach
      * @return an unmodifiable set of objects of the given class.
      */
-    <T extends BioPAXElement> Set<T> getElements(Class<T> filterBy, boolean eager, boolean stateless);
+    <T extends BioPAXElement> Set<T> getElements(Class<T> filterBy, boolean eager, boolean forceDetach);
 
 
-	/**
-     * Search the lucene index for given string and returns
-	 * and returns a set of objects in the model of the given class
+	 /**
+	 * Searches the lucene index and returns the set of objects 
+	 * of the given class in the model that match the query string.
 	 * 
      * @param query String
      * @param filterBy class to be used as a filter.
-     * @return List<BioPAXElement>
+     * @return ordered by relevance list of elements
      */
-    <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy, boolean stateless);
+    <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy, boolean forceDetach);
        
 }

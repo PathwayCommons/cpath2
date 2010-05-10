@@ -80,10 +80,10 @@ public class UniprotConverterImplTest {
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
 		
 		//(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
+		proteinsDAO.importModel(model);
 		
-		proteinsDAO.importModel(model, true);
-		
-		List<RelationshipXref> returnClasses = proteinsDAO.search("entrez gene", RelationshipXref.class, false);
+		List<RelationshipXref> returnClasses = proteinsDAO
+			.search("entrez gene", RelationshipXref.class, false);
 		assertTrue(returnClasses.size()==4);
 	}
 
