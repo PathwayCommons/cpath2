@@ -156,12 +156,13 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		importModel(model);
 	}
 
-	//@Transactional(propagation=Propagation.REQUIRES_NEW)
+	@Transactional
 	public void importModel(final Model model) {
 		merger.merge(this, model);
 	}
 	
 
+	@Transactional
     public BioPAXElement getElement(final String id, final boolean eager,
     		boolean forceDetach) 
     {
@@ -171,13 +172,14 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 			: "org.biopax.paxtools.impl.elementByRdfId";
 		//Session session = session();
 		StatelessSession session = getSessionFactory().openStatelessSession();
-		session.beginTransaction();
+		Transaction tx = session.beginTransaction();
 		try {
 			toReturn = (BioPAXElement) session.getNamedQuery(namedQuery)
 				.setString("rdfid", id).uniqueResult();
-			session.getTransaction().commit();
+			tx.commit();
 		} catch (Exception e) {
 			log.error("getElement(" + id + ") failed. " + e);
+			tx.rollback();
 		}
 		session.close();
 		
@@ -185,6 +187,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	}
 	
 
+	@Transactional
     public <T extends BioPAXElement> Set<T> getElements(final Class<T> filterBy, 
     		final boolean eager, final boolean forceDetach) 
     {	
@@ -248,7 +251,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 * @see org.biopax.paxtools.model.Model#add(org.biopax.paxtools.model.BioPAXElement)
 	 */
 	@Override
-	//@Transactional(propagation=Propagation.REQUIRES_NEW)
+	@Transactional
 	public void add(BioPAXElement aBioPAXElement) {
 		String rdfId = aBioPAXElement.getRDFId();
         if(!level.hasElement(aBioPAXElement)) {
@@ -260,13 +263,11 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		} else {
 			if(log.isDebugEnabled())
 				log.debug("adding " + rdfId);
-			
-			//session().save(aBioPAXElement); 
-
+			//session().save(aBioPAXElement); // was stateful
 			StatelessSession session = getSessionFactory().openStatelessSession();
-			session.beginTransaction();
+			Transaction tx = session.beginTransaction();
 			session.insert(aBioPAXElement);
-			session.getTransaction().commit();
+			tx.commit();
 			session.close();
 		}
 	}
@@ -295,6 +296,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 
 
 	@Override
+	@Transactional
 	public <T extends BioPAXElement> T addNew(Class<T> type, String id) {
 		T bpe = factory.reflectivelyCreate(type);
 		bpe.setRDFId(id);
@@ -305,6 +307,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 
 
 	@Override
+	@Transactional
 	public boolean contains(BioPAXElement bpe) {
 		return containsID(bpe.getRDFId()); 
 	}
@@ -312,6 +315,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 
 
 	@Override
+	@Transactional
 	public boolean containsID(String id) {
 		return getByID(id) != null;
 	}
@@ -319,6 +323,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 
 
 	@Override
+	@Transactional
 	public BioPAXElement getByID(String id) {
 		return getElement(id, false, false);
 	}
@@ -391,6 +396,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 
 
 	@Override
+	@Transactional
 	public void updateID(String oldId, String newId) {
 		BioPAXElement bpe = getByID(oldId);
 		bpe.setRDFId(newId);
