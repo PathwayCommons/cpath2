@@ -8,9 +8,9 @@ import org.biopax.paxtools.model.Model;
 import java.io.IOException;
 
 /**
- * Provider Protein Data service.  Retrieves provider protein data.
+ * Warehouse Data service.  Retrieves protein and small molecule data on behalf of warehouse.
  */
-public interface ProviderProteinDataService {
+public interface WarehouseDataService {
 
     /**
      * For the given Metadata, returns a collection of EntityReference objects
@@ -20,5 +20,5 @@ public interface ProviderProteinDataService {
      * @return Model
      * @throws IOException if an IO error occurs
      */
-    Model getProviderProteinData(final Metadata metadata) throws IOException;
+    Model getWarehouseData(final Metadata metadata) throws IOException;
 }

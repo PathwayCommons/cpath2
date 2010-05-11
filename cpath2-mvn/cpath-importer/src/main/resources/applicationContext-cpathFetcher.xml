@@ -18,8 +18,7 @@
 	  <constructor-arg ref="fetcherHTTPClient"/>
 	</bean>
 
-	<bean id="providerProteinDataService" class="cpath.fetcher.internal.ProviderProteinDataServiceImpl">
+	<bean id="warehouseDataService" class="cpath.fetcher.internal.WarehouseDataServiceImpl">
 	  <constructor-arg ref="fetcherHTTPClient"/>
 	</bean>
-		
 </beans>
