@@ -39,16 +39,23 @@ public class BottomUpMerger extends AbstractTraverser
 			String rdfid = bpe.getRDFId();
 			if (target.getByID(rdfid) == null) {
 				// add the element after all its children added
-				if(log.isTraceEnabled())
-					log.trace("merging new " + 
+				if(log.isDebugEnabled())
+					log.debug("merging new " + 
 						bpe.getModelInterface().getSimpleName()
 						+ " " + rdfid);
 				traverse(bpe, target);
-				if(!target.containsID(rdfid)) // chances are, it's just been added
+				if(!target.containsID(rdfid)) {
+					// chances are, it's just been added
 					target.add(bpe);
+				} else {
+					if(log.isDebugEnabled())
+						log.debug("Found existing " + 
+								bpe.getModelInterface().getSimpleName()
+								+ "element: " + rdfid);
+				}
 			} else {
-				if(log.isTraceEnabled())
-					log.trace("skip existing " + 
+				if(log.isDebugEnabled())
+					log.debug("skip existing " + 
 							bpe.getModelInterface().getSimpleName()
 							+ " " + rdfid);
 			}
@@ -62,8 +69,8 @@ public class BottomUpMerger extends AbstractTraverser
 		if(value instanceof BioPAXElement )
 			//of course,  && editor instanceof ObjectPropertyEditor
 		{
-			if(log.isTraceEnabled())
-				log.trace("Traverser's path: " + 
+			if(log.isDebugEnabled())
+				log.debug("Traverser's path: " + 
 					getCurrentParentsList().toString() +
 					"; " + editor.getDomain().getSimpleName() +
 					"." + editor.getProperty() + "=" + value 

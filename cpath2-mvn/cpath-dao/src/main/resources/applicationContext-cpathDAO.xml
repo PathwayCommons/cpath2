@@ -25,6 +25,7 @@
 			<prop key="hibernate.cache.provider_class">org.hibernate.cache.NoCacheProvider</prop>
 			<prop key="hibernate.search.default.directory_provider">org.hibernate.search.store.FSDirectoryProvider</prop>
 			<prop key="hibernate.search.default.indexBase">${lucene.index-path}</prop>
+			<prop key="hibernate.jdbc.batch_size">20</prop>
 		  </props>
         </property>
         <property name="configurationClass" value="org.hibernate.cfg.AnnotationConfiguration"/>
