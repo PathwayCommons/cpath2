@@ -30,9 +30,9 @@ package cpath.admin;
 
 // imports
 import cpath.dao.PaxtoolsDAO;
+import cpath.fetcher.WarehouseDataService;
 import cpath.fetcher.ProviderMetadataService;
 import cpath.fetcher.ProviderPathwayDataService;
-import cpath.fetcher.ProviderProteinDataService;
 import cpath.importer.Merger;
 import cpath.importer.internal.PremergeDispatcher;
 import cpath.warehouse.MetadataDAO;
@@ -41,8 +41,6 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
 import org.biopax.paxtools.model.Model;
-
-import org.apache.log4j.PropertyConfigurator;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -66,6 +64,7 @@ public class Admin implements Runnable {
         FETCH_METADATA("-fetch-metadata"),
 		FETCH_PATHWAY_DATA("-fetch-pathwaydata"),
 		FETCH_PROTEIN_DATA("-fetch-proteindata"),
+		FETCH_SMALL_MOLECULE_DATA("-fetch-smallmoleculedata"),
 		PREMERGE("-premerge"),
 		MERGE("-merge");
 
@@ -127,6 +126,15 @@ public class Admin implements Runnable {
 				this.commandParameters = new String[] { args[1] };
 			}
 		}
+		else if (args[0].equals(COMMAND.FETCH_SMALL_MOLECULE_DATA.toString())) {
+			if (args.length != 2) {
+				validArgs = false;
+			}
+			else {
+				this.command = COMMAND.FETCH_SMALL_MOLECULE_DATA;
+				this.commandParameters = new String[] { args[1] };
+			}
+		}
 		else if (args[0].equals(COMMAND.PREMERGE.toString())) {
 			this.command = COMMAND.PREMERGE;
 			// takes no args
@@ -158,7 +166,10 @@ public class Admin implements Runnable {
 				fetchPathwayData(commandParameters[0]);
 				break;
 			case FETCH_PROTEIN_DATA:
-				fetchProteinData(commandParameters[0]);
+				fetchWarehouseData(COMMAND.FETCH_PROTEIN_DATA, commandParameters[0]);
+				break;
+			case FETCH_SMALL_MOLECULE_DATA:
+				fetchWarehouseData(COMMAND.FETCH_SMALL_MOLECULE_DATA, commandParameters[0]);
 				break;
 			case PREMERGE:
 				ApplicationContext context =
@@ -269,21 +280,23 @@ public class Admin implements Runnable {
     }
 
     /**
-     * Helper function to get protein data.
+     * Helper function to get warehouse (protein, small molecule) data.
 	 *
      * @param provider String
      * @throws IOException
      */
-    private void fetchProteinData(final String provider) throws IOException {
+    private void fetchWarehouseData(final COMMAND command, final String provider) throws IOException {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
             		"classpath:applicationContext-whouseDAO.xml", 
             		"classpath:applicationContext-whouseProteins.xml", 
+            		"classpath:applicationContext-whouseMolecules.xml", 
 					"classpath:applicationContext-cpathFetcher.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
         PaxtoolsDAO proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
-        ProviderProteinDataService providerProteinDataService = (ProviderProteinDataService) context.getBean("providerProteinDataService");
+        PaxtoolsDAO smallMoleculesDAO = (PaxtoolsDAO) context.getBean("moleculesDAO");
+        WarehouseDataService warehouseDataService = (WarehouseDataService) context.getBean("warehouseDataService");
     	
 		// get metadata
 		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
@@ -297,9 +310,9 @@ public class Admin implements Runnable {
 		// interate over all metadata
 		for (Metadata metadata : metadataCollection) {
 			// only process protein references data
-			if (metadata.getType() == Metadata.TYPE.PROTEIN) {
+			if (command == COMMAND.FETCH_PROTEIN_DATA && metadata.getType() == Metadata.TYPE.PROTEIN) {
 				// grab the data (actually, a set of ProteinReferenceProxy !)
-				Model model = providerProteinDataService.getProviderProteinData(metadata);
+				Model model = warehouseDataService.getWarehouseData(metadata);
 				if (model != null) {
 					proteinsDAO.importModel(model);
 				}
@@ -307,6 +320,16 @@ public class Admin implements Runnable {
 					System.err.println("Model created from protein annotation data is null, aborting.");
 				}
         	}
+			else if (command == COMMAND.FETCH_SMALL_MOLECULE_DATA && metadata.getType() == Metadata.TYPE.SMALL_MOLECULE) {
+				// grab the data (actually, a set of SmallMoleculeReferenceProxy !)
+				Model model = warehouseDataService.getWarehouseData(metadata);
+				if (model != null) {
+					smallMoleculesDAO.importModel(model);
+				}
+				else {
+					System.err.println("Model created from small molecule annotation data is null, aborting.");
+				}
+			}
 		}
 	}
 
@@ -341,6 +364,7 @@ public class Admin implements Runnable {
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>");
 		toReturn.append(COMMAND.FETCH_PATHWAY_DATA.toString() + " <provider-name or all>");
 		toReturn.append(COMMAND.FETCH_PROTEIN_DATA.toString() + " <provider-name or all>");
+		toReturn.append(COMMAND.FETCH_SMALL_MOLECULE_DATA.toString() + " <provider-name or all>");
 		toReturn.append(COMMAND.PREMERGE.toString());
 		toReturn.append(COMMAND.MERGE.toString());
 
@@ -362,8 +386,6 @@ public class Admin implements Runnable {
             System.exit(-1);
         }
 
-        // configure log4j
-        PropertyConfigurator.configure(Admin.class.getClassLoader().getResource("log4j.properties"));
 		Admin admin = new Admin();
 		admin.setCommandParameters(args);
         admin.run();

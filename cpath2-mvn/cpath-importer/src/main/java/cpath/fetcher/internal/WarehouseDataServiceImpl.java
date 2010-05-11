@@ -4,7 +4,7 @@ package cpath.fetcher.internal;
 import cpath.warehouse.beans.Metadata;
 import cpath.converter.Converter;
 import cpath.fetcher.FetcherHTTPClient;
-import cpath.fetcher.ProviderProteinDataService;
+import cpath.fetcher.WarehouseDataService;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -26,16 +26,16 @@ import java.util.zip.GZIPInputStream;
 import java.net.URL;
 
 /**
- * Provider Protein Data service.  Retrieves provider protein data.
+ * Warehouse Data service.  Retrieves protein and small molecule data on behalf of warehouse.
  */
 @Service
-public final class ProviderProteinDataServiceImpl implements ProviderProteinDataService {
+public final class WarehouseDataServiceImpl implements WarehouseDataService {
 
 	// used in unzip method
 	private static final int BUFFER = 2048;
 
 	// logger
-    private static Log log = LogFactory.getLog(ProviderProteinDataServiceImpl.class);
+    private static Log log = LogFactory.getLog(WarehouseDataServiceImpl.class);
 
 	// ref to FetcherHTTPClient
     private FetcherHTTPClient fetcherHTTPClient;
@@ -45,23 +45,23 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
      * 
      * @param fetcherHTTPClient FetcherHTTPClient
      */
-	public ProviderProteinDataServiceImpl(FetcherHTTPClient fetcherHTTPClient) {
+	public WarehouseDataServiceImpl(FetcherHTTPClient fetcherHTTPClient) {
 		this.fetcherHTTPClient = fetcherHTTPClient;
 	}
 
     /**
      * (non-Javadoc)
-     * @see cpath.fetcher.ProviderProteinDataService#getProviderProteinData(cpath.warehouse.beans.Metadata)
+     * @see cpath.fetcher.WarehouseDataService#getWarehouseData(cpath.warehouse.beans.Metadata)
      */
     @Override
-    public Model getProviderProteinData(final Metadata metadata) throws IOException {
+    public Model getWarehouseData(final Metadata metadata) throws IOException {
 
         Model toReturn = null;
 
 		String urlStr = metadata.getURLToPathwayData();
 
 		// protein data comes zipped
-		log.info("getProviderPathwayData(), data is zip/gz, unzipping.");
+		log.info("getWarehouseData(), data is zip/gz, unzipping.");
 		if (urlStr.startsWith("ftp://")) {
 			URL url = new URL(urlStr);
 			toReturn = unzip(metadata, url.openConnection().getInputStream());
@@ -71,7 +71,7 @@ public final class ProviderProteinDataServiceImpl implements ProviderProteinData
 			fetcherHTTPClient.releaseConnection();
 		}
 
-		log.info("getProviderPathwayData(), return model: " + toReturn);
+		log.info("getWarehouseData(), return model: " + toReturn);
 
         // outta here
         return toReturn;
