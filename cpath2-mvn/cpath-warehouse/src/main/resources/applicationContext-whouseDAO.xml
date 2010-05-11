@@ -56,7 +56,7 @@
 	<bean id="pathwayDataJDBCServices" class="cpath.warehouse.internal.PathwayDataJDBCServicesImpl">
         <property name="dbUser" value="${wdb.user}"/>
         <property name="dbPassword" value="${wdb.password}"/>
-        <property name="dbDataSource" value="${wdb.driver}"/>
+        <property name="dbDriver" value="${wdb.driver}"/>
         <property name="dbConnection" value="${wdb.connection}"/>
     </bean>
 
