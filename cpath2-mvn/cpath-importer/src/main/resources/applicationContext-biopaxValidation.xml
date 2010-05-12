@@ -27,6 +27,9 @@
     <!-- Use BioPAX Rules's Configuration -->
     <import resource="classpath:rules-context.xml"/>
     
+    <!-- override to disallow extra DB synonyms (defined in the rules-context.xml) -->
+    <util:set id="extraDbSynonyms"/>
+    
 	<!-- BiopaxValidatorUtils configuration -->
 	
     <oxm:jaxb2-marshaller id="resultsMarshaller" xmlns="http://www.biopax.org/validator">
