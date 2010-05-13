@@ -7,6 +7,7 @@ import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.UtilityClass;
 
 import java.util.*;
 
@@ -36,6 +37,15 @@ public class BottomUpMerger extends AbstractTraverser
 
 		Set<BioPAXElement> sourceElements = source.getObjects();
 		for (BioPAXElement bpe : sourceElements) {
+			
+			/* skip utility classes - 
+			 * they will be merged via parent elements anyway;
+			 * ortherwise, it's "dangling" element
+			 */
+			if(bpe instanceof UtilityClass) {
+				continue;
+			}
+			
 			String rdfid = bpe.getRDFId();
 			if (target.getByID(rdfid) == null) {
 				// add the element after all its children added

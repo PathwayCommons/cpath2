@@ -159,6 +159,21 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	@Transactional
 	public void importModel(final Model model) {
 		merger.merge(this, model);
+		/*
+		Session session = session();
+		int i = 0;
+		for(BioPAXElement e : model.getObjects()) {
+			if (log.isInfoEnabled())
+				log.info("Saving biopax element, rdfID: " 
+						+ e.getRDFId());
+			session.save(e);
+			++i;
+			if(i % 50 == 0) {
+				session.flush();
+				session.clear();
+			}
+		}
+		*/
 	}
 	
 
@@ -171,6 +186,7 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 			? "org.biopax.paxtools.impl.elementByRdfIdEager"
 			: "org.biopax.paxtools.impl.elementByRdfId";
 		//Session session = session();
+		
 		StatelessSession session = getSessionFactory().openStatelessSession();
 		Transaction tx = session.beginTransaction();
 		try {
@@ -264,11 +280,14 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 			if(log.isDebugEnabled())
 				log.debug("adding " + rdfId);
 			//session().save(aBioPAXElement); // was stateful
+			
+			
 			StatelessSession session = getSessionFactory().openStatelessSession();
 			Transaction tx = session.beginTransaction();
 			session.insert(aBioPAXElement);
 			tx.commit();
 			session.close();
+
 		}
 	}
 

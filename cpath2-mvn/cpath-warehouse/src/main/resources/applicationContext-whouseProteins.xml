@@ -35,6 +35,7 @@
         <property name="configurationClass" value="org.hibernate.cfg.AnnotationConfiguration"/>
 		<property name="packagesToScan">
 			<list>
+				<value>org.biopax.paxtools.impl</value>
 				<value>org.biopax.paxtools.impl.level3</value>
 			</list>
 		</property>        
