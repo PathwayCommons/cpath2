@@ -105,7 +105,27 @@ public class PaxtoolsHibernateDAOTest {
 		GET_BY_QUERY_RETURN_CLASSES.add(SmallMoleculeReference.class);
 	}
 
+	
+	
 	@Test
+	public void testSimple() throws Exception {
+		assertTrue(((Model)paxtoolsDAO).getNameSpacePrefixMap()
+				.containsValue("http://pathwaycommons.org#"));
+		
+		log.info("Testing importModel(file)...");
+		File biopaxFile = new File(getClass()
+				//.getResource("/biopax-level3-test.owl.xml").getFile());
+				.getResource("/test.owl").getFile());
+		paxtoolsDAO.importModel(biopaxFile);
+		
+		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
+		BioPAXElement bpe = paxtoolsDAO
+			.getByID("http://www.biopax.org/examples/myExample#Protein_A");
+		assertTrue(bpe instanceof Protein);
+	}
+	
+	
+	//@Test
 	//@Transactional
 	//@Rollback(false)
 	public void testRun() throws Exception {
@@ -120,13 +140,13 @@ public class PaxtoolsHibernateDAOTest {
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
 		BioPAXElement bpe = paxtoolsDAO
 			.getByID("http://www.biopax.org/examples/myExample#Pathway50");
-		assertTrue(bpe != null && bpe instanceof Pathway);
+		assertTrue(bpe instanceof Pathway);
 		
 		 // again, but now get element detached
 		log.info("Testing call to paxtoolsDAO.getElement(..) detached");
 		bpe = paxtoolsDAO.getElement("http://www.biopax.org/examples/myExample#Pathway50",
 				false, true);
-		assertTrue(bpe != null && bpe instanceof Pathway);
+		assertTrue(bpe instanceof Pathway);
 		
 		Set<String> pathwayNames = ((Pathway)bpe).getName();
 		assertTrue(pathwayNames.size() == PATHWAY_TEST_VALUES.size());

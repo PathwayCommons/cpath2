@@ -42,8 +42,7 @@ public class ProviderProteinDataServiceImplTest {
 				"cpath.cleaner.internal.BaseCleanerImpl", 
 				"cpath.converter.internal.UniprotConverterImpl");
 		
-		Model m = (new ProviderProteinDataServiceImpl(new FetcherHTTPClientImpl()))
-			.getProviderProteinData(metadata);
+		Model m = (new WarehouseDataServiceImpl(new FetcherHTTPClientImpl())).getWarehouseData(metadata);
 		
 		assertTrue(m.containsID("http://uniprot.org#NGNC_TOP1MT"));
 		
