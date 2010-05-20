@@ -34,14 +34,14 @@ import java.beans.PropertyEditorSupport;
  * @author rodche
  *
  */
-public class GraphTypeEditor extends PropertyEditorSupport {
+public class OutputFormatEditor extends PropertyEditorSupport {
 	
 	/* (non-Javadoc)
 	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
 	 */
 	@Override
 	public void setAsText(String arg0) throws IllegalArgumentException {
-		setValue(GraphType.parseGraphType(arg0));
+		setValue(OutputFormat.parseFormat(arg0));
 	}
 	
 }
