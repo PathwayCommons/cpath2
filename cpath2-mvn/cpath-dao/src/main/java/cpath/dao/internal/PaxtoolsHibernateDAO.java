@@ -34,7 +34,9 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.util.Version;
+import org.biopax.paxtools.impl.level3.Level3FactoryImpl;
 import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.Level3Factory;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.BioPAXIOHandler;
@@ -44,6 +46,7 @@ import org.hibernate.*;
 import org.hibernate.search.*;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
+
 
 import cpath.dao.PaxtoolsDAO;
 
@@ -55,109 +58,123 @@ import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
 
 @Transactional
 @Repository
-public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
+public class PaxtoolsHibernateDAO implements PaxtoolsDAO
+{
 	private static final long serialVersionUID = 1L;
 
-	private final static String[] ALL_FIELDS = 
-	{
-		SEARCH_FIELD_AVAILABILITY,
-		SEARCH_FIELD_COMMENT,
-		SEARCH_FIELD_KEYWORD,
-		SEARCH_FIELD_NAME,
-		SEARCH_FIELD_TERM,
-		SEARCH_FIELD_XREF_DB,
-		SEARCH_FIELD_XREF_ID,
-	};
-	
-    private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
+	private final static String[] ALL_FIELDS =
+			{
+					SEARCH_FIELD_AVAILABILITY,
+					SEARCH_FIELD_COMMENT,
+					SEARCH_FIELD_KEYWORD,
+					SEARCH_FIELD_NAME,
+					SEARCH_FIELD_TERM,
+					SEARCH_FIELD_XREF_DB,
+					SEARCH_FIELD_XREF_ID,
+			};
+
+	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
 	private SessionFactory sessionFactory;
-    private final Map<String, String> nameSpacePrefixMap;
+	private final Map<String, String> nameSpacePrefixMap;
 	private final BioPAXLevel level;
 	private BioPAXFactory factory;
 	private BottomUpMerger merger;
 	private BioPAXIOHandler reader;
 	private SimpleExporter exporter;
 	private boolean addDependencies = false;
-	
-	protected PaxtoolsHibernateDAO() {
-		this.level= BioPAXLevel.L3;
+
+	protected PaxtoolsHibernateDAO()
+	{
+		this.level = BioPAXLevel.L3;
 		this.factory = level.getDefaultFactory();
 		this.nameSpacePrefixMap = new HashMap<String, String>();
 		nameSpacePrefixMap.put("", "http://pathwaycommons.org#");
 		// set default Biopax reader, exporter, and merger
-		reader = new SimpleReader(BioPAXLevel.L3);
+		reader = new SimpleReader(new internalFactory(),BioPAXLevel.L3);
 		exporter = new SimpleExporter(level);
 		merger = new BottomUpMerger(reader.getEditorMap());
 	}
-	
+
 	/**
 	 * @param simpleMerger the simpleMerger to set
 	 */
-	public void setMerger(BottomUpMerger simpleMerger) {
+	public void setMerger(BottomUpMerger simpleMerger)
+	{
 		this.merger = simpleMerger;
 	}
-	
-	public BottomUpMerger getMerger() {
+
+	public BottomUpMerger getMerger()
+	{
 		return merger;
 	}
-	
+
 	// get/set methods used by spring
-	public SessionFactory getSessionFactory() {
+
+	public SessionFactory getSessionFactory()
+	{
 		return sessionFactory;
 	}
-	
-	public void setSessionFactory(SessionFactory sessionFactory) {
+
+	public void setSessionFactory(SessionFactory sessionFactory)
+	{
 		this.sessionFactory = sessionFactory;
 	}
-	
-	public SimpleExporter getExporter() {
+
+	public SimpleExporter getExporter()
+	{
 		return exporter;
 	}
-	
-	public void setExporter(SimpleExporter exporter) {
+
+	public void setExporter(SimpleExporter exporter)
+	{
 		this.exporter = exporter;
 	}
-	
-	public BioPAXIOHandler getReader() {
+
+	public BioPAXIOHandler getReader()
+	{
 		return reader;
 	}
-	
-	public void setReader(BioPAXIOHandler reader) {
+
+	public void setReader(BioPAXIOHandler reader)
+	{
 		this.reader = reader;
 	}
-	
+
 	/* (non-Javadoc)
-	 * @see cpath.dao.PaxtoolsDAO#createIndex()
-	 */
+		 * @see cpath.dao.PaxtoolsDAO#createIndex()
+		 */
+
 	@Override
-	@Transactional(propagation=Propagation.REQUIRES_NEW)
-	public void createIndex() {
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	public void createIndex()
+	{
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		try {
+		try
+		{
 			fullTextSession.createIndexer().startAndWait();
-		} catch (InterruptedException e) {
+		}
+		catch (InterruptedException e)
+		{
 			throw new RuntimeException("Faild to re-build index.");
 		}
 	}
-	
 
-	public void importModel(File biopaxFile) throws FileNotFoundException {
-		if(log.isInfoEnabled())
+    @Transactional
+	public void importModel(File biopaxFile) throws FileNotFoundException
+	{
+		if (log.isInfoEnabled())
+		{
 			log.info("Creating biopax model using: " + biopaxFile.getAbsolutePath());
-		
-		// convert file to model
-		Model model = reader.convertFromOWL(new FileInputStream(biopaxFile));
+		}
 
-		if(log.isInfoEnabled())
-			log.info("Model converted from OWL contains " + 
-					model.getObjects().size() + " objects.");
-		
-		// save model
-		importModel(model);
+		// convert file to model
+		reader.convertFromOWL(new FileInputStream(biopaxFile));
+
 	}
 
 	@Transactional
-	public void importModel(final Model model) {
+	public void importModel(final Model model)
+	{
 		merger.merge(this, model);
 		/*
 		Session session = session();
@@ -175,49 +192,58 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		}
 		*/
 	}
-	
+
 
 	@Transactional
-    public BioPAXElement getElement(final String id, final boolean eager,
-    		boolean forceDetach) 
-    {
+	public BioPAXElement getElement(final String id, final boolean eager,
+	                                boolean forceDetach)
+	{
 		BioPAXElement toReturn = null;
-		String namedQuery = (eager) 
-			? "org.biopax.paxtools.impl.elementByRdfIdEager"
-			: "org.biopax.paxtools.impl.elementByRdfId";
-		//Session session = session();
-		
-		StatelessSession session = getSessionFactory().openStatelessSession();
-		Transaction tx = session.beginTransaction();
-		try {
+		String namedQuery = (eager)
+		                    ? "org.biopax.paxtools.impl.elementByRdfIdEager"
+		                    : "org.biopax.paxtools.impl.elementByRdfId";
+		Session session = session();
+
+
+		try
+		{
 			toReturn = (BioPAXElement) session.getNamedQuery(namedQuery)
-				.setString("rdfid", id).uniqueResult();
-			tx.commit();
-		} catch (Exception e) {
-			log.error("getElement(" + id + ") failed. " + e);
-			tx.rollback();
+					.setString("rdfid", id).uniqueResult();
+
 		}
-		session.close();
+		catch (Exception e)
+		{
+			log.error("getElement(" + id + ") failed. " + e);
+
+		}
 		
+
 		return (toReturn != null && forceDetach) ? detach(toReturn) : toReturn;
 	}
-	
+
 
 	@Transactional
-    public <T extends BioPAXElement> Set<T> getElements(final Class<T> filterBy, 
-    		final boolean eager, final boolean forceDetach) 
-    {	
-    	String query = "from " + filterBy.getCanonicalName();
-		if(eager) query += " fetch all properties";
-		
+	public <T extends BioPAXElement> Set<T> getElements(final Class<T> filterBy,
+	                                                    final boolean eager,
+	                                                    final boolean forceDetach)
+	{
+		String query = "from " + filterBy.getCanonicalName();
+		if (eager)
+		{
+			query += " fetch all properties";
+		}
+
 		List<T> results = null;
 		results = session().createQuery(query).list();
-		
+
 		Set<T> toReturn = new HashSet<T>();
-		
-		if(forceDetach) {
+
+		if (forceDetach)
+		{
 			toReturn.addAll(detach(results));
-		} else {
+		}
+		else
+		{
 			toReturn.addAll(results);
 		}
 
@@ -232,22 +258,28 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 * - always search using the basic class
 	 * - apply org.biopax.paxtools.util.ClassFilterSet
 	 */
-    public <T extends BioPAXElement> List<T> search(String query, 
-    		Class<T> filterBy, boolean forceDetach) 
-    {
-		if(log.isInfoEnabled())
+
+	public <T extends BioPAXElement> List<T> search(String query,
+	                                                Class<T> filterBy, boolean forceDetach)
+	{
+		if (log.isInfoEnabled())
+		{
 			log.info("query: " + query + ", filterBy: " + filterBy);
+		}
 
 		// set to return
 		List<T> toReturn = new ArrayList<T>();
-		
-        // create native lucene query
+
+		// create native lucene query
 		MultiFieldQueryParser parser = new MultiFieldQueryParser(
 				Version.LUCENE_29, ALL_FIELDS, new StandardAnalyzer(Version.LUCENE_29));
 		org.apache.lucene.search.Query luceneQuery = null;
-		try {
+		try
+		{
 			luceneQuery = parser.parse(query);
-		} catch (ParseException e) {
+		}
+		catch (ParseException e)
+		{
 			log.info("parse exception: " + e.getMessage());
 			return toReturn;
 		}
@@ -257,36 +289,38 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterBy);
 		// execute search
 		List<T> results = hibQuery.list();
-		
-		return ((forceDetach && results.size()>0) ? detach(results) : results); 
+
+		return ((forceDetach && results.size() > 0) ? detach(results) : results);
 		// - experimental - forcing the "real detaching" by copying...
 	}
 
-    
+
 	/* (non-Javadoc)
-	 * @see org.biopax.paxtools.model.Model#add(org.biopax.paxtools.model.BioPAXElement)
-	 */
+		 * @see org.biopax.paxtools.model.Model#add(org.biopax.paxtools.model.BioPAXElement)
+		 */
+
 	@Override
 	@Transactional
-	public void add(BioPAXElement aBioPAXElement) {
+	public void add(BioPAXElement aBioPAXElement)
+	{
 		String rdfId = aBioPAXElement.getRDFId();
-        if(!level.hasElement(aBioPAXElement)) {
-            throw new IllegalBioPAXArgumentException(
-                "Given object is of wrong level");
-        } else if (rdfId == null) {
+		if (!level.hasElement(aBioPAXElement))
+		{
 			throw new IllegalBioPAXArgumentException(
-				"null ID: every object must have an RDF ID");
-		} else {
-			if(log.isDebugEnabled())
+					"Given object is of wrong level");
+		}
+		else if (rdfId == null)
+		{
+			throw new IllegalBioPAXArgumentException(
+					"null ID: every object must have an RDF ID");
+		}
+		else
+		{
+			if (log.isDebugEnabled())
+			{
 				log.debug("adding " + rdfId);
-			//session().save(aBioPAXElement); // was stateful
-			
-			
-			StatelessSession session = getSessionFactory().openStatelessSession();
-			Transaction tx = session.beginTransaction();
-			session.insert(aBioPAXElement);
-			tx.commit();
-			session.close();
+			}
+			session().save(aBioPAXElement);
 
 		}
 	}
@@ -295,8 +329,10 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	/* (non-Javadoc)
 	 * @see org.biopax.paxtools.model.Model#remove(org.biopax.paxtools.model.BioPAXElement)
 	 */
+
 	@Override
-	public void remove(BioPAXElement aBioPAXElement) {
+	public void remove(BioPAXElement aBioPAXElement)
+	{
 		/*
 		// may work only for elements that were previously detached, i.e., returned by getById, search, etc. methods
 		Session session = getSessionFactory().getCurrentSession();
@@ -305,18 +341,14 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 		// TODO compare to another approach - find persistent one by RDFId, delete it...
 		*/
 		BioPAXElement bpe = getByID(aBioPAXElement.getRDFId());
-		StatelessSession session = getSessionFactory().openStatelessSession();
-		session.beginTransaction();
-		session.delete(bpe);
-		session.getTransaction().commit();
-		session.close();
+		session().delete(bpe);
 	}
-
 
 
 	@Override
 	@Transactional
-	public <T extends BioPAXElement> T addNew(Class<T> type, String id) {
+	public <T extends BioPAXElement> T addNew(Class<T> type, String id)
+	{
 		T bpe = factory.reflectivelyCreate(type);
 		bpe.setRDFId(id);
 		add(bpe);
@@ -324,49 +356,49 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	}
 
 
-
 	@Override
 	@Transactional
-	public boolean contains(BioPAXElement bpe) {
-		return containsID(bpe.getRDFId()); 
+	public boolean contains(BioPAXElement bpe)
+	{
+		return containsID(bpe.getRDFId());
 	}
 
 
-
 	@Override
 	@Transactional
-	public boolean containsID(String id) {
+	public boolean containsID(String id)
+	{
 		return getByID(id) != null;
 	}
 
 
-
 	@Override
 	@Transactional
-	public BioPAXElement getByID(String id) {
+	public BioPAXElement getByID(String id)
+	{
 		return getElement(id, false, false);
 	}
 
 
-
 	@Override
-	public Map<String, BioPAXElement> getIdMap() {
+	public Map<String, BioPAXElement> getIdMap()
+	{
 		throw new UnsupportedOperationException(
 				"Discontinued method; use a combination of " +
 				"containsID(id), getById(id), getObjects() instead.");
 	}
 
 
-
 	@Override
-	public BioPAXLevel getLevel() {
+	public BioPAXLevel getLevel()
+	{
 		return level;
 	}
 
 
-
 	@Override
-	public Map<String, String> getNameSpacePrefixMap() {
+	public Map<String, String> getNameSpacePrefixMap()
+	{
 		return nameSpacePrefixMap;
 	}
 
@@ -375,117 +407,140 @@ public class PaxtoolsHibernateDAO  implements PaxtoolsDAO {
 	 * (non-Javadoc)
 	 * @see org.biopax.paxtools.model.Model#getObjects()
 	 */
+
 	@Override
-	public Set<BioPAXElement> getObjects() {
+	public Set<BioPAXElement> getObjects()
+	{
 		return Collections.unmodifiableSet(
 				getElements(BioPAXElement.class, true, false));
 	}
 
 
 	@Override
-	public <T extends BioPAXElement> Set<T> getObjects(Class<T> clazz) {
+	public <T extends BioPAXElement> Set<T> getObjects(Class<T> clazz)
+	{
 		return Collections.unmodifiableSet(getElements(clazz, true, false));
 	}
 
 
-
 	@Override
-	public boolean isAddDependencies() {
+	public boolean isAddDependencies()
+	{
 		return addDependencies;
 	}
 
 
-
 	@Override
-	public void setAddDependencies(boolean addDependencies) {
+	public void setAddDependencies(boolean addDependencies)
+	{
 		this.addDependencies = addDependencies;
 	}
 
 
-
 	@Override
-	public void setFactory(BioPAXFactory factory) {
-		if(factory.getLevel() == this.level) {
+	public void setFactory(BioPAXFactory factory)
+	{
+		if (factory.getLevel() == this.level)
+		{
 			this.factory = factory;
-		} else {
+		}
+		else
+		{
 			throw new IllegalAccessError("Cannot use this Biopax factory!");
 		}
 	}
 
 
-
 	@Override
 	@Transactional
-	public void updateID(String oldId, String newId) {
+	public void updateID(String oldId, String newId)
+	{
 		BioPAXElement bpe = getByID(oldId);
 		bpe.setRDFId(newId);
 		session().refresh(bpe); // TODO is refresh required?
 	}
-	
-	
+
+
 	// ------ private methods --------
-	
+
 	// gets current stateful session
-	private Session session() {
+
+	private Session session()
+	{
 		return getSessionFactory().getCurrentSession();
 	}
-	
-	
-    /**
-     * Returns a copy of the BioPAX element with all 
-     * its data properties set, but object properties -
-     * stubbed with corresponding elements having only RDFID 
-     * not empty.
-     * 
-     * TODO another method, such as detach(bpe, depth), may be also required
-     * 
-     * @param bpe
-     * @return
-     */
-	private BioPAXElement detach(BioPAXElement bpe) {
-		
-		if(bpe == null) return null;
-		
+
+
+	/**
+	 * Returns a copy of the BioPAX element with all its data properties set, but object properties -
+	 * stubbed with corresponding elements having only RDFID not empty.
+	 * <p/>
+	 * TODO another method, such as detach(bpe, depth), may be also required
+	 *
+	 * @param bpe
+	 * @return
+	 */
+	private BioPAXElement detach(BioPAXElement bpe)
+	{
+
+		if (bpe == null)
+		{
+			return null;
+		}
+
 		final BioPAXElement toReturn = BioPAXLevel.L3.getDefaultFactory()
-			.reflectivelyCreate(bpe.getModelInterface());
+				.reflectivelyCreate(bpe.getModelInterface());
 		toReturn.setRDFId(bpe.getRDFId());
 		AbstractTraverser traverser = new AbstractTraverser(
-				reader.getEditorMap(), 
-				new PropertyFilter() {
+				reader.getEditorMap(),
+				new PropertyFilter()
+				{
 					@Override
-					public boolean filter(PropertyEditor editor) {
+					public boolean filter(PropertyEditor editor)
+					{
 						return (!editor.getProperty().equals("nextStep"));
 					}
-				}) 
-		{	
+				})
+		{
 			@Override
 			protected void visit(Object value, BioPAXElement bpe, Model m,
-					PropertyEditor editor) 
+			                     PropertyEditor editor)
 			{
 				editor.setPropertyToBean(toReturn, value);
 			}
 		};
-		
+
 		traverser.traverse(bpe, null);
-		
+
 		return toReturn;
 	}
 
 	/**
 	 * Detaches a collection of BioPAX elements.
-	 * 
-	 * @see #detach(BioPAXElement)
-	 * 
-	 * @param <T> a BioPAX element subclass
+	 *
+	 * @param <T>      a BioPAX element subclass
 	 * @param elements collection or persistent elements
 	 * @return
+	 * @see #detach(BioPAXElement)
 	 */
-	private <T extends BioPAXElement> List<T> detach(Collection<T> elements) {
+	private <T extends BioPAXElement> List<T> detach(Collection<T> elements)
+	{
 		List<T> toReturn = new ArrayList<T>();
-		for(T el : elements) {
+		for (T el : elements)
+		{
 			toReturn.add((T) detach(el));
 		}
 		return toReturn;
 	}
+
+	private class internalFactory extends Level3FactoryImpl
+	{
+		@Override
+		public Model createModel()
+		{
+			return PaxtoolsHibernateDAO.this;
+		}
+	}
 }
+
 
