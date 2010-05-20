@@ -32,9 +32,11 @@ import cpath.dao.PaxtoolsDAO;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
+import org.bridgedb.DataSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.WebDataBinder;
@@ -52,62 +54,40 @@ public class WebserviceController {
 	private PaxtoolsDAO pcDAO;
 	private SimpleExporter exporter;
 
-    // TODO move Format definition outta here?..
-    public enum Format {
-    	BIOPAX,
-    	SIF,
-    	SBML,
-    	GSEA,
-    	GENESET,
-    	TSV,
-    	IMAGE,
-    	;
-    	
-    	public static Format parseFormat(String value) {
-    		for(Format v : Format.values()) {
-    			if(value.equalsIgnoreCase(v.toString())) {
-    				return v;
-    			}
-    		}
-    		return null;
-    	}
-    }
-    
-    // TODO move GraphType definition outta here?..
-    public enum GraphType {
-    	NEIGHBORHOOD("neighborhood"),
-    	COMMON_UPSTREAM("common upstream"),
-    	COMMON_DOWNSTREAM("common downstream"),
-    	COMMON_TARGET("common target"),
-    	NETWORK_OF_INTEREST("network of interest"),
-    	K_SHORTEST_PATH("k-shortest path"),
-    	;
-    	
-    	private String value;
-
-		private GraphType(String value) {
-			this.value = value;
-		}
-		
-		@Override
-		public String toString() {
-			return value;
-		}
-		
-    	public static GraphType parseGraphType(String value) {
-    		for(GraphType v : GraphType.values()) {
-    			if(value.equalsIgnoreCase(v.toString())) {
-    				return v;
-    			}
-    		}
-    		return null;
-    	}
-    }
-
     
     @PostConstruct
     void init() {
+    	// re-build Lucene index (TODO is this required?)
     	pcDAO.createIndex();
+    	
+    	/* TODO consider moving the following to Warehouse altogether 
+    	 * - create BioDataTypes class with the only static method;
+    	 * - init() would register with org.bridgedb.DataSource all the 
+    	 * data sources found in Warehouse's Metadata, MIRIAM, 
+    	 * plus - custom data types (cpath1 legacy, e.g., CELL_MAP);
+    	 */
+    	
+    	// TODO register all the data providers (from Warehouse's Metadata)
+    	
+    	// register all MIRIAM data types in BridgeDB's DataSource
+    	for(String name : MiriamLink.getDataTypesName()) {
+    		// register all synonyms (incl. the name)
+    		for(String s : MiriamLink.getNames(name)) {
+    			DataSource.register(s, name)
+    			  .urnBase(MiriamLink.getDataTypeURI(name));
+    		}
+    	}
+    	
+    	// manually register legacy (cpath) data source names
+    	DataSource.register("BIOGRID", "BioGRID");
+    	DataSource.register("CELL_MAP", "Cancer Cell Map"); // add to Miriam
+    	DataSource.register("HPRD", "HPRD"); // add to Miriam
+    	DataSource.register("HUMANCYC", "HumanCyc");
+    	DataSource.register("IMID", "IMID");
+    	DataSource.register("INTACT", "IntAct");
+    	DataSource.register("MINT", "MINT");
+    	DataSource.register("NCI_NATURE", "NCI / Nature Pathway Interaction Database");
+    	DataSource.register("REACTOME", "Reactome");
     }
     
 
@@ -126,9 +106,10 @@ public class WebserviceController {
 	 */
 	@InitBinder
     public void initBinder(WebDataBinder binder) {
-        binder.registerCustomEditor(Format.class, new FormatEditor());
+        binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
+        binder.registerCustomEditor(DataSource.class, new DataSourceEditor());
     }
 	
 	
@@ -141,7 +122,7 @@ public class WebserviceController {
     @ResponseBody
     public String getFormats() {
     	StringBuffer toReturn = new StringBuffer();
-    	for(Format f : Format.values()) {
+    	for(OutputFormat f : OutputFormat.values()) {
     		toReturn.append(f.toString().toLowerCase()).append(newline);
     	}
     	return toReturn.toString();
@@ -201,13 +182,13 @@ public class WebserviceController {
     @ResponseBody
     public String elementById(@RequestParam("uri") String uri) {
     	if(log.isInfoEnabled()) log.info("POST Query /elements");
-    	return elementById(Format.BIOPAX, uri);
+    	return elementById(OutputFormat.BIOPAX, uri);
     }
 
     
     @RequestMapping(value="/format/{format}/elements")
     @ResponseBody
-    public String elementById(@PathVariable("format") Format format, 
+    public String elementById(@PathVariable("format") OutputFormat format, 
     		@RequestParam("uri") String uri) 
     {
     	BioPAXElement element = pcDAO.getElement(uri, true, true); 

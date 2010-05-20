@@ -28,22 +28,43 @@
 package cpath.webservice;
 
 import java.beans.PropertyEditorSupport;
+import java.net.URI;
 
-import cpath.webservice.WebserviceController.Format;
+import org.bridgedb.DataSource;
 
 
 /**
+ * Converts a string parameter to org.bridgedb.DataSource
+ * 
  * @author rodche
  *
  */
-public class FormatEditor extends PropertyEditorSupport {
+public class DataSourceEditor extends PropertyEditorSupport {
 	
 	/* (non-Javadoc)
 	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
 	 */
 	@Override
-	public void setAsText(String arg0) throws IllegalArgumentException {
-		setValue(Format.parseFormat(arg0));
+	public void setAsText(String ds) throws IllegalArgumentException {
+		// guess it's a key (data source code)
+		DataSource dataSource = DataSource.getBySystemCode(ds);
+		
+		if(dataSource == null) { // is full name?
+			dataSource = DataSource.getByFullName(ds);
+		}	
+		
+		if(dataSource == null) { // is URN?
+			for(DataSource d : DataSource.getDataSources()) {
+				URI u1 = URI.create(ds);
+				URI u2 = URI.create(d.getURN(""));
+				if(u1.equals(u2)) {
+					dataSource = d;
+					break;
+				}
+			}
+		}
+		
+		setValue(dataSource);
 	}
 	
 }

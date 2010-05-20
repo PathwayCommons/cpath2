@@ -18,8 +18,7 @@ public class CPathSquaredWebserviceTest {
 	
 	static RestTemplate template;
 	//static final String CPATH2_SERVICE_URL = "http://www.pathwaycommons.org/webservice";
-	static final String CPATH2_SERVICE_URL = "http://localhost:8080/cpath-web-service"; // Temp.
-	static final String CPATH_SERVICE_URL = "http://www.pathwaycommons.org/pc/webservice.do";
+	static final String CPATH2_SERVICE_URL = "http://localhost:8080/cpath-web-service"; // Temp.	
 	
 	static {
 		template = new RestTemplate();
