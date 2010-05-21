@@ -36,7 +36,6 @@ import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.util.Version;
 import org.biopax.paxtools.impl.level3.Level3FactoryImpl;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.Level3Factory;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.BioPAXIOHandler;
@@ -176,6 +175,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public void importModel(final Model model)
 	{
 		merger.merge(this, model);
+		
 		/*
 		Session session = session();
 		int i = 0;
@@ -335,9 +335,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	{
 		/*
 		// may work only for elements that were previously detached, i.e., returned by getById, search, etc. methods
-		Session session = getSessionFactory().getCurrentSession();
-		session.update(aBioPAXElement); // re-associate - make persistent
-		session.delete(aBioPAXElement); 
+		session().update(aBioPAXElement); // re-associate - make persistent
+		session().delete(aBioPAXElement); 
 		// TODO compare to another approach - find persistent one by RDFId, delete it...
 		*/
 		BioPAXElement bpe = getByID(aBioPAXElement.getRDFId());

@@ -128,7 +128,7 @@ public class IdNormalizerTest {
 		IdNormalizer idNormalizer = new IdNormalizer();
 		String xml = idNormalizer.normalize(out.toString());
 		
-		System.out.println(xml);
+		//System.out.println(xml);
 		
 		// check
 		model = simpleReader.convertFromOWL(new ByteArrayInputStream(xml.getBytes()));
@@ -167,7 +167,7 @@ public class IdNormalizerTest {
 		Model m = simpleReader.convertFromOWL(getClass()
 				.getResourceAsStream("/biopax-level3-test.owl"));
 		String xml = idNormalizer.normalize(m);
-		System.out.println(xml);	
+		//System.out.println(xml);	
 		// check the result
 		Model model = simpleReader.convertFromOWL(new ByteArrayInputStream(xml.getBytes()));
 	}
