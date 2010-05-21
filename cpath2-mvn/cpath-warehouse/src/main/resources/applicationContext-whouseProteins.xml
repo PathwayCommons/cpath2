@@ -30,6 +30,14 @@
 			<prop key="hibernate.cache.provider_class">org.hibernate.cache.NoCacheProvider</prop>
 			<prop key="hibernate.search.default.directory_provider">org.hibernate.search.store.FSDirectoryProvider</prop>
 			<prop key="hibernate.search.default.indexBase">${lucene.index-path.proteins}</prop>
+			<!-- 
+			<prop key="hibernate.c3p0.max_size">${c3p0.max_size}</prop>
+			<prop key="hibernate.c3p0.min_size">${c3p0.min_size}</prop>
+			<prop key="hibernate.c3p0.timeout">${c3p0.timeout}</prop>
+			<prop key="hibernate.c3p0.max_statements">${c3p0.max_statements}</prop>
+			<prop key="hibernate.c3p0.idle_test_period">${c3p0.idle_test_period}</prop>
+			<prop key="hibernate.c3p0.acquire_increment">${c3p0.acquire_increment}</prop>
+			-->
 		  </props>
         </property>
         <property name="configurationClass" value="org.hibernate.cfg.AnnotationConfiguration"/>

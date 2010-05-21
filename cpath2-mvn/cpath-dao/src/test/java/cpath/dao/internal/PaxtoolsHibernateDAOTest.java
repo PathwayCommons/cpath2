@@ -108,14 +108,14 @@ public class PaxtoolsHibernateDAOTest {
 	
 	
 	@Test
+	@Transactional
+	//@Rollback(false)
 	public void testSimple() throws Exception {
 		assertTrue(((Model)paxtoolsDAO).getNameSpacePrefixMap()
 				.containsValue("http://pathwaycommons.org#"));
 		
 		log.info("Testing importModel(file)...");
-		File biopaxFile = new File(getClass()
-				//.getResource("/biopax-level3-test.owl.xml").getFile());
-				.getResource("/test.owl").getFile());
+		File biopaxFile = new File(getClass().getResource("/test.owl").getFile());
 		paxtoolsDAO.importModel(biopaxFile);
 		
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
@@ -126,7 +126,7 @@ public class PaxtoolsHibernateDAOTest {
 	
 	
 	//@Test
-	//@Transactional
+	@Transactional
 	//@Rollback(false)
 	public void testRun() throws Exception {
 		assertTrue(((Model)paxtoolsDAO).getNameSpacePrefixMap()

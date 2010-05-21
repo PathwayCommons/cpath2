@@ -77,7 +77,7 @@ public class ChEBIConverterImplTest {
 		assertTrue(relationshipXrefCount == 12);
 
 		// dump owl out to stdout for review
-		System.out.println("ChEBI BioPAX: ");
-		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
+		//System.out.println("ChEBI BioPAX: ");
+		//(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
 	}
 }

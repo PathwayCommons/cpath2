@@ -34,7 +34,8 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Set;
 
-//import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.impl.level3.RelationshipXrefImpl;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ProteinReference;
@@ -68,7 +69,7 @@ public class UniprotConverterImplTest {
 	 * @throws IOException 
 	 */
 	@Test
-	@Transactional
+	//@Transactional
 	//@Rollback(false)
 	public void testConvert() throws IOException {
 		Converter converter = new UniprotConverterImpl();
@@ -80,11 +81,13 @@ public class UniprotConverterImplTest {
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
 		
 		//(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
-		proteinsDAO.importModel(model);
 		
-		List<RelationshipXref> returnClasses = proteinsDAO
-			.search("entrez gene", RelationshipXref.class, false);
-		assertTrue(returnClasses.size()==4);
+		proteinsDAO.importModel(model);
+		//proteinsDAO.createIndex(); // causes too many connections error?..
+		
+		List<? extends RelationshipXref> returnClasses = proteinsDAO
+			.search("entrez", RelationshipXrefImpl.class, false);
+		assertFalse(returnClasses.isEmpty());
 	}
 
 }

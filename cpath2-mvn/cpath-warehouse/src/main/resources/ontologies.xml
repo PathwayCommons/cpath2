@@ -25,8 +25,8 @@
    	<cvSource source="file" uri="http://psidev.sourceforge.net/mod/data/PSI-MOD.obo"
               format="OBO" name="Protein Modification Ontology" identifier="MOD"/>
              
-    <!-- chebi.obo has error or incompatibility with OntologyManager's OBOEdit lib. It works when onle line that causes the issue is manually edited; so now waiting for CHEBI to fix or confirm...
-    <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/chemical/chebi.obo"
+    <!-- 
+    <cvSource source="file" uri="ftp://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi.obo"
               format="OBO" name="ChEBI" identifier="ChEBI"/>   
     -->
 </cvSourceList>

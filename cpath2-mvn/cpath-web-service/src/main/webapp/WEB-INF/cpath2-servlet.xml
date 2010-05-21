@@ -26,11 +26,7 @@
 		</list>
 	  </property>
 	</bean>
-    
-    <!-- 
-    <context:component-scan base-package="cpath.webservice"/>
-    -->
-    
+       
     <!-- this is temporary - for test forms -->
     <bean id="viewResolver"
 		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
