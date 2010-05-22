@@ -29,9 +29,14 @@
 package cpath.dao.internal;
 
 // imports
+import org.biopax.paxtools.impl.BioPAXElementImpl;
+import org.biopax.paxtools.impl.level3.XrefImpl;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -64,6 +69,9 @@ public class PaxtoolsHibernateDAOTest {
 
     @Autowired
     PaxtoolsDAO paxtoolsDAO;
+    
+    @Autowired
+    SessionFactory sessionFactory;
 
 	//
 	// used to test getByID
@@ -107,8 +115,10 @@ public class PaxtoolsHibernateDAOTest {
 
 	
 	
+	
 	@Test
-	@Transactional
+	// TODO: why it passes only with @Transactional annotation and paxtoolsDAO.search disabled..?
+	@Transactional 
 	//@Rollback(false)
 	public void testSimple() throws Exception {
 		assertTrue(((Model)paxtoolsDAO).getNameSpacePrefixMap()
@@ -117,16 +127,27 @@ public class PaxtoolsHibernateDAOTest {
 		log.info("Testing importModel(file)...");
 		File biopaxFile = new File(getClass().getResource("/test.owl").getFile());
 		paxtoolsDAO.importModel(biopaxFile);
+		log.info("importModel(file) done!");
 		
+		BioPAXElement e = paxtoolsDAO.getElement(
+				"http://www.biopax.org/examples/myExample#Protein_A", false);
+		assertNotNull(e);
+		assertTrue(e instanceof Protein);
+	
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
 		BioPAXElement bpe = paxtoolsDAO
 			.getByID("http://www.biopax.org/examples/myExample#Protein_A");
+		assertNotNull(bpe);
 		assertTrue(bpe instanceof Protein);
+
+		// search
+		//List<? extends BioPAXElement> elist = paxtoolsDAO.search("P46880", BioPAXElement.class);
+		//assertFalse(elist.isEmpty());
 	}
 	
 	
 	//@Test
-	@Transactional
+	//@Transactional
 	//@Rollback(false)
 	public void testRun() throws Exception {
 		assertTrue(((Model)paxtoolsDAO).getNameSpacePrefixMap()
@@ -136,6 +157,7 @@ public class PaxtoolsHibernateDAOTest {
 		File biopaxFile = new File(getClass()
 				.getResource("/biopax-level3-test.owl.xml").getFile());
 		paxtoolsDAO.importModel(biopaxFile);
+		log.info("importModel(file) done!");
 		
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
 		BioPAXElement bpe = paxtoolsDAO
@@ -145,7 +167,7 @@ public class PaxtoolsHibernateDAOTest {
 		 // again, but now get element detached
 		log.info("Testing call to paxtoolsDAO.getElement(..) detached");
 		bpe = paxtoolsDAO.getElement("http://www.biopax.org/examples/myExample#Pathway50",
-				false, true);
+				false);
 		assertTrue(bpe instanceof Pathway);
 		
 		Set<String> pathwayNames = ((Pathway)bpe).getName();
@@ -158,7 +180,7 @@ public class PaxtoolsHibernateDAOTest {
 
 		// verify a call to getObjects(Class<T> filterBy)
 		log.info("Testing call to paxtoolsDAO.getElements()...");
-		Set<Protein> proteins = paxtoolsDAO.getElements(Protein.class, false, false);
+		Set<Protein> proteins = paxtoolsDAO.getElements(Protein.class, false);
 		assertTrue(proteins != null && proteins.size() == PROTEIN_TEST_VALUES.size());
 		
 		int lc = 0;
@@ -175,38 +197,34 @@ public class PaxtoolsHibernateDAOTest {
 		log.info("paxtoolsDAO.getElements() succeeded!");
 
 		// verify a call to getByQueryString - filter by BioPAXElementProxy
-		log.info("Testing first call to paxtoolsDAO.getByQueryString()...");
+		log.info("First try - paxtoolsDAO.search(..)");
 		List<Level3Element> returnClasses = paxtoolsDAO
-			.search(GET_BY_QUERY_TEST_VALUE, Level3Element.class, false);
+			.search(GET_BY_QUERY_TEST_VALUE, Level3Element.class);
 		Set<Class<? extends BioPAXElement>> uniqueClasses = new HashSet<Class<? extends BioPAXElement>>();
 		for (BioPAXElement returnClass : returnClasses) {
 			uniqueClasses.add(returnClass.getModelInterface());
 			System.out.println(returnClass.toString() + " is " + 
 					returnClass.getModelInterface().getSimpleName());
 		}
-		
 		assertEquals(GET_BY_QUERY_RETURN_CLASSES.size(), uniqueClasses.size());
-		
 		for (Class<? extends BioPAXElement> returnClass : uniqueClasses) {
 			assertTrue(GET_BY_QUERY_RETURN_CLASSES.contains(returnClass));
 		}
-		log.info("paxtoolsDAO.getByQueryString() first call succeeded!");
+		log.info("The first search call succeeded!");
 		
-		log.info("Testing second call to paxtoolsDAO.getByQueryString()...");
-		// verify a call to getByQueryString - filter by GET_BY_QUERY_RETURN_TEST_CLASS
-		returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, GET_BY_QUERY_RETURN_TEST_CLASS, false);
-		
+		log.info("Second try - paxtoolsDAO.search(..)");
+		returnClasses = paxtoolsDAO.search(GET_BY_QUERY_TEST_VALUE, GET_BY_QUERY_RETURN_TEST_CLASS);
 		assertEquals(returnClasses.size(), 1);
 		
 		for (BioPAXElement returnClass : returnClasses) {
 			assertTrue(returnClass.getClass() == GET_BY_QUERY_RETURN_TEST_CLASS);
 		}
-		log.info("paxtoolsDAO.getByQueryString() second call succeeded!");
+		log.info("The second search succeeded!");
 		
 		
 		// verify object property is set
 		SmallMoleculeReference smr = (SmallMoleculeReference) paxtoolsDAO
-			.getElement("http://www.biopax.org/examples/myExample#SmallMoleculeReference_10", false, false);
+			.getElement("http://www.biopax.org/examples/myExample#SmallMoleculeReference_10", false);
 		Set<Xref> xs = smr.getXref();
 		assertFalse(xs.isEmpty());
 		assertTrue(xs.size()==1);

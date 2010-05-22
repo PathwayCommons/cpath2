@@ -33,6 +33,7 @@ import cpath.dao.PaxtoolsDAO;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.miriam.MiriamLink;
+import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
@@ -166,7 +167,7 @@ public class WebserviceController {
     	/* getObjects with eager=false, statless=false is ok for RDFIds only...
     	 * - no need to detach elements from the DAA session
     	 */
-    	Set<? extends BioPAXElement> results = pcDAO.getElements(type, false, false); 
+    	Set<? extends BioPAXElement> results = pcDAO.getElements(type, false); 
     	for(BioPAXElement e : results)
     	{
     		toReturn.append(e.getRDFId()).append(newline);
@@ -191,11 +192,9 @@ public class WebserviceController {
     public String elementById(@PathVariable("format") OutputFormat format, 
     		@RequestParam("uri") String uri) 
     {
-    	BioPAXElement element = pcDAO.getElement(uri, true, true); 
-    	/* - checked if eager=true (the first boolean) works regardless of 'stateless' (the second arg.)...
-    	 * Answer: no (toOWL(element) fails with "...no session or session was closed")
-    	 * So, we do need to use force detach (stateless=true)
-    	 */
+    	BioPAXElement element = pcDAO.getElement(uri, true); 
+    	element = pcDAO.detach(element);
+
 		if(log.isInfoEnabled()) log.info("Query - format:" + format + 
 				", urn:" + uri + ", returned:" + element);
 
@@ -215,14 +214,15 @@ public class WebserviceController {
 
     @RequestMapping(value="/types/{type}/find/{query}")
     @ResponseBody
-    public String fulltextSearchForType(@PathVariable("type") Class<? extends BioPAXElement> type, 
-    		@PathVariable("query") String query) {	
-    	
+    public String fulltextSearchForType(
+    		@PathVariable("type") Class<? extends BioPAXElement> type, 
+    		@PathVariable("query") String query) 
+    {		
     	if(log.isInfoEnabled()) log.info("Fulltext Search for type:" 
 				+ type.getCanonicalName() + ", query:" + query);
     	
     	// do search
-		List<BioPAXElement> results = (List<BioPAXElement>) pcDAO.search(query, type, false);
+		List<BioPAXElement> results = (List<BioPAXElement>) pcDAO.search(query, type);
 		StringBuffer toReturn = new StringBuffer();
 		for(BioPAXElement e : results) {
 			toReturn.append(e.getRDFId()).append(newline);

@@ -30,6 +30,8 @@ package cpath.dao;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -73,24 +75,21 @@ public interface PaxtoolsDAO extends Model {
      * in this model.
 	 *
      * @param id of the object to be retrieved.
-	 * @param eager boolean indicating eager (as opposed to lazy) fetching
-	 * @param forceDetach
-     * @return BioPAXElement
+     * @param eager boolean indicating eager (as opposed to lazy) fetching
+	 * @return BioPAXElement
      */
-    BioPAXElement getElement(String id, boolean eager, boolean forceDetach);
+    BioPAXElement getElement(String id, boolean eager);
 
-
-   
+    
     /**
      * This method returns a set of objects in the model of the given class.
      * Contents of this set should not be modified.
 	 *
      * @param filterBy class to be used as a filter.
-	 * @param eager boolean indicating eager (as opposed to lazy) fetching
-	 * @param forceDetach
-     * @return an unmodifiable set of objects of the given class.
+     * @param eager boolean indicating eager (as opposed to lazy) fetching
+	 * @return an unmodifiable set of objects of the given class.
      */
-    <T extends BioPAXElement> Set<T> getElements(Class<T> filterBy, boolean eager, boolean forceDetach);
+    <T extends BioPAXElement> Set<T> getElements(Class<T> filterBy, boolean eager);
 
 
 	 /**
@@ -98,9 +97,22 @@ public interface PaxtoolsDAO extends Model {
 	 * of the given class in the model that match the query string.
 	 * 
      * @param query String
-     * @param filterBy class to be used as a filter.
+	 * @param filterBy class to be used as a filter.
      * @return ordered by relevance list of elements
      */
-    <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy, boolean forceDetach);
+    <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy);
+
+    
+	/**
+	 * Returns a transient copy of the persistent or detached BioPAX element 
+	 * with all its data properties set, but object properties -
+	 * stubbed with corresponding elements having only RDFID not empty.
+	 * <p/>
+	 * TODO another method, such as detach(bpe, depth), may be also required
+	 *
+	 * @param bpe
+	 * @return
+	 */
+	BioPAXElement detach(BioPAXElement bpe);
        
 }

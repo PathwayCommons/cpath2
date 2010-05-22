@@ -49,7 +49,7 @@ public class ProviderProteinDataServiceImplTest {
 		proteinsDAO.importModel(m);
 		
 		List<RelationshipXref> returnClasses = proteinsDAO
-			.search("ngnc", RelationshipXref.class, false);
+			.search("ngnc", RelationshipXref.class);
 	}
 
 }
