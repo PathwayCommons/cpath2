@@ -77,7 +77,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	private final Map<String, String> nameSpacePrefixMap;
 	private final BioPAXLevel level;
 	private BioPAXFactory factory;
-	private BottomUpMerger merger;
+	private SimpleMerger merger;
 	private BioPAXIOHandler reader;
 	private SimpleExporter exporter;
 	private boolean addDependencies = false;
@@ -89,20 +89,21 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		this.nameSpacePrefixMap = new HashMap<String, String>();
 		nameSpacePrefixMap.put("", "http://pathwaycommons.org#");
 		// set default Biopax reader, exporter, and merger
-		reader = new SimpleReader(new internalFactory(),BioPAXLevel.L3);
+		//reader = new SimpleReader(new internalFactory(),BioPAXLevel.L3); //reads directly into DB but does not merge so far...
+		reader = new SimpleReader(BioPAXLevel.L3);
 		exporter = new SimpleExporter(level);
-		merger = new BottomUpMerger(reader.getEditorMap());
+		merger = new SimpleMerger(reader.getEditorMap());
 	}
 
 	/**
 	 * @param simpleMerger the simpleMerger to set
 	 */
-	public void setMerger(BottomUpMerger simpleMerger)
+	public void setMerger(SimpleMerger simpleMerger)
 	{
 		this.merger = simpleMerger;
 	}
 
-	public BottomUpMerger getMerger()
+	public SimpleMerger getMerger()
 	{
 		return merger;
 	}
@@ -139,12 +140,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		this.reader = reader;
 	}
 
-	/* (non-Javadoc)
-		 * @see cpath.dao.PaxtoolsDAO#createIndex()
-		 */
 
 	@Override
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional(propagation=Propagation.REQUIRED)
 	public void createIndex()
 	{
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
@@ -158,7 +156,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 	}
 
-    @Transactional
+
+	@Transactional(propagation=Propagation.REQUIRED)
 	public void importModel(File biopaxFile) throws FileNotFoundException
 	{
 		if (log.isInfoEnabled())
@@ -167,15 +166,17 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 
 		// convert file to model
-		reader.convertFromOWL(new FileInputStream(biopaxFile));
+		Model m = reader.convertFromOWL(new FileInputStream(biopaxFile));
+		importModel(m);
 
 	}
 
-	@Transactional
+    
+	@Transactional(propagation=Propagation.REQUIRED)
 	public void importModel(final Model model)
 	{
 		merger.merge(this, model);
-		
+
 		/*
 		Session session = session();
 		int i = 0;
@@ -194,38 +195,34 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 
 
-	@Transactional
-	public BioPAXElement getElement(final String id, final boolean eager,
-	                                boolean forceDetach)
+	@Transactional(propagation=Propagation.REQUIRED)
+	public BioPAXElement getElement(final String id, final boolean eager)
 	{
 		BioPAXElement toReturn = null;
 		String namedQuery = (eager)
-		                    ? "org.biopax.paxtools.impl.elementByRdfIdEager"
-		                    : "org.biopax.paxtools.impl.elementByRdfId";
-		Session session = session();
-
+			? "org.biopax.paxtools.impl.elementByRdfIdEager"
+					: "org.biopax.paxtools.impl.elementByRdfId";
 
 		try
 		{
-			toReturn = (BioPAXElement) session.getNamedQuery(namedQuery)
+			toReturn = (BioPAXElement) session().getNamedQuery(namedQuery)
 					.setString("rdfid", id).uniqueResult();
 
 		}
 		catch (Exception e)
 		{
-			log.error("getElement(" + id + ") failed. " + e);
+			log.error("getElement(" + id + ") failed. ", e);
 
 		}
 		
 
-		return (toReturn != null && forceDetach) ? detach(toReturn) : toReturn;
+		return toReturn;
 	}
 
 
-	@Transactional
+	@Transactional(propagation=Propagation.REQUIRED)
 	public <T extends BioPAXElement> Set<T> getElements(final Class<T> filterBy,
-	                                                    final boolean eager,
-	                                                    final boolean forceDetach)
+	                                                    final boolean eager)
 	{
 		String query = "from " + filterBy.getCanonicalName();
 		if (eager)
@@ -235,38 +232,33 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 		List<T> results = null;
 		results = session().createQuery(query).list();
-
 		Set<T> toReturn = new HashSet<T>();
-
-		if (forceDetach)
-		{
-			toReturn.addAll(detach(results));
-		}
-		else
-		{
-			toReturn.addAll(results);
-		}
+		toReturn.addAll(results);
 
 		return toReturn;
 	}
 
 
 	/*
-	 * TODO 'filterBy' to be a BioPAX interface, not a concrete class.
-	 * Currently, search expects concrete annotated BioPAX classes only;
-	 * this, probably, has to change as follows:
-	 * - always search using the basic class
-	 * - apply org.biopax.paxtools.util.ClassFilterSet
-	 */
-
-	public <T extends BioPAXElement> List<T> search(String query,
-	                                                Class<T> filterBy, boolean forceDetach)
+	 * TODO 'filterBy' to be a BioPAX interface, not a concrete class...
+	 */ 
+	@Transactional(propagation=Propagation.REQUIRED)
+	public <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy)
 	{
 		if (log.isInfoEnabled())
 		{
 			log.info("query: " + query + ", filterBy: " + filterBy);
 		}
 
+		// must be a BioPAX interface!
+		if(filterBy.isInterface()) {
+			// convert the interface into the model class (persistent annotated)
+			filterBy = (Class<T>) factory.reflectivelyCreate(filterBy).getClass();
+		} else {
+			throw new IllegalArgumentException("Expected a BioPAX model interface, " +
+					"not the implementing class: " + filterBy.getCanonicalName());
+		}
+			
 		// set to return
 		List<T> toReturn = new ArrayList<T>();
 
@@ -290,8 +282,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		// execute search
 		List<T> results = hibQuery.list();
 
-		return ((forceDetach && results.size() > 0) ? detach(results) : results);
-		// - experimental - forcing the "real detaching" by copying...
+		return results;
 	}
 
 
@@ -300,7 +291,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		 */
 
 	@Override
-	@Transactional
+	@Transactional(propagation=Propagation.REQUIRED)
 	public void add(BioPAXElement aBioPAXElement)
 	{
 		String rdfId = aBioPAXElement.getRDFId();
@@ -331,6 +322,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 */
 
 	@Override
+	@Transactional(propagation=Propagation.MANDATORY)
 	public void remove(BioPAXElement aBioPAXElement)
 	{
 		/*
@@ -345,7 +337,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	@Override
-	@Transactional
+	@Transactional(propagation=Propagation.REQUIRED)
 	public <T extends BioPAXElement> T addNew(Class<T> type, String id)
 	{
 		T bpe = factory.reflectivelyCreate(type);
@@ -356,15 +348,15 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	@Override
-	@Transactional
+	@Transactional(propagation=Propagation.REQUIRED)
 	public boolean contains(BioPAXElement bpe)
 	{
-		return containsID(bpe.getRDFId());
+		return getByID(bpe.getRDFId()) != null;
 	}
 
 
 	@Override
-	@Transactional
+	@Transactional(propagation=Propagation.REQUIRED)
 	public boolean containsID(String id)
 	{
 		return getByID(id) != null;
@@ -372,10 +364,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	@Override
-	@Transactional
+	@Transactional(readOnly=true, propagation=Propagation.REQUIRED)
 	public BioPAXElement getByID(String id)
 	{
-		return getElement(id, false, false);
+		return getElement(id, false);
 	}
 
 
@@ -408,17 +400,19 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 */
 
 	@Override
+	@Transactional(propagation=Propagation.REQUIRED)
 	public Set<BioPAXElement> getObjects()
 	{
 		return Collections.unmodifiableSet(
-				getElements(BioPAXElement.class, true, false));
+				getElements(BioPAXElement.class, true));
 	}
 
 
 	@Override
+	@Transactional(propagation=Propagation.REQUIRED)
 	public <T extends BioPAXElement> Set<T> getObjects(Class<T> clazz)
 	{
-		return Collections.unmodifiableSet(getElements(clazz, true, false));
+		return Collections.unmodifiableSet(getElements(clazz, true));
 	}
 
 
@@ -451,7 +445,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	@Override
-	@Transactional
+	@Transactional(propagation=Propagation.MANDATORY)
 	public void updateID(String oldId, String newId)
 	{
 		BioPAXElement bpe = getByID(oldId);
@@ -471,7 +465,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	/**
-	 * Returns a copy of the BioPAX element with all its data properties set, but object properties -
+	 * Returns a transient copy of the persistent or detached BioPAX element 
+	 * with all its data properties set, but object properties -
 	 * stubbed with corresponding elements having only RDFID not empty.
 	 * <p/>
 	 * TODO another method, such as detach(bpe, depth), may be also required
@@ -479,14 +474,18 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * @param bpe
 	 * @return
 	 */
-	private BioPAXElement detach(BioPAXElement bpe)
+	@Transactional(propagation=Propagation.REQUIRED)
+	public BioPAXElement detach(BioPAXElement bpe)
 	{
-
 		if (bpe == null)
 		{
 			return null;
 		}
+		
+		// re-assosiate with the session
+		session().update(bpe);
 
+		// create a transient object
 		final BioPAXElement toReturn = BioPAXLevel.L3.getDefaultFactory()
 				.reflectivelyCreate(bpe.getModelInterface());
 		toReturn.setRDFId(bpe.getRDFId());
@@ -532,6 +531,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		return toReturn;
 	}
 
+	
 	private class internalFactory extends Level3FactoryImpl
 	{
 		@Override

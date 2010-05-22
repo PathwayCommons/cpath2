@@ -43,9 +43,9 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
 	public <T extends UtilityClass> T getObject(String primaryUrn,
 			Class<T> utilityClazz) {
 		if(SmallMoleculeReference.class.isAssignableFrom(utilityClazz)) {
-			return (T) moleculesDAO.getElement(primaryUrn, true, true);
+			return (T) moleculesDAO.getElement(primaryUrn, true);
 		} else if(ProteinReference.class.isAssignableFrom(utilityClazz)) {
-			return (T) proteinsDAO.getElement(primaryUrn, true, true);
+			return (T) proteinsDAO.getElement(primaryUrn, true);
 		} else if(ControlledVocabulary.class.isAssignableFrom(utilityClazz)) {
 			// TODO create proper CV
 		}

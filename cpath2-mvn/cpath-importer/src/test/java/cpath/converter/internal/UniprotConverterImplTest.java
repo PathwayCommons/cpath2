@@ -86,7 +86,7 @@ public class UniprotConverterImplTest {
 		//proteinsDAO.createIndex(); // causes too many connections error?..
 		
 		List<? extends RelationshipXref> returnClasses = proteinsDAO
-			.search("entrez", RelationshipXrefImpl.class, false);
+			.search("entrez", RelationshipXrefImpl.class);
 		assertFalse(returnClasses.isEmpty());
 	}
 

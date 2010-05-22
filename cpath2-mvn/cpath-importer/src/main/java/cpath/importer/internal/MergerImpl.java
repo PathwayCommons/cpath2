@@ -167,7 +167,7 @@ public final class MergerImpl implements Merger {
 		// create a model, grab all elements from db and add to model
 		Model toReturn = BioPAXLevel.L3.getDefaultFactory().createModel();
 		
-		Set<BioPAXElement> allElements = mergePaxtoolsDAO.getElements(BioPAXElement.class, true, true);
+		Set<BioPAXElement> allElements = mergePaxtoolsDAO.getElements(BioPAXElement.class, true);
 		for (BioPAXElement bpe : allElements) {
 			toReturn.add(bpe);
 		}
