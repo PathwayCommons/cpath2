@@ -1,6 +1,7 @@
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.*;
 
 import org.junit.Before;
@@ -13,7 +14,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-@Ignore
+//@Ignore
 public class CPathSquaredWebserviceTest {
 	
 	static RestTemplate template;
@@ -79,6 +80,21 @@ public class CPathSquaredWebserviceTest {
 				map, String.class);
 		assertNotNull(result);
 		System.out.println(result);
+	}
+	
+	
+	
+	/*============ TEST THE WEB SERVICES BACKWARD COMPARTIBILITY ============*/
+	
+	
+	@Test 
+	public void testGetNeighbors() throws IOException {
+		CPathWebserviceTest test = new CPathWebserviceTest();
+		test.testGetNeighbors(); // should pass unless the older web service is dead
+		
+		// test the new web service that is to support the old one
+		test.setServiceUrl(CPATH2_SERVICE_URL);
+		test.testGetNeighbors(); // aha?!
 	}
 	
 }
