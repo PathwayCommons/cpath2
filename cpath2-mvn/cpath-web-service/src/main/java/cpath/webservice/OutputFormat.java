@@ -5,7 +5,7 @@ public enum OutputFormat {
 	SIF,
 	SBML,
 	GSEA,
-	GENESET,
+	ID_LIST,
 	TSV,
 	IMAGE,
 	;

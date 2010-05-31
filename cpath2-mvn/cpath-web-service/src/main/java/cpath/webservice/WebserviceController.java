@@ -32,8 +32,6 @@ import cpath.dao.PaxtoolsDAO;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.miriam.MiriamLink;
-import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
@@ -54,45 +52,23 @@ public class WebserviceController {
     private static String newline = System.getProperty("line.separator");
 	private PaxtoolsDAO pcDAO;
 	private SimpleExporter exporter;
-
     
     @PostConstruct
     void init() {
     	// re-build Lucene index (TODO is this required?)
     	pcDAO.createIndex();
-    	
-    	/* TODO consider moving the following to Warehouse altogether 
-    	 * - create BioDataTypes class with the only static method;
-    	 * - init() would register with org.bridgedb.DataSource all the 
-    	 * data sources found in Warehouse's Metadata, MIRIAM, 
-    	 * plus - custom data types (cpath1 legacy, e.g., CELL_MAP);
-    	 */
-    	
-    	// TODO register all the data providers (from Warehouse's Metadata)
-    	
-    	// register all MIRIAM data types in BridgeDB's DataSource
-    	for(String name : MiriamLink.getDataTypesName()) {
-    		// register all synonyms (incl. the name)
-    		for(String s : MiriamLink.getNames(name)) {
-    			DataSource.register(s, name)
-    			  .urnBase(MiriamLink.getDataTypeURI(name));
-    		}
-    	}
-    	
-    	// manually register legacy (cpath) data source names
-    	DataSource.register("BIOGRID", "BioGRID");
-    	DataSource.register("CELL_MAP", "Cancer Cell Map"); // add to Miriam
-    	DataSource.register("HPRD", "HPRD"); // add to Miriam
-    	DataSource.register("HUMANCYC", "HumanCyc");
-    	DataSource.register("IMID", "IMID");
-    	DataSource.register("INTACT", "IntAct");
-    	DataSource.register("MINT", "MINT");
-    	DataSource.register("NCI_NATURE", "NCI / Nature Pathway Interaction Database");
-    	DataSource.register("REACTOME", "Reactome");
+ 
+    	// if not done before, init the global list of data sources
+    	// (BioDataTypes bean still must be initialized by app. context)
+    	try {
+			Class.forName("cpath.warehouse.internal.BioIdTypes");
+			Class.forName("cpath.warehouse.internal.BioDataTypes");
+		} catch (ClassNotFoundException e) {
+			throw new IllegalStateException(e);
+		}
     }
     
 
-	//@Autowired
 	public WebserviceController(PaxtoolsDAO mainDAO, SimpleExporter exporter) {
 		this.pcDAO = mainDAO;
 		this.exporter = exporter;

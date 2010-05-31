@@ -69,7 +69,7 @@ public class UniprotConverterImplTest {
 	 * @throws IOException 
 	 */
 	@Test
-	//@Transactional
+	@Transactional
 	//@Rollback(false)
 	public void testConvert() throws IOException {
 		Converter converter = new UniprotConverterImpl();

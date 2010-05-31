@@ -21,11 +21,11 @@
 	</organization>
 	<modules>
 		<module>cpath-dao</module>
-		<module>cpath-web</module>
+		<!-- <module>cpath-web</module> -->
 		<module>cpath-warehouse</module>
 		<module>cpath-admin</module>
 		<module>cpath-importer</module>
-		<module>cpath-web-service</module>
+		<!-- <module>cpath-web-service</module> -->
 	</modules>
 
 	<properties>
@@ -131,12 +131,6 @@
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>1.5.6</version>
-			<scope>runtime</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
 			<version>${spring.version}</version>
@@ -186,7 +180,7 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-			<version>1.5.6</version>
+			<version>1.5.8</version>
 			<type>jar</type>
 			<scope>runtime</scope>
 		</dependency>
@@ -205,27 +199,32 @@
 			<artifactId>paxtools-core</artifactId>
 			<version>2.0-SNAPSHOT</version>
 		</dependency>
-        <dependency>
+		<dependency>
+    		<groupId>org.bridgedb</groupId>
+    		<artifactId>org.bridgedb</artifactId>
+    		<version>1.0-SNAPSHOT</version>
+    	</dependency>
+		<dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-annotations</artifactId>
             <version>3.5.1-Final</version>
         </dependency>
-        <dependency>
+		<dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-search</artifactId>
             <version>3.2.0.CR1</version>
         </dependency>
-        <dependency>
+		<dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-tools</artifactId>
             <version>3.2.4.GA</version>
         </dependency>
-        <dependency>
+		<dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-entitymanager</artifactId>
             <version>3.5.1-Final</version>
         </dependency>
-        <dependency>
+		<dependency>
 			<groupId>org.hibernate.java-persistence</groupId>
 			<artifactId>jpa-api</artifactId>
 			<version>2.0-cr-1</version>
