@@ -29,6 +29,8 @@
 package cpath.webservice;
 
 import cpath.dao.PaxtoolsDAO;
+import cpath.warehouse.beans.Metadata.TYPE;
+import cpath.warehouse.internal.BioDataTypes;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -234,7 +236,7 @@ public class WebserviceController {
 	
 	
 	/**
-	 * List of formats that web methods return
+	 * List of bio-network data sources.
 	 * 
 	 * @return
 	 */
@@ -242,22 +244,18 @@ public class WebserviceController {
     @ResponseBody
     public String getDatasources() {
     	StringBuffer toReturn = new StringBuffer();
-    	for(OutputFormat f : OutputFormat.values()) {
-    		toReturn.append(f.toString().toLowerCase()).append(newline);
+    	for(String name : DataSource.getFullNames()) {
+    		DataSource ds = DataSource.getByFullName(name);
+    		if(ds.getType().equals(TYPE.BIOPAX) || ds.getType().equals(TYPE.PSI_MI)
+    				|| ds.getType().equals(BioDataTypes.NETWORK_TYPE)) {
+    			String code = ds.getSystemCode();
+    			toReturn.append(code).append(newline);
+    		}
     	}
     	return toReturn.toString();
     }	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+		
 	
 	/*========= private staff ==============*/
 	
