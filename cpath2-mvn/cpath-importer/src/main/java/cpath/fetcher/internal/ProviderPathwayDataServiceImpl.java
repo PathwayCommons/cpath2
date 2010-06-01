@@ -3,12 +3,14 @@ package cpath.fetcher.internal;
 // imports
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
-import cpath.fetcher.FetcherHTTPClient;
 import cpath.fetcher.ProviderPathwayDataService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -44,22 +46,14 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
 	// logger
     private static Log log = LogFactory.getLog(ProviderPathwayDataServiceImpl.class);
 
-	// ref to FetcherHTTPClient
-    private FetcherHTTPClient fetcherHTTPClient;
+    @Autowired
+    ApplicationContext applicationContext;
 
     /**
 	 * Default Constructor.
 	 */
 	public ProviderPathwayDataServiceImpl() {}
 
-	/**
-     * Constructor.
-     * 
-     * @param fetcherHTTPClient FetcherHTTPClient
-     */
-	public ProviderPathwayDataServiceImpl(FetcherHTTPClient fetcherHTTPClient) {
-		this.fetcherHTTPClient = fetcherHTTPClient;
-	}
 
     /**
      * (non-Javadoc)
@@ -76,19 +70,20 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
 		boolean isOWL = (url.endsWith(".owl") || url.endsWith(".OWL"));
 
 		// pathway data is either owl or zip/gz
+		Resource resource = applicationContext.getResource(url);
 		if (isOWL) {
 			log.info("getProviderPathwayData(), data is owl, directly returning.");
-			String fetchedData = readFromService(fetcherHTTPClient.getDataFromServiceAsStream(url));
+			String fetchedData = readFromService(resource.getInputStream());
 			String filename = url.substring(url.lastIndexOf("/"));
 			String digest = getDigest(fetchedData.getBytes());
-			PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), metadata.getVersion(), filename, digest, fetchedData);
+			PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), 
+					metadata.getVersion(), filename, digest, fetchedData);
 			toReturn.add(pathwayData);
 		}
 		else {
 			log.info("getProviderPathwayData(), data is zip/gz, unzipping.");
-			unzip(metadata, fetcherHTTPClient.getDataFromServiceAsStream(url), toReturn);
+			unzip(metadata, resource.getInputStream(), toReturn);
 		}
-		fetcherHTTPClient.releaseConnection();
 
         // outta here
         return toReturn;

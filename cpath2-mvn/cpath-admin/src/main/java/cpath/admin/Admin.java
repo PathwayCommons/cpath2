@@ -209,10 +209,10 @@ public class Admin implements Runnable {
     /**
      * Helper function to get provider metadata.
      *
-     * @param url String
+     * @param location String URL or local file.
      * @throws IOException
      */
-    private void fetchMetadata(final String url) throws IOException {
+    private void fetchMetadata(final String location) throws IOException {
         ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
@@ -222,7 +222,7 @@ public class Admin implements Runnable {
         ProviderMetadataService providerMetadataService = (ProviderMetadataService) context.getBean("providerMetadataService");
     	
         // grab the data
-        Collection<Metadata> metadata = providerMetadataService.getProviderMetadata(url);
+        Collection<Metadata> metadata = providerMetadataService.getProviderMetadata(location);
         
         // process metadata
         for (Metadata mdata : metadata) {

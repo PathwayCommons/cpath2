@@ -47,18 +47,20 @@ import cpath.warehouse.beans.Metadata.TYPE;
 public class BioDataTypes {
 	private static final Log LOG = LogFactory.getLog(BioDataTypes.class);
 	
+	public static final String NETWORK_TYPE = "network";
+	
 	private MetadataDAO metadataDAO;
 
 	// manually register legacy (cpath) data source names
-	public final DataSource BIOGRID = DataSource.register("BIOGRID", "BioGRID").asDataSource();
-	public final DataSource CELL_MAP = DataSource.register("CELL_MAP", "Cancer Cell Map").asDataSource(); 
-	public final DataSource HPRD = DataSource.register("HPRD", "HPRD").asDataSource();
-	public final DataSource HUMANCYC = DataSource.register("HUMANCYC", "HumanCyc").asDataSource();
-	public final DataSource IMID = DataSource.register("IMID", "IMID").asDataSource();
-	public final DataSource INTACT = DataSource.register("INTACT", "IntAct").asDataSource();
-	public final DataSource MINT = DataSource.register("MINT", "MINT").asDataSource();
-	public final DataSource NCI_NATURE = DataSource.register("NCI_NATURE", "NCI / Nature Pathway Interaction Database").asDataSource();
-	public final DataSource REACTOME = DataSource.register("REACTOME", "Reactome").asDataSource();
+	public final DataSource BIOGRID = DataSource.register("BIOGRID", "BioGRID").type(NETWORK_TYPE).asDataSource();
+	public final DataSource CELL_MAP = DataSource.register("CELL_MAP", "Cancer Cell Map").type(NETWORK_TYPE).asDataSource(); 
+	public final DataSource HPRD = DataSource.register("HPRD", "HPRD").type("").type(NETWORK_TYPE).asDataSource();
+	public final DataSource HUMANCYC = DataSource.register("HUMANCYC", "HumanCyc").type(NETWORK_TYPE).asDataSource();
+	public final DataSource IMID = DataSource.register("IMID", "IMID").type(NETWORK_TYPE).asDataSource();
+	public final DataSource INTACT = DataSource.register("INTACT", "IntAct").type(NETWORK_TYPE).asDataSource();
+	public final DataSource MINT = DataSource.register("MINT", "MINT").type(NETWORK_TYPE).asDataSource();
+	public final DataSource NCI_NATURE = DataSource.register("NCI_NATURE", "NCI / Nature Pathway Interaction Database").type(NETWORK_TYPE).asDataSource();
+	public final DataSource REACTOME = DataSource.register("REACTOME", "Reactome").type(NETWORK_TYPE).asDataSource();
 	
 	/* Remark:
 	 * for example, we can get BIOGRID data source from anywhere,
@@ -71,12 +73,21 @@ public class BioDataTypes {
 	}
 	
 	
+	/**
+	 * Register all the pathway data providers (as stored in Warehouse).
+	 * 
+	 * Note: metadata.getType() becomes DataSource's type, and it will be used, 
+	 * e.g., in web controllers, to separate "true" cPathSquare data sources 
+	 * (imported and merged through Admin tool) from all others 
+	 * (legacy, synonyms, ID types, etc..)
+	 * 
+	 */
 	@PostConstruct
 	void init() {
-		// register all the pathway data providers (as stored in Warehouse)
 		for(Metadata metadata : metadataDAO.getAll()) {
 			if(metadata.getType() == TYPE.BIOPAX || metadata.getType() == TYPE.PSI_MI) {
-				DataSource ds = DataSource.getByFullName(metadata.getIdentifier());
+				DataSource ds = DataSource.register(metadata.getIdentifier(), metadata.getName())
+					.type(metadata.getType().name()).mainUrl(metadata.getURLToPathwayData()).asDataSource();
 				if(LOG.isInfoEnabled()) 
 					LOG.info("Register data provider: " + ds);
 			}

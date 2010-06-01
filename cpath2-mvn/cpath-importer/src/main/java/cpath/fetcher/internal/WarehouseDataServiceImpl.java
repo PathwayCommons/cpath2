@@ -3,7 +3,6 @@ package cpath.fetcher.internal;
 // imports
 import cpath.warehouse.beans.Metadata;
 import cpath.converter.Converter;
-import cpath.fetcher.FetcherHTTPClient;
 import cpath.fetcher.WarehouseDataService;
 
 import org.biopax.paxtools.model.Model;
@@ -12,18 +11,14 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.BufferedReader;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.BufferedOutputStream;
+import java.io.*;
 
 import java.util.zip.GZIPInputStream;
-import java.net.URL;
 
 /**
  * Warehouse Data service.  Retrieves protein and small molecule data on behalf of warehouse.
@@ -37,18 +32,9 @@ public final class WarehouseDataServiceImpl implements WarehouseDataService {
 	// logger
     private static Log log = LogFactory.getLog(WarehouseDataServiceImpl.class);
 
-	// ref to FetcherHTTPClient
-    private FetcherHTTPClient fetcherHTTPClient;
-
-	/**
-     * Constructor.
-     * 
-     * @param fetcherHTTPClient FetcherHTTPClient
-     */
-	public WarehouseDataServiceImpl(FetcherHTTPClient fetcherHTTPClient) {
-		this.fetcherHTTPClient = fetcherHTTPClient;
-	}
-
+    @Autowired
+    ApplicationContext applicationContext;
+    
     /**
      * (non-Javadoc)
      * @see cpath.fetcher.WarehouseDataService#getWarehouseData(cpath.warehouse.beans.Metadata)
@@ -60,18 +46,13 @@ public final class WarehouseDataServiceImpl implements WarehouseDataService {
 
 		String urlStr = metadata.getURLToPathwayData();
 
+		Resource resource = applicationContext.getResource(urlStr);
 		// protein data comes zipped
-		log.info("getWarehouseData(), data is zip/gz, unzipping.");
-		if (urlStr.startsWith("ftp://")) {
-			URL url = new URL(urlStr);
-			toReturn = unzip(metadata, url.openConnection().getInputStream());
-		}
-		else {
-			toReturn = unzip(metadata, fetcherHTTPClient.getDataFromServiceAsStream(urlStr));
-			fetcherHTTPClient.releaseConnection();
-		}
-
-		log.info("getWarehouseData(), return model: " + toReturn);
+		if(log.isInfoEnabled())
+			log.info("getWarehouseData(), data is zip/gz, unzipping.");
+		toReturn = convert(metadata, resource.getInputStream());
+		if(log.isInfoEnabled())
+			log.info("getWarehouseData(), return model: " + toReturn);
 
         // outta here
         return toReturn;
@@ -85,7 +66,7 @@ public final class WarehouseDataServiceImpl implements WarehouseDataService {
      * @param fetchedData InputStream
 	 * @return model Model
      */
-    private Model unzip(final Metadata metadata, final InputStream fetchedData) throws IOException {
+    private Model convert(final Metadata metadata, final InputStream fetchedData) throws IOException {
 
         Model toReturn = null;
         GZIPInputStream zis = null;

@@ -31,63 +31,39 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
 import java.util.Set;
 
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
-import org.biopax.paxtools.impl.level3.RelationshipXrefImpl;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ProteinReference;
-import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.transaction.TransactionConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import cpath.converter.Converter;
-import cpath.dao.PaxtoolsDAO;
 
 /**
  * @author rodche
  *
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:applicationContext-whouseProteins.xml"})
-@TransactionConfiguration(transactionManager="proteinsTransactionManager")
 public class UniprotConverterImplTest {
-
-	@Autowired
-	PaxtoolsDAO proteinsDAO;
 
 	/**
 	 * Test method for {@link cpath.converter.internal.UniprotConverterImpl#convert(java.io.InputStream, org.biopax.paxtools.model.BioPAXLevel)}.
 	 * @throws IOException 
 	 */
 	@Test
-	@Transactional
-	//@Rollback(false)
 	public void testConvert() throws IOException {
 		Converter converter = new UniprotConverterImpl();
-		InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_uniprot_data.dat");
+		InputStream is = getClass().getResourceAsStream("/test_uniprot_data.dat");
+		
 		Model model = converter.convert(is, BioPAXLevel.L3);
 		
 		Set<ProteinReference> proteinReferences = model.getObjects(ProteinReference.class);
 		assertTrue(proteinReferences.size()==2);
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
 		
+		//TODO add more checks that the conversion went ok...
+		
 		//(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
-		
-		proteinsDAO.importModel(model);
-		//proteinsDAO.createIndex(); // causes too many connections error?..
-		
-		List<? extends RelationshipXref> returnClasses = proteinsDAO
-			.search("entrez", RelationshipXrefImpl.class);
-		assertFalse(returnClasses.isEmpty());
 	}
 
 }
