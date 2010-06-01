@@ -233,6 +233,35 @@ public class WebserviceController {
     public void testForm() {}
 	
 	
+	/**
+	 * List of formats that web methods return
+	 * 
+	 * @return
+	 */
+    @RequestMapping("/datasources")
+    @ResponseBody
+    public String getDatasources() {
+    	StringBuffer toReturn = new StringBuffer();
+    	for(OutputFormat f : OutputFormat.values()) {
+    		toReturn.append(f.toString().toLowerCase()).append(newline);
+    	}
+    	return toReturn.toString();
+    }	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	/*========= private staff ==============*/
+	
+
 	private String toOWL(BioPAXElement element) {
 		if(element == null) return "NOTFOUND"; // temporary
 		

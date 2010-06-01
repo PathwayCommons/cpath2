@@ -30,14 +30,17 @@ package cpath.fetcher.internal;
 
 // imports
 import cpath.warehouse.beans.Metadata;
-import cpath.fetcher.FetcherHTTPClient;
 import cpath.fetcher.ProviderMetadataService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -45,6 +48,8 @@ import java.io.BufferedReader;
 
 import java.util.HashSet;
 import java.util.Collection;
+
+import javax.imageio.ImageIO;
 
 
 /**
@@ -68,26 +73,19 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
 	// logger
     private static Log log = LogFactory.getLog(ProviderMetadataServiceImpl.class);
 
-	// ref to FetcherHTTPClient
-    private FetcherHTTPClient fetcherHTTPClient;
-
+    
+    @Autowired
+    ApplicationContext applicationContext;
+    
     /**
 	 * Default Constructor.
 	 */
 	public ProviderMetadataServiceImpl() {}
 
-	/**
-     * Constructor.
-     * 
-     * @param fetcherHTTPClient FetcherHTTPClient
-     */
-	public ProviderMetadataServiceImpl(FetcherHTTPClient fetcherHTTPClient) {
-		this.fetcherHTTPClient = fetcherHTTPClient;
-	}
 
     /**
      * (non-Javadoc)
-     * @see cpath.fetcher.ProviderMetadataService#getProviderMetadata(java.lang.String)
+     * @see cpath.fetcher.ProviderMetadataService#getProviderMetadata(String)
      */
     @Override
     public Collection<Metadata> getProviderMetadata(final String url) throws IOException {
@@ -100,8 +98,7 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
         }
 
         // get data from service
-		readFromService(fetcherHTTPClient.getDataFromServiceAsStream(url), toReturn);
-		fetcherHTTPClient.releaseConnection();
+		readFromService(applicationContext.getResource(url).getInputStream(), toReturn);
 
         // outta here
         return toReturn;
@@ -123,8 +120,8 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
             reader = new BufferedReader(new InputStreamReader(inputStream));
 
             // are we ready to read?
-            while (reader.ready()) {
-
+            while (reader.ready()) 
+            {
                 // grab a line
                 String line = reader.readLine();
                 log.info("readFromService(), line: " + line);
@@ -154,7 +151,11 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
 
 					// get icon data from service
 					log.info("fetching icon data from: " + tokens[METADATA_ICON_URL_INDEX]);
-					byte[] iconData = fetcherHTTPClient.getDataFromService(tokens[METADATA_ICON_URL_INDEX]);
+					InputStream stream = applicationContext.getResource(tokens[METADATA_ICON_URL_INDEX]).getInputStream();
+					// we could simply read to byte[] directly, but let's do more interesting things - 
+					BufferedImage image = ImageIO.read(stream);
+					// TODO conversion of the icon into another format could easily happen here
+					byte[] iconData = ((DataBufferByte)image.getRaster().getDataBuffer()).getData();
 
                     if (iconData != null) {
 
