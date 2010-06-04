@@ -61,6 +61,7 @@ public class Admin implements Runnable {
     public static enum COMMAND {
 
         // command types
+    	CREATE_TABLES("-create-tables"),
         FETCH_METADATA("-fetch-metadata"),
 		FETCH_PATHWAY_DATA("-fetch-pathwaydata"),
 		FETCH_PROTEIN_DATA("-fetch-proteindata"),
@@ -98,8 +99,11 @@ public class Admin implements Runnable {
 
         boolean validArgs = true;
 
-        // TODO: use gnu getopt or some variant        
-        if (args[0].equals(COMMAND.FETCH_METADATA.toString())) {
+        // TODO: use gnu getopt or some variant  
+        if(args[0].equals(COMMAND.CREATE_TABLES.toString())) {
+        	this.command = COMMAND.CREATE_TABLES;
+        } 
+        else if (args[0].equals(COMMAND.FETCH_METADATA.toString())) {
 			if (args.length != 2) {
 				validArgs = false;
 			}
@@ -159,6 +163,13 @@ public class Admin implements Runnable {
     public void run() {
         try {
             switch (command) {
+            case CREATE_TABLES: // empty databases must exist!
+            	ApplicationContext context =
+                    new ClassPathXmlApplicationContext(new String [] { 	
+                    		"classpath:applicationContext-cpathAdmin.xml",
+                    		"classpath:applicationContext-createTables.xml"});
+            	// that's it!
+            	break;
             case FETCH_METADATA:
                 fetchMetadata(commandParameters[0]);
 				break;
@@ -172,7 +183,7 @@ public class Admin implements Runnable {
 				fetchWarehouseData(COMMAND.FETCH_SMALL_MOLECULE_DATA, commandParameters[0]);
 				break;
 			case PREMERGE:
-				ApplicationContext context =
+				context =
                     new ClassPathXmlApplicationContext(new String [] { 	
                     		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
                     		"classpath:applicationContext-whouseDAO.xml", 

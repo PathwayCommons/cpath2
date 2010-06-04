@@ -42,6 +42,8 @@ import org.springframework.stereotype.Repository;
 
 /**
  * Class which provides services to create provider database to persist pathway data.
+ * 
+ * Note: it is MySQL-specific. TODO: add 'masterDb' field...
  */
 @Repository
 public class PathwayDataJDBCServicesImpl implements PathwayDataJDBCServices {
@@ -97,23 +99,28 @@ public class PathwayDataJDBCServicesImpl implements PathwayDataJDBCServices {
      */
     public boolean createProviderDatabase(final Metadata metadata, 
     		final boolean drop) {
+		return createDatabase(metadata.getIdentifier(), drop);
+	}
+    
+    
+    private boolean createDatabase(final String db, final boolean drop) {
 		
 		boolean toReturn = true;
 
 		// create simple JdbcTemplate if necessary
 		if (jdbcTemplate == null) {
-			DataSource dataSource = getDataSource("mysql");
+			DataSource dataSource = getDataSource("mysql"); // works for MySQL
 			jdbcTemplate = new JdbcTemplate(dataSource);
 		}
 
 		try {
 			// drop if desired
 			if (drop) {
-				jdbcTemplate.execute("DROP DATABASE IF EXISTS " + metadata.getIdentifier());
+				jdbcTemplate.execute("DROP DATABASE IF EXISTS " + db);
 			}
 
 			// create
-			jdbcTemplate.execute("CREATE DATABASE " + metadata.getIdentifier());
+			jdbcTemplate.execute("CREATE DATABASE " + db);
 			
 			// save 
 		}
