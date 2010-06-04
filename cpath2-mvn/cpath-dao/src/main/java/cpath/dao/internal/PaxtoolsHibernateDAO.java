@@ -167,31 +167,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 		// convert file to model
 		Model m = reader.convertFromOWL(new FileInputStream(biopaxFile));
-		importModel(m);
-
+		//importModel(m);
+		merger.merge(this, m);
 	}
 
     
 	@Transactional(propagation=Propagation.REQUIRED)
+	@Deprecated // to use merger directly
 	public void importModel(final Model model)
 	{
 		merger.merge(this, model);
-
-		/*
-		Session session = session();
-		int i = 0;
-		for(BioPAXElement e : model.getObjects()) {
-			if (log.isInfoEnabled())
-				log.info("Saving biopax element, rdfID: " 
-						+ e.getRDFId());
-			session.save(e);
-			++i;
-			if(i % 50 == 0) {
-				session.flush();
-				session.clear();
-			}
-		}
-		*/
 	}
 
 
