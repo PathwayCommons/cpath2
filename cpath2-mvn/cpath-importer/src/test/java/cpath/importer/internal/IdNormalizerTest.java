@@ -114,8 +114,8 @@ public class IdNormalizerTest {
 		BioSource bioSource = model.addNew(BioSource.class, "BioSource_Mouse_Tissue");
 		bioSource.addXref((UnificationXref)ref);
 		
-		model.getNameSpacePrefixMap().put("pc", "http://www.pathwaycommons.org/import#");
-		model.getNameSpacePrefixMap().put("", "http://biopax.org/");
+		model.getNameSpacePrefixMap().put("", "http://www.pathwaycommons.org/import#");
+		model.getNameSpacePrefixMap().put("biopax", "http://biopax.org/");
 		
 		// normalize!		
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -134,7 +134,7 @@ public class IdNormalizerTest {
 		model = simpleReader.convertFromOWL(new ByteArrayInputStream(xml.getBytes()));
 		
 		// check Xref
-		BioPAXElement bpe = model.getByID("http://biopax.org/UnificationXref#UniProt_P68250");
+		BioPAXElement bpe = model.getByID("biopax:UnificationXref:UniProt_P68250");
 		assertTrue(bpe instanceof UnificationXref);
 		
 		// check PR
@@ -142,7 +142,7 @@ public class IdNormalizerTest {
 		assertTrue(bpe instanceof ProteinReference);
 		
 		//check when two xrefs have the same db:id
-		bpe = model.getByID("http://biopax.org/RelationshipXref#RefSeq_NP_001734");
+		bpe = model.getByID("biopax:RelationshipXref:RefSeq_NP_001734");
 		assertEquals(2, ((Xref)bpe).getXrefOf().size());
 		
 		
@@ -153,7 +153,7 @@ public class IdNormalizerTest {
 		//test BioSource
 		bpe = model.getByID("urn:miriam:taxonomy:10090");
 		assertTrue(bpe instanceof BioSource);
-		bpe = model.getByID("http://biopax.org/UnificationXref#Taxonomy_10090");
+		bpe = model.getByID("biopax:UnificationXref:Taxonomy_10090");
 		assertTrue(bpe instanceof UnificationXref);
 		
 		//TODO test Provenance

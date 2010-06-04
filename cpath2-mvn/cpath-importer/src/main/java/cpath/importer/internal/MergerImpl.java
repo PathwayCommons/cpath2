@@ -142,7 +142,8 @@ public final class MergerImpl implements Merger {
 		}
 		
 		// final merge
-		pcDAO.importModel(pcModel);
+		//pcDAO.importModel(pcModel);
+		simpleMerger.merge(pcDAO, pcModel);
 	}
 
 	/**

@@ -1,17 +1,13 @@
 package cpath.converter.internal;
 
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level2.*;
-import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.BioPAXElement;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.*;
 import java.util.*;
-import java.net.URLEncoder;
 
 /**
  * Base Implementation of Converter interface for SDF (ChEBI & PubChem) data.

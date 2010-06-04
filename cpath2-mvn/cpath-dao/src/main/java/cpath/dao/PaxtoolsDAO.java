@@ -30,8 +30,6 @@ package cpath.dao;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -52,6 +50,8 @@ public interface PaxtoolsDAO extends Model {
 	
 	/**
 	 * Persists the given model to the db.
+	 *
+	 * @deprecated Use merger, e.g. SimpleMerger instead.
 	 *
 	 * @param model Model
 	 * @param createIndex boolean

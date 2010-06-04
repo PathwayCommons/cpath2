@@ -50,7 +50,7 @@ import cpath.importer.Normalizer;
  */
 public class IdNormalizer implements Normalizer {
 	private static final Log log = LogFactory.getLog(IdNormalizer.class);
-	public static final String BIOPAX_URI_PREFIX = "http://biopax.org/"; // for xrefs
+	public static final String BIOPAX_URI_PREFIX = "biopax:"; // for xrefs
 	
 	
 	private BioPAXIOHandler biopaxReader;
@@ -159,7 +159,7 @@ public class IdNormalizer implements Normalizer {
 				log.error("Unknown or misspelled datanase name! Won't fix this now... " + e);
 			}
 			String rdfid =  BIOPAX_URI_PREFIX + x.getModelInterface().getSimpleName() 
-				+ "#" + URLEncoder.encode(name + "_" + x.getId());
+				+ ":" + URLEncoder.encode(name + "_" + x.getId());
 			if(model.containsID(rdfid) 
 					&& model.getByID(rdfid).getModelInterface().equals(x.getModelInterface())) {
 				log.warn("Model has 'equivalent' xrefs. This one: " 
