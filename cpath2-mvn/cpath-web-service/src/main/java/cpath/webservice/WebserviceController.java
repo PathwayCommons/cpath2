@@ -34,6 +34,7 @@ import cpath.warehouse.internal.BioDataTypes;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.io.sif.BinaryInteractionType;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
@@ -48,6 +49,11 @@ import java.util.*;
 
 import javax.annotation.PostConstruct;
 
+/**
+ * cPathSquared Main Web Service.
+ * 
+ * TODO add request param. validation
+ */
 @Controller
 public class WebserviceController {
     private static final Log log = LogFactory.getLog(WebserviceController.class);
@@ -60,10 +66,9 @@ public class WebserviceController {
     	// re-build Lucene index (TODO is this required?)
     	pcDAO.createIndex();
  
-    	// if not done before, init the global list of data sources
+    	// if not already done, init the global list of data sources
     	// (BioDataTypes bean still must be initialized by app. context)
     	try {
-			Class.forName("cpath.warehouse.internal.BioIdTypes");
 			Class.forName("cpath.warehouse.internal.BioDataTypes");
 		} catch (ClassNotFoundException e) {
 			throw new IllegalStateException(e);
@@ -89,6 +94,8 @@ public class WebserviceController {
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
         binder.registerCustomEditor(DataSource.class, new DataSourceEditor());
+        binder.registerCustomEditor(Cmd.class, new CmdEditor());
+        //TODO register SIF rules (BinaryInteractionType) editor
     }
 	
 	
@@ -255,9 +262,36 @@ public class WebserviceController {
     	return toReturn.toString();
     }	
 	
-		
-	
-	/*========= private staff ==============*/
+    
+    /**
+     * Mapping and controller for the legacy cPath web services
+     * (for backward compatibility).
+     */
+    @RequestMapping("/webservice.do")
+    @ResponseBody
+    public String doWebservice(
+    		@RequestParam("cmd") Cmd cmd, 
+    		@RequestParam("version") String version,
+    		@RequestParam("q") String q,
+    		@RequestParam(value="output", required=false) OutputFormat output,
+    		@RequestParam(value="organism", required=false) Integer organism,
+    		@RequestParam(value="input_id_type", required=false) DataSource inputIdType, // TODO validate (BioDataTypes, 'id' type)
+    		@RequestParam(value="data_source", required=false) DataSource dataSource, // TODO validate (BioDataTypes, 'network' type)
+    		@RequestParam(value="output_id_type", required=false) DataSource outputIdType, // TODO validate (see: input_id_type)
+    		@RequestParam(value="binary_interaction_rule", required=false) BinaryInteractionType sifRule
+    	) 
+    {
+    	String toReturn = "";
+    	
+    	
+    	
+    	
+    	
+    	return toReturn;
+    }
+
+    
+    /*========= private staff ==============*/
 	
 
 	private String toOWL(BioPAXElement element) {

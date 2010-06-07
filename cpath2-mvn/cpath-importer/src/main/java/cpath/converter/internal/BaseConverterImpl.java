@@ -14,7 +14,7 @@ import java.io.InputStream;
 public class BaseConverterImpl implements Converter {
 
 	// e.g., xref's rdfId= L3_UNIFICATIONXREF_URI + URLEncoder.encode(db + "_" +  id);
-	public static final String BIOPAX_URI_PREFIX = "biopax:";
+	public static final String BIOPAX_URI_PREFIX = "urn:biopax:";
 	
 	public static final String L3_UNIFICATIONXREF_URI = BIOPAX_URI_PREFIX + "UnificationXref:";
 	public static final String L3_PUBLICATIONXREF_URI = BIOPAX_URI_PREFIX + "PublicationXref:";
