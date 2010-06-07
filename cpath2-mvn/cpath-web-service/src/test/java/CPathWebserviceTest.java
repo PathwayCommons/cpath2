@@ -341,7 +341,7 @@ public class CPathWebserviceTest {
 	 * [Required] cmd=get_record_by_cpath_id
 	 * [Required] version=2.0
 	 * [Required] q= a comma delimited list of internal identifiers, used to identify the pathways, interactions or physical entities of interest.
-	 * [Required] output= biopax, binary_sif, gsea, or pc_gene_set.
+	 * [Optional] output= biopax (default), binary_sif, gsea, or pc_gene_set. // modified: it's "required" in the original web service!
 	 * [Optional] output_id_type= (use only with 'gsea' or 'binary_sif' formats)
 	 * [Optional] binary_interaction_rule= (only when output=binary_sif) a comma separated list of 
 	 * binary interaction rules (see Command: 'get_neighbors').   

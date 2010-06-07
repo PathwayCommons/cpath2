@@ -25,40 +25,23 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.warehouse.internal;
+package cpath.webservice;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.biopax.miriam.MiriamLink;
-import org.bridgedb.DataSource;
-
+import java.beans.PropertyEditorSupport;
 
 
 /**
- * This convenience bean makes some ID types, e.g., 
- * old CPath web service's input_id_type, available as/via Bridgedb DataSource.
- * 
  * @author rodche
+ *
  */
-public class BioIdTypes {
-	private static final Log LOG = LogFactory.getLog(BioIdTypes.class);
+public class CmdEditor extends PropertyEditorSupport {
 	
-	// manually register what is used in cPath WS, parameter input_id_type
-	public final DataSource UNIPROT = DataSource.getByFullName("UNIPROT");
-	public final DataSource CPATH_ID = DataSource.getByFullName("CPATH_ID"); // RDFId
-	public final DataSource ENTREZ_GENE = DataSource.getByFullName("ENTREZ_GENE");
-	public final DataSource GENE_SYMBOL =  DataSource.getByFullName("GENE_SYMBOL");
-
-	static {
-		// register MIRIAM data types
-		for (String name : MiriamLink.getDataTypesName()) {
-			// register all synonyms (incl. the name)
-			for (String s : MiriamLink.getNames(name)) {
-				DataSource ds = DataSource.register(s, name).urnBase(
-						MiriamLink.getDataTypeURI(name)).asDataSource();
-				if(LOG.isInfoEnabled()) 
-					LOG.info("Register data provider: " + ds);
-			}
-		}
+	/* (non-Javadoc)
+	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
+	 */
+	@Override
+	public void setAsText(String arg0) throws IllegalArgumentException {
+		setValue(Cmd.parseCmd(arg0));
 	}
+	
 }
