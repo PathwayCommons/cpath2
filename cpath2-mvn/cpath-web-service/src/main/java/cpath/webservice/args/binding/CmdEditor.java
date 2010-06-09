@@ -25,9 +25,11 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice;
+package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
+
+import cpath.webservice.args.Cmd;
 
 
 /**
@@ -41,7 +43,7 @@ public class CmdEditor extends PropertyEditorSupport {
 	 */
 	@Override
 	public void setAsText(String arg0) throws IllegalArgumentException {
-		setValue(Cmd.parseCmd(arg0));
+		setValue(Cmd.parse(arg0));
 	}
 	
 }

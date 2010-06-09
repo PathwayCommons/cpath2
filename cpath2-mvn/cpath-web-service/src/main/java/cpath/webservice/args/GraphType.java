@@ -25,46 +25,29 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice;
+package cpath.webservice.args;
 
-import java.beans.PropertyEditorSupport;
-import java.net.URI;
-
-import org.bridgedb.DataSource;
-
-
-/**
- * Converts a string parameter to org.bridgedb.DataSource
- * 
- * @author rodche
- *
- */
-public class DataSourceEditor extends PropertyEditorSupport {
+public enum GraphType {
+	NEIGHBORHOOD("neighborhood"),
+	COMMON_UPSTREAM("common upstream"),
+	COMMON_DOWNSTREAM("common downstream"),
+	COMMON_TARGET("common target"),
+	NETWORK_OF_INTEREST("network of interest"),
+	K_SHORTEST_PATH("k-shortest path"),
+	;
 	
-	/* (non-Javadoc)
-	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
-	 */
-	@Override
-	public void setAsText(String ds) throws IllegalArgumentException {
-		// guess it's a key (data source code)
-		DataSource dataSource = DataSource.getBySystemCode(ds);
-		
-		if(dataSource == null) { // is full name?
-			dataSource = DataSource.getByFullName(ds);
-		}	
-		
-		if(dataSource == null) { // is URN?
-			for(DataSource d : DataSource.getDataSources()) {
-				URI u1 = URI.create(ds);
-				URI u2 = URI.create(d.getURN(""));
-				if(u1.equals(u2)) {
-					dataSource = d;
-					break;
-				}
-			}
-		}
-		
-		setValue(dataSource);
+	public final String fullName;
+
+	private GraphType(String value) {
+		this.fullName = value;
 	}
 	
+	public static GraphType parse(String value) {
+		for(GraphType v : GraphType.values()) {
+			if(value.equalsIgnoreCase(v.toString())) {
+				return v;
+			}
+		}
+		return null;
+	}
 }

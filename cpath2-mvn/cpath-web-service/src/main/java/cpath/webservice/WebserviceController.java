@@ -31,6 +31,15 @@ package cpath.webservice;
 import cpath.dao.PaxtoolsDAO;
 import cpath.warehouse.beans.Metadata.TYPE;
 import cpath.warehouse.internal.BioDataTypes;
+import cpath.webservice.args.CPathIdType;
+import cpath.webservice.args.Cmd;
+import cpath.webservice.args.GraphType;
+import cpath.webservice.args.OutputFormat;
+import cpath.webservice.args.binding.BiopaxTypeEditor;
+import cpath.webservice.args.binding.CmdEditor;
+import cpath.webservice.args.binding.DataSourceEditor;
+import cpath.webservice.args.binding.GraphTypeEditor;
+import cpath.webservice.args.binding.OutputFormatEditor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -41,6 +50,7 @@ import org.biopax.paxtools.model.Model;
 import org.bridgedb.DataSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.MultiValueMap;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
@@ -48,6 +58,8 @@ import java.io.*;
 import java.util.*;
 
 import javax.annotation.PostConstruct;
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 /**
  * cPathSquared Main Web Service.
@@ -58,7 +70,9 @@ import javax.annotation.PostConstruct;
 public class WebserviceController {
     private static final Log log = LogFactory.getLog(WebserviceController.class);
     private static String newline = System.getProperty("line.separator");
+    @NotNull
 	private PaxtoolsDAO pcDAO;
+	@NotNull
 	private SimpleExporter exporter;
     
     @PostConstruct
@@ -270,21 +284,25 @@ public class WebserviceController {
     @RequestMapping("/webservice.do")
     @ResponseBody
     public String doWebservice(
-    		@RequestParam("cmd") Cmd cmd, 
-    		@RequestParam("version") String version,
+    		@RequestParam("cmd") @NotNull Cmd cmd, 
+    		@RequestParam(value="version", required=false) String version, // was mandatory...
     		@RequestParam("q") String q,
-    		@RequestParam(value="output", required=false) OutputFormat output,
-    		@RequestParam(value="organism", required=false) Integer organism,
-    		@RequestParam(value="input_id_type", required=false) DataSource inputIdType, // TODO validate (BioDataTypes, 'id' type)
-    		@RequestParam(value="data_source", required=false) DataSource dataSource, // TODO validate (BioDataTypes, 'network' type)
-    		@RequestParam(value="output_id_type", required=false) DataSource outputIdType, // TODO validate (see: input_id_type)
-    		@RequestParam(value="binary_interaction_rule", required=false) BinaryInteractionType sifRule
+    		@RequestParam(value="output", required=false) @Valid OutputFormat output,
+    		@RequestParam(value="organism", required=false) @Valid Integer organism,
+    		@RequestParam(value="input_id_type", required=false) @Valid CPathIdType inputIdType,
+    		@RequestParam(value="data_source", required=false) @Valid DataSource dataSource,
+    		@RequestParam(value="output_id_type", required=false) @Valid CPathIdType outputIdType,
+    		@RequestParam(value="binary_interaction_rule", required=false) @Valid BinaryInteractionType sifRule,
+    		BindingResult result
     	) 
     {
     	String toReturn = "";
     	
+    	// TODO check individual parameters validation result (BindingResult); and return only the first error?..
     	
     	
+    	
+    	// TODO also validate using the cPath protocol...
     	
     	
     	return toReturn;
