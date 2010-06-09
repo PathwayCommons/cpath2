@@ -26,6 +26,7 @@ public final class Metadata {
         // command types
         PSI_MI("PSI-MI"),
 		BIOPAX("BIOPAX"),
+		BIOPAX_L2("BIOPAX-L2"),
 		PROTEIN("PROTEIN"),
 		SMALL_MOLECULE("SMALL-MOLECULE");
 

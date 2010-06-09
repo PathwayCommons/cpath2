@@ -25,23 +25,28 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice;
-
-import java.beans.PropertyEditorSupport;
-
+package cpath.webservice.args;
 
 /**
+ * Valid cPath web service commands; 
+ * added for backward compatibility.
+ * 
  * @author rodche
  *
  */
-public class OutputFormatEditor extends PropertyEditorSupport {
+public enum Cmd {
+	SEARCH,
+	GET_PATHWAYS,
+	GET_NEIGHBORS,
+	GET_PARENTS,
+	GET_RECORD_BY_CPATH_ID;
 	
-	/* (non-Javadoc)
-	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
-	 */
-	@Override
-	public void setAsText(String arg0) throws IllegalArgumentException {
-		setValue(OutputFormat.parseFormat(arg0));
+	public static Cmd parse(String value) {
+		for(Cmd v : Cmd.values()) {
+			if(value.equalsIgnoreCase(v.toString())) {
+				return v;
+			}
+		}
+		return null;
 	}
-	
 }

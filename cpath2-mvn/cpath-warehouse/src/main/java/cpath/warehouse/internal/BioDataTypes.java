@@ -55,22 +55,22 @@ public class BioDataTypes {
 
 	public static final String NETWORK_TYPE = "network";
 	// manually register legacy (cpath) data source names
-	public final DataSource BIOGRID = DataSource.register("BIOGRID", "BioGRID").type(NETWORK_TYPE).asDataSource();
-	public final DataSource CELL_MAP = DataSource.register("CELL_MAP", "Cancer Cell Map").type(NETWORK_TYPE).asDataSource(); 
-	public final DataSource HPRD = DataSource.register("HPRD", "HPRD").type("").type(NETWORK_TYPE).asDataSource();
-	public final DataSource HUMANCYC = DataSource.register("HUMANCYC", "HumanCyc").type(NETWORK_TYPE).asDataSource();
-	public final DataSource IMID = DataSource.register("IMID", "IMID").type(NETWORK_TYPE).asDataSource();
-	public final DataSource INTACT = DataSource.register("INTACT", "IntAct").type(NETWORK_TYPE).asDataSource();
-	public final DataSource MINT = DataSource.register("MINT", "MINT").type(NETWORK_TYPE).asDataSource();
-	public final DataSource NCI_NATURE = DataSource.register("NCI_NATURE", "NCI / Nature Pathway Interaction Database").type(NETWORK_TYPE).asDataSource();
-	public final DataSource REACTOME = DataSource.register("REACTOME", "Reactome").type(NETWORK_TYPE).asDataSource();
+	public static final DataSource BIOGRID = DataSource.register("BIOGRID", "BioGRID").type(NETWORK_TYPE).asDataSource();
+	public static final DataSource CELL_MAP = DataSource.register("CELL_MAP", "Cancer Cell Map").type(NETWORK_TYPE).asDataSource(); 
+	public static final DataSource HPRD = DataSource.register("HPRD", "HPRD").type("").type(NETWORK_TYPE).asDataSource();
+	public static final DataSource HUMANCYC = DataSource.register("HUMANCYC", "HumanCyc").type(NETWORK_TYPE).asDataSource();
+	public static final DataSource IMID = DataSource.register("IMID", "IMID").type(NETWORK_TYPE).asDataSource();
+	public static final DataSource INTACT = DataSource.register("INTACT", "IntAct").type(NETWORK_TYPE).asDataSource();
+	public static final DataSource MINT = DataSource.register("MINT", "MINT").type(NETWORK_TYPE).asDataSource();
+	public static final DataSource NCI_NATURE = DataSource.register("NCI_NATURE", "NCI / Nature Pathway Interaction Database").type(NETWORK_TYPE).asDataSource();
+	public static final DataSource REACTOME = DataSource.register("REACTOME", "Reactome").type(NETWORK_TYPE).asDataSource();
 	
 	public static final String ID_TYPE = "id";
 	// manually register what is used in cPath WS, parameter input_id_type
-	public final DataSource UNIPROT = DataSource.register("UNIPROT", "UniProt").type(ID_TYPE).asDataSource();
-	public final DataSource CPATH_ID = DataSource.register("CPATH_ID", "CPATH_ID").type(ID_TYPE).asDataSource(); // now - RDFId
-	public final DataSource ENTREZ_GENE = DataSource.register("ENTREZ_GENE", "Entrez Gene").type(ID_TYPE).asDataSource();
-	public final DataSource GENE_SYMBOL =  DataSource.register("GENE_SYMBOL", "Gene Symbol").type(ID_TYPE).asDataSource();
+	public static final DataSource UNIPROT = DataSource.register("UNIPROT", "UniProt").type(ID_TYPE).asDataSource();
+	public static final DataSource CPATH_ID = DataSource.register("CPATH_ID", "CPATH_ID").type(ID_TYPE).asDataSource(); // now - RDFId
+	public static final DataSource ENTREZ_GENE = DataSource.register("ENTREZ_GENE", "Entrez Gene").type(ID_TYPE).asDataSource();
+	public static final DataSource GENE_SYMBOL =  DataSource.register("GENE_SYMBOL", "Gene Symbol").type(ID_TYPE).asDataSource();
 
 	
 	public BioDataTypes(MetadataDAO metadataDAO) {
@@ -104,7 +104,9 @@ public class BioDataTypes {
 		//Register all the pathway data providers (as stored in Warehouse).
 		for(Metadata metadata : metadataDAO.getAll()) {
 			// won't register here data sources of proteins and molecules (warehouse resources)
-			if(metadata.getType() == TYPE.BIOPAX || metadata.getType() == TYPE.PSI_MI) {
+			if(metadata.getType() == TYPE.BIOPAX || metadata.getType() == TYPE.PSI_MI
+				|| metadata.getType() == TYPE.BIOPAX_L2) 
+			{
 				// warn: if s (name) exists, will override
 				DataSource ds = DataSource.register(metadata.getIdentifier(), metadata.getName())
 					.type(NETWORK_TYPE).mainUrl(metadata.getURLToPathwayData()).asDataSource();

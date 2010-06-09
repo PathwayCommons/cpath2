@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice;
+package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
 import java.lang.reflect.Method;

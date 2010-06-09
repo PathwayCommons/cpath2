@@ -50,8 +50,12 @@ import cpath.importer.Normalizer;
  */
 public class IdNormalizer implements Normalizer {
 	private static final Log log = LogFactory.getLog(IdNormalizer.class);
-	public static final String BIOPAX_URI_PREFIX = "urn:biopax:"; // for xrefs
 	
+	/* 
+	 * URI namespace prefix for the utility class IDs 
+	 * generated during data convertion, normalization, merge...
+	 */
+	public static final String BIOPAX_URI_PREFIX = "urn:pathwaycommons:";
 	
 	private BioPAXIOHandler biopaxReader;
 	

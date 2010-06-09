@@ -116,8 +116,8 @@
         </xsd:annotation>
         <xsd:sequence>
             <xsd:element name="error_code" type="xsd:integer"/>
-            <xsd:element name="error_msg" type="xsd:integer"/>
-            <xsd:element name="error_details" type="xsd:integer"/>
+            <xsd:element name="error_msg" type="xsd:string"/>
+            <xsd:element name="error_details" type="xsd:string"/>
         </xsd:sequence>
     </xsd:complexType>
   

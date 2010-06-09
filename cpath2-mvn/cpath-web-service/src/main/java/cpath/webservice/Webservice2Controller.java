@@ -29,6 +29,7 @@
 package cpath.webservice;
 
 import cpath.warehouse.CPathWarehouse;
+import cpath.webservice.args.binding.BiopaxTypeEditor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
