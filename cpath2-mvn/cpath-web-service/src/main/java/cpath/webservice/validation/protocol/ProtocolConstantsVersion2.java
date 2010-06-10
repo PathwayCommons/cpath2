@@ -1,6 +1,7 @@
 package cpath.webservice.validation.protocol;
 
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Protocol Constants, Version 2.0.
@@ -11,7 +12,7 @@ public class ProtocolConstantsVersion2 {
     /**
      * HashSet of Valid Commands.
      */
-    private static HashSet validCommands;
+    private static Set<String> validCommands;
 
     /**
      * Get Neighbors Command.
@@ -88,9 +89,9 @@ public class ProtocolConstantsVersion2 {
      *
      * @return HashMap of Valid Commands.
      */
-    public HashSet getValidCommands() {
+    public Set<String> getValidCommands() {
         if (validCommands == null) {
-            validCommands = new HashSet();
+            validCommands = new HashSet<String>();
             validCommands.add(ProtocolConstants.COMMAND_GET_RECORD_BY_CPATH_ID);
             validCommands.add(ProtocolConstants.COMMAND_HELP);
             validCommands.add(ProtocolConstants.COMMAND_GET_BY_KEYWORD);

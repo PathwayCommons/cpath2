@@ -32,6 +32,7 @@
 package cpath.webservice.validation.protocol;
 
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Protocol Constants, Version 1.0.
@@ -39,25 +40,21 @@ import java.util.HashSet;
  * @author cPath Dev Team.
  */
 public class ProtocolConstantsVersion1 {
-    /**
-     * HashSet of Valid PSI-MI Commands.
-     */
-    private static HashSet validPsiMiCommands;
 
     /**
      * HashSet of Valid BioPAX Commands.
      */
-    private static HashSet validBioPaxCommands;
+    private static Set<String> validBioPaxCommands;
 
     /**
      * HashMap of Valid PSI-MI Formats.
      */
-    private static HashSet validPsiMiFormats;
+    private static Set<String> validPsiMiFormats;
 
     /**
      * HashMap of Valid BioPax Formats.
      */
-    private static HashSet validBioPaxFormats;
+    private static Set<String> validBioPaxFormats;
 
     /**
      * XML Format.
@@ -143,34 +140,15 @@ public class ProtocolConstantsVersion1 {
      */
     public static final int MAX_NUM_HITS = 1000;
 
-    /**
-     * Gets HashSet of Valid PSI-MI Commands.
-     *
-     * @return HashMap of Valid Commands.
-     */
-    public HashSet getValidPsiMiCommands() {
-        if (validPsiMiCommands == null) {
-            validPsiMiCommands = new HashSet();
-            validPsiMiCommands.add(COMMAND_GET_BY_INTERACTOR_NAME_XREF);
-            validPsiMiCommands.add(COMMAND_GET_BY_INTERACTOR_ID);
-            validPsiMiCommands.add(COMMAND_GET_BY_ORGANISM);
-            validPsiMiCommands.add(ProtocolConstants.COMMAND_GET_BY_KEYWORD);
-            validPsiMiCommands.add(COMMAND_GET_BY_DATABASE);
-            validPsiMiCommands.add(COMMAND_GET_BY_PMID);
-            validPsiMiCommands.add(COMMAND_GET_BY_EXPERIMENT_TYPE);
-            validPsiMiCommands.add(ProtocolConstants.COMMAND_HELP);
-        }
-        return validPsiMiCommands;
-    }
 
     /**
      * Gets HashSet of Valid BioPAX Commands.
      *
      * @return HashMap of Valid Commands.
      */
-    public HashSet getValidBioPaxCommands() {
+    public Set<String> getValidBioPaxCommands() {
         if (validBioPaxCommands == null) {
-            validBioPaxCommands = new HashSet();
+            validBioPaxCommands = new HashSet<String>();
             validBioPaxCommands.add(ProtocolConstants.COMMAND_HELP);
             validBioPaxCommands.add(ProtocolConstants.COMMAND_GET_BY_KEYWORD);
             validBioPaxCommands.add(ProtocolConstants.COMMAND_GET_RECORD_BY_CPATH_ID);
@@ -185,9 +163,9 @@ public class ProtocolConstantsVersion1 {
      *
      * @return HashMap of Valid Formats.
      */
-    public HashSet getValidPsiMiFormats() {
+    public Set<String> getValidPsiMiFormats() {
         if (validPsiMiFormats == null) {
-            validPsiMiFormats = new HashSet();
+            validPsiMiFormats = new HashSet<String>();
             validPsiMiFormats.add(FORMAT_XML);
             validPsiMiFormats.add(FORMAT_PSI_MI);
             validPsiMiFormats.add(ProtocolConstants.FORMAT_HTML);
@@ -201,9 +179,9 @@ public class ProtocolConstantsVersion1 {
      *
      * @return HashMap of Valid Formats.
      */
-    public HashSet getValidBioPaxFormats() {
+    public Set<String> getValidBioPaxFormats() {
         if (validBioPaxFormats == null) {
-            validBioPaxFormats = new HashSet();
+            validBioPaxFormats = new HashSet<String>();
             validBioPaxFormats.add(FORMAT_BIO_PAX);
             validBioPaxFormats.add(ProtocolConstants.FORMAT_HTML);
         }

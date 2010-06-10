@@ -43,7 +43,10 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
+import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.UtilityClass;
+import org.biopax.paxtools.model.level3.XReferrable;
+import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.paxtools.controller.SimpleMerger;
 
 import org.springframework.context.ApplicationContext;
@@ -129,11 +132,31 @@ public final class MergerImpl implements Merger {
 					&& !elementExistsInPC) 
 				{
 					// find specific subclass (e.g. CellVocabulary)!
-					Class<? extends UtilityClass> cvType = 
+					Class<? extends UtilityClass> clazz = 
 						(Class<? extends UtilityClass>) bpe.getModelInterface(); 
 					UtilityClass object = cpathWarehouse
-						.getObject(bpe.getRDFId(), cvType);
-					pcModel.add(object);
+						.getObject(bpe.getRDFId(), clazz);
+					
+					// if not found by id, - search by UnificationXrefs
+					if(object==null) {
+						XReferrable r = (XReferrable)bpe; // because PR, SMR, and CV are XReferrable
+						Set<UnificationXref> urefs = new ClassFilterSet<UnificationXref>(
+								r.getXref(), UnificationXref.class);
+						object = cpathWarehouse.getObject(urefs, clazz);
+					}
+					
+					// TODO if not found, shall we search by RelationshipXrefs?.. ;)
+					//...
+					
+					if(object != null) {
+						pcModel.add(object);
+					} else {
+						// TODO log error, add the bpe as is?
+						pcModel.add(bpe);
+						log.warn(bpe.getRDFId() + 
+							" added 'As Is', because nothing's found in Warehouse.");
+					}
+					
 				}
 			}
 			

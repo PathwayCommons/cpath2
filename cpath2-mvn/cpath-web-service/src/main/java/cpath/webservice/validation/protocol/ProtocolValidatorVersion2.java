@@ -1,17 +1,12 @@
 package cpath.webservice.validation.protocol;
 
 import org.mskcc.pathdb.form.WebUIBean;
-import org.mskcc.pathdb.model.CPathRecord;
 import org.mskcc.pathdb.model.ExternalDatabaseRecord;
 import org.mskcc.pathdb.model.ExternalDatabaseSnapshotRecord;
-import org.mskcc.pathdb.servlet.CPathUIConfig;
-import org.mskcc.pathdb.sql.dao.*;
 import org.mskcc.pathdb.util.ExternalDatabaseConstants;
-import org.mskcc.pathdb.action.web_api.binary_interaction_mode.ExecuteBinaryInteraction;
 
-import java.util.List;
-import java.util.HashSet;
-import java.util.ArrayList;
+import java.net.URI;
+import java.util.*;
 
 /**
  * Validates Client/Browser Request, Version 1.0.
@@ -50,23 +45,18 @@ class ProtocolValidatorVersion2 {
      * Validates the Request object.
      *
      * @throws ProtocolException  Indicates Violation of Protocol.
-     * @throws NeedsHelpException Indicates user requests/needs help.
      */
-    public void validate() throws ProtocolException, NeedsHelpException {
-        try {
-            validateCommand();
-            validateVersion();
-            validateIdType(ID_Type.INPUT_ID_TYPE);
-            validateIdType(ID_Type.OUTPUT_ID_TYPE);
-            validateDataSources();
-            validateQuery();
-            validateOutput();
-            validateOrganism();
-            validateMisc();
-        } catch (DaoException e) {
-            throw new ProtocolException(ProtocolStatusCode.INTERNAL_ERROR);
-        }
-    }
+	public void validate() throws ProtocolException{
+		validateCommand();
+		validateVersion();
+		validateIdType(ID_Type.INPUT_ID_TYPE);
+		validateIdType(ID_Type.OUTPUT_ID_TYPE);
+		validateDataSources();
+		validateQuery();
+		validateOutput();
+		validateOrganism();
+		validateMisc();
+	}
 
     /**
      * Validates the organism paramter.
@@ -98,7 +88,7 @@ class ProtocolValidatorVersion2 {
                     "Argument:  '" + ProtocolRequest.ARG_COMMAND
                             + "' is not specified." + ProtocolValidator.HELP_MESSAGE);
         } else {
-            HashSet set = constants.getValidCommands();
+            Set<String> set = constants.getValidCommands();
             if (!set.contains(request.getCommand())) {
                 throw new ProtocolException(ProtocolStatusCode.BAD_COMMAND,
                         "Command:  '" + request.getCommand()
@@ -114,7 +104,7 @@ class ProtocolValidatorVersion2 {
      *
      * @throws ProtocolException Indicates Violation of Protocol.
      */
-    protected void validateQuery() throws ProtocolException, DaoException {
+    protected void validateQuery() throws ProtocolException {
         String command = request.getCommand();
         String q = request.getQuery();
         if (q == null || q.length() == 0) {
@@ -133,11 +123,8 @@ class ProtocolValidatorVersion2 {
                                         + ProtocolConstantsVersion2.MAX_NUM_IDS
                                         + " IDs at a time.");
                     }
-                } else if (command.equals(ProtocolConstantsVersion2.COMMAND_GET_PARENT_SUMMARIES)) {
-                    long cpathId = convertQueryToLong(q);
-                    checkRecordExists(cpathId, q);
                 } else if (command.equals(ProtocolConstants.COMMAND_GET_RECORD_BY_CPATH_ID)) {
-                    long cPathIds[] = convertQueryToLongs(q);
+                    queryToIdList(q); // checks IDs
                 }
             }
         }
@@ -252,7 +239,7 @@ class ProtocolValidatorVersion2 {
         }
     }
 
-    protected void validateDataSources() throws ProtocolException, DaoException {
+    protected void validateDataSources() throws ProtocolException {
         String command = request.getCommand();
         if (command != null &&
                 (command.equals(ProtocolConstantsVersion2.COMMAND_GET_PATHWAY_LIST) ||
@@ -272,7 +259,7 @@ class ProtocolValidatorVersion2 {
     }
 
     private ArrayList getMasterTermList
-            () throws DaoException {
+            (){
         DaoExternalDbSnapshot dao = new DaoExternalDbSnapshot();
         ArrayList list = dao.getAllNetworkDatabaseSnapshots();
         ArrayList masterTermList = new ArrayList();
@@ -285,7 +272,7 @@ class ProtocolValidatorVersion2 {
         return masterTermList;
     }
 
-    protected void validateMisc() throws ProtocolException, DaoException {
+    protected void validateMisc() throws ProtocolException {
 
         String command = request.getCommand();
 
@@ -300,16 +287,8 @@ class ProtocolValidatorVersion2 {
         }
     }
 
-	private void validateMiscGetRecordByCpathIdArgs() throws ProtocolException {
 
-		// validate binary interaction rule
-		validateBinaryInteractionRule();
-	}
-
-    private void validateMiscGetNeighborArgs() throws ProtocolException, DaoException {
-
-		// validate binary interaction rule
-		validateBinaryInteractionRule();
+    private void validateMiscGetNeighborArgs() throws ProtocolException{
 
         // validate fully connected
         String fullyConnected = request.getFullyConnected();
@@ -327,7 +306,7 @@ class ProtocolValidatorVersion2 {
         if (inputIDTerm == null ||
                 inputIDTerm.equals(ExternalDatabaseConstants.INTERNAL_DATABASE)) {
             long recordID = convertQueryToLong(query);
-            checkRecordExists(recordID, query);
+            assertIdIsURI(recordID, query);
         } else if (inputIDTerm != null &&
                 !inputIDTerm.equals(ExternalDatabaseConstants.INTERNAL_DATABASE)) {
             DaoExternalDb daoExternalDb = new DaoExternalDb();
@@ -346,38 +325,18 @@ class ProtocolValidatorVersion2 {
         }
     }
 
-	/**
-	 * Validates the binary interaction rule argument.
-	 */
-	private void validateBinaryInteractionRule() throws ProtocolException {
-
-        String[] binaryInteractionRules = request.getBinaryInteractionRules();
-        if (binaryInteractionRules != null) {
-			// get valid rule types
-			List<String> ruleTypes = ExecuteBinaryInteraction.getRuleTypesForDisplay();
-			// interate through requested rule(s) and check for validity
-			for (String rule : binaryInteractionRules) {
-				if (!ruleTypes.contains(rule)) {
-						throw new ProtocolException(ProtocolStatusCode.INVALID_ARGUMENT,
-													ProtocolRequest.ARG_BINARY_INTERACTION_RULE + ": "
-													+ rule + " is not a recognized binary interaction rule.");
-				}
-			}
-		}
-	}
 
     /**
-     * Checks that the specified cpathId exists within the database.
+     * Checks that the specified Id is URI.
      */
-    private void checkRecordExists(long cpathId, String query) throws DaoException,
-            ProtocolException {
-        DaoCPath daoCPath = DaoCPath.getInstance();
-        CPathRecord record = daoCPath.getRecordById(cpathId);
-        if (record == null) {
-            throw new ProtocolException(ProtocolStatusCode.INVALID_ARGUMENT,
-                    ProtocolRequest.ARG_QUERY + ": an internal record with id: " +
-                            query + " cannot be found.");
-        }
+    private void assertIdIsURI(String id, String query) throws ProtocolException {
+    	try {
+			URI.create(id);
+		} catch (IllegalArgumentException e) {
+			 throw new ProtocolException(ProtocolStatusCode.INVALID_ARGUMENT,
+	                    ProtocolRequest.ARG_QUERY + ": " +
+	                    query + " contains invalid ID (not URI): " + id);
+		}	
     }
 
     /**
@@ -395,16 +354,14 @@ class ProtocolValidatorVersion2 {
         return -1;
     }
 
-    /**
-     * Checks that the query is an integer value.
-     */
-    private long[] convertQueryToLongs(String q) throws ProtocolException {
+
+    private String[] queryToIdList(String q) throws ProtocolException {
         if (q != null) {
             try {
                 String idStrs[] = q.split(",");
-                long ids[] = new long[idStrs.length];
+                String ids[] = new String[idStrs.length];
                 for (int i=0; i< idStrs.length; i++) {
-                    ids[i] = Long.parseLong(idStrs[i].trim());
+                    ids[i] = idStrs[i].trim();
                 }
                 return ids;
             } catch (NumberFormatException e) {

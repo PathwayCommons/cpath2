@@ -31,7 +31,9 @@ package cpath.webservice;
 import cpath.dao.PaxtoolsDAO;
 import cpath.warehouse.beans.Metadata.TYPE;
 import cpath.warehouse.internal.BioDataTypes;
+import cpath.webservice.args.CPathBinaryInteractionRule;
 import cpath.webservice.args.CPathIdType;
+import cpath.webservice.args.CPathProtocolVersion;
 import cpath.webservice.args.Cmd;
 import cpath.webservice.args.GraphType;
 import cpath.webservice.args.OutputFormat;
@@ -285,14 +287,14 @@ public class WebserviceController {
     @ResponseBody
     public String doWebservice(
     		@RequestParam("cmd") @NotNull Cmd cmd, 
-    		@RequestParam(value="version", required=false) String version, // was mandatory...
-    		@RequestParam("q") String q,
+    		@RequestParam(value="version", required=false) CPathProtocolVersion version,
+    		@RequestParam("q") String q, // to be validated below
     		@RequestParam(value="output", required=false) @Valid OutputFormat output,
-    		@RequestParam(value="organism", required=false) @Valid Integer organism,
+    		@RequestParam(value="organism", required=false) @NotNull Integer organism,
     		@RequestParam(value="input_id_type", required=false) @Valid CPathIdType inputIdType,
     		@RequestParam(value="data_source", required=false) @Valid DataSource dataSource,
     		@RequestParam(value="output_id_type", required=false) @Valid CPathIdType outputIdType,
-    		@RequestParam(value="binary_interaction_rule", required=false) @Valid BinaryInteractionType sifRule,
+    		@RequestParam(value="binary_interaction_rule", required=false) @NotNull CPathBinaryInteractionRule rule,
     		BindingResult result
     	) 
     {

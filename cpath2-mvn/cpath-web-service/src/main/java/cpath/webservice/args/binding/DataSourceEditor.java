@@ -53,6 +53,7 @@ public class DataSourceEditor extends PropertyEditorSupport {
 			dataSource = DataSource.getByFullName(ds);
 		}	
 		
+		// TODO the following might not required...
 		if(dataSource == null) { // is URN?
 			for(DataSource d : DataSource.getDataSources()) {
 				URI u1 = URI.create(ds);
