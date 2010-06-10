@@ -27,7 +27,10 @@
 
 package cpath.warehouse;
 
+import java.util.Set;
+
 import org.biopax.paxtools.model.level3.UtilityClass;
+import org.biopax.paxtools.model.level3.Xref;
 
 
 /**
@@ -41,8 +44,7 @@ public interface CPathWarehouse extends CvRepository {
 	
 	/**
 	 * Gets the standard BioPAX utility class object from cPath Warehouse
-	 * (e.g., CellVocabulary or ProteinReference); if required, 
-	 * it performs URI mapping (e.g., to primary uniprot id for protein references)
+	 * (e.g., CellVocabulary, SmallMoleculeReference, or ProteinReference).
 	 * 
 	 * @param <T> UtilityClass or its subclass (e.g., ProteinReference)
 	 * @param urn
@@ -50,6 +52,19 @@ public interface CPathWarehouse extends CvRepository {
 	 * @return
 	 */
 	<T extends UtilityClass> T getObject(String urn, Class<T> utilityClazz);
+	
+	
+	/**
+	 * Finds the object (of BioPAX utility class) in cPath Warehouse,
+	 * e.g., CellVocabulary, SmallMoleculeReference, or ProteinReference, 
+	 * using the set of xrefs to search by.
+	 * 
+	 * @param <T> UtilityClass or its subclass
+	 * @param xrefs query set
+	 * @param clazz
+	 * @return
+	 */
+	<T extends UtilityClass> T getObject(final Set<? extends Xref> xrefs, Class<T> utilityClazz);
 	
 	
 	/**

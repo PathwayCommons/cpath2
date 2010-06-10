@@ -1,9 +1,8 @@
 package cpath.webservice.validation.protocol;
 
 import org.apache.log4j.Logger;
-import org.mskcc.pathdb.servlet.CPathUIConfig;
 
-import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Validates Client/Browser Request, Version 1.0.
@@ -42,7 +41,6 @@ class ProtocolValidatorVersion1 {
         try {
             validateEmptySet();
             validateCommand();
-            validateMaxHits();
             validateVersion();
             validateFormat();
             validateQuery();
@@ -59,54 +57,34 @@ class ProtocolValidatorVersion1 {
      * @throws ProtocolException  Indicates Violation of Protocol.
      * @throws NeedsHelpException Indicates user requests/needs help.
      */
-    private void validateCommand() throws ProtocolException,
-            NeedsHelpException {
-        if (request.getCommand() == null) {
-            throw new ProtocolException(ProtocolStatusCode.MISSING_ARGUMENTS,
-                    "Argument:  '" + ProtocolRequest.ARG_COMMAND
-                            + "' is not specified." + ProtocolValidator.HELP_MESSAGE);
-        }
-        HashSet set;
-        if (CPathUIConfig.getWebMode() == CPathUIConfig.WEB_MODE_PSI_MI) {
-            set = constants.getValidPsiMiCommands();
-        } else {
-            //  Special Case
-            set = constants.getValidBioPaxCommands();
-            if (request.getCommand().equals
-                    (ProtocolConstants.COMMAND_GET_BY_KEYWORD)) {
-                if (request.getFormat() != null && request.getFormat().equals
-                        (ProtocolConstantsVersion1.FORMAT_BIO_PAX)) {
-                    throw new ProtocolException(ProtocolStatusCode.BAD_FORMAT,
-                            "BioPAX format not supported for this command.");
-                }
-            }
-        }
-        if (!set.contains(request.getCommand())) {
-            throw new ProtocolException(ProtocolStatusCode.BAD_COMMAND,
-                    "Command:  '" + request.getCommand()
-                            + "' is not recognized." + ProtocolValidator.HELP_MESSAGE);
-        }
-        if (request.getCommand().equals(ProtocolConstants.COMMAND_HELP)) {
-            throw new NeedsHelpException();
-        }
-    }
-
-    /**
-     * Validates the MaxHits Parameter.
-     *
-     * @throws ProtocolException Indicates Violation of Protocol.
-     */
-    private void validateMaxHits() throws ProtocolException {
-        if (CPathUIConfig.getWebMode() == CPathUIConfig.WEB_MODE_PSI_MI) {
-            int maxHits = request.getMaxHitsInt();
-            if (maxHits > ProtocolConstantsVersion1.MAX_NUM_HITS) {
-                throw new ProtocolException(ProtocolStatusCode.INVALID_ARGUMENT,
-                        "To prevent overloading of the system, clients are "
-                                + "restricted to a maximum of "
-                                + ProtocolConstantsVersion1.MAX_NUM_HITS + " hits at a time.");
-            }
-        }
-    }
+	private void validateCommand() throws ProtocolException, NeedsHelpException {
+		if (request.getCommand() == null) {
+			throw new ProtocolException(ProtocolStatusCode.MISSING_ARGUMENTS,
+					"Argument:  '" + ProtocolRequest.ARG_COMMAND
+					+ "' is not specified." + ProtocolValidator.HELP_MESSAGE);
+		}
+		Set<String> set;
+		// Special Case
+		set = constants.getValidBioPaxCommands();
+		if (request.getCommand().equals(
+				ProtocolConstants.COMMAND_GET_BY_KEYWORD)) {
+			if (request.getFormat() != null
+					&& request.getFormat().equals(
+							ProtocolConstantsVersion1.FORMAT_BIO_PAX)) {
+				throw new ProtocolException(ProtocolStatusCode.BAD_FORMAT,
+						"BioPAX format not supported for this command.");
+			}
+		}
+		if (!set.contains(request.getCommand())) {
+			throw new ProtocolException(ProtocolStatusCode.BAD_COMMAND,
+					"Command:  '" + request.getCommand()
+							+ "' is not recognized."
+							+ ProtocolValidator.HELP_MESSAGE);
+		}
+		if (request.getCommand().equals(ProtocolConstants.COMMAND_HELP)) {
+			throw new NeedsHelpException();
+		}
+	}
 
     /**
      * Validates the Format Parameter.
@@ -120,12 +98,7 @@ class ProtocolValidatorVersion1 {
                             "Argument:  '" + ProtocolRequest.ARG_FORMAT
                                     + "' is not specified." + ProtocolValidator.HELP_MESSAGE);
         }
-        HashSet set;
-        if (CPathUIConfig.getWebMode() == CPathUIConfig.WEB_MODE_PSI_MI) {
-            set = constants.getValidPsiMiFormats();
-        } else {
-            set = constants.getValidBioPaxFormats();
-        }
+        Set<String> set = constants.getValidBioPaxFormats();
         if (!set.contains(request.getFormat())) {
             throw new ProtocolException(ProtocolStatusCode.BAD_FORMAT,
                     "Format:  '" + request.getFormat()
@@ -173,8 +146,10 @@ class ProtocolValidatorVersion1 {
             }
         } else if (command.equals
                 (ProtocolConstantsVersion1.COMMAND_GET_TOP_LEVEL_PATHWAY_LIST)) {
-            // ProtocolConstants.COMMAND_GET_TOP_LEVEL_PATHWAY_LIST can appear
-            // without a query parameter or an organism parameter.
+            /*
+             * ProtocolConstants.COMMAND_GET_TOP_LEVEL_PATHWAY_LIST can appear
+             * without a query parameter or an organism parameter.
+             */
             return;
         }
         else {

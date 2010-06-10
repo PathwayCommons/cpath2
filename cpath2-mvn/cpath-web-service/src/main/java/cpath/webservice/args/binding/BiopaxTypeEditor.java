@@ -48,8 +48,9 @@ public class BiopaxTypeEditor extends PropertyEditorSupport {
 	private static BioPAXFactory bioPAXFactory;
 	
 	static {
+		bioPAXFactory = BioPAXLevel.L3.getDefaultFactory();
 		typesByName = new TreeMap<String, Class<? extends BioPAXElement>>(); // want it sorted
-		for (Method method : BioPAXLevel.L3.getDefaultFactory().getClass().getMethods())
+		for (Method method : bioPAXFactory.getClass().getMethods())
 		{
 			if (method.getName().startsWith("create"))
 			{
@@ -59,8 +60,6 @@ public class BiopaxTypeEditor extends PropertyEditorSupport {
 				typesByName.put(clazz.getSimpleName(), clazz);
 			}
 		}
-		
-		bioPAXFactory = BioPAXLevel.L3.getDefaultFactory();
 	}
 	
 	

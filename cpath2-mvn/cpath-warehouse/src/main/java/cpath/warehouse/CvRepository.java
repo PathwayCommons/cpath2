@@ -49,17 +49,16 @@ public interface CvRepository {
 	<T extends ControlledVocabulary> T getControlledVocabulary(String urn, Class<T> cvClass);
 	
 	/**
-	 * Gets a CV
+	 * Gets a CV by ontology name and term accession
 	 * 
 	 * @param <T>
-	 * @param db "database" name, like in Xrefs, i.e., OBO ontology name or synonym (e.g., "Gene Ontology", "go", or "urn:miriam:obo.go")
+	 * @param db "database" name, like Xref's, i.e., OBO ontology name, synonym, or uri (e.g., "Gene Ontology", "go", or "urn:miriam:obo.go"!)
 	 * @param id term accession number (identifier)
 	 * @param cvClass
 	 * @return
 	 */
 	<T extends ControlledVocabulary> T getControlledVocabulary(String db, String id, Class<T> cvClass);
 
-	
 	
 	/*
 	 * CVs Hierarchy Access

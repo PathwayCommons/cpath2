@@ -58,6 +58,7 @@ import cpath.warehouse.CvRepository;
 public final class OntologyManagerCvRepository extends BiopaxOntologyManager implements CvRepository {
 	private static final Log log = LogFactory.getLog(OntologyManagerCvRepository.class);
 	private static final String URN_OBO_PREFIX = "urn:miriam:obo.";
+	private static final String URN_UNIFICATION_XREF_PREFIX = "urn:pathwaycommons:UnificationXref:";
 	private static BioPAXFactory biopaxFactory = BioPAXLevel.L3.getDefaultFactory();
 	
 	/**
@@ -65,7 +66,7 @@ public final class OntologyManagerCvRepository extends BiopaxOntologyManager imp
 	 * 
 	 * @param ontologies ontology config XML resource (for OntologyManager)
 	 * @param miriam
-	 * @param ontTmpDir TODO
+	 * @param ontTmpDir
 	 * @throws Exception
 	 */
 	public OntologyManagerCvRepository(Resource ontologies, String ontTmpDir) {
@@ -86,9 +87,29 @@ public final class OntologyManagerCvRepository extends BiopaxOntologyManager imp
 	 * @see cpath.warehouse.CvRepository#getByDbAndId(java.lang.String, java.lang.String, java.lang.Class)
 	 */
 	@Override
-	public <T extends ControlledVocabulary> T getControlledVocabulary(String db,
-			String id, Class<T> cvClass) {
-		// TODO Auto-generated method stub
+	public <T extends ControlledVocabulary> T getControlledVocabulary(
+			String db, String id, Class<T> cvClass) 
+	{
+		OntologyTermI term = null;
+		
+		Ontology ontology = getOntology(db);
+		if(ontology == null) // it may be urn -
+			ontology = getOntologyByUrn(db);
+		
+		if (ontology != null) {
+			term = ontology.getTermForAccession(id);
+		} else { // still null? well, no problem -
+			/*
+			 * surprisingly or by design, "accession" is a unique key (through
+			 * all ontologies) in the ontology manager
+			 */
+			term = findTermByAccession(id);
+		}
+		
+		if(term != null) {
+			return getControlledVocabulary(term, cvClass);
+		} 
+		
 		return null;
 	}
 
@@ -101,21 +122,7 @@ public final class OntologyManagerCvRepository extends BiopaxOntologyManager imp
 			Class<T> cvClass) 
 	{
 		OntologyTermI term = getTermByUrn(urn);
-		
-		T cv = biopaxFactory.reflectivelyCreate(cvClass);
-		cv.setRDFId(urn);
-		cv.addTerm(term.getPreferredName());
-		
-		UnificationXref uref = biopaxFactory.reflectivelyCreate(UnificationXref.class);
-		String ontId = term.getOntologyId(); // like "GO" 
-		String db = getOntology(ontId).getName(); // names were fixed in the constructor!
-		uref.setDb(db); 
-		String rdfid = "http://biopax.org/UnificationXref#" + 
-			URLEncoder.encode(uref.getDb() + "_" + term.getTermAccession());
-		uref.setRDFId(rdfid);
-		uref.setId(term.getTermAccession());
-		cv.addXref(uref);
-		
+		T cv = getControlledVocabulary(term, cvClass);
 		return cv;
 	}
 	
@@ -162,6 +169,27 @@ public final class OntologyManagerCvRepository extends BiopaxOntologyManager imp
 	 *        Internal Methods (package-private - for easy testing)              *
 	 * ==========================================================================*/
 	
+	
+	<T extends ControlledVocabulary> T getControlledVocabulary(OntologyTermI term,
+			Class<T> cvClass) 
+	{
+		String urn = ontologyTermToUrn(term);
+		T cv = biopaxFactory.reflectivelyCreate(cvClass);
+		cv.setRDFId(urn);
+		cv.addTerm(term.getPreferredName());
+		
+		UnificationXref uref = biopaxFactory.reflectivelyCreate(UnificationXref.class);
+		String ontId = term.getOntologyId(); // like "GO" 
+		String db = getOntology(ontId).getName(); // names were fixed in the constructor!
+		uref.setDb(db); 
+		String rdfid = URN_UNIFICATION_XREF_PREFIX + 
+			URLEncoder.encode(uref.getDb() + "_" + term.getTermAccession());
+		uref.setRDFId(rdfid);
+		uref.setId(term.getTermAccession());
+		cv.addXref(uref);
+		return cv;
+	}
+	
 
 	OntologyTermI getTermByUrn(String urn) {
 		if(urn.startsWith(URN_OBO_PREFIX)) {
@@ -196,15 +224,17 @@ public final class OntologyManagerCvRepository extends BiopaxOntologyManager imp
 	
 	Set<String> ontologyTermsToUrns(Collection<OntologyTermI> terms) {
 		Set<String> urns = new HashSet<String>();
-		
 		for(OntologyTermI term : terms) {
-			String ontologyID = term.getOntologyId();
-			String accession = term.getTermAccession();
-			String urn = MiriamLink.getURI(ontologyID, accession);
-			urns.add(urn);
+			urns.add(ontologyTermToUrn(term));
 		}
-		
 		return urns;
+	}
+	
+	String ontologyTermToUrn(OntologyTermI term) {
+		String ontologyID = term.getOntologyId();
+		String accession = term.getTermAccession();
+		String urn = MiriamLink.getURI(ontologyID, accession);
+		return urn;
 	}
 	
 	
