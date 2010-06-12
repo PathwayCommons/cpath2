@@ -1,8 +1,8 @@
-// $Id$
-//------------------------------------------------------------------------------
-/** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center.
+/**
+ ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** and University of Toronto (UofT).
  **
- ** This library is free software; you can redistribute it and/or modify it
+ ** This is free software; you can redistribute it and/or modify it
  ** under the terms of the GNU Lesser General Public License as published
  ** by the Free Software Foundation; either version 2.1 of the License, or
  ** any later version.
@@ -11,41 +11,40 @@
  ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
  ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
  ** documentation provided hereunder is on an "as is" basis, and
- ** Memorial Sloan-Kettering Cancer Center
- ** has no obligations to provide maintenance, support,
- ** updates, enhancements or modifications.  In no event shall
- ** Memorial Sloan-Kettering Cancer Center
- ** be liable to any party for direct, indirect, special,
+ ** both UofT and MSKCC have no obligations to provide maintenance, 
+ ** support, updates, enhancements or modifications.  In no event shall
+ ** UofT or MSKCC be liable to any party for direct, indirect, special,
  ** incidental or consequential damages, including lost profits, arising
  ** out of the use of this software and its documentation, even if
- ** Memorial Sloan-Kettering Cancer Center
- ** has been advised of the possibility of such damage.  See
- ** the GNU Lesser General Public License for more details.
+ ** UofT or MSKCC have been advised of the possibility of such damage.  
+ ** See the GNU Lesser General Public License for more details.
  **
  ** You should have received a copy of the GNU Lesser General Public License
- ** along with this library; if not, write to the Free Software Foundation,
- ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+ ** along with this software; if not, write to the Free Software Foundation,
+ ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
+ ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
+
 package cpath.webservice;
 
 import cpath.dao.PaxtoolsDAO;
-import cpath.warehouse.beans.Metadata.TYPE;
 import cpath.warehouse.internal.BioDataTypes;
-import cpath.webservice.args.CPathBinaryInteractionRule;
-import cpath.webservice.args.CPathIdType;
-import cpath.webservice.args.CPathProtocolVersion;
+import cpath.warehouse.internal.BioDataTypes.Type;
+import cpath.webservice.args.BinaryInteractionRule;
+import cpath.webservice.args.PathwayDataSource;
+import cpath.webservice.args.ProtocolVersion;
 import cpath.webservice.args.Cmd;
 import cpath.webservice.args.GraphType;
 import cpath.webservice.args.OutputFormat;
+import cpath.webservice.args.binding.BinaryInteractionRuleEditor;
 import cpath.webservice.args.binding.BiopaxTypeEditor;
 import cpath.webservice.args.binding.CmdEditor;
-import cpath.webservice.args.binding.DataSourceEditor;
+import cpath.webservice.args.binding.PathwayDataSourceEditor;
 import cpath.webservice.args.binding.GraphTypeEditor;
 import cpath.webservice.args.binding.OutputFormatEditor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.io.sif.BinaryInteractionType;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
@@ -60,13 +59,12 @@ import java.io.*;
 import java.util.*;
 
 import javax.annotation.PostConstruct;
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 /**
  * cPathSquared Main Web Service.
  * 
- * TODO add request param. validation
+ * @author rodche
  */
 @Controller
 public class WebserviceController {
@@ -80,15 +78,7 @@ public class WebserviceController {
     @PostConstruct
     void init() {
     	// re-build Lucene index (TODO is this required?)
-    	pcDAO.createIndex();
- 
-    	// if not already done, init the global list of data sources
-    	// (BioDataTypes bean still must be initialized by app. context)
-    	try {
-			Class.forName("cpath.warehouse.internal.BioDataTypes");
-		} catch (ClassNotFoundException e) {
-			throw new IllegalStateException(e);
-		}
+    	//pcDAO.createIndex();
     }
     
 
@@ -108,10 +98,10 @@ public class WebserviceController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
-        binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
-        binder.registerCustomEditor(DataSource.class, new DataSourceEditor());
+        binder.registerCustomEditor(BioPAXElement.class, new BiopaxTypeEditor());
+        binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
-        //TODO register SIF rules (BinaryInteractionType) editor
+        binder.registerCustomEditor(BinaryInteractionRule.class, new BinaryInteractionRuleEditor());
     }
 	
 	
@@ -267,13 +257,9 @@ public class WebserviceController {
     @ResponseBody
     public String getDatasources() {
     	StringBuffer toReturn = new StringBuffer();
-    	for(String name : DataSource.getFullNames()) {
-    		DataSource ds = DataSource.getByFullName(name);
-    		if(ds.getType().equals(TYPE.BIOPAX) || ds.getType().equals(TYPE.PSI_MI)
-    				|| ds.getType().equals(BioDataTypes.NETWORK_TYPE)) {
-    			String code = ds.getSystemCode();
-    			toReturn.append(code).append(newline);
-    		}
+    	for(DataSource ds : BioDataTypes.getDataSources(Type.PATHWAY_DATA)) {
+    		String code = ds.getSystemCode();
+    		toReturn.append(code).append(newline);
     	}
     	return toReturn.toString();
     }	
@@ -287,14 +273,14 @@ public class WebserviceController {
     @ResponseBody
     public String doWebservice(
     		@RequestParam("cmd") @NotNull Cmd cmd, 
-    		@RequestParam(value="version", required=false) CPathProtocolVersion version,
-    		@RequestParam("q") String q, // to be validated below
-    		@RequestParam(value="output", required=false) @Valid OutputFormat output,
+    		@RequestParam(value="version", required=false) String version,
+    		@RequestParam("q") String q,
+    		@RequestParam(value="output", required=false) @NotNull OutputFormat output,
     		@RequestParam(value="organism", required=false) @NotNull Integer organism,
-    		@RequestParam(value="input_id_type", required=false) @Valid CPathIdType inputIdType,
-    		@RequestParam(value="data_source", required=false) @Valid DataSource dataSource,
-    		@RequestParam(value="output_id_type", required=false) @Valid CPathIdType outputIdType,
-    		@RequestParam(value="binary_interaction_rule", required=false) @NotNull CPathBinaryInteractionRule rule,
+    		@RequestParam(value="input_id_type", required=false) String inputIdType,
+    		@RequestParam(value="data_source", required=false) @NotNull PathwayDataSource dataSource,
+    		@RequestParam(value="output_id_type", required=false) String outputIdType,
+    		@RequestParam(value="binary_interaction_rule", required=false) @NotNull BinaryInteractionRule rule,
     		BindingResult result
     	) 
     {
@@ -303,8 +289,7 @@ public class WebserviceController {
     	// TODO check individual parameters validation result (BindingResult); and return only the first error?..
     	
     	
-    	
-    	// TODO also validate using the cPath protocol...
+    	// TODO continue to validate using ProtocolRequest and ProtocolValidator....
     	
     	
     	return toReturn;

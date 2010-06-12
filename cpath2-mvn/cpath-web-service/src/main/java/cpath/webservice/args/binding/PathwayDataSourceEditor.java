@@ -25,61 +25,56 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice.args;
+package cpath.webservice.args.binding;
+
+import java.beans.PropertyEditorSupport;
+import java.net.URI;
 
 import org.bridgedb.DataSource;
 
 import cpath.warehouse.internal.BioDataTypes;
+import cpath.warehouse.internal.BioDataTypes.Type;
+import cpath.webservice.args.PathwayDataSource;
 
 
 /**
- * Limit choice of values for the cPath webservice's 
- * parameter 'data_source' (added mainly for backward compatibility)
- * 
- * All the required data sources (as org.bridgedb.DataSource) -
- * networks/pathway data providers, ID types, etc., - 
- * are defined and initialized in the Warehouse's bean BioDataTypes.
- * This enumeration defines a sub-set of those.
+ * Helps parse the string parameter in the web service call
+ * (data_source: identifier, full name or official Miriam URI);
+ * sets NULL if none of the 'network' data sources matched.
  * 
  * @author rodche
  *
  */
-public enum CPathDataSource {
-	BIOGRID(BioDataTypes.BIOGRID),
-	CELL_MAP(BioDataTypes.CELL_MAP),
-	HPRD(BioDataTypes.HPRD),
-	HUMANCYC(BioDataTypes.HUMANCYC),
-	IMID(BioDataTypes.IMID),
-	INTACT(BioDataTypes.INTACT),
-	MINT(BioDataTypes.MINT),
-	NCI_NATURE(BioDataTypes.NCI_NATURE),
-	REACTOME(BioDataTypes.REACTOME),
-	;
+public class PathwayDataSourceEditor extends PropertyEditorSupport {
 	
-	public final DataSource dataSource;
-	
-	private CPathDataSource(DataSource dataSource) {
-		this.dataSource = dataSource;
-	}
-	
-	public static CPathDataSource parse(String value) {
-		for(CPathDataSource v : CPathDataSource.values()) {
-			if(value.equalsIgnoreCase(v.dataSource.getSystemCode())
-				|| value.equalsIgnoreCase(v.dataSource.getFullName())
-			) return v;
-		}
-		return null;
-	}
-	
-	public static boolean contains(DataSource dataSource) {
+	/* (non-Javadoc)
+	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
+	 */
+	@Override
+	public void setAsText(String ds) throws IllegalArgumentException {
+		DataSource dataSource = null;
+		URI u1 = URI.create(ds);
 		
-		for(CPathDataSource v : CPathDataSource.values()) {
-			if(v.dataSource.equals(dataSource)) 
-				return true;
+		/*
+		 * all the pathway data sources 
+		 * should have been already registered by BioDataTypes
+		 */
+		for (DataSource d : BioDataTypes.getDataSources(Type.PATHWAY_DATA)) {
+			// guess it's an id or name
+			if (d.getSystemCode().equalsIgnoreCase(ds)
+					|| d.getFullName().equalsIgnoreCase(ds)) {
+				dataSource = d;
+				break;
+			} else // may be URN?
+			{
+				if (u1.equals(URI.create(d.getURN("")))) {
+					dataSource = d;
+					break;
+				}
+			}
 		}
-		return false;
-		
-		//return parse(dataSource.getSystemCode()) != null;
+
+		setValue(new PathwayDataSource(dataSource));
 	}
 	
 }

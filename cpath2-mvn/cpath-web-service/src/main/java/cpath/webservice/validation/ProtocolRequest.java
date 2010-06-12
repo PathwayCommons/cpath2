@@ -30,11 +30,13 @@
  ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
  **/
 
-package cpath.webservice.validation.protocol;
+package cpath.webservice.validation;
 
 import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.GetMethod;
+
+import cpath.webservice.args.ProtocolVersion;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -268,7 +270,7 @@ public class ProtocolRequest {
      * Constructor.
      */
     public ProtocolRequest() {
-        this.version = ProtocolConstantsVersion1.VERSION_1;
+        this.version = ProtocolVersion.VERSION_2.name();
         this.startIndex = 0;
         this.organism = null;
         this.maxHits = null;
@@ -300,7 +302,7 @@ public class ProtocolRequest {
         this.organism = parameterMap.get
                 (ProtocolRequest.ARG_ORGANISM);
         if (maxHits == null) {
-            maxHits = Integer.toString(ProtocolConstantsVersion1.DEFAULT_MAX_HITS);
+            maxHits = "25";
         }
         String startStr =
                 (String) parameterMap.get(ProtocolRequest.ARG_START_INDEX);

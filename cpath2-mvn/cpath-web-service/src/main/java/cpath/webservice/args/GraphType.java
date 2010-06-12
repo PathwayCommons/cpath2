@@ -1,5 +1,5 @@
 /**
- ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
  ** and University of Toronto (UofT).
  **
  ** This is free software; you can redistribute it and/or modify it
@@ -40,14 +40,5 @@ public enum GraphType {
 
 	private GraphType(String value) {
 		this.fullName = value;
-	}
-	
-	public static GraphType parse(String value) {
-		for(GraphType v : GraphType.values()) {
-			if(value.equalsIgnoreCase(v.toString())) {
-				return v;
-			}
-		}
-		return null;
 	}
 }

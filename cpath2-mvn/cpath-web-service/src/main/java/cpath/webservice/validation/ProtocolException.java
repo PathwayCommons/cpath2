@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice.validation.protocol;
+package cpath.webservice.validation;
 
 import java.io.*;
 import java.util.Stack;

@@ -29,20 +29,15 @@ package cpath.webservice.args;
 
 public enum OutputFormat {
 	BIOPAX,
-	SIF,
+	BINARY_SIF,
 	SBML,
 	GSEA,
 	PC_GENE_SET,
 	ID_LIST,
 	IMAGE,
+	IMAGE_MAP,
+	IMAGE_MAP_THUMBNAIL,
+	IMAGE_MAP_IPHONE,
+	IMAGE_MAP_FRAMESET,
 	;
-	
-	public static OutputFormat parse(String value) {
-		for(OutputFormat v : OutputFormat.values()) {
-			if(value.equalsIgnoreCase(v.toString())) {
-				return v;
-			}
-		}
-		return null;
-	}
 }

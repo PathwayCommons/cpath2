@@ -1,5 +1,5 @@
 /**
- ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
  ** and University of Toronto (UofT).
  **
  ** This is free software; you can redistribute it and/or modify it
@@ -27,45 +27,36 @@
 
 package cpath.webservice.args;
 
-import org.bridgedb.DataSource;
-
-import cpath.warehouse.internal.BioDataTypes;
-
-
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * Limits values for the cPath webservice's parameters -
- * 'input_id_type' and 'output_id_type'  
- * (added for backward compatibility).
- * 
- * All the required data sources (as org.bridgedb.DataSource) -
- * networks/pathway data providers, ID types, etc., - 
- * are defined and initialized in the Warehouse's bean BioDataTypes.
- * This enumeration defines a sub-set of those.
+ * Enumeration for legacy webservice versions
+ * (added for backward compatibility with cPath)
  * 
  * @author rodche
- *
  */
-public enum CPathIdType {
-	UNIPROT(BioDataTypes.UNIPROT),
-	CPATH_ID(BioDataTypes.CPATH_ID),
-	ENTREZ_GENE(BioDataTypes.ENTREZ_GENE),
-	GENE_SYMBOL(BioDataTypes.GENE_SYMBOL),
-	;
+public enum ProtocolVersion { 
+	VERSION_2("2.0"), 
+	VERSION_3("3.0");
 	
-	public final DataSource dataSource;
+	public final String value;
 	
-	private CPathIdType(DataSource dataSource) {
-		this.dataSource = dataSource;
+	private static final Map<String, ProtocolVersion> 
+		lookup = new HashMap<String, ProtocolVersion>();
+	
+	static {
+		for(ProtocolVersion r : EnumSet.allOf(ProtocolVersion.class))
+			lookup.put(r.value, r);
 	}
 	
-	public static CPathIdType parse(String value) {
-		for(CPathIdType v : CPathIdType.values()) {
-			if(value.equalsIgnoreCase(v.dataSource.getSystemCode())
-				|| value.equalsIgnoreCase(v.dataSource.getFullName())
-			) return v;
-		}
-		return null;
+	private ProtocolVersion(String v) {
+		value = v;
+	}
+	
+	public static ProtocolVersion fromValue(String v) {
+		return lookup.get(v);
 	}
 	
 }

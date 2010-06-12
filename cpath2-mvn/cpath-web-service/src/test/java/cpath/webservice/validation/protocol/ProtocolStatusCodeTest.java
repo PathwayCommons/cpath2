@@ -7,6 +7,7 @@ import java.util.List;
 import org.junit.Test;
 
 import cpath.webservice.jaxb.ErrorType;
+import cpath.webservice.validation.ProtocolStatusCode;
 
 public class ProtocolStatusCodeTest {
 

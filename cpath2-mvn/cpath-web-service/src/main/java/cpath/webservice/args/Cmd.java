@@ -39,14 +39,11 @@ public enum Cmd {
 	GET_PATHWAYS,
 	GET_NEIGHBORS,
 	GET_PARENTS,
-	GET_RECORD_BY_CPATH_ID;
-	
-	public static Cmd parse(String value) {
-		for(Cmd v : Cmd.values()) {
-			if(value.equalsIgnoreCase(v.toString())) {
-				return v;
-			}
-		}
-		return null;
-	}
+	GET_RECORD_BY_CPATH_ID,
+	// old?
+	GET_BY_KEYWORD,
+	HELP,
+	// perhaps we need -
+	COUNT,
+	;
 }

@@ -1,5 +1,5 @@
 /**
- ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
  ** and University of Toronto (UofT).
  **
  ** This is free software; you can redistribute it and/or modify it
@@ -25,47 +25,38 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice.args.binding;
-
-import java.beans.PropertyEditorSupport;
-import java.net.URI;
+package cpath.webservice.args;
 
 import org.bridgedb.DataSource;
 
+import cpath.warehouse.internal.BioDataTypes.Type;
+
 
 /**
- * Converts a string parameter to org.bridgedb.DataSource
+ * This defines a specific set values for the webservice 
+ * parameter 'data_source' (- mainly for backward compatibility).
  * 
- * @author rodche
+ * All the required data sources (as org.bridgedb.DataSource) -
+ * networks/pathway data providers, - 
+ * are defined in the bioDataTypes bean.
  *
+ * @author rodche
  */
-public class DataSourceEditor extends PropertyEditorSupport {
+public class PathwayDataSource {
 	
-	/* (non-Javadoc)
-	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
-	 */
-	@Override
-	public void setAsText(String ds) throws IllegalArgumentException {
-		// guess it's a key (data source code)
-		DataSource dataSource = DataSource.getBySystemCode(ds);
-		
-		if(dataSource == null) { // is full name?
-			dataSource = DataSource.getByFullName(ds);
-		}	
-		
-		// TODO the following might not required...
-		if(dataSource == null) { // is URN?
-			for(DataSource d : DataSource.getDataSources()) {
-				URI u1 = URI.create(ds);
-				URI u2 = URI.create(d.getURN(""));
-				if(u1.equals(u2)) {
-					dataSource = d;
-					break;
-				}
-			}
+	private final DataSource dataSource;
+	
+	public PathwayDataSource(DataSource dataSource) {
+		if(dataSource.getType().equals(Type.PATHWAY_DATA.name()))
+		{
+			this.dataSource = dataSource;
+		} else {
+			throw new IllegalArgumentException("Not " 
+					+ Type.PATHWAY_DATA + "  datasource type!");
 		}
-		
-		setValue(dataSource);
-	}
+	}	
 	
+	public DataSource asDataSource() {
+		return dataSource;
+	}
 }

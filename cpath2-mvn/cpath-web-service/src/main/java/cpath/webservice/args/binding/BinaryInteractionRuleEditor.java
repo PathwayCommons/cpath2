@@ -25,40 +25,29 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice.validation;
+package cpath.webservice.args.binding;
 
-import org.bridgedb.DataSource;
-import org.springframework.validation.Errors;
-import org.springframework.validation.Validator;
+import java.beans.PropertyEditorSupport;
 
-import cpath.warehouse.internal.BioDataTypes;
-import cpath.webservice.jaxb.ErrorType;
-import cpath.webservice.validation.protocol.ProtocolStatusCode;
+import cpath.webservice.args.BinaryInteractionRule;
 
 /**
- * Checks if DataSource is not of BioDataTypes.NETWORK_TYPE.
- * 
  * @author rodche
  *
  */
-public class CPathDataSourceValidator implements Validator {
-
+public class BinaryInteractionRuleEditor extends PropertyEditorSupport {
+	
+	/* (non-Javadoc)
+	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
+	 */
 	@Override
-	public boolean supports(Class<?> clazz) {
-		return clazz.equals(DataSource.class);
-	}
-
-	@Override
-	public void validate(Object target, Errors errors) {
-		DataSource ds = (DataSource) target;
-		//if(!CPathDataSource.contains(ds)) { // no good.., too limiting (for old cPath only)
-		if(!ds.getType().equals(BioDataTypes.NETWORK_TYPE)) {
-			ErrorType e = ProtocolStatusCode.INVALID_ARGUMENT.getError();
-			e.setErrorDetails("Value for 'data_source' does not match any " +
-				"pathway data provider's name (who's data were merged into " +
-				"our system).");
-			errors.reject(e.getErrorCode().toString(), ProtocolStatusCode.marshal(e));
+	public void setAsText(String arg0) throws IllegalArgumentException {
+		BinaryInteractionRule value = null;
+		try{
+			value = BinaryInteractionRule.valueOf(arg0.trim().toUpperCase());
+		} catch (IllegalArgumentException e) {
 		}
+		setValue(value);
 	}
-
+	
 }

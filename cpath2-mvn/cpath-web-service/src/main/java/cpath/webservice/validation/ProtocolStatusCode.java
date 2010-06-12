@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice.validation.protocol;
+package cpath.webservice.validation;
 
 import java.io.StringWriter;
 import java.math.BigInteger;
@@ -42,9 +42,7 @@ import cpath.webservice.jaxb.ErrorType;
 /**
  * Enumeration of Protocol Status Codes.
  *
- * @author Ethan Cerami
- * @author Igor Rodchenkov - 06/2010, 
- * original cPath code modified and adapted for cPathSquared
+ * @author rodche
  */
 public enum ProtocolStatusCode {
     /**
