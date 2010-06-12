@@ -43,7 +43,12 @@ public class GraphTypeEditor extends PropertyEditorSupport {
 	 */
 	@Override
 	public void setAsText(String arg0) throws IllegalArgumentException {
-		setValue(GraphType.parse(arg0));
+		GraphType value = null;
+		try{
+			value = GraphType.valueOf(arg0.trim().toUpperCase());
+		} catch (IllegalArgumentException e) {
+		}
+		setValue(value);
 	}
 	
 }

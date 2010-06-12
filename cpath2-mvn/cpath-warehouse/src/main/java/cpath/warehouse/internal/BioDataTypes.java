@@ -1,5 +1,5 @@
 /**
- ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
  ** and University of Toronto (UofT).
  **
  ** This is free software; you can redistribute it and/or modify it
@@ -27,20 +27,23 @@
 
 package cpath.warehouse.internal;
 
+import java.util.*;
+
 import javax.annotation.PostConstruct;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.miriam.MiriamLink;
+//import org.biopax.miriam.MiriamLink;
 import org.bridgedb.DataSource;
+import org.bridgedb.DataSource.Builder;
 
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.TYPE;
 
 /**
- * This convenience bean makes all the CPathSquared data sources (from Metadata),
- * id types, and legacy (cPath) data_source names accessible via Bridgedb DataSource.
+ * This convenience bean makes all the CPathSquared data sources,
+ * id types, and legacy (cPath) data_source names accessible via org.bridgedb.DataSource.
  * For example, one can get BIOGRID data source from anywhere (in the same JVM),
  * either as BioDataTypes.BIOGRID, DataSource.getBySystemCode("BIOGRID").
  * or DataSource.getByFullName("BioGRID"), etc.
@@ -48,30 +51,29 @@ import cpath.warehouse.beans.Metadata.TYPE;
  * @author rodche
  *
  */
-public class BioDataTypes {
+public final class BioDataTypes {
 	private static final Log LOG = LogFactory.getLog(BioDataTypes.class);
 	
 	private MetadataDAO metadataDAO;
 
-	public static final String NETWORK_TYPE = "network";
-	// manually register legacy (cpath) data source names
-	public static final DataSource BIOGRID = DataSource.register("BIOGRID", "BioGRID").type(NETWORK_TYPE).asDataSource();
-	public static final DataSource CELL_MAP = DataSource.register("CELL_MAP", "Cancer Cell Map").type(NETWORK_TYPE).asDataSource(); 
-	public static final DataSource HPRD = DataSource.register("HPRD", "HPRD").type("").type(NETWORK_TYPE).asDataSource();
-	public static final DataSource HUMANCYC = DataSource.register("HUMANCYC", "HumanCyc").type(NETWORK_TYPE).asDataSource();
-	public static final DataSource IMID = DataSource.register("IMID", "IMID").type(NETWORK_TYPE).asDataSource();
-	public static final DataSource INTACT = DataSource.register("INTACT", "IntAct").type(NETWORK_TYPE).asDataSource();
-	public static final DataSource MINT = DataSource.register("MINT", "MINT").type(NETWORK_TYPE).asDataSource();
-	public static final DataSource NCI_NATURE = DataSource.register("NCI_NATURE", "NCI / Nature Pathway Interaction Database").type(NETWORK_TYPE).asDataSource();
-	public static final DataSource REACTOME = DataSource.register("REACTOME", "Reactome").type(NETWORK_TYPE).asDataSource();
-	
-	public static final String ID_TYPE = "id";
-	// manually register what is used in cPath WS, parameter input_id_type
-	public static final DataSource UNIPROT = DataSource.register("UNIPROT", "UniProt").type(ID_TYPE).asDataSource();
-	public static final DataSource CPATH_ID = DataSource.register("CPATH_ID", "CPATH_ID").type(ID_TYPE).asDataSource(); // now - RDFId
-	public static final DataSource ENTREZ_GENE = DataSource.register("ENTREZ_GENE", "Entrez Gene").type(ID_TYPE).asDataSource();
-	public static final DataSource GENE_SYMBOL =  DataSource.register("GENE_SYMBOL", "Gene Symbol").type(ID_TYPE).asDataSource();
-
+	/** 
+	 * Enumeration to use for the 'type' property 
+	 * when registering new org.bridgedb.DataSource
+	 */
+	public enum Type {
+	// for pathway/network data provider
+		PATHWAY_DATA,	
+	// for physical entity's and other identifiers (RDFId, CPATH_ID, InCHI, iRefWeb, etc.)
+		IDENTIFIER;
+		
+		public static Type parse(String value) {
+			for(Type v : Type.values()) {
+				if(v.name().equalsIgnoreCase(value))
+					return v;
+			}
+			return null;
+		}
+	}
 	
 	public BioDataTypes(MetadataDAO metadataDAO) {
 		this.metadataDAO = metadataDAO;
@@ -79,60 +81,103 @@ public class BioDataTypes {
 
 	
 	/**
-	 * Initializes (Bridgedb) data sources.
+	 * Initializes data sources.
 	 * 
-	 * Note: metadata.getType() becomes DataSource's type, and it will be used, 
-	 * e.g., in web controllers, to separate "true" cPathSquare data sources 
+	 * Note: metadata.getType() becomes DataSource's type, and it will be used 
+	 * in the web controller, to separate known to cPathSquare data sources 
 	 * from the rest.
 	 * 
 	 */
 	@PostConstruct
-	void init() {
-		
-		// register MIRIAM data types as "id" data sources
+	void init() 
+	{
+		/* probably, wrong or not required (there are different types of data sources...)
+		// dynamically register MIRIAM data types as ID_TYPE data sources
 		for (String name : MiriamLink.getDataTypesName()) {
 			// register all synonyms (incl. the name)
 			for (String s : MiriamLink.getNames(name)) {
 				// warn: if s (name) exists, will override
-				DataSource ds = DataSource.register(s, name).urnBase(
-						MiriamLink.getDataTypeURI(name)).type(ID_TYPE).asDataSource();
+				register(s, name, Type.IDENTIFIER).urnBase(MiriamLink.getDataTypeURI(name));
 				if(LOG.isInfoEnabled()) 
-					LOG.info("Register data provider: " + ds);
+					LOG.info("Register data provider: " + s + " (" + name + ")");
 			}
 		}
+		*/
 		
-		//Register all the pathway data providers (as stored in Warehouse).
+		// dynamically register all the pathway data providers -
 		for(Metadata metadata : metadataDAO.getAll()) {
-			// won't register here data sources of proteins and molecules (warehouse resources)
+			// skip data sources of protein and molecule references (warehouse resources)
 			if(metadata.getType() == TYPE.BIOPAX || metadata.getType() == TYPE.PSI_MI
 				|| metadata.getType() == TYPE.BIOPAX_L2) 
 			{
 				// warn: if s (name) exists, will override
-				DataSource ds = DataSource.register(metadata.getIdentifier(), metadata.getName())
-					.type(NETWORK_TYPE).mainUrl(metadata.getURLToPathwayData()).asDataSource();
+				register(metadata.getIdentifier(), metadata.getName(), Type.PATHWAY_DATA)
+					.mainUrl(metadata.getURLToPathwayData());
 				if(LOG.isInfoEnabled()) 
-					LOG.info("Register data provider: " + ds);
+					LOG.info("Register data provider: " + metadata.getIdentifier());
 			}
 		}
 		
 		/* 
 		 * fix if the above possibly overrides the legacy data sources defined 
-		 * earlier as constants (this is for parameter values that are required
+		 * earlier (this is for parameter values that are required
 		 * to be exactly as they were in the cPath web service)
 		 */
-		DataSource.register("BIOGRID", "BioGRID").type(NETWORK_TYPE).asDataSource();
-		DataSource.register("CELL_MAP", "Cancer Cell Map").type(NETWORK_TYPE).asDataSource(); 
-		DataSource.register("HPRD", "HPRD").type("").type(NETWORK_TYPE).asDataSource();
-		DataSource.register("HUMANCYC", "HumanCyc").type(NETWORK_TYPE).asDataSource();
-		DataSource.register("IMID", "IMID").type(NETWORK_TYPE).asDataSource();
-		DataSource.register("INTACT", "IntAct").type(NETWORK_TYPE).asDataSource();
-		DataSource.register("MINT", "MINT").type(NETWORK_TYPE).asDataSource();
-		DataSource.register("NCI_NATURE", "NCI / Nature Pathway Interaction Database").type(NETWORK_TYPE).asDataSource();
-		DataSource.register("REACTOME", "Reactome").type(NETWORK_TYPE).asDataSource();
+		// register legacy (cpath) data source names
+		register("BIOGRID", "BioGRID", Type.PATHWAY_DATA);
+		register("CELL_MAP", "Cancer Cell Map", Type.PATHWAY_DATA); 
+		register("HPRD", "HPRD", Type.PATHWAY_DATA);
+		register("HUMANCYC", "HumanCyc", Type.PATHWAY_DATA);
+		register("IMID", "IMID", Type.PATHWAY_DATA);
+		register("INTACT", "IntAct", Type.PATHWAY_DATA);
+		register("MINT", "MINT", Type.PATHWAY_DATA);
+		register("NCI_NATURE", "NCI / Nature Pathway Interaction Database", Type.PATHWAY_DATA);
+		register("REACTOME", "Reactome", Type.PATHWAY_DATA);
 		
-		DataSource.register("UNIPROT", "UniProt").type(ID_TYPE).asDataSource();
-		DataSource.register("CPATH_ID", "CPATH_ID").type(ID_TYPE).asDataSource(); // now - RDFId
-		DataSource.register("ENTREZ_GENE", "Entrez Gene").type(ID_TYPE).asDataSource();
-		DataSource.register("GENE_SYMBOL", "Gene Symbol").type(ID_TYPE).asDataSource();
+		// register what is used in cPath WS, parameter input_id_type
+		register("UNIPROT", "UniProt", Type.IDENTIFIER);
+		register("CPATH_ID", "CPATH_ID", Type.IDENTIFIER); // now - RDFId
+		register("ENTREZ_GENE", "Entrez Gene", Type.IDENTIFIER);
+		register("GENE_SYMBOL", "Gene Symbol", Type.IDENTIFIER);
+		// new
+		register("REFSEQ", "RefSeq", Type.IDENTIFIER);
 	}
+	
+	
+	/**
+	 * Registers a new org.bridgedb.DataType 
+	 * 
+	 * (currently, being used internally, but it may help future plugins or admin tools)
+	 * 
+	 * @param id - data source identifier (short name)
+	 * @param fullName
+	 * @param type
+	 * @return
+	 */
+	public static Builder register(String id, String fullName, Type type) {
+		return DataSource.register(id, fullName).type(type.name());
+	}
+	
+	/**
+	 * Gets the set of data sources of the specified types.
+	 * 
+	 * @param types
+	 * @return
+	 */
+	public static Set<DataSource> getDataSources(Type... types) {
+		Set<DataSource> allDatasources = DataSource.getDataSources();
+		List<Type> reqiredTypes = Arrays.asList(types);
+		if(reqiredTypes.isEmpty()) {
+			return allDatasources;
+		} else {
+			Set<DataSource> toReturn = new HashSet<DataSource>();
+			for(DataSource ds : allDatasources) {
+				Type type = Type.parse(ds.getType());
+				if(type != null && reqiredTypes.contains(type))
+					toReturn.add(ds);
+			}
+			return toReturn;
+		}
+	}
+	
 }

@@ -1,54 +1,65 @@
-package cpath.webservice.validation.protocol;
 
-import org.mskcc.pathdb.form.WebUIBean;
-import org.mskcc.pathdb.model.ExternalDatabaseRecord;
-import org.mskcc.pathdb.model.ExternalDatabaseSnapshotRecord;
-import org.mskcc.pathdb.util.ExternalDatabaseConstants;
+package cpath.webservice.validation;
 
 import java.net.URI;
 import java.util.*;
 
+import cpath.webservice.args.Cmd;
+import cpath.webservice.args.OutputFormat;
+import cpath.webservice.args.ProtocolVersion;
+import cpath.webservice.args.binding.CmdEditor;
+
 /**
- * Validates Client/Browser Request, Version 1.0.
+ * Validates Client/Browser Request.
  *
- * @author cPath Dev Team.
+ * TODO complete code re-factoring...
  */
-class ProtocolValidatorVersion2 {
+public class ProtocolValidator {
+    /**
+     * Help Message
+     */
+    public static final String HELP_MESSAGE = "  Please try again.";
+
     /**
      * Protocol Request.
      */
     private ProtocolRequest request;
 
+    
     /**
-     * Protocol Constants.
-     */
-    private ProtocolConstantsVersion2 constants = new ProtocolConstantsVersion2();
-
-    /**
-     * IdType
+     * IdType parameter names (keys)
      */
     public enum ID_Type {
         INPUT_ID_TYPE,
         OUTPUT_ID_TYPE
     }
-
+    
+    
     /**
      * Constructor.
      *
      * @param request Protocol Request.
      */
-    ProtocolValidatorVersion2(ProtocolRequest request) {
+    public ProtocolValidator(ProtocolRequest request) {
         this.request = request;
     }
 
+    public void validateVersion() throws ProtocolException {
+    	String version = request.getVersion();
+        if(ProtocolVersion.fromValue(version) == null) {
+        	throw new IllegalArgumentException ("Unsupported version # specified:  "
+                    + version);
+        }
+    }
+    
     /**
      * Validates the Request object.
      *
      * @throws ProtocolException  Indicates Violation of Protocol.
      */
-	public void validate() throws ProtocolException{
-		validateCommand();
+	public void validate() throws ProtocolException {
 		validateVersion();
+		validateCommand();
 		validateIdType(ID_Type.INPUT_ID_TYPE);
 		validateIdType(ID_Type.OUTPUT_ID_TYPE);
 		validateDataSources();
@@ -58,9 +69,10 @@ class ProtocolValidatorVersion2 {
 		validateMisc();
 	}
 
+	
     /**
-     * Validates the organism paramter.
-     * @throws ProtocolException Indicates violocation of Protocol.
+     * Validates the organism parameter.
+     * @throws ProtocolException Indicates violation of Protocol.
      */
     protected void validateOrganism() throws ProtocolException {
         String organism = request.getOrganism();
@@ -81,21 +93,21 @@ class ProtocolValidatorVersion2 {
      * @throws ProtocolException  Indicates Violation of Protocol.
      * @throws NeedsHelpException Indicates user requests/needs help.
      */
-    protected void validateCommand() throws ProtocolException,
-            NeedsHelpException {
+    protected void validateCommand() throws ProtocolException 
+    {
         if (request.getCommand() == null) {
             throw new ProtocolException(ProtocolStatusCode.MISSING_ARGUMENTS,
                     "Argument:  '" + ProtocolRequest.ARG_COMMAND
                             + "' is not specified." + ProtocolValidator.HELP_MESSAGE);
         } else {
-            Set<String> set = constants.getValidCommands();
-            if (!set.contains(request.getCommand())) {
+        	CmdEditor cmdEditor = new CmdEditor();
+        	cmdEditor.setAsText(request.getCommand());
+        	Cmd value = (Cmd) cmdEditor.getValue();
+            if(value == null) {
                 throw new ProtocolException(ProtocolStatusCode.BAD_COMMAND,
                         "Command:  '" + request.getCommand()
                                 + "' is not recognized." + ProtocolValidator.HELP_MESSAGE);
-            } else if (request.getCommand().equals(ProtocolConstants.COMMAND_HELP)) {
-                throw new NeedsHelpException();
-            }
+            } 
         }
     }
 
@@ -114,51 +126,29 @@ class ProtocolValidatorVersion2 {
                     "You did not specify a query term.  Please try again.");
         } else {
             if (command != null) {
-                if (command.equals (ProtocolConstantsVersion2.COMMAND_GET_PATHWAY_LIST)) {
-                    String ids[] = q.split("[\\s]");
-                    if (ids.length > ProtocolConstantsVersion2.MAX_NUM_IDS) {
-                        throw new ProtocolException(ProtocolStatusCode.INVALID_ARGUMENT,
-                                "To prevent overloading of the system, clients are "
-                                        + "restricted to a maximum of "
-                                        + ProtocolConstantsVersion2.MAX_NUM_IDS
-                                        + " IDs at a time.");
-                    }
-                } else if (command.equals(ProtocolConstants.COMMAND_GET_RECORD_BY_CPATH_ID)) {
+            	if (command.equalsIgnoreCase(Cmd.GET_RECORD_BY_CPATH_ID.name())) {
                     queryToIdList(q); // checks IDs
                 }
             }
         }
     }
-
-    /**
-     * Validates the Version Parameter.
-     *
-     * @throws ProtocolException Indicates Violation of Protocol.
-     */
-    protected void validateVersion() throws ProtocolException {
-        if (request.getVersion() == null) {
-            throw new ProtocolException(ProtocolStatusCode.MISSING_ARGUMENTS,
-                    "Argument: '" + ProtocolRequest.ARG_VERSION
-                            + "' is not specified." + ProtocolValidator.HELP_MESSAGE);
-        } else if (!request.getVersion().equals(ProtocolConstantsVersion2.VERSION_2)) {
-            throw new ProtocolException
-                    (ProtocolStatusCode.VERSION_NOT_SUPPORTED,
-                            "The web service API currently only supports "
-                                    + "version 2.0." + ProtocolValidator.HELP_MESSAGE);
-        }
-    }
+    
 
     protected void validateIdType(ID_Type idType) throws ProtocolException {
         String command = request.getCommand();
-        if (command != null &&
-                (command.equals(ProtocolConstantsVersion2.COMMAND_GET_PATHWAY_LIST) ||
-                 command.equals(ProtocolConstants.COMMAND_GET_RECORD_BY_CPATH_ID) ||
-                        command.equals(ProtocolConstantsVersion2.COMMAND_GET_NEIGHBORS))) {
-            String type = (idType == ID_Type.INPUT_ID_TYPE) ?
+        if(command == null) 
+        	throw new ProtocolException(ProtocolStatusCode.BAD_COMMAND,
+                    idType.name() + " must be set!");
+        
+        if (command.equalsIgnoreCase(Cmd.GET_PATHWAYS.name()) ||
+            command.equalsIgnoreCase(Cmd.GET_RECORD_BY_CPATH_ID.name()) ||
+            command.equalsIgnoreCase(Cmd.GET_NEIGHBORS.name()))
+        {
+            // get input_id_type or output_id_type parameter string value
+        	String type = (idType == ID_Type.INPUT_ID_TYPE) ?
                     request.getInputIDType() : request.getOutputIDType();
             if (type != null) {
-                WebUIBean webBean = CPathUIConfig.getWebUIBean();
-                ArrayList supportedIdList = webBean.getSupportedIdTypes();
+            	Set<String> supportedIdList = null; // TODO get the list of valid ID types from BioDataTypes...
                 if (!supportedIdList.contains(type)) {
                     StringBuffer buf = new StringBuffer();
                     for (int i = 0; i < supportedIdList.size(); i++) {
@@ -182,11 +172,11 @@ class ProtocolValidatorVersion2 {
         String command = request.getCommand();
 
         if (command != null &&
-                command.equals(ProtocolConstantsVersion2.COMMAND_GET_NEIGHBORS)) {
+                command.equals(Cmd.GET_PATHWAYS.name())) {
             String output = request.getOutput();
             if (output == null) {
-                output = ProtocolConstantsVersion1.FORMAT_BIO_PAX;
-                request.setOutput(ProtocolConstantsVersion1.FORMAT_BIO_PAX);
+                output = OutputFormat.BIOPAX.name().toLowerCase();
+                request.setOutput(output);
             }
             if (output != null &&
                     !output.equalsIgnoreCase(ProtocolConstantsVersion1.FORMAT_BIO_PAX) &&
@@ -242,8 +232,9 @@ class ProtocolValidatorVersion2 {
     protected void validateDataSources() throws ProtocolException {
         String command = request.getCommand();
         if (command != null &&
-                (command.equals(ProtocolConstantsVersion2.COMMAND_GET_PATHWAY_LIST) ||
-                        command.equals(ProtocolConstantsVersion2.COMMAND_GET_NEIGHBORS))) {
+                (command.equalsIgnoreCase(Cmd.GET_PATHWAYS.name()) ||
+                 command.equalsIgnoreCase(Cmd.GET_NEIGHBORS.name()))) 
+        {
             String dataSources[] = request.getDataSources();
             if (dataSources != null) {
                 ArrayList masterTermList = getMasterTermList();
@@ -258,31 +249,16 @@ class ProtocolValidatorVersion2 {
         }
     }
 
-    private ArrayList getMasterTermList
-            (){
-        DaoExternalDbSnapshot dao = new DaoExternalDbSnapshot();
-        ArrayList list = dao.getAllNetworkDatabaseSnapshots();
-        ArrayList masterTermList = new ArrayList();
-        for (int i = 0; i < list.size(); i++) {
-            ExternalDatabaseSnapshotRecord snapshotRecord = (ExternalDatabaseSnapshotRecord)
-                    list.get(i);
-            String masterTerm = snapshotRecord.getExternalDatabase().getMasterTerm();
-            masterTermList.add(masterTerm);
-        }
-        return masterTermList;
-    }
-
     protected void validateMisc() throws ProtocolException {
-
         String command = request.getCommand();
 
 		// get record by cpath id misc args
-		if (command != null && command.equals(ProtocolConstants.COMMAND_GET_RECORD_BY_CPATH_ID)) {
+		if (command != null && command.equals(Cmd.GET_RECORD_BY_CPATH_ID.name())) {
 			validateMiscGetRecordByCpathIdArgs();
 		}
 
         // get neighbors misc args
-        if (command != null && command.equals(ProtocolConstantsVersion2.COMMAND_GET_NEIGHBORS)) {
+        if (command != null && command.equals(Cmd.GET_NEIGHBORS.name())) {
             validateMiscGetNeighborArgs();
         }
     }
@@ -371,4 +347,5 @@ class ProtocolValidatorVersion2 {
         }
         return null;
     }
+    
 }

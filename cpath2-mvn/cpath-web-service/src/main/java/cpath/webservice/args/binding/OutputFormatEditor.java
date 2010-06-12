@@ -43,7 +43,12 @@ public class OutputFormatEditor extends PropertyEditorSupport {
 	 */
 	@Override
 	public void setAsText(String arg0) throws IllegalArgumentException {
-		setValue(OutputFormat.parse(arg0));
+		OutputFormat value = null;
+		try{
+			value = OutputFormat.valueOf(arg0.trim().toUpperCase());
+		} catch (IllegalArgumentException e) {
+		}
+		setValue(value);
 	}
 	
 }

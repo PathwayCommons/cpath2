@@ -43,7 +43,12 @@ public class CmdEditor extends PropertyEditorSupport {
 	 */
 	@Override
 	public void setAsText(String arg0) throws IllegalArgumentException {
-		setValue(Cmd.parse(arg0));
+		Object value = null;
+		try{
+			value = Cmd.valueOf(arg0.trim().toUpperCase());
+		} catch (IllegalArgumentException e) {
+		}
+		setValue(value);
 	}
 	
 }
