@@ -22,7 +22,7 @@ import cpath.webservice.jaxb.ExtendedRecordType;
 import cpath.webservice.jaxb.SearchResponseType;
 
 
-//@Ignore
+@Ignore
 public class CPathWebserviceTest {
 	static final RestTemplate template;
 	static final HttpClient client;

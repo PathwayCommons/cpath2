@@ -30,28 +30,24 @@ package cpath.webservice;
 import cpath.dao.PaxtoolsDAO;
 import cpath.warehouse.internal.BioDataTypes;
 import cpath.warehouse.internal.BioDataTypes.Type;
-import cpath.webservice.args.BinaryInteractionRule;
-import cpath.webservice.args.PathwayDataSource;
-import cpath.webservice.args.ProtocolVersion;
-import cpath.webservice.args.Cmd;
-import cpath.webservice.args.GraphType;
-import cpath.webservice.args.OutputFormat;
-import cpath.webservice.args.binding.BinaryInteractionRuleEditor;
-import cpath.webservice.args.binding.BiopaxTypeEditor;
-import cpath.webservice.args.binding.CmdEditor;
-import cpath.webservice.args.binding.PathwayDataSourceEditor;
-import cpath.webservice.args.binding.GraphTypeEditor;
-import cpath.webservice.args.binding.OutputFormatEditor;
+import cpath.webservice.args.*;
+import cpath.webservice.args.binding.*;
+import cpath.webservice.jaxb.ErrorType;
+import cpath.webservice.validation.ProtocolException;
+import cpath.webservice.validation.ProtocolRequest;
+import cpath.webservice.validation.ProtocolStatusCode;
+import cpath.webservice.validation.ProtocolValidator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.bridgedb.DataSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.MultiValueMap;
-import org.springframework.validation.BindingResult;
+import org.springframework.validation.*;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
@@ -72,7 +68,7 @@ public class WebserviceController {
     private static String newline = System.getProperty("line.separator");
     @NotNull
 	private PaxtoolsDAO pcDAO;
-	@NotNull
+    
 	private SimpleExporter exporter;
     
     @PostConstruct
@@ -82,9 +78,9 @@ public class WebserviceController {
     }
     
 
-	public WebserviceController(PaxtoolsDAO mainDAO, SimpleExporter exporter) {
+	public WebserviceController(PaxtoolsDAO mainDAO) {
 		this.pcDAO = mainDAO;
-		this.exporter = exporter;
+		this.exporter = new SimpleExporter(BioPAXLevel.L3);
 	}
 
 	
@@ -99,9 +95,9 @@ public class WebserviceController {
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
         binder.registerCustomEditor(BioPAXElement.class, new BiopaxTypeEditor());
-        binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
+        //binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
-        binder.registerCustomEditor(BinaryInteractionRule.class, new BinaryInteractionRuleEditor());
+        binder.registerCustomEditor(ProtocolVersion.class, new ProtocolVersionEditor());
     }
 	
 	
@@ -115,7 +111,7 @@ public class WebserviceController {
     public String getFormats() {
     	StringBuffer toReturn = new StringBuffer();
     	for(OutputFormat f : OutputFormat.values()) {
-    		toReturn.append(f.toString().toLowerCase()).append(newline);
+    		toReturn.append(f.toString().toUpperCase()).append(newline);
     	}
     	return toReturn.toString();
     }
@@ -273,24 +269,71 @@ public class WebserviceController {
     @ResponseBody
     public String doWebservice(
     		@RequestParam("cmd") @NotNull Cmd cmd, 
-    		@RequestParam(value="version", required=false) String version,
-    		@RequestParam("q") String q,
+    		@RequestParam(value="version", required=false) @NotNull ProtocolVersion version,
+    		@RequestParam("q") String q, // e.g. the list of identifiers or a search string
     		@RequestParam(value="output", required=false) @NotNull OutputFormat output,
     		@RequestParam(value="organism", required=false) @NotNull Integer organism,
     		@RequestParam(value="input_id_type", required=false) String inputIdType,
-    		@RequestParam(value="data_source", required=false) @NotNull PathwayDataSource dataSource,
+    		@RequestParam(value="data_source", required=false) String dataSources, //comma-separated names
     		@RequestParam(value="output_id_type", required=false) String outputIdType,
-    		@RequestParam(value="binary_interaction_rule", required=false) @NotNull BinaryInteractionRule rule,
+    		@RequestParam(value="binary_interaction_rule", required=false) String rules, //comma-separated names
     		BindingResult result
     	) 
     {
+    	if(log.isDebugEnabled()) {
+    		log.debug("After webservice.do request params binding - cmd=" + cmd +
+    			"; version=" + version + "; q=" + q + "; output=" + output +
+    			"; organism="+ organism.intValue() + "; input_id_type=" + inputIdType +
+    			"; data_source=" + dataSources + "; output_id_type=" + outputIdType +
+    			"; binary_interaction_rule=" + rules);
+    	}
+    	
     	String toReturn = "";
     	
-    	// TODO check individual parameters validation result (BindingResult); and return only the first error?..
+    	// check the binding result, return the first error if any, exit
+    	if(result.hasErrors()) {
+    	   	if(log.isDebugEnabled()) {
+        		StringBuffer sb = new StringBuffer("Binding errors: \n");
+        		for(ObjectError oe : result.getAllErrors()) sb.append(oe + "\n");
+        		log.debug(sb.toString());
+    	   	}
+    	   	// return XML error object
+    	   	ObjectError err = result.getFieldError();
+    	   	if(err==null) err = result.getGlobalError();
+    	   	// get the xml error type object
+    	   	ErrorType errorType = ProtocolStatusCode.INVALID_ARGUMENT.createErrorType();
+    	   	// set the error details
+    	   	errorType.setErrorDetails(err.toString());
+    	   	// build the xml string
+    	   	return ProtocolStatusCode.marshal(errorType);	
+		} else {
+			// build the ProtocolRequest
+			ProtocolRequest request = new ProtocolRequest();
+			request.setCommand(cmd);
+			request.setQuery(q);
+			request.setOutput(output);
+			request.setBinaryInteractionRule(rules); // comma-separated rule names ()
+			request.setDataSource(dataSources);
+			request.setInputIDType(inputIdType);
+			request.setOrganism(organism);
+			
+			
+
+			// TODO validate it using ProtocolValidator
+			ProtocolValidator protocolValidator = new ProtocolValidator(request);
+			try {
+				protocolValidator.validate();
+			} catch (ProtocolException e) {
+				ErrorType errorType = e.getStatusCode().createErrorType();
+	    	   	// set the error details
+	    	   	errorType.setErrorDetails(e.getMessage());
+	    	   	// build the xml string
+	    	   	return ProtocolStatusCode.marshal(errorType);	
+			}
+
+		}
     	
-    	
-    	// TODO continue to validate using ProtocolRequest and ProtocolValidator....
-    	
+    	// TODO execute query and get results
     	
     	return toReturn;
     }

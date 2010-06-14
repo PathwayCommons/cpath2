@@ -143,7 +143,7 @@ public enum ProtocolStatusCode {
 		errorType.setErrorMsg(msg);
     }
 	
-	public ProtocolStatusCode fromCode(int code) {
+	public static ProtocolStatusCode fromCode(int code) {
 		for(ProtocolStatusCode type : ProtocolStatusCode.values()) {
 			if(type.getErrorCode() == code)
 				return type;
@@ -151,7 +151,7 @@ public enum ProtocolStatusCode {
 		return null;
 	}
 	
-	public ErrorType getError() {
+	public ErrorType createErrorType() {
 		ErrorType e = new ErrorType();
 		e.setErrorCode(errorType.getErrorCode());
 		e.setErrorDetails(errorType.getErrorDetails());

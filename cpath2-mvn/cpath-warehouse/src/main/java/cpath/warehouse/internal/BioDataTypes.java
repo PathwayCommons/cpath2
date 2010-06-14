@@ -180,4 +180,21 @@ public final class BioDataTypes {
 		}
 	}
 	
+	
+	/**
+	 * Gets the set of datasource "keys" (codes)
+	 * of the specified types.
+	 * 
+	 * @param types
+	 * @return
+	 */
+	public static Set<String> getDataSourceKeys(Type... types) {
+		Set<String> dss = new HashSet<String>();
+		
+		for(DataSource ds : getDataSources(types)) {
+			dss.add(ds.getSystemCode().toLowerCase());
+		}
+		
+		return dss;
+	}
 }

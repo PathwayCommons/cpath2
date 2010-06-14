@@ -19,7 +19,7 @@ public class ProtocolStatusCodeTest {
 
 	@Test
 	public final void testMarshal() {
-		ErrorType e = ProtocolStatusCode.BAD_COMMAND.getError();
+		ErrorType e = ProtocolStatusCode.BAD_COMMAND.createErrorType();
 		e.setErrorDetails("created in the juinit test ;)");
 		String out = ProtocolStatusCode.marshal(e);
 		assertTrue(out.length()>0);

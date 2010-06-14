@@ -25,7 +25,7 @@
 		<module>cpath-warehouse</module>
 		<module>cpath-admin</module>
 		<module>cpath-importer</module>
-		<!-- <module>cpath-web-service</module> -->
+		<module>cpath-web-service</module>
 	</modules>
 
 	<properties>
