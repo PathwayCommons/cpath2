@@ -1,11 +1,8 @@
-// $Id: ProtocolRequest.java,v 1.36 2009/10/05 18:03:49 cerami Exp $
-//------------------------------------------------------------------------------
-/** Copyright (c) 2006 Memorial Sloan-Kettering Cancer Center.
+/**
+ ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** and University of Toronto (UofT).
  **
- ** Code written by: Ethan Cerami
- ** Authors: Ethan Cerami, Gary Bader, Chris Sander
- **
- ** This library is free software; you can redistribute it and/or modify it
+ ** This is free software; you can redistribute it and/or modify it
  ** under the terms of the GNU Lesser General Public License as published
  ** by the Free Software Foundation; either version 2.1 of the License, or
  ** any later version.
@@ -14,20 +11,18 @@
  ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
  ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
  ** documentation provided hereunder is on an "as is" basis, and
- ** Memorial Sloan-Kettering Cancer Center 
- ** has no obligations to provide maintenance, support,
- ** updates, enhancements or modifications.  In no event shall
- ** Memorial Sloan-Kettering Cancer Center
- ** be liable to any party for direct, indirect, special,
+ ** both UofT and MSKCC have no obligations to provide maintenance, 
+ ** support, updates, enhancements or modifications.  In no event shall
+ ** UofT or MSKCC be liable to any party for direct, indirect, special,
  ** incidental or consequential damages, including lost profits, arising
  ** out of the use of this software and its documentation, even if
- ** Memorial Sloan-Kettering Cancer Center 
- ** has been advised of the possibility of such damage.  See
- ** the GNU Lesser General Public License for more details.
+ ** UofT or MSKCC have been advised of the possibility of such damage.  
+ ** See the GNU Lesser General Public License for more details.
  **
  ** You should have received a copy of the GNU Lesser General Public License
- ** along with this library; if not, write to the Free Software Foundation,
- ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
+ ** along with this software; if not, write to the Free Software Foundation,
+ ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
+ ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
 package cpath.webservice.validation;
@@ -36,18 +31,15 @@ import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.GetMethod;
 
+import cpath.webservice.args.Cmd;
+import cpath.webservice.args.OutputFormat;
 import cpath.webservice.args.ProtocolVersion;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Encapsulates Request object from client/browser application.
  *
- * @author Ethan Cerami
- * 
- * @author rodche - fitting into cPathSquared
  */
 public class ProtocolRequest {
 
@@ -61,10 +53,6 @@ public class ProtocolRequest {
      */
     public static final String ARG_QUERY = "q";
 
-    /**
-     * Format Argument.
-     */
-    public static final String ARG_FORMAT = "output"; // was "format"
 
     /**
      * Version Argument.
@@ -86,29 +74,7 @@ public class ProtocolRequest {
      */
     public static final String ARG_ORGANISM = "organism";
 
-    /**
-     * Check cache (undocumented argument, used for debugging purposes only)
-     * Default is set to true.
-     */
-    public static final String ARG_CHECK_XML_CACHE = "checkXmlCache";
 
-    /**
-     * Use optimized code (undocument argument, used for debugging purposes only)
-     * Default is set to true.
-     */
-    public static final String ARG_USE_OPTIMIZED_CODE = "useOptimizedCode";
-
-	/**
-	 * Internal ID Type - used in some newer web service api calls,
-	 * like get_neighbors & get_pathway_list.
-	 */
-	public static final String INTERNAL_ID = "internal_id";
-
-	/**
-	 * ID List Type - used in some newer web service api calls,
-	 * like get_neighbors.
-	 */
-	public static final String ID_LIST = "id_list";
 
 	/**
 	 * Input ID Type.
@@ -179,7 +145,7 @@ public class ProtocolRequest {
     /**
      * Command.
      */
-    private String command;
+    private Cmd command;
 
     /**
      * Query Parameter.
@@ -189,12 +155,12 @@ public class ProtocolRequest {
     /**
      * Format.
      */
-    private String format;
+    private OutputFormat output;
 
     /**
      * Version.
      */
-    private String version;
+    private ProtocolVersion version;
 
     /**
      * Start Index.
@@ -209,17 +175,7 @@ public class ProtocolRequest {
     /**
      * Organism Parameter.
      */
-    private String organism;
-
-    /**
-     * Check XML cache parameter.
-     */
-    private boolean checkXmlCache;
-
-    /**
-     * Use optimized code parameter.
-     */
-    private boolean useOptimizedCode;
+    private Integer organism;
 
 	/**
 	 * Input ID Type Parameter.
@@ -237,13 +193,7 @@ public class ProtocolRequest {
 	 * Binary Interaction Rule Parameter.
 	 * (see ProtocolRequest.ARG_BINARY_INTERACTION_RULE)
 	 */
-	private String binaryInteractionRule;
-
-	/**
-	 * Output Parameter.
-	 * (see ProtocolRequest.ARG_OUTPUT)
-	 */
-	private String output;
+	private String binaryInteractionRule; // comma-separated names
 
 	/**
 	 * Output ID Type Parameter.
@@ -270,12 +220,10 @@ public class ProtocolRequest {
      * Constructor.
      */
     public ProtocolRequest() {
-        this.version = ProtocolVersion.VERSION_2.name();
+        this.version = ProtocolVersion.VERSION_2;
         this.startIndex = 0;
         this.organism = null;
         this.maxHits = null;
-        this.checkXmlCache = true;
-        this.useOptimizedCode = true;
 		// start get_neighbors parameters
 		this.inputIDType = null;
 		this.fullyConnected = null;
@@ -284,63 +232,6 @@ public class ProtocolRequest {
 		this.outputIDType = null;
 		this.dataSource = null;
 		// end get_neighbors parameters
-    }
-
-
-    /**
-     * Constructor.
-     *
-     * @param parameterMap Map of all Request Parameters.
-     */
-    public ProtocolRequest(Map<String,String> parameterMap) {
-        this.command = parameterMap.get(ProtocolRequest.ARG_COMMAND);
-        this.query = parameterMap.get(ProtocolRequest.ARG_QUERY);
-        this.query = massageQuery(query);
-        this.format = parameterMap.get(ProtocolRequest.ARG_FORMAT);
-        this.version = parameterMap.get(ProtocolRequest.ARG_VERSION);
-        this.maxHits = parameterMap.get(ProtocolRequest.ARG_MAX_HITS);
-        this.organism = parameterMap.get
-                (ProtocolRequest.ARG_ORGANISM);
-        if (maxHits == null) {
-            maxHits = "25";
-        }
-        String startStr =
-                (String) parameterMap.get(ProtocolRequest.ARG_START_INDEX);
-        if (startStr != null) {
-            this.startIndex = Integer.parseInt(startStr);
-        } else {
-            this.startIndex = 0;
-        }
-        String checkXmlCacheStr = (String) parameterMap.get
-                (ProtocolRequest.ARG_CHECK_XML_CACHE);
-        if (checkXmlCacheStr != null && checkXmlCacheStr.equals("0")) {
-            checkXmlCache = false;
-        } else {
-            checkXmlCache = true;
-        }
-
-        String useOptimizedCodeStr = (String) parameterMap.get
-                (ProtocolRequest.ARG_USE_OPTIMIZED_CODE);
-        if (useOptimizedCodeStr != null && useOptimizedCodeStr.equals("0")) {
-            useOptimizedCode = false;
-        } else {
-            useOptimizedCode = true;
-        }
-
-        // start get_neighbors parameters
-		this.inputIDType = (String)parameterMap.get(ProtocolRequest.ARG_INPUT_ID_TYPE);
-		this.fullyConnected = (String)parameterMap.get(ProtocolRequest.ARG_FULLY_CONNECTED);
-		this.binaryInteractionRule = (String)parameterMap.get(ProtocolRequest.ARG_BINARY_INTERACTION_RULE);
-		this.output = (String)parameterMap.get(ProtocolRequest.ARG_OUTPUT);
-		this.outputIDType = (String)parameterMap.get(ProtocolRequest.ARG_OUTPUT_ID_TYPE);
-		this.dataSource = (String)parameterMap.get(ProtocolRequest.ARG_DATA_SOURCE);
-		// end get_neighbors parameters
-
-        if (parameterMap.size() == 0) {
-            emptyParameterSet = true;
-        } else {
-            emptyParameterSet = false;
-        }
     }
 
     /**
@@ -376,17 +267,17 @@ public class ProtocolRequest {
      *
      * @return command value.
      */
-    public String getCommand() {
+    public Cmd getCommand() {
         return command;
     }
 
     /**
      * Gets the Format value.
      *
-     * @return format value.
+     * @return output value.
      */
-    public String getFormat() {
-        return format;
+    public OutputFormat getOutput() {
+        return output;
     }
 
     /**
@@ -394,7 +285,7 @@ public class ProtocolRequest {
      *
      * @return version value.
      */
-    public String getVersion() {
+    public ProtocolVersion getVersion() {
         return version;
     }
 
@@ -403,7 +294,7 @@ public class ProtocolRequest {
      *
      * @param command Command Argument.
      */
-    public void setCommand(String command) {
+    public void setCommand(Cmd command) {
         this.command = command;
     }
 
@@ -419,10 +310,10 @@ public class ProtocolRequest {
     /**
      * Sets the Format Argument.
      *
-     * @param format Format Argument.
+     * @param output Format Argument.
      */
-    public void setFormat(String format) {
-        this.format = format;
+    public void setOutput(OutputFormat format) {
+        this.output = format;
     }
 
     /**
@@ -430,7 +321,7 @@ public class ProtocolRequest {
      *
      * @param version Version Argument.
      */
-    public void setVersion(String version) {
+    public void setVersion(ProtocolVersion version) {
         this.version = version;
     }
 
@@ -488,7 +379,7 @@ public class ProtocolRequest {
      *
      * @return Organism String.
      */
-    public String getOrganism() {
+    public Integer getOrganism() {
         return this.organism;
     }
 
@@ -497,40 +388,8 @@ public class ProtocolRequest {
      *
      * @param organism Organism String.
      */
-    public void setOrganism(String organism) {
+    public void setOrganism(Integer organism) {
         this.organism = organism;
-    }
-
-    /**
-     * Gets the Check XML Cache Flag.
-     * @return true or false.
-     */
-    public boolean getCheckXmlCache () {
-        return this.checkXmlCache;
-    }
-
-    /**
-     * Sets the Check XML Cache Flag.
-     * @param flag true or false.
-     */
-    public void setCheckXmlCache(boolean flag){
-        this.checkXmlCache = flag;
-    }
-
-    /**
-     * Gets the use optimized code flag.
-     * @return flag true or false.
-     */
-    public boolean getUseOptimizedCode() {
-        return this.useOptimizedCode;
-    }
-
-    /**
-     * Sets the use optimized code flag.
-     * @param flag true or false.
-     */
-    public void setUseOptimizedCode (boolean flag) {
-        this.useOptimizedCode = flag;
     }
 
     /**
@@ -589,7 +448,7 @@ public class ProtocolRequest {
             //  Split by comma, and then trim
             String rules[] = binaryInteractionRule.split(",");
             for (int i=0; i< rules.length; i++) {
-                rules[i] = rules[i].trim();
+                rules[i] = rules[i].trim().toUpperCase();
             }
             return rules;
         } else {
@@ -604,24 +463,6 @@ public class ProtocolRequest {
      */
     public void setBinaryInteractionRule(String binaryInteractionRule) {
         this.binaryInteractionRule = binaryInteractionRule;
-    }
-
-    /**
-     * Gets Output.
-     *
-     * @return String
-     */
-    public String getOutput() {
-        return this.output;
-    }
-
-    /**
-     * Sets Output.
-     *
-     * @param output String
-     */
-    public void setOutput(String output) {
-        this.output = output;
     }
 
     /**
@@ -660,7 +501,7 @@ public class ProtocolRequest {
             //  Split by comma, and then trim
             String dataSources[] = dataSource.split(",");
             for (int i=0; i<dataSources.length; i++) {
-                dataSources[i] = dataSources[i].trim();
+                dataSources[i] = dataSources[i].trim().toUpperCase();
             }
             return dataSources;
         } else {
@@ -669,7 +510,7 @@ public class ProtocolRequest {
     }
 
     /**
-     * Sets Data Source.
+     * Sets Data Source (comma-separated names list).
      *
      * @param dataSource String
      */
@@ -711,35 +552,27 @@ public class ProtocolRequest {
         String uri;
         List<NameValuePair> list = new ArrayList<NameValuePair>();
         if (version != null) {
-            list.add(new NameValuePair(ARG_VERSION, version));
+            list.add(new NameValuePair(ARG_VERSION, version.value));
         }
         if (command != null) {
-            list.add(new NameValuePair(ARG_COMMAND, command));
+            list.add(new NameValuePair(ARG_COMMAND, command.name().toUpperCase()));
         }
         if (query != null) {
             list.add(new NameValuePair(ARG_QUERY, query));
         }
-        if (format != null) {
-            list.add(new NameValuePair(ARG_FORMAT, format));
+        if (output != null) {
+            list.add(new NameValuePair(ARG_OUTPUT, output.name().toUpperCase()));
         }
         if (startIndex != 0) {
             list.add(new NameValuePair(ARG_START_INDEX,
                     Long.toString(startIndex)));
         }
         if (organism != null) {
-            list.add(new NameValuePair(ARG_ORGANISM, organism));
+            list.add(new NameValuePair(ARG_ORGANISM, organism.toString()));
         }
         if (maxHits != null) {
             list.add(new NameValuePair(ARG_MAX_HITS, maxHits));
         }
-        
-        if (checkXmlCache == false) {
-            list.add(new NameValuePair(ARG_CHECK_XML_CACHE, "0"));
-        }
-        if (useOptimizedCode == false) {
-            list.add(new NameValuePair(ARG_USE_OPTIMIZED_CODE, "0"));
-        }
-
 		if (inputIDType != null) {
             list.add(new NameValuePair(ARG_INPUT_ID_TYPE, inputIDType));
 		}
@@ -748,9 +581,6 @@ public class ProtocolRequest {
 		}
 		if (binaryInteractionRule != null) {
 			list.add(new NameValuePair(ARG_BINARY_INTERACTION_RULE, binaryInteractionRule));
-		}
-		if (output != null) {
-            list.add(new NameValuePair(ARG_OUTPUT, output));
 		}
 		if (outputIDType != null) {
             list.add(new NameValuePair(ARG_OUTPUT_ID_TYPE, outputIDType));

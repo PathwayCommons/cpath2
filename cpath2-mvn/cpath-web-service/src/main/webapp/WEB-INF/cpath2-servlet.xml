@@ -16,6 +16,7 @@
     
     <context:annotation-config/>
 
+<!-- 
 	<bean id="log4jInitialization" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
 	  <property name="targetClass"
 				value="org.springframework.util.Log4jConfigurer" />
@@ -26,6 +27,7 @@
 		</list>
 	  </property>
 	</bean>
+-->
        
     <!-- this is temporary - for test forms -->
     <bean id="viewResolver"
@@ -37,12 +39,10 @@
 	
 	<bean id="webserviceController" class="cpath.webservice.WebserviceController">
 		<constructor-arg ref="paxtoolsDAO"/>
-		<constructor-arg ref="simpleExporter"/>
 	</bean>
 
 	<bean id="webservice2Controller" class="cpath.webservice.Webservice2Controller">
 		<constructor-arg ref="cPathWarehouse"/>
-		<constructor-arg ref="simpleExporter"/>
 	</bean>
 	
 	<!-- simply starting this bean populates the (static) Bridgedb DataSource list from constants and metadataDAO! -->

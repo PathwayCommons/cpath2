@@ -35,6 +35,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.Level3Element;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.springframework.stereotype.Controller;
@@ -44,6 +45,7 @@ import org.springframework.web.bind.annotation.*;
 import java.io.*;
 
 import javax.annotation.PostConstruct;
+import javax.validation.constraints.NotNull;
 
 /**
  * The "Second Query" web controller.
@@ -56,19 +58,19 @@ import javax.annotation.PostConstruct;
 public class Webservice2Controller {
     private static final Log log = LogFactory.getLog(Webservice2Controller.class);
     private static String newline = System.getProperty("line.separator");
-	private CPathWarehouse warehouse;
+	@NotNull
+    private CPathWarehouse warehouse;
 	private SimpleExporter exporter;	
 
 	//@Autowired
-	public Webservice2Controller(CPathWarehouse warehouse, 
-			 SimpleExporter exporter) {
+	public Webservice2Controller(CPathWarehouse warehouse) {
 		this.warehouse = warehouse;
-		this.exporter = exporter;
+		this.exporter = new SimpleExporter(BioPAXLevel.L3);
 	}
 
 	@PostConstruct
 	void init() {
-		warehouse.createIndex();
+		//warehouse.createIndex(); // mysql driver issue- throws 'too many connections'..?
 	}
 	
 	/**

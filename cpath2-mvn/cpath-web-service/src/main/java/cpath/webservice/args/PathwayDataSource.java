@@ -33,14 +33,15 @@ import cpath.warehouse.internal.BioDataTypes.Type;
 
 
 /**
- * This defines a specific set values for the webservice 
- * parameter 'data_source' (- mainly for backward compatibility).
+ * This defines a specific object for the webservice 
+ * parameter 'data_source' (for backward compatibility).
  * 
  * All the required data sources (as org.bridgedb.DataSource) -
  * networks/pathway data providers, - 
  * are defined in the bioDataTypes bean.
  *
  * @author rodche
+ * @deprecated - currently not used as intended, because 'data_source' value is the comma-separated list of names...
  */
 public class PathwayDataSource {
 	

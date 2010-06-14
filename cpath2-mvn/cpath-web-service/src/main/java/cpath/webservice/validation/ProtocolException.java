@@ -160,7 +160,7 @@ public class ProtocolException extends Exception {
      */
     public String toXml() {
     	// get the xml schema's ErrorType bean
-    	ErrorType errorType = statusCode.getError();
+    	ErrorType errorType = statusCode.createErrorType();
         Throwable rootCause = getRootCause(this);
         if (xmlErrorMessage != null) {
         	errorType.setErrorDetails(xmlErrorMessage);
