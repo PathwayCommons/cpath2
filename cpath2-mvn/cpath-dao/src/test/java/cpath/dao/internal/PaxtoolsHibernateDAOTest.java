@@ -122,15 +122,15 @@ public class PaxtoolsHibernateDAOTest {
 	//@Rollback(false)
 	public void testSimple() throws Exception {
 		assertTrue(((Model)paxtoolsDAO).getNameSpacePrefixMap()
-				.containsValue("http://pathwaycommons.org#"));
+				.containsValue("urn:pathwaycommons:"));
 		
 		log.info("Testing importModel(file)...");
 		File biopaxFile = new File(getClass().getResource("/test.owl").getFile());
 		paxtoolsDAO.importModel(biopaxFile);
 		log.info("importModel(file) done!");
 		
-		BioPAXElement e = paxtoolsDAO.getElement(
-				"http://www.biopax.org/examples/myExample#Protein_A", false);
+		BioPAXElement e = paxtoolsDAO.getByID(
+				"http://www.biopax.org/examples/myExample#Protein_A");
 		assertNotNull(e);
 		assertTrue(e instanceof Protein);
 	
@@ -150,9 +150,6 @@ public class PaxtoolsHibernateDAOTest {
 	//@Transactional
 	//@Rollback(false)
 	public void testRun() throws Exception {
-		assertTrue(((Model)paxtoolsDAO).getNameSpacePrefixMap()
-				.containsValue("http://pathwaycommons.org#"));
-		
 		log.info("Testing importModel(file)...");
 		File biopaxFile = new File(getClass()
 				.getResource("/biopax-level3-test.owl.xml").getFile());
@@ -166,8 +163,7 @@ public class PaxtoolsHibernateDAOTest {
 		
 		 // again, but now get element detached
 		log.info("Testing call to paxtoolsDAO.getElement(..) detached");
-		bpe = paxtoolsDAO.getElement("http://www.biopax.org/examples/myExample#Pathway50",
-				false);
+		bpe = paxtoolsDAO.getByID("http://www.biopax.org/examples/myExample#Pathway50");
 		assertTrue(bpe instanceof Pathway);
 		
 		Set<String> pathwayNames = ((Pathway)bpe).getName();
@@ -224,7 +220,7 @@ public class PaxtoolsHibernateDAOTest {
 		
 		// verify object property is set
 		SmallMoleculeReference smr = (SmallMoleculeReference) paxtoolsDAO
-			.getElement("http://www.biopax.org/examples/myExample#SmallMoleculeReference_10", false);
+			.getByID("http://www.biopax.org/examples/myExample#SmallMoleculeReference_10");
 		Set<Xref> xs = smr.getXref();
 		assertFalse(xs.isEmpty());
 		assertTrue(xs.size()==1);

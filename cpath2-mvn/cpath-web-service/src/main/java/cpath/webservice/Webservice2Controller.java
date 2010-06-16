@@ -28,23 +28,19 @@
  **/
 package cpath.webservice;
 
-import cpath.warehouse.CPathWarehouse;
+import cpath.service.CPathService;
+import cpath.service.internal.CPathServiceImpl;
 import cpath.webservice.args.binding.BiopaxTypeEditor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.Level3Element;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.*;
-
-import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -57,20 +53,14 @@ import javax.validation.constraints.NotNull;
 @RequestMapping("/warehouse/*")
 public class Webservice2Controller {
     private static final Log log = LogFactory.getLog(Webservice2Controller.class);
-    private static String newline = System.getProperty("line.separator");
-	@NotNull
-    private CPathWarehouse warehouse;
-	private SimpleExporter exporter;	
+    private static String newline = System.getProperty("line.separator");	
 
+    @NotNull
+    private CPathService service;
+    
 	//@Autowired
-	public Webservice2Controller(CPathWarehouse warehouse) {
-		this.warehouse = warehouse;
-		this.exporter = new SimpleExporter(BioPAXLevel.L3);
-	}
-
-	@PostConstruct
-	void init() {
-		//warehouse.createIndex(); // mysql driver issue- throws 'too many connections'..?
+	public Webservice2Controller(CPathServiceImpl service) {
+		this.service = service;
 	}
 	
 	/**
@@ -102,7 +92,8 @@ public class Webservice2Controller {
     			+ ", urn:" + urn);
     	StringBuffer toReturn = new StringBuffer();
 		if (UtilityClass.class.isAssignableFrom(type)) {
-			UtilityClass el = warehouse.getObject(urn, type);
+			//TODO
+			UtilityClass el = null; //((CPathServiceImpl)service).getWarehouse().getObject(urn, type);
 			if(el != null) {
 				toReturn.append(el.getRDFId()).append(newline);
 			}
@@ -128,7 +119,7 @@ public class Webservice2Controller {
     	StringBuffer toReturn = new StringBuffer();
     	
     	/*
-    	 * TODO add search capability to Warehouse
+    	 * TODO search in Warehouse
 		List<BioPAXElement> results = (List<BioPAXElement>) warehouse.search(query, type);
 		for(BioPAXElement e : results) {
 			toReturn.append(e.getRDFId()).append(newline);
@@ -136,19 +127,6 @@ public class Webservice2Controller {
 		*/
 		
 		return toReturn.toString(); 
-	}
-    
-	
-	private String toOWL(BioPAXElement element) {
-		if(element == null) return "NOTFOUND"; // temporary
-		
-		StringWriter writer = new StringWriter();
-		try {
-			exporter.writeObject(writer, element);
-		} catch (IOException e) {
-			log.error(e);
-		}
-		return writer.toString();
 	}
 	
 }

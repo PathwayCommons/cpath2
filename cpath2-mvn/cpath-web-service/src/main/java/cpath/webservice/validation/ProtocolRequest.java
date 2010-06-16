@@ -38,8 +38,7 @@ import cpath.webservice.args.ProtocolVersion;
 import java.util.*;
 
 /**
- * Encapsulates Request object from client/browser application.
- *
+ * Encapsulates web request from client applications.
  */
 public class ProtocolRequest {
 
@@ -52,7 +51,6 @@ public class ProtocolRequest {
      * Uid Argument.
      */
     public static final String ARG_QUERY = "q";
-
 
     /**
      * Version Argument.
@@ -220,7 +218,7 @@ public class ProtocolRequest {
      * Constructor.
      */
     public ProtocolRequest() {
-        this.version = ProtocolVersion.VERSION_2;
+        this.version = ProtocolVersion.VERSION_3;
         this.startIndex = 0;
         this.organism = null;
         this.maxHits = null;
@@ -234,6 +232,26 @@ public class ProtocolRequest {
 		// end get_neighbors parameters
     }
 
+    
+    /**
+     * Constructor that builds from the Map.
+     * 
+     * @param map
+     * @throws ProtocolException
+     */
+    public ProtocolRequest(Map<String, String> map) throws ProtocolException {
+		setVersion(map.get(ARG_VERSION));
+		setCommand(map.get(ARG_COMMAND));
+		setQuery(map.get(ARG_QUERY));
+		setOutput(map.get(ARG_OUTPUT));
+		setBinaryInteractionRule(map.get(ARG_BINARY_INTERACTION_RULE)); // comma-separated rule names
+		setDataSource(map.get(ARG_DATA_SOURCE));
+		setInputIDType(map.get(ARG_INPUT_ID_TYPE));
+		setOrganism(map.get(ARG_ORGANISM));
+		setOutputIDType(map.get(ARG_OUTPUT_ID_TYPE));
+    }
+    
+    
     /**
      * Massages the UID such that No Database Error Occur.
      * 0.  Trim and make upper case.
@@ -298,6 +316,21 @@ public class ProtocolRequest {
         this.command = command;
     }
 
+    
+    public void setCommand(String command) throws ProtocolException {
+		if(command != null) {
+			try {
+				this.command = Cmd.valueOf(command.trim().toUpperCase());
+			} catch (IllegalArgumentException e) {
+				throw new ProtocolException(ProtocolStatusCode.BAD_COMMAND,
+					"Illegal command; must be one of: " 
+					+ Cmd.values().toString());
+			}
+		} 
+		// for null, check later
+    }
+ 
+    
     /**
      * Sets the Query Argument.
      *
@@ -307,6 +340,7 @@ public class ProtocolRequest {
         this.query = query;
     }
 
+    
     /**
      * Sets the Format Argument.
      *
@@ -316,6 +350,19 @@ public class ProtocolRequest {
         this.output = format;
     }
 
+    
+    public void setOutput(String format) throws ProtocolException {
+		if (format != null) {
+			try {
+				this.output = OutputFormat.valueOf(format.trim().toUpperCase());
+			} catch (IllegalArgumentException e) {
+				throw new ProtocolException(ProtocolStatusCode.BAD_FORMAT,
+						ProtocolRequest.ARG_OUTPUT + " must be one of: " 
+						+ OutputFormat.values().toString());
+			}
+		}
+    }
+    
     /**
      * Sets the Version Argument.
      *
@@ -325,6 +372,19 @@ public class ProtocolRequest {
         this.version = version;
     }
 
+    
+    public void setVersion(String version) throws ProtocolException {
+        if(version != null) {
+        	this.version = ProtocolVersion
+        		.fromValue(version.trim().toUpperCase());
+        	if(this.version == null)
+        		throw new ProtocolException(ProtocolStatusCode.VERSION_NOT_SUPPORTED,
+						"Supported protocol versions are: " 
+						+ ProtocolVersion.versionNumbers().toString());
+        }
+    }
+    
+    
     /**
      * Gets the Start Index.
      *
@@ -391,6 +451,17 @@ public class ProtocolRequest {
     public void setOrganism(Integer organism) {
         this.organism = organism;
     }
+    
+	public void setOrganism(String organism) throws ProtocolException {
+		if (organism != null) {
+			try {
+				setOrganism(Integer.valueOf(organism));
+			} catch (NumberFormatException e) {
+				throw new ProtocolException(ProtocolStatusCode.INVALID_ARGUMENT,
+						ProtocolRequest.ARG_ORGANISM + " must be Taxonomy ID");
+			}
+		}
+	}
 
     /**
      * Gets Input ID Type.

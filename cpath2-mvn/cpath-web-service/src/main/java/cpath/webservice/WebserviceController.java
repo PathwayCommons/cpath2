@@ -27,34 +27,26 @@
 
 package cpath.webservice;
 
-import cpath.dao.PaxtoolsDAO;
+import cpath.service.CPathService.ResultMapKey;
+import cpath.service.internal.CPathServiceImpl;
 import cpath.warehouse.internal.BioDataTypes;
 import cpath.warehouse.internal.BioDataTypes.Type;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
 import cpath.webservice.jaxb.ErrorType;
-import cpath.webservice.validation.ProtocolException;
-import cpath.webservice.validation.ProtocolRequest;
-import cpath.webservice.validation.ProtocolStatusCode;
-import cpath.webservice.validation.ProtocolValidator;
+import cpath.webservice.validation.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.Model;
-import org.bridgedb.DataSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.MultiValueMap;
-import org.springframework.validation.*;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.*;
 import java.util.*;
 
-import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotNull;
 
 /**
@@ -66,26 +58,17 @@ import javax.validation.constraints.NotNull;
 public class WebserviceController {
     private static final Log log = LogFactory.getLog(WebserviceController.class);
     private static String newline = System.getProperty("line.separator");
+    
     @NotNull
-	private PaxtoolsDAO pcDAO;
+    private CPathServiceImpl service;
     
-	private SimpleExporter exporter;
-    
-    @PostConstruct
-    void init() {
-    	// re-build Lucene index (TODO is this required?)
-    	//pcDAO.createIndex();
-    }
-    
-
-	public WebserviceController(PaxtoolsDAO mainDAO) {
-		this.pcDAO = mainDAO;
-		this.exporter = new SimpleExporter(BioPAXLevel.L3);
+	public WebserviceController(CPathServiceImpl service) {
+		this.service = service;
 	}
 
 	
 	/**
-	 * Customizes request strings conversion to internal types,
+	 * Customizes request parameters conversion to proper internal types,
 	 * e.g., "network of interest" is recognized as GraphType.NETWORK_OF_INTEREST, etc.
 	 * 
 	 * @param binder
@@ -95,7 +78,6 @@ public class WebserviceController {
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
         binder.registerCustomEditor(BioPAXElement.class, new BiopaxTypeEditor());
-        //binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
         binder.registerCustomEditor(ProtocolVersion.class, new ProtocolVersionEditor());
     }
@@ -150,26 +132,17 @@ public class WebserviceController {
     @RequestMapping(value="/types/{type}/elements")
     @ResponseBody
     public String getElementsOfType(@PathVariable("type") Class<? extends BioPAXElement> type) {
-    	StringBuffer toReturn = new StringBuffer();
-    	/* getObjects with eager=false, statless=false is ok for RDFIds only...
-    	 * - no need to detach elements from the DAA session
-    	 */
-    	Set<? extends BioPAXElement> results = pcDAO.getElements(type, false); 
-    	for(BioPAXElement e : results)
-    	{
-    		toReturn.append(e.getRDFId()).append(newline);
-    	}
-    	return toReturn.toString();
+    	Map<ResultMapKey, Object> results = service.list(type, false);
+    	String body = getListDataBody(results, type.getSimpleName());
+		return body;
     }
     
      
-    //=== Most critical web methods that get one element by ID (URI) ===//
-
-    
-    @RequestMapping(value="/elements")
+    /*=== Most critical web method that get ONE element by ID (URI) ===*/
+	@RequestMapping(value="/elements")
     @ResponseBody
     public String elementById(@RequestParam("uri") String uri) {
-    	if(log.isInfoEnabled()) log.info("POST Query /elements");
+    	if(log.isInfoEnabled()) log.info("Query /elements");
     	return elementById(OutputFormat.BIOPAX, uri);
     }
 
@@ -179,14 +152,11 @@ public class WebserviceController {
     public String elementById(@PathVariable("format") OutputFormat format, 
     		@RequestParam("uri") String uri) 
     {
-    	BioPAXElement element = pcDAO.getElement(uri, true); 
-    	element = pcDAO.detach(element);
-
-		if(log.isInfoEnabled()) log.info("Query - format:" + format + 
-				", urn:" + uri + ", returned:" + element);
-
-		String owl = toOWL(element);		
-		return owl;
+    	if (log.isDebugEnabled())
+			log.debug("Query - format:" + format + ", urn:" + uri);
+    	Map<ResultMapKey, Object> result = service.element(uri, format);
+    	String body = getBody(result, format, uri);
+		return body;
     }
     
     
@@ -207,15 +177,10 @@ public class WebserviceController {
     {		
     	if(log.isInfoEnabled()) log.info("Fulltext Search for type:" 
 				+ type.getCanonicalName() + ", query:" + query);
-    	
-    	// do search
-		List<BioPAXElement> results = (List<BioPAXElement>) pcDAO.search(query, type);
-		StringBuffer toReturn = new StringBuffer();
-		for(BioPAXElement e : results) {
-			toReturn.append(e.getRDFId()).append(newline);
-		}
-		
-		return toReturn.toString(); 
+    	Map<ResultMapKey,Object> results = service.list(query, type, false);
+    	String body = getListDataBody(results, query + 
+    			" (in " + type.getSimpleName() + ")");
+		return body;
 	}
     
 	
@@ -253,118 +218,114 @@ public class WebserviceController {
     @ResponseBody
     public String getDatasources() {
     	StringBuffer toReturn = new StringBuffer();
-    	for(DataSource ds : BioDataTypes.getDataSources(Type.PATHWAY_DATA)) {
-    		String code = ds.getSystemCode();
-    		toReturn.append(code).append(newline);
+    	for(String ds : BioDataTypes.getDataSourceKeys(Type.PATHWAY_DATA)) {
+    		toReturn.append(ds).append(newline);
     	}
     	return toReturn.toString();
     }	
 	
     
     /**
-     * Mapping and controller for the legacy cPath web services
-     * (for backward compatibility).
+     * Controller for the legacy cPath web services
+     * (backward compatibility).
+     */
+    /*
+     * Currently, we do not use neither custom property editors nor framework's validator 
+     * for the web method parameters. All the arguments are plain strings, 
+     * and actual validation is performed after the binding, using the same approach 
+     * as in old cPath (original cPath web 'protocol' was ported and re-factored)
+     * 
+     * TODO migrate to spring MVC and javax.validation framework (Validator, Errors and BindingResult, etc..)
+     * 
      */
     @RequestMapping("/webservice.do")
     @ResponseBody
     public String doWebservice(
-    		@RequestParam("cmd") @NotNull Cmd cmd, 
-    		@RequestParam(value="version", required=false) @NotNull ProtocolVersion version,
+    		/*
+    		@RequestParam("cmd") String cmd, 
+    		@RequestParam(value="version", required=false) String version,
     		@RequestParam("q") String q, // e.g. the list of identifiers or a search string
-    		@RequestParam(value="output", required=false) @NotNull OutputFormat output,
-    		@RequestParam(value="organism", required=false) @NotNull Integer organism,
+    		@RequestParam(value="output", required=false) String output,
+    		@RequestParam(value="organism", required=false) String organism, // taxonomy id
     		@RequestParam(value="input_id_type", required=false) String inputIdType,
     		@RequestParam(value="data_source", required=false) String dataSources, //comma-separated names
     		@RequestParam(value="output_id_type", required=false) String outputIdType,
-    		@RequestParam(value="binary_interaction_rule", required=false) String rules, //comma-separated names
-    		BindingResult result
+    		@RequestParam(value="binary_interaction_rule", required=false) String rules //comma-separated names
+    		*/
+    		@RequestBody MultiValueMap<String,String> map
     	) 
     {
     	if(log.isDebugEnabled()) {
-    		log.debug("After webservice.do request params binding - cmd=" + cmd +
-    			"; version=" + version + "; q=" + q + "; output=" + output +
-    			"; organism="+ organism.intValue() + "; input_id_type=" + inputIdType +
-    			"; data_source=" + dataSources + "; output_id_type=" + outputIdType +
-    			"; binary_interaction_rule=" + rules);
+    		log.debug("After webservice.do request params binding - " + 
+    				map.toString());
     	}
-    	
-    	String toReturn = "";
-    	
-    	// check the binding result, return the first error if any, exit
-    	if(result.hasErrors()) {
-    	   	if(log.isDebugEnabled()) {
-        		StringBuffer sb = new StringBuffer("Binding errors: \n");
-        		for(ObjectError oe : result.getAllErrors()) sb.append(oe + "\n");
-        		log.debug(sb.toString());
-    	   	}
-    	   	// return XML error object
-    	   	ObjectError err = result.getFieldError();
-    	   	if(err==null) err = result.getGlobalError();
-    	   	// get the xml error type object
-    	   	ErrorType errorType = ProtocolStatusCode.INVALID_ARGUMENT.createErrorType();
-    	   	// set the error details
-    	   	errorType.setErrorDetails(err.toString());
-    	   	// build the xml string
-    	   	return ProtocolStatusCode.marshal(errorType);	
-		} else {
-			// build the ProtocolRequest
-			ProtocolRequest request = new ProtocolRequest();
-			request.setCommand(cmd);
-			request.setQuery(q);
-			request.setOutput(output);
-			request.setBinaryInteractionRule(rules); // comma-separated rule names ()
-			request.setDataSource(dataSources);
-			request.setInputIDType(inputIdType);
-			request.setOrganism(organism);
-			
-			
 
-			// TODO validate it using ProtocolValidator
+		String toReturn = "";
+		try {
+			// build the ProtocolRequest from the Map
+			ProtocolRequest request = new ProtocolRequest(map.toSingleValueMap());
+			// validate by ProtocolValidator
 			ProtocolValidator protocolValidator = new ProtocolValidator(request);
-			try {
-				protocolValidator.validate();
-			} catch (ProtocolException e) {
-				ErrorType errorType = e.getStatusCode().createErrorType();
-	    	   	// set the error details
-	    	   	errorType.setErrorDetails(e.getMessage());
-	    	   	// build the xml string
-	    	   	return ProtocolStatusCode.marshal(errorType);	
-			}
-
+			protocolValidator.validate();
+		} catch (ProtocolException e) {
+			ErrorType errorType = e.getStatusCode().createErrorType();
+			// set the error details
+			errorType.setErrorDetails(e.getMessage());
+			// build the xml string
+			return ProtocolStatusCode.marshal(errorType);
 		}
-    	
-    	// TODO execute query and get results
-    	
-    	return toReturn;
+
+		// TODO execute query and get results here
+
+		return toReturn;
     }
 
     
-    /*========= private staff ==============*/
-	
-
-	private String toOWL(BioPAXElement element) {
-		if(element == null) return "NOTFOUND"; // temporary
-		
-		StringWriter writer = new StringWriter();
-		try {
-			exporter.writeObject(writer, element);
-		} catch (IOException e) {
-			log.error(e);
+    /*
+     * makes a plain text string (response body) 
+     * when the data (in the map) is the list of IDs,
+     * one ID per line.
+     */
+    private String getListDataBody(Map<ResultMapKey, Object> result, String details) {
+    	StringBuffer toReturn = new StringBuffer();
+    	
+		if (!result.containsKey(ResultMapKey.ERROR)) {
+			Collection<String> dataSet = (Collection<String>) result.get(ResultMapKey.DATA);
+			if(dataSet.isEmpty()) {
+				ErrorType errorType = ProtocolStatusCode.NO_RESULTS_FOUND.createErrorType();
+				errorType.setErrorDetails("No elements found for: " + details);
+				toReturn.append(ProtocolStatusCode.marshal(errorType));
+			} else {
+				for (String s : dataSet) {
+					toReturn.append(s).append(newline);
+				}
+			}
+		} else {
+			ErrorType errorType = ProtocolStatusCode.INTERNAL_ERROR.createErrorType();
+			errorType.setErrorDetails(result.get(ResultMapKey.ERROR).toString());
+			toReturn.append(ProtocolStatusCode.marshal(errorType));
 		}
-		return writer.toString();
-	}
-	
-	
-	private String toOWL(Model model) {
-		if(model == null) return null;
 		
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		try {
-			exporter.convertToOWL(model, out);
-		} catch (IOException e) {
-			log.error(e);
-		}
-		return out.toString();
+		return toReturn.toString();
 	}
-
+  
+    
+    private String getBody(Map<ResultMapKey, Object> results, OutputFormat format, String details) {
+    	String toReturn = null;
+    	
+		if (!results.containsKey(ResultMapKey.ERROR)) {
+			toReturn = (String) results.get(ResultMapKey.DATA);
+			if(toReturn == null) {
+				ErrorType errorType = ProtocolStatusCode.NO_RESULTS_FOUND.createErrorType();
+				errorType.setErrorDetails("No elements found for: " + details);
+				toReturn = ProtocolStatusCode.marshal(errorType);
+			} 
+		} else {
+			ErrorType errorType = ProtocolStatusCode.INTERNAL_ERROR.createErrorType();
+			errorType.setErrorDetails(results.get(ResultMapKey.ERROR).toString());
+			toReturn = ProtocolStatusCode.marshal(errorType);
+		}
+		
+		return toReturn;
+	}
 }

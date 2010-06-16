@@ -39,7 +39,6 @@ import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.BioPAXIOHandler;
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.hibernate.*;
 import org.hibernate.search.*;
@@ -79,7 +78,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	private BioPAXFactory factory;
 	private SimpleMerger merger;
 	private BioPAXIOHandler reader;
-	private SimpleExporter exporter;
 	private boolean addDependencies = false;
 
 	protected PaxtoolsHibernateDAO()
@@ -87,11 +85,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		this.level = BioPAXLevel.L3;
 		this.factory = level.getDefaultFactory();
 		this.nameSpacePrefixMap = new HashMap<String, String>();
-		nameSpacePrefixMap.put("", "http://pathwaycommons.org#");
-		// set default Biopax reader, exporter, and merger
-		//reader = new SimpleReader(new internalFactory(),BioPAXLevel.L3); //reads directly into DB but does not merge so far...
+		//nameSpacePrefixMap.put("", "http://pathwaycommons.org#");
+		nameSpacePrefixMap.put("", "urn:pathwaycommons:");
 		reader = new SimpleReader(BioPAXLevel.L3);
-		exporter = new SimpleExporter(level);
 		merger = new SimpleMerger(reader.getEditorMap());
 	}
 
@@ -118,16 +114,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public void setSessionFactory(SessionFactory sessionFactory)
 	{
 		this.sessionFactory = sessionFactory;
-	}
-
-	public SimpleExporter getExporter()
-	{
-		return exporter;
-	}
-
-	public void setExporter(SimpleExporter exporter)
-	{
-		this.exporter = exporter;
 	}
 
 	public BioPAXIOHandler getReader()
@@ -379,17 +365,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.biopax.paxtools.model.Model#getObjects()
-	 */
-
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
 	public Set<BioPAXElement> getObjects()
 	{
-		return Collections.unmodifiableSet(
-				getElements(BioPAXElement.class, true));
+		return getObjects(BioPAXElement.class);
 	}
 
 
@@ -397,7 +377,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Transactional(propagation=Propagation.REQUIRED)
 	public <T extends BioPAXElement> Set<T> getObjects(Class<T> clazz)
 	{
-		return Collections.unmodifiableSet(getElements(clazz, true));
+		return getElements(clazz, false);
 	}
 
 
@@ -441,79 +421,15 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	// ------ private methods --------
 
-	// gets current stateful session
-
-	private Session session()
+	/**
+	 * Gets the current stateful session 
+	 * 
+	 * (made 'public', to try using HQL, SQL and full-text queries
+	 * from other modules)
+	 */
+	public Session session()
 	{
 		return getSessionFactory().getCurrentSession();
-	}
-
-
-	/**
-	 * Returns a transient copy of the persistent or detached BioPAX element 
-	 * with all its data properties set, but object properties -
-	 * stubbed with corresponding elements having only RDFID not empty.
-	 * <p/>
-	 * TODO another method, such as detach(bpe, depth), may be also required
-	 *
-	 * @param bpe
-	 * @return
-	 */
-	@Transactional(propagation=Propagation.REQUIRED)
-	public BioPAXElement detach(BioPAXElement bpe)
-	{
-		if (bpe == null)
-		{
-			return null;
-		}
-		
-		// re-assosiate with the session
-		session().update(bpe);
-
-		// create a transient object
-		final BioPAXElement toReturn = BioPAXLevel.L3.getDefaultFactory()
-				.reflectivelyCreate(bpe.getModelInterface());
-		toReturn.setRDFId(bpe.getRDFId());
-		AbstractTraverser traverser = new AbstractTraverser(
-				reader.getEditorMap(),
-				new PropertyFilter()
-				{
-					@Override
-					public boolean filter(PropertyEditor editor)
-					{
-						return (!editor.getProperty().equals("nextStep"));
-					}
-				})
-		{
-			@Override
-			protected void visit(Object value, BioPAXElement bpe, Model m,
-			                     PropertyEditor editor)
-			{
-				editor.setPropertyToBean(toReturn, value);
-			}
-		};
-
-		traverser.traverse(bpe, null);
-
-		return toReturn;
-	}
-
-	/**
-	 * Detaches a collection of BioPAX elements.
-	 *
-	 * @param <T>      a BioPAX element subclass
-	 * @param elements collection or persistent elements
-	 * @return
-	 * @see #detach(BioPAXElement)
-	 */
-	private <T extends BioPAXElement> List<T> detach(Collection<T> elements)
-	{
-		List<T> toReturn = new ArrayList<T>();
-		for (T el : elements)
-		{
-			toReturn.add((T) detach(el));
-		}
-		return toReturn;
 	}
 
 	
