@@ -38,16 +38,21 @@
 	</bean>
 	
 	<bean id="webserviceController" class="cpath.webservice.WebserviceController">
-		<constructor-arg ref="paxtoolsDAO"/>
+		<constructor-arg ref="cPathService"/>
 	</bean>
 
 	<bean id="webservice2Controller" class="cpath.webservice.Webservice2Controller">
-		<constructor-arg ref="cPathWarehouse"/>
+		<constructor-arg ref="cPathService"/>
 	</bean>
 	
 	<!-- simply starting this bean populates the (static) Bridgedb DataSource list from constants and metadataDAO! -->
 	<bean id="bioDataTypes" class="cpath.warehouse.internal.BioDataTypes" init-method="init">
 		<constructor-arg ref="metadataDAO"/>
+	</bean>
+	
+	<bean id="cPathService" class="cpath.service.internal.CPathServiceImpl">
+		<constructor-arg ref="paxtoolsDAO"/>
+		<constructor-arg ref="cPathWarehouse"/>
 	</bean>
 
 </beans>

@@ -1,5 +1,5 @@
 /**
- ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
  ** and University of Toronto (UofT).
  **
  ** This is free software; you can redistribute it and/or modify it
@@ -25,42 +25,26 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice.args;
+package cpath.webservice.args.binding;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.beans.PropertyEditorSupport;
+
+import cpath.webservice.args.ProtocolVersion;
+
 
 /**
- * Enumeration for legacy webservice versions
- * (added for backward compatibility with cPath)
- * 
  * @author rodche
+ *
  */
-public enum ProtocolVersion { 
-	VERSION_2("2.0"), 
-	VERSION_3("3.0");
+public class ProtocolVersionEditor extends PropertyEditorSupport {
 	
-	public final String value;
-	
-	private static final Map<String, ProtocolVersion> 
-		lookup = new HashMap<String, ProtocolVersion>();
-	
-	static {
-		for(ProtocolVersion r : EnumSet.allOf(ProtocolVersion.class))
-			lookup.put(r.value, r);
+	/* (non-Javadoc)
+	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
+	 */
+	@Override
+	public void setAsText(String arg0) throws IllegalArgumentException {
+		ProtocolVersion value = ProtocolVersion.fromValue(arg0.trim().toUpperCase());
+		setValue(value);
 	}
 	
-	private ProtocolVersion(String v) {
-		value = v;
-	}
-	
-	public static ProtocolVersion fromValue(String v) {
-		return lookup.get(v);
-	}
-	
-	public static Set<String> versionNumbers() {
-		return lookup.keySet();
-	}
 }

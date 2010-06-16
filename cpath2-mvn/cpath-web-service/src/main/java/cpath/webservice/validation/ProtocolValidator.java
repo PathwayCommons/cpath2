@@ -1,3 +1,29 @@
+/**
+ ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** and University of Toronto (UofT).
+ **
+ ** This is free software; you can redistribute it and/or modify it
+ ** under the terms of the GNU Lesser General Public License as published
+ ** by the Free Software Foundation; either version 2.1 of the License, or
+ ** any later version.
+ **
+ ** This library is distributed in the hope that it will be useful, but
+ ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
+ ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
+ ** documentation provided hereunder is on an "as is" basis, and
+ ** both UofT and MSKCC have no obligations to provide maintenance, 
+ ** support, updates, enhancements or modifications.  In no event shall
+ ** UofT or MSKCC be liable to any party for direct, indirect, special,
+ ** incidental or consequential damages, including lost profits, arising
+ ** out of the use of this software and its documentation, even if
+ ** UofT or MSKCC have been advised of the possibility of such damage.  
+ ** See the GNU Lesser General Public License for more details.
+ **
+ ** You should have received a copy of the GNU Lesser General Public License
+ ** along with this software; if not, write to the Free Software Foundation,
+ ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
+ ** or find it at http://www.fsf.org/ or http://www.gnu.org.
+ **/
 
 package cpath.webservice.validation;
 
@@ -16,15 +42,8 @@ import cpath.webservice.args.*;
  */
 public class ProtocolValidator {
 	private static final Log log = LogFactory.getLog(ProtocolValidator.class);
-	
-    /**
-     * Help Message
-     */
     public static final String HELP_MESSAGE = "  Please try again.";
-
-    /**
-     * Protocol Request.
-     */
+    
     private ProtocolRequest request;
     
     
@@ -36,14 +55,6 @@ public class ProtocolValidator {
     public ProtocolValidator(ProtocolRequest request) {
         this.request = request;
     }
-
-    public void validateVersion() throws ProtocolException {
-    	ProtocolVersion version = request.getVersion();
-        if(version == null) {
-        	request.setVersion(ProtocolVersion.VERSION_3); // do not make it error, just use default...
-        	
-        }
-    }
     
     /**
      * Validates the Request object.
@@ -53,14 +64,21 @@ public class ProtocolValidator {
 	public void validate() throws ProtocolException {
 		validateVersion();
 		validateCommand();
-		validateIdType(ProtocolRequest.ARG_INPUT_ID_TYPE);
-		validateIdType(ProtocolRequest.ARG_OUTPUT_ID_TYPE);
+		validateIdType();
 		validateDataSources();
 		validateQuery();
 		validateOutput();
 		validateMisc();
 	}
 
+	
+    public void validateVersion() throws ProtocolException {
+        if(request.getVersion() == null) {
+        	request.setVersion(ProtocolVersion.VERSION_3); // do not make it error, just use default...
+        }
+    }
+
+    
     /**
      * Validates the Command Parameter.
      *
@@ -89,50 +107,45 @@ public class ProtocolValidator {
                             + "' is not specified." + ProtocolValidator.HELP_MESSAGE,
                     "You did not specify a query term.  Please try again.");
         } else {
-            if (command != null) {
-            	if (command == Cmd.GET_RECORD_BY_CPATH_ID) {
-                    queryToIdList(q); // checks IDs
-                }
+            if (command == Cmd.GET_RECORD_BY_CPATH_ID) {
+            	queryToIdList(q); // checks IDs
             }
         }
     }
+
     
+	protected void validateIdType() throws ProtocolException {
+		Cmd command = request.getCommand();
+		if (command == Cmd.GET_PATHWAYS
+				|| command == Cmd.GET_RECORD_BY_CPATH_ID
+				|| command == Cmd.GET_NEIGHBORS) {
+			// get input_id_type or output_id_type parameter string value
+			for (String type : new String[] { request.getInputIDType(),
+					request.getOutputIDType() }) {
+				if (type != null) {
+					Set<String> supportedIdList = BioDataTypes
+							.getDataSourceKeys(Type.IDENTIFIER);
+					if (!supportedIdList.contains(type.toLowerCase())) {
+						StringBuffer buf = new StringBuffer();
+						int i = 0;
+						for (String s : supportedIdList) {
+							buf.append(s);
+							if (++i < supportedIdList.size()) {
+								buf.append(", ");
+							}
+						}
+						throw new ProtocolException(
+							ProtocolStatusCode.INVALID_ARGUMENT,
+							"'*_id_type' must be one of: " + buf.toString());
+					}
+				}
+			}
+		}
+	}
 
-    protected void validateIdType(String idType) throws ProtocolException {
-        Cmd command = request.getCommand();
-        if(command == null) 
-        	throw new ProtocolException(ProtocolStatusCode.BAD_COMMAND,
-                    idType + " must be set!");
-        
-        if (command == Cmd.GET_PATHWAYS ||
-            command == Cmd.GET_RECORD_BY_CPATH_ID ||
-            command == Cmd.GET_NEIGHBORS)
-        {
-            // get input_id_type or output_id_type parameter string value
-        	String type = (idType.equalsIgnoreCase(ProtocolRequest.ARG_INPUT_ID_TYPE)) ?
-                    request.getInputIDType() : request.getOutputIDType();
-            if (type != null) {
-            	Set<String> supportedIdList = BioDataTypes.getDataSourceKeys(Type.IDENTIFIER);
-                if (!supportedIdList.contains(type.toLowerCase())) {
-                    StringBuffer buf = new StringBuffer();
-                    int i=0;
-                    for (String s : supportedIdList) {
-                        buf.append(s);
-                        if (++i < supportedIdList.size()) {
-                            buf.append(", ");
-                        }
-                    }
-                    throw new ProtocolException(ProtocolStatusCode.INVALID_ARGUMENT,
-                            idType + " must be set to one of the following: " +
-                            buf.toString() + ".");
-                }
-            }
-        }
-    }
-
+	
     protected void validateOutput() throws ProtocolException {
         Cmd command = request.getCommand();
-        
         OutputFormat output = request.getOutput();
         if (output == null) {
         	output = OutputFormat.BIOPAX;
@@ -158,11 +171,7 @@ public class ProtocolValidator {
             }
     }
 
-    /**
-     * 
-     * 
-     * @throws ProtocolException
-     */
+    
     protected void validateDataSources() throws ProtocolException {
         Cmd command = request.getCommand();
         if (command == Cmd.GET_PATHWAYS || command == Cmd.GET_NEIGHBORS) 
@@ -181,10 +190,7 @@ public class ProtocolValidator {
         }
     }
 
-    /**
-     * 
-     * @throws ProtocolException
-     */
+
     protected void validateMisc() throws ProtocolException {
         Cmd command = request.getCommand();
 

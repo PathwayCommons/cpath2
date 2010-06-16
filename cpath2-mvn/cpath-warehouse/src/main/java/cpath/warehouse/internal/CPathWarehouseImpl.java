@@ -80,10 +80,12 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
 	{
 		if(SmallMoleculeReference.class.isAssignableFrom(utilityClazz)) 
 		{
-			return (T) moleculesDAO.getElement(primaryUrn, true);
+			T bpe = (T) moleculesDAO.getByID(primaryUrn);
+			return bpe; // TODO clone - completely detach (create a new one)
 		} else if(ProteinReference.class.isAssignableFrom(utilityClazz)) 
 		{
-			return (T) proteinsDAO.getElement(primaryUrn, true);
+			T bpe = (T) proteinsDAO.getByID(primaryUrn);
+			return bpe; // TODO clone
 		} else if(ControlledVocabulary.class.isAssignableFrom(utilityClazz)) 
 		{
 			return (T) cvRepository.getControlledVocabulary(primaryUrn, 

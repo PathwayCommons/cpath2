@@ -42,8 +42,5 @@ public enum Cmd {
 	GET_RECORD_BY_CPATH_ID,
 	// old?
 	GET_BY_KEYWORD,
-	HELP,
-	// perhaps we need -
-	COUNT,
 	;
 }

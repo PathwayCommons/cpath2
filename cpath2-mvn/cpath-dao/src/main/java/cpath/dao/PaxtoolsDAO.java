@@ -1,6 +1,6 @@
 // $Id$
 //------------------------------------------------------------------------------
-/** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center.
+/** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center.
  **
  ** This library is free software; you can redistribute it and/or modify it
  ** under the terms of the GNU Lesser General Public License as published
@@ -77,6 +77,7 @@ public interface PaxtoolsDAO extends Model {
      * @param id of the object to be retrieved.
      * @param eager boolean indicating eager (as opposed to lazy) fetching
 	 * @return BioPAXElement
+	 * @deprecated may be made private; 'eager' is of no use outside here?; use getById
      */
     BioPAXElement getElement(String id, boolean eager);
 
@@ -88,6 +89,7 @@ public interface PaxtoolsDAO extends Model {
      * @param filterBy class to be used as a filter.
      * @param eager boolean indicating eager (as opposed to lazy) fetching
 	 * @return an unmodifiable set of objects of the given class.
+	 * @deprecated may be made private; 'eager' is of no use outside here?; use getObjects
      */
     <T extends BioPAXElement> Set<T> getElements(Class<T> filterBy, boolean eager);
 
@@ -101,18 +103,5 @@ public interface PaxtoolsDAO extends Model {
      * @return ordered by relevance list of elements
      */
     <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy);
-
-    
-	/**
-	 * Returns a transient copy of the persistent or detached BioPAX element 
-	 * with all its data properties set, but object properties -
-	 * stubbed with corresponding elements having only RDFID not empty.
-	 * <p/>
-	 * TODO another method, such as detach(bpe, depth), may be also required
-	 *
-	 * @param bpe
-	 * @return
-	 */
-	BioPAXElement detach(BioPAXElement bpe);
        
 }

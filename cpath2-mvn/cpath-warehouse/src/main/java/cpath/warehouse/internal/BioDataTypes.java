@@ -192,7 +192,7 @@ public final class BioDataTypes {
 		Set<String> dss = new HashSet<String>();
 		
 		for(DataSource ds : getDataSources(types)) {
-			dss.add(ds.getSystemCode().toLowerCase());
+			dss.add(ds.getSystemCode().toUpperCase());
 		}
 		
 		return dss;
