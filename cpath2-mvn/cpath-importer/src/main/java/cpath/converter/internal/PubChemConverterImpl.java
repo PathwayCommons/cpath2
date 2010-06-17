@@ -6,7 +6,7 @@ package cpath.converter.internal;
 public class PubChemConverterImpl extends BaseSDFConverterImpl {
 
 	// some statics
-	private static final String PUBCHEM_NAMESPACE_PREFIX = "http://ebi.org#";
+	private static final String PUBCHEM_NAMESPACE_PREFIX = "http://pubchem.ncbi.nlm.nih.gov#";
 	private static final String ENTRY_START = "M  END";
 	private static final String ENTRY_END = "$$$$";
 
