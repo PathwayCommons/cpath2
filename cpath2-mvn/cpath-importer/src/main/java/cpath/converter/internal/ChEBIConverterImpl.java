@@ -7,7 +7,7 @@ public class ChEBIConverterImpl extends BaseSDFConverterImpl {
 
 	// some statics
 	private static final String CHEBI_NAMESPACE_PREFIX = "http://ebi.org#";
-	private static final String ENTRY_START = "> <ChEBI ID>";
+	private static final String ENTRY_START = "M  END";
 	private static final String ENTRY_END = "$$$$";
 
 	/**

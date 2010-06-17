@@ -39,9 +39,11 @@ import cpath.warehouse.internal.DataSourceFactory;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.validator.Validator;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
+import org.biopax.paxtools.converter.OneTwoThree;
 
 import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
 
@@ -185,12 +187,23 @@ public final class PremergeImpl extends Thread implements Premerge {
 
 		// clean
 		log.info("pipeline(), cleaning pathway data.");
-		pathwayDataStr = cleaner.clean(pathwayData.getPathwayData());
+		// biopax l2 data gets cleaned after its converter to L3
+		if (metadata.getType() == Metadata.TYPE.BIOPAX_L2) {
+			pathwayDataStr = pathwayData.getPathwayData();
+		}
+		else {
+			pathwayDataStr = cleaner.clean(pathwayData.getPathwayData());
+		}
 
 		// if psi-mi, convert to biopax
 		if (metadata.getType() == Metadata.TYPE.PSI_MI) {
 			log.info("pipeline(), converting psi-mi data.");
-			pathwayDataStr = convertToBioPAX(pathwayDataStr);
+			pathwayDataStr = convertPSIToBioPAX(pathwayDataStr);
+		}
+		// if biopax l2, convert to biopax l3, then clean
+		else if (metadata.getType() == Metadata.TYPE.BIOPAX_L2) {
+			pathwayDataStr = convertBioPAXL2ToLevel3(pathwayDataStr);
+			pathwayDataStr = cleaner.clean(pathwayDataStr);
 		}
 
 		// error during conversion
@@ -257,7 +270,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 *
 	 * @param psimiData String
 	 */
-	private String convertToBioPAX(final String psimiData) {
+	private String convertPSIToBioPAX(final String psimiData) {
 
 		String toReturn = "";
 				
@@ -278,6 +291,36 @@ public final class PremergeImpl extends Thread implements Premerge {
 
 			// made it here, conversion is complete
 			toReturn = os.toString();
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+
+		// outta here
+		return toReturn;
+	}
+
+	/**
+	 * Converts biopax l2 string to biopax l3
+	 *
+	 * @param bpl2Data String
+	 */
+	private String convertBioPAXL2ToLevel3(final String bpl2Data) {
+
+		String toReturn = "";
+				
+		try {
+			ByteArrayOutputStream os = new ByteArrayOutputStream();
+			InputStream is = new ByteArrayInputStream(bpl2Data.getBytes());
+
+			SimpleReader reader = new SimpleReader();
+			Model model = reader.convertFromOWL(is);
+			model = (new OneTwoThree()).filter(model);
+			if (model != null) {
+				SimpleExporter exporter = new SimpleExporter(model.getLevel());
+				exporter.convertToOWL(model, os);
+				toReturn = os.toString();
+			}
 		}
 		catch(Exception e) {
 			e.printStackTrace();

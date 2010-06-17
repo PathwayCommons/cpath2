@@ -56,7 +56,7 @@ public class ChEBIConverterImplTest {
 		Model model = converter.convert(is, BioPAXLevel.L3);
 		
 		// get all small molecule references out
-		assertTrue(model.getObjects(SmallMoleculeReference.class).size() == 3);
+		assertTrue(model.getObjects(SmallMoleculeReference.class).size() == 6);
 
 		// get lactic acid sm
 		String rdfID = "urn:miriam:chebi:422";
@@ -65,15 +65,15 @@ public class ChEBIConverterImplTest {
 		// check some props
 		assertTrue(smallMoleculeReference.getDisplayName().equals("(S)-lactic acid"));
 		assertTrue(smallMoleculeReference.getName().size() == 10);
-		assertTrue(smallMoleculeReference.getChemicalFormula().equals("C[C@H](O)C(O)=O"));
-		//assertTrue(smallMoleculeReference.getMolecularWeight() == 90.07794);
+		assertTrue(smallMoleculeReference.getChemicalFormula().equals("C3H6O3"));
 		int relationshipXrefCount = 0;
 		int unificationXrefCount = 0;
 		for (Xref xref : smallMoleculeReference.getXref()) {
 			if (xref instanceof RelationshipXref) ++relationshipXrefCount;
 			if (xref instanceof UnificationXref) ++ unificationXrefCount;
+
 		}
-		assertTrue(unificationXrefCount == 3);
+		assertTrue(unificationXrefCount == 1);
 		assertTrue(relationshipXrefCount == 12);
 
 		// dump owl out to stdout for review
