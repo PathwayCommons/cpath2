@@ -50,15 +50,15 @@ import org.junit.Test;
  * 
  * @author rodch
  */
-public class IdNormalizerTest {
+public class NormalizerTest {
 	/**
-	 * Test method for {@link cpath.importer.internal.IdNormalizer#filter(org.biopax.paxtools.model.Model)}.
+	 * Test method for {@link cpath.importer.internal.NormalizerImpl#filter(org.biopax.paxtools.model.Model)}.
 	 */
 	
 	SimpleReader simpleReader;
 	SimpleExporter simpleExporter;
 	
-	public IdNormalizerTest() {
+	public NormalizerTest() {
 		simpleExporter = new SimpleExporter(BioPAXLevel.L3);
 		simpleReader = new SimpleReader();
 	}
@@ -125,8 +125,8 @@ public class IdNormalizerTest {
 			fail(e1.toString());
 		}
 		
-		IdNormalizer idNormalizer = new IdNormalizer();
-		String xml = idNormalizer.normalize(out.toString());
+		NormalizerImpl normalizer = new NormalizerImpl();
+		String xml = normalizer.normalize(out.toString());
 		
 		//System.out.println(xml);
 		
@@ -134,7 +134,7 @@ public class IdNormalizerTest {
 		model = simpleReader.convertFromOWL(new ByteArrayInputStream(xml.getBytes()));
 		
 		// check Xref
-		BioPAXElement bpe = model.getByID(IdNormalizer.BIOPAX_URI_PREFIX + "UnificationXref:UniProt_P68250");
+		BioPAXElement bpe = model.getByID(NormalizerImpl.BIOPAX_URI_PREFIX + "UnificationXref:UniProt_P68250");
 		assertTrue(bpe instanceof UnificationXref);
 		
 		// check PR
@@ -142,7 +142,7 @@ public class IdNormalizerTest {
 		assertTrue(bpe instanceof ProteinReference);
 		
 		//check when two xrefs have the same db:id
-		bpe = model.getByID(IdNormalizer.BIOPAX_URI_PREFIX + "RelationshipXref:RefSeq_NP_001734");
+		bpe = model.getByID(NormalizerImpl.BIOPAX_URI_PREFIX + "RelationshipXref:RefSeq_NP_001734");
 		assertEquals(2, ((Xref)bpe).getXrefOf().size());
 		
 		
@@ -153,7 +153,7 @@ public class IdNormalizerTest {
 		//test BioSource
 		bpe = model.getByID("urn:miriam:taxonomy:10090");
 		assertTrue(bpe instanceof BioSource);
-		bpe = model.getByID(IdNormalizer.BIOPAX_URI_PREFIX + "UnificationXref:Taxonomy_10090");
+		bpe = model.getByID(NormalizerImpl.BIOPAX_URI_PREFIX + "UnificationXref:Taxonomy_10090");
 		assertTrue(bpe instanceof UnificationXref);
 		
 		//TODO test Provenance
@@ -163,10 +163,10 @@ public class IdNormalizerTest {
 	// TODO fix/clean the input file first!!!
 	@Test
 	public final void testNormalizeTestFile() throws IOException {
-		IdNormalizer idNormalizer = new IdNormalizer();
+		NormalizerImpl normalizer = new NormalizerImpl();
 		Model m = simpleReader.convertFromOWL(getClass()
 				.getResourceAsStream("/biopax-level3-test.owl"));
-		String xml = idNormalizer.normalize(m);
+		String xml = normalizer.normalize(m);
 		//System.out.println(xml);	
 		// check the result
 		Model model = simpleReader.convertFromOWL(new ByteArrayInputStream(xml.getBytes()));

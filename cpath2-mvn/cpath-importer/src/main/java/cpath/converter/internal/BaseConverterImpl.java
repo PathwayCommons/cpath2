@@ -2,7 +2,7 @@ package cpath.converter.internal;
 
 // imports
 import cpath.converter.Converter;
-import static cpath.importer.internal.IdNormalizer.*;
+import static cpath.importer.internal.NormalizerImpl.*;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;

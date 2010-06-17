@@ -48,8 +48,8 @@ import cpath.importer.Normalizer;
  * @author rodch
  *
  */
-public class IdNormalizer implements Normalizer {
-	private static final Log log = LogFactory.getLog(IdNormalizer.class);
+public class NormalizerImpl implements Normalizer {
+	private static final Log log = LogFactory.getLog(NormalizerImpl.class);
 	
 	/* 
 	 * URI namespace prefix for the utility class IDs 
@@ -63,7 +63,7 @@ public class IdNormalizer implements Normalizer {
 	/**
 	 * Constructor
 	 */
-	public IdNormalizer() {
+	public NormalizerImpl() {
 		this.biopaxReader = new SimpleReader(); //may be to use 'biopaxReader' bean that uses (new BioPAXFactoryForPersistence(), BioPAXLevel.L3);
 	}
 
@@ -72,6 +72,10 @@ public class IdNormalizer implements Normalizer {
 	 * @see cpath.importer.Normalizer#normalize(String)
 	 */
 	public String normalize(String biopaxOwlData) {
+		
+		// fix BioPAX L3 pre-release property name 'taxonXref' (BioSource)
+		biopaxOwlData = biopaxOwlData.replaceAll("taxonXref","xref");
+		
 		// build the model
 		Model model = biopaxReader.convertFromOWL(new ByteArrayInputStream(biopaxOwlData.getBytes()));
 		if(model == null || model.getLevel() != BioPAXLevel.L3) {
@@ -188,7 +192,7 @@ public class IdNormalizer implements Normalizer {
 			if(x instanceof UnificationXref && x.getXrefOf().size()>1) {
 				log.warn("UnificationXref " + x + 
 						" is used by several elements : " + x.getXrefOf().toString() + 
-						". (It's either a BioPAX error or those utility classes " +
+						". It may be a semantic error, or these elements " +
 						"are the same and should be merged!");
 			}
 		}
