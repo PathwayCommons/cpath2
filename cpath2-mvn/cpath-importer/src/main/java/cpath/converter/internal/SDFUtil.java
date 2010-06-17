@@ -171,7 +171,7 @@ public class SDFUtil {
 		}
 
 		// create "member entity reference" using inchi key
-		if (inchiKey.length() > 0) {
+		if (inchiKey != null && inchiKey.length() > 0) {
 			String[] rdfIDParts = rdfID.split(":");
 			String[] unificationXRefParts = { rdfIDParts[2], rdfIDParts[3] };
 			String memberEntityReferenceID = "urn:inchi:" + inchiKey;
