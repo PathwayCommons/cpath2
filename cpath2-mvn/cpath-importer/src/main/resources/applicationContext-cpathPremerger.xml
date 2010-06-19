@@ -14,7 +14,6 @@
 
 	<bean id="premerge" class="cpath.importer.internal.PremergeImpl" scope="prototype">
 	  <constructor-arg ref="pathwayDataDAO"/>
-	  <constructor-arg ref="pathwayDataJDBCServices"/>
 	  <constructor-arg ref="validator"/>
 	</bean>
 

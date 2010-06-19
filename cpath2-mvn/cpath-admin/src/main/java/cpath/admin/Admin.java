@@ -29,6 +29,7 @@
 package cpath.admin;
 
 // imports
+import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
 import cpath.fetcher.WarehouseDataService;
 import cpath.fetcher.ProviderMetadataService;
@@ -48,6 +49,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Collection;
+
 
 /**
  * Class which provides command line admin capabilities.
@@ -163,12 +165,12 @@ public class Admin implements Runnable {
     public void run() {
         try {
             switch (command) {
-            case CREATE_TABLES: // empty databases must exist!
+            case CREATE_TABLES: // TODO also create DBs
             	ApplicationContext context =
                     new ClassPathXmlApplicationContext(new String [] { 	
-                    		"classpath:applicationContext-cpathAdmin.xml",
-                    		"classpath:applicationContext-createTables.xml"});
-            	// that's it!
+                    		"classpath:applicationContext-cpathAdmin.xml"});
+            	DataServices dataServices = (DataServices) context.getBean("&dataServicesFactory");
+            	dataServices.createDatabasesAndTables(true);
             	break;
             case FETCH_METADATA:
                 fetchMetadata(commandParameters[0]);
@@ -217,7 +219,8 @@ public class Admin implements Runnable {
         }
     }
 
-    /**
+
+	/**
      * Helper function to get provider metadata.
      *
      * @param location String URL or local file.

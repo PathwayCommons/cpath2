@@ -29,12 +29,12 @@ package cpath.importer.internal;
 
 // imports
 import cpath.importer.Merger;
+import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
+import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.internal.DataSourceFactory;
 import cpath.warehouse.CPathWarehouse;
 import cpath.warehouse.MetadataDAO;
-import cpath.warehouse.PathwayDataJDBCServices;
 
 import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 import org.biopax.paxtools.model.Model;
@@ -49,6 +49,7 @@ import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.paxtools.controller.SimpleMerger;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -77,8 +78,8 @@ public final class MergerImpl implements Merger {
 	// ref to the warehouse
 	private CPathWarehouse cpathWarehouse;
 	
-	// ref to jdbc services
-	private PathwayDataJDBCServices pathwayDataJDBCServices;
+	@Autowired
+	private ApplicationContext applicationContext;
 
 
 	/**
@@ -88,18 +89,15 @@ public final class MergerImpl implements Merger {
 	 * @param pcDAO PaxtoolsDAO;
      * @param metadataDAO MetadataDAO
 	 * @param cPathWarehouse CPathWarehouse
-	 * @param pathwaydDataJDBCServices PathwayDataJDBCServices
 	 */
 	public MergerImpl(final PaxtoolsDAO pcDAO,
 					  final MetadataDAO metadataDAO,
-					  final CPathWarehouse cpathWarehouse,
-					  final PathwayDataJDBCServices pathwayDataJDBCServices) 
+					  final CPathWarehouse cpathWarehouse) 
 	{
 		// init members
 		this.pcDAO = pcDAO;
 		this.metadataDAO = metadataDAO;
 		this.cpathWarehouse = cpathWarehouse;
-		this.pathwayDataJDBCServices = pathwayDataJDBCServices;
 	}
 
     /*
@@ -134,8 +132,7 @@ public final class MergerImpl implements Merger {
 					// find specific subclass (e.g. CellVocabulary)!
 					Class<? extends UtilityClass> clazz = 
 						(Class<? extends UtilityClass>) bpe.getModelInterface(); 
-					UtilityClass object = cpathWarehouse
-						.getObject(bpe.getRDFId(), clazz);
+					UtilityClass object = cpathWarehouse.getObject(bpe.getRDFId(), clazz);
 					
 					// if not found by id, - search by UnificationXrefs
 					if(object==null) {
@@ -176,17 +173,19 @@ public final class MergerImpl implements Merger {
 	 * @return Model
 	 */
 	private Model getModel(final Metadata metadata) {
+		// get the factory bean (not its product, data source bean)
+		DataServices dataServices = (DataServices) applicationContext.getBean("&cpath2_meta");
 		// create data source
-		DataSource pathwayDataSource = pathwayDataJDBCServices
-			.getDataSource(metadata.getIdentifier());
+		DataSource pathwayDataSource = dataServices.getDataSource(metadata.getIdentifier());
 
-		// get application context after setting the new, custom, datasource (replaces former one)
-		DataSourceFactory.getDataSourceMap().put("mergeDataSource", pathwayDataSource);
+		// set custom datasource (replaces old one); name matters!
+		DataServicesFactoryBean.getDataSourceMap().put("premergeDataSource", pathwayDataSource);
 		
+		// exactly the same context configuration is now used in "premerge" and "merge"!
 		ApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:internalContext-merge.xml");
+			new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");
 		// get a ref to PaxtoolsDAO
-		PaxtoolsDAO mergePaxtoolsDAO = (PaxtoolsDAO)context.getBean("mergePaxtoolsDAO");
+		PaxtoolsDAO mergePaxtoolsDAO = (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
 
 		// create a model, grab all elements from db and add to model
 		Model toReturn = BioPAXLevel.L3.getDefaultFactory().createModel();

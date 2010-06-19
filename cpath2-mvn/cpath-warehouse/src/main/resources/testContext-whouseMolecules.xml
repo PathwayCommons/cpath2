@@ -20,13 +20,13 @@
 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
 
     <util:properties id="smdbProps" location="classpath:hibernate.properties" local-override="true">
-		<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_molecules</prop>
+		<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_molecules_test</prop>
 		<prop key="hibernate.hbm2ddl.auto"></prop>
 	</util:properties>
 
 	<bean id="moleculesSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-        <property name="dataSource" ref="cpath2_molecules"/>
+        <property name="dataSource" ref="cpath2_molecules_test"/>
         <property name="hibernateProperties" ref="smdbProps"/>
 		<property name="packagesToScan">
 			<list>
@@ -45,7 +45,7 @@
         <property name="sessionFactory" ref="moleculesSessionFactory"/>
     </bean>
 
-    <bean id="cpath2_molecules" class="cpath.dao.internal.DataServicesFactoryBean"/>
+    <bean id="cpath2_molecules_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
   	
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
 	

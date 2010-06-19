@@ -28,13 +28,13 @@ package cpath.importer.internal;
 
 // imports
 import cpath.cleaner.Cleaner;
+import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
+import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Premerge;
 import cpath.warehouse.PathwayDataDAO;
-import cpath.warehouse.PathwayDataJDBCServices;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
-import cpath.warehouse.internal.DataSourceFactory;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -50,7 +50,9 @@ import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -71,8 +73,8 @@ public final class PremergeImpl extends Thread implements Premerge {
 	// ref to PathwayDataDAO
     private PathwayDataDAO pathwayDataDAO;
 
-	// ref to jdbc services
-	private PathwayDataJDBCServices pathwayDataJDBCServices;
+    @Autowired
+	private ApplicationContext applicationContext;
 
 	// ref to validator
 	private Validator validator;
@@ -92,15 +94,12 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 *
 	 * @param metadata Metadata
 	 * @param pathwayDataDAO PathwayDataDAO
-	 * @param pathwaydDataJDBCServices
 	 * @param validator Biopax Validator
 	 */
 	public PremergeImpl(final PathwayDataDAO pathwayDataDAO,
-						final PathwayDataJDBCServices pathwayDataJDBCServices,
 						final Validator validator) 
 	{
 		this.pathwayDataDAO = pathwayDataDAO;
-		this.pathwayDataJDBCServices = pathwayDataJDBCServices;
 		this.validator = validator;
 	}
 
@@ -145,9 +144,6 @@ public final class PremergeImpl extends Thread implements Premerge {
 			log.info("run(), metadata object is null.");
 			return;
 		}
-
-		// create db
-		//pathwayDataJDBCServices.createProviderDatabase(metadata, true);
 
 		// get pathway data
 		log.info("run(), getting pathway data for provider.");
@@ -367,27 +363,33 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 */
 	@Transactional
 	private boolean persistPathway(final PathwayData pathwayData, final Model model) {
-
-		// 8create db
-		if (!pathwayDataJDBCServices.createProviderDatabase(metadata, true)) {
+		// get the DataSource factory
+		DataServices dataServices = (DataServices) applicationContext.getBean("&cpath2_meta");
+		
+		// create new db
+		if (!dataServices.createDatabase(metadata.getIdentifier(), true)) {
 			return false;
 		}
-
-		// create data source
-		DataSource premergeDataSource = pathwayDataJDBCServices
-				.getDataSource(metadata.getIdentifier());
-
+		
+		// use the DataSource
+		DataSource premergeDataSource = dataServices.getDataSource(metadata.getIdentifier());
+		
 		/* 
-		 * get application context after setting custom datasource 
-		 * (it replaces former one)
-		 * DataSourceFactory.getDataSourceMap() returns the thread-local 
+		 * get application context after setting custom datasource (replaces old one)
+		 * DataServicesFactoryBean.getDataSourceMap() returns the thread-local 
 		 * instance of the map; so, should work...
-		 * TODO test DataSourceFactory works as expected
 		 */
-		DataSourceFactory.getDataSourceMap().put("premergeDataSource", premergeDataSource);
+		DataServicesFactoryBean.getDataSourceMap().put("premergeDataSource", premergeDataSource);
 		ApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");
-
+		
+		// create schema (tables)
+		AnnotationSessionFactoryBean sessionFactoryBean = (AnnotationSessionFactoryBean) 
+			context.getBean("premergeSessionFactory");
+		sessionFactoryBean.dropDatabaseSchema();
+		sessionFactoryBean.createDatabaseSchema();
+		
+		
 		// get a ref to PaxtoolsDAO
 		PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
 		paxtoolsDAO.importModel(model);

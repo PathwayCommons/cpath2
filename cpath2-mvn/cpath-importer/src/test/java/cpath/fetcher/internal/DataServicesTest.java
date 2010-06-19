@@ -21,7 +21,7 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.TYPE;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:applicationContext-whouseProteins.xml",
+@ContextConfiguration(locations = {"classpath:testContext-whouseProteins.xml",
 		"classpath:applicationContext-cpathFetcher.xml"})
 @TransactionConfiguration(transactionManager="proteinsTransactionManager")
 public class DataServicesTest {
