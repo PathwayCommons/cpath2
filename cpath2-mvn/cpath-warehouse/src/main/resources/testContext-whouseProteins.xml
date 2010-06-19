@@ -3,6 +3,7 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:p="http://www.springframework.org/schema/p"
        xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="
        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
@@ -12,40 +13,40 @@
     
     <context:annotation-config/>
     
-    <context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
-
+ 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+       
     <!-- enable the configuration of transactional behavior based on annotations -->
-    <tx:annotation-driven transaction-manager="moleculesTransactionManager"/>
+    <tx:annotation-driven transaction-manager="proteinsTransactionManager"/>
     
 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
 
-    <util:properties id="smdbProps" location="classpath:hibernate.properties" local-override="true">
-		<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_molecules</prop>
+    <util:properties id="prdbProps" location="classpath:hibernate.properties" local-override="true">
+		<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_proteins_test</prop>
 		<prop key="hibernate.hbm2ddl.auto"></prop>
 	</util:properties>
 
-	<bean id="moleculesSessionFactory"
+	<bean id="proteinsSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-        <property name="dataSource" ref="cpath2_molecules"/>
-        <property name="hibernateProperties" ref="smdbProps"/>
+        <property name="dataSource" ref="cpath2_proteins_test"/>
+		<property name="hibernateProperties" ref="prdbProps"/>
 		<property name="packagesToScan">
 			<list>
 				<value>org.biopax.paxtools.impl</value>
 				<value>org.biopax.paxtools.impl.level3</value>
 			</list>
-		</property>     
+		</property>        
     </bean>
 
-    <bean id="moleculesTransactionManager"
+    <bean id="proteinsTransactionManager"
         class="org.springframework.orm.hibernate3.HibernateTransactionManager">
-        <property name="sessionFactory" ref="moleculesSessionFactory" />
+        <property name="sessionFactory" ref="proteinsSessionFactory" />
     </bean>
 
-    <bean id="moleculesDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
-        <property name="sessionFactory" ref="moleculesSessionFactory"/>
+    <bean id="proteinsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
+        <property name="sessionFactory" ref="proteinsSessionFactory"/>
     </bean>
 
-    <bean id="cpath2_molecules" class="cpath.dao.internal.DataServicesFactoryBean"/>
+    <bean id="cpath2_proteins_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
   	
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
 	

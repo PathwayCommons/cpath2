@@ -34,13 +34,14 @@ import org.biopax.paxtools.impl.level3.XrefImpl;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -49,6 +50,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.apache.commons.logging.*;
 
+import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
 
 import java.io.File;
@@ -60,8 +62,7 @@ import static org.junit.Assert.*;
  * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {
-		"classpath:applicationContext-cpathDAO.xml"})
+@ContextConfiguration(locations = {"classpath:testContext-cpathDAO.xml"})
 @TransactionConfiguration(transactionManager="mainTransactionManager")
 public class PaxtoolsHibernateDAOTest {
 
@@ -69,24 +70,24 @@ public class PaxtoolsHibernateDAOTest {
 
     @Autowired
     PaxtoolsDAO paxtoolsDAO;
-    
-    @Autowired
-    SessionFactory sessionFactory;
 
+    @Autowired
+    ApplicationContext context;
+    
 	//
 	// used to test getByID
 	//
-	private List<String> PATHWAY_TEST_VALUES = new ArrayList<String>();
-	private List<String> PROTEIN_A_TEST_VALUES = new ArrayList<String>();
-	private List<String> PROTEIN_B_TEST_VALUES = new ArrayList<String>();
-	private List<List<String>> PROTEIN_TEST_VALUES = new ArrayList<List<String>>();
-	private String[] UNIFICATION_TEST_VALUES = { "Gene Ontology", "GO:0005737" };
-	private String GET_BY_QUERY_TEST_VALUE = "ATP";
-	private Class GET_BY_QUERY_RETURN_TEST_CLASS = ChemicalStructure.class;
-	private List<Class> GET_BY_QUERY_RETURN_CLASSES = new ArrayList<Class>();
+	private static List<String> PATHWAY_TEST_VALUES = new ArrayList<String>();
+	private static List<String> PROTEIN_A_TEST_VALUES = new ArrayList<String>();
+	private static List<String> PROTEIN_B_TEST_VALUES = new ArrayList<String>();
+	private static List<List<String>> PROTEIN_TEST_VALUES = new ArrayList<List<String>>();
+	private static String[] UNIFICATION_TEST_VALUES = { "Gene Ontology", "GO:0005737" };
+	private static String GET_BY_QUERY_TEST_VALUE = "ATP";
+	private static Class GET_BY_QUERY_RETURN_TEST_CLASS = ChemicalStructure.class;
+	private static List<Class> GET_BY_QUERY_RETURN_CLASSES = new ArrayList<Class>();
 
-	@Before
-	public void setUp() throws Exception {
+	
+	static {
 		PATHWAY_TEST_VALUES.add("glycolysis");
 		PATHWAY_TEST_VALUES.add("Glycolysis Pathway");
 		PATHWAY_TEST_VALUES.add("Embden-Meyerhof pathway");
@@ -112,17 +113,27 @@ public class PaxtoolsHibernateDAOTest {
 		GET_BY_QUERY_RETURN_CLASSES.add(BiochemicalReaction.class);
 		GET_BY_QUERY_RETURN_CLASSES.add(SmallMoleculeReference.class);
 	}
+	
+	
+	@Before
+	public void setUp() throws Exception {
+		System.out.println("Preparing...");
+		//ApplicationContext context = new ClassPathXmlApplicationContext("classpath:testContext-cpathDAO.xml");
+		DataServices dataServices = (DataServices) context.getBean("&cpath2_main_test");
+		dataServices.createDatabasesAndTables(false);
+		//paxtoolsDAO = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
+		//((ClassPathXmlApplicationContext)context).refresh();
+	}
 
-	
-	
+	@After
+	public void tearDown() throws Exception {
+		//DataServicesFactoryBean.createDatabasesAndTables();
+	}
 	
 	@Test
-	// TODO: why it passes only with @Transactional annotation and paxtoolsDAO.search disabled..?
 	@Transactional 
 	//@Rollback(false)
 	public void testSimple() throws Exception {
-		assertTrue(((Model)paxtoolsDAO).getNameSpacePrefixMap()
-				.containsValue("urn:pathwaycommons:"));
 		
 		log.info("Testing importModel(file)...");
 		File biopaxFile = new File(getClass().getResource("/test.owl").getFile());
@@ -146,7 +157,7 @@ public class PaxtoolsHibernateDAOTest {
 	}
 	
 	
-	//@Test
+	//@Test // comment out to ignore
 	//@Transactional
 	//@Rollback(false)
 	public void testRun() throws Exception {

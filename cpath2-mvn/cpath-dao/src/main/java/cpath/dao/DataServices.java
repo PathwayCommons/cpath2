@@ -24,26 +24,25 @@
  ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
-package cpath.warehouse;
+package cpath.dao;
 
 // imports
 import javax.sql.DataSource;
 
-import cpath.warehouse.beans.Metadata;
 
 /**
  * Class which provides services to create provider database to persist pathway data.
  */
-public interface PathwayDataJDBCServices {
+public interface DataServices {
 
     /**
-     * Creates database to persist given provider data.
+     * Creates database (e.g., to persist given provider data).
      *
-     * @param metadata Metadata
+     * @param dbName
 	 * @param drop boolean
 	 * @return boolean (true - success, false - failure)
      */
-    boolean createProviderDatabase(final Metadata metadata, final boolean drop);
+    boolean createDatabase(final String dbName, final boolean drop);
     
     /**
      * Gets a new DataSource instance for the previously created
@@ -53,4 +52,12 @@ public interface PathwayDataJDBCServices {
      * @return
      */
     DataSource getDataSource(String databaseName);
+    
+    
+	/**
+	 * Drops/creates databases with empty tables. Use with caution ;)
+	 * 
+	 * @param production - 'false' for junit tests
+	 */
+    void createDatabasesAndTables(boolean production);
 }

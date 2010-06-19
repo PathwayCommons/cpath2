@@ -32,7 +32,7 @@ import java.util.Set;
  *
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:applicationContext-whouseProteins.xml"})
+@ContextConfiguration(locations = {"classpath:testContext-whouseProteins.xml"})
 @TransactionConfiguration(transactionManager="proteinsTransactionManager")
 public class PubChemConverterImplTest {
 

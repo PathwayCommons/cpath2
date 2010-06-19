@@ -34,9 +34,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import cpath.dao.DataServices;
 import cpath.warehouse.CPathWarehouse;
 
 /**
@@ -45,9 +47,9 @@ import cpath.warehouse.CPathWarehouse;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
-		"classpath:applicationContext-whouseMolecules.xml",
-		"classpath:applicationContext-whouseProteins.xml",
-		"classpath:applicationContext-whouseDAO.xml",
+		"classpath:testContext-whouseMolecules.xml",
+		"classpath:testContext-whouseProteins.xml",
+		"classpath:testContext-whouseDAO.xml",
 		"classpath:applicationContext-cpathWarehouse.xml",
 		"classpath:applicationContext-cvRepository.xml"})
 public class CPathWarehouseImplTest {
@@ -55,11 +57,18 @@ public class CPathWarehouseImplTest {
 	@Autowired
 	CPathWarehouse warehouse;
 	
+	@Autowired
+	ApplicationContext context;
+	
+	
 	/**
 	 * @throws java.lang.Exception
 	 */
 	@Before
 	public void setUp() throws Exception {
+		System.out.println("Preparing...");
+		DataServices dataServices = (DataServices) context.getBean("&cpath2_meta_test");
+		dataServices.createDatabasesAndTables(false);
 	}
 
 	/**

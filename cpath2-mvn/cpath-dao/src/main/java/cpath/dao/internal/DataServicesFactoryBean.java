@@ -24,59 +24,131 @@
  ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
-package cpath.warehouse.internal;
+package cpath.dao.internal;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
-import cpath.warehouse.PathwayDataJDBCServices;
-import cpath.warehouse.beans.Metadata;
+import cpath.dao.DataServices;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.springframework.beans.factory.BeanNameAware;
+import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.stereotype.Repository;
 
 /**
- * Class which provides services to create provider database to persist pathway data.
+ * Class that provides services to create 
+ * pathway data provider databases; 
+ * also is used as a general data source factory.
  * 
  * Note: it is MySQL-specific. TODO: add 'masterDb' field...
  */
-@Repository
-public class PathwayDataJDBCServicesImpl implements PathwayDataJDBCServices {
+public class DataServicesFactoryBean implements DataServices, BeanNameAware, FactoryBean<DataSource> {
     // log
-    private static Log log = LogFactory.getLog(PathwayDataJDBCServicesImpl.class);
+    private static Log log = LogFactory.getLog(DataServicesFactoryBean.class);
 
 	// ref to some db props - set via spring
 	private String dbUser;
+	@Value("${user}")
 	public void setDbUser(String dbUser) { this.dbUser = dbUser; }
 	public String getDbUser() { return dbUser; }
 
 	private String dbPassword;
+	@Value("${password}")
 	public void setDbPassword(String dbPassword) { this.dbPassword = dbPassword; }
 	public String getDbPassword() { return dbPassword; }
 
 	private String dbDriver;
+	@Value("${driver}")
 	public void setDbDriver(String dbDriver) { this.dbDriver = dbDriver; }
 	public String getDbDriver() { return dbDriver; }
 
 	private String dbConnection;
+	@Value("${connection}")
 	public void setDbConnection(String dbConnection) { this.dbConnection = dbConnection; }
 	public String getDbConnection() { return dbConnection; }
-
-	// ref to jdbc template
+	
 	private JdbcTemplate jdbcTemplate;
 
+    private String beanName;
+    
+    private static ThreadLocal<Map<String, DataSource>> beansByName =
+        new ThreadLocal<Map<String, DataSource>>() {
+            @Override
+            protected Map<String, DataSource> initialValue() {
+                return new HashMap<String, DataSource>(1);
+            }
+        };
+    
+    public static Map<String, DataSource> getDataSourceMap() {
+    	return beansByName.get();
+    }
+        
+
+    @Override
+    public void setBeanName(String beanName) {
+        this.beanName = beanName;
+    }
+
+    
+    @Override
+    public DataSource getObject() {
+    	DataSource ds = getDataSourceMap().get(beanName);
+    	if(ds == null) {
+    		// create new one
+    		ds = getDataSource(beanName);
+    		getDataSourceMap().put(beanName, ds);
+    	}
+        return ds; 
+    }
+
+    @Override
+    public Class<?> getObjectType() {
+        return getObject().getClass();
+    }
+
+    @Override
+    public boolean isSingleton() {
+        return true;
+    }
+    
+	/**
+	 * Static factory method that creates any DataSource.
+	 * 
+	 * @param dbUser
+	 * @param dbPassword
+	 * @param dbDriver
+	 * @param dbUrl
+	 * @return the data source
+	 * 
+	 * @deprecated not used anymore...
+	 */
+	public static DataSource getDataSource(String dbUser, String dbPassword,
+			String dbDriver, String dbUrl) {
+		DriverManagerDataSource dataSource = new DriverManagerDataSource();
+		dataSource.setDriverClassName(dbDriver);
+		dataSource.setUrl(dbUrl);
+		dataSource.setUsername(dbUser);
+		dataSource.setPassword(dbPassword);
+		return dataSource;
+	}
+	
+	
 	/**
 	 * Default Constructor.
 	 */
-	public PathwayDataJDBCServicesImpl() {}
+	public DataServicesFactoryBean() {}
 	
 
-	// this method is automatically called by Spring after configuration 
 	@PostConstruct public void init() {
 		if (dbConnection == null) {
 			throw new IllegalArgumentException("The database connection string is required");
@@ -91,25 +163,15 @@ public class PathwayDataJDBCServicesImpl implements PathwayDataJDBCServices {
 			throw new IllegalArgumentException("The path to the test data set is required");
 		}
 	}
-	
-	
-    /*
-	 * (non-Javadoc)
-	 * @see cpath.warehouse.pathway.PathwayDataJDBCServices#createProviderDatabase(cpath.warehouse.beans.Metadata, java.lang.boolean)
-     */
-    public boolean createProviderDatabase(final Metadata metadata, 
-    		final boolean drop) {
-		return createDatabase(metadata.getIdentifier(), drop);
-	}
     
     
-    private boolean createDatabase(final String db, final boolean drop) {
-		
+    public boolean createDatabase(final String db, final boolean drop) 
+    {
 		boolean toReturn = true;
 
 		// create simple JdbcTemplate if necessary
 		if (jdbcTemplate == null) {
-			DataSource dataSource = getDataSource("mysql"); // works for MySQL
+			DataSource dataSource = getDataSource(""); // works for MySQL
 			jdbcTemplate = new JdbcTemplate(dataSource);
 		}
 
@@ -135,10 +197,12 @@ public class PathwayDataJDBCServicesImpl implements PathwayDataJDBCServices {
 
 
 	/**
-	 * Factory-method
+	 * Factory-method that get a new data source using instance
+	 * variables: driver, connection, user, password, and
+	 * parameter database name.
 	 * 
 	 * (non-Javadoc)
-	 * @see cpath.warehouse.PathwayDataJDBCServices#getDataSource(java.lang.String)
+	 * @see cpath.dao.DataServices#getDataSource(java.lang.String)
 	 */
 	public DataSource getDataSource(String databaseName) {
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();
@@ -147,6 +211,23 @@ public class PathwayDataJDBCServicesImpl implements PathwayDataJDBCServices {
 		dataSource.setUsername(dbUser);
 		dataSource.setPassword(dbPassword);
 		return dataSource;
+	}
+	
+	
+	public void createDatabasesAndTables(boolean production) {
+		if(production) {
+			createDatabase("cpath2_meta", true);
+			createDatabase("cpath2_main", true);
+			createDatabase("cpath2_molecules", true);
+			createDatabase("cpath2_proteins", true);
+			new ClassPathXmlApplicationContext("classpath:applicationContext-creation.xml");
+		} else {
+			createDatabase("cpath2_meta_test", true);
+			createDatabase("cpath2_main_test", true);
+			createDatabase("cpath2_molecules_test", true);
+			createDatabase("cpath2_proteins_test", true);
+			new ClassPathXmlApplicationContext("classpath:applicationContext-creationTest.xml");
+		}
 	}
 	
 }
