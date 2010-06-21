@@ -62,7 +62,9 @@ import static org.junit.Assert.*;
  * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {"classpath:testContext-cpathDAO.xml"})
+@ContextConfiguration(locations = {
+		"classpath:applicationContext-creationTest.xml",
+		"classpath:testContext-cpathDAO.xml"})
 @TransactionConfiguration(transactionManager="mainTransactionManager")
 public class PaxtoolsHibernateDAOTest {
 
@@ -117,17 +119,18 @@ public class PaxtoolsHibernateDAOTest {
 	
 	@Before
 	public void setUp() throws Exception {
-		System.out.println("Preparing...");
+		// if we want every Test use fresh databases - 
+		//System.out.println("Preparing...");
 		//ApplicationContext context = new ClassPathXmlApplicationContext("classpath:testContext-cpathDAO.xml");
-		DataServices dataServices = (DataServices) context.getBean("&cpath2_main_test");
-		dataServices.createDatabasesAndTables(false);
+		//DataServices dataServices = (DataServices) context.getBean("&cpath2_main_test");
+		//dataServices.createTestDatabasesAndTables();
 		//paxtoolsDAO = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
 		//((ClassPathXmlApplicationContext)context).refresh();
+		DataServicesFactoryBean.createTestSchema();
 	}
 
 	@After
 	public void tearDown() throws Exception {
-		//DataServicesFactoryBean.createDatabasesAndTables();
 	}
 	
 	@Test

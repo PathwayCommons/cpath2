@@ -171,7 +171,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 
 		// create simple JdbcTemplate if necessary
 		if (jdbcTemplate == null) {
-			DataSource dataSource = getDataSource(""); // works for MySQL
+			DataSource dataSource = getDataSource("mysql"); // works for MySQL
 			jdbcTemplate = new JdbcTemplate(dataSource);
 		}
 
@@ -214,20 +214,41 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	}
 	
 	
-	public void createDatabasesAndTables(boolean production) {
-		if(production) {
-			createDatabase("cpath2_meta", true);
-			createDatabase("cpath2_main", true);
-			createDatabase("cpath2_molecules", true);
-			createDatabase("cpath2_proteins", true);
-			new ClassPathXmlApplicationContext("classpath:applicationContext-creation.xml");
-		} else {
-			createDatabase("cpath2_meta_test", true);
-			createDatabase("cpath2_main_test", true);
-			createDatabase("cpath2_molecules_test", true);
-			createDatabase("cpath2_proteins_test", true);
-			new ClassPathXmlApplicationContext("classpath:applicationContext-creationTest.xml");
-		}
+	/**** static methods *****/
+	
+	public static void createTestSchema() {
+		new ClassPathXmlApplicationContext("classpath:applicationContext-creationTest.xml");
+		// note: createTestDatabases is called during the context init!
 	}
 	
+	public static void createTestDatabases(String user,
+			String passwd, String conn, String driver) {
+		DataServicesFactoryBean bean = new DataServicesFactoryBean();
+		bean.setDbUser(user);
+		bean.setDbPassword(passwd);
+		bean.setDbConnection(conn);
+		bean.setDbDriver(driver);
+		bean.createDatabase("cpath2_meta_test", true);
+		bean.createDatabase("cpath2_main_test", true);
+		bean.createDatabase("cpath2_molecules_test", true);
+		bean.createDatabase("cpath2_proteins_test", true);
+	}	
+	
+	public static void createSchema() {
+		new ClassPathXmlApplicationContext("classpath:applicationContext-creation.xml");
+		// note: createDatabases is called during the context init!
+	}
+	
+	public static void createDatabases(String user,
+			String passwd, String conn, String driver) {
+		DataServicesFactoryBean bean = new DataServicesFactoryBean();
+		bean.setDbUser(user);
+		bean.setDbPassword(passwd);
+		bean.setDbConnection(conn);
+		bean.setDbDriver(driver);
+		bean.createDatabase("cpath2_meta", true);
+		bean.createDatabase("cpath2_main", true);
+		bean.createDatabase("cpath2_molecules", true);
+		bean.createDatabase("cpath2_proteins", true);
+	}
 }

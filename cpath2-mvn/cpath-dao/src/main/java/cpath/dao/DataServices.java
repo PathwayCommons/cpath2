@@ -53,11 +53,4 @@ public interface DataServices {
      */
     DataSource getDataSource(String databaseName);
     
-    
-	/**
-	 * Drops/creates databases with empty tables. Use with caution ;)
-	 * 
-	 * @param production - 'false' for junit tests
-	 */
-    void createDatabasesAndTables(boolean production);
 }

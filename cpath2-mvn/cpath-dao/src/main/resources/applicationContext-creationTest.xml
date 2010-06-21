@@ -15,15 +15,27 @@
 
  	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
-	<!-- <util:properties id="hibProps" location="classpath:hibernate.properties" local-override="true"> 
-	<util:properties id="hibProps">
-		<prop key="hibernate.hbm2ddl.auto">create</prop>
-	</util:properties>
+  	<!-- (re-)create test databases -->
+  	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+  		<property name="staticMethod" value="cpath.dao.internal.DataServicesFactoryBean.createTestDatabases"/>
+  		<property name="arguments">
+  			<list>
+  				<value>${user}</value>
+  				<value>${password}</value>
+  				<value>${connection}</value>
+  				<value>${driver}</value>
+  			</list>
+  		</property>
+ 	</bean>
+
+	<!-- seems, hibernate.properties, if exists, is found and used anyway...
+	<util:properties id="hibProps" location="classpath:hibernate.properties" local-override="true"> 
 	-->
   	
   	<bean id="mainSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="cpath2_main_test"/>
+        <!-- these props add/override those in hibernate.properties (if any present) on the classpath -->
         <property name="hibernateProperties">
 		  <props>
 			<prop key="hibernate.hbm2ddl.auto">create</prop>
@@ -89,11 +101,5 @@
   	<bean id="cpath2_meta_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
   	<bean id="cpath2_molecules_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
   	<bean id="cpath2_proteins_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
-  	
-  	<!-- interesting idea... 
-  	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-   		<property name="staticMethod"><value>cpath.dao.internal.DataServicesFactoryBean.createDatabasesAndTables</value></property>
- 	</bean>
-  	-->
   	
 </beans>

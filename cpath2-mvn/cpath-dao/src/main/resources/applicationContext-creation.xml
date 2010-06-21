@@ -15,11 +15,25 @@
 
  	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
+  	<!-- (re-)create databases -->
+  	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+  		<property name="staticMethod" value="cpath.dao.internal.DataServicesFactoryBean.createDatabases"/>
+  		<property name="arguments">
+  			<list>
+  				<value>${user}</value>
+  				<value>${password}</value>
+  				<value>${connection}</value>
+  				<value>${driver}</value>
+  			</list>
+  		</property>
+ 	</bean>
+
 	<!-- <util:properties id="hibProps" location="classpath:hibernate.properties" local-override="true"> -->
   	
   	<bean id="mainSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="cpath2_main"/>
+        <!-- props to add/override those hibernate.properties (if any present) on the classpath-->
         <property name="hibernateProperties">
 		  <props>
 			<prop key="hibernate.hbm2ddl.auto">create</prop>
@@ -85,11 +99,5 @@
   	<bean id="cpath2_meta" class="cpath.dao.internal.DataServicesFactoryBean"/>
   	<bean id="cpath2_molecules" class="cpath.dao.internal.DataServicesFactoryBean"/>
   	<bean id="cpath2_proteins" class="cpath.dao.internal.DataServicesFactoryBean"/>
-  	
-  	<!-- interesting idea... 
-  	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-   		<property name="staticMethod"><value>cpath.dao.internal.DataServicesFactoryBean.createDatabasesAndTables</value></property>
- 	</bean>
-  	-->
-  	
+
 </beans>

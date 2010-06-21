@@ -28,7 +28,4 @@
 	  </property>
 	</bean>
   	
-  	<!-- to get this factory, not its product (data source), use cxt.getBean("&dataServicesFactory") -->
-    <bean id="dataServicesFactory" class="cpath.dao.internal.DataServicesFactoryBean"/>
-  	
 </beans>
