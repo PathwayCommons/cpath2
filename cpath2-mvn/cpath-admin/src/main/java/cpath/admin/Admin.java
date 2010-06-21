@@ -29,8 +29,8 @@
 package cpath.admin;
 
 // imports
-import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
+import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.WarehouseDataService;
 import cpath.fetcher.ProviderMetadataService;
 import cpath.fetcher.ProviderPathwayDataService;
@@ -165,12 +165,8 @@ public class Admin implements Runnable {
     public void run() {
         try {
             switch (command) {
-            case CREATE_TABLES: // TODO also create DBs
-            	ApplicationContext context =
-                    new ClassPathXmlApplicationContext(new String [] { 	
-                    		"classpath:applicationContext-cpathAdmin.xml"});
-            	DataServices dataServices = (DataServices) context.getBean("&dataServicesFactory");
-            	dataServices.createDatabasesAndTables(true);
+            case CREATE_TABLES:
+            	DataServicesFactoryBean.createSchema();
             	break;
             case FETCH_METADATA:
                 fetchMetadata(commandParameters[0]);
@@ -185,7 +181,7 @@ public class Admin implements Runnable {
 				fetchWarehouseData(COMMAND.FETCH_SMALL_MOLECULE_DATA, commandParameters[0]);
 				break;
 			case PREMERGE:
-				context =
+				ApplicationContext context =
                     new ClassPathXmlApplicationContext(new String [] { 	
                     		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
                     		"classpath:applicationContext-whouseDAO.xml", 
