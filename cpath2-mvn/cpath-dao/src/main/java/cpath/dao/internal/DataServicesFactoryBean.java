@@ -40,6 +40,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -217,7 +218,8 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	/**** static methods *****/
 	
 	public static void createTestSchema() {
-		new ClassPathXmlApplicationContext("classpath:applicationContext-creationTest.xml");
+		ApplicationContext ctx = 
+			new ClassPathXmlApplicationContext("classpath:internalContext-creationTest.xml");
 		// note: createTestDatabases is called during the context init!
 	}
 	
@@ -235,7 +237,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	}	
 	
 	public static void createSchema() {
-		new ClassPathXmlApplicationContext("classpath:applicationContext-creation.xml");
+		new ClassPathXmlApplicationContext("classpath:internalContext-creation.xml");
 		// note: createDatabases is called during the context init!
 	}
 	

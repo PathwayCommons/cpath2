@@ -25,14 +25,12 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.service;
+package cpath.dao;
 
 import java.util.Map;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
-
-import cpath.webservice.args.OutputFormat;
 
 
 /**
@@ -65,6 +63,26 @@ public interface CPathService {
 		MISC; // key to, e.g., lucene search statistics, etc.
 	}
 	
+	/**
+	 * Enumeration of cPath service output formats
+	 * 
+	 * @author rodche
+	 *
+	 */
+	public static enum OutputFormat {
+		BIOPAX,
+		BINARY_SIF,
+		SBML,
+		GSEA,
+		PC_GENE_SET,
+		ID_LIST,
+		IMAGE,
+		IMAGE_MAP,
+		IMAGE_MAP_THUMBNAIL,
+		IMAGE_MAP_IPHONE,
+		IMAGE_MAP_FRAMESET,
+		;
+	}
 	
 	/**
 	 * Gets the results map that contain either count of the elements 
@@ -102,7 +120,7 @@ public interface CPathService {
 	 * @param countOnly
 	 * @return
 	 */
-	Map<ResultMapKey, Object> list(String queryStr, Class<? extends BioPAXElement> biopaxClass, boolean countOnly);
+	Map<ResultMapKey, Object> list(String queryStr, Class<? extends BioPAXElement> biopaxClass);
 
 	
 	/**

@@ -29,8 +29,6 @@
 package cpath.dao.internal;
 
 // imports
-import org.biopax.paxtools.impl.BioPAXElementImpl;
-import org.biopax.paxtools.impl.level3.XrefImpl;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
@@ -50,8 +48,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import org.apache.commons.logging.*;
 
-import cpath.dao.DataServices;
+import cpath.dao.CPathService;
 import cpath.dao.PaxtoolsDAO;
+import cpath.dao.CPathService.OutputFormat;
+import cpath.dao.CPathService.ResultMapKey;
 
 import java.io.File;
 import java.util.*;
@@ -61,19 +61,21 @@ import static org.junit.Assert.*;
 /**
  * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
  */
+/*
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
 		"classpath:applicationContext-creationTest.xml",
 		"classpath:testContext-cpathDAO.xml"})
 @TransactionConfiguration(transactionManager="mainTransactionManager")
+*/
 public class PaxtoolsHibernateDAOTest {
 
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
 
-    @Autowired
+    //@Autowired
     PaxtoolsDAO paxtoolsDAO;
 
-    @Autowired
+    //@Autowired
     ApplicationContext context;
     
 	//
@@ -117,32 +119,34 @@ public class PaxtoolsHibernateDAOTest {
 	}
 	
 	
+	/*
+	 * drop-create db schema, import data file
+	 */
 	@Before
 	public void setUp() throws Exception {
-		// if we want every Test use fresh databases - 
-		//System.out.println("Preparing...");
-		//ApplicationContext context = new ClassPathXmlApplicationContext("classpath:testContext-cpathDAO.xml");
-		//DataServices dataServices = (DataServices) context.getBean("&cpath2_main_test");
-		//dataServices.createTestDatabasesAndTables();
-		//paxtoolsDAO = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-		//((ClassPathXmlApplicationContext)context).refresh();
+		// create test DBs and all the tables 
 		DataServicesFactoryBean.createTestSchema();
+
+		// init the DAO (it loads now because databases are created above)
+		context = new ClassPathXmlApplicationContext("classpath:testContext-cpathDAO.xml");
+		paxtoolsDAO = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
+		
+		// load some data into the test storage
+		log.info("Loading BioPAX data (importModel(file))...");
+		File biopaxFile = new File(getClass().getResource("/test.owl").getFile());
+		//File biopaxFile = new File(getClass().getResource("/biopax-level3-test.owl.xml").getFile());
+		paxtoolsDAO.importModel(biopaxFile);
+		
+		log.info("importModel(file) done!");
 	}
 
 	@After
 	public void tearDown() throws Exception {
 	}
+
 	
 	@Test
-	@Transactional 
-	//@Rollback(false)
 	public void testSimple() throws Exception {
-		
-		log.info("Testing importModel(file)...");
-		File biopaxFile = new File(getClass().getResource("/test.owl").getFile());
-		paxtoolsDAO.importModel(biopaxFile);
-		log.info("importModel(file) done!");
-		
 		BioPAXElement e = paxtoolsDAO.getByID(
 				"http://www.biopax.org/examples/myExample#Protein_A");
 		assertNotNull(e);
@@ -153,23 +157,46 @@ public class PaxtoolsHibernateDAOTest {
 			.getByID("http://www.biopax.org/examples/myExample#Protein_A");
 		assertNotNull(bpe);
 		assertTrue(bpe instanceof Protein);
-
-		// search
-		//List<? extends BioPAXElement> elist = paxtoolsDAO.search("P46880", BioPAXElement.class);
-		//assertFalse(elist.isEmpty());
 	}
+
 	
+	//@Test // fails
+	//@Transactional 
+	public void testSimpleSerch() throws Exception {
+		List<? extends BioPAXElement> elist = paxtoolsDAO.search("P46880", BioPAXElement.class);
+		assertFalse(elist.isEmpty());
+	}
+
+	
+	//@Test
+	public void testServiceElement() throws Exception {
+		CPathService service = new CPathServiceImpl(paxtoolsDAO);
+		
+		Map<ResultMapKey, Object> map = service.element(
+				"http://www.biopax.org/examples/myExample#Protein_A",
+				OutputFormat.BIOPAX);
+		assertNotNull(map);
+		System.out.println(map.toString());
+		
+		assertNotNull(map.get(ResultMapKey.DATA));
+		System.out.println(map.get(ResultMapKey.DATA));
+		
+		Model m = (Model) map.get(ResultMapKey.MODEL);
+		assertNotNull(m);
+		BioPAXElement e = m.getByID("http://www.biopax.org/examples/myExample#Protein_A");
+		assertTrue(e instanceof Protein);
+	
+		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
+		BioPAXElement bpe = paxtoolsDAO
+			.getByID("http://www.biopax.org/examples/myExample#Protein_A");
+		assertNotNull(bpe);
+		assertTrue(bpe instanceof Protein);
+	}
 	
 	//@Test // comment out to ignore
 	//@Transactional
 	//@Rollback(false)
-	public void testRun() throws Exception {
-		log.info("Testing importModel(file)...");
-		File biopaxFile = new File(getClass()
-				.getResource("/biopax-level3-test.owl.xml").getFile());
-		paxtoolsDAO.importModel(biopaxFile);
-		log.info("importModel(file) done!");
-		
+	public void testRun() throws Exception {		
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
 		BioPAXElement bpe = paxtoolsDAO
 			.getByID("http://www.biopax.org/examples/myExample#Pathway50");

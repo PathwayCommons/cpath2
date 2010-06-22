@@ -27,8 +27,9 @@
 
 package cpath.webservice;
 
-import cpath.service.CPathService.ResultMapKey;
-import cpath.service.internal.CPathServiceImpl;
+import cpath.dao.CPathService.OutputFormat;
+import cpath.dao.CPathService.ResultMapKey;
+import cpath.dao.internal.CPathServiceImpl;
 import cpath.warehouse.internal.BioDataTypes;
 import cpath.warehouse.internal.BioDataTypes.Type;
 import cpath.webservice.args.*;
@@ -177,7 +178,7 @@ public class WebserviceController {
     {		
     	if(log.isInfoEnabled()) log.info("Fulltext Search for type:" 
 				+ type.getCanonicalName() + ", query:" + query);
-    	Map<ResultMapKey,Object> results = service.list(query, type, false);
+    	Map<ResultMapKey,Object> results = service.list(query, type);
     	String body = getListDataBody(results, query + 
     			" (in " + type.getSimpleName() + ")");
 		return body;

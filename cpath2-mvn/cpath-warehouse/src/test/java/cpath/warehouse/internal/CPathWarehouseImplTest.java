@@ -47,7 +47,7 @@ import cpath.warehouse.CPathWarehouse;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
-		"classpath:applicationContext-creationTest.xml",
+		"classpath:internalContext-creationTest.xml",
 		"classpath:testContext-whouseMolecules.xml",
 		"classpath:testContext-whouseProteins.xml",
 		"classpath:testContext-whouseDAO.xml",
@@ -67,8 +67,8 @@ public class CPathWarehouseImplTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
-		System.out.println("Preparing...");
-		DataServicesFactoryBean.createTestSchema();
+		//System.out.println("Preparing...");
+		//DataServicesFactoryBean.createTestSchema(); // it gets created during spring context load
 	}
 
 	/**

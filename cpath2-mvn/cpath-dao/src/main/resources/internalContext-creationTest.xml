@@ -15,9 +15,9 @@
 
  	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
-  	<!-- (re-)create databases -->
+  	<!-- (re-)create test databases -->
   	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-  		<property name="staticMethod" value="cpath.dao.internal.DataServicesFactoryBean.createDatabases"/>
+  		<property name="staticMethod" value="cpath.dao.internal.DataServicesFactoryBean.createTestDatabases"/>
   		<property name="arguments">
   			<list>
   				<value>${user}</value>
@@ -28,16 +28,18 @@
   		</property>
  	</bean>
 
-	<!-- <util:properties id="hibProps" location="classpath:hibernate.properties" local-override="true"> -->
+	<!-- seems, hibernate.properties, if exists, is found and used anyway...
+	<util:properties id="hibProps" location="classpath:hibernate.properties" local-override="true"> 
+	-->
   	
-  	<bean id="mainSessionFactory"
+  	<bean id="sessionFactory1"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-        <property name="dataSource" ref="cpath2_main"/>
-        <!-- props to add/override those hibernate.properties (if any present) on the classpath-->
+        <property name="dataSource" ref="cpath2_main_test"/>
+        <!-- these props add/override those in hibernate.properties (if any present) on the classpath -->
         <property name="hibernateProperties">
 		  <props>
 			<prop key="hibernate.hbm2ddl.auto">create</prop>
-			<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_main</prop>
+			<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_main_test</prop>
 		  </props>
         </property>
 		<property name="packagesToScan">
@@ -48,25 +50,25 @@
 		</property>        
     </bean>
     
-    <bean id="metaSessionFactory"
+    <bean id="sessionFactory2"
         class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-        <property name="dataSource" ref="cpath2_meta"/>
-		<property name="hibernateProperties">
+        <property name="dataSource" ref="cpath2_meta_test"/>
+        <property name="hibernateProperties">
 		  <props>
 			<prop key="hibernate.hbm2ddl.auto">create</prop>
-			<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_meta</prop>
+			<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_meta_test</prop>
 		  </props>
         </property>
 		<property name="packagesToScan" value="cpath.warehouse.beans" /> 
     </bean>
     
-    <bean id="proteinsSessionFactory"
+    <bean id="sessionFactory3"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-        <property name="dataSource" ref="cpath2_proteins"/>
+        <property name="dataSource" ref="cpath2_proteins_test"/>
         <property name="hibernateProperties">
 		  <props>
 			<prop key="hibernate.hbm2ddl.auto">create</prop>
-			<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_proteins</prop>
+			<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_proteins_test</prop>
 		  </props>
         </property>
 		<property name="packagesToScan">
@@ -77,13 +79,13 @@
 		</property>        
     </bean>
     
-    <bean id="moleculesSessionFactory"
+    <bean id="sessionFactory4"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-        <property name="dataSource" ref="cpath2_molecules"/>
+        <property name="dataSource" ref="cpath2_molecules_test"/>
         <property name="hibernateProperties">
 		  <props>
 			<prop key="hibernate.hbm2ddl.auto">create</prop>
-			<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_molecues</prop>
+			<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_molecules_test</prop>
 		  </props>
         </property>
         <property name="configurationClass" value="org.hibernate.cfg.AnnotationConfiguration"/>
@@ -95,9 +97,9 @@
 		</property>        
     </bean>
     
-  	<bean id="cpath2_main" class="cpath.dao.internal.DataServicesFactoryBean"/>
-  	<bean id="cpath2_meta" class="cpath.dao.internal.DataServicesFactoryBean"/>
-  	<bean id="cpath2_molecules" class="cpath.dao.internal.DataServicesFactoryBean"/>
-  	<bean id="cpath2_proteins" class="cpath.dao.internal.DataServicesFactoryBean"/>
-
+  	<bean id="cpath2_main_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
+  	<bean id="cpath2_meta_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
+  	<bean id="cpath2_molecules_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
+  	<bean id="cpath2_proteins_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
+  	
 </beans>
