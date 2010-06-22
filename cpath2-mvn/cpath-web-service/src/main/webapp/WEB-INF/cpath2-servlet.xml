@@ -50,9 +50,8 @@
 		<constructor-arg ref="metadataDAO"/>
 	</bean>
 	
-	<bean id="cPathService" class="cpath.service.internal.CPathServiceImpl">
+	<bean id="cPathService" class="cpath.dao.internal.CPathServiceImpl">
 		<constructor-arg ref="paxtoolsDAO"/>
-		<constructor-arg ref="cPathWarehouse"/>
 	</bean>
 
 </beans>

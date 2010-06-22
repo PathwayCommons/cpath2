@@ -28,8 +28,8 @@
  **/
 package cpath.webservice;
 
-import cpath.service.CPathService;
-import cpath.service.internal.CPathServiceImpl;
+import cpath.dao.CPathService;
+import cpath.dao.internal.CPathServiceImpl;
 import cpath.webservice.args.binding.BiopaxTypeEditor;
 
 import org.apache.commons.logging.Log;

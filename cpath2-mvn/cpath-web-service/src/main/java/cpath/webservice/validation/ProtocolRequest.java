@@ -31,8 +31,8 @@ import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.GetMethod;
 
+import cpath.dao.CPathService.OutputFormat;
 import cpath.webservice.args.Cmd;
-import cpath.webservice.args.OutputFormat;
 import cpath.webservice.args.ProtocolVersion;
 
 import java.util.*;

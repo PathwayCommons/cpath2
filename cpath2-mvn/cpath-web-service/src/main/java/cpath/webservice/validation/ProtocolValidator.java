@@ -33,6 +33,7 @@ import java.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import cpath.dao.CPathService.OutputFormat;
 import cpath.warehouse.internal.BioDataTypes;
 import cpath.warehouse.internal.BioDataTypes.Type;
 import cpath.webservice.args.*;

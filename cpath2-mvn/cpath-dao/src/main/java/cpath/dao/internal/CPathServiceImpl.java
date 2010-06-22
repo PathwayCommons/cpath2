@@ -26,7 +26,7 @@
  **/
 
 
-package cpath.service.internal;
+package cpath.dao.internal;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -37,6 +37,10 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.queryParser.MultiFieldQueryParser;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.util.Version;
 import org.biopax.paxtools.controller.Completer;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
@@ -44,36 +48,50 @@ import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
+import org.hibernate.Session;
+import org.hibernate.Transaction;
+import org.hibernate.search.FullTextQuery;
+import org.hibernate.search.FullTextSession;
+import org.hibernate.search.Search;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import cpath.dao.CPathService;
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.internal.PaxtoolsHibernateDAO;
-import cpath.service.CPathService;
-import cpath.warehouse.CPathWarehouse;
-import cpath.webservice.args.OutputFormat;
 
+/**
+ * Service tier class - to uniformly access 
+ * BioPAX model (DAO) from console and web service 
+ * applications (PaxtoolsDAO - either 'main' storage, 
+ * or Warehouses's proteins and molecules)
+ * 
+ * @author rodche
+ *
+ */
 @Service
 @Repository
 public class CPathServiceImpl implements CPathService {
 	private static final Log log = LogFactory.getLog(CPathServiceImpl.class);
 	
 	@NotNull
-	private PaxtoolsDAO mainhouse;
-	@NotNull
-    private CPathWarehouse warehouse;
+	private PaxtoolsDAO dao;
 	
 	private final SimpleReader reader; // to allow BioPAX OWL in queries
 	private final SimpleExporter exporter;
 	private final SimpleMerger merger;
+	private final StandardAnalyzer analyzer;
+	private final MultiFieldQueryParser multiFieldQueryParser;
 	
-	public CPathServiceImpl(PaxtoolsDAO paxtoolsDAO, CPathWarehouse cPathWarehouse) {
+	public CPathServiceImpl(PaxtoolsDAO paxtoolsDAO) {
 		this.reader = new SimpleReader(BioPAXLevel.L3);
 		this.exporter = new SimpleExporter(BioPAXLevel.L3);
 		this.merger = new SimpleMerger(reader.getEditorMap());
-		this.mainhouse = paxtoolsDAO;
-		this.warehouse = cPathWarehouse;
+		this.dao = paxtoolsDAO;
+		this.analyzer = new StandardAnalyzer(Version.LUCENE_29);
+		this.multiFieldQueryParser = new MultiFieldQueryParser(
+				Version.LUCENE_29, PaxtoolsHibernateDAO.ALL_FIELDS, this.analyzer);
 	}
 	
 	
@@ -82,8 +100,7 @@ public class CPathServiceImpl implements CPathService {
     	/* attempts to re-build the lucene index (TODO is this required?)
     	 * result in mysql driver issue: too many connections..?
     	 */
-    	// mainhouse.createIndex();
-    	// warehouse.createIndex();
+    	// dao.createIndex();
     }
 
 
@@ -95,13 +112,13 @@ public class CPathServiceImpl implements CPathService {
 
 		try {
 			if (countOnly) {
-				Integer count = (Integer) ((PaxtoolsHibernateDAO) mainhouse)
+				Integer count = (Integer) ((PaxtoolsHibernateDAO) dao)
 					.session().createQuery("select count(*) from "
 						+ biopaxClass.getCanonicalName()).uniqueResult();
 				map.put(ResultMapKey.COUNT, count.intValue());
 			} else {
 				Set<String> data = new HashSet<String>();
-				Set<? extends BioPAXElement> results = mainhouse.getElements(
+				Set<? extends BioPAXElement> results = dao.getElements(
 						biopaxClass, false);
 				for (BioPAXElement e : results) {
 					data.add(e.getRDFId());
@@ -132,9 +149,9 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
+	@Transactional
 	public Map<ResultMapKey, Object> element(String id, OutputFormat format) {
-		Map<ResultMapKey, Object> map = null;
-
+		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
 
 			switch (format) {
@@ -156,48 +173,89 @@ public class CPathServiceImpl implements CPathService {
 
 	@Override
 	@Transactional
+	@Deprecated //does not allow pagination, projections, etc. optimization..
 	public Map<ResultMapKey, Object> list(String queryStr,
-			Class<? extends BioPAXElement> biopaxClass, boolean countOnly) {
+			Class<? extends BioPAXElement> biopaxClass) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
-			if (countOnly) {
-				// TODO count
-				map.put(ResultMapKey.COUNT, Integer.valueOf(0));
-				map.put(ResultMapKey.MISC, "test stub (0)");
-			} else {
-				List<BioPAXElement> results = (List<BioPAXElement>) mainhouse
-						.search(queryStr, biopaxClass);
-				Set<String> idSet = new HashSet<String>(results.size());
-				for (BioPAXElement e : results) {
-					idSet.add(e.getRDFId());
-				}
-				map.put(ResultMapKey.DATA, idSet);
-				map.put(ResultMapKey.COUNT, Integer.valueOf(idSet.size()));
+			Transaction tx = ((PaxtoolsHibernateDAO)dao).session().beginTransaction();
+			List<BioPAXElement> results = (List<BioPAXElement>) dao.search(
+					queryStr, biopaxClass);
+			Set<String> idSet = new HashSet<String>(results.size());
+			for (BioPAXElement e : results) {
+				idSet.add(e.getRDFId());
 			}
+			tx.commit();
+			map.put(ResultMapKey.DATA, idSet);
+			map.put(ResultMapKey.COUNT, Integer.valueOf(idSet.size()));
 		} catch (Exception e) {
 			map.put(ResultMapKey.ERROR, e.toString());
 		}
 
 		return map;
 	}	
-
 	
-	
-	/*=== Private Methods ===*/
 	
 	@Transactional
+	private int count(String search, Class<?> filterBy) {
+		Session session = ((PaxtoolsHibernateDAO) dao).session();
+		FullTextSession fullTextSession = Search.getFullTextSession(session);
+		org.apache.lucene.search.Query luceneQuery = null;
+		try {
+			luceneQuery = multiFieldQueryParser.parse(search);
+		}
+		catch (ParseException e) {
+			throw new RuntimeException("Lucene query parser exception", e);
+		}
+		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery,
+				filterBy);
+		return hibQuery.getResultSize();
+	}
+	
+	
+	@Transactional
+	private List<Object> fulltextSearch(String q, boolean countOnly, 
+			int firstResult, int maxResults, Class<? extends BioPAXElement> filterBy, 
+			Object... projections) 
+	{	
+		org.apache.lucene.search.Query luceneQuery = null;
+		try {
+			luceneQuery = multiFieldQueryParser.parse(q);
+		}
+		catch (ParseException e) {
+			throw new RuntimeException("Lucene query parser exception", e);
+		}
+
+		Session session = ((PaxtoolsHibernateDAO)dao).session();
+		// get full text session
+		FullTextSession fullTextSession = Search.getFullTextSession(session);
+		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterBy);
+		
+		// TODO use pagination (add args)
+		hibQuery.setFirstResult(firstResult);
+		hibQuery.setMaxResults(maxResults);
+		
+		// TODO use projection (to get lucene score and other meta info)...
+		//...
+		
+		// execute search
+		return hibQuery.list();
+	}
+
+	
+	@Transactional(propagation=Propagation.REQUIRED)
 	Map<ResultMapKey, Object> asBiopax(String id) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		
-		Model m = mainhouse.getLevel().getDefaultFactory().createModel();
+		Model m = dao.getLevel().getDefaultFactory().createModel();
 		// find element by id
-		BioPAXElement element = mainhouse.getByID(id);
+		BioPAXElement element = dao.getByID(id);
 		if (element != null) {
 			// auto-complete!
 			// warn: completer instance has internal set of elements that is not cleared!
 			Completer completer = new Completer(reader.getEditorMap());
 			Set<BioPAXElement> elements = completer.complete(Collections
-					.singletonList(element), mainhouse);
+					.singletonList(element), dao);
 			for (BioPAXElement bpe : elements) {
 				m.add(bpe);
 			}

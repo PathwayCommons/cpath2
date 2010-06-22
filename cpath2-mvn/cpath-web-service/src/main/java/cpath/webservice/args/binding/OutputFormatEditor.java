@@ -29,7 +29,7 @@ package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
 
-import cpath.webservice.args.OutputFormat;
+import cpath.dao.CPathService.OutputFormat;
 
 
 /**

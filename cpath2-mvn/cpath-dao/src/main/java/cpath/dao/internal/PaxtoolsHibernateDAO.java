@@ -34,6 +34,7 @@ import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.util.Version;
+import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.impl.level3.Level3FactoryImpl;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
@@ -60,7 +61,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 {
 	private static final long serialVersionUID = 1L;
 
-	private final static String[] ALL_FIELDS =
+	public final static String[] ALL_FIELDS =
 			{
 					SEARCH_FIELD_AVAILABILITY,
 					SEARCH_FIELD_COMMENT,
@@ -69,6 +70,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 					SEARCH_FIELD_TERM,
 					SEARCH_FIELD_XREF_DB,
 					SEARCH_FIELD_XREF_ID,
+					SEARCH_FIELD_ID,
 			};
 
 	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
@@ -126,6 +128,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		this.reader = reader;
 	}
 
+
+	Session session()
+	{
+		return getSessionFactory().getCurrentSession();
+	}
+		
+	SessionFactory sessionFactory() {
+		return getSessionFactory();
+	}
+	
 
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
@@ -211,23 +223,32 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	/*
-	 * TODO 'filterBy' to be a BioPAX interface, not a concrete class...
+	 * 'filterBy' is to be a BioPAX interface, not a concrete class...
 	 */ 
 	@Transactional(propagation=Propagation.REQUIRED)
 	public <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy)
 	{
 		if (log.isInfoEnabled())
-		{
 			log.info("query: " + query + ", filterBy: " + filterBy);
-		}
 
-		// must be a BioPAX interface!
-		if(filterBy.isInterface()) {
-			// convert the interface into the model class (persistent annotated)
-			filterBy = (Class<T>) factory.reflectivelyCreate(filterBy).getClass();
+		// unfortunately, fulltextquery cannot filter by interfaces (only likes annotated entity classes)...
+		// TODO the following ~20 lines is ugly and may be not required...
+		Class filterClass = BioPAXElementImpl.class; // fall-back
+		if(BioPAXElement.class.equals(filterBy)) {
+			filterClass = BioPAXElementImpl.class;
+		} else if(filterBy.isInterface()) {
+			try {
+				filterClass = (Class<T>) factory.reflectivelyCreate(filterBy).getClass();
+			} catch (IllegalBioPAXArgumentException e) {
+				//throw new IllegalArgumentException(
+				log.error("Expected a BioPAX model interface " +
+					"of the instantiable BioPAX class or the base interface, " +
+					"'BioPAXElement'; but it was: " + filterBy.getCanonicalName(), e);
+				filterClass = BioPAXElementImpl.class;
+			}
 		} else {
-			throw new IllegalArgumentException("Expected a BioPAX model interface, " +
-					"not the implementing class: " + filterBy.getCanonicalName());
+			//throw new IllegalArgumentException(
+			log.error("Not a BioPAX model interface: " + filterBy.getCanonicalName());
 		}
 			
 		// set to return
@@ -237,19 +258,31 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		MultiFieldQueryParser parser = new MultiFieldQueryParser(
 				Version.LUCENE_29, ALL_FIELDS, new StandardAnalyzer(Version.LUCENE_29));
 		org.apache.lucene.search.Query luceneQuery = null;
-		try
-		{
+		try {
 			luceneQuery = parser.parse(query);
 		}
-		catch (ParseException e)
-		{
+		catch (ParseException e) {
 			log.info("parse exception: " + e.getMessage());
 			return toReturn;
 		}
 
 		// get full text session
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterBy);
+		//fullTextSession.createFilter(arg0, arg1); // how to use this, btw?!
+		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterClass);
+		
+		// TODO use count
+		int count = hibQuery.getResultSize();
+		if(log.isDebugEnabled())
+			log.debug("Query '" + query + "' results size = " + count);
+		
+		// TODO use pagination (add args)
+		hibQuery.setFirstResult(0);
+		hibQuery.setMaxResults(10);
+		
+		// TODO use projection (to get lucene score and other meta info)...
+		//...
+		
 		// execute search
 		List<T> results = hibQuery.list();
 
@@ -418,19 +451,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		session().refresh(bpe); // TODO is refresh required?
 	}
 
-
-	// ------ private methods --------
-
-	/**
-	 * Gets the current stateful session 
-	 * 
-	 * (made 'public', to try using HQL, SQL and full-text queries
-	 * from other modules)
-	 */
-	public Session session()
-	{
-		return getSessionFactory().getCurrentSession();
-	}
 
 	
 	private class internalFactory extends Level3FactoryImpl
