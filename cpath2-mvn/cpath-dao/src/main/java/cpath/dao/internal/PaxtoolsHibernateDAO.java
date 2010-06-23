@@ -81,6 +81,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	private SimpleMerger merger;
 	private BioPAXIOHandler reader;
 	private boolean addDependencies = false;
+	MultiFieldQueryParser multiFieldQueryParser;
 
 	protected PaxtoolsHibernateDAO()
 	{
@@ -91,6 +92,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		nameSpacePrefixMap.put("", "urn:pathwaycommons:");
 		reader = new SimpleReader(BioPAXLevel.L3);
 		merger = new SimpleMerger(reader.getEditorMap());
+		multiFieldQueryParser = new MultiFieldQueryParser(
+			Version.LUCENE_29, ALL_FIELDS, 
+				new StandardAnalyzer(Version.LUCENE_29));
 	}
 
 	/**
@@ -229,40 +233,54 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy)
 	{
 		if (log.isInfoEnabled())
-			log.info("query: " + query + ", filterBy: " + filterBy);
-
+			log.info("search: " + query + ", filterBy: " + filterBy);
 		// unfortunately, fulltextquery cannot filter by interfaces (only likes annotated entity classes)...
-		// TODO the following ~20 lines is ugly and may be not required...
-		Class filterClass = BioPAXElementImpl.class; // fall-back
-		if(BioPAXElement.class.equals(filterBy)) {
-			filterClass = BioPAXElementImpl.class;
-		} else if(filterBy.isInterface()) {
-			try {
-				filterClass = (Class<T>) factory.reflectivelyCreate(filterBy).getClass();
-			} catch (IllegalBioPAXArgumentException e) {
-				//throw new IllegalArgumentException(
-				log.error("Expected a BioPAX model interface " +
-					"of the instantiable BioPAX class or the base interface, " +
-					"'BioPAXElement'; but it was: " + filterBy.getCanonicalName(), e);
-				filterClass = BioPAXElementImpl.class;
-			}
-		} else {
-			//throw new IllegalArgumentException(
-			log.error("Not a BioPAX model interface: " + filterBy.getCanonicalName());
-		}
-			
+		Class<? extends BioPAXElement> filterClass = getEntityClass(filterBy);
 		// set to return
 		List<T> toReturn = new ArrayList<T>();
-
 		// create native lucene query
-		MultiFieldQueryParser parser = new MultiFieldQueryParser(
-				Version.LUCENE_29, ALL_FIELDS, new StandardAnalyzer(Version.LUCENE_29));
 		org.apache.lucene.search.Query luceneQuery = null;
 		try {
-			luceneQuery = parser.parse(query);
-		}
-		catch (ParseException e) {
+			luceneQuery = multiFieldQueryParser.parse(query);
+		} catch (ParseException e) {
 			log.info("parse exception: " + e.getMessage());
+			return toReturn;
+		}
+
+		// get full text session
+		FullTextSession fullTextSession = Search.getFullTextSession(session());
+		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterClass);
+		// execute search
+		List results = hibQuery.list();
+		
+		for(Object entry: results) {
+			toReturn.add((T)entry);
+		}
+		
+		return results;
+	}
+
+	
+
+	/* (non-Javadoc)
+	 * @see cpath.dao.PaxtoolsDAO#find(java.lang.String, java.lang.Class)
+	 */
+	@Override
+	public List<String> find(String query,
+			Class<? extends BioPAXElement> filterBy) {
+		if (log.isInfoEnabled())
+			log.info("find (IDs): " + query + ", filterBy: " + filterBy);
+
+		// fulltextquery cannot filter by interfaces (only likes annotated entity classes)...
+		Class<? extends BioPAXElement> filterClass = getEntityClass(filterBy);
+		// set to return
+		List<String> toReturn = new ArrayList<String>();
+		// create native lucene query
+		org.apache.lucene.search.Query luceneQuery = null;
+		try {
+			luceneQuery = multiFieldQueryParser.parse(query);
+		} catch (ParseException e) {
+			log.info("parser exception: " + e.getMessage());
 			return toReturn;
 		}
 
@@ -270,30 +288,37 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
 		//fullTextSession.createFilter(arg0, arg1); // how to use this, btw?!
 		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterClass);
-		
 		// TODO use count
 		int count = hibQuery.getResultSize();
 		if(log.isDebugEnabled())
 			log.debug("Query '" + query + "' results size = " + count);
 		
-		// TODO use pagination (add args)
+		// TODO use pagination properly (this is stub!)
 		hibQuery.setFirstResult(0);
 		hibQuery.setMaxResults(10);
 		
-		// TODO use projection (to get lucene score and other meta info)...
-		//...
-		
+		// use projection!
+		hibQuery.setProjection("rdfId", FullTextQuery.SCORE, 
+				FullTextQuery.EXPLANATION //, FullTextQuery.THIS
+			);
 		// execute search
-		List<T> results = hibQuery.list();
+		List results = hibQuery.list();
+		for(Object row: results) {
+			Object[] cols = (Object[]) row;
+			String id = (String) cols[0];
+  			float score = (Float) cols[1];
+  			String expl = (String) cols[2];
+  			//BioPAXElement bpe = (BioPAXElement) cols[3];
+  			if(log.isDebugEnabled())
+  				log.debug("found: " + id + "; score=" + score 
+  						+ "; expl.: " + expl);
+  			toReturn.add(id);
+		}
 
-		return results;
+		return toReturn;
 	}
-
-
-	/* (non-Javadoc)
-		 * @see org.biopax.paxtools.model.Model#add(org.biopax.paxtools.model.BioPAXElement)
-		 */
-
+	
+	
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
 	public void add(BioPAXElement aBioPAXElement)
@@ -461,6 +486,41 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			return PaxtoolsHibernateDAO.this;
 		}
 	}
+
+	
+	/*
+	 * Gets Hibernate annotated entity class 
+	 * by the BioPAX Model interface class 
+	 * 
+	 * TODO improve, generalize...
+	 */
+	private Class<? extends BioPAXElement> getEntityClass(
+			Class<? extends BioPAXElement> filterBy) 
+	{
+		Class<? extends BioPAXElement> filterClass = BioPAXElementImpl.class; // fall-back
+		if (!BioPAXElement.class.equals(filterBy)) { // otherwise use BioPAXElementImpl
+			if (filterBy.isInterface()) {
+				try {
+					filterClass = (Class<? extends BioPAXElement>) factory
+						.reflectivelyCreate(filterBy).getClass();
+				} catch (IllegalBioPAXArgumentException e) {
+					// throw new IllegalArgumentException(
+					log.error("Expected a BioPAX model interface "
+								+ "of the instantiable BioPAX class or the base interface, "
+								+ "'BioPAXElement'; but it was: "
+								+ filterBy.getCanonicalName(), e);
+					filterClass = BioPAXElementImpl.class;
+				}
+			} else {
+				// throw new IllegalArgumentException(
+				log.error("Not a BioPAX model interface: "
+						+ filterBy.getCanonicalName());
+			}
+		}
+
+		return filterClass;
+	}
+	
 }
 
 
