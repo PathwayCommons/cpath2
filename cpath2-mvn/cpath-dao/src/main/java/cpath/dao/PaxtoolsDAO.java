@@ -30,8 +30,6 @@ package cpath.dao;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
 
 import java.util.List;
 import java.util.Set;
@@ -105,5 +103,16 @@ public interface PaxtoolsDAO extends Model {
      * @return ordered by relevance list of elements
      */
     <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy);
+    
+	 /**
+	 * Searches the lucene index and returns the set of IDs 
+	 * of the BioPAX elements of given class in the model 
+	 * that match the query string.
+	 * 
+     * @param query String
+	 * @param filterBy class to be used as a filter.
+     * @return ordered by the element's relevance list of rdfIds
+     */
+    List<String> find(String query, Class<? extends BioPAXElement> filterBy);
        
 }
