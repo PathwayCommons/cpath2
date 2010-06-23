@@ -16,12 +16,9 @@
 
     <context:annotation-config/>
 
-	<util:properties id="pmProps" location="classpath:hibernate.properties"/>
-
     <bean id="premergeSessionFactory"
         class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="premergeDataSource"/>
-        <property name="hibernateProperties" ref="pmProps"/>
 		<property name="packagesToScan">
 			<list>
 				<value>org.biopax.paxtools.impl</value>

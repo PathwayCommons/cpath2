@@ -41,11 +41,13 @@ import cpath.warehouse.PathwayDataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
+import org.apache.log4j.PropertyConfigurator;
 import org.biopax.paxtools.model.Model;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Collection;
@@ -183,7 +185,6 @@ public class Admin implements Runnable {
 			case PREMERGE:
 				ApplicationContext context =
                     new ClassPathXmlApplicationContext(new String [] { 	
-                    		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
                     		"classpath:applicationContext-whouseDAO.xml", 
                     		"classpath:applicationContext-biopaxValidation.xml", 
         					"classpath:applicationContext-cpathPremerger.xml",
@@ -196,7 +197,6 @@ public class Admin implements Runnable {
 			case MERGE:
 				context =
                     new ClassPathXmlApplicationContext(new String [] { 	
-                    		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
                     		"classpath:applicationContext-whouseDAO.xml", 
                     		"classpath:applicationContext-cpathWarehouse.xml",
                     		"classpath:applicationContext-cvRepository.xml",
@@ -225,7 +225,6 @@ public class Admin implements Runnable {
     private void fetchMetadata(final String location) throws IOException {
         ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
             		"classpath:applicationContext-whouseDAO.xml", 
 					"classpath:applicationContext-cpathFetcher.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
@@ -250,7 +249,6 @@ public class Admin implements Runnable {
 
     	ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
             		"classpath:applicationContext-whouseDAO.xml", 
 					"classpath:applicationContext-cpathFetcher.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
@@ -298,7 +296,6 @@ public class Admin implements Runnable {
     private void fetchWarehouseData(final COMMAND command, final String provider) throws IOException {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:applicationContext-cpathAdmin.xml", // must be the first (properties-placeholder overrides those in next files)!
             		"classpath:applicationContext-whouseDAO.xml", 
             		"classpath:applicationContext-whouseProteins.xml", 
             		"classpath:applicationContext-whouseMolecules.xml", 
@@ -388,13 +385,28 @@ public class Admin implements Runnable {
      * @param args String[]
      */    
     public static void main(String[] args) throws Exception {
-
         // sanity check
         if (args.length == 0) {
             System.err.println("Missing args to Admin.");
 			System.err.println(Admin.usage());
             System.exit(-1);
         }
+    	
+    	String home = System.getenv("CPATH2_HOME");
+    	
+    	if (home==null) {
+            System.err.println("Please set CPATH2_HOME environment variable " +
+            	" (point to a directory where cpath.properties, etc. files are placed)");
+            System.exit(-1);
+    	}
+    	
+    	// configure logging
+    	PropertyConfigurator.configure(home + File.separator 
+    			+ "log4j.properties");
+    	
+    	// set JVM property to be used by other modules (in spring context)
+    	System.setProperty("CPATH2_HOME", home);
+
 
 		Admin admin = new Admin();
 		admin.setCommandParameters(args);
