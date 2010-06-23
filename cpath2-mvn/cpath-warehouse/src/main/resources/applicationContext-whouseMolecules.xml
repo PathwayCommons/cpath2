@@ -21,7 +21,7 @@
 
     <util:properties id="smdbProps" location="classpath:hibernate.properties" local-override="true">
 		<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_molecules</prop>
-		<prop key="hibernate.hbm2ddl.auto"></prop>
+		<prop key="hibernate.hbm2ddl.auto"></prop><!-- no value - to prevent accidental tables drop -->
 	</util:properties>
 
 	<bean id="moleculesSessionFactory"
