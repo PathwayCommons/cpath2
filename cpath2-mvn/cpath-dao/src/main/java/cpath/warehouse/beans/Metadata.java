@@ -4,7 +4,7 @@ package cpath.warehouse.beans;
 import javax.persistence.*;
 import org.hibernate.search.annotations.Indexed;
 
-import cpath.warehouse.CPathWarehouse;
+import cpath.config.CPathSettings;
 
 /**
  * Data Provider Metadata.
@@ -17,7 +17,7 @@ import cpath.warehouse.CPathWarehouse;
 		@NamedQuery(name="cpath.warehouse.beans.allProvider", 
 					query="from Metadata as metadata")
 })
-@Indexed(index=CPathWarehouse.SEARCH_INDEX_NAME)
+@Indexed(index=CPathSettings.WHOUSE_SEARCH_INDEX)
 public final class Metadata {
 
     // TYPE Enum

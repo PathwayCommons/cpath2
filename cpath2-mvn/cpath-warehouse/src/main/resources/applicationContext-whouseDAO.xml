@@ -15,7 +15,7 @@
  	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
       
     <util:properties id="wdbProps" location="classpath:hibernate.properties" local-override="true">
-		<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_meta</prop>
+		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_meta</prop>
 		<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental tables drop -->
 	</util:properties>
        

@@ -29,6 +29,7 @@
 package cpath.admin;
 
 // imports
+import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.WarehouseDataService;
@@ -168,7 +169,7 @@ public class Admin implements Runnable {
         try {
             switch (command) {
             case CREATE_TABLES:
-            	DataServicesFactoryBean.createSchema();
+            	DataServicesFactoryBean.createDatabases();
             	break;
             case FETCH_METADATA:
                 fetchMetadata(commandParameters[0]);
@@ -392,7 +393,7 @@ public class Admin implements Runnable {
             System.exit(-1);
         }
     	
-    	String home = System.getenv("CPATH2_HOME");
+    	String home = System.getenv(CPathSettings.HOME_VARIABLE_NAME);
     	
     	if (home==null) {
             System.err.println("Please set CPATH2_HOME environment variable " +
@@ -405,7 +406,7 @@ public class Admin implements Runnable {
     			+ "log4j.properties");
     	
     	// set JVM property to be used by other modules (in spring context)
-    	System.setProperty("CPATH2_HOME", home);
+    	System.setProperty(CPathSettings.HOME_VARIABLE_NAME, home);
 
 
 		Admin admin = new Admin();

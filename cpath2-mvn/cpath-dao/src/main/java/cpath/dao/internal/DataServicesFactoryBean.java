@@ -32,6 +32,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
+import cpath.config.CPathSettings;
 import cpath.dao.DataServices;
 
 import org.apache.commons.logging.Log;
@@ -47,11 +48,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 /**
- * Class that provides services to create 
- * pathway data provider databases; 
- * also is used as a general data source factory.
+ * This is a fantastic (crazy) factory that 
+ * helps create any cPath database schema, 
+ * and it is also a dynamic data source factory!
  * 
- * Note: it is MySQL-specific. TODO: add 'masterDb' field...
+ * Note: it is MySQL-specific.
+ * 
+ * @author rodche
  */
 public class DataServicesFactoryBean implements DataServices, BeanNameAware, FactoryBean<DataSource> {
     // log
@@ -79,9 +82,20 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	public String getDbConnection() { return dbConnection; }
 	
 	private JdbcTemplate jdbcTemplate;
+	public JdbcTemplate getJdbcTemplate() {
+		return jdbcTemplate;
+	}
 
     private String beanName;
     
+    /**
+     * This sort of map allows for a DataSource dynamically 
+     * created at runtime (e.g., by #{@link cpath.importer.internal.PremergeImpl}
+     * persistPathway method) to be associated with a key (e.g.,"myId") 
+     * and then used by any internal spring context within the same thread 
+     * loaded from a xml configuration that contains the following -
+     * <bean id="myId" class="cpath.dao.internal.DataServicesFactoryBean"/>
+     */	
     private static ThreadLocal<Map<String, DataSource>> beansByName =
         new ThreadLocal<Map<String, DataSource>>() {
             @Override
@@ -121,27 +135,6 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
     public boolean isSingleton() {
         return true;
     }
-    
-	/**
-	 * Static factory method that creates any DataSource.
-	 * 
-	 * @param dbUser
-	 * @param dbPassword
-	 * @param dbDriver
-	 * @param dbUrl
-	 * @return the data source
-	 * 
-	 * @deprecated not used anymore...
-	 */
-	public static DataSource getDataSource(String dbUser, String dbPassword,
-			String dbDriver, String dbUrl) {
-		DriverManagerDataSource dataSource = new DriverManagerDataSource();
-		dataSource.setDriverClassName(dbDriver);
-		dataSource.setUrl(dbUrl);
-		dataSource.setUsername(dbUser);
-		dataSource.setPassword(dbPassword);
-		return dataSource;
-	}
 	
 	
 	/**
@@ -165,9 +158,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		}
 	}
     
-    
-    public boolean createDatabase(final String db, final boolean drop) 
-    {
+    public boolean createDatabase(final String db, final boolean drop) {
 		boolean toReturn = true;
 
 		// create simple JdbcTemplate if necessary
@@ -178,14 +169,11 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 
 		try {
 			// drop if desired
-			if (drop) {
+			if (drop)
 				jdbcTemplate.execute("DROP DATABASE IF EXISTS " + db);
-			}
 
 			// create
 			jdbcTemplate.execute("CREATE DATABASE " + db);
-			
-			// save 
 		}
 		catch (DataAccessException e) {
 			e.printStackTrace();
@@ -215,42 +203,95 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	}
 	
 	
-	/**** static methods *****/
+	/* *** static methods *** */
 	
-	public static void createTestSchema() {
-		ApplicationContext ctx = 
-			new ClassPathXmlApplicationContext("classpath:internalContext-creationTest.xml");
-		// note: createTestDatabases is called during the context init!
-	}
-	
-	public static void createTestDatabases(String user,
-			String passwd, String conn, String driver) {
-		DataServicesFactoryBean bean = new DataServicesFactoryBean();
-		bean.setDbUser(user);
-		bean.setDbPassword(passwd);
-		bean.setDbConnection(conn);
-		bean.setDbDriver(driver);
-		bean.createDatabase("cpath2_meta_test", true);
-		bean.createDatabase("cpath2_main_test", true);
-		bean.createDatabase("cpath2_molecules_test", true);
-		bean.createDatabase("cpath2_proteins_test", true);
+	/**
+	 * Static factory method that creates any DataSource.
+	 * 
+	 * @param dbUser
+	 * @param dbPassword
+	 * @param dbDriver
+	 * @param dbUrl
+	 * @return
+	 */
+	public static DataSource getDataSource(String dbUser, String dbPassword,
+			String dbDriver, String dbUrl) {
+		DriverManagerDataSource dataSource = new DriverManagerDataSource();
+		dataSource.setDriverClassName(dbDriver);
+		dataSource.setUrl(dbUrl);
+		dataSource.setUsername(dbUser);
+		dataSource.setPassword(dbPassword);
+		return dataSource;
 	}	
+
 	
-	public static void createSchema() {
-		new ClassPathXmlApplicationContext("classpath:internalContext-creation.xml");
-		// note: createDatabases is called during the context init!
+	/**
+	 * Creates all the (pre-defined) 
+	 * "production" databases and tables.
+	 */
+	public static void createDatabases() {
+		createSchema(CPathSettings.MAIN_DB);
+		createSchema(CPathSettings.METADATA_DB);
+		createSchema(CPathSettings.MOLECULES_DB);
+		createSchema(CPathSettings.PROTEINS_DB);
 	}
 	
-	public static void createDatabases(String user,
-			String passwd, String conn, String driver) {
-		DataServicesFactoryBean bean = new DataServicesFactoryBean();
-		bean.setDbUser(user);
-		bean.setDbPassword(passwd);
-		bean.setDbConnection(conn);
-		bean.setDbDriver(driver);
-		bean.createDatabase("cpath2_meta", true);
-		bean.createDatabase("cpath2_main", true);
-		bean.createDatabase("cpath2_molecules", true);
-		bean.createDatabase("cpath2_proteins", true);
+	
+	/**
+	 * Creates all the (pre-defined) 
+	 * test databases and tables.
+	 */
+	public static void createTestDatabases() {
+		createSchema(CPathSettings.MAIN_DB + CPathSettings.TEST_SUFFIX);
+		createSchema(CPathSettings.METADATA_DB + CPathSettings.TEST_SUFFIX);
+		createSchema(CPathSettings.MOLECULES_DB + CPathSettings.TEST_SUFFIX);
+		createSchema(CPathSettings.PROTEINS_DB + CPathSettings.TEST_SUFFIX);
+	}
+	
+	/**
+	 * Drops, creates database schema.
+	 * 
+	 * This is called by a special context
+	 * that {@link #createSchema(String)} loads.
+	 * 
+	 * @param user
+	 * @param passwd
+	 * @param driver
+	 * @param conn
+	 * @param dbName
+	 */
+	static void createDatabase(String user, String passwd, 
+			String driver, String conn, String dbName) 
+	{
+		// drop, create database
+		DataSource adminDataSource = getDataSource(user, passwd, driver, conn);
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(adminDataSource);
+		// drop
+		jdbcTemplate.execute("DROP DATABASE IF EXISTS " + dbName);
+		// create
+		jdbcTemplate.execute("CREATE DATABASE " + dbName);
+		
+		DataSource create = getDataSource(user, passwd, driver, conn+dbName);
+		// save the new data source in the static map
+		getDataSourceMap().put("createdDb", create);
+	}
+	
+	
+	/**
+	 * Fantastic way to create a database schema!
+	 * 
+	 * This implicitly calls 
+	 * {@link #createDatabase(String, String, String, String, String)} 
+	 * method.
+	 * 
+	 * @param dbName - db name to initialize
+	 */
+	public static void createSchema(String dbName) {
+		// set the system property (new db name)
+		System.setProperty("cpath2.db.name", dbName);
+		// load the context that depends on the above property -
+		ApplicationContext ctx = new ClassPathXmlApplicationContext(
+				"classpath:internalContext-createSchema.xml");
+		// all done!
 	}
 }

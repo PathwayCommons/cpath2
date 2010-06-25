@@ -39,8 +39,6 @@ import org.biopax.paxtools.model.level3.Xref;
  * @author rodch
  */
 public interface CPathWarehouse extends CvRepository {
-
-	static final String SEARCH_INDEX_NAME = "cpathwarehouse";
 	
 	/**
 	 * Gets the standard BioPAX utility class object from cPath Warehouse
