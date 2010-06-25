@@ -21,7 +21,7 @@
 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
 
     <util:properties id="prdbProps" location="classpath:hibernate.properties" local-override="true">
-		<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_proteins_test</prop>
+		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_proteins_test</prop>
 		<prop key="hibernate.hbm2ddl.auto"></prop><!-- no value - to prevent accidental tables drop -->
 	</util:properties>
 
@@ -29,12 +29,16 @@
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="cpath2_proteins_test"/>
 		<property name="hibernateProperties" ref="prdbProps"/>
-		<property name="packagesToScan">
+        <property name="annotatedClasses">
+        	<list>
+				<value>org.biopax.paxtools.impl.BioPAXElementImpl</value>
+			</list>
+         </property>
+		 <property name="packagesToScan">
 			<list>
-				<value>org.biopax.paxtools.impl</value>
 				<value>org.biopax.paxtools.impl.level3</value>
 			</list>
-		</property>        
+		 </property> 
     </bean>
 
     <bean id="proteinsTransactionManager"

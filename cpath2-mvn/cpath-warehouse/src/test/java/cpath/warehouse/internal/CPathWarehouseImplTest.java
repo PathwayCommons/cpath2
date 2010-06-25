@@ -32,11 +32,8 @@ import static org.junit.Assert.*;
 import org.biopax.paxtools.model.level3.ProteinReference;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.warehouse.CPathWarehouse;
@@ -45,38 +42,36 @@ import cpath.warehouse.CPathWarehouse;
  * @author rodche
  *
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {
-		"classpath:internalContext-creationTest.xml",
-		"classpath:testContext-whouseMolecules.xml",
-		"classpath:testContext-whouseProteins.xml",
-		"classpath:testContext-whouseDAO.xml",
-		"classpath:applicationContext-cpathWarehouse.xml",
-		"classpath:applicationContext-cvRepository.xml"})
 public class CPathWarehouseImplTest {
 
-	@Autowired
-	CPathWarehouse warehouse;
-	
-	@Autowired
 	ApplicationContext context;
-	
-	
+		
 	/**
 	 * @throws java.lang.Exception
 	 */
 	@Before
 	public void setUp() throws Exception {
-		//System.out.println("Preparing...");
-		//DataServicesFactoryBean.createTestSchema(); // it gets created during spring context load
+		System.out.println("Preparing...");
+		DataServicesFactoryBean.createTestDatabases(); // it gets created during spring context load
+		context = new ClassPathXmlApplicationContext(new String[]{
+				"classpath:testContext-whouseMolecules.xml",
+				"classpath:testContext-whouseProteins.xml",
+				"classpath:testContext-whouseDAO.xml",
+				"classpath:applicationContext-cpathWarehouse.xml",
+				"classpath:applicationContext-cvRepository.xml"}
+		);
 	}
 
 	/**
-	 * Test method for {@link cpath.warehouse.internal.CPathWarehouseImpl#getObject(java.lang.String, java.lang.Class)}.
+	 * Test method for 
+	 * {@link cpath.warehouse.internal.CPathWarehouseImpl#getObject(java.lang.String, java.lang.Class)}.
 	 */
 	@Test
 	public final void testCreateUtilityClass() {
-		ProteinReference pr = warehouse.getObject("urn:miriam:uniprot:P62158", ProteinReference.class);
+		CPathWarehouse warehouse = (CPathWarehouse) context
+			.getBean("cPathWarehouse");
+		ProteinReference pr = warehouse
+			.getObject("urn:miriam:uniprot:P62158", ProteinReference.class);
 		//assertNotNull(pr);
 	}
 

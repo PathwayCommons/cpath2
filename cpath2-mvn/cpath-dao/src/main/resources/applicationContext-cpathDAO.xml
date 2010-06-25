@@ -17,7 +17,7 @@
 
 
     <util:properties id="dbProps" location="classpath:hibernate.properties" local-override="true">
-		<prop key="hibernate.search.default.indexBase">${lucene.index-path}/cpath2_main</prop>
+		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_main</prop>
 		<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->
 	</util:properties>
 

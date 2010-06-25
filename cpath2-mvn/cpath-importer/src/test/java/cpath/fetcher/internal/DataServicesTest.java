@@ -31,7 +31,7 @@ public class DataServicesTest {
 	@Before
 	public void setUp() throws Exception {
 			// create test DBs and all the tables 
-			DataServicesFactoryBean.createTestSchema();
+			DataServicesFactoryBean.createTestDatabases();
 			
 			context = new ClassPathXmlApplicationContext(new String[] {
 				//"classpath:internalContext-creationTest.xml",

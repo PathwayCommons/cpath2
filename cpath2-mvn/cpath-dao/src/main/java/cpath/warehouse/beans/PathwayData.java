@@ -4,10 +4,10 @@ package cpath.warehouse.beans;
 import javax.persistence.*;
 
 /**
- * Data Provider Metadata.
+ * Data Providers's Pathway Data.
  */
 @Entity
-@Table(name="pathway")
+@Table(name="pathwayData")
 @NamedQueries({
 	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifier",
 				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier)"),

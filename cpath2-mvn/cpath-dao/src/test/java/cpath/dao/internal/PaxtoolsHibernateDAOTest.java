@@ -35,19 +35,12 @@ import org.biopax.paxtools.model.level3.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.context.support.GenericApplicationContext;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.transaction.TransactionConfiguration;
-import org.springframework.transaction.annotation.Transactional;
 
 import org.apache.commons.logging.*;
 
+import cpath.config.CPathSettings;
 import cpath.dao.CPathService;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.CPathService.OutputFormat;
@@ -61,21 +54,12 @@ import static org.junit.Assert.*;
 /**
  * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
  */
-/*
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = {
-		"classpath:applicationContext-creationTest.xml",
-		"classpath:testContext-cpathDAO.xml"})
-@TransactionConfiguration(transactionManager="mainTransactionManager")
-*/
 public class PaxtoolsHibernateDAOTest {
 
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
 
-    //@Autowired
     PaxtoolsDAO paxtoolsDAO;
 
-    //@Autowired
     ApplicationContext context;
     
 	//
@@ -124,9 +108,8 @@ public class PaxtoolsHibernateDAOTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
-		// create test DBs and all the tables 
-		DataServicesFactoryBean.createTestSchema();
-
+		DataServicesFactoryBean.createSchema(
+				CPathSettings.MAIN_DB+CPathSettings.TEST_SUFFIX);
 		// init the DAO (it loads now because databases are created above)
 		context = new ClassPathXmlApplicationContext("classpath:testContext-cpathDAO.xml");
 		paxtoolsDAO = (PaxtoolsDAO) context.getBean("paxtoolsDAO");

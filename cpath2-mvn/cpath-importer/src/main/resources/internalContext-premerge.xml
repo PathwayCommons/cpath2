@@ -19,12 +19,16 @@
     <bean id="premergeSessionFactory"
         class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="premergeDataSource"/>
-		<property name="packagesToScan">
+        <property name="annotatedClasses">
+        	<list>
+				<value>org.biopax.paxtools.impl.BioPAXElementImpl</value>
+			</list>
+         </property>
+		 <property name="packagesToScan">
 			<list>
-				<value>org.biopax.paxtools.impl</value>
 				<value>org.biopax.paxtools.impl.level3</value>
 			</list>
-		</property> 
+		 </property> 
     </bean>
 
 	<!-- This looks-up for the existing, thread-local, data source by bean's name -->
