@@ -108,8 +108,12 @@ public class Admin implements Runnable {
         if(args[0].equals(COMMAND.CREATE_TABLES.toString())) {
         	this.command = COMMAND.CREATE_TABLES;
         	// agrs[1] may contain comma-separated db names
-        	if (args.length == 2){
+        	if (args.length > 1){
 				this.commandParameters = args[1].split(",");
+				// use args[1], ignore the rest of args, if any...
+			} else {
+				// no parameters (create default tables)
+				this.commandParameters = null;
 			}
         } 
         else if (args[0].equals(COMMAND.FETCH_METADATA.toString())) {
