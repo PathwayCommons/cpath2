@@ -107,6 +107,10 @@ public class Admin implements Runnable {
         // TODO: use gnu getopt or some variant  
         if(args[0].equals(COMMAND.CREATE_TABLES.toString())) {
         	this.command = COMMAND.CREATE_TABLES;
+        	// agrs[1] may contain comma-separated db names
+        	if (args.length == 2){
+				this.commandParameters = args[1].split(",");
+			}
         } 
         else if (args[0].equals(COMMAND.FETCH_METADATA.toString())) {
 			if (args.length != 2) {
@@ -164,12 +168,26 @@ public class Admin implements Runnable {
         }
     }
 
+    /**
+     * Executes cPath^2 admin command.
+     * 
+     * At this point, 'command' and 'commandParameters' (array) 
+     * have been already (re-)set
+     * by previous {@link #parseArgs(String[])} method call
+     * 
+     * @see java.lang.Runnable#run()
+     */
     @Override
     public void run() {
         try {
             switch (command) {
             case CREATE_TABLES:
-            	DataServicesFactoryBean.createDatabases();
+            	if(commandParameters == null || commandParameters.length == 0) {
+            		DataServicesFactoryBean.createDatabases();
+            	} else {
+            		for(String db : commandParameters)
+            			DataServicesFactoryBean.createSchema(db.trim());
+            	}
             	break;
             case FETCH_METADATA:
                 fetchMetadata(commandParameters[0]);
