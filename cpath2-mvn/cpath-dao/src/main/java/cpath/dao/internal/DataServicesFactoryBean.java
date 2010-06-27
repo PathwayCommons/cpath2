@@ -31,6 +31,7 @@ import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
+import javax.validation.constraints.NotNull;
 
 import cpath.config.CPathSettings;
 import cpath.dao.DataServices;
@@ -56,30 +57,60 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
  * 
  * @author rodche
  */
-public class DataServicesFactoryBean implements DataServices, BeanNameAware, FactoryBean<DataSource> {
-    // log
+public class DataServicesFactoryBean implements DataServices, BeanNameAware, FactoryBean<DataSource> 
+{
     private static Log log = LogFactory.getLog(DataServicesFactoryBean.class);
 
-	// ref to some db props - set via spring
+	// fields are set by Spring from cpath.properties
+    
+    @NotNull
 	private String dbUser;
 	@Value("${user}")
 	public void setDbUser(String dbUser) { this.dbUser = dbUser; }
 	public String getDbUser() { return dbUser; }
 
+	@NotNull
 	private String dbPassword;
 	@Value("${password}")
 	public void setDbPassword(String dbPassword) { this.dbPassword = dbPassword; }
 	public String getDbPassword() { return dbPassword; }
 
+	@NotNull
 	private String dbDriver;
 	@Value("${driver}")
 	public void setDbDriver(String dbDriver) { this.dbDriver = dbDriver; }
 	public String getDbDriver() { return dbDriver; }
 
+	@NotNull
 	private String dbConnection;
 	@Value("${connection}")
 	public void setDbConnection(String dbConnection) { this.dbConnection = dbConnection; }
 	public String getDbConnection() { return dbConnection; }
+
+	@NotNull
+	private String metaDb;
+	@Value("${metadata.db}")
+	public void setMetaDb(String db) {this.metaDb = db;}
+	public String getMetaDb() {return metaDb;}
+
+	@NotNull
+	private String mainDb;
+	@Value("${main.db}")
+	public void setMainDb(String db) {this.mainDb = db;}
+	public String getMainDb() {return mainDb;}
+
+	@NotNull
+	private String proteinsDb;
+	@Value("${proteins.db}")
+	public void setProteinsDb(String db) {this.proteinsDb = db;}
+	public String getProteinsDb() {return proteinsDb;}
+
+	@NotNull
+	private String moleculesDb;
+	@Value("${molecules.db}")
+	public void setMoleculesDb(String db) {this.moleculesDb = db;}
+	public String getMoleculesDb() {return moleculesDb;}
+
 	
 	private JdbcTemplate jdbcTemplate;
 	public JdbcTemplate getJdbcTemplate() {
@@ -144,18 +175,15 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	
 
 	@PostConstruct public void init() {
-		if (dbConnection == null) {
-			throw new IllegalArgumentException("The database connection string is required");
-		}
-		if (dbDriver == null) {
-			throw new IllegalArgumentException("The database driver class name is required");
-		}
-		if (dbUser == null) {
-			throw new IllegalArgumentException("The path to the test data set is required");
-		}
-		if (dbPassword == null) {
-			throw new IllegalArgumentException("The path to the test data set is required");
-		}
+		// create and save data sources in the map
+		DataSource dataSource = getDataSource(mainDb);
+		getDataSourceMap().put(CPathSettings.MAIN_DB, dataSource);
+		dataSource = getDataSource(metaDb);
+		getDataSourceMap().put(CPathSettings.METADATA_DB, dataSource);
+		dataSource = getDataSource(proteinsDb);
+		getDataSourceMap().put(CPathSettings.PROTEINS_DB, dataSource);
+		dataSource = getDataSource(moleculesDb);
+		getDataSourceMap().put(CPathSettings.MOLECULES_DB, dataSource);
 	}
     
     public boolean createDatabase(final String db, final boolean drop) {
@@ -226,29 +254,6 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 
 	
 	/**
-	 * Creates all the (pre-defined) 
-	 * "production" databases and tables.
-	 */
-	public static void createDatabases() {
-		createSchema(CPathSettings.MAIN_DB);
-		createSchema(CPathSettings.METADATA_DB);
-		createSchema(CPathSettings.MOLECULES_DB);
-		createSchema(CPathSettings.PROTEINS_DB);
-	}
-	
-	
-	/**
-	 * Creates all the (pre-defined) 
-	 * test databases and tables.
-	 */
-	public static void createTestDatabases() {
-		createSchema(CPathSettings.MAIN_DB + CPathSettings.TEST_SUFFIX);
-		createSchema(CPathSettings.METADATA_DB + CPathSettings.TEST_SUFFIX);
-		createSchema(CPathSettings.MOLECULES_DB + CPathSettings.TEST_SUFFIX);
-		createSchema(CPathSettings.PROTEINS_DB + CPathSettings.TEST_SUFFIX);
-	}
-	
-	/**
 	 * Drops, creates database schema.
 	 * 
 	 * This is called by a special context
@@ -272,7 +277,11 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		jdbcTemplate.execute("CREATE DATABASE " + dbName);
 		
 		DataSource create = getDataSource(user, passwd, driver, conn+dbName);
-		// save the new data source in the static map
+		
+		/* Put the data source under special name in the static map.
+		 * (the name is used then, e.g., in the internalContext-createSchema.xml 
+		 * to get the same data source object  spring context xml file)
+		 */
 		getDataSourceMap().put("createdDb", create);
 	}
 	

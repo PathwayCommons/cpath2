@@ -40,7 +40,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import org.apache.commons.logging.*;
 
-import cpath.config.CPathSettings;
 import cpath.dao.CPathService;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.CPathService.OutputFormat;
@@ -108,8 +107,7 @@ public class PaxtoolsHibernateDAOTest {
 	 */
 	@Before
 	public void setUp() throws Exception {
-		DataServicesFactoryBean.createSchema(
-				CPathSettings.MAIN_DB+CPathSettings.TEST_SUFFIX);
+		DataServicesFactoryBean.createSchema("cpath2_test");
 		// init the DAO (it loads now because databases are created above)
 		context = new ClassPathXmlApplicationContext("classpath:testContext-cpathDAO.xml");
 		paxtoolsDAO = (PaxtoolsDAO) context.getBean("paxtoolsDAO");

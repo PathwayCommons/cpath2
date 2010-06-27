@@ -20,15 +20,15 @@
     
 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
 
-    <util:properties id="prdbProps" location="classpath:hibernate.properties" local-override="true">
-		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_proteins</prop>
-		<prop key="hibernate.hbm2ddl.auto"></prop><!-- no value - to prevent accidental tables drop -->
-	</util:properties>
-
 	<bean id="proteinsSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="cpath2_proteins"/>
-		<property name="hibernateProperties" ref="prdbProps"/>
+		<property name="hibernateProperties">
+		<props>
+		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${proteins.db}</prop>
+		<prop key="hibernate.hbm2ddl.auto"></prop><!-- no value - to prevent accidental tables drop -->		
+		</props>
+		</property>
         <property name="annotatedClasses">
         	<list>
 				<value>org.biopax.paxtools.impl.BioPAXElementImpl</value>

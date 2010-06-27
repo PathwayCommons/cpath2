@@ -42,13 +42,12 @@
         <property name="annotatedClasses">
         	<list>
 				<value>org.biopax.paxtools.impl.BioPAXElementImpl</value>
-				<value>cpath.warehouse.beans.Metadata</value>
-				<value>cpath.warehouse.beans.PathwayData</value>
 			</list>
         </property>
 		<property name="packagesToScan">
 			<list>
 				<value>org.biopax.paxtools.impl.level3</value>
+				<value>cpath.warehouse.beans</value>
 			</list>
 		</property>        
     </bean>

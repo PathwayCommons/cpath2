@@ -11,11 +11,11 @@ public class DataServicesFactoryBeanTest {
 	@Test
 	public void testCreateSchemaString() {
 		
-		DataServicesFactoryBean.createSchema("cpath2_meta_test");
+		DataServicesFactoryBean.createSchema("cpath2_test");
 		
 		DataSource dataSource = DataServicesFactoryBean
 			.getDataSource("cbio", "cbio", "com.mysql.jdbc.Driver", 
-					"jdbc:mysql://localhost/cpath2_meta_test");
+					"jdbc:mysql://localhost/cpath2_test");
 		
 		assertNotNull(dataSource);
 	}

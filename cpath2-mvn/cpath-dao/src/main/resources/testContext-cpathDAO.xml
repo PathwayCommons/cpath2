@@ -15,15 +15,15 @@
 
 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
-    <util:properties id="dbProps" location="classpath:hibernate.properties" local-override="true">
-		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_main_test</prop>
-		<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->
-	</util:properties>
-
 	<bean id="mainSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-        <property name="dataSource" ref="cpath2_main_test"/>
-        <property name="hibernateProperties" ref="dbProps"/>
+        <property name="dataSource" ref="cpath2_test"/>
+        <property name="hibernateProperties">
+        	<props>
+        		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_test</prop>
+				<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->
+       		</props>
+        </property>
         <property name="annotatedClasses">
         	<list>
 				<value>org.biopax.paxtools.impl.BioPAXElementImpl</value>
@@ -32,6 +32,7 @@
 		 <property name="packagesToScan">
 			<list>
 				<value>org.biopax.paxtools.impl.level3</value>
+				<value>cpath.warehouse.beans</value>
 			</list>
 		 </property>        
     </bean>
@@ -53,6 +54,6 @@
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
 
 	<!-- DataSource bean gets created from the factory-bean by name -->
-    <bean id="cpath2_main_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
+    <bean id="cpath2_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
   	
 </beans>

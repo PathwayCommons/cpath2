@@ -106,15 +106,13 @@ public class Admin implements Runnable {
 
         // TODO: use gnu getopt or some variant  
         if(args[0].equals(COMMAND.CREATE_TABLES.toString())) {
-        	this.command = COMMAND.CREATE_TABLES;
-        	// agrs[1] may contain comma-separated db names
-        	if (args.length > 1){
-				this.commandParameters = args[1].split(",");
-				// use args[1], ignore the rest of args, if any...
+			if (args.length != 2) {
+				validArgs = false;
 			} else {
-				// no parameters (create default tables)
-				this.commandParameters = null;
-			}
+				this.command = COMMAND.CREATE_TABLES;
+				// agrs[1] contains comma-separated db names
+				this.commandParameters = args[1].split(",");
+			} 
         } 
         else if (args[0].equals(COMMAND.FETCH_METADATA.toString())) {
 			if (args.length != 2) {
@@ -186,9 +184,7 @@ public class Admin implements Runnable {
         try {
             switch (command) {
             case CREATE_TABLES:
-            	if(commandParameters == null || commandParameters.length == 0) {
-            		DataServicesFactoryBean.createDatabases();
-            	} else {
+            	if(commandParameters != null) {
             		for(String db : commandParameters)
             			DataServicesFactoryBean.createSchema(db.trim());
             	}
@@ -391,6 +387,7 @@ public class Admin implements Runnable {
 		StringBuffer toReturn = new StringBuffer();
 		toReturn.append("cpath.Admin <command> <one or more args>");
 		toReturn.append("commands:");
+		toReturn.append(COMMAND.CREATE_TABLES.toString() + " <table1,table2,..>");
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>");
 		toReturn.append(COMMAND.FETCH_PATHWAY_DATA.toString() + " <provider-name or all>");
 		toReturn.append(COMMAND.FETCH_PROTEIN_DATA.toString() + " <provider-name or all>");
