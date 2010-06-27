@@ -17,7 +17,7 @@
 
 
     <util:properties id="dbProps" location="classpath:hibernate.properties" local-override="true">
-		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_main</prop>
+		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${main.db}</prop>
 		<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->
 	</util:properties>
 
@@ -49,7 +49,8 @@
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
 
-	<!-- DataSource bean gets created from the factory-bean by name -->
+	<!-- DataSource bean gets from the factory-bean using 
+	its id as a key (constant defined in the CPathSetting class) -->
     <bean id="cpath2_main" class="cpath.dao.internal.DataServicesFactoryBean"/>
   	
 </beans>

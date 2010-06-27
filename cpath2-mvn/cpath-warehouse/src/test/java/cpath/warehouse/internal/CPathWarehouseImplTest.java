@@ -52,11 +52,9 @@ public class CPathWarehouseImplTest {
 	@Before
 	public void setUp() throws Exception {
 		System.out.println("Preparing...");
-		DataServicesFactoryBean.createTestDatabases(); // it gets created during spring context load
+		DataServicesFactoryBean.createSchema("cpath2_test"); // it gets created during spring context load
 		context = new ClassPathXmlApplicationContext(new String[]{
-				"classpath:testContext-whouseMolecules.xml",
-				"classpath:testContext-whouseProteins.xml",
-				"classpath:testContext-whouseDAO.xml",
+				"classpath:testContext-dao.xml",
 				"classpath:applicationContext-cpathWarehouse.xml",
 				"classpath:applicationContext-cvRepository.xml"}
 		);

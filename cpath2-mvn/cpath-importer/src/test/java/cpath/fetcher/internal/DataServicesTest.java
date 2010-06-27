@@ -31,11 +31,9 @@ public class DataServicesTest {
 	@Before
 	public void setUp() throws Exception {
 			// create test DBs and all the tables 
-			DataServicesFactoryBean.createTestDatabases();
-			
+			DataServicesFactoryBean.createSchema("cpath2_test");
 			context = new ClassPathXmlApplicationContext(new String[] {
-				//"classpath:internalContext-creationTest.xml",
-				"classpath:testContext-whouseProteins.xml",
+				"classpath:testContext-dao.xml",
 				"classpath:applicationContext-cpathFetcher.xml"});
 			proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
 			warehouseDataService = (WarehouseDataService) context.getBean("warehouseDataService");

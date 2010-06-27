@@ -19,15 +19,15 @@
     
 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
 
-    <util:properties id="smdbProps" location="classpath:hibernate.properties" local-override="true">
-		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_molecules</prop>
-		<prop key="hibernate.hbm2ddl.auto"></prop><!-- no value - to prevent accidental tables drop -->
-	</util:properties>
-
 	<bean id="moleculesSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="cpath2_molecules"/>
-        <property name="hibernateProperties" ref="smdbProps"/>
+        <property name="hibernateProperties">
+        <props>
+		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${molecules.db}</prop>
+		<prop key="hibernate.hbm2ddl.auto"></prop><!-- no value - to prevent accidental tables drop -->        
+        </props>
+        </property>
         <property name="annotatedClasses">
         	<list>
 				<value>org.biopax.paxtools.impl.BioPAXElementImpl</value>
