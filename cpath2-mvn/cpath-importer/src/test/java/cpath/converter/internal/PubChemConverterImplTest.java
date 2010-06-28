@@ -33,7 +33,7 @@ import java.util.Set;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:testContext-dao.xml"})
-@TransactionConfiguration(transactionManager="proteinsTransactionManager")
+@TransactionConfiguration(transactionManager="testTransactionManager")
 public class PubChemConverterImplTest {
 
 	//@Autowired

@@ -175,7 +175,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
     
 	@Transactional(propagation=Propagation.REQUIRED)
-	@Deprecated // to use merger directly
 	public void importModel(final Model model)
 	{
 		merger.merge(this, model);
@@ -186,24 +185,20 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public BioPAXElement getElement(final String id, final boolean eager)
 	{
 		BioPAXElement toReturn = null;
+		
 		String namedQuery = (eager)
 			? "org.biopax.paxtools.impl.elementByRdfIdEager"
-					: "org.biopax.paxtools.impl.elementByRdfId";
+				: "org.biopax.paxtools.impl.elementByRdfId";
 
-		try
-		{
-			toReturn = (BioPAXElement) session().getNamedQuery(namedQuery)
-					.setString("rdfid", id).uniqueResult();
-
-		}
-		catch (Exception e)
-		{
-			log.error("getElement(" + id + ") failed. ", e);
-
+		try {
+			Query query = session().getNamedQuery(namedQuery);
+			query.setString("rdfid", id);
+			toReturn = (BioPAXElement) query.uniqueResult();
+		} catch (HibernateException e) {
+			throw new RuntimeException("getElement(" + id + ") failed. ", e);
 		}
 		
-
-		return toReturn;
+		return toReturn; // null means no such element
 	}
 
 

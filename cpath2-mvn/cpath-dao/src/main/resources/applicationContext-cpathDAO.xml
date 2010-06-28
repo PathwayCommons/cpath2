@@ -15,16 +15,15 @@
 
 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
-
-    <util:properties id="dbProps" location="classpath:hibernate.properties" local-override="true">
-		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${main.db}</prop>
-		<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->
-	</util:properties>
-
 	<bean id="mainSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="cpath2_main"/>
-        <property name="hibernateProperties" ref="dbProps"/>
+        <property name="hibernateProperties">
+        <props>
+		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${main.db}</prop>
+		<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->        
+        </props>
+        </property>
         <property name="annotatedClasses">
         	<list>
 				<value>org.biopax.paxtools.impl.BioPAXElementImpl</value>

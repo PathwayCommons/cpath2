@@ -115,7 +115,7 @@ public class PaxtoolsHibernateDAOTest {
 		// load some data into the test storage
 		log.info("Loading BioPAX data (importModel(file))...");
 		File biopaxFile = new File(getClass().getResource("/test.owl").getFile());
-		//File biopaxFile = new File(getClass().getResource("/biopax-level3-test.owl.xml").getFile());
+		//File biopaxFile = new File(getClass().getResource("/biopax-level3-test-normalized.owl").getFile());
 		paxtoolsDAO.importModel(biopaxFile);
 		
 		log.info("importModel(file) done!");

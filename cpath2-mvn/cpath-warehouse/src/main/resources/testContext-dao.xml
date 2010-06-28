@@ -16,7 +16,7 @@
  	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
        
     <!-- enable the configuration of transactional behavior based on annotations -->
-    <tx:annotation-driven transaction-manager="proteinsTransactionManager"/>
+    <tx:annotation-driven transaction-manager="testTransactionManager"/>
     
 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
 
@@ -43,7 +43,7 @@
 		 </property> 
     </bean>
 
-    <bean id="proteinsTransactionManager"
+    <bean id="testTransactionManager"
         class="org.springframework.orm.hibernate3.HibernateTransactionManager">
         <property name="sessionFactory" ref="testSessionFactory" />
     </bean>

@@ -51,8 +51,6 @@ public interface PaxtoolsDAO extends Model {
 	/**
 	 * Persists the given model to the db.
 	 *
-	 * @deprecated Use merger, e.g. SimpleMerger instead.
-	 *
 	 * @param model Model
 	 * @param createIndex boolean
 	 */
