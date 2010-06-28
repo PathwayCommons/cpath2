@@ -62,7 +62,6 @@ public class DataServicesTest {
 		//String location = "file://" + getClass().getResource("/test_uniprot_data.dat.gz").getPath();
 		//location = "classpath:test_uniprot_data.dat.gz";
 		//location = "ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz"
-		
 		/*
 		metadata = new Metadata(
 				"UNIPROT-TEST", 
@@ -79,6 +78,7 @@ public class DataServicesTest {
 		warehouseDataService.storeWarehouseData(metadata, proteinsDAO);
 		assertFalse(proteinsDAO.getObjects().isEmpty());
 		//assertTrue(m.containsID("http://uniprot.org#NGNC_TOP1MT"));
+
 		assertTrue(proteinsDAO.containsID("urn:miriam:uniprot:P62158"));
 	}
 }

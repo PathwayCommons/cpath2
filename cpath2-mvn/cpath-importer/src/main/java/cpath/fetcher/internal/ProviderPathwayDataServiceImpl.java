@@ -74,7 +74,9 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
 		if (isOWL) {
 			log.info("getProviderPathwayData(), data is owl, directly returning.");
 			String fetchedData = readFromService(resource.getInputStream());
-			String filename = url.substring(url.lastIndexOf("/"));
+			int idx = url.lastIndexOf("/");
+			if(idx < 0) idx = 0; // '/' not found, - use entire string
+			String filename = url.substring(idx);
 			String digest = getDigest(fetchedData.getBytes());
 			PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), 
 					metadata.getVersion(), filename, digest, fetchedData);

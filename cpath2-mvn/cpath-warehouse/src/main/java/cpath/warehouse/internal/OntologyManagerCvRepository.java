@@ -173,6 +173,9 @@ public final class OntologyManagerCvRepository extends BiopaxOntologyManager imp
 	<T extends ControlledVocabulary> T getControlledVocabulary(OntologyTermI term,
 			Class<T> cvClass) 
 	{
+		if(term == null)
+			return null;
+		
 		String urn = ontologyTermToUrn(term);
 		T cv = biopaxFactory.reflectivelyCreate(cvClass);
 		cv.setRDFId(urn);
@@ -230,10 +233,14 @@ public final class OntologyManagerCvRepository extends BiopaxOntologyManager imp
 		return urns;
 	}
 	
+	
 	String ontologyTermToUrn(OntologyTermI term) {
-		String ontologyID = term.getOntologyId();
-		String accession = term.getTermAccession();
-		String urn = MiriamLink.getURI(ontologyID, accession);
+		String urn = null;
+		if (term != null) {
+			String ontologyID = term.getOntologyId();
+			String accession = term.getTermAccession();
+			urn = MiriamLink.getURI(ontologyID, accession);
+		}
 		return urn;
 	}
 	

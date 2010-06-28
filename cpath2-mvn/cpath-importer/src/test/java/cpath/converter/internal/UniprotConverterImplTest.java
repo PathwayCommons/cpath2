@@ -29,9 +29,11 @@ package cpath.converter.internal;
 
 import static org.junit.Assert.*;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
+import java.util.zip.GZIPInputStream;
 
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
@@ -53,16 +55,16 @@ public class UniprotConverterImplTest {
 	@Test
 	public void testConvert() throws IOException {
 		Converter converter = new UniprotConverterImpl();
-		InputStream is = getClass().getResourceAsStream("/test_uniprot_data.dat");
+		InputStream is = getClass().getResourceAsStream("/test_uniprot_data.dat.gz");
+		GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(is));
 		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
-		converter.convert(is, model);
+		converter.convert(zis, model);
 		
 		Set<ProteinReference> proteinReferences = model.getObjects(ProteinReference.class);
 		assertTrue(proteinReferences.size()==2);
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
 		
 		//TODO add more checks that the conversion went ok...
-		
 		//(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
 	}
 

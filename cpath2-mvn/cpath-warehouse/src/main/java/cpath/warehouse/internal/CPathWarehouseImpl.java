@@ -41,7 +41,6 @@ import org.springframework.transaction.annotation.Transactional;
 import cpath.dao.PaxtoolsDAO;
 import cpath.warehouse.CPathWarehouse;
 import cpath.warehouse.CvRepository;
-import cpath.warehouse.MetadataDAO;
 
 import java.util.List;
 import java.util.Set;
@@ -57,15 +56,14 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
     private CvRepository cvRepository;
     private PaxtoolsDAO moleculesDAO;
     private PaxtoolsDAO proteinsDAO;
-    private MetadataDAO metadataDAO;
 	
 	
-	public CPathWarehouseImpl(CvRepository cvRepository,
-			PaxtoolsDAO moleculesDAO, MetadataDAO metadataDAO, PaxtoolsDAO proteinsDAO) {
+	public CPathWarehouseImpl(PaxtoolsDAO moleculesDAO, 
+			CvRepository cvRepository, PaxtoolsDAO proteinsDAO) 
+	{
 		this.cvRepository = cvRepository;
 		this.moleculesDAO = moleculesDAO;
 		this.proteinsDAO = proteinsDAO;
-		this.metadataDAO = metadataDAO;
 	}
 
 	

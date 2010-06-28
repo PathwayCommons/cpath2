@@ -2,10 +2,7 @@ package cpath.warehouse.internal;
 
 // imports
 import cpath.warehouse.PathwayDataDAO;
-import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
-
-import org.biopax.paxtools.model.Model;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -13,7 +10,6 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;

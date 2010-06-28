@@ -26,10 +26,12 @@
  **/
 package cpath.dao.internal;
 
+import java.beans.PropertyVetoException;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
+import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
 import javax.validation.constraints.NotNull;
 
@@ -47,6 +49,8 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 /**
  * This is a fantastic (crazy) factory that 
@@ -220,12 +224,21 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	 * 
 	 * (non-Javadoc)
 	 * @see cpath.dao.DataServices#getDataSource(java.lang.String)
+	 * 
 	 */
 	public DataSource getDataSource(String databaseName) {
-		DriverManagerDataSource dataSource = new DriverManagerDataSource();
-		dataSource.setDriverClassName(dbDriver);
-		dataSource.setUrl(dbConnection + databaseName);
-		dataSource.setUsername(dbUser);
+		ComboPooledDataSource dataSource = new ComboPooledDataSource();
+		//DriverManagerDataSource dataSource = new DriverManagerDataSource();
+		try {
+			dataSource.setDriverClass(dbDriver);
+		} catch (PropertyVetoException e) {
+			throw new RuntimeException(e);
+		}
+		//dataSource.setDriverClassName(dbDriver);
+		//dataSource.setUrl(dbConnection + databaseName);
+		dataSource.setJdbcUrl(dbConnection + databaseName);
+		//dataSource.setUsername(dbUser);
+		dataSource.setUser(dbUser);
 		dataSource.setPassword(dbPassword);
 		return dataSource;
 	}
