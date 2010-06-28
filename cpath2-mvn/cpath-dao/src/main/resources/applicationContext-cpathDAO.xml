@@ -25,12 +25,16 @@
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="cpath2_main"/>
         <property name="hibernateProperties" ref="dbProps"/>
-		<property name="packagesToScan">
+        <property name="annotatedClasses">
+        	<list>
+				<value>org.biopax.paxtools.impl.BioPAXElementImpl</value>
+			</list>
+         </property>
+		 <property name="packagesToScan">
 			<list>
-				<value>org.biopax.paxtools.impl</value> 
 				<value>org.biopax.paxtools.impl.level3</value>
 			</list>
-		</property>        
+		 </property>        
     </bean>
 
     <!-- enable the configuration of transactional behavior based on annotations -->
