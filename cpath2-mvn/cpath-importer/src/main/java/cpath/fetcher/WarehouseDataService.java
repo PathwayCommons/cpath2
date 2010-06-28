@@ -13,12 +13,12 @@ import java.io.IOException;
 public interface WarehouseDataService {
 
     /**
-     * For the given Metadata, returns a collection of EntityReference objects
-	 * in a paxtools model.
+     * For the given Metadata, converts target data int EntityReference objects and 
+	 * adds into given paxtools model.
      *
 	 * @param metadata Metadata
-     * @return Model
+     * @param model Model
      * @throws IOException if an IO error occurs
      */
-    Model getWarehouseData(final Metadata metadata) throws IOException;
+    void storeWarehouseData(final Metadata metadata, final Model model) throws IOException;
 }

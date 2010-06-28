@@ -76,14 +76,9 @@ public class DataServicesTest {
 				"cpath.converter.internal.UniprotConverterImpl");
 		*/
 		
-		Model m = warehouseDataService.getWarehouseData(metadata);
-		assertFalse(m.getObjects().isEmpty());
+		warehouseDataService.storeWarehouseData(metadata, proteinsDAO);
+		assertFalse(proteinsDAO.getObjects().isEmpty());
 		//assertTrue(m.containsID("http://uniprot.org#NGNC_TOP1MT"));
-		
-		proteinsDAO.importModel(m);
-		
 		assertTrue(proteinsDAO.containsID("urn:miriam:uniprot:P62158"));
-		
 	}
-
 }

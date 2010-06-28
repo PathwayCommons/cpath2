@@ -15,12 +15,10 @@ public interface Converter {
 	/**
 	 * Converts the given protein annotation data
 	 * into a paxtools model which contains EntityReferences only.
-	 * Model is set/passed by reference.  The biopax level of model
-	 * is determined by level parameter.
+	 * Model is set/passed by reference.
 	 *
 	 * @param is InputStream
-	 * @praam level BioPAXLevel
-	 * @return Model
+	 * @param model Model
 	 */
-	Model convert(InputStream is, BioPAXLevel level);
+	void convert(final InputStream is, final Model model);
 }

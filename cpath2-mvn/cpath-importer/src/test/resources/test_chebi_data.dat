@@ -36,6 +36,9 @@ CHEBI:20
 > <Secondary ChEBI ID>
 CHEBI:545070
 
+> <SMILES>
+[H]O[H]
+
 > <InChI>
 InChI=1/C10H16/c1-7-8-4-5-9(6-8)10(7,2)3/h8-9H,1,4-6H2,2-3H3/t8-,9+/m0/s1
 

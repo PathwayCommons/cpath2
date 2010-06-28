@@ -118,14 +118,11 @@ public class SDFUtil {
 	private static final String NCBI_MMDB = "ncbi_mmdb";
 	private static final String NCBI_GENE = "ncbi_gene";
 
-	// ref to factory
-	private BioPAXFactory factory;
-
 	// source of SDF data
 	private SOURCE source;
 
 	// ref to model
-	private Model bpModel;
+	private Model model;
 
 	/**
 	 * Constructor.
@@ -134,9 +131,10 @@ public class SDFUtil {
 	 * @param model Model
 	 */
 	public SDFUtil(SOURCE source, Model model) {
+
+		// init members
 		this.source = source;
-		this.bpModel = model;
-		this.factory = BioPAXLevel.L3.getDefaultFactory();
+		this.model = model;
 	}
 
 	/**
@@ -156,8 +154,18 @@ public class SDFUtil {
 		if (rdfID == null) {
 			return;
 		}
+
+		// do not import any entity reference that does not have a smiles entry
+		if (source == SOURCE.CHEBI) {
+			String smiles = getValue(entryBuffer, CHEBI_SMILES);
+			if (smiles == null || smiles.length() == 0) {
+				log.info("ChEBI entry without smiles, id: " + rdfID);
+				return;
+			}
+		}
+
 		SmallMoleculeReference smallMoleculeReference =
-			(SmallMoleculeReference)bpModel.addNew(SmallMoleculeReference.class, rdfID);
+			(SmallMoleculeReference)model.addNew(SmallMoleculeReference.class, rdfID);
 
 		if (source == SOURCE.CHEBI) {
 			setChEBISmallMoleculeReference(entryBuffer, smallMoleculeReference);
@@ -173,19 +181,27 @@ public class SDFUtil {
 		// create "member entity reference" using inchi key
 		if (inchiKey != null && inchiKey.length() > 0) {
 			String[] rdfIDParts = rdfID.split(":");
+			String inchiKeyParts[] = inchiKey.split(EQUALS_DELIMITER);
 			String[] unificationXRefParts = { rdfIDParts[2], rdfIDParts[3] };
-			String memberEntityReferenceID = "urn:inchi:" + inchiKey;
-			SmallMoleculeReference memberEntityRef =
-				(SmallMoleculeReference)bpModel.addNew(SmallMoleculeReference.class, memberEntityReferenceID);
-			// create a unification xref to pubchem or chebi
-			memberEntityRef.addXref(getXref(UnificationXref.class, unificationXRefParts));
-			// create chem struct using inchi
-			if (inchi != null) {
-				String parts[] = inchi.split(EQUALS_DELIMITER);
-				if (parts.length == 2) {
-					String chemicalStructureID = memberEntityRef.getRDFId() + ":chemical_structure_1";
-					setChemicalStructure(parts[1], chemicalStructureID, smallMoleculeReference);
+			String memberEntityReferenceID = "urn:inchi:" + inchiKeyParts[1];
+			try {
+				SmallMoleculeReference memberEntityRef =
+					(SmallMoleculeReference)model.addNew(SmallMoleculeReference.class, memberEntityReferenceID);
+				// create a unification xref to pubchem or chebi
+				memberEntityRef.addXref(getXref(UnificationXref.class, unificationXRefParts));
+				// create chem struct using inchi
+				if (inchi != null) {
+					String parts[] = inchi.split(EQUALS_DELIMITER);
+					if (parts.length == 2) {
+						String chemicalStructureID = memberEntityRef.getRDFId() + ":chemical_structure_1";
+						setChemicalStructure(parts[1], chemicalStructureID, smallMoleculeReference);
+					}
 				}
+			}
+			catch (org.biopax.paxtools.util.IllegalBioPAXArgumentException e) {
+				// ignore
+				//System.out.println("Duplicate inchi/inchi key, rdfid: " + rdfID);
+				//System.out.println("Duplicate inchi/inchi key, inchi: " + inchiKey);
 			}
 		}
 	}
@@ -412,7 +428,7 @@ public class SDFUtil {
 				log.info("setStructure(), structure: " + structure);
 			}
 			// should only get one of these
-			ChemicalStructure chemStruct = (ChemicalStructure)bpModel.addNew(ChemicalStructure.class, chemicalStructureID);
+			ChemicalStructure chemStruct = (ChemicalStructure)model.addNew(ChemicalStructure.class, chemicalStructureID);
 			chemStruct.setStructureData(structure);
 			chemStruct.setStructureFormat(StructureFormatType.SMILES);
 			smallMoleculeReference.setStructure(chemStruct);
@@ -581,13 +597,13 @@ public class SDFUtil {
 			log.info("getRelationshipType(), id: " + id);
 		}
 
-		if (bpModel.containsID(id)) {
-			toReturn = (RelationshipTypeVocabulary)bpModel.getByID(id);
+		if (model.containsID(id)) {
+			toReturn = (RelationshipTypeVocabulary)model.getByID(id);
 		}
 		else {
 			// create a new cv
 			toReturn =
-				(RelationshipTypeVocabulary)bpModel.addNew(RelationshipTypeVocabulary.class, id);
+				(RelationshipTypeVocabulary)model.addNew(RelationshipTypeVocabulary.class, id);
 			toReturn.addTerm(""); // convert dbName into some term
 		}
 
@@ -641,11 +657,11 @@ public class SDFUtil {
 		}
 		String rdfID =  URI + URLEncoder.encode(dbName + "_" + dbID);
 
-		if (bpModel.containsID(rdfID)) {
-			toReturn = (T)bpModel.getByID(rdfID);
+		if (model.containsID(rdfID)) {
+			toReturn = (T)model.getByID(rdfID);
 		}
 		else {
-			toReturn = (T)bpModel.addNew(aClass, rdfID);
+			toReturn = (T)model.addNew(aClass, rdfID);
 			toReturn.setDb(dbName);
 			toReturn.setId(dbID);
 		}

@@ -37,25 +37,19 @@ public final class WarehouseDataServiceImpl implements WarehouseDataService {
     
     /**
      * (non-Javadoc)
-     * @see cpath.fetcher.WarehouseDataService#getWarehouseData(cpath.warehouse.beans.Metadata)
+     * @see cpath.fetcher.WarehouseDataService#storeWarehouseData(cpath.warehouse.beans.Metadata, org.biopax.paxtools.model.Model)
      */
     @Override
-    public Model getWarehouseData(final Metadata metadata) throws IOException {
-
-        Model toReturn = null;
+    public void storeWarehouseData(final Metadata metadata, final Model model) throws IOException {
 
 		String urlStr = metadata.getURLToPathwayData();
-
 		Resource resource = applicationContext.getResource(urlStr);
-		// protein data comes zipped
-		if(log.isInfoEnabled())
-			log.info("getWarehouseData(), data is zip/gz, unzipping.");
-		toReturn = convert(metadata, resource.getInputStream());
-		if(log.isInfoEnabled())
-			log.info("getWarehouseData(), return model: " + toReturn);
 
-        // outta here
-        return toReturn;
+		// protein data comes zipped
+		if (log.isInfoEnabled()) {
+			log.info("getWarehouseData(), data is zip/gz, unzipping.");
+		}
+		convert(metadata, resource.getInputStream(), model);
     }
 
     /**
@@ -64,55 +58,39 @@ public final class WarehouseDataServiceImpl implements WarehouseDataService {
 	 *
 	 * @param metadata Metadata
      * @param fetchedData InputStream
-	 * @return model Model
+     * @param model Model
      */
-    private Model convert(final Metadata metadata, final InputStream fetchedData) throws IOException {
+    private void convert(final Metadata metadata, final InputStream fetchedData, final Model model) throws IOException {
 
-        Model toReturn = null;
         GZIPInputStream zis = null;
 
 		// create converter
         if(log.isInfoEnabled())
         	log.info("unzip(), getting a converter with name: " 
 				+ metadata.getConverterClassname());
-        
 		Converter converter = getConverter(metadata.getConverterClassname());
 		if (converter == null) {
 			// TDB: report failure
 			log.fatal("unzip(), could not create converter class " 
 					+ metadata.getConverterClassname());
-			return null;
+			return;
 		}
 
         try {
-
             // create a zip input stream
 			zis = new GZIPInputStream(new BufferedInputStream(fetchedData));
-			if(log.isInfoEnabled()	)
+			if (log.isInfoEnabled()) {
 				log.info("unzip(), created gzip input stream: " + zis);
-
-			// write file to buffered output stream
-			int count;
-			byte data[] = new byte[BUFFER];
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			BufferedOutputStream dest = new BufferedOutputStream(bos, BUFFER);
-			int total=0;
-			while ((count = zis.read(data, 0, BUFFER)) != -1) {
-				total+= count;
-				if(log.isInfoEnabled()	)
-					log.info("unzip(), read " + total + " bytes so far.");
-				dest.write(data, 0, count);
 			}
-			dest.flush();
-			dest.close();
 
 			// create entity reference objects
-			if(log.isInfoEnabled()	)
+			if (log.isInfoEnabled()) {
 				log.info("unzip(), creating EntityReference objects, provider: " +
-					 metadata.getIdentifier() + " version: " + metadata.getVersion());
+						 metadata.getIdentifier() + " version: " + metadata.getVersion());
+			}
 
 			// hook into biopax converter for given provider
-			toReturn = converter.convert(new ByteArrayInputStream(bos.toByteArray()), BioPAXLevel.L3);
+			converter.convert(zis, model);
         }
         catch (IOException e) {
             throw e;
@@ -120,8 +98,6 @@ public final class WarehouseDataServiceImpl implements WarehouseDataService {
         finally {
             closeQuietly(zis);
         }
-		// outta here
-		return toReturn;
     }
 
    /**
