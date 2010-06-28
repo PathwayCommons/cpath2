@@ -337,24 +337,12 @@ public class Admin implements Runnable {
 		for (Metadata metadata : metadataCollection) {
 			// only process protein references data
 			if (command == COMMAND.FETCH_PROTEIN_DATA && metadata.getType() == Metadata.TYPE.PROTEIN) {
-				// grab the data (actually, a set of ProteinReferenceProxy !)
-				Model model = warehouseDataService.getWarehouseData(metadata);
-				if (model != null) {
-					proteinsDAO.importModel(model);
-				}
-				else {
-					System.err.println("Model created from protein annotation data is null, aborting.");
-				}
+				// store the data (actually, a set of ProteinReferenceProxy !)
+				warehouseDataService.storeWarehouseData(metadata, proteinsDAO);
         	}
 			else if (command == COMMAND.FETCH_SMALL_MOLECULE_DATA && metadata.getType() == Metadata.TYPE.SMALL_MOLECULE) {
-				// grab the data (actually, a set of SmallMoleculeReferenceProxy !)
-				Model model = warehouseDataService.getWarehouseData(metadata);
-				if (model != null) {
-					smallMoleculesDAO.importModel(model);
-				}
-				else {
-					System.err.println("Model created from small molecule annotation data is null, aborting.");
-				}
+				// store the data (actually, a set of SmallMoleculeReferenceProxy !)
+				warehouseDataService.storeWarehouseData(metadata, smallMoleculesDAO);
 			}
 		}
 	}

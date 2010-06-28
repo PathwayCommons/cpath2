@@ -47,15 +47,15 @@ import cpath.converter.Converter;
 public class UniprotConverterImplTest {
 
 	/**
-	 * Test method for {@link cpath.converter.internal.UniprotConverterImpl#convert(java.io.InputStream, org.biopax.paxtools.model.BioPAXLevel)}.
+	 * Test method for {@link cpath.converter.internal.UniprotConverterImpl#convert(java.io.InputStream, org.biopax.paxtools.model.Model)}.
 	 * @throws IOException 
 	 */
 	@Test
 	public void testConvert() throws IOException {
 		Converter converter = new UniprotConverterImpl();
 		InputStream is = getClass().getResourceAsStream("/test_uniprot_data.dat");
-		
-		Model model = converter.convert(is, BioPAXLevel.L3);
+		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
+		converter.convert(is, model);
 		
 		Set<ProteinReference> proteinReferences = model.getObjects(ProteinReference.class);
 		assertTrue(proteinReferences.size()==2);

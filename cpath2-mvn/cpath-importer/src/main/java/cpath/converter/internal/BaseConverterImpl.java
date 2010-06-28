@@ -25,7 +25,7 @@ public class BaseConverterImpl implements Converter {
 	
 	/**
 	 * (non-Javadoc>
-	 * @see cpath.converter.Converter#convert(java.io.InputStream, org.biopax.paxtools.model.BioPXLevel)
+	 * @see cpath.converter.Converter#convert(java.io.InputStream, org.biopax.paxtools.model.Model)
 	 */
-	public Model convert(final InputStream is, BioPAXLevel level) { return null; }
+	public void convert(final InputStream is, final Model model) {}
 }

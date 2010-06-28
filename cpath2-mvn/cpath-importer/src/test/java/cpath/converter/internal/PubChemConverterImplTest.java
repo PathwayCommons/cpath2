@@ -53,7 +53,8 @@ public class PubChemConverterImplTest {
 
 		// convert test data
 		InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_pubchem_data.dat");
-		Model model = converter.convert(is, BioPAXLevel.L3);
+		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
+		converter.convert(is, model);
 		
 		// get all small molecule references out
 		assertTrue(model.getObjects(SmallMoleculeReference.class).size() == 4);

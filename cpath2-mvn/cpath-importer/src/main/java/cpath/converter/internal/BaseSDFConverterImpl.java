@@ -2,6 +2,9 @@ package cpath.converter.internal;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.level3.SmallMoleculeReference;
+import org.biopax.paxtools.controller.SimpleMerger;
+import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -18,72 +21,47 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
     private static Log log = LogFactory.getLog(BaseSDFConverterImpl.class);
 
 	// the following are set by children
-	private String NAMESPACE_PREFIX;
 	private String ENTRY_START;
 	private String ENTRY_END;
 	private SDFUtil.SOURCE source;
 
-	// ref to bp level
-	private BioPAXLevel bpLevel;
+	// ref to simple merger
+	private SimpleMerger simpleMerger;
 
-	// ref to bp model
-	private Model bpModel;
-
-	// ref to stdf util
-	private SDFUtil sdfUtil;
+	// testing code (inchi key is key, space delimited string of chebi ids)
+	public Map<String, String> INCHI_KEY_MAP = new HashMap<String, String>();
 
 	/**
 	 * Constructor.
 	 *
 	 * @param source STFUtil.Source
-	 * @param namespacePrefix String
 	 * @param entryStart String
 	 * @param entryEnd String
 	 */
-	public BaseSDFConverterImpl(SDFUtil.SOURCE source, String namespacePrefix, String entryStart, String entryEnd) {
+	public BaseSDFConverterImpl(SDFUtil.SOURCE source, String entryStart, String entryEnd) {
 
 		// init members
 		this.source = source;
-		this.NAMESPACE_PREFIX = namespacePrefix;
 		this.ENTRY_START = entryStart;
 		this.ENTRY_END = entryEnd;
+		this.simpleMerger = new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
 	}
 	
 	/**
 	 * (non-Javadoc)
-	 * @see cpath.converter.Converter#convert(java.io.InputStream, org.biopax.paxtools.model.BioPXLevel)
+	 * @see cpath.converter.Converter#convert(java.io.InputStream, org.biopax.paxtools.model.Model)
 	 */
 	@Override
-	public Model convert(final InputStream is, BioPAXLevel level) {
-
-		// sanity check
-		if (level != BioPAXLevel.L3) {
-            throw new IllegalArgumentException("BioPAX level: " + level + " is not supported.");
-		}
-
-		// init members
-		this.bpLevel = level;
-
-		// create the model
-		createBPModel();
-
-		// create an sdfUtil class
-		sdfUtil = new SDFUtil(source, bpModel);
+	public void convert(final InputStream is, final Model model) {
 
 		// ref to reader here so, we can close in finally clause
         InputStreamReader reader = null;
-
-		// create a model
-        if (log.isInfoEnabled()) {
-        	log.info("convert(), creating Biopax Model.");
-		}
-	
 
         try {
 			// setup the reader
             reader = new InputStreamReader(is);
             BufferedReader bufferedReader = new BufferedReader(reader);
-            if(log.isInfoEnabled()) {
+            if (log.isInfoEnabled()) {
             	log.info("convert(), starting to read data...");
 			}
 			// read the file
@@ -102,13 +80,10 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 						line = bufferedReader.readLine();
 					}
 					// process entry
-					processEntry(entryBuffer);
+					processEntry(entryBuffer, model);
                 }
                 line = bufferedReader.readLine();
             }
-            if (log.isInfoEnabled()) {
-            	log.info("convert(), no. of elements created: " + bpModel.getObjects().size());
-			}
         }
 		catch (IOException e) {
 			log.error("Failed", e);
@@ -130,8 +105,14 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 			log.info("convert(), exiting.");
 		}
 
-		// outta here
-		return bpModel;
+		// testing code - dump the chebi map 
+		log.info("dumping chebi records with shared inchi keys...");
+		for (String key : INCHI_KEY_MAP.keySet()) {
+			String[] ids = INCHI_KEY_MAP.get(key).split(" ");
+			if (ids.length > 1) {
+				log.info(key + ": " + ids);
+			}
+		}
     }
 
 	/**
@@ -141,28 +122,59 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 	 * @param entryBuffer StringBuffer
 	 * @throwns IOException
 	 */
-	private void processEntry(StringBuffer entryBuffer) throws IOException {
+	private void processEntry(StringBuffer entryBuffer, Model model) throws IOException {
 
         if (log.isInfoEnabled()) {
         	log.info("processEntry(), calling sdfUtil.setSmallMoleculeReference.");
 		}
 
-		// set the small molecule reference and add to model
+		// create local model to add ER
+		Model smallMoleculeReferenceModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+
+		// create STDUtil to do dirty work
+		SDFUtil sdfUtil = new SDFUtil(source, smallMoleculeReferenceModel);
+
+		// set the small molecule reference - gets added to model by sdfUtil
 		sdfUtil.setSmallMoleculeReference(entryBuffer);
+
+		// testing code: update testing map
+		updateTestingMap(smallMoleculeReferenceModel);
+
+		// merge
+		simpleMerger.merge(model, smallMoleculeReferenceModel);
 	}
 
-	/**
-	 * Creates a paxtools model based on level passed to convert.
-	 */
-	private void createBPModel() {
+	// testing code
+	private void updateTestingMap(Model smallMoleculeReferenceModel) {
 
-		// create the model
-		if (bpLevel == BioPAXLevel.L3) {
-			bpModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+		// used below
+		String[] inchiParts = null;
+		String[] chebiOrPubchemParts = null;
+
+		// get smallmolecules from model
+		Set<SmallMoleculeReference> smrs =
+			smallMoleculeReferenceModel.getObjects(SmallMoleculeReference.class);
+
+		for (SmallMoleculeReference smr : smrs) {
+			String rdf = smr.getRDFId();
+			if (rdf.contains("urn:inchi")) {
+				inchiParts = smr.getRDFId().split(":");
+			}
+			else {
+				chebiOrPubchemParts = smr.getRDFId().split(":");
+			}
 		}
 
-		// setup base
-		Map<String, String> nsMap = bpModel.getNameSpacePrefixMap();
-		nsMap.put("", NAMESPACE_PREFIX);
+		if (inchiParts == null || chebiOrPubchemParts == null) {
+			return;
+		}
+
+		if (INCHI_KEY_MAP.containsKey(inchiParts[2])) {
+			String existingIds = INCHI_KEY_MAP.get(inchiParts[2]);
+			INCHI_KEY_MAP.put(inchiParts[2], existingIds + chebiOrPubchemParts[3]);
+		}
+		else {
+			INCHI_KEY_MAP.put(inchiParts[2], chebiOrPubchemParts[3] + " ");
+		}
 	}
 }

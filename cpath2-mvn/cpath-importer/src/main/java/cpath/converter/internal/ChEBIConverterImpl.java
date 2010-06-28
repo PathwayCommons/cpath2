@@ -6,7 +6,6 @@ package cpath.converter.internal;
 public class ChEBIConverterImpl extends BaseSDFConverterImpl {
 
 	// some statics
-	private static final String CHEBI_NAMESPACE_PREFIX = "http://ebi.org#";
 	private static final String ENTRY_START = "M  END";
 	private static final String ENTRY_END = "$$$$";
 
@@ -14,6 +13,6 @@ public class ChEBIConverterImpl extends BaseSDFConverterImpl {
 	 * Constructor.
 	 */
 	public ChEBIConverterImpl() {
-		super(SDFUtil.SOURCE.CHEBI, CHEBI_NAMESPACE_PREFIX, ENTRY_START, ENTRY_END);
+		super(SDFUtil.SOURCE.CHEBI, ENTRY_START, ENTRY_END);
 	}
 }

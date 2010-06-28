@@ -63,38 +63,17 @@ public class SmallMoleculeMerger {
 	 */
 	public void merge(SmallMoleculeReference inchiSMR, Set<SmallMoleculeReference> smrs) {
 
-		// smrs may contain up to two smr, one for pubchem and one for chebi.
-		SmallMoleculeReference chebiSMR = null;
-		SmallMoleculeReference pubChemSMR = null;
-		// we want to merge pubchem last, properly set references
-		for (SmallMoleculeReference smr : smrs) {
-			if (smr.getRDFId().contains("urn.miriam.pubchem")) {
-				pubChemSMR = smr;
-			}
-			else {
-				chebiSMR = smr;
-			}
-		}
-
 		// create model and place inchiSMR inside it
 		Model inchiModel= BioPAXLevel.L3.getDefaultFactory().createModel();
 		inchiModel.add(inchiSMR);
-		
-		// if we have a chebi smr, create and add to model, then merge with inchi
-		if (chebiSMR != null) {
-			Model chebiModel= BioPAXLevel.L3.getDefaultFactory().createModel();
-			chebiModel.add(chebiSMR);
-			merge(inchiModel, chebiModel);
-		}
 
-		// if we have a pubchem smr, create and add to model, then merge with inchi
-		if (pubChemSMR != null) {
-			Model pubChemModel= BioPAXLevel.L3.getDefaultFactory().createModel();
-			pubChemModel.add(pubChemSMR);
-			merge(inchiModel, pubChemModel);
+		// currently we do not worry about which
+		// SmallMoleculeReference in smrs gets merged last
+		for (SmallMoleculeReference smr : smrs) {
+			Model smrModel= BioPAXLevel.L3.getDefaultFactory().createModel();
+			smrModel.add(smr);
+			merge(inchiModel, smrModel);
 		}
-
-		// at this point, inchi smr has had data merged into it, ok to return
 	}
 
     /**
