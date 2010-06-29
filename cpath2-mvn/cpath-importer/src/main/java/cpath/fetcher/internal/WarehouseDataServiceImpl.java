@@ -6,14 +6,13 @@ import cpath.converter.Converter;
 import cpath.fetcher.WarehouseDataService;
 
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.BioPAXLevel;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -24,16 +23,13 @@ import java.util.zip.GZIPInputStream;
  * Warehouse Data service.  Retrieves protein and small molecule data on behalf of warehouse.
  */
 @Service
-public final class WarehouseDataServiceImpl implements WarehouseDataService {
-
-	// used in unzip method
-	private static final int BUFFER = 2048;
+public class WarehouseDataServiceImpl implements WarehouseDataService {
 
 	// logger
     private static Log log = LogFactory.getLog(WarehouseDataServiceImpl.class);
-
+    
     @Autowired
-    ApplicationContext applicationContext;
+    ResourceLoader applicationContext; // it is!
     
     /**
      * (non-Javadoc)
@@ -66,12 +62,12 @@ public final class WarehouseDataServiceImpl implements WarehouseDataService {
 
 		// create converter
         if(log.isInfoEnabled())
-        	log.info("unzip(), getting a converter with name: " 
+        	log.info("getting a converter with name: " 
 				+ metadata.getConverterClassname());
 		Converter converter = getConverter(metadata.getConverterClassname());
 		if (converter == null) {
 			// TDB: report failure
-			log.fatal("unzip(), could not create converter class " 
+			log.fatal("could not create converter class " 
 					+ metadata.getConverterClassname());
 			return;
 		}
@@ -80,12 +76,12 @@ public final class WarehouseDataServiceImpl implements WarehouseDataService {
             // create a zip input stream
 			zis = new GZIPInputStream(new BufferedInputStream(fetchedData));
 			if (log.isInfoEnabled()) {
-				log.info("unzip(), created gzip input stream: " + zis);
+				log.info("created gzip input stream: " + zis);
 			}
 
 			// create entity reference objects
 			if (log.isInfoEnabled()) {
-				log.info("unzip(), creating EntityReference objects, provider: " +
+				log.info("creating EntityReference objects, provider: " +
 						 metadata.getIdentifier() + " version: " + metadata.getVersion());
 			}
 
@@ -105,25 +101,9 @@ public final class WarehouseDataServiceImpl implements WarehouseDataService {
     *
     * @param zis ZipInputStream
     */
-    private static void closeQuietly(final GZIPInputStream zis) {
-    
+    private static void closeQuietly(final InputStream zis) {
         try {
             zis.close();
-        }
-        catch (Exception e) {
-            // ignore
-        }
-    }
-
-   /**
-    * Close the specified reader quietly.
-    *
-    * @param zis ZipInputStream
-    */
-    private static void closeQuietly(final BufferedReader reader) {
-    
-        try {
-            reader.close();
         }
         catch (Exception e) {
             // ignore
@@ -138,13 +118,13 @@ public final class WarehouseDataServiceImpl implements WarehouseDataService {
 	 * @param converterClassName String
 	 * @return Converter
 	 */
-	private Converter getConverter(final String converterClassName) {
+	private static Converter getConverter(final String converterClassName) {
 		try {
 			Class<?> converterClass = Class.forName(converterClassName);
 			return (Converter)converterClass.newInstance();
 		}
 		catch (Exception e) {
-			log.error("unzip(), could not create converter class " 
+			log.error("could not create converter class " 
 					+ converterClassName, e);
 		}
 		return null;

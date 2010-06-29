@@ -9,8 +9,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -30,7 +30,7 @@ import java.util.zip.ZipInputStream;
  * Provider PathwayData service.  Retrieves provider pathway data.
  */
 @Service
-public final class ProviderPathwayDataServiceImpl implements ProviderPathwayDataService {
+public class ProviderPathwayDataServiceImpl implements ProviderPathwayDataService {
 
 	// used in unzip method
 	private static final int BUFFER = 2048;
@@ -47,7 +47,7 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
     private static Log log = LogFactory.getLog(ProviderPathwayDataServiceImpl.class);
 
     @Autowired
-    ApplicationContext applicationContext;
+    ResourceLoader applicationContext;
 
     /**
 	 * Default Constructor.
@@ -136,14 +136,13 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
         ZipInputStream zis = null;
 
         try {
-
             // create a zip intput stream
 			zis = new ZipInputStream(new BufferedInputStream(fetchedData));
 
 			// interate over zip entries
 			ZipEntry entry = null;
-            while ((entry = zis.getNextEntry()) != null) {
-
+            while ((entry = zis.getNextEntry()) != null) 
+            {
 				log.info("Processing zip entry: " + entry.getName());
 
 				// write file to buffered outputstream
@@ -167,7 +166,6 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
 				String digest = getDigest(bos.toByteArray());
 
 				if (digest != null) {
-
 					// create pathway data object
 					log.info("unzip(), creating pathway data object, zip entry: " + entry.getName() +
 							 " provider: " + metadata.getIdentifier() +
@@ -194,7 +192,6 @@ public final class ProviderPathwayDataServiceImpl implements ProviderPathwayData
     * @param zis ZipInputStream
     */
     private static void closeQuietly(final ZipInputStream zis) {
-    
         try {
             zis.close();
         }

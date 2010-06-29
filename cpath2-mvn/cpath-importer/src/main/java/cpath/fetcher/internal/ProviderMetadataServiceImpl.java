@@ -36,7 +36,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 import java.awt.image.BufferedImage;
@@ -45,6 +45,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.BufferedReader;
+import java.io.Reader;
 
 import java.util.HashSet;
 import java.util.Collection;
@@ -56,7 +57,7 @@ import javax.imageio.ImageIO;
  * Provider Metadata service.  Retrieves provider metadata.
  */
 @Service
-public final class ProviderMetadataServiceImpl implements ProviderMetadataService {
+public class ProviderMetadataServiceImpl implements ProviderMetadataService {
 
     // some bits for metadata reading
     private static final int METADATA_IDENTIFIER_INDEX = 0;
@@ -75,7 +76,7 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
 
     
     @Autowired
-    ApplicationContext applicationContext;
+    ResourceLoader applicationContext;
     
     /**
 	 * Default Constructor.
@@ -206,8 +207,7 @@ public final class ProviderMetadataServiceImpl implements ProviderMetadataServic
     *
     * @param reader BufferedReader
     */
-    private static void closeQuietly(final BufferedReader reader) {
-    
+    private static void closeQuietly(final Reader reader) {
         try {
             reader.close();
         }
