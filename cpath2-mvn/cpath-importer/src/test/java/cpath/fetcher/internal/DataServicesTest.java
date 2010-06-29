@@ -7,7 +7,6 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.Model;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
