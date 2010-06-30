@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
-import javax.sql.ConnectionPoolDataSource;
 import javax.sql.DataSource;
 import javax.validation.constraints.NotNull;
 
@@ -256,13 +255,27 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	 * @return
 	 */
 	public static DataSource getDataSource(String dbUser, String dbPassword,
-			String dbDriver, String dbUrl) {
+			String dbDriver, String dbUrl) 
+	{
+		ComboPooledDataSource dataSource = new ComboPooledDataSource();
+		try {
+			dataSource.setDriverClass(dbDriver);
+		} catch (PropertyVetoException e) {
+			throw new RuntimeException(e);
+		}
+		dataSource.setJdbcUrl(dbUrl);
+		dataSource.setUser(dbUser);
+		dataSource.setPassword(dbPassword);
+		return dataSource;
+
+		/*
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();
 		dataSource.setDriverClassName(dbDriver);
 		dataSource.setUrl(dbUrl);
 		dataSource.setUsername(dbUser);
 		dataSource.setPassword(dbPassword);
 		return dataSource;
+		*/
 	}	
 
 	
