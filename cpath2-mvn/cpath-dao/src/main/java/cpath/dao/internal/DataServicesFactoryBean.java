@@ -50,6 +50,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
+import com.mchange.v2.c3p0.PoolBackedDataSource;
 
 /**
  * This is a fantastic (crazy) factory that 
@@ -226,20 +227,8 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	 * 
 	 */
 	public DataSource getDataSource(String databaseName) {
-		ComboPooledDataSource dataSource = new ComboPooledDataSource();
-		//DriverManagerDataSource dataSource = new DriverManagerDataSource();
-		try {
-			dataSource.setDriverClass(dbDriver);
-		} catch (PropertyVetoException e) {
-			throw new RuntimeException(e);
-		}
-		//dataSource.setDriverClassName(dbDriver);
-		//dataSource.setUrl(dbConnection + databaseName);
-		dataSource.setJdbcUrl(dbConnection + databaseName);
-		//dataSource.setUsername(dbUser);
-		dataSource.setUser(dbUser);
-		dataSource.setPassword(dbPassword);
-		return dataSource;
+		return getDataSource(dbUser, dbPassword, dbDriver, 
+				dbConnection + databaseName);
 	}
 	
 	
@@ -266,6 +255,13 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		dataSource.setJdbcUrl(dbUrl);
 		dataSource.setUser(dbUser);
 		dataSource.setPassword(dbPassword);
+		
+		// c3p0 props
+		//dataSource.setAcquireIncrement(2);
+		dataSource.setIdleConnectionTestPeriod(100);
+		dataSource.setInitialPoolSize(1);
+		dataSource.setMaxPoolSize(99);
+		
 		return dataSource;
 
 		/*
