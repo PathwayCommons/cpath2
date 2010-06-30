@@ -142,7 +142,6 @@ public class PaxtoolsHibernateDAOTest {
 
 	
 	//@Test // fails
-	//@Transactional 
 	public void testSimpleSerch() throws Exception {
 		List<? extends BioPAXElement> elist = paxtoolsDAO.search("P46880", BioPAXElement.class);
 		assertFalse(elist.isEmpty());
@@ -175,8 +174,6 @@ public class PaxtoolsHibernateDAOTest {
 	}
 	
 	//@Test // comment out to ignore
-	//@Transactional
-	//@Rollback(false)
 	public void testRun() throws Exception {		
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
 		BioPAXElement bpe = paxtoolsDAO

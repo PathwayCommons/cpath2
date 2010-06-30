@@ -176,6 +176,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Transactional(propagation=Propagation.REQUIRED)
 	public BioPAXElement getElement(final String id, final boolean eager)
 	{
+		if(id == null || "".equals(id)) 
+			throw new RuntimeException("getElement(null) is called!");
 		// rdfid is PK now
 		BioPAXElement toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
 		return toReturn;
@@ -184,11 +186,14 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		String namedQuery = (eager)
 			? "org.biopax.paxtools.impl.elementByRdfIdEager"
 				: "org.biopax.paxtools.impl.elementByRdfId";
-
 		try {
-			Query query = session().getNamedQuery(namedQuery);
+			//Query query = session().getNamedQuery(namedQuery);
+			Query query = session().createQuery("from BioPAXElementImpl as el where upper(el.RDFId) = upper(:rdfid)");
 			query.setString("rdfid", id);
-			toReturn = (BioPAXElement) query.uniqueResult();
+			query.setCacheable(false);
+			query.setReadOnly(true);
+			List l = query.list();
+			toReturn = ((l.isEmpty()) ? null : (BioPAXElement) l.get(0)); //(BioPAXElement) query.uniqueResult();
 		} catch (HibernateException e) {
 			throw new RuntimeException("getElement(" + id + ") failed. ", e);
 		}
@@ -330,7 +335,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			{
 				log.debug("adding " + rdfId);
 			}
-			
 			/* seems, unlike 'save' or 'persist', 'saveOrUpdate' 
 			does resolve duplicate key issues 
 			(because of children elements cascade=All mappings)
@@ -381,7 +385,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	@Override
-	@Transactional(readOnly=true, propagation=Propagation.REQUIRED)
+	@Transactional(propagation=Propagation.REQUIRED)
 	public BioPAXElement getByID(String id)
 	{
 		return getElement(id, false);

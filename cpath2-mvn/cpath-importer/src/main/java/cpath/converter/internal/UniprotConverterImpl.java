@@ -6,6 +6,7 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -47,9 +48,11 @@ public class UniprotConverterImpl extends BaseConverterImpl {
             if (log.isInfoEnabled()) {
             	log.info("convert(), starting to read data...");
 			}
+            long linesReadSoFar = 0;
             while (line != null) {
-                if (line.startsWith ("//")) {
-
+            	linesReadSoFar++;
+                if (line.startsWith ("//")) 
+                {
 					// create local model to add ER
 					Model proteinReferenceModel = BioPAXLevel.L3.getDefaultFactory().createModel();
 
@@ -80,6 +83,14 @@ public class UniprotConverterImpl extends BaseConverterImpl {
                         setComments (comments.toString(), geneSyns, proteinReference);
                     }
 
+                    // debug: write the one-protein-reference model
+                    if(log.isDebugEnabled()) {
+                    	ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    	(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(proteinReferenceModel, out);
+                    	log.debug("So far line# " + linesReadSoFar + 
+                    		"; merging new protein model:\n" + out.toString());
+                    }
+                    
 					// we have finished creating local model, merge into global one now
 					simpleMerger.merge(model, proteinReferenceModel);
                     
@@ -175,8 +186,6 @@ public class UniprotConverterImpl extends BaseConverterImpl {
         parts = organismName.split("\\(");
         String name = parts[0].trim();
 		BioSource bioSource = getBioSource(proteinReferenceModel, "urn:miriam:taxonomy:" + taxId, taxId, name);
-		//SequenceEntityReference ser = (SequenceEntityReference)ProteinReference;
-		//ser.setOrganism((BioSource)bpSource);
 		proteinReference.setOrganism(bioSource);
     }
 
