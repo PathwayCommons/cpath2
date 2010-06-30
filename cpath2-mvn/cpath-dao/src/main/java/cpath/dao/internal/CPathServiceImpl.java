@@ -153,17 +153,15 @@ public class CPathServiceImpl implements CPathService {
 	public Map<ResultMapKey, Object> element(String id, OutputFormat format) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
-
 			switch (format) {
 			case BIOPAX:
 				map = asBiopax(id);
 			case BINARY_SIF:
-				//TODO
+				// TODO
 				break;
 
 			default:
 			}
-
 		} catch (Exception e) {
 			map.put(ResultMapKey.ERROR, e.toString());
 		}
