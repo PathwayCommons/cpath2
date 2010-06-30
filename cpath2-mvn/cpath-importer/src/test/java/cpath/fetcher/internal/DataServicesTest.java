@@ -2,7 +2,7 @@ package cpath.fetcher.internal;
 
 import static org.junit.Assert.*;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.Collection;
 
 import org.apache.commons.logging.Log;
@@ -56,18 +56,16 @@ public class DataServicesTest {
 		assertNotNull(metadata);
 		assertEquals(TYPE.PROTEIN, metadata.getType());
 
-		// any resource location inside the metadata page works!
+		/*
+		// any resource location inside the metadata page works now!
 		//String location = "file://" + getClass().getResource("/test_uniprot_data.dat.gz").getPath();
 		//location = "classpath:test_uniprot_data.dat.gz";
 		//location = "ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz"
-		/*
 		metadata = new Metadata(
-				"UNIPROT-TEST", 
-				"Uniprot TEST", 
-				Float.valueOf("15.15"), 
-				"Mar 2, 2010",  
+				"UNIPROT-TEST", "Uniprot TEST", 
+				Float.valueOf("15.15"), "Mar 2, 2010",  
 				location,
-				"".getBytes(), 
+				new byte[]{}, 
 				Metadata.TYPE.PROTEIN, 
 				"cpath.cleaner.internal.BaseCleanerImpl", 
 				"cpath.converter.internal.UniprotConverterImpl");
@@ -75,8 +73,12 @@ public class DataServicesTest {
 		
 		warehouseDataService.storeWarehouseData(metadata, proteinsDAO);
 		assertFalse(proteinsDAO.getObjects().isEmpty());
-		//assertTrue(m.containsID("http://uniprot.org#NGNC_TOP1MT"));
-
 		assertTrue(proteinsDAO.containsID("urn:miriam:uniprot:P62158"));
+		
+		// write the whole merged model (to target/test-classes dir)
+		OutputStream out = new FileOutputStream(
+			getClass().getClassLoader().getResource("").getPath() 
+				+ File.separator + "DataServicesTest.out.owl");
+		proteinsDAO.exportModel(out);
 	}
 }
