@@ -2,7 +2,6 @@ package cpath.converter;
 
 // imports
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.BioPAXLevel;
 
 import java.io.InputStream;
 

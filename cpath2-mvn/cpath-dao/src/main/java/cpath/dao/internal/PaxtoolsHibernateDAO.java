@@ -47,6 +47,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 
 
+import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 
 import java.util.*;
@@ -88,8 +89,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		this.level = BioPAXLevel.L3;
 		this.factory = level.getDefaultFactory();
 		this.nameSpacePrefixMap = new HashMap<String, String>();
-		//nameSpacePrefixMap.put("", "http://pathwaycommons.org#");
-		nameSpacePrefixMap.put("", "urn:pathwaycommons:");
+		nameSpacePrefixMap.put("", CPathSettings.CPATH_URI_PREFIX);
 		reader = new SimpleReader(BioPAXLevel.L3);
 		merger = new SimpleMerger(reader.getEditorMap());
 		multiFieldQueryParser = new MultiFieldQueryParser(
@@ -111,7 +111,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 
 	// get/set methods used by spring
-
 	public SessionFactory getSessionFactory()
 	{
 		return sessionFactory;
@@ -132,14 +131,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		this.reader = reader;
 	}
 
-
-	Session session()
-	{
-		return getSessionFactory().getCurrentSession();
-	}
-		
-	SessionFactory sessionFactory() {
-		return getSessionFactory();
+	
+	@Transactional(propagation=Propagation.REQUIRED)
+	Session session() {
+		return sessionFactory.getCurrentSession();
 	}
 	
 
@@ -148,12 +143,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public void createIndex()
 	{
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		try
-		{
+		try {
 			fullTextSession.createIndexer().startAndWait();
-		}
-		catch (InterruptedException e)
-		{
+		} catch (InterruptedException e) {
 			throw new RuntimeException("Faild to re-build index.");
 		}
 	}
@@ -169,23 +161,26 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 		// convert file to model
 		Model m = reader.convertFromOWL(new FileInputStream(biopaxFile));
-		//importModel(m);
-		merger.merge(this, m);
+		importModel(m);
 	}
 
     
 	@Transactional(propagation=Propagation.REQUIRED)
 	public void importModel(final Model model)
 	{
-		merger.merge(this, model);
+		if(model != null && !model.getObjects().isEmpty())
+			merger.merge(this, model);
 	}
 
 
 	@Transactional(propagation=Propagation.REQUIRED)
 	public BioPAXElement getElement(final String id, final boolean eager)
 	{
+		// rdfid is PK now
+		BioPAXElement toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
+		return toReturn;
+		/* proxyId does not work!
 		BioPAXElement toReturn = null;
-		
 		String namedQuery = (eager)
 			? "org.biopax.paxtools.impl.elementByRdfIdEager"
 				: "org.biopax.paxtools.impl.elementByRdfId";
@@ -197,8 +192,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		} catch (HibernateException e) {
 			throw new RuntimeException("getElement(" + id + ") failed. ", e);
 		}
-		
 		return toReturn; // null means no such element
+		*/
 	}
 
 
@@ -335,8 +330,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			{
 				log.debug("adding " + rdfId);
 			}
-			session().save(aBioPAXElement);
-
+			
+			/* seems, unlike 'save' or 'persist', 'saveOrUpdate' 
+			does resolve duplicate key issues 
+			(because of children elements cascade=All mappings)
+			*/
+			session().saveOrUpdate(aBioPAXElement);
 		}
 	}
 
@@ -349,12 +348,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Transactional(propagation=Propagation.MANDATORY)
 	public void remove(BioPAXElement aBioPAXElement)
 	{
-		/*
-		// may work only for elements that were previously detached, i.e., returned by getById, search, etc. methods
-		session().update(aBioPAXElement); // re-associate - make persistent
-		session().delete(aBioPAXElement); 
-		// TODO compare to another approach - find persistent one by RDFId, delete it...
-		*/
 		BioPAXElement bpe = getByID(aBioPAXElement.getRDFId());
 		session().delete(bpe);
 	}

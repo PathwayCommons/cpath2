@@ -5,7 +5,6 @@ import cpath.converter.Converter;
 import static cpath.importer.internal.NormalizerImpl.*;
 
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.BioPAXLevel;
 
 import java.io.InputStream;
 
