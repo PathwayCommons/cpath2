@@ -55,10 +55,10 @@ import cpath.warehouse.CPathWarehouse;
  */
 public class WarehouseCVsTest {
 
-	CPathWarehouse warehouse;
-	OntologyManagerCvRepository cvRepository;
+	static CPathWarehouse warehouse;
+	static OntologyManagerCvRepository cvRepository;
 		
-	public WarehouseCVsTest() {
+	static {
 		Resource ont = new ClassPathResource("ontologies.xml");
 		cvRepository = new OntologyManagerCvRepository(ont, null);
 		warehouse = new CPathWarehouseImpl(null, cvRepository, null);

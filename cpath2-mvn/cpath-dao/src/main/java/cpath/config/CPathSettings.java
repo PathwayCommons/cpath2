@@ -21,4 +21,6 @@ public final class CPathSettings {
 	public static final String PROTEINS_DB = "cpath2_proteins";
 	
 	public static final String WHOUSE_SEARCH_INDEX = "cpathwhouse";
+	
+	public static final String CPATH_URI_PREFIX = "urn:pathwaycommons:";
 }

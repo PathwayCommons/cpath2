@@ -79,7 +79,8 @@ public class NormalizerImpl implements Normalizer {
 		// build the model
 		Model model = biopaxReader.convertFromOWL(new ByteArrayInputStream(biopaxOwlData.getBytes()));
 		if(model == null || model.getLevel() != BioPAXLevel.L3) {
-			throw new IllegalArgumentException(model.getLevel() + " is not supported!");
+			throw new IllegalArgumentException(model.getLevel() 
+				+ " is not supported!");
 		}
 		
 		// clean/normalize xrefs first!
