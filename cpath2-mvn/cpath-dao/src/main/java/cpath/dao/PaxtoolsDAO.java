@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Set;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * BioPAX data access (both model and repository).
@@ -112,5 +114,12 @@ public interface PaxtoolsDAO extends Model {
      * @return ordered by the element's relevance list of rdfIds
      */
     List<String> find(String query, Class<? extends BioPAXElement> filterBy);
-       
+    
+    /**
+     * Writes the complete model as BioPAX (OWL)
+     * 
+     * @param outputStream
+     * @throws IOException 
+     */
+    void exportModel(OutputStream outputStream) throws IOException;   
 }

@@ -40,6 +40,7 @@ import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.BioPAXIOHandler;
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.hibernate.*;
 import org.hibernate.search.*;
@@ -511,6 +512,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 
 		return filterClass;
+	}
+
+	/* (non-Javadoc)
+	 * @see cpath.dao.PaxtoolsDAO#exportModel(java.io.OutputStream)
+	 */
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED)
+	public void exportModel(OutputStream outputStream) throws IOException {
+		new SimpleExporter(level)
+			.convertToOWL(this, outputStream);
 	}
 	
 }
