@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.search.Explanation;
 import org.apache.lucene.util.Version;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.impl.level3.Level3FactoryImpl;
@@ -65,6 +66,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	public final static String[] ALL_FIELDS =
 			{
+					SEARCH_FIELD_ID,
 					SEARCH_FIELD_AVAILABILITY,
 					SEARCH_FIELD_COMMENT,
 					SEARCH_FIELD_KEYWORD,
@@ -72,7 +74,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 					SEARCH_FIELD_TERM,
 					SEARCH_FIELD_XREF_DB,
 					SEARCH_FIELD_XREF_ID,
-					SEARCH_FIELD_ID,
 			};
 
 	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
@@ -141,13 +142,17 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
-	public void createIndex()
-	{
+	public void createIndex() {
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
+		MassIndexer indexer = fullTextSession.createIndexer();
 		try {
-			fullTextSession.createIndexer().startAndWait();
+			int attempts = 0;
+			indexer.batchSizeToLoadObjects(50)
+				.purgeAllOnStart(true)
+				//.optimizeOnFinish(true)
+				.startAndWait();
 		} catch (InterruptedException e) {
-			throw new RuntimeException("Faild to re-build index.");
+			throw new RuntimeException("Index re-build is interrupted.");
 		}
 	}
 
@@ -262,8 +267,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * @see cpath.dao.PaxtoolsDAO#find(java.lang.String, java.lang.Class)
 	 */
 	@Override
-	public List<String> find(String query,
-			Class<? extends BioPAXElement> filterBy) {
+	@Transactional(propagation=Propagation.REQUIRED)
+	public List<String> find(String query, Class<? extends BioPAXElement> filterBy) 
+	{
 		if (log.isInfoEnabled())
 			log.info("find (IDs): " + query + ", filterBy: " + filterBy);
 
@@ -294,7 +300,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		hibQuery.setMaxResults(10);
 		
 		// use projection!
-		hibQuery.setProjection("rdfId", FullTextQuery.SCORE, 
+		hibQuery.setProjection("RDFId", FullTextQuery.SCORE, 
 				FullTextQuery.EXPLANATION //, FullTextQuery.THIS
 			);
 		// execute search
@@ -303,7 +309,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			Object[] cols = (Object[]) row;
 			String id = (String) cols[0];
   			float score = (Float) cols[1];
-  			String expl = (String) cols[2];
+  			Explanation expl = (Explanation) cols[2];
   			//BioPAXElement bpe = (BioPAXElement) cols[3];
   			if(log.isDebugEnabled())
   				log.debug("found: " + id + "; score=" + score 

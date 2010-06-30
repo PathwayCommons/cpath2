@@ -89,6 +89,7 @@ public interface PaxtoolsDAO extends Model {
      * @param filterBy class to be used as a filter.
      * @param eager boolean indicating eager (as opposed to lazy) fetching
 	 * @return an unmodifiable set of objects of the given class.
+	 *
 	 * @deprecated may be made private; 'eager' is of no use outside here?; use getObjects
      */
     <T extends BioPAXElement> Set<T> getElements(Class<T> filterBy, boolean eager);
@@ -101,8 +102,11 @@ public interface PaxtoolsDAO extends Model {
      * @param query String
 	 * @param filterBy class to be used as a filter.
      * @return ordered by relevance list of elements
+     * 
+     * @deprecated use 'find' and 'getById' combination instead
      */
     <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy);
+
     
 	 /**
 	 * Searches the lucene index and returns the set of IDs 
@@ -114,6 +118,7 @@ public interface PaxtoolsDAO extends Model {
      * @return ordered by the element's relevance list of rdfIds
      */
     List<String> find(String query, Class<? extends BioPAXElement> filterBy);
+
     
     /**
      * Writes the complete model as BioPAX (OWL)

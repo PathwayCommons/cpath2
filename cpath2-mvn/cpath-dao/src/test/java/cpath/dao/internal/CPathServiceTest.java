@@ -30,8 +30,8 @@ package cpath.dao.internal;
 
 // imports
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
@@ -39,9 +39,13 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import org.apache.commons.logging.*;
 
+import cpath.dao.CPathService;
 import cpath.dao.PaxtoolsDAO;
+import cpath.dao.CPathService.OutputFormat;
+import cpath.dao.CPathService.ResultMapKey;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -49,16 +53,13 @@ import static org.junit.Assert.*;
 /**
  * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
  */
-public class PaxtoolsHibernateDAOTest {
+public class CPathServiceTest {
 
-    private static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
+    private static Log log = LogFactory.getLog(CPathServiceTest.class);
 
     PaxtoolsDAO paxtoolsDAO;
-
+    
 	
-	/*
-	 * drop-create db schema, import data file
-	 */
 	@Before
 	public void setUp() throws Exception {
 		DataServicesFactoryBean.createSchema("cpath2_test");
@@ -69,23 +70,35 @@ public class PaxtoolsHibernateDAOTest {
 		
 		// load some data into the test storage
 		log.info("Loading BioPAX data (importModel(file))...");
-		File biopaxFile = new File(getClass().getResource("/test.owl").getFile());
+		File biopaxFile = new File(CPathServiceTest.class.getResource("/test.owl").getFile());
 		//File biopaxFile = new File(getClass().getResource("/biopax-level3-test-normalized.owl").getFile());
-		paxtoolsDAO.importModel(biopaxFile);
-		
-		log.info("importModel(file) done!");
+		try {
+			paxtoolsDAO.importModel(biopaxFile);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
 	}
-
-	@After
-	public void tearDown() throws Exception {
-	}
-
+	
 	
 	@Test
-	public void testSimple() throws Exception {
-		BioPAXElement e = paxtoolsDAO.getByID(
-				"http://www.biopax.org/examples/myExample#Protein_A");
-		assertNotNull(e);
+	public void foo() {}
+	
+	//@Test
+	public void testServiceElement() throws Exception {
+		CPathService service = new CPathServiceImpl(paxtoolsDAO);
+		
+		Map<ResultMapKey, Object> map = service.element(
+				"http://www.biopax.org/examples/myExample#Protein_A",
+				OutputFormat.BIOPAX);
+		assertNotNull(map);
+		System.out.println(map.toString());
+		
+		assertNotNull(map.get(ResultMapKey.DATA));
+		System.out.println(map.get(ResultMapKey.DATA));
+		
+		Model m = (Model) map.get(ResultMapKey.MODEL);
+		assertNotNull(m);
+		BioPAXElement e = m.getByID("http://www.biopax.org/examples/myExample#Protein_A");
 		assertTrue(e instanceof Protein);
 	
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
@@ -93,33 +106,6 @@ public class PaxtoolsHibernateDAOTest {
 			.getByID("http://www.biopax.org/examples/myExample#Protein_A");
 		assertNotNull(bpe);
 		assertTrue(bpe instanceof Protein);
-	}
-
-	
-	//@Test //fails (SimplePhysicalEntity.setEntityReference, hibernate has issues with the collections...)
-	// not so important method so far...
-	public void testSerch() throws Exception {
-		List<? extends BioPAXElement> elist = paxtoolsDAO.search("P46880", BioPAXElement.class);
-		assertFalse(elist.isEmpty());
-	}
-
-	
-	@Test
-	public void testFind() throws Exception {
-		List<String> list = paxtoolsDAO.find("P46880", BioPAXElement.class);
-		assertFalse(list.isEmpty());
-		assertTrue(list.contains("urn:pathwaycommons:UnificationXref:UniProt_P46880"));
-		System.out.println("find by 'P46880' returned: " + list.toString());
-		
-		list = paxtoolsDAO.find("P46880", ProteinReference.class);
-		assertTrue(list.size()==1);
-		assertTrue(list.contains("urn:miriam:uniprot:P46880"));
-	}
-	
-	
-	//@Test // takes forever...
-	public void testIndex() {
-		paxtoolsDAO.createIndex();
 	}
 
 }
