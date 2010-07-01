@@ -41,6 +41,7 @@ public interface DataServices {
      * @param dbName
 	 * @param drop boolean
 	 * @return boolean (true - success, false - failure)
+	 * @deprecated use static #{@link cpath.dao.internal.DataServicesFactoryBean#createSchema(String)}
      */
     boolean createDatabase(final String dbName, final boolean drop);
     

@@ -22,6 +22,7 @@
         	<props>
         		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_test</prop>
 				<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->
+				<prop key="hibernate.connection.release_mode">auto</prop>  
        		</props>
         </property>
         <property name="annotatedClasses">

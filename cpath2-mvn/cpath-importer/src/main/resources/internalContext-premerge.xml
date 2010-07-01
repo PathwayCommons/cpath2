@@ -19,6 +19,12 @@
     <bean id="premergeSessionFactory"
         class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="premergeDataSource"/>
+        <property name="hibernateProperties">
+		<props>
+		<prop key="hibernate.hbm2ddl.auto"></prop><!-- no value - to prevent accidental tables drop -->	
+		<prop key="hibernate.connection.release_mode">auto</prop>	
+		</props>
+		</property>
         <property name="annotatedClasses">
         	<list>
 				<value>org.biopax.paxtools.impl.BioPAXElementImpl</value>

@@ -363,23 +363,16 @@ public final class PremergeImpl extends Thread implements Premerge {
 	 */
 	@Transactional
 	private boolean persistPathway(final PathwayData pathwayData, final Model model) {
-		// get the DataSource factory
-		DataServices dataServices = (DataServices) applicationContext.getBean("&cpath2_meta");
-		
 		// create new db
-		if (!dataServices.createDatabase(metadata.getIdentifier(), true)) {
-			return false;
-		}
+		DataServicesFactoryBean.createSchema(metadata.getIdentifier());
 		
+		// get the DataSource factory (that is aware of the driver, user, and password)
+		DataServices dataServices = (DataServices) applicationContext.getBean("&cpath2_meta");
 		// use the DataSource
 		DataSource premergeDataSource = dataServices.getDataSource(metadata.getIdentifier());
-		
-		/* 
-		 * get application context after setting custom datasource (replaces old one)
-		 * DataServicesFactoryBean.getDataSourceMap() returns the thread-local 
-		 * instance of the map; so, should work...
-		 */
 		DataServicesFactoryBean.getDataSourceMap().put("premergeDataSource", premergeDataSource);
+		
+		// get application context after setting the custom data source (replaces old one)
 		ApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");
 		

@@ -47,10 +47,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
-import com.mchange.v2.c3p0.PoolBackedDataSource;
 
 /**
  * This is a fantastic (crazy) factory that 
@@ -152,20 +150,16 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
     
     @Override
     public DataSource getObject() {
-    	DataSource ds = getDataSourceMap().get(beanName);
-    	if(ds == null) {
-    		// create new one
-    		ds = getDataSource(beanName);
-    		getDataSourceMap().put(beanName, ds);
-    	}
-        return ds; 
+    	return getDataSource(beanName);
     }
 
+    
     @Override
     public Class<?> getObjectType() {
         return getObject().getClass();
     }
 
+    
     @Override
     public boolean isSingleton() {
         return true;
@@ -189,7 +183,8 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		dataSource = getDataSource(moleculesDb);
 		getDataSourceMap().put(CPathSettings.MOLECULES_DB, dataSource);
 	}
-    
+
+	
     public boolean createDatabase(final String db, final boolean drop) {
 		boolean toReturn = true;
 
@@ -218,17 +213,21 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 
 
 	/**
-	 * Factory-method that get a new data source using instance
+	 * - instance factory-method 
+	 * that returns the existing data source 
+	 * or creates a new one using instance
 	 * variables: driver, connection, user, password, and
-	 * parameter database name.
+	 * the database name.
 	 * 
-	 * (non-Javadoc)
-	 * @see cpath.dao.DataServices#getDataSource(java.lang.String)
-	 * 
+	 * @param databaseName 
 	 */
 	public DataSource getDataSource(String databaseName) {
-		return getDataSource(dbUser, dbPassword, dbDriver, 
-				dbConnection + databaseName);
+    	DataSource ds = getDataSourceMap().get(databaseName);
+    	if(ds == null) { // create new one
+    		ds = getDataSource(dbUser, dbPassword, dbDriver, 
+    				dbConnection + databaseName);
+    	}
+        return ds; 
 	}
 	
 	
@@ -257,10 +256,10 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		dataSource.setPassword(dbPassword);
 		
 		// c3p0 props
-		//dataSource.setAcquireIncrement(2);
+		dataSource.setAcquireIncrement(2);
 		dataSource.setIdleConnectionTestPeriod(100);
-		dataSource.setInitialPoolSize(1);
-		dataSource.setMaxPoolSize(99);
+		dataSource.setInitialPoolSize(0);
+		dataSource.setMaxPoolSize(20);
 		
 		return dataSource;
 
