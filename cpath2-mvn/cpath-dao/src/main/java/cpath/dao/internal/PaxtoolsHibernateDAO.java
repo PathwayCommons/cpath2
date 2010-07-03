@@ -134,7 +134,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 
 	
-	@Transactional(propagation=Propagation.REQUIRED)
 	Session session() {
 		return sessionFactory.getCurrentSession();
 	}
@@ -156,8 +155,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 	}
 
-
-	@Transactional(propagation=Propagation.REQUIRED)
+	//not transactional (but it's 'merge' method that creates a new transaction)
 	public void importModel(File biopaxFile) throws FileNotFoundException
 	{
 		if (log.isInfoEnabled())
@@ -167,15 +165,37 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 		// convert file to model
 		Model m = reader.convertFromOWL(new FileInputStream(biopaxFile));
-		importModel(m);
+		merge(m);
 	}
+	
 
-    
 	@Transactional(propagation=Propagation.REQUIRED)
-	public void importModel(final Model model)
+	@Override
+	public void merge(final Model model)
 	{
-		if(model != null && !model.getObjects().isEmpty())
-			merger.merge(this, model);
+		/* TODO level3 property/propertyOf mapping have to be fixed for this to work!
+		 * Annotations must move to new setter/getter pair that would not call
+		 * the inverse prop. 'add' from the setter.
+		 */
+		// Flash session often (because of cascades...)
+		//Session session = session();
+		//session.setFlushMode(FlushMode.MANUAL); 
+		if(model != null && !model.getObjects().isEmpty()) {
+			//merger.merge(this, model); 
+			/* SimpleMerger is unsafe and, probably, not required at all :) 
+			 * Session itself does the RDFId-based merge, and it seems working!
+			 */
+			Set<BioPAXElement> sourceElements = model.getObjects();
+			for (BioPAXElement bpe : sourceElements) {
+				BioPAXElement paxElement = getByID(bpe.getRDFId());
+				if (paxElement == null) {
+					add(bpe); 
+					//session.flush(); //TODO see the previous
+					//session.clear();
+				}
+			}
+		}
+		//session.setFlushMode(FlushMode.AUTO);
 	}
 
 
@@ -184,11 +204,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	{
 		if(id == null || "".equals(id)) 
 			throw new RuntimeException("getElement(null) is called!");
-		// rdfid is PK now
-		BioPAXElement toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
-		return toReturn;
-		/* proxyId does not work!
 		BioPAXElement toReturn = null;
+		// rdfid is Primary Key now (see BioPAXElementImpl)
+		toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
+		
+		/* proxyId does not work well!
 		String namedQuery = (eager)
 			? "org.biopax.paxtools.impl.elementByRdfIdEager"
 				: "org.biopax.paxtools.impl.elementByRdfId";
@@ -203,8 +223,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		} catch (HibernateException e) {
 			throw new RuntimeException("getElement(" + id + ") failed. ", e);
 		}
-		return toReturn; // null means no such element
 		*/
+		
+		return toReturn; // null means no such element
 	}
 
 
@@ -346,7 +367,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			does resolve duplicate key issues 
 			(because of children elements cascade=All mappings)
 			*/
-			session().saveOrUpdate(aBioPAXElement);
+			session().merge(aBioPAXElement); // argument aBioPAXElement is merged (saved/updated), but this remains detached/transient!
+			//session().saveOrUpdate(aBioPAXElement); // element becomes persistent; throws exception, e.g., when aBioPAXElement refers to previously saved one...
 		}
 	}
 

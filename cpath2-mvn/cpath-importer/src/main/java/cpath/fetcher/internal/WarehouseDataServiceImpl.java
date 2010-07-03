@@ -33,7 +33,7 @@ public class WarehouseDataServiceImpl implements WarehouseDataService {
     
     /**
      * (non-Javadoc)
-     * @see cpath.fetcher.WarehouseDataService#storeWarehouseData(cpath.warehouse.beans.Metadata, org.biopax.paxtools.model.Model)
+     * @see cpath.fetcher.WarehouseDataService#storeWarehouseData(cpath.warehouse.beans.Metadata, Model)
      */
     @Override
     public void storeWarehouseData(final Metadata metadata, final Model model) throws IOException {

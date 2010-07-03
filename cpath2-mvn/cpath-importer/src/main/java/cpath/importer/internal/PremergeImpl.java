@@ -385,7 +385,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 		
 		// get a ref to PaxtoolsDAO
 		PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
-		paxtoolsDAO.importModel(model);
+		paxtoolsDAO.merge(model);
 
 		// outta here
 		return true;

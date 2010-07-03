@@ -47,7 +47,6 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.util.ClassFilterSet;
-import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.miriam.MiriamLink;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,7 +56,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -108,8 +106,6 @@ public final class MergerImpl implements Merger {
 	 */
 	@Override
 	public void merge() {
-		
-		SimpleMerger simpleMerger = new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
 
 		// create pc model
 		Model pcModel= BioPAXLevel.L3.getDefaultFactory().createModel();
@@ -175,12 +171,12 @@ public final class MergerImpl implements Merger {
 				}
 			}
 
-			// local merge
-			simpleMerger.merge(pcModel, pathwayModel);
+			// local merge (id-based)
+			pcModel.merge(pathwayModel);
 		}
 		
 		// final merge
-		simpleMerger.merge(pcDAO, pcModel);
+		pcDAO.merge(pcModel);
 	}
 
 	/**
@@ -295,14 +291,19 @@ public final class MergerImpl implements Merger {
 		pcModel.add(inchiSMR);
 
 		// the follow steps are required for simple merger to work properly
+		pathwayModel.remove(incomingSMR);
+		pathwayModel.add(inchiSMR);
+		
+		/* [igor] because - above is the simpler and more natural way to go.
 		// 1) change rdf id of incoming smr to inchi smr id
 		String incomingRDFId = incomingSMR.getRDFId();
 		String inchiRDFId = inchiSMR.getRDFId();
-		incomingSMR.setRDFId(inchiRDFId);
+		incomingSMR.setRDFId(inchiRDFId); // [igor] doesn't make sense, because the following pathwayModelMap.remove(incomingRDFId) removes the object anyway!
 		// 2) update id map of incoming model and replace id of incoming smr with inchi smr id
 		Map<String, BioPAXElement> pathwayModelMap = pathwayModel.getIdMap();
-		pathwayModelMap.remove(incomingRDFId);
-		pathwayModelMap.put(inchiRDFId, inchiSMR);
+		pathwayModelMap.remove(incomingRDFId); // [igor] this removes the object from the model!
+		pathwayModelMap.put(inchiRDFId, inchiSMR); // adds the object to the model, bypassing the natural 'add' method's checks, why?..
+		*/
 	}
 
 	/**

@@ -255,11 +255,11 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		dataSource.setUser(dbUser);
 		dataSource.setPassword(dbPassword);
 		
-		// c3p0 props
-		dataSource.setAcquireIncrement(2);
-		dataSource.setIdleConnectionTestPeriod(100);
+		// c3p0 properties
+		//dataSource.setAcquireIncrement(3);
+		//dataSource.setIdleConnectionTestPeriod(100);
 		dataSource.setInitialPoolSize(0);
-		dataSource.setMaxPoolSize(20);
+		dataSource.setMaxPoolSize(3);
 		
 		return dataSource;
 

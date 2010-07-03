@@ -53,15 +53,6 @@ public interface PaxtoolsDAO extends Model {
 	/**
 	 * Persists the given model to the db.
 	 *
-	 * @param model Model
-	 * @param createIndex boolean
-	 */
-	void importModel(Model model);
-
-	
-	/**
-	 * Persists the given model to the db.
-	 *
 	 * @param biopaxFile File
 	 * @param createIndex boolean
 	 * @throws FileNoteFoundException

@@ -15,14 +15,13 @@
 
 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
-	<bean id="mainSessionFactory"
+	<bean id="testSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="cpath2_test"/>
         <property name="hibernateProperties">
         	<props>
         		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_test</prop>
-				<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->
-				<prop key="hibernate.connection.release_mode">auto</prop>  
+				<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops --> 
        		</props>
         </property>
         <property name="annotatedClasses">
@@ -39,17 +38,17 @@
     </bean>
 
     <!-- enable the configuration of transactional behavior based on annotations -->
-    <tx:annotation-driven transaction-manager="mainTransactionManager"/>
+    <tx:annotation-driven transaction-manager="testTransactionManager"/>
     
 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
     
-    <bean id="mainTransactionManager"
+    <bean id="testTransactionManager"
         class="org.springframework.orm.hibernate3.HibernateTransactionManager">
-        <property name="sessionFactory" ref="mainSessionFactory" />
+        <property name="sessionFactory" ref="testSessionFactory" />
     </bean>
 
     <bean id="paxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
-        <property name="sessionFactory" ref="mainSessionFactory"/>
+        <property name="sessionFactory" ref="testSessionFactory"/>
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>

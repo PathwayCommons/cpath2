@@ -4,9 +4,6 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -22,6 +19,12 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 
 	// logger
     private static Log log = LogFactory.getLog(UniprotConverterImpl.class);
+    
+    private final Map<Integer, BioSource> organisms;
+    
+	public UniprotConverterImpl() {
+		organisms = new HashMap<Integer, BioSource>();
+	}
 
 	/**
 	 * (non-Javadoc>
@@ -29,9 +32,6 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 	 */
 	@Override
 	public void convert(final InputStream is, final Model model) {
-
-		// used below
-		SimpleMerger simpleMerger = new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
 
 		// ref to reader here so
 		// we can close in finally clause
@@ -85,14 +85,14 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 
                     // debug: write the one-protein-reference model
                     if(log.isDebugEnabled()) {
-                    	ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    	(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(proteinReferenceModel, out);
+                    	//ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    	//(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(proteinReferenceModel, out);
                     	log.debug("So far line# " + linesReadSoFar + 
-                    		"; merging new protein model:\n" + out.toString());
+                    		"; merging new protein reference (model):\n");// + out.toString());
                     }
                     
 					// we have finished creating local model, merge into global one now
-					simpleMerger.merge(model, proteinReferenceModel);
+					model.merge(proteinReferenceModel);
                     
                     dataElements = new HashMap<String, StringBuffer>();
                 }
@@ -363,16 +363,41 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 	 * @param name String
 	 * @return BioSource
 	 */
-	private BioSource getBioSource(Model proteinReferenceModel, String rdfId, String taxId, String name) {
+	private BioSource getBioSource(Model proteinReferenceModel, String rdfId,
+			String taxId, String name) 
+	{
+		// check taxonomy ID is integer value
+		Integer taxonomy = null;
+		try {
+			taxonomy = Integer.valueOf(taxId);
+		} catch (NumberFormatException e) {
+			throw new RuntimeException("Faild to convert " + taxId
+					+ " into integer taxonomy ID!", e);
+		}
 
-		BioSource toReturn = (BioSource) proteinReferenceModel.addNew(BioSource.class, rdfId);
-		toReturn.setStandardName(name);
-		UnificationXref taxonXref =
-			(UnificationXref) proteinReferenceModel.addNew(UnificationXref.class, L3_UNIFICATIONXREF_URI + "taxonomy_" + taxId);
-		taxonXref.setDb("taxonomy");
-		taxonXref.setId(taxId);
-		// TODO update when taxonXref is removed (deprecated property)
-		toReturn.addXref((UnificationXref)taxonXref);
+		BioSource toReturn = null;
+
+		// check the organism was previously used, re-use it
+		if(taxonomy==null || taxonomy <= 0) {
+			throw new RuntimeException("Illegal taxonomy ID: " + taxId);
+		} else if (organisms.containsKey(taxonomy)) {
+			toReturn = organisms.get(taxonomy);
+			proteinReferenceModel.add(toReturn);
+			proteinReferenceModel.add(toReturn.getXref().iterator().next());
+		} else {
+			toReturn = (BioSource) proteinReferenceModel.addNew(
+					BioSource.class, rdfId);
+			toReturn.setStandardName(name);
+			UnificationXref taxonXref = (UnificationXref) proteinReferenceModel
+					.addNew(UnificationXref.class, L3_UNIFICATIONXREF_URI
+							+ "taxonomy_" + taxId);
+			taxonXref.setDb("taxonomy");
+			taxonXref.setId(taxId);
+			// TODO update when taxonXref is removed (deprecated property)
+			toReturn.addXref((UnificationXref) taxonXref);
+			// save to re-use when importing other proteins 
+			organisms.put(taxonomy, toReturn);
+		}
 		return toReturn;
 	}
 }
