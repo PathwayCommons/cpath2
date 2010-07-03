@@ -3,8 +3,6 @@ package cpath.converter.internal;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
-import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,8 +23,6 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 	private String ENTRY_END;
 	private SDFUtil.SOURCE source;
 
-	// ref to simple merger
-	private SimpleMerger simpleMerger;
 
 	// testing code (inchi key is key, space delimited string of chebi ids)
 	public Map<String, String> INCHI_KEY_MAP = new HashMap<String, String>();
@@ -44,7 +40,6 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 		this.source = source;
 		this.ENTRY_START = entryStart;
 		this.ENTRY_END = entryEnd;
-		this.simpleMerger = new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
 	}
 	
 	/**
@@ -141,7 +136,7 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 		updateTestingMap(smallMoleculeReferenceModel);
 
 		// merge
-		simpleMerger.merge(model, smallMoleculeReferenceModel);
+		model.merge(smallMoleculeReferenceModel);
 	}
 
 	// testing code

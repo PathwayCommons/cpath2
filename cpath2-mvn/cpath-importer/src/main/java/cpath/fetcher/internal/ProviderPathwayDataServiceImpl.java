@@ -171,7 +171,8 @@ public class ProviderPathwayDataServiceImpl implements ProviderPathwayDataServic
 							 " provider: " + metadata.getIdentifier() +
 							 " version: " + metadata.getVersion() +
 							 " digest: " + digest);
-					PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), metadata.getVersion(), entry.getName(), digest, stringBuilder.toString());
+					PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), 
+						metadata.getVersion(), entry.getName(), digest, stringBuilder.toString());
 				
 					// add object to return collection
 					toReturn.add(pathwayData);

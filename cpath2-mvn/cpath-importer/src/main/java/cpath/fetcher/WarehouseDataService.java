@@ -3,9 +3,10 @@ package cpath.fetcher;
 // imports
 import cpath.warehouse.beans.Metadata;
 
-import org.biopax.paxtools.model.Model;
 
 import java.io.IOException;
+
+import org.biopax.paxtools.model.Model;
 
 /**
  * Warehouse Data service.  Retrieves protein and small molecule data on behalf of warehouse.

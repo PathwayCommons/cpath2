@@ -64,7 +64,7 @@ public class CPathWarehouseTest {
 		// load beans
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 			new String[]{
-				"classpath:testContext-dao.xml", 
+				"classpath:testContext-allDAO.xml", 
 				"classpath:applicationContext-cpathFetcher.xml"});
 		PaxtoolsDAO moleculesDAO = (PaxtoolsDAO) context.getBean("moleculesDAO");
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");

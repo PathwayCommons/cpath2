@@ -35,6 +35,9 @@ import java.io.InputStream;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
+import org.biopax.paxtools.controller.SimpleMerger;
+import org.biopax.paxtools.impl.ModelImpl;
+import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ProteinReference;
@@ -57,11 +60,24 @@ public class UniprotConverterImplTest {
 		Converter converter = new UniprotConverterImpl();
 		InputStream is = getClass().getResourceAsStream("/test_uniprot_data.dat.gz");
 		GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(is));
-		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
+		
+		// extend Model for the converter the calls 'merge' method to work
+		Model model = new ModelImpl(BioPAXLevel.L3.getDefaultFactory()) {
+			/* (non-Javadoc)
+			 * @see org.biopax.paxtools.impl.ModelImpl#merge(org.biopax.paxtools.model.Model)
+			 */
+			@Override
+			public void merge(Model source) {
+				SimpleMerger simpleMerger = new SimpleMerger(new SimpleEditorMap(getLevel()));
+				simpleMerger.merge(this, source);
+			}
+		};
+		
+		
 		converter.convert(zis, model);
 		
 		Set<ProteinReference> proteinReferences = model.getObjects(ProteinReference.class);
-		assertTrue(proteinReferences.size()==2);
+		assertTrue(proteinReferences.size()==6);
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
 		
 		//TODO add more checks that the conversion went ok...

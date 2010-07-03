@@ -31,7 +31,7 @@ public class DataServicesTest {
 			// create test DBs and all the tables 
 			DataServicesFactoryBean.createSchema("cpath2_test");
 			ApplicationContext context = new ClassPathXmlApplicationContext(
-				new String[] {"classpath:testContext-dao.xml",
+				new String[] {"classpath:testContext-allDAO.xml",
 				"classpath:applicationContext-cpathFetcher.xml"});
 			proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
 			warehouseDataService = (WarehouseDataService) context.getBean("warehouseDataService");
@@ -61,6 +61,8 @@ public class DataServicesTest {
 		//String location = "file://" + getClass().getResource("/test_uniprot_data.dat.gz").getPath();
 		//location = "classpath:test_uniprot_data.dat.gz";
 		//location = "ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz"
+		
+		// in case there's no "metadata page" prepared -
 		metadata = new Metadata(
 				"UNIPROT-TEST", "Uniprot TEST", 
 				Float.valueOf("15.15"), "Mar 2, 2010",  
