@@ -357,12 +357,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			{
 				log.debug("adding " + rdfId);
 			}
+			
 			/* seems, unlike 'save' or 'persist', 'saveOrUpdate' 
-			does resolve duplicate key issues 
-			(because of children elements cascade=All mappings)
-			*/
-			session().merge(aBioPAXElement); // argument aBioPAXElement is merged (saved/updated), but this remains detached/transient!
-			//session().saveOrUpdate(aBioPAXElement); // element becomes persistent; throws exception, e.g., when aBioPAXElement refers to previously saved one...
+			 * does resolve duplicate key issues (because of 
+			 * children elements cascade=All mappings)
+			 * Element becomes persistent; saveOrUpdate throws exception 
+			 * when aBioPAXElement (or one of its children) 
+			 * has been previously saved...
+			 */
+			//session().saveOrUpdate(aBioPAXElement);
+			session().merge(aBioPAXElement); // aBioPAXElement is saved/updated, but this remains detached/transient!
 		}
 	}
 

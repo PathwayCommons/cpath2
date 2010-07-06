@@ -328,11 +328,11 @@ public class Admin implements Runnable {
 
 		// interate over all metadata
 		for (Metadata metadata : metadataCollection) {
-			context = new ClassPathXmlApplicationContext(new String [] {
-	            		"classpath:applicationContext-whouseProteins.xml"});
-	        PaxtoolsDAO proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
 			// only process protein references data
 			if (command == COMMAND.FETCH_PROTEIN_DATA && metadata.getType() == Metadata.TYPE.PROTEIN) {
+				context = new ClassPathXmlApplicationContext(new String [] {
+        		"classpath:applicationContext-whouseProteins.xml"});
+				PaxtoolsDAO proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
 				// store the data (actually, a set of ProteinReferenceProxy !)
 				warehouseDataService.storeWarehouseData(metadata, proteinsDAO);
         	}
