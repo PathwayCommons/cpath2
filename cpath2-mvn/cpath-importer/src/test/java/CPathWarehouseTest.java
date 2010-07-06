@@ -38,7 +38,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
-import cpath.fetcher.*;
+import cpath.fetcher.internal.CPathFetcherImpl;
 import cpath.warehouse.*;
 import cpath.warehouse.beans.*;
 import cpath.warehouse.beans.Metadata.TYPE;
@@ -63,9 +63,7 @@ public class CPathWarehouseTest {
 		
 		// load beans
 		ApplicationContext context = new ClassPathXmlApplicationContext(
-			new String[]{
-				"classpath:testContext-allDAO.xml", 
-				"classpath:applicationContext-cpathFetcher.xml"});
+			new String[]{"classpath:testContext-allDAO.xml"});
 		PaxtoolsDAO moleculesDAO = (PaxtoolsDAO) context.getBean("moleculesDAO");
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		PaxtoolsDAO proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
@@ -75,22 +73,17 @@ public class CPathWarehouseTest {
 		warehouse = new CPathWarehouseImpl(moleculesDAO, null, proteinsDAO);	
 		
 		// load test data
-		WarehouseDataService warehouseDataService = 
-			(WarehouseDataService) context.getBean("warehouseDataService");
-		ProviderMetadataService metadataService = 
-			(ProviderMetadataService) context.getBean("providerMetadataService");
-		ProviderPathwayDataService pathwayDataService = 
-			(ProviderPathwayDataService) context.getBean("providerPathwayDataService");
-        Collection<Metadata> metadata = metadataService.getProviderMetadata("classpath:metadata.html");
+		CPathFetcherImpl fetcher = new CPathFetcherImpl();
+        Collection<Metadata> metadata = fetcher.getProviderMetadata("classpath:metadata.html");
         for (Metadata mdata : metadata) {
             metadataDAO.importMetadata(mdata);
             if(mdata.getType() == TYPE.PROTEIN) {
-            	warehouseDataService.storeWarehouseData(mdata, proteinsDAO);
+            	fetcher.storeWarehouseData(mdata, proteinsDAO);
             } else if(mdata.getType() == TYPE.SMALL_MOLECULE) {
-            	warehouseDataService.storeWarehouseData(mdata, moleculesDAO);
+            	fetcher.storeWarehouseData(mdata, moleculesDAO);
             } else {
             	Collection<PathwayData> pathwayData =
-					pathwayDataService.getProviderPathwayData(mdata);
+            		fetcher.getProviderPathwayData(mdata);
 				for (PathwayData pwData : pathwayData) {
 					pathwayDataDAO.importPathwayData(pwData);
 				}

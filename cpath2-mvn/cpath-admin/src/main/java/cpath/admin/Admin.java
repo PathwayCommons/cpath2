@@ -35,6 +35,7 @@ import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.WarehouseDataService;
 import cpath.fetcher.ProviderMetadataService;
 import cpath.fetcher.ProviderPathwayDataService;
+import cpath.fetcher.internal.CPathFetcherImpl;
 import cpath.importer.Merger;
 import cpath.importer.internal.PremergeDispatcher;
 import cpath.warehouse.MetadataDAO;
@@ -43,7 +44,6 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
 import org.apache.log4j.PropertyConfigurator;
-import org.biopax.paxtools.model.Model;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -244,10 +244,9 @@ public class Admin implements Runnable {
     private void fetchMetadata(final String location) throws IOException {
         ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:applicationContext-whouseDAO.xml", 
-					"classpath:applicationContext-cpathFetcher.xml"});
+            	"classpath:applicationContext-whouseDAO.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-        ProviderMetadataService providerMetadataService = (ProviderMetadataService) context.getBean("providerMetadataService");
+        ProviderMetadataService providerMetadataService = new CPathFetcherImpl();
     	
         // grab the data
         Collection<Metadata> metadata = providerMetadataService.getProviderMetadata(location);
@@ -268,11 +267,10 @@ public class Admin implements Runnable {
 
     	ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:applicationContext-whouseDAO.xml", 
-					"classpath:applicationContext-cpathFetcher.xml"});
+            	"classpath:applicationContext-whouseDAO.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
         PathwayDataDAO pathwayDataDAO = (PathwayDataDAO) context.getBean("pathwayDataDAO");
-        ProviderPathwayDataService providerPathwayDataService = (ProviderPathwayDataService) context.getBean("providerPathwayDataService");
+        ProviderPathwayDataService providerPathwayDataService = new CPathFetcherImpl();
     	
 		// get metadata
 		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
@@ -315,14 +313,9 @@ public class Admin implements Runnable {
     private void fetchWarehouseData(final COMMAND command, final String provider) throws IOException {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:applicationContext-whouseDAO.xml", 
-            		"classpath:applicationContext-whouseProteins.xml", 
-            		"classpath:applicationContext-whouseMolecules.xml", 
-					"classpath:applicationContext-cpathFetcher.xml"});
+            		"classpath:applicationContext-whouseDAO.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-        PaxtoolsDAO proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
-        PaxtoolsDAO smallMoleculesDAO = (PaxtoolsDAO) context.getBean("moleculesDAO");
-        WarehouseDataService warehouseDataService = (WarehouseDataService) context.getBean("warehouseDataService");
+        WarehouseDataService warehouseDataService = new CPathFetcherImpl();
     	
 		// get metadata
 		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
@@ -335,12 +328,18 @@ public class Admin implements Runnable {
 
 		// interate over all metadata
 		for (Metadata metadata : metadataCollection) {
+			context = new ClassPathXmlApplicationContext(new String [] {
+	            		"classpath:applicationContext-whouseProteins.xml"});
+	        PaxtoolsDAO proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
 			// only process protein references data
 			if (command == COMMAND.FETCH_PROTEIN_DATA && metadata.getType() == Metadata.TYPE.PROTEIN) {
 				// store the data (actually, a set of ProteinReferenceProxy !)
 				warehouseDataService.storeWarehouseData(metadata, proteinsDAO);
         	}
 			else if (command == COMMAND.FETCH_SMALL_MOLECULE_DATA && metadata.getType() == Metadata.TYPE.SMALL_MOLECULE) {
+				context = new ClassPathXmlApplicationContext(new String [] { 	
+		            		"classpath:applicationContext-whouseMolecules.xml"});
+		        PaxtoolsDAO smallMoleculesDAO = (PaxtoolsDAO) context.getBean("moleculesDAO");
 				// store the data (actually, a set of SmallMoleculeReferenceProxy !)
 				warehouseDataService.storeWarehouseData(metadata, smallMoleculesDAO);
 			}

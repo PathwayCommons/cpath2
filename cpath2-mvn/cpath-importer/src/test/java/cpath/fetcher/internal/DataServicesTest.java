@@ -14,8 +14,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
-import cpath.fetcher.ProviderMetadataService;
-import cpath.fetcher.WarehouseDataService;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.TYPE;
 
@@ -23,19 +21,16 @@ public class DataServicesTest {
 	private static Log log = LogFactory.getLog(DataServicesTest.class);
 	
 	PaxtoolsDAO proteinsDAO;
-	WarehouseDataService warehouseDataService;
-	ProviderMetadataService metadataService;
+	CPathFetcherImpl fetcher;
 	
 	@Before
 	public void setUp() throws Exception {
 			// create test DBs and all the tables 
 			DataServicesFactoryBean.createSchema("cpath2_test");
 			ApplicationContext context = new ClassPathXmlApplicationContext(
-				new String[] {"classpath:testContext-allDAO.xml",
-				"classpath:applicationContext-cpathFetcher.xml"});
+				new String[] {"classpath:testContext-allDAO.xml"});
 			proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
-			warehouseDataService = (WarehouseDataService) context.getBean("warehouseDataService");
-			metadataService = (ProviderMetadataService) context.getBean("providerMetadataService");
+			fetcher = new CPathFetcherImpl();
 	}
 	
 	@Test
@@ -43,7 +38,7 @@ public class DataServicesTest {
 		// any resource location now works (not only http://...)!
 		String url = "classpath:metadata.html";
 		System.out.println("Loading metadata from " + url);
-		Collection<Metadata> metadatas = metadataService.getProviderMetadata(url);
+		Collection<Metadata> metadatas = fetcher.getProviderMetadata(url);
 		assertEquals(2, metadatas.size());
 		boolean found = false;
 		Metadata metadata = null;
@@ -73,7 +68,7 @@ public class DataServicesTest {
 				"cpath.converter.internal.UniprotConverterImpl");
 		*/
 		
-		warehouseDataService.storeWarehouseData(metadata, proteinsDAO);
+		fetcher.storeWarehouseData(metadata, proteinsDAO);
 		assertFalse(proteinsDAO.getObjects().isEmpty());
 		assertTrue(proteinsDAO.containsID("urn:miriam:uniprot:P62158"));
 		

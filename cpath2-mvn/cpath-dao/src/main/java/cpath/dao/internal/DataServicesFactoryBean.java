@@ -259,7 +259,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		//dataSource.setAcquireIncrement(3);
 		//dataSource.setIdleConnectionTestPeriod(100);
 		dataSource.setInitialPoolSize(0);
-		dataSource.setMaxPoolSize(3);
+		dataSource.setMaxPoolSize(30);
 		
 		return dataSource;
 

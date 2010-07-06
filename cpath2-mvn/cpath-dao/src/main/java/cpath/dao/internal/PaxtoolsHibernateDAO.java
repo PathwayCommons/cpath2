@@ -177,9 +177,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		 * Annotations must move to new setter/getter pair that would not call
 		 * the inverse prop. 'add' from the setter.
 		 */
-		// Flash session often (because of cascades...)
-		//Session session = session();
-		//session.setFlushMode(FlushMode.MANUAL); 
 		if(model != null && !model.getObjects().isEmpty()) {
 			//merger.merge(this, model); 
 			/* SimpleMerger is unsafe and, probably, not required at all :) 
@@ -190,12 +187,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				BioPAXElement paxElement = getByID(bpe.getRDFId());
 				if (paxElement == null) {
 					add(bpe); 
-					//session.flush(); //TODO see the previous
-					//session.clear();
 				}
 			}
 		}
-		//session.setFlushMode(FlushMode.AUTO);
 	}
 
 
