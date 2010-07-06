@@ -375,14 +375,7 @@ public final class PremergeImpl extends Thread implements Premerge {
 		// get application context after setting the custom data source (replaces old one)
 		ApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");
-		
-		// create schema (tables)
-		AnnotationSessionFactoryBean sessionFactoryBean = (AnnotationSessionFactoryBean) 
-			context.getBean("premergeSessionFactory");
-		sessionFactoryBean.dropDatabaseSchema();
-		sessionFactoryBean.createDatabaseSchema();
-		
-		
+				
 		// get a ref to PaxtoolsDAO
 		PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
 		paxtoolsDAO.merge(model);
