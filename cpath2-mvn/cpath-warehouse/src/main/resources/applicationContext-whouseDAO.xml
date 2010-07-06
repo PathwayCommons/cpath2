@@ -13,6 +13,9 @@
     <context:annotation-config/>
     
  	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+ 	
+ 	<!-- enable the configuration of transactional behavior based on annotations -->
+    <tx:annotation-driven transaction-manager="whouseTransactionManager"/>
        
     <bean id="whouseSessionFactory"
         class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
@@ -26,9 +29,6 @@
 		<property name="packagesToScan" value="cpath.warehouse.beans" /> 
     </bean>
 
-    <!-- enable the configuration of transactional behavior based on annotations -->
-    <tx:annotation-driven transaction-manager="whouseTransactionManager"/>
-    
 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
 
     <bean id="cpath2_meta" class="cpath.dao.internal.DataServicesFactoryBean"/>

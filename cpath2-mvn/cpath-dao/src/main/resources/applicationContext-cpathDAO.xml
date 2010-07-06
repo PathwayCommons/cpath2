@@ -14,6 +14,9 @@
 	<context:annotation-config />
 
 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+	
+    <!-- enable the configuration of transactional behavior based on annotations -->
+    <tx:annotation-driven transaction-manager="mainTransactionManager"/>
 
 	<bean id="mainSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
@@ -32,19 +35,17 @@
 		 <property name="packagesToScan">
 			<list>
 				<value>org.biopax.paxtools.impl.level3</value>
-				<value>cpath.warehouse.beans</value>
 			</list>
 		 </property>        
     </bean>
 
-    <!-- enable the configuration of transactional behavior based on annotations -->
-    <tx:annotation-driven transaction-manager="mainTransactionManager"/>
     
 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
     
     <bean id="mainTransactionManager"
         class="org.springframework.orm.hibernate3.HibernateTransactionManager">
         <property name="sessionFactory" ref="mainSessionFactory" />
+        <qualifier value="main" type="org.springframework.beans.factory.annotation.Qualifier"/>
     </bean>
 
     <bean id="paxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
