@@ -6,7 +6,7 @@ import cpath.cleaner.Cleaner;
 /**
  * Implementation of Cleaner interface for HPRD ppi data.
  */
-public final class HPRDCleanerImpl extends BaseCleanerImpl implements Cleaner {
+public class HPRDCleanerImpl extends BaseCleanerImpl implements Cleaner {
 
 	/**
 	 * (non-Javadoc>

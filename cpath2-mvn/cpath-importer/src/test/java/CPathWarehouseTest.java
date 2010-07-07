@@ -70,7 +70,7 @@ public class CPathWarehouseTest {
 		PathwayDataDAO pathwayDataDAO = (PathwayDataDAO) context.getBean("pathwayDataDAO");
 
 		// create Warehouse instance
-		warehouse = new CPathWarehouseImpl(moleculesDAO, null, proteinsDAO);	
+		warehouse = new CPathWarehouseImpl(proteinsDAO, null, moleculesDAO);	
 		
 		// load test data
 		CPathFetcherImpl fetcher = new CPathFetcherImpl();
@@ -89,7 +89,6 @@ public class CPathWarehouseTest {
 				}
             }
         }
-        
         //warehouse.createIndex();
 	}
 

@@ -39,11 +39,11 @@ import cpath.fetcher.internal.CPathFetcherImpl;
 import cpath.importer.Merger;
 import cpath.importer.internal.MergerImpl;
 import cpath.importer.internal.PremergeDispatcher;
-import cpath.warehouse.CPathWarehouse;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.PathwayDataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
+import cpath.warehouse.internal.CPathWarehouseImpl;
 
 import org.apache.log4j.PropertyConfigurator;
 
@@ -217,16 +217,13 @@ public class Admin implements Runnable {
 				break;
 			case MERGE:
 				// pc dao
-				context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-cpathDAO.xml"});
+				context = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
 				final PaxtoolsDAO pcDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
 				// metadata dao
-				context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-whouseDAO.xml"});
+				context = new ClassPathXmlApplicationContext("classpath:applicationContext-whouseDAO.xml");
 				final MetadataDAO metadataDAO = (MetadataDAO)context.getBean("metadataDAO");
-				// cpath warehouse
-				context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-cpathWarehouse.xml"});
-				final CPathWarehouse cpathWarehouse = (CPathWarehouse)context.getBean("cPathWarehouse");
 				// merger
-				Merger merger = new MergerImpl(pcDAO, metadataDAO, cpathWarehouse);
+				Merger merger = new MergerImpl(pcDAO, metadataDAO, new CPathWarehouseImpl());
 				merger.merge();
 				break;
             }

@@ -16,7 +16,7 @@ import javax.persistence.*;
 	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersionAndFilenameAndDigest",
 				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and pathwaydata.version = :version and upper(pathwaydata.filename) = upper(:filename) and upper(pathwaydata.digest) = upper(:digest)")
 })
-public final class PathwayData {
+public class PathwayData {
 
 	@Id
 	@Column(name="pathway_id")

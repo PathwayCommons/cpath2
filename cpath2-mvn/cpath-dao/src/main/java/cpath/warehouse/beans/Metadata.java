@@ -18,7 +18,7 @@ import cpath.config.CPathSettings;
 					query="from Metadata as metadata")
 })
 @Indexed(index=CPathSettings.WHOUSE_SEARCH_INDEX)
-public final class Metadata {
+public class Metadata {
 
     // TYPE Enum
     public static enum TYPE {

@@ -10,7 +10,6 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
@@ -24,7 +23,7 @@ import java.util.Collection;
  * Implemenation of MetadatDAO interface.
  */
 @Repository
-public final class MetadataHibernateDAO  implements MetadataDAO {
+public class MetadataHibernateDAO  implements MetadataDAO {
 
     // log
     private static Log log = LogFactory.getLog(MetadataHibernateDAO.class);
