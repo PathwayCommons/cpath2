@@ -64,7 +64,7 @@ import javax.sql.DataSource;
 /**
  * Class responsible for Merging pathway data.
  */
-public final class MergerImpl implements Merger {
+public class MergerImpl implements Merger {
 
 	// log
     private static final Log log = LogFactory.getLog(MergerImpl.class);

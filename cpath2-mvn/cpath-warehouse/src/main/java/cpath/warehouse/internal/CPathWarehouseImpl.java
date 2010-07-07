@@ -53,7 +53,7 @@ import java.util.Set;
  *
  */
 @Service
-public final class CPathWarehouseImpl implements CPathWarehouse {
+public class CPathWarehouseImpl implements CPathWarehouse {
 	private final static Log log = LogFactory.getLog(CPathWarehouseImpl.class);
 	
     private CvRepository cvRepository;
@@ -77,6 +77,14 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
 		this.cvRepository = (CvRepository)context.getBean("cvFetcher");
 	}
 
+	// this constructor is required, e.g., for tests...
+	public CPathWarehouseImpl(PaxtoolsDAO proteinsDAO, CvRepository cvRepository, PaxtoolsDAO moleculesDAO)
+	{
+		this.proteinsDAO = proteinsDAO;
+		this.cvRepository = cvRepository;
+		this.moleculesDAO = moleculesDAO;
+	}
+	
 	
 
 	/* (non-Javadoc)

@@ -50,7 +50,6 @@ import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -65,7 +64,7 @@ import javax.sql.DataSource;
 /**
  * Class responsible for premerging pathway data.
  */
-public final class PremergeImpl extends Thread implements Premerge {
+public class PremergeImpl extends Thread implements Premerge {
 
 	// log
     private static Log log = LogFactory.getLog(PremergeImpl.class);

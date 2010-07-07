@@ -16,7 +16,7 @@ import java.util.Collection;
 /**
  * Provides Premerge dispatch services.
  */
-public final class PremergeDispatcher extends Thread {
+public class PremergeDispatcher extends Thread {
 
     // log
     private static Log log = LogFactory.getLog(PremergeDispatcher.class);

@@ -55,7 +55,7 @@ import cpath.warehouse.CvRepository;
  * @author rodch
  *
  */
-public final class OntologyManagerCvRepository extends BiopaxOntologyManager implements CvRepository {
+public class OntologyManagerCvRepository extends BiopaxOntologyManager implements CvRepository {
 	private static final Log log = LogFactory.getLog(OntologyManagerCvRepository.class);
 	private static final String URN_OBO_PREFIX = "urn:miriam:obo.";
 	private static final String URN_UNIFICATION_XREF_PREFIX = "urn:pathwaycommons:UnificationXref:";

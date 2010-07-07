@@ -23,7 +23,7 @@ import java.util.Collection;
  * Implementation of PathwayDataDAO interface.
  */
 @Repository
-public final class PathwayDataHibernateDAO implements PathwayDataDAO {
+public class PathwayDataHibernateDAO implements PathwayDataDAO {
 
     // log
     private static Log log = LogFactory.getLog(PathwayDataHibernateDAO.class);

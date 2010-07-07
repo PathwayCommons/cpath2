@@ -18,7 +18,6 @@
 		<param-name>contextConfigLocation</param-name>
 		<param-value>
 			classpath:applicationContext-cpathDAO.xml
-			classpath:applicationContext-cpathWarehouse.xml
 			classpath:applicationContext-whouseDAO.xml
 			classpath:applicationContext-whouseMolecules.xml
 			classpath:applicationContext-whouseProteins.xml

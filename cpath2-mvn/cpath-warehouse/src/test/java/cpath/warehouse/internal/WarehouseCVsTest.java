@@ -61,7 +61,7 @@ public class WarehouseCVsTest {
 	static {
 		Resource ont = new ClassPathResource("ontologies.xml");
 		cvRepository = new OntologyManagerCvRepository(ont, null);
-		warehouse = new CPathWarehouseImpl();
+		warehouse = new CPathWarehouseImpl(null,cvRepository,null);
 	}
 	
 	@Test
