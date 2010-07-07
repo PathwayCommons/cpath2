@@ -101,12 +101,9 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 		}
 
 		// testing code - dump the chebi map 
-		log.info("dumping chebi records with shared inchi keys...");
+		log.info("dumping inchi keys (values is rdf id that references inchi key)...");
 		for (String key : INCHI_KEY_MAP.keySet()) {
-			String[] ids = INCHI_KEY_MAP.get(key).split(" ");
-			if (ids.length > 1) {
-				log.info(key + ": " + ids);
-			}
+			log.info(key + ": " + INCHI_KEY_MAP.get(key));
 		}
     }
 
@@ -166,7 +163,7 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 
 		if (INCHI_KEY_MAP.containsKey(inchiParts[2])) {
 			String existingIds = INCHI_KEY_MAP.get(inchiParts[2]);
-			INCHI_KEY_MAP.put(inchiParts[2], existingIds + chebiOrPubchemParts[3]);
+			INCHI_KEY_MAP.put(inchiParts[2], existingIds + chebiOrPubchemParts[3] + " ");
 		}
 		else {
 			INCHI_KEY_MAP.put(inchiParts[2], chebiOrPubchemParts[3] + " ");

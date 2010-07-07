@@ -8,10 +8,6 @@
     
     <context:annotation-config/>
 
-	<bean id="cPathWarehouse" class="cpath.warehouse.internal.CPathWarehouseImpl">
-		<constructor-arg ref="moleculesDAO"/>
-		<constructor-arg ref="cvFetcher"/>
-		<constructor-arg ref="proteinsDAO"/>
-	</bean>
+	<bean id="cPathWarehouse" class="cpath.warehouse.internal.CPathWarehouseImpl"/>
 	
 </beans>

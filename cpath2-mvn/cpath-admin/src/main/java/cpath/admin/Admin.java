@@ -37,7 +37,9 @@ import cpath.fetcher.ProviderMetadataService;
 import cpath.fetcher.ProviderPathwayDataService;
 import cpath.fetcher.internal.CPathFetcherImpl;
 import cpath.importer.Merger;
+import cpath.importer.internal.MergerImpl;
 import cpath.importer.internal.PremergeDispatcher;
+import cpath.warehouse.CPathWarehouse;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.PathwayDataDAO;
 import cpath.warehouse.beans.Metadata;
@@ -214,16 +216,17 @@ public class Admin implements Runnable {
 				premergeDispatcher.join();
 				break;
 			case MERGE:
-				context =
-                    new ClassPathXmlApplicationContext(new String [] { 	
-                    		"classpath:applicationContext-whouseDAO.xml", 
-                    		"classpath:applicationContext-cpathWarehouse.xml",
-                    		"classpath:applicationContext-cvRepository.xml",
-                    		"classpath:applicationContext-whouseMolecules.xml",
-                    		"classpath:applicationContext-whouseProteins.xml", 
-                    		"classpath:applicationContext-cpathDAO.xml", 
-        					"classpath:applicationContext-cpathMerger.xml"});
-				Merger merger = (Merger) context.getBean("merge");
+				// pc dao
+				context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-cpathDAO.xml"});
+				final PaxtoolsDAO pcDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
+				// metadata dao
+				context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-whouseDAO.xml"});
+				final MetadataDAO metadataDAO = (MetadataDAO)context.getBean("metadataDAO");
+				// cpath warehouse
+				context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-cpathWarehouse.xml"});
+				final CPathWarehouse cpathWarehouse = (CPathWarehouse)context.getBean("cPathWarehouse");
+				// merger
+				Merger merger = new MergerImpl(pcDAO, metadataDAO, cpathWarehouse);
 				merger.merge();
 				break;
             }
