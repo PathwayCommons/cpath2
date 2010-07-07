@@ -35,8 +35,11 @@ import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.model.level3.Xref;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.warehouse.CPathWarehouse;
@@ -57,13 +60,21 @@ public final class CPathWarehouseImpl implements CPathWarehouse {
     private PaxtoolsDAO moleculesDAO;
     private PaxtoolsDAO proteinsDAO;
 	
-	
-	public CPathWarehouseImpl(PaxtoolsDAO moleculesDAO, 
-			CvRepository cvRepository, PaxtoolsDAO proteinsDAO) 
+	/**
+	 * Constructor.
+	 */
+	public CPathWarehouseImpl()
 	{
-		this.cvRepository = cvRepository;
-		this.moleculesDAO = moleculesDAO;
-		this.proteinsDAO = proteinsDAO;
+		ApplicationContext context = null;
+		// molecules
+		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-whouseMolecules.xml"});
+		this.moleculesDAO = (PaxtoolsDAO)context.getBean("moleculesDAO");
+		// proteins
+		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-whouseProteins.xml"});
+		this.proteinsDAO = (PaxtoolsDAO)context.getBean("proteinsDAO");
+		// cvRepository
+		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-cvRepository.xml"});
+		this.cvRepository = (CvRepository)context.getBean("cvFetcher");
 	}
 
 	
