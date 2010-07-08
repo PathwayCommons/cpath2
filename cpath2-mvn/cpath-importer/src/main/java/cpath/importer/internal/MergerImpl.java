@@ -31,31 +31,26 @@ package cpath.importer.internal;
 import cpath.importer.Merger;
 import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.CPathWarehouse;
 import cpath.warehouse.MetadataDAO;
 
 import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
+import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.level3.SmallMoleculeReference;
-import org.biopax.paxtools.model.level3.ProteinReference;
-import org.biopax.paxtools.model.level3.ControlledVocabulary;
-import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.paxtools.model.level3.UtilityClass;
-import org.biopax.paxtools.model.level3.XReferrable;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.miriam.MiriamLink;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import java.io.*;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -187,28 +182,22 @@ public class MergerImpl implements Merger {
 	 */
 	private Model getModel(final Metadata metadata) {
 
+		String metadataIdentifier = metadata.getIdentifier();
 		// get the factory bean (not its product, data source bean)
 		DataServices dataServices = (DataServices) applicationContext.getBean("&cpath2_meta");
 		// create data source
-		DataSource pathwayDataSource = dataServices.getDataSource(metadata.getIdentifier());
+		DataSource pathwayDataSource = dataServices.getDataSource(metadataIdentifier);
+		// get the PaxtoolsDAO instance
+		PaxtoolsDAO mergePaxtoolsDAO = PremergeImpl.buildPremergeDAO(metadata.getIdentifier(), pathwayDataSource);
 
-		// set custom datasource (replaces old one); name matters!
-		DataServicesFactoryBean.getDataSourceMap().put("premergeDataSource", pathwayDataSource);
+		// get the complete model from the pre-merge db!
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		mergePaxtoolsDAO.exportModel(outputStream);
+		InputStream inputStream = new BufferedInputStream(
+				new ByteArrayInputStream(outputStream.toByteArray()));
+		SimpleReader simpleReader = new SimpleReader(BioPAXLevel.L3);
+		Model toReturn = simpleReader.convertFromOWL(inputStream);
 		
-		// exactly the same context configuration is now used in "premerge" and "merge"!
-		ApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");
-		// get a ref to PaxtoolsDAO
-		PaxtoolsDAO mergePaxtoolsDAO = (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
-
-		// create a model, grab all elements from db and add to model
-		Model toReturn = BioPAXLevel.L3.getDefaultFactory().createModel();
-		
-		Set<BioPAXElement> allElements = mergePaxtoolsDAO.getElements(BioPAXElement.class, true);
-		for (BioPAXElement bpe : allElements) {
-			toReturn.add(bpe);
-		}
-
 		// outta here
 		return toReturn;
 	}
@@ -294,7 +283,7 @@ public class MergerImpl implements Merger {
 		pathwayModel.remove(incomingSMR);
 		pathwayModel.add(inchiSMR);
 		
-		/* [igor] because - above is the simpler and more natural way to go.
+		/* [igor] commented out because the above is much simpler and more natural way to go.
 		// 1) change rdf id of incoming smr to inchi smr id
 		String incomingRDFId = incomingSMR.getRDFId();
 		String inchiRDFId = inchiSMR.getRDFId();

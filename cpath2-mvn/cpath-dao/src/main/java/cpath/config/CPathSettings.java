@@ -19,8 +19,9 @@ public final class CPathSettings {
 	public static final String METADATA_DB = "cpath2_meta";
 	public static final String MOLECULES_DB = "cpath2_molecules";
 	public static final String PROTEINS_DB = "cpath2_proteins";
+	public static final String PREMERGE_DB = "premergeDataSource";
 	
+	public static final String PREMERGE_INDEX_DIR_VARIABLE = "premerge.index.dir";
 	public static final String WHOUSE_SEARCH_INDEX = "cpathwhouse";
-	
 	public static final String CPATH_URI_PREFIX = "urn:pathwaycommons:";
 }

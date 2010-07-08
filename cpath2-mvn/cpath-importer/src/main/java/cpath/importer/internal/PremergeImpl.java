@@ -28,6 +28,7 @@ package cpath.importer.internal;
 
 // imports
 import cpath.cleaner.Cleaner;
+import cpath.config.CPathSettings;
 import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
@@ -362,24 +363,43 @@ public class PremergeImpl extends Thread implements Premerge {
 	 */
 	@Transactional
 	private boolean persistPathway(final PathwayData pathwayData, final Model model) {
-		// create new db
-		DataServicesFactoryBean.createSchema(metadata.getIdentifier());
+		// create a new database schema for this data provider
+		String premergeDbName = metadata.getIdentifier();
+		DataServicesFactoryBean.createSchema(premergeDbName);
 		
-		// get the DataSource factory (that is aware of the driver, user, and password)
+		// get the data source factory bean (that is aware of the driver, user, and password)
 		DataServices dataServices = (DataServices) applicationContext.getBean("&cpath2_meta");
-		// use the DataSource
-		DataSource premergeDataSource = dataServices.getDataSource(metadata.getIdentifier());
-		DataServicesFactoryBean.getDataSourceMap().put("premergeDataSource", premergeDataSource);
-		
-		// get application context after setting the custom data source (replaces old one)
-		ApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");
-				
-		// get a ref to PaxtoolsDAO
-		PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
+		// get the DataSource (for the database just created)
+		DataSource premergeDataSource = dataServices.getDataSource(premergeDbName);
+		// get the PaxtoolsDAO instance
+		PaxtoolsDAO paxtoolsDAO = buildPremergeDAO(premergeDbName, premergeDataSource);
 		paxtoolsDAO.merge(model);
 
 		// outta here
 		return true;
+	}
+	
+	/**
+	 * Creates new PaxtoolsDAO instance to work with existing "premerge"
+	 * database. This is used both during the "pre-merge" (here) and "merge".
+	 */
+	public static PaxtoolsDAO buildPremergeDAO(String premergeDbName, DataSource premergeDataSource) {
+		DataServicesFactoryBean.getDataSourceMap().put(CPathSettings.PREMERGE_DB, premergeDataSource);
+		/* 
+		 * set system properties and data source 
+		 * (replaces existing one in the same thread),
+		 * load a special application context
+		 */
+		String home = System.getenv(CPathSettings.HOME_VARIABLE_NAME);
+		if (home==null) throw new RuntimeException(
+				"Please set CPATH2_HOME environment variable " +
+            	" (point to a directory where cpath.properties, etc. files are placed)");
+		String indexDir = home + File.separator + premergeDbName;
+		System.setProperty(CPathSettings.PREMERGE_INDEX_DIR_VARIABLE, indexDir);
+		ApplicationContext context = 
+			new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");
+				
+		// get a ref to the PaxtoolsDAO bean
+		return (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
 	}
 }

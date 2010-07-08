@@ -545,9 +545,13 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
-	public void exportModel(OutputStream outputStream) throws IOException {
-		new SimpleExporter(level)
-			.convertToOWL(this, outputStream);
+	public void exportModel(OutputStream outputStream) {
+		try {
+			new SimpleExporter(level)
+				.convertToOWL(this, outputStream);
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to export Model.", e);
+		}
 	}
 	
 }
