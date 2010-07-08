@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Set;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.OutputStream;
 
 /**
@@ -115,7 +114,6 @@ public interface PaxtoolsDAO extends Model {
      * Writes the complete model as BioPAX (OWL)
      * 
      * @param outputStream
-     * @throws IOException 
      */
-    void exportModel(OutputStream outputStream) throws IOException;   
+    void exportModel(OutputStream outputStream);   
 }

@@ -15,13 +15,18 @@
     	and cpath.importer.internal.MergerImpl ('merge') beans! -->
 
     <context:annotation-config/>
+    
+ 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
     <bean id="premergeSessionFactory"
         class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="premergeDataSource"/>
         <property name="hibernateProperties">
 		<props>
-		<prop key="hibernate.hbm2ddl.auto"></prop><!-- no value - to prevent accidental tables drop -->	
+		<!-- premerge.index.dir value is to set programmatically (before this context is loaded) -->	
+		<prop key="hibernate.search.default.indexBase">${premerge.index.dir}</prop>
+		<!-- no value - to prevent accidental tables drop -->	
+		<prop key="hibernate.hbm2ddl.auto"></prop>
 		</props>
 		</property>
         <property name="annotatedClasses">
