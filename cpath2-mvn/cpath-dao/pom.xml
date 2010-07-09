@@ -47,6 +47,13 @@
     	<artifactId>commons-collections</artifactId>
     	<version>3.2.1</version>
     </dependency>
+    <!-- 
+	<dependency>
+		<groupId>com.atomikos</groupId>
+		<artifactId>transactions</artifactId>
+		<version>3.6.4</version>
+	</dependency>
+	-->
   </dependencies>
   
 </project>

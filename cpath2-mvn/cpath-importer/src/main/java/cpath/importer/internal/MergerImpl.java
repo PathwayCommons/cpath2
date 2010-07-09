@@ -29,28 +29,29 @@ package cpath.importer.internal;
 
 // imports
 import cpath.importer.Merger;
+import cpath.dao.CPathWarehouse;
 import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
 import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.CPathWarehouse;
 import cpath.warehouse.MetadataDAO;
 
 import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
-import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.miriam.MiriamLink;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.*;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 import java.util.HashSet;
 
@@ -67,14 +68,15 @@ public class MergerImpl implements Merger {
 	// ref to MetadataDAO
 	private MetadataDAO metadataDAO;
 
-	// ref to pc repository
+	// ref to the main repository
 	private PaxtoolsDAO pcDAO;
 
-	// ref to the warehouse
-	private CPathWarehouse cpathWarehouse;
+    private CPathWarehouse cvRepository;
+    private CPathWarehouse moleculesDAO;
+    private CPathWarehouse proteinsDAO;
 	
 	@Autowired
-	private ApplicationContext applicationContext;
+	private ApplicationContext applicationContext; // gets the parent/existing context
 
 
 	/**
@@ -82,17 +84,25 @@ public class MergerImpl implements Merger {
 	 * Constructor.
 	 *
 	 * @param pcDAO PaxtoolsDAO;
-     * @param metadataDAO MetadataDAO
+	 * @param metadataDAO MetadataDAO
 	 * @param cPathWarehouse CPathWarehouse
 	 */
 	public MergerImpl(final PaxtoolsDAO pcDAO,
-					  final MetadataDAO metadataDAO,
-					  final CPathWarehouse cpathWarehouse) 
+					  final MetadataDAO metadataDAO) 
 	{
 		// init members
 		this.pcDAO = pcDAO;
 		this.metadataDAO = metadataDAO;
-		this.cpathWarehouse = cpathWarehouse;
+		ApplicationContext context = null;
+		// molecules
+		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-whouseMolecules.xml"});
+		this.moleculesDAO = (CPathWarehouse)context.getBean("moleculesDAO");
+		// proteins
+		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-whouseProteins.xml"});
+		this.proteinsDAO = (CPathWarehouse)context.getBean("proteinsDAO");
+		// cvRepository
+		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-cvRepository.xml"});
+		this.cvRepository = (CPathWarehouse)context.getBean("cvFetcher");
 	}
 
     /*
@@ -101,7 +111,6 @@ public class MergerImpl implements Merger {
 	 */
 	@Override
 	public void merge() {
-
 		// create pc model
 		Model pcModel= BioPAXLevel.L3.getDefaultFactory().createModel();
 
@@ -118,33 +127,62 @@ public class MergerImpl implements Merger {
 				boolean elementExistsInPC = (pcModel.getByID(bpe.getRDFId()) != null);
 
 				// merge all protein/SM references & controlled vocabularies
-				if ((bpe instanceof ProteinReference ||bpe instanceof ControlledVocabulary)
-					&& !elementExistsInPC) {
-
+				if (bpe instanceof ProteinReference && !elementExistsInPC) 
+				{
 					// find specific subclass (e.g. CellVocabulary)!
-					Class<? extends UtilityClass> clazz = 
-						(Class<? extends UtilityClass>) bpe.getModelInterface(); 
-					UtilityClass object = cpathWarehouse.getObject(bpe.getRDFId(), clazz);
+					ProteinReference object = proteinsDAO.getObject(bpe.getRDFId(), ProteinReference.class);
 					
 					// if not found by id, - search by UnificationXrefs
 					if (object==null) {
-						XReferrable r = (XReferrable)bpe; // because PR, SMR, and CV are XReferrable
+						XReferrable r = (XReferrable) bpe;
 						Set<UnificationXref> urefs =
 							new ClassFilterSet<UnificationXref>(r.getXref(), UnificationXref.class);
-						object = cpathWarehouse.getObject(urefs, clazz);
+						
+						Collection<ProteinReference> prefs = proteinsDAO
+							.getObjects(urefs, ProteinReference.class);
+						
+						if(!prefs.isEmpty()) 
+							object = prefs.iterator().next();
+						
+						if(prefs.size()==1)
+							throw new RuntimeException("Several ProteinReference " +
+								"that share the same xref found:" + prefs.toString());
 					}
-					
-					// TODO if not found, shall we search by RelationshipXrefs?.. ;)
-					//...
 					
 					if (object != null) {
 						pcModel.add(object);
-					}
-					else {
+					} else {
 						utilityClassNotFoundInWarehouse(pcModel, bpe);
 					}
-				}
-				else if (bpe instanceof SmallMoleculeReference) {
+				} else if (bpe instanceof ControlledVocabulary && !elementExistsInPC) 
+				{
+					// get the CV subclass (e.g. CellVocabulary)!
+					Class<? extends ControlledVocabulary> clazz = 
+						(Class<? extends ControlledVocabulary>) bpe.getModelInterface(); 
+					ControlledVocabulary object = cvRepository.getObject(bpe.getRDFId(), clazz);
+					
+					// if not found by id, - search by UnificationXrefs
+					if (object==null) {
+						XReferrable r = (XReferrable) bpe;
+						Set<UnificationXref> urefs =
+							new ClassFilterSet<UnificationXref>(r.getXref(), UnificationXref.class);
+
+						Collection<? extends ControlledVocabulary> cvs = cvRepository.getObjects(urefs, clazz);
+						
+						if (!cvs.isEmpty())
+							object = cvs.iterator().next();
+							
+						if (cvs.size() > 1)
+							throw new RuntimeException("Several ControlledVocabulary "
+								+ "that use the same xref found:" + cvs.toString());
+					}
+					
+					if (object != null) {
+						pcModel.add(object);
+					} else {
+						utilityClassNotFoundInWarehouse(pcModel, bpe);
+					}
+				} else if (bpe instanceof SmallMoleculeReference) {
 
 					// this is a pubchem or chebi small molecule reference
 					// get respective inchi small molecule reference from warehouse
@@ -230,12 +268,10 @@ public class MergerImpl implements Merger {
 					// are passed simulataneously.  for example, if we were to pass the set
 					// of uxrefs contains in the inchi smr, we could get back both 
 					// a pubchem and a chebi smr
-					Set<UnificationXref> uxrefsToSearch = new HashSet<UnificationXref>();
-					uxrefsToSearch.add(uxref);
-					SmallMoleculeReference smr =
-						cpathWarehouse.getObject(uxrefsToSearch, SmallMoleculeReference.class);
-					if (smr != null) {
-						toReturn.add(smr);
+					Collection<SmallMoleculeReference> smrs =
+						moleculesDAO.getObjects(Collections.singleton(uxref), SmallMoleculeReference.class);
+					if (!smrs.isEmpty()) {
+						toReturn.addAll(smrs);
 					}
 				}
 			}

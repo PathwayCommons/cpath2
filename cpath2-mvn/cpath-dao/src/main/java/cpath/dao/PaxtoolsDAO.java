@@ -31,8 +31,8 @@ package cpath.dao;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
+
 import java.util.List;
-import java.util.Set;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
@@ -40,7 +40,7 @@ import java.io.OutputStream;
 /**
  * BioPAX data access (both model and repository).
  */
-public interface PaxtoolsDAO extends Model {
+public interface PaxtoolsDAO extends Model, CPathWarehouse {
 	
 	/**
 	 * Builds lucene index.
@@ -57,32 +57,6 @@ public interface PaxtoolsDAO extends Model {
 	 * @throws FileNoteFoundException
 	 */
 	void importModel(File biopaxFile) throws FileNotFoundException;
-
-	
-    /**
-     * This method returns the biopax element with the given id,
-     * returns null if the object with the given id does not exist
-     * in this model.
-	 *
-     * @param id of the object to be retrieved.
-     * @param eager boolean indicating eager (as opposed to lazy) fetching
-	 * @return BioPAXElement
-	 * @deprecated may be made private; 'eager' is of no use outside here?; use getById
-     */
-    BioPAXElement getElement(String id, boolean eager);
-
-    
-    /**
-     * This method returns a set of objects in the model of the given class.
-     * Contents of this set should not be modified.
-	 *
-     * @param filterBy class to be used as a filter.
-     * @param eager boolean indicating eager (as opposed to lazy) fetching
-	 * @return an unmodifiable set of objects of the given class.
-	 *
-	 * @deprecated may be made private; 'eager' is of no use outside here?; use getObjects
-     */
-    <T extends BioPAXElement> Set<T> getElements(Class<T> filterBy, boolean eager);
 
 
 	 /**
@@ -116,4 +90,5 @@ public interface PaxtoolsDAO extends Model {
      * @param outputStream
      */
     void exportModel(OutputStream outputStream);   
+    
 }

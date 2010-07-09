@@ -32,7 +32,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 
-import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.logging.Log;
@@ -49,14 +48,11 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.hibernate.Session;
-import org.hibernate.Transaction;
 import org.hibernate.search.FullTextQuery;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import cpath.dao.CPathService;
 import cpath.dao.PaxtoolsDAO;
@@ -93,19 +89,9 @@ public class CPathServiceImpl implements CPathService {
 		this.multiFieldQueryParser = new MultiFieldQueryParser(
 				Version.LUCENE_29, PaxtoolsHibernateDAO.ALL_FIELDS, this.analyzer);
 	}
-	
-	
-    @PostConstruct
-    void init() {
-    	/* attempts to re-build the lucene index (TODO is this required?)
-    	 * result in mysql driver issue: too many connections..?
-    	 */
-    	// dao.createIndex();
-    }
 
 
 	@Override
-	@Transactional
 	public Map<ResultMapKey, Object> list(
 			Class<? extends BioPAXElement> biopaxClass, boolean countOnly) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
@@ -117,12 +103,7 @@ public class CPathServiceImpl implements CPathService {
 						+ biopaxClass.getCanonicalName()).uniqueResult();
 				map.put(ResultMapKey.COUNT, count.intValue());
 			} else {
-				Set<String> data = new HashSet<String>();
-				Set<? extends BioPAXElement> results = dao.getElements(
-						biopaxClass, false);
-				for (BioPAXElement e : results) {
-					data.add(e.getRDFId());
-				}
+				Collection<String> data = dao.find("*", biopaxClass);
 				map.put(ResultMapKey.DATA, data);
 				map.put(ResultMapKey.COUNT, Integer.valueOf(data.size()));
 			}
@@ -149,7 +130,6 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
-	@Transactional
 	public Map<ResultMapKey, Object> element(String id, OutputFormat format) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
@@ -170,22 +150,15 @@ public class CPathServiceImpl implements CPathService {
 	
 
 	@Override
-	@Transactional
-	@Deprecated //does not allow pagination, projections, etc. optimization..
+	//TODO does not do pagination, projections, no optimization..
 	public Map<ResultMapKey, Object> list(String queryStr,
-			Class<? extends BioPAXElement> biopaxClass) {
+			Class<? extends BioPAXElement> biopaxClass) 
+	{
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
-			Transaction tx = ((PaxtoolsHibernateDAO)dao).session().beginTransaction();
-			List<BioPAXElement> results = (List<BioPAXElement>) dao.search(
-					queryStr, biopaxClass);
-			Set<String> idSet = new HashSet<String>(results.size());
-			for (BioPAXElement e : results) {
-				idSet.add(e.getRDFId());
-			}
-			tx.commit();
-			map.put(ResultMapKey.DATA, idSet);
-			map.put(ResultMapKey.COUNT, Integer.valueOf(idSet.size()));
+			List<String> results =dao.find(queryStr, biopaxClass);
+			map.put(ResultMapKey.DATA, results);
+			map.put(ResultMapKey.COUNT, Integer.valueOf(results.size()));
 		} catch (Exception e) {
 			map.put(ResultMapKey.ERROR, e.toString());
 		}
@@ -194,7 +167,6 @@ public class CPathServiceImpl implements CPathService {
 	}	
 	
 	
-	@Transactional
 	private int count(String search, Class<?> filterBy) {
 		Session session = ((PaxtoolsHibernateDAO) dao).session();
 		FullTextSession fullTextSession = Search.getFullTextSession(session);
@@ -211,7 +183,6 @@ public class CPathServiceImpl implements CPathService {
 	}
 	
 	
-	@Transactional
 	private List<Object> fulltextSearch(String q, boolean countOnly, 
 			int firstResult, int maxResults, Class<? extends BioPAXElement> filterBy, 
 			Object... projections) 
@@ -241,7 +212,6 @@ public class CPathServiceImpl implements CPathService {
 	}
 
 	
-	@Transactional(propagation=Propagation.REQUIRED)
 	Map<ResultMapKey, Object> asBiopax(String id) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		

@@ -36,8 +36,9 @@ import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.Explanation;
 import org.apache.lucene.util.Version;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
-import org.biopax.paxtools.impl.level3.Level3FactoryImpl;
 import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.XReferrable;
+import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.BioPAXIOHandler;
@@ -58,6 +59,14 @@ import java.io.*;
 import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
 
 
+/**
+ * Paxtools/BioPAX DAO class.
+ * 
+ * 
+ * 
+ * @author rodche
+ *
+ */
 @Transactional
 @Repository
 public class PaxtoolsHibernateDAO implements PaxtoolsDAO
@@ -65,16 +74,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	private static final long serialVersionUID = 1L;
 
 	public final static String[] ALL_FIELDS =
-			{
-					SEARCH_FIELD_ID,
-					SEARCH_FIELD_AVAILABILITY,
-					SEARCH_FIELD_COMMENT,
-					SEARCH_FIELD_KEYWORD,
-					SEARCH_FIELD_NAME,
-					SEARCH_FIELD_TERM,
-					SEARCH_FIELD_XREF_DB,
-					SEARCH_FIELD_XREF_ID,
-			};
+		{
+			SEARCH_FIELD_ID,
+			SEARCH_FIELD_AVAILABILITY,
+			SEARCH_FIELD_COMMENT,
+			SEARCH_FIELD_KEYWORD,
+			SEARCH_FIELD_NAME,
+			SEARCH_FIELD_TERM,
+			SEARCH_FIELD_XREF_DB,
+			SEARCH_FIELD_XREF_ID,
+		};
 
 	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
 	private SessionFactory sessionFactory;
@@ -102,34 +111,28 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	/**
 	 * @param simpleMerger the simpleMerger to set
 	 */
-	public void setMerger(SimpleMerger simpleMerger)
-	{
+	public void setMerger(SimpleMerger simpleMerger) {
 		this.merger = simpleMerger;
 	}
 
-	public SimpleMerger getMerger()
-	{
+	public SimpleMerger getMerger() {
 		return merger;
 	}
 
 	// get/set methods used by spring
-	public SessionFactory getSessionFactory()
-	{
+	public SessionFactory getSessionFactory() {
 		return sessionFactory;
 	}
 
-	public void setSessionFactory(SessionFactory sessionFactory)
-	{
+	public void setSessionFactory(SessionFactory sessionFactory) {
 		this.sessionFactory = sessionFactory;
 	}
 
-	public BioPAXIOHandler getReader()
-	{
+	public BioPAXIOHandler getReader() {
 		return reader;
 	}
 
-	public void setReader(BioPAXIOHandler reader)
-	{
+	public void setReader(BioPAXIOHandler reader) {
 		this.reader = reader;
 	}
 
@@ -193,55 +196,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 
 
-	@Transactional(propagation=Propagation.REQUIRED)
-	public BioPAXElement getElement(final String id, final boolean eager)
-	{
-		if(id == null || "".equals(id)) 
-			throw new RuntimeException("getElement(null) is called!");
-		BioPAXElement toReturn = null;
-		// rdfid is Primary Key now (see BioPAXElementImpl)
-		toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
-		
-		/* proxyId does not work well!
-		String namedQuery = (eager)
-			? "org.biopax.paxtools.impl.elementByRdfIdEager"
-				: "org.biopax.paxtools.impl.elementByRdfId";
-		try {
-			//Query query = session().getNamedQuery(namedQuery);
-			Query query = session().createQuery("from BioPAXElementImpl as el where upper(el.RDFId) = upper(:rdfid)");
-			query.setString("rdfid", id);
-			query.setCacheable(false);
-			query.setReadOnly(true);
-			List l = query.list();
-			toReturn = ((l.isEmpty()) ? null : (BioPAXElement) l.get(0)); //(BioPAXElement) query.uniqueResult();
-		} catch (HibernateException e) {
-			throw new RuntimeException("getElement(" + id + ") failed. ", e);
-		}
-		*/
-		
-		return toReturn; // null means no such element
-	}
-
-
-	@Transactional(propagation=Propagation.REQUIRED)
-	public <T extends BioPAXElement> Set<T> getElements(final Class<T> filterBy,
-	                                                    final boolean eager)
-	{
-		String query = "from " + filterBy.getCanonicalName();
-		if (eager)
-		{
-			query += " fetch all properties";
-		}
-
-		List<T> results = null;
-		results = session().createQuery(query).list();
-		Set<T> toReturn = new HashSet<T>();
-		toReturn.addAll(results);
-
-		return toReturn;
-	}
-
-
 	/*
 	 * 'filterBy' is to be a BioPAX interface, not a concrete class...
 	 */ 
@@ -270,6 +224,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		List results = hibQuery.list();
 		
 		for(Object entry: results) {
+			Hibernate.initialize(entry);
 			toReturn.add((T)entry);
 		}
 		
@@ -413,9 +368,33 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
-	public BioPAXElement getByID(String id)
+	public BioPAXElement getByID(String id) 
 	{
-		return getElement(id, false);
+		if(id == null || "".equals(id)) 
+			throw new RuntimeException("getElement(null) is called!");
+
+		BioPAXElement toReturn = null;
+		// rdfid is Primary Key now (see BioPAXElementImpl)
+		toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
+		
+		/* proxyId does not work well!
+		String namedQuery = (eager)
+			? "org.biopax.paxtools.impl.elementByRdfIdEager"
+				: "org.biopax.paxtools.impl.elementByRdfId";
+		try {
+			//Query query = session().getNamedQuery(namedQuery);
+			Query query = session().createQuery("from BioPAXElementImpl as el where upper(el.RDFId) = upper(:rdfid)");
+			query.setString("rdfid", id);
+			query.setCacheable(false);
+			query.setReadOnly(true);
+			List l = query.list();
+			toReturn = ((l.isEmpty()) ? null : (BioPAXElement) l.get(0)); //(BioPAXElement) query.uniqueResult();
+		} catch (HibernateException e) {
+			throw new RuntimeException("getElement(" + id + ") failed. ", e);
+		}
+		*/
+		
+		return toReturn; // null means no such element
 	}
 
 
@@ -454,13 +433,22 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Transactional(propagation=Propagation.REQUIRED)
 	public <T extends BioPAXElement> Set<T> getObjects(Class<T> clazz)
 	{
-		return getElements(clazz, false);
+		String query = "from " + clazz.getCanonicalName();
+		//if (eager) query += " fetch all properties";
+		List<T> results = null;
+		results = session().createQuery(query).list();
+		Set<T> toReturn = new HashSet<T>();
+		
+		for(Object entry: results) {
+			Hibernate.initialize(entry);
+			toReturn.add((T)entry);
+		}
+		return toReturn;
 	}
 
 
 	@Override
-	public boolean isAddDependencies()
-	{
+	public boolean isAddDependencies() {
 		return addDependencies;
 	}
 
@@ -495,17 +483,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		session().refresh(bpe); // TODO is refresh required?
 	}
 
-
-	
-	private class internalFactory extends Level3FactoryImpl
-	{
-		@Override
-		public Model createModel()
-		{
-			return PaxtoolsHibernateDAO.this;
-		}
-	}
-
 	
 	/*
 	 * Gets Hibernate annotated entity class 
@@ -514,9 +491,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * TODO improve, generalize...
 	 */
 	private Class<? extends BioPAXElement> getEntityClass(
-			Class<? extends BioPAXElement> filterBy) 
-	{
+			Class<? extends BioPAXElement> filterBy) {
+		
 		Class<? extends BioPAXElement> filterClass = BioPAXElementImpl.class; // fall-back
+		
 		if (!BioPAXElement.class.equals(filterBy)) { // otherwise use BioPAXElementImpl
 			if (filterBy.isInterface()) {
 				try {
@@ -552,6 +530,49 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to export Model.", e);
 		}
+	}
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.CPathWarehouse#getObject(java.lang.String, java.lang.Class)
+	 */
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED)
+	public <T extends BioPAXElement> T getObject(String urn, Class<T> clazz) 
+	{
+		BioPAXElement bpe = getByID(urn);
+		if(clazz.isInstance(bpe)) {
+			Hibernate.initialize(bpe);
+			return (T) bpe;
+		} else {
+			if(bpe != null) log.error("getObject(" +
+				urn + ", " + clazz.getSimpleName() + 
+				"): returned object has different type, " 
+				+ bpe.getModelInterface());
+			return null;
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.CPathWarehouse#getObject(java.util.Set, java.lang.Class)
+	 */
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED)
+	public <T extends XReferrable> Collection<T> getObjects(Set<? extends Xref> xrefs,
+			Class<T> clazz) 
+	{
+		Collection<T> toReturn = new HashSet<T>();
+		
+		for (Xref xref : xrefs) {
+			Xref x = (Xref) getByID(xref.getId());
+			for(XReferrable xr: x.getXrefOf()) {
+				if(clazz.isInstance(xr)) {
+					Hibernate.initialize(xr);
+					toReturn.add((T) xr);
+				}
+			}
+		}
+		
+		return toReturn;
 	}
 	
 }

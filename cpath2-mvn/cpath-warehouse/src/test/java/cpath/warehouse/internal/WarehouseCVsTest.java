@@ -44,8 +44,6 @@ import psidev.ontology_manager.OntologyTermI;
 import psidev.ontology_manager.impl.OntologyImpl;
 import psidev.ontology_manager.impl.OntologyTermImpl;
 
-import cpath.warehouse.CPathWarehouse;
-
 /**
  * This tests are for CVs only (not using DAO);
  * other tests are in the cpath-importer module.
@@ -55,31 +53,29 @@ import cpath.warehouse.CPathWarehouse;
  */
 public class WarehouseCVsTest {
 
-	static CPathWarehouse warehouse;
-	static OntologyManagerCvRepository cvRepository;
+	static OntologyManagerCvRepository warehouse; // implements cpath.dao.CPathWarehouse
 		
 	static {
 		Resource ont = new ClassPathResource("ontologies.xml");
-		cvRepository = new OntologyManagerCvRepository(ont, null);
-		warehouse = new CPathWarehouseImpl(null,cvRepository,null);
+		warehouse = new OntologyManagerCvRepository(ont, null);
 	}
 	
 	@Test
 	public void ontologyLoading() {
-		Collection<String> ontologyIDs = cvRepository.getOntologyIDs();
+		Collection<String> ontologyIDs = warehouse.getOntologyIDs();
 		Assert.assertTrue(ontologyIDs.contains("GO"));
 		Assert.assertTrue(ontologyIDs.contains("SO"));
 		Assert.assertTrue(ontologyIDs.contains("MI"));
 
-		Ontology oa2 = cvRepository.getOntology("GO");
+		Ontology oa2 = warehouse.getOntology("GO");
 		Assert.assertNotNull(oa2);
 		Assert.assertTrue(oa2 instanceof OntologyImpl);
 
-		oa2 = cvRepository.getOntology("SO");
+		oa2 = warehouse.getOntology("SO");
 		Assert.assertNotNull(oa2);
 		Assert.assertTrue(oa2 instanceof OntologyImpl);
 
-		oa2 = cvRepository.getOntology("MI");
+		oa2 = warehouse.getOntology("MI");
 		Assert.assertNotNull(oa2);
 		Assert.assertTrue(oa2 instanceof OntologyImpl);
 	}
@@ -95,7 +91,7 @@ public class WarehouseCVsTest {
 				"nucleoplasm");
 		Set<OntologyTermI> terms = new HashSet<OntologyTermI>();
 		terms.add(term);
-		Set<String> urns = cvRepository.ontologyTermsToUrns(terms);
+		Set<String> urns = warehouse.ontologyTermsToUrns(terms);
 		assertFalse(urns.isEmpty());
 		assertTrue(urns.size() == 1);
 		String urn = urns.iterator().next();
@@ -109,7 +105,7 @@ public class WarehouseCVsTest {
 	 */
 	@Test
 	public final void testSearchForTermByAccession() {
-		OntologyTermI term = cvRepository.findTermByAccession("GO:0005654");
+		OntologyTermI term = warehouse.findTermByAccession("GO:0005654");
 		assertNotNull(term);
 		assertEquals("nucleoplasm", term.getPreferredName());
 	}
@@ -134,62 +130,19 @@ public class WarehouseCVsTest {
 
 	}
 
-	/**
-	 * Test method for
-	 * {@link cpath.warehouse.internal.CPathWarehouseImpl#getObject(java.lang.String, java.lang.Class)}
-	 * .
-	 */
-	@Test
+
+	@Test // using correct ID
 	public final void testCreateUtilityClass() {
 		CellularLocationVocabulary cv = warehouse.getObject(
 				"urn:miriam:obo.go:GO%3A0005737",CellularLocationVocabulary.class);
 		assertNotNull(cv);
 	}
 	
-	@Test
+	@Test // using bad ID
 	public final void testCreateUtilityClass2() {
 		CellularLocationVocabulary cv = warehouse.getObject(
 				"urn:miriam:obo.go:GO%3A0005737X",CellularLocationVocabulary.class);
 		assertNull(cv);
 	}
 
-	/**
-	 * Test method for {@link cpath.warehouse.internal.CPathWarehouseImpl#getAllChildrenOfCv(java.lang.String)}.
-	 */
-	//@Test
-	public final void testGetAllChildrenOfCv() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link cpath.warehouse.internal.CPathWarehouseImpl#getDirectChildrenOfCv(java.lang.String)}.
-	 */
-	//@Test
-	public final void testGetDirectChildrenOfCv() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link cpath.warehouse.internal.CPathWarehouseImpl#getParentsOfCv(java.lang.String)}.
-	 */
-	//@Test
-	public final void testGetParentsOfCv() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link cpath.warehouse.internal.CPathWarehouseImpl#getDirectParentsOfCv(java.lang.String)}.
-	 */
-	//@Test
-	public final void testGetDirectParentsOfCv() {
-		fail("Not yet implemented"); // TODO
-	}
-
-	/**
-	 * Test method for {@link cpath.warehouse.internal.CPathWarehouseImpl#getPrimaryURI(java.lang.String)}.
-	 */
-	//@Test
-	public final void testGetPrimaryURI() {
-		fail("Not yet implemented"); // TODO
-	}
 }

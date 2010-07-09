@@ -25,12 +25,13 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.warehouse;
+package cpath.dao;
 
+import java.util.Collection;
 import java.util.Set;
 
-import org.biopax.paxtools.model.level3.UtilityClass;
-import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.level3.*;
 
 
 /**
@@ -38,47 +39,29 @@ import org.biopax.paxtools.model.level3.Xref;
  * 
  * @author rodch
  */
-public interface CPathWarehouse extends CvRepository {
+public interface CPathWarehouse {
 	
+	   
 	/**
-	 * Gets the standard BioPAX utility class object from cPath Warehouse
-	 * (e.g., CellVocabulary, SmallMoleculeReference, or ProteinReference).
+	 * Gets fully initialized (and detached form the DAO) BioPAX object.
 	 * 
 	 * @param <T> UtilityClass or its subclass (e.g., ProteinReference)
 	 * @param urn
 	 * @param clazz
 	 * @return
 	 */
-	<T extends UtilityClass> T getObject(String urn, Class<T> utilityClazz);
+	<T extends BioPAXElement> T getObject(String urn, Class<T> clazz);
 	
 	
 	/**
-	 * Finds the object (of BioPAX utility class) in cPath Warehouse,
-	 * e.g., CellVocabulary, SmallMoleculeReference, or ProteinReference, 
+	 * Gets fully initialized (and detached form the DAO) BioPAX object 
 	 * using the set of xrefs to search by.
 	 * 
 	 * @param <T> UtilityClass or its subclass
 	 * @param xrefs query set
-	 * @param clazz
+	 * @param clazz XReferable
 	 * @return
 	 */
-	<T extends UtilityClass> T getObject(final Set<? extends Xref> xrefs, Class<T> utilityClazz);
-	
-	
-	/**
-	 * Gets the primary URN of the (BioPAX utility class) element by another identifier.
-	 * This method's implementation will guess the identifier type and search in Warehouse.
-	 * 
-	 * @param id any identifier
-	 * @param utilityClass 
-	 * @return URI of the matching object in the Warehouse
-	 */
-	String getPrimaryURI(String id, Class<? extends UtilityClass> utilityClass);
+	<T extends XReferrable> Collection<T> getObjects(final Set<? extends Xref> xrefs, Class<T> clazz);
 
-
-	/**
-	 * Create Lucene Index
-	 */
-	void createIndex();
-		
 }

@@ -35,16 +35,20 @@ import java.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.miriam.MiriamLink;
+import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.UnificationXref;
+import org.biopax.paxtools.model.level3.XReferrable;
+import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.validator.utils.BiopaxOntologyManager;
 import org.springframework.core.io.Resource;
 
 import psidev.ontology_manager.Ontology;
 import psidev.ontology_manager.OntologyTermI;
 
+import cpath.dao.CPathWarehouse;
 import cpath.warehouse.CvRepository;
 
 
@@ -55,7 +59,7 @@ import cpath.warehouse.CvRepository;
  * @author rodch
  *
  */
-public class OntologyManagerCvRepository extends BiopaxOntologyManager implements CvRepository {
+public class OntologyManagerCvRepository extends BiopaxOntologyManager implements CvRepository, CPathWarehouse {
 	private static final Log log = LogFactory.getLog(OntologyManagerCvRepository.class);
 	private static final String URN_OBO_PREFIX = "urn:miriam:obo.";
 	private static final String URN_UNIFICATION_XREF_PREFIX = "urn:pathwaycommons:UnificationXref:";
@@ -242,6 +246,40 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager implement
 			urn = MiriamLink.getURI(ontologyID, accession);
 		}
 		return urn;
+	}
+
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.CPathWarehouse#getObject(java.lang.String, java.lang.Class)
+	 */
+	// TODO validate if the ontology term (form URN) can be used by this CV class
+	@Override
+	public <T extends BioPAXElement> T getObject(String urn, Class<T> clazz) {
+		return (T) getControlledVocabulary(urn,(Class<ControlledVocabulary>) clazz);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see cpath.warehouse.CPathWarehouse#getObject(java.util.Set,
+	 * java.lang.Class)
+	 */
+	// TODO validate if the ontology terms (form xrefs) can be used by this CV class
+	@Override
+	public <T extends XReferrable> Collection<T> getObjects(Set<? extends Xref> xrefs,
+			Class<T> clazz) 
+	{
+		Collection<T> toReturn = new HashSet<T>();
+		
+		for (Xref xref : xrefs) {
+			T cv = (T) getControlledVocabulary(xref.getDb(), xref.getId(),
+					(Class<ControlledVocabulary>) clazz);
+			if (cv != null) {
+				toReturn.add(cv);
+			}
+		}
+
+		return toReturn;
 	}
 	
 	

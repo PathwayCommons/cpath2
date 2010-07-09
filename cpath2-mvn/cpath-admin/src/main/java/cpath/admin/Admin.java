@@ -43,7 +43,6 @@ import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.PathwayDataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
-import cpath.warehouse.internal.CPathWarehouseImpl;
 
 import org.apache.log4j.PropertyConfigurator;
 
@@ -223,7 +222,7 @@ public class Admin implements Runnable {
 				context = new ClassPathXmlApplicationContext("classpath:applicationContext-whouseDAO.xml");
 				final MetadataDAO metadataDAO = (MetadataDAO)context.getBean("metadataDAO");
 				// merger
-				Merger merger = new MergerImpl(pcDAO, metadataDAO, new CPathWarehouseImpl());
+				Merger merger = new MergerImpl(pcDAO, metadataDAO);
 				merger.merge();
 				break;
             }
