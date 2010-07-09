@@ -36,13 +36,13 @@ import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import cpath.dao.CPathWarehouse;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.internal.CPathFetcherImpl;
 import cpath.warehouse.*;
 import cpath.warehouse.beans.*;
 import cpath.warehouse.beans.Metadata.TYPE;
-import cpath.warehouse.internal.CPathWarehouseImpl;
 
 /**
  * Test the CPathWarehouse implementation,
@@ -54,7 +54,8 @@ import cpath.warehouse.internal.CPathWarehouseImpl;
  */
 public class CPathWarehouseTest {
 
-	CPathWarehouse warehouse;
+	CPathWarehouse molecules;
+	CPathWarehouse proteins;
 	
 	public CPathWarehouseTest() throws IOException {
 		System.out.println("Preparing...");
@@ -64,13 +65,10 @@ public class CPathWarehouseTest {
 		// load beans
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 			new String[]{"classpath:testContext-allDAO.xml"});
-		PaxtoolsDAO moleculesDAO = (PaxtoolsDAO) context.getBean("moleculesDAO");
+		molecules = (PaxtoolsDAO) context.getBean("moleculesDAO");
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-		PaxtoolsDAO proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
+		proteins = (PaxtoolsDAO) context.getBean("proteinsDAO");
 		PathwayDataDAO pathwayDataDAO = (PathwayDataDAO) context.getBean("pathwayDataDAO");
-
-		// create Warehouse instance
-		warehouse = new CPathWarehouseImpl(proteinsDAO, null, moleculesDAO);	
 		
 		// load test data
 		CPathFetcherImpl fetcher = new CPathFetcherImpl();
@@ -78,9 +76,9 @@ public class CPathWarehouseTest {
         for (Metadata mdata : metadata) {
             metadataDAO.importMetadata(mdata);
             if(mdata.getType() == TYPE.PROTEIN) {
-            	fetcher.storeWarehouseData(mdata, proteinsDAO);
+            	fetcher.storeWarehouseData(mdata, (PaxtoolsDAO)proteins);
             } else if(mdata.getType() == TYPE.SMALL_MOLECULE) {
-            	fetcher.storeWarehouseData(mdata, moleculesDAO);
+            	fetcher.storeWarehouseData(mdata, (PaxtoolsDAO)molecules);
             } else {
             	Collection<PathwayData> pathwayData =
             		fetcher.getProviderPathwayData(mdata);
@@ -89,26 +87,14 @@ public class CPathWarehouseTest {
 				}
             }
         }
-        //warehouse.createIndex();
 	}
 
-	/**
-	 * Test method for 
-	 * {@link cpath.warehouse.internal.CPathWarehouseImpl#getObject(java.lang.String, java.lang.Class)}.
-	 */
+
 	@Test
 	public final void testCreateUtilityClass() {
-		ProteinReference pr = warehouse
+		ProteinReference pr = proteins
 			.getObject("urn:miriam:uniprot:P62158", ProteinReference.class);
 		//assertNotNull(pr);
 	}
 
-
-	/**
-	 * Test method for {@link cpath.warehouse.internal.CPathWarehouseImpl#getPrimaryURI(java.lang.String)}.
-	 */
-	//@Test
-	public final void testGetPrimaryURI() {
-		fail("Not yet implemented"); // TODO
-	}
 }
