@@ -20,9 +20,8 @@
 		<url>http://www.pathwaycommons.org</url>
 	</organization>
 	<modules>
-		<module>cpath-dao</module>
 		<!-- <module>cpath-web</module> -->
-		<module>cpath-warehouse</module>
+		<module>cpath-dao</module>
 		<module>cpath-admin</module>
 		<module>cpath-importer</module>
 		<module>cpath-web-service</module>

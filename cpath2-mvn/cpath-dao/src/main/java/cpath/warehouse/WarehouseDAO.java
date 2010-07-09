@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.dao;
+package cpath.warehouse;
 
 import java.util.Collection;
 import java.util.Set;
@@ -39,9 +39,17 @@ import org.biopax.paxtools.model.level3.*;
  * 
  * @author rodch
  */
-public interface CPathWarehouse {
+public interface WarehouseDAO {
+
+	/**
+	 * Gets fully initialized (and detached form the DAO) BioPAX object.
+	 * 
+	 * @param urn
+	 * @return
+	 */
+	BioPAXElement getObject(String urn);
 	
-	   
+	
 	/**
 	 * Gets fully initialized (and detached form the DAO) BioPAX object.
 	 * 
@@ -62,6 +70,6 @@ public interface CPathWarehouse {
 	 * @param clazz XReferable
 	 * @return
 	 */
-	<T extends XReferrable> Collection<T> getObjects(final Set<? extends Xref> xrefs, Class<T> clazz);
-
+	<T extends XReferrable> Collection<T> getObjects(Set<? extends Xref> xrefs, Class<T> clazz);
+	
 }

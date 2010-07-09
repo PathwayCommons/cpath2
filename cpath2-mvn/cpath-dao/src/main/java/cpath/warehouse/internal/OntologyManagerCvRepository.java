@@ -48,8 +48,8 @@ import org.springframework.core.io.Resource;
 import psidev.ontology_manager.Ontology;
 import psidev.ontology_manager.OntologyTermI;
 
-import cpath.dao.CPathWarehouse;
 import cpath.warehouse.CvRepository;
+import cpath.warehouse.WarehouseDAO;
 
 
 
@@ -59,7 +59,9 @@ import cpath.warehouse.CvRepository;
  * @author rodch
  *
  */
-public class OntologyManagerCvRepository extends BiopaxOntologyManager implements CvRepository, CPathWarehouse {
+public class OntologyManagerCvRepository extends BiopaxOntologyManager 
+	implements CvRepository, WarehouseDAO 
+{
 	private static final Log log = LogFactory.getLog(OntologyManagerCvRepository.class);
 	private static final String URN_OBO_PREFIX = "urn:miriam:obo.";
 	private static final String URN_UNIFICATION_XREF_PREFIX = "urn:pathwaycommons:UnificationXref:";
@@ -250,7 +252,7 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager implement
 
 
 	/* (non-Javadoc)
-	 * @see cpath.warehouse.CPathWarehouse#getObject(java.lang.String, java.lang.Class)
+	 * @see cpath.dao.WarehouseDAO#getObject(java.lang.String, java.lang.Class)
 	 */
 	// TODO validate if the ontology term (form URN) can be used by this CV class
 	@Override
@@ -258,16 +260,13 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager implement
 		return (T) getControlledVocabulary(urn,(Class<ControlledVocabulary>) clazz);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see cpath.warehouse.CPathWarehouse#getObject(java.util.Set,
-	 * java.lang.Class)
-	 */
+	
 	// TODO validate if the ontology terms (form xrefs) can be used by this CV class
+	/* (non-Javadoc)
+	 * @see cpath.dao.WarehouseDAO#getObjects(java.util.Set, java.lang.Class)
+	 */
 	@Override
-	public <T extends XReferrable> Collection<T> getObjects(Set<? extends Xref> xrefs,
-			Class<T> clazz) 
+	public <T extends XReferrable> Collection<T> getObjects(Set<? extends Xref> xrefs, Class<T> clazz)
 	{
 		Collection<T> toReturn = new HashSet<T>();
 		
@@ -281,7 +280,17 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager implement
 
 		return toReturn;
 	}
-	
+
+
+	/* (non-Javadoc)
+	 * @see cpath.dao.WarehouseDAO#getObject(java.lang.String)
+	 */
+	@Override
+	public BioPAXElement getObject(String urn) {
+		throw new UnsupportedOperationException(
+			"Use getObject(String urn, Class<T> cvSubclass) instead.");
+	}
+
 	
 /*
  * TODO Methods below would guarantee working only with BioPAX-recommended CVs...

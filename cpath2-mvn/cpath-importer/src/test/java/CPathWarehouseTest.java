@@ -36,7 +36,6 @@ import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import cpath.dao.CPathWarehouse;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.internal.CPathFetcherImpl;
@@ -45,7 +44,7 @@ import cpath.warehouse.beans.*;
 import cpath.warehouse.beans.Metadata.TYPE;
 
 /**
- * Test the CPathWarehouse implementation,
+ * Test the WarehouseDAO implementation,
  * except for CVs (tested in cpath-warehouse module),
  * using DAO and some test data 
  * 
@@ -54,8 +53,8 @@ import cpath.warehouse.beans.Metadata.TYPE;
  */
 public class CPathWarehouseTest {
 
-	CPathWarehouse molecules;
-	CPathWarehouse proteins;
+	WarehouseDAO molecules;
+	WarehouseDAO proteins;
 	
 	public CPathWarehouseTest() throws IOException {
 		System.out.println("Preparing...");
@@ -65,9 +64,9 @@ public class CPathWarehouseTest {
 		// load beans
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 			new String[]{"classpath:testContext-allDAO.xml"});
-		molecules = (PaxtoolsDAO) context.getBean("moleculesDAO");
+		molecules = (WarehouseDAO) context.getBean("moleculesDAO");
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-		proteins = (PaxtoolsDAO) context.getBean("proteinsDAO");
+		proteins = (WarehouseDAO) context.getBean("proteinsDAO");
 		PathwayDataDAO pathwayDataDAO = (PathwayDataDAO) context.getBean("pathwayDataDAO");
 		
 		// load test data

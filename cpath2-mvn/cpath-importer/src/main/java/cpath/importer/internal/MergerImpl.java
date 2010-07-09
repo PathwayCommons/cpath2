@@ -29,11 +29,11 @@ package cpath.importer.internal;
 
 // imports
 import cpath.importer.Merger;
-import cpath.dao.CPathWarehouse;
 import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.MetadataDAO;
+import cpath.warehouse.WarehouseDAO;
 
 import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
@@ -71,9 +71,9 @@ public class MergerImpl implements Merger {
 	// ref to the main repository
 	private PaxtoolsDAO pcDAO;
 
-    private CPathWarehouse cvRepository;
-    private CPathWarehouse moleculesDAO;
-    private CPathWarehouse proteinsDAO;
+    private WarehouseDAO cvRepository;
+    private WarehouseDAO moleculesDAO;
+    private WarehouseDAO proteinsDAO;
 	
 	@Autowired
 	private ApplicationContext applicationContext; // gets the parent/existing context
@@ -85,7 +85,7 @@ public class MergerImpl implements Merger {
 	 *
 	 * @param pcDAO PaxtoolsDAO;
 	 * @param metadataDAO MetadataDAO
-	 * @param cPathWarehouse CPathWarehouse
+	 * @param cPathWarehouse WarehouseDAO
 	 */
 	public MergerImpl(final PaxtoolsDAO pcDAO,
 					  final MetadataDAO metadataDAO) 
@@ -96,13 +96,13 @@ public class MergerImpl implements Merger {
 		ApplicationContext context = null;
 		// molecules
 		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-whouseMolecules.xml"});
-		this.moleculesDAO = (CPathWarehouse)context.getBean("moleculesDAO");
+		this.moleculesDAO = (WarehouseDAO)context.getBean("moleculesDAO");
 		// proteins
 		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-whouseProteins.xml"});
-		this.proteinsDAO = (CPathWarehouse)context.getBean("proteinsDAO");
+		this.proteinsDAO = (WarehouseDAO)context.getBean("proteinsDAO");
 		// cvRepository
 		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-cvRepository.xml"});
-		this.cvRepository = (CPathWarehouse)context.getBean("cvFetcher");
+		this.cvRepository = (WarehouseDAO)context.getBean("cvFetcher");
 	}
 
     /*

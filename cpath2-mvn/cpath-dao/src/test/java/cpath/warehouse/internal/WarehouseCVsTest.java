@@ -53,7 +53,7 @@ import psidev.ontology_manager.impl.OntologyTermImpl;
  */
 public class WarehouseCVsTest {
 
-	static OntologyManagerCvRepository warehouse; // implements cpath.dao.CPathWarehouse
+	static OntologyManagerCvRepository warehouse; // implements cpath.dao.WarehouseDAO
 		
 	static {
 		Resource ont = new ClassPathResource("ontologies.xml");
