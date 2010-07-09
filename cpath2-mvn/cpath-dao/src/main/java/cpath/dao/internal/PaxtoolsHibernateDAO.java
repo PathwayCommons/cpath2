@@ -52,6 +52,7 @@ import org.springframework.transaction.annotation.*;
 
 import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
+import cpath.warehouse.WarehouseDAO;
 
 import java.util.*;
 import java.io.*;
@@ -69,7 +70,7 @@ import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
  */
 @Transactional
 @Repository
-public class PaxtoolsHibernateDAO implements PaxtoolsDAO
+public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 {
 	private static final long serialVersionUID = 1L;
 
@@ -376,23 +377,33 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		BioPAXElement toReturn = null;
 		// rdfid is Primary Key now (see BioPAXElementImpl)
 		toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
+
+		return toReturn; // null means no such element
+	}
+	
+	
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED)
+	public BioPAXElement getObject(String id) 
+	{
+		if(id == null || "".equals(id)) 
+			throw new RuntimeException("getElement(null) is called!");
+
+		BioPAXElement toReturn = null;
 		
-		/* proxyId does not work well!
-		String namedQuery = (eager)
-			? "org.biopax.paxtools.impl.elementByRdfIdEager"
-				: "org.biopax.paxtools.impl.elementByRdfId";
+		String namedQuery = "org.biopax.paxtools.impl.elementByRdfIdEager";
+		//"org.biopax.paxtools.impl.elementByRdfId";
 		try {
-			//Query query = session().getNamedQuery(namedQuery);
-			Query query = session().createQuery("from BioPAXElementImpl as el where upper(el.RDFId) = upper(:rdfid)");
+			Query query = session().getNamedQuery(namedQuery);
+			//Query query = session().createQuery("from BioPAXElementImpl as el where upper(el.RDFId) = upper(:rdfid)");
 			query.setString("rdfid", id);
-			query.setCacheable(false);
-			query.setReadOnly(true);
-			List l = query.list();
-			toReturn = ((l.isEmpty()) ? null : (BioPAXElement) l.get(0)); //(BioPAXElement) query.uniqueResult();
+			//query.setCacheable(false);
+			//query.setReadOnly(true);
+			toReturn = (BioPAXElement) query.uniqueResult();
+			Hibernate.initialize(toReturn);
 		} catch (HibernateException e) {
-			throw new RuntimeException("getElement(" + id + ") failed. ", e);
+			throw new RuntimeException(" getObject(" + id + ") failed. ", e);
 		}
-		*/
 		
 		return toReturn; // null means no such element
 	}
@@ -478,9 +489,13 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Transactional(propagation=Propagation.MANDATORY)
 	public void updateID(String oldId, String newId)
 	{
+		throw new UnsupportedOperationException(
+				"updateID is not supported by this Model.");
+		/* unsafe...
 		BioPAXElement bpe = getByID(oldId);
 		bpe.setRDFId(newId);
 		session().refresh(bpe); // TODO is refresh required?
+		*/
 	}
 
 	
@@ -539,9 +554,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Transactional(propagation=Propagation.REQUIRED)
 	public <T extends BioPAXElement> T getObject(String urn, Class<T> clazz) 
 	{
-		BioPAXElement bpe = getByID(urn);
+		BioPAXElement bpe = getObject(urn); //getByID(urn);
 		if(clazz.isInstance(bpe)) {
-			Hibernate.initialize(bpe);
+			if(!Hibernate.isInitialized(bpe))
+				Hibernate.initialize(bpe);
 			return (T) bpe;
 		} else {
 			if(bpe != null) log.error("getObject(" +

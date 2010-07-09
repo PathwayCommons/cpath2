@@ -29,19 +29,25 @@
 package cpath.dao.internal;
 
 // imports
+import org.biopax.paxtools.controller.Completer;
+import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import org.apache.commons.logging.*;
 
 import cpath.dao.PaxtoolsDAO;
+import cpath.warehouse.WarehouseDAO;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.StringWriter;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -53,15 +59,11 @@ public class PaxtoolsHibernateDAOTest {
 
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
 
-    PaxtoolsDAO paxtoolsDAO;
+    static PaxtoolsDAO paxtoolsDAO;
 
 	
-	/*
-	 * drop-create db schema, import data file
-	 */
-	@Before
-	public void setUp() throws Exception {
-		DataServicesFactoryBean.createSchema("cpath2_test");
+    static {
+    	DataServicesFactoryBean.createSchema("cpath2_test");
 		// init the DAO (it loads now because databases are created above)
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 				"classpath:testContext-cpathDAO.xml");
@@ -69,40 +71,89 @@ public class PaxtoolsHibernateDAOTest {
 		
 		// load some data into the test storage
 		log.info("Loading BioPAX data (importModel(file))...");
-		File biopaxFile = new File(getClass().getResource("/test.owl").getFile());
-		//File biopaxFile = new File(getClass().getResource("/biopax-level3-test-normalized.owl").getFile());
-		paxtoolsDAO.importModel(biopaxFile);
+		File biopaxFile = new File(PaxtoolsHibernateDAOTest.class.getResource("/test.owl").getFile());
 		
-		log.info("importModel(file) done!");
-	}
-
-	@After
-	public void tearDown() throws Exception {
-	}
-
+		//File biopaxFile = new File(getClass().getResource("/biopax-level3-test-normalized.owl").getFile());
+		try {
+			paxtoolsDAO.importModel(biopaxFile);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+    }
+    
 	
 	@Test
 	public void testSimple() throws Exception {
-		BioPAXElement e = paxtoolsDAO.getByID(
-				"http://www.biopax.org/examples/myExample#Protein_A");
-		assertNotNull(e);
-		assertTrue(e instanceof Protein);
-	
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
 		BioPAXElement bpe = paxtoolsDAO
 			.getByID("http://www.biopax.org/examples/myExample#Protein_A");
-		assertNotNull(bpe);
 		assertTrue(bpe instanceof Protein);
 	}
 
 	
-	//@Test //fails (SimplePhysicalEntity.setEntityReference, hibernate has issues with the collections...)
-	// not so important method so far...
-	public void testSerch() throws Exception {
+	//@Test // fails (lazy collections...) even though getObject uses Hibernate.initialize
+	public void testAdvanced() throws Exception {
+		// check inverse property (xrefOf) is set
+		/* 
+		 * getByID would return an object with lazy collections, 
+		 * which is usable only within the session/transaction,
+		 * which is closed after the call :)
+		 * so we gonna use getObject instead - 
+		 */
+		//BioPAXElement bpe = paxtoolsDAO.getByID("urn:pathwaycommons:UnificationXref:UniProt_P46880");
+		
+		BioPAXElement bpe = ((WarehouseDAO)paxtoolsDAO).getObject(
+				"urn:pathwaycommons:UnificationXref:UniProt_P46880", UnificationXref.class);
+		assertTrue(bpe instanceof UnificationXref);
+		Set<XReferrable> xrOfs = ((UnificationXref) bpe).getXrefOf();
+		assertTrue(xrOfs.size()==1);
+		ProteinReference pr = (ProteinReference) xrOfs.iterator().next();
+		System.out.println(pr.toString());
+	}
+	
+	//@Test // fails (lazy collections...)
+	public void testAdvanced2() throws Exception {		
+		// get a protein
+		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
+		BioPAXElement bpe =  ((WarehouseDAO)paxtoolsDAO).getObject(
+				"http://www.biopax.org/examples/myExample#Protein_A", Protein.class);
+		
+		// if the element can be exported like this, it's fully initialized...
+		SimpleExporter exporter = new SimpleExporter(BioPAXLevel.L3);
+		StringWriter writer = new StringWriter();
+		exporter.writeObject(writer, bpe);
+		System.out.println("Export single protein (partial BioPAX OWL):");
+		System.out.println(writer.toString());
+		
+		
+		// auto-complete - make model
+		Model m = BioPAXLevel.L3.getDefaultFactory().createModel();
+		Completer completer = new Completer(new SimpleEditorMap(BioPAXLevel.L3));
+		Set<BioPAXElement> elements = completer.complete(Collections
+				.singletonList(bpe), paxtoolsDAO);
+		for (BioPAXElement el: elements) {
+			m.add(el);
+		}
+		System.out.println("Auto-complete the protein and export model:");
+		exporter.convertToOWL(m, System.out);
+	}
+	
+	
+	@Test
+	public void testSerchForObjects() throws Exception {
 		List<? extends BioPAXElement> elist = paxtoolsDAO.search("P46880", BioPAXElement.class);
 		assertFalse(elist.isEmpty());
+		System.out.println(elist.toString());
 	}
 
+	@Test
+	public void testSerchForIDs() throws Exception {
+		List<String> elist = paxtoolsDAO.find("P46880", UnificationXref.class);
+		assertFalse(elist.isEmpty());
+		assertTrue(elist.size()==1);
+		System.out.println(elist.toString());
+	}
+	
 	
 	@Test
 	public void testFind() throws Exception {
