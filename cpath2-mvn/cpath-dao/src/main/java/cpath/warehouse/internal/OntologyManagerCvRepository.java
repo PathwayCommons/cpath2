@@ -261,20 +261,18 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 	}
 
 	
-	// TODO validate if the ontology terms (form xrefs) can be used by this CV class
-	/* (non-Javadoc)
-	 * @see cpath.dao.WarehouseDAO#getObjects(java.util.Set, java.lang.Class)
-	 */
 	@Override
-	public <T extends XReferrable> Collection<T> getObjects(Set<? extends Xref> xrefs, Class<T> clazz)
+	public Set<String> getByXref(Set<? extends Xref> xrefs, Class<? extends XReferrable> clazz)
 	{
-		Collection<T> toReturn = new HashSet<T>();
+		Set<String> toReturn = new HashSet<String>();
 		
 		for (Xref xref : xrefs) {
-			T cv = (T) getControlledVocabulary(xref.getDb(), xref.getId(),
+			ControlledVocabulary cv = getControlledVocabulary(xref.getDb(), xref.getId(),
 					(Class<ControlledVocabulary>) clazz);
+			// TODO validate if the ontology terms (form xrefs) can be used by this CV class
+			//...
 			if (cv != null) {
-				toReturn.add(cv);
+				toReturn.add(cv.getRDFId());
 			}
 		}
 

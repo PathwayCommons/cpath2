@@ -138,15 +138,15 @@ public class MergerImpl implements Merger {
 						Set<UnificationXref> urefs =
 							new ClassFilterSet<UnificationXref>(r.getXref(), UnificationXref.class);
 						
-						Collection<ProteinReference> prefs = proteinsDAO
-							.getObjects(urefs, ProteinReference.class);
+						Collection<String> prefs = proteinsDAO
+							.getByXref(urefs, ProteinReference.class);
 						
 						if(!prefs.isEmpty()) 
-							object = prefs.iterator().next();
+							object = proteinsDAO.getObject(prefs.iterator().next(), ProteinReference.class);
 						
-						if(prefs.size()==1)
+						if(prefs.size() > 1)
 							throw new RuntimeException("Several ProteinReference " +
-								"that share the same xref found:" + prefs.toString());
+								"that share the same xref found:" + prefs);
 					}
 					
 					if (object != null) {
@@ -167,10 +167,10 @@ public class MergerImpl implements Merger {
 						Set<UnificationXref> urefs =
 							new ClassFilterSet<UnificationXref>(r.getXref(), UnificationXref.class);
 
-						Collection<? extends ControlledVocabulary> cvs = cvRepository.getObjects(urefs, clazz);
+						Collection<String> cvs = cvRepository.getByXref(urefs, clazz);
 						
 						if (!cvs.isEmpty())
-							object = cvs.iterator().next();
+							object = cvRepository.getObject(cvs.iterator().next(), clazz);
 							
 						if (cvs.size() > 1)
 							throw new RuntimeException("Several ControlledVocabulary "
@@ -268,10 +268,11 @@ public class MergerImpl implements Merger {
 					// are passed simulataneously.  for example, if we were to pass the set
 					// of uxrefs contains in the inchi smr, we could get back both 
 					// a pubchem and a chebi smr
-					Collection<SmallMoleculeReference> smrs =
-						moleculesDAO.getObjects(Collections.singleton(uxref), SmallMoleculeReference.class);
-					if (!smrs.isEmpty()) {
-						toReturn.addAll(smrs);
+					Collection<String> smrs = moleculesDAO
+						.getByXref(Collections.singleton(uxref), SmallMoleculeReference.class);
+					for(String id: smrs) {
+						SmallMoleculeReference mol = moleculesDAO.getObject(id, SmallMoleculeReference.class);
+						toReturn.add(mol);
 					}
 				}
 			}

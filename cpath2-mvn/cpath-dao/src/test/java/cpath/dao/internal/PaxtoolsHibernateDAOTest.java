@@ -28,9 +28,6 @@
  **/
 package cpath.dao.internal;
 
-// imports
-import org.biopax.paxtools.controller.Completer;
-import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -60,6 +57,7 @@ public class PaxtoolsHibernateDAOTest {
     private static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
 
     static PaxtoolsDAO paxtoolsDAO;
+    static SimpleExporter exporter;
 
 	
     static {
@@ -79,6 +77,8 @@ public class PaxtoolsHibernateDAOTest {
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
+		
+		exporter = new SimpleExporter(BioPAXLevel.L3);
     }
     
 	
@@ -88,53 +88,84 @@ public class PaxtoolsHibernateDAOTest {
 		BioPAXElement bpe = paxtoolsDAO
 			.getByID("http://www.biopax.org/examples/myExample#Protein_A");
 		assertTrue(bpe instanceof Protein);
+		
+		bpe = ((WarehouseDAO)paxtoolsDAO).getObject(
+				"urn:pathwaycommons:UnificationXref:UniProt_P46880", UnificationXref.class);
+		assertTrue(bpe instanceof UnificationXref);
 	}
 
 	
-	//@Test // fails (lazy collections...) even though getObject uses Hibernate.initialize
-	public void testAdvanced() throws Exception {
-		// check inverse property (xrefOf) is set
+	//@Test // getXrefOf() returns empty set, but it's not empty inside the DAO (cloning bug!)
+	public void testGetObjectAndXrefOf() throws Exception {
 		/* 
 		 * getByID would return an object with lazy collections, 
 		 * which is usable only within the session/transaction,
-		 * which is closed after the call :)
-		 * so we gonna use getObject instead - 
+		 * which is closed after the call :) So we use getObject instead - 
 		 */
 		//BioPAXElement bpe = paxtoolsDAO.getByID("urn:pathwaycommons:UnificationXref:UniProt_P46880");
 		
 		BioPAXElement bpe = ((WarehouseDAO)paxtoolsDAO).getObject(
 				"urn:pathwaycommons:UnificationXref:UniProt_P46880", UnificationXref.class);
 		assertTrue(bpe instanceof UnificationXref);
+		
+		// if the element can be exported like this, it's fully initialized...
+		StringWriter writer = new StringWriter();
+		exporter.writeObject(writer, bpe);
+		System.out.println("Export single Xref (incomplete BioPAX):");
+		System.out.println(writer.toString());
+		
+		// check if it has xrefOf values...
 		Set<XReferrable> xrOfs = ((UnificationXref) bpe).getXrefOf();
-		assertTrue(xrOfs.size()==1);
-		ProteinReference pr = (ProteinReference) xrOfs.iterator().next();
-		System.out.println(pr.toString());
+		assertEquals(1, xrOfs.size()); // so far fails...
 	}
 	
-	//@Test // fails (lazy collections...)
-	public void testAdvanced2() throws Exception {		
+	
+	//@Test // getEntityReferenceOf() returns empty set (it's a cloning bug)!
+	public void testGetObjectAndEntityRefOf() throws Exception {
+		BioPAXElement bpe = ((WarehouseDAO)paxtoolsDAO).getObject(
+				"urn:miriam:uniprot:P46880", EntityReference.class);
+		assertTrue(bpe instanceof ProteinReference);
+		
+		// if the element can be exported like this, it's fully initialized...
+		StringWriter writer = new StringWriter();
+		exporter.writeObject(writer, bpe);
+		System.out.println("Export single ProteinReference (incomplete BioPAX):");
+		System.out.println(writer.toString());
+		
+		// check if it has xrefOf values...
+		Set<SimplePhysicalEntity> xrOfs = ((EntityReference) bpe).getEntityReferenceOf();
+		assertEquals(1, xrOfs.size()); // so far fails...
+	}
+	
+	
+	@Test
+	public void testGetObject() throws Exception {		
 		// get a protein
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
 		BioPAXElement bpe =  ((WarehouseDAO)paxtoolsDAO).getObject(
 				"http://www.biopax.org/examples/myExample#Protein_A", Protein.class);
 		
+		assertTrue(bpe instanceof Protein);
+		assertEquals("glucokinase A", ((Protein)bpe).getDisplayName());
+		assertNotNull(((Protein)bpe).getEntityReference());
+		assertEquals(1, ((Protein)bpe).getEntityReference().getXref().size());
+		
 		// if the element can be exported like this, it's fully initialized...
-		SimpleExporter exporter = new SimpleExporter(BioPAXLevel.L3);
 		StringWriter writer = new StringWriter();
 		exporter.writeObject(writer, bpe);
-		System.out.println("Export single protein (partial BioPAX OWL):");
+		System.out.println("Export single protein (incomplete BioPAX):");
 		System.out.println(writer.toString());
-		
-		
-		// auto-complete - make model
-		Model m = BioPAXLevel.L3.getDefaultFactory().createModel();
-		Completer completer = new Completer(new SimpleEditorMap(BioPAXLevel.L3));
-		Set<BioPAXElement> elements = completer.complete(Collections
-				.singletonList(bpe), paxtoolsDAO);
-		for (BioPAXElement el: elements) {
-			m.add(el);
-		}
-		System.out.println("Auto-complete the protein and export model:");
+	}
+	
+	
+	@Test
+	public void testGetValidSubModel() throws Exception {	
+		Model m =  paxtoolsDAO.getValidSubModel(
+			Collections.singleton("http://www.biopax.org/examples/myExample#Protein_A"));
+		System.out.println("Clone the protein and export model:");
+		assertTrue(m.containsID("http://www.biopax.org/examples/myExample#Protein_A"));
+		assertTrue(m.containsID("urn:miriam:uniprot:P46880"));
+		assertTrue(m.containsID("urn:pathwaycommons:UnificationXref:UniProt_P46880"));
 		exporter.convertToOWL(m, System.out);
 	}
 	
