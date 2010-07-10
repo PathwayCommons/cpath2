@@ -27,7 +27,6 @@
 
 package cpath.warehouse;
 
-import java.util.Collection;
 import java.util.Set;
 
 import org.biopax.paxtools.model.BioPAXElement;
@@ -53,7 +52,7 @@ public interface WarehouseDAO {
 	/**
 	 * Gets fully initialized (and detached form the DAO) BioPAX object.
 	 * 
-	 * @param <T> UtilityClass or its subclass (e.g., ProteinReference)
+	 * @param <T> BioPAXElement or its subclass (e.g., ProteinReference)
 	 * @param urn
 	 * @param clazz
 	 * @return
@@ -65,11 +64,10 @@ public interface WarehouseDAO {
 	 * Gets fully initialized (and detached form the DAO) BioPAX object 
 	 * using the set of xrefs to search by.
 	 * 
-	 * @param <T> UtilityClass or its subclass
 	 * @param xrefs query set
-	 * @param clazz XReferable
+	 * @param clazz extends XReferable
 	 * @return
 	 */
-	<T extends XReferrable> Collection<T> getObjects(Set<? extends Xref> xrefs, Class<T> clazz);
+	Set<String> getByXref(Set<? extends Xref> xrefs, Class<? extends XReferrable> clazz);
 	
 }

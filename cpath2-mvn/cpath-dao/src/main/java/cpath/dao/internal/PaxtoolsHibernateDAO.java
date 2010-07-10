@@ -90,7 +90,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	private SessionFactory sessionFactory;
 	private final Map<String, String> nameSpacePrefixMap;
 	private final BioPAXLevel level;
-	private BioPAXFactory factory;
+	private final BioPAXFactory factory;
 	private SimpleMerger merger;
 	private BioPAXIOHandler reader;
 	private boolean addDependencies = false;
@@ -162,8 +162,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	//not transactional (but it's 'merge' method that creates a new transaction)
 	public void importModel(File biopaxFile) throws FileNotFoundException
 	{
-		if (log.isInfoEnabled())
-		{
+		if (log.isInfoEnabled()) {
 			log.info("Creating biopax model using: " + biopaxFile.getAbsolutePath());
 		}
 
@@ -184,7 +183,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		if(model != null && !model.getObjects().isEmpty()) {
 			//merger.merge(this, model); 
 			/* SimpleMerger is unsafe and, probably, not required at all :) 
-			 * Session itself does the RDFId-based merge, and it seems working!
+			 * Session itself does the RDFId-based merge, and it works!
 			 */
 			Set<BioPAXElement> sourceElements = model.getObjects();
 			for (BioPAXElement bpe : sourceElements) {
@@ -198,7 +197,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 
 	/*
-	 * 'filterBy' is to be a BioPAX interface, not a concrete class...
+	 * 'filterBy' is a BioPAX interface, not the implementation.
 	 */ 
 	@Transactional(propagation=Propagation.REQUIRED)
 	public <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy)
@@ -266,7 +265,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		if(log.isDebugEnabled())
 			log.debug("Query '" + query + "' results size = " + count);
 		
-		// TODO use pagination properly (this is stub!)
+		// TODO later, use pagination properly (this is stub!!!)
 		hibQuery.setFirstResult(0);
 		hibQuery.setMaxResults(10);
 		
@@ -322,7 +321,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			 * has been previously saved...
 			 */
 			//session().saveOrUpdate(aBioPAXElement);
-			session().merge(aBioPAXElement); // aBioPAXElement is saved/updated, but this remains detached/transient!
+			session().merge(aBioPAXElement); 
+			// - aBioPAXElement is saved/updated, but this remains detached/transient!
+			// - many elements, because of cascade=ALL
 		}
 	}
 
@@ -336,7 +337,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	public void remove(BioPAXElement aBioPAXElement)
 	{
 		BioPAXElement bpe = getByID(aBioPAXElement.getRDFId());
-		session().delete(bpe);
+		session().delete(bpe); // many elements, because of cascade=ALL
 	}
 
 
@@ -346,7 +347,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	{
 		T bpe = factory.reflectivelyCreate(type);
 		bpe.setRDFId(id);
-		add(bpe);
+		add(bpe); // many elements, because of cascade=ALL
 		return bpe;
 	}
 
@@ -383,7 +384,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	
 	
 	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
+	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	public BioPAXElement getObject(String id) 
 	{
 		if(id == null || "".equals(id)) 
@@ -391,20 +392,40 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 		BioPAXElement toReturn = null;
 		
-		String namedQuery = "org.biopax.paxtools.impl.elementByRdfIdEager";
-		//"org.biopax.paxtools.impl.elementByRdfId";
+		// get the element
+		BioPAXElement bpe = getByID(id);
+		
+		// check it has inverse props set ("cloning" may break it...)
+		if(bpe instanceof Xref) {
+			assert(!((Xref)bpe).getXrefOf().isEmpty());
+			if(log.isDebugEnabled()) {
+				log.debug(id + " is xrefOf " + 
+					((Xref)bpe).getXrefOf().iterator().next().toString()
+				);
+			}
+		}
+		
+		
+		if (bpe != null) { 
+			// clone
+			ElementCloner cloner = new ElementCloner();
+			Model model = cloner.clone(this, bpe); 
+			toReturn = model.getByID(id);
+		}
+		
+		/* (old approach; Hibernate.initialize(toReturn) does not prevent )
+		String namedQuery = "org.biopax.paxtools.impl.elementByRdfIdEager"; //"org.biopax.paxtools.impl.elementByRdfId";
 		try {
 			Query query = session().getNamedQuery(namedQuery);
-			//Query query = session().createQuery("from BioPAXElementImpl as el where upper(el.RDFId) = upper(:rdfid)");
 			query.setString("rdfid", id);
-			//query.setCacheable(false);
-			//query.setReadOnly(true);
+			//query.setCacheable(false); //query.setReadOnly(true);
 			toReturn = (BioPAXElement) query.uniqueResult();
 			Hibernate.initialize(toReturn);
 		} catch (HibernateException e) {
 			throw new RuntimeException(" getObject(" + id + ") failed. ", e);
 		}
-		
+		*/
+
 		return toReturn; // null means no such element
 	}
 
@@ -413,8 +434,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	public Map<String, BioPAXElement> getIdMap()
 	{
 		throw new UnsupportedOperationException(
-				"Discontinued method; use a combination of " +
-				"containsID(id), getById(id), getObjects() instead.");
+			"Discontinued method; use a combination of " +
+			"containsID(id), getById(id), getObjects() instead.");
 	}
 
 
@@ -474,14 +495,14 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Override
 	public void setFactory(BioPAXFactory factory)
 	{
-		if (factory.getLevel() == this.level)
-		{
+		throw new UnsupportedOperationException("Internal BioPAX Factory cannot be modified.");
+		/* unsafe
+		if (factory.getLevel() == this.level) {
 			this.factory = factory;
-		}
-		else
-		{
+		} else {
 			throw new IllegalAccessError("Cannot use this Biopax factory!");
 		}
+		*/
 	}
 
 
@@ -540,8 +561,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Transactional(propagation=Propagation.REQUIRED)
 	public void exportModel(OutputStream outputStream) {
 		try {
-			new SimpleExporter(level)
-				.convertToOWL(this, outputStream);
+			new SimpleExporter(level).convertToOWL(this, outputStream);
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to export Model.", e);
 		}
@@ -551,13 +571,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	 * @see cpath.warehouse.CPathWarehouse#getObject(java.lang.String, java.lang.Class)
 	 */
 	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
+	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	public <T extends BioPAXElement> T getObject(String urn, Class<T> clazz) 
 	{
-		BioPAXElement bpe = getObject(urn); //getByID(urn);
+		BioPAXElement bpe = getObject(urn);
 		if(clazz.isInstance(bpe)) {
-			if(!Hibernate.isInitialized(bpe))
-				Hibernate.initialize(bpe);
 			return (T) bpe;
 		} else {
 			if(bpe != null) log.error("getObject(" +
@@ -568,22 +586,21 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see cpath.warehouse.CPathWarehouse#getObject(java.util.Set, java.lang.Class)
-	 */
+
+	
 	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
-	public <T extends XReferrable> Collection<T> getObjects(Set<? extends Xref> xrefs,
-			Class<T> clazz) 
+	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
+	public Set<String> getByXref(Set<? extends Xref> xrefs, Class<? extends XReferrable> clazz) 
 	{
-		Collection<T> toReturn = new HashSet<T>();
+		Set<String> toReturn = new HashSet<String>();
 		
 		for (Xref xref : xrefs) {
-			Xref x = (Xref) getByID(xref.getId());
+			// get persistent Xref by RDFId
+			Xref x = (Xref) getByID(xref.getRDFId());
+			// collect owners's ids (of requested type only)
 			for(XReferrable xr: x.getXrefOf()) {
 				if(clazz.isInstance(xr)) {
-					Hibernate.initialize(xr);
-					toReturn.add((T) xr);
+					toReturn.add(xr.getRDFId());
 				}
 			}
 		}
@@ -591,6 +608,73 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		return toReturn;
 	}
 	
+	
+
+	/* (non-Javadoc)
+	 * @see cpath.dao.PaxtoolsDAO#getValidSubModel(java.util.Collection)
+	 */
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
+	public Model getValidSubModel(Collection<String> ids) {
+		Set<BioPAXElement> bioPAXElements = new HashSet<BioPAXElement>();
+		for(String id : ids) {
+			BioPAXElement bpe = getByID(id);
+			if(bpe != null)
+				bioPAXElements.add(bpe);
+		}
+		
+		Completer c = new Completer(reader.getEditorMap());
+		bioPAXElements = c.complete(bioPAXElements, null); //null - this model is used explicitly there
+		Cloner cln = new Cloner(reader.getEditorMap(), factory);
+		Model model = cln.clone(null, bioPAXElements);
+		return model;
+	}
+	
+	
+	/*
+	 * Clones all the properties and properties's properties, etc.
+	 */
+	@Transactional
+	private class ElementCloner implements Visitor {
+		private Traverser traverser;
+		
+		//protected TraverserBilinked traverser; 
+		//TODO debug -> in (inverse) object property editor, e.g., for xrefOf, it returns element not set; but traverser casts to Set...
+		
+		public ElementCloner() {
+			traverser = new Traverser(reader.getEditorMap(), this);
+		}
+
+		@Transactional
+		public Model clone(Model source, BioPAXElement toBeCloned) {
+			Model subModel = factory.createModel();
+			Hibernate.initialize(toBeCloned);
+			traverser.traverse(toBeCloned, subModel);
+			return subModel;
+		}
+
+		@Transactional
+		public void visit(BioPAXElement domain, Object range, Model targetModel, PropertyEditor editor)
+		{
+			if (!targetModel.containsID(domain.getRDFId())) {
+				targetModel.addNew(domain.getModelInterface(), domain.getRDFId());
+			}
+
+			if (range instanceof BioPAXElement)
+			{
+				Hibernate.initialize(range);
+				BioPAXElement bpe = (BioPAXElement) range;
+				if (!targetModel.containsID(bpe.getRDFId())) {
+					traverser.traverse(bpe, targetModel);
+				}
+				editor.setPropertyToBean(targetModel.getByID(domain.getRDFId()), 
+						targetModel.getByID(bpe.getRDFId()));
+			} else {
+				editor.setPropertyToBean(targetModel.getByID(domain.getRDFId()), range);
+			}
+		}
+	}
+
 }
 
 
