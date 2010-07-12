@@ -44,6 +44,8 @@ import cpath.warehouse.WarehouseDAO;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.*;
 
@@ -54,8 +56,7 @@ import static org.junit.Assert.*;
  */
 public class PaxtoolsHibernateDAOTest {
 
-    private static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
-
+    static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
     static PaxtoolsDAO paxtoolsDAO;
     static SimpleExporter exporter;
 
@@ -95,8 +96,24 @@ public class PaxtoolsHibernateDAOTest {
 	}
 
 	
-	//@Test // getXrefOf() returns empty set, but it's not empty inside the DAO (cloning bug!)
-	public void testGetObjectAndXrefOf() throws Exception {
+	@Test
+	public void testGetObjectXReferableAndXrefOf() throws Exception {
+		ProteinReference pr = ((WarehouseDAO)paxtoolsDAO).getObject(
+				"urn:miriam:uniprot:P46880", ProteinReference.class);
+		assertTrue(pr instanceof ProteinReference);
+		assertFalse(pr.getXref().isEmpty());
+		Xref x = pr.getXref().iterator().next();		
+		Set<XReferrable> xrOfs = x.getXrefOf();
+		assertEquals(1, xrOfs.size()); // so far fails...
+		System.out.println(x.getRDFId() + " is xrefOf " + 
+				x.getXrefOf().iterator().next().toString()
+		);
+	}
+	
+	
+	
+	@Test // getXrefOf() returns empty set, but it's not a bug!
+	public void testGetObjectXrefAndXrefOf() throws Exception {
 		/* 
 		 * getByID would return an object with lazy collections, 
 		 * which is usable only within the session/transaction,
@@ -116,7 +133,7 @@ public class PaxtoolsHibernateDAOTest {
 		
 		// check if it has xrefOf values...
 		Set<XReferrable> xrOfs = ((UnificationXref) bpe).getXrefOf();
-		assertEquals(1, xrOfs.size()); // so far fails...
+		assertTrue(xrOfs.isEmpty()); // EMPTY when the xref is returned by getObject!
 	}
 	
 	
@@ -166,7 +183,11 @@ public class PaxtoolsHibernateDAOTest {
 		assertTrue(m.containsID("http://www.biopax.org/examples/myExample#Protein_A"));
 		assertTrue(m.containsID("urn:miriam:uniprot:P46880"));
 		assertTrue(m.containsID("urn:pathwaycommons:UnificationXref:UniProt_P46880"));
-		exporter.convertToOWL(m, System.out);
+		
+		OutputStream out = new FileOutputStream(
+				getClass().getClassLoader().getResource("").getPath() 
+					+ File.separator + "testGetValidSubModel.out.owl");
+		exporter.convertToOWL(m, out);
 	}
 	
 	
