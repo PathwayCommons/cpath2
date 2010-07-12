@@ -632,14 +632,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	
 	
 	/*
+	 * Special object copier.
 	 * Clones all the properties and properties's properties, etc.
 	 */
 	@Transactional
 	private class ElementCloner implements Visitor {
 		private Traverser traverser;
-		
-		//protected TraverserBilinked traverser; 
-		//TODO debug -> in (inverse) object property editor, e.g., for xrefOf, it returns element not set; but traverser casts to Set...
 		
 		public ElementCloner() {
 			traverser = new Traverser(reader.getEditorMap(), this);
