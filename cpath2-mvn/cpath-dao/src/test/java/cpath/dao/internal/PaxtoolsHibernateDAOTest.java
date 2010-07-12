@@ -96,7 +96,7 @@ public class PaxtoolsHibernateDAOTest {
 	}
 
 	
-	@Test
+	@Test // protein reference's xref's getXrefOf() is not empty
 	public void testGetObjectXReferableAndXrefOf() throws Exception {
 		ProteinReference pr = ((WarehouseDAO)paxtoolsDAO).getObject(
 				"urn:miriam:uniprot:P46880", ProteinReference.class);
@@ -134,24 +134,6 @@ public class PaxtoolsHibernateDAOTest {
 		// check if it has xrefOf values...
 		Set<XReferrable> xrOfs = ((UnificationXref) bpe).getXrefOf();
 		assertTrue(xrOfs.isEmpty()); // EMPTY when the xref is returned by getObject!
-	}
-	
-	
-	//@Test // getEntityReferenceOf() returns empty set (it's a cloning bug)!
-	public void testGetObjectAndEntityRefOf() throws Exception {
-		BioPAXElement bpe = ((WarehouseDAO)paxtoolsDAO).getObject(
-				"urn:miriam:uniprot:P46880", EntityReference.class);
-		assertTrue(bpe instanceof ProteinReference);
-		
-		// if the element can be exported like this, it's fully initialized...
-		StringWriter writer = new StringWriter();
-		exporter.writeObject(writer, bpe);
-		System.out.println("Export single ProteinReference (incomplete BioPAX):");
-		System.out.println(writer.toString());
-		
-		// check if it has xrefOf values...
-		Set<SimplePhysicalEntity> xrOfs = ((EntityReference) bpe).getEntityReferenceOf();
-		assertEquals(1, xrOfs.size()); // so far fails...
 	}
 	
 	
