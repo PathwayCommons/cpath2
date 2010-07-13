@@ -126,8 +126,8 @@ public class WarehouseCVsTest {
 		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0044451"));
 		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0042555"));
 		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0070847"));
-		System.out.println("AllChildren:\n" +dc.toString() + "; e.g., " +
-				warehouse.getObject("urn:miriam:obo.go:GO%3A0042555", ControlledVocabulary.class));
+		//System.out.println("AllChildren:\n" +dc.toString() + "; e.g., " +
+		//		warehouse.getObject("urn:miriam:obo.go:GO%3A0042555", ControlledVocabulary.class));
 	}
 
 	@Test
@@ -146,7 +146,7 @@ public class WarehouseCVsTest {
 		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0031981"));
 		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0044428"));
 		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0044422"));
-		System.out.println("AllParents:\n" +dc.toString());
+		//System.out.println("AllParents:\n" +dc.toString());
 	}
 
 

@@ -133,7 +133,7 @@ public class WebserviceController {
     @RequestMapping(value="/types/{type}/elements")
     @ResponseBody
     public String getElementsOfType(@PathVariable("type") Class<? extends BioPAXElement> type) {
-    	Map<ResultMapKey, Object> results = service.list(type, false);
+    	Map<ResultMapKey, Object> results = service.list(null, type, false);
     	String body = getListDataBody(results, type.getSimpleName());
 		return body;
     }
@@ -178,7 +178,7 @@ public class WebserviceController {
     {		
     	if(log.isInfoEnabled()) log.info("Fulltext Search for type:" 
 				+ type.getCanonicalName() + ", query:" + query);
-    	Map<ResultMapKey,Object> results = service.list(query, type);
+    	Map<ResultMapKey,Object> results = service.list(query, type, false);
     	String body = getListDataBody(results, query + 
     			" (in " + type.getSimpleName() + ")");
 		return body;
