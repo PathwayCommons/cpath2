@@ -28,6 +28,7 @@
  **/
 package cpath.dao;
 
+import org.biopax.paxtools.io.sif.InteractionRule;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
@@ -107,16 +108,27 @@ public interface PaxtoolsDAO extends Model {
      * Writes the complete model as BioPAX (OWL)
      * 
      * @param outputStream
+     * @param ids (optional) build a sub-model from these IDs and export it
      */
-    void exportModel(OutputStream outputStream);   
+    void exportModel(OutputStream outputStream, String... ids);   
     
     
     /**
-     * Extracts
+     * Creates a "valid" sub-model from the BioPAX elements
+     * (using paxtools's "auto-complete" and "clone" procedures)
      * 
      * @param ids a set of valid RDFId
      * @return
      */
     Model getValidSubModel(Collection<String> ids);
+    
+    
+    /**
+     * 
+     * @param outputStream
+     * @param rules
+     * @param ids (optional) the list of BioPAX elements (IDs) to export
+     */
+    void exportBinaryInteractions(OutputStream outputStream, Collection<InteractionRule> rules, String... ids);
  
 }

@@ -29,13 +29,11 @@
 package cpath.webservice;
 
 import cpath.dao.CPathService;
-import cpath.dao.internal.CPathServiceImpl;
 import cpath.webservice.args.binding.BiopaxTypeEditor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.level3.Level3Element;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
@@ -56,11 +54,19 @@ public class Webservice2Controller {
     private static String newline = System.getProperty("line.separator");	
 
     @NotNull
-    private CPathService service;
+    private CPathService proteinsService;
+    @NotNull
+    private CPathService moleculesService;
+    @NotNull
+    private CPathService cvService;
     
 	//@Autowired
-	public Webservice2Controller(CPathServiceImpl service) {
-		this.service = service;
+	public Webservice2Controller(CPathService proteinsService,
+			CPathService moleculesService, CPathService cvService) 
+	{
+		this.proteinsService = proteinsService;
+		this.moleculesService = moleculesService;
+		this.cvService = cvService;
 	}
 	
 	/**
@@ -84,35 +90,54 @@ public class Webservice2Controller {
 	 * @param urn Miriam standard version of the data type identifier (e.g., urm:miriam:obo.go:GO%3A00123)
 	 * @return
 	 */
-    @RequestMapping(value="/{type}/get")
+    @RequestMapping(value="/get")
     @ResponseBody
-    public String getElementsOfType(@PathVariable("type") Class<? extends UtilityClass> type,
-    		@RequestParam("urn") String urn) {
-    	if(log.isInfoEnabled()) log.info("Warehouse query for type:" + type.getSimpleName() 
+    public String getElementsOfType(
+    		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
+    		@RequestParam("urn") String urn) 
+    {
+    	if(type == null) {
+    		type = UtilityClass.class;
+    	} else if(!UtilityClass.class.isAssignableFrom(type)) {
+    		log.warn("Parameter 'type' value, " + 
+    				type.getSimpleName() + ", is not a sub class of UtilityClass " +
+    				"(UtilityClass will be used for the search instead)!");
+    		type = UtilityClass.class;
+    	}
+    	
+    	if(log.isInfoEnabled()) 
+    		log.info("Warehouse query for type:" + type.getSimpleName() 
     			+ ", urn:" + urn);
+    	
+    	
     	StringBuffer toReturn = new StringBuffer();
 		if (UtilityClass.class.isAssignableFrom(type)) {
-			//TODO
-			UtilityClass el = null; //((CPathServiceImpl)service).getWarehouse().getObject(urn, type);
+			//TODO use the service object
+			UtilityClass el = null;
 			if(el != null) {
 				toReturn.append(el.getRDFId()).append(newline);
 			}
 		}
+		
     	return toReturn.toString();
     }
     
-    
-	@RequestMapping(value="/find/{query}")
-	@ResponseBody
-    public String fulltextSearch(@PathVariable("query") String query) {
-		return fulltextSearchForType(Level3Element.class, query);
-	}
-        
 
-    @RequestMapping(value="/types/{type}/find/{query}")
+    @RequestMapping(value="/search")
     @ResponseBody
-    public String fulltextSearchForType(@PathVariable("type") Class<? extends BioPAXElement> type, 
-    		@PathVariable("query") String query) {	
+    public String fulltextSearchForType(
+    		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
+    		@RequestParam("q") String query) 
+    {	
+    	if(type == null) {
+    		type = UtilityClass.class;
+    	} else if(!UtilityClass.class.isAssignableFrom(type)) {
+    		log.warn("Parameter 'type' value, " + 
+    				type.getSimpleName() + ", is not a sub class of UtilityClass " +
+    				"(UtilityClass will be used for the search instead)!");
+    		type = UtilityClass.class;
+    	}
+    	
     	if(log.isInfoEnabled()) log.info("Warehouse fulltext Search for type:" 
 				+ type.getCanonicalName() + ", query:" + query);
     	
@@ -120,10 +145,6 @@ public class Webservice2Controller {
     	
     	/*
     	 * TODO search in Warehouse
-		List<BioPAXElement> results = (List<BioPAXElement>) warehouse.search(query, type);
-		for(BioPAXElement e : results) {
-			toReturn.append(e.getRDFId()).append(newline);
-		}
 		*/
 		
 		return toReturn.toString(); 

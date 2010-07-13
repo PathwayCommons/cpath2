@@ -44,7 +44,7 @@ public class CPathSquaredWebserviceTest {
 
 	@Test
 	public void testGetAllElements() {
-		String result = template.getForObject(CPATH2_SERVICE_URL+"/all/elements", String.class);
+		String result = template.getForObject(CPATH2_SERVICE_URL+"/elements", String.class);
 		assertNotNull(result);
 		System.out.println(result);
 	}
@@ -62,7 +62,7 @@ public class CPathSquaredWebserviceTest {
 
 	@Test
 	public void testGetQueryById1() {
-		String result = template.getForObject(CPATH2_SERVICE_URL+"/elements?uri={uri}", 
+		String result = template.getForObject(CPATH2_SERVICE_URL+"/get?uri={uri}", 
 				String.class, "http://www.biopax.org/examples/myExample#Pathway50");
 		// http%3A%2F%2Fwww.biopax.org%2Fexamples%2FmyExample%23Pathway50 
 		//? potential URL encoding/decoding problem here (may break NCName): - what if 'GO:12345' used instead 'Pathway50'?
@@ -76,7 +76,7 @@ public class CPathSquaredWebserviceTest {
 	public void testPostQueryById() {
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
 		map.add("uri", "http://www.biopax.org/examples/myExample#Pathway50");
-		String result = template.postForObject(CPATH2_SERVICE_URL+"/elements", 
+		String result = template.postForObject(CPATH2_SERVICE_URL+"/get", 
 				map, String.class);
 		assertNotNull(result);
 		System.out.println(result);

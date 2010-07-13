@@ -30,6 +30,7 @@ package cpath.webservice.args;
 import java.util.*;
 
 import org.biopax.paxtools.io.sif.BinaryInteractionType;
+import org.biopax.paxtools.io.sif.level3.*;
 
 /**
  * Enumeration for the SIF rules that also 
@@ -40,51 +41,57 @@ import org.biopax.paxtools.io.sif.BinaryInteractionType;
  */
 public enum BinaryInteractionRule {
 	
-	ACTIVATES(BinaryInteractionType.ACTIVATES.name()),
-	CO_CONTROL(BinaryInteractionType.CO_CONTROL.name()),
-	COMPONENT_OF(BinaryInteractionType.COMPONENT_OF.name()),
-	IN_SAME_COMPONENT(BinaryInteractionType.IN_SAME_COMPONENT.name()),
-	INACTIVATES(BinaryInteractionType.INACTIVATES.name()),
-	INTERACTS_WITH(BinaryInteractionType.INTERACTS_WITH.name()),
-	METABOLIC_CATALYSIS(BinaryInteractionType.METABOLIC_CATALYSIS.name()),
-	REACTS_WITH(BinaryInteractionType.REACTS_WITH.name()),
-	SEQUENTIAL_CATALYSIS(BinaryInteractionType.SEQUENTIAL_CATALYSIS.name()),
-	STATE_CHANGE(BinaryInteractionType.STATE_CHANGE.name()),
+	ACTIVATES(BinaryInteractionType.ACTIVATES.name(), null),
+	CO_CONTROL(BinaryInteractionType.CO_CONTROL.name(), new ControlsTogetherRule()),
+	IN_SAME_COMPONENT(BinaryInteractionType.IN_SAME_COMPONENT.name(), new ComponentRule()),
+	INACTIVATES(BinaryInteractionType.INACTIVATES.name(), null),
+	INTERACTS_WITH(BinaryInteractionType.INTERACTS_WITH.name(), new ParticipatesRule()),
+	METABOLIC_CATALYSIS(BinaryInteractionType.METABOLIC_CATALYSIS.name(), new ControlRule()),
+	REACTS_WITH(BinaryInteractionType.REACTS_WITH.name(), new ParticipatesRule()),
+	SEQUENTIAL_CATALYSIS(BinaryInteractionType.SEQUENTIAL_CATALYSIS.name(), new ConsecutiveCatalysisRule()),
+	STATE_CHANGE(BinaryInteractionType.STATE_CHANGE.name(), new ControlRule()),
 	
 	// for backward compatibility -
-	CO_CONTROL_DEPENDENT_ANTI(BinaryInteractionType.CO_CONTROL.name()),
-	CO_CONTROL_DEPENDENT_SIMILAR(BinaryInteractionType.CO_CONTROL.name()),
-	CO_CONTROL_INDEPENDENT_ANTI(BinaryInteractionType.CO_CONTROL.name()),
-	CO_CONTROL_INDEPENDENT_SIMILAR(BinaryInteractionType.CO_CONTROL.name()),
-	CONTROLS_METABOLIC_CHANGE(BinaryInteractionType.METABOLIC_CATALYSIS.name()),
-	COMPONENT_IN_SAME(BinaryInteractionType.IN_SAME_COMPONENT.name()),
-	CONTROLS_STATE_CHANGE(BinaryInteractionType.STATE_CHANGE.name()),
-	PARTICIPATES_CONVERSION(BinaryInteractionType.REACTS_WITH.name()),
-	PARTICIPATES_INTERACTION(BinaryInteractionType.STATE_CHANGE.name()),
+	COMPONENT_OF(BinaryInteractionType.COMPONENT_OF.name(), null),
+	CO_CONTROL_DEPENDENT_ANTI(BinaryInteractionType.CO_CONTROL.name(), new ControlsTogetherRule()),
+	CO_CONTROL_DEPENDENT_SIMILAR(BinaryInteractionType.CO_CONTROL.name(), new ControlsTogetherRule()),
+	CO_CONTROL_INDEPENDENT_ANTI(BinaryInteractionType.CO_CONTROL.name(), new ControlsTogetherRule()),
+	CO_CONTROL_INDEPENDENT_SIMILAR(BinaryInteractionType.CO_CONTROL.name(), new ControlsTogetherRule()),
+	CONTROLS_METABOLIC_CHANGE(BinaryInteractionType.METABOLIC_CATALYSIS.name(), new ControlRule()),
+	COMPONENT_IN_SAME(BinaryInteractionType.IN_SAME_COMPONENT.name(), new ComponentRule()),
+	CONTROLS_STATE_CHANGE(BinaryInteractionType.STATE_CHANGE.name(), new ControlRule()),
+	PARTICIPATES_CONVERSION(BinaryInteractionType.REACTS_WITH.name(), new ParticipatesRule()),
+	PARTICIPATES_INTERACTION(BinaryInteractionType.STATE_CHANGE.name(), new ControlRule()),
 	;
 	
 	/**
 	 * actual (paxtools's) binary interaction rule name
 	 */
 	public final String ruleName;
+	public final InteractionRuleL3 rule;
 	
-	private BinaryInteractionRule(String rule) {
-		this.ruleName = rule;
+	private BinaryInteractionRule(String ruleName, InteractionRuleL3 rule) {
+		this.ruleName = ruleName;
+		this.rule = rule;
 	}
 	
 	private static final Set<String> allnames = new HashSet<String>();
 	private static final Set<String> actualnames = new HashSet<String>();
+	private static final Set<InteractionRuleL3> allrules = new HashSet<InteractionRuleL3>();
 
 	static {
 		for(BinaryInteractionRule r : EnumSet.allOf(BinaryInteractionRule.class))
+		{
 			allnames.add(r.name());
-		
-		for(BinaryInteractionType t : EnumSet.allOf(BinaryInteractionType.class))
-			actualnames.add(t.name());
+			actualnames.add(r.ruleName);
+			if(r.rule != null)
+				allrules.add(r.rule);
+		}
 	}
 
 	/**
-	 * Gets all the SIF rules (names), including old legacy ones.
+	 * Gets all the SIF rule names (as defined in the enumeration), 
+	 * including old/legacy ones.
 	 * 
 	 * @return
 	 */
@@ -93,11 +100,21 @@ public enum BinaryInteractionRule {
 	}
 	
 	/**
-	 * Gets all the SIF rules (names)
+	 * Gets all the SIF rules (actual pxtools's names)
 	 * 
 	 * @return
 	 */
 	public static Set<String> actualNames() {
 		return Collections.unmodifiableSet(actualnames);
+	}
+
+	
+	/**
+	 * Gets all the SIF rules.
+	 * 
+	 * @return
+	 */
+	public static Set<InteractionRuleL3> allRules() {
+		return Collections.unmodifiableSet(allrules);
 	}
 }

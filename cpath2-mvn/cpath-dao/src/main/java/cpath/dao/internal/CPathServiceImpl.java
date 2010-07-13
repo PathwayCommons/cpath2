@@ -122,13 +122,13 @@ public class CPathServiceImpl implements CPathService {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
 			switch (format) {
-			case BIOPAX:
-				map = asBiopax(id);
 			case BINARY_SIF:
 				// TODO
 				break;
 
+			case BIOPAX: // is default
 			default:
+				map = asBiopax(id);
 			}
 		} catch (Exception e) {
 			map.put(ResultMapKey.ERROR, e.toString());
