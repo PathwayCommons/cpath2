@@ -42,7 +42,9 @@
 	</bean>
 
 	<bean id="webservice2Controller" class="cpath.webservice.Webservice2Controller">
-		<constructor-arg ref="cPathService"/>
+		<constructor-arg index="0" ref="cPathServiceProteins"/>
+		<constructor-arg index="1" ref="cPathServiceMolecules"/>
+		<constructor-arg index="2" ref="cPathServiceCVs"/>
 	</bean>
 	
 	<!-- simply starting this bean populates the (static) Bridgedb DataSource list from constants and metadataDAO! -->
@@ -52,6 +54,18 @@
 	
 	<bean id="cPathService" class="cpath.dao.internal.CPathServiceImpl">
 		<constructor-arg ref="paxtoolsDAO"/>
+	</bean>
+	
+	<bean id="cPathServiceProteins" class="cpath.dao.internal.CPathServiceImpl">
+		<constructor-arg ref="proteinsDAO"/>
+	</bean>
+	
+	<bean id="cPathServiceMolecules" class="cpath.dao.internal.CPathServiceImpl">
+		<constructor-arg ref="moleculesDAO"/>
+	</bean>
+	
+	<bean id="cPathServiceCVs" class="cpath.dao.internal.CPathServiceImpl">
+		<constructor-arg ref="cvFetcher"/>
 	</bean>
 
 </beans>

@@ -35,12 +35,12 @@ package cpath.webservice.args;
  *
  */
 public enum Cmd {
-	SEARCH,
-	GET_PATHWAYS,
-	GET_NEIGHBORS,
-	GET_PARENTS,
-	GET_RECORD_BY_CPATH_ID,
+	SEARCH, // full-text search
+	GET_PATHWAYS, // - search first, then - GET_PARENTS of type Pathway
+	GET_NEIGHBORS, // - by 'graph' command
+	GET_PARENTS, // graph query
+	GET_RECORD_BY_CPATH_ID, // new 'get' command
 	// old?
-	GET_BY_KEYWORD,
+	GET_BY_KEYWORD, // 'search'?
 	;
 }

@@ -82,6 +82,133 @@ public class WebserviceController {
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
         binder.registerCustomEditor(ProtocolVersion.class, new ProtocolVersionEditor());
     }
+
+	
+	/* ========================================================================
+	 *    Most Important Web Service Methods
+	 * ======================================================================*/
+	
+	// Get by ID
+    @RequestMapping(value="/get")
+    @ResponseBody
+    public String elementById(
+    		@RequestParam(value="format", required=false) OutputFormat format, 
+    		@RequestParam("uri") String uri) 
+    {
+    	if (log.isDebugEnabled())
+			log.debug("Query: /get; format:" + format + ", urn:" + uri);
+    	
+    	if(format==null) 
+    		format = OutputFormat.BIOPAX;
+    	
+    	Map<ResultMapKey, Object> result = service.element(uri, format);
+    	
+    	String body = getBody(result, format, uri);
+    	
+		return body;
+    }
+	
+	
+    // Fulltext Search
+    @RequestMapping(value="/search")
+    @ResponseBody
+    public String fulltextSearch(
+    		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
+    		@RequestParam("q") String query) 
+    {		
+    	if(log.isInfoEnabled()) log.info("Fulltext Search for type:" 
+				+ type.getCanonicalName() + ", query:" + query);
+    	Map<ResultMapKey,Object> results = service.list(query, type, false);
+    	String body = getListDataBody(results, query + 
+    			" (in " + type.getSimpleName() + ")");
+		return body;
+	}
+    
+	// Graph Queries
+	@RequestMapping(value="/graph")
+	@ResponseBody
+    public String graphQuery(
+    		@RequestParam(value="format", required=false) OutputFormat format,
+    		@RequestParam(value="kind", required=true) GraphType kind,
+    		@RequestParam(value="source", required=false) String sources,
+    		@RequestParam(value="dest", required=false) String dests)
+    {
+		if(format==null) 
+			format = OutputFormat.BIOPAX;
+		
+		StringBuffer toReturn = new StringBuffer(
+				"(Graph Query Is Not Implemented Yet) " 
+				+ "GraphQuery format:" + format + 
+				", kind:" + kind + ", source:" 
+				+ sources + ", dest:" + dests);
+		
+		if(log.isInfoEnabled()) 
+			log.info(toReturn.toString());
+		
+		return toReturn.toString(); 
+	}
+	
+	
+	   
+    /**
+     * Controller for the legacy cPath web services
+     * (backward compatibility).
+     */
+    /*
+     * Currently, we do not use neither custom property editors nor framework's validator 
+     * for the web method parameters. All the arguments are plain strings, 
+     * and actual validation is performed after the binding, using the same approach 
+     * as in old cPath (original cPath web 'protocol' was ported and re-factored)
+     * 
+     * TODO migrate to spring MVC and javax.validation framework (Validator, Errors and BindingResult, etc..)
+     * 
+     */
+    @RequestMapping("/webservice.do")
+    @ResponseBody
+    public String doWebservice(
+    		/*
+    		@RequestParam("cmd") String cmd, 
+    		@RequestParam(value="version", required=false) String version,
+    		@RequestParam("q") String q, // e.g. the list of identifiers or a search string
+    		@RequestParam(value="output", required=false) String output,
+    		@RequestParam(value="organism", required=false) String organism, // taxonomy id
+    		@RequestParam(value="input_id_type", required=false) String inputIdType,
+    		@RequestParam(value="data_source", required=false) String dataSources, //comma-separated names
+    		@RequestParam(value="output_id_type", required=false) String outputIdType,
+    		@RequestParam(value="binary_interaction_rule", required=false) String rules //comma-separated names
+    		*/
+    		@RequestBody MultiValueMap<String,String> map // it's easier to initialize the ProtocolRequest below...
+    	) 
+    {
+    	if(log.isDebugEnabled()) {
+    		log.debug("After webservice.do request params binding - " + 
+    				map.toString());
+    	}
+
+		String toReturn = "";
+		try {
+			// build the ProtocolRequest from the Map
+			ProtocolRequest request = new ProtocolRequest(map.toSingleValueMap());
+			// validate by ProtocolValidator
+			ProtocolValidator protocolValidator = new ProtocolValidator(request);
+			protocolValidator.validate();
+		} catch (ProtocolException e) {
+			ErrorType errorType = e.getStatusCode().createErrorType();
+			// set the error details
+			errorType.setErrorDetails(e.getMessage());
+			// build the xml string
+			return ProtocolStatusCode.marshal(errorType);
+		}
+
+		// TODO execute query and get results here
+
+		return toReturn;
+    }
+	
+	
+	/* ========================================================================
+	 *    The Rest of Web Methods 
+	 * ======================================================================*/
 	
 	
 	/**
@@ -121,9 +248,9 @@ public class WebserviceController {
     //=== Web methods that list all BioPAX element or - by type ===
     
     /*
-     * TODO all objects?.. This might be too much to ask :)
+     * TODO all objects?.. This might be too much of curiosity :)
      */
-    @RequestMapping(value="/all/elements")
+    @RequestMapping(value="/elements")
     @ResponseBody
     public String getElements() throws IOException {
     	return getElementsOfType(BioPAXElement.class);
@@ -137,79 +264,8 @@ public class WebserviceController {
     	String body = getListDataBody(results, type.getSimpleName());
 		return body;
     }
-    
-     
-    /*=== Most critical web method that get ONE element by ID (URI) ===*/
-	@RequestMapping(value="/elements")
-    @ResponseBody
-    public String elementById(@RequestParam("uri") String uri) {
-    	if(log.isInfoEnabled()) log.info("Query /elements");
-    	return elementById(OutputFormat.BIOPAX, uri);
-    }
-
-    
-    @RequestMapping(value="/format/{format}/elements")
-    @ResponseBody
-    public String elementById(@PathVariable("format") OutputFormat format, 
-    		@RequestParam("uri") String uri) 
-    {
-    	if (log.isDebugEnabled())
-			log.debug("Query - format:" + format + ", urn:" + uri);
-    	Map<ResultMapKey, Object> result = service.element(uri, format);
-    	String body = getBody(result, format, uri);
-		return body;
-    }
-    
-    
-    //=== Fulltext search web methods ===//
-    
-	@RequestMapping(value="/find/{query}")
-	@ResponseBody
-    public String fulltextSearch(@PathVariable("query") String query) {
-		return fulltextSearchForType(BioPAXElement.class, query);
-	}
         
-
-    @RequestMapping(value="/types/{type}/find/{query}")
-    @ResponseBody
-    public String fulltextSearchForType(
-    		@PathVariable("type") Class<? extends BioPAXElement> type, 
-    		@PathVariable("query") String query) 
-    {		
-    	if(log.isInfoEnabled()) log.info("Fulltext Search for type:" 
-				+ type.getCanonicalName() + ", query:" + query);
-    	Map<ResultMapKey,Object> results = service.list(query, type, false);
-    	String body = getListDataBody(results, query + 
-    			" (in " + type.getSimpleName() + ")");
-		return body;
-	}
-    
-	
-    // TODO later, remove "method = RequestMethod.POST" and the test form method below
-	@RequestMapping(value="/graph", method = RequestMethod.POST)
-	@ResponseBody
-    public String graphQuery(@RequestBody MultiValueMap<String, String> formData)
-    {
-		if(log.isInfoEnabled()) log.info("GraphQuery format:" 
-				+ formData.get("format") + ", kind:" + formData.get("kind") 
-				+ ", source:" + formData.get("source") 
-				+ ", dest:" + formData.get("dest"));
-		
-		StringBuffer toReturn = new StringBuffer("Not Implemented Yet :)" 
-				+ "GraphQuery format:" + formData.get("format") + 
-				", kind:" + formData.get("kind") + ", source:" 
-				+ formData.get("source") + ", dest:" 
-				+ formData.get("dest"));
-		
-		return toReturn.toString(); 
-	}
-	
-	
-	// temporary - for testing
-	@RequestMapping(value="/graph", method = RequestMethod.GET)
-    public void testForm() {}
-	
-	
+    	
 	/**
 	 * List of bio-network data sources.
 	 * 
@@ -225,62 +281,11 @@ public class WebserviceController {
     	return toReturn.toString();
     }	
 	
+ 
+    /* 
+     * 
+     */
     
-    /**
-     * Controller for the legacy cPath web services
-     * (backward compatibility).
-     */
-    /*
-     * Currently, we do not use neither custom property editors nor framework's validator 
-     * for the web method parameters. All the arguments are plain strings, 
-     * and actual validation is performed after the binding, using the same approach 
-     * as in old cPath (original cPath web 'protocol' was ported and re-factored)
-     * 
-     * TODO migrate to spring MVC and javax.validation framework (Validator, Errors and BindingResult, etc..)
-     * 
-     */
-    @RequestMapping("/webservice.do")
-    @ResponseBody
-    public String doWebservice(
-    		/*
-    		@RequestParam("cmd") String cmd, 
-    		@RequestParam(value="version", required=false) String version,
-    		@RequestParam("q") String q, // e.g. the list of identifiers or a search string
-    		@RequestParam(value="output", required=false) String output,
-    		@RequestParam(value="organism", required=false) String organism, // taxonomy id
-    		@RequestParam(value="input_id_type", required=false) String inputIdType,
-    		@RequestParam(value="data_source", required=false) String dataSources, //comma-separated names
-    		@RequestParam(value="output_id_type", required=false) String outputIdType,
-    		@RequestParam(value="binary_interaction_rule", required=false) String rules //comma-separated names
-    		*/
-    		@RequestBody MultiValueMap<String,String> map
-    	) 
-    {
-    	if(log.isDebugEnabled()) {
-    		log.debug("After webservice.do request params binding - " + 
-    				map.toString());
-    	}
-
-		String toReturn = "";
-		try {
-			// build the ProtocolRequest from the Map
-			ProtocolRequest request = new ProtocolRequest(map.toSingleValueMap());
-			// validate by ProtocolValidator
-			ProtocolValidator protocolValidator = new ProtocolValidator(request);
-			protocolValidator.validate();
-		} catch (ProtocolException e) {
-			ErrorType errorType = e.getStatusCode().createErrorType();
-			// set the error details
-			errorType.setErrorDetails(e.getMessage());
-			// build the xml string
-			return ProtocolStatusCode.marshal(errorType);
-		}
-
-		// TODO execute query and get results here
-
-		return toReturn;
-    }
-
     
     /*
      * makes a plain text string (response body) 
