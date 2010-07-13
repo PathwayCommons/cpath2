@@ -29,10 +29,11 @@
 package cpath.dao.internal;
 
 // imports
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -43,6 +44,7 @@ import cpath.dao.CPathService;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.CPathService.OutputFormat;
 import cpath.dao.CPathService.ResultMapKey;
+import cpath.warehouse.WarehouseDAO;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -57,55 +59,61 @@ public class CPathServiceTest {
 
     private static Log log = LogFactory.getLog(CPathServiceTest.class);
 
-    PaxtoolsDAO paxtoolsDAO;
-    
+    static CPathService service;
+    static SimpleExporter exporter;
+
 	
-	@Before
-	public void setUp() throws Exception {
-		DataServicesFactoryBean.createSchema("cpath2_test");
-		// init the DAO (it loads now because databases are created above)
+    static {
+    	DataServicesFactoryBean.createSchema("cpath2_test");
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 				"classpath:testContext-cpathDAO.xml");
-		paxtoolsDAO = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-		
-		// load some data into the test storage
+		Object dao = context.getBean("paxtoolsDAO");
 		log.info("Loading BioPAX data (importModel(file))...");
-		File biopaxFile = new File(CPathServiceTest.class.getResource("/test.owl").getFile());
+		File biopaxFile = new File(CPathServiceTest.class.getResource("/test.owl").getFile());		
 		//File biopaxFile = new File(getClass().getResource("/biopax-level3-test-normalized.owl").getFile());
 		try {
-			paxtoolsDAO.importModel(biopaxFile);
+			((PaxtoolsDAO)dao).importModel(biopaxFile);
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
-	}
+		service = new CPathServiceImpl((PaxtoolsDAO)dao, (WarehouseDAO)dao);
+		exporter = new SimpleExporter(BioPAXLevel.L3);
+    }
 	
 	
 	@Test
-	public void foo() {}
-	
-	//@Test
 	public void testServiceElement() throws Exception {
-		CPathService service = new CPathServiceImpl(paxtoolsDAO);
-		
 		Map<ResultMapKey, Object> map = service.element(
 				"http://www.biopax.org/examples/myExample#Protein_A",
 				OutputFormat.BIOPAX);
 		assertNotNull(map);
-		System.out.println(map.toString());
 		
 		assertNotNull(map.get(ResultMapKey.DATA));
-		System.out.println(map.get(ResultMapKey.DATA));
+		assertNotNull(map.get(ResultMapKey.ELEMENT));
+		assertNotNull(map.get(ResultMapKey.MODEL));
 		
 		Model m = (Model) map.get(ResultMapKey.MODEL);
 		assertNotNull(m);
 		BioPAXElement e = m.getByID("http://www.biopax.org/examples/myExample#Protein_A");
 		assertTrue(e instanceof Protein);
-	
-		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
-		BioPAXElement bpe = paxtoolsDAO
-			.getByID("http://www.biopax.org/examples/myExample#Protein_A");
-		assertNotNull(bpe);
-		assertTrue(bpe instanceof Protein);
+		
+		e = null;
+		e = (BioPAXElement) map.get(ResultMapKey.ELEMENT);
+		assertTrue(e instanceof Protein);
 	}
 
+	
+	@Test
+	public void testServiceElement2() throws Exception {
+		Map<ResultMapKey, Object> map = service.element(
+				"urn:miriam:uniprot:P46880", OutputFormat.BIOPAX);
+		assertNotNull(map);
+		
+		assertEquals(1, map.get(ResultMapKey.COUNT));
+		
+		BioPAXElement e = (BioPAXElement) map.get(ResultMapKey.ELEMENT);
+		assertTrue(e instanceof ProteinReference);
+		
+		System.out.println(map.get(ResultMapKey.DATA));
+	}
 }

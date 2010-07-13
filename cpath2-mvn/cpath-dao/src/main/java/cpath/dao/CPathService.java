@@ -57,6 +57,7 @@ public interface CPathService {
 	 */
 	public static enum ResultMapKey {
 		MODEL, // key to BioPAX (PaxTools) Model, if any is returned
+		ELEMENT, // a BioPAXElement (detached from DAO)
 		DATA, // key to query results (to be treated by the caller), e.g., id-list, image, etc.
 		ERROR, // key to error string or object (e.g., toString() will be used to get message)
 		COUNT, // key to "records" count, e.g. items in the ID-list or no. of BioPAX elements
@@ -84,17 +85,6 @@ public interface CPathService {
 		;
 	}
 	
-	/**
-	 * Gets the results map that contain either count of the elements 
-	 * of the specified BioPAX class or the list of such RDF IDs as well.
-	 * 
-	 * @see ResultMapKey
-	 * 
-	 * @param biopaxClass
-	 * @return
-	 */
-	Map<ResultMapKey, Object> list(Class<? extends BioPAXElement> biopaxClass, boolean countOnly);
-	
 	
 	/**
 	 * 
@@ -115,12 +105,12 @@ public interface CPathService {
 	 * 
 	 * @see ResultMapKey
 	 * 
-	 * @param queryStr
+	 * @param queryStr if null or empty, list/count all elements (of the class)
 	 * @param biopaxClass
 	 * @param countOnly
 	 * @return
 	 */
-	Map<ResultMapKey, Object> list(String queryStr, Class<? extends BioPAXElement> biopaxClass);
+	Map<ResultMapKey, Object> list(String queryStr, Class<? extends BioPAXElement> biopaxClass, boolean countOnly);
 
 	
 	/**

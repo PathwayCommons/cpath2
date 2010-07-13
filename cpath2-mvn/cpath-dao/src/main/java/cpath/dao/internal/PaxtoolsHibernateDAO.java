@@ -240,13 +240,21 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Transactional(propagation=Propagation.REQUIRED)
 	public List<String> find(String query, Class<? extends BioPAXElement> filterBy) 
 	{
+		// set to return
+		List<String> toReturn = new ArrayList<String>();
+		
+		if(query == null || "".equals(query) || "*".equals(query.trim())) {
+			Query q = session().createQuery("select rdfid from " 
+					+ filterBy.getCanonicalName());
+			toReturn = q.list();
+			return toReturn;
+		}
+		
 		if (log.isInfoEnabled())
 			log.info("find (IDs): " + query + ", filterBy: " + filterBy);
 
 		// fulltextquery cannot filter by interfaces (only likes annotated entity classes)...
 		Class<? extends BioPAXElement> filterClass = getEntityClass(filterBy);
-		// set to return
-		List<String> toReturn = new ArrayList<String>();
 		// create native lucene query
 		org.apache.lucene.search.Query luceneQuery = null;
 		try {
@@ -628,6 +636,39 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		Cloner cln = new Cloner(reader.getEditorMap(), factory);
 		Model model = cln.clone(null, bioPAXElements);
 		return model;
+	}
+	
+
+
+	/* (non-Javadoc)
+	 * @see cpath.dao.PaxtoolsDAO#count(java.lang.String, java.lang.Class)
+	 */
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
+	public Integer count(String query, Class<? extends BioPAXElement> filterBy) {
+		Long toReturn;
+
+		if ("".equals(query) || query == null) {
+			Query q = session().createQuery(
+					"select count(*) from " + filterBy.getCanonicalName());
+			toReturn = (Long) q.uniqueResult();
+		} else {
+
+			Class<? extends BioPAXElement> filterClass = getEntityClass(filterBy);
+			org.apache.lucene.search.Query luceneQuery = null;
+			FullTextSession fullTextSession = Search
+					.getFullTextSession(session());
+			try {
+				luceneQuery = multiFieldQueryParser.parse(query);
+			} catch (ParseException e) {
+				throw new RuntimeException("Lucene query parser exception", e);
+			}
+			FullTextQuery hibQuery = fullTextSession.createFullTextQuery(
+					luceneQuery, filterClass);
+			toReturn = new Long(hibQuery.getResultSize());
+		}
+
+		return toReturn.intValue();
 	}
 	
 	

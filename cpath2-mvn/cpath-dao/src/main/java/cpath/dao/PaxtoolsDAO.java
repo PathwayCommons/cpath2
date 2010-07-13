@@ -79,9 +79,9 @@ public interface PaxtoolsDAO extends Model {
 
     
 	 /**
-	 * Searches the lucene index and returns the set of IDs 
-	 * of the BioPAX elements of given class in the model 
-	 * that match the query string.
+	 * Returns the set of IDs 
+	 * of the BioPAX elements of given class 
+	 * that match the query.
 	 * 
      * @param query String
 	 * @param filterBy class to be used as a filter.
@@ -89,6 +89,19 @@ public interface PaxtoolsDAO extends Model {
      */
     List<String> find(String query, Class<? extends BioPAXElement> filterBy);
 
+    
+	 /**
+	 * Returns the count 
+	 * of the BioPAX elements of given class
+	 * that match the full-text query string.
+	 * 
+     * @param query String
+	 * @param filterBy class to be used as a filter.
+     * @return count
+     */
+    Integer count(String query, Class<? extends BioPAXElement> filterBy);
+    
+    
     
     /**
      * Writes the complete model as BioPAX (OWL)
