@@ -112,34 +112,53 @@ public class WarehouseCVsTest {
 
 	@Test
 	public final void testGetDirectChildren() {
-
+		Set<String> dc = warehouse.getDirectChildren("urn:miriam:obo.go:GO%3A0005654");
+		assertFalse(dc.isEmpty());
+		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0044451"));
+		System.out.println("DirectChildren:\n" + dc.toString() + " " +
+			warehouse.getObject("urn:miriam:obo.go:GO%3A0044451", ControlledVocabulary.class));
 	}
 
 	@Test
 	public final void testGetDirectAllChildren() {
-
+		Set<String> dc = warehouse.getAllChildren("urn:miriam:obo.go:GO%3A0005654");
+		assertFalse(dc.isEmpty());
+		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0044451"));
+		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0042555"));
+		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0070847"));
+		System.out.println("AllChildren:\n" +dc.toString() + "; e.g., " +
+				warehouse.getObject("urn:miriam:obo.go:GO%3A0042555", ControlledVocabulary.class));
 	}
 
 	@Test
 	public final void testGetDirectParents() {
-
+		Set<String> dc = warehouse.getDirectParents("urn:miriam:obo.go:GO%3A0005654");
+		assertFalse(dc.isEmpty());
+		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0031981"));
+		System.out.println("DirectParents:\n" +dc.toString() + "; e.g., " +
+			warehouse.getObject("urn:miriam:obo.go:GO%3A0031981", ControlledVocabulary.class));
 	}
 
 	@Test
 	public final void testGetAllParents() {
-
+		Set<String> dc = warehouse.getAllParents("urn:miriam:obo.go:GO%3A0005654");
+		assertFalse(dc.isEmpty());
+		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0031981"));
+		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0044428"));
+		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0044422"));
+		System.out.println("AllParents:\n" +dc.toString());
 	}
 
 
 	@Test // using correct ID
-	public final void testCreateUtilityClass() {
+	public final void testGetObject() {
 		CellularLocationVocabulary cv = warehouse.getObject(
 				"urn:miriam:obo.go:GO%3A0005737",CellularLocationVocabulary.class);
 		assertNotNull(cv);
 	}
 	
 	@Test // using bad ID
-	public final void testCreateUtilityClass2() {
+	public final void testGetObject2() {
 		CellularLocationVocabulary cv = warehouse.getObject(
 				"urn:miriam:obo.go:GO%3A0005737X",CellularLocationVocabulary.class);
 		assertNull(cv);

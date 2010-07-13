@@ -36,26 +36,18 @@ import javax.validation.constraints.NotNull;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.queryParser.MultiFieldQueryParser;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.util.Version;
-import org.biopax.paxtools.controller.Completer;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.hibernate.Session;
-import org.hibernate.search.FullTextQuery;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
 import org.springframework.stereotype.Repository;
 import org.springframework.stereotype.Service;
 
 import cpath.dao.CPathService;
 import cpath.dao.PaxtoolsDAO;
+import cpath.warehouse.WarehouseDAO;
 
 /**
  * Service tier class - to uniformly access 
@@ -65,6 +57,7 @@ import cpath.dao.PaxtoolsDAO;
  * 
  * @author rodche
  *
+ * TODO It's not finished at all; - add/implement methods, debug!
  */
 @Service
 @Repository
@@ -73,39 +66,34 @@ public class CPathServiceImpl implements CPathService {
 	
 	@NotNull
 	private PaxtoolsDAO dao;
+	private WarehouseDAO whdao; // in fact, can be the same object as 'dao'
 	
 	private final SimpleReader reader; // to allow BioPAX OWL in queries
 	private final SimpleExporter exporter;
-	private final SimpleMerger merger;
-	private final StandardAnalyzer analyzer;
-	private final MultiFieldQueryParser multiFieldQueryParser;
+	private final SimpleMerger merger; // to merge results from subsequent queries...
 	
-	public CPathServiceImpl(PaxtoolsDAO paxtoolsDAO) {
+	public CPathServiceImpl(PaxtoolsDAO paxtoolsDAO, WarehouseDAO warehouseDAO) {
+		this.dao = paxtoolsDAO;
+		this.whdao = warehouseDAO;
 		this.reader = new SimpleReader(BioPAXLevel.L3);
 		this.exporter = new SimpleExporter(BioPAXLevel.L3);
 		this.merger = new SimpleMerger(reader.getEditorMap());
-		this.dao = paxtoolsDAO;
-		this.analyzer = new StandardAnalyzer(Version.LUCENE_29);
-		this.multiFieldQueryParser = new MultiFieldQueryParser(
-				Version.LUCENE_29, PaxtoolsHibernateDAO.ALL_FIELDS, this.analyzer);
 	}
 
 
 	@Override
-	public Map<ResultMapKey, Object> list(
+	public Map<ResultMapKey, Object> list(String queryStr, 
 			Class<? extends BioPAXElement> biopaxClass, boolean countOnly) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 
 		try {
 			if (countOnly) {
-				Integer count = (Integer) ((PaxtoolsHibernateDAO) dao)
-					.session().createQuery("select count(*) from "
-						+ biopaxClass.getCanonicalName()).uniqueResult();
-				map.put(ResultMapKey.COUNT, count.intValue());
+				Integer count =  dao.count(null, biopaxClass);
+				map.put(ResultMapKey.COUNT, count);
 			} else {
-				Collection<String> data = dao.find("*", biopaxClass);
+				Collection<String> data = dao.find(queryStr, biopaxClass);
 				map.put(ResultMapKey.DATA, data);
-				map.put(ResultMapKey.COUNT, Integer.valueOf(data.size()));
+				map.put(ResultMapKey.COUNT, data.size()); // becomes Integer
 			}
 		} catch (Exception e) {
 			map.put(ResultMapKey.ERROR, e.toString());
@@ -146,89 +134,19 @@ public class CPathServiceImpl implements CPathService {
 			map.put(ResultMapKey.ERROR, e.toString());
 		}
 		return map;
-	}
-	
-
-	@Override
-	//TODO does not do pagination, projections, no optimization..
-	public Map<ResultMapKey, Object> list(String queryStr,
-			Class<? extends BioPAXElement> biopaxClass) 
-	{
-		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-		try {
-			List<String> results =dao.find(queryStr, biopaxClass);
-			map.put(ResultMapKey.DATA, results);
-			map.put(ResultMapKey.COUNT, Integer.valueOf(results.size()));
-		} catch (Exception e) {
-			map.put(ResultMapKey.ERROR, e.toString());
-		}
-
-		return map;
 	}	
 	
-	
-	private int count(String search, Class<?> filterBy) {
-		Session session = ((PaxtoolsHibernateDAO) dao).session();
-		FullTextSession fullTextSession = Search.getFullTextSession(session);
-		org.apache.lucene.search.Query luceneQuery = null;
-		try {
-			luceneQuery = multiFieldQueryParser.parse(search);
-		}
-		catch (ParseException e) {
-			throw new RuntimeException("Lucene query parser exception", e);
-		}
-		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery,
-				filterBy);
-		return hibQuery.getResultSize();
-	}
-	
-	
-	private List<Object> fulltextSearch(String q, boolean countOnly, 
-			int firstResult, int maxResults, Class<? extends BioPAXElement> filterBy, 
-			Object... projections) 
-	{	
-		org.apache.lucene.search.Query luceneQuery = null;
-		try {
-			luceneQuery = multiFieldQueryParser.parse(q);
-		}
-		catch (ParseException e) {
-			throw new RuntimeException("Lucene query parser exception", e);
-		}
-
-		Session session = ((PaxtoolsHibernateDAO)dao).session();
-		// get full text session
-		FullTextSession fullTextSession = Search.getFullTextSession(session);
-		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterBy);
-		
-		// TODO use pagination (add args)
-		hibQuery.setFirstResult(firstResult);
-		hibQuery.setMaxResults(maxResults);
-		
-		// TODO use projection (to get lucene score and other meta info)...
-		//...
-		
-		// execute search
-		return hibQuery.list();
-	}
-
 	
 	Map<ResultMapKey, Object> asBiopax(String id) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		
-		Model m = dao.getLevel().getDefaultFactory().createModel();
-		// find element by id
-		BioPAXElement element = dao.getByID(id);
+		BioPAXElement element = whdao.getObject(id);
 		if (element != null) {
-			// auto-complete!
-			// warn: completer instance has internal set of elements that is not cleared!
-			Completer completer = new Completer(reader.getEditorMap());
-			Set<BioPAXElement> elements = completer.complete(Collections
-					.singletonList(element), dao);
-			for (BioPAXElement bpe : elements) {
-				m.add(bpe);
-			}
+			map.put(ResultMapKey.ELEMENT, element);
+			Model m = dao.getValidSubModel(Collections.singleton(id));
 			map.put(ResultMapKey.MODEL, m);
 			map.put(ResultMapKey.DATA, toOWL(m));
+			map.put(ResultMapKey.COUNT, 1);
 		}
 		
 		return map;

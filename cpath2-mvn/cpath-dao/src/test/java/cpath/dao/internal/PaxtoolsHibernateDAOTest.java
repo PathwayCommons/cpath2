@@ -104,7 +104,7 @@ public class PaxtoolsHibernateDAOTest {
 		assertFalse(pr.getXref().isEmpty());
 		Xref x = pr.getXref().iterator().next();		
 		Set<XReferrable> xrOfs = x.getXrefOf();
-		assertEquals(1, xrOfs.size()); // so far fails...
+		assertEquals(1, xrOfs.size());
 		System.out.println(x.getRDFId() + " is xrefOf " + 
 				x.getXrefOf().iterator().next().toString()
 		);
@@ -188,6 +188,21 @@ public class PaxtoolsHibernateDAOTest {
 		System.out.println(elist.toString());
 	}
 	
+	@Test
+	public void testCount() throws Exception {
+		Integer n = paxtoolsDAO.count("P46880", UnificationXref.class);
+		assertEquals(1, n.intValue());
+		
+		n = paxtoolsDAO.count("P46880", BioPAXElement.class);
+		assertEquals(2, n.intValue());
+		
+		n = paxtoolsDAO.count(null, BioPAXElement.class);
+		assertEquals(9, n.intValue());
+		
+		n = paxtoolsDAO.count(null, UnificationXref.class);
+		assertEquals(3, n.intValue());
+	}
+
 	
 	@Test
 	public void testFind() throws Exception {
