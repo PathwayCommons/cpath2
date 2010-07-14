@@ -646,13 +646,13 @@ public class SDFUtil {
 		String dbName = parts[0].trim().toLowerCase();
 		String dbID = parts[1].trim();
 		String URI = "";
-		if (aClass.getName().equals("UnificationXref")) {
+		if (aClass.getSimpleName().equals("UnificationXref")) {
 			URI = BaseConverterImpl.L3_UNIFICATIONXREF_URI;
 		}
-		else if (aClass.getName().equals("RelationshipXref")) {
+		else if (aClass.getSimpleName().equals("RelationshipXref")) {
 			URI = BaseConverterImpl.L3_RELATIONSHIPXREF_URI;
 		}
-		else if (aClass.getName().equals("PublicationXref")) {
+		else if (aClass.getSimpleName().equals("PublicationXref")) {
 			URI = BaseConverterImpl.L3_PUBLICATIONXREF_URI;
 		}
 		String rdfID =  URI + URLEncoder.encode(dbName + "_" + dbID);
