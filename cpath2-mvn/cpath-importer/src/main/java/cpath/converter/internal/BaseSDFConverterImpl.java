@@ -100,11 +100,13 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 			log.info("convert(), exiting.");
 		}
 
+		/*
 		// testing code - dump the chebi map 
 		log.info("dumping inchi keys (values is rdf id that references inchi key)...");
 		for (String key : INCHI_KEY_MAP.keySet()) {
 			log.info(key + ": " + INCHI_KEY_MAP.get(key));
 		}
+		*/
     }
 
 	/**
@@ -130,7 +132,7 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 		sdfUtil.setSmallMoleculeReference(entryBuffer);
 
 		// testing code: update testing map
-		updateTestingMap(smallMoleculeReferenceModel);
+		//updateTestingMap(smallMoleculeReferenceModel);
 
 		// merge
 		model.merge(smallMoleculeReferenceModel);
