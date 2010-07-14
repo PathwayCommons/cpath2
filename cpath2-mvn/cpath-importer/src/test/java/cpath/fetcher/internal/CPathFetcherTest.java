@@ -7,11 +7,14 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.controller.SimpleMerger;
+import org.biopax.paxtools.impl.ModelImpl;
+import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.Model;
 import org.junit.*;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.TYPE;
@@ -19,20 +22,29 @@ import cpath.warehouse.beans.Metadata.TYPE;
 public class CPathFetcherTest {
 	private static Log log = LogFactory.getLog(CPathFetcherTest.class);
 	
-	static PaxtoolsDAO proteinsDAO;
-	static PaxtoolsDAO moleculesDAO;
 	static CPathFetcherImpl fetcher;
+	Model model;
+	static SimpleExporter exporter;
 	
 	static {
 		// create test DBs and all the tables
 		DataServicesFactoryBean.createSchema("cpath2_test");
-		ApplicationContext context = new ClassPathXmlApplicationContext(
-				new String[] { "classpath:testContext-allDAO.xml" });
-		proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
-		moleculesDAO = (PaxtoolsDAO) context.getBean("moleculesDAO");
 		fetcher = new CPathFetcherImpl();
+		exporter = new SimpleExporter(BioPAXLevel.L3);
 	}
 	
+	@Before
+	public void setUp() {
+		// extend Model for the converter calling 'merge' method to work
+		model = new ModelImpl(BioPAXLevel.L3.getDefaultFactory()) {
+			@Override
+			public void merge(Model source) {
+				SimpleMerger simpleMerger = 
+					new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
+				simpleMerger.merge(this, source);
+			}
+		};
+	}
 	
 	@Test
 	public void testGetProviderProteinData() throws IOException {
@@ -69,17 +81,17 @@ public class CPathFetcherTest {
 				"cpath.cleaner.internal.BaseCleanerImpl", 
 				"cpath.converter.internal.UniprotConverterImpl");
 		
-		fetcher.storeWarehouseData(metadata, proteinsDAO);
-		assertTrue(proteinsDAO.containsID("urn:miriam:uniprot:P62158"));
+		fetcher.storeWarehouseData(metadata, model);
+		assertTrue(model.containsID("urn:miriam:uniprot:P62158"));
 		
 		// write the whole merged model (to target/test-classes dir)
 		OutputStream out = new FileOutputStream(
 			getClass().getClassLoader().getResource("").getPath() 
 				+ File.separator + "DataServicesTest1.out.owl");
-		proteinsDAO.exportModel(out);
+		exporter.convertToOWL(model, out);
 	}
 	
-	@Test // TODO enable when ZIP is supported
+	@Test
 	public void testImportChebiData() throws IOException {
 		String location = "classpath:test_chebi_data.dat.zip";
 		// in case there's no "metadata page" prepared -
@@ -92,17 +104,18 @@ public class CPathFetcherTest {
 				"cpath.cleaner.internal.BaseCleanerImpl", 
 				"cpath.converter.internal.ChEBIConverterImpl");
 		
-		fetcher.storeWarehouseData(metadata, moleculesDAO);
-		assertTrue(moleculesDAO.containsID("urn:miriam:uniprot:P62158"));
+		fetcher.storeWarehouseData(metadata, model);
+		assertTrue(model.containsID("urn:miriam:chebi:20"));
+		assertTrue(model.containsID("urn:inchi:JVTAAEKCZFNVCJ-SNQCPAJUDF:chemical_structure_1"));
 		
 		// write the whole merged model (to target/test-classes dir)
 		OutputStream out = new FileOutputStream(
 			getClass().getClassLoader().getResource("").getPath() 
 				+ File.separator + "DataServicesTest2.out.owl");
-		moleculesDAO.exportModel(out);
+		exporter.convertToOWL(model, out);
 	}
 	
-	@Test // TODO enable when ZIP is supported
+	@Test
 	public void testImportPubchemData() throws IOException {
 		String location = "classpath:test_pubchem_data.dat.zip";
 		// in case there's no "metadata page" prepared -
@@ -115,13 +128,14 @@ public class CPathFetcherTest {
 				"cpath.cleaner.internal.BaseCleanerImpl", 
 				"cpath.converter.internal.PubChemConverterImpl");
 		
-		fetcher.storeWarehouseData(metadata, moleculesDAO);
-		assertTrue(moleculesDAO.containsID("urn:miriam:uniprot:P62158"));
+		fetcher.storeWarehouseData(metadata, model);
+		assertTrue(model.containsID("urn:miriam:pubchem:14440"));
+		assertTrue(model.containsID("urn:miriam:pubchem:14439"));
 		
 		// write the whole merged model (to target/test-classes dir)
 		OutputStream out = new FileOutputStream(
 			getClass().getClassLoader().getResource("").getPath() 
 				+ File.separator + "DataServicesTest3.out.owl");
-		moleculesDAO.exportModel(out);
+		exporter.convertToOWL(model, out);
 	}
 }

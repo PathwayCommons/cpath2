@@ -216,7 +216,7 @@ public class WebserviceController {
 	 * 
 	 * @return
 	 */
-    @RequestMapping("/formats")
+    @RequestMapping("/help/formats")
     @ResponseBody
     public String getFormats() {
     	StringBuffer toReturn = new StringBuffer();
@@ -234,7 +234,7 @@ public class WebserviceController {
 	 * 
 	 * @return
 	 */
-    @RequestMapping("/types")
+    @RequestMapping("/help/types")
     @ResponseBody
     public String getBiopaxTypes() {
     	StringBuffer toReturn = new StringBuffer();
@@ -271,7 +271,7 @@ public class WebserviceController {
 	 * 
 	 * @return
 	 */
-    @RequestMapping("/datasources")
+    @RequestMapping("/help/datasources")
     @ResponseBody
     public String getDatasources() {
     	StringBuffer toReturn = new StringBuffer();
