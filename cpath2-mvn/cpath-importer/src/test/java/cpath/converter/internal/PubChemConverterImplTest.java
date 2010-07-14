@@ -6,9 +6,11 @@ import cpath.converter.Converter;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
+import org.biopax.paxtools.model.level3.UnificationXref;
 
 import org.junit.Test;
 
@@ -65,6 +67,8 @@ public class PubChemConverterImplTest {
 			assertTrue(comment.equals("CAS: 622-45-7") || comment.equals("Deposited Compound"));
 		}
 
+		assertFalse(model.getObjects(UnificationXref.class).isEmpty());
+		
 		// dump owl out to stdout for review
 		//System.out.println("ChEBI BioPAX: ");
 		//(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);

@@ -53,10 +53,10 @@ import cpath.warehouse.beans.Metadata.TYPE;
  */
 public class CPathWarehouseTest {
 
-	WarehouseDAO molecules;
-	WarehouseDAO proteins;
+	static WarehouseDAO molecules;
+	static WarehouseDAO proteins;
 	
-	public CPathWarehouseTest() throws IOException {
+	static {
 		System.out.println("Preparing...");
 		// init the test database
 		DataServicesFactoryBean.createSchema("cpath2_test");
@@ -71,7 +71,9 @@ public class CPathWarehouseTest {
 		
 		// load test data
 		CPathFetcherImpl fetcher = new CPathFetcherImpl();
-        Collection<Metadata> metadata = fetcher.getProviderMetadata("classpath:metadata.html");
+        Collection<Metadata> metadata;
+		try {
+			metadata = fetcher.getProviderMetadata("classpath:metadata.html");
         for (Metadata mdata : metadata) {
             metadataDAO.importMetadata(mdata);
             if(mdata.getType() == TYPE.PROTEIN) {
@@ -86,6 +88,9 @@ public class CPathWarehouseTest {
 				}
             }
         }
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 
