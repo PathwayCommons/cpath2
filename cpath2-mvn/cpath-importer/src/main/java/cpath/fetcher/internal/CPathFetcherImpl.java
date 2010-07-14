@@ -435,7 +435,7 @@ public class CPathFetcherImpl implements ProviderMetadataService,
      */
     private void convert(final Metadata metadata, final InputStream fetchedData, final Model model) throws IOException {
 
-        GZIPInputStream zis = null;
+        InputStream is = null;
 
 		// create converter
         if(log.isInfoEnabled())
@@ -450,10 +450,10 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 		}
 
         try {
-            // create a zip input stream
-			zis = new GZIPInputStream(new BufferedInputStream(fetchedData));
+            // get an input stream from a resource file that is either .gz or .zip
+			is = getInputStreamFromResource(metadata, fetchedData);
 			if (log.isInfoEnabled()) {
-				log.info("created gzip input stream: " + zis);
+				log.info("created input stream from resource: " + is);
 			}
 
 			// create entity reference objects
@@ -463,24 +463,68 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 			}
 
 			// hook into biopax converter for given provider
-			converter.convert(zis, model);
+			converter.convert(is, model);
         }
         catch (IOException e) {
             throw e;
         }
         finally {
-            closeQuietly(zis);
+            closeQuietly(is);
         }
     }
+
+	/**
+	 * Helper function to overcome java.io.EOFException: Unexpected end of ZLIB input stream.
+	 *
+	 * @param metadata Metadata
+	 * @param fetchedData InputStream
+	 */
+	private InputStream getInputStreamFromResource(final Metadata metadata, final InputStream fetchedData) throws IOException {
+
+		// determine if we have zip or gz file
+		String urlStr = metadata.getURLToPathwayData();
+		
+		if (urlStr.endsWith(".gz")) {
+			return new GZIPInputStream(new BufferedInputStream(fetchedData));
+		}
+		else if (urlStr.endsWith(".zip")) {
+
+			ZipEntry entry = null;
+			ZipInputStream zis = new ZipInputStream(new BufferedInputStream(fetchedData));
+
+			// we will return this
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+			while ((entry = zis.getNextEntry()) != null) {
+				log.info("Processing zip entry: " + entry.getName());
+
+				// write file to buffered outputstream
+				int count;
+				byte data[] = new byte[BUFFER];
+				BufferedOutputStream dest = new BufferedOutputStream(baos, BUFFER);
+				while ((count = zis.read(data, 0, BUFFER)) != -1) {
+					dest.write(data, 0, count);
+				}
+				dest.flush();
+				dest.close();
+			}
+			
+			// outta here
+			return new ByteArrayInputStream(baos.toByteArray());
+		}
+
+		// should not get here
+		return null;
+	}
 
    /**
     * Close the specified reader quietly.
     *
-    * @param zis ZipInputStream
+    * @param is InputStream
     */
-    private static void closeQuietly(final InputStream zis) {
+    private static void closeQuietly(final InputStream is) {
         try {
-            zis.close();
+            is.close();
         }
         catch (Exception e) {
             // ignore
