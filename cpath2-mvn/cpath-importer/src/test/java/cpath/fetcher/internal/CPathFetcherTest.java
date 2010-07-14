@@ -79,7 +79,7 @@ public class CPathFetcherTest {
 		proteinsDAO.exportModel(out);
 	}
 	
-	//@Test // TODO enable when ZIP is supported
+	@Test // TODO enable when ZIP is supported
 	public void testImportChebiData() throws IOException {
 		String location = "classpath:test_chebi_data.dat.zip";
 		// in case there's no "metadata page" prepared -
@@ -93,7 +93,7 @@ public class CPathFetcherTest {
 				"cpath.converter.internal.ChEBIConverterImpl");
 		
 		fetcher.storeWarehouseData(metadata, moleculesDAO);
-		//assertTrue(moleculesDAO.containsID("urn:miriam:uniprot:P62158"));
+		assertTrue(moleculesDAO.containsID("urn:miriam:uniprot:P62158"));
 		
 		// write the whole merged model (to target/test-classes dir)
 		OutputStream out = new FileOutputStream(
@@ -102,7 +102,7 @@ public class CPathFetcherTest {
 		moleculesDAO.exportModel(out);
 	}
 	
-	//@Test // TODO enable when ZIP is supported
+	@Test // TODO enable when ZIP is supported
 	public void testImportPubchemData() throws IOException {
 		String location = "classpath:test_pubchem_data.dat.zip";
 		// in case there's no "metadata page" prepared -
@@ -116,7 +116,7 @@ public class CPathFetcherTest {
 				"cpath.converter.internal.PubChemConverterImpl");
 		
 		fetcher.storeWarehouseData(metadata, moleculesDAO);
-		//assertTrue(moleculesDAO.containsID("urn:miriam:uniprot:P62158"));
+		assertTrue(moleculesDAO.containsID("urn:miriam:uniprot:P62158"));
 		
 		// write the whole merged model (to target/test-classes dir)
 		OutputStream out = new FileOutputStream(
