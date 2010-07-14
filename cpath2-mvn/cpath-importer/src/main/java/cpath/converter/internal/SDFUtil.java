@@ -2,8 +2,6 @@ package cpath.converter.internal;
 
 // imports
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.level3.*;
 
 import org.apache.commons.logging.Log;
@@ -107,6 +105,7 @@ public class SDFUtil {
 	private static final String PUBCHEM_EXT_DATASOURCE_NAME = "> <PUBCHEM_EXT_DATASOURCE_NAME>";
 	private static final String PUBCHEM_EXT_SUBSTANCE_URL = "> <PUBCHEM_EXT_SUBSTANCE_URL>";
 	private static final String PUBCHEM_EXT_SUBSTANCE_URL_REGEX = ".*regno|id|acc=(\\w+)\\W?.*";
+	private static final String PUBCHEM_EXT_DATASOURCE_REGID = "> <PUBCHEM_EXT_DATASOURCE_REGID>";
 
 	// xref db name statics
 	private static final String PUBMED = "pubmed";
@@ -271,10 +270,12 @@ public class SDFUtil {
 		// external datasource - use url as id
 		String db = getValue(entryBuffer, PUBCHEM_EXT_DATASOURCE_NAME);
 		if (db != null) {
-			String id = getValue(entryBuffer, PUBCHEM_EXT_SUBSTANCE_URL);
+			String id = getValue(entryBuffer, PUBCHEM_EXT_DATASOURCE_REGID);
 			if (id != null) {
+				// TODO use Miriam to extract ID from the URI
+				// String standardId = getIdFromPubchemExtUrl(id);
 				//if (id.matches(PUBCHEM_EXT_SUBSTANCE_URL_REGEX)) {
-				String[] parts = { db, id };
+				String[] parts = { db, id};
 				smallMoleculeReference.addXref(getXref(UnificationXref.class, parts));
 				//}
 			}
@@ -773,5 +774,12 @@ public class SDFUtil {
 	 */
 	private BufferedReader getBufferedReader(StringBuffer entry) throws IOException {
 		return new BufferedReader (new StringReader(entry.toString()));
+	}
+	
+	
+	// TODO using Miriam (MiriamLink), parse ID from the URL
+	// (shelved for later; not a problem now...)
+	private String getIdFromPubchemExtUrl(String pubchemExtUrl) {
+		return null;
 	}
 }

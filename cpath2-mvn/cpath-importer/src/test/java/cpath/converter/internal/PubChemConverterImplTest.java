@@ -69,8 +69,10 @@ public class PubChemConverterImplTest {
 
 		assertFalse(model.getObjects(UnificationXref.class).isEmpty());
 		
+		
+		
 		// dump owl out to stdout for review
-		//System.out.println("ChEBI BioPAX: ");
-		//(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
+		System.out.println("ChEBI BioPAX: ");
+		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
 	}
 }
