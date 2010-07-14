@@ -15,7 +15,6 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.junit.*;
 
-import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.TYPE;
 
@@ -27,8 +26,6 @@ public class CPathFetcherTest {
 	static SimpleExporter exporter;
 	
 	static {
-		// create test DBs and all the tables
-		DataServicesFactoryBean.createSchema("cpath2_test");
 		fetcher = new CPathFetcherImpl();
 		exporter = new SimpleExporter(BioPAXLevel.L3);
 	}
