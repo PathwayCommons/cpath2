@@ -273,10 +273,10 @@ public class SDFUtil {
 		if (db != null) {
 			String id = getValue(entryBuffer, PUBCHEM_EXT_SUBSTANCE_URL);
 			if (id != null) {
-				if (id.matches(PUBCHEM_EXT_SUBSTANCE_URL_REGEX)) {
-					String[] parts = { db, "$1" };
-					smallMoleculeReference.addXref(getXref(UnificationXref.class, parts));
-				}
+				//if (id.matches(PUBCHEM_EXT_SUBSTANCE_URL_REGEX)) {
+				String[] parts = { db, id };
+				smallMoleculeReference.addXref(getXref(UnificationXref.class, parts));
+				//}
 			}
 		}
 		// pubmed
