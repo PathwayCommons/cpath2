@@ -61,11 +61,13 @@ public interface WarehouseDAO {
 	
 	
 	/**
-	 * Gets fully initialized (and detached form the DAO) BioPAX object 
-	 * using the set of xrefs to search by.
+	 * Gets identifier(s) of the BioPAX object(s) using the xrefs to search by.
 	 * 
-	 * @param xrefs query set
-	 * @param clazz extends XReferable
+	 * Thus, this method allows for "id-mapping": one can try finding an entity reference
+	 * using some identifier or keyword and then gets all the xrefs (other IDs) and primary URI.
+	 * 
+	 * @param xrefs query set of xrefs
+	 * @param clazz subclass (of XReferable) of the requested object
 	 * @return
 	 */
 	Set<String> getByXref(Set<? extends Xref> xrefs, Class<? extends XReferrable> clazz);

@@ -29,9 +29,15 @@
 import static org.junit.Assert.*;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 
-import org.biopax.paxtools.model.level3.ProteinReference;
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.*;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -55,6 +61,7 @@ public class CPathWarehouseTest {
 
 	static WarehouseDAO molecules;
 	static WarehouseDAO proteins;
+	static Level3Factory factory;
 	
 	static {
 		System.out.println("Preparing...");
@@ -91,16 +98,93 @@ public class CPathWarehouseTest {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+		
+		factory = (Level3Factory) BioPAXLevel.L3.getDefaultFactory();
 	}
 
 
 	@Test
-	public final void testCreateUtilityClass() {
+	public final void testGetProteinReference() {
 		ProteinReference pr = proteins
 			.getObject("urn:miriam:uniprot:P62158", ProteinReference.class);
 		assertNotNull(pr);
+		assertFalse(pr.getName().isEmpty());
+		assertNotNull(pr.getOrganism());
+		assertEquals("Homo sapiens", pr.getOrganism().getStandardName());
+		assertFalse(pr.getXref().isEmpty());
+		// more checks?..
 		
+		// generate an xref to search Warehouse with -
+		// (it pretends to come from a pathway during merge...)
+		Xref x = factory.reflectivelyCreate(UnificationXref.class);
+		x.setRDFId("urn:pathwaycommons:UnificationXref:uniprot_A2A2M3");
+		x.setDbVersion("uniprot");
+		x.setId("A2A2M3"); // not a primary accession ;)
 		
+		Set<String> prIds =  proteins.getByXref(Collections.singleton(x), ProteinReference.class);
+		assertFalse(prIds.isEmpty());
+		assertEquals(1, prIds.size());
+		// correct entity reference found?
+		assertEquals("urn:miriam:uniprot:Q8TD86", prIds.iterator().next());
 	}
 
+	
+	@Test
+	public final void testGetChEBIMolecule() {
+		// TODO
+	}
+
+	
+	@Test
+	public final void testGetPubChemMolecule() {
+		// TODO
+	}
+
+	
+	@Test
+	public final void testSearchForProteinReference() {
+		// search with a secondary (RefSeq) accession number
+		Collection<String> prIds = ((PaxtoolsDAO)proteins).find("NP_619650", UnificationXref.class);
+		assertFalse(prIds.isEmpty());
+		assertTrue(prIds.contains("urn:pathwaycommons:UnificationXref:RefSeq_NP_619650"));
+		
+		// get that xref
+		Xref x = proteins.getObject("urn:pathwaycommons:UnificationXref:RefSeq_NP_619650", UnificationXref.class);
+		assertNotNull(x);
+		assertTrue(x.getXrefOf().isEmpty()); // when elements are detached by id, they do not remember its owners!
+		// if you get the owner (entity reference) by id, then this xref.xrefOf will contain the owner.
+		
+		// search/map for the corresponding entity reference
+		prIds =  proteins.getByXref(Collections.singleton(x), ProteinReference.class);
+		assertFalse(prIds.isEmpty());
+		assertEquals(1, prIds.size());
+		assertEquals("urn:miriam:uniprot:Q8TD86", prIds.iterator().next());
+	}
+
+	
+	@Test
+	public final void testSearchForMolecule() {
+		
+	}
+	
+	@Test
+	// just another test (not very useful...)
+	public final void testSubModel() {
+		Model m =((PaxtoolsDAO)proteins).getValidSubModel(
+				Arrays.asList(
+					"urn:pathwaycommons:UnificationXref:RefSeq_NP_619650",
+					"urn:miriam:uniprot:Q8TD86",
+					"urn:pathwaycommons:UnificationXref:uniprot_Q8TD86",
+					"urn:pathwaycommons:UnificationXref:uniprot_A2A2M3",
+					"urn:pathwaycommons:UnificationXref:uniprot_Q6Q2C4",
+					"urn:pathwaycommons:UnificationXref:Entrez+Gene_163688"));
+		
+		// TODO check elements
+		assertTrue(m.containsID("urn:miriam:taxonomy:9606")); // added by auto-complete
+		
+		try {
+			(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(m, System.out);
+		} catch (IOException e) {
+		}
+	}
 }
