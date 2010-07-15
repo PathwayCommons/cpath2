@@ -23,5 +23,11 @@ public final class CPathSettings {
 	
 	public static final String PREMERGE_INDEX_DIR_VARIABLE = "premerge.index.dir";
 	public static final String WHOUSE_SEARCH_INDEX = "cpathwhouse";
+	
+	/*
+	 * URI prefix for auto-generated/converted during the data import 
+	 * and normalization utility class objects 
+	 * (i.e., for xrefs, ChemicalStructure, etc.).
+	 */
 	public static final String CPATH_URI_PREFIX = "urn:pathwaycommons:";
 }

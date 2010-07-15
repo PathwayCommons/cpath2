@@ -74,20 +74,20 @@ public class CPathWarehouseTest {
         Collection<Metadata> metadata;
 		try {
 			metadata = fetcher.getProviderMetadata("classpath:metadata.html");
-        for (Metadata mdata : metadata) {
-            metadataDAO.importMetadata(mdata);
-            if(mdata.getType() == TYPE.PROTEIN) {
-            	fetcher.storeWarehouseData(mdata, (PaxtoolsDAO)proteins);
-            } else if(mdata.getType() == TYPE.SMALL_MOLECULE) {
-            	fetcher.storeWarehouseData(mdata, (PaxtoolsDAO)molecules);
-            } else {
-            	Collection<PathwayData> pathwayData =
-            		fetcher.getProviderPathwayData(mdata);
-				for (PathwayData pwData : pathwayData) {
-					pathwayDataDAO.importPathwayData(pwData);
+			for (Metadata mdata : metadata) {
+				metadataDAO.importMetadata(mdata);
+				if (mdata.getType() == TYPE.PROTEIN) {
+					fetcher.storeWarehouseData(mdata, (PaxtoolsDAO) proteins);
+				} else if (mdata.getType() == TYPE.SMALL_MOLECULE) {
+					fetcher.storeWarehouseData(mdata, (PaxtoolsDAO) molecules);
+				} else {
+					Collection<PathwayData> pathwayData = fetcher
+							.getProviderPathwayData(mdata);
+					for (PathwayData pwData : pathwayData) {
+						pathwayDataDAO.importPathwayData(pwData);
+					}
 				}
-            }
-        }
+			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -98,7 +98,9 @@ public class CPathWarehouseTest {
 	public final void testCreateUtilityClass() {
 		ProteinReference pr = proteins
 			.getObject("urn:miriam:uniprot:P62158", ProteinReference.class);
-		//assertNotNull(pr);
+		assertNotNull(pr);
+		
+		
 	}
 
 }

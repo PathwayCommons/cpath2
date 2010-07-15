@@ -44,7 +44,7 @@ public class MetadataHibernateDAO  implements MetadataDAO {
      * (non-Javadoc)
      * @see cpath.warehouse.metadata.MetadataDAO#importMetadata;
      */
-    @Transactional(propagation=Propagation.NESTED)
+    @Transactional(propagation=Propagation.REQUIRED)
 	public void importMetadata(final Metadata metadata) {
 
 		Session session = getSession();
@@ -70,7 +70,7 @@ public class MetadataHibernateDAO  implements MetadataDAO {
      * (non-Javadoc)
      * @see cpath.warehouse.MetadataDAO#getByID
      */
-    @Transactional(propagation=Propagation.NESTED)
+    @Transactional(propagation=Propagation.REQUIRED)
     public Metadata getByIdentifier(final String identifier) {
 		Session session = getSession();
 		Query query = session.getNamedQuery("cpath.warehouse.beans.providerByIdentifier");
@@ -83,7 +83,7 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 	 *
      * @return Collection<Metadata>
      */
-    @Transactional(propagation=Propagation.NESTED)
+    @Transactional(propagation=Propagation.REQUIRED)
     public Collection<Metadata> getAll() {
 		Session session = getSession();
 		Query query = session.getNamedQuery("cpath.warehouse.beans.allProvider");

@@ -6,6 +6,7 @@ import cpath.converter.Converter;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.*;
@@ -71,7 +72,7 @@ public class ChEBIConverterImplTest {
 		assertTrue(relationshipXrefCount == 12);
 
 		// dump owl out to stdout for review
-		//System.out.println("ChEBI BioPAX: ");
-		//(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
+		System.out.println("ChEBI BioPAX: ");
+		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
 	}
 }
