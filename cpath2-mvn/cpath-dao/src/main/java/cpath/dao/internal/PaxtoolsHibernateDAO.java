@@ -570,8 +570,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
 	public void exportModel(OutputStream outputStream, String... ids) {
+		
+		Model model = (ids.length > 0) 
+			? getValidSubModel(Arrays.asList(ids)) : this; // no ids? - export everything!
+		
 		try {
-			new SimpleExporter(level).convertToOWL(this, outputStream);
+			new SimpleExporter(level).convertToOWL(model, outputStream);
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to export Model.", e);
 		}
