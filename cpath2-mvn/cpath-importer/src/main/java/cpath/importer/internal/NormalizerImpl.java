@@ -42,6 +42,7 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.ClassFilterSet;
 
+import cpath.config.CPathSettings;
 import cpath.importer.Normalizer;
 
 /**
@@ -55,7 +56,7 @@ public class NormalizerImpl implements Normalizer {
 	 * URI namespace prefix for the utility class IDs 
 	 * generated during data convertion, normalization, merge...
 	 */
-	public static final String BIOPAX_URI_PREFIX = "urn:pathwaycommons:";
+	public static final String BIOPAX_URI_PREFIX = CPathSettings.CPATH_URI_PREFIX;
 	
 	private BioPAXIOHandler biopaxReader;
 	

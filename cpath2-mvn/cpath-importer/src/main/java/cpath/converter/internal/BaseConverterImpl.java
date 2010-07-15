@@ -1,8 +1,8 @@
 package cpath.converter.internal;
 
 // imports
+import cpath.config.CPathSettings;
 import cpath.converter.Converter;
-import static cpath.importer.internal.NormalizerImpl.*;
 
 import org.biopax.paxtools.model.Model;
 
@@ -12,6 +12,8 @@ import java.io.InputStream;
  * General implementation of Converter interface.
  */
 public class BaseConverterImpl implements Converter {
+	
+	public static final String BIOPAX_URI_PREFIX  = CPathSettings.CPATH_URI_PREFIX;
 
 	// use for, e.g., xref's RDFId = L3_UNIFICATIONXREF_URI + URLEncoder.encode(db + "_" +  id);
 	public static final String L3_UNIFICATIONXREF_URI = BIOPAX_URI_PREFIX + "UnificationXref:";

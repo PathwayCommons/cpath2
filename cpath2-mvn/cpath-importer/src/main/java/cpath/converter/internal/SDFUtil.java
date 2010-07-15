@@ -24,19 +24,10 @@ public class SDFUtil {
 
     // SOURCE enum
     public static enum SOURCE {
-
-        // command types
-        PUBCHEM("PUBCHEM"),
-		CHEBI("CHEBI");
-
-        // string ref for readable name
-        private String source;
-        
-        // contructor
-        SOURCE(String source) { this.source = source; }
-
-        // method to get enum readable name
-        public String toString() { return source; }
+        PUBCHEM,
+		CHEBI;
+        // Constructor or toString override are not required for such enum, - 
+        // default name() and toString() methods return "PUBCHEM","CHEBI"!
     }
 
 	// logger
@@ -181,13 +172,12 @@ public class SDFUtil {
 		if (inchiKey != null && inchiKey.length() > 0) {
 			String[] rdfIDParts = rdfID.split(":");
 			String inchiKeyParts[] = inchiKey.split(EQUALS_DELIMITER);
-			String[] unificationXRefParts = { rdfIDParts[2], rdfIDParts[3] };
 			String memberEntityReferenceID = "urn:inchi:" + inchiKeyParts[1];
 			try {
 				SmallMoleculeReference memberEntityRef =
 					(SmallMoleculeReference)model.addNew(SmallMoleculeReference.class, memberEntityReferenceID);
 				// create a unification xref to pubchem or chebi
-				memberEntityRef.addXref(getXref(UnificationXref.class, unificationXRefParts));
+				memberEntityRef.addXref(getXref(UnificationXref.class, rdfIDParts[2], rdfIDParts[3]));
 				// create chem struct using inchi
 				if (inchi != null) {
 					String parts[] = inchi.split(EQUALS_DELIMITER);
@@ -275,8 +265,7 @@ public class SDFUtil {
 				// TODO use Miriam to extract ID from the URI
 				// String standardId = getIdFromPubchemExtUrl(id);
 				//if (id.matches(PUBCHEM_EXT_SUBSTANCE_URL_REGEX)) {
-				String[] parts = { db, id};
-				smallMoleculeReference.addXref(getXref(UnificationXref.class, parts));
+				smallMoleculeReference.addXref(getXref(UnificationXref.class, db, id));
 				//}
 			}
 		}
@@ -637,26 +626,18 @@ public class SDFUtil {
 	 * Given an xref class and a string array containing a
 	 * db name at pos 0 and db id at pos 1 returns a proper xref.
 	 *
-	 * @param parts String[]
+	 * @param parts
 	 * @return <T extends Xref>
 	 */
-	private <T extends Xref> T getXref(Class<T> aClass, String[] parts) {
+	private <T extends Xref> T getXref(Class<T> aClass, String... parts) {
 		
 		T toReturn = null;
 
 		String dbName = parts[0].trim().toLowerCase();
 		String dbID = parts[1].trim();
-		String URI = "";
-		if (aClass.getSimpleName().equals("UnificationXref")) {
-			URI = BaseConverterImpl.L3_UNIFICATIONXREF_URI;
-		}
-		else if (aClass.getSimpleName().equals("RelationshipXref")) {
-			URI = BaseConverterImpl.L3_RELATIONSHIPXREF_URI;
-		}
-		else if (aClass.getSimpleName().equals("PublicationXref")) {
-			URI = BaseConverterImpl.L3_PUBLICATIONXREF_URI;
-		}
-		String rdfID =  URI + URLEncoder.encode(dbName + "_" + dbID);
+		
+		String rdfID =  BaseConverterImpl.BIOPAX_URI_PREFIX +
+			aClass.getSimpleName() + ":" + URLEncoder.encode(dbName + "_" + dbID);
 
 		if (model.containsID(rdfID)) {
 			toReturn = (T)model.getByID(rdfID);
