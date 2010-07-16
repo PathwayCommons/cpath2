@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.io.StringReader;
 import java.io.IOException;
 import java.io.BufferedReader;
@@ -59,7 +61,9 @@ public class SDFUtil {
 	private static final String CHEBI_BEILSTEIN = "> <Beilstein Registry Numbers>";
 	private static final String CHEBI_CAS = "> <CAS Registry Numbers>";
 	private static final String CHEBI_GMELIN = "> <Gmelin Registry Numbers>";
-	private static final String CHEBI_DATABASE_REGEX = "> <(\\w+|\\w+-\\w+) Database Links>";
+	private static final String CHEBI_DATABASE_REGEX = "> <(\\w+|\\w+\\-\\w+) Database Links>";
+	private static final Pattern CHEBI_EXT_LINK_OR_REGISTRY_REGEX =
+		Pattern.compile("> <(\\w+|\\w+\\-\\w+) (Registry Numbers|Database Links)>$");
 
 	// pubchem statics
 	private static final Map<String, String> PUBCHEM_COMPOUND_ID_TYPE_MAP = new HashMap<String, String>();
@@ -144,6 +148,7 @@ public class SDFUtil {
 		if (rdfID == null) {
 			return;
 		}
+		String[] rdfIDParts = rdfID.split(":");
 
 		// do not import any entity reference that does not have a smiles entry
 		if (source == SOURCE.CHEBI) {
@@ -170,27 +175,30 @@ public class SDFUtil {
 
 		// create "member entity reference" using inchi key
 		if (inchiKey != null && inchiKey.length() > 0) {
-			String[] rdfIDParts = rdfID.split(":");
 			String inchiKeyParts[] = inchiKey.split(EQUALS_DELIMITER);
-			String memberEntityReferenceID = "urn:inchi:" + inchiKeyParts[1];
+			String memberEntityReferenceID = BaseConverterImpl.BIOPAX_URI_PREFIX + inchiKeyParts[1];
 			try {
-				SmallMoleculeReference memberEntityRef =
-					(SmallMoleculeReference)model.addNew(SmallMoleculeReference.class, memberEntityReferenceID);
-				// create a unification xref to pubchem or chebi
-				memberEntityRef.addXref(getXref(UnificationXref.class, rdfIDParts[2], rdfIDParts[3]));
+				SmallMoleculeReference memberEntityRef = null;
+				if (model.containsID(memberEntityReferenceID)) {
+					memberEntityRef = (SmallMoleculeReference)model.getByID(memberEntityReferenceID);
+				}
+				else {
+					memberEntityRef = (SmallMoleculeReference)model.addNew(SmallMoleculeReference.class, memberEntityReferenceID);
+				}
+				// add unification xref back to pubchem or chebi small molecule reference
+				UnificationXref uXrefToSelf = getXref(UnificationXref.class, rdfIDParts[3], rdfIDParts[2]);
+				memberEntityRef.addXref(uXrefToSelf);
 				// create chem struct using inchi
 				if (inchi != null) {
 					String parts[] = inchi.split(EQUALS_DELIMITER);
 					if (parts.length == 2) {
-						String chemicalStructureID = memberEntityRef.getRDFId() + ":chemical_structure_1";
-						setChemicalStructure(parts[1], chemicalStructureID, smallMoleculeReference);
+						String chemicalStructureID = BaseConverterImpl.BIOPAX_URI_PREFIX + "ChemicalStructure:" + inchiKeyParts[1];
+						setChemicalStructure(parts[1], chemicalStructureID, memberEntityRef);
 					}
 				}
 			}
 			catch (org.biopax.paxtools.util.IllegalBioPAXArgumentException e) {
 				// ignore
-				//System.out.println("Duplicate inchi/inchi key, rdfid: " + rdfID);
-				//System.out.println("Duplicate inchi/inchi key, inchi: " + inchiKey);
 			}
 		}
 	}
@@ -212,7 +220,8 @@ public class SDFUtil {
 		// secondary ids
 		setUnificationXref(getValues(entryBuffer, CHEBI_SECONDARY_ID), COLON_DELIMITER, smallMoleculeReference);
 		// smiles - chemical structure
-		String chemicalStructureID = smallMoleculeReference.getRDFId() + ":chemical_structure_1";
+		String[] rdfIDParts = smallMoleculeReference.getRDFId().split(COLON_DELIMITER);
+		String chemicalStructureID = BaseConverterImpl.BIOPAX_URI_PREFIX + "ChemicalStructure:" + rdfIDParts[2].toUpperCase() + "_" + rdfIDParts[3];
 		setChemicalStructure(getValue(entryBuffer, CHEBI_SMILES), chemicalStructureID, smallMoleculeReference);
 		// mass
 		setMolecularWeight(getValue(entryBuffer, CHEBI_MASS), smallMoleculeReference);
@@ -248,7 +257,8 @@ public class SDFUtil {
 		setName(getValue(entryBuffer, PUBCHEM_IUPAC_CAS_NAME), ADDITIONAL_NAME, smallMoleculeReference);
 		setName(getValue(entryBuffer, PUBCHEM_IUPAC_SYSTEMATIC_NAME), ADDITIONAL_NAME, smallMoleculeReference);
 		// structure
-		String chemicalStructureID = smallMoleculeReference.getRDFId() + ":chemical_structure_1";
+		String[] rdfIDParts = smallMoleculeReference.getRDFId().split(COLON_DELIMITER);
+		String chemicalStructureID = BaseConverterImpl.BIOPAX_URI_PREFIX + "ChemicalStructure:" + rdfIDParts[2].toUpperCase() + "_" + rdfIDParts[3];
 		setChemicalStructure(getValue(entryBuffer, PUBCHEM_OPENEYE_CAN_SMILES), chemicalStructureID, smallMoleculeReference);
 		// comment - compound id type
 		String comment = getValue(entryBuffer, PUBCHEM_COMPOUND_ID_TYPE);
@@ -271,19 +281,19 @@ public class SDFUtil {
 		}
 		// pubmed
 		for (String id : getValues(entryBuffer, PUBCHEM_PUBMED_ID)) {
-			setPublicationXref(PUBMED + COLON_DELIMITER + id, COLON_DELIMITER, smallMoleculeReference);
+			setPublicationXref(id, PUBMED, smallMoleculeReference);
 		}
 		// genbank - nucleotide
 		for (String id : getValues(entryBuffer, PUBCHEM_GENBANK_NUCLEOTIDE_ID)) {
-			String[] parts = { GENBANK, id };
-			RelationshipXref xref = (RelationshipXref)getXref(RelationshipXref.class, parts);
+			String[] genbankNucParts = { GENBANK, id };
+			RelationshipXref xref = (RelationshipXref)getXref(RelationshipXref.class, genbankNucParts);
 			xref.setIdVersion(GENBANK_NUCLEOTIDE);
 			smallMoleculeReference.addXref(xref);
 		}
 		// genbank - protein
 		for (String id : getValues(entryBuffer, PUBCHEM_GENBANK_PROTEIN_ID)) {
-			String[] parts = { GENBANK, id };
-			RelationshipXref xref = (RelationshipXref)getXref(RelationshipXref.class, parts);
+			String[] genbankProParts = { GENBANK, id };
+			RelationshipXref xref = (RelationshipXref)getXref(RelationshipXref.class, genbankProParts);
 			xref.setIdVersion(GENBANK_PROTEIN);
 			smallMoleculeReference.addXref(xref);
 		}
@@ -315,13 +325,13 @@ public class SDFUtil {
 			String id = getValue(entry, CHEBI_ID);
 			if (id == null) return null;
 			String[] parts = id.split(":");
-			rdfID = "urn:miriam:" + parts[0].trim().toLowerCase() + ":" + parts[1].trim();
+			rdfID = "urn:miriam:chebi:" + parts[1].trim();
 		}
 		else if (source == SOURCE.PUBCHEM) {
 			String id = getValue(entry, PUBCHEM_COMPOUND_ID);
 			id = (id == null) ? getValue(entry, PUBCHEM_SUBSTANCE_ID) : id;
 			if (id == null) return null;
-			rdfID = "urn:miriam:pubchem" + ":" + id;
+			rdfID = "urn:miriam:pubchem:" + id;
 		}
 
 		if (log.isInfoEnabled()) {
@@ -419,7 +429,7 @@ public class SDFUtil {
 			}
 			// should only get one of these
 			ChemicalStructure chemStruct = (ChemicalStructure)model.addNew(ChemicalStructure.class, chemicalStructureID);
-			chemStruct.setStructureData(structure);
+			chemStruct.setStructureData(URLEncoder.encode(structure));
 			chemStruct.setStructureFormat(StructureFormatType.SMILES);
 			smallMoleculeReference.setStructure(chemStruct);
 		}
@@ -458,11 +468,11 @@ public class SDFUtil {
 	private void setChEBIRegistryNumbers(StringBuffer entry, String registryPropKey, SmallMoleculeReference smallMoleculeReference) throws IOException {
 
 		String registryName = getKeyName(registryPropKey);
-		Collection<String> registryProps = getValues(entry, registryPropKey);
-
-		for (String registryProp : registryProps) {
-			setUnificationXref(registryName + COLON_DELIMITER + registryProp,
-							   COLON_DELIMITER, smallMoleculeReference);
+		if (registryName != null) {
+			Collection<String> registryProps = getValues(entry, registryPropKey);
+			for (String registryProp : registryProps) {
+				setUnificationXref(registryProp, registryName, smallMoleculeReference);
+			}
 		}
 	}
 
@@ -482,16 +492,16 @@ public class SDFUtil {
 		String line = reader.readLine();
 		while (line != null) {
 			if (line.matches(databaseRegex)) {
-				String dbName = getKeyName(line);
-				Collection<String> dbIDs = getValues(entry, line);
-				for (String dbID : dbIDs) {
-					// use equals delimiter to avoid problems with such ids as: RHEA:10960
-					String id = dbName + EQUALS_DELIMITER + dbID;
-					if (dbName.toLowerCase().equals(SOURCE.PUBCHEM.toString())) {
-						setUnificationXref(id, EQUALS_DELIMITER, smallMoleculeReference);
-					}
-					else {
-						setRelationshipXref(id, EQUALS_DELIMITER, smallMoleculeReference);
+				String db = getKeyName(line);
+				if (db != null) {
+					Collection<String> ids = getValues(entry, line);
+					for (String id : ids) {
+						if (db.toLowerCase().equals(SOURCE.PUBCHEM.toString())) {
+							setUnificationXref(id, db, smallMoleculeReference);
+						}
+						else {
+							setRelationshipXref(id, db, smallMoleculeReference);
+						}
 					}
 				}
 			}
@@ -510,7 +520,7 @@ public class SDFUtil {
 	private void setPubChemDatabaseLinks(String db, Collection<String> ids, String delimiter, SmallMoleculeReference smallMoleculeReference) {
 		
 		for (String id : ids) {
-			setRelationshipXref(db + delimiter + id, delimiter, smallMoleculeReference);
+			setRelationshipXref(id, db, smallMoleculeReference);
 		}
 	}
 
@@ -524,50 +534,42 @@ public class SDFUtil {
 	private void setUnificationXref(Collection<String> ids, String delimiter, SmallMoleculeReference smallMoleculeReference) {
 		
 		for (String id : ids) {
-			setUnificationXref(id, delimiter, smallMoleculeReference);
+			// ids into this routine are of the form: CHEBI:XXXXX
+			String[] parts = id.split(delimiter);
+			if (parts.length == 2) {
+				setUnificationXref(parts[1], parts[0], smallMoleculeReference);
+			}
 		}
 	}
 
 	/**
 	 * Creates a unification xref for the given id.
 	 *
-	 * Note: id is db + delimiter + id
-	 *
 	 * @param id String
-	 * @param delimiter String
+	 * @param db String
 	 * @param smallMoleculeReference SmallMoleculeReference
 	 */
-	private void setUnificationXref(String id, String delimiter, SmallMoleculeReference smallMoleculeReference) {
+	private void setUnificationXref(String id, String db, SmallMoleculeReference smallMoleculeReference) {
 
-		if (id != null) {
-			String[] parts = id.split(delimiter);
-			if (parts.length != 2) return;
-			if (log.isInfoEnabled()) {
-				log.info("setUnificationXref(), parts: " + parts[0] + ", " + parts[1]);
-			}
-			smallMoleculeReference.addXref(getXref(UnificationXref.class, parts));
+		if (log.isInfoEnabled()) {
+			log.info("setUnificationXref(), id, db: " + id + ", " + db);
 		}
+		smallMoleculeReference.addXref(getXref(UnificationXref.class, id, db));
 	}
 
 	/**
 	 * Creates a relationship xref for the given id.
 	 *
-	 * Note: id is db + delimiter + id
-	 *
 	 * @param id String
-	 * @param delimiter String
+	 * @param db String
 	 * @param smallMoleculeReference SmallMoleculeReference
 	 */
-	private void setRelationshipXref(String id, String delimiter, SmallMoleculeReference smallMoleculeReference) {
+	private void setRelationshipXref(String id, String db, SmallMoleculeReference smallMoleculeReference) {
 
-		if (id != null) {
-			String[] parts = id.split(delimiter);
-			if (parts.length != 2) return;
-			if (log.isInfoEnabled()) {
-				log.info("setRelationshipXref(), parts: " + parts[0] + ", " + parts[1]);
-			}
-			smallMoleculeReference.addXref(getXref(RelationshipXref.class, parts));
+		if (log.isInfoEnabled()) {
+			log.info("setRelationshipXref(), id, db: " + id + ", " + db);
 		}
+		smallMoleculeReference.addXref(getXref(RelationshipXref.class, id, db));
 	}
 
 	/**
@@ -604,22 +606,16 @@ public class SDFUtil {
 	/**
 	 * Creates a publication xref for the given id.
 	 *
-	 * Note: id is db + delimiter + id
-	 *
 	 * @param id String
-	 * @param delimiter String
+	 * @param db String
 	 * @param smallMoleculeReference SmallMoleculeReference
 	 */
-	private void setPublicationXref(String id, String delimiter, SmallMoleculeReference smallMoleculeReference) {
+	private void setPublicationXref(String id, String db, SmallMoleculeReference smallMoleculeReference) {
 
-		if (id != null) {
-			String[] parts = id.split(delimiter);
-			if (parts.length != 2) return;
-			if (log.isInfoEnabled()) {
-				log.info("setPublicationXref(), parts: " + parts[0] + ", " + parts[1]);
-			}
-			smallMoleculeReference.addXref(getXref(PublicationXref.class, parts));
+		if (log.isInfoEnabled()) {
+			log.info("setPublicationXref(), id, db: " + id + ", " + db);
 		}
+		smallMoleculeReference.addXref(getXref(PublicationXref.class, id, db));
 	}
 
 	/**
@@ -633,19 +629,23 @@ public class SDFUtil {
 		
 		T toReturn = null;
 
-		String dbName = parts[0].trim().toLowerCase();
-		String dbID = parts[1].trim();
+		String id = parts[0].trim();
+		String db = parts[1].trim();
 		
 		String rdfID =  BaseConverterImpl.BIOPAX_URI_PREFIX +
-			aClass.getSimpleName() + ":" + URLEncoder.encode(dbName + "_" + dbID);
+			aClass.getSimpleName() + ":" + ("UnificationXref".equals(aClass.getSimpleName()) ?
+											URLEncoder.encode(db.toUpperCase() + "_" + id) : URLEncoder.encode(id));
 
 		if (model.containsID(rdfID)) {
 			toReturn = (T)model.getByID(rdfID);
 		}
 		else {
 			toReturn = (T)model.addNew(aClass, rdfID);
-			toReturn.setDb(dbName);
-			toReturn.setId(dbID);
+			toReturn.setDb(db);
+			toReturn.setId(id);
+			if ("RelationshipXref".equals(aClass.getSimpleName())) {
+				toReturn.setIdVersion("entry_name");
+			}
 		}
 
 		// outta here
@@ -741,8 +741,8 @@ public class SDFUtil {
 	 * @return String
 	 */
 	private String getKeyName(String key) {
-
-		return key.replace("^> <(\\w+) .*$", "$1");
+		Matcher matcher = CHEBI_EXT_LINK_OR_REGISTRY_REGEX.matcher(key);
+		return (matcher.find()) ? matcher.group(1) : null;
 	}
 
 	/**
