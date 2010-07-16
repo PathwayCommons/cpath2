@@ -49,7 +49,7 @@ public class ChEBIConverterImplTest {
 			}
 		};
 		converter.convert(is, model);
-		
+
 		// get all small molecule references out
 		assertTrue(model.getObjects(SmallMoleculeReference.class).size() == 6);
 

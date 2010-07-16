@@ -53,7 +53,7 @@ public class PubChemConverterImplTest {
 		converter.convert(is, model);
 		
 		// get all small molecule references out
-		assertTrue(model.getObjects(SmallMoleculeReference.class).size() == 4);
+		assertTrue(model.getObjects(SmallMoleculeReference.class).size() == 5);
 
 		// get Cyclohexyl acetate
 		String rdfID = "urn:miriam:pubchem:14441";
@@ -72,7 +72,7 @@ public class PubChemConverterImplTest {
 		
 		
 		// dump owl out to stdout for review
-		System.out.println("ChEBI BioPAX: ");
+		System.out.println("PubChem BioPAX: ");
 		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
 	}
 }
