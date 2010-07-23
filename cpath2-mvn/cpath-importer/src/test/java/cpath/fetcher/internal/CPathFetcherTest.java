@@ -22,16 +22,13 @@ public class CPathFetcherTest {
 	private static Log log = LogFactory.getLog(CPathFetcherTest.class);
 	
 	static CPathFetcherImpl fetcher;
-	Model model;
+	static Model model;
 	static SimpleExporter exporter;
+	static int count = 0;
 	
 	static {
 		fetcher = new CPathFetcherImpl();
 		exporter = new SimpleExporter(BioPAXLevel.L3);
-	}
-	
-	@Before
-	public void setUp() {
 		// extend Model for the converter calling 'merge' method to work
 		model = new ModelImpl(BioPAXLevel.L3.getDefaultFactory()) {
 			@Override
@@ -40,8 +37,9 @@ public class CPathFetcherTest {
 					new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
 				simpleMerger.merge(this, source);
 			}
-		};
+		}; // all tests outputs to the same model object
 	}
+
 	
 	@Test
 	public void testGetProviderProteinData() throws IOException {
@@ -80,12 +78,6 @@ public class CPathFetcherTest {
 		
 		fetcher.storeWarehouseData(metadata, model);
 		assertTrue(model.containsID("urn:miriam:uniprot:P62158"));
-		
-		// write the whole merged model (to target/test-classes dir)
-		OutputStream out = new FileOutputStream(
-			getClass().getClassLoader().getResource("").getPath() 
-				+ File.separator + "DataServicesTest1.out.owl");
-		exporter.convertToOWL(model, out);
 	}
 	
 	@Test
@@ -103,13 +95,7 @@ public class CPathFetcherTest {
 		
 		fetcher.storeWarehouseData(metadata, model);
 		assertTrue(model.containsID("urn:miriam:chebi:20"));
-		assertTrue(model.containsID("urn:inchi:JVTAAEKCZFNVCJ-SNQCPAJUDF:chemical_structure_1"));
-		
-		// write the whole merged model (to target/test-classes dir)
-		OutputStream out = new FileOutputStream(
-			getClass().getClassLoader().getResource("").getPath() 
-				+ File.separator + "DataServicesTest2.out.owl");
-		exporter.convertToOWL(model, out);
+		assertTrue(model.containsID("urn:pathwaycommons:ChemicalStructure:JVTAAEKCZFNVCJ-SNQCPAJUDF"));
 	}
 	
 	@Test
@@ -126,13 +112,25 @@ public class CPathFetcherTest {
 				"cpath.converter.internal.PubChemConverterImpl");
 		
 		fetcher.storeWarehouseData(metadata, model);
-		assertTrue(model.containsID("urn:miriam:pubchem:14440"));
-		assertTrue(model.containsID("urn:miriam:pubchem:14439"));
-		
+		assertTrue(model.containsID("urn:miriam:pubchem.substance:14438"));
+		assertFalse(model.containsID("urn:miriam:pubchem.substance:14439"));
+		assertTrue(model.containsID("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS"));
+		assertTrue(model.containsID("urn:pathwaycommons:ChemicalStructure:CRPUJAZIXJMDBK-DTWKUNHWBS"));
+	}
+	
+	@Override
+	/* 
+	 * note: although called several times, 
+	 * it finally exports the model
+	 * that results from all the test methods.
+	 */
+	protected void finalize() throws Throwable {
 		// write the whole merged model (to target/test-classes dir)
 		OutputStream out = new FileOutputStream(
 			getClass().getClassLoader().getResource("").getPath() 
-				+ File.separator + "DataServicesTest3.out.owl");
+				+ File.separator + "DataServicesTest.out.owl");
 		exporter.convertToOWL(model, out);
+		System.out.println("CPathFetcherTest finalize call# " + (++count));
+		super.finalize();
 	}
 }

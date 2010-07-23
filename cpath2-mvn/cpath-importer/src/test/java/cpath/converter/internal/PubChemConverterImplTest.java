@@ -27,14 +27,11 @@ import java.util.Set;
 public class PubChemConverterImplTest {
 
 	/**
-	 * Test method for {@link cpath.converter.internal.PubChemConverterImpl#convert(java.io.InputStream, org.biopax.paxtools.model.BioPAXLevel)}.
+	 * Test method for {@link cpath.converter.internal.PubChemConverterImpl#convert(java.io.InputStream)}.
 	 * @throws IOException 
 	 */
 	@Test
 	public void testConvert() throws IOException {
-
-		// setup the converter
-		Converter converter = new PubChemConverterImpl();
 
 		// convert test data
 		InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_pubchem_data.dat");
@@ -50,29 +47,34 @@ public class PubChemConverterImplTest {
 				simpleMerger.merge(this, source);
 			}
 		};
-		converter.convert(is, model);
-		
-		// get all small molecule references out
-		assertTrue(model.getObjects(SmallMoleculeReference.class).size() == 5);
 
-		// get Cyclohexyl acetate
-		String rdfID = "urn:miriam:pubchem:14441";
-		SmallMoleculeReference smallMoleculeReference = (SmallMoleculeReference)model.getByID(rdfID);
-		assertTrue(smallMoleculeReference != null);
-
-		// check comments
-		Set<String> comments = smallMoleculeReference.getComment();
-		assert(comments.size() == 2);
-		for (String comment : comments) {
-			assertTrue(comment.equals("CAS: 622-45-7") || comment.equals("Deposited Compound"));
-		}
-
-		assertFalse(model.getObjects(UnificationXref.class).isEmpty());
-		
-		
+		// setup the converter
+		Converter converter = new PubChemConverterImpl(model);
+		converter.convert(is);
 		
 		// dump owl out to stdout for review
 		System.out.println("PubChem BioPAX: ");
 		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
+		
+		// small molecule references without smiles or inchi are skipped!
+		assertTrue(model.containsID("urn:miriam:pubchem.substance:14438"));
+		assertFalse(model.containsID("urn:miriam:pubchem.substance:14439"));
+		
+		assertTrue(model.containsID("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS"));
+		assertTrue(model.containsID("urn:pathwaycommons:ChemicalStructure:CRPUJAZIXJMDBK-DTWKUNHWBS"));
+		
+		// get Cyclohexyl acetate
+		String rdfID = "urn:miriam:pubchem.substance:14438";
+		SmallMoleculeReference smallMoleculeReference = (SmallMoleculeReference)model.getByID(rdfID);
+		assertNotNull(smallMoleculeReference);
+
+		// check comments
+		Set<String> comments = smallMoleculeReference.getComment();
+		assertEquals(2, comments.size());
+		for (String comment : comments) {
+			assertTrue(comment.equals("CAS: 105-86-2") || comment.equals("Deposited Compound"));
+		}
+
+		assertFalse(model.getObjects(UnificationXref.class).isEmpty());
 	}
 }

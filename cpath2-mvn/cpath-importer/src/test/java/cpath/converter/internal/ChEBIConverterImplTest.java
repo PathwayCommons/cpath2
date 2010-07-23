@@ -25,15 +25,11 @@ import java.io.InputStream;
 public class ChEBIConverterImplTest {
 
 	/**
-	 * Test method for {@link cpath.converter.internal.ChEBIConverterImpl#convert(java.io.InputStream, org.biopax.paxtools.model.BioPAXLevel)}.
+	 * Test method for {@link cpath.converter.internal.ChEBIConverterImpl#convert(java.io.InputStream)}.
 	 * @throws IOException 
 	 */
 	@Test
 	public void testConvert() throws IOException {
-
-		// setup the converter
-		Converter converter = new ChEBIConverterImpl();
-
 		// convert test data
 		InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_chebi_data.dat");
 		//Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
@@ -48,10 +44,17 @@ public class ChEBIConverterImplTest {
 				simpleMerger.merge(this, source);
 			}
 		};
-		converter.convert(is, model);
+
+		// setup the converter
+		Converter converter = new ChEBIConverterImpl(model);
+		converter.convert(is);
+		
+		// dump owl out to stdout for review
+		System.out.println("ChEBI BioPAX: ");
+		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
 
 		// get all small molecule references out
-		assertTrue(model.getObjects(SmallMoleculeReference.class).size() == 6);
+		assertEquals(6, model.getObjects(SmallMoleculeReference.class).size());
 
 		// get lactic acid sm
 		String rdfID = "urn:miriam:chebi:422";
@@ -68,11 +71,17 @@ public class ChEBIConverterImplTest {
 			if (xref instanceof UnificationXref) ++ unificationXrefCount;
 
 		}
-		assertTrue(unificationXrefCount == 1);
-		assertTrue(relationshipXrefCount == 12);
-
-		// dump owl out to stdout for review
-		System.out.println("ChEBI BioPAX: ");
-		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
+		
+		assertEquals(2, unificationXrefCount);
+		assertEquals(12, relationshipXrefCount);
+		
+		assertTrue(model.containsID("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS"));
+		assertTrue(model.containsID("urn:miriam:chebi:20"));
+		
+		// following checks work in this test only (using in-memory model); with DAO - use getObject...
+		EntityReference er = (EntityReference) model.getByID("urn:miriam:chebi:20");
+		EntityReference ir = (EntityReference) model.getByID("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS");
+		assertTrue(er.getMemberEntityReferenceOf().contains(ir));
+		assertEquals(er, ir.getMemberEntityReference().iterator().next());
 	}
 }

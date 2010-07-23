@@ -104,7 +104,7 @@ public class CPathWarehouseTest {
 
 
 	@Test
-	public final void testGetProteinReference() {
+	public void testGetProteinReference() {
 		ProteinReference pr = proteins
 			.getObject("urn:miriam:uniprot:P62158", ProteinReference.class);
 		assertNotNull(pr);
@@ -130,19 +130,19 @@ public class CPathWarehouseTest {
 
 	
 	@Test
-	public final void testGetChEBIMolecule() {
+	public void testGetChEBIMolecule() {
 		// TODO
 	}
 
 	
 	@Test
-	public final void testGetPubChemMolecule() {
+	public void testGetPubChemMolecule() {
 		// TODO
 	}
 
 	
 	@Test
-	public final void testSearchForProteinReference() {
+	public void testSearchForProteinReference() {
 		// search with a secondary (RefSeq) accession number
 		Collection<String> prIds = ((PaxtoolsDAO)proteins).find("NP_619650", UnificationXref.class);
 		assertFalse(prIds.isEmpty());
@@ -163,13 +163,13 @@ public class CPathWarehouseTest {
 
 	
 	@Test
-	public final void testSearchForMolecule() {
+	public void testSearchForMolecule() {
 		
 	}
 	
 	@Test
 	// just another test (not very useful...)
-	public final void testSubModel() {
+	public void testSubModel() {
 		Model m =((PaxtoolsDAO)proteins).getValidSubModel(
 				Arrays.asList(
 					"urn:pathwaycommons:UnificationXref:RefSeq_NP_619650",

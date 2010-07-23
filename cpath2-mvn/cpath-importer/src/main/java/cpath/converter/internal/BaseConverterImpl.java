@@ -3,10 +3,17 @@ package cpath.converter.internal;
 // imports
 import cpath.config.CPathSettings;
 import cpath.converter.Converter;
+import cpath.warehouse.WarehouseDAO;
 
-import org.biopax.paxtools.model.Model;
 
 import java.io.InputStream;
+
+import org.biopax.paxtools.controller.Fetcher;
+import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
+import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.BioPAXFactory;
+import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.Model;
 
 /**
  * General implementation of Converter interface.
@@ -24,9 +31,34 @@ public class BaseConverterImpl implements Converter {
 	public static final String L2_PUBLICATIONXREF_URI = BIOPAX_URI_PREFIX + "publicationXref:";
 	public static final String L2_RELATIONSHIPXREF_URI = BIOPAX_URI_PREFIX + "relationshipXref:";
 	
+	protected Model model;
+	protected static final BioPAXFactory factory = 
+		BioPAXLevel.L3.getDefaultFactory();
+	protected static final Fetcher fetcher = 
+		new Fetcher(new SimpleEditorMap(BioPAXLevel.L3));
+	
+	public BaseConverterImpl() {
+	}
+	
+	public BaseConverterImpl(Model model) {
+		this.model = model;
+	}
+	
+	public void setModel(Model model) {
+		this.model = model;
+	}
+	
 	/**
 	 * (non-Javadoc>
-	 * @see cpath.converter.Converter#convert(java.io.InputStream, org.biopax.paxtools.model.Model)
+	 * @see cpath.converter.Converter#convert(java.io.InputStream)
 	 */
-	public void convert(final InputStream is, final Model model) {}
+	public void convert(final InputStream is) {}
+	
+	protected <T extends BioPAXElement> T getById(String urn, Class<T> type) 
+	{
+		return 
+		(model instanceof WarehouseDAO) 
+			? ((WarehouseDAO)model).getObject(urn, type) //completely detached
+				: (T) model.getByID(urn) ;	
+	}
 }
