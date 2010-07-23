@@ -45,6 +45,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 
 import cpath.converter.Converter;
+import cpath.converter.internal.BaseConverterImpl;
 import cpath.fetcher.ProviderMetadataService;
 import cpath.fetcher.ProviderPathwayDataService;
 import cpath.fetcher.WarehouseDataService;
@@ -116,11 +117,11 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 	 * @param toReturn Collection<Metadata>
 	 * @param throws IOException
      */
-    private void readFromService(final InputStream inputStream, final Collection<Metadata> toReturn) throws IOException {
-
+    private void readFromService(final InputStream inputStream, 
+    	final Collection<Metadata> toReturn) throws IOException 
+    {
         BufferedReader reader = null;
         try {
-
             // we'd like to read lines at a time
             reader = new BufferedReader(new InputStreamReader(inputStream));
 
@@ -156,15 +157,25 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 
 					// get icon data from service
 					log.info("fetching icon data from: " + tokens[METADATA_ICON_URL_INDEX]);
-					InputStream stream = LOADER.getResource(tokens[METADATA_ICON_URL_INDEX]).getInputStream();
-					// we could simply read to byte[] directly, but let's do more interesting things - 
-					BufferedImage image = ImageIO.read(stream);
-					// TODO conversion of the icon into another format could easily happen here
-					byte[] iconData = ((DataBufferByte)image.getRaster().getDataBuffer()).getData();
+					byte[] iconData = null;
+					try {
+						InputStream stream = LOADER.getResource(tokens[METADATA_ICON_URL_INDEX]).getInputStream();
+						// we could simply read to byte[] directly, but let's do more interesting things - 
+						BufferedImage image = ImageIO.read(stream);
+						// TODO conversion of the icon into another format could easily happen here
+						iconData = ((DataBufferByte)image.getRaster().getDataBuffer()).getData();
+					} catch (IOException e) {
+						log.error("Cannot load image from " +  
+								tokens[METADATA_ICON_URL_INDEX], e);
+					}
+					
+					if (iconData == null) { 
+						log.info("readFromService(), missing or unaccessible " +
+								"data (icon) to create Metadata bean: iconData.");
+						iconData = new byte[]{};
+					}
 
-                    if (iconData != null) {
-
-						log.info("readFromService(), we have enough data to make a Metadata bean.");
+						log.info("readFromService(), make a Metadata bean.");
 
                         // create a metadata bean
                         Metadata metadata = new Metadata(tokens[METADATA_IDENTIFIER_INDEX], tokens[METADATA_NAME_INDEX],
@@ -182,17 +193,12 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 						if (metadata.getType() == Metadata.TYPE.PSI_MI ||
 							metadata.getType() == Metadata.TYPE.BIOPAX) {
 							log.info(metadata.getCleanerClassname());
-						}
-						else if (metadata.getType() == Metadata.TYPE.PROTEIN) {
+						} else if (metadata.getType() == Metadata.TYPE.PROTEIN) {
 							log.info(metadata.getConverterClassname());
 						}
 
                         // add metadata object toc collection we return
                         toReturn.add(metadata);
-                    }
-					else {
-						log.info("readFromService(), missing data (icon) to create Metadata bean: iconData.");
-					}
                 }
             }
         }
@@ -422,6 +428,7 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 		if (log.isInfoEnabled()) {
 			log.info("getWarehouseData(), data is zip/gz, unzipping.");
 		}
+		
 		convert(metadata, LOADER.getResource(urlStr).getInputStream(), model);
     }
 
@@ -433,8 +440,9 @@ public class CPathFetcherImpl implements ProviderMetadataService,
      * @param fetchedData InputStream
      * @param model Model
      */
-    private void convert(final Metadata metadata, final InputStream fetchedData, final Model model) throws IOException {
-
+    private void convert(final Metadata metadata, final InputStream fetchedData, 
+    		final Model model) throws IOException 
+    {
         InputStream is = null;
 
 		// create converter
@@ -448,6 +456,8 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 					+ metadata.getConverterClassname());
 			return;
 		}
+		
+		((BaseConverterImpl)converter).setModel(model);
 
         try {
             // get an input stream from a resource file that is either .gz or .zip
@@ -462,8 +472,9 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 						 metadata.getIdentifier() + " version: " + metadata.getVersion());
 			}
 
+			
 			// hook into biopax converter for given provider
-			converter.convert(is, model);
+			converter.convert(is);
         }
         catch (IOException e) {
             throw e;
@@ -542,7 +553,7 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 	private static Converter getConverter(final String converterClassName) {
 		try {
 			Class<?> converterClass = Class.forName(converterClassName);
-			return (Converter)converterClass.newInstance();
+			return (Converter) converterClass.newInstance();
 		}
 		catch (Exception e) {
 			log.error("could not create converter class " 

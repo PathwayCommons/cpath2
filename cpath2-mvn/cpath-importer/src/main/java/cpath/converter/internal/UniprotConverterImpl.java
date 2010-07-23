@@ -22,16 +22,21 @@ public class UniprotConverterImpl extends BaseConverterImpl {
     
     private final Map<Integer, BioSource> organisms;
     
-	public UniprotConverterImpl() {
+    public UniprotConverterImpl() {
+    	this(null);
+    }
+    
+	public UniprotConverterImpl(Model model) {
+		super(model);
 		organisms = new HashMap<Integer, BioSource>();
 	}
 
 	/**
 	 * (non-Javadoc>
-	 * @see cpath.converter.Converter#convert(java.io.InputStream, org.biopax.paxtools.model.Model)
+	 * @see cpath.converter.Converter#convert(java.io.InputStream)
 	 */
 	@Override
-	public void convert(final InputStream is, final Model model) {
+	public void convert(final InputStream is) {
 
 		// ref to reader here so
 		// we can close in finally clause
@@ -290,8 +295,9 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 	 * @param id String
 	 * @param proteinReference ProteinReference
      */
-    private void setRelationshipXRef(Model proteinReferenceModel, String dbName, String id, ProteinReference proteinReference) {
-
+    private void setRelationshipXRef(Model proteinReferenceModel, String dbName, 
+    	String id, ProteinReference proteinReference) 
+    {
         id = id.trim();
 		String rdfId = L3_RELATIONSHIPXREF_URI + URLEncoder.encode(dbName + "_" +  id);
 		RelationshipXref rXRef = (RelationshipXref)proteinReferenceModel.addNew(RelationshipXref.class, rdfId);

@@ -1,7 +1,6 @@
 package cpath.converter;
 
 // imports
-import org.biopax.paxtools.model.Model;
 
 import java.io.InputStream;
 
@@ -10,14 +9,13 @@ import java.io.InputStream;
  * biopax objects.
  */
 public interface Converter {
-
+	
 	/**
 	 * Converts the given protein annotation data
 	 * into a paxtools model which contains EntityReferences only.
 	 * Model is set/passed by reference.
 	 *
 	 * @param is InputStream
-	 * @param model Model
 	 */
-	void convert(final InputStream is, final Model model);
+	void convert(final InputStream is);
 }

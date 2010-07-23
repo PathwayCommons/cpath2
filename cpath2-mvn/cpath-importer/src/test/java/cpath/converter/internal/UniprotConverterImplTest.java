@@ -52,12 +52,11 @@ import cpath.converter.Converter;
 public class UniprotConverterImplTest {
 
 	/**
-	 * Test method for {@link cpath.converter.internal.UniprotConverterImpl#convert(java.io.InputStream, org.biopax.paxtools.model.Model)}.
+	 * Test method for {@link cpath.converter.internal.UniprotConverterImpl#convert(java.io.InputStream)}.
 	 * @throws IOException 
 	 */
 	@Test
 	public void testConvert() throws IOException {
-		Converter converter = new UniprotConverterImpl();
 		InputStream is = getClass().getResourceAsStream("/test_uniprot_data.dat.gz");
 		GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(is));
 		
@@ -73,8 +72,8 @@ public class UniprotConverterImplTest {
 			}
 		};
 		
-		
-		converter.convert(zis, model);
+		Converter converter = new UniprotConverterImpl(model);
+		converter.convert(zis);
 		
 		Set<ProteinReference> proteinReferences = model.getObjects(ProteinReference.class);
 		assertTrue(proteinReferences.size()==6);
