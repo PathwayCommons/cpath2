@@ -37,6 +37,8 @@ import org.apache.lucene.search.Explanation;
 import org.apache.lucene.util.Version;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.EntityReference;
+import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
@@ -582,7 +584,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	}
 
 	/* (non-Javadoc)
-	 * @see cpath.warehouse.CPathWarehouse#getObject(java.lang.String, java.lang.Class)
+	 * @see cpath.warehouse.WarehouseDAO#getObject(java.lang.String, java.lang.Class)
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
@@ -601,20 +603,39 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	}
 
 
-	
+	/* (non-Javadoc)
+	 * @see cpath.dao.WarehouseDAO#getByXref(java.util.Set, java.lang.Class)
+	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public Set<String> getByXref(Set<? extends Xref> xrefs, Class<? extends XReferrable> clazz) 
+	public Set<String> getByXref(Set<? extends Xref> xrefs, 
+		Class<? extends XReferrable> clazz) 
 	{
 		Set<String> toReturn = new HashSet<String>();
 		
 		for (Xref xref : xrefs) {
-			// get persistent Xref by RDFId
+			// load persistent Xref by RDFId
 			Xref x = (Xref) getByID(xref.getRDFId());
 			// collect owners's ids (of requested type only)
 			for(XReferrable xr: x.getXrefOf()) {
 				if(clazz.isInstance(xr)) {
-					toReturn.add(xr.getRDFId());
+					// SMR special case (for cpath Warehouse)
+					if(xr instanceof SmallMoleculeReference) {
+						Collection<EntityReference> parentERs =
+							((EntityReference) xr).getMemberEntityReferenceOf();
+						if(parentERs.isEmpty()) {
+							toReturn.add(xr.getRDFId());
+							log.warn("WarehouseDAO.getByXref is going to " +
+								"return SmallMoleculeReference");
+						} else {
+							for(EntityReference er : parentERs) {
+								assert(er instanceof SmallMoleculeReference);
+								toReturn.add(er.getRDFId());
+							}
+						}
+					} else {
+						toReturn.add(xr.getRDFId());
+					}
 				}
 			}
 		}

@@ -36,7 +36,6 @@ import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.WarehouseDAO;
 
 import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.*;
@@ -119,7 +118,7 @@ public class MergerImpl implements Merger {
 		 *  
 		 *  TODO instead, try to save and flush it after each provider... 
 		 */
-		Model pcModel = new ModelImpl(BioPAXLevel.L3.getDefaultFactory());
+		Model pcModel = BioPAXLevel.L3.getDefaultFactory().createModel();
 
 		// iterate over all providers
 		for (Metadata metadata : metadataDAO.getAll()) {
