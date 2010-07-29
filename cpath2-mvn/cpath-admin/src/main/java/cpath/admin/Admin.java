@@ -44,6 +44,8 @@ import cpath.warehouse.PathwayDataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
+import org.biopax.paxtools.model.Model;
+
 import org.apache.log4j.PropertyConfigurator;
 
 import org.springframework.context.ApplicationContext;
