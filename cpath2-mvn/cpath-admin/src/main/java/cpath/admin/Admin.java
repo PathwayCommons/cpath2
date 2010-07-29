@@ -222,7 +222,7 @@ public class Admin implements Runnable {
 				context = new ClassPathXmlApplicationContext("classpath:applicationContext-whouseDAO.xml");
 				final MetadataDAO metadataDAO = (MetadataDAO)context.getBean("metadataDAO");
 				// merger
-				Merger merger = new MergerImpl(pcDAO, metadataDAO);
+				Merger merger = new MergerImpl((Model)pcDAO, metadataDAO);
 				merger.merge();
 				break;
             }

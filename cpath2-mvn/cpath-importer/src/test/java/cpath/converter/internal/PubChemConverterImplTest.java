@@ -58,7 +58,7 @@ public class PubChemConverterImplTest {
 		
 		// small molecule references without smiles or inchi are skipped!
 		assertTrue(model.containsID("urn:miriam:pubchem.substance:14438"));
-		assertFalse(model.containsID("urn:miriam:pubchem.substance:14439"));
+		assertTrue(model.containsID("urn:miriam:pubchem.substance:14439"));
 		
 		assertTrue(model.containsID("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS"));
 		assertTrue(model.containsID("urn:pathwaycommons:ChemicalStructure:CRPUJAZIXJMDBK-DTWKUNHWBS"));

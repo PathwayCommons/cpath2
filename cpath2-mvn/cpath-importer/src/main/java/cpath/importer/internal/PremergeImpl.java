@@ -200,6 +200,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		else if (metadata.getType() == Metadata.TYPE.BIOPAX_L2) {
 			pathwayDataStr = convertBioPAXL2ToLevel3(pathwayDataStr);
 			pathwayDataStr = cleaner.clean(pathwayDataStr);
+			// should we change type to BIOPAX ?
 		}
 
 		// error during conversion
