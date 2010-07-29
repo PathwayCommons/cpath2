@@ -29,19 +29,23 @@ package cpath.importer.internal;
 
 // imports
 import cpath.importer.Merger;
-import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
+import cpath.dao.DataServices;
 import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.beans.Metadata.TYPE;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.WarehouseDAO;
 
-import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
-import org.biopax.paxtools.io.simpleIO.SimpleReader;
+import org.biopax.miriam.MiriamLink;
+
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.util.ClassFilterSet;
-import org.biopax.miriam.MiriamLink;
+import org.biopax.paxtools.controller.SimpleMerger;
+import org.biopax.paxtools.io.simpleIO.SimpleReader;
+import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -67,12 +71,14 @@ public class MergerImpl implements Merger {
 	private MetadataDAO metadataDAO;
 
 	// ref to the main repository
-	private PaxtoolsDAO pcDAO;
+	private Model pcDAO;
+	// ref to provider model - used during testing
+	private Model pathwayModel;
 
     private WarehouseDAO cvRepository;
     private WarehouseDAO moleculesDAO;
     private WarehouseDAO proteinsDAO;
-	
+
 	@Autowired
 	private ApplicationContext applicationContext; // gets the parent/existing context
 
@@ -81,14 +87,14 @@ public class MergerImpl implements Merger {
 	/**
 	 * Constructor.
 	 *
-	 * @param pcDAO PaxtoolsDAO;
+	 * @param pcDAO Model;
 	 * @param metadataDAO MetadataDAO
-	 * @param cPathWarehouse WarehouseDAO
 	 */
-	public MergerImpl(final PaxtoolsDAO pcDAO, final MetadataDAO metadataDAO) 
+	public MergerImpl(final Model pcDAO, final MetadataDAO metadataDAO) 
 	{
 		this.pcDAO = pcDAO;
 		this.metadataDAO = metadataDAO;
+		this.pathwayModel = null;
 		
 		ApplicationContext context = null;
 		// molecules
@@ -105,30 +111,74 @@ public class MergerImpl implements Merger {
 			new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
 	}
 
+	/**
+	 * Constructor.
+	 *
+	 * This constructor was added to be used in a test context. At least called by
+	 * cpath.importer.internal.CPathInMemoryModelMergerTest.testMerger().
+	 *
+	 * @param pcDAO Model
+	 * @param providerPathwayModel Model
+	 * @param metadataDAO MetadataDAO
+	 * @param moleculesDAO WarehouseDAO
+	 * @param proteinsDAO WarehouseDAO
+	 * @param cvRepository WarehouseDAO
+	 */
+	public MergerImpl(final Model pcDAO, final Model providerPathwayModel, final MetadataDAO metadataDAO,
+					  final WarehouseDAO moleculesDAO, final WarehouseDAO proteinsDAO, final WarehouseDAO cvRepository) 
+	{
+		this.pcDAO = pcDAO;
+		this.pathwayModel = providerPathwayModel;
+		this.metadataDAO = metadataDAO;
+		this.moleculesDAO = moleculesDAO;
+		this.proteinsDAO = proteinsDAO;
+		this.cvRepository = cvRepository;
+
+		simpleMerger = 
+			new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
+	}
+
     /*
 	 * (non-Javadoc)
 	 * @see cpath.importer.Merger#merge
 	 */
 	@Override
 	public void merge() {
-		/*
-		 *  create a new in-memory model; 
-		 *  this is where all the pathway data (all data sources)
-		 *  will be merged before it's saved in the database;
-		 *  
-		 *  TODO instead, try to save and flush it after each provider... 
-		 */
-		Model pcModel = BioPAXLevel.L3.getDefaultFactory().createModel();
 
 		// iterate over all providers
 		for (Metadata metadata : metadataDAO.getAll()) {
+
+			// only process pathway data (we assume only pathway data comes in as biopax)
+			if (metadata.getType() != TYPE.BIOPAX && metadata.getType() != TYPE.BIOPAX_L2) continue;
+
+			/*
+			 *  create a new in-memory model; 
+			 *  this is where all the pathway data (all data sources)
+			 *  will be merged before it's saved in the database;
+			 *  
+			 *  TODO instead, try to save and flush it after each provider... 
+			 */
+			Model pcModel = new ModelImpl(BioPAXLevel.L3.getDefaultFactory()) {
+				@Override
+				public void merge(Model source) {
+					SimpleMerger simpleMerger = 
+						new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
+					simpleMerger.merge(this, source);
+				}
+			};
 			
 			// in-memory copy of the persisted model for this provider
-			Model pathwayModel = getPreMergeModel(metadata);
-			// (this model goes to trash after the merge)
+			pathwayModel = (pathwayModel == null) ? getPreMergeModel(metadata) : pathwayModel;
+			Model copyOfPathwayModel = copyModel(pathwayModel); // to prevent concurrent modification exception
+			// (these models go to trash after the merge)
+
+			if (copyOfPathwayModel == null) {
+				log.info("merge(), error copy pathwayModel for provider: " + metadata.getIdentifier() + ", continuing.");
+				continue;
+			}
 
 			// iterate over all utility elements in the pathway model
-			for (UtilityClass bpe : pathwayModel.getObjects(UtilityClass.class)) {
+			for (UtilityClass bpe : copyOfPathwayModel.getObjects(UtilityClass.class)) {
 
 				// skip if the element already exists in pcModel
 				if(pcModel.getByID(bpe.getRDFId()) != null)
@@ -147,7 +197,7 @@ public class MergerImpl implements Merger {
 						XReferrable r = (XReferrable) bpe;
 						Set<UnificationXref> urefs =
 							new ClassFilterSet<UnificationXref>(r.getXref(), UnificationXref.class);
-						
+
 						Collection<String> prefs = proteinsDAO
 							.getByXref(urefs, ProteinReference.class);
 						
@@ -255,20 +305,19 @@ public class MergerImpl implements Merger {
 
 			// merge the rest of elements
 			pcModel.merge(pathwayModel);
-			
-			pathwayModel = null; // trash it
+
+			// trash pathwayModel, we will get new one next iteration
+			pathwayModel = null;
+			copyOfPathwayModel = null;
+
+			// finally, merge with the database
+			pcDAO.merge(pcModel);
 		}
-		
-		// finally, merge with the database
-		pcDAO.merge(pcModel);
-		
-		// Whew!
 	}
 
 	/**
 	 * For the given provider, gets the 
-	 * in-memory copy of the persisted 
-	 * (pre-merge) model.
+	 * in-memory copy of the persisted 	 * (pre-merge) model.
 	 *
 	 * @param metadata Metadata
 	 * @return Model BioPAX Model created during the Pre Merge stage
@@ -374,5 +423,22 @@ public class MergerImpl implements Merger {
 		} 				
 
 		return id;
+	}
+
+	private Model copyModel(final Model modelToCopy) {
+
+		try {
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(modelToCopy, outputStream);
+			InputStream inputStream =
+				new BufferedInputStream(new ByteArrayInputStream(outputStream.toByteArray()));
+			SimpleReader simpleReader = new SimpleReader(BioPAXLevel.L3);
+			return simpleReader.convertFromOWL(inputStream);
+		}
+		catch (IOException e) {
+			log.info("copyModel(), error copying pathwayModel.");
+		}
+
+		return null;
 	}
 }
