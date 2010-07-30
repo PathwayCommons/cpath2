@@ -72,9 +72,6 @@ public class MergerImpl implements Merger {
 
 	// ref to the main repository
 	private Model pcDAO;
-	// ref to provider model - used during testing
-	private Model pathwayModel;
-
     private WarehouseDAO cvRepository;
     private WarehouseDAO moleculesDAO;
     private WarehouseDAO proteinsDAO;
@@ -94,7 +91,6 @@ public class MergerImpl implements Merger {
 	{
 		this.pcDAO = pcDAO;
 		this.metadataDAO = metadataDAO;
-		this.pathwayModel = null;
 		
 		ApplicationContext context = null;
 		// molecules
@@ -107,8 +103,7 @@ public class MergerImpl implements Merger {
 		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-cvRepository.xml"});
 		this.cvRepository = (WarehouseDAO)context.getBean("cvFetcher");
 		
-		simpleMerger = 
-			new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
+		simpleMerger = new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
 	}
 
 	/**
@@ -117,28 +112,170 @@ public class MergerImpl implements Merger {
 	 * This constructor was added to be used in a test context. At least called by
 	 * cpath.importer.internal.CPathInMemoryModelMergerTest.testMerger().
 	 *
-	 * @param pcDAO Model
-	 * @param providerPathwayModel Model
+	 * @param pcDAO final "global" Model
 	 * @param metadataDAO MetadataDAO
 	 * @param moleculesDAO WarehouseDAO
 	 * @param proteinsDAO WarehouseDAO
 	 * @param cvRepository WarehouseDAO
 	 */
-	public MergerImpl(final Model pcDAO, final Model providerPathwayModel, final MetadataDAO metadataDAO,
-					  final WarehouseDAO moleculesDAO, final WarehouseDAO proteinsDAO, final WarehouseDAO cvRepository) 
+	public MergerImpl(final Model pcDAO, final MetadataDAO metadataDAO, final WarehouseDAO moleculesDAO,
+					  final WarehouseDAO proteinsDAO, final WarehouseDAO cvRepository) 
 	{
 		this.pcDAO = pcDAO;
-		this.pathwayModel = providerPathwayModel;
 		this.metadataDAO = metadataDAO;
 		this.moleculesDAO = moleculesDAO;
 		this.proteinsDAO = proteinsDAO;
 		this.cvRepository = cvRepository;
-
-		simpleMerger = 
+		this.simpleMerger = 
 			new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
 	}
 
-    /*
+ 
+	/**
+	 * Merge a new single (provider's pathway) model
+	 * into the existing target model.
+	 * 
+	 * @param target
+	 * @param pathwayModel
+	 */
+	// is package-private - to be available in junit tests
+	void merge(Model target, Model pathwayModel) {
+		
+		Model copyOfPathwayModel = copyModel(pathwayModel); // to prevent concurrent modification exception
+
+		// iterate over all utility elements in the pathway model
+		for (UtilityClass bpe : copyOfPathwayModel.getObjects(UtilityClass.class)) 
+		{
+			// skip if the element already exists in pcModel
+			if(target.getByID(bpe.getRDFId()) != null)
+				continue; // already exists
+			
+			UtilityClass object = null;
+
+			// merge all protein/SM references & controlled vocabularies
+			if (bpe instanceof ProteinReference) 
+			{
+				// find specific subclass (e.g. CellVocabulary)!
+				object = proteinsDAO.getObject(bpe.getRDFId(), ProteinReference.class);
+				
+				// if not found by id, - search by UnificationXrefs
+				if (object==null) {
+					XReferrable r = (XReferrable) bpe;
+					Set<UnificationXref> urefs =
+						new ClassFilterSet<UnificationXref>(r.getXref(), UnificationXref.class);
+
+					Collection<String> prefs = proteinsDAO
+						.getByXref(urefs, ProteinReference.class);
+					
+					if(!prefs.isEmpty()) 
+						object = proteinsDAO.getObject(prefs.iterator().next(), ProteinReference.class);
+					
+					if(prefs.size() > 1)
+						throw new RuntimeException("Several ProteinReference " +
+							"that share the same xref found:" + prefs);
+				}
+			} else if (bpe instanceof ControlledVocabulary) 
+			{
+				// get the CV subclass (e.g. CellVocabulary)!
+				Class<? extends ControlledVocabulary> clazz = 
+					(Class<? extends ControlledVocabulary>) bpe.getModelInterface(); 
+				object = cvRepository.getObject(bpe.getRDFId(), clazz);
+				
+				// if not found by id, - search by UnificationXrefs
+				if (object==null) {
+					XReferrable r = (XReferrable) bpe;
+					Set<UnificationXref> urefs =
+						new ClassFilterSet<UnificationXref>(r.getXref(), UnificationXref.class);
+
+					Collection<String> cvs = cvRepository.getByXref(urefs, clazz);
+					
+					if (!cvs.isEmpty())
+						object = cvRepository.getObject(cvs.iterator().next(), clazz);
+						
+					if (cvs.size() > 1)
+						throw new RuntimeException("Several ControlledVocabulary "
+							+ "that use the same xref found:" + cvs.toString());
+				}
+			} else if (bpe instanceof SmallMoleculeReference) {
+				
+				// this is a (pubchem or chebi...) small molecule reference,
+				// get respective 'inchi' one from the warehouse
+				SmallMoleculeReference premergeSMR = (SmallMoleculeReference)bpe;
+				// using unification xrefs 
+				Set<UnificationXref> uxrefs = new 
+					ClassFilterSet<UnificationXref>(premergeSMR.getXref(), UnificationXref.class);
+				// - to find the 'inchi' SMR in the warehouse
+				String inchiUrn = getSmallMoleculeReference(uxrefs);
+				// did we find anything?
+				if (inchiUrn != null) { 
+					if(target.containsID(inchiUrn)) {
+						object = getById(target, inchiUrn, SmallMoleculeReference.class);
+					} else {
+						object = moleculesDAO.getObject(inchiUrn, SmallMoleculeReference.class);
+					}
+					SmallMoleculeReference inchiSMR = (SmallMoleculeReference) object;
+					
+					/*
+					 *  the following is required for the merge to work properly,
+					 *  i.e., premergeSMR must be replaced by the object (inchiSMR)
+					 */
+					pathwayModel.updateID(premergeSMR.getRDFId(), inchiSMR.getRDFId());
+					
+					/* because of the preceding line,
+					 * premergeSMR will be skipped during the merge,
+					 * but its members (mainly xrefs) will be added to 
+					 * the target 'inchi' one;
+					 * still, lets copy some of the properties manually,
+					 * otherwise, SimpleMerger would ignore all data properties 
+					 * in premergeSMR and create dangling ones (e.g., ChemicalStructure)
+					 */
+					// warehouse inchiSMR does not have any chem. formula (but has structure!)
+					if(inchiSMR.getChemicalFormula()==null)
+						inchiSMR.setChemicalFormula(premergeSMR.getChemicalFormula());
+					// premergeSMR may have different ChemicalStructure (not InChi based :))
+					if(premergeSMR.getStructure() != null) { 
+						// TODO what to do with original structure, if any?
+						// remove it
+						premergeSMR.setStructure(inchiSMR.getStructure());
+						pathwayModel.remove(premergeSMR.getStructure());
+						/*
+						inchiSMR.addComment("original structure:" + 
+							premergeSMR.getStructure().getStructureFormat() + 
+								"; " + premergeSMR.getStructure().getStructureData());
+						*/
+					}
+					// copy some of data properties
+					if(premergeSMR.getChemicalFormula() != null)
+						inchiSMR.addComment("original formula: " +
+								premergeSMR.getChemicalFormula());
+					for(String comm : premergeSMR.getComment())
+						inchiSMR.addComment(comm);
+					for(String name : premergeSMR.getName())
+						inchiSMR.addName(name);
+					
+				} else {
+					log.warn(bpe.getRDFId() + " added 'As Is', " +
+						"because nothing's found in Warehouse.");
+				}
+			}
+
+			if (object != null) {
+				// add (with all members) if not already there
+				if(!target.containsID(object.getRDFId()))
+					simpleMerger.merge(target, object);
+			} else {
+				if(log.isInfoEnabled())
+					log.info(bpe.getRDFId() + " wil be added 'As Is', " +
+						"because nothing's found in Warehouse.");
+			}
+		}
+		
+		// merge the rest of elements
+		target.merge(pathwayModel);
+	}
+	
+	
+	/*
 	 * (non-Javadoc)
 	 * @see cpath.importer.Merger#merge
 	 */
@@ -168,150 +305,13 @@ public class MergerImpl implements Merger {
 			};
 			
 			// in-memory copy of the persisted model for this provider
-			pathwayModel = (pathwayModel == null) ? getPreMergeModel(metadata) : pathwayModel;
-			Model copyOfPathwayModel = copyModel(pathwayModel); // to prevent concurrent modification exception
-			// (these models go to trash after the merge)
+			Model pathwayModel = getPreMergeModel(metadata);
 
-			if (copyOfPathwayModel == null) {
-				log.info("merge(), error copy pathwayModel for provider: " + metadata.getIdentifier() + ", continuing.");
-				continue;
-			}
-
-			// iterate over all utility elements in the pathway model
-			for (UtilityClass bpe : copyOfPathwayModel.getObjects(UtilityClass.class)) {
-
-				// skip if the element already exists in pcModel
-				if(pcModel.getByID(bpe.getRDFId()) != null)
-					continue; // already exists
-				
-				UtilityClass object = null;
-
-				// merge all protein/SM references & controlled vocabularies
-				if (bpe instanceof ProteinReference) 
-				{
-					// find specific subclass (e.g. CellVocabulary)!
-					object = proteinsDAO.getObject(bpe.getRDFId(), ProteinReference.class);
-					
-					// if not found by id, - search by UnificationXrefs
-					if (object==null) {
-						XReferrable r = (XReferrable) bpe;
-						Set<UnificationXref> urefs =
-							new ClassFilterSet<UnificationXref>(r.getXref(), UnificationXref.class);
-
-						Collection<String> prefs = proteinsDAO
-							.getByXref(urefs, ProteinReference.class);
-						
-						if(!prefs.isEmpty()) 
-							object = proteinsDAO.getObject(prefs.iterator().next(), ProteinReference.class);
-						
-						if(prefs.size() > 1)
-							throw new RuntimeException("Several ProteinReference " +
-								"that share the same xref found:" + prefs);
-					}
-				} else if (bpe instanceof ControlledVocabulary) 
-				{
-					// get the CV subclass (e.g. CellVocabulary)!
-					Class<? extends ControlledVocabulary> clazz = 
-						(Class<? extends ControlledVocabulary>) bpe.getModelInterface(); 
-					object = cvRepository.getObject(bpe.getRDFId(), clazz);
-					
-					// if not found by id, - search by UnificationXrefs
-					if (object==null) {
-						XReferrable r = (XReferrable) bpe;
-						Set<UnificationXref> urefs =
-							new ClassFilterSet<UnificationXref>(r.getXref(), UnificationXref.class);
-
-						Collection<String> cvs = cvRepository.getByXref(urefs, clazz);
-						
-						if (!cvs.isEmpty())
-							object = cvRepository.getObject(cvs.iterator().next(), clazz);
-							
-						if (cvs.size() > 1)
-							throw new RuntimeException("Several ControlledVocabulary "
-								+ "that use the same xref found:" + cvs.toString());
-					}
-				} else if (bpe instanceof SmallMoleculeReference) {
-					
-					// this is a (pubchem or chebi...) small molecule reference,
-					// get respective 'inchi' one from the warehouse
-					SmallMoleculeReference premergeSMR = (SmallMoleculeReference)bpe;
-					// using unification xrefs 
-					Set<UnificationXref> uxrefs = new 
-						ClassFilterSet<UnificationXref>(premergeSMR.getXref(), UnificationXref.class);
-					// - to find the 'inchi' SMR in the warehouse
-					String inchiUrn = getSmallMoleculeReference(uxrefs);
-					// did we find anything?
-					if (inchiUrn != null) { 
-						if(pcModel.containsID(inchiUrn)) {
-							object = (SmallMoleculeReference) pcModel.getByID(inchiUrn);
-						} else {
-							object = moleculesDAO.getObject(inchiUrn, SmallMoleculeReference.class);
-						}
-						SmallMoleculeReference inchiSMR = (SmallMoleculeReference) object;
-						
-						/*
-						 *  the following is required for the merge to work properly,
-						 *  i.e., premergeSMR must be replaced by the object (inchiSMR)
-						 */
-						pathwayModel.updateID(premergeSMR.getRDFId(), inchiSMR.getRDFId());
-						
-						/* because of the preceding line,
-						 * premergeSMR will be skipped during the merge,
-						 * but its members (mainly xrefs) will be added to 
-						 * the target 'inchi' one;
-						 * still, lets copy some of the properties manually,
-						 * otherwise, SimpleMerger would ignore all data properties 
-						 * in premergeSMR and create dangling ones (e.g., ChemicalStructure)
-						 */
-						// warehouse inchiSMR does not have any chem. formula (but has structure!)
-						if(inchiSMR.getChemicalFormula()==null)
-							inchiSMR.setChemicalFormula(premergeSMR.getChemicalFormula());
-						// premergeSMR may have different ChemicalStructure (not InChi based :))
-						if(premergeSMR.getStructure() != null) { 
-							// TODO what to do with original structure, if any?
-							// remove it
-							pathwayModel.remove(premergeSMR.getStructure());
-							/*
-							inchiSMR.addComment("original structure:" + 
-								premergeSMR.getStructure().getStructureFormat() + 
-									"; " + premergeSMR.getStructure().getStructureData());
-							*/
-						}
-						// copy some of data properties
-						if(premergeSMR.getChemicalFormula() != null)
-							inchiSMR.addComment("original formula: " +
-									premergeSMR.getChemicalFormula());
-						for(String comm : premergeSMR.getComment())
-							inchiSMR.addComment(comm);
-						for(String name : premergeSMR.getName())
-							inchiSMR.addName(name);
-						
-					} else {
-						log.warn(bpe.getRDFId() + " added 'As Is', " +
-							"because nothing's found in Warehouse.");
-					}
-				}
-
-				if (object != null) {
-					// add (with all members) if not already there
-					if(!pcModel.containsID(object.getRDFId()))
-						simpleMerger.merge(pcModel, object);
-				} else {
-					if(log.isInfoEnabled())
-						log.info(bpe.getRDFId() + " wil be added 'As Is', " +
-							"because nothing's found in Warehouse.");
-				}
-			}
-
-			// merge the rest of elements
-			pcModel.merge(pathwayModel);
-
-			// trash pathwayModel, we will get new one next iteration
-			pathwayModel = null;
-			copyOfPathwayModel = null;
+			// merge
+			merge(pcDAO, pathwayModel);
 
 			// finally, merge with the database
-			pcDAO.merge(pcModel);
+			//pcDAO.merge(pcModel);
 		}
 	}
 
@@ -440,5 +440,13 @@ public class MergerImpl implements Merger {
 		}
 
 		return null;
+	}
+	
+	private <T extends BioPAXElement> T getById(Model model, String urn, Class<T> type) 
+	{
+		return 
+		(model instanceof WarehouseDAO) 
+			? ((WarehouseDAO)model).getObject(urn, type) //completely detached
+				: (T) model.getByID(urn) ;	
 	}
 }
