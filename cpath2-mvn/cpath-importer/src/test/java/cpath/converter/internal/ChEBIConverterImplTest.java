@@ -12,6 +12,7 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.*;
 
 import org.junit.Test;
+import org.junit.Ignore;
 
 import static org.junit.Assert.*;
 import java.io.IOException;
@@ -28,6 +29,7 @@ public class ChEBIConverterImplTest {
 	 * Test method for {@link cpath.converter.internal.ChEBIConverterImpl#convert(java.io.InputStream)}.
 	 * @throws IOException 
 	 */
+	//@Ignore
 	@Test
 	public void testConvert() throws IOException {
 		// convert test data

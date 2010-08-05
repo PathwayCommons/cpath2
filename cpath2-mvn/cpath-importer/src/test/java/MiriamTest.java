@@ -30,6 +30,7 @@ import static org.junit.Assert.*;
 
 import org.biopax.miriam.MiriamLink;
 import org.junit.Test;
+import org.junit.Ignore;
 
 /**
  * @author rodch
@@ -40,19 +41,21 @@ public class MiriamTest {
 	/**
 	 * Test method for {@link cpath.common.internal.MiriamAdapter#getURI(java.lang.String, java.lang.String)}.
 	 */
+	//@Ignore
 	@Test
 	public final void testGetURI() {
 		String urn = MiriamLink.getURI("uniprot", "P62158");
 		assertEquals("urn:miriam:uniprot:P62158", urn);
 	}
 	
+	//@Ignore
 	@Test
 	public final void testGetURI_CV() {
 		String urn = MiriamLink.getURI("GO", "GO:0005654");
 		assertEquals("urn:miriam:obo.go:GO%3A0005654", urn);
 	}
 	
-	
+	//@Ignore
 	@Test
 	public final void testGetURI_wrong() {
 		try {
@@ -66,13 +69,14 @@ public class MiriamTest {
 	/**
 	 * Test method for {@link cpath.common.internal.MiriamAdapter#getDataTypeURN(java.lang.String)}.
 	 */
+	//@Ignore
 	@Test
 	public final void testGetDataTypeURN_byId() {
 		String urn = MiriamLink.getDataTypeURI("urn:miriam:uniprot");
 		assertEquals("urn:miriam:uniprot", urn);
 	}
 	
-
+	//@Ignore
 	@Test
 	public final void testGetDataTypeURN_byName() {
 		String urn = MiriamLink.getDataTypeURI("uniprotkb");

@@ -13,6 +13,7 @@ import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.UnificationXref;
 
 import org.junit.Test;
+import org.junit.Ignore;
 
 import static org.junit.Assert.*;
 import java.io.IOException;
@@ -30,6 +31,7 @@ public class PubChemConverterImplTest {
 	 * Test method for {@link cpath.converter.internal.PubChemConverterImpl#convert(java.io.InputStream)}.
 	 * @throws IOException 
 	 */
+	//@Ignore
 	@Test
 	public void testConvert() throws IOException {
 
