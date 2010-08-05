@@ -39,6 +39,7 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -102,7 +103,7 @@ public class CPathWarehouseTest {
 		factory = (Level3Factory) BioPAXLevel.L3.getDefaultFactory();
 	}
 
-
+	//@Ignore
 	@Test
 	public void testGetProteinReference() {
 		ProteinReference pr = proteins
@@ -128,19 +129,19 @@ public class CPathWarehouseTest {
 		assertEquals("urn:miriam:uniprot:Q8TD86", prIds.iterator().next());
 	}
 
-	
+	//@Ignore
 	@Test
 	public void testGetChEBIMolecule() {
 		// TODO
 	}
 
-	
+	//@Ignore	
 	@Test
 	public void testGetPubChemMolecule() {
 		// TODO
 	}
 
-	
+	//@Ignore
 	@Test
 	public void testSearchForProteinReference() {
 		// search with a secondary (RefSeq) accession number
@@ -161,12 +162,13 @@ public class CPathWarehouseTest {
 		assertEquals("urn:miriam:uniprot:Q8TD86", prIds.iterator().next());
 	}
 
-	
+	//@Ignore
 	@Test
 	public void testSearchForMolecule() {
 		
 	}
 	
+	//@Ignore
 	@Test
 	// just another test (not very useful...)
 	public void testSubModel() {

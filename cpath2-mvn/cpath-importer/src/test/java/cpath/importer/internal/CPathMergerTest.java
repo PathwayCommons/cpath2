@@ -5,11 +5,11 @@ import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.internal.CPathFetcherImpl;
 import cpath.warehouse.*;
 import cpath.warehouse.beans.*;
-import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.TYPE;
 import cpath.warehouse.internal.OntologyManagerCvRepository;
 
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.controller.SimpleMerger;
@@ -77,9 +77,9 @@ public class CPathMergerTest {
 		}
 	}
 
-	
+	@Ignore
 	@Test
-	public void testInMemoryModelMerge() {
+	public void testInMemoryModelMerge() throws IOException {
 
 		Model pcDAO = new ModelImpl(BioPAXLevel.L3.getDefaultFactory()) {
 			@Override
@@ -94,10 +94,15 @@ public class CPathMergerTest {
 										   moleculesDAO, proteinsDAO, cvRepository);
 		merger.merge(pcDAO, pathwayProviderModel);
 
-		// TODO: add asserts
+		assertMerge(pcDAO);
+		
+		// dump owl out to stdout for review
+		System.out.println("Merged BioPAX (memory model): ");
+		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(pcDAO, System.out);
 	}
 
-	//@Test
+	//@Ignore
+	@Test
 	public void testHibernateMerge() {
 
 		ApplicationContext context =
@@ -108,7 +113,48 @@ public class CPathMergerTest {
 										   moleculesDAO, proteinsDAO, cvRepository);
 		merger.merge();
 
-		// TODO: add asserts
-
+		assertMerge(paxtoolsDAO);
+	}
+	
+	private void assertMerge(Model mergedModel) {
+		
+		// test proper merge of protein reference
+		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#Protein_54"));
+		assertTrue(mergedModel.containsID("urn:miriam:uniprot:P27797"));
+		assertTrue(mergedModel.containsID("urn:pathwaycommons:UnificationXref:uniprot_P27797"));
+		assertTrue(!mergedModel.containsID("urn:pathwaycommons:UnificationXref:Uniprot_P27797"));
+		assertTrue(mergedModel.containsID("urn:miriam:taxonomy:9606"));
+		
+		ProteinReference pr = (ProteinReference)mergedModel.getByID("urn:miriam:uniprot:P27797");
+		assertEquals(8, pr.getName().size());
+		assertEquals("CALR_HUMAN", pr.getDisplayName());
+		assertEquals("Calreticulin", pr.getStandardName());
+		assertEquals(6, pr.getXref().size());
+		assertEquals("urn:miriam:taxonomy:9606", pr.getOrganism().getRDFId());
+		
+		// TODO: add asserts for CV
+		
+		// test proper merge of small molecule reference
+		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate"));
+		assertTrue(mergedModel.containsID("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS"));
+		assertTrue(mergedModel.containsID("urn:pathwaycommons:ChemicalStructure:CRPUJAZIXJMDBK-DTWKUNHWBS"));
+		assertTrue(mergedModel.containsID("urn:miriam:chebi:20"));
+		assertTrue(mergedModel.containsID("urn:pathwaycommons:ChemicalStructure:chebi_20"));
+		assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_8"));
+		assertTrue(mergedModel.containsID("urn:miriam:pubchem.substance:14438"));
+		assertTrue(mergedModel.containsID("urn:pathwaycommons:ChemicalStructure:pubchem.substance_14438"));
+		assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_6"));
+		
+		SmallMolecule sm = (SmallMolecule)mergedModel.getByID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
+		SmallMoleculeReference smr = (SmallMoleculeReference)sm.getEntityReference();
+		assertEquals("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS", smr.getRDFId());
+		
+		smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:chebi:20");
+		assertEquals("(+)-camphene", smr.getStandardName());
+		assertEquals(3, smr.getXref().size());
+		
+		smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:pubchem.substance:14438");
+		assertEquals("Geranyl formate", smr.getDisplayName());
+		assertEquals(1, smr.getXref().size());
 	}
 }
