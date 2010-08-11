@@ -41,6 +41,7 @@ import org.biopax.paxtools.model.level3.EntityReference;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.model.level3.Level3Element;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.BioPAXIOHandler;
@@ -390,6 +391,22 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		BioPAXElement toReturn = null;
 		// rdfid is Primary Key now (see BioPAXElementImpl)
 		toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
+		
+		/*
+		 * Interesting, inverse prop editor (XrefOf) is not
+		 * available during ElementInitializer,
+		 * "manually" initialize inverse props here.
+		 */
+		if (toReturn != null) {
+			
+			if (toReturn instanceof Xref) {
+				Hibernate.initialize(((Xref)toReturn).getXrefOf());
+			}
+			
+			// initialize
+			ElementInitializer initializer = new ElementInitializer();
+			initializer.initialize(this, toReturn); 
+		}
 
 		return toReturn; // null means no such element
 	}
@@ -721,6 +738,52 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	
 	
 	/*
+	 * Initializes all the properties and properties's properties, etc.
+	 */
+	@Transactional
+	private class ElementInitializer implements Visitor {
+		private Traverser traverser;
+		
+		public ElementInitializer() {
+			traverser = new Traverser(reader.getEditorMap(), this);
+		}
+
+		@Transactional
+		public void initialize(Model source, BioPAXElement toBeCloned) {
+			Model subModel = factory.createModel();
+			Hibernate.initialize(toBeCloned);
+			traverser.traverse(toBeCloned, subModel);
+		}
+
+		@Transactional
+		public void visit(BioPAXElement domain, Object range, Model targetModel, PropertyEditor editor)	{
+
+			if (!targetModel.containsID(domain.getRDFId())) {
+                targetModel.addNew(domain.getModelInterface(), domain.getRDFId());
+			}
+			
+			if (domain instanceof BioPAXElement) {
+				BioPAXElement bpeDomain = (BioPAXElement)domain;
+				Hibernate.initialize(bpeDomain);
+				if (range instanceof BioPAXElement) {
+					BioPAXElement bpeRange = (BioPAXElement)range;
+					if (!targetModel.containsID(bpeRange.getRDFId())) {
+						traverser.traverse(bpeRange, targetModel);
+					}
+				}
+				Object beanValue = editor.getValueFromBean(bpeDomain);
+				if (beanValue instanceof Collection) {
+					for (Object collectionValue : (Collection)beanValue) {
+						if (collectionValue instanceof BioPAXElement) {
+							Hibernate.initialize(collectionValue);
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	/*
 	 * Special object copier.
 	 * Clones all the properties and properties's properties, etc.
 	 */
@@ -744,9 +807,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		public void visit(BioPAXElement domain, Object range, Model targetModel, PropertyEditor editor)
 		{
 			if (!targetModel.containsID(domain.getRDFId())) {
-				targetModel.addNew(domain.getModelInterface(), domain.getRDFId());
+                targetModel.addNew(domain.getModelInterface(), domain.getRDFId());
 			}
-
+			
 			if (range instanceof BioPAXElement)
 			{
 				Hibernate.initialize(range);
