@@ -210,7 +210,6 @@ public class MergerImpl implements Merger {
 			}
 
 			if (object != null) {
-				
 				// add (with all members) if not already there
 				if(!target.containsID(object.getRDFId())) {
 					simpleMerger.merge(target, object);
