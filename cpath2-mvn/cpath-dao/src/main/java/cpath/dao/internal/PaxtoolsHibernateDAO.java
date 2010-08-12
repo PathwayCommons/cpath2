@@ -397,6 +397,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		 * available during ElementInitializer,
 		 * "manually" initialize inverse props here.
 		 */
+		/*
 		if (toReturn != null) {
 			
 			if (toReturn instanceof Xref) {
@@ -404,9 +405,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			}
 			
 			// initialize
-			//ElementInitializer initializer = new ElementInitializer();
-			//initializer.initialize(this, toReturn); 
+			ElementInitializer initializer = new ElementInitializer();
+			initializer.initialize(this, toReturn); 
 		}
+		*/
 
 		return toReturn; // null means no such element
 	}
