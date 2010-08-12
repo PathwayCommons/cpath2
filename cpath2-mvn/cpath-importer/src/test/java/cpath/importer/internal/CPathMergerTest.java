@@ -95,66 +95,28 @@ public class CPathMergerTest {
 										   moleculesDAO, proteinsDAO, cvRepository);
 		merger.merge(pcDAO, pathwayProviderModel);
 
-		assertMerge(pcDAO, true);
+		assertMerge(pcDAO);
 		
-		// dump owl out to stdout for review
+		// dump owl out to STDOUT for review
 		System.out.println("Merged BioPAX (memory model): ");
 		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(pcDAO, System.out);
 	}
-
-	//@Ignore
-	@Test
-	public void testHibernateMerge() throws IOException {
-
-		ApplicationContext context =
-			new ClassPathXmlApplicationContext("classpath:testContext-cpathDAO.xml");
-		PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
-
-		MergerImpl merger = new MergerImpl((Model)paxtoolsDAO, metadataDAO,
-										   moleculesDAO, proteinsDAO, cvRepository);
-		merger.merge((Model)paxtoolsDAO, pathwayProviderModel);
-
-		assertMerge(paxtoolsDAO, false);
-		
-		// dump owl out to stdout for review
-		//System.out.println("Merged BioPAX (memory model): ");
-		//(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(paxtoolsDAO, System.out);
-	}
 	
-	/*
-	 * Tests the merging routine.  We have to differenciate between
-	 * testing with an in-memory paxtools model and using a paxtoolsDAO (hibernate)
-	 * model.  This is true because during testing, warehouse data and in coming
-	 * pathway data resides in the same database.  Thus, checks (and subsequent) merging
-	 * of protein, CV, and small molecule data does not work as designed.
-	 */
-	private void assertMerge(Model mergedModel, boolean memoryModel) {
+	private void assertMerge(Model mergedModel) {
 		
 		// test proper merge of protein reference
 		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#Protein_54"));
 		assertTrue(mergedModel.containsID("urn:miriam:uniprot:P27797"));
 		assertTrue(mergedModel.containsID("urn:pathwaycommons:UnificationXref:uniprot_P27797"));
-		// hibernate/mysql search is case insensitive by default, only check with memory model
-		if (memoryModel) {
-			assertTrue(!mergedModel.containsID("urn:pathwaycommons:UnificationXref:Uniprot_P27797"));
-		}
+		assertTrue(!mergedModel.containsID("urn:pathwaycommons:UnificationXref:Uniprot_P27797"));
 		assertTrue(mergedModel.containsID("urn:miriam:taxonomy:9606"));
 		
-		ProteinReference pr = (ProteinReference)getById(mergedModel, "urn:miriam:uniprot:P27797", ProteinReference.class);
-		if (memoryModel) {
-			assertEquals(8, pr.getName().size());
-			assertEquals("CALR_HUMAN", pr.getDisplayName());
-			assertEquals("Calreticulin", pr.getStandardName());
-			assertEquals(6, pr.getXref().size());
-			assertEquals("urn:miriam:taxonomy:9606", pr.getOrganism().getRDFId());
-		}
-		else {
-			assertEquals(3, pr.getName().size());
-			assertEquals("glucokinase", pr.getDisplayName());
-			assertEquals("GLK", pr.getStandardName());
-			assertEquals(1, pr.getXref().size());
-			assertEquals("urn:miriam:taxonomy:562", pr.getOrganism().getRDFId());
-		}
+		ProteinReference pr = (ProteinReference)mergedModel.getByID("urn:miriam:uniprot:P27797");
+		assertEquals(8, pr.getName().size());
+		assertEquals("CALR_HUMAN", pr.getDisplayName());
+		assertEquals("Calreticulin", pr.getStandardName());
+		assertEquals(6, pr.getXref().size());
+		assertEquals("urn:miriam:taxonomy:9606", pr.getOrganism().getRDFId());
 		
 		// TODO: add asserts for CV
 		
@@ -164,44 +126,19 @@ public class CPathMergerTest {
 		assertTrue(mergedModel.containsID("urn:pathwaycommons:ChemicalStructure:CRPUJAZIXJMDBK-DTWKUNHWBS"));
 		assertTrue(mergedModel.containsID("urn:miriam:chebi:20"));
 		assertTrue(mergedModel.containsID("urn:pathwaycommons:ChemicalStructure:chebi_20"));
-		if (memoryModel) {
-			assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_8"));
-		}
+		assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_8"));
 		assertTrue(mergedModel.containsID("urn:miriam:pubchem.substance:14438"));
 		assertTrue(mergedModel.containsID("urn:pathwaycommons:ChemicalStructure:pubchem.substance_14438"));
-		if (memoryModel) {
-			assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_6"));
-		}
+		assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_6"));
 		
-		SmallMolecule sm = (SmallMolecule)getById(mergedModel, "http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate", SmallMolecule.class);
+		SmallMolecule sm = (SmallMolecule)mergedModel.getByID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
 		SmallMoleculeReference smr = (SmallMoleculeReference)sm.getEntityReference();
-		if (memoryModel) {
-			assertEquals("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS", smr.getRDFId());
-
-			smr = (SmallMoleculeReference)getById(mergedModel, "urn:miriam:chebi:20", SmallMoleculeReference.class);
-			assertEquals("(+)-camphene", smr.getStandardName());
-			assertEquals(3, smr.getXref().size());
-
-			smr = (SmallMoleculeReference)getById(mergedModel, "urn:miriam:pubchem.substance:14438", SmallMoleculeReference.class);
-			assertEquals("Geranyl formate", smr.getDisplayName());
-			assertEquals(1, smr.getXref().size());
-		}
-		else {
-			assertEquals("urn:miriam:chebi:20", smr.getRDFId());
-			assertEquals("b-D-fru-6-p", smr.getStandardName());
-			assertEquals(1, smr.getXref().size());
-
-			smr = (SmallMoleculeReference)getById(mergedModel, "urn:miriam:pubchem.substance:14438", SmallMoleculeReference.class);
-			assertEquals("Adenosine 5'-diphosphate", smr.getDisplayName());
-			assertEquals(1, smr.getXref().size());
-		}
-	}
-	
-	private <T extends BioPAXElement> T getById(Model model, String urn, Class<T> type) {
-		
-		return 
-		(model instanceof WarehouseDAO) 
-			? ((WarehouseDAO)model).getObject(urn, type) //completely detached
-				: (T) model.getByID(urn) ;	
+		assertEquals("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS", smr.getRDFId());
+		smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:chebi:20");
+		assertEquals("(+)-camphene", smr.getStandardName());
+		assertEquals(3, smr.getXref().size());
+		smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:pubchem.substance:14438");
+		assertEquals("Geranyl formate", smr.getDisplayName());
+		assertEquals(1, smr.getXref().size());
 	}
 }
