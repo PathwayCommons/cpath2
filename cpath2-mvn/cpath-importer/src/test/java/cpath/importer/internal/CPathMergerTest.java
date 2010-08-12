@@ -8,6 +8,7 @@ import cpath.warehouse.beans.*;
 import cpath.warehouse.beans.Metadata.TYPE;
 import cpath.warehouse.internal.OntologyManagerCvRepository;
 
+import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.impl.ModelImpl;
@@ -139,7 +140,7 @@ public class CPathMergerTest {
 		}
 		assertTrue(mergedModel.containsID("urn:miriam:taxonomy:9606"));
 		
-		ProteinReference pr = (ProteinReference)mergedModel.getByID("urn:miriam:uniprot:P27797");
+		ProteinReference pr = (ProteinReference)getById(mergedModel, "urn:miriam:uniprot:P27797", ProteinReference.class);
 		if (memoryModel) {
 			assertEquals(8, pr.getName().size());
 			assertEquals("CALR_HUMAN", pr.getDisplayName());
@@ -172,16 +173,16 @@ public class CPathMergerTest {
 			assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_6"));
 		}
 		
-		SmallMolecule sm = (SmallMolecule)mergedModel.getByID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
+		SmallMolecule sm = (SmallMolecule)getById(mergedModel, "http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate", SmallMolecule.class);
 		SmallMoleculeReference smr = (SmallMoleculeReference)sm.getEntityReference();
 		if (memoryModel) {
 			assertEquals("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS", smr.getRDFId());
 
-			smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:chebi:20");
+			smr = (SmallMoleculeReference)getById(mergedModel, "urn:miriam:chebi:20", SmallMoleculeReference.class);
 			assertEquals("(+)-camphene", smr.getStandardName());
 			assertEquals(3, smr.getXref().size());
 
-			smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:pubchem.substance:14438");
+			smr = (SmallMoleculeReference)getById(mergedModel, "urn:miriam:pubchem.substance:14438", SmallMoleculeReference.class);
 			assertEquals("Geranyl formate", smr.getDisplayName());
 			assertEquals(1, smr.getXref().size());
 		}
@@ -190,9 +191,17 @@ public class CPathMergerTest {
 			assertEquals("b-D-fru-6-p", smr.getStandardName());
 			assertEquals(1, smr.getXref().size());
 
-			smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:pubchem.substance:14438");
+			smr = (SmallMoleculeReference)getById(mergedModel, "urn:miriam:pubchem.substance:14438", SmallMoleculeReference.class);
 			assertEquals("Adenosine 5'-diphosphate", smr.getDisplayName());
 			assertEquals(1, smr.getXref().size());
 		}
+	}
+	
+	private <T extends BioPAXElement> T getById(Model model, String urn, Class<T> type) {
+		
+		return 
+		(model instanceof WarehouseDAO) 
+			? ((WarehouseDAO)model).getObject(urn, type) //completely detached
+				: (T) model.getByID(urn) ;	
 	}
 }
