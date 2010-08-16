@@ -37,11 +37,7 @@ import org.apache.lucene.search.Explanation;
 import org.apache.lucene.util.Version;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.EntityReference;
-import org.biopax.paxtools.model.level3.SmallMoleculeReference;
-import org.biopax.paxtools.model.level3.XReferrable;
-import org.biopax.paxtools.model.level3.Xref;
-import org.biopax.paxtools.model.level3.Level3Element;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.BioPAXIOHandler;
@@ -382,15 +378,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 
 	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
-	public BioPAXElement getByID(String id) 
-	{
-		if(id == null || "".equals(id)) 
-			throw new RuntimeException("getElement(null) is called!");
-
-		BioPAXElement toReturn = null;
-		// rdfid is Primary Key now (see BioPAXElementImpl)
-		toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
+	public BioPAXElement getByIdInitialized(String id) {
+		BioPAXElement toReturn = getByID(id);
 		
 		/*
 		 * Interesting, inverse prop editor (XrefOf) is not
@@ -409,6 +398,21 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			initializer.initialize(this, toReturn); 
 		}
 		*/
+
+		return toReturn; // null means no such element
+	}
+
+	
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED)
+	public BioPAXElement getByID(String id) 
+	{
+		if(id == null || "".equals(id)) 
+			throw new RuntimeException("getElement(null) is called!");
+
+		BioPAXElement toReturn = null;
+		// rdfid is Primary Key now (see BioPAXElementImpl)
+		toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
 
 		return toReturn; // null means no such element
 	}
@@ -826,7 +830,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			}
 		}
 	}
-
 }
 
 

@@ -40,7 +40,6 @@ public class CPathFetcherTest {
 		}; // all tests outputs to the same model object
 	}
 
-	//@Ignore
 	@Test
 	public void testGetProviderProteinData() throws IOException {
 		// any resource location now works (not only http://...)!
@@ -59,7 +58,6 @@ public class CPathFetcherTest {
 		assertEquals(TYPE.PROTEIN, metadata.getType());
 	}
 	
-	//@Ignore
 	@Test
 	public void testImportProteinData() throws IOException {
 		// any resource location inside the metadata page works now!
@@ -81,7 +79,6 @@ public class CPathFetcherTest {
 		assertTrue(model.containsID("urn:miriam:uniprot:P62158"));
 	}
 	
-	//@Ignore
 	@Test
 	public void testImportChebiData() throws IOException {
 		String location = "classpath:test_chebi_data.dat.zip";
@@ -100,7 +97,6 @@ public class CPathFetcherTest {
 		assertTrue(model.containsID("urn:pathwaycommons:ChemicalStructure:JVTAAEKCZFNVCJ-SNQCPAJUDF"));
 	}
 	
-	//@Ignore
 	@Test
 	public void testImportPubchemData() throws IOException {
 		String location = "classpath:test_pubchem_data.dat.zip";

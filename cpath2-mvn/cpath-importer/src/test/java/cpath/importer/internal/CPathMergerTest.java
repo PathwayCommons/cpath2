@@ -1,6 +1,5 @@
 package cpath.importer.internal;
 
-import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.internal.CPathFetcherImpl;
 import cpath.warehouse.*;
@@ -8,7 +7,6 @@ import cpath.warehouse.beans.*;
 import cpath.warehouse.beans.Metadata.TYPE;
 import cpath.warehouse.internal.OntologyManagerCvRepository;
 
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.impl.ModelImpl;
@@ -78,7 +76,6 @@ public class CPathMergerTest {
 		}
 	}
 
-	//@Ignore
 	@Test
 	public void testInMemoryModelMerge() throws IOException {
 

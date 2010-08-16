@@ -43,7 +43,6 @@ import org.biopax.validator.result.Validation;
 import org.biopax.validator.rules.ControlTypeRule;
 import org.biopax.validator.utils.BiopaxValidatorException;
 import org.junit.Test;
-import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
@@ -69,7 +68,6 @@ public class BiopaxValidatorTest {
 	/**
 	 * Test method for {@link cpath.validator.BiopaxValidator#validate(org.biopax.paxtools.model.Model)}.
 	 */
-	//@Ignore
 	@Test
 	public final void testCheckRule() {
 		Rule rule = new ControlTypeRule();	
@@ -100,7 +98,6 @@ public class BiopaxValidatorTest {
 		}
 	}
 
-	//@Ignore
 	@Test
 	public final void testValidateModel() {
 		//make sure the rule's behavior, we're interested in this test, is not 'IGNORED' 
