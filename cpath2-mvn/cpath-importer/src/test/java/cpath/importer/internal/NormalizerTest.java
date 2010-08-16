@@ -43,7 +43,6 @@ import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.Xref;
 import org.junit.Test;
-import org.junit.Ignore;
 
 
 /**
@@ -63,8 +62,7 @@ public class NormalizerTest {
 		simpleExporter = new SimpleExporter(BioPAXLevel.L3);
 		simpleReader = new SimpleReader();
 	}
-	
-	//@Ignore
+
 	@Test
 	public final void testNormalize() {
 		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
@@ -163,7 +161,6 @@ public class NormalizerTest {
 
 	
 	// TODO fix/clean the input file first!!!
-	//@Ignore
 	@Test
 	public final void testNormalizeTestFile() throws IOException {
 		NormalizerImpl normalizer = new NormalizerImpl();

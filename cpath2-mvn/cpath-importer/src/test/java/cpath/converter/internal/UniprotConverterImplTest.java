@@ -42,7 +42,6 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ProteinReference;
 import org.junit.Test;
-import org.junit.Ignore;
 
 import cpath.converter.Converter;
 
@@ -56,7 +55,6 @@ public class UniprotConverterImplTest {
 	 * Test method for {@link cpath.converter.internal.UniprotConverterImpl#convert(java.io.InputStream)}.
 	 * @throws IOException 
 	 */
-	//@Ignore
 	@Test
 	public void testConvert() throws IOException {
 		InputStream is = getClass().getResourceAsStream("/test_uniprot_data.dat.gz");

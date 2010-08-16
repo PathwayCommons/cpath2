@@ -131,4 +131,16 @@ public interface PaxtoolsDAO extends Model {
      */
     void exportBinaryInteractions(OutputStream outputStream, Collection<InteractionRule> rules, String... ids);
  
+    
+    /**
+     * Gets initialized BioPAX element, i.e., 
+     * with all the properties set for sure
+     * (this matters when an implementation uses 
+     * caching, transactions, etc.)
+     * 
+     * @param id
+     * @return
+     */
+    BioPAXElement getByIdInitialized(String id);
+    
 }
