@@ -70,7 +70,7 @@ public class CPathServiceTest {
 		Object dao = context.getBean("paxtoolsDAO");
 		log.info("Loading BioPAX data (importModel(file))...");
 		File biopaxFile = new File(CPathServiceTest.class.getResource("/test.owl").getFile());		
-		//File biopaxFile = new File(getClass().getResource("/biopax-level3-test-normalized.owl").getFile());
+		//File biopaxFile = new File(getClass().getResource("/test-normalized.owl").getFile());
 		try {
 			((PaxtoolsDAO)dao).importModel(biopaxFile);
 		} catch (FileNotFoundException e) {
