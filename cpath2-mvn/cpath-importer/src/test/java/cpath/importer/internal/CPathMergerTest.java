@@ -19,24 +19,38 @@ import static org.junit.Assert.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.*;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
+
+/**
+ * 
+ * 
+ * 
+ * @author rodche
+ *
+ */
 public class CPathMergerTest {
 
 	private static Log log = LogFactory.getLog(CPathMergerTest.class);
-
 	private static MetadataDAO metadataDAO;
 	private static WarehouseDAO proteinsDAO;
 	private static WarehouseDAO moleculesDAO;
 	private static WarehouseDAO cvRepository;
-	private static Model pathwayProviderModel;
+	private static Set<Model> pathwayModels; // pathways to merge
         
 	static {
-
+		final ResourceLoader resourceLoader = new DefaultResourceLoader();
+		
+		pathwayModels = new HashSet<Model>();
+		
 		// init the test database
 		DataServicesFactoryBean.createSchema("cpath2_test");
 
@@ -48,27 +62,32 @@ public class CPathMergerTest {
 		cvRepository = new OntologyManagerCvRepository(new ClassPathResource("ontologies.xml"), null);
 		metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 
+		
         // load test data
 		CPathFetcherImpl fetcher = new CPathFetcherImpl();
 		PathwayDataDAO pathwayDataDAO = (PathwayDataDAO) context.getBean("pathwayDataDAO");
 		try {
 			Collection<Metadata> metadata = fetcher.getProviderMetadata("classpath:metadata.html");
 			for (Metadata mdata : metadata) {
+				// store metadata in the warehouse
 				metadataDAO.importMetadata(mdata);
 				if (mdata.getType() == TYPE.PROTEIN) {
+					// store PRs in the warehouse
 					fetcher.storeWarehouseData(mdata, (Model)proteinsDAO);
 				}
 				else if (mdata.getType() == TYPE.SMALL_MOLECULE) {
+					// store SMRs in the warehouse
 					fetcher.storeWarehouseData(mdata, (Model)moleculesDAO);
 				}
-				else if ("TEST_BIOPAX".equals(mdata.getIdentifier())) {
-					Collection<PathwayData> pathwayData = fetcher.getProviderPathwayData(mdata);
-					assertEquals(1, pathwayData.size());
-					for (PathwayData pwData : pathwayData) {
-						pathwayDataDAO.importPathwayData(pwData);
-						pathwayProviderModel =
-							(new SimpleReader()).convertFromOWL(new ByteArrayInputStream(pwData.getPathwayData().getBytes()));
-					}
+				else if (mdata.getType() == TYPE.BIOPAX) {
+					// do NOT create pathway data DAO (for this test)! 
+					// Just build models right away (test data must be normalized/cleaned!):
+					String url = mdata.getURLToPathwayData();
+					Model model = (new SimpleReader()).convertFromOWL(resourceLoader.getResource(url).getInputStream());
+					if(model != null)
+						pathwayModels.add(model);
+					else 
+						fail("Failed to import Model from:" + url);
 				}
 			}
 		} catch (IOException e) {
@@ -90,13 +109,19 @@ public class CPathMergerTest {
 
 		MergerImpl merger = new MergerImpl(pcDAO, metadataDAO,
 										   moleculesDAO, proteinsDAO, cvRepository);
-		merger.merge(pcDAO, pathwayProviderModel);
-
-		assertMerge(pcDAO);
 		
-		// dump owl out to STDOUT for review
-		System.out.println("Merged BioPAX (memory model): ");
-		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(pcDAO, System.out);
+		for(Model model : pathwayModels) {
+			merger.merge(pcDAO, model);
+			break; // TODO remove this break to test several PWs merge
+		}
+		
+		// dump owl out for review
+		OutputStream out = new FileOutputStream(
+			getClass().getClassLoader().getResource("").getPath() 
+				+ File.separator + "MergerTest.out.owl");
+		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(pcDAO, out);
+		
+		assertMerge(pcDAO);
 	}
 	
 	private void assertMerge(Model mergedModel) {
@@ -116,6 +141,7 @@ public class CPathMergerTest {
 		assertEquals("urn:miriam:taxonomy:9606", pr.getOrganism().getRDFId());
 		
 		// TODO: add asserts for CV
+		assertTrue(mergedModel.containsID("urn:miriam:obo.go:GO%3A0005737"));
 		
 		// test proper merge of small molecule reference
 		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate"));

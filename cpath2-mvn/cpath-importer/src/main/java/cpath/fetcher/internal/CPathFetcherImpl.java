@@ -163,7 +163,8 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 						// we could simply read to byte[] directly, but let's do more interesting things - 
 						BufferedImage image = ImageIO.read(stream);
 						// TODO conversion of the icon into another format could easily happen here
-						iconData = ((DataBufferByte)image.getRaster().getDataBuffer()).getData();
+						if(image != null)
+							iconData = ((DataBufferByte)image.getRaster().getDataBuffer()).getData();
 					} catch (IOException e) {
 						log.error("Cannot load image from " +  
 								tokens[METADATA_ICON_URL_INDEX], e);

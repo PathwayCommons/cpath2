@@ -46,7 +46,7 @@ public class CPathFetcherTest {
 		String url = "classpath:metadata.html";
 		System.out.println("Loading metadata from " + url);
 		Collection<Metadata> metadatas = fetcher.getProviderMetadata(url);
-		assertEquals(4, metadatas.size());
+		assertTrue(metadatas.size() > 2);
 		Metadata metadata = null;
 		for(Metadata mt : metadatas) {
 			if(mt.getIdentifier().equalsIgnoreCase("TEST_UNIPROT")) {

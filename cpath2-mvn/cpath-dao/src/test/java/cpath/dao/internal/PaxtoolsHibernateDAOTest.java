@@ -72,7 +72,7 @@ public class PaxtoolsHibernateDAOTest {
 		log.info("Loading BioPAX data (importModel(file))...");
 		File biopaxFile = new File(PaxtoolsHibernateDAOTest.class.getResource("/test.owl").getFile());
 		
-		//File biopaxFile = new File(getClass().getResource("/biopax-level3-test-normalized.owl").getFile());
+		//File biopaxFile = new File(getClass().getResource("/test-normalized.owl").getFile());
 		try {
 			paxtoolsDAO.importModel(biopaxFile);
 		} catch (FileNotFoundException e) {

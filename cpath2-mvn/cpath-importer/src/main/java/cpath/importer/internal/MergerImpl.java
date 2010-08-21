@@ -36,8 +36,6 @@ import cpath.warehouse.beans.Metadata.TYPE;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.WarehouseDAO;
 
-import org.biopax.miriam.MiriamLink;
-
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.impl.ModelImpl;
@@ -165,8 +163,6 @@ public class MergerImpl implements Merger {
 			// merge
 			merge(pcDAO, pathwayModel);
 
-			// finally, merge with the database
-			//pcDAO.merge(pcModel);
 		}
 	}
  
@@ -180,25 +176,28 @@ public class MergerImpl implements Merger {
 	// is package-private - to be available in junit tests
 	void merge(Model target, Model pathwayModel) {
 		
-		Model copyOfPathwayModel = copyModel(pathwayModel); // to prevent concurrent modification exception
-
-		// iterate over all utility elements in the pathway model
-		for (UtilityClass bpe : copyOfPathwayModel.getObjects(UtilityClass.class)) {
-
-			/*
-			 * skip if the element already exists in pcModel
-			 * don't skip small molecule ref.  it may have gotten in from
-			 * a previous merge via a shared inchi and is not fully processed
-			 * (chebi previously processed now equivalent pubchem is encountered, 
-			 * and warehouse version of  pubchem was placed in target via inchi merge
-			 */
-			if (!(bpe instanceof SmallMoleculeReference) && (target.getByID(bpe.getRDFId()) != null)) {
-				continue; // already exists
-			}
-			
+		// get ids to prevent concurrent modification exception 
+		Set<String> ids = new HashSet<String>();
+		for(UtilityClass uc : pathwayModel.getObjects(UtilityClass.class)) {
+			ids.add(uc.getRDFId());
+		}
+		
+		// iterate over all utility elements in the pathway model;
+		// merge all protein/SM references and controlled vocabularies first
+		for (String id: ids) {	
+			UtilityClass bpe = (UtilityClass) pathwayModel.getByID(id);
 			UtilityClass object = null;
 
-			// merge all protein/SM references & controlled vocabularies
+			if(bpe == null // just removed
+					|| 
+						!(bpe instanceof SmallMoleculeReference) // special case (to replace with 'inchi') 
+						&& target.containsID(id) // skip prev. added
+				) continue;
+			
+			if(bpe instanceof ChemicalStructure)
+				pathwayModel.remove(bpe); // will be updated during merge anyway
+			
+			// find in the warehouse
 			if (bpe instanceof ProteinReference) {
 				object = processProteinReference(pathwayModel, bpe);
 			}
@@ -208,12 +207,50 @@ public class MergerImpl implements Merger {
 			else if (bpe instanceof SmallMoleculeReference) {
 				object = processSmallMoleculeReference(target, pathwayModel, (SmallMoleculeReference)bpe);
 			}
-
+			
 			if (object != null) {
+				/*
+				 * remove the element from the pathwayModel,
+				 * so its properties don't clobber properties of 
+				 * the "standard" object that will be merged to 
+				 * the target model!
+				 */
+				pathwayModel.remove(bpe);
+				
+				/*
+				 * if we the warehouse updated element's rdfid, update
+				 * it in the pathway model (black magic that during the merge 
+				 * allows for referencing elements to migrate to a new object 
+				 * with the same id from the target model)
+				 */
+				
+				//pathwayModel.updateID(bpe.getRDFId(), object.getRDFId()); 
+					/* the above fails if, e.g., there are one 'chebi' SMR 
+					 * and another 'pubchem' one in the pathwayModel (the source one) 
+					 * that both correspond to the same 'inchi' in the warehouse... 
+					 * This might not work for any duplicate utility classes in the 
+					 */
+				
+				// another hack
+				bpe.setRDFId(object.getRDFId());
+									
+				// remove xrefs of bpe or they will become dangling props
+				// TODO this cleanup can be also done for all xrefs later at "after-merge"..
+				for(Xref x: ((XReferrable)bpe).getXref()) {
+					((XReferrable)bpe).removeXref(x);
+					if(x.getXrefOf().isEmpty())
+						pathwayModel.remove(x);
+				}
+				
+				// !!! we have problem here :(
+				// TODO re-set inverse properties (e.g. for each of getEntityReferenceOf set the new ER manually); make sure they merge!..
+				// !!!
+				
 				// add (with all members) if not already there
 				if(!target.containsID(object.getRDFId())) {
 					simpleMerger.merge(target, object);
 				}
+				
 			}
 			else {
 				if (log.isInfoEnabled()) {
@@ -248,34 +285,6 @@ public class MergerImpl implements Merger {
 			}
 		}
 		
-		if (toReturn != null) {
-
-			/*
-			 * if we found a warehouse PR by other rdf, update
-			 * pathway model with rdf id of PR from warehouse
-			 */
-			if (!toReturn.getRDFId().equals(bpe.getRDFId())) {
-				// update references to bpe to point to new protein ref
-				pathwayModel.updateID(bpe.getRDFId(), toReturn.getRDFId());
-			}
-
-			/*
-			 *remove bpe protein ref from pathwayModel
-			 * so its properties don't clobber properties of 
-			 * warehouse protein ref that will be added to target
-			 * via merge
-			 */
-			pathwayModel.remove(bpe);
-								
-			// remove xrefs of bpe or they will become dangling props
-			for(Xref x: ((ProteinReference)bpe).getXref()) {
-				pathwayModel.remove(x);
-			}
-			
-			// cannot get rid of biosource -
-			// it may be referred to by other entity, like a pathway
-		}
-		
 		// outta here
 		return toReturn;
 	}
@@ -302,37 +311,13 @@ public class MergerImpl implements Merger {
 			}
 		}
 		
-		if (toReturn != null) {
-
-			/*
-			 * if we found a warehouse CV by other rdf, update
-			 * pathway model with rdf id of CV from warehouse
-			 */
-			if (!toReturn.getRDFId().equals(bpe.getRDFId())) {
-				// update references to bpe to point to new protein ref
-				pathwayModel.updateID(bpe.getRDFId(), toReturn.getRDFId());
-			}
-
-			/*
-			 *remove bpe cv from pathwayModel
-			 * so its properties don't clobber properties of 
-			 * warehouse cv ref that will be added to target
-			 * via merge
-			 */
-			pathwayModel.remove(bpe);
-								
-			// remove xrefs of bpe or they will become dangling props
-			for(Xref x: ((ControlledVocabulary)bpe).getXref()) {
-				pathwayModel.remove(x);
-			}
-		}
-		
 		// outta here
 		return toReturn;
 	}
 	
-	private UtilityClass processSmallMoleculeReference(Model target, Model pathwayModel, SmallMoleculeReference premergeSMR) {
-		
+	private UtilityClass processSmallMoleculeReference(Model target, 
+			Model pathwayModel, SmallMoleculeReference premergeSMR) 
+	{	
 		UtilityClass toReturn = null;
 		
 		// this is a (pubchem or chebi...) small molecule reference,
@@ -341,57 +326,22 @@ public class MergerImpl implements Merger {
 
 		// - to find the 'inchi' SMR in the warehouse
 		String inchiUrn = getSmallMoleculeReference(uxrefs);
-		
-		// did we find anything?
-		if (inchiUrn != null) { 
-			
-			if (target.containsID(inchiUrn)) {
-				toReturn = getById(target, inchiUrn, SmallMoleculeReference.class);
-			}
-			else {
-				toReturn = moleculesDAO.getObject(inchiUrn, SmallMoleculeReference.class);
-			}
-			SmallMoleculeReference inchiSMR = (SmallMoleculeReference)toReturn;
 
-			if (target.getByID(premergeSMR.getRDFId()) != null) {
-				/*
-				 * remove premergeSMR from pathwayModel
-				 * so its properties don't clobber properties of 
-				 * premergeSMR that resides in target (placed in 
-				 * from a previous merge).  for example, a pubchem
-				 * smr that resides in pathwayModel may have gotten into
-				 * the target model when its parent inchiSMR was put into
-				 * the model.
-				 */
-				pathwayModel.remove(premergeSMR);
-			 }
-			 else {
-				 /*
-				  *  the following is required for the merge to work properly,
-				  *  i.e., premergeSMR must be replaced by the object (inchiSMR)
-				  *  This ensures that SmallMolecule(s) that refer to this SMR will
-				  *  get updated with the inchiSMR rdf id.
-				  */
-				 pathwayModel.updateID(premergeSMR.getRDFId(), inchiSMR.getRDFId());
-				 /*
-				  * we now remove inchiSMR from pathwayModel so
-				  * its properties (inherited from premergeSMR)
-				  * do not clobber properties of inchiSMR in target
-				  */
-				 pathwayModel.remove(inchiSMR);
-			 }
-			 
-			 /*
-			  * now remove dangling property elements (Xrefs, ChemicalStructures)
-			  */
-			 for (Xref x: premergeSMR.getXref()) {
-				 pathwayModel.remove(x);
-			 }
-			 if (premergeSMR.getStructure() != null) {
-				 pathwayModel.remove(premergeSMR.getStructure());
-			 }
-		}
-		else {
+		if (inchiUrn != null) { 
+			SmallMoleculeReference smr = moleculesDAO
+				.getObject(inchiUrn, SmallMoleculeReference.class);	
+			
+			// special treat for the old chem. structure
+			if (premergeSMR.getStructure() != null) {
+				ChemicalStructure preStr = premergeSMR.getStructure();
+				ChemicalStructure inchiStr =  smr.getStructure();
+				// hack for the simplemerger
+				pathwayModel.remove(preStr);
+				preStr.setRDFId(inchiStr.getRDFId()); 
+			}
+			
+			toReturn = smr;
+		} else {
 			log.warn(premergeSMR.getRDFId() + " added 'As Is', " +
 			"because nothing's found in Warehouse.");
 		}
@@ -399,6 +349,7 @@ public class MergerImpl implements Merger {
 		// outta here
 		return toReturn;
 	}
+
 	
 	private String getSmallMoleculeReference(Set<UnificationXref> uxrefs) {
 		
@@ -453,24 +404,9 @@ public class MergerImpl implements Merger {
 		return toReturn;
 	}
 
-	private Model copyModel(final Model modelToCopy) {
-
-		try {
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(modelToCopy, outputStream);
-			InputStream inputStream =
-				new BufferedInputStream(new ByteArrayInputStream(outputStream.toByteArray()));
-			SimpleReader simpleReader = new SimpleReader(BioPAXLevel.L3);
-			return simpleReader.convertFromOWL(inputStream);
-		}
-		catch (IOException e) {
-			log.info("copyModel(), error copying pathwayModel.");
-		}
-
-		return null;
-	}
 	
-	private <T extends BioPAXElement> T getById(Model model, String urn, Class<T> type) {
+	private <T extends BioPAXElement> T getById(Model model, String urn, Class<T> type) 
+	{
 	
 		return 
 		(model instanceof WarehouseDAO) 
@@ -478,59 +414,4 @@ public class MergerImpl implements Merger {
 				: (T) model.getByID(urn) ;	
 	}
 	
-	/**
-	 * Given a SmallMoleculeReference with uxrefs, Find respective 
-	 * SmallMoleculeReference in warehouse.  Typically, there is
-	 * only one such SMR.  In some cases (bugs?), two or more can be found...
-	 *
-	 * @param smrWithUXrefs SmallMoleculeReference
-	 * @return SmallMoleculeReference
-	 * 
-	 * @deprecated
-	 */
-	private SmallMoleculeReference findSmallMoleculeReference(Set<UnificationXref> uxrefs) 
-	{
-		SmallMoleculeReference toReturn = null;
-
-		//TODO understand why iterate, whereas moleculesDA.getByXref could do for any xrefs?..
-		//TODO (instead) try ((PaxtoolsDAO)moleculesDAO).find(..) to find by either 'xref.id' or xref's rdfid...
-		
-		boolean found = false;
-		for (UnificationXref uxref : uxrefs) {
-			String urn = MiriamLink.getDataTypeURI(uxref.getDb());
-			if ("urn.miriam.chebi".equals(urn) || 
-				urn.toLowerCase().startsWith("urn.miriam.pubchem.")
-				//urn.miriam.pubchem.substance or urn.miriam.pubchem.compound
-			){
-				if(log.isInfoEnabled())
-					log.info("Looking in Warehouse for a (inchi) SMR " +
-						"having its member ER's xref: " + uxref);
-				if(found) {
-					log.warn("Small molecule reference " + toReturn.getRDFId() + 
-						" has been already found by using another xref!");
-					continue;
-				}
-				
-				/* Now (after re-design) that 'inchi' SMRs do not 
-				 * contain any xrefs but do have other SMRs as member ER,
-				 * Warehouse should not return more than one SMR!  
-				 * If it does, let's log a warning (the xrefs
-				 * in the set are probably about different molecules).
-				 */
-				// will return one 'inchi' one (does getMemberEntityReferenceOf() lookup internally!)
-				Collection<String> smrs = moleculesDAO
-					.getByXref(Collections.singleton(uxref), SmallMoleculeReference.class);
-				if(!smrs.isEmpty()) {
-					String id = smrs.iterator().next();
-					toReturn = moleculesDAO.getObject(id, SmallMoleculeReference.class);
-					found = true;
-					if(smrs.size()>1) //is this real?!
-						log.warn("Multiple SMRs " + smrs + " found in Warehouse by: " 
-							+ uxref);
-				} 				
-			}
-		}
-
-		return toReturn;
-	}
 }
