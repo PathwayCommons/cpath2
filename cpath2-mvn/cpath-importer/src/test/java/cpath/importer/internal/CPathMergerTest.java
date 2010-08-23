@@ -81,6 +81,10 @@ public class CPathMergerTest {
 				}
 				else if (mdata.getType() == TYPE.BIOPAX) {
 					// do NOT create pathway data DAO (for this test)! 
+					
+					if(!mdata.getIdentifier().equals("TEST_BIOPAX"))
+						continue; // TODO remove this break to test several PWs merge
+					
 					// Just build models right away (test data must be normalized/cleaned!):
 					String url = mdata.getURLToPathwayData();
 					Model model = (new SimpleReader()).convertFromOWL(resourceLoader.getResource(url).getInputStream());
@@ -112,7 +116,6 @@ public class CPathMergerTest {
 		
 		for(Model model : pathwayModels) {
 			merger.merge(pcDAO, model);
-			break; // TODO remove this break to test several PWs merge
 		}
 		
 		// dump owl out for review
@@ -163,5 +166,11 @@ public class CPathMergerTest {
 		smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:pubchem.substance:14438");
 		assertEquals("Geranyl formate", smr.getDisplayName());
 		assertEquals(1, smr.getXref().size());
+		
+		
+		//TODO test entityReferenceOf (of PEs from different pathways), xrefOf, etc.
+		
+		//TODO 
+		
 	}
 }
