@@ -14,6 +14,9 @@ import org.biopax.paxtools.model.level3.*;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -49,9 +52,11 @@ public class ChEBIConverterImplTest {
 		Converter converter = new ChEBIConverterImpl(model);
 		converter.convert(is);
 		
-		// dump owl out to stdout for review
-		System.out.println("ChEBI BioPAX: ");
-		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
+		// dump owl for review
+		String outFilename = getClass().getClassLoader().getResource("").getPath() 
+			+ File.separator + "testConvertChebi.out.owl";
+		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, 
+				new FileOutputStream(outFilename));
 
 		// get all small molecule references out
 		assertEquals(6, model.getObjects(SmallMoleculeReference.class).size());

@@ -63,10 +63,6 @@ import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
 
 /**
  * Paxtools/BioPAX DAO class.
- * 
- * 
- * 
- * @author rodche
  *
  */
 @Transactional
@@ -92,7 +88,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	private final Map<String, String> nameSpacePrefixMap;
 	private final BioPAXLevel level;
 	private final BioPAXFactory factory;
-	private SimpleMerger merger;
 	private BioPAXIOHandler reader;
 	private boolean addDependencies = false;
 	MultiFieldQueryParser multiFieldQueryParser;
@@ -104,21 +99,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		this.nameSpacePrefixMap = new HashMap<String, String>();
 		nameSpacePrefixMap.put("", CPathSettings.CPATH_URI_PREFIX);
 		reader = new SimpleReader(BioPAXLevel.L3);
-		merger = new SimpleMerger(reader.getEditorMap());
 		multiFieldQueryParser = new MultiFieldQueryParser(
 			Version.LUCENE_29, ALL_FIELDS, 
 				new StandardAnalyzer(Version.LUCENE_29));
-	}
-
-	/**
-	 * @param simpleMerger the simpleMerger to set
-	 */
-	public void setMerger(SimpleMerger simpleMerger) {
-		this.merger = simpleMerger;
-	}
-
-	public SimpleMerger getMerger() {
-		return merger;
 	}
 
 	// get/set methods used by spring
@@ -182,15 +165,20 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		 * the inverse prop. 'add' from the setter.
 		 */
 		if(model != null && !model.getObjects().isEmpty()) {
-			//merger.merge(this, model); 
-			/* SimpleMerger is unsafe and, probably, not required at all :) 
-			 * Session itself does the RDFId-based merge, and it works!
+			/* using SimpleMerger is unsafe and, probably, not required at all :) 
+			 * Session manages RDFId-based merge to some extent...
 			 */
+			
+			// idea: update props with existing values before the merge
+			//ElementUpdater updater = new ElementUpdater();
+			
 			Set<BioPAXElement> sourceElements = model.getObjects();
 			for (BioPAXElement bpe : sourceElements) {
-				BioPAXElement paxElement = getByID(bpe.getRDFId());
-				if (paxElement == null) {
-					add(bpe); 
+				if (!containsID(bpe.getRDFId())) { // adding a new element
+					// migrate object properties to existing objects (prevents duplicate PK!)
+					//updater.update(this, bpe);
+					// it's save to merge now
+					add(bpe); // is a CASCADE merge, in fact!
 				}
 			}
 		}
@@ -378,26 +366,29 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 
 	@Override
+	@Transactional(propagation=Propagation.REQUIRED)
+	/*
+	 * TODO experimental (see also #initialize(BioPAXElement))
+	 */
 	public BioPAXElement getByIdInitialized(String id) {
 		BioPAXElement toReturn = getByID(id);
 		
 		/*
 		 * Interesting, inverse prop editor (XrefOf) is not
 		 * available during ElementInitializer,
-		 * "manually" initialize inverse props here.
+		 * "manually" initialize (some of?) inverse props here.
 		 */
-		/*
 		if (toReturn != null) {
 			
 			if (toReturn instanceof Xref) {
-				Hibernate.initialize(((Xref)toReturn).getXrefOf());
+				Hibernate.initialize(((Xref)toReturn).getXrefOf()); // cool! TODO required for all inverse properties...
 			}
 			
 			// initialize
 			ElementInitializer initializer = new ElementInitializer();
 			initializer.initialize(this, toReturn); 
+
 		}
-		*/
 
 		return toReturn; // null means no such element
 	}
@@ -411,7 +402,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			throw new RuntimeException("getElement(null) is called!");
 
 		BioPAXElement toReturn = null;
-		// rdfid is Primary Key now (see BioPAXElementImpl)
+		// rdfid is the Primary Key see BioPAXElementImpl)
 		toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
 
 		return toReturn; // null means no such element
@@ -448,19 +439,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			toReturn = model.getByID(id);
 		}
 		
-		/* (old approach; Hibernate.initialize(toReturn) does not prevent )
-		String namedQuery = "org.biopax.paxtools.impl.elementByRdfIdEager"; //"org.biopax.paxtools.impl.elementByRdfId";
-		try {
-			Query query = session().getNamedQuery(namedQuery);
-			query.setString("rdfid", id);
-			//query.setCacheable(false); //query.setReadOnly(true);
-			toReturn = (BioPAXElement) query.uniqueResult();
-			Hibernate.initialize(toReturn);
-		} catch (HibernateException e) {
-			throw new RuntimeException(" getObject(" + id + ") failed. ", e);
-		}
-		*/
-
 		return toReturn; // null means no such element
 	}
 
@@ -601,7 +579,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		
 		try {
 			new SimpleExporter(level).convertToOWL(model, outputStream);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			throw new RuntimeException("Failed to export Model.", e);
 		}
 	}
@@ -744,8 +722,41 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	
 	
 	/*
-	 * Initializes all the properties and properties's properties, etc.
+	 * TODO experimental, very promising!
+	 * 
+	 * it's bidirectional not recursive 
+	 * (i.e., does not inits property's or inv. props' properties)
+	 * 
 	 */
+	@Transactional
+	@Override
+	public void initialize(BioPAXElement element) {
+		session().update(element);
+		
+		// init. biopax properties
+		Set<PropertyEditor> editors = reader.getEditorMap().getEditorsOf(
+				element);
+		if (editors != null)
+			for (PropertyEditor editor : editors) {
+				Hibernate.initialize(editor.getValueFromBean(element)); // does collections (when multiple cardinality editor) as well!
+			}
+
+		// init. inverse object properties (xxxOf)
+		Set<ObjectPropertyEditor> invEditors = reader.getEditorMap()
+				.getInverseEditorsOf(element);
+		if (invEditors != null)
+			for (ObjectPropertyEditor editor : invEditors) {
+				Hibernate.initialize(editor.getInverseValueFromBean(element)); // does collections as well!
+			}
+	}
+	
+	
+	/*
+	 * Initializes all the properties and properties's properties, etc.
+	 * 
+	 * TODO experimental
+	 */
+	// TODO what about inverse props? Btw, Traverser (standard) does not follow xxxOf properties...
 	@Transactional
 	private class ElementInitializer implements Visitor {
 		private Traverser traverser;
@@ -756,6 +767,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 		@Transactional
 		public void initialize(Model source, BioPAXElement toBeCloned) {
+			//TODO don't understand why subModel (it seems useless..) is here?
 			Model subModel = factory.createModel();
 			Hibernate.initialize(toBeCloned);
 			traverser.traverse(toBeCloned, subModel);
@@ -792,7 +804,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	/*
 	 * Special object copier.
 	 * Clones all the properties and properties's properties, etc.
+	 * 
 	 */
+	// TODO problem here: not all inverse xxxOf() property values are set for this and dependent elements (only those are set that occur on the traverse's path)!
 	@Transactional
 	private class ElementCloner implements Visitor {
 		private Traverser traverser;
@@ -830,6 +844,50 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			}
 		}
 	}
+	
+	
+	/*
+	 * Iteratively updates all the properties and properties's properties.
+	 * 
+	 * TODO experimental, idea: deeply update prop. values from the db
+	 */
+	@Transactional
+	private class ElementUpdater implements Visitor {
+		private Traverser traverser;
+		
+		public ElementUpdater() {
+			traverser = new Traverser(reader.getEditorMap(), this);
+		}
+
+		@Transactional
+		public void update(Model target, BioPAXElement toUpdate) {
+			traverser.traverse(toUpdate, target);
+		}
+
+		@Transactional
+		public void visit(BioPAXElement domain, Object range, Model target, 
+				PropertyEditor editor)	
+		{
+			if(range instanceof BioPAXElement) {
+				BioPAXElement value = (BioPAXElement) range;
+				migrateToTarget(domain, target, editor, value);
+				traverser.traverse(value, target);
+			}
+		}
+
+		@Transactional
+		private void migrateToTarget(BioPAXElement update, Model target, 
+				PropertyEditor editor, BioPAXElement value) {
+			if (value!=null) {
+				BioPAXElement newValue = target.getByID(value.getRDFId());
+				if(newValue != null) { // replace only if exists
+					editor.removePropertyFromBean(value,update);
+					editor.setPropertyToBean(update, newValue);
+				}
+			}
+		}
+	}
+
 }
 
 

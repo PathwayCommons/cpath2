@@ -1,5 +1,6 @@
 package cpath.importer.internal;
 
+import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.internal.CPathFetcherImpl;
 import cpath.warehouse.*;
@@ -31,26 +32,20 @@ import java.util.Set;
 
 
 /**
- * 
- * 
- * 
  * @author rodche
  *
  */
 public class CPathMergerTest {
 
 	private static Log log = LogFactory.getLog(CPathMergerTest.class);
-	private static MetadataDAO metadataDAO;
-	private static WarehouseDAO proteinsDAO;
-	private static WarehouseDAO moleculesDAO;
-	private static WarehouseDAO cvRepository;
-	private static Set<Model> pathwayModels; // pathways to merge
+	private static final MetadataDAO metadataDAO;
+	private static final WarehouseDAO proteinsDAO;
+	private static final WarehouseDAO moleculesDAO;
+	private static final WarehouseDAO cvRepository;
+	
+	private Set<Model> pathwayModels; // pathways to merge
         
 	static {
-		final ResourceLoader resourceLoader = new DefaultResourceLoader();
-		
-		pathwayModels = new HashSet<Model>();
-		
 		// init the test database
 		DataServicesFactoryBean.createSchema("cpath2_test");
 
@@ -62,10 +57,8 @@ public class CPathMergerTest {
 		cvRepository = new OntologyManagerCvRepository(new ClassPathResource("ontologies.xml"), null);
 		metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 
-		
-        // load test data
+        // load the test metadata and data into the warehouse
 		CPathFetcherImpl fetcher = new CPathFetcherImpl();
-		PathwayDataDAO pathwayDataDAO = (PathwayDataDAO) context.getBean("pathwayDataDAO");
 		try {
 			Collection<Metadata> metadata = fetcher.getProviderMetadata("classpath:metadata.html");
 			for (Metadata mdata : metadata) {
@@ -79,29 +72,45 @@ public class CPathMergerTest {
 					// store SMRs in the warehouse
 					fetcher.storeWarehouseData(mdata, (Model)moleculesDAO);
 				}
-				else if (mdata.getType() == TYPE.BIOPAX) {
-					// do NOT create pathway data DAO (for this test)! 
-					
-					if(!mdata.getIdentifier().equals("TEST_BIOPAX"))
-						continue; // TODO remove this break to test several PWs merge
-					
-					// Just build models right away (test data must be normalized/cleaned!):
-					String url = mdata.getURLToPathwayData();
-					Model model = (new SimpleReader()).convertFromOWL(resourceLoader.getResource(url).getInputStream());
-					if(model != null)
-						pathwayModels.add(model);
-					else 
-						fail("Failed to import Model from:" + url);
-				}
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
+	
+	@Before
+	/*
+	 * this is required before each (merge) test,
+	 * because the source models become incomplete/useless
+	 * during the merge!
+	 */
+	public void initPathwayModels() throws IOException {
+		final ResourceLoader resourceLoader = new DefaultResourceLoader();
+		pathwayModels = new HashSet<Model>();
+		for (Metadata mdata : metadataDAO.getAll()) {
+			if (mdata.getType() == TYPE.BIOPAX) {
+				//if(!mdata.getIdentifier().equals("TEST_BIOPAX"))
+					//continue; // TODO remove this break to test several PWs merge (but testMergeIntoDAO fails then, although similar idea test in cpath-dao works)
+				
+				// do NOT create pathway data db (for the tests)! 
+				// instead, build models right away (must be normalized/cleaned data!):
+				String url = mdata.getURLToPathwayData();
+				Model model = (new SimpleReader()).convertFromOWL(
+						resourceLoader.getResource(url).getInputStream());
+				if(model != null)
+					pathwayModels.add(model);
+				else 
+					fail("Failed to import Model from:" + url);
+			}
+		}
+	}
+	
+	
 	@Test
-	public void testInMemoryModelMerge() throws IOException {
-
+	public void testInMemoryModelMerge() throws IOException 
+	{
+		// extend Model for the 'merge' to work
 		Model pcDAO = new ModelImpl(BioPAXLevel.L3.getDefaultFactory()) {
 			@Override
 			public void merge(Model source) {
@@ -110,18 +119,18 @@ public class CPathMergerTest {
 				simpleMerger.merge(this, source);
 			}
 		};
-
+		
 		MergerImpl merger = new MergerImpl(pcDAO, metadataDAO,
 										   moleculesDAO, proteinsDAO, cvRepository);
 		
 		for(Model model : pathwayModels) {
-			merger.merge(pcDAO, model);
+			merger.merge(model);
 		}
 		
 		// dump owl out for review
 		OutputStream out = new FileOutputStream(
 			getClass().getClassLoader().getResource("").getPath() 
-				+ File.separator + "MergerTest.out.owl");
+				+ File.separator + "InMemoryMergerTest.out.owl");
 		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(pcDAO, out);
 		
 		assertMerge(pcDAO);
@@ -167,10 +176,58 @@ public class CPathMergerTest {
 		assertEquals("Geranyl formate", smr.getDisplayName());
 		assertEquals(1, smr.getXref().size());
 		
-		
 		//TODO test entityReferenceOf (of PEs from different pathways), xrefOf, etc.
+	}
+	
+	
+	@Test
+	public void testMergeIntoDAO() throws IOException {
+		// init the target test db
+		DataServicesFactoryBean.createSchema("cpath2_testpc"); // target db, for pcDAO
+		final PaxtoolsDAO pcDAO = (PaxtoolsDAO)(new ClassPathXmlApplicationContext("classpath:testContext-pcDAO.xml"))
+			.getBean("pcDAO");
+		assertNotNull(pcDAO);
+		assertTrue(pcDAO.getObjects().isEmpty());
 		
-		//TODO 
+		MergerImpl merger = new MergerImpl(pcDAO, metadataDAO, moleculesDAO, proteinsDAO, cvRepository);
+		for(Model model : pathwayModels) {
+			merger.merge(model);
+		}
+
+		String outFilename = getClass().getClassLoader().getResource("").getPath() 
+			+ File.separator + "pcDaoMergerTest.out.owl";
+		//check first whether it becomes ok after export/import as owl?
 		
+		pcDAO.exportModel(new FileOutputStream(outFilename));
+		Model m = (new SimpleReader()).convertFromOWL(new FileInputStream(outFilename));
+		assertMerge(m);
+		
+		
+		// now - test pcDAO model directly
+		//		
+		ProteinReference pr = (ProteinReference)pcDAO.getByIdInitialized("urn:miriam:uniprot:P27797");
+		assertEquals(8, pr.getName().size());
+		assertEquals("CALR_HUMAN", pr.getDisplayName());
+		assertEquals("Calreticulin", pr.getStandardName());
+		assertEquals(6, pr.getXref().size());
+		assertEquals("urn:miriam:taxonomy:9606", pr.getOrganism().getRDFId());
+		
+		// TODO: add asserts for CV
+		assertTrue(pcDAO.containsID("urn:miriam:obo.go:GO%3A0005737"));
+		
+		SmallMolecule sm = (SmallMolecule)pcDAO.getByIdInitialized("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
+		SmallMoleculeReference smr = (SmallMoleculeReference)sm.getEntityReference();
+		assertEquals("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS", smr.getRDFId());
+		
+		smr = (SmallMoleculeReference)pcDAO.getByID("urn:miriam:chebi:20");
+		pcDAO.initialize(smr);
+		assertEquals("(+)-camphene", smr.getStandardName());
+		assertEquals(3, smr.getXref().size());
+		
+		smr = (SmallMoleculeReference)pcDAO.getByID("urn:miriam:pubchem.substance:14438");
+		pcDAO.initialize(smr);
+		assertEquals("Geranyl formate", smr.getDisplayName());
+		assertEquals(1, smr.getXref().size());
+		assertTrue(smr.getEntityReferenceOf().isEmpty()); // because 'inchi' one is the one that is referenced
 	}
 }

@@ -12,9 +12,8 @@
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
     
     <context:annotation-config/>
-    
- 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
-       
+    <context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+     	
     <!-- enable the configuration of transactional behavior based on annotations -->
     <tx:annotation-driven transaction-manager="testTransactionManager"/>
     

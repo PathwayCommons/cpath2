@@ -133,8 +133,8 @@ public interface PaxtoolsDAO extends Model {
  
     
     /**
-     * Gets initialized BioPAX element, i.e., 
-     * with all the properties set for sure
+     * Gets deeply initialized BioPAX element, i.e., 
+     * with all the properties' properties set for sure
      * (this matters when an implementation uses 
      * caching, transactions, etc.)
      * 
@@ -142,5 +142,12 @@ public interface PaxtoolsDAO extends Model {
      * @return
      */
     BioPAXElement getByIdInitialized(String id);
+ 
     
+    /**
+     * Initializes the properties and inverse properties, 
+     * including collections!
+     * 
+     */
+    public void initialize(BioPAXElement element);
 }

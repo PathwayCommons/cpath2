@@ -31,6 +31,7 @@ package cpath.importer.internal;
 import cpath.importer.Merger;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.DataServices;
+import cpath.dao.internal.PaxtoolsHibernateDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.TYPE;
 import cpath.warehouse.MetadataDAO;
@@ -38,12 +39,11 @@ import cpath.warehouse.WarehouseDAO;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.util.ClassFilterSet;
+import org.biopax.paxtools.controller.AbstractTraverser;
+import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.io.simpleIO.SimpleReader;
-import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.io.simpleIO.*;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -68,7 +68,7 @@ public class MergerImpl implements Merger {
 	// ref to MetadataDAO
 	private MetadataDAO metadataDAO;
 
-	// ref to the main repository
+	// cpath2 repositories
 	private Model pcDAO;
     private WarehouseDAO cvRepository;
     private WarehouseDAO moleculesDAO;
@@ -82,7 +82,7 @@ public class MergerImpl implements Merger {
 	/**
 	 * Constructor.
 	 *
-	 * @param pcDAO Model;
+	 * @param pcDAO Model target, where to merge data
 	 * @param metadataDAO MetadataDAO
 	 */
 	public MergerImpl(final Model pcDAO, final MetadataDAO metadataDAO) 
@@ -110,7 +110,7 @@ public class MergerImpl implements Merger {
 	 * This constructor was added to be used in a test context. At least called by
 	 * cpath.importer.internal.CPathInMemoryModelMergerTest.testMerger().
 	 *
-	 * @param pcDAO final "global" Model
+	 * @param pcDAO final "global" Model (e.g., {@link PaxtoolsHibernateDAO} may be used here)
 	 * @param metadataDAO MetadataDAO
 	 * @param moleculesDAO WarehouseDAO
 	 * @param proteinsDAO WarehouseDAO
@@ -134,70 +134,47 @@ public class MergerImpl implements Merger {
 	 */
 	@Override
 	public void merge() {
-
 		// iterate over all providers
-		for (Metadata metadata : metadataDAO.getAll()) {
-
+		for (Metadata metadata : metadataDAO.getAll()) 
+		{
 			// only process pathway data (we assume only pathway data comes in as biopax)
 			if (metadata.getType() != TYPE.BIOPAX && metadata.getType() != TYPE.BIOPAX_L2) continue;
 
-			/*
-			 *  create a new in-memory model; 
-			 *  this is where all the pathway data (all data sources)
-			 *  will be merged before it's saved in the database;
-			 *  
-			 *  TODO instead, try to save and flush it after each provider... 
-			 */
-			Model pcModel = new ModelImpl(BioPAXLevel.L3.getDefaultFactory()) {
-				@Override
-				public void merge(Model source) {
-					SimpleMerger simpleMerger = 
-						new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
-					simpleMerger.merge(this, source);
-				}
-			};
-			
 			// in-memory copy of the persisted model for this provider
 			Model pathwayModel = getPreMergeModel(metadata);
-
+			
 			// merge
-			merge(pcDAO, pathwayModel);
-
+			if(log.isInfoEnabled()) 
+				log.info("Merging pathway data: " + metadata.getIdentifier() 
+						+ ", " + metadata.getName());
+			merge(pathwayModel);
 		}
 	}
- 
-	/**
-	 * Merge a new single (provider's pathway) model
-	 * into the existing target model.
-	 * 
-	 * @param target
-	 * @param pathwayModel
-	 */
-	// is package-private - to be available in junit tests
-	void merge(Model target, Model pathwayModel) {
-		
-		// get ids to prevent concurrent modification exception 
-		Set<String> ids = new HashSet<String>();
-		for(UtilityClass uc : pathwayModel.getObjects(UtilityClass.class)) {
-			ids.add(uc.getRDFId());
-		}
-		
-		// iterate over all utility elements in the pathway model;
-		// merge all protein/SM references and controlled vocabularies first
-		for (String id: ids) {	
-			UtilityClass bpe = (UtilityClass) pathwayModel.getByID(id);
-			UtilityClass object = null;
 
-			if(bpe == null // just removed
-					|| 
-						!(bpe instanceof SmallMoleculeReference) // special case (to replace with 'inchi') 
-						&& target.containsID(id) // skip prev. added
+	
+	/*
+	 * (non-Javadoc)
+	 * @see cpath.importer.Merger#merge(org.biopax.paxtools.model.Model)
+	 */
+	@Override
+	public void merge(Model pathwayModel) {
+
+		//create a new temporary in-memory model 
+		Model tmpModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+		
+		// copy the elements set (to prevent concurrent modification exception)
+		Set<UtilityClass> srcElements = 
+			new HashSet<UtilityClass>(pathwayModel.getObjects(UtilityClass.class));
+		
+		// iterate over all the utility elements in the pathway model;
+		// prepare all the PR/SMR/CVs for merging
+		for (UtilityClass bpe: srcElements) {	
+			if(!(bpe instanceof SmallMoleculeReference) // replace with 'inchi'
+					&& tmpModel.containsID(bpe.getRDFId()) // skip prev. added
 				) continue;
 			
-			if(bpe instanceof ChemicalStructure)
-				pathwayModel.remove(bpe); // will be updated during merge anyway
-			
 			// find in the warehouse
+			UtilityClass object = null;
 			if (bpe instanceof ProteinReference) {
 				object = processProteinReference(pathwayModel, bpe);
 			}
@@ -205,54 +182,26 @@ public class MergerImpl implements Merger {
 				object = processControlledVocabulary(pathwayModel, bpe);
 			}
 			else if (bpe instanceof SmallMoleculeReference) {
-				object = processSmallMoleculeReference(target, pathwayModel, (SmallMoleculeReference)bpe);
+				object = processSmallMoleculeReference(tmpModel, pathwayModel, (SmallMoleculeReference)bpe);
 			}
 			
 			if (object != null) {
-				/*
-				 * remove the element from the pathwayModel,
+				/* remove the element from the pathwayModel,
 				 * so its properties don't clobber properties of 
 				 * the "standard" object that will be merged to 
-				 * the target model!
-				 */
-				pathwayModel.remove(bpe);
+				 * the target model... wait! - 
+				 * this is not required: 
+				 * SimpleMerger updates only object properties
+				 * */
+				 //pathwayModel.remove(bpe);
 				
-				/*
-				 * if we the warehouse updated element's rdfid, update
-				 * it in the pathway model (black magic that during the merge 
-				 * allows for referencing elements to migrate to a new object 
-				 * with the same id from the target model)
-				 */
-				
-				//pathwayModel.updateID(bpe.getRDFId(), object.getRDFId()); 
-					/* the above fails if, e.g., there are one 'chebi' SMR 
-					 * and another 'pubchem' one in the pathwayModel (the source one) 
-					 * that both correspond to the same 'inchi' in the warehouse... 
-					 * This might not work for any duplicate utility classes in the 
-					 */
-				
-				// another hack
+				// hack - for object properties to use the target model's object!
 				bpe.setRDFId(object.getRDFId());
-									
-				// remove xrefs of bpe or they will become dangling props
-				// TODO this cleanup can be also done for all xrefs later at "after-merge"..
-				for(Xref x: ((XReferrable)bpe).getXref()) {
-					((XReferrable)bpe).removeXref(x);
-					if(x.getXrefOf().isEmpty())
-						pathwayModel.remove(x);
-				}
+								
+				// add (with children)
+				simpleMerger.merge(tmpModel, object);
 				
-				// !!! we have problem here :(
-				// TODO re-set inverse properties (e.g. for each of getEntityReferenceOf set the new ER manually); make sure they merge!..
-				// !!!
-				
-				// add (with all members) if not already there
-				if(!target.containsID(object.getRDFId())) {
-					simpleMerger.merge(target, object);
-				}
-				
-			}
-			else {
+			} else {
 				if (log.isInfoEnabled()) {
 					log.info(bpe.getRDFId() + " wil be added 'As Is', " +
 						"because nothing's found in Warehouse.");
@@ -260,9 +209,17 @@ public class MergerImpl implements Merger {
 			}
 		}
 
-		// merge the rest of elements
-		target.merge(pathwayModel);
+		// in-memory merge the rest of BioPAX elements
+		simpleMerger.merge(tmpModel, pathwayModel);
+		
+		// goodbye dangling utility classes
+		// (this should also prevent the hibernate's duplicate PK exceptions...)
+		removeDangling(tmpModel);
+		
+		// finally, merge into the global model;
+		pcDAO.merge(tmpModel);
 	}
+
 	
 	private UtilityClass processProteinReference(Model pathwayModel, UtilityClass bpe) {
 
@@ -288,6 +245,7 @@ public class MergerImpl implements Merger {
 		// outta here
 		return toReturn;
 	}
+
 	
 	private UtilityClass processControlledVocabulary(Model pathwayModel, UtilityClass bpe) {
 
@@ -314,6 +272,7 @@ public class MergerImpl implements Merger {
 		// outta here
 		return toReturn;
 	}
+
 	
 	private UtilityClass processSmallMoleculeReference(Model target, 
 			Model pathwayModel, SmallMoleculeReference premergeSMR) 
@@ -332,11 +291,12 @@ public class MergerImpl implements Merger {
 				.getObject(inchiUrn, SmallMoleculeReference.class);	
 			
 			// special treat for the old chem. structure
+			
 			if (premergeSMR.getStructure() != null) {
 				ChemicalStructure preStr = premergeSMR.getStructure();
 				ChemicalStructure inchiStr =  smr.getStructure();
 				// hack for the simplemerger
-				pathwayModel.remove(preStr);
+				//pathwayModel.remove(preStr);
 				preStr.setRDFId(inchiStr.getRDFId()); 
 			}
 			
@@ -412,6 +372,48 @@ public class MergerImpl implements Merger {
 		(model instanceof WarehouseDAO) 
 			? ((WarehouseDAO)model).getObject(urn, type) //completely detached
 				: (T) model.getByID(urn) ;	
+	}
+
+	
+	/*
+	 * recursively removes dangling utility class elements
+	 */
+	private void removeDangling(Model model) 
+	{
+		final Collection<UtilityClass> dangling = 
+			new HashSet<UtilityClass>(model.getObjects(UtilityClass.class));
+		
+		AbstractTraverser checker = new AbstractTraverser(new SimpleEditorMap(BioPAXLevel.L3)) 
+		{	
+			@Override
+			protected void visit(Object value, BioPAXElement parent, Model model,
+					PropertyEditor editor) {
+				if(value instanceof UtilityClass)
+					dangling.remove(value); // found, i.e., it is used by another element.
+			}
+		};
+		
+		for(BioPAXElement e : model.getObjects()) {
+			checker.traverse(e, model);
+		}
+		
+		// get rid of dangling objects
+		if(!dangling.isEmpty()) {
+			if(log.isInfoEnabled()) 
+				log.info(dangling.size() + " BioPAX utility objects " +
+						"became dangling during the merge, and they "
+						+ " will be deleted...");
+			if(log.isDebugEnabled())
+				log.debug("to remove (dangling after merge) :" + dangling);
+
+			for(BioPAXElement thing : dangling) {
+				model.remove(thing);
+				assert !model.contains(thing);
+				assert !model.containsID(thing.getRDFId());
+			}
+			// some may become dangling now, so check again...
+			removeDangling(model);
+		}
 	}
 	
 }

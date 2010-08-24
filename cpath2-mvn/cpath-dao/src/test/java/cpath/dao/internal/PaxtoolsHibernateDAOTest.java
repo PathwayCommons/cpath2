@@ -45,6 +45,7 @@ import cpath.warehouse.WarehouseDAO;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.*;
@@ -71,8 +72,6 @@ public class PaxtoolsHibernateDAOTest {
 		// load some data into the test storage
 		log.info("Loading BioPAX data (importModel(file))...");
 		File biopaxFile = new File(PaxtoolsHibernateDAOTest.class.getResource("/test.owl").getFile());
-		
-		//File biopaxFile = new File(getClass().getResource("/test-normalized.owl").getFile());
 		try {
 			paxtoolsDAO.importModel(biopaxFile);
 		} catch (FileNotFoundException e) {
@@ -83,6 +82,67 @@ public class PaxtoolsHibernateDAOTest {
     }
     
 	
+    @Test
+	public void testImportingAnotherFileAndTestInitialization() throws IOException {
+    	/* first, trying to import another "pathway" 
+    	 * and ensure this does not fail
+    	 * (I suspected a "duplicate entry for the key (rdfid)" exception)
+    	 */
+		File biopaxFile = new File(PaxtoolsHibernateDAOTest.class.getResource(
+				"/test2.owl").getFile());
+		paxtoolsDAO.importModel(biopaxFile);
+		// a few smoke checks
+		assertTrue(paxtoolsDAO.containsID("urn:miriam:uniprot:P46880"));
+		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
+		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Protein_A"));
+		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Protein_B"));
+		assertTrue(paxtoolsDAO.containsID("urn:pathwaycommons:UnificationXref:Taxonomy_562"));
+		
+		BioPAXElement bpe = ((WarehouseDAO) paxtoolsDAO).getObject(
+				"urn:pathwaycommons:UnificationXref:Taxonomy_562", UnificationXref.class);
+		assertTrue(bpe instanceof UnificationXref);
+		
+		BioPAXElement e = paxtoolsDAO
+				.getByID("http://www.biopax.org/examples/myExample2#Protein_A");
+		assertTrue(e instanceof Protein);
+		
+		
+		e = paxtoolsDAO // try to initialize
+		.getByIdInitialized("http://www.biopax.org/examples/myExample2#Protein_A");
+		Protein p = (Protein) e;
+				
+		assertTrue(p.getEntityReference() != null);
+		assertEquals("urn:miriam:uniprot:P46880", p.getEntityReference().getRDFId());
+		
+		// this would fail (lazy collections)
+		//assertEquals(4, p.getEntityReference().getEntityReferenceOf().size());
+			
+		// but when -
+		e = paxtoolsDAO // try to initialize
+		.getByIdInitialized("urn:miriam:uniprot:P46880");
+		assertTrue(e instanceof ProteinReference);
+		ProteinReference pr = (ProteinReference) e;
+		assertNotNull(pr.getOrganism());
+		// however, with using getByIdInitialized, next line would fail -
+		// pr.getEntityReferenceOf().size();
+		// assertEquals(4, pr.getEntityReferenceOf().size());
+		
+		// different approach works!
+		pr = (ProteinReference) paxtoolsDAO.getByID("urn:miriam:uniprot:P46880");
+		//pr.getEntityReferenceOf().size() would fail here, but...
+		// initialize(bpe) can be called at any time (it's bidirectional, though not recursive)
+		paxtoolsDAO.initialize(pr);
+		// should pass now :)
+		assertEquals(4, pr.getEntityReferenceOf().size());
+		assertEquals(2, pr.getName().size());
+		//pr.getOrganism().getXref().size(); // would fail, hehe... but
+		BioSource bs = pr.getOrganism();
+		assertNotNull(bs);
+		paxtoolsDAO.initialize(bs);
+		assertTrue(bs.getXref().size() > 0);
+	}
+    
+    
 	@Test
 	public void testSimple() throws Exception {
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
