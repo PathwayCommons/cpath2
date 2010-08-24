@@ -30,6 +30,8 @@ package cpath.converter.internal;
 import static org.junit.Assert.*;
 
 import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
@@ -38,6 +40,7 @@ import java.util.zip.GZIPInputStream;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ProteinReference;
@@ -79,8 +82,13 @@ public class UniprotConverterImplTest {
 		assertTrue(proteinReferences.size()==6);
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
 		
-		//TODO add more checks that the conversion went ok...
-		//(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
+		//TODO add more checks that the conversion went ok..
+		
+		// dump owl for review
+		String outFilename = getClass().getClassLoader().getResource("").getPath() 
+			+ File.separator + "testConvertUniprot.out.owl";
+		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, 
+				new FileOutputStream(outFilename));
 	}
 
 }

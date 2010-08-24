@@ -15,6 +15,9 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
@@ -52,9 +55,11 @@ public class PubChemConverterImplTest {
 		Converter converter = new PubChemConverterImpl(model);
 		converter.convert(is);
 		
-		// dump owl out to stdout for review
-		System.out.println("PubChem BioPAX: ");
-		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, System.out);
+		// dump owl for review
+		String outFilename = getClass().getClassLoader().getResource("").getPath() 
+			+ File.separator + "testConvertPubchem.out.owl";
+		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, 
+				new FileOutputStream(outFilename));
 		
 		// small molecule references without smiles or inchi are skipped!
 		assertTrue(model.containsID("urn:miriam:pubchem.substance:14438"));

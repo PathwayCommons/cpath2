@@ -52,7 +52,7 @@
 								<value>file:${CPATH2_HOME}/log4j.properties</value>
 							</property>
 						</systemProperties>
-						<argLine>-Xmx2024M -DCPATH2_HOME=${CPATH2_HOME} -DBIOPAX_HOME=${CPATH2_HOME}</argLine>
+						<argLine>-Xmx2024M -DCPATH2_HOME=${CPATH2_HOME} -DBIOPAX_HOME=${CPATH2_HOME} -ea</argLine>
 					</configuration>
 				</plugin>
 			</plugins>
