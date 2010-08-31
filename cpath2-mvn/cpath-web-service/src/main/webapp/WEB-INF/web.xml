@@ -5,11 +5,10 @@
 	id="cPathSquaredWs" version="2.5">
 	<display-name>cPath^2 Webservices</display-name>
 
-<!--
 	<listener>
 		<listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
 	</listener>
--->
+
 	<listener>
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
 	</listener>
