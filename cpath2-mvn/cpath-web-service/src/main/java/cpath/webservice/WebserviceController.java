@@ -28,13 +28,12 @@
 package cpath.webservice;
 
 import cpath.dao.CPathService;
+import cpath.dao.PaxtoolsDAO;
 import cpath.dao.CPathService.OutputFormat;
 import cpath.dao.CPathService.ResultMapKey;
 import cpath.dao.internal.CPathServiceImpl;
-import cpath.dao.internal.PaxtoolsHibernateDAO;
-import cpath.warehouse.WarehouseDAO;
+import cpath.warehouse.CvRepository;
 import cpath.warehouse.internal.BioDataTypes;
-import cpath.warehouse.internal.OntologyManagerCvRepository;
 import cpath.warehouse.internal.BioDataTypes.Type;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
@@ -50,7 +49,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.*;
 import java.util.*;
 
 import javax.validation.constraints.NotNull;
@@ -68,12 +66,12 @@ public class WebserviceController {
     @NotNull
     private CPathService service; // main PC db access
     // warehouse access objects:
-    private PaxtoolsHibernateDAO proteinsDao;
-    private PaxtoolsHibernateDAO moleculesDao;
-    private OntologyManagerCvRepository cvRepository;
+    private PaxtoolsDAO proteinsDao;
+    private PaxtoolsDAO moleculesDao;
+    private CvRepository cvRepository;
     
-	public WebserviceController(CPathServiceImpl service, PaxtoolsHibernateDAO proteinsDao,
-			OntologyManagerCvRepository cvRepository,  PaxtoolsHibernateDAO moleculesDao) {
+	public WebserviceController(CPathServiceImpl service, PaxtoolsDAO proteinsDao,
+			CvRepository cvRepository,  PaxtoolsDAO moleculesDao) {
 		this.service = service;
 		this.proteinsDao = proteinsDao;
 		this.cvRepository = cvRepository;
@@ -91,7 +89,7 @@ public class WebserviceController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
-        binder.registerCustomEditor(BioPAXElement.class, new BiopaxTypeEditor());
+        binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
         binder.registerCustomEditor(ProtocolVersion.class, new ProtocolVersionEditor());
     }
@@ -127,15 +125,16 @@ public class WebserviceController {
     @ResponseBody
     public String fulltextSearch(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
-    		@RequestParam("q") String query) 
+    		@RequestParam(value="q", required=true) String query) 
     {		
-    	if(log.isInfoEnabled()) log.info("Fulltext Search for type:" 
+    	if(log.isDebugEnabled()) log.debug("Fulltext Search for type:" 
 				+ type.getCanonicalName() + ", query:" + query);
     	Map<ResultMapKey,Object> results = service.list(query, type, false);
     	String body = getListDataBody(results, query + 
     			" (in " + type.getSimpleName() + ")");
 		return body;
 	}
+
     
 	// Graph Queries
 	@RequestMapping(value="/graph")
@@ -257,28 +256,7 @@ public class WebserviceController {
     	return toReturn.toString();
     }
 
-    
-    //=== Web methods that list all BioPAX element or - by type ===
-    
-    /*
-     * TODO all objects?.. This might be too much of curiosity :)
-     */
-    @RequestMapping(value="/elements")
-    @ResponseBody
-    public String getElements() throws IOException {
-    	return getElementsOfType(BioPAXElement.class);
-    }
-
-    
-    @RequestMapping(value="/types/{type}/elements")
-    @ResponseBody
-    public String getElementsOfType(@PathVariable("type") Class<? extends BioPAXElement> type) {
-    	Map<ResultMapKey, Object> results = service.list(null, type, false);
-    	String body = getListDataBody(results, type.getSimpleName());
-		return body;
-    }
-        
-    	
+      	
 	/**
 	 * List of bio-network data sources.
 	 * 
@@ -293,11 +271,6 @@ public class WebserviceController {
     	}
     	return toReturn.toString();
     }	
-	
- 
-    /* 
-     * 
-     */
     
     
     /*
