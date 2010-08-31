@@ -44,7 +44,6 @@ import cpath.dao.CPathService;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.CPathService.OutputFormat;
 import cpath.dao.CPathService.ResultMapKey;
-import cpath.warehouse.WarehouseDAO;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -76,7 +75,7 @@ public class CPathServiceTest {
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
-		service = new CPathServiceImpl((PaxtoolsDAO)dao, (WarehouseDAO)dao);
+		service = new CPathServiceImpl((PaxtoolsDAO)dao);
 		exporter = new SimpleExporter(BioPAXLevel.L3);
     }
 	

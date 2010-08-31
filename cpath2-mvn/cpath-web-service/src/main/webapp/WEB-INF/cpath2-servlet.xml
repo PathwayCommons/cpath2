@@ -11,12 +11,11 @@
         http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
 
-    <!-- JSR-303 support will be detected on classpath and enabled automatically -->
+    <!-- JSR-303 (validation) support will be detected on classpath and enabled automatically -->
     <mvc:annotation-driven/>
-    
     <context:annotation-config/>
 
-<!-- 
+	<!-- 
 	<bean id="log4jInitialization" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
 	  <property name="targetClass"
 				value="org.springframework.util.Log4jConfigurer" />
@@ -27,26 +26,24 @@
 		</list>
 	  </property>
 	</bean>
--->
+	-->
        
-    <!-- this is temporary - for test forms -->
+    <!-- this is temporary - for test forms 
     <bean id="viewResolver"
-		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		class="org.springframework.web.servlet.view.UrlBasedViewResolver">
 		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
 		<property name="prefix" value="/WEB-INF/views/" />
 		<property name="suffix" value=".jsp" />
 	</bean>
+	-->
 	
 	<bean id="webserviceController" class="cpath.webservice.WebserviceController">
 		<constructor-arg ref="cPathService"/>
+		<constructor-arg ref="proteinsDAO"/>
+		<constructor-arg ref="cvFetcher"/>
+		<constructor-arg ref="moleculesDAO"/>
 	</bean>
 
-	<bean id="webservice2Controller" class="cpath.webservice.Webservice2Controller">
-		<constructor-arg index="0" ref="cPathServiceProteins"/>
-		<constructor-arg index="1" ref="cPathServiceMolecules"/>
-		<constructor-arg index="2" ref="cPathServiceCVs"/>
-	</bean>
-	
 	<!-- simply starting this bean populates the (static) Bridgedb DataSource list from constants and metadataDAO! -->
 	<bean id="bioDataTypes" class="cpath.warehouse.internal.BioDataTypes" init-method="init">
 		<constructor-arg ref="metadataDAO"/>
@@ -56,16 +53,4 @@
 		<constructor-arg ref="paxtoolsDAO"/>
 	</bean>
 	
-	<bean id="cPathServiceProteins" class="cpath.dao.internal.CPathServiceImpl">
-		<constructor-arg ref="proteinsDAO"/>
-	</bean>
-	
-	<bean id="cPathServiceMolecules" class="cpath.dao.internal.CPathServiceImpl">
-		<constructor-arg ref="moleculesDAO"/>
-	</bean>
-	
-	<bean id="cPathServiceCVs" class="cpath.dao.internal.CPathServiceImpl">
-		<constructor-arg ref="cvFetcher"/>
-	</bean>
-
 </beans>
