@@ -47,13 +47,11 @@ import org.springframework.stereotype.Service;
 
 import cpath.dao.CPathService;
 import cpath.dao.PaxtoolsDAO;
-import cpath.warehouse.WarehouseDAO;
 
 /**
  * Service tier class - to uniformly access 
  * BioPAX model (DAO) from console and web service 
- * applications (PaxtoolsDAO - either 'main' storage, 
- * or Warehouses's proteins and molecules)
+ * applications.
  * 
  * @author rodche
  *
@@ -66,15 +64,13 @@ public class CPathServiceImpl implements CPathService {
 	
 	@NotNull
 	private PaxtoolsDAO dao;
-	private WarehouseDAO whdao; // in fact, can be the same object as 'dao'
 	
-	private final SimpleReader reader; // to allow BioPAX OWL in queries
+	private final SimpleReader reader;
 	private final SimpleExporter exporter;
-	private final SimpleMerger merger; // to merge results from subsequent queries...
+	private final SimpleMerger merger;
 	
-	public CPathServiceImpl(PaxtoolsDAO paxtoolsDAO, WarehouseDAO warehouseDAO) {
+	public CPathServiceImpl(PaxtoolsDAO paxtoolsDAO) {
 		this.dao = paxtoolsDAO;
-		this.whdao = warehouseDAO;
 		this.reader = new SimpleReader(BioPAXLevel.L3);
 		this.exporter = new SimpleExporter(BioPAXLevel.L3);
 		this.merger = new SimpleMerger(reader.getEditorMap());
@@ -137,17 +133,21 @@ public class CPathServiceImpl implements CPathService {
 	}	
 	
 	
+	/*
+	 * Gets the element (first-level object props are initialized) and 
+	 * the valid sub-model of it; and returns the map result.
+	 */
 	Map<ResultMapKey, Object> asBiopax(String id) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-		
-		BioPAXElement element = whdao.getObject(id);
+		BioPAXElement element = dao.getByID(id);
 		if (element != null) {
+			dao.initialize(element);
 			map.put(ResultMapKey.ELEMENT, element);
 			Model m = dao.getValidSubModel(Collections.singleton(id));
 			map.put(ResultMapKey.MODEL, m);
 			map.put(ResultMapKey.DATA, toOWL(m));
 			map.put(ResultMapKey.COUNT, 1);
-		}
+		} 
 		
 		return map;
 	}

@@ -27,10 +27,14 @@
 
 package cpath.webservice;
 
+import cpath.dao.CPathService;
 import cpath.dao.CPathService.OutputFormat;
 import cpath.dao.CPathService.ResultMapKey;
 import cpath.dao.internal.CPathServiceImpl;
+import cpath.dao.internal.PaxtoolsHibernateDAO;
+import cpath.warehouse.WarehouseDAO;
 import cpath.warehouse.internal.BioDataTypes;
+import cpath.warehouse.internal.OntologyManagerCvRepository;
 import cpath.warehouse.internal.BioDataTypes.Type;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
@@ -40,6 +44,7 @@ import cpath.webservice.validation.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.level3.UtilityClass;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.WebDataBinder;
@@ -61,10 +66,18 @@ public class WebserviceController {
     private static String newline = System.getProperty("line.separator");
     
     @NotNull
-    private CPathServiceImpl service;
+    private CPathService service; // main PC db access
+    // warehouse access objects:
+    private PaxtoolsHibernateDAO proteinsDao;
+    private PaxtoolsHibernateDAO moleculesDao;
+    private OntologyManagerCvRepository cvRepository;
     
-	public WebserviceController(CPathServiceImpl service) {
+	public WebserviceController(CPathServiceImpl service, PaxtoolsHibernateDAO proteinsDao,
+			OntologyManagerCvRepository cvRepository,  PaxtoolsHibernateDAO moleculesDao) {
 		this.service = service;
+		this.proteinsDao = proteinsDao;
+		this.cvRepository = cvRepository;
+		this.moleculesDao = moleculesDao;
 	}
 
 	
@@ -333,5 +346,72 @@ public class WebserviceController {
 		}
 		
 		return toReturn;
+	}
+
+    
+    //TODO the following two methods were copied from the (removed) webservice2Controller and require some coding...
+    
+	/*
+	 * Gets the utility element (from warehouse) by ID.
+	 * 
+	 * TODO implement...
+	 */
+    String getElementsOfType(Class<? extends BioPAXElement> type, String urn) 
+    {
+    	if(type == null) {
+    		type = UtilityClass.class;
+    	} else if(!UtilityClass.class.isAssignableFrom(type)) {
+    		log.warn("Parameter 'type' value, " + 
+    				type.getSimpleName() + ", is not a sub class of UtilityClass " +
+    				"(UtilityClass will be used for the search instead)!");
+    		type = UtilityClass.class;
+    	}
+    	
+    	if(log.isInfoEnabled()) 
+    		log.info("Warehouse query for type:" + type.getSimpleName() 
+    			+ ", urn:" + urn);
+    	
+    	
+    	StringBuffer toReturn = new StringBuffer();
+		if (UtilityClass.class.isAssignableFrom(type)) {
+			//TODO get from warehouse
+			UtilityClass el = null;
+			
+			if(el != null) {
+				toReturn.append(el.getRDFId()).append(newline);
+			}
+		}
+		
+    	return toReturn.toString();
+    }
+    
+    
+    /*
+     * Search Warehouse for utility class elements 
+     * (for those not found in the main PC model storage)
+     * 
+     * TODO implement....
+     */
+    String fulltextSearchForType(Class<? extends BioPAXElement> type, String query) 
+    {	
+    	if(type == null) {
+    		type = UtilityClass.class;
+    	} else if(!UtilityClass.class.isAssignableFrom(type)) {
+    		log.warn("Parameter 'type' value, " + 
+    				type.getSimpleName() + ", is not a sub class of UtilityClass " +
+    				"(UtilityClass will be used for the search instead)!");
+    		type = UtilityClass.class;
+    	}
+    	
+    	if(log.isInfoEnabled()) log.info("Warehouse fulltext Search for type:" 
+				+ type.getCanonicalName() + ", query:" + query);
+    	
+    	StringBuffer toReturn = new StringBuffer();
+    	
+    	/*
+    	 * TODO search Warehouse
+		*/
+		
+		return toReturn.toString(); 
 	}
 }
