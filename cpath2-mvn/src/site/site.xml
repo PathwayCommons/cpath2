@@ -1,2 +1,11 @@
 <project name="CPathSquared">
+<body>
+
+<menu ref="reports"/>
+
+<menu name="Javadoc">
+      <item name="Main" href="apidocs/index.html"/>
+</menu>
+
+</body>
 </project>
