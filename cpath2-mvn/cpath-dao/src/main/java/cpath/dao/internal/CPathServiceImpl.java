@@ -118,10 +118,18 @@ public class CPathServiceImpl implements CPathService {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
 			switch (format) {
-			case BINARY_SIF:
-				// TODO
+			case BINARY_SIF: // TODO
+				
 				break;
-
+			case GSEA: // TODO
+				break;
+			case PC_GENE_SET: // TODO
+				break;
+			case SBML: // TODO
+				break;
+			case XML: 
+				// also return as BioPAX... 
+				// TODO map to the legacy cpath xml schema format on the client's side
 			case BIOPAX: // is default
 			default:
 				map = asBiopax(id);

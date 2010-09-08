@@ -837,10 +837,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 				if (!targetModel.containsID(bpe.getRDFId())) {
 					traverser.traverse(bpe, targetModel);
 				}
-				editor.setPropertyToBean(targetModel.getByID(domain.getRDFId()), 
-						targetModel.getByID(bpe.getRDFId()));
+				editor.setValueToBean(targetModel.getByID(bpe.getRDFId()), 
+						targetModel.getByID(domain.getRDFId()));
 			} else {
-				editor.setPropertyToBean(targetModel.getByID(domain.getRDFId()), range);
+				editor.setValueToBean(range, targetModel.getByID(domain.getRDFId()));
 			}
 		}
 	}
@@ -881,8 +881,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			if (value!=null) {
 				BioPAXElement newValue = target.getByID(value.getRDFId());
 				if(newValue != null) { // replace only if exists
-					editor.removePropertyFromBean(value,update);
-					editor.setPropertyToBean(update, newValue);
+					editor.removeValueFromBean(value,update);
+					editor.setValueToBean(newValue, update);
 				}
 			}
 		}

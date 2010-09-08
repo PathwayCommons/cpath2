@@ -35,7 +35,7 @@
             </xsd:element>
             <xsd:element name="data_source" type="DataSourceType"/>
         </xsd:sequence>
-        <xsd:attribute name="primary_id" type="xsd:long">
+        <xsd:attribute name="primary_id" type="xsd:string">
             <xsd:annotation>
                 <xsd:documentation xml:lang="en">
                     Internal ID.  Use this ID to request additional information regarding the record.
@@ -142,7 +142,7 @@
             <xsd:element name="name" type="xsd:string"/>
             <xsd:element name="data_source" type="DataSourceType"/>
         </xsd:sequence>        
-        <xsd:attribute name="primary_id" type="xsd:long"/>
+        <xsd:attribute name="primary_id" type="xsd:string"/>
     </xsd:complexType>
     
     <xsd:complexType name="SummaryResponseType">
