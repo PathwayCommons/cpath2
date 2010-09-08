@@ -360,6 +360,8 @@ public class ProtocolRequest {
 						ProtocolRequest.ARG_OUTPUT + " must be one of: " 
 						+ OutputFormat.values().toString());
 			}
+		} else {
+			this.output = OutputFormat.XML;
 		}
     }
     

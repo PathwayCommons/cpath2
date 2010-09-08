@@ -71,13 +71,15 @@ public interface CPathService {
 	 *
 	 */
 	public static enum OutputFormat {
+		XML, // cpath legacy search output format
 		BIOPAX,
 		BINARY_SIF,
 		SBML,
 		GSEA,
 		PC_GENE_SET,
 		ID_LIST,
-		IMAGE,
+		// TODO think: do we need "image" formats at all in the new services?
+		IMAGE, 
 		IMAGE_MAP,
 		IMAGE_MAP_THUMBNAIL,
 		IMAGE_MAP_IPHONE,

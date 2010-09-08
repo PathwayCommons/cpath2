@@ -269,7 +269,7 @@ public class PaxtoolsHibernateDAOTest {
 		List<String> list = paxtoolsDAO.find("P46880", BioPAXElement.class);
 		assertFalse(list.isEmpty());
 		assertTrue(list.contains("urn:pathwaycommons:UnificationXref:UniProt_P46880"));
-		System.out.println("find by 'P46880' returned: " + list.toString());
+		//System.out.println("find by 'P46880' returned: " + list.toString());
 		
 		list = paxtoolsDAO.find("P46880", ProteinReference.class);
 		assertTrue(list.size()==1);

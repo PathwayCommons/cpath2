@@ -38,20 +38,30 @@ import cpath.warehouse.internal.BioDataTypes.Type;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
 import cpath.webservice.jaxb.ErrorType;
+import cpath.webservice.jaxb.ExtendedRecordType;
+import cpath.webservice.jaxb.SearchResponseType;
+import cpath.webservice.jaxb.SummaryResponseType;
 import cpath.webservice.validation.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.level3.Named;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.StringWriter;
 import java.util.*;
 
 import javax.validation.constraints.NotNull;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.namespace.QName;
 
 /**
  * cPathSquared Main Web Service.
@@ -100,7 +110,7 @@ public class WebserviceController {
 	 * ======================================================================*/
 	
 	// Get by ID
-    @RequestMapping(value="/get")
+    @RequestMapping("/get")
     @ResponseBody
     public String elementById(
     		@RequestParam(value="format", required=false) OutputFormat format, 
@@ -125,8 +135,11 @@ public class WebserviceController {
     @ResponseBody
     public String fulltextSearch(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
-    		@RequestParam(value="q", required=true) String query) 
+    		@RequestParam(value="q", required=true) String query)
     {		
+    	if(type == null)
+    		type = BioPAXElement.class;
+    	
     	if(log.isDebugEnabled()) log.debug("Fulltext Search for type:" 
 				+ type.getCanonicalName() + ", query:" + query);
     	Map<ResultMapKey,Object> results = service.list(query, type, false);
@@ -137,7 +150,7 @@ public class WebserviceController {
 
     
 	// Graph Queries
-	@RequestMapping(value="/graph")
+	@RequestMapping("/graph")
 	@ResponseBody
     public String graphQuery(
     		@RequestParam(value="format", required=false) OutputFormat format,
@@ -178,7 +191,6 @@ public class WebserviceController {
     @RequestMapping("/webservice.do")
     @ResponseBody
     public String doWebservice(
-    		/*
     		@RequestParam("cmd") String cmd, 
     		@RequestParam(value="version", required=false) String version,
     		@RequestParam("q") String q, // e.g. the list of identifiers or a search string
@@ -188,21 +200,32 @@ public class WebserviceController {
     		@RequestParam(value="data_source", required=false) String dataSources, //comma-separated names
     		@RequestParam(value="output_id_type", required=false) String outputIdType,
     		@RequestParam(value="binary_interaction_rule", required=false) String rules //comma-separated names
-    		*/
-    		@RequestBody MultiValueMap<String,String> map // it's easier to initialize the ProtocolRequest below...
+    		//@RequestBody MultiValueMap<String,String> map // it's easier to initialize the ProtocolRequest below...
     	) 
     {
+		String toReturn = "";
+		final Map<String,String> argsMap = new HashMap<String, String>(); //map.toSingleValueMap();
+		argsMap.put("cmd", cmd);
+		argsMap.put("version", version);
+		argsMap.put("q", q);
+		argsMap.put("output", output);
+		argsMap.put("organism", organism);
+		argsMap.put("input_id_type", inputIdType);
+		argsMap.put("data_source", dataSources);
+		argsMap.put("output_id_type", outputIdType);
+		argsMap.put("binary_interaction_rule", rules);
+		ProtocolRequest protocol = null;
+		
     	if(log.isDebugEnabled()) {
     		log.debug("After webservice.do request params binding - " + 
-    				map.toString());
+    				argsMap.toString());
     	}
-
-		String toReturn = "";
+		
 		try {
 			// build the ProtocolRequest from the Map
-			ProtocolRequest request = new ProtocolRequest(map.toSingleValueMap());
+			protocol = new ProtocolRequest(argsMap);
 			// validate by ProtocolValidator
-			ProtocolValidator protocolValidator = new ProtocolValidator(request);
+			ProtocolValidator protocolValidator = new ProtocolValidator(protocol);
 			protocolValidator.validate();
 		} catch (ProtocolException e) {
 			ErrorType errorType = e.getStatusCode().createErrorType();
@@ -211,13 +234,64 @@ public class WebserviceController {
 			// build the xml string
 			return ProtocolStatusCode.marshal(errorType);
 		}
+		
+		
 
 		// TODO execute query and get results here
+		if(protocol.getCommand() == Cmd.SEARCH) {
+			//return "forward:search.html";
+			// output format is always the 'xml'
+			// build a SearchResponseType (from xsd), marshal
+			if(log.isDebugEnabled()) log.debug("Legacy (cpath) Fulltext Search:" 
+					+ ", query:" + protocol.getQuery());
+	    	Map<ResultMapKey,Object> results = service.list(protocol.getQuery(), null, false);
+			if(results.containsKey(ResultMapKey.ERROR)) {
+				return internalError(results.get(ResultMapKey.ERROR).toString());
+			}
+	    	
+			Collection<String> idList = (Collection<String>) results.get(ResultMapKey.DATA);
+			SearchResponseType searchResponse = new SearchResponseType();
+			searchResponse.setTotalNumHits(Long.valueOf(idList.size()));
+			List<ExtendedRecordType> hits = searchResponse.getSearchHit();
+			for (String id : idList) {
+				Map<ResultMapKey, Object> result = service.element(id, OutputFormat.BIOPAX);
+				if(result.containsKey(ResultMapKey.ERROR)) {
+					return internalError(result.get(ResultMapKey.ERROR).toString());
+				}
+				BioPAXElement value = (BioPAXElement) result.get(ResultMapKey.ELEMENT);
+				
+				ExtendedRecordType rec = new ExtendedRecordType();
+				rec.setPrimaryId(id);
+				if(value instanceof Named)
+					rec.setName(((Named)value).getName().toString());
+				rec.setEntityType(value.getModelInterface().getSimpleName());
+				hits.add(rec);
+				// TODO set all fields...
+			}
+			toReturn = marshalSearchResponce(searchResponse);
+			//toReturn = idList.toString(); //TODO return xml
+		} else if(protocol.getCommand() == Cmd.GET_RECORD_BY_CPATH_ID) {
+			//return "forward:get";
+			return internalError("Not Implemented Yet: legacy GET_RECORD_BY_CPATH_ID");
+		} else if(protocol.getCommand() == Cmd.GET_BY_KEYWORD) {
+			// probably, is the same as "search"
+			return internalError("Not Implemented Yet: legacy GET_BY_KEYWORD");
+		} else if(protocol.getCommand() == Cmd.GET_PATHWAYS) {
+			return internalError("Not Implemented Yet: legacy GET_PATHWAYS");
+		} else if(protocol.getCommand() == Cmd.GET_NEIGHBORS) {
+			return internalError("Not Implemented Yet: legacy GET_NEIGHBORS");
+		} else if(protocol.getCommand() == Cmd.GET_PARENTS) {
+			//TODO implement "get_parents" or give up...
+			// build a SummaryResponseType (from xsd), marshal
+			return internalError("Not Implemented Yet: legacy GET_PARENTS");
+		}
+		
+		
 
 		return toReturn;
     }
 	
-	
+
 	/* ========================================================================
 	 *    The Rest of Web Methods 
 	 * ======================================================================*/
@@ -293,9 +367,7 @@ public class WebserviceController {
 				}
 			}
 		} else {
-			ErrorType errorType = ProtocolStatusCode.INTERNAL_ERROR.createErrorType();
-			errorType.setErrorDetails(result.get(ResultMapKey.ERROR).toString());
-			toReturn.append(ProtocolStatusCode.marshal(errorType));
+			toReturn.append(internalError(result.get(ResultMapKey.ERROR).toString()));		
 		}
 		
 		return toReturn.toString();
@@ -386,5 +458,48 @@ public class WebserviceController {
 		*/
 		
 		return toReturn.toString(); 
+	}
+    
+	
+	/**
+	 * @param string
+	 * @return
+	 */
+	private String internalError(String string) {
+		ErrorType errorType = ProtocolStatusCode.INTERNAL_ERROR
+			.createErrorType();
+		errorType.setErrorDetails(string);
+		return ProtocolStatusCode.marshal(errorType);
+	}
+
+	
+	static String marshalSearchResponce(SearchResponseType obj) {
+		StringWriter writer = new StringWriter();
+		try {
+			JAXBContext jaxbContext = JAXBContext.newInstance("cpath.webservice.jaxb");
+			Marshaller ma = jaxbContext.createMarshaller();
+			ma.setProperty("jaxb.formatted.output", true);
+			ma.marshal(
+			new JAXBElement<SearchResponseType>(new QName("","search_response"), 
+					SearchResponseType.class, obj), writer);
+		} catch (JAXBException e) {
+			throw new RuntimeException(e);
+		}
+		return writer.toString();
+	}
+	
+	static String marshalSummaryResponce(SummaryResponseType obj) {
+		StringWriter writer = new StringWriter();
+		try {
+			JAXBContext jaxbContext = JAXBContext.newInstance("cpath.webservice.jaxb");
+			Marshaller ma = jaxbContext.createMarshaller();
+			ma.setProperty("jaxb.formatted.output", true);
+			ma.marshal(
+			new JAXBElement<SummaryResponseType>(new QName("","summary_response"), 
+					SummaryResponseType.class, obj), writer);
+		} catch (JAXBException e) {
+			throw new RuntimeException(e);
+		}
+		return writer.toString();
 	}
 }

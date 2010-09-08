@@ -177,9 +177,11 @@ public class CPathWarehouseTest {
 		// TODO check elements
 		assertTrue(m.containsID("urn:miriam:taxonomy:9606")); // added by auto-complete
 		
+		/*
 		try {
 			(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(m, System.out);
 		} catch (IOException e) {
 		}
+		*/
 	}
 }

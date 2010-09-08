@@ -113,6 +113,7 @@ public class CPathServiceTest {
 		BioPAXElement e = (BioPAXElement) map.get(ResultMapKey.ELEMENT);
 		assertTrue(e instanceof ProteinReference);
 		
-		System.out.println(map.get(ResultMapKey.DATA));
+		//System.out.println(map.get(ResultMapKey.DATA));
+		assertTrue(map.get(ResultMapKey.DATA).toString().length()>0);
 	}
 }
