@@ -44,7 +44,6 @@ import cpath.webservice.args.PathwayDataSource;
  * 
  * @author rodche
  *
- * @deprecated note: currently not used...
  */
 public class PathwayDataSourceEditor extends PropertyEditorSupport {
 	

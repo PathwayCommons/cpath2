@@ -103,7 +103,7 @@ public class CPathSquaredWebserviceTest {
 	public void testLegacySearch() {
 		String result = template.getForObject(
 			CPATH2_SERVICE_URL + "/webservice.do?cmd=search&version=2.0&q={q}",
-			String.class, "Cly*");
+			String.class, "Gly*");
 		assertNotNull(result);
 		// TODO check schema, check contains...
 		System.out.println(result);

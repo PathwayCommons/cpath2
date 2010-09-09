@@ -30,7 +30,8 @@ package cpath.webservice.validation;
 import java.io.*;
 import java.util.Stack;
 
-import cpath.webservice.jaxb.ErrorType;
+import cpath.service.internal.ProtocolStatusCode;
+import cpath.service.jaxb.ErrorType;
 
 /**
  * Encapsulates a Violation of the Data Service Protocol.

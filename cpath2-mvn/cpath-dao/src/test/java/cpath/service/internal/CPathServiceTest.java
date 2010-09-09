@@ -26,7 +26,7 @@
  ** along with this library; if not, write to the Free Software Foundation,
  ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
  **/
-package cpath.dao.internal;
+package cpath.service.internal;
 
 // imports
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
@@ -40,10 +40,12 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import org.apache.commons.logging.*;
 
-import cpath.dao.CPathService;
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.CPathService.OutputFormat;
-import cpath.dao.CPathService.ResultMapKey;
+import cpath.dao.internal.DataServicesFactoryBean;
+import cpath.service.CPathService;
+import cpath.service.CPathService.OutputFormat;
+import cpath.service.CPathService.ResultMapKey;
+import cpath.service.internal.CPathServiceImpl;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -51,9 +53,6 @@ import java.util.*;
 
 import static org.junit.Assert.*;
 
-/**
- * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
- */
 public class CPathServiceTest {
 
     private static Log log = LogFactory.getLog(CPathServiceTest.class);
@@ -82,9 +81,9 @@ public class CPathServiceTest {
 	
 	@Test
 	public void testServiceElement() throws Exception {
-		Map<ResultMapKey, Object> map = service.element(
-				"http://www.biopax.org/examples/myExample#Protein_A",
-				OutputFormat.BIOPAX);
+		Map<ResultMapKey, Object> map = service.fetch(
+				OutputFormat.BIOPAX,
+				"http://www.biopax.org/examples/myExample#Protein_A");
 		assertNotNull(map);
 		
 		assertNotNull(map.get(ResultMapKey.DATA));
@@ -104,16 +103,18 @@ public class CPathServiceTest {
 	
 	@Test
 	public void testServiceElement2() throws Exception {
-		Map<ResultMapKey, Object> map = service.element(
-				"urn:miriam:uniprot:P46880", OutputFormat.BIOPAX);
+		Map<ResultMapKey, Object> map = service.fetch(
+				OutputFormat.BIOPAX, "urn:miriam:uniprot:P46880");
 		assertNotNull(map);
-		
-		assertEquals(1, map.get(ResultMapKey.COUNT));
-		
+			
 		BioPAXElement e = (BioPAXElement) map.get(ResultMapKey.ELEMENT);
 		assertTrue(e instanceof ProteinReference);
 		
 		//System.out.println(map.get(ResultMapKey.DATA));
 		assertTrue(map.get(ResultMapKey.DATA).toString().length()>0);
 	}
+
+	
+	// TODO add 'find' tests that use different strings (matching different biopax fields)
+	//...
 }

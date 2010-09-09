@@ -41,7 +41,6 @@ import cpath.warehouse.internal.BioDataTypes.Type;
  * are defined in the bioDataTypes bean.
  *
  * @author rodche
- * @deprecated - currently not used as intended, because 'data_source' value is the comma-separated list of names...
  */
 public class PathwayDataSource {
 	
