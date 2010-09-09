@@ -25,12 +25,16 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.dao;
+package cpath.service;
 
 import java.util.Map;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
+import org.bridgedb.DataSource;
+
+import cpath.service.jaxb.SearchResponseType;
+import cpath.service.jaxb.SummaryResponseType;
 
 
 /**
@@ -76,8 +80,8 @@ public interface CPathService {
 		BINARY_SIF,
 		SBML,
 		GSEA,
-		PC_GENE_SET,
-		ID_LIST,
+		PC_GENE_SET, // similar to GSEA, with multiple identifiers micro-encoded
+		ID_LIST, // URIs (default) or other identifiers (data type must be specified)
 		// TODO think: do we need "image" formats at all in the new services?
 		IMAGE, 
 		IMAGE_MAP,
@@ -89,15 +93,18 @@ public interface CPathService {
 	
 	
 	/**
-	 * 
+	 * Gets the BioPAX element by id 
+	 * (first-level object props are initialized),
+	 * converts to the required output format (if possible), 
+	 * and returns as map.
+	 * @param format
+	 * @param id the list of URIs to fetch
 	 * 
 	 * @see ResultMapKey
 	 * 
-	 * @param id
-	 * @param format
 	 * @return
 	 */
-	Map<ResultMapKey, Object> element(String id, OutputFormat format);
+	Map<ResultMapKey, Object> fetch(OutputFormat format, String... id);
 
 	
 	/**
@@ -110,16 +117,37 @@ public interface CPathService {
 	 * @param queryStr if null or empty, list/count all elements (of the class)
 	 * @param biopaxClass
 	 * @param countOnly
+	 * @param organisms list of the taxonomy ids
+	 * @param dataSources list of pathway data provider names
 	 * @return
 	 */
-	Map<ResultMapKey, Object> list(String queryStr, Class<? extends BioPAXElement> biopaxClass, boolean countOnly);
+	Map<ResultMapKey, Object> find(String queryStr, 
+			Class<? extends BioPAXElement> biopaxClass, boolean countOnly,
+			Integer[] organisms, String... dataSources);
 
 	
-	/**
-	 * Serializes Paxtools Model to BioPAX OWL.
+	/** 
+	 * Gets BioPAX elements by id, 
+	 * creates a sub-model, and returns everything as map.
 	 * 
-	 * @param element
+	 * @see ResultMapKey
+	 * 
+	 * @param uris
 	 * @return
 	 */
-	String toOWL(Model model);
+	Map<ResultMapKey, Object> fetchAsBiopax(String... uri);
+	
+	
+	/** 
+	 * Gets elements by id, 
+	 * creates SearchResponseType (cpath legacy service schema),
+	 * writes as xml and returns as map (key:DATA).
+	 * 
+	 * @see ResultMapKey
+	 * 
+	 * @param uris
+	 * @return
+	 */
+	Map<ResultMapKey, Object> fetchAsXmlSearchResponse(String... uris);
+	
 }

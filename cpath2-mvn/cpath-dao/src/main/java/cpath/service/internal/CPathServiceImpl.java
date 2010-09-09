@@ -26,27 +26,27 @@
  **/
 
 
-package cpath.dao.internal;
+package cpath.service.internal;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 import javax.validation.constraints.NotNull;
+import javax.xml.bind.*;
+import javax.xml.namespace.QName;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
-import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.Model;
-import org.springframework.stereotype.Repository;
+import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.Named;
 import org.springframework.stereotype.Service;
 
-import cpath.dao.CPathService;
 import cpath.dao.PaxtoolsDAO;
+import cpath.service.CPathService;
+import cpath.service.jaxb.*;
 
 /**
  * Service tier class - to uniformly access 
@@ -58,7 +58,6 @@ import cpath.dao.PaxtoolsDAO;
  * TODO It's not finished at all; - add/implement methods, debug!
  */
 @Service
-@Repository
 public class CPathServiceImpl implements CPathService {
 	private static final Log log = LogFactory.getLog(CPathServiceImpl.class);
 	
@@ -69,19 +68,35 @@ public class CPathServiceImpl implements CPathService {
 	private final SimpleExporter exporter;
 	private final SimpleMerger merger;
 	
+	private final JAXBContext jaxbContext;
+	
 	public CPathServiceImpl(PaxtoolsDAO paxtoolsDAO) {
 		this.dao = paxtoolsDAO;
 		this.reader = new SimpleReader(BioPAXLevel.L3);
 		this.exporter = new SimpleExporter(BioPAXLevel.L3);
 		this.merger = new SimpleMerger(reader.getEditorMap());
+		
+		// init cpath legacy xml schema jaxb context
+		try {
+			jaxbContext = JAXBContext.newInstance("cpath.service.jaxb");
+		} catch (JAXBException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 
 	@Override
-	public Map<ResultMapKey, Object> list(String queryStr, 
-			Class<? extends BioPAXElement> biopaxClass, boolean countOnly) {
+	public Map<ResultMapKey, Object> find(String queryStr, 
+			Class<? extends BioPAXElement> biopaxClass, boolean countOnly,
+			Integer[] taxids, String... dsources) 
+	{
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 
+		if(biopaxClass == null) 
+			biopaxClass = BioPAXElement.class;
+		if(taxids == null)
+			taxids = new Integer[]{};
+		
 		try {
 			if (countOnly) {
 				Integer count =  dao.count(null, biopaxClass);
@@ -99,8 +114,7 @@ public class CPathServiceImpl implements CPathService {
 	}
 
 	
-	@Override
-	public String toOWL(Model model) {
+	String exportToOWL(Model model) {
 		if(model == null) return null;
 		
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -114,7 +128,7 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
-	public Map<ResultMapKey, Object> element(String id, OutputFormat format) {
+	public Map<ResultMapKey, Object> fetch(OutputFormat format, String... uris) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
 			switch (format) {
@@ -122,17 +136,21 @@ public class CPathServiceImpl implements CPathService {
 				
 				break;
 			case GSEA: // TODO
+				
 				break;
 			case PC_GENE_SET: // TODO
+				
 				break;
 			case SBML: // TODO
+				
 				break;
 			case XML: 
-				// also return as BioPAX... 
-				// TODO map to the legacy cpath xml schema format on the client's side
+				// map to the legacy cpath xml format
+				map = fetchAsXmlSearchResponse(uris);
+				break;
 			case BIOPAX: // is default
 			default:
-				map = asBiopax(id);
+				map = fetchAsBiopax(uris);
 			}
 		} catch (Exception e) {
 			map.put(ResultMapKey.ERROR, e.toString());
@@ -141,22 +159,96 @@ public class CPathServiceImpl implements CPathService {
 	}	
 	
 	
-	/*
-	 * Gets the element (first-level object props are initialized) and 
-	 * the valid sub-model of it; and returns the map result.
-	 */
-	Map<ResultMapKey, Object> asBiopax(String id) {
+	public Map<ResultMapKey, Object> fetchAsBiopax(String... uris) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-		BioPAXElement element = dao.getByID(id);
-		if (element != null) {
-			dao.initialize(element);
-			map.put(ResultMapKey.ELEMENT, element);
-			Model m = dao.getValidSubModel(Collections.singleton(id));
+		
+		if(uris.length >= 1) {	
+			// extract a sub-model
+			Model m = dao.getValidSubModel(Arrays.asList(uris));
 			map.put(ResultMapKey.MODEL, m);
-			map.put(ResultMapKey.DATA, toOWL(m));
-			map.put(ResultMapKey.COUNT, 1);
+			map.put(ResultMapKey.DATA, exportToOWL(m));
 		} 
 		
+		if(uris.length == 1) {
+			// also put the object (element) in the map
+			BioPAXElement element = dao.getByID(uris[0]);
+			if (element != null) {
+				dao.initialize(element);
+				map.put(ResultMapKey.ELEMENT, element);
+			}
+		}
+		//map.put(ResultMapKey.COUNT, uris.length); //not needed...
+		
 		return map;
+	}
+	
+	
+	// TODO finish...
+	public Map<ResultMapKey, Object> fetchAsXmlSearchResponse(String... uris) {
+		Map<ResultMapKey, Object> toReturn = new HashMap<ResultMapKey, Object>();
+		
+		// extract a Biopax sub-model
+		Model m = dao.getValidSubModel(Arrays.asList(uris));
+		
+		// build a SearchResponseType, fill in, marshal
+		SearchResponseType searchResponse = new SearchResponseType();
+		searchResponse.setTotalNumHits(Long.valueOf(uris.length));
+		List<ExtendedRecordType> hits = searchResponse.getSearchHit();
+		for (String id : uris) {
+			BioPAXElement element = m.getByID(id); //= dao.getByID(id);
+			if (element != null) {
+				//dao.initialize(element); // if above: dao.getByID(id)
+				ExtendedRecordType rec = new ExtendedRecordType();
+				rec.setPrimaryId(id);
+				if(element instanceof Named)
+					rec.setName(((Named)element).getName().toString());
+				rec.setEntityType(element.getModelInterface().getSimpleName());
+				hits.add(rec);
+				// TODO set all fields... (requires using extra, pre-calculated parent-child, data!)
+			} else {
+				// add error message
+				//result.get(ResultMapKey.ERROR).toString();
+			}
+		}
+		
+		toReturn.put(ResultMapKey.DATA, marshalSearchResponse(searchResponse));
+		
+		return toReturn;
+	}
+
+
+	// TODO later...
+	Map<ResultMapKey, Object> fetchAsXmlSummaryResponse(String... uris) {
+		return new HashMap<ResultMapKey, Object>();
+	}
+	
+	
+	String marshalSearchResponse(SearchResponseType obj) {
+		StringWriter writer = new StringWriter();
+		try {
+			Marshaller ma = jaxbContext.createMarshaller();
+			ma.setProperty("jaxb.formatted.output", true);
+			ma.marshal(
+			new JAXBElement<SearchResponseType>(new QName("","search_response"), 
+					SearchResponseType.class, obj), writer);
+		} catch (JAXBException e) {
+			throw new RuntimeException(e);
+		}
+		return writer.toString();
+	}
+
+	
+	String marshalSummaryResponce(SummaryResponseType obj) {
+		StringWriter writer = new StringWriter();
+		try {
+			Marshaller ma = jaxbContext.createMarshaller();
+			ma.setProperty("jaxb.formatted.output", true);
+			ma.marshal(
+			new JAXBElement<SummaryResponseType>(new QName("","summary_response"), 
+					SummaryResponseType.class, obj), writer);
+		} catch (JAXBException e) {
+			throw new RuntimeException(e);
+		}
+		return writer.toString();
 	}
 }

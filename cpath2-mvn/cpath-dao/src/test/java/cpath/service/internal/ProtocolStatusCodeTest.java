@@ -1,4 +1,4 @@
-package cpath.webservice.validation.protocol;
+package cpath.service.internal;
 
 import static org.junit.Assert.*;
 
@@ -6,8 +6,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import cpath.webservice.jaxb.ErrorType;
-import cpath.webservice.validation.ProtocolStatusCode;
+import cpath.service.jaxb.ErrorType;
 
 public class ProtocolStatusCodeTest {
 

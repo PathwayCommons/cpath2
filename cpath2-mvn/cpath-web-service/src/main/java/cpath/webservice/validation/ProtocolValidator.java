@@ -33,7 +33,8 @@ import java.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import cpath.dao.CPathService.OutputFormat;
+import cpath.service.CPathService.OutputFormat;
+import cpath.service.internal.ProtocolStatusCode;
 import cpath.warehouse.internal.BioDataTypes;
 import cpath.warehouse.internal.BioDataTypes.Type;
 import cpath.webservice.args.*;
@@ -117,16 +118,18 @@ public class ProtocolValidator {
     
 	protected void validateIdType() throws ProtocolException {
 		Cmd command = request.getCommand();
-		if (command == Cmd.GET_PATHWAYS
+		if (	(command == Cmd.GET_PATHWAYS
 				|| command == Cmd.GET_RECORD_BY_CPATH_ID
-				|| command == Cmd.GET_NEIGHBORS) {
+				|| command == Cmd.GET_NEIGHBORS)
+			) 
+		{
 			// get input_id_type or output_id_type parameter string value
 			for (String type : new String[] { request.getInputIDType(),
 					request.getOutputIDType() }) {
 				if (type != null) {
 					Set<String> supportedIdList = BioDataTypes
 							.getDataSourceKeys(Type.IDENTIFIER);
-					if (!supportedIdList.contains(type.toLowerCase())) {
+					if (!supportedIdList.contains(type.toUpperCase())) {
 						StringBuffer buf = new StringBuffer();
 						int i = 0;
 						for (String s : supportedIdList) {

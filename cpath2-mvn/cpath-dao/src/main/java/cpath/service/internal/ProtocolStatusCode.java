@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice.validation;
+package cpath.service.internal;
 
 import java.io.StringWriter;
 import java.math.BigInteger;
@@ -37,7 +37,7 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.namespace.QName;
 
-import cpath.webservice.jaxb.ErrorType;
+import cpath.service.jaxb.ErrorType;
 
 /**
  * Enumeration of Protocol Status Codes.
@@ -94,7 +94,7 @@ public enum ProtocolStatusCode {
     
 	static {
 		try {
-			jaxbContext = JAXBContext.newInstance("cpath.webservice.jaxb");
+			jaxbContext = JAXBContext.newInstance("cpath.service.jaxb");
 		} catch (JAXBException e) {
 			throw new RuntimeException(e);
 		}
@@ -173,4 +173,13 @@ public enum ProtocolStatusCode {
 		return writer.toString();
 	}
 
+	/**
+	 * @param string service error details
+	 * @return XML error message
+	 */
+	public static String errorAsXml(ProtocolStatusCode code, String string) {
+		ErrorType errorType = code.createErrorType();
+		errorType.setErrorDetails(string);
+		return marshal(errorType);
+	}
 }

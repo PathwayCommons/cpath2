@@ -17,9 +17,7 @@ import org.springframework.http.converter.*;
 import org.springframework.http.converter.xml.SourceHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
-import cpath.webservice.jaxb.ErrorType;
-import cpath.webservice.jaxb.ExtendedRecordType;
-import cpath.webservice.jaxb.SearchResponseType;
+import cpath.service.jaxb.*;
 
 
 @Ignore

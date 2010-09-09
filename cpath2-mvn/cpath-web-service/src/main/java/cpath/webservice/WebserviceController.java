@@ -27,41 +27,30 @@
 
 package cpath.webservice;
 
-import cpath.dao.CPathService;
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.CPathService.OutputFormat;
-import cpath.dao.CPathService.ResultMapKey;
-import cpath.dao.internal.CPathServiceImpl;
+import cpath.service.CPathService;
+import cpath.service.CPathService.OutputFormat;
+import cpath.service.CPathService.ResultMapKey;
+import cpath.service.internal.CPathServiceImpl;
+import cpath.service.internal.ProtocolStatusCode;
 import cpath.warehouse.CvRepository;
 import cpath.warehouse.internal.BioDataTypes;
 import cpath.warehouse.internal.BioDataTypes.Type;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
-import cpath.webservice.jaxb.ErrorType;
-import cpath.webservice.jaxb.ExtendedRecordType;
-import cpath.webservice.jaxb.SearchResponseType;
-import cpath.webservice.jaxb.SummaryResponseType;
 import cpath.webservice.validation.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.level3.Named;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.StringWriter;
 import java.util.*;
 
 import javax.validation.constraints.NotNull;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.namespace.QName;
 
 /**
  * cPathSquared Main Web Service.
@@ -122,7 +111,7 @@ public class WebserviceController {
     	if(format==null) 
     		format = OutputFormat.BIOPAX;
     	
-    	Map<ResultMapKey, Object> result = service.element(uri, format);
+    	Map<ResultMapKey, Object> result = service.fetch(format, uri);
     	
     	String body = getBody(result, format, uri);
     	
@@ -130,7 +119,7 @@ public class WebserviceController {
     }
 	
 	
-    // Fulltext Search
+    // Fulltext Search. TODO add organism and data sources filter args
     @RequestMapping(value="/search")
     @ResponseBody
     public String fulltextSearch(
@@ -142,7 +131,7 @@ public class WebserviceController {
     	
     	if(log.isDebugEnabled()) log.debug("Fulltext Search for type:" 
 				+ type.getCanonicalName() + ", query:" + query);
-    	Map<ResultMapKey,Object> results = service.list(query, type, false);
+    	Map<ResultMapKey,Object> results = service.find(query, type, false, null);
     	String body = getListDataBody(results, query + 
     			" (in " + type.getSimpleName() + ")");
 		return body;
@@ -200,7 +189,6 @@ public class WebserviceController {
     		@RequestParam(value="data_source", required=false) String dataSources, //comma-separated names
     		@RequestParam(value="output_id_type", required=false) String outputIdType,
     		@RequestParam(value="binary_interaction_rule", required=false) String rules //comma-separated names
-    		//@RequestBody MultiValueMap<String,String> map // it's easier to initialize the ProtocolRequest below...
     	) 
     {
 		String toReturn = "";
@@ -228,66 +216,55 @@ public class WebserviceController {
 			ProtocolValidator protocolValidator = new ProtocolValidator(protocol);
 			protocolValidator.validate();
 		} catch (ProtocolException e) {
-			ErrorType errorType = e.getStatusCode().createErrorType();
-			// set the error details
-			errorType.setErrorDetails(e.getMessage());
-			// build the xml string
-			return ProtocolStatusCode.marshal(errorType);
+			return ProtocolStatusCode.errorAsXml(e.getStatusCode(), 
+						e.getMessage());
 		}
 		
-		
 
-		// TODO execute query and get results here
 		if(protocol.getCommand() == Cmd.SEARCH) {
-			//return "forward:search.html";
-			// output format is always the 'xml'
-			// build a SearchResponseType (from xsd), marshal
+			// return "forward:search.html"; // may try this later...
+			// format is always 'xml' (the same as cpath webservice's)
 			if(log.isDebugEnabled()) log.debug("Legacy (cpath) Fulltext Search:" 
 					+ ", query:" + protocol.getQuery());
-	    	Map<ResultMapKey,Object> results = service.list(protocol.getQuery(), null, false);
+			// do cpath2 search query
+	    	Map<ResultMapKey,Object> results = service
+	    		.find(protocol.getQuery(), null, false, 
+	    			new Integer[]{protocol.getOrganism()}, 
+	    			protocol.getDataSources());
 			if(results.containsKey(ResultMapKey.ERROR)) {
-				return internalError(results.get(ResultMapKey.ERROR).toString());
+				return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 
+						results.get(ResultMapKey.ERROR).toString());
 			}
-	    	
-			Collection<String> idList = (Collection<String>) results.get(ResultMapKey.DATA);
-			SearchResponseType searchResponse = new SearchResponseType();
-			searchResponse.setTotalNumHits(Long.valueOf(idList.size()));
-			List<ExtendedRecordType> hits = searchResponse.getSearchHit();
-			for (String id : idList) {
-				Map<ResultMapKey, Object> result = service.element(id, OutputFormat.BIOPAX);
-				if(result.containsKey(ResultMapKey.ERROR)) {
-					return internalError(result.get(ResultMapKey.ERROR).toString());
-				}
-				BioPAXElement value = (BioPAXElement) result.get(ResultMapKey.ELEMENT);
-				
-				ExtendedRecordType rec = new ExtendedRecordType();
-				rec.setPrimaryId(id);
-				if(value instanceof Named)
-					rec.setName(((Named)value).getName().toString());
-				rec.setEntityType(value.getModelInterface().getSimpleName());
-				hits.add(rec);
-				// TODO set all fields...
+			
+			// convert the search result (id-list) to the XML (SearchResponseType schema element)
+			Collection<String> uris = (Collection<String>) results.get(ResultMapKey.DATA);
+			results = service.fetchAsXmlSearchResponse(uris.toArray(new String[]{}));
+			if(results.containsKey(ResultMapKey.ERROR)) {
+				return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 
+						results.get(ResultMapKey.ERROR).toString());
 			}
-			toReturn = marshalSearchResponce(searchResponse);
-			//toReturn = idList.toString(); //TODO return xml
+			toReturn = (String) results.get(ResultMapKey.DATA);
 		} else if(protocol.getCommand() == Cmd.GET_RECORD_BY_CPATH_ID) {
 			//return "forward:get";
-			return internalError("Not Implemented Yet: legacy GET_RECORD_BY_CPATH_ID");
+			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 
+					"Not Implemented Yet: legacy GET_RECORD_BY_CPATH_ID");
 		} else if(protocol.getCommand() == Cmd.GET_BY_KEYWORD) {
 			// probably, is the same as "search"
-			return internalError("Not Implemented Yet: legacy GET_BY_KEYWORD");
+			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR,
+				"Not Implemented Yet: legacy GET_BY_KEYWORD");
 		} else if(protocol.getCommand() == Cmd.GET_PATHWAYS) {
-			return internalError("Not Implemented Yet: legacy GET_PATHWAYS");
+			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR,
+				"Not Implemented Yet: legacy GET_PATHWAYS");
 		} else if(protocol.getCommand() == Cmd.GET_NEIGHBORS) {
-			return internalError("Not Implemented Yet: legacy GET_NEIGHBORS");
+			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR,
+				"Not Implemented Yet: legacy GET_NEIGHBORS");
 		} else if(protocol.getCommand() == Cmd.GET_PARENTS) {
 			//TODO implement "get_parents" or give up...
 			// build a SummaryResponseType (from xsd), marshal
-			return internalError("Not Implemented Yet: legacy GET_PARENTS");
+			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR,
+				"Not Implemented Yet: legacy GET_PARENTS");
 		}
 		
-		
-
 		return toReturn;
     }
 	
@@ -358,16 +335,18 @@ public class WebserviceController {
 		if (!result.containsKey(ResultMapKey.ERROR)) {
 			Collection<String> dataSet = (Collection<String>) result.get(ResultMapKey.DATA);
 			if(dataSet.isEmpty()) {
-				ErrorType errorType = ProtocolStatusCode.NO_RESULTS_FOUND.createErrorType();
-				errorType.setErrorDetails("No elements found for: " + details);
-				toReturn.append(ProtocolStatusCode.marshal(errorType));
+				toReturn.append(ProtocolStatusCode
+					.errorAsXml(ProtocolStatusCode.NO_RESULTS_FOUND, 
+						"No elements found for: " + details));
 			} else {
 				for (String s : dataSet) {
 					toReturn.append(s).append(newline);
 				}
 			}
 		} else {
-			toReturn.append(internalError(result.get(ResultMapKey.ERROR).toString()));		
+			toReturn.append(ProtocolStatusCode
+				.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 
+					result.get(ResultMapKey.ERROR).toString()));		
 		}
 		
 		return toReturn.toString();
@@ -380,14 +359,12 @@ public class WebserviceController {
 		if (!results.containsKey(ResultMapKey.ERROR)) {
 			toReturn = (String) results.get(ResultMapKey.DATA);
 			if(toReturn == null) {
-				ErrorType errorType = ProtocolStatusCode.NO_RESULTS_FOUND.createErrorType();
-				errorType.setErrorDetails("No elements found for: " + details);
-				toReturn = ProtocolStatusCode.marshal(errorType);
+				toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.NO_RESULTS_FOUND, 
+						"No elements found for: " + details);
 			} 
 		} else {
-			ErrorType errorType = ProtocolStatusCode.INTERNAL_ERROR.createErrorType();
-			errorType.setErrorDetails(results.get(ResultMapKey.ERROR).toString());
-			toReturn = ProtocolStatusCode.marshal(errorType);
+			toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 
+					results.get(ResultMapKey.ERROR).toString());
 		}
 		
 		return toReturn;
@@ -459,47 +436,5 @@ public class WebserviceController {
 		
 		return toReturn.toString(); 
 	}
-    
-	
-	/**
-	 * @param string
-	 * @return
-	 */
-	private String internalError(String string) {
-		ErrorType errorType = ProtocolStatusCode.INTERNAL_ERROR
-			.createErrorType();
-		errorType.setErrorDetails(string);
-		return ProtocolStatusCode.marshal(errorType);
-	}
 
-	
-	static String marshalSearchResponce(SearchResponseType obj) {
-		StringWriter writer = new StringWriter();
-		try {
-			JAXBContext jaxbContext = JAXBContext.newInstance("cpath.webservice.jaxb");
-			Marshaller ma = jaxbContext.createMarshaller();
-			ma.setProperty("jaxb.formatted.output", true);
-			ma.marshal(
-			new JAXBElement<SearchResponseType>(new QName("","search_response"), 
-					SearchResponseType.class, obj), writer);
-		} catch (JAXBException e) {
-			throw new RuntimeException(e);
-		}
-		return writer.toString();
-	}
-	
-	static String marshalSummaryResponce(SummaryResponseType obj) {
-		StringWriter writer = new StringWriter();
-		try {
-			JAXBContext jaxbContext = JAXBContext.newInstance("cpath.webservice.jaxb");
-			Marshaller ma = jaxbContext.createMarshaller();
-			ma.setProperty("jaxb.formatted.output", true);
-			ma.marshal(
-			new JAXBElement<SummaryResponseType>(new QName("","summary_response"), 
-					SummaryResponseType.class, obj), writer);
-		} catch (JAXBException e) {
-			throw new RuntimeException(e);
-		}
-		return writer.toString();
-	}
 }
