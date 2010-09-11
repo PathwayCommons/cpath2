@@ -42,6 +42,7 @@
 		<module>cpath-admin</module>
 		<module>cpath-importer</module>
 		<module>cpath-web-service</module>
+		<module>distribution</module>
 	</modules>
 
 	<properties>
@@ -71,7 +72,7 @@
 								<value>file:${CPATH2_HOME}/log4j.properties</value>
 							</property>
 						</systemProperties>
-						<argLine>-Xmx2024M -DCPATH2_HOME=${CPATH2_HOME} -DBIOPAX_HOME=${CPATH2_HOME} -ea</argLine>
+						<argLine>-Xmx2024M -DCPATH2_HOME=${CPATH2_HOME} -ea</argLine>
 					</configuration>
 				</plugin>
 			</plugins>
