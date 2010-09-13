@@ -30,11 +30,6 @@ package cpath.service;
 import java.util.Map;
 
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.Model;
-import org.bridgedb.DataSource;
-
-import cpath.service.jaxb.SearchResponseType;
-import cpath.service.jaxb.SummaryResponseType;
 
 
 /**
@@ -149,5 +144,17 @@ public interface CPathService {
 	 * @return
 	 */
 	Map<ResultMapKey, Object> fetchAsXmlSearchResponse(String... uris);
+	
+	
+	/**
+	 * Gets BioPAX elements by id, 
+	 * creates a sub-model, converts to SIF format, 
+	 * and returns everything as map values.
+	 * 
+	 * @param uris identifiers of the elements to export
+	 * @param rules (optional) the names of SIF rules to apply
+	 * @return
+	 */
+	Map<ResultMapKey, Object> fetchAsBinarySIF(String[] uris, String... rules);
 	
 }

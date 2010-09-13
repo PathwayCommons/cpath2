@@ -209,10 +209,11 @@ public class WebserviceController {
     				argsMap.toString());
     	}
 		
+    	// Validate the query parameters
 		try {
 			// build the ProtocolRequest from the Map
 			protocol = new ProtocolRequest(argsMap);
-			// validate by ProtocolValidator
+			// validate with ProtocolValidator
 			ProtocolValidator protocolValidator = new ProtocolValidator(protocol);
 			protocolValidator.validate();
 		} catch (ProtocolException e) {
@@ -236,14 +237,26 @@ public class WebserviceController {
 						results.get(ResultMapKey.ERROR).toString());
 			}
 			
-			// convert the search result (id-list) to the XML (SearchResponseType schema element)
+			// not found?
+			if(results.isEmpty() || !results.containsKey(ResultMapKey.DATA)) {
+				return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.NO_RESULTS_FOUND,
+					"No data returned for the search string '" 
+						+ protocol.getQuery() + "'");
+			}
+			
+			// convert the search result (id-list) to the legacy XML (SearchResponseType schema element)
 			Collection<String> uris = (Collection<String>) results.get(ResultMapKey.DATA);
+			// (reusing the same 'results' variable is intentional)
 			results = service.fetchAsXmlSearchResponse(uris.toArray(new String[]{}));
 			if(results.containsKey(ResultMapKey.ERROR)) {
 				return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 
 						results.get(ResultMapKey.ERROR).toString());
 			}
+			
+			// Not found? (Converting the search result to the legacy web service XML format returned no data) 
+			assert(results.containsKey(ResultMapKey.DATA)); // otherwise, it's a bug
 			toReturn = (String) results.get(ResultMapKey.DATA);
+			
 		} else if(protocol.getCommand() == Cmd.GET_RECORD_BY_CPATH_ID) {
 			//return "forward:get";
 			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 

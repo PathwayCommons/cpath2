@@ -6,6 +6,9 @@
 	xmlns:owl="http://www.w3.org/2002/07/owl#" 
 	xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 	xml:base="http://pathwaycommons.org/test2#">
+	
+	<rdf:comment>This is similar to but NOT a REAL data (for software testing only)!</rdf:comment>
+	
 	<owl:Ontology rdf:about="">
 		<owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl#" />
 	</owl:Ontology>
