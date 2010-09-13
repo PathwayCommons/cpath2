@@ -257,10 +257,10 @@ public class PaxtoolsHibernateDAOTest {
 		assertEquals(2, n.intValue());
 		
 		n = paxtoolsDAO.count(null, BioPAXElement.class);
-		assertEquals(9, n.intValue());
+		assertEquals(16, n.intValue());
 		
 		n = paxtoolsDAO.count(null, UnificationXref.class);
-		assertEquals(3, n.intValue());
+		assertEquals(5, n.intValue());
 	}
 
 	

@@ -37,7 +37,10 @@ import javax.xml.namespace.QName;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.SimpleMerger;
+import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
+import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.*;
@@ -46,7 +49,10 @@ import org.springframework.stereotype.Service;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.CPathService;
+import cpath.service.CPathService.ResultMapKey;
 import cpath.service.jaxb.*;
+
+import static cpath.service.CPathService.ResultMapKey.*;
 
 /**
  * Service tier class - to uniformly access 
@@ -100,14 +106,14 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			if (countOnly) {
 				Integer count =  dao.count(null, biopaxClass);
-				map.put(ResultMapKey.COUNT, count);
+				map.put(COUNT, count);
 			} else {
 				Collection<String> data = dao.find(queryStr, biopaxClass);
-				map.put(ResultMapKey.DATA, data);
-				map.put(ResultMapKey.COUNT, data.size()); // becomes Integer
+				map.put(DATA, data);
+				map.put(COUNT, data.size()); // becomes Integer
 			}
 		} catch (Exception e) {
-			map.put(ResultMapKey.ERROR, e.toString());
+			map.put(ERROR, e.toString());
 		}
 		
 		return map;
@@ -133,7 +139,7 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			switch (format) {
 			case BINARY_SIF: // TODO
-				
+				map = fetchAsBinarySIF(uris);
 				break;
 			case GSEA: // TODO
 				
@@ -153,20 +159,60 @@ public class CPathServiceImpl implements CPathService {
 				map = fetchAsBiopax(uris);
 			}
 		} catch (Exception e) {
-			map.put(ResultMapKey.ERROR, e.toString());
+			map.put(ERROR, e.toString());
 		}
 		return map;
 	}	
 	
-	
+	/*
+	 * (non-Javadoc)
+	 * @see cpath.service.CPathService#fetchAsBinarySIF(java.lang.String[], java.lang.String[])
+	 * 
+	 * TODO 'rules' parameter is currently ignored (requires conversion 
+	 * from strings to the rules, e.g., using enum. BinaryInteractionRule from cpath-web-service)
+	 */
+	public Map<ResultMapKey, Object> fetchAsBinarySIF(String[] uris, String... rules) {
+		// get as BioPAX first
+		Map<ResultMapKey, Object> map = fetchAsBiopax(uris);
+		
+		// check for internal errors
+		if(map.containsKey(ERROR)) {
+			return map; // return as is (with error)
+		}
+		
+		// convert, replace DATA
+		Model m = (Model) map.get(MODEL);
+		SimpleInteractionConverter sic = new SimpleInteractionConverter(
+				new org.biopax.paxtools.io.sif.level3.ComponentRule(),
+				new org.biopax.paxtools.io.sif.level3.ConsecutiveCatalysisRule(),
+				new org.biopax.paxtools.io.sif.level3.ControlRule(),
+				new org.biopax.paxtools.io.sif.level3.ControlsTogetherRule(),
+				new org.biopax.paxtools.io.sif.level3.ParticipatesRule());
+		try {
+			OutputStream edgeStream = new ByteArrayOutputStream();
+			//sic.writeInteractionsInSIF(m, edgeStream); // default SIF output uses IDs
+			// lets use extended format and write other attributes
+			OutputStream nodeStream = new ByteArrayOutputStream();
+	        sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream, 
+	        		false, reader.getEditorMap(), "name", "xref");
+	        map.put(DATA, edgeStream.toString() + "\n\n" + nodeStream.toString());
+		} catch (Exception e) {
+			map.put(ERROR, e.toString());
+			return map;
+		}
+
+		return map;
+	}
+
+
 	public Map<ResultMapKey, Object> fetchAsBiopax(String... uris) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		
 		if(uris.length >= 1) {	
 			// extract a sub-model
 			Model m = dao.getValidSubModel(Arrays.asList(uris));
-			map.put(ResultMapKey.MODEL, m);
-			map.put(ResultMapKey.DATA, exportToOWL(m));
+			map.put(MODEL, m);
+			map.put(DATA, exportToOWL(m));
 		} 
 		
 		if(uris.length == 1) {
@@ -174,10 +220,9 @@ public class CPathServiceImpl implements CPathService {
 			BioPAXElement element = dao.getByID(uris[0]);
 			if (element != null) {
 				dao.initialize(element);
-				map.put(ResultMapKey.ELEMENT, element);
+				map.put(ELEMENT, element);
 			}
 		}
-		//map.put(ResultMapKey.COUNT, uris.length); //not needed...
 		
 		return map;
 	}
@@ -192,7 +237,6 @@ public class CPathServiceImpl implements CPathService {
 		
 		// build a SearchResponseType, fill in, marshal
 		SearchResponseType searchResponse = new SearchResponseType();
-		searchResponse.setTotalNumHits(Long.valueOf(uris.length));
 		List<ExtendedRecordType> hits = searchResponse.getSearchHit();
 		for (String id : uris) {
 			BioPAXElement element = m.getByID(id); //= dao.getByID(id);
@@ -206,18 +250,20 @@ public class CPathServiceImpl implements CPathService {
 				hits.add(rec);
 				// TODO set all fields... (requires using extra, pre-calculated parent-child, data!)
 			} else {
-				// add error message
-				//result.get(ResultMapKey.ERROR).toString();
+				// ignore not found...
 			}
 		}
 		
-		toReturn.put(ResultMapKey.DATA, marshalSearchResponse(searchResponse));
+		if(hits.size() != 0) {
+			searchResponse.setTotalNumHits(Long.valueOf(hits.size()));
+			toReturn.put(DATA, marshalSearchResponse(searchResponse));
+		} // otherwise, returns empty map
 		
 		return toReturn;
 	}
 
 
-	// TODO later...
+	// TODO finish later...
 	Map<ResultMapKey, Object> fetchAsXmlSummaryResponse(String... uris) {
 		return new HashMap<ResultMapKey, Object>();
 	}

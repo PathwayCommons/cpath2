@@ -45,6 +45,7 @@ import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.service.CPathService;
 import cpath.service.CPathService.OutputFormat;
 import cpath.service.CPathService.ResultMapKey;
+import static cpath.service.CPathService.ResultMapKey.*;
 import cpath.service.internal.CPathServiceImpl;
 
 import java.io.File;
@@ -68,7 +69,6 @@ public class CPathServiceTest {
 		Object dao = context.getBean("paxtoolsDAO");
 		log.info("Loading BioPAX data (importModel(file))...");
 		File biopaxFile = new File(CPathServiceTest.class.getResource("/test.owl").getFile());		
-		//File biopaxFile = new File(getClass().getResource("/test-normalized.owl").getFile());
 		try {
 			((PaxtoolsDAO)dao).importModel(biopaxFile);
 		} catch (FileNotFoundException e) {
@@ -80,15 +80,15 @@ public class CPathServiceTest {
 	
 	
 	@Test
-	public void testServiceElement() throws Exception {
+	public void testFetchAsBiopax() throws Exception {
 		Map<ResultMapKey, Object> map = service.fetch(
 				OutputFormat.BIOPAX,
 				"http://www.biopax.org/examples/myExample#Protein_A");
 		assertNotNull(map);
 		
-		assertNotNull(map.get(ResultMapKey.DATA));
-		assertNotNull(map.get(ResultMapKey.ELEMENT));
-		assertNotNull(map.get(ResultMapKey.MODEL));
+		assertNotNull(map.get(DATA));
+		assertNotNull(map.get(ELEMENT));
+		assertNotNull(map.get(MODEL));
 		
 		Model m = (Model) map.get(ResultMapKey.MODEL);
 		assertNotNull(m);
@@ -96,25 +96,39 @@ public class CPathServiceTest {
 		assertTrue(e instanceof Protein);
 		
 		e = null;
-		e = (BioPAXElement) map.get(ResultMapKey.ELEMENT);
+		e = (BioPAXElement) map.get(ELEMENT);
 		assertTrue(e instanceof Protein);
 	}
 
 	
 	@Test
-	public void testServiceElement2() throws Exception {
-		Map<ResultMapKey, Object> map = service.fetch(
-				OutputFormat.BIOPAX, "urn:miriam:uniprot:P46880");
+	public void testFetchAsBiopax2() throws Exception {
+		Map<ResultMapKey, Object> map = service.fetchAsBiopax("urn:miriam:uniprot:P46880");
 		assertNotNull(map);
 			
-		BioPAXElement e = (BioPAXElement) map.get(ResultMapKey.ELEMENT);
+		BioPAXElement e = (BioPAXElement) map.get(ELEMENT);
 		assertTrue(e instanceof ProteinReference);
 		
 		//System.out.println(map.get(ResultMapKey.DATA));
-		assertTrue(map.get(ResultMapKey.DATA).toString().length()>0);
+		assertTrue(map.get(DATA).toString().length()>0);
 	}
 
 	
 	// TODO add 'find' tests that use different strings (matching different biopax fields)
 	//...
+	
+	@Test
+	public void testFetchAsSIF() throws Exception {
+		Map<ResultMapKey, Object> map = service.fetch(
+				OutputFormat.BINARY_SIF,
+				"http://www.biopax.org/examples/myExample#biochemReaction1");
+		assertNotNull(map);
+		assertTrue(map.containsKey(DATA));
+		assertNotNull(map.get(DATA));
+		String data = (String) map.get(DATA);
+		System.out.println(data);
+		assertTrue(data.contains("REACTS_WITH"));
+		assertFalse(data.contains("Protein_A"));
+		assertTrue(data.contains("urn:miriam:uniprot:P46880"));
+	}
 }
