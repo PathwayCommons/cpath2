@@ -66,7 +66,7 @@ public class CPathWebserviceTest {
 				"?version=2.0&q={q}&cmd=search", String.class, "BRCA2");
 		assertNotNull(result);
 		// Wow, we got some xml! Let's unmarshal it to do something...
-		JAXBContext jaxbContext = JAXBContext.newInstance("cpath.webservice.jaxb");
+		JAXBContext jaxbContext = JAXBContext.newInstance("cpath.service.jaxb");
 		Unmarshaller un = jaxbContext.createUnmarshaller();
 		JAXBElement<?> element = (JAXBElement<?>) un.unmarshal(
 				new ByteArrayInputStream(result.getBytes()));
@@ -103,7 +103,7 @@ public class CPathWebserviceTest {
 		Source source = template.getForObject(serviceUrl + 
 				"?version=2.0&q=BRCA2&output=xml&cmd=search", Source.class);
 		assertNotNull(source);
-		JAXBContext jaxbContext = JAXBContext.newInstance("cpath.webservice.jaxb");
+		JAXBContext jaxbContext = JAXBContext.newInstance("cpath.service.jaxb");
 		// unlike above tests, we do not check for ErrorType here
 		SearchResponseType result =jaxbContext.createUnmarshaller()
 			.unmarshal(source, SearchResponseType.class).getValue();
