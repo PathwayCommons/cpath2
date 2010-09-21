@@ -393,9 +393,10 @@ public class PremergeImpl extends Thread implements Premerge {
 		 */
 		String home = System.getenv(CPathSettings.HOME_VARIABLE_NAME);
 		if (home==null) throw new RuntimeException(
-				"Please set CPATH2_HOME environment variable " +
+				"Please set " + CPathSettings.HOME_VARIABLE_NAME + " environment variable " +
             	" (point to a directory where cpath.properties, etc. files are placed)");
 		String indexDir = home + File.separator + premergeDbName;
+		// set the system variable that is used by the following spring context
 		System.setProperty(CPathSettings.PREMERGE_INDEX_DIR_VARIABLE, indexDir);
 		ApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");

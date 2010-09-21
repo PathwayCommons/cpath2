@@ -28,7 +28,6 @@
  **/
 package cpath.dao;
 
-import org.biopax.paxtools.io.sif.InteractionRule;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
@@ -121,15 +120,6 @@ public interface PaxtoolsDAO extends Model {
      * @return
      */
     Model getValidSubModel(Collection<String> ids);
-    
-    
-    /**
-     * 
-     * @param outputStream
-     * @param rules
-     * @param ids (optional) the list of BioPAX elements (IDs) to export
-     */
-    void exportBinaryInteractions(OutputStream outputStream, Collection<InteractionRule> rules, String... ids);
  
     
     /**

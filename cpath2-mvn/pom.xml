@@ -43,6 +43,7 @@
 		<module>cpath-importer</module>
 		<module>cpath-web-service</module>
 		<module>distribution</module>
+		<module>cpath-service</module>
 	</modules>
 
 	<properties>

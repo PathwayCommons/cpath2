@@ -403,7 +403,8 @@ public class Admin implements Runnable {
     	String home = System.getenv(CPathSettings.HOME_VARIABLE_NAME);
     	
     	if (home==null) {
-            System.err.println("Please set CPATH2_HOME environment variable " +
+            System.err.println("Please set " + CPathSettings.HOME_VARIABLE_NAME 
+            	+ " environment variable " +
             	" (point to a directory where cpath.properties, etc. files are placed)");
             System.exit(-1);
     	}

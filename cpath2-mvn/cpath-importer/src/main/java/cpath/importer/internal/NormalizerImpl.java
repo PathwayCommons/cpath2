@@ -46,6 +46,8 @@ import cpath.config.CPathSettings;
 import cpath.importer.Normalizer;
 
 /**
+ * BioPAX Normalizer.
+ * 
  * @author rodch
  *
  */
@@ -131,6 +133,17 @@ public class NormalizerImpl implements Normalizer {
 						uref + " - " + e);
 			}
 		}
+		
+		
+		/* 
+		 * We could also "fix" organism property, where it's null,
+		 * a swell (e.g., using the value from the pathway);
+		 * also - check those values in protein references actually
+		 * correspond to what can be found in the UniProt by using
+		 * unification xrefs's 'id'... But this, fortunately, 
+		 * happens in the CPathMerger (a ProteinReference 
+		 * comes from the Warehouse with organism property already set!)
+		 */
 		
 		// return as BioPAX OWL
 		String owl = convertToOWL(model);

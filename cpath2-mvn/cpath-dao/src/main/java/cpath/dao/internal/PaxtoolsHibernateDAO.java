@@ -41,8 +41,6 @@ import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.BioPAXIOHandler;
-import org.biopax.paxtools.io.sif.InteractionRule;
-import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.hibernate.*;
@@ -664,28 +662,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		Cloner cln = new Cloner(reader.getEditorMap(), factory);
 		Model model = cln.clone(null, bioPAXElements);
 		return model;
-	}
-	
-
-
-	/* (non-Javadoc)
-	 * @see cpath.dao.PaxtoolsDAO#exportBinaryInteractions(java.io.OutputStream, java.util.Collection, java.util.Collection)
-	 */
-	@Override
-	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public void exportBinaryInteractions(OutputStream outputStream,
-			Collection<InteractionRule> rules, String... ids) 
-	{
-		Model model = (ids.length > 0) 
-			? getValidSubModel(Arrays.asList(ids)) : this; // no ids? - export everything!
-		
-		SimpleInteractionConverter converter = 
-			new SimpleInteractionConverter(rules.toArray(new InteractionRule[]{}));
-		try {
-			converter.writeInteractionsInSIF(model, outputStream);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
 	}
 	
 

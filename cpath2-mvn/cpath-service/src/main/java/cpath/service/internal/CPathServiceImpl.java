@@ -37,19 +37,20 @@ import javax.xml.namespace.QName;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.SimpleMerger;
+import org.biopax.paxtools.io.gsea.GSEAConverter;
+import org.biopax.paxtools.io.sif.InteractionRule;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
-import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Named;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.CPathService;
-import cpath.service.CPathService.ResultMapKey;
 import cpath.service.jaxb.*;
 
 import static cpath.service.CPathService.ResultMapKey.*;
@@ -138,11 +139,11 @@ public class CPathServiceImpl implements CPathService {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
 			switch (format) {
-			case BINARY_SIF: // TODO
+			case BINARY_SIF:
 				map = fetchAsBinarySIF(uris);
 				break;
-			case GSEA: // TODO
-				
+			case GSEA:
+				map = fetchAsGSEA("uniprot", uris); // default
 				break;
 			case PC_GENE_SET: // TODO
 				
@@ -163,7 +164,37 @@ public class CPathServiceImpl implements CPathService {
 		}
 		return map;
 	}	
+
 	
+	/**
+	 * @param uris
+	 * @param string
+	 * @return
+	 */
+	public Map<ResultMapKey, Object> fetchAsGSEA(String idType, String... uris) {
+		// get as BioPAX first
+		Map<ResultMapKey, Object> map = fetchAsBiopax(uris);
+		
+		// check for internal errors
+		if(map.containsKey(ERROR)) {
+			return map; // return as is (with error)
+		}
+		
+		// convert, replace DATA
+		Model m = (Model) map.get(MODEL);
+		GSEAConverter gseaConverter = new GSEAConverter(idType, false);
+		OutputStream stream = new ByteArrayOutputStream();
+		try {
+	        gseaConverter.writeToGSEA(m, stream);
+	        map.put(DATA, stream.toString());
+		} catch (Exception e) {
+			map.put(ERROR, e.toString());
+		}
+		
+		return map;
+	}
+
+
 	/*
 	 * (non-Javadoc)
 	 * @see cpath.service.CPathService#fetchAsBinarySIF(java.lang.String[], java.lang.String[])
@@ -180,7 +211,8 @@ public class CPathServiceImpl implements CPathService {
 			return map; // return as is (with error)
 		}
 		
-		// convert, replace DATA
+		// convert, replace DATA value in the map to return
+		// TODO match 'rules' parameter to rule types (currently, it uses all)
 		Model m = (Model) map.get(MODEL);
 		SimpleInteractionConverter sic = new SimpleInteractionConverter(
 				new org.biopax.paxtools.io.sif.level3.ComponentRule(),
@@ -198,12 +230,11 @@ public class CPathServiceImpl implements CPathService {
 	        map.put(DATA, edgeStream.toString() + "\n\n" + nodeStream.toString());
 		} catch (Exception e) {
 			map.put(ERROR, e.toString());
-			return map;
 		}
 
 		return map;
 	}
-
+	
 
 	public Map<ResultMapKey, Object> fetchAsBiopax(String... uris) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
