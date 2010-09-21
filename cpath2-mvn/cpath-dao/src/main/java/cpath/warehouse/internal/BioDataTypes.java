@@ -91,7 +91,9 @@ public final class BioDataTypes {
 	@PostConstruct
 	void init() 
 	{
-		/* probably, wrong or not required (there are different types of data sources...)
+		/* The following was commented out, because it's
+		 * either wrong or not required (because Miriam does not separate different classes of data source)
+		 * 
 		// dynamically register MIRIAM data types as ID_TYPE data sources
 		for (String name : MiriamLink.getDataTypesName()) {
 			// register all synonyms (incl. the name)
@@ -104,7 +106,7 @@ public final class BioDataTypes {
 		}
 		*/
 		
-		// dynamically register all the pathway data providers -
+		// dynamically register all the Pathway Data providers -
 		for(Metadata metadata : metadataDAO.getAll()) {
 			// skip data sources of protein and molecule references (warehouse resources)
 			if(metadata.getType() == TYPE.BIOPAX || metadata.getType() == TYPE.PSI_MI
@@ -119,10 +121,16 @@ public final class BioDataTypes {
 		}
 		
 		/* 
-		 * fix if the above possibly overrides the legacy data sources defined 
-		 * earlier (this is for parameter values that are required
-		 * to be exactly as they were in the cPath web service)
+		 * The following would fix possibly overridden 
+		 * legacy data sources (query parameters are still required
+		 * to be exactly as they were in the cPath web services...)
 		 */
+		/*
+		 * This was commented out, because it's not required anymore;
+		 * we will only support those data source names found 
+		 * during the pathway data import (as defined in the metadata)
+		 * 
+		 * 
 		// register legacy (cpath) data source names
 		register("BIOGRID", "BioGRID", Type.PATHWAY_DATA);
 		register("CELL_MAP", "Cancer Cell Map", Type.PATHWAY_DATA); 
@@ -141,6 +149,7 @@ public final class BioDataTypes {
 		register("GENE_SYMBOL", "Gene Symbol", Type.IDENTIFIER);
 		// new
 		register("REFSEQ", "RefSeq", Type.IDENTIFIER);
+		*/
 	}
 	
 	

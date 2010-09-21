@@ -1,12 +1,14 @@
 package cpath.config;
 
+import java.io.File;
+
 public final class CPathSettings {
 	protected CPathSettings(){};
 	
 	public static final String HOME_VARIABLE_NAME = "CPATH2_HOME";
 	
 	/*
-	 * these define "keys" of the DataServicesFactoryBean's 
+	 * These define "keys" of the DataServicesFactoryBean's 
 	 * data sources map. Values (actual db names) are defined
 	 * in cpath.properties file (in the CPATH2_HOME directory).
 	 * So, these keys are used in the corresponding Spring 
@@ -21,13 +23,29 @@ public final class CPathSettings {
 	public static final String PROTEINS_DB = "cpath2_proteins";
 	public static final String PREMERGE_DB = "premergeDataSource";
 	
+	// PREMERGE_INDEX_DIR_VARIABLE value must match the one used in the 
+	// cpath-importer, internalContext-premerge.xml!
 	public static final String PREMERGE_INDEX_DIR_VARIABLE = "premerge.index.dir";
+	
+	public static final String MAPPING_DATA_DIR = "idmapping";
+	
 	public static final String WHOUSE_SEARCH_INDEX = "cpathwhouse";
 	
 	/*
 	 * URI prefix for auto-generated/converted during the data import 
 	 * and normalization utility class objects 
-	 * (i.e., for xrefs, ChemicalStructure, etc.).
+	 * (i.e., for xrefs, ChemicalStructure, etc.)
 	 */
 	public static final String CPATH_URI_PREFIX = "urn:pathwaycommons:";
+	
+	
+	/**
+	 * Gets the path to the directory with BridgeDb id-mapping files.
+	 * 
+	 * @return
+	 */
+	public static String getMappingDir() {
+		return System.getenv(HOME_VARIABLE_NAME) 
+			+ File.separator + MAPPING_DATA_DIR;
+	}
 }

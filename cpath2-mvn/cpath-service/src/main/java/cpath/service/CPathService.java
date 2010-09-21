@@ -156,5 +156,17 @@ public interface CPathService {
 	 * @return
 	 */
 	Map<ResultMapKey, Object> fetchAsBinarySIF(String[] uris, String... rules);
+
+	
+	/**
+	 * Gets BioPAX elements by id (URIs), 
+	 * extracts a sub-model, converts to GSEA format, 
+	 * and returns everything as map values.
+	 * 
+	 * @param outputIdType output identifiers type (db name)
+	 * @param uris identifiers of the BioPAX elements to export
+	 * @return
+	 */
+	Map<ResultMapKey, Object> fetchAsGSEA(String outputIdType, String... uris);
 	
 }
