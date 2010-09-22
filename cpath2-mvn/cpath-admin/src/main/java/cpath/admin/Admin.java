@@ -74,6 +74,7 @@ public class Admin implements Runnable {
 		FETCH_PATHWAY_DATA("-fetch-pathwaydata"),
 		FETCH_PROTEIN_DATA("-fetch-proteindata"),
 		FETCH_SMALL_MOLECULE_DATA("-fetch-smallmoleculedata"),
+		FETCH_MAPPING_DATA("-fetch-mappingdata"),
 		PREMERGE("-premerge"),
 		MERGE("-merge");
 
@@ -153,6 +154,11 @@ public class Admin implements Runnable {
 				this.commandParameters = new String[] { args[1] };
 			}
 		}
+		else if (args[0].equals(COMMAND.FETCH_MAPPING_DATA.toString())) {
+			this.command = COMMAND.FETCH_MAPPING_DATA;
+			// takes no args
+			this.commandParameters = new String[] { "" };
+		}
 		else if (args[0].equals(COMMAND.PREMERGE.toString())) {
 			this.command = COMMAND.PREMERGE;
 			// takes no args
@@ -199,10 +205,9 @@ public class Admin implements Runnable {
 				fetchPathwayData(commandParameters[0]);
 				break;
 			case FETCH_PROTEIN_DATA:
-				fetchWarehouseData(COMMAND.FETCH_PROTEIN_DATA, commandParameters[0]);
-				break;
 			case FETCH_SMALL_MOLECULE_DATA:
-				fetchWarehouseData(COMMAND.FETCH_SMALL_MOLECULE_DATA, commandParameters[0]);
+			case FETCH_MAPPING_DATA:
+				fetchWarehouseData(command, commandParameters[0]);
 				break;
 			case PREMERGE:
 				ApplicationContext context =
@@ -344,6 +349,10 @@ public class Admin implements Runnable {
 				// store the data (actually, a set of SmallMoleculeReferenceProxy !)
 				warehouseDataService.storeWarehouseData(metadata, smallMoleculesDAO);
 			}
+			else if (command == COMMAND.FETCH_MAPPING_DATA && metadata.getType() == Metadata.TYPE.MAPPING) {
+				// TODO simply fetch and save in the right directory
+				String mapingsDir = CPathSettings.getMappingDir();
+			}
 		}
 	}
 
@@ -380,6 +389,7 @@ public class Admin implements Runnable {
 		toReturn.append(COMMAND.FETCH_PATHWAY_DATA.toString() + " <provider-name or all>");
 		toReturn.append(COMMAND.FETCH_PROTEIN_DATA.toString() + " <provider-name or all>");
 		toReturn.append(COMMAND.FETCH_SMALL_MOLECULE_DATA.toString() + " <provider-name or all>");
+		toReturn.append(COMMAND.FETCH_MAPPING_DATA.toString());
 		toReturn.append(COMMAND.PREMERGE.toString());
 		toReturn.append(COMMAND.MERGE.toString());
 

@@ -28,7 +28,8 @@ public class Metadata {
 		BIOPAX("BIOPAX"),
 		BIOPAX_L2("BIOPAX_L2"),
 		PROTEIN("PROTEIN"),
-		SMALL_MOLECULE("SMALL-MOLECULE");
+		SMALL_MOLECULE("SMALL-MOLECULE"),
+		MAPPING("MAPPING");
 
         // string ref for readable name
         private String type;
