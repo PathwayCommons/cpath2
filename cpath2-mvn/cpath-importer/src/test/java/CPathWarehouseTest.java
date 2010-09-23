@@ -87,7 +87,9 @@ public class CPathWarehouseTest {
 					fetcher.storeWarehouseData(mdata, (PaxtoolsDAO) proteins);
 				} else if (mdata.getType() == TYPE.SMALL_MOLECULE) {
 					fetcher.storeWarehouseData(mdata, (PaxtoolsDAO) molecules);
-				} else {
+				} else if (mdata.getType() == TYPE.MAPPING) {
+					// skip
+				} else { // pathways
 					Collection<PathwayData> pathwayData = fetcher
 							.getProviderPathwayData(mdata);
 					for (PathwayData pwData : pathwayData) {

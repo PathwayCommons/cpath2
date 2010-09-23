@@ -32,9 +32,8 @@ package cpath.admin;
 import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
+import cpath.fetcher.CPathFetcher;
 import cpath.fetcher.WarehouseDataService;
-import cpath.fetcher.ProviderMetadataService;
-import cpath.fetcher.ProviderPathwayDataService;
 import cpath.fetcher.internal.CPathFetcherImpl;
 import cpath.importer.Merger;
 import cpath.importer.internal.MergerImpl;
@@ -64,7 +63,8 @@ public class Admin implements Runnable {
 
 	// used as a argument to fetch-pathwaydata
 	private static final String FETCH_ALL = "all";
-
+	static final String lineSeparator = System.getProperty ( "line.separator" );
+	
     // COMMAND Enum
     public static enum COMMAND {
 
@@ -157,7 +157,7 @@ public class Admin implements Runnable {
 		else if (args[0].equals(COMMAND.FETCH_MAPPING_DATA.toString())) {
 			this.command = COMMAND.FETCH_MAPPING_DATA;
 			// takes no args
-			this.commandParameters = new String[] { "" };
+			this.commandParameters = new String[] { FETCH_ALL };
 		}
 		else if (args[0].equals(COMMAND.PREMERGE.toString())) {
 			this.command = COMMAND.PREMERGE;
@@ -252,7 +252,7 @@ public class Admin implements Runnable {
             new ClassPathXmlApplicationContext(new String [] { 	
             	"classpath:applicationContext-whouseDAO.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-        ProviderMetadataService providerMetadataService = new CPathFetcherImpl();
+        CPathFetcher providerMetadataService = new CPathFetcherImpl();
     	
         // grab the data
         Collection<Metadata> metadata = providerMetadataService.getProviderMetadata(location);
@@ -276,7 +276,7 @@ public class Admin implements Runnable {
             	"classpath:applicationContext-whouseDAO.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
         PathwayDataDAO pathwayDataDAO = (PathwayDataDAO) context.getBean("pathwayDataDAO");
-        ProviderPathwayDataService providerPathwayDataService = new CPathFetcherImpl();
+        CPathFetcher providerPathwayDataService = new CPathFetcherImpl();
     	
 		// get metadata
 		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
@@ -292,7 +292,8 @@ public class Admin implements Runnable {
 
 			// only process interaction or pathway data
 			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
-				metadata.getType() == Metadata.TYPE.BIOPAX) {
+				metadata.getType() == Metadata.TYPE.BIOPAX ||
+				metadata.getType() == Metadata.TYPE.BIOPAX_L2) {
 
 				// lets not fetch data if its the same version we have already persisted
 				if (metadata.getVersion() > metadata.getPersistedVersion()) {
@@ -350,8 +351,7 @@ public class Admin implements Runnable {
 				warehouseDataService.storeWarehouseData(metadata, smallMoleculesDAO);
 			}
 			else if (command == COMMAND.FETCH_MAPPING_DATA && metadata.getType() == Metadata.TYPE.MAPPING) {
-				// TODO simply fetch and save in the right directory
-				String mapingsDir = CPathSettings.getMappingDir();
+				((CPathFetcher)warehouseDataService).fetchMappingData(metadata);
 			}
 		}
 	}
@@ -382,16 +382,16 @@ public class Admin implements Runnable {
 	private static String usage() {
 
 		StringBuffer toReturn = new StringBuffer();
-		toReturn.append("cpath.Admin <command> <one or more args>");
-		toReturn.append("commands:");
-		toReturn.append(COMMAND.CREATE_TABLES.toString() + " <table1,table2,..>");
-		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>");
-		toReturn.append(COMMAND.FETCH_PATHWAY_DATA.toString() + " <provider-name or all>");
-		toReturn.append(COMMAND.FETCH_PROTEIN_DATA.toString() + " <provider-name or all>");
-		toReturn.append(COMMAND.FETCH_SMALL_MOLECULE_DATA.toString() + " <provider-name or all>");
-		toReturn.append(COMMAND.FETCH_MAPPING_DATA.toString());
-		toReturn.append(COMMAND.PREMERGE.toString());
-		toReturn.append(COMMAND.MERGE.toString());
+		toReturn.append("cpath.Admin <command> <one or more args>" + lineSeparator);
+		toReturn.append("commands:" + lineSeparator);
+		toReturn.append(COMMAND.CREATE_TABLES.toString() + " <table1,table2,..>" + lineSeparator);
+		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + lineSeparator);
+		toReturn.append(COMMAND.FETCH_PATHWAY_DATA.toString() + " <provider-name or all>" + lineSeparator);
+		toReturn.append(COMMAND.FETCH_PROTEIN_DATA.toString() + " <provider-name or all>" + lineSeparator);
+		toReturn.append(COMMAND.FETCH_SMALL_MOLECULE_DATA.toString() + " <provider-name or all>" + lineSeparator);
+		toReturn.append(COMMAND.FETCH_MAPPING_DATA.toString() + lineSeparator);
+		toReturn.append(COMMAND.PREMERGE.toString() + lineSeparator);
+		toReturn.append(COMMAND.MERGE.toString() + lineSeparator);
 
 		// outta here
 		return toReturn.toString();
