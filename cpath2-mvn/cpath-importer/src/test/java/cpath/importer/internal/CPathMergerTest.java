@@ -95,7 +95,7 @@ public class CPathMergerTest {
 				
 				// do NOT create pathway data db (for the tests)! 
 				// instead, build models right away (must be normalized/cleaned data!):
-				String url = mdata.getURLToPathwayData();
+				String url = mdata.getURLToData();
 				Model model = (new SimpleReader()).convertFromOWL(
 						resourceLoader.getResource(url).getInputStream());
 				if(model != null)

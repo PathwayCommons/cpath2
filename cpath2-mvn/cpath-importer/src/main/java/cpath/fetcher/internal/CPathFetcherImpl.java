@@ -30,6 +30,8 @@ package cpath.fetcher.internal;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.*;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.zip.GZIPInputStream;
@@ -44,10 +46,10 @@ import org.biopax.paxtools.model.Model;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 
+import cpath.config.CPathSettings;
 import cpath.converter.Converter;
 import cpath.converter.internal.BaseConverterImpl;
-import cpath.fetcher.ProviderMetadataService;
-import cpath.fetcher.ProviderPathwayDataService;
+import cpath.fetcher.CPathFetcher;
 import cpath.fetcher.WarehouseDataService;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
@@ -56,8 +58,7 @@ import cpath.warehouse.beans.PathwayData;
  * @author rodche
  *
  */
-public class CPathFetcherImpl implements ProviderMetadataService,
-		ProviderPathwayDataService, WarehouseDataService 
+public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 {
 	// logger
     private static Log log = LogFactory.getLog(CPathFetcherImpl.class);
@@ -90,9 +91,6 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 	private static final ResourceLoader LOADER = new DefaultResourceLoader();
 	
 	
-	/* (non-Javadoc)
-	 * @see cpath.fetcher.ProviderMetadataService#getProviderMetadata(java.lang.String)
-	 */
 	@Override
     public Collection<Metadata> getProviderMetadata(final String url) throws IOException {
 
@@ -130,14 +128,17 @@ public class CPathFetcherImpl implements ProviderMetadataService,
             {
                 // grab a line
                 String line = reader.readLine();
-                log.info("readFromService(), line: " + line);
+                if(log.isInfoEnabled())
+                	log.info("readFromService(), line: " + line);
 
                 // for now assume line is delimited by '<br>'
                 // TODO: update when data moved to wiki page
                 String[] tokens = line.split("<br>");
-				log.info("readFromService(), token size: " + tokens.length);
-				for (String token : tokens) {
-					log.info("readFromService(), token: " + token);
+				if (log.isInfoEnabled()) {
+					log.info("readFromService(), token size: " + tokens.length);
+					for (String token : tokens) {
+						log.info("readFromService(), token: " + token);
+					}
 				}
 
                 if (tokens.length == NUMBER_METADATA_ITEMS) {
@@ -148,7 +149,9 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 						version = new Float(tokens[METADATA_VERSION_INDEX]);
 					}
 					catch (NumberFormatException e) {
-						log.info("readFromService(), number format exception caught for provider: " + tokens[METADATA_IDENTIFIER_INDEX] + " skipping");
+						if(log.isInfoEnabled())
+							log.info("readFromService(), number format exception caught for provider: "
+								+ tokens[METADATA_IDENTIFIER_INDEX] + " skipping");
 						continue;
 					}
 
@@ -156,7 +159,8 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 					Metadata.TYPE metadataType = Metadata.TYPE.valueOf(tokens[METADATA_TYPE_INDEX]);
 
 					// get icon data from service
-					log.info("fetching icon data from: " + tokens[METADATA_ICON_URL_INDEX]);
+					if(log.isInfoEnabled())
+						log.info("fetching icon data from: " + tokens[METADATA_ICON_URL_INDEX]);
 					byte[] iconData = null;
 					try {
 						InputStream stream = LOADER.getResource(tokens[METADATA_ICON_URL_INDEX]).getInputStream();
@@ -171,12 +175,13 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 					}
 					
 					if (iconData == null) { 
-						log.info("readFromService(), missing or unaccessible " +
+						if(log.isInfoEnabled())
+							log.info("readFromService(), missing or unaccessible " +
 								"data (icon) to create Metadata bean: iconData.");
 						iconData = new byte[]{};
 					}
-
-						log.info("readFromService(), make a Metadata bean.");
+						if(log.isInfoEnabled())
+							log.info("readFromService(), make a Metadata bean.");
 
                         // create a metadata bean
                         Metadata metadata = new Metadata(tokens[METADATA_IDENTIFIER_INDEX], tokens[METADATA_NAME_INDEX],
@@ -184,23 +189,27 @@ public class CPathFetcherImpl implements ProviderMetadataService,
                                                          tokens[METADATA_DATA_URL_INDEX], iconData, metadataType,
 														 tokens[METADATA_CLEANER_CLASS_NAME_INDEX],
 														 tokens[METADATA_CONVERTER_CLASS_NAME_INDEX]);
-                        log.info(metadata.getIdentifier());
-                        log.info(metadata.getName());
-                        log.info(metadata.getVersion());
-                        log.info(metadata.getReleaseDate());
-                        log.info(metadata.getURLToPathwayData());
-                        log.info(tokens[METADATA_ICON_URL_INDEX]);
-                        log.info(metadata.getType());
-						if (metadata.getType() == Metadata.TYPE.PSI_MI ||
-							metadata.getType() == Metadata.TYPE.BIOPAX) {
+					if (log.isInfoEnabled()) {
+						log.info(metadata.getIdentifier());
+						log.info(metadata.getName());
+						log.info(metadata.getVersion());
+						log.info(metadata.getReleaseDate());
+						log.info(metadata.getURLToData());
+						log.info(tokens[METADATA_ICON_URL_INDEX]);
+						log.info(metadata.getType());
+					}
+					if (metadata.getType() == Metadata.TYPE.PSI_MI
+							|| metadata.getType() == Metadata.TYPE.BIOPAX) {
+						if (log.isInfoEnabled())
 							log.info(metadata.getCleanerClassname());
-						} else if (metadata.getType() == Metadata.TYPE.PROTEIN) {
+					} else if (metadata.getType() == Metadata.TYPE.PROTEIN) {
+						if (log.isInfoEnabled())
 							log.info(metadata.getConverterClassname());
-						}
+					}
 
-                        // add metadata object toc collection we return
-                        toReturn.add(metadata);
-                }
+					// add metadata object toc collection we return
+					toReturn.add(metadata);
+				}
             }
         }
         catch (java.io.UnsupportedEncodingException e) {
@@ -214,22 +223,20 @@ public class CPathFetcherImpl implements ProviderMetadataService,
     }
 
 
-	/* (non-Javadoc)
-	 * @see cpath.fetcher.ProviderPathwayDataService#getProviderPathwayData(cpath.warehouse.beans.Metadata)
-	 */
 	@Override
     public Collection<PathwayData> getProviderPathwayData(final Metadata metadata) throws IOException {
 
         Collection<PathwayData> toReturn = new HashSet<PathwayData>();
 
-		String url = metadata.getURLToPathwayData();
+		String url = metadata.getURLToData();
 
 		// set isOWL
 		boolean isOWL = (url.endsWith(".owl") || url.endsWith(".OWL"));
 
 		// pathway data is either owl or zip/gz
 		if (isOWL) {
-			log.info("getProviderPathwayData(), data is owl, directly returning.");
+			if(log.isInfoEnabled())
+				log.info("getProviderPathwayData(), data is owl, directly returning.");
 			String fetchedData = readFromService(LOADER.getResource(url).getInputStream());
 			int idx = url.lastIndexOf("/");
 			if(idx < 0) idx = 0; // '/' not found, - use entire string
@@ -240,7 +247,8 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 			toReturn.add(pathwayData);
 		}
 		else {
-			log.info("getProviderPathwayData(), data is zip/gz, unzipping.");
+			if(log.isInfoEnabled())
+				log.info("getProviderPathwayData(), data is zip/gz, unzipping.");
 			unzip(metadata, LOADER.getResource(url).getInputStream(), toReturn);
 		}
 
@@ -301,7 +309,8 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 			ZipEntry entry = null;
             while ((entry = zis.getNextEntry()) != null) 
             {
-				log.info("Processing zip entry: " + entry.getName());
+            	if(log.isInfoEnabled())
+            		log.info("Processing zip entry: " + entry.getName());
 
 				// write file to buffered outputstream
 				int count;
@@ -325,10 +334,12 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 
 				if (digest != null) {
 					// create pathway data object
-					log.info("unzip(), creating pathway data object, zip entry: " + entry.getName() +
-							 " provider: " + metadata.getIdentifier() +
-							 " version: " + metadata.getVersion() +
-							 " digest: " + digest);
+					if(log.isInfoEnabled())
+						log.info("unzip(), creating pathway data object, zip entry: " 
+							+ entry.getName() +
+							" provider: " + metadata.getIdentifier() +
+							" version: " + metadata.getVersion() +
+							" digest: " + digest);
 					PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), 
 						metadata.getVersion(), entry.getName(), digest, stringBuilder.toString());
 				
@@ -423,7 +434,7 @@ public class CPathFetcherImpl implements ProviderMetadataService,
     public void storeWarehouseData(final Metadata metadata, final Model model) 
 		throws IOException 
 	{
-		String urlStr = metadata.getURLToPathwayData();
+		String urlStr = metadata.getURLToData();
 
 		// protein data comes zipped
 		if (log.isInfoEnabled()) {
@@ -494,7 +505,7 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 	private InputStream getInputStreamFromResource(final Metadata metadata, final InputStream fetchedData) throws IOException {
 
 		// determine if we have zip or gz file
-		String urlStr = metadata.getURLToPathwayData();
+		String urlStr = metadata.getURLToData();
 		
 		if (urlStr.endsWith(".gz")) {
 			return new GZIPInputStream(new BufferedInputStream(fetchedData));
@@ -508,7 +519,8 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 			while ((entry = zis.getNextEntry()) != null) {
-				log.info("Processing zip entry: " + entry.getName());
+				if(log.isInfoEnabled())
+					log.info("Processing zip entry: " + entry.getName());
 
 				// write file to buffered outputstream
 				int count;
@@ -561,5 +573,34 @@ public class CPathFetcherImpl implements ProviderMetadataService,
 					+ converterClassName, e);
 		}
 		return null;
+	}
+
+
+	
+	@Override
+	public void fetchMappingData(Metadata metadata) throws IOException {
+		String urlStr = metadata.getURLToData();
+		// LOADER can handle file:, ftp:, http:, etc. URLs
+		ReadableByteChannel rbc = Channels.newChannel(
+			LOADER.getResource(urlStr).getInputStream());
+		
+		String out = CPathSettings.getMappingDir() 
+			+ File.separator + metadata.getIdentifier();
+		int idx = urlStr.lastIndexOf('.');
+		if(idx >= 0) {
+			out += "." + urlStr.substring(idx+1);
+		}
+		
+		File dir = new File(CPathSettings.getMappingDir());
+		if(!(dir.exists() && dir.isDirectory())) {
+			dir.mkdir();
+		}
+		FileOutputStream fos = new FileOutputStream(out);
+		
+		fos.getChannel().transferFrom(rbc, 0, 1 << 24);
+		
+		if(log.isInfoEnabled())
+			log.info("Mapping data downloaded from " +
+				urlStr + " and saved in " + out);
 	}
 }

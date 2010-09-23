@@ -165,10 +165,10 @@ public class Metadata {
 	}
     public String getReleaseDate() { return releaseDate; }
 
-	public void setURLToPathwayData(String urlToData) {
+	public void setURLToData(String urlToData) {
 		this.urlToData = urlToData;
 	}
-    public String getURLToPathwayData() { return urlToData; }
+    public String getURLToData() { return urlToData; }
 
 	public void setIcon(byte[] icon) {
 		this.icon = icon;

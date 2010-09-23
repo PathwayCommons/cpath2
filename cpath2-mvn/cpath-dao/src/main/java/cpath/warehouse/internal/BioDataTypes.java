@@ -114,7 +114,7 @@ public final class BioDataTypes {
 			{
 				// warn: if s (name) exists, will override
 				register(metadata.getIdentifier(), metadata.getName(), Type.PATHWAY_DATA)
-					.mainUrl(metadata.getURLToPathwayData());
+					.mainUrl(metadata.getURLToData());
 				if(LOG.isInfoEnabled()) 
 					LOG.info("Register data provider: " + metadata.getIdentifier());
 			}

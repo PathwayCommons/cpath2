@@ -15,6 +15,7 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.junit.*;
 
+import cpath.config.CPathSettings;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.TYPE;
 
@@ -116,6 +117,33 @@ public class CPathFetcherTest {
 		assertTrue(model.containsID("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS"));
 		assertTrue(model.containsID("urn:pathwaycommons:ChemicalStructure:CRPUJAZIXJMDBK-DTWKUNHWBS"));
 	}
+	
+	
+	@Test
+	public void testFetchMappingData() throws IOException {
+		Metadata metadata = new Metadata(
+				"IDMAP", "Test Id Mapping Data", 
+				1.0f, "Sep 23, 2010",  
+				"classpath:yeast_id_mapping.txt",
+				//"http://bridgedb.org/data/gene_database/Sc_Derby_20100601.bridge", // works!
+				new byte[]{}, 
+				Metadata.TYPE.MAPPING, 
+				"cpath.cleaner.internal.BaseCleanerImpl", 
+				"cpath.converter.internal.BaseConverterImpl");
+		
+		File f = new File(CPathSettings.getMappingDir() + File.separator 
+			+ metadata.getIdentifier() + ".txt");
+		
+		if(f.exists()) {
+			f.delete();
+		}
+		
+		fetcher.fetchMappingData(metadata);
+		
+		assertTrue(f.exists() && f.isFile());
+	}
+
+	
 	
 	@Override
 	/* 

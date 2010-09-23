@@ -54,7 +54,7 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 			log.info("Metadata object with identifier: " + metadata.getIdentifier() + " already exists, manually merging.");
 			existing.setVersion(metadata.getVersion());
 			existing.setReleaseDate(metadata.getReleaseDate());
-			existing.setURLToPathwayData(metadata.getURLToPathwayData());
+			existing.setURLToData(metadata.getURLToData());
 			existing.setIcon(metadata.getIcon());
 			existing.setType(metadata.getType());
 			session.update(existing);
