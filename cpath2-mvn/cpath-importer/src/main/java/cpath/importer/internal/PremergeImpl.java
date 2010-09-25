@@ -182,62 +182,71 @@ public class PremergeImpl extends Thread implements Premerge {
 										 pathwayData.getFilename() + ".");
 
 		// clean
-		log.info("pipeline(), cleaning pathway data.");
-		// biopax l2 data gets cleaned after its converter to L3
+		if(log.isInfoEnabled())
+			log.info("pipeline(), cleaning pathway data.");
 		if (metadata.getType() == Metadata.TYPE.BIOPAX_L2) {
 			pathwayDataStr = pathwayData.getPathwayData();
+			// convert to biopax l3, then clean
+			pathwayDataStr = convertBioPAXL2ToLevel3(pathwayDataStr);
+			pathwayDataStr = cleaner.clean(pathwayDataStr);
 		}
 		else {
 			pathwayDataStr = cleaner.clean(pathwayData.getPathwayData());
-		}
-
-		// if psi-mi, convert to biopax
-		if (metadata.getType() == Metadata.TYPE.PSI_MI) {
-			log.info("pipeline(), converting psi-mi data.");
-			pathwayDataStr = convertPSIToBioPAX(pathwayDataStr);
-		}
-		// if biopax l2, convert to biopax l3, then clean
-		else if (metadata.getType() == Metadata.TYPE.BIOPAX_L2) {
-			pathwayDataStr = convertBioPAXL2ToLevel3(pathwayDataStr);
-			pathwayDataStr = cleaner.clean(pathwayDataStr);
-			// should we change type to BIOPAX ?
+			// if psi-mi, convert to biopax
+			if (metadata.getType() == Metadata.TYPE.PSI_MI) {
+				if(log.isInfoEnabled())
+					log.info("pipeline(), converting psi-mi data.");
+				pathwayDataStr = convertPSIToBioPAX(pathwayDataStr);
+			}
 		}
 
 		// error during conversion
 		if (pathwayDataStr.length() == 0) {
 			// TBD: report failure
-			log.info("pipeline(), error converting psi-mi data to biopax: " + pathwayDataDescription);
+			if(log.isInfoEnabled())
+				log.info("pipeline(), error converting to biopax: "
+					+ pathwayDataDescription);
 			return;
 		}
 
 		// normalize
-		log.info("pipeline(), normalizing pathway data.");
+		if(log.isInfoEnabled())
+			log.info("pipeline(), normalizing pathway data.");
 		try {
 			pathwayDataStr = (new NormalizerImpl()).normalize(pathwayDataStr);
 		} catch (RuntimeException e) {
 			// TBD: report failure
-			log.info("pipeline(), error normalizing pathway data: " + pathwayDataDescription, e);
+			log.error("pipeline(), error normalizing pathway data: " 
+				+ pathwayDataDescription, e);
 			return;
 		}
 
 		// validate
 		// TODO due to possible syntax errors, it may worth validating both before and after the normalization...
-		log.info("pipeline(), validating pathway data.");
-		if(!validatePathway(pathwayData, pathwayDataStr)) {
-			// TBD: report failure
-			log.info("pipeline(), error validating pathway data: " + pathwayDataDescription);
+		if(log.isInfoEnabled())
+			log.info("pipeline(), validating pathway data.");
+		pathwayData.setPremergeData(pathwayDataStr);
+		if(!validatePathway(pathwayData)) {			
+			log.warn("pipeline(), error validating pathway data: "
+				+ pathwayDataDescription);
+			// save with validation results
+			pathwayDataDAO.importPathwayData(pathwayData);
 			return;
 		}
 
 		// create paxtools model from pathway data (owl)
-		log.info("run(), creating paxtools model from pathway data.");
+		if(log.isInfoEnabled())
+			log.info("run(), creating paxtools model from pathway data.");
 		Model model = (new SimpleReader()).convertFromOWL(
 				new ByteArrayInputStream(pathwayDataStr.getBytes()));
 		// persist paxtools model
-		log.info("pipeline(), persisting pathway data.");
+		if(log.isInfoEnabled())
+			log.info("pipeline(), persisting pathway data.");
+		pathwayDataDAO.importPathwayData(pathwayData); // save for debugging
 		if (!persistPathway(pathwayData, model)) {
 			// TBD: report failure
-			log.info("pipeline(), error persisting pathway data: " + pathwayDataDescription);
+			log.warn("pipeline(), error persisting pathway data: "
+				+ pathwayDataDescription);
 			return;
 		}
 	}
@@ -334,7 +343,7 @@ public class PremergeImpl extends Thread implements Premerge {
 	 * @param pathwayDataStr OWL content; may be different from original one (e.g., normalized)
 	 * @return boolean
 	 */
-	private boolean validatePathway(final PathwayData pathwayData, final String pathwayDataStr) {
+	private boolean validatePathway(final PathwayData pathwayData) {
 
 		boolean toReturn = true;
 		
@@ -344,13 +353,25 @@ public class PremergeImpl extends Thread implements Premerge {
 		// create a new empty validation and associate with the model data
 		Validation validation = new Validation(pathwayData.getIdentifier());
 		// because errors are reported during the import (e.g., syntax)
-		validator.importModel(validation, new ByteArrayInputStream(pathwayDataStr.getBytes()));
+		validator.importModel(validation, 
+			new ByteArrayInputStream(pathwayData.getPremergeData().getBytes()));
 		// now post-validate
 		validator.validate(validation);
 		// serialize
 		BiopaxValidatorUtils.write(validation, writer, null);
 		pathwayData.setValidationResults(writer.toString());
 
+		// no errors?
+		toReturn = (validation.countErrors(null, null, null, true) == 0);
+		
+		if(log.isInfoEnabled()) {
+			log.info("Summary for " + pathwayData.getIdentifier() 
+				+ ". Critical errors found:" + toReturn + ". " 
+				+ validation.getComment().toString() + "; " 
+				+ validation.toString());
+		}
+		
+		
 		// outta here 
 		return toReturn;
 	}
@@ -365,7 +386,7 @@ public class PremergeImpl extends Thread implements Premerge {
 	@Transactional
 	private boolean persistPathway(final PathwayData pathwayData, final Model model) {
 		// create a new database schema for this data provider
-		String premergeDbName = metadata.getIdentifier();
+		String premergeDbName = CPathSettings.CPATH_DB_PREFIX + metadata.getIdentifier();
 		DataServicesFactoryBean.createSchema(premergeDbName);
 		
 		// get the data source factory bean (that is aware of the driver, user, and password)
@@ -385,7 +406,7 @@ public class PremergeImpl extends Thread implements Premerge {
 	 * database. This is used both during the "pre-merge" (here) and "merge".
 	 */
 	public static PaxtoolsDAO buildPremergeDAO(String premergeDbName, DataSource premergeDataSource) {
-		DataServicesFactoryBean.getDataSourceMap().put(CPathSettings.PREMERGE_DB, premergeDataSource);
+		DataServicesFactoryBean.getDataSourceMap().put(CPathSettings.PREMERGE_DB_KEY, premergeDataSource);
 		/* 
 		 * set system properties and data source 
 		 * (replaces existing one in the same thread),

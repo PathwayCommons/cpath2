@@ -24,7 +24,15 @@
         <property name="hibernateProperties">
         <props>
 		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${main.db}</prop>
-		<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->      
+		<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->   
+		<!-- 2nd level cache  -->
+		<!-- TODO check whether it works with hibernate 3.5.* and helps
+        <prop key="hibernate.cache.provider_class">net.sf.ehcache.hibernate.SingletonEhCacheProvider</prop>
+        <prop key="hibernate.cache.provider_configuration">${CPATH2_HOME}/ehcache.xml</prop>
+        <prop key="hibernate.cache.use_second_level_cache">true</prop>
+        <prop key="hibernate.generate_statistics">true</prop>
+        <prop key="hibernate.cache.use_structured_entries">true</prop> 
+        -->
         </props>
         </property>
         <property name="annotatedClasses">
@@ -39,7 +47,9 @@
 		 </property>        
     </bean>
 
-    
+<!-- try later (when using JPA instead of native hibernate...)
+    <bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor" />
+-->
 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
     
     <bean id="mainTransactionManager"
