@@ -238,9 +238,8 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 			if(log.isInfoEnabled())
 				log.info("getProviderPathwayData(), data is owl, directly returning.");
 			String fetchedData = readFromService(LOADER.getResource(url).getInputStream());
-			int idx = url.lastIndexOf("/");
-			if(idx < 0) idx = 0; // '/' not found, - use entire string
-			String filename = url.substring(idx);
+			int idx = url.lastIndexOf('/');
+			String filename = url.substring(idx+1); // not found (-1) gives entire string
 			String digest = getDigest(fetchedData.getBytes());
 			PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), 
 					metadata.getVersion(), filename, digest, fetchedData);

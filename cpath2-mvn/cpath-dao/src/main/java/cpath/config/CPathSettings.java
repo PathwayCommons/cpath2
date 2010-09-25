@@ -21,11 +21,11 @@ public final class CPathSettings {
 	 * <bean id="cpath2_meta" class="cpath.dao.internal.DataServicesFactoryBean"/>
 	 * ('cpath2_meta' is a key to get the data source from the factory)
 	 */
-	public static final String MAIN_DB = "cpath2_main";
-	public static final String METADATA_DB = "cpath2_meta";
-	public static final String MOLECULES_DB = "cpath2_molecules";
-	public static final String PROTEINS_DB = "cpath2_proteins";
-	public static final String PREMERGE_DB = "premergeDataSource";
+	public static final String MAIN_DB_KEY = "cpath2_main";
+	public static final String METADATA_DB_KEY = "cpath2_meta";
+	public static final String MOLECULES_DB_KEY = "cpath2_molecules";
+	public static final String PROTEINS_DB_KEY = "cpath2_proteins";
+	public static final String PREMERGE_DB_KEY = "premergeDataSource";
 	
 	/* 
 	 * PREMERGE_INDEX_DIR_VARIABLE value must match the one used in the 
@@ -68,5 +68,9 @@ public final class CPathSettings {
 	public static String getMappingDir() {
 		return System.getenv(HOME_VARIABLE_NAME) 
 			+ File.separator + MAPPING_DATA_DIR;
+	}
+	
+	public static String getHomeDir() {
+		return System.getenv(HOME_VARIABLE_NAME);
 	}
 }

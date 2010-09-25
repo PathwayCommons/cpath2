@@ -89,6 +89,9 @@ public class NormalizerImpl implements Normalizer {
 		// clean/normalize xrefs first!
 		normalizeXrefs(model);
 		
+		// fix displayName where possible
+		fixDisplayName(model);
+		
 		// copy
 		Set<? extends UtilityClass> objects = 
 			new HashSet<UtilityClass>(model.getObjects(UtilityClass.class));
@@ -105,14 +108,14 @@ public class NormalizerImpl implements Normalizer {
 				 * TODO do we want normalizing Provenance?..
 				 */
 				Provenance pro = (Provenance) bpe;
+				String name = pro.getStandardName();
+				if(name == null) name = pro.getDisplayName();
 				try {
-					//TODO also try look in Miriam 'resources' (getDataTypeURI looks for 'datatypes')
-					String urn = MiriamLink.getDataTypeURI(
-							pro.getStandardName());
+					String urn = MiriamLink.getDataTypeURI(name);
 					model.updateID(pro.getRDFId(), urn);
 				} catch (Exception e) {
-					log.error("Cannot normalize Provenance " + 
-							pro + " - " + e);
+					log.warn("Cannot normalize Provenance " + 
+							pro + " (name:" + name + ")");
 				}
 				// done.
 				continue;
@@ -132,6 +135,7 @@ public class NormalizerImpl implements Normalizer {
 				log.error("Cannot normalize Xref " +
 						uref + " - " + e);
 			}
+			
 		}
 		
 		
@@ -149,8 +153,33 @@ public class NormalizerImpl implements Normalizer {
 		String owl = convertToOWL(model);
 		return owl;
 	}
-
 	
+	
+	private void fixDisplayName(Model model) {
+		if (log.isInfoEnabled())
+			log.info("Trying to auto-fix 'null' displayName...");
+		for (Named e : model.getObjects(Named.class)) {
+			if (e.getDisplayName() == null) {
+				if (e.getStandardName() != null) {
+					e.setDisplayName(e.getStandardName());
+					if (log.isInfoEnabled())
+						log.info(e + " displayName auto-fix: "
+								+ e.getDisplayName());
+				} else if (!e.getName().isEmpty()) {
+					String dsp = e.getName().iterator().next();
+					for (String name : e.getName()) {
+						if (name.length() < dsp.length())
+							dsp = name;
+					}
+					e.setDisplayName(dsp);
+					if (log.isInfoEnabled())
+						log.info(e + " displayName auto-fix: " + dsp);
+				}
+			}
+		}
+	}
+
+
 	private String convertToOWL(Model model) {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {

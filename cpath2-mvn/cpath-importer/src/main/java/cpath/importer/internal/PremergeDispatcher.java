@@ -56,10 +56,11 @@ public class PremergeDispatcher extends Thread {
 	 * @param metadata Metadata
 	 */
 	public void premergeComplete(final Metadata metadata) {
-
 		synchronized (synObj) {
 			++premergesComplete;
-			log.info("premergeComplete(), Premerge complete for provider " + metadata.getIdentifier() + ".");
+			if(log.isInfoEnabled())
+				log.info("premergeComplete(), Premerge complete for provider "
+					+ metadata.getIdentifier() + ".");
 		}
 	}
 
@@ -76,19 +77,25 @@ public class PremergeDispatcher extends Thread {
 		// set number of premerges to dispatch
 		for (Metadata metadata : metadataCollection) {
 			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
-				metadata.getType() == Metadata.TYPE.BIOPAX) {
+				metadata.getType() == Metadata.TYPE.BIOPAX ||
+				metadata.getType() == Metadata.TYPE.BIOPAX_L2) {
 				++numPremerges;
 			}
 		}
-		log.info("run(), Spawning " + numPremerges + " Premerge instances.");
+		if(log.isInfoEnabled())
+			log.info("run(), Spawning " + numPremerges + " Premerge instances.");
 
 		// iterate over all metadata
 		for (Metadata metadata : metadataCollection) {
 
 			// only process interaction or pathway data
 			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
-				metadata.getType() == Metadata.TYPE.BIOPAX) {
-				log.info("run(), spawning Premerge for provider " + metadata.getIdentifier());
+				metadata.getType() == Metadata.TYPE.BIOPAX ||
+				metadata.getType() == Metadata.TYPE.BIOPAX_L2) 
+			{	
+				if(log.isInfoEnabled())
+					log.info("run(), spawning Premerge for provider " 
+						+ metadata.getIdentifier());
 				Premerge premerge = (Premerge)applicationContext.getBean("premerge");
 				premerge.setDispatcher(this);
 				premerge.setMetadata(metadata);
@@ -101,7 +108,8 @@ public class PremergeDispatcher extends Thread {
 
 			synchronized(synObj) {
 				if (premergesComplete == numPremerges) {
-					log.info("run(), All Premerge(s) have completed.");
+					if(log.isInfoEnabled())
+						log.info("run(), All Premerge(s) have completed.");
 					break;
 				}
 			}
@@ -116,6 +124,7 @@ public class PremergeDispatcher extends Thread {
 			}
 		}
 
-		log.info("run(), exiting...");
+		if(log.isInfoEnabled())
+			log.info("run(), exiting...");
 	}
 }

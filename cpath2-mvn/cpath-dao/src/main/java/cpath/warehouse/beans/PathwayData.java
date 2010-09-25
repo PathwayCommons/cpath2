@@ -31,6 +31,9 @@ public class PathwayData {
 	@Lob
 	@Column(nullable=false)
     private String pathwayData;
+	@Lob
+    private String premergeData;
+	@Lob
 	private String validationResults;
 	// digest is not unique - at least some reactome pw have different names but are identical
 	@Column(nullable=false)
@@ -79,6 +82,8 @@ public class PathwayData {
 
 		// validation results is empty by default
 		this.validationResults = "";
+		
+		this.premergeData = "";
     }
 
 	public void setId(Integer id) {
@@ -106,6 +111,11 @@ public class PathwayData {
 	}
     public String getPathwayData() { return pathwayData; }
 
+	public void setPremergeData(String premergeData) {
+		this.premergeData = premergeData;
+	}
+    public String getPremergeData() { return premergeData; }
+    
 	public void setValidationResults(String validationResults) {
 		this.validationResults = validationResults;
 	}

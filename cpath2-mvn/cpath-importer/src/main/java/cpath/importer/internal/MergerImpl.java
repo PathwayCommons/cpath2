@@ -29,6 +29,7 @@ package cpath.importer.internal;
 
 // imports
 import cpath.importer.Merger;
+import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.DataServices;
 import cpath.dao.internal.PaxtoolsHibernateDAO;
@@ -344,13 +345,13 @@ public class MergerImpl implements Merger {
 	 */
 	private Model getPreMergeModel(final Metadata metadata) 
 	{
-		String metadataIdentifier = metadata.getIdentifier();
+		String dbname = CPathSettings.CPATH_DB_PREFIX + metadata.getIdentifier();
 		// get the factory bean (not its product, data source bean)
 		DataServices dataServices = (DataServices) applicationContext.getBean("&cpath2_meta");
 		// create data source
-		DataSource pathwayDataSource = dataServices.getDataSource(metadataIdentifier);
+		DataSource pathwayDataSource = dataServices.getDataSource(dbname);
 		// get the PaxtoolsDAO instance
-		PaxtoolsDAO mergePaxtoolsDAO = PremergeImpl.buildPremergeDAO(metadata.getIdentifier(), pathwayDataSource);
+		PaxtoolsDAO mergePaxtoolsDAO = PremergeImpl.buildPremergeDAO(dbname, pathwayDataSource);
 
 		// get the complete model from the pre-merge db!
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

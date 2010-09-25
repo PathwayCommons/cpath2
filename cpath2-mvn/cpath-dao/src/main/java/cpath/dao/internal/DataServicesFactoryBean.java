@@ -175,13 +175,13 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	@PostConstruct public void init() {
 		// create and save data sources in the map
 		DataSource dataSource = getDataSource(mainDb);
-		getDataSourceMap().put(CPathSettings.MAIN_DB, dataSource);
+		getDataSourceMap().put(CPathSettings.MAIN_DB_KEY, dataSource);
 		dataSource = getDataSource(metaDb);
-		getDataSourceMap().put(CPathSettings.METADATA_DB, dataSource);
+		getDataSourceMap().put(CPathSettings.METADATA_DB_KEY, dataSource);
 		dataSource = getDataSource(proteinsDb);
-		getDataSourceMap().put(CPathSettings.PROTEINS_DB, dataSource);
+		getDataSourceMap().put(CPathSettings.PROTEINS_DB_KEY, dataSource);
 		dataSource = getDataSource(moleculesDb);
-		getDataSourceMap().put(CPathSettings.MOLECULES_DB, dataSource);
+		getDataSourceMap().put(CPathSettings.MOLECULES_DB_KEY, dataSource);
 	}
 
 	
