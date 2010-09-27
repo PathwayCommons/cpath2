@@ -12,9 +12,9 @@ import javax.persistence.*;
 	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifier",
 				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier)"),
 	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersion",
-				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and pathwaydata.version = :version"),
+				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and upper(pathwaydata.version) = upper(:version)"),
 	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersionAndFilenameAndDigest",
-				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and pathwaydata.version = :version and upper(pathwaydata.filename) = upper(:filename) and upper(pathwaydata.digest) = upper(:digest)")
+				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and upper(pathwaydata.version) = upper(:version) and upper(pathwaydata.filename) = upper(:filename) and upper(pathwaydata.digest) = upper(:digest)")
 })
 public class PathwayData {
 
@@ -25,7 +25,7 @@ public class PathwayData {
 	@Column(nullable=false)
     private String identifier;
 	@Column(nullable=false)
-    private Float version;
+    private String version;
 	@Column(nullable=false, unique=true)
     private String filename;
 	@Lob
@@ -53,7 +53,7 @@ public class PathwayData {
 	 * @param digest String
      * @param pathwayData String
      */
-    public PathwayData(final String identifier, final Float version, final String filename, final String digest, final String pathwayData) {
+    public PathwayData(final String identifier, final String version, final String filename, final String digest, final String pathwayData) {
 
         if (identifier == null) {
             throw new IllegalArgumentException("identifier must not be null");
@@ -96,10 +96,10 @@ public class PathwayData {
 	}
     public String getIdentifier() { return identifier; }
 
-	public void setVersion(Float version) {
+	public void setVersion(String version) {
 		this.version = version;
 	}
-    public Float getVersion() { return version; }
+    public String getVersion() { return version; }
 
 	public void setFilename(String filename) {
 		this.filename = filename;

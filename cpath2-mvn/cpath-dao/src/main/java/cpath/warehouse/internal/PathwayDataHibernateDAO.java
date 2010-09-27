@@ -95,7 +95,7 @@ public class PathwayDataHibernateDAO implements PathwayDataDAO {
      * @see cpath.warehouse.pathway.PathwayDataDAO#getByIdentifierAndVersion(java.lang.String, java.lang.Float);
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    public Collection<PathwayData> getByIdentifierAndVersion(final String identifier, final Float version) {
+    public Collection<PathwayData> getByIdentifierAndVersion(final String identifier, final String version) {
 
 		Session session = getSession();
 		Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayByIdentifierAndVersion");
@@ -111,7 +111,7 @@ public class PathwayDataHibernateDAO implements PathwayDataDAO {
      */
     @Transactional(propagation=Propagation.REQUIRED)
     public PathwayData getByIdentifierAndVersionAndFilenameAndDigest(final String identifier, 
-    		final Float version, final String filename, final String digest) 
+    		final String version, final String filename, final String digest) 
     {
 		Session session = getSession();
 		Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayByIdentifierAndVersionAndFilenameAndDigest");

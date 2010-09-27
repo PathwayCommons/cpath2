@@ -69,7 +69,7 @@ public class CPathFetcherTest {
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata(
 				"PROT", "Proteins Test Data", 
-				Float.valueOf("15.15"), "July 13, 2010",  
+				"15.15", "July 13, 2010",  
 				location,
 				new byte[]{}, 
 				Metadata.TYPE.PROTEIN, 
@@ -86,7 +86,7 @@ public class CPathFetcherTest {
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata(
 				"CHEBI", "ChEBI Test Data", 
-				Float.valueOf("15.15"), "July 13, 2010",  
+				"15.15", "July 13, 2010",  
 				location,
 				new byte[]{}, 
 				Metadata.TYPE.SMALL_MOLECULE, 
@@ -104,7 +104,7 @@ public class CPathFetcherTest {
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata(
 				"PUBCHEM", "PubChem Test Data", 
-				Float.valueOf("15.15"), "July 13, 2010",  
+				"15.15", "July 13, 2010",  
 				location,
 				new byte[]{}, 
 				Metadata.TYPE.SMALL_MOLECULE, 
@@ -123,7 +123,7 @@ public class CPathFetcherTest {
 	public void testFetchMappingData() throws IOException {
 		Metadata metadata = new Metadata(
 				"IDMAP", "Test Id Mapping Data", 
-				1.0f, "Sep 23, 2010",  
+				"1.0", "Sep 23, 2010",  
 				"classpath:yeast_id_mapping.txt",
 				//"http://bridgedb.org/data/gene_database/Sc_Derby_20100601.bridge", // works!
 				new byte[]{}, 
