@@ -46,7 +46,6 @@ import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.simpleIO.*;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -66,6 +65,8 @@ public class MergerImpl implements Merger {
 	// log
     private static final Log log = LogFactory.getLog(MergerImpl.class);
 
+    private ApplicationContext whApplicationContext;
+    
 	// ref to MetadataDAO
 	private MetadataDAO metadataDAO;
 
@@ -75,25 +76,23 @@ public class MergerImpl implements Merger {
     private WarehouseDAO moleculesDAO;
     private WarehouseDAO proteinsDAO;
 
-	@Autowired
-	private ApplicationContext applicationContext; // gets the parent/existing context
-
 	private final SimpleMerger simpleMerger;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param pcDAO Model target, where to merge data
-	 * @param metadataDAO MetadataDAO
 	 */
-	public MergerImpl(final Model pcDAO, final MetadataDAO metadataDAO) 
+	public MergerImpl(final Model pcDAO) 
 	{
 		this.pcDAO = pcDAO;
-		this.metadataDAO = metadataDAO;
 		
-		ApplicationContext context = null;
+		// metadata
+		whApplicationContext = new ClassPathXmlApplicationContext("classpath:applicationContext-whouseDAO.xml");
+		this.metadataDAO = (MetadataDAO)whApplicationContext.getBean("metadataDAO");
+		
 		// molecules
-		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-whouseMolecules.xml"});
+		ApplicationContext context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-whouseMolecules.xml"});
 		this.moleculesDAO = (WarehouseDAO)context.getBean("moleculesDAO");
 		// proteins
 		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-whouseProteins.xml"});
@@ -346,9 +345,9 @@ public class MergerImpl implements Merger {
 	private Model getPreMergeModel(final Metadata metadata) 
 	{
 		String dbname = CPathSettings.CPATH_DB_PREFIX + metadata.getIdentifier();
-		// get the factory bean (not its product, data source bean)
-		DataServices dataServices = (DataServices) applicationContext.getBean("&cpath2_meta");
-		// create data source
+		// using '&' to get the factory bean (not its product - data source bean)!
+		DataServices dataServices = (DataServices) whApplicationContext.getBean("&cpath2_meta");
+		// create data source (dataServices bean is aware of the DB connection settings!)
 		DataSource pathwayDataSource = dataServices.getDataSource(dbname);
 		// get the PaxtoolsDAO instance
 		PaxtoolsDAO mergePaxtoolsDAO = PremergeImpl.buildPremergeDAO(dbname, pathwayDataSource);
@@ -368,7 +367,6 @@ public class MergerImpl implements Merger {
 	
 	private <T extends BioPAXElement> T getById(Model model, String urn, Class<T> type) 
 	{
-	
 		return 
 		(model instanceof WarehouseDAO) 
 			? ((WarehouseDAO)model).getObject(urn, type) //completely detached
