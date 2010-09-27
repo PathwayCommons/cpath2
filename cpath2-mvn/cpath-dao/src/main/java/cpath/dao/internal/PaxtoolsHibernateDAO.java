@@ -604,6 +604,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 	/* (non-Javadoc)
 	 * @see cpath.dao.WarehouseDAO#getByXref(java.util.Set, java.lang.Class)
+	 * 
+	 * xrefs (args) are expected to be "normalized"!
+	 * 
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
@@ -615,6 +618,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		for (Xref xref : xrefs) {
 			// load persistent Xref by RDFId
 			Xref x = (Xref) getByID(xref.getRDFId());
+			if(x == null) {
+				log.warn("getByXref: no matching xref found for: " +
+					xref + " - " + xref.getRDFId() + ". Skipping.");
+				continue;
+			}
 			// collect owners's ids (of requested type only)
 			for(XReferrable xr: x.getXrefOf()) {
 				if(clazz.isInstance(xr)) {
@@ -624,8 +632,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 							((EntityReference) xr).getMemberEntityReferenceOf();
 						if(parentERs.isEmpty()) {
 							toReturn.add(xr.getRDFId());
-							log.warn("WarehouseDAO.getByXref is going to " +
-								"return SmallMoleculeReference");
+							log.warn("parent ER not found; getByXref is this " +
+								"returning a 'member' SmallMoleculeReference");
 						} else {
 							for(EntityReference er : parentERs) {
 								assert(er instanceof SmallMoleculeReference);

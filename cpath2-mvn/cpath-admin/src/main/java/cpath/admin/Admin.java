@@ -225,11 +225,8 @@ public class Admin implements Runnable {
 				// pc dao
 				context = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
 				final PaxtoolsDAO pcDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
-				// metadata dao
-				context = new ClassPathXmlApplicationContext("classpath:applicationContext-whouseDAO.xml");
-				final MetadataDAO metadataDAO = (MetadataDAO)context.getBean("metadataDAO");
 				// merger
-				Merger merger = new MergerImpl((Model)pcDAO, metadataDAO);
+				Merger merger = new MergerImpl((Model)pcDAO);
 				merger.merge();
 				break;
             }

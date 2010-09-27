@@ -391,6 +391,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		DataServicesFactoryBean.createSchema(premergeDbName);
 		
 		// get the data source factory bean (that is aware of the driver, user, and password)
+		// applicationContext is injected (auto-wired) parent context
 		DataServices dataServices = (DataServices) applicationContext.getBean("&cpath2_meta");
 		// get the DataSource (for the database just created)
 		DataSource premergeDataSource = dataServices.getDataSource(premergeDbName);
