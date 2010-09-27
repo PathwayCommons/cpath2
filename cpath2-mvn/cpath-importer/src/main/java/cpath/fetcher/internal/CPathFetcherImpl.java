@@ -144,9 +144,9 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
                 if (tokens.length == NUMBER_METADATA_ITEMS) {
 
 					// convert version string to float
-					Float version = null;
+					String version = null;
 					try {
-						version = new Float(tokens[METADATA_VERSION_INDEX]);
+						version = tokens[METADATA_VERSION_INDEX];
 					}
 					catch (NumberFormatException e) {
 						if(log.isInfoEnabled())

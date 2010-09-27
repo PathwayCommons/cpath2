@@ -32,7 +32,7 @@ public interface PathwayDataDAO {
      * @param version Float
      * @return Collection<PathwayData>
      */
-    Collection<PathwayData> getByIdentifierAndVersion(final String identifier, final Float version);
+    Collection<PathwayData> getByIdentifierAndVersion(final String identifier, final String version);
 
     /**
      * This method returns the pathway data objects with the given Identifier, Version, Filename and Digest.
@@ -43,5 +43,5 @@ public interface PathwayDataDAO {
 	 * @param digest String
      * @return PathwayData
      */
-    PathwayData getByIdentifierAndVersionAndFilenameAndDigest(final String identifier, final Float version, final String filename, final String digest);
+    PathwayData getByIdentifierAndVersionAndFilenameAndDigest(final String identifier, final String version, final String filename, final String digest);
 }

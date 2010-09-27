@@ -50,9 +50,7 @@ public class Metadata {
 	@Column(nullable=false)
     private String name;
 	@Column(nullable=false)
-    private Float version;
-	@Column(nullable=false)
-	private Float persistedVersion; // version that was persisted
+    private String version;
 	@Column(nullable=false)
     private String releaseDate;
 	@Column(nullable=false)
@@ -84,7 +82,7 @@ public class Metadata {
 	 * @param cleanerClassname String
 	 * @param converterClassname String
      */
-    public Metadata(final String identifier, final String name, final Float version, final String releaseDate, final String urlToData,
+    public Metadata(final String identifier, final String name, final String version, final String releaseDate, final String urlToData,
 					final byte[] icon, final TYPE type, final String cleanerClassname, final String converterClassname) {
 
         if (identifier == null) {
@@ -101,7 +99,6 @@ public class Metadata {
             throw new IllegalArgumentException("version must not be null");
         }
         this.version = version;
-		this.persistedVersion = 0.0f;
 
         if (releaseDate == null) {
             throw new IllegalArgumentException("release data must not be null");
@@ -150,15 +147,10 @@ public class Metadata {
 	}
     public String getName() { return name; }
 
-	public void setVersion(Float version) {
+	public void setVersion(String version) {
 		this.version = version;
 	}
-    public Float getVersion() { return version; }
-
-	public void setPersistedVersion(Float persistedVersion) {
-		this.persistedVersion = persistedVersion;
-	}
-    public Float getPersistedVersion() { return persistedVersion; }
+    public String getVersion() { return version; }
 
 	public void setReleaseDate(String releaseData) {
 		this.releaseDate = releaseDate;

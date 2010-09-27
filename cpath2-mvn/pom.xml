@@ -74,7 +74,8 @@
 								<value>file:${CPATH2_HOME}/log4j.properties</value>
 							</property>
 						</systemProperties>
-						<argLine>-Xmx2024M -DCPATH2_HOME=${CPATH2_HOME} -ea</argLine>
+						<!-- enable assertions, tests run in sequential mode -->
+						<argLine>-Xmx2024M -DCPATH2_HOME=${CPATH2_HOME} -ea -DforkMode=once</argLine>
 					</configuration>
 				</plugin>
 			</plugins>

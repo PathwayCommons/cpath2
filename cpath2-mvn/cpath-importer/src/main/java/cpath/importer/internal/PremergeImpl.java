@@ -148,7 +148,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		// get pathway data
 		log.info("run(), getting pathway data for provider.");
 		Collection<PathwayData> pathwayDataCollection =
-			pathwayDataDAO.getByIdentifier(metadata.getIdentifier());
+			pathwayDataDAO.getByIdentifierAndVersion(metadata.getIdentifier(), metadata.getVersion());
 
 		// create cleaner
 		log.info("run(), getting a cleaner with name: " + metadata.getCleanerClassname());
@@ -176,7 +176,7 @@ public class PremergeImpl extends Thread implements Premerge {
 	 * @param pathwayData PathwayData
 	 */
 	private void pipeline(final PathwayData pathwayData) {
-		String pathwayDataStr = "";
+		String pathwayDataStr = null;
 		String pathwayDataDescription = (pathwayData.getIdentifier() + ", " +
 										 pathwayData.getVersion() + ", " +
 										 pathwayData.getFilename() + ".");
@@ -201,10 +201,9 @@ public class PremergeImpl extends Thread implements Premerge {
 		}
 
 		// error during conversion
-		if (pathwayDataStr.length() == 0) {
+		if (pathwayDataStr == null || pathwayDataStr.length() == 0) {
 			// TBD: report failure
-			if(log.isInfoEnabled())
-				log.info("pipeline(), error converting to biopax: "
+			log.error("pipeline(), error converting to biopax: "
 					+ pathwayDataDescription);
 			return;
 		}
@@ -212,6 +211,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		// normalize
 		if(log.isInfoEnabled())
 			log.info("pipeline(), normalizing pathway data.");
+		
 		try {
 			pathwayDataStr = (new NormalizerImpl()).normalize(pathwayDataStr);
 		} catch (RuntimeException e) {
@@ -222,30 +222,31 @@ public class PremergeImpl extends Thread implements Premerge {
 		}
 
 		// validate
-		// TODO due to possible syntax errors, it may worth validating both before and after the normalization...
 		if(log.isInfoEnabled())
 			log.info("pipeline(), validating pathway data.");
 		pathwayData.setPremergeData(pathwayDataStr);
-		if(!validatePathway(pathwayData)) {			
-			log.warn("pipeline(), error validating pathway data: "
+		boolean valid = validatePathway(pathwayData);
+		// save with validation results
+		pathwayDataDAO.importPathwayData(pathwayData);
+		// shall we proceed?
+		if(!valid) {			
+			log.error("pipeline(), biopax errors found in pathway data: "
 				+ pathwayDataDescription);
-			// save with validation results
-			pathwayDataDAO.importPathwayData(pathwayData);
 			return;
 		}
-
-		// create paxtools model from pathway data (owl)
+		
+		// create a model from the normalized and validated pathway data
 		if(log.isInfoEnabled())
 			log.info("run(), creating paxtools model from pathway data.");
 		Model model = (new SimpleReader()).convertFromOWL(
 				new ByteArrayInputStream(pathwayDataStr.getBytes()));
-		// persist paxtools model
+		
+		// persist
 		if(log.isInfoEnabled())
 			log.info("pipeline(), persisting pathway data.");
-		pathwayDataDAO.importPathwayData(pathwayData); // save for debugging
 		if (!persistPathway(pathwayData, model)) {
 			// TBD: report failure
-			log.warn("pipeline(), error persisting pathway data: "
+			log.error("pipeline(), error persisting pathway data: "
 				+ pathwayDataDescription);
 			return;
 		}
