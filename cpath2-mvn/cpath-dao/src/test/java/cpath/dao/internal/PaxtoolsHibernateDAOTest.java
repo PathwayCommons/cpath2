@@ -61,7 +61,10 @@ public class PaxtoolsHibernateDAOTest {
     static PaxtoolsDAO paxtoolsDAO;
     static SimpleExporter exporter;
 
-	
+	/* test methods will use the same data (read-only, 
+	 * with one exception: testImportingAnotherFileAndTestInitialization
+	 * imports the same data again...)
+	 */
     static {
     	DataServicesFactoryBean.createSchema("cpath2_test");
 		// init the DAO (it loads now because databases are created above)
@@ -91,6 +94,7 @@ public class PaxtoolsHibernateDAOTest {
 		File biopaxFile = new File(PaxtoolsHibernateDAOTest.class.getResource(
 				"/test2.owl").getFile());
 		paxtoolsDAO.importModel(biopaxFile);
+		
 		// a few smoke checks
 		assertTrue(paxtoolsDAO.containsID("urn:miriam:uniprot:P46880"));
 		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
@@ -230,6 +234,14 @@ public class PaxtoolsHibernateDAOTest {
 				getClass().getClassLoader().getResource("").getPath() 
 					+ File.separator + "testGetValidSubModel.out.owl");
 		exporter.convertToOWL(m, out);
+		
+		// does a by-xref sub-model contain its parent? No...
+		/* TODO: ask Ozgun/Emek to enable auto-complete for xrefOf
+		m = null;
+		m =  paxtoolsDAO.getValidSubModel(
+				Collections.singleton("urn:pathwaycommons:UnificationXref:UniProt_P46880"));
+		assertTrue(m.containsID("urn:miriam:uniprot:P46880"));
+		*/
 	}
 	
 	
@@ -254,7 +266,7 @@ public class PaxtoolsHibernateDAOTest {
 		assertEquals(1, n.intValue());
 		
 		n = paxtoolsDAO.count("P46880", BioPAXElement.class);
-		assertEquals(2, n.intValue());
+		assertEquals(1, n.intValue());
 		
 		n = paxtoolsDAO.count(null, BioPAXElement.class);
 		assertEquals(16, n.intValue());
@@ -269,10 +281,15 @@ public class PaxtoolsHibernateDAOTest {
 		List<String> list = paxtoolsDAO.find("P46880", BioPAXElement.class);
 		assertFalse(list.isEmpty());
 		assertTrue(list.contains("urn:pathwaycommons:UnificationXref:UniProt_P46880"));
-		//System.out.println("find by 'P46880' returned: " + list.toString());
+		System.out.println("find by 'P46880' returned: " + list.toString());
 		
+		// P46880 is used only in the PR's RDFId and not in other fields
 		list = paxtoolsDAO.find("P46880", ProteinReference.class);
-		assertTrue(list.size()==1);
+		assertTrue(list.isEmpty());
+		//assertTrue(list.contains("urn:miriam:uniprot:P46880"));
+		
+		list = paxtoolsDAO.find("glucokinase", ProteinReference.class);
+		assertEquals(1, list.size());
 		assertTrue(list.contains("urn:miriam:uniprot:P46880"));
 	}
 	
