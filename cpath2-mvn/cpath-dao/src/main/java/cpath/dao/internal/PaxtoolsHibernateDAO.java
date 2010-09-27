@@ -71,7 +71,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 	public final static String[] ALL_FIELDS =
 		{
-			SEARCH_FIELD_ID,
+			//SEARCH_FIELD_ID,
 			SEARCH_FIELD_AVAILABILITY,
 			SEARCH_FIELD_COMMENT,
 			SEARCH_FIELD_KEYWORD,

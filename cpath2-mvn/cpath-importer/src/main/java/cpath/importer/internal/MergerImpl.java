@@ -350,11 +350,11 @@ public class MergerImpl implements Merger {
 		// create data source (dataServices bean is aware of the DB connection settings!)
 		DataSource pathwayDataSource = dataServices.getDataSource(dbname);
 		// get the PaxtoolsDAO instance
-		PaxtoolsDAO mergePaxtoolsDAO = PremergeImpl.buildPremergeDAO(dbname, pathwayDataSource);
+		PaxtoolsDAO premergePaxtoolsDAO = PremergeImpl.buildPremergeDAO(dbname, pathwayDataSource);
 
 		// get the complete model from the pre-merge db!
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		mergePaxtoolsDAO.exportModel(outputStream);
+		premergePaxtoolsDAO.exportModel(outputStream);
 		InputStream inputStream = new BufferedInputStream(
 				new ByteArrayInputStream(outputStream.toByteArray()));
 		SimpleReader simpleReader = new SimpleReader(BioPAXLevel.L3);
