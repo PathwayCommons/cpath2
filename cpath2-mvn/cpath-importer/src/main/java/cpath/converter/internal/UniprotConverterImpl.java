@@ -43,9 +43,6 @@ public class UniprotConverterImpl extends BaseConverterImpl {
         InputStreamReader reader= null;
 
         try {
-        	if (log.isInfoEnabled()) {
-        		log.info("convert(), creating buffered reader.");
-			}
             reader = new InputStreamReader(is);
             BufferedReader bufferedReader = new BufferedReader(reader);
             String line = bufferedReader.readLine();
@@ -126,8 +123,8 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 			log.error("Failed", e);
 		}
 		finally {
-			if (log.isInfoEnabled()) {
-				log.info("convert(), closing reader.");
+			if (log.isDebugEnabled()) {
+				log.debug("convert(), closing reader.");
 			}
             if (reader != null) {
 				try {

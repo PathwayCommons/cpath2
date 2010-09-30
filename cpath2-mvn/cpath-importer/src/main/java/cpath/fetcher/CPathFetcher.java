@@ -46,7 +46,7 @@ public interface CPathFetcher {
      * @return Collection<Metadata>
      * @throws IOException if an IO error occurs
      */
-    Collection<Metadata> getProviderMetadata(final String url) throws IOException;
+    Collection<Metadata> getMetadata(final String url) throws IOException;
     
     
     
@@ -61,11 +61,11 @@ public interface CPathFetcher {
     
     
     /**
-     * For the given Metadata, it downloads and saves id-mapping data file.
+     * Given Metadata, it downloads and stores the resources locally.
      * 
      * @param metadata
      * @throws IOException
      */
-    void fetchMappingData(final Metadata metadata) throws IOException;
+    void fetchData(final Metadata metadata) throws IOException;
 	
 }

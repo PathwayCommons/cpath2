@@ -33,7 +33,7 @@ import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Premerge;
-import cpath.warehouse.PathwayDataDAO;
+import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
@@ -51,7 +51,6 @@ import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -67,39 +66,33 @@ import javax.sql.DataSource;
  */
 public class PremergeImpl extends Thread implements Premerge {
 
-	// log
     private static Log log = LogFactory.getLog(PremergeImpl.class);
 
-	// ref to PathwayDataDAO
-    private PathwayDataDAO pathwayDataDAO;
+    private MetadataDAO metaDataDAO;
 
     @Autowired
 	private ApplicationContext applicationContext;
 
-	// ref to validator
 	private Validator validator;
 	
-	// ref to dispatcher
 	private PremergeDispatcher premergeDispatcher;
 
-	// ref to metadata
 	private Metadata metadata;
 	
-	// ref to cleaner
 	private Cleaner cleaner;
 
 	/**
 	 *
 	 * Constructor.
 	 *
-	 * @param metadata Metadata
-	 * @param pathwayDataDAO PathwayDataDAO
+	 * @param metadata
+	 * @param metaDataDAO
 	 * @param validator Biopax Validator
 	 */
-	public PremergeImpl(final PathwayDataDAO pathwayDataDAO,
+	public PremergeImpl(final MetadataDAO metaDataDAO,
 						final Validator validator) 
 	{
-		this.pathwayDataDAO = pathwayDataDAO;
+		this.metaDataDAO = metaDataDAO;
 		this.validator = validator;
 	}
 
@@ -136,8 +129,8 @@ public class PremergeImpl extends Thread implements Premerge {
 	 */
 	@Override
 	public void run() {
-
-		log.info("run(), starting...");
+		if(log.isInfoEnabled())
+			log.info("run(), starting...");
 
 		// sanity check
 		if (metadata == null) {
@@ -146,28 +139,43 @@ public class PremergeImpl extends Thread implements Premerge {
 		}
 
 		// get pathway data
-		log.info("run(), getting pathway data for provider.");
+		if(log.isInfoEnabled())
+			log.info("run(), getting pathway data for provider.");
 		Collection<PathwayData> pathwayDataCollection =
-			pathwayDataDAO.getByIdentifierAndVersion(metadata.getIdentifier(), metadata.getVersion());
+			metaDataDAO.getByIdentifierAndVersion(metadata.getIdentifier(), metadata.getVersion());
 
 		// create cleaner
-		log.info("run(), getting a cleaner with name: " + metadata.getCleanerClassname());
+		if(log.isInfoEnabled())
+			log.info("run(), getting a cleaner with name: " + metadata.getCleanerClassname());
 		cleaner = getCleaner(metadata.getCleanerClassname());
 		if (cleaner == null) {
 			// TDB: report failure
-			log.info("run(), could not create cleaner class " + metadata.getCleanerClassname());
+			if(log.isInfoEnabled())
+				log.info("run(), could not create cleaner class " 
+					+ metadata.getCleanerClassname());
 			return;
 		}
 		
+		// build the premerge database DAO
+		
+		// create a new database schema
+		String premergeDbName = CPathSettings.CPATH_DB_PREFIX + metadata.getIdentifier();
+		DataServicesFactoryBean.createSchema(premergeDbName);
+		
+		// get the PaxtoolsDAO instance
+		PaxtoolsDAO pemergeDAO = buildPremergeDAO(premergeDbName);
+		
 		// iterate over all pathway data
-		log.info("run(), interating over pathway data.");
+		if(log.isInfoEnabled())
+			log.info("run(), interating over pathway data.");
 		for (PathwayData pathwayData : pathwayDataCollection) {
-			pipeline(pathwayData);
+			pipeline(pathwayData, pemergeDAO);
 		}
 
 		// outta here
 		premergeDispatcher.premergeComplete(metadata);
-		log.info("run(), exiting...");
+		if(log.isInfoEnabled())
+			log.info("run(), exiting...");
 	}
 
 	/**
@@ -175,7 +183,7 @@ public class PremergeImpl extends Thread implements Premerge {
 	 *
 	 * @param pathwayData PathwayData
 	 */
-	private void pipeline(final PathwayData pathwayData) {
+	private void pipeline(final PathwayData pathwayData, PaxtoolsDAO premergeDAO) {
 		String pathwayDataStr = null;
 		String pathwayDataDescription = (pathwayData.getIdentifier() + ", " +
 										 pathwayData.getVersion() + ", " +
@@ -226,8 +234,8 @@ public class PremergeImpl extends Thread implements Premerge {
 			log.info("pipeline(), validating pathway data.");
 		pathwayData.setPremergeData(pathwayDataStr);
 		boolean valid = validatePathway(pathwayData);
-		// save with validation results
-		pathwayDataDAO.importPathwayData(pathwayData);
+		// update metadata (pathwaydata) with validation results
+		metaDataDAO.importPathwayData(pathwayData);
 		// shall we proceed?
 		if(!valid) {			
 			log.error("pipeline(), biopax errors found in pathway data: "
@@ -244,12 +252,9 @@ public class PremergeImpl extends Thread implements Premerge {
 		// persist
 		if(log.isInfoEnabled())
 			log.info("pipeline(), persisting pathway data.");
-		if (!persistPathway(pathwayData, model)) {
-			// TBD: report failure
-			log.error("pipeline(), error persisting pathway data: "
-				+ pathwayDataDescription);
-			return;
-		}
+				
+		premergeDAO.merge(model);
+		
 	}
 
 	/**
@@ -376,55 +381,36 @@ public class PremergeImpl extends Thread implements Premerge {
 		// outta here 
 		return toReturn;
 	}
-
-	/**
-	 * Persists the given PathwayData object with clean data
-	 *
-	 * @param pathwayData PathwayData
-	 * @param model Model
-	 * @return boolean
-	 */
-	@Transactional
-	private boolean persistPathway(final PathwayData pathwayData, final Model model) {
-		// create a new database schema for this data provider
-		String premergeDbName = CPathSettings.CPATH_DB_PREFIX + metadata.getIdentifier();
-		DataServicesFactoryBean.createSchema(premergeDbName);
-		
-		// get the data source factory bean (that is aware of the driver, user, and password)
-		// applicationContext is injected (auto-wired) parent context
-		DataServices dataServices = (DataServices) applicationContext.getBean("&cpath2_meta");
-		// get the DataSource (for the database just created)
-		DataSource premergeDataSource = dataServices.getDataSource(premergeDbName);
-		// get the PaxtoolsDAO instance
-		PaxtoolsDAO paxtoolsDAO = buildPremergeDAO(premergeDbName, premergeDataSource);
-		paxtoolsDAO.merge(model);
-
-		// outta here
-		return true;
-	}
 	
 	/**
 	 * Creates new PaxtoolsDAO instance to work with existing "premerge"
 	 * database. This is used both during the "pre-merge" (here) and "merge".
 	 */
-	public static PaxtoolsDAO buildPremergeDAO(String premergeDbName, DataSource premergeDataSource) {
-		DataServicesFactoryBean.getDataSourceMap().put(CPathSettings.PREMERGE_DB_KEY, premergeDataSource);
+	public static PaxtoolsDAO buildPremergeDAO(String premergeDbName) {
 		/* 
 		 * set system properties and data source 
 		 * (replaces existing one in the same thread),
-		 * load a special application context
+		 * load another specific application context
 		 */
-		String home = System.getenv(CPathSettings.HOME_VARIABLE_NAME);
-		if (home==null) throw new RuntimeException(
+		String home = CPathSettings.getHomeDir();
+		if (home==null) {
+			throw new RuntimeException(
 				"Please set " + CPathSettings.HOME_VARIABLE_NAME + " environment variable " +
             	" (point to a directory where cpath.properties, etc. files are placed)");
+		}
+		
 		String indexDir = home + File.separator + premergeDbName;
 		// set the system variable that is used by the following spring context
 		System.setProperty(CPathSettings.PREMERGE_INDEX_DIR_VARIABLE, indexDir);
+		
+		// get the data source factory bean (aware of the driver, user, and password)
 		ApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");
-				
-		// get a ref to the PaxtoolsDAO bean
+			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
+		DataServices dataServices = (DataServices) context.getBean("&dsBean");
+		DataSource premergeDataSource = dataServices.getDataSource(premergeDbName);
+		DataServicesFactoryBean.getDataSourceMap().put(CPathSettings.PREMERGE_DB_KEY, premergeDataSource);
+		// get the premerge DAO
+		context = new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");	
 		return (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
 	}
 }

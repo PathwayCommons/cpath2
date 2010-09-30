@@ -44,15 +44,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.Model;
 import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
-import cpath.config.CPathSettings;
 import cpath.converter.Converter;
 import cpath.converter.internal.BaseConverterImpl;
 import cpath.fetcher.CPathFetcher;
 import cpath.fetcher.WarehouseDataService;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
+
 
 /**
  * @author rodche
@@ -87,13 +88,13 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 		(byte)'c', (byte)'d', (byte)'e', (byte)'f'
     }; 
     
-	
+	// LOADER can handle file://, ftp://, http://  URL resources
 	private static final ResourceLoader LOADER = new DefaultResourceLoader();
 	
 	
 	@Override
-    public Collection<Metadata> getProviderMetadata(final String url) throws IOException {
-
+    public Collection<Metadata> getMetadata(final String url) throws IOException 
+    {
         Collection<Metadata> toReturn = new HashSet<Metadata>();
 
         // check args
@@ -102,7 +103,7 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
         }
 
         // get data from service
-		readFromService(LOADER.getResource(url).getInputStream(), toReturn);
+		readMetadata(LOADER.getResource(url).getInputStream(), toReturn);
 
         // outta here
         return toReturn;
@@ -115,7 +116,7 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 	 * @param toReturn Collection<Metadata>
 	 * @param throws IOException
      */
-    private void readFromService(final InputStream inputStream, 
+    private void readMetadata(final InputStream inputStream, 
     	final Collection<Metadata> toReturn) throws IOException 
     {
         BufferedReader reader = null;
@@ -128,16 +129,16 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
             {
                 // grab a line
                 String line = reader.readLine();
-                if(log.isInfoEnabled())
-                	log.info("readFromService(), line: " + line);
+                if(log.isDebugEnabled())
+                	log.debug("readFromService(), line: " + line);
 
                 // for now assume line is delimited by '<br>'
                 // TODO: update when data moved to wiki page
                 String[] tokens = line.split("<br>");
-				if (log.isInfoEnabled()) {
-					log.info("readFromService(), token size: " + tokens.length);
+				if (log.isDebugEnabled()) {
+					log.debug("readFromService(), token size: " + tokens.length);
 					for (String token : tokens) {
-						log.info("readFromService(), token: " + token);
+						log.debug("readFromService(), token: " + token);
 					}
 				}
 
@@ -149,8 +150,7 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 						version = tokens[METADATA_VERSION_INDEX];
 					}
 					catch (NumberFormatException e) {
-						if(log.isInfoEnabled())
-							log.info("readFromService(), number format exception caught for provider: "
+						log.error("readFromService(), number format exception caught for provider: "
 								+ tokens[METADATA_IDENTIFIER_INDEX] + " skipping");
 						continue;
 					}
@@ -170,8 +170,8 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 						if(image != null)
 							iconData = ((DataBufferByte)image.getRaster().getDataBuffer()).getData();
 					} catch (IOException e) {
-						log.error("Cannot load image from " +  
-								tokens[METADATA_ICON_URL_INDEX], e);
+						log.error("Cannot load image from " +  tokens[METADATA_ICON_URL_INDEX] 
+						                                              + ". Skipping. " + e);
 					}
 					
 					if (iconData == null) { 
@@ -180,23 +180,25 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 								"data (icon) to create Metadata bean: iconData.");
 						iconData = new byte[]{};
 					}
-						if(log.isInfoEnabled())
-							log.info("readFromService(), make a Metadata bean.");
+					
+					if(log.isDebugEnabled())
+						log.debug("readFromService(), make a Metadata bean.");
 
                         // create a metadata bean
-                        Metadata metadata = new Metadata(tokens[METADATA_IDENTIFIER_INDEX], tokens[METADATA_NAME_INDEX],
+                    Metadata metadata = new Metadata(tokens[METADATA_IDENTIFIER_INDEX], tokens[METADATA_NAME_INDEX],
                                                          version, tokens[METADATA_RELEASE_DATE_INDEX],
                                                          tokens[METADATA_DATA_URL_INDEX], iconData, metadataType,
 														 tokens[METADATA_CLEANER_CLASS_NAME_INDEX],
 														 tokens[METADATA_CONVERTER_CLASS_NAME_INDEX]);
 					if (log.isInfoEnabled()) {
-						log.info(metadata.getIdentifier());
-						log.info(metadata.getName());
-						log.info(metadata.getVersion());
-						log.info(metadata.getReleaseDate());
-						log.info(metadata.getURLToData());
-						log.info(tokens[METADATA_ICON_URL_INDEX]);
-						log.info(metadata.getType());
+						log.info("Adding Metadata : "
+							+ metadata.getIdentifier() 
+							+ "; " + metadata.getName()
+							+ "; " + metadata.getVersion()
+							+ "; " + metadata.getReleaseDate()
+							+ "; " + metadata.getURLToData()
+							+ "; " + tokens[METADATA_ICON_URL_INDEX]
+							+ "; " + metadata.getType());
 					}
 					if (metadata.getType() == Metadata.TYPE.PSI_MI
 							|| metadata.getType() == Metadata.TYPE.BIOPAX) {
@@ -224,11 +226,13 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 
 
 	@Override
-    public Collection<PathwayData> getProviderPathwayData(final Metadata metadata) throws IOException {
+    public Collection<PathwayData> getProviderPathwayData(final Metadata metadata) 
+    	throws IOException 
+    {
 
         Collection<PathwayData> toReturn = new HashSet<PathwayData>();
 
-		String url = metadata.getURLToData();
+		String url = "file://" + metadata.getLocalDataFile();
 
 		// set isOWL
 		boolean isOWL = (url.endsWith(".owl") || url.endsWith(".OWL"));
@@ -237,7 +241,7 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 		if (isOWL) {
 			if(log.isInfoEnabled())
 				log.info("getProviderPathwayData(), data is owl, directly returning.");
-			String fetchedData = readFromService(LOADER.getResource(url).getInputStream());
+			String fetchedData = readTextContent(LOADER.getResource(url).getInputStream());
 			int idx = url.lastIndexOf('/');
 			String filename = url.substring(idx+1); // not found (-1) gives entire string
 			String digest = getDigest(fetchedData.getBytes());
@@ -256,20 +260,19 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
     }
 
 	
-    /**
-     * Given an input stream, returns a string.
+    /*
+     * Given an input stream, returns a string (content).
 	 *
      * @param inputStream InputStream
 	 * @return String
 	 * @throws IOException
      */
-    private String readFromService(final InputStream inputStream) throws IOException {
+    private String readTextContent(final InputStream inputStream) throws IOException {
 
         BufferedReader reader = null;
 		StringBuffer toReturn = new StringBuffer();
 
         try {
-
             // we'd like to read lines at a time
             reader = new BufferedReader(new InputStreamReader(inputStream));
 
@@ -433,14 +436,14 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
     public void storeWarehouseData(final Metadata metadata, final Model model) 
 		throws IOException 
 	{
-		String urlStr = metadata.getURLToData();
+		String url = "file://" + metadata.getLocalDataFile();
 
 		// protein data comes zipped
 		if (log.isInfoEnabled()) {
 			log.info("getWarehouseData(), data is zip/gz, unzipping.");
 		}
 		
-		convert(metadata, LOADER.getResource(urlStr).getInputStream(), model);
+		convert(metadata, LOADER.getResource(url).getInputStream(), model);
     }
 
     /**
@@ -577,29 +580,25 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 
 	
 	@Override
-	public void fetchMappingData(Metadata metadata) throws IOException {
-		String urlStr = metadata.getURLToData();
-		// LOADER can handle file:, ftp:, http:, etc. URLs
-		ReadableByteChannel rbc = Channels.newChannel(
-			LOADER.getResource(urlStr).getInputStream());
+	public void fetchData(Metadata metadata) throws IOException {
 		
-		String out = CPathSettings.getMappingDir() 
-			+ File.separator + metadata.getIdentifier();
-		int idx = urlStr.lastIndexOf('.');
-		if(idx >= 0) {
-			out += "." + urlStr.substring(idx+1);
-		}
-		
-		File dir = new File(CPathSettings.getMappingDir());
+		File dir = new File(metadata.getDataLocalDir());
 		if(!(dir.exists() && dir.isDirectory())) {
 			dir.mkdir();
 		}
-		FileOutputStream fos = new FileOutputStream(out);
 		
-		fos.getChannel().transferFrom(rbc, 0, 1 << 24);
+		Resource resource = LOADER.getResource(metadata.getURLToData());
+		long size = resource.contentLength();
+		
+		ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
+		
+		FileOutputStream dest = new FileOutputStream(metadata.getLocalDataFile());
+		
+		dest.getChannel().transferFrom(source, 0, size);
 		
 		if(log.isInfoEnabled())
-			log.info("Mapping data downloaded from " +
-				urlStr + " and saved in " + out);
+			log.info(metadata.getType() + " data are downloaded from " +
+				metadata.getURLToData() + " and saved in " 
+				+ metadata.getLocalDataFile());
 	}
 }

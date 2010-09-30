@@ -34,7 +34,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
@@ -74,15 +73,15 @@ public class CPathWarehouseTest {
 		molecules = (WarehouseDAO) context.getBean("moleculesDAO");
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		proteins = (WarehouseDAO) context.getBean("proteinsDAO");
-		PathwayDataDAO pathwayDataDAO = (PathwayDataDAO) context.getBean("pathwayDataDAO");
 		
 		// load test data
 		CPathFetcherImpl fetcher = new CPathFetcherImpl();
         Collection<Metadata> metadata;
 		try {
-			metadata = fetcher.getProviderMetadata("classpath:metadata.html");
+			metadata = fetcher.getMetadata("classpath:metadata.html");
 			for (Metadata mdata : metadata) {
 				metadataDAO.importMetadata(mdata);
+				fetcher.fetchData(mdata);
 				if (mdata.getType() == TYPE.PROTEIN) {
 					fetcher.storeWarehouseData(mdata, (PaxtoolsDAO) proteins);
 				} else if (mdata.getType() == TYPE.SMALL_MOLECULE) {
@@ -93,7 +92,7 @@ public class CPathWarehouseTest {
 					Collection<PathwayData> pathwayData = fetcher
 							.getProviderPathwayData(mdata);
 					for (PathwayData pwData : pathwayData) {
-						pathwayDataDAO.importPathwayData(pwData);
+						metadataDAO.importPathwayData(pwData);
 					}
 				}
 			}

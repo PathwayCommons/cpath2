@@ -33,7 +33,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import cpath.dao.internal.DataServicesFactoryBean;
-import cpath.warehouse.PathwayDataDAO;
+import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.PathwayData;
 
 import static org.junit.Assert.*;
@@ -64,17 +64,17 @@ public class PathwayDataHibernateDAOTest {
 	public void testImportPathwayData() {
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 				"classpath:testContext-whDAO.xml");
-        PathwayDataDAO pathwayDataDAO = (PathwayDataDAO) context.getBean("pathwayDataDAO");
+        MetadataDAO dao = (MetadataDAO) context.getBean("metadataDAO");
 		
 		// mock a PathwayData
         PathwayData pathwayData = new PathwayData("testpw", "2010.04", "testpw", "testpw", "<rdf></rdf>");
         
         // import it
-        pathwayDataDAO.importPathwayData(pathwayData);
+        dao.importPathwayData(pathwayData);
         
         // get
         pathwayData = null;
-        pathwayData = pathwayDataDAO.getByIdentifierAndVersionAndFilenameAndDigest("testpw", "2010.04", "testpw", "testpw");
+        pathwayData = dao.getByIdentifierAndVersionAndFilenameAndDigest("testpw", "2010.04", "testpw", "testpw");
         assertNotNull(pathwayData);
         assertTrue(pathwayData.getValidationResults().length() == 0);
         
@@ -83,11 +83,11 @@ public class PathwayDataHibernateDAOTest {
         pathwayData.setValidationResults("<?xml version=\"1.0\"?>");
         
         // update
-        pathwayDataDAO.importPathwayData(pathwayData);
+        dao.importPathwayData(pathwayData);
         
         // check
         pathwayData = null;
-        pathwayData = pathwayDataDAO.getByIdentifierAndVersionAndFilenameAndDigest("testpw", "2010.04", "testpw", "testpw");
+        pathwayData = dao.getByIdentifierAndVersionAndFilenameAndDigest("testpw", "2010.04", "testpw", "testpw");
         assertNotNull(pathwayData);
         assertTrue(pathwayData.getValidationResults().length() > 0);
 	}

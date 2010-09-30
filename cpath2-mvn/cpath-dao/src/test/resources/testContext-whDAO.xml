@@ -44,10 +44,6 @@
         <property name="sessionFactory" ref="testSessionFactory"/>
     </bean>
 
-    <bean id="pathwayDataDAO" class="cpath.warehouse.internal.PathwayDataHibernateDAO">
-        <property name="sessionFactory" ref="testSessionFactory"/>
-    </bean>
-
     <bean id="cpath2_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
   	
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>

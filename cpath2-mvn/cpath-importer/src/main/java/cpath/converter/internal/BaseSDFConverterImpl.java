@@ -124,8 +124,8 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 	 */
 	private void processEntry(StringBuffer entryBuffer) throws IOException 
 	{
-        if (log.isInfoEnabled())
-        	log.info("calling processEntry()");
+        if (log.isDebugEnabled())
+        	log.debug("calling processEntry()");
         // build a new SMR with its dependent elements
 		SmallMoleculeReference smr = buildSmallMoleculeReference(entryBuffer);
 		// extract consistent sub-model from the SMR
@@ -153,8 +153,8 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 		// check if vocabulary already exists
 		String id = ""; // convert dbName into some id
 
-		if (log.isInfoEnabled())
-			log.info("getRelationshipType(), id: " + id);
+		if (log.isDebugEnabled())
+			log.debug("getRelationshipType(), id: " + id);
 
 		if (model.containsID(id)) {
 			toReturn = getById(id, RelationshipTypeVocabulary.class);
@@ -183,8 +183,8 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 		String id = parts[0].trim();
 		String db = parts[1].trim();
 		
-		if (log.isInfoEnabled()) {
-			log.info("getXref(), id: " + id + ", db: " + db 
+		if (log.isDebugEnabled()) {
+			log.debug("getXref(), id: " + id + ", db: " + db 
 					+ ", type: " + aClass.getSimpleName());
 		}
 		
@@ -223,8 +223,8 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 			String chemicalStructureID, SmallMoleculeReference  smallMoleculeReference) 
 	{	
 		if (structure != null) {
-			if (log.isInfoEnabled()) {
-				log.info("setStructure(), structure: " + structure);
+			if (log.isDebugEnabled()) {
+				log.debug("setStructure(), structure: " + structure);
 			}
 			// should only get one of these
 			ChemicalStructure chemStruct = factory.reflectivelyCreate(ChemicalStructure.class);
