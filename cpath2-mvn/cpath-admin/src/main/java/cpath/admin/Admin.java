@@ -28,8 +28,6 @@
  **/
 package cpath.admin;
 
-// imports
-import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.CPathFetcher;
@@ -39,12 +37,13 @@ import cpath.importer.Merger;
 import cpath.importer.internal.MergerImpl;
 import cpath.importer.internal.PremergeDispatcher;
 import cpath.warehouse.MetadataDAO;
-import cpath.warehouse.PathwayDataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
 import org.biopax.paxtools.model.Model;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;
 
 import org.springframework.context.ApplicationContext;
@@ -52,18 +51,19 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Collection;
 
+import static cpath.config.CPathSettings.*;
 
 /**
  * Class which provides command line admin capabilities.
  */
 public class Admin implements Runnable {
-
+	private static final Log LOG = LogFactory.getLog(Admin.class);
 	// used as a argument to fetch-pathwaydata
 	private static final String FETCH_ALL = "all";
-	static final String lineSeparator = System.getProperty ( "line.separator" );
 	
     // COMMAND Enum
     public static enum COMMAND {
@@ -71,10 +71,7 @@ public class Admin implements Runnable {
         // command types
     	CREATE_TABLES("-create-tables"),
         FETCH_METADATA("-fetch-metadata"),
-		FETCH_PATHWAY_DATA("-fetch-pathwaydata"),
-		FETCH_PROTEIN_DATA("-fetch-proteindata"),
-		FETCH_SMALL_MOLECULE_DATA("-fetch-smallmoleculedata"),
-		FETCH_MAPPING_DATA("-fetch-mappingdata"),
+		FETCH_DATA("-fetch-data"),
 		PREMERGE("-premerge"),
 		MERGE("-merge");
 
@@ -127,37 +124,14 @@ public class Admin implements Runnable {
 				this.commandParameters = new String[] { args[1] };
 			}
         }
-		else if (args[0].equals(COMMAND.FETCH_PATHWAY_DATA.toString())) {
+		else if (args[0].equals(COMMAND.FETCH_DATA.toString())) {
 			if (args.length != 2) {
 				validArgs = false;
 			}
 			else {
-				this.command = COMMAND.FETCH_PATHWAY_DATA;
+				this.command = COMMAND.FETCH_DATA;
 				this.commandParameters = new String[] { args[1] };
 			}
-		}
-		else if (args[0].equals(COMMAND.FETCH_PROTEIN_DATA.toString())) {
-			if (args.length != 2) {
-				validArgs = false;
-			}
-			else {
-				this.command = COMMAND.FETCH_PROTEIN_DATA;
-				this.commandParameters = new String[] { args[1] };
-			}
-		}
-		else if (args[0].equals(COMMAND.FETCH_SMALL_MOLECULE_DATA.toString())) {
-			if (args.length != 2) {
-				validArgs = false;
-			}
-			else {
-				this.command = COMMAND.FETCH_SMALL_MOLECULE_DATA;
-				this.commandParameters = new String[] { args[1] };
-			}
-		}
-		else if (args[0].equals(COMMAND.FETCH_MAPPING_DATA.toString())) {
-			this.command = COMMAND.FETCH_MAPPING_DATA;
-			// takes no args
-			this.commandParameters = new String[] { FETCH_ALL };
 		}
 		else if (args[0].equals(COMMAND.PREMERGE.toString())) {
 			this.command = COMMAND.PREMERGE;
@@ -194,20 +168,18 @@ public class Admin implements Runnable {
             switch (command) {
             case CREATE_TABLES:
             	if(commandParameters != null) {
-            		for(String db : commandParameters)
-            			DataServicesFactoryBean.createSchema(db.trim());
+            		for(String db : commandParameters) {
+            			String dbName = db.trim();
+            			// create db schema and lucene index
+            			DataServicesFactoryBean.createSchema(dbName);
+            		}
             	}
             	break;
             case FETCH_METADATA:
                 fetchMetadata(commandParameters[0]);
 				break;
-			case FETCH_PATHWAY_DATA:
-				fetchPathwayData(commandParameters[0]);
-				break;
-			case FETCH_PROTEIN_DATA:
-			case FETCH_SMALL_MOLECULE_DATA:
-			case FETCH_MAPPING_DATA:
-				fetchWarehouseData(command, commandParameters[0]);
+			case FETCH_DATA:
+				fetchWarehouseData(commandParameters[0]);
 				break;
 			case PREMERGE:
 				ApplicationContext context =
@@ -252,7 +224,7 @@ public class Admin implements Runnable {
         CPathFetcher providerMetadataService = new CPathFetcherImpl();
     	
         // grab the data
-        Collection<Metadata> metadata = providerMetadataService.getProviderMetadata(location);
+        Collection<Metadata> metadata = providerMetadataService.getMetadata(location);
         
         // process metadata
         for (Metadata mdata : metadata) {
@@ -260,58 +232,6 @@ public class Admin implements Runnable {
         }
     }
 
-    /**
-     * Helper function to get provider pathway data.
-     *
-     * @param provider String
-     * @throws IOException
-     */
-    private void fetchPathwayData(final String provider) throws IOException {
-
-    	ApplicationContext context =
-            new ClassPathXmlApplicationContext(new String [] { 	
-            	"classpath:applicationContext-whouseDAO.xml"});
-        MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-        PathwayDataDAO pathwayDataDAO = (PathwayDataDAO) context.getBean("pathwayDataDAO");
-        CPathFetcher providerPathwayDataService = new CPathFetcherImpl();
-    	
-		// get metadata
-		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
-
-		// sanity check
-		if (metadataCollection == null || metadataCollection.size() == 0) {
-			System.err.println("Unknown provider: " + provider);
-			return;
-		}
-
-		// interate over all metadata
-		for (Metadata metadata : metadataCollection) {
-
-			// only process interaction or pathway data
-			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
-				metadata.getType() == Metadata.TYPE.BIOPAX ||
-				metadata.getType() == Metadata.TYPE.BIOPAX_L2) 
-			{
-				// collect pathway data versions of the same provider
-				Collection<String> savedVersions = new HashSet<String>();
-				for(PathwayData pd: pathwayDataDAO
-						.getByIdentifier(metadata.getIdentifier())) {
-					savedVersions.add(pd.getVersion());
-				}
-				// lets not fetch the same version data
-				if (!savedVersions.contains(metadata.getVersion())) {
-					// grab the data
-					Collection<PathwayData> pathwayData =
-						providerPathwayDataService.getProviderPathwayData(metadata);
-        
-					// process pathway data
-					for (PathwayData pwData : pathwayData) {
-						pathwayDataDAO.importPathwayData(pwData);
-					}
-				}
-			}
-		}
-    }
 
     /**
      * Helper function to get warehouse (protein, small molecule) data.
@@ -319,7 +239,7 @@ public class Admin implements Runnable {
      * @param provider String
      * @throws IOException
      */
-    private void fetchWarehouseData(final COMMAND command, final String provider) throws IOException {
+    private void fetchWarehouseData(final String provider) throws IOException {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-whouseDAO.xml"});
@@ -337,63 +257,88 @@ public class Admin implements Runnable {
 
 		// interate over all metadata
 		for (Metadata metadata : metadataCollection) {
-			// only process protein references data
-			if (command == COMMAND.FETCH_PROTEIN_DATA && metadata.getType() == Metadata.TYPE.PROTEIN) {
+			// fetch (download or copy to a sub-directory in CPATH2_HOME)
+			try {
+				((CPathFetcher)warehouseDataService).fetchData(metadata);
+			} catch (IOException e) {
+				LOG.error("Failed fetching data for " + metadata.toString() 
+					+ ". Skipping...", e);
+				continue;
+			}
+			
+			
+			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
+					metadata.getType() == Metadata.TYPE.BIOPAX ||
+					metadata.getType() == Metadata.TYPE.BIOPAX_L2) 
+			{
+					// collect pathway data versions of the same provider
+					Collection<String> savedVersions = new HashSet<String>();
+					for(PathwayData pd: metadataDAO
+							.getPathwayDataByIdentifier(metadata.getIdentifier())) {
+						savedVersions.add(pd.getVersion());
+					}
+					// lets not fetch the same version data
+					if (!savedVersions.contains(metadata.getVersion())) {
+						// grab the data
+						Collection<PathwayData> pathwayData =
+							((CPathFetcher)warehouseDataService)
+								.getProviderPathwayData(metadata);
+	        
+						// process pathway data
+						for (PathwayData pwData : pathwayData) {
+							metadataDAO.importPathwayData(pwData);
+						}
+					}
+			} 
+			else if (metadata.getType() == Metadata.TYPE.PROTEIN) 
+			{
+				// process protein references data
 				context = new ClassPathXmlApplicationContext(new String [] {
         		"classpath:applicationContext-whouseProteins.xml"});
 				PaxtoolsDAO proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
-				// store the data (actually, a set of ProteinReferenceProxy !)
+				// parse/save
 				warehouseDataService.storeWarehouseData(metadata, proteinsDAO);
-        	}
-			else if (command == COMMAND.FETCH_SMALL_MOLECULE_DATA && metadata.getType() == Metadata.TYPE.SMALL_MOLECULE) {
+        	} 
+			else if (metadata.getType() == Metadata.TYPE.SMALL_MOLECULE) 
+			{
+				// process small molecule references data
 				context = new ClassPathXmlApplicationContext(new String [] { 	
 		            		"classpath:applicationContext-whouseMolecules.xml"});
 		        PaxtoolsDAO smallMoleculesDAO = (PaxtoolsDAO) context.getBean("moleculesDAO");
-				// store the data (actually, a set of SmallMoleculeReferenceProxy !)
+		        // parse/save
 				warehouseDataService.storeWarehouseData(metadata, smallMoleculesDAO);
-			}
-			else if (command == COMMAND.FETCH_MAPPING_DATA && metadata.getType() == Metadata.TYPE.MAPPING) {
-				((CPathFetcher)warehouseDataService).fetchMappingData(metadata);
+			} 
+			else if (metadata.getType() == Metadata.TYPE.MAPPING) {
+				// Nothing else to do
 			}
 		}
 	}
 
+    
 	/**
 	 * Given a provider, returns a collection of Metadata.
 	 *
 	 * @param provider String
 	 * @return Collection<Metadata>
 	 */
-	private Collection<Metadata> getMetadata(final MetadataDAO metadataDAO, final String provider) {
-
-		Collection<Metadata> toReturn = null;
-
-		// get metadata
-		if (provider == FETCH_ALL) {
-			toReturn = metadataDAO.getAll();
-		}
-		else {
-			toReturn = new HashSet<Metadata>();
-			toReturn.add(metadataDAO.getByIdentifier(provider));
-		}
-
-		// outta here
-		return toReturn;
+	private Collection<Metadata> getMetadata(final MetadataDAO metadataDAO, final String provider) 
+	{
+		return (provider.equalsIgnoreCase(FETCH_ALL))
+			? metadataDAO.getAll()
+			: Collections.singleton(metadataDAO.getMetadataByIdentifier(provider));
 	}
 
+	
 	private static String usage() {
 
 		StringBuffer toReturn = new StringBuffer();
-		toReturn.append("cpath.Admin <command> <one or more args>" + lineSeparator);
-		toReturn.append("commands:" + lineSeparator);
-		toReturn.append(COMMAND.CREATE_TABLES.toString() + " <table1,table2,..>" + lineSeparator);
-		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + lineSeparator);
-		toReturn.append(COMMAND.FETCH_PATHWAY_DATA.toString() + " <provider-name or all>" + lineSeparator);
-		toReturn.append(COMMAND.FETCH_PROTEIN_DATA.toString() + " <provider-name or all>" + lineSeparator);
-		toReturn.append(COMMAND.FETCH_SMALL_MOLECULE_DATA.toString() + " <provider-name or all>" + lineSeparator);
-		toReturn.append(COMMAND.FETCH_MAPPING_DATA.toString() + lineSeparator);
-		toReturn.append(COMMAND.PREMERGE.toString() + lineSeparator);
-		toReturn.append(COMMAND.MERGE.toString() + lineSeparator);
+		toReturn.append("cpath.Admin <command> <one or more args>" + NEWLINE);
+		toReturn.append("commands:" + NEWLINE);
+		toReturn.append(COMMAND.CREATE_TABLES.toString() + " <table1,table2,..>" + NEWLINE);
+		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + NEWLINE);
+		toReturn.append(COMMAND.FETCH_DATA.toString() + " <provider-name or all>" + NEWLINE);
+		toReturn.append(COMMAND.PREMERGE.toString() + NEWLINE);
+		toReturn.append(COMMAND.MERGE.toString() + NEWLINE);
 
 		// outta here
 		return toReturn.toString();
@@ -412,10 +357,10 @@ public class Admin implements Runnable {
             System.exit(-1);
         }
     	
-    	String home = System.getenv(CPathSettings.HOME_VARIABLE_NAME);
+    	String home = System.getenv(HOME_VARIABLE_NAME);
     	
     	if (home==null) {
-            System.err.println("Please set " + CPathSettings.HOME_VARIABLE_NAME 
+            System.err.println("Please set " + HOME_VARIABLE_NAME 
             	+ " environment variable " +
             	" (point to a directory where cpath.properties, etc. files are placed)");
             System.exit(-1);
@@ -426,7 +371,7 @@ public class Admin implements Runnable {
     			+ "log4j.properties");
     	
     	// set JVM property to be used by other modules (in spring context)
-    	System.setProperty(CPathSettings.HOME_VARIABLE_NAME, home);
+    	System.setProperty(HOME_VARIABLE_NAME, home);
 
 
 		Admin admin = new Admin();

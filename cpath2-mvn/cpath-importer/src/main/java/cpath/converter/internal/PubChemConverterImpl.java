@@ -192,8 +192,8 @@ public class PubChemConverterImpl extends BaseSDFConverterImpl {
 			rdfID = "urn:miriam:pubchem.substance:" + id;
 		}
 
-		if (log.isInfoEnabled()) {
-			log.info("getRDFID(), rdfID: " + rdfID);
+		if (log.isDebugEnabled()) {
+			log.debug("getRDFID(), rdfID: " + rdfID);
 		}
 
 		// outta here
@@ -211,9 +211,9 @@ public class PubChemConverterImpl extends BaseSDFConverterImpl {
 	private void setName(String name, String propertyName, SmallMoleculeReference smallMoleculeReference) {
 
 		if (name != null) {
-			if (log.isInfoEnabled()) {
-				log.info("setName(), name: " + name);
-				log.info("setName(), property: " + propertyName);
+			if (log.isDebugEnabled()) {
+				log.debug("setName(), name: " + name);
+				log.debug("setName(), property: " + propertyName);
 			}
 			if (propertyName.equals(DISPLAY_NAME)) {
 				smallMoleculeReference.setDisplayName(name);
@@ -236,8 +236,8 @@ public class PubChemConverterImpl extends BaseSDFConverterImpl {
 	private void setComment(String comment, SmallMoleculeReference smallMoleculeReference) {
 
 		if (comment != null) {
-			if (log.isInfoEnabled()) {
-				log.info("setComment(), comment: " + comment);
+			if (log.isDebugEnabled()) {
+				log.debug("setComment(), comment: " + comment);
 			}
 			smallMoleculeReference.addComment(comment);
 		}
@@ -252,8 +252,8 @@ public class PubChemConverterImpl extends BaseSDFConverterImpl {
 	private void setChemicalFormula(String formula, SmallMoleculeReference smallMoleculeReference) {
 
 		if (formula != null) {
-			if (log.isInfoEnabled()) {
-				log.info("setChemicalFormula(), formula: " + formula);
+			if (log.isDebugEnabled()) {
+				log.debug("setChemicalFormula(), formula: " + formula);
 			}
 			smallMoleculeReference.setChemicalFormula(formula);
 		}
@@ -295,8 +295,8 @@ public class PubChemConverterImpl extends BaseSDFConverterImpl {
 			id = id.replaceFirst("(?i)rhea:", "");
 		} 
 		
-		if (log.isInfoEnabled()) {
-			log.info("setRelationshipXref(), id, db: " + id + ", " + db);
+		if (log.isDebugEnabled()) {
+			log.debug("setRelationshipXref(), id, db: " + id + ", " + db);
 		}
 		smallMoleculeReference.addXref(getXref(RelationshipXref.class, id, db));
 	}
@@ -311,8 +311,8 @@ public class PubChemConverterImpl extends BaseSDFConverterImpl {
 	 */
 	private void setPublicationXref(String id, String db, SmallMoleculeReference smallMoleculeReference) {
 
-		if (log.isInfoEnabled()) {
-			log.info("setPublicationXref(), id, db: " + id + ", " + db);
+		if (log.isDebugEnabled()) {
+			log.debug("setPublicationXref(), id, db: " + id + ", " + db);
 		}
 		smallMoleculeReference.addXref(getXref(PublicationXref.class, id, db));
 	}
@@ -332,8 +332,8 @@ public class PubChemConverterImpl extends BaseSDFConverterImpl {
 		String toReturn = null;
 		BufferedReader reader = getBufferedReader(entry);
 
-		if (log.isInfoEnabled()) {
-			log.info("getValue(), key: " + key);
+		if (log.isDebugEnabled()) {
+			log.debug("getValue(), key: " + key);
 		}
 
 		String line = reader.readLine();
@@ -345,12 +345,12 @@ public class PubChemConverterImpl extends BaseSDFConverterImpl {
 			line = reader.readLine();
 		}
 
-		if (log.isInfoEnabled()) {
+		if (log.isDebugEnabled()) {
 			if (toReturn != null) {
-				log.info("getValue(), returning: " + toReturn);
+				log.debug("getValue(), returning: " + toReturn);
 			}
 			else {
-				log.info("getValue(), value not found!");
+				log.debug("getValue(), value not found!");
 			}
 		}
 
@@ -373,8 +373,8 @@ public class PubChemConverterImpl extends BaseSDFConverterImpl {
 		Collection<String> toReturn = new ArrayList<String>();
 		BufferedReader reader = getBufferedReader(entry);
 
-		if (log.isInfoEnabled())
-			log.info("getValues(), key: " + key);
+		if (log.isDebugEnabled())
+			log.debug("getValues(), key: " + key);
 
 		String line = reader.readLine();
 		while (line != null) {
@@ -391,8 +391,8 @@ public class PubChemConverterImpl extends BaseSDFConverterImpl {
 			line = reader.readLine();
 		}
 
-		if (log.isInfoEnabled()) {
-			log.info("getValues, toReturn size: " + toReturn.size());
+		if (log.isDebugEnabled()) {
+			log.debug("getValues, toReturn size: " + toReturn.size());
 		}
 
 		// outta here

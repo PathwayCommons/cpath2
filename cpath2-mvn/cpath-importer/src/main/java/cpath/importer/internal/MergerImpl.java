@@ -345,12 +345,8 @@ public class MergerImpl implements Merger {
 	private Model getPreMergeModel(final Metadata metadata) 
 	{
 		String dbname = CPathSettings.CPATH_DB_PREFIX + metadata.getIdentifier();
-		// using '&' to get the factory bean (not its product - data source bean)!
-		DataServices dataServices = (DataServices) whApplicationContext.getBean("&cpath2_meta");
-		// create data source (dataServices bean is aware of the DB connection settings!)
-		DataSource pathwayDataSource = dataServices.getDataSource(dbname);
 		// get the PaxtoolsDAO instance
-		PaxtoolsDAO premergePaxtoolsDAO = PremergeImpl.buildPremergeDAO(dbname, pathwayDataSource);
+		PaxtoolsDAO premergePaxtoolsDAO = PremergeImpl.buildPremergeDAO(dbname);
 
 		// get the complete model from the pre-merge db!
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

@@ -60,10 +60,11 @@ public class CPathMergerTest {
         // load the test metadata and data into the warehouse
 		CPathFetcherImpl fetcher = new CPathFetcherImpl();
 		try {
-			Collection<Metadata> metadata = fetcher.getProviderMetadata("classpath:metadata.html");
+			Collection<Metadata> metadata = fetcher.getMetadata("classpath:metadata.html");
 			for (Metadata mdata : metadata) {
 				// store metadata in the warehouse
 				metadataDAO.importMetadata(mdata);
+				fetcher.fetchData(mdata);
 				if (mdata.getType() == TYPE.PROTEIN) {
 					// store PRs in the warehouse
 					fetcher.storeWarehouseData(mdata, (Model)proteinsDAO);

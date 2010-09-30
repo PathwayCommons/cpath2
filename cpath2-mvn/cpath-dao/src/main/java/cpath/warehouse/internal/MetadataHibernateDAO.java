@@ -3,6 +3,7 @@ package cpath.warehouse.internal;
 // imports
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.beans.PathwayData;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,14 +31,16 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 
     // session factory prop/methods used by spring
     private SessionFactory sessionFactory;
+    
     public SessionFactory getSessionFactory() { return sessionFactory; }
+    
     public void setSessionFactory(SessionFactory sessionFactory) {
-	this.sessionFactory = sessionFactory;
+    	this.sessionFactory = sessionFactory;
     }
 	
     // a shortcut to get current session
     private Session getSession() {
-	return getSessionFactory().getCurrentSession();
+    	return getSessionFactory().getCurrentSession();
     }
 	
     /**
@@ -49,9 +52,11 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 
 		Session session = getSession();
 		// check for existing object
-		Metadata existing = getByIdentifier(metadata.getIdentifier());
+		Metadata existing = getMetadataByIdentifier(metadata.getIdentifier());
 		if (existing != null) {
-			log.info("Metadata object with identifier: " + metadata.getIdentifier() + " already exists, manually merging.");
+			if(log.isInfoEnabled())
+				log.info("Metadata object with identifier: " + metadata.getIdentifier() 
+					+ " already exists, manually merging.");
 			existing.setVersion(metadata.getVersion());
 			existing.setReleaseDate(metadata.getReleaseDate());
 			existing.setURLToData(metadata.getURLToData());
@@ -60,10 +65,14 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 			session.update(existing);
 		}
 		else {
-			log.info("Metadata object with identifier: " + metadata.getIdentifier() + " does not exist, saving.");
+			if(log.isInfoEnabled())
+				log.info("Metadata object with identifier: " 
+					+ metadata.getIdentifier() + " does not exist, saving.");
 			session.save(metadata);
 		}
-		log.info("metadata object has been sucessessfully saved or merged.");
+		
+		if(log.isInfoEnabled())
+			log.info("metadata object has been sucessessfully saved or merged.");
     }
 
     /**
@@ -71,7 +80,7 @@ public class MetadataHibernateDAO  implements MetadataDAO {
      * @see cpath.warehouse.MetadataDAO#getByID
      */
     @Transactional(propagation=Propagation.REQUIRED)
-    public Metadata getByIdentifier(final String identifier) {
+    public Metadata getMetadataByIdentifier(final String identifier) {
 		Session session = getSession();
 		Query query = session.getNamedQuery("cpath.warehouse.beans.providerByIdentifier");
 		query.setParameter("identifier", identifier);
@@ -91,5 +100,78 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 		return (toReturn.size() > 0) ? new HashSet(toReturn) : new HashSet();
 	}
     
+    
+    @Transactional(propagation=Propagation.REQUIRED)
+	public void importPathwayData(final PathwayData pathwayData) {
+
+		Session session = getSession();
+		// check for existing object
+		PathwayData existing = getByIdentifierAndVersionAndFilenameAndDigest(pathwayData.getIdentifier(), 
+				pathwayData.getVersion(), pathwayData.getFilename(), pathwayData.getDigest());
+		
+		if (existing == null) {
+			if(log.isInfoEnabled())
+				log.info("Saving PathwayData with identifier: " 
+					+ pathwayData.getIdentifier() +
+					 " and file: " + pathwayData.getFilename() +
+					 " and version: " + pathwayData.getVersion() +
+					 " and digest: " + pathwayData.getDigest());
+			
+			session.save(pathwayData);
+		}
+		else {
+			if(log.isInfoEnabled())
+				log.info("Updating PathwayData with identifier: "
+					+ pathwayData.getIdentifier() +
+					 " and file: " + pathwayData.getFilename() +
+					 " and version: " + pathwayData.getVersion() + 
+					 " and digest: " + pathwayData.getDigest());
+			
+			existing.setPathwayData(pathwayData.getPathwayData());
+			existing.setValidationResults(pathwayData.getValidationResults());
+			existing.setPremergeData(pathwayData.getPremergeData());
+			session.update(existing);
+		}
+		
+		if(log.isInfoEnabled())
+			log.info("pathway data object has been sucessessfully saved or updated.");
+    }
+
+
+    @Transactional(propagation=Propagation.REQUIRED)
+    public Collection<PathwayData> getPathwayDataByIdentifier(final String identifier) {
+
+		Session session = getSession();
+		Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayByIdentifier");
+		query.setParameter("identifier", identifier);
+		List toReturn = query.list();
+		return (toReturn.size() > 0) ? new HashSet(toReturn) : new HashSet();
+    }
+
+
+    @Transactional(propagation=Propagation.REQUIRED)
+    public Collection<PathwayData> getByIdentifierAndVersion(final String identifier, final String version) {
+
+		Session session = getSession();
+		Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayByIdentifierAndVersion");
+		query.setParameter("identifier", identifier);
+		query.setParameter("version", version);
+		List toReturn = query.list();
+		return (toReturn.size() > 0) ? new HashSet(toReturn) : new HashSet();
+    }
+
+
+    @Transactional(propagation=Propagation.REQUIRED)
+    public PathwayData getByIdentifierAndVersionAndFilenameAndDigest(final String identifier, 
+    		final String version, final String filename, final String digest) 
+    {
+		Session session = getSession();
+		Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayByIdentifierAndVersionAndFilenameAndDigest");
+		query.setParameter("identifier", identifier);
+		query.setParameter("version", version);
+		query.setParameter("filename", filename);
+		query.setParameter("digest", digest);
+		return (PathwayData)query.uniqueResult();
+    }
     
 }

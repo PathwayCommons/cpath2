@@ -15,7 +15,6 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.junit.*;
 
-import cpath.config.CPathSettings;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.TYPE;
 
@@ -46,7 +45,7 @@ public class CPathFetcherTest {
 		// any resource location now works (not only http://...)!
 		String url = "classpath:metadata.html";
 		System.out.println("Loading metadata from " + url);
-		Collection<Metadata> metadatas = fetcher.getProviderMetadata(url);
+		Collection<Metadata> metadatas = fetcher.getMetadata(url);
 		assertTrue(metadatas.size() > 2);
 		Metadata metadata = null;
 		for(Metadata mt : metadatas) {
@@ -75,7 +74,7 @@ public class CPathFetcherTest {
 				Metadata.TYPE.PROTEIN, 
 				"cpath.cleaner.internal.BaseCleanerImpl", 
 				"cpath.converter.internal.UniprotConverterImpl");
-		
+		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
 		assertTrue(model.containsID("urn:miriam:uniprot:P62158"));
 	}
@@ -92,7 +91,7 @@ public class CPathFetcherTest {
 				Metadata.TYPE.SMALL_MOLECULE, 
 				"cpath.cleaner.internal.BaseCleanerImpl", 
 				"cpath.converter.internal.ChEBIConverterImpl");
-		
+		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
 		assertTrue(model.containsID("urn:miriam:chebi:20"));
 		assertTrue(model.containsID("urn:pathwaycommons:ChemicalStructure:JVTAAEKCZFNVCJ-SNQCPAJUDF"));
@@ -110,7 +109,7 @@ public class CPathFetcherTest {
 				Metadata.TYPE.SMALL_MOLECULE, 
 				"cpath.cleaner.internal.BaseCleanerImpl", 
 				"cpath.converter.internal.PubChemConverterImpl");
-		
+		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
 		assertTrue(model.containsID("urn:miriam:pubchem.substance:14438"));
 		assertTrue(model.containsID("urn:miriam:pubchem.substance:14439"));
@@ -125,21 +124,16 @@ public class CPathFetcherTest {
 				"IDMAP", "Test Id Mapping Data", 
 				"1.0", "Sep 23, 2010",  
 				"classpath:yeast_id_mapping.txt",
-				//"http://bridgedb.org/data/gene_database/Sc_Derby_20100601.bridge", // works!
 				new byte[]{}, 
 				Metadata.TYPE.MAPPING, 
 				"cpath.cleaner.internal.BaseCleanerImpl", 
 				"cpath.converter.internal.BaseConverterImpl");
 		
-		File f = new File(CPathSettings.getMappingDir() + File.separator 
-			+ metadata.getIdentifier() + ".txt");
-		
+		File f = new File(metadata.getLocalDataFile());
 		if(f.exists()) {
 			f.delete();
 		}
-		
-		fetcher.fetchMappingData(metadata);
-		
+		fetcher.fetchData(metadata);
 		assertTrue(f.exists() && f.isFile());
 	}
 

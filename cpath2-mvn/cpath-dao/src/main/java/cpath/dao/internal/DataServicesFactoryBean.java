@@ -27,6 +27,7 @@
 package cpath.dao.internal;
 
 import java.beans.PropertyVetoException;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -190,7 +191,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 
 		// create simple JdbcTemplate if necessary
 		if (jdbcTemplate == null) {
-			DataSource dataSource = getDataSource("mysql"); // works for MySQL
+			DataSource dataSource = getDataSource("");
 			jdbcTemplate = new JdbcTemplate(dataSource);
 		}
 
@@ -203,11 +204,10 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 			jdbcTemplate.execute("CREATE DATABASE " + db);
 		}
 		catch (DataAccessException e) {
-			e.printStackTrace();
+			log.error(e);
 			toReturn = false;
 		}
 
-		// outta here
 		return toReturn;
 	}
 
@@ -242,8 +242,11 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	 * @param dbUrl
 	 * @return
 	 */
-	public static DataSource getDataSource(String dbUser, String dbPassword,
-			String dbDriver, String dbUrl) 
+	public static DataSource getDataSource(
+			String dbUser, 
+			String dbPassword,
+			String dbDriver, 
+			String dbUrl) 
 	{
 		ComboPooledDataSource dataSource = new ComboPooledDataSource();
 		try {
@@ -272,39 +275,6 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		return dataSource;
 		*/
 	}	
-
-	
-	/**
-	 * Drops, creates database schema.
-	 * 
-	 * This is called by a special context
-	 * that {@link #createSchema(String)} loads.
-	 * 
-	 * @param user
-	 * @param passwd
-	 * @param driver
-	 * @param conn
-	 * @param dbName
-	 */
-	static void createDatabase(String user, String passwd, 
-			String driver, String conn, String dbName) 
-	{
-		// drop, create database
-		DataSource adminDataSource = getDataSource(user, passwd, driver, conn);
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(adminDataSource);
-		// drop
-		jdbcTemplate.execute("DROP DATABASE IF EXISTS " + dbName);
-		// create
-		jdbcTemplate.execute("CREATE DATABASE " + dbName);
-		
-		DataSource create = getDataSource(user, passwd, driver, conn+dbName);
-		
-		/* Put the data source under special name in the static map.
-		 * (the name is used then, e.g., in the internalContext-createSchema.xml 
-		 * to get the same data source object  spring context xml file)
-		 */
-		getDataSourceMap().put("createdDb", create);
-	}
 	
 	
 	/**
@@ -317,11 +287,45 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	 * @param dbName - db name to initialize
 	 */
 	public static void createSchema(String dbName) {
-		// set the system property (new db name)
+		// drop existing index dir.
+		File dir = new File(CPathSettings.getHomeDir() + File.separator + dbName);
+		if(log.isInfoEnabled())
+			log.info("Removing index directory : " + dir.getAbsolutePath());
+		deleteDirectory(dir);
+		
+		// get the data source factory bean (aware of the driver, user, and password)
+		ApplicationContext ctx = 
+			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
+		DataServices dataServices = (DataServices) ctx.getBean("&dsBean");
+		dataServices.createDatabase(dbName, true);
+		DataSource premergeDataSource = dataServices.getDataSource(dbName);
+		getDataSourceMap().put(CPathSettings.CREATE_DB_KEY, premergeDataSource);
+		// set property for the index dir
 		System.setProperty("cpath2.db.name", dbName);
-		// load the context that depends on the above property -
-		ApplicationContext ctx = new ClassPathXmlApplicationContext(
+		// load the context (depends on the above key) that auto-creates tables
+		ctx = new ClassPathXmlApplicationContext(
 				"classpath:internalContext-createSchema.xml");
-		// all done!
 	}
+	
+    
+    /**
+     * Deletes a not empty file directory
+     * 
+     * @param path
+     * @return
+     */
+    static public boolean deleteDirectory(File path) {
+        if( path.exists() ) {
+          File[] files = path.listFiles();
+          for(int i=0; i<files.length; i++) {
+             if(files[i].isDirectory()) {
+               deleteDirectory(files[i]);
+             }
+             else {
+               files[i].delete();
+             }
+          }
+        }
+        return( path.delete() );
+    }
 }

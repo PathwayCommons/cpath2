@@ -14,25 +14,10 @@
     <context:annotation-config/>
 
  	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
-  	
-  	 <!-- (re-)creates the database! -->
-  	<bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-  		<property name="staticMethod" 
-  		 value="cpath.dao.internal.DataServicesFactoryBean.createDatabase"/>
-  		<property name="arguments">
-  			<list>
-  				<value>${user}</value>
-  				<value>${password}</value>
-  				<value>${driver}</value>
-  				<value>${connection}</value>
-  				<value>${cpath2.db.name}</value>
-  			</list>
-  		</property>
- 	</bean>
   		
   	<bean id="sessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-		<property name="dataSource" ref="createdDb"/>
+		<property name="dataSource" ref="createSchema"/>
         <property name="hibernateProperties">
 		  <props>
 			<prop key="hibernate.hbm2ddl.auto">create</prop>
@@ -52,6 +37,6 @@
 		</property>        
     </bean>
  
-  	<bean id="createdDb" class="cpath.dao.internal.DataServicesFactoryBean"/>
+  	<bean id="createSchema" class="cpath.dao.internal.DataServicesFactoryBean"/>
 
 </beans>

@@ -1,13 +1,41 @@
+/**
+ ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** and University of Toronto (UofT).
+ **
+ ** This is free software; you can redistribute it and/or modify it
+ ** under the terms of the GNU Lesser General Public License as published
+ ** by the Free Software Foundation; either version 2.1 of the License, or
+ ** any later version.
+ **
+ ** This library is distributed in the hope that it will be useful, but
+ ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
+ ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
+ ** documentation provided hereunder is on an "as is" basis, and
+ ** both UofT and MSKCC have no obligations to provide maintenance, 
+ ** support, updates, enhancements or modifications.  In no event shall
+ ** UofT or MSKCC be liable to any party for direct, indirect, special,
+ ** incidental or consequential damages, including lost profits, arising
+ ** out of the use of this software and its documentation, even if
+ ** UofT or MSKCC have been advised of the possibility of such damage.  
+ ** See the GNU Lesser General Public License for more details.
+ **
+ ** You should have received a copy of the GNU Lesser General Public License
+ ** along with this software; if not, write to the Free Software Foundation,
+ ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
+ ** or find it at http://www.fsf.org/ or http://www.gnu.org.
+ **/
 package cpath.config;
 
-import java.io.File;
-
-
-/*
+/**
+ * CPathSquared Build Constants
  * 
+ * @author rodche
+ *
  */
 public final class CPathSettings {
 	protected CPathSettings(){};
+	
+	public static final String NEWLINE = System.getProperty ( "line.separator" );
 	
 	public static final String HOME_VARIABLE_NAME = "CPATH2_HOME";
 	
@@ -26,24 +54,13 @@ public final class CPathSettings {
 	public static final String MOLECULES_DB_KEY = "cpath2_molecules";
 	public static final String PROTEINS_DB_KEY = "cpath2_proteins";
 	public static final String PREMERGE_DB_KEY = "premergeDataSource";
+	public static final String CREATE_DB_KEY = "createSchema";
 	
 	/* 
 	 * PREMERGE_INDEX_DIR_VARIABLE value must match the one used in the 
 	 * cpath-importer, internalContext-premerge.xml!
 	 */
 	public static final String PREMERGE_INDEX_DIR_VARIABLE = "premerge.index.dir";
-	
-	/*
-	 * A sub-directory name (within cpath2 home dir) to use
-	 * for fetched mapping data files (e.g., BridgeDb Derby files).
-	 * 
-	 */
-	public static final String MAPPING_DATA_DIR = "idmapping";
-	
-	/*
-	 * Lucene index name for the indexed warehouse entities
-	 */
-	public static final String WHOUSE_SEARCH_INDEX = "cpathwhouse";
 	
 	/*
 	 * URI prefix for auto-generated/converted during the data import 
@@ -58,19 +75,15 @@ public final class CPathSettings {
 	 * (this does not affect db names specified in cpath.properties)
 	 */
 	public static final String CPATH_DB_PREFIX = "cpath2_";
+
 	
 	/**
-	 * Gets the path to the directory with BridgeDb id-mapping files
-	 * (required by 'idmapper-pgdb' BridgeDb driver)
+	 * Gets current Home Directory (full path).
 	 * 
 	 * @return
 	 */
-	public static String getMappingDir() {
-		return System.getenv(HOME_VARIABLE_NAME) 
-			+ File.separator + MAPPING_DATA_DIR;
-	}
-	
 	public static String getHomeDir() {
 		return System.getenv(HOME_VARIABLE_NAME);
 	}
+	
 }

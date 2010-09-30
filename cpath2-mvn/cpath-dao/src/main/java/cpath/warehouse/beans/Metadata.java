@@ -1,6 +1,8 @@
 package cpath.warehouse.beans;
 
 // imports
+import java.io.File;
+
 import javax.persistence.*;
 import org.hibernate.search.annotations.Indexed;
 
@@ -17,28 +19,18 @@ import cpath.config.CPathSettings;
 		@NamedQuery(name="cpath.warehouse.beans.allProvider", 
 					query="from Metadata as metadata")
 })
-@Indexed(index=CPathSettings.WHOUSE_SEARCH_INDEX)
+@Indexed(index="cpathwhouse")
 public class Metadata {
 
     // TYPE Enum
     public static enum TYPE {
-
         // command types
-        PSI_MI("PSI-MI"),
-		BIOPAX("BIOPAX"),
-		BIOPAX_L2("BIOPAX_L2"),
-		PROTEIN("PROTEIN"),
-		SMALL_MOLECULE("SMALL-MOLECULE"),
-		MAPPING("MAPPING");
-
-        // string ref for readable name
-        private String type;
-        
-        // contructor
-        TYPE(String type) { this.type = type; }
-
-        // method to get enum readable name
-        public String toString() { return type; }
+        PSI_MI,
+		BIOPAX,
+		BIOPAX_L2,
+		PROTEIN,
+		SMALL_MOLECULE,
+		MAPPING;
     }
 
 	@Id
@@ -185,5 +177,38 @@ public class Metadata {
     @Override
     public String toString() {
         return identifier;
+    }
+    
+    
+	/**
+	 * Gets the full local directory name 
+	 * (within CPATH2_HOME directory)
+	 * where this type of data are/will be
+	 * stored.
+	 * 
+	 * @return
+	 */
+    @Transient
+	public String getDataLocalDir() {
+		return CPathSettings.getHomeDir() 
+			+ File.separator + type.name().toLowerCase();
+	}
+    
+	/**
+	 * Gets the full path to the local data file
+	 * 
+	 * @return
+	 */
+    @Transient
+    public String getLocalDataFile() {
+    	String name = getDataLocalDir() 
+    	+ File.separator + identifier + "." + version;
+    	
+		int idx = urlToData.lastIndexOf('.');
+		if(idx >= 0) {
+			name += "." + urlToData.substring(idx+1);
+		}
+		
+		return name;
     }
 }

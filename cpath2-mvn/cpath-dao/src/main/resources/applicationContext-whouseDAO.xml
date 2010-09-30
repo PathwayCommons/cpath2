@@ -42,10 +42,6 @@
         <property name="sessionFactory" ref="whouseSessionFactory"/>
     </bean>
 
-    <bean id="pathwayDataDAO" class="cpath.warehouse.internal.PathwayDataHibernateDAO">
-        <property name="sessionFactory" ref="whouseSessionFactory"/>
-    </bean>
-
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
 	
 </beans>

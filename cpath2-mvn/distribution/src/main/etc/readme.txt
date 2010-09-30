@@ -33,18 +33,20 @@ java -DCPATH2_HOME=$CPATH2_HOME -jar cpath-admin.jar -create-tables mymetadata
 java -DCPATH2_HOME=$CPATH2_HOME -Xmx1024M -jar cpath-admin.jar -fetch-metadata "file://full-path/cpath2-metadata.html"
 
 # http:// or ftp:// url can be used as well to kick off the cpath2 data import or update...
-#java -DCPATH2_HOME=$CPATH2_HOME -Xmx1024M -jar cpath-admin.jar -fetch-metadata <URL-of-the-metadata-page>
+#$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Xmx1024M -jar cpath-admin.jar -fetch-data <URL-of-the-metadata-page>
 
-java -DCPATH2_HOME=$CPATH2_HOME -Xmx2048M -jar cpath-admin.jar -fetch-pathwaydata CELLMAP
+$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Xmx2048M -jar cpath-admin.jar -fetch-data all
 
-java -DCPATH2_HOME=$CPATH2_HOME -Xmx2048M -jar cpath-admin.jar -fetch-proteindata UNIPROT-HUMAN
+or
 
-java -DCPATH2_HOME=$CPATH2_HOME -Xmx1024M -jar cpath-admin.jar -premerge
+$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Xmx2048M -jar cpath-admin.jar -fetch-data UNIPROT-HUMAN
+
+$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Xmx1024M -jar cpath-admin.jar -premerge
 
 # also possible to add new pathway providers to the "metadata" html page 
 # with corresponding cleaner/converter, if required, even after the cpath-admin.jar is compiled:
-#java -DCPATH2_HOME=$CPATH2_HOME -cp /path-to/DataCleaner1Impl.class;/path-to/DataCleaner2Impl.class  -Xmx1024M -jar cpath-admin.jar -premerge
+#$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -cp /path-to/DataCleaner1Impl.class;/path-to/DataCleaner2Impl.class  -Xmx1024M -jar cpath-admin.jar -premerge
 
-java -DCPATH2_HOME=$CPATH2_HOME -Xmx2048M -jar cpath-admin.jar -merge
+$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Xmx2048M -jar cpath-admin.jar -merge
 
 ...

@@ -13,7 +13,7 @@
 	</bean>
 
 	<bean id="premerge" class="cpath.importer.internal.PremergeImpl" scope="prototype">
-	  <constructor-arg ref="pathwayDataDAO"/>
+	  <constructor-arg ref="metadataDAO"/>
 	  <constructor-arg ref="validator"/>
 	</bean>
 
