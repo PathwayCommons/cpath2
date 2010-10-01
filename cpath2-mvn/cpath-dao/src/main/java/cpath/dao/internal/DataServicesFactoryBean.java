@@ -26,7 +26,6 @@
  **/
 package cpath.dao.internal;
 
-import java.beans.PropertyVetoException;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,8 +47,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 /**
  * This is a fantastic (crazy) factory that 
@@ -246,9 +245,9 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 			String dbUser, 
 			String dbPassword,
 			String dbDriver, 
-			String dbUrl) 
-	{
-		ComboPooledDataSource dataSource = new ComboPooledDataSource();
+			String dbUrl) {
+/*		
+		com.mchange.v2.c3p0.ComboPooledDataSource dataSource = new com.mchange.v2.c3p0.ComboPooledDataSource();
 		try {
 			dataSource.setDriverClass(dbDriver);
 		} catch (PropertyVetoException e) {
@@ -257,23 +256,18 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		dataSource.setJdbcUrl(dbUrl);
 		dataSource.setUser(dbUser);
 		dataSource.setPassword(dbPassword);
-		
-		// c3p0 properties
-		//dataSource.setAcquireIncrement(3);
-		//dataSource.setIdleConnectionTestPeriod(100);
 		dataSource.setInitialPoolSize(0);
 		dataSource.setMaxPoolSize(30);
-		
 		return dataSource;
-
-		/*
+*/
+		
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();
 		dataSource.setDriverClassName(dbDriver);
-		dataSource.setUrl(dbUrl);
+		dataSource.setUrl(dbUrl + "?autoReconnect=true");
 		dataSource.setUsername(dbUser);
-		dataSource.setPassword(dbPassword);
+		dataSource.setPassword(dbPassword);		
 		return dataSource;
-		*/
+
 	}	
 	
 	
