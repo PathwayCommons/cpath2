@@ -11,11 +11,13 @@ import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.junit.*;
 
 import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.beans.Metadata.TYPE;
 
 public class CPathFetcherTest {
@@ -41,7 +43,7 @@ public class CPathFetcherTest {
 	}
 
 	@Test
-	public void testGetProviderProteinData() throws IOException {
+	public void testGetProteinData() throws IOException {
 		// any resource location now works (not only http://...)!
 		String url = "classpath:metadata.html";
 		System.out.println("Loading metadata from " + url);
@@ -63,8 +65,6 @@ public class CPathFetcherTest {
 		// any resource location inside the metadata page works now!
 		//String location = "file://" + getClass().getResource("/test_uniprot_data.dat.gz").getPath();
 		String location = "classpath:test_uniprot_data.dat.gz";
-		//location = "ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz"
-		
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata(
 				"PROT", "Proteins Test Data", 
@@ -137,6 +137,29 @@ public class CPathFetcherTest {
 		assertTrue(f.exists() && f.isFile());
 	}
 
+
+	@Test
+	public void testGetProviderPathwayData() throws IOException {
+		String location = "classpath:test-normalized-2.zip";
+		// in case there's no "metadata page" prepared -
+		Metadata metadata = new Metadata(
+				"BIOPAX_ZIPPED", "Test Pathway Data", 
+				"1", "N/A",  
+				location,
+				new byte[]{}, 
+				Metadata.TYPE.BIOPAX, 
+				"cpath.cleaner.internal.BaseCleanerImpl", 
+				"cpath.converter.internal.BaseConverterImpl");
+		
+		Collection<PathwayData> pathwayData =
+			fetcher.getProviderPathwayData(metadata);
+		PathwayData pd = pathwayData.iterator().next();
+		String owl = pd.getPathwayData();
+		assertTrue(owl != null && owl.length() > 0);
+		assertTrue(owl.contains("<bp:Protein"));
+		Model m = (new SimpleReader()).convertFromOWL(new ByteArrayInputStream(owl.getBytes()));
+		assertFalse(m.getObjects().isEmpty());
+	}
 	
 	
 	@Override

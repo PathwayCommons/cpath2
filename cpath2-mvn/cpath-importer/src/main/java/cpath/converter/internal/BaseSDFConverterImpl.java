@@ -135,10 +135,7 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 			// merge into the warehouse
 			model.merge(m);
 		} else {
-			if(log.isWarnEnabled())
-				log.warn("Cannot create (InChi) entity reference " +
-					"from : " + entryBuffer.substring(0, 50) 
-					+ " ... Skipping.");
+			//if(log.isInfoEnabled()) log.info("Skipped entry.");
 		}
 	}
 	
