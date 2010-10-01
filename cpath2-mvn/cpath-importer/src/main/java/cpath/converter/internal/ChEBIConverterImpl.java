@@ -69,7 +69,7 @@ public class ChEBIConverterImpl extends BaseSDFConverterImpl
 		String smiles = getValue(entryBuffer, CHEBI_SMILES);
 		if (smiles == null || smiles.length() == 0) {
 			if(log.isInfoEnabled())
-				log.info("Skipping ChEBI entry without smiles, id: " 
+				log.info("ChEBI entry without smiles : " 
 						+ rdfID);
 			return null;
 		}
@@ -119,10 +119,13 @@ public class ChEBIConverterImpl extends BaseSDFConverterImpl
 			String key = inchiKey.split(EQUALS_DELIMITER)[1];
 			toReturn = getInchiEntityReference(key, inchi);
 			toReturn.addMemberEntityReference(smallMoleculeReference);
+		} else {
+			if(log.isInfoEnabled())
+				log.info("ChEBI entry without InChIKey : " 
+						+ rdfID);
 		}
 		
-		return toReturn; //(toReturn==null) ? smallMoleculeReference : toReturn;
-		// skip (null) when without InChiKey!
+		return toReturn;
 	}
 	
 

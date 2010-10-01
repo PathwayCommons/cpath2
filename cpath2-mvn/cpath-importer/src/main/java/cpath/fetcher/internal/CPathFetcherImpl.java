@@ -587,18 +587,26 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 			dir.mkdir();
 		}
 		
+		String localFileName = metadata.getLocalDataFile();
+		File localFile = new File(localFileName);
+		if(localFile.exists() && localFile.isFile()) {
+			if(log.isInfoEnabled())
+				log.info(metadata.getType() + " data : " + metadata.getIdentifier() 
+					+ "." + metadata.getVersion() + " - found in "
+					+ localFileName + ". Skip downloading.");
+			return;
+		}
+		
 		Resource resource = LOADER.getResource(metadata.getURLToData());
 		long size = resource.contentLength();
 		
 		ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
-		
-		FileOutputStream dest = new FileOutputStream(metadata.getLocalDataFile());
-		
+		FileOutputStream dest = new FileOutputStream(localFileName);
 		dest.getChannel().transferFrom(source, 0, size);
 		
 		if(log.isInfoEnabled())
 			log.info(metadata.getType() + " data are downloaded from " +
 				metadata.getURLToData() + " and saved in " 
-				+ metadata.getLocalDataFile());
+				+ localFileName);
 	}
 }

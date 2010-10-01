@@ -244,14 +244,14 @@ public class Admin implements Runnable {
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-whouseDAO.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-        WarehouseDataService warehouseDataService = new CPathFetcherImpl();
+        WarehouseDataService fetcher = new CPathFetcherImpl();
     	
 		// get metadata
 		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
 
 		// sanity check
 		if (metadataCollection == null || metadataCollection.size() == 0) {
-			System.err.println("Unknown provider: " + provider);
+			LOG.error("Unknown provider: " + provider);
 			return;
 		}
 
@@ -259,7 +259,7 @@ public class Admin implements Runnable {
 		for (Metadata metadata : metadataCollection) {
 			// fetch (download or copy to a sub-directory in CPATH2_HOME)
 			try {
-				((CPathFetcher)warehouseDataService).fetchData(metadata);
+				((CPathFetcher)fetcher).fetchData(metadata);
 			} catch (IOException e) {
 				LOG.error("Failed fetching data for " + metadata.toString() 
 					+ ". Skipping...", e);
@@ -281,7 +281,7 @@ public class Admin implements Runnable {
 					if (!savedVersions.contains(metadata.getVersion())) {
 						// grab the data
 						Collection<PathwayData> pathwayData =
-							((CPathFetcher)warehouseDataService)
+							((CPathFetcher)fetcher)
 								.getProviderPathwayData(metadata);
 	        
 						// process pathway data
@@ -297,7 +297,7 @@ public class Admin implements Runnable {
         		"classpath:applicationContext-whouseProteins.xml"});
 				PaxtoolsDAO proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
 				// parse/save
-				warehouseDataService.storeWarehouseData(metadata, proteinsDAO);
+				fetcher.storeWarehouseData(metadata, proteinsDAO);
         	} 
 			else if (metadata.getType() == Metadata.TYPE.SMALL_MOLECULE) 
 			{
@@ -306,11 +306,16 @@ public class Admin implements Runnable {
 		            		"classpath:applicationContext-whouseMolecules.xml"});
 		        PaxtoolsDAO smallMoleculesDAO = (PaxtoolsDAO) context.getBean("moleculesDAO");
 		        // parse/save
-				warehouseDataService.storeWarehouseData(metadata, smallMoleculesDAO);
+				fetcher.storeWarehouseData(metadata, smallMoleculesDAO);
 			} 
 			else if (metadata.getType() == Metadata.TYPE.MAPPING) {
 				// Nothing else to do
 			}
+			
+			
+			if(LOG.isInfoEnabled())
+				LOG.info("FETCHING DONE : " + metadata.getIdentifier()
+					+ "." + metadata.getVersion());
 		}
 	}
 
