@@ -309,7 +309,7 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 
 			// interate over zip entries
 			ZipEntry entry = null;
-            while ((entry = zis.getNextEntry()) != null) 
+            while ((entry = zis.getNextEntry()) != null && !entry.isDirectory()) 
             {
             	if(log.isInfoEnabled())
             		log.info("Processing zip entry: " + entry.getName());
@@ -319,14 +319,11 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 				byte data[] = new byte[BUFFER];
 				// use string builder to get over heap issue when
 				// converting from byte[] to string in PathwayData constructor
-				// we'll continue using bos to easily get digest
-				StringBuilder stringBuilder = new StringBuilder(); 
+				// we'll continue using bos to easily get digest 
 				ByteArrayOutputStream bos = new ByteArrayOutputStream();
 				BufferedOutputStream dest = new BufferedOutputStream(bos, BUFFER);
-				while ((count = zis.read(data, 0, BUFFER)) != -1) {
+				while ((count = zis.read(data, 0, data.length)) != -1) {
 					dest.write(data, 0, count);
-					// we assume encoding is UTF8, which is why we can append byte[], not char[]
-					stringBuilder.append(data);
 				}
 				dest.flush();
 				dest.close();
@@ -343,7 +340,7 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 							" version: " + metadata.getVersion() +
 							" digest: " + digest);
 					PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), 
-						metadata.getVersion(), entry.getName(), digest, stringBuilder.toString());
+						metadata.getVersion(), entry.getName(), digest, bos.toString());
 				
 					// add object to return collection
 					toReturn.add(pathwayData);

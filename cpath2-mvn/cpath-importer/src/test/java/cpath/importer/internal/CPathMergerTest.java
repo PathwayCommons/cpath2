@@ -13,6 +13,7 @@ import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.controller.SimpleMerger;
+import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.simpleIO.*;
 
 import org.junit.*;
@@ -57,7 +58,9 @@ public class CPathMergerTest {
 		cvRepository = new OntologyManagerCvRepository(new ClassPathResource("ontologies.xml"), null);
 		metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 
-        // load the test metadata and data into the warehouse
+        /* load the test metadata and ONLY (!) 
+		 * test proteins and molecules data into the warehouse
+		 */
 		CPathFetcherImpl fetcher = new CPathFetcherImpl();
 		try {
 			Collection<Metadata> metadata = fetcher.getMetadata("classpath:metadata.html");
@@ -72,6 +75,19 @@ public class CPathMergerTest {
 				else if (mdata.getType() == TYPE.SMALL_MOLECULE) {
 					// store SMRs in the warehouse
 					fetcher.storeWarehouseData(mdata, (Model)moleculesDAO);
+				} else { 
+				
+				/* 
+				 *  in production, we'd also use the following
+					Collection<PathwayData> pathwayData = fetcher.getProviderPathwayData(metadata);
+					then -
+					metadataDAO.importPathwayData(pwData); // for each PathwayData
+					finally (somewhere) -
+					metadataDAO.getPathwayDataByIdentifier(metadata.getIdentifier());
+					etc...
+					We don't need all the above for this test 
+					(it will merge models from two test biopax files).
+				*/
 				}
 			}
 		} catch (IOException e) {
@@ -89,22 +105,16 @@ public class CPathMergerTest {
 	public void initPathwayModels() throws IOException {
 		final ResourceLoader resourceLoader = new DefaultResourceLoader();
 		pathwayModels = new HashSet<Model>();
-		for (Metadata mdata : metadataDAO.getAll()) {
-			if (mdata.getType() == TYPE.BIOPAX) {
-				//if(!mdata.getIdentifier().equals("TEST_BIOPAX"))
-					//continue; // TODO remove this break to test several PWs merge (but testMergeIntoDAO fails then, although similar idea test in cpath-dao works)
-				
-				// do NOT create pathway data db (for the tests)! 
-				// instead, build models right away (must be normalized/cleaned data!):
-				String url = mdata.getURLToData();
-				Model model = (new SimpleReader()).convertFromOWL(
-						resourceLoader.getResource(url).getInputStream());
-				if(model != null)
-					pathwayModels.add(model);
-				else 
-					fail("Failed to import Model from:" + url);
-			}
-		}
+		BioPAXIOHandler reader = new SimpleReader();
+		
+		Model model = reader.convertFromOWL(resourceLoader
+			.getResource("classpath:test-normalized.owl").getInputStream());
+		pathwayModels.add(model);
+		
+		model = null;
+		model = reader.convertFromOWL(resourceLoader
+			.getResource("classpath:test-normalized-2.owl").getInputStream());
+		pathwayModels.add(model);
 	}
 	
 	
