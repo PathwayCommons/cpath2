@@ -143,7 +143,7 @@ public class CPathFetcherTest {
 		String location = "classpath:test-normalized-2.zip";
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata(
-				"BIOPAX_ZIPPED", "Test Pathway Data", 
+				"TEST_BIOPAX2", "Test Pathway Data", 
 				"1", "N/A",  
 				location,
 				new byte[]{}, 
@@ -151,6 +151,7 @@ public class CPathFetcherTest {
 				"cpath.cleaner.internal.BaseCleanerImpl", 
 				"cpath.converter.internal.BaseConverterImpl");
 		
+		fetcher.fetchData(metadata);
 		Collection<PathwayData> pathwayData =
 			fetcher.getProviderPathwayData(metadata);
 		PathwayData pd = pathwayData.iterator().next();
