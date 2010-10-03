@@ -67,8 +67,8 @@ public class CPathFetcherTest {
 		String location = "classpath:test_uniprot_data.dat.gz";
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata(
-				"PROT", "Proteins Test Data", 
-				"15.15", "July 13, 2010",  
+				"TEST_UNIPROT", "Proteins Test Data", 
+				"2010.10", "October 03, 2010",  
 				location,
 				new byte[]{}, 
 				Metadata.TYPE.PROTEIN, 
@@ -84,8 +84,8 @@ public class CPathFetcherTest {
 		String location = "classpath:test_chebi_data.dat.zip";
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata(
-				"CHEBI", "ChEBI Test Data", 
-				"15.15", "July 13, 2010",  
+				"TEST_CHEBI", "ChEBI Test Data", 
+				"2010.10", "October 03, 2010",  
 				location,
 				new byte[]{}, 
 				Metadata.TYPE.SMALL_MOLECULE, 
@@ -102,8 +102,8 @@ public class CPathFetcherTest {
 		String location = "classpath:test_pubchem_data.dat.zip";
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata(
-				"PUBCHEM", "PubChem Test Data", 
-				"15.15", "July 13, 2010",  
+				"TEST_PUBCHEM", "PubChem Test Data", 
+				"2010.10", "October 03, 2010",  
 				location,
 				new byte[]{}, 
 				Metadata.TYPE.SMALL_MOLECULE, 
@@ -121,8 +121,8 @@ public class CPathFetcherTest {
 	@Test
 	public void testFetchMappingData() throws IOException {
 		Metadata metadata = new Metadata(
-				"IDMAP", "Test Id Mapping Data", 
-				"1.0", "Sep 23, 2010",  
+				"TEST_MAPPING_TXT", "Test Id Mapping Data", 
+				"2010.10", "October 03, 2010",  
 				"classpath:yeast_id_mapping.txt",
 				new byte[]{}, 
 				Metadata.TYPE.MAPPING, 
@@ -143,7 +143,7 @@ public class CPathFetcherTest {
 		String location = "classpath:test-normalized-2.zip";
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata(
-				"TEST_BIOPAX2", "Test Pathway Data", 
+				"TEST_BIOPAX2", "Test Pathway Data 2", 
 				"1", "N/A",  
 				location,
 				new byte[]{}, 
