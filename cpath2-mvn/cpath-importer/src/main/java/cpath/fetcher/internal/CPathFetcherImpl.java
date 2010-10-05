@@ -309,7 +309,7 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 
 			// interate over zip entries
 			ZipEntry entry = null;
-            while ((entry = zis.getNextEntry()) != null && !entry.isDirectory()) 
+            while ((entry = zis.getNextEntry()) != null) 
             {
             	if(log.isInfoEnabled())
             		log.info("Processing zip entry: " + entry.getName());

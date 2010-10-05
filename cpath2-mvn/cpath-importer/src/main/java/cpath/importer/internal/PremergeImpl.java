@@ -1,5 +1,5 @@
 /**
- ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
  ** and University of Toronto (UofT).
  **
  ** This is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -69,16 +68,9 @@ public class PremergeImpl extends Thread implements Premerge {
     private static Log log = LogFactory.getLog(PremergeImpl.class);
 
     private MetadataDAO metaDataDAO;
-
-    @Autowired
-	private ApplicationContext applicationContext;
-
 	private Validator validator;
-	
 	private PremergeDispatcher premergeDispatcher;
-
 	private Metadata metadata;
-	
 	private Cleaner cleaner;
 
 	/**
@@ -195,8 +187,13 @@ public class PremergeImpl extends Thread implements Premerge {
 		if (metadata.getType() == Metadata.TYPE.BIOPAX_L2) {
 			pathwayDataStr = pathwayData.getPathwayData();
 			// convert to biopax l3, then clean
-			pathwayDataStr = convertBioPAXL2ToLevel3(pathwayDataStr);
-			pathwayDataStr = cleaner.clean(pathwayDataStr);
+			try {
+				pathwayDataStr = convertBioPAXL2ToLevel3(pathwayDataStr);
+				pathwayDataStr = cleaner.clean(pathwayDataStr);
+			} catch (RuntimeException e) {
+				log.error("pipeline(), cannot convert " 
+					+ pathwayDataDescription + " to L3.", e);
+			}
 		}
 		else {
 			pathwayDataStr = cleaner.clean(pathwayData.getPathwayData());
@@ -204,12 +201,18 @@ public class PremergeImpl extends Thread implements Premerge {
 			if (metadata.getType() == Metadata.TYPE.PSI_MI) {
 				if(log.isInfoEnabled())
 					log.info("pipeline(), converting psi-mi data.");
-				pathwayDataStr = convertPSIToBioPAX(pathwayDataStr);
+				try {
+					pathwayDataStr = convertPSIToBioPAX(pathwayDataStr);
+				} catch (RuntimeException e) {
+					log.error("pipeline(), cannot convert " 
+						+ pathwayDataDescription
+						+ " to L3.", e);
+				}
 			}
 		}
 
 		// error during conversion
-		if (pathwayDataStr == null || pathwayDataStr.length() == 0) {
+		if (pathwayDataStr == null || pathwayDataStr.trim().length() == 0) {
 			// TBD: report failure
 			log.error("pipeline(), error converting to biopax: "
 					+ pathwayDataDescription);
@@ -219,13 +222,14 @@ public class PremergeImpl extends Thread implements Premerge {
 		// normalize
 		if(log.isInfoEnabled())
 			log.info("pipeline(), normalizing pathway data.");
-		
+
 		try {
 			pathwayDataStr = (new NormalizerImpl()).normalize(pathwayDataStr);
-		} catch (RuntimeException e) {
-			// TBD: report failure
-			log.error("pipeline(), error normalizing pathway data: " 
-				+ pathwayDataDescription, e);
+		} catch(Exception e) {
+			log.error("pipeline(), skipping data : " 
+				+ pathwayData.getIdentifier() + "." 
+				+ pathwayData.getVersion()  + " " 
+				+ pathwayData.getFilename(), e);
 			return;
 		}
 
@@ -233,12 +237,13 @@ public class PremergeImpl extends Thread implements Premerge {
 		if(log.isInfoEnabled())
 			log.info("pipeline(), validating pathway data.");
 		pathwayData.setPremergeData(pathwayDataStr);
-		boolean valid = validatePathway(pathwayData);
+		int noErrors = validatePathway(pathwayData);
 		// update metadata (pathwaydata) with validation results
 		metaDataDAO.importPathwayData(pathwayData);
 		// shall we proceed?
-		if(!valid) {			
-			log.error("pipeline(), biopax errors found in pathway data: "
+		if(noErrors > 0) {			
+			log.error("pipeline(), " + noErrors 
+				+ " biopax errors found in pathway data: "
 				+ pathwayDataDescription);
 			return;
 		}
@@ -272,7 +277,7 @@ public class PremergeImpl extends Thread implements Premerge {
 				null : (Cleaner)cleanerClass.newInstance();
 		}
 		catch (Exception e) {
-			e.printStackTrace();
+			log.fatal(e);
 			return null;
 		}
 	}
@@ -305,7 +310,7 @@ public class PremergeImpl extends Thread implements Premerge {
 			toReturn = os.toString();
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
 
 		// outta here
@@ -335,7 +340,7 @@ public class PremergeImpl extends Thread implements Premerge {
 			}
 		}
 		catch(Exception e) {
-			e.printStackTrace();
+			throw new RuntimeException("L2 to L3 conversion failed", e);
 		}
 
 		// outta here
@@ -349,9 +354,9 @@ public class PremergeImpl extends Thread implements Premerge {
 	 * @param pathwayDataStr OWL content; may be different from original one (e.g., normalized)
 	 * @return boolean
 	 */
-	private boolean validatePathway(final PathwayData pathwayData) {
+	private int validatePathway(final PathwayData pathwayData) {
 
-		boolean toReturn = true;
+		int toReturn = 0;
 		
 		// get result and marshall to xml string to store
 		StringWriter writer = new StringWriter();
@@ -368,10 +373,12 @@ public class PremergeImpl extends Thread implements Premerge {
 		pathwayData.setValidationResults(writer.toString());
 
 		// no errors?
-		toReturn = (validation.countErrors(null, null, null, true) == 0);
+		toReturn = validation.countErrors(null, null, null, true);
 		
 		if(log.isInfoEnabled()) {
 			log.info("Summary for " + pathwayData.getIdentifier() 
+				+ "." + pathwayData.getVersion()
+				+ "." + pathwayData.getFilename()
 				+ ". Critical errors found:" + toReturn + ". " 
 				+ validation.getComment().toString() + "; " 
 				+ validation.toString());
