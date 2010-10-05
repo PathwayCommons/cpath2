@@ -263,7 +263,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();
 		dataSource.setDriverClassName(dbDriver);
-		dataSource.setUrl(dbUrl + "?autoReconnect=true");
+		dataSource.setUrl(dbUrl + "?autoReconnect=true&max_allowed_packet=256M");
 		dataSource.setUsername(dbUser);
 		dataSource.setPassword(dbPassword);		
 		return dataSource;

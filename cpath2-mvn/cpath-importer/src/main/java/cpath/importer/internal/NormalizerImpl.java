@@ -76,14 +76,16 @@ public class NormalizerImpl implements Normalizer {
 	 */
 	public String normalize(String biopaxOwlData) {
 		
+		if(biopaxOwlData == null || biopaxOwlData.length() == 0) 
+			throw new IllegalArgumentException("no data.");
+		
 		// fix BioPAX L3 pre-release property name 'taxonXref' (BioSource)
 		biopaxOwlData = biopaxOwlData.replaceAll("taxonXref","xref");
 		
 		// build the model
 		Model model = biopaxReader.convertFromOWL(new ByteArrayInputStream(biopaxOwlData.getBytes()));
 		if(model == null || model.getLevel() != BioPAXLevel.L3) {
-			throw new IllegalArgumentException(model.getLevel() 
-				+ " is not supported!");
+			throw new IllegalArgumentException("Data is not BioPAX L3!");
 		}
 		
 		// clean/normalize xrefs first!
@@ -101,8 +103,10 @@ public class NormalizerImpl implements Normalizer {
 			if(bpe instanceof ControlledVocabulary 
 					|| bpe instanceof BioSource) {
 				uref = getFirstUnificationXref((XReferrable) bpe);
+				// continue after the last 'else'
 			} else if(bpe instanceof EntityReference) {
 				uref = getFirstUnificationXrefOfEr((EntityReference) bpe);
+				// continue after the last 'else'
 			} else if(bpe instanceof Provenance) {
 				/*
 				 * TODO do we want normalizing Provenance?..
@@ -124,18 +128,17 @@ public class NormalizerImpl implements Normalizer {
 				continue;
 			}
 			
-			if (uref == null) {
-				throw new IllegalArgumentException(
-						"Cannot find a unification xrefs of : " + bpe);
+			if (uref != null) {
+				try {
+					String urn = MiriamLink.getURI(uref.getDb(), uref.getId());
+					model.updateID(bpe.getRDFId(), urn);
+				} catch (Exception e) {
+					log.error("Cannot normalize Xref " + uref + " - " + e);
+				}
+			} else {
+				log.error("Cannot find a unification xrefs of : " 
+					+ bpe.getRDFId());
 			}
-			try {
-				String urn = MiriamLink.getURI(uref.getDb(), uref.getId());
-				model.updateID(bpe.getRDFId(), urn);
-			} catch (Exception e) {
-				log.error("Cannot normalize Xref " +
-						uref + " - " + e);
-			}
-			
 		}
 		
 		
@@ -185,7 +188,7 @@ public class NormalizerImpl implements Normalizer {
 		try {
 			(new SimpleExporter(model.getLevel())).convertToOWL(model, out);
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException("Conversion to OWL failed.", e);
 		}
 		return out.toString();
 	}
@@ -200,46 +203,81 @@ public class NormalizerImpl implements Normalizer {
 		Set<? extends Xref> xrefs = new HashSet<Xref>(model.getObjects(Xref.class));
 		for(Xref ref : xrefs) {
 			// get database official urn
-			Xref x = ref; // can be replaced below...
-			String name = x.getDb();
+			String name = ref.getDb();
+			name = fixKnownMisspell(name);
 			try {
-				String urn = MiriamLink.getDataTypeURI(x.getDb());
+				String urn = MiriamLink.getDataTypeURI(name);
 				// update name to the primary one
 				name = MiriamLink.getName(urn);
-				x.setDb(name);
+				ref.setDb(name);
 			} catch (IllegalArgumentException e) {
 				log.error("Unknown or misspelled datanase name! Won't fix this now... " + e);
 			}
-			String rdfid =  BIOPAX_URI_PREFIX + x.getModelInterface().getSimpleName() 
-				+ ":" + URLEncoder.encode(name + "_" + x.getId());
-			if(model.containsID(rdfid) 
-					&& model.getByID(rdfid).getModelInterface().equals(x.getModelInterface())) {
-				log.warn("Model has 'equivalent' xrefs. This one: " 
-							+ model.getByID(rdfid) + " (" + rdfid + ") refers to the same thing as " 
-							+ x + " (" + x.getRDFId() + ")! Re-wiring...");
-				Xref existingXref = (Xref) model.getByID(rdfid);
-				// copy parents (because replacing the xref would change this set as well)
-				Set<? extends XReferrable> elementsThatUseThisRef = new HashSet<XReferrable>(x.getXrefOf());
-				// replace xref
-				for(XReferrable bpe : elementsThatUseThisRef) {
-					bpe.removeXref(x);
+			
+			Xref x = null;
+			// build new standard rdfid
+			String rdfid =  BIOPAX_URI_PREFIX + ref.getModelInterface().getSimpleName() 
+				+ ":" + URLEncoder.encode(name + "_" + ref.getId());
+			Xref existingXref = (Xref) model.getByID(rdfid);
+			if(existingXref != null) {
+				if(log.isInfoEnabled())
+					log.info("Removing duplicate and re-using xref " 
+						 + rdfid + " instead " + ref.getRDFId());
+				// replace the xref
+				for(XReferrable bpe : new HashSet<XReferrable>(ref.getXrefOf())) {
+					bpe.removeXref(ref);
 					bpe.addXref(existingXref);
 				}
-				assert(x.getXrefOf().isEmpty());
-				model.remove(x); // for this reason, the xref set is a copy of that in model
+				assert(ref.getXrefOf().isEmpty());
+				model.remove(ref);
+				// use existing
 				x = existingXref;
 			} else {
-				model.updateID(x.getRDFId(), rdfid);
+				model.updateID(ref.getRDFId(), rdfid);
+				x = ref;
 			}
 			
 			// warn if two elements reference the same unif. xref!
 			if(x instanceof UnificationXref && x.getXrefOf().size()>1) {
-				log.warn("UnificationXref " + x + 
-						" is used by several elements : " + x.getXrefOf().toString() + 
+				if(log.isWarnEnabled()) {
+					// report max. three such cases
+					Collection<String> list = new HashSet<String>();
+					int i = 0;
+					for(XReferrable e : x.getXrefOf()) {
+						list.add(x.getRDFId());
+						if(i == 3) break;
+					}
+					if(list.size() > 1) // yes, it can be the case! (different objects have the same rdfid...)
+						log.warn("UnificationXref " + x + 
+						" is used by several elements, e.g.,: " + list.toString() + 
 						". It may be a semantic error, or these elements " +
 						"are the same and should be merged!");
+				}
 			}
 		}
+	}
+
+
+	/*
+	 * Quick fix...
+	 * 
+	 * TODO generalize (e.g. using Validator's db synonyms...)
+	 * 
+	 * @param name
+	 * @return
+	 */
+	private String fixKnownMisspell(String name) {
+		String fixed = name.trim();
+		
+		if("psimi".equalsIgnoreCase(fixed) 
+			|| "psi-mi".equalsIgnoreCase(fixed)
+			|| "psi_mi".equalsIgnoreCase(fixed)
+			|| "psi mi".equalsIgnoreCase(fixed)) {
+			name = "MI";
+		}
+		
+
+		return fixed;
 	}
 
 
