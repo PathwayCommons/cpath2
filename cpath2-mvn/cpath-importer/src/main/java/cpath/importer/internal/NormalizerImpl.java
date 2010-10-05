@@ -272,8 +272,9 @@ public class NormalizerImpl implements Normalizer {
 		if("psimi".equalsIgnoreCase(fixed) 
 			|| "psi-mi".equalsIgnoreCase(fixed)
 			|| "psi_mi".equalsIgnoreCase(fixed)
-			|| "psi mi".equalsIgnoreCase(fixed)) {
-			name = "MI";
+			|| "psi mi".equalsIgnoreCase(fixed)) 
+		{
+			fixed = "MI";
 		}
 		
 
