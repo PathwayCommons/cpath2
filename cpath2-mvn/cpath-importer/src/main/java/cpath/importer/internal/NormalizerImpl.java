@@ -161,6 +161,7 @@ public class NormalizerImpl implements Normalizer {
 	private void fixDisplayName(Model model) {
 		if (log.isInfoEnabled())
 			log.info("Trying to auto-fix 'null' displayName...");
+		// where it's null, set to the shortest name if possible
 		for (Named e : model.getObjects(Named.class)) {
 			if (e.getDisplayName() == null) {
 				if (e.getStandardName() != null) {
@@ -177,6 +178,14 @@ public class NormalizerImpl implements Normalizer {
 					e.setDisplayName(dsp);
 					if (log.isInfoEnabled())
 						log.info(e + " displayName auto-fix: " + dsp);
+				}
+			}
+		}
+		// if required, set PE name to (already fixed) ER's name...
+		for(EntityReference er : model.getObjects(EntityReference.class)) {
+			for(SimplePhysicalEntity spe : er.getEntityReferenceOf()) {
+				if(spe.getDisplayName() == null || spe.getDisplayName().trim().length() == 0) {
+					spe.setDisplayName(er.getDisplayName());
 				}
 			}
 		}
