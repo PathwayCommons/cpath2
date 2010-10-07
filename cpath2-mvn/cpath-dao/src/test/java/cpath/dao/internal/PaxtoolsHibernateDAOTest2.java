@@ -45,9 +45,7 @@ import cpath.dao.PaxtoolsDAO;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 
 import static org.junit.Assert.*;
 
@@ -68,11 +66,11 @@ public class PaxtoolsHibernateDAOTest2 {
 	 */
     @Before
     public void setUp() {
-    	DataServicesFactoryBean.createSchema("cpath2_test");
+    	DataServicesFactoryBean.createSchema("cpath2_testpc");
 		// init the DAO (it loads now because databases are created above)
 		ApplicationContext context = new ClassPathXmlApplicationContext(
-				"classpath:testContext-cpathDAO.xml");
-		paxtoolsDAO = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
+				"classpath:testContext-pcDAO.xml");
+		paxtoolsDAO = (PaxtoolsDAO) context.getBean("pcDAO");
     }
     
 	

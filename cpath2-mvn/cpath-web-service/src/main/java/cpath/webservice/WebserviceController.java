@@ -27,13 +27,11 @@
 
 package cpath.webservice;
 
-import cpath.dao.PaxtoolsDAO;
 import cpath.service.CPathService;
 import cpath.service.CPathService.OutputFormat;
 import cpath.service.CPathService.ResultMapKey;
 import cpath.service.internal.CPathServiceImpl;
 import cpath.service.internal.ProtocolStatusCode;
-import cpath.warehouse.CvRepository;
 import cpath.warehouse.internal.BioDataTypes;
 import cpath.warehouse.internal.BioDataTypes.Type;
 import cpath.webservice.args.*;
@@ -64,17 +62,10 @@ public class WebserviceController {
     
     @NotNull
     private CPathService service; // main PC db access
-    // warehouse access objects:
-    private PaxtoolsDAO proteinsDao;
-    private PaxtoolsDAO moleculesDao;
-    private CvRepository cvRepository;
     
-	public WebserviceController(CPathServiceImpl service, PaxtoolsDAO proteinsDao,
-			CvRepository cvRepository,  PaxtoolsDAO moleculesDao) {
+    
+	public WebserviceController(CPathServiceImpl service) {
 		this.service = service;
-		this.proteinsDao = proteinsDao;
-		this.cvRepository = cvRepository;
-		this.moleculesDao = moleculesDao;
 	}
 
 	
@@ -350,7 +341,7 @@ public class WebserviceController {
 			if(dataSet.isEmpty()) {
 				toReturn.append(ProtocolStatusCode
 					.errorAsXml(ProtocolStatusCode.NO_RESULTS_FOUND, 
-						"No elements found for: " + details));
+						"Nothing found for: " + details));
 			} else {
 				for (String s : dataSet) {
 					toReturn.append(s).append(newline);
@@ -373,7 +364,7 @@ public class WebserviceController {
 			toReturn = (String) results.get(ResultMapKey.DATA);
 			if(toReturn == null) {
 				toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.NO_RESULTS_FOUND, 
-						"No elements found for: " + details);
+						"Nothing found for: " + details);
 			} 
 		} else {
 			toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 

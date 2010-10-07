@@ -35,9 +35,9 @@ import org.biopax.paxtools.model.BioPAXElement;
 /**
  * CPath^2 Service is a mid-tier or adapter between DAOs and web controllers. 
  * 
- * TODO Can be used in a console application or integration tests (web container is not required!)
+ * Can be used in a console application or integration tests (web container is not required!)
  * 
- * TODO This is to implement several query methods 
+ * This is to implement several query methods 
  * that accept valid parameters and beans, handle exceptions,
  * and return results packed in the HashMap with predefined keys.
  * 
@@ -70,13 +70,13 @@ public interface CPathService {
 	 *
 	 */
 	public static enum OutputFormat {
-		XML, // cpath legacy search output format
+		XML, // legacy full-text search output format
 		BIOPAX,
 		BINARY_SIF,
-		SBML,
-		GSEA,
+		TSV, // tab-separated "network" format
+		GSEA, // technically - TSV blend
 		PC_GENE_SET, // similar to GSEA, with multiple identifiers micro-encoded
-		ID_LIST, // URIs (default) or other identifiers (data type must be specified)
+		ID_LIST, // legacy TSV format, columns: Record Name, CPATH_ID, Database:ID (data type must be specified)
 		// TODO think: do we need "image" formats at all in the new services?
 		IMAGE, 
 		IMAGE_MAP,
@@ -168,5 +168,16 @@ public interface CPathService {
 	 * @return
 	 */
 	Map<ResultMapKey, Object> fetchAsGSEA(String outputIdType, String... uris);
+	
+
+	
+	/**
+	 * Generates the BioPAX validation report for the pathway data provider
+	 * (report will be associated with 'DATA' key in the returned map).
+	 * 
+	 * @param metadataIdentifier
+	 * @return
+	 */
+	Map<ResultMapKey, Object> getValidationReport(String metadataIdentifier);
 	
 }

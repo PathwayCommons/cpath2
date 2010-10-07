@@ -63,10 +63,10 @@ public class CPathServiceTest {
 
 	
     static {
-    	DataServicesFactoryBean.createSchema("cpath2_test");
+    	DataServicesFactoryBean.createSchema("cpath2_testpc");
 		ApplicationContext context = new ClassPathXmlApplicationContext(
-				"classpath:testContext-cpathDAO.xml");
-		Object dao = context.getBean("paxtoolsDAO");
+				"classpath:testContext-pcDAO.xml");
+		Object dao = context.getBean("pcDAO");
 		log.info("Loading BioPAX data (importModel(file))...");
 		File biopaxFile = new File(CPathServiceTest.class.getResource("/test.owl").getFile());		
 		try {
@@ -74,7 +74,8 @@ public class CPathServiceTest {
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
-		service = new CPathServiceImpl((PaxtoolsDAO)dao);
+		service = new CPathServiceImpl((PaxtoolsDAO)dao,
+				null,null,null,null);
 		exporter = new SimpleExporter(BioPAXLevel.L3);
     }
 	
