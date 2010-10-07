@@ -93,19 +93,20 @@ public class Main  {
         boolean validArgs = true;
  
         if(args[0].equals(COMMAND.VALIDATION_REPORT.toString())) {
-			if (args.length != 2) {
+			if (args.length != 3) {
 				validArgs = false;
 			} else {
 				this.command = COMMAND.VALIDATION_REPORT;
-				this.commandParameters = args;
+				this.commandParameters = new String[] {args[1], args[2]};
 			} 
         } 
         else {
             validArgs = false;
         }
-
-        if (!validArgs) {
-			
+        
+        if(!validArgs) {
+        	System.err.println("Missing args!" + args.toString());
+        	System.exit(-1);
         }
     }
 
@@ -128,6 +129,10 @@ public class Main  {
     private void getValidationReport(final String provider, 
     		final String output) throws IOException 
     {
+    	if(LOG.isInfoEnabled()) {
+    		LOG.info("Getting validation report for " + provider
+    				+ "...");
+    	}
     	Map<ResultMapKey, Object> res = service.getValidationReport(provider);
     	if(res.containsKey(ResultMapKey.ERROR)) {
     		System.err.println(res.get(ResultMapKey.ERROR));
@@ -157,7 +162,6 @@ public class Main  {
     public static void main(String[] args) throws Exception {
         // sanity check
         if (args.length == 0) {
-            System.err.println("Missing args to Admin.");
 			Main.usage(); //exits
         }
     	
