@@ -21,6 +21,7 @@
 			classpath:applicationContext-whouseMolecules.xml
 			classpath:applicationContext-whouseProteins.xml
 			classpath:applicationContext-cvRepository.xml
+			classpath:applicationContext-cpathService.xml
 		</param-value>
 	</context-param>
 

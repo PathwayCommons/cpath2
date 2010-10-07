@@ -66,11 +66,11 @@ public class PaxtoolsHibernateDAOTest {
 	 * imports the same data again...)
 	 */
     static {
-    	DataServicesFactoryBean.createSchema("cpath2_test");
+    	DataServicesFactoryBean.createSchema("cpath2_testpc");
 		// init the DAO (it loads now because databases are created above)
 		ApplicationContext context = new ClassPathXmlApplicationContext(
-				"classpath:testContext-cpathDAO.xml");
-		paxtoolsDAO = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
+				"classpath:testContext-pcDAO.xml");
+		paxtoolsDAO = (PaxtoolsDAO) context.getBean("pcDAO");
 		
 		// load some data into the test storage
 		log.info("Loading BioPAX data (importModel(file))...");

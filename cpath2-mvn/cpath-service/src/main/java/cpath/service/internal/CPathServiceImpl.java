@@ -34,6 +34,7 @@ import java.util.*;
 import javax.validation.constraints.NotNull;
 import javax.xml.bind.*;
 import javax.xml.namespace.QName;
+import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,18 +45,23 @@ import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Named;
+import org.biopax.validator.result.Validation;
+import org.biopax.validator.result.ValidatorResponse;
+import org.biopax.validator.utils.BiopaxValidatorUtils;
 import org.springframework.stereotype.Service;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.CPathService;
 import cpath.service.jaxb.*;
+import cpath.warehouse.CvRepository;
+import cpath.warehouse.MetadataDAO;
+import cpath.warehouse.beans.PathwayData;
 
 import static cpath.service.CPathService.ResultMapKey.*;
 
 /**
  * Service tier class - to uniformly access 
- * BioPAX model (DAO) from console and web service 
- * applications.
+ * persisted BioPAX model (DAO) from console and webservice 
  * 
  * @author rodche
  *
@@ -66,7 +72,19 @@ public class CPathServiceImpl implements CPathService {
 	private static final Log log = LogFactory.getLog(CPathServiceImpl.class);
 	
 	@NotNull
-	private PaxtoolsDAO dao;
+	private PaxtoolsDAO mainDAO;
+
+	@NotNull
+	private PaxtoolsDAO proteinsDAO;
+	
+	@NotNull
+	private PaxtoolsDAO moleculesDAO;
+	
+	@NotNull
+	private MetadataDAO metadataDAO;
+	
+	@NotNull
+	private CvRepository cvFetcher;
 	
 	private final SimpleReader reader;
 	private final SimpleExporter exporter;
@@ -74,8 +92,18 @@ public class CPathServiceImpl implements CPathService {
 	
 	private final JAXBContext jaxbContext;
 	
-	public CPathServiceImpl(PaxtoolsDAO paxtoolsDAO) {
-		this.dao = paxtoolsDAO;
+	public CPathServiceImpl(
+			PaxtoolsDAO mainDAO, 
+			PaxtoolsDAO proteinsDAO,
+			PaxtoolsDAO moleculesDAO,
+			MetadataDAO metadataDAO,
+			CvRepository cvFetcher) {
+		
+		this.mainDAO = mainDAO;
+		this.proteinsDAO = proteinsDAO;
+		this.moleculesDAO = moleculesDAO;
+		this.metadataDAO = metadataDAO;
+		this.cvFetcher = cvFetcher;
 		this.reader = new SimpleReader(BioPAXLevel.L3);
 		this.exporter = new SimpleExporter(BioPAXLevel.L3);
 		this.merger = new SimpleMerger(reader.getEditorMap());
@@ -87,8 +115,11 @@ public class CPathServiceImpl implements CPathService {
 			throw new RuntimeException(e);
 		}
 	}
-
-
+	
+	/*
+	 * Interface methods
+	 */	
+	
 	@Override
 	public Map<ResultMapKey, Object> find(String queryStr, 
 			Class<? extends BioPAXElement> biopaxClass, boolean countOnly,
@@ -103,10 +134,10 @@ public class CPathServiceImpl implements CPathService {
 		
 		try {
 			if (countOnly) {
-				Integer count =  dao.count(null, biopaxClass);
+				Integer count =  mainDAO.count(null, biopaxClass);
 				map.put(COUNT, count);
 			} else {
-				Collection<String> data = dao.find(queryStr, biopaxClass);
+				Collection<String> data = mainDAO.find(queryStr, biopaxClass);
 				map.put(DATA, data);
 				map.put(COUNT, data.size()); // becomes Integer
 			}
@@ -145,7 +176,13 @@ public class CPathServiceImpl implements CPathService {
 			case PC_GENE_SET: // TODO
 				
 				break;
-			case SBML: // TODO
+			case TSV: // TODO
+				
+				break;
+			case ID_LIST: // TODO
+				
+				break;
+			case IMAGE_MAP: // TODO ?
 				
 				break;
 			case XML: 
@@ -238,16 +275,16 @@ public class CPathServiceImpl implements CPathService {
 		
 		if(uris.length >= 1) {	
 			// extract a sub-model
-			Model m = dao.getValidSubModel(Arrays.asList(uris));
+			Model m = mainDAO.getValidSubModel(Arrays.asList(uris));
 			map.put(MODEL, m);
 			map.put(DATA, exportToOWL(m));
 		} 
 		
 		if(uris.length == 1) {
 			// also put the object (element) in the map
-			BioPAXElement element = dao.getByID(uris[0]);
+			BioPAXElement element = mainDAO.getByID(uris[0]);
 			if (element != null) {
-				dao.initialize(element);
+				mainDAO.initialize(element);
 				map.put(ELEMENT, element);
 			}
 		}
@@ -261,15 +298,15 @@ public class CPathServiceImpl implements CPathService {
 		Map<ResultMapKey, Object> toReturn = new HashMap<ResultMapKey, Object>();
 		
 		// extract a Biopax sub-model
-		Model m = dao.getValidSubModel(Arrays.asList(uris));
+		Model m = mainDAO.getValidSubModel(Arrays.asList(uris));
 		
 		// build a SearchResponseType, fill in, marshal
 		SearchResponseType searchResponse = new SearchResponseType();
 		List<ExtendedRecordType> hits = searchResponse.getSearchHit();
 		for (String id : uris) {
-			BioPAXElement element = m.getByID(id); //= dao.getByID(id);
+			BioPAXElement element = m.getByID(id); //= mainDAO.getByID(id);
 			if (element != null) {
-				//dao.initialize(element); // if above: dao.getByID(id)
+				//mainDAO.initialize(element); // if above: mainDAO.getByID(id)
 				ExtendedRecordType rec = new ExtendedRecordType();
 				rec.setPrimaryId(id);
 				if(element instanceof Named)
@@ -324,5 +361,47 @@ public class CPathServiceImpl implements CPathService {
 			throw new RuntimeException(e);
 		}
 		return writer.toString();
+	}
+
+
+	/* (non-Javadoc)
+	 * @see cpath.service.CPathService#getValidationReport(java.lang.String)
+	 */
+	@Override
+	public Map<ResultMapKey, Object> getValidationReport(
+			String metadataIdentifier) 
+	{
+		Map<ResultMapKey, Object> toReturn = new HashMap<ResultMapKey, Object>();
+		
+		// get validationResults from PathwayData beans
+		Collection<PathwayData> pathwayDataCollection = metadataDAO.getPathwayDataByIdentifier(metadataIdentifier);
+		if (!pathwayDataCollection.isEmpty()) {
+			// new container to collect different files validation results
+			ValidatorResponse response = new ValidatorResponse();
+
+			try {
+				JAXBContext ctx = JAXBContext
+						.newInstance("org.biopax.validator.result");
+				Unmarshaller un = ctx.createUnmarshaller();
+				for (PathwayData pathwayData : pathwayDataCollection) {
+					String xmlResult = pathwayData.getValidationResults();
+					// unmarshal and add to the 'results' list
+					Validation validation = un.unmarshal(
+							new StreamSource(new StringReader(xmlResult)),
+							Validation.class).getValue();
+					response.getValidationResult().add(validation);
+				}
+			} catch (JAXBException e) {
+				toReturn.put(ERROR, e);
+				return toReturn;
+			}
+
+			// write report and add it to the map(DATA)
+			StringWriter writer = new StringWriter();
+			BiopaxValidatorUtils.write(response, writer, null); // the last parameter could be a xsltSource
+			toReturn.put(DATA, writer.toString());
+		}
+		
+		return toReturn;
 	}
 }

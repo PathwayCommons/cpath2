@@ -362,13 +362,20 @@ public class PremergeImpl extends Thread implements Premerge {
 		StringWriter writer = new StringWriter();
 		// the following is 
 		// create a new empty validation and associate with the model data
-		Validation validation = new Validation(pathwayData.getIdentifier());
+		Validation validation = new Validation(
+				pathwayData.getIdentifier() + "." 
+				+ pathwayData.getVersion() + " " +
+				pathwayData.getFilename()); // constructor parameter sets the title
 		// because errors are reported during the import (e.g., syntax)
 		validator.importModel(validation, 
 			new ByteArrayInputStream(pathwayData.getPremergeData().getBytes()));
 		// now post-validate
 		validator.validate(validation);
-		// serialize
+		/* serialize
+		 * (the last parameter is for javax.xml.transform.Source;
+		 * so, if we have a XSL stylesheet, the validation 
+		 * can be transformed to a human-readable report)
+		 */
 		BiopaxValidatorUtils.write(validation, writer, null);
 		pathwayData.setValidationResults(writer.toString());
 

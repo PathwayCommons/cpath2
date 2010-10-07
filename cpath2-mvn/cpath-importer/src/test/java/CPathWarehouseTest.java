@@ -69,7 +69,7 @@ public class CPathWarehouseTest {
 		
 		// load beans
 		ApplicationContext context = new ClassPathXmlApplicationContext(
-			new String[]{"classpath:testContext-allDAO.xml"});
+			new String[]{"classpath:testContext-whDAO.xml"});
 		molecules = (WarehouseDAO) context.getBean("moleculesDAO");
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		proteins = (WarehouseDAO) context.getBean("proteinsDAO");

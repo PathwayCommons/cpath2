@@ -52,7 +52,7 @@ public class CPathMergerTest {
 
 		// load beans
 		ApplicationContext context = new ClassPathXmlApplicationContext(
-			new String[]{"classpath:testContext-allDAO.xml"});
+			new String[]{"classpath:testContext-whDAO.xml"});
 		proteinsDAO = (WarehouseDAO) context.getBean("proteinsDAO");
 		moleculesDAO = (WarehouseDAO) context.getBean("moleculesDAO");
 		cvRepository = new OntologyManagerCvRepository(new ClassPathResource("ontologies.xml"), null);
