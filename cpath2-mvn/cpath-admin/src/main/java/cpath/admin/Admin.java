@@ -255,6 +255,16 @@ public class Admin implements Runnable {
 			return;
 		}
 
+		// process small molecule references data
+		ApplicationContext contextM = new ClassPathXmlApplicationContext(new String [] { 	
+            		"classpath:applicationContext-whouseMolecules.xml"});
+        PaxtoolsDAO smallMoleculesDAO = (PaxtoolsDAO) contextM.getBean("moleculesDAO");
+        
+        
+        ApplicationContext contextP = new ClassPathXmlApplicationContext(new String [] {
+		"classpath:applicationContext-whouseProteins.xml"});
+		PaxtoolsDAO proteinsDAO = (PaxtoolsDAO) contextP.getBean("proteinsDAO");
+		
 		// interate over all metadata
 		for (Metadata metadata : metadataCollection) {
 			// fetch (download or copy to a sub-directory in CPATH2_HOME)
@@ -292,19 +302,11 @@ public class Admin implements Runnable {
 			} 
 			else if (metadata.getType() == Metadata.TYPE.PROTEIN) 
 			{
-				// process protein references data
-				context = new ClassPathXmlApplicationContext(new String [] {
-        		"classpath:applicationContext-whouseProteins.xml"});
-				PaxtoolsDAO proteinsDAO = (PaxtoolsDAO) context.getBean("proteinsDAO");
 				// parse/save
 				fetcher.storeWarehouseData(metadata, proteinsDAO);
         	} 
 			else if (metadata.getType() == Metadata.TYPE.SMALL_MOLECULE) 
 			{
-				// process small molecule references data
-				context = new ClassPathXmlApplicationContext(new String [] { 	
-		            		"classpath:applicationContext-whouseMolecules.xml"});
-		        PaxtoolsDAO smallMoleculesDAO = (PaxtoolsDAO) context.getBean("moleculesDAO");
 		        // parse/save
 				fetcher.storeWarehouseData(metadata, smallMoleculesDAO);
 			} 
