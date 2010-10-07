@@ -48,6 +48,7 @@ import org.biopax.paxtools.model.level3.Named;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
+import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.stereotype.Service;
 
 import cpath.dao.PaxtoolsDAO;
@@ -376,30 +377,34 @@ public class CPathServiceImpl implements CPathService {
 		// get validationResults from PathwayData beans
 		Collection<PathwayData> pathwayDataCollection = metadataDAO.getPathwayDataByIdentifier(metadataIdentifier);
 		if (!pathwayDataCollection.isEmpty()) {
+			// set/use oxm marshaller
+			org.springframework.oxm.jaxb.Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
+			marshaller.setClassesToBeBound(ValidatorResponse.class, Validation.class);
+			BiopaxValidatorUtils bpvUtils = new BiopaxValidatorUtils();
+			bpvUtils.setMarshaller(marshaller);
 			// new container to collect different files validation results
 			ValidatorResponse response = new ValidatorResponse();
 
-			try {
-				JAXBContext ctx = JAXBContext
-						.newInstance("org.biopax.validator.result");
-				Unmarshaller un = ctx.createUnmarshaller();
-				for (PathwayData pathwayData : pathwayDataCollection) {
-					String xmlResult = pathwayData.getValidationResults();
+			for (PathwayData pathwayData : pathwayDataCollection) {
+				String xmlResult = pathwayData.getValidationResults().trim();
+				if (log.isDebugEnabled())
+					log.debug(pathwayData.toString()
+							+ " - validation result : " + xmlResult);
+				if (xmlResult != null && xmlResult.length() > 0) {
 					// unmarshal and add to the 'results' list
-					Validation validation = un.unmarshal(
-							new StreamSource(new StringReader(xmlResult)),
-							Validation.class).getValue();
+					Validation validation = (Validation) marshaller
+						.unmarshal(new StreamSource(new StringReader(xmlResult)));
 					response.getValidationResult().add(validation);
 				}
-			} catch (JAXBException e) {
-				toReturn.put(ERROR, e);
-				return toReturn;
 			}
 
 			// write report and add it to the map(DATA)
 			StringWriter writer = new StringWriter();
-			BiopaxValidatorUtils.write(response, writer, null); // the last parameter could be a xsltSource
+			bpvUtils.write(response, writer, null); // the last parameter could be a xsltSource
 			toReturn.put(DATA, writer.toString());
+			
+			if(log.isDebugEnabled())
+				log.debug(writer.toString());
 		}
 		
 		return toReturn;
