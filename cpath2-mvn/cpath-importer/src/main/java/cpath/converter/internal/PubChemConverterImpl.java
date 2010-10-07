@@ -160,7 +160,7 @@ public class PubChemConverterImpl extends BaseSDFConverterImpl {
 		String inchiKey = getValue(entryBuffer, PUBCHEM_NIST_INCHIKEY);
 		String inchi = getValue(entryBuffer, PUBCHEM_NIST_INCHI);
 		if (inchiKey != null && inchiKey.length() > 0) {
-			String key = inchiKey.split(EQUALS_DELIMITER)[1];
+			String key = inchiKey.split(EQUALS_DELIMITER)[1]; // got OutOfBoundariesException here with real pubchem data :(
 			toReturn = getInchiEntityReference(key, inchi);
 			// pubchem SMR becomes member ER of the 'inchi' one
 			toReturn.addMemberEntityReference(smallMoleculeReference);
