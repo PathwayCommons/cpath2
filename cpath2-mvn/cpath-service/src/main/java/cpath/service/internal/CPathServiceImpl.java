@@ -45,6 +45,8 @@ import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Named;
+import org.biopax.validator.result.ErrorCaseType;
+import org.biopax.validator.result.ErrorType;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
@@ -377,9 +379,10 @@ public class CPathServiceImpl implements CPathService {
 		// get validationResults from PathwayData beans
 		Collection<PathwayData> pathwayDataCollection = metadataDAO.getPathwayDataByIdentifier(metadataIdentifier);
 		if (!pathwayDataCollection.isEmpty()) {
-			// set/use oxm marshaller
+			// set/use jaxb2 (spring-oxm) marshaller
 			org.springframework.oxm.jaxb.Jaxb2Marshaller marshaller = new Jaxb2Marshaller();
-			marshaller.setClassesToBeBound(ValidatorResponse.class, Validation.class);
+			marshaller.setClassesToBeBound(ValidatorResponse.class, Validation.class, 
+					ErrorCaseType.class, ErrorType.class);
 			BiopaxValidatorUtils bpvUtils = new BiopaxValidatorUtils();
 			bpvUtils.setMarshaller(marshaller);
 			// new container to collect different files validation results
