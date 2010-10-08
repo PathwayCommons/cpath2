@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 
 # author: rodche
-#
 # Generates cpath2 "metadata" configuration records from the ftp directory list 
 
 use strict;
@@ -9,16 +8,17 @@ use warnings;
 use NET::FTP;
 use Time::localtime;
 
-die "Use Parameters: host, directory, (new metadata)identifier, type, [version, cleaner class, converter class]\n" 
+my ($host, $dir, $id, $typ, $co, $cl, $ver) = @ARGV;
+
+$cl ||= "cpath.cleaner.internal.BaseCleanerImpl";
+$co ||= "cpath.converter.internal.BaseConverterImpl";
+
+die "Use Parameters: host, directory, (new metadata)identifier, type, [converter class, cleaner class, version]\n" 
 	unless (@ARGV > 3);
 
-my ($host, $dir, $id, $type, $ver, $cleaner, $converter) = @ARGV;
-
-$cleaner |= "cpath.cleaner.internal.BaseCleanerImpl";
-$converter |= "cpath.converter.internal.BaseConverterImpl";
-
 my $tm = localtime;
-$ver |= join "", $tm->year+1900, $tm->mon+1;
+$ver ||= join "", $tm->year+1900, $tm->mon+1;
+
 my $today = join "", $tm->year+1900, $tm->mon+1, $tm->mday;
 
 my $ftp = Net::FTP->new("$host", Debug => 0)
@@ -35,10 +35,10 @@ my @files = $ftp->ls()
 #print join("\n",@files);
 
 my $i = 0;
-foreach (@files) {
+foreach (sort @files) {
 	++$i;
-	print join("<br>", ("$id$i","",$ver, $today, "ftp://$host$dir/$_","",$type,$cleaner,$converter)), "\n"
-		if $_ =~ "\.gz" || $_ =~ "\.zip";
+	print join("<br>", "$id$i", "", $ver, $today, "ftp://$host$dir/$_", "", $typ, $cl, $co), "\n" 
+		if ($_ =~ "\.gz" || $_ =~ "\.zip");
 }
 
 $ftp->quit;
