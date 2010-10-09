@@ -37,6 +37,8 @@
     <oxm:jaxb2-marshaller id="resultsMarshaller" xmlns="http://www.biopax.org/validator">
 		<oxm:class-to-be-bound name="org.biopax.validator.result.Validation"/>
 		<oxm:class-to-be-bound name="org.biopax.validator.result.ValidatorResponse"/>
+		<oxm:class-to-be-bound name="org.biopax.validator.result.ErrorCaseType"/>
+		<oxm:class-to-be-bound name="org.biopax.validator.result.ErrorType"/>
 	</oxm:jaxb2-marshaller>
 
  	<!-- This is for the rules's and error messages's auto-configuration -->

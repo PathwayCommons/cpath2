@@ -298,6 +298,9 @@ public class Admin implements Runnable {
 						for (PathwayData pwData : pathwayData) {
 							metadataDAO.importPathwayData(pwData);
 						}
+					} else {
+						if(LOG.isInfoEnabled())
+							LOG.info("Skipping existing pathway data (- same identifier and version)");
 					}
 			} 
 			else if (metadata.getType() == Metadata.TYPE.PROTEIN) 
