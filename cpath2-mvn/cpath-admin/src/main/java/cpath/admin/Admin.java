@@ -125,12 +125,16 @@ public class Admin implements Runnable {
 			}
         }
 		else if (args[0].equals(COMMAND.FETCH_DATA.toString())) {
-			if (args.length != 2) {
+			if (args.length < 2) {
 				validArgs = false;
-			}
-			else {
+			} else { // args.length >= 2
 				this.command = COMMAND.FETCH_DATA;
-				this.commandParameters = new String[] { args[1] };
+				if(args.length == 2) {
+					this.commandParameters = new String[] { args[1], "true"};
+					// resume=true - default mode is to continue previously interrupted import
+				} else {
+					this.commandParameters = new String[] { args[1], args[2]};
+				}
 			}
 		}
 		else if (args[0].equals(COMMAND.PREMERGE.toString())) {
@@ -179,7 +183,7 @@ public class Admin implements Runnable {
                 fetchMetadata(commandParameters[0]);
 				break;
 			case FETCH_DATA:
-				fetchWarehouseData(commandParameters[0]);
+				fetchWarehouseData(commandParameters[0], Boolean.valueOf(commandParameters[1]));
 				break;
 			case PREMERGE:
 				ApplicationContext context =
@@ -237,9 +241,10 @@ public class Admin implements Runnable {
      * Helper function to get warehouse (protein, small molecule) data.
 	 *
      * @param provider String
+     * @param resume continue previous data import or start afresh
      * @throws IOException
      */
-    private void fetchWarehouseData(final String provider) throws IOException {
+    private void fetchWarehouseData(final String provider, Boolean resume) throws IOException {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-whouseDAO.xml"});
@@ -267,15 +272,25 @@ public class Admin implements Runnable {
 		
 		// interate over all metadata
 		for (Metadata metadata : metadataCollection) {
+			
+			File localFile = new File(metadata.getLocalDataFile());
+			if(!resume && localFile.exists() && localFile.isFile()) {
+				if(LOG.isInfoEnabled())
+					LOG.info("Skipping previously imported data: " 
+					+ metadata.getType() + " " + metadata.getIdentifier() 
+					+ "." + metadata.getVersion() + " (" 
+					+ metadata.getLocalDataFile() + ")");
+				continue;
+			} 
+			
 			// fetch (download or copy to a sub-directory in CPATH2_HOME)
 			try {
 				((CPathFetcher)fetcher).fetchData(metadata);
-			} catch (IOException e) {
+			} catch (Exception e) {
 				LOG.error("Failed fetching data for " + metadata.toString() 
 					+ ". Skipping...", e);
 				continue;
 			}
-			
 			
 			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
 					metadata.getType() == Metadata.TYPE.BIOPAX ||
@@ -346,7 +361,8 @@ public class Admin implements Runnable {
 		toReturn.append("commands:" + NEWLINE);
 		toReturn.append(COMMAND.CREATE_TABLES.toString() + " <table1,table2,..>" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + NEWLINE);
-		toReturn.append(COMMAND.FETCH_DATA.toString() + " <provider-name or all>" + NEWLINE);
+		toReturn.append(COMMAND.FETCH_DATA.toString() + 
+				" <provider-name or all> [<continue (True/false)>]" + NEWLINE);
 		toReturn.append(COMMAND.PREMERGE.toString() + NEWLINE);
 		toReturn.append(COMMAND.MERGE.toString() + NEWLINE);
 

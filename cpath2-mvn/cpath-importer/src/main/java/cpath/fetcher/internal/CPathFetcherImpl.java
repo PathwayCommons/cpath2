@@ -1,5 +1,5 @@
 /**
- ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
  ** and University of Toronto (UofT).
  **
  ** This is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ import cpath.warehouse.beans.PathwayData;
 
 
 /**
- * @author rodche
+ * @author rodche, ben
  *
  */
 public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
@@ -229,49 +229,44 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
     public Collection<PathwayData> getProviderPathwayData(final Metadata metadata) 
     	throws IOException 
     {
-
         Collection<PathwayData> toReturn = new HashSet<PathwayData>();
-
 		String url = "file://" + metadata.getLocalDataFile();
-
-		// set isOWL
-		boolean isOWL = (url.endsWith(".owl") || url.endsWith(".OWL"));
-
-		// pathway data is either owl or zip/gz
-		if (isOWL) {
+		BufferedInputStream bis = new BufferedInputStream(LOADER.getResource(url).getInputStream());
+		
+		// pathway data is either owl, zip (multiple file entries allowed) or gz (single data entry)
+		if (url.toLowerCase().endsWith(".owl")) {
 			if(log.isInfoEnabled())
-				log.info("getProviderPathwayData(), data is owl, directly returning.");
-			String fetchedData = readTextContent(LOADER.getResource(url).getInputStream());
-			int idx = url.lastIndexOf('/');
-			String filename = url.substring(idx+1); // not found (-1) gives entire string
-			String digest = getDigest(fetchedData.getBytes());
-			PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), 
-					metadata.getVersion(), filename, digest, fetchedData);
+				log.info("getProviderPathwayData(): data is owl (returning as is)");
+			PathwayData pathwayData = readContent(metadata, bis);
 			toReturn.add(pathwayData);
-		}
-		else {
+		} 
+		else if(url.toLowerCase().endsWith(".gz")) {
 			if(log.isInfoEnabled())
-				log.info("getProviderPathwayData(), data is zip/gz, unzipping.");
-			unzip(metadata, LOADER.getResource(url).getInputStream(), toReturn);
+				log.info("getProviderPathwayData(): extracting data from gzip archive.");
+			PathwayData pathwayData = readContent(metadata, new GZIPInputStream(bis));
+			toReturn.add(pathwayData);
+		} 
+		else if(url.toLowerCase().endsWith(".zip")) {
+			if(log.isInfoEnabled())
+				log.info("getProviderPathwayData(): extracting data from zip archive.");
+			toReturn = readContent(metadata, new ZipInputStream(bis));
+		} else {
+			if(log.isWarnEnabled())
+				log.warn("getProviderPathwayData(): data format is not supported: " + url);
 		}
 
-        // outta here
         return toReturn;
     }
 
 	
     /*
-     * Given an input stream, returns a string (content).
-	 *
-     * @param inputStream InputStream
-	 * @return String
-	 * @throws IOException
+     * @param inputStream plain text (uncompressed) data stream
      */
-    private String readTextContent(final InputStream inputStream) throws IOException {
-
+    private PathwayData readContent(Metadata metadata, final InputStream inputStream) 
+    	throws IOException 
+    {
         BufferedReader reader = null;
 		StringBuffer toReturn = new StringBuffer();
-
         try {
             // we'd like to read lines at a time
             reader = new BufferedReader(new InputStreamReader(inputStream));
@@ -288,25 +283,24 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
             closeQuietly(reader);
         }
 
-		// outta here
-		return toReturn.toString();
+		String fetchedData = toReturn.toString();
+		int idx = metadata.getURLToData().lastIndexOf('/');
+		String filename = metadata.getURLToData().substring(idx+1); // not found (-1) gives entire string
+		String digest = getDigest(fetchedData.getBytes());
+		
+		return new PathwayData(metadata.getIdentifier(), metadata.getVersion(), filename, digest, fetchedData);
 	}
 
-    /**
-     * Given an InputStream, unzip into individual files and creates PathwayData objects from each
-	 *
-	 * @param metadata Metadata
-     * @param fetchedData InputStream
-	 * @param toReturn Collection<PathwayData> 
+    
+    /*
+     * Given a zip stream, unzips it into individual files and creates PathwayData objects from each
      */
-    private void unzip(final Metadata metadata, final InputStream fetchedData, final Collection<PathwayData> toReturn) throws IOException {
-
-        ZipInputStream zis = null;
-
+    private Collection<PathwayData> readContent(final Metadata metadata, 
+    	final ZipInputStream zis) throws IOException 
+    {
+    	Collection<PathwayData> toReturn = new HashSet<PathwayData>();
+    	
         try {
-            // create a zip intput stream
-			zis = new ZipInputStream(new BufferedInputStream(fetchedData));
-
 			// interate over zip entries
 			ZipEntry entry = null;
             while ((entry = zis.getNextEntry()) != null) 
@@ -353,34 +347,31 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
         finally {
             closeQuietly(zis);
         }
+        
+        return toReturn;
     }
 
-   /**
-    * Close the specified reader quietly.
-    *
-    * @param zis ZipInputStream
+   /*
+    * Close the specified ZipInputStream quietly.
     */
-    private static void closeQuietly(final ZipInputStream zis) {
+    private static void closeQuietly(final InputStream zis) {
         try {
             zis.close();
         }
         catch (Exception e) {
-            // ignore
+           log.warn("zis.close() failed." + e);
         }
     }
 
-   /**
+   /*
     * Close the specified reader quietly.
-    *
-    * @param zis ZipInputStream
     */
-    private static void closeQuietly(final BufferedReader reader) {
-    
+    private static void closeQuietly(final Reader reader) {
         try {
             reader.close();
         }
         catch (Exception e) {
-            // ignore
+        	log.warn("reader.close() failed." + e);
         }
     }
 
@@ -432,128 +423,73 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 	@Override
     public void storeWarehouseData(final Metadata metadata, final Model model) 
 		throws IOException 
-	{
-		String url = "file://" + metadata.getLocalDataFile();
-
-		// protein data comes zipped
-		if (log.isInfoEnabled()) {
-			log.info("getWarehouseData(), data is zip/gz, unzipping.");
-		}
-		
-		convert(metadata, LOADER.getResource(url).getInputStream(), model);
-    }
-
-    /**
-     * Given an InputStream, unzip into individual files and create EntityReference objects from each
-	 * and place in model.
-	 *
-	 * @param metadata Metadata
-     * @param fetchedData InputStream
-     * @param model Model
-     */
-    private void convert(final Metadata metadata, final InputStream fetchedData, 
-    		final Model model) throws IOException 
-    {
-        InputStream is = null;
+ {
+		// use the local file (previously fetched from metadata.urlTodata)
+		String urlStr = "file://" + metadata.getLocalDataFile();
+		InputStream is = new BufferedInputStream(LOADER.getResource(urlStr)
+				.getInputStream());
 
 		// create converter
-        if(log.isInfoEnabled())
-        	log.info("getting a converter with name: " 
-				+ metadata.getConverterClassname());
+		if (log.isInfoEnabled())
+			log.info("getting a converter with name: "
+					+ metadata.getConverterClassname());
 		Converter converter = getConverter(metadata.getConverterClassname());
 		if (converter == null) {
 			// TDB: report failure
-			log.fatal("could not create converter class " 
+			log.fatal("could not create converter class "
 					+ metadata.getConverterClassname());
 			return;
 		}
-		
-		((BaseConverterImpl)converter).setModel(model);
 
-        try {
-            // get an input stream from a resource file that is either .gz or .zip
-			is = getInputStreamFromResource(metadata, fetchedData);
-			if (log.isInfoEnabled()) {
-				log.info("created input stream from resource: " + is);
+		((BaseConverterImpl) converter).setModel(model);
+
+		try {
+			// get an input stream from a resource file that is either .gz or
+			// .zip
+			if (urlStr.endsWith(".gz")) {
+				is = new GZIPInputStream(is);
+			} else if (urlStr.endsWith(".zip")) {
+				ZipEntry entry = null;
+				ZipInputStream zis = new ZipInputStream(is);
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				while ((entry = zis.getNextEntry()) != null) {
+					if (log.isInfoEnabled())
+						log.info("Processing zip entry: " + entry.getName());
+					// write file to buffered output stream
+					int count;
+					byte data[] = new byte[BUFFER];
+					BufferedOutputStream dest = new BufferedOutputStream(baos,
+							BUFFER);
+					while ((count = zis.read(data, 0, BUFFER)) != -1) {
+						dest.write(data, 0, count);
+					}
+					dest.flush();
+					dest.close();
+				}
+				is = new ByteArrayInputStream(baos.toByteArray());
+			} else {
+				if (log.isWarnEnabled())
+					log.warn("Not using un(g)zip - cannot detect from file extension : "
+									+ urlStr);
 			}
 
-			// create entity reference objects
 			if (log.isInfoEnabled()) {
-				log.info("creating EntityReference objects, provider: " +
-						 metadata.getIdentifier() + " version: " + metadata.getVersion());
+				log.info("Input stream (" + is + ") is open. "
+						+ "Creating EntityReference objects, provider: "
+						+ metadata.getIdentifier() + " version: "
+						+ metadata.getVersion());
 			}
 
-			
 			// hook into biopax converter for given provider
 			converter.convert(is);
-        }
-        catch (IOException e) {
-            throw e;
-        }
-        finally {
-            closeQuietly(is);
-        }
-    }
-
-	/**
-	 * Helper function to overcome java.io.EOFException: Unexpected end of ZLIB input stream.
-	 *
-	 * @param metadata Metadata
-	 * @param fetchedData InputStream
-	 */
-	private InputStream getInputStreamFromResource(final Metadata metadata, final InputStream fetchedData) throws IOException {
-
-		// determine if we have zip or gz file
-		String urlStr = metadata.getURLToData();
-		
-		if (urlStr.endsWith(".gz")) {
-			return new GZIPInputStream(new BufferedInputStream(fetchedData));
+		} catch (IOException e) {
+			throw e;
+		} finally {
+			closeQuietly(is);
 		}
-		else if (urlStr.endsWith(".zip")) {
-
-			ZipEntry entry = null;
-			ZipInputStream zis = new ZipInputStream(new BufferedInputStream(fetchedData));
-
-			// we will return this
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-			while ((entry = zis.getNextEntry()) != null) {
-				if(log.isInfoEnabled())
-					log.info("Processing zip entry: " + entry.getName());
-
-				// write file to buffered outputstream
-				int count;
-				byte data[] = new byte[BUFFER];
-				BufferedOutputStream dest = new BufferedOutputStream(baos, BUFFER);
-				while ((count = zis.read(data, 0, BUFFER)) != -1) {
-					dest.write(data, 0, count);
-				}
-				dest.flush();
-				dest.close();
-			}
-			
-			// outta here
-			return new ByteArrayInputStream(baos.toByteArray());
-		}
-
-		// should not get here
-		return null;
 	}
 
-   /**
-    * Close the specified reader quietly.
-    *
-    * @param is InputStream
-    */
-    private static void closeQuietly(final InputStream is) {
-        try {
-            is.close();
-        }
-        catch (Exception e) {
-            // ignore
-        }
-    }
-
+    
 	/**
 	 * For the given converter class name,
 	 * returns an instance of a class which
@@ -586,24 +522,27 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 		
 		String localFileName = metadata.getLocalDataFile();
 		File localFile = new File(localFileName);
+		
 		if(localFile.exists() && localFile.isFile()) {
 			if(log.isInfoEnabled())
 				log.info(metadata.getType() + " data : " + metadata.getIdentifier() 
 					+ "." + metadata.getVersion() + " - found in "
 					+ localFileName + ". Skip downloading.");
-			return;
+			
+		} else {
+			if(log.isInfoEnabled())
+				log.info("Downloading " + metadata.getType() + " from " +
+					metadata.getURLToData() + " to " + localFileName);
+		
+			Resource resource = LOADER.getResource(metadata.getURLToData());
+			long size = resource.contentLength();
+			if(log.isInfoEnabled())
+				log.info(metadata.getURLToData() + " content length= " + size);
+			ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
+			FileOutputStream dest = new FileOutputStream(localFileName);
+			size = dest.getChannel().transferFrom(source, 0, size); // can throw runtime exceptions
+			if(log.isInfoEnabled())
+				log.info(size + " bytes downloaded from " + metadata.getURLToData());
 		}
-		
-		Resource resource = LOADER.getResource(metadata.getURLToData());
-		long size = resource.contentLength();
-		
-		ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
-		FileOutputStream dest = new FileOutputStream(localFileName);
-		dest.getChannel().transferFrom(source, 0, size);
-		
-		if(log.isInfoEnabled())
-			log.info(metadata.getType() + " data are downloaded from " +
-				metadata.getURLToData() + " and saved in " 
-				+ localFileName);
 	}
 }

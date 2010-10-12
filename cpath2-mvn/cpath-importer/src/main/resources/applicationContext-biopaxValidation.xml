@@ -33,13 +33,6 @@
     <util:set id="extraDbSynonyms"/>
     
 	<!-- BiopaxValidatorUtils configuration -->
-	
-    <oxm:jaxb2-marshaller id="resultsMarshaller" xmlns="http://www.biopax.org/validator">
-		<oxm:class-to-be-bound name="org.biopax.validator.result.Validation"/>
-		<oxm:class-to-be-bound name="org.biopax.validator.result.ValidatorResponse"/>
-		<oxm:class-to-be-bound name="org.biopax.validator.result.ErrorCaseType"/>
-		<oxm:class-to-be-bound name="org.biopax.validator.result.ErrorType"/>
-	</oxm:jaxb2-marshaller>
 
  	<!-- This is for the rules's and error messages's auto-configuration -->
 	<bean id="messageSource"
@@ -56,7 +49,6 @@
       
 	<bean id="utils" class="org.biopax.validator.utils.BiopaxValidatorUtils">
 		<property name="messageSource" ref="messageSource" />
-		<property name="marshaller" ref="resultsMarshaller" />
 		<property name="locale" value="en" />
 		<property name="maxErrors" value="50" />
 	</bean>
