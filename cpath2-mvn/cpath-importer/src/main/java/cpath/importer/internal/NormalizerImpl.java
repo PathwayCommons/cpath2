@@ -62,7 +62,7 @@ public class NormalizerImpl implements Normalizer {
 	
 	private BioPAXIOHandler biopaxReader;
 	
-
+	
 	/**
 	 * Constructor
 	 */
@@ -98,47 +98,34 @@ public class NormalizerImpl implements Normalizer {
 		Set<? extends UtilityClass> objects = 
 			new HashSet<UtilityClass>(model.getObjects(UtilityClass.class));
 		// process the rest of utility classes (selectively though)
-		for(UtilityClass bpe : objects) {
-			UnificationXref uref = null;
-			if(bpe instanceof ControlledVocabulary 
-					|| bpe instanceof BioSource) {
-				uref = getFirstUnificationXref((XReferrable) bpe);
-				// continue after the last 'else'
+		for(UtilityClass bpe : objects) 
+		{
+			if(bpe instanceof ControlledVocabulary || bpe instanceof BioSource) 
+			{
+				UnificationXref uref = getFirstUnificationXref((XReferrable) bpe);
+				if (uref != null) 
+					normalizeID(model, bpe, uref.getDb(), uref.getId());
+				else 
+					log.error("Cannot normalize ControlledVocabulary: " +
+					"no unification xrefs found in " + bpe.getRDFId());
 			} else if(bpe instanceof EntityReference) {
-				uref = getFirstUnificationXrefOfEr((EntityReference) bpe);
-				// continue after the last 'else'
+				UnificationXref uref = getFirstUnificationXrefOfEr((EntityReference) bpe);
+				if (uref != null) 
+					normalizeID(model, bpe, uref.getDb(), uref.getId());
+				else 
+					log.error("Cannot normalize EntityReference: " +
+					"no unification xrefs found in " + bpe.getRDFId());
 			} else if(bpe instanceof Provenance) {
-				/*
-				 * TODO do we want normalizing Provenance?..
-				 */
 				Provenance pro = (Provenance) bpe;
 				String name = pro.getStandardName();
-				if(name == null) name = pro.getDisplayName();
-				try {
-					String urn = MiriamLink.getDataTypeURI(name);
-					model.updateID(pro.getRDFId(), urn);
-				} catch (Exception e) {
-					log.warn("Cannot normalize Provenance " + 
-							pro + " (name:" + name + ")");
-				}
-				// done.
-				continue;
-			} else {
-				// skip other utility classes
-				continue;
-			}
-			
-			if (uref != null) {
-				try {
-					String urn = MiriamLink.getURI(uref.getDb(), uref.getId());
-					model.updateID(bpe.getRDFId(), urn);
-				} catch (Exception e) {
-					log.error("Cannot normalize Xref " + uref + " - " + e);
-				}
-			} else {
-				log.error("Cannot find a unification xrefs of : " 
-					+ bpe.getRDFId());
-			}
+				if(name == null) 
+					name = pro.getDisplayName();
+				if (name != null) 
+					normalizeID(model, pro, name, null);
+				else 
+					log.error("Cannot normalize Provenance: " +
+					"no standard names found in " + bpe.getRDFId());
+			} 
 		}
 		
 		
@@ -155,6 +142,47 @@ public class NormalizerImpl implements Normalizer {
 		// return as BioPAX OWL
 		String owl = convertToOWL(model);
 		return owl;
+	}
+	
+
+	/**
+	 * 
+	 * 
+	 * @param model BioPAX model
+	 * @param bpe element to normalize
+	 * @param db official database name or synonym (from unification xref)
+	 * @param id identifier (if null, new ID will be that of the Miriam Data Type; this is mainly for Provenance)
+	 */
+	private void normalizeID(Model model, UtilityClass bpe, String db, String id) 
+	{	
+		// get the standard ID
+		String urn = null;
+		try {
+			// make a new ID for the element
+			if(id != null)
+				urn = MiriamLink.getURI(db, id);
+			else 
+				urn = MiriamLink.getDataTypeURI(db);
+		} catch (Exception e) {
+			log.error("Cannot get a Miriam standard ID for " + bpe 
+				+ " (" + bpe.getModelInterface().getSimpleName()
+				+ ") " + ", using " + db + ":" + id 
+				+ ". " + e);
+			return;
+		}
+		
+		// update the element and model
+		try {
+			// TODO if there is another element of the same class having this ID, which means - duplicate, update references -
+			
+			// otherwise, simply replace ID
+			model.updateID(bpe.getRDFId(), urn);
+		} catch (Exception e) {
+			log.error("Failed to replace ID of " + bpe 
+				+ " (" + bpe.getModelInterface().getSimpleName()
+				+ ") with '" + urn + "'. " + e);
+			return;
+		}
 	}
 	
 	
@@ -220,7 +248,7 @@ public class NormalizerImpl implements Normalizer {
 				name = MiriamLink.getName(urn);
 				ref.setDb(name);
 			} catch (IllegalArgumentException e) {
-				log.error("Unknown or misspelled datanase name! Won't fix this now... " + e);
+				log.error("Unknown or misspelled database name! Won't fix this now... " + e);
 			}
 			
 			Xref x = null;

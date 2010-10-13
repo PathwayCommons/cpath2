@@ -15,7 +15,7 @@
     <!-- 
     	Integration of BioPAX Validator into the cPathSquared (cPath^2) import pipeline
     	is implemented by simply using the required biopax-validator modules/classes in this
-    	application. However, (IMPORTANT thing is) unlike the stand-alone BioPAX Validator, 
+    	application. However, unlike the stand-alone BioPAX Validator, 
     	AspectJ Load-Time Weaving (LTW) is NOT used here; instead, Spring's default 
     	proxy-based AOP is used (thus there is no need in the  -javaagent JVM argument).
     -->  
