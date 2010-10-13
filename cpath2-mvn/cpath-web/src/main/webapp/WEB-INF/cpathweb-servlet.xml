@@ -48,6 +48,6 @@
 		<property name="exceptionAttribute"><value>exception</value></property>
 	</bean>
 	
-	<bean id="searchController" class="cpath.web.mvc.SearchController"/>
+	<!-- <bean id="searchController" class="cpath.web.mvc.SearchController"/> -->
 	
 </beans>
