@@ -274,7 +274,7 @@ public class Admin implements Runnable {
 		for (Metadata metadata : metadataCollection) {
 			
 			File localFile = new File(metadata.getLocalDataFile());
-			if(!resume && localFile.exists() && localFile.isFile()) {
+			if(resume && localFile.exists() && localFile.isFile()) {
 				if(LOG.isInfoEnabled())
 					LOG.info("Skipping previously imported data: " 
 					+ metadata.getType() + " " + metadata.getIdentifier() 

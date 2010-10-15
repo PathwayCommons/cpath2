@@ -42,7 +42,7 @@ import static org.junit.Assert.*;
  * @author rodche
  *
  */
-public class PathwayDataHibernateDAOTest {
+public class MetadataHibernateDAOTest {
 
 	/**
 	 * @throws java.lang.Exception
@@ -50,14 +50,6 @@ public class PathwayDataHibernateDAOTest {
 	@Before
 	public void setUp() throws Exception {
 		DataServicesFactoryBean.createSchema("cpath2_test");
-	}
-
-	/**
-	 * @throws java.lang.Exception
-	 */
-	@After
-	public void tearDown() throws Exception {
-		//DataServicesFactoryBean.createSchema("cpath2_test");
 	}
 
 	@Test

@@ -77,7 +77,7 @@ public class NormalizerTest {
     	ref = model.addNew(RelationshipXref.class, "Xref2");
     	ref.setDb("refseq");
     	ref.setId("NP_001734");
-    	ref.setIdVersion("1");
+    	ref.setIdVersion("1");  // this xref won't be removed by norm. (version matters in xrefs comparing!)
 		pr.addXref(ref);
 	   	ref = model.addNew(UnificationXref.class, "Xref3");
     	ref.setDb("uniprotkb"); // will be converted to 'uniprot'
@@ -87,13 +87,23 @@ public class NormalizerTest {
     	 * (because ProteinReference1 becomes ProteinReference2, both get RDFId= urn:miriam:uniprot:P68250!)
     	 */
     	ref.setId("Q0VCL1"); 
+    	Xref uniprotX = ref;
+    	
     	pr = model.addNew(ProteinReference.class, "ProteinReference2");
     	pr.setDisplayName("ProteinReference2");
-    	pr.addXref(ref);
+    	pr.addXref(uniprotX);
     	ref = model.addNew(RelationshipXref.class, "Xref4");
     	ref.setDb("refseq");
-    	ref.setId("NP_001734"); //normalizer must get rid of one of these two refseq xrefs!
-    	//ref.setIdVersion("1"); // shall we consider versions comparing xrefs?
+    	ref.setId("NP_001734");
+		pr.addXref(ref);
+		
+		// this ER is duplicate (same uniprot xref as ProteinReference2's) and must be removed by normalizer
+    	pr = model.addNew(ProteinReference.class, "ProteinReference3");
+    	pr.setDisplayName("ProteinReference3");
+    	pr.addXref(uniprotX);
+    	ref = model.addNew(RelationshipXref.class, "Xref5");
+    	ref.setDb("refseq");
+    	ref.setId("NP_001734");
 		pr.addXref(ref);
 		
 		// normalizer won't merge diff. types of xref with the same db:id
@@ -141,10 +151,12 @@ public class NormalizerTest {
 		bpe = model.getByID("urn:miriam:uniprot:Q0VCL1");
 		assertTrue(bpe instanceof ProteinReference);
 		
-		//check when two xrefs have the same db:id
+		//check xref's ID gets normalized
 		bpe = model.getByID(NormalizerImpl.BIOPAX_URI_PREFIX + "RelationshipXref:RefSeq_NP_001734");
-		assertEquals(2, ((Xref)bpe).getXrefOf().size());
-		
+		assertEquals(1, ((Xref)bpe).getXrefOf().size());
+		// almost the same xref (was different idVersion)
+		bpe = model.getByID(NormalizerImpl.BIOPAX_URI_PREFIX + "RelationshipXref:RefSeq_NP_001734_1");
+		assertEquals(1, ((Xref)bpe).getXrefOf().size());
 		
     	//TODO test when uniprot's is not the first xref
     	//TODO test illegal 'id', 'db', etc.
@@ -155,6 +167,10 @@ public class NormalizerTest {
 		assertTrue(bpe instanceof BioSource);
 		bpe = model.getByID(NormalizerImpl.BIOPAX_URI_PREFIX + "UnificationXref:Taxonomy_10090");
 		assertTrue(bpe instanceof UnificationXref);
+		
+		
+		// test that one of ProteinReference (2nd or 3rd) is removed
+		assertEquals(2, model.getObjects(ProteinReference.class).size());
 		
 		//TODO test Provenance
 	}
