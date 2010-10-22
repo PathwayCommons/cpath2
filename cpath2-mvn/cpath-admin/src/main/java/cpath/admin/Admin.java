@@ -244,7 +244,7 @@ public class Admin implements Runnable {
      * @param resume continue previous data import or start afresh
      * @throws IOException
      */
-    private void fetchWarehouseData(final String provider, Boolean resume) throws IOException {
+    private void fetchWarehouseData(final String provider, boolean resume) throws IOException {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-whouseDAO.xml"});
@@ -272,20 +272,25 @@ public class Admin implements Runnable {
 		
 		// interate over all metadata
 		for (Metadata metadata : metadataCollection) {
-			
+			// fetch data (first - to a sub-directory within $CPATH2_HOME)
 			File localFile = new File(metadata.getLocalDataFile());
-			if(resume && localFile.exists() && localFile.isFile()) {
+			if (resume == true
+					&& localFile.exists() && localFile.isFile()) {
 				if(LOG.isInfoEnabled())
 					LOG.info("Skipping previously imported data: " 
 					+ metadata.getType() + " " + metadata.getIdentifier() 
-					+ "." + metadata.getVersion() + " (" 
-					+ metadata.getLocalDataFile() + ")");
+					+ "." + metadata.getVersion() + " (file: " 
+					+ metadata.getLocalDataFile() + "), because the file " 
+					+ "already exists, and 'resume' flag was set " + resume);
 				continue;
 			} 
 			
-			// fetch (download or copy to a sub-directory in CPATH2_HOME)
+			
 			try {
-				((CPathFetcher)fetcher).fetchData(metadata);
+				/* it won't replace existing files (name: metadata.getLocalDataFile()),
+				 * which allows for manual correction of re-importing of previously fetched data
+				 */
+				((CPathFetcher)fetcher).fetchData(metadata); 
 			} catch (Exception e) {
 				LOG.error("Failed fetching data for " + metadata.toString() 
 					+ ". Skipping...", e);
@@ -293,8 +298,7 @@ public class Admin implements Runnable {
 			}
 			
 			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
-					metadata.getType() == Metadata.TYPE.BIOPAX ||
-					metadata.getType() == Metadata.TYPE.BIOPAX_L2) 
+					metadata.getType() == Metadata.TYPE.BIOPAX) 
 			{
 					// collect pathway data versions of the same provider
 					Collection<String> savedVersions = new HashSet<String>();

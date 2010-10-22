@@ -77,8 +77,7 @@ public class PremergeDispatcher extends Thread {
 		// set number of premerges to dispatch
 		for (Metadata metadata : metadataCollection) {
 			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
-				metadata.getType() == Metadata.TYPE.BIOPAX ||
-				metadata.getType() == Metadata.TYPE.BIOPAX_L2) {
+				metadata.getType() == Metadata.TYPE.BIOPAX) {
 				++numPremerges;
 			}
 		}
@@ -90,8 +89,7 @@ public class PremergeDispatcher extends Thread {
 
 			// only process interaction or pathway data
 			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
-				metadata.getType() == Metadata.TYPE.BIOPAX ||
-				metadata.getType() == Metadata.TYPE.BIOPAX_L2) 
+				metadata.getType() == Metadata.TYPE.BIOPAX) 
 			{	
 				if(log.isInfoEnabled())
 					log.info("run(), spawning Premerge for provider " 

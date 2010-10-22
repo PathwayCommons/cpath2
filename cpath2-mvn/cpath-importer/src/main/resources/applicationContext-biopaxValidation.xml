@@ -29,8 +29,9 @@
     <!-- Use BioPAX Rules's Configuration -->
     <import resource="classpath:rules-context.xml"/>
     
-    <!-- override to disallow extra DB synonyms (defined in the rules-context.xml) -->
-    <util:set id="extraDbSynonyms"/>
+    <!-- override to disable using manually entered db synonyms
+    	that defined in the validator's biopax-rules module, rules-context.xml) -->
+    <!-- <util:set id="extraDbSynonyms"/> -->
     
 	<!-- BiopaxValidatorUtils configuration -->
 

@@ -34,6 +34,7 @@ import org.biopax.paxtools.model.level3.Catalysis;
 import org.biopax.paxtools.model.level3.ControlType;
 import org.biopax.paxtools.model.level3.Level3Factory;
 import org.biopax.paxtools.model.level3.TemplateReactionRegulation;
+import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.validator.Behavior;
 import org.biopax.validator.Rule;
 import org.biopax.validator.Validator;
@@ -103,8 +104,6 @@ public class BiopaxValidatorTest {
 		//make sure the rule's behavior, we're interested in this test, is not 'IGNORED' 
 		// (otherwise this test should fail at the last line)
 		
-		System.out.println("testValidateModel");
-		
 		Rule rule = null;
 		for(Rule r : validator.getRules()) {
 			if(r.getName().equals("controlTypeRule")) {
@@ -112,7 +111,7 @@ public class BiopaxValidatorTest {
 				break;
 			}
 		}
-		rule.setBehavior(Behavior.ERROR); 
+		rule.setBehavior(Behavior.WARNING); 
 		
 		Catalysis ca = level3.createCatalysis();
 		ca.setControlType(ControlType.INHIBITION);
@@ -132,7 +131,7 @@ public class BiopaxValidatorTest {
 		
 		assertNotNull(result);
 		assertFalse(result.getError().isEmpty());
-		ErrorType error = result.findError("range.violated", Behavior.ERROR);
+		ErrorType error = result.findError("range.violated", Behavior.WARNING);
 		assertNotNull(error);
 		assertTrue(error.getErrorCase().size()==2);
 		assertEquals("range.violated",error.getCode());
@@ -143,4 +142,24 @@ public class BiopaxValidatorTest {
 		}
 
 	}
+	
+    /*
+     * Special case - check synonyms are there
+     */
+    @Test
+    public void testXrefRuleEntezGene() {
+    	Rule rule = null;
+		for(Rule r : validator.getRules()) {
+			if(r.getName().equals("xrefRule")) {
+				rule = r;
+				break;
+			}
+		}
+		rule.setBehavior(Behavior.WARNING); 
+        
+        UnificationXref x = level3.createUnificationXref();
+        x.setDb("EntrezGene");
+        x.setId("0000000");
+        rule.check(x);
+    }
 }

@@ -61,7 +61,9 @@ public interface CPathFetcher {
     
     
     /**
-     * Given Metadata, it downloads and stores the resources locally.
+     * Given Metadata, it downloads and stores the resources locally;
+     * it does not replace existing files (name: metadata.getLocalDataFile()),
+	 * which allows for manual correction and re-importing of previously fetched data
      * 
      * @param metadata
      * @throws IOException
