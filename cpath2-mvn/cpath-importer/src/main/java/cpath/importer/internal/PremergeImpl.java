@@ -148,26 +148,27 @@ public class PremergeImpl extends Thread implements Premerge {
 			return;
 		}
 		
-		// build the premerge database DAO
-		
-		// create a new database schema
+		// build the premerge DAO - 
+		// first, create a new database schema
 		String premergeDbName = CPathSettings.CPATH_DB_PREFIX + metadata.getIdentifier();
 		DataServicesFactoryBean.createSchema(premergeDbName);
-		
-		// get the PaxtoolsDAO instance
+		// next, get the PaxtoolsDAO instance
 		PaxtoolsDAO pemergeDAO = buildPremergeDAO(premergeDbName);
 		
-		// iterate over all pathway data
+		// iterate over and process all pathway data
 		if(log.isInfoEnabled())
-			log.info("run(), interating over pathway data.");
+			log.info("run(), interating over pathway data " 
+				+ metadata.getIdentifier());
 		for (PathwayData pathwayData : pathwayDataCollection) {
 			pipeline(pathwayData, pemergeDAO);
 		}
 
-		// outta here
 		premergeDispatcher.premergeComplete(metadata);
+		
 		if(log.isInfoEnabled())
-			log.info("run(), exiting...");
+			log.info("run(), exitting ("
+				+ metadata.getIdentifier() 
+				+ ") ...");
 	}
 
 	/**
@@ -181,32 +182,37 @@ public class PremergeImpl extends Thread implements Premerge {
 										 pathwayData.getVersion() + ", " +
 										 pathwayData.getFilename() + ".");
 
+		// get the BioPAX OWL from the pathwayData bean
+		pathwayDataStr = pathwayData.getPathwayData();
+		
 		// clean
 		if(log.isInfoEnabled())
-			log.info("pipeline(), cleaning pathway data.");
-		if (metadata.getType() == Metadata.TYPE.BIOPAX_L2) {
-			pathwayDataStr = pathwayData.getPathwayData();
-			// convert to biopax l3, then clean
+			log.info("pipeline(), cleaning pathway data " 
+				+ pathwayDataDescription);
+		
+		if (metadata.getType() == Metadata.TYPE.BIOPAX) {
+			// convert to biopax l3 (if required), then clean
 			try {
-				pathwayDataStr = convertBioPAXL2ToLevel3(pathwayDataStr);
+				pathwayDataStr = convertToLevel3(pathwayDataStr);
 				pathwayDataStr = cleaner.clean(pathwayDataStr);
 			} catch (RuntimeException e) {
 				log.error("pipeline(), cannot convert " 
-					+ pathwayDataDescription + " to L3.", e);
+					+ pathwayDataDescription + " to L3 - " 
+					+ e);
 			}
-		}
-		else {
+		} else {
 			pathwayDataStr = cleaner.clean(pathwayData.getPathwayData());
 			// if psi-mi, convert to biopax
 			if (metadata.getType() == Metadata.TYPE.PSI_MI) {
 				if(log.isInfoEnabled())
-					log.info("pipeline(), converting psi-mi data.");
+					log.info("pipeline(), converting psi-mi data " 
+						+ pathwayDataDescription);
 				try {
 					pathwayDataStr = convertPSIToBioPAX(pathwayDataStr);
 				} catch (RuntimeException e) {
 					log.error("pipeline(), cannot convert " 
 						+ pathwayDataDescription
-						+ " to L3.", e);
+						+ " to L3. - " + e);
 				}
 			}
 		}
@@ -229,7 +235,7 @@ public class PremergeImpl extends Thread implements Premerge {
 			log.error("pipeline(), skipping data : " 
 				+ pathwayData.getIdentifier() + "." 
 				+ pathwayData.getVersion()  + " " 
-				+ pathwayData.getFilename(), e);
+				+ pathwayData.getFilename() + " - " + e);
 			return;
 		}
 
@@ -250,13 +256,14 @@ public class PremergeImpl extends Thread implements Premerge {
 		
 		// create a model from the normalized and validated pathway data
 		if(log.isInfoEnabled())
-			log.info("run(), creating paxtools model from pathway data.");
+			log.info("pipeline(), creating paxtools model from pathway data.");
 		Model model = (new SimpleReader()).convertFromOWL(
 				new ByteArrayInputStream(pathwayDataStr.getBytes()));
 		
 		// persist
 		if(log.isInfoEnabled())
-			log.info("pipeline(), persisting pathway data.");
+			log.info("pipeline(), persisting pathway data " 
+				+ pathwayDataDescription);
 				
 		premergeDAO.merge(model);
 		
@@ -282,6 +289,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		}
 	}
 
+	
 	/**
 	 * Converts psi-mi string to biopax
 	 *
@@ -317,36 +325,44 @@ public class PremergeImpl extends Thread implements Premerge {
 		return toReturn;
 	}
 
+	
 	/**
-	 * Converts biopax l2 string to biopax l3
+	 * Converts biopax l2 string to biopax l3 if it's required
 	 *
-	 * @param bpl2Data String
+	 * @param biopaxData String
+	 * @return
 	 */
-	private String convertBioPAXL2ToLevel3(final String bpl2Data) {
-
+	private String convertToLevel3(final String biopaxData) {
 		String toReturn = "";
-				
+		
 		try {
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
-			InputStream is = new ByteArrayInputStream(bpl2Data.getBytes());
-
+			InputStream is = new ByteArrayInputStream(biopaxData.getBytes());
 			SimpleReader reader = new SimpleReader();
+			reader.mergeDuplicates(true);
 			Model model = reader.convertFromOWL(is);
-			model = (new OneTwoThree()).filter(model);
-			if (model != null) {
-				SimpleExporter exporter = new SimpleExporter(model.getLevel());
-				exporter.convertToOWL(model, os);
-				toReturn = os.toString();
+			if (model.getLevel() != BioPAXLevel.L3) {
+				if (log.isInfoEnabled())
+					log.info("pipeline(), converting to BioPAX Level3...");
+				model = (new OneTwoThree()).filter(model);
+				if (model != null) {
+					SimpleExporter exporter = new SimpleExporter(model.getLevel());
+					exporter.convertToOWL(model, os);
+					toReturn = os.toString();
+				}
+			} else {
+				toReturn = biopaxData;
 			}
-		}
-		catch(Exception e) {
-			throw new RuntimeException("L2 to L3 conversion failed", e);
+		} catch(Exception e) {
+			throw new RuntimeException("pipeline(), " +
+				"reading/conversion failed!", e);
 		}
 
 		// outta here
 		return toReturn;
 	}
 
+	
 	/**
 	 * Validates the given pathway data.
 	 *

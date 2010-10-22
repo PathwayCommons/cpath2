@@ -27,7 +27,6 @@ public class Metadata {
         // command types
         PSI_MI,
 		BIOPAX,
-		BIOPAX_L2,
 		PROTEIN,
 		SMALL_MOLECULE,
 		MAPPING;

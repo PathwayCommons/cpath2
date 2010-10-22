@@ -138,7 +138,7 @@ public class MergerImpl implements Merger {
 		for (Metadata metadata : metadataDAO.getAll()) 
 		{
 			// only process pathway data (we assume only pathway data comes in as biopax)
-			if (metadata.getType() != TYPE.BIOPAX && metadata.getType() != TYPE.BIOPAX_L2) continue;
+			if (metadata.getType() != TYPE.BIOPAX) continue;
 
 			// in-memory copy of the persisted model for this provider
 			Model pathwayModel = getPreMergeModel(metadata);

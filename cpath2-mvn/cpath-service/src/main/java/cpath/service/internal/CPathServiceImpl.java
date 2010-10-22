@@ -381,9 +381,6 @@ public class CPathServiceImpl implements CPathService {
 
 			for (PathwayData pathwayData : pathwayDataCollection) {
 				String xmlResult = pathwayData.getValidationResults().trim();
-				if (log.isDebugEnabled())
-					log.debug(pathwayData.toString()
-							+ " - validation result : " + xmlResult);
 				if (xmlResult != null && xmlResult.length() > 0) {
 					// unmarshal and add to the 'results' list
 					Validation validation = null;

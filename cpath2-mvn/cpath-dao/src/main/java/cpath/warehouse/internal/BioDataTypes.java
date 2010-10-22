@@ -109,8 +109,8 @@ public final class BioDataTypes {
 		// dynamically register all the Pathway Data providers -
 		for(Metadata metadata : metadataDAO.getAll()) {
 			// skip data sources of protein and molecule references (warehouse resources)
-			if(metadata.getType() == TYPE.BIOPAX || metadata.getType() == TYPE.PSI_MI
-				|| metadata.getType() == TYPE.BIOPAX_L2) 
+			if(metadata.getType() == TYPE.BIOPAX 
+					|| metadata.getType() == TYPE.PSI_MI) 
 			{
 				// warn: if s (name) exists, will override
 				register(metadata.getIdentifier(), metadata.getName(), Type.PATHWAY_DATA)
