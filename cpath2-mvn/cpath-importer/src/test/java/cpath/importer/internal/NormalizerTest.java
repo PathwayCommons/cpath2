@@ -61,6 +61,7 @@ public class NormalizerTest {
 	public NormalizerTest() {
 		simpleExporter = new SimpleExporter(BioPAXLevel.L3);
 		simpleReader = new SimpleReader();
+		simpleReader.mergeDuplicates(true);
 	}
 
 	@Test

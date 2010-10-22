@@ -37,7 +37,7 @@ import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.controller.AbstractTraverser;
 import org.biopax.paxtools.controller.ObjectPropertyEditor;
 import org.biopax.paxtools.controller.PropertyEditor;
-import org.biopax.paxtools.io.BioPAXIOHandler;
+import org.biopax.paxtools.converter.OneTwoThree;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -64,7 +64,7 @@ public class NormalizerImpl implements Normalizer {
 	 */
 	public static final String BIOPAX_URI_PREFIX = CPathSettings.CPATH_URI_PREFIX;
 	
-	private BioPAXIOHandler biopaxReader;
+	private SimpleReader biopaxReader;
 	
 	
 	/**
@@ -72,6 +72,7 @@ public class NormalizerImpl implements Normalizer {
 	 */
 	public NormalizerImpl() {
 		this.biopaxReader = new SimpleReader(); //may be to use 'biopaxReader' bean that uses (new BioPAXFactoryForPersistence(), BioPAXLevel.L3);
+		biopaxReader.mergeDuplicates(true);
 	}
 
 	
@@ -82,6 +83,9 @@ public class NormalizerImpl implements Normalizer {
 		
 		if(biopaxOwlData == null || biopaxOwlData.length() == 0) 
 			throw new IllegalArgumentException("no data.");
+		
+		// if required, upgrade to L3
+		biopaxOwlData = convertToLevel3(biopaxOwlData);
 		
 		// fix BioPAX L3 pre-release property name 'taxonXref' (BioSource)
 		biopaxOwlData = biopaxOwlData.replaceAll("taxonXref","xref");
@@ -411,4 +415,40 @@ public class NormalizerImpl implements Normalizer {
 		return normalize(owl);
 	}
 
+	
+	/**
+	 * Converts biopax l2 string to biopax l3 if it's required
+	 *
+	 * @param biopaxData String
+	 * @return
+	 */
+	private String convertToLevel3(final String biopaxData) {
+		String toReturn = "";
+		
+		try {
+			ByteArrayOutputStream os = new ByteArrayOutputStream();
+			InputStream is = new ByteArrayInputStream(biopaxData.getBytes());
+			SimpleReader reader = new SimpleReader();
+			reader.mergeDuplicates(true);
+			Model model = reader.convertFromOWL(is);
+			if (model.getLevel() != BioPAXLevel.L3) {
+				if (log.isInfoEnabled())
+					log.info("Converting to BioPAX Level3...");
+				model = (new OneTwoThree()).filter(model);
+				if (model != null) {
+					SimpleExporter exporter = new SimpleExporter(model.getLevel());
+					exporter.convertToOWL(model, os);
+					toReturn = os.toString();
+				}
+			} else {
+				toReturn = biopaxData;
+			}
+		} catch(Exception e) {
+			throw new RuntimeException(
+					"Failed to reading data or convert to L3!", e);
+		}
+
+		// outta here
+		return toReturn;
+	}
 }
