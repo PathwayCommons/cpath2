@@ -57,7 +57,7 @@ public class PaxtoolsHibernateDAOTest2 {
     static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest2.class);
     static PaxtoolsDAO paxtoolsDAO;
     static SimpleExporter exporter = new SimpleExporter(BioPAXLevel.L3);
-    static BioPAXIOHandler reader = new SimpleReader();
+    static SimpleReader reader = new SimpleReader();
     
 
 	/* test methods will use the same data (read-only, 
@@ -89,6 +89,7 @@ public class PaxtoolsHibernateDAOTest2 {
 		String exported = outputStream.toString();
 		
 		// read it back
+		reader.mergeDuplicates(true);
 		Model model = reader.convertFromOWL(new ByteArrayInputStream(exported
 				.getBytes()));
 		assertNotNull(model);

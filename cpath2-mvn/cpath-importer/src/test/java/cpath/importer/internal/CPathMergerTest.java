@@ -105,8 +105,8 @@ public class CPathMergerTest {
 	public void initPathwayModels() throws IOException {
 		final ResourceLoader resourceLoader = new DefaultResourceLoader();
 		pathwayModels = new HashSet<Model>();
-		BioPAXIOHandler reader = new SimpleReader();
-		
+		SimpleReader reader = new SimpleReader();
+		reader.mergeDuplicates(true);
 		Model model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:test-normalized.owl").getInputStream());
 		pathwayModels.add(model);
@@ -210,7 +210,9 @@ public class CPathMergerTest {
 		//check first whether it becomes ok after export/import as owl?
 		
 		pcDAO.exportModel(new FileOutputStream(outFilename));
-		Model m = (new SimpleReader()).convertFromOWL(new FileInputStream(outFilename));
+		SimpleReader reader = new SimpleReader();
+		reader.mergeDuplicates(true);
+		Model m = reader.convertFromOWL(new FileInputStream(outFilename));
 		assertMerge(m);
 		
 		

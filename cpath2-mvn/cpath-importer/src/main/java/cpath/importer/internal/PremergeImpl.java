@@ -36,6 +36,7 @@ import cpath.importer.Premerge;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
+import cpath.warehouse.beans.Metadata.TYPE;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -103,6 +104,8 @@ public class PremergeImpl extends Thread implements Premerge {
 	 */
 	@Override
 	public void setMetadata(final Metadata metadata) {
+		assert(metadata.getType() == TYPE.BIOPAX
+				|| metadata.getType() == TYPE.PSI_MI);
 		this.metadata = metadata;
 	}
 
@@ -187,65 +190,65 @@ public class PremergeImpl extends Thread implements Premerge {
 		
 		// clean
 		if(log.isInfoEnabled())
-			log.info("pipeline(), cleaning pathway data " 
+			log.info("pipeline(), cleaning data " 
 				+ pathwayDataDescription);
+		pathwayDataStr = cleaner.clean(pathwayDataStr);
 		
-		if (metadata.getType() == Metadata.TYPE.BIOPAX) {
-			// convert to biopax l3 (if required), then clean
-			try {
-				pathwayDataStr = convertToLevel3(pathwayDataStr);
-				pathwayDataStr = cleaner.clean(pathwayDataStr);
-			} catch (RuntimeException e) {
-				log.error("pipeline(), cannot convert " 
-					+ pathwayDataDescription + " to L3 - " 
-					+ e);
-			}
-		} else {
-			pathwayDataStr = cleaner.clean(pathwayData.getPathwayData());
-			// if psi-mi, convert to biopax
-			if (metadata.getType() == Metadata.TYPE.PSI_MI) {
-				if(log.isInfoEnabled())
-					log.info("pipeline(), converting psi-mi data " 
+		// if psi-mi, convert to biopax
+		if (metadata.getType() == Metadata.TYPE.PSI_MI) {
+			if (log.isInfoEnabled())
+				log.info("pipeline(), converting psi-mi data "
 						+ pathwayDataDescription);
-				try {
-					pathwayDataStr = convertPSIToBioPAX(pathwayDataStr);
-				} catch (RuntimeException e) {
-					log.error("pipeline(), cannot convert " 
-						+ pathwayDataDescription
-						+ " to L3. - " + e);
-				}
+			try {
+				pathwayDataStr = convertPSIToBioPAX(pathwayDataStr);
+			} catch (RuntimeException e) {
+				log.error("pipeline(), cannot convert PSI-MI data: "
+						+ pathwayDataDescription + " to L3. - " + e);
 			}
-		}
-
-		// error during conversion
-		if (pathwayDataStr == null || pathwayDataStr.trim().length() == 0) {
-			// TBD: report failure
-			log.error("pipeline(), error converting to biopax: "
-					+ pathwayDataDescription);
-			return;
-		}
-
-		// normalize
+		} 
+		
+		// now that 'pathwayDataStr' contains BioPAX (L3 or L2) data (unless there's an error),
+		// convert to biopax l3 (if required) and normalize
 		if(log.isInfoEnabled())
-			log.info("pipeline(), normalizing pathway data.");
-
+			log.info("pipeline(), upgrading to Level3 (if needed) and normalizing...");
 		try {
 			pathwayDataStr = (new NormalizerImpl()).normalize(pathwayDataStr);
 		} catch(Exception e) {
-			log.error("pipeline(), skipping data : " 
-				+ pathwayData.getIdentifier() + "." 
-				+ pathwayData.getVersion()  + " " 
-				+ pathwayData.getFilename() + " - " + e);
+			log.error("pipeline(), cannot convert/normalize: "
+					+ pathwayDataDescription + " - " + e);
 			return;
 		}
 
-		// validate
-		if(log.isInfoEnabled())
-			log.info("pipeline(), validating pathway data.");
+		// store normalized data in the pathwayData object (then in the db)
 		pathwayData.setPremergeData(pathwayDataStr);
-		int noErrors = validatePathway(pathwayData);
-		// update metadata (pathwaydata) with validation results
+		
+		if(log.isInfoEnabled())
+			log.info("pipeline(), validating pathway data...");
+		
+		// validate! 
+		/* TODO try auto-fix: e.g., synonyms in xref.db 
+		 * may be replaced with the primary db name, as in Miriam).
+		 * Seems, better do it even before the normalization 
+		 * (e.g., for Xrefs, it would generate more stable RDFIds...)
+		 */
+		Validation validation = validatePathway(pathwayData);
+		
+		// errors?
+		int noErrors = validation.countErrors(null, null, null, true);
+		if(log.isInfoEnabled()) {
+			log.info("Summary for " + pathwayData.getIdentifier() 
+				+ "." + pathwayData.getVersion()
+				+ "." + pathwayData.getFilename()
+				+ ". Critical errors found:" + noErrors + ". " 
+				+ validation.getComment().toString() + "; " 
+				+ validation.toString());
+		}
+		// TODO use OWL that is returned by validator (can be twice bigger than original...)
+		//if(validation.isFix()) pathwayDataStr = validation.getFixedOwl();
+		
+		// update pathwaydata with validation and normalization results
 		metaDataDAO.importPathwayData(pathwayData);
+		
 		// shall we proceed?
 		if(noErrors > 0) {			
 			log.error("pipeline(), " + noErrors 
@@ -327,52 +330,12 @@ public class PremergeImpl extends Thread implements Premerge {
 
 	
 	/**
-	 * Converts biopax l2 string to biopax l3 if it's required
-	 *
-	 * @param biopaxData String
-	 * @return
-	 */
-	private String convertToLevel3(final String biopaxData) {
-		String toReturn = "";
-		
-		try {
-			ByteArrayOutputStream os = new ByteArrayOutputStream();
-			InputStream is = new ByteArrayInputStream(biopaxData.getBytes());
-			SimpleReader reader = new SimpleReader();
-			reader.mergeDuplicates(true);
-			Model model = reader.convertFromOWL(is);
-			if (model.getLevel() != BioPAXLevel.L3) {
-				if (log.isInfoEnabled())
-					log.info("pipeline(), converting to BioPAX Level3...");
-				model = (new OneTwoThree()).filter(model);
-				if (model != null) {
-					SimpleExporter exporter = new SimpleExporter(model.getLevel());
-					exporter.convertToOWL(model, os);
-					toReturn = os.toString();
-				}
-			} else {
-				toReturn = biopaxData;
-			}
-		} catch(Exception e) {
-			throw new RuntimeException("pipeline(), " +
-				"reading/conversion failed!", e);
-		}
-
-		// outta here
-		return toReturn;
-	}
-
-	
-	/**
 	 * Validates the given pathway data.
 	 *
-	 * @param pathwayData
-	 * @param pathwayDataStr OWL content; may be different from original one (e.g., normalized)
-	 * @return boolean
+	 * @param pathwayData - BioPAX OWL
+	 * @return
 	 */
-	private int validatePathway(final PathwayData pathwayData) {
-
-		int toReturn = 0;
+	private Validation validatePathway(final PathwayData pathwayData) {
 		
 		// get result and marshall to xml string to store
 		StringWriter writer = new StringWriter();
@@ -381,7 +344,12 @@ public class PremergeImpl extends Thread implements Premerge {
 		Validation validation = new Validation(
 				pathwayData.getIdentifier() + "." 
 				+ pathwayData.getVersion() + " " +
-				pathwayData.getFilename()); // constructor parameter sets the title
+				pathwayData.getFilename()); // sets the title
+		
+		// set auto-fix and normalize modes (TODO (experimental) process the results)
+		validation.setFix(true);
+		validation.setNormalize(true); // TODO implement in the validator?
+		
 		// because errors are reported during the import (e.g., syntax)
 		validator.importModel(validation, 
 			new ByteArrayInputStream(pathwayData.getPremergeData().getBytes()));
@@ -395,21 +363,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		BiopaxValidatorUtils.write(validation, writer, null);
 		pathwayData.setValidationResults(writer.toString());
 
-		// no errors?
-		toReturn = validation.countErrors(null, null, null, true);
-		
-		if(log.isInfoEnabled()) {
-			log.info("Summary for " + pathwayData.getIdentifier() 
-				+ "." + pathwayData.getVersion()
-				+ "." + pathwayData.getFilename()
-				+ ". Critical errors found:" + toReturn + ". " 
-				+ validation.getComment().toString() + "; " 
-				+ validation.toString());
-		}
-		
-		
-		// outta here 
-		return toReturn;
+		return validation;
 	}
 	
 	/**

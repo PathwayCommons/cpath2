@@ -158,7 +158,9 @@ public class CPathFetcherTest {
 		String owl = pd.getPathwayData();
 		assertTrue(owl != null && owl.length() > 0);
 		assertTrue(owl.contains("<bp:Protein"));
-		Model m = (new SimpleReader()).convertFromOWL(new ByteArrayInputStream(owl.getBytes()));
+		SimpleReader reader = new SimpleReader();
+		reader.mergeDuplicates(true);
+		Model m = reader.convertFromOWL(new ByteArrayInputStream(owl.getBytes()));
 		assertFalse(m.getObjects().isEmpty());
 	}
 	

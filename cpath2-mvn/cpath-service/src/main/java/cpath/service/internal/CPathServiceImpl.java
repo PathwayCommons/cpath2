@@ -105,6 +105,7 @@ public class CPathServiceImpl implements CPathService {
 		this.metadataDAO = metadataDAO;
 		this.cvFetcher = cvFetcher;
 		this.reader = new SimpleReader(BioPAXLevel.L3);
+		reader.mergeDuplicates(true);
 		this.exporter = new SimpleExporter(BioPAXLevel.L3);
 		this.merger = new SimpleMerger(reader.getEditorMap());
 		

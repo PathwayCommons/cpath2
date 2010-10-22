@@ -97,6 +97,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		this.nameSpacePrefixMap = new HashMap<String, String>();
 		nameSpacePrefixMap.put("", CPathSettings.CPATH_URI_PREFIX);
 		reader = new SimpleReader(BioPAXLevel.L3);
+		((SimpleReader)reader).mergeDuplicates(true);
 		multiFieldQueryParser = new MultiFieldQueryParser(
 			Version.LUCENE_29, ALL_FIELDS, 
 				new StandardAnalyzer(Version.LUCENE_29));

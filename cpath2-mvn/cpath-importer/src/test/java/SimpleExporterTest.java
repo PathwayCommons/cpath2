@@ -27,7 +27,6 @@
 
 import java.io.*;
 
-import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -46,7 +45,7 @@ import static org.junit.Assert.*;
 public class SimpleExporterTest {
 
 	final ResourceLoader resourceLoader = new DefaultResourceLoader();
-	final BioPAXIOHandler reader = new SimpleReader();
+	final SimpleReader reader = new SimpleReader();
 	
 	@Test
 	public void testReadWriteRead() throws IOException {
@@ -66,6 +65,7 @@ public class SimpleExporterTest {
 		// read again
 		model = null;
 		String bytes = out.toString();
+		reader.mergeDuplicates(true);
 		model = reader.convertFromOWL(new ByteArrayInputStream(bytes.getBytes()));
 		assertNotNull(model);
 		assertTrue(model.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
