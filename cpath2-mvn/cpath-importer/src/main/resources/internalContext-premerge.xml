@@ -23,8 +23,8 @@
         <property name="dataSource" ref="premergeDataSource"/>
         <property name="hibernateProperties">
 		<props>
-		<!-- premerge.index.dir value is to set programmatically (before this context is loaded) -->	
-		<prop key="hibernate.search.default.indexBase">${premerge.index.dir}</prop>
+		<prop key="hibernate.search.default.directory_provider">org.hibernate.search.store.RAMDirectoryProvider</prop>
+		<prop key="hibernate.search.indexing_strategy">manual</prop>
 		<!-- no value - to prevent accidental tables drop -->	
 		<prop key="hibernate.hbm2ddl.auto"></prop>
 		</props>

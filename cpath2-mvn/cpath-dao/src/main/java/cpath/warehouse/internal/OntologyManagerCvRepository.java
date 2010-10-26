@@ -48,6 +48,7 @@ import org.springframework.core.io.Resource;
 import psidev.ontology_manager.Ontology;
 import psidev.ontology_manager.OntologyTermI;
 
+import cpath.config.CPathSettings;
 import cpath.warehouse.CvRepository;
 import cpath.warehouse.WarehouseDAO;
 
@@ -64,7 +65,8 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 {
 	private static final Log log = LogFactory.getLog(OntologyManagerCvRepository.class);
 	private static final String URN_OBO_PREFIX = "urn:miriam:obo.";
-	private static final String URN_UNIFICATION_XREF_PREFIX = "urn:pathwaycommons:UnificationXref:";
+	private static final String URN_UNIFICATION_XREF_PREFIX = 
+		CPathSettings.CPATH_URI_PREFIX + "UnificationXref:";
 	private static BioPAXFactory biopaxFactory = BioPAXLevel.L3.getDefaultFactory();
 	
 	/**
