@@ -74,13 +74,13 @@ public class BiopaxValidatorTest {
 		Rule rule = new ControlTypeRule();	
 		Catalysis ca = level3.createCatalysis();
 		ca.setRDFId("catalysis1");
-		rule.check(ca); // controlType==null, no error expected
+		rule.check(ca, false); // controlType==null, no error expected
 		ca.setControlType(ControlType.ACTIVATION);
-		rule.check(ca); // no error expected
+		rule.check(ca, false); // no error expected
 		ca.setControlType(ControlType.INHIBITION);
 		ca.addComment("error: illegal controlType");
 		try {
-			rule.check(ca); 
+			rule.check(ca, false); 
 			fail("must throw BiopaxValidatorException");
 		} catch(BiopaxValidatorException e) {
 		}
@@ -88,12 +88,12 @@ public class BiopaxValidatorTest {
 		TemplateReactionRegulation tr = level3.createTemplateReactionRegulation();
 		tr.setRDFId("regulation1");
 		tr.setControlType(ControlType.INHIBITION);
-		rule.check(tr); // no error...
+		rule.check(tr, false); // no error...
 		
 		tr.setControlType(ControlType.ACTIVATION_ALLOSTERIC);
 		tr.addComment("error: illegal controlType");
 		try {
-			rule.check(tr); 
+			rule.check(tr, false); 
 			fail("must throw BiopaxValidatorException");
 		} catch(BiopaxValidatorException e) {
 		}
@@ -160,6 +160,6 @@ public class BiopaxValidatorTest {
         UnificationXref x = level3.createUnificationXref();
         x.setDb("EntrezGene");
         x.setId("0000000");
-        rule.check(x);
+        rule.check(x, false);
     }
 }

@@ -56,12 +56,6 @@ public final class CPathSettings {
 	public static final String PREMERGE_DB_KEY = "premergeDataSource";
 	public static final String CREATE_DB_KEY = "createSchema";
 	
-	/* 
-	 * PREMERGE_INDEX_DIR_VARIABLE value must match the one used in the 
-	 * cpath-importer, internalContext-premerge.xml!
-	 */
-	public static final String PREMERGE_INDEX_DIR_VARIABLE = "premerge.index.dir";
-	
 	/*
 	 * URI prefix for auto-generated/converted during the data import 
 	 * and normalization utility class objects 
