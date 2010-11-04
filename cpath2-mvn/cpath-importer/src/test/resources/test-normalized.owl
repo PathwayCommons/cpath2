@@ -9,7 +9,7 @@
 	</owl:Ontology>
 
 	<bp:BioSource rdf:about="urn:miriam:taxonomy:562">
-		<bp:displayName rdf:datatype="xsd:string">Escherichia coli
+		<bp:displayName rdf:datatype="xsd:string">Escherichia coliü
 		</bp:displayName>
 		<bp:xref rdf:resource="urn:pathwaycommons:UnificationXref:Taxonomy_562" />
 	</bp:BioSource>

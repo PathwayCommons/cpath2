@@ -175,16 +175,17 @@ public class PremergeImpl extends Thread implements Premerge {
 	/**
 	 * Pushes given PathwayData through pipeline.
 	 *
-	 * @param pathwayData PathwayData
+	 * @param pathwayData provider's pathway data (usually from a single data file)
+	 * @param premergeDAO persistent BioPAX model for the data provider
 	 */
 	private void pipeline(final PathwayData pathwayData, PaxtoolsDAO premergeDAO) {
-		String pathwayDataStr = null;
-		String pathwayDataDescription = (pathwayData.getIdentifier() + ", " +
-										 pathwayData.getVersion() + ", " +
-										 pathwayData.getFilename() + ".");
+		String data = null;
+		String description = (pathwayData.getIdentifier() + ", " +
+								pathwayData.getVersion() + ", " +
+								pathwayData.getFilename() + ".");
 
 		// get the BioPAX OWL from the pathwayData bean
-		pathwayDataStr = pathwayData.getPathwayData();
+		data = pathwayData.getPathwayData();
 		
 		/*
 		 * First, clean - 
@@ -194,32 +195,47 @@ public class PremergeImpl extends Thread implements Premerge {
 		 */
 		if(log.isInfoEnabled())
 			log.info("pipeline(), cleaning data " 
-				+ pathwayDataDescription);
-		pathwayDataStr = cleaner.clean(pathwayDataStr);
+				+ description);
+		data = cleaner.clean(data);
 		
 		// Second, if psi-mi, convert to biopax L3
 		if (metadata.getType() == Metadata.TYPE.PSI_MI) {
 			if (log.isInfoEnabled())
 				log.info("pipeline(), converting psi-mi data "
-						+ pathwayDataDescription);
+						+ description);
 			try {
-				pathwayDataStr = convertPSIToBioPAX(pathwayDataStr);
+				data = convertPSIToBioPAX(data);
 			} catch (RuntimeException e) {
 				log.error("pipeline(), cannot convert PSI-MI data: "
-						+ pathwayDataDescription + " to L3. - " + e);
+						+ description + " to L3. - " + e);
 			}
 		} 
 		
 		if(log.isInfoEnabled())
 			log.info("pipeline(), validating pathway data...");
 		
-		
 		/* Validate, auto-fix, and normalize (incl. convesion to L3): 
 		 * e.g., synonyms in xref.db may be replaced 
 		 * with the primary db name, as in Miriam, etc.
 		 */
-		Validation v = checkAndNormalize(pathwayData, 
-				pathwayDataStr.getBytes());
+		Validation v = checkAndNormalize(description, data.getBytes());
+		
+		// Store the normalized data in the entity bean
+		pathwayData.setPremergeData(v.getFixedOwl());
+
+		/* serialize and add the validation results 
+		 * to the pathway data entity bean
+		 * (TODO using the last parameter, javax.xml.transform.Source
+		 * of a XSLT stylesheet, the validation object can be 
+		 * transformed to a human-readable report)
+		 */
+		/* let's clear the 'fixedOwl' field first,
+		 * because we've already saved it in 'premergeData' column 
+		 */
+		v.setFixedOwl(null);
+		StringWriter writer = new StringWriter();
+		BiopaxValidatorUtils.write(v, writer, null);
+		pathwayData.setValidationResults(writer.toString());
 		
 		// Update with the validation/normalization results in the DB
 		metaDataDAO.importPathwayData(pathwayData);
@@ -227,9 +243,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		// count error cases (ignoring warnings)
 		int noErrors = v.countErrors(null, null, null, true);
 		if(log.isInfoEnabled()) {
-			log.info("Summary for " + pathwayData.getIdentifier() 
-				+ "." + pathwayData.getVersion()
-				+ "." + pathwayData.getFilename()
+			log.info("Summary for " + description
 				+ ". Critical errors found:" + noErrors + ". " 
 				+ v.getComment().toString() + "; " 
 				+ v.toString());
@@ -239,17 +253,17 @@ public class PremergeImpl extends Thread implements Premerge {
 		if(noErrors > 0) {			
 			log.error("pipeline(), " + noErrors 
 				+ " biopax errors found in pathway data: "
-				+ pathwayDataDescription);
+				+ description);
 		} else {
 			// Get the normalized and validated model and persist it
 			if (log.isInfoEnabled())
 				log.info("pipeline(), creating paxtools model from pathway data.");
 				Model model = (new SimpleReader())
-					.convertFromOWL(new ByteArrayInputStream(pathwayDataStr
+					.convertFromOWL(new ByteArrayInputStream(data
 							.getBytes()));
 			if (log.isInfoEnabled())
 				log.info("pipeline(), persisting pathway data "
-						+ pathwayDataDescription);
+						+ description);
 
 			premergeDAO.merge(model);
 		}
@@ -317,20 +331,14 @@ public class PremergeImpl extends Thread implements Premerge {
 	/**
 	 * Validates the given pathway data.
 	 *
-	 * @param entityBean - BioPAX OWL
-	 * @param data TODO
+	 * @param title short description
+	 * @param data BioPAX OWL data
 	 * @return
 	 */
-	private Validation checkAndNormalize(final PathwayData entityBean, byte[] data) 
+	private Validation checkAndNormalize(final String title, byte[] data) 
 	{	
-		// get result and marshall to xml string to store
-		StringWriter writer = new StringWriter();
-		// the following is 
 		// create a new empty validation and associate with the model data
-		Validation validation = new Validation(
-				entityBean.getIdentifier() + "." 
-				+ entityBean.getVersion() + " " +
-				entityBean.getFilename()); // sets the title
+		Validation validation = new Validation(title); // sets the title
 		
 		// set auto-fix and normalize modes
 		validation.setFix(true);
@@ -340,17 +348,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		validator.importModel(validation, new ByteArrayInputStream(data));
 		// now post-validate
 		validator.validate(validation);
-		/* serialize
-		 * (the last parameter is for javax.xml.transform.Source;
-		 * so, if we have a XSL stylesheet, the validation 
-		 * can be transformed to a human-readable report)
-		 */
-		BiopaxValidatorUtils.write(validation, writer, null);
-		entityBean.setValidationResults(writer.toString());
 		
-		// Store (cleaned/converted/normalized) data in the entity bean
-		entityBean.setPremergeData(validation.getFixedOwl());
-
 		return validation;
 	}
 	
