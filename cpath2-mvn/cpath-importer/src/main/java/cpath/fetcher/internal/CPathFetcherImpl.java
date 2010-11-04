@@ -122,7 +122,7 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
         BufferedReader reader = null;
         try {
             // we'd like to read lines at a time
-            reader = new BufferedReader(new InputStreamReader(inputStream));
+            reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
 
             // are we ready to read?
             while (reader.ready()) 
@@ -269,7 +269,7 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 		StringBuffer toReturn = new StringBuffer();
         try {
             // we'd like to read lines at a time
-            reader = new BufferedReader(new InputStreamReader(inputStream));
+            reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
 
             // are we ready to read?
             while (reader.ready()) {
@@ -423,26 +423,16 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 	@Override
     public void storeWarehouseData(final Metadata metadata, final Model model) 
 		throws IOException 
- {
+	{
 		// use the local file (previously fetched from metadata.urlTodata)
 		String urlStr = "file://" + metadata.getLocalDataFile();
 		InputStream is = new BufferedInputStream(LOADER.getResource(urlStr)
 				.getInputStream());
-
-		// create converter
 		if (log.isInfoEnabled())
-			log.info("getting a converter with name: "
-					+ metadata.getConverterClassname());
-		Converter converter = getConverter(metadata.getConverterClassname());
-		if (converter == null) {
-			// TDB: report failure
-			log.fatal("could not create converter class "
-					+ metadata.getConverterClassname());
-			return;
-		}
-
-		((BaseConverterImpl) converter).setModel(model);
-
+			log.info("Input stream is now open for provider: "
+					+ metadata.getIdentifier() + " version: "
+					+ metadata.getVersion());
+		
 		try {
 			// get an input stream from a resource file that is either .gz or
 			// .zip
@@ -466,29 +456,44 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 					dest.flush();
 					dest.close();
 				}
+				
 				is = new ByteArrayInputStream(baos.toByteArray());
+				
 			} else {
-				if (log.isWarnEnabled())
-					log.warn("Not using un(g)zip - cannot detect from file extension : "
-									+ urlStr);
+				if (log.isInfoEnabled())
+					log.info("Not using un(g)zip (cannot guess " +
+						"from the extension) for " + urlStr);
 			}
 
 			if (log.isInfoEnabled()) {
-				log.info("Input stream (" + is + ") is open. "
-						+ "Creating EntityReference objects, provider: "
+				log.info("Creating EntityReference objects, provider: "
 						+ metadata.getIdentifier() + " version: "
 						+ metadata.getVersion());
 			}
 
 			// hook into biopax converter for given provider
+			if (log.isInfoEnabled())
+				log.info("getting a converter with name: "
+						+ metadata.getConverterClassname());
+			Converter converter = getConverter(metadata.getConverterClassname());
+			if (converter == null) {
+				// TDB: report failure
+				log.fatal("could not create converter class "
+						+ metadata.getConverterClassname());
+				return;
+			}
+			((BaseConverterImpl) converter).setModel(model);
+
 			converter.convert(is);
-		} catch (IOException e) {
-			throw e;
+			
 		} finally {
 			closeQuietly(is);
 		}
 	}
 
+	
+
+	
     
 	/**
 	 * For the given converter class name,
@@ -510,7 +515,6 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 		return null;
 	}
 
-
 	
 	@Override
 	public void fetchData(Metadata metadata) throws IOException {
@@ -522,13 +526,11 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 		
 		String localFileName = metadata.getLocalDataFile();
 		File localFile = new File(localFileName);
-		
 		if(localFile.exists() && localFile.isFile()) {
 			if(log.isInfoEnabled())
 				log.info(metadata.getType() + " data : " + metadata.getIdentifier() 
 					+ "." + metadata.getVersion() + " - found in "
 					+ localFileName + ". Skip downloading.");
-			
 		} else {
 			if(log.isInfoEnabled())
 				log.info("Downloading " + metadata.getType() + " from " +
@@ -544,5 +546,83 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 			if(log.isInfoEnabled())
 				log.info(size + " bytes downloaded from " + metadata.getURLToData());
 		}
+
+		if(metadata.getType() == Metadata.TYPE.MAPPING) {
+			storeMappingData(metadata);
+		}
+		
 	}
+	
+	/*
+	 * Currently, does not support gzip archives;
+	 * also, only one .bridge or .pgdb file per archive 
+	 * is expected (it ignores the rest); 
+	 * custom user mapping files should be fetched unpacked...
+	 * 
+	 */
+	private void storeMappingData(final Metadata metadata) throws IOException {
+		if (metadata.getType() != Metadata.TYPE.MAPPING) {
+			log.error("Not a Mapping data: " + metadata);
+			return;
+	  	}
+		
+		// use the local file (previously fetched from metadata.urlTodata)
+		String urlStr = "file://" + metadata.getLocalDataFile();
+		if (log.isInfoEnabled()) {
+			log.info("Processing mapping data: "
+					+ metadata.getIdentifier() + " file: "
+					+ metadata.getLocalDataFile());
+		}
+		InputStream is = new BufferedInputStream(
+				LOADER.getResource(urlStr).getInputStream());
+		try {
+			if (urlStr.endsWith(".zip")) {
+				ZipEntry entry = null;
+				ZipInputStream zis = new ZipInputStream(is);
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				while ((entry = zis.getNextEntry()) != null) {
+					if(entry.isDirectory())
+						continue;
+					// check ext
+					String tmp = entry.getName();
+					int idx = tmp.lastIndexOf('.');
+					tmp = tmp.substring(idx+1);
+					if(!"bridge".equalsIgnoreCase(tmp) 
+						&& !"pgdb".equalsIgnoreCase(tmp)) {
+						log.error("There in " + metadata.getURLToData() + 
+							", " + entry.getName() + " is not " +
+							"a '.bridge' or '.pgdb' file! Skipped.");
+						continue;
+					}
+					
+					/* Add .bridge extension.
+					 * Later, when it comes to instantiate a mapper, 
+					 * we should be able to say - 
+					 * 
+					 * Class.forName("org.bridgedb.rdb.IDMapperRdb");
+  					 * IDMapper mapper = BridgeDb.connect("idmapper-pgdb:"+ metadata.getDataLocalDir()+ File.separator);
+  					 * 
+  					 * (or at least - +metadata.getLocalDataFile() + ".bridge")
+					 */
+					String fname = metadata.getLocalDataFile() + ".bridge"; // .zip.bridge - ok
+					if (log.isInfoEnabled())
+						log.info("Processing zip entry: " + entry.getName()
+							+ "; expanding to: " + fname);
+					BufferedOutputStream dest = new BufferedOutputStream(
+						new FileOutputStream(fname), BUFFER);
+					int count;
+					byte data[] = new byte[BUFFER];
+					while ((count = zis.read(data, 0, BUFFER)) != -1) {
+						dest.write(data, 0, count);
+					}
+					dest.flush();
+					dest.close();
+					break; // at most one file is expected!
+				}
+			}
+		} finally {
+			closeQuietly(is);
+		}
+	}
+		
 }

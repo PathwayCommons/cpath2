@@ -70,4 +70,8 @@ public interface MetadataDAO {
      */
     PathwayData getByIdentifierAndVersionAndFilenameAndDigest(final String identifier, final String version, final String filename, final String digest);
 
+    /**
+     * Creates/re-builds the fulltext index.
+     */
+    void createIndex();
 }

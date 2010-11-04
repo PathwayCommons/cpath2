@@ -131,7 +131,7 @@ public class BiopaxValidatorTest {
 		
 		assertNotNull(result);
 		assertFalse(result.getError().isEmpty());
-		ErrorType error = result.findError("range.violated", Behavior.WARNING);
+		ErrorType error = result.findErrorType("range.violated", Behavior.WARNING);
 		assertNotNull(error);
 		assertTrue(error.getErrorCase().size()==2);
 		assertEquals("range.violated",error.getCode());
