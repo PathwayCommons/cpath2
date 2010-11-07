@@ -132,8 +132,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
 		MassIndexer indexer = fullTextSession.createIndexer();
 		try {
-			int attempts = 0;
-			indexer.batchSizeToLoadObjects(50)
+			indexer.batchSizeToLoadObjects(20)
 				.purgeAllOnStart(true)
 				//.optimizeOnFinish(true)
 				.startAndWait();

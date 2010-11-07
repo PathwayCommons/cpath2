@@ -68,7 +68,7 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 
         try {
 			// setup the reader
-            reader = new InputStreamReader(is);
+            reader = new InputStreamReader(is, "UTF-8");
             BufferedReader bufferedReader = new BufferedReader(reader);
             if (log.isInfoEnabled()) {
             	log.info("convert(), starting to read data...");

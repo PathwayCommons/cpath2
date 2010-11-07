@@ -51,6 +51,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Collection;
@@ -70,6 +71,7 @@ public class Admin implements Runnable {
 
         // command types
     	CREATE_TABLES("-create-tables"),
+    	CREATE_INDEX("-create-index"),
         FETCH_METADATA("-fetch-metadata"),
 		FETCH_DATA("-fetch-data"),
 		PREMERGE("-premerge"),
@@ -83,6 +85,15 @@ public class Admin implements Runnable {
 
         // method to get enum readable name
         public String toString() { return command; }
+    }
+    
+    // INDEX_TYPE enum
+    public static enum INDEX_TYPE {
+        // cpath2 fulltext index types
+    	MAIN,
+    	PROTEINS,
+    	MOLECULES,
+    	METADATA;
     }
 
     // command, command parameter
@@ -113,6 +124,15 @@ public class Admin implements Runnable {
 				this.command = COMMAND.CREATE_TABLES;
 				// agrs[1] contains comma-separated db names
 				this.commandParameters = args[1].split(",");
+			} 
+        } 
+        else if(args[0].equals(COMMAND.CREATE_INDEX.toString())) {
+			if (args.length != 2) {
+				validArgs = false;
+			} else {
+				this.command = COMMAND.CREATE_INDEX;
+				// agrs[1] contains comma-separated db names
+				this.commandParameters = new String[]{args[1].toUpperCase()};
 			} 
         } 
         else if (args[0].equals(COMMAND.FETCH_METADATA.toString())) {
@@ -176,6 +196,39 @@ public class Admin implements Runnable {
             			String dbName = db.trim();
             			// create db schema and lucene index
             			DataServicesFactoryBean.createSchema(dbName);
+            		}
+            	}
+            	break;
+            case CREATE_INDEX:
+            	if(commandParameters != null) {
+            		// re-build the fulltext index
+            		INDEX_TYPE mtype = INDEX_TYPE.valueOf(commandParameters[0]);
+            		ApplicationContext ctx = null;
+            		switch (mtype) {
+                    case MOLECULES:
+                       	ctx = new ClassPathXmlApplicationContext(
+                		"classpath:applicationContext-whouseMolecules.xml");
+                       	PaxtoolsDAO smdao = (PaxtoolsDAO) ctx.getBean("moleculesDAO");
+                		smdao.createIndex();
+                    	break;
+                    case PROTEINS:
+                       	ctx = new ClassPathXmlApplicationContext(
+                       	"classpath:applicationContext-whouseProteins.xml");
+                    	PaxtoolsDAO pdao = (PaxtoolsDAO) ctx.getBean("proteinsDAO");
+                		pdao.createIndex();
+                    	break;
+                    case METADATA :
+                    	ctx = new ClassPathXmlApplicationContext(
+                    		"classpath:applicationContext-whouseDAO.xml");
+                    	MetadataDAO medao = (MetadataDAO) ctx.getBean("metadataDAO");
+                    	medao.createIndex();
+                    	break;
+                    case MAIN :
+                    	ctx = new ClassPathXmlApplicationContext(
+                			"classpath:applicationContext-cpathDAO.xml");
+                    	PaxtoolsDAO pcdao = (PaxtoolsDAO) ctx.getBean("paxtoolsDAO");
+                		pcdao.createIndex();
+                    	break;
             		}
             	}
             	break;
@@ -332,8 +385,9 @@ public class Admin implements Runnable {
 		        // parse/save
 				fetcher.storeWarehouseData(metadata, smallMoleculesDAO);
 			} 
-			else if (metadata.getType() == Metadata.TYPE.MAPPING) {
-				// Nothing else to do
+			else if (metadata.getType() == Metadata.TYPE.MAPPING) 
+			{
+				// already done (by fetcher.fetchData(metadata)).
 			}
 			
 			
@@ -364,6 +418,8 @@ public class Admin implements Runnable {
 		toReturn.append("cpath.Admin <command> <one or more args>" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
 		toReturn.append(COMMAND.CREATE_TABLES.toString() + " <table1,table2,..>" + NEWLINE);
+		toReturn.append(COMMAND.CREATE_INDEX.toString() + 
+			" <type> (types are: metadata, proteins, molecules, main)" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_DATA.toString() + 
 				" <provider-name or all> [<continue (True/false)>]" + NEWLINE);
@@ -403,7 +459,9 @@ public class Admin implements Runnable {
     	// set JVM property to be used by other modules (in spring context)
     	System.setProperty(HOME_VARIABLE_NAME, home);
 
-
+        if(LOG.isInfoEnabled())
+        	LOG.info("Using Default Charset: " + Charset.defaultCharset());
+    	
 		Admin admin = new Admin();
 		admin.setCommandParameters(args);
         admin.run();

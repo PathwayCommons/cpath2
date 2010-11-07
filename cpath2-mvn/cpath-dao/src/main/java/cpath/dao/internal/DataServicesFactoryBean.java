@@ -263,7 +263,14 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();
 		dataSource.setDriverClassName(dbDriver);
-		dataSource.setUrl(dbUrl + "?autoReconnect=true&max_allowed_packet=256M");
+		/*
+		 * The following connection parameters are terribly,
+		 * unbelievably important 
+		 * (if not the most important part in cpath2 at all)!
+		 */
+		dataSource.setUrl(dbUrl + 
+			"?autoReconnect=true&max_allowed_packet=256M");
+			//+ "&useUnicode=true&characterEncoding=UTF-8"); // causes more pain...
 		dataSource.setUsername(dbUser);
 		dataSource.setPassword(dbPassword);		
 		return dataSource;
