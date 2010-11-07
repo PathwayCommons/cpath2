@@ -75,7 +75,7 @@
 							</property>
 						</systemProperties>
 						<!-- enable assertions, tests run in sequential mode -->
-						<argLine>-Xmx2024M -DCPATH2_HOME=${CPATH2_HOME} -ea -DforkMode=once</argLine>
+						<argLine>-Dfile.encoding=UTF-8 -Xmx2024M -DCPATH2_HOME=${CPATH2_HOME} -ea -DforkMode=once</argLine>
 					</configuration>
 				</plugin>
 			</plugins>

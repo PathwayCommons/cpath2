@@ -120,7 +120,7 @@ public class CPathWebserviceTest {
 		URL url = new URL(serviceUrl + 
 				"?version=2.0&q=BRCA2&output=xml&cmd=search");
 		BufferedReader in = new BufferedReader(
-				new InputStreamReader(url.openStream()));
+				new InputStreamReader(url.openStream(), "UTF-8"));
 		StringBuffer result = new StringBuffer();
 		String line;
 		while((line = in.readLine()) != null) {
@@ -143,7 +143,7 @@ public class CPathWebserviceTest {
 		int statusCode = client.executeMethod(method);
 		if (statusCode == HttpStatus.SC_OK) {
 			BufferedReader in = new BufferedReader(
-				new InputStreamReader(method.getResponseBodyAsStream()));
+				new InputStreamReader(method.getResponseBodyAsStream(), "UTF-8"));
 			String line;
 			while((line=in.readLine()) != null) {
 				sb.append(line)

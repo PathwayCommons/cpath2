@@ -403,8 +403,7 @@ public class CPathServiceImpl implements CPathService {
 			BiopaxValidatorUtils.write(response, writer, null); 
 			toReturn.put(DATA, writer.toString());
 			
-			if(log.isDebugEnabled())
-				log.debug(writer.toString());
+			//if(log.isDebugEnabled()) log.debug(writer.toString());
 		}
 		
 		return toReturn;

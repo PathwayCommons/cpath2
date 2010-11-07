@@ -47,8 +47,6 @@ import org.junit.Test;
 
 
 /**
- * uses idNormalizer-test-context.xml
- * 
  * @author rodch
  */
 public class NormalizerTest {

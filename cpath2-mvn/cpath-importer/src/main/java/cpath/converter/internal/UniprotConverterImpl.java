@@ -43,7 +43,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
         InputStreamReader reader= null;
 
         try {
-            reader = new InputStreamReader(is);
+            reader = new InputStreamReader(is, "UTF-8");
             BufferedReader bufferedReader = new BufferedReader(reader);
             String line = bufferedReader.readLine();
             HashMap<String, StringBuffer> dataElements = new HashMap<String, StringBuffer>();

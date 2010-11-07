@@ -11,6 +11,9 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.search.FullTextSession;
+import org.hibernate.search.MassIndexer;
+import org.hibernate.search.Search;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
@@ -174,4 +177,19 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 		return (PathwayData)query.uniqueResult();
     }
     
+    
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED)
+	public void createIndex() {
+		FullTextSession fullTextSession = Search.getFullTextSession(getSession());
+		MassIndexer indexer = fullTextSession.createIndexer();
+		try {
+			indexer.batchSizeToLoadObjects(20)
+				.purgeAllOnStart(true)
+				.optimizeOnFinish(true)
+				.startAndWait();
+		} catch (InterruptedException e) {
+			throw new RuntimeException("Index re-build is interrupted.");
+		}
+	}
 }

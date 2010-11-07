@@ -29,9 +29,160 @@
     <!-- Use BioPAX Rules's Configuration -->
     <import resource="classpath:rules-context.xml"/>
     
-    <!-- override to disable using manually entered db synonyms
-    	that defined in the validator's biopax-rules module, rules-context.xml) -->
+    <!-- overrides validator's built-in default 'extraDbSynonyms' set 
+    	(defined in the validator's biopax-rules, rules-context.xml)
+		The first name in each list is the preferred one unless
+		the corresponding synonyms are found in Miriam 
+		(then Miriam's takes priority)
+	-->
+	<util:set id="extraDbSynonyms">
+		<list>
+			<value>ENTREZ GENE</value>
+			<value>ENTREZ_GENE</value>
+			<value>LOCUS_LINK</value>
+			<value>LOCUSLINK</value>
+			<value>LOCUS-LINK</value>
+			<value>ENTREZGENE</value>
+			<value>ENTREZ GENE/LOCUSLINK</value>
+		</list>
+		<list>
+			<value>PUBCHEM-COMPOUND</value>
+			<value>NCBI PUBCHEM</value>
+			<value>PUBCHEM COMPOUND</value>
+			<value>PUBCHEM</value>
+		</list>
+		<list>
+			<value>PUBMED</value>
+			<value>PMID</value>
+		</list>
+		<list>
+			<value>UNIPROT</value>
+			<value>SWISS-PROT</value>
+			<value>SWISSPROT</value>
+			<value>SWISSTREMBL</value>
+			<value>SWP</value>
+			<value>SWISS-PROT/TREMBL</value>
+			<value>UNIPROTKB</value>
+			<value>REACTOME PROTEIN</value>
+			<value>UNIPROT KNOWLEDGE BASE</value>
+			<value>PIR</value>
+			<value>PIR-SSD</value>
+		</list>
+		<list>
+			<value>ECOCYC</value>
+			<value>ECOO157CYC</value>
+		</list>
+		<list>
+			<value>GO</value>
+			<value>GENE ONTOLOGY</value>
+			<value>GENE_ONTOLOGY</value>
+		</list>
+		<list>
+			<value>UM-BBD</value>
+			<value>UMBBD</value>
+		</list>
+		<list>
+			<value>PSI-MI</value>
+			<value>PSI MI</value>
+			<value>PSIMI</value>
+			<value>MI</value>
+		</list>
+		<list>
+			<value>REFSEQ PROTEIN</value>
+			<value>REFSEQ</value>
+			<value>REF_SEQ</value>
+			<value>REF-SEQ</value>
+			<value>REF_SEQ PROTEIN</value>
+		</list>
+		<list>
+			<value>GENE SYMBOL</value>
+			<value>GENE_SYMBOL</value>
+		</list>
+		<list>
+			<value>TAXONOMY</value>
+			<value>NCBI TAXONOMY</value>
+			<value>NCBI_TAXONOMY</value>
+			<value>NCBI-TAXONOMY</value>
+			<value>TAXON</value>
+		</list>
+		<list>
+			<value>NUCLEOTIDE SEQUENCE DATABASE</value>
+			<value>NCBI GENBANK</value>
+			<value>GENBANK</value>
+			<value>DDBJ</value>
+			<value>EMBL-BANK</value>
+		</list>
+		<list>
+			<value>NCBI GI</value>
+			<value>ENTREZ GI</value>
+			<value>GI</value>
+		</list>
+		<list>
+			<value>PROTEIN GENBANK IDENTIFIER</value>
+			<value>GENPEPT</value>
+		</list>
+		<list>
+			<value>KEGG</value>
+			<value>COMPOUND</value>
+			<value>KEGG COMPOUND</value>
+		</list>
+		<list>
+			<value>KEGG GENOMES</value>
+			<value>KEGG GENOME</value>
+		</list>
+		<list>
+			<value>KEGG LIGAND</value>
+			<value>LIGAND</value>
+		</list>
+		<list>
+			<value>AFFYMETRIX</value>
+		</list>
+		<list>
+			<value>KEGG Glycan</value>
+			<value>GLYCAN</value>
+		</list>
+		<list>
+			<value>IOB</value>
+		</list>
+		<list>
+			<value>SGD</value>
+		</list>
+		<list>
+			<value>ENCODE</value>
+		</list>
+		<list>
+			<value>AMAZE</value>
+		</list>
+		<list>
+			<value>HUGE</value>
+		</list>
+		<list>
+			<value>HPRD</value>
+		</list>
+		<list>
+			<value>UNIPARC</value>
+		</list>
+		<list>
+			<value>SWISS-MODEL</value>
+		</list>
+		<list>
+			<value>CAS</value>
+		</list>
+		<list>
+			<value>UNIGENE</value>
+		</list>
+		<list>
+			<value>EVIDENCE CODE ONTOLOGY</value>
+			<value>ECO</value>
+			<value>EVIDENCE CODE</value>
+		</list>
+	</util:set>
+    
+    <!-- or, disable the above and use the following empty set
+    to allow using only standard names and synonyms 
+    (from Miriam and MI 'database citation' vocabularies) -->
     <!-- <util:set id="extraDbSynonyms"/> -->
+    
     
 	<!-- BiopaxValidatorUtils configuration -->
 
