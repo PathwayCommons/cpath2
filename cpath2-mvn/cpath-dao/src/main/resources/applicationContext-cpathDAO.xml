@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
+
+	<context:annotation-config />
+
+	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+	
+    <!-- enable the configuration of transactional behavior based on annotations -->
+    <tx:annotation-driven transaction-manager="mainTransactionManager"/>
+
+	<bean id="mainSessionFactory"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+        <property name="dataSource" ref="cpath2_main"/>
+        <property name="hibernateProperties">
+        <props>
+			<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${main.db}</prop>
+			<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->   
+        </props>
+        </property>
+        <property name="annotatedClasses">
+        	<list>
+				<value>org.biopax.paxtools.impl.BioPAXElementImpl</value>
+			</list>
+         </property>
+		 <property name="packagesToScan">
+			<list>
+				<value>org.biopax.paxtools.impl.level3</value>
+			</list>
+		 </property>        
+    </bean>
+
+<!-- try later (when using JPA instead of native hibernate...)
+    <bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor" />
+-->
+	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
+    
+    <bean id="mainTransactionManager"
+        class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+        <property name="sessionFactory" ref="mainSessionFactory" />
+        <qualifier value="main" type="org.springframework.beans.factory.annotation.Qualifier"/>
+    </bean>
+
+    <bean id="paxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
+        <property name="sessionFactory" ref="mainSessionFactory"/>
+    </bean>
+
+	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
+
+	<!-- DataSource bean gets from the factory-bean using 
+	its id as a key (constant defined in the CPathSetting class) -->
+    <bean id="cpath2_main" class="cpath.dao.internal.DataServicesFactoryBean"/>
+  	
+</beans>

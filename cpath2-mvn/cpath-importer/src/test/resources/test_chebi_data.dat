@@ -1,0 +1,243 @@
+
+  Marvin  05210817452D          
+          
+ 10 11  0  0  1  0            999 V2000
+    0.0000   -0.8250    0.0000 C   0  0  2  0  0  0  0  0  0  0  0  0
+    0.7145   -0.4125    0.0000 C   0  0  3  0  0  0  0  0  0  0  0  0
+   -0.7145   -0.4125    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.7145    0.4125    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.7145    0.4125    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.1270   -1.1270    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.5395   -0.4125    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.4289    0.8250    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.8250    0.0000 C   0  0  1  0  0  0  0  0  0  0  0  0
+   -0.3000    0.0000    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0  0
+  2  6  1  0  0  0  0
+  2  7  1  0  0  0  0
+  1  3  1  0  0  0  0
+  2  4  1  0  0  0  0
+  4  8  2  0  0  0  0
+  3  5  1  0  0  0  0
+  9  5  1  0  0  0  0
+  4  9  1  0  0  0  0
+  9 10  1  1  0  0  0
+  1 10  1  1  0  0  0
+M  END
+> <ChEBI ID>
+CHEBI:20
+
+> <ChEBI Name>
+(+)-camphene
+
+> <Star>
+3
+
+> <Secondary ChEBI ID>
+CHEBI:545070
+
+> <SMILES>
+[H]O[H]
+
+> <InChI>
+InChI=1/C10H16/c1-7-8-4-5-9(6-8)10(7,2)3/h8-9H,1,4-6H2,2-3H3/t8-,9+/m0/s1
+
+> <InChIKey>
+InChIKey=CRPUJAZIXJMDBK-DTWKUNHWBS
+
+> <Formulae>
+C10H16
+
+> <Charge>
+0
+
+> <Mass>
+136.23404
+
+> <IUPAC Names>
+(1R,4S)-2,2-dimethyl-3-methylidenebicyclo[2.2.1]heptane
+
+> <Synonyms>
+(+)-Camphene
+(+)-Comphene
+(1R)-2,2-dimethyl-3-methylenebicyclo[2.2.1]heptane
+(1R,4S)-(+)-camphene
+(1R,4S)-2,2-dimethyl-3-methylenebicyclo[2.2.1]heptane
+d-camphene
+
+> <UniProt Database Links>
+BPPS_SALOF
+
+> <Last Modified>
+02 Dec 2009
+
+$$$$
+
+  Marvin  04050614332D          
+
+ 11 10  0  0  1  0            999 V2000
+   -1.5228   -0.3208    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -2.2372    0.0917    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.0938   -0.3208    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.6207    0.0917    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    1.3351   -0.3208    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.0496    0.0917    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.7641   -0.3208    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    2.0496    0.9167    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.8083    0.0917    0.0000 C   0  0  2  0  0  0  0  0  0  0  0  0
+   -1.2208    0.8061    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.3958    0.8061    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+  9  1  1  0  0  0  0
+  1  2  2  0  0  0  0
+  9  3  1  0  0  0  0
+  3  4  1  0  0  0  0
+  4  5  1  0  0  0  0
+  5  6  2  0  0  0  0
+  6  7  1  0  0  0  0
+  6  8  1  0  0  0  0
+  9 11  1  6  0  0  0
+  9 10  1  1  0  0  0
+M  END
+> <ChEBI ID>
+CHEBI:28
+
+> <ChEBI Name>
+(R)-linalool
+
+> <Star>
+3
+
+> <Secondary ChEBI ID>
+CHEBI:498941
+
+> <InChIKey>
+InChIKey=CDOSHBSSFJOMGT-JTQLQIEIBN
+
+> <SMILES>
+CC(C)=CCC[C@@](C)(O)C=C
+
+> <InChI>
+InChI=1/C10H18O/c1-5-10(4,11)8-6-7-9(2)3/h5,7,11H,1,6,8H2,2-4H3/t10-/m0/s1
+
+> <Formulae>
+C10H18O
+
+> <Charge>
+0
+
+> <Mass>
+154.24932
+
+> <IUPAC Names>
+(3R)-3,7-dimethylocta-1,6-dien-3-ol
+
+> <Synonyms>
+(-)-3,7-dimethyl-1,6-octadien-3-ol
+(-)-Linalool
+(3R)-3,7-dimethyl-1,6-octadien-3-ol
+(R)-(-)-Linalool
+(R)-3,7-dimethyl-1,6-octadien-3-ol
+
+> <IntEnz Database Links>
+EC 4.2.3.26
+
+> <Rhea Database Links>
+RHEA:15809
+RHEA:15810
+RHEA:15811
+RHEA:15812
+
+> <UniProt Database Links>
+HMNGT_SORBI
+LINS_ARATH
+LIS_CLABR
+
+> <Last Modified>
+17 Oct 2009
+
+$$$$
+
+  Marvin  07270713522D          
+
+  6  5  0  0  0  0            999 V2000
+    0.3572    0.2062    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.3572   -0.2062    0.0000 C   0  0  2  0  0  0  0  0  0  0  0  0
+    1.0717   -0.2063    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+   -1.0717    0.2063    0.0000 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.3572    1.0312    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+   -0.3572   -1.0313    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0
+  1  5  2  0  0  0  0
+  1  2  1  0  0  0  0
+  2  6  1  1  0  0  0
+  1  3  1  0  0  0  0
+  4  2  1  0  0  0  0
+M  END
+> <ChEBI ID>
+CHEBI:422
+
+> <ChEBI Name>
+(S)-lactic acid
+
+> <Star>
+3
+
+> <Secondary ChEBI ID>
+CHEBI:251281
+
+> <InChI>
+InChI=1/C3H6O3/c1-2(4)3(5)6/h2,4H,1H3,(H,5,6)/t2-/m0/s1/f/h5H
+
+> <SMILES>
+C[C@H](O)C(O)=O
+
+> <InChIKey>
+InChIKey=JVTAAEKCZFNVCJ-SNQCPAJUDF
+
+> <Formulae>
+C3H6O3
+
+> <Charge>
+0
+
+> <Mass>
+90.07794
+
+> <IUPAC Names>
+(2S)-2-hydroxypropanoic acid
+
+> <Synonyms>
+(+)-lactic acid
+(S)-(+)-lactic acid
+(S)-2-hydroxypropanoic acid
+(S)-2-hydroxypropionic acid
+L-(+)-alpha-hydroxypropionic acid
+L-(+)-lactic acid
+L-Lactic acid
+L-Milchsaeure
+
+> <IntEnz Database Links>
+EC 1.1.1.27
+
+> <Reactome Database Links>
+REACT_19245
+REACT_20553
+
+> <Rhea Database Links>
+RHEA:10960
+
+> <SABIO-RK Database Links>
+10148
+10181
+10553
+
+> <UniProt Database Links>
+ALDA_ECOLI
+GLCA_ECOLI
+GPR81_HUMAN
+GPR81_MOUSE
+LA2M_MYCSM
+
+> <Last Modified>
+17 Oct 2009
+
+$$$$
