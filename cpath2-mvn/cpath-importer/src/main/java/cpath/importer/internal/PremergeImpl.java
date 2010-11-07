@@ -243,15 +243,10 @@ public class PremergeImpl extends Thread implements Premerge {
 		} else {
 			// Get the normalized and validated model and persist it
 			if (log.isInfoEnabled())
-				log.info("pipeline(), creating paxtools model from pathway data.");
-				Model model = (new SimpleReader())
-					.convertFromOWL(new ByteArrayInputStream(pathwayDataStr
-							.getBytes()));
-			if (log.isInfoEnabled())
 				log.info("pipeline(), persisting pathway data "
 						+ pathwayDataDescription);
 
-			premergeDAO.merge(model);
+			premergeDAO.merge(v.getModel());
 		}
 		
 	}
@@ -349,7 +344,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		entityBean.setValidationResults(writer.toString());
 		
 		// Store (cleaned/converted/normalized) data in the entity bean
-		entityBean.setPremergeData(validation.getFixedOwl());
+		entityBean.setPremergeData(validation.getModelSerialized());
 
 		return validation;
 	}

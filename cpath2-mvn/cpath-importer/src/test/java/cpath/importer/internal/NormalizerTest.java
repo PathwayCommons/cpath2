@@ -184,9 +184,8 @@ public class NormalizerTest {
 		Normalizer normalizer = new Normalizer();
 		Model m = simpleReader.convertFromOWL(getClass()
 				.getResourceAsStream("/biopax-level3-test.owl"));
-		String xml = normalizer.normalize(m);
+		normalizer.normalize(m);
 		//System.out.println(xml);	
 		// check the result
-		Model model = simpleReader.convertFromOWL(new ByteArrayInputStream(xml.getBytes()));
 	}
 }
