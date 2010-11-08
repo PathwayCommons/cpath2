@@ -39,6 +39,7 @@ import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.beans.Metadata.TYPE;
 
 import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.validator.Behavior;
 import org.biopax.validator.Validator;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
@@ -220,25 +221,27 @@ public class PremergeImpl extends Thread implements Premerge {
 		 */
 		Validation v = checkAndNormalize(description, data);
 		
-		/*
-		if(log.isDebugEnabled())
-			log.debug(v.getDescription() + " >>>> " 
-				+ v.getModelSerialized() + " <<<<");
-		*/
-		/* serialize and add the validation results 
-		 * (with normalized OWL in it) to the pathway data entity bean
+		// get the updated BioPAX OWL and save it in the pathwayData bean
+		v.updateModelSerialized();
+		pathwayData.setPremergeData(v.getModelSerialized());
+		
+		/* Now - add the serialized validation results 
+		 * to the pathwayData entity bean, validationResults column.
+		 * 
 		 * (TODO using the last parameter, javax.xml.transform.Source
 		 * of a XSLT stylesheet, the validation object can be 
-		 * transformed to a human-readable report)
+		 * transformed to a human-readable report.)
 		 */
-		/* let's clear the 'fixedOwl' field first,
-		 * because we've already saved it in 'premergeData' column 
+		/* First, let's clear the (huge) 'serializedModel' field,
+		 * because it's already saved in the 'premergeData' column 
 		 */
+		v.setModelSerialized(null);
+		
 		StringWriter writer = new StringWriter();
 		BiopaxValidatorUtils.write(v, writer, null);
 		pathwayData.setValidationResults(writer.toString());
 		
-		// Update with the validation/normalization results in the DB
+		// Update in the DB
 		metaDataDAO.importPathwayData(pathwayData);
 		
 		// count error cases (ignoring warnings)
@@ -260,7 +263,6 @@ public class PremergeImpl extends Thread implements Premerge {
 			if (log.isInfoEnabled())
 				log.info("pipeline(), persisting pathway data "
 					+ description);
-
 			premergeDAO.merge(v.getModel());
 		}
 		
@@ -339,9 +341,9 @@ public class PremergeImpl extends Thread implements Premerge {
 		// set auto-fix and normalize modes
 		validation.setFix(true);
 		validation.setNormalize(true);
+		validation.setThreshold(Behavior.WARNING); // means - all err./warn.
 		
-		// because errors are reported during the import (e.g., syntax)
-		
+		// because errors are also reported during the import (e.g., syntax)
 		try {
 			validator.importModel(validation, new ByteArrayInputStream(data.getBytes("UTF-8")));
 		} catch (UnsupportedEncodingException e) {
@@ -351,6 +353,14 @@ public class PremergeImpl extends Thread implements Premerge {
 		// now post-validate
 		validator.validate(validation);
 
+		/* unregister the validation object
+		 * because rules (that work via AOP) could 
+		 * still report... Well, they will do anyway 
+		 * - we just don't want to see messages.
+		 * TODO this may be not required at all...
+		 */
+		validator.getResults().remove(validation);
+		
 		return validation;
 	}
 	
