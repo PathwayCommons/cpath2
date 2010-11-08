@@ -38,9 +38,7 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.beans.Metadata.TYPE;
 
-import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.validator.Validator;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
@@ -196,6 +194,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		if(log.isInfoEnabled())
 			log.info("pipeline(), cleaning data " 
 				+ description);
+		
 		data = cleaner.clean(data);
 		
 		// Second, if psi-mi, convert to biopax L3
@@ -212,14 +211,20 @@ public class PremergeImpl extends Thread implements Premerge {
 		} 
 		
 		if(log.isInfoEnabled())
-			log.info("pipeline(), validating pathway data...");
+			log.info("pipeline(), validating pathway data "
+				+ description);
 		
 		/* Validate, auto-fix, and normalize (incl. convesion to L3): 
 		 * e.g., synonyms in xref.db may be replaced 
 		 * with the primary db name, as in Miriam, etc.
 		 */
-		Validation v = checkAndNormalize(description, data.getBytes());
-
+		Validation v = checkAndNormalize(description, data);
+		
+		/*
+		if(log.isDebugEnabled())
+			log.debug(v.getDescription() + " >>>> " 
+				+ v.getModelSerialized() + " <<<<");
+		*/
 		/* serialize and add the validation results 
 		 * (with normalized OWL in it) to the pathway data entity bean
 		 * (TODO using the last parameter, javax.xml.transform.Source
@@ -295,7 +300,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		try {
 
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
-			InputStream is = new ByteArrayInputStream(psimiData.getBytes());
+			InputStream is = new ByteArrayInputStream(psimiData.getBytes("UTF-8"));
 			PSIMIBioPAXConverter psimiConverter = new PSIMIBioPAXConverter(BioPAXLevel.L3);
 			psimiConverter.convert(is, os);
 
@@ -326,7 +331,7 @@ public class PremergeImpl extends Thread implements Premerge {
 	 * @param data BioPAX OWL data
 	 * @return
 	 */
-	private Validation checkAndNormalize(final String title, byte[] data) 
+	private Validation checkAndNormalize(final String title, String data) 
 	{	
 		// create a new empty validation and associate with the model data
 		Validation validation = new Validation(title); // sets the title
@@ -336,7 +341,13 @@ public class PremergeImpl extends Thread implements Premerge {
 		validation.setNormalize(true);
 		
 		// because errors are reported during the import (e.g., syntax)
-		validator.importModel(validation, new ByteArrayInputStream(data));
+		
+		try {
+			validator.importModel(validation, new ByteArrayInputStream(data.getBytes("UTF-8")));
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
+		
 		// now post-validate
 		validator.validate(validation);
 

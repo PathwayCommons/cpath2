@@ -100,19 +100,7 @@ public class BiopaxValidatorTest {
 	}
 
 	@Test
-	public final void testValidateModel() {
-		//make sure the rule's behavior, we're interested in this test, is not 'IGNORED' 
-		// (otherwise this test should fail at the last line)
-		
-		Rule rule = null;
-		for(Rule r : validator.getRules()) {
-			if(r.getName().equals("controlTypeRule")) {
-				rule = r;
-				break;
-			}
-		}
-		rule.setBehavior(Behavior.WARNING); 
-		
+	public final void testValidateModel() {		
 		Catalysis ca = level3.createCatalysis();
 		ca.setControlType(ControlType.INHIBITION);
 		ca.addComment("error: illegal controlType");	
@@ -126,16 +114,14 @@ public class BiopaxValidatorTest {
 		m.add(tr);
 		
 		Validation result = new Validation("test");
-		validator.associate(m, result);
+		result.setModel(m);
+		//validator.associate(m, result); // - alternative to setModel
 		validator.validate(result);
 		
 		assertNotNull(result);
-		assertFalse(result.getError().isEmpty());
 		ErrorType error = result.findErrorType("range.violated", Behavior.WARNING);
 		assertNotNull(error);
-		assertTrue(error.getErrorCase().size()==2);
-		assertEquals("range.violated",error.getCode());
-		System.out.println(error);
+		assertEquals(2, error.getErrorCase().size());
 		for(ErrorCaseType errorCase : error.getErrorCase()) {
 			assertNotNull(errorCase.getObject());
 			System.out.println(errorCase);

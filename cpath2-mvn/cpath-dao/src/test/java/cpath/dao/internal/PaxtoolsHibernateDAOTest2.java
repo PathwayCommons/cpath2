@@ -91,7 +91,7 @@ public class PaxtoolsHibernateDAOTest2 {
 		// read it back
 		reader.mergeDuplicates(true);
 		Model model = reader.convertFromOWL(new ByteArrayInputStream(exported
-				.getBytes()));
+				.getBytes("UTF-8")));
 		assertNotNull(model);
 		assertTrue(model
 			.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));

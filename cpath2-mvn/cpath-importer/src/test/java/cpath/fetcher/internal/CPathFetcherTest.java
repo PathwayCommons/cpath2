@@ -16,6 +16,7 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.junit.*;
 
+import cpath.config.CPathSettings;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.beans.Metadata.TYPE;
@@ -94,7 +95,7 @@ public class CPathFetcherTest {
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
 		assertTrue(model.containsID("urn:miriam:chebi:20"));
-		assertTrue(model.containsID("urn:pathwaycommons:ChemicalStructure:JVTAAEKCZFNVCJ-SNQCPAJUDF"));
+		assertTrue(model.containsID(CPathSettings.CPATH_URI_PREFIX+"ChemicalStructure:JVTAAEKCZFNVCJ-SNQCPAJUDF"));
 	}
 	
 	@Test
@@ -113,8 +114,8 @@ public class CPathFetcherTest {
 		fetcher.storeWarehouseData(metadata, model);
 		assertTrue(model.containsID("urn:miriam:pubchem.substance:14438"));
 		assertTrue(model.containsID("urn:miriam:pubchem.substance:14439"));
-		assertTrue(model.containsID("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS"));
-		assertTrue(model.containsID("urn:pathwaycommons:ChemicalStructure:CRPUJAZIXJMDBK-DTWKUNHWBS"));
+		assertTrue(model.containsID(CPathSettings.CPATH_URI_PREFIX+"CRPUJAZIXJMDBK-DTWKUNHWBS"));
+		assertTrue(model.containsID(CPathSettings.CPATH_URI_PREFIX+"ChemicalStructure:CRPUJAZIXJMDBK-DTWKUNHWBS"));
 	}
 	
 	

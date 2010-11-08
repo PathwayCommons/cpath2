@@ -139,7 +139,7 @@ public class Main  {
     	} else if(res.containsKey(ResultMapKey.DATA)) {
     		String report = (String) res.get(ResultMapKey.DATA);
     		FileOutputStream fileOutputStream = new FileOutputStream(output);
-    		fileOutputStream.write(report.getBytes());
+    		fileOutputStream.write(report.getBytes("UTF-8"));
     		fileOutputStream.close();
     	}
 	}

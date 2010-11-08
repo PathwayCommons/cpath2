@@ -184,6 +184,5 @@ public class NormalizerTest {
 				.getResourceAsStream("/biopax-level3-test.owl"));
 		normalizer.normalize(m);
 		//System.out.println(xml);	
-		// check the result
 	}
 }

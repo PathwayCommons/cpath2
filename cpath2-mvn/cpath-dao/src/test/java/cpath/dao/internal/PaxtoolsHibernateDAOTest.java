@@ -39,6 +39,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import org.apache.commons.logging.*;
 
+import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 import cpath.warehouse.WarehouseDAO;
 
@@ -100,10 +101,10 @@ public class PaxtoolsHibernateDAOTest {
 		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
 		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Protein_A"));
 		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Protein_B"));
-		assertTrue(paxtoolsDAO.containsID("urn:pathwaycommons:UnificationXref:Taxonomy_562"));
+		assertTrue(paxtoolsDAO.containsID(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:Taxonomy_562"));
 		
 		BioPAXElement bpe = ((WarehouseDAO) paxtoolsDAO).getObject(
-				"urn:pathwaycommons:UnificationXref:Taxonomy_562", UnificationXref.class);
+				CPathSettings.CPATH_URI_PREFIX+"UnificationXref:Taxonomy_562", UnificationXref.class);
 		assertTrue(bpe instanceof UnificationXref);
 		
 		BioPAXElement e = paxtoolsDAO
@@ -154,8 +155,8 @@ public class PaxtoolsHibernateDAOTest {
 			.getByID("http://www.biopax.org/examples/myExample#Protein_A");
 		assertTrue(bpe instanceof Protein);
 		
-		bpe = ((WarehouseDAO)paxtoolsDAO).getObject(
-				"urn:pathwaycommons:UnificationXref:UniProt_P46880", UnificationXref.class);
+		bpe = ((WarehouseDAO)paxtoolsDAO).getObject(CPathSettings.CPATH_URI_PREFIX
+			+ "UnificationXref:UniProt_P46880", UnificationXref.class);
 		assertTrue(bpe instanceof UnificationXref);
 	}
 
@@ -183,10 +184,11 @@ public class PaxtoolsHibernateDAOTest {
 		 * which is usable only within the session/transaction,
 		 * which is closed after the call :) So we use getObject instead - 
 		 */
-		//BioPAXElement bpe = paxtoolsDAO.getByID("urn:pathwaycommons:UnificationXref:UniProt_P46880");
+		//BioPAXElement bpe = paxtoolsDAO.getByID(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:UniProt_P46880");
 		
-		BioPAXElement bpe = ((WarehouseDAO)paxtoolsDAO).getObject(
-				"urn:pathwaycommons:UnificationXref:UniProt_P46880", UnificationXref.class);
+		BioPAXElement bpe = ((WarehouseDAO)paxtoolsDAO)
+			.getObject(CPathSettings.CPATH_URI_PREFIX
+				+ "UnificationXref:UniProt_P46880", UnificationXref.class);
 		assertTrue(bpe instanceof UnificationXref);
 		
 		// if the element can be exported like this, it's fully initialized...
@@ -228,20 +230,12 @@ public class PaxtoolsHibernateDAOTest {
 		System.out.println("Clone the protein and export model:");
 		assertTrue(m.containsID("http://www.biopax.org/examples/myExample#Protein_A"));
 		assertTrue(m.containsID("urn:miriam:uniprot:P46880"));
-		assertTrue(m.containsID("urn:pathwaycommons:UnificationXref:UniProt_P46880"));
+		assertTrue(m.containsID(CPathSettings.CPATH_URI_PREFIX + "UnificationXref:UniProt_P46880"));
 		
 		OutputStream out = new FileOutputStream(
 				getClass().getClassLoader().getResource("").getPath() 
 					+ File.separator + "testGetValidSubModel.out.owl");
 		exporter.convertToOWL(m, out);
-		
-		// does a by-xref sub-model contain its parent? No...
-		/* TODO: ask Ozgun/Emek to enable auto-complete for xrefOf
-		m = null;
-		m =  paxtoolsDAO.getValidSubModel(
-				Collections.singleton("urn:pathwaycommons:UnificationXref:UniProt_P46880"));
-		assertTrue(m.containsID("urn:miriam:uniprot:P46880"));
-		*/
 	}
 	
 	
@@ -280,7 +274,7 @@ public class PaxtoolsHibernateDAOTest {
 	public void testFind() throws Exception {
 		List<String> list = paxtoolsDAO.find("P46880", BioPAXElement.class);
 		assertFalse(list.isEmpty());
-		assertTrue(list.contains("urn:pathwaycommons:UnificationXref:UniProt_P46880"));
+		assertTrue(list.contains(CPathSettings.CPATH_URI_PREFIX + "UnificationXref:UniProt_P46880"));
 		System.out.println("find by 'P46880' returned: " + list.toString());
 		
 		// P46880 is used only in the PR's RDFId and not in other fields

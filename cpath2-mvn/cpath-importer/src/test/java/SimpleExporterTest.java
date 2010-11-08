@@ -66,7 +66,7 @@ public class SimpleExporterTest {
 		model = null;
 		String bytes = out.toString();
 		reader.mergeDuplicates(true);
-		model = reader.convertFromOWL(new ByteArrayInputStream(bytes.getBytes()));
+		model = reader.convertFromOWL(new ByteArrayInputStream(bytes.getBytes("UTF-8")));
 		assertNotNull(model);
 		assertTrue(model.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
 		assertEquals(50, model.getObjects().size());

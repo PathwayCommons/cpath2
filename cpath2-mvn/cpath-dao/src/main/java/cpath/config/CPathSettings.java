@@ -26,6 +26,7 @@
  **/
 package cpath.config;
 
+
 /**
  * CPathSquared Build Constants
  * 
@@ -61,7 +62,7 @@ public final class CPathSettings {
 	 * and normalization utility class objects 
 	 * (i.e., for xrefs, ChemicalStructure, etc.)
 	 */
-	public static final String CPATH_URI_PREFIX = "urn:pathwaycommons:";
+	public static final String CPATH_URI_PREFIX = "urn:pathwaycommons:"; //=Normalizer.BIOPAX_URI_PREFIX;
 	
 	/*
 	 * Use this default prefix for DB names that we create (drop),
