@@ -41,6 +41,7 @@ import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.internal.CPathFetcherImpl;
@@ -117,7 +118,7 @@ public class CPathWarehouseTest {
 		// generate an xref to search Warehouse with -
 		// (it pretends to come from a pathway during merge...)
 		Xref x = factory.reflectivelyCreate(UnificationXref.class);
-		x.setRDFId("urn:pathwaycommons:UnificationXref:uniprot_A2A2M3");
+		x.setRDFId(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:uniprot_A2A2M3");
 		x.setDbVersion("uniprot");
 		x.setId("A2A2M3"); // not a primary accession ;)
 		
@@ -143,10 +144,10 @@ public class CPathWarehouseTest {
 		// search with a secondary (RefSeq) accession number
 		Collection<String> prIds = ((PaxtoolsDAO)proteins).find("NP_619650", UnificationXref.class);
 		assertFalse(prIds.isEmpty());
-		assertTrue(prIds.contains("urn:pathwaycommons:UnificationXref:RefSeq_NP_619650"));
+		assertTrue(prIds.contains(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:RefSeq_NP_619650"));
 		
 		// get that xref
-		Xref x = proteins.getObject("urn:pathwaycommons:UnificationXref:RefSeq_NP_619650", UnificationXref.class);
+		Xref x = proteins.getObject(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:RefSeq_NP_619650", UnificationXref.class);
 		assertNotNull(x);
 		assertTrue(x.getXrefOf().isEmpty()); // when elements are detached by id, they do not remember its owners!
 		// if you get the owner (entity reference) by id, then this xref.xrefOf will contain the owner.
@@ -168,12 +169,12 @@ public class CPathWarehouseTest {
 	public void testSubModel() {
 		Model m =((PaxtoolsDAO)proteins).getValidSubModel(
 				Arrays.asList(
-					"urn:pathwaycommons:UnificationXref:RefSeq_NP_619650",
+						CPathSettings.CPATH_URI_PREFIX+"UnificationXref:RefSeq_NP_619650",
 					"urn:miriam:uniprot:Q8TD86",
-					"urn:pathwaycommons:UnificationXref:uniprot_Q8TD86",
-					"urn:pathwaycommons:UnificationXref:uniprot_A2A2M3",
-					"urn:pathwaycommons:UnificationXref:uniprot_Q6Q2C4",
-					"urn:pathwaycommons:UnificationXref:Entrez+Gene_163688"));
+					CPathSettings.CPATH_URI_PREFIX+"UnificationXref:uniprot_Q8TD86",
+					CPathSettings.CPATH_URI_PREFIX+"UnificationXref:uniprot_A2A2M3",
+					CPathSettings.CPATH_URI_PREFIX+"UnificationXref:uniprot_Q6Q2C4",
+					CPathSettings.CPATH_URI_PREFIX+"UnificationXref:Entrez+Gene_163688"));
 		
 		// TODO check elements
 		assertTrue(m.containsID("urn:miriam:taxonomy:9606")); // added by auto-complete

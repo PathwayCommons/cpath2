@@ -6,6 +6,8 @@ import org.biopax.paxtools.model.level3.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import cpath.config.CPathSettings;
+
 import java.io.*;
 import java.net.URLEncoder;
 
@@ -188,7 +190,7 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 					+ ", type: " + aClass.getSimpleName());
 		}
 		
-		String rdfID =  BaseConverterImpl.BIOPAX_URI_PREFIX +
+		String rdfID =  CPathSettings.CPATH_URI_PREFIX +
 			aClass.getSimpleName() + ":" + 
 			URLEncoder.encode(db.toUpperCase() + "_" + id);
 
@@ -245,7 +247,7 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 		SmallMoleculeReference inchiEntityRef = null;
 		
 		if (inchiKey != null && inchiKey.length() > 0) {
-			String inchiEntityReferenceID = BaseConverterImpl.BIOPAX_URI_PREFIX 
+			String inchiEntityReferenceID = CPathSettings.CPATH_URI_PREFIX 
 				+ inchiKey;
 			try {
 				//try to pull the existing entity reference
@@ -256,7 +258,7 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 					inchiEntityRef.setRDFId(inchiEntityReferenceID);
 					// create chem struct using inchi
 					if (inchi != null && inchi.length() > 0) {
-						String chemicalStructureID = BaseConverterImpl.BIOPAX_URI_PREFIX 
+						String chemicalStructureID = CPathSettings.CPATH_URI_PREFIX 
 							+ "ChemicalStructure:" + inchiKey;
 						setChemicalStructure(inchi, StructureFormatType.InChI, 
 								chemicalStructureID, inchiEntityRef);

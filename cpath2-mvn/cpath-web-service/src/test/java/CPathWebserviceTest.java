@@ -61,7 +61,7 @@ public class CPathWebserviceTest {
 	 * [Optional] organism= organism filter. Must be specified as an NCBI Taxonomy identifier
 	 */
 	@Test
-	public void testSearchWithRestTemplate() throws JAXBException {
+	public void testSearchWithRestTemplate() throws JAXBException, UnsupportedEncodingException {
 		String result = template.getForObject(serviceUrl + 
 				"?version=2.0&q={q}&cmd=search", String.class, "BRCA2");
 		assertNotNull(result);
@@ -69,7 +69,7 @@ public class CPathWebserviceTest {
 		JAXBContext jaxbContext = JAXBContext.newInstance("cpath.service.jaxb");
 		Unmarshaller un = jaxbContext.createUnmarshaller();
 		JAXBElement<?> element = (JAXBElement<?>) un.unmarshal(
-				new ByteArrayInputStream(result.getBytes()));
+				new ByteArrayInputStream(result.getBytes("UTF-8")));
 		Object response = element.getValue();
 		if(response instanceof ErrorType) {
 			System.out.println(((ErrorType)response).getErrorMsg());

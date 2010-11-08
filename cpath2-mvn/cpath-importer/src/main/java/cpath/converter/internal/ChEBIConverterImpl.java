@@ -10,6 +10,8 @@ import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 
+import cpath.config.CPathSettings;
+
 /**
  * Implementation of Converter interface for ChEBI data.
  */
@@ -92,7 +94,7 @@ public class ChEBIConverterImpl extends BaseSDFConverterImpl
 		}		
 		// smiles - chemical structure
 		String[] rdfIDParts = smallMoleculeReference.getRDFId().split(COLON_DELIMITER);
-		String chemicalStructureID = BaseConverterImpl.BIOPAX_URI_PREFIX 
+		String chemicalStructureID = CPathSettings.CPATH_URI_PREFIX 
 			+ "ChemicalStructure:" + rdfIDParts[2]+"_"+rdfIDParts[3];
 		String structure = getValue(entryBuffer, CHEBI_SMILES);
 		setChemicalStructure(structure, StructureFormatType.SMILES, 

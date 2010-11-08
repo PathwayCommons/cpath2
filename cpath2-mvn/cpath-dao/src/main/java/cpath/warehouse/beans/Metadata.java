@@ -79,8 +79,14 @@ public class Metadata {
         if (identifier == null) {
             throw new IllegalArgumentException("identifier must not be null");
         }
-        this.identifier = identifier;
-
+        
+        // MySQL can't handle dashes in database names (metadata identifier may become part of db name...)
+        if(identifier.contains("-")) {
+        	this.identifier = identifier.replaceAll("-", "_");
+        } else {
+        	this.identifier = identifier;
+        }
+        
         if (name == null) {
             throw new IllegalArgumentException("name must not be null");
         }

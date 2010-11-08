@@ -1,6 +1,7 @@
 package cpath.converter.internal;
 
 // imports
+import cpath.config.CPathSettings;
 import cpath.converter.Converter;
 
 import org.biopax.paxtools.controller.SimpleMerger;
@@ -80,12 +81,12 @@ public class ChEBIConverterImplTest {
 		assertEquals(2, unificationXrefCount);
 		assertEquals(12, relationshipXrefCount);
 		
-		assertTrue(model.containsID("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS"));
+		assertTrue(model.containsID(CPathSettings.CPATH_URI_PREFIX+"CRPUJAZIXJMDBK-DTWKUNHWBS"));
 		assertTrue(model.containsID("urn:miriam:chebi:20"));
 		
 		// following checks work in this test only (using in-memory model); with DAO - use getObject...
 		EntityReference er = (EntityReference) model.getByID("urn:miriam:chebi:20");
-		EntityReference ir = (EntityReference) model.getByID("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS");
+		EntityReference ir = (EntityReference) model.getByID(CPathSettings.CPATH_URI_PREFIX+"CRPUJAZIXJMDBK-DTWKUNHWBS");
 		assertTrue(er.getMemberEntityReferenceOf().contains(ir));
 		assertEquals(er, ir.getMemberEntityReference().iterator().next());
 	}

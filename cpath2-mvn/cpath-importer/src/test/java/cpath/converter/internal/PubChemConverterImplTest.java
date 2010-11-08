@@ -1,6 +1,7 @@
 package cpath.converter.internal;
 
 // imports
+import cpath.config.CPathSettings;
 import cpath.converter.Converter;
 
 import org.biopax.paxtools.controller.SimpleMerger;
@@ -65,8 +66,8 @@ public class PubChemConverterImplTest {
 		assertTrue(model.containsID("urn:miriam:pubchem.substance:14438"));
 		assertTrue(model.containsID("urn:miriam:pubchem.substance:14439"));
 		
-		assertTrue(model.containsID("urn:pathwaycommons:CRPUJAZIXJMDBK-DTWKUNHWBS"));
-		assertTrue(model.containsID("urn:pathwaycommons:ChemicalStructure:CRPUJAZIXJMDBK-DTWKUNHWBS"));
+		assertTrue(model.containsID(CPathSettings.CPATH_URI_PREFIX+"CRPUJAZIXJMDBK-DTWKUNHWBS"));
+		assertTrue(model.containsID(CPathSettings.CPATH_URI_PREFIX+"ChemicalStructure:CRPUJAZIXJMDBK-DTWKUNHWBS"));
 		
 		// get Cyclohexyl acetate
 		String rdfID = "urn:miriam:pubchem.substance:14438";
