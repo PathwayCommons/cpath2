@@ -208,6 +208,7 @@ public class PremergeImpl extends Thread implements Premerge {
 			} catch (RuntimeException e) {
 				log.error("pipeline(), cannot convert PSI-MI data: "
 						+ description + " to L3. - " + e);
+				return;
 			}
 		} 
 		
@@ -220,6 +221,11 @@ public class PremergeImpl extends Thread implements Premerge {
 		 * with the primary db name, as in Miriam, etc.
 		 */
 		Validation v = checkAndNormalize(description, data);
+		if(v == null) {
+			if(log.isInfoEnabled())
+				log.info("pipeline(), skipping: " + description);
+			return;
+		}
 		
 		// get the updated BioPAX OWL and save it in the pathwayData bean
 		v.updateModelSerialized();
@@ -346,20 +352,23 @@ public class PremergeImpl extends Thread implements Premerge {
 		// because errors are also reported during the import (e.g., syntax)
 		try {
 			validator.importModel(validation, new ByteArrayInputStream(data.getBytes("UTF-8")));
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
+			// now post-validate
+			if(validation.getModel() != null) {
+				validator.validate(validation);
+			}
+			/* unregister the validation object 
+			 * (rules are still active (AOP), but we just don't want any messages)
+			 */
+			validator.getResults().remove(validation);
+		} catch (Exception e) {
+			/*
+			  throw new RuntimeException("pipeline(), " +
+				"Failed to check/normalize " + title, e);
+			*/ 
+			e.printStackTrace();
+			log.error("pipeline(), Failed to process " + title + " - ", e);
+			return null;
 		}
-		
-		// now post-validate
-		validator.validate(validation);
-
-		/* unregister the validation object
-		 * because rules (that work via AOP) could 
-		 * still report... Well, they will do anyway 
-		 * - we just don't want to see messages.
-		 * TODO this may be not required at all...
-		 */
-		validator.getResults().remove(validation);
 		
 		return validation;
 	}
@@ -380,8 +389,6 @@ public class PremergeImpl extends Thread implements Premerge {
 				"Please set " + CPathSettings.HOME_VARIABLE_NAME + " environment variable " +
             	" (point to a directory where cpath.properties, etc. files are placed)");
 		}
-		
-		String indexDir = home + File.separator + premergeDbName;
 		
 		// get the data source factory bean (aware of the driver, user, and password)
 		ApplicationContext context = 

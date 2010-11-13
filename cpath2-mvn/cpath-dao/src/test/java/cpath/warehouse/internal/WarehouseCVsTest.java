@@ -66,6 +66,7 @@ public class WarehouseCVsTest {
 		Assert.assertTrue(ontologyIDs.contains("GO"));
 		Assert.assertTrue(ontologyIDs.contains("SO"));
 		Assert.assertTrue(ontologyIDs.contains("MI"));
+		Assert.assertTrue(ontologyIDs.contains("MOD"));
 
 		Ontology oa2 = warehouse.getOntology("GO");
 		Assert.assertNotNull(oa2);
@@ -110,6 +111,13 @@ public class WarehouseCVsTest {
 		assertEquals("nucleoplasm", term.getPreferredName());
 	}
 
+	@Test
+	public final void testSearchMODForTermByAccession() {
+		OntologyTermI term = warehouse.findTermByAccession("MOD:00046");
+		assertNotNull(term);
+		assertEquals("MOD", term.getOntologyId());
+	}
+	
 	@Test
 	public final void testGetDirectChildren() {
 		Set<String> dc = warehouse.getDirectChildren("urn:miriam:obo.go:GO%3A0005654");

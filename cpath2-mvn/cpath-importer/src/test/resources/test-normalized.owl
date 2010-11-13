@@ -281,6 +281,7 @@
 		</bp:displayName>
 		<bp:dataSource rdf:resource="#aMAZE" />
 		<bp:dataSource rdf:resource="#KEGG" />
+		<bp:feature rdf:resource="#O_phospho_L_serine_at_5" />
 	</bp:Protein>
 
 	<bp:Pathway rdf:ID="Pathway50">
@@ -463,4 +464,21 @@
 		<bp:id rdf:datatype="xsd:string">Q16602</bp:id>
 		<bp:comment rdf:datatype="xsd:string">PMID: 15608167</bp:comment>
 	</bp:UnificationXref>
+	
+	<!-- the following SMCV is added to test a bug in the cvRepository impl. (why MOD becomes MI...) -->
+	<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:Protein+Modification+Ontology_MOD%3A00046">
+ 		<bp:id rdf:datatype = "xsd:string">MOD:00046</bp:id>
+ 		<bp:db rdf:datatype = "xsd:string">Protein Modification Ontology</bp:db>
+	</bp:UnificationXref>
+	
+	<bp:SequenceModificationVocabulary rdf:about="urn:miriam:obo.psi-mod:MOD%3A00046">
+ 		<bp:term rdf:datatype = "xsd:string">O-phospho-L-serine</bp:term>
+ 		<bp:xref rdf:resource="urn:biopax:UnificationXref:Protein+Modification+Ontology_MOD%3A00046" />
+	</bp:SequenceModificationVocabulary>
+	
+	<bp:ModificationFeature rdf:ID="O_phospho_L_serine_at_5">
+ 		<bp:modificationType rdf:resource="urn:miriam:obo.psi-mod:MOD%3A00046" />
+	</bp:ModificationFeature>
+	
+	
 </rdf:RDF>

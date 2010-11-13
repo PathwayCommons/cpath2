@@ -95,10 +95,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		this.level = BioPAXLevel.L3;
 		this.factory = level.getDefaultFactory();
 		this.nameSpacePrefixMap = new HashMap<String, String>();
-		nameSpacePrefixMap.put("", CPathSettings.CPATH_URI_PREFIX);
-		reader = new SimpleReader(BioPAXLevel.L3);
+		this.nameSpacePrefixMap.put("", CPathSettings.CPATH_URI_PREFIX);
+		this.reader = new SimpleReader(BioPAXLevel.L3);
 		((SimpleReader)reader).mergeDuplicates(true);
-		multiFieldQueryParser = new MultiFieldQueryParser(
+		this.multiFieldQueryParser = new MultiFieldQueryParser(
 			Version.LUCENE_29, ALL_FIELDS, 
 				new StandardAnalyzer(Version.LUCENE_29));
 	}
@@ -291,6 +291,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	public void add(BioPAXElement aBioPAXElement)
 	{
 		String rdfId = aBioPAXElement.getRDFId();
+		
+		if (log.isDebugEnabled())
+			log.debug("will be adding " + rdfId);
+		
 		if (!level.hasElement(aBioPAXElement))
 		{
 			throw new IllegalBioPAXArgumentException(
@@ -304,9 +308,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		else
 		{
 			if (log.isDebugEnabled())
-			{
-				log.debug("adding " + rdfId);
-			}
+				log.debug("now adding " + rdfId);
 			
 			/* seems, unlike 'save' or 'persist', 'saveOrUpdate' 
 			 * does resolve duplicate key issues (because of 

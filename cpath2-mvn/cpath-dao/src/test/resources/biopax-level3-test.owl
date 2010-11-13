@@ -582,5 +582,10 @@
 		<bp:pathwayComponent
 			rdf:resource="#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p" />
 	</bp:Pathway>
+	
+<!-- there was a bug when an Evidence is added (@ManyToOne instead of @ManyToMany for evidenceCode...) -->	
+	<bp:Evidence rdf:ID="InferredFrom_Dissociation_of_L13a_from_the_60s_ribosomal_subunit">
+	</bp:Evidence>
+	
 </rdf:RDF>
 

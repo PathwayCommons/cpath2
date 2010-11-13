@@ -14,13 +14,10 @@ import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.simpleIO.*;
 
 import org.junit.*;
 import static org.junit.Assert.*;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
@@ -38,8 +35,6 @@ import java.util.Set;
  *
  */
 public class CPathMergerTest {
-
-	private static Log log = LogFactory.getLog(CPathMergerTest.class);
 	private static final MetadataDAO metadataDAO;
 	private static final WarehouseDAO proteinsDAO;
 	private static final WarehouseDAO moleculesDAO;
@@ -192,7 +187,7 @@ public class CPathMergerTest {
 	}
 	
 	
-	@Test
+	//@Test
 	public void testMergeIntoDAO() throws IOException {
 		// init the target test db
 		DataServicesFactoryBean.createSchema("cpath2_testpc"); // target db, for pcDAO
