@@ -286,11 +286,5 @@ public class PaxtoolsHibernateDAOTest {
 		assertEquals(1, list.size());
 		assertTrue(list.contains("urn:miriam:uniprot:P46880"));
 	}
-	
-	
-	//@Test // takes forever...
-	public void testIndex() {
-		paxtoolsDAO.createIndex();
-	}
 
 }

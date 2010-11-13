@@ -28,14 +28,14 @@
  **/
 package cpath.admin;
 
+import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.CPathFetcher;
 import cpath.fetcher.WarehouseDataService;
 import cpath.fetcher.internal.CPathFetcherImpl;
 import cpath.importer.Merger;
-import cpath.importer.internal.MergerImpl;
-import cpath.importer.internal.PremergeDispatcher;
+import cpath.importer.internal.*;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
@@ -50,6 +50,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Collections;
@@ -64,7 +65,7 @@ import static cpath.config.CPathSettings.*;
 public class Admin implements Runnable {
 	private static final Log LOG = LogFactory.getLog(Admin.class);
 	// used as a argument to fetch-pathwaydata
-	private static final String FETCH_ALL = "all";
+	private static final String FETCH_ALL = "--all";
 	
     // COMMAND Enum
     public static enum COMMAND {
@@ -75,7 +76,9 @@ public class Admin implements Runnable {
         FETCH_METADATA("-fetch-metadata"),
 		FETCH_DATA("-fetch-data"),
 		PREMERGE("-premerge"),
-		MERGE("-merge");
+		MERGE("-merge"),
+		EXPORT_PREMERGE("-export-premerge"),
+		;
 
         // string ref for readable name
         private String command;
@@ -150,7 +153,7 @@ public class Admin implements Runnable {
 			} else { // args.length >= 2
 				this.command = COMMAND.FETCH_DATA;
 				if(args.length == 2) {
-					this.commandParameters = new String[] { args[1], "true"};
+					this.commandParameters = new String[] { args[1] , ""};
 					// resume=true - default mode is to continue previously interrupted import
 				} else {
 					this.commandParameters = new String[] { args[1], args[2]};
@@ -167,6 +170,14 @@ public class Admin implements Runnable {
 			// takes no args
 			this.commandParameters = new String[] { "" };
 		}
+		else if(args[0].equals(COMMAND.EXPORT_PREMERGE.toString())) {
+			if (args.length != 3) {
+				validArgs = false;
+			} else {
+				this.command = COMMAND.EXPORT_PREMERGE;
+				this.commandParameters = new String[] {args[1], args[2]};
+			} 
+        } 
         else {
             validArgs = false;
         }
@@ -236,7 +247,7 @@ public class Admin implements Runnable {
                 fetchMetadata(commandParameters[0]);
 				break;
 			case FETCH_DATA:
-				fetchWarehouseData(commandParameters[0], Boolean.valueOf(commandParameters[1]));
+				fetchWarehouseData(commandParameters[0], commandParameters[1]);
 				break;
 			case PREMERGE:
 				ApplicationContext context =
@@ -257,6 +268,9 @@ public class Admin implements Runnable {
 				// merger
 				Merger merger = new MergerImpl((Model)pcDAO);
 				merger.merge();
+				break;
+            case EXPORT_PREMERGE:
+                exportPremergeData(commandParameters[0], commandParameters[1]);
 				break;
             }
         }
@@ -297,7 +311,7 @@ public class Admin implements Runnable {
      * @param resume continue previous data import or start afresh
      * @throws IOException
      */
-    private void fetchWarehouseData(final String provider, boolean resume) throws IOException {
+    private void fetchWarehouseData(final String provider, String flag) throws IOException {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-whouseDAO.xml"});
@@ -327,14 +341,14 @@ public class Admin implements Runnable {
 		for (Metadata metadata : metadataCollection) {
 			// fetch data (first - to a sub-directory within $CPATH2_HOME)
 			File localFile = new File(metadata.getLocalDataFile());
-			if (resume == true
+			if ("--continue".equalsIgnoreCase(flag)
 					&& localFile.exists() && localFile.isFile()) {
 				if(LOG.isInfoEnabled())
 					LOG.info("Skipping previously imported data: " 
 					+ metadata.getType() + " " + metadata.getIdentifier() 
 					+ "." + metadata.getVersion() + " (file: " 
 					+ metadata.getLocalDataFile() + "), because the file " 
-					+ "already exists, and 'resume' flag was set " + resume);
+					+ "already exists, and '--continue' flag was set.");
 				continue;
 			} 
 			
@@ -412,6 +426,16 @@ public class Admin implements Runnable {
 	}
 
 	
+	private void exportPremergeData(final String provider, final String output) throws IOException {
+		// first, build the premerge DAO - 
+		String premergeDbName = CPathSettings.CPATH_DB_PREFIX + provider;
+		// next, get the PaxtoolsDAO instance
+		PaxtoolsDAO pemergeDAO = PremergeImpl.buildPremergeDAO(premergeDbName);
+		// finally, export (all BioPAX elements) to OWL
+		pemergeDAO.exportModel(new FileOutputStream(output));
+	}	
+	
+	
 	private static String usage() {
 
 		StringBuffer toReturn = new StringBuffer();
@@ -422,9 +446,10 @@ public class Admin implements Runnable {
 			" <type> (types are: metadata, proteins, molecules, main)" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_DATA.toString() + 
-				" <provider-name or all> [<continue (True/false)>]" + NEWLINE);
+				" <metadataId or --all> [--continue]" + NEWLINE);
 		toReturn.append(COMMAND.PREMERGE.toString() + NEWLINE);
 		toReturn.append(COMMAND.MERGE.toString() + NEWLINE);
+		toReturn.append(COMMAND.EXPORT_PREMERGE.toString() + " <provider, output>" + NEWLINE);
 
 		// outta here
 		return toReturn.toString();

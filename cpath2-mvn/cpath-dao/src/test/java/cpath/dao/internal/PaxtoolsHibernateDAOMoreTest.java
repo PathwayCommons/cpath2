@@ -28,7 +28,6 @@
  **/
 package cpath.dao.internal;
 
-import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -49,12 +48,9 @@ import java.io.IOException;
 
 import static org.junit.Assert.*;
 
-/**
- * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
- */
-public class PaxtoolsHibernateDAOTest2 {
+public class PaxtoolsHibernateDAOMoreTest {
 
-    static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest2.class);
+    static Log log = LogFactory.getLog(PaxtoolsHibernateDAOMoreTest.class);
     static PaxtoolsDAO paxtoolsDAO;
     static SimpleExporter exporter = new SimpleExporter(BioPAXLevel.L3);
     static SimpleReader reader = new SimpleReader();
@@ -77,11 +73,11 @@ public class PaxtoolsHibernateDAOTest2 {
     @Test
 	public void testImportExportRead() throws IOException {
     	// import (not so good) pathway data
-		Resource input = (new DefaultResourceLoader())
-			.getResource("classpath:biopax-level3-test.owl");
+		Resource input = (new DefaultResourceLoader()).getResource("classpath:biopax-level3-test.owl");
 		paxtoolsDAO.importModel(input.getFile());
 		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
-		assertEquals(50, paxtoolsDAO.getObjects().size()); // there was a bug in paxtools (due to Stoichiometry.hashCode() override)!
+		assertEquals(51, paxtoolsDAO.getObjects().size()); 
+		// there was a bug in paxtools (due to Stoichiometry.hashCode() override)!
 		
 		// export from the DAO to OWL
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -95,13 +91,12 @@ public class PaxtoolsHibernateDAOTest2 {
 		assertNotNull(model);
 		assertTrue(model
 			.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
-		assertEquals(50, model.getObjects().size());
+		assertEquals(51, model.getObjects().size());
 	}
     
-	
-	//@Test // takes forever...
+    
+	@Test
 	public void testIndex() {
 		paxtoolsDAO.createIndex();
 	}
-
 }

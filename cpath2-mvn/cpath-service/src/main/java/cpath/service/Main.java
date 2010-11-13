@@ -66,11 +66,9 @@ public class Main  {
     // command, command parameter
     private COMMAND command;
     private String[] commandParameters;
-    private CPathService service;
     
-    
-	public Main() {
-		// build service application context:
+	
+	private CPathService getService() {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-cpathDAO.xml",
@@ -79,9 +77,10 @@ public class Main  {
         			"classpath:applicationContext-whouseProteins.xml",
         			"classpath:applicationContext-cvRepository.xml",
         			"classpath:applicationContext-cpathService.xml"});
-		service = (CPathService) context.getBean("service");
+		return (CPathService) context.getBean("service");
 	}
-    
+	
+	
     public void setCommandParameters(String[] args) {
 		this.commandParameters = args;
         // parse args
@@ -125,15 +124,15 @@ public class Main  {
         }
     }
 
-    
-    private void getValidationReport(final String provider, 
+
+	private void getValidationReport(final String provider, 
     		final String output) throws IOException 
     {
     	if(LOG.isInfoEnabled()) {
     		LOG.info("Getting validation report for " + provider
     				+ "...");
     	}
-    	Map<ResultMapKey, Object> res = service.getValidationReport(provider);
+    	Map<ResultMapKey, Object> res = getService().getValidationReport(provider);
     	if(res.containsKey(ResultMapKey.ERROR)) {
     		System.err.println(res.get(ResultMapKey.ERROR));
     	} else if(res.containsKey(ResultMapKey.DATA)) {
@@ -143,7 +142,7 @@ public class Main  {
     		fileOutputStream.close();
     	}
 	}
-
+	
 	
 	private static void usage() {
 		StringBuffer toReturn = new StringBuffer();
