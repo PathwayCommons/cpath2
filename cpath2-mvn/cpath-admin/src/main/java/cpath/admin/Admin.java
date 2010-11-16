@@ -41,6 +41,7 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
 import org.biopax.paxtools.model.Model;
+import org.biopax.validator.Validator;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -254,9 +255,10 @@ public class Admin implements Runnable {
                     new ClassPathXmlApplicationContext(new String [] { 	
                     		"classpath:applicationContext-whouseDAO.xml", 
                     		"classpath:applicationContext-biopaxValidation.xml", 
-        					"classpath:applicationContext-cpathPremerger.xml",
         					"classpath:applicationContext-cvRepository.xml"});
-                PremergeDispatcher premergeDispatcher = (PremergeDispatcher) context.getBean("premergeDispatcher");
+				MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
+				Validator validator = (Validator) context.getBean("validator");
+                PremergeDispatcher premergeDispatcher = new PremergeDispatcher(metadataDAO, validator);
 				premergeDispatcher.start();
 				// sleep until premerge is complete, this is required so we can call System.exit(...) below
 				premergeDispatcher.join();

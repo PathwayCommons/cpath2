@@ -305,8 +305,9 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 			ZipEntry entry = null;
             while ((entry = zis.getNextEntry()) != null) 
             {
+            	String entryName = entry.getName();
             	if(log.isInfoEnabled())
-            		log.info("Processing zip entry: " + entry.getName());
+            		log.info("Processing zip entry: " + entryName);
 
 				// write file to buffered outputstream
 				int count;
@@ -322,6 +323,15 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 				dest.flush();
 				dest.close();
 
+				// quick fix: skip undesired entries
+				if(!entryName.toLowerCase().endsWith(".owl")
+					&& !entryName.toLowerCase().endsWith(".xml")) {
+					if(log.isInfoEnabled())
+	            		log.info("Skipping (not owl/xml) zip entry: " 
+	            			+ entryName);
+					continue;
+				}
+				
 				// create digest
 				String digest = getDigest(bos.toByteArray());
 
@@ -329,12 +339,12 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 					// create pathway data object
 					if(log.isInfoEnabled())
 						log.info("unzip(), creating pathway data object, zip entry: " 
-							+ entry.getName() +
+							+ entryName +
 							" provider: " + metadata.getIdentifier() +
 							" version: " + metadata.getVersion() +
 							" digest: " + digest);
 					PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), 
-						metadata.getVersion(), entry.getName(), digest, bos.toString());
+						metadata.getVersion(), entryName, digest, bos.toString());
 				
 					// add object to return collection
 					toReturn.add(pathwayData);

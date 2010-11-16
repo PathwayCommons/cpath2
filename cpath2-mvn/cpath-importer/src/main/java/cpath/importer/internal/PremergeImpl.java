@@ -121,6 +121,8 @@ public class PremergeImpl extends Thread implements Premerge {
 	 */
 	@Override
 	public void run() {
+	  try {
+		
 		if(log.isInfoEnabled())
 			log.info("run(), starting...");
 
@@ -163,12 +165,13 @@ public class PremergeImpl extends Thread implements Premerge {
 			pipeline(pathwayData, pemergeDAO);
 		}
 
+	  } finally {
 		premergeDispatcher.premergeComplete(metadata);
-		
 		if(log.isInfoEnabled())
 			log.info("run(), exitting ("
 				+ metadata.getIdentifier() 
 				+ ") ...");
+	  }
 	}
 
 	/**
@@ -365,7 +368,7 @@ public class PremergeImpl extends Thread implements Premerge {
 			  throw new RuntimeException("pipeline(), " +
 				"Failed to check/normalize " + title, e);
 			*/ 
-			e.printStackTrace();
+			//e.printStackTrace();
 			log.error("pipeline(), Failed to process " + title + " - ", e);
 			return null;
 		}
