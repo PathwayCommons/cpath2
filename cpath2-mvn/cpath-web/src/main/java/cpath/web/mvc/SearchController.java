@@ -29,13 +29,11 @@
 package cpath.web.mvc;
 
 // imports
-
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.Interaction;
 import org.biopax.paxtools.model.level3.Named;
 import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.Protein;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -58,7 +56,6 @@ public class SearchController {
 	private final Set<String> proteinNames;
 	private final Set<String> otherNames;
 
-	@Autowired
 	public SearchController() {		
 		pathwayNames = new HashSet<String>();
 		proteinNames = new HashSet<String>();

@@ -5,11 +5,9 @@ import cpath.importer.Premerge;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.validator.Validator;
 
 import java.util.Collection;
 
@@ -33,21 +31,21 @@ public class PremergeDispatcher extends Thread {
 	// number of premerges complete
 	private int premergesComplete;
 
-	// application context is auto-set (see spring ref. - 3.4.5 Autowiring collaborators)
-	@Autowired
-	private ApplicationContext applicationContext;
-
-
+	private Validator validator;
+	
+	
 	/**
      * Constructor.
      * 
      * @param metadataDAO MetadataDAO
      */
-	public PremergeDispatcher(final MetadataDAO metadataDAO) {
-
+	public PremergeDispatcher(final MetadataDAO metadataDAO, 
+			final Validator validator) 
+	{
 		// init members
 		this.metadataDAO = metadataDAO;
 		this.synObj = new Object();
+		this.validator = validator;
 	}
 
 	/**
@@ -70,31 +68,22 @@ public class PremergeDispatcher extends Thread {
 	 */
     @Override
     public void run() {
-
 		// grab all metadata
 		Collection<Metadata> metadataCollection = metadataDAO.getAll();
 
-		// set number of premerges to dispatch
-		for (Metadata metadata : metadataCollection) {
-			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
-				metadata.getType() == Metadata.TYPE.BIOPAX) {
-				++numPremerges;
-			}
-		}
-		if(log.isInfoEnabled())
-			log.info("run(), Spawning " + numPremerges + " Premerge instances.");
-
 		// iterate over all metadata
 		for (Metadata metadata : metadataCollection) {
-
 			// only process interaction or pathway data
 			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
 				metadata.getType() == Metadata.TYPE.BIOPAX) 
-			{	
+			{
+				++numPremerges;
 				if(log.isInfoEnabled())
 					log.info("run(), spawning Premerge for provider " 
 						+ metadata.getIdentifier());
-				Premerge premerge = (Premerge)applicationContext.getBean("premerge");
+
+				// a new premerge runs in a new thread
+				Premerge premerge = new PremergeImpl(metadataDAO, validator);
 				premerge.setDispatcher(this);
 				premerge.setMetadata(metadata);
 				premerge.premerge();
