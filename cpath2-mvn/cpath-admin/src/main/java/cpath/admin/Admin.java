@@ -29,7 +29,9 @@
 package cpath.admin;
 
 import cpath.config.CPathSettings;
+import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
+import cpath.dao.Reindexable;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.CPathFetcher;
 import cpath.fetcher.WarehouseDataService;
@@ -42,6 +44,9 @@ import cpath.warehouse.beans.PathwayData;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.validator.Validator;
+//import org.biopax.validator.result.Validation;
+//import org.biopax.validator.result.ValidatorResponse;
+//import org.biopax.validator.utils.BiopaxValidatorUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,13 +55,11 @@ import org.apache.log4j.PropertyConfigurator;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.Charset;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Collection;
+import java.util.*;
+
+//import javax.xml.transform.stream.StreamSource;
 
 import static cpath.config.CPathSettings.*;
 
@@ -66,7 +69,7 @@ import static cpath.config.CPathSettings.*;
 public class Admin implements Runnable {
 	private static final Log LOG = LogFactory.getLog(Admin.class);
 	// used as a argument to fetch-pathwaydata
-	private static final String FETCH_ALL = "--all";
+	private static final String __ALL = "--all";
 	
     // COMMAND Enum
     public static enum COMMAND {
@@ -78,7 +81,9 @@ public class Admin implements Runnable {
 		FETCH_DATA("-fetch-data"),
 		PREMERGE("-premerge"),
 		MERGE("-merge"),
-		EXPORT_PREMERGE("-export-premerge"),
+		EXPORT_PREMERGE("-export-premerge"), // gets data that passed clean/conv./normalize...
+		EXPORT_PATHWAYDATA("-export-pathway"), // gets the original provider's pathway data
+		EXPORT_VALIDATION("-export-validation"),
 		;
 
         // string ref for readable name
@@ -172,13 +177,29 @@ public class Admin implements Runnable {
 			this.commandParameters = new String[] { "" };
 		}
 		else if(args[0].equals(COMMAND.EXPORT_PREMERGE.toString())) {
-			if (args.length != 3) {
+			if (args.length != 4) {
 				validArgs = false;
 			} else {
 				this.command = COMMAND.EXPORT_PREMERGE;
+				this.commandParameters = new String[] {args[1], args[2], args[3]};
+			} 
+        } 
+		else if(args[0].equals(COMMAND.EXPORT_PATHWAYDATA.toString())) {
+			if (args.length != 3) {
+				validArgs = false;
+			} else {
+				this.command = COMMAND.EXPORT_PATHWAYDATA;
 				this.commandParameters = new String[] {args[1], args[2]};
 			} 
         } 
+		else if(args[0].equals(COMMAND.EXPORT_VALIDATION.toString())) {
+			if (args.length != 3) {
+				validArgs = false;
+			} else {
+				this.command = COMMAND.EXPORT_VALIDATION;
+				this.commandParameters = new String[] {args[1], args[2]};
+			} 
+        }
         else {
             validArgs = false;
         }
@@ -216,30 +237,40 @@ public class Admin implements Runnable {
             		// re-build the fulltext index
             		INDEX_TYPE mtype = INDEX_TYPE.valueOf(commandParameters[0]);
             		ApplicationContext ctx = null;
+            		DataServices ds = null;
+            		Reindexable dao = null;
             		switch (mtype) {
                     case MOLECULES:
                        	ctx = new ClassPathXmlApplicationContext(
                 		"classpath:applicationContext-whouseMolecules.xml");
-                       	PaxtoolsDAO smdao = (PaxtoolsDAO) ctx.getBean("moleculesDAO");
-                		smdao.createIndex();
+                       	ds = (DataServices) ctx.getBean("&cpath2_molecules");
+                       	ds.dropMoleculesFulltextIndex(); // deletes the index dir!
+                       	dao = (Reindexable) ctx.getBean("moleculesDAO");
+                		dao.createIndex();
                     	break;
                     case PROTEINS:
                        	ctx = new ClassPathXmlApplicationContext(
                        	"classpath:applicationContext-whouseProteins.xml");
-                    	PaxtoolsDAO pdao = (PaxtoolsDAO) ctx.getBean("proteinsDAO");
-                		pdao.createIndex();
+                       	ds = (DataServices) ctx.getBean("&cpath2_proteins");
+                       	ds.dropProteinsFulltextIndex();
+                       	dao = (Reindexable) ctx.getBean("proteinsDAO");
+                		dao.createIndex();
                     	break;
                     case METADATA :
                     	ctx = new ClassPathXmlApplicationContext(
                     		"classpath:applicationContext-whouseDAO.xml");
-                    	MetadataDAO medao = (MetadataDAO) ctx.getBean("metadataDAO");
-                    	medao.createIndex();
+                    	ds = (DataServices) ctx.getBean("&cpath2_meta");
+                    	ds.dropMetadataFulltextIndex();
+                    	dao = (Reindexable) ctx.getBean("metadataDAO");
+                    	dao.createIndex();
                     	break;
                     case MAIN :
                     	ctx = new ClassPathXmlApplicationContext(
                 			"classpath:applicationContext-cpathDAO.xml");
-                    	PaxtoolsDAO pcdao = (PaxtoolsDAO) ctx.getBean("paxtoolsDAO");
-                		pcdao.createIndex();
+                    	ds = (DataServices) ctx.getBean("&cpath2_main");
+                       	ds.dropMainFulltextIndex();
+                    	dao = (Reindexable) ctx.getBean("paxtoolsDAO");
+                		dao.createIndex();
                     	break;
             		}
             	}
@@ -272,7 +303,18 @@ public class Admin implements Runnable {
 				merger.merge();
 				break;
             case EXPORT_PREMERGE:
-                exportPremergeData(commandParameters[0], commandParameters[1]);
+            	OutputStream os = new FileOutputStream(commandParameters[2]);
+                exportPremergeData(commandParameters[0], commandParameters[1], os);
+				break;
+            case EXPORT_PATHWAYDATA:
+            	os = new FileOutputStream(commandParameters[2]);
+            	Writer writer = new OutputStreamWriter(os, "UTF-8");
+                exportPathwayData(commandParameters[0], writer);
+				break;
+            case EXPORT_VALIDATION:
+            	os = new FileOutputStream(commandParameters[2]);
+            	writer = new OutputStreamWriter(os, "UTF-8");
+                exportValidation(commandParameters[0], writer);
 				break;
             }
         }
@@ -422,22 +464,86 @@ public class Admin implements Runnable {
 	 */
 	private Collection<Metadata> getMetadata(final MetadataDAO metadataDAO, final String provider) 
 	{
-		return (provider.equalsIgnoreCase(FETCH_ALL))
+		return (provider.equalsIgnoreCase(__ALL))
 			? metadataDAO.getAll()
 			: Collections.singleton(metadataDAO.getMetadataByIdentifier(provider));
 	}
 
 	
-	private void exportPremergeData(final String provider, final String output) throws IOException {
-		// first, build the premerge DAO - 
-		String premergeDbName = CPathSettings.CPATH_DB_PREFIX + provider;
-		// next, get the PaxtoolsDAO instance
-		PaxtoolsDAO pemergeDAO = PremergeImpl.buildPremergeDAO(premergeDbName);
-		// finally, export (all BioPAX elements) to OWL
-		pemergeDAO.exportModel(new FileOutputStream(output));
+	public static void exportPremergeData(final String provider, final String pk, 
+			final OutputStream output) throws IOException 
+	{		
+		if(__ALL.equalsIgnoreCase(pk)) {
+			// first, build the premerge DAO - 
+			String premergeDbName = CPathSettings.CPATH_DB_PREFIX + provider;
+			// next, get the PaxtoolsDAO instance
+			PaxtoolsDAO pemergeDAO = PremergeImpl.buildPremergeDAO(premergeDbName);
+			// finally, export (all BioPAX elements) to OWL
+			pemergeDAO.exportModel(output);
+		} else {
+			PathwayData pdata = getPathwayData(pk);
+			if(pdata != null) {
+				Writer writer = new OutputStreamWriter(output, "UTF-8");
+				writer.write(pdata.getPremergeData());
+				writer.flush();
+			}
+		}
 	}	
 	
 	
+	public static void exportPathwayData(final String pk, final Writer writer) 
+		throws IOException 
+	{
+		PathwayData pdata = getPathwayData(pk);
+		if(pdata != null) {
+			writer.write(pdata.getPathwayData());
+			writer.flush();
+		}
+	}
+	
+	
+	public static void exportValidation(final String pk, final Writer writer) 
+		throws IOException 
+	{
+		// get validationResults from PathwayData beans
+		PathwayData pathwayData = getPathwayData(pk);
+		if (pathwayData != null) {
+			//Validation validation = null;
+			String xmlResult = pathwayData.getValidationResults();
+			/*
+			if (xmlResult != null && xmlResult.length() > 0) {
+				// unmarshal (because the XML is escaped)
+				try {
+					validation = (Validation) BiopaxValidatorUtils.getUnmarshaller()
+						.unmarshal(new StreamSource(new StringReader(xmlResult)));
+				} catch (Exception e) {
+					LOG.error(e);
+				}
+			}
+			*/
+			//BiopaxValidatorUtils.write(validation, writer, null); 
+			writer.write(xmlResult);
+			writer.flush();
+		}
+	}	
+
+	
+	private static PathwayData getPathwayData(final String pk) {
+		Integer pathway_id = null;
+		try {
+			pathway_id = Integer.valueOf(pk);
+		} catch (Exception e) {
+			throw new IllegalArgumentException(
+					"Bad parameter: " + pk, e);
+		}
+
+		ApplicationContext ctx = new ClassPathXmlApplicationContext(
+				"classpath:applicationContext-whouseDAO.xml");
+		MetadataDAO dao = (MetadataDAO) ctx.getBean("metadataDAO");
+		return dao.getPathwayData(pathway_id);
+	}
+	
+		
 	private static String usage() {
 
 		StringBuffer toReturn = new StringBuffer();
@@ -448,12 +554,19 @@ public class Admin implements Runnable {
 			" <type> (types are: metadata, proteins, molecules, main)" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_DATA.toString() + 
-				" <metadataId or --all> [--continue]" + NEWLINE);
+				" <metadataId or " + __ALL + "> [--continue]" + NEWLINE);
 		toReturn.append(COMMAND.PREMERGE.toString() + NEWLINE);
 		toReturn.append(COMMAND.MERGE.toString() + NEWLINE);
-		toReturn.append(COMMAND.EXPORT_PREMERGE.toString() + " <provider, output>" + NEWLINE);
+		toReturn.append(COMMAND.EXPORT_PREMERGE.toString() + " <provider> " +
+			"<pathway_id or --all> <output> (note: 'pathway_id' is not the " +
+			"same as (metadata) 'identifier'; when " + __ALL + "' is used, it" +
+			" performs exporing from the provider's pre-merge DB rather than " +
+			" from the cpath2 metadata.pathwayData table!)" + NEWLINE);
+		toReturn.append(COMMAND.EXPORT_PATHWAYDATA.toString() 
+			+ " <pathway_id> <output>" + NEWLINE);
+		toReturn.append(COMMAND.EXPORT_VALIDATION.toString() 
+				+ " <pathway_id> <output>" + NEWLINE);
 
-		// outta here
 		return toReturn.toString();
 	}
 
@@ -486,8 +599,10 @@ public class Admin implements Runnable {
     	// set JVM property to be used by other modules (in spring context)
     	System.setProperty(HOME_VARIABLE_NAME, home);
 
-        if(LOG.isInfoEnabled())
-        	LOG.info("Using Default Charset: " + Charset.defaultCharset());
+    	if(!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
+    		if(LOG.isWarnEnabled())
+    			LOG.warn("Default Charset, " + Charset.defaultCharset() 
+    				+ " (is NOT 'UTF-8'...)");
     	
 		Admin admin = new Admin();
 		admin.setCommandParameters(args);

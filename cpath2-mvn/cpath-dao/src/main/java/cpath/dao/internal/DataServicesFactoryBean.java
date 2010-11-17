@@ -289,10 +289,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	 */
 	public static void createSchema(String dbName) {
 		// drop existing index dir.
-		File dir = new File(CPathSettings.getHomeDir() + File.separator + dbName);
-		if(log.isInfoEnabled())
-			log.info("Removing index directory : " + dir.getAbsolutePath());
-		deleteDirectory(dir);
+		dropFulltextIndex(dbName);
 		
 		// get the data source factory bean (aware of the driver, user, and password)
 		ApplicationContext ctx = 
@@ -329,4 +326,32 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
         }
         return( path.delete() );
     }
+    
+    
+    private static void dropFulltextIndex(String dbName) {
+		// drop existing index dir.
+		File dir = new File(CPathSettings.getHomeDir() + File.separator + dbName);
+		if(log.isInfoEnabled())
+			log.info("Removing full-text index directory : " 
+				+ dir.getAbsolutePath());
+		deleteDirectory(dir);
+    }
+    
+    
+    public void dropMainFulltextIndex() {
+    	dropFulltextIndex(mainDb);
+    }
+
+    public void dropMoleculesFulltextIndex() {
+    	dropFulltextIndex(moleculesDb);
+    }
+    
+    public void dropProteinsFulltextIndex() {
+    	dropFulltextIndex(proteinsDb);
+    }
+    
+    public void dropMetadataFulltextIndex() {
+    	dropFulltextIndex(metaDb);
+    }
+
 }

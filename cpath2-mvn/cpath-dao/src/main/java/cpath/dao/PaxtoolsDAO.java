@@ -28,6 +28,9 @@
  **/
 package cpath.dao;
 
+import org.biopax.paxtools.controller.Cloner;
+import org.biopax.paxtools.controller.Completer;
+import org.biopax.paxtools.controller.Fetcher;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
@@ -42,14 +45,7 @@ import java.io.OutputStream;
 /**
  * BioPAX data access (both model and repository).
  */
-public interface PaxtoolsDAO extends Model {
-	
-	/**
-	 * Builds lucene index.
-	 * 
-	 */
-	void createIndex();
-	
+public interface PaxtoolsDAO extends Model, Reindexable {	
 	
 	/**
 	 * Persists the given model to the db.
@@ -102,9 +98,9 @@ public interface PaxtoolsDAO extends Model {
     Integer count(String query, Class<? extends BioPAXElement> filterBy);
     
     
-    
     /**
-     * Writes the complete model as BioPAX (OWL)
+     * Exports the entire model (if no IDs are given) 
+     * or a sub-model to BioPAX (OWL)
      * 
      * @param outputStream
      * @param ids (optional) build a sub-model from these IDs and export it
@@ -114,7 +110,6 @@ public interface PaxtoolsDAO extends Model {
     
     /**
      * Creates a "valid" sub-model from the BioPAX elements
-     * (using paxtools's "auto-complete" and "clone" procedures)
      * 
      * @param ids a set of valid RDFId
      * @return
@@ -139,5 +134,6 @@ public interface PaxtoolsDAO extends Model {
      * including collections!
      * 
      */
-    public void initialize(BioPAXElement element);
+    void initialize(BioPAXElement element);
+
 }

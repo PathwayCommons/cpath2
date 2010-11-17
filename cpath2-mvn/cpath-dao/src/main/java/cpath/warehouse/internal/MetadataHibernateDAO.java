@@ -8,6 +8,7 @@ import cpath.warehouse.beans.PathwayData;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import org.hibernate.Hibernate;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -190,6 +191,21 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 				.startAndWait();
 		} catch (InterruptedException e) {
 			throw new RuntimeException("Index re-build is interrupted.");
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see cpath.warehouse.MetadataDAO#getById(java.lang.Integer)
+	 */
+	@Override
+	@Transactional
+	public PathwayData getPathwayData(Integer pathwayId) {
+		PathwayData pd = (PathwayData) getSession().get(PathwayData.class, pathwayId);
+		if(pd != null) {
+			Hibernate.initialize(pd);
+			return pd;
+		} else {
+			return null;
 		}
 	}
 }

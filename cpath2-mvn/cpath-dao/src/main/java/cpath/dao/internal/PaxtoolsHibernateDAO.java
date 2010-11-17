@@ -134,7 +134,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		try {
 			indexer.batchSizeToLoadObjects(20)
 				.purgeAllOnStart(true)
-				//.optimizeOnFinish(true)
+				.optimizeOnFinish(true)
 				.startAndWait();
 		} catch (InterruptedException e) {
 			throw new RuntimeException("Index re-build is interrupted.");
@@ -158,25 +158,22 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Override
 	public void merge(final Model model)
 	{
-		/* TODO level3 property/propertyOf mapping have to be fixed for this to work!
-		 * Annotations must move to new setter/getter pair that would not call
-		 * the inverse prop. 'add' from the setter.
+		/* 
+		 * Level3 property/propertyOf ORM mapping and getters/setters 
+		 * are to be properly implemented for this to work!
+		 * Persistence annotations must move to new setter/getter pair 
+		 * that do NOT call inverse prop. 'add' methods in the setter.
 		 */
 		if(model != null && !model.getObjects().isEmpty()) {
-			/* using SimpleMerger is unsafe and, probably, not required at all :) 
+			/* 
+			 * Using SimpleMerger is unsafe and, probably, not required at all :) 
 			 * Session manages RDFId-based merge to some extent...
 			 */
-			
-			// idea: update props with existing values before the merge
-			//ElementUpdater updater = new ElementUpdater();
-			
 			Set<BioPAXElement> sourceElements = model.getObjects();
 			for (BioPAXElement bpe : sourceElements) {
 				if (!containsID(bpe.getRDFId())) { // adding a new element
-					// migrate object properties to existing objects (prevents duplicate PK!)
-					//updater.update(this, bpe);
 					// it's save to merge now
-					add(bpe); // is a CASCADE merge, in fact!
+					add(bpe); // CASCADING merge!
 				}
 			}
 		}
@@ -572,10 +569,27 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
-	public void exportModel(OutputStream outputStream, String... ids) {
-		
-		Model model = (ids.length > 0) 
-			? getValidSubModel(Arrays.asList(ids)) : this; // no ids? - export everything!
+	public void exportModel(OutputStream outputStream, String... ids) 
+	{
+		Model model = this; // default is to export everything (when 'ids' is empty)!
+		if (ids.length > 0) {
+			// getValidSubModel would ignore elements that were not from the list (it's mainly designed for web/graph queries...)
+			//getValidSubModel(Arrays.asList(ids)); // anyway, let's keep in mind to try this later...
+			model = factory.createModel();
+			PropertyFilter filter = new PropertyFilter() {
+				@Override
+				public boolean filter(PropertyEditor editor) {
+					return !"nextStep".equalsIgnoreCase(editor.getProperty());
+				}
+			};
+			Fetcher fetcher = new Fetcher(reader.getEditorMap(), filter);
+			for(String uri : ids) {
+				BioPAXElement bpe = getByID(uri);
+				if(bpe != null) {
+					fetcher.fetch(bpe, model);
+				}
+			}
+		}
 		
 		try {
 			new SimpleExporter(level).convertToOWL(model, outputStream);
@@ -654,8 +668,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	
 	
 
-	/* (non-Javadoc)
-	 * @see cpath.dao.PaxtoolsDAO#getValidSubModel(java.util.Collection)
+	/** 
+	 * 
+	 * Creates a new detached BioPAX sub-model from the list of URIs
+	 * using Paxtools's {@link Completer} and {@link Cloner} approach
+	 * (thus ignoring those not in the same list); runs within a transaction.
+	 * 
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
@@ -791,8 +809,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	 * Special object copier.
 	 * Clones all the properties and properties's properties, etc.
 	 * 
+	 * TODO not all inverse (xxxOf) properties are set for this and/or dependent elements 
+	 * (only those are set that occur on the traverse's path)!
 	 */
-	// TODO problem here: not all inverse xxxOf() property values are set for this and dependent elements (only those are set that occur on the traverse's path)!
 	@Transactional
 	private class ElementCloner implements Visitor {
 		private Traverser traverser;
@@ -827,49 +846,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 						targetModel.getByID(domain.getRDFId()));
 			} else {
 				editor.setValueToBean(range, targetModel.getByID(domain.getRDFId()));
-			}
-		}
-	}
-	
-	
-	/*
-	 * Iteratively updates all the properties and properties's properties.
-	 * 
-	 * TODO experimental, idea: deeply update prop. values from the db
-	 */
-	@Transactional
-	private class ElementUpdater implements Visitor {
-		private Traverser traverser;
-		
-		public ElementUpdater() {
-			traverser = new Traverser(reader.getEditorMap(), this);
-		}
-
-		@Transactional
-		public void update(Model target, BioPAXElement toUpdate) {
-			traverser.traverse(toUpdate, target);
-		}
-
-		@Transactional
-		public void visit(BioPAXElement domain, Object range, Model target, 
-				PropertyEditor editor)	
-		{
-			if(range instanceof BioPAXElement) {
-				BioPAXElement value = (BioPAXElement) range;
-				migrateToTarget(domain, target, editor, value);
-				traverser.traverse(value, target);
-			}
-		}
-
-		@Transactional
-		private void migrateToTarget(BioPAXElement update, Model target, 
-				PropertyEditor editor, BioPAXElement value) {
-			if (value!=null) {
-				BioPAXElement newValue = target.getByID(value.getRDFId());
-				if(newValue != null) { // replace only if exists
-					editor.removeValueFromBean(value,update);
-					editor.setValueToBean(newValue, update);
-				}
 			}
 		}
 	}
