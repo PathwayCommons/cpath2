@@ -1,6 +1,7 @@
 package cpath.warehouse;
 
 // imports
+import cpath.dao.Reindexable;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
@@ -9,7 +10,7 @@ import java.util.Collection;
 /**
  * An interface which provides methods to persist and query provider metadata.
  */
-public interface MetadataDAO {
+public interface MetadataDAO  extends Reindexable {
 
     /**
      * Persists the given metadata object to the db.
@@ -32,8 +33,6 @@ public interface MetadataDAO {
      * @return Collection<Metadata>
      */
     Collection<Metadata> getAll();
-
-    
 
     /**
      * Persists the pathway data stored in the given pathway data object to the ware house db.
@@ -60,7 +59,7 @@ public interface MetadataDAO {
     Collection<PathwayData> getByIdentifierAndVersion(final String identifier, final String version);
 
     /**
-     * This method returns the pathway data objects with the given Identifier, Version, Filename and Digest.
+     * This method returns a pathway data object with the given Identifier, Version, Filename and Digest.
 	 *
      * @param identifier String
      * @param version Float
@@ -71,7 +70,11 @@ public interface MetadataDAO {
     PathwayData getByIdentifierAndVersionAndFilenameAndDigest(final String identifier, final String version, final String filename, final String digest);
 
     /**
-     * Creates/re-builds the fulltext index.
+     * This method gets a PathwayData bean (initialized) by primary key.
+     * 
+     * @param pathway_id PK
+     * @return
      */
-    void createIndex();
+    PathwayData getPathwayData(Integer pathway_id);
+    
 }

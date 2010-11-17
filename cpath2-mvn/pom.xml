@@ -5,7 +5,7 @@
                  
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>pathwaycommons.cpath</groupId>
-	<artifactId>cpath2</artifactId>
+	<artifactId>parent</artifactId>
 	<packaging>pom</packaging>
 	<name>CPathSquared</name>
 	<version>1.0-SNAPSHOT</version>
@@ -44,6 +44,7 @@
 		<module>cpath-web-service</module>
 		<module>distribution</module>
 		<module>cpath-service</module>
+		<module>cpath-test</module>
 	</modules>
 
 	<properties>

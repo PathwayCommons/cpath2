@@ -37,9 +37,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import cpath.service.CPathService.ResultMapKey;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.Map;
 
 import static cpath.config.CPathSettings.*;
@@ -54,6 +52,7 @@ public class Main  {
     public static enum COMMAND 
     {
     	VALIDATION_REPORT("-validation-report"),
+    	FETCH("-fetch"),
     	;
 
         private String command;
@@ -68,7 +67,7 @@ public class Main  {
     private String[] commandParameters;
     
 	
-	private CPathService getService() {
+	private static CPathService getService() {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-cpathDAO.xml",
@@ -99,6 +98,14 @@ public class Main  {
 				this.commandParameters = new String[] {args[1], args[2]};
 			} 
         } 
+        else if(args[0].equals(COMMAND.FETCH.toString())) {
+			if (args.length != 3) {
+				validArgs = false;
+			} else {
+				this.command = COMMAND.FETCH;
+				this.commandParameters = new String[] {args[1], args[2]};
+			} 
+        } 
         else {
             validArgs = false;
         }
@@ -110,13 +117,19 @@ public class Main  {
     }
 
 
-    public void run() {
+    private void run() {
         try {
             switch (command) {
             case VALIDATION_REPORT:
-                getValidationReport(commandParameters[0], commandParameters[1]);
+            	FileOutputStream fos = new FileOutputStream(commandParameters[1]);
+                getValidationReport(commandParameters[0], fos);
+				break;
+            case FETCH:
+            	fos = new FileOutputStream(commandParameters[1]);
+                fetchAsBiopax(fos, commandParameters[0]);
 				break;
             }
+            
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -125,8 +138,39 @@ public class Main  {
     }
 
 
-	private void getValidationReport(final String provider, 
-    		final String output) throws IOException 
+	/**
+	 * 
+	 * 
+	 * @param output
+	 * @param csvIdsString
+	 * @throws IOException 
+	 */
+	public static  void fetchAsBiopax(OutputStream output, String csvIdsString) 
+		throws IOException 
+	{
+		String[] uris = csvIdsString.split(",");
+		Map<ResultMapKey, Object> res = getService().fetchAsBiopax(uris);
+		if(res.containsKey(ResultMapKey.ERROR)) {
+    		System.err.println(res.get(ResultMapKey.ERROR));
+    	} else if(res.containsKey(ResultMapKey.DATA)) {
+    		String owl = (String) res.get(ResultMapKey.DATA);
+    		output.write(owl.getBytes("UTF-8"));
+    		output.flush();
+    	}
+	}
+
+
+	/**
+	 * Exports the consolidated validation report (XML) that includes
+	 * multiple validation results for the provider's pathway data from 
+	 * different files/versions.
+	 * 
+	 * @param provider
+	 * @param output
+	 * @throws IOException
+	 */
+	public static void getValidationReport(final String provider, 
+    		final OutputStream output) throws IOException 
     {
     	if(LOG.isInfoEnabled()) {
     		LOG.info("Getting validation report for " + provider
@@ -137,9 +181,8 @@ public class Main  {
     		System.err.println(res.get(ResultMapKey.ERROR));
     	} else if(res.containsKey(ResultMapKey.DATA)) {
     		String report = (String) res.get(ResultMapKey.DATA);
-    		FileOutputStream fileOutputStream = new FileOutputStream(output);
-    		fileOutputStream.write(report.getBytes("UTF-8"));
-    		fileOutputStream.close();
+    		output.write(report.getBytes("UTF-8"));
+    		output.flush();
     	}
 	}
 	
@@ -148,11 +191,13 @@ public class Main  {
 		StringBuffer toReturn = new StringBuffer();
 		toReturn.append(Main.class.getCanonicalName()).append(" <command> <one or more args>" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
-		toReturn.append(COMMAND.VALIDATION_REPORT.toString() + " <provider,output>" + NEWLINE);
+		toReturn.append(COMMAND.VALIDATION_REPORT.toString() + " <provider> <output.xml>" + NEWLINE);
+		toReturn.append(COMMAND.FETCH.toString() + " <uri1,uri2,..> <output.owl>" + NEWLINE);
 		System.err.println(toReturn.toString());
 		System.exit(-1);
 	}
 
+	
     /**
      * The big deal main.
      * 

@@ -24,42 +24,16 @@
  ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
+
 package cpath.dao;
 
-// imports
-import javax.sql.DataSource;
-
-
 /**
- * Class which provides services to create provider database to persist pathway data.
+ * @author rodche
+ *
  */
-public interface DataServices {
-
+public interface Reindexable {
     /**
-     * Creates database (e.g., to persist given provider data).
-     *
-     * @param dbName
-	 * @param drop boolean
-	 * @return boolean (true - success, false - failure)
+     * Creates/re-builds the fulltext index.
      */
-    boolean createDatabase(final String dbName, final boolean drop);
-    
-    /**
-     * Gets a new DataSource instance for the previously created
-     * pathway data provider database.
-     * 
-     * @param databaseName
-     * @return
-     */
-    DataSource getDataSource(String databaseName);
-    
-    
-    public void dropMainFulltextIndex();
-
-    public void dropMoleculesFulltextIndex();
-    
-    public void dropProteinsFulltextIndex();
-    
-    public void dropMetadataFulltextIndex();
-    
+    void createIndex();
 }
