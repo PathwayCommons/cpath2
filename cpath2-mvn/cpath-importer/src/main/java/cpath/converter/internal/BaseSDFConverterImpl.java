@@ -98,7 +98,7 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
             }
         }
 		catch (IOException e) {
-			log.error("Failed", e);
+			log.error(e);
 		}
 		finally {
 			if (log.isInfoEnabled()) {

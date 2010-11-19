@@ -205,7 +205,6 @@ public class Admin implements Runnable {
         }
 
         if (!validArgs) {
-			System.err.println(usage());
             throw new IllegalArgumentException("Invalid command passed to Admin.");
         }
     }
@@ -307,12 +306,12 @@ public class Admin implements Runnable {
                 exportPremergeData(commandParameters[0], commandParameters[1], os);
 				break;
             case EXPORT_PATHWAYDATA:
-            	os = new FileOutputStream(commandParameters[2]);
+            	os = new FileOutputStream(commandParameters[1]);
             	Writer writer = new OutputStreamWriter(os, "UTF-8");
                 exportPathwayData(commandParameters[0], writer);
 				break;
             case EXPORT_VALIDATION:
-            	os = new FileOutputStream(commandParameters[2]);
+            	os = new FileOutputStream(commandParameters[1]);
             	writer = new OutputStreamWriter(os, "UTF-8");
                 exportValidation(commandParameters[0], writer);
 				break;
@@ -547,7 +546,7 @@ public class Admin implements Runnable {
 	private static String usage() {
 
 		StringBuffer toReturn = new StringBuffer();
-		toReturn.append("cpath.Admin <command> <one or more args>" + NEWLINE);
+		toReturn.append("Usage: <-command_name> <command_args...>" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
 		toReturn.append(COMMAND.CREATE_TABLES.toString() + " <table1,table2,..>" + NEWLINE);
 		toReturn.append(COMMAND.CREATE_INDEX.toString() + 
@@ -605,8 +604,12 @@ public class Admin implements Runnable {
     				+ " (is NOT 'UTF-8'...)");
     	
 		Admin admin = new Admin();
-		admin.setCommandParameters(args);
-        admin.run();
+		try {
+			admin.setCommandParameters(args);
+			admin.run();
+		} catch (Exception e) {
+			System.err.println(e + NEWLINE + usage());
+		}
 		// required because MySQL Statement Cancellation Timer thread is still running
 		System.exit(0);
     }
