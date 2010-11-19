@@ -28,9 +28,6 @@
  **/
 package cpath.dao;
 
-import org.biopax.paxtools.controller.Cloner;
-import org.biopax.paxtools.controller.Completer;
-import org.biopax.paxtools.controller.Fetcher;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
@@ -136,4 +133,11 @@ public interface PaxtoolsDAO extends Model, Reindexable {
      */
     void initialize(BioPAXElement element);
 
+    
+    /**
+     * Merges (updates or adds) a BioPAX element to the model.
+     * 
+     * @param bpe
+     */
+    void merge(BioPAXElement bpe);
 }

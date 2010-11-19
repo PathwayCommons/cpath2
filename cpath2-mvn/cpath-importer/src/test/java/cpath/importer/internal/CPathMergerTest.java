@@ -128,7 +128,7 @@ public class CPathMergerTest {
 		};
 		
 		MergerImpl merger = new MergerImpl(pcDAO, metadataDAO,
-										   moleculesDAO, proteinsDAO, cvRepository);
+				moleculesDAO, proteinsDAO, cvRepository);
 		
 		for(Model model : pathwayModels) {
 			merger.merge(model);
@@ -176,18 +176,31 @@ public class CPathMergerTest {
 		SmallMolecule sm = (SmallMolecule)mergedModel.getByID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
 		SmallMoleculeReference smr = (SmallMoleculeReference)sm.getEntityReference();
 		assertEquals(CPathSettings.CPATH_URI_PREFIX+"CRPUJAZIXJMDBK-DTWKUNHWBS", smr.getRDFId());
-		smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:chebi:20");
-		assertEquals("(+)-camphene", smr.getStandardName());
-		assertEquals(3, smr.getXref().size());
-		smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:pubchem.substance:14438");
-		assertEquals("Geranyl formate", smr.getDisplayName());
-		assertEquals(1, smr.getXref().size());
+		// smr must contain two member SMRs (from chebi and pubchem)
+		if(mergedModel instanceof PaxtoolsDAO) {
+			((PaxtoolsDAO) mergedModel).initialize(smr);
+		}
+		assertEquals(2, smr.getMemberEntityReference().size());
 		
-		//TODO test entityReferenceOf (of PEs from different pathways), xrefOf, etc.
+		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:chebi:20");
+		assertEquals("(+)-camphene", msmr.getStandardName());
+		assertEquals(3, msmr.getXref().size());
+		if(mergedModel instanceof PaxtoolsDAO) {
+			((PaxtoolsDAO) mergedModel).initialize(msmr);
+		}
+		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
+		
+		msmr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:pubchem.substance:14438");
+		assertEquals("Geranyl formate", msmr.getDisplayName());
+		assertEquals(1, msmr.getXref().size());
+		if(mergedModel instanceof PaxtoolsDAO) {
+			((PaxtoolsDAO) mergedModel).initialize(msmr);
+		}
+		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
 	}
 	
 	
-	//@Test
+	@Test
 	public void testMergeIntoDAO() throws IOException {
 		// init the target test db
 		DataServicesFactoryBean.createSchema("cpath2_testpc"); // target db, for pcDAO

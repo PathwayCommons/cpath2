@@ -172,13 +172,17 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			Set<BioPAXElement> sourceElements = model.getObjects();
 			for (BioPAXElement bpe : sourceElements) {
 				if (!containsID(bpe.getRDFId())) { // adding a new element
-					// it's save to merge now
 					add(bpe); // CASCADING merge!
 				}
 			}
 		}
 	}
 
+	
+	@Transactional(propagation=Propagation.REQUIRED)
+	public void merge(final BioPAXElement bpe) {
+		session().merge(bpe); 
+	}
 
 	/*
 	 * 'filterBy' is a BioPAX interface, not the implementation.
@@ -375,6 +379,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		 * available during ElementInitializer,
 		 * "manually" initialize (some of?) inverse props here.
 		 */
+		/*
 		if (toReturn != null) {
 			
 			if (toReturn instanceof Xref) {
@@ -386,6 +391,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			initializer.initialize(this, toReturn); 
 
 		}
+		*/
+		
+		initialize(toReturn);
 
 		return toReturn; // null means no such element
 	}
@@ -725,11 +733,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	}
 	
 	
-	/*
-	 * TODO experimental, very promising!
-	 * 
-	 * it's bidirectional not recursive 
-	 * (i.e., does not inits property's or inv. props' properties)
+	/* 
+	 * All properties and inverse properties 
+	 * (not recursive) initialization
 	 * 
 	 */
 	@Transactional
@@ -761,6 +767,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	 * TODO experimental
 	 */
 	// TODO what about inverse props? Btw, Traverser (standard) does not follow xxxOf properties...
+	@Deprecated
 	@Transactional
 	private class ElementInitializer implements Visitor {
 		private Traverser traverser;
