@@ -128,6 +128,6 @@ public class PathwayData {
 
     @Override
     public String toString() {
-        return identifier;
+        return getIdentifier() + ", " + getVersion() + ", " + getFilename();
     }
 }

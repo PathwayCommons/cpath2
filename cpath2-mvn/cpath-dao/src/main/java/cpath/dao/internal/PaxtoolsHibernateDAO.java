@@ -171,9 +171,17 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			 */
 			Set<BioPAXElement> sourceElements = model.getObjects();
 			for (BioPAXElement bpe : sourceElements) {
-				if (!containsID(bpe.getRDFId())) { // adding a new element
-					add(bpe); // CASCADING merge!
-				}
+				/*
+				 * Note: with this if(..) check enabled, it used to 
+				 * throw a Hibernate exception, saying that another object with the same 
+				 * identifies already existed in the session... 
+				 * (- caught with PantherDb BioPAX L3 files, thank you ;P)
+				 if (!containsID(bpe.getRDFId())) { // adding a new element
+				 	add(bpe); // CASCADING merge!
+				 }
+				 */
+				// hmm.., well, let's try simpler way...
+				merge(bpe);
 			}
 		}
 	}
@@ -559,7 +567,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 					log.error("Expected a BioPAX model interface "
 								+ "of the instantiable BioPAX class or the base interface, "
 								+ "'BioPAXElement'; but it was: "
-								+ filterBy.getCanonicalName(), e);
+								+ filterBy.getCanonicalName() + " - " + e);
 					filterClass = BioPAXElementImpl.class;
 				}
 			} else {

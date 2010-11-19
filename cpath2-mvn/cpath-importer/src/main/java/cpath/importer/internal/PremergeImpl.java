@@ -162,7 +162,11 @@ public class PremergeImpl extends Thread implements Premerge {
 			log.info("run(), interating over pathway data " 
 				+ metadata.getIdentifier());
 		for (PathwayData pathwayData : pathwayDataCollection) {
-			pipeline(pathwayData, pemergeDAO);
+			try {
+				pipeline(pathwayData, pemergeDAO);
+			} catch(Exception e) {
+				log.error("pipeline(), failed for " + pathwayData, e);
+			}
 		}
 
 	  } finally {
@@ -182,9 +186,6 @@ public class PremergeImpl extends Thread implements Premerge {
 	 */
 	private void pipeline(final PathwayData pathwayData, PaxtoolsDAO premergeDAO) {
 		String data = null;
-		String description = (pathwayData.getIdentifier() + ", " +
-								pathwayData.getVersion() + ", " +
-								pathwayData.getFilename() + ".");
 
 		// get the BioPAX OWL from the pathwayData bean
 		data = pathwayData.getPathwayData();
@@ -197,7 +198,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		 */
 		if(log.isInfoEnabled())
 			log.info("pipeline(), cleaning data " 
-				+ description);
+				+ pathwayData);
 		
 		data = cleaner.clean(data);
 		
@@ -205,28 +206,28 @@ public class PremergeImpl extends Thread implements Premerge {
 		if (metadata.getType() == Metadata.TYPE.PSI_MI) {
 			if (log.isInfoEnabled())
 				log.info("pipeline(), converting psi-mi data "
-						+ description);
+						+ pathwayData);
 			try {
 				data = convertPSIToBioPAX(data);
 			} catch (RuntimeException e) {
 				log.error("pipeline(), cannot convert PSI-MI data: "
-						+ description + " to L3. - " + e);
+						+ pathwayData + " to L3. - " + e);
 				return;
 			}
 		} 
 		
 		if(log.isInfoEnabled())
 			log.info("pipeline(), validating pathway data "
-				+ description);
+				+ pathwayData);
 		
 		/* Validate, auto-fix, and normalize (incl. convesion to L3): 
 		 * e.g., synonyms in xref.db may be replaced 
 		 * with the primary db name, as in Miriam, etc.
 		 */
-		Validation v = checkAndNormalize(description, data);
+		Validation v = checkAndNormalize(pathwayData.toString(), data);
 		if(v == null) {
 			if(log.isInfoEnabled())
-				log.info("pipeline(), skipping: " + description);
+				log.info("pipeline(), skipping: " + pathwayData);
 			return;
 		}
 		
@@ -256,7 +257,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		// count error cases (ignoring warnings)
 		int noErrors = v.countErrors(null, null, null, true);
 		if(log.isInfoEnabled()) {
-			log.info("Summary for " + description
+			log.info("Summary for " + pathwayData.toString()
 				+ ". Critical errors found:" + noErrors + ". " 
 				+ v.getComment().toString() + "; " 
 				+ v.toString());
@@ -266,12 +267,12 @@ public class PremergeImpl extends Thread implements Premerge {
 		if(noErrors > 0) {			
 			log.error("pipeline(), " + noErrors 
 				+ " biopax errors found in pathway data: "
-				+ description);
+				+ pathwayData);
 		} else {
 			// Get the normalized and validated model and persist it
 			if (log.isInfoEnabled())
 				log.info("pipeline(), persisting pathway data "
-					+ description);
+					+ pathwayData);
 			premergeDAO.merge(v.getModel());
 		}
 		
@@ -369,7 +370,7 @@ public class PremergeImpl extends Thread implements Premerge {
 				"Failed to check/normalize " + title, e);
 			*/ 
 			//e.printStackTrace();
-			log.error("pipeline(), Failed to process " + title + " - ", e);
+			log.error("pipeline(), Failed to process " + title + " - " + e);
 			return null;
 		}
 		

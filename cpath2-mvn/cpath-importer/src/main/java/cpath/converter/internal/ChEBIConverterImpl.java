@@ -248,7 +248,7 @@ public class ChEBIConverterImpl extends BaseSDFConverterImpl
 				smallMoleculeReference.setMolecularWeight(Float.parseFloat(molecularWeight));
 			}
 			catch (NumberFormatException e) {
-				log.error("setMolecularWeight(), molecular weight NumberFormatException, skipping.");
+				log.error("setMolecularWeight(), skipping due to: " + e);
 			}
 		}
 	}

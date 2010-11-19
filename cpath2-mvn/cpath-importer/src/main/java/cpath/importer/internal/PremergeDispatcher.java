@@ -104,9 +104,9 @@ public class PremergeDispatcher extends Thread {
 			// sleep for a bit
 			try {
 				sleep(100);
-			}
-			catch (InterruptedException e){
-				e.printStackTrace();
+			} catch (InterruptedException e) {
+				log.error("run(), a premerge failed.", e);
+				//e.printStackTrace();
 				break;
 			}
 		}
