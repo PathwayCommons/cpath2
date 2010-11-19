@@ -7,6 +7,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import cpath.config.CPathSettings;
+import cpath.dao.PaxtoolsDAO;
 
 import java.io.*;
 import java.net.URLEncoder;
@@ -130,14 +131,13 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
         	log.debug("calling processEntry()");
         // build a new SMR with its dependent elements
 		SmallMoleculeReference smr = buildSmallMoleculeReference(entryBuffer);
-		// extract consistent sub-model from the SMR
 		if (smr != null) {
-			Model m = factory.createModel();
-			fetcher.fetch(smr, m);
-			// merge into the warehouse
-			model.merge(m);
-		} else {
-			//if(log.isInfoEnabled()) log.info("Skipped entry.");
+			if(model instanceof PaxtoolsDAO) {
+				((PaxtoolsDAO) model).merge(smr);
+			} else {
+				// make a self-consistent sub-model from the smr
+				MERGER.merge(model, smr);
+			}
 		}
 	}
 	
