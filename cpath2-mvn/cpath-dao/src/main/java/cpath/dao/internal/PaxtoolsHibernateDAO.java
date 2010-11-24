@@ -657,24 +657,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			}
 			// collect owners's ids (of requested type only)
 			for(XReferrable xr: x.getXrefOf()) {
-				if(clazz.isInstance(xr)) {
-					// SMR special case (for cpath Warehouse)
-					if(xr instanceof SmallMoleculeReference) {
-						Collection<EntityReference> parentERs =
-							((EntityReference) xr).getMemberEntityReferenceOf();
-						if(parentERs.isEmpty()) {
-							toReturn.add(xr.getRDFId());
-							log.warn("parent ER not found; getByXref is this " +
-								"returning a 'member' SmallMoleculeReference");
-						} else {
-							for(EntityReference er : parentERs) {
-								assert(er instanceof SmallMoleculeReference);
-								toReturn.add(er.getRDFId());
-							}
-						}
-					} else {
-						toReturn.add(xr.getRDFId());
-					}
+				if (clazz.isInstance(xr)) {
+					toReturn.add(xr.getRDFId());
 				}
 			}
 		}

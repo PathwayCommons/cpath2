@@ -4,8 +4,6 @@ package cpath.converter.internal;
 import cpath.config.CPathSettings;
 import cpath.converter.Converter;
 import cpath.dao.PaxtoolsDAO;
-//import cpath.warehouse.WarehouseDAO;
-
 
 import java.io.InputStream;
 
@@ -34,7 +32,7 @@ public class BaseConverterImpl implements Converter {
 	protected static final BioPAXFactory factory = 
 		BioPAXLevel.L3.getDefaultFactory();
 	protected static final SimpleMerger MERGER = 
-		new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
+        new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
 	
 	public BaseConverterImpl() {
 	}
@@ -54,17 +52,17 @@ public class BaseConverterImpl implements Converter {
 	public void convert(final InputStream is) {}
 	
 	protected <T extends BioPAXElement> T getById(String urn, Class<T> type) 
-	{
-		/*return 
-		(model instanceof WarehouseDAO) 
-			? ((WarehouseDAO)model).getObject(urn, type) //completely detached
-				: (T) model.getByID(urn) ;	
-		*/
-		T bpe = (T) model.getByID(urn);
-		if(bpe != null && model instanceof PaxtoolsDAO) {
-			// initialize before finally detaching it
-			((PaxtoolsDAO) model).initialize(bpe);
-		}
-		return bpe;
-	}
+    {
+            /*return 
+            (model instanceof WarehouseDAO) 
+                    ? ((WarehouseDAO)model).getObject(urn, type) //completely detached
+                            : (T) model.getByID(urn) ;      
+            */
+            T bpe = (T) model.getByID(urn);
+            if(bpe != null && model instanceof PaxtoolsDAO) {
+                    // initialize before finally detaching it
+                    ((PaxtoolsDAO) model).initialize(bpe);
+            }
+            return bpe;
+    }
 }
