@@ -16,11 +16,11 @@ import cpath.config.CPathSettings;
 /**
  * Implementation of Converter interface for ChEBI data.
  */
-public class ChEBIConverterImpl extends BaseSDFConverterImpl
+public class ChEBIConverterForTestingImpl extends BaseSDFConverterImpl
 {
 	// url to ChEBI OBO file
 	private static final String CHEBI_OBO_FILE_URL = 
-		"ftp://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi.obo";
+		"test_chebi_obo_data.dat";
 	
 	// logger
     private static Log log = LogFactory.getLog(ChEBIConverterImpl.class);
@@ -46,11 +46,11 @@ public class ChEBIConverterImpl extends BaseSDFConverterImpl
 	private static final Pattern CHEBI_EXT_LINK_OR_REGISTRY_REGEX =
 		Pattern.compile("> <(\\w+|\\w+\\-\\w+) (Registry Numbers|Database Links)>$");
 	
-	public ChEBIConverterImpl() {
+	public ChEBIConverterForTestingImpl() {
 		this(null);
 	}
 	
-	public ChEBIConverterImpl(Model model) {
+	public ChEBIConverterForTestingImpl(Model model) {
 		super(model, CHEBI_OBO_FILE_URL);
 		if (log.isDebugEnabled()) {
 			log.debug("CHEBI OBO FILE URL: " + CHEBI_OBO_FILE_URL);

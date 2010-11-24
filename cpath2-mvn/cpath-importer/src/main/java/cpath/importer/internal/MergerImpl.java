@@ -279,25 +279,33 @@ public class MergerImpl implements Merger {
 	{	
 		UtilityClass toReturn = null;
 		
-		// this is a (pubchem or chebi...) small molecule reference,
-		// get respective 'inchi' one from the warehouse using unification xrefs
+		// this is a pubchem or chebi small molecule reference.
+		// get set of unification xrefs for this incoming smr
+		// which we will then use to lookup our version of the smr
+		// in the warehouse.
 		Set<UnificationXref> uxrefs = new ClassFilterSet<UnificationXref>(premergeSMR.getXref(), UnificationXref.class);
 
-		// - to find the 'inchi' SMR in the warehouse
-		String inchiUrn = getSmallMoleculeReference(uxrefs);
+		// get id of matching smr in our warehouse.  note:
+		// all smr in warehouse have at least ChEBI and
+		// possible inchi, and/or pubchem uxrefs.  not sure
+		// if it is possible that multiple SMRs in our warehouse
+		// match the given set of uxrefs.  In any event
+		// we return only the first matching id we
+		// encounter - see getSmallMoleculeReference() below.
+		String chebiUrn = getSmallMoleculeReference(uxrefs);
 
-		if (inchiUrn != null) { 
+		if (chebiUrn != null) { 
 			SmallMoleculeReference smr = moleculesDAO
-				.getObject(inchiUrn, SmallMoleculeReference.class);	
+				.getObject(chebiUrn, SmallMoleculeReference.class);	
 			
 			// special treat for the old chem. structure
 			
 			if (premergeSMR.getStructure() != null) {
 				ChemicalStructure preStr = premergeSMR.getStructure();
-				ChemicalStructure inchiStr =  smr.getStructure();
+				ChemicalStructure chebiStr =  smr.getStructure();
 				// hack for the simplemerger
 				//pathwayModel.remove(preStr);
-				preStr.setRDFId(inchiStr.getRDFId()); 
+				preStr.setRDFId(chebiStr.getRDFId()); 
 			}
 			
 			toReturn = smr;
@@ -310,26 +318,27 @@ public class MergerImpl implements Merger {
 		return toReturn;
 	}
 
-	
+	/**
+	 * Given a set of unification xrefs (could be ChEBI, PubChem or combination of both),
+	 * return an ID to a SMR in our warehouse that matches.
+	 * 
+	 * @param uxrefs Set<UnificationXref>
+	 * @return id String
+	 */
 	private String getSmallMoleculeReference(Set<UnificationXref> uxrefs) {
 		
 		String id = null;
 
 		//TODO (instead) try ((PaxtoolsDAO)moleculesDAO).find(..) to find by either 'xref.id' or xref's rdfid...
 		
-		/* Now (after re-design) that 'inchi' SMRs do not 
-		* contain any xrefs but do have other SMRs as member ER,
-		* Warehouse should not return more than one SMR!  
-		* If it does, let's log a warning (the xrefs
-		* in the set are probably about different molecules).
-		*/
-		// will return one 'inchi' one (does getMemberEntityReferenceOf() lookup internally!)
+		// will return 'chebi' smr.
 		Collection<String> smrs = moleculesDAO.getByXref(uxrefs, SmallMoleculeReference.class);
-		if(!smrs.isEmpty()) {
+		if (!smrs.isEmpty()) {
 			id = smrs.iterator().next();
-			if(smrs.size()>1) //is this real?!
-				log.warn("Multiple SMRs " + smrs + " found in Warehouse by: " 
-					+ uxrefs);
+			if(smrs.size()>1) {
+				// is this real?!
+				log.warn("Multiple SMRs " + smrs + " found in Warehouse by: " + uxrefs);
+			}
 		} 				
 
 		return id;

@@ -91,31 +91,10 @@ public class CPathFetcherTest {
 				new byte[]{}, 
 				Metadata.TYPE.SMALL_MOLECULE, 
 				"cpath.cleaner.internal.BaseCleanerImpl", 
-				"cpath.converter.internal.ChEBIConverterImpl");
+				"cpath.converter.internal.ChEBIConverterForTestingImpl");
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
 		assertTrue(model.containsID("urn:miriam:chebi:20"));
-		assertTrue(model.containsID(CPathSettings.CPATH_URI_PREFIX+"ChemicalStructure:JVTAAEKCZFNVCJ-SNQCPAJUDF"));
-	}
-	
-	@Test
-	public void testImportPubchemData() throws IOException {
-		String location = "classpath:test_pubchem_data.dat.zip";
-		// in case there's no "metadata page" prepared -
-		Metadata metadata = new Metadata(
-				"TEST_PUBCHEM", "PubChem Test Data", 
-				"2010.10", "October 03, 2010",  
-				location,
-				new byte[]{}, 
-				Metadata.TYPE.SMALL_MOLECULE, 
-				"cpath.cleaner.internal.BaseCleanerImpl", 
-				"cpath.converter.internal.PubChemConverterImpl");
-		fetcher.fetchData(metadata);
-		fetcher.storeWarehouseData(metadata, model);
-		assertTrue(model.containsID("urn:miriam:pubchem.substance:14438"));
-		assertTrue(model.containsID("urn:miriam:pubchem.substance:14439"));
-		assertTrue(model.containsID(CPathSettings.CPATH_URI_PREFIX+"CRPUJAZIXJMDBK-DTWKUNHWBS"));
-		assertTrue(model.containsID(CPathSettings.CPATH_URI_PREFIX+"ChemicalStructure:CRPUJAZIXJMDBK-DTWKUNHWBS"));
 	}
 	
 	

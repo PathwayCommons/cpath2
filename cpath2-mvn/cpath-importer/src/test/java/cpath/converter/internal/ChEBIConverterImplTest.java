@@ -1,7 +1,6 @@
 package cpath.converter.internal;
 
 // imports
-import cpath.config.CPathSettings;
 import cpath.converter.Converter;
 
 import org.biopax.paxtools.controller.SimpleMerger;
@@ -34,6 +33,7 @@ public class ChEBIConverterImplTest {
 	 */
 	@Test
 	public void testConvert() throws IOException {
+	
 		// convert test data
 		InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_chebi_data.dat");
 		//Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
@@ -50,7 +50,7 @@ public class ChEBIConverterImplTest {
 		};
 
 		// setup the converter
-		Converter converter = new ChEBIConverterImpl(model);
+		Converter converter = new ChEBIConverterForTestingImpl(model);
 		converter.convert(is);
 		
 		// dump owl for review
@@ -60,10 +60,11 @@ public class ChEBIConverterImplTest {
 				new FileOutputStream(outFilename));
 
 		// get all small molecule references out
-		assertEquals(6, model.getObjects(SmallMoleculeReference.class).size());
+		assertEquals(3, model.getObjects(SmallMoleculeReference.class).size());
 
 		// get lactic acid sm
 		String rdfID = "urn:miriam:chebi:422";
+		assertTrue(model.containsID(rdfID));
 		SmallMoleculeReference smallMoleculeReference = (SmallMoleculeReference)model.getByID(rdfID);
 
 		// check some props
@@ -75,19 +76,25 @@ public class ChEBIConverterImplTest {
 		for (Xref xref : smallMoleculeReference.getXref()) {
 			if (xref instanceof RelationshipXref) ++relationshipXrefCount;
 			if (xref instanceof UnificationXref) ++ unificationXrefCount;
-
 		}
-		
-		assertEquals(2, unificationXrefCount);
+		assertEquals(3, unificationXrefCount);
 		assertEquals(12, relationshipXrefCount);
 		
-		assertTrue(model.containsID(CPathSettings.CPATH_URI_PREFIX+"CRPUJAZIXJMDBK-DTWKUNHWBS"));
-		assertTrue(model.containsID("urn:miriam:chebi:20"));
-		
 		// following checks work in this test only (using in-memory model); with DAO - use getObject...
-		EntityReference er = (EntityReference) model.getByID("urn:miriam:chebi:20");
-		EntityReference ir = (EntityReference) model.getByID(CPathSettings.CPATH_URI_PREFIX+"CRPUJAZIXJMDBK-DTWKUNHWBS");
-		assertTrue(er.getMemberEntityReferenceOf().contains(ir));
-		assertEquals(er, ir.getMemberEntityReference().iterator().next());
+        assertTrue(model.containsID("urn:miriam:chebi:20"));
+        EntityReference er20 = (EntityReference) model.getByID("urn:miriam:chebi:20");
+        assertTrue(model.containsID("urn:miriam:chebi:28"));
+        EntityReference er28 = (EntityReference) model.getByID("urn:miriam:chebi:28");
+        assertTrue(model.containsID("urn:miriam:chebi:422"));
+        EntityReference er422 = (EntityReference) model.getByID("urn:miriam:chebi:422");
+        
+        assertTrue(er20.getMemberEntityReferenceOf().contains(er422));
+        assertEquals(er20, er422.getMemberEntityReference().iterator().next());
+        
+		assertTrue(er422.getMemberEntityReferenceOf().contains(er28));
+        assertEquals(er422, er28.getMemberEntityReference().iterator().next());
+        
+        assertTrue(model.containsID("urn:pathwaycommons:RelationshipXref:HAS_PART_CHEBI_20"));
+        assertTrue(model.containsID("urn:pathwaycommons:RelationshipXref:IS_CONJUGATE_ACID_OF_CHEBI_422"));
 	}
 }

@@ -2,23 +2,32 @@ package cpath.converter.internal;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 
 import java.io.*;
-import java.net.URLEncoder;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 
 /**
  * Base Implementation of Converter interface for SDF (ChEBI & PubChem) data.
  */
 public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
+	
+	private static final String PROCESS_SDF = "PROCESS_SDF";
+	private static final String PROCESS_OBO = "PROCESS_OBO";
 
-	private static final String ENTRY_START = "M  END";
-	private static final String ENTRY_END = "$$$$";
+	private static final String SDF_ENTRY_START = "M  END";
+	private static final String SDF_ENTRY_END = "$$$$";
+	
+	private static final String CHEBI_OBO_ENTRY_START = "[Term]";
+	private static final String CHEBI_OBO_ENTRY_END = "";
 	
 	// some statics to identify names methods
 	protected static final String DISPLAY_NAME = "DISPLAY_NAME";
@@ -29,11 +38,27 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 	protected static final String COLON_DELIMITER = ":";
 	protected static final String EQUALS_DELIMITER = "=";
 	
+	 // loader can handle file://, ftp://, http://  URL resources
+	private static final ResourceLoader LOADER = new DefaultResourceLoader();
+	
+	// url to chebi obo file - set by ChEBI subclass
+	private String CHEBI_OBO_FILE_URL;
+	
+	// chebi obo file path/name
+	private static final String CHEBI_OBO_FILE;
+	static {
+		CHEBI_OBO_FILE =
+			System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "chebi.obo";
+	}
+	
 	// logger
     private static Log log = LogFactory.getLog(BaseSDFConverterImpl.class);
-
+    
+    // OBO converter
+    private ChEBIOBOConverterImpl oboConverter;
+    
 	public BaseSDFConverterImpl() {
-		this(null);
+		this(null, null);
 	}
 	
 	/**
@@ -41,9 +66,10 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 	 *
 	 * @param model to merge converted data to
 	 */
-	public BaseSDFConverterImpl(Model model) 
-	{
+	public BaseSDFConverterImpl(Model model, String chebiOBOFileURL) {
 		super(model);
+		this.oboConverter = new ChEBIOBOConverterImpl(model, factory);
+		this.CHEBI_OBO_FILE_URL = chebiOBOFileURL;
 	}
 	
 	/**
@@ -51,20 +77,61 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 	 * reference (and other related elements in it) 
 	 * from the SDF entry.
 	 * 
-	 * By convention, this must be based on InChi/InChiKey
-	 * and may contain other SMR (chebi, pubchem) 
-	 * as its member entity references.
-	 * 
 	 * @param entry
 	 * @return TODO
 	 * @throws IOException
 	 */
-	protected abstract SmallMoleculeReference buildSmallMoleculeReference(StringBuffer entry)
-		throws IOException;
+	protected abstract SmallMoleculeReference
+	buildSmallMoleculeReference(StringBuffer entry) throws IOException;
 	
-
 	@Override
 	public void convert(final InputStream is) {
+		
+		// first convert given SDF input stream and store SM in warehouse
+		convert(is, PROCESS_SDF, SDF_ENTRY_START, SDF_ENTRY_END);
+		
+		// Note - we are only converting ChEBI now, so assume OBO processing required
+		InputStream oboIS = null;
+		try {
+			oboIS = getChEBIOBOInputStream();
+			if (oboIS == null && log.isInfoEnabled()) {
+				log.info("convert(): chebi-obo file is null, cannot create hierarchical relationships!");
+			}
+			else {
+				if (oboConverter.getModel() == null) {
+					oboConverter.setModel(model);
+				}
+				convert(oboIS, PROCESS_OBO, CHEBI_OBO_ENTRY_START, CHEBI_OBO_ENTRY_END);
+			}
+		}
+		catch (IOException e) {
+			log.error(e);
+		}
+		finally {
+			if (oboIS != null) {
+				try {
+					oboIS.close();
+				}
+				catch (Exception e) {
+					// ignore
+				}
+	           }
+		}
+		
+		if (log.isInfoEnabled()) {
+			log.info("convert(), exiting.");
+		}
+	}
+	
+	/**
+	 * Utility function that helps convert both SDF and OBO files.
+	 *  
+	 * @param is InputStream
+	 * @param whatEntryToProcess String
+	 * @param entryStart String
+	 * @param entryEnd String
+	 */
+	private void convert(final InputStream is, String whatEntryToProcess, String entryStart, String entryEnd) {
 
 		// ref to reader here so, we can close in finally clause
         InputStreamReader reader = null;
@@ -80,19 +147,26 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
             String line = bufferedReader.readLine();
             while (line != null) {
 				// start of entry
-                if (line.startsWith(ENTRY_START)) {
+                if (line.startsWith(entryStart)) {
 					StringBuffer entryBuffer = new StringBuffer(line + "\n");
 					line = bufferedReader.readLine();
 					while (line != null) {
 						entryBuffer.append(line + "\n");
 						// keep reading until we reach last modified
-						if (line.startsWith(ENTRY_END)) {
+						if (whatEntryToProcess.equals(PROCESS_SDF) && line.startsWith(entryEnd)) {
+							break;
+						}
+						else if (whatEntryToProcess.equals(PROCESS_OBO) && line.isEmpty()) {
 							break;
 						}
 						line = bufferedReader.readLine();
 					}
-					// process entry
-					processEntry(entryBuffer);
+					if (whatEntryToProcess.equals(PROCESS_SDF)) {
+						processSDFEntry(entryBuffer);
+					}
+					else if (whatEntryToProcess.equals(PROCESS_OBO)) {
+						processOBOEntry(entryBuffer);
+					}
                 }
                 line = bufferedReader.readLine();
             }
@@ -113,9 +187,7 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 				}
             }
         }
-		if (log.isInfoEnabled()) {
-			log.info("convert(), exiting.");
-		}
+		
     }
 
 	/**
@@ -123,154 +195,68 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 	 * create a BioPAX Entity reference.
 	 *
 	 * @param entryBuffer StringBuffer
-	 * @throwns IOException
+	 * @throws IOException
 	 */
-	private void processEntry(StringBuffer entryBuffer) throws IOException 
-	{
-        if (log.isDebugEnabled())
-        	log.debug("calling processEntry()");
+	private void processSDFEntry(StringBuffer entryBuffer) throws IOException { 
+
+        if (log.isDebugEnabled()) {
+        	log.debug("calling processSDFEntry()");
+        }
         // build a new SMR with its dependent elements
 		SmallMoleculeReference smr = buildSmallMoleculeReference(entryBuffer);
 		if (smr != null) {
-			if(model instanceof PaxtoolsDAO) {
-				((PaxtoolsDAO) model).merge(smr);
-			} else {
-				// make a self-consistent sub-model from the smr
-				MERGER.merge(model, smr);
-			}
+            if(model instanceof PaxtoolsDAO) {
+            	((PaxtoolsDAO) model).merge(smr);
+            }
+            else {
+            	// make a self-consistent sub-model from the smr
+            	MERGER.merge(model, smr);
+            }
 		}
 	}
-	
-	
+
 	/**
-	 * Given a database link db, returns proper relationship type.
-	 *
-	 * @param dbName String
-	 * @return RelationshipTypeVocabulary
+	 * Given a string buffer for a single OBO entry, create proper relationships
+	 * between SMR within the warehouse.
+	 * 
+	 * @param entryBuffer String Buffer
+	 * @throws IOException
 	 */
-	protected RelationshipTypeVocabulary getRelationshipType(String dbName) 
-	{
-		RelationshipTypeVocabulary toReturn;
-
-		// check if vocabulary already exists
-		String id = ""; // convert dbName into some id
-
-		if (log.isDebugEnabled())
-			log.debug("getRelationshipType(), id: " + id);
-
-		if (model.containsID(id)) {
-			toReturn = getById(id, RelationshipTypeVocabulary.class);
-		} else {
-			// create a new cv
-			toReturn = factory.reflectivelyCreate(RelationshipTypeVocabulary.class);
-			toReturn.setRDFId(id);
-			toReturn.addTerm(""); // convert dbName into some term
-		}
-
-		// outta here
-		return toReturn;
-	}
-	
-	/**
-	 * Given an xref class and a string array containing a
-	 * db name at pos 0 and db id at pos 1 returns a proper xref.
-	 *
-	 * @param parts
-	 * @return <T extends Xref>
-	 */
-	protected <T extends Xref> T getXref(Class<T> aClass, String... parts) 
-	{	
-		T toReturn = null;
-
-		String id = parts[0].trim();
-		String db = parts[1].trim();
+	private void processOBOEntry(StringBuffer entryBuffer) throws IOException {
 		
 		if (log.isDebugEnabled()) {
-			log.debug("getXref(), id: " + id + ", db: " + db 
-					+ ", type: " + aClass.getSimpleName());
+			log.debug("calling processOBOEntry()");
 		}
 		
-		String rdfID =  CPathSettings.CPATH_URI_PREFIX +
-			aClass.getSimpleName() + ":" + 
-			URLEncoder.encode(db.toUpperCase() + "_" + id);
-
-		if (model.containsID(rdfID)) {
-			toReturn = getById(rdfID, aClass);
-		} else {
-			toReturn = (T) factory.reflectivelyCreate(aClass);
-			toReturn.setRDFId(rdfID);
-			toReturn.setDb(db);
-			toReturn.setId(id);
-			
-			// TODO doubt: should this apply for all ids?..
-			if ("RelationshipXref".equals(aClass.getSimpleName())) {
-				toReturn.setIdVersion("entry_name");
-			}
-		}
-
-		// outta here
-		return toReturn;
+		// create obo converter
+		oboConverter.processOBOEntry(entryBuffer);
 	}
 	
 	/**
-	 * Sets the structure.
-	 *
-	 * @param structure String
-	 * @param structureFormat TODO
-	 * @param chemicalStructureID String
-	 * @param smallMoleculeReference SmallMoleculeReference
+	 * Method to download and return an InputStream to the OBO file.
+	 * @return InputStream
+	 * @throws IOException
 	 */
-	protected void setChemicalStructure(String structure, 
-			StructureFormatType structureFormat, 
-			String chemicalStructureID, SmallMoleculeReference  smallMoleculeReference) 
-	{	
-		if (structure != null) {
-			if (log.isDebugEnabled()) {
-				log.debug("setStructure(), structure: " + structure);
-			}
-			// should only get one of these
-			ChemicalStructure chemStruct = factory.reflectivelyCreate(ChemicalStructure.class);
-			chemStruct.setRDFId(chemicalStructureID);
-			chemStruct.setStructureData(URLEncoder.encode(structure));
-			chemStruct.setStructureFormat(structureFormat);
-			smallMoleculeReference.setStructure(chemStruct);
+	private InputStream getChEBIOBOInputStream() throws IOException {
+		
+		// sanity check
+		if (CHEBI_OBO_FILE_URL == null) {
+			return null;
 		}
-	}
+		
+		Resource resource = LOADER.getResource(CHEBI_OBO_FILE_URL);
+		long size = resource.contentLength();
+		if(log.isInfoEnabled()) {
+			log.info(CHEBI_OBO_FILE_URL + " content length= " + size);
+		}
+		ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
+		FileOutputStream dest = new FileOutputStream(CHEBI_OBO_FILE);
+		size = dest.getChannel().transferFrom(source, 0, size); // can throw runtime exceptions
+		if(log.isInfoEnabled()) {
+			log.info(size + " bytes downloaded from " + CHEBI_OBO_FILE_URL);
+		}
 
-	
-	/*
-	 * Get or create a 'inchi' small mol. ref. and make the pubchem/chebi
-	 * its member entity ref. 
-	 */
-	protected SmallMoleculeReference getInchiEntityReference(String inchiKey, String inchi) 
-	{
-		SmallMoleculeReference inchiEntityRef = null;
-		
-		if (inchiKey != null && inchiKey.length() > 0) {
-			String inchiEntityReferenceID = CPathSettings.CPATH_URI_PREFIX 
-				+ inchiKey;
-			try {
-				//try to pull the existing entity reference
-				if (model.containsID(inchiEntityReferenceID)) {
-					inchiEntityRef = getById(inchiEntityReferenceID, SmallMoleculeReference.class);
-				} else {
-					inchiEntityRef = factory.reflectivelyCreate(SmallMoleculeReference.class);
-					inchiEntityRef.setRDFId(inchiEntityReferenceID);
-					// create chem struct using inchi
-					if (inchi != null && inchi.length() > 0) {
-						String chemicalStructureID = CPathSettings.CPATH_URI_PREFIX 
-							+ "ChemicalStructure:" + inchiKey;
-						setChemicalStructure(inchi, StructureFormatType.InChI, 
-								chemicalStructureID, inchiEntityRef);
-					}
-				}
-			}
-			catch (org.biopax.paxtools.util.IllegalBioPAXArgumentException e) {
-				// ignore
-			}
-		}
-		
-		return inchiEntityRef;
+		// outta here
+		return new FileInputStream(CHEBI_OBO_FILE);
 	}
-	
 }

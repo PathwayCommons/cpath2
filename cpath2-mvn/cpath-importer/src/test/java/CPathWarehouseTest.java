@@ -135,11 +135,6 @@ public class CPathWarehouseTest {
 	}
 
 	@Test
-	public void testGetPubChemMolecule() {
-		// TODO
-	}
-
-	@Test
 	public void testSearchForProteinReference() {
 		// search with a secondary (RefSeq) accession number
 		Collection<String> prIds = ((PaxtoolsDAO)proteins).find("NP_619650", UnificationXref.class);

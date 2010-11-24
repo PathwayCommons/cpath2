@@ -164,35 +164,24 @@ public class CPathMergerTest {
 		
 		// test proper merge of small molecule reference
 		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate"));
-		assertTrue(mergedModel.containsID(CPathSettings.CPATH_URI_PREFIX+"CRPUJAZIXJMDBK-DTWKUNHWBS"));
-		assertTrue(mergedModel.containsID(CPathSettings.CPATH_URI_PREFIX+"ChemicalStructure:CRPUJAZIXJMDBK-DTWKUNHWBS"));
 		assertTrue(mergedModel.containsID("urn:miriam:chebi:20"));
 		assertTrue(mergedModel.containsID(CPathSettings.CPATH_URI_PREFIX+"ChemicalStructure:chebi_20"));
 		assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_8"));
-		assertTrue(mergedModel.containsID("urn:miriam:pubchem.substance:14438"));
-		assertTrue(mergedModel.containsID(CPathSettings.CPATH_URI_PREFIX+"ChemicalStructure:pubchem.substance_14438"));
-		assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_6"));
-		
-		SmallMolecule sm = (SmallMolecule)mergedModel.getByID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
+		assertTrue(!mergedModel.containsID("urn:miriam:pubchem.substance:14438"));
+		assertTrue(!mergedModel.containsID("urn:miriam:pubchem.substance:14439"));
+				
+		SmallMolecule sm = (SmallMolecule)mergedModel.getByID("http://pathwaycommons.org/test2#alpha-D-glucose_6-phosphate");
 		SmallMoleculeReference smr = (SmallMoleculeReference)sm.getEntityReference();
-		assertEquals(CPathSettings.CPATH_URI_PREFIX+"CRPUJAZIXJMDBK-DTWKUNHWBS", smr.getRDFId());
-		// smr must contain two member SMRs (from chebi and pubchem)
+		assertEquals("urn:miriam:chebi:422", smr.getRDFId());
+		// smr must contain one member SMR
 		if(mergedModel instanceof PaxtoolsDAO) {
 			((PaxtoolsDAO) mergedModel).initialize(smr);
 		}
-		assertEquals(2, smr.getMemberEntityReference().size());
+		assertEquals(1, smr.getMemberEntityReference().size());
 		
 		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:chebi:20");
 		assertEquals("(+)-camphene", msmr.getStandardName());
-		assertEquals(3, msmr.getXref().size());
-		if(mergedModel instanceof PaxtoolsDAO) {
-			((PaxtoolsDAO) mergedModel).initialize(msmr);
-		}
-		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
-		
-		msmr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:pubchem.substance:14438");
-		assertEquals("Geranyl formate", msmr.getDisplayName());
-		assertEquals(1, msmr.getXref().size());
+		assertEquals(5, msmr.getXref().size());
 		if(mergedModel instanceof PaxtoolsDAO) {
 			((PaxtoolsDAO) mergedModel).initialize(msmr);
 		}
@@ -239,17 +228,17 @@ public class CPathMergerTest {
 		
 		SmallMolecule sm = (SmallMolecule)pcDAO.getByIdInitialized("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
 		SmallMoleculeReference smr = (SmallMoleculeReference)sm.getEntityReference();
-		assertEquals(CPathSettings.CPATH_URI_PREFIX+"CRPUJAZIXJMDBK-DTWKUNHWBS", smr.getRDFId());
+		assertEquals("urn:miriam:chebi:20", smr.getRDFId());
 		
 		smr = (SmallMoleculeReference)pcDAO.getByID("urn:miriam:chebi:20");
 		pcDAO.initialize(smr);
 		assertEquals("(+)-camphene", smr.getStandardName());
-		assertEquals(3, smr.getXref().size());
+		assertEquals(5, smr.getXref().size());
 		
-		smr = (SmallMoleculeReference)pcDAO.getByID("urn:miriam:pubchem.substance:14438");
+		smr = (SmallMoleculeReference)pcDAO.getByID("urn:miriam:chebi:28");
 		pcDAO.initialize(smr);
-		assertEquals("Geranyl formate", smr.getDisplayName());
-		assertEquals(1, smr.getXref().size());
-		assertTrue(smr.getEntityReferenceOf().isEmpty()); // because 'inchi' one is the one that is referenced
+		assertEquals("(R)-linalool", smr.getDisplayName());
+		assertEquals(14, smr.getXref().size());
+		assertEquals(4, smr.getEntityReferenceOf().size());
 	}
 }

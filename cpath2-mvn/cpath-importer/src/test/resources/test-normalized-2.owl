@@ -78,7 +78,7 @@
 		<bp:eCNumber rdf:datatype="xsd:string">2.7.1.1</bp:eCNumber>
 		<bp:eCNumber rdf:datatype="xsd:string">2.7.1.2</bp:eCNumber>
 		<bp:left rdf:resource="#alpha-D-glucose_" />
-		<bp:left rdf:resource="#ATP_" />
+		<bp:left rdf:resource="#ATP" />
 		<bp:name rdf:datatype="xsd:string">glucose ATP phosphotransferase</bp:name>
 		<bp:name rdf:datatype="xsd:string">ATP:D-glucose 6-phosphotransferase
 		</bp:name>
@@ -155,7 +155,7 @@
 		<bp:displayName rdf:datatype="xsd:string">Adenosine
 			5&apos;-diphosphate</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">ADP</bp:standardName>
-		<bp:xref rdf:resource="urn:pathwaycommons:UnificationXref:KEGG_C12294" />
+		<bp:xref rdf:resource="urn:pathwaycommons:UnificationXref:PUBCHEM_14438" />
 		<bp:name rdf:datatype="xsd:string">adenosine diphosphate</bp:name>
 		<bp:molecularWeight rdf:datatype="xsd:float">427.2
 		</bp:molecularWeight>
@@ -167,7 +167,7 @@
 		<bp:displayName rdf:datatype="xsd:string">Adenosine
 			5&apos;-triphosphate</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">ATP</bp:standardName>
-		<bp:xref rdf:resource="urn:pathwaycommons:UnificationXref:KEGG_C12295" />
+		<bp:xref rdf:resource="urn:pathwaycommons:UnificationXref:PUBCHEM_14439" />
 		<bp:name rdf:datatype="xsd:string">adenosine triphosphate</bp:name>
 		<bp:molecularWeight rdf:datatype="xsd:float">507.18
 		</bp:molecularWeight>
@@ -297,7 +297,7 @@
 		<bp:organism rdf:resource="urn:miriam:taxonomy:9606" />
 	</bp:ProteinReference>
 
-	<bp:SmallMolecule rdf:ID="ATP_">
+	<bp:SmallMolecule rdf:ID="ATP">
 		<bp:entityReference rdf:resource="urn:miriam:pubchem.substance:14439" />
 		<bp:cellularLocation rdf:resource="urn:miriam:obo.go:GO%3A0005737" />
 		<bp:standardName rdf:datatype="xsd:string">ATP</bp:standardName>
@@ -307,9 +307,9 @@
 		<bp:dataSource rdf:resource="#KEGG" />
 	</bp:SmallMolecule>
 
-	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:KEGG_C12294">
-		<bp:db rdf:datatype="xsd:string">KEGG compound</bp:db>
-		<bp:id rdf:datatype="xsd:string">C12294</bp:id>
+	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:PUBCHEM_14438">
+		<bp:db rdf:datatype="xsd:string">PUBCHEM</bp:db>
+		<bp:id rdf:datatype="xsd:string">PUBCHEM:14438</bp:id>
 		<bp:comment rdf:datatype="xsd:string">PMID: 9847135</bp:comment>
 	</bp:UnificationXref>
 
@@ -332,9 +332,9 @@
 		<bp:dataSource rdf:resource="#KEGG" />
 	</bp:Catalysis>
 
-	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:KEGG_C12295">
-		<bp:db rdf:datatype="xsd:string">KEGG compound</bp:db>
-		<bp:id rdf:datatype="xsd:string">C12295</bp:id>
+	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:PUBCHEM_14439">
+		<bp:db rdf:datatype="xsd:string">PUBCHEM</bp:db>
+		<bp:id rdf:datatype="xsd:string">PUBCHEM:14439</bp:id>
 		<bp:comment rdf:datatype="xsd:string">PMID: 9847135</bp:comment>
 	</bp:UnificationXref>
 
