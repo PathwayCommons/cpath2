@@ -171,25 +171,33 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			 */
 			Set<BioPAXElement> sourceElements = model.getObjects();
 			for (BioPAXElement bpe : sourceElements) {
-				/*
-				 * Note: with this if(..) check enabled, it used to 
-				 * throw a Hibernate exception, saying that another object with the same 
-				 * identifies already existed in the session... 
-				 * (- caught with PantherDb BioPAX L3 files, thank you ;P)
-				 if (!containsID(bpe.getRDFId())) { // adding a new element
-				 	add(bpe); // CASCADING merge!
-				 }
-				 */
-				// hmm.., well, let's try simpler way...
-				merge(bpe);
+				if(!containsID(bpe.getRDFId()))
+					merge(bpe); // there are CASCADE annotations!..
 			}
 		}
 	}
 
 	
-	@Transactional(propagation=Propagation.REQUIRED)
-	public void merge(final BioPAXElement bpe) {
-		session().merge(bpe); 
+	/**
+	 * Saves or merges the element 
+	 * (use when it's updated or unsure if saved ever before...)
+	 * 
+	 */
+	@Transactional(propagation = Propagation.REQUIRED)
+	public void merge(BioPAXElement aBioPAXElement) {
+		String rdfId = aBioPAXElement.getRDFId();
+		if (!level.hasElement(aBioPAXElement)) {
+			throw new IllegalBioPAXArgumentException(
+					"Given object is of wrong level");
+		} else if (rdfId == null) {
+			throw new IllegalBioPAXArgumentException(
+					"null ID: every object must have an RDF ID");
+		} else {
+			if (log.isDebugEnabled())
+				log.debug("updating/merging " + rdfId);
+			session().merge(aBioPAXElement);
+			// - many elements are affected, because of cascades...
+		}
 	}
 
 	/*
@@ -302,7 +310,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		String rdfId = aBioPAXElement.getRDFId();
 		
 		if (log.isDebugEnabled())
-			log.debug("will be adding " + rdfId);
+			log.debug("about to add: " + rdfId);
 		
 		if (!level.hasElement(aBioPAXElement))
 		{
@@ -317,19 +325,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		else
 		{
 			if (log.isDebugEnabled())
-				log.debug("now adding " + rdfId);
-			
-			/* seems, unlike 'save' or 'persist', 'saveOrUpdate' 
-			 * does resolve duplicate key issues (because of 
-			 * children elements cascade=All mappings)
-			 * Element becomes persistent; saveOrUpdate throws exception 
-			 * when aBioPAXElement (or one of its children) 
-			 * has been previously saved...
-			 */
-			//session().saveOrUpdate(aBioPAXElement);
-			session().merge(aBioPAXElement); 
-			// - aBioPAXElement is saved/updated, but this remains detached/transient!
-			// - many elements, because of cascade=ALL
+				log.debug("adding " + rdfId);
+			session().persist(aBioPAXElement); 
+			// - many elements are affected, because of cascades...
 		}
 	}
 
@@ -343,7 +341,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	public void remove(BioPAXElement aBioPAXElement)
 	{
 		BioPAXElement bpe = getByID(aBioPAXElement.getRDFId());
-		session().delete(bpe); // many elements, because of cascade=ALL
+		session().delete(bpe); // affects many elements, because of cascade=ALL!
 	}
 
 

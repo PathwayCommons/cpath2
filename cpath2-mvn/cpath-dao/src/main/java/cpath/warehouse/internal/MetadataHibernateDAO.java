@@ -75,6 +75,9 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 			session.save(metadata);
 		}
 		
+		session.flush();
+		session.clear();
+		
 		if(log.isInfoEnabled())
 			log.info("metadata object has been sucessessfully saved or merged.");
     }
@@ -136,6 +139,10 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 			existing.setPremergeData(pathwayData.getPremergeData());
 			session.update(existing);
 		}
+		
+		// pathwayData contains very large test data fields; so it's better to flush and free memory...
+		session.flush();
+		session.clear();
 		
 		if(log.isInfoEnabled())
 			log.info("pathway data object has been sucessessfully saved or updated.");

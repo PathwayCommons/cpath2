@@ -33,9 +33,12 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Catalysis;
 import org.biopax.paxtools.model.level3.ControlType;
 import org.biopax.paxtools.model.level3.Level3Factory;
+import org.biopax.paxtools.model.level3.ModificationFeature;
+import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
 import org.biopax.paxtools.model.level3.TemplateReactionRegulation;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.validator.Behavior;
+import org.biopax.validator.CvRule;
 import org.biopax.validator.Rule;
 import org.biopax.validator.Validator;
 import org.biopax.validator.result.ErrorCaseType;
@@ -46,6 +49,7 @@ import org.biopax.validator.utils.BiopaxValidatorException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -63,6 +67,9 @@ public class BiopaxValidatorTest {
 
 	@Autowired
 	Validator validator;
+	
+	@Autowired
+	ApplicationContext context;
 	
 	Level3Factory level3 = (Level3Factory) BioPAXLevel.L3.getDefaultFactory();
 
@@ -148,4 +155,21 @@ public class BiopaxValidatorTest {
         x.setId("0000000");
         rule.check(x, false);
     }
+ 
+    
+    @Test
+	public void testProteinModificationFeatureCvRule() {
+    	CvRule rule = (CvRule) context.getBean("proteinModificationFeatureCvRule");
+    	//System.out.print("proteinModificationFeatureCvRule valid terms are: " 
+    			//+ rule.getValidTerms().toString());
+    	assertTrue(rule.getValidTerms().contains("(2S,3R)-3-hydroxyaspartic acid".toLowerCase()));
+    	
+    	SequenceModificationVocabulary cv = level3.reflectivelyCreate(SequenceModificationVocabulary.class);
+    	cv.setRDFId("MOD_00036");
+    	cv.addTerm("(2S,3R)-3-hydroxyaspartic acid");
+    	ModificationFeature mf = level3.reflectivelyCreate(ModificationFeature.class);
+    	mf.setRDFId("MF_MOD_00036");
+    	mf.setModificationType(cv);
+   		rule.check(mf, false); // should not fail
+	}
 }
