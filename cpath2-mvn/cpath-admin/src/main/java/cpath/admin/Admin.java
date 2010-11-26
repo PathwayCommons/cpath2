@@ -365,8 +365,8 @@ public class Admin implements Runnable {
 		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
 
 		// sanity check
-		if (metadataCollection == null || metadataCollection.size() == 0) {
-			LOG.error("Unknown provider: " + provider);
+		if (metadataCollection == null || metadataCollection.isEmpty()) {
+			LOG.error("Unknown provider identifier: " + provider);
 			return;
 		}
 
@@ -463,9 +463,15 @@ public class Admin implements Runnable {
 	 */
 	private Collection<Metadata> getMetadata(final MetadataDAO metadataDAO, final String provider) 
 	{
-		return (provider.equalsIgnoreCase(__ALL))
-			? metadataDAO.getAll()
-			: Collections.singleton(metadataDAO.getMetadataByIdentifier(provider));
+		Collection<Metadata> toReturn = new HashSet<Metadata>();
+		if (provider.equalsIgnoreCase(__ALL)) {
+			toReturn = metadataDAO.getAll();
+		} else {
+			Metadata md = metadataDAO.getMetadataByIdentifier(provider);
+			if(md != null)
+				toReturn.add(md);
+		}
+		return toReturn;
 	}
 
 	

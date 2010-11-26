@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- TODO: needs to learn what/how to configure here... -->
+
+<ehcache>
+  <cache
+    name="org.biopax.paxtools.model.BioPAXElement"
+    maxElementsInMemory="5000"
+    eternal="false"
+    timeToIdleSeconds="300"
+    timeToLiveSeconds="600"
+    overflowToDisk="true"
+  />
+</ehcache>
+ 

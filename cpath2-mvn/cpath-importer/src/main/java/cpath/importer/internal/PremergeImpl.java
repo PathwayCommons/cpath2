@@ -38,7 +38,18 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.beans.Metadata.TYPE;
 
+import org.biopax.paxtools.controller.AbstractTraverser;
+import org.biopax.paxtools.controller.EditorMap;
+import org.biopax.paxtools.controller.Fetcher;
+import org.biopax.paxtools.controller.PropertyEditor;
+import org.biopax.paxtools.controller.PropertyFilter;
+import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.io.simpleIO.SimpleReader;
+import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.validator.Behavior;
 import org.biopax.validator.Validator;
 import org.biopax.validator.result.Validation;
@@ -53,6 +64,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 import java.io.*;
 
@@ -184,8 +197,9 @@ public class PremergeImpl extends Thread implements Premerge {
 	 * @param pathwayData provider's pathway data (usually from a single data file)
 	 * @param premergeDAO persistent BioPAX model for the data provider
 	 */
-	private void pipeline(final PathwayData pathwayData, PaxtoolsDAO premergeDAO) {
+	private void pipeline(PathwayData pathwayData, PaxtoolsDAO premergeDAO) {
 		String data = null;
+		String info = pathwayData.toString();
 
 		// get the BioPAX OWL from the pathwayData bean
 		data = pathwayData.getPathwayData();
@@ -197,8 +211,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		 * to the original data (in PSI_MI, BioPAX L2, or L3 formats)
 		 */
 		if(log.isInfoEnabled())
-			log.info("pipeline(), cleaning data " 
-				+ pathwayData);
+			log.info("pipeline(), cleaning data " + info);
 		
 		data = cleaner.clean(data);
 		
@@ -206,19 +219,19 @@ public class PremergeImpl extends Thread implements Premerge {
 		if (metadata.getType() == Metadata.TYPE.PSI_MI) {
 			if (log.isInfoEnabled())
 				log.info("pipeline(), converting psi-mi data "
-						+ pathwayData);
+						+ info);
 			try {
 				data = convertPSIToBioPAX(data);
 			} catch (RuntimeException e) {
 				log.error("pipeline(), cannot convert PSI-MI data: "
-						+ pathwayData + " to L3. - " + e);
+						+ info + " to L3. - " + e);
 				return;
 			}
 		} 
 		
 		if(log.isInfoEnabled())
 			log.info("pipeline(), validating pathway data "
-				+ pathwayData);
+				+ info);
 		
 		/* Validate, auto-fix, and normalize (incl. convesion to L3): 
 		 * e.g., synonyms in xref.db may be replaced 
@@ -227,7 +240,7 @@ public class PremergeImpl extends Thread implements Premerge {
 		Validation v = checkAndNormalize(pathwayData.toString(), data);
 		if(v == null) {
 			if(log.isInfoEnabled())
-				log.info("pipeline(), skipping: " + pathwayData);
+				log.info("pipeline(), skipping: " + info);
 			return;
 		}
 		
@@ -249,36 +262,106 @@ public class PremergeImpl extends Thread implements Premerge {
 		
 		StringWriter writer = new StringWriter();
 		BiopaxValidatorUtils.write(v, writer, null);
+		writer.flush();		
 		pathwayData.setValidationResults(writer.toString());
-		
-		// Update in the DB
-		metaDataDAO.importPathwayData(pathwayData);
 		
 		// count error cases (ignoring warnings)
 		int noErrors = v.countErrors(null, null, null, true);
 		if(log.isInfoEnabled()) {
-			log.info("Summary for " + pathwayData.toString()
+			log.info("pipeline(), summary for " + info
 				+ ". Critical errors found:" + noErrors + ". " 
 				+ v.getComment().toString() + "; " 
 				+ v.toString());
 		}
 		
+		
+		// update pathwayData (with premergeData and validationResults)
+		metaDataDAO.importPathwayData(pathwayData);
+		
 		// shall we continue with saving or reject this pathway data?
-		if(noErrors > 0) {			
-			log.error("pipeline(), " + noErrors 
-				+ " biopax errors found in pathway data: "
-				+ pathwayData);
-		} else {
+		if(noErrors <= 0 ) {			
 			// Get the normalized and validated model and persist it
 			if (log.isInfoEnabled())
 				log.info("pipeline(), persisting pathway data "
-					+ pathwayData);
-			premergeDAO.merge(v.getModel());
+					+ info);
+			
+			Model pathwayDataModel = v.getModel();
+			
+			// persist
+			premergeDAO.merge(pathwayDataModel);
+			// optimization: split into pathways and merge
+			//splitAndMerge(pathwayDataModel, premergeDAO);
 		}
 		
 	}
 
 	
+	/**
+	 * Splits the "big" model into several 
+	 * smaller self-consistent pathways.
+	 * 
+	 * @param bigModel
+	 * @return
+	 */
+	private void splitAndMerge(Model bigModel, PaxtoolsDAO premergeDAO) 
+	{
+		PropertyFilter filter = new PropertyFilter() {
+			@Override
+			public boolean filter(PropertyEditor editor) {
+				return !"nextStep".equalsIgnoreCase(editor.getProperty());
+			}
+		};
+		EditorMap editorMap = new SimpleEditorMap(bigModel.getLevel());
+		Fetcher fetcher = new Fetcher(editorMap, filter);
+		SimpleReader reader = new SimpleReader(bigModel.getLevel());
+		SimpleExporter exporter = new SimpleExporter(bigModel.getLevel());
+		
+		// collect "top" pathways only
+		// copy set is required (otherwise remove() method is not supported!)
+		final Set<Pathway> objects = new HashSet<Pathway>();
+		objects.addAll(bigModel.getObjects(Pathway.class));
+		AbstractTraverser checker = new AbstractTraverser(editorMap) {
+			@Override
+			protected void visit(Object value, BioPAXElement parent, Model model,
+					PropertyEditor editor) {
+				if(value instanceof Pathway && objects.contains(value)) 
+					objects.remove(value); 
+			}
+		};	
+		// this removes sub-pathways
+		for(BioPAXElement e : bigModel.getObjects()) {
+			checker.traverse(e, null);
+		}
+		
+		// for each "top" element
+		for(Pathway instance : objects) {
+			if(log.isInfoEnabled())
+				log.info("pipeline(), now fetching Pathway: "
+					+ instance.getRDFId() + " into a separate model...");
+			Model m = bigModel.getLevel().getDefaultFactory().createModel();
+			fetcher.fetch(instance, m);
+			m.getNameSpacePrefixMap().put("", bigModel.getNameSpacePrefixMap().get(""));
+			// now, completely detach from the original model (via xml)
+			ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+			try {
+				// write
+				exporter.convertToOWL(m, bytes);
+				// read back
+				InputStream is = new ByteArrayInputStream(bytes.toByteArray());
+				m = reader.convertFromOWL(is);
+			} catch (IOException e) {
+				log.error("pipeline(), failed extracting a sub-model: ", e);
+			}
+			
+			if(m != null || !m.getObjects().isEmpty())
+				// persist
+				premergeDAO.merge(m);
+			else 
+				log.error("pipeline(), Empty model resulted from " 
+					+ instance.getRDFId());
+		}
+	}
+
 	/**
 	 * For the given cleaner class name,
 	 * returns an instance of a class which

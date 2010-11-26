@@ -22,8 +22,8 @@
     <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/genomic-proteomic/gene_ontology_edit.obo"
               format="OBO" name="Gene Ontology" identifier="GO"/>
               
-   	<cvSource source="file" uri="http://psidev.sourceforge.net/mod/data/PSI-MOD.obo"
-              format="OBO" name="Protein Modification Ontology" identifier="MOD"/>
+   	<cvSource source="file" uri="http://psidev.cvs.sourceforge.net/viewvc/psidev/psi/mod/data/PSI-MOD.obo"
+              format="OBO" name="Protein Modification Ontology" identifier="MOD"/>    
              
     <!-- 
     <cvSource source="file" uri="ftp://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi.obo"
