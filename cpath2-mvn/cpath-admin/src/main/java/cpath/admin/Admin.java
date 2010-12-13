@@ -288,10 +288,8 @@ public class Admin implements Runnable {
         					"classpath:applicationContext-cvRepository.xml"});
 				MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 				Validator validator = (Validator) context.getBean("validator");
-                PremergeDispatcher premergeDispatcher = new PremergeDispatcher(metadataDAO, validator);
-				premergeDispatcher.start();
-				// sleep until premerge is complete, this is required so we can call System.exit(...) below
-				premergeDispatcher.join();
+                PremergeImpl premerge = new PremergeImpl(metadataDAO, validator);
+                premerge.premerge();
 				break;
 			case MERGE:
 				// pc dao
