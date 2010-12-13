@@ -74,14 +74,12 @@ import javax.sql.DataSource;
 /**
  * Class responsible for premerging pathway data.
  */
-public class PremergeImpl extends Thread implements Premerge {
+public class PremergeImpl implements Premerge {
 
     private static Log log = LogFactory.getLog(PremergeImpl.class);
 
     private MetadataDAO metaDataDAO;
 	private Validator validator;
-	private PremergeDispatcher premergeDispatcher;
-	private Metadata metadata;
 	private Cleaner cleaner;
 
 	/**
@@ -101,50 +99,31 @@ public class PremergeImpl extends Thread implements Premerge {
 
     /**
 	 * (non-Javadoc)
-	 * @see cpath.importer.Premerge#setDispatcher(cpath.importer.internal.PremergeDispatcher)
-	 */
-	@Override
-	public void setDispatcher(final PremergeDispatcher premergeDispatcher) {
-		this.premergeDispatcher = premergeDispatcher;
-	}
-
-	/**
-	 * (non-Javadoc)
-	 * @see cpath.importer.Premerge#setMetadata(cpath.warehouse.beans.Metadata)
-	 */
-	@Override
-	public void setMetadata(final Metadata metadata) {
-		assert(metadata.getType() == TYPE.BIOPAX
-				|| metadata.getType() == TYPE.PSI_MI);
-		this.metadata = metadata;
-	}
-
-    /**
-	 * (non-Javadoc)
 	 * @see cpath.importer.Premerge#premerge
 	 */
 	@Override
-	public void premerge() {
-		this.start();
+    public void premerge() {
+
+		// grab all metadata
+		Collection<Metadata> metadataCollection = metaDataDAO.getAll();
+
+		// iterate over all metadata
+		for (Metadata metadata : metadataCollection) {
+			// only process interaction or pathway data
+			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
+				metadata.getType() == Metadata.TYPE.BIOPAX) {
+				process(metadata);
+			}
+		}
 	}
 
 	/**
 	 * (non-Javadoc)
 	 * @see java.lang.Thread#run()
 	 */
-	@Override
-	public void run() {
+	private void process(Metadata metadata) {
 	  try {
 		
-		if(log.isInfoEnabled())
-			log.info("run(), starting...");
-
-		// sanity check
-		if (metadata == null) {
-			log.info("run(), metadata object is null.");
-			return;
-		}
-
 		// get pathway data
 		if(log.isInfoEnabled())
 			log.info("run(), getting pathway data for provider.");
@@ -176,18 +155,20 @@ public class PremergeImpl extends Thread implements Premerge {
 				+ metadata.getIdentifier());
 		for (PathwayData pathwayData : pathwayDataCollection) {
 			try {
-				pipeline(pathwayData, pemergeDAO);
+				pipeline(metadata, pathwayData, pemergeDAO);
 			} catch(Exception e) {
 				log.error("pipeline(), failed for " + pathwayData, e);
+				System.out.println("pipeline(), failed for " + pathwayData.getIdentifier());
+				e.printStackTrace();
 			}
 		}
 
 	  } finally {
-		premergeDispatcher.premergeComplete(metadata);
 		if(log.isInfoEnabled())
 			log.info("run(), exitting ("
 				+ metadata.getIdentifier() 
 				+ ") ...");
+		System.out.println("run(), exitting (" + metadata.getIdentifier() + ") ...");
 	  }
 	}
 
@@ -197,7 +178,7 @@ public class PremergeImpl extends Thread implements Premerge {
 	 * @param pathwayData provider's pathway data (usually from a single data file)
 	 * @param premergeDAO persistent BioPAX model for the data provider
 	 */
-	private void pipeline(PathwayData pathwayData, PaxtoolsDAO premergeDAO) {
+	private void pipeline(Metadata metadata, PathwayData pathwayData, PaxtoolsDAO premergeDAO) {
 		String data = null;
 		String info = pathwayData.toString();
 
@@ -398,16 +379,6 @@ public class PremergeImpl extends Thread implements Premerge {
 			InputStream is = new ByteArrayInputStream(psimiData.getBytes("UTF-8"));
 			PSIMIBioPAXConverter psimiConverter = new PSIMIBioPAXConverter(BioPAXLevel.L3);
 			psimiConverter.convert(is, os);
-
-			// wait for conversion to finish
-			while(true) {
-				sleep(100);
-				if (psimiConverter.conversionIsComplete()) {
-					break;
-				}
-			}
-
-			// made it here, conversion is complete
 			toReturn = os.toString();
 		}
 		catch(Exception e) {
