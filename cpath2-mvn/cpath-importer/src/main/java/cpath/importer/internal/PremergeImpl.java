@@ -156,19 +156,18 @@ public class PremergeImpl implements Premerge {
 		for (PathwayData pathwayData : pathwayDataCollection) {
 			try {
 				pipeline(metadata, pathwayData, pemergeDAO);
-			} catch(Exception e) {
+			}
+			catch(Exception e) {
 				log.error("pipeline(), failed for " + pathwayData, e);
-				System.out.println("pipeline(), failed for " + pathwayData.getIdentifier());
 				e.printStackTrace();
 			}
 		}
 
-	  } finally {
-		if(log.isInfoEnabled())
-			log.info("run(), exitting ("
-				+ metadata.getIdentifier() 
-				+ ") ...");
-		System.out.println("run(), exitting (" + metadata.getIdentifier() + ") ...");
+	  }
+	  finally {
+		if(log.isInfoEnabled()) {
+			log.info("run(), exitting (" + metadata.getIdentifier() + ") ...");
+		}
 	  }
 	}
 
