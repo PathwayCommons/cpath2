@@ -195,8 +195,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		} else {
 			if (log.isDebugEnabled())
 				log.debug("updating/merging " + rdfId);
-			session().merge(aBioPAXElement);
 			// - many elements are affected, because of cascades...
+			session().merge(aBioPAXElement);
 		}
 	}
 
