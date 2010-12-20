@@ -76,7 +76,7 @@ public class PaxtoolsHibernateDAOMoreTest {
 		Resource input = (new DefaultResourceLoader()).getResource("classpath:biopax-level3-test.owl");
 		paxtoolsDAO.importModel(input.getFile());
 		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
-		assertEquals(51, paxtoolsDAO.getObjects().size()); 
+		assertEquals(55, paxtoolsDAO.getObjects().size()); 
 		// there was a bug in paxtools (due to Stoichiometry.hashCode() override)!
 		
 		// export from the DAO to OWL
@@ -91,7 +91,7 @@ public class PaxtoolsHibernateDAOMoreTest {
 		assertNotNull(model);
 		assertTrue(model
 			.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
-		assertEquals(51, model.getObjects().size());
+		assertEquals(55, model.getObjects().size());
 	}
     
     

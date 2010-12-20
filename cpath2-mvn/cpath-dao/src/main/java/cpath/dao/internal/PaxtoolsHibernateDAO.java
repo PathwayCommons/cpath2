@@ -166,10 +166,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		 */
 		if(model != null && !model.getObjects().isEmpty()) {
 			/* 
-			 * Using SimpleMerger is unsafe and, probably, not required at all :) 
-			 * Session manages RDFId-based merge to some extent...
+			 * Using SimpleMerger would be unsafe and, probably, is not required :) 
+			 * Hibernate should handle RDFId-based, cascading merging well...
 			 */
-			Set<BioPAXElement> sourceElements = model.getObjects();
+			// start from "top" elements only :)
+			Set<BioPAXElement> sourceElements = getRootElements(model); //model.getObjects();
+			if(log.isInfoEnabled())
+				log.info("Persisting a BioPAX Model that has " 
+						+ sourceElements.size() 
+						+ " 'root' elements (of total: "
+						+ model.getObjects().size());
 			for (BioPAXElement bpe : sourceElements) {
 				if(!containsID(bpe.getRDFId()))
 					merge(bpe); // there are CASCADE annotations!..
@@ -410,7 +416,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	public BioPAXElement getByID(String id) 
 	{
 		if(id == null || "".equals(id)) 
-			throw new RuntimeException("getElement(null) is called!");
+			throw new RuntimeException("getByID(null) is called!");
 
 		BioPAXElement toReturn = null;
 		// rdfid is the Primary Key see BioPAXElementImpl)
@@ -425,7 +431,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	public BioPAXElement getObject(String id) 
 	{
 		if(id == null || "".equals(id)) 
-			throw new RuntimeException("getElement(null) is called!");
+			throw new RuntimeException("getObject(null) is called!");
 
 		BioPAXElement toReturn = null;
 		
@@ -847,6 +853,29 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		}
 	}
 
+	
+	private Set<BioPAXElement> getRootElements(Model model) {
+		// collect "top" pathways only
+		// copy set is required (otherwise remove() method is not supported!)
+		final Set<BioPAXElement> objects = new HashSet<BioPAXElement>();
+		objects.addAll(model.getObjects());
+		int n = objects.size();
+		AbstractTraverser checker = new AbstractTraverser(reader.getEditorMap()) {
+			@Override
+			protected void visit(Object value, BioPAXElement parent, Model model,
+					PropertyEditor editor) {
+				if(value instanceof BioPAXElement && objects.contains(value)) 
+					objects.remove(value); 
+			}
+		};	
+		// this removes sub-pathways
+		for(BioPAXElement e : model.getObjects()) {
+			checker.traverse(e, null);
+		}
+		
+		return objects;
+	}
+	
 }
 
 

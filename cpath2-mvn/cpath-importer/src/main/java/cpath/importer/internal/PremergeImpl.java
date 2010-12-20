@@ -36,7 +36,6 @@ import cpath.importer.Premerge;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
-import cpath.warehouse.beans.Metadata.TYPE;
 
 import org.biopax.paxtools.controller.AbstractTraverser;
 import org.biopax.paxtools.controller.EditorMap;
@@ -144,7 +143,8 @@ public class PremergeImpl implements Premerge {
 		
 		// build the premerge DAO - 
 		// first, create a new database schema
-		String premergeDbName = CPathSettings.CPATH_DB_PREFIX + metadata.getIdentifier();
+		String premergeDbName = CPathSettings.CPATH_DB_PREFIX + metadata.getIdentifier()
+			+ "_" + metadata.getVersion();
 		DataServicesFactoryBean.createSchema(premergeDbName);
 		// next, get the PaxtoolsDAO instance
 		PaxtoolsDAO pemergeDAO = buildPremergeDAO(premergeDbName);
@@ -267,12 +267,11 @@ public class PremergeImpl implements Premerge {
 			
 			Model pathwayDataModel = v.getModel();
 			
-			// persist
+			// persist all at once -
 			premergeDAO.merge(pathwayDataModel);
-			// optimization: split into pathways and merge
-			//splitAndMerge(pathwayDataModel, premergeDAO);
+			// , or -
+			//splitAndMerge(pathwayDataModel, premergeDAO); // if debug log is enabled, creates owl files...
 		}
-		
 	}
 
 	
@@ -300,6 +299,7 @@ public class PremergeImpl implements Premerge {
 		// copy set is required (otherwise remove() method is not supported!)
 		final Set<Pathway> objects = new HashSet<Pathway>();
 		objects.addAll(bigModel.getObjects(Pathway.class));
+		int n = objects.size();
 		AbstractTraverser checker = new AbstractTraverser(editorMap) {
 			@Override
 			protected void visit(Object value, BioPAXElement parent, Model model,
@@ -313,29 +313,63 @@ public class PremergeImpl implements Premerge {
 			checker.traverse(e, null);
 		}
 		
+		if(log.isInfoEnabled())
+			log.info("pipeline(), " + objects.size() 
+				+ " 'top' pathways found " + " out of " + n);
+		
 		// for each "top" element
 		for(Pathway instance : objects) {
+			int i = 0;
 			if(log.isInfoEnabled())
 				log.info("pipeline(), now fetching Pathway: "
-					+ instance.getRDFId() + " into a separate model...");
+					+ instance.getRDFId() 
+					+ " (" + instance.getDisplayName() + ")"
+					+ " into a separate model...");
 			Model m = bigModel.getLevel().getDefaultFactory().createModel();
-			fetcher.fetch(instance, m);
-			m.getNameSpacePrefixMap().put("", bigModel.getNameSpacePrefixMap().get(""));
-			// now, completely detach from the original model (via xml)
-			ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-			try {
-				// write
-				exporter.convertToOWL(m, bytes);
-				// read back
-				InputStream is = new ByteArrayInputStream(bytes.toByteArray());
-				m = reader.convertFromOWL(is);
-			} catch (IOException e) {
-				log.error("pipeline(), failed extracting a sub-model: ", e);
+			// skip if there is only one top pw
+			if (objects.size() != 1) {
+				fetcher.fetch(instance, m);
+				m.getNameSpacePrefixMap().put("",
+						bigModel.getNameSpacePrefixMap().get(""));
+				try {
+					// debug print to owl file
+					if (log.isDebugEnabled() && i++ < 5) {
+						FileOutputStream out = new FileOutputStream(System
+								.getenv("CPATH2_HOME")
+								+ File.separator
+								+ instance.getRDFId().replaceAll("[\\/:]", "_")
+								+ ".debug.owl");
+						exporter.convertToOWL(m, out);
+					}
+					/*
+					 * completely detaching from the original model (via xml)
+					 * (see right below) may be not required,.. but cascades in
+					 * the nextStep/nextStepOf ORM make me worry... :/
+					 */
+					// write OWL:
+					ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+					exporter.convertToOWL(m, bytes);
+					// back to the Model (this cuts ties to the bigModel)
+					InputStream is = new ByteArrayInputStream(bytes
+							.toByteArray());
+					m = reader.convertFromOWL(is);
+
+				} catch (IOException e) {
+					log.error("pipeline(), failed extracting a sub-model: ", e);
+				}
+			} else {
+				m = bigModel;
 			}
 			
-			if(m != null || !m.getObjects().isEmpty())
+			if(m != null && !m.getObjects().isEmpty())
 				// persist
-				premergeDAO.merge(m);
+				if(premergeDAO != null) {
+					premergeDAO.merge(m);
+				} else { 
+					log.error("pipeline(), Cnnot save " +
+						instance.getRDFId() +	
+							"model: paxtoolsDAO is null!"); 
+				}
 			else 
 				log.error("pipeline(), Empty model resulted from " 
 					+ instance.getRDFId());
