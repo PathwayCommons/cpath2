@@ -177,11 +177,11 @@ public class Admin implements Runnable {
 			this.commandParameters = new String[] { "" };
 		}
 		else if(args[0].equals(COMMAND.EXPORT_PREMERGE.toString())) {
-			if (args.length != 4) {
+			if (args.length != 5) {
 				validArgs = false;
 			} else {
 				this.command = COMMAND.EXPORT_PREMERGE;
-				this.commandParameters = new String[] {args[1], args[2], args[3]};
+				this.commandParameters = new String[] {args[1], args[2], args[3], args[4]};
 			} 
         } 
 		else if(args[0].equals(COMMAND.EXPORT_PATHWAYDATA.toString())) {
@@ -242,32 +242,32 @@ public class Admin implements Runnable {
                     case MOLECULES:
                        	ctx = new ClassPathXmlApplicationContext(
                 		"classpath:applicationContext-whouseMolecules.xml");
-                       	ds = (DataServices) ctx.getBean("&cpath2_molecules");
-                       	ds.dropMoleculesFulltextIndex(); // deletes the index dir!
+                       	//ds = (DataServices) ctx.getBean("&cpath2_molecules");
+                       	//ds.dropMoleculesFulltextIndex(); // deletes the index dir!
                        	dao = (Reindexable) ctx.getBean("moleculesDAO");
                 		dao.createIndex();
                     	break;
                     case PROTEINS:
                        	ctx = new ClassPathXmlApplicationContext(
                        	"classpath:applicationContext-whouseProteins.xml");
-                       	ds = (DataServices) ctx.getBean("&cpath2_proteins");
-                       	ds.dropProteinsFulltextIndex();
+                       	//ds = (DataServices) ctx.getBean("&cpath2_proteins");
+                       	//ds.dropProteinsFulltextIndex();
                        	dao = (Reindexable) ctx.getBean("proteinsDAO");
                 		dao.createIndex();
                     	break;
                     case METADATA :
                     	ctx = new ClassPathXmlApplicationContext(
                     		"classpath:applicationContext-whouseDAO.xml");
-                    	ds = (DataServices) ctx.getBean("&cpath2_meta");
-                    	ds.dropMetadataFulltextIndex();
+                    	//ds = (DataServices) ctx.getBean("&cpath2_meta");
+                    	//ds.dropMetadataFulltextIndex();
                     	dao = (Reindexable) ctx.getBean("metadataDAO");
                     	dao.createIndex();
                     	break;
                     case MAIN :
                     	ctx = new ClassPathXmlApplicationContext(
                 			"classpath:applicationContext-cpathDAO.xml");
-                    	ds = (DataServices) ctx.getBean("&cpath2_main");
-                       	ds.dropMainFulltextIndex();
+                    	//ds = (DataServices) ctx.getBean("&cpath2_main");
+                       	//ds.dropMainFulltextIndex();
                     	dao = (Reindexable) ctx.getBean("paxtoolsDAO");
                 		dao.createIndex();
                     	break;
@@ -300,8 +300,8 @@ public class Admin implements Runnable {
 				merger.merge();
 				break;
             case EXPORT_PREMERGE:
-            	OutputStream os = new FileOutputStream(commandParameters[2]);
-                exportPremergeData(commandParameters[0], commandParameters[1], os);
+            	OutputStream os = new FileOutputStream(commandParameters[3]);
+                exportPremergeData(commandParameters[0], commandParameters[1], commandParameters[2] , os);
 				break;
             case EXPORT_PATHWAYDATA:
             	os = new FileOutputStream(commandParameters[1]);
@@ -473,12 +473,13 @@ public class Admin implements Runnable {
 	}
 
 	
-	public static void exportPremergeData(final String provider, final String pk, 
+	public static void exportPremergeData(final String provider, final String version, final String pk, 
 			final OutputStream output) throws IOException 
 	{		
 		if(__ALL.equalsIgnoreCase(pk)) {
 			// first, build the premerge DAO - 
-			String premergeDbName = CPathSettings.CPATH_DB_PREFIX + provider;
+			String premergeDbName = CPathSettings.CPATH_DB_PREFIX + provider
+				+ "_" + version;
 			// next, get the PaxtoolsDAO instance
 			PaxtoolsDAO pemergeDAO = PremergeImpl.buildPremergeDAO(premergeDbName);
 			// finally, export (all BioPAX elements) to OWL
@@ -560,7 +561,7 @@ public class Admin implements Runnable {
 				" <metadataId or " + __ALL + "> [--continue]" + NEWLINE);
 		toReturn.append(COMMAND.PREMERGE.toString() + NEWLINE);
 		toReturn.append(COMMAND.MERGE.toString() + NEWLINE);
-		toReturn.append(COMMAND.EXPORT_PREMERGE.toString() + " <provider> " +
+		toReturn.append(COMMAND.EXPORT_PREMERGE.toString() + " <provider> <version> " +
 			"<pathway_id or --all> <output> (note: 'pathway_id' is not the " +
 			"same as (metadata) 'identifier'; when " + __ALL + "' is used, it" +
 			" performs exporing from the provider's pre-merge DB rather than " +

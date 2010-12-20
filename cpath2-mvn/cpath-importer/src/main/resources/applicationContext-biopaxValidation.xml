@@ -111,6 +111,7 @@
 			<value>GENBANK</value>
 			<value>DDBJ</value>
 			<value>EMBL-BANK</value>
+			<value>EMBL</value>
 		</list>
 		<list>
 			<value>NCBI GI</value>

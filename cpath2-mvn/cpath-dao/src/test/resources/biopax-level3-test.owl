@@ -587,5 +587,24 @@
 	<bp:Evidence rdf:ID="InferredFrom_Dissociation_of_L13a_from_the_60s_ribosomal_subunit">
 	</bp:Evidence>
 	
+	<bp:SequenceInterval rdf:ID="SequenceInterval1802">
+		<bp:sequenceIntervalEnd rdf:resource="#SequenceSite3557" />
+		<bp:sequenceIntervalBegin rdf:resource="#SequenceSite3556" />	
+	</bp:SequenceInterval>
+
+	<bp:SequenceInterval rdf:ID="SequenceInterval1801">
+	</bp:SequenceInterval>
+	
+	<bp:SequenceSite rdf:ID="SequenceSite3556">
+ 		<bp:sequencePosition rdf:datatype = "xsd:int">19</bp:sequencePosition>
+ 		<bp:positionStatus rdf:datatype = "xsd:string">EQUAL</bp:positionStatus>
+	</bp:SequenceSite>
+	
+	<bp:SequenceSite rdf:ID="SequenceSite3557">
+		<bp:sequencePosition rdf:datatype = "xsd:int">220</bp:sequencePosition>
+		<bp:positionStatus rdf:datatype = "xsd:string">EQUAL</bp:positionStatus>
+	</bp:SequenceSite>
+	
+	
 </rdf:RDF>
 

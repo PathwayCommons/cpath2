@@ -353,7 +353,8 @@ public class MergerImpl implements Merger {
 	 */
 	private Model getPreMergeModel(final Metadata metadata) 
 	{
-		String dbname = CPathSettings.CPATH_DB_PREFIX + metadata.getIdentifier();
+		String dbname = CPathSettings.CPATH_DB_PREFIX + metadata.getIdentifier()
+			+ "_" + metadata.getVersion();
 		// get the PaxtoolsDAO instance
 		PaxtoolsDAO premergePaxtoolsDAO = PremergeImpl.buildPremergeDAO(dbname);
 
