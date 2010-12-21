@@ -105,12 +105,6 @@ public class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
 			return pathwayData;
 		}
 		
-		try {
-		java.io.FileOutputStream fos = new java.io.FileOutputStream("/home/grossb/tmp/ben-homos.owl");
-			fos.write(outputStream.toByteArray());
-		} catch(Exception e) {
-		}
-		
 		// outta here
 		return outputStream.toString();
 	}
