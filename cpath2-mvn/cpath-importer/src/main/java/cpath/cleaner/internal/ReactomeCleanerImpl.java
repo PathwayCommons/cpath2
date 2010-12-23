@@ -11,9 +11,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.util.Set;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.HashSet;
 
 import java.io.InputStream;
 import java.io.BufferedInputStream;
@@ -24,34 +22,29 @@ import java.io.IOException;
 /**
  * Implementation of Cleaner interface for Reactome data. 
  *
- * For ALL biopax element, such as:
- *
- * <bp:Complex rdf:ID="xxxx">
- * ...
- * ...
- * <bp:xref rdf:resource="#REACT_6602.2" />
- * </bp:Complex>
- *
- * replaces rdf:ID="xxxx" with rdf:ID="#REACT_6602.2" -
- * if xref to REACT exists.  All references to element are
- * properly updated with the help of paxtools.
- *
- * This was motivated by wordy rdf id's used by reactome elements which 
+ * For all Entity elements, replace RDF id with id that will
+ * not clash with other id's in model or other id's across
+ * species files belonging to the same data provider.
+ * See getRDFIdReplacement in the base cleaner class.
+
+ * This was motivated by wordy RDF id's used by Reactome elements which 
  * may only differ by the case of a single character:
  *
- * http://www.reactome.org/biopax#HIV_1_aborted_elongation_complex_after_arrest__nucleoplasm_
- * http://www.reactome.org/biopax#HIV_1_Aborted_elongation_complex_after_arrest__nucleoplasm_
+ * HIV_1_aborted_elongation_complex_after_arrest__nucleoplasm_
+ * HIV_1_Aborted_elongation_complex_after_arrest__nucleoplasm_
+ *
+ * or
+ *
+ * Active_Calmodulin__name_copied_from_entity_in_Homo_sapiens___nucleoplasm_
+ * active_Calmodulin__name_copied_from_entity_in_Homo_sapiens___nucleoplasm_
  *
  * then subsequently caused primary key conflicts since (by default) mysql does not
- * differenciate between upper and lower case on primary keys.
+ * differentiate between upper and lower case on primary keys.
  */
 public class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
 	
 	// logger
     private static Log log = LogFactory.getLog(ReactomeCleanerImpl.class);
-    
-    private static final String RDF_ID_REPLACEMENT = "urn:miriam:reactome_";
-    private static final Pattern REACTOME_XREF_REGEX = Pattern.compile("REACT_\\d+(\\.\\d+)?");
 
 	/**
 	 * (non-Javadoc>
@@ -63,40 +56,34 @@ public class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
 		InputStream inputStream =
 			new BufferedInputStream(new ByteArrayInputStream(pathwayData.getBytes()));
 		SimpleReader simpleReader = new SimpleReader(BioPAXLevel.L3);
-		Model bpModel = simpleReader.convertFromOWL(inputStream);
+		Model model = simpleReader.convertFromOWL(inputStream);
 		
-		Set<BioPAXElement> sourceElements = bpModel.getObjects();
-		for (BioPAXElement bpe : sourceElements) {
-			if (bpe instanceof XReferrable) {
-				Set<Xref> xrefs = ((XReferrable)bpe).getXref();
-				// look for REACT xref
-				for (Xref xref : xrefs) {
-					if (xref.getId() == null) {
-						if (log.isDebugEnabled()) {
-							log.debug("clean(), Encountered xref without any id!, bpe: " +
-                                      bpe.getRDFId() + " skipping rdf id replacement...");
-						}
-						continue;
-					}
-					Matcher reactXref = REACTOME_XREF_REGEX.matcher(xref.getId());
-	                if (reactXref.find()) {
-	                	String newRDF = RDF_ID_REPLACEMENT + xref.getId();
-	                	String idVersion = xref.getIdVersion();
-	                	if (idVersion != null & idVersion.length() > 0) {
-	                		newRDF += '.' + idVersion;
-	                	}
-	                	// replace rdf of bpe with rdf:ID of xref (should be of the form REACT_XXXX)
-	                	bpe.setRDFId(newRDF);
-	                }
-				}
+		// get the tax id for the model, we will append this to id (prevent clashes across species)
+		String taxID = super.getTaxID(model);
+		if (taxID == null) {
+			if (log.isInfoEnabled()) {
+				log.info("clean(), a taxonomy ID cannot be found while cleaning pathway data, returning dirty data...");
 			}
+			return pathwayData;
 		}
 		
-		// convert model back to outputstream for return
+		// we only modify entity rdf ids
+		if (log.isInfoEnabled()) {
+			log.info("Cleaning Reactome data, this may take some time, please be patient...");
+		}
+		Set<Entity> sourceEntities = new HashSet<Entity>(model.getObjects(Entity.class));
+		for (Entity entity : sourceEntities) {
+			String newRDFId = super.getRDFIdReplacement(model, entity, taxID);
+			// before update, store original in a comment
+			entity.addComment("Original RDFId (before applying ReactomeCleaner): " + entity.getRDFId());
+			model.updateID(entity.getRDFId(), newRDFId);
+		}
+		
+		// convert model back to OutputStream for return
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		try {
 			SimpleExporter simpleExporter = new SimpleExporter(BioPAXLevel.L3);
-			simpleExporter.convertToOWL(bpModel, outputStream);
+			simpleExporter.convertToOWL(model, outputStream);
 		}
 		catch (IOException e) {
 			if (log.isInfoEnabled()) {
