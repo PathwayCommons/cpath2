@@ -71,12 +71,14 @@ public class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
 		if (log.isInfoEnabled()) {
 			log.info("Cleaning Reactome data, this may take some time, please be patient...");
 		}
-		Set<Entity> sourceEntities = new HashSet<Entity>(model.getObjects(Entity.class));
-		for (Entity entity : sourceEntities) {
-			String newRDFId = super.getRDFIdReplacement(model, entity, taxID);
-			// before update, store original in a comment
-			entity.addComment("Original RDFId (before applying ReactomeCleaner): " + entity.getRDFId());
-			model.updateID(entity.getRDFId(), newRDFId);
+		Set<Level3Element> sourceElements = new HashSet<Level3Element>(model.getObjects(Level3Element.class));
+		for (Level3Element l3e : sourceElements) {
+			if (l3e instanceof Entity || l3e instanceof PathwayStep) {
+				String newRDFId = super.getRDFIdReplacement(model, l3e, taxID);
+				// before update, store original in a comment
+				l3e.addComment("Original RDFId (before applying ReactomeCleaner): " + l3e.getRDFId());
+				model.updateID(l3e.getRDFId(), newRDFId);
+			}
 		}
 		
 		// convert model back to OutputStream for return
