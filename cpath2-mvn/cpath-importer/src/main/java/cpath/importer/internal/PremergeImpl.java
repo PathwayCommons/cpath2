@@ -37,18 +37,10 @@ import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
-import org.biopax.paxtools.controller.AbstractTraverser;
-import org.biopax.paxtools.controller.EditorMap;
-import org.biopax.paxtools.controller.Fetcher;
-import org.biopax.paxtools.controller.PropertyEditor;
-import org.biopax.paxtools.controller.PropertyFilter;
-import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
-import org.biopax.paxtools.io.simpleIO.SimpleReader;
-import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.Pathway;
+//import org.biopax.paxtools.controller.*;
+//import org.biopax.paxtools.model.level3.Pathway;
+//import org.biopax.paxtools.io.simpleIO.*;
+import org.biopax.paxtools.model.*;
 import org.biopax.validator.Behavior;
 import org.biopax.validator.Validator;
 import org.biopax.validator.result.Validation;
@@ -62,9 +54,7 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import java.io.*;
 
@@ -282,6 +272,7 @@ public class PremergeImpl implements Premerge {
 	 * @param bigModel
 	 * @return
 	 */
+	/*
 	private void splitAndMerge(Model bigModel, PaxtoolsDAO premergeDAO) 
 	{
 		PropertyFilter filter = new PropertyFilter() {
@@ -341,11 +332,9 @@ public class PremergeImpl implements Premerge {
 								+ ".debug.owl");
 						exporter.convertToOWL(m, out);
 					}
-					/*
-					 * completely detaching from the original model (via xml)
-					 * (see right below) may be not required,.. but cascades in
-					 * the nextStep/nextStepOf ORM make me worry... :/
-					 */
+
+					 // completely detaching (via OWL I/O)
+					 // may, in fact, break inter-pathway links (nextStep)
 					// write OWL:
 					ByteArrayOutputStream bytes = new ByteArrayOutputStream();
 					exporter.convertToOWL(m, bytes);
@@ -375,6 +364,7 @@ public class PremergeImpl implements Premerge {
 					+ instance.getRDFId());
 		}
 	}
+	*/
 
 	/**
 	 * For the given cleaner class name,

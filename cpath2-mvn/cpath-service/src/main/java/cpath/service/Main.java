@@ -43,7 +43,8 @@ import java.util.Map;
 import static cpath.config.CPathSettings.*;
 
 /**
- * Provides command line query services.
+ * Console commands to query the cpath2 data
+ * without using the web services.
  */
 public class Main  {
 	private static final Log LOG = LogFactory.getLog(Main.class);
@@ -51,8 +52,10 @@ public class Main  {
     // COMMAND Enum
     public static enum COMMAND 
     {
+    	// validation report for a data provider (incl. about all data files)
     	VALIDATION_REPORT("-validation-report"),
-    	FETCH("-fetch"),
+    	// export a "valid sub-model" from the main db
+    	GET("-get"), //TODO add '--output-format' parameter
     	;
 
         private String command;
@@ -98,11 +101,11 @@ public class Main  {
 				this.commandParameters = new String[] {args[1], args[2]};
 			} 
         } 
-        else if(args[0].equals(COMMAND.FETCH.toString())) {
+        else if(args[0].equals(COMMAND.GET.toString())) {
 			if (args.length != 3) {
 				validArgs = false;
 			} else {
-				this.command = COMMAND.FETCH;
+				this.command = COMMAND.GET;
 				this.commandParameters = new String[] {args[1], args[2]};
 			} 
         } 
@@ -124,7 +127,7 @@ public class Main  {
             	FileOutputStream fos = new FileOutputStream(commandParameters[1]);
                 getValidationReport(commandParameters[0], fos);
 				break;
-            case FETCH:
+            case GET:
             	fos = new FileOutputStream(commandParameters[1]);
                 fetchAsBiopax(fos, commandParameters[0]);
 				break;
@@ -192,7 +195,7 @@ public class Main  {
 		toReturn.append(Main.class.getCanonicalName()).append(" <command> <one or more args>" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
 		toReturn.append(COMMAND.VALIDATION_REPORT.toString() + " <provider> <output.xml>" + NEWLINE);
-		toReturn.append(COMMAND.FETCH.toString() + " <uri1,uri2,..> <output.owl>" + NEWLINE);
+		toReturn.append(COMMAND.GET.toString() + " <uri1,uri2,..> <output.owl>" + NEWLINE);
 		System.err.println(toReturn.toString());
 		System.exit(-1);
 	}

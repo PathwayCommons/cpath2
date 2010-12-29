@@ -81,6 +81,10 @@ public class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
 			}
 		}
 		
+		// update ns prefix (to upper case) as well -
+		String xmlns = model.getNameSpacePrefixMap().remove("");
+		model.getNameSpacePrefixMap().put("", xmlns.toUpperCase());
+		
 		// convert model back to OutputStream for return
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		try {
@@ -93,7 +97,7 @@ public class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
 			}
 			return pathwayData;
 		}
-		
+
 		// outta here
 		return outputStream.toString();
 	}

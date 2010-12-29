@@ -60,7 +60,7 @@ import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
 
 
 /**
- * Paxtools/BioPAX DAO class.
+ * Paxtools BioPAX Model and DAO.
  *
  */
 @Transactional
@@ -71,7 +71,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 	public final static String[] ALL_FIELDS =
 		{
-			//SEARCH_FIELD_ID,
+			//SEARCH_FIELD_ID, // do not full-text search/match in RDFId field!
 			SEARCH_FIELD_AVAILABILITY,
 			SEARCH_FIELD_COMMENT,
 			SEARCH_FIELD_KEYWORD,
@@ -178,7 +178,13 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 						+ model.getObjects().size());
 			for (BioPAXElement bpe : sourceElements) {
 				if(!containsID(bpe.getRDFId()))
+				{
+					if(log.isInfoEnabled())
+						log.info("Merging (root) BioPAX element: " 
+							+ bpe + " - " 
+							+ bpe.getModelInterface().getSimpleName());
 					merge(bpe); // there are CASCADE annotations!..
+				}
 			}
 		}
 	}
@@ -554,17 +560,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	 * Gets Hibernate annotated entity class 
 	 * by the BioPAX Model interface class 
 	 * 
-	 * TODO improve, generalize...
 	 */
 	private Class<? extends BioPAXElement> getEntityClass(
 			Class<? extends BioPAXElement> filterBy) {
 		
-		Class<? extends BioPAXElement> filterClass = BioPAXElementImpl.class; // fall-back
+		Class<? extends BioPAXElement> clazz = BioPAXElementImpl.class; // fall-back
 		
 		if (!BioPAXElement.class.equals(filterBy)) { // otherwise use BioPAXElementImpl
 			if (filterBy.isInterface()) {
 				try {
-					filterClass = (Class<? extends BioPAXElement>) factory
+					clazz = (Class<? extends BioPAXElement>) factory
 						.reflectivelyCreate(filterBy).getClass();
 				} catch (IllegalBioPAXArgumentException e) {
 					// throw new IllegalArgumentException(
@@ -572,7 +577,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 								+ "of the instantiable BioPAX class or the base interface, "
 								+ "'BioPAXElement'; but it was: "
 								+ filterBy.getCanonicalName() + " - " + e);
-					filterClass = BioPAXElementImpl.class;
+					clazz = BioPAXElementImpl.class;
 				}
 			} else {
 				// throw new IllegalArgumentException(
@@ -581,40 +586,34 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			}
 		}
 
-		return filterClass;
+		return clazz;
 	}
 
 	/* (non-Javadoc)
 	 * @see cpath.dao.PaxtoolsDAO#exportModel(java.io.OutputStream)
 	 */
+	/**
+	 * When an non-empty list of IDs (RDFId, URI) is provided,
+	 * it will use {@link SimpleExporter#convertToOWL(Model, OutputStream, String...)} 
+	 * which in turn uses {@link Fetcher#fetch(BioPAXElement, Model)}
+	 * (rather than {@link #getValidSubModel(Collection)}) method
+	 * to recursively extract each listed element (with all children and properties)
+	 * and put into a new sub-model, which is then serialized and 
+	 * written to the output stream. Note: using the Fetcher, there is a risk 
+	 * (depending on the data stored) of pulling almost entire network 
+	 * by providing one or a few IDs... Also implemented here is 
+	 * that the Fetcher/traverser does not follow BioPAX
+	 * property 'nextStep', which otherwise could lead to infinite loops.
+	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
 	public void exportModel(OutputStream outputStream, String... ids) 
 	{
-		Model model = this; // default is to export everything (when 'ids' is empty)!
-		if (ids.length > 0) {
-			// getValidSubModel would ignore elements that were not from the list (it's mainly designed for web/graph queries...)
-			//getValidSubModel(Arrays.asList(ids)); // anyway, let's keep in mind to try this later...
-			model = factory.createModel();
-			PropertyFilter filter = new PropertyFilter() {
-				@Override
-				public boolean filter(PropertyEditor editor) {
-					return !"nextStep".equalsIgnoreCase(editor.getProperty());
-				}
-			};
-			Fetcher fetcher = new Fetcher(reader.getEditorMap(), filter);
-			for(String uri : ids) {
-				BioPAXElement bpe = getByID(uri);
-				if(bpe != null) {
-					fetcher.fetch(bpe, model);
-				}
-			}
-		}
-		
+		SimpleExporter exporter = new SimpleExporter(level);
 		try {
-			new SimpleExporter(level).convertToOWL(model, outputStream);
-		} catch (Exception e) {
-			throw new RuntimeException("Failed to export Model.", e);
+			exporter.convertToOWL(this, outputStream, ids);
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to export (sub-)model!", e);
 		}
 	}
 

@@ -28,10 +28,7 @@
  **/
 package cpath.admin;
 
-import cpath.config.CPathSettings;
-import cpath.dao.DataServices;
-import cpath.dao.PaxtoolsDAO;
-import cpath.dao.Reindexable;
+import cpath.dao.*;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.CPathFetcher;
 import cpath.fetcher.WarehouseDataService;
@@ -42,6 +39,8 @@ import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
+import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.Model;
 import org.biopax.validator.Validator;
 //import org.biopax.validator.result.Validation;
@@ -68,8 +67,6 @@ import static cpath.config.CPathSettings.*;
  */
 public class Admin implements Runnable {
 	private static final Log LOG = LogFactory.getLog(Admin.class);
-	// used as a argument to fetch-pathwaydata
-	private static final String __ALL = "--all";
 	
     // COMMAND Enum
     public static enum COMMAND {
@@ -81,8 +78,7 @@ public class Admin implements Runnable {
 		FETCH_DATA("-fetch-data"),
 		PREMERGE("-premerge"),
 		MERGE("-merge"),
-		EXPORT_PREMERGE("-export-premerge"), // gets data that passed clean/conv./normalize...
-		EXPORT_PATHWAYDATA("-export-pathway"), // gets the original provider's pathway data
+		EXPORT("-export"),
 		EXPORT_VALIDATION("-export-validation"),
 		;
 
@@ -176,20 +172,12 @@ public class Admin implements Runnable {
 			// takes no args
 			this.commandParameters = new String[] { "" };
 		}
-		else if(args[0].equals(COMMAND.EXPORT_PREMERGE.toString())) {
-			if (args.length != 5) {
+		else if(args[0].equals(COMMAND.EXPORT.toString())) {
+			if (args.length != 4) {
 				validArgs = false;
 			} else {
-				this.command = COMMAND.EXPORT_PREMERGE;
-				this.commandParameters = new String[] {args[1], args[2], args[3], args[4]};
-			} 
-        } 
-		else if(args[0].equals(COMMAND.EXPORT_PATHWAYDATA.toString())) {
-			if (args.length != 3) {
-				validArgs = false;
-			} else {
-				this.command = COMMAND.EXPORT_PATHWAYDATA;
-				this.commandParameters = new String[] {args[1], args[2]};
+				this.command = COMMAND.EXPORT;
+				this.commandParameters = new String[] {args[1], args[2], args[3]};
 			} 
         } 
 		else if(args[0].equals(COMMAND.EXPORT_VALIDATION.toString())) {
@@ -299,19 +287,18 @@ public class Admin implements Runnable {
 				Merger merger = new MergerImpl((Model)pcDAO);
 				merger.merge();
 				break;
-            case EXPORT_PREMERGE:
-            	OutputStream os = new FileOutputStream(commandParameters[3]);
-                exportPremergeData(commandParameters[0], commandParameters[1], commandParameters[2] , os);
-				break;
-            case EXPORT_PATHWAYDATA:
-            	os = new FileOutputStream(commandParameters[1]);
-            	Writer writer = new OutputStreamWriter(os, "UTF-8");
-                exportPathwayData(commandParameters[0], writer);
+            case EXPORT:
+            	OutputStream os = new FileOutputStream(commandParameters[2]);
+            	if("--all".equalsIgnoreCase(commandParameters[1]))
+            		exportData(commandParameters[0], os);
+            	else
+            		exportData(commandParameters[0], os, commandParameters[1].split(","));
 				break;
             case EXPORT_VALIDATION:
             	os = new FileOutputStream(commandParameters[1]);
-            	writer = new OutputStreamWriter(os, "UTF-8");
-                exportValidation(commandParameters[0], writer);
+            	Writer writer = new OutputStreamWriter(os, "UTF-8");
+            	Integer pk = Integer.valueOf(commandParameters[0]);
+                exportValidation(pk, writer);
 				break;
             }
         }
@@ -462,7 +449,7 @@ public class Admin implements Runnable {
 	private Collection<Metadata> getMetadata(final MetadataDAO metadataDAO, final String provider) 
 	{
 		Collection<Metadata> toReturn = new HashSet<Metadata>();
-		if (provider.equalsIgnoreCase(__ALL)) {
+		if (provider.equalsIgnoreCase("--all")) {
 			toReturn = metadataDAO.getAll();
 		} else {
 			Metadata md = metadataDAO.getMetadataByIdentifier(provider);
@@ -473,48 +460,72 @@ public class Admin implements Runnable {
 	}
 
 	
-	public static void exportPremergeData(final String provider, final String version, final String pk, 
-			final OutputStream output) throws IOException 
+	public static void exportData(final String src,  final OutputStream output, String... uris) 
+		throws IOException
 	{		
-		if(__ALL.equalsIgnoreCase(pk)) {
-			// first, build the premerge DAO - 
-			String premergeDbName = CPathSettings.CPATH_DB_PREFIX + provider
-				+ "_" + version;
-			// next, get the PaxtoolsDAO instance
-			PaxtoolsDAO pemergeDAO = PremergeImpl.buildPremergeDAO(premergeDbName);
-			// finally, export (all BioPAX elements) to OWL
-			pemergeDAO.exportModel(output);
+		Integer pk = null; // aka pathway_id
+		try {
+			pk = Integer.valueOf(src);
+			if(LOG.isDebugEnabled())
+				LOG.debug("Export from the original data," +
+					" pathway_id=" + src);
+		} catch (NumberFormatException e) {
+			if(LOG.isDebugEnabled())
+				LOG.debug("Export from the database: " + src);
+		}
+		/* if the first argument was not a (integer) pathway_id from pathwayData,
+		 * it must be a PaxtoolsDAO db name (i.e,, a premerge or cpath2 main one)
+		 */
+		if(pk == null) {
+			PaxtoolsDAO pemergeDAO = PremergeImpl
+				.buildPremergeDAO(src); // yup, it also works for the main db
+			pemergeDAO.exportModel(output, uris);
 		} else {
+			// get pathwayData (bean)
 			PathwayData pdata = getPathwayData(pk);
 			if(pdata != null) {
-				Writer writer = new OutputStreamWriter(output, "UTF-8");
-				writer.write(pdata.getPremergeData());
-				writer.flush();
+				// get premergeData (OWL text)
+				String data = pdata.getPremergeData();
+				if (data != null && data.length() > 0) {
+					if (uris.length > 0) { // extract a sub-model
+						Model model = (new SimpleReader())
+								.convertFromOWL(new ByteArrayInputStream(data
+										.getBytes("UTF-8")));
+						(new SimpleExporter(model.getLevel())).convertToOWL(
+								model, output, uris);
+					} else { 
+						/*	write all (premergeData -
+							cleaned/converted/validated/normalized from
+							the original provider's file )	*/
+						Writer writer = new OutputStreamWriter(output, "UTF-8");
+						writer.write(data);
+						writer.flush();
+					}
+				}
+				else {
+					// no data found
+					LOG.error("Data not found! Have you run '-premerge' for "
+						+ pdata.getIdentifier() + "? ("
+						+ pdata.getId() + "," + pdata.toString() + ")");
+				}
+			} 
+			else {
+				LOG.error("Record not found: pathway_id=" + pk);
 			}
 		}
 	}	
 	
 	
-	public static void exportPathwayData(final String pk, final Writer writer) 
-		throws IOException 
-	{
-		PathwayData pdata = getPathwayData(pk);
-		if(pdata != null) {
-			writer.write(pdata.getPathwayData());
-			writer.flush();
-		}
-	}
-	
-	
-	public static void exportValidation(final String pk, final Writer writer) 
+	public static void exportValidation(final Integer pk, final Writer writer) 
 		throws IOException 
 	{
 		// get validationResults from PathwayData beans
 		PathwayData pathwayData = getPathwayData(pk);
 		if (pathwayData != null) {
-			//Validation validation = null;
 			String xmlResult = pathwayData.getValidationResults();
+			
 			/*
+			Validation validation = null;
 			if (xmlResult != null && xmlResult.length() > 0) {
 				// unmarshal (because the XML is escaped)
 				try {
@@ -524,27 +535,20 @@ public class Admin implements Runnable {
 					LOG.error(e);
 				}
 			}
+			BiopaxValidatorUtils.write(validation, writer, null); 
 			*/
-			//BiopaxValidatorUtils.write(validation, writer, null); 
+
 			writer.write(xmlResult);
 			writer.flush();
 		}
 	}	
 
 	
-	private static PathwayData getPathwayData(final String pk) {
-		Integer pathway_id = null;
-		try {
-			pathway_id = Integer.valueOf(pk);
-		} catch (Exception e) {
-			throw new IllegalArgumentException(
-					"Bad parameter: " + pk, e);
-		}
-
+	private static PathwayData getPathwayData(final Integer pk) {
 		ApplicationContext ctx = new ClassPathXmlApplicationContext(
 				"classpath:applicationContext-whouseDAO.xml");
 		MetadataDAO dao = (MetadataDAO) ctx.getBean("metadataDAO");
-		return dao.getPathwayData(pathway_id);
+		return dao.getPathwayData(pk);
 	}
 	
 		
@@ -558,16 +562,13 @@ public class Admin implements Runnable {
 			" <type> (types are: metadata, proteins, molecules, main)" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_DATA.toString() + 
-				" <metadataId or " + __ALL + "> [--continue]" + NEWLINE);
+				" <metadataId or --all> [--continue]" + NEWLINE);
 		toReturn.append(COMMAND.PREMERGE.toString() + NEWLINE);
 		toReturn.append(COMMAND.MERGE.toString() + NEWLINE);
-		toReturn.append(COMMAND.EXPORT_PREMERGE.toString() + " <provider> <version> " +
-			"<pathway_id or --all> <output> (note: 'pathway_id' is not the " +
-			"same as (metadata) 'identifier'; when " + __ALL + "' is used, it" +
-			" performs exporing from the provider's pre-merge DB rather than " +
-			" from the cpath2 metadata.pathwayData table!)" + NEWLINE);
-		toReturn.append(COMMAND.EXPORT_PATHWAYDATA.toString() 
-			+ " <pathway_id> <output>" + NEWLINE);
+		toReturn.append(COMMAND.EXPORT.toString() 
+			+ " <dbName or pathway_id> <uri,uri,.. or --all> <outfile>" +
+			" (dbName - any supported by PaxtoolsDAO DB; " +
+			"pathway_id is a PK of the pathwayData table)" + NEWLINE);
 		toReturn.append(COMMAND.EXPORT_VALIDATION.toString() 
 				+ " <pathway_id> <output>" + NEWLINE);
 

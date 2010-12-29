@@ -31,7 +31,6 @@ package cpath.importer.internal;
 import cpath.importer.Merger;
 import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.DataServices;
 import cpath.dao.internal.PaxtoolsHibernateDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.TYPE;
@@ -54,8 +53,6 @@ import org.apache.commons.logging.LogFactory;
 
 import java.io.*;
 import java.util.*;
-
-import javax.sql.DataSource;
 
 /**
  * Class responsible for Merging pathway data.

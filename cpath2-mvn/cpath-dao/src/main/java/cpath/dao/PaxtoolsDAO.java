@@ -97,7 +97,7 @@ public interface PaxtoolsDAO extends Model, Reindexable {
     
     /**
      * Exports the entire model (if no IDs are given) 
-     * or a sub-model to BioPAX (OWL)
+     * or a sub-model as BioPAX (OWL)
      * 
      * @param outputStream
      * @param ids (optional) build a sub-model from these IDs and export it
