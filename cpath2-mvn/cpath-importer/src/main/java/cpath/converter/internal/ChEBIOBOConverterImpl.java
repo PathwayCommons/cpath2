@@ -78,15 +78,33 @@ public class ChEBIOBOConverterImpl {
 	
 		// get SMR for entry out of warehouse
 		Collection<String> childChebiIDs = getValuesByREGEX(entryBuffer, CHEBI_OBO_ID_REGEX);
-		assert (childChebiIDs.size() == 1);
+		if (childChebiIDs.size() != 1) {
+			if (log.isDebugEnabled()) {
+				log.debug("processOBOEntry(), problem parsing 'id:' tag for this entry: " + entryBuffer.toString());
+				log.debug("processOBOEntry(), returning...");
+			}
+			return;
+		}
 		SmallMoleculeReference childSMR = getSMRByChebiID(childChebiIDs.iterator().next());
-		assert (childSMR != null);
+		if (childSMR == null) {
+			if (log.isDebugEnabled()) {
+				log.debug("processOBOEntry(), Cannot find SMR by ChebiID for this entry: " + entryBuffer.toString());
+				log.debug("processOBOEntry(), returning...");
+			}
+			return;
+		}
 		
 		// for each parent ChEBI, create a member entity reference to child
 		Collection<String> parentChebiIDs = getValuesByREGEX(entryBuffer, CHEBI_OBO_ISA_REGEX);
 		for (String parentChebiID : parentChebiIDs) {
 			SmallMoleculeReference parentSMR = getSMRByChebiID(parentChebiID);
-			assert (parentSMR != null);
+			if (parentSMR == null) {
+				if (log.isDebugEnabled()) {
+					log.debug("processOBOEntry(), Cannot find SMR by ChebiID via 'is_a', entry: " + entryBuffer.toString());
+					log.debug("processOBOEntry(), skipping...");
+				}
+				continue;
+			}
 			parentSMR.addMemberEntityReference(childSMR);
 			mergeSMR(parentSMR);
 		}
