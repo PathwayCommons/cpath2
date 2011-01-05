@@ -177,14 +177,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 						+ " 'root' elements (of total: "
 						+ model.getObjects().size());
 			for (BioPAXElement bpe : sourceElements) {
-				if(!containsID(bpe.getRDFId()))
-				{
-					if(log.isInfoEnabled())
-						log.info("Merging (root) BioPAX element: " 
-							+ bpe + " - " 
-							+ bpe.getModelInterface().getSimpleName());
-					merge(bpe); // there are CASCADE annotations!..
+				if (log.isInfoEnabled()) {
+					log.info("Merging (root) BioPAX element: " 
+							 + bpe + " - " 
+							 + bpe.getModelInterface().getSimpleName());
 				}
+				merge(bpe); // there are CASCADE annotations!..
 			}
 		}
 	}
