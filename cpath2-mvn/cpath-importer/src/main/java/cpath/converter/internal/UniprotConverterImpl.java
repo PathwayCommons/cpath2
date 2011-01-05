@@ -296,7 +296,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
     	String id, ProteinReference proteinReference) 
     {
         id = id.trim();
-		String rdfId = L3_RELATIONSHIPXREF_URI + URLEncoder.encode(dbName + "_" +  id);
+		String rdfId = L3_RELATIONSHIPXREF_URI + URLEncoder.encode(dbName.toUpperCase() + "_" +  id.toUpperCase());
 		RelationshipXref rXRef = (RelationshipXref)proteinReferenceModel.addNew(RelationshipXref.class, rdfId);
 		rXRef.setDb(dbName);
 		rXRef.setId(id);
@@ -314,7 +314,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
     private void setUnificationXRef(Model proteinReferenceModel, String dbName, String id, ProteinReference proteinReference) {
 
         id = id.trim();
-		String rdfId = L3_UNIFICATIONXREF_URI + URLEncoder.encode(dbName + "_" +  id);
+		String rdfId = L3_UNIFICATIONXREF_URI + URLEncoder.encode(dbName.toUpperCase() + "_" +  id.toUpperCase());
 		UnificationXref rXRef = (UnificationXref)proteinReferenceModel.addNew(UnificationXref.class, rdfId);
 		rXRef.setDb(dbName);
 		rXRef.setId(id);
@@ -337,7 +337,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 		// accession numbers as array
 		String acList[] = accessions.toString().split(";");
 		// the first one, primary id, becomes the RDFId
-		String id = "urn:miriam:uniprot:" + acList[0].trim();
+		String id = "urn:miriam:uniprot:" + acList[0].trim().toUpperCase();
 		// create new pr
 		ProteinReference proteinReference = proteinReferenceModel.addNew(ProteinReference.class, id);
 		proteinReference.setDisplayName(shortName);
@@ -393,7 +393,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 			toReturn.setStandardName(name);
 			UnificationXref taxonXref = (UnificationXref) proteinReferenceModel
 					.addNew(UnificationXref.class, L3_UNIFICATIONXREF_URI
-							+ "taxonomy_" + taxId);
+							+ "TAXONOMY_" + taxId.toUpperCase());
 			taxonXref.setDb("taxonomy");
 			taxonXref.setId(taxId);
 			// TODO update when taxonXref is removed (deprecated property)

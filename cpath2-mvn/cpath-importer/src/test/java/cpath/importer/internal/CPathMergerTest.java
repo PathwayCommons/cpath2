@@ -148,7 +148,7 @@ public class CPathMergerTest {
 		// test proper merge of protein reference
 		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#Protein_54"));
 		assertTrue(mergedModel.containsID("urn:miriam:uniprot:P27797"));
-		assertTrue(mergedModel.containsID(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:uniprot_P27797"));
+		assertTrue(mergedModel.containsID(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:UNIPROT_P27797"));
 		assertTrue(!mergedModel.containsID(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:Uniprot_P27797"));
 		assertTrue(mergedModel.containsID("urn:miriam:taxonomy:9606"));
 		
