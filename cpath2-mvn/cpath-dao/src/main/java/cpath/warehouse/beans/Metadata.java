@@ -181,7 +181,7 @@ public class Metadata {
 
     @Override
     public String toString() {
-        return identifier;
+        return identifier + "." + version;
     }
     
     

@@ -34,6 +34,7 @@ import cpath.fetcher.CPathFetcher;
 import cpath.fetcher.WarehouseDataService;
 import cpath.fetcher.internal.CPathFetcherImpl;
 import cpath.importer.Merger;
+import cpath.importer.Premerge;
 import cpath.importer.internal.*;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
@@ -43,9 +44,6 @@ import org.biopax.paxtools.io.simpleIO.SimpleExporter;
 import org.biopax.paxtools.io.simpleIO.SimpleReader;
 import org.biopax.paxtools.model.Model;
 import org.biopax.validator.Validator;
-//import org.biopax.validator.result.Validation;
-//import org.biopax.validator.result.ValidatorResponse;
-//import org.biopax.validator.utils.BiopaxValidatorUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -58,12 +56,12 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 
-//import javax.xml.transform.stream.StreamSource;
-
 import static cpath.config.CPathSettings.*;
 
 /**
  * Class which provides command line admin capabilities.
+ * 
+ * TODO (not urgent) re-factor to use JLine
  */
 public class Admin implements Runnable {
 	private static final Log LOG = LogFactory.getLog(Admin.class);
@@ -164,13 +162,11 @@ public class Admin implements Runnable {
 		}
 		else if (args[0].equals(COMMAND.PREMERGE.toString())) {
 			this.command = COMMAND.PREMERGE;
-			// takes no args
-			this.commandParameters = new String[] { "" };
+			validArgs = processOptionalArgs(this.command, args);
 		}
 		else if (args[0].equals(COMMAND.MERGE.toString())) {
 			this.command = COMMAND.MERGE;
-			// takes no args
-			this.commandParameters = new String[] { "" };
+			validArgs = processOptionalArgs(this.command, args);
 		}
 		else if(args[0].equals(COMMAND.EXPORT.toString())) {
 			if (args.length != 4) {
@@ -197,7 +193,55 @@ public class Admin implements Runnable {
         }
     }
 
-    /**
+    
+	private boolean  processOptionalArgs(COMMAND cmd, final String[] args) {
+		String flag;
+		boolean defaultVal;
+		if(cmd == COMMAND.PREMERGE) {
+			flag = "--nodatabases";
+			defaultVal = true; // means - must create pre-merge DBs
+		} else if (cmd == COMMAND.MERGE) {
+			flag = "--usedatabases";
+			defaultVal = false; // do not merge from pre-merge DBs, use premergeData (OWL) instead
+		} else {
+			throw new UnsupportedOperationException(cmd + " is not supported!");
+		}
+		
+		if (args.length > 4) {
+			return false;
+		}
+		else if (args.length == 1) { // command without parameters
+			// use all data (providers and versions), default mode (regarding pre-merge DBs)
+			this.commandParameters = new String[] {null, null, Boolean.toString(defaultVal)};
+		} 
+		else if (args.length == 2) { // command with single parameter
+			if(flag.equalsIgnoreCase(args[1])) // if only optional flag set
+				// use all data (providers and versions), use alternative action (!defaultVal)
+				this.commandParameters = new String[] {null, null, Boolean.toString(!defaultVal)};
+			else
+				// for the provider, use all versions, use default
+				this.commandParameters = new String[] {args[1], null, Boolean.toString(defaultVal)};
+		} 
+		else if (args.length == 3) { // command with two parameters
+			if(flag.equalsIgnoreCase(args[2])) 
+				// for the provider, use all version, change mode
+				this.commandParameters = new String[] {args[1], null, Boolean.toString(!defaultVal)};
+			else
+				// for the provider and version, use default mode
+				this.commandParameters = new String[] {args[1], args[2], Boolean.toString(defaultVal)};
+		} 
+		else if (args.length == 4) {
+			if(flag.equalsIgnoreCase(args[3])) 
+				// for the provider and version, alter mode
+				this.commandParameters = new String[] {args[1], args[2], Boolean.toString(!defaultVal)};
+			else // error: illegal argument or wrong order
+				return false; 
+		}
+		
+		return true;
+	}
+
+	/**
      * Executes cPath^2 admin command.
      * 
      * At this point, 'command' and 'commandParameters' (array) 
@@ -269,23 +313,12 @@ public class Admin implements Runnable {
 				fetchWarehouseData(commandParameters[0], commandParameters[1]);
 				break;
 			case PREMERGE:
-				ApplicationContext context =
-                    new ClassPathXmlApplicationContext(new String [] { 	
-                    		"classpath:applicationContext-whouseDAO.xml", 
-                    		"classpath:applicationContext-biopaxValidation.xml", 
-        					"classpath:applicationContext-cvRepository.xml"});
-				MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-				Validator validator = (Validator) context.getBean("validator");
-                PremergeImpl premerge = new PremergeImpl(metadataDAO, validator);
-                premerge.premerge();
+				runPremerge(commandParameters[0], commandParameters[1], 
+					Boolean.parseBoolean(commandParameters[2]));
 				break;
 			case MERGE:
-				// pc dao
-				context = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
-				final PaxtoolsDAO pcDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
-				// merger
-				Merger merger = new MergerImpl((Model)pcDAO);
-				merger.merge();
+				runMerge(commandParameters[0], commandParameters[1], 
+					Boolean.parseBoolean(commandParameters[2]));
 				break;
             case EXPORT:
             	OutputStream os = new FileOutputStream(commandParameters[2]);
@@ -308,6 +341,34 @@ public class Admin implements Runnable {
         }
     }
 
+    
+	private void runMerge(String provider, String version, boolean usedb) {
+		// pc dao
+		ApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
+		final PaxtoolsDAO pcDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
+		// merger
+		Merger merger = new MergerImpl((Model)pcDAO);
+		merger.setIdentifier(provider);
+		merger.setVersion(version);
+		merger.setUseDb(usedb);
+		merger.merge();
+	}
+
+	
+	private void runPremerge(String provider, String version, boolean usedb) {
+		ApplicationContext context =
+            new ClassPathXmlApplicationContext(new String [] { 	
+            		"classpath:applicationContext-whouseDAO.xml", 
+            		"classpath:applicationContext-biopaxValidation.xml", 
+					"classpath:applicationContext-cvRepository.xml"});
+		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
+		Validator validator = (Validator) context.getBean("validator");
+        Premerge premerge = new PremergeImpl(metadataDAO, validator);
+        premerge.setCreateDb(usedb);
+        premerge.setIdentifier(provider);
+        premerge.setVersion(version);
+        premerge.premerge();
+	}
 
 	/**
      * Helper function to get provider metadata.
@@ -432,7 +493,6 @@ public class Admin implements Runnable {
 				// already done (by fetcher.fetchData(metadata)).
 			}
 			
-			
 			if(LOG.isInfoEnabled())
 				LOG.info("FETCHING DONE : " + metadata.getIdentifier()
 					+ "." + metadata.getVersion());
@@ -516,6 +576,28 @@ public class Admin implements Runnable {
 	}	
 	
 	
+	
+	/**
+	 * Exports from the PathwayData entity bean and 
+	 * writes the BioPAX validation report (XML).
+	 * 
+	 * @param pk
+	 * @param writer
+	 * 
+	 * // Example, how to unmarshal that XML-
+	 * // {@link org.biopax.validator.result.Validation}
+	 * Validation validation = null;
+	 * if (xmlResult != null && xmlResult.length() > 0) {
+	 *	try {
+	 *		validation = (Validation) BiopaxValidatorUtils.getUnmarshaller()
+	 *			.unmarshal(new StreamSource(new StringReader(xmlResult)));
+	 *	} catch (Exception e) {
+	 *		LOG.error(e);
+	 *	}
+	 * }
+	 * //BiopaxValidatorUtils.write(validation, writer, null); 
+	 *
+	 */
 	public static void exportValidation(final Integer pk, final Writer writer) 
 		throws IOException 
 	{
@@ -523,21 +605,6 @@ public class Admin implements Runnable {
 		PathwayData pathwayData = getPathwayData(pk);
 		if (pathwayData != null) {
 			String xmlResult = pathwayData.getValidationResults();
-			
-			/*
-			Validation validation = null;
-			if (xmlResult != null && xmlResult.length() > 0) {
-				// unmarshal (because the XML is escaped)
-				try {
-					validation = (Validation) BiopaxValidatorUtils.getUnmarshaller()
-						.unmarshal(new StreamSource(new StringReader(xmlResult)));
-				} catch (Exception e) {
-					LOG.error(e);
-				}
-			}
-			BiopaxValidatorUtils.write(validation, writer, null); 
-			*/
-
 			writer.write(xmlResult);
 			writer.flush();
 		}
@@ -552,8 +619,8 @@ public class Admin implements Runnable {
 	}
 	
 		
-	private static String usage() {
-
+	private static String usage() 
+	{
 		StringBuffer toReturn = new StringBuffer();
 		toReturn.append("Usage: <-command_name> <command_args...>" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
@@ -563,8 +630,8 @@ public class Admin implements Runnable {
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_DATA.toString() + 
 				" <metadataId or --all> [--continue]" + NEWLINE);
-		toReturn.append(COMMAND.PREMERGE.toString() + NEWLINE);
-		toReturn.append(COMMAND.MERGE.toString() + NEWLINE);
+		toReturn.append(COMMAND.PREMERGE.toString() + " [<metadataId> [<version>]] [--nodatabases]" + NEWLINE);
+		toReturn.append(COMMAND.MERGE.toString() + " [<metadataId> [<version>]] [--usedatabases]"+ NEWLINE);
 		toReturn.append(COMMAND.EXPORT.toString() 
 			+ " <dbName or pathway_id> <uri,uri,.. or --all> <outfile>" +
 			" (dbName - any supported by PaxtoolsDAO DB; " +

@@ -66,7 +66,7 @@ public class MetadataHibernateDAOTest {
         
         // get
         pathwayData = null;
-        pathwayData = dao.getByIdentifierAndVersionAndFilenameAndDigest("testpw", "2010.04", "testpw", "testpw");
+        pathwayData = dao.getPathwayDataByIdentifierAndVersionAndFilenameAndDigest("testpw", "2010.04", "testpw", "testpw");
         assertNotNull(pathwayData);
         assertTrue(pathwayData.getValidationResults().length() == 0);
         
@@ -79,7 +79,7 @@ public class MetadataHibernateDAOTest {
         
         // check
         pathwayData = null;
-        pathwayData = dao.getByIdentifierAndVersionAndFilenameAndDigest("testpw", "2010.04", "testpw", "testpw");
+        pathwayData = dao.getPathwayDataByIdentifierAndVersionAndFilenameAndDigest("testpw", "2010.04", "testpw", "testpw");
         assertNotNull(pathwayData);
         assertTrue(pathwayData.getValidationResults().length() > 0);
 	}

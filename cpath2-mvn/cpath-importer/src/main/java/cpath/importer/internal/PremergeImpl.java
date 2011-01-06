@@ -70,6 +70,9 @@ public class PremergeImpl implements Premerge {
     private MetadataDAO metaDataDAO;
 	private Validator validator;
 	private Cleaner cleaner;
+	private boolean createDb;
+	private String identifier;
+	private String version;
 
 	/**
 	 *
@@ -84,6 +87,7 @@ public class PremergeImpl implements Premerge {
 	{
 		this.metaDataDAO = metaDataDAO;
 		this.validator = validator;
+		this.createDb = true;
 	}
 
     /**
@@ -98,6 +102,15 @@ public class PremergeImpl implements Premerge {
 
 		// iterate over all metadata
 		for (Metadata metadata : metadataCollection) {
+			// use filter if set (identifier and version)
+			if(identifier != null) {
+				if(!metadata.getIdentifier().equals(identifier))
+					continue;
+				if(version != null)
+					if(!metadata.getVersion().equals(version))
+						continue;
+			}
+			
 			// only process interaction or pathway data
 			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
 				metadata.getType() == Metadata.TYPE.BIOPAX) {
@@ -112,12 +125,11 @@ public class PremergeImpl implements Premerge {
 	 */
 	private void process(Metadata metadata) {
 	  try {
-		
 		// get pathway data
 		if(log.isInfoEnabled())
 			log.info("run(), getting pathway data for provider.");
 		Collection<PathwayData> pathwayDataCollection =
-			metaDataDAO.getByIdentifierAndVersion(metadata.getIdentifier(), metadata.getVersion());
+			metaDataDAO.getPathwayDataByIdentifierAndVersion(metadata.getIdentifier(), metadata.getVersion());
 
 		// create cleaner
 		if(log.isInfoEnabled())
@@ -131,21 +143,28 @@ public class PremergeImpl implements Premerge {
 			return;
 		}
 		
-		// build the premerge DAO - 
-		// first, create a new database schema
-		String premergeDbName = CPathSettings.CPATH_DB_PREFIX + metadata.getIdentifier()
-			+ "_" + metadata.getVersion();
-		DataServicesFactoryBean.createSchema(premergeDbName);
-		// next, get the PaxtoolsDAO instance
-		PaxtoolsDAO pemergeDAO = buildPremergeDAO(premergeDbName);
-		
+		PaxtoolsDAO pemergeDAO = null;
+
+		if (isCreateDb()) {
+			// build the premerge DAO -
+			// first, create a new database schema
+			String premergeDbName = CPathSettings.CPATH_DB_PREFIX
+				+ metadata.getIdentifier() + "_" + metadata.getVersion();
+			if(log.isInfoEnabled())
+				log.info("Creating a new 'pre-merge' db and schema: " +
+						premergeDbName);
+			DataServicesFactoryBean.createSchema(premergeDbName);
+			// next, get the PaxtoolsDAO instance
+			pemergeDAO = buildPremergeDAO(premergeDbName);
+		}
+	
 		// iterate over and process all pathway data
 		if(log.isInfoEnabled())
 			log.info("run(), interating over pathway data " 
 				+ metadata.getIdentifier());
 		for (PathwayData pathwayData : pathwayDataCollection) {
 			try {
-				pipeline(metadata, pathwayData, pemergeDAO);
+				pipeline(metadata, pathwayData, pemergeDAO); //pemergeDAO);
 			}
 			catch(Exception e) {
 				log.error("pipeline(), failed for " + pathwayData, e);
@@ -244,12 +263,16 @@ public class PremergeImpl implements Premerge {
 				+ v.toString());
 		}
 		
+		if(noErrors > 0) 
+			pathwayData.setValid(false); 
+		else 
+			pathwayData.setValid(true);
 		
 		// update pathwayData (with premergeData and validationResults)
 		metaDataDAO.importPathwayData(pathwayData);
 		
-		// shall we continue with saving or reject this pathway data?
-		if(noErrors <= 0 ) {			
+		// persist
+		if(noErrors <= 0 && isCreateDb()) {			
 			// Get the normalized and validated model and persist it
 			if (log.isInfoEnabled())
 				log.info("pipeline(), persisting pathway data "
@@ -259,112 +282,8 @@ public class PremergeImpl implements Premerge {
 			
 			// persist all at once -
 			premergeDAO.merge(pathwayDataModel);
-			// , or -
-			//splitAndMerge(pathwayDataModel, premergeDAO); // if debug log is enabled, creates owl files...
 		}
 	}
-
-	
-	/**
-	 * Splits the "big" model into several 
-	 * smaller self-consistent pathways.
-	 * 
-	 * @param bigModel
-	 * @return
-	 */
-	/*
-	private void splitAndMerge(Model bigModel, PaxtoolsDAO premergeDAO) 
-	{
-		PropertyFilter filter = new PropertyFilter() {
-			@Override
-			public boolean filter(PropertyEditor editor) {
-				return !"nextStep".equalsIgnoreCase(editor.getProperty());
-			}
-		};
-		EditorMap editorMap = new SimpleEditorMap(bigModel.getLevel());
-		Fetcher fetcher = new Fetcher(editorMap, filter);
-		SimpleReader reader = new SimpleReader(bigModel.getLevel());
-		SimpleExporter exporter = new SimpleExporter(bigModel.getLevel());
-		
-		// collect "top" pathways only
-		// copy set is required (otherwise remove() method is not supported!)
-		final Set<Pathway> objects = new HashSet<Pathway>();
-		objects.addAll(bigModel.getObjects(Pathway.class));
-		int n = objects.size();
-		AbstractTraverser checker = new AbstractTraverser(editorMap) {
-			@Override
-			protected void visit(Object value, BioPAXElement parent, Model model,
-					PropertyEditor editor) {
-				if(value instanceof Pathway && objects.contains(value)) 
-					objects.remove(value); 
-			}
-		};	
-		// this removes sub-pathways
-		for(BioPAXElement e : bigModel.getObjects()) {
-			checker.traverse(e, null);
-		}
-		
-		if(log.isInfoEnabled())
-			log.info("pipeline(), " + objects.size() 
-				+ " 'top' pathways found " + " out of " + n);
-		
-		// for each "top" element
-		for(Pathway instance : objects) {
-			int i = 0;
-			if(log.isInfoEnabled())
-				log.info("pipeline(), now fetching Pathway: "
-					+ instance.getRDFId() 
-					+ " (" + instance.getDisplayName() + ")"
-					+ " into a separate model...");
-			Model m = bigModel.getLevel().getDefaultFactory().createModel();
-			// skip if there is only one top pw
-			if (objects.size() != 1) {
-				fetcher.fetch(instance, m);
-				m.getNameSpacePrefixMap().put("",
-						bigModel.getNameSpacePrefixMap().get(""));
-				try {
-					// debug print to owl file
-					if (log.isDebugEnabled() && i++ < 5) {
-						FileOutputStream out = new FileOutputStream(System
-								.getenv("CPATH2_HOME")
-								+ File.separator
-								+ instance.getRDFId().replaceAll("[\\/:]", "_")
-								+ ".debug.owl");
-						exporter.convertToOWL(m, out);
-					}
-
-					 // completely detaching (via OWL I/O)
-					 // may, in fact, break inter-pathway links (nextStep)
-					// write OWL:
-					ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-					exporter.convertToOWL(m, bytes);
-					// back to the Model (this cuts ties to the bigModel)
-					InputStream is = new ByteArrayInputStream(bytes
-							.toByteArray());
-					m = reader.convertFromOWL(is);
-
-				} catch (IOException e) {
-					log.error("pipeline(), failed extracting a sub-model: ", e);
-				}
-			} else {
-				m = bigModel;
-			}
-			
-			if(m != null && !m.getObjects().isEmpty())
-				// persist
-				if(premergeDAO != null) {
-					premergeDAO.merge(m);
-				} else { 
-					log.error("pipeline(), Cnnot save " +
-						instance.getRDFId() +	
-							"model: paxtoolsDAO is null!"); 
-				}
-			else 
-				log.error("pipeline(), Empty model resulted from " 
-					+ instance.getRDFId());
-		}
-	}
-	*/
 
 	/**
 	 * For the given cleaner class name,
@@ -481,4 +400,26 @@ public class PremergeImpl implements Premerge {
 		context = new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");	
 		return (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
 	}
+
+	public boolean isCreateDb() {
+		return createDb;
+	}
+	public void setCreateDb(boolean createDb) {
+		this.createDb = createDb;
+	}
+
+	public String getIdentifier() {
+		return identifier;
+	}
+	public void setIdentifier(String identifier) {
+		this.identifier = identifier;
+	}
+
+	public String getVersion() {
+		return version;
+	}
+	public void setVersion(String version) {
+		this.version = version;
+	}
+	
 }

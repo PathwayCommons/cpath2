@@ -56,7 +56,7 @@ public interface MetadataDAO  extends Reindexable {
      * @param version Float
      * @return Collection<PathwayData>
      */
-    Collection<PathwayData> getByIdentifierAndVersion(final String identifier, final String version);
+    Collection<PathwayData> getPathwayDataByIdentifierAndVersion(final String identifier, final String version);
 
     /**
      * This method returns a pathway data object with the given Identifier, Version, Filename and Digest.
@@ -67,7 +67,7 @@ public interface MetadataDAO  extends Reindexable {
 	 * @param digest String
      * @return PathwayData
      */
-    PathwayData getByIdentifierAndVersionAndFilenameAndDigest(final String identifier, final String version, final String filename, final String digest);
+    PathwayData getPathwayDataByIdentifierAndVersionAndFilenameAndDigest(final String identifier, final String version, final String filename, final String digest);
 
     /**
      * This method gets a PathwayData bean (initialized) by primary key.
