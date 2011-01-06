@@ -113,7 +113,7 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 
 		Session session = getSession();
 		// check for existing object
-		PathwayData existing = getByIdentifierAndVersionAndFilenameAndDigest(pathwayData.getIdentifier(), 
+		PathwayData existing = getPathwayDataByIdentifierAndVersionAndFilenameAndDigest(pathwayData.getIdentifier(), 
 				pathwayData.getVersion(), pathwayData.getFilename(), pathwayData.getDigest());
 		
 		if (existing == null) {
@@ -137,6 +137,7 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 			existing.setPathwayData(pathwayData.getPathwayData());
 			existing.setValidationResults(pathwayData.getValidationResults());
 			existing.setPremergeData(pathwayData.getPremergeData());
+			existing.setValid(pathwayData.getValid());
 			session.update(existing);
 		}
 		
@@ -161,7 +162,7 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 
 
     @Transactional(propagation=Propagation.REQUIRED)
-    public Collection<PathwayData> getByIdentifierAndVersion(final String identifier, final String version) {
+    public Collection<PathwayData> getPathwayDataByIdentifierAndVersion(final String identifier, final String version) {
 
 		Session session = getSession();
 		Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayByIdentifierAndVersion");
@@ -173,7 +174,7 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 
 
     @Transactional(propagation=Propagation.REQUIRED)
-    public PathwayData getByIdentifierAndVersionAndFilenameAndDigest(final String identifier, 
+    public PathwayData getPathwayDataByIdentifierAndVersionAndFilenameAndDigest(final String identifier, 
     		final String version, final String filename, final String digest) 
     {
 		Session session = getSession();

@@ -391,26 +391,19 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		BioPAXElement toReturn = getByID(id);
 		
 		/*
-		 * Interesting, inverse prop editor (XrefOf) is not
-		 * available during ElementInitializer,
-		 * "manually" initialize (some of?) inverse props here.
-		 */
+		 * manually initialize (some of) inverse props here
+		 * (inverse prop. editors are not available in ElementInitializer)
 		/*
 		if (toReturn != null) {
-			
 			if (toReturn instanceof Xref) {
 				Hibernate.initialize(((Xref)toReturn).getXrefOf()); // cool! TODO required for all inverse properties...
 			}
-			
-			// initialize
 			ElementInitializer initializer = new ElementInitializer();
 			initializer.initialize(this, toReturn); 
-
 		}
 		*/
 		
 		initialize(toReturn);
-
 		return toReturn; // null means no such element
 	}
 
@@ -452,11 +445,13 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			}
 		}
 		
-		
 		if (bpe != null) { 
 			// clone
-			ElementCloner cloner = new ElementCloner();
-			Model model = cloner.clone(this, bpe); 
+			//ElementCloner cloner = new ElementCloner();
+			//Model model = cloner.clone(this, bpe); 
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			exportModel(baos, id);
+			Model model = reader.convertFromOWL(new ByteArrayInputStream(baos.toByteArray()));
 			toReturn = model.getByID(id);
 		}
 		
@@ -754,64 +749,17 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	}
 	
 	
-	/*
-	 * Initializes all the properties and properties's properties, etc.
-	 * 
-	 * TODO experimental
-	 */
-	// TODO what about inverse props? Btw, Traverser (standard) does not follow xxxOf properties...
-	@Deprecated
-	@Transactional
-	private class ElementInitializer implements Visitor {
-		private Traverser traverser;
-		
-		public ElementInitializer() {
-			traverser = new Traverser(reader.getEditorMap(), this);
-		}
-
-		@Transactional
-		public void initialize(Model source, BioPAXElement toBeCloned) {
-			//TODO don't understand why subModel (it seems useless..) is here?
-			Model subModel = factory.createModel();
-			Hibernate.initialize(toBeCloned);
-			traverser.traverse(toBeCloned, subModel);
-		}
-
-		@Transactional
-		public void visit(BioPAXElement domain, Object range, Model targetModel, PropertyEditor editor)	{
-
-			if (!targetModel.containsID(domain.getRDFId())) {
-                targetModel.addNew(domain.getModelInterface(), domain.getRDFId());
-			}
-			
-			if (domain instanceof BioPAXElement) {
-				BioPAXElement bpeDomain = (BioPAXElement)domain;
-				Hibernate.initialize(bpeDomain);
-				if (range instanceof BioPAXElement) {
-					BioPAXElement bpeRange = (BioPAXElement)range;
-					if (!targetModel.containsID(bpeRange.getRDFId())) {
-						traverser.traverse(bpeRange, targetModel);
-					}
-				}
-				Object beanValue = editor.getValueFromBean(bpeDomain);
-				if (beanValue instanceof Collection) {
-					for (Object collectionValue : (Collection)beanValue) {
-						if (collectionValue instanceof BioPAXElement) {
-							Hibernate.initialize(collectionValue);
-						}
-					}
-				}
-			}
-		}
-	}
 	
-	/*
+	/**
 	 * Special object copier.
 	 * Clones all the properties and properties's properties, etc.
 	 * 
 	 * TODO not all inverse (xxxOf) properties are set for this and/or dependent elements 
 	 * (only those are set that occur on the traverse's path)!
+	 * 
+	 * @deprecated use {@link PaxtoolsHibernateDAO#exportModel(OutputStream, String...)} and then {@link SimpleReader#convertFromOWL(InputStream)}
 	 */
+	@Deprecated
 	@Transactional
 	private class ElementCloner implements Visitor {
 		private Traverser traverser;

@@ -38,6 +38,8 @@ public class PathwayData {
 	// digest is not unique - at least some reactome pw have different names but are identical
 	@Column(nullable=false)
     private String digest;
+	@Column
+	private Boolean valid;
 
 	/**
 	 * Default Constructor.
@@ -126,7 +128,14 @@ public class PathwayData {
 	}
     public String getDigest() { return digest; }
 
-    @Override
+    public Boolean getValid() {
+		return valid;
+	}
+	public void setValid(Boolean valid) {
+		this.valid = valid;
+	}
+
+	@Override
     public String toString() {
         return getIdentifier() + ", " + getVersion() + ", " + getFilename();
     }

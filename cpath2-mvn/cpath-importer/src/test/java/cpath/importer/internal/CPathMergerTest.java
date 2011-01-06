@@ -74,7 +74,7 @@ public class CPathMergerTest {
 				} else { 
 				
 				/* 
-				 *  in production, we'd also use the following
+				 // in production, we'd also use the following
 					Collection<PathwayData> pathwayData = fetcher.getProviderPathwayData(metadata);
 					then -
 					metadataDAO.importPathwayData(pwData); // for each PathwayData

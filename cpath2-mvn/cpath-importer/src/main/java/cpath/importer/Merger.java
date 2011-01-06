@@ -23,4 +23,26 @@ public interface Merger {
 	 * @param pathwayModel - one-pathway or several interactions, model
 	 */
 	public void merge(Model pathwayModel);
+	
+	/**
+	 * Sets whether provider specific premerge databases 
+	 * should be used (otherwise, pathwayData.premergeData is used)
+	 * 
+	 * @param createDb
+	 */
+	void setUseDb(boolean createDb);
+	
+	/**
+	 * Sets a metadata identifier filter
+	 * 
+	 * @param identifier
+	 */
+	void setIdentifier(String identifier);
+	
+	/**
+	 * Sets a metadata version filter
+	 * 
+	 * @param version
+	 */
+	void setVersion(String version);
 }
