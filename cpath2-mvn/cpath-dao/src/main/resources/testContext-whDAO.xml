@@ -11,6 +11,11 @@
        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
     
+    <!--  Unlike "production" warehouse configuration, this (test) one defines single 
+    session factory that works for metadata, proteins, and molecules altogether, and 
+    full-text auto-indexing is enabled.  -->
+    
+    
     <context:annotation-config/>
     <context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
      	

@@ -4,7 +4,6 @@ package cpath.warehouse.beans;
 import java.io.File;
 
 import javax.persistence.*;
-import org.hibernate.search.annotations.Indexed;
 
 import cpath.config.CPathSettings;
 
@@ -19,7 +18,6 @@ import cpath.config.CPathSettings;
 		@NamedQuery(name="cpath.warehouse.beans.allProvider", 
 					query="from Metadata as metadata")
 })
-@Indexed(index="cpathwhouse")
 public class Metadata {
 
     // TYPE Enum
