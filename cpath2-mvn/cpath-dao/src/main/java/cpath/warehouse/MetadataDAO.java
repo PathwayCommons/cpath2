@@ -1,7 +1,6 @@
 package cpath.warehouse;
 
 // imports
-import cpath.dao.Reindexable;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
@@ -10,7 +9,7 @@ import java.util.Collection;
 /**
  * An interface which provides methods to persist and query provider metadata.
  */
-public interface MetadataDAO  extends Reindexable {
+public interface MetadataDAO {
 
     /**
      * Persists the given metadata object to the db.

@@ -59,7 +59,7 @@ public class MetadataHibernateDAOTest {
         MetadataDAO dao = (MetadataDAO) context.getBean("metadataDAO");
 		
 		// mock a PathwayData
-        PathwayData pathwayData = new PathwayData("testpw", "2010.04", "testpw", "testpw", "<rdf></rdf>");
+        PathwayData pathwayData = new PathwayData("testpw", "2010.04", "testpw", "testpw", "<rdf> </rdf>");
         
         // import it
         dao.importPathwayData(pathwayData);

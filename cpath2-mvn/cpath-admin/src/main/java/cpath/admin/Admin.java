@@ -287,14 +287,6 @@ public class Admin implements Runnable {
                        	dao = (Reindexable) ctx.getBean("proteinsDAO");
                 		dao.createIndex();
                     	break;
-                    case METADATA :
-                    	ctx = new ClassPathXmlApplicationContext(
-                    		"classpath:applicationContext-whouseDAO.xml");
-                    	//ds = (DataServices) ctx.getBean("&cpath2_meta");
-                    	//ds.dropMetadataFulltextIndex();
-                    	dao = (Reindexable) ctx.getBean("metadataDAO");
-                    	dao.createIndex();
-                    	break;
                     case MAIN :
                     	ctx = new ClassPathXmlApplicationContext(
                 			"classpath:applicationContext-cpathDAO.xml");
@@ -626,7 +618,7 @@ public class Admin implements Runnable {
 		toReturn.append("commands:" + NEWLINE);
 		toReturn.append(COMMAND.CREATE_TABLES.toString() + " <table1,table2,..>" + NEWLINE);
 		toReturn.append(COMMAND.CREATE_INDEX.toString() + 
-			" <type> (types are: metadata, proteins, molecules, main)" + NEWLINE);
+			" <type> (types are: proteins, molecules, main)" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_DATA.toString() + 
 				" <metadataId or --all> [--continue]" + NEWLINE);

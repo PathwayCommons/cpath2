@@ -47,6 +47,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 
@@ -245,36 +246,19 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 			String dbUser, 
 			String dbPassword,
 			String dbDriver, 
-			String dbUrl) {
-/*		
-		com.mchange.v2.c3p0.ComboPooledDataSource dataSource = new com.mchange.v2.c3p0.ComboPooledDataSource();
-		try {
-			dataSource.setDriverClass(dbDriver);
-		} catch (PropertyVetoException e) {
-			throw new RuntimeException(e);
-		}
-		dataSource.setJdbcUrl(dbUrl);
-		dataSource.setUser(dbUser);
-		dataSource.setPassword(dbPassword);
-		dataSource.setInitialPoolSize(0);
-		dataSource.setMaxPoolSize(30);
-		return dataSource;
-*/
+			String dbUrl) 
+	{
 		
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();
 		dataSource.setDriverClassName(dbDriver);
-		/*
-		 * The following connection parameters are terribly,
-		 * unbelievably important 
-		 * (if not the most important part in cpath2 at all)!
-		 */
-		dataSource.setUrl(dbUrl + 
-			"?autoReconnect=true&max_allowed_packet=256M");
-			//+ "&useUnicode=true&characterEncoding=UTF-8"); // causes more pain...
+		// The following connection parameters are terribly important 
+		// (if not the most important part in cpath2 at all)!
+		dataSource.setUrl(dbUrl + "?autoReconnect=true&max_allowed_packet=256M");
+		//&useServerPrepStmts=true&useCursorFetch=true
 		dataSource.setUsername(dbUser);
-		dataSource.setPassword(dbPassword);		
-		return dataSource;
+		dataSource.setPassword(dbPassword);
 
+		return dataSource;
 	}	
 	
 	

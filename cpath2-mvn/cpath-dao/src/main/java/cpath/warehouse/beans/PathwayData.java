@@ -55,8 +55,9 @@ public class PathwayData {
 	 * @param digest String
      * @param pathwayData String
      */
-    public PathwayData(final String identifier, final String version, final String filename, final String digest, final String pathwayData) {
-
+    public PathwayData(final String identifier, final String version, final String filename, 
+    		final String digest, final String pathwayData) 
+    {
         if (identifier == null) {
             throw new IllegalArgumentException("identifier must not be null");
         }
@@ -77,8 +78,8 @@ public class PathwayData {
         }
         this.digest = digest;
 
-        if (pathwayData == null) {
-            throw new IllegalArgumentException("pathway data must not be null");
+        if (pathwayData == null || pathwayData.trim().length() == 0) {
+            throw new IllegalArgumentException("pathway data must not be null/empty");
         }
         this.pathwayData = pathwayData;
 

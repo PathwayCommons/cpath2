@@ -130,15 +130,41 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Transactional(propagation=Propagation.REQUIRED)
 	public void createIndex() {
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		MassIndexer indexer = fullTextSession.createIndexer();
+		
+		/* - often gets stuck or crashes...
 		try {
-			indexer.batchSizeToLoadObjects(20)
+			fullTextSession.createIndexer()
 				.purgeAllOnStart(true)
-				.optimizeOnFinish(true)
+				//.batchSizeToLoadObjects( 10 )
+				//.threadsForSubsequentFetching( 4 )
+				//.threadsToLoadObjects( 2 )
+				//.cacheMode(CacheMode.NORMAL) // defaults to CacheMode.IGNORE
 				.startAndWait();
 		} catch (InterruptedException e) {
 			throw new RuntimeException("Index re-build is interrupted.");
 		}
+		*/
+		
+		// manually re-index
+		final int BATCH_SIZE = 100;
+		fullTextSession.setFlushMode(FlushMode.MANUAL);
+		fullTextSession.setCacheMode(CacheMode.IGNORE);
+		//Transaction transaction = fullTextSession.beginTransaction();
+		//Scrollable results will avoid loading too many objects in memory
+		ScrollableResults results = fullTextSession.createCriteria( BioPAXElementImpl.class )
+		    .setFetchSize(BATCH_SIZE)
+		    .scroll( ScrollMode.FORWARD_ONLY );
+		int index = 0;
+		while( results.next() ) {
+		    index++;
+		    fullTextSession.index( results.get(0) ); //index each element
+		    if (index % BATCH_SIZE == 0) {
+		        fullTextSession.flushToIndexes(); //apply changes to indexes
+		        fullTextSession.clear(); //free memory since the queue is processed
+		    }
+		}
+		//transaction.commit();
+		
 	}
 
 	//not transactional (but it's 'merge' method that creates a new transaction)
