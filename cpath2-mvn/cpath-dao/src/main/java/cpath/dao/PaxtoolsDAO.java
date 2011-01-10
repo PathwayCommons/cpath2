@@ -140,4 +140,14 @@ public interface PaxtoolsDAO extends Model, Reindexable {
      * @param bpe
      */
     void merge(BioPAXElement bpe);
+
+    
+    /**
+     * Executes custom algorithms (or plugins)
+     * 
+     * @param analysis defines a job/query to perform
+     * @param args - optional parameters for the algorithm
+     * @return
+     */
+    Model runAnalysis(Analysis analysis, Object... args);
 }

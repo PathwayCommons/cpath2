@@ -73,10 +73,10 @@ public interface CPathService {
 		XML, // legacy full-text search output format
 		BIOPAX,
 		BINARY_SIF,
-		TSV, // tab-separated "network" format
+		TSV, // tab-separated "network" format, cols: DB:ID, Pathway_Name, DataProvider, CPATH_ID?..
 		GSEA, // technically - TSV blend
 		PC_GENE_SET, // similar to GSEA, with multiple identifiers micro-encoded
-		ID_LIST, // legacy TSV format, columns: Record Name, CPATH_ID, Database:ID (data type must be specified)
+		ID_LIST, // legacy TSV format, columns: Record_Name, CPATH_ID, Database:ID (data type must be specified)
 		// TODO think: do we need "image" formats at all in the new services?
 		IMAGE, 
 		IMAGE_MAP,
