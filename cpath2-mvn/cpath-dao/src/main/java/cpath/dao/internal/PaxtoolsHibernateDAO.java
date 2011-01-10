@@ -50,6 +50,7 @@ import org.springframework.transaction.annotation.*;
 
 
 import cpath.config.CPathSettings;
+import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.warehouse.WarehouseDAO;
 
@@ -130,7 +131,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Transactional(propagation=Propagation.REQUIRED)
 	public void createIndex() {
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		
+		if(log.isInfoEnabled())
+			log.info("Begin indexing...");
 		/* - often gets stuck or crashes...
 		try {
 			fullTextSession.createIndexer()
@@ -164,7 +166,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		    }
 		}
 		//transaction.commit();
-		
+		if(log.isInfoEnabled())
+			log.info("Ended indexing.");
 	}
 
 	//not transactional (but it's 'merge' method that creates a new transaction)
@@ -700,18 +703,35 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	public Model getValidSubModel(Collection<String> ids) {
+		/*
 		Set<BioPAXElement> bioPAXElements = new HashSet<BioPAXElement>();
 		for(String id : ids) {
 			BioPAXElement bpe = getByID(id);
 			if(bpe != null)
 				bioPAXElements.add(bpe);
 		}
-		
 		Completer c = new Completer(reader.getEditorMap());
 		bioPAXElements = c.complete(bioPAXElements, null); //null - this model is used explicitly there
 		Cloner cln = new Cloner(reader.getEditorMap(), factory);
 		Model model = cln.clone(null, bioPAXElements);
 		return model;
+		*/
+		
+		//(re-written) using the internal {@link Analysis} class ;)
+		Analysis getTheseElements = new Analysis() {
+			@Override
+			public Set<BioPAXElement> execute(Model model, Object... args) {
+				Set<BioPAXElement> bioPAXElements = new HashSet<BioPAXElement>();
+				for(Object id : args) {
+					BioPAXElement bpe = getByID(id.toString());
+					if(bpe != null)
+						bioPAXElements.add(bpe);
+				}
+				return bioPAXElements;
+			}
+		};
+		
+		return runAnalysis(getTheseElements, ids.toArray());
 	}
 	
 
@@ -845,6 +865,32 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		}
 		
 		return objects;
+	}
+
+	/* (non-Javadoc)
+	 * @see cpath.dao.PaxtoolsDAO#runAnalysis(cpath.dao.Analysis, java.lang.Object[])
+	 */
+	@Override
+	@Transactional
+	public Model runAnalysis(Analysis analysis, Object... args) {
+		Set<BioPAXElement> result = null;
+		
+		// perform
+		try {
+			result = analysis.execute(this, args);
+		} catch (Exception e) {
+			log.error("Failed performing a custom analysis: " + analysis);
+		}
+		
+		// auto-complete/detach
+		if(result != null) {
+			Completer c = new Completer(reader.getEditorMap());
+			result = c.complete(result, null); //null - because the (would be) model is never used there anyway
+			Cloner cln = new Cloner(reader.getEditorMap(), factory);
+			return cln.clone(null, result); // new (sub-)model
+		} 
+		
+		return null;
 	}
 	
 }
