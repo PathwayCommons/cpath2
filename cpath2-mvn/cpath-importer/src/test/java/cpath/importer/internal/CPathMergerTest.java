@@ -131,7 +131,7 @@ public class CPathMergerTest {
 				moleculesDAO, proteinsDAO, cvRepository);
 		
 		for(Model model : pathwayModels) {
-			merger.merge(model);
+			merger.merge(null, model);
 		}
 		
 		// dump owl out for review
@@ -200,7 +200,7 @@ public class CPathMergerTest {
 		
 		MergerImpl merger = new MergerImpl(pcDAO, metadataDAO, moleculesDAO, proteinsDAO, cvRepository);
 		for(Model model : pathwayModels) {
-			merger.merge(model);
+			merger.merge(null, model);
 		}
 
 		String outFilename = getClass().getClassLoader().getResource("").getPath() 

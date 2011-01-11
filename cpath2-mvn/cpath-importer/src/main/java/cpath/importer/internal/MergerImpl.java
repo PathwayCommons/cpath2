@@ -35,6 +35,7 @@ import cpath.dao.internal.PaxtoolsHibernateDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.beans.Metadata.TYPE;
+import cpath.warehouse.beans.BioPAXElementSource;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.WarehouseDAO;
 
@@ -162,7 +163,7 @@ public class MergerImpl implements Merger {
 			if(useDb) {
 				// in-memory copy of the persisted model for this provider/version
 				Model pathwayModel = getPreMergeModel(metadata);
-				merge(pathwayModel);	
+				merge(metadata, pathwayModel);	
 			} 
 			else {
 				// build models and merge from pathwayData.premergeData
@@ -199,9 +200,13 @@ public class MergerImpl implements Merger {
 						throw new RuntimeException(e);
 					}
 					Model pathwayModel = simpleReader.convertFromOWL(inputStream);
-					merge(pathwayModel);
+					merge(metadata, pathwayModel);
 				}
 			}
+		}
+		
+		if(log.isInfoEnabled()) {
+			log.info("merge() complete, exiting...");
 		}
 	}
 
@@ -211,7 +216,7 @@ public class MergerImpl implements Merger {
 	 * @see cpath.importer.Merger#merge(org.biopax.paxtools.model.Model)
 	 */
 	@Override
-	public void merge(Model pathwayModel) {
+	public void merge(final Metadata metadata, final Model pathwayModel) {
 		//create a new temporary in-memory model 
 		Model tmpModel = BioPAXLevel.L3.getDefaultFactory().createModel();
 		
@@ -279,6 +284,14 @@ public class MergerImpl implements Merger {
 		
 		// finally, merge into the global (persistent) model;
 		pcDAO.merge(tmpModel);
+		
+		// before exiting, lets iterate over tmpModel and capture
+		// BioPAXElementSource information - used for filtering
+		processBioPAXElementSource(metadata, tmpModel);
+		
+		if(log.isInfoEnabled()) {
+			log.info("merge(Model pathwayModel) complete, exiting...");
+		}
 	}
 
 	
@@ -479,6 +492,67 @@ public class MergerImpl implements Merger {
 			// some may become dangling now, so check again...
 			removeDangling(model);
 		}
+	}
+	
+	private void processBioPAXElementSource(final Metadata metadata, final Model model) {
+	
+		// some sanity checking
+		if (metadata == null) {
+			if (log.isInfoEnabled()) {
+				log.info("processBioPAXElementSource(), metadata is null!");
+				return;
+			}
+		}
+
+		// get tax id
+		String taxId = getTaxID(model);
+		if (taxId == null) {
+			if (log.isInfoEnabled()) {
+				log.info("processBioPAXElementSource(), cannot find taxID!");
+				return;
+			}
+		}
+		
+		// iterate over all Entity 
+		for (Entity entity : (Set<Entity>)model.getObjects(Entity.class)) {
+			// we explicitly set props to avoid IdentifierGenerationException
+			BioPAXElementSource bes = new BioPAXElementSource();
+			bes.setRDFId(entity.getRDFId());
+			bes.setTaxId(taxId);
+			bes.setProviderId(metadata.getIdentifier());
+			metadataDAO.importBioPAXElementSource(bes);
+		}
+	}
+	
+	/*
+	 * Given a paxtools model for an entire owl file
+	 * returns the tax id for the organism.  This method 
+	 * assumes that at least one pathway in model is annotated
+	 * with a biosource (although all should be).  It also assumes
+	 * that all pathways share the the same biosource.  With that in 
+	 * mind, it returns the first tax id encountered while iterating 
+	 * over each pathways biosource, else returns null.
+	 * 
+	 * @param model Model
+	 * @return String
+	 */
+	private String getTaxID(final Model model) {
+
+		for (Pathway pathway : model.getObjects(Pathway.class)) {
+			BioSource bioSource = pathway.getOrganism();
+			if (bioSource != null) {
+				for (Xref xref : bioSource.getXref()) {
+					if (xref instanceof UnificationXref) {
+						if (xref.getDb().contains("taxonomy")) {
+							return xref.getId();
+						}
+					}
+				}
+			}
+		}
+		
+		// outta here
+		return null;
 	}
 	
 	public String getIdentifier() {
