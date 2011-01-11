@@ -4,6 +4,7 @@ package cpath.warehouse.internal;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
+import cpath.warehouse.beans.BioPAXElementSource;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -24,7 +25,7 @@ import java.util.HashSet;
 import java.util.Collection;
 
 /**
- * Implemenation of MetadatDAO interface.
+ * Implementation of MetadatDAO interface.
  */
 @Repository
 public class MetadataHibernateDAO  implements MetadataDAO {
@@ -107,6 +108,10 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 	}
     
     
+    /**
+     * (non-Javadoc)
+     * @see cpath.warehouse.metadata.MetadataDAO#importPathwayData;
+     */
     @Transactional(propagation=Propagation.REQUIRED)
 	public void importPathwayData(final PathwayData pathwayData) {
 
@@ -148,7 +153,10 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 			log.info("pathway data object has been sucessessfully saved or updated.");
     }
 
-
+    /**
+     * (non-Javadoc)
+     * @see cpath.warehouse.metadata.MetadataDAO#getPathwayDataByIdentifier;
+     */
     @Transactional(propagation=Propagation.REQUIRED)
     public Collection<PathwayData> getPathwayDataByIdentifier(final String identifier) {
 
@@ -159,7 +167,10 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 		return (toReturn.size() > 0) ? new HashSet(toReturn) : new HashSet();
     }
 
-
+    /**
+     * (non-Javadoc)
+     * @see cpath.warehouse.metadata.MetadataDAO#getPathwayDataByIdentifierAndVersion;
+     */
     @Transactional(propagation=Propagation.REQUIRED)
     public Collection<PathwayData> getPathwayDataByIdentifierAndVersion(final String identifier, final String version) {
 
@@ -171,7 +182,10 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 		return (toReturn.size() > 0) ? new HashSet(toReturn) : new HashSet();
     }
 
-
+    /**
+     * (non-Javadoc)
+     * @see cpath.warehouse.metadata.MetadataDAO#getPathwayDataByIdentifierAndVersionAndFilenameAndDigest;
+     */
     @Transactional(propagation=Propagation.REQUIRED)
     public PathwayData getPathwayDataByIdentifierAndVersionAndFilenameAndDigest(final String identifier, 
     		final String version, final String filename, final String digest) 
@@ -187,7 +201,7 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 
     
 	/* (non-Javadoc)
-	 * @see cpath.warehouse.MetadataDAO#getById(java.lang.Integer)
+	 * @see cpath.warehouse.MetadataDAO#getPathwayData;
 	 */
 	@Override
 	@Transactional
@@ -200,4 +214,85 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 			return null;
 		}
 	}
+	
+	/**
+     * (non-Javadoc)
+     * @see cpath.warehouse.metadata.MetadataDAO#importBioPAXElementSource;
+     */
+    @Transactional(propagation=Propagation.REQUIRED)
+	public void importBioPAXElementSource(final BioPAXElementSource biopaxElementSource) {
+
+		Session session = getSession();
+		// check for existing object
+		BioPAXElementSource existing = getBioPAXElementSourceByRDFId(biopaxElementSource.getRDFId());
+		
+		if (existing == null) {
+			if(log.isInfoEnabled())
+				log.info("Saving BioPAXElementSource with RDF Id: " + biopaxElementSource.getRDFId() + 
+						" and tax id: " + biopaxElementSource.getTaxId() +
+						" and provider identifier: " + biopaxElementSource.getProviderId());
+			
+			session.save(biopaxElementSource);
+		}
+		else {
+			if(log.isInfoEnabled())
+				log.info("Updating BioPAXElementSource with RDF Id: " + biopaxElementSource.getRDFId() +
+						" and tax id: " + biopaxElementSource.getTaxId() +
+						" and provider identifier: " + biopaxElementSource.getProviderId());
+			
+			existing.setRDFId(biopaxElementSource.getRDFId());
+			existing.setTaxId(biopaxElementSource.getTaxId());
+			existing.setProviderId(biopaxElementSource.getProviderId());
+			session.update(existing);
+		}
+		
+		session.flush();
+		session.clear();
+		
+		if(log.isInfoEnabled()) {
+			log.info("BioPAXElementData object has been sucessessfully saved or updated.");
+		}
+    }
+	
+    /**
+     * (non-Javadoc)
+     * @see cpath.warehouse.MetadataDAO#getBioPAXElementSourceByRDFId
+     */
+    @Transactional(propagation=Propagation.REQUIRED)
+	public BioPAXElementSource getBioPAXElementSourceByRDFId(final String rdfId) {
+		
+		Session session = getSession();
+		Query query = session.getNamedQuery("cpath.warehouse.beans.biopaxElementSourceByRDFIdentifier");
+		query.setParameter("rdfId", rdfId);
+		List toReturn = query.list();
+		return (BioPAXElementSource)query.uniqueResult();
+	}
+    
+    /**
+     * (non-Javadoc)
+     * @see cpath.warehouse.MetadataDAO#getBioPAXElementSourceByTaxId(String)
+     */
+    @Transactional(propagation=Propagation.REQUIRED)
+    public Collection<BioPAXElementSource> getBioPAXElementSourceByTaxId(final String taxId) {
+    	
+    	Session session = getSession();
+		Query query = session.getNamedQuery("cpath.warehouse.beans.biopaxElementSourceByTaxIdentifier");
+		query.setParameter("taxId", taxId);
+		List toReturn = query.list();
+		return (toReturn.size() > 0) ? new HashSet(toReturn) : new HashSet();
+    }
+    
+    /**
+     * (non-Javadoc)
+     * @see cpath.warehouse.MetadataDAO#getBioPAXElementSourceByProviderId(String)
+     */
+    @Transactional(propagation=Propagation.REQUIRED)
+    public Collection<BioPAXElementSource> getBioPAXElementSourceByProviderId(final String providerId) {
+    	
+    	Session session = getSession();
+		Query query = session.getNamedQuery("cpath.warehouse.beans.biopaxElementSourceByProviderIdentifier");
+		query.setParameter("providerId", providerId);
+		List toReturn = query.list();
+		return (toReturn.size() > 0) ? new HashSet(toReturn) : new HashSet();
+    }
 }
