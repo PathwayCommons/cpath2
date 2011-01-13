@@ -876,11 +876,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		Set<BioPAXElement> result = null;
 		
 		// perform
-		try {
-			result = analysis.execute(this, args);
-		} catch (Exception e) {
-			log.error("Failed performing a custom analysis: " + analysis);
-		}
+		result = analysis.execute(this, args);
 		
 		// auto-complete/detach
 		if(result != null) {

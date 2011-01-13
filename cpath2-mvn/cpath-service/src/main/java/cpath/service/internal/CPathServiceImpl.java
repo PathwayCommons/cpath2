@@ -50,8 +50,11 @@ import org.biopax.validator.result.ValidatorResponse;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
 import org.springframework.stereotype.Service;
 
+import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.CPathService;
+import cpath.service.CPathService.ResultMapKey;
+import cpath.service.analyses.NearestNeighborhoodQueryAnalysis;
 import cpath.service.jaxb.*;
 import cpath.warehouse.CvRepository;
 import cpath.warehouse.MetadataDAO;
@@ -202,11 +205,15 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	/**
-	 * @param uris
-	 * @param string
+	 * Gets BioPAX elements by id (URIs), 
+	 * extracts a sub-model, converts to GSEA format, 
+	 * and returns everything as map values.
+	 * 
+	 * @param outputIdType output identifiers type (db name)
+	 * @param uris identifiers of the BioPAX elements to export
 	 * @return
 	 */
-	public Map<ResultMapKey, Object> fetchAsGSEA(String idType, String... uris) {
+	Map<ResultMapKey, Object> fetchAsGSEA(String outputIdType, String... uris) {
 		// get as BioPAX first
 		Map<ResultMapKey, Object> map = fetchAsBiopax(uris);
 		
@@ -217,7 +224,7 @@ public class CPathServiceImpl implements CPathService {
 		
 		// convert, replace DATA
 		Model m = (Model) map.get(MODEL);
-		GSEAConverter gseaConverter = new GSEAConverter(idType, false);
+		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, false);
 		OutputStream stream = new ByteArrayOutputStream();
 		try {
 	        gseaConverter.writeToGSEA(m, stream);
@@ -230,14 +237,19 @@ public class CPathServiceImpl implements CPathService {
 	}
 
 
-	/*
-	 * (non-Javadoc)
-	 * @see cpath.service.CPathService#fetchAsBinarySIF(java.lang.String[], java.lang.String[])
+	/**
+	 * Gets BioPAX elements by id, 
+	 * creates a sub-model, converts to SIF format, 
+	 * and returns everything as map values.
 	 * 
 	 * TODO 'rules' parameter is currently ignored (requires conversion 
 	 * from strings to the rules, e.g., using enum. BinaryInteractionRule from cpath-web-service)
+	 * 
+	 * @param uris identifiers of the elements to export
+	 * @param rules (optional) the names of SIF rules to apply
+	 * @return
 	 */
-	public Map<ResultMapKey, Object> fetchAsBinarySIF(String[] uris, String... rules) {
+	Map<ResultMapKey, Object> fetchAsBinarySIF(String[] uris, String... rules) {
 		// get as BioPAX first
 		Map<ResultMapKey, Object> map = fetchAsBiopax(uris);
 		
@@ -271,7 +283,16 @@ public class CPathServiceImpl implements CPathService {
 	}
 	
 
-	public Map<ResultMapKey, Object> fetchAsBiopax(String... uris) {
+	/** 
+	 * Gets BioPAX elements by id, 
+	 * creates a sub-model, and returns everything as map.
+	 * 
+	 * @see ResultMapKey
+	 * 
+	 * @param uris
+	 * @return
+	 */
+	Map<ResultMapKey, Object> fetchAsBiopax(String... uris) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		
 		if(uris.length >= 1) {	
@@ -402,10 +423,33 @@ public class CPathServiceImpl implements CPathService {
 			// (the last parameter below can be a xsltSource)
 			BiopaxValidatorUtils.write(response, writer, null); 
 			toReturn.put(DATA, writer.toString());
-			
-			//if(log.isDebugEnabled()) log.debug(writer.toString());
 		}
 		
 		return toReturn;
+	}
+	
+	
+	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String... uris) {
+		//TODO return in different formats
+		return getNeighborhood(uris); // in BioPAX
+	}
+	
+	
+	Map<ResultMapKey, Object> getNeighborhood(String... uris) {
+		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
+		
+		if(uris.length >= 1) {	
+			try {
+				Analysis analysis = new NearestNeighborhoodQueryAnalysis();
+				Model m = mainDAO.runAnalysis(analysis, uris);
+				map.put(MODEL, m);
+				map.put(DATA, exportToOWL(m));
+			} catch (Exception e) {
+				map.put(ERROR, e);
+				log.error("getNeighborhood failed. ", e);
+			}
+		} 
+		
+		return map;
 	}
 }

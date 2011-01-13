@@ -94,17 +94,21 @@ public class WebserviceController {
     @ResponseBody
     public String elementById(
     		@RequestParam(value="format", required=false) OutputFormat format, 
-    		@RequestParam("uri") String uri) 
+    		@RequestParam("uri") String[] uri) 
     {
-    	if (log.isDebugEnabled())
-			log.debug("Query: /get; format:" + format + ", urn:" + uri);
+    	if (log.isInfoEnabled())
+			log.info("Query: /get; format:" + format + ", urn:" + uri);
     	
-    	if(format==null) 
+    	if(format==null) {
     		format = OutputFormat.BIOPAX;
+    		if (log.isInfoEnabled())
+    			log.info("Format not specified/recognized;" +
+    					" - using BioPAX.");
+    	}
     	
     	Map<ResultMapKey, Object> result = service.fetch(format, uri);
     	
-    	String body = getBody(result, format, uri);
+    	String body = getBody(result, format, uri.toString());
     	
 		return body;
     }
@@ -117,14 +121,25 @@ public class WebserviceController {
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
     		@RequestParam(value="q", required=true) String query)
     {		
-    	if(type == null)
-    		type = BioPAXElement.class;
-    	
-    	if(log.isDebugEnabled()) log.debug("Fulltext Search for type:" 
-				+ type.getCanonicalName() + ", query:" + query);
-    	Map<ResultMapKey,Object> results = service.find(query, type, false, null);
-    	String body = getListDataBody(results, query + 
-    			" (in " + type.getSimpleName() + ")");
+    	String body = "";
+
+		if (type == null) {
+			type = BioPAXElement.class;
+			if (log.isInfoEnabled())
+    			log.info("Type not specified/recognized;" +
+    					" - using all (BioPAXElement).");
+			//TODO distinguish between not specified vs. wrong type (better return error)
+		}
+
+		if (log.isDebugEnabled())
+			log.debug("Fulltext Search for type:" + type.getCanonicalName()
+					+ ", query:" + query);
+
+		Map<ResultMapKey, Object> results = service.find(query, type, false,
+				null);
+		body = getListDataBody(results, query + " (in " + type.getSimpleName()
+				+ ")");
+
 		return body;
 	}
 
@@ -135,21 +150,30 @@ public class WebserviceController {
     public String graphQuery(
     		@RequestParam(value="format", required=false) OutputFormat format,
     		@RequestParam(value="kind", required=true) GraphType kind,
-    		@RequestParam(value="source", required=false) String sources,
-    		@RequestParam(value="dest", required=false) String dests)
+    		@RequestParam(value="source", required=false) String[] sources,
+    		@RequestParam(value="dest", required=false) String[] dests)
     {
-		if(format==null) 
-			format = OutputFormat.BIOPAX;
-		
-		StringBuffer toReturn = new StringBuffer(
-				"(Graph Query Is Not Implemented Yet) " 
-				+ "GraphQuery format:" + format + 
+		String toReturn = "";
+				
+		if(log.isInfoEnabled()) 
+			log.info("GraphQuery format:" + format + 
 				", kind:" + kind + ", source:" 
 				+ sources + ", dest:" + dests);
 		
-		if(log.isInfoEnabled()) 
-			log.info(toReturn.toString());
+		if(format==null)  {
+			format = OutputFormat.BIOPAX;
+			if (log.isInfoEnabled())
+    			log.info("Format not specified/recognized;" +
+    					" - using BioPAX.");
+		}
 		
+		if(kind == GraphType.NEIGHBORHOOD) {
+			Map<ResultMapKey, Object> result =
+				service.getNeighborhood(format, sources);
+			toReturn = getBody(result, format, "nearest neighbors of " 
+					+ sources.toString());
+		}
+			
 		return toReturn.toString(); 
 	}
 	
@@ -158,8 +182,7 @@ public class WebserviceController {
     /**
      * Controller for the legacy cPath web services
      * (backward compatibility).
-     */
-    /*
+     * 
      * Currently, we do not use neither custom property editors nor framework's validator 
      * for the web method parameters. All the arguments are plain strings, 
      * and actual validation is performed after the binding, using the same approach 

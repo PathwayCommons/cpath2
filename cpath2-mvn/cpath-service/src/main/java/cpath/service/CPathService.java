@@ -120,19 +120,7 @@ public interface CPathService {
 			Class<? extends BioPAXElement> biopaxClass, boolean countOnly,
 			Integer[] organisms, String... dataSources);
 
-	
-	/** 
-	 * Gets BioPAX elements by id, 
-	 * creates a sub-model, and returns everything as map.
-	 * 
-	 * @see ResultMapKey
-	 * 
-	 * @param uris
-	 * @return
-	 */
-	Map<ResultMapKey, Object> fetchAsBiopax(String... uri);
-	
-	
+
 	/** 
 	 * Gets elements by id, 
 	 * creates SearchResponseType (cpath legacy service schema),
@@ -147,31 +135,6 @@ public interface CPathService {
 	
 	
 	/**
-	 * Gets BioPAX elements by id, 
-	 * creates a sub-model, converts to SIF format, 
-	 * and returns everything as map values.
-	 * 
-	 * @param uris identifiers of the elements to export
-	 * @param rules (optional) the names of SIF rules to apply
-	 * @return
-	 */
-	Map<ResultMapKey, Object> fetchAsBinarySIF(String[] uris, String... rules);
-
-	
-	/**
-	 * Gets BioPAX elements by id (URIs), 
-	 * extracts a sub-model, converts to GSEA format, 
-	 * and returns everything as map values.
-	 * 
-	 * @param outputIdType output identifiers type (db name)
-	 * @param uris identifiers of the BioPAX elements to export
-	 * @return
-	 */
-	Map<ResultMapKey, Object> fetchAsGSEA(String outputIdType, String... uris);
-	
-
-	
-	/**
 	 * Generates the BioPAX validation report for the pathway data provider
 	 * (report will be associated with 'DATA' key in the returned map).
 	 * 
@@ -179,5 +142,16 @@ public interface CPathService {
 	 * @return
 	 */
 	Map<ResultMapKey, Object> getValidationReport(String metadataIdentifier);
+	
+	
+	/**
+	 * Executes the "get nearest neighbors" query and 
+	 * returns a BioPAX sub-model (also in the specified output format)
+	 * 
+	 * @param format output format
+	 * @param uris BioPAX element identifiers
+	 * @return
+	 */
+	Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String... uris);
 	
 }
