@@ -104,7 +104,7 @@ public class CPathServiceTest {
 	
 	@Test
 	public void testFetchAsBiopax2() throws Exception {
-		Map<ResultMapKey, Object> map = service.fetchAsBiopax("urn:miriam:uniprot:P46880");
+		Map<ResultMapKey, Object> map = service.fetch(OutputFormat.BIOPAX, "urn:miriam:uniprot:P46880");
 		assertNotNull(map);
 			
 		BioPAXElement e = (BioPAXElement) map.get(ELEMENT);

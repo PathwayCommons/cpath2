@@ -35,6 +35,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import cpath.service.CPathService.OutputFormat;
 import cpath.service.CPathService.ResultMapKey;
 
 import java.io.*;
@@ -148,11 +149,11 @@ public class Main  {
 	 * @param csvIdsString
 	 * @throws IOException 
 	 */
-	public static  void fetchAsBiopax(OutputStream output, String csvIdsString) 
+	public static void fetchAsBiopax(OutputStream output, String csvIdsString) 
 		throws IOException 
 	{
 		String[] uris = csvIdsString.split(",");
-		Map<ResultMapKey, Object> res = getService().fetchAsBiopax(uris);
+		Map<ResultMapKey, Object> res = getService().fetch(OutputFormat.BIOPAX, uris);
 		if(res.containsKey(ResultMapKey.ERROR)) {
     		System.err.println(res.get(ResultMapKey.ERROR));
     	} else if(res.containsKey(ResultMapKey.DATA)) {

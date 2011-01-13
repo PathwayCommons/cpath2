@@ -18,7 +18,8 @@ public class CPathSquaredWebserviceTest {
 	
 	static RestTemplate template;
 	//static final String CPATH2_SERVICE_URL = "http://www.pathwaycommons.org/pc/webservice";
-	static final String CPATH2_SERVICE_URL = "http://localhost:8080/cpath-web-service"; // Temp.	
+	//static final String CPATH2_SERVICE_URL = "http://awabi.cbio.mskcc.org/cpath2"; // development instance
+	static final String CPATH2_SERVICE_URL = "http://localhost:8080/cpath-web-service";	
 	
 	static {
 		template = new RestTemplate();
@@ -55,8 +56,7 @@ public class CPathSquaredWebserviceTest {
 	@Test
 	public void testGetQueryById1() {
 		String result = template.getForObject(CPATH2_SERVICE_URL+"/get?uri={uri}", 
-				String.class, "http://www.biopax.org/examples/myExample#ADP");
-		//any URL encoding/decoding problem here? What if 'GO:12345' used instead 'Pathway50'?
+				String.class, "http://www.biopax.org/examples/myExample#ADP"); //"HTTP://WWW.REACTOME.ORG/BIOPAX#SIGNALING_BY_BMP_1_9606");
 		assertNotNull(result);
 		System.out.println(result);
 	}
