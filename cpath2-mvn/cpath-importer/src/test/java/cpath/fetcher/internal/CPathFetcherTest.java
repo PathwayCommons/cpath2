@@ -16,7 +16,6 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.junit.*;
 
-import cpath.config.CPathSettings;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.beans.Metadata.TYPE;

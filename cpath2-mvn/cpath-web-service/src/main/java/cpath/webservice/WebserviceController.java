@@ -156,9 +156,9 @@ public class WebserviceController {
 		String toReturn = "";
 				
 		if(log.isInfoEnabled()) 
-			log.info("GraphQuery format:" + format + 
-				", kind:" + kind + ", source:" 
-				+ sources + ", dest:" + dests);
+			log.info("GraphQuery format:" + format + ", kind:" + kind 
+				+ ( (sources == null) ? "no source nodes" : ", source:" + sources.toString() ) 
+				+ ( (dests == null) ? "no dest. nodes" : ", dest:" + dests.toString()) );
 		
 		if(format==null)  {
 			format = OutputFormat.BIOPAX;
@@ -168,10 +168,15 @@ public class WebserviceController {
 		}
 		
 		if(kind == GraphType.NEIGHBORHOOD) {
-			Map<ResultMapKey, Object> result =
-				service.getNeighborhood(format, sources);
-			toReturn = getBody(result, format, "nearest neighbors of " 
-					+ sources.toString());
+			if (sources != null && sources.length > 0) {
+				Map<ResultMapKey, Object> result = service.getNeighborhood(
+						format, sources);
+				toReturn = getBody(result, format, "nearest neighbors of "
+						+ sources.toString());
+			} else {
+				toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.MISSING_ARGUMENTS, 
+						"No source nodes specified for the neighborhood graph query.");
+			}
 		}
 			
 		return toReturn.toString(); 
@@ -285,6 +290,9 @@ public class WebserviceController {
 		} else if(protocol.getCommand() == Cmd.GET_NEIGHBORS) {
 			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR,
 				"Not Implemented Yet: legacy GET_NEIGHBORS");
+			// TODO Problem: semantic of this old command is very different from the new '/graph' variant (which cannot use UtilityClasses)!
+			// TODO call the service method
+			// TODO translate the results to the XML schema
 		} else if(protocol.getCommand() == Cmd.GET_PARENTS) {
 			//TODO implement "get_parents" or give up...
 			// build a SummaryResponseType (from xsd), marshal
