@@ -582,5 +582,23 @@
 		<bp:pathwayComponent
 			rdf:resource="#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p" />
 	</bp:Pathway>
+	
+	
+<!-- the following is extra tests for the Normalizer -->
+  <bp:UnificationXref rdf:ID="UnificationXref166275">
+    <bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string">C00022</bp:id>
+    <bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string">KEGG Compound</bp:db>
+  </bp:UnificationXref>
+  <bp:UnificationXref rdf:ID="UnificationXref166274">
+    <bp:id rdf:datatype="http://www.w3.org/2001/XMLSchema#string">c00022</bp:id>
+    <bp:db rdf:datatype="http://www.w3.org/2001/XMLSchema#string">KEGG Compound</bp:db>
+  </bp:UnificationXref>
+  <bp:Protein rdf:ID="Protein_x">
+ 	<bp:xref rdf:resource="#UnificationXref166275"></bp:xref>
+  </bp:Protein>
+  <bp:Protein rdf:ID="Protein_y">
+ 	<bp:xref rdf:resource="#UnificationXref166275"></bp:xref>
+  </bp:Protein>
+ 
 </rdf:RDF>
 

@@ -56,7 +56,7 @@ public class SimpleExporterTest {
 					.getInputStream());
 		assertNotNull(model);
 		assertTrue(model.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
-		assertEquals(50, model.getObjects(BioPAXElement.class).size());
+		assertEquals(54, model.getObjects(BioPAXElement.class).size());
 		
 		// write (unchanged)
 		OutputStream out = new ByteArrayOutputStream();
@@ -69,7 +69,7 @@ public class SimpleExporterTest {
 		model = reader.convertFromOWL(new ByteArrayInputStream(bytes.getBytes("UTF-8")));
 		assertNotNull(model);
 		assertTrue(model.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
-		assertEquals(50, model.getObjects().size());
+		assertEquals(54, model.getObjects().size());
 	}
 	
 }
