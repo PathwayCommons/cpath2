@@ -407,8 +407,9 @@ public class CPathServiceImpl implements CPathService {
 					// unmarshal and add to the 'results' list
 					Validation validation = null;
 					try {
-						validation = (Validation) BiopaxValidatorUtils.getUnmarshaller()
+						ValidatorResponse resp = (ValidatorResponse) BiopaxValidatorUtils.getUnmarshaller()
 							.unmarshal(new StreamSource(new StringReader(xmlResult)));
+						validation = resp.getValidationResult().get(0);
 					} catch (Exception e) {
 						toReturn.put(ERROR, e);
 						log.error(e);

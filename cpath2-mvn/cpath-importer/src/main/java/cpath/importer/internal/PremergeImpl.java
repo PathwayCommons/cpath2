@@ -41,9 +41,8 @@ import cpath.warehouse.beans.PathwayData;
 //import org.biopax.paxtools.model.level3.Pathway;
 //import org.biopax.paxtools.io.simpleIO.*;
 import org.biopax.paxtools.model.*;
-import org.biopax.validator.Behavior;
+import org.biopax.validator.result.*;
 import org.biopax.validator.Validator;
-import org.biopax.validator.result.Validation;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
 
 import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
