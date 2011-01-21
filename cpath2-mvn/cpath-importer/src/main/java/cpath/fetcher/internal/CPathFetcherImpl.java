@@ -323,11 +323,18 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 				dest.flush();
 				dest.close();
 
+				String content = bos.toString("UTF-8");
 				// quick fix: skip undesired entries
-				if(!entryName.toLowerCase().endsWith(".owl")
-					&& !entryName.toLowerCase().endsWith(".xml")) {
+				if(entry.isDirectory() 
+						|| !( content.contains("RDF")
+								&& content.contains("biopax.org/release/biopax")
+							)
+					//|| !entryName.toLowerCase().endsWith(".owl")
+					//&& !entryName.toLowerCase().endsWith(".xml")
+					) 
+				{
 					if(log.isInfoEnabled())
-	            		log.info("Skipping (not owl/xml) zip entry: " 
+	            		log.info("Skipping not BioPAX (owl) zip entry: " 
 	            			+ entryName);
 					continue;
 				}
@@ -344,7 +351,7 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 							" version: " + metadata.getVersion() +
 							" digest: " + digest);
 					PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), 
-						metadata.getVersion(), entryName, digest, bos.toString());
+						metadata.getVersion(), entryName, digest, content);
 				
 					// add object to return collection
 					toReturn.add(pathwayData);
@@ -547,14 +554,24 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 					metadata.getURLToData() + " to " + localFileName);
 		
 			Resource resource = LOADER.getResource(metadata.getURLToData());
-			long size = resource.contentLength();
-			if(log.isInfoEnabled())
-				log.info(metadata.getURLToData() + " content length= " + size);
-			ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
-			FileOutputStream dest = new FileOutputStream(localFileName);
-			size = dest.getChannel().transferFrom(source, 0, size); // can throw runtime exceptions
-			if(log.isInfoEnabled())
-				log.info(size + " bytes downloaded from " + metadata.getURLToData());
+			
+			long size = 0; 
+			if(resource.isReadable()) {
+				size = resource.contentLength();
+				if(log.isInfoEnabled())
+					log.info(metadata.getURLToData() + " content length= " + size);
+			}
+			
+			if(size > 0) {
+				ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
+				FileOutputStream dest = new FileOutputStream(localFileName);
+				size = dest.getChannel().transferFrom(source, 0, size); // can throw runtime exceptions
+				if(log.isInfoEnabled())
+					log.info(size + " bytes downloaded from " + metadata.getURLToData());
+			} else {
+				throw new IllegalStateException("Download failed: zero content length at "
+						+ resource + "; readable=" + resource.isReadable());
+			}
 		}
 
 		if(metadata.getType() == Metadata.TYPE.MAPPING) {
