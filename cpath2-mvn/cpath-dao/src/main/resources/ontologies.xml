@@ -4,26 +4,32 @@
 	<!-- Only source="file" (that also means URI) supported 
 		in the modified (BioPAX Validator's) OntologyManager version -->
 
-    <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/genomic-proteomic/so.obo"
+    <!-- <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/genomic-proteomic/so.obo" -->
+    <cvSource source="file" uri="http://berkeleybop.org/ontologies/obo-all/sequence/sequence.obo"
               format="OBO" name="Sequence Ontology" identifier="SO"/>
 
-    <cvSource source="file" uri="http://psidev.cvs.sourceforge.net/viewvc/*checkout*/psidev/psi/mi/rel25/data/psi-mi25.obo"
+    <!-- <cvSource source="file" uri="http://psidev.cvs.sourceforge.net/viewvc/*checkout*/psidev/psi/mi/rel25/data/psi-mi25.obo" -->
+    <cvSource source="file" uri="http://berkeleybop.org/ontologies/obo-all/psi-mi/psi-mi.obo"
               format="OBO" name="Molecular Interactions Ontology" identifier="MI"/>
 
-    <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/anatomy/cell_type/cell.obo"
+    <!-- <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/anatomy/cell_type/cell.obo" -->
+    <cvSource source="file" uri="http://berkeleybop.org/ontologies/obo-all/cell/cell.obo"
               format="OBO" name="Cell Ontology" identifier="CL"/>
 
     <cvSource source="file" uri="http://www.brenda-enzymes.info/ontology/tissue/tree/update/update_files/BrendaTissueOBO"
               format="OBO" name="Brenda Tissue Ontology" identifier="BTO"/>
 
-    <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/phenotype/quality.obo"
+    <!-- <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/phenotype/quality.obo" -->
+    <cvSource source="file" uri="http://berkeleybop.org/ontologies/obo-all/quality/quality.obo"
               format="OBO" name="PATO" identifier="PATO"/>
               
-    <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/genomic-proteomic/gene_ontology_edit.obo"
+    <!-- <cvSource source="file" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/genomic-proteomic/gene_ontology_edit.obo"-->
+    <cvSource source="file" uri="http://www.geneontology.org/ontology/gene_ontology_edit.obo"
               format="OBO" name="Gene Ontology" identifier="GO"/>
               
-   	<cvSource source="file" uri="http://psidev.cvs.sourceforge.net/viewvc/psidev/psi/mod/data/PSI-MOD.obo"
-              format="OBO" name="Protein Modification Ontology" identifier="MOD"/>    
+   	<!-- <cvSource source="file" uri="http://psidev.cvs.sourceforge.net/viewvc/psidev/psi/mod/data/PSI-MOD.obo" -->
+   	<cvSource source="file" uri="http://berkeleybop.org/ontologies/obo-all/psi-mod/psi-mod.obo"
+              format="OBO" name="Protein Modification Ontology" identifier="MOD"/> 
              
     <!-- 
     <cvSource source="file" uri="ftp://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi.obo"
