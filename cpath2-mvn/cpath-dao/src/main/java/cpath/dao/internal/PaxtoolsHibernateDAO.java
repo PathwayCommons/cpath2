@@ -317,8 +317,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			log.debug("Query '" + query + "' results size = " + count);
 		
 		// TODO later, use pagination properly (this is stub!!!)
-		hibQuery.setFirstResult(0);
-		hibQuery.setMaxResults(10);
+		//hibQuery.setFirstResult(0);
+		//hibQuery.setMaxResults(10);
 		
 		// use projection!
 		hibQuery.setProjection("RDFId", FullTextQuery.SCORE, 
