@@ -19,6 +19,7 @@ import javax.persistence.*;
 	@NamedQuery(name="cpath.warehouse.beans.biopaxElementSourceByProviderIdentifier",
 				query="from BioPAXElementSource as bpe where bpe.providerId = :providerId")
 })
+@Deprecated
 public class BioPAXElementSource {
 	
 	@Id

@@ -290,54 +290,5 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 		throw new UnsupportedOperationException(
 			"Use getObject(String urn, Class<T> cvSubclass) instead.");
 	}
-
-	
-/*
- * TODO Methods below would guarantee working only with BioPAX-recommended CVs...
- */
-
-/*
-	public Set<Cv> fetchBiopaxCVs(Level3CvTermsRule cvRule) {
-		Set<Cv> beans = new HashSet<Cv>();
-		
-		// find the CV class name
-		String cvClassName = (cvRule.getEditor() == null) 
-			? cvRule.getDomain().getSimpleName()
-			: cvRule.getEditor().getRange().getSimpleName();
-		
-		Set<OntologyTermI> terms = getValidTerms(cvRule);
-		// create Cv beans hierarchy (recursively)
-		for(OntologyTermI term : terms) {
-			Cv bean = createBean(beans, terms, term, cvClassName);
-			beans.add(bean);
-		}
-		
-		return beans;
-	}
-
-
-	private Cv createBean(final Set<Cv> beans, final Set<OntologyTermI> terms, final OntologyTermI term, final String type) {
-		// get allowed terms
-		String ontology = term.getOntologyName();
-		String accession = term.getTermAccession();
-		String urn = miriam.getURI(ontology, accession);
-		Cv bean = new Cv(type, urn, ontology, accession, term.getPreferredName());
-		
-		if (!beans.contains(bean)) {
-			bean.getSynonyms().addAll(term.getNameSynonyms());
-			for (OntologyTermI childTerm : getOntologyAccess(ontology).getDirectChildren(term)) 
-			{
-				// sure, we use only valid children terms (remember the CV Rule)
-				if (terms.contains(childTerm)) {
-					Cv childBean = createBean(beans, terms, childTerm, type);
-					bean.addMember(childBean);
-					beans.add(childBean);
-				}
-			}
-		}
-		
-		return bean;
-	}
-*/
 	
 }

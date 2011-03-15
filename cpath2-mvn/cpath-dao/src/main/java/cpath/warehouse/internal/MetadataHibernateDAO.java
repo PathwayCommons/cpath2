@@ -219,6 +219,7 @@ public class MetadataHibernateDAO  implements MetadataDAO {
      * (non-Javadoc)
      * @see cpath.warehouse.metadata.MetadataDAO#importBioPAXElementSource;
      */
+	@Deprecated
     @Transactional(propagation=Propagation.REQUIRED)
 	public void importBioPAXElementSource(final BioPAXElementSource biopaxElementSource) {
 
