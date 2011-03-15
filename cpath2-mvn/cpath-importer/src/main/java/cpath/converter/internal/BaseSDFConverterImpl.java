@@ -1,5 +1,6 @@
 package cpath.converter.internal;
 
+import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -170,6 +171,11 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
                 }
                 line = bufferedReader.readLine();
             }
+            // quick fix - mainly for testing (without DAO)
+            if(!(model instanceof PaxtoolsDAO)) {
+            	// make self-consistent (auto-fix object props and add child elements)
+            	MERGER.merge(model);
+            }
         }
 		catch (IOException e) {
 			log.error(e);
@@ -209,8 +215,8 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
             	((PaxtoolsDAO) model).merge(smr);
             }
             else {
-            	// make a self-consistent sub-model from the smr
-            	MERGER.merge(model, smr);
+            	// don't merge now (later - all at once)
+            	model.add(smr);
             }
 		}
 	}

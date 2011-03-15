@@ -280,14 +280,17 @@ public class MergerImpl implements Merger {
 		
 		// goodbye dangling utility classes
 		// (this should also prevent the hibernate's duplicate PK exceptions...)
-		removeDangling(tmpModel);
+		removeDanglingUtilityClassObjects(tmpModel);
 		
 		// finally, merge into the global (persistent) model;
 		pcDAO.merge(tmpModel);
 		
+		/*
+		 * TODO something for filtering; do it before the merge into the main DB
 		// before exiting, lets iterate over tmpModel and capture
 		// BioPAXElementSource information - used for filtering
-		processBioPAXElementSource(metadata, tmpModel);
+		processBioPAXElementSource(metadata, tmpModel); // @deprecated
+		*/
 		
 		if(log.isInfoEnabled()) {
 			log.info("merge(Model pathwayModel) complete, exiting...");
@@ -456,7 +459,7 @@ public class MergerImpl implements Merger {
 	/*
 	 * recursively removes dangling utility class elements
 	 */
-	private void removeDangling(Model model) 
+	private void removeDanglingUtilityClassObjects(Model model) 
 	{
 		final Collection<UtilityClass> dangling = 
 			new HashSet<UtilityClass>(model.getObjects(UtilityClass.class));
@@ -490,10 +493,11 @@ public class MergerImpl implements Merger {
 				assert !model.containsID(thing.getRDFId());
 			}
 			// some may become dangling now, so check again...
-			removeDangling(model);
+			removeDanglingUtilityClassObjects(model);
 		}
 	}
 	
+	@Deprecated
 	private void processBioPAXElementSource(final Metadata metadata, final Model model) {
 	
 		// some sanity checking

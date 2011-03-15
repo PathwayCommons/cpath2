@@ -253,8 +253,8 @@ public class PremergeImpl implements Premerge {
 		writer.flush();		
 		pathwayData.setValidationResults(writer.toString());
 		
-		// count error cases (ignoring warnings)
-		int noErrors = v.countErrors(null, null, null, true);
+		// count critical not fixed error cases (ignore warnings and fixed ones)
+		int noErrors = v.countErrors(null, null, null, null, true, true);
 		if(log.isInfoEnabled()) {
 			log.info("pipeline(), summary for " + info
 				+ ". Critical errors found:" + noErrors + ". " 

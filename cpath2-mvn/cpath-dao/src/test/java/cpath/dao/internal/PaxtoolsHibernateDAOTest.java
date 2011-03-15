@@ -75,9 +75,11 @@ public class PaxtoolsHibernateDAOTest {
 		
 		// load some data into the test storage
 		log.info("Loading BioPAX data (importModel(file))...");
-		File biopaxFile = new File(PaxtoolsHibernateDAOTest.class.getResource("/test.owl").getFile());
 		try {
-			paxtoolsDAO.importModel(biopaxFile);
+	    	/* import two files to ensure it does not fail
+	    	 * (suspecting a "duplicate entry for the key (rdfid)" exception) */
+			paxtoolsDAO.importModel(new File(PaxtoolsHibernateDAOTest.class.getResource("/test.owl").getFile()));
+			paxtoolsDAO.importModel(new File(PaxtoolsHibernateDAOTest.class.getResource("/test2.owl").getFile()));
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
@@ -88,15 +90,6 @@ public class PaxtoolsHibernateDAOTest {
 	
     @Test
 	public void testImportingAnotherFileAndTestInitialization() throws IOException {
-    	/* first, trying to import another "pathway" 
-    	 * and ensure this does not fail
-    	 * (I suspected a "duplicate entry for the key (rdfid)" exception)
-    	 */
-		File biopaxFile = new File(PaxtoolsHibernateDAOTest.class.getResource(
-				"/test2.owl").getFile());
-		paxtoolsDAO.importModel(biopaxFile);
-		
-		// a few smoke checks
 		assertTrue(paxtoolsDAO.containsID("urn:miriam:uniprot:P46880"));
 		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
 		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Protein_A"));
@@ -110,7 +103,6 @@ public class PaxtoolsHibernateDAOTest {
 		BioPAXElement e = paxtoolsDAO
 				.getByID("http://www.biopax.org/examples/myExample2#Protein_A");
 		assertTrue(e instanceof Protein);
-		
 		
 		e = paxtoolsDAO // try to initialize
 		.getByIdInitialized("http://www.biopax.org/examples/myExample2#Protein_A");
@@ -263,7 +255,7 @@ public class PaxtoolsHibernateDAOTest {
 		assertEquals(1, n.intValue());
 		
 		n = paxtoolsDAO.count(null, BioPAXElement.class);
-		assertEquals(16, n.intValue());
+		assertEquals(19, n.intValue());
 		
 		n = paxtoolsDAO.count(null, UnificationXref.class);
 		assertEquals(5, n.intValue());

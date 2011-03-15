@@ -37,7 +37,7 @@ public class Metadata {
 	@Column(nullable=false, unique=true)
     private String identifier;
 	@Column(nullable=false)
-    private String name;
+    private String name; // MUST be a Miriam standard name/synonym for the datasource!!!
 	@Column(nullable=false)
     private String version;
 	@Column(nullable=false)
