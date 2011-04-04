@@ -2,37 +2,28 @@
   <parent>
     <artifactId>parent</artifactId>
     <groupId>pathwaycommons.cpath</groupId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>pathwaycommons.cpath</groupId>
   <artifactId>cpath-importer</artifactId>
   <name>cPath2 Importer</name>
-  <version>1.0-SNAPSHOT</version>
   <description>cPath^2 Import Pipeline. It also helps fetch various data from Internet, including provider's metadata and pathway data, OBO terms, and Miriam.</description>
   <dependencies>
   	<dependency>
   		<groupId>org.biopax.paxtools</groupId>
-  		<artifactId>paxtools-simple-io</artifactId>
-  		<version>${paxtools.version}</version>
-  		<type>jar</type>
-  	</dependency>
-  	<dependency>
-  		<groupId>org.biopax.paxtools</groupId>
   		<artifactId>psimi-converter</artifactId>
   		<version>${paxtools.version}</version>
-  		<type>jar</type>
   	</dependency>
   	<dependency>
   		<groupId>org.biopax.paxtools</groupId>
   		<artifactId>biopax-converter</artifactId>
   		<version>${paxtools.version}</version>
-  		<type>jar</type>
   	</dependency>
   	<dependency>
         <groupId>pathwaycommons.cpath</groupId>
         <artifactId>cpath-dao</artifactId>
-        <version>1.0-SNAPSHOT</version>
+        <version>${project.version}</version>
     </dependency>
   	<dependency>
       <groupId>commons-httpclient</groupId>
@@ -42,7 +33,7 @@
   	<dependency>
     	<groupId>org.biopax.validator</groupId>
     	<artifactId>biopax-rules</artifactId>
-    	<version>2.0-SNAPSHOT</version>
+    	<version>${validator.version}</version>
     </dependency>
   </dependencies>
 </project>

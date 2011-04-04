@@ -2,9 +2,11 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="
        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
 
 	<context:property-placeholder/>
 	
@@ -12,8 +14,28 @@
 
 	<!-- info: CvFetcher extends OntologyManager(Adapter) and also implements CvRepository interface -->
 	<bean id="cvFetcher" class="cpath.warehouse.internal.OntologyManagerCvRepository">
-		<constructor-arg index="0" value="classpath:ontologies.xml"/>
+		<constructor-arg index="0" ref="ontologies"/>
 		<constructor-arg index="1"><null/></constructor-arg>
+		<constructor-arg index="2" value="true"/> 
+		<!-- change to "false" in production - to refresh all CVs at every run -->
 	</bean>
+	
+	<util:map id="ontologies">
+		<!-- another URL "http://berkeleybop.org/ontologies/obo-all/sequence/sequence.obo", older: "..so.obo?revision=1.283"-->
+		<entry key="SO" value="http://song.cvs.sourceforge.net/viewvc/*checkout*/song/ontology/so.obo"/>
+		<!-- "http://berkeleybop.org/ontologies/obo-all/psi-mi/psi-mi.obo -->
+		<entry key="MI" value="http://psidev.cvs.sourceforge.net/viewvc/*checkout*/psidev/psi/mi/rel25/data/psi-mi25.obo"/>
+		<!-- "http://berkeleybop.org/ontologies/obo-all/cell/cell.obo -->
+		<entry key="CL" value="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/anatomy/cell_type/cell.obo"/>
+		<entry key="BTO" value="http://www.brenda-enzymes.info/ontology/tissue/tree/update/update_files/BrendaTissueOBO"/>
+		<!--"http://berkeleybop.org/ontologies/obo-all/quality/quality.obo" -->
+		<entry key="PATO" value="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/phenotype/quality.obo"/>
+		<!-- "http://www.geneontology.org/ontology/gene_ontology_edit.obo" -->
+		<entry key="GO" value="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/genomic-proteomic/gene_ontology_edit.obo"/>
+		<!-- "http://berkeleybop.org/ontologies/obo-all/psi-mod/psi-mod.obo" -->
+		<entry key="MOD" value="http://psidev.cvs.sourceforge.net/viewvc/*checkout*/psidev/psi/mod/data/PSI-MOD.obo"/>	
+		
+		<!-- <entry key="CHEBI" value="ftp://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi.obo"/> -->
+	</util:map>
 	
 </beans>

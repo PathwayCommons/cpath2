@@ -40,10 +40,14 @@ import cpath.warehouse.beans.PathwayData;
 //import org.biopax.paxtools.controller.*;
 //import org.biopax.paxtools.model.level3.Pathway;
 //import org.biopax.paxtools.io.simpleIO.*;
+import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.Entity;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.validator.result.*;
 import org.biopax.validator.Validator;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
+import org.biopax.validator.utils.Normalizer;
 
 import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
 
@@ -221,6 +225,7 @@ public class PremergeImpl implements Premerge {
 			log.info("pipeline(), validating pathway data "
 				+ info);
 		
+		
 		/* Validate, auto-fix, and normalize (incl. convesion to L3): 
 		 * e.g., synonyms in xref.db may be replaced 
 		 * with the primary db name, as in Miriam, etc.
@@ -232,17 +237,24 @@ public class PremergeImpl implements Premerge {
 			return;
 		}
 		
+		// (in addition to normalizer's job) find existing or create new Provenance 
+		// from the metadata.name to add it explicitly to all entities now!
+		fixDataSource(v.getModel(), metadata.getName());
+		
+		// TODO add 'pathway membership' relatioship xrefs to all entities (incl. sub-pathways) before merging into the main db 
+		// TODO ?? auto-set 'organism', - only for (sub-)pathways, where empty (ignore proteinReference, Complex, Gene, dna*Reference, rna*Reference for now...)
+		
 		// get the updated BioPAX OWL and save it in the pathwayData bean
 		v.updateModelSerialized();
 		pathwayData.setPremergeData(v.getModelSerialized());
 		
 		/* Now - add the serialized validation results 
 		 * to the pathwayData entity bean, validationResults column.
-		 * 
-		 * (TODO using the last parameter, javax.xml.transform.Source
+		 * (using the last parameter, javax.xml.transform.Source
 		 * of a XSLT stylesheet, the validation object can be 
-		 * transformed to a human-readable report.)
+		 * further transformed to a human-readable report.)
 		 */
+		
 		/* First, let's clear the (huge) 'serializedModel' field,
 		 * because it's already saved in the 'premergeData' column 
 		 */
@@ -421,4 +433,22 @@ public class PremergeImpl implements Premerge {
 		this.version = version;
 	}
 	
+	
+	private void fixDataSource(Model model, String dataSource) {
+		Provenance pro = null;
+		
+		String urn = MiriamLink.getDataTypeURI(dataSource);
+		if(model.containsID(urn))
+			pro = (Provenance) model.getByID(urn);
+		else {
+			pro = BioPAXLevel.L3.getDefaultFactory().create(Provenance.class, urn);
+			Normalizer.autoName(pro); // + standard name and synonyms
+		}
+
+		// add new value to each entity (but not to the model yet - it's
+		// simpleMerger's job)
+		for (Entity ent : model.getObjects(Entity.class)) {
+			ent.addDataSource(pro);
+		}
+	}
 }

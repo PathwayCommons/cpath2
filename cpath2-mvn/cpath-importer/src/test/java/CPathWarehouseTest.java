@@ -34,6 +34,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
+import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
@@ -61,7 +62,7 @@ public class CPathWarehouseTest {
 
 	static WarehouseDAO molecules;
 	static WarehouseDAO proteins;
-	static Level3Factory factory;
+	static BioPAXFactory factory;
 	
 	static {
 		System.out.println("Preparing...");
@@ -101,7 +102,7 @@ public class CPathWarehouseTest {
 			throw new RuntimeException(e);
 		}
 		
-		factory = (Level3Factory) BioPAXLevel.L3.getDefaultFactory();
+		factory = BioPAXLevel.L3.getDefaultFactory();
 	}
 
 	@Test
@@ -117,8 +118,8 @@ public class CPathWarehouseTest {
 		
 		// generate an xref to search Warehouse with -
 		// (it pretends to come from a pathway during merge...)
-		Xref x = factory.reflectivelyCreate(UnificationXref.class);
-		x.setRDFId(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:UNIPROT_A2A2M3");
+		Xref x = factory.create(UnificationXref.class,
+			CPathSettings.CPATH_URI_PREFIX+"UnificationXref:UNIPROT_A2A2M3");
 		x.setDbVersion("uniprot");
 		x.setId("A2A2M3"); // not a primary accession ;)
 		
@@ -176,7 +177,7 @@ public class CPathWarehouseTest {
 		
 		/*
 		try {
-			(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(m, System.out);
+			(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(m, System.out);
 		} catch (IOException e) {
 		}
 		*/

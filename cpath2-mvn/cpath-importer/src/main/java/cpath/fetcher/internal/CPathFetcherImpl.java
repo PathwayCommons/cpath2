@@ -562,16 +562,15 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 					log.info(metadata.getURLToData() + " content length= " + size);
 			}
 			
-			if(size > 0) {
-				ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
-				FileOutputStream dest = new FileOutputStream(localFileName);
-				size = dest.getChannel().transferFrom(source, 0, size); // can throw runtime exceptions
-				if(log.isInfoEnabled())
-					log.info(size + " bytes downloaded from " + metadata.getURLToData());
-			} else {
-				throw new IllegalStateException("Download failed: zero content length at "
-						+ resource + "; readable=" + resource.isReadable());
-			}
+			if(size < 0) 
+				size = 100 * 1024 * 1024 * 1024; // TODO (may be make it a parameter) max bytes = 100Gb
+				
+			ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
+			FileOutputStream dest = new FileOutputStream(localFileName);
+			size = dest.getChannel().transferFrom(source, 0, size); // can throw runtime exceptions
+			
+			if(log.isInfoEnabled())
+				log.info(size + " bytes downloaded from " + metadata.getURLToData());
 		}
 
 		if(metadata.getType() == Metadata.TYPE.MAPPING) {

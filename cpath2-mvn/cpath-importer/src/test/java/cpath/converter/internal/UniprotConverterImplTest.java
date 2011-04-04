@@ -37,10 +37,7 @@ import java.io.InputStream;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
-import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.impl.ModelImpl;
-import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ProteinReference;
@@ -63,17 +60,7 @@ public class UniprotConverterImplTest {
 		InputStream is = getClass().getResourceAsStream("/test_uniprot_data.dat.gz");
 		GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(is));
 		
-		// extend Model for the converter the calls 'merge' method to work
-		Model model = new ModelImpl(BioPAXLevel.L3.getDefaultFactory()) {
-			/* (non-Javadoc)
-			 * @see org.biopax.paxtools.impl.ModelImpl#merge(org.biopax.paxtools.model.Model)
-			 */
-			@Override
-			public void merge(Model source) {
-				SimpleMerger simpleMerger = new SimpleMerger(new SimpleEditorMap(getLevel()));
-				simpleMerger.merge(this, source);
-			}
-		};
+		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
 		
 		Converter converter = new UniprotConverterImpl(model);
 		converter.convert(zis);
@@ -87,7 +74,7 @@ public class UniprotConverterImplTest {
 		// dump owl for review
 		String outFilename = getClass().getClassLoader().getResource("").getPath() 
 			+ File.separator + "testConvertUniprot.out.owl";
-		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, 
+		(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(model, 
 				new FileOutputStream(outFilename));
 	}
 

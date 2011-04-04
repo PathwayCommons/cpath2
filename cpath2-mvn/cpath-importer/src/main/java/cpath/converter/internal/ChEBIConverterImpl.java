@@ -75,8 +75,7 @@ public class ChEBIConverterImpl extends BaseSDFConverterImpl
 		if (rdfID == null) {
 			return null;
 		}
-		toReturn = factory.reflectivelyCreate(SmallMoleculeReference.class);
-		toReturn.setRDFId(rdfID);
+		toReturn = factory.create(SmallMoleculeReference.class, rdfID);
 		// primary id (u.xref)
 		toReturn.addXref(getXref(UnificationXref.class,getValue(entryBuffer, CHEBI_ID), "chebi"));
 		// names
@@ -239,8 +238,7 @@ public class ChEBIConverterImpl extends BaseSDFConverterImpl
 				log.debug("setStructure(), structure: " + structure);
 			}
 			// should only get one of these
-			ChemicalStructure chemStruct = factory.reflectivelyCreate(ChemicalStructure.class);
-			chemStruct.setRDFId(chemicalStructureID);
+			ChemicalStructure chemStruct = factory.create(ChemicalStructure.class, chemicalStructureID);
 			chemStruct.setStructureData(URLEncoder.encode(structure));
 			chemStruct.setStructureFormat(structureFormat);
 			smallMoleculeReference.setStructure(chemStruct);
@@ -372,8 +370,7 @@ public class ChEBIConverterImpl extends BaseSDFConverterImpl
 			toReturn = getById(rdfID, aClass);
 		}
 		else {
-			toReturn = (T) factory.reflectivelyCreate(aClass);
-			toReturn.setRDFId(rdfID);
+			toReturn = (T) factory.create(aClass, rdfID);
 			toReturn.setDb(db);
 			toReturn.setId(id);
 			

@@ -7,11 +7,7 @@ import java.util.Collection;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.impl.ModelImpl;
-import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
-import org.biopax.paxtools.io.simpleIO.SimpleReader;
+import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.junit.*;
@@ -25,21 +21,14 @@ public class CPathFetcherTest {
 	
 	static CPathFetcherImpl fetcher;
 	static Model model;
-	static SimpleExporter exporter;
+	static SimpleIOHandler exporter;
 	static int count = 0;
 	
 	static {
 		fetcher = new CPathFetcherImpl();
-		exporter = new SimpleExporter(BioPAXLevel.L3);
+		exporter = new SimpleIOHandler(BioPAXLevel.L3);
 		// extend Model for the converter calling 'merge' method to work
-		model = new ModelImpl(BioPAXLevel.L3.getDefaultFactory()) {
-			@Override
-			public void merge(Model source) {
-				SimpleMerger simpleMerger = 
-					new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
-				simpleMerger.merge(this, source);
-			}
-		}; // all tests outputs to the same model object
+		model = BioPAXLevel.L3.getDefaultFactory().createModel();
 	}
 
 	@Test
@@ -137,7 +126,7 @@ public class CPathFetcherTest {
 		String owl = pd.getPathwayData();
 		assertTrue(owl != null && owl.length() > 0);
 		assertTrue(owl.contains("<bp:Protein"));
-		SimpleReader reader = new SimpleReader();
+		SimpleIOHandler reader = new SimpleIOHandler(); //level auto-detect
 		reader.mergeDuplicates(true);
 		Model m = reader.convertFromOWL(new ByteArrayInputStream(owl.getBytes()));
 		assertFalse(m.getObjects().isEmpty());

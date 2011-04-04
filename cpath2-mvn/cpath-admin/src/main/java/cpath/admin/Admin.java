@@ -40,8 +40,7 @@ import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
-import org.biopax.paxtools.io.simpleIO.SimpleReader;
+import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.Model;
 import org.biopax.validator.Validator;
 
@@ -540,11 +539,11 @@ public class Admin implements Runnable {
 				String data = pdata.getPremergeData();
 				if (data != null && data.length() > 0) {
 					if (uris.length > 0) { // extract a sub-model
-						Model model = (new SimpleReader())
-								.convertFromOWL(new ByteArrayInputStream(data
+						SimpleIOHandler handler = new SimpleIOHandler(); // auto-detect Level
+						Model model = handler.convertFromOWL(new ByteArrayInputStream(data
 										.getBytes("UTF-8")));
-						(new SimpleExporter(model.getLevel())).convertToOWL(
-								model, output, uris);
+						//handler.setFactory(model.getLevel().getDefaultFactory());
+						handler.convertToOWL(model, output, uris);
 					} else { 
 						/*	write all (premergeData -
 							cleaned/converted/validated/normalized from

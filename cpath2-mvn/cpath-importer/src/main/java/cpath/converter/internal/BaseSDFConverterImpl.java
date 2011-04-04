@@ -1,6 +1,5 @@
 package cpath.converter.internal;
 
-import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -166,15 +165,14 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
 						processSDFEntry(entryBuffer);
 					}
 					else if (whatEntryToProcess.equals(PROCESS_OBO)) {
-						processOBOEntry(entryBuffer);
+						oboConverter.processOBOEntry(entryBuffer);
 					}
                 }
                 line = bufferedReader.readLine();
             }
             // quick fix - mainly for testing (without DAO)
             if(!(model instanceof PaxtoolsDAO)) {
-            	// make self-consistent (auto-fix object props and add child elements)
-            	MERGER.merge(model);
+            	model.repair();
             }
         }
 		catch (IOException e) {
@@ -220,23 +218,7 @@ public abstract class BaseSDFConverterImpl extends BaseConverterImpl {
             }
 		}
 	}
-
-	/**
-	 * Given a string buffer for a single OBO entry, create proper relationships
-	 * between SMR within the warehouse.
-	 * 
-	 * @param entryBuffer String Buffer
-	 * @throws IOException
-	 */
-	private void processOBOEntry(StringBuffer entryBuffer) throws IOException {
-		
-		if (log.isDebugEnabled()) {
-			log.debug("calling processOBOEntry()");
-		}
-		
-		// create obo converter
-		oboConverter.processOBOEntry(entryBuffer);
-	}
+	
 	
 	/**
 	 * Method to download and return an InputStream to the OBO file.

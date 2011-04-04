@@ -74,8 +74,7 @@
 			glucokinase</bp:displayName>
 		<bp:dataSource>
 			<bp:Provenance rdf:ID="SwissProtTrEMBL">
-				<bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">
-					Swiss-Prot/TrEMBL</bp:displayName>
+				<bp:displayName rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Swiss-Prot</bp:displayName>
 			</bp:Provenance>
 		</bp:dataSource>
 		<bp:dataSource>

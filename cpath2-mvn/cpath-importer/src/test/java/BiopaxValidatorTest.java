@@ -28,6 +28,7 @@
 
 import static org.junit.Assert.*;
 
+import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
@@ -60,7 +61,7 @@ public class BiopaxValidatorTest {
 	@Autowired
 	ApplicationContext context;
 	
-	Level3Factory level3 = (Level3Factory) BioPAXLevel.L3.getDefaultFactory();
+	BioPAXFactory level3 = BioPAXLevel.L3.getDefaultFactory();
 
 	/**
 	 * Test method for {@link cpath.validator.BiopaxValidator#validate(org.biopax.paxtools.model.Model)}.
@@ -68,8 +69,7 @@ public class BiopaxValidatorTest {
 	@Test
 	public final void testCheckRule() {
 		Rule rule = new ControlTypeRule();	
-		Catalysis ca = level3.createCatalysis();
-		ca.setRDFId("catalysis1");
+		Catalysis ca = level3.create(Catalysis.class, "catalysis1");
 		rule.check(ca, false); // controlType==null, no error expected
 		ca.setControlType(ControlType.ACTIVATION);
 		rule.check(ca, false); // no error expected
@@ -81,8 +81,8 @@ public class BiopaxValidatorTest {
 		} catch(BiopaxValidatorException e) {
 		}
 		
-		TemplateReactionRegulation tr = level3.createTemplateReactionRegulation();
-		tr.setRDFId("regulation1");
+		TemplateReactionRegulation tr = level3
+			.create(TemplateReactionRegulation.class, "regulation1");
 		tr.setControlType(ControlType.INHIBITION);
 		rule.check(tr, false); // no error...
 		
@@ -97,12 +97,11 @@ public class BiopaxValidatorTest {
 
 	@Test
 	public final void testValidateModel() {		
-		Catalysis ca = level3.createCatalysis();
+		Catalysis ca = level3.create(Catalysis.class, "catalysis1"); 
 		ca.setControlType(ControlType.INHIBITION);
 		ca.addComment("error: illegal controlType");	
-		ca.setRDFId("catalysis1");
-		TemplateReactionRegulation tr = level3.createTemplateReactionRegulation();
-		tr.setRDFId("regulation1");
+		TemplateReactionRegulation tr = level3
+			.create(TemplateReactionRegulation.class, "regulation1");
 		tr.setControlType(ControlType.ACTIVATION_ALLOSTERIC);
 		tr.addComment("error: illegal controlType");
 		Model m = level3.createModel();
@@ -139,7 +138,7 @@ public class BiopaxValidatorTest {
 		}
 		rule.setBehavior(Behavior.WARNING); 
         
-        UnificationXref x = level3.createUnificationXref();
+        UnificationXref x = level3.create(UnificationXref.class, "1");
         x.setDb("EntrezGene");
         x.setId("0000000");
         rule.check(x, false);
@@ -153,11 +152,10 @@ public class BiopaxValidatorTest {
     			//+ rule.getValidTerms().toString());
     	assertTrue(rule.getValidTerms().contains("(2S,3R)-3-hydroxyaspartic acid".toLowerCase()));
     	
-    	SequenceModificationVocabulary cv = level3.reflectivelyCreate(SequenceModificationVocabulary.class);
-    	cv.setRDFId("MOD_00036");
+    	SequenceModificationVocabulary cv = level3
+    		.create(SequenceModificationVocabulary.class, "MOD_00036");
     	cv.addTerm("(2S,3R)-3-hydroxyaspartic acid");
-    	ModificationFeature mf = level3.reflectivelyCreate(ModificationFeature.class);
-    	mf.setRDFId("MF_MOD_00036");
+    	ModificationFeature mf = level3.create(ModificationFeature.class, "MF_MOD_00036");
     	mf.setModificationType(cv);
    		rule.check(mf, false); // should not fail
 	}
