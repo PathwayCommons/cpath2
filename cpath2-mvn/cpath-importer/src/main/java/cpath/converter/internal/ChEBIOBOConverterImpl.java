@@ -10,7 +10,7 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
+import org.biopax.paxtools.controller.SimpleEditorMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -74,8 +74,11 @@ public class ChEBIOBOConverterImpl {
 	 * @param entryBuffer
 	 * @throws IOException
 	 */
-	public void processOBOEntry(StringBuffer entryBuffer) throws IOException {
-	
+	public void processOBOEntry(StringBuffer entryBuffer) throws IOException 
+	{
+		if (log.isDebugEnabled()) {
+			log.debug("calling processOBOEntry()");
+		}
 		// get SMR for entry out of warehouse
 		Collection<String> childChebiIDs = getValuesByREGEX(entryBuffer, CHEBI_OBO_ID_REGEX);
 		if (childChebiIDs.size() != 1) {
@@ -199,8 +202,7 @@ public class ChEBIOBOConverterImpl {
 		}
 		
 		// made it here, need to create relationship xref
-		toReturn = (RelationshipXref)factory.reflectivelyCreate(RelationshipXref.class);
-		toReturn.setRDFId(xrefRdfID);
+		toReturn = (RelationshipXref)factory.create(RelationshipXref.class, xrefRdfID);
 		toReturn.setDb("CHEBI");
 		toReturn.setId(chebiID);
 		

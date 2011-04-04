@@ -28,8 +28,7 @@
  **/
 package cpath.dao.internal;
 
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
-import org.biopax.paxtools.io.simpleIO.SimpleReader;
+import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.junit.*;
@@ -52,8 +51,7 @@ public class PaxtoolsHibernateDAOMoreTest {
 
     static Log log = LogFactory.getLog(PaxtoolsHibernateDAOMoreTest.class);
     static PaxtoolsDAO paxtoolsDAO;
-    static SimpleExporter exporter = new SimpleExporter(BioPAXLevel.L3);
-    static SimpleReader reader = new SimpleReader();
+    static SimpleIOHandler io = new SimpleIOHandler(BioPAXLevel.L3);
     
 
 	/* test methods will use the same data (read-only, 
@@ -85,8 +83,8 @@ public class PaxtoolsHibernateDAOMoreTest {
 		String exported = outputStream.toString();
 		
 		// read it back
-		reader.mergeDuplicates(true);
-		Model model = reader.convertFromOWL(new ByteArrayInputStream(exported
+		io.mergeDuplicates(true);
+		Model model = io.convertFromOWL(new ByteArrayInputStream(exported
 				.getBytes("UTF-8")));
 		assertNotNull(model);
 		assertTrue(model

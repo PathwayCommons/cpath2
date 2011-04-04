@@ -7,8 +7,6 @@ import cpath.dao.PaxtoolsDAO;
 
 import java.io.InputStream;
 
-import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -31,8 +29,6 @@ public class BaseConverterImpl implements Converter {
 	protected Model model;
 	protected static final BioPAXFactory factory = 
 		BioPAXLevel.L3.getDefaultFactory();
-	protected static final SimpleMerger MERGER = 
-        new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
 	
 	public BaseConverterImpl() {
 	}

@@ -41,8 +41,7 @@ import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.BioPAXIOHandler;
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
-import org.biopax.paxtools.io.simpleIO.SimpleReader;
+import org.biopax.paxtools.io.SimpleIOHandler;
 import org.hibernate.*;
 import org.hibernate.search.*;
 import org.springframework.stereotype.Repository;
@@ -87,7 +86,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	private final Map<String, String> nameSpacePrefixMap;
 	private final BioPAXLevel level;
 	private final BioPAXFactory factory;
-	private BioPAXIOHandler reader;
+	private SimpleIOHandler simpleIO;
 	private boolean addDependencies = false;
 	MultiFieldQueryParser multiFieldQueryParser;
 
@@ -97,8 +96,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		this.factory = level.getDefaultFactory();
 		this.nameSpacePrefixMap = new HashMap<String, String>();
 		this.nameSpacePrefixMap.put("", CPathSettings.CPATH_URI_PREFIX);
-		this.reader = new SimpleReader(BioPAXLevel.L3);
-		((SimpleReader)reader).mergeDuplicates(true);
+		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
+		this.simpleIO.mergeDuplicates(true);
 		this.multiFieldQueryParser = new MultiFieldQueryParser(
 			Version.LUCENE_29, ALL_FIELDS, 
 				new StandardAnalyzer(Version.LUCENE_29));
@@ -114,14 +113,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	}
 
 	public BioPAXIOHandler getReader() {
-		return reader;
+		return simpleIO;
 	}
 
-	public void setReader(BioPAXIOHandler reader) {
-		this.reader = reader;
-	}
 
-	
 	Session session() {
 		return sessionFactory.getCurrentSession();
 	}
@@ -178,7 +173,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		}
 
 		// convert file to model
-		Model m = reader.convertFromOWL(new FileInputStream(biopaxFile));
+		Model m = simpleIO.convertFromOWL(new FileInputStream(biopaxFile));
 		merge(m);
 	}
 	
@@ -199,7 +194,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			 * Hibernate should handle RDFId-based, cascading merging well...
 			 */
 			// start from "top" elements only :)
-			Set<BioPAXElement> sourceElements = getRootElements(model); //model.getObjects();
+			Set<BioPAXElement> sourceElements = ModelUtils
+				.getRootElements(model.getObjects(), BioPAXElement.class);
 			if(log.isInfoEnabled())
 				log.info("Persisting a BioPAX Model that has " 
 						+ sourceElements.size() 
@@ -388,8 +384,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Transactional(propagation=Propagation.REQUIRED)
 	public <T extends BioPAXElement> T addNew(Class<T> type, String id)
 	{
-		T bpe = factory.reflectivelyCreate(type);
-		bpe.setRDFId(id);
+		T bpe = factory.create(type, id);
 		add(bpe); // many elements, because of cascade=ALL
 		return bpe;
 	}
@@ -475,25 +470,21 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		}
 		
 		if (bpe != null) { 
-			// clone
+			/* used to be...
 			//ElementCloner cloner = new ElementCloner();
-			//Model model = cloner.clone(this, bpe); 
+			//Model model = cloner.clone(this, bpe);
+			*/
+			
+			// write/read cycle should completely detach the sub-model 
+			// (new java objects are created by the simpleIO)
+			// and restore inverse properties 
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			exportModel(baos, id);
-			Model model = reader.convertFromOWL(new ByteArrayInputStream(baos.toByteArray()));
+			Model model = simpleIO.convertFromOWL(new ByteArrayInputStream(baos.toByteArray()));
 			toReturn = model.getByID(id);
 		}
 		
 		return toReturn; // null means no such element
-	}
-
-
-	@Override
-	public Map<String, BioPAXElement> getIdMap()
-	{
-		throw new UnsupportedOperationException(
-			"Discontinued method; use a combination of " +
-			"containsID(id), getById(id), getObjects() instead.");
 	}
 
 
@@ -563,20 +554,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		*/
 	}
 
-
-	@Override
-	@Transactional(propagation=Propagation.MANDATORY)
-	public void updateID(String oldId, String newId)
-	{
-		throw new UnsupportedOperationException(
-				"updateID is not supported by this Model.");
-		/* unsafe...
-		BioPAXElement bpe = getByID(oldId);
-		bpe.setRDFId(newId);
-		session().refresh(bpe); // TODO is refresh required?
-		*/
-	}
-
 	
 	/*
 	 * Gets Hibernate annotated entity class 
@@ -592,7 +569,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			if (filterBy.isInterface()) {
 				try {
 					clazz = (Class<? extends BioPAXElement>) factory
-						.reflectivelyCreate(filterBy).getClass();
+						.create(filterBy, null).getClass();
 				} catch (IllegalBioPAXArgumentException e) {
 					// throw new IllegalArgumentException(
 					log.error("Expected a BioPAX model interface "
@@ -616,7 +593,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	 */
 	/**
 	 * When an non-empty list of IDs (RDFId, URI) is provided,
-	 * it will use {@link SimpleExporter#convertToOWL(Model, OutputStream, String...)} 
+	 * it will use {@link SimpleIOHandler#convertToOWL(Model, OutputStream, String...)} 
 	 * which in turn uses {@link Fetcher#fetch(BioPAXElement, Model)}
 	 * (rather than {@link #getValidSubModel(Collection)}) method
 	 * to recursively extract each listed element (with all children and properties)
@@ -631,12 +608,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Transactional(propagation=Propagation.REQUIRED)
 	public void exportModel(OutputStream outputStream, String... ids) 
 	{
-		SimpleExporter exporter = new SimpleExporter(level);
-		try {
-			exporter.convertToOWL(this, outputStream, ids);
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to export (sub-)model!", e);
-		}
+		simpleIO.convertToOWL(this, outputStream, ids);
 	}
 
 	/* (non-Javadoc)
@@ -710,9 +682,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			if(bpe != null)
 				bioPAXElements.add(bpe);
 		}
-		Completer c = new Completer(reader.getEditorMap());
+		Completer c = new Completer(simpleIO.getEditorMap());
 		bioPAXElements = c.complete(bioPAXElements, null); //null - this model is used explicitly there
-		Cloner cln = new Cloner(reader.getEditorMap(), factory);
+		Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
 		Model model = cln.clone(null, bioPAXElements);
 		return model;
 		*/
@@ -778,7 +750,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		session().update(element);
 		
 		// init. biopax properties
-		Set<PropertyEditor> editors = reader.getEditorMap().getEditorsOf(
+		Set<PropertyEditor> editors = simpleIO.getEditorMap().getEditorsOf(
 				element);
 		if (editors != null)
 			for (PropertyEditor editor : editors) {
@@ -786,7 +758,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			}
 
 		// init. inverse object properties (xxxOf)
-		Set<ObjectPropertyEditor> invEditors = reader.getEditorMap()
+		Set<ObjectPropertyEditor> invEditors = simpleIO.getEditorMap()
 				.getInverseEditorsOf(element);
 		if (invEditors != null)
 			for (ObjectPropertyEditor editor : invEditors) {
@@ -803,7 +775,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	 * TODO not all inverse (xxxOf) properties are set for this and/or dependent elements 
 	 * (only those are set that occur on the traverse's path)!
 	 * 
-	 * @deprecated use {@link PaxtoolsHibernateDAO#exportModel(OutputStream, String...)} and then {@link SimpleReader#convertFromOWL(InputStream)}
+	 * @deprecated use {@link PaxtoolsHibernateDAO#exportModel(OutputStream, String...)} and then {@link SimpleIOHandler#convertFromOWL(InputStream)}
 	 */
 	@Deprecated
 	@Transactional
@@ -811,7 +783,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		private Traverser traverser;
 		
 		public ElementCloner() {
-			traverser = new Traverser(reader.getEditorMap(), this);
+			traverser = new Traverser(simpleIO.getEditorMap(), this);
 		}
 
 		@Transactional
@@ -844,29 +816,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		}
 	}
 
-	
-	private Set<BioPAXElement> getRootElements(Model model) {
-		// collect "top" pathways only
-		// copy set is required (otherwise remove() method is not supported!)
-		final Set<BioPAXElement> objects = new HashSet<BioPAXElement>();
-		objects.addAll(model.getObjects());
-		int n = objects.size();
-		AbstractTraverser checker = new AbstractTraverser(reader.getEditorMap()) {
-			@Override
-			protected void visit(Object value, BioPAXElement parent, Model model,
-					PropertyEditor editor) {
-				if(value instanceof BioPAXElement && objects.contains(value)) 
-					objects.remove(value); 
-			}
-		};	
-		// this removes sub-pathways
-		for(BioPAXElement e : model.getObjects()) {
-			checker.traverse(e, null);
-		}
-		
-		return objects;
-	}
-
 	/* (non-Javadoc)
 	 * @see cpath.dao.PaxtoolsDAO#runAnalysis(cpath.dao.Analysis, java.lang.Object[])
 	 */
@@ -880,13 +829,23 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		
 		// auto-complete/detach
 		if(result != null) {
-			Completer c = new Completer(reader.getEditorMap());
+			Completer c = new Completer(simpleIO.getEditorMap());
 			result = c.complete(result, null); //null - because the (would be) model is never used there anyway
-			Cloner cln = new Cloner(reader.getEditorMap(), factory);
+			Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
 			return cln.clone(null, result); // new (sub-)model
 		} 
 		
 		return null;
+	}
+
+	@Override
+	public void replace(BioPAXElement existing, BioPAXElement replacement) {
+		throw new UnsupportedOperationException("not supported");
+	}
+
+	@Override
+	public void repair() {
+		throw new UnsupportedOperationException("not supported");
 	}
 	
 }

@@ -88,7 +88,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
                     // debug: write the one-protein-reference model
                     if(log.isDebugEnabled()) {
                     	//ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    	//(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(proteinReferenceModel, out);
+                    	//(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(proteinReferenceModel, out);
                     	log.debug("So far line# " + linesReadSoFar + 
                     		"; merging new protein reference (model):\n");// + out.toString());
                     }

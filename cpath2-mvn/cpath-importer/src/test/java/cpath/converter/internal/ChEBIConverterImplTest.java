@@ -3,10 +3,7 @@ package cpath.converter.internal;
 // imports
 import cpath.converter.Converter;
 
-import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.impl.ModelImpl;
-import org.biopax.paxtools.io.simpleIO.SimpleEditorMap;
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.*;
@@ -36,18 +33,7 @@ public class ChEBIConverterImplTest {
 	
 		// convert test data
 		InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_chebi_data.dat");
-		//Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
-		// extend Model for the converter the calls 'merge' method to work
-		Model model = new ModelImpl(BioPAXLevel.L3.getDefaultFactory()) {
-			/* (non-Javadoc)
-			 * @see org.biopax.paxtools.impl.ModelImpl#merge(org.biopax.paxtools.model.Model)
-			 */
-			@Override
-			public void merge(Model source) {
-				SimpleMerger simpleMerger = new SimpleMerger(new SimpleEditorMap(getLevel()));
-				simpleMerger.merge(this, source);
-			}
-		};
+		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
 
 		// setup the converter
 		Converter converter = new ChEBIConverterForTestingImpl(model);
@@ -56,7 +42,7 @@ public class ChEBIConverterImplTest {
 		// dump owl for review
 		String outFilename = getClass().getClassLoader().getResource("").getPath() 
 			+ File.separator + "testConvertChebi.out.owl";
-		(new SimpleExporter(BioPAXLevel.L3)).convertToOWL(model, 
+		(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(model, 
 				new FileOutputStream(outFilename));
 
 		// get all small molecule references out

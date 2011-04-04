@@ -1,6 +1,5 @@
 package cpath.importer;
 
-import cpath.warehouse.beans.Metadata;
 import org.biopax.paxtools.model.Model;
 
 
@@ -18,13 +17,11 @@ public interface Merger {
 	void merge();
 	
 	/**
-	 * Merges a new single (provider's pathway) model
-	 * into the existing target model.
-	 * 
-	 * @param metadata - The metadata from which this model belongs
+	 * Merges a new (provider's pathway) model
+	 * into the current target model.
 	 * @param pathwayModel - one-pathway or several interactions, model
 	 */
-	public void merge(Metadata metadata, Model pathwayModel);
+	public void merge(Model pathwayModel);
 	
 	/**
 	 * Sets whether provider specific premerge databases 

@@ -28,7 +28,7 @@
  **/
 package cpath.dao.internal;
 
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
@@ -60,7 +60,7 @@ public class PaxtoolsHibernateDAOTest {
 
     static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
     static PaxtoolsDAO paxtoolsDAO;
-    static SimpleExporter exporter;
+    static SimpleIOHandler exporter;
 
 	/* test methods will use the same data (read-only, 
 	 * with one exception: testImportingAnotherFileAndTestInitialization
@@ -84,7 +84,7 @@ public class PaxtoolsHibernateDAOTest {
 			throw new RuntimeException(e);
 		}
 		
-		exporter = new SimpleExporter(BioPAXLevel.L3);
+		exporter = new SimpleIOHandler(BioPAXLevel.L3);
     }
     
 	

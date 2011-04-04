@@ -41,8 +41,7 @@ import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
-import org.biopax.paxtools.io.simpleIO.SimpleReader;
+import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Named;
 import org.biopax.validator.result.Validation;
@@ -89,8 +88,7 @@ public class CPathServiceImpl implements CPathService {
 	@NotNull
 	private CvRepository cvFetcher;
 	
-	private final SimpleReader reader;
-	private final SimpleExporter exporter;
+	private final SimpleIOHandler simpleIO;
 	private final SimpleMerger merger;
 	
 	private final JAXBContext jaxbContext;
@@ -107,10 +105,9 @@ public class CPathServiceImpl implements CPathService {
 		this.moleculesDAO = moleculesDAO;
 		this.metadataDAO = metadataDAO;
 		this.cvFetcher = cvFetcher;
-		this.reader = new SimpleReader(BioPAXLevel.L3);
-		reader.mergeDuplicates(true);
-		this.exporter = new SimpleExporter(BioPAXLevel.L3);
-		this.merger = new SimpleMerger(reader.getEditorMap());
+		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
+		simpleIO.mergeDuplicates(true);
+		this.merger = new SimpleMerger(simpleIO.getEditorMap());
 		
 		// init cpath legacy xml schema jaxb context
 		try {
@@ -154,14 +151,11 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	String exportToOWL(Model model) {
-		if(model == null) return null;
+		if(model == null) 
+			return null;
 		
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		try {
-			exporter.convertToOWL(model, out);
-		} catch (IOException e) {
-			log.error(e);
-		}
+		simpleIO.convertToOWL(model, out);
 		return out.toString();
 	}
 
@@ -273,7 +267,7 @@ public class CPathServiceImpl implements CPathService {
 			// lets use extended format and write other attributes
 			OutputStream nodeStream = new ByteArrayOutputStream();
 	        sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream, 
-	        		false, reader.getEditorMap(), "name", "xref");
+	        		false, simpleIO.getEditorMap(), "name", "xref");
 	        map.put(DATA, edgeStream.toString() + "\n\n" + nodeStream.toString());
 		} catch (Exception e) {
 			map.put(ERROR, e.toString());

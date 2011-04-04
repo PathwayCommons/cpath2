@@ -30,18 +30,18 @@ package cpath.warehouse.internal;
 import static org.junit.Assert.*;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.biopax.paxtools.model.level3.*;
-import org.junit.Assert;
 import org.junit.Test;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 
-import psidev.ontology_manager.Ontology;
 import psidev.ontology_manager.OntologyTermI;
-import psidev.ontology_manager.impl.OntologyImpl;
 import psidev.ontology_manager.impl.OntologyTermImpl;
 
 /**
@@ -54,37 +54,30 @@ import psidev.ontology_manager.impl.OntologyTermImpl;
 public class WarehouseCVsTest {
 
 	static OntologyManagerCvRepository warehouse; // implements cpath.dao.WarehouseDAO
-		
+	private static final ResourceLoader LOADER = new DefaultResourceLoader();	
+	
 	static {
-		Resource ont = new ClassPathResource("ontologies.xml");
-		warehouse = new OntologyManagerCvRepository(ont, null);
+		final Map<String, Resource> cfg = new HashMap<String, Resource>();
+		cfg.put("SO", LOADER.getResource("http://song.cvs.sourceforge.net/viewvc/song/ontology/so.obo")); //?revision=1.283
+		cfg.put("MI", LOADER.getResource("http://psidev.cvs.sourceforge.net/viewvc/psidev/psi/mi/rel25/data/psi-mi25.obo?revision=1.58"));
+		cfg.put("MOD", LOADER.getResource("http://psidev.cvs.sourceforge.net/viewvc/psidev/psi/mod/data/PSI-MOD.obo?revision=1.23"));
+		cfg.put("GO", LOADER.getResource("http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/genomic-proteomic/gene_ontology_edit.obo"));
+		warehouse = new OntologyManagerCvRepository(cfg, null, true);
 	}
 	
 	@Test
 	public void ontologyLoading() {
 		Collection<String> ontologyIDs = warehouse.getOntologyIDs();
-		Assert.assertTrue(ontologyIDs.contains("GO"));
-		Assert.assertTrue(ontologyIDs.contains("SO"));
-		Assert.assertTrue(ontologyIDs.contains("MI"));
-		Assert.assertTrue(ontologyIDs.contains("MOD"));
-
-		Ontology oa2 = warehouse.getOntology("GO");
-		Assert.assertNotNull(oa2);
-		Assert.assertTrue(oa2 instanceof OntologyImpl);
-
-		oa2 = warehouse.getOntology("SO");
-		Assert.assertNotNull(oa2);
-		Assert.assertTrue(oa2 instanceof OntologyImpl);
-
-		oa2 = warehouse.getOntology("MI");
-		Assert.assertNotNull(oa2);
-		Assert.assertTrue(oa2 instanceof OntologyImpl);
+		assertTrue(ontologyIDs.contains("GO"));
+		assertEquals("gene ontology", warehouse.getOntology("GO").getName().toLowerCase());
+		assertTrue(ontologyIDs.contains("SO"));
+		assertTrue(ontologyIDs.contains("MI"));
+		assertTrue(ontologyIDs.contains("MOD"));
 	}
 
 	/**
 	 * Test method for
 	 * {@link cpath.warehouse.internal.OntologyManagerCvRepository#ontologyTermsToUrns(java.util.Collection)}
-	 * .
 	 */
 	@Test
 	public final void testOntologyTermsToUrns() {
@@ -102,7 +95,6 @@ public class WarehouseCVsTest {
 	/**
 	 * Test method for
 	 * {@link cpath.warehouse.internal.OntologyManagerCvRepository#ontologyTermsToUrns(java.util.Collection)}
-	 * .
 	 */
 	@Test
 	public final void testSearchForTermByAccession() {

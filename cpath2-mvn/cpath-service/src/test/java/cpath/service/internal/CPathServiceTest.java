@@ -29,7 +29,7 @@
 package cpath.service.internal;
 
 // imports
-import org.biopax.paxtools.io.simpleIO.SimpleExporter;
+import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
@@ -59,7 +59,7 @@ public class CPathServiceTest {
     private static Log log = LogFactory.getLog(CPathServiceTest.class);
 
     static CPathService service;
-    static SimpleExporter exporter;
+    static SimpleIOHandler exporter;
 
 	
     static {
@@ -76,7 +76,7 @@ public class CPathServiceTest {
 		}
 		service = new CPathServiceImpl((PaxtoolsDAO)dao,
 				null,null,null,null);
-		exporter = new SimpleExporter(BioPAXLevel.L3);
+		exporter = new SimpleIOHandler(BioPAXLevel.L3);
     }
 	
 	

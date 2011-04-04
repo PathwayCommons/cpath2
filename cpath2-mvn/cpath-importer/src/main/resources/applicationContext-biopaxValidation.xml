@@ -184,7 +184,6 @@
     (from Miriam and MI 'database citation' vocabularies) -->
     <!-- <util:set id="extraDbSynonyms"/> -->
     
-    
 	<!-- BiopaxValidatorUtils configuration -->
 
  	<!-- This is for the rules's and error messages's auto-configuration -->
@@ -212,16 +211,6 @@
 		<constructor-arg ref="extraDbSynonyms"/>
         <constructor-arg ref="cvFetcher" />
     </bean>
-	
-	<!-- required (not only) by biopax-validator -->
-	<bean id="editorMap3" class="org.biopax.paxtools.io.simpleIO.SimpleEditorMap">
-		<constructor-arg type="org.biopax.paxtools.model.BioPAXLevel" value="L3"/>
-	</bean>
-
-	<!-- required (at least) by biopax-validator -->
-	<bean id="editorMap2" class="org.biopax.paxtools.io.simpleIO.SimpleEditorMap">
-		<constructor-arg type="org.biopax.paxtools.model.BioPAXLevel" value="L2"/>
-	</bean>
 	
 	<bean id="validator" class="org.biopax.validator.impl.ValidatorImpl"/>
 	

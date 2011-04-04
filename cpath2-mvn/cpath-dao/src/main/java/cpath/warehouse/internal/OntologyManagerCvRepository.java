@@ -47,6 +47,7 @@ import org.springframework.core.io.Resource;
 
 import psidev.ontology_manager.Ontology;
 import psidev.ontology_manager.OntologyTermI;
+import psidev.ontology_manager.impl.OntologyManagerContext;
 
 import cpath.config.CPathSettings;
 import cpath.warehouse.CvRepository;
@@ -77,12 +78,12 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 	 * @param ontTmpDir
 	 * @throws Exception
 	 */
-	public OntologyManagerCvRepository(Resource ontologies, String ontTmpDir) {
-		super(ontologies, ontTmpDir);
+	public OntologyManagerCvRepository(Map<String, Resource> ontologies, 
+			String ontTmpDir, boolean isReuseAndStoreOBOLocally) 
+	{
+		super(ontologies, ontTmpDir, isReuseAndStoreOBOLocally);
 		
-		/* Normalize (for safety :)) ontology names using ID naming convention in ontologies.xml
-		 * This is also a good check that everything's ok...
-		 */
+		//Normalize (for safety :)) ontology names using IDs
 		for(String id : getOntologyIDs()) {
 			String officialName = MiriamLink.getName(id); 
 			Ontology o = getOntology(id);
@@ -131,6 +132,8 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 	{
 		OntologyTermI term = getTermByUrn(urn);
 		T cv = getControlledVocabulary(term, cvClass);
+		if(cv != null)
+			cv.addComment(CPathSettings.CPATH_WAREHOUSE_ENTRY_COMMENT);
 		return cv;
 	}
 	
@@ -185,19 +188,18 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 			return null;
 		
 		String urn = ontologyTermToUrn(term);
-		T cv = biopaxFactory.reflectivelyCreate(cvClass);
-		cv.setRDFId(urn);
+		T cv = biopaxFactory.create(cvClass, urn);
 		cv.addTerm(term.getPreferredName());
 		
-		UnificationXref uref = biopaxFactory.reflectivelyCreate(UnificationXref.class);
 		String ontId = term.getOntologyId(); // like "GO" 
 		String db = getOntology(ontId).getName(); // names were fixed in the constructor!
-		uref.setDb(db); 
 		String rdfid = URN_UNIFICATION_XREF_PREFIX + 
-			URLEncoder.encode(uref.getDb() + "_" + term.getTermAccession());
-		uref.setRDFId(rdfid);
+			URLEncoder.encode(db + "_" + term.getTermAccession());
+		UnificationXref uref = biopaxFactory.create(UnificationXref.class, rdfid);
+		uref.setDb(db); 
 		uref.setId(term.getTermAccession());
 		cv.addXref(uref);
+		
 		return cv;
 	}
 	
@@ -256,7 +258,7 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 	/* (non-Javadoc)
 	 * @see cpath.dao.WarehouseDAO#getObject(java.lang.String, java.lang.Class)
 	 */
-	// TODO validate if the ontology term (form URN) can be used by this CV class
+	// TODO validate if the ontology term (form URN) can be used by this CV class?
 	@Override
 	public <T extends BioPAXElement> T getObject(String urn, Class<T> clazz) {
 		return (T) getControlledVocabulary(urn,(Class<ControlledVocabulary>) clazz);
@@ -271,8 +273,9 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 		for (Xref xref : xrefs) {
 			ControlledVocabulary cv = getControlledVocabulary(xref.getDb(), xref.getId(),
 					(Class<ControlledVocabulary>) clazz);
-			// TODO validate if the ontology terms (form xrefs) can be used by this CV class
-			//...
+			
+			// TODO validate if the ontology terms (form xrefs) can be used by this CV class?
+			
 			if (cv != null) {
 				toReturn.add(cv.getRDFId());
 			}

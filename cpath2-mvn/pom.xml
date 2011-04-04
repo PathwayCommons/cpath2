@@ -8,7 +8,7 @@
 	<artifactId>parent</artifactId>
 	<packaging>pom</packaging>
 	<name>CPathSquared</name>
-	<version>1.0-SNAPSHOT</version>
+	<version>1.0.0-SNAPSHOT</version>
 	<description>A software suite for storing, visualizing, and analyzing biological pathways.</description>
 	<url>http://code.google.com/p/pathway-commons/</url>
 	
@@ -53,7 +53,8 @@
         <spring.version>3.0.5.RELEASE</spring.version>
         <slf4j.version>1.5.8</slf4j.version>
         <hibernate.version>3.5.5-Final</hibernate.version>
-        <paxtools.version>2.0-SNAPSHOT</paxtools.version>
+        <paxtools.version>3.0.0-SNAPSHOT</paxtools.version>
+        <validator.version>2.0.0-SNAPSHOT</validator.version>
 	</properties>
 
 	<build>
@@ -213,17 +214,17 @@
 		<dependency>
 			<groupId>org.biopax.validator</groupId>
 			<artifactId>biopax-validator-core</artifactId>
-			<version>2.0-SNAPSHOT</version>
+			<version>${validator.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.biopax</groupId>
 			<artifactId>miriam-lib</artifactId>
-			<version>1.1.1</version>
+			<version>${validator.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.biopax.paxtools</groupId>
 			<artifactId>paxtools-core</artifactId>
-			<version>2.0-SNAPSHOT</version>
+			<version>${paxtools.version}</version>
 		</dependency>
 		<dependency>
     		<groupId>org.bridgedb</groupId>
