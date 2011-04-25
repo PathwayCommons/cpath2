@@ -65,6 +65,7 @@ public class PaxtoolsHibernateDAOMoreTest {
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 				"classpath:testContext-pcDAO.xml");
 		paxtoolsDAO = (PaxtoolsDAO) context.getBean("pcDAO");
+		paxtoolsDAO.setWarehouseMode(true); // to search in utility classes as well
     }
     
 	
@@ -94,7 +95,7 @@ public class PaxtoolsHibernateDAOMoreTest {
     
     
 	/* it should normally work.., but sometimes "hangs"
-	* the entire maven build process if the lucene index directory
+	* the maven build process if the lucene index directory
 	* already exists (and, seems, when the index has been touched
 	* by another app./process, e.g., by cpath-admin '-create-index' command)
 	* In such an event, simply deleting the index dir makes this test pass.

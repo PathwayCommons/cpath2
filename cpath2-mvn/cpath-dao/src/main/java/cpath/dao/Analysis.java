@@ -33,6 +33,13 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
 /**
+ * This is a cPath2 core Analysis plugin interface.
+ *   
+ * A class using Paxtools API for a BioPAX data analysis 
+ * and implementing this interface can be also run by 
+ * {@link PaxtoolsDAO} ({@link Model}) within a database transaction 
+ * and work within the "global" persistent BioPAX model.
+ * 
  * @author rodche
  *
  */

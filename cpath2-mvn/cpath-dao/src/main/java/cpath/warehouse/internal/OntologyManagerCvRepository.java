@@ -47,7 +47,6 @@ import org.springframework.core.io.Resource;
 
 import psidev.ontology_manager.Ontology;
 import psidev.ontology_manager.OntologyTermI;
-import psidev.ontology_manager.impl.OntologyManagerContext;
 
 import cpath.config.CPathSettings;
 import cpath.warehouse.CvRepository;
@@ -133,7 +132,7 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 		OntologyTermI term = getTermByUrn(urn);
 		T cv = getControlledVocabulary(term, cvClass);
 		if(cv != null)
-			cv.addComment(CPathSettings.CPATH_WAREHOUSE_ENTRY_COMMENT);
+			cv.addComment(CPathSettings.CPATH2_GENERATED_COMMENT);
 		return cv;
 	}
 	

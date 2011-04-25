@@ -71,7 +71,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 	public final static String[] ALL_FIELDS =
 		{
-			//SEARCH_FIELD_ID, // do not full-text search/match in RDFId field!
+			//SEARCH_FIELD_ID, // do NOT search in RDFId!
 			SEARCH_FIELD_AVAILABILITY,
 			SEARCH_FIELD_COMMENT,
 			SEARCH_FIELD_KEYWORD,
@@ -79,6 +79,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			SEARCH_FIELD_TERM,
 			SEARCH_FIELD_XREF_DB,
 			SEARCH_FIELD_XREF_ID,
+			//TODO add all @IndexedEmbedded fields! Test it.
+			"xref." + SEARCH_FIELD_XREF_DB,
+			"xref." + SEARCH_FIELD_XREF_ID,
+			"organism." + SEARCH_FIELD_NAME,
+			"organism.xref." + SEARCH_FIELD_XREF_ID, // to find entity by taxonomy id
+			//TODO add more of the emdedded index fields...
 		};
 
 	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
@@ -89,6 +95,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	private SimpleIOHandler simpleIO;
 	private boolean addDependencies = false;
 	MultiFieldQueryParser multiFieldQueryParser;
+	private boolean warehouseMode = false; // if true, search/get only UtilityClass elements!
 
 	protected PaxtoolsHibernateDAO()
 	{
@@ -194,8 +201,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			 * Hibernate should handle RDFId-based, cascading merging well...
 			 */
 			// start from "top" elements only :)
-			Set<BioPAXElement> sourceElements = ModelUtils
-				.getRootElements(model.getObjects(), BioPAXElement.class);
+			Set<BioPAXElement> sourceElements = new ModelUtils(model)
+				.getRootElements(BioPAXElement.class);
 			if(log.isInfoEnabled())
 				log.info("Persisting a BioPAX Model that has " 
 						+ sourceElements.size() 
@@ -234,42 +241,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			session().merge(aBioPAXElement);
 		}
 	}
-
-	/*
-	 * 'filterBy' is a BioPAX interface, not the implementation.
-	 */ 
-	@Transactional(propagation=Propagation.REQUIRED)
-	public <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy)
-	{
-		if (log.isInfoEnabled())
-			log.info("search: " + query + ", filterBy: " + filterBy);
-		// unfortunately, fulltextquery cannot filter by interfaces (only likes annotated entity classes)...
-		Class<? extends BioPAXElement> filterClass = getEntityClass(filterBy);
-		// set to return
-		List<T> toReturn = new ArrayList<T>();
-		// create native lucene query
-		org.apache.lucene.search.Query luceneQuery = null;
-		try {
-			luceneQuery = multiFieldQueryParser.parse(query);
-		} catch (ParseException e) {
-			log.info("parse exception: " + e.getMessage());
-			return toReturn;
-		}
-
-		// get full text session
-		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterClass);
-		// execute search
-		List results = hibQuery.list();
-		
-		for(Object entry: results) {
-			Hibernate.initialize(entry);
-			toReturn.add((T)entry);
-		}
-		
-		return results;
-	}
-
 	
 
 	/* (non-Javadoc)
@@ -282,6 +253,19 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		// set to return
 		List<String> toReturn = new ArrayList<String>();
 		
+		// if it's a "main" cPath2 database DAO -
+		if(!isWarehouseMode()) { // want Entity types (no UtilityClass search) 
+			if(BioPAXElement.class.equals(filterBy)) {
+				filterBy = Entity.class;
+			} else if(!Entity.class.isAssignableFrom(filterBy)) {
+				return toReturn; // empty
+			}
+		} 
+		else {
+			// TODO modify here if a UtilityClassImpl is added in Paxtools
+		}
+		
+		// shortcut: return all if - ... TODO may be return empty result instead?
 		if(query == null || "".equals(query) || "*".equals(query.trim())) {
 			Query q = session().createQuery("select rdfid from " 
 					+ filterBy.getCanonicalName());
@@ -294,7 +278,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 		// fulltextquery cannot filter by interfaces (only likes annotated entity classes)...
 		Class<? extends BioPAXElement> filterClass = getEntityClass(filterBy);
-		// create native lucene query
+		
+		// create a native Lucene query
 		org.apache.lucene.search.Query luceneQuery = null;
 		try {
 			luceneQuery = multiFieldQueryParser.parse(query);
@@ -305,32 +290,41 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 		// get full text session
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		//fullTextSession.createFilter(arg0, arg1); // how to use this, btw?!
+		//fullTextSession.createFilter(arg0, arg1); // TODO how to use this?
 		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterClass);
-		// TODO use count
+		
 		int count = hibQuery.getResultSize();
 		if(log.isDebugEnabled())
 			log.debug("Query '" + query + "' results size = " + count);
 		
-		// TODO later, use pagination properly (this is stub!!!)
+		// TODO shall we use pagination? [later...]
 		//hibQuery.setFirstResult(0);
 		//hibQuery.setMaxResults(10);
 		
 		// use projection!
-		hibQuery.setProjection("RDFId", FullTextQuery.SCORE, 
-				FullTextQuery.EXPLANATION //, FullTextQuery.THIS
-			);
+		if(log.isDebugEnabled()) {
+			hibQuery.setProjection("RDFId", FullTextQuery.SCORE, 
+				FullTextQuery.EXPLANATION, FullTextQuery.THIS);
+		} 
+		else {
+			hibQuery.setProjection("RDFId");
+		}
 		// execute search
 		List results = hibQuery.list();
 		for(Object row: results) {
 			Object[] cols = (Object[]) row;
 			String id = (String) cols[0];
-  			float score = (Float) cols[1];
-  			Explanation expl = (Explanation) cols[2];
-  			//BioPAXElement bpe = (BioPAXElement) cols[3];
-  			if(log.isDebugEnabled())
-  				log.debug("found: " + id + "; score=" + score 
-  						+ "; expl.: " + expl);
+			
+			if(log.isDebugEnabled()) {
+				float score = (Float) cols[1];
+  				Explanation expl = (Explanation) cols[2];
+  				BioPAXElement bpe = (BioPAXElement) cols[3];
+  				log.debug("found uri: " + id + " (" 
+  						+ bpe + " - " + bpe.getModelInterface() + ")"
+  						+ "; score=" + score 
+  						+ "; explanation: " + expl);
+			}
+  			
   			toReturn.add(id);
 		}
 
@@ -515,7 +509,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	public <T extends BioPAXElement> Set<T> getObjects(Class<T> clazz)
 	{
 		String query = "from " + clazz.getCanonicalName();
-		//if (eager) query += " fetch all properties";
 		List<T> results = null;
 		results = session().createQuery(query).list();
 		Set<T> toReturn = new HashSet<T>();
@@ -544,14 +537,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Override
 	public void setFactory(BioPAXFactory factory)
 	{
-		throw new UnsupportedOperationException("Internal BioPAX Factory cannot be modified.");
-		/* unsafe
-		if (factory.getLevel() == this.level) {
-			this.factory = factory;
-		} else {
-			throw new IllegalAccessError("Cannot use this Biopax factory!");
-		}
-		*/
+		throw new UnsupportedOperationException(
+			"Internal BioPAX Factory cannot be modified.");//would be unsafe!
 	}
 
 	
@@ -561,28 +548,15 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	 * 
 	 */
 	private Class<? extends BioPAXElement> getEntityClass(
-			Class<? extends BioPAXElement> filterBy) {
+			Class<? extends BioPAXElement> filterBy) 
+	{
+		Class<? extends BioPAXElement> clazz = (BioPAXElement.class.equals(filterBy))
+			? BioPAXElementImpl.class : factory.getImplClass(filterBy);
 		
-		Class<? extends BioPAXElement> clazz = BioPAXElementImpl.class; // fall-back
-		
-		if (!BioPAXElement.class.equals(filterBy)) { // otherwise use BioPAXElementImpl
-			if (filterBy.isInterface()) {
-				try {
-					clazz = (Class<? extends BioPAXElement>) factory
-						.create(filterBy, null).getClass();
-				} catch (IllegalBioPAXArgumentException e) {
-					// throw new IllegalArgumentException(
-					log.error("Expected a BioPAX model interface "
-								+ "of the instantiable BioPAX class or the base interface, "
-								+ "'BioPAXElement'; but it was: "
-								+ filterBy.getCanonicalName() + " - " + e);
-					clazz = BioPAXElementImpl.class;
-				}
-			} else {
-				// throw new IllegalArgumentException(
-				log.error("Not a BioPAX model interface: "
-						+ filterBy.getCanonicalName());
-			}
+		if(clazz == null) {
+			clazz = BioPAXElementImpl.class; // fall-back (to no filtering)
+			log.error("Expected argument: a BioPAX interface"
+					+ "; actual argument: " + filterBy.getCanonicalName());
 		}
 
 		return clazz;
@@ -720,7 +694,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 					"select count(*) from " + filterBy.getCanonicalName());
 			toReturn = (Long) q.uniqueResult();
 		} else {
-
 			Class<? extends BioPAXElement> filterClass = getEntityClass(filterBy);
 			org.apache.lucene.search.Query luceneQuery = null;
 			FullTextSession fullTextSession = Search
@@ -846,6 +819,14 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Override
 	public void repair() {
 		throw new UnsupportedOperationException("not supported");
+	}
+
+	public boolean isWarehouseMode() {
+		return warehouseMode;
+	}
+
+	public void setWarehouseMode(boolean warehouseMode) {
+		this.warehouseMode = warehouseMode;
 	}
 	
 }

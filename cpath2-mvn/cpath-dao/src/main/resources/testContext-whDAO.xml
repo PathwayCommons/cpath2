@@ -85,6 +85,7 @@
 
     <bean id="proteinsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="testSessionFactory"/>
+        <property name="warehouseMode" value="true"/>
     </bean>
 
     <bean id="metadataDAO" class="cpath.warehouse.internal.MetadataHibernateDAO">
@@ -93,6 +94,7 @@
     
     <bean id="moleculesDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="testSessionFactory"/>
+        <property name="warehouseMode" value="true"/>
     </bean>
 
     <bean id="cpath2_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
