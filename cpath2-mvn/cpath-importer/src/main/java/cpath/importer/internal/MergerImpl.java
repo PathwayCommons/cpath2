@@ -230,13 +230,13 @@ public class MergerImpl implements Merger {
 						"will be merged as is.");
 			} else {
 				// label it by adding a special signature comment,
-				replacement.addComment(CPathSettings.CPATH_WAREHOUSE_ENTRY_COMMENT);
+				replacement.addComment(CPathSettings.CPATH2_GENERATED_COMMENT);
 				
 				// already emerged from our warehouse?
 				UtilityClass existing = (UtilityClass) pathwayModel.getByID(replacement.getRDFId());
 				if (existing != null) { // well, nice tricky test comes next ;)
 					if(existing.getComment().contains(
-							CPathSettings.CPATH_WAREHOUSE_ENTRY_COMMENT)) {
+							CPathSettings.CPATH2_GENERATED_COMMENT)) {
 						// simply re-use it again!
 						replacement = existing;
 					} else {
@@ -260,7 +260,7 @@ public class MergerImpl implements Merger {
 		
 		// goodbye dangling utility classes
 		// (this should also prevent the hibernate's duplicate PK exceptions...)
-		modelUtils.removeUtilityObjectsIfDangling();
+		modelUtils.removeObjectsIfDangling(UtilityClass.class);
 		
 		// cut from external objects, recover inverse properties -
 		//pathwayModel = modelUtils.writeRead();

@@ -49,6 +49,7 @@
 
     <bean id="pcDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="pcSessionFactory"/>
+        <property name="warehouseMode" value="false"/>
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>

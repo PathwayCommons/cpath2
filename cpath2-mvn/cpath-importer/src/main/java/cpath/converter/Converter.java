@@ -5,13 +5,13 @@ package cpath.converter;
 import java.io.InputStream;
 
 /**
- * Converters convert protein annotation into
+ * Converters convert molecules annotation into
  * biopax objects.
  */
 public interface Converter {
 	
 	/**
-	 * Converts the given protein annotation data
+	 * Converts the given protein or chemical annotation data
 	 * into a paxtools model which contains EntityReferences only.
 	 * Model is set/passed by reference.
 	 *

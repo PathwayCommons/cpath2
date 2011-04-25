@@ -19,11 +19,9 @@ public class BaseConverterImpl implements Converter {
 
 	// use for, e.g., xref's RDFId = L3_UNIFICATIONXREF_URI + URLEncoder.encode(db + "_" +  id);
 	public static final String L3_UNIFICATIONXREF_URI = CPathSettings.CPATH_URI_PREFIX + "UnificationXref:";
-	public static final String L3_PUBLICATIONXREF_URI = CPathSettings.CPATH_URI_PREFIX + "PublicationXref:";
 	public static final String L3_RELATIONSHIPXREF_URI = CPathSettings.CPATH_URI_PREFIX + "RelationshipXref:";
 	
 	public static final String L2_UNIFICATIONXREF_URI = CPathSettings.CPATH_URI_PREFIX + "unificationXref:";
-	public static final String L2_PUBLICATIONXREF_URI = CPathSettings.CPATH_URI_PREFIX + "publicationXref:";
 	public static final String L2_RELATIONSHIPXREF_URI = CPathSettings.CPATH_URI_PREFIX + "relationshipXref:";
 	
 	protected Model model;

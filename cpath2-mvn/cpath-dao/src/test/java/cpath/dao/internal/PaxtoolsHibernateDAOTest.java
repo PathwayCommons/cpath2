@@ -72,6 +72,7 @@ public class PaxtoolsHibernateDAOTest {
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 				"classpath:testContext-pcDAO.xml");
 		paxtoolsDAO = (PaxtoolsDAO) context.getBean("pcDAO");
+		paxtoolsDAO.setWarehouseMode(true); // to search in utility classes as well
 		
 		// load some data into the test storage
 		log.info("Loading BioPAX data (importModel(file))...");
@@ -228,14 +229,6 @@ public class PaxtoolsHibernateDAOTest {
 				getClass().getClassLoader().getResource("").getPath() 
 					+ File.separator + "testGetValidSubModel.out.owl");
 		exporter.convertToOWL(m, out);
-	}
-	
-	
-	@Test
-	public void testSerchForObjects() throws Exception {
-		List<? extends BioPAXElement> elist = paxtoolsDAO.search("P46880", BioPAXElement.class);
-		assertFalse(elist.isEmpty());
-		System.out.println(elist.toString());
 	}
 
 	@Test

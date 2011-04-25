@@ -422,14 +422,21 @@ public class CPathServiceImpl implements CPathService {
 		
 		return toReturn;
 	}
-	
+
 	
 	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String... uris) {
 		//TODO return in different formats
 		return getNeighborhood(uris); // in BioPAX
 	}
+
 	
-	
+	/**
+	 * Executes a nearest neighborhood query on
+	 * the global persistent BioPAX model (main).
+	 * 
+	 * @param uris
+	 * @return
+	 */
 	Map<ResultMapKey, Object> getNeighborhood(String... uris) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		

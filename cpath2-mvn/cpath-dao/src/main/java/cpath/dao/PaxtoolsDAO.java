@@ -31,8 +31,6 @@ package cpath.dao;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
-import cpath.warehouse.WarehouseDAO;
-
 import java.util.Collection;
 import java.util.List;
 import java.io.File;
@@ -52,23 +50,6 @@ public interface PaxtoolsDAO extends Model, Reindexable {
 	 * @throws FileNoteFoundException
 	 */
 	void importModel(File biopaxFile) throws FileNotFoundException;
-
-
-	 /**
-	 * Searches the lucene index and returns the set of objects 
-	 * of the given class in the model that match the query string.
-	 * 
-	 * This method is more useful when run within a transaction/session,
-	 * because the returned list is not guaranteed to be fully initialized
-	 * (it may contain elements with incomplete (lazy) property values)
-	 * 
-     * @param query String
-	 * @param filterBy class to be used as a filter.
-     * @return ordered by relevance list of elements
-     * 
-     * @deprecated use {@link #find(String, Class)} and {@link #getValidSubModel(Collection)}, or {@link WarehouseDAO#getObject(String)}
-     */
-    <T extends BioPAXElement> List<T> search(String query, Class<T> filterBy);
 
     
 	 /**
@@ -150,4 +131,23 @@ public interface PaxtoolsDAO extends Model, Reindexable {
      * @return
      */
     Model runAnalysis(Analysis analysis, Object... args);
+    
+    
+    /**
+     * Returns whether current DAO mode is "warehouse" (true),
+     * or normal (false); In warehouse mode, e.g., full-text search   
+     * would return not only entity but also utility class objects
+     * (or utility class elements only).
+     * 
+     * @return
+     */
+    boolean isWarehouseMode();
+    
+    
+    /**
+     * Sets the "warehouse" DAO mode.
+     * @param warehouseMode
+     */
+    void setWarehouseMode(boolean warehouseMode);
+    
 }

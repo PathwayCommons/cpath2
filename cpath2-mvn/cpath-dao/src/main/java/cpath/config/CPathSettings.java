@@ -72,7 +72,7 @@ public final class CPathSettings {
 	public static final String CPATH_DB_PREFIX = "cpath2_";
 
 	
-	public static final String CPATH_WAREHOUSE_ENTRY_COMMENT = "cPath2-generated";
+	public static final String CPATH2_GENERATED_COMMENT = "cPath2-generated";
 	
 	/**
 	 * Gets current Home Directory (full path).
