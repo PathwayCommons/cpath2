@@ -251,8 +251,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
                     parts = refSeqId.split("\\.");
                     refSeqId = parts[0];
                 }
-                //setRelationshipXRef("RefSeq", refSeqId, currentProteinOrER);
-                setUnificationXRef(proteinReferenceModel, "RefSeq", refSeqId, proteinReference);
+                setRelationshipXRef(proteinReferenceModel, "RefSeq", refSeqId, proteinReference);
             }
         }
     }
