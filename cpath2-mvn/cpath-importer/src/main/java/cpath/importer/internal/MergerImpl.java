@@ -251,6 +251,12 @@ public class MergerImpl implements Merger {
 				if(bpe != replacement) {
 					pathwayModel.replace(bpe, replacement);
 					modelUtils.removeDependentsIfDangling(bpe);
+					
+					if (log.isInfoEnabled()) {
+						log.info(bpe.getRDFId() 
+							+ " (" + bpe.getModelInterface().getSimpleName() + ") " +
+							"is replaced with " + replacement + "(from the warehouse)");	
+					}
 				}
 			}
 		}
@@ -286,11 +292,31 @@ public class MergerImpl implements Merger {
 				new ClassFilterSet<UnificationXref>(((XReferrable)bpe).getXref(), UnificationXref.class);
 			Collection<String> prefs = proteinsDAO.getByXref(urefs, ProteinReference.class);
 			if (!prefs.isEmpty()) { 
-				if (prefs.size() > 1) 
+				if (prefs.size() > 1) {
 					throw new RuntimeException("Several ProteinReference " +
 						"that share the same xref found:" + prefs);	
+				}
 				toReturn = proteinsDAO.getObject(prefs.iterator().next(), ProteinReference.class);
+			} else {
+				// use relationship xrefs (refseq, entrez gene,..)
+				Set<RelationshipXref> rrefs =
+					new ClassFilterSet<RelationshipXref>(((XReferrable)bpe).getXref(), RelationshipXref.class);
+				prefs = proteinsDAO.getByXref(rrefs, ProteinReference.class);
+				if (!prefs.isEmpty()) { 
+					if (prefs.size() > 1) {
+						log.info("More than one ProteinReference " +
+							"that share the same relationship xref weren found:" 
+							+ prefs + ". Skipping (TODO: choose one).");	
+					} else {					
+						toReturn = proteinsDAO.getObject(prefs.iterator().next(), ProteinReference.class);
+						log.warn("ProteinReference: " + bpe +  " will be replaced "
+							+ "with the one found in the warehouse by RelationshipXref"
+							+ " (not by unification xref): " + prefs);
+					}
+				}
 			}
+			
+			
 		}
 		
 		return toReturn;

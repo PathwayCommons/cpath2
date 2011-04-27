@@ -138,14 +138,14 @@ public class CPathWarehouseTest {
 	@Test
 	public void testSearchForProteinReference() {
 		// search with a secondary (RefSeq) accession number
-		Collection<String> prIds = ((PaxtoolsDAO)proteins).find("NP_619650", UnificationXref.class);
+		Collection<String> prIds = ((PaxtoolsDAO)proteins).find("NP_619650", RelationshipXref.class);
 		assertFalse(prIds.isEmpty());
-		assertTrue(prIds.contains(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:REFSEQ_NP_619650"));
+		assertTrue(prIds.contains(CPathSettings.CPATH_URI_PREFIX+"RelationshipXref:REFSEQ_NP_619650"));
 		
 		// get that xref
-		Xref x = proteins.getObject(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:REFSEQ_NP_619650", UnificationXref.class);
+		Xref x = proteins.getObject(CPathSettings.CPATH_URI_PREFIX+"RelationshipXref:REFSEQ_NP_619650", RelationshipXref.class);
 		assertNotNull(x);
-		assertTrue(x.getXrefOf().isEmpty()); // when elements are detached by id, they do not remember its owners!
+		assertTrue(x.getXrefOf().isEmpty()); // when elements are detached using getObject, they do not remember its owners!
 		// if you get the owner (entity reference) by id, then this xref.xrefOf will contain the owner.
 		
 		// search/map for the corresponding entity reference
