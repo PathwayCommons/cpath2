@@ -37,7 +37,7 @@
 	</licenses>
 	
 	<modules>
-		<!-- <module>cpath-web</module> -->
+		<module>cpath-webdocs</module>
 		<module>cpath-dao</module>
 		<module>cpath-admin</module>
 		<module>cpath-importer</module>

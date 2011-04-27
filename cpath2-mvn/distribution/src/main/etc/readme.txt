@@ -57,4 +57,6 @@ $JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Xmx1024M -Xss2048k -jar cpath-ad
 
 $JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Xmx2048M -jar cpath-admin.jar -merge
 
+(again, NOTE: easier - to use cpath-admin.sh script)
+
 ...
