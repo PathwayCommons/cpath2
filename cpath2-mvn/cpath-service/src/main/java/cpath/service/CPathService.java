@@ -70,19 +70,10 @@ public interface CPathService {
 	 *
 	 */
 	public static enum OutputFormat {
-		XML, // legacy full-text search output format
-		BIOPAX,
+        BIOPAX,
 		BINARY_SIF,
-		TSV, // tab-separated "network" format, cols: DB:ID, Pathway_Name, DataProvider, CPATH_ID?..
-		GSEA, // technically - TSV blend
-		PC_GENE_SET, // similar to GSEA, with multiple identifiers micro-encoded
-		ID_LIST, // legacy TSV format, columns: Record_Name, CPATH_ID, Database:ID (data type must be specified)
-		// TODO think: do we need "image" formats at all in the new services?
-		IMAGE, 
-		IMAGE_MAP,
-		IMAGE_MAP_THUMBNAIL,
-		IMAGE_MAP_IPHONE,
-		IMAGE_MAP_FRAMESET,
+        EXTENDED_BINARY_SIF,
+		GSEA
 		;
 	}
 	
@@ -121,19 +112,6 @@ public interface CPathService {
 			Integer[] organisms, String... dataSources);
 
 
-	/** 
-	 * Gets elements by id, 
-	 * creates SearchResponseType (cpath legacy service schema),
-	 * writes as xml and returns as map (key:DATA).
-	 * 
-	 * @see ResultMapKey
-	 * 
-	 * @param uris
-	 * @return
-	 */
-	Map<ResultMapKey, Object> fetchAsXmlSearchResponse(String... uris);
-	
-	
 	/**
 	 * Generates the BioPAX validation report for the pathway data provider
 	 * (report will be associated with 'DATA' key in the returned map).
@@ -153,5 +131,17 @@ public interface CPathService {
 	 * @return
 	 */
 	Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String... uris);
+
+	/**
+	 * For the given biopax, converts to the desired output format.
+     *
+     * @param biopax
+	 * @param format
+	 * 
+	 * @see ResultMapKey
+	 * 
+	 * @return
+	 */
+	Map<ResultMapKey, Object> convert(String biopax, OutputFormat format);
 	
 }

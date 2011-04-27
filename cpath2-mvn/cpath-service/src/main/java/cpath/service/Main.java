@@ -57,6 +57,7 @@ public class Main  {
     	VALIDATION_REPORT("-validation-report"),
     	// export a "valid sub-model" from the main db
     	GET("-get"), //TODO add '--output-format' parameter
+        CONVERT("-convert"),
     	;
 
         private String command;
@@ -110,6 +111,15 @@ public class Main  {
 				this.commandParameters = new String[] {args[1], args[2]};
 			} 
         } 
+        else if(args[0].equals(COMMAND.CONVERT.toString())) {
+			if (args.length != 4) {
+				validArgs = false;
+			}
+            else {
+				this.command = COMMAND.CONVERT;
+				this.commandParameters = new String[] {args[1], args[2], args[3]};
+			} 
+        } 
         else {
             validArgs = false;
         }
@@ -122,6 +132,7 @@ public class Main  {
 
 
     private void run() {
+
         try {
             switch (command) {
             case VALIDATION_REPORT:
@@ -132,8 +143,11 @@ public class Main  {
             	fos = new FileOutputStream(commandParameters[1]);
                 fetchAsBiopax(fos, commandParameters[0]);
 				break;
+            case CONVERT:
+                String biopax = readFileAsString(commandParameters[0]);
+            	fos = new FileOutputStream(commandParameters[1]);
+                convert(fos, biopax, commandParameters[2]);
             }
-            
         }
         catch (Exception e) {
             e.printStackTrace();
@@ -141,6 +155,25 @@ public class Main  {
         }
     }
 
+	/**
+	 * 
+	 * 
+	 * @param output
+	 * @param csvIdsString
+	 * @throws IOException 
+	 */
+	public static void convert(OutputStream output, String biopax, String outputFormat) throws IOException {
+
+		Map<ResultMapKey, Object> res = getService().convert(biopax, OutputFormat.valueOf(outputFormat));
+		if (res.containsKey(ResultMapKey.ERROR)) {
+    		System.err.println(res.get(ResultMapKey.ERROR));
+    	}
+        else if (res.containsKey(ResultMapKey.DATA)) {
+    		String owl = (String) res.get(ResultMapKey.DATA);
+    		output.write(owl.getBytes("UTF-8"));
+    		output.flush();
+    	}
+	}
 
 	/**
 	 * 
@@ -197,10 +230,28 @@ public class Main  {
 		toReturn.append("commands:" + NEWLINE);
 		toReturn.append(COMMAND.VALIDATION_REPORT.toString() + " <provider> <output.xml>" + NEWLINE);
 		toReturn.append(COMMAND.GET.toString() + " <uri1,uri2,..> <output.owl>" + NEWLINE);
+		toReturn.append(COMMAND.CONVERT.toString() + " <biopax.owl> <output-file> <output format>" + NEWLINE);
 		System.err.println(toReturn.toString());
 		System.exit(-1);
 	}
 
+    /**
+     * Converts incoming biopax file to string.
+     */
+    private static String readFileAsString(String filePath) throws java.io.IOException {
+
+        StringBuffer fileData = new StringBuffer();
+        BufferedReader reader = new BufferedReader(new FileReader(filePath));
+        char[] buf = new char[1024];
+        int numRead=0;
+        while ((numRead=reader.read(buf)) != -1) {
+            String readData = String.valueOf(buf, 0, numRead);
+            fileData.append(readData);
+            buf = new char[1024];
+        }
+        reader.close();
+        return fileData.toString();
+    }
 	
     /**
      * The big deal main.

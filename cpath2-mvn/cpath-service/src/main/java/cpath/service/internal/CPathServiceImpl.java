@@ -39,6 +39,7 @@ import javax.xml.transform.stream.StreamSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.SimpleMerger;
+import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
@@ -87,12 +88,14 @@ public class CPathServiceImpl implements CPathService {
 	
 	@NotNull
 	private CvRepository cvFetcher;
-	
-	private final SimpleIOHandler simpleIO;
-	private final SimpleMerger merger;
-	
+
+	private final SimpleMerger merger;	
 	private final JAXBContext jaxbContext;
-	
+	private final SimpleIOHandler simpleIO;
+
+    /**
+     * Constructor.
+     */
 	public CPathServiceImpl(
 			PaxtoolsDAO mainDAO, 
 			PaxtoolsDAO proteinsDAO,
@@ -121,6 +124,10 @@ public class CPathServiceImpl implements CPathService {
 	 * Interface methods
 	 */	
 	
+	/*
+     * (non-Javadoc)
+	 * @see cpath.service.CPathService#find(..)
+	 */
 	@Override
 	public Map<ResultMapKey, Object> find(String queryStr, 
 			Class<? extends BioPAXElement> biopaxClass, boolean countOnly,
@@ -149,72 +156,110 @@ public class CPathServiceImpl implements CPathService {
 		return map;
 	}
 
-	
-	String exportToOWL(Model model) {
-		if(model == null) 
-			return null;
-		
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		simpleIO.convertToOWL(model, out);
-		return out.toString();
-	}
-
-	
+	/*
+     * (non-Javadoc)
+	 * @see cpath.service.CPathService#fetch(..)
+	 */
 	@Override
 	public Map<ResultMapKey, Object> fetch(OutputFormat format, String... uris) {
+
+        // before anything, get the biopax
+        Map<ResultMapKey, Object> map = fetchAsBiopax(uris);
+
+        // outta here
+        return (map.containsKey(ERROR)) ? map : convert(map, format);
+    }
+
+	/*
+     * (non-Javadoc)
+	 * @see cpath.service.CPathService#convert(..)
+	 */
+    @Override
+    public Map<ResultMapKey, Object> convert(String biopax, OutputFormat format) {
+
+        // put incoming biopax into map
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
+        Model model = simpleIO.convertFromOWL(new ByteArrayInputStream(biopax.getBytes()));
+        map.put(MODEL, model);
+        map.put(DATA, biopax);
+
+        // outta here
+        return convert(map, format);
+	}
+
+    /*
+     * Function used by both convert(String, OutputFormat)
+     * and fetch(OutputFormat, String... uris).
+     */
+    Map<ResultMapKey, Object> convert(Map<ResultMapKey, Object> map, OutputFormat format) {
+
 		try {
 			switch (format) {
 			case BINARY_SIF:
-				map = fetchAsBinarySIF(uris);
+				map = fetchAsBinarySIF(map, false);
+				break;
+			case EXTENDED_BINARY_SIF:
+				map = fetchAsBinarySIF(map, true);
 				break;
 			case GSEA:
-				map = fetchAsGSEA("uniprot", uris); // default
+				map = fetchAsGSEA(map, "uniprot");
 				break;
-			case PC_GENE_SET: // TODO
-				
-				break;
-			case TSV: // TODO
-				
-				break;
-			case ID_LIST: // TODO
-				
-				break;
-			case IMAGE_MAP: // TODO ?
-				
-				break;
-			case XML: 
-				// map to the legacy cpath xml format
-				map = fetchAsXmlSearchResponse(uris);
-				break;
-			case BIOPAX: // is default
+            case BIOPAX: // default handler
 			default:
-				map = fetchAsBiopax(uris);
+                // do nothing
 			}
-		} catch (Exception e) {
+		}
+        catch (Exception e) {
 			map.put(ERROR, e.toString());
 		}
+
+        // outta here
+		return map;
+    }
+	
+	/** 
+	 * Gets BioPAX elements by id, 
+	 * creates a sub-model, and returns everything as map.
+	 * 
+	 * @see ResultMapKey
+	 * 
+	 * @param uris
+	 * @return
+	 */
+	Map<ResultMapKey, Object> fetchAsBiopax(String... uris) {
+
+		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
+		
+		if (uris.length >= 1) {	
+			// extract a sub-model
+			Model m = mainDAO.getValidSubModel(Arrays.asList(uris));
+			map.put(MODEL, m);
+			map.put(DATA, exportToOWL(m));
+		} 
+		
+		if (uris.length == 1) {
+			// also put the object (element) in the map
+			BioPAXElement element = mainDAO.getByID(uris[0]);
+			if (element != null) {
+				mainDAO.initialize(element);
+				map.put(ELEMENT, element);
+			}
+		}
+		
+        // outta here
 		return map;
 	}	
-
 	
 	/**
 	 * Gets BioPAX elements by id (URIs), 
 	 * extracts a sub-model, converts to GSEA format, 
 	 * and returns everything as map values.
 	 * 
+     * @param map Map<ResultMapKey, Object>
 	 * @param outputIdType output identifiers type (db name)
-	 * @param uris identifiers of the BioPAX elements to export
 	 * @return
 	 */
-	Map<ResultMapKey, Object> fetchAsGSEA(String outputIdType, String... uris) {
-		// get as BioPAX first
-		Map<ResultMapKey, Object> map = fetchAsBiopax(uris);
-		
-		// check for internal errors
-		if(map.containsKey(ERROR)) {
-			return map; // return as is (with error)
-		}
+	Map<ResultMapKey, Object> fetchAsGSEA(Map<ResultMapKey, Object> map, String outputIdType) {
 		
 		// convert, replace DATA
 		Model m = (Model) map.get(MODEL);
@@ -230,7 +275,6 @@ public class CPathServiceImpl implements CPathService {
 		return map;
 	}
 
-
 	/**
 	 * Gets BioPAX elements by id, 
 	 * creates a sub-model, converts to SIF format, 
@@ -239,154 +283,46 @@ public class CPathServiceImpl implements CPathService {
 	 * TODO 'rules' parameter is currently ignored (requires conversion 
 	 * from strings to the rules, e.g., using enum. BinaryInteractionRule from cpath-web-service)
 	 * 
-	 * @param uris identifiers of the elements to export
+     * @param map Map<ResultMapKey, Object>
+     * @param extended if true, call SIFNX else SIF
 	 * @param rules (optional) the names of SIF rules to apply
 	 * @return
 	 */
-	Map<ResultMapKey, Object> fetchAsBinarySIF(String[] uris, String... rules) {
-		// get as BioPAX first
-		Map<ResultMapKey, Object> map = fetchAsBiopax(uris);
-		
-		// check for internal errors
-		if(map.containsKey(ERROR)) {
-			return map; // return as is (with error)
-		}
-		
+	Map<ResultMapKey, Object> fetchAsBinarySIF(Map<ResultMapKey, Object> map, boolean extended, String... rules) {
+
 		// convert, replace DATA value in the map to return
 		// TODO match 'rules' parameter to rule types (currently, it uses all)
 		Model m = (Model) map.get(MODEL);
-		SimpleInteractionConverter sic = new SimpleInteractionConverter(
-				new org.biopax.paxtools.io.sif.level3.ComponentRule(),
-				new org.biopax.paxtools.io.sif.level3.ConsecutiveCatalysisRule(),
-				new org.biopax.paxtools.io.sif.level3.ControlRule(),
-				new org.biopax.paxtools.io.sif.level3.ControlsTogetherRule(),
-				new org.biopax.paxtools.io.sif.level3.ParticipatesRule());
+		SimpleInteractionConverter sic = getSimpleInteractionConverter(m);
+
 		try {
 			OutputStream edgeStream = new ByteArrayOutputStream();
-			//sic.writeInteractionsInSIF(m, edgeStream); // default SIF output uses IDs
-			// lets use extended format and write other attributes
-			OutputStream nodeStream = new ByteArrayOutputStream();
-	        sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream, 
-	        		false, simpleIO.getEditorMap(), "name", "xref");
-	        map.put(DATA, edgeStream.toString() + "\n\n" + nodeStream.toString());
-		} catch (Exception e) {
+            if (extended) {
+                OutputStream nodeStream = new ByteArrayOutputStream();
+                sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream,
+                                             true, new SimpleEditorMap(m.getLevel()), "NAME", "XREF", "ORGANISM");
+                map.put(DATA, edgeStream.toString() + "\n\n" + nodeStream.toString());
+            }
+            else {
+                sic.writeInteractionsInSIF(m, edgeStream);
+                map.put(DATA, edgeStream.toString());
+            }
+		}
+        catch (Exception e) {
 			map.put(ERROR, e.toString());
 		}
 
+        // outta here
 		return map;
 	}
-	
 
-	/** 
-	 * Gets BioPAX elements by id, 
-	 * creates a sub-model, and returns everything as map.
-	 * 
-	 * @see ResultMapKey
-	 * 
-	 * @param uris
-	 * @return
-	 */
-	Map<ResultMapKey, Object> fetchAsBiopax(String... uris) {
-		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-		
-		if(uris.length >= 1) {	
-			// extract a sub-model
-			Model m = mainDAO.getValidSubModel(Arrays.asList(uris));
-			map.put(MODEL, m);
-			map.put(DATA, exportToOWL(m));
-		} 
-		
-		if(uris.length == 1) {
-			// also put the object (element) in the map
-			BioPAXElement element = mainDAO.getByID(uris[0]);
-			if (element != null) {
-				mainDAO.initialize(element);
-				map.put(ELEMENT, element);
-			}
-		}
-		
-		return map;
-	}
-	
-	
-	// TODO finish...
-	public Map<ResultMapKey, Object> fetchAsXmlSearchResponse(String... uris) {
-		Map<ResultMapKey, Object> toReturn = new HashMap<ResultMapKey, Object>();
-		
-		// extract a Biopax sub-model
-		Model m = mainDAO.getValidSubModel(Arrays.asList(uris));
-		
-		// build a SearchResponseType, fill in, marshal
-		SearchResponseType searchResponse = new SearchResponseType();
-		List<ExtendedRecordType> hits = searchResponse.getSearchHit();
-		for (String id : uris) {
-			BioPAXElement element = m.getByID(id); //= mainDAO.getByID(id);
-			if (element != null) {
-				//mainDAO.initialize(element); // if above: mainDAO.getByID(id)
-				ExtendedRecordType rec = new ExtendedRecordType();
-				rec.setPrimaryId(id);
-				if(element instanceof Named)
-					rec.setName(((Named)element).getName().toString());
-				rec.setEntityType(element.getModelInterface().getSimpleName());
-				hits.add(rec);
-				// TODO set all fields... (requires using extra, pre-calculated parent-child, data!)
-			} else {
-				// ignore not found...
-			}
-		}
-		
-		if(hits.size() != 0) {
-			searchResponse.setTotalNumHits(Long.valueOf(hits.size()));
-			toReturn.put(DATA, marshalSearchResponse(searchResponse));
-		} // otherwise, returns empty map
-		
-		return toReturn;
-	}
-
-
-	// TODO finish later...
-	Map<ResultMapKey, Object> fetchAsXmlSummaryResponse(String... uris) {
-		return new HashMap<ResultMapKey, Object>();
-	}
-	
-	
-	String marshalSearchResponse(SearchResponseType obj) {
-		StringWriter writer = new StringWriter();
-		try {
-			Marshaller ma = jaxbContext.createMarshaller();
-			ma.setProperty("jaxb.formatted.output", true);
-			ma.marshal(
-			new JAXBElement<SearchResponseType>(new QName("","search_response"), 
-					SearchResponseType.class, obj), writer);
-		} catch (JAXBException e) {
-			throw new RuntimeException(e);
-		}
-		return writer.toString();
-	}
-
-	
-	String marshalSummaryResponce(SummaryResponseType obj) {
-		StringWriter writer = new StringWriter();
-		try {
-			Marshaller ma = jaxbContext.createMarshaller();
-			ma.setProperty("jaxb.formatted.output", true);
-			ma.marshal(
-			new JAXBElement<SummaryResponseType>(new QName("","summary_response"), 
-					SummaryResponseType.class, obj), writer);
-		} catch (JAXBException e) {
-			throw new RuntimeException(e);
-		}
-		return writer.toString();
-	}
-
-
-	/* (non-Javadoc)
-	 * @see cpath.service.CPathService#getValidationReport(java.lang.String)
+	/*
+     * (non-Javadoc)
+	 * @see cpath.service.CPathService#getValidationReport(...)
 	 */
 	@Override
-	public Map<ResultMapKey, Object> getValidationReport(
-			String metadataIdentifier) 
-	{
+	public Map<ResultMapKey, Object> getValidationReport(String metadataIdentifier) {
+
 		Map<ResultMapKey, Object> toReturn = new HashMap<ResultMapKey, Object>();
 		
 		// get validationResults from PathwayData beans
@@ -404,7 +340,8 @@ public class CPathServiceImpl implements CPathService {
 						ValidatorResponse resp = (ValidatorResponse) BiopaxValidatorUtils.getUnmarshaller()
 							.unmarshal(new StreamSource(new StringReader(xmlResult)));
 						validation = resp.getValidationResult().get(0);
-					} catch (Exception e) {
+					}
+                    catch (Exception e) {
 						toReturn.put(ERROR, e);
 						log.error(e);
 					}
@@ -423,16 +360,19 @@ public class CPathServiceImpl implements CPathService {
 		return toReturn;
 	}
 
-	
+	/**
+     * (non-Javadoc)
+	 * @see cpath.service.CPathService#getNeighborhood(...)
+     */
+    @Override
 	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String... uris) {
-		//TODO return in different formats
-		return getNeighborhood(uris); // in BioPAX
-	}
 
+		// for now, only return biopax
+		return getNeighborhood(uris);
+	}
 	
 	/**
-	 * Executes a nearest neighborhood query on
-	 * the global persistent BioPAX model (main).
+	 * Executes a nearest neighborhood query on the global persistent BioPAX model (main).
 	 * 
 	 * @param uris
 	 * @return
@@ -440,13 +380,14 @@ public class CPathServiceImpl implements CPathService {
 	Map<ResultMapKey, Object> getNeighborhood(String... uris) {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		
-		if(uris.length >= 1) {	
+		if (uris.length >= 1) {	
 			try {
 				Analysis analysis = new NearestNeighborhoodQueryAnalysis();
 				Model m = mainDAO.runAnalysis(analysis, uris);
 				map.put(MODEL, m);
 				map.put(DATA, exportToOWL(m));
-			} catch (Exception e) {
+			}
+            catch (Exception e) {
 				map.put(ERROR, e);
 				log.error("getNeighborhood failed. ", e);
 			}
@@ -454,4 +395,52 @@ public class CPathServiceImpl implements CPathService {
 		
 		return map;
 	}
+
+    /**
+     * Given paxtools model, returns as string
+     *
+     * @param model Model
+     * @return String
+     */
+	String exportToOWL(Model model) {
+
+		if (model == null) {
+			return null;
+        }
+		
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		simpleIO.convertToOWL(model, out);
+
+		return out.toString();
+	}
+
+    /**
+     * Returns proper simple interaction converter based on level
+     * of model. We don't have to be l2 compatible, but it doesn't hurt.
+     *
+     * @param model Model
+     * @return SimpleInteractionConverter
+     */
+    SimpleInteractionConverter getSimpleInteractionConverter(Model model) {
+
+        if (model.getLevel() == BioPAXLevel.L2) {
+            return new SimpleInteractionConverter(
+				new org.biopax.paxtools.io.sif.level2.ComponentRule(),
+				new org.biopax.paxtools.io.sif.level2.ConsecutiveCatalysisRule(),
+				new org.biopax.paxtools.io.sif.level2.ControlRule(),
+				new org.biopax.paxtools.io.sif.level2.ControlsTogetherRule(),
+				new org.biopax.paxtools.io.sif.level2.ParticipatesRule());
+        }
+        else if (model.getLevel() == BioPAXLevel.L3) {
+            return new SimpleInteractionConverter(
+				new org.biopax.paxtools.io.sif.level3.ComponentRule(),
+				new org.biopax.paxtools.io.sif.level3.ConsecutiveCatalysisRule(),
+				new org.biopax.paxtools.io.sif.level3.ControlRule(),
+				new org.biopax.paxtools.io.sif.level3.ControlsTogetherRule(),
+				new org.biopax.paxtools.io.sif.level3.ParticipatesRule());
+        }
+
+        // should not make it here
+        return null;
+    }
 }
