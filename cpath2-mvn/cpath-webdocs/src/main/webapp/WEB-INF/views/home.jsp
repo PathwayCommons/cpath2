@@ -10,6 +10,8 @@
 	<link rel="stylesheet" type="text/css" href="styles/style.css" media="screen" />
 	<link rel="shortcut icon" href="images/favicon.ico" />
 	<title>cPath2 Welcome Page</title>
+	<script type="text/javascript" src="scripts/jquery-1.5.2.min.js"></script>
+	<script type="text/javascript" src="scripts/home.js"></script>
 </head>
 <body>
 
@@ -17,6 +19,8 @@
 <div style="width: 90%">
 cPath2 is...
 </div>
+
+<button id="foo">A button named foo</button>
 
 </body>
 </html>

@@ -28,19 +28,16 @@
 package cpath.webservice.args;
 
 /**
- * Valid cPath web service commands; 
- * added for backward compatibility.
+ * cPath2 web service commands.
  * 
  * @author rodche
  *
  */
 public enum Cmd {
-	SEARCH, // full-text search
-	GET_PATHWAYS, // - search first, then - GET_PARENTS of type Pathway
-	GET_NEIGHBORS, // - by 'graph' command
-	GET_PARENTS, // graph query
-	GET_RECORD_BY_CPATH_ID, // new 'get' command
-	// old?
-	GET_BY_KEYWORD, // 'search'?
+	SEARCH,
+	GET,
+	GRAPH,
+	HELP,
+	TRAVERSE,
 	;
 }

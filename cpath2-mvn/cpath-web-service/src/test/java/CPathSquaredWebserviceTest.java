@@ -1,7 +1,6 @@
 
 import static org.junit.Assert.*;
 
-import java.io.IOException;
 import java.util.*;
 
 import org.junit.*;
@@ -71,85 +70,5 @@ public class CPathSquaredWebserviceTest {
 				map, String.class);
 		assertNotNull(result);
 	}
-	
-	
-	
-	//@Test // not done yet
-	public void testGetNeighbors() throws IOException {
-		CPathWebserviceTest test = new CPathWebserviceTest();
-		//test.testGetNeighbors(); // should pass unless the older web service is dead
-		
-		// test the new web service that is to support the old one
-		test.setServiceUrl(CPATH2_SERVICE_URL+"/webservice.do");
-		test.testGetNeighbors(); // aha?!
-	}
-	
-	
-	/*
-	 * Legacy Command: search
-	 * 
-	 * webservice.do?version=2.0&q=BRCA2&output=xml&cmd=search
-	 * response xml (<search_response/>) schema: 
-	 * http://pathway-commons.googlecode.com/hg/cpath2-mvn/cpath-web-service/src/main/resources/schemas/cpath1-responses.xsd
-	 * (previously referred as http://www.pathwaycommons.org/pc/xml/SearchResponse.xsd)
-	 * 
-	 * [Required] cmd=search
-	 * [Required] version=2.0
-	 * [Required] q= a keyword, name or external identifier.
-	 * [Optional] output= xml (it's documented as 'required' but in fact - always ignored; format=xml also works...)
-	 * [Optional] organism= organism filter. Must be specified as an NCBI Taxonomy identifier
-	 */
-	@Test
-	public void testLegacySearch() {
-		String result = template.getForObject(
-			CPATH2_SERVICE_URL + "/webservice.do?cmd=search&version=2.0&q={q}",
-			String.class, "Gly*");
-		assertNotNull(result);
-		// TODO check schema, check contains...
-		System.out.println(result);
-	}
-	
-	/*
-	 * Command: get_pathways
-	 * 
-	 * http://www.pathwaycommons.org/pc/webservice.do?cmd=get_pathways&version=2.0&q=O14763&input_id_type=UNIPROT
-	 * 
-	 * [Required] cmd=get_pathways
-	 * [Required] version=2.0
-	 * [Required] q= a comma separated list of internal or external identifiers
-	 * [Optional] input_id_type. Valid values:
-		UNIPROT
-		CPATH_ID
-		ENTREZ_GENE
-		GENE_SYMBOL
-	 * [Optional] parameter data_source. Comma-separated values:
-		BIOGRID
-		CELL_MAP (not in MIRIAM yet)
-		HPRD (iRefWeb)
-		HUMANCYC
-		IMID
-		INTACT
-		MINT
-		NCI_NATURE
-		REACTOME
-	 *
-	 * Note: datasource names depend on the pathwaycommons.org release;
-	 *
-	 * Output is a tab-delimited text with four data columns:
-	 *  Database:ID, Pathway_Name, Pathway_Database_Name, and CPATH_ID
-	 *  (the first line contains column names).
-	 * The result row may also contain an error message, 
-	 *  e.g., "XXXX    PHYSICAL_ENTITY_ID_NOT_FOUND', instead of the columns!!
-	 */
-	@Test
-	public void testGetPathways() throws IOException {
-		String result = template.getForObject(
-			CPATH2_SERVICE_URL + "/webservice.do?version=2.0&cmd=get_pathways"
-			+ "&input_id_type=UNIPROT&q={q}&data_source=NCI_NATURE", 
-			String.class, 
-			"http://www.biopax.org/examples/myExample#phosphoglucose_isomerase");
-		assertTrue(result.length() > 0);
-		// TODO check for pathway
-		System.out.println(result);
-	}
+
 }
