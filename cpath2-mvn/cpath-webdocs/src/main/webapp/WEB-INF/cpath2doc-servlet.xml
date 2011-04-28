@@ -14,8 +14,7 @@
     <!-- JSR-303 (validation) support will be detected on classpath and enabled automatically -->
     <context:annotation-config/>
 	
-	<mvc:view-controller path="/home.html"/>
-	<mvc:view-controller path="/search.html"/>
+	<mvc:view-controller path="/" view-name="home"/>
 	
 	<bean id="viewResolver"
 		class="org.springframework.web.servlet.view.UrlBasedViewResolver">

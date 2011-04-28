@@ -32,11 +32,8 @@ import cpath.service.CPathService.OutputFormat;
 import cpath.service.CPathService.ResultMapKey;
 import cpath.service.internal.CPathServiceImpl;
 import cpath.service.internal.ProtocolStatusCode;
-import cpath.warehouse.internal.BioDataTypes;
-import cpath.warehouse.internal.BioDataTypes.Type;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
-import cpath.webservice.validation.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -81,7 +78,6 @@ public class WebserviceController {
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
-        binder.registerCustomEditor(ProtocolVersion.class, new ProtocolVersionEditor());
     }
 
 	
@@ -183,182 +179,6 @@ public class WebserviceController {
 	}
 	
 	
-	   
-    /**
-     * Controller for the legacy cPath web services
-     * (backward compatibility).
-     * 
-     * Currently, we do not use neither custom property editors nor framework's validator 
-     * for the web method parameters. All the arguments are plain strings, 
-     * and actual validation is performed after the binding, using the same approach 
-     * as in old cPath (original cPath web 'protocol' was ported and re-factored)
-     * 
-     * TODO migrate to spring MVC and javax.validation framework (Validator, Errors and BindingResult, etc..)
-     * 
-     */
-    @RequestMapping("/webservice.do")
-    @ResponseBody
-    public String doWebservice(
-    		@RequestParam("cmd") String cmd, 
-    		@RequestParam(value="version", required=false) String version,
-    		@RequestParam("q") String q, // e.g. the list of identifiers or a search string
-    		@RequestParam(value="output", required=false) String output,
-    		@RequestParam(value="organism", required=false) String organism, // taxonomy id
-    		@RequestParam(value="input_id_type", required=false) String inputIdType,
-    		@RequestParam(value="data_source", required=false) String dataSources, //comma-separated names
-    		@RequestParam(value="output_id_type", required=false) String outputIdType,
-    		@RequestParam(value="binary_interaction_rule", required=false) String rules //comma-separated names
-    	) 
-    {
-		String toReturn = "";
-		final Map<String,String> argsMap = new HashMap<String, String>(); //map.toSingleValueMap();
-		argsMap.put("cmd", cmd);
-		argsMap.put("version", version);
-		argsMap.put("q", q);
-		argsMap.put("output", output);
-		argsMap.put("organism", organism);
-		argsMap.put("input_id_type", inputIdType);
-		argsMap.put("data_source", dataSources);
-		argsMap.put("output_id_type", outputIdType);
-		argsMap.put("binary_interaction_rule", rules);
-		ProtocolRequest protocol = null;
-		
-    	if(log.isDebugEnabled()) {
-    		log.debug("After webservice.do request params binding - " + 
-    				argsMap.toString());
-    	}
-		
-    	// Validate the query parameters
-		try {
-			// build the ProtocolRequest from the Map
-			protocol = new ProtocolRequest(argsMap);
-			// validate with ProtocolValidator
-			ProtocolValidator protocolValidator = new ProtocolValidator(protocol);
-			protocolValidator.validate();
-		} catch (ProtocolException e) {
-			return ProtocolStatusCode.errorAsXml(e.getStatusCode(), 
-						e.getMessage());
-		}
-		
-
-		if(protocol.getCommand() == Cmd.SEARCH) {
-			// return "forward:search.html"; // may try this later...
-			// format is always 'xml' (the same as cpath webservice's)
-			if(log.isDebugEnabled()) log.debug("Legacy (cpath) Fulltext Search:" 
-					+ ", query:" + protocol.getQuery());
-			// do cpath2 search query
-	    	Map<ResultMapKey,Object> results = service
-	    		.find(protocol.getQuery(), null, false, 
-	    			new Integer[]{protocol.getOrganism()}, 
-	    			protocol.getDataSources());
-			if(results.containsKey(ResultMapKey.ERROR)) {
-				return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 
-						results.get(ResultMapKey.ERROR).toString());
-			}
-			
-			// not found?
-			if(results.isEmpty() || !results.containsKey(ResultMapKey.DATA)) {
-				return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.NO_RESULTS_FOUND,
-					"No data returned for the search string '" 
-						+ protocol.getQuery() + "'");
-			}
-			
-			// convert the search result (id-list) to the legacy XML (SearchResponseType schema element)
-			Collection<String> uris = (Collection<String>) results.get(ResultMapKey.DATA);
-			// (reusing the same 'results' variable is intentional)
-			results = service.fetchAsXmlSearchResponse(uris.toArray(new String[]{}));
-			if(results.containsKey(ResultMapKey.ERROR)) {
-				return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 
-						results.get(ResultMapKey.ERROR).toString());
-			}
-			
-			// Not found? (Converting the search result to the legacy web service XML format returned no data) 
-			assert(results.containsKey(ResultMapKey.DATA)); // otherwise, it's a bug
-			toReturn = (String) results.get(ResultMapKey.DATA);
-			
-		} else if(protocol.getCommand() == Cmd.GET_RECORD_BY_CPATH_ID) {
-			//return "forward:get";
-			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 
-					"Not Implemented Yet: legacy GET_RECORD_BY_CPATH_ID");
-		} else if(protocol.getCommand() == Cmd.GET_BY_KEYWORD) {
-			// probably, is the same as "search"
-			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR,
-				"Not Implemented Yet: legacy GET_BY_KEYWORD");
-		} else if(protocol.getCommand() == Cmd.GET_PATHWAYS) {
-			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR,
-				"Not Implemented Yet: legacy GET_PATHWAYS");
-		} else if(protocol.getCommand() == Cmd.GET_NEIGHBORS) {
-			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR,
-				"Not Implemented Yet: legacy GET_NEIGHBORS");
-			// TODO Problem: semantic of this old command is very different from the new '/graph' variant (which cannot use UtilityClasses)!
-			// TODO call the service method
-			// TODO translate the results to the XML schema
-		} else if(protocol.getCommand() == Cmd.GET_PARENTS) {
-			//TODO implement "get_parents" or give up...
-			// build a SummaryResponseType (from xsd), marshal
-			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR,
-				"Not Implemented Yet: legacy GET_PARENTS");
-		}
-		
-		return toReturn;
-    }
-	
-
-	/* ========================================================================
-	 *    The Rest of Web Methods 
-	 * ======================================================================*/
-	
-	
-	/**
-	 * List of formats that web methods return
-	 * 
-	 * @return
-	 */
-    @RequestMapping("/help/formats")
-    @ResponseBody
-    public String getFormats() {
-    	StringBuffer toReturn = new StringBuffer();
-    	for(OutputFormat f : OutputFormat.values()) {
-    		toReturn.append(f.toString().toUpperCase()).append(newline);
-    	}
-    	return toReturn.toString();
-    }
-    
-    
-    //=== Web methods that help understand BioPAX model (and rules) ===
-    
-	/**
-	 * List of BioPAX L3 Classes
-	 * 
-	 * @return
-	 */
-    @RequestMapping("/help/types")
-    @ResponseBody
-    public String getBiopaxTypes() {
-    	StringBuffer toReturn = new StringBuffer();
-    	for(String type : BiopaxTypeEditor.getTypesByName().keySet()) {
-    		toReturn.append(type).append(newline);
-    	}
-    	return toReturn.toString();
-    }
-
-      	
-	/**
-	 * List of bio-network data sources.
-	 * 
-	 * @return
-	 */
-    @RequestMapping("/help/datasources")
-    @ResponseBody
-    public String getDatasources() {
-    	StringBuffer toReturn = new StringBuffer();
-    	for(String ds : BioDataTypes.getDataSourceKeys(Type.PATHWAY_DATA)) {
-    		toReturn.append(ds).append(newline);
-    	}
-    	return toReturn.toString();
-    }	
-    
-    
     /*
      * makes a plain text string (response body) 
      * when the data (in the map) is the list of IDs,
