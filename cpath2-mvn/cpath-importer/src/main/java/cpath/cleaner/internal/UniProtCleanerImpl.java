@@ -37,7 +37,7 @@ public class UniProtCleanerImpl extends BaseCleanerImpl implements Cleaner {
         String toReturn = pathwayData;
         
         try {
-            Map<String, List<String>> accessionsMap = populateAccessionsToRemoveMap(pathwayData);
+            Map<String, List<String>> accessionsMap = populateAccessionsMap(pathwayData);
             toReturn = cleanAccessions(pathwayData, accessionsMap);
         }
         catch (IOException e) {
@@ -65,7 +65,7 @@ public class UniProtCleanerImpl extends BaseCleanerImpl implements Cleaner {
      * @param uniprotData String
      * @return Map<String, List<String>>
      */
-    private Map<String, List<String>> populateAccessionsToRemoveMap(final String uniprotData) throws IOException {
+    private Map<String, List<String>> populateAccessionsMap(final String uniprotData) throws IOException {
 
         Map<String, List<String>> toReturn = new HashMap<String, List<String>>();
 
