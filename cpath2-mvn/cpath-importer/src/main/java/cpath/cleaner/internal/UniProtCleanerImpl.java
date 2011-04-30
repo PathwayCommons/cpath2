@@ -17,13 +17,19 @@ import java.util.regex.*;
  * ['A2A3T6', 'Q0VGC5', 'Q5VX65', 'Q5VX66', 'Q8IUU4']
  * between records: C1T9B_HUMAN, id: C1T9A_HUMAN
  *
+ * This class works on UniProt exports of the form:
+ * uniprot_sprot_xxxx.dat, where xxxx is species.
+ *
  */
 public class UniProtCleanerImpl extends BaseCleanerImpl implements Cleaner {
 
-    // some statics dependent on format of
-    // uniprot export (uniprot_sprot_xxxx.dat), where xxxx is species
+    // delimiter between accessions
     private static final String AC_DELIMITER = "; ";
+
+    // identifier for start of accessions line
     private static final String AC_PREFIX = "AC   ";
+    
+    // regex to capture protein identifier
     private static final String ID_REGEX = "^ID\\s*(\\w*).*$";
     private static Pattern pattern = Pattern.compile(ID_REGEX);
 
@@ -37,8 +43,7 @@ public class UniProtCleanerImpl extends BaseCleanerImpl implements Cleaner {
         String toReturn = pathwayData;
         
         try {
-            Map<String, List<String>> accessionsMap = populateAccessionsMap(pathwayData);
-            toReturn = cleanAccessions(pathwayData, accessionsMap);
+            toReturn = cleanAccessions(pathwayData, populateAccessionsMap(pathwayData));
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Error reading uniprot data");
