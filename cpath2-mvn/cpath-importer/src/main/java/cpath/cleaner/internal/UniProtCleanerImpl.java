@@ -117,7 +117,7 @@ public class UniProtCleanerImpl extends BaseCleanerImpl implements Cleaner {
      *
      * Its assumed that the bufferedReader argument is pointing to the line preceeding the accession list
      *
-     * @parmam bufferedReader BufferedReader
+     * @param bufferedReader BufferedReader
      * @return List<String>
      */
     private List<String> getAccessionsList(BufferedReader bufferedReader) throws IOException {
