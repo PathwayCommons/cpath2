@@ -36,7 +36,6 @@ import cpath.webservice.args.binding.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.bridgedb.DataSource;
-import org.bridgedb.bio.Organism;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -71,7 +70,7 @@ public class HelpController {
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
         binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
-        binder.registerCustomEditor(Organism.class, new OrganismEditor());
+        binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
     }
 
 	
@@ -245,8 +244,8 @@ public class HelpController {
     public @ResponseBody Help getOrganisms() {
     	Help help = new Help();
     	help.setId("organisms");
-    	for(Organism o : BioDataTypes.getOrganisms()) {
-    		help.addMember(getOrganism(o));
+    	for(DataSource ds : BioDataTypes.getDataSources(Type.ORGANISM)) {
+    		help.addMember(getOrganism(new OrganismDataSource(ds)));
     	}
     	help.setTitle("Organisms");
     	help.setInfo("Currently loaded into cPath2");
@@ -255,12 +254,22 @@ public class HelpController {
     
 
     @RequestMapping("/help/organisms/{o}") 
-    public @ResponseBody Help getOrganism(@PathVariable Organism o) {
+    public @ResponseBody Help getOrganism(@PathVariable OrganismDataSource o) {
     	Help help = new Help();
-    	help.setId(o.code());
-    	help.setTitle(o.shortName());
-    	help.setInfo(o.latinName());
+    	String taxid = o.asDataSource().getSystemCode();
+    	help.setId(taxid); //taxonomy id
+    	help.setTitle(o.asDataSource().getFullName());
+    	help.setInfo(o.asDataSource().getOrganism().toString()); //Miriam URN
+
     	return help;
     }
-
+    
+    
+    @RequestMapping("/help/statistics") 
+    public @ResponseBody Help getStatistics() {
+    	Help h = new Help("statistics");
+    	h.setInfo("TODO: get num. of molecules, pathways, interactions, etc...");
+    	// TODO statistics: num. of molecules, pathways, interactions, etc...
+    	return h;
+    }
 }

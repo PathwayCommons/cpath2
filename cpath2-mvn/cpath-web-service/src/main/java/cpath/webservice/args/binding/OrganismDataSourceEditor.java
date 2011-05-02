@@ -28,39 +28,50 @@
 package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
+import java.net.URI;
 
-import org.bridgedb.bio.Organism;
+import org.bridgedb.DataSource;
 
-//import cpath.service.BioDataTypes;
+import cpath.service.BioDataTypes;
+import cpath.service.BioDataTypes.Type;
+import cpath.webservice.args.OrganismDataSource;
+
 
 /**
- * Helps parse the parameter from the web service call
- * (organism: taxonomy Id, short name or latin name)
+ * Helps parse the string parameter in the web service call
+ * (organism: identifier, full name or official Miriam URN);
+ * sets NULL if none matched.
  * 
  * @author rodche
  *
  */
-public class OrganismEditor extends PropertyEditorSupport {
-	
+public class OrganismDataSourceEditor extends PropertyEditorSupport 
+{
 	@Override
-	public void setAsText(String arg) throws IllegalArgumentException {
-		// detect organism by code (taxonomy)
-		Organism organism = Organism.fromCode(arg);
-		if(organism == null) {
-			// - by name, etc.
-			organism = Organism.fromShortName(arg);
-			if(organism == null) {
-				organism = Organism.fromLatinName(arg);
-			}
-		}
+	public void setAsText(String ds) throws IllegalArgumentException {
+		DataSource dataSource = null;
+		URI u1 = URI.create(ds);
 		
 		/*
-		// TODO set null if it is not in the system
-		if(!BioDataTypes.containsOrganism(organism.code()))
-			organism = null;
+		 * all the organisms 
+		 * should have been already registered by BioDataTypes
 		 */
-		
-		setValue(organism);
+		for (DataSource d : BioDataTypes.getDataSources(Type.ORGANISM)) {
+			// guess it's an id or name
+			if (d.getSystemCode().equalsIgnoreCase(ds)
+					|| d.getFullName().equalsIgnoreCase(ds)) {
+				dataSource = d;
+				break;
+			} else // may be URN?
+			{
+				if (u1.equals(URI.create(d.getURN("")))) {
+					dataSource = d;
+					break;
+				}
+			}
+		}
+
+		setValue(new OrganismDataSource(dataSource));
 	}
 	
 }

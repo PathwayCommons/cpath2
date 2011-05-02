@@ -1,5 +1,5 @@
 /**
- ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
  ** and University of Toronto (UofT).
  **
  ** This is free software; you can redistribute it and/or modify it
@@ -25,56 +25,37 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice.args.binding;
-
-import java.beans.PropertyEditorSupport;
-import java.net.URI;
+package cpath.webservice.args;
 
 import org.bridgedb.DataSource;
 
-import cpath.service.BioDataTypes;
 import cpath.service.BioDataTypes.Type;
-import cpath.webservice.args.PathwayDataSource;
 
 
 /**
- * Helps parse the string parameter in the web service call
- * (datasource: identifier, full name or official Miriam URI);
- * sets NULL if none of the 'network' data sources matched.
+ * Defines a specific type to use in the web service 
+ * search for filtering by organism.
  * 
- * @author rodche
+ * All the organisms (as org.bridgedb.DataSource) -
+ * are defined in the bioDataTypes bean (during the initialization).
  *
+ * @author rodche
  */
-public class PathwayDataSourceEditor extends PropertyEditorSupport {
+public class OrganismDataSource {
 	
-	/* (non-Javadoc)
-	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
-	 */
-	@Override
-	public void setAsText(String ds) throws IllegalArgumentException {
-		DataSource dataSource = null;
-		URI u1 = URI.create(ds);
-		
-		/*
-		 * all the pathway data sources 
-		 * should have been already registered by BioDataTypes
-		 */
-		for (DataSource d : BioDataTypes.getDataSources(Type.PATHWAY_DATA)) {
-			// guess it's an id or name
-			if (d.getSystemCode().equalsIgnoreCase(ds)
-					|| d.getFullName().equalsIgnoreCase(ds)) {
-				dataSource = d;
-				break;
-			} else // may be URN?
-			{
-				if (u1.equals(URI.create(d.getURN("")))) {
-					dataSource = d;
-					break;
-				}
-			}
+	private final DataSource dataSource;
+	
+	public OrganismDataSource(DataSource dataSource) {
+		if(dataSource.getType().equals(Type.ORGANISM.name()))
+		{
+			this.dataSource = dataSource;
+		} else {
+			throw new IllegalArgumentException("Not " 
+					+ Type.ORGANISM + "  datasource type!");
 		}
-
-		setValue(new PathwayDataSource(dataSource));
-	}
+	}	
 	
+	public DataSource asDataSource() {
+		return dataSource;
+	}
 }
