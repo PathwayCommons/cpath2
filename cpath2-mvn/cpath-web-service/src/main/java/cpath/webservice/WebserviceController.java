@@ -39,6 +39,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.UtilityClass;
+import org.bridgedb.bio.Organism;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -78,6 +79,8 @@ public class WebserviceController {
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
+        binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
+        binder.registerCustomEditor(Organism.class, new OrganismEditor());
     }
 
 	
@@ -110,12 +113,14 @@ public class WebserviceController {
     }
 	
 	
-    // Fulltext Search. TODO add organism and data sources filter args
+    // Fulltext Search
     @RequestMapping(value="/search")
     @ResponseBody
     public String fulltextSearch(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
-    		@RequestParam(value="q", required=true) String query)
+    		@RequestParam(value="q", required=true) String query,
+    		@RequestParam(value="organism", required=false) Organism[] organisms,
+    		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources)
     {		
     	String body = "";
 
@@ -131,8 +136,15 @@ public class WebserviceController {
 			log.debug("Fulltext Search for type:" + type.getCanonicalName()
 					+ ", query:" + query);
 
-		Map<ResultMapKey, Object> results = service.find(query, type, false,
-				null);
+		Integer[] taxons = new Integer[organisms.length];
+		int i = 0;
+		for(Organism o : organisms) {
+			taxons[i++] = Integer.valueOf(o.code());
+		}
+		
+		Map<ResultMapKey, Object> results = null; //TODO
+			//service.find(query, type, false, taxons, dataSources);
+		
 		body = getListDataBody(results, query + " (in " + type.getSimpleName()
 				+ ")");
 
