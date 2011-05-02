@@ -14,7 +14,8 @@
 
 	<!-- simply starting this bean populates the (static) Bridgedb DataSource list from constants and metadataDAO! -->
 	<bean id="bioDataTypes" class="cpath.warehouse.internal.BioDataTypes" init-method="init">
-		<constructor-arg ref="metadataDAO"/>
+		<constructor-arg ref="metadataDAO" />
+		<constructor-arg ref="paxtoolsDAO" />
 	</bean>
 	
 	<bean id="service" class="cpath.service.internal.CPathServiceImpl">

@@ -29,12 +29,12 @@ package cpath.webservice.args;
 
 import org.bridgedb.DataSource;
 
-import cpath.warehouse.internal.BioDataTypes.Type;
+import cpath.service.BioDataTypes.Type;
 
 
 /**
- * This defines a specific object for the webservice 
- * parameter 'data_source' (for backward compatibility).
+ * Defines a specific type to use in the web service 
+ * search for filtering by pathway data source.
  * 
  * All the required data sources (as org.bridgedb.DataSource) -
  * networks/pathway data providers, - 

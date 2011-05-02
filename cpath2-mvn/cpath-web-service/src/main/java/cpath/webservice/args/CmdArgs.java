@@ -25,56 +25,39 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice.args.binding;
-
-import java.beans.PropertyEditorSupport;
-import java.net.URI;
-
-import org.bridgedb.DataSource;
-
-import cpath.service.BioDataTypes;
-import cpath.service.BioDataTypes.Type;
-import cpath.webservice.args.PathwayDataSource;
-
+package cpath.webservice.args;
 
 /**
- * Helps parse the string parameter in the web service call
- * (data_source: identifier, full name or official Miriam URI);
- * sets NULL if none of the 'network' data sources matched.
+ * cPath2 web service command arguments.
  * 
  * @author rodche
  *
  */
-public class PathwayDataSourceEditor extends PropertyEditorSupport {
+public enum CmdArgs {
+	uri("a URI, BioPAX element's ID (multiple 'uri=' per query are allowed). " +
+		"Note: normally (in a client app), you should not encode URIs, but, " +
+		"when for some reason you're using a browser to access the web service," +
+		"you should encode, e.g., HTTP://WWW.REACTOME.ORG/BIOPAX#BRCA2__NUCLEOPLASM__1_9606" +
+		" becomes HTTP:%2F%2FWWW.REACTOME.ORG%2FBIOPAX%23BRCA2__NUCLEOPLASM__1_9606"),
+	q("a query string"),
+	type("a BioPAX class"),
+	kind("advanced (graph) query type"),
+	format("output format (converting from BioPAX)"),
+	organism("filter by organism (multiple 'organism=' are allowed)"),
+	datasource("filter by data sources (multiple 'datasource=' are allowed)"),
+	source("graph query source URI (multiple 'source=' are allowed)"),
+	dest("graph query destination URI (multiple 'dest=' are allowed)"),
+	biopax("BioPAX OWL to convert"),
+	alg("a user-defined algorithm to run (a java Some.class using Paxtools core API)"), //TODO future (graph query extention point, plugins...)
+	;
 	
-	/* (non-Javadoc)
-	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
-	 */
-	@Override
-	public void setAsText(String ds) throws IllegalArgumentException {
-		DataSource dataSource = null;
-		URI u1 = URI.create(ds);
-		
-		/*
-		 * all the pathway data sources 
-		 * should have been already registered by BioDataTypes
-		 */
-		for (DataSource d : BioDataTypes.getDataSources(Type.PATHWAY_DATA)) {
-			// guess it's an id or name
-			if (d.getSystemCode().equalsIgnoreCase(ds)
-					|| d.getFullName().equalsIgnoreCase(ds)) {
-				dataSource = d;
-				break;
-			} else // may be URN?
-			{
-				if (u1.equals(URI.create(d.getURN("")))) {
-					dataSource = d;
-					break;
-				}
-			}
-		}
-
-		setValue(new PathwayDataSource(dataSource));
+	private final String info;
+	
+	public String getInfo() {
+		return info;
 	}
-	
+
+	private CmdArgs(String info) {
+		this.info = info;
+	}
 }

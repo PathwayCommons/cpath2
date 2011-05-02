@@ -28,53 +28,39 @@
 package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
-import java.net.URI;
 
-import org.bridgedb.DataSource;
+import org.bridgedb.bio.Organism;
 
-import cpath.service.BioDataTypes;
-import cpath.service.BioDataTypes.Type;
-import cpath.webservice.args.PathwayDataSource;
-
+//import cpath.service.BioDataTypes;
 
 /**
- * Helps parse the string parameter in the web service call
- * (data_source: identifier, full name or official Miriam URI);
- * sets NULL if none of the 'network' data sources matched.
+ * Helps parse the parameter from the web service call
+ * (organism: taxonomy Id, short name or latin name)
  * 
  * @author rodche
  *
  */
-public class PathwayDataSourceEditor extends PropertyEditorSupport {
+public class OrganismEditor extends PropertyEditorSupport {
 	
-	/* (non-Javadoc)
-	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
-	 */
 	@Override
-	public void setAsText(String ds) throws IllegalArgumentException {
-		DataSource dataSource = null;
-		URI u1 = URI.create(ds);
-		
-		/*
-		 * all the pathway data sources 
-		 * should have been already registered by BioDataTypes
-		 */
-		for (DataSource d : BioDataTypes.getDataSources(Type.PATHWAY_DATA)) {
-			// guess it's an id or name
-			if (d.getSystemCode().equalsIgnoreCase(ds)
-					|| d.getFullName().equalsIgnoreCase(ds)) {
-				dataSource = d;
-				break;
-			} else // may be URN?
-			{
-				if (u1.equals(URI.create(d.getURN("")))) {
-					dataSource = d;
-					break;
-				}
+	public void setAsText(String arg) throws IllegalArgumentException {
+		// detect organism by code (taxonomy)
+		Organism organism = Organism.fromCode(arg);
+		if(organism == null) {
+			// - by name, etc.
+			organism = Organism.fromShortName(arg);
+			if(organism == null) {
+				organism = Organism.fromLatinName(arg);
 			}
 		}
-
-		setValue(new PathwayDataSource(dataSource));
+		
+		/*
+		// TODO set null if it is not in the system
+		if(!BioDataTypes.containsOrganism(organism.code()))
+			organism = null;
+		 */
+		
+		setValue(organism);
 	}
 	
 }
