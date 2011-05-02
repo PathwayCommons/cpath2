@@ -27,8 +27,6 @@
 
 package cpath.webservice;
 
-import java.util.Arrays;
-
 import cpath.service.CPathService.OutputFormat;
 import cpath.service.BioDataTypes;
 import cpath.service.BioDataTypes.Type;

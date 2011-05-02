@@ -215,6 +215,12 @@
 			<groupId>org.biopax.validator</groupId>
 			<artifactId>biopax-validator-core</artifactId>
 			<version>${validator.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>lucene</artifactId>
+					<groupId>lucene</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.biopax</groupId>

@@ -42,6 +42,12 @@
 			<groupId>pathwaycommons.cpath</groupId>
 			<artifactId>cpath-service</artifactId>
 			<version>${project.version}</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>lucene</artifactId>
+					<groupId>lucene</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<!-- Jackson JSON Mapper -->
 		<dependency>
