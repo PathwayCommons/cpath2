@@ -117,7 +117,7 @@ public final class BioDataTypes {
 		
 		// dynamically register all available organisms -
 		for(BioSource bioSource : mainDAO.getObjects(BioSource.class)) {
-			// warn: if s (name) exists, will override
+			mainDAO.initialize(bioSource);
 			String taxon = getTaxonId(bioSource);
 			Organism o = Organism.fromCode(taxon);
 			if(o != null) {

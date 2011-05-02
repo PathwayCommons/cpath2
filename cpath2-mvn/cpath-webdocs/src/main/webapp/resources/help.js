@@ -1,11 +1,10 @@
-$(document).ready(function() {
+$(document).ready(function() {	
 	getHelp("help");
 });
 
 function getHelp(helpPath) {
-	var base = $('#wsroot').text();
-	
-	//alert("now in: " + helpPath + ", came from: " + prevHelpPath);
+	var base = $('#wsroot').text();	
+	//alert(base + "/" + helpPath);
 	$.getJSON(base + "/" + helpPath, function(help) {
 		$('#title').text(help.title);
 		$('#info').text(help.info);
