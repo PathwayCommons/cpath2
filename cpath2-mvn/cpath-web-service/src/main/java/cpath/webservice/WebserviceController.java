@@ -80,7 +80,7 @@ public class WebserviceController {
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
         binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
-        binder.registerCustomEditor(Organism.class, new OrganismEditor());
+        binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
     }
 
 	
@@ -239,7 +239,6 @@ public class WebserviceController {
 
     
     //TODO the following two methods were copied from the (removed) webservice2Controller and require some coding...
-    
 	/*
 	 * Gets the utility element (from warehouse) by ID.
 	 * 

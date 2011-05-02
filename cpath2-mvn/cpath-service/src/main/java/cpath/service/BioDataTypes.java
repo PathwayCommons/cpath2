@@ -38,7 +38,6 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.bridgedb.DataSource;
 import org.bridgedb.DataSource.Builder;
-import org.bridgedb.bio.Organism;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.warehouse.MetadataDAO;
@@ -60,9 +59,6 @@ public final class BioDataTypes {
 	
 	private MetadataDAO metadataDAO;
 	private PaxtoolsDAO mainDAO;
-	
-	//available in mainDAO organisms:
-	private static final Set<Organism> organisms = new HashSet<Organism>(); 
 
 	/** 
 	 * Enumeration to use for the 'type' property 
@@ -73,6 +69,8 @@ public final class BioDataTypes {
 		PATHWAY_DATA,	
 	// for physical entity's and other identifiers (RDFId, CPATH_ID, InCHI, iRefWeb, etc.)
 		IDENTIFIER,
+	// for organisms (because BridgeDb Organism class that we've tried does not have any attribute for taxonomy!)
+		ORGANISM,
 		;
 		
 		public static Type parse(String value) {
@@ -99,7 +97,7 @@ public final class BioDataTypes {
 	 * 
 	 */
 	@PostConstruct
-	void init() 
+	public void init() 
 	{	
 		// dynamically register all the Pathway Data providers -
 		for(Metadata metadata : metadataDAO.getAll()) {
@@ -115,21 +113,23 @@ public final class BioDataTypes {
 			}
 		}
 		
-		// dynamically register all available organisms -
+		// dynamically register organisms (available BioSource)
 		for(BioSource bioSource : mainDAO.getObjects(BioSource.class)) {
 			mainDAO.initialize(bioSource);
 			String taxon = getTaxonId(bioSource);
-			Organism o = Organism.fromCode(taxon);
-			if(o != null) {
-				organisms.add(o);
+			if(taxon != null) {
+				String name = getOrganismName(bioSource);
+				register(taxon, name, Type.ORGANISM)
+					.urnBase("urn:miriam:taxonomy:")
+					.organism(bioSource)
+					.mainUrl("urn:miriam:taxonomy:"+taxon);
 				if(LOG.isInfoEnabled())  {
-					String nameInMainDAO = getOrganismName(bioSource);
-					LOG.info("Register organism: " + o.latinName()
-						+ " matched by " + taxon + " and " + nameInMainDAO);
+					LOG.info("Registered a new organism: " + name
+						+ ", taxon:" + taxon);
 				}
 			} else {
 				if(LOG.isWarnEnabled())  {
-					LOG.warn("Cannot create Organism from " + taxon);
+					LOG.warn("Cannot create Organism from " + bioSource);
 				}
 			}	
 		}
@@ -217,26 +217,5 @@ public final class BioDataTypes {
 		
 		return dss;
 	}
-	
-	
-	public static Set<Organism> getOrganisms() {
-		return organisms;
-	}
-	
-	/**
-	 * Checks whether our system contains the organism 
-	 * specified by taxonomy id or name.
-	 * @param key
-	 */
-	public static boolean containsOrganism(String key) {
-		Organism o = Organism.fromCode(key);
-		if(o == null) {
-			o = Organism.fromShortName(key);
-			if(o == null) {
-				o = Organism.fromLatinName(key);
-			}
-		}
-		
-		return o != null && organisms.contains(o);
-	}
+
 }

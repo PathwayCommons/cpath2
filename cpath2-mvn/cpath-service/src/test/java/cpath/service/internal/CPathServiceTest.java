@@ -34,6 +34,9 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.bridgedb.DataSource;
+import org.bridgedb.bio.BioDataSource;
+import org.bridgedb.bio.Organism;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -42,11 +45,17 @@ import org.apache.commons.logging.*;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
+import cpath.service.BioDataTypes;
+import cpath.service.BioDataTypes.Type;
 import cpath.service.CPathService;
 import cpath.service.CPathService.OutputFormat;
 import cpath.service.CPathService.ResultMapKey;
 import static cpath.service.CPathService.ResultMapKey.*;
 import cpath.service.internal.CPathServiceImpl;
+import cpath.warehouse.MetadataDAO;
+import cpath.warehouse.beans.BioPAXElementSource;
+import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.beans.PathwayData;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -54,34 +63,35 @@ import java.util.*;
 
 import static org.junit.Assert.*;
 
+
 public class CPathServiceTest {
 
     private static Log log = LogFactory.getLog(CPathServiceTest.class);
 
-    static CPathService service;
+    static ApplicationContext context;
     static SimpleIOHandler exporter;
-
 	
     static {
     	DataServicesFactoryBean.createSchema("cpath2_testpc");
-		ApplicationContext context = new ClassPathXmlApplicationContext(
-				"classpath:testContext-pcDAO.xml");
-		Object dao = context.getBean("pcDAO");
+		context = new ClassPathXmlApplicationContext(
+				new String[] {"classpath:testContext-pcDAO.xml", 
+					"classpath:testContext-whDAO.xml"});
+		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
 		log.info("Loading BioPAX data (importModel(file))...");
 		File biopaxFile = new File(CPathServiceTest.class.getResource("/test.owl").getFile());		
 		try {
-			((PaxtoolsDAO)dao).importModel(biopaxFile);
+			dao.importModel(biopaxFile);
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
-		service = new CPathServiceImpl((PaxtoolsDAO)dao,
-				null,null,null,null);
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
     }
 	
 	
 	@Test
 	public void testFetchAsBiopax() throws Exception {
+		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
+		CPathService service = new CPathServiceImpl(dao, null,null,null,null);
 		Map<ResultMapKey, Object> map = service.fetch(
 				OutputFormat.BIOPAX,
 				"http://www.biopax.org/examples/myExample#Protein_A");
@@ -104,6 +114,8 @@ public class CPathServiceTest {
 	
 	@Test
 	public void testFetchAsBiopax2() throws Exception {
+		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
+		CPathService service = new CPathServiceImpl(dao, null,null,null,null);
 		Map<ResultMapKey, Object> map = service.fetch(OutputFormat.BIOPAX, "urn:miriam:uniprot:P46880");
 		assertNotNull(map);
 			
@@ -120,6 +132,8 @@ public class CPathServiceTest {
 	
 	@Test
 	public void testFetchAsSIF() throws Exception {
+		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
+		CPathService service = new CPathServiceImpl(dao, null,null,null,null);
 		Map<ResultMapKey, Object> map = service.fetch(
 				OutputFormat.BINARY_SIF,
 				"http://www.biopax.org/examples/myExample#biochemReaction1");
@@ -131,5 +145,20 @@ public class CPathServiceTest {
 		assertTrue(data.contains("REACTS_WITH"));
 		assertFalse(data.contains("Protein_A"));
 		assertTrue(data.contains("urn:miriam:uniprot:P46880"));
+	}
+	
+	
+	@Test
+	public void testBioDataTypes() {
+		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
+		MetadataDAO metadata = (MetadataDAO) context.getBean("metadataDAO");
+		BioDataTypes types = new BioDataTypes(metadata, dao);
+		types.init();		
+		assertFalse(types.getDataSourceKeys(Type.ORGANISM).isEmpty());
+		for(DataSource o : types.getDataSources(Type.ORGANISM)) {
+			System.out.println("organism: " + o.getSystemCode() + " "
+				+ o.getFullName() + " " + o.getMainUrl() 
+				+ "; bioSource: " + o.getOrganism().toString());
+		}
 	}
 }
