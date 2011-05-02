@@ -27,6 +27,9 @@
 
 package cpath.webservice.args;
 
+import static cpath.webservice.args.CmdArgs.*;
+
+
 /**
  * cPath2 web service commands.
  * 
@@ -34,10 +37,38 @@ package cpath.webservice.args;
  *
  */
 public enum Cmd {
-	SEARCH,
-	GET,
-	GRAPH,
-	HELP,
-	TRAVERSE,
+	SEARCH("Full-text search. " +
+			"Can filter by: BioPAX class, organism, and datasource. " +
+			"Returns the list of identifiers that can be used with 'get' command " +
+			"(TODO more colums: type, organisms, datasources, processes; " +
+			"and enable lucene syntax and boost...) This command has four parameters " +
+			" (the last three are optional)", 
+			new CmdArgs[]{q, type, organism, datasource}),
+	GET("Gets a BioPAX element or sub-model " +
+			"by ID(s).  This command has two parameters " +
+			" (the last is optional,- default is 'biopax')", 
+			new CmdArgs[]{uri, format}),
+	GRAPH("An advanced graph query (see : kind)." +
+			" Returns a sub-model as the result. This command has four parameters " +
+			" (the last two are optional, - default format is 'biopax')", 
+			new CmdArgs[]{kind, source, dest, format}),
+	CONVERT("Converts from BioPAX to simple formats.  This command has two parameters",
+			new CmdArgs[]{biopax, format}),
 	;
+	
+	private final CmdArgs[] args; //Array is better for use in json/jsp than List/Set
+	private final String info;
+	
+	public CmdArgs[] getArgs() {
+		return args;
+	}
+	
+	public String getInfo() {
+		return info;
+	}
+	
+	private Cmd(String info, CmdArgs... args) {
+		this.info = info;
+		this.args = args;
+	}
 }

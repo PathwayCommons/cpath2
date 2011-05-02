@@ -29,7 +29,7 @@
 		<entry key="CL" value="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/anatomy/cell_type/cell.obo"/>
 		<entry key="BTO" value="http://www.brenda-enzymes.info/ontology/tissue/tree/update/update_files/BrendaTissueOBO"/>
 		<!--"http://berkeleybop.org/ontologies/obo-all/quality/quality.obo" -->
-		<entry key="PATO" value="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/phenotype/quality.obo"/>
+		<entry key="PATO" value="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/phenotype/quality.obo?revision=1.288"/>
 		<!-- "http://www.geneontology.org/ontology/gene_ontology_edit.obo" -->
 		<entry key="GO" value="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/genomic-proteomic/gene_ontology_edit.obo"/>
 		<!-- "http://berkeleybop.org/ontologies/obo-all/psi-mod/psi-mod.obo" -->

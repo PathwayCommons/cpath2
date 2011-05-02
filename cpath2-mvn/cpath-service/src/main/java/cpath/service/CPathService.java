@@ -70,11 +70,21 @@ public interface CPathService {
 	 *
 	 */
 	public static enum OutputFormat {
-        BIOPAX,
-		BINARY_SIF,
-        EXTENDED_BINARY_SIF,
-		GSEA
+        BIOPAX("BioPAX RDF/XML Format"),
+		BINARY_SIF("Simple Binary Interactions Format"),
+        EXTENDED_BINARY_SIF("Extended Simple Binary Interactions Format"),
+		GSEA("Gene Set Expression Analysis Format")
 		;
+        
+        private final String info;
+        
+        public String getInfo() {
+			return info;
+		}
+        
+        private OutputFormat(String info) {
+			this.info = info;
+		}
 	}
 	
 	

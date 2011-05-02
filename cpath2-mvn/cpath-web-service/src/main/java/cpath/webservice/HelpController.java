@@ -27,18 +27,19 @@
 
 package cpath.webservice;
 
-import java.util.*;
+import java.util.Arrays;
 
 import cpath.service.CPathService.OutputFormat;
-import cpath.warehouse.internal.BioDataTypes;
-import cpath.warehouse.internal.BioDataTypes.Type;
+import cpath.service.BioDataTypes;
+import cpath.service.BioDataTypes.Type;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.bridgedb.DataSource;
+import org.bridgedb.bio.Organism;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,17 +47,18 @@ import org.springframework.web.bind.annotation.*;
 /**
  * cPathSquared Help Web Service.
  * 
+ * Can return XML (default) or
+ * JSON (on request) serialized
+ * {@link Help} bean!
+ * 
  * @author rodche
  */
 @Controller
-@RequestMapping("/help")
 public class HelpController {
-    private static final Log log = LogFactory.getLog(HelpController.class);
-    private static String newline = System.getProperty("line.separator");    
+    private static final Log log = LogFactory.getLog(HelpController.class);   
     
 	public HelpController() {
 	}
-
 	
 	/**
 	 * Customizes request parameters conversion to proper internal types,
@@ -70,90 +72,197 @@ public class HelpController {
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
+        binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
+        binder.registerCustomEditor(Organism.class, new OrganismEditor());
     }
 
 	
-    @RequestMapping("/commands")
-    public String getCommands(Model model) {
-    	///Map<String, String> cmds = new HashMap<String, String>();
-    	List<String> cmds = new ArrayList<String>();
-    	for(Cmd c : Cmd.values()) {
-    		cmds.add(c.toString());
-    	}
-    	model.addAttribute("list", cmds);
-    	model.addAttribute("title", "help/commands");
-    	return "help";
+    @RequestMapping("/")
+    public String getHello() {
+    	return "redirect:help";
     }
-    
-    
-    @RequestMapping("/commands/{cmd}")
-    public String getCommand(@PathVariable Cmd cmd) {
-    	StringBuffer toReturn = new StringBuffer();
-    	//TODO
-    	return "TODO: describe command " + cmd;
-    }
-    
-    
-    @RequestMapping("/commands/{cmd}/")
-    public String getCommandArgs(@PathVariable Cmd cmd) {
-    	StringBuffer toReturn = new StringBuffer();
-    	//TODO
-    	return "TODO: describe " + cmd + " parameters...";
-    }
-    
-    
-    @RequestMapping("/commands/{cmd}/args/{arg}")
-    public String getCommands(@PathVariable Cmd cmd, @PathVariable String arg) {
-    	StringBuffer toReturn = new StringBuffer();
-    	//TODO
-    	return "TODO: for " + cmd + ", describe parameter " + arg;
-    }
-    
 	
+    /*
+     * Using @ResponseBody with returning a bean
+     * makes it auto-generate xml or json, 
+     * depending on the client's http request
+     * (no extra coding required!)
+     */
+    @RequestMapping("/help")
+    public @ResponseBody Help getHelp() {
+    	Help help = new Help();
+    	help.setId("help");
+    	help.setTitle("Help");
+    	help.setInfo("Welcome to cPath2 Webservice Help");
+    	help.setExample("help/commands");
+    	// Help tree's five main branches:
+    	help.addMember(getCommands()); // sub-tree for commands and their args info
+    	help.addMember(getDatasources());
+       	help.addMember(getOrganisms());
+    	help.addMember(getFormats());
+    	help.addMember(getGraphTypes());
+    	return help;
+    }
+
+    
+    @RequestMapping("/help/commands")
+    public @ResponseBody Help getCommands() {
+    	Help help = new Help();
+    	for(Cmd c : Cmd.values()) {
+    		help.addMember(getCommand(c));
+    	}
+    	help.setId("commands");
+    	help.setInfo("cPath2 BioPAX L3 web service supports "
+    		+ Cmd.values().length + " commands");
+    	help.setTitle("cPath2 Webservice Commands");
+    	help.setExample("seach?q=brca*&type=protein");
+    	return help;
+    }    
+ 
+    
+    @RequestMapping("/help/commands/{cmd}")
+    public @ResponseBody Help getCommand(@PathVariable Cmd cmd) {
+    	Help help = new Help();
+    	help.setId(cmd.name());
+		help.setTitle(cmd.name());
+		help.setInfo(cmd.getInfo());
+		for(CmdArgs a: cmd.getArgs()) {
+			Help ah = new Help(a.name());
+			ah.setTitle(a.name());
+			ah.setInfo(a.getInfo());
+			help.addMember(ah);
+		}
+    	return help;
+    }
+    
+    
 	/**
 	 * List of formats that web methods return
 	 * 
 	 * @return
 	 */
-    @RequestMapping("/formats")
-    public String getFormats() {
-    	StringBuffer toReturn = new StringBuffer();
+    @RequestMapping("/help/formats")
+    public @ResponseBody Help getFormats() {
+    	Help help = new Help();
     	for(OutputFormat f : OutputFormat.values()) {
-    		toReturn.append(f.toString().toUpperCase()).append(newline);
+    		help.addMember(getFormat(f));
     	}
-    	return toReturn.toString();
+    	help.setId("formats");
+    	help.setTitle("Output Formats");
+    	help.setInfo("cPath2 can convert BioPAX to several text formats");
+    	help.setExample("help/formats/binary_sif");
+    	return help;
     }
+
     
-    
-    //=== Web methods that help understand BioPAX model (and rules) ===
+    @RequestMapping("/help/formats/{fmt}")
+    public @ResponseBody Help getFormat(@PathVariable OutputFormat fmt) {
+    	Help help = new Help();
+    	help.setId(fmt.name());
+    	help.setTitle(fmt.name());
+    	help.setInfo(fmt.getInfo());
+    	return help;
+    }
     
 	/**
 	 * List of BioPAX L3 Classes
 	 * 
 	 * @return
 	 */
-    @RequestMapping("/types")
-    public String getBiopaxTypes() {
-    	StringBuffer toReturn = new StringBuffer();
+    @RequestMapping("/help/types")
+    public @ResponseBody Help getBiopaxTypes() {
+    	Help help = new Help();
     	for(String type : BiopaxTypeEditor.getTypesByName().keySet()) {
-    		toReturn.append(type).append(newline);
+    		help.addMember(new Help(type)); //TODO provide a help page per BioPAX class?
     	}
-    	return toReturn.toString();
+    	help.setId("types");
+    	help.setTitle("Searchable BioPAX classes");
+    	help.setInfo("values:");
+    	help.setExample("help/types/protein");
+    	return help;
     }
-
-      	
+    
+    
 	/**
-	 * List of bio-network data sources.
+	 * List of graph query types.
 	 * 
 	 * @return
 	 */
-    @RequestMapping("/datasources")
-    public String getDatasources() {
-    	StringBuffer toReturn = new StringBuffer();
-    	for(String ds : BioDataTypes.getDataSourceKeys(Type.PATHWAY_DATA)) {
-    		toReturn.append(ds).append(newline);
+    @RequestMapping("/help/kinds")
+    public @ResponseBody Help getGraphTypes() {
+    	Help help = new Help();
+    	for(GraphType type : GraphType.values()) {
+    		help.addMember(getGraphType(type));
     	}
-    	return toReturn.toString();
-    }	
+    	help.setId("kinds");
+    	help.setTitle("Advanced Graph Query Types");
+    	help.setInfo("cPath2 has the following built-in algorithms:");
+    	help.setExample("help/kinds/neighborhood");
+    	return help;
+    }
+
+    
+    @RequestMapping("/help/kinds/{kind}")
+    public @ResponseBody Help getGraphType(@PathVariable GraphType kind) {
+    	Help help = new Help();
+    	help.setTitle(kind.name());
+    	help.setId(kind.name());
+    	help.setInfo(kind.fullName);
+    	return help;
+    }
+ 
+    
+	/**
+	 * List of loaded data sources.
+	 * 
+	 * @return
+	 */
+    @RequestMapping("/help/datasources") 
+    public @ResponseBody Help getDatasources() {
+    	Help help = new Help();
+    	help.setId("datasources");
+    	for(DataSource ds : BioDataTypes.getDataSources(Type.PATHWAY_DATA)) 
+    	{
+    		help.addMember(getDatasource(new PathwayDataSource(ds)));
+    	}
+    	help.setTitle("Pathway Data Sources");
+    	help.setInfo("Currently loaded into cPath2");
+    	return help;
+    }
+    
+
+    @RequestMapping("/help/datasources/{pds}") 
+    public @ResponseBody Help getDatasource(@PathVariable PathwayDataSource pds) {
+    	Help help = new Help();
+    	DataSource ds = pds.asDataSource();
+    	help.setId(ds.getSystemCode());
+    	help.setTitle(ds.getFullName());
+    	help.setInfo(ds.toString() + 
+    		"; URL: " + ds.getMainUrl());
+    	return help;
+    }
+    
+    
+    @RequestMapping("/help/organisms") 
+    public @ResponseBody Help getOrganisms() {
+    	Help help = new Help();
+    	help.setId("organisms");
+    	for(Organism o : BioDataTypes.getOrganisms()) {
+    		help.addMember(getOrganism(o));
+    	}
+    	help.setTitle("Organisms");
+    	help.setInfo("Currently loaded into cPath2");
+    	return help;
+    }
+    
+
+    @RequestMapping("/help/organisms/{o}") 
+    public @ResponseBody Help getOrganism(@PathVariable Organism o) {
+    	Help help = new Help();
+    	help.setId(o.code());
+    	help.setTitle(o.shortName());
+    	help.setInfo(o.latinName());
+    	return help;
+    }
 
 }
