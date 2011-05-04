@@ -47,12 +47,12 @@ public class PathwayDataSource {
 	private final DataSource dataSource;
 	
 	public PathwayDataSource(DataSource dataSource) {
-		if(dataSource.getType().equals(Type.PATHWAY_DATA.name()))
+		if(dataSource.getType().equals(Type.DATASOURCE.name()))
 		{
 			this.dataSource = dataSource;
 		} else {
 			throw new IllegalArgumentException("Not " 
-					+ Type.PATHWAY_DATA + "  datasource type!");
+					+ Type.DATASOURCE + "  datasource type!");
 		}
 	}	
 	

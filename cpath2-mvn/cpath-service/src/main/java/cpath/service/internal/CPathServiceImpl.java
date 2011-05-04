@@ -131,14 +131,14 @@ public class CPathServiceImpl implements CPathService {
 	@Override
 	public Map<ResultMapKey, Object> find(String queryStr, 
 			Class<? extends BioPAXElement> biopaxClass, boolean countOnly,
-			Integer[] taxids, String... dsources) 
+			String[] taxids, String... dsources) 
 	{
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 
 		if(biopaxClass == null) 
 			biopaxClass = BioPAXElement.class;
 		if(taxids == null)
-			taxids = new Integer[]{};
+			taxids = new String[]{};
 		
 		try {
 			if (countOnly) {

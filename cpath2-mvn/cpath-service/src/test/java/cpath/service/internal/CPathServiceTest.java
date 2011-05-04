@@ -35,8 +35,6 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.bridgedb.DataSource;
-import org.bridgedb.bio.BioDataSource;
-import org.bridgedb.bio.Organism;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -52,10 +50,6 @@ import cpath.service.CPathService.OutputFormat;
 import cpath.service.CPathService.ResultMapKey;
 import static cpath.service.CPathService.ResultMapKey.*;
 import cpath.service.internal.CPathServiceImpl;
-import cpath.warehouse.MetadataDAO;
-import cpath.warehouse.beans.BioPAXElementSource;
-import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.PathwayData;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -151,14 +145,21 @@ public class CPathServiceTest {
 	@Test
 	public void testBioDataTypes() {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		MetadataDAO metadata = (MetadataDAO) context.getBean("metadataDAO");
-		BioDataTypes types = new BioDataTypes(metadata, dao);
+		BioDataTypes types = new BioDataTypes(dao);
 		types.init();		
 		assertFalse(types.getDataSourceKeys(Type.ORGANISM).isEmpty());
+		assertFalse(types.getDataSourceKeys(Type.DATASOURCE).isEmpty());
+		
+		//
 		for(DataSource o : types.getDataSources(Type.ORGANISM)) {
 			System.out.println("organism: " + o.getSystemCode() + " "
 				+ o.getFullName() + " " + o.getMainUrl() 
 				+ "; bioSource: " + o.getOrganism().toString());
+		}
+		for(DataSource o : types.getDataSources(Type.DATASOURCE)) {
+			System.out.println("datatype: " + o.getSystemCode() + " "
+				+ o.getFullName() + " " + o.getMainUrl() 
+				+ "; provenance: " + o.getOrganism().toString());
 		}
 	}
 }

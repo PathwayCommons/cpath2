@@ -47,9 +47,6 @@ import cpath.webservice.args.PathwayDataSource;
  */
 public class PathwayDataSourceEditor extends PropertyEditorSupport {
 	
-	/* (non-Javadoc)
-	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
-	 */
 	@Override
 	public void setAsText(String ds) throws IllegalArgumentException {
 		DataSource dataSource = null;
@@ -59,7 +56,7 @@ public class PathwayDataSourceEditor extends PropertyEditorSupport {
 		 * all the pathway data sources 
 		 * should have been already registered by BioDataTypes
 		 */
-		for (DataSource d : BioDataTypes.getDataSources(Type.PATHWAY_DATA)) {
+		for (DataSource d : BioDataTypes.getDataSources(Type.DATASOURCE)) {
 			// guess it's an id or name
 			if (d.getSystemCode().equalsIgnoreCase(ds)
 					|| d.getFullName().equalsIgnoreCase(ds)) {

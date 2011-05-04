@@ -25,7 +25,7 @@ function getHelp(helpPath) {
 				$(".members").append('<li><a id="' 
 						+ v.id + '" href="#">' 
 					+ v.id + '</a>' 
-					//+ " - " + v.title 
+					+ ((v.title && v.title != v.id) ? (' (' + v.title + ') ') : ' ')
 					+ '</li>');
 				$("#"+ v.id).bind(
 						"click",
@@ -44,11 +44,14 @@ function getHelp(helpPath) {
 				);
 			} else {
 				// add the description without a link
-				// (incl. when no datasources/organisms are loaded to cpath2)
-				$(".members").append('<li><span id="' 
-					+ v.id + '">' + v.id + ": "
-					+ " (" + v.title + "): " 
-					+ v.info + '</span></li>');
+				$(".members").append(
+					'<li id="' + v.id + '">' + v.id + '</li>');
+				if(v.title && v.title != v.id) {
+					$("#"+v.id).append(' (' + v.title + ')');
+				}
+				if(v.info) {
+					$("#"+v.id).append('<pre>' + v.info + '</pre>');
+				}
 			} 
 		});
 	});

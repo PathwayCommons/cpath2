@@ -28,10 +28,10 @@
 package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
-import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.Set;
 
+import org.biopax.paxtools.controller.EditorMap;
+import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -44,24 +44,8 @@ import org.biopax.paxtools.model.BioPAXLevel;
  *
  */
 public class BiopaxTypeEditor extends PropertyEditorSupport {
-	private static final Map<String, Class<? extends BioPAXElement>> typesByName;
-	private static BioPAXFactory bioPAXFactory;
-	
-	static {
-		bioPAXFactory = BioPAXLevel.L3.getDefaultFactory();
-		typesByName = new TreeMap<String, Class<? extends BioPAXElement>>(); // want it sorted
-		for (Method method : bioPAXFactory.getClass().getMethods())
-		{
-			if (method.getName().startsWith("create"))
-			{
-				Class<? extends BioPAXElement> clazz =
-					(Class<? extends BioPAXElement>) method.getReturnType();
-				
-				typesByName.put(clazz.getSimpleName(), clazz);
-			}
-		}
-	}
-	
+	private static BioPAXFactory bioPAXFactory = BioPAXLevel.L3.getDefaultFactory();
+	private static EditorMap editorMap = new SimpleEditorMap(BioPAXLevel.L3);
 	
 	/* (non-Javadoc)
 	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
@@ -71,29 +55,27 @@ public class BiopaxTypeEditor extends PropertyEditorSupport {
 		setValue(getSearchableBiopaxClassByName(type));
 	}
 	
-	
 	/*
 	 * Enables using arguments, BioPAX class names, in any case: 
 	 *     ProteinReference, PROTEINREFERENCE, proteinreference, etc.
 	 * 
 	 */
 	private static Class<? extends BioPAXElement> getSearchableBiopaxClassByName(String type) {
-		for(String key : typesByName.keySet()) {
-			if(key.equalsIgnoreCase(type)) {
-				/*
-				Class<? extends BioPAXElement> persistentClass 
-					= bioPAXFactory.reflectivelyCreate(typesByName.get(key)).getClass();
-				return persistentClass;
-				*/
-				return typesByName.get(key);
+		// case sensitive -
+		//return bioPAXFactory.getImplClass(BioPAXLevel.L3.getInterfaceForName(type));
+		
+		// better - case insensitive way -
+		for(Class<? extends BioPAXElement> c : getTypes()) {
+			if(c.getSimpleName().equalsIgnoreCase(type)) {
+				//if(bioPAXFactory.canInstantiate(c)) //does not matter if abstract (can still search by)
+					return bioPAXFactory.getImplClass(c);
 			}
 		}
+		
 		return null;
 	}
 	
-	
-	public static Map<String, Class<? extends BioPAXElement>> getTypesByName() {
-		return typesByName;
+	public static Set<Class<? extends BioPAXElement>> getTypes() {
+		return editorMap.getKnownSubClassesOf(BioPAXElement.class);
 	}
-	
 }

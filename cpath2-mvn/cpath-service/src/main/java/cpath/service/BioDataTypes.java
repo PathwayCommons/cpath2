@@ -33,16 +33,15 @@ import javax.annotation.PostConstruct;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.model.level3.BioSource;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.bridgedb.DataSource;
 import org.bridgedb.DataSource.Builder;
 
 import cpath.dao.PaxtoolsDAO;
-import cpath.warehouse.MetadataDAO;
-import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.Metadata.TYPE;
 
 /**
  * This convenience bean makes all the CPathSquared datasources
@@ -57,7 +56,6 @@ import cpath.warehouse.beans.Metadata.TYPE;
 public final class BioDataTypes {
 	private static final Log LOG = LogFactory.getLog(BioDataTypes.class);
 	
-	private MetadataDAO metadataDAO;
 	private PaxtoolsDAO mainDAO;
 
 	/** 
@@ -66,7 +64,7 @@ public final class BioDataTypes {
 	 */
 	public enum Type {
 	// for pathway/network data provider
-		PATHWAY_DATA,	
+		DATASOURCE,	
 	// for physical entity's and other identifiers (RDFId, CPATH_ID, InCHI, iRefWeb, etc.)
 		IDENTIFIER,
 	// for organisms (because BridgeDb Organism class that we've tried does not have any attribute for taxonomy!)
@@ -82,8 +80,7 @@ public final class BioDataTypes {
 		}
 	}
 	
-	public BioDataTypes(MetadataDAO metadataDAO, PaxtoolsDAO mainDAO) {
-		this.metadataDAO = metadataDAO;
+	public BioDataTypes(PaxtoolsDAO mainDAO) {
 		this.mainDAO = mainDAO;
 	}
 
@@ -99,19 +96,32 @@ public final class BioDataTypes {
 	@PostConstruct
 	public void init() 
 	{	
-		// dynamically register all the Pathway Data providers -
-		for(Metadata metadata : metadataDAO.getAll()) {
-			// skip data sources of protein and molecule references (warehouse resources)
-			if(metadata.getType() == TYPE.BIOPAX 
-					|| metadata.getType() == TYPE.PSI_MI) 
-			{
-				// warn: if s (name) exists, will override
-				register(metadata.getIdentifier(), metadata.getName(), Type.PATHWAY_DATA)
-					.mainUrl(metadata.getURLToData());
-				if(LOG.isInfoEnabled()) 
-					LOG.info("Register data provider: " + metadata.getIdentifier());
+		boolean useObsoleteResources = MiriamLink.useObsoleteResources;
+		MiriamLink.useObsoleteResources = false; //set to ignore obsolete URLs
+		for(Provenance prov : mainDAO.getObjects(Provenance.class)) {
+			mainDAO.initialize(prov);
+			// it must have a standard name, uri (was normalized in the data import pipeline)!
+			String urn = prov.getRDFId();
+			String url = null;
+			try {
+				url = MiriamLink.getDataResources(urn)[0]; //any... (usually one)
+				//TODO use Arrays.toString(MiriamLink.getDataResources(prov.getRDFId())) instead?
+			} catch (IllegalArgumentException e) {
+				LOG.warn("Provenance object " + prov + 
+					" (" + urn + ") " + "is not normalized! (OK for junit test data)");
 			}
+			
+			register(prov.getRDFId(), prov.getStandardName(), Type.DATASOURCE)
+				.organism(prov) // *a hack* - just stores the Provenance object (not organism!)
+				.mainUrl(url)
+				.urnBase(urn)
+				; // it has been normalized (in the data import pipeline)!
+			if(LOG.isInfoEnabled())  {
+				LOG.info("Registered a new datasource: " + prov.getStandardName());
+			}	
 		}
+		MiriamLink.useObsoleteResources = useObsoleteResources; //restore
+		
 		
 		// dynamically register organisms (available BioSource)
 		for(BioSource bioSource : mainDAO.getObjects(BioSource.class)) {
