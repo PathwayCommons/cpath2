@@ -45,7 +45,7 @@ import org.biopax.paxtools.model.BioPAXLevel;
  */
 public class BiopaxTypeEditor extends PropertyEditorSupport {
 	private static BioPAXFactory bioPAXFactory = BioPAXLevel.L3.getDefaultFactory();
-	private static EditorMap editorMap = new SimpleEditorMap(BioPAXLevel.L3);
+	private static EditorMap editorMap = SimpleEditorMap.L3;
 	
 	/* (non-Javadoc)
 	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)

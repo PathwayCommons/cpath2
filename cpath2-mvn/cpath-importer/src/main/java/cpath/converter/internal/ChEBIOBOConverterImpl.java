@@ -8,7 +8,6 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXFactory;
-import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 
@@ -40,7 +39,7 @@ public class ChEBIOBOConverterImpl {
 	private static final String REGEX_GROUP_DELIMITER = ":";
     
 	private static final SimpleMerger MERGER = 
-        new SimpleMerger(new SimpleEditorMap(BioPAXLevel.L3));
+        new SimpleMerger(SimpleEditorMap.L3);
 	
 	// ref to warehouse dao/model - used to grab SMR's
 	private Model model;

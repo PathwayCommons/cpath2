@@ -17,7 +17,7 @@ function getHelp(helpPath) {
 		}
 		// add children (next help steps)
 		$('#content .members').remove();
-		var newUl = $('<ul class="members">');
+		var newUl = $('<ul class="members"/>');
 		$('#info').after(newUl);
 		$.each(help.members, function(idx, v) {
 			if(v.members.length > 0) {
