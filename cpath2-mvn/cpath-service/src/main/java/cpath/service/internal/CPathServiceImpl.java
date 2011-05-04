@@ -300,7 +300,7 @@ public class CPathServiceImpl implements CPathService {
             if (extended) {
                 OutputStream nodeStream = new ByteArrayOutputStream();
                 sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream,
-                                             true, new SimpleEditorMap(m.getLevel()), "NAME", "XREF", "ORGANISM");
+                		true, SimpleEditorMap.get(m.getLevel()), "NAME", "XREF", "ORGANISM");
                 map.put(DATA, edgeStream.toString() + "\n\n" + nodeStream.toString());
             }
             else {
