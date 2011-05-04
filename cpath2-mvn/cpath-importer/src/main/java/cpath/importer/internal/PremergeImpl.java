@@ -239,7 +239,7 @@ public class PremergeImpl implements Premerge {
 		
 		// (in addition to normalizer's job) find existing or create new Provenance 
 		// from the metadata.name to add it explicitly to all entities now!
-		fixDataSource(v.getModel(), metadata.getName());
+		fixDataSource(v.getModel(), metadata);
 		
 		// TODO add 'pathway membership' relatioship xrefs to all entities (incl. sub-pathways) before merging into the main db 
 		// TODO ?? auto-set 'organism', - only for (sub-)pathways, where empty (ignore proteinReference, Complex, Gene, dna*Reference, rna*Reference for now...)
@@ -434,10 +434,10 @@ public class PremergeImpl implements Premerge {
 	}
 	
 	
-	private void fixDataSource(Model model, String dataSource) {
+	private void fixDataSource(Model model, Metadata metadata) {
 		Provenance pro = null;
 		
-		String urn = MiriamLink.getDataTypeURI(dataSource);
+		String urn = MiriamLink.getDataTypeURI(metadata.getName());
 		if(model.containsID(urn))
 			pro = (Provenance) model.getByID(urn);
 		else {
@@ -445,6 +445,20 @@ public class PremergeImpl implements Premerge {
 			Normalizer.autoName(pro); // + standard name and synonyms
 		}
 
+		// add additional info about the current version, source, identifier, etc...
+		String keyComment = CPathSettings.CPATH2_GENERATED_COMMENT + 
+			". Data (internal) id: " + metadata.getIdentifier();
+		if(!pro.getComment().contains(keyComment)) { // trying not to add multiple times...
+			pro.addComment(keyComment);
+			pro.addComment(CPathSettings.CPATH2_GENERATED_COMMENT + 
+				". Data loaded from: " + metadata.getURLToData());
+			pro.addComment(CPathSettings.CPATH2_GENERATED_COMMENT + 
+				". Data type: " + metadata.getType());
+			pro.addComment(CPathSettings.CPATH2_GENERATED_COMMENT + 
+					". Data version: " + metadata.getVersion() + 
+					", " + metadata.getReleaseDate());
+		}
+		
 		// add new value to each entity (but not to the model yet - it's
 		// simpleMerger's job)
 		for (Entity ent : model.getObjects(Entity.class)) {

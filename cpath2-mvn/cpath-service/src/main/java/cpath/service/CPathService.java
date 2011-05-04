@@ -113,13 +113,13 @@ public interface CPathService {
 	 * @param queryStr if null or empty, list/count all elements (of the class)
 	 * @param biopaxClass
 	 * @param countOnly
-	 * @param organisms list of the taxonomy ids
-	 * @param dataSources list of pathway data provider names
+	 * @param organisms an array of the taxonomy ids
+	 * @param dataSources an array of pathway data provider names
 	 * @return
 	 */
 	Map<ResultMapKey, Object> find(String queryStr, 
 			Class<? extends BioPAXElement> biopaxClass, boolean countOnly,
-			Integer[] organisms, String... dataSources);
+			String[] organisms, String... dataSources);
 
 
 	/**

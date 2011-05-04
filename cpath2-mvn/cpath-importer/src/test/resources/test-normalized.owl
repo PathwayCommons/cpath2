@@ -31,9 +31,8 @@
 		</bp:comment>
 	</bp:ChemicalStructure>
 
-	<bp:Provenance rdf:ID="KEGG">
-		<bp:standardName rdf:datatype="xsd:string">Kyoto Encyclopedia of
-			Genes and Genomes</bp:standardName>
+	<bp:Provenance rdf:about="urn:miriam:kegg.pathway">
+		<bp:standardName rdf:datatype="xsd:string">KEGG Pathway</bp:standardName>
 		<bp:displayName rdf:datatype="xsd:string">KEGG</bp:displayName>
 	</bp:Provenance>
 
@@ -65,13 +64,9 @@
 		<bp:comment rdf:datatype="xsd:string">PMID: 9847135</bp:comment>
 	</bp:UnificationXref>
 
-	<bp:Provenance rdf:ID="aMAZE">
-		<bp:displayName rdf:datatype="xsd:string">aMAZE</bp:displayName>
-	</bp:Provenance>
-
-	<bp:Provenance rdf:ID="SwissProtTrEMBL">
-		<bp:displayName rdf:datatype="xsd:string">Swiss-Prot/TrEMBL
-		</bp:displayName>
+	<bp:Provenance rdf:about="urn:miriam:reactome">
+		<bp:displayName rdf:datatype="xsd:string">Reactome</bp:displayName>
+		<bp:standardName rdf:datatype="xsd:string">Reactome</bp:standardName>
 	</bp:Provenance>
 
 	<bp:SmallMoleculeReference rdf:about="urn:miriam:chebi:422">
@@ -105,8 +100,8 @@
 		<bp:right rdf:resource="#ADP" />
 		<bp:displayName rdf:datatype="xsd:string">beta-D-glu + ATP =&gt;
 			beta-D-glu-6-p + ADP</bp:displayName>
-		<bp:dataSource rdf:resource="#aMAZE" />
-		<bp:dataSource rdf:resource="#KEGG" />
+		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="urn:miriam:kegg.pathway" />
 	</bp:BiochemicalReaction>
 
 	<bp:SmallMoleculeReference rdf:about="urn:miriam:chebi:28">
@@ -168,8 +163,8 @@
 		</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">beta-D-fructose
 			6-phosphate</bp:displayName>
-		<bp:dataSource rdf:resource="#aMAZE" />
-		<bp:dataSource rdf:resource="#KEGG" />
+		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="urn:miriam:kegg.pathway" />
 	</bp:SmallMolecule>
 
 	<bp:SmallMoleculeReference rdf:about="urn:miriam:pubchem.substance:14438">
@@ -213,8 +208,8 @@
 		</bp:comment>
 		<bp:displayName rdf:datatype="xsd:string">catalysis of (alpha-D-glu
 			&lt;=&gt; alpha-D-glu-6-p)</bp:displayName>
-		<bp:dataSource rdf:resource="#aMAZE" />
-		<bp:dataSource rdf:resource="#KEGG" />
+		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="urn:miriam:kegg.pathway" />
 	</bp:Catalysis>
 
 	<bp:BiochemicalReaction rdf:ID="phosphoglucoisomerase">
@@ -233,8 +228,8 @@
 		<bp:right rdf:resource="#beta-D-fructose_6-phosphate" />
 		<bp:displayName rdf:datatype="xsd:string">beta-D-glu-6-p &lt;=&gt;
 			beta-D-fru-6-p</bp:displayName>
-		<bp:dataSource rdf:resource="#aMAZE" />
-		<bp:dataSource rdf:resource="#KEGG" />
+		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="urn:miriam:kegg.pathway" />
 	</bp:BiochemicalReaction>
 
 	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:KEGG_R01786">
@@ -250,8 +245,8 @@
 		<bp:name rdf:datatype="xsd:string">adenosine diphosphate</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">Adenosine
 			5&apos;-diphosphate</bp:displayName>
-		<bp:dataSource rdf:resource="#aMAZE" />
-		<bp:dataSource rdf:resource="#KEGG" />
+		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="urn:miriam:kegg.pathway" />
 	</bp:SmallMolecule>
 
 	<bp:Protein rdf:ID="Protein_54">
@@ -261,8 +256,7 @@
 		<bp:name rdf:datatype="xsd:string">GLK_ECOLI</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">glucokinase
 		</bp:displayName>
-		<bp:dataSource rdf:resource="#aMAZE" />
-		<bp:dataSource rdf:resource="#SwissProtTrEMBL" />
+		<bp:dataSource rdf:resource="urn:miriam:reactome" />
 	</bp:Protein>
 
 	<bp:DeltaG rdf:ID="DeltaG_12">
@@ -279,8 +273,8 @@
 		<bp:name rdf:datatype="xsd:string">glucose-6-phosphate isomerase</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">phosphoglucose isomerase
 		</bp:displayName>
-		<bp:dataSource rdf:resource="#aMAZE" />
-		<bp:dataSource rdf:resource="#KEGG" />
+		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="urn:miriam:kegg.pathway" />
 		<bp:feature rdf:resource="#O_phospho_L_serine_at_5" />
 	</bp:Protein>
 
@@ -306,8 +300,8 @@
 		</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">glycolysis
 		</bp:standardName>
-		<bp:dataSource rdf:resource="#aMAZE" />
-		<bp:dataSource rdf:resource="#KEGG" />
+		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="urn:miriam:kegg.pathway" />
 		<bp:pathwayComponent
 			rdf:resource="#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p" />
 	</bp:Pathway>
@@ -342,8 +336,8 @@
 		<bp:name rdf:datatype="xsd:string">adenosine triphosphate</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">Adenosine
 			5&apos;-triphosphate</bp:displayName>
-		<bp:dataSource rdf:resource="#aMAZE" />
-		<bp:dataSource rdf:resource="#KEGG" />
+		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="urn:miriam:kegg.pathway" />
 	</bp:SmallMolecule>
 
 	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:PUBCHEM_14438">
@@ -368,8 +362,8 @@
 		</bp:comment>
 		<bp:displayName rdf:datatype="xsd:string">catalysis of
 			(beta-D-glu-6-p &lt;=&gt; beta-D-fruc-6-p)</bp:displayName>
-		<bp:dataSource rdf:resource="#aMAZE" />
-		<bp:dataSource rdf:resource="#KEGG" />
+		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="urn:miriam:kegg.pathway" />
 	</bp:Catalysis>
 
 	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:PUBCHEM_14439">
@@ -389,8 +383,8 @@
 		<bp:name rdf:datatype="xsd:string">b-D-glucose-6-phoshate</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">beta-D-glucose 6-phosphate
 		</bp:displayName>
-		<bp:dataSource rdf:resource="#aMAZE" />
-		<bp:dataSource rdf:resource="#KEGG" />
+		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="urn:miriam:kegg.pathway" />
 	</bp:SmallMolecule>
 
 	<bp:BiochemicalPathwayStep rdf:ID="BiochemicalPathwayStep_3">
@@ -410,8 +404,8 @@
 			FACE=&quot;Symbol&quot;&gt;a&lt;/FONT&gt;-D-glucose</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">beta-D-glucose
 		</bp:displayName>
-		<bp:dataSource rdf:resource="#aMAZE" />
-		<bp:dataSource rdf:resource="#KEGG" />
+		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="urn:miriam:kegg.pathway" />
 	</bp:SmallMolecule>
 
 	<bp:UnificationXref

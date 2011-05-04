@@ -26,9 +26,8 @@
 		<label for="prev">back to: </label><a id="prev" href="#">help</a>
 		</div>
 		<div id="content" style="float: none;">
-			<a id="info" /><br /> 
-			<label for="example">Example:</label><br /> 
-			<a id="example" /><br /> 
+			<pre id="info" style="text-align: left;"></pre><br />
+			<label for="example">Example: </label><a id="example" /><br /> 
 		</div>
 		<br />
 	</div>

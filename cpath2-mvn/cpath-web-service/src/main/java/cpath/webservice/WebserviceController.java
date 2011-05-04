@@ -38,8 +38,9 @@ import cpath.webservice.args.binding.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.level3.BioSource;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.UtilityClass;
-import org.bridgedb.bio.Organism;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -81,6 +82,7 @@ public class WebserviceController {
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
         binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
         binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
+        binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
     }
 
 	
@@ -119,7 +121,7 @@ public class WebserviceController {
     public String fulltextSearch(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
     		@RequestParam(value="q", required=true) String query,
-    		@RequestParam(value="organism", required=false) Organism[] organisms,
+    		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms,
     		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources)
     {		
     	String body = "";
@@ -136,14 +138,31 @@ public class WebserviceController {
 			log.debug("Fulltext Search for type:" + type.getCanonicalName()
 					+ ", query:" + query);
 
-		Integer[] taxons = new Integer[organisms.length];
-		int i = 0;
-		for(Organism o : organisms) {
-			taxons[i++] = Integer.valueOf(o.code());
+		
+		String[] taxons = null; 
+		if(organisms != null) { // it's optional parameter (can be null)
+			taxons = new String[organisms.length];
+			int i = 0;
+			for(OrganismDataSource o : organisms) {
+				taxons[i++] = o.asDataSource().getSystemCode(); // taxonomy id
+				//taxons[i++] = o.asDataSource().getURN(o.asDataSource().getSystemCode()); //Miriam URN
+				//taxons[i++] = ((BioSource)o.asDataSource().getOrganism()).getRDFId(); //Miriam URN
+			}
 		}
 		
-		Map<ResultMapKey, Object> results = null; //TODO
-			//service.find(query, type, false, taxons, dataSources);
+		String[] dsources = null; 
+		if(dataSources != null) { // because of being optional arg.
+			dsources = new String[dataSources.length];
+			int i = 0;
+			for(PathwayDataSource o : dataSources) {
+				dsources[i++] = o.asDataSource().getSystemCode(); //standard name
+				//dsources[i++] = o.asDataSource().getURN(""); //Miriam URN
+				//dsources[i++] = ((Provenance)o.asDataSource().getOrganism()).getRDFId(); // hack!
+			}
+		}
+		
+		Map<ResultMapKey, Object> results = 
+			service.find(query, type, false, taxons, dsources);
 		
 		body = getListDataBody(results, query + " (in " + type.getSimpleName()
 				+ ")");

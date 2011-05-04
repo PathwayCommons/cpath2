@@ -3,8 +3,8 @@
  */
 package cpath.webservice;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.validation.constraints.NotNull;
 import javax.xml.bind.annotation.*;
@@ -17,18 +17,18 @@ import javax.xml.bind.annotation.*;
  */
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.PUBLIC_MEMBER)
-public class Help {
+public class Help implements Comparable<Help> {
 
 	@NotNull
 	private String id;
 	private String title;
 	private String info;
 	private String example;
-	private List<Help> members;
+	private Set<Help> members;
 	
 	
 	public Help() {
-		members = new ArrayList<Help>();
+		members = new TreeSet<Help>();
 	}
 	
 	public Help(String id) {
@@ -109,6 +109,11 @@ public class Help {
 		for(Help h : members) {
 			this.members.add(h);
 		}
+	}
+
+	@Override
+	public int compareTo(Help o) {
+		return this.id.compareToIgnoreCase(o.id);
 	}
 
 }

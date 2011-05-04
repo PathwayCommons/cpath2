@@ -35,6 +35,10 @@ import cpath.webservice.args.binding.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.level3.Provenance;
+import org.biopax.paxtools.model.level3.Xref;
 import org.bridgedb.DataSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
@@ -67,10 +71,11 @@ public class HelpController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
-        binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
         binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
         binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
+        binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
+        binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
 
 	
@@ -98,6 +103,7 @@ public class HelpController {
        	help.addMember(getOrganisms());
     	help.addMember(getFormats());
     	help.addMember(getGraphTypes());
+    	help.addMember(getBiopaxTypes());
     	return help;
     }
 
@@ -112,7 +118,7 @@ public class HelpController {
     	help.setInfo("cPath2 BioPAX L3 web service supports "
     		+ Cmd.values().length + " commands");
     	help.setTitle("cPath2 Webservice Commands");
-    	help.setExample("seach?q=brca*&type=protein");
+    	help.setExample("search?q=brca*&type=protein");
     	return help;
     }    
  
@@ -169,13 +175,19 @@ public class HelpController {
     @RequestMapping("/help/types")
     public @ResponseBody Help getBiopaxTypes() {
     	Help help = new Help();
-    	for(String type : BiopaxTypeEditor.getTypesByName().keySet()) {
-    		help.addMember(new Help(type)); //TODO provide a help page per BioPAX class?
+    	for(Class<? extends BioPAXElement> t : BiopaxTypeEditor.getTypes()) 
+    	{
+    		if(BioPAXLevel.L3.getDefaultFactory().getImplClass(t) != null)
+    			help.addMember(new Help(t.getSimpleName()));
     	}
     	help.setId("types");
-    	help.setTitle("Searchable BioPAX classes");
-    	help.setInfo("values:");
-    	help.setExample("help/types/protein");
+    	help.setTitle("BioPAX classes");
+    	help.setInfo("Objects of the following BioPAX L3 " +
+    		"(and some additional abstract) " 
+    		+ System.getProperty("line.separator") +
+    		"class are persisted/indexed in the system " +
+    		"(names are case insensitive):");
+    	help.setExample("search?type=pathway&q=b*");
     	return help;
     }
     
@@ -218,24 +230,47 @@ public class HelpController {
     public @ResponseBody Help getDatasources() {
     	Help help = new Help();
     	help.setId("datasources");
-    	for(DataSource ds : BioDataTypes.getDataSources(Type.PATHWAY_DATA)) 
+    	for(DataSource ds : BioDataTypes.getDataSources(Type.DATASOURCE)) 
     	{
     		help.addMember(getDatasource(new PathwayDataSource(ds)));
     	}
     	help.setTitle("Pathway Data Sources");
-    	help.setInfo("Currently loaded into cPath2");
+    	help.setInfo("Pathway data sources currently loaded into the system.");
     	return help;
     }
     
 
     @RequestMapping("/help/datasources/{pds}") 
-    public @ResponseBody Help getDatasource(@PathVariable PathwayDataSource pds) {
+    public @ResponseBody Help getDatasource(@PathVariable PathwayDataSource pds) 
+    {
+    	final String newLine = System.getProperty("line.separator");
     	Help help = new Help();
     	DataSource ds = pds.asDataSource();
     	help.setId(ds.getSystemCode());
     	help.setTitle(ds.getFullName());
-    	help.setInfo(ds.toString() + 
-    		"; URL: " + ds.getMainUrl());
+    	
+    	StringBuffer sb = new StringBuffer();
+    	// hack (BridgeDb): it has the Provenance stored in ds.organism ;)
+    	Provenance pro = ((Provenance)ds.getOrganism());
+    	sb.append("Known names: ");	
+    	for(String name : pro.getName()) {
+    		sb.append(name).append(", ");
+    	}
+    	sb.append(newLine);
+    	sb.append("Xrefs: ");	
+    	for(Xref x : pro.getXref()) {
+    		sb.append(x + ", "); //x.toString() is called implicitly
+    	}
+    	sb.append(newLine);
+    	sb.append("Comments: ");
+    	for(String rem : pro.getComment()) {
+    		sb.append(rem).append(newLine);
+    	}
+    	sb.append("URL: " + ds.getMainUrl());
+    	sb.append(newLine);
+    	
+    	help.setInfo(sb.toString());
+    	
     	return help;
     }
     
@@ -248,7 +283,7 @@ public class HelpController {
     		help.addMember(getOrganism(new OrganismDataSource(ds)));
     	}
     	help.setTitle("Organisms");
-    	help.setInfo("Currently loaded into cPath2");
+    	help.setInfo("Bio sources currently loaded into the system are");
     	return help;
     }
     
@@ -259,7 +294,9 @@ public class HelpController {
     	String taxid = o.asDataSource().getSystemCode();
     	help.setId(taxid); //taxonomy id
     	help.setTitle(o.asDataSource().getFullName());
-    	help.setInfo(o.asDataSource().getOrganism().toString()); //Miriam URN
+    	// a hack (BioSource was stored in the o.organism field) -
+    	help.setInfo(o.asDataSource().getOrganism().toString()); 
+    	//- got the name and Miriam URN (only when data were normalized)
 
     	return help;
     }
