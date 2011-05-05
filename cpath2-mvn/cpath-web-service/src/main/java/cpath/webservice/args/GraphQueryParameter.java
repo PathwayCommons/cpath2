@@ -27,31 +27,16 @@
 
 package cpath.webservice.args;
 
-public enum GraphType
+public enum GraphQueryParameter
 {
-	NEIGHBORHOOD,
-	PATHSBETWEEN,
-	COMMONSTREAM
-	;
+	// Directions
 
-	// I know this looks very idiotic but there was no solution for using those enums in
-	// @RequestMapping. It requires a constant string and if we use enum values while creating the
-	// constant string it won't accept. So I defined below strings representing enum values. If
-	// you change this just make sure that string value is the same with enum (enum should be
-	// capital letters and string is case insensitive).
+	UPSTREAM,
+	DOWNSTREAM,
+	BOTHSTREAM,
 
-	public static final String NEIGHBORHOOD_STR = "neighborhood";
-	public static final String PATHSBETWEEN_STR = "pathsbetween";
-	public static final String COMMONSTREAM_STR = "commonstream";
+	// Limit types
 
-	public String getFullName()
-	{
-		switch (this)
-		{
-			case NEIGHBORHOOD: return NEIGHBORHOOD_STR;
-			case PATHSBETWEEN: return PATHSBETWEEN_STR;
-			case COMMONSTREAM: return COMMONSTREAM_STR;
-		}
-		return null;
-	}
+	NORMAL,
+	SHORTEST_PLUS_K
 }

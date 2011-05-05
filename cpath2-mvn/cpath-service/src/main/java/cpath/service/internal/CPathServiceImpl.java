@@ -36,6 +36,9 @@ import javax.xml.bind.*;
 import javax.xml.namespace.QName;
 import javax.xml.transform.stream.StreamSource;
 
+import cpath.service.analyses.CommonStreamAnalysis;
+import cpath.service.analyses.NeighborhoodAnalysis;
+import cpath.service.analyses.PathsBetweenAnalysis;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.SimpleMerger;
@@ -360,41 +363,87 @@ public class CPathServiceImpl implements CPathService {
 		return toReturn;
 	}
 
-	/**
-     * (non-Javadoc)
-	 * @see cpath.service.CPathService#getNeighborhood(...)
-     */
-    @Override
-	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String... uris) {
+	//--- Graph queries ---------------------------------------------------------------------------|
 
-		// for now, only return biopax
-		return getNeighborhood(uris);
+	/**
+	 * Runs any analysis with the provided parameters.
+	 *
+	 * @param analysis the required analysis
+	 * @param format the required output format
+	 * @param params parameters for the analysis
+	 * @return analysis result
+	 */
+	Map<ResultMapKey, Object> runAnalysis(Analysis analysis, OutputFormat format, Object... params)
+	{
+		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
+
+		try
+		{
+			Model m = mainDAO.runAnalysis(analysis, params);
+			putRequiredOutput(m, format, map);
+		}
+		catch (Exception e)
+		{
+			map.put(ERROR, e);
+			log.error("getNeighborhood failed. ", e);
+		}
+
+		return map;
 	}
-	
+
+	/**
+	 * Converts the given biopax model into the requested format and puts into the result map.
+	 * TODO: Implement this conversion.
+	 *
+	 * @param model result model
+	 * @param format requested format
+	 * @param map result map
+	 */
+	protected void putRequiredOutput(Model model, OutputFormat format,
+		Map<ResultMapKey, Object> map)
+	{
+		// Currently only biopax output is supported and format is ignored.
+		map.put(MODEL, model);
+		map.put(DATA, exportToOWL(model));
+	}
+
 	/**
 	 * Executes a nearest neighborhood query on the global persistent BioPAX model (main).
-	 * 
+	 *
 	 * @param uris
 	 * @return
 	 */
-	Map<ResultMapKey, Object> getNeighborhood(String... uris) {
-		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-		
-		if (uris.length >= 1) {	
-			try {
-				Analysis analysis = new NearestNeighborhoodQueryAnalysis();
-				Model m = mainDAO.runAnalysis(analysis, uris);
-				map.put(MODEL, m);
-				map.put(DATA, exportToOWL(m));
-			}
-            catch (Exception e) {
-				map.put(ERROR, e);
-				log.error("getNeighborhood failed. ", e);
-			}
-		} 
-		
-		return map;
+	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String... uris)
+	{
+		Analysis analysis = new NearestNeighborhoodQueryAnalysis();
+		return runAnalysis(analysis, format, uris);
 	}
+
+	@Override
+	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String[] source,
+		int limit, boolean upstream, boolean downstream)
+	{
+		Analysis analysis = new NeighborhoodAnalysis();
+		return runAnalysis(analysis, format, source, limit, upstream, downstream);
+	}
+
+	@Override
+	public Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source,
+		String[] target, int limit, boolean limitType)
+	{
+		Analysis analysis = new PathsBetweenAnalysis();
+		return runAnalysis(analysis,format, source, target, limit, limitType);
+	}
+
+	@Override
+	public Map<ResultMapKey, Object> getCommonStream(OutputFormat format, String[] source,
+		int limit, boolean direction)
+	{
+		Analysis analysis = new CommonStreamAnalysis();
+		return runAnalysis(analysis,format, source, limit, direction);
+	}
+
+	//---------------------------------------------------------------------------------------------|
 
     /**
      * Given paxtools model, returns as string
