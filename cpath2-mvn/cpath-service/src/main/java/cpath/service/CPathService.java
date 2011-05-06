@@ -75,17 +75,7 @@ public interface CPathService {
         EXTENDED_BINARY_SIF("Extended Simple Binary Interactions Format"),
 		GSEA("Gene Set Expression Analysis Format")
 		;
-
-		/**
-		 * We needed this string because we cannot use the BIOPAX enum (or any string generated from
-		 * it) in @RequestParam. I know this looks very ugly but even assigning BIOPAX.toString() to
-		 * a final constant string, and using it in @RequestParam will not work. The compiler
-		 * catches that we use the enum while constructing this final string and gives error. So we
-		 * use this constant string instead of BIOPAX.toString(). Any update should make sure that
-		 * BIOPAX_STR.toUpperCase().equals(BIOPAX.toString()).
-		 */
-		public static final String BIOPAX_STR = "biopax";
-
+        
         private final String info;
         
         public String getInfo() {
@@ -97,6 +87,23 @@ public interface CPathService {
 		}
 	}
 
+	
+	public static enum GraphQueryDirection
+	{
+		// Directions
+		UPSTREAM,
+		DOWNSTREAM,
+		BOTHSTREAM,
+	}
+	
+	
+	public static enum GraphQueryLimit
+	{
+		NORMAL,
+		SHORTEST_PLUS_K
+	}
+	
+	
 	//--- Graph queries ---------------------------------------------------------------------------|
 
 	/**
@@ -142,29 +149,18 @@ public interface CPathService {
 	 */
 	Map<ResultMapKey, Object> getValidationReport(String metadataIdentifier);
 	
-	
-	/**
-	 * Executes the "get nearest neighbors" query and 
-	 * returns a BioPAX sub-model (also in the specified output format)
-	 * 
-	 * @param format output format
-	 * @param uris BioPAX element identifiers
-	 * @return
-	 */
-	Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String... uris);
 
 	/**
 	 * Runs a neighborhood query using the given parameters.
 	 *
 	 * @param format output format
 	 * @param source IDs of seed of neighborhood
-	 * @param limit search limit
-	 * @param upstream flag for searching towards upstream
-	 * @param downstream flag for searching towards downstream
+	 * @param limit search limit (integer value)
+	 * @param direction flag 
 	 * @return the neighborhood
 	 */
-	Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String[] source, int limit,
-		boolean upstream, boolean downstream);
+	Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, 
+			String[] source, Integer limit, GraphQueryDirection direction);
 
 	/**
 	 * Runs a paths-between query from the given sources to the given targets.
@@ -172,12 +168,12 @@ public interface CPathService {
 	 * @param format output format
 	 * @param source IDs of source molecules
 	 * @param target IDs of target molecules
-	 * @param limit search limit
-	 * @param limitType can be PoIQuery.NORMAL_LIMIT or PoIQuery.SHORTEST_PLUS_K
+	 * @param limit search limit (integer value)
+	 * @param limitType {@link GraphQueryLimit}
 	 * @return paths between
 	 */
-	Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source, String[] target,
-		int limit, boolean limitType);
+	Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source, 
+			String[] target, Integer limit, GraphQueryLimit limitType);
 
 	/**
 	 * Runs a common upstream or downstream query.
@@ -185,11 +181,11 @@ public interface CPathService {
 	 * @param format output format
 	 * @param source IDs of query seed
 	 * @param limit search limit
-	 * @param direction can be CommonStreamQuery.UPSTREAM or CommonStreamQuery.DOWNSTREAM
+	 * @param direction - can be {@link GraphQueryDirection#DOWNSTREAM} or {@link GraphQueryDirection#UPSTREAM}
 	 * @return common stream
 	 */
-	Map<ResultMapKey, Object> getCommonStream(OutputFormat format, String[] source, int limit,
-		boolean direction);
+	Map<ResultMapKey, Object> getCommonStream(OutputFormat format, 
+			String[] source, Integer limit, GraphQueryDirection direction);
 
 	//---------------------------------------------------------------------------------------------|
 

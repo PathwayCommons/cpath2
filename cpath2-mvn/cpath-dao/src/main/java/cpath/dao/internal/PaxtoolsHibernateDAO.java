@@ -71,7 +71,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 	public final static String[] ALL_FIELDS =
 		{
-			//SEARCH_FIELD_ID, // do NOT search in RDFId!
 			SEARCH_FIELD_AVAILABILITY,
 			SEARCH_FIELD_COMMENT,
 			SEARCH_FIELD_KEYWORD,
@@ -79,12 +78,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			SEARCH_FIELD_TERM,
 			SEARCH_FIELD_XREF_DB,
 			SEARCH_FIELD_XREF_ID,
-			//TODO add all @IndexedEmbedded fields! Test it.
-			"xref." + SEARCH_FIELD_XREF_DB,
-			"xref." + SEARCH_FIELD_XREF_ID,
-			"organism." + SEARCH_FIELD_NAME,
-			"organism.xref." + SEARCH_FIELD_XREF_ID, // to find entity by taxonomy id
-			//TODO add more of the emdedded index fields...
+			// not used/exist -
+			//SEARCH_FIELD_ID, // do NOT search in RDFId!
+			//SEARCH_FIELD_DATASOURCE, // to filter/search by provenance names
+			//SEARCH_FIELD_ORGANISM, // to filter/search by taxonomy or name
 		};
 
 	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);

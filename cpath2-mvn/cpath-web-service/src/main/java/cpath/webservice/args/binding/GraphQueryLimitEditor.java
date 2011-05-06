@@ -1,5 +1,5 @@
 /**
- ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
+ ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
  ** and University of Toronto (UofT).
  **
  ** This is free software; you can redistribute it and/or modify it
@@ -11,12 +11,12 @@
  ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
  ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
  ** documentation provided hereunder is on an "as is" basis, and
- ** both UofT and MSKCC have no obligations to provide maintenance,
+ ** both UofT and MSKCC have no obligations to provide maintenance, 
  ** support, updates, enhancements or modifications.  In no event shall
  ** UofT or MSKCC be liable to any party for direct, indirect, special,
  ** incidental or consequential damages, including lost profits, arising
  ** out of the use of this software and its documentation, even if
- ** UofT or MSKCC have been advised of the possibility of such damage.
+ ** UofT or MSKCC have been advised of the possibility of such damage.  
  ** See the GNU Lesser General Public License for more details.
  **
  ** You should have received a copy of the GNU Lesser General Public License
@@ -25,5 +25,33 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.webservice.args;
+package cpath.webservice.args.binding;
 
+import cpath.service.CPathService.GraphQueryLimit;
+
+import java.beans.PropertyEditorSupport;
+
+
+/**
+ * @author ozgun
+ *
+ */
+public class GraphQueryLimitEditor extends PropertyEditorSupport {
+	
+
+	@Override
+	public void setAsText(String arg0) throws IllegalArgumentException
+	{
+		GraphQueryLimit value = null;
+
+		try
+		{
+			value = GraphQueryLimit.valueOf(arg0.trim().toUpperCase());
+		}
+		catch (IllegalArgumentException e)
+		{
+		}
+
+		setValue(value);
+	}
+}

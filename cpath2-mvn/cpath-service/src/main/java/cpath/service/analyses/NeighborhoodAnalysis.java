@@ -34,7 +34,6 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.QueryExecuter;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**

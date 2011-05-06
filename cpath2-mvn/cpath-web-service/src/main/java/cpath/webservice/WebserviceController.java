@@ -28,7 +28,10 @@
 package cpath.webservice;
 
 import cpath.service.CPathService;
-import cpath.service.CPathService.OutputFormat;
+import static cpath.service.CPathService.*;
+import static cpath.service.CPathService.GraphQueryDirection.*;
+import static cpath.service.CPathService.GraphQueryLimit.*;
+import static cpath.service.CPathService.OutputFormat.*;
 import cpath.service.CPathService.ResultMapKey;
 import cpath.service.internal.CPathServiceImpl;
 import cpath.service.internal.ProtocolStatusCode;
@@ -38,11 +41,8 @@ import cpath.webservice.args.binding.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.level3.BioSource;
-import org.biopax.paxtools.model.level3.Provenance;
+import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.model.level3.UtilityClass;
-import org.biopax.paxtools.query.algorithm.CommonStreamQuery;
-import org.biopax.paxtools.query.algorithm.PoIQuery;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -71,8 +71,13 @@ public class WebserviceController {
 
 	
 	/**
-	 * Customizes request parameters conversion to proper internal types,
-	 * e.g., "network of interest" is recognized as GraphType.NETWORK_OF_INTEREST, etc.
+	 * This configures the web request parameters binding, i.e., 
+	 * conversion to the corresponding java types; for example,
+	 * "neighborhood" is recognized as {@link GraphType#NEIGHBORHOOD}, 
+	 * "search" will become {@link Cmd#SEARCH}, 
+	 *  "protein" - {@link Protein} , etc.
+	 *  Depending on the editor, illegal query parameters may result 
+	 *  in an error or just NULL value (see e.g., {@link CmdArgsEditor})
 	 * 
 	 * @param binder
 	 */
@@ -80,6 +85,8 @@ public class WebserviceController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
+        binder.registerCustomEditor(GraphQueryDirection.class, new GraphQueryDirectionEditor());
+        binder.registerCustomEditor(GraphQueryLimit.class, new GraphQueryLimitEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
         binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
@@ -175,172 +182,77 @@ public class WebserviceController {
     
 	//----- Graph Queries -------------------------------------------------------------------------|
 
-	// Old nearest neighbor query
 	@RequestMapping("/graph")
 	@ResponseBody
-	/**
-	 * @deprecated use the method below this one
-	 */
     public String graphQuery(
 		@RequestParam(value="format", required=false) OutputFormat format,
-		@RequestParam(value="kind", required=true) GraphType kind,
+		@RequestParam(value="kind", required=true) GraphType kind, //required!
 		@RequestParam(value="source", required=false) String[] sources,
-		@RequestParam(value="dest", required=false) String[] dests)
+		@RequestParam(value="dest", required=false) String[] dests,
+		@RequestParam(value="limit", required=false, defaultValue = "1") Integer limit,
+		@RequestParam(value="limit_type", required=false) GraphQueryLimit limitType,
+		@RequestParam(value="direction", required=false) GraphQueryDirection direction
+		)
     {
 		String toReturn = "";
 
 		if(log.isInfoEnabled())
 			log.info("GraphQuery format:" + format + ", kind:" + kind
 				+ ( (sources == null) ? "no source nodes" : ", source:" + sources.toString() )
-				+ ( (dests == null) ? "no dest. nodes" : ", dest:" + dests.toString()) );
+				+ ( (dests == null) ? "no dest. nodes" : ", dest:" + dests.toString()) 
+				+ ", limit: " + limit	
+				);
 
-		if(format==null)  {
-				format = OutputFormat.BIOPAX;
-				if (log.isInfoEnabled())
-				log.info("Format not specified/recognized; - using BioPAX.");
-		}
-
-		if(kind == GraphType.NEIGHBORHOOD) {
-			if (sources != null && sources.length > 0) {
-				Map<ResultMapKey, Object> result = service.getNeighborhood(
-					format, sources);
-				toReturn = getBody(result, format, "nearest neighbors of "
-					+ sources.toString());
-			} else {
-				toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.MISSING_ARGUMENTS,
-					"No source nodes specified for the neighborhood graph query.");
+		// set defaults
+		if(format==null) { format = BIOPAX; }
+		if(limit == null) { limit = 1; } 
+		if(direction == null) { direction = DOWNSTREAM; }
+		if(limitType == null) { limitType = NORMAL; }
+		
+		String response = checkSourceAndLimit(sources, limit);
+		if (response != null) 
+			return response; // return error (xml)
+		
+		Map<ResultMapKey, Object> result;
+		
+		switch (kind) {
+		case NEIGHBORHOOD:
+			result = service.getNeighborhood(format, sources, limit, direction);
+			toReturn = getBody(result, format, "nearest neighbors of " + sources.toString());
+			break;
+		case PATHSBETWEEN:
+			result = service.getPathsBetween(format, sources, dests, limit, limitType);
+			response = getBody(result, format, "paths between " + sources.toString() 
+					+ " and " + dests.toString());
+			break;
+		case COMMONSTREAM:
+			if (direction != UPSTREAM && direction != DOWNSTREAM) {
+				return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INVALID_ARGUMENT,
+					"direction parameter should be either " + UPSTREAM + " or " + DOWNSTREAM);
 			}
+			result = service.getCommonStream(format, sources, limit, direction);
+			response = getBody(result, format, "common " + direction + "stream of " +
+					sources.toString());
+			break;
+		default:
+			// impossible (should has failed earlier)
+			break;
 		}
 
 		return toReturn.toString();
 	}
 
-	// I tried to map the below "/neighborhood" string to the GraphQueryType.NEIGHBORHOOD enum, but
-	// it didn't work. @RequestMapping requests a *constant* string and it seems that using enum in
-	// any way violates this.
-
-	// Neighborhood query
-	@RequestMapping("/" + GraphType.NEIGHBORHOOD_STR)
-	@ResponseBody
-    public String neighborhoodQuery(
-		@RequestParam(value="format", defaultValue = OutputFormat.BIOPAX_STR) OutputFormat format,
-		@RequestParam(value="source", required=true) String[] source,
-		@RequestParam(value="limit", defaultValue = "1") Integer limit,
-		@RequestParam(value="direction") GraphQueryParameter direction)
-    {
-		String response = checkFormatSourceLimit(format, source, limit);
-		if (response != null) return response;
-
-		if (direction != GraphQueryParameter.UPSTREAM &&
-			direction != GraphQueryParameter.DOWNSTREAM &&
-			direction != GraphQueryParameter.BOTHSTREAM)
-		{
-			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INVALID_ARGUMENT,
-				"direction parameter should be " + GraphQueryParameter.UPSTREAM + " or " +
-					GraphQueryParameter.DOWNSTREAM + " or " + GraphQueryParameter.BOTHSTREAM);
-		}
-
-		boolean upstream = direction == GraphQueryParameter.UPSTREAM ||
-			direction == GraphQueryParameter.BOTHSTREAM;
-
-		boolean downstream = direction == GraphQueryParameter.DOWNSTREAM ||
-			direction == GraphQueryParameter.BOTHSTREAM;
-
-		Map<ResultMapKey, Object> result =
-			service.getNeighborhood(format, source, limit, upstream, downstream);
-
-		response = getBody(result, format, "nearest neighbors of " + source.toString());
-
-		return response;
-	}
-
-	// Paths-between query
-	@RequestMapping("/" + GraphType.PATHSBETWEEN_STR)
-	@ResponseBody
-    public String pathsBetweenQuery(
-		@RequestParam(value="format", defaultValue = OutputFormat.BIOPAX_STR) OutputFormat format,
-		@RequestParam(value="source", required=true) String[] source,
-		@RequestParam(value="target", required=false) String[] target,
-		@RequestParam(value="limit", defaultValue = "1") Integer limit,
-		@RequestParam(value="limit_type", defaultValue = "normal")
-			GraphQueryParameter limitType)
-    {
-		String response = checkFormatSourceLimit(format, source, limit);
-		if (response != null) return response;
-
-		if (limitType != GraphQueryParameter.NORMAL &&
-			limitType != GraphQueryParameter.SHORTEST_PLUS_K)
-		{
-			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INVALID_ARGUMENT,
-				"limit_type must be either " + GraphQueryParameter.NORMAL + " or " +
-					GraphQueryParameter.SHORTEST_PLUS_K);
-		}
-
-		boolean limitT = limitType == GraphQueryParameter.NORMAL ?
-			PoIQuery.NORMAL_LIMIT : PoIQuery.SHORTEST_PLUS_K;
-
-		Map<ResultMapKey, Object> result =
-			service.getPathsBetween(format, source, target, limit, limitT);
-
-		response = getBody(result, format, "paths between " + source.toString() + " and " +
-			target.toString());
-
-		return response;
-	}
-
-	// Common stream query
-	@RequestMapping("/" + GraphType.COMMONSTREAM_STR)
-	@ResponseBody
-    public String commonStreamQuery(
-		@RequestParam(value="format", defaultValue = OutputFormat.BIOPAX_STR) OutputFormat format,
-		@RequestParam(value="source", required=true) String[] source,
-		@RequestParam(value="limit", defaultValue = "1") Integer limit,
-		@RequestParam(value="direction", defaultValue = "downstream")
-			GraphQueryParameter direction)
-    {
-		String response = checkFormatSourceLimit(format, source, limit);
-		if (response != null) return response;
-
-		if (direction != GraphQueryParameter.UPSTREAM &&
-			direction != GraphQueryParameter.DOWNSTREAM)
-		{
-			return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INVALID_ARGUMENT,
-				"direction parameter should be either " + GraphQueryParameter.UPSTREAM + " or " +
-					GraphQueryParameter.DOWNSTREAM);
-		}
-
-		boolean dir = direction == GraphQueryParameter.UPSTREAM ?
-			CommonStreamQuery.UPSTREAM : CommonStreamQuery.DOWNSTREAM;
-
-		Map<ResultMapKey, Object> result =
-			service.getCommonStream(format, source, limit, dir);
-
-		response = getBody(result, format, "common " + (dir ? "down" : "up") + "stream of " +
-			source.toString());
-
-		return response;
-	}
-
-	private String checkFormatSourceLimit(OutputFormat format, String[] source, Integer limit)
+	
+	private String checkSourceAndLimit(String[] source, Integer limit)
 	{
 		String toReturn = null;
-
-		if(log.isInfoEnabled())
-			log.info("GraphQuery format:" + format
-				+ ((source == null) ? "no source nodes" : ", source:" + source.toString()
-				+ ", limit: " + limit));
-
-		if(format == null)
-		{
-			if (log.isInfoEnabled()) log.info("Format not specified/recognized -- using BioPAX.");
-		}
 
 		if (source == null || source.length == 0)
 		{
 			toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.MISSING_ARGUMENTS,
 				"No source nodes specified for the neighborhood graph query.");
 		}
-		else if (limit == null || limit < 0)
+		else if (limit < 0)
 		{
 			toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INVALID_ARGUMENT,
 				"Search limit must be specified and must be non-negative");
