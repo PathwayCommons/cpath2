@@ -60,11 +60,11 @@ public interface PaxtoolsDAO extends Model, Reindexable {
 	 * 
      * @param query String
 	 * @param filterByType class to be used as a filter
-	 * @param extraFilters custom data filters (e.g., by organism, datasource)
+	 * @param extraFilters custom filters list (implies AND in between), e.g., for filtering by organism or data source, anything...
 	 * @return ordered by the element's relevance list of rdfIds
      */
     List<String> find(String query, Class<? extends BioPAXElement> filterByType,
-    		SearchResultsFilter<? extends BioPAXElement>... extraFilters);
+    		SearchFilter<? extends BioPAXElement>... extraFilters);
     
     
 	 /**

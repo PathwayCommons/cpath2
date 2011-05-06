@@ -51,7 +51,7 @@ import org.springframework.transaction.annotation.*;
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.SearchResultsFilter;
+import cpath.dao.SearchFilter;
 import cpath.warehouse.WarehouseDAO;
 
 import java.util.*;
@@ -244,88 +244,118 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
 	public List<String> find(String query, Class<? extends BioPAXElement> filterByType,
-			SearchResultsFilter<? extends BioPAXElement>... extraFilters) 
-	{
+			SearchFilter<? extends BioPAXElement>... extraFilters) 
+ {
 		// set to return
 		List<String> toReturn = new ArrayList<String>();
-		
+
 		// if it's a "main" cPath2 database DAO -
-		if(!isWarehouseMode()) { // want Entity types (no UtilityClass search) 
-			if(BioPAXElement.class.equals(filterByType)) {
+		if (!isWarehouseMode()) { // want Entity types (no UtilityClass search)
+			if (BioPAXElement.class.equals(filterByType)) {
 				filterByType = Entity.class;
-			} else if(!Entity.class.isAssignableFrom(filterByType)) {
+			} else if (!Entity.class.isAssignableFrom(filterByType)) {
 				return toReturn; // empty
 			}
-		} 
-		else {
+		} else {
 			// TODO modify here if a UtilityClassImpl is added in Paxtools
 		}
-		
-		// shortcut: return all if - ... TODO may be return empty result instead?
-		if(query == null || "".equals(query) || "*".equals(query.trim())) {
-			Query q = session().createQuery("select rdfid from " 
-					+ filterByType.getCanonicalName());
-			toReturn = q.list();
-			return toReturn;
-		}
-		
-		if (log.isInfoEnabled())
-			log.info("find (IDs): " + query + ", filterBy: " + filterByType);
 
-		// fulltextquery cannot filter by interfaces (only likes annotated entity classes)...
-		Class<? extends BioPAXElement> filterClass = getEntityClass(filterByType);
-		
-		// create a native Lucene query
-		org.apache.lucene.search.Query luceneQuery = null;
-		try {
-			luceneQuery = multiFieldQueryParser.parse(query);
-		} catch (ParseException e) {
-			log.info("parser exception: " + e.getMessage());
-			return toReturn;
-		}
-
-		// get full text session
-		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		//fullTextSession.createFilter(arg0, arg1); // TODO how to use this?
-		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterClass);
-		
-		int count = hibQuery.getResultSize();
-		if(log.isDebugEnabled())
-			log.debug("Query '" + query + "' results size = " + count);
-		
-		// TODO shall we use pagination? [later...]
-		//hibQuery.setFirstResult(0);
-		//hibQuery.setMaxResults(10);
-		
-		// use projection!
-		if(log.isDebugEnabled()) {
-			hibQuery.setProjection("RDFId", FullTextQuery.SCORE, 
-				FullTextQuery.EXPLANATION, FullTextQuery.THIS);
-		} 
-		else {
-			hibQuery.setProjection("RDFId");
-		}
-		// execute search
-		List results = hibQuery.list();
-		for(Object row: results) {
-			Object[] cols = (Object[]) row;
-			String id = (String) cols[0];
-			
-			if(log.isDebugEnabled()) {
-				float score = (Float) cols[1];
-  				Explanation expl = (Explanation) cols[2];
-  				BioPAXElement bpe = (BioPAXElement) cols[3];
-  				log.debug("found uri: " + id + " (" 
-  						+ bpe + " - " + bpe.getModelInterface() + ")"
-  						+ "; score=" + score 
-  						+ "; explanation: " + expl);
+		// shortcut: return all if - ... TODO may be return empty result
+		// instead?
+		if (query == null || "".equals(query) || "*".equals(query.trim())) {
+			Query q = session().createQuery(
+					"select from " + filterByType.getCanonicalName());
+			for (Object o : q.list()) {
+				BioPAXElement bpe = (BioPAXElement) o;
+				if (filter(bpe, extraFilters)) {
+					toReturn.add(bpe.getRDFId());
+				}
 			}
-  			
-  			toReturn.add(id);
+		} else {
+
+			if (log.isInfoEnabled())
+				log.info("find (IDs): " + query + ", filterBy: " + filterByType
+						+ "; extra filters: " + extraFilters.toString());
+
+			// fulltextquery cannot filter by interfaces (only likes annotated
+			// entity classes)...
+			Class<? extends BioPAXElement> filterClass = getEntityClass(filterByType);
+
+			// create a native Lucene query
+			org.apache.lucene.search.Query luceneQuery = null;
+			try {
+				luceneQuery = multiFieldQueryParser.parse(query);
+			} catch (ParseException e) {
+				log.info("parser exception: " + e.getMessage());
+				return toReturn;
+			}
+
+			// get full text session
+			FullTextSession fullTextSession = Search
+					.getFullTextSession(session());
+			// fullTextSession.createFilter(arg0, arg1); // TODO how to use
+			// this?
+			FullTextQuery hibQuery = fullTextSession.createFullTextQuery(
+					luceneQuery, filterClass);
+
+			int count = hibQuery.getResultSize();
+			if (log.isDebugEnabled())
+				log.debug("Query '" + query + "' results size = " + count);
+
+			// TODO shall we use pagination? [later...]
+			// hibQuery.setFirstResult(0);
+			// hibQuery.setMaxResults(10);
+
+			// use projection!
+			if (log.isDebugEnabled()) {
+				hibQuery.setProjection("RDFId", FullTextQuery.SCORE,
+						FullTextQuery.EXPLANATION, FullTextQuery.THIS);
+			} else {
+				hibQuery.setProjection("RDFId");
+			}
+			// execute search
+			List results = hibQuery.list();
+			for (Object row : results) {
+				Object[] cols = (Object[]) row;
+				String id = (String) cols[0];
+
+				// get the matching element
+				BioPAXElement bpe = (BioPAXElement) cols[3];
+				// initialize(bpe); // do not need: we're ok inside a
+				// transaction!
+
+				// (debug info...)
+				if (log.isDebugEnabled()) {
+					float score = (Float) cols[1];
+					Explanation expl = (Explanation) cols[2];
+					log.debug("found uri: " + id + " (" + bpe + " - "
+							+ bpe.getModelInterface() + ")" + "; score="
+							+ score + "; explanation: " + expl);
+				}
+
+				if (filter(bpe, extraFilters)) {
+					toReturn.add(id);
+				}
+			}
 		}
 
 		return toReturn;
 	}
+	
+	
+	/**
+	 * Checks the object against the filter list.
+	 * 
+	 * @param bpe
+	 * @param extraFilters
+	 * @return true if it passed all the filters in the list
+	 */
+	private boolean filter(BioPAXElement bpe,
+			SearchFilter<? extends BioPAXElement>[] extraFilters) 
+	{
+		return true; // TODO Auto-generated method stub
+	}
+
 	
 	
 	@Override
