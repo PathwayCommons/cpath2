@@ -239,10 +239,7 @@ public class PremergeImpl implements Premerge {
 		
 		// (in addition to normalizer's job) find existing or create new Provenance 
 		// from the metadata.name to add it explicitly to all entities now!
-		fixDataSource(v.getModel(), metadata);
-		
-		// TODO add 'pathway membership' relatioship xrefs to all entities (incl. sub-pathways) before merging into the main db 
-		// TODO ?? auto-set 'organism', - only for (sub-)pathways, where empty (ignore proteinReference, Complex, Gene, dna*Reference, rna*Reference for now...)
+		fixDataSource(v.getModel(), metadata);	
 		
 		// get the updated BioPAX OWL and save it in the pathwayData bean
 		v.updateModelSerialized();
@@ -358,6 +355,17 @@ public class PremergeImpl implements Premerge {
 		// set auto-fix and normalize modes
 		validation.setFix(true);
 		validation.setNormalize(true);
+		// use special normalizer options
+		validation.getNormalizerOptions().setFixDisplayName(true);
+		validation.getNormalizerOptions().setInferPropertyDataSource(true);
+		validation.getNormalizerOptions().setInferPropertyOrganism(true);
+		validation.getNormalizerOptions().setGenerateRelatioshipToOrganismXrefs(true);
+		validation.getNormalizerOptions().setGenerateRelatioshipToPathwayXrefs(true);
+		validation.getNormalizerOptions().setGenerateRelatioshipToOrganismComments(false); //no
+		validation.getNormalizerOptions().setGenerateRelatioshipToPathwayComments(false); //no
+		validation.getNormalizerOptions().setGenerateRelatioshipToInteractionXrefs(false); //no
+		validation.getNormalizerOptions().setGenerateRelatioshipToInteractionComments(false); //no
+		// collect both errors and warnings
 		validation.setThreshold(Behavior.WARNING); // means - all err./warn.
 		
 		// because errors are also reported during the import (e.g., syntax)
