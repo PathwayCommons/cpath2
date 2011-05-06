@@ -27,7 +27,7 @@
 
 package cpath.webservice.args.binding;
 
-import cpath.webservice.args.GraphQueryParameter;
+import cpath.service.CPathService.GraphQueryDirection;
 
 import java.beans.PropertyEditorSupport;
 
@@ -36,19 +36,16 @@ import java.beans.PropertyEditorSupport;
  * @author ozgun
  *
  */
-public class GraphQueryParameterEditor extends PropertyEditorSupport {
+public class GraphQueryDirectionEditor extends PropertyEditorSupport {
 	
-	/* (non-Javadoc)
-	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
-	 */
 	@Override
 	public void setAsText(String arg0) throws IllegalArgumentException
 	{
-		GraphQueryParameter value = null;
+		GraphQueryDirection value = null;
 
 		try
 		{
-			value = GraphQueryParameter.valueOf(arg0.trim().toUpperCase());
+			value = GraphQueryDirection.valueOf(arg0.trim().toUpperCase());
 		}
 		catch (IllegalArgumentException e)
 		{

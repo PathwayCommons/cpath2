@@ -33,12 +33,8 @@ import java.util.*;
 
 import javax.validation.constraints.NotNull;
 import javax.xml.bind.*;
-import javax.xml.namespace.QName;
 import javax.xml.transform.stream.StreamSource;
 
-import cpath.service.analyses.CommonStreamAnalysis;
-import cpath.service.analyses.NeighborhoodAnalysis;
-import cpath.service.analyses.PathsBetweenAnalysis;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.SimpleMerger;
@@ -47,7 +43,8 @@ import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.Named;
+import org.biopax.paxtools.query.algorithm.CommonStreamQuery;
+import org.biopax.paxtools.query.algorithm.PoIQuery;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
@@ -55,10 +52,14 @@ import org.springframework.stereotype.Service;
 
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
+import cpath.service.analyses.CommonStreamAnalysis;
+import cpath.service.analyses.NeighborhoodAnalysis;
+import cpath.service.analyses.PathsBetweenAnalysis;
 import cpath.service.CPathService;
 import cpath.service.CPathService.ResultMapKey;
-import cpath.service.analyses.NearestNeighborhoodQueryAnalysis;
-import cpath.service.jaxb.*;
+import static cpath.service.CPathService.GraphQueryDirection.*;
+import static cpath.service.CPathService.GraphQueryLimit.*;
+
 import cpath.warehouse.CvRepository;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.PathwayData;
@@ -194,8 +195,9 @@ public class CPathServiceImpl implements CPathService {
      * Function used by both convert(String, OutputFormat)
      * and fetch(OutputFormat, String... uris).
      */
-    Map<ResultMapKey, Object> convert(Map<ResultMapKey, Object> map, OutputFormat format) {
-
+    Map<ResultMapKey, Object> convert(Map<ResultMapKey, 
+    		Object> map, OutputFormat format) 
+    {
 		try {
 			switch (format) {
 			case BINARY_SIF:
@@ -407,38 +409,36 @@ public class CPathServiceImpl implements CPathService {
 		map.put(DATA, exportToOWL(model));
 	}
 
-	/**
-	 * Executes a nearest neighborhood query on the global persistent BioPAX model (main).
-	 *
-	 * @param uris
-	 * @return
-	 */
-	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String... uris)
-	{
-		Analysis analysis = new NearestNeighborhoodQueryAnalysis();
-		return runAnalysis(analysis, format, uris);
-	}
 
 	@Override
 	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String[] source,
-		int limit, boolean upstream, boolean downstream)
+		Integer limit, GraphQueryDirection direction)
 	{
+		boolean upstream = (direction != DOWNSTREAM); //up or both
+		boolean downstream = (direction != UPSTREAM); // down or both	
 		Analysis analysis = new NeighborhoodAnalysis();
 		return runAnalysis(analysis, format, source, limit, upstream, downstream);
 	}
 
+	
 	@Override
 	public Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source,
-		String[] target, int limit, boolean limitType)
+		String[] target, Integer limit, GraphQueryLimit limitType)
 	{
+		
+		boolean limitT = limitType == NORMAL ?
+				PoIQuery.NORMAL_LIMIT : PoIQuery.SHORTEST_PLUS_K;
 		Analysis analysis = new PathsBetweenAnalysis();
 		return runAnalysis(analysis,format, source, target, limit, limitType);
 	}
 
+	
 	@Override
 	public Map<ResultMapKey, Object> getCommonStream(OutputFormat format, String[] source,
-		int limit, boolean direction)
+		Integer limit, GraphQueryDirection direction)
 	{
+		boolean dir = direction == UPSTREAM ?
+			CommonStreamQuery.UPSTREAM : CommonStreamQuery.DOWNSTREAM;
 		Analysis analysis = new CommonStreamAnalysis();
 		return runAnalysis(analysis,format, source, limit, direction);
 	}
