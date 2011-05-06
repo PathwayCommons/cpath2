@@ -51,6 +51,7 @@ import org.springframework.transaction.annotation.*;
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
+import cpath.dao.SearchResultsFilter;
 import cpath.warehouse.WarehouseDAO;
 
 import java.util.*;
@@ -240,21 +241,19 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	}
 	
 
-	/* (non-Javadoc)
-	 * @see cpath.dao.PaxtoolsDAO#find(java.lang.String, java.lang.Class)
-	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
-	public List<String> find(String query, Class<? extends BioPAXElement> filterBy) 
+	public List<String> find(String query, Class<? extends BioPAXElement> filterByType,
+			SearchResultsFilter<? extends BioPAXElement>... extraFilters) 
 	{
 		// set to return
 		List<String> toReturn = new ArrayList<String>();
 		
 		// if it's a "main" cPath2 database DAO -
 		if(!isWarehouseMode()) { // want Entity types (no UtilityClass search) 
-			if(BioPAXElement.class.equals(filterBy)) {
-				filterBy = Entity.class;
-			} else if(!Entity.class.isAssignableFrom(filterBy)) {
+			if(BioPAXElement.class.equals(filterByType)) {
+				filterByType = Entity.class;
+			} else if(!Entity.class.isAssignableFrom(filterByType)) {
 				return toReturn; // empty
 			}
 		} 
@@ -265,16 +264,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		// shortcut: return all if - ... TODO may be return empty result instead?
 		if(query == null || "".equals(query) || "*".equals(query.trim())) {
 			Query q = session().createQuery("select rdfid from " 
-					+ filterBy.getCanonicalName());
+					+ filterByType.getCanonicalName());
 			toReturn = q.list();
 			return toReturn;
 		}
 		
 		if (log.isInfoEnabled())
-			log.info("find (IDs): " + query + ", filterBy: " + filterBy);
+			log.info("find (IDs): " + query + ", filterBy: " + filterByType);
 
 		// fulltextquery cannot filter by interfaces (only likes annotated entity classes)...
-		Class<? extends BioPAXElement> filterClass = getEntityClass(filterBy);
+		Class<? extends BioPAXElement> filterClass = getEntityClass(filterByType);
 		
 		// create a native Lucene query
 		org.apache.lucene.search.Query luceneQuery = null;
@@ -539,9 +538,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	}
 
 	
-	/*
-	 * Gets Hibernate annotated entity class 
-	 * by the BioPAX Model interface class 
+	/**
+	 * Gets a Hibernate annotated entity class 
+	 * (implementation) by BioPAX Model interface class 
 	 * 
 	 */
 	private Class<? extends BioPAXElement> getEntityClass(
@@ -742,7 +741,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	 * Special object copier.
 	 * Clones all the properties and properties's properties, etc.
 	 * 
-	 * TODO not all inverse (xxxOf) properties are set for this and/or dependent elements 
+	 * not all inverse (xxxOf) properties are set for this and/or dependent elements 
 	 * (only those are set that occur on the traverse's path)!
 	 * 
 	 * @deprecated use {@link PaxtoolsHibernateDAO#exportModel(OutputStream, String...)} and then {@link SimpleIOHandler#convertFromOWL(InputStream)}
