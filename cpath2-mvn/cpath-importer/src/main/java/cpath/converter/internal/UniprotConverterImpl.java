@@ -1,5 +1,6 @@
 package cpath.converter.internal;
 
+import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -7,6 +8,8 @@ import org.biopax.paxtools.model.BioPAXElement;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import cpath.config.CPathSettings;
 
 import java.util.*;
 import java.io.*;
@@ -241,7 +244,8 @@ public class UniprotConverterImpl extends BaseConverterImpl {
                 xref = xref.replaceAll("; -.", "");
                 String parts[] = xref.split(";");
                 String entrezGeneId = parts[1];
-                setRelationshipXRef(proteinReferenceModel, "Entrez Gene", entrezGeneId, proteinReference);
+                setRelationshipXRef(proteinReferenceModel, "Entrez Gene", 
+                		entrezGeneId, proteinReference, RelationshipType.GENE);
             }
 			else if (xref.startsWith("RefSeq")) {
                 xref = xref.replaceAll("; -.", "");
@@ -251,7 +255,8 @@ public class UniprotConverterImpl extends BaseConverterImpl {
                     parts = refSeqId.split("\\.");
                     refSeqId = parts[0];
                 }
-                setRelationshipXRef(proteinReferenceModel, "RefSeq", refSeqId, proteinReference);
+                setRelationshipXRef(proteinReferenceModel, "RefSeq", 
+                		refSeqId, proteinReference, RelationshipType.SEQUENCE);
             }
         }
     }
@@ -270,7 +275,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
             String subParts[] = parts[i].split("=");
             // Set HUGO Gene Name
             if (subParts[0].trim().equals("Name")) {
-                setRelationshipXRef(proteinReferenceModel, "NGNC", subParts[1], proteinReference);
+                setRelationshipXRef(proteinReferenceModel, "NGNC", subParts[1], proteinReference, RelationshipType.GENE);
             }
 			else if (subParts[0].trim().equals("Synonyms")) {
                 String synList[] = subParts[1].split(",");
@@ -287,18 +292,30 @@ public class UniprotConverterImpl extends BaseConverterImpl {
      * Sets Relationship XRefs.
 	 *
 	 * @param proteinReferenceModel Model
-	 * @param dbName String
-	 * @param id String
-	 * @param proteinReference ProteinReference
+     * @param dbName String
+     * @param id String
+     * @param proteinReference ProteinReference
+     * @param relationshipType names from {@link RelationshipType} enum.
      */
     private void setRelationshipXRef(Model proteinReferenceModel, String dbName, 
-    	String id, ProteinReference proteinReference) 
+    	String id, ProteinReference proteinReference, RelationshipType relationshipType) 
     {
         id = id.trim();
 		String rdfId = L3_RELATIONSHIPXREF_URI + URLEncoder.encode(dbName.toUpperCase() + "_" +  id.toUpperCase());
 		RelationshipXref rXRef = (RelationshipXref)proteinReferenceModel.addNew(RelationshipXref.class, rdfId);
 		rXRef.setDb(dbName);
 		rXRef.setId(id);
+		
+		//find/create and add a special relationship CV
+		String relCvId = CPathSettings.CPATH_URI_PREFIX + 
+			RelationshipTypeVocabulary.class.getSimpleName() +
+				":" + relationshipType;
+		RelationshipTypeVocabulary relCv = (RelationshipTypeVocabulary) model.getByID(relCvId);
+		if(relCv == null) {
+			relCv = model.addNew(RelationshipTypeVocabulary.class, relCvId);
+			relCv.addTerm(relationshipType.name());
+		}
+		rXRef.setRelationshipType(relCv);
 		proteinReference.addXref(rXRef);
     }
 

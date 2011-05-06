@@ -55,14 +55,17 @@ public interface PaxtoolsDAO extends Model, Reindexable {
 	 /**
 	 * Returns the set of IDs 
 	 * of the BioPAX elements of given class 
-	 * that match the query.
+	 * that match the query and passes the filters
+	 * if any defined.
 	 * 
      * @param query String
-	 * @param filterBy class to be used as a filter.
-     * @return ordered by the element's relevance list of rdfIds
+	 * @param filterByType class to be used as a filter
+	 * @param extraFilters custom data filters (e.g., by organism, datasource)
+	 * @return ordered by the element's relevance list of rdfIds
      */
-    List<String> find(String query, Class<? extends BioPAXElement> filterBy);
-
+    List<String> find(String query, Class<? extends BioPAXElement> filterByType,
+    		SearchResultsFilter<? extends BioPAXElement>... extraFilters);
+    
     
 	 /**
 	 * Returns the count 
