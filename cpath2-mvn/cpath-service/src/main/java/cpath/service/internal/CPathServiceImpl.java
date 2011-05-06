@@ -43,6 +43,9 @@ import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.BioSource;
+import org.biopax.paxtools.model.level3.Gene;
+import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
 import org.biopax.paxtools.query.algorithm.CommonStreamQuery;
 import org.biopax.paxtools.query.algorithm.PoIQuery;
 import org.biopax.validator.result.Validation;
@@ -52,6 +55,9 @@ import org.springframework.stereotype.Service;
 
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
+import cpath.dao.SearchFilter;
+import cpath.dao.internal.filters.GeneOrganismFilter;
+import cpath.dao.internal.filters.SimplePhysicalEntityOrganismFilter;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
@@ -149,7 +155,16 @@ public class CPathServiceImpl implements CPathService {
 				Integer count =  mainDAO.count(null, biopaxClass);
 				map.put(COUNT, count);
 			} else {
-				Collection<String> data = mainDAO.find(queryStr, biopaxClass);
+				//TODO convert the organisms, dsources into the SearchFilter list  
+				SearchFilter<Gene, BioSource> gof = new GeneOrganismFilter();
+				//TODO set values
+				SearchFilter<SimplePhysicalEntity, BioSource> sof = new SimplePhysicalEntityOrganismFilter();
+				//TODO set values
+				//TODO add more
+				
+				// do search
+				Collection<String> data = mainDAO.find(queryStr, biopaxClass, gof, sof); 
+				
 				map.put(DATA, data);
 				map.put(COUNT, data.size()); // becomes Integer
 			}

@@ -1,11 +1,8 @@
-package cpath.dao.internal;
+package cpath.dao.internal.filters;
 
 
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.Provenance;
-
-import cpath.dao.SearchFilter;
 
 
 /**
@@ -14,10 +11,10 @@ import cpath.dao.SearchFilter;
  * @author rodche
  *
  */
-public class EntityDataSourceFilter implements SearchFilter<Provenance>{
+public class EntityDataSourceFilter extends SearchFilterAdapter<Entity, Provenance>{
 
 	@Override
-	public boolean accepted(BioPAXElement searchResult, Provenance... values) {
+	public boolean accepted(Entity searchResult) {
 		// TODO Auto-generated method stub
 		return false;
 	}

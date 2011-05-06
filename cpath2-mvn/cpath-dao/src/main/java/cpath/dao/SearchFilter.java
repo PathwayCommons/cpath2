@@ -35,18 +35,26 @@ import org.biopax.paxtools.model.BioPAXElement;
  * 
  * @author rodche
  *
+ * @param <E> - filter apply to this BioPAX type and sub-classes
  * @param <T> - decision is made based on a (property) value of this type (not necessarily {@link BioPAXElement})
  * 
  * @see PaxtoolsDAO#find(String, Class, SearchFilter...)
  */
-public interface SearchFilter<T> {
+public interface SearchFilter<E extends BioPAXElement, T> {
 	/**
 	 * Checks whether a BioPAX element passes 
 	 * this filter or not.
 	 * 
 	 * @param searchResult
-	 * @param values acceptable values (OR- or AND-joined - is up to an implementation)
 	 * @return
 	 */
-	boolean accepted(BioPAXElement searchResult, T... values);
+	boolean accepted(E searchResult);
+	
+	/**
+	 * These values are to be used
+	 * for the filtering.
+	 * 
+	 * @param values
+	 */
+	void setValues(T... values);
 }
