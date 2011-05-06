@@ -244,7 +244,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
 	public List<String> find(String query, Class<? extends BioPAXElement> filterByType,
-			SearchFilter<? extends BioPAXElement>... extraFilters) 
+			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
  {
 		// set to return
 		List<String> toReturn = new ArrayList<String>();
@@ -351,7 +351,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	 * @return true if it passed all the filters in the list
 	 */
 	private boolean filter(BioPAXElement bpe,
-			SearchFilter<? extends BioPAXElement>[] extraFilters) 
+			SearchFilter<? extends BioPAXElement,?>[] extraFilters) 
 	{
 		return true; // TODO Auto-generated method stub
 	}

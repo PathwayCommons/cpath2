@@ -64,7 +64,7 @@ public interface PaxtoolsDAO extends Model, Reindexable {
 	 * @return ordered by the element's relevance list of rdfIds
      */
     List<String> find(String query, Class<? extends BioPAXElement> filterByType,
-    		SearchFilter<? extends BioPAXElement>... extraFilters);
+    		SearchFilter<? extends BioPAXElement, ?>... extraFilters);
     
     
 	 /**

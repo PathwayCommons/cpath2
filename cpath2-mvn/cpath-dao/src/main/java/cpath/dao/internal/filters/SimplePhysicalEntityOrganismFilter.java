@@ -1,12 +1,11 @@
-package cpath.dao.internal;
+package cpath.dao.internal.filters;
 
-import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Dna;
 import org.biopax.paxtools.model.level3.DnaRegion;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
 
-import cpath.dao.SearchFilter;
 
 /**
  * Defines a filter by organism for {@link SimplePhysicalEntity},
@@ -16,13 +15,12 @@ import cpath.dao.SearchFilter;
  * @author rodche
  *
  */
-public class SimplePhysicalEntityOrganismFilter implements
-		SearchFilter<SimplePhysicalEntity> 
+public class SimplePhysicalEntityOrganismFilter 
+	extends SearchFilterAdapter<SimplePhysicalEntity, BioSource> 
 {
 
 	@Override
-	public boolean accepted(BioPAXElement searchResult,
-			SimplePhysicalEntity... values) {
+	public boolean accepted(SimplePhysicalEntity searchResult) {
 		// TODO Auto-generated method stub
 		return false;
 	}
