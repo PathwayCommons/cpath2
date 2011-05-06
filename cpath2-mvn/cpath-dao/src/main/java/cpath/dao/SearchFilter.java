@@ -31,21 +31,22 @@ import org.biopax.paxtools.model.BioPAXElement;
 
 /**
  * An interface for a Paxtools API based 
- * filter to optionally apply to full-text search queries.
+ * filter to apply to full-text search queries.
  * 
  * @author rodche
  *
- * @param <T> - pass/no-pass decision is made based on values of this BioPAX type 
+ * @param <T> - decision is made based on a (property) value of this type (not necessarily {@link BioPAXElement})
  * 
- * @see PaxtoolsDAO#find(String, Class, SearchResultsFilter...)
+ * @see PaxtoolsDAO#find(String, Class, SearchFilter...)
  */
-public interface SearchResultsFilter<T extends BioPAXElement> {
+public interface SearchFilter<T> {
 	/**
 	 * Checks whether a BioPAX element passes 
 	 * this filter or not.
 	 * 
 	 * @param searchResult
+	 * @param values acceptable values (OR- or AND-joined - is up to an implementation)
 	 * @return
 	 */
-	boolean accepted(BioPAXElement searchResult);
+	boolean accepted(BioPAXElement searchResult, T... values);
 }
