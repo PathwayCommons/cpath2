@@ -32,6 +32,14 @@
   <dependencySets>
     <dependencySet>
       <includes>
+        <include>*:cpath-webdoc:war</include>
+      </includes>
+      <outputDirectory></outputDirectory>
+      <outputFileNameMapping>cpath-webdoc.war</outputFileNameMapping>
+      <unpack>false</unpack>
+    </dependencySet>
+    <dependencySet>
+      <includes>
         <include>*:cpath-web-service:war</include>
       </includes>
       <outputDirectory></outputDirectory>
