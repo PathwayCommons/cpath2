@@ -138,7 +138,7 @@ public class CPathWarehouseTest {
 	@Test
 	public void testSearchForProteinReference() {
 		// search with a secondary (RefSeq) accession number
-		Collection<String> prIds = ((PaxtoolsDAO)proteins).find("NP_619650", RelationshipXref.class);
+		Collection<String> prIds = ((PaxtoolsDAO)proteins).find("NP_619650", new Class[]{RelationshipXref.class});
 		assertFalse(prIds.isEmpty());
 		assertTrue(prIds.contains(CPathSettings.CPATH_URI_PREFIX+"RelationshipXref:REFSEQ_NP_619650"));
 		

@@ -18,6 +18,7 @@ import cpath.dao.Analysis;
  * 
  * @author rodche
  */
+@Deprecated
 public class PathwayMembershipRobot implements Analysis {
 	
 	@Override

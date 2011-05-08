@@ -25,9 +25,11 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.dao;
+package cpath.dao.filters;
 
 import org.biopax.paxtools.model.BioPAXElement;
+
+import cpath.dao.PaxtoolsDAO;
 
 /**
  * An interface for a Paxtools API based 
@@ -48,7 +50,7 @@ public interface SearchFilter<E extends BioPAXElement, T> {
 	 * @param searchResult
 	 * @return
 	 */
-	boolean accepted(E searchResult);
+	boolean apply(E searchResult);
 	
 	/**
 	 * These values are to be used

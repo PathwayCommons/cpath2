@@ -6,6 +6,8 @@ import org.biopax.paxtools.model.level3.DnaRegion;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
 
+import cpath.dao.filters.SearchFilterRange;
+
 
 /**
  * Defines a filter by organism for {@link SimplePhysicalEntity},
@@ -15,12 +17,13 @@ import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
  * @author rodche
  *
  */
+@SearchFilterRange(SimplePhysicalEntity.class)
 public class SimplePhysicalEntityOrganismFilter 
 	extends SearchFilterAdapter<SimplePhysicalEntity, BioSource> 
 {
 
 	@Override
-	public boolean accepted(SimplePhysicalEntity searchResult) {
+	public boolean apply(SimplePhysicalEntity searchResult) {
 		// TODO Auto-generated method stub
 		return false;
 	}

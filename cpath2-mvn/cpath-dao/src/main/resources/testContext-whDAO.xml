@@ -83,18 +83,16 @@
 </bean> 
 --> 	
 
-    <bean id="proteinsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
+    <bean id="proteinsDAO" class="cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="testSessionFactory"/>
-        <property name="warehouseMode" value="true"/>
     </bean>
 
     <bean id="metadataDAO" class="cpath.warehouse.internal.MetadataHibernateDAO">
         <property name="sessionFactory" ref="testSessionFactory"/>
     </bean>
     
-    <bean id="moleculesDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
+    <bean id="moleculesDAO" class="cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="testSessionFactory"/>
-        <property name="warehouseMode" value="true"/>
     </bean>
 
     <bean id="cpath2_test" class="cpath.dao.internal.DataServicesFactoryBean"/>

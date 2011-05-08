@@ -31,6 +31,8 @@ package cpath.dao;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
+import cpath.dao.filters.SearchFilter;
+
 import java.util.Collection;
 import java.util.List;
 import java.io.File;
@@ -54,17 +56,17 @@ public interface PaxtoolsDAO extends Model, Reindexable {
     
 	 /**
 	 * Returns the set of IDs 
-	 * of the BioPAX elements of given class 
-	 * that match the query and passes the filters
-	 * if any defined.
+	 * of the BioPAX elements that match the query 
+	 * and satisfy the filters if any defined.
 	 * 
      * @param query String
-	 * @param filterByType class to be used as a filter
-	 * @param extraFilters custom filters list (implies AND in between), e.g., for filtering by organism or data source, anything...
+	 * @param filterByTypes - class filters for the full-text search (actual effect may depend on the concrete implementation!)
+	 * @param extraFilters custom filters (implies AND in between) that apply after the full-text query has returned;
+	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
 	 * @return ordered by the element's relevance list of rdfIds
      */
-    List<String> find(String query, Class<? extends BioPAXElement> filterByType,
-    		SearchFilter<? extends BioPAXElement, ?>... extraFilters);
+    List<String> find(String query, Class<? extends BioPAXElement>[] filterByTypes,
+    		SearchFilter<? extends BioPAXElement,?>... extraFilters);
     
     
 	 /**
@@ -76,6 +78,7 @@ public interface PaxtoolsDAO extends Model, Reindexable {
 	 * @param filterBy class to be used as a filter.
      * @return count
      */
+    @Deprecated
     Integer count(String query, Class<? extends BioPAXElement> filterBy);
     
     
@@ -107,6 +110,7 @@ public interface PaxtoolsDAO extends Model, Reindexable {
      * @param id
      * @return
      */
+    @Deprecated
     BioPAXElement getByIdInitialized(String id);
  
     
@@ -115,7 +119,7 @@ public interface PaxtoolsDAO extends Model, Reindexable {
      * including collections!
      * 
      */
-    void initialize(BioPAXElement element);
+    void initialize(Object element);
 
     
     /**
@@ -134,23 +138,5 @@ public interface PaxtoolsDAO extends Model, Reindexable {
      * @return
      */
     Model runAnalysis(Analysis analysis, Object... args);
-    
-    
-    /**
-     * Returns whether current DAO mode is "warehouse" (true),
-     * or normal (false); In warehouse mode, e.g., full-text search   
-     * would return not only entity but also utility class objects
-     * (or utility class elements only).
-     * 
-     * @return
-     */
-    boolean isWarehouseMode();
-    
-    
-    /**
-     * Sets the "warehouse" DAO mode.
-     * @param warehouseMode
-     */
-    void setWarehouseMode(boolean warehouseMode);
     
 }
