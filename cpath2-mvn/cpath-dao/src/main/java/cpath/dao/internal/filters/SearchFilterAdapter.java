@@ -2,7 +2,7 @@ package cpath.dao.internal.filters;
 
 import org.biopax.paxtools.model.BioPAXElement;
 
-import cpath.dao.SearchFilter;
+import cpath.dao.filters.SearchFilter;
 
 /**
  * @author rodche

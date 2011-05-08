@@ -51,8 +51,9 @@ import org.springframework.transaction.annotation.*;
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.SearchFilter;
-import cpath.warehouse.WarehouseDAO;
+import cpath.dao.filters.SearchFilter;
+import cpath.dao.filters.SearchFilterRange;
+import cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO;
 
 import java.util.*;
 import java.io.*;
@@ -61,12 +62,13 @@ import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
 
 
 /**
- * Paxtools BioPAX Model and DAO.
+ * Paxtools BioPAX main Model and DAO
+ * (not a warehouse)
  *
  */
 @Transactional
 @Repository
-public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
+public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 {
 	private static final long serialVersionUID = 1L;
 
@@ -81,8 +83,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			SEARCH_FIELD_XREF_ID,
 			// not used/exist -
 			//SEARCH_FIELD_ID, // do NOT search in RDFId!
-			//SEARCH_FIELD_DATASOURCE, // to filter/search by provenance names
-			//SEARCH_FIELD_ORGANISM, // to filter/search by taxonomy or name
 		};
 
 	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
@@ -90,10 +90,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	private final Map<String, String> nameSpacePrefixMap;
 	private final BioPAXLevel level;
 	private final BioPAXFactory factory;
-	private SimpleIOHandler simpleIO;
+	protected SimpleIOHandler simpleIO;
 	private boolean addDependencies = false;
-	MultiFieldQueryParser multiFieldQueryParser;
-	private boolean warehouseMode = false; // if true, search/get only UtilityClass elements!
+	protected MultiFieldQueryParser multiFieldQueryParser;
 
 	protected PaxtoolsHibernateDAO()
 	{
@@ -122,7 +121,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	}
 
 
-	Session session() {
+	protected Session session() {
 		return sessionFactory.getCurrentSession();
 	}
 	
@@ -241,119 +240,167 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	}
 	
 
+	/**
+	 * Paxtools MAIN DAO implementation details. 
+	 * 
+	 * unlike {@link WarehousePaxtoolsHibernateDAO#find(String, Class[], SearchFilter...)},
+	 * 'filterByTypes' parameter here works rather similar to the rest of the (extra) filters, 
+	 * but it goes the last in the filters chain! Plus, there is one extra step - lookup, i.e.:
+	 * - first, a {@link FullTextQuery} query does not use any class filters and just returns 
+	 *   matching objects (chances are, the list will contain many {@link UtilityClass} elements);
+	 * - second, 'extraFilters' are applied (to exclude undesired elements earlier...);
+	 * - next, the list is iterated over to replace each utility class object with
+	 *   one or many of its nearest parent {@link Entity} class elements if possible
+	 *   (it takes to use PaxtoolsAPI, e.g., inverse properties or path accessors...);
+	 *   TODO possibly to implement the same using HQL?..
+	 * - next, 'filterByTypes' are now applied;
+	 * - finally, 'extraFilters' are applied (again) to generate the final result
+	 * (the last step will be to convert the objects list to the list of their identifiers)
+	 * 
+	 * @see WarehousePaxtoolsHibernateDAO#find(String, Class[], SearchFilter...)
+	 * 
+	 * TODO shall I return not only IDs but also always - organism, pathway, datasource?
+	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
-	public List<String> find(String query, Class<? extends BioPAXElement> filterByType,
+	public List<String> find(
+			String query, 
+			Class<? extends BioPAXElement> filterByTypes[],
 			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
- {
-		// set to return
+	{
+		// a list of identifiers to return
 		List<String> toReturn = new ArrayList<String>();
 
-		// if it's a "main" cPath2 database DAO -
-		if (!isWarehouseMode()) { // want Entity types (no UtilityClass search)
-			if (BioPAXElement.class.equals(filterByType)) {
-				filterByType = Entity.class;
-			} else if (!Entity.class.isAssignableFrom(filterByType)) {
-				return toReturn; // empty
-			}
-		} else {
-			// TODO modify here if a UtilityClassImpl is added in Paxtools
+		// a shortcut!
+		if (query == null || "".equals(query) 
+				|| query.trim().startsWith("*")) // see: Lucene query syntax
+		{
+			// do nothing, return the empty list
+			return toReturn;
+		} 
+		
+		// - otherwise, we continue and do real job -
+		if (log.isInfoEnabled())
+			log.info("find (IDs): " + query + ", filterBy: " + Arrays.toString(filterByTypes)
+					+ "; extra filters: " + extraFilters.toString());
+
+		// collect matching elements here
+		List<BioPAXElement> results = new ArrayList<BioPAXElement>();
+		
+		/* - won't use for the main DAO impl.
+		// fulltext query cannot filter by interfaces (only likes annotated entity classes)...
+		Class<?>[] filterClasses = new Class<?>[filterByTypes.length];
+		for(int i = 0; i < filterClasses.length; i++) {
+			filterClasses[i] = getEntityClass(filterByTypes[i]);
+		}
+		*/
+			
+		// create a native Lucene query
+		org.apache.lucene.search.Query luceneQuery = null;
+		try {
+			luceneQuery = multiFieldQueryParser.parse(query);
+		} catch (ParseException e) {
+			log.info("parser exception: " + e.getMessage());
+			return toReturn;
+		}
+		// get full text session and create the query
+		FullTextSession fullTextSession = Search.getFullTextSession(session());
+		// fullTextSession.createFilter(arg0, arg1); // TODO how to use this?
+		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery);
+			//, filterClasses); // - won't use for the main DAO impl.
+
+		if (log.isDebugEnabled()) {
+			log.debug("Query '" + query + "' results size = " 
+					+ hibQuery.getResultSize());
 		}
 
-		// shortcut: return all if - ... TODO may be return empty result
-		// instead?
-		if (query == null || "".equals(query) || "*".equals(query.trim())) {
-			Query q = session().createQuery(
-					"select from " + filterByType.getCanonicalName());
-			for (Object o : q.list()) {
-				BioPAXElement bpe = (BioPAXElement) o;
-				if (filter(bpe, extraFilters)) {
-					toReturn.add(bpe.getRDFId());
-				}
-			}
-		} else {
+		/*
+		// TODO use pagination? [later...]
+		hibQuery.setFirstResult(0);
+		hibQuery.setMaxResults(10);
+		*/
 
-			if (log.isInfoEnabled())
-				log.info("find (IDs): " + query + ", filterBy: " + filterByType
-						+ "; extra filters: " + extraFilters.toString());
-
-			// fulltextquery cannot filter by interfaces (only likes annotated
-			// entity classes)...
-			Class<? extends BioPAXElement> filterClass = getEntityClass(filterByType);
-
-			// create a native Lucene query
-			org.apache.lucene.search.Query luceneQuery = null;
-			try {
-				luceneQuery = multiFieldQueryParser.parse(query);
-			} catch (ParseException e) {
-				log.info("parser exception: " + e.getMessage());
-				return toReturn;
-			}
-
-			// get full text session
-			FullTextSession fullTextSession = Search
-					.getFullTextSession(session());
-			// fullTextSession.createFilter(arg0, arg1); // TODO how to use
-			// this?
-			FullTextQuery hibQuery = fullTextSession.createFullTextQuery(
-					luceneQuery, filterClass);
-
-			int count = hibQuery.getResultSize();
-			if (log.isDebugEnabled())
-				log.debug("Query '" + query + "' results size = " + count);
-
-			// TODO shall we use pagination? [later...]
-			// hibQuery.setFirstResult(0);
-			// hibQuery.setMaxResults(10);
-
-			// use projection!
+		// define a projection -
+		/*TODO do we really need to know score and explanation? 
+		* (if not, can skip hibQuery.setProjection, and hibQuery.list()
+		* will return the list of BioPAX elements)
+		*/
+		hibQuery.setProjection(FullTextQuery.THIS, FullTextQuery.SCORE,
+			"RDFId", FullTextQuery.EXPLANATION);
+		
+		// execute search and get the list
+		List hibQueryResults = hibQuery.list();
+		
+		// process the entries
+		for (Object row : hibQueryResults) {
+			// get the matching element
+			//BioPAXElement bpe = (BioPAXElement) row; // when not using hibQuery.setProjection...
+			
+			Object[] cols = (Object[]) row; // only when hibQuery.setProjection -
+			BioPAXElement bpe = (BioPAXElement) cols[0];
+			String id = (String) cols[2]; //  was used above
+			
+			// (debug info...)
 			if (log.isDebugEnabled()) {
-				hibQuery.setProjection("RDFId", FullTextQuery.SCORE,
-						FullTextQuery.EXPLANATION, FullTextQuery.THIS);
-			} else {
-				hibQuery.setProjection("RDFId");
+				float score = (Float) cols[1];
+				Explanation expl = (Explanation) cols[3];
+				log.debug("found uri: " + id + " (" + bpe + " - "
+						+ bpe.getModelInterface() + ")" + "; score="
+						+ score + "; explanation: " + expl);
 			}
-			// execute search
-			List results = hibQuery.list();
-			for (Object row : results) {
-				Object[] cols = (Object[]) row;
-				String id = (String) cols[0];
-
-				// get the matching element
-				BioPAXElement bpe = (BioPAXElement) cols[3];
-				// initialize(bpe); // do not need: we're ok inside a
-				// transaction!
-
-				// (debug info...)
-				if (log.isDebugEnabled()) {
-					float score = (Float) cols[1];
-					Explanation expl = (Explanation) cols[2];
-					log.debug("found uri: " + id + " (" + bpe + " - "
-							+ bpe.getModelInterface() + ")" + "; score="
-							+ score + "; explanation: " + expl);
-				}
-
-				if (filter(bpe, extraFilters)) {
-					toReturn.add(id);
-				}
+			
+			if (filter(bpe, extraFilters)) {
+				results.add(bpe);
 			}
 		}
-
+		
+		// collect identifiers
+		for(BioPAXElement bpe : results) {
+			if(isInstanceofOneOf(bpe, filterByTypes))
+				toReturn.add(bpe.getRDFId());
+		}
+		
+		
+		if (log.isDebugEnabled()) {
+			log.debug("Query '" + query + "' final results size = " 
+					+ toReturn.size());
+		}
+		
 		return toReturn;
 	}
 	
 	
+	private List<Entity> lookupForEntities(List<BioPAXElement> elements) {
+		// TODO for UtilityClass objects in the list, find the nearest Entity class parent and replace it
+		return null;
+	}
+
+	
 	/**
 	 * Checks the object against the filter list.
 	 * 
-	 * @param bpe
-	 * @param extraFilters
-	 * @return true if it passed all the filters in the list
+	 * @param bpe an object
+	 * @param extraFilters filters the object must pass (if aplicable)
+	 * @return true if it passed all the filters (that apply) in the list
 	 */
-	private boolean filter(BioPAXElement bpe,
-			SearchFilter<? extends BioPAXElement,?>[] extraFilters) 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	protected boolean filter(BioPAXElement bpe, SearchFilter[] extraFilters) 
 	{
-		return true; // TODO Auto-generated method stub
+		for(SearchFilter sf : extraFilters) {
+			SearchFilterRange filterRange = sf.getClass()
+				.getAnnotation(SearchFilterRange.class);
+			if(filterRange == null 
+				|| filterRange.value().isInstance(bpe)) 
+			{
+				try {
+					if(!sf.apply(bpe)) 
+						return false;
+				} catch (ClassCastException e) {
+					// skip (not applicable for this element filter)
+				}
+			}
+		}
+		return true;
 	}
 
 	
@@ -428,9 +475,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
-	/*
-	 * TODO experimental (see also #initialize(BioPAXElement))
+	/**
+	 * @deprecated Use getByID(uri) and then initialize(BioPAXElement) instead
 	 */
+	@Deprecated
 	public BioPAXElement getByIdInitialized(String id) {
 		BioPAXElement toReturn = getByID(id);
 		
@@ -467,47 +515,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	}
 	
 	
-	@Override
-	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public BioPAXElement getObject(String id) 
-	{
-		if(id == null || "".equals(id)) 
-			throw new RuntimeException("getObject(null) is called!");
-
-		BioPAXElement toReturn = null;
-		
-		// get the element
-		BioPAXElement bpe = getByID(id);
-		
-		// check it has inverse props set ("cloning" may break it...)
-		if(bpe instanceof Xref) {
-			assert(!((Xref)bpe).getXrefOf().isEmpty());
-			if(log.isDebugEnabled()) {
-				log.debug(id + " is xrefOf " + 
-					((Xref)bpe).getXrefOf().iterator().next().toString()
-				);
-			}
-		}
-		
-		if (bpe != null) { 
-			/* used to be...
-			//ElementCloner cloner = new ElementCloner();
-			//Model model = cloner.clone(this, bpe);
-			*/
-			
-			// write/read cycle should completely detach the sub-model 
-			// (new java objects are created by the simpleIO)
-			// and restore inverse properties 
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			exportModel(baos, id);
-			Model model = simpleIO.convertFromOWL(new ByteArrayInputStream(baos.toByteArray()));
-			toReturn = model.getByID(id);
-		}
-		
-		return toReturn; // null means no such element
-	}
-
-
 	@Override
 	public BioPAXLevel getLevel()
 	{
@@ -573,7 +580,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	 * (implementation) by BioPAX Model interface class 
 	 * 
 	 */
-	private Class<? extends BioPAXElement> getEntityClass(
+	protected Class<? extends BioPAXElement> getEntityClass(
 			Class<? extends BioPAXElement> filterBy) 
 	{
 		Class<? extends BioPAXElement> clazz = (BioPAXElement.class.equals(filterBy))
@@ -610,59 +617,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	{
 		simpleIO.convertToOWL(this, outputStream, ids);
 	}
-
-	/* (non-Javadoc)
-	 * @see cpath.warehouse.WarehouseDAO#getObject(java.lang.String, java.lang.Class)
-	 */
-	@Override
-	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public <T extends BioPAXElement> T getObject(String urn, Class<T> clazz) 
-	{
-		BioPAXElement bpe = getObject(urn);
-		if(clazz.isInstance(bpe)) {
-			return (T) bpe;
-		} else {
-			if(bpe != null) log.error("getObject(" +
-				urn + ", " + clazz.getSimpleName() + 
-				"): returned object has different type, " 
-				+ bpe.getModelInterface());
-			return null;
-		}
-	}
-
-
-	/* (non-Javadoc)
-	 * @see cpath.dao.WarehouseDAO#getByXref(java.util.Set, java.lang.Class)
-	 * 
-	 * xrefs (args) are expected to be "normalized"!
-	 * 
-	 */
-	@Override
-	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public Set<String> getByXref(Set<? extends Xref> xrefs, 
-		Class<? extends XReferrable> clazz) 
-	{
-		Set<String> toReturn = new HashSet<String>();
-		
-		for (Xref xref : xrefs) {
-			// load persistent Xref by RDFId
-			Xref x = (Xref) getByID(xref.getRDFId());
-			if(x == null) {
-				log.warn("getByXref: no matching xref found for: " +
-					xref + " - " + xref.getRDFId() + ". Skipping.");
-				continue;
-			}
-			// collect owners's ids (of requested type only)
-			for(XReferrable xr: x.getXrefOf()) {
-				if (clazz.isInstance(xr)) {
-					toReturn.add(xr.getRDFId());
-				}
-			}
-		}
-		
-		return toReturn;
-	}
-	
 	
 
 	/** 
@@ -712,6 +666,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
+	@Deprecated
 	public Integer count(String query, Class<? extends BioPAXElement> filterBy) {
 		Long toReturn;
 
@@ -745,24 +700,30 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	 */
 	@Transactional
 	@Override
-	public void initialize(BioPAXElement element) {
-		session().update(element);
-		
-		// init. biopax properties
-		Set<PropertyEditor> editors = simpleIO.getEditorMap().getEditorsOf(
-				element);
-		if (editors != null)
-			for (PropertyEditor editor : editors) {
-				Hibernate.initialize(editor.getValueFromBean(element)); // does collections (when multiple cardinality editor) as well!
-			}
+	public void initialize(Object obj) {
+		if(obj instanceof BioPAXElement) {
+			BioPAXElement element = (BioPAXElement) obj;
+			// re-associate with a session
+			session().update(element);
+			// init. biopax properties
+			Set<PropertyEditor> editors = simpleIO.getEditorMap()
+				.getEditorsOf(element);
+			if (editors != null)
+				for (PropertyEditor editor : editors) {
+					// it can treat collections (when multiple cardinality editor) as well!
+					Hibernate.initialize(editor.getValueFromBean(element)); 
+				}
 
-		// init. inverse object properties (xxxOf)
-		Set<ObjectPropertyEditor> invEditors = simpleIO.getEditorMap()
+			// init. inverse object properties (xxxOf)
+			Set<ObjectPropertyEditor> invEditors = simpleIO.getEditorMap()
 				.getInverseEditorsOf(element);
-		if (invEditors != null)
-			for (ObjectPropertyEditor editor : invEditors) {
-				Hibernate.initialize(editor.getInverseValueFromBean(element)); // does collections as well!
+			if (invEditors != null) {
+				for (ObjectPropertyEditor editor : invEditors) {
+					// does collections as well!
+					Hibernate.initialize(editor.getInverseValueFromBean(element)); 
+				}
 			}
+		}
 	}
 	
 	
@@ -815,6 +776,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		}
 	}
 
+	
 	/* (non-Javadoc)
 	 * @see cpath.dao.PaxtoolsDAO#runAnalysis(cpath.dao.Analysis, java.lang.Object[])
 	 */
@@ -837,22 +799,36 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 		return null;
 	}
 
+	
 	@Override
 	public void replace(BioPAXElement existing, BioPAXElement replacement) {
 		throw new UnsupportedOperationException("not supported");
 	}
 
+	
 	@Override
 	public void repair() {
 		throw new UnsupportedOperationException("not supported");
 	}
-
-	public boolean isWarehouseMode() {
-		return warehouseMode;
-	}
-
-	public void setWarehouseMode(boolean warehouseMode) {
-		this.warehouseMode = warehouseMode;
+	
+	
+	/**
+	 * Checks an object is instance of at least
+	 * on of classes in the list.
+	 * 
+	 * @param classes
+	 * @param obj
+	 * @return
+	 */
+	protected boolean isInstanceofOneOf( 
+			BioPAXElement obj, Class<? extends BioPAXElement>... classes) 
+	{
+			for(Class<? extends BioPAXElement> c : classes) {
+				if(c.isInstance(obj)) {
+					return true;
+				}
+			}	
+			return false;
 	}
 	
 }

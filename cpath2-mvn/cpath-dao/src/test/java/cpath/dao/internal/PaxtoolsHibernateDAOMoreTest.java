@@ -65,7 +65,6 @@ public class PaxtoolsHibernateDAOMoreTest {
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 				"classpath:testContext-pcDAO.xml");
 		paxtoolsDAO = (PaxtoolsDAO) context.getBean("pcDAO");
-		paxtoolsDAO.setWarehouseMode(true); // to search in utility classes as well
     }
     
 	

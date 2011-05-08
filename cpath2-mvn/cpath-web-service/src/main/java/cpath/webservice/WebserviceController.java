@@ -128,15 +128,15 @@ public class WebserviceController {
     @RequestMapping(value="/search")
     @ResponseBody
     public String fulltextSearch(
-    		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
+    		@RequestParam(value="type", required=false) Class<? extends BioPAXElement>[] types, 
     		@RequestParam(value="q", required=true) String query,
     		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms,
     		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources)
     {		
     	String body = "";
 
-		if (type == null) {
-			type = BioPAXElement.class;
+		if (types == null || types.length == 0) {
+			types = new Class[]{BioPAXElement.class};
 			if (log.isInfoEnabled())
     			log.info("Type not specified/recognized;" +
     					" - using all (BioPAXElement).");
@@ -144,8 +144,8 @@ public class WebserviceController {
 		}
 
 		if (log.isDebugEnabled())
-			log.debug("Fulltext Search for type:" + type.getCanonicalName()
-					+ ", query:" + query);
+			log.debug("Fulltext Search (for " + Arrays.toString(types)
+					+ "), query:" + query);
 
 		
 		String[] taxons = null; 
@@ -171,10 +171,10 @@ public class WebserviceController {
 		}
 		
 		Map<ResultMapKey, Object> results = 
-			service.find(query, type, false, taxons, dsources);
+			service.find(query, types, taxons, dsources);
 		
-		body = getListDataBody(results, query + " (in " + type.getSimpleName()
-				+ ")");
+		body = getListDataBody(results, query + " (in " 
+				+ Arrays.toString(types) + ")");
 
 		return body;
 	}

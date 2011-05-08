@@ -55,7 +55,7 @@ import org.springframework.stereotype.Service;
 
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.SearchFilter;
+import cpath.dao.filters.SearchFilter;
 import cpath.dao.internal.filters.GeneOrganismFilter;
 import cpath.dao.internal.filters.SimplePhysicalEntityOrganismFilter;
 import cpath.service.analyses.CommonStreamAnalysis;
@@ -140,21 +140,18 @@ public class CPathServiceImpl implements CPathService {
 	 */
 	@Override
 	public Map<ResultMapKey, Object> find(String queryStr, 
-			Class<? extends BioPAXElement> biopaxClass, boolean countOnly,
-			String[] taxids, String... dsources) 
+			Class<? extends BioPAXElement>[] biopaxClasses, String[] taxids,
+			String... dsources) 
 	{
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 
-		if(biopaxClass == null) 
-			biopaxClass = BioPAXElement.class;
+		if(biopaxClasses == null) 
+			biopaxClasses = new Class[]{};
+		
 		if(taxids == null)
 			taxids = new String[]{};
 		
 		try {
-			if (countOnly) {
-				Integer count =  mainDAO.count(null, biopaxClass);
-				map.put(COUNT, count);
-			} else {
 				//TODO convert the organisms, dsources into the SearchFilter list  
 				SearchFilter<Gene, BioSource> gof = new GeneOrganismFilter();
 				//TODO set values
@@ -163,11 +160,10 @@ public class CPathServiceImpl implements CPathService {
 				//TODO add more
 				
 				// do search
-				Collection<String> data = mainDAO.find(queryStr, biopaxClass, gof, sof); 
+				Collection<String> data = mainDAO.find(queryStr, biopaxClasses, gof, sof); 
 				
 				map.put(DATA, data);
 				map.put(COUNT, data.size()); // becomes Integer
-			}
 		} catch (Exception e) {
 			map.put(ERROR, e.toString());
 		}

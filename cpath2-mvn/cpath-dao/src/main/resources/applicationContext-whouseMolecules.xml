@@ -46,9 +46,8 @@
         <property name="sessionFactory" ref="moleculesSessionFactory" />
     </bean>
 
-    <bean id="moleculesDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
+    <bean id="moleculesDAO" class="cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="moleculesSessionFactory"/>
-        <property name="warehouseMode" value="true"/>
     </bean>
 
     <bean id="cpath2_molecules" class="cpath.dao.internal.DataServicesFactoryBean"/>

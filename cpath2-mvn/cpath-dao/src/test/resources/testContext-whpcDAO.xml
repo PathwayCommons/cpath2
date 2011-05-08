@@ -47,7 +47,7 @@
         <qualifier value="main" type="org.springframework.beans.factory.annotation.Qualifier"/>
     </bean>
 
-    <bean id="pcDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
+    <bean id="whpcDAO" class="cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="pcSessionFactory"/>
     </bean>
 
