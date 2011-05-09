@@ -27,7 +27,7 @@
 
 package cpath.webservice.args.binding;
 
-import cpath.service.CPathService.GraphQueryDirection;
+import org.biopax.paxtools.query.algorithm.Direction;
 
 import java.beans.PropertyEditorSupport;
 
@@ -41,11 +41,11 @@ public class GraphQueryDirectionEditor extends PropertyEditorSupport {
 	@Override
 	public void setAsText(String arg0) throws IllegalArgumentException
 	{
-		GraphQueryDirection value = null;
+		Direction value = null;
 
 		try
 		{
-			value = GraphQueryDirection.valueOf(arg0.trim().toUpperCase());
+			value = Direction.valueOf(arg0.trim().toUpperCase());
 		}
 		catch (IllegalArgumentException e)
 		{

@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.QueryExecuter;
+import org.biopax.paxtools.query.algorithm.Direction;
 
 import java.util.Set;
 
@@ -63,14 +64,11 @@ public class NeighborhoodAnalysis implements Analysis {
 		// Search limit
 		int limit = (Integer) args[1];
 
-		// Upstream flag
-		boolean upstream = (Boolean) args[2];
-
-		// Downstream flag
-		boolean downstream = (Boolean) args[3];
+		// Direction
+		Direction direction = (Direction) args[2];
 
 		// Execute the query
-		return QueryExecuter.runNeighborhood(source, model, limit, upstream, downstream);
+		return QueryExecuter.runNeighborhood(source, model, limit, direction);
 	}
 
 }

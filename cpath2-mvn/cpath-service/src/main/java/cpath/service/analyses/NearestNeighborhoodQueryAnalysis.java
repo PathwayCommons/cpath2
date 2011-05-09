@@ -37,6 +37,7 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.QueryExecuter;
 
 import cpath.dao.Analysis;
+import org.biopax.paxtools.query.algorithm.Direction;
 
 /**
  * Nearest neighborhood graph query wrapper (cPath2 DAO plugin)
@@ -68,7 +69,7 @@ public class NearestNeighborhoodQueryAnalysis implements Analysis {
 		}
 		
 		return QueryExecuter
-			.runNeighborhood(elements, model, 1, true, true);
+			.runNeighborhood(elements, model, 1, Direction.BOTHSTREAM);
 	}
 
 }

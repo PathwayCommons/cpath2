@@ -27,7 +27,7 @@
 
 package cpath.webservice.args.binding;
 
-import cpath.service.CPathService.GraphQueryLimit;
+import org.biopax.paxtools.query.algorithm.LimitType;
 
 import java.beans.PropertyEditorSupport;
 
@@ -42,11 +42,11 @@ public class GraphQueryLimitEditor extends PropertyEditorSupport {
 	@Override
 	public void setAsText(String arg0) throws IllegalArgumentException
 	{
-		GraphQueryLimit value = null;
+		LimitType value = null;
 
 		try
 		{
-			value = GraphQueryLimit.valueOf(arg0.trim().toUpperCase());
+			value = LimitType.valueOf(arg0.trim().toUpperCase());
 		}
 		catch (IllegalArgumentException e)
 		{

@@ -29,8 +29,6 @@ package cpath.webservice;
 
 import cpath.service.CPathService;
 import static cpath.service.CPathService.*;
-import static cpath.service.CPathService.GraphQueryDirection.*;
-import static cpath.service.CPathService.GraphQueryLimit.*;
 import static cpath.service.CPathService.OutputFormat.*;
 import cpath.service.CPathService.ResultMapKey;
 import cpath.service.internal.CPathServiceImpl;
@@ -43,6 +41,8 @@ import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.model.level3.UtilityClass;
+import org.biopax.paxtools.query.algorithm.Direction;
+import org.biopax.paxtools.query.algorithm.LimitType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -85,8 +85,8 @@ public class WebserviceController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
-        binder.registerCustomEditor(GraphQueryDirection.class, new GraphQueryDirectionEditor());
-        binder.registerCustomEditor(GraphQueryLimit.class, new GraphQueryLimitEditor());
+        binder.registerCustomEditor(Direction.class, new GraphQueryDirectionEditor());
+        binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
         binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
@@ -187,59 +187,56 @@ public class WebserviceController {
     public String graphQuery(
 		@RequestParam(value="format", required=false) OutputFormat format,
 		@RequestParam(value="kind", required=true) GraphType kind, //required!
-		@RequestParam(value="source", required=false) String[] sources,
-		@RequestParam(value="dest", required=false) String[] dests,
+		@RequestParam(value="source", required=false) String[] source,
+		@RequestParam(value="dest", required=false) String[] target,
 		@RequestParam(value="limit", required=false, defaultValue = "1") Integer limit,
-		@RequestParam(value="limit_type", required=false) GraphQueryLimit limitType,
-		@RequestParam(value="direction", required=false) GraphQueryDirection direction
+		@RequestParam(value="limit_type", required=false) LimitType limitType,
+		@RequestParam(value="direction", required=false) Direction direction
 		)
     {
-		String toReturn = "";
-
 		if(log.isInfoEnabled())
 			log.info("GraphQuery format:" + format + ", kind:" + kind
-				+ ( (sources == null) ? "no source nodes" : ", source:" + sources.toString() )
-				+ ( (dests == null) ? "no dest. nodes" : ", dest:" + dests.toString()) 
-				+ ", limit: " + limit	
-				);
+				+ ((source == null) ? "no source nodes" : ", source:" + source.toString())
+				+ ((target == null) ? "no target nodes" : ", target:" + target.toString())
+				+ ", limit: " + limit
+			);
 
 		// set defaults
 		if(format==null) { format = BIOPAX; }
 		if(limit == null) { limit = 1; } 
-		if(direction == null) { direction = DOWNSTREAM; }
-		if(limitType == null) { limitType = NORMAL; }
+		if(direction == null) { direction = Direction.DOWNSTREAM; }
+		if(limitType == null) { limitType = LimitType.NORMAL; }
 		
-		String response = checkSourceAndLimit(sources, limit);
-		if (response != null) 
-			return response; // return error (xml)
+		String response = checkSourceAndLimit(source, limit);
+		if (response != null) return response; // return error (xml)
 		
 		Map<ResultMapKey, Object> result;
 		
 		switch (kind) {
 		case NEIGHBORHOOD:
-			result = service.getNeighborhood(format, sources, limit, direction);
-			toReturn = getBody(result, format, "nearest neighbors of " + sources.toString());
+			result = service.getNeighborhood(format, source, limit, direction);
+			response = getBody(result, format, "nearest neighbors of " + source.toString());
 			break;
 		case PATHSBETWEEN:
-			result = service.getPathsBetween(format, sources, dests, limit, limitType);
-			response = getBody(result, format, "paths between " + sources.toString() 
-					+ " and " + dests.toString());
+			result = service.getPathsBetween(format, source, target, limit, limitType);
+			response = getBody(result, format, "paths between " + source.toString()
+				+ " and " + target.toString());
 			break;
 		case COMMONSTREAM:
-			if (direction != UPSTREAM && direction != DOWNSTREAM) {
+			if (direction == Direction.BOTHSTREAM) {
 				return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INVALID_ARGUMENT,
-					"direction parameter should be either " + UPSTREAM + " or " + DOWNSTREAM);
+					"Direction parameter cannot be " + direction + " here");
 			}
-			result = service.getCommonStream(format, sources, limit, direction);
+			result = service.getCommonStream(format, source, limit, direction);
 			response = getBody(result, format, "common " + direction + "stream of " +
-					sources.toString());
+					source.toString());
 			break;
 		default:
 			// impossible (should has failed earlier)
 			break;
 		}
 
-		return toReturn.toString();
+		return response;
 	}
 
 	

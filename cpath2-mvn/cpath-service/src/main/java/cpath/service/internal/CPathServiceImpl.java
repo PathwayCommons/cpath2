@@ -47,6 +47,8 @@ import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Gene;
 import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
 import org.biopax.paxtools.query.algorithm.CommonStreamQuery;
+import org.biopax.paxtools.query.algorithm.Direction;
+import org.biopax.paxtools.query.algorithm.LimitType;
 import org.biopax.paxtools.query.algorithm.PoIQuery;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
@@ -62,9 +64,6 @@ import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
 import cpath.service.CPathService;
-import cpath.service.CPathService.ResultMapKey;
-import static cpath.service.CPathService.GraphQueryDirection.*;
-import static cpath.service.CPathService.GraphQueryLimit.*;
 
 import cpath.warehouse.CvRepository;
 import cpath.warehouse.MetadataDAO;
@@ -420,25 +419,20 @@ public class CPathServiceImpl implements CPathService {
 		map.put(DATA, exportToOWL(model));
 	}
 
-
 	@Override
 	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String[] source,
-		Integer limit, GraphQueryDirection direction)
+		Integer limit, Direction direction)
 	{
-		boolean upstream = (direction != DOWNSTREAM); //up or both
-		boolean downstream = (direction != UPSTREAM); // down or both	
 		Analysis analysis = new NeighborhoodAnalysis();
-		return runAnalysis(analysis, format, source, limit, upstream, downstream);
+		return runAnalysis(analysis, format, source, limit, direction);
 	}
 
 	
 	@Override
 	public Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source,
-		String[] target, Integer limit, GraphQueryLimit limitType)
+		String[] target, Integer limit, LimitType limitType)
 	{
 		
-		boolean limitT = limitType == NORMAL ?
-				PoIQuery.NORMAL_LIMIT : PoIQuery.SHORTEST_PLUS_K;
 		Analysis analysis = new PathsBetweenAnalysis();
 		return runAnalysis(analysis,format, source, target, limit, limitType);
 	}
@@ -446,10 +440,8 @@ public class CPathServiceImpl implements CPathService {
 	
 	@Override
 	public Map<ResultMapKey, Object> getCommonStream(OutputFormat format, String[] source,
-		Integer limit, GraphQueryDirection direction)
+		Integer limit, Direction direction)
 	{
-		boolean dir = direction == UPSTREAM ?
-			CommonStreamQuery.UPSTREAM : CommonStreamQuery.DOWNSTREAM;
 		Analysis analysis = new CommonStreamAnalysis();
 		return runAnalysis(analysis,format, source, limit, direction);
 	}

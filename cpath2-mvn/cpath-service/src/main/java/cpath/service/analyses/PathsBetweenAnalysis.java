@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.QueryExecuter;
+import org.biopax.paxtools.query.algorithm.LimitType;
 
 import java.util.Set;
 
@@ -76,7 +77,7 @@ public class PathsBetweenAnalysis implements Analysis {
 		}
 
 		// Limit type
-		boolean limitType = (Boolean) args[2];
+		LimitType limitType = (LimitType) args[2];
 
 		// Search limit
 		int limit = (Integer) args[3];
