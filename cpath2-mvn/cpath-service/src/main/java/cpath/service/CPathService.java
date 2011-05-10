@@ -30,6 +30,8 @@ package cpath.service;
 import java.util.Map;
 
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.query.algorithm.Direction;
+import org.biopax.paxtools.query.algorithm.LimitType;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
@@ -88,22 +90,6 @@ public interface CPathService {
         private OutputFormat(String info) {
 			this.info = info;
 		}
-	}
-
-	
-	public static enum GraphQueryDirection
-	{
-		// Directions
-		UPSTREAM,
-		DOWNSTREAM,
-		BOTHSTREAM,
-	}
-	
-	
-	public static enum GraphQueryLimit
-	{
-		NORMAL,
-		SHORTEST_PLUS_K
 	}
 	
 	
@@ -164,7 +150,7 @@ public interface CPathService {
 	 * @return the neighborhood
 	 */
 	Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, 
-			String[] source, Integer limit, GraphQueryDirection direction);
+			String[] source, Integer limit, Direction direction);
 
 	/**
 	 * Runs a paths-between query from the given sources to the given targets.
@@ -177,7 +163,7 @@ public interface CPathService {
 	 * @return paths between
 	 */
 	Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source, 
-			String[] target, Integer limit, GraphQueryLimit limitType);
+			String[] target, Integer limit, LimitType limitType);
 
 	/**
 	 * Runs a common upstream or downstream query.
@@ -189,7 +175,7 @@ public interface CPathService {
 	 * @return common stream
 	 */
 	Map<ResultMapKey, Object> getCommonStream(OutputFormat format, 
-			String[] source, Integer limit, GraphQueryDirection direction);
+			String[] source, Integer limit, Direction direction);
 
 	//---------------------------------------------------------------------------------------------|
 

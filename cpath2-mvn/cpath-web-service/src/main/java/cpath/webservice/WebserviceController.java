@@ -29,8 +29,6 @@ package cpath.webservice;
 
 import cpath.service.CPathService;
 import static cpath.service.CPathService.*;
-import static cpath.service.CPathService.GraphQueryDirection.*;
-import static cpath.service.CPathService.GraphQueryLimit.*;
 import static cpath.service.CPathService.OutputFormat.*;
 import cpath.service.CPathService.ResultMapKey;
 import cpath.service.internal.CPathServiceImpl;
@@ -43,6 +41,8 @@ import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.model.level3.UtilityClass;
+import org.biopax.paxtools.query.algorithm.Direction;
+import org.biopax.paxtools.query.algorithm.LimitType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -85,8 +85,8 @@ public class WebserviceController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
-        binder.registerCustomEditor(GraphQueryDirection.class, new GraphQueryDirectionEditor());
-        binder.registerCustomEditor(GraphQueryLimit.class, new GraphQueryLimitEditor());
+        binder.registerCustomEditor(Direction.class, new GraphQueryDirectionEditor());
+        binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
         binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
@@ -190,8 +190,8 @@ public class WebserviceController {
 		@RequestParam(value="source", required=false) String[] sources,
 		@RequestParam(value="dest", required=false) String[] dests,
 		@RequestParam(value="limit", required=false, defaultValue = "1") Integer limit,
-		@RequestParam(value="limit_type", required=false) GraphQueryLimit limitType,
-		@RequestParam(value="direction", required=false) GraphQueryDirection direction
+		@RequestParam(value="limit_type", required=false) LimitType limitType,
+		@RequestParam(value="direction", required=false) Direction direction
 		)
     {
 		String toReturn = "";
@@ -206,8 +206,8 @@ public class WebserviceController {
 		// set defaults
 		if(format==null) { format = BIOPAX; }
 		if(limit == null) { limit = 1; } 
-		if(direction == null) { direction = DOWNSTREAM; }
-		if(limitType == null) { limitType = NORMAL; }
+		if(direction == null) { direction = Direction.DOWNSTREAM; }
+		if(limitType == null) { limitType = LimitType.NORMAL; }
 		
 		String response = checkSourceAndLimit(sources, limit);
 		if (response != null) 
@@ -226,9 +226,10 @@ public class WebserviceController {
 					+ " and " + dests.toString());
 			break;
 		case COMMONSTREAM:
-			if (direction != UPSTREAM && direction != DOWNSTREAM) {
+			if (direction != Direction.UPSTREAM && direction != Direction.DOWNSTREAM) {
 				return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INVALID_ARGUMENT,
-					"direction parameter should be either " + UPSTREAM + " or " + DOWNSTREAM);
+					"direction parameter should be either " + 
+						Direction.UPSTREAM + " or " + Direction.DOWNSTREAM);
 			}
 			result = service.getCommonStream(format, sources, limit, direction);
 			response = getBody(result, format, "common " + direction + "stream of " +

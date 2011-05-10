@@ -33,6 +33,7 @@ import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.QueryExecuter;
+import org.biopax.paxtools.query.algorithm.Direction;
 
 import java.util.Set;
 
@@ -60,7 +61,7 @@ public class CommonStreamAnalysis implements Analysis {
 		Set<BioPAXElement> source = Common.getAllByID(model, args[0]);
 
 		// Direction
-		boolean direction = (Boolean) args[1];
+		Direction direction = (Direction) args[1];
 
 		// Search limit
 		int limit = (Integer) args[2];
