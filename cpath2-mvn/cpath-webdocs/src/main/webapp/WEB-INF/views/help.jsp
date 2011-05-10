@@ -9,50 +9,56 @@
 	<meta name="description" content="cPath2 help" />
 	<meta name="keywords" content="cPath2, webservice, help, documentation" />
 	<title>cPath2 Help</title>
-	<script type="text/javascript" src="<c:url value="/resources/jquery-1.5.1.min.js" />"></script>
-	<script type="text/javascript" src="<c:url value="/resources/json.min.js" />"></script>
-	<script type="text/javascript" src="<c:url value="/resources/help.js" />"></script>
+	<script type="text/javascript" src="<c:url value="/resources/scripts/jquery-1.5.1.min.js" />"></script>
+	<script type="text/javascript" src="<c:url value="/resources/scripts/json.min.js" />"></script>
+	<script type="text/javascript" src="<c:url value="/resources/scripts/help.js" />"></script>
+  	<link rel="stylesheet" href="<c:url value="/resources/css/andreas08.css" />" type="text/css" media="screen,projection" />
 </head>
+
 <body>
-	<h2><fmt:message key="cpath2.welcome"/> <fmt:message key="cpath2.provider"/></h2>
-
-	<!-- this label is used in the javascript as a constant (to get the cPath2 ws base URL) -->
-	<p>
-		(<span id="wsroot" ><fmt:message key="cpath2.url"/></span>)
-	</p>
-	<div style="float: left;">
-		<div style="padding-bottom: 1em;">
-		<h2 id="title"></h2>
-		<label for="prev">back to: </label><a id="prev" href="#">help</a>
-		</div>
-		<div id="content" style="float: none;">
-			<pre id="info" style="text-align: left;"></pre><br />
-			<label for="example">Example: </label><a id="example" /><br /> 
-		</div>
-		<br />
-	</div>
-	
-	<div id="tree" style="float: right; padding: 2em;">
-		<em>TODO: navigation (a tree?)</em><br />
-	</div>
-	
-	<!-- 
-	<div id="mask" style="display: none;"></div>
-	<div id="popup" style="display: none;">
-		<div class="span-8 last">
-			<h3>Example</h3>
-			<form>
-				<fieldset>
-					<p>
-						<label for="result" /><br />
-						<textarea id="result" style="display: none;" readonly="readonly" />
-					</p>
-				</fieldset>
-			</form>
-			<a href="#" onclick="closePopup();">Close</a>
-		</div>
-	</div>
-	-->
-
+  <!-- set some variables to string constants from web.properties & messages.properties files -->
+  <span id="web_service_url" style="display:none"><fmt:message key="cpath2.url"/></span>
+  <span id="command_header_prefix" style="display:none"><fmt:message key="cpath2.command_header_prefix"/></span>
+  <span id="command_header_summary" style="display:none"><fmt:message key="cpath2.command_header_summary"/></span>
+  <span id="command_header_parameters" style="display:none"><fmt:message key="cpath2.command_header_parameters"/></span>
+  <span id="command_header_output" style="display:none"><fmt:message key="cpath2.command_header_output"/></span>
+  <span id="command_header_query" style="display:none"><fmt:message key="cpath2.command_header_query"/></span>
+  <span id="command_header_query_footnote" style="display:none"><fmt:message key="cpath2.command_header_query_footnote"/></span>
+  <span id="command_header_additional_parameters" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters"/></span>
+  <span id="command_header_additional_parameters_output" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_output"/></span>
+  <span id="command_header_additional_parameters_graph" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_graph"/></span>
+  <span id="command_header_additional_parameters_datasource" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_datasource"/></span>
+  <span id="command_header_additional_parameters_organism" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_organism"/></span>
+  <span id="command_header_additional_parameters_biopax" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_biopax"/></span>
+  <span id="command_header_additional_parameters_none" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_none"/></span>
+ <!-- place the content -->
+  <div id="container">
+    <jsp:include page="header.jsp" flush="true"/>
+    <div id="content">
+      <jsp:include page="feedback.jsp" flush="true"/>
+      <h1><fmt:message key="cpath2.welcome"/></h1>
+      <br>
+      <h1><fmt:message key="cpath2.web_service_title"/></h1>
+      <p><fmt:message key="cpath2.web_service_sub_title"/></p>
+	  <pre id="command_list" style="text-align: left;"></pre>
+	  <pre id="command_bodies" style="text-align: left;"></pre>
+      <h2><a name="additional_parameters"></a><fmt:message key="cpath2.command_header_additional_parameters"/>:</h2>
+	  <pre id="output_parameter" style="text-align: left;"></pre>
+	  <pre id="graph_parameter" style="text-align: left;"></pre>
+	  <pre id="datasource_parameter" style="text-align: left;"></pre>
+	  <pre id="organism_parameter" style="text-align: left;"></pre>
+	  <pre id="biopax_parameter" style="text-align: left;"></pre>
+      <br>
+      <!--
+	  <pre id="info" style="text-align: left;"></pre>
+	  <label for="example">Example: </label><a id="example" />
+      <p>
+        <a href="http://awabi.cbio.mskcc.org/cpath2-docs/">(back to home)</a>
+      </p>
+      -->
+  </div>
+    <jsp:include page="footer.jsp" flush="true"/>
+  </div>
 </body>
+
 </html>

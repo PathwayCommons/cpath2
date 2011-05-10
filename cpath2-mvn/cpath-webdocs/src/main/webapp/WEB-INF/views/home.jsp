@@ -9,9 +9,9 @@
 	<meta name="description" content="cPath2 help" />
 	<meta name="keywords" content="cPath2, webservice, help, documentation" />
 	<title>cPath2 Help</title>
-	<script type="text/javascript" src="<c:url value="/resources/jquery-1.5.1.min.js" />"></script>
-	<script type="text/javascript" src="<c:url value="/resources/json.min.js" />"></script>
-	<script type="text/javascript" src="<c:url value="/resources/home.js" />"></script>
+	<script type="text/javascript" src="<c:url value="/resources/scripts/jquery-1.5.1.min.js" />"></script>
+	<script type="text/javascript" src="<c:url value="/resources/scripts/json.min.js" />"></script>
+	<script type="text/javascript" src="<c:url value="/resources/scripts/home.js" />"></script>
 </head>
 <body>
 

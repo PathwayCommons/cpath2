@@ -131,7 +131,8 @@ public class WebserviceController {
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement>[] types, 
     		@RequestParam(value="q", required=true) String query,
     		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms,
-    		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources)
+    		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources,
+            @RequestHeader("User-Agent") String userAgent)
     {		
     	String body = "";
 
@@ -176,7 +177,9 @@ public class WebserviceController {
 		body = getListDataBody(results, query + " (in " 
 				+ Arrays.toString(types) + ")");
 
-		return body;
+        // hack to return "html" to browser so example on cpath-webdocs page
+        // shows up without having to view page code - only required for safari
+        return (userAgent.indexOf("Safari") != -1) ? getBodyAsHTML(body) : body;
 	}
 
     
@@ -284,8 +287,8 @@ public class WebserviceController {
 				.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 
 					result.get(ResultMapKey.ERROR).toString()));		
 		}
-		
-		return toReturn.toString();
+
+        return toReturn.toString();
 	}
   
     
@@ -305,6 +308,20 @@ public class WebserviceController {
 		
 		return toReturn;
 	}
+
+    private String getBodyAsHTML(String body) {
+
+        StringBuffer toReturn = new StringBuffer();
+
+        toReturn.append("<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">");
+        toReturn.append("<body>");
+        toReturn.append(body);
+        toReturn.append("</body>");
+        toReturn.append("</html>");
+
+        // outta here
+        return toReturn.toString();
+    }
 
     
     //TODO the following two methods were copied from the (removed) webservice2Controller and require some coding...

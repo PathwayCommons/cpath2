@@ -29,29 +29,19 @@ package cpath.webservice.args;
 
 public enum GraphType
 {
-	NEIGHBORHOOD,
-	PATHSBETWEEN,
-	COMMONSTREAM
+	NEIGHBORHOOD("searches the neighborhood of given source set of nodes"),
+    PATHSBETWEEN("finds the paths from a specific source set of states or entities to a specific target set of states or entities within the boundaries of a specified length limit"),
+    COMMONSTREAM("searches common downstream or common upstream of a specified set of entities based on the given directions within the boundaries of a specified length limit"),
 	;
 
-	// I know this looks very idiotic but there was no solution for using those enums in
-	// @RequestMapping. It requires a constant string and if we use enum values while creating the
-	// constant string it won't accept. So I defined below strings representing enum values. If
-	// you change this just make sure that string value is the same with enum (enum should be
-	// capital letters and string is case insensitive).
+    private final String description;
 
-	public static final String NEIGHBORHOOD_STR = "neighborhood";
-	public static final String PATHSBETWEEN_STR = "pathsbetween";
-	public static final String COMMONSTREAM_STR = "commonstream";
+    public String getDescription() {
+        return description;
+    }
 
-	public String getFullName()
-	{
-		switch (this)
-		{
-			case NEIGHBORHOOD: return NEIGHBORHOOD_STR;
-			case PATHSBETWEEN: return PATHSBETWEEN_STR;
-			case COMMONSTREAM: return COMMONSTREAM_STR;
-		}
-		return null;
-	}
+
+    private GraphType(String description) {
+        this.description = description;
+    }
 }
