@@ -244,8 +244,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * Paxtools MAIN DAO implementation details. 
 	 * 
 	 * unlike {@link WarehousePaxtoolsHibernateDAO#find(String, Class[], SearchFilter...)},
-	 * 'filterByTypes' parameter here works rather similar to the rest of the (extra) filters, 
-	 * but it goes the last in the filters chain! Plus, there is one extra step - lookup, i.e.:
+	 * 'filterByTypes' parameter here works rather similar to the "extra filters", 
+	 * but it goes the last in the filters chain! Plus, there is one extra step - 
+	 * lookup for parent entities, i.e.:
 	 * - first, a {@link FullTextQuery} query does not use any class filters and just returns 
 	 *   matching objects (chances are, the list will contain many {@link UtilityClass} elements);
 	 * - second, 'extraFilters' are applied (to exclude undesired elements earlier...);
@@ -254,8 +255,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 *   (it takes to use PaxtoolsAPI, e.g., inverse properties or path accessors...);
 	 *   TODO possibly to implement the same using HQL?..
 	 * - next, 'filterByTypes' are now applied;
-	 * - finally, 'extraFilters' are applied (again) to generate the final result
-	 * (the last step will be to convert the objects list to the list of their identifiers)
+	 * - [not sure] now, 'extraFilters' are applied AGAIN to generate the final result
+	 * - the last step will be to convert the objects list to the list of their identifiers
 	 * 
 	 * @see WarehousePaxtoolsHibernateDAO#find(String, Class[], SearchFilter...)
 	 * 
@@ -823,6 +824,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	protected boolean isInstanceofOneOf( 
 			BioPAXElement obj, Class<? extends BioPAXElement>... classes) 
 	{
+			if(classes.length == 0)
+				return true;
+		
 			for(Class<? extends BioPAXElement> c : classes) {
 				if(c.isInstance(obj)) {
 					return true;

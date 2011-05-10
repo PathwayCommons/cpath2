@@ -216,7 +216,7 @@ public class HelpController {
     	Help help = new Help();
     	help.setTitle(kind.name());
     	help.setId(kind.name());
-    	help.setInfo(kind.getFullName());
+    	//help.setInfo(kind.getFullName());
     	return help;
     }
  
