@@ -192,7 +192,7 @@ public class PaxtoolsHibernateDAOTest {
 	
 	
 	@Test
-	public void testGetBiID() throws Exception {		
+	public void testGetByID() throws Exception {		
 		// get a protein
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
 		BioPAXElement bpe =  paxtoolsDAO.getByID(
