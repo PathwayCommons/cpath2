@@ -38,26 +38,32 @@ import static cpath.webservice.args.CmdArgs.*;
  */
 public enum Cmd {
 	SEARCH("Full-text search. " +
-			"Can filter by: BioPAX class, organism, and datasource. " +
-			"Returns the list of identifiers that can be used with 'get' command " +
-			"(TODO more colums: type, organisms, datasources, processes; " +
-			"and enable lucene syntax and boost...) This command has four parameters " +
-			" (the last three are optional)", 
+           "Returns the list of identifiers that can be used with the 'get' command " +
+           "This command has four parameters.",
+           "http://awabi.cbio.mskcc.org/cpath2/search?q=brca*",
+           "Ordered list of IDs to records within pathway commons that match search criteria.",
 			new CmdArgs[]{q, type, organism, datasource}),
 	GET("Gets a BioPAX element or sub-model " +
-			"by ID(s).  This command has two parameters " +
-			" (the last is optional,- default is 'biopax')", 
-			new CmdArgs[]{uri, format}),
-	GRAPH("An advanced graph query (see : kind)." +
-			" Returns a sub-model as the result. This command has four parameters " +
-			" (the last two are optional, - default format is 'biopax')", 
-			new CmdArgs[]{kind, source, dest, format}),
+        "by ID(s).  This command has two parameters.",
+        "http://awabi.cbio.mskcc.org/cpath2/get?uri=urn:miriam:uniprot:P38398",
+        "BioPAX by default, other formats as specified by the format parameter.  See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
+        new CmdArgs[]{uri, format}),
+	GRAPH("Executes an advanced graph query on the data within pathway commons. " +
+          "Returns a sub-model as the result. This command has four parameters.",
+          "http://awabi.cbio.mskcc.org/cpath2/graph?kind=neighborhood&source=HTTP:%2F%2FWWW.REACTOME.ORG%2FBIOPAX%23BRCA2__NUCLEOPLASM__1_9606",
+          "BioPAX by default, other formats as specified by the format parameter.  See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
+          new CmdArgs[]{kind, source, dest, format})
+        ;
+    /* should we expose this method?
 	CONVERT("Converts from BioPAX to simple formats.  This command has two parameters",
 			new CmdArgs[]{biopax, format}),
 	;
+    */
 	
 	private final CmdArgs[] args; //Array is better for use in json/jsp than List/Set
 	private final String info;
+    private final String example;
+    private final String output;
 	
 	public CmdArgs[] getArgs() {
 		return args;
@@ -66,9 +72,19 @@ public enum Cmd {
 	public String getInfo() {
 		return info;
 	}
+
+    public String getExample() {
+        return example;
+    }
+    
+    public String getOutput() {
+        return output;
+    }
 	
-	private Cmd(String info, CmdArgs... args) {
+	private Cmd(String info, String example, String output, CmdArgs... args) {
 		this.info = info;
+        this.example = example;
+        this.output = output;
 		this.args = args;
 	}
 }

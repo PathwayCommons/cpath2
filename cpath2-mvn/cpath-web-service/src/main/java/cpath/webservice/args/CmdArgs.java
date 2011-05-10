@@ -34,21 +34,18 @@ package cpath.webservice.args;
  *
  */
 public enum CmdArgs {
-	uri("a URI, BioPAX element's ID (multiple 'uri=' per query are allowed). " +
-		"Note: normally (in a client app), you should not encode URIs, but, " +
-		"when for some reason you're using a browser to access the web service," +
-		"you should encode, e.g., HTTP://WWW.REACTOME.ORG/BIOPAX#BRCA2__NUCLEOPLASM__1_9606" +
-		" becomes HTTP:%2F%2FWWW.REACTOME.ORG%2FBIOPAX%23BRCA2__NUCLEOPLASM__1_9606"),
-	q("a query string"),
-	type("a BioPAX class"),
-	kind("advanced (graph) query type"),
-	format("output format (converting from BioPAX)"),
-	organism("filter by organism (multiple 'organism=' are allowed)"),
-	datasource("filter by data sources (multiple 'datasource=' are allowed)"),
+	uri("a BioPAX element ID as specified as a miriam URI (multiple 'uri=' per query are allowed)"),
+    q("a query string."),
+	type("a BioPAX class - see the <a href=\"#valid_biopax_parameter\">valid values for type parameter</a> below"),
+	kind("graph query type - see the <a href=\"#valid_graph_parameter\">valid values for kind parameter</a> below"),
+	format("output format - see the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below"),
+	organism("filter by organism (multiple 'organism=' are allowed) - see the <a href=\"#valid_organism_parameter\">valid values for organism parameter</a> below"),
+	datasource("filter by data sources (multiple 'datasource=' are allowed) - see the <a href=\"#valid_datasource_parameter\">valid values for datasource parameter</a> below"),
 	source("graph query source URI (multiple 'source=' are allowed)"),
 	dest("graph query destination URI (multiple 'dest=' are allowed)"),
-	biopax("BioPAX OWL to convert"),
-	alg("a user-defined algorithm to run (a java Some.class using Paxtools core API)"), //TODO future (graph query extention point, plugins...)
+    biopax("a BioPAX OWL to convert"),
+    //TODO future (graph query extention point, plugins...)
+    //alg("a user-defined algorithm to run."), 
 	;
 	
 	private final String info;

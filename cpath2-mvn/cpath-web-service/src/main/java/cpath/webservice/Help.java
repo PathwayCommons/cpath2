@@ -24,6 +24,7 @@ public class Help implements Comparable<Help> {
 	private String title;
 	private String info;
 	private String example;
+    private String output;
 	private Set<Help> members;
 	
 	
@@ -89,6 +90,18 @@ public class Help implements Comparable<Help> {
 	 */
 	public void setExample(String example) {
 		this.example = example;
+	}
+	/**
+	 * @return the output
+	 */
+	public String getOutput() {
+		return output;
+	}
+	/**
+	 * @param output the output to set
+	 */
+	public void setOutput(String output) {
+		this.output = output;
 	}
 	/**
 	 * @return the members

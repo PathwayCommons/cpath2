@@ -9,11 +9,11 @@
 	<meta name="description" content="cPath2 help" />
 	<meta name="keywords" content="cPath2, webservice, help, documentation" />
 	<title>cPath2 Tests</title>
-	<script type="text/javascript" src="<c:url value="/resources/jquery-1.5.1.min.js" />"></script>
-	<script type="text/javascript" src="<c:url value="/resources/json.min.js" />"></script>
-  	<link rel="stylesheet" href="<c:url value="/resources/qunit.css" />" type="text/css" media="screen" />
-	<script type="text/javascript" src="<c:url value="/resources/qunit.js" />"></script>
-	<script type="text/javascript" src="<c:url value="/resources/tests.js" />"></script>
+	<script type="text/javascript" src="<c:url value="/resources/scripts/jquery-1.5.1.min.js" />"></script>
+	<script type="text/javascript" src="<c:url value="/resources/scripts/json.min.js" />"></script>
+  	<link rel="stylesheet" href="<c:url value="/resources/css/qunit.css" />" type="text/css" media="screen" />
+	<script type="text/javascript" src="<c:url value="/resources/scripts/qunit.js" />"></script>
+	<script type="text/javascript" src="<c:url value="/resources/scripts/tests.js" />"></script>
 </head>
 <body>
 

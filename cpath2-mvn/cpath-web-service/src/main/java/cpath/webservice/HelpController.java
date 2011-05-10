@@ -37,6 +37,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.Xref;
 import org.bridgedb.DataSource;
@@ -129,6 +130,8 @@ public class HelpController {
     	help.setId(cmd.name());
 		help.setTitle(cmd.name());
 		help.setInfo(cmd.getInfo());
+        help.setExample(cmd.getExample());
+        help.setOutput(cmd.getOutput());
 		for(CmdArgs a: cmd.getArgs()) {
 			Help ah = new Help(a.name());
 			ah.setTitle(a.name());
@@ -216,7 +219,7 @@ public class HelpController {
     	Help help = new Help();
     	help.setTitle(kind.name());
     	help.setId(kind.name());
-    	//help.setInfo(kind.getFullName());
+    	help.setInfo(kind.getDescription());
     	return help;
     }
  
@@ -292,10 +295,13 @@ public class HelpController {
     public @ResponseBody Help getOrganism(@PathVariable OrganismDataSource o) {
     	Help help = new Help();
     	String taxid = o.asDataSource().getSystemCode();
-    	help.setId(taxid); //taxonomy id
+    	//help.setId(taxid); //taxonomy id
+        BioSource bs = (BioSource)o.asDataSource().getOrganism();
+        help.setId(bs.getRDFId()); // miriam
     	help.setTitle(o.asDataSource().getFullName());
     	// a hack (BioSource was stored in the o.organism field) -
-    	help.setInfo(o.asDataSource().getOrganism().toString()); 
+    	//help.setInfo(o.asDataSource().getOrganism().toString()); 
+        help.setInfo(bs.getName().toString());
     	//- got the name and Miriam URN (only when data were normalized)
 
     	return help;

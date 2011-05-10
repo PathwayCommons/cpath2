@@ -17,7 +17,8 @@
     <!-- JSR-303 (validation) support will be detected on classpath and enabled automatically -->
     <context:annotation-config/>
 	
-	<mvc:view-controller path="/" view-name="home"/>
+	<mvc:view-controller path="/" view-name="help"/>
+	<mvc:view-controller path="/home" view-name="home"/>
 	<mvc:view-controller path="/help" view-name="help"/>
 	<mvc:view-controller path="/tests" view-name="tests"/>
 	
