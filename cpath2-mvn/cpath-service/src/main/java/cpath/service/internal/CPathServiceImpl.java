@@ -44,6 +44,7 @@ import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.BioSource;
+import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.Gene;
 import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
 import org.biopax.paxtools.query.algorithm.CommonStreamQuery;
@@ -58,8 +59,7 @@ import org.springframework.stereotype.Service;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
-import cpath.dao.internal.filters.GeneOrganismFilter;
-import cpath.dao.internal.filters.SimplePhysicalEntityOrganismFilter;
+import cpath.dao.internal.filters.EntityByOrganismRelationshipXrefsFilter;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
@@ -151,15 +151,12 @@ public class CPathServiceImpl implements CPathService {
 			taxids = new String[]{};
 		
 		try {
-				//TODO convert the organisms, dsources into the SearchFilter list  
-				SearchFilter<Gene, BioSource> gof = new GeneOrganismFilter();
-				//TODO set values
-				SearchFilter<SimplePhysicalEntity, BioSource> sof = new SimplePhysicalEntityOrganismFilter();
+				SearchFilter<Entity, BioSource> sof = new EntityByOrganismRelationshipXrefsFilter();
 				//TODO set values
 				//TODO add more
 				
 				// do search
-				Collection<String> data = mainDAO.find(queryStr, biopaxClasses, gof, sof); 
+				Collection<String> data = mainDAO.find(queryStr, biopaxClasses, sof); 
 				
 				map.put(DATA, data);
 				map.put(COUNT, data.size()); // becomes Integer
@@ -314,8 +311,9 @@ public class CPathServiceImpl implements CPathService {
 			OutputStream edgeStream = new ByteArrayOutputStream();
             if (extended) {
                 OutputStream nodeStream = new ByteArrayOutputStream();
-                sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream,
-                		true, SimpleEditorMap.get(m.getLevel()), "NAME", "XREF", "ORGANISM");
+                //FIXME writeInteractionsInSIFNX method signature has changed!
+                //sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream,
+                //		true, SimpleEditorMap.get(m.getLevel()), "NAME", "XREF", "ORGANISM");
                 map.put(DATA, edgeStream.toString() + "\n\n" + nodeStream.toString());
             }
             else {

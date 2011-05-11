@@ -361,10 +361,7 @@ public class PremergeImpl implements Premerge {
 		validation.getNormalizerOptions().setInferPropertyOrganism(true);
 		validation.getNormalizerOptions().setGenerateRelatioshipToOrganismXrefs(true);
 		validation.getNormalizerOptions().setGenerateRelatioshipToPathwayXrefs(true);
-		validation.getNormalizerOptions().setGenerateRelatioshipToOrganismComments(false); //no
-		validation.getNormalizerOptions().setGenerateRelatioshipToPathwayComments(false); //no
 		validation.getNormalizerOptions().setGenerateRelatioshipToInteractionXrefs(false); //no
-		validation.getNormalizerOptions().setGenerateRelatioshipToInteractionComments(false); //no
 		// collect both errors and warnings
 		validation.setThreshold(Behavior.WARNING); // means - all err./warn.
 		
