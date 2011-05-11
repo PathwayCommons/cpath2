@@ -37,6 +37,7 @@ import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.UnificationXref;
+import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.bridgedb.DataSource;
 import org.bridgedb.DataSource.Builder;
@@ -161,7 +162,7 @@ public final class BioDataTypes {
 		String id = null;
 		if(!bioSource.getXref().isEmpty()) {
 			Set<UnificationXref> uxs = new 
-				ClassFilterSet<UnificationXref>(bioSource.getXref(), 
+				ClassFilterSet<Xref,UnificationXref>(bioSource.getXref(), 
 						UnificationXref.class);
 			for(UnificationXref ux : uxs) {
 				if("taxonomy".equalsIgnoreCase(ux.getDb())) {

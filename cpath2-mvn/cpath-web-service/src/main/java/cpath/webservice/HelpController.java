@@ -35,6 +35,7 @@ import cpath.webservice.args.binding.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.BioSource;
@@ -178,7 +179,9 @@ public class HelpController {
     @RequestMapping("/help/types")
     public @ResponseBody Help getBiopaxTypes() {
     	Help help = new Help();
-    	for(Class<? extends BioPAXElement> t : BiopaxTypeEditor.getTypes()) 
+    	
+    	for(Class<? extends BioPAXElement> t : 
+    		SimpleEditorMap.L3.getKnownSubClassesOf(BioPAXElement.class)) 
     	{
     		if(BioPAXLevel.L3.getDefaultFactory().getImplClass(t) != null)
     			help.addMember(new Help(t.getSimpleName()));

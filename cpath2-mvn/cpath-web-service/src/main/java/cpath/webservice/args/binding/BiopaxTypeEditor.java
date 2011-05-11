@@ -65,7 +65,7 @@ public class BiopaxTypeEditor extends PropertyEditorSupport {
 		//return bioPAXFactory.getImplClass(BioPAXLevel.L3.getInterfaceForName(type));
 		
 		// better - case insensitive way -
-		for(Class<? extends BioPAXElement> c : getTypes()) {
+		for(Class<? extends BioPAXElement> c : editorMap.getKnownSubClassesOf(BioPAXElement.class)) {
 			if(c.getSimpleName().equalsIgnoreCase(type)) {
 				//if(bioPAXFactory.canInstantiate(c)) //does not matter if abstract (can still search by)
 					return bioPAXFactory.getImplClass(c);
@@ -73,9 +73,5 @@ public class BiopaxTypeEditor extends PropertyEditorSupport {
 		}
 		
 		return null;
-	}
-	
-	public static Set<Class<? extends BioPAXElement>> getTypes() {
-		return editorMap.getKnownSubClassesOf(BioPAXElement.class);
 	}
 }

@@ -289,7 +289,7 @@ public class MergerImpl implements Merger {
 		// if not found by id, - search by UnificationXrefs
 		if (toReturn == null) {
 			Set<UnificationXref> urefs =
-				new ClassFilterSet<UnificationXref>(((XReferrable)bpe).getXref(), UnificationXref.class);
+				new ClassFilterSet<Xref,UnificationXref>(((XReferrable)bpe).getXref(), UnificationXref.class);
 			Collection<String> prefs = proteinsDAO.getByXref(urefs, ProteinReference.class);
 			if (!prefs.isEmpty()) { 
 				if (prefs.size() > 1) {
@@ -300,7 +300,7 @@ public class MergerImpl implements Merger {
 			} else {
 				// use relationship xrefs (refseq, entrez gene,..)
 				Set<RelationshipXref> rrefs =
-					new ClassFilterSet<RelationshipXref>(((XReferrable)bpe).getXref(), RelationshipXref.class);
+					new ClassFilterSet<Xref,RelationshipXref>(((XReferrable)bpe).getXref(), RelationshipXref.class);
 				prefs = proteinsDAO.getByXref(rrefs, ProteinReference.class);
 				if (!prefs.isEmpty()) { 
 					if (prefs.size() > 1) {
@@ -335,7 +335,7 @@ public class MergerImpl implements Merger {
 		if (toReturn == null) {
 			
 			Set<UnificationXref> urefs = 
-				new ClassFilterSet<UnificationXref>(((XReferrable)bpe).getXref(), UnificationXref.class);
+				new ClassFilterSet<Xref,UnificationXref>(((XReferrable)bpe).getXref(), UnificationXref.class);
 			Collection<String> cvUrns = cvRepository.getByXref(urefs, clazz);
 			if (!cvUrns.isEmpty()) {
 				toReturn = cvRepository.getObject(cvUrns.iterator().next(), clazz);
@@ -358,7 +358,7 @@ public class MergerImpl implements Merger {
 		// get set of unification xrefs for this incoming smr
 		// which we will then use to lookup our version of the smr
 		// in the warehouse.
-		Set<UnificationXref> uxrefs = new ClassFilterSet<UnificationXref>(
+		Set<UnificationXref> uxrefs = new ClassFilterSet<Xref,UnificationXref>(
 				premergeSMR.getXref(), UnificationXref.class);
 
 		// get id of matching smr in our warehouse.  note:
