@@ -696,7 +696,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	
 	/* 
 	 * All properties and inverse properties 
-	 * (not recursive) initialization
+	 * (not very deep) initialization
 	 * 
 	 */
 	@Transactional
@@ -711,8 +711,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				.getEditorsOf(element);
 			if (editors != null)
 				for (PropertyEditor editor : editors) {
-					// it can treat collections (when multiple cardinality editor) as well!
-					Hibernate.initialize(editor.getValueFromBean(element)); 
+					Set value = editor.getValueFromBean(element);
+					Hibernate.initialize(value); 
+					for(Object v : value) {
+						Hibernate.initialize(v); 
+					}
 				}
 
 			// init. inverse object properties (xxxOf)
@@ -721,7 +724,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			if (invEditors != null) {
 				for (ObjectPropertyEditor editor : invEditors) {
 					// does collections as well!
-					Hibernate.initialize(editor.getInverseValueFromBean(element)); 
+					Object value = editor.getInverseValueFromBean(element);
+					Hibernate.initialize(value);
+					if(value instanceof Collection)
+					for(Object v : (Collection)value) {
+						Hibernate.initialize(v); 
+					}
 				}
 			}
 		}
