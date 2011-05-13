@@ -790,7 +790,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * @see cpath.dao.PaxtoolsDAO#runAnalysis(cpath.dao.Analysis, java.lang.Object[])
 	 */
 	@Override
-	@Transactional
+	@Transactional(propagation = Propagation.REQUIRED)
 	public Model runAnalysis(Analysis analysis, Object... args) {
 		Set<BioPAXElement> result = null;
 		

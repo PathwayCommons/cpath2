@@ -306,13 +306,13 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 		rXRef.setDb(dbName);
 		rXRef.setId(id);
 		
-		//find/create and add a special relationship CV
+		//find/create a special relationship CV
 		String relCvId = CPathSettings.CPATH_URI_PREFIX + 
 			RelationshipTypeVocabulary.class.getSimpleName() +
 				":" + relationshipType;
-		RelationshipTypeVocabulary relCv = (RelationshipTypeVocabulary) model.getByID(relCvId);
+		RelationshipTypeVocabulary relCv = (RelationshipTypeVocabulary) proteinReferenceModel.getByID(relCvId);
 		if(relCv == null) {
-			relCv = model.addNew(RelationshipTypeVocabulary.class, relCvId);
+			relCv = proteinReferenceModel.addNew(RelationshipTypeVocabulary.class, relCvId);
 			relCv.addTerm(relationshipType.name());
 		}
 		rXRef.setRelationshipType(relCv);
