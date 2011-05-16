@@ -1,6 +1,5 @@
 package cpath.dao.internal.filters;
 
-import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Dna;
 import org.biopax.paxtools.model.level3.DnaRegion;
 import org.biopax.paxtools.model.level3.Protein;
@@ -21,12 +20,12 @@ import cpath.dao.filters.SearchFilterRange;
  */
 @SearchFilterRange(Entity.class)
 public class EntityByOrganismRelationshipXrefsFilter 
-	extends SearchFilterAdapter<Entity, BioSource> 
+	extends SearchFilterAdapter<Entity, String> 
 {
 
 	@Override
 	public boolean apply(Entity searchResult) {
-		// TODO check relationship xrefs with rel. type CV term "organism"!
+		// TODO use relationship xrefs with rel. CV "ORGANISM"; compare 'id' vs. the list of filter values
 		return false;
 	}
 

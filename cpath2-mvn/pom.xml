@@ -79,7 +79,7 @@
 							</property>
 						</systemProperties>
 						<!-- enable assertions, tests run in sequential mode -->
-						<argLine>-Dfile.encoding=UTF-8 -Xmx2024M -DCPATH2_HOME=${CPATH2_HOME} -ea -DforkMode=once</argLine>
+						<argLine>-Dfile.encoding=UTF-8 -Xmx4g -DCPATH2_HOME=${CPATH2_HOME} -ea -DforkMode=once</argLine>
 					</configuration>
 				</plugin>
 			</plugins>
@@ -126,6 +126,17 @@
             <url>https://repository.jboss.org/nexus/content/repositories/releases</url>
             <name>JBoss Repo</name>
         </repository>
+		<repository>
+		<!-- for Ehcache... -->
+			<id>sourceforge</id>
+			<url>http://oss.sonatype.org/content/groups/sourceforge/</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
 	</repositories>
 	
     <pluginRepositories>
