@@ -38,19 +38,13 @@ import javax.xml.transform.stream.StreamSource;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Entity;
-import org.biopax.paxtools.model.level3.Gene;
-import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
-import org.biopax.paxtools.query.algorithm.CommonStreamQuery;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
-import org.biopax.paxtools.query.algorithm.PoIQuery;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
@@ -60,6 +54,7 @@ import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
 import cpath.dao.internal.filters.EntityByOrganismRelationshipXrefsFilter;
+import cpath.dao.internal.filters.EntityDataSourceFilter;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
@@ -151,12 +146,14 @@ public class CPathServiceImpl implements CPathService {
 			taxids = new String[]{};
 		
 		try {
-				SearchFilter<Entity, BioSource> sof = new EntityByOrganismRelationshipXrefsFilter();
-				//TODO set values
-				//TODO add more
+				// init filters
+				SearchFilter<Entity, String> byOrganismFilter = new EntityByOrganismRelationshipXrefsFilter();
+				byOrganismFilter.setValues(taxids);
+				SearchFilter<Entity, String> byDatasourceFilter = new EntityDataSourceFilter();
+				byDatasourceFilter.setValues(dsources);
 				
 				// do search
-				Collection<String> data = mainDAO.find(queryStr, biopaxClasses, sof); 
+				Collection<String> data = mainDAO.find(queryStr, biopaxClasses, byDatasourceFilter, byOrganismFilter); 
 				
 				map.put(DATA, data);
 				map.put(COUNT, data.size()); // becomes Integer

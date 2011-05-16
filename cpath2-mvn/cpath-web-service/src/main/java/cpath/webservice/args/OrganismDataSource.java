@@ -58,4 +58,8 @@ public class OrganismDataSource {
 	public DataSource asDataSource() {
 		return dataSource;
 	}
+	
+	public String getURI() {
+		return dataSource.getURN(dataSource.getSystemCode());
+	}
 }

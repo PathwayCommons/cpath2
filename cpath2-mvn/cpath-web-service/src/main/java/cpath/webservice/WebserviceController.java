@@ -39,7 +39,9 @@ import cpath.webservice.args.binding.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Protein;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
@@ -154,9 +156,8 @@ public class WebserviceController {
 			taxons = new String[organisms.length];
 			int i = 0;
 			for(OrganismDataSource o : organisms) {
-				taxons[i++] = o.asDataSource().getSystemCode(); // taxonomy id
-				//taxons[i++] = o.asDataSource().getURN(o.asDataSource().getSystemCode()); //Miriam URN
-				//taxons[i++] = ((BioSource)o.asDataSource().getOrganism()).getRDFId(); //Miriam URN
+				//taxons[i++] = o.asDataSource().getSystemCode(); // taxonomy id
+				taxons[i++] = o.getURI();
 			}
 		}
 		
@@ -165,8 +166,8 @@ public class WebserviceController {
 			dsources = new String[dataSources.length];
 			int i = 0;
 			for(PathwayDataSource o : dataSources) {
-				dsources[i++] = o.asDataSource().getSystemCode(); //standard name
-				//dsources[i++] = o.asDataSource().getURN(""); //Miriam URN
+				//dsources[i++] = o.asDataSource().getSystemCode(); //just standard name
+				dsources[i++] = o.getURI();
 				//dsources[i++] = ((Provenance)o.asDataSource().getOrganism()).getRDFId(); // hack!
 			}
 		}

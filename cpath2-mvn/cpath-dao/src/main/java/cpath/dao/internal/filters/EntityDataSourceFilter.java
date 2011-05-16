@@ -2,7 +2,6 @@ package cpath.dao.internal.filters;
 
 
 import org.biopax.paxtools.model.level3.Entity;
-import org.biopax.paxtools.model.level3.Provenance;
 
 import cpath.dao.filters.SearchFilterRange;
 
@@ -15,7 +14,7 @@ import cpath.dao.filters.SearchFilterRange;
  */
 @SearchFilterRange(Entity.class)
 public class EntityDataSourceFilter extends 
-	SearchFilterAdapter<Entity, Provenance>
+	SearchFilterAdapter<Entity, String>
 {
 	@Override
 	public boolean apply(Entity searchResult) {
