@@ -47,11 +47,6 @@ public class BaseConverterImpl implements Converter {
 	
 	protected <T extends BioPAXElement> T getById(String urn, Class<T> type) 
     {
-            /*return 
-            (model instanceof WarehouseDAO) 
-                    ? ((WarehouseDAO)model).getObject(urn, type) //completely detached
-                            : (T) model.getByID(urn) ;      
-            */
             T bpe = (T) model.getByID(urn);
             if(bpe != null && model instanceof PaxtoolsDAO) {
                     // initialize before finally detaching it

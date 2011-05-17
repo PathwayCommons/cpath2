@@ -234,13 +234,7 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 		BufferedInputStream bis = new BufferedInputStream(LOADER.getResource(url).getInputStream());
 		
 		// pathway data is either owl, zip (multiple file entries allowed) or gz (single data entry)
-		if (url.toLowerCase().endsWith(".owl")) {
-			if(log.isInfoEnabled())
-				log.info("getProviderPathwayData(): data is owl (returning as is)");
-			PathwayData pathwayData = readContent(metadata, bis);
-			toReturn.add(pathwayData);
-		} 
-		else if(url.toLowerCase().endsWith(".gz")) {
+		if(url.toLowerCase().endsWith(".gz")) {
 			if(log.isInfoEnabled())
 				log.info("getProviderPathwayData(): extracting data from gzip archive.");
 			PathwayData pathwayData = readContent(metadata, new GZIPInputStream(bis));
@@ -250,9 +244,11 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 			if(log.isInfoEnabled())
 				log.info("getProviderPathwayData(): extracting data from zip archive.");
 			toReturn = readContent(metadata, new ZipInputStream(bis));
-		} else {
-			if(log.isWarnEnabled())
-				log.warn("getProviderPathwayData(): data format is not supported: " + url);
+		} else { // expecting BioPAX content (RDF+XML) 
+			if(log.isInfoEnabled())
+				log.info("getProviderPathwayData(): returning as is (supposed to be RDF+XML)");
+			PathwayData pathwayData = readContent(metadata, bis);
+			toReturn.add(pathwayData);
 		}
 
         return toReturn;

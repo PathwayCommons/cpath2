@@ -27,6 +27,11 @@
 	  <outputDirectory>sampleData</outputDirectory>
 	  <fileMode>0644</fileMode>
     </fileSet>
+    <fileSet>
+	  <directory>src/main/etc/tmp</directory>
+	  <outputDirectory>tmp</outputDirectory>
+	  <fileMode>0644</fileMode>
+    </fileSet>
   </fileSets>
    
   <dependencySets>

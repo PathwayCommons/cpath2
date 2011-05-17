@@ -181,8 +181,8 @@ public class PaxtoolsHibernateDAOTest {
 		
 		OutputStream out = new ByteArrayOutputStream();
 		paxtoolsDAO.exportModel(out, bpe.getRDFId());
-		System.out.println("Export single Xref (incomplete BioPAX):");
-		System.out.println(out.toString());
+		//System.out.println("Export single Xref (incomplete BioPAX):");
+		//System.out.println(out.toString());
 		
 		// check if it has xrefOf values...
 		Set<XReferrable> xrOfs = ((UnificationXref) bpe).getXrefOf();
@@ -206,8 +206,8 @@ public class PaxtoolsHibernateDAOTest {
 		
 		OutputStream out = new ByteArrayOutputStream();
 		paxtoolsDAO.exportModel(out, bpe.getRDFId());
-		System.out.println("Export single protein (incomplete BioPAX):");
-		System.out.println(out.toString());
+		//System.out.println("Export single protein (incomplete BioPAX):");
+		//System.out.println(out.toString());
 	}
 	
 	

@@ -80,7 +80,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public static String getHomeDir() {
-		return System.getenv(HOME_VARIABLE_NAME);
+		return System.getProperty(HOME_VARIABLE_NAME);
 	}
 	
 }
