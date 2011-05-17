@@ -271,6 +271,14 @@ public class Main  {
             	" (point to a directory where cpath.properties, etc. files are placed)");
             System.exit(-1);
     	}
+    	// the JVM option must be set to the same value as well!
+    	if (!home.equals(System.getProperty(HOME_VARIABLE_NAME))) {
+            System.err.println("Please also set the java property " 
+            	+ HOME_VARIABLE_NAME 
+            	+ ", i.e., run with -D" + HOME_VARIABLE_NAME + "=" 
+            	+ home + " option.");
+            System.exit(-1);
+    	}
     	
     	// configure logging
     	PropertyConfigurator.configure(home + File.separator 

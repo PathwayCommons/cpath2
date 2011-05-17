@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 /**
  * Converter for ChEBI-OBO data.
  */
-public class ChEBIOBOConverterImpl {
+public class ChEBIOBOConverterImpl extends BaseConverterImpl {
 
 	// logger
     private static Log log = LogFactory.getLog(ChEBIOBOConverterImpl.class);

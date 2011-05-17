@@ -646,12 +646,20 @@ public class Admin implements Runnable {
             System.exit(-1);
         }
     	
-    	String home = System.getenv(HOME_VARIABLE_NAME);
-    	
+    	// "CPATH2_HOME" env. var. must be set (mainly for log4j config)
+        String home = System.getenv(HOME_VARIABLE_NAME);
     	if (home==null) {
             System.err.println("Please set " + HOME_VARIABLE_NAME 
             	+ " environment variable " +
             	" (point to a directory where cpath.properties, etc. files are placed)");
+            System.exit(-1);
+    	}
+    	// the JVM option must be set to the same value as well!
+    	if (!home.equals(System.getProperty(HOME_VARIABLE_NAME))) {
+            System.err.println("Please also set the java property " 
+            	+ HOME_VARIABLE_NAME 
+            	+ ", i.e., run with -D" + HOME_VARIABLE_NAME + "=" 
+            	+ home + " option.");
             System.exit(-1);
     	}
     	

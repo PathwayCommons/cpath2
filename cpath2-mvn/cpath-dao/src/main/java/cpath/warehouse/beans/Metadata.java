@@ -193,8 +193,9 @@ public class Metadata {
 	 */
     @Transient
 	public String getDataLocalDir() {
-		return CPathSettings.getHomeDir() 
-			+ File.separator + type.name().toLowerCase();
+		//return CPathSettings.getHomeDir() 
+		//	+ File.separator + type.name().toLowerCase();
+    	return System.getProperty("java.io.tmpdir");
 	}
     
 	/**

@@ -2,6 +2,8 @@ package cpath.converter.internal;
 
 import java.io.*;
 import java.net.URLEncoder;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -10,17 +12,58 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 
 import cpath.config.CPathSettings;
+import cpath.dao.PaxtoolsDAO;
 
 /**
  * Implementation of Converter interface for ChEBI data.
  */
-public class ChEBIConverterImpl extends BaseSDFConverterImpl
+public class ChEBIConverterImpl extends BaseConverterImpl
 {
+	static enum WhatEntryToProcess {
+		PROCESS_SDF,
+		PROCESS_OBO;
+	}
+	
+	//use java option -Dcpath.converter.sdf.skip to process OBO only
+	public static final String JAVA_OPT_SKIP_SDF = "cpath.converter.sdf.skip";
+
+	private static final String SDF_ENTRY_START = "M  END";
+	private static final String SDF_ENTRY_END = "$$$$";
+	
+	private static final String CHEBI_OBO_ENTRY_START = "[Term]";
+	private static final String CHEBI_OBO_ENTRY_END = "";
+	
+	// some statics to identify names methods
+	protected static final String DISPLAY_NAME = "DISPLAY_NAME";
+	protected static final String STANDARD_NAME = "STANDARD_NAME";
+	protected static final String ADDITIONAL_NAME = "ADDITIONAL_NAME";
+
+	// some statics to identify secondary id delimiters
+	protected static final String COLON_DELIMITER = ":";
+	protected static final String EQUALS_DELIMITER = "=";
+	
+	 // loader can handle file://, ftp://, http://  URL resources
+	private static final ResourceLoader LOADER = new DefaultResourceLoader();
+	
+	// url to chebi obo file - set by ChEBI subclass
+	private final String chebiOboFileUrl;
+    
+    // OBO converter
+    private ChEBIOBOConverterImpl oboConverter;	
+
 	// url to ChEBI OBO file
-	private static final String CHEBI_OBO_FILE_URL = 
+	public static final String CHEBI_OBO_FILE_URL = 
 		"ftp://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi.obo";
+	// chebi obo file target path/name
+	public static final String CHEBI_OBO_FILE = 
+		System.getProperty("java.io.tmpdir") 
+			+ System.getProperty("file.separator") + "chebi.obo";
+	
 	
 	// logger
     private static Log log = LogFactory.getLog(ChEBIConverterImpl.class);
@@ -51,23 +94,200 @@ public class ChEBIConverterImpl extends BaseSDFConverterImpl
 	}
 	
 	public ChEBIConverterImpl(Model model) {
-		super(model, CHEBI_OBO_FILE_URL);
+		this(model, CHEBI_OBO_FILE_URL);
 		if (log.isDebugEnabled()) {
-			log.debug("CHEBI OBO FILE URL: " + CHEBI_OBO_FILE_URL);
+			log.debug("CHEBI OBO FILE URL: " + chebiOboFileUrl);
 		}
 	}
 
+	
 	/**
+	 * Constructor.
+	 *
+	 * @param model to merge converted data to
+	 */
+	public ChEBIConverterImpl(Model model, String chebiOBOFileURL) {
+		super(model);
+		this.oboConverter = new ChEBIOBOConverterImpl(model, factory);
+		this.chebiOboFileUrl = chebiOBOFileURL;
+	}
+
+	
+	@Override
+	public void convert(final InputStream is) {
+		
+		// first convert given SDF input stream and store SM in warehouse
+		if(System.getProperty(JAVA_OPT_SKIP_SDF) == null) {
+			convert(is, WhatEntryToProcess.PROCESS_SDF, SDF_ENTRY_START, SDF_ENTRY_END);
+		}
+		
+		// Note - we are only converting ChEBI now, so assume OBO processing required
+		InputStream oboIS = null;
+		try {
+			if (oboConverter.getModel() == null) {
+				oboConverter.setModel(model);
+			}
+			oboIS = getChEBIOBOInputStream();
+			convert(oboIS, WhatEntryToProcess.PROCESS_OBO, CHEBI_OBO_ENTRY_START, CHEBI_OBO_ENTRY_END);
+		}
+		catch (IOException e) {
+			log.error("convert(): cannot create hierarchical relationships!", e);
+		}
+		finally {
+			if (oboIS != null) {
+				try {
+					oboIS.close();
+				}
+				catch (Exception e) {
+					// ignore
+				}
+	           }
+		}
+		
+		if (log.isInfoEnabled()) {
+			log.info("convert(), exiting.");
+		}
+	}
+	
+	/**
+	 * Utility function that helps convert both SDF and OBO files.
 	 *  
-	 *  
+	 * @param is InputStream
+	 * @param whatEntryToProcess String
+	 * @param entryStart String
+	 * @param entryEnd String
+	 */
+	private void convert(final InputStream is, 
+		WhatEntryToProcess whatEntryToProcess, String entryStart, String entryEnd) 
+	{
+		// ref to reader here so, we can close in finally clause
+        InputStreamReader reader = null;
+
+        try {
+			// setup the reader
+            reader = new InputStreamReader(is, "UTF-8");
+            BufferedReader bufferedReader = new BufferedReader(reader);
+            if (log.isInfoEnabled()) {
+            	log.info("convert(), starting to read data...");
+			}
+			// read the file
+            String line = bufferedReader.readLine();
+            while (line != null) {
+				// start of entry
+                if (line.startsWith(entryStart)) {
+					StringBuffer entryBuffer = new StringBuffer(line + "\n");
+					line = bufferedReader.readLine();
+					while (line != null) {
+						entryBuffer.append(line + "\n");
+						// keep reading until we reach last modified
+						if (whatEntryToProcess == WhatEntryToProcess.PROCESS_SDF 
+							&& line.startsWith(entryEnd)) {
+							break;
+						}
+						else if (whatEntryToProcess.equals(WhatEntryToProcess.PROCESS_OBO) 
+							&& line.isEmpty()) {
+							break;
+						}
+						line = bufferedReader.readLine();
+					}
+					if (whatEntryToProcess==WhatEntryToProcess.PROCESS_SDF) {
+						processSDFEntry(entryBuffer);
+					}
+					else if (whatEntryToProcess==WhatEntryToProcess.PROCESS_OBO) {
+						oboConverter.processOBOEntry(entryBuffer);
+					}
+                }
+                line = bufferedReader.readLine();
+            }
+            // quick fix - mainly for testing (without DAO)
+            if(!(model instanceof PaxtoolsDAO)) {
+            	model.repair();
+            }
+        }
+		catch (IOException e) {
+			log.error(e);
+		}
+		finally {
+			if (log.isInfoEnabled()) {
+				log.info("convert(), closing reader.");
+			}
+            if (reader != null) {
+				try {
+					reader.close();
+				}
+				catch (Exception e) {
+					// ignore
+				}
+            }
+        }
+    }
+
+	/**
+	 * Given a string buffer for a single SDF entry,
+	 * create a BioPAX Entity reference.
+	 *
+	 * @param entryBuffer StringBuffer
+	 * @throws IOException
+	 */
+	private void processSDFEntry(StringBuffer entryBuffer) throws IOException { 
+
+        if (log.isDebugEnabled()) {
+        	log.debug("calling processSDFEntry()");
+        }
+        // build a new SMR with its dependent elements
+		SmallMoleculeReference smr = buildSmallMoleculeReference(entryBuffer);
+		if (smr != null) {
+            if(model instanceof PaxtoolsDAO) {
+            	((PaxtoolsDAO) model).merge(smr);
+            }
+            else {
+            	// don't merge now (later - all at once)
+            	model.add(smr);
+            }
+		}
+	}
+	
+	
+	/**
+	 * Method to download and return an InputStream to the OBO file.
+	 * @return InputStream
+	 * @throws IOException
+	 */
+	private InputStream getChEBIOBOInputStream() throws IOException 
+	{
+		File localFile = new File(ChEBIConverterImpl.CHEBI_OBO_FILE);
+		if(!localFile.exists() || !localFile.isFile()) {
+			Resource resource = LOADER.getResource(chebiOboFileUrl);
+			long size = resource.contentLength();
+			if(log.isInfoEnabled()) {
+				log.info(CHEBI_OBO_FILE_URL + " content length= " + size);
+			}
+			ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
+			FileOutputStream dest = new FileOutputStream(ChEBIConverterImpl.CHEBI_OBO_FILE);
+			size = dest.getChannel().transferFrom(source, 0, size); // can throw runtime exceptions
+			if(log.isInfoEnabled()) {
+				log.info(size + " bytes downloaded from " + CHEBI_OBO_FILE_URL);
+			}
+		} else {
+			log.info("Re-using existing file: " + ChEBIConverterImpl.CHEBI_OBO_FILE);
+		}
+
+		// outta here
+		return new FileInputStream(ChEBIConverterImpl.CHEBI_OBO_FILE);
+	}
+	
+	
+	/**
+	 * Creates a new small molecule 
+	 * reference (and other related elements in it) 
+	 * from the SDF entry. 
 	 *
 	 * @param stringBuffer StringBuffer
 	 * @throws IOException
 	 */
-	@Override
-	protected SmallMoleculeReference buildSmallMoleculeReference(StringBuffer entryBuffer) 
-		throws IOException {
-		
+	private SmallMoleculeReference buildSmallMoleculeReference(StringBuffer entryBuffer) 
+		throws IOException 
+	{	
 		SmallMoleculeReference toReturn = null;
 		
         // grab rdf id, create SMR 

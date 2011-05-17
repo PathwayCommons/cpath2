@@ -36,7 +36,7 @@ public class ChEBIConverterImplTest {
 		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
 
 		// setup the converter
-		Converter converter = new ChEBIConverterForTestingImpl(model);
+		Converter converter = new ChEBIConverterImpl(model, "classpath:test_chebi_obo_data.dat");
 		converter.convert(is);
 		
 		// dump owl for review

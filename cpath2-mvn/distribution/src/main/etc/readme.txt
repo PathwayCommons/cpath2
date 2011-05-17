@@ -33,29 +33,33 @@ ALSO (in production) - increase ulimits, e.g.:
 
 'ulimit -s unlimited' (Linux), or 'launchctl limit stack unlimited' (MacOSX)
 
+ALSO (when several users run the cpath-admin.jar) specify 'java.io.tmpdir' dir, e.g.:
 
-Example admin actions (note: better use cpath-admin.sh shell script):
+-Djava.io.tmpdir=$CPATH2_HOME/tmp
 
-java -DCPATH2_HOME=$CPATH2_HOME -jar cpath-admin.jar -create-tables mymetadata
 
-java -DCPATH2_HOME=$CPATH2_HOME -Xmx1024M -jar cpath-admin.jar -fetch-metadata "file://full-path/cpath2-metadata.html"
+Example admin actions (note: BETTER USE cpath-admin.sh shell script):
+
+java -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -jar cpath-admin.jar -create-tables mymetadata
+
+java -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Xmx1024M -jar cpath-admin.jar -fetch-metadata "file://full-path/cpath2-metadata.html"
 
 # http:// or ftp:// url can be used as well to kick off the cpath2 data import or update...
-#$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Xmx1024M -jar cpath-admin.jar -fetch-data <URL-of-the-metadata-page>
+#$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Xmx1024M -jar cpath-admin.jar -fetch-data <URL-of-the-metadata-page>
 
-$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Xmx2048M -jar cpath-admin.jar -fetch-data --all
+$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Xmx2048M -jar cpath-admin.jar -fetch-data --all
 
 or
 
-$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Xmx2048M -jar cpath-admin.jar -fetch-data UNIPROT-HUMAN
+$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Xmx2048M -jar cpath-admin.jar -fetch-data UNIPROT-HUMAN
 
-$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Xmx1024M -Xss2048k -jar cpath-admin.jar -premerge
+$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Xmx1024M -Xss2048k -jar cpath-admin.jar -premerge
 
 # also possible to add new pathway providers to the "metadata" html page 
 # with corresponding cleaner/converter, if required, even after the cpath-admin.jar is compiled:
-#$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -cp /path-to/DataCleaner1Impl.class;/path-to/DataCleaner2Impl.class  -Xmx1024M -jar cpath-admin.jar -premerge
+#$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -cp /path-to/DataCleaner1Impl.class;/path-to/DataCleaner2Impl.class  -Xmx1024M -jar cpath-admin.jar -premerge
 
-$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Xmx2048M -jar cpath-admin.jar -merge
+$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Xmx2048M -jar cpath-admin.jar -merge
 
 (again, NOTE: easier - to use cpath-admin.sh script)
 
