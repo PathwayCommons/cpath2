@@ -48,6 +48,7 @@ import org.biopax.validator.result.*;
 import org.biopax.validator.Validator;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
 import org.biopax.validator.utils.Normalizer;
+import org.biopax.validator.utils.Normalizer.NormalizerOptions;
 
 import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
 
@@ -351,17 +352,18 @@ public class PremergeImpl implements Premerge {
 	{	
 		// create a new empty validation and associate with the model data
 		Validation validation = new Validation(title); // sets the title
-		
 		// set auto-fix and normalize modes
 		validation.setFix(true);
 		validation.setNormalize(true);
 		// use special normalizer options
-		validation.getNormalizerOptions().setFixDisplayName(true);
-		validation.getNormalizerOptions().setInferPropertyDataSource(true);
-		validation.getNormalizerOptions().setInferPropertyOrganism(true);
-		validation.getNormalizerOptions().setGenerateRelatioshipToOrganismXrefs(true);
-		validation.getNormalizerOptions().setGenerateRelatioshipToPathwayXrefs(true);
-		validation.getNormalizerOptions().setGenerateRelatioshipToInteractionXrefs(false); //no
+		NormalizerOptions normalizerOptions = new NormalizerOptions();
+		normalizerOptions.setFixDisplayName(true);
+		normalizerOptions.setInferPropertyDataSource(true);
+		normalizerOptions.setInferPropertyOrganism(true);
+		normalizerOptions.setGenerateRelatioshipToOrganismXrefs(true);
+		normalizerOptions.setGenerateRelatioshipToPathwayXrefs(true);
+		normalizerOptions.setGenerateRelatioshipToInteractionXrefs(false); //no
+		validation.setNormalizerOptions(normalizerOptions);
 		// collect both errors and warnings
 		validation.setThreshold(Behavior.WARNING); // means - all err./warn.
 		
