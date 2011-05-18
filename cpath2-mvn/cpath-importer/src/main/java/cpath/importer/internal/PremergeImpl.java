@@ -444,7 +444,15 @@ public class PremergeImpl implements Premerge {
 	private void fixDataSource(Model model, Metadata metadata) {
 		Provenance pro = null;
 		
-		String urn = MiriamLink.getDataTypeURI(metadata.getName());
+		String urn; 
+		try {
+		 urn = MiriamLink.getDataTypeURI(metadata.getName());
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException(
+				"Metadata 'name' must be a valid Miriam standard name " +
+				"or synonym for the data source!", e);
+		}
+		
 		if(model.containsID(urn))
 			pro = (Provenance) model.getByID(urn);
 		else {

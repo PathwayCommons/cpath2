@@ -42,6 +42,7 @@ import javax.imageio.ImageIO;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.model.Model;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
@@ -204,11 +205,21 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 							|| metadata.getType() == Metadata.TYPE.BIOPAX) {
 						if (log.isInfoEnabled())
 							log.info(metadata.getCleanerClassname());
+						
+						// sanity check (forces using standard names)
+						try {
+							MiriamLink.getDataTypeURI(metadata.getName());
+						} catch (IllegalArgumentException e) {
+							throw new IllegalArgumentException(
+								"Metadata " + metadata.getIdentifier() + 
+								" 'name' is not a Miriam standard name " +
+								"or synonym of a pathway data provider!", e);
+						}						
 					} else if (metadata.getType() == Metadata.TYPE.PROTEIN) {
 						if (log.isInfoEnabled())
 							log.info(metadata.getConverterClassname());
 					}
-
+					
 					// add metadata object toc collection we return
 					toReturn.add(metadata);
 				}
