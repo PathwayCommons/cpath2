@@ -42,7 +42,7 @@ public enum Cmd {
            "This command has four parameters.",
            "http://awabi.cbio.mskcc.org/cpath2/search?q=brca*",
            "Ordered list of IDs to records within pathway commons that match search criteria.",
-			new CmdArgs[]{q, type, organism, datasource}),
+			new CmdArgs[]{q, type, organism, datasource, process}),
 	GET("Gets a BioPAX element or sub-model " +
         "by ID(s).  This command has two parameters.",
         "http://awabi.cbio.mskcc.org/cpath2/get?uri=urn:miriam:uniprot:P38398",

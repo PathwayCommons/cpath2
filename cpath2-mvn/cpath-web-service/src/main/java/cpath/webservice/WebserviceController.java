@@ -39,9 +39,7 @@ import cpath.webservice.args.binding.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Protein;
-import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
@@ -132,8 +130,9 @@ public class WebserviceController {
     public String fulltextSearch(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement>[] types, 
     		@RequestParam(value="q", required=true) String query,
-    		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms,
-    		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources,
+    		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms, //filter by
+    		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources, //filter by
+    		@RequestParam(value="process", required=false) String[] pathwayURIs, // filter by
             @RequestHeader("User-Agent") String userAgent)
     {		
     	String body = "";
@@ -151,29 +150,29 @@ public class WebserviceController {
 					+ "), query:" + query);
 
 		
-		String[] taxons = null; 
+		String[] organismURIs = null; 
 		if(organisms != null) { // it's optional parameter (can be null)
-			taxons = new String[organisms.length];
+			organismURIs = new String[organisms.length];
 			int i = 0;
 			for(OrganismDataSource o : organisms) {
-				//taxons[i++] = o.asDataSource().getSystemCode(); // taxonomy id
-				taxons[i++] = o.getURI();
+				//organismURIs[i++] = o.asDataSource().getSystemCode(); // taxonomy id
+				organismURIs[i++] = o.getURI();
 			}
 		}
 		
-		String[] dsources = null; 
+		String[] dsourceURIs = null; 
 		if(dataSources != null) { // because of being optional arg.
-			dsources = new String[dataSources.length];
+			dsourceURIs = new String[dataSources.length];
 			int i = 0;
 			for(PathwayDataSource o : dataSources) {
-				//dsources[i++] = o.asDataSource().getSystemCode(); //just standard name
-				dsources[i++] = o.getURI();
-				//dsources[i++] = ((Provenance)o.asDataSource().getOrganism()).getRDFId(); // hack!
+				//dsourceURIs[i++] = o.asDataSource().getSystemCode(); //just standard name
+				dsourceURIs[i++] = o.getURI();
+				//dsourceURIs[i++] = ((Provenance)o.asDataSource().getOrganism()).getRDFId(); // hack!
 			}
 		}
-		
+
 		Map<ResultMapKey, Object> results = 
-			service.find(query, types, taxons, dsources);
+			service.find(query, types, organismURIs, dsourceURIs, pathwayURIs);
 		
 		body = getListDataBody(results, query + " (in " 
 				+ Arrays.toString(types) + ")");

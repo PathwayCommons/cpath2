@@ -58,5 +58,5 @@ public interface SearchFilter<E extends BioPAXElement, T> {
 	 * 
 	 * @param values
 	 */
-	void setValues(T... values);
+	void setValues(T[] values);
 }

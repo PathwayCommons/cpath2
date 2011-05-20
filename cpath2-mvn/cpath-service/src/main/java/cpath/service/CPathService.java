@@ -33,9 +33,6 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
 
-import cpath.dao.PaxtoolsDAO;
-import cpath.dao.filters.SearchFilter;
-
 
 /**
  * CPath^2 Service is a mid-tier or adapter between DAOs and web controllers. 
@@ -118,15 +115,13 @@ public interface CPathService {
 	 * 
 	 * @param queryStr if null or empty, list/count all elements (of the class)
 	 * @param biopaxClasses
-	 * @param organisms an array of the taxonomy ids
-	 * @param dataSources an array of pathway data provider names
+	 * @param filterValues can be arrays of URIs of organisms, data sources, etc.
 	 * @return
 	 * 
 	 * @see PaxtoolsDAO#find(String, Class[], SearchFilter[]...)
 	 */
 	Map<ResultMapKey, Object> find(String queryStr, 
-			Class<? extends BioPAXElement>[] biopaxClasses, String[] organisms,
-			String... dataSources);
+			Class<? extends BioPAXElement>[] biopaxClasses, String[]... filterValues);
 
 
 	/**

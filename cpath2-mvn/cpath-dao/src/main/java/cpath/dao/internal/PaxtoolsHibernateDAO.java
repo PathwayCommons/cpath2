@@ -280,7 +280,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			return toReturn;
 		} 
 		
-		// - otherwise, we continue and do real job -
+		// - otherwise, we continue and do real job -		
 		if (log.isInfoEnabled())
 			log.info("find (IDs): " + query + ", filterBy: " + Arrays.toString(filterByTypes)
 					+ "; extra filters: " + extraFilters.toString());
@@ -357,8 +357,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		
 		// collect identifiers
 		for(BioPAXElement bpe : results) {
-			if(isInstanceofOneOf(bpe, filterByTypes))
+			if(filterByTypes == null || filterByTypes.length == 0 
+				|| isInstanceofOneOf(bpe, filterByTypes)) 
+			{
 				toReturn.add(bpe.getRDFId());
+			}
 		}
 		
 		
