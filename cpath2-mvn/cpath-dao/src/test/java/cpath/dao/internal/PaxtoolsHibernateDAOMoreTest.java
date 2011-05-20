@@ -81,14 +81,13 @@ public class PaxtoolsHibernateDAOMoreTest {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		paxtoolsDAO.exportModel(outputStream);
 		String exported = outputStream.toString();
+		System.out.println("\n\n*********\n\n" + exported);
 		
 		// read it back
 		io.mergeDuplicates(true);
-		Model model = io.convertFromOWL(new ByteArrayInputStream(exported
-				.getBytes("UTF-8")));
+		Model model = io.convertFromOWL(new ByteArrayInputStream(exported.getBytes("UTF-8")));
 		assertNotNull(model);
-		assertTrue(model
-			.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
+		assertTrue(model.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
 		assertEquals(55, model.getObjects().size());
 	}
     

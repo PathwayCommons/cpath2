@@ -1,15 +1,16 @@
 package cpath.converter.internal;
 
 // imports
-import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXFactory;
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.controller.SimpleEditorMap;
+import org.biopax.validator.utils.Normalizer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -193,8 +194,8 @@ public class ChEBIOBOConverterImpl extends BaseConverterImpl {
 		// we use relationship type in rdf id of xref since there can be many to many relation types
 		// bet SM.  For example CHEBI:X has_part CHEBI:Y and CHEBI:Z is_conjugate_acid_of CHEBI:Y
 		// we need distinct rxref to has_part CHEBI:Y and is_conjugate_acid_of CHEBI:Y
-		String xrefRdfID = CPathSettings.CPATH_URI_PREFIX + RelationshipXref.class.getSimpleName() + ":" + 
-			URLEncoder.encode(relationshipType.toUpperCase() + "_CHEBI_" + chebiID);
+		String xrefRdfID = Normalizer
+			.generateURIForXref(relationshipType, "CHEBI:" + chebiID, null, RelationshipXref.class);
 		
 		if (model.containsID(xrefRdfID)) {
 			return getByID(xrefRdfID, RelationshipXref.class);
@@ -206,9 +207,7 @@ public class ChEBIOBOConverterImpl extends BaseConverterImpl {
 		toReturn.setId(chebiID);
 		
 		// set relationship type vocabulary on the relationship xref
-		String relTypeRdfID =
-			CPathSettings.CPATH_URI_PREFIX + RelationshipTypeVocabulary.class.getSimpleName() +
-			":" + URLEncoder.encode("CHEBI_" + relationshipType.toUpperCase());
+		String relTypeRdfID = ModelUtils.relationshipTypeVocabularyUri(relationshipType); //or "CHEBI_" + relationshipType?
 		
 		if (model.containsID(relTypeRdfID)) {
 			toReturn.setRelationshipType(getByID(relTypeRdfID, RelationshipTypeVocabulary.class));

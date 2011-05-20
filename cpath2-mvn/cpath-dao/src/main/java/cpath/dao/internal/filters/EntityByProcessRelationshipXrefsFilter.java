@@ -27,25 +27,24 @@ import cpath.dao.filters.SearchFilterRange;
  *
  */
 @SearchFilterRange(Entity.class)
-public class EntityByOrganismRelationshipXrefsFilter 
+public class EntityByProcessRelationshipXrefsFilter 
 	extends SearchFilterAdapter<Entity, String> 
 {
 
 	@Override
 	public boolean apply(Entity searchResult) {
-		// use relationship xrefs with rel. CV "ORGANISM"; compare 'id' vs. the list of filter values
 		Set<RelationshipXref> rxrefs = new ClassFilterSet<Xref, RelationshipXref>(
 				searchResult.getXref(), RelationshipXref.class);
 		for(RelationshipXref rx : rxrefs) {
 			ControlledVocabulary rcv = rx.getRelationshipType();
 			if(rcv != null 
-				&& rcv.getTerm().contains(RelationshipType.ORGANISM.name())
-				&& this.values.contains(rx.getId())) // by design, the value is a BioSource URI (RDF ID) 
+				&& rcv.getTerm().contains(RelationshipType.PROCESS.name())
+				&& this.values.contains(rx.getId())) // by design, the value is a Process URI (RDF ID) 
 			{
 				assert ModelUtils.COMMENT_FOR_GENERATED.equals(rx.getDb()) : "Only rel. xrefs auto-generated "
 					+ "by the normalizer can be used in this filter implementation. Such rel. xrefs have "
 					+ " property db=" + ModelUtils.COMMENT_FOR_GENERATED + ", and id - URI of the corresponding "
-					+ "BioSource object in the same model.";
+					+ "Process (Pathway or Interaction) object in the same model.";
 				return true;
 			}
 		}

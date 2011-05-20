@@ -58,13 +58,6 @@ public final class CPathSettings {
 	public static final String CREATE_DB_KEY = "createSchema";
 	
 	/*
-	 * URI prefix for auto-generated/converted during the data import 
-	 * and normalization utility class objects 
-	 * (i.e., for xrefs, ChemicalStructure, etc.)
-	 */
-	public static final String CPATH_URI_PREFIX = "urn:pathwaycommons:"; //=Normalizer.BIOPAX_URI_PREFIX;
-	
-	/*
 	 * Use this default prefix for DB names that we create (drop),
 	 * e.g., for pre-merge and unit test databases.
 	 * (this does not affect db names specified in cpath.properties)

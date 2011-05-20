@@ -123,8 +123,8 @@ public class CPathMergerTest {
 		// test proper merge of protein reference
 		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#Protein_54"));
 		assertTrue(mergedModel.containsID("urn:miriam:uniprot:P27797"));
-		assertTrue(mergedModel.containsID(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:UNIPROT_P27797"));
-		assertTrue(!mergedModel.containsID(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:Uniprot_P27797"));
+		assertTrue(mergedModel.containsID("urn:biopax:UnificationXref:UNIPROT_P27797"));
+		assertTrue(!mergedModel.containsID("urn:biopax:UnificationXref:Uniprot_P27797"));
 		assertTrue(mergedModel.containsID("urn:miriam:taxonomy:9606"));
 		
 		ProteinReference pr = (ProteinReference)mergedModel.getByID("urn:miriam:uniprot:P27797");
@@ -139,7 +139,7 @@ public class CPathMergerTest {
 		// test proper merge of small molecule reference
 		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate"));
 		assertTrue(mergedModel.containsID("urn:miriam:chebi:20"));
-		assertTrue(mergedModel.containsID(CPathSettings.CPATH_URI_PREFIX+"ChemicalStructure:chebi_20"));
+		assertTrue(mergedModel.containsID("urn:biopax:ChemicalStructure:chebi_20"));
 		assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_8"));
 		assertTrue(!mergedModel.containsID("urn:miriam:pubchem.substance:14438"));
 		assertTrue(!mergedModel.containsID("urn:miriam:pubchem.substance:14439"));
@@ -190,7 +190,8 @@ public class CPathMergerTest {
 		
 		
 		// now - test pcDAO model directly	
-		ProteinReference pr = (ProteinReference)pcDAO.getByIdInitialized("urn:miriam:uniprot:P27797");
+		ProteinReference pr = (ProteinReference)pcDAO.getByID("urn:miriam:uniprot:P27797");
+		pcDAO.initialize(pr);
 		assertEquals(8, pr.getName().size());
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
@@ -200,7 +201,8 @@ public class CPathMergerTest {
 		// TODO: add asserts for CV
 		assertTrue(pcDAO.containsID("urn:miriam:obo.go:GO%3A0005737"));
 		
-		SmallMolecule sm = (SmallMolecule)pcDAO.getByIdInitialized("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
+		SmallMolecule sm = (SmallMolecule)pcDAO.getByID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
+		pcDAO.initialize(sm);
 		SmallMoleculeReference smr = (SmallMoleculeReference)sm.getEntityReference();
 		assertEquals("urn:miriam:chebi:20", smr.getRDFId());
 		

@@ -47,8 +47,6 @@ import org.hibernate.search.*;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 
-
-import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
@@ -98,10 +96,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	{
 		this.level = BioPAXLevel.L3;
 		this.factory = level.getDefaultFactory();
+		// no namespace!
 		this.nameSpacePrefixMap = new HashMap<String, String>();
-		this.nameSpacePrefixMap.put("", CPathSettings.CPATH_URI_PREFIX);
+		//this.nameSpacePrefixMap.put("", "urn:biopax:");
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
+		this.simpleIO.normalizeNameSpaces(false);
 		this.multiFieldQueryParser = new MultiFieldQueryParser(
 			Version.LUCENE_29, ALL_FIELDS, 
 				new StandardAnalyzer(Version.LUCENE_29));
@@ -369,12 +369,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		
 		return toReturn;
 	}
-	
-	
-	private List<Entity> lookupForEntities(List<BioPAXElement> elements) {
-		// TODO for UtilityClass objects in the list, find the nearest Entity class parent and replace it
-		return null;
-	}
 
 	
 	/**
@@ -476,33 +470,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
-	/**
-	 * @deprecated Use getByID(uri) and then initialize(BioPAXElement) instead
-	 */
-	@Deprecated
-	public BioPAXElement getByIdInitialized(String id) {
-		BioPAXElement toReturn = getByID(id);
-		
-		/*
-		 * manually initialize (some of) inverse props here
-		 * (inverse prop. editors are not available in ElementInitializer)
-		/*
-		if (toReturn != null) {
-			if (toReturn instanceof Xref) {
-				Hibernate.initialize(((Xref)toReturn).getXrefOf()); // cool! TODO required for all inverse properties...
-			}
-			ElementInitializer initializer = new ElementInitializer();
-			initializer.initialize(this, toReturn); 
-		}
-		*/
-		
-		initialize(toReturn);
-		return toReturn; // null means no such element
-	}
-
-	
-	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
 	public BioPAXElement getByID(String id) 
 	{
 		if(id == null || "".equals(id)) 
@@ -526,7 +493,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Override
 	public Map<String, String> getNameSpacePrefixMap()
 	{
-		return nameSpacePrefixMap;
+		return Collections.unmodifiableMap(nameSpacePrefixMap);
 	}
 
 
@@ -731,56 +698,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 						Hibernate.initialize(v); 
 					}
 				}
-			}
-		}
-	}
-	
-	
-	
-	/**
-	 * Special object copier.
-	 * Clones all the properties and properties's properties, etc.
-	 * 
-	 * not all inverse (xxxOf) properties are set for this and/or dependent elements 
-	 * (only those are set that occur on the traverse's path)!
-	 * 
-	 * @deprecated use {@link PaxtoolsHibernateDAO#exportModel(OutputStream, String...)} and then {@link SimpleIOHandler#convertFromOWL(InputStream)}
-	 */
-	@Deprecated
-	@Transactional
-	private class ElementCloner implements Visitor {
-		private Traverser traverser;
-		
-		public ElementCloner() {
-			traverser = new Traverser(simpleIO.getEditorMap(), this);
-		}
-
-		@Transactional
-		public Model clone(Model source, BioPAXElement toBeCloned) {
-			Model subModel = factory.createModel();
-			Hibernate.initialize(toBeCloned);
-			traverser.traverse(toBeCloned, subModel);
-			return subModel;
-		}
-
-		@Transactional
-		public void visit(BioPAXElement domain, Object range, Model targetModel, PropertyEditor editor)
-		{
-			if (!targetModel.containsID(domain.getRDFId())) {
-                targetModel.addNew(domain.getModelInterface(), domain.getRDFId());
-			}
-			
-			if (range instanceof BioPAXElement)
-			{
-				Hibernate.initialize(range);
-				BioPAXElement bpe = (BioPAXElement) range;
-				if (!targetModel.containsID(bpe.getRDFId())) {
-					traverser.traverse(bpe, targetModel);
-				}
-				editor.setValueToBean(targetModel.getByID(bpe.getRDFId()), 
-						targetModel.getByID(domain.getRDFId()));
-			} else {
-				editor.setValueToBean(range, targetModel.getByID(domain.getRDFId()));
 			}
 		}
 	}

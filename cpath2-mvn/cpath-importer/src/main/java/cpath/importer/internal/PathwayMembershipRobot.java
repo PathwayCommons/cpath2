@@ -25,7 +25,7 @@ public class PathwayMembershipRobot implements Analysis {
 	public Set<BioPAXElement> execute(Model model, Object... args) 
 	{	
 		ModelUtils modelUtils = new ModelUtils(model);
-		modelUtils.generateEntityProcessXrefs(Pathway.class, null);
+		modelUtils.generateEntityProcessXrefs(Pathway.class);
 		return null;
 	}
 }

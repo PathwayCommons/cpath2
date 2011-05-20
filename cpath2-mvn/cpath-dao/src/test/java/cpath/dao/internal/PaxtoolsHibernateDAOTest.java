@@ -40,7 +40,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import org.apache.commons.logging.*;
 
-import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 
 import java.io.*;
@@ -89,10 +88,9 @@ public class PaxtoolsHibernateDAOTest {
 		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
 		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Protein_A"));
 		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Protein_B"));
-		assertTrue(paxtoolsDAO.containsID(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:Taxonomy_562"));
+		assertTrue(paxtoolsDAO.containsID("urn:biopax:UnificationXref:Taxonomy_562"));
 		
-		BioPAXElement bpe = paxtoolsDAO.getByID(
-				CPathSettings.CPATH_URI_PREFIX+"UnificationXref:Taxonomy_562");
+		BioPAXElement bpe = paxtoolsDAO.getByID("urn:biopax:UnificationXref:Taxonomy_562");
 		assertTrue(bpe instanceof UnificationXref);
 		
 		BioPAXElement e = paxtoolsDAO
@@ -144,16 +142,15 @@ public class PaxtoolsHibernateDAOTest {
 			.getByID("http://www.biopax.org/examples/myExample#Protein_A");
 		assertTrue(bpe instanceof Protein);
 		
-		bpe = paxtoolsDAO.getByID(CPathSettings.CPATH_URI_PREFIX
-			+ "UnificationXref:UniProt_P46880");
+		bpe = paxtoolsDAO.getByID("urn:biopax:UnificationXref:UniProt_P46880");
 		assertTrue(bpe instanceof UnificationXref);
 	}
 
 	
 	@Test // protein reference's xref's getXrefOf() is not empty
 	public void testGetXReferableAndXrefOf() throws Exception {
-		ProteinReference pr = (ProteinReference) paxtoolsDAO.getByID(
-				"urn:miriam:uniprot:P46880");
+		ProteinReference pr = (ProteinReference) paxtoolsDAO
+			.getByID("urn:miriam:uniprot:P46880");
 		paxtoolsDAO.initialize(pr);
 		assertTrue(pr instanceof ProteinReference);
 		assertFalse(pr.getXref().isEmpty());
@@ -174,8 +171,7 @@ public class PaxtoolsHibernateDAOTest {
 		 * which is usable only within the session/transaction,
 		 * which is closed after the call :) So 'initialize' is required - 
 		 */
-		BioPAXElement bpe = paxtoolsDAO.getByID(CPathSettings.CPATH_URI_PREFIX
-				+ "UnificationXref:UniProt_P46880");
+		BioPAXElement bpe = paxtoolsDAO.getByID("urn:biopax:UnificationXref:UniProt_P46880");
 		paxtoolsDAO.initialize(bpe);
 		assertTrue(bpe instanceof UnificationXref);
 		
@@ -218,7 +214,7 @@ public class PaxtoolsHibernateDAOTest {
 		System.out.println("Clone the protein and export model:");
 		assertTrue(m.containsID("http://www.biopax.org/examples/myExample#Protein_A"));
 		assertTrue(m.containsID("urn:miriam:uniprot:P46880"));
-		assertTrue(m.containsID(CPathSettings.CPATH_URI_PREFIX + "UnificationXref:UniProt_P46880"));
+		assertTrue(m.containsID("urn:biopax:UnificationXref:UniProt_P46880"));
 		
 		OutputStream out = new FileOutputStream(
 				getClass().getClassLoader().getResource("").getPath() 
@@ -255,7 +251,7 @@ public class PaxtoolsHibernateDAOTest {
 	public void testFind() throws Exception {
 		List<String> list = paxtoolsDAO.find("P46880", new Class[]{BioPAXElement.class});
 		assertFalse(list.isEmpty());
-		assertTrue(list.contains(CPathSettings.CPATH_URI_PREFIX + "UnificationXref:UniProt_P46880"));
+		assertTrue(list.contains("urn:biopax:UnificationXref:UniProt_P46880"));
 		System.out.println("find by 'P46880' returned: " + list.toString());
 		
 		/* 'P46880' is used only in the PR's RDFId and in the Uni.Xref,

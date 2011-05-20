@@ -10,13 +10,14 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.validator.utils.Normalizer;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
-import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 
 /**
@@ -309,7 +310,7 @@ public class ChEBIConverterImpl extends BaseConverterImpl
 		}		
 		// chemical structure - we use InChI, not smiles
 		String[] rdfIDParts = toReturn.getRDFId().split(COLON_DELIMITER);
-		String chemicalStructureID = CPathSettings.CPATH_URI_PREFIX 
+		String chemicalStructureID = ModelUtils.BIOPAX_URI_PREFIX 
 			+ "ChemicalStructure:" + rdfIDParts[2]+"_"+rdfIDParts[3];
 		String structure = getValue(entryBuffer, CHEBI_INCHI);
 		setChemicalStructure(structure, StructureFormatType.InChI, chemicalStructureID, toReturn);
@@ -582,9 +583,7 @@ public class ChEBIConverterImpl extends BaseConverterImpl
 					+ ", type: " + aClass.getSimpleName());
 		}
 		
-		String rdfID =  CPathSettings.CPATH_URI_PREFIX +
-			aClass.getSimpleName() + ":" + 
-			URLEncoder.encode(db.toUpperCase() + "_" + id);
+		String rdfID = Normalizer.generateURIForXref(db, id, null, aClass);
 
 		if (model.containsID(rdfID)) {
 			toReturn = getById(rdfID, aClass);

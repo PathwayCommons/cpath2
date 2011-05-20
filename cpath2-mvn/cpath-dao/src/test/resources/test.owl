@@ -28,7 +28,7 @@
 	<bp:ProteinReference rdf:about="urn:miriam:uniprot:P46880">
 		<bp:displayName rdf:datatype="xsd:string">glucokinase</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">GLK</bp:standardName>
-		<bp:xref rdf:resource="urn:pathwaycommons:UnificationXref:UniProt_P46880" />
+		<bp:xref rdf:resource="urn:biopax:UnificationXref:UniProt_P46880" />
 		<bp:sequence rdf:datatype="xsd:string">MTKYALVGDVGGTNARLALCDIASGEISQAKTYSGLDYPSLEAVIRVYLEEHKVEVKDGCIAIACPITGDWVAMTNHTWAFSIAEMKKNLGFSHLEIINDFTAVSMAIPMLKKEHLIQFGGAEPVEGKPIAVYGAGTGLGVAHLVHVDKRWVSLPGEGGHVDFAPNSEEEAIILEILRAEIGHVSAERVLSGPGLVNLYRAIVKADNRLPENLKPKDITERALADSCTDCRRALSLFCVIMGRFGGNLALNLGTFGGVFIAGGIVPRFLEFFKASGFRAAFEDKGRFKEYVHDIPVYLIVHDNPGLLGSGAHLRQTLGHIL
 		</bp:sequence>
 		<bp:organism rdf:resource="urn:miriam:taxonomy:562" />
@@ -37,10 +37,10 @@
 	<bp:BioSource rdf:about="urn:miriam:taxonomy:562">
 		<bp:displayName rdf:datatype="xsd:string">Escherichia coli
 		</bp:displayName>
-		<bp:xref rdf:resource="urn:pathwaycommons:UnificationXref:Taxonomy_562" />
+		<bp:xref rdf:resource="urn:biopax:UnificationXref:Taxonomy_562" />
 	</bp:BioSource>
 
-	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:Taxonomy_562">
+	<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:Taxonomy_562">
 		<bp:db rdf:datatype="xsd:string">Taxonomy</bp:db>
 		<bp:id rdf:datatype="xsd:string">562</bp:id>
 	</bp:UnificationXref>
@@ -48,10 +48,10 @@
 	<bp:CellularLocationVocabulary rdf:about="urn:miriam:obo.go:GO%3A0005737">
 		<bp:term rdf:datatype="xsd:string">cytoplasm</bp:term>
 		<bp:xref
-			rdf:resource="urn:pathwaycommons:UnificationXref:Gene+Ontology_GO%3A0005737" />
+			rdf:resource="urn:biopax:UnificationXref:Gene+Ontology_GO%3A0005737" />
 	</bp:CellularLocationVocabulary>
 
-	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:UniProt_P46880">
+	<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UniProt_P46880">
 		<bp:db rdf:datatype="xsd:string">UniProt</bp:db>
 		<bp:id rdf:datatype="xsd:string">P46880</bp:id>
 		<bp:comment rdf:datatype="xsd:string">PMID: 15608167</bp:comment>
@@ -62,7 +62,7 @@
 	</bp:Provenance>
 
 	<bp:UnificationXref
-		rdf:about="urn:pathwaycommons:UnificationXref:Gene+Ontology_GO%3A0005737">
+		rdf:about="urn:biopax:UnificationXref:Gene+Ontology_GO%3A0005737">
 		<bp:db rdf:datatype="xsd:string">Gene Ontology</bp:db>
 		<bp:id rdf:datatype="xsd:string">GO:0005737</bp:id>
 		<bp:comment rdf:datatype="xsd:string">PMID: 11483584</bp:comment>

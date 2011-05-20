@@ -1,7 +1,7 @@
 package cpath.dao.internal.filters;
 
-
 import org.biopax.paxtools.model.level3.Entity;
+import org.biopax.paxtools.model.level3.Provenance;
 
 import cpath.dao.filters.SearchFilterRange;
 
@@ -18,7 +18,10 @@ public class EntityDataSourceFilter extends
 {
 	@Override
 	public boolean apply(Entity searchResult) {
-		// TODO Auto-generated method stub
+		for(Provenance prov : searchResult.getDataSource()) {
+			if(this.values.contains(prov.getRDFId()))
+				return true;
+		}
 		return false;
 	}
 
