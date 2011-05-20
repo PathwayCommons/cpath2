@@ -34,6 +34,7 @@ import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.Explanation;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.validator.utils.Normalizer;
 import org.hibernate.search.*;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
@@ -44,6 +45,7 @@ import cpath.warehouse.WarehouseDAO;
 
 import java.util.*;
 import java.io.*;
+import java.net.URLEncoder;
 
 
 /**
@@ -236,19 +238,46 @@ public class WarehousePaxtoolsHibernateDAO extends PaxtoolsHibernateDAO implemen
 	{
 		Set<String> toReturn = new HashSet<String>();
 		
-		for (Xref xref : xrefs) {
-			// load persistent Xref by RDFId
-			Xref x = (Xref) getByID(xref.getRDFId());
-			if(x == null) {
-				log.warn("getByXref: no matching xref found for: " +
-					xref + " - " + xref.getRDFId() + ". Skipping.");
+		for (Xref xref : xrefs) {			
+			// load persistent Xref by ID
+			
+			/* WARN: x will be always NULL (the BUG was here!)
+			 * if cpath2 importer and biopax normalizer 
+			 * use different methods to generate xref IDs!
+			 * 
+			 * The other thing is that the normalizer uses
+			 * idVersion property when generating xref IDs,
+			 * but we do not want/do this creating our warehouse...
+			 */
+			//String xurn = xref.getRDFId();
+			//Xref x = (Xref) getByID(xurn);
+			
+			/* this (an alternative) could be used to fix that bug,
+			 */
+			// map to a normalized RDFId for this type of xref:
+			if(xref.getDb() == null || xref.getId() == null) {
+				log.warn("getByXref: " + xref + " db or id is null! Skipping.");
 				continue;
 			}
-			// collect owners's ids (of requested type only)
-			for(XReferrable xr: x.getXrefOf()) {
-				if (clazz.isInstance(xr)) {
-					toReturn.add(xr.getRDFId());
+			
+			// generate "normalized" ID, and (unlike it's done in the normalizer) we here 
+			// ignore xref.idVersion!!! (TODO think of, e.g., unoprot isoforms, etc. later)
+			String xurn = Normalizer.generateURIForXref(xref.getDb(), 
+				xref.getId(), null, (Class<? extends Xref>) xref.getModelInterface());
+			
+			// now try to get it from the warehouse
+			Xref x = (Xref) getByID(xurn);
+			if (x != null) {
+				// collect owners's ids (of requested type only)
+				for (XReferrable xr : x.getXrefOf()) {
+					if (clazz.isInstance(xr)) {
+						toReturn.add(xr.getRDFId());
+					}
 				}
+			} else {
+				log.warn("getByXref: using normalized ID:" + xurn 
+					+ " " + "no matching xref found for: " +
+					xref + " - " + xref.getRDFId() + ". Skipping.");
 			}
 		}
 		

@@ -308,7 +308,7 @@
 
 	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:PUBCHEM_14438">
 		<bp:db rdf:datatype="xsd:string">PUBCHEM</bp:db>
-		<bp:id rdf:datatype="xsd:string">PUBCHEM:14438</bp:id>
+		<bp:id rdf:datatype="xsd:string">14438</bp:id>
 		<bp:comment rdf:datatype="xsd:string">PMID: 9847135</bp:comment>
 	</bp:UnificationXref>
 
@@ -333,7 +333,7 @@
 
 	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:PUBCHEM_14439">
 		<bp:db rdf:datatype="xsd:string">PUBCHEM</bp:db>
-		<bp:id rdf:datatype="xsd:string">PUBCHEM:14439</bp:id>
+		<bp:id rdf:datatype="xsd:string">14439</bp:id>
 		<bp:comment rdf:datatype="xsd:string">PMID: 9847135</bp:comment>
 	</bp:UnificationXref>
 

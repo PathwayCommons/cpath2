@@ -1,19 +1,18 @@
 package cpath.converter.internal;
 
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.validator.utils.Normalizer;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import cpath.config.CPathSettings;
-
 import java.util.*;
 import java.io.*;
-import java.net.URLEncoder;
 
 /**
  * Implementation of Converter interface for Uniprot data.
@@ -301,15 +300,13 @@ public class UniprotConverterImpl extends BaseConverterImpl {
     	String id, ProteinReference proteinReference, RelationshipType relationshipType) 
     {
         id = id.trim();
-		String rdfId = L3_RELATIONSHIPXREF_URI + URLEncoder.encode(dbName.toUpperCase() + "_" +  id.toUpperCase());
+		String rdfId = Normalizer.generateURIForXref(dbName, id, null, RelationshipXref.class);
 		RelationshipXref rXRef = (RelationshipXref)proteinReferenceModel.addNew(RelationshipXref.class, rdfId);
 		rXRef.setDb(dbName);
 		rXRef.setId(id);
 		
 		//find/create a special relationship CV
-		String relCvId = CPathSettings.CPATH_URI_PREFIX + 
-			RelationshipTypeVocabulary.class.getSimpleName() +
-				":" + relationshipType;
+		String relCvId = ModelUtils.relationshipTypeVocabularyUri(relationshipType.name());
 		RelationshipTypeVocabulary relCv = (RelationshipTypeVocabulary) proteinReferenceModel.getByID(relCvId);
 		if(relCv == null) {
 			relCv = proteinReferenceModel.addNew(RelationshipTypeVocabulary.class, relCvId);
@@ -330,7 +327,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
     private void setUnificationXRef(Model proteinReferenceModel, String dbName, String id, ProteinReference proteinReference) {
 
         id = id.trim();
-		String rdfId = L3_UNIFICATIONXREF_URI + URLEncoder.encode(dbName.toUpperCase() + "_" +  id.toUpperCase());
+		String rdfId = Normalizer.generateURIForXref(dbName, id, null, UnificationXref.class);
 		UnificationXref rXRef = (UnificationXref)proteinReferenceModel.addNew(UnificationXref.class, rdfId);
 		rXRef.setDb(dbName);
 		rXRef.setId(id);
@@ -408,8 +405,8 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 					BioSource.class, rdfId);
 			toReturn.setStandardName(name);
 			UnificationXref taxonXref = (UnificationXref) proteinReferenceModel
-					.addNew(UnificationXref.class, L3_UNIFICATIONXREF_URI
-							+ "TAXONOMY_" + taxId.toUpperCase());
+				.addNew(UnificationXref.class, 
+					Normalizer.generateURIForXref("TAXONOMY", taxId, null, UnificationXref.class));
 			taxonXref.setDb("taxonomy");
 			taxonXref.setId(taxId);
 			// TODO update when taxonXref is removed (deprecated property)

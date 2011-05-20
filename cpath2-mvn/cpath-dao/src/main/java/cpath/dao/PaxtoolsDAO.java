@@ -100,20 +100,7 @@ public interface PaxtoolsDAO extends Model, Reindexable {
      */
     Model getValidSubModel(Collection<String> ids);
  
-    
-    /**
-     * Gets deeply initialized BioPAX element, i.e., 
-     * with all the properties' properties set for sure
-     * (this matters when an implementation uses 
-     * caching, transactions, etc.)
-     * 
-     * @param id
-     * @return
-     */
-    @Deprecated
-    BioPAXElement getByIdInitialized(String id);
- 
-    
+        
     /**
      * Initializes the properties and inverse properties, 
      * including collections!

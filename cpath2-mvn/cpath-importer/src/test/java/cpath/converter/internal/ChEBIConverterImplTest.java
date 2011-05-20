@@ -80,7 +80,11 @@ public class ChEBIConverterImplTest {
 		assertTrue(er422.getMemberEntityReferenceOf().contains(er28));
         assertEquals(er422, er28.getMemberEntityReference().iterator().next());
         
-        assertTrue(model.containsID("urn:pathwaycommons:RelationshipXref:HAS_PART_CHEBI_20"));
-        assertTrue(model.containsID("urn:pathwaycommons:RelationshipXref:IS_CONJUGATE_ACID_OF_CHEBI_422"));
+        for(RelationshipXref x : model.getObjects(RelationshipXref.class)) {
+        	System.out.println(x.getRDFId() + " is " + x);
+        }
+        
+        assertTrue(model.containsID("urn:biopax:RelationshipXref:HAS_PART_CHEBI%3A20"));
+        assertTrue(model.containsID("urn:biopax:RelationshipXref:IS_CONJUGATE_ACID_OF_CHEBI%3A422"));
 	}
 }

@@ -1,5 +1,9 @@
 package cpath.dao.internal.filters;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.biopax.paxtools.model.BioPAXElement;
 
 import cpath.dao.filters.SearchFilter;
@@ -13,11 +17,16 @@ import cpath.dao.filters.SearchFilter;
 public abstract class SearchFilterAdapter<E extends BioPAXElement, T> 
 	implements SearchFilter<E, T> 
 {
-	protected T[] values;
+	protected Set<T> values;
+	
+	public SearchFilterAdapter() {
+		values = new HashSet<T>();
+	}
 	
 	@Override
 	public void setValues(T... values) {
-		this.values = values;
+		this.values.clear();
+		Collections.addAll(this.values, values);
 	}
 
 }

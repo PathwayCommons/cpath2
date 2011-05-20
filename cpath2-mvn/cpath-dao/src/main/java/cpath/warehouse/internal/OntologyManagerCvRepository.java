@@ -43,6 +43,7 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.validator.utils.BiopaxOntologyManager;
+import org.biopax.validator.utils.Normalizer;
 import org.springframework.core.io.Resource;
 
 import psidev.ontology_manager.Ontology;
@@ -65,8 +66,6 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 {
 	private static final Log log = LogFactory.getLog(OntologyManagerCvRepository.class);
 	private static final String URN_OBO_PREFIX = "urn:miriam:obo.";
-	private static final String URN_UNIFICATION_XREF_PREFIX = 
-		CPathSettings.CPATH_URI_PREFIX + "UnificationXref:";
 	private static BioPAXFactory biopaxFactory = BioPAXLevel.L3.getDefaultFactory();
 	
 	/**
@@ -192,8 +191,7 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 		
 		String ontId = term.getOntologyId(); // like "GO" 
 		String db = getOntology(ontId).getName(); // names were fixed in the constructor!
-		String rdfid = URN_UNIFICATION_XREF_PREFIX + 
-			URLEncoder.encode(db + "_" + term.getTermAccession());
+		String rdfid = Normalizer.generateURIForXref(db, term.getTermAccession(), null, UnificationXref.class);
 		UnificationXref uref = biopaxFactory.create(UnificationXref.class, rdfid);
 		uref.setDb(db); 
 		uref.setId(term.getTermAccession());

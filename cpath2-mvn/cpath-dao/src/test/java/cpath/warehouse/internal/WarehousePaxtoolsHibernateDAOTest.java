@@ -38,7 +38,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import org.apache.commons.logging.*;
 
-import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.dao.internal.PaxtoolsHibernateDAOTest;
@@ -81,7 +80,7 @@ public class WarehousePaxtoolsHibernateDAOTest {
 			((PaxtoolsDAO)whpcDAO).importModel(new File(WarehousePaxtoolsHibernateDAOTest.class.getResource("/test.owl").getFile()));
 			((PaxtoolsDAO)whpcDAO).importModel(new File(WarehousePaxtoolsHibernateDAOTest.class.getResource("/test2.owl").getFile()));
 		} catch (FileNotFoundException e) {
-			throw new RuntimeException(e);
+			throw new RuntimeException("Failed to read test data!", e);
 		}
 		
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
@@ -99,10 +98,9 @@ public class WarehousePaxtoolsHibernateDAOTest {
 		assertTrue(((PaxtoolsDAO)whpcDAO).containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
 		assertTrue(((PaxtoolsDAO)whpcDAO).containsID("http://www.biopax.org/examples/myExample#Protein_A"));
 		assertTrue(((PaxtoolsDAO)whpcDAO).containsID("http://www.biopax.org/examples/myExample#Protein_B"));
-		assertTrue(((PaxtoolsDAO)whpcDAO).containsID(CPathSettings.CPATH_URI_PREFIX+"UnificationXref:Taxonomy_562"));
+		assertTrue(((PaxtoolsDAO)whpcDAO).containsID("urn:biopax:UnificationXref:Taxonomy_562"));
 		
-		BioPAXElement bpe = whpcDAO.getObject(
-				CPathSettings.CPATH_URI_PREFIX+"UnificationXref:Taxonomy_562", UnificationXref.class);
+		BioPAXElement bpe = whpcDAO.getObject("urn:biopax:UnificationXref:Taxonomy_562", UnificationXref.class);
 		assertTrue(bpe instanceof UnificationXref);
 		
 		BioPAXElement e = whpcDAO
@@ -137,8 +135,8 @@ public class WarehousePaxtoolsHibernateDAOTest {
 		BioPAXElement bpe = whpcDAO.getObject("http://www.biopax.org/examples/myExample#Protein_A");
 		assertTrue(bpe instanceof Protein);
 		
-		bpe = ((WarehouseDAO)whpcDAO).getObject(CPathSettings.CPATH_URI_PREFIX
-			+ "UnificationXref:UniProt_P46880", UnificationXref.class);
+		bpe = ((WarehouseDAO)whpcDAO)
+			.getObject("urn:biopax:UnificationXref:UniProt_P46880", UnificationXref.class);
 		assertTrue(bpe instanceof UnificationXref);
 	}
 
@@ -166,8 +164,8 @@ public class WarehousePaxtoolsHibernateDAOTest {
 		 * which is usable only within the session/transaction,
 		 * which is closed after the call :) So we use getObject instead - 
 		 */		
-		BioPAXElement bpe = whpcDAO.getObject(CPathSettings.CPATH_URI_PREFIX
-				+ "UnificationXref:UniProt_P46880", UnificationXref.class);
+		BioPAXElement bpe = whpcDAO
+			.getObject("urn:biopax:UnificationXref:UniProt_P46880", UnificationXref.class);
 		assertTrue(bpe instanceof UnificationXref);
 		
 		// if the element can be exported like this, it's fully initialized...
@@ -215,7 +213,7 @@ public class WarehousePaxtoolsHibernateDAOTest {
 	public void testFind() throws Exception {
 		List<String> list = ((PaxtoolsDAO)whpcDAO).find("P46880", new Class[]{BioPAXElement.class});
 		assertFalse(list.isEmpty());
-		assertTrue(list.contains(CPathSettings.CPATH_URI_PREFIX + "UnificationXref:UniProt_P46880"));
+		assertTrue(list.contains("urn:biopax:UnificationXref:UniProt_P46880"));
 		System.out.println("find by 'P46880' returned: " + list.toString());
 		
 		// P46880 is used only in the PR's RDFId and not in other fields

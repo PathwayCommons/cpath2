@@ -60,7 +60,7 @@ public class NormalizerTest {
 			System.out.println(x.getRDFId() + " [" + x + "]");
 		}
 */
-		assertFalse(m.containsID(Normalizer.BIOPAX_URI_PREFIX + "UnificationXref:KEGG+COMPOUND_c00022"));
-		assertTrue(m.containsID(Normalizer.BIOPAX_URI_PREFIX + "UnificationXref:KEGG+COMPOUND_C00022"));	
+		assertFalse(m.containsID("urn:biopax:UnificationXref:KEGG+COMPOUND_c00022"));
+		assertTrue(m.containsID("urn:biopax:UnificationXref:KEGG+COMPOUND_C00022"));	
 	}
 }
