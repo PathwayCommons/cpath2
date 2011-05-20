@@ -34,6 +34,9 @@ public class EntityByOrganismRelationshipXrefsFilter
 	@Override
 	public boolean apply(Entity searchResult) {
 		// use relationship xrefs with rel. CV "ORGANISM"; compare 'id' vs. the list of filter values
+		if(values.isEmpty())
+			return true;
+		
 		Set<RelationshipXref> rxrefs = new ClassFilterSet<Xref, RelationshipXref>(
 				searchResult.getXref(), RelationshipXref.class);
 		for(RelationshipXref rx : rxrefs) {

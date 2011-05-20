@@ -18,6 +18,9 @@ public class EntityDataSourceFilter extends
 {
 	@Override
 	public boolean apply(Entity searchResult) {
+		if(values.isEmpty())
+			return true;
+		
 		for(Provenance prov : searchResult.getDataSource()) {
 			if(this.values.contains(prov.getRDFId()))
 				return true;

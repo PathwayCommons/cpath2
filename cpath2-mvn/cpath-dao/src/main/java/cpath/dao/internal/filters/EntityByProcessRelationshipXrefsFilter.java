@@ -33,6 +33,9 @@ public class EntityByProcessRelationshipXrefsFilter
 
 	@Override
 	public boolean apply(Entity searchResult) {
+		if(values.isEmpty())
+			return true;
+		
 		Set<RelationshipXref> rxrefs = new ClassFilterSet<Xref, RelationshipXref>(
 				searchResult.getXref(), RelationshipXref.class);
 		for(RelationshipXref rx : rxrefs) {

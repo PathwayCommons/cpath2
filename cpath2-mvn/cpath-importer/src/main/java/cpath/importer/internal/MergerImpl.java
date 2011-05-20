@@ -225,9 +225,9 @@ public class MergerImpl implements Merger {
 			
 			if(replacement == null) {
 				if (log.isInfoEnabled()) 
-					log.info("No match found in the Warehouse: " + bpe.getRDFId() 
-						+ " (" + bpe.getModelInterface().getSimpleName() + ") " +
-						"will be merged as is.");
+					log.info("No match found in the warehouse to replace " + bpe.getRDFId() 
+						+ " (" + bpe.getModelInterface().getSimpleName() + "), " +
+						"and so it will be merged as is!");
 			} else {
 				// label it by adding a special signature comment,
 				replacement.addComment(CPathSettings.CPATH2_GENERATED_COMMENT);
@@ -251,11 +251,11 @@ public class MergerImpl implements Merger {
 				if(bpe != replacement) {
 					pathwayModel.replace(bpe, replacement);
 					modelUtils.removeDependentsIfDangling(bpe);
-					
 					if (log.isInfoEnabled()) {
 						log.info(bpe.getRDFId() 
-							+ " (" + bpe.getModelInterface().getSimpleName() + ") " +
-							"is replaced with " + replacement + "(from the warehouse)");	
+							+ " (" + bpe.getModelInterface().getSimpleName() + ") " 
+							+ "is replaced with " + replacement.getRDFId() 
+							+ "(from the warehouse)");	
 					}
 				}
 			}
@@ -353,15 +353,23 @@ public class MergerImpl implements Merger {
 	private UtilityClass processSmallMoleculeReference(SmallMoleculeReference premergeSMR) 
 	{	
 		SmallMoleculeReference toReturn = null;
+
+		// try by ID first (should work if properly normalized)
+		toReturn = moleculesDAO.getObject(premergeSMR.getRDFId(), SmallMoleculeReference.class);
+		if(toReturn != null) {
+			return toReturn;
+		}
 		
-		// this is a pubchem or chebi small molecule reference.
-		// get set of unification xrefs for this incoming smr
+		// If not found by id, we search by UnificationXrefs
+		
+		// This is a pubchem or chebi small molecule reference.
+		// Let's get the set of its unification xrefs,
 		// which we will then use to lookup our version of the smr
 		// in the warehouse.
 		Set<UnificationXref> uxrefs = new ClassFilterSet<Xref,UnificationXref>(
 				premergeSMR.getXref(), UnificationXref.class);
 
-		// get id of matching smr in our warehouse.  note:
+		// Get id of matching smr in our warehouse.  Note:
 		// all smr in warehouse have at least ChEBI and,
 		// possibly, inchi and/or pubchem uxrefs.  Not sure
 		// if it is possible that multiple SMRs in our warehouse
@@ -372,9 +380,6 @@ public class MergerImpl implements Merger {
 		
 		if (chebiUrn != null) { 
 			toReturn = moleculesDAO.getObject(chebiUrn, SmallMoleculeReference.class);
-		} else {
-			log.warn(premergeSMR.getRDFId() + " added 'As Is', " +
-			"because nothing's found in Warehouse.");
 		}
 		
 		return toReturn;
@@ -400,7 +405,8 @@ public class MergerImpl implements Merger {
 					log.warn("Multiple SMRs " + smrs + 
 						" found in Warehouse by: " + uxrefs);
 			}
-		} 				
+		} 
+		
 		// TODO someday.., try moleculesDAO.find(..) to search in 'xref.id'
 		
 		return id;

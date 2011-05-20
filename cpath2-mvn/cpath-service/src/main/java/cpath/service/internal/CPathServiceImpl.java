@@ -54,6 +54,7 @@ import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
 import cpath.dao.internal.filters.EntityByOrganismRelationshipXrefsFilter;
+import cpath.dao.internal.filters.EntityByProcessRelationshipXrefsFilter;
 import cpath.dao.internal.filters.EntityDataSourceFilter;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
@@ -132,28 +133,38 @@ public class CPathServiceImpl implements CPathService {
      * (non-Javadoc)
 	 * @see cpath.service.CPathService#find(..)
 	 */
+	/**
+	 * @param filterValues arrays must follow the order: organisms, datasources, pathways (anyone can be null)
+	 * 
+	 */
 	@Override
 	public Map<ResultMapKey, Object> find(String queryStr, 
-			Class<? extends BioPAXElement>[] biopaxClasses, String[] taxids,
-			String... dsources) 
+			Class<? extends BioPAXElement>[] biopaxClasses, String[]... filterValues) 
 	{
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-
-		if(biopaxClasses == null) 
-			biopaxClasses = new Class[]{};
-		
-		if(taxids == null)
-			taxids = new String[]{};
 		
 		try {
 				// init filters
-				SearchFilter<Entity, String> byOrganismFilter = new EntityByOrganismRelationshipXrefsFilter();
-				byOrganismFilter.setValues(taxids);
-				SearchFilter<Entity, String> byDatasourceFilter = new EntityDataSourceFilter();
-				byDatasourceFilter.setValues(dsources);
+				SearchFilter[] searchFilters = new SearchFilter[filterValues.length];
+			
+				if(filterValues.length  > 0) {
+					SearchFilter<Entity, String> byOrganismFilter = new EntityByOrganismRelationshipXrefsFilter();
+					byOrganismFilter.setValues(filterValues[0]);
+					searchFilters[0] = byOrganismFilter;
+				}
+				if(filterValues.length  > 1) {
+					SearchFilter<Entity, String> byDatasourceFilter = new EntityDataSourceFilter();
+					byDatasourceFilter.setValues(filterValues[1]);
+					searchFilters[1] = byDatasourceFilter;
+				}
+				if(filterValues.length  > 2) {
+					SearchFilter<Entity, String> byProcessFilter = new EntityByProcessRelationshipXrefsFilter();
+					byProcessFilter.setValues(filterValues[2]);
+					searchFilters[2] = byProcessFilter;
+				}
 				
 				// do search
-				Collection<String> data = mainDAO.find(queryStr, biopaxClasses, byDatasourceFilter, byOrganismFilter); 
+				Collection<String> data = mainDAO.find(queryStr, biopaxClasses, searchFilters); 
 				
 				map.put(DATA, data);
 				map.put(COUNT, data.size()); // becomes Integer
