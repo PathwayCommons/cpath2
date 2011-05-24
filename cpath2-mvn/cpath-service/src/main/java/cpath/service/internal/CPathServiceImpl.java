@@ -45,6 +45,7 @@ import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.Provenance;
+import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.query.algorithm.Direction;
@@ -171,10 +172,12 @@ public class CPathServiceImpl implements CPathService {
 						&& ((RelationshipXref) x).getRelationshipType() != null) 
 					{
 						RelationshipXref rx = (RelationshipXref) x;
-						if(rx.getRelationshipType().getTerm().contains(RelationshipType.ORGANISM)) {
+						RelationshipTypeVocabulary cv = rx.getRelationshipType();
+						mainDAO.initialize(cv);
+						if(cv.getTerm().contains(RelationshipType.ORGANISM)) {
 							hit.getOrganism().add(rx.getId());
 						} 
-						else if(rx.getRelationshipType().getTerm().contains(RelationshipType.PROCESS)) {
+						else if(cv.getTerm().contains(RelationshipType.PROCESS)) {
 							hit.getPathway().add(rx.getId());
 						}
 					}
