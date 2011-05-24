@@ -26,7 +26,8 @@ public abstract class SearchFilterAdapter<E extends BioPAXElement, T>
 	@Override
 	public void setValues(T[] values) {
 		this.values.clear();
-		Collections.addAll(this.values, values);
+		if(values != null)
+			Collections.addAll(this.values, values);
 	}
 
 }

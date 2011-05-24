@@ -127,6 +127,7 @@ public class HelpController {
     
     @RequestMapping("/help/commands/{cmd}")
     public @ResponseBody Help getCommand(@PathVariable Cmd cmd) {
+    	if(cmd == null) return getCommands();
     	Help help = new Help();
     	help.setId(cmd.name());
 		help.setTitle(cmd.name());
@@ -164,6 +165,7 @@ public class HelpController {
     
     @RequestMapping("/help/formats/{fmt}")
     public @ResponseBody Help getFormat(@PathVariable OutputFormat fmt) {
+    	if(fmt == null) return getFormats();
     	Help help = new Help();
     	help.setId(fmt.name());
     	help.setTitle(fmt.name());
@@ -219,6 +221,7 @@ public class HelpController {
     
     @RequestMapping("/help/kinds/{kind}")
     public @ResponseBody Help getGraphType(@PathVariable GraphType kind) {
+    	if(kind == null) return getGraphTypes();
     	Help help = new Help();
     	help.setTitle(kind.name());
     	help.setId(kind.name());
@@ -249,6 +252,7 @@ public class HelpController {
     @RequestMapping("/help/datasources/{pds}") 
     public @ResponseBody Help getDatasource(@PathVariable PathwayDataSource pds) 
     {
+    	if(pds == null) return getDatasources();
     	final String newLine = System.getProperty("line.separator");
     	Help help = new Help();
     	DataSource ds = pds.asDataSource();
@@ -296,6 +300,7 @@ public class HelpController {
 
     @RequestMapping("/help/organisms/{o}") 
     public @ResponseBody Help getOrganism(@PathVariable OrganismDataSource o) {
+    	if(o == null) return getOrganisms();
     	Help help = new Help();
     	String taxid = o.asDataSource().getSystemCode();
     	//help.setId(taxid); //taxonomy id

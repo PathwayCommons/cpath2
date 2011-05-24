@@ -27,18 +27,32 @@
 
 package cpath.webservice;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
+
+import cpath.dao.filters.SearchFilter;
+import cpath.dao.internal.filters.EntityByOrganismRelationshipXrefsFilter;
+import cpath.dao.internal.filters.EntityByProcessRelationshipXrefsFilter;
+import cpath.dao.internal.filters.EntityDataSourceFilter;
 import cpath.service.CPathService;
 import static cpath.service.CPathService.*;
 import static cpath.service.CPathService.OutputFormat.*;
 import cpath.service.CPathService.ResultMapKey;
 import cpath.service.internal.CPathServiceImpl;
 import cpath.service.internal.ProtocolStatusCode;
+import cpath.service.jaxb.ErrorType;
+import cpath.service.jaxb.SearchHitType;
+import cpath.service.jaxb.SearchResponseType;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.query.algorithm.Direction;
@@ -46,8 +60,6 @@ import org.biopax.paxtools.query.algorithm.LimitType;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.*;
 
 import javax.validation.constraints.NotNull;
 
@@ -101,8 +113,7 @@ public class WebserviceController {
 	
 	// Get by ID
     @RequestMapping("/get")
-    @ResponseBody
-    public String elementById(
+    public @ResponseBody String elementById(
     		@RequestParam(value="format", required=false) OutputFormat format, 
     		@RequestParam("uri") String[] uri) 
     {
@@ -126,68 +137,134 @@ public class WebserviceController {
 	
     // Fulltext Search
     @RequestMapping(value="/search")
-    @ResponseBody
-    public String fulltextSearch(
+    public @ResponseBody String fulltextSearch(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement>[] types, 
-    		@RequestParam(value="q", required=true) String query,
     		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms, //filter by
     		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources, //filter by
     		@RequestParam(value="process", required=false) String[] pathwayURIs, // filter by
+    		@RequestParam(value="q", required=true) String query,
             @RequestHeader("User-Agent") String userAgent)
     {		
     	String body = "";
 
-		if (types == null || types.length == 0) {
-			types = new Class[]{BioPAXElement.class};
-			if (log.isInfoEnabled())
-    			log.info("Type not specified/recognized;" +
-    					" - using all (BioPAXElement).");
-			//TODO distinguish between not specified vs. wrong type (better return error)
-		}
-
 		if (log.isDebugEnabled())
-			log.debug("Fulltext Search (for " + Arrays.toString(types)
-					+ "), query:" + query);
-
+			log.debug("/search called (for " + Arrays.toString(types)
+				+ "), query:" + query);
 		
-		String[] organismURIs = null; 
+		Set<SearchFilter> searchFilters = createFilters(organisms, dataSources, pathwayURIs);
+
+		// get results from the service
+		Map<ResultMapKey, Object> results = service.findElements(query, types, 
+				searchFilters.toArray(new SearchFilter[]{}));
+		
+		String details = query + " (in " + Arrays.toString(types) + ")";
+		body = getListDataBody(results, details);
+		
+        /* hack to return "html" to browser so example on cpath-webdocs page
+         * shows up without having to view page code - only required for safari
+         */
+        return (userAgent.indexOf("Safari") != -1) ? getBodyAsHTML(body) : body;
+		//return body;
+	}
+   
+    
+    private Set<SearchFilter> createFilters(OrganismDataSource[] organisms,
+			PathwayDataSource[] dataSources, String[] pathwayURIs) 
+	{
+		Set<SearchFilter> searchFilters = new HashSet<SearchFilter>();
 		if(organisms != null) { // it's optional parameter (can be null)
-			organismURIs = new String[organisms.length];
+			String[] organismURIs = new String[organisms.length];
 			int i = 0;
 			for(OrganismDataSource o : organisms) {
 				//organismURIs[i++] = o.asDataSource().getSystemCode(); // taxonomy id
-				organismURIs[i++] = o.getURI();
+				if(o == null)
+					organismURIs[i++] = "UNKNOWN_THING"; // won't much anything!
+				else
+					organismURIs[i++] = o.getURI();
 			}
+			SearchFilter<Entity, String> byOrganismFilter = new EntityByOrganismRelationshipXrefsFilter();
+			byOrganismFilter.setValues(organismURIs);
+			searchFilters.add(byOrganismFilter);
 		}
 		
-		String[] dsourceURIs = null; 
 		if(dataSources != null) { // because of being optional arg.
-			dsourceURIs = new String[dataSources.length];
+			String[] dsourceURIs = new String[dataSources.length];
 			int i = 0;
-			for(PathwayDataSource o : dataSources) {
-				//dsourceURIs[i++] = o.asDataSource().getSystemCode(); //just standard name
-				dsourceURIs[i++] = o.getURI();
-				//dsourceURIs[i++] = ((Provenance)o.asDataSource().getOrganism()).getRDFId(); // hack!
+			for(PathwayDataSource d : dataSources) {
+				//dsourceURIs[i++] = d.asDataSource().getSystemCode(); //just standard name
+				//dsourceURIs[i++] = ((Provenance)d.asDataSource().getOrganism()).getRDFId(); // hack!
+				if(d == null)
+					dsourceURIs[i++] = "UNKNOWN_THING"; // won't much anything!
+				else
+					dsourceURIs[i++] = d.getURI();
 			}
+			SearchFilter<Entity, String> byDatasourceFilter = new EntityDataSourceFilter();
+			byDatasourceFilter.setValues(dsourceURIs);
+			searchFilters.add(byDatasourceFilter);
 		}
-
-		Map<ResultMapKey, Object> results = 
-			service.find(query, types, organismURIs, dsourceURIs, pathwayURIs);
 		
-		body = getListDataBody(results, query + " (in " 
-				+ Arrays.toString(types) + ")");
+		if(pathwayURIs != null) {
+			SearchFilter<Entity, String> byProcessFilter = new EntityByProcessRelationshipXrefsFilter();
+			byProcessFilter.setValues(pathwayURIs);
+			searchFilters.add(byProcessFilter);
+		}
+		
+		return searchFilters;
+	}
 
-        // hack to return "html" to browser so example on cpath-webdocs page
-        // shows up without having to view page code - only required for safari
-        return (userAgent.indexOf("Safari") != -1) ? getBodyAsHTML(body) : body;
+
+	/*
+     * An alternative to /search command;
+     * returns xml or json!
+     * 
+     */
+    @RequestMapping(value="/find")
+    public @ResponseBody SearchResponseType find(
+    		@RequestParam(value="type", required=false) Class<? extends BioPAXElement>[] types, 
+    		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms, //filter by
+    		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources, //filter by
+    		@RequestParam(value="process", required=false) String[] pathwayURIs, // filter by
+    		@RequestParam(value="q", required=true) String query
+    )
+    {		
+		if (log.isDebugEnabled())
+			log.debug("/find called (for " + Arrays.toString(types)
+					+ "), query:" + query);
+		
+		SearchResponseType response = new SearchResponseType();
+		
+		Set<SearchFilter> searchFilters = createFilters(organisms, dataSources, pathwayURIs);
+
+		// get results from the service
+		Map<ResultMapKey, Object> results = service.findElements(query, types, 
+				searchFilters.toArray(new SearchFilter[]{}));
+		
+		String details = query + " (in " + Arrays.toString(types) + ")";
+
+		if (!results.containsKey(ResultMapKey.ERROR)) {
+			List<SearchHitType> dataSet = (List<SearchHitType>) results.get(ResultMapKey.DATA);
+			if(dataSet.isEmpty()) {
+				ErrorType error = ProtocolStatusCode.NO_RESULTS_FOUND.createErrorType();
+				error.setErrorDetails("Nothing found for: " + details);
+				response.setError(error);
+			} else {
+				response.setTotalNumHits((long) dataSet.size());
+				response.getSearchHit().addAll(dataSet);
+			}
+		} else {
+			ErrorType error = ProtocolStatusCode.INTERNAL_ERROR.createErrorType();
+			error.setErrorDetails(results.get(ResultMapKey.ERROR).toString());
+			response.setError(error);
+		}
+		
+		return response;
 	}
 
     
 	//----- Graph Queries -------------------------------------------------------------------------|
 
 	@RequestMapping("/graph")
-	@ResponseBody
-    public String graphQuery(
+    public @ResponseBody String graphQuery(
 		@RequestParam(value="format", required=false) OutputFormat format,
 		@RequestParam(value="kind", required=true) GraphType kind, //required!
 		@RequestParam(value="source", required=false) String[] source,
@@ -263,23 +340,26 @@ public class WebserviceController {
 
 	//---------------------------------------------------------------------------------------------|
 	
-    /*
+    /**
      * makes a plain text string (response body) 
      * when the data (in the map) is the list of IDs,
      * one ID per line.
-     */
+     * 
+     * @deprecated
+     */ 
+	@Deprecated
     private String getListDataBody(Map<ResultMapKey, Object> result, String details) {
     	StringBuffer toReturn = new StringBuffer();
     	
 		if (!result.containsKey(ResultMapKey.ERROR)) {
-			Collection<String> dataSet = (Collection<String>) result.get(ResultMapKey.DATA);
+			List<SearchHitType> dataSet = (List<SearchHitType>) result.get(ResultMapKey.DATA);
 			if(dataSet.isEmpty()) {
 				toReturn.append(ProtocolStatusCode
 					.errorAsXml(ProtocolStatusCode.NO_RESULTS_FOUND, 
 						"Nothing found for: " + details));
 			} else {
-				for (String s : dataSet) {
-					toReturn.append(s).append(newline);
+				for (SearchHitType s : dataSet) {
+					toReturn.append(s.getUri()).append(newline);
 				}
 			}
 		} else {
@@ -309,6 +389,9 @@ public class WebserviceController {
 		return toReturn;
 	}
 
+    
+    
+    @Deprecated
     private String getBodyAsHTML(String body) {
 
         StringBuffer toReturn = new StringBuffer();
@@ -364,7 +447,7 @@ public class WebserviceController {
      * Search Warehouse for utility class elements 
      * (for those not found in the main PC model storage)
      * 
-     * TODO implement....
+     * TODO implement... if we still want this
      */
     String fulltextSearchForType(Class<? extends BioPAXElement> type, String query) 
     {	

@@ -30,11 +30,13 @@ package cpath.dao;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.Entity;
 
 import cpath.dao.filters.SearchFilter;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
@@ -53,10 +55,9 @@ public interface PaxtoolsDAO extends Model, Reindexable {
 	 */
 	void importModel(File biopaxFile) throws FileNotFoundException;
 
-    
+		
 	 /**
-	 * Returns the set of IDs 
-	 * of the BioPAX elements that match the query 
+	 * Returns the list of BioPAX elements that match the query 
 	 * and satisfy the filters if any defined.
 	 * 
      * @param query String
@@ -65,22 +66,24 @@ public interface PaxtoolsDAO extends Model, Reindexable {
 	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
 	 * @return ordered by the element's relevance list of rdfIds
      */
-    List<String> find(String query, Class<? extends BioPAXElement>[] filterByTypes,
-    		SearchFilter<? extends BioPAXElement,?>... extraFilters);
-    
+    List<BioPAXElement> findElements(String query, Class<? extends BioPAXElement>[] filterByTypes,
+    		SearchFilter<? extends BioPAXElement,?>... extraFilters);        
+
     
 	 /**
-	 * Returns the count 
-	 * of the BioPAX elements of given class
-	 * that match the full-text query string.
+	 * Returns the list of BioPAX entities that 
+	 * either match the query by themselves or 
+	 * who's child utility class elements do 
+	 * (filters apply).
 	 * 
      * @param query String
-	 * @param filterBy class to be used as a filter.
-     * @return count
+	 * @param filterByTypes - class filters for the full-text search (actual effect may depend on the concrete implementation!)
+	 * @param extraFilters custom filters (implies AND in between) that apply after the full-text query has returned;
+	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
+	 * @return ordered by the element's relevance list of rdfIds
      */
-    @Deprecated
-    Integer count(String query, Class<? extends BioPAXElement> filterBy);
-    
+    List<Entity> findEntities(String query, Class<? extends BioPAXElement>[] filterByTypes,
+    		SearchFilter<? extends BioPAXElement,?>... extraFilters);
     
     /**
      * Exports the entire model (if no IDs are given) 

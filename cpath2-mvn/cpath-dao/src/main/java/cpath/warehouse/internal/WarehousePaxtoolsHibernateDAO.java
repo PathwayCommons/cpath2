@@ -30,22 +30,17 @@ package cpath.warehouse.internal;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.search.Explanation;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.utils.Normalizer;
-import org.hibernate.search.*;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 
-import cpath.dao.filters.SearchFilter;
 import cpath.dao.internal.PaxtoolsHibernateDAO;
 import cpath.warehouse.WarehouseDAO;
 
 import java.util.*;
 import java.io.*;
-import java.net.URLEncoder;
 
 
 /**
@@ -59,102 +54,7 @@ public class WarehousePaxtoolsHibernateDAO extends PaxtoolsHibernateDAO implemen
 {
 	private static final long serialVersionUID = 1L;
 	private static Log log = LogFactory.getLog(WarehousePaxtoolsHibernateDAO.class);
-	
 
-	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
-	public List<String> find(
-			String query, 
-			Class<? extends BioPAXElement> filterByTypes[],
-			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
-	{
-		// a list of identifiers to return
-		List<String> toReturn = new ArrayList<String>();
-
-		// a shortcut
-		if (query == null || "".equals(query) 
-				|| query.trim().startsWith("*")) // see: Lucene query syntax
-		{
-			// do nothing, return the empty list
-			return toReturn;
-		} 
-		
-		// otherwise, we continue and do real job -
-		if (log.isInfoEnabled())
-			log.info("find (IDs): " + query + ", filterBy: " + Arrays.toString(filterByTypes)
-					+ "; extra filters: " + extraFilters.toString());
-
-		// collect matching elements here
-		List<BioPAXElement> results = new ArrayList<BioPAXElement>();
-		
-		// fulltext query cannot filter by interfaces (only likes annotated entity classes)...
-		Class<?>[] filterClasses = new Class<?>[filterByTypes.length];
-		for(int i = 0; i < filterClasses.length; i++) {
-			filterClasses[i] = getEntityClass(filterByTypes[i]);
-		}
-			
-		// create a native Lucene query
-		org.apache.lucene.search.Query luceneQuery = null;
-		try {
-			luceneQuery = multiFieldQueryParser.parse(query);
-		} catch (ParseException e) {
-			log.info("parser exception: " + e.getMessage());
-			return toReturn;
-		}
-
-		// get full text session
-		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		// fullTextSession.createFilter(arg0, arg1); // TODO use this, how?
-		FullTextQuery hibQuery = fullTextSession
-			.createFullTextQuery(luceneQuery, filterClasses);
-
-		int count = hibQuery.getResultSize();
-		if (log.isDebugEnabled())
-			log.debug("Query '" + query + "' results size = " + count);
-
-		// TODO shall we use pagination? [later...]
-		// hibQuery.setFirstResult(0);
-		// hibQuery.setMaxResults(10);
-
-		// using the projection
-		if (log.isDebugEnabled()) {
-			hibQuery.setProjection("RDFId", FullTextQuery.SCORE,
-				FullTextQuery.EXPLANATION, FullTextQuery.THIS);
-		} else {
-			hibQuery.setProjection("RDFId");
-		}
-		// execute search
-		List hibQueryResults = hibQuery.list();
-		for (Object row : hibQueryResults) {
-			Object[] cols = (Object[]) row;
-			String id = (String) cols[0];
-
-			// get the matching element
-			BioPAXElement bpe = (BioPAXElement) cols[3];
-			// initialize(bpe); // do not need: we're inside the transaction!
-
-			// (debug info...)
-			if (log.isDebugEnabled()) {
-				float score = (Float) cols[1];
-				Explanation expl = (Explanation) cols[2];
-				log.debug("found uri: " + id + " (" + bpe + " - "
-						+ bpe.getModelInterface() + ")" + "; score="
-						+ score + "; explanation: " + expl);
-			}
-			
-			// extra filtering
-			if (filter(bpe, extraFilters)) {
-				results.add(bpe);
-			}
-		}
-		
-		for(BioPAXElement bpe : results) {
-			toReturn.add(bpe.getRDFId());
-		}
-		
-		return toReturn;
-	}
-	
 	
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)

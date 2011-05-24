@@ -198,32 +198,5 @@ public class WarehousePaxtoolsHibernateDAOTest {
 		System.out.println("Export single protein (incomplete BioPAX):");
 		System.out.println(writer.toString());
 	}
-	
-
-	@Test
-	public void testSerchForIDs() throws Exception {
-		List<String> elist = ((PaxtoolsDAO)whpcDAO).find("P46880", new Class[]{UnificationXref.class});
-		assertFalse(elist.isEmpty());
-		assertTrue(elist.size()==1);
-		System.out.println(elist.toString());
-	}
-
-	
-	@Test
-	public void testFind() throws Exception {
-		List<String> list = ((PaxtoolsDAO)whpcDAO).find("P46880", new Class[]{BioPAXElement.class});
-		assertFalse(list.isEmpty());
-		assertTrue(list.contains("urn:biopax:UnificationXref:UniProt_P46880"));
-		System.out.println("find by 'P46880' returned: " + list.toString());
-		
-		// P46880 is used only in the PR's RDFId and not in other fields
-		list = ((PaxtoolsDAO)whpcDAO).find("P46880", new Class[]{ProteinReference.class});
-		assertTrue(list.isEmpty());
-		//assertTrue(list.contains("urn:miriam:uniprot:P46880"));
-		
-		list = ((PaxtoolsDAO)whpcDAO).find("glucokinase", new Class[]{ProteinReference.class});
-		assertEquals(1, list.size());
-		assertTrue(list.contains("urn:miriam:uniprot:P46880"));
-	}
 
 }
