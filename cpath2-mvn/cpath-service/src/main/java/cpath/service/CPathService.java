@@ -33,6 +33,9 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
 
+import cpath.dao.PaxtoolsDAO;
+import cpath.dao.filters.SearchFilter;
+
 
 /**
  * CPath^2 Service is a mid-tier or adapter between DAOs and web controllers. 
@@ -108,22 +111,39 @@ public interface CPathService {
 	
 	/**
 	 * Full-text search for the BioPAX elements. 
-	 * Returns the map result that contains the list of identifiers,
-	 * count, and supplementary information.
+	 * Returns the map result that contains the list of elements
 	 * 
 	 * @see ResultMapKey
 	 * 
-	 * @param queryStr if null or empty, list/count all elements (of the class)
+	 * @param queryStr
 	 * @param biopaxClasses
 	 * @param filterValues can be arrays of URIs of organisms, data sources, etc.
 	 * @return
 	 * 
 	 * @see PaxtoolsDAO#find(String, Class[], SearchFilter[]...)
 	 */
-	Map<ResultMapKey, Object> find(String queryStr, 
-			Class<? extends BioPAXElement>[] biopaxClasses, String[]... filterValues);
+	Map<ResultMapKey, Object> findElements(String queryStr, 
+			Class<? extends BioPAXElement>[] biopaxClasses, SearchFilter... searchFilters);
 
-
+	
+	/**
+	 * Full-text search for the BioPAX Entity class elements. 
+	 * Returns the map result that contains the list of elements
+	 * 
+	 * @see PaxtoolsDAO#findEntities(String, Class[], SearchFilter...)
+	 * @see ResultMapKey
+	 * 
+	 * @param queryStr
+	 * @param biopaxClasses
+	 * @param filterValues can be arrays of URIs of organisms, data sources, etc.
+	 * @return
+	 * 
+	 * @see PaxtoolsDAO#find(String, Class[], SearchFilter[]...)
+	 */
+	Map<ResultMapKey, Object> findEntities(String queryStr, 
+			Class<? extends BioPAXElement>[] biopaxClasses, SearchFilter... searchFilters);
+	
+	
 	/**
 	 * Generates the BioPAX validation report for the pathway data provider
 	 * (report will be associated with 'DATA' key in the returned map).

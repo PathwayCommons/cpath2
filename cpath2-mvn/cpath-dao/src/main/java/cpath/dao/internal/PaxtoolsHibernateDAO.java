@@ -239,7 +239,105 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 	}
 	
+	
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED)
+	public List<BioPAXElement> findElements(
+			String query, 
+			Class<? extends BioPAXElement> filterByTypes[],
+			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
+	{
+		// collect matching elements here
+		List<BioPAXElement> results = new ArrayList<BioPAXElement>();
+		
+		// a shortcut
+		if (query == null || "".equals(query) 
+				|| query.trim().startsWith("*")) // see: Lucene query syntax
+		{
+			// do nothing, return the empty list
+			return results;
+		} 
+		
+		// otherwise, we continue and do real job -
+		if (log.isInfoEnabled())
+			log.info("find (IDs): " + query + ", filterBy: " + Arrays.toString(filterByTypes)
+					+ "; extra filters: " + extraFilters.toString());
+			
+		// create a native Lucene query
+		org.apache.lucene.search.Query luceneQuery = null;
+		try {
+			luceneQuery = multiFieldQueryParser.parse(query);
+		} catch (ParseException e) {
+			log.info("parser exception: " + e.getMessage());
+			return results;
+		}
 
+		// get a full text session
+		FullTextSession fullTextSession = Search.getFullTextSession(session());
+		FullTextQuery hibQuery;
+		
+		
+		if(filterByTypes != null && filterByTypes.length > 0) {
+			// full-text query cannot filter by interfaces; 
+			// so let's translate them to the annotated entity classes
+			Class<?>[] filterClasses = new Class<?>[filterByTypes.length];
+			for(int i = 0; i < filterClasses.length; i++) {
+				filterClasses[i] = getEntityClass(filterByTypes[i]);
+			}
+			hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterClasses);
+		} else {
+			hibQuery = fullTextSession.createFullTextQuery(luceneQuery);
+		}
+		
+		int count = hibQuery.getResultSize();
+		if (log.isDebugEnabled())
+			log.debug("Query '" + query + "' results size = " + count);
+
+		// TODO shall we use pagination? [later...]
+		// hibQuery.setFirstResult(0);
+		// hibQuery.setMaxResults(10);
+
+		// using the projection
+		if (log.isDebugEnabled()) {
+			hibQuery.setProjection("RDFId", FullTextQuery.SCORE,
+				FullTextQuery.EXPLANATION, FullTextQuery.THIS);
+		} else {
+			hibQuery.setProjection("RDFId");
+		}
+		// execute search
+		List hibQueryResults = hibQuery.list();
+		for (Object row : hibQueryResults) {
+			Object[] cols = (Object[]) row;
+			String id = (String) cols[0];
+
+			// get the matching element
+			BioPAXElement bpe = (BioPAXElement) cols[3];
+
+			// (debug info...)
+			if (log.isDebugEnabled()) {
+				float score = (Float) cols[1];
+				Explanation expl = (Explanation) cols[2];
+				log.debug("found uri: " + id + " (" + bpe + " - "
+						+ bpe.getModelInterface() + ")" + "; score="
+						+ score + "; explanation: " + expl);
+			}
+			
+			// extra filtering
+			if (filter(bpe, extraFilters)) {
+				results.add(bpe);
+			}
+		}
+		
+		// initialize all props
+		for(BioPAXElement bpe : results) {
+			initialize(bpe);
+		}
+		
+		return results;
+	}
+	
+	
+	
 	/**
 	 * Paxtools MAIN DAO implementation details. 
 	 * 
@@ -249,28 +347,23 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * lookup for parent entities, i.e.:
 	 * - first, a {@link FullTextQuery} query does not use any class filters and just returns 
 	 *   matching objects (chances are, the list will contain many {@link UtilityClass} elements);
-	 * - second, 'extraFilters' are applied (to exclude undesired elements earlier...);
-	 * - next, the list is iterated over to replace each utility class object with
+	 * - second, the list is iterated over to replace each utility class object with
 	 *   one or many of its nearest parent {@link Entity} class elements if possible
 	 *   (it takes to use PaxtoolsAPI, e.g., inverse properties or path accessors...);
 	 *   TODO possibly to implement the same using HQL?..
 	 * - next, 'filterByTypes' are now applied;
-	 * - [not sure] now, 'extraFilters' are applied AGAIN to generate the final result
-	 * - the last step will be to convert the objects list to the list of their identifiers
+	 * - finally, 'extraFilters' are applied
 	 * 
-	 * @see WarehousePaxtoolsHibernateDAO#find(String, Class[], SearchFilter...)
-	 * 
-	 * TODO shall I return not only IDs but also always - organism, pathway, datasource?
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
-	public List<String> find(
+	public List<Entity> findEntities(
 			String query, 
 			Class<? extends BioPAXElement> filterByTypes[],
 			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
 	{
 		// a list of identifiers to return
-		List<String> toReturn = new ArrayList<String>();
+		List<Entity> toReturn = new ArrayList<Entity>();
 
 		// a shortcut!
 		if (query == null || "".equals(query) 
@@ -287,14 +380,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 		// collect matching elements here
 		List<BioPAXElement> results = new ArrayList<BioPAXElement>();
-		
-		/* - won't use for the main DAO impl.
-		// fulltext query cannot filter by interfaces (only likes annotated entity classes)...
-		Class<?>[] filterClasses = new Class<?>[filterByTypes.length];
-		for(int i = 0; i < filterClasses.length; i++) {
-			filterClasses[i] = getEntityClass(filterByTypes[i]);
-		}
-		*/
 			
 		// create a native Lucene query
 		org.apache.lucene.search.Query luceneQuery = null;
@@ -321,11 +406,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		hibQuery.setMaxResults(10);
 		*/
 
-		// define a projection -
-		/*TODO do we really need to know score and explanation? 
-		* (if not, can skip hibQuery.setProjection, and hibQuery.list()
-		* will return the list of BioPAX elements)
-		*/
 		hibQuery.setProjection(FullTextQuery.THIS, FullTextQuery.SCORE,
 			"RDFId", FullTextQuery.EXPLANATION);
 		
@@ -339,28 +419,33 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			
 			Object[] cols = (Object[]) row; // only when hibQuery.setProjection -
 			BioPAXElement bpe = (BioPAXElement) cols[0];
-			String id = (String) cols[2]; //  was used above
 			
 			// (debug info...)
 			if (log.isDebugEnabled()) {
 				float score = (Float) cols[1];
 				Explanation expl = (Explanation) cols[3];
-				log.debug("found uri: " + id + " (" + bpe + " - "
-						+ bpe.getModelInterface() + ")" + "; score="
-						+ score + "; explanation: " + expl);
+				log.debug("found uri: " + bpe.getRDFId() 
+					+ " (" + bpe + " - "
+					+ bpe.getModelInterface() + ")" + "; score="
+					+ score + "; explanation: " + expl);
 			}
 			
-			if (filter(bpe, extraFilters)) {
-				results.add(bpe);
+			//TODO cast to entity (usually parent)
+			Entity ent = null;
+			if(!(bpe instanceof Entity)) {
+				//ent = //TODO
 			}
-		}
-		
-		// collect identifiers
-		for(BioPAXElement bpe : results) {
+			
+			// filter by types
 			if(filterByTypes == null || filterByTypes.length == 0 
-				|| isInstanceofOneOf(bpe, filterByTypes)) 
+				|| isInstanceofOneOf(ent, filterByTypes)) 
 			{
-				toReturn.add(bpe.getRDFId());
+				toReturn.add(ent);
+			}
+			
+			// use extra filters (e.g., by organism)	
+			if (filter(ent, extraFilters)) {
+				results.add(ent);
 			}
 		}
 		
@@ -629,38 +714,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		};
 		
 		return runAnalysis(getTheseElements, ids.toArray());
-	}
-	
-
-	/* (non-Javadoc)
-	 * @see cpath.dao.PaxtoolsDAO#count(java.lang.String, java.lang.Class)
-	 */
-	@Override
-	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	@Deprecated
-	public Integer count(String query, Class<? extends BioPAXElement> filterBy) {
-		Long toReturn;
-
-		if ("".equals(query) || query == null) {
-			Query q = session().createQuery(
-					"select count(*) from " + filterBy.getCanonicalName());
-			toReturn = (Long) q.uniqueResult();
-		} else {
-			Class<? extends BioPAXElement> filterClass = getEntityClass(filterBy);
-			org.apache.lucene.search.Query luceneQuery = null;
-			FullTextSession fullTextSession = Search
-					.getFullTextSession(session());
-			try {
-				luceneQuery = multiFieldQueryParser.parse(query);
-			} catch (ParseException e) {
-				throw new RuntimeException("Lucene query parser exception", e);
-			}
-			FullTextQuery hibQuery = fullTextSession.createFullTextQuery(
-					luceneQuery, filterClass);
-			toReturn = new Long(hibQuery.getResultSize());
-		}
-
-		return toReturn.intValue();
 	}
 	
 	

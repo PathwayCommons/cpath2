@@ -224,49 +224,37 @@ public class PaxtoolsHibernateDAOTest {
 
 	@Test
 	public void testSerchForIDs() throws Exception {
-		List<String> elist = paxtoolsDAO.find("P46880", new Class[]{UnificationXref.class});
+		List<BioPAXElement> elist = paxtoolsDAO.findElements("P46880", new Class[]{UnificationXref.class});
 		assertFalse(elist.isEmpty());
 		assertTrue(elist.size()==1);
-		System.out.println(elist.toString());
-	}
-	
-	
-	@Test
-	public void testCount() throws Exception {
-		Integer n = paxtoolsDAO.count("P46880", UnificationXref.class);
-		assertEquals(1, n.intValue());
-		
-		n = paxtoolsDAO.count("P46880", BioPAXElement.class);
-		assertEquals(1, n.intValue());
-		
-		n = paxtoolsDAO.count(null, BioPAXElement.class);
-		assertEquals(19, n.intValue());
-		
-		n = paxtoolsDAO.count(null, UnificationXref.class);
-		assertEquals(5, n.intValue());
 	}
 
 	
 	@Test
 	public void testFind() throws Exception {
-		List<String> list = paxtoolsDAO.find("P46880", new Class[]{BioPAXElement.class});
+		List<BioPAXElement> list = paxtoolsDAO.findElements("P46880", new Class[]{BioPAXElement.class});
 		assertFalse(list.isEmpty());
-		assertTrue(list.contains("urn:biopax:UnificationXref:UniProt_P46880"));
+		Model m = paxtoolsDAO.getLevel().getDefaultFactory().createModel();
+		for(BioPAXElement e : list) {
+			m.add(e);
+		}
+		//assertTrue(list.contains("urn:biopax:UnificationXref:UniProt_P46880"));
+		assertTrue(m.containsID("urn:biopax:UnificationXref:UniProt_P46880"));
+		
 		System.out.println("find by 'P46880' returned: " + list.toString());
 		
 		/* 'P46880' is used only in the PR's RDFId and in the Uni.Xref,
 		 * but the find method (full-text search) must NOT match in rdf ID:
 		 */
-		list = paxtoolsDAO.find("P46880", new Class[]{ProteinReference.class});
+		list = paxtoolsDAO.findElements("P46880", new Class[]{ProteinReference.class});
 		System.out.println("find by 'P46880', " +
 			"filter by ProteinReference.class, returned: " + list.toString());
 		
 		assertTrue(list.isEmpty());
-		//assertTrue(list.contains("urn:miriam:uniprot:P46880"));
 		
-		list = paxtoolsDAO.find("glucokinase", new Class[]{ProteinReference.class});
+		list = paxtoolsDAO.findElements("glucokinase", new Class[]{ProteinReference.class});
 		assertEquals(1, list.size());
-		assertTrue(list.contains("urn:miriam:uniprot:P46880"));
+		assertTrue(list.get(0).getRDFId().equals("urn:miriam:uniprot:P46880"));
 	}
 
 }

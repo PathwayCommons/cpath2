@@ -37,12 +37,16 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Entity;
+import org.biopax.paxtools.model.level3.Provenance;
+import org.biopax.paxtools.model.level3.RelationshipXref;
+import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
 import org.biopax.validator.result.Validation;
@@ -53,12 +57,10 @@ import org.springframework.stereotype.Service;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
-import cpath.dao.internal.filters.EntityByOrganismRelationshipXrefsFilter;
-import cpath.dao.internal.filters.EntityByProcessRelationshipXrefsFilter;
-import cpath.dao.internal.filters.EntityDataSourceFilter;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
+import cpath.service.jaxb.SearchHitType;
 import cpath.service.CPathService;
 
 import cpath.warehouse.CvRepository;
@@ -129,51 +131,81 @@ public class CPathServiceImpl implements CPathService {
 	 * Interface methods
 	 */	
 	
-	/*
-     * (non-Javadoc)
-	 * @see cpath.service.CPathService#find(..)
-	 */
-	/**
-	 * @param filterValues arrays must follow the order: organisms, datasources, pathways (anyone can be null)
-	 * 
-	 */
+	
 	@Override
-	public Map<ResultMapKey, Object> find(String queryStr, 
-			Class<? extends BioPAXElement>[] biopaxClasses, String[]... filterValues) 
+	public Map<ResultMapKey, Object> findElements(String queryStr, 
+			Class<? extends BioPAXElement>[] biopaxClasses, SearchFilter... searchFilters) 
 	{
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-		
 		try {
-				// init filters
-				SearchFilter[] searchFilters = new SearchFilter[filterValues.length];
-			
-				if(filterValues.length  > 0) {
-					SearchFilter<Entity, String> byOrganismFilter = new EntityByOrganismRelationshipXrefsFilter();
-					byOrganismFilter.setValues(filterValues[0]);
-					searchFilters[0] = byOrganismFilter;
-				}
-				if(filterValues.length  > 1) {
-					SearchFilter<Entity, String> byDatasourceFilter = new EntityDataSourceFilter();
-					byDatasourceFilter.setValues(filterValues[1]);
-					searchFilters[1] = byDatasourceFilter;
-				}
-				if(filterValues.length  > 2) {
-					SearchFilter<Entity, String> byProcessFilter = new EntityByProcessRelationshipXrefsFilter();
-					byProcessFilter.setValues(filterValues[2]);
-					searchFilters[2] = byProcessFilter;
-				}
-				
-				// do search
-				Collection<String> data = mainDAO.find(queryStr, biopaxClasses, searchFilters); 
-				
-				map.put(DATA, data);
-				map.put(COUNT, data.size()); // becomes Integer
+			// do search
+			List<BioPAXElement> data = mainDAO.findElements(queryStr, biopaxClasses, searchFilters); 
+			// build (xml/json) serializable search hit types
+			List<SearchHitType> hits = toSearchHits(data);
+			map.put(DATA, hits);
+			map.put(COUNT, hits.size()); // becomes Integer
 		} catch (Exception e) {
 			map.put(ERROR, e.toString());
 		}
 		
 		return map;
 	}
+	
+	
+	private List<SearchHitType> toSearchHits(List<? extends BioPAXElement> data) {
+		List<SearchHitType> hits = new ArrayList<SearchHitType>(data.size());
+		
+		for(BioPAXElement bpe : data) {
+			SearchHitType hit = new SearchHitType();
+			hit.setUri(bpe.getRDFId());
+			hit.setBiopaxClass(bpe.getModelInterface().getSimpleName());
+			if(bpe instanceof Entity) {
+				//TODO may be, extend SearchHitType and add more details about organism/ds, e.g., Latin name, taxon, standard name, etc.
+				// add data sources (URIs)
+				for(Provenance pro : ((Entity)bpe).getDataSource()) {
+					hit.getDataSource().add(pro.getRDFId());
+				}
+				// add organisms and pathways (URIs)
+				for(Xref x : ((Entity)bpe).getXref()) {
+					if(x instanceof RelationshipXref 
+						&& ((RelationshipXref) x).getRelationshipType() != null) 
+					{
+						RelationshipXref rx = (RelationshipXref) x;
+						if(rx.getRelationshipType().getTerm().contains(RelationshipType.ORGANISM)) {
+							hit.getOrganism().add(rx.getId());
+						} 
+						else if(rx.getRelationshipType().getTerm().contains(RelationshipType.PROCESS)) {
+							hit.getPathway().add(rx.getId());
+						}
+					}
+				}
+			}
+			hits.add(hit);
+		}
+		
+		return hits;
+	}
+
+	
+	@Override
+	public Map<ResultMapKey, Object> findEntities(String queryStr, 
+			Class<? extends BioPAXElement>[] biopaxClasses, SearchFilter... searchFilters) 
+	{
+		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
+		try {
+			// do search
+			List<Entity> data = mainDAO.findEntities(queryStr, biopaxClasses, searchFilters); 
+			// build (xml/json) serializable search hit types
+			List<SearchHitType> hits = toSearchHits(data);
+			map.put(DATA, hits);
+			map.put(COUNT, hits.size()); // becomes Integer
+		} catch (Exception e) {
+			map.put(ERROR, e.toString());
+		}
+		
+		return map;
+	}
+	
 
 	/*
      * (non-Javadoc)

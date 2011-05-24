@@ -71,7 +71,10 @@ public class OrganismDataSourceEditor extends PropertyEditorSupport
 			}
 		}
 
-		setValue(new OrganismDataSource(dataSource));
+		if(dataSource != null)
+			setValue(new OrganismDataSource(dataSource));
+		else 
+			setValue(null);
 	}
 	
 }

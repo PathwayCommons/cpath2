@@ -71,7 +71,10 @@ public class PathwayDataSourceEditor extends PropertyEditorSupport {
 			}
 		}
 
-		setValue(new PathwayDataSource(dataSource));
+		if(dataSource != null)
+			setValue(new PathwayDataSource(dataSource));
+		else 
+			setValue(null);
 	}
 	
 }

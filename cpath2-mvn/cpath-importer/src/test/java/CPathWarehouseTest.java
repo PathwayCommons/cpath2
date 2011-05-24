@@ -32,8 +32,10 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
+import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
@@ -138,8 +140,12 @@ public class CPathWarehouseTest {
 	@Test
 	public void testSearchForProteinReference() {
 		// search with a secondary (RefSeq) accession number
-		Collection<String> prIds = ((PaxtoolsDAO)proteins).find("NP_619650", new Class[]{RelationshipXref.class});
-		assertFalse(prIds.isEmpty());
+		Collection<BioPAXElement> prs = ((PaxtoolsDAO)proteins).findElements("NP_619650", new Class[]{RelationshipXref.class});
+		assertFalse(prs.isEmpty());
+		Collection<String> prIds = new HashSet<String>();
+		for(BioPAXElement e : prs) {
+			prIds.add(e.getRDFId());
+		}
 		assertTrue(prIds.contains("urn:biopax:RelationshipXref:REFSEQ_NP_619650"));
 		
 		// get that xref
