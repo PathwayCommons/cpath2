@@ -116,32 +116,32 @@ public interface CPathService {
 	 * @see ResultMapKey
 	 * 
 	 * @param queryStr
-	 * @param biopaxClasses
+	 * @param biopaxClass
 	 * @param filterValues can be arrays of URIs of organisms, data sources, etc.
 	 * @return
 	 * 
 	 * @see PaxtoolsDAO#find(String, Class[], SearchFilter[]...)
 	 */
 	Map<ResultMapKey, Object> findElements(String queryStr, 
-			Class<? extends BioPAXElement>[] biopaxClasses, SearchFilter... searchFilters);
+			Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters);
 
 	
 	/**
 	 * Full-text search for the BioPAX Entity class elements. 
 	 * Returns the map result that contains the list of elements
 	 * 
-	 * @see PaxtoolsDAO#findEntities(String, Class[], SearchFilter...)
+	 * @see PaxtoolsDAO#findEntities(String, Class, SearchFilter...)
 	 * @see ResultMapKey
 	 * 
 	 * @param queryStr
-	 * @param biopaxClasses
+	 * @param biopaxClass
 	 * @param filterValues can be arrays of URIs of organisms, data sources, etc.
 	 * @return
 	 * 
 	 * @see PaxtoolsDAO#find(String, Class[], SearchFilter[]...)
 	 */
 	Map<ResultMapKey, Object> findEntities(String queryStr, 
-			Class<? extends BioPAXElement>[] biopaxClasses, SearchFilter... searchFilters);
+			Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters);
 	
 	
 	/**

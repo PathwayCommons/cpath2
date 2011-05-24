@@ -61,7 +61,9 @@ import cpath.dao.filters.SearchFilter;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
+import cpath.service.jaxb.ErrorType;
 import cpath.service.jaxb.SearchHitType;
+import cpath.service.jaxb.SearchResponseType;
 import cpath.service.CPathService;
 
 import cpath.warehouse.CvRepository;
@@ -122,7 +124,7 @@ public class CPathServiceImpl implements CPathService {
 		
 		// init cpath legacy xml schema jaxb context
 		try {
-			jaxbContext = JAXBContext.newInstance("cpath.service.jaxb");
+			jaxbContext = JAXBContext.newInstance(ErrorType.class, SearchResponseType.class, SearchHitType.class);
 		} catch (JAXBException e) {
 			throw new RuntimeException(e);
 		}
@@ -135,12 +137,12 @@ public class CPathServiceImpl implements CPathService {
 	
 	@Override
 	public Map<ResultMapKey, Object> findElements(String queryStr, 
-			Class<? extends BioPAXElement>[] biopaxClasses, SearchFilter... searchFilters) 
+			Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
 	{
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
 			// do search
-			List<BioPAXElement> data = mainDAO.findElements(queryStr, biopaxClasses, searchFilters); 
+			List<BioPAXElement> data = mainDAO.findElements(queryStr, biopaxClass, searchFilters); 
 			// build (xml/json) serializable search hit types
 			List<SearchHitType> hits = toSearchHits(data);
 			map.put(DATA, hits);
@@ -163,7 +165,9 @@ public class CPathServiceImpl implements CPathService {
 			if(bpe instanceof Entity) {
 				//TODO may be, extend SearchHitType and add more details about organism/ds, e.g., Latin name, taxon, standard name, etc.
 				// add data sources (URIs)
+				mainDAO.initialize(bpe);
 				for(Provenance pro : ((Entity)bpe).getDataSource()) {
+					//mainDAO.initialize(pro);
 					hit.getDataSource().add(pro.getRDFId());
 				}
 				// add organisms and pathways (URIs)
@@ -192,12 +196,12 @@ public class CPathServiceImpl implements CPathService {
 	
 	@Override
 	public Map<ResultMapKey, Object> findEntities(String queryStr, 
-			Class<? extends BioPAXElement>[] biopaxClasses, SearchFilter... searchFilters) 
+			Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
 	{
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
 			// do search
-			List<Entity> data = mainDAO.findEntities(queryStr, biopaxClasses, searchFilters); 
+			List<Entity> data = mainDAO.findEntities(queryStr, biopaxClass, searchFilters); 
 			// build (xml/json) serializable search hit types
 			List<SearchHitType> hits = toSearchHits(data);
 			map.put(DATA, hits);

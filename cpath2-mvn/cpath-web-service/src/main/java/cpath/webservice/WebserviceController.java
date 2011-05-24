@@ -27,7 +27,6 @@
 
 package cpath.webservice;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,7 +53,6 @@ import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.Protein;
-import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
 import org.springframework.stereotype.Controller;
@@ -138,33 +136,34 @@ public class WebserviceController {
     // Fulltext Search
     @RequestMapping(value="/search")
     public @ResponseBody String fulltextSearch(
-    		@RequestParam(value="type", required=false) Class<? extends BioPAXElement>[] types, 
+    		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
     		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms, //filter by
     		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources, //filter by
     		@RequestParam(value="process", required=false) String[] pathwayURIs, // filter by
-    		@RequestParam(value="q", required=true) String query,
-            @RequestHeader("User-Agent") String userAgent)
+    		@RequestParam(value="q", required=true) String query
+    		//,@RequestHeader("User-Agent") String userAgent //did not work as expected...
+    		)
     {		
     	String body = "";
 
 		if (log.isDebugEnabled())
-			log.debug("/search called (for " + Arrays.toString(types)
-				+ "), query:" + query);
+			log.debug("/search called (for " + type	+ "), query:" + query);
 		
 		Set<SearchFilter> searchFilters = createFilters(organisms, dataSources, pathwayURIs);
 
 		// get results from the service
-		Map<ResultMapKey, Object> results = service.findElements(query, types, 
+		Map<ResultMapKey, Object> results = service.findElements(query, type, 
 				searchFilters.toArray(new SearchFilter[]{}));
 		
-		String details = query + " (in " + Arrays.toString(types) + ")";
+		String details = query + " (in " + type + ")";
 		body = getListDataBody(results, details);
 		
         /* hack to return "html" to browser so example on cpath-webdocs page
          * shows up without having to view page code - only required for safari
          */
-        return (userAgent.indexOf("Safari") != -1) ? getBodyAsHTML(body) : body;
-		//return body;
+		// did not work well...
+        //return (userAgent.indexOf("Safari") != -1) ? getBodyAsHTML(body) : body;
+		return body;
 	}
    
     
@@ -218,9 +217,9 @@ public class WebserviceController {
      * returns xml or json!
      * 
      */
-    @RequestMapping(value="/find")
+    @RequestMapping(value="/xml/search")
     public @ResponseBody SearchResponseType find(
-    		@RequestParam(value="type", required=false) Class<? extends BioPAXElement>[] types, 
+    		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
     		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms, //filter by
     		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources, //filter by
     		@RequestParam(value="process", required=false) String[] pathwayURIs, // filter by
@@ -228,18 +227,17 @@ public class WebserviceController {
     )
     {		
 		if (log.isDebugEnabled())
-			log.debug("/find called (for " + Arrays.toString(types)
-					+ "), query:" + query);
+			log.debug("/find called (for " + type + "), query:" + query);
 		
 		SearchResponseType response = new SearchResponseType();
 		
 		Set<SearchFilter> searchFilters = createFilters(organisms, dataSources, pathwayURIs);
 
 		// get results from the service
-		Map<ResultMapKey, Object> results = service.findElements(query, types, 
+		Map<ResultMapKey, Object> results = service.findElements(query, type, 
 				searchFilters.toArray(new SearchFilter[]{}));
 		
-		String details = query + " (in " + Arrays.toString(types) + ")";
+		String details = query + " (in " + type + ")";
 
 		if (!results.containsKey(ResultMapKey.ERROR)) {
 			List<SearchHitType> dataSet = (List<SearchHitType>) results.get(ResultMapKey.DATA);
@@ -260,6 +258,52 @@ public class WebserviceController {
 		return response;
 	}
 
+    
+	/*
+     * An alternative to /search command;
+     * returns xml or json!
+     * 
+     */
+    @RequestMapping(value="/xml/entity/search")
+    public @ResponseBody SearchResponseType findEntities(
+    		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
+    		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms, //filter by
+    		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources, //filter by
+    		@RequestParam(value="process", required=false) String[] pathwayURIs, // filter by
+    		@RequestParam(value="q", required=true) String query
+    )
+    {		
+		if (log.isDebugEnabled())
+			log.debug("/find called (for " + type + "), query:" + query);
+		
+		SearchResponseType response = new SearchResponseType();
+		
+		Set<SearchFilter> searchFilters = createFilters(organisms, dataSources, pathwayURIs);
+
+		// get results from the service
+		Map<ResultMapKey, Object> results = service.findEntities(query, type, 
+				searchFilters.toArray(new SearchFilter[]{}));
+		
+		String details = query + " (in " + type + ")";
+
+		if (!results.containsKey(ResultMapKey.ERROR)) {
+			List<SearchHitType> dataSet = (List<SearchHitType>) results.get(ResultMapKey.DATA);
+			if(dataSet.isEmpty()) {
+				ErrorType error = ProtocolStatusCode.NO_RESULTS_FOUND.createErrorType();
+				error.setErrorDetails("Nothing found for: " + details);
+				response.setError(error);
+			} else {
+				response.setTotalNumHits((long) dataSet.size());
+				response.getSearchHit().addAll(dataSet);
+			}
+		} else {
+			ErrorType error = ProtocolStatusCode.INTERNAL_ERROR.createErrorType();
+			error.setErrorDetails(results.get(ResultMapKey.ERROR).toString());
+			response.setError(error);
+		}
+		
+		return response;
+	}
     
 	//----- Graph Queries -------------------------------------------------------------------------|
 
@@ -405,71 +449,5 @@ public class WebserviceController {
         // outta here
         return toReturn.toString();
     }
-
-    
-    //TODO the following two methods were copied from the (removed) webservice2Controller and require some coding...
-	/*
-	 * Gets the utility element (from warehouse) by ID.
-	 * 
-	 * TODO implement...
-	 */
-    String getElementsOfType(Class<? extends BioPAXElement> type, String urn) 
-    {
-    	if(type == null) {
-    		type = UtilityClass.class;
-    	} else if(!UtilityClass.class.isAssignableFrom(type)) {
-    		log.warn("Parameter 'type' value, " + 
-    				type.getSimpleName() + ", is not a sub class of UtilityClass " +
-    				"(UtilityClass will be used for the search instead)!");
-    		type = UtilityClass.class;
-    	}
-    	
-    	if(log.isInfoEnabled()) 
-    		log.info("Warehouse query for type:" + type.getSimpleName() 
-    			+ ", urn:" + urn);
-    	
-    	
-    	StringBuffer toReturn = new StringBuffer();
-		if (UtilityClass.class.isAssignableFrom(type)) {
-			//TODO get from warehouse
-			UtilityClass el = null;
-			
-			if(el != null) {
-				toReturn.append(el.getRDFId()).append(newline);
-			}
-		}
-		
-    	return toReturn.toString();
-    }
-    
-    
-    /*
-     * Search Warehouse for utility class elements 
-     * (for those not found in the main PC model storage)
-     * 
-     * TODO implement... if we still want this
-     */
-    String fulltextSearchForType(Class<? extends BioPAXElement> type, String query) 
-    {	
-    	if(type == null) {
-    		type = UtilityClass.class;
-    	} else if(!UtilityClass.class.isAssignableFrom(type)) {
-    		log.warn("Parameter 'type' value, " + 
-    				type.getSimpleName() + ", is not a sub class of UtilityClass " +
-    				"(UtilityClass will be used for the search instead)!");
-    		type = UtilityClass.class;
-    	}
-    	
-    	if(log.isInfoEnabled()) log.info("Warehouse fulltext Search for type:" 
-				+ type.getCanonicalName() + ", query:" + query);
-    	
-    	StringBuffer toReturn = new StringBuffer();
-    	
-    	/*
-    	 * TODO search Warehouse
-		*/
-		
-		return toReturn.toString(); 
-	}
 
 }

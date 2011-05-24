@@ -224,7 +224,7 @@ public class PaxtoolsHibernateDAOTest {
 
 	@Test
 	public void testSerchForIDs() throws Exception {
-		List<BioPAXElement> elist = paxtoolsDAO.findElements("P46880", new Class[]{UnificationXref.class});
+		List<BioPAXElement> elist = paxtoolsDAO.findElements("P46880", UnificationXref.class);
 		assertFalse(elist.isEmpty());
 		assertTrue(elist.size()==1);
 	}
@@ -232,7 +232,7 @@ public class PaxtoolsHibernateDAOTest {
 	
 	@Test
 	public void testFind() throws Exception {
-		List<BioPAXElement> list = paxtoolsDAO.findElements("P46880", new Class[]{BioPAXElement.class});
+		List<BioPAXElement> list = paxtoolsDAO.findElements("P46880", BioPAXElement.class);
 		assertFalse(list.isEmpty());
 		Model m = paxtoolsDAO.getLevel().getDefaultFactory().createModel();
 		for(BioPAXElement e : list) {
@@ -246,13 +246,13 @@ public class PaxtoolsHibernateDAOTest {
 		/* 'P46880' is used only in the PR's RDFId and in the Uni.Xref,
 		 * but the find method (full-text search) must NOT match in rdf ID:
 		 */
-		list = paxtoolsDAO.findElements("P46880", new Class[]{ProteinReference.class});
+		list = paxtoolsDAO.findElements("P46880", ProteinReference.class);
 		System.out.println("find by 'P46880', " +
 			"filter by ProteinReference.class, returned: " + list.toString());
 		
 		assertTrue(list.isEmpty());
 		
-		list = paxtoolsDAO.findElements("glucokinase", new Class[]{ProteinReference.class});
+		list = paxtoolsDAO.findElements("glucokinase", ProteinReference.class);
 		assertEquals(1, list.size());
 		assertTrue(list.get(0).getRDFId().equals("urn:miriam:uniprot:P46880"));
 	}

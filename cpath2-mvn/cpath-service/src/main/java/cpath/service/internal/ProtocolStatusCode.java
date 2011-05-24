@@ -38,6 +38,8 @@ import javax.xml.bind.Marshaller;
 import javax.xml.namespace.QName;
 
 import cpath.service.jaxb.ErrorType;
+import cpath.service.jaxb.SearchHitType;
+import cpath.service.jaxb.SearchResponseType;
 
 /**
  * Enumeration of Protocol Status Codes.
@@ -94,7 +96,7 @@ public enum ProtocolStatusCode {
     
 	static {
 		try {
-			jaxbContext = JAXBContext.newInstance("cpath.service.jaxb");
+			jaxbContext = JAXBContext.newInstance(ErrorType.class, SearchHitType.class, SearchResponseType.class);
 		} catch (JAXBException e) {
 			throw new RuntimeException(e);
 		}

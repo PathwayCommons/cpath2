@@ -171,8 +171,8 @@ public class WarehousePaxtoolsHibernateDAOTest {
 		// if the element can be exported like this, it's fully initialized...
 		StringWriter writer = new StringWriter();
 		exporter.writeObject(writer, bpe);
-		System.out.println("Export single Xref (incomplete BioPAX):");
-		System.out.println(writer.toString());
+		//System.out.println("Export single Xref (incomplete BioPAX):");
+		//System.out.println(writer.toString());
 		
 		// check if it has xrefOf values...
 		Set<XReferrable> xrOfs = ((UnificationXref) bpe).getXrefOf();
@@ -195,8 +195,8 @@ public class WarehousePaxtoolsHibernateDAOTest {
 		// if the element can be exported like this, it's fully initialized...
 		StringWriter writer = new StringWriter();
 		exporter.writeObject(writer, bpe);
-		System.out.println("Export single protein (incomplete BioPAX):");
-		System.out.println(writer.toString());
+		//System.out.println("Export single protein (incomplete BioPAX):");
+		//System.out.println(writer.toString());
 	}
 
 }

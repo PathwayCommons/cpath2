@@ -68,7 +68,9 @@ public class BiopaxTypeEditor extends PropertyEditorSupport {
 		for(Class<? extends BioPAXElement> c : editorMap.getKnownSubClassesOf(BioPAXElement.class)) {
 			if(c.getSimpleName().equalsIgnoreCase(type)) {
 				//if(bioPAXFactory.canInstantiate(c)) //does not matter if abstract (can still search by)
-					return bioPAXFactory.getImplClass(c);
+					//return bioPAXFactory.getImplClass(c);
+				if(c.isInterface() && bioPAXFactory.getImplClass(c) != null)
+					return c; // interface!
 			}
 		}
 		

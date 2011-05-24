@@ -140,7 +140,7 @@ public class CPathWarehouseTest {
 	@Test
 	public void testSearchForProteinReference() {
 		// search with a secondary (RefSeq) accession number
-		Collection<BioPAXElement> prs = ((PaxtoolsDAO)proteins).findElements("NP_619650", new Class[]{RelationshipXref.class});
+		Collection<BioPAXElement> prs = ((PaxtoolsDAO)proteins).findElements("NP_619650", RelationshipXref.class);
 		assertFalse(prs.isEmpty());
 		Collection<String> prIds = new HashSet<String>();
 		for(BioPAXElement e : prs) {

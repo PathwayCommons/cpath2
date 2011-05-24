@@ -31,6 +31,10 @@ public class EntityByProcessRelationshipXrefsFilter
 	extends SearchFilterAdapter<Entity, String> 
 {
 
+	public EntityByProcessRelationshipXrefsFilter() {
+		super(Entity.class);
+	}
+	
 	@Override
 	public boolean apply(Entity searchResult) {
 		if(values.isEmpty())

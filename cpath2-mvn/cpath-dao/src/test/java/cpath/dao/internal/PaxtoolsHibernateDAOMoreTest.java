@@ -81,8 +81,7 @@ public class PaxtoolsHibernateDAOMoreTest {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		paxtoolsDAO.exportModel(outputStream);
 		String exported = outputStream.toString();
-		System.out.println("\n\n*********\n\n" + exported);
-		
+		//System.out.println("\n\n*********\n\n" + exported);
 		// read it back
 		io.mergeDuplicates(true);
 		Model model = io.convertFromOWL(new ByteArrayInputStream(exported.getBytes("UTF-8")));

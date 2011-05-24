@@ -36,7 +36,6 @@ import cpath.dao.filters.SearchFilter;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
@@ -61,12 +60,12 @@ public interface PaxtoolsDAO extends Model, Reindexable {
 	 * and satisfy the filters if any defined.
 	 * 
      * @param query String
-	 * @param filterByTypes - class filters for the full-text search (actual effect may depend on the concrete implementation!)
+	 * @param filterByType - class filter for the full-text search (actual effect may depend on the concrete implementation!)
 	 * @param extraFilters custom filters (implies AND in between) that apply after the full-text query has returned;
 	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
 	 * @return ordered by the element's relevance list of rdfIds
      */
-    List<BioPAXElement> findElements(String query, Class<? extends BioPAXElement>[] filterByTypes,
+    List<BioPAXElement> findElements(String query, Class<? extends BioPAXElement> filterByType,
     		SearchFilter<? extends BioPAXElement,?>... extraFilters);        
 
     
@@ -77,12 +76,12 @@ public interface PaxtoolsDAO extends Model, Reindexable {
 	 * (filters apply).
 	 * 
      * @param query String
-	 * @param filterByTypes - class filters for the full-text search (actual effect may depend on the concrete implementation!)
+	 * @param filterByType - class filter for the full-text search (actual effect may depend on the concrete implementation!)
 	 * @param extraFilters custom filters (implies AND in between) that apply after the full-text query has returned;
 	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
 	 * @return ordered by the element's relevance list of rdfIds
      */
-    List<Entity> findEntities(String query, Class<? extends BioPAXElement>[] filterByTypes,
+    List<Entity> findEntities(String query, Class<? extends BioPAXElement> filterByType,
     		SearchFilter<? extends BioPAXElement,?>... extraFilters);
     
     /**

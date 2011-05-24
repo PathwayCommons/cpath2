@@ -31,6 +31,10 @@ public class EntityByOrganismRelationshipXrefsFilter
 	extends SearchFilterAdapter<Entity, String> 
 {
 
+	public EntityByOrganismRelationshipXrefsFilter() {
+		super(Entity.class);
+	}
+	
 	@Override
 	public boolean apply(Entity searchResult) {
 		// use relationship xrefs with rel. CV "ORGANISM"; compare 'id' vs. the list of filter values

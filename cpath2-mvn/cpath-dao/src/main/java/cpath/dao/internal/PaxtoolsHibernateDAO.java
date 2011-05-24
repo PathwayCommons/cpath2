@@ -244,7 +244,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Transactional(propagation=Propagation.REQUIRED)
 	public List<BioPAXElement> findElements(
 			String query, 
-			Class<? extends BioPAXElement> filterByTypes[],
+			Class<? extends BioPAXElement> filterByType,
 			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
 	{
 		// collect matching elements here
@@ -260,8 +260,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		
 		// otherwise, we continue and do real job -
 		if (log.isInfoEnabled())
-			log.info("find (IDs): " + query + ", filterBy: " + Arrays.toString(filterByTypes)
-					+ "; extra filters: " + extraFilters.toString());
+			log.info("find (IDs): " + query + ", filterBy: " + filterByType
+					+ "; extra filters: " + Arrays.toString(extraFilters));
 			
 		// create a native Lucene query
 		org.apache.lucene.search.Query luceneQuery = null;
@@ -276,15 +276,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
 		FullTextQuery hibQuery;
 		
-		
-		if(filterByTypes != null && filterByTypes.length > 0) {
+		if(filterByType != null) {
 			// full-text query cannot filter by interfaces; 
 			// so let's translate them to the annotated entity classes
-			Class<?>[] filterClasses = new Class<?>[filterByTypes.length];
-			for(int i = 0; i < filterClasses.length; i++) {
-				filterClasses[i] = getEntityClass(filterByTypes[i]);
-			}
-			hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterClasses);
+			Class<?> filterClass = getEntityClass(filterByType);
+			hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterClass);
 		} else {
 			hibQuery = fullTextSession.createFullTextQuery(luceneQuery);
 		}
@@ -297,26 +293,22 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		// hibQuery.setFirstResult(0);
 		// hibQuery.setMaxResults(10);
 
-		// using the projection
-		if (log.isDebugEnabled()) {
-			hibQuery.setProjection("RDFId", FullTextQuery.SCORE,
-				FullTextQuery.EXPLANATION, FullTextQuery.THIS);
-		} else {
-			hibQuery.setProjection("RDFId");
-		}
+		// using the projection (to get some more statistics/fields)
+		hibQuery.setProjection(FullTextQuery.THIS, FullTextQuery.SCORE,
+				FullTextQuery.EXPLANATION);
 		// execute search
 		List hibQueryResults = hibQuery.list();
 		for (Object row : hibQueryResults) {
 			Object[] cols = (Object[]) row;
-			String id = (String) cols[0];
-
 			// get the matching element
-			BioPAXElement bpe = (BioPAXElement) cols[3];
-
+			BioPAXElement bpe = (BioPAXElement) cols[0];
+			String id = bpe.getRDFId();
+			
 			// (debug info...)
 			if (log.isDebugEnabled()) {
 				float score = (Float) cols[1];
 				Explanation expl = (Explanation) cols[2];
+				//TODO where to store the explanation, if needed?
 				log.debug("found uri: " + id + " (" + bpe + " - "
 						+ bpe.getModelInterface() + ")" + "; score="
 						+ score + "; explanation: " + expl);
@@ -359,7 +351,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Transactional(propagation=Propagation.REQUIRED)
 	public List<Entity> findEntities(
 			String query, 
-			Class<? extends BioPAXElement> filterByTypes[],
+			Class<? extends BioPAXElement> filterByType,
 			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
 	{
 		// a list of identifiers to return
@@ -375,8 +367,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		
 		// - otherwise, we continue and do real job -		
 		if (log.isInfoEnabled())
-			log.info("find (IDs): " + query + ", filterBy: " + Arrays.toString(filterByTypes)
-					+ "; extra filters: " + extraFilters.toString());
+			log.info("find (IDs): " + query + ", filterBy: " + filterByType
+					+ "; extra filters: " + Arrays.toString(extraFilters));
 
 		// collect matching elements here
 		List<BioPAXElement> results = new ArrayList<BioPAXElement>();
@@ -391,7 +383,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 		// get full text session and create the query
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		// fullTextSession.createFilter(arg0, arg1); // TODO how to use this?
 		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery);
 			//, filterClasses); // - won't use for the main DAO impl.
 
@@ -406,8 +397,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		hibQuery.setMaxResults(10);
 		*/
 
-		hibQuery.setProjection(FullTextQuery.THIS, FullTextQuery.SCORE,
-			"RDFId", FullTextQuery.EXPLANATION);
+		hibQuery.setProjection(FullTextQuery.THIS, FullTextQuery.SCORE, FullTextQuery.EXPLANATION);
 		
 		// execute search and get the list
 		List hibQueryResults = hibQuery.list();
@@ -423,32 +413,40 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			// (debug info...)
 			if (log.isDebugEnabled()) {
 				float score = (Float) cols[1];
-				Explanation expl = (Explanation) cols[3];
+				Explanation expl = (Explanation) cols[2];
+				//TODO shall we store 'explanation' somewhere (~excerpt)?
 				log.debug("found uri: " + bpe.getRDFId() 
 					+ " (" + bpe + " - "
 					+ bpe.getModelInterface() + ")" + "; score="
 					+ score + "; explanation: " + expl);
 			}
 			
-			//TODO cast to entity (usually parent)
-			Entity ent = null;
+			//"cast" matched objects to parent entity(-ies) 
+			// currently for xrefs only... TODO test it
 			if(!(bpe instanceof Entity)) {
-				//ent = //TODO
+				if(bpe instanceof Xref) {
+					for(XReferrable xReferrable : ((Xref)bpe).getXrefOf()) {
+						if(xReferrable instanceof Entity) {
+							if(passFilters(xReferrable, filterByType, extraFilters))
+								toReturn.add((Entity) xReferrable);
+						} 
+						else if(xReferrable instanceof EntityReference) {
+							Set<SimplePhysicalEntity> spes = ((EntityReference) xReferrable).getEntityReferenceOf();
+							for(SimplePhysicalEntity spe : spes) {
+								if(passFilters(spe, filterByType, extraFilters))
+									toReturn.add(spe);
+							}
+						}
+					}
+				}
+				//TODO other non-entities
+			}
+			else {
+				if(passFilters(bpe, filterByType, extraFilters))
+					toReturn.add((Entity) bpe);
 			}
 			
-			// filter by types
-			if(filterByTypes == null || filterByTypes.length == 0 
-				|| isInstanceofOneOf(ent, filterByTypes)) 
-			{
-				toReturn.add(ent);
-			}
-			
-			// use extra filters (e.g., by organism)	
-			if (filter(ent, extraFilters)) {
-				results.add(ent);
-			}
 		}
-		
 		
 		if (log.isDebugEnabled()) {
 			log.debug("Query '" + query + "' final results size = " 
@@ -456,6 +454,29 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 		
 		return toReturn;
+	}
+
+	
+	/**
+	 * Apply search filters
+	 * 
+	 * @param bpe
+	 * @param filterByType
+	 * @param extraFilters
+	 * @return
+	 */
+	private boolean passFilters(BioPAXElement bpe, 
+			Class<? extends BioPAXElement> filterByType, 
+			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
+	{
+		if( ( filterByType == null || filterByType.isInstance(bpe) )	
+			&& filter(bpe, extraFilters) 
+		){ 
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
 
 	
@@ -747,10 +768,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			if (invEditors != null) {
 				for (ObjectPropertyEditor editor : invEditors) {
 					// does collections as well!
-					Object value = editor.getInverseValueFromBean(element);
+					Set<?> value = editor.getInverseAccessor().getValueFromBean(element);
 					Hibernate.initialize(value);
-					if(value instanceof Collection)
-					for(Object v : (Collection)value) {
+					for(Object v : value) {
 						Hibernate.initialize(v); 
 					}
 				}
@@ -792,30 +812,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public void repair() {
 		throw new UnsupportedOperationException("not supported");
 	}
-	
-	
-	/**
-	 * Checks an object is instance of at least
-	 * on of classes in the list.
-	 * 
-	 * @param classes
-	 * @param obj
-	 * @return
-	 */
-	protected boolean isInstanceofOneOf( 
-			BioPAXElement obj, Class<? extends BioPAXElement>... classes) 
-	{
-			if(classes.length == 0)
-				return true;
-		
-			for(Class<? extends BioPAXElement> c : classes) {
-				if(c.isInstance(obj)) {
-					return true;
-				}
-			}	
-			return false;
-	}
-	
+
 }
 
 

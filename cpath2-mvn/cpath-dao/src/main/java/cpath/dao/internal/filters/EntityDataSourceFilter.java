@@ -16,6 +16,10 @@ import cpath.dao.filters.SearchFilterRange;
 public class EntityDataSourceFilter extends 
 	SearchFilterAdapter<Entity, String>
 {
+	public EntityDataSourceFilter() {
+		super(Entity.class);
+	}
+	
 	@Override
 	public boolean apply(Entity searchResult) {
 		if(values.isEmpty())

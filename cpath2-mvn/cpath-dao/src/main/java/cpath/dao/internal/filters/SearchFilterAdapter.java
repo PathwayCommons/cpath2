@@ -18,9 +18,11 @@ public abstract class SearchFilterAdapter<E extends BioPAXElement, T>
 	implements SearchFilter<E, T> 
 {
 	protected Set<T> values;
+	private Class<E> applyTo;
 	
-	public SearchFilterAdapter() {
+	public SearchFilterAdapter(Class<E> applyTo) {
 		values = new HashSet<T>();
+		this.applyTo = applyTo;
 	}
 	
 	@Override
@@ -28,6 +30,14 @@ public abstract class SearchFilterAdapter<E extends BioPAXElement, T>
 		this.values.clear();
 		if(values != null)
 			Collections.addAll(this.values, values);
+	}
+	
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() 
+			+ " apply to:" + applyTo.getSimpleName()
+			+ ";  filter values: " 
+			+ values.toString();
 	}
 
 }
