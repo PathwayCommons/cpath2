@@ -23,9 +23,11 @@
 		<param-value>
 			classpath:applicationContext-cpathDAO.xml
 			classpath:applicationContext-whouseDAO.xml
+			<!-- not required anymore (- trying one cpathService per DAO, if more than one are required at all)
 			classpath:applicationContext-whouseMolecules.xml
 			classpath:applicationContext-whouseProteins.xml
 			classpath:applicationContext-cvRepository.xml
+			-->
 			classpath:applicationContext-cpathService.xml
 		</param-value>
 	</context-param>

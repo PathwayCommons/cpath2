@@ -6,13 +6,11 @@ import javax.xml.bind.annotation.*;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-/*
 @XmlType(name = "SearchResponseType", propOrder = {
     "error",
     "totalNumHits",
     "searchHit"
 })
-*/
 public class SearchResponseType {
 
     protected ErrorType error;

@@ -40,7 +40,6 @@ import cpath.service.CPathService;
 import static cpath.service.CPathService.*;
 import static cpath.service.CPathService.OutputFormat.*;
 import cpath.service.CPathService.ResultMapKey;
-import cpath.service.internal.CPathServiceImpl;
 import cpath.service.internal.ProtocolStatusCode;
 import cpath.service.jaxb.ErrorType;
 import cpath.service.jaxb.SearchHitType;
@@ -59,8 +58,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
-import com.googlecode.ehcache.annotations.Cacheable;
-
 import javax.validation.constraints.NotNull;
 
 /**
@@ -77,10 +74,7 @@ public class WebserviceController {
     private CPathService service; // main PC db access
     
     
-    public WebserviceController() {
-	}
-    
-    public WebserviceController(CPathServiceImpl service) {
+    public WebserviceController(CPathService service) {
 		this.service = service;
 	}
 
@@ -222,7 +216,6 @@ public class WebserviceController {
      * returns xml or json!
      * 
      */
-    @Cacheable(cacheName = "findElementsCache")
     @RequestMapping(value="/xml/search")
     public @ResponseBody SearchResponseType find(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 

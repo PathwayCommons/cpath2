@@ -37,25 +37,30 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
 import org.biopax.paxtools.model.level3.RelationshipXref;
+import org.biopax.paxtools.model.level3.SequenceEntityReference;
+import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
-import org.springframework.context.annotation.Scope;
-import org.springframework.context.annotation.ScopedProxyMode;
+import org.biopax.validator.utils.Normalizer;
 import org.springframework.stereotype.Service;
+
+import com.googlecode.ehcache.annotations.Cacheable;
 
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
@@ -68,7 +73,7 @@ import cpath.service.jaxb.SearchHitType;
 import cpath.service.jaxb.SearchResponseType;
 import cpath.service.CPathService;
 
-import cpath.warehouse.CvRepository;
+//import cpath.warehouse.CvRepository;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.PathwayData;
 
@@ -82,7 +87,6 @@ import static cpath.service.CPathService.ResultMapKey.*;
  *
  * TODO add/implement methods, debug!
  */
-@Scope(proxyMode=ScopedProxyMode.TARGET_CLASS)
 @Service
 public class CPathServiceImpl implements CPathService {
 	private static final Log log = LogFactory.getLog(CPathServiceImpl.class);
@@ -90,37 +94,45 @@ public class CPathServiceImpl implements CPathService {
 	@NotNull
 	private PaxtoolsDAO mainDAO;
 
+	/*[rodche] 
+	 * Looks, one DAO per service instance is enough; 
+	 * the "second query" use case can be covered by 
+	 * the second (third, etc..) CPathService instance!
 	@NotNull
 	private PaxtoolsDAO proteinsDAO;
-	
 	@NotNull
 	private PaxtoolsDAO moleculesDAO;
+	@NotNull
+	private CvRepository cvFetcher;
+	*/
 	
 	@NotNull
 	private MetadataDAO metadataDAO;
+
+	private SimpleMerger merger;	
+	private JAXBContext jaxbContext;
+	private SimpleIOHandler simpleIO;
+
+	// this is probably required for the echcache to work
+	public CPathServiceImpl() {
+	}
 	
-	@NotNull
-	private CvRepository cvFetcher;
-
-	private final SimpleMerger merger;	
-	private final JAXBContext jaxbContext;
-	private final SimpleIOHandler simpleIO;
-
     /**
      * Constructor.
      */
 	public CPathServiceImpl(
 			PaxtoolsDAO mainDAO, 
-			PaxtoolsDAO proteinsDAO,
-			PaxtoolsDAO moleculesDAO,
-			MetadataDAO metadataDAO,
-			CvRepository cvFetcher) {
+			//PaxtoolsDAO proteinsDAO,
+			//PaxtoolsDAO moleculesDAO,
+			//CvRepository cvFetcher,
+			MetadataDAO metadataDAO) 
+	{
 		
 		this.mainDAO = mainDAO;
-		this.proteinsDAO = proteinsDAO;
-		this.moleculesDAO = moleculesDAO;
+		//this.proteinsDAO = proteinsDAO;
+		//this.moleculesDAO = moleculesDAO;
+		//this.cvFetcher = cvFetcher;
 		this.metadataDAO = metadataDAO;
-		this.cvFetcher = cvFetcher;
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		simpleIO.mergeDuplicates(true);
 		this.merger = new SimpleMerger(simpleIO.getEditorMap());
@@ -136,7 +148,7 @@ public class CPathServiceImpl implements CPathService {
 	/*
 	 * Interface methods
 	 */	
-	
+	@Cacheable(cacheName = "findElementsCache")
 	@Override
 	public Map<ResultMapKey, Object> findElements(String queryStr, 
 			Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
@@ -157,6 +169,13 @@ public class CPathServiceImpl implements CPathService {
 	}
 	
 	
+	/**
+	 * Converts the returned by a query BioPAX elements to 
+	 * simpler "hit" java beans (serializable to XML, etc..) 
+	 * 
+	 * @param data
+	 * @return
+	 */
 	private List<SearchHitType> toSearchHits(List<? extends BioPAXElement> data) {
 		List<SearchHitType> hits = new ArrayList<SearchHitType>(data.size());
 		
@@ -172,7 +191,9 @@ public class CPathServiceImpl implements CPathService {
 					//mainDAO.initialize(pro);
 					hit.getDataSource().add(pro.getRDFId());
 				}
-				// add organisms and pathways (URIs)
+				
+				// add organisms and pathways (URIs);
+				// at the moment, this apply to Entities only -
 				for(Xref x : ((Entity)bpe).getXref()) {
 					if(x instanceof RelationshipXref 
 						&& ((RelationshipXref) x).getRelationshipType() != null) 
@@ -180,22 +201,35 @@ public class CPathServiceImpl implements CPathService {
 						RelationshipXref rx = (RelationshipXref) x;
 						RelationshipTypeVocabulary cv = rx.getRelationshipType();
 						mainDAO.initialize(cv);
-						if(cv.getTerm().contains(RelationshipType.ORGANISM)) {
+						if(cv.getRDFId().equals(ModelUtils
+							.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name()))) 
+						{
 							hit.getOrganism().add(rx.getId());
 						} 
-						else if(cv.getTerm().contains(RelationshipType.PROCESS)) {
+						else if(cv.getRDFId().equals(ModelUtils
+							.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()))) 
+						{
 							hit.getPathway().add(rx.getId());
-						}
+						}	
 					}
 				}
 			}
+			
+			// set organism for some of EntityReference
+			if(bpe instanceof SequenceEntityReference) {
+				BioSource bs = ((SequenceEntityReference)bpe).getOrganism(); 
+				if(bs != null)
+					hit.getOrganism().add(bs.getRDFId());
+			}
+			
+			
 			hits.add(hit);
 		}
 		
 		return hits;
 	}
 
-	
+	@Cacheable(cacheName = "findEntitiesCache")
 	@Override
 	public Map<ResultMapKey, Object> findEntities(String queryStr, 
 			Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
@@ -220,6 +254,7 @@ public class CPathServiceImpl implements CPathService {
      * (non-Javadoc)
 	 * @see cpath.service.CPathService#fetch(..)
 	 */
+	@Cacheable(cacheName = "elementByIdCache")
 	@Override
 	public Map<ResultMapKey, Object> fetch(OutputFormat format, String... uris) {
 
@@ -477,6 +512,7 @@ public class CPathServiceImpl implements CPathService {
 		}
 	}
 
+	@Cacheable(cacheName = "getNeighborhoodCache")
 	@Override
 	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String[] source,
 		Integer limit, Direction direction)
@@ -485,7 +521,7 @@ public class CPathServiceImpl implements CPathService {
 		return runAnalysis(analysis, format, source, limit, direction);
 	}
 
-	
+	@Cacheable(cacheName = "getPathsBetweenCache")
 	@Override
 	public Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source,
 		String[] target, Integer limit, LimitType limitType)
@@ -495,7 +531,7 @@ public class CPathServiceImpl implements CPathService {
 		return runAnalysis(analysis, format, source, target, limit, limitType);
 	}
 
-	
+	@Cacheable(cacheName = "getCommonStreamCache")
 	@Override
 	public Map<ResultMapKey, Object> getCommonStream(OutputFormat format, String[] source,
 		Integer limit, Direction direction)
