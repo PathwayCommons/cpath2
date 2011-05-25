@@ -53,6 +53,8 @@ import org.biopax.paxtools.query.algorithm.LimitType;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
+import org.springframework.context.annotation.Scope;
+import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Service;
 
 import cpath.dao.Analysis;
@@ -80,6 +82,7 @@ import static cpath.service.CPathService.ResultMapKey.*;
  *
  * TODO add/implement methods, debug!
  */
+@Scope(proxyMode=ScopedProxyMode.TARGET_CLASS)
 @Service
 public class CPathServiceImpl implements CPathService {
 	private static final Log log = LogFactory.getLog(CPathServiceImpl.class);
@@ -133,7 +136,6 @@ public class CPathServiceImpl implements CPathService {
 	/*
 	 * Interface methods
 	 */	
-	
 	
 	@Override
 	public Map<ResultMapKey, Object> findElements(String queryStr, 
@@ -358,9 +360,9 @@ public class CPathServiceImpl implements CPathService {
 			OutputStream edgeStream = new ByteArrayOutputStream();
             if (extended) {
                 OutputStream nodeStream = new ByteArrayOutputStream();
-                //FIXME writeInteractionsInSIFNX method signature has changed!
-                //sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream,
-                //		true, SimpleEditorMap.get(m.getLevel()), "NAME", "XREF", "ORGANISM");
+                sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream,
+                	Arrays.asList("Entity/name","Entity/xref","Entity/organism"), 
+                	Arrays.asList("Interaction/xref:PublicationXref"));
                 map.put(DATA, edgeStream.toString() + "\n\n" + nodeStream.toString());
             }
             else {
@@ -372,7 +374,6 @@ public class CPathServiceImpl implements CPathService {
 			map.put(ERROR, e.toString());
 		}
 
-        // outta here
 		return map;
 	}
 
@@ -459,9 +460,21 @@ public class CPathServiceImpl implements CPathService {
 	protected void putRequiredOutput(Model model, OutputFormat format,
 		Map<ResultMapKey, Object> map)
 	{
-		// Currently only biopax output is supported and format is ignored.
+		// Currently only biopax, sif, gsea output is supported
 		map.put(MODEL, model);
-		map.put(DATA, exportToOWL(model));
+		
+		if(format == null || format == OutputFormat.BIOPAX) {
+			map.put(DATA, exportToOWL(model));
+		} 
+		else if(format == OutputFormat.BINARY_SIF) {
+			map.put(DATA, fetchAsBinarySIF(map, false));
+		} 
+		else if(format == OutputFormat.EXTENDED_BINARY_SIF) {
+			map.put(DATA, fetchAsBinarySIF(map, true));
+		}
+		else if(format == OutputFormat.GSEA) {
+			map.put(DATA, fetchAsGSEA(map, "UniProt"));
+		}
 	}
 
 	@Override
@@ -479,7 +492,7 @@ public class CPathServiceImpl implements CPathService {
 	{
 		
 		Analysis analysis = new PathsBetweenAnalysis();
-		return runAnalysis(analysis,format, source, target, limit, limitType);
+		return runAnalysis(analysis, format, source, target, limit, limitType);
 	}
 
 	
@@ -488,7 +501,7 @@ public class CPathServiceImpl implements CPathService {
 		Integer limit, Direction direction)
 	{
 		Analysis analysis = new CommonStreamAnalysis();
-		return runAnalysis(analysis,format, source, limit, direction);
+		return runAnalysis(analysis, format, source, limit, direction);
 	}
 
 	//---------------------------------------------------------------------------------------------|

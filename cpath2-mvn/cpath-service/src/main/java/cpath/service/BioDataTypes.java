@@ -112,7 +112,7 @@ public final class BioDataTypes {
 					" (" + urn + ") " + "is not normalized! (OK for junit test data)");
 			}
 			
-			register(prov.getRDFId(), prov.getStandardName(), Type.DATASOURCE)
+			register(urn, prov.getStandardName(), Type.DATASOURCE)
 				.organism(prov) // *a hack* - just stores the Provenance object (not organism!)
 				.mainUrl(url)
 				.urnBase(urn)
@@ -131,7 +131,7 @@ public final class BioDataTypes {
 			if(taxon != null) {
 				String name = getOrganismName(bioSource);
 				register(taxon, name, Type.ORGANISM)
-					.urnBase("urn:miriam:taxonomy:")
+					.urnBase("urn:miriam:taxonomy")
 					.organism(bioSource)
 					.mainUrl("urn:miriam:taxonomy:"+taxon);
 				if(LOG.isInfoEnabled())  {
