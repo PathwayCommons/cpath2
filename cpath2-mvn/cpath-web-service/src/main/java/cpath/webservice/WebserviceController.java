@@ -59,6 +59,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import com.googlecode.ehcache.annotations.Cacheable;
+
 import javax.validation.constraints.NotNull;
 
 /**
@@ -75,7 +77,10 @@ public class WebserviceController {
     private CPathService service; // main PC db access
     
     
-	public WebserviceController(CPathServiceImpl service) {
+    public WebserviceController() {
+	}
+    
+    public WebserviceController(CPathServiceImpl service) {
 		this.service = service;
 	}
 
@@ -138,7 +143,7 @@ public class WebserviceController {
     public @ResponseBody String fulltextSearch(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
     		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms, //filter by
-    		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources, //filter by
+    		@RequestParam(value="datasource", required=false) PathwayDataSource[] dataSources, //filter by
     		@RequestParam(value="process", required=false) String[] pathwayURIs, // filter by
     		@RequestParam(value="q", required=true) String query
     		//,@RequestHeader("User-Agent") String userAgent //did not work as expected...
@@ -195,7 +200,7 @@ public class WebserviceController {
 				if(d == null)
 					dsourceURIs[i++] = "UNKNOWN_THING"; // won't much anything!
 				else
-					dsourceURIs[i++] = d.getURI();
+					dsourceURIs[i++] = d.asDataSource().getSystemCode();
 			}
 			SearchFilter<Entity, String> byDatasourceFilter = new EntityDataSourceFilter();
 			byDatasourceFilter.setValues(dsourceURIs);
@@ -217,11 +222,12 @@ public class WebserviceController {
      * returns xml or json!
      * 
      */
+    @Cacheable(cacheName = "findElementsCache")
     @RequestMapping(value="/xml/search")
     public @ResponseBody SearchResponseType find(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
     		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms, //filter by
-    		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources, //filter by
+    		@RequestParam(value="datasource", required=false) PathwayDataSource[] dataSources, //filter by
     		@RequestParam(value="process", required=false) String[] pathwayURIs, // filter by
     		@RequestParam(value="q", required=true) String query
     )
@@ -268,7 +274,7 @@ public class WebserviceController {
     public @ResponseBody SearchResponseType findEntities(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
     		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms, //filter by
-    		@RequestParam(value="dataSource", required=false) PathwayDataSource[] dataSources, //filter by
+    		@RequestParam(value="datasource", required=false) PathwayDataSource[] dataSources, //filter by
     		@RequestParam(value="process", required=false) String[] pathwayURIs, // filter by
     		@RequestParam(value="q", required=true) String query
     )

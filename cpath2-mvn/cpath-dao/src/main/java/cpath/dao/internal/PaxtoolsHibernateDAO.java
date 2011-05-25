@@ -439,13 +439,25 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 						}
 					}
 				}
-				//TODO other non-entities
-			}
-			else {
-				if(passFilters(bpe, filterByType, extraFilters))
+				else if(bpe instanceof EntityReference) {
+					Set<SimplePhysicalEntity> spes = ((EntityReference) bpe).getEntityReferenceOf();
+					for(SimplePhysicalEntity spe : spes) {
+						if(passFilters(spe, filterByType, extraFilters))
+							toReturn.add(spe);
+						// TODO not sure whether to go here for complexes or not...
+						addComplexes(toReturn, spe, filterByType, extraFilters);
+					}
+				}
+			} else {
+				if (passFilters(bpe, filterByType, extraFilters))
 					toReturn.add((Entity) bpe);
+				// TODO not sure whether to go here for complexes or not...
+				if (bpe instanceof PhysicalEntity) {
+					addComplexes(toReturn, (PhysicalEntity) bpe, filterByType, extraFilters);
+				}
 			}
 			
+			//TODO other non-entities
 		}
 		
 		if (log.isDebugEnabled()) {
@@ -456,7 +468,19 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		return toReturn;
 	}
 
+
 	
+	private void addComplexes(List<Entity> toReturn, PhysicalEntity pe,
+			Class<? extends BioPAXElement> filterByType, 
+			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
+	{
+		Set<Complex> complexes = ((PhysicalEntity) pe).getComponentOf();
+		for (Complex c : complexes) {
+			if (passFilters(c, filterByType, extraFilters))
+				toReturn.add(c);
+		}
+	}
+
 	/**
 	 * Apply search filters
 	 * 

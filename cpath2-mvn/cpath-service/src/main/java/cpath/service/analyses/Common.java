@@ -29,7 +29,7 @@ public class Common
 		Set<BioPAXElement> elements = new HashSet<BioPAXElement>();
 
 		// IDs of source elements
-		Set<String> ids = (Set<String>) arg;
+		String[] ids = (String[]) arg;
 
 		// Fetch source objects using IDs
 

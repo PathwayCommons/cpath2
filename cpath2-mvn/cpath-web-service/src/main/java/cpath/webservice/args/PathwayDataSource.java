@@ -59,8 +59,4 @@ public class PathwayDataSource {
 	public DataSource asDataSource() {
 		return dataSource;
 	}
-	
-	public String getURI() {
-		return dataSource.getURN("");
-	}
 }

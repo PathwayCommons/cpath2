@@ -28,7 +28,8 @@
 package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
-import java.net.URI;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 import org.bridgedb.DataSource;
 
@@ -50,7 +51,6 @@ public class OrganismDataSourceEditor extends PropertyEditorSupport
 	@Override
 	public void setAsText(String ds) throws IllegalArgumentException {
 		DataSource dataSource = null;
-		URI u1 = URI.create(ds);
 		
 		/*
 		 * all the organisms 
@@ -62,12 +62,21 @@ public class OrganismDataSourceEditor extends PropertyEditorSupport
 					|| d.getFullName().equalsIgnoreCase(ds)) {
 				dataSource = d;
 				break;
-			} else // may be URN?
+			} 
+			
+			// may be it's a standard URN?
+			String dsuriEncoded;
+			try {
+				dsuriEncoded = URLEncoder.encode(ds, "UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				dsuriEncoded = URLEncoder.encode(ds);
+			}
+			
+			if (ds.equalsIgnoreCase(d.getMainUrl()) // is actually RDFId - as created by BioDataSources.init()
+				|| dsuriEncoded.equalsIgnoreCase(d.getMainUrl())) 
 			{
-				if (u1.equals(URI.create(d.getURN("")))) {
-					dataSource = d;
-					break;
-				}
+				dataSource = d;
+				break;
 			}
 		}
 
