@@ -8,7 +8,6 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
 @XmlAccessorType(XmlAccessType.FIELD)
-/*
 @XmlType(name = "SearchHitType", propOrder = {
     "uri",
     "biopaxClass",
@@ -18,7 +17,6 @@ import javax.xml.bind.annotation.XmlType;
     "pathway",
     "excerpt"
 })
-*/
 public class SearchHitType {
 
     @XmlElement(required = true)

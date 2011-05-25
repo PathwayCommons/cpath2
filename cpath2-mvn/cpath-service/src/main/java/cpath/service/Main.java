@@ -72,14 +72,21 @@ public class Main  {
     private String[] commandParameters;
     
 	
+    /**
+     * Creates a CPathService instance using
+     * the "main" cpath2 DAO.
+     * 
+     * @return
+     */
 	private static CPathService getService() {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-cpathDAO.xml",
         			"classpath:applicationContext-whouseDAO.xml",
-        			"classpath:applicationContext-whouseMolecules.xml",
-        			"classpath:applicationContext-whouseProteins.xml",
-        			"classpath:applicationContext-cvRepository.xml",
+        			// the following three are not required anymore (temporarily or forever)
+        			//"classpath:applicationContext-whouseMolecules.xml",
+        			//"classpath:applicationContext-whouseProteins.xml",
+        			//"classpath:applicationContext-cvRepository.xml",
         			"classpath:applicationContext-cpathService.xml"});
 		return (CPathService) context.getBean("service");
 	}

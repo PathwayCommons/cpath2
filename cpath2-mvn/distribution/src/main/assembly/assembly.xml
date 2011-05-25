@@ -37,10 +37,10 @@
   <dependencySets>
     <dependencySet>
       <includes>
-        <include>*:cpath-webdoc:war</include>
+        <include>*:cpath-webdocs:war</include>
       </includes>
       <outputDirectory></outputDirectory>
-      <outputFileNameMapping>cpath-webdoc.war</outputFileNameMapping>
+      <outputFileNameMapping>cpath-webdocs.war</outputFileNameMapping>
       <unpack>false</unpack>
     </dependencySet>
     <dependencySet>

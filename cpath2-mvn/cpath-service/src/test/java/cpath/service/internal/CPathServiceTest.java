@@ -85,7 +85,7 @@ public class CPathServiceTest {
 	@Test
 	public void testFetchAsBiopax() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		CPathService service = new CPathServiceImpl(dao, null,null,null,null);
+		CPathService service = new CPathServiceImpl(dao, null);//,null,null,null);
 		Map<ResultMapKey, Object> map = service.fetch(
 				OutputFormat.BIOPAX,
 				"http://www.biopax.org/examples/myExample#Protein_A");
@@ -109,7 +109,7 @@ public class CPathServiceTest {
 	@Test
 	public void testFetchAsBiopax2() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		CPathService service = new CPathServiceImpl(dao, null,null,null,null);
+		CPathService service = new CPathServiceImpl(dao, null);//,null,null,null);
 		Map<ResultMapKey, Object> map = service.fetch(OutputFormat.BIOPAX, "urn:miriam:uniprot:P46880");
 		assertNotNull(map);
 			
@@ -127,7 +127,7 @@ public class CPathServiceTest {
 	@Test
 	public void testFetchAsSIF() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		CPathService service = new CPathServiceImpl(dao, null,null,null,null);
+		CPathService service = new CPathServiceImpl(dao, null);//,null,null,null);
 		Map<ResultMapKey, Object> map = service.fetch(
 				OutputFormat.BINARY_SIF,
 				"http://www.biopax.org/examples/myExample#biochemReaction1");

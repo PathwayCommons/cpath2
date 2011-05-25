@@ -39,9 +39,10 @@ import static cpath.webservice.args.CmdArgs.*;
 public enum Cmd {
 	SEARCH("Full-text search. " +
            "Returns the list of identifiers that can be used with the 'get' command " +
-           "This command has four parameters.",
+           "This command has four parameters. ",
            "http://awabi.cbio.mskcc.org/cpath2/search?q=brca*",
-           "Ordered list of IDs to records within pathway commons that match search criteria.",
+           "Ordered list of IDs to records within pathway commons that match search criteria " +
+           "(or, when '/xml/search' or '/xml/entity/search' endpoints are called - generates a XML/JSON search response).",
 			new CmdArgs[]{q, type, organism, datasource, process}),
 	GET("Gets a BioPAX element or sub-model " +
         "by ID(s).  This command has two parameters.",

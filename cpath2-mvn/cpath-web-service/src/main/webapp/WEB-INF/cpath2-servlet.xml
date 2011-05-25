@@ -37,10 +37,11 @@
 	<bean id="helpController" class="cpath.webservice.HelpController">
 	</bean>
 
-	<!-- in addition to Hibernate L2 cache, we can set up a general-purpose java ehcache; shelved for later... -->
-	<ehcache:annotation-driven cache-manager="ehCacheManager" default-cache-key-generator="defaultCacheKeyGenerator" />
-	<bean id="ehCacheManager" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean" />
+	<!-- in addition to Hibernate L2 cache, we can set up a general-purpose java ehcache; shelved for later...
+	<ehcache:annotation-driven cache-manager="ehCacheManagerWs" default-cache-key-generator="defaultCacheKeyGenerator" />
+	<bean id="ehCacheManagerWs" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean" />
     <bean id="defaultCacheKeyGenerator" class="com.googlecode.ehcache.annotations.key.StringCacheKeyGenerator" />
+    -->
 
 	<mvc:annotation-driven/>
 </beans>
