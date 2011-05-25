@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.HashSet;
 
 import cpath.dao.filters.SearchFilter;
+import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.dao.internal.filters.EntityByOrganismRelationshipXrefsFilter;
 import cpath.dao.internal.filters.EntityByProcessRelationshipXrefsFilter;
 import cpath.dao.internal.filters.EntityDataSourceFilter;
@@ -449,4 +450,13 @@ public class WebserviceController {
         return toReturn.toString();
     }
 
+    
+    @Override
+    protected void finalize() throws Throwable {
+    	try {
+    		DataServicesFactoryBean.clearAllDatasources();
+    	} finally {
+    		super.finalize();
+    	}
+    }
 }

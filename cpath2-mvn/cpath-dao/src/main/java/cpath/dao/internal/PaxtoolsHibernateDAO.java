@@ -281,6 +281,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			// so let's translate them to the annotated entity classes
 			Class<?> filterClass = getEntityClass(filterByType);
 			hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterClass);
+			//NOTE:  unlike for findEntities method, 'filterClass' is applied right here!
 		} else {
 			hibQuery = fullTextSession.createFullTextQuery(luceneQuery);
 		}
@@ -320,11 +321,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			}
 		}
 		
-		// initialize all props
-		for(BioPAXElement bpe : results) {
-			initialize(bpe);
-		}
-		
 		return results;
 	}
 	
@@ -339,11 +335,13 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * lookup for parent entities, i.e.:
 	 * - first, a {@link FullTextQuery} query does not use any class filters and just returns 
 	 *   matching objects (chances are, the list will contain many {@link UtilityClass} elements);
+	 *   in fact, it is going to delegate the search to {@link #findElements(String, Class, SearchFilter...)} 
+	 *   method, with the second parameter set to NULL.
 	 * - second, the list is iterated over to replace each utility class object with
 	 *   one or many of its nearest parent {@link Entity} class elements if possible
 	 *   (it takes to use PaxtoolsAPI, e.g., inverse properties or path accessors...);
 	 *   TODO possibly to implement the same using HQL?..
-	 * - next, 'filterByTypes' are now applied;
+	 * - next, 'filterByTypes' are now applied (the second time; the first was in the first step);
 	 * - finally, 'extraFilters' are applied
 	 * 
 	 */
@@ -356,73 +354,17 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	{
 		// a list of identifiers to return
 		List<Entity> toReturn = new ArrayList<Entity>();
-
-		// a shortcut!
-		if (query == null || "".equals(query) 
-				|| query.trim().startsWith("*")) // see: Lucene query syntax
-		{
-			// do nothing, return the empty list
-			return toReturn;
-		} 
 		
 		// - otherwise, we continue and do real job -		
 		if (log.isInfoEnabled())
-			log.info("find (IDs): " + query + ", filterBy: " + filterByType
-					+ "; extra filters: " + Arrays.toString(extraFilters));
+			log.info("findEntities called");
 
-		// collect matching elements here
-		List<BioPAXElement> results = new ArrayList<BioPAXElement>();
+		// First, search in all classes
+		List<BioPAXElement> results = findElements(query, null, extraFilters);
 			
-		// create a native Lucene query
-		org.apache.lucene.search.Query luceneQuery = null;
-		try {
-			luceneQuery = multiFieldQueryParser.parse(query);
-		} catch (ParseException e) {
-			log.info("parser exception: " + e.getMessage());
-			return toReturn;
-		}
-		// get full text session and create the query
-		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery);
-			//, filterClasses); // - won't use for the main DAO impl.
-
-		if (log.isDebugEnabled()) {
-			log.debug("Query '" + query + "' results size = " 
-					+ hibQuery.getResultSize());
-		}
-
-		/*
-		// TODO use pagination? [later...]
-		hibQuery.setFirstResult(0);
-		hibQuery.setMaxResults(10);
-		*/
-
-		hibQuery.setProjection(FullTextQuery.THIS, FullTextQuery.SCORE, FullTextQuery.EXPLANATION);
-		
-		// execute search and get the list
-		List hibQueryResults = hibQuery.list();
-		
-		// process the entries
-		for (Object row : hibQueryResults) {
-			// get the matching element
-			//BioPAXElement bpe = (BioPAXElement) row; // when not using hibQuery.setProjection...
-			
-			Object[] cols = (Object[]) row; // only when hibQuery.setProjection -
-			BioPAXElement bpe = (BioPAXElement) cols[0];
-			
-			// (debug info...)
-			if (log.isDebugEnabled()) {
-				float score = (Float) cols[1];
-				Explanation expl = (Explanation) cols[2];
-				//TODO shall we store 'explanation' somewhere (~excerpt)?
-				log.debug("found uri: " + bpe.getRDFId() 
-					+ " (" + bpe + " - "
-					+ bpe.getModelInterface() + ")" + "; score="
-					+ score + "; explanation: " + expl);
-			}
-			
-			//"cast" matched objects to parent entity(-ies) 
-			// currently for xrefs only... TODO test it
+		for(BioPAXElement bpe : results) 
+		{
+			// currently, lookup for entities works for some utility calsses only... TODO test it
 			if(!(bpe instanceof Entity)) {
 				if(bpe instanceof Xref) {
 					for(XReferrable xReferrable : ((Xref)bpe).getXrefOf()) {
@@ -456,13 +398,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 					addComplexes(toReturn, (PhysicalEntity) bpe, filterByType, extraFilters);
 				}
 			}
-			
-			//TODO other non-entities
+			//TODO for other non-entities
 		}
 		
 		if (log.isDebugEnabled()) {
-			log.debug("Query '" + query + "' final results size = " 
-					+ toReturn.size());
+			log.debug("Using query for entities '" + query 
+					+ "', final results size = " + toReturn.size());
 		}
 		
 		return toReturn;

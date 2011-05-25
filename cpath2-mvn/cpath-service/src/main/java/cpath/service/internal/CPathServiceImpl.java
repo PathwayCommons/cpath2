@@ -46,18 +46,17 @@ import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Entity;
+import org.biopax.paxtools.model.level3.Named;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.SequenceEntityReference;
-import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
-import org.biopax.validator.utils.Normalizer;
 import org.springframework.stereotype.Service;
 
 import com.googlecode.ehcache.annotations.Cacheable;
@@ -65,6 +64,7 @@ import com.googlecode.ehcache.annotations.Cacheable;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
+import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
@@ -84,8 +84,6 @@ import static cpath.service.CPathService.ResultMapKey.*;
  * persisted BioPAX model (DAO) from console and webservice 
  * 
  * @author rodche
- *
- * TODO add/implement methods, debug!
  */
 @Service
 public class CPathServiceImpl implements CPathService {
@@ -180,33 +178,43 @@ public class CPathServiceImpl implements CPathService {
 		List<SearchHitType> hits = new ArrayList<SearchHitType>(data.size());
 		
 		for(BioPAXElement bpe : data) {
+			mainDAO.initialize(bpe);
 			SearchHitType hit = new SearchHitType();
 			hit.setUri(bpe.getRDFId());
 			hit.setBiopaxClass(bpe.getModelInterface().getSimpleName());
+			// add standard and display names if any -
+			if(bpe instanceof Named) {
+				Named named = (Named)bpe;
+				String std = named.getStandardName();
+				if( std != null)
+					hit.getName().add(std);
+				String dsp = named.getDisplayName();
+				if(dsp != null && !dsp.equalsIgnoreCase(std))
+					hit.getName().add(dsp);
+			}
+			// add organisms and data sources
 			if(bpe instanceof Entity) {
-				//TODO may be, extend SearchHitType and add more details about organism/ds, e.g., Latin name, taxon, standard name, etc.
 				// add data sources (URIs)
-				mainDAO.initialize(bpe);
 				for(Provenance pro : ((Entity)bpe).getDataSource()) {
-					//mainDAO.initialize(pro);
 					hit.getDataSource().add(pro.getRDFId());
 				}
 				
 				// add organisms and pathways (URIs);
 				// at the moment, this apply to Entities only -
-				for(Xref x : ((Entity)bpe).getXref()) {
-					if(x instanceof RelationshipXref 
-						&& ((RelationshipXref) x).getRelationshipType() != null) 
+				for(Xref x : ((Entity)bpe).getXref()) 
+				{
+					mainDAO.initialize(x);
+					if((x instanceof RelationshipXref) && ((RelationshipXref) x).getRelationshipType() != null) 
 					{
 						RelationshipXref rx = (RelationshipXref) x;
 						RelationshipTypeVocabulary cv = rx.getRelationshipType();
 						mainDAO.initialize(cv);
-						if(cv.getRDFId().equals(ModelUtils
+						if(cv.getRDFId().equalsIgnoreCase(ModelUtils
 							.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name()))) 
 						{
 							hit.getOrganism().add(rx.getId());
 						} 
-						else if(cv.getRDFId().equals(ModelUtils
+						else if(cv.getRDFId().equalsIgnoreCase(ModelUtils
 							.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()))) 
 						{
 							hit.getPathway().add(rx.getId());
@@ -588,5 +596,14 @@ public class CPathServiceImpl implements CPathService {
 
         // should not make it here
         return null;
+    }
+    
+    @Override
+    protected void finalize() throws Throwable {
+    	try {
+    		DataServicesFactoryBean.clearAllDatasources();
+    	} finally {
+    		super.finalize();
+    	}
     }
 }
