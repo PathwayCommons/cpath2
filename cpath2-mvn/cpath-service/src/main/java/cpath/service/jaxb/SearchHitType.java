@@ -23,10 +23,15 @@ public class SearchHitType {
     protected String uri;
     @XmlElement(required = true)
     protected String biopaxClass;
+    @XmlElement
     protected List<String> name;
+    @XmlElement
     protected List<String> dataSource;
+    @XmlElement
     protected List<String> organism;
+    @XmlElement
     protected List<String> pathway;
+    @XmlElement
     protected String excerpt;
 
 

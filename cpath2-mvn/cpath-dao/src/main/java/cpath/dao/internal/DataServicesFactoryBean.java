@@ -338,4 +338,18 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
     	dropFulltextIndex(metaDb);
     }
 
+    
+    public static void clearAllDatasources() {
+    	try {
+    		for(DataSource dataSource : getDataSourceMap().values() ) {
+    			((DriverManagerDataSource) dataSource).getConnection().close();
+    		}
+    		getDataSourceMap().clear();
+    	} catch (Exception e) {
+    		log.error("Error in clearAllDatasources.", e);
+    	} finally {
+    		if(beansByName != null)
+    			beansByName.remove();
+    	}
+    }
 }
