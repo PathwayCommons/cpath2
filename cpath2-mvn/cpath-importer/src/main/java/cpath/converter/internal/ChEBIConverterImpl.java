@@ -271,20 +271,42 @@ public class ChEBIConverterImpl extends BaseConverterImpl
 			log.info("Using test OBO file at: " + chebiOboFileUrl);
 			return LOADER.getResource(chebiOboFileUrl).getInputStream();
 		}
-		else if(!localFile.exists() || !localFile.isFile()) {
+		else if(!localFile.exists() || !localFile.isFile() || localFile.length() == 0) {
 			log.info("Using OBO file at: " + CHEBI_OBO_RESOURCE_URL);
 			// get the file and save locally
 			Resource resource = LOADER.getResource(CHEBI_OBO_RESOURCE_URL);
-			long size = resource.contentLength();
-			if(log.isInfoEnabled()) {
-				log.info(CHEBI_OBO_RESOURCE_URL + " content length= " + size);
+			if (resource.exists()) {
+					long size = resource.contentLength();
+					if(log.isInfoEnabled()) {
+						if (size == -1) {
+							log.info(CHEBI_OBO_RESOURCE_URL + " content length = " + size);
+						}
+						else {
+							log.info(CHEBI_OBO_RESOURCE_URL + " content length = -1, " +
+									 "this does not necessarily mean resource does not exist, " +
+									 "attempting to fetch by setting content length to Long.MAX_VALUE");
+						}
+					}
+					// resource.contentLength() does not work on (at least) miso-dev, it returns -1
+					// if so, set to MAX_VALUE (else transferFrom() will throw an exception).  this
+					// will not break the call to transferFrom below - 
+					// fewer than the requested number of bytes will be transferred if the source channel 
+					// has fewer than count bytes remaining
+					size = (size == -1) ? Long.MAX_VALUE : size;
+					ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
+					FileOutputStream dest = new FileOutputStream(ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
+					size = dest.getChannel().transferFrom(source, 0, size); // can throw runtime exceptions
+					if (log.isInfoEnabled()) {
+						log.info(size + " bytes downloaded from " + CHEBI_OBO_RESOURCE_URL 
+								 + " and saved to " + ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
+					}
 			}
-			ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
-			FileOutputStream dest = new FileOutputStream(ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
-			size = dest.getChannel().transferFrom(source, 0, size); // can throw runtime exceptions
-			if(log.isInfoEnabled()) {
-				log.info(size + " bytes downloaded from " + CHEBI_OBO_RESOURCE_URL 
-						+ " and saved to " + ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
+			else {
+				// resource does not exist
+				if (log.isInfoEnabled()) {
+					log.info("resource does not exist: " + CHEBI_OBO_RESOURCE_URL);
+				}
+				throw new IOException("resource does not exist: " + CHEBI_OBO_RESOURCE_URL);
 			}
 		} else { 
 			// use the existing file 
