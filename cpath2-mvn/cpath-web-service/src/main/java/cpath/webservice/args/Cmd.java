@@ -53,7 +53,7 @@ public enum Cmd {
           "Returns a sub-model as the result. This command has four parameters.",
           "http://awabi.cbio.mskcc.org/cpath2/graph?kind=neighborhood&source=HTTP:%2F%2FWWW.REACTOME.ORG%2FBIOPAX%23BRCA2__NUCLEOPLASM__1_9606",
           "BioPAX by default, other formats as specified by the format parameter.  See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
-          new CmdArgs[]{kind, source, dest, format})
+          new CmdArgs[]{kind, source, target, format, limit, limit_type})
         ;
     /* should we expose this method?
 	CONVERT("Converts from BioPAX to simple formats.  This command has two parameters",
