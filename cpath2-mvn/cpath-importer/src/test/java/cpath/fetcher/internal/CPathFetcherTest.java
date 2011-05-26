@@ -79,7 +79,7 @@ public class CPathFetcherTest {
 				new byte[]{}, 
 				Metadata.TYPE.SMALL_MOLECULE, 
 				"cpath.cleaner.internal.BaseCleanerImpl", 
-				"cpath.converter.internal.ChEBIConverterImpl");
+				"cpath.converter.internal.ChEBITestConverterImpl");
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
 		assertTrue(model.containsID("urn:miriam:chebi:20"));

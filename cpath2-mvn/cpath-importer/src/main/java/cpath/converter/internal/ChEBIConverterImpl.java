@@ -48,20 +48,26 @@ public class ChEBIConverterImpl extends BaseConverterImpl
 	protected static final String COLON_DELIMITER = ":";
 	protected static final String EQUALS_DELIMITER = "=";
 	
-	 // loader can handle file://, ftp://, http://  URL resources
+	 // loader can handle classpath:, file://, ftp://, http://  URL resources
 	private static final ResourceLoader LOADER = new DefaultResourceLoader();
 	
-	// url to chebi obo file - set by ChEBI subclass
+	// url to chebi obo file
 	private final String chebiOboFileUrl;
+	
     
     // OBO converter
     private ChEBIOBOConverterImpl oboConverter;	
 
-	// url to ChEBI OBO file
-	public static final String CHEBI_OBO_FILE_URL = 
+	/**
+	 * ChEBI OBO file official location
+	 */
+	public static final String CHEBI_OBO_RESOURCE_URL = 
 		"ftp://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi.obo";
-	// chebi obo file target path/name
-	public static final String CHEBI_OBO_FILE = 
+	
+	/**
+	 *  path to find in / download to (if not present) the chebi.obo file
+	 */
+	public static final String CHEBI_OBO_LOCAL_FILE = 
 		System.getProperty("java.io.tmpdir") 
 			+ System.getProperty("file.separator") + "chebi.obo";
 	
@@ -95,22 +101,25 @@ public class ChEBIConverterImpl extends BaseConverterImpl
 	}
 	
 	public ChEBIConverterImpl(Model model) {
-		this(model, CHEBI_OBO_FILE_URL);
-		if (log.isDebugEnabled()) {
-			log.debug("CHEBI OBO FILE URL: " + chebiOboFileUrl);
-		}
+		this(model, CHEBI_OBO_RESOURCE_URL);
 	}
 
 	
 	/**
-	 * Constructor.
+	 * Constructor to set a location of 
+	 * the chebi.obo file or a mock file 
+	 * (for testing).
+	 * 
 	 *
 	 * @param model to merge converted data to
 	 */
-	public ChEBIConverterImpl(Model model, String chebiOBOFileURL) {
+	ChEBIConverterImpl(Model model, String chebiOBOFileURL) {
 		super(model);
 		this.oboConverter = new ChEBIOBOConverterImpl(model, factory);
 		this.chebiOboFileUrl = chebiOBOFileURL;
+		if (log.isInfoEnabled()) {
+			log.info("CHEBI OBO FILE URL: " + chebiOboFileUrl);
+		}
 	}
 
 	
@@ -256,25 +265,33 @@ public class ChEBIConverterImpl extends BaseConverterImpl
 	 */
 	private InputStream getChEBIOBOInputStream() throws IOException 
 	{
-		File localFile = new File(ChEBIConverterImpl.CHEBI_OBO_FILE);
-		if(!localFile.exists() || !localFile.isFile()) {
-			Resource resource = LOADER.getResource(chebiOboFileUrl);
+		File localFile = new File(ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
+		
+		if (!CHEBI_OBO_RESOURCE_URL.equalsIgnoreCase(chebiOboFileUrl)) { // - means testing
+			log.info("Using test OBO file at: " + chebiOboFileUrl);
+			return LOADER.getResource(chebiOboFileUrl).getInputStream();
+		}
+		else if(!localFile.exists() || !localFile.isFile()) {
+			log.info("Using OBO file at: " + CHEBI_OBO_RESOURCE_URL);
+			// get the file and save locally
+			Resource resource = LOADER.getResource(CHEBI_OBO_RESOURCE_URL);
 			long size = resource.contentLength();
 			if(log.isInfoEnabled()) {
-				log.info(CHEBI_OBO_FILE_URL + " content length= " + size);
+				log.info(CHEBI_OBO_RESOURCE_URL + " content length= " + size);
 			}
 			ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
-			FileOutputStream dest = new FileOutputStream(ChEBIConverterImpl.CHEBI_OBO_FILE);
+			FileOutputStream dest = new FileOutputStream(ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
 			size = dest.getChannel().transferFrom(source, 0, size); // can throw runtime exceptions
 			if(log.isInfoEnabled()) {
-				log.info(size + " bytes downloaded from " + CHEBI_OBO_FILE_URL);
+				log.info(size + " bytes downloaded from " + CHEBI_OBO_RESOURCE_URL 
+						+ " and saved to " + ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
 			}
-		} else {
-			log.info("Re-using existing file: " + ChEBIConverterImpl.CHEBI_OBO_FILE);
+		} else { 
+			// use the existing file 
+			log.info("Re-using the existing ontology file: " + ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
 		}
-
-		// outta here
-		return new FileInputStream(ChEBIConverterImpl.CHEBI_OBO_FILE);
+		
+		return new FileInputStream(ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
 	}
 	
 	

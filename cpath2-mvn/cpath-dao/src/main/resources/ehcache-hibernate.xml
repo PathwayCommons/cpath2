@@ -11,7 +11,7 @@
 	<diskStore path="java.io.tmpdir/cpath2_hibernate_ehcache" /> 
  
 	<defaultCache eternal="false" maxElementsInMemory="100000"
-        overflowToDisk="true" diskPersistent="false" timeToIdleSeconds="0"
+        overflowToDisk="false" diskPersistent="false" timeToIdleSeconds="0"
         timeToLiveSeconds="600" memoryStoreEvictionPolicy="LRU"/> 
  
  
