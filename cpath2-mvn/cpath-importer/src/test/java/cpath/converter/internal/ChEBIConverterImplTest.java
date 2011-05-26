@@ -35,8 +35,9 @@ public class ChEBIConverterImplTest {
 		InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_chebi_data.dat");
 		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
 
-		// setup the converter
-		Converter converter = new ChEBIConverterImpl(model, "classpath:test_chebi_obo_data.dat");
+		// setup the converter using a special constructor to set mock chebi.obo data
+		Converter converter = new ChEBITestConverterImpl();
+		((BaseConverterImpl)converter).setModel(model);
 		converter.convert(is);
 		
 		// dump owl for review
