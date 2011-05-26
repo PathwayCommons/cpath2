@@ -63,7 +63,7 @@ public interface CPathService {
 		MODEL, // key to BioPAX (PaxTools) Model, if any is returned
 		ELEMENT, // a BioPAXElement (detached from DAO)
 		DATA, // key to query results (to be treated by the caller), e.g., id-list, image, etc.
-		ERROR, // key to error string or object (e.g., toString() will be used to get message)
+		ERROR, // key to an error string or Exception object (e.g., toString() will be used to get message)
 		COUNT, // key to "records" count, e.g. items in the ID-list or no. of BioPAX elements
 		MISC; // key to, e.g., lucene search statistics, etc.
 	}

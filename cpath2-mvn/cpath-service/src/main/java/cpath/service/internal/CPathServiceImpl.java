@@ -160,7 +160,7 @@ public class CPathServiceImpl implements CPathService {
 			map.put(DATA, hits);
 			map.put(COUNT, hits.size()); // becomes Integer
 		} catch (Exception e) {
-			map.put(ERROR, e.toString());
+			map.put(ERROR, e);
 		}
 		
 		return map;
@@ -178,7 +178,6 @@ public class CPathServiceImpl implements CPathService {
 		List<SearchHitType> hits = new ArrayList<SearchHitType>(data.size());
 		
 		for(BioPAXElement bpe : data) {
-			mainDAO.initialize(bpe);
 			SearchHitType hit = new SearchHitType();
 			hit.setUri(bpe.getRDFId());
 			hit.setBiopaxClass(bpe.getModelInterface().getSimpleName());
@@ -203,7 +202,6 @@ public class CPathServiceImpl implements CPathService {
 				// at the moment, this apply to Entities only -
 				for(Xref x : ((Entity)bpe).getXref()) 
 				{
-					mainDAO.initialize(x);
 					if((x instanceof RelationshipXref) && ((RelationshipXref) x).getRelationshipType() != null) 
 					{
 						RelationshipXref rx = (RelationshipXref) x;
@@ -230,7 +228,6 @@ public class CPathServiceImpl implements CPathService {
 					hit.getOrganism().add(bs.getRDFId());
 			}
 			
-			
 			hits.add(hit);
 		}
 		
@@ -251,7 +248,7 @@ public class CPathServiceImpl implements CPathService {
 			map.put(DATA, hits);
 			map.put(COUNT, hits.size()); // becomes Integer
 		} catch (Exception e) {
-			map.put(ERROR, e.toString());
+			map.put(ERROR, e);
 		}
 		
 		return map;
@@ -314,7 +311,7 @@ public class CPathServiceImpl implements CPathService {
 			}
 		}
         catch (Exception e) {
-			map.put(ERROR, e.toString());
+			map.put(ERROR, e);
 		}
 
         // outta here
@@ -350,7 +347,6 @@ public class CPathServiceImpl implements CPathService {
 			}
 		}
 		
-        // outta here
 		return map;
 	}	
 	
@@ -363,8 +359,8 @@ public class CPathServiceImpl implements CPathService {
 	 * @param outputIdType output identifiers type (db name)
 	 * @return
 	 */
-	Map<ResultMapKey, Object> fetchAsGSEA(Map<ResultMapKey, Object> map, String outputIdType) {
-		
+	Map<ResultMapKey, Object> fetchAsGSEA(Map<ResultMapKey, Object> map, String outputIdType) 
+	{	
 		// convert, replace DATA
 		Model m = (Model) map.get(MODEL);
 		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, false);
@@ -373,7 +369,7 @@ public class CPathServiceImpl implements CPathService {
 	        gseaConverter.writeToGSEA(m, stream);
 	        map.put(DATA, stream.toString());
 		} catch (Exception e) {
-			map.put(ERROR, e.toString());
+			map.put(ERROR, e);
 		}
 		
 		return map;
@@ -414,7 +410,7 @@ public class CPathServiceImpl implements CPathService {
             }
 		}
         catch (Exception e) {
-			map.put(ERROR, e.toString());
+			map.put(ERROR, e);
 		}
 
 		return map;
@@ -477,11 +473,14 @@ public class CPathServiceImpl implements CPathService {
 	Map<ResultMapKey, Object> runAnalysis(Analysis analysis, OutputFormat format, Object... params)
 	{
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-
 		try
 		{
 			Model m = mainDAO.runAnalysis(analysis, params);
-			putRequiredOutput(m, format, map);
+			map.put(MODEL, m);
+			map.put(DATA, exportToOWL(m));
+			if(format != null && format != OutputFormat.BIOPAX) {
+				map = convert(map, format);
+			}
 		}
 		catch (Exception e)
 		{
@@ -492,33 +491,6 @@ public class CPathServiceImpl implements CPathService {
 		return map;
 	}
 
-	/**
-	 * Converts the given biopax model into the requested format and puts into the result map.
-	 * TODO: Implement this conversion.
-	 *
-	 * @param model result model
-	 * @param format requested format
-	 * @param map result map
-	 */
-	protected void putRequiredOutput(Model model, OutputFormat format,
-		Map<ResultMapKey, Object> map)
-	{
-		// Currently only biopax, sif, gsea output is supported
-		map.put(MODEL, model);
-		
-		if(format == null || format == OutputFormat.BIOPAX) {
-			map.put(DATA, exportToOWL(model));
-		} 
-		else if(format == OutputFormat.BINARY_SIF) {
-			map.put(DATA, fetchAsBinarySIF(map, false));
-		} 
-		else if(format == OutputFormat.EXTENDED_BINARY_SIF) {
-			map.put(DATA, fetchAsBinarySIF(map, true));
-		}
-		else if(format == OutputFormat.GSEA) {
-			map.put(DATA, fetchAsGSEA(map, "UniProt"));
-		}
-	}
 
 	@Cacheable(cacheName = "getNeighborhoodCache")
 	@Override

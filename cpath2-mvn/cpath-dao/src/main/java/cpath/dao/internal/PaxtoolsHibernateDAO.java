@@ -241,7 +241,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	
 	
 	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
+	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	public List<BioPAXElement> findElements(
 			String query, 
 			Class<? extends BioPAXElement> filterByType,
@@ -287,8 +287,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 		
 		int count = hibQuery.getResultSize();
-		if (log.isDebugEnabled())
-			log.debug("Query '" + query + "' results size = " + count);
+		if (log.isInfoEnabled())
+			log.info("Query '" + query + "' (filters not shown), results size = " + count);
 
 		// TODO shall we use pagination? [later...]
 		// hibQuery.setFirstResult(0);
@@ -317,6 +317,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			
 			// extra filtering
 			if (filter(bpe, extraFilters)) {
+				initialize(bpe); //important (incl. how it's done)!
 				results.add(bpe);
 			}
 		}
@@ -346,7 +347,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * 
 	 */
 	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
+	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	public List<Entity> findEntities(
 			String query, 
 			Class<? extends BioPAXElement> filterByType,
@@ -359,24 +360,25 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		if (log.isInfoEnabled())
 			log.info("findEntities called");
 
-		// First, search in all classes
-		List<BioPAXElement> results = findElements(query, null, extraFilters);
+		// search in all classes (the first pass)
+		List<BioPAXElement> results = findElements(query, null);//, extraFilters);
 			
+		// filter and "upgrade" (lookup) to corresponding parent Entities
 		for(BioPAXElement bpe : results) 
 		{
+			//TODO may be implement this in HQL instead...
+			
 			// currently, lookup for entities works for some utility calsses only... TODO test it
-			if(!(bpe instanceof Entity)) {
+			if(!(bpe instanceof Entity)) { // a UtilityClass object
 				if(bpe instanceof Xref) {
 					for(XReferrable xReferrable : ((Xref)bpe).getXrefOf()) {
 						if(xReferrable instanceof Entity) {
-							if(passFilters(xReferrable, filterByType, extraFilters))
-								toReturn.add((Entity) xReferrable);
+							addEntity(toReturn, (Entity)xReferrable, filterByType, extraFilters);
 						} 
 						else if(xReferrable instanceof EntityReference) {
 							Set<SimplePhysicalEntity> spes = ((EntityReference) xReferrable).getEntityReferenceOf();
 							for(SimplePhysicalEntity spe : spes) {
-								if(passFilters(spe, filterByType, extraFilters))
-									toReturn.add(spe);
+								addEntity(toReturn,spe, filterByType, extraFilters);
 							}
 						}
 					}
@@ -384,19 +386,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				else if(bpe instanceof EntityReference) {
 					Set<SimplePhysicalEntity> spes = ((EntityReference) bpe).getEntityReferenceOf();
 					for(SimplePhysicalEntity spe : spes) {
-						if(passFilters(spe, filterByType, extraFilters))
-							toReturn.add(spe);
-						// TODO not sure whether to go here for complexes or not...
-						addComplexes(toReturn, spe, filterByType, extraFilters);
+						addEntity(toReturn, spe, filterByType, extraFilters);
 					}
 				}
 			} else {
-				if (passFilters(bpe, filterByType, extraFilters))
-					toReturn.add((Entity) bpe);
-				// TODO not sure whether to go here for complexes or not...
-				if (bpe instanceof PhysicalEntity) {
-					addComplexes(toReturn, (PhysicalEntity) bpe, filterByType, extraFilters);
-				}
+				addEntity(toReturn, (Entity)bpe, filterByType, extraFilters);
 			}
 			//TODO for other non-entities
 		}
@@ -408,17 +402,36 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		
 		return toReturn;
 	}
-
-
 	
+	private void addEntity(List<Entity> toReturn, Entity ent,
+			Class<? extends BioPAXElement> filterByType,
+			SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
+	{
+		addIfPassAndNew(toReturn, ent, filterByType, extraFilters);
+		// TODO not sure whether to go here for complexes or not...
+		if (ent instanceof PhysicalEntity) {
+			addComplexes(toReturn, (PhysicalEntity) ent, filterByType, extraFilters);
+		}
+	}
+
+	private void addIfPassAndNew(List<Entity> toReturn, Entity ent,
+			Class<? extends BioPAXElement> filterByType,
+			SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
+	{
+		if(!toReturn.contains(ent) && passFilters(ent, filterByType, extraFilters))
+		{
+			initialize(ent); //important (incl. how it's done)!
+			toReturn.add(ent);
+		}
+	}
+
 	private void addComplexes(List<Entity> toReturn, PhysicalEntity pe,
 			Class<? extends BioPAXElement> filterByType, 
 			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
 	{
-		Set<Complex> complexes = ((PhysicalEntity) pe).getComponentOf();
+		Set<Complex> complexes = pe.getComponentOf();
 		for (Complex c : complexes) {
-			if (passFilters(c, filterByType, extraFilters))
-				toReturn.add(c);
+			addIfPassAndNew(toReturn, c, filterByType, extraFilters);
 		}
 	}
 
@@ -708,24 +721,29 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * (not very deep) initialization
 	 * 
 	 */
-	@Transactional
+	@Transactional(readOnly=true)
 	@Override
-	public void initialize(Object obj) {
-		if(obj instanceof BioPAXElement) {
+	public void initialize(Object obj) 
+	{
+		if(obj instanceof BioPAXElement) {		
+			//just reassociate:
+			session().buildLockRequest(LockOptions.NONE).lock(obj);
+			Hibernate.initialize(obj);
+	
 			BioPAXElement element = (BioPAXElement) obj;
-			// re-associate with a session
-			session().update(element);
+
 			// init. biopax properties
 			Set<PropertyEditor> editors = simpleIO.getEditorMap()
 				.getEditorsOf(element);
-			if (editors != null)
+			if (editors != null) {
 				for (PropertyEditor editor : editors) {
-					Set value = editor.getValueFromBean(element);
-					Hibernate.initialize(value); 
+					Set<?> value = editor.getValueFromBean(element);
+					Hibernate.initialize(value); //yup, it inits collections as well ;)
 					for(Object v : value) {
 						Hibernate.initialize(v); 
 					}
 				}
+			}
 
 			// init. inverse object properties (xxxOf)
 			Set<ObjectPropertyEditor> invEditors = simpleIO.getEditorMap()
@@ -735,6 +753,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 					// does collections as well!
 					Set<?> value = editor.getInverseAccessor().getValueFromBean(element);
 					Hibernate.initialize(value);
+					//values the set can be BioPAX elements only
 					for(Object v : value) {
 						Hibernate.initialize(v); 
 					}

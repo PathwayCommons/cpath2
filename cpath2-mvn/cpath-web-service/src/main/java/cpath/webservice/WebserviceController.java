@@ -27,6 +27,7 @@
 
 package cpath.webservice;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -250,9 +251,10 @@ public class WebserviceController {
 				response.getSearchHit().addAll(dataSet);
 			}
 		} else {
-			ErrorType error = ProtocolStatusCode.INTERNAL_ERROR.createErrorType();
-			error.setErrorDetails(results.get(ResultMapKey.ERROR).toString());
-			response.setError(error);
+			response.setError(
+					errorFromResults(results.get(ResultMapKey.ERROR), 
+					ProtocolStatusCode.INTERNAL_ERROR)
+			);
 		}
 		
 		return response;
@@ -297,13 +299,27 @@ public class WebserviceController {
 				response.getSearchHit().addAll(dataSet);
 			}
 		} else {
-			ErrorType error = ProtocolStatusCode.INTERNAL_ERROR.createErrorType();
-			error.setErrorDetails(results.get(ResultMapKey.ERROR).toString());
-			response.setError(error);
+			response.setError(
+					errorFromResults(results.get(ResultMapKey.ERROR), 
+					ProtocolStatusCode.INTERNAL_ERROR)
+			);
 		}
 		
 		return response;
 	}
+    
+    
+    private ErrorType errorFromResults(Object err, ProtocolStatusCode statusCode) 
+    {
+    	ErrorType error = statusCode.createErrorType();
+		if(err instanceof Exception) {
+			error.setErrorDetails(err.toString() + "; " 
+				+ Arrays.toString(((Exception)err).getStackTrace()));
+		} else {
+			error.setErrorDetails(err.toString());
+		}
+		return error;
+    }
     
 	//----- Graph Queries -------------------------------------------------------------------------|
 
@@ -407,9 +423,11 @@ public class WebserviceController {
 				}
 			}
 		} else {
-			toReturn.append(ProtocolStatusCode
-				.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 
-					result.get(ResultMapKey.ERROR).toString()));		
+			toReturn.append(
+				ProtocolStatusCode.marshal(
+					errorFromResults(result.get(ResultMapKey.ERROR), ProtocolStatusCode.INTERNAL_ERROR)
+				)
+			);		
 		}
 
         return toReturn.toString();
@@ -426,8 +444,9 @@ public class WebserviceController {
 						"Nothing found for: " + details);
 			} 
 		} else {
-			toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.INTERNAL_ERROR, 
-					results.get(ResultMapKey.ERROR).toString());
+			toReturn = ProtocolStatusCode.marshal(
+					errorFromResults(results.get(ResultMapKey.ERROR), ProtocolStatusCode.INTERNAL_ERROR)		
+			);
 		}
 		
 		return toReturn;
