@@ -22,11 +22,11 @@
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="cpath2_main"/>
         <property name="hibernateProperties">
-        <props>
-			<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${main.db}</prop>
+          <util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
+        	<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${main.db}</prop>
 			<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->   
 			<prop key="hibernate.search.indexing_strategy">manual</prop>
-        </props>
+          </util:properties>
         </property>
         <property name="annotatedClasses">
         	<list>

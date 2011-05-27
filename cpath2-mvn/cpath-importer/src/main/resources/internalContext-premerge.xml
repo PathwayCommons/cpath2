@@ -22,12 +22,11 @@
         class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="premergeDataSource"/>
         <property name="hibernateProperties">
-		<props>
-		<prop key="hibernate.search.default.directory_provider">org.hibernate.search.store.RAMDirectoryProvider</prop>
-		<prop key="hibernate.search.indexing_strategy">manual</prop>
-		<!-- no value - to prevent accidental tables drop -->	
-		<prop key="hibernate.hbm2ddl.auto"></prop>
-		</props>
+		<util:properties local-override="true" location="${CPATH2_HOME}/hibernate.properties">
+		  <prop key="hibernate.search.default.directory_provider">org.hibernate.search.store.RAMDirectoryProvider</prop>
+		  <prop key="hibernate.search.indexing_strategy">manual</prop>
+		  <prop key="hibernate.hbm2ddl.auto"></prop><!-- no value - prevents accidential db drops! -->
+		</util:properties>
 		</property>
         <property name="annotatedClasses">
         	<list>
