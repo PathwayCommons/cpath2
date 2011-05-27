@@ -194,7 +194,7 @@
 			<list>
 				<value>rule-descriptions</value>
 				<value>error-codes</value>
-				<value>validation</value>
+				<value>file:${CPATH2_HOME}/validation</value>
 			</list>
 		</property>
 	</bean>

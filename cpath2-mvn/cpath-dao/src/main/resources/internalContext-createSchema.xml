@@ -19,12 +19,11 @@
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
 		<property name="dataSource" ref="createSchema"/>
         <property name="hibernateProperties">
-		  <props>
+		  <util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
 			<prop key="hibernate.hbm2ddl.auto">create</prop>
-			<!-- <prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${cpath2.db.name}</prop> -->
 			<prop key="hibernate.search.default.directory_provider">org.hibernate.search.store.RAMDirectoryProvider</prop>
 			<prop key="hibernate.search.indexing_strategy">manual</prop>
-		  </props>
+		  </util:properties>
         </property>
         <property name="annotatedClasses">
         	<list>

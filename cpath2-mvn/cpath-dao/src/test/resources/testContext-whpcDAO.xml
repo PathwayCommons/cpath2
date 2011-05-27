@@ -20,10 +20,10 @@
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="dataSource" ref="cpath2_testpc"/>
         <property name="hibernateProperties">
-        <props>
-		<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_testpc</prop>
-		<prop key="hibernate.hbm2ddl.auto"></prop>
-        </props>
+        <util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
+		  <prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_testpc</prop>
+		  <prop key="hibernate.hbm2ddl.auto"></prop>
+        </util:properties>
         </property>
         <property name="annotatedClasses">
         	<list>
