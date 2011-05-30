@@ -210,6 +210,11 @@ public class MergerImpl implements Merger {
 		
 		// iterate over all the utility-class elements to replace PR/SMR/CVs
 		ModelUtils modelUtils = new ModelUtils(pathwayModel);
+		if (log.isInfoEnabled()) {
+			log.info("merge(pathwayModel): will be using equivalent utility class objects " +
+				"from the warehouse to replace existing ones (this apply only to some BioPAX " +
+				"types and if the have the same ID or a unification xref)");
+		}
 		for (UtilityClass bpe: srcElements) {	
 			UtilityClass replacement = null; // to find in the Warehouse
 			
@@ -221,6 +226,13 @@ public class MergerImpl implements Merger {
 			}
 			else if (bpe instanceof SmallMoleculeReference) {
 				replacement = processSmallMoleculeReference((SmallMoleculeReference)bpe);
+			} else {
+				// do not try to match/replace it
+				if (log.isDebugEnabled()) {
+					log.debug("Skipping not warehouse object: " + bpe.getRDFId() 
+						+ " (" + bpe.getModelInterface().getSimpleName() + ")");
+				}
+				continue;
 			}
 			
 			if(replacement == null) {
