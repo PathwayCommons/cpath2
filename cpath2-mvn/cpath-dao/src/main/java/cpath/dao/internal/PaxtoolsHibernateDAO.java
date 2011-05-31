@@ -31,6 +31,7 @@ package cpath.dao.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.Explanation;
@@ -47,6 +48,7 @@ import org.hibernate.search.*;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 
+import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
@@ -286,17 +288,21 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			hibQuery = fullTextSession.createFullTextQuery(luceneQuery);
 		}
 		
-		int count = hibQuery.getResultSize();
+		int count = hibQuery.getResultSize(); //"cheap" operation (Hib. does not init objects)
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "' (filters not shown), results size = " + count);
 
 		// TODO shall we use pagination? [later...]
 		// hibQuery.setFirstResult(0);
-		// hibQuery.setMaxResults(10);
+		// hibQuery.setMaxResults(100);
 
 		// using the projection (to get some more statistics/fields)
-		hibQuery.setProjection(FullTextQuery.THIS, FullTextQuery.SCORE,
+		if(CPathSettings.isDebug())
+			hibQuery.setProjection(FullTextQuery.THIS, FullTextQuery.SCORE,
 				FullTextQuery.EXPLANATION);
+		else
+			hibQuery.setProjection(FullTextQuery.THIS);
+			
 		// execute search
 		List hibQueryResults = hibQuery.list();
 		for (Object row : hibQueryResults) {
@@ -304,15 +310,21 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			// get the matching element
 			BioPAXElement bpe = (BioPAXElement) cols[0];
 			String id = bpe.getRDFId();
+	
 			
-			// (debug info...)
-			if (log.isDebugEnabled()) {
+			if(log.isDebugEnabled()) {
+				log.debug("Hit uri: " + id + " (" + bpe + " - "
+						+ bpe.getModelInterface() + ")");
+			}
+				
+			if(CPathSettings.isDebug()) {
 				float score = (Float) cols[1];
+				bpe.getAnnotations().put("score", score);
 				Explanation expl = (Explanation) cols[2];
-				//TODO where to store the explanation, if needed?
-				log.debug("found uri: " + id + " (" + bpe + " - "
-						+ bpe.getModelInterface() + ")" + "; score="
-						+ score + "; explanation: " + expl);
+				bpe.getAnnotations().put("explanation", expl.toString());	
+				if(log.isDebugEnabled()) {
+					log.debug("Hit score=" + cols[1] + "; explanation: " + cols[2]);
+				}
 			}
 			
 			// extra filtering
@@ -373,12 +385,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				if(bpe instanceof Xref) {
 					for(XReferrable xReferrable : ((Xref)bpe).getXrefOf()) {
 						if(xReferrable instanceof Entity) {
-							addEntity(toReturn, (Entity)xReferrable, filterByType, extraFilters);
+							addEntity(toReturn, (Entity)xReferrable, bpe, filterByType, extraFilters);
 						} 
 						else if(xReferrable instanceof EntityReference) {
 							Set<SimplePhysicalEntity> spes = ((EntityReference) xReferrable).getEntityReferenceOf();
 							for(SimplePhysicalEntity spe : spes) {
-								addEntity(toReturn,spe, filterByType, extraFilters);
+								addEntity(toReturn,spe, bpe, filterByType, extraFilters);
 							}
 						}
 					}
@@ -386,11 +398,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				else if(bpe instanceof EntityReference) {
 					Set<SimplePhysicalEntity> spes = ((EntityReference) bpe).getEntityReferenceOf();
 					for(SimplePhysicalEntity spe : spes) {
-						addEntity(toReturn, spe, filterByType, extraFilters);
+						addEntity(toReturn, spe, bpe, filterByType, extraFilters);
 					}
 				}
 			} else {
-				addEntity(toReturn, (Entity)bpe, filterByType, extraFilters);
+				addEntity(toReturn, (Entity)bpe, null, filterByType, extraFilters);
 			}
 			//TODO for other non-entities
 		}
@@ -404,34 +416,43 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 	
 	private void addEntity(List<Entity> toReturn, Entity ent,
-			Class<? extends BioPAXElement> filterByType,
-			SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
+			BioPAXElement actualHit,
+			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
 	{
-		addIfPassAndNew(toReturn, ent, filterByType, extraFilters);
+		addIfPassAndNew(toReturn, ent, actualHit, filterByType, extraFilters);
 		// TODO not sure whether to go here for complexes or not...
 		if (ent instanceof PhysicalEntity) {
-			addComplexes(toReturn, (PhysicalEntity) ent, filterByType, extraFilters);
+			addComplexes(toReturn, (PhysicalEntity) ent, actualHit, filterByType, extraFilters);
 		}
 	}
 
 	private void addIfPassAndNew(List<Entity> toReturn, Entity ent,
-			Class<? extends BioPAXElement> filterByType,
+			BioPAXElement actualHit,
+			Class<? extends BioPAXElement> filterByType, 
 			SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
 	{
 		if(!toReturn.contains(ent) && passFilters(ent, filterByType, extraFilters))
 		{
 			initialize(ent); //important (incl. how it's done)!
+			if(actualHit != null && !ent.equals(actualHit)) {
+				if(CPathSettings.isDebug()) {
+					ent.getAnnotations().put("score", actualHit.getAnnotations().get("score"));
+					ent.getAnnotations().put("explanation", actualHit.getAnnotations().get("explanation"));
+				}
+				ent.getAnnotations().put("actualHitUri", actualHit.getRDFId());
+			}
 			toReturn.add(ent);
 		}
 	}
 
 	private void addComplexes(List<Entity> toReturn, PhysicalEntity pe,
+			BioPAXElement actualHit, 
 			Class<? extends BioPAXElement> filterByType, 
 			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
 	{
 		Set<Complex> complexes = pe.getComponentOf();
 		for (Complex c : complexes) {
-			addIfPassAndNew(toReturn, c, filterByType, extraFilters);
+			addIfPassAndNew(toReturn, c, actualHit, filterByType, extraFilters);
 		}
 	}
 
@@ -600,11 +621,14 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		List<T> results = null;
 		results = session().createQuery(query).list();
 		Set<T> toReturn = new HashSet<T>();
-		
+		/*
 		for(Object entry: results) {
 			Hibernate.initialize(entry);
 			toReturn.add((T)entry);
 		}
+		return toReturn;
+		*/
+		toReturn.addAll(results);
 		return toReturn;
 	}
 
@@ -684,21 +708,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	public Model getValidSubModel(Collection<String> ids) {
-		/*
-		Set<BioPAXElement> bioPAXElements = new HashSet<BioPAXElement>();
-		for(String id : ids) {
-			BioPAXElement bpe = getByID(id);
-			if(bpe != null)
-				bioPAXElements.add(bpe);
-		}
-		Completer c = new Completer(simpleIO.getEditorMap());
-		bioPAXElements = c.complete(bioPAXElements, null); //null - this model is used explicitly there
-		Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
-		Model model = cln.clone(null, bioPAXElements);
-		return model;
-		*/
-		
-		//(re-written) using the internal {@link Analysis} class ;)
 		Analysis getTheseElements = new Analysis() {
 			@Override
 			public Set<BioPAXElement> execute(Model model, Object... args) {
@@ -774,11 +783,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		// perform
 		result = analysis.execute(this, args);
 		
+		if(log.isDebugEnabled())
+			log.debug("runAnalysis: finished; now detaching the sub-moodel...");
+		
 		// auto-complete/detach
 		if(result != null) {
 			Completer c = new Completer(simpleIO.getEditorMap());
 			result = c.complete(result, null); //null - because the (would be) model is never used there anyway
 			Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
+			if(log.isDebugEnabled())
+				log.debug("runAnalysis: exitting");
 			return cln.clone(null, result); // new (sub-)model
 		} 
 		

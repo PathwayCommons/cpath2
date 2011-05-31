@@ -35,6 +35,7 @@ import javax.validation.constraints.NotNull;
 import javax.xml.bind.*;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -61,6 +62,7 @@ import org.springframework.stereotype.Service;
 
 import com.googlecode.ehcache.annotations.Cacheable;
 
+import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
@@ -180,26 +182,40 @@ public class CPathServiceImpl implements CPathService {
 		for(BioPAXElement bpe : data) {
 			SearchHitType hit = new SearchHitType();
 			hit.setUri(bpe.getRDFId());
-			hit.setBiopaxClass(bpe.getModelInterface().getSimpleName());
+			hit.getProps().put("type",bpe.getModelInterface().getSimpleName());
+			// add lucene info
+			if(CPathSettings.isDebug()) {
+				hit.getProps().put("score", bpe.getAnnotations().get("score"));
+				hit.getProps().put("explanation", StringEscapeUtils.escapeXml(
+					bpe.getAnnotations().get("explanation").toString()));
+			}
+			
+			if(bpe.getAnnotations().get("actualHitUri") != null)
+				hit.getProps().put("actualHitUri", StringEscapeUtils.escapeXml(
+						bpe.getAnnotations().get("actualHitUri").toString()));
+			
 			// add standard and display names if any -
 			if(bpe instanceof Named) {
 				Named named = (Named)bpe;
 				String std = named.getStandardName();
 				if( std != null)
-					hit.getName().add(std);
+					hit.getProps().put("standardName",std);
 				String dsp = named.getDisplayName();
 				if(dsp != null && !dsp.equalsIgnoreCase(std))
-					hit.getName().add(dsp);
+					hit.getProps().put("displayName", dsp);
 			}
+			
 			// add organisms and data sources
 			if(bpe instanceof Entity) {
 				// add data sources (URIs)
 				for(Provenance pro : ((Entity)bpe).getDataSource()) {
-					hit.getDataSource().add(pro.getRDFId());
+					hit.getProps().put("dataSource",pro.getRDFId());
 				}
 				
 				// add organisms and pathways (URIs);
 				// at the moment, this apply to Entities only -
+				HashSet<String> organisms = new HashSet<String>();
+				HashSet<String> processes = new HashSet<String>();
 				for(Xref x : ((Entity)bpe).getXref()) 
 				{
 					if((x instanceof RelationshipXref) && ((RelationshipXref) x).getRelationshipType() != null) 
@@ -210,22 +226,25 @@ public class CPathServiceImpl implements CPathService {
 						if(cv.getRDFId().equalsIgnoreCase(ModelUtils
 							.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name()))) 
 						{
-							hit.getOrganism().add(rx.getId());
+							organisms.add(rx.getId());
 						} 
 						else if(cv.getRDFId().equalsIgnoreCase(ModelUtils
 							.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()))) 
 						{
-							hit.getPathway().add(rx.getId());
+							processes.add(rx.getId());
 						}	
 					}
 				}
-			}
-			
+				if(!organisms.isEmpty())
+					hit.getProps().put("organisms", organisms.toString());
+				if(!processes.isEmpty())
+					hit.getProps().put("processes", processes.toString());
+			} else
 			// set organism for some of EntityReference
 			if(bpe instanceof SequenceEntityReference) {
 				BioSource bs = ((SequenceEntityReference)bpe).getOrganism(); 
 				if(bs != null)
-					hit.getOrganism().add(bs.getRDFId());
+					hit .getProps().put("organisms", Collections.singleton(bs.getRDFId()));
 			}
 			
 			hits.add(hit);

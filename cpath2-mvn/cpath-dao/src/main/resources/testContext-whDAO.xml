@@ -95,7 +95,15 @@
         <property name="sessionFactory" ref="testSessionFactory"/>
     </bean>
 
-    <bean id="cpath2_test" class="cpath.dao.internal.DataServicesFactoryBean"/>
+    <bean id="cpath2_test" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+    	<property name="driverClass" value="${driver}"/>
+    	<property name="jdbcUrl" value="${connection}cpath2_test?autoReconnect=true&amp;max_allowed_packet=256M"/>
+    	<property name="user" value="${user}"/>
+    	<property name="password" value="${password}"/>
+    	<property name="maxPoolSize" value="30"/>
+    	<property name="maxStatements" value="50"/>
+    	<property name="maxIdleTime" value="1800"/>
+    </bean>
   	
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
 	
