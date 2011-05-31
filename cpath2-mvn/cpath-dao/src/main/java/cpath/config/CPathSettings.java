@@ -76,4 +76,9 @@ public final class CPathSettings {
 		return System.getProperty(HOME_VARIABLE_NAME);
 	}
 	
+	public static final String JAVA_OPT_DEBUG = "cpath.debug";
+	
+	public static boolean isDebug() {
+		return "true".equalsIgnoreCase(System.getProperty(CPathSettings.JAVA_OPT_DEBUG));
+	}
 }

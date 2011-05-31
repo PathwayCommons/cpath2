@@ -134,7 +134,9 @@ public class WebserviceController {
     }
 	
 	
-    // Fulltext Search
+/*    
+    // Fulltext Search - plain text response...
+    @Deprecated
     @RequestMapping(value="/search")
     public @ResponseBody String fulltextSearch(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
@@ -159,14 +161,14 @@ public class WebserviceController {
 		String details = query + " (in " + type + ")";
 		body = getListDataBody(results, details);
 		
-        /* hack to return "html" to browser so example on cpath-webdocs page
-         * shows up without having to view page code - only required for safari
-         */
+        // hack to return "html" to browser so example on cpath-webdocs page
+        // shows up without having to view page code - only required for safari
+        //
 		// did not work well...
         //return (userAgent.indexOf("Safari") != -1) ? getBodyAsHTML(body) : body;
 		return body;
 	}
-   
+*/   
     
     private Set<SearchFilter> createFilters(OrganismDataSource[] organisms,
 			PathwayDataSource[] dataSources, String[] pathwayURIs) 
@@ -213,12 +215,7 @@ public class WebserviceController {
 	}
 
 
-	/*
-     * An alternative to /search command;
-     * returns xml or json!
-     * 
-     */
-    @RequestMapping(value="/xml/search")
+    @RequestMapping(value="/search")
     public @ResponseBody SearchResponseType find(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
     		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms, //filter by
@@ -261,12 +258,7 @@ public class WebserviceController {
 	}
 
     
-	/*
-     * An alternative to /search command;
-     * returns xml or json!
-     * 
-     */
-    @RequestMapping(value="/xml/entity/search")
+    @RequestMapping(value="/entity/search")
     public @ResponseBody SearchResponseType findEntities(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
     		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms, //filter by
@@ -320,6 +312,7 @@ public class WebserviceController {
 		}
 		return error;
     }
+    
     
 	//----- Graph Queries -------------------------------------------------------------------------|
 

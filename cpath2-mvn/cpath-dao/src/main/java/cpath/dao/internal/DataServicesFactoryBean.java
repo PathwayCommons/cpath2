@@ -26,6 +26,7 @@
  **/
 package cpath.dao.internal;
 
+import java.beans.PropertyVetoException;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,6 +40,7 @@ import cpath.dao.DataServices;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.ojb.broker.cache.RuntimeCacheException;
 
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
@@ -49,6 +51,8 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
+import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 
 /**
@@ -249,6 +253,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 			String dbUrl) 
 	{
 		
+		/* low performance driver, for prototyping...
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();
 		dataSource.setDriverClassName(dbDriver);
 		// The following connection parameters are terribly important 
@@ -257,7 +262,21 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		//&useServerPrepStmts=true&useCursorFetch=true
 		dataSource.setUsername(dbUser);
 		dataSource.setPassword(dbPassword);
-
+		*/
+		
+		ComboPooledDataSource dataSource = new ComboPooledDataSource();
+		try {
+			dataSource.setDriverClass(dbDriver);
+			dataSource.setJdbcUrl(dbUrl + "?autoReconnect=true&max_allowed_packet=256M");
+			dataSource.setUser(dbUser);
+			dataSource.setPassword(dbPassword);
+			dataSource.setMaxPoolSize(30);
+			dataSource.setMaxStatements(50);
+			dataSource.setMaxIdleTime(1800);
+		} catch (PropertyVetoException e) {
+			throw new RuntimeCacheException("getDataSource: failed to set connection properties!", e);
+		}
+		
 		return dataSource;
 	}	
 	

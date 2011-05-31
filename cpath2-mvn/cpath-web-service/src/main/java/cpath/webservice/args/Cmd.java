@@ -37,25 +37,34 @@ import static cpath.webservice.args.CmdArgs.*;
  *
  */
 public enum Cmd {
-	SEARCH("Full-text search. " +
-           "Returns the list of identifiers that can be used with the 'get' command " +
-           "This command has four parameters. ",
-           "http://awabi.cbio.mskcc.org/cpath2/search?q=brca*",
-           "Ordered list of IDs to records within pathway commons that match search criteria " +
-           "(or, when '/xml/search' or '/xml/entity/search' endpoints are called - generates a XML/JSON search response).",
+	SEARCH("Full-text search. This command has four parameters." +
+           "It returns the ordered list of search 'hits', i.e., " +
+           "objects describing BioPAX entities and utility class elements " +
+           "that matched the query. A hit's id is the existing BioPAX " +
+           "object's URI (RDF ID); thus, it can be used with other " +
+           "webservice commands to extract the corresponding sub-model to BioPAX " +
+           "or another supported format. There is also a special (experimental) variant of " +
+           "this command - '/entity/search', which is to find such BioPAX " +
+           "Entity class (only) objects that themselves or have children that " +
+           "satisfy the search query and filters.",
+           "/search?q=brca*", //URL prefix shouldn't be specified here (it depends on actual server configuration)!
+           "Search response - as XML (default) or JSON (" +
+           "when called using '/search.json' or '/entity/search.json')",
 			new CmdArgs[]{q, type, organism, datasource, process}),
 	GET("Gets a BioPAX element or sub-model " +
         "by ID(s).  This command has two parameters.",
-        "http://awabi.cbio.mskcc.org/cpath2/get?uri=urn:miriam:uniprot:P38398",
-        "BioPAX by default, other formats as specified by the format parameter.  See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
+        "/get?uri=urn:miriam:uniprot:P38398",
+        "BioPAX by default, other formats as specified by the format parameter.  " +
+        "See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
         new CmdArgs[]{uri, format}),
 	GRAPH("Executes an advanced graph query on the data within pathway commons. " +
           "Returns a sub-model as the result. This command has four parameters.",
-          "http://awabi.cbio.mskcc.org/cpath2/graph?kind=neighborhood&source=HTTP:%2F%2FWWW.REACTOME.ORG%2FBIOPAX%23BRCA2__NUCLEOPLASM__1_9606",
-          "BioPAX by default, other formats as specified by the format parameter.  See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
+          "/graph?kind=neighborhood&source=HTTP:%2F%2FWWW.REACTOME.ORG%2FBIOPAX%23BRCA2__NUCLEOPLASM__1_9606",
+          "BioPAX by default, other formats as specified by the format parameter. " +
+          "See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
           new CmdArgs[]{kind, source, target, format, limit, limit_type})
         ;
-    /* should we expose this method?
+    /* TODO should we expose "/convert" command?
 	CONVERT("Converts from BioPAX to simple formats.  This command has two parameters",
 			new CmdArgs[]{biopax, format}),
 	;
