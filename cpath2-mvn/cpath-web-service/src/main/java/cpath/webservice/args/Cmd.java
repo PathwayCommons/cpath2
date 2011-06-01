@@ -37,20 +37,30 @@ import static cpath.webservice.args.CmdArgs.*;
  *
  */
 public enum Cmd {
-	SEARCH("Full-text search. This command has four parameters." +
-           "It returns the ordered list of search 'hits', i.e., " +
-           "objects describing BioPAX entities and utility class elements " +
-           "that matched the query. A hit's id is the existing BioPAX " +
-           "object's URI (RDF ID); thus, it can be used with other " +
+	SEARCH("Full-text search. This command has four parameters. " +
+           "It returns the ordered (by match score) list of BioPAX element URIs " +
+           "that matched the query and satisfied the filters. Such " +
+           "URI (RDF ID) can be used with other " +
            "webservice commands to extract the corresponding sub-model to BioPAX " +
-           "or another supported format. There is also a special (experimental) variant of " +
-           "this command - '/entity/search', which is to find such BioPAX " +
-           "Entity class (only) objects that themselves or have children that " +
-           "satisfy the search query and filters.",
+           "or another supported format.",
            "/search?q=brca*", //URL prefix shouldn't be specified here (it depends on actual server configuration)!
-           "Search response - as XML (default) or JSON (" +
-           "when called using '/search.json' or '/entity/search.json')",
+           "Plain text list (one URI per line)",
 			new CmdArgs[]{q, type, organism, datasource, process}),
+	FIND("An alternative full-text search, similar to '/search'but returns XML/JSON. " +
+			"It accepts four parameters " +
+			"and returns the ordered list of search 'hits', i.e., " +
+			"objects describing the corresponding BioPAX entity and utility class elements " +
+			"that matched the query and passed filters. A hit's uri (same as the corresponding BioPAX " +
+			"object's RDF ID) can be used with other webservice commands to " +
+			"extract the corresponding sub-model to BioPAX or another supported format. " +
+			"There is also a special variant of " +
+			"the command - '/entity/find', which is to find such BioPAX " +
+			"Entity class (only) objects that themselves - or have children that " +
+			"satisfy the search query and filters.",
+			"/find?q=brca*", //URL prefix shouldn't be specified here (it depends on actual server configuration)!
+			"Search response - as XML (default) or JSON (" +
+			"when called using '/find.json' or '/entity/find.json')",
+			new CmdArgs[]{q, type, organism, datasource, process}),			
 	GET("Gets a BioPAX element or sub-model " +
         "by ID(s).  This command has two parameters.",
         "/get?uri=urn:miriam:uniprot:P38398",

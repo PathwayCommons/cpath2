@@ -469,6 +469,7 @@ public class CPathServiceImpl implements CPathService {
 				}
 			}
 
+			toReturn.put(ResultMapKey.ELEMENT, response);
 			// write report and add it to the map(DATA)
 			StringWriter writer = new StringWriter();
 			// (the last parameter below can be a xsltSource)

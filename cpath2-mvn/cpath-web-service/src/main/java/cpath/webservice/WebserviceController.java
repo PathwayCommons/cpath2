@@ -34,7 +34,6 @@ import java.util.Set;
 import java.util.HashSet;
 
 import cpath.dao.filters.SearchFilter;
-import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.dao.internal.filters.EntityByOrganismRelationshipXrefsFilter;
 import cpath.dao.internal.filters.EntityByProcessRelationshipXrefsFilter;
 import cpath.dao.internal.filters.EntityDataSourceFilter;
@@ -134,9 +133,8 @@ public class WebserviceController {
     }
 	
 	
-/*    
+   
     // Fulltext Search - plain text response...
-    @Deprecated
     @RequestMapping(value="/search")
     public @ResponseBody String fulltextSearch(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
@@ -167,8 +165,8 @@ public class WebserviceController {
 		// did not work well...
         //return (userAgent.indexOf("Safari") != -1) ? getBodyAsHTML(body) : body;
 		return body;
-	}
-*/   
+	}   
+ 
     
     private Set<SearchFilter> createFilters(OrganismDataSource[] organisms,
 			PathwayDataSource[] dataSources, String[] pathwayURIs) 
@@ -215,7 +213,7 @@ public class WebserviceController {
 	}
 
 
-    @RequestMapping(value="/search")
+    @RequestMapping(value="/find")
     public @ResponseBody SearchResponseType find(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
     		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms, //filter by
@@ -258,7 +256,7 @@ public class WebserviceController {
 	}
 
     
-    @RequestMapping(value="/entity/search")
+    @RequestMapping(value="/entity/find")
     public @ResponseBody SearchResponseType findEntities(
     		@RequestParam(value="type", required=false) Class<? extends BioPAXElement> type, 
     		@RequestParam(value="organism", required=false) OrganismDataSource[] organisms, //filter by
@@ -268,7 +266,7 @@ public class WebserviceController {
     )
     {		
 		if (log.isDebugEnabled())
-			log.debug("/find called (for " + type + "), query:" + query);
+			log.debug("/entity/find called (for " + type + "), query:" + query);
 		
 		SearchResponseType response = new SearchResponseType();
 		
@@ -398,9 +396,7 @@ public class WebserviceController {
      * when the data (in the map) is the list of IDs,
      * one ID per line.
      * 
-     * @deprecated
      */ 
-	@Deprecated
     private String getListDataBody(Map<ResultMapKey, Object> result, String details) {
     	StringBuffer toReturn = new StringBuffer();
     	
@@ -460,15 +456,5 @@ public class WebserviceController {
 
         // outta here
         return toReturn.toString();
-    }
-
-    
-    @Override
-    protected void finalize() throws Throwable {
-    	try {
-    		DataServicesFactoryBean.clearAllDatasources();
-    	} finally {
-    		super.finalize();
-    	}
     }
 }

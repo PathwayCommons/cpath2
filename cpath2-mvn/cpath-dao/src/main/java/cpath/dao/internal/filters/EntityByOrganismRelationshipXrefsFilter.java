@@ -46,8 +46,11 @@ public class EntityByOrganismRelationshipXrefsFilter
 		for(RelationshipXref rx : rxrefs) {
 			ControlledVocabulary rcv = rx.getRelationshipType();
 			if(rcv != null 
-				&& rcv.getTerm().contains(RelationshipType.ORGANISM.name())
-				&& this.values.contains(rx.getId())) // by design, the value is a BioSource URI (RDF ID) 
+				&& ( this.values.contains(rx.getId()) // by design, the value is a BioSource URI (RDF ID) 
+					||
+					rcv.getRDFId().equalsIgnoreCase(ModelUtils
+						.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name())))
+				) 
 			{
 				assert ModelUtils.COMMENT_FOR_GENERATED.equals(rx.getDb()) : "Only rel. xrefs auto-generated "
 					+ "by the normalizer can be used in this filter implementation. Such rel. xrefs have "
