@@ -31,7 +31,6 @@ package cpath.dao.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.Document;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.Explanation;
@@ -302,7 +301,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				FullTextQuery.EXPLANATION);
 		else
 			hibQuery.setProjection(FullTextQuery.THIS);
-			
+		
 		// execute search
 		List hibQueryResults = hibQuery.list();
 		for (Object row : hibQueryResults) {
@@ -313,22 +312,24 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	
 			
 			if(log.isDebugEnabled()) {
-				log.debug("Hit uri: " + id + " (" + bpe + " - "
-						+ bpe.getModelInterface() + ")");
-			}
-				
-			if(CPathSettings.isDebug()) {
-				float score = (Float) cols[1];
-				bpe.getAnnotations().put("score", score);
-				Explanation expl = (Explanation) cols[2];
-				bpe.getAnnotations().put("explanation", expl.toString());	
-				if(log.isDebugEnabled()) {
-					log.debug("Hit score=" + cols[1] + "; explanation: " + cols[2]);
-				}
+				log.debug("Hit (before filters applied) uri: " 
+					+ id + " (" + bpe + " - "
+					+ bpe.getModelInterface() + ")");
 			}
 			
 			// extra filtering
 			if (filter(bpe, extraFilters)) {
+				
+				if(CPathSettings.isDebug()) {
+					float score = (Float) cols[1];
+					bpe.getAnnotations().put("score", score);
+					Explanation expl = (Explanation) cols[2];
+					bpe.getAnnotations().put("explanation", expl.toString());	
+					if(log.isDebugEnabled()) {
+						log.debug("Hit score=" + cols[1] + "; explanation: " + cols[2]);
+					}
+				}
+				
 				initialize(bpe); //important (incl. how it's done)!
 				results.add(bpe);
 			}
