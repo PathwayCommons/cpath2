@@ -31,6 +31,8 @@ import java.beans.PropertyEditorSupport;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.bridgedb.DataSource;
 
 import cpath.service.BioDataTypes;
@@ -48,6 +50,8 @@ import cpath.webservice.args.OrganismDataSource;
  */
 public class OrganismDataSourceEditor extends PropertyEditorSupport 
 {
+	private static final Log log = LogFactory.getLog(OrganismDataSourceEditor.class);
+	
 	@Override
 	public void setAsText(String ds) throws IllegalArgumentException {
 		DataSource dataSource = null;
@@ -82,8 +86,10 @@ public class OrganismDataSourceEditor extends PropertyEditorSupport
 
 		if(dataSource != null)
 			setValue(new OrganismDataSource(dataSource));
-		else 
+		else {
 			setValue(null);
+			log.info("No matching organism (BioSource object) found for " + ds);
+		}
 	}
 	
 }

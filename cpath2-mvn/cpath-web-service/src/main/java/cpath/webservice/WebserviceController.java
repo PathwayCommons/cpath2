@@ -51,6 +51,7 @@ import cpath.webservice.args.binding.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.query.algorithm.Direction;
@@ -120,14 +121,13 @@ public class WebserviceController {
     	
     	if(format==null) {
     		format = OutputFormat.BIOPAX;
-    		if (log.isInfoEnabled())
-    			log.info("Format not specified/recognized;" +
-    					" - using BioPAX.");
+    		log.info("Using default output format (BioPAX), " +
+    			"because nothing was specified/recognized.");
     	}
     	
     	Map<ResultMapKey, Object> result = service.fetch(format, uri);
     	
-    	String body = getBody(result, format, uri.toString());
+    	String body = getBody(result, format, Arrays.toString(uri));
     	
 		return body;
     }
@@ -142,7 +142,6 @@ public class WebserviceController {
     		@RequestParam(value="datasource", required=false) PathwayDataSource[] dataSources, //filter by
     		@RequestParam(value="process", required=false) String[] pathwayURIs, // filter by
     		@RequestParam(value="q", required=true) String query
-    		//,@RequestHeader("User-Agent") String userAgent //did not work as expected...
     		)
     {		
     	String body = "";
@@ -159,11 +158,6 @@ public class WebserviceController {
 		String details = query + " (in " + type + ")";
 		body = getListDataBody(results, details);
 		
-        // hack to return "html" to browser so example on cpath-webdocs page
-        // shows up without having to view page code - only required for safari
-        //
-		// did not work well...
-        //return (userAgent.indexOf("Safari") != -1) ? getBodyAsHTML(body) : body;
 		return body;
 	}   
  
@@ -176,11 +170,7 @@ public class WebserviceController {
 			String[] organismURIs = new String[organisms.length];
 			int i = 0;
 			for(OrganismDataSource o : organisms) {
-				//organismURIs[i++] = o.asDataSource().getSystemCode(); // taxonomy id
-				if(o == null)
-					organismURIs[i++] = "UNKNOWN_THING"; // won't much anything!
-				else
-					organismURIs[i++] = o.getURI();
+				organismURIs[i++] = (o == null) ? "UNKNOWN" : o.getURI();
 			}
 			SearchFilter<Entity, String> byOrganismFilter = new EntityByOrganismRelationshipXrefsFilter();
 			byOrganismFilter.setValues(organismURIs);
@@ -191,12 +181,7 @@ public class WebserviceController {
 			String[] dsourceURIs = new String[dataSources.length];
 			int i = 0;
 			for(PathwayDataSource d : dataSources) {
-				//dsourceURIs[i++] = d.asDataSource().getSystemCode(); //just standard name
-				//dsourceURIs[i++] = ((Provenance)d.asDataSource().getOrganism()).getRDFId(); // hack!
-				if(d == null)
-					dsourceURIs[i++] = "UNKNOWN_THING"; // won't much anything!
-				else
-					dsourceURIs[i++] = d.asDataSource().getSystemCode();
+				dsourceURIs[i++] = (d == null) ? "UNKNOWN" : d.asDataSource().getSystemCode();
 			}
 			SearchFilter<Entity, String> byDatasourceFilter = new EntityDataSourceFilter();
 			byDatasourceFilter.setValues(dsourceURIs);
@@ -325,10 +310,13 @@ public class WebserviceController {
 		@RequestParam(value="direction", required=false) Direction direction
 		)
     {
+		String sources = Arrays.toString(source);
+		String targets = Arrays.toString(target);
+		
 		if(log.isInfoEnabled())
 			log.info("GraphQuery format:" + format + ", kind:" + kind
-				+ ((source == null) ? "no source nodes" : ", source:" + source.toString())
-				+ ((target == null) ? "no target nodes" : ", target:" + target.toString())
+				+ ((source == null) ? "no source nodes" : ", source:" + sources)
+				+ ((target == null) ? "no target nodes" : ", target:" + targets)
 				+ ", limit: " + limit
 			);
 
@@ -346,12 +334,12 @@ public class WebserviceController {
 		switch (kind) {
 		case NEIGHBORHOOD:
 			result = service.getNeighborhood(format, source, limit, direction);
-			response = getBody(result, format, "nearest neighbors of " + source.toString());
+			response = getBody(result, format, "nearest neighbors of " + sources);
 			break;
 		case PATHSBETWEEN:
 			result = service.getPathsBetween(format, source, target, limit, limitType);
-			response = getBody(result, format, "paths between " + source.toString()
-				+ " and " + target.toString());
+			response = getBody(result, format, "paths between " + sources
+				+ " and " + targets);
 			break;
 		case COMMONSTREAM:
 			if (direction == Direction.BOTHSTREAM) {
@@ -360,7 +348,7 @@ public class WebserviceController {
 			}
 			result = service.getCommonStream(format, source, limit, direction);
 			response = getBody(result, format, "common " + direction + "stream of " +
-					source.toString());
+					sources);
 			break;
 		default:
 			// impossible (should has failed earlier)
@@ -428,10 +416,17 @@ public class WebserviceController {
     	
 		if (!results.containsKey(ResultMapKey.ERROR)) {
 			toReturn = (String) results.get(ResultMapKey.DATA);
-			if(toReturn == null) {
+			
+			if(toReturn == null || "".equals(toReturn.trim())) {
 				toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.NO_RESULTS_FOUND, 
-						"Nothing found for: " + details);
-			} 
+						"Empty result for: " + details);
+			} else if(OutputFormat.BIOPAX == format) {
+				Model m = (Model) results.get(ResultMapKey.MODEL);
+				if(m == null || m.getObjects().isEmpty()) {
+					toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.NO_RESULTS_FOUND, 
+							"Empty result for: " + details);
+				}
+			}
 		} else {
 			toReturn = ProtocolStatusCode.marshal(
 					errorFromResults(results.get(ResultMapKey.ERROR), ProtocolStatusCode.INTERNAL_ERROR)		
@@ -440,21 +435,4 @@ public class WebserviceController {
 		
 		return toReturn;
 	}
-
-    
-    
-    @Deprecated
-    private String getBodyAsHTML(String body) {
-
-        StringBuffer toReturn = new StringBuffer();
-
-        toReturn.append("<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\" lang=\"en\">");
-        toReturn.append("<body>");
-        toReturn.append(body);
-        toReturn.append("</body>");
-        toReturn.append("</html>");
-
-        // outta here
-        return toReturn.toString();
-    }
 }

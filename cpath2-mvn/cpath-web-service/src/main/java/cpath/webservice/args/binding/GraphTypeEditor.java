@@ -29,6 +29,9 @@ package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import cpath.webservice.args.GraphType;
 
 
@@ -37,6 +40,7 @@ import cpath.webservice.args.GraphType;
  *
  */
 public class GraphTypeEditor extends PropertyEditorSupport {
+	private static final Log log = LogFactory.getLog(GraphTypeEditor.class);
 	
 	/* (non-Javadoc)
 	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
@@ -47,6 +51,7 @@ public class GraphTypeEditor extends PropertyEditorSupport {
 		try{
 			value = GraphType.valueOf(arg0.trim().toUpperCase());
 		} catch (IllegalArgumentException e) {
+			log.info("Illegal value for graph query kind parameter: " + arg0, e);
 		}
 		setValue(value);
 	}

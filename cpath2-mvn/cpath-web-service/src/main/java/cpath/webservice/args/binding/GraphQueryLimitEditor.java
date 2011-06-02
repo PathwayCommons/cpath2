@@ -27,6 +27,8 @@
 
 package cpath.webservice.args.binding;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.query.algorithm.LimitType;
 
 import java.beans.PropertyEditorSupport;
@@ -37,7 +39,7 @@ import java.beans.PropertyEditorSupport;
  *
  */
 public class GraphQueryLimitEditor extends PropertyEditorSupport {
-	
+	private static final Log log = LogFactory.getLog(GraphQueryLimitEditor.class);
 
 	@Override
 	public void setAsText(String arg0) throws IllegalArgumentException
@@ -48,8 +50,8 @@ public class GraphQueryLimitEditor extends PropertyEditorSupport {
 		{
 			value = LimitType.valueOf(arg0.trim().toUpperCase());
 		}
-		catch (IllegalArgumentException e)
-		{
+		catch (IllegalArgumentException e){
+			log.info(e);
 		}
 
 		setValue(value);

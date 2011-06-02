@@ -29,6 +29,9 @@ package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import cpath.webservice.args.CmdArgs;
 
 
@@ -37,6 +40,7 @@ import cpath.webservice.args.CmdArgs;
  *
  */
 public class CmdArgsEditor extends PropertyEditorSupport {
+	private static final Log log = LogFactory.getLog(CmdArgsEditor.class);
 	
 	@Override
 	public void setAsText(String arg0) throws IllegalArgumentException {
@@ -44,6 +48,7 @@ public class CmdArgsEditor extends PropertyEditorSupport {
 		try{
 			value = CmdArgs.valueOf(arg0.trim().toUpperCase());
 		} catch (IllegalArgumentException e) {
+			log.info("Illegal argument (for a webservice command): " + arg0, e);
 		}
 		setValue(value);
 	}

@@ -182,16 +182,16 @@ public class CPathServiceImpl implements CPathService {
 		for(BioPAXElement bpe : data) {
 			SearchHitType hit = new SearchHitType();
 			hit.setUri(bpe.getRDFId());
-			hit.getProps().put("type",bpe.getModelInterface().getSimpleName());
+			hit.setBiopaxClass(bpe.getModelInterface().getSimpleName());
 			// add lucene info
 			if(CPathSettings.isDebug()) {
-				hit.getProps().put("score", bpe.getAnnotations().get("score"));
-				hit.getProps().put("explanation", StringEscapeUtils.escapeXml(
+				//TODO setExcerpt must contain the matched text...
+				hit.setExcerpt(StringEscapeUtils.escapeXml(
 					bpe.getAnnotations().get("explanation").toString()));
 			}
 			
 			if(bpe.getAnnotations().get("actualHitUri") != null)
-				hit.getProps().put("actualHitUri", StringEscapeUtils.escapeXml(
+				hit.setActualHitUri(StringEscapeUtils.escapeXml(
 						bpe.getAnnotations().get("actualHitUri").toString()));
 			
 			// add standard and display names if any -
@@ -199,17 +199,17 @@ public class CPathServiceImpl implements CPathService {
 				Named named = (Named)bpe;
 				String std = named.getStandardName();
 				if( std != null)
-					hit.getProps().put("standardName",std);
+					hit.getName().add(std);
 				String dsp = named.getDisplayName();
 				if(dsp != null && !dsp.equalsIgnoreCase(std))
-					hit.getProps().put("displayName", dsp);
+					hit.getName().add(dsp);
 			}
 			
 			// add organisms and data sources
 			if(bpe instanceof Entity) {
 				// add data sources (URIs)
 				for(Provenance pro : ((Entity)bpe).getDataSource()) {
-					hit.getProps().put("dataSource",pro.getRDFId());
+					hit.getDataSource().add(pro.getRDFId());
 				}
 				
 				// add organisms and pathways (URIs);
@@ -223,8 +223,9 @@ public class CPathServiceImpl implements CPathService {
 						RelationshipXref rx = (RelationshipXref) x;
 						RelationshipTypeVocabulary cv = rx.getRelationshipType();
 						mainDAO.initialize(cv);
-						if(cv.getRDFId().equalsIgnoreCase(ModelUtils
-							.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name()))) 
+						String autoId = ModelUtils
+							.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name());
+						if(cv.getRDFId().equalsIgnoreCase(autoId))
 						{
 							organisms.add(rx.getId());
 						} 
@@ -236,15 +237,15 @@ public class CPathServiceImpl implements CPathService {
 					}
 				}
 				if(!organisms.isEmpty())
-					hit.getProps().put("organisms", organisms.toString());
+					hit.getOrganism().addAll(organisms);
 				if(!processes.isEmpty())
-					hit.getProps().put("processes", processes.toString());
+					hit.getPathway().addAll(processes);
 			} else
 			// set organism for some of EntityReference
 			if(bpe instanceof SequenceEntityReference) {
 				BioSource bs = ((SequenceEntityReference)bpe).getOrganism(); 
 				if(bs != null)
-					hit .getProps().put("organisms", Collections.singleton(bs.getRDFId()));
+					hit.getOrganism().add(bs.getRDFId());
 			}
 			
 			hits.add(hit);
@@ -377,20 +378,17 @@ public class CPathServiceImpl implements CPathService {
      * @param map Map<ResultMapKey, Object>
 	 * @param outputIdType output identifiers type (db name)
 	 * @return
+	 * @throws IOException 
 	 */
-	Map<ResultMapKey, Object> fetchAsGSEA(Map<ResultMapKey, Object> map, String outputIdType) 
+	Map<ResultMapKey, Object> fetchAsGSEA(Map<ResultMapKey, Object> map, 
+		String outputIdType) throws IOException 
 	{	
 		// convert, replace DATA
 		Model m = (Model) map.get(MODEL);
 		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, false);
 		OutputStream stream = new ByteArrayOutputStream();
-		try {
-	        gseaConverter.writeToGSEA(m, stream);
-	        map.put(DATA, stream.toString());
-		} catch (Exception e) {
-			map.put(ERROR, e);
-		}
-		
+	    gseaConverter.writeToGSEA(m, stream);
+	    map.put(DATA, stream.toString());
 		return map;
 	}
 
@@ -406,30 +404,26 @@ public class CPathServiceImpl implements CPathService {
      * @param extended if true, call SIFNX else SIF
 	 * @param rules (optional) the names of SIF rules to apply
 	 * @return
+	 * @throws IOException 
 	 */
-	Map<ResultMapKey, Object> fetchAsBinarySIF(Map<ResultMapKey, Object> map, boolean extended, String... rules) {
-
+	Map<ResultMapKey, Object> fetchAsBinarySIF(Map<ResultMapKey, Object> map, 
+		boolean extended, String... rules) throws IOException 
+	{
 		// convert, replace DATA value in the map to return
 		// TODO match 'rules' parameter to rule types (currently, it uses all)
 		Model m = (Model) map.get(MODEL);
 		SimpleInteractionConverter sic = getSimpleInteractionConverter(m);
 
-		try {
-			OutputStream edgeStream = new ByteArrayOutputStream();
-            if (extended) {
-                OutputStream nodeStream = new ByteArrayOutputStream();
-                sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream,
-                	Arrays.asList("Entity/name","Entity/xref","Entity/organism"), 
-                	Arrays.asList("Interaction/xref:PublicationXref"));
-                map.put(DATA, edgeStream.toString() + "\n\n" + nodeStream.toString());
-            }
-            else {
-                sic.writeInteractionsInSIF(m, edgeStream);
-                map.put(DATA, edgeStream.toString());
-            }
-		}
-        catch (Exception e) {
-			map.put(ERROR, e);
+		OutputStream edgeStream = new ByteArrayOutputStream();
+		if (extended) {
+			OutputStream nodeStream = new ByteArrayOutputStream();
+			sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream, Arrays
+				.asList("Entity/name", "Entity/xref", "Entity/organism"),
+				Arrays.asList("Interaction/xref:PublicationXref"));
+			map.put(DATA, edgeStream.toString() + "\n\n" + nodeStream.toString());
+		} else {
+			sic.writeInteractionsInSIF(m, edgeStream);
+			map.put(DATA, edgeStream.toString());
 		}
 
 		return map;

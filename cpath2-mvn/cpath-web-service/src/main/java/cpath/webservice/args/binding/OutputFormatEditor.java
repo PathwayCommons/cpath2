@@ -29,6 +29,9 @@ package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import cpath.service.CPathService.OutputFormat;
 
 
@@ -37,6 +40,8 @@ import cpath.service.CPathService.OutputFormat;
  *
  */
 public class OutputFormatEditor extends PropertyEditorSupport {
+	
+	private static final Log log = LogFactory.getLog(OutputFormatEditor.class);
 	
 	/* (non-Javadoc)
 	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
@@ -47,6 +52,7 @@ public class OutputFormatEditor extends PropertyEditorSupport {
 		try{
 			value = OutputFormat.valueOf(arg0.trim().toUpperCase());
 		} catch (IllegalArgumentException e) {
+			log.info("No matching output format found for " + arg0, e);
 		}
 		setValue(value);
 	}
