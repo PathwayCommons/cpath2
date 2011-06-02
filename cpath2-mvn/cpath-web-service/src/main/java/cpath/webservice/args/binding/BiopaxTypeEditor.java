@@ -28,8 +28,9 @@
 package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
-import java.util.Set;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -46,6 +47,7 @@ import org.biopax.paxtools.model.BioPAXLevel;
 public class BiopaxTypeEditor extends PropertyEditorSupport {
 	private static BioPAXFactory bioPAXFactory = BioPAXLevel.L3.getDefaultFactory();
 	private static EditorMap editorMap = SimpleEditorMap.L3;
+	private static final Log log = LogFactory.getLog(BiopaxTypeEditor.class);
 	
 	/* (non-Javadoc)
 	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
@@ -74,6 +76,9 @@ public class BiopaxTypeEditor extends PropertyEditorSupport {
 			}
 		}
 		
+		log.info("Illegal BioPAX class name '" +
+			type + "' (cannot this " +
+			"as a filter by type value in queries) ");
 		return null;
 	}
 }

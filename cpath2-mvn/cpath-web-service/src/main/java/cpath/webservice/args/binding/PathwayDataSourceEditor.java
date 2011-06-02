@@ -31,6 +31,8 @@ import java.beans.PropertyEditorSupport;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.bridgedb.DataSource;
 
 import cpath.service.BioDataTypes;
@@ -46,7 +48,10 @@ import cpath.webservice.args.PathwayDataSource;
  * @author rodche
  *
  */
-public class PathwayDataSourceEditor extends PropertyEditorSupport {
+public class PathwayDataSourceEditor extends PropertyEditorSupport 
+{
+
+	private static final Log log = LogFactory.getLog(PathwayDataSourceEditor.class);
 	
 	@Override
 	public void setAsText(String ds) throws IllegalArgumentException {
@@ -82,8 +87,10 @@ public class PathwayDataSourceEditor extends PropertyEditorSupport {
 
 		if(dataSource != null)
 			setValue(new PathwayDataSource(dataSource));
-		else 
+		else {
 			setValue(null);
+			log.info("No matching data source (Provenance) found for " + ds);
+		}
 	}
 	
 }
