@@ -79,7 +79,7 @@
 							</property>
 						</systemProperties>
 						<!-- enable assertions, tests run in sequential mode -->
-						<argLine>-Dcpath.debug=true -Dfile.encoding=UTF-8 -Xmx4g -DCPATH2_HOME=${CPATH2_HOME} -Djava.io.tmpdir=${CPATH2_HOME}/tmp -ea -DforkMode=once</argLine>
+						<argLine>-Dfile.encoding=UTF-8 -Xmx4g -DCPATH2_HOME=${CPATH2_HOME} -Djava.io.tmpdir=${CPATH2_HOME}/tmp -ea -DforkMode=once</argLine>
 					</configuration>
 				</plugin>
 			</plugins>

@@ -50,7 +50,7 @@ public enum ProtocolStatusCode {
     /**
      * Status Code:  OK.
      */
-    OK(200, "OK, data follows"),
+    OK(200, "OK, data follows"), //TODO remove if not used anymore...
 
     /**
      * Status Code:  Bad Command.
@@ -58,29 +58,15 @@ public enum ProtocolStatusCode {
     BAD_COMMAND(450, "Bad Command (command not recognized)"),
 
     /**
-     * Status Code:  Bad Format.
-     */
-    BAD_FORMAT(451, "Bad Data Format (data format not recognized)"),
-
-    /**
      * Status Code:  Bad Request, Missing Arguments.
      */
-    MISSING_ARGUMENTS(452, "Bad Request (missing arguments)"),
-
-    /**
-     * Status Code:  Bad Request, Invalid Argument.
-     */
-    INVALID_ARGUMENT(453, "Bad Request (invalid arguments)"),
+    BAD_REQUEST(452, "Bad Request (missing/illegal arguments)"),
 
     /**
      * Status Code:  No Results Found.
      */
     NO_RESULTS_FOUND(460, "No Results Found"),
 
-    /**
-     * Status Code:  Version Not Supported.
-     */
-    VERSION_NOT_SUPPORTED(470, "Version not supported"),
 
     /**
      * Status Code:  Internal Server Error.

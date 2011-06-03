@@ -13,7 +13,7 @@ public class ProtocolStatusCodeTest {
 	@Test
 	public final void testGetAllStatusCodes() {
 		List<String> list = ProtocolStatusCode.getAllStatusCodes();
-		assertEquals(8, list.size());
+		assertEquals(5, list.size());
 	}
 
 	@Test

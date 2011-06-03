@@ -27,7 +27,11 @@
 	  </property>
 	</bean>
 	  	 
-	<bean id="webserviceController" class="cpath.webservice.WebserviceController">
+	<bean id="searchController" class="cpath.webservice.SearchController">
+		<constructor-arg ref="service"/>
+	</bean>
+	
+	<bean id="graphController" class="cpath.webservice.GraphController">
 		<constructor-arg ref="service"/>
 	</bean>
 

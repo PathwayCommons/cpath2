@@ -51,8 +51,8 @@ public class CommonStreamAnalysis implements Analysis {
 	/**
 	 * Parameters to provide:
 	 * source: IDs of source objects
-	 * direction: upstream or downstream
 	 * limit: search distance limit
+	 * direction: upstream or downstream
 	 */
 	@Override
 	public Set<BioPAXElement> execute(Model model, Object... args)
@@ -60,11 +60,11 @@ public class CommonStreamAnalysis implements Analysis {
 		// Source elements
 		Set<BioPAXElement> source = Common.getAllByID(model, args[0]);
 
-		// Direction
-		Direction direction = (Direction) args[1];
-
 		// Search limit
-		int limit = (Integer) args[2];
+		int limit = (Integer) args[1];
+		
+		// Direction
+		Direction direction = (Direction) args[2];
 
 		// Execute the query
 		return QueryExecuter.runCommonStreamWithPOI(source, model, direction, limit);

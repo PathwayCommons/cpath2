@@ -52,8 +52,8 @@ public class PathsBetweenAnalysis implements Analysis {
 	 * Parameters to provide:
 	 * source: IDs of source objects
 	 * target: IDs of target objects
-	 * limit-type: normal limit or shortest+k limit
 	 * limit: search distance limit
+	 * limit-type: normal limit or shortest+k limit
 	 */
 	@Override
 	public Set<BioPAXElement> execute(Model model, Object... args)
@@ -77,10 +77,10 @@ public class PathsBetweenAnalysis implements Analysis {
 		}
 
 		// Limit type
-		LimitType limitType = (LimitType) args[2];
+		LimitType limitType = (LimitType) args[3];
 
 		// Search limit
-		int limit = (Integer) args[3];
+		int limit = (Integer) args[2];
 
 		// Execute the query
 		return QueryExecuter.runPOI(source, target, model, limitType, limit);

@@ -52,8 +52,12 @@ public class NeighborhoodAnalysis implements Analysis {
 	static Log log = LogFactory.getLog(NeighborhoodAnalysis.class);
 	
 	/**
-	 * Second argument should be a String Set of source objects' IDs.
-	 * Third argument
+	 * 
+	 * @param model - a BioPAX {@link Model}
+	 * @param args - are as follows: 
+	 *   - first argument should be a String Set of source objects' IDs (URIs).
+	 *   - second (Integer) is the neighborhood 'limit' (distance)
+	 *   - third argument is is {@link Direction}
 	 */
 	@Override
 	public Set<BioPAXElement> execute(Model model, Object... args)
