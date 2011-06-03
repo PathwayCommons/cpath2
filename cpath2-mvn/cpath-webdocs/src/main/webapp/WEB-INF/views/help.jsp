@@ -6,9 +6,9 @@
 <head>
    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
 	<meta name="author" content="Pathway Commons" />
-	<meta name="description" content="cPath2 help" />
-	<meta name="keywords" content="cPath2, webservice, help, documentation" />
-	<title>cPath2 Help</title>
+	<meta name="description" content="Pathway Commons-2::Home" />
+	<meta name="keywords" content="Pathway Commons, cPath2, webservice, help, documentation" />
+	<title>Pathway Commons-2::Home</title>
 	<script type="text/javascript" src="<c:url value="/resources/scripts/jquery-1.5.1.min.js" />"></script>
 	<script type="text/javascript" src="<c:url value="/resources/scripts/json.min.js" />"></script>
 	<script type="text/javascript" src="<c:url value="/resources/scripts/help.js" />"></script>
@@ -51,6 +51,7 @@
 		<li><a href="#get"><fmt:message key="cpath2.command_header_get"/></a></li>
 		<li><a href="#graph"><fmt:message key="cpath2.command_header_graph"/></a></li>
 		<li><a href="#additional_parameters"><fmt:message key="cpath2.command_header_additional_parameters"/></a></li>
+		<li><a href="#errors"><fmt:message key="cpath2.error_code_header"/></a></li>
 	  </ul>
 	  <!-- miriam -->
       <h3><a NAME="miriam"></a><fmt:message key="cpath2.miriam_title"/></h3>
@@ -136,6 +137,22 @@
 	  <pre id="datasource_parameter" style="text-align: left;"></pre>
 	  <pre id="organism_parameter" style="text-align: left;"></pre>
 	  <pre id="biopax_parameter" style="text-align: left;"></pre>
+	  <!-- error codes -->
+	  <h2><a name="errors"></a><fmt:message key="cpath2.error_code_header"/>:</h2>
+	  <p><a name="errors"></a><fmt:message key="cpath2.error_code_description"/></p>
+	  <pre><a name="errors"></a><fmt:message key="cpath2.error_xml_format"/></pre>
+	  <p><a name="errors"></a><fmt:message key="cpath2.error_code_footnote"/></p>
+	  <!-- error codes table -->
+	  <div>
+		<table>
+		  <tr><th><fmt:message key="cpath2.error_code_label"/></th><th><fmt:message key="cpath2.error_code_description_label"/></th></tr>
+		  <tr><td><fmt:message key="cpath2.error_code_450"/></td><td><fmt:message key="cpath2.error_code_450_description"/></td></tr>
+		  <tr><td><fmt:message key="cpath2.error_code_452"/></td><td><fmt:message key="cpath2.error_code_452_description"/></td></tr>
+		  <tr><td><fmt:message key="cpath2.error_code_460"/></td><td><fmt:message key="cpath2.error_code_460_description"/></td></tr>
+		  <tr><td><fmt:message key="cpath2.error_code_500"/></td><td><fmt:message key="cpath2.error_code_500_description"/></td></tr>
+		</table>
+	  </div>
+	  <br>
 </div>
     <jsp:include page="footer.jsp" flush="true"/>
   </div>
