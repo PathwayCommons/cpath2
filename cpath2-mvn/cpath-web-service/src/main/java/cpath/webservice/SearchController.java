@@ -90,6 +90,23 @@ public class SearchController extends BasicController {
     }
 
 	
+	/*
+	 * This is for reporting an error "BAD COMMAND"
+	 * for everything except for known cpath2 web service
+	 * commands (known commands with parameters are mapped 
+	 * to more specific controller methods in this class; see below)
+	 * 
+	 * @param cmd
+	 * @return
+	 */
+	 @RequestMapping("/{cmd}")
+	 public @ResponseBody String illegalCommand(@PathVariable String cmd) 
+	 {
+		 return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.BAD_COMMAND,
+			"Unknown command: " + cmd);
+	 }
+	
+	
 	/* ========================================================================
 	 *    Most Important Web Service Methods
 	 * ======================================================================*/

@@ -4,6 +4,7 @@ $(document).ready(function() {
     getCommandParameterDetails("help/datasources", "datasource_parameter", "#command_header_additional_parameters_datasource", "#command_header_additional_parameters_datasource_desc");
     getCommandParameterDetails("help/organisms", "organism_parameter", "#command_header_additional_parameters_organism", "#command_header_additional_parameters_organism_desc");
     getCommandParameterDetails("help/types", "biopax_parameter", "#command_header_additional_parameters_biopax", "#command_header_additional_parameters_biopax_desc");
+    setOnClicks(); // auto-set 'onclick' handlers for particular A elements (query examples)
 });
 
 //
@@ -49,3 +50,42 @@ function getCommandParameterDetails(helpWSPath, clazz, header, parameterDesc) {
 			$("." + class_name).append('<br>');
     });
 }
+
+
+/* sets a special onclick handler for 
+ * all 'A' elemets with name="example"
+ */
+function setOnClicks() {
+	//select all the a tag with name equal to modal
+    $('a[name=example]').click(function(e) {
+        //Cancel the link behavior
+        e.preventDefault();
+        //Get the A tag
+        var url = $(this).attr('href');
+    	//alert("Show content from: " + url);	
+    	$.get(url, function(data) {
+    		var content;
+    		if(url.indexOf("xml") != -1) {
+    			content = (new XMLSerializer()).serializeToString(data);
+    		} 
+    		else if(url.toLowerCase().indexOf("json") != -1){
+    			content = JSON.stringify(data,null,null);
+    		} else {
+    			content = data;
+    		}
+    		
+    		//show the query result in a new modal window!
+    		//note: <textarea/> plays a very important role: to auto-encode special symbols in its content!
+        	$('<div><textarea rows="100" cols="50">' + content + '</textarea></div>').dialogpaper({
+				title: "Example",
+				width: 500,
+				height: 300,
+				resizable: true,
+				modal: true
+			});
+        });
+    });
+}
+
+
+
