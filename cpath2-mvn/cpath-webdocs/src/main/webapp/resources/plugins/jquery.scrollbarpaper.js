@@ -54,11 +54,12 @@ $.fn.extend({
 
       $this.unbind();
       var ratio = $this.innerHeight() / contentHeight;
-      if (ratio < 1) {
+
+      if ((!$.browser.mozilla && ratio < 1) || ($.browser.mozilla && ratio < 0.99)) {
 
         paper.show();
         content.addClass('scrollbarpaper-visible');
-        content.width($this.width() - content.innerWidth() + content.width() - barWidth);
+        content.width( Math.ceil($this.width() - content.innerWidth() + content.width() - barWidth) );
         paper.height($this.innerHeight());
         var offset = $this.position();
         paper.css('left', (offset.left + $this.innerWidth() - paper.width()) + 'px').css('top', offset.top);
@@ -97,7 +98,7 @@ $.fn.extend({
         $this.unbind();
         paper.hide();
         content.removeClass('scrollbarpaper-visible');
-        content.width($this.width() - content.innerWidth() + content.width());
+        content.width(Math.ceil($this.width() - content.innerWidth() + content.width()) + 1);
       }
 
       var lastWidth = $this.outerWidth();

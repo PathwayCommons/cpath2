@@ -15,7 +15,7 @@ div.scrollbarpaper-track
 
 div.scrollbarpaper-drag
 {
-	position: absolute;
+  position: absolute;
   width: 100%;
   height: 100px;
 }
@@ -61,11 +61,11 @@ div.scrollbarpaper-drag
 
 div.scrollbarpaper-drag.scrollbarpaper-dragging,
 div.scrollbarpaper-drag.scrollbarpaper-mousedown {
-	background: #C2E9FF;
+	background: #C2E9FF !important;
 	border-color: #91afbf !important;
-	-webkit-box-shadow: inset 0px 0px 5px #000000;
-	-moz-box-shadow: inset 0px 0px 5px #000000;
-	box-shadow: inset 0px 0px 5px #000000;
+	-webkit-box-shadow: inset 0px 0px 5px #000000 !important;
+	-moz-box-shadow: inset 0px 0px 5px #000000 !important;
+	box-shadow: inset 0px 0px 5px #000000 !important;
 }
 
 div.scrollbarpaper-drag-top
