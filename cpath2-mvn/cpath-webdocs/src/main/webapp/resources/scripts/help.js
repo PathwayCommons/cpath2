@@ -77,7 +77,7 @@ function setOnClicks() {
     		//show the query result in a new modal window!
     		//note: <textarea/> plays a very important role: to auto-encode special symbols in its content!
         	$('<div><textarea rows="100" cols="50">' + content + '</textarea></div>').dialogpaper({
-				title: "Example",
+				title: "Example Query (press 'Esc' to close window)",
 				width: 500,
 				height: 300,
 				resizable: true,
