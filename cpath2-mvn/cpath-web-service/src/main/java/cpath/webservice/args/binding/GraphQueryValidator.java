@@ -5,7 +5,6 @@ import static cpath.service.CPathService.OutputFormat.BIOPAX;
 import javax.validation.Valid;
 
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.biopax.paxtools.query.algorithm.LimitType;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
@@ -26,9 +25,13 @@ public class GraphQueryValidator implements Validator {
 		// set defaults
 		if(g.getFormat()==null) { g.setFormat(BIOPAX); }
 		if(g.getLimit() == null) { g.setLimit(1); } 
-		if(g.getDirection() == null) { g.setDirection(Direction.DOWNSTREAM); }
-		if(g.getLimitType() == null) { g.setLimitType(LimitType.NORMAL); }
-		
+
+		if(g.getDirection() == null)
+		{
+			g.setDirection(g.getKind() == GraphType.NEIGHBORHOOD ?
+				Direction.BOTHSTREAM : Direction.DOWNSTREAM);
+		}
+
 		// check
 		if (g.getKind() ==  GraphType.COMMONSTREAM && g.getDirection() == Direction.BOTHSTREAM) {
 			err.rejectValue("direction", "COMMONSTREAM.direction", 

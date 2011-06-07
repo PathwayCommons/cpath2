@@ -130,7 +130,6 @@
 		<li><fmt:message key="cpath2.command_graph_target_parameter"/></li>
 		<li><fmt:message key="cpath2.command_header_format_parameter"/></li>
 		<li><fmt:message key="cpath2.command_graph_limit_parameter"/></li>
-		<li><fmt:message key="cpath2.command_graph_limit_type_parameter"/></li>
 	  </ul>
 	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
 	  <fmt:message key="cpath2.command_graph_output"/>

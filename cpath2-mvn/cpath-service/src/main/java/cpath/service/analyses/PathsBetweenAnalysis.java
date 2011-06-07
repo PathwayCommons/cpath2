@@ -62,7 +62,7 @@ public class PathsBetweenAnalysis implements Analysis {
 		Set<BioPAXElement> source = Common.getAllByID(model, args[0]);
 
 		// Target elements
-		Set<BioPAXElement> target;
+		Set<BioPAXElement> target = null;
 
 		// If a different target set is provided, use it. Otherwise the search will be among the
 		// source set.
@@ -71,19 +71,20 @@ public class PathsBetweenAnalysis implements Analysis {
 		{
 			target = Common.getAllByID(model, args[1]);
 		}
-		else
-		{
-			target = source;
-		}
-
-		// Limit type
-		LimitType limitType = (LimitType) args[3];
 
 		// Search limit
 		int limit = (Integer) args[2];
 
 		// Execute the query
-		return QueryExecuter.runPOI(source, target, model, limitType, limit);
+
+		if (target == null)
+		{
+			return QueryExecuter.runPathsBetween(source, model, limit);
+		}
+		else
+		{
+			return QueryExecuter.runPOI(source, target, model, LimitType.NORMAL, limit);
+		}
 	}
 
 }

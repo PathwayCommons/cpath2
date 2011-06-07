@@ -112,7 +112,6 @@ public class GraphController extends BasicController {
 		String[] source = graph.getSource();
 		String[] target = graph.getTarget();
 		Integer limit = graph.getLimit();
-		LimitType limitType = graph.getLimitType();
 		Direction direction = graph.getDirection();
 		String sources = Arrays.toString(source);
 		String targets = Arrays.toString(target);
@@ -120,8 +119,7 @@ public class GraphController extends BasicController {
 		if(log.isInfoEnabled()) {
 			log.info("GraphQuery format:" + format + ", kind:" + kind
 				+ ", source:" + sources + ", target:" + targets
-				+ ", limit: " + limit + ", limitType: " + limitType 
-				+ ", direction: " + direction
+				+ ", limit: " + limit + ", direction: " + direction
 			);
 		}
 		
@@ -133,7 +131,7 @@ public class GraphController extends BasicController {
 			response = getBody(result, format, "nearest neighbors of " + sources);
 			break;
 		case PATHSBETWEEN:
-			result = service.getPathsBetween(format, source, target, limit, limitType);
+			result = service.getPathsBetween(format, source, target, limit);
 			response = getBody(result, format, "paths between " + sources
 				+ " and " + targets);
 			break;

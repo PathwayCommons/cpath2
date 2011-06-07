@@ -518,11 +518,11 @@ public class CPathServiceImpl implements CPathService {
 	@Cacheable(cacheName = "getPathsBetweenCache")
 	@Override
 	public Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source,
-		String[] target, Integer limit, LimitType limitType)
+		String[] target, Integer limit)
 	{
 		
 		Analysis analysis = new PathsBetweenAnalysis();
-		return runAnalysis(analysis, format, source, target, limit, limitType);
+		return runAnalysis(analysis, format, source, target, limit);
 	}
 
 	@Cacheable(cacheName = "getCommonStreamCache")

@@ -173,11 +173,10 @@ public interface CPathService {
 	 * @param source IDs of source molecules
 	 * @param target IDs of target molecules
 	 * @param limit search limit (integer value)
-	 * @param limitType {@link LimitType}
 	 * @return paths between
 	 */
 	Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source, 
-			String[] target, Integer limit, LimitType limitType);
+			String[] target, Integer limit);
 
 	/**
 	 * Runs a common upstream or downstream query.

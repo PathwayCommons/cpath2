@@ -4,7 +4,6 @@ import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.biopax.paxtools.query.algorithm.LimitType;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import cpath.service.CPathService.OutputFormat;
@@ -22,7 +21,6 @@ public class Graph {
 	@Min(1) //note: this allows for null
 	private Integer limit;
 	
-	private LimitType limitType;
 	private Direction direction;
 	private OutputFormat format;
 	
@@ -68,14 +66,6 @@ public class Graph {
 
 	public void setLimit(Integer limit) {
 		this.limit = limit;
-	}
-
-	public LimitType getLimitType() {
-		return limitType;
-	}
-
-	public void setLimitType(LimitType limitType) {
-		this.limitType = limitType;
 	}
 
 	public Direction getDirection() {
