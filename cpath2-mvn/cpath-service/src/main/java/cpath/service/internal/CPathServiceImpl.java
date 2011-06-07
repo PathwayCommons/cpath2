@@ -385,7 +385,7 @@ public class CPathServiceImpl implements CPathService {
 	{	
 		// convert, replace DATA
 		Model m = (Model) map.get(MODEL);
-		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, false);
+		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true);
 		OutputStream stream = new ByteArrayOutputStream();
 	    gseaConverter.writeToGSEA(m, stream);
 	    map.put(DATA, stream.toString());
