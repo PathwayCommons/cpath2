@@ -22,10 +22,15 @@ public class Graph {
 	private Integer limit;
 	
 	private Direction direction;
+	
+	@NotNull(message="Illegal Output Format")
 	private OutputFormat format;
 	
 	
 	public Graph() {
+		format = OutputFormat.BIOPAX; // default
+		limit = 1;
+		direction = Direction.DOWNSTREAM;
 	}
 
 	public OutputFormat getFormat() {

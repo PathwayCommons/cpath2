@@ -68,6 +68,7 @@ public class MergerImpl implements Merger {
 	private String identifier;
 	private String version;
 	private boolean useDb;
+	private boolean force;
 
 	/**
 	 * Constructor.
@@ -94,6 +95,7 @@ public class MergerImpl implements Merger {
 		this.cvRepository = (WarehouseDAO)context.getBean("cvFetcher");
 		
 		this.useDb = false;
+		this.force = false;
 	}
 
 	/**
@@ -166,16 +168,19 @@ public class MergerImpl implements Merger {
 						|| pwdata.getPremergeData().length() == 0) 
 					{
 						// must run pre-merge first!
-						if(log.isInfoEnabled())
-							log.info("Do '-premerge' first! Skipping: #" 
-								+ pwdata.getId() + " - "+ pwdata.toString());
+						log.info("Do '-premerge' first! Skipping: " 
+							+ pwdata.getId() + " - "+ pwdata.toString());
 						continue;
 					} else if (pwdata.getValid() == false) {
 						// has BioPAX errors
-						if(log.isInfoEnabled())
-							log.info("There are BioPAX errors! Skipping: #" 
-								+ pwdata.getId() + " - "+ pwdata.toString());
-						continue;
+						log.info("There were critical BioPAX errors in " 
+							+ pwdata.getId() + " - "+ pwdata.toString());
+						if(!isForce()) {
+							log.info("Skipping for " + pwdata.getId());
+							continue;
+						} else {
+							log.info("FORCE merging (ignoring all validation issues) for " + pwdata.getId());
+						}
 					}
 				
 					InputStream inputStream;
@@ -546,5 +551,11 @@ public class MergerImpl implements Merger {
 	public void setUseDb(boolean useDb) {
 		this.useDb = useDb;
 	}
-	
+
+	public boolean isForce() {
+		return force;
+	}
+	public void setForce(boolean forceInvalid) {
+		this.force = forceInvalid;
+	}
 }

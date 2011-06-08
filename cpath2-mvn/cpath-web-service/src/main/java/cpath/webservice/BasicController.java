@@ -113,31 +113,61 @@ public abstract class BasicController {
 		return error;
     }
 
-    
-    protected Object getBody(Map<ResultMapKey, Object> results, OutputFormat format, String details, ResultMapKey mapKey) {
+    /**
+     * Extracts the result object 
+     * (can be list, text, etc., depending on query type) 
+     * from the service response message map
+     * using a key form {@link ResultMapKey}.
+     * If the map contains not null value under 
+     * {@link ResultMapKey#ERROR} key, it will be wrapped
+     * into {@link ErrorType} and returned instead.
+     * 
+     * @param messageMap
+     * @param format
+     * @param details
+     * @param mapKey
+     * @return
+     */
+    protected Object parseResultMap(Map<ResultMapKey, Object> messageMap, OutputFormat format, String details, ResultMapKey mapKey) {
     	Object toReturn = null;
     	
-		if (!results.containsKey(ResultMapKey.ERROR)) {
-			toReturn = results.get(mapKey);
+		if (!messageMap.containsKey(ResultMapKey.ERROR)) {
+			toReturn = messageMap.get(mapKey);
 			
+			// check specifically for empty data
 			if(toReturn == null || 
 				(mapKey == ResultMapKey.DATA && "".equals(toReturn.toString().trim()))
-			){
-				toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.NO_RESULTS_FOUND, 
-						"Empty result for: " + details);
-			} else if(OutputFormat.BIOPAX == format) {
-				Model m = (Model) results.get(ResultMapKey.MODEL);
-				if(m == null || m.getObjects().isEmpty()) {
-					toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.NO_RESULTS_FOUND, 
-							"Empty result for: " + details);
+			)
+			{
+				toReturn = noResultsError(details);
+			} 
+			else if(OutputFormat.BIOPAX == format) 
+			{ // check specifically for not null empty Model
+			  // (when model does not have any elements, its XML
+			  // serialization is still not blank!)
+				Model m = (Model) messageMap.get(ResultMapKey.MODEL);
+				if(m != null && m.getObjects().isEmpty()) {
+					toReturn = noResultsError(details);
 				}
 			}
-		} else {
-			toReturn = ProtocolStatusCode.marshal(
-					errorFromResults(results.get(ResultMapKey.ERROR), ProtocolStatusCode.INTERNAL_ERROR)		
-			);
+		} else { // return error
+			toReturn = 
+				errorFromResults(messageMap.get(ResultMapKey.ERROR), ProtocolStatusCode.INTERNAL_ERROR);
 		}
 		
 		return toReturn;
+	}
+
+
+    /**
+     * Creates a 'NO_RESULTS_FOUND' error bean.
+     * 
+     * @param details
+     * @return
+     */
+	protected ErrorType noResultsError(String details) {
+		ErrorType error = ProtocolStatusCode.NO_RESULTS_FOUND.createErrorType();
+		error.setErrorDetails("Empty result for: " + details);
+		return error;
 	}    
 }

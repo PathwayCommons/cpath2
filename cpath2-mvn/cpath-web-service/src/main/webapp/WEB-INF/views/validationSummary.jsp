@@ -9,9 +9,6 @@
 	<meta name="author" content="BioPAX" />
 	<meta name="description" content="BioPAX Validator" />
 	<meta name="keywords" content="BioPAX, Validation, Validator, Rule, OWL, Exchange" />
-	<link rel="stylesheet" type="text/css" href="styles/style.css" media="screen" />
-	<link rel="shortcut icon" href="images/favicon.ico" />
-	<script type="text/javascript" src="scripts/rel.js"></script>
 	<script type="text/javascript">
 	  function switchit(list) {
 		var listElementStyle = document.getElementById(list).style;

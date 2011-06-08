@@ -1,7 +1,5 @@
 package cpath.webservice.args.binding;
 
-import static cpath.service.CPathService.OutputFormat.BIOPAX;
-
 import javax.validation.Valid;
 
 import org.biopax.paxtools.query.algorithm.Direction;
@@ -23,7 +21,7 @@ public class GraphQueryValidator implements Validator {
 		Graph g = (Graph) obj;
 
 		// set defaults
-		if(g.getFormat()==null) { g.setFormat(BIOPAX); }
+		//if(g.getFormat()==null) { g.setFormat(BIOPAX); } //now - set by OutputFormatEditor
 		if(g.getLimit() == null) { g.setLimit(1); } 
 
 		if(g.getDirection() == null)
