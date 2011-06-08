@@ -38,16 +38,15 @@ GSEA are stored for convenience in the Molecular Signature Database
 the main tab-delimited file format specified by the Broad Molecular
 Signature Database (http://www.broad.mit.edu/gsea/msigdb/).
 
-In this output format, all participants in the pathway are specified as
-official gene symbols (if an official gene symbol is not available,
-the participant will not be exported).  All participants for a pathway
-must come from the same species as the pathway.  Therefore some
-participants from cross-species pathways are removed.  Exporting to
-the MSigDB format will enable computational biologists to use pathway
-commons data within gene set enrichment algorithms, such as GSEA.
-Available for all pathways within Pathway Commons (only from pathway
-database sources, not interaction database sources). Full data format
-details are available at: Broad GSEA Wiki,
+In this output format, all participants in the pathway are specified with
+a UniProt Accession.  All participants for a pathway must come from
+the same species as the pathway.  Therefore some participants from
+cross-species pathways are removed.  Exporting to the MSigDB format
+will enable computational biologists to use pathway commons data
+within gene set enrichment algorithms, such as GSEA. Available for all
+pathways within Pathway Commons (only from pathway database sources,
+not interaction database sources). Full data format details are
+available at: Broad GSEA Wiki, 
 http://www.broad.mit.edu/cancer/software/gsea/wiki/index.php/Data_formats.
 
 Simple Interaction Format (BINARY_SIF)
@@ -67,29 +66,32 @@ network analysis tools, like Cytoscape
 (http://cytoscape.org/cgi-bin/moin.cgi/Cytoscape_User_Manual/Network_Formats).
 
 In this output format, all participants will be specified as
-GENE_SYMBOL.  If an official gene symbol is not available for all
-members of the interaction, the interaction will not be exported.
-This format does not contain any cross-species interactions and is
-available for all pathways and interactions within Pathway Commons.
+MIRIAM URIs.  This format does not contain any cross-species
+interactions and is available for all pathways and interactions within
+Pathway Commons.
 
 Extended Simple Interaction Format (Extended_BINARY_SIF)
 -----------------------------------------------
 
 Similar to the basic SIF output format, except that this output format is
-specified in two sections.  Each section is tab-delimited,
-multi-column.  The sections are separated by two blank lines.  The
-first section is SIF (using MIRIAM URI instead of GENE_SYMBOL) plus edge
-attributes.  Current edge attributes are the Participant-A GENE_SYMBOL,
-Participant-B GENE_SYMBOL, interaction data source and PubMed ID.  The
-second section contains participant MIRIAM URI followed by node attributes.
-Current node attributes are GENE_SYMBOL, UNIPROT_ACCESSION,
-ENTREZ_GENE_ID, CHEBI_ID, NODE_TYPE, and Organism (NCBI taxonomy id).
-If an attribute cannot be determined, "NOT_SPECIFIED" will be
-used. This output format is suitable for Cytoscape - Attribute Table import
-and loading into Excel.  To prevent an unsuccessful import into
-Cytoscape due to missing attribute values, users should specify during
-import that all columns are strings.  This format is available for all
-pathways and interactions within Pathway Commons.
+specified in two sections.  Each section starts with one row of column
+headings.  Each entry is multi-column, tab-delimited.  The sections
+are separated by one blank line.  The first section is BINARY_SIF as
+describe above, followed by edge attributes.  Current edge attributes
+include the interaction data source and PubMed ID.  The second section
+contains participant MIRIAM URI followed by node attributes.  Current
+node attributes include UNIFICATION_XREF (one or more UniProt IDs in
+the case of a protein reference, or a ChEBI ID in the case of a Small
+Molecule reference), and RELATIONSHIP_XREF (including RefSeq, Entrez
+Gene, and Gene Symbol).  If an attribute cannot be determined,
+"NOT_SPECIFIED" will be used.  All attributes are represented as a
+NAME:VALUE pair; for example PubMed:9136927.  Multiple NAME:VALUE
+pairs will be separated by a semicolon ';'.  This output format is
+suitable for Cytoscape - Attribute Table import and loading into
+Excel.  To prevent an unsuccessful import into Cytoscape due to
+missing attribute values, users should specify during import that all
+columns are strings.  This format is available for all pathways and
+interactions within Pathway Commons.
 
 Availability
 ------------
