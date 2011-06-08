@@ -44,7 +44,7 @@ public class AdminController extends BasicController
 			log.info("Query for validation object: " + metadataId);
 
     	Map<ResultMapKey, Object> result = service.getValidationReport(metadataId);
-    	ValidatorResponse body = (ValidatorResponse) getBody(result, null, metadataId, ResultMapKey.ELEMENT);
+    	ValidatorResponse body = (ValidatorResponse) parseResultMap(result, null, metadataId, ResultMapKey.ELEMENT);
 		return body;
     }
 
@@ -56,7 +56,7 @@ public class AdminController extends BasicController
 			log.info("Query for validation html:" + metadataId);
 
     	Map<ResultMapKey, Object> result = service.getValidationReport(metadataId);
-    	ValidatorResponse body = (ValidatorResponse) getBody(result, null, metadataId, ResultMapKey.ELEMENT);
+    	ValidatorResponse body = (ValidatorResponse) parseResultMap(result, null, metadataId, ResultMapKey.ELEMENT);
 		model.addAttribute("response", body);
 		return "validationSummary";
     }

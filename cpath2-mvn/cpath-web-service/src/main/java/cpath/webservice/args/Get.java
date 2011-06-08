@@ -7,7 +7,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 import cpath.service.CPathService.OutputFormat;
 
 public class Get {
-	//optional field
+	@NotNull(message="Illegal Output Format") 
 	private OutputFormat format;
 	// required at least one value
 	@NotNull(message="Parameter 'uri' is required!")
@@ -15,6 +15,7 @@ public class Get {
 	private String[] uri;
 	
 	public Get() {
+		format = OutputFormat.BIOPAX; // default
 	}
 
 	public OutputFormat getFormat() {

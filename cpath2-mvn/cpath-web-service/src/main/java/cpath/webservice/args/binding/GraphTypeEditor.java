@@ -51,8 +51,7 @@ public class GraphTypeEditor extends PropertyEditorSupport {
 		try{
 			value = GraphType.valueOf(arg0.trim().toUpperCase());
 		} catch (IllegalArgumentException e) {
-			log.info("Illegal value for graph query kind parameter: " 
-					+ arg0 + ". " + e.getMessage());
+			log.info(e);
 		}
 		setValue(value);
 	}

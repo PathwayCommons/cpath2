@@ -44,4 +44,13 @@ public interface Merger {
 	 * @param version
 	 */
 	void setVersion(String version);
+	
+	
+	/**
+	 * Sets whether to force merge data that 
+	 * failed to pass the validator (invalid)
+	 * 
+	 * @param forceInvalid
+	 */
+	public void setForce(boolean forceInvalid);
 }

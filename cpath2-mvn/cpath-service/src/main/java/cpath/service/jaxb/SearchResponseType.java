@@ -41,5 +41,9 @@ public class SearchResponseType {
         }
         return this.searchHit;
     }
+    
+    public void setSearchHit(List<SearchHitType> searchHit) {
+		this.searchHit = searchHit;
+	}
 
 }

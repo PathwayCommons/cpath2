@@ -194,47 +194,37 @@ public class Admin implements Runnable {
 
     
 	private boolean  processOptionalArgs(COMMAND cmd, final String[] args) {
-		String flag;
-		boolean defaultVal;
+		//args[0],the command name, plus max. 4 optional parameters...
+		if (args.length > 5) {
+			return false;
+		}
+		
+		String usePremergeDbflag; //actual name depends on the command
+		boolean usePremergeDbDefault;
 		if(cmd == COMMAND.PREMERGE) {
-			flag = "--nodatabases";
-			defaultVal = true; // means - must create pre-merge DBs
+			usePremergeDbflag = "--nodatabases";
+			usePremergeDbDefault = true; // means - must create pre-merge DBs
 		} else if (cmd == COMMAND.MERGE) {
-			flag = "--usedatabases";
-			defaultVal = false; // do not merge from pre-merge DBs, use premergeData (OWL) instead
+			usePremergeDbflag = "--usedatabases";
+			usePremergeDbDefault = false; // do not merge from pre-merge DBs, use premergeData (OWL) instead
 		} else {
 			throw new UnsupportedOperationException(cmd + " is not supported!");
 		}
 		
-		if (args.length > 4) {
-			return false;
-		}
-		else if (args.length == 1) { // command without parameters
-			// use all data (providers and versions), default mode (regarding pre-merge DBs)
-			this.commandParameters = new String[] {null, null, Boolean.toString(defaultVal)};
-		} 
-		else if (args.length == 2) { // command with single parameter
-			if(flag.equalsIgnoreCase(args[1])) // if only optional flag set
-				// use all data (providers and versions), use alternative action (!defaultVal)
-				this.commandParameters = new String[] {null, null, Boolean.toString(!defaultVal)};
-			else
-				// for the provider, use all versions, use default
-				this.commandParameters = new String[] {args[1], null, Boolean.toString(defaultVal)};
-		} 
-		else if (args.length == 3) { // command with two parameters
-			if(flag.equalsIgnoreCase(args[2])) 
-				// for the provider, use all version, change mode
-				this.commandParameters = new String[] {args[1], null, Boolean.toString(!defaultVal)};
-			else
-				// for the provider and version, use default mode
-				this.commandParameters = new String[] {args[1], args[2], Boolean.toString(defaultVal)};
-		} 
-		else if (args.length == 4) {
-			if(flag.equalsIgnoreCase(args[3])) 
-				// for the provider and version, alter mode
-				this.commandParameters = new String[] {args[1], args[2], Boolean.toString(!defaultVal)};
-			else // error: illegal argument or wrong order
-				return false; 
+		String forceMergeFlag = "--force";
+		
+		// set default values first, i.e.,
+		// do all data providers and versions, default mode 
+		// regarding pre-merge DBs, merge valid BioPAX (no forcing)
+		this.commandParameters = new String[] {null, null, Boolean.toString(usePremergeDbDefault), "false"};	
+		for(int i=1 ; i < args.length ; i++) {
+			if(usePremergeDbflag.equalsIgnoreCase(args[i])) {
+				this.commandParameters[2] = Boolean.toString(!usePremergeDbDefault);
+			} else if(forceMergeFlag.equalsIgnoreCase(args[i])) {
+				this.commandParameters[3] = "true";
+			} else {
+				this.commandParameters[i] = args[i];
+			}
 		}
 		
 		return true;
@@ -309,7 +299,7 @@ public class Admin implements Runnable {
 				break;
 			case MERGE:
 				runMerge(commandParameters[0], commandParameters[1], 
-					Boolean.parseBoolean(commandParameters[2]));
+					Boolean.parseBoolean(commandParameters[2]), Boolean.parseBoolean(commandParameters[3]));
 				break;
             case EXPORT:
             	OutputStream os = new FileOutputStream(commandParameters[2]);
@@ -333,7 +323,7 @@ public class Admin implements Runnable {
     }
 
     
-	private void runMerge(String provider, String version, boolean usedb) {
+	private void runMerge(String provider, String version, boolean usedb, boolean force) {
 		// pc dao
 		ApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
 		final PaxtoolsDAO pcDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
@@ -342,6 +332,7 @@ public class Admin implements Runnable {
 		merger.setIdentifier(provider);
 		merger.setVersion(version);
 		merger.setUseDb(usedb);
+		merger.setForce(force);
 		merger.merge();
 	}
 
@@ -622,7 +613,7 @@ public class Admin implements Runnable {
 		toReturn.append(COMMAND.FETCH_DATA.toString() + 
 				" <metadataId or --all> [--continue]" + NEWLINE);
 		toReturn.append(COMMAND.PREMERGE.toString() + " [<metadataId> [<version>]] [--nodatabases]" + NEWLINE);
-		toReturn.append(COMMAND.MERGE.toString() + " [<metadataId> [<version>]] [--usedatabases]"+ NEWLINE);
+		toReturn.append(COMMAND.MERGE.toString() + " [<metadataId> [<version>]] [--usedatabases] [--force]"+ NEWLINE);
 		toReturn.append(COMMAND.EXPORT.toString() 
 			+ " <dbName or pathway_id> <uri,uri,.. or --all> <outfile>" +
 			" (dbName - any supported by PaxtoolsDAO DB; " +

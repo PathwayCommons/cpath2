@@ -42,7 +42,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.biopax.paxtools.query.algorithm.LimitType;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.DataBinder;
@@ -95,7 +94,7 @@ public class GraphController extends BasicController {
 			return ProtocolStatusCode.marshal(error);
 		} 
 		
-		// additional validation
+    	// additional validation of query parameters
 		DataBinder binder = new DataBinder(graph);
 		binder.setValidator(new GraphQueryValidator());
 		binder.validate();
@@ -105,7 +104,7 @@ public class GraphController extends BasicController {
 			return ProtocolStatusCode.marshal(error);
 		}
 		
-		String response = "";
+		Object response = null;
 		
 		OutputFormat format = graph.getFormat();
 		GraphType kind = graph.getKind();
@@ -128,17 +127,17 @@ public class GraphController extends BasicController {
 		switch (kind) {
 		case NEIGHBORHOOD:
 			result = service.getNeighborhood(format, source, limit, direction);
-			response = (String) getBody(result, format, "nearest neighbors of " 
+			response = parseResultMap(result, format, "nearest neighbors of " 
 				+ sources, ResultMapKey.DATA);
 			break;
 		case PATHSBETWEEN:
 			result = service.getPathsBetween(format, source, target, limit);
-			response = (String) getBody(result, format, "paths between " + sources
+			response = parseResultMap(result, format, "paths between " + sources
 				+ " and " + targets, ResultMapKey.DATA);
 			break;
 		case COMMONSTREAM:
 			result = service.getCommonStream(format, source, limit, direction);
-			response = (String) getBody(result, format, "common " + direction + "stream of " +
+			response = parseResultMap(result, format, "common " + direction + "stream of " +
 					sources, ResultMapKey.DATA);
 			break;
 		default:
@@ -146,7 +145,9 @@ public class GraphController extends BasicController {
 			break;
 		}
 
-		return response;
+		return (response instanceof ErrorType)
+			? ProtocolStatusCode.marshal((ErrorType) response)
+				: (String)response;
     }
 
 }

@@ -114,38 +114,33 @@ public class SearchController extends BasicController {
 	
 	// Get by ID (URI) command
     @RequestMapping("/get")
-    public @ResponseBody String elementById(@Valid Get get, BindingResult binding) 
+    public @ResponseBody String elementById(@Valid Get get, BindingResult bindingResult)
     {
-    	if(binding.hasErrors()) {
-    		return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.BAD_REQUEST,
-					"Missing parameter 'uri': at least one URI must be specified!");
+    	if(bindingResult.hasErrors()) {
+    		ErrorType error = errorfromBindingResult(bindingResult);
+			return ProtocolStatusCode.marshal(error);
     	}
-
-    	
+    	    	
     	OutputFormat format = get.getFormat();
     	String[] uri = get.getUri();
     	
     	if (log.isInfoEnabled())
 			log.info("Query: /get; format:" + format + ", urn:" + Arrays.toString(uri));
-
-    	
-    	if(format==null) {
-    		format = OutputFormat.BIOPAX;
-    		log.info("Using default output format (BioPAX), " +
-    			"because nothing was specified/recognized.");
-    	}
     	
     	Map<ResultMapKey, Object> result = service.fetch(format, uri);
     	
-    	String body = (String) getBody(result, format, Arrays.toString(uri), ResultMapKey.DATA);
+    	Object data = parseResultMap(result, format, Arrays.toString(uri), ResultMapKey.DATA);
     	
-		return body;
+    	if(data instanceof ErrorType) {
+			return ProtocolStatusCode.marshal((ErrorType)data);
+		} else {
+			return (String) data;
+		}
     }
 	
 	
    
     // Fulltext Search - plain text response...
-    @Deprecated
     @RequestMapping(value="/search")
     public @ResponseBody String fulltextSearch(@Valid Search search, BindingResult bindingResult)
     {		
@@ -168,7 +163,18 @@ public class SearchController extends BasicController {
 				searchFilters.toArray(new SearchFilter[]{}));
 		
 		String details = search.getQ() + " (in " + search.getType() + ")";
-		body = getListDataBody(results, details);
+		
+		// extract data from the message
+		Object data = parseResultMap(results, null, details, ResultMapKey.DATA);
+		if(data instanceof ErrorType) {
+			body = ProtocolStatusCode.marshal((ErrorType)data);
+		} else {
+			StringBuffer sb = new StringBuffer();
+			for (SearchHitType s : (List<SearchHitType>)data) {
+				sb.append(s.getUri()).append(newline);
+			}
+			body = sb.toString();
+		}
 		
 		return body;
 	}   
@@ -233,23 +239,9 @@ public class SearchController extends BasicController {
 		
 		String details = search.getQ() + " (in " + search.getType() + ")";
 
-		if (!results.containsKey(ResultMapKey.ERROR)) {
-			List<SearchHitType> dataSet = (List<SearchHitType>) results.get(ResultMapKey.DATA);
-			if(dataSet.isEmpty()) {
-				ErrorType error = ProtocolStatusCode.NO_RESULTS_FOUND.createErrorType();
-				error.setErrorDetails("Nothing found for: " + details);
-				response.setError(error);
-			} else {
-				response.setTotalNumHits((long) dataSet.size());
-				response.getSearchHit().addAll(dataSet);
-			}
-		} else {
-			response.setError(
-					errorFromResults(results.get(ResultMapKey.ERROR), 
-					ProtocolStatusCode.INTERNAL_ERROR)
-			);
-		}
-		
+		// extract data from the message map
+		parseSearchResults(results, details, response);		
+
 		return response;
 	}
 
@@ -276,57 +268,22 @@ public class SearchController extends BasicController {
 				searchFilters.toArray(new SearchFilter[]{}));
 		
 		String details = search.getQ() + " (in " + search.getType() + ")";
-
-		if (!results.containsKey(ResultMapKey.ERROR)) {
-			List<SearchHitType> dataSet = (List<SearchHitType>) results.get(ResultMapKey.DATA);
-			if(dataSet.isEmpty()) {
-				ErrorType error = ProtocolStatusCode.NO_RESULTS_FOUND.createErrorType();
-				error.setErrorDetails("Nothing found for: " + details);
-				response.setError(error);
-			} else {
-				response.setTotalNumHits((long) dataSet.size());
-				response.getSearchHit().addAll(dataSet);
-			}
-		} else {
-			response.setError(
-					errorFromResults(results.get(ResultMapKey.ERROR), 
-					ProtocolStatusCode.INTERNAL_ERROR)
-			);
-		}
+		// extract data from the message map
+		parseSearchResults(results, details, response);
 		
 		return response;
 	}
-    
-    	
-    /**
-     * makes a plain text string (response body) 
-     * when the data (in the map) is the list of IDs,
-     * one ID per line.
-     * 
-     */ 
-    private String getListDataBody(Map<ResultMapKey, Object> result, String details) {
-    	StringBuffer toReturn = new StringBuffer();
-    	
-		if (!result.containsKey(ResultMapKey.ERROR)) {
-			List<SearchHitType> dataSet = (List<SearchHitType>) result.get(ResultMapKey.DATA);
-			if(dataSet.isEmpty()) {
-				toReturn.append(ProtocolStatusCode
-					.errorAsXml(ProtocolStatusCode.NO_RESULTS_FOUND, 
-						"Nothing found for: " + details));
-			} else {
-				for (SearchHitType s : dataSet) {
-					toReturn.append(s.getUri()).append(newline);
-				}
-			}
+
+	private void parseSearchResults(Map<ResultMapKey, Object> results,
+			String details, SearchResponseType response) 
+	{
+		Object data = parseResultMap(results, null, details, ResultMapKey.DATA);
+		if(data instanceof ErrorType) {
+			response.setError((ErrorType)data);
 		} else {
-			toReturn.append(
-				ProtocolStatusCode.marshal(
-					errorFromResults(result.get(ResultMapKey.ERROR), ProtocolStatusCode.INTERNAL_ERROR)
-				)
-			);		
-		}
-
-        return toReturn.toString();
+			List<SearchHitType> hits = (List<SearchHitType>) data;
+			response.setTotalNumHits((long) hits.size());
+			response.setSearchHit(hits);
+		}	
 	}
-
 }

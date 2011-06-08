@@ -47,12 +47,12 @@ public class OutputFormatEditor extends PropertyEditorSupport {
 	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
 	 */
 	@Override
-	public void setAsText(String arg0) throws IllegalArgumentException {
+	public void setAsText(String param) throws IllegalArgumentException {
 		OutputFormat value = null;
 		try{
-			value = OutputFormat.valueOf(arg0.trim().toUpperCase());
+			value = OutputFormat.valueOf(param.trim().toUpperCase());
 		} catch (IllegalArgumentException e) {
-			log.info("No matching output format found for " + arg0, e);
+			log.info(e);
 		}
 		setValue(value);
 	}
