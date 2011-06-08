@@ -126,7 +126,7 @@ public class SearchController extends BasicController {
     	String[] uri = get.getUri();
     	
     	if (log.isInfoEnabled())
-			log.info("Query: /get; format:" + format + ", urn:" + uri);
+			log.info("Query: /get; format:" + format + ", urn:" + Arrays.toString(uri));
 
     	
     	if(format==null) {
@@ -137,7 +137,7 @@ public class SearchController extends BasicController {
     	
     	Map<ResultMapKey, Object> result = service.fetch(format, uri);
     	
-    	String body = getBody(result, format, Arrays.toString(uri));
+    	String body = (String) getBody(result, format, Arrays.toString(uri), ResultMapKey.DATA);
     	
 		return body;
     }

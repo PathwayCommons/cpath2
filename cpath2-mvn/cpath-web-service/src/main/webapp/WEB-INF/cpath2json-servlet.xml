@@ -43,6 +43,10 @@
     <bean id="marshallingHttpMessageConverter"
         class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">
     </bean>
+    
+    <bean id="adminController" class="cpath.webservice.AdminController">
+		<constructor-arg ref="service"/>
+	</bean>
 
     <!-- Required for REST services in order to bind the return value to the ResponseBody. -->
     <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">

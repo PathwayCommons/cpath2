@@ -114,13 +114,15 @@ public abstract class BasicController {
     }
 
     
-    protected String getBody(Map<ResultMapKey, Object> results, OutputFormat format, String details) {
-    	String toReturn = null;
+    protected Object getBody(Map<ResultMapKey, Object> results, OutputFormat format, String details, ResultMapKey mapKey) {
+    	Object toReturn = null;
     	
 		if (!results.containsKey(ResultMapKey.ERROR)) {
-			toReturn = (String) results.get(ResultMapKey.DATA);
+			toReturn = results.get(mapKey);
 			
-			if(toReturn == null || "".equals(toReturn.trim())) {
+			if(toReturn == null || 
+				(mapKey == ResultMapKey.DATA && "".equals(toReturn.toString().trim()))
+			){
 				toReturn = ProtocolStatusCode.errorAsXml(ProtocolStatusCode.NO_RESULTS_FOUND, 
 						"Empty result for: " + details);
 			} else if(OutputFormat.BIOPAX == format) {

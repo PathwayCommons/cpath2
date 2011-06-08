@@ -40,7 +40,7 @@ public class CPathSquaredWebserviceTest {
 	}
 	
 
-	@Test
+	//@Test
 	public void testSearchPathway() {
 		String result = null;
 		result = template.getForObject(CPATH2_SERVICE_URL + 
@@ -55,14 +55,16 @@ public class CPathSquaredWebserviceTest {
 	@Test
 	public void testGetQueryById1() {
 		String result = template.getForObject(CPATH2_SERVICE_URL+"/get?uri={uri}", 
-				String.class, "http://www.biopax.org/examples/myExample#ADP"); //"HTTP://WWW.REACTOME.ORG/BIOPAX#SIGNALING_BY_BMP_1_9606");
+				String.class, 
+				//"http://www.biopax.org/examples/myExample#ADP"); 
+				"HTTP://WWW.REACTOME.ORG/BIOPAX/48887#PATHWAY1076_1_9606");
 		assertNotNull(result);
 		System.out.println(result);
 	}
 	
 	
 	//HTTP POST
-	@Test
+	//@Test
 	public void testPostQueryById() {
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
 		map.add("uri", "http://www.biopax.org/examples/myExample#Pathway50");

@@ -32,6 +32,7 @@ import java.util.Map;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
+import org.biopax.validator.result.ValidatorResponse;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
@@ -57,15 +58,35 @@ import cpath.dao.filters.SearchFilter;
 public interface CPathService {
 
 	/**
-	 * Enumeration: map keys for the cPath^2 service results 
+	 * Enumeration: map keys for the cPath^2 service results
+	 * that always returned as a {@link Map}
+	 * 
 	 */
 	public static enum ResultMapKey {
-		MODEL, // key to BioPAX (PaxTools) Model, if any is returned
-		ELEMENT, // a BioPAXElement (detached from DAO)
-		DATA, // key to query results (to be treated by the caller), e.g., id-list, image, etc.
-		ERROR, // key to an error string or Exception object (e.g., toString() will be used to get message)
-		COUNT, // key to "records" count, e.g. items in the ID-list or no. of BioPAX elements
-		MISC; // key to, e.g., lucene search statistics, etc.
+		/**
+		 * key to a BioPAX (PaxTools) Model, if any is returned, or any other "model" object (up to the implementation)
+		 */
+		MODEL, 
+		/**
+		 *  key to a BioPAXElement (detached from DAO) or other object (e.g., ValidationResponse)
+		 */
+		ELEMENT, 
+		/**
+		 *  key to query results (to be treated by the caller), e.g., id-list, image, etc.
+		 */
+		DATA, 
+		/**
+		 *  key to an error string or Exception object (e.g., toString() will be used to get message)
+		 */
+		ERROR,
+		/**
+		 *  key to "records" count, e.g. items in the ID-list or no. of BioPAX elements
+		 */
+		COUNT, 
+		/**
+		 *  key to, e.g., lucene search statistics, etc.
+		 */
+		MISC; 
 	}
 	
 	/**
@@ -145,8 +166,9 @@ public interface CPathService {
 	
 	
 	/**
-	 * Generates the BioPAX validation report for the pathway data provider
-	 * (report will be associated with 'DATA' key in the returned map).
+	 * Generates the BioPAX validation report for the pathway data provider:
+	 * - XML report will be associated with {@link ResultMapKey#DATA} key in the returned map;
+	 * - {@link ValidatorResponse} bean will be associated with {@link ResultMapKey#ELEMENT} key.
 	 * 
 	 * @param metadataIdentifier
 	 * @return
