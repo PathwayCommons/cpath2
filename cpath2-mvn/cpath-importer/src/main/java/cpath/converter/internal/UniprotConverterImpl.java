@@ -274,7 +274,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
             String subParts[] = parts[i].split("=");
             // Set HUGO Gene Name
             if (subParts[0].trim().equals("Name")) {
-                setRelationshipXRef(proteinReferenceModel, "NGNC", subParts[1], proteinReference, RelationshipType.GENE);
+                setRelationshipXRef(proteinReferenceModel, "HGNC", subParts[1], proteinReference, RelationshipType.GENE);
             }
 			else if (subParts[0].trim().equals("Synonyms")) {
                 String synList[] = subParts[1].split(",");
