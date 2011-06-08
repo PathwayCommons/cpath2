@@ -11,11 +11,9 @@
 	<title>Pathway Commons-2::Home</title>
 	<!-- JQuery plugins -->
 	<script type="text/javascript" src="<c:url value="/resources/plugins/jquery-1.6.1.js" />"></script>
-	<script type="text/javascript" src="<c:url value="/resources/plugins/jquery.dialogpaper.js" />"></script>
 	<script type="text/javascript" src="<c:url value="/resources/plugins/jquery-ui-1.8.11.custom.min.js" />"></script>
-	<script type="text/javascript" src="<c:url value="/resources/plugins/jquery.scrollbarpaper.js" />"></script>
-	<link rel="stylesheet" href="<c:url value="/resources/plugins/jquery.scrollbarpaper.css" />" type="text/css"/>
-	<link rel="stylesheet" href="<c:url value="/resources/plugins/jquery-ui-1.8.11.custom.css" />" type="text/css"/>	
+	<link rel="stylesheet" href="<c:url value="/resources/plugins/jquery-ui-1.8.11.custom.css" />" type="text/css"/>
+	<link rel="stylesheet" href="<c:url value="/resources/plugins/jquery.ui.override.css" />" type="text/css"/>
 	<!-- other -->
 	<script type="text/javascript" src="<c:url value="/resources/scripts/json.min.js" />"></script>
 	<!-- pathwaycommons js code -->
@@ -81,6 +79,7 @@
 	  <a name="example" href="resources/schemas/SearchResponse.xml"><fmt:message key="cpath2.url"/>/resources/schemas/SearchResponse.xml</a>
 	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
 	  <fmt:message key="cpath2.command_header_query_description"/><br>
+	  <br>
 	  <a name="example" href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_1_url"/>>
 		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_1_url"/></a>
 	  <br>

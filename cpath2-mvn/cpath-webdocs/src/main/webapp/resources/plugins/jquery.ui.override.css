@@ -163,12 +163,9 @@ textarea {
 	-moz-box-shadow: 0 0 40px rgba(0, 0, 0, 0.2);
 	box-shadow: 0 0 40px rgba(0, 0, 0, 0.2);
 	padding: 0;
-	border-color: #000;
-	background: transparent;
-	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#D8000000,endColorstr=#D8000000)"; /* IE8 */
-    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=#D8000000,endColorstr=#D8000000);   /* IE6 & 7 */
     zoom: 1;
-	background: rgba(0, 0, 0, 0.85);
+	background: #eee;
+	border-color: #888;
 	-webkit-border-radius: 8px;
 	-moz-border-radius: 8px;
 	border-radius: 8px;
@@ -178,12 +175,13 @@ textarea {
 .ui-dialog-titlebar {
 	background: transparent;
 	border: 0;
-	border-bottom: 1px solid #666;
+	border-bottom: 1px solid #888;
 	text-align: center;
+	color: #000;
 }
 
 .ui-dialog-content {
-	color: #fff;
+	color: #000;
 }
 
 .ui-dialog-buttonpane {
@@ -202,7 +200,7 @@ textarea {
 }
 
 .ui-dialog .ui-resizable-se {
-	background-image: url("plugins/custom-theme/images/ui-icons_888888_256x240.png");
+	background-image: url("custom-theme/images/ui-icons_888888_256x240.png");
 }
 
 .ui-widget-overlay {
@@ -397,4 +395,22 @@ button:active {
 
 .ui-dialog {
 	z-index: 99999 !important;
+}
+
+.ui-dialog textarea {
+	width: 100%;
+	height: 100%;
+	background: transparent !important;
+	color: #000 !important;
+	outline: none !important;
+	border: 0 !important;
+	padding: 0 !important;
+	overflow: auto !important;
+	resize: none !important;
+	background: #f0fff0 !important;
+}
+
+.ui-dialog-content {
+	padding: 0 !important; 
+	overflow: hidden !important;
 }

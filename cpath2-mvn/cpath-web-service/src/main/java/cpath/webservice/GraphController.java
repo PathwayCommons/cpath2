@@ -128,17 +128,18 @@ public class GraphController extends BasicController {
 		switch (kind) {
 		case NEIGHBORHOOD:
 			result = service.getNeighborhood(format, source, limit, direction);
-			response = getBody(result, format, "nearest neighbors of " + sources);
+			response = (String) getBody(result, format, "nearest neighbors of " 
+				+ sources, ResultMapKey.DATA);
 			break;
 		case PATHSBETWEEN:
 			result = service.getPathsBetween(format, source, target, limit);
-			response = getBody(result, format, "paths between " + sources
-				+ " and " + targets);
+			response = (String) getBody(result, format, "paths between " + sources
+				+ " and " + targets, ResultMapKey.DATA);
 			break;
 		case COMMONSTREAM:
 			result = service.getCommonStream(format, source, limit, direction);
-			response = getBody(result, format, "common " + direction + "stream of " +
-					sources);
+			response = (String) getBody(result, format, "common " + direction + "stream of " +
+					sources, ResultMapKey.DATA);
 			break;
 		default:
 			// impossible (should has failed earlier)

@@ -63,28 +63,33 @@ function setOnClicks() {
         //Get the A tag
         var url = $(this).attr('href');
     	//alert("Show content from: " + url);	
-    	$.get(url, function(data) {
-    		var content;
-    		if(url.indexOf("xml") != -1) {
-    			content = (new XMLSerializer()).serializeToString(data);
-    		} 
-    		else if(url.toLowerCase().indexOf("json") != -1){
-    			content = JSON.stringify(data,null,null);
-    		} else {
-    			content = data;
-    		}
-    		
-    		//show the query result in a new modal window!
-    		//note: <textarea/> plays a very important role: to auto-encode special symbols in its content!
-        	$('<div><textarea rows="100" cols="50" readonly="readonly">' 
-        			+ content + '</textarea></div>').dialogpaper({
-				title: "Example Query (press 'Esc' to close window)",
-				width: 500,
-				height: 300,
-				resizable: true,
-				modal: true
-			});
-        });
+    	$.ajax({
+    		type: "GET",
+    		url: url,
+    		dataType: "text",
+	    	success: function(data) {
+	    		var content = $('<div></div>');
+	    		var textarea = $('<textarea></textarea>');
+	    		
+	    		foo = data;
+//	    		console.log(foo);
+	    		
+	    		textarea.html(data);
+	    		content.append(textarea);
+	    		$("body").append(content);
+	    		
+	    		//show the query result in a new modal window!
+	    		//note: <textarea/> plays a very important role: to auto-encode special symbols in its content!
+	        	content.dialog({
+					title: "Result from: " + url + " (as text)",
+					width: 500,
+					height: 300,
+					resizable: true,
+					modal: true
+				});
+	        }
+    	});
+        
     });
 }
 

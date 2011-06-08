@@ -16,7 +16,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.io.*;
-import java.net.URLEncoder;
 
 import java.util.ArrayList;
 import java.util.Collection;

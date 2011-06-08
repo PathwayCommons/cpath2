@@ -93,6 +93,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	private boolean addDependencies = false;
 	protected MultiFieldQueryParser multiFieldQueryParser;
 
+	/**
+	 *  A supplementary {@link Analysis} (algorithm) to be executed 
+	 *  when detaching elements (element(s) as a sub-model) from this model
+	 */
+	private Analysis getTheseElements;
+	
 	protected PaxtoolsHibernateDAO()
 	{
 		this.level = BioPAXLevel.L3;
@@ -106,6 +112,20 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		this.multiFieldQueryParser = new MultiFieldQueryParser(
 			Version.LUCENE_29, ALL_FIELDS, 
 				new StandardAnalyzer(Version.LUCENE_29));
+		
+		// this simply implements how to get a list of elements from the list of URIs
+		this.getTheseElements = new Analysis() {
+			@Override
+			public Set<BioPAXElement> execute(Model model, Object... args) {
+				Set<BioPAXElement> bioPAXElements = new HashSet<BioPAXElement>();
+				for(Object id : args) {
+					BioPAXElement bpe = getByID(id.toString());
+					if(bpe != null)
+						bioPAXElements.add(bpe);
+				}
+				return bioPAXElements;
+			}
+		};
 	}
 
 	// get/set methods used by spring
@@ -183,7 +203,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 	
 
-	@Transactional(propagation=Propagation.REQUIRED)
+	@Transactional(propagation=Propagation.NEVER)
 	@Override
 	public void merge(final Model model)
 	{
@@ -223,7 +243,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * (use when it's updated or unsure if saved ever before...)
 	 * 
 	 */
-	@Transactional(propagation = Propagation.REQUIRED)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void merge(BioPAXElement aBioPAXElement) {
 		String rdfId = aBioPAXElement.getRDFId();
 		if (!level.hasElement(aBioPAXElement)) {
@@ -506,7 +526,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 		return true;
 	}
-
 	
 	
 	@Override
@@ -552,7 +571,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
+	//@Transactional(propagation=Propagation.REQUIRED)
 	public <T extends BioPAXElement> T addNew(Class<T> type, String id)
 	{
 		T bpe = factory.create(type, id);
@@ -562,7 +581,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
+	//@Transactional(propagation=Propagation.REQUIRED)
 	public boolean contains(BioPAXElement bpe)
 	{
 		return getByID(bpe.getRDFId()) != null;
@@ -570,7 +589,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
+	//@Transactional(propagation=Propagation.REQUIRED)
 	public boolean containsID(String id)
 	{
 		return getByID(id) != null;
@@ -607,7 +626,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
+	//@Transactional(propagation=Propagation.REQUIRED)
 	public Set<BioPAXElement> getObjects()
 	{
 		return getObjects(BioPAXElement.class);
@@ -692,7 +711,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * property 'nextStep', which otherwise could lead to infinite loops.
 	 */
 	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
+	@Transactional(propagation=Propagation.REQUIRES_NEW)
 	public void exportModel(OutputStream outputStream, String... ids) 
 	{
 		simpleIO.convertToOWL(this, outputStream, ids);
@@ -707,22 +726,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * 
 	 */
 	@Override
-	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
+	//@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	public Model getValidSubModel(Collection<String> ids) {
-		Analysis getTheseElements = new Analysis() {
-			@Override
-			public Set<BioPAXElement> execute(Model model, Object... args) {
-				Set<BioPAXElement> bioPAXElements = new HashSet<BioPAXElement>();
-				for(Object id : args) {
-					BioPAXElement bpe = getByID(id.toString());
-					if(bpe != null)
-						bioPAXElements.add(bpe);
-				}
-				return bioPAXElements;
-			}
-		};
-		
-		return runAnalysis(getTheseElements, ids.toArray());
+		// run the analysis (in a new transaction)
+		return runAnalysis(this.getTheseElements, ids.toArray());
 	}
 	
 	
@@ -731,7 +738,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * (not very deep) initialization
 	 * 
 	 */
-	@Transactional(readOnly=true)
+	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	@Override
 	public void initialize(Object obj) 
 	{
@@ -777,7 +784,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * @see cpath.dao.PaxtoolsDAO#runAnalysis(cpath.dao.Analysis, java.lang.Object[])
 	 */
 	@Override
-	@Transactional(propagation = Propagation.REQUIRED)
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public Model runAnalysis(Analysis analysis, Object... args) {
 		Set<BioPAXElement> result = null;
 		
