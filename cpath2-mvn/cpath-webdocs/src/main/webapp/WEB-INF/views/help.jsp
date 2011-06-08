@@ -49,7 +49,7 @@
 	  </ul>
 	  <p><fmt:message key="cpath2.license_terms"/></p>
 	  <!-- start of web service api documentation -->
-      <h1><fmt:message key="cpath2.web_service_title"/></h1>
+      <h2><fmt:message key="cpath2.web_service_title"/></h2>
       <p><fmt:message key="cpath2.web_service_sub_title"/></p>
 	  <!-- list of web service commands -->
 	  <ul>
@@ -138,7 +138,6 @@
 		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_graph_example_query_1_url"/></a>
 	  <!-- additional parameter details -->
       <h2><a name="additional_parameters"></a><fmt:message key="cpath2.command_header_additional_parameters"/>:</h2>
-	  <br>
 	  <pre id="output_parameter" style="text-align: left;"></pre>
 	  <pre id="graph_parameter" style="text-align: left;"></pre>
 	  <pre id="datasource_parameter" style="text-align: left;"></pre>

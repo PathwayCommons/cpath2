@@ -20,7 +20,7 @@ function getCommandParameterDetails(helpWSPath, clazz, header, parameterDesc) {
     // get some var values from jsp page
     var base = $('#web_service_url').text();
     var command_header = $(header).text();
-	var parameter_desc = $(parameterDesc).text();
+	var parameter_desc = $(parameterDesc).html();
     var class_name = clazz + "_class"
 
     // setup content element and append header
@@ -47,7 +47,7 @@ function getCommandParameterDetails(helpWSPath, clazz, header, parameterDesc) {
             });
             $("." + class_name).append('</ul>');
             $("." + class_name).append('</div>');
-			$("." + class_name).append('<br>');
+			//$("." + class_name).append('<br>');
     });
 }
 
