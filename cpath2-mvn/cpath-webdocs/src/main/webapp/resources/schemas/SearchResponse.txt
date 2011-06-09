@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="searchResponseType" type="SearchResponseType"/>
+
+  <xs:complexType name="errorType">
+    <xs:sequence>
+      <xs:element name="error_code" type="xs:integer"/>
+      <xs:element name="error_msg" type="xs:string"/>
+      <xs:element name="error_details" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SearchHitType">
+    <xs:sequence>
+      <xs:element name="uri" type="xs:string"/>
+      <xs:element name="actualHitUri" type="xs:string" minOccurs="0"/>
+      <xs:element name="biopaxClass" type="xs:string"/>
+      <xs:element name="name" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="dataSource" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="organism" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="pathway" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="excerpt" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SearchResponseType">
+    <xs:sequence>
+      <xs:element name="error" type="errorType" minOccurs="0"/>
+      <xs:element name="totalNumHits" type="xs:long" minOccurs="0"/>
+      <xs:element name="searchHit" type="SearchHitType" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
+
