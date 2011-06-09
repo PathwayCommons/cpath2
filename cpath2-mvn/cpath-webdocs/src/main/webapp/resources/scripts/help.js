@@ -4,7 +4,6 @@ $(document).ready(function() {
     getCommandParameterDetails("help/datasources", "datasource_parameter", "#command_header_additional_parameters_datasource", "#command_header_additional_parameters_datasource_desc");
     getCommandParameterDetails("help/organisms", "organism_parameter", "#command_header_additional_parameters_organism", "#command_header_additional_parameters_organism_desc");
     getCommandParameterDetails("help/types", "biopax_parameter", "#command_header_additional_parameters_biopax", "#command_header_additional_parameters_biopax_desc");
-    setOnClicks(); // auto-set 'onclick' handlers for particular A elements (query examples)
 });
 
 //
@@ -47,51 +46,5 @@ function getCommandParameterDetails(helpWSPath, clazz, header, parameterDesc) {
             });
             $("." + class_name).append('</ul>');
             $("." + class_name).append('</div>');
-			//$("." + class_name).append('<br>');
     });
 }
-
-
-/* sets a special onclick handler for 
- * all 'A' elemets with name="example"
- */
-function setOnClicks() {
-	//select all the a tag with name equal to modal
-    $('a[name=example]').click(function(e) {
-        //Cancel the link behavior
-        e.preventDefault();
-        //Get the A tag
-        var url = $(this).attr('href');
-    	//alert("Show content from: " + url);	
-    	$.ajax({
-    		type: "GET",
-    		url: url,
-    		dataType: "text",
-	    	success: function(data) {
-	    		var content = $('<div></div>');
-	    		var textarea = $('<textarea></textarea>');
-	    		
-	    		foo = data;
-//	    		console.log(foo);
-	    		
-	    		textarea.html(data);
-	    		content.append(textarea);
-	    		$("body").append(content);
-	    		
-	    		//show the query result in a new modal window!
-	    		//note: <textarea/> plays a very important role: to auto-encode special symbols in its content!
-	        	content.dialog({
-					title: "Result from: " + url + " (as text)",
-					width: 500,
-					height: 300,
-					resizable: true,
-					modal: true
-				});
-	        }
-    	});
-        
-    });
-}
-
-
-
