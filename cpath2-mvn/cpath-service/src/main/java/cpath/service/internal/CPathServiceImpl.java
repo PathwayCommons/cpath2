@@ -421,7 +421,7 @@ public class CPathServiceImpl implements CPathService {
 										 Arrays.asList("Entity/xref:UnificationXref", "Entity/xref:RelationshipXref"),
 										 Arrays.asList("Interaction/dataSource/name", "Interaction/xref:PublicationXref"));
 			String edgeColumns = "PARTICIPANT_A\tINTERACTION_TYPE\tPARTICIPANT_B\tINTERACTION_DATA_SOURCE\tINTERACTION_PUBMED_ID\n";
-			String nodeColumns = "PARTICIPANT\tRELATIONSHIP_XREF\tUNIFICATION_XREF\tRELATIONSHIP_XREF\n";
+			String nodeColumns = "PARTICIPANT\tUNIFICATION_XREF\tRELATIONSHIP_XREF\n";
 			map.put(DATA, edgeColumns + edgeStream.toString() + "\n" + nodeColumns + nodeStream.toString());
 		} else {
 			sic.writeInteractionsInSIF(m, edgeStream);
