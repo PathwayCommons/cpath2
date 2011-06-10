@@ -132,8 +132,8 @@ public class GraphController extends BasicController {
 			break;
 		case PATHSBETWEEN:
 			result = service.getPathsBetween(format, source, target, limit);
-			response = parseResultMap(result, format, "paths between " + sources
-				+ " and " + targets, ResultMapKey.DATA);
+			response = parseResultMap(result, format, "paths between sources: " + sources
+				+ " and targets: " + targets, ResultMapKey.DATA);
 			break;
 		case COMMONSTREAM:
 			result = service.getCommonStream(format, source, limit, direction);

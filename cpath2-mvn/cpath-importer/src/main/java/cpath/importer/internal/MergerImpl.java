@@ -268,8 +268,8 @@ public class MergerImpl implements Merger {
 				if(bpe != replacement) {
 					pathwayModel.replace(bpe, replacement);
 					modelUtils.removeDependentsIfDangling(bpe);
-					if (log.isInfoEnabled()) {
-						log.info(bpe.getRDFId() 
+					if (log.isDebugEnabled()) {
+						log.debug(bpe.getRDFId() 
 							+ " (" + bpe.getModelInterface().getSimpleName() + ") " 
 							+ "is replaced with " + replacement.getRDFId() 
 							+ "(from the warehouse)");	

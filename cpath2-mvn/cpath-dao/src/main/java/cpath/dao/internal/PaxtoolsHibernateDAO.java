@@ -225,10 +225,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			Set<BioPAXElement> sourceElements = new ModelUtils(model)
 				.getRootElements(BioPAXElement.class);
 			if(log.isInfoEnabled())
-				log.info("Persisting a BioPAX Model that has " 
-						+ sourceElements.size() 
+				log.info("Persisting a BioPAX Model"
+						+ " that has " + sourceElements.size() 
 						+ " 'root' elements (of total: "
-						+ model.getObjects().size());
+						+ model.getObjects().size()
+				);
+			
 			for (BioPAXElement bpe : sourceElements) {
 				if (log.isInfoEnabled()) {
 					log.info("Merging (root) BioPAX element: " 
@@ -704,17 +706,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public <T extends BioPAXElement> Set<T> getObjects(Class<T> clazz)
 	{
 		String query = "from " + clazz.getCanonicalName();
-		List<T> results = null;
-		results = session().createQuery(query).list();
-		Set<T> toReturn = new HashSet<T>();
-		/*
-		for(Object entry: results) {
-			Hibernate.initialize(entry);
-			toReturn.add((T)entry);
-		}
-		return toReturn;
-		*/
-		toReturn.addAll(results);
+		List<T> results = session().createQuery(query).list();
+		Set<T> toReturn = new HashSet<T>(results);
 		return toReturn;
 	}
 

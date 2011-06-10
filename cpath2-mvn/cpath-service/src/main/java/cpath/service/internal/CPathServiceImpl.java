@@ -35,24 +35,13 @@ import javax.validation.constraints.NotNull;
 import javax.xml.bind.*;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.controller.ModelUtils;
-import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.BioSource;
-import org.biopax.paxtools.model.level3.Entity;
-import org.biopax.paxtools.model.level3.Named;
-import org.biopax.paxtools.model.level3.Provenance;
-import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
-import org.biopax.paxtools.model.level3.RelationshipXref;
-import org.biopax.paxtools.model.level3.SequenceEntityReference;
-import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
@@ -61,7 +50,6 @@ import org.springframework.stereotype.Service;
 
 import com.googlecode.ehcache.annotations.Cacheable;
 
-import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
@@ -92,18 +80,6 @@ public class CPathServiceImpl implements CPathService {
 	
 	@NotNull
 	private PaxtoolsDAO mainDAO;
-
-	/*[rodche] 
-	 * Looks, one DAO per service instance is enough; 
-	 * the "second query" use case can be covered by 
-	 * the second (third, etc..) CPathService instance!
-	@NotNull
-	private PaxtoolsDAO proteinsDAO;
-	@NotNull
-	private PaxtoolsDAO moleculesDAO;
-	@NotNull
-	private CvRepository cvFetcher;
-	*/
 	
 	@NotNull
 	private MetadataDAO metadataDAO;
@@ -121,12 +97,8 @@ public class CPathServiceImpl implements CPathService {
      */
 	public CPathServiceImpl(
 			PaxtoolsDAO mainDAO, 
-			//PaxtoolsDAO proteinsDAO,
-			//PaxtoolsDAO moleculesDAO,
-			//CvRepository cvFetcher,
 			MetadataDAO metadataDAO) 
 	{
-		
 		this.mainDAO = mainDAO;
 		//this.proteinsDAO = proteinsDAO;
 		//this.moleculesDAO = moleculesDAO;
@@ -297,10 +269,15 @@ public class CPathServiceImpl implements CPathService {
 	{	
 		// convert, replace DATA
 		Model m = (Model) map.get(MODEL);
-		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true);
-		OutputStream stream = new ByteArrayOutputStream();
-	    gseaConverter.writeToGSEA(m, stream);
-	    map.put(DATA, stream.toString());
+		if (m != null && m.getObjects().size()>0) {
+			GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true);
+			OutputStream stream = new ByteArrayOutputStream();
+			gseaConverter.writeToGSEA(m, stream);
+			map.put(DATA, stream.toString());
+		} else {
+			log.info("Won't convert to GSEA: empty Model!");
+		}
+		
 		return map;
 	}
 
@@ -324,6 +301,12 @@ public class CPathServiceImpl implements CPathService {
 		// convert, replace DATA value in the map to return
 		// TODO match 'rules' parameter to rule types (currently, it uses all)
 		Model m = (Model) map.get(MODEL);
+		
+		if (m == null || m.getObjects().size() == 0) {
+			log.info("Won't convert to SIF: empty Model!");
+			return map; //unchanged
+		}
+		
 		SimpleInteractionConverter sic = getSimpleInteractionConverter(m);
 
 		OutputStream edgeStream = new ByteArrayOutputStream();
