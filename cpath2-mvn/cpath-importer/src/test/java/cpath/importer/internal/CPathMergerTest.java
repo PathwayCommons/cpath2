@@ -89,6 +89,8 @@ public class CPathMergerTest {
 		reader.mergeDuplicates(true);
 		Model model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:test-normalized.owl").getInputStream());
+		if(model == null)
+			fail("Failed to import test data from classpath:test-normalized.owl");
 		pathwayModels.add(model);
 		
 		model = null;
