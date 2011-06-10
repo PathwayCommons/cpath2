@@ -30,9 +30,9 @@ package cpath.dao;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.Entity;
 
 import cpath.dao.filters.SearchFilter;
+import cpath.service.jaxb.SearchHitType;
 
 import java.util.Collection;
 import java.util.List;
@@ -63,9 +63,9 @@ public interface PaxtoolsDAO extends Model, Reindexable {
 	 * @param filterByType - class filter for the full-text search (actual effect may depend on the concrete implementation!)
 	 * @param extraFilters custom filters (implies AND in between) that apply after the full-text query has returned;
 	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
-	 * @return ordered by the element's relevance list of rdfIds
+	 * @return ordered by the element's relevance list of hits
      */
-    List<BioPAXElement> findElements(String query, Class<? extends BioPAXElement> filterByType,
+    List<SearchHitType> findElements(String query, Class<? extends BioPAXElement> filterByType,
     		SearchFilter<? extends BioPAXElement,?>... extraFilters);        
 
     
@@ -79,9 +79,9 @@ public interface PaxtoolsDAO extends Model, Reindexable {
 	 * @param filterByType - class filter for the full-text search (actual effect may depend on the concrete implementation!)
 	 * @param extraFilters custom filters (implies AND in between) that apply after the full-text query has returned;
 	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
-	 * @return ordered by the element's relevance list of rdfIds
+	 * @return ordered by the element's relevance list of hits
      */
-    List<Entity> findEntities(String query, Class<? extends BioPAXElement> filterByType,
+    List<SearchHitType> findEntities(String query, Class<? extends BioPAXElement> filterByType,
     		SearchFilter<? extends BioPAXElement,?>... extraFilters);
     
     /**

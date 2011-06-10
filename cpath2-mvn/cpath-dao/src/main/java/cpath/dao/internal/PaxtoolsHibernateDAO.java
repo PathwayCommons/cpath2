@@ -28,6 +28,7 @@
  **/
 package cpath.dao.internal;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -40,6 +41,7 @@ import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
+import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.hibernate.*;
@@ -52,6 +54,7 @@ import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
 import cpath.dao.filters.SearchFilterRange;
+import cpath.service.jaxb.SearchHitType;
 import cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO;
 
 import java.util.*;
@@ -263,13 +266,13 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public List<BioPAXElement> findElements(
+	public List<SearchHitType> findElements(
 			String query, 
 			Class<? extends BioPAXElement> filterByType,
 			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
 	{
 		// collect matching elements here
-		List<BioPAXElement> results = new ArrayList<BioPAXElement>();
+		List<SearchHitType> results = new ArrayList<SearchHitType>();
 		
 		// a shortcut
 		if (query == null || "".equals(query) 
@@ -281,7 +284,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		
 		// otherwise, we continue and do real job -
 		if (log.isInfoEnabled())
-			log.info("find (IDs): " + query + ", filterBy: " + filterByType
+			log.info("find: " + query + ", filterBy: " + filterByType
 					+ "; extra filters: " + Arrays.toString(extraFilters));
 			
 		// create a native Lucene query
@@ -311,10 +314,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "' (filters not shown), results size = " + count);
 
-		// TODO shall we use pagination? [later...]
-		// hibQuery.setFirstResult(0);
-		// hibQuery.setMaxResults(100);
-
 		// using the projection (to get some more statistics/fields)
 		if(CPathSettings.isDebug())
 			hibQuery.setProjection(FullTextQuery.THIS, FullTextQuery.SCORE,
@@ -323,36 +322,50 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			hibQuery.setProjection(FullTextQuery.THIS);
 		
 		// execute search
-		List hibQueryResults = hibQuery.list();
-		for (Object row : hibQueryResults) {
-			Object[] cols = (Object[]) row;
-			// get the matching element
-			BioPAXElement bpe = (BioPAXElement) cols[0];
-			String id = bpe.getRDFId();
-	
-			
-			if(log.isDebugEnabled()) {
-				log.debug("Hit (before filters applied) uri: " 
-					+ id + " (" + bpe + " - "
-					+ bpe.getModelInterface() + ")");
-			}
-			
-			// extra filtering
-			if (filter(bpe, extraFilters)) {
-				
-				if(CPathSettings.isDebug()) {
-					float score = (Float) cols[1];
-					bpe.getAnnotations().put("score", score);
-					Explanation expl = (Explanation) cols[2];
-					bpe.getAnnotations().put("explanation", expl.toString());	
-					if(log.isDebugEnabled()) {
-						log.debug("Hit score=" + cols[1] + "; explanation: " + cols[2]);
-					}
+		// TODO try pagination...
+		final int max = 50;
+		int l = 0;
+		hibQuery.setMaxResults(max);
+		while (l < count) {
+			hibQuery.setFirstResult(l);
+			List hibQueryResults = hibQuery.list(); // gets up to 'max' records
+			for (Object row : hibQueryResults) {
+				Object[] cols = (Object[]) row;
+				// get the matching element
+				BioPAXElement bpe = (BioPAXElement) cols[0];
+				String id = bpe.getRDFId();
+
+				if (log.isDebugEnabled()) {
+					log.debug("Hit (before filters applied) uri: " + id + " ("
+							+ bpe + " - " + bpe.getModelInterface() + ")");
 				}
-				
-				initialize(bpe); //important (incl. how it's done)!
-				results.add(bpe);
+
+				// extra filtering
+				if (filter(bpe, extraFilters)) {
+
+					if (CPathSettings.isDebug()) {
+						float score = (Float) cols[1];
+						bpe.getAnnotations().put("score", score);
+						Explanation expl = (Explanation) cols[2];
+						bpe.getAnnotations()
+								.put("explanation", expl.toString());
+						if (log.isDebugEnabled()) {
+							log.debug("Hit score=" + cols[1]
+									+ "; explanation: " + cols[2]);
+						}
+					}
+
+					//initialize(bpe); // not required: we're not going to return this outside the transaction
+					results.add(bpeToSearcHit(bpe));
+				}
+
+				l++;
 			}
+		}
+		
+		if (log.isInfoEnabled()) {
+			log.info("Using query '" + query 
+				+ "', after filtering results size = " + results.size());
 		}
 		
 		return results;
@@ -381,78 +394,131 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public List<Entity> findEntities(
+	public List<SearchHitType> findEntities(
 			String query, 
 			Class<? extends BioPAXElement> filterByType,
 			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
 	{
-		// a list of identifiers to return
-		List<Entity> toReturn = new ArrayList<Entity>();
+		List<SearchHitType> results = new ArrayList<SearchHitType>();
 		
 		// - otherwise, we continue and do real job -		
 		if (log.isInfoEnabled())
 			log.info("findEntities called");
 
 		// search in all classes (the first pass)
-		List<BioPAXElement> results = findElements(query, null);//, extraFilters);
-			
-		// filter and "upgrade" (lookup) to corresponding parent Entities
-		for(BioPAXElement bpe : results) 
+		// a shortcut
+		if (query == null || "".equals(query) 
+				|| query.trim().startsWith("*")) // see: Lucene query syntax
 		{
-			//TODO may be implement this in HQL instead...
+			// do nothing, return the empty list
+			return results;
+		} 
+		
+		// otherwise, we continue and do real job -
+		if (log.isInfoEnabled())
+			log.info("find: " + query + ", filterBy: " + filterByType
+					+ "; extra filters: " + Arrays.toString(extraFilters));
 			
-			// currently, lookup for entities works for some utility calsses only... TODO test it
-			if(!(bpe instanceof Entity)) { // a UtilityClass object
-				if(bpe instanceof Xref) {
-					for(XReferrable xReferrable : ((Xref)bpe).getXrefOf()) {
-						if(xReferrable instanceof Entity) {
-							addEntity(toReturn, (Entity)xReferrable, bpe, filterByType, extraFilters);
-						} 
-						else if(xReferrable instanceof EntityReference) {
-							Set<SimplePhysicalEntity> spes = ((EntityReference) xReferrable).getEntityReferenceOf();
-							for(SimplePhysicalEntity spe : spes) {
-								addEntity(toReturn,spe, bpe, filterByType, extraFilters);
+		// create a native Lucene query
+		org.apache.lucene.search.Query luceneQuery = null;
+		try {
+			luceneQuery = multiFieldQueryParser.parse(query);
+		} catch (ParseException e) {
+			log.info("parser exception: " + e.getMessage());
+			return results;
+		}
+
+		// get a full text session
+		FullTextSession fullTextSession = Search.getFullTextSession(session());
+		//no class filter use here (first pass)
+		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery); 
+		
+		int count = hibQuery.getResultSize(); //"cheap" operation (Hib. does not init objects)
+		if (log.isInfoEnabled())
+			log.info("Query '" + query + "' (no filter/lookup applied yet), results size = " + count);
+
+		// using the projection (to get some more statistics/fields)
+		if(CPathSettings.isDebug())
+			hibQuery.setProjection(FullTextQuery.THIS, FullTextQuery.SCORE,
+				FullTextQuery.EXPLANATION);
+		else
+			hibQuery.setProjection(FullTextQuery.THIS);
+		
+		// execute search
+		// TODO try pagination...
+		final int max = 50;
+		int l = 0;
+		hibQuery.setMaxResults(max);
+		while (l < count) {
+			hibQuery.setFirstResult(l);
+			List hibQueryResults = hibQuery.list(); // gets up to 'max' records
+			for (Object row : hibQueryResults) {
+				Object[] cols = (Object[]) row;
+				// get the matching element
+				BioPAXElement bpe = (BioPAXElement) cols[0];
+				String id = bpe.getRDFId();
+
+				if (log.isDebugEnabled()) {
+					log.debug("Hit (before filters applied) uri: " + id + " ("
+							+ bpe + " - " + bpe.getModelInterface() + ")");
+				}
+
+				// Filter and "upgrade" (lookup) to corresponding parent Entities
+				//TODO may be implement this in HQL instead...
+				// currently, lookup for entities works for some utility calsses only... TODO test it
+				if(!(bpe instanceof Entity)) { // a UtilityClass object
+					if(bpe instanceof Xref) {
+						for(XReferrable xReferrable : ((Xref)bpe).getXrefOf()) {
+							if(xReferrable instanceof Entity) {
+								addEntity(results, (Entity)xReferrable, bpe, filterByType, extraFilters);
+							} 
+							else if(xReferrable instanceof EntityReference) {
+								Set<SimplePhysicalEntity> spes = ((EntityReference) xReferrable).getEntityReferenceOf();
+								for(SimplePhysicalEntity spe : spes) {
+									addEntity(results,spe, bpe, filterByType, extraFilters);
+								}
 							}
 						}
 					}
-				}
-				else if(bpe instanceof EntityReference) {
-					Set<SimplePhysicalEntity> spes = ((EntityReference) bpe).getEntityReferenceOf();
-					for(SimplePhysicalEntity spe : spes) {
-						addEntity(toReturn, spe, bpe, filterByType, extraFilters);
+					else if(bpe instanceof EntityReference) {
+						Set<SimplePhysicalEntity> spes = ((EntityReference) bpe).getEntityReferenceOf();
+						for(SimplePhysicalEntity spe : spes) {
+							addEntity(results, spe, bpe, filterByType, extraFilters);
+						}
 					}
+				} else {
+					addEntity(results, (Entity)bpe, null, filterByType, extraFilters);
 				}
-			} else {
-				addEntity(toReturn, (Entity)bpe, null, filterByType, extraFilters);
+				//TODO for other non-entities
+				l++;
 			}
-			//TODO for other non-entities
 		}
 		
-		if (log.isDebugEnabled()) {
-			log.debug("Using query for entities '" + query 
-					+ "', final results size = " + toReturn.size());
+		if (log.isInfoEnabled()) {
+			log.info("Using query for entities '" + query 
+					+ "', final results size = " + results.size());
 		}
 		
-		return toReturn;
+		return results;
 	}
 	
-	private void addEntity(List<Entity> toReturn, Entity ent,
+	private void addEntity(List<SearchHitType> list, Entity ent,
 			BioPAXElement actualHit,
 			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
 	{
-		addIfPassAndNew(toReturn, ent, actualHit, filterByType, extraFilters);
+		addIfPassAndNew(list, ent, actualHit, filterByType, extraFilters);
 		// TODO not sure whether to go here for complexes or not...
 		if (ent instanceof PhysicalEntity) {
-			addComplexes(toReturn, (PhysicalEntity) ent, actualHit, filterByType, extraFilters);
+			addComplexes(list, (PhysicalEntity) ent, actualHit, filterByType, extraFilters);
 		}
 	}
 
-	private void addIfPassAndNew(List<Entity> toReturn, Entity ent,
+	private void addIfPassAndNew(List<SearchHitType> list, Entity ent,
 			BioPAXElement actualHit,
 			Class<? extends BioPAXElement> filterByType, 
 			SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
 	{
-		if(!toReturn.contains(ent) && passFilters(ent, filterByType, extraFilters))
+		if(!list.contains(ent) && passFilters(ent, filterByType, extraFilters))
 		{
 			initialize(ent); //important (incl. how it's done)!
 			if(actualHit != null && !ent.equals(actualHit)) {
@@ -462,18 +528,18 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				}
 				ent.getAnnotations().put("actualHitUri", actualHit.getRDFId());
 			}
-			toReturn.add(ent);
+			list.add(bpeToSearcHit(ent));
 		}
 	}
 
-	private void addComplexes(List<Entity> toReturn, PhysicalEntity pe,
+	private void addComplexes(List<SearchHitType> list, PhysicalEntity pe,
 			BioPAXElement actualHit, 
 			Class<? extends BioPAXElement> filterByType, 
 			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
 	{
 		Set<Complex> complexes = pe.getComponentOf();
 		for (Complex c : complexes) {
-			addIfPassAndNew(toReturn, c, actualHit, filterByType, extraFilters);
+			addIfPassAndNew(list, c, actualHit, filterByType, extraFilters);
 		}
 	}
 
@@ -819,6 +885,106 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		throw new UnsupportedOperationException("not supported");
 	}
 
+	
+	/**
+	 * Converts the returned by a query BioPAX elements to 
+	 * simpler "hit" java beans (serializable to XML, etc..) 
+	 * 
+	 * @param data
+	 * @return
+	 */
+	private List<SearchHitType> toSearchHits(List<? extends BioPAXElement> data) {
+		List<SearchHitType> hits = new ArrayList<SearchHitType>(data.size());
+		
+		for(BioPAXElement bpe : data) {
+			SearchHitType hit = bpeToSearcHit(bpe);
+			hits.add(hit);
+		}
+		
+		return hits;
+	}
+	
+	/**
+	 * Converts a returned by a query BioPAX element to 
+	 * the search hit java bean (serializable to XML) 
+	 * 
+	 * @param bpe
+	 * @return
+	 */
+	private SearchHitType bpeToSearcHit(BioPAXElement bpe) {
+			SearchHitType hit = new SearchHitType();
+			hit.setUri(bpe.getRDFId());
+			hit.setBiopaxClass(bpe.getModelInterface().getSimpleName());
+			// add lucene info
+			if(CPathSettings.isDebug()) {
+				//TODO setExcerpt must contain the matched text...
+				hit.setExcerpt(StringEscapeUtils.escapeXml(
+					bpe.getAnnotations().get("explanation").toString()));
+			}
+			
+			if(bpe.getAnnotations().get("actualHitUri") != null)
+				hit.setActualHitUri(StringEscapeUtils.escapeXml(
+						bpe.getAnnotations().get("actualHitUri").toString()));
+			
+			// add standard and display names if any -
+			if(bpe instanceof Named) {
+				Named named = (Named)bpe;
+				String std = named.getStandardName();
+				if( std != null)
+					hit.getName().add(std);
+				String dsp = named.getDisplayName();
+				if(dsp != null && !dsp.equalsIgnoreCase(std))
+					hit.getName().add(dsp);
+			}
+			
+			// add organisms and data sources
+			if(bpe instanceof Entity) {
+				// add data sources (URIs)
+				for(Provenance pro : ((Entity)bpe).getDataSource()) {
+					hit.getDataSource().add(pro.getRDFId());
+				}
+				
+				// add organisms and pathways (URIs);
+				// at the moment, this apply to Entities only -
+				HashSet<String> organisms = new HashSet<String>();
+				HashSet<String> processes = new HashSet<String>();
+				for(Xref x : ((Entity)bpe).getXref()) 
+				{
+					if((x instanceof RelationshipXref) && ((RelationshipXref) x).getRelationshipType() != null) 
+					{
+						RelationshipXref rx = (RelationshipXref) x;
+						RelationshipTypeVocabulary cv = rx.getRelationshipType();
+						//initialize(cv); // not required - this methos is called within an active transaction
+						String autoId = ModelUtils
+							.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name());
+						if(cv.getRDFId().equalsIgnoreCase(autoId))
+						{
+							organisms.add(rx.getId());
+						} 
+// this feature is disabled for now...
+//						else if(cv.getRDFId().equalsIgnoreCase(ModelUtils
+//							.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()))) 
+//						{
+//							processes.add(rx.getId());
+//						}	
+					}
+				}
+				
+				if(!organisms.isEmpty())
+					hit.getOrganism().addAll(organisms);
+				
+//				if(!processes.isEmpty())
+//					hit.getPathway().addAll(processes);
+			} else
+			// set organism for some of EntityReference
+			if(bpe instanceof SequenceEntityReference) {
+				BioSource bs = ((SequenceEntityReference)bpe).getOrganism(); 
+				if(bs != null)
+					hit.getOrganism().add(bs.getRDFId());
+			}
+		
+		return hit;
+	}
 }
 
 

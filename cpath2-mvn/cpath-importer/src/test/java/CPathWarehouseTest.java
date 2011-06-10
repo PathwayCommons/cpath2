@@ -35,7 +35,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
@@ -47,6 +46,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.internal.CPathFetcherImpl;
+import cpath.service.jaxb.SearchHitType;
 import cpath.warehouse.*;
 import cpath.warehouse.beans.*;
 import cpath.warehouse.beans.Metadata.TYPE;
@@ -140,11 +140,11 @@ public class CPathWarehouseTest {
 	@Test
 	public void testSearchForProteinReference() {
 		// search with a secondary (RefSeq) accession number
-		Collection<BioPAXElement> prs = ((PaxtoolsDAO)proteins).findElements("NP_619650", RelationshipXref.class);
+		Collection<SearchHitType> prs = ((PaxtoolsDAO)proteins).findElements("NP_619650", RelationshipXref.class);
 		assertFalse(prs.isEmpty());
 		Collection<String> prIds = new HashSet<String>();
-		for(BioPAXElement e : prs) {
-			prIds.add(e.getRDFId());
+		for(SearchHitType e : prs) {
+			prIds.add(e.getUri());
 		}
 		assertTrue(prIds.contains("urn:biopax:RelationshipXref:REFSEQ_NP_619650"));
 		

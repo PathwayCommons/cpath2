@@ -54,7 +54,6 @@ import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.SequenceEntityReference;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.biopax.paxtools.query.algorithm.LimitType;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
@@ -156,9 +155,7 @@ public class CPathServiceImpl implements CPathService {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
 			// do search
-			List<BioPAXElement> data = mainDAO.findElements(queryStr, biopaxClass, searchFilters); 
-			// build (xml/json) serializable search hit types
-			List<SearchHitType> hits = toSearchHits(data);
+			List<SearchHitType> hits = mainDAO.findElements(queryStr, biopaxClass, searchFilters); 
 			map.put(DATA, hits);
 			map.put(COUNT, hits.size()); // becomes Integer
 		} catch (Exception e) {
@@ -169,90 +166,7 @@ public class CPathServiceImpl implements CPathService {
 	}
 	
 	
-	/**
-	 * Converts the returned by a query BioPAX elements to 
-	 * simpler "hit" java beans (serializable to XML, etc..) 
-	 * 
-	 * @param data
-	 * @return
-	 */
-	private List<SearchHitType> toSearchHits(List<? extends BioPAXElement> data) {
-		List<SearchHitType> hits = new ArrayList<SearchHitType>(data.size());
-		
-		for(BioPAXElement bpe : data) {
-			SearchHitType hit = new SearchHitType();
-			hit.setUri(bpe.getRDFId());
-			hit.setBiopaxClass(bpe.getModelInterface().getSimpleName());
-			// add lucene info
-			if(CPathSettings.isDebug()) {
-				//TODO setExcerpt must contain the matched text...
-				hit.setExcerpt(StringEscapeUtils.escapeXml(
-					bpe.getAnnotations().get("explanation").toString()));
-			}
-			
-			if(bpe.getAnnotations().get("actualHitUri") != null)
-				hit.setActualHitUri(StringEscapeUtils.escapeXml(
-						bpe.getAnnotations().get("actualHitUri").toString()));
-			
-			// add standard and display names if any -
-			if(bpe instanceof Named) {
-				Named named = (Named)bpe;
-				String std = named.getStandardName();
-				if( std != null)
-					hit.getName().add(std);
-				String dsp = named.getDisplayName();
-				if(dsp != null && !dsp.equalsIgnoreCase(std))
-					hit.getName().add(dsp);
-			}
-			
-			// add organisms and data sources
-			if(bpe instanceof Entity) {
-				// add data sources (URIs)
-				for(Provenance pro : ((Entity)bpe).getDataSource()) {
-					hit.getDataSource().add(pro.getRDFId());
-				}
-				
-				// add organisms and pathways (URIs);
-				// at the moment, this apply to Entities only -
-				HashSet<String> organisms = new HashSet<String>();
-				HashSet<String> processes = new HashSet<String>();
-				for(Xref x : ((Entity)bpe).getXref()) 
-				{
-					if((x instanceof RelationshipXref) && ((RelationshipXref) x).getRelationshipType() != null) 
-					{
-						RelationshipXref rx = (RelationshipXref) x;
-						RelationshipTypeVocabulary cv = rx.getRelationshipType();
-						mainDAO.initialize(cv);
-						String autoId = ModelUtils
-							.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name());
-						if(cv.getRDFId().equalsIgnoreCase(autoId))
-						{
-							organisms.add(rx.getId());
-						} 
-						else if(cv.getRDFId().equalsIgnoreCase(ModelUtils
-							.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()))) 
-						{
-							processes.add(rx.getId());
-						}	
-					}
-				}
-				if(!organisms.isEmpty())
-					hit.getOrganism().addAll(organisms);
-				if(!processes.isEmpty())
-					hit.getPathway().addAll(processes);
-			} else
-			// set organism for some of EntityReference
-			if(bpe instanceof SequenceEntityReference) {
-				BioSource bs = ((SequenceEntityReference)bpe).getOrganism(); 
-				if(bs != null)
-					hit.getOrganism().add(bs.getRDFId());
-			}
-			
-			hits.add(hit);
-		}
-		
-		return hits;
-	}
+
 
 	@Cacheable(cacheName = "findEntitiesCache")
 	@Override
@@ -262,9 +176,7 @@ public class CPathServiceImpl implements CPathService {
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
 			// do search
-			List<Entity> data = mainDAO.findEntities(queryStr, biopaxClass, searchFilters); 
-			// build (xml/json) serializable search hit types
-			List<SearchHitType> hits = toSearchHits(data);
+			List<SearchHitType> hits = mainDAO.findEntities(queryStr, biopaxClass, searchFilters); 
 			map.put(DATA, hits);
 			map.put(COUNT, hits.size()); // becomes Integer
 		} catch (Exception e) {
