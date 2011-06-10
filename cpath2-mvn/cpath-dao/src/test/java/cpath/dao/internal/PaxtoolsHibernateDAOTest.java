@@ -41,6 +41,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.apache.commons.logging.*;
 
 import cpath.dao.PaxtoolsDAO;
+import cpath.service.jaxb.SearchHitType;
 
 import java.io.*;
 import java.util.*;
@@ -224,7 +225,7 @@ public class PaxtoolsHibernateDAOTest {
 
 	@Test
 	public void testSerchForIDs() throws Exception {
-		List<BioPAXElement> elist = paxtoolsDAO.findElements("P46880", UnificationXref.class);
+		List<SearchHitType> elist = paxtoolsDAO.findElements("P46880", UnificationXref.class);
 		assertFalse(elist.isEmpty());
 		assertTrue(elist.size()==1);
 	}
@@ -232,14 +233,14 @@ public class PaxtoolsHibernateDAOTest {
 	
 	@Test
 	public void testFind() throws Exception {
-		List<BioPAXElement> list = paxtoolsDAO.findElements("P46880", BioPAXElement.class);
+		List<SearchHitType> list = paxtoolsDAO.findElements("P46880", BioPAXElement.class);
 		assertFalse(list.isEmpty());
-		Model m = paxtoolsDAO.getLevel().getDefaultFactory().createModel();
-		for(BioPAXElement e : list) {
-			m.add(e);
+		Set<String> m = new HashSet<String>();
+		for(SearchHitType e : list) {
+			m.add(e.getUri());
 		}
 		//assertTrue(list.contains("urn:biopax:UnificationXref:UniProt_P46880"));
-		assertTrue(m.containsID("urn:biopax:UnificationXref:UniProt_P46880"));
+		assertTrue(m.contains("urn:biopax:UnificationXref:UniProt_P46880"));
 		
 		System.out.println("find by 'P46880' returned: " + list.toString());
 		
@@ -254,7 +255,7 @@ public class PaxtoolsHibernateDAOTest {
 		
 		list = paxtoolsDAO.findElements("glucokinase", ProteinReference.class);
 		assertEquals(1, list.size());
-		assertTrue(list.get(0).getRDFId().equals("urn:miriam:uniprot:P46880"));
+		assertTrue(list.get(0).getUri().equals("urn:miriam:uniprot:P46880"));
 	}
 
 }

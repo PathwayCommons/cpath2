@@ -13,10 +13,10 @@ public class Search {
 	
 	private Class<? extends BioPAXElement> type;
 	@Valid
-	private OrganismDataSource[] organisms;
+	private OrganismDataSource[] organism;
 	@Valid
-	private PathwayDataSource[] dataSources;
-	private String[] pathwayURIs;
+	private PathwayDataSource[] datasource;
+	//private String[] pathwayURIs;
 
 	public Search() {
 	}
@@ -37,27 +37,27 @@ public class Search {
 		this.type = type;
 	}
 
-	public OrganismDataSource[] getOrganisms() {
-		return organisms;
+	public OrganismDataSource[] getOrganism() {
+		return organism;
 	}
 
-	public void setOrganisms(OrganismDataSource[] organisms) {
-		this.organisms = organisms;
+	public void setOrganism(OrganismDataSource[] organisms) {
+		this.organism = organisms;
 	}
 
-	public PathwayDataSource[] getDataSources() {
-		return dataSources;
+	public PathwayDataSource[] getDatasource() {
+		return datasource;
 	}
 
-	public void setDataSources(PathwayDataSource[] dataSources) {
-		this.dataSources = dataSources;
+	public void setDatasource(PathwayDataSource[] dataSources) {
+		this.datasource = dataSources;
 	}
 
-	public String[] getPathwayURIs() {
-		return pathwayURIs;
-	}
-
-	public void setPathwayURIs(String[] pathwayURIs) {
-		this.pathwayURIs = pathwayURIs;
-	}
+//	public String[] getPathwayURIs() {
+//		return pathwayURIs;
+//	}
+//
+//	public void setPathwayURIs(String[] pathwayURIs) {
+//		this.pathwayURIs = pathwayURIs;
+//	}
 }

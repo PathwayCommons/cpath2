@@ -45,7 +45,8 @@ public class EntityByProcessRelationshipXrefsFilter
 		for(RelationshipXref rx : rxrefs) {
 			ControlledVocabulary rcv = rx.getRelationshipType();
 			if(rcv != null 
-				&& rcv.getTerm().contains(RelationshipType.PROCESS.name())
+				&& rcv.getRDFId().equalsIgnoreCase(
+						ModelUtils.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()))
 				&& this.values.contains(rx.getId())) // by design, the value is a Process URI (RDF ID) 
 			{
 				assert ModelUtils.COMMENT_FOR_GENERATED.equals(rx.getDb()) : "Only rel. xrefs auto-generated "

@@ -29,7 +29,6 @@ package cpath.warehouse.internal;
 
 //import java.io.IOException;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.*;
 
 import org.apache.commons.logging.Log;
@@ -44,7 +43,6 @@ import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.validator.utils.BiopaxOntologyManager;
 import org.biopax.validator.utils.Normalizer;
-import org.springframework.core.io.Resource;
 
 import psidev.ontology_manager.Ontology;
 import psidev.ontology_manager.OntologyTermI;
@@ -76,7 +74,7 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 	 * @param ontTmpDir
 	 * @throws Exception
 	 */
-	public OntologyManagerCvRepository(Map<String, Resource> ontologies, 
+	public OntologyManagerCvRepository(Properties ontologies, 
 			String ontTmpDir, boolean isReuseAndStoreOBOLocally) 
 	{
 		super(ontologies, ontTmpDir, isReuseAndStoreOBOLocally);

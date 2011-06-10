@@ -361,7 +361,7 @@ public class PremergeImpl implements Premerge {
 		normalizerOptions.setInferPropertyDataSource(true);
 		normalizerOptions.setInferPropertyOrganism(true);
 		normalizerOptions.setGenerateRelatioshipToOrganismXrefs(true);
-		normalizerOptions.setGenerateRelatioshipToPathwayXrefs(true);
+		normalizerOptions.setGenerateRelatioshipToPathwayXrefs(false); // shelved for later (much increases data size)...
 		normalizerOptions.setGenerateRelatioshipToInteractionXrefs(false); //no
 		validation.setNormalizerOptions(normalizerOptions);
 		// collect both errors and warnings
