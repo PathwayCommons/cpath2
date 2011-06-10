@@ -216,9 +216,10 @@ public class MergerImpl implements Merger {
 		// iterate over all the utility-class elements to replace PR/SMR/CVs
 		ModelUtils modelUtils = new ModelUtils(pathwayModel);
 		if (log.isInfoEnabled()) {
-			log.info("merge(pathwayModel): will be using equivalent utility class objects " +
-				"from the warehouse to replace existing ones (this apply only to some BioPAX " +
-				"types and if the have the same ID or a unification xref)");
+			log.info("merge(pathwayModel): existing utility class objects " +
+				"will be replaced with equivalent ones from the warehouse " +
+				"(this apply only to some BioPAX " +
+				"types and if we have a matching ID or unification xref)");
 		}
 		for (UtilityClass bpe: srcElements) {	
 			UtilityClass replacement = null; // to find in the Warehouse
@@ -321,8 +322,8 @@ public class MergerImpl implements Merger {
 				prefs = proteinsDAO.getByXref(rrefs, ProteinReference.class);
 				if (!prefs.isEmpty()) { 
 					if (prefs.size() > 1) {
-						log.info("More than one ProteinReference " +
-							"that share the same relationship xref weren found:" 
+						log.warn("More than one warehouse ProteinReferences " +
+							"that share the same relationship xref were found:" 
 							+ prefs + ". Skipping (TODO: choose one).");	
 					} else {					
 						toReturn = proteinsDAO.getObject(prefs.iterator().next(), ProteinReference.class);

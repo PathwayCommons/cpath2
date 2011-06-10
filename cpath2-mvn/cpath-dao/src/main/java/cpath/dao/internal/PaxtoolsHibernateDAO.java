@@ -37,8 +37,25 @@ import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.Explanation;
 import org.apache.lucene.util.Version;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
-import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.BioPAXFactory;
+import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.BioSource;
+import org.biopax.paxtools.model.level3.Complex;
+import org.biopax.paxtools.model.level3.Entity;
+import org.biopax.paxtools.model.level3.EntityReference;
+import org.biopax.paxtools.model.level3.Named;
+import org.biopax.paxtools.model.level3.PhysicalEntity;
+//import org.biopax.paxtools.model.level3.Process;
+import org.biopax.paxtools.model.level3.Provenance;
+import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
+import org.biopax.paxtools.model.level3.RelationshipXref;
+import org.biopax.paxtools.model.level3.SequenceEntityReference;
+import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
+import org.biopax.paxtools.model.level3.XReferrable;
+import org.biopax.paxtools.model.level3.Xref;
+//import org.biopax.paxtools.util.BioPaxIOException;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
@@ -156,6 +173,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
 		if(log.isInfoEnabled())
 			log.info("Begin indexing...");
+		
 		/* - often gets stuck or crashes...
 		try {
 			fullTextSession.createIndexer()
@@ -204,8 +222,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		Model m = simpleIO.convertFromOWL(new FileInputStream(biopaxFile));
 		merge(m);
 	}
-	
 
+	
 	@Transactional(propagation=Propagation.NEVER)
 	@Override
 	public void merge(final Model model)
@@ -224,8 +242,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			// start from "top" elements only :)
 			Set<BioPAXElement> sourceElements = new ModelUtils(model)
 				.getRootElements(BioPAXElement.class);
-			if(log.isInfoEnabled())
-				log.info("Persisting a BioPAX Model"
+			if(log.isDebugEnabled())
+				log.debug("Persisting a BioPAX Model"
 						+ " that has " + sourceElements.size() 
 						+ " 'root' elements (of total: "
 						+ model.getObjects().size()
@@ -233,7 +251,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			
 			for (BioPAXElement bpe : sourceElements) {
 				if (log.isInfoEnabled()) {
-					log.info("Merging (root) BioPAX element: " 
+					log.info("Merging/Persisting (root) BioPAX element: " 
 							 + bpe + " - " 
 							 + bpe.getModelInterface().getSimpleName());
 				}
@@ -241,6 +259,52 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			}
 		}
 	}
+	
+	
+//	/**
+//	 * TODO discuss this alternative (it would require refactoring of converters and junit tests)
+//	 * Integrates a new pathway/interaction model 
+//	 * into the BioPAX main model (databases)
+//	 * 
+//	 * It starts merging from pathways or interactions only;
+//	 * so, to add/merge a single physical entity or utility class
+//	 * (with its children), one should use {@link #merge(BioPAXElement)}
+//	 * instead! This also allows to skip dangling child elements sometimes
+//	 * (it can still, e.g., share an xref with other elements, which, 
+//	 * due to ORM cascades, leads to being persisted as well).
+//	 * 
+//	 */
+//	@Transactional(propagation=Propagation.NEVER)
+//	@Override
+//	public void merge(final Model model)
+//	{
+//		/* 
+//		 * Level3 property/propertyOf ORM mapping and getters/setters 
+//		 * are to be properly implemented for this to work!
+//		 * Persistence annotations must move to new setter/getter pair 
+//		 * that do NOT call inverse prop. 'add' methods in the setter.
+//		 * 
+//		 * Using of SimpleMerger would be unsafe, and, probably, is not required :) 
+//		 * Hibernate should handle RDFId-based, cascading merging well...
+//		 */
+//		Set<Process> processes = model.getObjects(Process.class);
+//		if(model != null && !processes.isEmpty()) {
+//			if(log.isInfoEnabled())
+//				log.info("Persisting a BioPAX Model");	
+//			for (BioPAXElement bpe : processes) {	
+//				if (log.isInfoEnabled()) {
+//					log.info("Merging (root) BioPAX element: " 
+//							 + bpe + " - " 
+//							 + bpe.getModelInterface().getSimpleName());
+//				}
+//				merge(bpe); // there are CASCADE annotations!..
+//			}
+//		} else {
+//			throw new BioPaxIOException("Skip saving the model " 
+//				+ "which does not have any interactions " 
+//				+ "or pathways (or empty/null)! Use merge(BioPAXElement) instead.");	
+//		}
+//	}
 
 	
 	/**
