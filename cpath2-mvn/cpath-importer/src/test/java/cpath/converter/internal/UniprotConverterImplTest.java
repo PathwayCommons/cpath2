@@ -66,7 +66,7 @@ public class UniprotConverterImplTest {
 		converter.convert(zis);
 		
 		Set<ProteinReference> proteinReferences = model.getObjects(ProteinReference.class);
-		assertTrue(proteinReferences.size()==6);
+		assertTrue(proteinReferences.size()==7);
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
 		
 		//TODO add more checks that the conversion went ok..
