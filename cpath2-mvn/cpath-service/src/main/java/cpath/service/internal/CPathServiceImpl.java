@@ -334,10 +334,10 @@ public class CPathServiceImpl implements CPathService {
 										 Arrays.asList("Interaction/dataSource/name", "Interaction/xref:PublicationXref"));
 			String edgeColumns = "PARTICIPANT_A\tINTERACTION_TYPE\tPARTICIPANT_B\tINTERACTION_DATA_SOURCE\tINTERACTION_PUBMED_ID\n";
 			String nodeColumns = "PARTICIPANT\tUNIFICATION_XREF\tRELATIONSHIP_XREF\n";
-			map.put(DATA, edgeColumns + edgeStream.toString() + "\n" + nodeColumns + nodeStream.toString());
+			map.put(DATA, edgeColumns + removeDuplicateBinaryInteractions(edgeStream) + "\n" + nodeColumns + nodeStream.toString());
 		} else {
 			sic.writeInteractionsInSIF(m, edgeStream);
-			map.put(DATA, edgeStream.toString());
+			map.put(DATA, removeDuplicateBinaryInteractions(edgeStream));
 		}
 
 		return map;
@@ -506,4 +506,26 @@ public class CPathServiceImpl implements CPathService {
     		super.finalize();
     	}
     }
+
+	/**
+	 * Remove duplicate binary interactions from SIF/SIFNX converter output
+	 *
+	 * @param edgeStream OutputStream from converter
+	 * @return String
+	 */
+	private String removeDuplicateBinaryInteractions(OutputStream edgeStream) {
+
+		StringBuffer toReturn = new StringBuffer();
+		HashSet<String> interactions = new HashSet<String>();
+		for (String interaction : edgeStream.toString().split("\n")) {
+			interactions.add(interaction);
+		}
+		Iterator iterator = interactions.iterator();
+		while (iterator.hasNext()) {
+			toReturn.append(iterator.next() + "\n");
+		}
+		
+		// outta here
+		return toReturn.toString();
+	}
 }
