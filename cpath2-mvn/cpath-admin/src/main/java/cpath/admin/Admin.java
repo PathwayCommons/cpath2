@@ -217,7 +217,7 @@ public class Admin implements Runnable {
 			} else if(forceMergeFlag.equalsIgnoreCase(args[i])) {
 				this.commandParameters[3] = "true";
 			} else {
-				this.commandParameters[i] = args[i];
+				this.commandParameters[i-1] = args[i];
 			}
 		}
 		
@@ -251,7 +251,6 @@ public class Admin implements Runnable {
             		// re-build the fulltext index
             		INDEX_TYPE mtype = INDEX_TYPE.valueOf(commandParameters[0]);
             		ApplicationContext ctx = null;
-            		DataServices ds = null;
             		Reindexable dao = null;
             		switch (mtype) {
                     case MOLECULES:
@@ -327,6 +326,8 @@ public class Admin implements Runnable {
 		merger.setVersion(version);
 		merger.setUseDb(usedb);
 		merger.setForce(force);
+		LOG.info("runMerge: provider=" + provider + "; version=" + version
+			+ "; useDBs=" + usedb + "; --force=" + force);
 		merger.merge();
 	}
 
@@ -343,6 +344,8 @@ public class Admin implements Runnable {
         premerge.setCreateDb(usedb);
         premerge.setIdentifier(provider);
         premerge.setVersion(version);
+        LOG.info("runPremerge: provider=" + provider + "; version=" + version
+    			+ "; useDBs=" + usedb);
         premerge.premerge();
 	}
 
