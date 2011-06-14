@@ -481,15 +481,6 @@ public class CPathServiceImpl implements CPathService {
         return null;
     }
     
-    @Override
-    protected void finalize() throws Throwable {
-    	try {
-    		DataServicesFactoryBean.clearAllDatasources();
-    	} finally {
-    		super.finalize();
-    	}
-    }
-
 	/**
 	 * Remove duplicate binary interactions from SIF/SIFNX converter output
 	 *

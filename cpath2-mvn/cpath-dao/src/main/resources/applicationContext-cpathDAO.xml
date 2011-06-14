@@ -20,9 +20,12 @@
 
 	<bean id="mainSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-        <property name="dataSource" ref="cpath2_main"/>
         <property name="hibernateProperties">
           <util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
+        	<prop key="hibernate.connection.url">${connection}${main.db}?autoReconnect=true&amp;max_allowed_packet=256M</prop>
+        	<prop key="hibernate.connection.username">${user}</prop>
+        	<prop key="hibernate.connection.password">${password}</prop>
+        	<prop key="hibernate.connection.driver_class">${driver}</prop>
         	<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${main.db}</prop>
 			<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->   
 			<prop key="hibernate.search.indexing_strategy">manual</prop>
@@ -56,15 +59,5 @@
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
-
-    <bean id="cpath2_main" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
-    	<property name="driverClass" value="${driver}"/>
-    	<property name="jdbcUrl" value="${connection}${main.db}?autoReconnect=true&amp;max_allowed_packet=256M"/>
-    	<property name="user" value="${user}"/>
-    	<property name="password" value="${password}"/>
-    	<property name="maxPoolSize" value="30"/>
-    	<property name="maxStatements" value="50"/>
-    	<property name="maxIdleTime" value="1800"/>
-    </bean>
   	
 </beans>

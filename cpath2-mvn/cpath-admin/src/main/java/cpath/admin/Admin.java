@@ -195,31 +195,25 @@ public class Admin implements Runnable {
     
 	private boolean  processOptionalArgs(COMMAND cmd, final String[] args) {
 		//args[0],the command name, plus max. 4 optional parameters...
+		
+		if(cmd != COMMAND.PREMERGE && cmd != COMMAND.MERGE) {
+			throw new UnsupportedOperationException(cmd + " is not supported!");
+		}
+		
 		if (args.length > 5) {
 			return false;
 		}
 		
-		String usePremergeDbflag; //actual name depends on the command
-		boolean usePremergeDbDefault;
-		if(cmd == COMMAND.PREMERGE) {
-			usePremergeDbflag = "--nodatabases";
-			usePremergeDbDefault = true; // means - must create pre-merge DBs
-		} else if (cmd == COMMAND.MERGE) {
-			usePremergeDbflag = "--usedatabases";
-			usePremergeDbDefault = false; // do not merge from pre-merge DBs, use premergeData (OWL) instead
-		} else {
-			throw new UnsupportedOperationException(cmd + " is not supported!");
-		}
-		
+		String usePremergeDbflag = "--usedatabases"; 
 		String forceMergeFlag = "--force";
 		
 		// set default values first, i.e.,
-		// do all data providers and versions, default mode 
-		// regarding pre-merge DBs, merge valid BioPAX (no forcing)
-		this.commandParameters = new String[] {null, null, Boolean.toString(usePremergeDbDefault), "false"};	
+		// do all data providers and versions, do not create/use 
+		// the pre-merge DBs, merge valid BioPAX (no forcing)
+		this.commandParameters = new String[] {null, null, "false", "false"};	
 		for(int i=1 ; i < args.length ; i++) {
 			if(usePremergeDbflag.equalsIgnoreCase(args[i])) {
-				this.commandParameters[2] = Boolean.toString(!usePremergeDbDefault);
+				this.commandParameters[2] = "true";
 			} else if(forceMergeFlag.equalsIgnoreCase(args[i])) {
 				this.commandParameters[3] = "true";
 			} else {
@@ -612,12 +606,12 @@ public class Admin implements Runnable {
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_DATA.toString() + 
 				" <metadataId or --all> [--continue]" + NEWLINE);
-		toReturn.append(COMMAND.PREMERGE.toString() + " [<metadataId> [<version>]] [--nodatabases]" + NEWLINE);
+		toReturn.append(COMMAND.PREMERGE.toString() + " [<metadataId> [<version>]] [--usedatabases]" + NEWLINE);
 		toReturn.append(COMMAND.MERGE.toString() + " [<metadataId> [<version>]] [--usedatabases] [--force]"+ NEWLINE);
 		toReturn.append(COMMAND.EXPORT.toString() 
 			+ " <dbName or pathway_id> <uri,uri,.. or --all> <outfile>" +
 			" (dbName - any supported by PaxtoolsDAO DB; " +
-			"pathway_id is a PK of the pathwayData table)" + NEWLINE);
+			"pathway_id is a PK of the pathwayData table - to extract 'premerged' data)" + NEWLINE);
 		toReturn.append(COMMAND.EXPORT_VALIDATION.toString() 
 				+ " <pathway_id> <output>" + NEWLINE);
 
