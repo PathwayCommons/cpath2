@@ -22,9 +22,12 @@
 
 	<bean id="proteinsSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-        <property name="dataSource" ref="cpath2_proteins"/>
 		<property name="hibernateProperties">
 		<util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
+		  <prop key="hibernate.connection.url">${connection}${proteins.db}?autoReconnect=true&amp;max_allowed_packet=256M</prop>
+		  <prop key="hibernate.connection.username">${user}</prop>
+          <prop key="hibernate.connection.password">${password}</prop>
+       	  <prop key="hibernate.connection.driver_class">${driver}</prop>
 		  <prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${proteins.db}</prop>
 		  <prop key="hibernate.hbm2ddl.auto"></prop><!-- no value - to prevent accidental tables drop -->
 		  <prop key="hibernate.search.indexing_strategy">manual</prop>
@@ -51,16 +54,6 @@
         <property name="sessionFactory" ref="proteinsSessionFactory"/>
     </bean>
 
-    <bean id="cpath2_proteins" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
-    	<property name="driverClass" value="${driver}"/>
-    	<property name="jdbcUrl" value="${connection}${proteins.db}?autoReconnect=true&amp;max_allowed_packet=256M"/>
-    	<property name="user" value="${user}"/>
-    	<property name="password" value="${password}"/>
-    	<property name="maxPoolSize" value="30"/>
-    	<property name="maxStatements" value="50"/>
-    	<property name="maxIdleTime" value="1800"/>
-    </bean>
-  	
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
 	
 </beans>
