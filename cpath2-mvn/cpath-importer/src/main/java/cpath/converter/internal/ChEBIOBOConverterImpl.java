@@ -5,7 +5,6 @@ import cpath.dao.PaxtoolsDAO;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.SimpleMerger;
@@ -41,8 +40,6 @@ public class ChEBIOBOConverterImpl extends BaseConverterImpl {
 	private static final SimpleMerger MERGER = 
         new SimpleMerger(SimpleEditorMap.L3);
 	
-	// ref to warehouse dao/model - used to grab SMR's
-	private Model model;
 	private BioPAXFactory factory;
 		
 	/**
@@ -55,16 +52,6 @@ public class ChEBIOBOConverterImpl extends BaseConverterImpl {
 		this.factory = factory;
 	}
 	
-	/** 
-	 * At the time this class is constructed by
-	 * BaseSDFConverter, the model it passes to constructor
-	 * may be null.  This can be called to ensure model is valid.
-	 * @param model
-	 */
-	public void setModel(final Model model) {
-		this.model = model;
-	}
-	public Model getModel() { return model; }
 	
 	/**
 	 * Given a ChEBI - OBO entry, creates proper member entity reference
@@ -176,7 +163,7 @@ public class ChEBIOBOConverterImpl extends BaseConverterImpl {
 	private SmallMoleculeReference getSMRByChebiID(String chebiID) {
 		
 		String rdfID = "urn:miriam:chebi:" + chebiID;
-		return getByID(rdfID, SmallMoleculeReference.class);
+		return getById(rdfID, SmallMoleculeReference.class);
 	}
 	
 	/**
@@ -197,7 +184,7 @@ public class ChEBIOBOConverterImpl extends BaseConverterImpl {
 			.generateURIForXref(relationshipType, "CHEBI:" + chebiID, null, RelationshipXref.class);
 		
 		if (model.containsID(xrefRdfID)) {
-			return getByID(xrefRdfID, RelationshipXref.class);
+			return getById(xrefRdfID, RelationshipXref.class);
 		}
 		
 		// made it here, need to create relationship xref
@@ -209,7 +196,7 @@ public class ChEBIOBOConverterImpl extends BaseConverterImpl {
 		String relTypeRdfID = ModelUtils.relationshipTypeVocabularyUri(relationshipType); //or "CHEBI_" + relationshipType?
 		
 		if (model.containsID(relTypeRdfID)) {
-			toReturn.setRelationshipType(getByID(relTypeRdfID, RelationshipTypeVocabulary.class));
+			toReturn.setRelationshipType(getById(relTypeRdfID, RelationshipTypeVocabulary.class));
 		}
 		else {
 			RelationshipTypeVocabulary rtv = model.addNew(RelationshipTypeVocabulary.class, relTypeRdfID);
@@ -220,28 +207,6 @@ public class ChEBIOBOConverterImpl extends BaseConverterImpl {
 		// outta here
 		return toReturn;
 	}
-
-	/**
-	 * Given an RDF ID and class type, returns an instance of the class
-	 * from the warehouse.
-	 * 
-	 * @param <T>
-	 * @param urn
-	 * @param type
-	 * @return
-	 */
-	private <T extends BioPAXElement> T getByID(String urn, Class<T> type) {
-
-		T bpe = (T) model.getByID(urn);
-		if (bpe != null && model instanceof PaxtoolsDAO) {
-			// initialize before finally detaching it
-			((PaxtoolsDAO) model).initialize(bpe);
-		}
-		
-		// outta here
-		return bpe;
-		
-    }
 	
 	/**
 	 * Merges the given SMR back into the model

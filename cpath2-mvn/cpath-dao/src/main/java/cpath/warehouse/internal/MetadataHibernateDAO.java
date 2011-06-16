@@ -4,7 +4,6 @@ package cpath.warehouse.internal;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
-import cpath.warehouse.beans.BioPAXElementSource;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -214,86 +213,5 @@ public class MetadataHibernateDAO  implements MetadataDAO {
 			return null;
 		}
 	}
-	
-	/**
-     * (non-Javadoc)
-     * @see cpath.warehouse.metadata.MetadataDAO#importBioPAXElementSource;
-     */
-	@Deprecated
-    @Transactional(propagation=Propagation.REQUIRED)
-	public void importBioPAXElementSource(final BioPAXElementSource biopaxElementSource) {
 
-		Session session = getSession();
-		// check for existing object
-		BioPAXElementSource existing = getBioPAXElementSourceByRDFId(biopaxElementSource.getRDFId());
-		
-		if (existing == null) {
-			if(log.isInfoEnabled())
-				log.info("Saving BioPAXElementSource with RDF Id: " + biopaxElementSource.getRDFId() + 
-						" and tax id: " + biopaxElementSource.getTaxId() +
-						" and provider identifier: " + biopaxElementSource.getProviderId());
-			
-			session.save(biopaxElementSource);
-		}
-		else {
-			if(log.isInfoEnabled())
-				log.info("Updating BioPAXElementSource with RDF Id: " + biopaxElementSource.getRDFId() +
-						" and tax id: " + biopaxElementSource.getTaxId() +
-						" and provider identifier: " + biopaxElementSource.getProviderId());
-			
-			existing.setRDFId(biopaxElementSource.getRDFId());
-			existing.setTaxId(biopaxElementSource.getTaxId());
-			existing.setProviderId(biopaxElementSource.getProviderId());
-			session.update(existing);
-		}
-		
-		session.flush();
-		session.clear();
-		
-		if(log.isInfoEnabled()) {
-			log.info("BioPAXElementData object has been sucessessfully saved or updated.");
-		}
-    }
-	
-    /**
-     * (non-Javadoc)
-     * @see cpath.warehouse.MetadataDAO#getBioPAXElementSourceByRDFId
-     */
-    @Transactional(propagation=Propagation.REQUIRED)
-	public BioPAXElementSource getBioPAXElementSourceByRDFId(final String rdfId) {
-		
-		Session session = getSession();
-		Query query = session.getNamedQuery("cpath.warehouse.beans.biopaxElementSourceByRDFIdentifier");
-		query.setParameter("rdfId", rdfId);
-		List toReturn = query.list();
-		return (BioPAXElementSource)query.uniqueResult();
-	}
-    
-    /**
-     * (non-Javadoc)
-     * @see cpath.warehouse.MetadataDAO#getBioPAXElementSourceByTaxId(String)
-     */
-    @Transactional(propagation=Propagation.REQUIRED)
-    public Collection<BioPAXElementSource> getBioPAXElementSourceByTaxId(final String taxId) {
-    	
-    	Session session = getSession();
-		Query query = session.getNamedQuery("cpath.warehouse.beans.biopaxElementSourceByTaxIdentifier");
-		query.setParameter("taxId", taxId);
-		List toReturn = query.list();
-		return (toReturn.size() > 0) ? new HashSet(toReturn) : new HashSet();
-    }
-    
-    /**
-     * (non-Javadoc)
-     * @see cpath.warehouse.MetadataDAO#getBioPAXElementSourceByProviderId(String)
-     */
-    @Transactional(propagation=Propagation.REQUIRED)
-    public Collection<BioPAXElementSource> getBioPAXElementSourceByProviderId(final String providerId) {
-    	
-    	Session session = getSession();
-		Query query = session.getNamedQuery("cpath.warehouse.beans.biopaxElementSourceByProviderIdentifier");
-		query.setParameter("providerId", providerId);
-		List toReturn = query.list();
-		return (toReturn.size() > 0) ? new HashSet(toReturn) : new HashSet();
-    }
 }

@@ -175,7 +175,8 @@ public class WarehousePaxtoolsHibernateDAO extends PaxtoolsHibernateDAO implemen
 					}
 				}
 			} else {
-				log.warn("getByXref: using normalized ID:" + xurn 
+				if(log.isDebugEnabled())
+					log.debug("getByXref: using normalized ID:" + xurn 
 					+ " " + "no matching xref found for: " +
 					xref + " - " + xref.getRDFId() + ". Skipping.");
 			}
