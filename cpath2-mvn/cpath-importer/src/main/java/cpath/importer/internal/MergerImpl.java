@@ -41,6 +41,7 @@ import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.paxtools.controller.*;
+import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.io.*;
 
 import org.springframework.context.ApplicationContext;
@@ -209,95 +210,103 @@ public class MergerImpl implements Merger {
 	@Override
 	public void merge(Model pathwayModel) 
 	{	
-		// copy set (to prevent concurrent modification exception)
-		Set<UtilityClass> srcElements = 
-			new HashSet<UtilityClass>(pathwayModel.getObjects(UtilityClass.class));
-		
-		// iterate over all the utility-class elements to replace PR/SMR/CVs
-		ModelUtils modelUtils = new ModelUtils(pathwayModel);
-		if (log.isInfoEnabled()) {
-			log.info("merge(pathwayModel): existing utility class objects " +
-				"will be replaced with equivalent ones from the warehouse " +
-				"(this apply only to some BioPAX " +
-				"types and if we have a matching ID or unification xref)");
+		// First, find/collect matching elements from the warehouse
+		if(log.isInfoEnabled())
+			log.info("merge(pathwayModel): looking for matching utility class elements in the warehouse...");
+		final Map<UtilityClass, UtilityClass> replacements = new HashMap<UtilityClass, UtilityClass>();
+		for (UtilityClass uce: new HashSet<UtilityClass>(pathwayModel.getObjects(UtilityClass.class))) {
+			UtilityClass replacement = getFromWarehouse(uce);
+			if(replacement != null) {
+				replacements.put(uce, replacement);
+			}
 		}
-		for (UtilityClass bpe: srcElements) {	
-			UtilityClass replacement = null; // to find in the Warehouse
-			
-			if (bpe instanceof ProteinReference) {
-				replacement = processProteinReference((ProteinReference) bpe);
-			} 
-			else if (bpe instanceof ControlledVocabulary) { 
-				replacement = processControlledVocabulary((ControlledVocabulary) bpe);
-			}
-			else if (bpe instanceof SmallMoleculeReference) {
-				replacement = processSmallMoleculeReference((SmallMoleculeReference)bpe);
-			} else {
-				// do not try to match/replace it
-				if (log.isDebugEnabled()) {
-					log.debug("Skipping not warehouse object: " + bpe.getRDFId() 
-						+ " (" + bpe.getModelInterface().getSimpleName() + ")");
-				}
-				continue;
-			}
-			
-			if(replacement == null) {
-				if (log.isInfoEnabled()) 
-					log.info("No match found in the warehouse to replace " + bpe.getRDFId() 
-						+ " (" + bpe.getModelInterface().getSimpleName() + "), " +
-						"and so it will be merged as is!");
-			} else {
-				// label it by adding a special signature comment,
-				replacement.addComment(CPathSettings.CPATH2_GENERATED_COMMENT);
-				
-				// already emerged from our warehouse?
-				UtilityClass existing = (UtilityClass) pathwayModel.getByID(replacement.getRDFId());
-				if (existing != null) { // well, nice tricky test comes next ;)
-					if(existing.getComment().contains(
-							CPathSettings.CPATH2_GENERATED_COMMENT)) {
-						// simply re-use it again!
-						replacement = existing;
-					} else {
-						// existing has the same ID as the replacement but it's original (no signature)
-						// replace it first
-						pathwayModel.replace(existing, replacement);
-						modelUtils.removeDependentsIfDangling(existing);
-					}
-				}
-				
-				// replace bpe with the new object
-				if(bpe != replacement) {
-					pathwayModel.replace(bpe, replacement);
-					modelUtils.removeDependentsIfDangling(bpe);
-					if (log.isDebugEnabled()) {
-						log.debug(bpe.getRDFId() 
-							+ " (" + bpe.getModelInterface().getSimpleName() + ") " 
-							+ "is replaced with " + replacement.getRDFId() 
-							+ "(from the warehouse)");	
+		
+		// Second, replace utility class object property values if
+		// matching element (the replacement) was found in the warehouse
+		Visitor visitor = new Visitor() {
+			@Override
+			public void visit(BioPAXElement domain, Object range, Model model,
+					PropertyEditor editor) 
+			{
+				if (range instanceof UtilityClass && range != null) {
+					UtilityClass replacement = replacements.get(range);
+					if (replacement != null) {
+						String oldId = ((UtilityClass)range).getRDFId();
+						String newId = replacement.getRDFId(); // (can be the same, it does not matter)
+						editor.setValueToBean(replacement, domain);
+						if (editor.isMultipleCardinality()) {
+							editor.removeValueFromBean(range, domain);
+						}
+						// remove the old one
+						model.remove((BioPAXElement) range);
+						
+						if(log.isDebugEnabled())
+							log.debug("merge(pathwayModel): replaced - "
+								+ oldId + " (" +  range + "; " 
+								+ ((UtilityClass) range).getModelInterface().getSimpleName() + ")"
+								+ " with " + newId + " (" +  replacement + "); for property: " + editor.getProperty()
+								+ " of bean: " + domain.getRDFId() + " (" + domain + "; " 
+								+ domain.getModelInterface().getSimpleName() + ")");
 					}
 				}
 			}
+		};
+		
+		if(log.isInfoEnabled())
+			log.info("merge(pathwayModel): updating UtilityClass range object properties...");
+		EditorMap em = SimpleEditorMap.get(pathwayModel.getLevel());
+		Traverser traverser = new Traverser(em, visitor);
+		for (BioPAXElement bpe: new HashSet<BioPAXElement>(pathwayModel.getObjects())) {	
+			traverser.traverse(bpe, pathwayModel);
 		}
 
 		// auto-fix object properties and adds lost children
-		pathwayModel.repair();
+		// - not required when merging into PaxtoolsDAO persistent model
+		// (hibernate will get to all child elements anyway)
+		if(pcDAO instanceof ModelImpl)  {
+			if(log.isInfoEnabled())
+				log.info("merge(pathwayModel): resolving child elements (adding to the model)...");
+			pathwayModel.repair();
+		}
 		
-		// goodbye dangling utility classes
-		// (this should also prevent the hibernate's duplicate PK exceptions...)
-		modelUtils.removeObjectsIfDangling(UtilityClass.class);
-		
-		// cut from external objects, recover inverse properties -
-		//pathwayModel = modelUtils.writeRead();
+		// find and remove dangling util. elements, -
+		// those left after their parent has been replaced
+		// (e.g., old ChemicalStructure, Xref, etc..)
+		if(log.isInfoEnabled())
+			log.info("merge(pathwayModel): cleaning up (to remove dangling utility objects)...");
+		ModelUtils mu = new ModelUtils(pathwayModel);
+		mu.removeObjectsIfDangling(UtilityClass.class);
 
+		if(log.isInfoEnabled())
+			log.info("merge(pathwayModel): persisting...");
+		
 		// finally, merge into the global (persistent) model;
 		pcDAO.merge(pathwayModel);
 		
-		if(log.isInfoEnabled()) {
-			log.info("merge(Model pathwayModel) complete, exiting...");
-		}
+		if(log.isInfoEnabled())
+			log.info("merge(pathwayModel): merge is complete, exiting...");
 	}
 
 	
+	private UtilityClass getFromWarehouse(UtilityClass bpe) {
+		UtilityClass replacement = null;
+		
+		if (bpe instanceof ProteinReference) {
+			replacement = processProteinReference((ProteinReference) bpe);
+		} 
+		else if (bpe instanceof ControlledVocabulary) { 
+			replacement = processControlledVocabulary((ControlledVocabulary) bpe);
+		}
+		else if (bpe instanceof SmallMoleculeReference) {
+			replacement = processSmallMoleculeReference((SmallMoleculeReference)bpe);
+		}
+		
+		if(replacement != null)
+			replacement.addComment(CPathSettings.CPATH2_GENERATED_COMMENT);
+		
+		return replacement;
+	}
+
 	private ProteinReference processProteinReference(ProteinReference bpe) 
 	{
 		// find specific subclass
@@ -333,9 +342,11 @@ public class MergerImpl implements Merger {
 					}
 				}
 			}
-			
-			
 		}
+		
+		// a quick fix, saving/query time optimization
+		if(toReturn != null)
+			toReturn.setSequence(null);
 		
 		return toReturn;
 	}
@@ -449,16 +460,6 @@ public class MergerImpl implements Merger {
 		// "detach" the model by export to/import from owl/xml
 		ModelUtils modelUtils = new ModelUtils(premergePaxtoolsDAO);
 		return modelUtils.writeRead();
-		
-		/* the following used to do the same as above two lines...
-		// get the complete model from the pre-merge db!
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		premergePaxtoolsDAO.exportModel(outputStream);
-		InputStream inputStream = new BufferedInputStream(
-				new ByteArrayInputStream(outputStream.toByteArray()));
-		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
-		return simpleReader.convertFromOWL(inputStream);
-		*/
 	}
 
 	
@@ -470,67 +471,6 @@ public class MergerImpl implements Merger {
 				: (T) model.getByID(urn) ;	
 	}
 
-	
-	@Deprecated
-	private void processBioPAXElementSource(final Metadata metadata, final Model model) {
-	
-		// some sanity checking
-		if (metadata == null) {
-			if (log.isInfoEnabled()) {
-				log.info("processBioPAXElementSource(), metadata is null!");
-				return;
-			}
-		}
-
-		// get tax id
-		String taxId = getTaxID(model);
-		if (taxId == null) {
-			if (log.isInfoEnabled()) {
-				log.info("processBioPAXElementSource(), cannot find taxID!");
-				return;
-			}
-		}
-		
-		// iterate over all Entity 
-		for (Entity entity : (Set<Entity>)model.getObjects(Entity.class)) {
-			// we explicitly set props to avoid IdentifierGenerationException
-			BioPAXElementSource bes = new BioPAXElementSource();
-			bes.setRDFId(entity.getRDFId());
-			bes.setTaxId(taxId);
-			bes.setProviderId(metadata.getIdentifier());
-			metadataDAO.importBioPAXElementSource(bes);
-		}
-	}
-	
-	/*
-	 * Given a paxtools model for an entire owl file
-	 * returns the tax id for the organism.  This method 
-	 * assumes that at least one pathway in model is annotated
-	 * with a biosource (although all should be).  It also assumes
-	 * that all pathways share the the same biosource.  With that in 
-	 * mind, it returns the first tax id encountered while iterating 
-	 * over each pathways biosource, else returns null.
-	 * 
-	 * @param model Model
-	 * @return String
-	 */
-	private String getTaxID(final Model model) {
-
-		for (Pathway pathway : model.getObjects(Pathway.class)) {
-			BioSource bioSource = pathway.getOrganism();
-			if (bioSource != null) {
-				for (Xref xref : bioSource.getXref()) {
-					if (xref instanceof UnificationXref) {
-						if (xref.getDb().contains("taxonomy")) {
-							return xref.getId();
-						}
-					}
-				}
-			}
-		}
-		
-		return null;
-	}
 	
 	public String getIdentifier() {
 		return identifier;

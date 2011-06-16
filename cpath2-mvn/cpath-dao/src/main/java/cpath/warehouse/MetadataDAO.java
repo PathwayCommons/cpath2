@@ -3,7 +3,6 @@ package cpath.warehouse;
 // imports
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
-import cpath.warehouse.beans.BioPAXElementSource;
 
 import java.util.Collection;
 
@@ -76,35 +75,5 @@ public interface MetadataDAO {
      * @return PathwayData
      */
     PathwayData getPathwayData(final Integer pathway_id);
-    
-    /**
-     * Persists the BioPAXElementSource.
-     * 
-     * @param biopaxElementSource
-     */
-    void importBioPAXElementSource(final BioPAXElementSource biopaxElementSource);
-    
-    /**
-     * This method returns a BioPAXElementSource object by the giving RDF id.
-     * 
-     * @param rdfId String
-     * @return BioPAXElementSource
-     */
-    BioPAXElementSource getBioPAXElementSourceByRDFId(final String rdfId);
-    
-    /**
-     * This method returns a collection of BioPAXElementSource object by the given tax id.
-     * 
-     * @param taxId String
-     * @return Collection<BioPAXElementSource>
-     */
-    Collection<BioPAXElementSource> getBioPAXElementSourceByTaxId(final String taxId);
-    
-    /**
-     * This method returns a collection of BioPAXElementSource object by the given provider id.
-     * 
-     * @param providerId String
-     * @return Collection<BioPAXElementSource>
-     */
-    Collection<BioPAXElementSource> getBioPAXElementSourceByProviderId(final String providerId);
+
 }

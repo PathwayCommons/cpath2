@@ -31,19 +31,20 @@ public class BaseConverterImpl implements Converter {
 		this.model = model;
 	}
 	
+	public Model getModel() { return model; }
+	
 	/**
 	 * (non-Javadoc>
 	 * @see cpath.converter.Converter#convert(java.io.InputStream)
 	 */
 	public void convert(final InputStream is) {}
 	
-	protected <T extends BioPAXElement> T getById(String urn, Class<T> type) 
-    {
-            T bpe = (T) model.getByID(urn);
-            if(bpe != null && model instanceof PaxtoolsDAO) {
-                    // initialize before finally detaching it
-                    ((PaxtoolsDAO) model).initialize(bpe);
-            }
-            return bpe;
-    }
+	protected <T extends BioPAXElement> T getById(String urn, Class<T> type) {
+		T bpe = (T) model.getByID(urn);
+		if (bpe != null && model instanceof PaxtoolsDAO) {
+			// initialize before finally detaching it
+			((PaxtoolsDAO) model).initialize(bpe);
+		}
+		return bpe;
+	}
 }

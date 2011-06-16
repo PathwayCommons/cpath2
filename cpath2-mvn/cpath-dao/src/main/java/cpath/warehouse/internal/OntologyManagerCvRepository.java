@@ -209,7 +209,8 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 			OntologyTermI term = findTermByAccession(acc); // acc. is globally unique in OntologyManager!..
 			return term;
 		} else {
-			log.error("Cannot Decode not a Controlled Vocabulary's URI : " + urn);
+			if(log.isDebugEnabled())
+				log.debug("Cannot Decode not a Controlled Vocabulary's URI : " + urn);
 			return null;
 		}
 	}

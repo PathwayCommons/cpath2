@@ -223,8 +223,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		merge(m);
 	}
 
-	
-	@Transactional(propagation=Propagation.NEVER)
+	 
+	//@Transactional(propagation=Propagation.REQUIRED)
+	// - disabled; - want a separate transaction for each
+	// merge(bpe call)
 	@Override
 	public void merge(final Model model)
 	{
@@ -260,59 +262,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 	}
 	
-	
-//	/**
-//	 * TODO discuss this alternative (it would require refactoring of converters and junit tests)
-//	 * Integrates a new pathway/interaction model 
-//	 * into the BioPAX main model (databases)
-//	 * 
-//	 * It starts merging from pathways or interactions only;
-//	 * so, to add/merge a single physical entity or utility class
-//	 * (with its children), one should use {@link #merge(BioPAXElement)}
-//	 * instead! This also allows to skip dangling child elements sometimes
-//	 * (it can still, e.g., share an xref with other elements, which, 
-//	 * due to ORM cascades, leads to being persisted as well).
-//	 * 
-//	 */
-//	@Transactional(propagation=Propagation.NEVER)
-//	@Override
-//	public void merge(final Model model)
-//	{
-//		/* 
-//		 * Level3 property/propertyOf ORM mapping and getters/setters 
-//		 * are to be properly implemented for this to work!
-//		 * Persistence annotations must move to new setter/getter pair 
-//		 * that do NOT call inverse prop. 'add' methods in the setter.
-//		 * 
-//		 * Using of SimpleMerger would be unsafe, and, probably, is not required :) 
-//		 * Hibernate should handle RDFId-based, cascading merging well...
-//		 */
-//		Set<Process> processes = model.getObjects(Process.class);
-//		if(model != null && !processes.isEmpty()) {
-//			if(log.isInfoEnabled())
-//				log.info("Persisting a BioPAX Model");	
-//			for (BioPAXElement bpe : processes) {	
-//				if (log.isInfoEnabled()) {
-//					log.info("Merging (root) BioPAX element: " 
-//							 + bpe + " - " 
-//							 + bpe.getModelInterface().getSimpleName());
-//				}
-//				merge(bpe); // there are CASCADE annotations!..
-//			}
-//		} else {
-//			throw new BioPaxIOException("Skip saving the model " 
-//				+ "which does not have any interactions " 
-//				+ "or pathways (or empty/null)! Use merge(BioPAXElement) instead.");	
-//		}
-//	}
-
-	
 	/**
 	 * Saves or merges the element 
 	 * (use when it's updated or unsure if saved ever before...)
 	 * 
 	 */
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional(propagation = Propagation.REQUIRED)
 	public void merge(BioPAXElement aBioPAXElement) {
 		String rdfId = aBioPAXElement.getRDFId();
 		if (!level.hasElement(aBioPAXElement)) {
@@ -586,7 +541,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	{
 		if(!list.contains(ent) && passFilters(ent, filterByType, extraFilters))
 		{
-			initialize(ent); //important (incl. how it's done)!
 			if(actualHit != null && !ent.equals(actualHit)) {
 				if(CPathSettings.isDebug()) {
 					ent.getAnnotations().put("score", actualHit.getAnnotations().get("score"));
@@ -692,9 +646,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	/* (non-Javadoc)
 	 * @see org.biopax.paxtools.model.Model#remove(org.biopax.paxtools.model.BioPAXElement)
 	 */
-
 	@Override
-	@Transactional(propagation=Propagation.MANDATORY)
+	@Transactional(propagation=Propagation.REQUIRED)
 	public void remove(BioPAXElement aBioPAXElement)
 	{
 		BioPAXElement bpe = getByID(aBioPAXElement.getRDFId());
@@ -703,7 +656,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	@Override
-	//@Transactional(propagation=Propagation.REQUIRED)
 	public <T extends BioPAXElement> T addNew(Class<T> type, String id)
 	{
 		T bpe = factory.create(type, id);
@@ -713,7 +665,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	@Override
-	//@Transactional(propagation=Propagation.REQUIRED)
+	@Transactional(readOnly=true)
 	public boolean contains(BioPAXElement bpe)
 	{
 		return getByID(bpe.getRDFId()) != null;
@@ -721,7 +673,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	@Override
-	//@Transactional(propagation=Propagation.REQUIRED)
+	@Transactional(readOnly=true)
 	public boolean containsID(String id)
 	{
 		return getByID(id) != null;
@@ -758,7 +710,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 
 	@Override
-	//@Transactional(propagation=Propagation.REQUIRED)
 	public Set<BioPAXElement> getObjects()
 	{
 		return getObjects(BioPAXElement.class);
@@ -849,7 +800,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * 
 	 */
 	@Override
-	//@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	public Model getValidSubModel(Collection<String> ids) {
 		// run the analysis (in a new transaction)
 		return runAnalysis(this.getTheseElements, ids.toArray());
