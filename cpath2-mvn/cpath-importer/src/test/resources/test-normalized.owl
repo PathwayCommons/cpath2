@@ -313,36 +313,21 @@
 	  <bp:cellularLocation rdf:resource="urn:miriam:obo.go:GO%3A0005737" />
 	  <bp:entityReference rdf:resource="urn:miriam:uniprot:P16104" />
 	  <bp:comment rdf:datatype="xsd:string">Reactome DB_ID: 56151</bp:comment>
-	  <bp:xref rdf:resource="#UnificationXref29695" />
-	  <bp:xref rdf:resource="#UnificationXref29696" />
+	  <bp:xref rdf:resource="urn:biopax:UnificationXref:REACTOME_REACT_3939" />
 	  <bp:dataSource rdf:resource="urn:miriam:reactome" />
 	</bp:Protein>
-	
 	<bp:ProteinReference rdf:about="urn:miriam:uniprot:P16104">
- 	  <bp:entityFeature rdf:resource="http://www.reactome.org/biopax/48887#ModificationFeature1066" />
-	  <bp:name rdf:datatype = "xsd:string">UniProt:P16104 H2AFX</bp:name>
-	  <bp:name rdf:datatype = "xsd:string">H2AFX</bp:name>
 	  <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_P16104" />
 	  <bp:displayName rdf:datatype = "xsd:string">H2AX</bp:displayName>
-	  <bp:comment rdf:datatype = "xsd:string">DEVELOPMENTAL STAGE Synthesized in G1 as well as in S-phase.DOMAIN The [ST]-Q motif constitutes a recognition sequence for kinases from the PI3/PI4-kinase family.PTM Monoubiquitination of Lys-120 (H2AXK119ub) by RING1 and RNF2/RING2 complex gives a specific tag for epigenetic transcriptional repression. Following DNA double-strand breaks (DSBs), it is ubiquitinated through &apos;Lys-63&apos; linkage of ubiquitin moieties by the E2 ligase UBE2N and the E3 ligases RNF8 and RNF168, leading to the recruitment of repair proteins to sites of DNA damage. Monoubiquitination and ionizing radiation-induced &apos;Lys-63&apos;-linked ubiquitination are distinct events.SIMILARITY Belongs to the histone H2A family.</bp:comment>
-	  <bp:organism rdf:resource="urn:miriam:taxonomy:9606" />
 	</bp:ProteinReference>
-
-
-	<bp:UnificationXref rdf:ID="UnificationXref29694">
+	<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UNIPROT_P16104">
 	  <bp:db rdf:datatype="xsd:string">UniProt</bp:db>
 	  <bp:id rdf:datatype="xsd:string">P16104</bp:id>
 	</bp:UnificationXref>
-	<bp:UnificationXref rdf:ID="UnificationXref29695">
-	  <bp:db rdf:datatype="xsd:string">Reactome</bp:db>
-	  <bp:id rdf:datatype="xsd:string">56151</bp:id>
-	  <bp:comment rdf:datatype="xsd:string">Database identifier. Use this URL to connect to the web page of this instance in Reactome: http://www.reactome.org/cgi-bin/eventbrowser?DB=gk_current&amp;ID=56151</bp:comment>
-	</bp:UnificationXref>
-	<bp:UnificationXref rdf:ID="UnificationXref29696">
+	<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:REACTOME_REACT_3939">
 	  <bp:db rdf:datatype="xsd:string">Reactome</bp:db>
 	  <bp:id rdf:datatype="xsd:string">REACT_3939</bp:id>
 	  <bp:idVersion rdf:datatype="xsd:string">1</bp:idVersion>
-	  <bp:comment rdf:datatype="xsd:string">Reactome stable identifier. Use this URL to connect to the web page of this instance in Reactome: http://www.reactome.org/cgi-bin/eventbrowser_st_id?ST_ID=REACT_3939.1</bp:comment>
 	</bp:UnificationXref>
 
 	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:TAXONOMY_562">

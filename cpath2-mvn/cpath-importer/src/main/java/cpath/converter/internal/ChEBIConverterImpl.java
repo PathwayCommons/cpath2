@@ -10,7 +10,9 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.controller.Fetcher;
 import org.biopax.paxtools.controller.ModelUtils;
+import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.utils.Normalizer;
@@ -248,7 +250,10 @@ public class ChEBIConverterImpl extends BaseConverterImpl
 		SmallMoleculeReference smr = buildSmallMoleculeReference(entryBuffer);
 		if (smr != null) {
             if(model instanceof PaxtoolsDAO) {
-            	((PaxtoolsDAO) model).merge(smr);
+            	Fetcher fetcher = new Fetcher(SimpleEditorMap.get(model.getLevel()));
+            	Model smrModel = model.getLevel().getDefaultFactory().createModel();
+            	fetcher.fetch(smr, smrModel);
+            	((PaxtoolsDAO) model).merge(smrModel);
             }
             else {
             	// don't merge now (later - all at once)

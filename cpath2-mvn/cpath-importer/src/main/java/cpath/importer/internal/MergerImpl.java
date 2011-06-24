@@ -41,7 +41,6 @@ import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.paxtools.controller.*;
-import org.biopax.paxtools.impl.ModelImpl;
 import org.biopax.paxtools.io.*;
 
 import org.springframework.context.ApplicationContext;
@@ -70,6 +69,7 @@ public class MergerImpl implements Merger {
 	private String version;
 	private boolean useDb;
 	private boolean force;
+	private SimpleMerger simpleMerger;
 
 	/**
 	 * Constructor.
@@ -97,6 +97,8 @@ public class MergerImpl implements Merger {
 		
 		this.useDb = false;
 		this.force = false;
+		
+		this.simpleMerger = new SimpleMerger(SimpleEditorMap.get(pcDAO.getLevel()));
 	}
 
 	/**
@@ -119,6 +121,7 @@ public class MergerImpl implements Merger {
 		this.moleculesDAO = moleculesDAO;
 		this.proteinsDAO = proteinsDAO;
 		this.cvRepository = cvRepository;
+		this.simpleMerger = new SimpleMerger(SimpleEditorMap.get(pcDAO.getLevel()));
 	}
 	
 	/*
@@ -146,7 +149,7 @@ public class MergerImpl implements Merger {
 				continue;
 
 			if(log.isInfoEnabled()) 
-				log.info("Merging pathway data of " 
+				log.info("merge(): reading (normalized) pathway data - " 
 					+ metadata + ", " + metadata.getName());
 			
 			if(useDb) {
@@ -210,100 +213,118 @@ public class MergerImpl implements Merger {
 	@Override
 	public void merge(Model pathwayModel) 
 	{	
-		// First, find/collect matching elements from the warehouse
+		// build a merged in-memory model
+		final Model target = pathwayModel.getLevel().getDefaultFactory().createModel();
+		ModelUtils mu = new ModelUtils(target);
+		
+		// find/collect matching elements from the warehouse
 		if(log.isInfoEnabled())
 			log.info("merge(pathwayModel): looking for matching utility class elements in the warehouse...");
+	
+		// a map to relate utility class objects to ones from the warehouse
 		final Map<UtilityClass, UtilityClass> replacements = new HashMap<UtilityClass, UtilityClass>();
-		for (UtilityClass uce: new HashSet<UtilityClass>(pathwayModel.getObjects(UtilityClass.class))) {
-			UtilityClass replacement = getFromWarehouse(uce);
+		for (UtilityClass u: new HashSet<UtilityClass>(pathwayModel.getObjects(UtilityClass.class))) 
+		{
+			//find the replacement in the warehouse or target model
+			// (it also adds the replacement elements to the target model)
+			UtilityClass replacement = getFromWarehouse(u, target);
 			if(replacement != null) {
-				replacements.put(uce, replacement);
+				replacements.put(u, replacement);
 			}
-		}
-		
-		// Second, replace utility class object property values if
-		// matching element (the replacement) was found in the warehouse
-		Visitor visitor = new Visitor() {
-			@Override
-			public void visit(BioPAXElement domain, Object range, Model model,
-					PropertyEditor editor) 
-			{
-				if (range instanceof UtilityClass && range != null) {
-					UtilityClass replacement = replacements.get(range);
-					if (replacement != null) {
-						String oldId = ((UtilityClass)range).getRDFId();
-						String newId = replacement.getRDFId(); // (can be the same, it does not matter)
-						editor.setValueToBean(replacement, domain);
-						if (editor.isMultipleCardinality()) {
-							editor.removeValueFromBean(range, domain);
-						}
-						// remove the old one
-						model.remove((BioPAXElement) range);
-						
-						if(log.isDebugEnabled())
-							log.debug("merge(pathwayModel): replaced - "
-								+ oldId + " (" +  range + "; " 
-								+ ((UtilityClass) range).getModelInterface().getSimpleName() + ")"
-								+ " with " + newId + " (" +  replacement + "); for property: " + editor.getProperty()
-								+ " of bean: " + domain.getRDFId() + " (" + domain + "; " 
-								+ domain.getModelInterface().getSimpleName() + ")");
-					}
+			
+			// remove entity features (cause hibernate exceptions; can be recovered after all)
+			if (u instanceof EntityReference) {
+				EntityReference er = (EntityReference) u;
+				// loop, to ensure entityFeatureOf is also cleared (cannot simple set null or empty set!)
+				for (EntityFeature ef : new HashSet<EntityFeature>(er.getEntityFeature())) {
+					er.removeEntityFeature(ef);
+					assert ef.getEntityFeatureOf() == null;
 				}
 			}
-		};
-		
-		if(log.isInfoEnabled())
-			log.info("merge(pathwayModel): updating UtilityClass range object properties...");
-		EditorMap em = SimpleEditorMap.get(pathwayModel.getLevel());
-		Traverser traverser = new Traverser(em, visitor);
-		for (BioPAXElement bpe: new HashSet<BioPAXElement>(pathwayModel.getObjects())) {	
-			traverser.traverse(bpe, pathwayModel);
-		}
-
-		// auto-fix object properties and adds lost children
-		// - not required when merging into PaxtoolsDAO persistent model
-		// (hibernate will get to all child elements anyway)
-		if(pcDAO instanceof ModelImpl)  {
-			if(log.isInfoEnabled())
-				log.info("merge(pathwayModel): resolving child elements (adding to the model)...");
-			pathwayModel.repair();
 		}
 		
-		// find and remove dangling util. elements, -
-		// those left after their parent has been replaced
-		// (e.g., old ChemicalStructure, Xref, etc..)
 		if(log.isInfoEnabled())
-			log.info("merge(pathwayModel): cleaning up (to remove dangling utility objects)...");
-		ModelUtils mu = new ModelUtils(pathwayModel);
-		mu.removeObjectsIfDangling(UtilityClass.class);
-
+			log.info("merge(pathwayModel): updating object property values in the pathwayModel...");
+		
+		// replace utility class object property values if replacements were found
+		ModelUtils pathwayModelUtils = new ModelUtils(pathwayModel);
+		pathwayModelUtils.replace(replacements);
+		pathwayModelUtils.removeObjectsIfDangling(UtilityClass.class);
+		
+		// merge into target (in-memory)
+		if(log.isInfoEnabled())
+			log.info("merge(pathwayModel): merging the updated pathwayModel " +
+				"into the (in-memory) target model, which already contains " +
+				"the replacement (warehouse) objects...");
+		target.merge(pathwayModel);
+		pathwayModel = null; //trash
+		
+// not required anymore
+//		// find and remove dangling util. elements, if any, after their parents 
+//		// have been replaced (e.g., old ChemicalStructure, Xref, etc..)
+//		if(log.isInfoEnabled())
+//			log.info("merge(pathwayModel): cleaning up (to remove dangling utility objects)...");
+//		mu.removeObjectsIfDangling(UtilityClass.class);
+		
+//		//sanity checks
+//		if(log.isInfoEnabled())
+//			log.info("merge(pathwayModel): checking...");
+//		for(BioPAXElement e : replacements.keySet()) {
+//			assert !target.contains(e) 
+//				: "old element "+ e +"is still in the model!";
+//			BioPAXElement r = replacements.get(e);
+//			assert target.containsID(r.getRDFId()) 
+//				: "replacement element ID "+ r.getRDFId() +" is not in the model!";
+//			assert target.contains(r) 
+//				: "replacement element "+ r +" is not in the model!";
+//			if(e instanceof EntityReference)
+//				assert ((EntityReference) e).getEntityFeature().isEmpty()
+//					: e.getRDFId() + " - entityFeature is still not empty!";
+//		}
+//		for(EntityFeature ef : target.getObjects(EntityFeature.class)) {
+//			assert ef.getEntityFeatureOf() == null
+//			: ef.getRDFId() + " - entityFeatureOf still links to "
+//				+ ef.getEntityFeatureOf().getRDFId();
+//		}
+		
+		
 		if(log.isInfoEnabled())
 			log.info("merge(pathwayModel): persisting...");
-		
 		// finally, merge into the global (persistent) model;
-		pcDAO.merge(pathwayModel);
+		pcDAO.merge(target);
 		
 		if(log.isInfoEnabled())
 			log.info("merge(pathwayModel): merge is complete, exiting...");
 	}
 
 	
-	private UtilityClass getFromWarehouse(UtilityClass bpe) {
+	private UtilityClass getFromWarehouse(UtilityClass bpe, Model cache) {
 		UtilityClass replacement = null;
-		
+
 		if (bpe instanceof ProteinReference) {
 			replacement = processProteinReference((ProteinReference) bpe);
-		} 
-		else if (bpe instanceof ControlledVocabulary) { 
+		} else if (bpe instanceof ControlledVocabulary) {
 			replacement = processControlledVocabulary((ControlledVocabulary) bpe);
+		} else if (bpe instanceof SmallMoleculeReference) {
+			replacement = processSmallMoleculeReference((SmallMoleculeReference) bpe);
 		}
-		else if (bpe instanceof SmallMoleculeReference) {
-			replacement = processSmallMoleculeReference((SmallMoleculeReference)bpe);
+
+		if (replacement != null) {
+			String id = replacement.getRDFId();
+			// searching the cache, because the warehouse DAO builds a new java object every time
+			// (for the same query, we actually want the same instance); multiple objects with the same ID
+			// will cause exceptions during the merge to the DB)
+			if (!cache.containsID(id)) {
+//				cache.add(replacement);
+				simpleMerger.merge(cache, replacement);
+			} else {
+				if(log.isDebugEnabled())
+					log.debug("getFromWarehouse(bpe, cache): cache hit: " + id);
+				// get from the cache model
+				replacement = (UtilityClass) cache.getByID(id);
+			}
 		}
-		
-		if(replacement != null)
-			replacement.addComment(CPathSettings.CPATH2_GENERATED_COMMENT);
-		
+
 		return replacement;
 	}
 

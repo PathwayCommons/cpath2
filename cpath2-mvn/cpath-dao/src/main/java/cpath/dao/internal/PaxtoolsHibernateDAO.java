@@ -47,7 +47,6 @@ import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.EntityReference;
 import org.biopax.paxtools.model.level3.Named;
 import org.biopax.paxtools.model.level3.PhysicalEntity;
-//import org.biopax.paxtools.model.level3.Process;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
 import org.biopax.paxtools.model.level3.RelationshipXref;
@@ -55,7 +54,6 @@ import org.biopax.paxtools.model.level3.SequenceEntityReference;
 import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
-//import org.biopax.paxtools.util.BioPaxIOException;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
@@ -90,6 +88,8 @@ import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
 public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 {
 	private static final long serialVersionUID = 1L;
+	
+	private final int BATCH_SIZE = 20;
 
 	public final static String[] ALL_FIELDS =
 		{
@@ -189,7 +189,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		*/
 		
 		// manually re-index
-		final int BATCH_SIZE = 100;
 		fullTextSession.setFlushMode(FlushMode.MANUAL);
 		fullTextSession.setCacheMode(CacheMode.IGNORE);
 		//Transaction transaction = fullTextSession.beginTransaction();
@@ -204,6 +203,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		    if (index % BATCH_SIZE == 0) {
 		        fullTextSession.flushToIndexes(); //apply changes to indexes
 		        fullTextSession.clear(); //free memory since the queue is processed
+		        if(log.isDebugEnabled())
+					log.debug("Indexed " + index);
 		    }
 		}
 		//transaction.commit();
@@ -224,9 +225,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 
 	 
-	//@Transactional(propagation=Propagation.REQUIRED)
-	// - disabled; - want a separate transaction for each
-	// merge(bpe call)
+	// non @Transactional here 
 	@Override
 	public void merge(final Model model)
 	{
@@ -237,30 +236,60 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		 * that do NOT call inverse prop. 'add' methods in the setter.
 		 */
 		if(model != null && !model.getObjects().isEmpty()) {
-			/* 
-			 * Using SimpleMerger would be unsafe and, probably, is not required :) 
-			 * Hibernate should handle RDFId-based, cascading merging well...
-			 */
-			// start from "top" elements only :)
-			Set<BioPAXElement> sourceElements = new ModelUtils(model)
-				.getRootElements(BioPAXElement.class);
+			// First, insert new elements using a stateless session!
 			if(log.isDebugEnabled())
-				log.debug("Persisting a BioPAX Model"
-						+ " that has " + sourceElements.size() 
-						+ " 'root' elements (of total: "
-						+ model.getObjects().size()
-				);
-			
-			for (BioPAXElement bpe : sourceElements) {
-				if (log.isInfoEnabled()) {
-					log.info("Merging/Persisting (root) BioPAX element: " 
-							 + bpe + " - " 
-							 + bpe.getModelInterface().getSimpleName());
+				log.debug("merge(model): inserting BioPAX elements (stateless)...");
+			StatelessSession stls = getSessionFactory().openStatelessSession();
+			int i = 0;
+			Transaction tx = stls.beginTransaction();
+			for (BioPAXElement bpe : model.getObjects()) {
+				if(stls.get(bpe.getClass(), bpe.getRDFId()) == null) {
+					stls.insert(bpe);
+					i++;
 				}
-				merge(bpe); // there are CASCADE annotations!..
+				//else stls.update(bpe); // TODO ? may be not required at all (unless we want overwrite)
 			}
+			tx.commit();
+			stls.close();
+			
+			if (log.isDebugEnabled()) {
+				log.debug("merge(model): inserted " + i + " objects");
+			}
+			
+			//run batch update in a separate transaction;
+			//this saves object relationships and collections
+			update(model);
 		}
 	}
+
+	
+	@Transactional(propagation=Propagation.REQUIRED)
+	public void update(final Model model) 
+	{	
+		Session ses = session();
+		
+		//Set<BioPAXElement> sourceElements = new ModelUtils(model).getRootElements(BioPAXElement.class);
+		//for (BioPAXElement bpe : sourceElements) { // works when cascades are enabled
+		int i = 0;
+		for (BioPAXElement bpe : model.getObjects()) {			
+			// save/update
+			merge(bpe);
+			
+			i++;
+			if(i % BATCH_SIZE == 0) {
+				ses.flush();
+				ses.clear();
+				if (log.isDebugEnabled()) {
+					log.debug("update(model): saved " + i);
+				}
+			}
+		}
+		
+		if (log.isDebugEnabled()) {
+			log.debug("update(model): total merged " + i + " objects");
+		}
+	}
+	
 	
 	/**
 	 * Saves or merges the element 
@@ -270,15 +299,18 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void merge(BioPAXElement aBioPAXElement) {
 		String rdfId = aBioPAXElement.getRDFId();
-		if (!level.hasElement(aBioPAXElement)) {
-			throw new IllegalBioPAXArgumentException(
-					"Given object is of wrong level");
-		} else if (rdfId == null) {
+//		if (!level.hasElement(aBioPAXElement)) {
+//			throw new IllegalBioPAXArgumentException(
+//					"Given object is of wrong level");
+//		} else 
+		if (rdfId == null) {
 			throw new IllegalBioPAXArgumentException(
 					"null ID: every object must have an RDF ID");
 		} else {
 			if (log.isDebugEnabled())
-				log.debug("updating/merging " + rdfId);
+				log.debug("merge(aBioPAXElement): merging " + rdfId + " " 
+					+ aBioPAXElement.getModelInterface().getSimpleName());
+			
 			// - many elements are affected, because of cascades...
 			session().merge(aBioPAXElement);
 		}

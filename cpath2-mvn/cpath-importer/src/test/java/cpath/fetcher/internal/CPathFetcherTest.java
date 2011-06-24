@@ -16,6 +16,7 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.beans.Metadata.TYPE;
 
+//@Ignore
 public class CPathFetcherTest {
 	private static Log log = LogFactory.getLog(CPathFetcherTest.class);
 	
@@ -128,7 +129,7 @@ public class CPathFetcherTest {
 		assertTrue(owl.contains("<bp:Protein"));
 		SimpleIOHandler reader = new SimpleIOHandler(); //level auto-detect
 		reader.mergeDuplicates(true);
-		Model m = reader.convertFromOWL(new ByteArrayInputStream(owl.getBytes()));
+		Model m = reader.convertFromOWL(new ByteArrayInputStream(owl.getBytes("UTF-8")));
 		assertFalse(m.getObjects().isEmpty());
 	}
 	

@@ -34,6 +34,7 @@
        	    <prop key="hibernate.connection.driver_class">${driver}</prop>
 			<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_test</prop>
 			<prop key="hibernate.hbm2ddl.auto"></prop>
+			<prop key="hibernate.search.indexing_strategy">manual</prop>
 		</util:properties>
 		</property>
         <property name="annotatedClasses">

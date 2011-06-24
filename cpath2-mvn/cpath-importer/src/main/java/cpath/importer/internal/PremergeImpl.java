@@ -384,7 +384,8 @@ public class PremergeImpl implements Premerge {
 				"Failed to check/normalize " + title, e);
 			*/ 
 			//e.printStackTrace();
-			log.error("pipeline(), Failed to process " + title + " - " + e);
+			log.error("pipeline(), Failed to process " + title, e);
+			e.printStackTrace();
 			return null;
 		}
 		

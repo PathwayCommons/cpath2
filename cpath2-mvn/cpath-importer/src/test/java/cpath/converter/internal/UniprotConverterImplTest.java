@@ -41,6 +41,7 @@ import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ProteinReference;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import cpath.converter.Converter;
@@ -49,6 +50,7 @@ import cpath.converter.Converter;
  * @author rodche
  *
  */
+//@Ignore
 public class UniprotConverterImplTest {
 
 	/**
@@ -66,7 +68,7 @@ public class UniprotConverterImplTest {
 		converter.convert(zis);
 		
 		Set<ProteinReference> proteinReferences = model.getObjects(ProteinReference.class);
-		assertTrue(proteinReferences.size()==7);
+		assertEquals(9, proteinReferences.size());
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
 		
 		//TODO add more checks that the conversion went ok..

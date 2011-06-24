@@ -55,6 +55,7 @@ import static org.junit.Assert.*;
  * 
  * @see PaxtoolsHibernateDAOTest
  */
+//@Ignore
 public class WarehousePaxtoolsHibernateDAOTest {
 
     static Log log = LogFactory.getLog(WarehousePaxtoolsHibernateDAOTest.class);
@@ -84,6 +85,7 @@ public class WarehousePaxtoolsHibernateDAOTest {
 		}
 		
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
+		((PaxtoolsDAO)whpcDAO).createIndex();
     }
     
     public void testIsWhDAOInstance() {

@@ -32,10 +32,7 @@ import static org.junit.Assert.*;
 import java.io.*;
 import java.util.zip.GZIPInputStream;
 
-import org.biopax.paxtools.io.*;
-import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.level3.ProteinReference;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import cpath.cleaner.Cleaner;
@@ -43,6 +40,7 @@ import cpath.cleaner.Cleaner;
 /**
  * Test UniProt data cleaner.
  */
+//@Ignore
 public class UniProtCleanerImplTest {
 
     // some statics of accessions before cleaning
