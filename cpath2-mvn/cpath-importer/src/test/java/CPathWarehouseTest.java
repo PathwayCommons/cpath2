@@ -39,6 +39,7 @@ import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -59,6 +60,7 @@ import cpath.warehouse.beans.Metadata.TYPE;
  * @author rodche
  *
  */
+//@Ignore
 public class CPathWarehouseTest {
 
 	static WarehouseDAO molecules;
@@ -104,6 +106,9 @@ public class CPathWarehouseTest {
 		}
 		
 		factory = BioPAXLevel.L3.getDefaultFactory();
+		
+		((PaxtoolsDAO)molecules).createIndex();
+		((PaxtoolsDAO)proteins).createIndex();
 	}
 
 	@Test

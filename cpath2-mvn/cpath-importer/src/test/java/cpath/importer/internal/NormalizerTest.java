@@ -34,6 +34,7 @@ import java.io.*;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.*;
 import org.biopax.validator.utils.Normalizer;
+import org.junit.Ignore;
 import org.junit.Test;
 
 
@@ -43,6 +44,7 @@ import org.junit.Test;
  * 
  * @author rodch
  */
+//@Ignore
 public class NormalizerTest {
 
 	@Test

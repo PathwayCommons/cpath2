@@ -112,12 +112,28 @@ public interface PaxtoolsDAO extends Model, Reindexable {
 
     
     /**
-     * Merges (updates or adds) a BioPAX element to the model.
+     * Merges the source model into this one.
+     * 
+     * @param source a model to merge
+     */
+    void merge(Model source);
+    
+    
+    /**
+     * Merges (adds and updates) a BioPAX element to the model.
      * 
      * @param bpe
      */
     void merge(BioPAXElement bpe);
 
+    
+    /**
+     * Updates
+     * 
+     * @param model
+     */
+    void update(Model model);
+    
     
     /**
      * Executes custom algorithms (or plugins)

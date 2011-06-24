@@ -51,6 +51,7 @@ import static org.junit.Assert.*;
 /**
  * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
  */
+//@Ignore
 public class PaxtoolsHibernateDAOTest {
 
     static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
@@ -80,6 +81,8 @@ public class PaxtoolsHibernateDAOTest {
 		}
 		
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
+		
+		paxtoolsDAO.createIndex();
     }
     
 	

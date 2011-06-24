@@ -3,7 +3,9 @@ package cpath.converter.internal;
 // imports
 import cpath.dao.PaxtoolsDAO;
 
+import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level2.xref;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -95,7 +97,7 @@ public class ChEBIOBOConverterImpl extends BaseConverterImpl {
 				continue;
 			}
 			parentSMR.addMemberEntityReference(childSMR);
-			mergeSMR(parentSMR);
+			merge(parentSMR);
 		}
 
 		// we can also grab relationship (horizontal hierarchical info) 
@@ -104,10 +106,11 @@ public class ChEBIOBOConverterImpl extends BaseConverterImpl {
 			String[] parts = relationship.split(REGEX_GROUP_DELIMITER);
 			RelationshipXref xref = getRelationshipXref(parts[0], parts[1]); 
 			childSMR.addXref(xref);
+			merge(xref);
 		}
 		
 		// merge child back into model
-		mergeSMR(childSMR);
+		merge(childSMR);
 	}
 	
 	/**
@@ -209,18 +212,18 @@ public class ChEBIOBOConverterImpl extends BaseConverterImpl {
 	}
 	
 	/**
-	 * Merges the given SMR back into the model
+	 * Merges the given object into the model
 	 * 
-	 * @param smr SmallMoleculeReference
+	 * @param bpe
 	 */
-	private void mergeSMR(SmallMoleculeReference smr) {
+	private void merge(BioPAXElement bpe) {
 		
 		if (model instanceof PaxtoolsDAO) {
-        	((PaxtoolsDAO)model).merge(smr);
+        	((PaxtoolsDAO)model).merge(bpe);
         }
         else {
         	// make a self-consistent sub-model from the smr
-        	MERGER.merge(model, smr);
+        	MERGER.merge(model, bpe);
         }
 	}
 

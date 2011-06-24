@@ -73,6 +73,7 @@ public class PaxtoolsHibernateDAOMoreTest {
     	// import (not so good) pathway data
 		Resource input = (new DefaultResourceLoader()).getResource("classpath:biopax-level3-test.owl");
 		paxtoolsDAO.importModel(input.getFile());
+		paxtoolsDAO.createIndex();
 		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
 		assertEquals(55, paxtoolsDAO.getObjects().size()); 
 		// there was a bug in paxtools (due to Stoichiometry.hashCode() override)!

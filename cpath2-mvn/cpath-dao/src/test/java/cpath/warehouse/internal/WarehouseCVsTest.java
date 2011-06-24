@@ -35,6 +35,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import org.biopax.paxtools.model.level3.*;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import psidev.ontology_manager.OntologyTermI;
@@ -47,6 +48,7 @@ import psidev.ontology_manager.impl.OntologyTermImpl;
  * @author rodche
  *
  */
+//@Ignore
 public class WarehouseCVsTest {
 
 	static OntologyManagerCvRepository warehouse; // implements cpath.dao.WarehouseDAO	

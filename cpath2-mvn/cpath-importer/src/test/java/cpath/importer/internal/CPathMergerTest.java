@@ -87,7 +87,8 @@ public class CPathMergerTest {
 		pathwayModels = new HashSet<Model>();
 		SimpleIOHandler reader = new SimpleIOHandler();
 		reader.mergeDuplicates(true);
-		Model model = reader.convertFromOWL(resourceLoader
+		Model model;
+		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:test-normalized.owl").getInputStream());
 		if(model == null)
 			fail("Failed to import test data from classpath:test-normalized.owl");
@@ -97,6 +98,14 @@ public class CPathMergerTest {
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:test-normalized-2.owl").getInputStream());
 		pathwayModels.add(model);
+		model = null;
+		model = reader.convertFromOWL(resourceLoader
+			.getResource("classpath:pid_60446.owl").getInputStream());
+		pathwayModels.add(model); //PR P22932 caused the trouble
+		model = null;
+		model = reader.convertFromOWL(resourceLoader
+			.getResource("classpath:pid_6349.owl").getInputStream());
+		pathwayModels.add(model); //Xref for P01118 caused the trouble
 	}
 	
 	
@@ -161,6 +170,23 @@ public class CPathMergerTest {
 			((PaxtoolsDAO) mergedModel).initialize(msmr);
 		}
 		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
+		
+//		for(ProteinReference prf : ((Model)proteinsDAO).getObjects(ProteinReference.class)) {
+//			System.out.println(prf.getRDFId());
+//		}
+		
+		// if the following fails, try to cleanup your java.io.tmpdir...
+		assertTrue(((Model) proteinsDAO).containsID("urn:miriam:uniprot:P13631"));
+		assertFalse(((Model) proteinsDAO).containsID("urn:miriam:uniprot:P22932"));
+		
+		assertTrue(mergedModel.containsID("urn:miriam:uniprot:P13631"));
+		assertFalse(mergedModel.containsID("urn:miriam:uniprot:P22932"));
+		
+		assertTrue(mergedModel.containsID("urn:biopax:UnificationXref:UNIPROT_P01118"));
+		assertFalse(mergedModel.containsID("urn:miriam:uniprot:P01118"));
+//		System.out.println("new xrefOf: " + newXref.getXrefOf().toString());
+		assertTrue(mergedModel.containsID("urn:biopax:UnificationXref:UNIPROT_P01116"));
+		assertTrue(mergedModel.containsID("urn:miriam:uniprot:P01116"));
 	}
 	
 	
@@ -188,7 +214,6 @@ public class CPathMergerTest {
 		reader.mergeDuplicates(true);
 		Model m = reader.convertFromOWL(new FileInputStream(outFilename));
 		assertMerge(m);
-		
 		
 		// now - test pcDAO model directly	
 		ProteinReference pr = (ProteinReference)pcDAO.getByID("urn:miriam:uniprot:P27797");
