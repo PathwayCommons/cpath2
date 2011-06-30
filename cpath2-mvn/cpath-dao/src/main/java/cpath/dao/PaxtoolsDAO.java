@@ -43,7 +43,7 @@ import java.io.OutputStream;
 /**
  * BioPAX data access (both model and repository).
  */
-public interface PaxtoolsDAO extends Model, Reindexable {	
+public interface PaxtoolsDAO extends Model {	
 	
 	/**
 	 * Persists the given model to the db.

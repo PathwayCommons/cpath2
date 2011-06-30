@@ -42,6 +42,7 @@ import static org.junit.Assert.*;
  * @author rodche
  *
  */
+//@Ignore
 public class MetadataHibernateDAOTest {
 
 	/**

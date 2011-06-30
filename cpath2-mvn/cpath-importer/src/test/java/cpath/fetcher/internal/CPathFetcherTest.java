@@ -127,7 +127,7 @@ public class CPathFetcherTest {
 		String owl = pd.getPathwayData();
 		assertTrue(owl != null && owl.length() > 0);
 		assertTrue(owl.contains("<bp:Protein"));
-		SimpleIOHandler reader = new SimpleIOHandler(); //level auto-detect
+		SimpleIOHandler reader = new SimpleIOHandler(BioPAXLevel.L3);
 		reader.mergeDuplicates(true);
 		Model m = reader.convertFromOWL(new ByteArrayInputStream(owl.getBytes("UTF-8")));
 		assertFalse(m.getObjects().isEmpty());

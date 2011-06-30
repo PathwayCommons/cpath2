@@ -251,31 +251,15 @@ public class Admin implements Runnable {
             		// re-build the fulltext index
             		INDEX_TYPE mtype = INDEX_TYPE.valueOf(commandParameters[0]);
             		ApplicationContext ctx = null;
-            		Reindexable dao = null;
             		switch (mtype) {
                     case MOLECULES:
-                       	ctx = new ClassPathXmlApplicationContext(
-                		"classpath:applicationContext-whouseMolecules.xml");
-                       	//ds = (DataServices) ctx.getBean("&cpath2_molecules");
-                       	//ds.dropMoleculesFulltextIndex(); // deletes the index dir!
-                       	dao = (Reindexable) ctx.getBean("moleculesDAO");
-                		dao.createIndex();
+                    	DataServicesFactoryBean.rebuildMoleculesIndex();
                     	break;
                     case PROTEINS:
-                       	ctx = new ClassPathXmlApplicationContext(
-                       	"classpath:applicationContext-whouseProteins.xml");
-                       	//ds = (DataServices) ctx.getBean("&cpath2_proteins");
-                       	//ds.dropProteinsFulltextIndex();
-                       	dao = (Reindexable) ctx.getBean("proteinsDAO");
-                		dao.createIndex();
+                		DataServicesFactoryBean.rebuildProteinsIndex();
                     	break;
                     case MAIN :
-                    	ctx = new ClassPathXmlApplicationContext(
-                			"classpath:applicationContext-cpathDAO.xml");
-                    	//ds = (DataServices) ctx.getBean("&cpath2_main");
-                       	//ds.dropMainFulltextIndex();
-                    	dao = (Reindexable) ctx.getBean("paxtoolsDAO");
-                		dao.createIndex();
+                       	DataServicesFactoryBean.rebuildMainIndex();
                     	break;
             		}
             	}

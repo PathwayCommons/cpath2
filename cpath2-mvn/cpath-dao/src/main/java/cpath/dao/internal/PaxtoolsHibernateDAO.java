@@ -90,6 +90,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	private static final long serialVersionUID = 1L;
 	
 	private final int BATCH_SIZE = 20;
+	private final int BATCH_INDEXING_SIZE = 200;
 
 	public final static String[] ALL_FIELDS =
 		{
@@ -166,51 +167,36 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		return sessionFactory.getCurrentSession();
 	}
 	
-
-	@Override
-	@Transactional(propagation=Propagation.REQUIRED)
-	public void createIndex() {
-		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		if(log.isInfoEnabled())
-			log.info("Begin indexing...");
-		
-		/* - often gets stuck or crashes...
-		try {
-			fullTextSession.createIndexer()
-				.purgeAllOnStart(true)
-				//.batchSizeToLoadObjects( 10 )
-				//.threadsForSubsequentFetching( 4 )
-				//.threadsToLoadObjects( 2 )
-				//.cacheMode(CacheMode.NORMAL) // defaults to CacheMode.IGNORE
-				.startAndWait();
-		} catch (InterruptedException e) {
-			throw new RuntimeException("Index re-build is interrupted.");
-		}
-		*/
-		
-		// manually re-index
-		fullTextSession.setFlushMode(FlushMode.MANUAL);
-		fullTextSession.setCacheMode(CacheMode.IGNORE);
-		//Transaction transaction = fullTextSession.beginTransaction();
-		//Scrollable results will avoid loading too many objects in memory
-		ScrollableResults results = fullTextSession.createCriteria( BioPAXElementImpl.class )
-		    .setFetchSize(BATCH_SIZE)
-		    .scroll( ScrollMode.FORWARD_ONLY );
-		int index = 0;
-		while( results.next() ) {
-		    index++;
-		    fullTextSession.index( results.get(0) ); //index each element
-		    if (index % BATCH_SIZE == 0) {
-		        fullTextSession.flushToIndexes(); //apply changes to indexes
-		        fullTextSession.clear(); //free memory since the queue is processed
-		        if(log.isDebugEnabled())
-					log.debug("Indexed " + index);
-		    }
-		}
-		//transaction.commit();
-		if(log.isInfoEnabled())
-			log.info("Ended indexing.");
-	}
+//	//Now that were able to make MassIndexer work (in a separate class),
+//	//this older interface has been removed (worked reliably but waaay too slow!)
+//	
+//	@Transactional(propagation=Propagation.REQUIRED)
+//	public void createIndex() {
+//		if(log.isInfoEnabled())
+//			log.info("Begin indexing...");
+//		
+//		// manually re-index
+//		FullTextSession fullTextSession = Search.getFullTextSession(session());
+//		fullTextSession.setFlushMode(FlushMode.MANUAL);
+//		fullTextSession.setCacheMode(CacheMode.IGNORE);
+//		//Scrollable results will avoid loading too many objects in memory
+//		ScrollableResults results = fullTextSession.createCriteria( BioPAXElementImpl.class )
+//		    .setFetchSize(BATCH_INDEXING_SIZE)
+//		    .scroll( ScrollMode.FORWARD_ONLY );
+//		int index = 0;
+//		while( results.next() ) {
+//		    index++;
+//		    fullTextSession.index( results.get(0) ); //index each element
+//		    if (index % BATCH_INDEXING_SIZE == 0) {
+//		        fullTextSession.flushToIndexes(); //apply changes to indexes
+//		        fullTextSession.clear(); //free memory since the queue is processed
+//		        if(log.isDebugEnabled())
+//					log.debug("Indexed " + index);
+//		    }
+//		}
+//		if(log.isInfoEnabled())
+//			log.info("Ended indexing.");
+//	}
 
 	//not transactional (but it's 'merge' method that creates a new transaction)
 	public void importModel(File biopaxFile) throws FileNotFoundException
