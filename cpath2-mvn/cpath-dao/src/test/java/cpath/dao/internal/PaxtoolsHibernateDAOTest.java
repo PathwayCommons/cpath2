@@ -42,6 +42,7 @@ import org.apache.commons.logging.*;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHitType;
+import cpath.warehouse.WarehouseDAO;
 
 import java.io.*;
 import java.util.*;
@@ -56,18 +57,19 @@ public class PaxtoolsHibernateDAOTest {
 
     static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
     static PaxtoolsDAO paxtoolsDAO;
-    static SimpleIOHandler exporter;
+    static WarehouseDAO whDAO;
+    static SimpleIOHandler exporter = new SimpleIOHandler(BioPAXLevel.L3);
 
 	/* test methods will use the same data (read-only, 
 	 * with one exception: testImportingAnotherFileAndTestInitialization
 	 * imports the same data again...)
 	 */
     static {
-    	DataServicesFactoryBean.createSchema("cpath2_testpc");
 		// init the DAO (it loads now because databases are created above)
 		ApplicationContext context = new ClassPathXmlApplicationContext(
-				"classpath:testContext-pcDAO.xml");
+				"classpath:testContext-pcDAO.xml"); //auto-creates schema
 		paxtoolsDAO = (PaxtoolsDAO) context.getBean("pcDAO");
+		whDAO = (WarehouseDAO) context.getBean("whDAO");
 		
 		// load some data into the test storage
 		log.info("Loading BioPAX data (importModel(file))...");
@@ -79,10 +81,6 @@ public class PaxtoolsHibernateDAOTest {
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
-		
-		exporter = new SimpleIOHandler(BioPAXLevel.L3);
-		
-		paxtoolsDAO.createIndex();
     }
     
 	
@@ -226,16 +224,15 @@ public class PaxtoolsHibernateDAOTest {
 		exporter.convertToOWL(m, out);
 	}
 
-	@Test
-	public void testSerchForIDs() throws Exception {
-		List<SearchHitType> elist = paxtoolsDAO.findElements("P46880", UnificationXref.class);
-		assertFalse(elist.isEmpty());
-		assertTrue(elist.size()==1);
-	}
-
 	
 	@Test
 	public void testFind() throws Exception {
+		DataServicesFactoryBean.rebuildIndex("cpath2_testpc");
+		
+		List<SearchHitType> elist = paxtoolsDAO.findElements("P46880", UnificationXref.class);
+		assertFalse(elist.isEmpty());
+		assertEquals(1, elist.size());
+		
 		List<SearchHitType> list = paxtoolsDAO.findElements("P46880", BioPAXElement.class);
 		assertFalse(list.isEmpty());
 		Set<String> m = new HashSet<String>();
@@ -260,5 +257,117 @@ public class PaxtoolsHibernateDAOTest {
 		assertEquals(1, list.size());
 		assertTrue(list.get(0).getUri().equals("urn:miriam:uniprot:P46880"));
 	}
+	
+	   public void testIsWhDAOInstance() {
+	    	assertTrue(whDAO instanceof PaxtoolsDAO);
+	    	assertTrue(whDAO instanceof WarehouseDAO);
+	    }
+	    
+		
+	    @Test
+		public void testImportingAnotherFile() throws IOException {
+			assertTrue(((PaxtoolsDAO)whDAO).containsID("urn:miriam:uniprot:P46880"));
+			assertTrue(((PaxtoolsDAO)whDAO).containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
+			assertTrue(((PaxtoolsDAO)whDAO).containsID("http://www.biopax.org/examples/myExample#Protein_A"));
+			assertTrue(((PaxtoolsDAO)whDAO).containsID("http://www.biopax.org/examples/myExample#Protein_B"));
+			assertTrue(((PaxtoolsDAO)whDAO).containsID("urn:biopax:UnificationXref:Taxonomy_562"));
+			
+			BioPAXElement bpe = whDAO.getObject("urn:biopax:UnificationXref:Taxonomy_562", UnificationXref.class);
+			assertTrue(bpe instanceof UnificationXref);
+			
+			BioPAXElement e = whDAO
+					.getObject("http://www.biopax.org/examples/myExample2#Protein_A");
+			assertTrue(e instanceof Protein);
+			
+			e = whDAO 
+			.getObject("http://www.biopax.org/examples/myExample2#Protein_A");
+			Protein p = (Protein) e;
+					
+			assertTrue(p.getEntityReference() != null);
+			assertEquals("urn:miriam:uniprot:P46880", p.getEntityReference().getRDFId());
+			
+			e = whDAO.getObject("urn:miriam:uniprot:P46880");
+			assertTrue(e instanceof ProteinReference);
+			ProteinReference pr = (ProteinReference) e;
+			assertNotNull(pr.getOrganism());
+			
+			// WarehouseDAO.getObject cannot get inverse props for the object itself!
+			assertTrue(pr.getEntityReferenceOf().isEmpty()); 
+			assertEquals(2, pr.getName().size());
 
+			BioSource bs = pr.getOrganism();
+			assertNotNull(bs);
+			assertTrue(bs.getXref().size() > 0);
+		}
+	    
+	    
+		@Test
+		public void testSimpleWh() throws Exception {
+			log.info("Testing PaxtoolsDAO as Model.getByID(id)");
+			BioPAXElement bpe = whDAO.getObject("http://www.biopax.org/examples/myExample#Protein_A");
+			assertTrue(bpe instanceof Protein);
+			
+			bpe = ((WarehouseDAO)whDAO)
+				.getObject("urn:biopax:UnificationXref:UniProt_P46880", UnificationXref.class);
+			assertTrue(bpe instanceof UnificationXref);
+		}
+
+		
+		@Test // protein reference's xref's getXrefOf() is not empty
+		public void testGetObjectXReferableAndXrefOf() throws Exception {
+			ProteinReference pr = whDAO.getObject(
+					"urn:miriam:uniprot:P46880", ProteinReference.class);
+			assertTrue(pr instanceof ProteinReference);
+			assertFalse(pr.getXref().isEmpty());
+			Xref x = pr.getXref().iterator().next();		
+			Set<XReferrable> xrOfs = x.getXrefOf();
+			assertEquals(1, xrOfs.size());
+			System.out.println(x.getRDFId() + " is xrefOf " + 
+					x.getXrefOf().iterator().next().toString()
+			);
+		}
+		
+		
+		
+		@Test // getXrefOf() returns empty set, but it's not a bug!
+		public void testGetObjectXrefAndXrefOf() throws Exception {
+			/* 
+			 * getByID would return an object with lazy collections, 
+			 * which is usable only within the session/transaction,
+			 * which is closed after the call :) So we use getObject instead - 
+			 */		
+			BioPAXElement bpe = whDAO
+				.getObject("urn:biopax:UnificationXref:UniProt_P46880", UnificationXref.class);
+			assertTrue(bpe instanceof UnificationXref);
+			
+			// if the element can be exported like this, it's fully initialized...
+			StringWriter writer = new StringWriter();
+			exporter.writeObject(writer, bpe);
+			//System.out.println("Export single Xref (incomplete BioPAX):");
+			//System.out.println(writer.toString());
+			
+			// check if it has xrefOf values...
+			Set<XReferrable> xrOfs = ((UnificationXref) bpe).getXrefOf();
+			assertTrue(xrOfs.isEmpty()); // EMPTY when the xref is returned by getObject!
+		}
+		
+		
+		@Test
+		public void testGetObject() throws Exception {		
+			// get a protein
+			log.info("Testing WarehouseDAO.getObject(id, clazz)");
+			BioPAXElement bpe =  whDAO.getObject(
+					"http://www.biopax.org/examples/myExample#Protein_A", Protein.class);
+			
+			assertTrue(bpe instanceof Protein);
+			assertEquals("glucokinase A", ((Protein)bpe).getDisplayName());
+			assertNotNull(((Protein)bpe).getEntityReference());
+			assertEquals(1, ((Protein)bpe).getEntityReference().getXref().size());
+			
+			// if the element can be exported like this, it's fully initialized...
+			StringWriter writer = new StringWriter();
+			exporter.writeObject(writer, bpe);
+			//System.out.println("Export single protein (incomplete BioPAX):");
+			//System.out.println(writer.toString());
+		}
 }

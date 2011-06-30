@@ -31,49 +31,42 @@ package cpath.dao.internal;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.UnificationXref;
+import org.biopax.paxtools.model.level3.Xref;
 import org.junit.*;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
-
-import org.apache.commons.logging.*;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import cpath.dao.PaxtoolsDAO;
+import cpath.service.jaxb.SearchHitType;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration("classpath:testContext-pcDAO.xml")
+@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 public class PaxtoolsHibernateDAOMoreTest {
 
-    static Log log = LogFactory.getLog(PaxtoolsHibernateDAOMoreTest.class);
-    static PaxtoolsDAO paxtoolsDAO;
+    @javax.annotation.Resource(name="pcDAO")
+	PaxtoolsDAO paxtoolsDAO;
     static SimpleIOHandler io = new SimpleIOHandler(BioPAXLevel.L3);
-    
 
-	/* test methods will use the same data (read-only, 
-	 * with one exception: testImportingAnotherFileAndTestInitialization
-	 * imports the same data again...)
-	 */
-    @Before
-    public void setUp() {
-    	DataServicesFactoryBean.createSchema("cpath2_testpc");
-		// init the DAO (it loads now because databases are created above)
-		ApplicationContext context = new ClassPathXmlApplicationContext(
-				"classpath:testContext-pcDAO.xml");
-		paxtoolsDAO = (PaxtoolsDAO) context.getBean("pcDAO");
-    }
-    
-	
     @Test
 	public void testImportExportRead() throws IOException {
     	// import (not so good) pathway data
 		Resource input = (new DefaultResourceLoader()).getResource("classpath:biopax-level3-test.owl");
 		paxtoolsDAO.importModel(input.getFile());
-		paxtoolsDAO.createIndex();
 		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
 		assertEquals(55, paxtoolsDAO.getObjects().size()); 
 		// there was a bug in paxtools (due to Stoichiometry.hashCode() override)!
@@ -91,16 +84,17 @@ public class PaxtoolsHibernateDAOMoreTest {
 		assertEquals(55, model.getObjects().size());
 	}
     
-    
-	/* it should normally work.., but sometimes "hangs"
-	* the maven build process if the lucene index directory
-	* already exists (and, seems, when the index has been touched
-	* by another app./process, e.g., by cpath-admin '-create-index' command)
-	* In such an event, simply deleting the index dir makes this test pass.
-	* So, let's keep it disabled for now...
-	*/
-	//@Test
-	public void testIndex() {
-		paxtoolsDAO.createIndex();
+    @Test
+	public void testSearch() throws IOException {
+    	// import (not so good) pathway data
+		Resource input = (new DefaultResourceLoader()).getResource("classpath:xrefs.owl");
+		paxtoolsDAO.importModel(input.getFile());
+		
+		assertEquals(3, paxtoolsDAO.getObjects(Xref.class).size());
+		DataServicesFactoryBean.rebuildIndex("cpath2_testpc");
+		
+		List<SearchHitType> elist = paxtoolsDAO.findElements("P46880", UnificationXref.class);
+		assertFalse(elist.isEmpty());
+		assertEquals(1, elist.size());
 	}
 }

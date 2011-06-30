@@ -107,8 +107,7 @@ public class CPathWarehouseTest {
 		
 		factory = BioPAXLevel.L3.getDefaultFactory();
 		
-		((PaxtoolsDAO)molecules).createIndex();
-		((PaxtoolsDAO)proteins).createIndex();
+		DataServicesFactoryBean.rebuildProteinsIndex(); //molecules are in the same test db
 	}
 
 	@Test
@@ -138,11 +137,6 @@ public class CPathWarehouseTest {
 	}
 
 	@Test
-	public void testGetChEBIMolecule() {
-		// TODO
-	}
-
-	@Test
 	public void testSearchForProteinReference() {
 		// search with a secondary (RefSeq) accession number
 		Collection<SearchHitType> prs = ((PaxtoolsDAO)proteins).findElements("NP_619650", RelationshipXref.class);
@@ -164,11 +158,6 @@ public class CPathWarehouseTest {
 		assertFalse(prIds.isEmpty());
 		assertEquals(1, prIds.size());
 		assertEquals("urn:miriam:uniprot:Q8TD86", prIds.iterator().next());
-	}
-
-	@Test
-	public void testSearchForMolecule() {
-		
 	}
 	
 	@Test

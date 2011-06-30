@@ -30,8 +30,8 @@ import java.beans.PropertyVetoException;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
-import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import javax.validation.constraints.NotNull;
 
@@ -41,7 +41,12 @@ import cpath.dao.DataServices;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.ojb.broker.cache.RuntimeCacheException;
-
+import org.biopax.paxtools.impl.BioPAXElementImpl;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.search.FullTextSession;
+import org.hibernate.search.Search;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,8 +54,9 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+
+import org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean;
 
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 
@@ -176,20 +182,6 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	 */
 	public DataServicesFactoryBean() {}
 	
-
-	@PostConstruct public void init() {
-		// create and save data sources in the map
-		DataSource dataSource = getDataSource(mainDb);
-		getDataSourceMap().put(CPathSettings.MAIN_DB_KEY, dataSource);
-		dataSource = getDataSource(metaDb);
-		getDataSourceMap().put(CPathSettings.METADATA_DB_KEY, dataSource);
-		dataSource = getDataSource(proteinsDb);
-		getDataSourceMap().put(CPathSettings.PROTEINS_DB_KEY, dataSource);
-		dataSource = getDataSource(moleculesDb);
-		getDataSourceMap().put(CPathSettings.MOLECULES_DB_KEY, dataSource);
-	}
-
-	
     public boolean createDatabase(final String db, final boolean drop) {
 		boolean toReturn = true;
 
@@ -253,7 +245,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 			String dbUrl) 
 	{
 		
-		/* low performance driver, for prototyping...
+		// Springs DriverManagerDataSource is not intended for production use, but this method is not critical anymore...
 		DriverManagerDataSource dataSource = new DriverManagerDataSource();
 		dataSource.setDriverClassName(dbDriver);
 		// The following connection parameters are terribly important 
@@ -262,20 +254,20 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		//&useServerPrepStmts=true&useCursorFetch=true
 		dataSource.setUsername(dbUser);
 		dataSource.setPassword(dbPassword);
-		*/
 		
-		ComboPooledDataSource dataSource = new ComboPooledDataSource();
-		try {
-			dataSource.setDriverClass(dbDriver);
-			dataSource.setJdbcUrl(dbUrl + "?autoReconnect=true&max_allowed_packet=256M");
-			dataSource.setUser(dbUser);
-			dataSource.setPassword(dbPassword);
-			dataSource.setMaxPoolSize(30);
-			dataSource.setMaxStatements(50);
-			dataSource.setMaxIdleTime(1800);
-		} catch (PropertyVetoException e) {
-			throw new RuntimeCacheException("getDataSource: failed to set connection properties!", e);
-		}
+//		
+//		ComboPooledDataSource dataSource = new ComboPooledDataSource();
+//		try {
+//			dataSource.setDriverClass(dbDriver);
+//			dataSource.setJdbcUrl(dbUrl + "?autoReconnect=true&max_allowed_packet=256M");
+//			dataSource.setUser(dbUser);
+//			dataSource.setPassword(dbPassword);
+//			dataSource.setMaxPoolSize(10);
+//			dataSource.setMaxStatements(50);
+//			dataSource.setMaxIdleTime(1800);
+//		} catch (PropertyVetoException e) {
+//			throw new RuntimeCacheException("getDataSource: failed to set connection properties!", e);
+//		}
 		
 		return dataSource;
 	}	
@@ -339,36 +331,131 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 				+ dir.getAbsolutePath());
 		deleteDirectory(dir);
     }
+ 
     
+    /**
+     * Creates full-text index for the "main" DB
+     * (actual connection parameters are set 
+     * from system/environment properties)
+     * 
+     */
+    public static void rebuildMainIndex() {
+    	ApplicationContext ctx = 
+			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
+		DataServices ds = (DataServices) ctx.getBean("&dsBean");
+    	ds.createIndex(ds.getMainDb());
+    }
     
-    public void dropMainFulltextIndex() {
-    	dropFulltextIndex(mainDb);
+    /**
+     * Creates full-text index for the "proteins" DB
+     * (actual connection parameters are set 
+     * from system/environment properties)
+     * 
+     */
+    public static void rebuildProteinsIndex() {
+    	ApplicationContext ctx = 
+			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
+		DataServices ds = (DataServices) ctx.getBean("&dsBean");
+    	ds.createIndex(ds.getProteinsDb());
+    }
+    
+    /**
+     * Creates full-text index for the "molecules" DB
+     * (actual connection parameters are set 
+     * from system/environment properties)
+     * 
+     */
+    public static void rebuildMoleculesIndex() {
+    	ApplicationContext ctx = 
+			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
+		DataServices ds = (DataServices) ctx.getBean("&dsBean");
+    	ds.createIndex(ds.getMoleculesDb());
+    }
+    
+    /**
+     * Creates full-text index for the database name
+     * (other connection parameters are set from 
+     * system properties)
+     * 
+     * @param db
+     */
+    public static void rebuildIndex(String db) {
+    	ApplicationContext ctx = 
+			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
+		DataServices ds = (DataServices) ctx.getBean("&dsBean");
+    	ds.createIndex(db);
     }
 
-    public void dropMoleculesFulltextIndex() {
-    	dropFulltextIndex(moleculesDb);
-    }
     
-    public void dropProteinsFulltextIndex() {
-    	dropFulltextIndex(proteinsDb);
-    }
-    
-    public void dropMetadataFulltextIndex() {
-    	dropFulltextIndex(metaDb);
-    }
-
-    
-    public static void clearAllDatasources() {
-    	try {
-    		for(DataSource dataSource : getDataSourceMap().values() ) {
-    			((DriverManagerDataSource) dataSource).getConnection().close();
-    		}
-    		getDataSourceMap().clear();
-    	} catch (Exception e) {
-    		log.error("Error in clearAllDatasources.", e);
-    	} finally {
-    		if(beansByName != null)
-    			beansByName.remove();
+    class MySessionFactoryBean extends AnnotationSessionFactoryBean {
+    	public MySessionFactoryBean(Properties properties) {
+        	setHibernateProperties(properties);
+        	setPackagesToScan(new String[]{"org.biopax.paxtools.impl.level3",
+    			"cpath.warehouse.beans"});
+        	setAnnotatedClasses(new Class[]{BioPAXElementImpl.class});
     	}
-    }
+    	
+    	@Override
+    	public SessionFactory getObject() {
+    		try {
+				afterPropertiesSet();
+				return buildSessionFactory();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+    	}
+	}
+    
+    
+    /**
+     * Awesome mass-parallel indexing method.
+     * 
+     */
+    public void createIndex(String db) {
+    	// delete existing index dir
+    	dropFulltextIndex(db);
+    	
+    	Properties properties = new Properties();
+    	// pooling (c3p0) is disabled (it leads to a deadlock during the mass-indexing...)
+    	properties.put("hibernate.connection.release_mode", "after_transaction");
+    	properties.put("hibernate.dialect", "org.hibernate.dialect.MySQL5Dialect");
+    	properties.put("hibernate.connection.url", dbConnection+db);
+    	properties.put("hibernate.connection.username", dbUser);
+    	properties.put("hibernate.connection.password", dbPassword);
+    	properties.put("hibernate.connection.driver_class", dbDriver);
+    	properties.put("hibernate.search.default.indexBase", CPathSettings.getHomeDir()+File.separator+db);
+    	properties.put("hibernate.search.default.directory_provider", "filesystem");
+    	properties.put("hibernate.search.indexing_strategy", "manual");
+    	
+		MySessionFactoryBean sfb = new MySessionFactoryBean(properties);
+    	SessionFactory sessionFactory = sfb.getObject();
+    	
+		if(log.isInfoEnabled())
+			log.info("Begin indexing...");
+		
+		// - often gets stuck or crashes...
+		Session ses = sessionFactory.openSession();
+		FullTextSession fullTextSession = Search.getFullTextSession(ses);
+		Transaction tx = fullTextSession.beginTransaction();
+		try {
+			fullTextSession.createIndexer()
+				.purgeAllOnStart(true)
+				.batchSizeToLoadObjects( 10 )
+				.threadsForSubsequentFetching( 1 )
+				.threadsToLoadObjects( 1 )
+//				.limitIndexedObjectsTo(10000)
+//				.optimizeOnFinish(true)
+				.startAndWait();
+		} catch (Exception e) {
+			throw new RuntimeException("Index re-build is interrupted.", e);
+		}	
+		tx.commit();
+		fullTextSession.close();
+		sessionFactory.close();
+		sfb.destroy();
+		
+		if(log.isInfoEnabled())
+			log.info("End indexing.");
+	}
+    
 }

@@ -25,7 +25,7 @@
             <prop key="hibernate.connection.password">${password}</prop>
        	    <prop key="hibernate.connection.driver_class">${driver}</prop>
 			<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_testpc</prop>
-			<prop key="hibernate.hbm2ddl.auto"></prop>
+			<prop key="hibernate.hbm2ddl.auto">create</prop>
 			<prop key="hibernate.search.indexing_strategy">manual</prop>
         </util:properties>
         </property>
@@ -52,6 +52,10 @@
     </bean>
 
     <bean id="pcDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
+        <property name="sessionFactory" ref="pcSessionFactory"/>
+    </bean>
+
+    <bean id="whDAO" class="cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="pcSessionFactory"/>
     </bean>
 

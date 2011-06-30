@@ -18,6 +18,8 @@ public class DataServicesFactoryBeanTest {
 					"jdbc:mysql://localhost/cpath2_test");
 		
 		assertNotNull(dataSource);
+		
+		DataServicesFactoryBean.rebuildIndex("cpath2_test");
 	}
 
 }

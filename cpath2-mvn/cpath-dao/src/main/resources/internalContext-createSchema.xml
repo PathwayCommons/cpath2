@@ -19,11 +19,13 @@
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
 		<property name="dataSource" ref="createSchema"/>
         <property name="hibernateProperties">
-		  <util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
+		  <props>
+		  	<prop key="hibernate.connection.release_mode">after_transaction</prop>
+		  	<prop key="hibernate.dialect">org.hibernate.dialect.MySQL5Dialect</prop>
 			<prop key="hibernate.hbm2ddl.auto">create</prop>
 			<prop key="hibernate.search.default.directory_provider">org.hibernate.search.store.RAMDirectoryProvider</prop>
 			<prop key="hibernate.search.indexing_strategy">manual</prop>
-		  </util:properties>
+		  </props>
         </property>
         <property name="annotatedClasses">
         	<list>

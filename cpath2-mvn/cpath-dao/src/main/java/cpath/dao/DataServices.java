@@ -52,14 +52,23 @@ public interface DataServices {
      * @return
      */
     DataSource getDataSource(String databaseName);
-    
-    
-    public void dropMainFulltextIndex();
 
-    public void dropMoleculesFulltextIndex();
+    void createIndex(String db);
     
-    public void dropProteinsFulltextIndex();
+    String getDbPassword();
     
-    public void dropMetadataFulltextIndex();
+    String getDbUser();
+    
+    String getDbDriver();
+    
+    String getDbConnection();
+    
+    String getMetaDb();
+    
+    String getMainDb();
+    
+    String getProteinsDb();
+    
+    String getMoleculesDb();
     
 }
