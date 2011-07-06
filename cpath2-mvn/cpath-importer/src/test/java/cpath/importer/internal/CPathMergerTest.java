@@ -162,12 +162,12 @@ public class CPathMergerTest {
 			((PaxtoolsDAO) mergedModel).initialize(smr);
 		}
 		assertEquals(1, smr.getMemberEntityReference().size());
-		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
+//		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
 		assertEquals(3, smr.getXref().size());		
 		
 		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:chebi:20");
 		assertEquals("(+)-camphene", msmr.getStandardName());
-		System.out.println("merged chebi:20 xrefs: " + msmr.getXref().toString());
+//		System.out.println("merged chebi:20 xrefs: " + msmr.getXref().toString());
 		assertEquals(4, msmr.getXref().size());
 		if(mergedModel instanceof PaxtoolsDAO) {
 			((PaxtoolsDAO) mergedModel).initialize(msmr);
@@ -205,13 +205,13 @@ public class CPathMergerTest {
 		smr = (SmallMoleculeReference)sm.getEntityReference();
 
 		smr = (SmallMoleculeReference)moleculesDAO.getObject("urn:miriam:chebi:28");
-		System.out.println("warehouse chebi:28 xrefs: " + smr.getXref().toString());
+//		System.out.println("warehouse chebi:28 xrefs: " + smr.getXref().toString());
 		assertEquals(14, smr.getXref().size());
 
 		smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:chebi:28");
 		if(mergedModel instanceof PaxtoolsDAO)
 			((PaxtoolsDAO) mergedModel).initialize(smr);
-		System.out.println("merged chebi:28 xrefs: " + smr.getXref().toString());
+//		System.out.println("merged chebi:28 xrefs: " + smr.getXref().toString());
 		assertEquals(6, smr.getXref().size()); // relationship xrefs were removed before merging
 		assertEquals("(R)-linalool", smr.getDisplayName());
 		assertEquals(4, smr.getEntityReferenceOf().size());

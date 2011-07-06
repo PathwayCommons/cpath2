@@ -17,7 +17,6 @@
   		<groupId>pathwaycommons.cpath</groupId>
   		<artifactId>cpath-admin</artifactId>
   		<version>${project.version}</version>
-  		<type>jar</type>
   		<classifier>jar-with-dependencies</classifier>
   	</dependency>
   	<dependency>
@@ -31,7 +30,6 @@
   		<artifactId>cpath-service</artifactId>
   		<version>${project.version}</version>
   		<classifier>jar-with-dependencies</classifier>
-  		<scope>compile</scope>
   	</dependency>
   	<dependency>
   		<groupId>pathwaycommons.cpath</groupId>
