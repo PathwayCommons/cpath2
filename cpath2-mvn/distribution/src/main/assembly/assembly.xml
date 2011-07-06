@@ -36,7 +36,7 @@
         <include>*:cpath-webdocs:war</include>
       </includes>
       <outputDirectory></outputDirectory>
-      <outputFileNameMapping>cpath-webdocs.war</outputFileNameMapping>
+      <outputFileNameMapping>cpath2-demo.war</outputFileNameMapping>
       <unpack>false</unpack>
     </dependencySet>
     <dependencySet>
@@ -44,7 +44,7 @@
         <include>*:cpath-web-service:war</include>
       </includes>
       <outputDirectory></outputDirectory>
-      <outputFileNameMapping>cpath-web-service.war</outputFileNameMapping>
+      <outputFileNameMapping>cpath2.war</outputFileNameMapping>
       <unpack>false</unpack>
     </dependencySet>
     <dependencySet>
