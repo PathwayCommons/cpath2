@@ -53,7 +53,6 @@ import com.googlecode.ehcache.annotations.Cacheable;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
-import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
@@ -171,7 +170,8 @@ public class CPathServiceImpl implements CPathService {
         Map<ResultMapKey, Object> map = fetchAsBiopax(uris);
 
         // outta here
-        return (map.containsKey(ERROR)) ? map : convert(map, format);
+        return (map.containsKey(ERROR) || format == OutputFormat.BIOPAX) 
+        	? map : convert(map, format);
     }
 
 	/*
@@ -242,14 +242,16 @@ public class CPathServiceImpl implements CPathService {
 			map.put(DATA, exportToOWL(m));
 		} 
 		
-		if (uris.length == 1) {
-			// also put the object (element) in the map
-			BioPAXElement element = mainDAO.getByID(uris[0]);
-			if (element != null) {
-				mainDAO.initialize(element);
-				map.put(ELEMENT, element);
-			}
-		}
+//		if (uris.length == 1) {
+//			// also put the object (element) in the map
+//			BioPAXElement element = mainDAO.getByID(uris[0]);
+//			if (element != null) {
+//				mainDAO.initialize(element);
+//				map.put(ELEMENT, element);
+//			}
+//			if(log.isDebugEnabled())
+//				log.debug("mainDAO.initialize(" + uris[0] + ") done");
+//		}
 		
 		return map;
 	}	

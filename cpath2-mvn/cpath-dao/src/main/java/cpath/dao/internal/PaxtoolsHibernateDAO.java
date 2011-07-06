@@ -254,8 +254,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	{	
 		Session ses = session();
 		
-		//Set<BioPAXElement> sourceElements = new ModelUtils(model).getRootElements(BioPAXElement.class);
-		//for (BioPAXElement bpe : sourceElements) { // works when cascades are enabled
 		int i = 0;
 		for (BioPAXElement bpe : model.getObjects()) {			
 			// save/update
@@ -877,24 +875,30 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Override
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public Model runAnalysis(Analysis analysis, Object... args) {
-		Set<BioPAXElement> result = null;
-		
 		// perform
-		result = analysis.execute(this, args);
+		Set<BioPAXElement> result = analysis.execute(this, args);
 		
 		if(log.isDebugEnabled())
 			log.debug("runAnalysis: finished; now detaching the sub-moodel...");
 		
 		// auto-complete/detach
 		if(result != null) {
+			if(log.isDebugEnabled())
+				log.debug("runAnalysis: running auto-complete...");
 			Completer c = new Completer(simpleIO.getEditorMap());
 			result = c.complete(result, null); //null - because the (would be) model is never used there anyway
-			Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
 			if(log.isDebugEnabled())
-				log.debug("runAnalysis: exitting");
-			return cln.clone(null, result); // new (sub-)model
+				log.debug("runAnalysis: cloning...");
+			Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
+			Model submodel = cln.clone(null, result);
+			
+			if(log.isDebugEnabled())
+				log.debug("runAnalysis: returned");
+			return submodel; // new (sub-)model
 		} 
 		
+		if(log.isDebugEnabled())
+			log.debug("runAnalysis: returned NULL");
 		return null;
 	}
 

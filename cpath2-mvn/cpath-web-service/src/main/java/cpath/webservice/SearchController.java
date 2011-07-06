@@ -27,6 +27,8 @@
 
 package cpath.webservice;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -116,11 +118,13 @@ public class SearchController extends BasicController {
 	
 	// Get by ID (URI) command
     @RequestMapping("/get")
-    public @ResponseBody String elementById(@Valid Get get, BindingResult bindingResult)
+    public void elementById(@Valid Get get, BindingResult bindingResult, Writer writer) throws IOException
     {
     	if(bindingResult.hasErrors()) {
     		ErrorType error = errorfromBindingResult(bindingResult);
-			return ProtocolStatusCode.marshal(error);
+    		String str = ProtocolStatusCode.marshal(error);
+//			return str;
+    		writer.write(str);
     	}
     	    	
     	OutputFormat format = get.getFormat();
@@ -130,13 +134,17 @@ public class SearchController extends BasicController {
 			log.info("Query: /get; format:" + format + ", urn:" + Arrays.toString(uri));
     	
     	Map<ResultMapKey, Object> result = service.fetch(format, uri);
-    	
     	Object data = parseResultMap(result, format, Arrays.toString(uri), ResultMapKey.DATA);
     	
     	if(data instanceof ErrorType) {
-			return ProtocolStatusCode.marshal((ErrorType)data);
+//			return ProtocolStatusCode.marshal((ErrorType)data);
+    		writer.write(ProtocolStatusCode.marshal((ErrorType)data));
 		} else {
-			return (String) data;
+			if(log.isDebugEnabled())
+				log.debug("QUERY RETURNED " 
+					+ data.toString().length() + " chars");
+//			return (String) data;
+			writer.write((String) data);
 		}
     }
 	

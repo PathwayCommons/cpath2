@@ -641,8 +641,6 @@ public class ChEBIConverterImpl extends BaseConverterImpl
 			if ("RelationshipXref".equals(aClass.getSimpleName())) {
 				toReturn.setIdVersion("entry_name");
 			}
-			
-			//TODO how about to add this xref to the model, huh? (otherwise, have to/will do in the SimpleMerger)
 		}
 
 		// outta here

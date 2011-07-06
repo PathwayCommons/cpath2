@@ -259,35 +259,6 @@ public class MergerImpl implements Merger {
 		target.merge(pathwayModel);
 		pathwayModel = null; //trash
 		
-// not required anymore
-//		// find and remove dangling util. elements, if any, after their parents 
-//		// have been replaced (e.g., old ChemicalStructure, Xref, etc..)
-//		if(log.isInfoEnabled())
-//			log.info("merge(pathwayModel): cleaning up (to remove dangling utility objects)...");
-//		mu.removeObjectsIfDangling(UtilityClass.class);
-		
-//		//sanity checks
-//		if(log.isInfoEnabled())
-//			log.info("merge(pathwayModel): checking...");
-//		for(BioPAXElement e : replacements.keySet()) {
-//			assert !target.contains(e) 
-//				: "old element "+ e +"is still in the model!";
-//			BioPAXElement r = replacements.get(e);
-//			assert target.containsID(r.getRDFId()) 
-//				: "replacement element ID "+ r.getRDFId() +" is not in the model!";
-//			assert target.contains(r) 
-//				: "replacement element "+ r +" is not in the model!";
-//			if(e instanceof EntityReference)
-//				assert ((EntityReference) e).getEntityFeature().isEmpty()
-//					: e.getRDFId() + " - entityFeature is still not empty!";
-//		}
-//		for(EntityFeature ef : target.getObjects(EntityFeature.class)) {
-//			assert ef.getEntityFeatureOf() == null
-//			: ef.getRDFId() + " - entityFeatureOf still links to "
-//				+ ef.getEntityFeatureOf().getRDFId();
-//		}
-		
-		
 		if(log.isInfoEnabled())
 			log.info("merge(pathwayModel): persisting...");
 		// finally, merge into the global (persistent) model;
@@ -315,7 +286,6 @@ public class MergerImpl implements Merger {
 			// (for the same query, we actually want the same instance); multiple objects with the same ID
 			// will cause exceptions during the merge to the DB)
 			if (!cache.containsID(id)) {
-//				cache.add(replacement);
 				simpleMerger.merge(cache, replacement);
 			} else {
 				if(log.isDebugEnabled())
@@ -345,24 +315,29 @@ public class MergerImpl implements Merger {
 						"that share the same xref found:" + prefs);	
 				}
 				toReturn = proteinsDAO.getObject(prefs.iterator().next(), ProteinReference.class);
-			} else {
-				// use relationship xrefs (refseq, entrez gene,..)
-				Set<RelationshipXref> rrefs =
-					new ClassFilterSet<Xref,RelationshipXref>(((XReferrable)bpe).getXref(), RelationshipXref.class);
-				prefs = proteinsDAO.getByXref(rrefs, ProteinReference.class);
-				if (!prefs.isEmpty()) { 
-					if (prefs.size() > 1) {
-						log.warn("More than one warehouse ProteinReferences " +
-							"that share the same relationship xref were found:" 
-							+ prefs + ". Skipping (TODO: choose one).");	
-					} else {					
-						toReturn = proteinsDAO.getObject(prefs.iterator().next(), ProteinReference.class);
-						log.warn("ProteinReference: " + bpe +  " will be replaced "
-							+ "with the one found in the warehouse by RelationshipXref"
-							+ " (not by unification xref): " + prefs);
-					}
-				}
-			}
+			} 
+/* we do not match by rel.xrefs anymore as this potentially creates identity errors
+ * (we may "promote" some kinds of relationship xref to unification xref later, 
+ * should there be a good reason, after thorough checks...)
+ */
+//			else {
+//				// use relationship xrefs (refseq, entrez gene,..)
+//				Set<RelationshipXref> rrefs =
+//					new ClassFilterSet<Xref,RelationshipXref>(((XReferrable)bpe).getXref(), RelationshipXref.class);
+//				prefs = proteinsDAO.getByXref(rrefs, ProteinReference.class);
+//				if (!prefs.isEmpty()) { 
+//					if (prefs.size() > 1) {
+//						log.warn("More than one warehouse ProteinReferences " +
+//							"that share the same relationship xref were found:" 
+//							+ prefs + ". Skipping (TODO: choose one).");	
+//					} else {					
+//						toReturn = proteinsDAO.getObject(prefs.iterator().next(), ProteinReference.class);
+//						log.warn("ProteinReference: " + bpe +  " will be replaced "
+//							+ "with the one found in the warehouse by RelationshipXref"
+//							+ " (not by unification xref): " + prefs);
+//					}
+//				}
+//			}
 		}
 		
 		// a quick fix, saving/query time optimization
@@ -402,37 +377,64 @@ public class MergerImpl implements Merger {
 	
 	private UtilityClass processSmallMoleculeReference(SmallMoleculeReference premergeSMR) 
 	{	
-		SmallMoleculeReference toReturn = null;
-
 		// try by ID first (should work if properly normalized)
-		toReturn = moleculesDAO.getObject(premergeSMR.getRDFId(), SmallMoleculeReference.class);
-		if(toReturn != null) {
-			return toReturn;
-		}
+		SmallMoleculeReference toReturn = moleculesDAO
+			.getObject(premergeSMR.getRDFId(), SmallMoleculeReference.class);
 		
-		// If not found by id, we search by UnificationXrefs
+		if(toReturn == null) {
+			// If not found by id, we search by UnificationXrefs
 		
-		// This is a pubchem or chebi small molecule reference.
-		// Let's get the set of its unification xrefs,
-		// which we will then use to lookup our version of the smr
-		// in the warehouse.
-		Set<UnificationXref> uxrefs = new ClassFilterSet<Xref,UnificationXref>(
+			// This is a pubchem or chebi small molecule reference.
+			// Let's get the set of its unification xrefs,
+			// which we will then use to lookup our version of the smr
+			// in the warehouse.
+			Set<UnificationXref> uxrefs = new ClassFilterSet<Xref,UnificationXref>(
 				premergeSMR.getXref(), UnificationXref.class);
 
-		// Get id of matching smr in our warehouse.  Note:
-		// all smr in warehouse have at least ChEBI and,
-		// possibly, inchi and/or pubchem uxrefs.  Not sure
-		// if it is possible that multiple SMRs in our warehouse
-		// match the given set of uxrefs.  In any event
-		// we return only the first matching id we
-		// encounter - see getSmallMoleculeReference() below.
-		String chebiUrn = getSmallMoleculeReferenceUrn(uxrefs);
+			// Get id of matching smr in our warehouse.  Note:
+			// all smr in warehouse have at least ChEBI and,
+			// possibly, inchi and/or pubchem uxrefs.  Not sure
+			// if it is possible that multiple SMRs in our warehouse
+			// match the given set of uxrefs.  In any event
+			// we return only the first matching id we
+			// encounter - see getSmallMoleculeReference() below.
+			String chebiUrn = getSmallMoleculeReferenceUrn(uxrefs);
 		
-		if (chebiUrn != null) { 
-			toReturn = moleculesDAO.getObject(chebiUrn, SmallMoleculeReference.class);
+			if (chebiUrn != null) { 
+				toReturn = moleculesDAO.getObject(chebiUrn, SmallMoleculeReference.class);
+			}
+		}
+		
+		// a fix, to remove thousands rel.xrefs (later, if required, 
+		// one may query the (chebi) warehouse rather the main db 
+		// to get those xrefs back...)
+		// (TODO - think to remove all member SMRs as well?)
+		if(toReturn != null) {
+			removeRelXrefs(toReturn);
 		}
 		
 		return toReturn;
+	}
+
+	
+	/*
+	 * Removes those (thousands!) relationship xrefs
+	 * generated by the samll mol. data converter
+	 * with special idVersion="entry_name"
+	 * (most likely, we will never need them in the main DB)
+	 */
+	private void removeRelXrefs(EntityReference er) {
+		for(Xref x : new HashSet<Xref>(er.getXref())) {
+			if(x instanceof RelationshipXref 
+				&& "entry_name".equalsIgnoreCase(x.getIdVersion())) 
+			{
+				er.removeXref(x);
+			}
+		}
+		
+		for(EntityReference member : er.getMemberEntityReference()) {
+			removeRelXrefs(member);
+		}
 	}
 
 	/**

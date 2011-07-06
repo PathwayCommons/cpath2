@@ -162,18 +162,17 @@ public class CPathMergerTest {
 			((PaxtoolsDAO) mergedModel).initialize(smr);
 		}
 		assertEquals(1, smr.getMemberEntityReference().size());
+		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
+		assertEquals(3, smr.getXref().size());		
 		
 		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:chebi:20");
 		assertEquals("(+)-camphene", msmr.getStandardName());
-		assertEquals(5, msmr.getXref().size());
+		System.out.println("merged chebi:20 xrefs: " + msmr.getXref().toString());
+		assertEquals(4, msmr.getXref().size());
 		if(mergedModel instanceof PaxtoolsDAO) {
 			((PaxtoolsDAO) mergedModel).initialize(msmr);
 		}
 		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
-		
-//		for(ProteinReference prf : ((Model)proteinsDAO).getObjects(ProteinReference.class)) {
-//			System.out.println(prf.getRDFId());
-//		}
 		
 		// if the following fails, try to cleanup your java.io.tmpdir...
 		assertTrue(((Model) proteinsDAO).containsID("urn:miriam:uniprot:P13631"));
@@ -187,6 +186,35 @@ public class CPathMergerTest {
 //		System.out.println("new xrefOf: " + newXref.getXrefOf().toString());
 		assertTrue(mergedModel.containsID("urn:biopax:UnificationXref:UNIPROT_P01116"));
 		assertTrue(mergedModel.containsID("urn:miriam:uniprot:P01116"));
+				
+		pr = (ProteinReference)mergedModel.getByID("urn:miriam:uniprot:P27797");
+		if(mergedModel instanceof PaxtoolsDAO)
+			((PaxtoolsDAO) mergedModel).initialize(pr);
+		assertEquals(8, pr.getName().size());
+		assertEquals("CALR_HUMAN", pr.getDisplayName());
+		assertEquals("Calreticulin", pr.getStandardName());
+		assertEquals(6, pr.getXref().size());
+		assertEquals("urn:miriam:taxonomy:9606", pr.getOrganism().getRDFId());
+		
+		// TODO: add asserts for CV
+		assertTrue(mergedModel.containsID("urn:miriam:obo.go:GO%3A0005737"));
+
+		sm = (SmallMolecule)mergedModel.getByID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
+		if(mergedModel instanceof PaxtoolsDAO)
+			((PaxtoolsDAO) mergedModel).initialize(sm);
+		smr = (SmallMoleculeReference)sm.getEntityReference();
+
+		smr = (SmallMoleculeReference)moleculesDAO.getObject("urn:miriam:chebi:28");
+		System.out.println("warehouse chebi:28 xrefs: " + smr.getXref().toString());
+		assertEquals(14, smr.getXref().size());
+
+		smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:chebi:28");
+		if(mergedModel instanceof PaxtoolsDAO)
+			((PaxtoolsDAO) mergedModel).initialize(smr);
+		System.out.println("merged chebi:28 xrefs: " + smr.getXref().toString());
+		assertEquals(6, smr.getXref().size()); // relationship xrefs were removed before merging
+		assertEquals("(R)-linalool", smr.getDisplayName());
+		assertEquals(4, smr.getEntityReferenceOf().size());
 	}
 	
 	
@@ -213,34 +241,7 @@ public class CPathMergerTest {
 		SimpleIOHandler reader = new SimpleIOHandler();
 		reader.mergeDuplicates(true);
 		Model m = reader.convertFromOWL(new FileInputStream(outFilename));
+		
 		assertMerge(m);
-		
-		// now - test pcDAO model directly	
-		ProteinReference pr = (ProteinReference)pcDAO.getByID("urn:miriam:uniprot:P27797");
-		pcDAO.initialize(pr);
-		assertEquals(8, pr.getName().size());
-		assertEquals("CALR_HUMAN", pr.getDisplayName());
-		assertEquals("Calreticulin", pr.getStandardName());
-		assertEquals(6, pr.getXref().size());
-		assertEquals("urn:miriam:taxonomy:9606", pr.getOrganism().getRDFId());
-		
-		// TODO: add asserts for CV
-		assertTrue(pcDAO.containsID("urn:miriam:obo.go:GO%3A0005737"));
-		
-		SmallMolecule sm = (SmallMolecule)pcDAO.getByID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
-		pcDAO.initialize(sm);
-		SmallMoleculeReference smr = (SmallMoleculeReference)sm.getEntityReference();
-		assertEquals("urn:miriam:chebi:20", smr.getRDFId());
-		
-		smr = (SmallMoleculeReference)pcDAO.getByID("urn:miriam:chebi:20");
-		pcDAO.initialize(smr);
-		assertEquals("(+)-camphene", smr.getStandardName());
-		assertEquals(5, smr.getXref().size());
-		
-		smr = (SmallMoleculeReference)pcDAO.getByID("urn:miriam:chebi:28");
-		pcDAO.initialize(smr);
-		assertEquals("(R)-linalool", smr.getDisplayName());
-		assertEquals(14, smr.getXref().size());
-		assertEquals(4, smr.getEntityReferenceOf().size());
 	}
 }
