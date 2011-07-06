@@ -92,7 +92,7 @@ public class CPathServiceTest {
 		assertNotNull(map);
 		
 		assertNotNull(map.get(DATA));
-		assertNotNull(map.get(ELEMENT));
+		assertNull(map.get(ELEMENT));
 		assertNotNull(map.get(MODEL));
 		
 		Model m = (Model) map.get(ResultMapKey.MODEL);
@@ -100,9 +100,9 @@ public class CPathServiceTest {
 		BioPAXElement e = m.getByID("http://www.biopax.org/examples/myExample#Protein_A");
 		assertTrue(e instanceof Protein);
 		
-		e = null;
-		e = (BioPAXElement) map.get(ELEMENT);
-		assertTrue(e instanceof Protein);
+//		e = null;
+//		e = (BioPAXElement) map.get(ELEMENT);
+//		assertTrue(e instanceof Protein);
 	}
 
 	
@@ -113,8 +113,8 @@ public class CPathServiceTest {
 		Map<ResultMapKey, Object> map = service.fetch(OutputFormat.BIOPAX, "urn:miriam:uniprot:P46880");
 		assertNotNull(map);
 			
-		BioPAXElement e = (BioPAXElement) map.get(ELEMENT);
-		assertTrue(e instanceof ProteinReference);
+//		BioPAXElement e = (BioPAXElement) map.get(ELEMENT);
+//		assertTrue(e instanceof ProteinReference);
 		
 		//System.out.println(map.get(ResultMapKey.DATA));
 		assertTrue(map.get(DATA).toString().length()>0);
