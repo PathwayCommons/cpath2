@@ -51,6 +51,7 @@
 
     <bean id="moleculesDAO" class="cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="moleculesSessionFactory"/>
+        <property name="maxHits" value="${maxSearchHits}"/>
     </bean>
   	
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>

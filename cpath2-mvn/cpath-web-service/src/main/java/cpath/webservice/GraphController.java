@@ -27,6 +27,8 @@
 
 package cpath.webservice;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -86,12 +88,14 @@ public class GraphController extends BasicController {
     }
 
 	@RequestMapping("/graph")
-    public @ResponseBody String graphQuery(@Valid Graph graph, BindingResult bindingResult)
+//    public @ResponseBody String graphQuery(@Valid Graph graph, BindingResult bindingResult)
+	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, Writer writer) throws IOException
     {
 		//check for binding errors
 		if(bindingResult.hasErrors()) {
 			ErrorType error = errorfromBindingResult(bindingResult);
-			return ProtocolStatusCode.marshal(error);
+//			return ProtocolStatusCode.marshal(error);
+			writer.write(ProtocolStatusCode.marshal(error));
 		} 
 		
     	// additional validation of query parameters
@@ -101,7 +105,8 @@ public class GraphController extends BasicController {
 		bindingResult = binder.getBindingResult();
 		if(bindingResult.hasErrors()) {
 			ErrorType error = errorfromBindingResult(bindingResult);
-			return ProtocolStatusCode.marshal(error);
+//			return ProtocolStatusCode.marshal(error);
+			writer.write(ProtocolStatusCode.marshal(error));
 		}
 		
 		Object response = null;
@@ -145,9 +150,15 @@ public class GraphController extends BasicController {
 			break;
 		}
 
-		return (response instanceof ErrorType)
+//		return (response instanceof ErrorType)
+//			? ProtocolStatusCode.marshal((ErrorType) response)
+//				: (String)response;
+		
+		writer.write(
+			(response instanceof ErrorType)
 			? ProtocolStatusCode.marshal((ErrorType) response)
-				: (String)response;
+				: (String)response
+		);
     }
 
 }
