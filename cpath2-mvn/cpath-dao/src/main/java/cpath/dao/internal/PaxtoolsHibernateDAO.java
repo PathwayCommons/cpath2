@@ -89,8 +89,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 {
 	private static final long serialVersionUID = 1L;
 	
-	private final int BATCH_SIZE = 20;
-	private final int BATCH_INDEXING_SIZE = 200;
+	final static int BATCH_SIZE = 20;
+	final static int DEFAULT_MAX_HITS = Integer.MAX_VALUE;
+	
+	private int maxHits = DEFAULT_MAX_HITS;
 
 	public final static String[] ALL_FIELDS =
 		{
@@ -131,8 +133,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		this.simpleIO.mergeDuplicates(true);
 		this.simpleIO.normalizeNameSpaces(false);
 		this.multiFieldQueryParser = new MultiFieldQueryParser(
-			Version.LUCENE_29, ALL_FIELDS, 
-				new StandardAnalyzer(Version.LUCENE_29));
+			Version.LUCENE_31, ALL_FIELDS, 
+				new StandardAnalyzer(Version.LUCENE_31));
 		
 		// this simply implements how to get a list of elements from the list of URIs
 		this.getTheseElements = new Analysis() {
@@ -181,13 +183,13 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 //		fullTextSession.setCacheMode(CacheMode.IGNORE);
 //		//Scrollable results will avoid loading too many objects in memory
 //		ScrollableResults results = fullTextSession.createCriteria( BioPAXElementImpl.class )
-//		    .setFetchSize(BATCH_INDEXING_SIZE)
+//		    .setFetchSize(BATCH_SIZE)
 //		    .scroll( ScrollMode.FORWARD_ONLY );
 //		int index = 0;
 //		while( results.next() ) {
 //		    index++;
 //		    fullTextSession.index( results.get(0) ); //index each element
-//		    if (index % BATCH_INDEXING_SIZE == 0) {
+//		    if (index % batchIndexingSize == 0) {
 //		        fullTextSession.flushToIndexes(); //apply changes to indexes
 //		        fullTextSession.clear(); //free memory since the queue is processed
 //		        if(log.isDebugEnabled())
@@ -197,6 +199,17 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 //		if(log.isInfoEnabled())
 //			log.info("Ended indexing.");
 //	}
+
+	public int getMaxHits() {
+		return maxHits;
+	}
+
+	public void setMaxHits(int maxHits) {
+		if(maxHits <= 0)
+			this.maxHits = DEFAULT_MAX_HITS;
+		else 
+			this.maxHits = maxHits;
+	}
 
 	//not transactional (but it's 'merge' method that creates a new transaction)
 	public void importModel(File biopaxFile) throws FileNotFoundException
@@ -363,7 +376,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		final int max = 50;
 		int l = 0;
 		hibQuery.setMaxResults(max);
-		while (l < count) {
+		while (l < count && l < maxHits) {
 			hibQuery.setFirstResult(l);
 			List hibQueryResults = hibQuery.list(); // gets up to 'max' records
 			for (Object row : hibQueryResults) {
@@ -486,7 +499,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		final int max = 50;
 		int l = 0;
 		hibQuery.setMaxResults(max);
-		while (l < count) {
+		while (l < count && l < maxHits) {
 			hibQuery.setFirstResult(l);
 			List hibQueryResults = hibQuery.list(); // gets up to 'max' records
 			for (Object row : hibQueryResults) {
