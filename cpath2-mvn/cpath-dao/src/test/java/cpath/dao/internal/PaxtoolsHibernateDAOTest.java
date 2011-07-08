@@ -42,6 +42,7 @@ import org.apache.commons.logging.*;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHitType;
+import cpath.service.jaxb.SearchResponseType;
 import cpath.warehouse.WarehouseDAO;
 
 import java.io.*;
@@ -229,11 +230,13 @@ public class PaxtoolsHibernateDAOTest {
 	public void testFind() throws Exception {
 		DataServicesFactoryBean.rebuildIndex("cpath2_testpc");
 		
-		List<SearchHitType> elist = paxtoolsDAO.findElements("P46880", UnificationXref.class);
+		SearchResponseType resp = paxtoolsDAO.findElements("P46880", 0, UnificationXref.class);
+		List<SearchHitType> elist = resp.getSearchHit();
 		assertFalse(elist.isEmpty());
 		assertEquals(1, elist.size());
 		
-		List<SearchHitType> list = paxtoolsDAO.findElements("P46880", BioPAXElement.class);
+		resp = paxtoolsDAO.findElements("P46880", 0, BioPAXElement.class);
+		List<SearchHitType> list = resp.getSearchHit();
 		assertFalse(list.isEmpty());
 		Set<String> m = new HashSet<String>();
 		for(SearchHitType e : list) {
@@ -247,13 +250,15 @@ public class PaxtoolsHibernateDAOTest {
 		/* 'P46880' is used only in the PR's RDFId and in the Uni.Xref,
 		 * but the find method (full-text search) must NOT match in rdf ID:
 		 */
-		list = paxtoolsDAO.findElements("P46880", ProteinReference.class);
+		resp = paxtoolsDAO.findElements("P46880", 0, ProteinReference.class);
+		list = resp.getSearchHit();
 		System.out.println("find by 'P46880', " +
 			"filter by ProteinReference.class, returned: " + list.toString());
 		
 		assertTrue(list.isEmpty());
 		
-		list = paxtoolsDAO.findElements("glucokinase", ProteinReference.class);
+		resp = paxtoolsDAO.findElements("glucokinase", 0, ProteinReference.class);
+		list = resp.getSearchHit();
 		assertEquals(1, list.size());
 		assertTrue(list.get(0).getUri().equals("urn:miriam:uniprot:P46880"));
 	}

@@ -48,6 +48,7 @@ import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.internal.CPathFetcherImpl;
 import cpath.service.jaxb.SearchHitType;
+import cpath.service.jaxb.SearchResponseType;
 import cpath.warehouse.*;
 import cpath.warehouse.beans.*;
 import cpath.warehouse.beans.Metadata.TYPE;
@@ -139,7 +140,8 @@ public class CPathWarehouseTest {
 	@Test
 	public void testSearchForProteinReference() {
 		// search with a secondary (RefSeq) accession number
-		Collection<SearchHitType> prs = ((PaxtoolsDAO)proteins).findElements("NP_619650", RelationshipXref.class);
+		SearchResponseType resp =  ((PaxtoolsDAO)proteins).findElements("NP_619650", 0, RelationshipXref.class);
+		Collection<SearchHitType> prs = resp.getSearchHit();
 		assertFalse(prs.isEmpty());
 		Collection<String> prIds = new HashSet<String>();
 		for(SearchHitType e : prs) {

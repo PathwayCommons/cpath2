@@ -14,9 +14,11 @@ import javax.xml.bind.annotation.*;
 public class SearchResponseType {
 
     protected ErrorType error;
-    protected Long totalNumHits;
-    protected List<SearchHitType> searchHit;
-
+    protected Long totalNumHits; // actually means - "raw" hits before filters and lookup (for parent ent.) applied!
+    protected List<SearchHitType> searchHit; // count these to get actual num hits!
+    //TODO add "page" number (search pagination)
+    //TODO add "numHitsPerPage" (== cpath.properties variable 'maxSearchHitsPerPage')
+    //TODO update the schema file in the cpath-webdocs/src/main/webapp/resources/schemas/
 
     public ErrorType getError() {
         return error;

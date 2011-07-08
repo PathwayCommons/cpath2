@@ -121,14 +121,14 @@ public class CPathServiceImpl implements CPathService {
 	@Cacheable(cacheName = "findElementsCache")
 	@Override
 	public Map<ResultMapKey, Object> findElements(String queryStr, 
-			Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
+			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
 	{
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
 			// do search
-			List<SearchHitType> hits = mainDAO.findElements(queryStr, biopaxClass, searchFilters); 
+			SearchResponseType hits = mainDAO.findElements(queryStr, page, biopaxClass, searchFilters); 
 			map.put(DATA, hits);
-			map.put(COUNT, hits.size()); // becomes Integer
+			map.put(COUNT, hits.getTotalNumHits()); // becomes Integer
 		} catch (Exception e) {
 			map.put(ERROR, e);
 		}
@@ -142,14 +142,14 @@ public class CPathServiceImpl implements CPathService {
 	@Cacheable(cacheName = "findEntitiesCache")
 	@Override
 	public Map<ResultMapKey, Object> findEntities(String queryStr, 
-			Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
+			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
 	{
 		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
 		try {
 			// do search
-			List<SearchHitType> hits = mainDAO.findEntities(queryStr, biopaxClass, searchFilters); 
+			SearchResponseType hits = mainDAO.findEntities(queryStr, page, biopaxClass, searchFilters); 
 			map.put(DATA, hits);
-			map.put(COUNT, hits.size()); // becomes Integer
+			map.put(COUNT, hits.getTotalNumHits()); // becomes Integer
 		} catch (Exception e) {
 			map.put(ERROR, e);
 		}

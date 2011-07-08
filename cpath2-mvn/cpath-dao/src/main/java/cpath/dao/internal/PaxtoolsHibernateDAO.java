@@ -70,6 +70,7 @@ import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
 import cpath.dao.filters.SearchFilterRange;
 import cpath.service.jaxb.SearchHitType;
+import cpath.service.jaxb.SearchResponseType;
 import cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO;
 
 import java.util.*;
@@ -316,20 +317,22 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public List<SearchHitType> findElements(
+	public SearchResponseType findElements(
 			String query, 
-			Class<? extends BioPAXElement> filterByType,
-			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
+			int page,
+			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters) 
 	{
 		// collect matching elements here
+		SearchResponseType toReturn = new SearchResponseType();
 		List<SearchHitType> results = new ArrayList<SearchHitType>();
+		toReturn.setSearchHit(results);
 		
 		// a shortcut
 		if (query == null || "".equals(query) 
 				|| query.trim().startsWith("*")) // see: Lucene query syntax
 		{
 			// do nothing, return the empty list
-			return results;
+			return toReturn;
 		} 
 		
 		// otherwise, we continue and do real job -
@@ -343,7 +346,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			luceneQuery = multiFieldQueryParser.parse(query);
 		} catch (ParseException e) {
 			log.info("parser exception: " + e.getMessage());
-			return results;
+			return toReturn;
 		}
 
 		// get a full text session
@@ -363,6 +366,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		int count = hibQuery.getResultSize(); //"cheap" operation (Hib. does not init objects)
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "' (filters not shown), results size = " + count);
+		toReturn.setTotalNumHits((long)count); // "raw" size, i.e, before filters, pages considered...
 
 		// using the projection (to get some more statistics/fields)
 		if(CPathSettings.isDebug())
@@ -372,11 +376,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			hibQuery.setProjection(FullTextQuery.THIS);
 		
 		// execute search
-		// TODO try pagination...
-		final int max = 50;
-		int l = 0;
-		hibQuery.setMaxResults(max);
-		while (l < count && l < maxHits) {
+		int l = page * maxHits;
+		hibQuery.setMaxResults(maxHits);
+		while (l < count && l < maxHits*(page+1)) {
 			hibQuery.setFirstResult(l);
 			List hibQueryResults = hibQuery.list(); // gets up to 'max' records
 			for (Object row : hibQueryResults) {
@@ -418,7 +420,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				+ "', after filtering results size = " + results.size());
 		}
 		
-		return results;
+		return toReturn;
 	}
 	
 	
@@ -432,7 +434,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * lookup for parent entities, i.e.:
 	 * - first, a {@link FullTextQuery} query does not use any class filters and just returns 
 	 *   matching objects (chances are, the list will contain many {@link UtilityClass} elements);
-	 *   in fact, it is going to delegate the search to {@link #findElements(String, Class, SearchFilter...)} 
+	 *   in fact, it is going to delegate the search to {@link #findElements(String, int, Class, SearchFilter...)} 
 	 *   method, with the second parameter set to NULL.
 	 * - second, the list is iterated over to replace each utility class object with
 	 *   one or many of its nearest parent {@link Entity} class elements if possible
@@ -444,12 +446,15 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public List<SearchHitType> findEntities(
+	public SearchResponseType findEntities(
 			String query, 
-			Class<? extends BioPAXElement> filterByType,
-			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
+			int page,
+			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters) 
 	{
+		// collect matching elements here
+		SearchResponseType toReturn = new SearchResponseType();
 		List<SearchHitType> results = new ArrayList<SearchHitType>();
+		toReturn.setSearchHit(results);
 		
 		// - otherwise, we continue and do real job -		
 		if (log.isInfoEnabled())
@@ -461,7 +466,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				|| query.trim().startsWith("*")) // see: Lucene query syntax
 		{
 			// do nothing, return the empty list
-			return results;
+			return toReturn;
 		} 
 		
 		// otherwise, we continue and do real job -
@@ -475,7 +480,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			luceneQuery = multiFieldQueryParser.parse(query);
 		} catch (ParseException e) {
 			log.info("parser exception: " + e.getMessage());
-			return results;
+			return toReturn;
 		}
 
 		// get a full text session
@@ -486,6 +491,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		int count = hibQuery.getResultSize(); //"cheap" operation (Hib. does not init objects)
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "' (no filter/lookup applied yet), results size = " + count);
+		toReturn.setTotalNumHits((long)count);  // "raw" size, i.e, before filters, pages considered...
 
 		// using the projection (to get some more statistics/fields)
 		if(CPathSettings.isDebug())
@@ -495,11 +501,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			hibQuery.setProjection(FullTextQuery.THIS);
 		
 		// execute search
-		// TODO try pagination...
-		final int max = 50;
-		int l = 0;
-		hibQuery.setMaxResults(max);
-		while (l < count && l < maxHits) {
+		int l = page * maxHits;
+		hibQuery.setMaxResults(maxHits);
+		while (l < count && l < maxHits*(page+1)) {
 			hibQuery.setFirstResult(l);
 			List hibQueryResults = hibQuery.list(); // gets up to 'max' records
 			for (Object row : hibQueryResults) {
@@ -549,8 +553,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 					+ "', final results size = " + results.size());
 		}
 		
-		return results;
+		return toReturn;
 	}
+
 	
 	private void addEntity(List<SearchHitType> list, Entity ent,
 			BioPAXElement actualHit,

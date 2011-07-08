@@ -45,6 +45,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHitType;
+import cpath.service.jaxb.SearchResponseType;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -93,8 +94,8 @@ public class PaxtoolsHibernateDAOMoreTest {
 		assertEquals(3, paxtoolsDAO.getObjects(Xref.class).size());
 		DataServicesFactoryBean.rebuildIndex("cpath2_testpc");
 		
-		List<SearchHitType> elist = paxtoolsDAO.findElements("P46880", UnificationXref.class);
-		assertFalse(elist.isEmpty());
-		assertEquals(1, elist.size());
+		SearchResponseType resp = paxtoolsDAO.findElements("P46880", 0, UnificationXref.class);
+		assertFalse(resp.getSearchHit().isEmpty());
+		assertEquals(1, resp.getSearchHit().size());
 	}
 }

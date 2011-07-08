@@ -1,6 +1,7 @@
 package cpath.webservice.args;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
 import org.biopax.paxtools.model.BioPAXElement;
@@ -17,8 +18,12 @@ public class Search {
 	@Valid
 	private PathwayDataSource[] datasource;
 	//private String[] pathwayURIs;
+	
+	@Min(0)
+	private Integer page;
 
 	public Search() {
+		page = 0;
 	}
 
 	public String getQ() {
@@ -53,6 +58,15 @@ public class Search {
 		this.datasource = dataSources;
 	}
 
+	public int getPage() {
+		return page;
+	}
+
+	public void setPage(int page) {
+		this.page = page;
+	}
+
+	
 //	public String[] getPathwayURIs() {
 //		return pathwayURIs;
 //	}

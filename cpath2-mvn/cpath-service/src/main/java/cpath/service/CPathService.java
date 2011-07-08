@@ -31,7 +31,6 @@ import java.util.Map;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.biopax.paxtools.query.algorithm.LimitType;
 import org.biopax.validator.result.ValidatorResponse;
 
 import cpath.dao.PaxtoolsDAO;
@@ -137,6 +136,7 @@ public interface CPathService {
 	 * @see ResultMapKey
 	 * 
 	 * @param queryStr
+	 * @param page TODO
 	 * @param biopaxClass
 	 * @param filterValues can be arrays of URIs of organisms, data sources, etc.
 	 * @return
@@ -144,17 +144,18 @@ public interface CPathService {
 	 * @see PaxtoolsDAO#find(String, Class[], SearchFilter[]...)
 	 */
 	Map<ResultMapKey, Object> findElements(String queryStr, 
-			Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters);
+			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters);
 
 	
 	/**
 	 * Full-text search for the BioPAX Entity class elements. 
 	 * Returns the map result that contains the list of elements
 	 * 
-	 * @see PaxtoolsDAO#findEntities(String, Class, SearchFilter...)
+	 * @see PaxtoolsDAO#findEntities(String, int, Class, SearchFilter...)
 	 * @see ResultMapKey
 	 * 
 	 * @param queryStr
+	 * @param page TODO
 	 * @param biopaxClass
 	 * @param filterValues can be arrays of URIs of organisms, data sources, etc.
 	 * @return
@@ -162,7 +163,7 @@ public interface CPathService {
 	 * @see PaxtoolsDAO#find(String, Class[], SearchFilter[]...)
 	 */
 	Map<ResultMapKey, Object> findEntities(String queryStr, 
-			Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters);
+			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters);
 	
 	
 	/**
