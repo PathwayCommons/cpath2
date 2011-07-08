@@ -151,6 +151,7 @@ public class SearchController extends BasicController {
 	
    
     // Fulltext Search - plain text response...
+    @Deprecated
     @RequestMapping(value="/search")
     public @ResponseBody String fulltextSearch(@Valid Search search, BindingResult bindingResult)
     {		
@@ -162,14 +163,15 @@ public class SearchController extends BasicController {
 		String body = "";
     	
     	if (log.isDebugEnabled())
-			log.debug("/search called (for " + search.getType()	+ "), query:" + search.getQ());
+			log.debug("/search called (for " + search.getType()	+ "), query:" 
+				+ search.getQ() + ", page #" + search.getPage());
 		
 		Set<SearchFilter> searchFilters = createFilters(
 			search.getOrganism(), search.getDatasource());//, search.getPathwayURIs());
 
 		// get results from the service
 		Map<ResultMapKey, Object> results = service.findElements(
-				search.getQ(), 0, 
+				search.getQ(), search.getPage(), 
 				search.getType(), searchFilters.toArray(new SearchFilter[]{}));
 		
 		String details = search.getQ() + " (in " + search.getType() + ")";
@@ -242,7 +244,8 @@ public class SearchController extends BasicController {
 		}
 		
 		if (log.isDebugEnabled())
-			log.debug("/find called (for " + search.getType() + "), query:" + search.getQ());
+			log.debug("/find called (for " + search.getType() + "), query:" 
+				+ search.getQ() + ", page #" + search.getPage());
 		
 		Set<SearchFilter> searchFilters = createFilters(
 				search.getOrganism(), search.getDatasource());//, search.getPathwayURIs());
@@ -269,7 +272,8 @@ public class SearchController extends BasicController {
 		}
 		
 		if (log.isDebugEnabled())
-			log.debug("/entity/find called (for " + search.getType() + "), query:" + search.getQ());
+			log.debug("/entity/find called (for " + search.getType() + "), query:" 
+				+ search.getQ() + ", page #" + search.getPage());
 		
 		Set<SearchFilter> searchFilters = createFilters(
 				search.getOrganism(), search.getDatasource());//, search.getPathwayURIs());

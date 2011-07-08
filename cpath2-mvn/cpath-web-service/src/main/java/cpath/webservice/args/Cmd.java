@@ -45,7 +45,7 @@ public enum Cmd {
            "or another supported format.",
            "/search?q=brca*", //URL prefix shouldn't be specified here (it depends on actual server configuration)!
            "Plain text list (one URI per line)",
-			new CmdArgs[]{q, type, organism, datasource, process}),
+			new CmdArgs[]{q, page, type, organism, datasource, process}),
 	FIND("An alternative full-text search, similar to '/search'but returns XML/JSON. " +
 			"It accepts four parameters " +
 			"and returns the ordered list of search 'hits', i.e., " +
@@ -60,7 +60,7 @@ public enum Cmd {
 			"/find?q=brca*", //URL prefix shouldn't be specified here (it depends on actual server configuration)!
 			"Search response - as XML (default) or JSON (" +
 			"when called using '/find.json' or '/entity/find.json')",
-			new CmdArgs[]{q, type, organism, datasource, process}),			
+			new CmdArgs[]{q, page, type, organism, datasource, process}),			
 	GET("Gets a BioPAX element or sub-model " +
         "by ID(s).  This command has two parameters.",
         "/get?uri=urn:miriam:uniprot:P38398",
