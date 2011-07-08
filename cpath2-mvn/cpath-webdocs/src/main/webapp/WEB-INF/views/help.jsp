@@ -70,6 +70,7 @@
 	  <h3><fmt:message key="cpath2.command_header_parameters"/></h3>
 	  <ul>
 		<li><fmt:message key="cpath2.command_find_query_parameter"/></li>
+		<li><fmt:message key="cpath2.command_find_page_parameter"/></li>
 		<li><fmt:message key="cpath2.command_header_datasource_parameter"/></li>
 		<li><fmt:message key="cpath2.command_header_organism_parameter"/></li>
 		<li><fmt:message key="cpath2.command_header_biopax_class_parameter"/></li>
@@ -96,6 +97,9 @@
 	  <br>
 	  <a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_6_url"/>>
 		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_6_url"/></a>
+	  <br>
+	  <a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_7_url"/>>
+		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_7_url"/></a>
 	  <!-- get command -->
 	  <h2><a NAME="get"></a><fmt:message key="cpath2.command_header_get"/></h2>
 	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>

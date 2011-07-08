@@ -36,6 +36,7 @@ package cpath.webservice.args;
 public enum CmdArgs {
 	uri("a BioPAX element ID as specified as a miriam URI (multiple 'uri=' per query are allowed)"),
     q("a query string."),
+    page("search results page number (>=0)."),
 	type("a BioPAX class - see the <a href=\"#valid_biopax_parameter\">valid values for type parameter</a> below"),
 	kind("graph query type - see the <a href=\"#valid_graph_parameter\">valid values for kind parameter</a> below"),
 	format("output format - see the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below"),
