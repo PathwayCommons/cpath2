@@ -169,8 +169,8 @@ public class SearchController extends BasicController {
 
 		// get results from the service
 		Map<ResultMapKey, Object> results = service.findElements(
-				search.getQ(), search.getType(), 
-				searchFilters.toArray(new SearchFilter[]{}));
+				search.getQ(), 0, 
+				search.getType(), searchFilters.toArray(new SearchFilter[]{}));
 		
 		String details = search.getQ() + " (in " + search.getType() + ")";
 		
@@ -235,9 +235,8 @@ public class SearchController extends BasicController {
     @RequestMapping(value="/find")
     public @ResponseBody SearchResponseType find(@Valid Search search, BindingResult bindingResult)
     {		
-    	SearchResponseType response = new SearchResponseType();
-    	
 		if(bindingResult.hasErrors()) {
+			SearchResponseType response = new SearchResponseType();
 			response.setError(errorfromBindingResult(bindingResult));
 			return response; // return ERROR
 		}
@@ -250,24 +249,21 @@ public class SearchController extends BasicController {
 
 		// get results from the service
 		Map<ResultMapKey, Object> results = service.findElements(
-				search.getQ(), search.getType(), 
-				searchFilters.toArray(new SearchFilter[]{}));
+				search.getQ(), search.getPage(), 
+				search.getType(), searchFilters.toArray(new SearchFilter[]{}));
 		
 		String details = search.getQ() + " (in " + search.getType() + ")";
 
 		// extract data from the message map
-		parseSearchResults(results, details, response);		
-
-		return response;
+		return parseSearchResults(results, details);	
 	}
 
     
 	@RequestMapping(value="/entity/find")
     public @ResponseBody SearchResponseType findEntities(@Valid Search search, BindingResult bindingResult)
     {		
-    	SearchResponseType response = new SearchResponseType();
-    	
 		if(bindingResult.hasErrors()) {
+			SearchResponseType response = new SearchResponseType();
 			response.setError(errorfromBindingResult(bindingResult));
 			return response; // return ERROR
 		}
@@ -280,26 +276,25 @@ public class SearchController extends BasicController {
 
 		// get results from the service
 		Map<ResultMapKey, Object> results = service.findEntities(
-				search.getQ(), search.getType(), 
-				searchFilters.toArray(new SearchFilter[]{}));
+				search.getQ(), search.getPage(), 
+				search.getType(), searchFilters.toArray(new SearchFilter[]{}));
 		
 		String details = search.getQ() + " (in " + search.getType() + ")";
 		// extract data from the message map
-		parseSearchResults(results, details, response);
-		
-		return response;
+
+		return parseSearchResults(results, details);
 	}
 
-	private void parseSearchResults(Map<ResultMapKey, Object> results,
-			String details, SearchResponseType response) 
+	private SearchResponseType parseSearchResults(Map<ResultMapKey, Object> results,
+			String details) 
 	{
 		Object data = parseResultMap(results, null, details, ResultMapKey.DATA);
 		if(data instanceof ErrorType) {
-			response.setError((ErrorType)data);
+			SearchResponseType srt = new SearchResponseType();
+			srt.setError((ErrorType)data);
+			return srt;
 		} else {
-			List<SearchHitType> hits = (List<SearchHitType>) data;
-			response.setTotalNumHits((long) hits.size());
-			response.setSearchHit(hits);
+			return (SearchResponseType) data;
 		}	
 	}
 }

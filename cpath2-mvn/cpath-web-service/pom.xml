@@ -92,6 +92,11 @@
 			<type>jar</type>
 			<scope>compile</scope>
 		</dependency>
+		<dependency>
+  			<groupId>pathwaycommons.cpath</groupId>
+  			<artifactId>cpath-schema</artifactId>
+  			<version>${project.version}</version>
+  		</dependency>
 	</dependencies>
 	<properties>
 		<tomcat.http.port>8088</tomcat.http.port>

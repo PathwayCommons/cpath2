@@ -32,10 +32,9 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
 import cpath.dao.filters.SearchFilter;
-import cpath.service.jaxb.SearchHitType;
+import cpath.service.jaxb.SearchResponseType;
 
 import java.util.Collection;
-import java.util.List;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
@@ -60,13 +59,14 @@ public interface PaxtoolsDAO extends Model {
 	 * and satisfy the filters if any defined.
 	 * 
      * @param query String
+	 * @param page page number (when the number of hits exceeds a threshold)
 	 * @param filterByType - class filter for the full-text search (actual effect may depend on the concrete implementation!)
 	 * @param extraFilters custom filters (implies AND in between) that apply after the full-text query has returned;
 	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
 	 * @return ordered by the element's relevance list of hits
      */
-    List<SearchHitType> findElements(String query, Class<? extends BioPAXElement> filterByType,
-    		SearchFilter<? extends BioPAXElement,?>... extraFilters);        
+	SearchResponseType findElements(String query, int page,
+    		Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters);        
 
     
 	 /**
@@ -76,13 +76,14 @@ public interface PaxtoolsDAO extends Model {
 	 * (filters apply).
 	 * 
      * @param query String
+	 * @param page page number (when the number of hits exceeds a threshold)
 	 * @param filterByType - class filter for the full-text search (actual effect may depend on the concrete implementation!)
 	 * @param extraFilters custom filters (implies AND in between) that apply after the full-text query has returned;
 	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
 	 * @return ordered by the element's relevance list of hits
      */
-    List<SearchHitType> findEntities(String query, Class<? extends BioPAXElement> filterByType,
-    		SearchFilter<? extends BioPAXElement,?>... extraFilters);
+    SearchResponseType findEntities(String query, int page,
+    		Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters);
     
     /**
      * Exports the entire model (if no IDs are given) 

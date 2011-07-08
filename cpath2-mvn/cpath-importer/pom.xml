@@ -35,5 +35,10 @@
     	<artifactId>biopax-rules</artifactId>
     	<version>${validator.version}</version>
     </dependency>
+  	<dependency>
+  		<groupId>pathwaycommons.cpath</groupId>
+  		<artifactId>cpath-schema</artifactId>
+  		<version>${project.version}</version>
+  	</dependency>
   </dependencies>
 </project>

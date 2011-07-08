@@ -55,6 +55,11 @@
         <version>2.4.2</version>
         <scope>runtime</scope>
 		</dependency>
+		<dependency>
+			<groupId>pathwaycommons.cpath</groupId>
+			<artifactId>cpath-schema</artifactId>
+			<version>${project.version}</version>
+		</dependency>
   </dependencies>
     
 </project>

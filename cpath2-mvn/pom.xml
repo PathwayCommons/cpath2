@@ -45,6 +45,7 @@
 		<module>distribution</module>
 		<module>cpath-service</module>
 		<module>cpath-test</module>
+		<module>cpath-schema</module>
 	</modules>
 
 	<properties>
