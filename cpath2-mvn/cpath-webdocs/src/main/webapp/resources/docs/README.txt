@@ -80,12 +80,13 @@ are separated by one blank line.  The first section is BINARY_SIF as
 describe above, followed by edge attributes.  Current edge attributes
 include the interaction data source and PubMed ID.  The second section
 contains participant MIRIAM URI followed by node attributes.  Current
-node attributes include UNIFICATION_XREF (one or more UniProt IDs in
-the case of a protein reference, or a ChEBI ID in the case of a Small
-Molecule reference), and RELATIONSHIP_XREF (including RefSeq, Entrez
-Gene, and Gene Symbol).  If an attribute cannot be determined,
-"NOT_SPECIFIED" will be used.  All attributes are represented as a
-NAME:VALUE pair; for example PubMed:9136927.  Multiple NAME:VALUE
+node attributes include entity type, entity name, UNIFICATION_XREF
+(one or more UniProt IDs in the case of a protein reference, or a
+ChEBI ID in the case of a Small Molecule reference), and
+RELATIONSHIP_XREF (including RefSeq, Entrez Gene, and Gene Symbol).
+If an attribute cannot be determined, "NOT_SPECIFIED" will be used.
+All attributes except entity name are represented as a NAME:VALUE
+pair; for example PubMed:9136927.  Multiple entity names or NAME:VALUE
 pairs will be separated by a semicolon ';'.  This output format is
 suitable for Cytoscape - Attribute Table import and loading into
 Excel.  To prevent an unsuccessful import into Cytoscape due to
