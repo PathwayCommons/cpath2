@@ -315,10 +315,10 @@ public class CPathServiceImpl implements CPathService {
 		if (extended) {
 			OutputStream nodeStream = new ByteArrayOutputStream();
 			sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream,
-										 Arrays.asList("Entity/xref:UnificationXref", "Entity/xref:RelationshipXref"),
-										 Arrays.asList("Interaction/dataSource/name", "Interaction/xref:PublicationXref"));
+										 Arrays.asList("Entity/name", "Entity/xref:UnificationXref", "Entity/xref:RelationshipXref"),
+										 Arrays.asList("Interaction/dataSource/name", "Interaction/xref:PublicationXref"), true);
 			String edgeColumns = "PARTICIPANT_A\tINTERACTION_TYPE\tPARTICIPANT_B\tINTERACTION_DATA_SOURCE\tINTERACTION_PUBMED_ID\n";
-			String nodeColumns = "PARTICIPANT\tUNIFICATION_XREF\tRELATIONSHIP_XREF\n";
+			String nodeColumns = "PARTICIPANT\tPARTICIPANT_TYPE\tPARTICPANT_NAME\tUNIFICATION_XREF\tRELATIONSHIP_XREF\n";
 			map.put(DATA, edgeColumns + removeDuplicateBinaryInteractions(edgeStream) + "\n" + nodeColumns + nodeStream.toString());
 		} else {
 			sic.writeInteractionsInSIF(m, edgeStream);
