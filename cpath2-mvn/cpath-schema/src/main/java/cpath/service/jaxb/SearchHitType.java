@@ -21,7 +21,7 @@ import javax.xml.bind.annotation.XmlType;
     "name",
     "dataSource",
     "organism",
-    //"pathway", //feature (temporary) disabled
+    "pathway",
     "excerpt"
 })
 public class SearchHitType {
@@ -33,7 +33,7 @@ public class SearchHitType {
     protected List<String> name;
     protected List<String> dataSource;
     protected List<String> organism;
-//    protected List<String> pathway;
+    protected List<String> pathway;
     protected String excerpt;
 
 
@@ -89,8 +89,7 @@ public class SearchHitType {
     public void setOrganism(List<String> organism) {
 		this.organism = organism;
 	}
-
-/*    
+   
     public List<String> getPathway() {
         if (pathway == null) {
             pathway = new ArrayList<String>();
@@ -100,7 +99,8 @@ public class SearchHitType {
     public void setPathway(List<String> pathway) {
 		this.pathway = pathway;
 	}
-*/   
+
+    
     public String getExcerpt() {
         return excerpt;
     }

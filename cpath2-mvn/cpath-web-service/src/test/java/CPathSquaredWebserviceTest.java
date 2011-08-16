@@ -16,7 +16,7 @@ import org.springframework.web.client.RestTemplate;
 public class CPathSquaredWebserviceTest {
 	
 	static RestTemplate template;
-	//static final String CPATH2_SERVICE_URL = "http://www.pathwaycommons.org/pc/webservice";
+	//static final String CPATH2_SERVICE_URL = "http://www.pathwaycommons.org/pc2";
 	//static final String CPATH2_SERVICE_URL = "http://awabi.cbio.mskcc.org/cpath2"; // development instance
 	static final String CPATH2_SERVICE_URL = "http://localhost:8080/cpath-web-service";	
 	

@@ -150,46 +150,46 @@ public class SearchController extends BasicController {
 	
 	
    
-    // Fulltext Search - plain text response...
-    @Deprecated
-    @RequestMapping(value="/search")
-    public @ResponseBody String fulltextSearch(@Valid Search search, BindingResult bindingResult)
-    {		
-		if(bindingResult.hasErrors()) {
-			ErrorType error = errorfromBindingResult(bindingResult);
-			return ProtocolStatusCode.marshal(error);
-		}
-		
-		String body = "";
-    	
-    	if (log.isDebugEnabled())
-			log.debug("/search called (for " + search.getType()	+ "), query:" 
-				+ search.getQ() + ", page #" + search.getPage());
-		
-		Set<SearchFilter> searchFilters = createFilters(
-			search.getOrganism(), search.getDatasource());//, search.getPathwayURIs());
-
-		// get results from the service
-		Map<ResultMapKey, Object> results = service.findElements(
-				search.getQ(), search.getPage(), 
-				search.getType(), searchFilters.toArray(new SearchFilter[]{}));
-		
-		String details = search.getQ() + " (in " + search.getType() + ")";
-		
-		// extract data from the message
-		Object data = parseResultMap(results, null, details, ResultMapKey.DATA);
-		if(data instanceof ErrorType) {
-			body = ProtocolStatusCode.marshal((ErrorType)data);
-		} else {
-			StringBuffer sb = new StringBuffer();
-			for (SearchHitType s : (List<SearchHitType>)data) {
-				sb.append(s.getUri()).append(newline);
-			}
-			body = sb.toString();
-		}
-		
-		return body;
-	}   
+//    // Fulltext Search - plain text response...
+//    @Deprecated
+//    @RequestMapping(value="/search")
+//    public @ResponseBody String fulltextSearch(@Valid Search search, BindingResult bindingResult)
+//    {		
+//		if(bindingResult.hasErrors()) {
+//			ErrorType error = errorfromBindingResult(bindingResult);
+//			return ProtocolStatusCode.marshal(error);
+//		}
+//		
+//		String body = "";
+//    	
+//    	if (log.isDebugEnabled())
+//			log.debug("/search called (for " + search.getType()	+ "), query:" 
+//				+ search.getQ() + ", page #" + search.getPage());
+//		
+//		Set<SearchFilter> searchFilters = createFilters(
+//			search.getOrganism(), search.getDatasource());//, search.getPathwayURIs());
+//
+//		// get results from the service
+//		Map<ResultMapKey, Object> results = service.findElements(
+//				search.getQ(), search.getPage(), 
+//				search.getType(), searchFilters.toArray(new SearchFilter[]{}));
+//		
+//		String details = search.getQ() + " (in " + search.getType() + ")";
+//		
+//		// extract data from the message
+//		Object data = parseResultMap(results, null, details, ResultMapKey.DATA);
+//		if(data instanceof ErrorType) {
+//			body = ProtocolStatusCode.marshal((ErrorType)data);
+//		} else {
+//			StringBuffer sb = new StringBuffer();
+//			for (SearchHitType s : (List<SearchHitType>)data) {
+//				sb.append(s.getUri()).append(newline);
+//			}
+//			body = sb.toString();
+//		}
+//		
+//		return body;
+//	}   
  
     
     private Set<SearchFilter> createFilters(OrganismDataSource[] organisms,

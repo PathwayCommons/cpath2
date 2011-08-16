@@ -1001,27 +1001,25 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 					{
 						RelationshipXref rx = (RelationshipXref) x;
 						RelationshipTypeVocabulary cv = rx.getRelationshipType();
-						//initialize(cv); // not required - this methos is called within an active transaction
 						String autoId = ModelUtils
 							.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name());
 						if(cv.getRDFId().equalsIgnoreCase(autoId))
 						{
 							organisms.add(rx.getId());
 						} 
-// this feature is disabled for now...
-//						else if(cv.getRDFId().equalsIgnoreCase(ModelUtils
-//							.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()))) 
-//						{
-//							processes.add(rx.getId());
-//						}	
+						else if(cv.getRDFId().equalsIgnoreCase(ModelUtils
+							.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()))) 
+						{
+							processes.add(rx.getId());
+						}	
 					}
 				}
 				
 				if(!organisms.isEmpty())
 					hit.getOrganism().addAll(organisms);
 				
-//				if(!processes.isEmpty())
-//					hit.getPathway().addAll(processes);
+				if(!processes.isEmpty())
+					hit.getPathway().addAll(processes);
 			} else
 			// set organism for some of EntityReference
 			if(bpe instanceof SequenceEntityReference) {
