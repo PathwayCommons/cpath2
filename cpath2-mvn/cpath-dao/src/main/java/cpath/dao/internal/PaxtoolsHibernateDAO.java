@@ -116,6 +116,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	protected SimpleIOHandler simpleIO;
 	private boolean addDependencies = false;
 	protected MultiFieldQueryParser multiFieldQueryParser;
+	private String xmlBase;
 
 	/**
 	 *  A supplementary {@link Analysis} (algorithm) to be executed 
@@ -1029,6 +1030,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			}
 		
 		return hit;
+	}
+
+	@Override
+	public void setXmlBase(String base) {
+		this.xmlBase = base;
+	}
+
+	@Override
+	public String getXmlBase() {
+		return xmlBase;
 	}
 }
 
