@@ -28,6 +28,7 @@
 package cpath.webservice;
 
 import cpath.service.CPathService.OutputFormat;
+import cpath.service.jaxb.Help;
 import cpath.service.BioDataTypes;
 import cpath.service.BioDataTypes.Type;
 import cpath.webservice.args.*;

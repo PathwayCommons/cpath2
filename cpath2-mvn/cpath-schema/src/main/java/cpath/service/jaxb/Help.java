@@ -1,7 +1,7 @@
 /**
  * 
  */
-package cpath.webservice;
+package cpath.service.jaxb;
 
 import java.util.Set;
 import java.util.TreeSet;
@@ -15,7 +15,8 @@ import javax.xml.bind.annotation.*;
  * @author rodche
  *
  */
-@XmlRootElement
+@XmlRootElement(namespace="http://pathwaycommons.org/cpath2/1.0/help")
+@XmlType(namespace="http://pathwaycommons.org/cpath2/1.0/help", name = "Help")
 @XmlAccessorType(XmlAccessType.PUBLIC_MEMBER)
 public class Help implements Comparable<Help> {
 
