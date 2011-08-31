@@ -48,24 +48,27 @@
 				<version>1.2</version>
 				<executions>
 					<execution>
-						<phase>generate-resources</phase>
+						<phase>process-sources</phase>
 						<goals>
 							<goal>generate</goal>
 						</goals>
+						<configuration>
+							<project>${project}</project>
+							<srcdir>${project.build.sourceDirectory}/cpath/service/jaxb/</srcdir>
+							<schemas>
+								<schema>
+									<namespace>http://pathwaycommons.org/cpath2/1.0/search</namespace>
+									<file>search.xsd</file>
+								</schema>
+								<schema>
+									<namespace>http://pathwaycommons.org/cpath2/1.0/help</namespace>
+									<file>help.xsd</file>
+								</schema>
+							</schemas>
+							<verbose>true</verbose>
+						</configuration>
 					</execution>
 				</executions>
-
-				<configuration>
-					<project>${project}</project>
-					<srcdir>${project.build.sourceDirectory}/cpath/service/jaxb/</srcdir>
-					<schemas>
-						<schema>
-							<namespace>http://pathwaycommons.org/cpath2/1.0/schema</namespace>
-							<file>cpath2-response-1.0.xsd</file>
-						</schema>
-					</schemas>
-					<verbose>true</verbose>
-				</configuration>
 				<dependencies>
 					<dependency>
 						<groupId>javax.xml.bind</groupId>
@@ -80,11 +83,6 @@
 					<dependency>
 						<groupId>com.sun.xml.bind</groupId>
 						<artifactId>jaxb-impl</artifactId>
-						<version>2.2</version>
-					</dependency>
-					<dependency>
-						<groupId>com.sun.xml.bind</groupId>
-						<artifactId>jaxb-xjc</artifactId>
 						<version>2.2</version>
 					</dependency>
 				</dependencies>
