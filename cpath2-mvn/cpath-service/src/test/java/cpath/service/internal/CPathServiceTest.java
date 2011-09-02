@@ -46,8 +46,8 @@ import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.service.BioDataTypes;
 import cpath.service.BioDataTypes.Type;
 import cpath.service.CPathService;
-import cpath.service.CPathService.OutputFormat;
 import cpath.service.CPathService.ResultMapKey;
+import cpath.service.OutputFormat;
 import static cpath.service.CPathService.ResultMapKey.*;
 import cpath.service.internal.CPathServiceImpl;
 

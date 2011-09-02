@@ -60,6 +60,7 @@ import cpath.service.jaxb.ErrorType;
 import cpath.service.jaxb.SearchHitType;
 import cpath.service.jaxb.SearchResponseType;
 import cpath.service.CPathService;
+import cpath.service.OutputFormat;
 
 //import cpath.warehouse.CvRepository;
 import cpath.warehouse.MetadataDAO;

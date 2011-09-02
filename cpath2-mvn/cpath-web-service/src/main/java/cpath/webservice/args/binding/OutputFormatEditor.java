@@ -32,7 +32,7 @@ import java.beans.PropertyEditorSupport;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import cpath.service.CPathService.OutputFormat;
+import cpath.service.OutputFormat;
 
 
 /**

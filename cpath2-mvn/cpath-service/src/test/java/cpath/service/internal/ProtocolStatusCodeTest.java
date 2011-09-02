@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.junit.Test;
 
+import cpath.service.ProtocolStatusCode;
 import cpath.service.jaxb.ErrorType;
 
 public class ProtocolStatusCodeTest {

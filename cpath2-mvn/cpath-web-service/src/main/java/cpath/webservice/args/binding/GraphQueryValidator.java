@@ -6,8 +6,8 @@ import org.biopax.paxtools.query.algorithm.Direction;
 import org.springframework.validation.Errors;
 import org.springframework.validation.Validator;
 
+import cpath.service.GraphType;
 import cpath.webservice.args.Graph;
-import cpath.webservice.args.GraphType;
 
 public class GraphQueryValidator implements Validator {
 

@@ -30,7 +30,6 @@ package cpath.webservice;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
@@ -40,12 +39,13 @@ import cpath.dao.internal.filters.EntityByOrganismRelationshipXrefsFilter;
 import cpath.dao.internal.filters.SequenceEntityReferenceOrganismFilter;
 //import cpath.dao.internal.filters.EntityByProcessRelationshipXrefsFilter;
 import cpath.dao.internal.filters.EntityDataSourceFilter;
-import static cpath.service.CPathService.*;
 import cpath.service.CPathService;
+import cpath.service.Cmd;
+import cpath.service.GraphType;
+import cpath.service.ProtocolStatusCode;
 import cpath.service.CPathService.ResultMapKey;
-import cpath.service.internal.ProtocolStatusCode;
+import cpath.service.OutputFormat;
 import cpath.service.jaxb.ErrorType;
-import cpath.service.jaxb.SearchHitType;
 import cpath.service.jaxb.SearchResponseType;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
@@ -146,50 +146,7 @@ public class SearchController extends BasicController {
 //			return (String) data;
 			writer.write((String) data);
 		}
-    }
-	
-	
-   
-//    // Fulltext Search - plain text response...
-//    @Deprecated
-//    @RequestMapping(value="/search")
-//    public @ResponseBody String fulltextSearch(@Valid Search search, BindingResult bindingResult)
-//    {		
-//		if(bindingResult.hasErrors()) {
-//			ErrorType error = errorfromBindingResult(bindingResult);
-//			return ProtocolStatusCode.marshal(error);
-//		}
-//		
-//		String body = "";
-//    	
-//    	if (log.isDebugEnabled())
-//			log.debug("/search called (for " + search.getType()	+ "), query:" 
-//				+ search.getQ() + ", page #" + search.getPage());
-//		
-//		Set<SearchFilter> searchFilters = createFilters(
-//			search.getOrganism(), search.getDatasource());//, search.getPathwayURIs());
-//
-//		// get results from the service
-//		Map<ResultMapKey, Object> results = service.findElements(
-//				search.getQ(), search.getPage(), 
-//				search.getType(), searchFilters.toArray(new SearchFilter[]{}));
-//		
-//		String details = search.getQ() + " (in " + search.getType() + ")";
-//		
-//		// extract data from the message
-//		Object data = parseResultMap(results, null, details, ResultMapKey.DATA);
-//		if(data instanceof ErrorType) {
-//			body = ProtocolStatusCode.marshal((ErrorType)data);
-//		} else {
-//			StringBuffer sb = new StringBuffer();
-//			for (SearchHitType s : (List<SearchHitType>)data) {
-//				sb.append(s.getUri()).append(newline);
-//			}
-//			body = sb.toString();
-//		}
-//		
-//		return body;
-//	}   
+    }  
  
     
     private Set<SearchFilter> createFilters(OrganismDataSource[] organisms,

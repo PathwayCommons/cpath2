@@ -35,7 +35,6 @@ import org.apache.log4j.PropertyConfigurator;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import cpath.service.CPathService.OutputFormat;
 import cpath.service.CPathService.ResultMapKey;
 
 import java.io.*;
