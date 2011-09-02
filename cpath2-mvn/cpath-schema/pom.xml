@@ -98,5 +98,36 @@
 	</pluginRepository>
   </pluginRepositories> 
   
+  <profiles>
+		<profile>
+			<id>rodche</id>
+			<!-- used by maven-release-plugin during 
+				"mvn release:prepare -Prodche", 
+				"mvn release:perform -Prodche";
+			${local.biopax.m2repo}, ${local.biopax.site} must 
+			be defined in the local ~/.m2/settings.xml, profiles...
+			-->
+			<properties>
+				<scm.username>rodche</scm.username>
+			</properties>
+			<distributionManagement>
+				<snapshotRepository>
+					<id>biopax.snapshots</id>
+					<name>Local BioPAX Snapshots Repository</name>
+					<url>${local.biopax.m2repo}/snapshots</url>
+				</snapshotRepository>
+				<repository>
+					<id>biopax.releases</id>
+					<name>Local BioPAX Repository</name>
+					<url>${local.biopax.m2repo}/releases</url>
+				</repository>
+				<site>
+					<id>biopax.sf.net</id>
+					<name>BioPAX Sourceforge site</name>
+					<url>${local.biopax.site}/cpath2-${project.version}</url>
+				</site>
+			</distributionManagement>
+		</profile>
+  </profiles>
   
 </project>
