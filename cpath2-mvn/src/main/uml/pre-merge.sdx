@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<diagram>
+<source><![CDATA[#![cPath^2 Pre-merge Sequence Diagram]
+builder:Admin
+importer:CPathImporter
+warehouse:CPathWarehouse
+models:PremergeRepository
+
+*1 builder
+Datasources are configured
+using a web (wiki) page 
+*1
+*2 importer
+For CV's and ER's RDFId 
+to be a Miriam URN
+*2
+*3 warehouse
+Warehouse contains: 
+Metadata, 
+cleaned original PathwayData
+Entity References, 
+CVs with relationships, 
+ID-mapping (by ER searching)
+*3
+*4 models
+cleaned, normalized and validated 
+pathway data, one physical database 
+(several BioPAX models allowed)
+per datasource
+*4
+*5 importer
+Using Ontology Manager as a CV Repository
+*5
+*6 importer
+"Enrichment" can also be part of convertion
+*6
+
+(1)builder:importer.fetchMetadata(wikiUrl)
+[c:loop for each entry]
+importer:metadata=fetchMetadata(entry)
+importer:warehouse.importMetadata(metadata)
+[/c]
+builder:importer.fetchAllPathwayData()
+[c:loop for each provider/metadata]
+importer:metadata=warehouse.getMetadata(provider)
+[c:cond metadata.type is PSI_MI or BIOPAX]
+importer:data=fetchPathwayData(metadata)
+importer:warehouse.importPathwayData(data)
+[/c]
+[/c]
+builder:importer.fetchAllProteinData()
+[c:loop for each provider/metadata]
+importer:metadata=warehouse.getMetadata(provider)
+[c:cond metadata.type is PROTEIN]
+importer:proteinRefs=fetchDataAndConvertToBioPAX(metadata)
+(6)importer:addUnificationXrefs(proteinRefs)
+(6)importer:addRelationshipXrefs(proteinRefs)
+importer:warehouse.importProteinData(proteinRefs)
+[/c]
+[/c]
+builder:importer.fetchAllMoleculeData()
+[c:loop for each provider/metadata]
+importer:metadata=warehouse.getMetadata(provider)
+[c:cond metadata.type is MOLECULE]
+importer:moleculesRefs=fetchDataAndConvertToBioPAX(metadata)
+(6)importer:addUnificationXrefs(moleculesRefs)
+(6)importer:addRelationshipXrefs(moleculesRefs)
+importer:warehouse.importChemData(moleculesRefs)
+[/c]
+[/c]
+builder:importer.premerge()
+[c:loop for each pathway data provider ( PSI_MI or BIOPAX)]
+importer:metadata=warehouse.getMetadata(identifier)
+importer:pathwayDataCollection=warehouse.getByIdentifier(identifier)
+[c:loop for each xml pathway data]
+[c:cond if metadata type is PSI_MI]
+importer:owl=convertToBioPAX(xml)
+[/c]
+importer:owl=providerSpecificClean(owl)
+(2)importer:owl=normalize(owl)
+importer:validation=validate(owl)
+[c:cond validation ok]
+(4)importer:models.importModel(owl)
+[/c]
+[/c]
+[/c]]]></source>
+<configuration>
+<property name="actorWidth" value="25"/>
+<property name="allowMessageProperties" value="false"/>
+<property name="arrowSize" value="6"/>
+<property name="colorizeThreads" value="true"/>
+<property name="destructorWidth" value="30"/>
+<property family="Dialog" name="font" size="12" style="0"/>
+<property name="fragmentMargin" value="8"/>
+<property name="fragmentPadding" value="10"/>
+<property name="fragmentTextPadding" value="3"/>
+<property name="glue" value="10"/>
+<property name="headHeight" value="35"/>
+<property name="headLabelPadding" value="5"/>
+<property name="headWidth" value="100"/>
+<property name="initialSpace" value="10"/>
+<property name="leftMargin" value="5"/>
+<property name="lineWrap" value="false"/>
+<property name="lowerMargin" value="5"/>
+<property name="mainLifelineWidth" value="8"/>
+<property name="messageLabelSpace" value="3"/>
+<property name="messagePadding" value="6"/>
+<property name="noteMargin" value="6"/>
+<property name="notePadding" value="6"/>
+<property name="opaqueMessageText" value="false"/>
+<property name="returnArrowVisible" value="true"/>
+<property name="rightMargin" value="5"/>
+<property name="selfMessageHorizontalSpace" value="15"/>
+<property name="separatorBottomMargin" value="8"/>
+<property name="separatorTopMargin" value="15"/>
+<property name="shouldShadowParticipants" value="true"/>
+<property name="spaceBeforeActivation" value="2"/>
+<property name="spaceBeforeAnswerToSelf" value="10"/>
+<property name="spaceBeforeConstruction" value="6"/>
+<property name="spaceBeforeSelfMessage" value="7"/>
+<property name="subLifelineWidth" value="6"/>
+<property name="tc0" value="-1118482"/>
+<property name="tc1" value="-256"/>
+<property name="tc2" value="-65536"/>
+<property name="tc3" value="-16776961"/>
+<property name="tc4" value="-16711936"/>
+<property name="tc5" value="-4144960"/>
+<property name="tc6" value="-65281"/>
+<property name="tc7" value="-14336"/>
+<property name="tc8" value="-20561"/>
+<property name="tc9" value="-12566464"/>
+<property name="threadNumbersVisible" value="false"/>
+<property name="threaded" value="true"/>
+<property name="upperMargin" value="5"/>
+<property name="verticallySplit" value="true"/>
+</configuration>
+</diagram>
