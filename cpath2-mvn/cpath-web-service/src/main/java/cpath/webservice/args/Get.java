@@ -4,7 +4,7 @@ import javax.validation.constraints.NotNull;
 
 import org.hibernate.validator.constraints.NotEmpty;
 
-import cpath.service.CPathService.OutputFormat;
+import cpath.service.OutputFormat;
 
 public class Get {
 	@NotNull(message="Illegal Output Format") 

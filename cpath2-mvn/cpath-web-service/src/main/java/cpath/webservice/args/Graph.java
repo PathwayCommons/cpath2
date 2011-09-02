@@ -6,7 +6,8 @@ import javax.validation.constraints.NotNull;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.hibernate.validator.constraints.NotEmpty;
 
-import cpath.service.CPathService.OutputFormat;
+import cpath.service.GraphType;
+import cpath.service.OutputFormat;
 
 public class Graph {
 	@NotNull(message="Parameter 'kind' is required!")

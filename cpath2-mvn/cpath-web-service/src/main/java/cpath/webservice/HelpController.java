@@ -27,9 +27,12 @@
 
 package cpath.webservice;
 
-import cpath.service.CPathService.OutputFormat;
 import cpath.service.jaxb.Help;
 import cpath.service.BioDataTypes;
+import cpath.service.Cmd;
+import cpath.service.CmdArgs;
+import cpath.service.GraphType;
+import cpath.service.OutputFormat;
 import cpath.service.BioDataTypes.Type;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;

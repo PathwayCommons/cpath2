@@ -31,9 +31,12 @@ import java.util.Arrays;
 import java.util.Map;
 
 import cpath.service.CPathService;
-import cpath.service.CPathService.OutputFormat;
+import cpath.service.Cmd;
+import cpath.service.CmdArgs;
+import cpath.service.GraphType;
+import cpath.service.ProtocolStatusCode;
 import cpath.service.CPathService.ResultMapKey;
-import cpath.service.internal.ProtocolStatusCode;
+import cpath.service.OutputFormat;
 import cpath.service.jaxb.ErrorType;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
