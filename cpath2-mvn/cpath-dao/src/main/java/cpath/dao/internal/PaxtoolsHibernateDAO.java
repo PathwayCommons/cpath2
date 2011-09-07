@@ -46,6 +46,7 @@ import org.biopax.paxtools.model.level3.Complex;
 import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.EntityReference;
 import org.biopax.paxtools.model.level3.Named;
+import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.PhysicalEntity;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
@@ -54,6 +55,7 @@ import org.biopax.paxtools.model.level3.SequenceEntityReference;
 import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
@@ -367,7 +369,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		int count = hibQuery.getResultSize(); //"cheap" operation (Hib. does not init objects)
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "' (filters not shown), results size = " + count);
-		toReturn.setTotalNumHits((long)count); // "raw" size, i.e, before filters, pages considered...
+		toReturn.setNumHitsBeforeRefined(count); // "raw" size, i.e, before filters, pages considered...
 
 		// using the projection (to get some more statistics/fields)
 		if(CPathSettings.isDebug())
@@ -492,7 +494,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		int count = hibQuery.getResultSize(); //"cheap" operation (Hib. does not init objects)
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "' (no filter/lookup applied yet), results size = " + count);
-		toReturn.setTotalNumHits((long)count);  // "raw" size, i.e, before filters, pages considered...
+		toReturn.setNumHitsBeforeRefined(count);  // "raw" size, i.e, before filters, pages considered...
 
 		// using the projection (to get some more statistics/fields)
 		if(CPathSettings.isDebug())
@@ -1001,15 +1003,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 					if((x instanceof RelationshipXref) && ((RelationshipXref) x).getRelationshipType() != null) 
 					{
 						RelationshipXref rx = (RelationshipXref) x;
-						RelationshipTypeVocabulary cv = rx.getRelationshipType();
-						String autoId = ModelUtils
-							.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name());
-						if(cv.getRDFId().equalsIgnoreCase(autoId))
+						if(isOrganismRelationshipXref(rx))
 						{
 							organisms.add(rx.getId());
 						} 
-						else if(cv.getRDFId().equalsIgnoreCase(ModelUtils
-							.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()))) 
+						else if(isProcessRelationshipXref(rx)) 
 						{
 							processes.add(rx.getId());
 						}	
@@ -1032,14 +1030,66 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		return hit;
 	}
 
+	
+	private boolean isOrganismRelationshipXref(RelationshipXref rx) {
+		RelationshipTypeVocabulary cv = rx.getRelationshipType();
+		return cv != null && cv.getRDFId().equalsIgnoreCase(
+				ModelUtils.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name()));
+	}
+
+	
+	private boolean isProcessRelationshipXref(RelationshipXref rx) {
+		RelationshipTypeVocabulary cv = rx.getRelationshipType();
+		return cv != null && cv.getRDFId().equalsIgnoreCase(
+			ModelUtils.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()));
+	}
+
+	
 	@Override
 	public void setXmlBase(String base) {
 		this.xmlBase = base;
 	}
 
+	
 	@Override
 	public String getXmlBase() {
 		return xmlBase;
+	}
+
+	
+	@Override
+	@Transactional
+	public SearchResponseType getTopPathways() {
+		SearchResponseType toReturn = new SearchResponseType();
+		
+		// we could also use another (perhaps too expensive) approach -
+//		ModelUtils mu = new ModelUtils(this);
+//		toReturn.addAll(mu.getRootElements(Pathway.class));
+		
+		// - instead, we'll simply check each pathway's generated rel. xrefs:
+		for(Pathway pathway : getObjects(Pathway.class)) {
+			Set<RelationshipXref> rxs = new ClassFilterSet<Xref, 
+				RelationshipXref>(pathway.getXref(), RelationshipXref.class);
+			boolean isTop = true;
+			if(!rxs.isEmpty()) {
+				// hack: find a "process" rel.xrefs (auto-generated during the data import)
+				for(RelationshipXref rx : rxs) {
+					if(isProcessRelationshipXref(rx))
+					{
+						if(getByID(rx.getId()) instanceof Pathway) {
+							isTop = false;
+							break;
+						}
+					}
+				}
+			} 
+			
+			if(isTop) {
+				toReturn.getSearchHit().add(bpeToSearcHit(pathway));
+			}
+		}
+		
+		return toReturn;
 	}
 }
 

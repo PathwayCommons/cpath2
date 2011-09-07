@@ -4,40 +4,24 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.*;
 
-@XmlRootElement(namespace="http://pathwaycommons.org/cpath2/1.0/search")
+@XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(
-	namespace="http://pathwaycommons.org/cpath2/1.0/search", 
-	name = "SearchResponseType", 
-	propOrder = {
-    "error",
-    "totalNumHits",
-    "searchHit"
-})
+@XmlType(name = "SearchResponseType", propOrder = {"error", "searchHit"})
 public class SearchResponseType {
 
     protected ErrorType error;
-    protected Long totalNumHits; // actually means - "raw" hits before filters and lookup (for parent ent.) applied!
-    protected List<SearchHitType> searchHit; // count these to get actual num hits!
-    //TODO add "page" number (search pagination)
-    //TODO add "numHitsPerPage" (== cpath.properties variable 'maxSearchHitsPerPage')
-    //TODO update the schema file in the cpath-webdocs/src/main/webapp/resources/schemas/
+    @XmlAttribute
+    protected Integer numHitsBeforeRefined;
+    protected List<SearchHitType> searchHit; // count to get actual no. hits!
+    @XmlAttribute
+    protected Integer pageNo; //search result page number
 
     public ErrorType getError() {
         return error;
     }
 
-
     public void setError(ErrorType value) {
         this.error = value;
-    }
-
-    public Long getTotalNumHits() {
-        return totalNumHits;
-    }
-
-    public void setTotalNumHits(Long value) {
-        this.totalNumHits = value;
     }
 
     public List<SearchHitType> getSearchHit() {
@@ -49,6 +33,22 @@ public class SearchResponseType {
     
     public void setSearchHit(List<SearchHitType> searchHit) {
 		this.searchHit = searchHit;
+	}
+
+	public Integer getNumHitsBeforeRefined() {
+		return numHitsBeforeRefined;
+	}
+
+	public void setNumHitsBeforeRefined(Integer numHitsBeforeRefined) {
+		this.numHitsBeforeRefined = numHitsBeforeRefined;
+	}
+
+	public Integer getPageNo() {
+		return pageNo;
+	}
+
+	public void setPageNo(Integer pageNo) {
+		this.pageNo = pageNo;
 	}
 
 }
