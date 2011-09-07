@@ -141,8 +141,16 @@ public interface PaxtoolsDAO extends Model {
      * 
      * @param analysis defines a job/query to perform
      * @param args - optional parameters for the algorithm
-     * @return
+     * @return a detached (cloned) BioPAX sub-model
      */
     Model runAnalysis(Analysis analysis, Object... args);
     
+    
+    /**
+     * Finds top (root) pathways in the entire BioPAX model.
+     * (It's good idea to cache this method's result permanently)
+     * 
+     * @return
+     */
+    SearchResponseType getTopPathways();
 }

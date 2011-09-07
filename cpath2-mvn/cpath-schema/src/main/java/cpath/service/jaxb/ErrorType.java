@@ -9,9 +9,8 @@ import javax.xml.bind.annotation.XmlType;
 
 
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(namespace="http://pathwaycommons.org/cpath2/1.0/search")
+@XmlType(name = "ErrorType")
 public class ErrorType {
-
     @XmlElement(name = "error_code", required = true)
     protected BigInteger errorCode;
     @XmlElement(name = "error_msg", required = true)

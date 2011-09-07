@@ -15,7 +15,6 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(
-	namespace="http://pathwaycommons.org/cpath2/1.0/search",
 	name = "SearchHitType", propOrder = {
     "uri",
     "actualHitUri",

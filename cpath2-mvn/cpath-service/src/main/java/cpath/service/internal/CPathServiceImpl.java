@@ -31,13 +31,12 @@ package cpath.service.internal;
 import java.io.*;
 import java.util.*;
 
+import javax.annotation.PostConstruct;
 import javax.validation.constraints.NotNull;
-import javax.xml.bind.*;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
@@ -56,8 +55,6 @@ import cpath.dao.filters.SearchFilter;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
-import cpath.service.jaxb.ErrorType;
-import cpath.service.jaxb.SearchHitType;
 import cpath.service.jaxb.SearchResponseType;
 import cpath.service.CPathService;
 import cpath.service.OutputFormat;
@@ -84,8 +81,6 @@ public class CPathServiceImpl implements CPathService {
 	@NotNull
 	private MetadataDAO metadataDAO;
 
-	private SimpleMerger merger;	
-	private JAXBContext jaxbContext;
 	private SimpleIOHandler simpleIO;
 
 	// this is probably required for the echcache to work
@@ -106,15 +101,15 @@ public class CPathServiceImpl implements CPathService {
 		this.metadataDAO = metadataDAO;
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		simpleIO.mergeDuplicates(true);
-		this.merger = new SimpleMerger(simpleIO.getEditorMap());
-		
-		// init cpath legacy xml schema jaxb context
-		try {
-			jaxbContext = JAXBContext.newInstance(ErrorType.class, SearchResponseType.class, SearchHitType.class);
-		} catch (JAXBException e) {
-			throw new RuntimeException(e);
-		}
 	}
+
+	
+	@PostConstruct
+	public void init() 
+	{
+		//TODO
+	}
+	
 	
 	/*
 	 * Interface methods
@@ -129,7 +124,7 @@ public class CPathServiceImpl implements CPathService {
 			// do search
 			SearchResponseType hits = mainDAO.findElements(queryStr, page, biopaxClass, searchFilters); 
 			map.put(DATA, hits);
-			map.put(COUNT, hits.getTotalNumHits()); // becomes Integer
+			map.put(COUNT, hits.getNumHitsBeforeRefined()); // becomes Integer
 		} catch (Exception e) {
 			map.put(ERROR, e);
 		}
@@ -137,8 +132,6 @@ public class CPathServiceImpl implements CPathService {
 		return map;
 	}
 	
-	
-
 
 	@Cacheable(cacheName = "findEntitiesCache")
 	@Override
@@ -150,7 +143,7 @@ public class CPathServiceImpl implements CPathService {
 			// do search
 			SearchResponseType hits = mainDAO.findEntities(queryStr, page, biopaxClass, searchFilters); 
 			map.put(DATA, hits);
-			map.put(COUNT, hits.getTotalNumHits()); // becomes Integer
+			map.put(COUNT, hits.getNumHitsBeforeRefined()); // becomes Integer
 		} catch (Exception e) {
 			map.put(ERROR, e);
 		}
@@ -170,7 +163,6 @@ public class CPathServiceImpl implements CPathService {
         // before anything, get the biopax
         Map<ResultMapKey, Object> map = fetchAsBiopax(uris);
 
-        // outta here
         return (map.containsKey(ERROR) || format == OutputFormat.BIOPAX) 
         	? map : convert(map, format);
     }
@@ -188,10 +180,10 @@ public class CPathServiceImpl implements CPathService {
         map.put(MODEL, model);
         map.put(DATA, biopax);
 
-        // outta here
         return convert(map, format);
 	}
 
+    
     /*
      * Function used by both convert(String, OutputFormat)
      * and fetch(OutputFormat, String... uris).
@@ -219,7 +211,6 @@ public class CPathServiceImpl implements CPathService {
 			map.put(ERROR, e);
 		}
 
-        // outta here
 		return map;
     }
 	
@@ -242,17 +233,6 @@ public class CPathServiceImpl implements CPathService {
 			map.put(MODEL, m);
 			map.put(DATA, exportToOWL(m));
 		} 
-		
-//		if (uris.length == 1) {
-//			// also put the object (element) in the map
-//			BioPAXElement element = mainDAO.getByID(uris[0]);
-//			if (element != null) {
-//				mainDAO.initialize(element);
-//				map.put(ELEMENT, element);
-//			}
-//			if(log.isDebugEnabled())
-//				log.debug("mainDAO.initialize(" + uris[0] + ") done");
-//		}
 		
 		return map;
 	}	
@@ -502,7 +482,6 @@ public class CPathServiceImpl implements CPathService {
 			toReturn.append(iterator.next() + "\n");
 		}
 		
-		// outta here
 		return toReturn.toString();
 	}
 }

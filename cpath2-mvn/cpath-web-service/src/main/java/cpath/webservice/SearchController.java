@@ -90,7 +90,6 @@ public class SearchController extends BasicController {
 	@InitBinder
     public void initBinder(WebDataBinder binder) {
 		super.initBinder(binder);
-		//TODO set SearchValidator
     }
 
 	
@@ -123,7 +122,6 @@ public class SearchController extends BasicController {
     	if(bindingResult.hasErrors()) {
     		ErrorType error = errorfromBindingResult(bindingResult);
     		String str = ProtocolStatusCode.marshal(error);
-//			return str;
     		writer.write(str);
     	}
     	    	
@@ -143,7 +141,6 @@ public class SearchController extends BasicController {
 			if(log.isDebugEnabled())
 				log.debug("QUERY RETURNED " 
 					+ data.toString().length() + " chars");
-//			return (String) data;
 			writer.write((String) data);
 		}
     }  
@@ -151,7 +148,6 @@ public class SearchController extends BasicController {
     
     private Set<SearchFilter> createFilters(OrganismDataSource[] organisms,
 			PathwayDataSource[] dataSources )
-//			, String[] pathwayURIs) 
 	{
 		Set<SearchFilter> searchFilters = new HashSet<SearchFilter>();
 		if(organisms != null) { // it's optional parameter (can be null)
@@ -181,12 +177,6 @@ public class SearchController extends BasicController {
 			searchFilters.add(byDatasourceFilter);
 		}
 		
-//		if (pathwayURIs != null) {
-//			SearchFilter<Entity, String> byProcessFilter = new EntityByProcessRelationshipXrefsFilter();
-//			byProcessFilter.setValues(pathwayURIs);
-//			searchFilters.add(byProcessFilter);
-//		}
-		
 		return searchFilters;
 	}
 
@@ -205,7 +195,7 @@ public class SearchController extends BasicController {
 				+ search.getQ() + ", page #" + search.getPage());
 		
 		Set<SearchFilter> searchFilters = createFilters(
-				search.getOrganism(), search.getDatasource());//, search.getPathwayURIs());
+				search.getOrganism(), search.getDatasource());
 
 		// get results from the service
 		Map<ResultMapKey, Object> results = service.findElements(
@@ -233,7 +223,7 @@ public class SearchController extends BasicController {
 				+ search.getQ() + ", page #" + search.getPage());
 		
 		Set<SearchFilter> searchFilters = createFilters(
-				search.getOrganism(), search.getDatasource());//, search.getPathwayURIs());
+				search.getOrganism(), search.getDatasource());
 
 		// get results from the service
 		Map<ResultMapKey, Object> results = service.findEntities(
@@ -246,6 +236,7 @@ public class SearchController extends BasicController {
 		return parseSearchResults(results, details);
 	}
 
+	
 	private SearchResponseType parseSearchResults(Map<ResultMapKey, Object> results,
 			String details) 
 	{
