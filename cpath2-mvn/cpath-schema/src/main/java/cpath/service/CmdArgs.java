@@ -35,7 +35,7 @@ package cpath.service;
  */
 public enum CmdArgs {
 	uri("a BioPAX element ID as specified as a miriam URI (multiple 'uri=' per query are allowed)"),
-    q("a query string."),
+    q("a Lucene full-text search query string."),
     page("search results page number (>=0)."),
 	type("a BioPAX class - see the <a href=\"#valid_biopax_parameter\">valid values for type parameter</a> below"),
 	kind("graph query type - see the <a href=\"#valid_graph_parameter\">valid values for kind parameter</a> below"),
@@ -47,6 +47,7 @@ public enum CmdArgs {
 	target("graph query destination URI (multiple 'target=' are allowed, only for PATHSBETWEEN query)"),
     limit("graph query search distance limit"),
     biopax("a BioPAX OWL to convert"),
+    path("a BioPAX property path expression (like xPath)"),
     //TODO future (graph query extention point, plugins...)
     //alg("a user-defined algorithm to run."), 
 	;

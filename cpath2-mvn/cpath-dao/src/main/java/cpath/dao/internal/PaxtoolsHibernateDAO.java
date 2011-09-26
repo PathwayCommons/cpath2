@@ -1057,17 +1057,31 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 
 	
+	/**
+	 * TODO "Top pathway" can mean different thing...
+	 * Here we collect those pathways which are not 
+	 * values of any object BioPAX property, i.e., 
+	 * 'stepProcess', 'pathwayComponent', 
+	 *  sub-classes of 'participant' (that includes 
+	 *  both 'controller' and 'controlled'!).
+	 * 
+	 * An alternative definition of "top" could rest on 
+	 * whether particular (inverse) properties, such as 
+	 * controlledOf, pathwayComponentOf and stepProcessOf,
+	 * are empty...
+	 * 
+	 */
 	@Override
-	@Transactional
-	public SearchResponseType getTopPathways() {
-		SearchResponseType toReturn = new SearchResponseType();
+	@Transactional(readOnly = true)
+	public Set<String> getTopPathways() {
+		Set<String> toReturn = new TreeSet<String>();
 		
 		// we could also use another (perhaps too expensive) approach -
 //		ModelUtils mu = new ModelUtils(this);
-//		toReturn.addAll(mu.getRootElements(Pathway.class));
+//		Set<Pathway> topPathways = mu.getRootElements(Pathway.class);
 		
-		// - instead, we'll simply check each pathway's generated rel. xrefs:
 		for(Pathway pathway : getObjects(Pathway.class)) {
+			// we'll simply check each pathway's generated rel. xrefs:
 			Set<RelationshipXref> rxs = new ClassFilterSet<Xref, 
 				RelationshipXref>(pathway.getXref(), RelationshipXref.class);
 			boolean isTop = true;
@@ -1083,13 +1097,48 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 					}
 				}
 			} 
-			
 			if(isTop) {
-				toReturn.getSearchHit().add(bpeToSearcHit(pathway));
+				toReturn.add(pathway.getRDFId());
 			}
 		}
 		
 		return toReturn;
+	}
+
+	
+	/**
+	 * In this version, it only collects values 
+	 * where the property path does apply, 
+	 * and the property value is not null/empty. 
+	 * 
+	 */
+	@Transactional(readOnly = true)
+	@Override
+	public Map<Object, String> traverse(String propertyPath, String... uris) {
+		Map<Object, String> values = new HashMap<Object, String>();
+		
+		PathAccessor pathAccessor = new PathAccessor(propertyPath, getLevel());
+		for(String uri : uris) {
+			BioPAXElement bpe = getByID(uri);
+			try {
+				Object v = pathAccessor.getValueFromBean(bpe);
+				if(!pathAccessor.isUnknown(v)) {
+					if(v instanceof Collection) {
+						for(Object item : (Collection)v) {
+							values.put(item, uri);
+						}
+					} else {
+						values.put(v, uri);
+					}
+				}
+			} catch (IllegalBioPAXArgumentException e) {
+				if(log.isDebugEnabled())
+					log.debug("Failed to get values at: " + 
+						propertyPath + " from the element: " + uri, e);
+			}
+		}
+		
+		return values;
 	}
 }
 

@@ -72,8 +72,18 @@ public enum Cmd {
           "/graph?kind=neighborhood&source=HTTP:%2F%2FWWW.REACTOME.ORG%2FBIOPAX%23BRCA2__NUCLEOPLASM__1_9606",
           "BioPAX by default, other formats as specified by the format parameter. " +
           "See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
-          new CmdArgs[]{kind, source, target, format, limit})
-        ;
+          new CmdArgs[]{kind, source, target, format, limit}),
+    TOPPATHWAYS("Gets Top Pathways. This command has no parameters.", 
+    	"/topPathways",
+        "Plain text list of top pathway URIs.", 
+        new CmdArgs[]{}),   
+    TRAVERSE("Gets data property values (or elements's URIs) " +
+    	"at the end of the property path.  This command has two parameters.",
+    	"/traverse?uri=urn:miriam:uniprot:P38398&path=ProteinReference%2Forganism%2FdisplayName",
+    	"Plain text map (value, uri).", 
+    	new CmdArgs[]{path, uri})
+          
+    ;
     /* TODO should we expose "/convert" command?
 	CONVERT("Converts from BioPAX to simple formats.  This command has two parameters",
 			new CmdArgs[]{biopax, format}),

@@ -27,9 +27,6 @@
 
 package cpath.webservice;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
@@ -40,11 +37,8 @@ import cpath.dao.internal.filters.SequenceEntityReferenceOrganismFilter;
 //import cpath.dao.internal.filters.EntityByProcessRelationshipXrefsFilter;
 import cpath.dao.internal.filters.EntityDataSourceFilter;
 import cpath.service.CPathService;
-import cpath.service.Cmd;
 import cpath.service.GraphType;
-import cpath.service.ProtocolStatusCode;
 import cpath.service.CPathService.ResultMapKey;
-import cpath.service.OutputFormat;
 import cpath.service.jaxb.ErrorType;
 import cpath.service.jaxb.SearchResponseType;
 import cpath.webservice.args.*;
@@ -63,7 +57,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 
 /**
- * cPathSquared Main Web Service.
+ * cPathSquared Search Web Service.
  * 
  * @author rodche
  */
@@ -79,72 +73,20 @@ public class SearchController extends BasicController {
     /**
 	 * This configures the web request parameters binding, i.e., 
 	 * conversion to the corresponding java types; for example,
-	 * "neighborhood" is recognized as {@link GraphType#NEIGHBORHOOD}, 
-	 * "search" will become {@link Cmd#SEARCH}, 
+	 * "neighborhood" is recognized as {@link GraphType#NEIGHBORHOOD},  
 	 *  "protein" - {@link Protein} , etc.
 	 *  Depending on the editor, illegal query parameters may result 
-	 *  in an error or just NULL value (see e.g., {@link CmdArgsEditor})
+	 *  in an error or just NULL value.
 	 * 
 	 * @param binder
 	 */
 	@InitBinder
     public void initBinder(WebDataBinder binder) {
-		super.initBinder(binder);
+        binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
+        binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
+        binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
     }
-
 	
-	/*
-	 * This is for reporting an error "BAD COMMAND"
-	 * for everything except for known cpath2 web service
-	 * commands (known commands with parameters are mapped 
-	 * to more specific controller methods in this class; see below)
-	 * 
-	 * @param cmd
-	 * @return
-	 */
-	 @RequestMapping("/{cmd}")
-	 public @ResponseBody String illegalCommand(@PathVariable String cmd) 
-	 {
-		 return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.BAD_COMMAND,
-			"Unknown command: " + cmd);
-	 }
-	
-	
-	/* ========================================================================
-	 *    Most Important Web Service Methods
-	 * ======================================================================*/
-	
-	
-	// Get by ID (URI) command
-    @RequestMapping("/get")
-    public void elementById(@Valid Get get, BindingResult bindingResult, Writer writer) throws IOException
-    {
-    	if(bindingResult.hasErrors()) {
-    		ErrorType error = errorfromBindingResult(bindingResult);
-    		String str = ProtocolStatusCode.marshal(error);
-    		writer.write(str);
-    	}
-    	    	
-    	OutputFormat format = get.getFormat();
-    	String[] uri = get.getUri();
-    	
-    	if (log.isInfoEnabled())
-			log.info("Query: /get; format:" + format + ", urn:" + Arrays.toString(uri));
-    	
-    	Map<ResultMapKey, Object> result = service.fetch(format, uri);
-    	Object data = parseResultMap(result, format, Arrays.toString(uri), ResultMapKey.DATA);
-    	
-    	if(data instanceof ErrorType) {
-//			return ProtocolStatusCode.marshal((ErrorType)data);
-    		writer.write(ProtocolStatusCode.marshal((ErrorType)data));
-		} else {
-			if(log.isDebugEnabled())
-				log.debug("QUERY RETURNED " 
-					+ data.toString().length() + " chars");
-			writer.write((String) data);
-		}
-    }  
- 
     
     private Set<SearchFilter> createFilters(OrganismDataSource[] organisms,
 			PathwayDataSource[] dataSources )
@@ -249,4 +191,5 @@ public class SearchController extends BasicController {
 			return (SearchResponseType) data;
 		}	
 	}
+	
 }

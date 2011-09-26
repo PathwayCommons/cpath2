@@ -9,7 +9,7 @@ import org.hibernate.validator.constraints.NotBlank;
 
 public class Search {
 	@NotNull(message="Parameter 'q' (Lucene full-text query string) is required!")
-	@NotBlank
+	@NotBlank(message="Parameter 'q' (Lucene full-text query string) is blank!")
 	private String q;
 	
 	private Class<? extends BioPAXElement> type;
