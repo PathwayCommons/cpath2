@@ -32,9 +32,7 @@ import java.io.Writer;
 import java.util.Arrays;
 import java.util.Map;
 
-import static cpath.service.CPathService.*;
 import cpath.service.CPathService;
-import cpath.service.Cmd;
 import cpath.service.GraphType;
 import cpath.service.ProtocolStatusCode;
 import cpath.service.CPathService.ResultMapKey;
@@ -45,8 +43,8 @@ import cpath.webservice.args.binding.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.query.algorithm.Direction;
+import org.biopax.paxtools.query.algorithm.LimitType;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.DataBinder;
@@ -72,22 +70,18 @@ public class GraphController extends BasicController {
     /**
 	 * This configures the web request parameters binding, i.e., 
 	 * conversion to the corresponding java types; for example,
-	 * "neighborhood" is recognized as {@link GraphType#NEIGHBORHOOD}, 
-	 * "search" will become {@link Cmd#SEARCH}, 
-	 *  "protein" - {@link Protein} , etc.
+	 * "neighborhood" is recognized as {@link GraphType#NEIGHBORHOOD}.
 	 *  Depending on the editor, illegal query parameters may result 
-	 *  in an error or just NULL value (see e.g., {@link CmdArgsEditor})
+	 *  in an error or just NULL value.
 	 * 
 	 * @param binder
 	 */
 	@InitBinder
     public void initBinder(WebDataBinder binder) {
-        super.initBinder(binder);
-        /* when GraphQueryValidator is set here,
-         * it prevents javax.validation.Validator instance (JSR-303)
-         * from checking first; so - we will use it inside controller methods
-         //  binder.setValidator(new GraphQueryValidator());
-         */
+        binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
+        binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
+        binder.registerCustomEditor(Direction.class, new GraphQueryDirectionEditor());
+        binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
     }
 
 	@RequestMapping("/graph")
@@ -99,6 +93,7 @@ public class GraphController extends BasicController {
 			ErrorType error = errorfromBindingResult(bindingResult);
 //			return ProtocolStatusCode.marshal(error);
 			writer.write(ProtocolStatusCode.marshal(error));
+			return;
 		} 
 		
     	// additional validation of query parameters
@@ -110,6 +105,7 @@ public class GraphController extends BasicController {
 			ErrorType error = errorfromBindingResult(bindingResult);
 //			return ProtocolStatusCode.marshal(error);
 			writer.write(ProtocolStatusCode.marshal(error));
+			return;
 		}
 		
 		Object response = null;

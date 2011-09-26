@@ -83,6 +83,8 @@ public class CPathServiceImpl implements CPathService {
 
 	private SimpleIOHandler simpleIO;
 
+	private static Set<String> topPathways;
+	
 	// this is probably required for the echcache to work
 	public CPathServiceImpl() {
 	}
@@ -107,7 +109,7 @@ public class CPathServiceImpl implements CPathService {
 	@PostConstruct
 	public void init() 
 	{
-		//TODO
+		topPathways = mainDAO.getTopPathways();
 	}
 	
 	
@@ -388,30 +390,30 @@ public class CPathServiceImpl implements CPathService {
 
 	@Cacheable(cacheName = "getNeighborhoodCache")
 	@Override
-	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String[] source,
+	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String[] sources,
 		Integer limit, Direction direction)
 	{
 		Analysis analysis = new NeighborhoodAnalysis();
-		return runAnalysis(analysis, format, source, limit, direction);
+		return runAnalysis(analysis, format, sources, limit, direction);
 	}
 
 	@Cacheable(cacheName = "getPathsBetweenCache")
 	@Override
-	public Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source,
-		String[] target, Integer limit)
+	public Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] sources,
+		String[] targets, Integer limit)
 	{
 		
 		Analysis analysis = new PathsBetweenAnalysis();
-		return runAnalysis(analysis, format, source, target, limit);
+		return runAnalysis(analysis, format, sources, targets, limit);
 	}
 
 	@Cacheable(cacheName = "getCommonStreamCache")
 	@Override
-	public Map<ResultMapKey, Object> getCommonStream(OutputFormat format, String[] source,
+	public Map<ResultMapKey, Object> getCommonStream(OutputFormat format, String[] sources,
 		Integer limit, Direction direction)
 	{
 		Analysis analysis = new CommonStreamAnalysis();
-		return runAnalysis(analysis, format, source, limit, direction);
+		return runAnalysis(analysis, format, sources, limit, direction);
 	}
 
 	//---------------------------------------------------------------------------------------------|
@@ -457,7 +459,8 @@ public class CPathServiceImpl implements CPathService {
 				new org.biopax.paxtools.io.sif.level3.ConsecutiveCatalysisRule(),
 				new org.biopax.paxtools.io.sif.level3.ControlRule(),
 				new org.biopax.paxtools.io.sif.level3.ControlsTogetherRule(),
-				new org.biopax.paxtools.io.sif.level3.ParticipatesRule());
+				new org.biopax.paxtools.io.sif.level3.ParticipatesRule()
+				);
         }
 
         // should not make it here
@@ -483,5 +486,43 @@ public class CPathServiceImpl implements CPathService {
 		}
 		
 		return toReturn.toString();
+	}
+
+	
+	/**
+	 * Returns a results map using following pre-defined keys:
+	 * - key: {@link ResultMapKey#DATA}, value: Map (property value, source URI)
+	 * (for object properties, URIs are used instead of object value)
+	 * - key: {@link ResultMapKey#ERROR}, value: error message
+	 * 
+	 */
+	@Override
+	public Map<ResultMapKey, Object> traverse(String propertyPath, String... sourceUris) {
+		Map<ResultMapKey, Object> toReturn = new HashMap<ResultMapKey, Object>();
+		// get results from the DAO
+		Map<Object, String> values = mainDAO.traverse(propertyPath, sourceUris);
+		// TODO convert to Map<String, String>
+		Map<String, String> stringValues = new HashMap<String, String>();
+		for(Object o: values.keySet()) {
+			if(o instanceof BioPAXElement) {
+				stringValues.put(((BioPAXElement) o).getRDFId(), values.get(o));
+			} else if(o instanceof String) {
+				stringValues.put(((String) o), values.get(o));
+			} else {
+				stringValues.put(String.valueOf(o), values.get(o));
+			}
+		}
+		toReturn.put(DATA, stringValues);
+		return toReturn;
+	}
+
+	
+	/**
+	 * Returns the set of top pathway URIs
+	 * 
+	 */
+	@Override
+	public Set<String> getTopPathways() {
+		return topPathways;
 	}
 }

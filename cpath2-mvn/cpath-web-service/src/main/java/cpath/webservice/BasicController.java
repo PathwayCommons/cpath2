@@ -28,29 +28,20 @@
 package cpath.webservice;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Map;
 
 import cpath.service.CPathService;
-import cpath.service.Cmd;
-import cpath.service.CmdArgs;
-import cpath.service.GraphType;
 import cpath.service.ProtocolStatusCode;
 import cpath.service.CPathService.ResultMapKey;
 import cpath.service.OutputFormat;
 import cpath.service.jaxb.ErrorType;
-import cpath.webservice.args.*;
-import cpath.webservice.args.binding.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.Protein;
-import org.biopax.paxtools.query.algorithm.Direction;
-import org.biopax.paxtools.query.algorithm.LimitType;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.*;
 
 import javax.validation.constraints.NotNull;
 
@@ -65,31 +56,6 @@ public abstract class BasicController {
     
     @NotNull
     protected CPathService service; // main PC db access
-    
-	
-	/**
-	 * This configures the web request parameters binding, i.e., 
-	 * conversion to the corresponding java types; for example,
-	 * "neighborhood" is recognized as {@link GraphType#NEIGHBORHOOD}, 
-	 * "search" will become {@link Cmd#SEARCH}, 
-	 *  "protein" - {@link Protein} , etc.
-	 *  Depending on the editor, illegal query parameters may result 
-	 *  in an error or just NULL value (see e.g., {@link CmdArgsEditor})
-	 * 
-	 * @param binder
-	 */
-	@InitBinder
-    protected void initBinder(WebDataBinder binder) {
-        binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
-        binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
-        binder.registerCustomEditor(Direction.class, new GraphQueryDirectionEditor());
-        binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
-        binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
-        binder.registerCustomEditor(Cmd.class, new CmdEditor());
-        binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
-        binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
-        binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
-    }
  
 	
 	protected ErrorType errorfromBindingResult(BindingResult bindingResult) {
@@ -131,15 +97,18 @@ public abstract class BasicController {
      * @param mapKey
      * @return
      */
-    protected Object parseResultMap(Map<ResultMapKey, Object> messageMap, OutputFormat format, String details, ResultMapKey mapKey) {
-    	Object toReturn = null;
+    protected Object parseResultMap(Map<ResultMapKey, Object> messageMap, 
+    		OutputFormat format, String details, ResultMapKey mapKey) {
+    		Object toReturn = null;
     	
 		if (!messageMap.containsKey(ResultMapKey.ERROR)) {
 			toReturn = messageMap.get(mapKey);
 			
 			// check specifically for empty data
-			if(toReturn == null || 
-				(mapKey == ResultMapKey.DATA && "".equals(toReturn.toString().trim()))
+			if(toReturn == null 
+				|| ( toReturn instanceof Collection && ((Collection) toReturn).isEmpty() )
+				|| ( toReturn instanceof Map && ((Map) toReturn).isEmpty() )
+				|| (mapKey == ResultMapKey.DATA && "".equals(toReturn.toString().trim()))
 			)
 			{
 				toReturn = noResultsError(details);

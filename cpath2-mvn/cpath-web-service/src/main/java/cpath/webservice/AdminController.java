@@ -10,7 +10,6 @@ import org.apache.commons.logging.LogFactory;
 import org.biopax.validator.result.ValidatorResponse;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -30,10 +29,10 @@ public class AdminController extends BasicController
 	}
     
 
-	@InitBinder
-    public void initBinder(WebDataBinder binder) {
-		super.initBinder(binder);
-    }
+//	@InitBinder
+//    public void initBinder(WebDataBinder binder) {
+//		//empty
+//    }
 
 	
 	// Get by ID (URI) command

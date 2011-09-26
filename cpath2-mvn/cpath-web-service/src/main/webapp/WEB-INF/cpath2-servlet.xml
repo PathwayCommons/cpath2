@@ -42,5 +42,9 @@
 		<constructor-arg ref="service"/>
 	</bean>
 
+	<bean id="biopaxModelController" class="cpath.webservice.BiopaxModelController">
+		<constructor-arg ref="service"/>
+	</bean>
+
 	<mvc:annotation-driven/>
 </beans>

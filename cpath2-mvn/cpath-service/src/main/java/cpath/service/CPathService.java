@@ -28,7 +28,9 @@
 package cpath.service;
 
 import java.util.Map;
+import java.util.Set;
 
+import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.validator.result.ValidatorResponse;
@@ -38,18 +40,17 @@ import cpath.dao.filters.SearchFilter;
 
 
 /**
- * CPath^2 Service is a mid-tier or adapter between DAOs and web controllers. 
+ * CPath^2 Service is an adapter between DAO and web controllers. 
+ * Can be used in a console application or integration tests 
+ * (web container is not required!)
  * 
- * Can be used in a console application or integration tests (web container is not required!)
+ * This interface defines several middle-tier data access and analysis methods 
+ * that accept valid parameters, handle exceptions, and return results packed 
+ * in a universal HashMap (using predefined keys). This class therefore creates an 
+ * additional "elastic" layer between the public (web, console) api and persistence 
+ * methods, allowing to modify either its implementation or the DAO implementation 
+ * without breaking end user's services (backward compatibility).
  * 
- * This is to implement several query methods 
- * that accept valid parameters and beans, handle exceptions,
- * and return results packed in the HashMap with predefined keys.
- * 
- * TODO Enables "second query" use case -
- * when no data found in the pathway data (main) storage,
- * it will hit Warehouse to find general information (about 
- * CVs, small molecules and proteins)
  * 
  * @author rodche
  *
@@ -57,8 +58,8 @@ import cpath.dao.filters.SearchFilter;
 public interface CPathService {
 
 	/**
-	 * Enumeration: map keys for the cPath^2 service results
-	 * that always returned as a {@link Map}
+	 * Enumeration: map keys for the cPath^2 service tier. 
+	 * Methods have to return a Map using key strings from this enumeration.
 	 * 
 	 */
 	public static enum ResultMapKey {
@@ -91,18 +92,17 @@ public interface CPathService {
 	//--- Graph queries ---------------------------------------------------------------------------|
 
 	/**
-	 * Gets the BioPAX element by id 
-	 * (first-level object props are initialized),
+	 * Gets the BioPAX element by id,
 	 * converts to the required output format (if possible), 
 	 * and returns as map.
 	 * @param format
-	 * @param id the list of URIs to fetch
+	 * @param uris the list of URIs to fetch
 	 * 
 	 * @see ResultMapKey
 	 * 
 	 * @return
 	 */
-	Map<ResultMapKey, Object> fetch(OutputFormat format, String... id);
+	Map<ResultMapKey, Object> fetch(OutputFormat format, String... uris);
 
 	
 	/**
@@ -157,37 +157,37 @@ public interface CPathService {
 	 * Runs a neighborhood query using the given parameters.
 	 *
 	 * @param format output format
-	 * @param source IDs of seed of neighborhood
+	 * @param sources IDs of seed of neighborhood
 	 * @param limit search limit (integer value)
 	 * @param direction flag 
 	 * @return the neighborhood
 	 */
 	Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, 
-			String[] source, Integer limit, Direction direction);
+			String[] sources, Integer limit, Direction direction);
 
 	/**
 	 * Runs a paths-between query from the given sources to the given targets.
 	 *
 	 * @param format output format
-	 * @param source IDs of source molecules
-	 * @param target IDs of target molecules
+	 * @param sources IDs of source molecules
+	 * @param targets IDs of target molecules
 	 * @param limit search limit (integer value)
 	 * @return paths between
 	 */
-	Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source, 
-			String[] target, Integer limit);
+	Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] sources, 
+			String[] targets, Integer limit);
 
 	/**
 	 * Runs a common upstream or downstream query.
 	 *
 	 * @param format output format
-	 * @param source IDs of query seed
+	 * @param sources IDs of query seed
 	 * @param limit search limit
 	 * @param direction - can be {@link Direction#DOWNSTREAM} or {@link Direction#UPSTREAM}
 	 * @return common stream
 	 */
 	Map<ResultMapKey, Object> getCommonStream(OutputFormat format, 
-			String[] source, Integer limit, Direction direction);
+			String[] sources, Integer limit, Direction direction);
 
 	//---------------------------------------------------------------------------------------------|
 
@@ -203,4 +203,25 @@ public interface CPathService {
 	 */
 	Map<ResultMapKey, Object> convert(String biopax, OutputFormat format);
 	
+	
+	/**
+	 * Collects BioPAX property values at the end of the property path
+	 * applied to each BioPAX object in the list (defined by URIs), 
+	 * where applicable.
+	 *  
+	 * @see PathAccessor
+	 * 
+	 * @param propertyPath
+	 * @param sourceUris
+	 * @return
+	 */
+	Map<ResultMapKey, Object> traverse(String propertyPath, String... sourceUris);
+	
+	
+	/**
+	 * Gets top (root) pathways (URIs) in the current BioPAX model.
+	 * 
+	 * @return
+	 */
+	Set<String> getTopPathways();
 }

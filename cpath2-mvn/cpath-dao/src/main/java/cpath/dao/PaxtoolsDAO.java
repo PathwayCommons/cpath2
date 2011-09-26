@@ -35,6 +35,8 @@ import cpath.dao.filters.SearchFilter;
 import cpath.service.jaxb.SearchResponseType;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
@@ -147,10 +149,22 @@ public interface PaxtoolsDAO extends Model {
     
     
     /**
-     * Finds top (root) pathways in the entire BioPAX model.
-     * (It's good idea to cache this method's result permanently)
+     * Finds top (root) pathway URIs in the entire BioPAX model.
+     * (It's good idea to cache this method's result permanently,
+     * may be - in the middle tier)
      * 
      * @return
      */
-    SearchResponseType getTopPathways();
+    Set<String> getTopPathways();
+    
+    
+    /**
+     * Accesses and collects BioPAX property values 
+     * at the end of the path (applied to every element in the list)
+     * 
+     * @param propertyPath
+     * @param uris
+     * @return a map (property value, uri)
+     */
+    Map<Object, String> traverse(String propertyPath, String... uris);
 }
