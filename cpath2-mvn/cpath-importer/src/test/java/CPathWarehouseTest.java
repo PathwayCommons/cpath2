@@ -108,7 +108,7 @@ public class CPathWarehouseTest {
 		
 		factory = BioPAXLevel.L3.getDefaultFactory();
 		
-		DataServicesFactoryBean.rebuildProteinsIndex(); //molecules are in the same test db
+		DataServicesFactoryBean.rebuildIndex("cpath2_test"); //molecules are in the same test db
 	}
 
 	@Test

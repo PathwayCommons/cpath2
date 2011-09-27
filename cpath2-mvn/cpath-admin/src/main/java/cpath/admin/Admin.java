@@ -248,7 +248,8 @@ public class Admin implements Runnable {
             	break;
             case CREATE_INDEX:
             	if(commandParameters != null) {
-            		// re-build the fulltext index
+            		// re-build the full-text index
+            		// it gets the DB name from the environment variables (set in cpath.properties)
             		INDEX_TYPE mtype = INDEX_TYPE.valueOf(commandParameters[0]);
             		ApplicationContext ctx = null;
             		switch (mtype) {
