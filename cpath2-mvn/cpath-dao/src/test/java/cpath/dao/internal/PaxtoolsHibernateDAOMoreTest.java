@@ -31,40 +31,28 @@ package cpath.dao.internal;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.paxtools.model.level3.Xref;
 import org.junit.*;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import cpath.dao.PaxtoolsDAO;
-import cpath.service.jaxb.SearchHitType;
-import cpath.service.jaxb.SearchResponseType;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.List;
 
 import static org.junit.Assert.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration("classpath:testContext-pcDAO.xml")
-@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
-public class PaxtoolsHibernateDAOMoreTest {
-
-    @javax.annotation.Resource(name="pcDAO")
-	PaxtoolsDAO paxtoolsDAO;
-    static SimpleIOHandler io = new SimpleIOHandler(BioPAXLevel.L3);
-
+public class PaxtoolsHibernateDAOMoreTest {    
     @Test
 	public void testImportExportRead() throws IOException {
+    	SimpleIOHandler io = new SimpleIOHandler(BioPAXLevel.L3);
+    	DataServicesFactoryBean.createSchema("cpath2_testpc");
+    	ApplicationContext context = new ClassPathXmlApplicationContext(
+				"classpath:testContext-pcDAO.xml");
+    	PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO) context.getBean("pcDAO");
     	// import (not so good) pathway data
 		Resource input = (new DefaultResourceLoader()).getResource("classpath:biopax-level3-test.owl");
 		paxtoolsDAO.importModel(input.getFile());
@@ -84,18 +72,5 @@ public class PaxtoolsHibernateDAOMoreTest {
 		assertTrue(model.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
 		assertEquals(55, model.getObjects().size());
 	}
-    
-    @Test
-	public void testSearch() throws IOException {
-    	// import (not so good) pathway data
-		Resource input = (new DefaultResourceLoader()).getResource("classpath:xrefs.owl");
-		paxtoolsDAO.importModel(input.getFile());
-		
-		assertEquals(3, paxtoolsDAO.getObjects(Xref.class).size());
-		DataServicesFactoryBean.rebuildIndex("cpath2_testpc");
-		
-		SearchResponseType resp = paxtoolsDAO.findElements("P46880", 0, UnificationXref.class);
-		assertFalse(resp.getSearchHit().isEmpty());
-		assertEquals(1, resp.getSearchHit().size());
-	}
+
 }
