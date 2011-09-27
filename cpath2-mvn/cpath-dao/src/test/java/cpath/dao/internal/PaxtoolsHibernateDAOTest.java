@@ -37,6 +37,8 @@ import org.biopax.paxtools.model.level3.*;
 import org.junit.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
 
 import org.apache.commons.logging.*;
 
@@ -67,8 +69,9 @@ public class PaxtoolsHibernateDAOTest {
 	 */
     static {
 		// init the DAO (it loads now because databases are created above)
+    	DataServicesFactoryBean.createSchema("cpath2_testpc");
 		ApplicationContext context = new ClassPathXmlApplicationContext(
-				"classpath:testContext-pcDAO.xml"); //auto-creates schema
+				"classpath:testContext-pcDAO.xml");
 		paxtoolsDAO = (PaxtoolsDAO) context.getBean("pcDAO");
 		whDAO = (WarehouseDAO) context.getBean("whDAO");
 		
@@ -261,6 +264,20 @@ public class PaxtoolsHibernateDAOTest {
 		list = resp.getSearchHit();
 		assertEquals(1, list.size());
 		assertTrue(list.get(0).getUri().equals("urn:miriam:uniprot:P46880"));
+		
+		
+    	// import more data
+		paxtoolsDAO.importModel(
+			(new DefaultResourceLoader()).getResource("classpath:xrefs.owl")
+				.getFile());
+		DataServicesFactoryBean.rebuildIndex("cpath2_testpc");
+		
+		resp = paxtoolsDAO.findElements("P46880", 0, UnificationXref.class);
+		assertFalse(resp.getSearchHit().isEmpty());
+		assertEquals(1, resp.getSearchHit().size());
+		resp = paxtoolsDAO.findElements("9847135", 0, PublicationXref.class);
+		assertFalse(resp.getSearchHit().isEmpty());
+		assertEquals(1, resp.getSearchHit().size());
 	}
 	
 	   public void testIsWhDAOInstance() {
