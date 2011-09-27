@@ -34,11 +34,12 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.hibernate.search.annotations.DocumentId;
+import org.hibernate.search.annotations.Field;
 import org.junit.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.core.io.Resource;
 
 import org.apache.commons.logging.*;
 
@@ -266,18 +267,26 @@ public class PaxtoolsHibernateDAOTest {
 		assertTrue(list.get(0).getUri().equals("urn:miriam:uniprot:P46880"));
 		
 		
-    	// import more data
-		paxtoolsDAO.importModel(
-			(new DefaultResourceLoader()).getResource("classpath:xrefs.owl")
-				.getFile());
-		DataServicesFactoryBean.rebuildIndex("cpath2_testpc");
-		
-		resp = paxtoolsDAO.findElements("P46880", 0, UnificationXref.class);
-		assertFalse(resp.getSearchHit().isEmpty());
-		assertEquals(1, resp.getSearchHit().size());
-		resp = paxtoolsDAO.findElements("9847135", 0, PublicationXref.class);
-		assertFalse(resp.getSearchHit().isEmpty());
-		assertEquals(1, resp.getSearchHit().size());
+//    	/* This precious piece of code used to be a separate test method, which
+//		 * once has helped to catch/understand a VERY important problem about Hibernate/Search Mass Indexer:
+//		 * if failed/hang if a class has an ORM annotated/mapped 'id' property 
+//		 * (as, e.g., Xref had @Field @Column getId() method) 
+//		 * despite that there was also a primary key field defined, e.g., 
+//		 * as "@Id @DocumentId public String getRDFId()..."! It was resolved by making getId() @Transient 
+//		 * and creating another pair of @Field annotated getter/setter, getIdx()/setIdx(String).
+//		 * So, "id" field/property is better to avoid or use a more specific name instead!
+//		 */
+//		paxtoolsDAO.importModel(
+//			(new DefaultResourceLoader()).getResource("classpath:xrefs.owl")
+//				.getFile());
+//		DataServicesFactoryBean.rebuildIndex("cpath2_testpc");
+//		
+//		resp = paxtoolsDAO.findElements("P46880", 0, UnificationXref.class);
+//		assertFalse(resp.getSearchHit().isEmpty());
+//		assertEquals(1, resp.getSearchHit().size());
+//		resp = paxtoolsDAO.findElements("9847135", 0, PublicationXref.class);
+//		assertFalse(resp.getSearchHit().isEmpty());
+//		assertEquals(1, resp.getSearchHit().size());
 	}
 	
 	   public void testIsWhDAOInstance() {
