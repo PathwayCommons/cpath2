@@ -1058,17 +1058,20 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	
 	/**
-	 * TODO "Top pathway" can mean different thing...
-	 * Here we collect those pathways which are not 
-	 * values of any object BioPAX property, i.e., 
-	 * 'stepProcess', 'pathwayComponent', 
-	 *  sub-classes of 'participant' (that includes 
-	 *  both 'controller' and 'controlled'!).
+	 * "Top pathway" can mean different things...
 	 * 
-	 * An alternative definition of "top" could rest on 
-	 * whether particular (inverse) properties, such as 
-	 * controlledOf, pathwayComponentOf and stepProcessOf,
-	 * are empty...
+	 * 1) One may want simply collect pathways which are not 
+	 * values of any BioPAX property ("graph-theoretic" approach, 
+	 * used by {@link ModelUtils#getRootElements(Class)} method).
+	 * Alternative approaches would be:
+	 * 2) - to check whether particular (inverse) properties, such as 
+	 * controlledOf, pathwayComponentOf and stepProcessOf, are empty; or
+	 * 3) - to check whether a pathway is reachable from other pathways if
+	 * to follow standard BioPAX object range properties; this method is used 
+	 * by the BioPAX normalizer (in the cPath2 "premerge" stage), which 
+	 * for all BioPAX Entities generates relationship xrefs to parent pathways.
+	 * 
+	 * Here we use the second method!
 	 * 
 	 */
 	@Override
@@ -1076,31 +1079,43 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public Set<String> getTopPathways() {
 		Set<String> toReturn = new TreeSet<String>();
 		
-		// we could also use another (perhaps too expensive) approach -
-//		ModelUtils mu = new ModelUtils(this);
-//		Set<Pathway> topPathways = mu.getRootElements(Pathway.class);
-		
+		// here we use the aproach #2
 		for(Pathway pathway : getObjects(Pathway.class)) {
-			// we'll simply check each pathway's generated rel. xrefs:
-			Set<RelationshipXref> rxs = new ClassFilterSet<Xref, 
-				RelationshipXref>(pathway.getXref(), RelationshipXref.class);
-			boolean isTop = true;
-			if(!rxs.isEmpty()) {
-				// hack: find a "process" rel.xrefs (auto-generated during the data import)
-				for(RelationshipXref rx : rxs) {
-					if(isProcessRelationshipXref(rx))
-					{
-						if(getByID(rx.getId()) instanceof Pathway) {
-							isTop = false;
-							break;
-						}
-					}
-				}
-			} 
-			if(isTop) {
+			if(pathway.getControlledOf().isEmpty()
+					&& pathway.getStepProcessOf().isEmpty()
+					&& pathway.getPathwayComponentOf().isEmpty()) {
 				toReturn.add(pathway.getRDFId());
 			}
 		}
+		
+//		// would be if using method #1 -
+//		Set<Pathway> topPathways = mu.getRootElements(Pathway.class);
+//		for(Pathway pathway : topPathways) {
+//			toReturn.add(pathway.getRDFId());
+//		}
+
+//		// would be if using method #3 -
+//		for(Pathway pathway : getObjects(Pathway.class)) {
+//			// we'll simply check each pathway's generated rel. xrefs:
+//			Set<RelationshipXref> rxs = new ClassFilterSet<Xref, 
+//				RelationshipXref>(pathway.getXref(), RelationshipXref.class);
+//			boolean isTop = true;
+//			if(!rxs.isEmpty()) {
+//				// hack: find a "process" rel.xrefs (auto-generated during the data import)
+//				for(RelationshipXref rx : rxs) {
+//					if(isProcessRelationshipXref(rx))
+//					{
+//						if(getByID(rx.getId()) instanceof Pathway) {
+//							isTop = false;
+//							break;
+//						}
+//					}
+//				}
+//			} 
+//			if(isTop) {
+//				toReturn.add(pathway.getRDFId());
+//			}
+//		}
 		
 		return toReturn;
 	}
