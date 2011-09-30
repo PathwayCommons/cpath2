@@ -29,8 +29,7 @@ package cpath.webservice;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Arrays;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 import cpath.service.CPathService;
@@ -39,6 +38,7 @@ import cpath.service.ProtocolStatusCode;
 import cpath.service.CPathService.ResultMapKey;
 import cpath.service.OutputFormat;
 import cpath.service.jaxb.ErrorType;
+import cpath.service.jaxb.SearchResponseType;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
 
@@ -117,13 +117,11 @@ public class BiopaxModelController extends BasicController {
     }  
  
 
-    @RequestMapping("/topPathways")
-    public void topPathways(Writer writer) throws IOException
+    @RequestMapping("/top_pathways")
+    @ResponseBody
+    public SearchResponseType topPathways()
     {
-    	for(String uri : service.getTopPathways()) {
-    		writer.write(uri);
-    		writer.append(newline);
-    	}
+    	return service.getTopPathways();
     }
     
     
@@ -135,21 +133,22 @@ public class BiopaxModelController extends BasicController {
     		ErrorType error = errorfromBindingResult(bindingResult);
     		String str = ProtocolStatusCode.marshal(error);
     		writer.write(str);
-    		return;
-    	}
-    	
-    	Map<ResultMapKey, Object> result = service.traverse(query.getPath(), query.getUri());
-    	Object data = parseResultMap(result, null, Arrays.toString(query.getUri()), ResultMapKey.DATA);
-    	if(data instanceof ErrorType) {
-    		writer.write(ProtocolStatusCode.marshal((ErrorType)data));
     	} else {
-			if(log.isDebugEnabled())
-				log.debug("QUERY RETURNED " + ((Map)data).size() + " values");
-			
-    		for(Entry<String, String> etry : ((Map<String,String>)data).entrySet()) {
-    			writer.write(etry.getValue() + "\t" + etry.getKey());
-    			writer.append(newline);
-    		}
-    	}
+			Map<ResultMapKey, Object> result = service.traverse(
+				query.getPath(), query.getUri());
+			Object data = parseResultMap(result, null,
+				Arrays.toString(query.getUri()), ResultMapKey.DATA);
+			if (data instanceof ErrorType) {
+				writer.write(ProtocolStatusCode.marshal((ErrorType) data));
+			} else {
+				if (log.isDebugEnabled())
+					log.debug("QUERY RETURNED " + ((Map) data).size() + " values");
+				
+				for (Entry<String, String> etry : ((Map<String, String>) data).entrySet()) {
+					writer.write(etry.getValue() + "\t" + etry.getKey());
+					writer.append(newline);
+				}
+			}
+		}
     }
 }

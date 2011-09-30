@@ -31,7 +31,7 @@ public class SearchHitType {
     protected String actualHitUri;
     @XmlElement(required = true)
     protected String biopaxClass;
-    protected List<String> name;
+    protected String name;
     protected List<String> dataSource;
     protected List<String> organism;
     protected List<String> pathway;
@@ -52,13 +52,10 @@ public class SearchHitType {
 		this.actualHitUri = actualHitUri;
 	}
 	
-	public List<String> getName() {
-        if (name == null) {
-            name = new ArrayList<String>();
-        }
+	public String getName() {
         return this.name;
     }
-	public void setName(List<String> name) {
+	public void setName(String name) {
 		this.name = name;
 	}
 
