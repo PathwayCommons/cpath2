@@ -28,7 +28,6 @@
 package cpath.service;
 
 import java.util.Map;
-import java.util.Set;
 
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -37,6 +36,7 @@ import org.biopax.validator.result.ValidatorResponse;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
+import cpath.service.jaxb.SearchResponseType;
 
 
 /**
@@ -219,9 +219,9 @@ public interface CPathService {
 	
 	
 	/**
-	 * Gets top (root) pathways (URIs) in the current BioPAX model.
+	 * Gets top (root) pathways (URIs, names) in the current BioPAX model.
 	 * 
 	 * @return
 	 */
-	Set<String> getTopPathways();
+	SearchResponseType getTopPathways();
 }

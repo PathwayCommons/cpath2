@@ -8,7 +8,6 @@ import javax.xml.bind.annotation.*;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "SearchResponseType", propOrder = {"error", "searchHit"})
 public class SearchResponseType {
-
     protected ErrorType error;
     @XmlAttribute
     protected Integer numHitsBeforeRefined;

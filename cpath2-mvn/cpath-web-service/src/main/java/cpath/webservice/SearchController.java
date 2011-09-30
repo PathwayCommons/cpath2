@@ -151,7 +151,7 @@ public class SearchController extends BasicController {
 	}
 
     
-	@RequestMapping(value="/entity/find")
+	@RequestMapping(value="/find_entity")
     public @ResponseBody SearchResponseType findEntities(@Valid Search search, BindingResult bindingResult)
     {		
 		if(bindingResult.hasErrors()) {
@@ -161,7 +161,7 @@ public class SearchController extends BasicController {
 		}
 		
 		if (log.isDebugEnabled())
-			log.debug("/entity/find called (for " + search.getType() + "), query:" 
+			log.debug("/find_entity called (for " + search.getType() + "), query:" 
 				+ search.getQ() + ", page #" + search.getPage());
 		
 		Set<SearchFilter> searchFilters = createFilters(

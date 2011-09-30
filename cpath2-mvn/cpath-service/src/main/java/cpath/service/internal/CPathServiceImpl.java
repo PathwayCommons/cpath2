@@ -83,7 +83,7 @@ public class CPathServiceImpl implements CPathService {
 
 	private SimpleIOHandler simpleIO;
 
-	private static Set<String> topPathways;
+	private static SearchResponseType topPathways;
 	
 	// this is probably required for the echcache to work
 	public CPathServiceImpl() {
@@ -522,7 +522,7 @@ public class CPathServiceImpl implements CPathService {
 	 * 
 	 */
 	@Override
-	public Set<String> getTopPathways() {
+	public SearchResponseType getTopPathways() {
 		return topPathways;
 	}
 }

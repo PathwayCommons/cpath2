@@ -48,6 +48,7 @@ public enum CmdArgs {
     limit("graph query search distance limit"),
     biopax("a BioPAX OWL to convert"),
     path("a BioPAX property path expression (like xPath)"),
+    direction("graph query parameter 'direction'"),
     //TODO future (graph query extention point, plugins...)
     //alg("a user-defined algorithm to run."), 
 	;
@@ -61,4 +62,9 @@ public enum CmdArgs {
 	private CmdArgs(String info) {
 		this.info = info;
 	}
+	
+	@Override
+	public String toString() {
+		return name().toLowerCase();
+	}	
 }

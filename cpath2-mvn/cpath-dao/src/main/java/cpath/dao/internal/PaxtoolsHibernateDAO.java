@@ -55,7 +55,6 @@ import org.biopax.paxtools.model.level3.SequenceEntityReference;
 import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
-import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
@@ -981,10 +980,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				Named named = (Named)bpe;
 				String std = named.getStandardName();
 				if( std != null)
-					hit.getName().add(std);
-				String dsp = named.getDisplayName();
-				if(dsp != null && !dsp.equalsIgnoreCase(std))
-					hit.getName().add(dsp);
+					hit.setName(std);
+				else
+					hit.setName(named.getDisplayName());
 			}
 			
 			// add organisms and data sources
@@ -1076,22 +1074,23 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 */
 	@Override
 	@Transactional(readOnly = true)
-	public Set<String> getTopPathways() {
-		Set<String> toReturn = new TreeSet<String>();
+	public SearchResponseType getTopPathways() {
+		SearchResponseType toReturn = new SearchResponseType();
 		
 		// here we use the aproach #2
 		for(Pathway pathway : getObjects(Pathway.class)) {
 			if(pathway.getControlledOf().isEmpty()
 					&& pathway.getStepProcessOf().isEmpty()
-					&& pathway.getPathwayComponentOf().isEmpty()) {
-				toReturn.add(pathway.getRDFId());
+					&& pathway.getPathwayComponentOf().isEmpty()) 
+			{
+				toReturn.getSearchHit().add(bpeToSearcHit(pathway));
 			}
 		}
 		
 //		// would be if using method #1 -
 //		Set<Pathway> topPathways = mu.getRootElements(Pathway.class);
 //		for(Pathway pathway : topPathways) {
-//			toReturn.add(pathway.getRDFId());
+//			toReturn.getSearchHit().add(bpeToSearcHit(pathway));
 //		}
 
 //		// would be if using method #3 -
@@ -1113,7 +1112,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 //				}
 //			} 
 //			if(isTop) {
-//				toReturn.add(pathway.getRDFId());
+//				toReturn.getSearchHit().add(bpeToSearcHit(pathway));
 //			}
 //		}
 		
