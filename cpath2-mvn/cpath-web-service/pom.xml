@@ -95,7 +95,7 @@
 		<dependency>
   			<groupId>pathwaycommons.cpath</groupId>
   			<artifactId>cpath-schema</artifactId>
-  			<version>${project.version}</version>
+  			<version>1.0.0</version>
   		</dependency>
 	</dependencies>
 	<properties>

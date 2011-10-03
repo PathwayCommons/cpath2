@@ -4,10 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.*;
 
-@XmlRootElement(namespace="http://pathwaycommons.org/cpath2/1.0/search")
+@XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(
-	namespace="http://pathwaycommons.org/cpath2/1.0/search", 
 	name = "SearchResponseType", 
 	propOrder = {
     "error",

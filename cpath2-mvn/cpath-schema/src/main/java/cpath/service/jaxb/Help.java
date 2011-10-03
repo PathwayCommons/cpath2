@@ -15,8 +15,8 @@ import javax.xml.bind.annotation.*;
  * @author rodche
  *
  */
-@XmlRootElement(namespace="http://pathwaycommons.org/cpath2/1.0/help")
-@XmlType(namespace="http://pathwaycommons.org/cpath2/1.0/help", name = "Help")
+@XmlRootElement
+@XmlType(name = "Help")
 @XmlAccessorType(XmlAccessType.PUBLIC_MEMBER)
 public class Help implements Comparable<Help> {
 
