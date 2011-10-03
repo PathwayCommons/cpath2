@@ -123,8 +123,8 @@ public class SearchController extends BasicController {
     	if(bindingResult.hasErrors()) {
     		ErrorType error = errorfromBindingResult(bindingResult);
     		String str = ProtocolStatusCode.marshal(error);
-//			return str;
     		writer.write(str);
+    		return;
     	}
     	    	
     	OutputFormat format = get.getFormat();
@@ -137,13 +137,11 @@ public class SearchController extends BasicController {
     	Object data = parseResultMap(result, format, Arrays.toString(uri), ResultMapKey.DATA);
     	
     	if(data instanceof ErrorType) {
-//			return ProtocolStatusCode.marshal((ErrorType)data);
     		writer.write(ProtocolStatusCode.marshal((ErrorType)data));
 		} else {
 			if(log.isDebugEnabled())
 				log.debug("QUERY RETURNED " 
 					+ data.toString().length() + " chars");
-//			return (String) data;
 			writer.write((String) data);
 		}
     }  
@@ -151,7 +149,6 @@ public class SearchController extends BasicController {
     
     private Set<SearchFilter> createFilters(OrganismDataSource[] organisms,
 			PathwayDataSource[] dataSources )
-//			, String[] pathwayURIs) 
 	{
 		Set<SearchFilter> searchFilters = new HashSet<SearchFilter>();
 		if(organisms != null) { // it's optional parameter (can be null)
@@ -180,12 +177,6 @@ public class SearchController extends BasicController {
 			byDatasourceFilter.setValues(dsourceURIs);
 			searchFilters.add(byDatasourceFilter);
 		}
-		
-//		if (pathwayURIs != null) {
-//			SearchFilter<Entity, String> byProcessFilter = new EntityByProcessRelationshipXrefsFilter();
-//			byProcessFilter.setValues(pathwayURIs);
-//			searchFilters.add(byProcessFilter);
-//		}
 		
 		return searchFilters;
 	}
