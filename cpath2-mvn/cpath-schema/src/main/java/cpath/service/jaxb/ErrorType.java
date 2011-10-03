@@ -9,7 +9,7 @@ import javax.xml.bind.annotation.XmlType;
 
 
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(namespace="http://pathwaycommons.org/cpath2/1.0/search")
+@XmlType
 public class ErrorType {
 
     @XmlElement(name = "error_code", required = true)
