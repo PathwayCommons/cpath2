@@ -16,33 +16,6 @@
 				<target>1.6</target>
 			</configuration>
 		</plugin>
-  			<!-- 
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>jaxb2-maven-plugin</artifactId>
-				<version>1.3</version>
-				<executions>
-					<execution>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>xjc</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<clearOutputDir>false</clearOutputDir>
-					<packageName>cpath.service.jaxb</packageName>
-					<schemaDirectory>${basedir}/src/main/resources/schemas</schemaDirectory>
-				</configuration>
-				<dependencies>
-					<dependency>
-						<groupId>xerces</groupId>
-						<artifactId>xercesImpl</artifactId>
-						<version>2.8.1</version>
-					</dependency>
-				</dependencies>
-			</plugin>
-		-->
 			<!-- generate schema from beans -->
 			<plugin>
 				<groupId>com.sun.tools.jxc.maven2</groupId>
@@ -57,16 +30,6 @@
 						<configuration>
 							<project>${project}</project>
 							<srcdir>${project.build.sourceDirectory}/cpath/service/jaxb/</srcdir>
-							<schemas>
-								<schema>
-									<namespace>http://pathwaycommons.org/cpath2/1.0/search</namespace>
-									<file>search.xsd</file>
-								</schema>
-								<schema>
-									<namespace>http://pathwaycommons.org/cpath2/1.0/help</namespace>
-									<file>help.xsd</file>
-								</schema>
-							</schemas>
 							<verbose>true</verbose>
 						</configuration>
 					</execution>
@@ -121,7 +84,7 @@
 				<site>
 					<id>biopax.sf.net</id>
 					<name>BioPAX Sourceforge site</name>
-					<url>${local.biopax.site}/cpath2-${project.version}</url>
+					<url>${local.biopax.site}/${project.artifactId}-${project.version}</url>
 				</site>
 			</distributionManagement>
 		</profile>
@@ -132,6 +95,6 @@
   		<artifactId>validation-api</artifactId>
   		<version>1.0.0.GA</version>
   	</dependency>
-  </dependencies>
+  </dependencies> 
   
 </project>
