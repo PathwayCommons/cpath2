@@ -32,7 +32,6 @@ import java.io.Writer;
 import java.util.Arrays;
 import java.util.Map;
 
-import static cpath.service.CPathService.*;
 import cpath.service.CPathService;
 import cpath.service.Cmd;
 import cpath.service.GraphType;
@@ -99,6 +98,7 @@ public class GraphController extends BasicController {
 			ErrorType error = errorfromBindingResult(bindingResult);
 //			return ProtocolStatusCode.marshal(error);
 			writer.write(ProtocolStatusCode.marshal(error));
+			return;
 		} 
 		
     	// additional validation of query parameters
@@ -110,6 +110,7 @@ public class GraphController extends BasicController {
 			ErrorType error = errorfromBindingResult(bindingResult);
 //			return ProtocolStatusCode.marshal(error);
 			writer.write(ProtocolStatusCode.marshal(error));
+			return;
 		}
 		
 		Object response = null;
