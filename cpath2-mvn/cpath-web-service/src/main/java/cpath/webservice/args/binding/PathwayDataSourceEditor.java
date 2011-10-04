@@ -88,8 +88,9 @@ public class PathwayDataSourceEditor extends PropertyEditorSupport
 		if(dataSource != null)
 			setValue(new PathwayDataSource(dataSource));
 		else {
-			setValue(null);
-			log.info("No matching data source (Provenance) found for " + ds);
+			throw new IllegalArgumentException("Illegal value for 'datasource': " + ds);
+//			setValue(null);
+//			log.info("No matching data source (Provenance) found for " + ds);
 		}
 	}
 	

@@ -17,7 +17,6 @@ public class Search {
 	private OrganismDataSource[] organism;
 	@Valid
 	private PathwayDataSource[] datasource;
-	//private String[] pathwayURIs;
 	
 	@Min(0)
 	private Integer page;
@@ -66,12 +65,4 @@ public class Search {
 		this.page = page;
 	}
 
-	
-//	public String[] getPathwayURIs() {
-//		return pathwayURIs;
-//	}
-//
-//	public void setPathwayURIs(String[] pathwayURIs) {
-//		this.pathwayURIs = pathwayURIs;
-//	}
 }
