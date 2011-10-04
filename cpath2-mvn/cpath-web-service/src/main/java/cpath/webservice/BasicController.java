@@ -96,7 +96,15 @@ public abstract class BasicController {
 		ErrorType error = ProtocolStatusCode.BAD_REQUEST.createErrorType();
 		StringBuffer sb = new StringBuffer();
 		for (FieldError fe : bindingResult.getFieldErrors()) {
-			sb.append(fe.getField() + " was " + fe.getRejectedValue() + "; "
+			Object rejectedVal = fe.getRejectedValue();
+			if(rejectedVal instanceof Object[]) {
+				if(((Object[]) rejectedVal).length > 0) {
+					rejectedVal = Arrays.toString((Object[])rejectedVal);
+				} else {
+					rejectedVal = "empty array";
+				}
+			}
+			sb.append(fe.getField() + " was '" + rejectedVal + "'; "
 					+ fe.getDefaultMessage() + ". ");
 		}
 		error.setErrorDetails(sb.toString());

@@ -151,7 +151,8 @@ public class SearchController extends BasicController {
 			PathwayDataSource[] dataSources )
 	{
 		Set<SearchFilter> searchFilters = new HashSet<SearchFilter>();
-		if(organisms != null) { // it's optional parameter (can be null)
+		
+		if(organisms != null && organisms.length>0) { // it's optional parameter (can be null)
 			String[] organismURIs = new String[organisms.length];
 			int i = 0;
 			for(OrganismDataSource o : organisms) {
@@ -167,7 +168,7 @@ public class SearchController extends BasicController {
 			searchFilters.add(byOrganismFilter);
 		}
 		
-		if(dataSources != null) { // because of being optional arg.
+		if(dataSources != null && dataSources.length > 0) { // because of being optional arg.
 			String[] dsourceURIs = new String[dataSources.length];
 			int i = 0;
 			for(PathwayDataSource d : dataSources) {
@@ -185,18 +186,18 @@ public class SearchController extends BasicController {
     @RequestMapping(value="/find")
     public @ResponseBody SearchResponseType find(@Valid Search search, BindingResult bindingResult)
     {		
-		if(bindingResult.hasErrors()) {
+		if (log.isDebugEnabled())
+			log.debug("/find called (for " + search.getType() + "), query:" 
+				+ search.getQ() + ", page #" + search.getPage());
+    	
+    	if(bindingResult.hasErrors()) {
 			SearchResponseType response = new SearchResponseType();
 			response.setError(errorfromBindingResult(bindingResult));
 			return response; // return ERROR
 		}
 		
-		if (log.isDebugEnabled())
-			log.debug("/find called (for " + search.getType() + "), query:" 
-				+ search.getQ() + ", page #" + search.getPage());
-		
 		Set<SearchFilter> searchFilters = createFilters(
-				search.getOrganism(), search.getDatasource());//, search.getPathwayURIs());
+				search.getOrganism(), search.getDatasource());
 
 		// get results from the service
 		Map<ResultMapKey, Object> results = service.findElements(
@@ -224,7 +225,7 @@ public class SearchController extends BasicController {
 				+ search.getQ() + ", page #" + search.getPage());
 		
 		Set<SearchFilter> searchFilters = createFilters(
-				search.getOrganism(), search.getDatasource());//, search.getPathwayURIs());
+				search.getOrganism(), search.getDatasource());
 
 		// get results from the service
 		Map<ResultMapKey, Object> results = service.findEntities(

@@ -87,8 +87,9 @@ public class OrganismDataSourceEditor extends PropertyEditorSupport
 		if(dataSource != null)
 			setValue(new OrganismDataSource(dataSource));
 		else {
-			setValue(null);
-			log.info("No matching organism (BioSource object) found for " + ds);
+			throw new IllegalArgumentException("Illegal value for 'organism': " + ds);
+//			setValue(null);
+//			log.info("No matching organism (BioSource object) found for " + ds);
 		}
 	}
 	
