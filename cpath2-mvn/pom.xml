@@ -6,7 +6,7 @@
 	<artifactId>parent</artifactId>
 	<packaging>pom</packaging>
 	<name>CPathSquared</name>
-	<version>1.0.0</version>
+	<version>1.0.1-SNAPSHOT</version>
 	<description>A software suite for storing, visualizing, and analyzing biological pathways.</description>
 	<url>http://code.google.com/p/pathway-commons/</url>
 	
