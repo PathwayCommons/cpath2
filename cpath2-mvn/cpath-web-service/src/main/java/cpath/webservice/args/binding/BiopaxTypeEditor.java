@@ -62,7 +62,8 @@ public class BiopaxTypeEditor extends PropertyEditorSupport {
 	 *     ProteinReference, PROTEINREFERENCE, proteinreference, etc.
 	 * 
 	 */
-	private static Class<? extends BioPAXElement> getSearchableBiopaxClassByName(String type) {
+	private static Class<? extends BioPAXElement> getSearchableBiopaxClassByName(String type) 
+	{
 		// case sensitive -
 		//return bioPAXFactory.getImplClass(BioPAXLevel.L3.getInterfaceForName(type));
 		
@@ -74,9 +75,9 @@ public class BiopaxTypeEditor extends PropertyEditorSupport {
 			}
 		}
 		
-		log.info("Illegal BioPAX class name '" +
-			type + "' (cannot this " +
-			"as a filter by type value in queries) ");
-		return null;
+//		log.info("Illegal BioPAX class name '" +
+//			type + "' (cannot this " +
+//			"as a filter by type value in queries) ");
+		throw new IllegalArgumentException("Illegal BioPAX class name '" + type);
 	}
 }

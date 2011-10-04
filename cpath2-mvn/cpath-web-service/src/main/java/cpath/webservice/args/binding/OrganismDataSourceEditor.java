@@ -53,7 +53,7 @@ public class OrganismDataSourceEditor extends PropertyEditorSupport
 	private static final Log log = LogFactory.getLog(OrganismDataSourceEditor.class);
 	
 	@Override
-	public void setAsText(String ds) throws IllegalArgumentException {
+	public void setAsText(String ds) {
 		DataSource dataSource = null;
 		
 		/*
@@ -87,8 +87,7 @@ public class OrganismDataSourceEditor extends PropertyEditorSupport
 		if(dataSource != null)
 			setValue(new OrganismDataSource(dataSource));
 		else {
-			setValue(null);
-			log.info("No matching organism (BioSource object) found for " + ds);
+			throw new IllegalArgumentException("Illegal value for 'organism': " + ds);
 		}
 	}
 	

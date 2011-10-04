@@ -54,7 +54,7 @@ public class PathwayDataSourceEditor extends PropertyEditorSupport
 	private static final Log log = LogFactory.getLog(PathwayDataSourceEditor.class);
 	
 	@Override
-	public void setAsText(String ds) throws IllegalArgumentException {
+	public void setAsText(String ds) {
 		DataSource dataSource = null;
 		
 		/*
@@ -88,8 +88,7 @@ public class PathwayDataSourceEditor extends PropertyEditorSupport
 		if(dataSource != null)
 			setValue(new PathwayDataSource(dataSource));
 		else {
-			setValue(null);
-			log.info("No matching data source (Provenance) found for " + ds);
+			throw new IllegalArgumentException("Illegal value for 'datasource': " + ds);
 		}
 	}
 	
