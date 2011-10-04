@@ -43,14 +43,9 @@ public class CmdArgsEditor extends PropertyEditorSupport {
 	private static final Log log = LogFactory.getLog(CmdArgsEditor.class);
 	
 	@Override
-	public void setAsText(String arg0) throws IllegalArgumentException {
+	public void setAsText(String arg0) {
 		Object value = null;
-		try{
-			value = CmdArgs.valueOf(arg0.trim().toUpperCase());
-		} catch (IllegalArgumentException e) {
-			log.info("Illegal argument (for a webservice command): " + arg0, e);
-		}
+		value = CmdArgs.valueOf(arg0.trim().toUpperCase());
 		setValue(value);
-	}
-	
+	}	
 }

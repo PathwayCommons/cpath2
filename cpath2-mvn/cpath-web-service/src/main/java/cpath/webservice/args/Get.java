@@ -1,5 +1,6 @@
 package cpath.webservice.args;
 
+import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 import org.hibernate.validator.constraints.NotEmpty;
@@ -8,6 +9,7 @@ import cpath.service.OutputFormat;
 
 public class Get {
 	@NotNull(message="Illegal Output Format") 
+	@Valid
 	private OutputFormat format;
 	// required at least one value
 	@NotNull(message="Parameter 'uri' is required!")

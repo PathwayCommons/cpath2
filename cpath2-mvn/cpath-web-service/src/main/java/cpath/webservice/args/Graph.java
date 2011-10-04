@@ -1,5 +1,6 @@
 package cpath.webservice.args;
 
+import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
@@ -11,6 +12,7 @@ import cpath.service.OutputFormat;
 
 public class Graph {
 	@NotNull(message="Parameter 'kind' is required!")
+	@Valid
 	private GraphType kind; //required!
 	
 	@NotNull(message="Parameter 'source' is required!")
@@ -22,6 +24,7 @@ public class Graph {
 	@Min(1) //note: this allows for null
 	private Integer limit;
 	
+	@Valid
 	private Direction direction;
 	
 	@NotNull(message="Illegal Output Format")
