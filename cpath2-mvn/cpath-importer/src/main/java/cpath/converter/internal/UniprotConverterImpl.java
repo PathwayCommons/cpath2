@@ -404,6 +404,7 @@ public class UniprotConverterImpl extends BaseConverterImpl {
 			toReturn = (BioSource) proteinReferenceModel.addNew(
 					BioSource.class, rdfId);
 			toReturn.setStandardName(name);
+			toReturn.setDisplayName(name);
 			UnificationXref taxonXref = (UnificationXref) proteinReferenceModel
 				.addNew(UnificationXref.class, 
 					Normalizer.generateURIForXref("TAXONOMY", taxId, null, UnificationXref.class));
