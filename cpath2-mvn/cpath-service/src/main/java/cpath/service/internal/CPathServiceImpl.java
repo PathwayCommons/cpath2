@@ -500,6 +500,7 @@ public class CPathServiceImpl implements CPathService {
 	public Map<ResultMapKey, Object> traverse(String propertyPath, String... sourceUris) {
 		Map<ResultMapKey, Object> toReturn = new HashMap<ResultMapKey, Object>();
 		// get results from the DAO
+		//TODO Fix a hidden bug (in DAO, traverse): records with equal keys are lost!
 		Map<Object, String> values = mainDAO.traverse(propertyPath, sourceUris);
 		// TODO convert to Map<String, String>
 		Map<String, String> stringValues = new HashMap<String, String>();

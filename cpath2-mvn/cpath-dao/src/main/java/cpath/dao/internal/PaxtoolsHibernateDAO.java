@@ -1128,6 +1128,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 */
 	@Transactional(readOnly = true)
 	@Override
+	//TODO Fix a hidden bug: Object key CAN happen to be the same value here!
 	public Map<Object, String> traverse(String propertyPath, String... uris) {
 		Map<Object, String> values = new HashMap<Object, String>();
 		
@@ -1135,14 +1136,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		for(String uri : uris) {
 			BioPAXElement bpe = getByID(uri);
 			try {
-				Object v = pathAccessor.getValueFromBean(bpe);
+				Set v = pathAccessor.getValueFromBean(bpe);
 				if(!pathAccessor.isUnknown(v)) {
-					if(v instanceof Collection) {
-						for(Object item : (Collection)v) {
-							values.put(item, uri);
-						}
-					} else {
-						values.put(v, uri);
+					for(Object item : v) {
+						values.put(item, uri);
 					}
 				}
 			} catch (IllegalBioPAXArgumentException e) {
