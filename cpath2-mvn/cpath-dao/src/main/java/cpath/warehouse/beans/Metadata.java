@@ -208,9 +208,12 @@ public class Metadata {
     	String name = getDataLocalDir() 
     	+ File.separator + identifier + "." + version;
     	
+    	// add the file extension, if any, if different from the version...
 		int idx = urlToData.lastIndexOf('.');
 		if(idx >= 0) {
-			name += "." + urlToData.substring(idx+1);
+			String ext = urlToData.substring(idx+1);
+			if(!version.equals(ext))
+				name += "." + ext;
 		}
 		
 		return name;
