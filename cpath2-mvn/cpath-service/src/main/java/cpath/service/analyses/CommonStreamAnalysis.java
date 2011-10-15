@@ -67,7 +67,8 @@ public class CommonStreamAnalysis implements Analysis {
 		Direction direction = (Direction) args[2];
 
 		// Execute the query
-		return QueryExecuter.runCommonStreamWithPOI(source, model, direction, limit);
+		return QueryExecuter.runCommonStreamWithPOI(source, model, direction, limit,
+			Common.getUbiqueIDs());
 	}
 
 }

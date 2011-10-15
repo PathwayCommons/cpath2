@@ -72,7 +72,8 @@ public class NeighborhoodAnalysis implements Analysis {
 		Direction direction = (Direction) args[2];
 
 		// Execute the query
-		return QueryExecuter.runNeighborhood(source, model, limit, direction);
+		return QueryExecuter.runNeighborhood(source, model, limit, direction,
+			Common.getUbiqueIDs());
 	}
 
 }
