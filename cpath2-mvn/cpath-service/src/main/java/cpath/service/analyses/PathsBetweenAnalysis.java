@@ -79,11 +79,12 @@ public class PathsBetweenAnalysis implements Analysis {
 
 		if (target == null)
 		{
-			return QueryExecuter.runPathsBetween(source, model, limit);
+			return QueryExecuter.runPathsBetween(source, model, limit, Common.getUbiqueIDs());
 		}
 		else
 		{
-			return QueryExecuter.runPOI(source, target, model, LimitType.NORMAL, limit);
+			return QueryExecuter.runPOI(source, target, model, LimitType.NORMAL, limit,
+				Common.getUbiqueIDs());
 		}
 	}
 
