@@ -28,6 +28,7 @@
 		</list>
 	  </property>
 	</bean>
+
 	  	 
 	<bean id="searchController" class="cpath.webservice.SearchController">
 		<constructor-arg ref="service"/>
@@ -40,13 +41,17 @@
 	<bean id="helpController" class="cpath.webservice.HelpController">
 	</bean>
 
+    <bean id="validationResultsController" class="cpath.webservice.ValidationResultsController">
+		<constructor-arg ref="service"/>
+	</bean>
+
+	<bean id="biopaxModelController" class="cpath.webservice.BiopaxModelController">
+		<constructor-arg ref="service"/>
+	</bean>
+
     <bean id="marshallingHttpMessageConverter"
         class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">
     </bean>
-    
-    <bean id="adminController" class="cpath.webservice.AdminController">
-		<constructor-arg ref="service"/>
-	</bean>
 
     <!-- Required for REST services in order to bind the return value to the ResponseBody. -->
     <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">

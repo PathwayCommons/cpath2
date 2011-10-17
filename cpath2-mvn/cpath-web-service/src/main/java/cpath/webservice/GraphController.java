@@ -30,14 +30,12 @@ package cpath.webservice;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
-import java.util.Map;
 
 import cpath.service.CPathService;
 import cpath.service.GraphType;
-import cpath.service.ProtocolStatusCode;
-import cpath.service.CPathService.ResultMapKey;
 import cpath.service.OutputFormat;
-import cpath.service.jaxb.ErrorType;
+import cpath.service.Status;
+import cpath.service.jaxb.*;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
 
@@ -52,6 +50,7 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 /**
  * cPathSquared Main Web Service.
@@ -62,6 +61,8 @@ import javax.validation.Valid;
 public class GraphController extends BasicController {
     private static final Log log = LogFactory.getLog(GraphController.class);    
 	
+    @NotNull
+    private CPathService service; // main PC db access
 	
     public GraphController(CPathService service) {
 		this.service = service;
@@ -85,14 +86,11 @@ public class GraphController extends BasicController {
     }
 
 	@RequestMapping("/graph")
-//    public @ResponseBody String graphQuery(@Valid Graph graph, BindingResult bindingResult)
 	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, Writer writer) throws IOException
     {
 		//check for binding errors
 		if(bindingResult.hasErrors()) {
-			ErrorType error = errorfromBindingResult(bindingResult);
-//			return ProtocolStatusCode.marshal(error);
-			writer.write(ProtocolStatusCode.marshal(error));
+			errorResponse(errorfromBindingResult(bindingResult), writer);;
 			return;
 		} 
 		
@@ -102,14 +100,10 @@ public class GraphController extends BasicController {
 		binder.validate();
 		bindingResult = binder.getBindingResult();
 		if(bindingResult.hasErrors()) {
-			ErrorType error = errorfromBindingResult(bindingResult);
-//			return ProtocolStatusCode.marshal(error);
-			writer.write(ProtocolStatusCode.marshal(error));
+			errorResponse(errorfromBindingResult(bindingResult), writer);
 			return;
 		}
-		
-		Object response = null;
-		
+			
 		OutputFormat format = graph.getFormat();
 		GraphType kind = graph.getKind();
 		String[] source = graph.getSource();
@@ -126,38 +120,27 @@ public class GraphController extends BasicController {
 			);
 		}
 		
-		Map<ResultMapKey, Object> result;
+		ServiceResponse result = new ServiceResponse();
 		
 		switch (kind) {
 		case NEIGHBORHOOD:
 			result = service.getNeighborhood(format, source, limit, direction);
-			response = parseResultMap(result, format, "nearest neighbors of " 
-				+ sources, ResultMapKey.DATA);
 			break;
 		case PATHSBETWEEN:
 			result = service.getPathsBetween(format, source, target, limit);
-			response = parseResultMap(result, format, "paths between sources: " + sources
-				+ " and targets: " + targets, ResultMapKey.DATA);
 			break;
 		case COMMONSTREAM:
 			result = service.getCommonStream(format, source, limit, direction);
-			response = parseResultMap(result, format, "common " + direction + "stream of " +
-					sources, ResultMapKey.DATA);
 			break;
 		default:
 			// impossible (should has failed earlier)
+			result.setResponse(Status.INTERNAL_ERROR
+				.errorResponse(getClass().getCanonicalName() + 
+					" does not support " + kind));
 			break;
 		}
-
-//		return (response instanceof ErrorType)
-//			? ProtocolStatusCode.marshal((ErrorType) response)
-//				: (String)response;
 		
-		writer.write(
-			(response instanceof ErrorType)
-			? ProtocolStatusCode.marshal((ErrorType) response)
-				: (String)response
-		);
+		stringResponse(result, writer);
     }
 
 }

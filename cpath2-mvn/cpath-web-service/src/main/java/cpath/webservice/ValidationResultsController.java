@@ -1,9 +1,9 @@
 package cpath.webservice;
 
-import java.util.Map;
+import javax.validation.constraints.NotNull;
 
 import cpath.service.CPathService;
-import cpath.service.CPathService.ResultMapKey;
+import cpath.service.jaxb.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -18,21 +18,17 @@ import org.springframework.web.bind.annotation.*;
  * @author rodche
  */
 @Controller
-public class AdminController extends BasicController 
+public class ValidationResultsController extends BasicController 
 {
     
-	private static final Log log = LogFactory.getLog(AdminController.class);    
+	private static final Log log = LogFactory.getLog(ValidationResultsController.class);    
 	
+    @NotNull
+    private CPathService service; // main PC db access
 	
-    public AdminController(CPathService service) {
+    public ValidationResultsController(CPathService service) {
 		this.service = service;
 	}
-    
-
-//	@InitBinder
-//    public void initBinder(WebDataBinder binder) {
-//		//empty
-//    }
 
 	
 	// Get by ID (URI) command
@@ -42,8 +38,8 @@ public class AdminController extends BasicController
     	if (log.isInfoEnabled())
 			log.info("Query for validation object: " + metadataId);
 
-    	Map<ResultMapKey, Object> result = service.getValidationReport(metadataId);
-    	ValidatorResponse body = (ValidatorResponse) parseResultMap(result, null, metadataId, ResultMapKey.ELEMENT);
+    	ServiceResponse result = service.getValidationReport(metadataId);
+    	ValidatorResponse body = (ValidatorResponse) result.getData();
 		return body;
     }
 
@@ -54,8 +50,8 @@ public class AdminController extends BasicController
     	if (log.isInfoEnabled())
 			log.info("Query for validation html:" + metadataId);
 
-    	Map<ResultMapKey, Object> result = service.getValidationReport(metadataId);
-    	ValidatorResponse body = (ValidatorResponse) parseResultMap(result, null, metadataId, ResultMapKey.ELEMENT);
+    	ServiceResponse result = service.getValidationReport(metadataId);
+    	ValidatorResponse body = (ValidatorResponse) result.getData();
 		model.addAttribute("response", body);
 		return "validationSummary";
     }

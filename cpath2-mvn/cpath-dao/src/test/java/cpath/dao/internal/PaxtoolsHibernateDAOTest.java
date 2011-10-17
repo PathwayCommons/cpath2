@@ -44,8 +44,8 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.apache.commons.logging.*;
 
 import cpath.dao.PaxtoolsDAO;
-import cpath.service.jaxb.SearchHitType;
-import cpath.service.jaxb.SearchResponseType;
+import cpath.service.jaxb.SearchHit;
+import cpath.service.jaxb.SearchResponse;
 import cpath.warehouse.WarehouseDAO;
 
 import java.io.*;
@@ -234,16 +234,16 @@ public class PaxtoolsHibernateDAOTest {
 	public void testFind() throws Exception {
 		DataServicesFactoryBean.rebuildIndex("cpath2_testpc");
 		
-		SearchResponseType resp = paxtoolsDAO.findElements("P46880", 0, UnificationXref.class);
-		List<SearchHitType> elist = resp.getSearchHit();
+		SearchResponse resp = paxtoolsDAO.findElements("P46880", 0, UnificationXref.class);
+		List<SearchHit> elist = resp.getSearchHit();
 		assertFalse(elist.isEmpty());
 		assertEquals(1, elist.size());
 		
 		resp = paxtoolsDAO.findElements("P46880", 0, BioPAXElement.class);
-		List<SearchHitType> list = resp.getSearchHit();
+		List<SearchHit> list = resp.getSearchHit();
 		assertFalse(list.isEmpty());
 		Set<String> m = new HashSet<String>();
-		for(SearchHitType e : list) {
+		for(SearchHit e : list) {
 			m.add(e.getUri());
 		}
 		//assertTrue(list.contains("urn:biopax:UnificationXref:UniProt_P46880"));

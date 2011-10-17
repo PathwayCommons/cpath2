@@ -28,7 +28,7 @@ package cpath.config;
 
 
 /**
- * CPathSquared Build Constants
+ * ServiceResponse Build Constants
  * 
  * @author rodche
  *

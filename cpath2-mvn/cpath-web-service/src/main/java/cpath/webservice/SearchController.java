@@ -27,20 +27,15 @@
 
 package cpath.webservice;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 
 import cpath.dao.filters.SearchFilter;
 import cpath.dao.internal.filters.EntityByOrganismRelationshipXrefsFilter;
 import cpath.dao.internal.filters.SequenceEntityReferenceOrganismFilter;
-//import cpath.dao.internal.filters.EntityByProcessRelationshipXrefsFilter;
 import cpath.dao.internal.filters.EntityDataSourceFilter;
 import cpath.service.CPathService;
-import cpath.service.GraphType;
-import cpath.service.CPathService.ResultMapKey;
-import cpath.service.jaxb.ErrorType;
-import cpath.service.jaxb.SearchResponseType;
+import cpath.service.jaxb.*;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
 
@@ -55,6 +50,7 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 /**
  * cPathSquared Search Web Service.
@@ -65,6 +61,8 @@ import javax.validation.Valid;
 public class SearchController extends BasicController {
     private static final Log log = LogFactory.getLog(SearchController.class);    
 	
+    @NotNull
+    private CPathService service; // main PC db access
 	
     public SearchController(CPathService service) {
 		this.service = service;
@@ -73,8 +71,7 @@ public class SearchController extends BasicController {
     /**
 	 * This configures the web request parameters binding, i.e., 
 	 * conversion to the corresponding java types; for example,
-	 * "neighborhood" is recognized as {@link GraphType#NEIGHBORHOOD},  
-	 *  "protein" - {@link Protein} , etc.
+	 * "protein" is recognized as {@link Protein}, etc.
 	 *  Illegal query parameters result in binding errors.
 	 * 
 	 * @param binder
@@ -124,72 +121,50 @@ public class SearchController extends BasicController {
 
 
     @RequestMapping(value="/find")
-    public @ResponseBody SearchResponseType find(@Valid Search search, BindingResult bindingResult)
+    public @ResponseBody ServiceResponse find(@Valid Search search, BindingResult bindingResult)
     {		
 		if(bindingResult.hasErrors()) {
-			SearchResponseType response = new SearchResponseType();
-			response.setError(errorfromBindingResult(bindingResult));
-			return response; // return ERROR
+			return serviceResponse(errorfromBindingResult(bindingResult));
+		} else {
+			if (log.isDebugEnabled())
+				log.debug("/find called (for type: " 
+					+ ((search.getType() == null)? "ALL" : search.getType()) 
+					+ "), query:" + search.getQ() + ", page #" + search.getPage());
+
+			Set<SearchFilter> searchFilters = createFilters(
+					search.getOrganism(), search.getDatasource());
+
+			// get results from the service
+			ServiceResponse results = service.findElements(
+					search.getQ(), search.getPage(), search.getType(),
+					searchFilters.toArray(new SearchFilter[] {}));
+
+			return results;
 		}
-		
-		if (log.isDebugEnabled())
-			log.debug("/find called (for " + search.getType() + "), query:" 
-				+ search.getQ() + ", page #" + search.getPage());
-		
-		Set<SearchFilter> searchFilters = createFilters(
-				search.getOrganism(), search.getDatasource());
-
-		// get results from the service
-		Map<ResultMapKey, Object> results = service.findElements(
-				search.getQ(), search.getPage(), 
-				search.getType(), searchFilters.toArray(new SearchFilter[]{}));
-		
-		String details = search.getQ() + " (in " + search.getType() + ")";
-
-		// extract data from the message map
-		return parseSearchResults(results, details);	
 	}
 
     
 	@RequestMapping(value="/find_entity")
-    public @ResponseBody SearchResponseType findEntities(@Valid Search search, BindingResult bindingResult)
+    public @ResponseBody ServiceResponse findEntities(@Valid Search search, BindingResult bindingResult)
     {		
 		if(bindingResult.hasErrors()) {
-			SearchResponseType response = new SearchResponseType();
-			response.setError(errorfromBindingResult(bindingResult));
-			return response; // return ERROR
-		}
-		
-		if (log.isDebugEnabled())
-			log.debug("/find_entity called (for " + search.getType() + "), query:" 
-				+ search.getQ() + ", page #" + search.getPage());
-		
-		Set<SearchFilter> searchFilters = createFilters(
-				search.getOrganism(), search.getDatasource());
-
-		// get results from the service
-		Map<ResultMapKey, Object> results = service.findEntities(
-				search.getQ(), search.getPage(), 
-				search.getType(), searchFilters.toArray(new SearchFilter[]{}));
-		
-		String details = search.getQ() + " (in " + search.getType() + ")";
-		// extract data from the message map
-
-		return parseSearchResults(results, details);
-	}
-
-	
-	private SearchResponseType parseSearchResults(Map<ResultMapKey, Object> results,
-			String details) 
-	{
-		Object data = parseResultMap(results, null, details, ResultMapKey.DATA);
-		if(data instanceof ErrorType) {
-			SearchResponseType srt = new SearchResponseType();
-			srt.setError((ErrorType)data);
-			return srt;
+			return serviceResponse(errorfromBindingResult(bindingResult));
 		} else {
-			return (SearchResponseType) data;
-		}	
+			if (log.isDebugEnabled())
+				log.debug("/find_entity called (for type: " 
+						+ ((search.getType() == null)? "ALL" : search.getType()) 
+						+ "), query:" + search.getQ() + ", page #" + search.getPage());
+
+			Set<SearchFilter> searchFilters = createFilters(
+					search.getOrganism(), search.getDatasource());
+
+			// get results from the service
+			ServiceResponse results = service.findEntities(
+					search.getQ(), search.getPage(), search.getType(),
+					searchFilters.toArray(new SearchFilter[] {}));
+
+			return results;
+		}
 	}
 	
 }

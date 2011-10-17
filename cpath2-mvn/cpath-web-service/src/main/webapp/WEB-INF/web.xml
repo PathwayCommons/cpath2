@@ -74,13 +74,13 @@
 -->
 
 	<servlet>
-		<servlet-name>cpath2admin</servlet-name>
+		<servlet-name>cpath2html</servlet-name>
 		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
 		<load-on-startup>3</load-on-startup>
 	</servlet>
 
 	<servlet-mapping>
-		<servlet-name>cpath2admin</servlet-name>
+		<servlet-name>cpath2html</servlet-name>
 		<url-pattern>*.html</url-pattern>
 	</servlet-mapping>
 

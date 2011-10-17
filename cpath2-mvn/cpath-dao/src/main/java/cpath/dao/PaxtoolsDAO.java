@@ -32,10 +32,10 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
 import cpath.dao.filters.SearchFilter;
-import cpath.service.jaxb.SearchResponseType;
+import cpath.service.jaxb.SearchResponse;
+import cpath.service.jaxb.TraverseResponse;
 
 import java.util.Collection;
-import java.util.Map;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
@@ -66,7 +66,7 @@ public interface PaxtoolsDAO extends Model {
 	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
 	 * @return ordered by the element's relevance list of hits
      */
-	SearchResponseType findElements(String query, int page,
+	SearchResponse findElements(String query, int page,
     		Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters);        
 
     
@@ -83,7 +83,7 @@ public interface PaxtoolsDAO extends Model {
 	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
 	 * @return ordered by the element's relevance list of hits
      */
-    SearchResponseType findEntities(String query, int page,
+    SearchResponse findEntities(String query, int page,
     		Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters);
     
     /**
@@ -154,7 +154,7 @@ public interface PaxtoolsDAO extends Model {
      * 
      * @return
      */
-    SearchResponseType getTopPathways();
+    SearchResponse getTopPathways();
     
     
     /**
@@ -163,7 +163,7 @@ public interface PaxtoolsDAO extends Model {
      * 
      * @param propertyPath
      * @param uris
-     * @return a map (property value, source element uri)
+     * @return source element uri, path, and corresponding values
      */
-    Map<Object, String> traverse(String propertyPath, String... uris);
+    TraverseResponse traverse(String propertyPath, String... uris);
 }

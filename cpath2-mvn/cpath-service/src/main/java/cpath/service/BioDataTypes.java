@@ -45,7 +45,7 @@ import org.bridgedb.DataSource.Builder;
 import cpath.dao.PaxtoolsDAO;
 
 /**
- * This convenience bean makes all the CPathSquared datasources
+ * This convenience bean makes all the ServiceResponse datasources
  * id types, and organisms accessible via org.bridgedb.DataSource.
  * For example, one can get BIOGRID data source from anywhere (in the same JVM),
  * either as BioDataTypes.BIOGRID, DataSource.getBySystemCode("BIOGRID").

@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(
-	name = "SearchHitType", propOrder = {
+	name = "SearchHit", propOrder = {
     "uri",
     "actualHitUri",
     "biopaxClass",
@@ -25,7 +25,7 @@ import javax.xml.bind.annotation.XmlType;
     "pathway",
     "excerpt"
 })
-public class SearchHitType {
+public class SearchHit {
     @XmlElement(required = true)
     protected String uri;
     protected String actualHitUri;
