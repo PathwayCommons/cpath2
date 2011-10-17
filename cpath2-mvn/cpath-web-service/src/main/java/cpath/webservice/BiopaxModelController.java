@@ -30,15 +30,11 @@ package cpath.webservice;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
-import java.util.Map.Entry;
 
 import cpath.service.CPathService;
 import cpath.service.GraphType;
-import cpath.service.ProtocolStatusCode;
-import cpath.service.CPathService.ResultMapKey;
 import cpath.service.OutputFormat;
-import cpath.service.jaxb.ErrorType;
-import cpath.service.jaxb.SearchResponseType;
+import cpath.service.jaxb.*;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
 
@@ -51,6 +47,7 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 
 /**
  * cPathSquared Model Access Web Service.
@@ -61,6 +58,8 @@ import javax.validation.Valid;
 public class BiopaxModelController extends BasicController {
     private static final Log log = LogFactory.getLog(BiopaxModelController.class);    
 	
+    @NotNull
+    private CPathService service; // main PC db access
 	
     public BiopaxModelController(CPathService service) {
 		this.service = service;
@@ -83,72 +82,48 @@ public class BiopaxModelController extends BasicController {
         binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
         binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
     }
-
+	
 	
 	// Get by ID (URI) command
     @RequestMapping("/get")
-    public void elementById(@Valid Get get, BindingResult bindingResult, Writer writer) throws IOException
+    public void elementById(@Valid Get get, BindingResult bindingResult, Writer writer) 
+    	throws IOException
     {
     	if(bindingResult.hasErrors()) {
-    		ErrorType error = errorfromBindingResult(bindingResult);
-    		String str = ProtocolStatusCode.marshal(error);
-    		writer.write(str);
-    		return;
-    	}
-    	    	
-    	OutputFormat format = get.getFormat();
-    	String[] uri = get.getUri();
-    	
-    	if (log.isInfoEnabled())
-			log.info("Query: /get; format:" + format + ", urn:" + Arrays.toString(uri));
-    	
-    	Map<ResultMapKey, Object> result = service.fetch(format, uri);
-    	Object data = parseResultMap(result, format, Arrays.toString(uri), ResultMapKey.DATA);
-    	
-    	if(data instanceof ErrorType) {
-//			return ProtocolStatusCode.marshal((ErrorType)data);
-    		writer.write(ProtocolStatusCode.marshal((ErrorType)data));
-		} else {
-			if(log.isDebugEnabled())
-				log.debug("QUERY RETURNED " 
-					+ data.toString().length() + " chars");
-			writer.write((String) data);
+    		errorResponse(errorfromBindingResult(bindingResult), writer);
+    	} else {
+			OutputFormat format = get.getFormat();
+			String[] uri = get.getUri();
+
+			if (log.isInfoEnabled())
+				log.info("Query: /get; format:" + format + ", urn:"
+						+ Arrays.toString(uri));
+
+			ServiceResponse result = service.fetch(format, uri);
+			stringResponse(result, writer);
 		}
     }  
- 
 
-    @RequestMapping("/top_pathways")
-    @ResponseBody
-    public SearchResponseType topPathways()
+
+	@RequestMapping("/top_pathways")
+    public @ResponseBody SearchResponse topPathways()
     {
     	return service.getTopPathways();
     }
     
     
     @RequestMapping("/traverse")
-    public void traverse(@Valid GetProperty query, BindingResult bindingResult, Writer writer) 
+    public @ResponseBody ServiceResponse traverse(@Valid GetProperty query, BindingResult bindingResult) 
     		throws IOException 
     {
+    	ServiceResponse result = new ServiceResponse();
+    	
     	if(bindingResult.hasErrors()) {
-    		ErrorType error = errorfromBindingResult(bindingResult);
-    		String str = ProtocolStatusCode.marshal(error);
-    		writer.write(str);
+    		result.setResponse(errorfromBindingResult(bindingResult));
     	} else {
-			Map<ResultMapKey, Object> result = service.traverse(
-				query.getPath(), query.getUri());
-			Object data = parseResultMap(result, null,
-				Arrays.toString(query.getUri()), ResultMapKey.DATA);
-			if (data instanceof ErrorType) {
-				writer.write(ProtocolStatusCode.marshal((ErrorType) data));
-			} else {
-				if (log.isDebugEnabled())
-					log.debug("QUERY RETURNED " + ((Map) data).size() + " values");
-				
-				for (Entry<String, String> etry : ((Map<String, String>) data).entrySet()) {
-					writer.write(etry.getValue() + "\t" + etry.getKey());
-					writer.append(newline);
-				}
-			}
-		}
+			result = service.traverse(query.getPath(), query.getUri());
+    	}
+    	
+    	return result;
     }
 }

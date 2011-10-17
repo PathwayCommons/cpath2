@@ -70,8 +70,10 @@ import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
 import cpath.dao.filters.SearchFilterRange;
-import cpath.service.jaxb.SearchHitType;
-import cpath.service.jaxb.SearchResponseType;
+import cpath.service.jaxb.SearchHit;
+import cpath.service.jaxb.SearchResponse;
+import cpath.service.jaxb.TraverseEntry;
+import cpath.service.jaxb.TraverseResponse;
 import cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO;
 
 import java.util.*;
@@ -319,14 +321,14 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public SearchResponseType findElements(
+	public SearchResponse findElements(
 			String query, 
 			int page,
 			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters) 
 	{
 		// collect matching elements here
-		SearchResponseType toReturn = new SearchResponseType();
-		List<SearchHitType> results = new ArrayList<SearchHitType>();
+		SearchResponse toReturn = new SearchResponse();
+		List<SearchHit> results = new ArrayList<SearchHit>();
 		toReturn.setSearchHit(results);
 		
 		// a shortcut
@@ -368,7 +370,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		int count = hibQuery.getResultSize(); //"cheap" operation (Hib. does not init objects)
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "' (filters not shown), results size = " + count);
-		toReturn.setNumHitsBeforeRefined(count); // "raw" size, i.e, before filters, pages considered...
+		toReturn.setMaxHits(count); // "raw" size, i.e, before filters, pages considered...
 
 		// using the projection (to get some more statistics/fields)
 		if(CPathSettings.isDebug())
@@ -448,14 +450,14 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public SearchResponseType findEntities(
+	public SearchResponse findEntities(
 			String query, 
 			int page,
 			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters) 
 	{
 		// collect matching elements here
-		SearchResponseType toReturn = new SearchResponseType();
-		List<SearchHitType> results = new ArrayList<SearchHitType>();
+		SearchResponse toReturn = new SearchResponse();
+		List<SearchHit> results = new ArrayList<SearchHit>();
 		toReturn.setSearchHit(results);
 		
 		// - otherwise, we continue and do real job -		
@@ -493,7 +495,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		int count = hibQuery.getResultSize(); //"cheap" operation (Hib. does not init objects)
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "' (no filter/lookup applied yet), results size = " + count);
-		toReturn.setNumHitsBeforeRefined(count);  // "raw" size, i.e, before filters, pages considered...
+		toReturn.setMaxHits(count);  // "raw" size, i.e, before filters, pages considered...
 
 		// using the projection (to get some more statistics/fields)
 		if(CPathSettings.isDebug())
@@ -559,7 +561,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 
 	
-	private void addEntity(List<SearchHitType> list, Entity ent,
+	private void addEntity(List<SearchHit> list, Entity ent,
 			BioPAXElement actualHit,
 			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
 	{
@@ -570,7 +572,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 	}
 
-	private void addIfPassAndNew(List<SearchHitType> list, Entity ent,
+	private void addIfPassAndNew(List<SearchHit> list, Entity ent,
 			BioPAXElement actualHit,
 			Class<? extends BioPAXElement> filterByType, 
 			SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
@@ -588,7 +590,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 	}
 
-	private void addComplexes(List<SearchHitType> list, PhysicalEntity pe,
+	private void addComplexes(List<SearchHit> list, PhysicalEntity pe,
 			BioPAXElement actualHit, 
 			Class<? extends BioPAXElement> filterByType, 
 			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
@@ -942,11 +944,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * @param data
 	 * @return
 	 */
-	private List<SearchHitType> toSearchHits(List<? extends BioPAXElement> data) {
-		List<SearchHitType> hits = new ArrayList<SearchHitType>(data.size());
+	private List<SearchHit> toSearchHits(List<? extends BioPAXElement> data) {
+		List<SearchHit> hits = new ArrayList<SearchHit>(data.size());
 		
 		for(BioPAXElement bpe : data) {
-			SearchHitType hit = bpeToSearcHit(bpe);
+			SearchHit hit = bpeToSearcHit(bpe);
 			hits.add(hit);
 		}
 		
@@ -960,8 +962,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * @param bpe
 	 * @return
 	 */
-	private SearchHitType bpeToSearcHit(BioPAXElement bpe) {
-			SearchHitType hit = new SearchHitType();
+	private SearchHit bpeToSearcHit(BioPAXElement bpe) {
+			SearchHit hit = new SearchHit();
 			hit.setUri(bpe.getRDFId());
 			hit.setBiopaxClass(bpe.getModelInterface().getSimpleName());
 			// add lucene info
@@ -1074,8 +1076,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 */
 	@Override
 	@Transactional(readOnly = true)
-	public SearchResponseType getTopPathways() {
-		SearchResponseType toReturn = new SearchResponseType();
+	public SearchResponse getTopPathways() {
+		SearchResponse toReturn = new SearchResponse();
 		
 		// here we use the aproach #2
 		for(Pathway pathway : getObjects(Pathway.class)) {
@@ -1119,37 +1121,40 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		return toReturn;
 	}
 
-	
+
 	/**
-	 * In this version, it only collects values 
-	 * where the property path does apply, 
-	 * and the property value is not null/empty. 
-	 * 
+	 * It generates results only for those URIs where
+	 * the property path apply, although the values set 
+	 * can be empty.
+	 * TODO may be to return a row for each query URI regardless path apply or not; e.g., use 'valid' attr...
 	 */
 	@Transactional(readOnly = true)
 	@Override
-	//TODO Fix a hidden bug: Object key CAN happen to be the same value here!
-	public Map<Object, String> traverse(String propertyPath, String... uris) {
-		Map<Object, String> values = new HashMap<Object, String>();
-		
+	public TraverseResponse traverse(String propertyPath, String... uris) {
+		TraverseResponse resp = new TraverseResponse();
+		resp.setPropertyPath(propertyPath);
 		PathAccessor pathAccessor = new PathAccessor(propertyPath, getLevel());
 		for(String uri : uris) {
 			BioPAXElement bpe = getByID(uri);
 			try {
-				Set v = pathAccessor.getValueFromBean(bpe);
+				Set<?> v = pathAccessor.getValueFromBean(bpe);
+				
+				TraverseEntry entry = new TraverseEntry();
+				entry.setUri(uri);
 				if(!pathAccessor.isUnknown(v)) {
-					for(Object item : v) {
-						values.put(item, uri);
-					}
+					entry.getValue().addAll(v);
 				}
+				// add (it might have no values, but the path is correct)
+				resp.getTraverseEntry().add(entry); 
 			} catch (IllegalBioPAXArgumentException e) {
+				// path does not apply?
 				if(log.isDebugEnabled())
 					log.debug("Failed to get values at: " + 
 						propertyPath + " from the element: " + uri, e);
 			}
 		}
 		
-		return values;
+		return resp;
 	}
 }
 

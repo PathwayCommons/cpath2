@@ -1,32 +1,32 @@
 package cpath.service.jaxb;
 
-import java.math.BigInteger;
-
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
+import cpath.service.Status;
+
 
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "ErrorType")
-@XmlRootElement(name = "error")
-public class ErrorType {
+@XmlType(name = "ErrorResponse")
+@XmlRootElement(name = "errorResponse")
+public class ErrorResponse extends Response {
     @XmlElement(name = "error_code", required = true)
-    protected BigInteger errorCode;
+    protected Integer errorCode;
     @XmlElement(name = "error_msg", required = true)
     protected String errorMsg;
     @XmlElement(name = "error_details", required = true)
     protected String errorDetails;
 
     
-    public BigInteger getErrorCode() {
+    public Integer getErrorCode() {
         return errorCode;
     }
 
 
-    public void setErrorCode(BigInteger value) {
+    public void setErrorCode(Integer value) {
         this.errorCode = value;
     }
 
@@ -47,5 +47,21 @@ public class ErrorType {
     public void setErrorDetails(String value) {
         this.errorDetails = value;
     }
+	
 
+	public boolean isStatus(Status statusCode) {
+		return statusCode.equals(this.errorCode);
+	}
+	
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + ": " + 
+			errorCode + " " + errorMsg + " - " + errorDetails;
+	}
+
+
+	@Override
+	public boolean isEmpty() {
+		return false;
+	}
 }

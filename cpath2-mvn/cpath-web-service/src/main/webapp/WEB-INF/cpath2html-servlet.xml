@@ -34,7 +34,7 @@
 		<property name="suffix" value=".jsp" />
 	</bean> 	 
 	  	   	 
-	<bean id="adminController" class="cpath.webservice.AdminController">
+	<bean id="validationResultsController" class="cpath.webservice.ValidationResultsController">
 		<constructor-arg ref="service"/>
 	</bean>
 

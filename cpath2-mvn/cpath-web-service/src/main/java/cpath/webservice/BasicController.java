@@ -27,39 +27,41 @@
 
 package cpath.webservice;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
 
-import cpath.service.CPathService;
-import cpath.service.ProtocolStatusCode;
-import cpath.service.CPathService.ResultMapKey;
-import cpath.service.OutputFormat;
-import cpath.service.jaxb.ErrorType;
+import static cpath.service.Status.*;
+import cpath.service.Status;
+import cpath.service.jaxb.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
-import javax.validation.constraints.NotNull;
-
 /**
- * Basic (abstract) controller.
+ * Basic controller.
  * 
  * @author rodche
  */
 public abstract class BasicController {
     private static final Log log = LogFactory.getLog(BasicController.class);
-    protected static String newline = System.getProperty("line.separator");
-    
-    @NotNull
-    protected CPathService service; // main PC db access
- 
+   
+
+	/**
+	 * Writes an error response body from the error bean.
+	 * 
+	 * @param bindingResult
+	 * @param writer
+	 * @throws IOException 
+	 */
+	protected void errorResponse(ErrorResponse error, Writer writer) throws IOException {
+		writer.write(Status.marshal(error));
+	}
 	
-	protected ErrorType errorfromBindingResult(BindingResult bindingResult) {
-		ErrorType error = ProtocolStatusCode.BAD_REQUEST.createErrorType();
+	
+	protected ErrorResponse errorfromBindingResult(BindingResult bindingResult) {
 		StringBuffer sb = new StringBuffer();
 		for (FieldError fe : bindingResult.getFieldErrors()) {
 			Object rejectedVal = fe.getRejectedValue();
@@ -73,81 +75,37 @@ public abstract class BasicController {
 			sb.append(fe.getField() + " was '" + rejectedVal + "'; "
 					+ fe.getDefaultMessage() + ". ");
 		}
-		error.setErrorDetails(sb.toString());
-		return error;
-	}
-    
-    
-    protected ErrorType errorFromResults(Object err, ProtocolStatusCode statusCode) 
-    {
-    	ErrorType error = statusCode.createErrorType();
-		if(err instanceof Exception) {
-			error.setErrorDetails(err.toString() + "; " 
-				+ Arrays.toString(((Exception)err).getStackTrace()));
-		} else {
-			error.setErrorDetails(err.toString());
-		}
-		return error;
-    }
-
-    /**
-     * Extracts the result object 
-     * (can be list, text, etc., depending on query type) 
-     * from the service response message map
-     * using a key form {@link ResultMapKey}.
-     * If the map contains not null value under 
-     * {@link ResultMapKey#ERROR} key, it will be wrapped
-     * into {@link ErrorType} and returned instead.
-     * 
-     * @param messageMap
-     * @param format
-     * @param details
-     * @param mapKey
-     * @return
-     */
-    protected Object parseResultMap(Map<ResultMapKey, Object> messageMap, 
-    		OutputFormat format, String details, ResultMapKey mapKey) {
-    		Object toReturn = null;
-    	
-		if (!messageMap.containsKey(ResultMapKey.ERROR)) {
-			toReturn = messageMap.get(mapKey);
-			
-			// check specifically for empty data
-			if(toReturn == null 
-				|| ( toReturn instanceof Collection && ((Collection) toReturn).isEmpty() )
-				|| ( toReturn instanceof Map && ((Map) toReturn).isEmpty() )
-				|| (mapKey == ResultMapKey.DATA && "".equals(toReturn.toString().trim()))
-			)
-			{
-				toReturn = noResultsError(details);
-			} 
-			else if(OutputFormat.BIOPAX == format) 
-			{ // check specifically for not null empty Model
-			  // (when model does not have any elements, its XML
-			  // serialization is still not blank!)
-				Model m = (Model) messageMap.get(ResultMapKey.MODEL);
-				if(m != null && m.getObjects().isEmpty()) {
-					toReturn = noResultsError(details);
-				}
-			}
-		} else { // return error
-			toReturn = 
-				errorFromResults(messageMap.get(ResultMapKey.ERROR), ProtocolStatusCode.INTERNAL_ERROR);
-		}
 		
-		return toReturn;
-	}
-
-
-    /**
-     * Creates a 'NO_RESULTS_FOUND' error bean.
-     * 
-     * @param details
-     * @return
-     */
-	protected ErrorType noResultsError(String details) {
-		ErrorType error = ProtocolStatusCode.NO_RESULTS_FOUND.createErrorType();
-		error.setErrorDetails("Empty result for: " + details);
+		ErrorResponse error = BAD_REQUEST.errorResponse(sb.toString());
 		return error;
-	}    
+	}
+    
+	
+	protected void stringResponse(ServiceResponse resp, Writer writer) throws IOException {
+		if(resp.isError()) {
+    		errorResponse((ErrorResponse) resp.getResponse(), writer);
+		} else if(resp.isEmpty()) {
+			resp.setNoResultsFoundResponse(null);
+			errorResponse((ErrorResponse) resp.getResponse(), writer);
+		} else {
+			if(log.isDebugEnabled())
+				log.debug("QUERY RETURNED " 
+					+ resp.getData().toString().length() + " chars");
+			writer.write(resp.getData().toString());
+		}
+	}
+	
+	
+	/**
+	 * Wraps a response bean in a new service response bean.
+	 * 
+	 * @param response
+	 * @return
+	 */
+	protected ServiceResponse serviceResponse(Response response) {
+		ServiceResponse resp = new ServiceResponse();
+		resp.setResponse(response);
+		return resp;
+	}
+		
 }

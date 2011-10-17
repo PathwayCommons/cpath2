@@ -27,13 +27,15 @@
 
 package cpath.webservice;
 
-import cpath.service.jaxb.Help;
+import java.io.IOException;
+
+import cpath.service.jaxb.*;
 import cpath.service.BioDataTypes;
 import cpath.service.Cmd;
 import cpath.service.CmdArgs;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
-import cpath.service.ProtocolStatusCode;
+import cpath.service.Status;
 import cpath.service.BioDataTypes.Type;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
@@ -86,31 +88,31 @@ public class HelpController {
     }
 
 	
+	/**
+	* This is for reporting an error "BAD COMMAND"
+	* for everything except for known cpath2 web service
+	* commands (known commands with parameters are mapped 
+	* to more specific controller methods in this class; see below)
+	* 
+	* @param cmd
+	* 
+	* @return 
+	 * @throws IOException 
+	*/
+	@RequestMapping("/{cmd}")
+	public @ResponseBody ErrorResponse illegalCommand(@PathVariable String cmd) {
+		return Status.BAD_COMMAND.errorResponse("Unknown command: " + cmd);
+	}
+	
+	
     @RequestMapping("/")
     public String getHello() {
     	return "redirect:help";
     }
 	
-    
-	/*
-	 * This is for reporting an error "BAD COMMAND"
-	 * for everything except for known cpath2 web service
-	 * commands (known commands with parameters are mapped 
-	 * to more specific controller methods in this class; see below)
-	 * 
-	 * @param cmd
-	 * @return
-	 */
-	 @RequestMapping("/{cmd}")
-	 public @ResponseBody String illegalCommand(@PathVariable String cmd) 
-	 {
-		 return ProtocolStatusCode.errorAsXml(ProtocolStatusCode.BAD_COMMAND,
-			"Unknown command: " + cmd);
-	 }
-    
-    
+	 
     /*
-     * Using @ResponseBody with returning a bean
+     * Using @Response with returning a bean
      * makes it auto-generate xml or json, 
      * depending on the client's http request
      * (no extra coding required!)
