@@ -79,4 +79,24 @@ public class BaseCleanerImpl implements Cleaner {
 		// outta here
 		return toReturn;
 	}
+	
+	/**
+	 * For the given cleaner class name,
+	 * returns an instance of a class which
+	 * implements the cleaner interface.
+	 *
+	 * @param cleanerClassName String
+	 * @return Cleaner
+	 */
+	public static Cleaner getCleaner(final String cleanerClassName) {
+		try {
+			Class cleanerClass = Class.forName(cleanerClassName);
+			return (cleanerClass == null) ?
+				null : (Cleaner)cleanerClass.newInstance();
+		}
+		catch (Exception e) {
+//			log.fatal(e);
+			return null;
+		}
+	}
 }

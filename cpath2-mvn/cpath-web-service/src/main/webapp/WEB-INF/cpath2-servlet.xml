@@ -48,7 +48,7 @@
 	
 	
 	<!-- This additional configuration (three beans) is required 
-	for cpath-schema-3.0.0, because Jaxb2RootElementHttpMessageConverter 
+	for cpath-api-3.0.0, because Jaxb2RootElementHttpMessageConverter 
 	used as default by MVC does not treat properly abstract cpath.service.jaxb.Response 
 	and @XmlElementRef annotation on cpath.service.jaxb.ServiceResponse.response
 	-->

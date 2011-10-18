@@ -10,6 +10,8 @@ import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.ProteinReference;
+import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.junit.*;
 
 import cpath.warehouse.beans.Metadata;
@@ -66,6 +68,7 @@ public class CPathFetcherTest {
 				"cpath.converter.internal.UniprotConverterImpl");
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
+		assertFalse(model.getObjects(ProteinReference.class).isEmpty());
 		assertTrue(model.containsID("urn:miriam:uniprot:P62158"));
 	}
 	
@@ -83,6 +86,7 @@ public class CPathFetcherTest {
 				"cpath.converter.internal.ChEBITestConverterImpl");
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
+		assertFalse(model.getObjects(SmallMoleculeReference.class).isEmpty());
 		assertTrue(model.containsID("urn:miriam:chebi:20"));
 	}
 	
