@@ -5,7 +5,7 @@
   <artifactId>cpath-api</artifactId>
   <version>3.0.0-SNAPSHOT</version>
   <name>CPath2 API</name>
-  <description>JAXB</description>
+  <description>CPath2 enumerations, beans (JAXB), XML schema, and utility classes</description>
   <url>http://www.pathwaycommons.org</url>
   
   <build>
