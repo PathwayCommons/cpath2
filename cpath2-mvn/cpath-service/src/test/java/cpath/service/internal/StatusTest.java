@@ -11,7 +11,7 @@ import cpath.service.Status;
 import cpath.service.jaxb.ErrorResponse;
 
 @Deprecated
-@Ignore //tested in the cpath-schema
+@Ignore //tested in the cpath-api
 public class StatusTest {
 
 	@Test

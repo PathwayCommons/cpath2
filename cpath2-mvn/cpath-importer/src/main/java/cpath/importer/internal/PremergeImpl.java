@@ -28,6 +28,7 @@ package cpath.importer.internal;
 
 // imports
 import cpath.cleaner.Cleaner;
+import cpath.cleaner.internal.BaseCleanerImpl;
 import cpath.config.CPathSettings;
 import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
@@ -138,7 +139,7 @@ public class PremergeImpl implements Premerge {
 		// create cleaner
 		if(log.isInfoEnabled())
 			log.info("run(), getting a cleaner with name: " + metadata.getCleanerClassname());
-		cleaner = getCleaner(metadata.getCleanerClassname());
+		cleaner = BaseCleanerImpl.getCleaner(metadata.getCleanerClassname());
 		if (cleaner == null) {
 			// TDB: report failure
 			if(log.isInfoEnabled())
@@ -291,26 +292,6 @@ public class PremergeImpl implements Premerge {
 			
 			// persist all at once -
 			premergeDAO.merge(pathwayDataModel);
-		}
-	}
-
-	/**
-	 * For the given cleaner class name,
-	 * returns an instance of a class which
-	 * implements the cleaner interface.
-	 *
-	 * @param cleanerClassName String
-	 * @return Cleaner
-	 */
-	private Cleaner getCleaner(final String cleanerClassName) {
-		try {
-			Class cleanerClass = getClass().forName(cleanerClassName);
-			return (cleanerClass == null) ?
-				null : (Cleaner)cleanerClass.newInstance();
-		}
-		catch (Exception e) {
-			log.fatal(e);
-			return null;
 		}
 	}
 
