@@ -438,7 +438,7 @@ public class PremergeImpl implements Premerge {
 		if(model.containsID(urn))
 			pro = (Provenance) model.getByID(urn);
 		else {
-			pro = BioPAXLevel.L3.getDefaultFactory().create(Provenance.class, urn);
+			pro = model.addNew(Provenance.class, urn);
 			Normalizer.autoName(pro); // + standard name and synonyms
 		}
 
