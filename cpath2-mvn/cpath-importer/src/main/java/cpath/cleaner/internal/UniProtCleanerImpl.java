@@ -7,6 +7,9 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 /**
  * Implementation of Cleaner interface for UniProt data.
  * Specifically, the class removes all shared accession numbers
@@ -33,22 +36,33 @@ public class UniProtCleanerImpl extends BaseCleanerImpl implements Cleaner {
     private static final String ID_REGEX = "^ID\\s*(\\w*).*$";
     private static Pattern pattern = Pattern.compile(ID_REGEX);
 
+	// logger
+    private static Log log = LogFactory.getLog(UniProtCleanerImpl.class);
+    
 	/**
 	 * (non-Javadoc>
 	 * @see cpath.cleaner.Cleaner#clean(java.lang.String)
 	 */
-	public String clean(final String pathwayData) {
+	public String clean(final String uniProtData) {
 
         // string we will return
-        String toReturn = pathwayData;
+        String toReturn = uniProtData;
+        
+        if (log.isInfoEnabled()) {
+        	log.info("clean(), starting...");
+		}
         
         try {
-            toReturn = cleanAccessions(pathwayData, populateAccessionsMap(pathwayData));
+            toReturn = cleanAccessions(uniProtData, populateAccessionsMap(uniProtData));
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Error reading uniprot data");
         }
 
+        if (log.isInfoEnabled()) {
+        	log.info("clean(), done!");
+		}
+        
         // outta here
         return toReturn;
     }
