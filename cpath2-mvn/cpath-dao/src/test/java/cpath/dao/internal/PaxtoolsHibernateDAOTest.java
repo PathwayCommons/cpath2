@@ -34,12 +34,9 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.hibernate.search.annotations.DocumentId;
-import org.hibernate.search.annotations.Field;
 import org.junit.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.core.io.DefaultResourceLoader;
 
 import org.apache.commons.logging.*;
 
