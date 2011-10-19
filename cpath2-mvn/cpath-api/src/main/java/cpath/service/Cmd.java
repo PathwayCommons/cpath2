@@ -67,7 +67,7 @@ public enum Cmd {
           "See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
           new CmdArgs[]{kind, source, target, format, limit, direction}),
     TOP_PATHWAYS("Gets Top Pathways. This command has no parameters.", 
-    	"/topPathways",
+    	"/top_pathways",
         "Plain text list of top pathway URIs.", 
         new CmdArgs[]{}),   
     TRAVERSE("Gets data property values (or elements's URIs) " +

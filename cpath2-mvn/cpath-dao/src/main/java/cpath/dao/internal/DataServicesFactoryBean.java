@@ -437,7 +437,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		try {
 			fullTextSession.createIndexer()
 				.purgeAllOnStart(true)
-				.batchSizeToLoadObjects( 10 )
+				.batchSizeToLoadObjects( 5 )
 				.threadsForSubsequentFetching( 1 )
 				.threadsToLoadObjects( 1 )
 //				.limitIndexedObjectsTo(10000)
