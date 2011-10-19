@@ -26,7 +26,6 @@
  **/
 package cpath.dao.internal;
 
-import java.beans.PropertyVetoException;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,7 +39,6 @@ import cpath.dao.DataServices;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.ojb.broker.cache.RuntimeCacheException;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -58,7 +56,6 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean;
 
-import com.mchange.v2.c3p0.ComboPooledDataSource;
 
 
 /**
@@ -238,7 +235,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	 * @param dbUrl
 	 * @return
 	 */
-	public static DataSource getDataSource(
+	private final static DataSource getDataSource(
 			String dbUser, 
 			String dbPassword,
 			String dbDriver, 
