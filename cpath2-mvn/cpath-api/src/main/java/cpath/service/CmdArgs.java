@@ -44,7 +44,7 @@ public enum CmdArgs {
 	datasource("filter by data sources (multiple 'datasource=' are allowed) - see the <a href=\"#valid_datasource_parameter\">valid values for datasource parameter</a> below"),
 	process("filter by pathway URI (multiple are allowed) - see the <a href=\"#valid_process_parameter\">valid values for process parameter</a> below"),
 	source("graph query source URI (multiple 'source=' are allowed)"),
-	target("graph query destination URI (multiple 'target=' are allowed, only for PATHSBETWEEN query)"),
+	target("graph query destination URI (multiple 'target=' are allowed)"),
     limit("graph query search distance limit"),
     biopax("a BioPAX OWL to convert"),
     path("a BioPAX property path expression (like xPath)"),
