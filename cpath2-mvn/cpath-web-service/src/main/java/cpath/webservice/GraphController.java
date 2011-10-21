@@ -45,7 +45,6 @@ import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.DataBinder;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
@@ -85,6 +84,14 @@ public class GraphController extends BasicController {
         binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
     }
 
+
+//TODO re-factor as (same - for the rest of graph kinds)
+//	@RequestMapping("/neighborhood")
+//	public void neighborhood(@Valid NeighborhoodGraph graph, BindingResult bindingResult, Writer writer) throws IOException {
+//		
+//	}
+	
+	
 	@RequestMapping("/graph")
 	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, Writer writer) throws IOException
     {
@@ -94,53 +101,45 @@ public class GraphController extends BasicController {
 			return;
 		} 
 		
-    	// additional validation of query parameters
-		DataBinder binder = new DataBinder(graph);
-		binder.setValidator(new GraphQueryValidator());
-		binder.validate();
-		bindingResult = binder.getBindingResult();
-		if(bindingResult.hasErrors()) {
-			errorResponse(errorfromBindingResult(bindingResult), writer);
-			return;
-		}
-			
-		OutputFormat format = graph.getFormat();
-		GraphType kind = graph.getKind();
-		String[] source = graph.getSource();
-		String[] target = graph.getTarget();
-		Integer limit = graph.getLimit();
-		Direction direction = graph.getDirection();
-		String sources = Arrays.toString(source);
-		String targets = Arrays.toString(target);
-		
-		if(log.isInfoEnabled()) {
-			log.info("GraphQuery format:" + format + ", kind:" + kind
-				+ ", source:" + sources + ", target:" + targets
-				+ ", limit: " + limit + ", direction: " + direction
-			);
-		}
+		log("/graph", graph);
 		
 		ServiceResponse result = new ServiceResponse();
 		
-		switch (kind) {
+		switch (graph.getKind()) {
 		case NEIGHBORHOOD:
-			result = service.getNeighborhood(format, source, limit, direction);
+			result = service.getNeighborhood(graph.getFormat(), graph.getSource(), graph.getLimit(), graph.getDirection());
 			break;
 		case PATHSBETWEEN:
-			result = service.getPathsBetween(format, source, target, limit);
+			result = service.getPathsBetween(graph.getFormat(), graph.getSource(), graph.getLimit());
+			break;
+		case PATHSOFINTEREST:
+			result = service.getPathsOfInterest(graph.getFormat(), graph.getSource(), graph.getTarget(), graph.getLimit());
 			break;
 		case COMMONSTREAM:
-			result = service.getCommonStream(format, source, limit, direction);
+			result = service.getCommonStream(graph.getFormat(), graph.getSource(), graph.getLimit(), graph.getDirection());
 			break;
 		default:
 			// impossible (should has failed earlier)
 			result.setResponse(Status.INTERNAL_ERROR
 				.errorResponse(getClass().getCanonicalName() + 
-					" does not support " + kind));
+					" does not support " + graph.getKind()));
 			break;
 		}
 		
 		stringResponse(result, writer);
     }
+
+	
+	private void log(String method, Graph graph) {
+		if(log.isInfoEnabled()) {
+			log.info(method + " query; format:" + graph.getFormat() 
+				+ ", kind:" + graph.getKind()
+				+ ", source:" + Arrays.toString(graph.getSource())
+				+ ", target:" + Arrays.toString(graph.getTarget())
+				+ ", limit: " + graph.getLimit() 
+				+ ", direction: " + graph.getDirection()
+			);
+		}
+	}
 
 }

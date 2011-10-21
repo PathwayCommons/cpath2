@@ -55,11 +55,13 @@ import cpath.dao.filters.SearchFilter;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
+import cpath.service.analyses.PathsOfInterestAnalysis;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 import cpath.service.jaxb.TraverseResponse;
 import cpath.service.CPathService;
 import cpath.service.OutputFormat;
+import cpath.service.Status;
 
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.PathwayData;
@@ -392,25 +394,47 @@ public class CPathServiceImpl implements CPathService {
 	public ServiceResponse getNeighborhood(OutputFormat format, String[] sources,
 		Integer limit, Direction direction)
 	{
+		if(direction == null) {
+			direction = Direction.BOTHSTREAM;	
+		}
 		Analysis analysis = new NeighborhoodAnalysis();
 		return runAnalysis(analysis, format, sources, limit, direction);
 	}
 
 	@Cacheable(cacheName = "getPathsBetweenCache")
 	@Override
-	public ServiceResponse getPathsBetween(OutputFormat format, String[] sources,
-		String[] targets, Integer limit)
+	public ServiceResponse getPathsBetween(OutputFormat format, String[] sources, Integer limit)
 	{
 		
 		Analysis analysis = new PathsBetweenAnalysis();
+		return runAnalysis(analysis, format, sources, limit);
+	}
+	
+	@Cacheable(cacheName = "getPathsOfInterestCache")
+	@Override
+	public ServiceResponse getPathsOfInterest(OutputFormat format, String[] sources,
+		String[] targets, Integer limit)
+	{
+		
+		Analysis analysis = new PathsOfInterestAnalysis();
 		return runAnalysis(analysis, format, sources, targets, limit);
 	}
+	
 
 	@Cacheable(cacheName = "getCommonStreamCache")
 	@Override
 	public ServiceResponse getCommonStream(OutputFormat format, String[] sources,
 		Integer limit, Direction direction)
 	{
+		if (direction == Direction.BOTHSTREAM) {
+			ServiceResponse resp = new ServiceResponse();
+			resp.setResponse(Status.BAD_REQUEST
+				.errorResponse("Direction cannot be BOTHSTREAM for the COMMONSTREAM query!"));
+			return resp;
+		} else if(direction == null) {
+			direction = Direction.DOWNSTREAM;	
+		}
+			
 		Analysis analysis = new CommonStreamAnalysis();
 		return runAnalysis(analysis, format, sources, limit, direction);
 	}

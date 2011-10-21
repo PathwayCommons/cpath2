@@ -65,7 +65,9 @@
 			<scope>compile</scope>
 		</dependency>
 	</dependencies>
+<!--
 	<properties>
 		<tomcat.http.port>8088</tomcat.http.port>
 	</properties>
+-->
 </project>

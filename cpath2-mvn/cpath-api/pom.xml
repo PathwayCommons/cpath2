@@ -1,22 +1,23 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-  <groupId>pathwaycommons.cpath</groupId>
-  <artifactId>cpath-api</artifactId>
-  <version>3.0.0-SNAPSHOT</version>
-  <name>CPath2 API</name>
-  <description>CPath2 enumerations, beans (JAXB), XML schema, and utility classes</description>
-  <url>http://www.pathwaycommons.org</url>
-  
-  <build>
-	<plugins>
-		<plugin>
-			<artifactId>maven-compiler-plugin</artifactId>
-			<configuration>
-				<source>1.6</source>
-				<target>1.6</target>
-			</configuration>
-		</plugin>
+	<groupId>pathwaycommons.cpath</groupId>
+	<artifactId>cpath-api</artifactId>
+	<version>3.0.0-SNAPSHOT</version>
+	<name>CPath2 API</name>
+	<description>CPath2 enumerations, beans (JAXB), XML schema, and utility classes</description>
+	<url>http://www.pathwaycommons.org</url>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
 			<!-- generate schema from beans -->
 			<plugin>
 				<groupId>com.sun.tools.jxc.maven2</groupId>
@@ -53,56 +54,66 @@
 					</dependency>
 				</dependencies>
 			</plugin>
-  	</plugins>
-  </build>
-  
-  <pluginRepositories>
-	<pluginRepository>
-		<id>maven-repository.dev.java.net</id>
-		<name>Java.net Maven 2 Repository</name>
-		<url>http://download.java.net/maven/2</url>
-	</pluginRepository>
-  </pluginRepositories> 
-  
-  <profiles>
+		</plugins>
+	</build>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>maven-repository.dev.java.net</id>
+			<name>Java.net Maven 2 Repository</name>
+			<url>http://download.java.net/maven/2</url>
+		</pluginRepository>
+	</pluginRepositories>
+
+	<profiles>
 		<profile>
-			<id>local</id>
-			<!-- use as "mvn deploy -Plocal"; 
-			${local.biopax.m2repo}, ${local.biopax.site} must 
-			be defined in the local ~/.m2/settings.xml, profiles...
-			-->
-			<distributionManagement>
-				<snapshotRepository>
-					<id>biopax.snapshots</id>
-					<name>Local BioPAX Snapshots Repository</name>
-					<url>${local.biopax.m2repo}/snapshots</url>
-				</snapshotRepository>
-				<repository>
-					<id>biopax.releases</id>
-					<name>Local BioPAX Repository</name>
-					<url>${local.biopax.m2repo}/releases</url>
-				</repository>
-				<site>
-					<id>biopax.sf.net</id>
-					<name>BioPAX Sourceforge site</name>
-					<url>${local.biopax.site}/cpath2-${project.version}</url>
-				</site>
-			</distributionManagement>
+			<id>sourceforge</id>
+			<properties>
+				<biopax.site.url>
+					scp://shell.sourceforge.net/home/project-web/biopax/htdocs/
+				</biopax.site.url>
+				<biopax.snapshot.url>
+					scp://shell.sourceforge.net/home/project-web/biopax/htdocs/m2repo/snapshots
+				</biopax.snapshot.url>
+				<biopax.release.url>
+					scp://shell.sourceforge.net/home/project-web/biopax/htdocs/m2repo/releases
+				</biopax.release.url>
+			</properties>
 		</profile>
-  </profiles>
-  <dependencies>
-  	<dependency>
-  		<groupId>javax.validation</groupId>
-  		<artifactId>validation-api</artifactId>
-  		<version>1.0.0.GA</version>
-  	</dependency>
-  	<dependency>
-  		<groupId>junit</groupId>
-  		<artifactId>junit</artifactId>
-  		<version>4.7</version>
-  		<scope>test</scope>
-  		<optional>true</optional>
-  	</dependency>
-  </dependencies>
-  
+	</profiles>
+
+	<distributionManagement>
+		<site>
+			<id>biopax.sf.net</id>
+			<name>BioPAX Sourceforge site</name>
+			<url>${biopax.site.url}/cpath2-${project.version}</url>
+		</site>
+		<snapshotRepository>
+			<id>biopax.snapshots</id>
+			<name>BioPAX Snapshots Repository</name>
+			<url>${biopax.snapshot.url}</url>
+		</snapshotRepository>
+		<repository>
+			<id>biopax.releases</id>
+			<name>BioPAX Releases Repository</name>
+			<url>${biopax.release.url}</url>
+		</repository>
+	</distributionManagement>
+
+
+	<dependencies>
+		<dependency>
+			<groupId>javax.validation</groupId>
+			<artifactId>validation-api</artifactId>
+			<version>1.0.0.GA</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.7</version>
+			<scope>test</scope>
+			<optional>true</optional>
+		</dependency>
+	</dependencies>
+
 </project>
