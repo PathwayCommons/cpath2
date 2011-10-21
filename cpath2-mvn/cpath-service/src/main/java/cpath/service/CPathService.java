@@ -134,7 +134,17 @@ public interface CPathService {
 			String[] sources, Integer limit, Direction direction);
 
 	/**
-	 * Runs a paths-between query from the given sources to the given targets.
+	 * Runs a paths-between query for the given sources.
+	 *
+	 * @param format output format
+	 * @param sources IDs of source molecules
+	 * @param limit search limit (integer value)
+	 * @return paths between
+	 */
+	ServiceResponse getPathsBetween(OutputFormat format, String[] sources, Integer limit);
+
+	/**
+	 * Runs a POI query from the given sources to the given targets.
 	 *
 	 * @param format output format
 	 * @param sources IDs of source molecules
@@ -142,9 +152,10 @@ public interface CPathService {
 	 * @param limit search limit (integer value)
 	 * @return paths between
 	 */
-	ServiceResponse getPathsBetween(OutputFormat format, String[] sources, 
-			String[] targets, Integer limit);
-
+	ServiceResponse getPathsOfInterest(OutputFormat format, String[] sources, 
+			String[] targets, Integer limit);	
+	
+	
 	/**
 	 * Runs a common upstream or downstream query.
 	 *
