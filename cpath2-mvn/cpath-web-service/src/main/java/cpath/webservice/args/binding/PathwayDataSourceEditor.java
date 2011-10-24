@@ -33,6 +33,7 @@ import java.net.URLEncoder;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.bridgedb.DataSource;
 
 import cpath.service.BioDataTypes;
@@ -68,20 +69,31 @@ public class PathwayDataSourceEditor extends PropertyEditorSupport
 				dataSource = d;
 				break;
 			} 
-			
-			// may be URN?
-			String uriEncoded;
-			try {
-				uriEncoded = URLEncoder.encode(ds, "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				uriEncoded = URLEncoder.encode(ds);
+			else {
+				for (String name : ((Provenance)d.getOrganism()).getName()) {
+					if(name.equalsIgnoreCase(ds)) {
+						dataSource = d;
+						break;
+					}
+				} 
 			}
 			
-			if (ds.equalsIgnoreCase(d.getSystemCode()) // is RDFId (created as such in the BioDataSources init())
-				|| uriEncoded.equalsIgnoreCase(d.getSystemCode())) 
-			{
-				dataSource = d;
-				break;
+			if(dataSource == null) {
+				// may be it's a URN?
+				String uriEncoded;
+					try {
+					uriEncoded = URLEncoder.encode(ds, "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					uriEncoded = URLEncoder.encode(ds);
+				}
+			
+				if (ds.equalsIgnoreCase(d.getSystemCode()) 
+					// is RDFId (created as such in the BioDataSources init())
+					|| uriEncoded.equalsIgnoreCase(d.getSystemCode())) 
+				{
+					dataSource = d;
+					break;
+				}
 			}
 		}
 

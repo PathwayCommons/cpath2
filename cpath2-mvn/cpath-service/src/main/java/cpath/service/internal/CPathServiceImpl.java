@@ -170,8 +170,10 @@ public class CPathServiceImpl implements CPathService {
 	@Cacheable(cacheName = "elementByIdCache")
 	@Override
 	public ServiceResponse fetch(OutputFormat format, String... uris) {
-        ServiceResponse res = fetchAsBiopax(uris);
-        return (res.isError())? res : convert(res, format);
+        ServiceResponse res = fetchBiopaxModel(uris);
+        if(!res.isError()) 
+        	convert(res, format);
+        return res;
     }
 
 	/*
@@ -185,7 +187,8 @@ public class CPathServiceImpl implements CPathService {
         Model model = simpleIO.convertFromOWL(new ByteArrayInputStream(biopax.getBytes()));
         if(!model.getObjects().isEmpty()) {
             serviceResponse.setData(model);
-            return convert(serviceResponse, format);
+            convert(serviceResponse, format);
+            return serviceResponse;
         } else {
         	serviceResponse.setNoResultsFoundResponse("Empty BioPAX Model!");
         	return serviceResponse;
@@ -199,18 +202,27 @@ public class CPathServiceImpl implements CPathService {
      */
     ServiceResponse convert(ServiceResponse serviceResponse, OutputFormat format) 
     {
-		try {
+		if(serviceResponse.isError()) {
+			return serviceResponse; //unchanged
+		} else if(serviceResponse.isEmpty()) {
+			serviceResponse.setNoResultsFoundResponse("Empty BioPAX Model returned!");
+			return serviceResponse;
+		}
+
+		// otherwise, do convert
+    	try {
 			switch (format) {
 			case BINARY_SIF:
-				serviceResponse = fetchAsBinarySIF(serviceResponse, false);
+				convertToBinarySIF(serviceResponse, false);
 				break;
 			case EXTENDED_BINARY_SIF:
-				serviceResponse = fetchAsBinarySIF(serviceResponse, true);
+				convertToBinarySIF(serviceResponse, true);
 				break;
 			case GSEA:
-				serviceResponse = fetchAsGSEA(serviceResponse, "uniprot");
+				convertToGSEA(serviceResponse, "uniprot");
 				break;
             case BIOPAX: // default handler
+            	convertToBiopaxOWL(serviceResponse);
 			default:
                 // do nothing
 			}
@@ -222,6 +234,19 @@ public class CPathServiceImpl implements CPathService {
 		return serviceResponse;
     }
 	
+    /**
+     * Replace the Model object contained in the service bean 
+     * with its OWL serialization (text data)
+     * 
+     * @param serviceResponse
+     */
+	void convertToBiopaxOWL(ServiceResponse serviceResponse) {
+		Model m = (Model) serviceResponse.getData();
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		simpleIO.convertToOWL(m, baos);
+		serviceResponse.setData(baos.toString());
+	}
+
 	/** 
 	 * Gets BioPAX elements by id, 
 	 * creates a sub-model, and returns everything as map.
@@ -229,14 +254,14 @@ public class CPathServiceImpl implements CPathService {
 	 * @param uris
 	 * @return
 	 */
-	ServiceResponse fetchAsBiopax(String... uris) {
+	ServiceResponse fetchBiopaxModel(String... uris) {
 
 		ServiceResponse serviceResponse = new ServiceResponse();
 		
 		if (uris.length > 0) {	
 			// extract a sub-model
 			Model m = mainDAO.getValidSubModel(Arrays.asList(uris));
-			if(!m.getObjects().isEmpty()) {
+			if(m != null && !m.getObjects().isEmpty()) {
 				serviceResponse.setData(m);
 			} else {
 				serviceResponse.setNoResultsFoundResponse(
@@ -250,33 +275,28 @@ public class CPathServiceImpl implements CPathService {
 	}	
 	
 	/**
-	 * Converts service results that contain a BioPAXmodel to GSEA format.
+	 * Converts service results that contain 
+	 * a not empty BioPAX Model to GSEA format.
 	 * 
      * @param resp ServiceResponse
 	 * @param outputIdType output identifiers type (db name)
 	 * @return
 	 * @throws IOException 
 	 */
-	ServiceResponse fetchAsGSEA(ServiceResponse resp, 
+	void convertToGSEA(ServiceResponse resp, 
 		String outputIdType) throws IOException 
 	{	
 		// convert, replace DATA
 		Model m = (Model) resp.getData();
-		if (m != null && m.getObjects().size()>0) {
-			GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true);
-			OutputStream stream = new ByteArrayOutputStream();
-			gseaConverter.writeToGSEA(m, stream);
-			resp.setData(stream.toString());
-		} else {
-			log.info("Won't convert to GSEA: empty Model!");
-		}
-		
-		return resp;
+		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true);
+		OutputStream stream = new ByteArrayOutputStream();
+		gseaConverter.writeToGSEA(m, stream);
+		resp.setData(stream.toString());
 	}
 
 	/**
-	 * Gets BioPAX elements by id, 
-	 * creates a sub-model, converts to SIF format.
+	 * Converts a not empty BioPAX Model (contained in the service bean) 
+	 * to SIF data format.
 	 * 
 	 * TODO 'rules' parameter is currently ignored (requires conversion 
 	 * from strings to the rules, e.g., using enum. BinaryInteractionRule from cpath-web-service)
@@ -287,20 +307,13 @@ public class CPathServiceImpl implements CPathService {
 	 * @return
 	 * @throws IOException 
 	 */
-	ServiceResponse fetchAsBinarySIF(ServiceResponse resp, 
+	void convertToBinarySIF(ServiceResponse resp, 
 		boolean extended, String... rules) throws IOException 
 	{
 		// convert, replace DATA value in the map to return
 		// TODO match 'rules' parameter to rule types (currently, it uses all)
 		Model m = (Model) resp.getData();
-		
-		if (m == null || m.getObjects().size() == 0) {
-			log.info("Won't convert to SIF: empty Model!");
-			return resp; //unchanged
-		}
-		
 		SimpleInteractionConverter sic = getSimpleInteractionConverter(m);
-
 		OutputStream edgeStream = new ByteArrayOutputStream();
 		if (extended) {
 			OutputStream nodeStream = new ByteArrayOutputStream();
@@ -317,7 +330,6 @@ public class CPathServiceImpl implements CPathService {
 			resp.setData(removeDuplicateBinaryInteractions(edgeStream));
 		}
 
-		return resp;
 	}
 
 	/*
@@ -379,7 +391,7 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			Model m = mainDAO.runAnalysis(analysis, params);
 			resp.setData(m);
-			resp = convert(resp, format);
+			convert(resp, format);
 		} catch (Exception e) {
 			resp.setExceptionResponse(e);
 			log.error("runAnalysis failed. ", e);
