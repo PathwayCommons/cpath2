@@ -80,12 +80,10 @@ public class CPathServiceTest {
 	
 	
 	@Test
-	public void testFetchAsBiopax() throws Exception {
+	public void testFetchBiopaxModel() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		CPathService service = new CPathServiceImpl(dao, null);
-		ServiceResponse res = service.fetch(
-				OutputFormat.BIOPAX,
-				"http://www.biopax.org/examples/myExample#Protein_A");
+		CPathServiceImpl service = new CPathServiceImpl(dao, null);
+		ServiceResponse res = service.fetchBiopaxModel("http://www.biopax.org/examples/myExample#Protein_A");
 		assertNotNull(res);
 		assertFalse(res.isError());
 		assertNotNull(res.getData());
@@ -100,15 +98,13 @@ public class CPathServiceTest {
 
 	
 	@Test
-	public void testFetchAsBiopax2() throws Exception {
+	public void testFetchBiopax() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
 		CPathService service = new CPathServiceImpl(dao, null);//,null,null,null);
 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "urn:miriam:uniprot:P46880");
 		assertNotNull(res);
 		assertFalse(res.isError());
 		assertFalse(res.isEmpty());
-		
-		//System.out.println(map.getData());
 		assertTrue(res.getData().toString().length()>0);
 	}
 
