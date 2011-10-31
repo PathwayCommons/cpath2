@@ -32,7 +32,6 @@ import java.io.*;
 import java.util.*;
 
 import javax.annotation.PostConstruct;
-import javax.validation.constraints.NotNull;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.Log;
@@ -76,10 +75,8 @@ import cpath.warehouse.beans.PathwayData;
 public class CPathServiceImpl implements CPathService {
 	private static final Log log = LogFactory.getLog(CPathServiceImpl.class);
 	
-	@NotNull
 	private PaxtoolsDAO mainDAO;
 	
-	@NotNull
 	private MetadataDAO metadataDAO;
 
 	private SimpleIOHandler simpleIO;

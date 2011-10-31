@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.sql.DataSource;
-import javax.validation.constraints.NotNull;
 
 import cpath.config.CPathSettings;
 import cpath.dao.DataServices;
@@ -73,49 +72,43 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 
 	// fields are set by Spring from cpath.properties
     
-    @NotNull
 	private String dbUser;
 	@Value("${user}")
 	public void setDbUser(String dbUser) { this.dbUser = dbUser; }
 	public String getDbUser() { return dbUser; }
 
-	@NotNull
 	private String dbPassword;
 	@Value("${password}")
 	public void setDbPassword(String dbPassword) { this.dbPassword = dbPassword; }
 	public String getDbPassword() { return dbPassword; }
 
-	@NotNull
 	private String dbDriver;
 	@Value("${driver}")
 	public void setDbDriver(String dbDriver) { this.dbDriver = dbDriver; }
 	public String getDbDriver() { return dbDriver; }
 
-	@NotNull
 	private String dbConnection;
 	@Value("${connection}")
 	public void setDbConnection(String dbConnection) { this.dbConnection = dbConnection; }
 	public String getDbConnection() { return dbConnection; }
 
-	@NotNull
 	private String metaDb;
 	@Value("${metadata.db}")
 	public void setMetaDb(String db) {this.metaDb = db;}
 	public String getMetaDb() {return metaDb;}
 
-	@NotNull
+
 	private String mainDb;
 	@Value("${main.db}")
 	public void setMainDb(String db) {this.mainDb = db;}
 	public String getMainDb() {return mainDb;}
 
-	@NotNull
+
 	private String proteinsDb;
 	@Value("${proteins.db}")
 	public void setProteinsDb(String db) {this.proteinsDb = db;}
 	public String getProteinsDb() {return proteinsDb;}
 
-	@NotNull
 	private String moleculesDb;
 	@Value("${molecules.db}")
 	public void setMoleculesDb(String db) {this.moleculesDb = db;}
