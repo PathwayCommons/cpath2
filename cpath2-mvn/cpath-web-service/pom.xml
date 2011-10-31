@@ -25,6 +25,7 @@
 					<systemProperties>
 						<CPATH2_HOME>${CPATH2_HOME}</CPATH2_HOME>
 						<java.io.tmpdir>${CPATH2_HOME}/tmp</java.io.tmpdir>
+						<net.sf.ehcache.disabled>true</net.sf.ehcache.disabled>
 					</systemProperties>
 				</configuration>
 			</plugin>

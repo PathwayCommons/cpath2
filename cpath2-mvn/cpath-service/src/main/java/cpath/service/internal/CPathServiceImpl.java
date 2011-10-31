@@ -527,13 +527,17 @@ public class CPathServiceImpl implements CPathService {
 	@Cacheable(cacheName = "traverseCache")
 	@Override
 	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
-		ServiceResponse toReturn = new ServiceResponse();
+		ServiceResponse resp = new ServiceResponse();
+		try {
+			// get results from the DAO
+			TraverseResponse results = mainDAO.traverse(propertyPath, sourceUris);
+			resp.setResponse(results);
+		} catch (Exception e) {
+			resp.setExceptionResponse(e);
+			log.error("Failed. ", e);
+		}
 		
-		// get results from the DAO
-		TraverseResponse results = mainDAO.traverse(propertyPath, sourceUris);
-		toReturn.setResponse(results);
-		
-		return toReturn;
+		return resp;
 	}
 
 	

@@ -11,7 +11,7 @@ public class Search {
 	@NotNull(message="Parameter 'q' (Lucene full-text query string) is required!")
 	@NotBlank(message="Parameter 'q' (Lucene full-text query string) is blank!")
 	private String q;
-	
+	@Valid
 	private Class<? extends BioPAXElement> type;
 	@Valid
 	private OrganismDataSource[] organism;

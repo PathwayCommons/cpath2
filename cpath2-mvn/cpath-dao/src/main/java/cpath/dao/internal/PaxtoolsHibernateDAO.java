@@ -1147,7 +1147,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				// add (it might have no values, but the path is correct)
 				resp.getTraverseEntry().add(entry); 
 			} catch (IllegalBioPAXArgumentException e) {
-				// path does not apply?
+				// log, ignore if the path does not apply
 				if(log.isDebugEnabled())
 					log.debug("Failed to get values at: " + 
 						propertyPath + " from the element: " + uri, e);
