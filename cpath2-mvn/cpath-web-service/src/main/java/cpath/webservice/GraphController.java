@@ -101,7 +101,7 @@ public class GraphController extends BasicController {
 		
 		log("/graph", graph);
 		
-		ServiceResponse result = new ServiceResponse();
+		ServiceResponse result;
 		
 		switch (graph.getKind()) {
 		case NEIGHBORHOOD:

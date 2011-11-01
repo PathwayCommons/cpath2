@@ -27,17 +27,18 @@ public class ValidationResultsController extends BasicController
 		this.service = service;
 	}
 
-	
-	// Get by ID (URI) command
+
     @RequestMapping("/validation/{metadataId}")
     public @ResponseBody ValidatorResponse queryForValidation(@PathVariable String metadataId) 
     {
     	if (log.isInfoEnabled())
 			log.info("Query for validation object: " + metadataId);
-
+    	
     	ServiceResponse result = service.getValidationReport(metadataId);
-    	ValidatorResponse body = (ValidatorResponse) result.getData();
-		return body;
+    	// TODO this may throw an exception, which we can make a ErrorResponse instead... later
+    	ValidatorResponse body = (ValidatorResponse) ((DataResponse) result).getData();
+    	
+    	return body;
     }
 
     
@@ -48,8 +49,10 @@ public class ValidationResultsController extends BasicController
 			log.info("Query for validation html:" + metadataId);
 
     	ServiceResponse result = service.getValidationReport(metadataId);
-    	ValidatorResponse body = (ValidatorResponse) result.getData();
+    	// TODO this may throw an exception, which we can make a ErrorResponse instead... later
+    	ValidatorResponse body = (ValidatorResponse) ((DataResponse) result).getData();
 		model.addAttribute("response", body);
+		
 		return "validationSummary";
     }
 	
