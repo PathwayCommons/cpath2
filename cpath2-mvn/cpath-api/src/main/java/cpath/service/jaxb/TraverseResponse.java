@@ -8,7 +8,7 @@ import javax.xml.bind.annotation.*;
 @XmlRootElement(name="traverseResponse")
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "TraverseResponse")
-public class TraverseResponse extends Response {
+public class TraverseResponse extends ServiceResponse {
     @XmlAttribute
     protected String propertyPath;
 

@@ -1138,11 +1138,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			BioPAXElement bpe = getByID(uri);
 			try {
 				Set<?> v = pathAccessor.getValueFromBean(bpe);
-				
 				TraverseEntry entry = new TraverseEntry();
 				entry.setUri(uri);
 				if(!pathAccessor.isUnknown(v)) {
-					entry.getValue().addAll(v);
+//					entry.getValue().addAll(v);
+					for(Object o : v) {
+						if(o instanceof BioPAXElement) 
+							entry.getValue().add(((BioPAXElement) o).getRDFId());
+						else
+							entry.getValue().add(String.valueOf(o));
+					}
 				}
 				// add (it might have no values, but the path is correct)
 				resp.getTraverseEntry().add(entry); 

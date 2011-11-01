@@ -47,7 +47,6 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 /**
  * cPathSquared Model Access Web Service.
@@ -58,7 +57,6 @@ import javax.validation.constraints.NotNull;
 public class BiopaxModelController extends BasicController {
     private static final Log log = LogFactory.getLog(BiopaxModelController.class);    
 	
-    @NotNull
     private CPathService service; // main PC db access
 	
     public BiopaxModelController(CPathService service) {
@@ -116,14 +114,10 @@ public class BiopaxModelController extends BasicController {
     public @ResponseBody ServiceResponse traverse(@Valid GetProperty query, BindingResult bindingResult) 
     		throws IOException 
     {
-    	ServiceResponse result = new ServiceResponse();
-    	
     	if(bindingResult.hasErrors()) {
-    		result.setResponse(errorfromBindingResult(bindingResult));
+    		return errorfromBindingResult(bindingResult);
     	} else {
-			result = service.traverse(query.getPath(), query.getUri());
+			return service.traverse(query.getPath(), query.getUri());
     	}
-    	
-    	return result;
     }
 }

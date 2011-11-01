@@ -5,8 +5,6 @@ import java.io.File;
 
 import javax.persistence.*;
 
-import cpath.config.CPathSettings;
-
 /**
  * Data Provider Metadata.
  */

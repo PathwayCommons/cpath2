@@ -12,7 +12,7 @@ import cpath.service.Status;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "ErrorResponse")
 @XmlRootElement(name = "errorResponse")
-public class ErrorResponse extends Response {
+public class ErrorResponse extends ServiceResponse {
     @XmlElement(name = "error_code", required = true)
     protected Integer errorCode;
     @XmlElement(name = "error_msg", required = true)

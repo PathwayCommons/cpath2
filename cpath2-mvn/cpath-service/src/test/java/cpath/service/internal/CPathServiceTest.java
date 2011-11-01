@@ -47,6 +47,7 @@ import cpath.service.BioDataTypes;
 import cpath.service.BioDataTypes.Type;
 import cpath.service.CPathService;
 import cpath.service.OutputFormat;
+import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.ServiceResponse;
 
 import java.io.File;
@@ -85,7 +86,7 @@ public class CPathServiceTest {
 		CPathServiceImpl service = new CPathServiceImpl(dao, null);
 		ServiceResponse res = service.fetchBiopaxModel("http://www.biopax.org/examples/myExample#Protein_A");
 		assertNotNull(res);
-		assertFalse(res.isError());
+		assertFalse(res instanceof ErrorResponse);
 		assertNotNull(res.getData());
 		assertFalse(res.isEmpty());
 		
@@ -103,7 +104,7 @@ public class CPathServiceTest {
 		CPathService service = new CPathServiceImpl(dao, null);//,null,null,null);
 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "urn:miriam:uniprot:P46880");
 		assertNotNull(res);
-		assertFalse(res.isError());
+		assertFalse(res instanceof ErrorResponse);
 		assertFalse(res.isEmpty());
 		assertTrue(res.getData().toString().length()>0);
 	}
@@ -120,7 +121,7 @@ public class CPathServiceTest {
 				OutputFormat.BINARY_SIF,
 				"http://www.biopax.org/examples/myExample#biochemReaction1");
 		assertNotNull(res);
-		assertFalse(res.isError());
+		assertFalse(res instanceof ErrorResponse);
 		assertFalse(res.isEmpty());
 		
 		String data = (String) res.getData();		

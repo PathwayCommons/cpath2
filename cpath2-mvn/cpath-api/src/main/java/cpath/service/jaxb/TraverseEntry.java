@@ -14,7 +14,7 @@ public class TraverseEntry {
     @XmlAttribute(required = true)
     protected String uri;
     
-    protected List<Object> value;
+    protected List<String> value;
 
 
     public String getUri() {
@@ -24,13 +24,13 @@ public class TraverseEntry {
         this.uri = value;
     }
 	
-	public List<Object> getValue() {
+	public List<String> getValue() {
 		if(value == null) {
-			value = new ArrayList<Object>();
+			value = new ArrayList<String>();
 		}
 		return value;
 	}
-	public void setValue(List<Object> value) {
+	public void setValue(List<String> value) {
 		this.value = value;
 	}
 

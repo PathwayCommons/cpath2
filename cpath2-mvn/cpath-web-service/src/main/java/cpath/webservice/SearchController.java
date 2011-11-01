@@ -52,7 +52,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 /**
  * cPathSquared Search Web Service.
@@ -63,7 +62,6 @@ import javax.validation.constraints.NotNull;
 public class SearchController extends BasicController {
     private static final Log log = LogFactory.getLog(SearchController.class);    
 	
-    @NotNull
     private CPathService service; // main PC db access
 	
     public SearchController(CPathService service) {
@@ -126,7 +124,7 @@ public class SearchController extends BasicController {
     public @ResponseBody ServiceResponse find(@Valid Search search, BindingResult bindingResult)
     {		
 		if(bindingResult.hasErrors()) {
-			return serviceResponse(errorfromBindingResult(bindingResult));
+			return errorfromBindingResult(bindingResult);
 		} else {
 			if (log.isDebugEnabled())
 				log.debug("/find called (for type: " 
@@ -150,7 +148,7 @@ public class SearchController extends BasicController {
     public @ResponseBody ServiceResponse findEntities(@Valid Search search, BindingResult bindingResult)
     {		
 		if(bindingResult.hasErrors()) {
-			return serviceResponse(errorfromBindingResult(bindingResult));
+			return errorfromBindingResult(bindingResult);
 		} else {
 			if (log.isDebugEnabled())
 				log.debug("/find_entity called (for type: " 

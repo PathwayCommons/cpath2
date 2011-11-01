@@ -7,7 +7,7 @@ import javax.xml.bind.annotation.*;
 @XmlRootElement(name="searchResponse")
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "SearchResponse")
-public class SearchResponse extends Response {
+public class SearchResponse extends ServiceResponse {
     @XmlAttribute
     protected Integer maxHits;
     
@@ -16,6 +16,17 @@ public class SearchResponse extends Response {
     @XmlAttribute
     protected Integer pageNo; //search result page number
 
+    @XmlAttribute
+    protected String comment;
+	
+	public String getComment() {
+		return comment;
+	}
+	
+	public void setComment(String comment) {
+		this.comment = comment;
+	}
+    
     public List<SearchHit> getSearchHit() {
         if (searchHit == null) {
             searchHit = new ArrayList<SearchHit>();
