@@ -82,30 +82,17 @@ public abstract class BasicController {
     
 	
 	protected void stringResponse(ServiceResponse resp, Writer writer) throws IOException {
-		if(resp.isError()) {
-    		errorResponse((ErrorResponse) resp.getResponse(), writer);
-		} else if(resp.isEmpty()) {
-			resp.setNoResultsFoundResponse(null);
-			errorResponse((ErrorResponse) resp.getResponse(), writer);
+		if(resp instanceof ErrorResponse) {
+    		errorResponse((ErrorResponse) resp, writer);
+		} else if(resp.isEmpty()) { // should not be here (normally, it gets converter to ErrorResponse...)
+			log.warn("stringResponse: I got an empty ServiceResponce! (must be already converted to the ErrorResponse)");
+			errorResponse(NO_RESULTS_FOUND.errorResponse(null), writer);
 		} else {
 			if(log.isDebugEnabled())
 				log.debug("QUERY RETURNED " 
 					+ resp.getData().toString().length() + " chars");
 			writer.write(resp.getData().toString());
 		}
-	}
-	
-	
-	/**
-	 * Wraps a response bean in a new service response bean.
-	 * 
-	 * @param response
-	 * @return
-	 */
-	protected ServiceResponse serviceResponse(Response response) {
-		ServiceResponse resp = new ServiceResponse();
-		resp.setResponse(response);
-		return resp;
 	}
 		
 }

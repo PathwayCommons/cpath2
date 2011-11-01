@@ -49,7 +49,6 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
 
 /**
  * cPathSquared Main Web Service.
@@ -60,7 +59,6 @@ import javax.validation.constraints.NotNull;
 public class GraphController extends BasicController {
     private static final Log log = LogFactory.getLog(GraphController.class);    
 	
-    @NotNull
     private CPathService service; // main PC db access
 	
     public GraphController(CPathService service) {
@@ -120,9 +118,9 @@ public class GraphController extends BasicController {
 			break;
 		default:
 			// impossible (should has failed earlier)
-			result.setResponse(Status.INTERNAL_ERROR
+			result= Status.INTERNAL_ERROR
 				.errorResponse(getClass().getCanonicalName() + 
-					" does not support " + graph.getKind()));
+					" does not support " + graph.getKind());
 			break;
 		}
 		

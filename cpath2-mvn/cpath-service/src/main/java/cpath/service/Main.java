@@ -37,6 +37,7 @@ import org.biopax.validator.utils.BiopaxValidatorUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.ServiceResponse;
 
 import java.io.*;
@@ -169,11 +170,12 @@ public class Main  {
 	 * @param csvIdsString
 	 * @throws IOException 
 	 */
-	public static void convert(OutputStream output, String biopax, String outputFormat) throws IOException {
-
+	public static void convert(OutputStream output, String biopax, String outputFormat) 
+			throws IOException 
+	{
 		ServiceResponse res = getService().convert(biopax, OutputFormat.valueOf(outputFormat));
-		if (!res.isError()) {
-    		System.err.println(res.getResponse().toString());
+		if (!(res instanceof ErrorResponse)) {
+    		System.err.println(res.toString());
     	}
         else if (res.getData() != null) {
     		String owl = (String) res.getData();
@@ -194,8 +196,8 @@ public class Main  {
 	{
 		String[] uris = csvIdsString.split(",");
 		ServiceResponse res = getService().fetch(OutputFormat.BIOPAX, uris);
-		if(res.isError()) {
-    		System.err.println(res.getResponse());
+		if(res instanceof ErrorResponse) {
+    		System.err.println(res.toString());
     	} else if(res.getData() != null) {
     		String owl = (String) res.getData();
     		output.write(owl.getBytes("UTF-8"));
@@ -221,8 +223,8 @@ public class Main  {
     				+ "...");
     	}
     	ServiceResponse res = getService().getValidationReport(provider);
-    	if(res.isError()) {
-    		System.err.println(res.getResponse());
+    	if(res instanceof ErrorResponse) {
+    		System.err.println(res.toString());
     	} else if(res.getData() != null) {
     		ValidatorResponse report = (ValidatorResponse) res.getData();
     		OutputStreamWriter writer = new OutputStreamWriter(output, "UTF-8");

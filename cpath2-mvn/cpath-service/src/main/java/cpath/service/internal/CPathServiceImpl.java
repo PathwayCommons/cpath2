@@ -55,12 +55,14 @@ import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
 import cpath.service.analyses.PathsOfInterestAnalysis;
+import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
+import cpath.service.jaxb.TraverseEntry;
 import cpath.service.jaxb.TraverseResponse;
 import cpath.service.CPathService;
 import cpath.service.OutputFormat;
-import cpath.service.Status;
+import static cpath.service.Status.*;
 
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.PathwayData;
@@ -116,20 +118,22 @@ public class CPathServiceImpl implements CPathService {
 	public ServiceResponse findElements(String queryStr, 
 			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
 	{
-		ServiceResponse serviceResponse = new ServiceResponse();
+		ServiceResponse serviceResponse;
 		
 		try {
 			// do search
 			SearchResponse hits = mainDAO.findElements(queryStr, page, biopaxClass, searchFilters);
-			serviceResponse.setResponse(hits);
-			serviceResponse.setQuery("Find '" + queryStr  + 
-					"' in " + 
+			if(hits.isEmpty())
+				serviceResponse = NO_RESULTS_FOUND.errorResponse("No hits");
+			else {
+				hits.setComment("Find '" + queryStr  + "' in " + 
 					((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName()) 
 					+ "; filters: " + Arrays.toString(searchFilters));
-			if(serviceResponse.isEmpty())
-				serviceResponse.setNoResultsFoundResponse("No hits");
+				serviceResponse = hits;
+			}
+			
 		} catch (Exception e) {
-			serviceResponse.setExceptionResponse(e);
+			serviceResponse = INTERNAL_ERROR.errorResponse(e);
 		}
 		
 		return serviceResponse;
@@ -141,19 +145,21 @@ public class CPathServiceImpl implements CPathService {
 	public ServiceResponse findEntities(String queryStr, 
 			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
 	{
-		ServiceResponse serviceResponse = new ServiceResponse();
+		ServiceResponse serviceResponse;
 		try {
 			// do search
 			SearchResponse hits = mainDAO.findEntities(queryStr, page, biopaxClass, searchFilters); 
-			serviceResponse.setResponse(hits);
-			serviceResponse.setQuery("Find (Entity) '" + queryStr  + 
-				"' in " + 
+			if(hits.isEmpty())
+				serviceResponse = NO_RESULTS_FOUND.errorResponse("No (Entity) hits");
+			else {
+				hits.setComment("Find (Entity) '" + queryStr  + "' in " + 
 				((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName()) 
 				+ "; filters: " + Arrays.toString(searchFilters));
-			if(serviceResponse.isEmpty())
-				serviceResponse.setNoResultsFoundResponse("No (Entity) hits");
+				serviceResponse = hits;
+			}
+			
 		} catch (Exception e) {
-			serviceResponse.setExceptionResponse(e);
+			serviceResponse = INTERNAL_ERROR.errorResponse(e);
 		}
 		
 		return serviceResponse;
@@ -168,7 +174,7 @@ public class CPathServiceImpl implements CPathService {
 	@Override
 	public ServiceResponse fetch(OutputFormat format, String... uris) {
         ServiceResponse res = fetchBiopaxModel(uris);
-        if(!res.isError()) 
+        if(!(res instanceof ErrorResponse)) 
         	convert(res, format);
         return res;
     }
@@ -187,8 +193,7 @@ public class CPathServiceImpl implements CPathService {
             convert(serviceResponse, format);
             return serviceResponse;
         } else {
-        	serviceResponse.setNoResultsFoundResponse("Empty BioPAX Model!");
-        	return serviceResponse;
+        	return NO_RESULTS_FOUND.errorResponse("Empty BioPAX Model!");
         }
 	}
 
@@ -199,11 +204,10 @@ public class CPathServiceImpl implements CPathService {
      */
     ServiceResponse convert(ServiceResponse serviceResponse, OutputFormat format) 
     {
-		if(serviceResponse.isError()) {
+		if(serviceResponse instanceof ErrorResponse) {
 			return serviceResponse; //unchanged
 		} else if(serviceResponse.isEmpty()) {
-			serviceResponse.setNoResultsFoundResponse("Empty BioPAX Model returned!");
-			return serviceResponse;
+			return NO_RESULTS_FOUND.errorResponse("Empty BioPAX Model returned!");
 		}
 
 		// otherwise, do convert
@@ -223,12 +227,12 @@ public class CPathServiceImpl implements CPathService {
 			default:
                 // do nothing
 			}
+			
+			return serviceResponse;
 		}
         catch (Exception e) {
-        	serviceResponse.setExceptionResponse(e);
+        	return INTERNAL_ERROR.errorResponse(e);
 		}
-
-		return serviceResponse;
     }
 	
     /**
@@ -253,19 +257,21 @@ public class CPathServiceImpl implements CPathService {
 	 */
 	ServiceResponse fetchBiopaxModel(String... uris) {
 
-		ServiceResponse serviceResponse = new ServiceResponse();
+		ServiceResponse serviceResponse;
 		
 		if (uris.length > 0) {	
 			// extract a sub-model
 			Model m = mainDAO.getValidSubModel(Arrays.asList(uris));
 			if(m != null && !m.getObjects().isEmpty()) {
+				serviceResponse = new ServiceResponse();
 				serviceResponse.setData(m);
 			} else {
-				serviceResponse.setNoResultsFoundResponse(
+				serviceResponse = NO_RESULTS_FOUND.errorResponse(
 					"No results for: " + Arrays.toString(uris));
 			}
 		} else {
-			serviceResponse.setNoResultsFoundResponse("No URIs were specified for the query!");
+			serviceResponse = NO_RESULTS_FOUND.errorResponse(
+				"No URIs were specified for the query!");
 		}
 		
 		return serviceResponse;
@@ -335,15 +341,12 @@ public class CPathServiceImpl implements CPathService {
 	 */
 	@Override
 	public ServiceResponse getValidationReport(String metadataIdentifier) {
-
-		ServiceResponse toReturn = new ServiceResponse();
-		
 		// get validationResults from PathwayData beans
-		Collection<PathwayData> pathwayDataCollection = metadataDAO.getPathwayDataByIdentifier(metadataIdentifier);
+		Collection<PathwayData> pathwayDataCollection = metadataDAO
+				.getPathwayDataByIdentifier(metadataIdentifier);
 		if (!pathwayDataCollection.isEmpty()) {
 			// new container to collect different files validation results
 			ValidatorResponse response = new ValidatorResponse();
-
 			for (PathwayData pathwayData : pathwayDataCollection) {
 				String xmlResult = pathwayData.getValidationResults().trim();
 				if (xmlResult != null && xmlResult.length() > 0) {
@@ -355,20 +358,21 @@ public class CPathServiceImpl implements CPathService {
 						validation = resp.getValidationResult().get(0);
 					}
                     catch (Exception e) {
-						toReturn.setExceptionResponse(e);
-						log.error(e);
+                    	log.error(e);
+						return INTERNAL_ERROR.errorResponse(e);
 					}
 					if(validation != null)
 						response.getValidationResult().add(validation);
 				}
 			}
-
+			
+			ServiceResponse toReturn = new ServiceResponse();
 			toReturn.setData(response);
+			return toReturn;
 		} else {
-			toReturn.setNoResultsFoundResponse("No validation data found by " + metadataIdentifier);
+			return NO_RESULTS_FOUND.errorResponse(
+				"No validation data found by " + metadataIdentifier);
 		}
-		
-		return toReturn;
 	}
 
 	//--- Graph queries ---------------------------------------------------------------------------|
@@ -383,18 +387,16 @@ public class CPathServiceImpl implements CPathService {
 	 */
 	ServiceResponse runAnalysis(Analysis analysis, OutputFormat format, Object... params)
 	{
-		ServiceResponse resp = new ServiceResponse();
-		
 		try {
 			Model m = mainDAO.runAnalysis(analysis, params);
+			ServiceResponse resp = new ServiceResponse();
 			resp.setData(m);
 			convert(resp, format);
+			return resp;
 		} catch (Exception e) {
-			resp.setExceptionResponse(e);
 			log.error("runAnalysis failed. ", e);
+			return INTERNAL_ERROR.errorResponse(e);
 		}
-
-		return resp;
 	}
 
 
@@ -424,7 +426,6 @@ public class CPathServiceImpl implements CPathService {
 	public ServiceResponse getPathsOfInterest(OutputFormat format, String[] sources,
 		String[] targets, Integer limit)
 	{
-		
 		Analysis analysis = new PathsOfInterestAnalysis();
 		return runAnalysis(analysis, format, sources, targets, limit);
 	}
@@ -436,10 +437,8 @@ public class CPathServiceImpl implements CPathService {
 		Integer limit, Direction direction)
 	{
 		if (direction == Direction.BOTHSTREAM) {
-			ServiceResponse resp = new ServiceResponse();
-			resp.setResponse(Status.BAD_REQUEST
-				.errorResponse("Direction cannot be BOTHSTREAM for the COMMONSTREAM query!"));
-			return resp;
+			return BAD_REQUEST.errorResponse(
+				"Direction cannot be BOTHSTREAM for the COMMONSTREAM query!");
 		} else if(direction == null) {
 			direction = Direction.DOWNSTREAM;	
 		}
@@ -524,17 +523,14 @@ public class CPathServiceImpl implements CPathService {
 	@Cacheable(cacheName = "traverseCache")
 	@Override
 	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
-		ServiceResponse resp = new ServiceResponse();
 		try {
 			// get results from the DAO
 			TraverseResponse results = mainDAO.traverse(propertyPath, sourceUris);
-			resp.setResponse(results);
+			return results;
 		} catch (Exception e) {
-			resp.setExceptionResponse(e);
 			log.error("Failed. ", e);
+			return INTERNAL_ERROR.errorResponse(e);
 		}
-		
-		return resp;
 	}
 
 	

@@ -1,7 +1,5 @@
 package cpath.webservice;
 
-import javax.validation.constraints.NotNull;
-
 import cpath.service.CPathService;
 import cpath.service.jaxb.*;
 
@@ -23,7 +21,6 @@ public class ValidationResultsController extends BasicController
     
 	private static final Log log = LogFactory.getLog(ValidationResultsController.class);    
 	
-    @NotNull
     private CPathService service; // main PC db access
 	
     public ValidationResultsController(CPathService service) {
