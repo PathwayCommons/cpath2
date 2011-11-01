@@ -55,10 +55,10 @@ import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
 import cpath.service.analyses.PathsOfInterestAnalysis;
+import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
-import cpath.service.jaxb.TraverseEntry;
 import cpath.service.jaxb.TraverseResponse;
 import cpath.service.CPathService;
 import cpath.service.OutputFormat;
@@ -186,12 +186,12 @@ public class CPathServiceImpl implements CPathService {
     @Override
     public ServiceResponse convert(String biopax, OutputFormat format) {
         // put incoming biopax into map
-		ServiceResponse serviceResponse = new ServiceResponse();
+    	DataResponse dataResponse = new DataResponse();
         Model model = simpleIO.convertFromOWL(new ByteArrayInputStream(biopax.getBytes()));
         if(!model.getObjects().isEmpty()) {
-            serviceResponse.setData(model);
-            convert(serviceResponse, format);
-            return serviceResponse;
+            dataResponse.setData(model);
+            convert(dataResponse, format);
+            return dataResponse;
         } else {
         	return NO_RESULTS_FOUND.errorResponse("Empty BioPAX Model!");
         }
@@ -210,20 +210,21 @@ public class CPathServiceImpl implements CPathService {
 			return NO_RESULTS_FOUND.errorResponse("Empty BioPAX Model returned!");
 		}
 
-		// otherwise, do convert
+		// otherwise, do convert (it's a DataResponse)
+		DataResponse dataResponse = (DataResponse) serviceResponse;
     	try {
 			switch (format) {
 			case BINARY_SIF:
-				convertToBinarySIF(serviceResponse, false);
+				convertToBinarySIF(dataResponse, false);
 				break;
 			case EXTENDED_BINARY_SIF:
-				convertToBinarySIF(serviceResponse, true);
+				convertToBinarySIF(dataResponse, true);
 				break;
 			case GSEA:
-				convertToGSEA(serviceResponse, "uniprot");
+				convertToGSEA(dataResponse, "uniprot");
 				break;
             case BIOPAX: // default handler
-            	convertToBiopaxOWL(serviceResponse);
+            	convertToBiopaxOWL(dataResponse);
 			default:
                 // do nothing
 			}
@@ -241,7 +242,7 @@ public class CPathServiceImpl implements CPathService {
      * 
      * @param serviceResponse
      */
-	void convertToBiopaxOWL(ServiceResponse serviceResponse) {
+	void convertToBiopaxOWL(DataResponse serviceResponse) {
 		Model m = (Model) serviceResponse.getData();
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		simpleIO.convertToOWL(m, baos);
@@ -256,25 +257,21 @@ public class CPathServiceImpl implements CPathService {
 	 * @return
 	 */
 	ServiceResponse fetchBiopaxModel(String... uris) {
-
-		ServiceResponse serviceResponse;
-		
 		if (uris.length > 0) {	
 			// extract a sub-model
 			Model m = mainDAO.getValidSubModel(Arrays.asList(uris));
 			if(m != null && !m.getObjects().isEmpty()) {
-				serviceResponse = new ServiceResponse();
-				serviceResponse.setData(m);
+				DataResponse dataResponse = new DataResponse();
+				dataResponse.setData(m);
+				return dataResponse;
 			} else {
-				serviceResponse = NO_RESULTS_FOUND.errorResponse(
+				return NO_RESULTS_FOUND.errorResponse(
 					"No results for: " + Arrays.toString(uris));
 			}
 		} else {
-			serviceResponse = NO_RESULTS_FOUND.errorResponse(
+			return NO_RESULTS_FOUND.errorResponse(
 				"No URIs were specified for the query!");
 		}
-		
-		return serviceResponse;
 	}	
 	
 	/**
@@ -286,7 +283,7 @@ public class CPathServiceImpl implements CPathService {
 	 * @return
 	 * @throws IOException 
 	 */
-	void convertToGSEA(ServiceResponse resp, 
+	void convertToGSEA(DataResponse resp, 
 		String outputIdType) throws IOException 
 	{	
 		// convert, replace DATA
@@ -310,7 +307,7 @@ public class CPathServiceImpl implements CPathService {
 	 * @return
 	 * @throws IOException 
 	 */
-	void convertToBinarySIF(ServiceResponse resp, 
+	void convertToBinarySIF(DataResponse resp, 
 		boolean extended, String... rules) throws IOException 
 	{
 		// convert, replace DATA value in the map to return
@@ -366,7 +363,7 @@ public class CPathServiceImpl implements CPathService {
 				}
 			}
 			
-			ServiceResponse toReturn = new ServiceResponse();
+			DataResponse toReturn = new DataResponse();
 			toReturn.setData(response);
 			return toReturn;
 		} else {
@@ -389,7 +386,7 @@ public class CPathServiceImpl implements CPathService {
 	{
 		try {
 			Model m = mainDAO.runAnalysis(analysis, params);
-			ServiceResponse resp = new ServiceResponse();
+			DataResponse resp = new DataResponse();
 			resp.setData(m);
 			convert(resp, format);
 			return resp;

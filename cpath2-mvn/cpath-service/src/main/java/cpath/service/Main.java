@@ -37,6 +37,7 @@ import org.biopax.validator.utils.BiopaxValidatorUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.ServiceResponse;
 
@@ -176,9 +177,8 @@ public class Main  {
 		ServiceResponse res = getService().convert(biopax, OutputFormat.valueOf(outputFormat));
 		if (!(res instanceof ErrorResponse)) {
     		System.err.println(res.toString());
-    	}
-        else if (res.getData() != null) {
-    		String owl = (String) res.getData();
+    	} else if (!res.isEmpty()) {
+    		String owl = (String) ((DataResponse)res).getData();
     		output.write(owl.getBytes("UTF-8"));
     		output.flush();
     	}
@@ -198,8 +198,8 @@ public class Main  {
 		ServiceResponse res = getService().fetch(OutputFormat.BIOPAX, uris);
 		if(res instanceof ErrorResponse) {
     		System.err.println(res.toString());
-    	} else if(res.getData() != null) {
-    		String owl = (String) res.getData();
+    	} else if(!res.isEmpty()) {
+    		String owl = (String) ((DataResponse)res).getData();
     		output.write(owl.getBytes("UTF-8"));
     		output.flush();
     	}
@@ -225,8 +225,8 @@ public class Main  {
     	ServiceResponse res = getService().getValidationReport(provider);
     	if(res instanceof ErrorResponse) {
     		System.err.println(res.toString());
-    	} else if(res.getData() != null) {
-    		ValidatorResponse report = (ValidatorResponse) res.getData();
+    	} else if(!res.isEmpty()) {
+    		ValidatorResponse report = (ValidatorResponse) ((DataResponse)res).getData();
     		OutputStreamWriter writer = new OutputStreamWriter(output, "UTF-8");
 			// (the last parameter below can be a xsltSource)
 			BiopaxValidatorUtils.write(report, writer, null); 

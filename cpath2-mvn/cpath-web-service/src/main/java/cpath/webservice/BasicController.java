@@ -85,13 +85,14 @@ public abstract class BasicController {
 		if(resp instanceof ErrorResponse) {
     		errorResponse((ErrorResponse) resp, writer);
 		} else if(resp.isEmpty()) { // should not be here (normally, it gets converter to ErrorResponse...)
-			log.warn("stringResponse: I got an empty ServiceResponce! (must be already converted to the ErrorResponse)");
+			log.warn("stringResponse: I got an empty ServiceResponce! " +
+				"(must be already converted to the ErrorResponse)");
 			errorResponse(NO_RESULTS_FOUND.errorResponse(null), writer);
 		} else {
+			DataResponse dresp = (DataResponse) resp;
 			if(log.isDebugEnabled())
-				log.debug("QUERY RETURNED " 
-					+ resp.getData().toString().length() + " chars");
-			writer.write(resp.getData().toString());
+				log.debug("QUERY RETURNED " + dresp.getData().toString().length() + " chars");
+			writer.write(dresp.getData().toString());
 		}
 	}
 		

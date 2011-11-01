@@ -47,6 +47,7 @@ import cpath.service.BioDataTypes;
 import cpath.service.BioDataTypes.Type;
 import cpath.service.CPathService;
 import cpath.service.OutputFormat;
+import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.ServiceResponse;
 
@@ -87,10 +88,11 @@ public class CPathServiceTest {
 		ServiceResponse res = service.fetchBiopaxModel("http://www.biopax.org/examples/myExample#Protein_A");
 		assertNotNull(res);
 		assertFalse(res instanceof ErrorResponse);
-		assertNotNull(res.getData());
+		assertTrue(res instanceof DataResponse);
+		assertNotNull(((DataResponse)res).getData());
 		assertFalse(res.isEmpty());
 		
-		Model m = (Model) res.getData();
+		Model m = (Model) ((DataResponse)res).getData();
 		assertNotNull(m);
 		BioPAXElement e = m.getByID("http://www.biopax.org/examples/myExample#Protein_A");
 		assertTrue(e instanceof Protein);
@@ -105,8 +107,9 @@ public class CPathServiceTest {
 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "urn:miriam:uniprot:P46880");
 		assertNotNull(res);
 		assertFalse(res instanceof ErrorResponse);
+		assertTrue(res instanceof DataResponse);
 		assertFalse(res.isEmpty());
-		assertTrue(res.getData().toString().length()>0);
+		assertTrue(((DataResponse)res).getData().toString().length()>0);
 	}
 
 	
@@ -123,8 +126,8 @@ public class CPathServiceTest {
 		assertNotNull(res);
 		assertFalse(res instanceof ErrorResponse);
 		assertFalse(res.isEmpty());
-		
-		String data = (String) res.getData();		
+		assertTrue(res instanceof DataResponse);
+		String data = (String) ((DataResponse)res).getData();		
 		assertNotNull(data);
 
 		System.out.println(data);
