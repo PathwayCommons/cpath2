@@ -88,6 +88,9 @@ public class CPathServiceImpl implements CPathService {
 	private JAXBContext jaxbContext;
 	private SimpleIOHandler simpleIO;
 
+    private Set<String> blacklist;
+    private String blacklistStr;
+
 	// this is probably required for the echcache to work
 	public CPathServiceImpl() {
 	}
@@ -317,7 +320,7 @@ public class CPathServiceImpl implements CPathService {
 			OutputStream nodeStream = new ByteArrayOutputStream();
 			sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream,
 										 Arrays.asList("Entity/displayName", "Entity/xref:UnificationXref", "Entity/xref:RelationshipXref"),
-										 Arrays.asList("Interaction/dataSource/name", "Interaction/xref:PublicationXref"), true);
+										 Arrays.asList("Interaction/dataSource/displayName", "Interaction/xref:PublicationXref"), true);
 			String edgeColumns = "PARTICIPANT_A\tINTERACTION_TYPE\tPARTICIPANT_B\tINTERACTION_DATA_SOURCE\tINTERACTION_PUBMED_ID\n";
 			String nodeColumns = "PARTICIPANT\tPARTICIPANT_TYPE\tPARTICIPANT_NAME\tUNIFICATION_XREF\tRELATIONSHIP_XREF\n";
 			map.put(DATA, edgeColumns + removeDuplicateBinaryInteractions(edgeStream) + "\n" + nodeColumns + nodeStream.toString());
@@ -412,7 +415,7 @@ public class CPathServiceImpl implements CPathService {
 		Integer limit, Direction direction)
 	{
 		Analysis analysis = new NeighborhoodAnalysis();
-		return runAnalysis(analysis, format, source, limit, direction);
+		return runAnalysis(analysis, format, source, limit, direction, blacklist);
 	}
 
 	@Cacheable(cacheName = "getPathsBetweenCache")
@@ -422,7 +425,7 @@ public class CPathServiceImpl implements CPathService {
 	{
 		
 		Analysis analysis = new PathsBetweenAnalysis();
-		return runAnalysis(analysis, format, source, target, limit);
+		return runAnalysis(analysis, format, source, target, limit, blacklist);
 	}
 
 	@Cacheable(cacheName = "getCommonStreamCache")
@@ -431,7 +434,7 @@ public class CPathServiceImpl implements CPathService {
 		Integer limit, Direction direction)
 	{
 		Analysis analysis = new CommonStreamAnalysis();
-		return runAnalysis(analysis, format, source, limit, direction);
+		return runAnalysis(analysis, format, source, limit, direction, blacklist);
 	}
 
 	//---------------------------------------------------------------------------------------------|
@@ -505,4 +508,21 @@ public class CPathServiceImpl implements CPathService {
 		// outta here
 		return toReturn.toString();
 	}
+
+    public Set<String> getBlacklist() {
+        return blacklist;
+    }
+
+    public void setBlacklist(Set<String> blacklist) {
+        this.blacklist = blacklist;
+    }
+
+    public String getBlacklistStr() {
+        return blacklistStr;
+    }
+
+    public void setBlacklistStr(String blacklistStr) {
+        this.blacklistStr = blacklistStr;
+        setBlacklist(new HashSet<String>(Arrays.asList(blacklistStr.split(","))));
+    }
 }
