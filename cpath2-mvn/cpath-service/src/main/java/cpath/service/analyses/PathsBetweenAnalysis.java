@@ -75,15 +75,18 @@ public class PathsBetweenAnalysis implements Analysis {
 		// Search limit
 		int limit = (Integer) args[2];
 
+        // Blacklist
+        Set<String> blacklist = (Set<String>) args[3];
+
 		// Execute the query
 
 		if (target == null)
 		{
-			return QueryExecuter.runPathsBetween(source, model, limit);
+			return QueryExecuter.runPathsBetween(source, model, limit, blacklist);
 		}
 		else
 		{
-			return QueryExecuter.runPOI(source, target, model, LimitType.NORMAL, limit);
+			return QueryExecuter.runPOI(source, target, model, LimitType.NORMAL, limit, blacklist);
 		}
 	}
 

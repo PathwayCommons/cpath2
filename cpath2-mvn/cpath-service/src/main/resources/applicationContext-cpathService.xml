@@ -14,15 +14,17 @@
     <context:annotation-config/>
     
 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+    <context:property-placeholder location="file:${CPATH2_HOME}/blacklist.properties"/>
 
 	<!-- simply starting this bean populates the (static) Bridgedb DataSource list from constants and metadataDAO! -->
 	<bean id="bioDataTypes" class="cpath.service.BioDataTypes" init-method="init">
 		<constructor-arg ref="paxtoolsDAO" />
 	</bean>
-	
+
 	<bean id="service" class="cpath.service.internal.CPathServiceImpl">
 		<constructor-arg ref="paxtoolsDAO"/>
 		<constructor-arg ref="metadataDAO"/>
+        <property name="blacklistStr" value="{blacklisted.entities}"/>
 	</bean>
 
 	<!-- in addition to Hibernate L2 cache, we can set up a general-purpose java ehcache; shelved for later... -->
