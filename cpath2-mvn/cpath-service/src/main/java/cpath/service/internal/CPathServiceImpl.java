@@ -90,7 +90,6 @@ public class CPathServiceImpl implements CPathService {
 	private SimpleIOHandler simpleIO;
 
     private Set<String> blacklist;
-    private Resource blacklistResource;
 
     // this is probably required for the echcache to work
 	public CPathServiceImpl() {
@@ -510,14 +509,14 @@ public class CPathServiceImpl implements CPathService {
 		return toReturn.toString();
 	}
 
-    public Resource getBlacklist() {
-        return blacklistResource;
-    }
-
+	/**
+	 * A special setter for the blacklist bean property
+	 * (to be used by Spring)
+	 * 
+	 * @param blacklistResource
+	 * @throws IOException
+	 */
     public void setBlacklist(Resource blacklistResource) throws IOException {
-        // This is to read a blacklist set from a file via Spring injection
-        this.blacklistResource = blacklistResource;
-
         blacklist = new HashSet<String>();
         Scanner scanner = new Scanner(blacklistResource.getFile());
         while(scanner.hasNextLine())
@@ -525,4 +524,13 @@ public class CPathServiceImpl implements CPathService {
         scanner.close();
     }
 
+    // blacklist property standard getter/setter pair
+    
+	public Set<String> getBlacklist() {
+		return blacklist;
+	}
+	public void setBlacklist(Set<String> blacklist) {
+		this.blacklist = blacklist;
+	}
+    
 }
