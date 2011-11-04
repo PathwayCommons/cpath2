@@ -46,6 +46,7 @@ import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import com.googlecode.ehcache.annotations.Cacheable;
@@ -89,9 +90,9 @@ public class CPathServiceImpl implements CPathService {
 	private SimpleIOHandler simpleIO;
 
     private Set<String> blacklist;
-    private String blacklistStr;
+    private Resource blacklistResource;
 
-	// this is probably required for the echcache to work
+    // this is probably required for the echcache to work
 	public CPathServiceImpl() {
 	}
 	
@@ -509,20 +510,19 @@ public class CPathServiceImpl implements CPathService {
 		return toReturn.toString();
 	}
 
-    public Set<String> getBlacklist() {
-        return blacklist;
+    public Resource getBlacklist() {
+        return blacklistResource;
     }
 
-    public void setBlacklist(Set<String> blacklist) {
-        this.blacklist = blacklist;
+    public void setBlacklist(Resource blacklistResource) throws IOException {
+        // This is to read a blacklist set from a file via Spring injection
+        this.blacklistResource = blacklistResource;
+
+        blacklist = new HashSet<String>();
+        Scanner scanner = new Scanner(blacklistResource.getFile());
+        while(scanner.hasNextLine())
+            blacklist.add(scanner.nextLine().trim());
+        scanner.close();
     }
 
-    public String getBlacklistStr() {
-        return blacklistStr;
-    }
-
-    public void setBlacklistStr(String blacklistStr) {
-        this.blacklistStr = blacklistStr;
-        setBlacklist(new HashSet<String>(Arrays.asList(blacklistStr.split(","))));
-    }
 }

@@ -12,16 +12,7 @@
      	http://ehcache-spring-annotations.googlecode.com/svn/schema/ehcache-spring/ehcache-spring-1.1.xsd">
 
     <context:annotation-config/>
-
-    <bean id="propertyConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
-          <property name="locations">
-              <list>
-                  <value>file:${CPATH2_HOME}/cpath.properties</value>
-                  <value>file:${CPATH2_HOME}/blacklist.properties</value>
-              </list>
-          </property>
-          <property name="ignoreUnresolvablePlaceholders" value="true"/>
-      </bean>
+    <context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
 	<!-- simply starting this bean populates the (static) Bridgedb DataSource list from constants and metadataDAO! -->
 	<bean id="bioDataTypes" class="cpath.service.BioDataTypes" init-method="init">
@@ -31,7 +22,7 @@
 	<bean id="service" class="cpath.service.internal.CPathServiceImpl">
 		<constructor-arg ref="paxtoolsDAO"/>
 		<constructor-arg ref="metadataDAO"/>
-        <property name="blacklistStr" value="${blacklisted.entities}"/>
+        <property name="blacklist" value="file:${CPATH2_HOME}/blacklist.txt"/>
 	</bean>
 
 	<!-- in addition to Hibernate L2 cache, we can set up a general-purpose java ehcache; shelved for later... -->
