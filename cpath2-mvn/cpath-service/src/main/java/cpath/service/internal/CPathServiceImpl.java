@@ -462,9 +462,16 @@ public class CPathServiceImpl implements CPathService {
      * @return SimpleInteractionConverter
      */
     SimpleInteractionConverter getSimpleInteractionConverter(Model model) {
+        // Currently we don't have any options
+        // But I will just leave it here for the sake
+        // of API interface and future use
+        Map options = new HashMap();
 
         if (model.getLevel() == BioPAXLevel.L2) {
+
             return new SimpleInteractionConverter(
+                options,
+                blacklist,
 				new org.biopax.paxtools.io.sif.level2.ComponentRule(),
 				new org.biopax.paxtools.io.sif.level2.ConsecutiveCatalysisRule(),
 				new org.biopax.paxtools.io.sif.level2.ControlRule(),
@@ -473,6 +480,8 @@ public class CPathServiceImpl implements CPathService {
         }
         else if (model.getLevel() == BioPAXLevel.L3) {
             return new SimpleInteractionConverter(
+                options,
+                blacklist,
 				new org.biopax.paxtools.io.sif.level3.ComponentRule(),
 				new org.biopax.paxtools.io.sif.level3.ConsecutiveCatalysisRule(),
 				new org.biopax.paxtools.io.sif.level3.ControlRule(),
