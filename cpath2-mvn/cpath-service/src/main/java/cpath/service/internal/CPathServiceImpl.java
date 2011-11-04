@@ -46,6 +46,7 @@ import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import com.googlecode.ehcache.annotations.Cacheable;
@@ -88,7 +89,10 @@ public class CPathServiceImpl implements CPathService {
 	private JAXBContext jaxbContext;
 	private SimpleIOHandler simpleIO;
 
-	// this is probably required for the echcache to work
+    private Set<String> blacklist;
+    private Resource blacklistResource;
+
+    // this is probably required for the echcache to work
 	public CPathServiceImpl() {
 	}
 	
@@ -317,7 +321,7 @@ public class CPathServiceImpl implements CPathService {
 			OutputStream nodeStream = new ByteArrayOutputStream();
 			sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream,
 										 Arrays.asList("Entity/displayName", "Entity/xref:UnificationXref", "Entity/xref:RelationshipXref"),
-										 Arrays.asList("Interaction/dataSource/name", "Interaction/xref:PublicationXref"), true);
+										 Arrays.asList("Interaction/dataSource/displayName", "Interaction/xref:PublicationXref"), true);
 			String edgeColumns = "PARTICIPANT_A\tINTERACTION_TYPE\tPARTICIPANT_B\tINTERACTION_DATA_SOURCE\tINTERACTION_PUBMED_ID\n";
 			String nodeColumns = "PARTICIPANT\tPARTICIPANT_TYPE\tPARTICIPANT_NAME\tUNIFICATION_XREF\tRELATIONSHIP_XREF\n";
 			map.put(DATA, edgeColumns + removeDuplicateBinaryInteractions(edgeStream) + "\n" + nodeColumns + nodeStream.toString());
@@ -412,7 +416,7 @@ public class CPathServiceImpl implements CPathService {
 		Integer limit, Direction direction)
 	{
 		Analysis analysis = new NeighborhoodAnalysis();
-		return runAnalysis(analysis, format, source, limit, direction);
+		return runAnalysis(analysis, format, source, limit, direction, blacklist);
 	}
 
 	@Cacheable(cacheName = "getPathsBetweenCache")
@@ -422,7 +426,7 @@ public class CPathServiceImpl implements CPathService {
 	{
 		
 		Analysis analysis = new PathsBetweenAnalysis();
-		return runAnalysis(analysis, format, source, target, limit);
+		return runAnalysis(analysis, format, source, target, limit, blacklist);
 	}
 
 	@Cacheable(cacheName = "getCommonStreamCache")
@@ -431,7 +435,7 @@ public class CPathServiceImpl implements CPathService {
 		Integer limit, Direction direction)
 	{
 		Analysis analysis = new CommonStreamAnalysis();
-		return runAnalysis(analysis, format, source, limit, direction);
+		return runAnalysis(analysis, format, source, limit, direction, blacklist);
 	}
 
 	//---------------------------------------------------------------------------------------------|
@@ -505,4 +509,20 @@ public class CPathServiceImpl implements CPathService {
 		// outta here
 		return toReturn.toString();
 	}
+
+    public Resource getBlacklist() {
+        return blacklistResource;
+    }
+
+    public void setBlacklist(Resource blacklistResource) throws IOException {
+        // This is to read a blacklist set from a file via Spring injection
+        this.blacklistResource = blacklistResource;
+
+        blacklist = new HashSet<String>();
+        Scanner scanner = new Scanner(blacklistResource.getFile());
+        while(scanner.hasNextLine())
+            blacklist.add(scanner.nextLine().trim());
+        scanner.close();
+    }
+
 }
