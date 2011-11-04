@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://java.sun.com/xml/ns/javaee" xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+	id="cPathSquaredWs" version="2.5">
+	<display-name>cPath^2 Webservices</display-name>
+
+	<context-param>
+		<param-name>webAppRootKey</param-name>
+		<param-value>cpath2.root</param-value>
+	</context-param>
+
+	<listener>
+		<listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
+	</listener>
+
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>
+			classpath:applicationContext-cpathDAO.xml
+			classpath:applicationContext-whouseDAO.xml
+			<!-- not required anymore (- trying one cpathService per DAO, if more than one are required at all)
+			classpath:applicationContext-whouseMolecules.xml
+			classpath:applicationContext-whouseProteins.xml
+			classpath:applicationContext-cvRepository.xml
+			-->
+			classpath:applicationContext-cpathService.xml
+			file://${CPATH2_HOME}/security-config.xml
+		</param-value>
+	</context-param>
+ 
+	<servlet>
+		<servlet-name>cpath2</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>cpath2</servlet-name>
+		<url-pattern>/</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>cpath2json</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<load-on-startup>2</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>cpath2json</servlet-name>
+		<url-pattern>*.json</url-pattern>
+	</servlet-mapping>
+
+
+	<!-- Admin servlet and its security configuration -->
+<!-- 
+	<filter>
+		<filter-name>springSecurityFilterChain</filter-name>
+		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+	</filter>
+
+	<listener>
+		<listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
+	</listener>
+
+	<filter-mapping>
+		<filter-name>springSecurityFilterChain</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+-->
+
+	<servlet>
+		<servlet-name>cpath2admin</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+		<load-on-startup>3</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>cpath2admin</servlet-name>
+		<url-pattern>*.html</url-pattern>
+	</servlet-mapping>
+
+</web-app>
