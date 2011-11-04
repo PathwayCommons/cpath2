@@ -22,7 +22,7 @@
 	<bean id="service" class="cpath.service.internal.CPathServiceImpl">
 		<constructor-arg ref="paxtoolsDAO"/>
 		<constructor-arg ref="metadataDAO"/>
-        <property name="blacklist" value="file:${CPATH2_HOME}/blacklist.txt"/>
+        <property name="blacklistLocation" value="file:${CPATH2_HOME}/blacklist.txt"/>
 	</bean>
 
 	<!-- in addition to Hibernate L2 cache, we can set up a general-purpose java ehcache; shelved for later... -->
