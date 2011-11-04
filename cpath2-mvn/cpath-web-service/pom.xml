@@ -21,6 +21,11 @@
 				<version>1.1</version>
 				<configuration>
 					<port>${tomcat.http.port}</port>
+					<systemProperties>
+						<CPATH2_HOME>${CPATH2_HOME}</CPATH2_HOME>
+						<java.io.tmpdir>${CPATH2_HOME}/tmp</java.io.tmpdir>
+						<net.sf.ehcache.disabled>true</net.sf.ehcache.disabled>
+					</systemProperties>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -97,7 +102,4 @@
   			<version>1.0.0</version>
   		</dependency>
 	</dependencies>
-	<properties>
-		<tomcat.http.port>8088</tomcat.http.port>
-	</properties>
 </project>

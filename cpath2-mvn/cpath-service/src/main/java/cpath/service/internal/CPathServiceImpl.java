@@ -97,10 +97,11 @@ public class CPathServiceImpl implements CPathService {
 	
     /**
      * Constructor.
+     * @throws JAXBException 
      */
 	public CPathServiceImpl(
 			PaxtoolsDAO mainDAO, 
-			MetadataDAO metadataDAO) 
+			MetadataDAO metadataDAO) throws JAXBException 
 	{
 		this.mainDAO = mainDAO;
 		//this.proteinsDAO = proteinsDAO;
@@ -112,11 +113,7 @@ public class CPathServiceImpl implements CPathService {
 		this.merger = new SimpleMerger(simpleIO.getEditorMap());
 		
 		// init cpath legacy xml schema jaxb context
-		try {
-			jaxbContext = JAXBContext.newInstance(ErrorType.class, SearchResponseType.class, SearchHitType.class);
-		} catch (JAXBException e) {
-			throw new RuntimeException(e);
-		}
+		jaxbContext = JAXBContext.newInstance(ErrorType.class, SearchResponseType.class, SearchHitType.class);
 	}
 	
 	/*
@@ -510,22 +507,30 @@ public class CPathServiceImpl implements CPathService {
 	}
 
 	/**
-	 * A special setter for the blacklist bean property
+	 * A special setter for the blacklist property
 	 * (to be used by Spring)
 	 * 
 	 * @param blacklistResource
 	 * @throws IOException
 	 */
-    public void setBlacklist(Resource blacklistResource) throws IOException {
-        blacklist = new HashSet<String>();
-        Scanner scanner = new Scanner(blacklistResource.getFile());
-        while(scanner.hasNextLine())
-            blacklist.add(scanner.nextLine().trim());
-        scanner.close();
+    public void setBlacklistLocation(Resource blacklistResource) throws IOException {
+		if(blacklistResource.exists()) {
+			Scanner scanner = new Scanner(blacklistResource.getFile());
+			blacklist = new HashSet<String>();
+			while(scanner.hasNextLine())
+				blacklist.add(scanner.nextLine().trim());
+			scanner.close();
+			if(log.isInfoEnabled())
+				log.info("Successfully loaded " + blacklist.size()
+				+ " URIs for a (graph queries) 'blacklist' resource: " 
+				+ blacklistResource.getDescription());
+		} else {
+			log.warn(blacklistResource.getDescription() + 
+				" does not exists (a 'blacklist' file)!");
+		}
     }
 
     // blacklist property standard getter/setter pair
-    
 	public Set<String> getBlacklist() {
 		return blacklist;
 	}
