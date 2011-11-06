@@ -26,7 +26,7 @@ public class PathwayData {
     private String identifier;
 	@Column(nullable=false)
     private String version;
-	@Column(nullable=false, unique=true)
+	@Column(nullable=false)
     private String filename;
 	@Lob
 	@Column(nullable=false)
