@@ -60,10 +60,13 @@ public class PathsBetweenAnalysis implements Analysis {
 		Set<BioPAXElement> source = Common.getAllByID(model, args[0]);
 
 		// Search limit
-		int limit = (Integer) args[2];
+		int limit = (Integer) args[1];
+
+        // Blacklist
+        Set<String> blacklist = (Set<String>) args[2];
 
 		// Execute the query
-		return QueryExecuter.runPathsBetween(source, model, limit, Common.getUbiqueIDs());
+		return QueryExecuter.runPathsBetween(source, model, limit, blacklist);
 		
 	}
 

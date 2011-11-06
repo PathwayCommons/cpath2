@@ -44,6 +44,7 @@ import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import com.googlecode.ehcache.annotations.Cacheable;
@@ -85,7 +86,9 @@ public class CPathServiceImpl implements CPathService {
 
 	private static SearchResponse topPathways;
 	
-	// this is probably required for the echcache to work
+    private Set<String> blacklist;
+
+    // this is probably required for the echcache to work
 	public CPathServiceImpl() {
 	}
 	
@@ -406,7 +409,7 @@ public class CPathServiceImpl implements CPathService {
 			direction = Direction.BOTHSTREAM;	
 		}
 		Analysis analysis = new NeighborhoodAnalysis();
-		return runAnalysis(analysis, format, sources, limit, direction);
+		return runAnalysis(analysis, format, sources, limit, direction, blacklist);
 	}
 
 	@Cacheable(cacheName = "getPathsBetweenCache")
@@ -415,7 +418,7 @@ public class CPathServiceImpl implements CPathService {
 	{
 		
 		Analysis analysis = new PathsBetweenAnalysis();
-		return runAnalysis(analysis, format, sources, limit);
+		return runAnalysis(analysis, format, sources, limit, blacklist);
 	}
 	
 	@Cacheable(cacheName = "getPathsOfInterestCache")
@@ -441,7 +444,7 @@ public class CPathServiceImpl implements CPathService {
 		}
 			
 		Analysis analysis = new CommonStreamAnalysis();
-		return runAnalysis(analysis, format, sources, limit, direction);
+		return runAnalysis(analysis, format, sources, limit, direction, blacklist);
 	}
 
 	//---------------------------------------------------------------------------------------------|
@@ -472,9 +475,16 @@ public class CPathServiceImpl implements CPathService {
      * @return SimpleInteractionConverter
      */
     SimpleInteractionConverter getSimpleInteractionConverter(Model model) {
+        // Currently we don't have any options
+        // But I will just leave it here for the sake
+        // of API interface and future use
+        Map options = new HashMap();
 
         if (model.getLevel() == BioPAXLevel.L2) {
+
             return new SimpleInteractionConverter(
+                options,
+                blacklist,
 				new org.biopax.paxtools.io.sif.level2.ComponentRule(),
 				new org.biopax.paxtools.io.sif.level2.ConsecutiveCatalysisRule(),
 				new org.biopax.paxtools.io.sif.level2.ControlRule(),
@@ -483,6 +493,8 @@ public class CPathServiceImpl implements CPathService {
         }
         else if (model.getLevel() == BioPAXLevel.L3) {
             return new SimpleInteractionConverter(
+                options,
+                blacklist,
 				new org.biopax.paxtools.io.sif.level3.ComponentRule(),
 				new org.biopax.paxtools.io.sif.level3.ConsecutiveCatalysisRule(),
 				new org.biopax.paxtools.io.sif.level3.ControlRule(),
@@ -539,4 +551,37 @@ public class CPathServiceImpl implements CPathService {
 	public SearchResponse getTopPathways() {
 		return topPathways;
 	}
+
+	/**
+	 * A special setter for the blacklist property
+	 * (to be used by Spring)
+	 * 
+	 * @param blacklistResource
+	 * @throws IOException
+	 */
+    public void setBlacklistLocation(Resource blacklistResource) throws IOException {
+		if(blacklistResource.exists()) {
+			Scanner scanner = new Scanner(blacklistResource.getFile());
+			blacklist = new HashSet<String>();
+			while(scanner.hasNextLine())
+				blacklist.add(scanner.nextLine().trim());
+			scanner.close();
+			if(log.isInfoEnabled())
+				log.info("Successfully loaded " + blacklist.size()
+				+ " URIs for a (graph queries) 'blacklist' resource: " 
+				+ blacklistResource.getDescription());
+		} else {
+			log.warn(blacklistResource.getDescription() + 
+				" does not exists (a 'blacklist' file)!");
+		}
+    }
+
+    // blacklist property standard getter/setter pair
+	public Set<String> getBlacklist() {
+		return blacklist;
+	}
+	public void setBlacklist(Set<String> blacklist) {
+		this.blacklist = blacklist;
+	}
+    
 }

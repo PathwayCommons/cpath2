@@ -66,9 +66,11 @@ public class CommonStreamAnalysis implements Analysis {
 		// Direction
 		Direction direction = (Direction) args[2];
 
+        // Blacklist
+        Set<String> blacklist = (Set<String>) args[3];
+
 		// Execute the query
-		return QueryExecuter.runCommonStreamWithPOI(source, model, direction, limit,
-			Common.getUbiqueIDs());
+		return QueryExecuter.runCommonStreamWithPOI(source, model, direction, limit, blacklist);
 	}
 
 }
