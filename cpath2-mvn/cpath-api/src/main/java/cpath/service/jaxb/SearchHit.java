@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(
 	name = "SearchHit", propOrder = {
     "uri",
-    "actualHitUri",
+    "actualHitUri", //TODO remove this once 'find_entity' command is removed
     "biopaxClass",
     "name",
     "dataSource",
@@ -28,7 +28,7 @@ import javax.xml.bind.annotation.XmlType;
 public class SearchHit {
     @XmlElement(required = true)
     protected String uri;
-    protected String actualHitUri;
+    protected String actualHitUri; //TODO remove this once 'find_entity' command is removed
     @XmlElement(required = true)
     protected String biopaxClass;
     protected String name;
@@ -106,4 +106,9 @@ public class SearchHit {
         this.excerpt = value;
     }
 
+    
+    @Override
+    public String toString() {
+    	return name;
+    }
 }
