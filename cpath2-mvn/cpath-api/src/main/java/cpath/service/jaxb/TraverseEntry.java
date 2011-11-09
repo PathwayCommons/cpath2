@@ -34,4 +34,8 @@ public class TraverseEntry {
 		this.value = value;
 	}
 
+	@Override
+	public String toString() {
+		return getValue().toString();
+	}
 }

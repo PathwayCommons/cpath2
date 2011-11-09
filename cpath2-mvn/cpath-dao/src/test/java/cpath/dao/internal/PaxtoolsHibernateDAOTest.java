@@ -248,15 +248,18 @@ public class PaxtoolsHibernateDAOTest {
 		
 		System.out.println("find by 'P46880' returned: " + list.toString());
 		
-		/* 'P46880' is used only in the PR's RDFId and in the Uni.Xref,
-		 * but the find method (full-text search) must NOT match in rdf ID:
+		/* 
+		 * 'P46880' is used only in the PR's RDFId and in the Uni.Xref's id.
+		 * (The find method (full-text search) must NOT match in rdf ID)
 		 */
 		resp = paxtoolsDAO.findElements("P46880", 0, ProteinReference.class);
 		list = resp.getSearchHit();
 		System.out.println("find by 'P46880', " +
 			"filter by ProteinReference.class, returned: " + list.toString());
 		
-		assertTrue(list.isEmpty());
+		// now that xref's fields are embedded into parent object's index -
+		//assertTrue(list.isEmpty()); // became wrong
+		assertEquals(1, list.size()); // ProteinReference was matched by its xref's id!
 		
 		resp = paxtoolsDAO.findElements("glucokinase", 0, ProteinReference.class);
 		list = resp.getSearchHit();
