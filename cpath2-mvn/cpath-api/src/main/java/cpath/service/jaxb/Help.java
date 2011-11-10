@@ -6,7 +6,6 @@ package cpath.service.jaxb;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.validation.constraints.NotNull;
 import javax.xml.bind.annotation.*;
 
 /**
@@ -20,7 +19,6 @@ import javax.xml.bind.annotation.*;
 @XmlAccessorType(XmlAccessType.PUBLIC_MEMBER)
 public class Help implements Comparable<Help> {
 
-	@NotNull
 	private String id;
 	private String title;
 	private String info;
@@ -42,6 +40,7 @@ public class Help implements Comparable<Help> {
 	/**
 	 * @return the id
 	 */
+	@XmlElement(required = true)
 	public String getId() {
 		return id;
 	}

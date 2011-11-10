@@ -35,7 +35,7 @@ package cpath.service;
  */
 public enum CmdArgs {
 	uri("a BioPAX element ID as specified as a miriam URI (multiple 'uri=' per query are allowed)"),
-    q("a query string."),
+    q("a Lucene full-text search query string."),
     page("search results page number (>=0)."),
 	type("a BioPAX class - see the <a href=\"#valid_biopax_parameter\">valid values for type parameter</a> below"),
 	kind("graph query type - see the <a href=\"#valid_graph_parameter\">valid values for kind parameter</a> below"),
@@ -44,9 +44,11 @@ public enum CmdArgs {
 	datasource("filter by data sources (multiple 'datasource=' are allowed) - see the <a href=\"#valid_datasource_parameter\">valid values for datasource parameter</a> below"),
 	process("filter by pathway URI (multiple are allowed) - see the <a href=\"#valid_process_parameter\">valid values for process parameter</a> below"),
 	source("graph query source URI (multiple 'source=' are allowed)"),
-	target("graph query destination URI (multiple 'target=' are allowed, only for PATHSBETWEEN query)"),
+	target("graph query destination URI (multiple 'target=' are allowed)"),
     limit("graph query search distance limit"),
     biopax("a BioPAX OWL to convert"),
+    path("a BioPAX property path expression (like xPath)"),
+    direction("graph query parameter 'direction'"),
     //TODO future (graph query extention point, plugins...)
     //alg("a user-defined algorithm to run."), 
 	;
@@ -60,4 +62,9 @@ public enum CmdArgs {
 	private CmdArgs(String info) {
 		this.info = info;
 	}
+	
+	@Override
+	public String toString() {
+		return name().toLowerCase();
+	}	
 }

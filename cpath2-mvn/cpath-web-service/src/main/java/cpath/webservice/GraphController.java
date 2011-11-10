@@ -30,25 +30,21 @@ package cpath.webservice;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
-import java.util.Map;
 
 import cpath.service.CPathService;
-import cpath.service.Cmd;
 import cpath.service.GraphType;
-import cpath.service.ProtocolStatusCode;
-import cpath.service.CPathService.ResultMapKey;
 import cpath.service.OutputFormat;
-import cpath.service.jaxb.ErrorType;
+import cpath.service.Status;
+import cpath.service.jaxb.*;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.query.algorithm.Direction;
+import org.biopax.paxtools.query.algorithm.LimitType;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.DataBinder;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
@@ -63,6 +59,7 @@ import javax.validation.Valid;
 public class GraphController extends BasicController {
     private static final Log log = LogFactory.getLog(GraphController.class);    
 	
+    private CPathService service; // main PC db access
 	
     public GraphController(CPathService service) {
 		this.service = service;
@@ -71,98 +68,76 @@ public class GraphController extends BasicController {
     /**
 	 * This configures the web request parameters binding, i.e., 
 	 * conversion to the corresponding java types; for example,
-	 * "neighborhood" is recognized as {@link GraphType#NEIGHBORHOOD}, 
-	 * "search" will become {@link Cmd#SEARCH}, 
-	 *  "protein" - {@link Protein} , etc.
+	 * "neighborhood" is recognized as {@link GraphType#NEIGHBORHOOD}.
 	 *  Depending on the editor, illegal query parameters may result 
-	 *  in an error or just NULL value (see e.g., {@link CmdArgsEditor})
+	 *  in an error or just NULL value.
 	 * 
 	 * @param binder
 	 */
 	@InitBinder
     public void initBinder(WebDataBinder binder) {
-        super.initBinder(binder);
-        /* when GraphQueryValidator is set here,
-         * it prevents javax.validation.Validator instance (JSR-303)
-         * from checking first; so - we will use it inside controller methods
-         //  binder.setValidator(new GraphQueryValidator());
-         */
+        binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
+        binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
+        binder.registerCustomEditor(Direction.class, new GraphQueryDirectionEditor());
+        binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
     }
 
+
+//TODO re-factor as (same - for the rest of graph kinds)
+//	@RequestMapping("/neighborhood")
+//	public void neighborhood(@Valid NeighborhoodGraph graph, BindingResult bindingResult, Writer writer) throws IOException {
+//		
+//	}
+	
+	
 	@RequestMapping("/graph")
-//    public @ResponseBody String graphQuery(@Valid Graph graph, BindingResult bindingResult)
 	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, Writer writer) throws IOException
     {
 		//check for binding errors
 		if(bindingResult.hasErrors()) {
-			ErrorType error = errorfromBindingResult(bindingResult);
-//			return ProtocolStatusCode.marshal(error);
-			writer.write(ProtocolStatusCode.marshal(error));
+			errorResponse(errorfromBindingResult(bindingResult), writer);;
 			return;
 		} 
 		
-    	// additional validation of query parameters
-		DataBinder binder = new DataBinder(graph);
-		binder.setValidator(new GraphQueryValidator());
-		binder.validate();
-		bindingResult = binder.getBindingResult();
-		if(bindingResult.hasErrors()) {
-			ErrorType error = errorfromBindingResult(bindingResult);
-//			return ProtocolStatusCode.marshal(error);
-			writer.write(ProtocolStatusCode.marshal(error));
-			return;
-		}
+		log("/graph", graph);
 		
-		Object response = null;
+		ServiceResponse result;
 		
-		OutputFormat format = graph.getFormat();
-		GraphType kind = graph.getKind();
-		String[] source = graph.getSource();
-		String[] target = graph.getTarget();
-		Integer limit = graph.getLimit();
-		Direction direction = graph.getDirection();
-		String sources = Arrays.toString(source);
-		String targets = Arrays.toString(target);
-		
-		if(log.isInfoEnabled()) {
-			log.info("GraphQuery format:" + format + ", kind:" + kind
-				+ ", source:" + sources + ", target:" + targets
-				+ ", limit: " + limit + ", direction: " + direction
-			);
-		}
-		
-		Map<ResultMapKey, Object> result;
-		
-		switch (kind) {
+		switch (graph.getKind()) {
 		case NEIGHBORHOOD:
-			result = service.getNeighborhood(format, source, limit, direction);
-			response = parseResultMap(result, format, "nearest neighbors of " 
-				+ sources, ResultMapKey.DATA);
+			result = service.getNeighborhood(graph.getFormat(), graph.getSource(), graph.getLimit(), graph.getDirection());
 			break;
 		case PATHSBETWEEN:
-			result = service.getPathsBetween(format, source, target, limit);
-			response = parseResultMap(result, format, "paths between sources: " + sources
-				+ " and targets: " + targets, ResultMapKey.DATA);
+			result = service.getPathsBetween(graph.getFormat(), graph.getSource(), graph.getLimit());
+			break;
+		case PATHSOFINTEREST:
+			result = service.getPathsOfInterest(graph.getFormat(), graph.getSource(), graph.getTarget(), graph.getLimit());
 			break;
 		case COMMONSTREAM:
-			result = service.getCommonStream(format, source, limit, direction);
-			response = parseResultMap(result, format, "common " + direction + "stream of " +
-					sources, ResultMapKey.DATA);
+			result = service.getCommonStream(graph.getFormat(), graph.getSource(), graph.getLimit(), graph.getDirection());
 			break;
 		default:
 			// impossible (should has failed earlier)
+			result= Status.INTERNAL_ERROR
+				.errorResponse(getClass().getCanonicalName() + 
+					" does not support " + graph.getKind());
 			break;
 		}
-
-//		return (response instanceof ErrorType)
-//			? ProtocolStatusCode.marshal((ErrorType) response)
-//				: (String)response;
 		
-		writer.write(
-			(response instanceof ErrorType)
-			? ProtocolStatusCode.marshal((ErrorType) response)
-				: (String)response
-		);
+		stringResponse(result, writer);
     }
+
+	
+	private void log(String method, Graph graph) {
+		if(log.isInfoEnabled()) {
+			log.info(method + " query; format:" + graph.getFormat() 
+				+ ", kind:" + graph.getKind()
+				+ ", source:" + Arrays.toString(graph.getSource())
+				+ ", target:" + Arrays.toString(graph.getTarget())
+				+ ", limit: " + graph.getLimit() 
+				+ ", direction: " + graph.getDirection()
+			);
+		}
+	}
 
 }

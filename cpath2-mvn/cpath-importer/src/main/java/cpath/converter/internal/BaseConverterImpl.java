@@ -47,4 +47,25 @@ public class BaseConverterImpl implements Converter {
 		}
 		return bpe;
 	}
+	
+    
+	/**
+	 * For the given converter class name,
+	 * returns an instance of a class which
+	 * implements the converter interface.
+	 *
+	 * @param converterClassName String
+	 * @return Converter
+	 */
+	public static Converter getConverter(final String converterClassName) {
+		try {
+			Class<?> converterClass = Class.forName(converterClassName);
+			return (Converter) converterClass.newInstance();
+		}
+		catch (Exception e) {
+//			log.error("could not create converter class " 
+//					+ converterClassName, e);
+		}
+		return null;
+	}
 }

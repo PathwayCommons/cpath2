@@ -1,16 +1,13 @@
 package cpath.webservice;
 
-import java.util.Map;
-
 import cpath.service.CPathService;
-import cpath.service.CPathService.ResultMapKey;
+import cpath.service.jaxb.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.validator.result.ValidatorResponse;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -19,33 +16,29 @@ import org.springframework.web.bind.annotation.*;
  * @author rodche
  */
 @Controller
-public class AdminController extends BasicController 
+public class ValidationResultsController extends BasicController 
 {
     
-	private static final Log log = LogFactory.getLog(AdminController.class);    
+	private static final Log log = LogFactory.getLog(ValidationResultsController.class);    
 	
+    private CPathService service; // main PC db access
 	
-    public AdminController(CPathService service) {
+    public ValidationResultsController(CPathService service) {
 		this.service = service;
 	}
-    
 
-	@InitBinder
-    public void initBinder(WebDataBinder binder) {
-		super.initBinder(binder);
-    }
 
-	
-	// Get by ID (URI) command
     @RequestMapping("/validation/{metadataId}")
     public @ResponseBody ValidatorResponse queryForValidation(@PathVariable String metadataId) 
     {
     	if (log.isInfoEnabled())
 			log.info("Query for validation object: " + metadataId);
-
-    	Map<ResultMapKey, Object> result = service.getValidationReport(metadataId);
-    	ValidatorResponse body = (ValidatorResponse) parseResultMap(result, null, metadataId, ResultMapKey.ELEMENT);
-		return body;
+    	
+    	ServiceResponse result = service.getValidationReport(metadataId);
+    	// TODO this may throw an exception, which we can make a ErrorResponse instead... later
+    	ValidatorResponse body = (ValidatorResponse) ((DataResponse) result).getData();
+    	
+    	return body;
     }
 
     
@@ -55,9 +48,11 @@ public class AdminController extends BasicController
     	if (log.isInfoEnabled())
 			log.info("Query for validation html:" + metadataId);
 
-    	Map<ResultMapKey, Object> result = service.getValidationReport(metadataId);
-    	ValidatorResponse body = (ValidatorResponse) parseResultMap(result, null, metadataId, ResultMapKey.ELEMENT);
+    	ServiceResponse result = service.getValidationReport(metadataId);
+    	// TODO this may throw an exception, which we can make a ErrorResponse instead... later
+    	ValidatorResponse body = (ValidatorResponse) ((DataResponse) result).getData();
 		model.addAttribute("response", body);
+		
 		return "validationSummary";
     }
 	

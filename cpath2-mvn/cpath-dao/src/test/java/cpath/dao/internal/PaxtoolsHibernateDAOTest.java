@@ -41,8 +41,8 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.apache.commons.logging.*;
 
 import cpath.dao.PaxtoolsDAO;
-import cpath.service.jaxb.SearchHitType;
-import cpath.service.jaxb.SearchResponseType;
+import cpath.service.jaxb.SearchHit;
+import cpath.service.jaxb.SearchResponse;
 import cpath.warehouse.WarehouseDAO;
 
 import java.io.*;
@@ -231,16 +231,16 @@ public class PaxtoolsHibernateDAOTest {
 	public void testFind() throws Exception {
 		DataServicesFactoryBean.rebuildIndex("cpath2_testpc");
 		
-		SearchResponseType resp = paxtoolsDAO.findElements("P46880", 0, UnificationXref.class);
-		List<SearchHitType> elist = resp.getSearchHit();
+		SearchResponse resp = paxtoolsDAO.findElements("P46880", 0, UnificationXref.class);
+		List<SearchHit> elist = resp.getSearchHit();
 		assertFalse(elist.isEmpty());
 		assertEquals(1, elist.size());
 		
 		resp = paxtoolsDAO.findElements("P46880", 0, BioPAXElement.class);
-		List<SearchHitType> list = resp.getSearchHit();
+		List<SearchHit> list = resp.getSearchHit();
 		assertFalse(list.isEmpty());
 		Set<String> m = new HashSet<String>();
-		for(SearchHitType e : list) {
+		for(SearchHit e : list) {
 			m.add(e.getUri());
 		}
 		//assertTrue(list.contains("urn:biopax:UnificationXref:UniProt_P46880"));
@@ -248,15 +248,18 @@ public class PaxtoolsHibernateDAOTest {
 		
 		System.out.println("find by 'P46880' returned: " + list.toString());
 		
-		/* 'P46880' is used only in the PR's RDFId and in the Uni.Xref,
-		 * but the find method (full-text search) must NOT match in rdf ID:
+		/* 
+		 * 'P46880' is used only in the PR's RDFId and in the Uni.Xref's id.
+		 * (The find method (full-text search) must NOT match in rdf ID)
 		 */
 		resp = paxtoolsDAO.findElements("P46880", 0, ProteinReference.class);
 		list = resp.getSearchHit();
 		System.out.println("find by 'P46880', " +
 			"filter by ProteinReference.class, returned: " + list.toString());
 		
-		assertTrue(list.isEmpty());
+		// now that xref's fields are embedded into parent object's index -
+		//assertTrue(list.isEmpty()); // became wrong
+		assertEquals(1, list.size()); // ProteinReference was matched by its xref's id!
 		
 		resp = paxtoolsDAO.findElements("glucokinase", 0, ProteinReference.class);
 		list = resp.getSearchHit();

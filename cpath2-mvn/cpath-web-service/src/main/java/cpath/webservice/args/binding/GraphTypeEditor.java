@@ -46,14 +46,10 @@ public class GraphTypeEditor extends PropertyEditorSupport {
 	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
 	 */
 	@Override
-	public void setAsText(String arg0) throws IllegalArgumentException {
+	public void setAsText(String arg0) {
 		GraphType value = null;
-		try{
 			value = GraphType.valueOf(arg0.trim().toUpperCase());
-		} catch (IllegalArgumentException e) {
-			log.info(e);
-		}
-		setValue(value);
+			setValue(value);
 	}
 	
 }

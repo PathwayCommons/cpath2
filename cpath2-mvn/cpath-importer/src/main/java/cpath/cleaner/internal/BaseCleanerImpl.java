@@ -20,7 +20,7 @@ public class BaseCleanerImpl implements Cleaner {
 		return pathwayData;
 	}
 	
-	/*
+	/**
 	 * Given a paxtools model for an entire owl file
 	 * returns the tax id for the organism.  This method 
 	 * assumes that at least one pathway in model is annotated
@@ -51,7 +51,7 @@ public class BaseCleanerImpl implements Cleaner {
 		return null;
 	}
 	
-	/*
+	/**
 	 * Given a BioPAXElement, returns an RDF Id by
 	 * apply the suffix '_X', where X is an integer to
 	 * the current id.  X is derived by setting it to 1
@@ -65,6 +65,7 @@ public class BaseCleanerImpl implements Cleaner {
 	 * @param taxID String
 	 * @return String
 	 */
+	@Deprecated
 	protected String getRDFIdReplacement(final Model model, final BioPAXElement bpe, final String taxID) {
 		
 		int inc = 0;
@@ -77,5 +78,25 @@ public class BaseCleanerImpl implements Cleaner {
 		
 		// outta here
 		return toReturn;
+	}
+	
+	/**
+	 * For the given cleaner class name,
+	 * returns an instance of a class which
+	 * implements the cleaner interface.
+	 *
+	 * @param cleanerClassName String
+	 * @return Cleaner
+	 */
+	public static Cleaner getCleaner(final String cleanerClassName) {
+		try {
+			Class cleanerClass = Class.forName(cleanerClassName);
+			return (cleanerClass == null) ?
+				null : (Cleaner)cleanerClass.newInstance();
+		}
+		catch (Exception e) {
+//			log.fatal(e);
+			return null;
+		}
 	}
 }

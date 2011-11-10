@@ -42,18 +42,10 @@ public class GraphQueryDirectionEditor extends PropertyEditorSupport {
 	private static final Log log = LogFactory.getLog(GraphQueryDirectionEditor.class);
 	
 	@Override
-	public void setAsText(String arg0) throws IllegalArgumentException
+	public void setAsText(String arg0)
 	{
 		Direction value = null;
-
-		try
-		{
-			value = Direction.valueOf(arg0.trim().toUpperCase());
-		}
-		catch (IllegalArgumentException e){
-			log.info(e);
-		}
-
+		value = Direction.valueOf(arg0.trim().toUpperCase());
 		setValue(value);
 	}
 }

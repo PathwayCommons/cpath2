@@ -31,13 +31,11 @@ package cpath.service.internal;
 import java.io.*;
 import java.util.*;
 
-import javax.validation.constraints.NotNull;
-import javax.xml.bind.*;
+import javax.annotation.PostConstruct;
 import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
@@ -57,17 +55,18 @@ import cpath.dao.filters.SearchFilter;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
-import cpath.service.jaxb.ErrorType;
-import cpath.service.jaxb.SearchHitType;
-import cpath.service.jaxb.SearchResponseType;
+import cpath.service.analyses.PathsOfInterestAnalysis;
+import cpath.service.jaxb.DataResponse;
+import cpath.service.jaxb.ErrorResponse;
+import cpath.service.jaxb.SearchResponse;
+import cpath.service.jaxb.ServiceResponse;
+import cpath.service.jaxb.TraverseResponse;
 import cpath.service.CPathService;
 import cpath.service.OutputFormat;
+import static cpath.service.Status.*;
 
-//import cpath.warehouse.CvRepository;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.PathwayData;
-
-import static cpath.service.CPathService.ResultMapKey.*;
 
 /**
  * Service tier class - to uniformly access 
@@ -79,16 +78,14 @@ import static cpath.service.CPathService.ResultMapKey.*;
 public class CPathServiceImpl implements CPathService {
 	private static final Log log = LogFactory.getLog(CPathServiceImpl.class);
 	
-	@NotNull
 	private PaxtoolsDAO mainDAO;
 	
-	@NotNull
 	private MetadataDAO metadataDAO;
 
-	private SimpleMerger merger;	
-	private JAXBContext jaxbContext;
 	private SimpleIOHandler simpleIO;
 
+	private static SearchResponse topPathways;
+	
     private Set<String> blacklist;
 
     // this is probably required for the echcache to work
@@ -97,65 +94,78 @@ public class CPathServiceImpl implements CPathService {
 	
     /**
      * Constructor.
-     * @throws JAXBException 
      */
-	public CPathServiceImpl(
-			PaxtoolsDAO mainDAO, 
-			MetadataDAO metadataDAO) throws JAXBException 
+	public CPathServiceImpl(PaxtoolsDAO mainDAO, MetadataDAO metadataDAO) 
 	{
 		this.mainDAO = mainDAO;
-		//this.proteinsDAO = proteinsDAO;
-		//this.moleculesDAO = moleculesDAO;
-		//this.cvFetcher = cvFetcher;
 		this.metadataDAO = metadataDAO;
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		simpleIO.mergeDuplicates(true);
-		this.merger = new SimpleMerger(simpleIO.getEditorMap());
-		
-		// init cpath legacy xml schema jaxb context
-		jaxbContext = JAXBContext.newInstance(ErrorType.class, SearchResponseType.class, SearchHitType.class);
 	}
+
+	
+	@PostConstruct
+	public void init() 
+	{
+		// call this only once
+		topPathways = mainDAO.getTopPathways();
+		topPathways.setMaxHits(topPathways.getSearchHit().size());
+	}
+	
 	
 	/*
 	 * Interface methods
 	 */	
 	@Cacheable(cacheName = "findElementsCache")
 	@Override
-	public Map<ResultMapKey, Object> findElements(String queryStr, 
+	public ServiceResponse findElements(String queryStr, 
 			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
 	{
-		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
+		ServiceResponse serviceResponse;
+		
 		try {
 			// do search
-			SearchResponseType hits = mainDAO.findElements(queryStr, page, biopaxClass, searchFilters); 
-			map.put(DATA, hits);
-			map.put(COUNT, hits.getTotalNumHits()); // becomes Integer
+			SearchResponse hits = mainDAO.findElements(queryStr, page, biopaxClass, searchFilters);
+			if(hits.isEmpty())
+				serviceResponse = NO_RESULTS_FOUND.errorResponse("No hits");
+			else {
+				hits.setComment("Find '" + queryStr  + "' in " + 
+					((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName()) 
+					+ "; filters: " + Arrays.toString(searchFilters));
+				serviceResponse = hits;
+			}
+			
 		} catch (Exception e) {
-			map.put(ERROR, e);
+			serviceResponse = INTERNAL_ERROR.errorResponse(e);
 		}
 		
-		return map;
+		return serviceResponse;
 	}
 	
-	
-
 
 	@Cacheable(cacheName = "findEntitiesCache")
 	@Override
-	public Map<ResultMapKey, Object> findEntities(String queryStr, 
+	public ServiceResponse findEntities(String queryStr, 
 			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
 	{
-		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
+		ServiceResponse serviceResponse;
 		try {
 			// do search
-			SearchResponseType hits = mainDAO.findEntities(queryStr, page, biopaxClass, searchFilters); 
-			map.put(DATA, hits);
-			map.put(COUNT, hits.getTotalNumHits()); // becomes Integer
+			SearchResponse hits = mainDAO.findEntities(queryStr, page, biopaxClass, searchFilters); 
+			if(hits.isEmpty())
+				serviceResponse = NO_RESULTS_FOUND.errorResponse("No (Entity) hits");
+			else {
+				hits.setComment("Find (Entity) '" + queryStr  + "' in " + 
+				((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName()) 
+				+ "; filters: " + Arrays.toString(searchFilters));
+				serviceResponse = hits;
+			}
+			
 		} catch (Exception e) {
-			map.put(ERROR, e);
+			serviceResponse = INTERNAL_ERROR.errorResponse(e);
 		}
 		
-		return map;
+		return serviceResponse;
 	}
 	
 
@@ -165,14 +175,11 @@ public class CPathServiceImpl implements CPathService {
 	 */
 	@Cacheable(cacheName = "elementByIdCache")
 	@Override
-	public Map<ResultMapKey, Object> fetch(OutputFormat format, String... uris) {
-
-        // before anything, get the biopax
-        Map<ResultMapKey, Object> map = fetchAsBiopax(uris);
-
-        // outta here
-        return (map.containsKey(ERROR) || format == OutputFormat.BIOPAX) 
-        	? map : convert(map, format);
+	public ServiceResponse fetch(OutputFormat format, String... uris) {
+        ServiceResponse res = fetchBiopaxModel(uris);
+        if(!(res instanceof ErrorResponse)) 
+        	convert(res, format);
+        return res;
     }
 
 	/*
@@ -180,153 +187,152 @@ public class CPathServiceImpl implements CPathService {
 	 * @see cpath.service.CPathService#convert(..)
 	 */
     @Override
-    public Map<ResultMapKey, Object> convert(String biopax, OutputFormat format) {
-
+    public ServiceResponse convert(String biopax, OutputFormat format) {
         // put incoming biopax into map
-		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
+    	DataResponse dataResponse = new DataResponse();
         Model model = simpleIO.convertFromOWL(new ByteArrayInputStream(biopax.getBytes()));
-        map.put(MODEL, model);
-        map.put(DATA, biopax);
-
-        // outta here
-        return convert(map, format);
+        if(!model.getObjects().isEmpty()) {
+            dataResponse.setData(model);
+            convert(dataResponse, format);
+            return dataResponse;
+        } else {
+        	return NO_RESULTS_FOUND.errorResponse("Empty BioPAX Model!");
+        }
 	}
 
+    
     /*
      * Function used by both convert(String, OutputFormat)
      * and fetch(OutputFormat, String... uris).
      */
-    Map<ResultMapKey, Object> convert(Map<ResultMapKey, 
-    		Object> map, OutputFormat format) 
+    ServiceResponse convert(ServiceResponse serviceResponse, OutputFormat format) 
     {
-		try {
+		if(serviceResponse instanceof ErrorResponse) {
+			return serviceResponse; //unchanged
+		} else if(serviceResponse.isEmpty()) {
+			return NO_RESULTS_FOUND.errorResponse("Empty BioPAX Model returned!");
+		}
+
+		// otherwise, do convert (it's a DataResponse)
+		DataResponse dataResponse = (DataResponse) serviceResponse;
+    	try {
 			switch (format) {
 			case BINARY_SIF:
-				map = fetchAsBinarySIF(map, false);
+				convertToBinarySIF(dataResponse, false);
 				break;
 			case EXTENDED_BINARY_SIF:
-				map = fetchAsBinarySIF(map, true);
+				convertToBinarySIF(dataResponse, true);
 				break;
 			case GSEA:
-				map = fetchAsGSEA(map, "uniprot");
+				convertToGSEA(dataResponse, "uniprot");
 				break;
             case BIOPAX: // default handler
+            	convertToBiopaxOWL(dataResponse);
 			default:
                 // do nothing
 			}
+			
+			return serviceResponse;
 		}
         catch (Exception e) {
-			map.put(ERROR, e);
+        	return INTERNAL_ERROR.errorResponse(e);
 		}
-
-        // outta here
-		return map;
     }
 	
+    /**
+     * Replace the Model object contained in the service bean 
+     * with its OWL serialization (text data)
+     * 
+     * @param serviceResponse
+     */
+	void convertToBiopaxOWL(DataResponse serviceResponse) {
+		Model m = (Model) serviceResponse.getData();
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		simpleIO.convertToOWL(m, baos);
+		serviceResponse.setData(baos.toString());
+	}
+
 	/** 
 	 * Gets BioPAX elements by id, 
 	 * creates a sub-model, and returns everything as map.
 	 * 
-	 * @see ResultMapKey
-	 * 
 	 * @param uris
 	 * @return
 	 */
-	Map<ResultMapKey, Object> fetchAsBiopax(String... uris) {
-
-		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-		
-		if (uris.length >= 1) {	
+	ServiceResponse fetchBiopaxModel(String... uris) {
+		if (uris.length > 0) {	
 			// extract a sub-model
 			Model m = mainDAO.getValidSubModel(Arrays.asList(uris));
-			map.put(MODEL, m);
-			map.put(DATA, exportToOWL(m));
-		} 
-		
-//		if (uris.length == 1) {
-//			// also put the object (element) in the map
-//			BioPAXElement element = mainDAO.getByID(uris[0]);
-//			if (element != null) {
-//				mainDAO.initialize(element);
-//				map.put(ELEMENT, element);
-//			}
-//			if(log.isDebugEnabled())
-//				log.debug("mainDAO.initialize(" + uris[0] + ") done");
-//		}
-		
-		return map;
+			if(m != null && !m.getObjects().isEmpty()) {
+				DataResponse dataResponse = new DataResponse();
+				dataResponse.setData(m);
+				return dataResponse;
+			} else {
+				return NO_RESULTS_FOUND.errorResponse(
+					"No results for: " + Arrays.toString(uris));
+			}
+		} else {
+			return NO_RESULTS_FOUND.errorResponse(
+				"No URIs were specified for the query!");
+		}
 	}	
 	
 	/**
-	 * Gets BioPAX elements by id (URIs), 
-	 * extracts a sub-model, converts to GSEA format, 
-	 * and returns everything as map values.
+	 * Converts service results that contain 
+	 * a not empty BioPAX Model to GSEA format.
 	 * 
-     * @param map Map<ResultMapKey, Object>
+     * @param resp ServiceResponse
 	 * @param outputIdType output identifiers type (db name)
 	 * @return
 	 * @throws IOException 
 	 */
-	Map<ResultMapKey, Object> fetchAsGSEA(Map<ResultMapKey, Object> map, 
+	void convertToGSEA(DataResponse resp, 
 		String outputIdType) throws IOException 
 	{	
 		// convert, replace DATA
-		Model m = (Model) map.get(MODEL);
-		if (m != null && m.getObjects().size()>0) {
-			GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true);
-			OutputStream stream = new ByteArrayOutputStream();
-			gseaConverter.writeToGSEA(m, stream);
-			map.put(DATA, stream.toString());
-		} else {
-			log.info("Won't convert to GSEA: empty Model!");
-		}
-		
-		return map;
+		Model m = (Model) resp.getData();
+		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true);
+		OutputStream stream = new ByteArrayOutputStream();
+		gseaConverter.writeToGSEA(m, stream);
+		resp.setData(stream.toString());
 	}
 
 	/**
-	 * Gets BioPAX elements by id, 
-	 * creates a sub-model, converts to SIF format, 
-	 * and returns everything as map values.
+	 * Converts a not empty BioPAX Model (contained in the service bean) 
+	 * to SIF data format.
 	 * 
 	 * TODO 'rules' parameter is currently ignored (requires conversion 
 	 * from strings to the rules, e.g., using enum. BinaryInteractionRule from cpath-web-service)
 	 * 
-     * @param map Map<ResultMapKey, Object>
+     * @param resp ServiceResponse
      * @param extended if true, call SIFNX else SIF
 	 * @param rules (optional) the names of SIF rules to apply
 	 * @return
 	 * @throws IOException 
 	 */
-	Map<ResultMapKey, Object> fetchAsBinarySIF(Map<ResultMapKey, Object> map, 
+	void convertToBinarySIF(DataResponse resp, 
 		boolean extended, String... rules) throws IOException 
 	{
 		// convert, replace DATA value in the map to return
 		// TODO match 'rules' parameter to rule types (currently, it uses all)
-		Model m = (Model) map.get(MODEL);
-		
-		if (m == null || m.getObjects().size() == 0) {
-			log.info("Won't convert to SIF: empty Model!");
-			return map; //unchanged
-		}
-		
+		Model m = (Model) resp.getData();
 		SimpleInteractionConverter sic = getSimpleInteractionConverter(m);
-
 		OutputStream edgeStream = new ByteArrayOutputStream();
 		if (extended) {
 			OutputStream nodeStream = new ByteArrayOutputStream();
-			sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream,
-										 Arrays.asList("Entity/displayName", "Entity/xref:UnificationXref", "Entity/xref:RelationshipXref"),
-										 Arrays.asList("Interaction/dataSource/displayName", "Interaction/xref:PublicationXref"), true);
+			sic.writeInteractionsInSIFNX(
+					m, edgeStream, nodeStream,
+					Arrays.asList("Entity/displayName", "Entity/xref:UnificationXref", "Entity/xref:RelationshipXref"),
+					Arrays.asList("Interaction/dataSource/displayName", "Interaction/xref:PublicationXref"), 
+					true);
 			String edgeColumns = "PARTICIPANT_A\tINTERACTION_TYPE\tPARTICIPANT_B\tINTERACTION_DATA_SOURCE\tINTERACTION_PUBMED_ID\n";
 			String nodeColumns = "PARTICIPANT\tPARTICIPANT_TYPE\tPARTICIPANT_NAME\tUNIFICATION_XREF\tRELATIONSHIP_XREF\n";
-			map.put(DATA, edgeColumns + removeDuplicateBinaryInteractions(edgeStream) + "\n" + nodeColumns + nodeStream.toString());
+			resp.setData(edgeColumns + removeDuplicateBinaryInteractions(edgeStream) + "\n" + nodeColumns + nodeStream.toString());
 		} else {
 			sic.writeInteractionsInSIF(m, edgeStream);
-			map.put(DATA, removeDuplicateBinaryInteractions(edgeStream));
+			resp.setData(removeDuplicateBinaryInteractions(edgeStream));
 		}
 
-		return map;
 	}
 
 	/*
@@ -334,16 +340,13 @@ public class CPathServiceImpl implements CPathService {
 	 * @see cpath.service.CPathService#getValidationReport(...)
 	 */
 	@Override
-	public Map<ResultMapKey, Object> getValidationReport(String metadataIdentifier) {
-
-		Map<ResultMapKey, Object> toReturn = new HashMap<ResultMapKey, Object>();
-		
+	public ServiceResponse getValidationReport(String metadataIdentifier) {
 		// get validationResults from PathwayData beans
-		Collection<PathwayData> pathwayDataCollection = metadataDAO.getPathwayDataByIdentifier(metadataIdentifier);
+		Collection<PathwayData> pathwayDataCollection = metadataDAO
+				.getPathwayDataByIdentifier(metadataIdentifier);
 		if (!pathwayDataCollection.isEmpty()) {
 			// new container to collect different files validation results
 			ValidatorResponse response = new ValidatorResponse();
-
 			for (PathwayData pathwayData : pathwayDataCollection) {
 				String xmlResult = pathwayData.getValidationResults().trim();
 				if (xmlResult != null && xmlResult.length() > 0) {
@@ -355,23 +358,21 @@ public class CPathServiceImpl implements CPathService {
 						validation = resp.getValidationResult().get(0);
 					}
                     catch (Exception e) {
-						toReturn.put(ERROR, e);
-						log.error(e);
+                    	log.error(e);
+						return INTERNAL_ERROR.errorResponse(e);
 					}
 					if(validation != null)
 						response.getValidationResult().add(validation);
 				}
 			}
-
-			toReturn.put(ResultMapKey.ELEMENT, response);
-			// write report and add it to the map(DATA)
-			StringWriter writer = new StringWriter();
-			// (the last parameter below can be a xsltSource)
-			BiopaxValidatorUtils.write(response, writer, null); 
-			toReturn.put(DATA, writer.toString());
+			
+			DataResponse toReturn = new DataResponse();
+			toReturn.setData(response);
+			return toReturn;
+		} else {
+			return NO_RESULTS_FOUND.errorResponse(
+				"No validation data found by " + metadataIdentifier);
 		}
-		
-		return toReturn;
 	}
 
 	//--- Graph queries ---------------------------------------------------------------------------|
@@ -384,54 +385,66 @@ public class CPathServiceImpl implements CPathService {
 	 * @param params parameters for the analysis
 	 * @return analysis result
 	 */
-	Map<ResultMapKey, Object> runAnalysis(Analysis analysis, OutputFormat format, Object... params)
+	ServiceResponse runAnalysis(Analysis analysis, OutputFormat format, Object... params)
 	{
-		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-		try
-		{
+		try {
 			Model m = mainDAO.runAnalysis(analysis, params);
-			map.put(MODEL, m);
-			map.put(DATA, exportToOWL(m));
-			if(format != null && format != OutputFormat.BIOPAX) {
-				map = convert(map, format);
-			}
+			DataResponse resp = new DataResponse();
+			resp.setData(m);
+			convert(resp, format);
+			return resp;
+		} catch (Exception e) {
+			log.error("runAnalysis failed. ", e);
+			return INTERNAL_ERROR.errorResponse(e);
 		}
-		catch (Exception e)
-		{
-			map.put(ERROR, e);
-			log.error("getNeighborhood failed. ", e);
-		}
-
-		return map;
 	}
 
 
 	@Cacheable(cacheName = "getNeighborhoodCache")
 	@Override
-	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String[] source,
+	public ServiceResponse getNeighborhood(OutputFormat format, String[] sources,
 		Integer limit, Direction direction)
 	{
+		if(direction == null) {
+			direction = Direction.BOTHSTREAM;	
+		}
 		Analysis analysis = new NeighborhoodAnalysis();
-		return runAnalysis(analysis, format, source, limit, direction, blacklist);
+		return runAnalysis(analysis, format, sources, limit, direction, blacklist);
 	}
 
 	@Cacheable(cacheName = "getPathsBetweenCache")
 	@Override
-	public Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source,
-		String[] target, Integer limit)
+	public ServiceResponse getPathsBetween(OutputFormat format, String[] sources, Integer limit)
 	{
 		
 		Analysis analysis = new PathsBetweenAnalysis();
-		return runAnalysis(analysis, format, source, target, limit, blacklist);
+		return runAnalysis(analysis, format, sources, limit, blacklist);
 	}
+	
+	@Cacheable(cacheName = "getPathsOfInterestCache")
+	@Override
+	public ServiceResponse getPathsOfInterest(OutputFormat format, String[] sources,
+		String[] targets, Integer limit)
+	{
+		Analysis analysis = new PathsOfInterestAnalysis();
+		return runAnalysis(analysis, format, sources, targets, limit);
+	}
+	
 
 	@Cacheable(cacheName = "getCommonStreamCache")
 	@Override
-	public Map<ResultMapKey, Object> getCommonStream(OutputFormat format, String[] source,
+	public ServiceResponse getCommonStream(OutputFormat format, String[] sources,
 		Integer limit, Direction direction)
 	{
+		if (direction == Direction.BOTHSTREAM) {
+			return BAD_REQUEST.errorResponse(
+				"Direction cannot be BOTHSTREAM for the COMMONSTREAM query!");
+		} else if(direction == null) {
+			direction = Direction.DOWNSTREAM;	
+		}
+			
 		Analysis analysis = new CommonStreamAnalysis();
-		return runAnalysis(analysis, format, source, limit, direction, blacklist);
+		return runAnalysis(analysis, format, sources, limit, direction, blacklist);
 	}
 
 	//---------------------------------------------------------------------------------------------|
@@ -486,7 +499,8 @@ public class CPathServiceImpl implements CPathService {
 				new org.biopax.paxtools.io.sif.level3.ConsecutiveCatalysisRule(),
 				new org.biopax.paxtools.io.sif.level3.ControlRule(),
 				new org.biopax.paxtools.io.sif.level3.ControlsTogetherRule(),
-				new org.biopax.paxtools.io.sif.level3.ParticipatesRule());
+				new org.biopax.paxtools.io.sif.level3.ParticipatesRule()
+				);
         }
 
         // should not make it here
@@ -511,8 +525,31 @@ public class CPathServiceImpl implements CPathService {
 			toReturn.append(iterator.next() + "\n");
 		}
 		
-		// outta here
 		return toReturn.toString();
+	}
+
+	
+	@Cacheable(cacheName = "traverseCache")
+	@Override
+	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
+		try {
+			// get results from the DAO
+			TraverseResponse results = mainDAO.traverse(propertyPath, sourceUris);
+			return results;
+		} catch (Exception e) {
+			log.error("Failed. ", e);
+			return INTERNAL_ERROR.errorResponse(e);
+		}
+	}
+
+	
+	/**
+	 * Gets top pathways.
+	 * 
+	 */
+	@Override
+	public SearchResponse getTopPathways() {
+		return topPathways;
 	}
 
 	/**
