@@ -108,6 +108,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			SEARCH_FIELD_XREF_DB,
 			SEARCH_FIELD_XREF_ID,
 			"xref." + SEARCH_FIELD_XREF_ID,
+//			"entityReferenceX." + SEARCH_FIELD_NAME,
+//			"entityReferenceX.xref." + SEARCH_FIELD_XREF_ID,
 			// not used/exist -
 			//SEARCH_FIELD_ID, // do NOT search in RDFId!
 		};
