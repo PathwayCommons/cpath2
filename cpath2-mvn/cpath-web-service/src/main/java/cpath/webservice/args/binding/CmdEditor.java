@@ -46,14 +46,9 @@ public class CmdEditor extends PropertyEditorSupport {
 	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
 	 */
 	@Override
-	public void setAsText(String arg0) throws IllegalArgumentException {
+	public void setAsText(String arg0) {
 		Object value = null;
-		try{
-			value = Cmd.valueOf(arg0.trim().toUpperCase());
-		} catch (IllegalArgumentException e) {
-			log.info(e);
-		}
+		value = Cmd.valueOf(arg0.trim().toUpperCase());
 		setValue(value);
 	}
-	
 }

@@ -27,73 +27,41 @@
 
 package cpath.webservice;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Arrays;
-import java.util.Map;
 
-import cpath.service.CPathService;
-import cpath.service.Cmd;
-import cpath.service.CmdArgs;
-import cpath.service.GraphType;
-import cpath.service.ProtocolStatusCode;
-import cpath.service.CPathService.ResultMapKey;
-import cpath.service.OutputFormat;
-import cpath.service.jaxb.ErrorType;
-import cpath.webservice.args.*;
-import cpath.webservice.args.binding.*;
+import static cpath.service.Status.*;
+import cpath.service.Status;
+import cpath.service.jaxb.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.Protein;
-import org.biopax.paxtools.query.algorithm.Direction;
-import org.biopax.paxtools.query.algorithm.LimitType;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
-import org.springframework.web.bind.WebDataBinder;
-import org.springframework.web.bind.annotation.*;
-
-import javax.validation.constraints.NotNull;
 
 /**
- * Basic (abstract) controller.
+ * Basic controller.
  * 
  * @author rodche
  */
 public abstract class BasicController {
     private static final Log log = LogFactory.getLog(BasicController.class);
-    protected static String newline = System.getProperty("line.separator");
-    
-    @NotNull
-    protected CPathService service; // main PC db access
-    
-	
+   
+
 	/**
-	 * This configures the web request parameters binding, i.e., 
-	 * conversion to the corresponding java types; for example,
-	 * "neighborhood" is recognized as {@link GraphType#NEIGHBORHOOD}, 
-	 * "search" will become {@link Cmd#SEARCH}, 
-	 *  "protein" - {@link Protein} , etc.
-	 *  Depending on the editor, illegal query parameters may result 
-	 *  in an error or just NULL value (see e.g., {@link CmdArgsEditor})
+	 * Writes an error response body from the error bean.
 	 * 
-	 * @param binder
+	 * @param bindingResult
+	 * @param writer
+	 * @throws IOException 
 	 */
-	@InitBinder
-    protected void initBinder(WebDataBinder binder) {
-        binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
-        binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
-        binder.registerCustomEditor(Direction.class, new GraphQueryDirectionEditor());
-        binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
-        binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
-        binder.registerCustomEditor(Cmd.class, new CmdEditor());
-        binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
-        binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
-        binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
-    }
- 
+	protected void errorResponse(ErrorResponse error, Writer writer) throws IOException {
+		writer.write(Status.marshal(error));
+	}
 	
-	protected ErrorType errorfromBindingResult(BindingResult bindingResult) {
-		ErrorType error = ProtocolStatusCode.BAD_REQUEST.createErrorType();
+	
+	protected ErrorResponse errorfromBindingResult(BindingResult bindingResult) {
 		StringBuffer sb = new StringBuffer();
 		for (FieldError fe : bindingResult.getFieldErrors()) {
 			Object rejectedVal = fe.getRejectedValue();
@@ -107,78 +75,25 @@ public abstract class BasicController {
 			sb.append(fe.getField() + " was '" + rejectedVal + "'; "
 					+ fe.getDefaultMessage() + ". ");
 		}
-		error.setErrorDetails(sb.toString());
-		return error;
-	}
-    
-    
-    protected ErrorType errorFromResults(Object err, ProtocolStatusCode statusCode) 
-    {
-    	ErrorType error = statusCode.createErrorType();
-		if(err instanceof Exception) {
-			error.setErrorDetails(err.toString() + "; " 
-				+ Arrays.toString(((Exception)err).getStackTrace()));
-		} else {
-			error.setErrorDetails(err.toString());
-		}
-		return error;
-    }
-
-    /**
-     * Extracts the result object 
-     * (can be list, text, etc., depending on query type) 
-     * from the service response message map
-     * using a key form {@link ResultMapKey}.
-     * If the map contains not null value under 
-     * {@link ResultMapKey#ERROR} key, it will be wrapped
-     * into {@link ErrorType} and returned instead.
-     * 
-     * @param messageMap
-     * @param format
-     * @param details
-     * @param mapKey
-     * @return
-     */
-    protected Object parseResultMap(Map<ResultMapKey, Object> messageMap, OutputFormat format, String details, ResultMapKey mapKey) {
-    	Object toReturn = null;
-    	
-		if (!messageMap.containsKey(ResultMapKey.ERROR)) {
-			toReturn = messageMap.get(mapKey);
-			
-			// check specifically for empty data
-			if(toReturn == null || 
-				(mapKey == ResultMapKey.DATA && "".equals(toReturn.toString().trim()))
-			)
-			{
-				toReturn = noResultsError(details);
-			} 
-			else if(OutputFormat.BIOPAX == format) 
-			{ // check specifically for not null empty Model
-			  // (when model does not have any elements, its XML
-			  // serialization is still not blank!)
-				Model m = (Model) messageMap.get(ResultMapKey.MODEL);
-				if(m != null && m.getObjects().isEmpty()) {
-					toReturn = noResultsError(details);
-				}
-			}
-		} else { // return error
-			toReturn = 
-				errorFromResults(messageMap.get(ResultMapKey.ERROR), ProtocolStatusCode.INTERNAL_ERROR);
-		}
 		
-		return toReturn;
-	}
-
-
-    /**
-     * Creates a 'NO_RESULTS_FOUND' error bean.
-     * 
-     * @param details
-     * @return
-     */
-	protected ErrorType noResultsError(String details) {
-		ErrorType error = ProtocolStatusCode.NO_RESULTS_FOUND.createErrorType();
-		error.setErrorDetails("Empty result for: " + details);
+		ErrorResponse error = BAD_REQUEST.errorResponse(sb.toString());
 		return error;
-	}    
+	}
+    
+	
+	protected void stringResponse(ServiceResponse resp, Writer writer) throws IOException {
+		if(resp instanceof ErrorResponse) {
+    		errorResponse((ErrorResponse) resp, writer);
+		} else if(resp.isEmpty()) { // should not be here (normally, it gets converter to ErrorResponse...)
+			log.warn("stringResponse: I got an empty ServiceResponce! " +
+				"(must be already converted to the ErrorResponse)");
+			errorResponse(NO_RESULTS_FOUND.errorResponse(null), writer);
+		} else {
+			DataResponse dresp = (DataResponse) resp;
+			if(log.isDebugEnabled())
+				log.debug("QUERY RETURNED " + dresp.getData().toString().length() + " chars");
+			writer.write(dresp.getData().toString());
+		}
+	}
+		
 }

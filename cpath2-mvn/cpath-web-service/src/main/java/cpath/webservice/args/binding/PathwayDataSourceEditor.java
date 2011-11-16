@@ -33,6 +33,7 @@ import java.net.URLEncoder;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.bridgedb.DataSource;
 
 import cpath.service.BioDataTypes;
@@ -54,7 +55,7 @@ public class PathwayDataSourceEditor extends PropertyEditorSupport
 	private static final Log log = LogFactory.getLog(PathwayDataSourceEditor.class);
 	
 	@Override
-	public void setAsText(String ds) throws IllegalArgumentException {
+	public void setAsText(String ds) {
 		DataSource dataSource = null;
 		
 		/*
@@ -68,20 +69,31 @@ public class PathwayDataSourceEditor extends PropertyEditorSupport
 				dataSource = d;
 				break;
 			} 
-			
-			// may be URN?
-			String uriEncoded;
-			try {
-				uriEncoded = URLEncoder.encode(ds, "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				uriEncoded = URLEncoder.encode(ds);
+			else {
+				for (String name : ((Provenance)d.getOrganism()).getName()) {
+					if(name.equalsIgnoreCase(ds)) {
+						dataSource = d;
+						break;
+					}
+				} 
 			}
 			
-			if (ds.equalsIgnoreCase(d.getSystemCode()) // is RDFId (created as such in the BioDataSources init())
-				|| uriEncoded.equalsIgnoreCase(d.getSystemCode())) 
-			{
-				dataSource = d;
-				break;
+			if(dataSource == null) {
+				// may be it's a URN?
+				String uriEncoded;
+					try {
+					uriEncoded = URLEncoder.encode(ds, "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					uriEncoded = URLEncoder.encode(ds);
+				}
+			
+				if (ds.equalsIgnoreCase(d.getSystemCode()) 
+					// is RDFId (created as such in the BioDataSources init())
+					|| uriEncoded.equalsIgnoreCase(d.getSystemCode())) 
+				{
+					dataSource = d;
+					break;
+				}
 			}
 		}
 
@@ -89,8 +101,6 @@ public class PathwayDataSourceEditor extends PropertyEditorSupport
 			setValue(new PathwayDataSource(dataSource));
 		else {
 			throw new IllegalArgumentException("Illegal value for 'datasource': " + ds);
-//			setValue(null);
-//			log.info("No matching data source (Provenance) found for " + ds);
 		}
 	}
 	

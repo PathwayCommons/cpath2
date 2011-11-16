@@ -19,25 +19,28 @@ import java.io.*;
 /**
  * Implementation of Cleaner interface for Reactome data. 
  *
- * For all Entity elements, replace RDF id with id that will
- * not clash with other id's in model or other id's across
- * species files belonging to the same data provider.
- * See getRDFIdReplacement in the base cleaner class.
-
- * This was motivated by wordy RDF id's used by Reactome elements which 
- * may only differ by the case of a single character:
- *
- * HIV_1_aborted_elongation_complex_after_arrest__nucleoplasm_
- * HIV_1_Aborted_elongation_complex_after_arrest__nucleoplasm_
- *
- * or
- *
- * Active_Calmodulin__name_copied_from_entity_in_Homo_sapiens___nucleoplasm_
- * active_Calmodulin__name_copied_from_entity_in_Homo_sapiens___nucleoplasm_
- *
- * then subsequently caused primary key conflicts since (by default) mysql does not
- * differentiate between upper and lower case on primary keys.
+ * @deprecated Reactome (2011/09) now uses different xml:base suffix for different species and consistent IDs!
+// * The following is not a problem with Reactome anymore! 
+// * For all Entity elements, replace RDF id with id that will
+// * not clash with other id's in model or other id's across
+// * species files belonging to the same data provider.
+// * See getRDFIdReplacement in the base cleaner class.
+//
+// * This was motivated by wordy RDF id's used by Reactome elements which 
+// * may only differ by the case of a single character:
+// *
+// * HIV_1_aborted_elongation_complex_after_arrest__nucleoplasm_
+// * HIV_1_Aborted_elongation_complex_after_arrest__nucleoplasm_
+// *
+// * or
+// *
+// * Active_Calmodulin__name_copied_from_entity_in_Homo_sapiens___nucleoplasm_
+// * active_Calmodulin__name_copied_from_entity_in_Homo_sapiens___nucleoplasm_
+// *
+// * then subsequently caused primary key conflicts since (by default) mysql does not
+// * differentiate between upper and lower case on primary keys.
  */
+@Deprecated
 public class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
 	
 	// logger
@@ -67,6 +70,7 @@ public class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
 		if (log.isInfoEnabled()) {
 			log.info("Cleaning Reactome data, this may take some time, please be patient...");
 		}
+		
 		ModelUtils modelUtils = new ModelUtils(model);
 		Set<Level3Element> sourceElements = new HashSet<Level3Element>(model.getObjects(Level3Element.class));
 		for (Level3Element l3e : sourceElements) {
@@ -85,6 +89,7 @@ public class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
 		// update ns prefix (to upper case) as well -
 		String xmlns = model.getNameSpacePrefixMap().remove("");
 		model.getNameSpacePrefixMap().put("", xmlns.toUpperCase());
+		model.setXmlBase(model.getXmlBase().toUpperCase());
 		
 		// convert model back to OutputStream for return
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -92,14 +97,9 @@ public class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
 			simpleReader.convertToOWL(model, outputStream);
 		}
 		catch (Exception e) {
-			if (log.isInfoEnabled()) {
-				log.info("clean(), Exception thrown while cleaning pathway data, returning dirty data...");
-			}
-			//TODO why to return dirty data? Why not letting the (runtime) exception propagate...
-			return pathwayData;
+			throw new RuntimeException("clean(), Exception thrown while cleaning pathway data!", e);
 		}
 
-		// outta here
 		return outputStream.toString();
 	}
 }

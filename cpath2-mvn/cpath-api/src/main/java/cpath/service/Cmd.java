@@ -37,30 +37,23 @@ import static cpath.service.CmdArgs.*;
  *
  */
 public enum Cmd {
-	SEARCH("Full-text search. This command has four parameters. " +
-           "It returns the ordered (by match score) list of BioPAX element URIs " +
-           "that matched the query and satisfied the filters. Such " +
-           "URI (RDF ID) can be used with other " +
-           "webservice commands to extract the corresponding sub-model to BioPAX " +
-           "or another supported format.",
-           "/search?q=brca*", //URL prefix shouldn't be specified here (it depends on actual server configuration)!
-           "Plain text list (one URI per line)",
-			new CmdArgs[]{q, page, type, organism, datasource, process}),
-	FIND("An alternative full-text search, similar to '/search'but returns XML/JSON. " +
-			"It accepts four parameters " +
+	FIND("Full-text search for BioPAX objects. " +
+			"It accepts up to six parameters " +
 			"and returns the ordered list of search 'hits', i.e., " +
 			"objects describing the corresponding BioPAX entity and utility class elements " +
 			"that matched the query and passed filters. A hit's uri (same as the corresponding BioPAX " +
 			"object's RDF ID) can be used with other webservice commands to " +
-			"extract the corresponding sub-model to BioPAX or another supported format. " +
-			"There is also a special variant of " +
-			"the command - '/entity/find', which is to find such BioPAX " +
-			"Entity class (only) objects that themselves - or have children that " +
-			"satisfy the search query and filters.",
+			"extract the corresponding sub-model to BioPAX or another supported format. ",
 			"/find?q=brca*", //URL prefix shouldn't be specified here (it depends on actual server configuration)!
-			"Search response - as XML (default) or JSON (" +
-			"when called using '/find.json' or '/entity/find.json')",
-			new CmdArgs[]{q, page, type, organism, datasource, process}),			
+			"Search response - as XML (default) or JSON (when called as '/find.json')",
+			new CmdArgs[]{q, page, type, organism, datasource, process}),	
+	FIND_ENTITY("Two-step full-text search that returns only BioPAX Entity class hits. " +
+			"It accepts up to six parameters. It returns the ordered list of search 'hits' corresponding to " +
+			"BioPAX Entity (sub-)class objects that either by themselves " +
+			"or their child Xrefs or EntityReferences match the search criteria.",
+			"/entity/find?q=brca*",
+			"Search response - as XML (default) or JSON (when called as '/entity/find.json')",
+			new CmdArgs[]{q, page, type, organism, datasource, process}),	
 	GET("Gets a BioPAX element or sub-model " +
         "by ID(s).  This command has two parameters.",
         "/get?uri=urn:miriam:uniprot:P38398",
@@ -68,12 +61,22 @@ public enum Cmd {
         "See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
         new CmdArgs[]{uri, format}),
 	GRAPH("Executes an advanced graph query on the data within pathway commons. " +
-          "Returns a sub-model as the result. This command has four parameters.",
+          "Returns a sub-model as the result. This command has up to six parameters.",
           "/graph?kind=neighborhood&source=HTTP:%2F%2FWWW.REACTOME.ORG%2FBIOPAX%23BRCA2__NUCLEOPLASM__1_9606",
           "BioPAX by default, other formats as specified by the format parameter. " +
           "See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
-          new CmdArgs[]{kind, source, target, format, limit})
-        ;
+          new CmdArgs[]{kind, source, target, format, limit, direction}),
+    TOP_PATHWAYS("Gets Top Pathways. This command has no parameters.", 
+    	"/top_pathways",
+        "Plain text list of top pathway URIs.", 
+        new CmdArgs[]{}),   
+    TRAVERSE("Gets data property values (or elements's URIs) " +
+    	"at the end of the property path.  This command has two parameters.",
+    	"/traverse?uri=urn:miriam:uniprot:P38398&path=ProteinReference%2Forganism%2FdisplayName",
+    	"Plain text map (value, uri).", 
+    	new CmdArgs[]{path, uri})
+          
+    ;
     /* TODO should we expose "/convert" command?
 	CONVERT("Converts from BioPAX to simple formats.  This command has two parameters",
 			new CmdArgs[]{biopax, format}),
@@ -106,5 +109,10 @@ public enum Cmd {
         this.example = example;
         this.output = output;
 		this.args = args;
+	}
+	
+	@Override
+	public String toString() {
+		return name().toLowerCase();
 	}
 }
