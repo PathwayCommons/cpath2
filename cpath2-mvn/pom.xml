@@ -54,7 +54,7 @@
         <slf4j.version>1.5.8</slf4j.version>
         <hibernate.version>3.6.3.Final</hibernate.version>
         <paxtools.version>4.1.0-SNAPSHOT</paxtools.version>
-        <validator.version>2.0.0-SNAPSHOT</validator.version>
+        <validator.version>2.0.0</validator.version>
 	</properties>
 
 	<build>
