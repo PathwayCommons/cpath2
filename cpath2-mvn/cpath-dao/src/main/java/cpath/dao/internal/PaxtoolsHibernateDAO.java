@@ -461,8 +461,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		SearchResponse toReturn = new SearchResponse();
 		toReturn.setSearchHit(new ArrayList<SearchHit>());
 		
-		// to collect matching elements in a set (to avoid duplicates)
-		Set<SearchHit> results = new HashSet<SearchHit>();
+		// collect matching elements in a separate list (to avoid duplicates later)
+		List<BioPAXElement> results = new ArrayList<BioPAXElement>();
 		
 		// - otherwise, we continue and do real job -		
 		if (log.isInfoEnabled())
@@ -561,12 +561,13 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 					+ "', final results size = " + results.size());
 		}
 		
-		toReturn.getSearchHit().addAll(results);
+		// add all hits, no duplicates, preserve the order
+		toReturn.getSearchHit().addAll(toSearchHits(results));
 		return toReturn;
 	}
 
 	
-	private void addEntity(Collection<SearchHit> list, Entity ent,
+	private void addEntity(Collection<BioPAXElement> list, Entity ent,
 			BioPAXElement actualHit,
 			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
 	{
@@ -577,8 +578,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 	}
 
-
-	private void addIfPassAndNew(Collection<SearchHit> list, Entity ent,
+	
+	private void addIfPassAndNew(Collection<BioPAXElement> list, Entity ent,
 			BioPAXElement actualHit,
 			Class<? extends BioPAXElement> filterByType, 
 			SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
@@ -592,12 +593,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				}
 				ent.getAnnotations().put("actualHitUri", actualHit.getRDFId());
 			}
-			list.add(bpeToSearcHit(ent));
+			list.add(ent);
 		}
 	}
 
-
-	private void addComplexes(Collection<SearchHit> list, PhysicalEntity pe,
+	
+	private void addComplexes(Collection<BioPAXElement> list, PhysicalEntity pe,
 			BioPAXElement actualHit, 
 			Class<? extends BioPAXElement> filterByType, 
 			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
