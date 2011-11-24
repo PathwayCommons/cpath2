@@ -310,34 +310,14 @@ public class MergerImpl implements Merger {
 				new ClassFilterSet<Xref,UnificationXref>(((XReferrable)bpe).getXref(), UnificationXref.class);
 			Collection<String> prefs = proteinsDAO.getByXref(urefs, ProteinReference.class);
 			if (!prefs.isEmpty()) { 
-				if (prefs.size() > 1) {
-					throw new RuntimeException("Several ProteinReference " +
-						"that share the same xref found:" + prefs);	
+				if (prefs.size() == 1) {
+					toReturn = proteinsDAO.getObject(prefs.iterator().next(), ProteinReference.class);
+				} else {
+					log.warn("Several ProteinReference: " + prefs 
+						+ " were found in the warehouse by unification xrefs: " + urefs 
+						+ " of the original ProteinReference: " + bpe.getRDFId());	
 				}
-				toReturn = proteinsDAO.getObject(prefs.iterator().next(), ProteinReference.class);
 			} 
-/* we do not match by rel.xrefs anymore as this potentially creates identity errors
- * (we may "promote" some kinds of relationship xref to unification xref later, 
- * should there be a good reason, after thorough checks...)
- */
-//			else {
-//				// use relationship xrefs (refseq, entrez gene,..)
-//				Set<RelationshipXref> rrefs =
-//					new ClassFilterSet<Xref,RelationshipXref>(((XReferrable)bpe).getXref(), RelationshipXref.class);
-//				prefs = proteinsDAO.getByXref(rrefs, ProteinReference.class);
-//				if (!prefs.isEmpty()) { 
-//					if (prefs.size() > 1) {
-//						log.warn("More than one warehouse ProteinReferences " +
-//							"that share the same relationship xref were found:" 
-//							+ prefs + ". Skipping (TODO: choose one).");	
-//					} else {					
-//						toReturn = proteinsDAO.getObject(prefs.iterator().next(), ProteinReference.class);
-//						log.warn("ProteinReference: " + bpe +  " will be replaced "
-//							+ "with the one found in the warehouse by RelationshipXref"
-//							+ " (not by unification xref): " + prefs);
-//					}
-//				}
-//			}
 		}
 		
 		// a quick fix, saving/query time optimization
@@ -358,16 +338,17 @@ public class MergerImpl implements Merger {
 		
 		// if not found by id, - search by UnificationXrefs
 		if (toReturn == null) {
-			
 			Set<UnificationXref> urefs = 
 				new ClassFilterSet<Xref,UnificationXref>(((XReferrable)bpe).getXref(), UnificationXref.class);
 			Collection<String> cvUrns = cvRepository.getByXref(urefs, clazz);
 			if (!cvUrns.isEmpty()) {
-				toReturn = cvRepository.getObject(cvUrns.iterator().next(), clazz);
-			}
-			if (cvUrns.size() > 1) {
-				throw new RuntimeException("Several ControlledVocabulary "
-					+ "that use the same xref found:" + cvUrns.toString());
+				if (cvUrns.size() == 1) {
+					toReturn = cvRepository.getObject(cvUrns.iterator().next(), clazz);
+				} else {
+					log.warn("Several ControlledVocabulary: " + cvUrns.toString()
+						+ "were found in the warehouse by unification xrefs: "
+						+ urefs + " of the original CV: " + bpe.getRDFId());
+				}
 			}
 		}
 		
@@ -397,8 +378,20 @@ public class MergerImpl implements Merger {
 			// if it is possible that multiple SMRs in our warehouse
 			// match the given set of uxrefs.  In any event
 			// we return only the first matching id we
-			// encounter - see getSmallMoleculeReference() below.
-			String chebiUrn = getSmallMoleculeReferenceUrn(uxrefs);
+			// encounter or nothing (won't replace SMR) 
+			// - see getSmallMoleculeReference() below.
+			String chebiUrn = null;
+			Collection<String> smrs = moleculesDAO.getByXref(uxrefs, SmallMoleculeReference.class);
+			// TODO someday.., try moleculesDAO.find(..) to search in 'xref.id'
+			if (!smrs.isEmpty()) {
+				if (smrs.size() == 1) {
+					chebiUrn = smrs.iterator().next();
+				} else {
+					log.warn("Several SMRs: " + smrs 
+						+ " were found in the warehouse by unification xrefs: " 
+						+ uxrefs + " of the ofiginal SMR: " + premergeSMR.getRDFId());	
+				}
+			} 
 		
 			if (chebiUrn != null) { 
 				toReturn = moleculesDAO.getObject(chebiUrn, SmallMoleculeReference.class);
@@ -437,32 +430,6 @@ public class MergerImpl implements Merger {
 		}
 	}
 
-	/**
-	 * Given a set of unification xrefs (could be ChEBI, PubChem or combination of both),
-	 * return an ID to a matching (equivalent) SMR in our warehouse.
-	 * 
-	 * @param uxrefs
-	 * @return
-	 */
-	private String getSmallMoleculeReferenceUrn(Set<UnificationXref> uxrefs) 
-	{	
-		String id = null;
-		// will return 'chebi' SMRs
-		Collection<String> smrs = moleculesDAO.getByXref(uxrefs, SmallMoleculeReference.class);
-		if (!smrs.isEmpty()) {
-			id = smrs.iterator().next();
-			if(smrs.size()>1) {
-				// we believe it is hardly possible...
-				if(log.isWarnEnabled())
-					log.warn("Multiple SMRs " + smrs + 
-						" found in Warehouse by: " + uxrefs);
-			}
-		} 
-		
-		// TODO someday.., try moleculesDAO.find(..) to search in 'xref.id'
-		
-		return id;
-	}
 	
 	/**
 	 * For the given provider, gets the completely detached

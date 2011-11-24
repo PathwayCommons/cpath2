@@ -31,14 +31,17 @@ package cpath.service;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;
+import org.biopax.validator.result.ValidatorResponse;
+import org.biopax.validator.utils.BiopaxValidatorUtils;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import cpath.service.CPathService.ResultMapKey;
+import cpath.service.jaxb.DataResponse;
+import cpath.service.jaxb.ErrorResponse;
+import cpath.service.jaxb.ServiceResponse;
 
 import java.io.*;
-import java.util.Map;
 
 import static cpath.config.CPathSettings.*;
 
@@ -168,14 +171,14 @@ public class Main  {
 	 * @param csvIdsString
 	 * @throws IOException 
 	 */
-	public static void convert(OutputStream output, String biopax, String outputFormat) throws IOException {
-
-		Map<ResultMapKey, Object> res = getService().convert(biopax, OutputFormat.valueOf(outputFormat));
-		if (res.containsKey(ResultMapKey.ERROR)) {
-    		System.err.println(res.get(ResultMapKey.ERROR));
-    	}
-        else if (res.containsKey(ResultMapKey.DATA)) {
-    		String owl = (String) res.get(ResultMapKey.DATA);
+	public static void convert(OutputStream output, String biopax, String outputFormat) 
+			throws IOException 
+	{
+		ServiceResponse res = getService().convert(biopax, OutputFormat.valueOf(outputFormat));
+		if (!(res instanceof ErrorResponse)) {
+    		System.err.println(res.toString());
+    	} else if (!res.isEmpty()) {
+    		String owl = (String) ((DataResponse)res).getData();
     		output.write(owl.getBytes("UTF-8"));
     		output.flush();
     	}
@@ -192,11 +195,11 @@ public class Main  {
 		throws IOException 
 	{
 		String[] uris = csvIdsString.split(",");
-		Map<ResultMapKey, Object> res = getService().fetch(OutputFormat.BIOPAX, uris);
-		if(res.containsKey(ResultMapKey.ERROR)) {
-    		System.err.println(res.get(ResultMapKey.ERROR));
-    	} else if(res.containsKey(ResultMapKey.DATA)) {
-    		String owl = (String) res.get(ResultMapKey.DATA);
+		ServiceResponse res = getService().fetch(OutputFormat.BIOPAX, uris);
+		if(res instanceof ErrorResponse) {
+    		System.err.println(res.toString());
+    	} else if(!res.isEmpty()) {
+    		String owl = (String) ((DataResponse)res).getData();
     		output.write(owl.getBytes("UTF-8"));
     		output.flush();
     	}
@@ -219,13 +222,15 @@ public class Main  {
     		LOG.info("Getting validation report for " + provider
     				+ "...");
     	}
-    	Map<ResultMapKey, Object> res = getService().getValidationReport(provider);
-    	if(res.containsKey(ResultMapKey.ERROR)) {
-    		System.err.println(res.get(ResultMapKey.ERROR));
-    	} else if(res.containsKey(ResultMapKey.DATA)) {
-    		String report = (String) res.get(ResultMapKey.DATA);
-    		output.write(report.getBytes("UTF-8"));
-    		output.flush();
+    	ServiceResponse res = getService().getValidationReport(provider);
+    	if(res instanceof ErrorResponse) {
+    		System.err.println(res.toString());
+    	} else if(!res.isEmpty()) {
+    		ValidatorResponse report = (ValidatorResponse) ((DataResponse)res).getData();
+    		OutputStreamWriter writer = new OutputStreamWriter(output, "UTF-8");
+			// (the last parameter below can be a xsltSource)
+			BiopaxValidatorUtils.write(report, writer, null); 
+    		writer.flush();
     	}
 	}
 	

@@ -46,6 +46,7 @@ import org.biopax.paxtools.model.level3.Complex;
 import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.EntityReference;
 import org.biopax.paxtools.model.level3.Named;
+import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.PhysicalEntity;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
@@ -69,8 +70,10 @@ import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.filters.SearchFilter;
 import cpath.dao.filters.SearchFilterRange;
-import cpath.service.jaxb.SearchHitType;
-import cpath.service.jaxb.SearchResponseType;
+import cpath.service.jaxb.SearchHit;
+import cpath.service.jaxb.SearchResponse;
+import cpath.service.jaxb.TraverseEntry;
+import cpath.service.jaxb.TraverseResponse;
 import cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO;
 
 import java.util.*;
@@ -104,6 +107,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			SEARCH_FIELD_TERM,
 			SEARCH_FIELD_XREF_DB,
 			SEARCH_FIELD_XREF_ID,
+			"xref." + SEARCH_FIELD_XREF_ID,
+//			"entityReferenceX." + SEARCH_FIELD_NAME,
+//			"entityReferenceX.xref." + SEARCH_FIELD_XREF_ID,
 			// not used/exist -
 			//SEARCH_FIELD_ID, // do NOT search in RDFId!
 		};
@@ -318,14 +324,14 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public SearchResponseType findElements(
+	public SearchResponse findElements(
 			String query, 
 			int page,
 			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters) 
 	{
 		// collect matching elements here
-		SearchResponseType toReturn = new SearchResponseType();
-		List<SearchHitType> results = new ArrayList<SearchHitType>();
+		SearchResponse toReturn = new SearchResponse();
+		List<SearchHit> results = new ArrayList<SearchHit>();
 		toReturn.setSearchHit(results);
 		
 		// a shortcut
@@ -367,7 +373,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		int count = hibQuery.getResultSize(); //"cheap" operation (Hib. does not init objects)
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "' (filters not shown), results size = " + count);
-		toReturn.setTotalNumHits((long)count); // "raw" size, i.e, before filters, pages considered...
+		toReturn.setMaxHits(count); // "raw" size, i.e, before filters, pages considered...
 
 		// using the projection (to get some more statistics/fields)
 		if(CPathSettings.isDebug())
@@ -447,17 +453,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public SearchResponseType findEntities(
+	public SearchResponse findEntities(
 			String query, 
 			int page,
 			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters) 
-	{
-		
-		SearchResponseType toReturn = new SearchResponseType();
-		toReturn.setSearchHit(new ArrayList<SearchHitType>());
+	{		
+		SearchResponse toReturn = new SearchResponse();
+		toReturn.setSearchHit(new ArrayList<SearchHit>());
 		
 		// to collect matching elements in a set (to avoid duplicates)
-		Set<SearchHitType> results = new HashSet<SearchHitType>();
+		Set<SearchHit> results = new HashSet<SearchHit>();
 		
 		// - otherwise, we continue and do real job -		
 		if (log.isInfoEnabled())
@@ -494,7 +499,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		int count = hibQuery.getResultSize(); //"cheap" operation (Hib. does not init objects)
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "' (no filter/lookup applied yet), results size = " + count);
-		toReturn.setTotalNumHits((long)count);  // "raw" size, i.e, before filters, pages considered...
+		toReturn.setMaxHits(count);  // "raw" size, i.e, before filters, pages considered...
 
 		// using the projection (to get some more statistics/fields)
 		if(CPathSettings.isDebug())
@@ -561,7 +566,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 
 	
-	private void addEntity(Collection<SearchHitType> list, Entity ent,
+	private void addEntity(Collection<SearchHit> list, Entity ent,
 			BioPAXElement actualHit,
 			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
 	{
@@ -572,7 +577,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 	}
 
-	private void addIfPassAndNew(Collection<SearchHitType> list, Entity ent,
+
+	private void addIfPassAndNew(Collection<SearchHit> list, Entity ent,
 			BioPAXElement actualHit,
 			Class<? extends BioPAXElement> filterByType, 
 			SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
@@ -590,7 +596,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 	}
 
-	private void addComplexes(Collection<SearchHitType> list, PhysicalEntity pe,
+
+	private void addComplexes(Collection<SearchHit> list, PhysicalEntity pe,
 			BioPAXElement actualHit, 
 			Class<? extends BioPAXElement> filterByType, 
 			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
@@ -944,11 +951,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * @param data
 	 * @return
 	 */
-	private List<SearchHitType> toSearchHits(List<? extends BioPAXElement> data) {
-		List<SearchHitType> hits = new ArrayList<SearchHitType>(data.size());
+	private List<SearchHit> toSearchHits(List<? extends BioPAXElement> data) {
+		List<SearchHit> hits = new ArrayList<SearchHit>(data.size());
 		
 		for(BioPAXElement bpe : data) {
-			SearchHitType hit = bpeToSearcHit(bpe);
+			SearchHit hit = bpeToSearcHit(bpe);
 			hits.add(hit);
 		}
 		
@@ -962,8 +969,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * @param bpe
 	 * @return
 	 */
-	private SearchHitType bpeToSearcHit(BioPAXElement bpe) {
-			SearchHitType hit = new SearchHitType();
+	private SearchHit bpeToSearcHit(BioPAXElement bpe) {
+			SearchHit hit = new SearchHit();
 			hit.setUri(bpe.getRDFId());
 			hit.setBiopaxClass(bpe.getModelInterface().getSimpleName());
 			// add lucene info
@@ -982,10 +989,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				Named named = (Named)bpe;
 				String std = named.getStandardName();
 				if( std != null)
-					hit.getName().add(std);
-				String dsp = named.getDisplayName();
-				if(dsp != null && !dsp.equalsIgnoreCase(std))
-					hit.getName().add(dsp);
+					hit.setName(std);
+				else
+					hit.setName(named.getDisplayName());
 			}
 			
 			// add organisms and data sources
@@ -1004,15 +1010,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 					if((x instanceof RelationshipXref) && ((RelationshipXref) x).getRelationshipType() != null) 
 					{
 						RelationshipXref rx = (RelationshipXref) x;
-						RelationshipTypeVocabulary cv = rx.getRelationshipType();
-						String autoId = ModelUtils
-							.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name());
-						if(cv.getRDFId().equalsIgnoreCase(autoId))
+						if(isOrganismRelationshipXref(rx))
 						{
 							organisms.add(rx.getId());
 						} 
-						else if(cv.getRDFId().equalsIgnoreCase(ModelUtils
-							.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()))) 
+						else if(isProcessRelationshipXref(rx)) 
 						{
 							processes.add(rx.getId());
 						}	
@@ -1035,14 +1037,136 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		return hit;
 	}
 
+	
+	private boolean isOrganismRelationshipXref(RelationshipXref rx) {
+		RelationshipTypeVocabulary cv = rx.getRelationshipType();
+		return cv != null && cv.getRDFId().equalsIgnoreCase(
+				ModelUtils.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name()));
+	}
+
+	
+	private boolean isProcessRelationshipXref(RelationshipXref rx) {
+		RelationshipTypeVocabulary cv = rx.getRelationshipType();
+		return cv != null && cv.getRDFId().equalsIgnoreCase(
+			ModelUtils.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()));
+	}
+
+	
 	@Override
 	public void setXmlBase(String base) {
 		this.xmlBase = base;
 	}
 
+	
 	@Override
 	public String getXmlBase() {
 		return xmlBase;
+	}
+
+	
+	/**
+	 * "Top pathway" can mean different things...
+	 * 
+	 * 1) One may want simply collect pathways which are not 
+	 * values of any BioPAX property ("graph-theoretic" approach, 
+	 * used by {@link ModelUtils#getRootElements(Class)} method).
+	 * Alternative approaches would be:
+	 * 2) - to check whether particular (inverse) properties, such as 
+	 * controlledOf, pathwayComponentOf and stepProcessOf, are empty; or
+	 * 3) - to check whether a pathway is reachable from other pathways if
+	 * to follow standard BioPAX object range properties; this method is used 
+	 * by the BioPAX normalizer (in the cPath2 "premerge" stage), which 
+	 * for all BioPAX Entities generates relationship xrefs to parent pathways.
+	 * 
+	 * Here we use the second method!
+	 * 
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public SearchResponse getTopPathways() {
+		SearchResponse toReturn = new SearchResponse();
+		
+		// here we use the aproach #2
+		for(Pathway pathway : getObjects(Pathway.class)) {
+			if(pathway.getControlledOf().isEmpty()
+					&& pathway.getStepProcessOf().isEmpty()
+					&& pathway.getPathwayComponentOf().isEmpty()) 
+			{
+				toReturn.getSearchHit().add(bpeToSearcHit(pathway));
+			}
+		}
+		
+//		// would be if using method #1 -
+//		Set<Pathway> topPathways = mu.getRootElements(Pathway.class);
+//		for(Pathway pathway : topPathways) {
+//			toReturn.getSearchHit().add(bpeToSearcHit(pathway));
+//		}
+
+//		// would be if using method #3 -
+//		for(Pathway pathway : getObjects(Pathway.class)) {
+//			// we'll simply check each pathway's generated rel. xrefs:
+//			Set<RelationshipXref> rxs = new ClassFilterSet<Xref, 
+//				RelationshipXref>(pathway.getXref(), RelationshipXref.class);
+//			boolean isTop = true;
+//			if(!rxs.isEmpty()) {
+//				// hack: find a "process" rel.xrefs (auto-generated during the data import)
+//				for(RelationshipXref rx : rxs) {
+//					if(isProcessRelationshipXref(rx))
+//					{
+//						if(getByID(rx.getId()) instanceof Pathway) {
+//							isTop = false;
+//							break;
+//						}
+//					}
+//				}
+//			} 
+//			if(isTop) {
+//				toReturn.getSearchHit().add(bpeToSearcHit(pathway));
+//			}
+//		}
+		
+		return toReturn;
+	}
+
+
+	/**
+	 * It generates results only for those URIs where
+	 * the property path apply, although the values set 
+	 * can be empty.
+	 * TODO may be to return a row for each query URI regardless path apply or not; e.g., use 'valid' attr...
+	 */
+	@Transactional(readOnly = true)
+	@Override
+	public TraverseResponse traverse(String propertyPath, String... uris) {
+		TraverseResponse resp = new TraverseResponse();
+		resp.setPropertyPath(propertyPath);
+		PathAccessor pathAccessor = new PathAccessor(propertyPath, getLevel());
+		for(String uri : uris) {
+			BioPAXElement bpe = getByID(uri);
+			try {
+				Set<?> v = pathAccessor.getValueFromBean(bpe);
+				TraverseEntry entry = new TraverseEntry();
+				entry.setUri(uri);
+				if(!pathAccessor.isUnknown(v)) {
+//					entry.getValue().addAll(v);
+					for(Object o : v) {
+						if(o instanceof BioPAXElement) 
+							entry.getValue().add(((BioPAXElement) o).getRDFId());
+						else
+							entry.getValue().add(String.valueOf(o));
+					}
+				}
+				// add (it might have no values, but the path is correct)
+				resp.getTraverseEntry().add(entry); 
+			} catch (IllegalBioPAXArgumentException e) {
+				// log, ignore if the path does not apply
+				if(log.isDebugEnabled())
+					log.debug("Failed to get values at: " + 
+						propertyPath + " from the element: " + uri, e);
+			}
+		}
+		
+		return resp;
 	}
 }
 

@@ -15,9 +15,9 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(
-	name = "SearchHitType", propOrder = {
+	name = "SearchHit", propOrder = {
     "uri",
-    "actualHitUri",
+    "actualHitUri", //TODO remove this once 'find_entity' command is removed
     "biopaxClass",
     "name",
     "dataSource",
@@ -25,13 +25,13 @@ import javax.xml.bind.annotation.XmlType;
     "pathway",
     "excerpt"
 })
-public class SearchHitType {
+public class SearchHit {
     @XmlElement(required = true)
     protected String uri;
-    protected String actualHitUri;
+    protected String actualHitUri; //TODO remove this once 'find_entity' command is removed
     @XmlElement(required = true)
     protected String biopaxClass;
-    protected List<String> name;
+    protected String name;
     protected List<String> dataSource;
     protected List<String> organism;
     protected List<String> pathway;
@@ -52,13 +52,10 @@ public class SearchHitType {
 		this.actualHitUri = actualHitUri;
 	}
 	
-	public List<String> getName() {
-        if (name == null) {
-            name = new ArrayList<String>();
-        }
+	public String getName() {
         return this.name;
     }
-	public void setName(List<String> name) {
+	public void setName(String name) {
 		this.name = name;
 	}
 
@@ -109,4 +106,9 @@ public class SearchHitType {
         this.excerpt = value;
     }
 
+    
+    @Override
+    public String toString() {
+    	return name;
+    }
 }
