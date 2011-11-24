@@ -30,16 +30,16 @@ package cpath.service;
 public enum GraphType
 {
 	NEIGHBORHOOD("searches the neighborhood of given source set of nodes"),
-    PATHSBETWEEN("finds the paths from a specific source set of states or entities to a specific target set of states or entities within the boundaries of a specified length limit"),
+    PATHSBETWEEN("finds the paths between specific source set of states or entities within the boundaries of a specified length limit"),
     COMMONSTREAM("searches common downstream or common upstream of a specified set of entities based on the given directions within the boundaries of a specified length limit"),
-	;
+    PATHSOFINTEREST("finds the paths from a specific source set of states or entities to a specific target set of states or entities within the boundaries of a specified length limit"),
+    ;
 
     private final String description;
 
     public String getDescription() {
         return description;
     }
-
 
     private GraphType(String description) {
         this.description = description;

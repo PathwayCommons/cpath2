@@ -90,7 +90,7 @@ public class UniProtCleanerImplTest {
 		GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(is));
 
         StringBuffer fileData = new StringBuffer();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(zis));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(zis, "UTF-8"));
         char[] buf = new char[1024];
         int numRead=0;
         while ((numRead=reader.read(buf)) != -1) {

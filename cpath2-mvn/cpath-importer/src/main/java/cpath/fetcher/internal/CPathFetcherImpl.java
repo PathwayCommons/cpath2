@@ -48,6 +48,9 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
+import cpath.cleaner.Cleaner;
+import cpath.cleaner.internal.BaseCleanerImpl;
+import cpath.config.CPathSettings;
 import cpath.converter.Converter;
 import cpath.converter.internal.BaseConverterImpl;
 import cpath.fetcher.CPathFetcher;
@@ -267,36 +270,44 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 
 	
     /*
+     * Reads the input stream content as PathwayData
      * @param inputStream plain text (uncompressed) data stream
      */
     private PathwayData readContent(Metadata metadata, final InputStream inputStream) 
     	throws IOException 
     {
-        BufferedReader reader = null;
-		StringBuffer toReturn = new StringBuffer();
-        try {
-            // we'd like to read lines at a time
-            reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
-
-            // are we ready to read?
-            while (reader.ready()) {
-                toReturn.append(reader.readLine());
-			}
-		}
-        catch (IOException e) {
-            throw e;
-        }
-        finally {
-            closeQuietly(reader);
-        }
-
-		String fetchedData = toReturn.toString();
+		String fetchedData = readContent(inputStream);
 		int idx = metadata.getURLToData().lastIndexOf('/');
 		String filename = metadata.getURLToData().substring(idx+1); // not found (-1) gives entire string
 		String digest = getDigest(fetchedData.getBytes());
 		
 		return new PathwayData(metadata.getIdentifier(), metadata.getVersion(), filename, digest, fetchedData);
 	}
+
+    
+    private String readContent(final InputStream inputStream) throws IOException 
+    {
+            BufferedReader reader = null;
+    		StringBuffer toReturn = new StringBuffer();
+            try {
+                // we'd like to read lines at a time
+                reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
+
+                // are we ready to read?
+                while (reader.ready()) {
+                	// NEWLINE here is critical for the protein/molecule cleaner/converter!
+                    toReturn.append(reader.readLine()).append(CPathSettings.NEWLINE);
+    			}
+    		}
+            catch (IOException e) {
+                throw e;
+            }
+            finally {
+                closeQuietly(reader);
+            }
+
+    		return toReturn.toString();
+    }    
 
     
     /*
@@ -336,8 +347,6 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 						|| !( content.contains("RDF")
 								&& content.contains("biopax.org/release/biopax")
 							)
-					//|| !entryName.toLowerCase().endsWith(".owl")
-					//&& !entryName.toLowerCase().endsWith(".xml")
 					) 
 				{
 					if(log.isInfoEnabled())
@@ -495,11 +504,31 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 						+ metadata.getVersion());
 			}
 
-			// hook into biopax converter for given provider
+			// hook into a cleaner for given provider
+			if(log.isInfoEnabled())
+				log.info("getting a cleaner with name: " + metadata.getCleanerClassname());
+			Cleaner cleaner = BaseCleanerImpl.getCleaner(metadata.getCleanerClassname());
+			if (cleaner == null) {
+				// TDB: report failure
+				if(log.isInfoEnabled())
+					log.info("could not create cleaner class " 
+						+ metadata.getCleanerClassname());
+				return;
+			}
+			
+			// read the entire data from the input stream to a text string
+			String data = readContent(is);
+			// run the cleaner
+			data = cleaner.clean(data);
+			
+			// re-open a new input stream for the cleaned data
+			is = new BufferedInputStream(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			
+			// hook into a converter for given provider
 			if (log.isInfoEnabled())
 				log.info("getting a converter with name: "
 						+ metadata.getConverterClassname());
-			Converter converter = getConverter(metadata.getConverterClassname());
+			Converter converter = BaseConverterImpl.getConverter(metadata.getConverterClassname());
 			if (converter == null) {
 				// TDB: report failure
 				log.fatal("could not create converter class "
@@ -513,30 +542,6 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 		} finally {
 			closeQuietly(is);
 		}
-	}
-
-	
-
-	
-    
-	/**
-	 * For the given converter class name,
-	 * returns an instance of a class which
-	 * implements the converter interface.
-	 *
-	 * @param converterClassName String
-	 * @return Converter
-	 */
-	private static Converter getConverter(final String converterClassName) {
-		try {
-			Class<?> converterClass = Class.forName(converterClassName);
-			return (Converter) converterClass.newInstance();
-		}
-		catch (Exception e) {
-			log.error("could not create converter class " 
-					+ converterClassName, e);
-		}
-		return null;
 	}
 
 	

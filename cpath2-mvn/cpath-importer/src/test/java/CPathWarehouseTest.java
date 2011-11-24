@@ -47,8 +47,8 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.fetcher.internal.CPathFetcherImpl;
-import cpath.service.jaxb.SearchHitType;
-import cpath.service.jaxb.SearchResponseType;
+import cpath.service.jaxb.SearchHit;
+import cpath.service.jaxb.SearchResponse;
 import cpath.warehouse.*;
 import cpath.warehouse.beans.*;
 import cpath.warehouse.beans.Metadata.TYPE;
@@ -140,11 +140,11 @@ public class CPathWarehouseTest {
 	@Test
 	public void testSearchForProteinReference() {
 		// search with a secondary (RefSeq) accession number
-		SearchResponseType resp =  ((PaxtoolsDAO)proteins).findElements("NP_619650", 0, RelationshipXref.class);
-		Collection<SearchHitType> prs = resp.getSearchHit();
+		SearchResponse resp =  ((PaxtoolsDAO)proteins).findElements("NP_619650", 0, RelationshipXref.class);
+		Collection<SearchHit> prs = resp.getSearchHit();
 		assertFalse(prs.isEmpty());
 		Collection<String> prIds = new HashSet<String>();
-		for(SearchHitType e : prs) {
+		for(SearchHit e : prs) {
 			prIds.add(e.getUri());
 		}
 		assertTrue(prIds.contains("urn:biopax:RelationshipXref:REFSEQ_NP_619650"));

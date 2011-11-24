@@ -32,7 +32,8 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
 import cpath.dao.filters.SearchFilter;
-import cpath.service.jaxb.SearchResponseType;
+import cpath.service.jaxb.SearchResponse;
+import cpath.service.jaxb.TraverseResponse;
 
 import java.util.Collection;
 import java.io.File;
@@ -65,7 +66,7 @@ public interface PaxtoolsDAO extends Model {
 	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
 	 * @return ordered by the element's relevance list of hits
      */
-	SearchResponseType findElements(String query, int page,
+	SearchResponse findElements(String query, int page,
     		Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters);        
 
     
@@ -82,7 +83,7 @@ public interface PaxtoolsDAO extends Model {
 	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
 	 * @return ordered by the element's relevance list of hits
      */
-    SearchResponseType findEntities(String query, int page,
+    SearchResponse findEntities(String query, int page,
     		Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters);
     
     /**
@@ -141,8 +142,28 @@ public interface PaxtoolsDAO extends Model {
      * 
      * @param analysis defines a job/query to perform
      * @param args - optional parameters for the algorithm
-     * @return
+     * @return a detached (cloned) BioPAX sub-model
      */
     Model runAnalysis(Analysis analysis, Object... args);
     
+    
+    /**
+     * Finds top (root) pathways in the entire BioPAX model.
+     * (It's good idea to cache this method's result permanently,
+     * may be - in the middle tier)
+     * 
+     * @return
+     */
+    SearchResponse getTopPathways();
+    
+    
+    /**
+     * Accesses and collects BioPAX property values 
+     * at the end of the path (applied to every element in the list)
+     * 
+     * @param propertyPath
+     * @param uris
+     * @return source element uri, path, and corresponding values
+     */
+    TraverseResponse traverse(String propertyPath, String... uris);
 }

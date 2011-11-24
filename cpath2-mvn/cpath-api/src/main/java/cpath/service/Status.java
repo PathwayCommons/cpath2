@@ -28,25 +28,23 @@
 package cpath.service;
 
 import java.io.StringWriter;
-import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
+//import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
-import javax.xml.namespace.QName;
+//import javax.xml.namespace.QName;
 
-import cpath.service.jaxb.ErrorType;
-import cpath.service.jaxb.SearchHitType;
-import cpath.service.jaxb.SearchResponseType;
+import cpath.service.jaxb.ErrorResponse;
 
 /**
  * Enumeration of Protocol Status Codes.
  *
  * @author rodche
  */
-public enum ProtocolStatusCode {
+public enum Status {
     /**
      * Status Code:  OK.
      */
@@ -73,29 +71,41 @@ public enum ProtocolStatusCode {
      */
     INTERNAL_ERROR(500, "Internal Server Error");
 
-    /*
-     * ErrorType xml bean
-     */
-    private final ErrorType errorType;
+
+    private final Integer errorCode;
+    private final String errorMsg;
+    
     
     private static final JAXBContext jaxbContext;
     
 	static {
 		try {
-			jaxbContext = JAXBContext.newInstance(ErrorType.class, SearchHitType.class, SearchResponseType.class);
+			jaxbContext = JAXBContext.newInstance(ErrorResponse.class);//, SearchHit.class, SearchResponse.class);
 		} catch (JAXBException e) {
 			throw new RuntimeException(e);
 		}
 	}
     
-    
+
+	/**
+	 * Private Constructor.
+	 * 
+	 * @param errorCode
+	 * @param msg
+	 */
+    private Status(int errorCode, String msg) {
+		this.errorCode = Integer.valueOf(errorCode);
+		this.errorMsg = msg;
+    }    
+	
+	
     /**
      * Gets Error Code.
      *
      * @return Error Code.
      */
     public int getErrorCode() {
-        return errorType.getErrorCode().intValue();
+        return errorCode.intValue();
     }
 
     /**
@@ -104,70 +114,79 @@ public enum ProtocolStatusCode {
      * @return Error Message.
      */
     public String getErrorMsg() {
-        return errorType.getErrorMsg();
+        return errorMsg;
     }
 
     /**
      * Gets Complete List of all Status Codes.
      *
-     * @return ArrayList of ProtocolStatusCode Objects.
+     * @return ArrayList of Status Objects.
      */
     public static ArrayList<String> getAllStatusCodes() {
         ArrayList<String> list = new ArrayList<String>();
-        for(ProtocolStatusCode statusCode : ProtocolStatusCode.values()) {
+        for(Status statusCode : Status.values()) {
         	list.add(statusCode.name());
         }
         return list;
     }
 
-    /**
-     * Private Constructor.
-     *
-     * @param errorCode Error Code.
-     */
-    private ProtocolStatusCode(int errorCode, String msg) {
-		errorType = new ErrorType();
-		errorType.setErrorCode(BigInteger.valueOf(errorCode));
-		errorType.setErrorMsg(msg);
-    }
-	
-	public static ProtocolStatusCode fromCode(int code) {
-		for(ProtocolStatusCode type : ProtocolStatusCode.values()) {
+	public static Status fromCode(int code) {
+		for(Status type : Status.values()) {
 			if(type.getErrorCode() == code)
 				return type;
 		}
 		return null;
 	}
 	
-	public ErrorType createErrorType() {
-		ErrorType e = new ErrorType();
-		e.setErrorCode(errorType.getErrorCode());
-		e.setErrorDetails(errorType.getErrorDetails());
-		e.setErrorMsg(errorType.getErrorMsg());
-		return e;
-	}
 	
-	public static String marshal(ErrorType error) {
+	public static String marshal(ErrorResponse error) {
 		StringWriter writer = new StringWriter();
 		try {
 			Marshaller ma = jaxbContext.createMarshaller();
 			ma.setProperty("jaxb.formatted.output", true);
-			ma.marshal(
-			new JAXBElement<ErrorType>(new QName("","error"), ErrorType.class, error), 
-			writer);
+//			ma.marshal(new JAXBElement<ErrorResponse>(new QName("","errorResponse"), ErrorResponse.class, error), writer);
+			ma.marshal(error, writer);
 		} catch (JAXBException e) {
 			throw new RuntimeException(e);
 		}
 		return writer.toString();
 	}
 
+	
 	/**
-	 * @param string service error details
+	 * Gets the error as XML string.
+	 * 
+	 * @param str error details (exception or string)
 	 * @return XML error message
 	 */
-	public static String errorAsXml(ProtocolStatusCode code, String string) {
-		ErrorType errorType = code.createErrorType();
-		errorType.setErrorDetails(string);
-		return marshal(errorType);
+	public String errorResponseXml(Object str) {
+		ErrorResponse errorResponse = errorResponse(str);
+		return marshal(errorResponse);
 	}
+	
+    
+	/**
+	 * Creates a desired error bean from an object
+	 * (e.g., exception or string)
+	 * 
+	 * @param o
+	 * @return
+	 */
+	public ErrorResponse errorResponse(Object o) 
+    {
+		ErrorResponse error = new ErrorResponse();
+		error.setErrorCode(errorCode);
+		error.setErrorMsg(errorMsg);
+		
+		if(o instanceof Exception) {
+			error.setErrorDetails(o.toString() + "; " 
+				+ Arrays.toString(((Exception)o).getStackTrace()));
+		} else {
+			if(o != null)
+				error.setErrorDetails(o.toString());
+		}
+		
+		return error;
+    } 
+
 }
