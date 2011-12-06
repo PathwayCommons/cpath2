@@ -181,6 +181,11 @@
 			<value>REACTOME</value>
 			<value>REACTOME STABLE ID</value>
 		</list>
+		<list>
+			<value>CL</value>
+			<value>CELL TYPE ONTOLOGY</value>
+			<value>CELL ONTOLOGY</value>
+		</list>
 	</util:set>
     
     <!-- or, disable the above and use the following empty set
