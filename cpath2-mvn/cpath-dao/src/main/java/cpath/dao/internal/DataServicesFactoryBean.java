@@ -400,6 +400,11 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
     /**
      * Awesome mass-parallel indexing method.
      * 
+     * Note: this high-speed method automatically re-builds the index  
+     * based only on the Hibernate/Search annotations; so
+     * all other/extra index fields and information (e.g., manually generated 
+     * using Lucene/Search API) will be lost (has to be re-created again)!
+     * 
      */
     public void createIndex(String db) {
     	// delete existing index dir
