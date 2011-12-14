@@ -29,6 +29,7 @@
         	<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${main.db}</prop>
 			<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->   
 			<prop key="hibernate.search.indexing_strategy">manual</prop>
+			<prop key="hibernate.cache.use_second_level_cache">false</prop>
           </util:properties>
         </property>
         <property name="annotatedClasses">
