@@ -12,23 +12,25 @@
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
 
 	<context:annotation-config />
- 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
-    <tx:annotation-driven transaction-manager="pcTransactionManager"/>
+	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+	
+    <!-- enable the configuration of transactional behavior based on annotations -->
+    <tx:annotation-driven transaction-manager="mainTransactionManager"/>
 
-	<bean id="pcSessionFactory"
+	<bean id="mainSessionFactory"
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="hibernateProperties">
-        <util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
-        	<prop key="hibernate.connection.url">${connection}cpath2_testpc?autoReconnect=true&amp;max_allowed_packet=256M</prop>
+          <util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
+        	<prop key="hibernate.connection.url">${connection}${main.db}?autoReconnect=true&amp;max_allowed_packet=256M</prop>
         	<prop key="hibernate.connection.username">${user}</prop>
-            <prop key="hibernate.connection.password">${password}</prop>
-       	    <prop key="hibernate.connection.driver_class">${driver}</prop>
-			<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_testpc</prop>
-			<prop key="hibernate.hbm2ddl.auto"></prop>
+        	<prop key="hibernate.connection.password">${password}</prop>
+        	<prop key="hibernate.connection.driver_class">${driver}</prop>
+        	<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${main.db}</prop>
+			<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->   
 			<prop key="hibernate.search.indexing_strategy">manual</prop>
-			<prop key="hibernate.cache.use_second_level_cache">false</prop>
-        </util:properties>
+			<prop key="net.sf.ehcache.configurationResourceName">file:${CPATH2_HOME}/ehcache-hibernate.xml</prop>
+          </util:properties>
         </property>
         <property name="annotatedClasses">
         	<list>
@@ -38,26 +40,24 @@
 		 <property name="packagesToScan">
 			<list>
 				<value>org.biopax.paxtools.impl.level3</value>
-				<value>cpath.warehouse.beans</value>
 			</list>
 		 </property>        
     </bean>
 
-    
+<!-- try later (when using JPA instead of native hibernate...)
+    <bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor" />
+-->
 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
     
-    <bean id="pcTransactionManager"
+    <bean id="mainTransactionManager"
         class="org.springframework.orm.hibernate3.HibernateTransactionManager">
-        <property name="sessionFactory" ref="pcSessionFactory" />
+        <property name="sessionFactory" ref="mainSessionFactory" />
         <qualifier value="main" type="org.springframework.beans.factory.annotation.Qualifier"/>
     </bean>
 
-    <bean id="pcDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
-        <property name="sessionFactory" ref="pcSessionFactory"/>
-    </bean>
-
-    <bean id="whDAO" class="cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO">
-        <property name="sessionFactory" ref="pcSessionFactory"/>
+    <bean id="paxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
+        <property name="sessionFactory" ref="mainSessionFactory"/>
+        <property name="maxHits" value="${maxSearchHitsPerPage}"/>
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>

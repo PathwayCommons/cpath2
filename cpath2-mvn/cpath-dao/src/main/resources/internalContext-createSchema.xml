@@ -25,6 +25,7 @@
 			<prop key="hibernate.hbm2ddl.auto">create</prop>
 			<prop key="hibernate.search.default.directory_provider">org.hibernate.search.store.RAMDirectoryProvider</prop>
 			<prop key="hibernate.search.indexing_strategy">manual</prop>
+			<prop key="hibernate.cache.use_second_level_cache">false</prop>
 		  </props>
         </property>
         <property name="annotatedClasses">
