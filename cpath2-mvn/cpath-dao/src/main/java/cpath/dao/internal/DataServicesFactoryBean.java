@@ -421,6 +421,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
     	properties.put("hibernate.search.default.indexBase", CPathSettings.getHomeDir()+File.separator+db);
     	properties.put("hibernate.search.default.directory_provider", "filesystem");
     	properties.put("hibernate.search.indexing_strategy", "manual");
+    	properties.put("hibernate.cache.use_second_level_cache", "false");
     	
 		MySessionFactoryBean sfb = new MySessionFactoryBean(properties);
     	SessionFactory sessionFactory = sfb.getObject();
