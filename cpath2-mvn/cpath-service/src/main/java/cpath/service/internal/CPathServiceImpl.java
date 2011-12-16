@@ -322,7 +322,7 @@ public class CPathServiceImpl implements CPathService {
 			OutputStream nodeStream = new ByteArrayOutputStream();
 			sic.writeInteractionsInSIFNX(
 					m, edgeStream, nodeStream,
-					Arrays.asList("Entity/displayName", "Entity/xref:UnificationXref", "Entity/xref:RelationshipXref"),
+					Arrays.asList("EntityReference/displayName", "EntityReference/xref:UnificationXref", "EntityReference/xref:RelationshipXref"),
 					Arrays.asList("Interaction/dataSource/displayName", "Interaction/xref:PublicationXref"), 
 					true);
 			String edgeColumns = "PARTICIPANT_A\tINTERACTION_TYPE\tPARTICIPANT_B\tINTERACTION_DATA_SOURCE\tINTERACTION_PUBMED_ID\n";
