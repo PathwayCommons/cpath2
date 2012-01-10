@@ -97,15 +97,15 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	public final static String[] ALL_FIELDS =
 		{
-			SEARCH_FIELD_AVAILABILITY,
-			SEARCH_FIELD_COMMENT,
-			SEARCH_FIELD_KEYWORD,
-			SEARCH_FIELD_NAME,
-			SEARCH_FIELD_TERM,
-			SEARCH_FIELD_XREF_DB,
-			SEARCH_FIELD_XREF_ID,
-			// not used/exist -
-			//SEARCH_FIELD_ID, // do NOT search in RDFId!
+			"availability",
+			"comment",
+			"keyword",
+			"name",
+			"term",
+			"xrefdb",
+			"xrefid",
+			"ecnumber",
+			"sequence",
 		};
 
 	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
