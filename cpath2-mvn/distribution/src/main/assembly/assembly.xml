@@ -1,0 +1,68 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
+  <id>all</id>
+    
+  <formats>    
+    <format>dir</format>
+  </formats>   
+  
+  <fileSets>
+    <fileSet>
+	  <directory>src/main/etc</directory>
+	  <fileMode>0644</fileMode>
+	  <outputDirectory></outputDirectory>
+	  <includes>
+	  	<include>*.properties</include>
+	  	<include>*.txt</include>
+	  	<include>*.xml</include>
+	  </includes>
+    </fileSet>
+    <fileSet>
+	  <directory>src/main/etc/bin</directory>
+	  <outputDirectory></outputDirectory>
+	  <fileMode>0755</fileMode>
+    </fileSet>
+    <fileSet>
+	  <directory>src/main/etc/tmp</directory>
+	  <outputDirectory>tmp</outputDirectory>
+	  <fileMode>0644</fileMode>
+    </fileSet>
+  </fileSets>
+   
+  <dependencySets>
+    <dependencySet>
+      <includes>
+        <include>*:cpath-webdocs:war</include>
+      </includes>
+      <outputDirectory></outputDirectory>
+      <outputFileNameMapping>cpath2-demo.war</outputFileNameMapping>
+      <unpack>false</unpack>
+    </dependencySet>
+    <dependencySet>
+      <includes>
+        <include>*:cpath-web-service:war</include>
+      </includes>
+      <outputDirectory></outputDirectory>
+      <outputFileNameMapping>cpath2.war</outputFileNameMapping>
+      <unpack>false</unpack>
+    </dependencySet>
+    <dependencySet>
+      <includes>
+        <include>*:cpath-admin:jar:jar-with-dependencies</include>
+      </includes>
+      <outputDirectory></outputDirectory>
+	  <outputFileNameMapping>cpath-admin.jar</outputFileNameMapping>
+      <unpack>false</unpack>
+    </dependencySet>
+        <dependencySet>
+      <includes>
+        <include>*:cpath-service:jar:jar-with-dependencies</include>
+      </includes>
+      <outputDirectory></outputDirectory>
+	  <outputFileNameMapping>cpath-service.jar</outputFileNameMapping>
+      <unpack>false</unpack>
+    </dependencySet>
+  </dependencySets>
+   
+</assembly>

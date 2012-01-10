@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema version="1.0" targetNamespace="http://pathwaycommons.org/cpath2/1.0/help" xmlns:tns="http://pathwaycommons.org/cpath2/1.0/help" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="help" type="tns:Help"/>
+
+  <xs:complexType name="Help">
+    <xs:sequence>
+      <xs:element name="example" type="xs:string" minOccurs="0"/>
+      <xs:element name="id" type="xs:string" minOccurs="0"/>
+      <xs:element name="info" type="xs:string" minOccurs="0"/>
+      <xs:element name="members" type="tns:Help" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="output" type="xs:string" minOccurs="0"/>
+      <xs:element name="title" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
+
