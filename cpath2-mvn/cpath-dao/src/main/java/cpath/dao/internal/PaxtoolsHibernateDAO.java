@@ -28,42 +28,6 @@
  **/
 package cpath.dao.internal;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.queryParser.MultiFieldQueryParser;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.search.Explanation;
-import org.apache.lucene.util.Version;
-import org.biopax.paxtools.impl.BioPAXElementImpl;
-import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.BioPAXFactory;
-import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.BioSource;
-import org.biopax.paxtools.model.level3.Complex;
-import org.biopax.paxtools.model.level3.Entity;
-import org.biopax.paxtools.model.level3.EntityReference;
-import org.biopax.paxtools.model.level3.Named;
-import org.biopax.paxtools.model.level3.PhysicalEntity;
-import org.biopax.paxtools.model.level3.Provenance;
-import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
-import org.biopax.paxtools.model.level3.RelationshipXref;
-import org.biopax.paxtools.model.level3.SequenceEntityReference;
-import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
-import org.biopax.paxtools.model.level3.XReferrable;
-import org.biopax.paxtools.model.level3.Xref;
-import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
-import org.biopax.paxtools.controller.*;
-import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
-import org.biopax.paxtools.io.BioPAXIOHandler;
-import org.biopax.paxtools.io.SimpleIOHandler;
-import org.hibernate.*;
-import org.hibernate.search.*;
-import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.*;
-
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
@@ -72,9 +36,39 @@ import cpath.dao.filters.SearchFilterRange;
 import cpath.service.jaxb.SearchHitType;
 import cpath.service.jaxb.SearchResponseType;
 import cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.queryParser.MultiFieldQueryParser;
+import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.search.Explanation;
+import org.apache.lucene.util.Version;
+import org.biopax.paxtools.controller.*;
+import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
+import org.biopax.paxtools.hql.HQLPropertyAccessor;
+import org.biopax.paxtools.impl.BioPAXElementImpl;
+import org.biopax.paxtools.io.BioPAXIOHandler;
+import org.biopax.paxtools.io.SimpleIOHandler;
+import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.BioPAXFactory;
+import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
+import org.hibernate.*;
+import org.hibernate.search.FullTextQuery;
+import org.hibernate.search.FullTextSession;
+import org.hibernate.search.Search;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.OutputStream;
 import java.util.*;
-import java.io.*;
 
 import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
 
@@ -110,6 +104,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
 	private SessionFactory sessionFactory;
+
+
+    private Map<PropertyEditor,HQLPropertyAccessor> editor2Accessor;
+    HQLOrderedFetcher fetcher = new HQLOrderedFetcher(this,true);
 	private final Map<String, String> nameSpacePrefixMap;
 	private final BioPAXLevel level;
 	private final BioPAXFactory factory;
@@ -151,9 +149,23 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				return bioPAXElements;
 			}
 		};
-	}
 
-	// get/set methods used by spring
+        initializeEditor2HQLMap();
+    }
+
+    private void initializeEditor2HQLMap() 
+    {
+        editor2Accessor = new HashMap<PropertyEditor, HQLPropertyAccessor>();
+        Iterator<PropertyEditor> iterator = SimpleEditorMap.get(level).iterator();
+        while (iterator.hasNext()) 
+        {
+            PropertyEditor editor =  iterator.next();
+            this.editor2Accessor.put(editor, new HQLPropertyAccessor(editor));
+        }
+        
+    }
+
+    // get/set methods used by spring
 	public SessionFactory getSessionFactory() {
 		return sessionFactory;
 	}
@@ -733,8 +745,19 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		return toReturn; // null means no such element
 	}
 	
-	
-	@Override
+	@Transactional(propagation=Propagation.REQUIRED)
+	public Set getByProperty(PropertyEditor editor, Set<? extends BioPAXElement> values)
+	{
+            HQLPropertyAccessor accessor  = this.editor2Accessor.get(editor);
+            accessor.init(session());
+
+            return accessor.getValueFromBeans(values);
+	}
+
+    
+    
+    
+    @Override
 	public BioPAXLevel getLevel()
 	{
 		return level;
@@ -764,6 +787,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		Set<T> toReturn = new HashSet<T>(results);
 		return toReturn;
 	}
+
 
 
 	@Override
@@ -822,6 +846,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * by providing one or a few IDs... Also implemented here is 
 	 * that the Fetcher/traverser does not follow BioPAX
 	 * property 'nextStep', which otherwise could lead to infinite loops.
+     *
+     * //TODO this is heavily affected by N+1 selects. Use a 1property1query breadth first approach with HQLAccessors
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRES_NEW)
@@ -910,8 +936,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				log.debug("runAnalysis: running auto-complete...");
 			Completer c = new Completer(simpleIO.getEditorMap());
 			result = c.complete(result, null); //null - because the (would be) model is never used there anyway
-			if(log.isDebugEnabled())
-				log.debug("runAnalysis: cloning...");
+            if(log.isDebugEnabled())
+                log.debug("runAnalysis:Pre-Clone fetch..");
+            this.fetch(result);
+
+            if(log.isDebugEnabled())
+                log.debug("runAnalysis: cloning...");
 			Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
 			Model submodel = cln.clone(null, result);
 			
@@ -1045,6 +1075,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public String getXmlBase() {
 		return xmlBase;
 	}
+    
+    public Set<BioPAXElement> fetch(Set<? extends BioPAXElement> elements)
+    {
+       return this.fetcher.fetch(elements);
+    }
+
 }
 
 
