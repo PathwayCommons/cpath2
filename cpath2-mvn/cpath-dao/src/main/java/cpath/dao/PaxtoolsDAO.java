@@ -28,6 +28,7 @@
  **/
 package cpath.dao;
 
+import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
@@ -38,6 +39,7 @@ import java.util.Collection;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
+import java.util.Set;
 
 /**
  * BioPAX data access (both model and repository).
@@ -144,5 +146,11 @@ public interface PaxtoolsDAO extends Model {
      * @return
      */
     Model runAnalysis(Analysis analysis, Object... args);
+
+
+    public Set getByProperty(PropertyEditor editor, Set<? extends BioPAXElement> values);
+
+    public Set<BioPAXElement> fetch(Set<? extends BioPAXElement> elements);
+
     
 }
