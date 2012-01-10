@@ -28,9 +28,17 @@
  **/
 package cpath.dao.internal;
 
+import org.biopax.paxtools.controller.PropertyEditor;
+import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.io.*;
+
+import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.hql.*;
+import org.biopax.paxtools.model.level3.*;
+import org.hibernate.LazyInitializationException;
+import org.hibernate.SessionFactory;
 import org.junit.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -38,39 +46,75 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 
 import cpath.dao.PaxtoolsDAO;
+import org.springframework.orm.hibernate3.HibernateSystemException;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
-public class PaxtoolsHibernateDAOMoreTest {    
+public class PaxtoolsHibernateDAOMoreTest {
     @Test
-	public void testImportExportRead() throws IOException {
-    	SimpleIOHandler io = new SimpleIOHandler(BioPAXLevel.L3);
-    	DataServicesFactoryBean.createSchema("cpath2_testpc");
-    	ApplicationContext context = new ClassPathXmlApplicationContext(
-				"classpath:testContext-pcDAO.xml");
-    	PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO) context.getBean("pcDAO");
-    	// import (not so good) pathway data
-		Resource input = (new DefaultResourceLoader()).getResource("classpath:biopax-level3-test.owl");
-		paxtoolsDAO.importModel(input.getFile());
-		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
-		assertEquals(55, paxtoolsDAO.getObjects().size()); 
-		// there was a bug in paxtools (due to Stoichiometry.hashCode() override)!
-		
-		// export from the DAO to OWL
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		paxtoolsDAO.exportModel(outputStream);
-		String exported = outputStream.toString();
-		//System.out.println("\n\n*********\n\n" + exported);
-		// read it back
-		io.mergeDuplicates(true);
-		Model model = io.convertFromOWL(new ByteArrayInputStream(exported.getBytes("UTF-8")));
-		assertNotNull(model);
-		assertTrue(model.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
-		assertEquals(55, model.getObjects().size());
-	}
+    public void testImportExportRead() throws IOException {
+        SimpleIOHandler io = new SimpleIOHandler(BioPAXLevel.L3);
+        DataServicesFactoryBean.createSchema("cpath2_testpc");
+        ApplicationContext context = new ClassPathXmlApplicationContext(
+                "classpath:testContext-pcDAO.xml");
+        PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO) context.getBean("pcDAO");
+        // import (not so good) pathway data
+        Resource input = (new DefaultResourceLoader()).getResource("classpath:biopax-level3-test.owl");
+        paxtoolsDAO.importModel(input.getFile());
+        assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
+        assertEquals(55, paxtoolsDAO.getObjects().size());
+        // there was a bug in paxtools (due to Stoichiometry.hashCode() override)!
+
+        // export from the DAO to OWL
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        paxtoolsDAO.exportModel(outputStream);
+        String exported = outputStream.toString();
+        //System.out.println("\n\n*********\n\n" + exported);
+        // read it back
+        io.mergeDuplicates(true);
+        Model model = io.convertFromOWL(new ByteArrayInputStream(exported.getBytes("UTF-8")));
+
+        testFetch(context, paxtoolsDAO);
+
+
+        assertNotNull(model);
+        assertTrue(model.containsID("http://www.biopax.org/examples/myExample#Stoichiometry_58"));
+        assertEquals(55, model.getObjects().size());
+    }
+
+    @Transactional(propagation = Propagation.REQUIRED)
+    private void accesswithHQL(ApplicationContext context, PaxtoolsDAO paxtoolsDAO) {
+        Iterator<PropertyEditor> editors = SimpleEditorMap.L3.iterator();
+        while (editors.hasNext()) {
+            PropertyEditor editor = editors.next();
+            Set byProperty = paxtoolsDAO.getByProperty(editor,
+                    paxtoolsDAO.getObjects(editor.getDomain()));
+        }
+        
+    }
+    @Transactional(propagation = Propagation.REQUIRED)
+    private void testFetch(ApplicationContext context, PaxtoolsDAO paxtoolsDAO) {
+        Iterator<PropertyEditor> editors = SimpleEditorMap.L3.iterator();
+        Set<Pathway> objects = paxtoolsDAO.getObjects(Pathway.class);
+        for (Pathway object : objects)
+        {
+
+            HashSet<BioPAXElement> seed = new HashSet<BioPAXElement>();
+            seed.add(object);
+            Set<BioPAXElement> fetch = paxtoolsDAO.fetch(seed);
+            System.out.println("fetch = " + fetch);
+    }
+
+    }
 
 }
+

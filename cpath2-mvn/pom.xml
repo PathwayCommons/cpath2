@@ -51,7 +51,7 @@
         <spring.version>3.0.5.RELEASE</spring.version>
         <slf4j.version>1.5.8</slf4j.version>
         <hibernate.version>3.6.3.Final</hibernate.version>
-        <paxtools.version>4.0.1</paxtools.version>
+        <paxtools.version>4.1.0-SNAPSHOT</paxtools.version>
         <validator.version>2.0.0beta6</validator.version>
 	</properties>
 
@@ -269,6 +269,7 @@
 			<artifactId>paxtools-core</artifactId>
 			<version>${paxtools.version}</version>
 		</dependency>
+
 		<dependency>
     		<groupId>org.bridgedb</groupId>
     		<artifactId>org.bridgedb</artifactId>
