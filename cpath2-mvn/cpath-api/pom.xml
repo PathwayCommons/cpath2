@@ -4,7 +4,7 @@
 
 	<groupId>pathwaycommons.cpath</groupId>
 	<artifactId>cpath-api</artifactId>
-	<version>4.0.0-SNAPSHOT</version>
+	<version>5.0.0-SNAPSHOT</version>
 	<name>CPath2 API</name>
 	<description>CPath2 enumerations, beans (JAXB), XML schema, and utility classes</description>
 	<url>http://www.pathwaycommons.org</url>

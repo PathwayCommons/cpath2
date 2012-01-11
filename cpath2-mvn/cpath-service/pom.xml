@@ -5,7 +5,6 @@
     <groupId>pathwaycommons.cpath</groupId>
     <version>3.1.0-SNAPSHOT</version>
   </parent>
-  <groupId>pathwaycommons.cpath</groupId>
   <artifactId>cpath-service</artifactId>
   <name>cPath2 Service Tier</name>
   <description>CPath2 services that can be used both in web and console applications.</description>
@@ -36,7 +35,7 @@
   	<dependency>
   		<groupId>pathwaycommons.cpath</groupId>
   		<artifactId>cpath-api</artifactId>
-  		<version>4.0.0-SNAPSHOT</version>
+  		<version>5.0.0-SNAPSHOT</version>
   	</dependency>
   </dependencies>
   

@@ -31,7 +31,6 @@ package cpath.dao;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
-import cpath.dao.filters.SearchFilter;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.TraverseResponse;
 
@@ -54,37 +53,22 @@ public interface PaxtoolsDAO extends Model {
 	 */
 	void importModel(File biopaxFile) throws FileNotFoundException;
 
-		
+	
+
 	 /**
-	 * Returns the list of BioPAX elements that match the query 
-	 * and satisfy the filters if any defined.
+	 * Full-text search for BioPAX elements.
 	 * 
-     * @param query String
+     * @param query String (keywords or Lucene query string)
 	 * @param page page number (when the number of hits exceeds a threshold)
 	 * @param filterByType - class filter for the full-text search (actual effect may depend on the concrete implementation!)
-	 * @param extraFilters custom filters (implies AND in between) that apply after the full-text query has returned;
-	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
+	 * @param datasources  - filter by datasource(s)
+	 * @param organisms - filter by organism(s)
 	 * @return ordered by the element's relevance list of hits
-     */
-	SearchResponse findElements(String query, int page,
-    		Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters);        
+    */
+   SearchResponse search(String query, int page,
+   		Class<? extends BioPAXElement> filterByType, String[] dsources, String[] organisms);
 
     
-	 /**
-	 * Returns the list of BioPAX entities that 
-	 * either match the query by themselves or 
-	 * who's child utility class elements do 
-	 * (filters apply).
-	 * 
-     * @param query String
-	 * @param page page number (when the number of hits exceeds a threshold)
-	 * @param filterByType - class filter for the full-text search (actual effect may depend on the concrete implementation!)
-	 * @param extraFilters custom filters (implies AND in between) that apply after the full-text query has returned;
-	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
-	 * @return ordered by the element's relevance list of hits
-     */
-    SearchResponse findEntities(String query, int page,
-    		Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters);
     
     /**
      * Exports the entire model (if no IDs are given) 
@@ -166,4 +150,9 @@ public interface PaxtoolsDAO extends Model {
      * @return source element uri, path, and corresponding values
      */
     TraverseResponse traverse(String propertyPath, String... uris);
+    
+    /**
+     * Create or re-build the full-text index.
+     */
+    void index();
 }

@@ -51,7 +51,6 @@ import com.googlecode.ehcache.annotations.Cacheable;
 
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.filters.SearchFilter;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
@@ -118,20 +117,20 @@ public class CPathServiceImpl implements CPathService {
 	 */	
 	@Cacheable(cacheName = "findElementsCache")
 	@Override
-	public ServiceResponse findElements(String queryStr, 
-			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
+	public ServiceResponse search(String queryStr, 
+			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms) 
 	{
 		ServiceResponse serviceResponse;
 		
 		try {
 			// do search
-			SearchResponse hits = mainDAO.findElements(queryStr, page, biopaxClass, searchFilters);
+			SearchResponse hits = mainDAO.search(queryStr, page, biopaxClass, dsources, organisms);
 			if(hits.isEmpty())
 				serviceResponse = NO_RESULTS_FOUND.errorResponse("No hits");
 			else {
-				hits.setComment("Find '" + queryStr  + "' in " + 
+				hits.setComment("Search '" + queryStr  + "' in " + 
 					((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName()) 
-					+ "; filters: " + Arrays.toString(searchFilters));
+					+ "; ds: " + Arrays.toString(dsources)+ "; org.: " + Arrays.toString(organisms));
 				serviceResponse = hits;
 			}
 			
@@ -141,33 +140,7 @@ public class CPathServiceImpl implements CPathService {
 		
 		return serviceResponse;
 	}
-	
-
-	@Cacheable(cacheName = "findEntitiesCache")
-	@Override
-	public ServiceResponse findEntities(String queryStr, 
-			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
-	{
-		ServiceResponse serviceResponse;
-		try {
-			// do search
-			SearchResponse hits = mainDAO.findEntities(queryStr, page, biopaxClass, searchFilters); 
-			if(hits.isEmpty())
-				serviceResponse = NO_RESULTS_FOUND.errorResponse("No (Entity) hits");
-			else {
-				hits.setComment("Find (Entity) '" + queryStr  + "' in " + 
-				((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName()) 
-				+ "; filters: " + Arrays.toString(searchFilters));
-				serviceResponse = hits;
-			}
-			
-		} catch (Exception e) {
-			serviceResponse = INTERNAL_ERROR.errorResponse(e);
-		}
 		
-		return serviceResponse;
-	}
-	
 
 	/*
      * (non-Javadoc)

@@ -338,12 +338,12 @@ public class PremergeImpl implements Premerge {
 		validation.setNormalize(true);
 		// use special normalizer options
 		NormalizerOptions normalizerOptions = new NormalizerOptions();
-		normalizerOptions.setFixDisplayName(true);
-		normalizerOptions.setInferPropertyDataSource(true);
-		normalizerOptions.setInferPropertyOrganism(true);
-		normalizerOptions.setGenerateRelatioshipToOrganismXrefs(true);
+		normalizerOptions.setFixDisplayName(true); // important
+		normalizerOptions.setInferPropertyDataSource(true); // important
+		normalizerOptions.setInferPropertyOrganism(true); // important
+		normalizerOptions.setGenerateRelatioshipToOrganismXrefs(false); //not required anymore (used to be a key to search results filtering...)
 		normalizerOptions.setGenerateRelatioshipToPathwayXrefs(true); 
-		normalizerOptions.setGenerateRelatioshipToInteractionXrefs(false); //no
+		normalizerOptions.setGenerateRelatioshipToInteractionXrefs(false); //not required
 		validation.setNormalizerOptions(normalizerOptions);
 		// collect both errors and warnings
 		validation.setThreshold(Behavior.WARNING); // means - all err./warn.

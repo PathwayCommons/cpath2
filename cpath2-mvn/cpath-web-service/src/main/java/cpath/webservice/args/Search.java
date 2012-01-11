@@ -64,4 +64,22 @@ public class Search {
 		this.page = page;
 	}
 
+	public String[] datasources() {
+		String[] dsources = new String[datasource.length];
+		int i = 0;
+		for(PathwayDataSource d : datasource) {
+			dsources[i++] = d.asDataSource().getSystemCode();
+		}
+		return dsources;
+	}
+	
+	public String[] organisms() {
+		String[] orgs = new String[organism.length];
+		int i = 0;
+		for(OrganismDataSource d : organism) {
+			orgs[i++] = d.asDataSource().getSystemCode();
+		}
+		return orgs;
+	}
+	
 }

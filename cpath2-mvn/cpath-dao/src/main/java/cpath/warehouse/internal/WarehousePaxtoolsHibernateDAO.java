@@ -161,7 +161,7 @@ public class WarehousePaxtoolsHibernateDAO extends PaxtoolsHibernateDAO implemen
 			}
 			
 			// generate "normalized" ID, and (unlike it's done in the normalizer) we here 
-			// ignore xref.idVersion!!! (TODO think of, e.g., unoprot isoforms, etc. later)
+			// ignore xref.idVersion!!! (TODO think of, e.g., uniprot isoforms, etc. later)
 			String xurn = Normalizer.generateURIForXref(xref.getDb(), 
 				xref.getId(), null, (Class<? extends Xref>) xref.getModelInterface());
 			
