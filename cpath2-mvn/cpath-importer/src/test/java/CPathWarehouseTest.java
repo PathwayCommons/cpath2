@@ -108,7 +108,8 @@ public class CPathWarehouseTest {
 		
 		factory = BioPAXLevel.L3.getDefaultFactory();
 		
-		DataServicesFactoryBean.rebuildIndex("cpath2_test"); //molecules are in the same test db
+		//DataServicesFactoryBean.rebuildIndex("cpath2_test"); //molecules are in the same test db
+		((PaxtoolsDAO)proteins).index();
 	}
 
 	@Test
@@ -140,7 +141,7 @@ public class CPathWarehouseTest {
 	@Test
 	public void testSearchForProteinReference() {
 		// search with a secondary (RefSeq) accession number
-		SearchResponse resp =  ((PaxtoolsDAO)proteins).findElements("NP_619650", 0, RelationshipXref.class);
+		SearchResponse resp =  ((PaxtoolsDAO)proteins).search("NP_619650", 0, RelationshipXref.class, null, null);
 		Collection<SearchHit> prs = resp.getSearchHit();
 		assertFalse(prs.isEmpty());
 		Collection<String> prIds = new HashSet<String>();

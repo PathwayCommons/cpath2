@@ -35,6 +35,7 @@ import javax.sql.DataSource;
 
 import cpath.config.CPathSettings;
 import cpath.dao.DataServices;
+import cpath.dao.PaxtoolsDAO;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -97,12 +98,10 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	public void setMetaDb(String db) {this.metaDb = db;}
 	public String getMetaDb() {return metaDb;}
 
-
 	private String mainDb;
 	@Value("${main.db}")
 	public void setMainDb(String db) {this.mainDb = db;}
 	public String getMainDb() {return mainDb;}
-
 
 	private String proteinsDb;
 	@Value("${proteins.db}")
@@ -313,7 +312,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
     }
     
     
-    private static void dropFulltextIndex(String dbName) {
+    public static void dropFulltextIndex(String dbName) {
 		// drop existing index dir.
 		File dir = new File(CPathSettings.getHomeDir() + File.separator + dbName);
 		if(log.isInfoEnabled())
@@ -328,6 +327,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
      * (actual connection parameters are set 
      * from system/environment properties)
      * 
+     * @deprecated use {@link PaxtoolsDAO#index()} instead
      */
     public static void rebuildMainIndex() {
     	ApplicationContext ctx = 
@@ -341,6 +341,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
      * (actual connection parameters are set 
      * from system/environment properties)
      * 
+     * @deprecated use {@link PaxtoolsDAO#index()} instead
      */
     public static void rebuildProteinsIndex() {
     	ApplicationContext ctx = 
@@ -354,6 +355,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
      * (actual connection parameters are set 
      * from system/environment properties)
      * 
+     * @deprecated use {@link PaxtoolsDAO#index()} instead
      */
     public static void rebuildMoleculesIndex() {
     	ApplicationContext ctx = 
@@ -368,6 +370,8 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
      * system properties)
      * 
      * @param db
+     * 
+     * @deprecated use {@link PaxtoolsDAO#index()} instead
      */
     public static void rebuildIndex(String db) {
     	ApplicationContext ctx = 
@@ -405,6 +409,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
      * all other/extra index fields and information (e.g., manually generated 
      * using Lucene/Search API) will be lost (has to be re-created again)!
      * 
+     * @deprecated use {@link PaxtoolsDAO#index()} instead
      */
     public void createIndex(String db) {
     	// delete existing index dir
@@ -436,10 +441,9 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		try {
 			fullTextSession.createIndexer()
 				.purgeAllOnStart(true)
-				.batchSizeToLoadObjects( 5 )
+				.batchSizeToLoadObjects( 4 )
 				.threadsForSubsequentFetching( 1 )
 				.threadsToLoadObjects( 1 )
-//				.limitIndexedObjectsTo(10000)
 //				.optimizeOnFinish(true)
 				.startAndWait();
 		} catch (Exception e) {

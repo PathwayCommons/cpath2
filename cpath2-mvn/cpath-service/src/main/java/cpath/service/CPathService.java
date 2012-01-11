@@ -33,7 +33,6 @@ import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.validator.result.ValidatorResponse;
 
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.filters.SearchFilter;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 
@@ -54,7 +53,6 @@ import cpath.service.jaxb.ServiceResponse;
  * @author rodche
  *
  */
-//TODO get rid of the Map, replace with the ServiceResponse bean!
 public interface CPathService {
 
 	//--- Graph queries ---------------------------------------------------------------------------|
@@ -80,35 +78,17 @@ public interface CPathService {
 	 * 
 	 * 
 	 * @param queryStr
-	 * @param page TODO
+	 * @param page search results page no.
 	 * @param biopaxClass
-	 * @param filterValues can be arrays of URIs of organisms, data sources, etc.
+	 * @param dsources URIs of data sources
+	 * @param organisms URIs of organisms
 	 * @return
 	 * 
-	 * @see PaxtoolsDAO#find(String, Class[], SearchFilter[]...)
+	 * @see PaxtoolsDAO#search(String, Class[], String[], String[])
 	 */
-	ServiceResponse findElements(String queryStr, 
-			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters);
+	ServiceResponse search(String queryStr, 
+			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms);
 
-	
-	/**
-	 * Full-text search for the BioPAX Entity class elements. 
-	 * Returns the map result that contains the list of elements
-	 * 
-	 * @see PaxtoolsDAO#findEntities(String, int, Class, SearchFilter...)
-	 * 
-	 * 
-	 * @param queryStr
-	 * @param page TODO
-	 * @param biopaxClass
-	 * @param filterValues can be arrays of URIs of organisms, data sources, etc.
-	 * @return
-	 * 
-	 * @see PaxtoolsDAO#find(String, Class[], SearchFilter[]...)
-	 */
-	ServiceResponse findEntities(String queryStr, 
-			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters);
-	
 	
 	/**
 	 * Generates the BioPAX validation report for the pathway data provider:
