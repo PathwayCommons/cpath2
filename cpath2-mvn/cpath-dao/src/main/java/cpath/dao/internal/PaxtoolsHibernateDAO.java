@@ -79,47 +79,21 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	public final static String[] DEFAULT_SEARCH_FIELDS =
 		{
+			// auto-generated index fields (from annotations)
 			"availability",
 			"comment",
-			"keyword",
+			"keyword", // incl. names, comments of child el. 
 			"name",
 			"term",
 			"xrefdb",
 			"xrefid",
 			"ecnumber",
 			"sequence",
-			"xref", // stores identifiers only
-			"participant.comment",
-			"participant.name",
-			"participant.xref",
-			"participant.evidence.comment",
-			"participant.evidence.xref",
-			"pathwayComponent.comment",
-			"pathwayComponent.name",
-			"pathwayComponent.xref",
-			"pathwayComponent.evidence.comment",
-			"pathwayComponent.evidence.xref",
-			"component.comment",
-			"component.name",
-			"component.xref",
-			"entityReferenceX.xref",
-			"entityReferenceX.name",
-			"entityReferenceX.comment",
-			"entityReferenceX.memberEntityReference.xref",
-			"entityReferenceX.memberEntityReference.name",
-			"entityReferenceX.memberEntityReference.comment",
-			"entityReferenceX.memberEntityReference.memberEntityReference.xref",
-			"entityReferenceX.memberEntityReference.memberEntityReference.name",
-			"entityReferenceX.memberEntityReference.memberEntityReference.comment",
-			"memberEntityReference.xref",
-			"memberEntityReference.name",
-			"memberEntityReference.comment",
-			"memberEntityReference.memberEntityReference.xref",
-			"memberEntityReference.memberEntityReference.name",
-			"memberEntityReference.memberEntityReference.comment",
-			"evidence.comment",
-			"evidence.xref",
-			// other fields: *organism, *datasource, *RDFId are used for filtering only!
+			"xref", // stores ids of child xrefs
+			// filter fields -
+			"organism",
+			"dataSource",
+			"process"
 		};
 
 	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
@@ -896,7 +870,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Transactional
 	public void index() {
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		
 		// Manual indexing
 		fullTextSession.setFlushMode(FlushMode.MANUAL);
 		fullTextSession.setCacheMode(CacheMode.IGNORE);
@@ -905,9 +878,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		    .setFetchSize(IDX_BATCH_SIZE)
 		    .scroll( ScrollMode.FORWARD_ONLY );
 		int index = 0;
+		ModelUtils mu = new ModelUtils(this);
 		while( results.next() ) {
 		    index++;
-		    fullTextSession.index( results.get(0) ); //index each element
+		    BioPAXElement bpe = (BioPAXElement) results.get(0);
+		    fullTextSession.index( bpe ); //index each element
 		    if (index % IDX_BATCH_SIZE == 0) {
 		        fullTextSession.flushToIndexes(); //apply changes to indexes
 		        fullTextSession.clear(); //free memory since the queue is processed
