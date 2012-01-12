@@ -40,6 +40,11 @@ import cpath.dao.DataServices;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
+import org.biopax.paxtools.model.BioPAXElement;
+import org.hibernate.CacheMode;
+import org.hibernate.FlushMode;
+import org.hibernate.ScrollMode;
+import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -435,18 +440,41 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		Session ses = sessionFactory.openSession();
 		FullTextSession fullTextSession = Search.getFullTextSession(ses);
 		Transaction tx = fullTextSession.beginTransaction();
-		try {
-			fullTextSession.createIndexer()
-				.purgeAllOnStart(true)
-				.batchSizeToLoadObjects( 10 )
-				.threadsForSubsequentFetching( 1 )
-				.threadsToLoadObjects( 1 )
-//				.limitIndexedObjectsTo(10000)
-//				.optimizeOnFinish(true)
-				.startAndWait();
-		} catch (Exception e) {
-			throw new RuntimeException("Index re-build is interrupted.", e);
-		}	
+//		try {
+//			fullTextSession.createIndexer()
+//				.purgeAllOnStart(true)
+//				.batchSizeToLoadObjects( 10 )
+//				.threadsForSubsequentFetching( 1 )
+//				.threadsToLoadObjects( 1 )
+////				.optimizeOnFinish(true)
+//				.startAndWait();
+//		} catch (Exception e) {
+//			throw new RuntimeException("Index re-build is interrupted.", e);
+//		}	
+		
+// Begin manual indexing
+		fullTextSession.setFlushMode(FlushMode.MANUAL);
+		fullTextSession.setCacheMode(CacheMode.IGNORE);
+		//Scrollable results will avoid loading too many objects in memory
+		ScrollableResults results = fullTextSession.createCriteria( BioPAXElementImpl.class )
+		    .setFetchSize(200)
+		    .scroll( ScrollMode.FORWARD_ONLY );
+		int index = 0;
+		while( results.next() ) {
+		    index++;
+		    BioPAXElement bpe = (BioPAXElement) results.get(0);
+		    fullTextSession.index( bpe ); //index each element
+		    if (index % 200 == 0) {
+		        fullTextSession.flushToIndexes(); //apply changes to indexes
+		        fullTextSession.clear(); //free memory since the queue is processed
+		        if(log.isDebugEnabled())
+					log.debug("Indexed " + index);
+		    }
+		}
+        fullTextSession.flushToIndexes();
+        fullTextSession.clear();
+//
+        
 		tx.commit();
 		fullTextSession.close();
 		sessionFactory.close();
