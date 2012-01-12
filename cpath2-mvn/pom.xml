@@ -43,6 +43,7 @@
 		<module>distribution</module>
 		<module>cpath-service</module>
 		<module>cpath-schema</module>
+		<module>cpath-client</module>
 	</modules>
 
 	<properties>
