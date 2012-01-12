@@ -878,7 +878,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		    .setFetchSize(IDX_BATCH_SIZE)
 		    .scroll( ScrollMode.FORWARD_ONLY );
 		int index = 0;
-		ModelUtils mu = new ModelUtils(this);
 		while( results.next() ) {
 		    index++;
 		    BioPAXElement bpe = (BioPAXElement) results.get(0);
