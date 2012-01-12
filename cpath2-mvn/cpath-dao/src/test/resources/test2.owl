@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns="http://www.biopax.org/examples/myExample2#"
+	xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:bp="http://www.biopax.org/release/biopax-level3.owl#"
+	xmlns:p1="http://www.owl-ontologies.com/assert.owl#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+	xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+	xml:base="http://www.biopax.org/examples/myExample2#">
+	<owl:Ontology rdf:about="">
+		<owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl#" />
+	</owl:Ontology>
+
+	<bp:Protein rdf:ID="Protein_A">
+		<bp:entityReference rdf:resource="urn:miriam:uniprot:P46880" />
+		<bp:cellularLocation rdf:resource="urn:miriam:obo.go:GO%3A0005737" />
+		<bp:displayName rdf:datatype="xsd:string">glucokinase A</bp:displayName>
+		<bp:dataSource rdf:resource="#aMAZE" />
+		<bp:comment rdf:datatype="xsd:string">Example to test paxtools/hibernate...</bp:comment>
+	</bp:Protein>
+
+	<bp:Protein rdf:ID="Protein_B">
+		<bp:entityReference rdf:resource="urn:miriam:uniprot:P46880" />
+		<bp:displayName rdf:datatype="xsd:string">glucokinase B</bp:displayName>
+		<bp:dataSource rdf:resource="#aMAZE" />
+	</bp:Protein>
+
+	<bp:ProteinReference rdf:about="urn:miriam:uniprot:P46880">
+		<bp:displayName rdf:datatype="xsd:string">glucokinase</bp:displayName>
+		<bp:standardName rdf:datatype="xsd:string">GLK</bp:standardName>
+		<bp:xref rdf:resource="urn:biopax:UnificationXref:UniProt_P46880" />
+		<bp:sequence rdf:datatype="xsd:string">MTKYALVGDVGGTNARLALCDIASGEISQAKTYSGLDYPSLEAVIRVYLEEHKVEVKDGCIAIACPITGDWVAMTNHTWAFSIAEMKKNLGFSHLEIINDFTAVSMAIPMLKKEHLIQFGGAEPVEGKPIAVYGAGTGLGVAHLVHVDKRWVSLPGEGGHVDFAPNSEEEAIILEILRAEIGHVSAERVLSGPGLVNLYRAIVKADNRLPENLKPKDITERALADSCTDCRRALSLFCVIMGRFGGNLALNLGTFGGVFIAGGIVPRFLEFFKASGFRAAFEDKGRFKEYVHDIPVYLIVHDNPGLLGSGAHLRQTLGHIL
+		</bp:sequence>
+		<bp:organism rdf:resource="urn:miriam:taxonomy:562" />
+	</bp:ProteinReference>
+
+	<bp:BioSource rdf:about="urn:miriam:taxonomy:562">
+		<bp:displayName rdf:datatype="xsd:string">Escherichia coli
+		</bp:displayName>
+		<bp:xref rdf:resource="urn:biopax:UnificationXref:Taxonomy_562" />
+	</bp:BioSource>
+
+	<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:Taxonomy_562">
+		<bp:db rdf:datatype="xsd:string">Taxonomy</bp:db>
+		<bp:id rdf:datatype="xsd:string">562</bp:id>
+	</bp:UnificationXref>
+
+	<bp:CellularLocationVocabulary rdf:about="urn:miriam:obo.go:GO%3A0005737">
+		<bp:term rdf:datatype="xsd:string">cytoplasm</bp:term>
+		<bp:xref
+			rdf:resource="urn:biopax:UnificationXref:Gene+Ontology_GO%3A0005737" />
+	</bp:CellularLocationVocabulary>
+
+	<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UniProt_P46880">
+		<bp:db rdf:datatype="xsd:string">UniProt</bp:db>
+		<bp:id rdf:datatype="xsd:string">P46880</bp:id>
+		<bp:comment rdf:datatype="xsd:string">PMID: 15608167</bp:comment>
+	</bp:UnificationXref>
+
+	<bp:Provenance rdf:ID="aMAZE">
+		<bp:displayName rdf:datatype="xsd:string">aMAZE</bp:displayName>
+	</bp:Provenance>
+
+	<bp:UnificationXref
+		rdf:about="urn:biopax:UnificationXref:Gene+Ontology_GO%3A0005737">
+		<bp:db rdf:datatype="xsd:string">Gene Ontology</bp:db>
+		<bp:id rdf:datatype="xsd:string">GO:0005737</bp:id>
+		<bp:comment rdf:datatype="xsd:string">PMID: 11483584</bp:comment>
+	</bp:UnificationXref>
+
+</rdf:RDF>
