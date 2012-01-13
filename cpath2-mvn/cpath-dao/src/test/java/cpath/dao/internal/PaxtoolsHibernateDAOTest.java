@@ -258,11 +258,10 @@ public class PaxtoolsHibernateDAOTest {
 		
 		assertTrue(list.isEmpty());
 		
-		// TODO: investigate why this started to fail
-		//resp = paxtoolsDAO.findElements("glucokinase", 0, ProteinReference.class);
-		//list = resp.getSearchHit();
-		//assertEquals(1, list.size());
-		//assertTrue(list.get(0).getUri().equals("urn:miriam:uniprot:P46880"));
+		resp = paxtoolsDAO.findElements("glucokinase", 0, ProteinReference.class);
+		list = resp.getSearchHit();
+		assertEquals(1, list.size());
+		assertTrue(list.get(0).getUri().equals("urn:miriam:uniprot:P46880"));
 		
 		
 //    	/* This precious piece of code used to be a separate test method, which
