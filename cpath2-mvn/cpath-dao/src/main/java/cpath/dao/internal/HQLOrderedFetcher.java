@@ -20,6 +20,12 @@ public class HQLOrderedFetcher extends OrderedFetcher {
     }
 
     @Override
+    public Set<BioPAXElement> fetch(Set<? extends BioPAXElement> elements)
+    {
+        return super.fetch(elements);
+    }
+
+    @Override
     protected Set getValuesFromBeans(Set<? extends BioPAXElement> elements, PropertyEditor editor)
     {
         return dao.getByProperty(editor,elements);

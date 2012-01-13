@@ -116,12 +116,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	protected MultiFieldQueryParser multiFieldQueryParser;
 	private String xmlBase;
 
+
+    private static final String refreshQuery = "SELECT DISTINCT bpe FROM L3ElementImpl as bpe WHERE bpe in(:SEED)";
+
+
 	/**
-	 *  A supplementary {@link Analysis} (algorithm) to be executed 
+	 *  A supplementary {@link Analysis} (algorithm) to be executed
 	 *  when detaching elements (element(s) as a sub-model) from this model
 	 */
 	private Analysis getTheseElements;
-	
+
 	protected PaxtoolsHibernateDAO()
 	{
 		this.level = BioPAXLevel.L3;
@@ -133,9 +137,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		this.simpleIO.mergeDuplicates(true);
 		this.simpleIO.normalizeNameSpaces(false);
 		this.multiFieldQueryParser = new MultiFieldQueryParser(
-			Version.LUCENE_31, ALL_FIELDS, 
+			Version.LUCENE_31, ALL_FIELDS,
 				new StandardAnalyzer(Version.LUCENE_31));
-		
+
 		// this simply implements how to get a list of elements from the list of URIs
 		this.getTheseElements = new Analysis() {
 			@Override
@@ -153,16 +157,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
         initializeEditor2HQLMap();
     }
 
-    private void initializeEditor2HQLMap() 
+    private void initializeEditor2HQLMap()
     {
         editor2Accessor = new HashMap<PropertyEditor, HQLPropertyAccessor>();
         Iterator<PropertyEditor> iterator = SimpleEditorMap.get(level).iterator();
-        while (iterator.hasNext()) 
+        while (iterator.hasNext())
         {
             PropertyEditor editor =  iterator.next();
             this.editor2Accessor.put(editor, new HQLPropertyAccessor(editor));
         }
-        
+
     }
 
     // get/set methods used by spring
@@ -182,15 +186,15 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	protected Session session() {
 		return sessionFactory.getCurrentSession();
 	}
-	
+
 //	//Now that were able to make MassIndexer work (in a separate class),
 //	//this older interface has been removed (worked reliably but waaay too slow!)
-//	
+//
 //	@Transactional(propagation=Propagation.REQUIRED)
 //	public void createIndex() {
 //		if(log.isInfoEnabled())
 //			log.info("Begin indexing...");
-//		
+//
 //		// manually re-index
 //		FullTextSession fullTextSession = Search.getFullTextSession(session());
 //		fullTextSession.setFlushMode(FlushMode.MANUAL);
@@ -221,7 +225,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public void setMaxHits(int maxHits) {
 		if(maxHits <= 0)
 			this.maxHits = DEFAULT_MAX_HITS;
-		else 
+		else
 			this.maxHits = maxHits;
 	}
 
@@ -237,15 +241,15 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		merge(m);
 	}
 
-	 
-	// non @Transactional here 
+
+	// non @Transactional here
 	@Override
 	public void merge(final Model model)
 	{
-		/* 
-		 * Level3 property/propertyOf ORM mapping and getters/setters 
+		/*
+		 * Level3 property/propertyOf ORM mapping and getters/setters
 		 * are to be properly implemented for this to work!
-		 * Persistence annotations must move to new setter/getter pair 
+		 * Persistence annotations must move to new setter/getter pair
 		 * that do NOT call inverse prop. 'add' methods in the setter.
 		 */
 		if(model != null && !model.getObjects().isEmpty()) {
@@ -264,28 +268,28 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			}
 			tx.commit();
 			stls.close();
-			
+
 			if (log.isDebugEnabled()) {
 				log.debug("merge(model): inserted " + i + " objects");
 			}
-			
+
 			//run batch update in a separate transaction;
 			//this saves object relationships and collections
 			update(model);
 		}
 	}
 
-	
+
 	@Transactional(propagation=Propagation.REQUIRED)
-	public void update(final Model model) 
-	{	
+	public void update(final Model model)
+	{
 		Session ses = session();
-		
+
 		int i = 0;
-		for (BioPAXElement bpe : model.getObjects()) {			
+		for (BioPAXElement bpe : model.getObjects()) {
 			// save/update
 			merge(bpe);
-			
+
 			i++;
 			if(i % BATCH_SIZE == 0) {
 				ses.flush();
@@ -295,17 +299,17 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				}
 			}
 		}
-		
+
 		if (log.isDebugEnabled()) {
 			log.debug("update(model): total merged " + i + " objects");
 		}
 	}
-	
-	
+
+
 	/**
-	 * Saves or merges the element 
+	 * Saves or merges the element
 	 * (use when it's updated or unsure if saved ever before...)
-	 * 
+	 *
 	 */
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void merge(BioPAXElement aBioPAXElement) {
@@ -313,46 +317,46 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 //		if (!level.hasElement(aBioPAXElement)) {
 //			throw new IllegalBioPAXArgumentException(
 //					"Given object is of wrong level");
-//		} else 
+//		} else
 		if (rdfId == null) {
 			throw new IllegalBioPAXArgumentException(
 					"null ID: every object must have an RDF ID");
 		} else {
 			if (log.isDebugEnabled())
-				log.debug("merge(aBioPAXElement): merging " + rdfId + " " 
+				log.debug("merge(aBioPAXElement): merging " + rdfId + " "
 					+ aBioPAXElement.getModelInterface().getSimpleName());
-			
+
 			// - many elements are affected, because of cascades...
 			session().merge(aBioPAXElement);
 		}
 	}
-	
-	
+
+
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	public SearchResponseType findElements(
-			String query, 
+			String query,
 			int page,
-			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters) 
+			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters)
 	{
 		// collect matching elements here
 		SearchResponseType toReturn = new SearchResponseType();
 		List<SearchHitType> results = new ArrayList<SearchHitType>();
 		toReturn.setSearchHit(results);
-		
+
 		// a shortcut
-		if (query == null || "".equals(query) 
+		if (query == null || "".equals(query)
 				|| query.trim().startsWith("*")) // see: Lucene query syntax
 		{
 			// do nothing, return the empty list
 			return toReturn;
-		} 
-		
+		}
+
 		// otherwise, we continue and do real job -
 		if (log.isInfoEnabled())
 			log.info("find: " + query + ", filterBy: " + filterByType
 					+ "; extra filters: " + Arrays.toString(extraFilters));
-			
+
 		// create a native Lucene query
 		org.apache.lucene.search.Query luceneQuery = null;
 		try {
@@ -365,9 +369,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		// get a full text session
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
 		FullTextQuery hibQuery;
-		
+
 		if(filterByType != null) {
-			// full-text query cannot filter by interfaces; 
+			// full-text query cannot filter by interfaces;
 			// so let's translate them to the annotated entity classes
 			Class<?> filterClass = getEntityClass(filterByType);
 			hibQuery = fullTextSession.createFullTextQuery(luceneQuery, filterClass);
@@ -375,7 +379,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		} else {
 			hibQuery = fullTextSession.createFullTextQuery(luceneQuery);
 		}
-		
+
 		int count = hibQuery.getResultSize(); //"cheap" operation (Hib. does not init objects)
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "' (filters not shown), results size = " + count);
@@ -387,7 +391,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				FullTextQuery.EXPLANATION);
 		else
 			hibQuery.setProjection(FullTextQuery.THIS);
-		
+
 		// execute search
 		int l = page * maxHits;
 		hibQuery.setMaxResults(maxHits);
@@ -427,27 +431,27 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				l++;
 			}
 		}
-		
+
 		if (log.isInfoEnabled()) {
-			log.info("Using query '" + query 
+			log.info("Using query '" + query
 				+ "', after filtering results size = " + results.size());
 		}
-		
+
 		return toReturn;
 	}
-	
-	
-	
+
+
+
 	/**
-	 * Paxtools MAIN DAO implementation details. 
-	 * 
+	 * Paxtools MAIN DAO implementation details.
+	 *
 	 * unlike {@link WarehousePaxtoolsHibernateDAO#find(String, Class[], SearchFilter...)},
-	 * 'filterByTypes' parameter here works rather similar to the "extra filters", 
-	 * but it goes the last in the filters chain! Plus, there is one extra step - 
+	 * 'filterByTypes' parameter here works rather similar to the "extra filters",
+	 * but it goes the last in the filters chain! Plus, there is one extra step -
 	 * lookup for parent entities, i.e.:
-	 * - first, a {@link FullTextQuery} query does not use any class filters and just returns 
+	 * - first, a {@link FullTextQuery} query does not use any class filters and just returns
 	 *   matching objects (chances are, the list will contain many {@link UtilityClass} elements);
-	 *   in fact, it is going to delegate the search to {@link #findElements(String, int, Class, SearchFilter...)} 
+	 *   in fact, it is going to delegate the search to {@link #findElements(String, int, Class, SearchFilter...)}
 	 *   method, with the second parameter set to NULL.
 	 * - second, the list is iterated over to replace each utility class object with
 	 *   one or many of its nearest parent {@link Entity} class elements if possible
@@ -455,40 +459,40 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 *   TODO possibly to implement the same using HQL?..
 	 * - next, 'filterByTypes' are now applied (the second time; the first was in the first step);
 	 * - finally, 'extraFilters' are applied
-	 * 
+	 *
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	public SearchResponseType findEntities(
-			String query, 
+			String query,
 			int page,
-			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters) 
+			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters)
 	{
-		
+
 		SearchResponseType toReturn = new SearchResponseType();
 		toReturn.setSearchHit(new ArrayList<SearchHitType>());
-		
+
 		// collect matching elements in a separate list (to avoid duplicates later)
 		List<BioPAXElement> results = new ArrayList<BioPAXElement>();
-		
-		// - otherwise, we continue and do real job -		
+
+		// - otherwise, we continue and do real job -
 		if (log.isInfoEnabled())
 			log.info("findEntities called");
 
 		// search in all classes (the first pass)
 		// a shortcut
-		if (query == null || "".equals(query) 
+		if (query == null || "".equals(query)
 				|| query.trim().startsWith("*")) // see: Lucene query syntax
 		{
 			// do nothing, return the empty list
 			return toReturn;
-		} 
-		
+		}
+
 		// otherwise, we continue and do real job -
 		if (log.isInfoEnabled())
 			log.info("find: " + query + ", filterBy: " + filterByType
 					+ "; extra filters: " + Arrays.toString(extraFilters));
-			
+
 		// create a native Lucene query
 		org.apache.lucene.search.Query luceneQuery = null;
 		try {
@@ -501,8 +505,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		// get a full text session
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
 		//no class filter use here (first pass)
-		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery); 
-		
+		FullTextQuery hibQuery = fullTextSession.createFullTextQuery(luceneQuery);
+
 		int count = hibQuery.getResultSize(); //"cheap" operation (Hib. does not init objects)
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "' (no filter/lookup applied yet), results size = " + count);
@@ -514,7 +518,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				FullTextQuery.EXPLANATION);
 		else
 			hibQuery.setProjection(FullTextQuery.THIS);
-		
+
 		// execute search
 		int l = page * maxHits;
 		hibQuery.setMaxResults(maxHits);
@@ -540,7 +544,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 						for(XReferrable xReferrable : ((Xref)bpe).getXrefOf()) {
 							if(xReferrable instanceof Entity) {
 								addEntity(results, (Entity)xReferrable, bpe, filterByType, extraFilters);
-							} 
+							}
 							else if(xReferrable instanceof EntityReference) {
 								Set<SimplePhysicalEntity> spes = ((EntityReference) xReferrable).getEntityReferenceOf();
 								for(SimplePhysicalEntity spe : spes) {
@@ -562,21 +566,21 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				l++;
 			}
 		}
-		
+
 		if (log.isInfoEnabled()) {
-			log.info("Using query for entities '" + query 
+			log.info("Using query for entities '" + query
 					+ "', final results size = " + results.size());
 		}
-		
-		
+
+
 		toReturn.getSearchHit().addAll(toSearchHits(results));
 		return toReturn;
 	}
 
-	
+
 	private void addEntity(Collection<BioPAXElement> list, Entity ent,
 			BioPAXElement actualHit,
-			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
+			Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement, ?>[] extraFilters)
 	{
 		addIfPassAndNew(list, ent, actualHit, filterByType, extraFilters);
 		// TODO not sure whether to go here for complexes or not...
@@ -587,8 +591,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	private void addIfPassAndNew(Collection<BioPAXElement> list, Entity ent,
 			BioPAXElement actualHit,
-			Class<? extends BioPAXElement> filterByType, 
-			SearchFilter<? extends BioPAXElement, ?>[] extraFilters) 
+			Class<? extends BioPAXElement> filterByType,
+			SearchFilter<? extends BioPAXElement, ?>[] extraFilters)
 	{
 		if(!list.contains(ent) && passFilters(ent, filterByType, extraFilters))
 		{
@@ -604,9 +608,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 
 	private void addComplexes(Collection<BioPAXElement> list, PhysicalEntity pe,
-			BioPAXElement actualHit, 
-			Class<? extends BioPAXElement> filterByType, 
-			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
+			BioPAXElement actualHit,
+			Class<? extends BioPAXElement> filterByType,
+			SearchFilter<? extends BioPAXElement,?>... extraFilters)
 	{
 		Set<Complex> complexes = pe.getComponentOf();
 		for (Complex c : complexes) {
@@ -616,19 +620,19 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	/**
 	 * Apply search filters
-	 * 
+	 *
 	 * @param bpe
 	 * @param filterByType
 	 * @param extraFilters
 	 * @return
 	 */
-	private boolean passFilters(BioPAXElement bpe, 
-			Class<? extends BioPAXElement> filterByType, 
-			SearchFilter<? extends BioPAXElement,?>... extraFilters) 
+	private boolean passFilters(BioPAXElement bpe,
+			Class<? extends BioPAXElement> filterByType,
+			SearchFilter<? extends BioPAXElement,?>... extraFilters)
 	{
-		if( ( filterByType == null || filterByType.isInstance(bpe) )	
-			&& filter(bpe, extraFilters) 
-		){ 
+		if( ( filterByType == null || filterByType.isInstance(bpe) )
+			&& filter(bpe, extraFilters)
+		){
 			return true;
 		}
 		else {
@@ -636,25 +640,25 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 	}
 
-	
+
 	/**
 	 * Checks the object against the filter list.
-	 * 
+	 *
 	 * @param bpe an object
 	 * @param extraFilters filters the object must pass (if aplicable)
 	 * @return true if it passed all the filters (that apply) in the list
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	protected boolean filter(BioPAXElement bpe, SearchFilter[] extraFilters) 
+	protected boolean filter(BioPAXElement bpe, SearchFilter[] extraFilters)
 	{
 		for(SearchFilter sf : extraFilters) {
 			SearchFilterRange filterRange = sf.getClass()
 				.getAnnotation(SearchFilterRange.class);
-			if(filterRange == null 
-				|| filterRange.value().isInstance(bpe)) 
+			if(filterRange == null
+				|| filterRange.value().isInstance(bpe))
 			{
 				try {
-					if(!sf.apply(bpe)) 
+					if(!sf.apply(bpe))
 						return false;
 				} catch (ClassCastException e) {
 					// skip (not applicable for this element filter)
@@ -663,17 +667,17 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 		return true;
 	}
-	
-	
+
+
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
 	public void add(BioPAXElement aBioPAXElement)
 	{
 		String rdfId = aBioPAXElement.getRDFId();
-		
+
 		if (log.isDebugEnabled())
 			log.debug("about to add: " + rdfId);
-		
+
 		if (!level.hasElement(aBioPAXElement))
 		{
 			throw new IllegalBioPAXArgumentException(
@@ -688,7 +692,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		{
 			if (log.isDebugEnabled())
 				log.debug("adding " + rdfId);
-			session().persist(aBioPAXElement); 
+			session().persist(aBioPAXElement);
 			// - many elements are affected, because of cascades...
 		}
 	}
@@ -733,9 +737,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED)
-	public BioPAXElement getByID(String id) 
+	public BioPAXElement getByID(String id)
 	{
-		if(id == null || "".equals(id)) 
+		if(id == null || "".equals(id))
 			throw new RuntimeException("getByID(null) is called!");
 
 		BioPAXElement toReturn = null;
@@ -744,19 +748,20 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 		return toReturn; // null means no such element
 	}
-	
+
 	@Transactional(propagation=Propagation.REQUIRED)
 	public Set getByProperty(PropertyEditor editor, Set<? extends BioPAXElement> values)
 	{
             HQLPropertyAccessor accessor  = this.editor2Accessor.get(editor);
-            accessor.init(session());
+        Session session = session();
+        accessor.init(session);
 
             return accessor.getValueFromBeans(values);
 	}
 
-    
-    
-    
+
+
+
     @Override
 	public BioPAXLevel getLevel()
 	{
@@ -783,7 +788,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public <T extends BioPAXElement> Set<T> getObjects(Class<T> clazz)
 	{
 		String query = "from " + clazz.getCanonicalName();
-		List<T> results = session().createQuery(query).list();
+
+        Session session = session();
+        List<T> results = session.createQuery(query).list();
 		Set<T> toReturn = new HashSet<T>(results);
 		return toReturn;
 	}
@@ -810,18 +817,18 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			"Internal BioPAX Factory cannot be modified.");//would be unsafe!
 	}
 
-	
+
 	/**
-	 * Gets a Hibernate annotated entity class 
-	 * (implementation) by BioPAX Model interface class 
-	 * 
+	 * Gets a Hibernate annotated entity class
+	 * (implementation) by BioPAX Model interface class
+	 *
 	 */
 	protected Class<? extends BioPAXElement> getEntityClass(
-			Class<? extends BioPAXElement> filterBy) 
+			Class<? extends BioPAXElement> filterBy)
 	{
 		Class<? extends BioPAXElement> clazz = (BioPAXElement.class.equals(filterBy))
 			? BioPAXElementImpl.class : factory.getImplClass(filterBy);
-		
+
 		if(clazz == null) {
 			clazz = BioPAXElementImpl.class; // fall-back (to no filtering)
 			log.error("Expected argument: a BioPAX interface"
@@ -836,14 +843,14 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 */
 	/**
 	 * When an non-empty list of IDs (RDFId, URI) is provided,
-	 * it will use {@link SimpleIOHandler#convertToOWL(Model, OutputStream, String...)} 
+	 * it will use {@link SimpleIOHandler#convertToOWL(Model, OutputStream, String...)}
 	 * which in turn uses {@link Fetcher#fetch(BioPAXElement, Model)}
 	 * (rather than {@link #getValidSubModel(Collection)}) method
 	 * to recursively extract each listed element (with all children and properties)
-	 * and put into a new sub-model, which is then serialized and 
-	 * written to the output stream. Note: using the Fetcher, there is a risk 
-	 * (depending on the data stored) of pulling almost entire network 
-	 * by providing one or a few IDs... Also implemented here is 
+	 * and put into a new sub-model, which is then serialized and
+	 * written to the output stream. Note: using the Fetcher, there is a risk
+	 * (depending on the data stored) of pulling almost entire network
+	 * by providing one or a few IDs... Also implemented here is
 	 * that the Fetcher/traverser does not follow BioPAX
 	 * property 'nextStep', which otherwise could lead to infinite loops.
      *
@@ -851,40 +858,40 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRES_NEW)
-	public void exportModel(OutputStream outputStream, String... ids) 
+	public void exportModel(OutputStream outputStream, String... ids)
 	{
 		simpleIO.convertToOWL(this, outputStream, ids);
 	}
-	
 
-	/** 
-	 * 
+
+	/**
+	 *
 	 * Creates a new detached BioPAX sub-model from the list of URIs
 	 * using Paxtools's {@link Completer} and {@link Cloner} approach
 	 * (thus ignoring those not in the same list); runs within a transaction.
-	 * 
+	 *
 	 */
 	@Override
 	public Model getValidSubModel(Collection<String> ids) {
 		// run the analysis (in a new transaction)
 		return runAnalysis(this.getTheseElements, ids.toArray());
 	}
-	
-	
-	/* 
-	 * All properties and inverse properties 
+
+
+	/*
+	 * All properties and inverse properties
 	 * (not very deep) initialization
-	 * 
+	 *
 	 */
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	@Override
-	public void initialize(Object obj) 
+	public void initialize(Object obj)
 	{
-		if(obj instanceof BioPAXElement) {		
+		if(obj instanceof BioPAXElement) {
 			//just reassociate:
 			session().buildLockRequest(LockOptions.NONE).lock(obj);
 			Hibernate.initialize(obj);
-	
+
 			BioPAXElement element = (BioPAXElement) obj;
 
 			// init. biopax properties
@@ -895,7 +902,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 					Set<?> value = editor.getValueFromBean(element);
 					Hibernate.initialize(value); //yup, it inits collections as well ;)
 					for(Object v : value) {
-						Hibernate.initialize(v); 
+						Hibernate.initialize(v);
 					}
 				}
 			}
@@ -910,14 +917,14 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 					Hibernate.initialize(value);
 					//values the set can be BioPAX elements only
 					for(Object v : value) {
-						Hibernate.initialize(v); 
+						Hibernate.initialize(v);
 					}
 				}
 			}
 		}
 	}
 
-	
+
 	/* (non-Javadoc)
 	 * @see cpath.dao.PaxtoolsDAO#runAnalysis(cpath.dao.Analysis, java.lang.Object[])
 	 */
@@ -926,16 +933,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public Model runAnalysis(Analysis analysis, Object... args) {
 		// perform
 		Set<BioPAXElement> result = analysis.execute(this, args);
-		
+
 		if(log.isDebugEnabled())
 			log.debug("runAnalysis: finished; now detaching the sub-moodel...");
-		
+
 		// auto-complete/detach
 		if(result != null) {
-			if(log.isDebugEnabled())
-				log.debug("runAnalysis: running auto-complete...");
-			Completer c = new Completer(simpleIO.getEditorMap());
-			result = c.complete(result, null); //null - because the (would be) model is never used there anyway
             if(log.isDebugEnabled())
                 log.debug("runAnalysis:Pre-Clone fetch..");
             this.fetch(result);
@@ -944,52 +947,52 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
                 log.debug("runAnalysis: cloning...");
 			Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
 			Model submodel = cln.clone(null, result);
-			
+
 			if(log.isDebugEnabled())
 				log.debug("runAnalysis: returned");
 			return submodel; // new (sub-)model
-		} 
-		
+		}
+
 		if(log.isDebugEnabled())
 			log.debug("runAnalysis: returned NULL");
 		return null;
 	}
 
-	
+
 	@Override
 	public void replace(BioPAXElement existing, BioPAXElement replacement) {
 		throw new UnsupportedOperationException("not supported");
 	}
 
-	
+
 	@Override
 	public void repair() {
 		throw new UnsupportedOperationException("not supported");
 	}
 
-	
+
 	/**
-	 * Converts the returned by a query BioPAX elements to 
-	 * simpler "hit" java beans (serializable to XML, etc..) 
-	 * 
+	 * Converts the returned by a query BioPAX elements to
+	 * simpler "hit" java beans (serializable to XML, etc..)
+	 *
 	 * @param data
 	 * @return
 	 */
 	private List<SearchHitType> toSearchHits(List<? extends BioPAXElement> data) {
 		List<SearchHitType> hits = new ArrayList<SearchHitType>(data.size());
-		
+
 		for(BioPAXElement bpe : data) {
 			SearchHitType hit = bpeToSearcHit(bpe);
 			hits.add(hit);
 		}
-		
+
 		return hits;
 	}
-	
+
 	/**
-	 * Converts a returned by a query BioPAX element to 
-	 * the search hit java bean (serializable to XML) 
-	 * 
+	 * Converts a returned by a query BioPAX element to
+	 * the search hit java bean (serializable to XML)
+	 *
 	 * @param bpe
 	 * @return
 	 */
@@ -1003,11 +1006,11 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				hit.setExcerpt(StringEscapeUtils.escapeXml(
 					bpe.getAnnotations().get("explanation").toString()));
 			}
-			
+
 			if(bpe.getAnnotations().get("actualHitUri") != null)
 				hit.setActualHitUri(StringEscapeUtils.escapeXml(
 						bpe.getAnnotations().get("actualHitUri").toString()));
-			
+
 			// add standard and display names if any -
 			if(bpe instanceof Named) {
 				Named named = (Named)bpe;
@@ -1018,21 +1021,21 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				if(dsp != null && !dsp.equalsIgnoreCase(std))
 					hit.getName().add(dsp);
 			}
-			
+
 			// add organisms and data sources
 			if(bpe instanceof Entity) {
 				// add data sources (URIs)
 				for(Provenance pro : ((Entity)bpe).getDataSource()) {
 					hit.getDataSource().add(pro.getRDFId());
 				}
-				
+
 				// add organisms and pathways (URIs);
 				// at the moment, this apply to Entities only -
 				HashSet<String> organisms = new HashSet<String>();
 				HashSet<String> processes = new HashSet<String>();
-				for(Xref x : ((Entity)bpe).getXref()) 
+				for(Xref x : ((Entity)bpe).getXref())
 				{
-					if((x instanceof RelationshipXref) && ((RelationshipXref) x).getRelationshipType() != null) 
+					if((x instanceof RelationshipXref) && ((RelationshipXref) x).getRelationshipType() != null)
 					{
 						RelationshipXref rx = (RelationshipXref) x;
 						RelationshipTypeVocabulary cv = rx.getRelationshipType();
@@ -1041,28 +1044,28 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 						if(cv.getRDFId().equalsIgnoreCase(autoId))
 						{
 							organisms.add(rx.getId());
-						} 
+						}
 						else if(cv.getRDFId().equalsIgnoreCase(ModelUtils
-							.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()))) 
+							.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name())))
 						{
 							processes.add(rx.getId());
-						}	
+						}
 					}
 				}
-				
+
 				if(!organisms.isEmpty())
 					hit.getOrganism().addAll(organisms);
-				
+
 				if(!processes.isEmpty())
 					hit.getPathway().addAll(processes);
 			} else
 			// set organism for some of EntityReference
 			if(bpe instanceof SequenceEntityReference) {
-				BioSource bs = ((SequenceEntityReference)bpe).getOrganism(); 
+				BioSource bs = ((SequenceEntityReference)bpe).getOrganism();
 				if(bs != null)
 					hit.getOrganism().add(bs.getRDFId());
 			}
-		
+
 		return hit;
 	}
 
@@ -1075,10 +1078,15 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public String getXmlBase() {
 		return xmlBase;
 	}
-    
+    @Transactional(propagation = Propagation.REQUIRED)
     public Set<BioPAXElement> fetch(Set<? extends BioPAXElement> elements)
     {
-       return this.fetcher.fetch(elements);
+
+        Query query = this.session().createQuery(refreshQuery);
+        query.setParameterList("SEED", elements);
+        query.setReadOnly(true);
+        Set seed = new HashSet<BioPAXElement>(query.list());
+        return this.fetcher.fetch(seed);
     }
 
 }
