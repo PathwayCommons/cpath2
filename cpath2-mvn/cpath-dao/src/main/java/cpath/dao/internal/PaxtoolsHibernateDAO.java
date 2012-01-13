@@ -116,8 +116,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	protected MultiFieldQueryParser multiFieldQueryParser;
 	private String xmlBase;
 
-
+    // TODO: Make these named queries
     private static final String refreshQuery = "SELECT DISTINCT bpe FROM L3ElementImpl as bpe WHERE bpe in(:SEED)";
+    private static final String getByIDsQuery = "SELECT DISTINCT bpe FROM L3ElementImpl as bpe WHERE bpe.id in(:SEED)";
 
 
 	/**
@@ -872,9 +873,19 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 *
 	 */
 	@Override
-	public Model getValidSubModel(Collection<String> ids) {
+	public Model getValidSubModel(final Collection<String> ids) {
 		// run the analysis (in a new transaction)
-		return runAnalysis(this.getTheseElements, ids.toArray());
+
+        return runAnalysis(new Analysis() {
+            @Override
+            public Set<BioPAXElement> execute(Model model, Object... args) {
+                Query query = session().createQuery(getByIDsQuery);
+                query.setParameterList("SEED", ids);
+                List list = query.list();
+
+                return fetch(new HashSet<BioPAXElement>(list));
+            }
+        }, ids.toArray());
 	}
 
 
