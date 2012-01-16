@@ -46,6 +46,7 @@ public enum CmdArgs {
 	source("graph query source URI (multiple 'source=' are allowed)"),
 	target("graph query destination URI (multiple 'target=' are allowed, only for PATHSBETWEEN query)"),
     limit("graph query search distance limit"),
+    direction("graph search direction"),
     biopax("a BioPAX OWL to convert"),
     //TODO future (graph query extention point, plugins...)
     //alg("a user-defined algorithm to run."), 
