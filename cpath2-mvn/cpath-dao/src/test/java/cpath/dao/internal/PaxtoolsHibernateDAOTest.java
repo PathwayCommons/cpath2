@@ -248,15 +248,13 @@ public class PaxtoolsHibernateDAOTest {
 		
 		System.out.println("find by 'P46880' returned: " + list.toString());
 		
-		/* 'P46880' is used only in the PR's RDFId and in the Uni.Xref,
-		 * but the find method (full-text search) must NOT match in rdf ID:
-		 */
+		// PR must match if one of its xref.id matches the query -
 		resp = paxtoolsDAO.findElements("P46880", 0, ProteinReference.class);
 		list = resp.getSearchHit();
 		System.out.println("find by 'P46880', " +
 			"filter by ProteinReference.class, returned: " + list.toString());
-		
-		assertTrue(list.isEmpty());
+
+		assertEquals(1, list.size());
 		
 		resp = paxtoolsDAO.findElements("glucokinase", 0, ProteinReference.class);
 		list = resp.getSearchHit();

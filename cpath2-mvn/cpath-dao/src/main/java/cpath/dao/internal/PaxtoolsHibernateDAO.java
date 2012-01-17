@@ -91,15 +91,20 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	public final static String[] ALL_FIELDS =
 		{
-			"availability",
-			"comment",
-			"keyword",
-			"name",
-			"term",
-			"xrefdb",
-			"xrefid",
-			"ecnumber",
-			"sequence",
+		// auto-generated index fields (from the annotations in paxtools-core)
+		FIELD_AVAILABILITY,
+		FIELD_COMMENT, // biopax comments
+		FIELD_KEYWORD, //anything, e.g., names, terms, comments, incl. - from child elements 
+		FIELD_NAME, // standardName, displayName, other names
+		FIELD_TERM, // CV terms
+		FIELD_XREFDB, //xref.db
+		FIELD_XREFID, //xref.id (incl. direct child xref's id, if any)
+		FIELD_ECNUMBER,
+		FIELD_SEQUENCE,
+		// plus, filter fields (TODO experiment with not including these fields into default search fields; use for filtering only)
+		FIELD_ORGANISM,
+		FIELD_DATASOURCE,
+		FIELD_PATHWAY, // i.e., helps find an object by a parent pathway name or filter a search results by pathway ;) 
 		};
 
 	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
