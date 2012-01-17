@@ -42,7 +42,6 @@ public enum CmdArgs {
 	format("output format - see the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below"),
 	organism("filter by organism (multiple 'organism=' are allowed) - see the <a href=\"#valid_organism_parameter\">valid values for organism parameter</a> below"),
 	datasource("filter by data sources (multiple 'datasource=' are allowed) - see the <a href=\"#valid_datasource_parameter\">valid values for datasource parameter</a> below"),
-	process("filter by pathway URI (multiple are allowed) - see the <a href=\"#valid_process_parameter\">valid values for process parameter</a> below"),
 	source("graph query source URI (multiple 'source=' are allowed)"),
 	target("graph query destination URI (multiple 'target=' are allowed)"),
     limit("graph query search distance limit"),

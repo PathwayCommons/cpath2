@@ -108,7 +108,7 @@ public class CPathServiceImpl implements CPathService {
 	{
 		// call this only once
 		topPathways = mainDAO.getTopPathways();
-		topPathways.setMaxHits(topPathways.getSearchHit().size());
+		topPathways.setNumHits(topPathways.getSearchHit().size());
 	}
 	
 	
