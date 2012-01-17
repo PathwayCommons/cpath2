@@ -32,15 +32,16 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.document.Document;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.util.Version;
-import org.biopax.paxtools.impl.BioPAXElementImpl;
+import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
-import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
+import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.hibernate.*;
@@ -79,21 +80,20 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 	public final static String[] DEFAULT_SEARCH_FIELDS =
 		{
-			// auto-generated index fields (from annotations)
-			"availability",
-			"comment",
-			"keyword", // incl. names, comments of child el. 
-			"name",
-			"term",
-			"xrefdb",
-			"xrefid",
-			"ecnumber",
-			"sequence",
-			"xref", // stores ids of child xrefs
-			// filter fields -
-			"organism",
-			"dataSource",
-			"process"
+			// auto-generated index fields (from the annotations in paxtools-core)
+			FIELD_AVAILABILITY,
+			FIELD_COMMENT, // biopax comments
+			FIELD_KEYWORD, //anything, e.g., names, terms, comments, incl. - from child elements 
+			FIELD_NAME, // standardName, displayName, other names
+			FIELD_TERM, // CV terms
+			FIELD_XREFDB, //xref.db
+			FIELD_XREFID, //xref.id (incl. direct child xref's id, if any)
+			FIELD_ECNUMBER,
+			FIELD_SEQUENCE,
+			// plus, filter fields (TODO experiment with not including these fields into default search fields; use for filtering only)
+			FIELD_ORGANISM,
+			FIELD_DATASOURCE,
+			FIELD_PATHWAY, // i.e., helps find an object by a parent pathway name or filter a search results by pathway ;) 
 		};
 
 	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
@@ -277,28 +277,24 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			String[] dsources, String[] organisms) 
 	{
 		// collect matching elements here
-		SearchResponse toReturn = new SearchResponse();
-		List<SearchHit> results = new ArrayList<SearchHit>();
-		toReturn.setSearchHit(results);
+		SearchResponse searchResponse = new SearchResponse();
+//		List<SearchHit> results = new ArrayList<SearchHit>();
+//		searchResponse.setSearchHit(results);
 		
-		// a shortcut
-		if (query == null || "".equals(query) 
-				|| query.trim().startsWith("*")) // see: Lucene query syntax
-		{
-			// do nothing, return the empty list
-			return toReturn;
-		} 
+//		// shortcut
+//		if (query == null || "".equals(query) 
+//				|| query.trim().startsWith("*")) { // see: Lucene query syntax
+//			return searchResponse; // do nothing, return the empty list
+//		} 
 		
-		// otherwise, we continue and do real job -
 		if (log.isInfoEnabled())
-			log.info("find: " + query + ", filterBy: " + filterByType
+			log.info("search: " + query + ", filterBy: " + filterByType
 				+ "; extra filters: ds in (" + Arrays.toString(dsources) 
 					+ "), org. in (" + Arrays.toString(organisms) + ")");
 
-		//(for filtering) can also do -
-		//extend the user query by adding organism and datasource filters -
+		//for filtering, we could add organism and datasource restrictions to the query string:
 		//if(dsources.length > 0) query += " AND ( " + dsFilterStmt(dsources) + ")";
-		// but - will use fullTextQuery.enableFullTextFilter instead (see below)
+		// but we'll use fullTextQuery.enableFullTextFilter instead (see below)
 		
 		// create a native Lucene query
 		org.apache.lucene.search.Query luceneQuery = null;
@@ -306,7 +302,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			luceneQuery = multiFieldQueryParser.parse(query);
 		} catch (ParseException e) {
 			log.info("parser exception: " + e.getMessage());
-			return toReturn;
+			return searchResponse;
 		}
 		
 		// get a full text session
@@ -322,40 +318,64 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		} else {
 			fullTextQuery = fullTextSession.createFullTextQuery(luceneQuery);
 		}
-		
-		if(dsources != null && dsources.length > 0)
-			fullTextQuery.enableFullTextFilter("datasources").setParameter("datasources", dsources);
-		if(organisms != null && organisms.length > 0)
-			fullTextQuery.enableFullTextFilter("organisms").setParameter("organisms", organisms);
 		fullTextQuery.setReadOnly(true);
+		
+		// use Projection (allows extracting/highlighting matching text, etc., if stored...)
+		if(CPathSettings.isDebug())
+			fullTextQuery.setProjection(FullTextQuery.THIS, FullTextQuery.DOCUMENT_ID, FullTextQuery.DOCUMENT, FullTextQuery.SCORE, FullTextQuery.EXPLANATION);
+		else
+			fullTextQuery.setProjection(FullTextQuery.THIS, FullTextQuery.DOCUMENT_ID, FullTextQuery.DOCUMENT);		
+		
+		// enable filters
+		if(dsources != null && dsources.length > 0)
+			fullTextQuery.enableFullTextFilter("datasource").setParameter("datasources", dsources);
+		if(organisms != null && organisms.length > 0)
+			fullTextQuery.enableFullTextFilter("organism").setParameter("organisms", organisms);
+			
+		// set pagination
+		int l = page * maxHits; // - the first hit no., if any
+		fullTextQuery.setMaxResults(maxHits);
+		fullTextQuery.setFirstResult(l);
+
+		/* TODO create a highlighter (to get the excerpt); 
+		 * - store data in the index (i.e., use store.YES in the annotations; this much increases index size)
+		 * - two-way field bridges must be defined and used
+		 */
+//		Highlighter highlighter = new Highlighter(query, indexReader, analyzer) {...};		
+		
 		fullTextQuery.setResultTransformer(
 				new ResultTransformer() {
 					public Object transformTuple(Object[] tuple, String[] aliases) {
-						return new UnsupportedOperationException("not implemented!");
+						BioPAXElement bpe = (BioPAXElement) tuple[0];
+						int docId = (Integer) tuple[1];
+						Document doc = (Document) tuple[2];
+						
+						SearchHit hit = bpeToSearcHit(bpe); //new SearchHit();
+						
+						// TODO use the highlighter here to calculate the excerpt
+						hit.setExcerpt(null);
+						
+//						return new UnsupportedOperationException("not implemented!");
+						return hit;
 					}
+					
 					public List transformList(List collection) {
+						// when no projection used
 						return toSearchHits(collection);
 					}
 				}); 
 		
-		int count = fullTextQuery.getResultSize(); //- a cheap operation
+		int count = fullTextQuery.getResultSize(); // cheap operation
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "', results size = " + count);
-		toReturn.setMaxHits(count);
+		searchResponse.setMaxHits(count);
 		
-		// do search, transform, pagination
-		int l = page * maxHits; // - the first hit no., if any
-		fullTextQuery.setMaxResults(maxHits);
-		fullTextQuery.setFirstResult(l);
-		
-//TODO get excerpts, probably, by using projections and something else.. (shelved for later)
-//		if(CPathSettings.isDebug())
-//			fullTextQuery.setProjection(FullTextQuery.THIS, FullTextQuery.SCORE,
-//				FullTextQuery.EXPLANATION);
-		
+		// do search and get (auto-transformed) hits
 		List<SearchHit> searchHits =  (List<SearchHit>) fullTextQuery.list();
-		toReturn.setSearchHit(searchHits);
-		return toReturn;
+		
+		searchResponse.setSearchHit(searchHits);
+		
+		return searchResponse;
 	}	
 	
 	
@@ -702,16 +722,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				// at the moment, this apply to Entities only -
 				HashSet<String> organisms = new HashSet<String>();
 				HashSet<String> processes = new HashSet<String>();
-				for(Xref x : ((Entity)bpe).getXref()) 
+				for(Xref x : ((Entity)bpe).getXref())
 				{
 					if((x instanceof RelationshipXref) && ((RelationshipXref) x).getRelationshipType() != null) 
 					{
 						RelationshipXref rx = (RelationshipXref) x;
-						if(isOrganismRelationshipXref(rx))
+						if(ModelUtils.isOrganismRelationshipXref(rx))
 						{
 							organisms.add(rx.getId());
 						} 
-						else if(isProcessRelationshipXref(rx)) 
+						else if(ModelUtils.isProcessRelationshipXref(rx)) 
 						{
 							processes.add(rx.getId());
 						}	
@@ -735,20 +755,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 	
 	
-	private boolean isOrganismRelationshipXref(RelationshipXref rx) {
-		RelationshipTypeVocabulary cv = rx.getRelationshipType();
-		return cv != null && cv.getRDFId().equalsIgnoreCase(
-				ModelUtils.relationshipTypeVocabularyUri(RelationshipType.ORGANISM.name()));
-	}
-
-	
-	private boolean isProcessRelationshipXref(RelationshipXref rx) {
-		RelationshipTypeVocabulary cv = rx.getRelationshipType();
-		return cv != null && cv.getRDFId().equalsIgnoreCase(
-			ModelUtils.relationshipTypeVocabularyUri(RelationshipType.PROCESS.name()));
-	}
-
-	
 	@Override
 	public void setXmlBase(String base) {
 		this.xmlBase = base;
@@ -765,17 +771,15 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * "Top pathway" can mean different things...
 	 * 
 	 * 1) One may want simply collect pathways which are not 
-	 * values of any BioPAX property ("graph-theoretic" approach, 
-	 * used by {@link ModelUtils#getRootElements(Class)} method).
-	 * Alternative approaches would be:
-	 * 2) - to check whether particular (inverse) properties, such as 
-	 * controlledOf, pathwayComponentOf and stepProcessOf, are empty; or
-	 * 3) - to check whether a pathway is reachable from other pathways if
-	 * to follow standard BioPAX object range properties; this method is used 
-	 * by the BioPAX normalizer (in the cPath2 "premerge" stage), which 
-	 * for all BioPAX Entities generates relationship xrefs to parent pathways.
+	 * values of any BioPAX property (i.e., a "graph-theoretic" approach, 
+	 * used by {@link ModelUtils#getRootElements(Class)} method) and by 
+	 * BioPAX normalizer, which (in the cPath2 "premerge" stage),
+	 * for all Entities, generates relationship xrefs to their "parent" pathways.
 	 * 
-	 * Here we use the second method!
+	 * 2) Another approach would be to check whether specific (inverse) 
+	 * properties, such as controlledOf, pathwayComponentOf and stepProcessOf, are empty.
+	 * 
+	 * Here we follow the second method!
 	 * 
 	 */
 	@Override
@@ -785,42 +789,14 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		
 		// here we use the aproach #2
 		for(Pathway pathway : getObjects(Pathway.class)) {
-			if(pathway.getControlledOf().isEmpty()
-					&& pathway.getStepProcessOf().isEmpty()
-					&& pathway.getPathwayComponentOf().isEmpty()) 
+			if(
+				pathway.getControlledOf().isEmpty() // TODO not sure whether controlledOf cannot be empty,.. guess true
+//				&& pathway.getStepProcessOf().isEmpty() //TODO not sure whether a root pw cannot be a stepProcess,.. guess false
+				&& pathway.getPathwayComponentOf().isEmpty()) // that's correct, no doubt!
 			{
 				toReturn.getSearchHit().add(bpeToSearcHit(pathway));
 			}
 		}
-		
-//		// would be if using method #1 -
-//		Set<Pathway> topPathways = mu.getRootElements(Pathway.class);
-//		for(Pathway pathway : topPathways) {
-//			toReturn.getSearchHit().add(bpeToSearcHit(pathway));
-//		}
-
-//		// would be if using method #3 -
-//		for(Pathway pathway : getObjects(Pathway.class)) {
-//			// we'll simply check each pathway's generated rel. xrefs:
-//			Set<RelationshipXref> rxs = new ClassFilterSet<Xref, 
-//				RelationshipXref>(pathway.getXref(), RelationshipXref.class);
-//			boolean isTop = true;
-//			if(!rxs.isEmpty()) {
-//				// hack: find a "process" rel.xrefs (auto-generated during the data import)
-//				for(RelationshipXref rx : rxs) {
-//					if(isProcessRelationshipXref(rx))
-//					{
-//						if(getByID(rx.getId()) instanceof Pathway) {
-//							isTop = false;
-//							break;
-//						}
-//					}
-//				}
-//			} 
-//			if(isTop) {
-//				toReturn.getSearchHit().add(bpeToSearcHit(pathway));
-//			}
-//		}
 		
 		return toReturn;
 	}

@@ -42,6 +42,7 @@ import cpath.warehouse.beans.PathwayData;
 //import org.biopax.paxtools.model.level3.Pathway;
 //import org.biopax.paxtools.io.simpleIO.*;
 import org.biopax.miriam.MiriamLink;
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.Provenance;
@@ -243,6 +244,9 @@ public class PremergeImpl implements Premerge {
 		// from the metadata.name to add it explicitly to all entities now!
 		fixDataSource(v.getModel(), metadata);	
 		
+		// TODO calculate pathway membership (stored in the bpe.annotation)
+//		(new ModelUtils(v.getModel())).calculatePathwayMembership(Entity.class, false, true);
+		
 		// get the updated BioPAX OWL and save it in the pathwayData bean
 		v.updateModelSerialized();
 		pathwayData.setPremergeData(v.getModelSerialized());
@@ -338,12 +342,15 @@ public class PremergeImpl implements Premerge {
 		validation.setNormalize(true);
 		// use special normalizer options
 		NormalizerOptions normalizerOptions = new NormalizerOptions();
+		// to infer/autofix biopax properties
 		normalizerOptions.setFixDisplayName(true); // important
 		normalizerOptions.setInferPropertyDataSource(true); // important
 		normalizerOptions.setInferPropertyOrganism(true); // important
-		normalizerOptions.setGenerateRelatioshipToOrganismXrefs(false); //not required anymore (used to be a key to search results filtering...)
-		normalizerOptions.setGenerateRelatioshipToPathwayXrefs(true); 
-		normalizerOptions.setGenerateRelatioshipToInteractionXrefs(false); //not required
+		// disable auto-generated xrefs (not required by cpath2, since 2012/01)
+		normalizerOptions.setGenerateRelatioshipToOrganismXrefs(false); //was to filter search results...
+		normalizerOptions.setGenerateRelatioshipToPathwayXrefs(false);
+		normalizerOptions.setGenerateRelatioshipToInteractionXrefs(false);
+		
 		validation.setNormalizerOptions(normalizerOptions);
 		// collect both errors and warnings
 		validation.setThreshold(Behavior.WARNING); // means - all err./warn.

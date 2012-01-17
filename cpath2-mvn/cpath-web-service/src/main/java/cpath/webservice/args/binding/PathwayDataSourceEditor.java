@@ -48,7 +48,9 @@ import cpath.webservice.args.PathwayDataSource;
  * 
  * @author rodche
  *
+ * @deprecated any string can be accepted as the filter by datasource value
  */
+@Deprecated
 public class PathwayDataSourceEditor extends PropertyEditorSupport 
 {
 

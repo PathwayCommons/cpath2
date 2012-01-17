@@ -70,8 +70,9 @@ public class SearchController extends BasicController {
 	@InitBinder
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
-        binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
-        binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
+// disable binders for OrganismDataSource, PathwayDataSource (can now use any string values!)
+//        binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
+//        binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
     }
 
 
@@ -89,7 +90,8 @@ public class SearchController extends BasicController {
 			// get results from the service
 			ServiceResponse results = service.search(
 					search.getQ(), search.getPage(), search.getType(),
-					search.datasources(), search.organisms());
+//					search.datasources(), search.organisms());
+					search.getDatasource(), search.getOrganism());
 
 			return results;
 		}
