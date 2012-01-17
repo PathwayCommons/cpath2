@@ -6,6 +6,67 @@
   <name>CPath schema</name>
   <description>JAXB</description>
   <url>http://www.pathwaycommons.org</url>
+
+	<profiles>
+		<profile>
+			<id>sourceforge</id>
+			<properties>
+				<biopax.site.url>
+					scp://shell.sourceforge.net/home/project-web/biopax/htdocs/
+				</biopax.site.url>
+				<biopax.snapshot.url>
+					scp://shell.sourceforge.net/home/project-web/biopax/htdocs/m2repo/snapshots
+				</biopax.snapshot.url>
+				<biopax.release.url>
+					scp://shell.sourceforge.net/home/project-web/biopax/htdocs/m2repo/releases
+				</biopax.release.url>
+			</properties>
+		</profile>
+	</profiles>
+	
+	<scm>
+        	<connection>scm:hg:https://pathway-commons.googlecode.com/hg/</connection>
+        	<developerConnection>scm:hg:https://${scm.username}@pathway-commons.googlecode.com/hg/</developerConnection>
+        	<url>http://code.google.com/p/pathway-commons/source/browse/</url>
+    	</scm>
+
+	<distributionManagement>
+		<site>
+			<id>biopax.sf.net</id>
+			<name>BioPAX Sourceforge site</name>
+			<url>${biopax.site.url}/cpath-${project.version}</url>
+		</site>
+		<snapshotRepository>
+			<id>biopax.snapshots</id>
+			<name>BioPAX Snapshots Repository</name>
+			<url>${biopax.snapshot.url}</url>
+		</snapshotRepository>
+		<repository>
+			<id>biopax.releases</id>
+			<name>BioPAX Releases Repository</name>
+			<url>${biopax.release.url}</url>
+		</repository>
+	</distributionManagement>
+
+	<repositories>
+		<repository>
+			<id>biopax.snapshots</id>
+			<name>BioPAX Snapshots Repository at Sourceforge</name>
+			<url>http://biopax.sourceforge.net/m2repo/snapshots/</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+		</repository>
+		<repository>
+			<id>biopax.releases</id>
+			<name>BioPAX Repository at Sourceforge</name>
+			<url>http://biopax.sourceforge.net/m2repo/releases/</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+	
   
   <build>
   	<plugins>
@@ -53,6 +114,13 @@
 				</dependencies>
 			</plugin>
   	</plugins>
+		<extensions>
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-ssh</artifactId>
+				<version>2.0</version>
+			</extension>
+		</extensions>
   </build>
   
   <pluginRepositories>
@@ -62,14 +130,11 @@
 		<url>http://download.java.net/maven/2</url>
 	</pluginRepository>
   </pluginRepositories> 
-  
+ 
+  <!--
   <profiles>
 		<profile>
 			<id>local</id>
-			<!-- use as "mvn deploy -Plocal"; 
-			${local.biopax.m2repo}, ${local.biopax.site} must 
-			be defined in the local ~/.m2/settings.xml, profiles...
-			-->
 			<distributionManagement>
 				<snapshotRepository>
 					<id>biopax.snapshots</id>
@@ -89,6 +154,8 @@
 			</distributionManagement>
 		</profile>
   </profiles>
+  -->
+
   <dependencies>
   	<dependency>
   		<groupId>javax.validation</groupId>
