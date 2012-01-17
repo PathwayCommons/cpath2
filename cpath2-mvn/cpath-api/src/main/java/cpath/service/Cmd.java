@@ -37,23 +37,16 @@ import static cpath.service.CmdArgs.*;
  *
  */
 public enum Cmd {
-	FIND("Full-text search for BioPAX objects. " +
-			"It accepts up to six parameters " +
-			"and returns the ordered list of search 'hits', i.e., " +
-			"objects describing the corresponding BioPAX entity and utility class elements " +
-			"that matched the query and passed filters. A hit's uri (same as the corresponding BioPAX " +
+	SEARCH("Full-text search for BioPAX objects. " +
+			"It accepts up to five parameters " +
+			"and returns the ordered list of search hits, " +
+			"which are simplified description of BioPAX elements " +
+			"matching the query and passing all filters. A hit's uri (same as the corresponding BioPAX " +
 			"object's RDF ID) can be used with other webservice commands to " +
 			"extract the corresponding sub-model to BioPAX or another supported format. ",
-			"/find?q=brca*", //URL prefix shouldn't be specified here (it depends on actual server configuration)!
-			"Search response - as XML (default) or JSON (when called as '/find.json')",
-			new CmdArgs[]{q, page, type, organism, datasource, process}),	
-	FIND_ENTITY("Two-step full-text search that returns only BioPAX Entity class hits. " +
-			"It accepts up to six parameters. It returns the ordered list of search 'hits' corresponding to " +
-			"BioPAX Entity (sub-)class objects that either by themselves " +
-			"or their child Xrefs or EntityReferences match the search criteria.",
-			"/entity/find?q=brca*",
-			"Search response - as XML (default) or JSON (when called as '/entity/find.json')",
-			new CmdArgs[]{q, page, type, organism, datasource, process}),	
+			"/search?q=brca*", //URL prefix shouldn't be specified here (it depends on actual server configuration)!
+			"Search response - as XML (default) or JSON (when called as '/search.json')",
+			new CmdArgs[]{q, page, type, organism, datasource}),	
 	GET("Gets a BioPAX element or sub-model " +
         "by ID(s).  This command has two parameters.",
         "/get?uri=urn:miriam:uniprot:P38398",

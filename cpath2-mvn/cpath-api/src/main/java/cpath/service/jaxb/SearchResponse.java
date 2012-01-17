@@ -9,7 +9,7 @@ import javax.xml.bind.annotation.*;
 @XmlType(name = "SearchResponse")
 public class SearchResponse extends ServiceResponse {
     @XmlAttribute
-    protected Integer maxHits;
+    protected Integer numHits;
     
     protected List<SearchHit> searchHit; // count to get actual no. hits!
     
@@ -42,12 +42,12 @@ public class SearchResponse extends ServiceResponse {
      * The number of hits before filters or post-processing applied.
      * @return
      */
-	public Integer getMaxHits() {
-		return maxHits;
+	public Integer getNumHits() {
+		return numHits;
 	}
 
-	public void setMaxHits(Integer maxHits) {
-		this.maxHits = maxHits;
+	public void setNumHits(Integer numHits) {
+		this.numHits = numHits;
 	}
 
 	public Integer getPageNo() {

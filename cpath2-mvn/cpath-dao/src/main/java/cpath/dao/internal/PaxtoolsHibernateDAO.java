@@ -328,9 +328,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		
 		// enable filters
 		if(dsources != null && dsources.length > 0)
-			fullTextQuery.enableFullTextFilter("datasource").setParameter("datasources", dsources);
+			fullTextQuery.enableFullTextFilter(FILTER_BY_DATASOURCE).setParameter("datasources", dsources);
 		if(organisms != null && organisms.length > 0)
-			fullTextQuery.enableFullTextFilter("organism").setParameter("organisms", organisms);
+			fullTextQuery.enableFullTextFilter(FILTER_BY_ORGANISM).setParameter("organisms", organisms);
 			
 		// set pagination
 		int l = page * maxHits; // - the first hit no., if any
@@ -355,7 +355,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 						// TODO use the highlighter here to calculate the excerpt
 						hit.setExcerpt(null);
 						
-//						return new UnsupportedOperationException("not implemented!");
 						return hit;
 					}
 					
@@ -368,7 +367,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		int count = fullTextQuery.getResultSize(); // cheap operation
 		if (log.isInfoEnabled())
 			log.info("Query '" + query + "', results size = " + count);
-		searchResponse.setMaxHits(count);
+		searchResponse.setNumHits(count);
 		
 		// do search and get (auto-transformed) hits
 		List<SearchHit> searchHits =  (List<SearchHit>) fullTextQuery.list();

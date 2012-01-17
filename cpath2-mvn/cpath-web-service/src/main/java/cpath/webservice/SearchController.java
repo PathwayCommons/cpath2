@@ -77,7 +77,7 @@ public class SearchController extends BasicController {
 
 
     @RequestMapping(value="/search")
-    public @ResponseBody ServiceResponse find(@Valid Search search, BindingResult bindingResult)
+    public @ResponseBody ServiceResponse search(@Valid Search search, BindingResult bindingResult)
     {		
 		if(bindingResult.hasErrors()) {
 			return errorfromBindingResult(bindingResult);
@@ -90,7 +90,6 @@ public class SearchController extends BasicController {
 			// get results from the service
 			ServiceResponse results = service.search(
 					search.getQ(), search.getPage(), search.getType(),
-//					search.datasources(), search.organisms());
 					search.getDatasource(), search.getOrganism());
 
 			return results;
