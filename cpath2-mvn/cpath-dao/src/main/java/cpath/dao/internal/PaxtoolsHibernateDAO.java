@@ -952,12 +952,13 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		if(result != null) {
             if(log.isDebugEnabled())
                 log.debug("runAnalysis:Pre-Clone fetch..");
-            this.fetch(result);
+            Set<BioPAXElement> fetched = this.fetch(result);
+
 
             if(log.isDebugEnabled())
                 log.debug("runAnalysis: cloning...");
 			Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
-			Model submodel = cln.clone(null, result);
+			Model submodel = cln.clone(null, fetched);
 
 			if(log.isDebugEnabled())
 				log.debug("runAnalysis: returned");
