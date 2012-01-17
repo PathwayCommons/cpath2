@@ -46,8 +46,10 @@ import cpath.webservice.args.OrganismDataSource;
  * sets NULL if none matched.
  * 
  * @author rodche
- *
+ * 
+ * @deprecated any string can be accepted as the filter by organism value
  */
+@Deprecated
 public class OrganismDataSourceEditor extends PropertyEditorSupport 
 {
 	private static final Log log = LogFactory.getLog(OrganismDataSourceEditor.class);

@@ -13,9 +13,10 @@ public class Search {
 
 	private Class<? extends BioPAXElement> type;
 
-	private OrganismDataSource[] organism;
-
-	private PathwayDataSource[] datasource;
+//	private OrganismDataSource[] organism;
+//	private PathwayDataSource[] datasource;
+	private String[] organism;
+	private String[] datasource;
 	
 	@Min(0)
 	private Integer page;
@@ -40,46 +41,66 @@ public class Search {
 		this.type = type;
 	}
 
-	public OrganismDataSource[] getOrganism() {
+
+	public String[] getOrganism() {
 		return organism;
 	}
 
-	public void setOrganism(OrganismDataSource[] organisms) {
-		this.organism = organisms;
+	public void setOrganism(String[] organism) {
+		this.organism = organism;
 	}
 
-	public PathwayDataSource[] getDatasource() {
+	public String[] getDatasource() {
 		return datasource;
 	}
 
-	public void setDatasource(PathwayDataSource[] dataSources) {
-		this.datasource = dataSources;
+	public void setDatasource(String[] datasource) {
+		this.datasource = datasource;
 	}
 
-	public int getPage() {
+	public Integer getPage() {
 		return page;
 	}
 
-	public void setPage(int page) {
+	public void setPage(Integer page) {
 		this.page = page;
 	}
-
-	public String[] datasources() {
-		String[] dsources = new String[datasource.length];
-		int i = 0;
-		for(PathwayDataSource d : datasource) {
-			dsources[i++] = d.asDataSource().getSystemCode();
-		}
-		return dsources;
-	}
 	
-	public String[] organisms() {
-		String[] orgs = new String[organism.length];
-		int i = 0;
-		for(OrganismDataSource d : organism) {
-			orgs[i++] = d.asDataSource().getSystemCode();
-		}
-		return orgs;
-	}
+	
+	
+//  disabled/commented out methods: any string value is now ok for filtering
+//	public OrganismDataSource[] getOrganism() {
+//		return organism;
+//	}
+//
+//	public void setOrganism(OrganismDataSource[] organisms) {
+//		this.organism = organisms;
+//	}
+//
+//	public PathwayDataSource[] getDatasource() {
+//		return datasource;
+//	}
+//
+//	public void setDatasource(PathwayDataSource[] dataSources) {
+//		this.datasource = dataSources;
+//	}
+//
+//	public String[] datasources() {
+//		String[] dsources = new String[datasource.length];
+//		int i = 0;
+//		for(PathwayDataSource d : datasource) {
+//			dsources[i++] = d.asDataSource().getSystemCode();
+//		}
+//		return dsources;
+//	}
+//	
+//	public String[] organisms() {
+//		String[] orgs = new String[organism.length];
+//		int i = 0;
+//		for(OrganismDataSource d : organism) {
+//			orgs[i++] = d.asDataSource().getSystemCode();
+//		}
+//		return orgs;
+//	}
 	
 }
