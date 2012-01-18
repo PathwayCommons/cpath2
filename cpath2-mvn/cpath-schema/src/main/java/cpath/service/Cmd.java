@@ -72,7 +72,7 @@ public enum Cmd {
           "/graph?kind=neighborhood&source=HTTP:%2F%2FWWW.REACTOME.ORG%2FBIOPAX%23BRCA2__NUCLEOPLASM__1_9606",
           "BioPAX by default, other formats as specified by the format parameter. " +
           "See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
-          new CmdArgs[]{kind, source, target, format, limit})
+          new CmdArgs[]{kind, source, target, format, limit, direction})
         ;
     /* TODO should we expose "/convert" command?
 	CONVERT("Converts from BioPAX to simple formats.  This command has two parameters",
@@ -106,5 +106,10 @@ public enum Cmd {
         this.example = example;
         this.output = output;
 		this.args = args;
+	}
+
+	@Override
+	public String toString() {
+		return name().toLowerCase();
 	}
 }
