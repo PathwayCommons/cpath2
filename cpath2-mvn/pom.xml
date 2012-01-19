@@ -21,12 +21,47 @@
 		<name>Pathway Commons</name>
 		<url>http://www.pathwaycommons.org</url>
 	</organization>
+
+	<profiles>
+		<profile>
+			<id>sourceforge</id>
+			<properties>
+				<biopax.site.url>
+					scp://shell.sourceforge.net/home/project-web/biopax/htdocs/
+				</biopax.site.url>
+				<biopax.snapshot.url>
+					scp://shell.sourceforge.net/home/project-web/biopax/htdocs/m2repo/snapshots
+				</biopax.snapshot.url>
+				<biopax.release.url>
+					scp://shell.sourceforge.net/home/project-web/biopax/htdocs/m2repo/releases
+				</biopax.release.url>
+			</properties>
+		</profile>
+	</profiles>
 	
 	<scm>
         <connection>scm:hg:https://pathway-commons.googlecode.com/hg/</connection>
         <developerConnection>scm:hg:https://pathway-commons.googlecode.com/hg/</developerConnection>
-        <url>http://code.google.com/p/pathway-commons/source/browse/</url>
-    </scm>
+        	<url>http://code.google.com/p/pathway-commons/source/browse/</url>
+    	</scm>
+
+	<distributionManagement>
+		<site>
+			<id>biopax.sf.net</id>
+			<name>BioPAX Sourceforge site</name>
+			<url>${biopax.site.url}/cpath-${project.version}</url>
+		</site>
+		<snapshotRepository>
+			<id>biopax.snapshots</id>
+			<name>BioPAX Snapshots Repository</name>
+			<url>${biopax.snapshot.url}</url>
+		</snapshotRepository>
+		<repository>
+			<id>biopax.releases</id>
+			<name>BioPAX Releases Repository</name>
+			<url>${biopax.release.url}</url>
+		</repository>
+	</distributionManagement>
 	
 	<licenses>
 		<license>
@@ -45,6 +80,7 @@
 		<module>distribution</module>
 		<module>cpath-service</module>
 		<module>cpath-api</module>
+		<module>cpath-client</module>
 	</modules>
 
 	<properties>
@@ -84,6 +120,13 @@
 				</plugin>
 			</plugins>
 		</pluginManagement>
+		<extensions>
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-ssh</artifactId>
+				<version>2.0</version>
+			</extension>
+		</extensions>
 	</build>
 
 	<repositories>

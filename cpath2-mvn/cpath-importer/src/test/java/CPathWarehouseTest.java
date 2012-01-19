@@ -162,8 +162,8 @@ public class CPathWarehouseTest {
 		assertEquals(1, prIds.size());
 		assertEquals("urn:miriam:uniprot:Q8TD86", prIds.iterator().next());
 	}
-	
-	@Test
+
+    @Test
 	// just another test (not very useful...)
 	public void testSubModel() {
 		Model m =((PaxtoolsDAO)proteins).getValidSubModel(
@@ -174,10 +174,11 @@ public class CPathWarehouseTest {
 					"urn:biopax:UnificationXref:UNIPROT_A2A2M3",
 					"urn:biopax:UnificationXref:UNIPROT_Q6Q2C4",
 					"urn:biopax:UnificationXref:ENTREZ+GENE_163688"));
-		
-		// TODO check elements
+
+		// The following item should come from urn:miriam:uniprot:Q8TD86
+        // See TEST_UNIPROT*.gz file for the original reference
 		assertTrue(m.containsID("urn:miriam:taxonomy:9606")); // added by auto-complete
-		
+
 		/*
 		try {
 			(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(m, System.out);
@@ -185,4 +186,5 @@ public class CPathWarehouseTest {
 		}
 		*/
 	}
+
 }

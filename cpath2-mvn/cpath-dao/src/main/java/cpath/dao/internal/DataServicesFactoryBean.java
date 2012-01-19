@@ -40,6 +40,11 @@ import cpath.dao.PaxtoolsDAO;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
+import org.biopax.paxtools.model.BioPAXElement;
+import org.hibernate.CacheMode;
+import org.hibernate.FlushMode;
+import org.hibernate.ScrollMode;
+import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -442,8 +447,8 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 			fullTextSession.createIndexer()
 				.purgeAllOnStart(true)
 				.batchSizeToLoadObjects( 4 )
-				.threadsForSubsequentFetching( 1 )
-				.threadsToLoadObjects( 1 )
+//				.threadsForSubsequentFetching( 1 )
+//				.threadsToLoadObjects( 1 )
 //				.optimizeOnFinish(true)
 				.startAndWait();
 		} catch (Exception e) {
