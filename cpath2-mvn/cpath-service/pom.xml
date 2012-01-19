@@ -36,7 +36,7 @@
   	<dependency>
   		<groupId>pathwaycommons.cpath</groupId>
   		<artifactId>cpath-schema</artifactId>
-  		<version>1.0.0</version>
+         	<version>${cpath.schema.version}</version>
   	</dependency>
   </dependencies>
   

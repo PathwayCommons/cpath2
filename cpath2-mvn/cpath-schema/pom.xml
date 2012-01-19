@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>pathwaycommons.cpath</groupId>
   <artifactId>cpath-schema</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1-SNAPSHOT</version>
   <name>CPath schema</name>
   <description>JAXB</description>
   <url>http://www.pathwaycommons.org</url>
