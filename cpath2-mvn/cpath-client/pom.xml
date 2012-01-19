@@ -3,7 +3,7 @@
   <parent>
     <artifactId>parent</artifactId>
     <groupId>pathwaycommons.cpath</groupId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>3.1.0-SNAPSHOT</version>
   </parent>
   
   <groupId>pathwaycommons.cpath</groupId>
@@ -20,8 +20,8 @@
   	</dependency>
         <dependency>
             <groupId>pathwaycommons.cpath</groupId>
-            <artifactId>cpath-schema</artifactId>
-            <version>${cpath.schema.version}</version>
+            <artifactId>cpath-api</artifactId>
+	    <version>4.0.0-SNAPSHOT</version>
         </dependency>
 	<dependency>
 		<groupId>org.springframework</groupId>
