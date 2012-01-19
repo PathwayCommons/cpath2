@@ -59,16 +59,6 @@
 			<artifactId>cpath-schema</artifactId>
 			<version>1.0.0</version>
 		</dependency>
-      <dependency>
-			<groupId>org.biopax.paxtools</groupId>
-			<artifactId>paxtools-hql</artifactId>
-			<version>${paxtools.version}</version>
-		</dependency>
-      <dependency>
-			<groupId>org.biopax.paxtools</groupId>
-			<artifactId>paxtools-core</artifactId>
-			<version>${paxtools.version}</version>
-		</dependency>
   </dependencies>
     
 </project>
