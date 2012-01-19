@@ -50,8 +50,7 @@ public interface PaxtoolsDAO extends Model {
 	 * Persists the given model to the db.
 	 *
 	 * @param biopaxFile File
-	 * @param createIndex boolean
-	 * @throws FileNoteFoundException
+	 * @throws FileNotFoundException biopaxFile not present
 	 */
 	void importModel(File biopaxFile) throws FileNotFoundException;
 
@@ -147,10 +146,4 @@ public interface PaxtoolsDAO extends Model {
      */
     Model runAnalysis(Analysis analysis, Object... args);
 
-
-    public Set getByProperty(PropertyEditor editor, Set<? extends BioPAXElement> values);
-
-    public Set<BioPAXElement> fetch(Set<? extends BioPAXElement> elements);
-
-    
 }

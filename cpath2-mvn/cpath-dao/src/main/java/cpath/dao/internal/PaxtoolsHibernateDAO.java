@@ -46,7 +46,6 @@ import org.apache.lucene.search.Explanation;
 import org.apache.lucene.util.Version;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
-import org.biopax.paxtools.hql.HQLPropertyAccessor;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
@@ -111,8 +110,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	private SessionFactory sessionFactory;
 
 
-    private Map<PropertyEditor,HQLPropertyAccessor> editor2Accessor;
-    HQLOrderedFetcher fetcher = new HQLOrderedFetcher(this,true);
 	private final Map<String, String> nameSpacePrefixMap;
 	private final BioPAXLevel level;
 	private final BioPAXFactory factory;
@@ -120,11 +117,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	private boolean addDependencies = false;
 	protected MultiFieldQueryParser multiFieldQueryParser;
 	private String xmlBase;
-
-    // TODO: Make these named queries
-    private static final String refreshQuery = "SELECT DISTINCT bpe FROM L3ElementImpl as bpe WHERE bpe in(:SEED)";
-    private static final String getByIDsQuery = "SELECT DISTINCT bpe FROM L3ElementImpl as bpe WHERE bpe.id in(:SEED)";
-
 
 	/**
 	 *  A supplementary {@link Analysis} (algorithm) to be executed
@@ -159,20 +151,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				return bioPAXElements;
 			}
 		};
-
-        initializeEditor2HQLMap();
-    }
-
-    private void initializeEditor2HQLMap()
-    {
-        editor2Accessor = new HashMap<PropertyEditor, HQLPropertyAccessor>();
-        Iterator<PropertyEditor> iterator = SimpleEditorMap.get(level).iterator();
-        while (iterator.hasNext())
-        {
-            PropertyEditor editor =  iterator.next();
-            this.editor2Accessor.put(editor, new HQLPropertyAccessor(editor));
-        }
-
     }
 
     // get/set methods used by spring
@@ -451,7 +429,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	/**
 	 * Paxtools MAIN DAO implementation details.
 	 *
-	 * unlike {@link WarehousePaxtoolsHibernateDAO#find(String, Class[], SearchFilter...)},
+	 * unlike {@link WarehousePaxtoolsHibernateDAO#findElements(String, int, Class, cpath.dao.filters.SearchFilter[])},
 	 * 'filterByTypes' parameter here works rather similar to the "extra filters",
 	 * but it goes the last in the filters chain! Plus, there is one extra step -
 	 * lookup for parent entities, i.e.:
@@ -755,18 +733,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		return toReturn; // null means no such element
 	}
 
-	@Transactional(propagation=Propagation.REQUIRED)
-	public Set getByProperty(PropertyEditor editor, Set<? extends BioPAXElement> values)
-	{
-            HQLPropertyAccessor accessor  = this.editor2Accessor.get(editor);
-        Session session = session();
-        accessor.init(session);
-
-            return accessor.getValueFromBeans(values);
-	}
-
-
-
 
     @Override
 	public BioPAXLevel getLevel()
@@ -859,8 +825,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 * by providing one or a few IDs... Also implemented here is
 	 * that the Fetcher/traverser does not follow BioPAX
 	 * property 'nextStep', which otherwise could lead to infinite loops.
-     *
-     * //TODO this is heavily affected by N+1 selects. Use a 1property1query breadth first approach with HQLAccessors
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRES_NEW)
@@ -880,17 +844,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Override
 	public Model getValidSubModel(final Collection<String> ids) {
 		// run the analysis (in a new transaction)
-
-        return runAnalysis(new Analysis() {
-            @Override
-            public Set<BioPAXElement> execute(Model model, Object... args) {
-                Query query = session().createQuery(getByIDsQuery);
-                query.setParameterList("SEED", ids);
-                List list = query.list();
-
-                return fetch(new HashSet<BioPAXElement>(list));
-            }
-        }, ids.toArray());
+        return runAnalysis(this.getTheseElements, ids.toArray());
 	}
 
 
@@ -954,27 +908,26 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			log.debug("runAnalysis: finished; now detaching the sub-moodel...");
 
 		// auto-complete/detach
-		if(result != null) {
-            if(log.isDebugEnabled())
-                log.debug("runAnalysis:Pre-Clone fetch..");
-            Set<BioPAXElement> fetched = this.fetch(result);
+        if(result != null) {
+                if(log.isDebugEnabled())
+                        log.debug("runAnalysis: running auto-complete...");
+                Completer c = new Completer(simpleIO.getEditorMap());
+                result = c.complete(result, null); //null - because the (would be) model is never used there anyway
+                if(log.isDebugEnabled())
+                        log.debug("runAnalysis: cloning...");
+                Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
+                Model submodel = cln.clone(null, result);
 
+                if(log.isDebugEnabled())
+                        log.debug("runAnalysis: returned");
+                return submodel; // new (sub-)model
+        }
 
-            if(log.isDebugEnabled())
-                log.debug("runAnalysis: cloning...");
-			Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
-			Model submodel = cln.clone(null, fetched);
+        if(log.isDebugEnabled())
+                log.debug("runAnalysis: returned NULL");
 
-			if(log.isDebugEnabled())
-				log.debug("runAnalysis: returned");
-			return submodel; // new (sub-)model
-		}
-
-		if(log.isDebugEnabled())
-			log.debug("runAnalysis: returned NULL");
-		return null;
-	}
-
+        return null;
+    }
 
 	@Override
 	public void replace(BioPAXElement existing, BioPAXElement replacement) {
@@ -1095,16 +1048,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	public String getXmlBase() {
 		return xmlBase;
 	}
-    @Transactional(propagation = Propagation.REQUIRED)
-    public Set<BioPAXElement> fetch(Set<? extends BioPAXElement> elements)
-    {
-
-        Query query = this.session().createQuery(refreshQuery);
-        query.setParameterList("SEED", elements);
-        query.setReadOnly(true);
-        Set seed = new HashSet<BioPAXElement>(query.list());
-        return this.fetcher.fetch(seed);
-    }
 
 }
 
