@@ -28,6 +28,7 @@
  **/
 package cpath.dao;
 
+import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
@@ -38,6 +39,7 @@ import java.util.Collection;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
+import java.util.Set;
 
 /**
  * BioPAX data access (both model and repository).
@@ -48,8 +50,7 @@ public interface PaxtoolsDAO extends Model {
 	 * Persists the given model to the db.
 	 *
 	 * @param biopaxFile File
-	 * @param createIndex boolean
-	 * @throws FileNoteFoundException
+	 * @throws FileNotFoundException biopaxFile not present
 	 */
 	void importModel(File biopaxFile) throws FileNotFoundException;
 
@@ -129,7 +130,7 @@ public interface PaxtoolsDAO extends Model {
      * @return a detached (cloned) BioPAX sub-model
      */
     Model runAnalysis(Analysis analysis, Object... args);
-    
+
     
     /**
      * Finds top (root) pathways in the entire BioPAX model.

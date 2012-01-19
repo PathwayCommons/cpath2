@@ -103,7 +103,7 @@ public enum Cmd {
         this.output = output;
 		this.args = args;
 	}
-	
+
 	@Override
 	public String toString() {
 		return name().toLowerCase();
