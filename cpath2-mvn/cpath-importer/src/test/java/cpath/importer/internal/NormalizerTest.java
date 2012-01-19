@@ -56,12 +56,8 @@ public class NormalizerTest {
 		Model m = simpleReader.convertFromOWL(getClass()
 				.getResourceAsStream("/biopax-level3-test.owl"));
 		normalizer.normalize(m);
-/*
-		Set<UnificationXref> xrefs = m.getObjects(UnificationXref.class);
-		for(UnificationXref x : xrefs) {
-			System.out.println(x.getRDFId() + " [" + x + "]");
-		}
-*/
+
+		// normalizer turns the DB_ID part of xref's URIs to upper case and removes duplicate xrefs after all!
 		assertFalse(m.containsID("urn:biopax:UnificationXref:KEGG+COMPOUND_c00022"));
 		assertTrue(m.containsID("urn:biopax:UnificationXref:KEGG+COMPOUND_C00022"));	
 	}
