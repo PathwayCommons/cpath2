@@ -138,7 +138,7 @@ public class CPathMergerTest {
 		assertTrue(mergedModel.containsID("urn:miriam:taxonomy:9606"));
 		
 		ProteinReference pr = (ProteinReference)mergedModel.getByID("urn:miriam:uniprot:P27797");
-		assertEquals(8, pr.getName().size());
+		assertEquals(9, pr.getName().size());
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
 		assertEquals(6, pr.getXref().size());
@@ -190,7 +190,7 @@ public class CPathMergerTest {
 		pr = (ProteinReference)mergedModel.getByID("urn:miriam:uniprot:P27797");
 		if(mergedModel instanceof PaxtoolsDAO)
 			((PaxtoolsDAO) mergedModel).initialize(pr);
-		assertEquals(8, pr.getName().size());
+		assertEquals(9, pr.getName().size());
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
 		assertEquals(6, pr.getXref().size());
