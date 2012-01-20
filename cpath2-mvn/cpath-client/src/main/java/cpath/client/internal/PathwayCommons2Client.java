@@ -97,11 +97,10 @@ public class PathwayCommons2Client
         restTemplate.setMessageConverters(httpMessageConverters);
     }
 
-    private ServiceResponse findTemplate(Collection<String> keywords, boolean entitySearch) 
+    private ServiceResponse searchTemplate(Collection<String> keywords) 
     		throws PathwayCommonsException 
     {
-        String url = endPointURL +
-        	(entitySearch ? Cmd.FIND_ENTITY : Cmd.FIND ) + commandDelimiter 
+        String url = endPointURL + Cmd.SEARCH + commandDelimiter 
         	+ CmdArgs.q + "=" + join("", keywords, ",")
             + (getPage() > 0 ? "&" + CmdArgs.page + "=" + getPage() : "")
             + (getDataSources().isEmpty() ? "" : "&" + join(CmdArgs.datasource + "=", getDataSources(), "&"))
@@ -140,7 +139,7 @@ public class PathwayCommons2Client
      * @throws PathwayCommonsException when the WEB API gives an error
      */
     public ServiceResponse findEntity(Collection<String> keywords) throws PathwayCommonsException {
-        return findTemplate(keywords, true);
+        return searchTemplate(keywords);
     }
 
     /**
@@ -164,7 +163,7 @@ public class PathwayCommons2Client
      * @throws PathwayCommonsException when the WEB API gives an error
      */
     public ServiceResponse find(Collection<String> keywords) throws PathwayCommonsException {
-        return findTemplate(keywords, false);
+        return searchTemplate(keywords);
     }
 
     /**
