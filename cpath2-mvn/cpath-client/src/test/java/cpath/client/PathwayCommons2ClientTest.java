@@ -1,4 +1,4 @@
-package org.biopax.paxtools.io.pathwayCommons;
+package cpath.client;
 
 import static org.junit.Assert.*;
 
@@ -7,6 +7,7 @@ import java.util.Collection;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import cpath.client.internal.PathwayCommons2Client;
 import cpath.service.jaxb.SearchResponse;
 
 /**

@@ -1,4 +1,4 @@
-package org.biopax.paxtools.io.pathwayCommons;
+package cpath.client.internal;
 
 import org.biopax.paxtools.controller.Merger;
 import org.biopax.paxtools.io.BioPAXIOHandler;
@@ -74,7 +74,7 @@ public class PathwayCommonsIOHandler
     /**
      * Sets input id type
      * @param newInputIdType    input id type to be set
-     * @see                     org.biopax.paxtools.io.pathwayCommons.PathwayCommonsIOHandler.ID_TYPE
+     * @see                     cpath.client.PathwayCommonsIOHandler.ID_TYPE
      */
     public void setInputIdType(ID_TYPE newInputIdType)
     {
@@ -84,7 +84,7 @@ public class PathwayCommonsIOHandler
     /**
      * Sets output id type
      * @param newOutputIdType   output id type to be set
-     * @see                     org.biopax.paxtools.io.pathwayCommons.PathwayCommonsIOHandler.ID_TYPE
+     * @see                     cpath.client.PathwayCommonsIOHandler.ID_TYPE
      */
     public void setOutputIdType(ID_TYPE newOutputIdType)
     {
@@ -94,7 +94,7 @@ public class PathwayCommonsIOHandler
     /**
      * Sets the data source to obtain results only from a specific data source.
      * @param newDataSource     data source to be used
-     * @see                     org.biopax.paxtools.io.pathwayCommons.PathwayCommonsIOHandler.DATA_SRC
+     * @see                     cpath.client.PathwayCommonsIOHandler.DATA_SRC
      */
     public void setDataSource(DATA_SRC newDataSource)
     {
@@ -155,9 +155,9 @@ public class PathwayCommonsIOHandler
      * @param id    entity id
      * @return      An ArrayList containing "PHYSICAL_ENTITY_ID_NOT_FOUND" as the second column in case of no results
      *
-     * @see #setDataSource(org.biopax.paxtools.io.pathwayCommons.PathwayCommonsIOHandler.DATA_SRC)
-     * @see #setInputIdType(org.biopax.paxtools.io.pathwayCommons.PathwayCommonsIOHandler.ID_TYPE)
-     * @see #setOutputIdType(org.biopax.paxtools.io.pathwayCommons.PathwayCommonsIOHandler.ID_TYPE)
+     * @see #setDataSource(cpath.client.PathwayCommonsIOHandler.DATA_SRC)
+     * @see #setInputIdType(cpath.client.PathwayCommonsIOHandler.ID_TYPE)
+     * @see #setOutputIdType(cpath.client.PathwayCommonsIOHandler.ID_TYPE)
      * @see #setPrefix(String)
      *
      */
@@ -214,9 +214,9 @@ public class PathwayCommonsIOHandler
      * @param id    entity id
      * @return      empty model in case of errors.
      *
-     * @see #setDataSource(org.biopax.paxtools.io.pathwayCommons.PathwayCommonsIOHandler.DATA_SRC)
-     * @see #setInputIdType(org.biopax.paxtools.io.pathwayCommons.PathwayCommonsIOHandler.ID_TYPE)
-     * @see #setOutputIdType(org.biopax.paxtools.io.pathwayCommons.PathwayCommonsIOHandler.ID_TYPE)
+     * @see #setDataSource(cpath.client.PathwayCommonsIOHandler.DATA_SRC)
+     * @see #setInputIdType(cpath.client.PathwayCommonsIOHandler.ID_TYPE)
+     * @see #setOutputIdType(cpath.client.PathwayCommonsIOHandler.ID_TYPE)
      * @see #setPrefix(String)
      */
     public Model getNeighbors(String id) throws IOException

@@ -37,7 +37,7 @@
   	<dependency>
   		<groupId>pathwaycommons.cpath</groupId>
   		<artifactId>cpath-api</artifactId>
-  		<version>5.0.0-SNAPSHOT</version>
+  		<version>${cpath.api.version}</version>
   	</dependency>
   </dependencies>
 </project>

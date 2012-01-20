@@ -1,5 +1,8 @@
-package org.biopax.paxtools.io.pathwayCommons;
+package cpath.client.internal;
 
+import cpath.client.internal.util.BioPAXHttpMessageConverter;
+import cpath.client.internal.util.ErrorUtil;
+import cpath.client.internal.util.PathwayCommonsException;
 import cpath.service.Cmd;
 import cpath.service.CmdArgs;
 import cpath.service.jaxb.*;
@@ -7,9 +10,6 @@ import cpath.service.jaxb.*;
 import org.apache.commons.lang.StringUtils;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
-import org.biopax.paxtools.io.pathwayCommons.util.BioPAXHttpMessageConverter;
-import org.biopax.paxtools.io.pathwayCommons.util.ErrorUtil;
-import org.biopax.paxtools.io.pathwayCommons.util.PathwayCommonsException;
 import org.biopax.paxtools.model.Model;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
@@ -341,7 +341,7 @@ public class PathwayCommons2Client
      * See http://www.pathwaycommons.org/pc2-demo/#graph
      *
      * @see #getNeighborhood(java.util.Collection)
-     * @see #getCommonStream(java.util.Collection, org.biopax.paxtools.io.pathwayCommons.PathwayCommons2Client.STREAM_DIRECTION)
+     * @see #getCommonStream(java.util.Collection, cpath.client.PathwayCommons2Client.STREAM_DIRECTION)
      * @see #getPathsBetween(java.util.Collection)
      *
      * @return distance limit.

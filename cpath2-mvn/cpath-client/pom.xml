@@ -9,8 +9,8 @@
   <groupId>pathwaycommons.cpath</groupId>
   <artifactId>cpath-client</artifactId>
   <packaging>jar</packaging>
-  <name>cPath2 Client for Paxtools</name>
-  <description>cPath 2 Client for Paxtools</description>
+  <name>cPath Client</name>
+  <description>cPath/cPath2 Client</description>
   
   <dependencies>
         <dependency>

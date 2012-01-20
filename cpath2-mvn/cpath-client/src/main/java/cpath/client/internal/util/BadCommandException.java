@@ -1,4 +1,4 @@
-package org.biopax.paxtools.io.pathwayCommons.util;
+package cpath.client.internal.util;
 
 import cpath.service.jaxb.ErrorResponse;
 
