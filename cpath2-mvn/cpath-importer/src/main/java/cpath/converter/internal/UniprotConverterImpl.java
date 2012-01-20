@@ -257,6 +257,21 @@ public class UniprotConverterImpl extends BaseConverterImpl {
                 setRelationshipXRef(proteinReferenceModel, "RefSeq", 
                 		refSeqId, proteinReference, RelationshipType.SEQUENCE);
             }
+			else if (xref.startsWith("HGNC") 
+					|| xref.startsWith("MGI") 
+						|| xref.startsWith("RGD")) {
+				//TODO this xref is created only for hs, mm, rn species; do we need this at all?..
+                xref = xref.replaceAll("; -.", "");
+                String parts[] = xref.split(";");
+                String db = parts[0].trim();
+                String id = parts[1];
+                if (id.contains(".")) {
+                    parts = id.split("\\.");
+                    id = parts[0];
+                }
+                setRelationshipXRef(proteinReferenceModel, db, 
+                		id, proteinReference, RelationshipType.GENE);
+            }
         }
     }
 
@@ -274,7 +289,9 @@ public class UniprotConverterImpl extends BaseConverterImpl {
             String subParts[] = parts[i].split("=");
             // Set HUGO Gene Name
             if (subParts[0].trim().equals("Name")) {
-                setRelationshipXRef(proteinReferenceModel, "HGNC", subParts[1], proteinReference, RelationshipType.GENE);
+//                setRelationshipXRef(proteinReferenceModel, "HGNC", subParts[1], proteinReference, RelationshipType.GENE);
+            	// add the gene symbol to protein names
+            	proteinReference.addName(subParts[1]);
             }
 			else if (subParts[0].trim().equals("Synonyms")) {
                 String synList[] = subParts[1].split(",");
