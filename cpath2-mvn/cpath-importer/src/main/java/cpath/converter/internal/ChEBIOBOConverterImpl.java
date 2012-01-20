@@ -5,7 +5,6 @@ import cpath.dao.PaxtoolsDAO;
 
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level2.xref;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.controller.ModelUtils;
