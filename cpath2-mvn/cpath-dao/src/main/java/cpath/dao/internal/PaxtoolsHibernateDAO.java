@@ -56,13 +56,16 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.hibernate.*;
+import org.hibernate.annotations.FetchProfile;
 import org.hibernate.search.FullTextQuery;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.tmatesoft.svn.core.internal.wc.SVNExportEditor;
 
+import javax.persistence.criteria.From;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -139,6 +142,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 				new StandardAnalyzer(Version.LUCENE_31));
 
 		// this simply implements how to get a list of elements from the list of URIs
+        //Todo implement this with HQL for performance
 		this.getTheseElements = new Analysis() {
 			@Override
 			public Set<BioPAXElement> execute(Model model, Object... args) {
@@ -830,7 +834,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	@Transactional(propagation=Propagation.REQUIRES_NEW)
 	public void exportModel(OutputStream outputStream, String... ids)
 	{
-		simpleIO.convertToOWL(this, outputStream, ids);
+        session().enableFetchProfile("completer");
+        simpleIO.convertToOWL(this, outputStream, ids);
+        session().disableFetchProfile("completer");
 	}
 
 
@@ -909,6 +915,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 
 		// auto-complete/detach
         if(result != null) {
+                session().enableFetchProfile("completer");
                 if(log.isDebugEnabled())
                         log.debug("runAnalysis: running auto-complete...");
                 Completer c = new Completer(simpleIO.getEditorMap());
@@ -917,6 +924,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
                         log.debug("runAnalysis: cloning...");
                 Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
                 Model submodel = cln.clone(null, result);
+                session().disableFetchProfile("completer");
 
                 if(log.isDebugEnabled())
                         log.debug("runAnalysis: returned");
