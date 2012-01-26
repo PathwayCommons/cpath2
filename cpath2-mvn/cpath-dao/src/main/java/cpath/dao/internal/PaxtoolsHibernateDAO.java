@@ -85,10 +85,10 @@ import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
 public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 {
 	private static final long serialVersionUID = 1L;
-	
+
 	final static int BATCH_SIZE = 20;
 	final static int DEFAULT_MAX_HITS = Integer.MAX_VALUE;
-	
+
 	private int maxHits = DEFAULT_MAX_HITS;
 
 	public final static String[] ALL_FIELDS =
@@ -96,7 +96,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		// auto-generated index fields (from the annotations in paxtools-core)
 		FIELD_AVAILABILITY,
 		FIELD_COMMENT, // biopax comments
-		FIELD_KEYWORD, //anything, e.g., names, terms, comments, incl. - from child elements 
+		FIELD_KEYWORD, //anything, e.g., names, terms, comments, incl. - from child elements
 		FIELD_NAME, // standardName, displayName, other names
 		FIELD_TERM, // CV terms
 		FIELD_XREFDB, //xref.db
@@ -106,7 +106,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		// plus, filter fields (TODO experiment with not including these fields into default search fields; use for filtering only)
 		FIELD_ORGANISM,
 		FIELD_DATASOURCE,
-		FIELD_PATHWAY, // i.e., helps find an object by a parent pathway name or filter a search results by pathway ;) 
+		FIELD_PATHWAY, // i.e., helps find an object by a parent pathway name or filter a search results by pathway ;)
 		};
 
 	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
@@ -848,10 +848,23 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	 *
 	 */
 	@Override
-	public Model getValidSubModel(final Collection<String> ids) {
-		// run the analysis (in a new transaction)
-        return runAnalysis(this.getTheseElements, ids.toArray());
-	}
+    @Transactional(propagation=Propagation.REQUIRED, readOnly=true)
+	public Model getValidSubModel(final Collection<String> ids)
+    {
+        session().enableFetchProfile("completer");
+        Query query = session().createQuery("Select distinct bpe From BioPAXElementImpl as bpe where bpe.id in(:SEED)");
+        query.setParameterList("SEED", ids);
+        Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
+        Set<BioPAXElement> result = new HashSet<BioPAXElement>(query.list());
+
+        Completer c = new Completer(simpleIO.getEditorMap());
+        result = c.complete(result, null);
+        Model submodel = cln.clone(null,result);
+        session().disableFetchProfile("completer");
+
+        return submodel;
+
+    }
 
 
 	/*
@@ -913,28 +926,12 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		if(log.isDebugEnabled())
 			log.debug("runAnalysis: finished; now detaching the sub-moodel...");
 
-		// auto-complete/detach
-        if(result != null) {
-                session().enableFetchProfile("completer");
-                if(log.isDebugEnabled())
-                        log.debug("runAnalysis: running auto-complete...");
-                Completer c = new Completer(simpleIO.getEditorMap());
-                result = c.complete(result, null); //null - because the (would be) model is never used there anyway
-                if(log.isDebugEnabled())
-                        log.debug("runAnalysis: cloning...");
-                Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
-                Model submodel = cln.clone(null, result);
-                session().disableFetchProfile("completer");
-
-                if(log.isDebugEnabled())
-                        log.debug("runAnalysis: returned");
-                return submodel; // new (sub-)model
+        List<String> ids= new ArrayList<String>(result.size());
+        for (BioPAXElement bpe : result) 
+        {
+           ids.add(bpe.getRDFId());
         }
-
-        if(log.isDebugEnabled())
-                log.debug("runAnalysis: returned NULL");
-
-        return null;
+		return getValidSubModel(ids);
     }
 
 	@Override
