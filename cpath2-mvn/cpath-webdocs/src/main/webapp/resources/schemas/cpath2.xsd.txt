@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <xs:schema version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
 
   <xs:element name="dataResponse" type="DataResponse"/>
@@ -68,7 +69,7 @@
           <xs:element name="searchHit" type="SearchHit" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
         <xs:attribute name="numHits" type="xs:int"/>
-        <xs:attribute name="numHitsPerPage" type="xs:int"/>
+        <xs:attribute name="maxHitsPerPage" type="xs:int"/>
         <xs:attribute name="pageNo" type="xs:int"/>
         <xs:attribute name="comment" type="xs:string"/>
       </xs:extension>

@@ -12,7 +12,7 @@ public class SearchResponse extends ServiceResponse {
     protected Integer numHits;
     
     @XmlAttribute
-    protected Integer numHitsPerPage;
+    protected Integer maxHitsPerPage;
     
     protected List<SearchHit> searchHit; // count to get actual no. hits!
     
@@ -73,12 +73,12 @@ public class SearchResponse extends ServiceResponse {
      * The number of hits per page.
      * @return
      */
-	public Integer getNumHitsPerPage() {
-		return numHitsPerPage;
+	public Integer getMaxHitsPerPage() {
+		return maxHitsPerPage;
 	}
 
-	public void setNumHitsPerPage(Integer numHitsPerPage) {
-		this.numHitsPerPage = numHitsPerPage;
+	public void setMaxHitsPerPage(Integer maxHitsPerPage) {
+		this.maxHitsPerPage = maxHitsPerPage;
 	}
 	
 }
