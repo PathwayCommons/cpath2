@@ -38,11 +38,7 @@ import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
-//import org.biopax.paxtools.controller.*;
-//import org.biopax.paxtools.model.level3.Pathway;
-//import org.biopax.paxtools.io.simpleIO.*;
 import org.biopax.miriam.MiriamLink;
-import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.Provenance;

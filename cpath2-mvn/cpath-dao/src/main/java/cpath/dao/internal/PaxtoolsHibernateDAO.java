@@ -74,9 +74,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	private static final long serialVersionUID = 1L;
 	
 	private final static int BATCH_SIZE = 20;
-	private final static int DEFAULT_MAX_HITS = Integer.MAX_VALUE;
+	private final static int DEFAULT_MAX_HITS_PER_PAGE = Integer.MAX_VALUE;
 	private final static int IDX_BATCH_SIZE = 200;
-	private int maxHits = DEFAULT_MAX_HITS;
+	private int maxHitsPerPage = DEFAULT_MAX_HITS_PER_PAGE;
 
 	public final static String[] DEFAULT_SEARCH_FIELDS =
 		{
@@ -161,15 +161,24 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	}
 	
 
-	public int getMaxHits() {
-		return maxHits;
+	public int getMaxHitsPerPage() {
+		return maxHitsPerPage;
 	}
 
-	public void setMaxHits(int maxHits) {
+	/**
+	 * Sets the max. number of hits returned at once (per page).
+	 * 
+	 * @param maxHits
+	 */
+	/*
+	 * This parameter is currently set via Spring xml beans configuration,
+	 * which, in turn, reads it from the capth.property file in the current $CPATH2_HOME dir)
+	 */
+	public void setMaxHitsPerPage(int maxHits) {
 		if(maxHits <= 0)
-			this.maxHits = DEFAULT_MAX_HITS;
+			this.maxHitsPerPage = DEFAULT_MAX_HITS_PER_PAGE;
 		else 
-			this.maxHits = maxHits;
+			this.maxHitsPerPage = maxHits;
 	}
 
 	//not transactional (but it's 'merge' method that creates a new transaction)
@@ -333,8 +342,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 			fullTextQuery.enableFullTextFilter(FILTER_BY_ORGANISM).setParameter("organisms", organisms);
 			
 		// set pagination
-		int l = page * maxHits; // - the first hit no., if any
-		fullTextQuery.setMaxResults(maxHits);
+		int l = page * maxHitsPerPage; // - the first hit no., if any
+		fullTextQuery.setMaxResults(maxHitsPerPage);
 		fullTextQuery.setFirstResult(l);
 
 		/* TODO create a highlighter (to get the excerpt); 
@@ -363,6 +372,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 						return toSearchHits(collection);
 					}
 				}); 
+		
+		searchResponse.setNumHitsPerPage(maxHitsPerPage);
 		
 		int count = fullTextQuery.getResultSize(); // cheap operation
 		if (log.isInfoEnabled())

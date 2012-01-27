@@ -57,7 +57,7 @@
 
     <bean id="paxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="mainSessionFactory"/>
-        <property name="maxHits" value="${maxSearchHitsPerPage}"/>
+        <property name="maxHitsPerPage" value="${maxSearchHitsPerPage}"/>
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
