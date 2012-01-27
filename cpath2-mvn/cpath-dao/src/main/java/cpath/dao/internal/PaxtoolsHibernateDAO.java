@@ -373,7 +373,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 					}
 				}); 
 		
-		searchResponse.setNumHitsPerPage(maxHitsPerPage);
+		searchResponse.setMaxHitsPerPage(maxHitsPerPage);
 		
 		int count = fullTextQuery.getResultSize(); // cheap operation
 		if (log.isInfoEnabled())
