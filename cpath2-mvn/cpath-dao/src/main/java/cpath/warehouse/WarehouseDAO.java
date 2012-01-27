@@ -61,10 +61,14 @@ public interface WarehouseDAO {
 	
 	
 	/**
-	 * Gets identifier(s) of the BioPAX object(s) using the xrefs to search by.
+	 * Gets identifier(s) of the BioPAX object(s) stored in the warehouse 
+	 * by using the xrefs as a query.
 	 * 
-	 * Thus, this method allows for "id-mapping": one can try finding an entity reference
-	 * using some identifier or keyword and then gets all the xrefs (other IDs) and primary URI.
+	 * In fact, this method does sort of "id-mapping", which is based on the
+	 * warehouse data though, i.e., on how and which Xrefs were generated for each
+	 * protein or small molecule entry during the warehous was built, which can be 
+	 * improved from one release to another (an may be still no perfect). And, 
+	 * one can always create better BioPAX data alignment/merge algorithm on top of it.
 	 * 
 	 * @param xrefs query set of xrefs
 	 * @param clazz subclass (of XReferable) of the requested object

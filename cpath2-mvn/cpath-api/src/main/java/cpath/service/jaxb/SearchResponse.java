@@ -11,6 +11,9 @@ public class SearchResponse extends ServiceResponse {
     @XmlAttribute
     protected Integer numHits;
     
+    @XmlAttribute
+    protected Integer numHitsPerPage;
+    
     protected List<SearchHit> searchHit; // count to get actual no. hits!
     
     @XmlAttribute
@@ -39,7 +42,7 @@ public class SearchResponse extends ServiceResponse {
 	}
 
     /**
-     * The number of hits before filters or post-processing applied.
+     * The total number of hits
      * @return
      */
 	public Integer getNumHits() {
@@ -65,4 +68,17 @@ public class SearchResponse extends ServiceResponse {
 	public boolean isEmpty() {
 		return getSearchHit().isEmpty();
 	}
+
+    /**
+     * The number of hits per page.
+     * @return
+     */
+	public Integer getNumHitsPerPage() {
+		return numHitsPerPage;
+	}
+
+	public void setNumHitsPerPage(Integer numHitsPerPage) {
+		this.numHitsPerPage = numHitsPerPage;
+	}
+	
 }
