@@ -1,6 +1,7 @@
 $(document).ready(function() {
     getCommandParameterDetails("help/formats", "output_parameter", "#command_header_additional_parameters_output", "#command_header_additional_parameters_output_desc");
     getCommandParameterDetails("help/kinds", "graph_parameter", "#command_header_additional_parameters_graph", "#command_header_additional_parameters_graph_desc");
+    getCommandParameterDetails("help/directions", "direction_parameter", "#command_header_additional_parameters_direction", "#command_header_additional_parameters_direction_desc");
     getCommandParameterDetails("help/datasources", "datasource_parameter", "#command_header_additional_parameters_datasource", "#command_header_additional_parameters_datasource_desc");
     getCommandParameterDetails("help/organisms", "organism_parameter", "#command_header_additional_parameters_organism", "#command_header_additional_parameters_organism_desc");
     getCommandParameterDetails("help/types", "biopax_parameter", "#command_header_additional_parameters_biopax", "#command_header_additional_parameters_biopax_desc");
