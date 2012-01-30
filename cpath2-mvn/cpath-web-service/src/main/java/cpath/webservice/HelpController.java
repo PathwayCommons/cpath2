@@ -48,6 +48,7 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.query.algorithm.Direction;
 import org.bridgedb.DataSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
@@ -254,7 +255,36 @@ public class HelpController {
     	return help;
     }
  
-    
+	/**
+	 * List of graph query types.
+	 *
+	 * @return
+	 */
+    @RequestMapping("/help/directions")
+    public @ResponseBody Help getDirectionTypes() {
+    	Help help = new Help();
+    	for(Direction direction : Direction.values()) {
+    		help.addMember(getDirectionType(direction));
+    	}
+    	help.setId("directions");
+    	help.setTitle("Graph Query Traversal Directions");
+    	help.setInfo("Following are possible query directions:");
+    	help.setExample("help/directions/downstream");
+    	return help;
+    }
+
+
+    @RequestMapping("/help/directions/{direction}")
+    public @ResponseBody Help getDirectionType(@PathVariable Direction direction) {
+    	if(direction == null) return getDirectionTypes();
+    	Help help = new Help();
+    	help.setTitle(direction.name());
+    	help.setId(direction.name());
+    	help.setInfo(direction.getDescription());
+    	return help;
+    }
+
+
 	/**
 	 * List of loaded data sources.
 	 * 

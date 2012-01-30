@@ -29,6 +29,8 @@
   <span id="command_header_additional_parameters_output_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_output_desc"/></span>
   <span id="command_header_additional_parameters_graph" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_graph"/></span>
   <span id="command_header_additional_parameters_graph_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_graph_desc"/></span>
+  <span id="command_header_additional_parameters_direction" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_direction"/></span>
+  <span id="command_header_additional_parameters_direction_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_direction_desc"/></span>
   <span id="command_header_additional_parameters_datasource" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_datasource"/></span>
   <span id="command_header_additional_parameters_datasource_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_datasource_desc"/></span>
   <span id="command_header_additional_parameters_organism" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_organism"/></span>
