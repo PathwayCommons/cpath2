@@ -194,62 +194,89 @@ public class PathwayCommons2Client
         return restTemplate.getForObject(url, Model.class);
     }
 
-    /**
-     *  Finds paths between a given source set of objects. The source set may contain Xref,
-     *  EntityReference, and/or PhysicalEntity objects.
-     *  See http://www.pathwaycommons.org/pc2-demo/#graph
-     *
-     * @param sourceSet set of xrefs, entity references, or physical entities
-     * @return a BioPAX model that contains the path(s).
-     */
-    public Model getPathsBetween(Collection<String> sourceSet) 
-    {
-        String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=pathsbetween&"
-                        + join(CmdArgs.source + "=", sourceSet, "&") + "&"
-                        + CmdArgs.limit + "=" + graphQueryLimit;
+	/**
+	 *  Finds paths between a given source set of objects. The source set may contain Xref,
+	 *  EntityReference, and/or PhysicalEntity objects.
+	 *  See http://www.pathwaycommons.org/pc2-demo/#graph
+	 *
+	 * @param sourceSet set of xrefs, entity references, or physical entities
+	 * @return a BioPAX model that contains the path(s).
+	 */
+	public Model getPathsBetween(Collection<String> sourceSet)
+	{
+		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=pathsbetween&"
+			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
+			+ CmdArgs.limit + "=" + graphQueryLimit;
 
-        return restTemplate.getForObject(url, Model.class);
-    }
+		return restTemplate.getForObject(url, Model.class);
+	}
 
-    //TODO implement public Model getPOI(Collection<String> sourceSet, Collection<String> targetSet)  ??
-    
-    /**
-     * Searches directed paths from and/or to the given source set of entities, in the specified search limit.
-     * See http://www.pathwaycommons.org/pc2-demo/#graph
-     *
-     * @param sourceSet Set of source physical entities
-     * @return BioPAX model representing the neighborhood.
-     */
-    public Model getNeighborhood(Collection<String> sourceSet) {
-        String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=neighborhood&"
-                        + join(CmdArgs.source + "=", sourceSet, "&") + "&"
-                        + CmdArgs.limit + "=" + graphQueryLimit;
+	/**
+	 *  Finds paths between from a given source set of objects to a given target set of objects. Source and target sets
+	 *  may contain Xref, EntityReference, and/or PhysicalEntity objects.
+	 *  See http://www.pathwaycommons.org/pc2-demo/#graph
+	 *
+	 * @param sourceSet set of xrefs, entity references, or physical entities
+	 * @param targetSet set of xrefs, entity references, or physical entities
+	 * @return a BioPAX model that contains the path(s).
+	 */
+	public Model getPathsFromTo(Collection<String> sourceSet, Collection<String> targetSet)
+	{
+		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=pathsofinterest&"
+			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
+			+ join(CmdArgs.target + "=", targetSet, "&") + "&"
+			+ CmdArgs.limit + "=" + graphQueryLimit;
 
-        return restTemplate.getForObject(url, Model.class);
-    }
+		System.out.println(url);
+		return restTemplate.getForObject(url, Model.class);
+	}
 
-    /**
-     * This query searches for the common upstream (common regulators) or
-     * common downstream (common targets) objects of the given source set.
-     * See http://www.pathwaycommons.org/pc2-demo/#graph
-     *
-     * @see STREAM_DIRECTION
-     *
-     * @param sourceSet set of physical entities
-     * @param direction upstream or downstream
-     * @return a BioPAX model that contains the common stream
-     */
-    public Model getCommonStream(Collection<String> sourceSet, STREAM_DIRECTION direction) 
-    {
-        String url = endPointURL + Cmd.GRAPH + commandDelimiter 
-        	+ CmdArgs.kind + "=commonstream&"
-            + join(CmdArgs.source + "=", sourceSet, "&") + "&"
-            + CmdArgs.direction + "=" + direction + "&"
-            + CmdArgs.limit + "=" + graphQueryLimit;
+	/**
+	 * Searches directed paths from and/or to the given source set of entities, in the specified search limit.
+	 * See http://www.pathwaycommons.org/pc2-demo/#graph
+	 *
+	 * @param sourceSet Set of source physical entities
+	 * @param direction direction to extends network towards neighbors
+	 * @return BioPAX model representing the neighborhood.
+	 */
+	public Model getNeighborhood(Collection<String> sourceSet, STREAM_DIRECTION direction)
+	{
+		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=neighborhood&"
+			+ CmdArgs.format + "=BIOPAX&"
+			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
+			+ CmdArgs.direction + "=" + direction + "&"
+			+ CmdArgs.limit + "=" + graphQueryLimit;
 
-        return restTemplate.getForObject(url, Model.class);
-    }
+		return restTemplate.getForObject(url, Model.class);
+	}
 
+	/**
+	 * This query searches for the common upstream (common regulators) or
+	 * common downstream (common targets) objects of the given source set.
+	 * See http://www.pathwaycommons.org/pc2-demo/#graph
+	 *
+	 * @see STREAM_DIRECTION
+	 *
+	 * @param sourceSet set of physical entities
+	 * @param direction upstream or downstream
+	 * @return a BioPAX model that contains the common stream
+	 */
+	public Model getCommonStream(Collection<String> sourceSet, STREAM_DIRECTION direction)
+	{
+		if (direction == STREAM_DIRECTION.BOTHSTREAM)
+		{
+			throw new IllegalArgumentException(
+				"Direction of common-stream query should be either upstream or downstream.");
+		}
+
+		String url = endPointURL + Cmd.GRAPH + commandDelimiter
+			+ CmdArgs.kind + "=commonstream&"
+			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
+			+ CmdArgs.direction + "=" + direction + "&"
+			+ CmdArgs.limit + "=" + graphQueryLimit;
+
+		return restTemplate.getForObject(url, Model.class);
+	}
     
     /**
      * Gets the list of top (root) pathways 
@@ -339,8 +366,8 @@ public class PathwayCommons2Client
      * Graph query search distance limit (default = 1).
      * See http://www.pathwaycommons.org/pc2-demo/#graph
      *
-     * @see #getNeighborhood(java.util.Collection)
-     * @see #getCommonStream(java.util.Collection, cpath.client.PathwayCommons2Client.STREAM_DIRECTION)
+     * @see #getNeighborhood(java.util.Collection, cpath.client.internal.PathwayCommons2Client.STREAM_DIRECTION)
+     * @see #getCommonStream(java.util.Collection, cpath.client.internal.PathwayCommons2Client.STREAM_DIRECTION)
      * @see #getPathsBetween(java.util.Collection)
      *
      * @return distance limit.
@@ -471,7 +498,8 @@ public class PathwayCommons2Client
 
     public enum STREAM_DIRECTION {
         UPSTREAM("upstream"),
-        DOWNSTREAM("downstream");
+        DOWNSTREAM("downstream"),
+		BOTHSTREAM("bothstream");
 
         private final String direction;
 
