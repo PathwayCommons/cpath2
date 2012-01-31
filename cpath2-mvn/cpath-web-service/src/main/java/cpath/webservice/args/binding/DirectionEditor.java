@@ -28,67 +28,27 @@
 package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.bridgedb.DataSource;
-
-import cpath.service.BioDataTypes;
-import cpath.service.BioDataTypes.Type;
-import cpath.webservice.args.OrganismDataSource;
+import org.biopax.paxtools.query.algorithm.Direction;
 
 
 /**
- * Helps parse the string parameter in the web service call
- * (organism: identifier, full name or official Miriam URN);
- * sets NULL if none matched.
- * 
  * @author rodche
- * 
+ *
  */
-public class OrganismDataSourceEditor extends PropertyEditorSupport 
-{
-	private static final Log log = LogFactory.getLog(OrganismDataSourceEditor.class);
+public class DirectionEditor extends PropertyEditorSupport {
+	private static final Log log = LogFactory.getLog(DirectionEditor.class);
 	
+	/* (non-Javadoc)
+	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)
+	 */
 	@Override
-	public void setAsText(String ds) {
-		DataSource dataSource = null;
-		
-		/*
-		 * all the organisms 
-		 * should have been already registered by BioDataTypes
-		 */
-		for (DataSource d : BioDataTypes.getDataSources(Type.ORGANISM)) {
-			// guess it's an id or name
-			if (d.getSystemCode().equalsIgnoreCase(ds)
-					|| d.getFullName().equalsIgnoreCase(ds)) {
-				dataSource = d;
-				break;
-			} 
-			
-			// may be it's a standard URN?
-			String dsuriEncoded;
-			try {
-				dsuriEncoded = URLEncoder.encode(ds, "UTF-8");
-			} catch (UnsupportedEncodingException e) {
-				dsuriEncoded = URLEncoder.encode(ds);
-			}
-			
-			if (ds.equalsIgnoreCase(d.getMainUrl()) // is actually RDFId - as created by BioDataSources.init()
-				|| dsuriEncoded.equalsIgnoreCase(d.getMainUrl())) 
-			{
-				dataSource = d;
-				break;
-			}
-		}
-
-		if(dataSource != null)
-			setValue(new OrganismDataSource(dataSource));
-		else {
-			throw new IllegalArgumentException("Illegal value for 'organism': " + ds);
-		}
+	public void setAsText(String arg0) {
+		Direction value = null;
+			value = Direction.valueOf(arg0.trim().toUpperCase());
+			setValue(value);
 	}
 	
 }
