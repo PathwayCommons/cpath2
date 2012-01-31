@@ -54,7 +54,7 @@ import cpath.dao.PaxtoolsDAO;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
-import cpath.service.analyses.PathsOfInterestAnalysis;
+import cpath.service.analyses.PathsFromToAnalysis;
 import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.SearchResponse;
@@ -394,12 +394,12 @@ public class CPathServiceImpl implements CPathService {
 		return runAnalysis(analysis, format, sources, limit, blacklist);
 	}
 	
-	@Cacheable(cacheName = "getPathsOfInterestCache")
+	@Cacheable(cacheName = "getPathsFromToCache")
 	@Override
-	public ServiceResponse getPathsOfInterest(OutputFormat format, String[] sources,
-		String[] targets, Integer limit)
+	public ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
+										  String[] targets, Integer limit)
 	{
-		Analysis analysis = new PathsOfInterestAnalysis();
+		Analysis analysis = new PathsFromToAnalysis();
 		return runAnalysis(analysis, format, sources, targets, limit);
 	}
 	

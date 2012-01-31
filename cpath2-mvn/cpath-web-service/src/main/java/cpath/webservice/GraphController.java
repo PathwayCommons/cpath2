@@ -110,8 +110,8 @@ public class GraphController extends BasicController {
 		case PATHSBETWEEN:
 			result = service.getPathsBetween(graph.getFormat(), graph.getSource(), graph.getLimit());
 			break;
-		case PATHSOFINTEREST:
-			result = service.getPathsOfInterest(graph.getFormat(), graph.getSource(), graph.getTarget(), graph.getLimit());
+		case PATHSFROMTO:
+			result = service.getPathsFromTo(graph.getFormat(), graph.getSource(), graph.getTarget(), graph.getLimit());
 			break;
 		case COMMONSTREAM:
 			result = service.getCommonStream(graph.getFormat(), graph.getSource(), graph.getLimit(), graph.getDirection());
