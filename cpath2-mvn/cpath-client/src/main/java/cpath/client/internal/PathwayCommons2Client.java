@@ -11,6 +11,7 @@ import org.apache.commons.lang.StringUtils;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.query.algorithm.Direction;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
@@ -239,7 +240,7 @@ public class PathwayCommons2Client
 	 * @param direction direction to extends network towards neighbors
 	 * @return BioPAX model representing the neighborhood.
 	 */
-	public Model getNeighborhood(Collection<String> sourceSet, STREAM_DIRECTION direction)
+	public Model getNeighborhood(Collection<String> sourceSet, Direction direction)
 	{
 		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=neighborhood&"
 			+ CmdArgs.format + "=BIOPAX&"
@@ -255,15 +256,13 @@ public class PathwayCommons2Client
 	 * common downstream (common targets) objects of the given source set.
 	 * See http://www.pathwaycommons.org/pc2-demo/#graph
 	 *
-	 * @see STREAM_DIRECTION
-	 *
 	 * @param sourceSet set of physical entities
 	 * @param direction upstream or downstream
 	 * @return a BioPAX model that contains the common stream
 	 */
-	public Model getCommonStream(Collection<String> sourceSet, STREAM_DIRECTION direction)
+	public Model getCommonStream(Collection<String> sourceSet, Direction direction)
 	{
-		if (direction == STREAM_DIRECTION.BOTHSTREAM)
+		if (direction == Direction.BOTHSTREAM)
 		{
 			throw new IllegalArgumentException(
 				"Direction of common-stream query should be either upstream or downstream.");
@@ -366,8 +365,8 @@ public class PathwayCommons2Client
      * Graph query search distance limit (default = 1).
      * See http://www.pathwaycommons.org/pc2-demo/#graph
      *
-     * @see #getNeighborhood(java.util.Collection, cpath.client.internal.PathwayCommons2Client.STREAM_DIRECTION)
-     * @see #getCommonStream(java.util.Collection, cpath.client.internal.PathwayCommons2Client.STREAM_DIRECTION)
+     * @see #getNeighborhood(java.util.Collection, Direction)
+     * @see #getCommonStream(java.util.Collection, Direction)
      * @see #getPathsBetween(java.util.Collection)
      *
      * @return distance limit.
@@ -494,22 +493,6 @@ public class PathwayCommons2Client
     private Help getValidParameterValues(String parameter) {
         String url = endPointURL + "help/" + parameter + "s";
         return restTemplate.getForObject(url, Help.class);
-    }
-
-    public enum STREAM_DIRECTION {
-        UPSTREAM("upstream"),
-        DOWNSTREAM("downstream"),
-		BOTHSTREAM("bothstream");
-
-        private final String direction;
-
-        STREAM_DIRECTION(String direction) {
-            this.direction = direction;
-        }
-
-        public String toString() {
-            return direction;
-        }
     }
 
 	public String getPath() {
