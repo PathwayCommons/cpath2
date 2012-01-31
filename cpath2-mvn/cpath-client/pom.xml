@@ -19,6 +19,11 @@
         	<version>${paxtools.version}</version>
   	</dependency>
         <dependency>
+        	<groupId>org.biopax.paxtools</groupId>
+         	<artifactId>paxtools-query</artifactId>
+        	<version>${paxtools.version}</version>
+  	</dependency>
+        <dependency>
             <groupId>pathwaycommons.cpath</groupId>
             <artifactId>cpath-api</artifactId>
 	    <version>${cpath.api.version}</version>
