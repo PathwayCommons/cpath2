@@ -54,64 +54,69 @@
       <h2><fmt:message key="cpath2.web_service_title"/></h2>
       <p><fmt:message key="cpath2.web_service_sub_title"/></p>
 	  <!-- list of web service commands -->
-	  <ul>
-		<li><a href="#find"><fmt:message key="cpath2.command_header_find"/></a></li>
+	  <ol>
+		<li><a href="#search"><fmt:message key="cpath2.command_header_search"/></a></li>
 		<li><a href="#get"><fmt:message key="cpath2.command_header_get"/></a></li>
 		<li><a href="#graph"><fmt:message key="cpath2.command_header_graph"/></a></li>
-		<li><a href="#additional_parameters"><fmt:message key="cpath2.command_header_additional_parameters"/></a></li>
-		<li><a href="#errors"><fmt:message key="cpath2.error_code_header"/></a></li>
-	  </ul>
+		<li><a href="#traverse"><fmt:message key="cpath2.command_header_traverse"/></a></li>
+	  </ol>
+		<a href="#additional_parameters"><fmt:message key="cpath2.command_header_additional_parameters"/></a><br/>
+		<a href="#errors"><fmt:message key="cpath2.error_code_header"/></a><br/>
+	  
 	  <!-- miriam -->
       <h3><a NAME="miriam"></a><fmt:message key="cpath2.miriam_title"/></h3>
 	  <p><fmt:message key="cpath2.miriam_description"/></p>
 	  <!-- command bodies -->
-	  <!-- find command -->
-	  <h2><a NAME="find"></a><fmt:message key="cpath2.command_header_find"/></h2>
+	 
+	 <ol> 
+	  
+	  <!-- search command -->
+	  <li><h2><a NAME="search"></a><fmt:message key="cpath2.command_header_search"/></h2></li>
 	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>
-	  <fmt:message key="cpath2.command_find_summary"/>
+	  <fmt:message key="cpath2.command_search_summary"/>
 	  <h3><fmt:message key="cpath2.command_header_parameters"/></h3>
 	  <ul>
-		<li><fmt:message key="cpath2.command_find_query_parameter"/></li>
-		<li><fmt:message key="cpath2.command_find_page_parameter"/></li>
+		<li><fmt:message key="cpath2.command_search_query_parameter"/></li>
+		<li><fmt:message key="cpath2.command_search_page_parameter"/></li>
 		<li><fmt:message key="cpath2.command_header_datasource_parameter"/></li>
 		<li><fmt:message key="cpath2.command_header_organism_parameter"/></li>
 		<li><fmt:message key="cpath2.command_header_biopax_class_parameter"/></li>
 	  </ul>
 	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
-	  <fmt:message key="cpath2.command_find_output1"/><a href=<fmt:message key="cpath2.command_search_response_schema_url"/>><fmt:message key="cpath2.command_search_response_schema"/></a><fmt:message key="cpath2.command_find_output2"/><br/>
+	  <fmt:message key="cpath2.command_search_output1"/><a href="resources/schemas/cpath2.xsd.txt"><fmt:message key="cpath2.command_search_response_schema"/></a><fmt:message key="cpath2.command_search_output2"/><br/>
 	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
 	  <fmt:message key="cpath2.command_header_query_description"/><br>
 	  <br>
 	  <ol>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_1_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_1_url"/></a>
+	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_1_url"/>>
+		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_1_url"/></a>
 	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_2_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_2_url"/></a>
+	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_2_url"/>>
+		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_2_url"/></a>
 	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_3_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_3_url"/></a>
+	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_3_url"/>>
+		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_3_url"/></a>
 	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_4_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_4_url"/></a>
+	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_4_url"/>>
+		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_4_url"/></a>
 	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_5_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_5_url"/></a>
+	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_5_url"/>>
+		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_5_url"/></a>
 	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_6_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_6_url"/></a>
+	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_6_url"/>>
+		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_6_url"/></a>
 	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_7_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_find_example_query_7_url"/></a>
+	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_7_url"/>>
+		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_7_url"/></a>
 	  </li>
 	  </ol>
 	  <!-- get command -->
-	  <h2><a NAME="get"></a><fmt:message key="cpath2.command_header_get"/></h2>
+	  <li><h2><a NAME="get"></a><fmt:message key="cpath2.command_header_get"/></h2></li>
 	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>
 	  <fmt:message key="cpath2.command_get_summary"/>
 	  <h3><fmt:message key="cpath2.command_header_parameters"/></h3>
 	  <ul>
-		<li><fmt:message key="cpath2.command_get_miriam_id_parameter"/></li>
+		<li><fmt:message key="cpath2.command_get_uri_parameter"/></li>
 		<li><fmt:message key="cpath2.command_header_format_parameter"/></li>
 	  </ul>
 	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
@@ -130,7 +135,7 @@
 	  </li>
 	 </ol>
 	  <!-- graph command -->
-	  <h2><a NAME="graph"></a><fmt:message key="cpath2.command_header_graph"/></h2>
+	  <li><h2><a NAME="graph"></a><fmt:message key="cpath2.command_header_graph"/></h2></li>
 	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>
 	  <fmt:message key="cpath2.command_graph_summary"/>
 	  <h3><fmt:message key="cpath2.command_header_parameters"/></h3>
@@ -158,13 +163,41 @@
 		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_graph_example_query_3_url"/></a>
 	  </li>
 	  </ol>
+	  
+	  <!-- traverse command -->
+	  <li><h2><a NAME="traverse"></a><fmt:message key="cpath2.command_header_traverse"/></h2></li>
+	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>
+	  <fmt:message key="cpath2.command_traverse_summary"/>
+	  <h3><fmt:message key="cpath2.command_header_parameters"/></h3>
+	  <ul>
+		<li><fmt:message key="cpath2.command_traverse_uri_param"/></li>
+		<li><fmt:message key="cpath2.command_traverse_path_param"/></li>
+	  </ul>
+	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
+	  <fmt:message key="cpath2.command_traverse_output1"/><a href="resources/schemas/cpath2.xsd.txt"><fmt:message key="cpath2.command_search_response_schema"/></a><fmt:message key="cpath2.command_traverse_output2"/><br/>
+	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
+	  <fmt:message key="cpath2.command_header_query_description"/><br>
+	  <fmt:message key="cpath2.command_header_traverse_query_description"/><br>
+	  <ol>
+	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_traverse_example1_url"/>>
+		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_traverse_example1_url"/></a>
+	  </li>
+	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_traverse_example2_url"/>>
+		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_traverse_example2_url"/></a>
+	  </li>
+	  </ol>	
+
+	  </ol>
+
 	  <!-- additional parameter details -->
       <h2><a name="additional_parameters"></a><fmt:message key="cpath2.command_header_additional_parameters"/>:</h2>
 	  <pre id="output_parameter" style="text-align: left;"></pre>
 	  <pre id="graph_parameter" style="text-align: left;"></pre>
+	  <pre id="direction_parameter" style="text-align: left;"></pre>
 	  <pre id="datasource_parameter" style="text-align: left;"></pre>
 	  <pre id="organism_parameter" style="text-align: left;"></pre>
 	  <pre id="biopax_parameter" style="text-align: left;"></pre>
+	  
 	  <!-- error codes -->
 	  <h2><a name="errors"></a><fmt:message key="cpath2.error_code_header"/>:</h2>
 	  <p><a name="errors"></a><fmt:message key="cpath2.error_code_description"/></p>
@@ -180,7 +213,7 @@
 		  <tr><td><fmt:message key="cpath2.error_code_500"/></td><td><fmt:message key="cpath2.error_code_500_description"/></td></tr>
 		</table>
 	  </div>
-	  <br>
+	  <br/>
 </div>
 
    <jsp:include page="footer.jsp" flush="true"/>

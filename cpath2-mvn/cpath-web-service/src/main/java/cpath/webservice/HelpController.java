@@ -85,6 +85,7 @@ public class HelpController {
         binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
         binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
         binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
+        binder.registerCustomEditor(Direction.class, new DirectionEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
 
@@ -254,9 +255,10 @@ public class HelpController {
     	help.setInfo(kind.getDescription());
     	return help;
     }
- 
+
+    
 	/**
-	 * List of graph query types.
+	 * List of graph directions.
 	 *
 	 * @return
 	 */

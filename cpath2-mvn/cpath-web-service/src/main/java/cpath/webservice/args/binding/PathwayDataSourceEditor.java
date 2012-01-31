@@ -47,10 +47,7 @@ import cpath.webservice.args.PathwayDataSource;
  * sets NULL if none of the 'network' data sources matched.
  * 
  * @author rodche
- *
- * @deprecated any string can be accepted as the filter by datasource value
  */
-@Deprecated
 public class PathwayDataSourceEditor extends PropertyEditorSupport 
 {
 
