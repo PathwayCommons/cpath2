@@ -132,8 +132,8 @@ public interface CPathService {
 	 * @param limit search limit (integer value)
 	 * @return paths between
 	 */
-	ServiceResponse getPathsOfInterest(OutputFormat format, String[] sources, 
-			String[] targets, Integer limit);	
+	ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
+								   String[] targets, Integer limit);
 	
 	
 	/**

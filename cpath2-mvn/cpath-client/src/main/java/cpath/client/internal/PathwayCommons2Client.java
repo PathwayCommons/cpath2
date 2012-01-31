@@ -223,7 +223,7 @@ public class PathwayCommons2Client
 	 */
 	public Model getPathsFromTo(Collection<String> sourceSet, Collection<String> targetSet)
 	{
-		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=pathsofinterest&"
+		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=pathsfromto&"
 			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
 			+ join(CmdArgs.target + "=", targetSet, "&") + "&"
 			+ CmdArgs.limit + "=" + graphQueryLimit;
@@ -243,7 +243,6 @@ public class PathwayCommons2Client
 	public Model getNeighborhood(Collection<String> sourceSet, Direction direction)
 	{
 		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=neighborhood&"
-			+ CmdArgs.format + "=BIOPAX&"
 			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
 			+ CmdArgs.direction + "=" + direction + "&"
 			+ CmdArgs.limit + "=" + graphQueryLimit;
