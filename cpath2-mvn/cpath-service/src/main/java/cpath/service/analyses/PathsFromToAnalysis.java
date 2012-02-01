@@ -44,9 +44,9 @@ import java.util.Set;
  * @author ozgun
  *
  */
-public class PathsOfInterestAnalysis implements Analysis {
+public class PathsFromToAnalysis implements Analysis {
 
-	static Log log = LogFactory.getLog(PathsOfInterestAnalysis.class);
+	static Log log = LogFactory.getLog(PathsFromToAnalysis.class);
 	
 	/**
 	 * Parameters to provide:
