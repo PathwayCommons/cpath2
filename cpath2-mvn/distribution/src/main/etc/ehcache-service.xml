@@ -52,7 +52,7 @@
         overflowToDisk="false" diskPersistent="false" timeToIdleSeconds="0"
         timeToLiveSeconds="900" memoryStoreEvictionPolicy="LRU"/>   
         
-        <cache name="getPathsOfInterestCache" eternal="false" maxElementsInMemory="10000"
+        <cache name="getPathsFromToCache" eternal="false" maxElementsInMemory="10000"
         overflowToDisk="false" diskPersistent="false" timeToIdleSeconds="0"
         timeToLiveSeconds="900" memoryStoreEvictionPolicy="LRU"/> 
 	
