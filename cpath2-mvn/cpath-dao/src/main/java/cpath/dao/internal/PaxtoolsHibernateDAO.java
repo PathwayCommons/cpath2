@@ -337,9 +337,9 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		
 		// enable filters
 		if(dsources != null && dsources.length > 0)
-			fullTextQuery.enableFullTextFilter(FILTER_BY_DATASOURCE).setParameter("datasources", dsources);
+			fullTextQuery.enableFullTextFilter(FILTER_BY_DATASOURCE).setParameter("values", dsources);
 		if(organisms != null && organisms.length > 0)
-			fullTextQuery.enableFullTextFilter(FILTER_BY_ORGANISM).setParameter("organisms", organisms);
+			fullTextQuery.enableFullTextFilter(FILTER_BY_ORGANISM).setParameter("values", organisms);
 			
 		// set pagination
 		int l = page * maxHitsPerPage; // - the first hit no., if any

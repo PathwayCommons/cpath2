@@ -5,6 +5,8 @@ $(document).ready(function() {
     getCommandParameterDetails("help/datasources", "datasource_parameter", "#command_header_additional_parameters_datasource", "#command_header_additional_parameters_datasource_desc");
     getCommandParameterDetails("help/organisms", "organism_parameter", "#command_header_additional_parameters_organism", "#command_header_additional_parameters_organism_desc");
     getCommandParameterDetails("help/types", "biopax_parameter", "#command_header_additional_parameters_biopax", "#command_header_additional_parameters_biopax_desc");
+    getCommandParameterDetails("help/types/properties", "properties_parameter", "#command_header_additional_parameters_properties", "#command_header_additional_parameters_properties_desc");
+    getCommandParameterDetails("help/types/inverse_properties", "inverse_properties_parameter", "#command_header_additional_parameters_inverse_properties", "#command_header_additional_parameters_inverse_properties_desc");
 });
 
 //
@@ -27,7 +29,7 @@ function getCommandParameterDetails(helpWSPath, clazz, header, parameterDesc) {
     $('#content .' + class_name).remove();
     var ui = $('<div class="' + class_name + '">');
     $('#' + clazz).after(ui);
-    $("." + class_name).append('<h3><a name="valid_' + clazz + '"></a>' + command_header + '</h3>');
+    $("." + class_name).append('<h3><a name="available_' + clazz + '"></a>' + command_header + '</h3>');
 	if (parameter_desc.length > 0) {
 		$("." + class_name).append('<p>' + parameter_desc + '</p>');
 	}
