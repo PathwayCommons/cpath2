@@ -42,6 +42,8 @@ import cpath.webservice.args.binding.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.controller.EditorMap;
+import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -217,15 +219,97 @@ public class HelpController {
     	}
     	help.setId("types");
     	help.setTitle("BioPAX classes");
-    	help.setInfo("Objects of the following BioPAX L3 " +
-    		"(and some additional abstract) " 
+    	help.setInfo("Objects of the following BioPAX L3 class " +
+    		"(and some abstract ones) " 
     		+ System.getProperty("line.separator") +
-    		"class are persisted/indexed in the system " +
+    		"are persisted/indexed/searchable in the system " +
     		"(names are case insensitive):");
     	help.setExample("search?type=pathway&q=b*");
     	return help;
     }
     
+    
+    @RequestMapping("/help/types/{type}") 
+    public @ResponseBody Help getBiopaxType(@PathVariable Class<? extends BioPAXElement> type) {
+    	if(type == null) return getBiopaxTypes();
+    	
+    	Help h = new Help(type.getSimpleName());
+    	h.setTitle(type.getSimpleName());
+    	h.setInfo("See: biopax.org, http://www.biopax.org/webprotege");
+    	
+    	return h;
+    }
+
+    
+    @RequestMapping("/help/types/{type}/properties") 
+    public @ResponseBody Help getBiopaxTypeProperties(@PathVariable Class<? extends BioPAXElement> type) {
+    	final String id = type.getSimpleName() + " properties";
+    	Help h = new Help(id);
+    	h.setTitle(id);
+    	h.setInfo("BioPAX properties " +
+    		"for class: " + type.getSimpleName());
+    	
+    	EditorMap em = SimpleEditorMap.get(BioPAXLevel.L3);
+    	for(PropertyEditor e : em.getEditorsOf(type)) 
+    		h.addMember(new Help(e.toString()));
+    	
+    	return h;
+    }
+    
+    
+    @RequestMapping("/help/types/properties") 
+    public @ResponseBody Help getBiopaxTypesProperties() {
+    	Help h = new Help("properties");
+    	h.setTitle("BioPAX Properites");
+    	h.setInfo("The list of all BioPAX properties");
+    	 	
+    	for(Class<? extends BioPAXElement> t : 
+    		SimpleEditorMap.L3.getKnownSubClassesOf(BioPAXElement.class)) 
+    	{
+    		if(BioPAXLevel.L3.getDefaultFactory().getImplClass(t) != null) {
+    			for(Help th : getBiopaxTypeProperties(t).getMembers()) {
+    				h.addMember(th);
+    			}
+    		}
+    	}
+    	
+    	return h;
+    }
+    
+    @RequestMapping("/help/types/{type}/inverse_properties") 
+    public @ResponseBody Help getBiopaxTypeInverseProperties(@PathVariable Class<? extends BioPAXElement> type) {
+    	final String id = type.getSimpleName() + " inverse_properties";
+    	Help h = new Help(id);
+    	h.setTitle(id);
+    	h.setInfo("Paxtools inverse properties " +
+    		"for class: " + type.getSimpleName());
+    	
+    	EditorMap em = SimpleEditorMap.get(BioPAXLevel.L3);
+    	for(PropertyEditor e : em.getInverseEditorsOf(type)) 
+    		h.addMember(new Help(e.toString()));
+    	
+    	return h;
+    }
+    
+    
+    @RequestMapping("/help/types/inverse_properties") 
+    public @ResponseBody Help getBiopaxTypesInverseProperties() {
+    	Help h = new Help("inverse_properties");
+    	h.setTitle("Paxtools inverse properites");
+    	h.setInfo("The list of all inverse (Paxtools) properties");
+    	 	
+    	for(Class<? extends BioPAXElement> t : 
+    		SimpleEditorMap.L3.getKnownSubClassesOf(BioPAXElement.class)) 
+    	{
+    		if(BioPAXLevel.L3.getDefaultFactory().getImplClass(t) != null) {
+    			for(Help th : getBiopaxTypeInverseProperties(t).getMembers()) {
+    				h.addMember(th);
+    			}
+    		}
+    	}
+    	
+    	return h;
+    }
     
 	/**
 	 * List of graph query types.
@@ -371,13 +455,5 @@ public class HelpController {
 
     	return help;
     }
-    
-    
-    @RequestMapping("/help/statistics") 
-    public @ResponseBody Help getStatistics() {
-    	Help h = new Help("statistics");
-    	h.setInfo("TODO: get num. of molecules, pathways, interactions, etc...");
-    	// TODO statistics: num. of molecules, pathways, interactions, etc...
-    	return h;
-    }
+
 }

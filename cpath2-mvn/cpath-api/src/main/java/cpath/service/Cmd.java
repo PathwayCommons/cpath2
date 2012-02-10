@@ -44,8 +44,8 @@ public enum Cmd {
 			"matching the query and passing all filters. A hit's uri (same as the corresponding BioPAX " +
 			"object's RDF ID) can be used with other webservice commands to " +
 			"extract the corresponding sub-model to BioPAX or another supported format. ",
-			"/search?q=brca*", //URL prefix shouldn't be specified here (it depends on actual server configuration)!
-			"Search response - as XML (default) or JSON (when called as '/search.json')",
+			"/search?q=brca*&organism=9606", //full URL shouldn't be specified here (it depends on the server configuration)!
+			"Search Response that lists Search Hits - XML (default) or JSON (when called as '/search.json?')",
 			new CmdArgs[]{q, page, type, organism, datasource}),	
 	GET("Gets a BioPAX element or sub-model " +
         "by ID(s).  This command has two parameters.",
@@ -55,18 +55,18 @@ public enum Cmd {
         new CmdArgs[]{uri, format}),
 	GRAPH("Executes an advanced graph query on the data within pathway commons. " +
           "Returns a sub-model as the result. This command has up to six parameters.",
-          "/graph?kind=neighborhood&source=HTTP:%2F%2FWWW.REACTOME.ORG%2FBIOPAX%23BRCA2__NUCLEOPLASM__1_9606",
+          "/graph?kind=neighborhood&source=URI1&source=URI2&...",
           "BioPAX by default, other formats as specified by the format parameter. " +
           "See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
           new CmdArgs[]{kind, source, target, format, limit, direction}),
     TOP_PATHWAYS("Gets Top Pathways. This command has no parameters.", 
     	"/top_pathways",
-        "Plain text list of top pathway URIs.", 
+        "Search Response - XML (JSON, when called as '/top_pathways.json?') contains the list of top pathway URIs.", 
         new CmdArgs[]{}),   
     TRAVERSE("Gets data property values (or elements's URIs) " +
     	"at the end of the property path.  This command has two parameters.",
     	"/traverse?uri=urn:miriam:uniprot:P38398&path=ProteinReference%2Forganism%2FdisplayName",
-    	"Plain text map (value, uri).", 
+    	"Traverse Response - XML (or JSON, when called as '/traverse.json?').", 
     	new CmdArgs[]{path, uri})
           
     ;

@@ -120,4 +120,13 @@ public class BiopaxModelController extends BasicController {
 			return service.traverse(query.getPath(), query.getUri());
     	}
     }
+    
+    
+    @RequestMapping("/help/statistics") 
+    public @ResponseBody Help getStatistics() {
+    	Help h = new Help("statistics");
+    	h.setInfo("TODO: get num. of molecules, pathways, interactions, etc...");
+    	// TODO statistics: num. of molecules, pathways, interactions, etc...
+    	return h;
+    }
 }

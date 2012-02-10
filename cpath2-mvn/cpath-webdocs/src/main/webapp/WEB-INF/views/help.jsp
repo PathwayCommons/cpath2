@@ -37,6 +37,11 @@
   <span id="command_header_additional_parameters_organism_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_organism_desc"/></span>
   <span id="command_header_additional_parameters_biopax" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_biopax"/></span>
   <span id="command_header_additional_parameters_biopax_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_biopax_desc"/></span>
+  <span id="command_header_additional_parameters_properties" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_properties"/></span>
+  <span id="command_header_additional_parameters_properties_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_properties_desc"/></span>
+  <span id="command_header_additional_parameters_inverse_properties" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_inverse_properties"/></span>
+  <span id="command_header_additional_parameters_inverse_properties_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_inverse_properties_desc"/></span>
+
 <!-- place the content -->
   <div id="container">
    <jsp:include page="header.jsp" flush="true"/>
@@ -45,10 +50,6 @@
 	  <!-- description of cpath2 -->
       <h2><fmt:message key="cpath2.welcome"/></h2>
       <p><fmt:message key="cpath2.description"/></p>
-	  <ul>
-		<li><fmt:message key="cpath2.comp_biologists"/></li>
-		<li><fmt:message key="cpath2.software_developers"/></li>
-	  </ul>
 	  <p><fmt:message key="cpath2.license_terms"/></p>
 	  <!-- start of web service api documentation -->
       <h2><fmt:message key="cpath2.web_service_title"/></h2>
@@ -59,13 +60,19 @@
 		<li><a href="#get"><fmt:message key="cpath2.command_header_get"/></a></li>
 		<li><a href="#graph"><fmt:message key="cpath2.command_header_graph"/></a></li>
 		<li><a href="#traverse"><fmt:message key="cpath2.command_header_traverse"/></a></li>
+		<li><a href="#top_pathways"><fmt:message key="cpath2.command_header_tp"/></a></li>
+		<li><a href="#help"><fmt:message key="cpath2.command_header_help"/></a></li>
 	  </ol>
 		<a href="#additional_parameters"><fmt:message key="cpath2.command_header_additional_parameters"/></a><br/>
 		<a href="#errors"><fmt:message key="cpath2.error_code_header"/></a><br/>
+	  <br/>
 	  
-	  <!-- miriam -->
-      <h3><a NAME="miriam"></a><fmt:message key="cpath2.miriam_title"/></h3>
-	  <p><fmt:message key="cpath2.miriam_description"/></p>
+	  <!-- URIs -->
+      <h3><a NAME="miriam"></a><fmt:message key="cpath2.uri_title"/></h3>
+	  <p><fmt:message key="cpath2.uri_description"/></p>
+	  <h3><a NAME="enco"></a><fmt:message key="cpath2.encoding_title"/></h3>
+	  <p><fmt:message key="cpath2.encoding_description"/></p>
+	 
 	  <!-- command bodies -->
 	 
 	 <ol> 
@@ -85,31 +92,19 @@
 	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
 	  <fmt:message key="cpath2.command_search_output1"/><a href="resources/schemas/cpath2.xsd.txt"><fmt:message key="cpath2.command_search_response_schema"/></a><fmt:message key="cpath2.command_search_output2"/><br/>
 	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
-	  <fmt:message key="cpath2.command_header_query_description"/><br>
 	  <br>
 	  <ol>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_1_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_1_url"/></a>
-	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_2_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_2_url"/></a>
-	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_3_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_3_url"/></a>
-	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_4_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_4_url"/></a>
-	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_5_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_5_url"/></a>
-	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_6_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_6_url"/></a>
-	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_7_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_search_example_query_7_url"/></a>
-	  </li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search.xml?q=Q06609"><fmt:message key="cpath2.example.search1"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=xrefid:Q06609"><fmt:message key="cpath2.example.search2"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search.json?q=Q06609"><fmt:message key="cpath2.example.search3"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search.json?q=Q06609&type=pathway"><fmt:message key="cpath2.example.search4"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=brca2&type=proteinreference&organism=homo%20sapiens&datasource=pid"><fmt:message key="cpath2.example.search5"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=brc*&type=control&organism=9606&datasource=reactome"><fmt:message key="cpath2.example.search6"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=a*&page=3"><fmt:message key="cpath2.example.search7"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=+binding%20NOT%20transcription*&type=control&page=0"><fmt:message key="cpath2.example.search8"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=pathway:immune&type=conversion"><fmt:message key="cpath2.example.search9"/></a></li>
 	  </ol>
+	  
 	  <!-- get command -->
 	  <li><h2><a NAME="get"></a><fmt:message key="cpath2.command_header_get"/></h2></li>
 	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>
@@ -121,17 +116,16 @@
 	  </ul>
 	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
 	  <fmt:message key="cpath2.command_get_output"/>
-	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
-	  <fmt:message key="cpath2.command_header_query_description"/><br>
+	  <h3><fmt:message key="cpath2.command_header_query"/></h3><br>
 	  <ol>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_get_example_query_1_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_get_example_query_1_url"/></a>
+	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=urn:miriam:uniprot:Q06609">
+		<fmt:message key="cpath2.example.get1"/></a>
 	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_get_example_query_2_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_get_example_query_2_url"/></a>
+	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http:%2F%2Fwww.reactome.org%2Fbiopax/48887pathway1026">
+		<fmt:message key="cpath2.example.get2"/></a>
 	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_get_example_query_3_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_get_example_query_3_url"/></a>
+	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http://pid.nci.nih.gov/biopaxpid_55888&format=BINARY_SIF">
+		<fmt:message key="cpath2.example.get3"/></a>
 	  </li>
 	 </ol>
 	  <!-- graph command -->
@@ -150,17 +144,16 @@
 	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
 	  <fmt:message key="cpath2.command_graph_output"/>
 	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
-	  <fmt:message key="cpath2.command_header_query_description"/><br>
 	  <fmt:message key="cpath2.command_header_graph_query_description"/><br>
 	  <ol>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_graph_example_query_1_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_graph_example_query_1_url"/></a>
+	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=http:%2F%2Fwww.reactome.org%2Fbiopax%2F48892protein6017&kind=neighborhood">
+		<fmt:message key="cpath2.example.graph1"/></a>
 	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_graph_example_query_2_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_graph_example_query_2_url"/></a>
+	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=urn:miriam:uniprot:O88207&kind=neighborhood">
+		<fmt:message key="cpath2.example.graph2"/></a>
 	  </li>
-	  	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_graph_example_query_3_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_graph_example_query_3_url"/></a>
+	  	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=urn:miriam:uniprot:O88207&kind=neighborhood&format=EXTENDED_BINARY_SIF">
+		<fmt:message key="cpath2.example.graph3"/></a>
 	  </li>
 	  </ol>
 	  
@@ -174,21 +167,74 @@
 		<li><fmt:message key="cpath2.command_traverse_path_param"/></li>
 	  </ul>
 	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
-	  <fmt:message key="cpath2.command_traverse_output1"/><a href="resources/schemas/cpath2.xsd.txt"><fmt:message key="cpath2.command_search_response_schema"/></a><fmt:message key="cpath2.command_traverse_output2"/><br/>
+	  <fmt:message key="cpath2.command_search_output1"/><a href="resources/schemas/cpath2.xsd.txt"><fmt:message key="cpath2.command_search_response_schema"/></a><fmt:message key="cpath2.command_traverse_output2"/><br/>
 	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
-	  <fmt:message key="cpath2.command_header_query_description"/><br>
 	  <fmt:message key="cpath2.command_header_traverse_query_description"/><br>
 	  <ol>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_traverse_example1_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_traverse_example1_url"/></a>
+	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=urn:miriam:uniprot:P38398&path=ProteinReference/organism/displayName">
+		<fmt:message key="cpath2.example.traverse1"/></a>
 	  </li>
-	  <li><a href=<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_traverse_example2_url"/>>
-		<fmt:message key="cpath2.url"/><fmt:message key="cpath2.command_traverse_example2_url"/></a>
+	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=urn:miriam:uniprot:P38398&uri=urn:miriam:uniprot:Q06609&path=ProteinReference/organism/">
+		<fmt:message key="cpath2.example.traverse2"/></a>
+	  </li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=urn:miriam:uniprot:Q06609&path=ProteinReference%2fentityReferenceOf:Protein%2fname">
+		<fmt:message key="cpath2.example.traverse3"/></a>
+	  </li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=urn:miriam:uniprot:P38398&path=ProteinReference%2fentityReferenceOf:Protein/">
+		<fmt:message key="cpath2.example.traverse4"/></a>
+	  </li>	
+	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=urn:miriam:uniprot:P38398&uri=http://pid.nci.nih.gov/biopaxpid_68613&uri=http://www.reactome.org/biopax/48887Protein2992&uri=urn:miriam:taxonomy:9606&path=Named%2fname">
+		<fmt:message key="cpath2.example.traverse5"/></a>
+	  </li>		  
+	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://pid.nci.nih.gov/biopaxpid_55888&path=Pathway%2fpathwayComponent:Interaction/participant/displayName">
+		<fmt:message key="cpath2.example.traverse6"/></a>
+	  </li>	
+	  </ol>	
+
+	  <!-- top_pathways command -->
+	  <li><h2><a NAME="top_pathways"></a><fmt:message key="cpath2.command_header_tp"/></h2></li>
+	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>
+	  <fmt:message key="cpath2.command_tp_summary"/>
+	  <h3><fmt:message key="cpath2.command_header_parameters"/></h3>
+		no parameters
+	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
+	  <fmt:message key="cpath2.command_search_output1"/><a href="resources/schemas/cpath2.xsd.txt"><fmt:message key="cpath2.command_search_response_schema"/></a><fmt:message key="cpath2.command_tp_output2"/><br/>
+	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
+	  <ol>
+	  <li><a href="<fmt:message key="cpath2.url"/>/top_pathways">
+		<fmt:message key="cpath2.example.top_pathways1"/></a>
+	  </li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/top_pathways.json">
+		<fmt:message key="cpath2.example.top_pathways2"/></a>
 	  </li>
 	  </ol>	
 
+	  <!-- help command -->
+	  <li><h2><a NAME="help"></a><fmt:message key="cpath2.command_header_help"/></h2></li>
+	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>
+	  <fmt:message key="cpath2.command_help_summary"/>
+	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
+	  <fmt:message key="cpath2.command_help_output"/><a href="resources/schemas/cpath2.xsd.txt"><fmt:message key="cpath2.command_search_response_schema"/></a><br/>
+	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
+	  <br>
+	  <ol>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/commands"><fmt:message key="cpath2.example.help1"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/commands/search"><fmt:message key="cpath2.example.help11"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/types"><fmt:message key="cpath2.example.help2"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/kinds"><fmt:message key="cpath2.example.help3"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/organisms"><fmt:message key="cpath2.example.help4"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/datasources"><fmt:message key="cpath2.example.help9"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/datasources/reactome"><fmt:message key="cpath2.example.help10"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/directions"><fmt:message key="cpath2.example.help5"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/properties"><fmt:message key="cpath2.example.help6"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/provenance/properties"><fmt:message key="cpath2.example.help7"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/inverse_properties"><fmt:message key="cpath2.example.help8"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help"><fmt:message key="cpath2.example.help0"/></a></li>
 	  </ol>
-
+	  
+	  </ol>
+	<br/>
+	
 	  <!-- additional parameter details -->
       <h2><a name="additional_parameters"></a><fmt:message key="cpath2.command_header_additional_parameters"/>:</h2>
 	  <pre id="output_parameter" style="text-align: left;"></pre>
@@ -197,12 +243,14 @@
 	  <pre id="datasource_parameter" style="text-align: left;"></pre>
 	  <pre id="organism_parameter" style="text-align: left;"></pre>
 	  <pre id="biopax_parameter" style="text-align: left;"></pre>
+	  <pre id="properties_parameter" style="text-align: left;"></pre>
+	  <pre id="inverse_properties_parameter" style="text-align: left;"></pre>
 	  
 	  <!-- error codes -->
-	  <h2><a name="errors"></a><fmt:message key="cpath2.error_code_header"/>:</h2>
-	  <p><a name="errors"></a><fmt:message key="cpath2.error_code_description"/></p>
-	  <pre><a name="errors"></a><fmt:message key="cpath2.error_xml_format"/></pre>
-	  <p><a name="errors"></a><fmt:message key="cpath2.error_code_footnote"/></p>
+	  <h2><fmt:message key="cpath2.error_code_header"/>:</h2>
+	  <p><fmt:message key="cpath2.error_code_description"/><a href="resources/schemas/cpath2.xsd.txt">
+	  <fmt:message key="cpath2.command_search_response_schema"/></a></p>
+	  <p></a><fmt:message key="cpath2.error_code_footnote"/></p>
 	  <!-- error codes table -->
 	  <div>
 		<table>
