@@ -5,6 +5,7 @@ import cpath.client.internal.util.ErrorUtil;
 import cpath.client.internal.util.PathwayCommonsException;
 import cpath.service.Cmd;
 import cpath.service.CmdArgs;
+import cpath.service.GraphType;
 import cpath.service.jaxb.*;
 
 import org.apache.commons.lang.StringUtils;
@@ -205,7 +206,8 @@ public class PathwayCommons2Client
 	 */
 	public Model getPathsBetween(Collection<String> sourceSet)
 	{
-		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=pathsbetween&"
+		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=" +
+			GraphType.PATHSBETWEEN.name().toLowerCase() + "&"
 			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
 			+ CmdArgs.limit + "=" + graphQueryLimit;
 
@@ -223,7 +225,8 @@ public class PathwayCommons2Client
 	 */
 	public Model getPathsFromTo(Collection<String> sourceSet, Collection<String> targetSet)
 	{
-		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=pathsfromto&"
+		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=" +
+			GraphType.PATHSFROMTO.name().toLowerCase() + "&"
 			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
 			+ join(CmdArgs.target + "=", targetSet, "&") + "&"
 			+ CmdArgs.limit + "=" + graphQueryLimit;
@@ -242,7 +245,8 @@ public class PathwayCommons2Client
 	 */
 	public Model getNeighborhood(Collection<String> sourceSet, Direction direction)
 	{
-		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=neighborhood&"
+		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=" +
+			GraphType.NEIGHBORHOOD.name().toLowerCase() + "&"
 			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
 			+ CmdArgs.direction + "=" + direction + "&"
 			+ CmdArgs.limit + "=" + graphQueryLimit;
@@ -267,8 +271,8 @@ public class PathwayCommons2Client
 				"Direction of common-stream query should be either upstream or downstream.");
 		}
 
-		String url = endPointURL + Cmd.GRAPH + commandDelimiter
-			+ CmdArgs.kind + "=commonstream&"
+		String url = endPointURL + Cmd.GRAPH + commandDelimiter + CmdArgs.kind + "=" +
+			GraphType.COMMONSTREAM.name().toLowerCase() + "&"
 			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
 			+ CmdArgs.direction + "=" + direction + "&"
 			+ CmdArgs.limit + "=" + graphQueryLimit;
