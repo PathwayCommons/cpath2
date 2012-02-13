@@ -62,28 +62,20 @@ public class PathsFromToAnalysis implements Analysis {
 		Set<BioPAXElement> source = Common.getAllByID(model, args[0]);
 
 		// Target elements
-		Set<BioPAXElement> target = null;
-
-		// If a different target set is provided, use it. Otherwise the search will be among the
-		// source set.
-
-		if (args[1] instanceof Set)
-		{
-			target = Common.getAllByID(model, args[1]);
-		}
+		Set<BioPAXElement> target = Common.getAllByID(model, args[1]);
 
 		// Search limit
 		int limit = (Integer) args[2];
 
 		// Execute the query
 
-		if (target == null)
+		if (target == null || target.isEmpty())
 		{
 			return QueryExecuter.runPathsBetween(source, model, limit, Common.getUbiqueIDs());
 		}
 		else
 		{
-			return QueryExecuter.runPOI(source, target, model, LimitType.NORMAL, limit,
+			return QueryExecuter.runPathsFromTo(source, target, model, LimitType.NORMAL, limit,
 				Common.getUbiqueIDs());
 		}
 	}
