@@ -7,10 +7,10 @@ import java.io.IOException;
 /**
  * See http://www.pathwaycommons.org/pc2-demo/#errors
  */
-public class PathwayCommonsException extends IOException {
+public class CPathException extends IOException {
     private ErrorResponse error;
 
-    public PathwayCommonsException(ErrorResponse error) {
+    public CPathException(ErrorResponse error) {
         super(error.toString());
         this.error = error;
     }

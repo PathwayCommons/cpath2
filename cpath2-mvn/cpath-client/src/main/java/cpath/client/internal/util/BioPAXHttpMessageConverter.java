@@ -22,7 +22,7 @@ import java.util.List;
  * Converts the REST response into a BioPAX model, if the model is not valid
  * throws a PathwayCommons exception.
  *
- * @see cpath.client.util.PathwayCommonsException
+ * @see cpath.client.CPathException.PathwayCommonsException
  */
 public class BioPAXHttpMessageConverter implements HttpMessageConverter<Model> {
     private BioPAXIOHandler bioPAXIOHandler;
@@ -73,7 +73,7 @@ public class BioPAXHttpMessageConverter implements HttpMessageConverter<Model> {
             Jaxb2Marshaller jaxb2Marshaller = new Jaxb2Marshaller();
             jaxb2Marshaller.setClassesToBeBound(ErrorResponse.class); 
             ErrorResponse error = (ErrorResponse) jaxb2Marshaller.unmarshal(new StreamSource(bis));
-            throw ErrorUtil.createException(error);
+            throw CPathExceptions.newException(error);
         }
     }
 

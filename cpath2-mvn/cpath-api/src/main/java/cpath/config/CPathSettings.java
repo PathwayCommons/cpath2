@@ -34,7 +34,9 @@ package cpath.config;
  *
  */
 public final class CPathSettings {
-	protected CPathSettings(){};
+	private CPathSettings(){
+		throw new AssertionError("Noninstantiable!");
+	};
 	
 	public static final String NEWLINE = System.getProperty ( "line.separator" );
 	
