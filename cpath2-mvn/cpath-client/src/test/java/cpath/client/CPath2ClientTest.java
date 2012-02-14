@@ -7,23 +7,23 @@ import java.util.Collection;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import cpath.client.internal.PathwayCommons2Client;
+import cpath.client.internal.CPath2Client;
 import cpath.service.jaxb.SearchResponse;
 
 /**
  * INFO: when "cPath2Url" Java property is not set,
  * (e.g., -DcPath2Url="http://localhost:8080/cpath-web-service/")
- * the default cpath2 endpoint URL is {@link PathwayCommons2Client#DEFAULT_ENDPOINT_URL}
+ * the default cpath2 endpoint URL is {@link CPath2Client#DEFAULT_ENDPOINT_URL}
  * (e.g., http://www.pathwaycommons.org/pc2/). So, it is possible that the 
  * default (official) service still provides an older cpath2 API than this PC2 client expects.
  * Take care. 
  */
 @Ignore
-public class PathwayCommons2ClientTest {
+public class CPath2ClientTest {
 	
 	@Test
 	public final void testConnection() {
-		PathwayCommons2Client client = new PathwayCommons2Client();
+		CPath2Client client = CPath2Client.newInstance();
 		Collection<String> vals = client.getValidTypes();
 		assertFalse(vals.isEmpty());
 		assertTrue(vals.contains("BioSource"));
@@ -32,7 +32,7 @@ public class PathwayCommons2ClientTest {
 	
 	@Test
 	public final void testGetTopPathways() {
-		PathwayCommons2Client client = new PathwayCommons2Client();
+		CPath2Client client = CPath2Client.newInstance();
 		
 		SearchResponse result = null;
 		try {
