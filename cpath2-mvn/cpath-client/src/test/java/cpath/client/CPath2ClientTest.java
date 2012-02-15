@@ -7,13 +7,12 @@ import java.util.Collection;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import cpath.client.internal.CPath2Client;
 import cpath.service.jaxb.SearchResponse;
 
 /**
  * INFO: when "cPath2Url" Java property is not set,
  * (e.g., -DcPath2Url="http://localhost:8080/cpath-web-service/")
- * the default cpath2 endpoint URL is {@link CPath2Client#DEFAULT_ENDPOINT_URL}
+ * the default cpath2 endpoint URL is {@link CPath2ClientImpl#DEFAULT_ENDPOINT_URL}
  * (e.g., http://www.pathwaycommons.org/pc2/). So, it is possible that the 
  * default (official) service still provides an older cpath2 API than this PC2 client expects.
  * Take care. 

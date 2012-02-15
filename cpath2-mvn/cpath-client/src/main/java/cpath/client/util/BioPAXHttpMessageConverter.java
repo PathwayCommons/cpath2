@@ -1,4 +1,4 @@
-package cpath.client.internal.util;
+package cpath.client.util;
 
 import cpath.service.jaxb.ErrorResponse;
 import org.biopax.paxtools.io.BioPAXIOHandler;
@@ -22,7 +22,7 @@ import java.util.List;
  * Converts the REST response into a BioPAX model, if the model is not valid
  * throws a PathwayCommons exception.
  *
- * @see cpath.client.CPathException.PathwayCommonsException
+ * @see cpath.cpath.client.util.CPathException.PathwayCommonsException
  */
 public class BioPAXHttpMessageConverter implements HttpMessageConverter<Model> {
     private BioPAXIOHandler bioPAXIOHandler;
