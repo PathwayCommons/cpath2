@@ -1,8 +1,8 @@
-package cpath.client.internal;
+package cpath.client;
 
-import cpath.client.internal.util.BioPAXHttpMessageConverter;
-import cpath.client.internal.util.CPathExceptions;
-import cpath.client.internal.util.CPathException;
+import cpath.client.util.BioPAXHttpMessageConverter;
+import cpath.client.util.CPathException;
+import cpath.client.util.CPathExceptions;
 import cpath.service.Cmd;
 import cpath.service.CmdArgs;
 import cpath.service.GraphType;
@@ -100,10 +100,10 @@ public final class CPath2Client
 
     
     private ServiceResponse searchTemplate(Collection<String> keywords) 
-    		throws CPathException 
+    		throws CPathException
     {
         String url = endPointURL + Cmd.SEARCH + "?" 
-        	+ CmdArgs.q + "=" + join("", keywords, ",")
+        	+ CmdArgs.q + "=" + join("", keywords, " ") // spaces means 'OR'
             + (getPage() > 0 ? "&" + CmdArgs.page + "=" + getPage() : "")
             + (getDataSources().isEmpty() ? "" : "&" + join(CmdArgs.datasource + "=", getDataSources(), "&"))
             + (getOrganisms().isEmpty() ? "" : "&" + join(CmdArgs.organism + "=", getOrganisms(), "&"))
@@ -159,7 +159,6 @@ public final class CPath2Client
      * Retrieves details regarding one or more records, such as pathway,
      * interaction or physical entity. For example, get the complete
      * Apoptosis pathway from Reactome.
-     * See http://www.pathwaycommons.org/pc2-demo/#get
      *
      * @param ids a set of BioPAX element IDs
      * @return BioPAX model containing the requested element
@@ -481,10 +480,24 @@ public final class CPath2Client
         return restTemplate.getForObject(url, Help.class);
     }
 
+    
+	/**
+	 * Gets the BioPAX property path (current value).
+	 * @see #traverse(Collection)
+	 * 
+	 * @return
+	 */
 	public String getPath() {
 		return path;
 	}
 
+	
+	/**
+	 * @see #getPath()
+	 * @see #traverse(Collection)
+	 * 
+	 * @param path
+	 */
 	public void setPath(String path) {
 		this.path = path;
 	}

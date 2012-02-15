@@ -1,7 +1,8 @@
-package cpath.client.internal;
+package cpath.client;
 
 import org.biopax.paxtools.controller.Merger;
 import org.biopax.paxtools.io.BioPAXIOHandler;
+import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
 
 import java.io.BufferedReader;
@@ -20,6 +21,7 @@ import java.util.StringTokenizer;
  * of Pathway Commons web service API:
  * (http://www.pathwaycommons.org/pc/webservice.do?cmd=help)
  *
+ * TODO remove or generalize (i.e., extract public api; make it usable not only for Pathway Commons cPath1 servers...)
  */
 public class PathwayCommonsIOHandler
 {
@@ -59,6 +61,11 @@ public class PathwayCommonsIOHandler
     	this.ioHandler = ioHandler;
     }
    
+    public PathwayCommonsIOHandler() {
+		this(new SimpleIOHandler());
+	}
+    
+    
     /**
      * Sets the prefix of the webservice
      *

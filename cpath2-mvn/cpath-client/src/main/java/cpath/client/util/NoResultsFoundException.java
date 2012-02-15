@@ -1,4 +1,4 @@
-package cpath.client.internal.util;
+package cpath.client.util;
 
 import cpath.service.jaxb.ErrorResponse;
 
