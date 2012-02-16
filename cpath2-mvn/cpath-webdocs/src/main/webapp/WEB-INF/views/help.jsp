@@ -124,7 +124,7 @@
 	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=urn:miriam:uniprot:Q06609">
 		<fmt:message key="cpath2.example.get1"/></a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http:%2F%2Fwww.reactome.org%2Fbiopax/48887pathway1026">
+	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http:%2F%2Fwww.reactome.org%2Fbiopax/48887Pathway1026">
 		<fmt:message key="cpath2.example.get2"/></a>
 	  </li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http://pid.nci.nih.gov/biopaxpid_55888&format=BINARY_SIF">
