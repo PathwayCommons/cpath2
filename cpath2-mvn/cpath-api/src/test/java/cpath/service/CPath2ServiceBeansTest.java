@@ -39,8 +39,8 @@ public class CPath2ServiceBeansTest {
 
 	@Test
 	public final void testMarshalServiceResponse() throws Exception {
-		JAXBContext jaxbContext = JAXBContext.newInstance(Help.class, 
-			ServiceResponse.class, ErrorResponse.class, 
+		JAXBContext jaxbContext = JAXBContext.newInstance(
+			Help.class, ErrorResponse.class, 
 			SearchHit.class, SearchResponse.class, 
 			TraverseResponse.class, TraverseEntry.class);
 		

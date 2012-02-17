@@ -14,11 +14,11 @@ import cpath.service.Status;
 @XmlRootElement(name = "errorResponse")
 public class ErrorResponse extends ServiceResponse {
     @XmlElement(name = "error_code", required = true)
-    protected Integer errorCode;
+    private Integer errorCode;
     @XmlElement(name = "error_msg", required = true)
-    protected String errorMsg;
+    private String errorMsg;
     @XmlElement(name = "error_details", required = true)
-    protected String errorDetails;
+    private String errorDetails;
 
     
     public Integer getErrorCode() {

@@ -16,6 +16,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -25,8 +26,21 @@ import java.util.List;
  * @see cpath.cpath.client.util.CPathException.PathwayCommonsException
  */
 public class BioPAXHttpMessageConverter implements HttpMessageConverter<Model> {
-    private BioPAXIOHandler bioPAXIOHandler;
-    private List<MediaType> mediaList = null;
+    private final BioPAXIOHandler bioPAXIOHandler;
+    private static final List<MediaType> mediaList;
+    private static final Jaxb2Marshaller jaxb;
+    
+    static {
+    	mediaList = new ArrayList<MediaType>();
+        mediaList.add(MediaType.APPLICATION_XHTML_XML);
+        mediaList.add(MediaType.APPLICATION_XML);
+        mediaList.add(MediaType.TEXT_HTML);
+        mediaList.add(MediaType.TEXT_XML);
+        mediaList.add(MediaType.TEXT_PLAIN);
+        
+        jaxb = new Jaxb2Marshaller();
+        jaxb.setClassesToBeBound(ErrorResponse.class);
+    }
 
     public BioPAXHttpMessageConverter(BioPAXIOHandler bioPAXIOHandler) {
         this.bioPAXIOHandler = bioPAXIOHandler;
@@ -41,16 +55,7 @@ public class BioPAXHttpMessageConverter implements HttpMessageConverter<Model> {
     }
 
     public List<MediaType> getSupportedMediaTypes() {
-        if(mediaList == null) {
-            mediaList = new ArrayList<MediaType>();
-            mediaList.add(MediaType.APPLICATION_XHTML_XML);
-            mediaList.add(MediaType.APPLICATION_XML);
-            mediaList.add(MediaType.TEXT_HTML);
-            mediaList.add(MediaType.TEXT_XML);
-            mediaList.add(MediaType.TEXT_PLAIN);
-        }
-
-        return mediaList;
+        return Collections.unmodifiableList(mediaList);
     }
 
     public Model read(Class<? extends Model> clazz, HttpInputMessage inputMessage) throws IOException, HttpMessageNotReadableException
@@ -70,9 +75,7 @@ public class BioPAXHttpMessageConverter implements HttpMessageConverter<Model> {
             return bioPAXIOHandler.convertFromOWL(bis);
         } catch(BioPaxIOException ioe) { // Not a BioPAX file, so go with the error parsing
             bis.reset();
-            Jaxb2Marshaller jaxb2Marshaller = new Jaxb2Marshaller();
-            jaxb2Marshaller.setClassesToBeBound(ErrorResponse.class); 
-            ErrorResponse error = (ErrorResponse) jaxb2Marshaller.unmarshal(new StreamSource(bis));
+            ErrorResponse error = (ErrorResponse) jaxb.unmarshal(new StreamSource(bis));
             throw CPathExceptions.newException(error);
         }
     }

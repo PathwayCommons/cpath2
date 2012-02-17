@@ -26,14 +26,14 @@ import javax.xml.bind.annotation.XmlType;
 })
 public class SearchHit {
     @XmlElement(required = true)
-    protected String uri;
+    private String uri;
     @XmlElement(required = true)
-    protected String biopaxClass;
-    protected String name;
-    protected List<String> dataSource;
-    protected List<String> organism;
-    protected List<String> pathway;
-    protected String excerpt;
+    private String biopaxClass;
+    private String name;
+    private List<String> dataSource;
+    private List<String> organism;
+    private List<String> pathway;
+    private String excerpt;
 
 
     public String getUri() {

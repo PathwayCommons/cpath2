@@ -2,7 +2,7 @@ package cpath.service.jaxb;
 
 import javax.xml.bind.annotation.*;
 
-@XmlRootElement(name="serviceResponse")
+// not instantiable, basic cpath2 xml response type
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "ServiceResponse")
 public abstract class ServiceResponse {

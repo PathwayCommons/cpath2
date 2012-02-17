@@ -9,18 +9,18 @@ import javax.xml.bind.annotation.*;
 @XmlType(name = "SearchResponse")
 public class SearchResponse extends ServiceResponse {
     @XmlAttribute
-    protected Integer numHits;
+    private Integer numHits;
     
     @XmlAttribute
-    protected Integer maxHitsPerPage;
+    private Integer maxHitsPerPage;
     
-    protected List<SearchHit> searchHit; // count to get actual no. hits!
+    private List<SearchHit> searchHit; // count to get actual no. hits!
     
     @XmlAttribute
-    protected Integer pageNo; //search result page number
+    private Integer pageNo; //search result page number
 
     @XmlAttribute
-    protected String comment;
+    private String comment;
 	
 	public String getComment() {
 		return comment;

@@ -9,8 +9,6 @@
 
   <xs:element name="searchResponse" type="SearchResponse"/>
 
-  <xs:element name="serviceResponse" type="ServiceResponse"/>
-
   <xs:element name="traverseResponse" type="TraverseResponse"/>
 
   <xs:complexType name="DataResponse">
@@ -40,14 +38,18 @@
   </xs:complexType>
 
   <xs:complexType name="Help">
-    <xs:sequence>
-      <xs:element name="example" type="xs:string" minOccurs="0"/>
-      <xs:element name="id" type="xs:string"/>
-      <xs:element name="info" type="xs:string" minOccurs="0"/>
-      <xs:element name="members" type="Help" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
-      <xs:element name="output" type="xs:string" minOccurs="0"/>
-      <xs:element name="title" type="xs:string" minOccurs="0"/>
-    </xs:sequence>
+    <xs:complexContent>
+      <xs:extension base="ServiceResponse">
+        <xs:sequence>
+          <xs:element name="example" type="xs:string" minOccurs="0"/>
+          <xs:element name="id" type="xs:string"/>
+          <xs:element name="info" type="xs:string" minOccurs="0"/>
+          <xs:element name="members" type="Help" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+          <xs:element name="output" type="xs:string" minOccurs="0"/>
+          <xs:element name="title" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
   </xs:complexType>
 
   <xs:complexType name="SearchHit">
