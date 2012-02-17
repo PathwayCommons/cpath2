@@ -10,9 +10,9 @@ import javax.xml.bind.annotation.*;
 @XmlType(name = "TraverseResponse")
 public class TraverseResponse extends ServiceResponse {
     @XmlAttribute
-    protected String propertyPath;
+    private String propertyPath;
 
-    protected List<TraverseEntry> traverseEntry;
+    private List<TraverseEntry> traverseEntry;
     
 	public String getPropertyPath() {
 		return propertyPath;
@@ -33,7 +33,13 @@ public class TraverseResponse extends ServiceResponse {
 	
 	@Override
 	public boolean isEmpty() {
-		return getTraverseEntry().isEmpty();
+		boolean noValues = true;
+		for(TraverseEntry ent : traverseEntry) {
+			if(!ent.isEmpty())
+				return false;
+		}
+		
+		return getTraverseEntry().isEmpty() || noValues;
 	} 
 
 }

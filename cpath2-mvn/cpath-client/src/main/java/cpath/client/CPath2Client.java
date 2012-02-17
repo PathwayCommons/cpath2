@@ -3,6 +3,7 @@ package cpath.client;
 import cpath.client.util.BioPAXHttpMessageConverter;
 import cpath.client.util.CPathException;
 import cpath.client.util.CPathExceptions;
+import cpath.client.util.ServiceResponseHttpMessageConverter;
 import cpath.service.Cmd;
 import cpath.service.CmdArgs;
 import cpath.service.GraphType;
@@ -13,8 +14,6 @@ import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
-import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -36,9 +35,7 @@ public final class CPath2Client
 {
 	public static final String JVM_PROPERTY_ENDPOINT_URL = "cPath2Url";
 	public static final String DEFAULT_ENDPOINT_URL = "http://awabi.cbio.mskcc.org/pc2/"; //finally - will be at http://www.pathwaycommons.org/pc2/
-	
-	private static final MarshallingHttpMessageConverter MARSHALLING_HTTP_MESSAGE_CONVERTER;
-	
+
 	private final RestTemplate restTemplate;
 	
 	private String endPointURL;
@@ -48,26 +45,15 @@ public final class CPath2Client
     private Collection<String> dataSources = new HashSet<String>();
     private String type = null;
     private String path = null;
-
-    // static initializer
-    static {
-        // init the JAXB marshaller/message converter once
-    	Jaxb2Marshaller jaxb2Marshaller = new Jaxb2Marshaller();
-    	jaxb2Marshaller.setClassesToBeBound(Help.class, 
-        		ServiceResponse.class, ErrorResponse.class,
-        		SearchResponse.class, SearchHit.class, 
-        		TraverseEntry.class, TraverseResponse.class
-        );
-    	MARSHALLING_HTTP_MESSAGE_CONVERTER = 
-    		new MarshallingHttpMessageConverter(jaxb2Marshaller, jaxb2Marshaller);
-    }
-    
     
     // suppress using constructors in favor of static factories
     private CPath2Client() {
      	// create a new REST template with the xml message converter
      	restTemplate = new RestTemplate();
-     	restTemplate.getMessageConverters().add(MARSHALLING_HTTP_MESSAGE_CONVERTER);
+     	// remove default (xml) message converters (xml root element based, do not work with cpath2 schema)!
+     	restTemplate.getMessageConverters().clear();
+     	// add custom cPath2 XML message converters
+     	restTemplate.getMessageConverters().add(new ServiceResponseHttpMessageConverter());
     }
     
     
@@ -86,16 +72,14 @@ public final class CPath2Client
      */
     public static CPath2Client newInstance(BioPAXIOHandler bioPAXIOHandler) {
     	CPath2Client client = new CPath2Client(); 
+    	// add BioPAX http message converter
+        client.restTemplate.getMessageConverters().add(new BioPAXHttpMessageConverter(bioPAXIOHandler));
     	
     	// init the server URL
     	client.endPointURL = System.getProperty(JVM_PROPERTY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);
     	assert client.endPointURL != null :  "BUG: cpath2 URL is not defined!";
-       
-    	// add custom BioPAX http message converter
-        client.restTemplate.getMessageConverters()
-        	.add(new BioPAXHttpMessageConverter(bioPAXIOHandler));
-        
-        return client;
+    	
+    	return client;
     }
 
     
@@ -109,10 +93,12 @@ public final class CPath2Client
             + (getOrganisms().isEmpty() ? "" : "&" + join(CmdArgs.organism + "=", getOrganisms(), "&"))
             + (getType() != null ? "&" + CmdArgs.type + "=" + getType() : "");
 
-        ServiceResponse resp = restTemplate.getForObject(url, ServiceResponse.class);
+        ServiceResponse resp = restTemplate.getForObject(url, SearchResponse.class);
+        
         if(resp instanceof ErrorResponse) {
             throw CPathExceptions.newException((ErrorResponse) resp);
         }
+        
         return resp;
     }
 
@@ -271,13 +257,19 @@ public final class CPath2Client
      * 
      * @param uris
      * @return
+     * @throws CPathException 
      */
-    public ServiceResponse traverse(Collection<String> uris) {
-        String url = endPointURL + Cmd.GET + "?" 
+    public ServiceResponse traverse(Collection<String> uris) throws CPathException {
+        String url = endPointURL + Cmd.TRAVERSE + "?" 
         		+ join(CmdArgs.uri + "=", uris, "&")
         		+ "&" + CmdArgs.path + "=" + path;
         
-        return restTemplate.getForObject(url, ServiceResponse.class);
+        ServiceResponse resp = restTemplate.getForObject(url, TraverseResponse.class);
+        if(resp instanceof ErrorResponse) {
+            throw CPathExceptions.newException((ErrorResponse) resp);
+        }
+        
+        return resp;
     }
     
     
@@ -446,8 +438,9 @@ public final class CPath2Client
      * @see #setDataSources(java.util.Collection)
      * @return valid values for the datasource parameter as a Help object.
      */
-    public Help getValidDataSources() {
-        return getValidParameterValues(CmdArgs.datasource.toString());
+    public Collection<String> getValidDataSources() {
+        Help h = restTemplate.getForObject(endPointURL + "help/datasources", Help.class);
+        return parseHelpSimple(h);
     }
 
     
@@ -456,8 +449,9 @@ public final class CPath2Client
      * @see #setOrganisms(java.util.Collection)
      * @return valid values for the organism parameter as a Help object.
      */
-    public Help getValidOrganisms() {
-        return getValidParameterValues(CmdArgs.organism.toString());
+    public Collection<String> getValidOrganisms() {
+        Help h = restTemplate.getForObject(endPointURL + "help/organisms", Help.class);
+        return parseHelpSimple(h);
     }
 
     
@@ -467,19 +461,18 @@ public final class CPath2Client
      * @return valid values for the BioPAX type parameter.
      */
     public Collection<String> getValidTypes() {
+    	Help help = restTemplate.getForObject(endPointURL + "help/types", Help.class);
+    	return parseHelpSimple(help);
+    }
+
+    
+    private Collection<String> parseHelpSimple(Help help) {
         Set<String> types = new TreeSet<String>();
-    	Help help = getValidParameterValues(CmdArgs.type.toString());
     	for(Help h : help.getMembers()) {
     		types.add(h.getId());
     	}
     	return types;
     }
-
-    private Help getValidParameterValues(String parameter) {
-        String url = endPointURL + "help/" + parameter + "s";
-        return restTemplate.getForObject(url, Help.class);
-    }
-
     
 	/**
 	 * Gets the BioPAX property path (current value).

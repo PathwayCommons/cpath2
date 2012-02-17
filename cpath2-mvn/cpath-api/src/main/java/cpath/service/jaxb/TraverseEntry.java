@@ -12,9 +12,9 @@ import javax.xml.bind.annotation.XmlType;
 @XmlType(name = "TraverseEntry")
 public class TraverseEntry {
     @XmlAttribute(required = true)
-    protected String uri;
+    private String uri;
     
-    protected List<String> value;
+    private List<String> value;
 
 
     public String getUri() {
@@ -37,5 +37,10 @@ public class TraverseEntry {
 	@Override
 	public String toString() {
 		return getValue().toString();
+	}
+	
+	//package-private
+	boolean isEmpty() {
+		return value.isEmpty();
 	}
 }

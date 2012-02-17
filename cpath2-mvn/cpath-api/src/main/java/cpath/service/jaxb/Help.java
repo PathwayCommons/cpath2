@@ -17,7 +17,7 @@ import javax.xml.bind.annotation.*;
 @XmlRootElement
 @XmlType(name = "Help")
 @XmlAccessorType(XmlAccessType.PUBLIC_MEMBER)
-public class Help implements Comparable<Help> {
+public class Help extends ServiceResponse implements Comparable<Help>{
 
 	private String id;
 	private String title;
@@ -127,6 +127,11 @@ public class Help implements Comparable<Help> {
 	@Override
 	public int compareTo(Help o) {
 		return this.id.compareToIgnoreCase(o.id);
+	}
+
+	@Override
+	public boolean isEmpty() {
+		return false;
 	}
 
 }
