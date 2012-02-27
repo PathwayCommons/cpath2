@@ -90,7 +90,7 @@
         <slf4j.version>1.5.8</slf4j.version>
         <hibernate.version>3.6.9.Final</hibernate.version>
         <paxtools.version>4.1.0-SNAPSHOT</paxtools.version>
-        <validator.version>2.0.0</validator.version>
+        <validator.version>2.0.1-SNAPSHOT</validator.version>
         <cpath.api.version>5.1.0-SNAPSHOT</cpath.api.version>
 	</properties>
 

@@ -81,7 +81,14 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 		
 		//Normalize (for safety :)) ontology names using IDs
 		for(String id : getOntologyIDs()) {
-			String officialName = MiriamLink.getName(id); 
+			String officialName = MiriamLink.getName(id);
+//			String officialName = null;
+//			try {
+//				officialName = MiriamLink.getName(id); 
+//			} catch (Exception e) {
+//				System.out.println("MiriamLink.getName("+id+") FAILED!");
+//				throw new RuntimeException(e);
+//			}
 			Ontology o = getOntology(id);
 			o.setName(officialName);
 			

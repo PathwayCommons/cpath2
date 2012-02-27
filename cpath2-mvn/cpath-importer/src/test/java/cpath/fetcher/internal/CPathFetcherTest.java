@@ -34,6 +34,7 @@ public class CPathFetcherTest {
 		model = BioPAXLevel.L3.getDefaultFactory().createModel();
 	}
 
+	
 	@Test
 	public void testGetProteinData() throws IOException {
 		// any resource location now works (not only http://...)!
@@ -137,20 +138,4 @@ public class CPathFetcherTest {
 		assertFalse(m.getObjects().isEmpty());
 	}
 	
-	
-	@Override
-	/* 
-	 * note: although called several times, 
-	 * it finally exports the model
-	 * that results from all the test methods.
-	 */
-	protected void finalize() throws Throwable {
-		// write the whole merged model (to target/test-classes dir)
-		OutputStream out = new FileOutputStream(
-			getClass().getClassLoader().getResource("").getPath() 
-				+ File.separator + "DataServicesTest.out.owl");
-		exporter.convertToOWL(model, out);
-		System.out.println("CPathFetcherTest finalize call# " + (++count));
-		super.finalize();
-	}
 }

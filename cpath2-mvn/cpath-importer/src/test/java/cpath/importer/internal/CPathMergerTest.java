@@ -20,6 +20,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.*;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -35,7 +36,29 @@ public class CPathMergerTest {
 	private static final WarehouseDAO cvRepository;
 	
 	private Set<Model> pathwayModels; // pathways to merge
-        
+	
+	/**
+	 * Mocks an empty CV repository
+	 * 
+	 * @author rodche
+	 */
+	public static class MockCvWarehouse implements WarehouseDAO {
+		@Override
+		public Set<String> getByXref(Set<? extends Xref> arg0,
+				Class<? extends XReferrable> arg1)  {
+			return Collections.EMPTY_SET;
+		}
+		@Override
+		public BioPAXElement getObject(String arg0) {
+			return null;
+		}
+		@Override
+		public <T extends BioPAXElement> T getObject(String arg0, Class<T> arg1) { 
+			return null;
+		}
+	}
+	
+	
 	static {
 		// init the test database
 		DataServicesFactoryBean.createSchema("cpath2_test");
@@ -44,11 +67,12 @@ public class CPathMergerTest {
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 			new String[] {
 				"classpath:testContext-whDAO.xml", 
-				"classpath:applicationContext-cvRepository.xml"
+//				"classpath:applicationContext-cvRepository.xml"
 				});
 		proteinsDAO = (WarehouseDAO) context.getBean("proteinsDAO");
 		moleculesDAO = (WarehouseDAO) context.getBean("moleculesDAO");
-		cvRepository = (WarehouseDAO) context.getBean("cvFetcher");
+//		cvRepository = (WarehouseDAO) context.getBean("cvFetcher");
+		cvRepository = new MockCvWarehouse();
 		metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 
         /* load the test metadata and ONLY (!) 
