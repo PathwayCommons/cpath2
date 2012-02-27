@@ -162,4 +162,15 @@ public class WarehouseCVsTest {
 		assertNull(cv);
 	}
 
+	@Test 
+	public final void testEscapeChars() {
+		ControlledVocabulary cv = warehouse.getObject(
+				"urn:miriam:obo.psi-mod:MOD%3A00048",SequenceModificationVocabulary.class);
+		assertNotNull(cv);
+		
+//		System.out.println("MOD%253A00048 term:" + cv.getTerm().toString());
+		
+		assertTrue(cv.getTerm().contains("O4'-phospho-L-tyrosine")); // apostrophe
+	}
+	
 }
