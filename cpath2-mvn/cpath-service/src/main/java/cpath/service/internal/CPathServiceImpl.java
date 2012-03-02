@@ -48,6 +48,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import com.googlecode.ehcache.annotations.Cacheable;
+import com.mchange.util.AssertException;
 
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
@@ -83,7 +84,7 @@ public class CPathServiceImpl implements CPathService {
 
 	private SimpleIOHandler simpleIO;
 
-	private static SearchResponse topPathways;
+	private static volatile SearchResponse topPathways;
 	
     private Set<String> blacklist;
 
@@ -100,15 +101,6 @@ public class CPathServiceImpl implements CPathService {
 		this.metadataDAO = metadataDAO;
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		simpleIO.mergeDuplicates(true);
-	}
-
-	
-	@PostConstruct
-	public void init() 
-	{
-		// call this only once
-		topPathways = mainDAO.getTopPathways();
-		topPathways.setNumHits(topPathways.getSearchHit().size());
 	}
 	
 	
@@ -522,6 +514,11 @@ public class CPathServiceImpl implements CPathService {
 	 */
 	@Override
 	public SearchResponse getTopPathways() {
+		// call this only once
+		if(topPathways == null) {
+			topPathways = mainDAO.getTopPathways();
+		} 
+		
 		return topPathways;
 	}
 
