@@ -31,13 +31,15 @@ package cpath.dao.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.Document;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.search.highlight.Highlighter;
+import org.apache.lucene.search.highlight.QueryScorer;
+import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
+import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
 import org.apache.lucene.util.Version;
 import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
@@ -47,7 +49,6 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.hibernate.*;
 import org.hibernate.search.*;
 import org.hibernate.search.query.dsl.QueryBuilder;
-import org.hibernate.transform.ResultTransformer;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 
@@ -61,7 +62,6 @@ import cpath.service.jaxb.TraverseResponse;
 
 import java.util.*;
 import java.io.*;
-import java.net.URI;
 
 
 /**
@@ -103,7 +103,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 	private final Map<String, String> nameSpacePrefixMap;
 	private final BioPAXLevel level;
 	private final BioPAXFactory factory;
-	private final ResultTransformer resultTransformer;
 	protected SimpleIOHandler simpleIO;
 	private boolean addDependencies = false;
 	protected MultiFieldQueryParser multiFieldQueryParser;
@@ -141,73 +140,6 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 						bioPAXElements.add(bpe);
 				}
 				return bioPAXElements;
-			}
-		};
-		
-		this.resultTransformer = new ResultTransformer() {
-			/*
-			 * We suppose, 'organism', 'dataSource' (URIs), and 'keyword' 
-			 * search fields values were stored in the Lucene index.
-			 */
-			public Object transformTuple(Object[] tuple, String[] aliases) {
-				BioPAXElement bpe = (BioPAXElement) tuple[0];
-				Document doc = (Document) tuple[1];
-				
-				SearchHit hit = new SearchHit();
-				
-                hit.setUri(bpe.getRDFId());
-                hit.setBiopaxClass(bpe.getModelInterface().getSimpleName());
-				
-				// add standard and display names if any -
-				if (bpe instanceof Named) {
-					Named named = (Named) bpe;
-					String std = named.getStandardName();
-					if (std != null)
-						hit.setName(std);
-					else
-						hit.setName(named.getDisplayName());
-				}
-				
-				// extract only organism URNs (no names, etc..)
-				if(doc.getField(FIELD_ORGANISM) != null) {
-					List<String> l = hit.getOrganism();
-					for(String o : doc.getValues(FIELD_ORGANISM)) {
-						if(o.startsWith("urn") && !l.contains(o)) {
-							l.add(o);
-						}
-					}
-				}
-				
-				// extract only dataSource URNs
-				if(doc.getField(FIELD_DATASOURCE) != null) {
-					List<String> l = hit.getDataSource();
-					for(String d : doc.getValues(FIELD_DATASOURCE)) {
-						if(d.startsWith("urn") && !l.contains(d)) {
-							l.add(d);
-						}
-					}
-				}	
-				
-				// extract only pathway URIs
-				if(doc.getField(FIELD_PATHWAY) != null) {
-					List<String> l = hit.getPathway();
-					for(String d : doc.getValues(FIELD_PATHWAY)) {
-						try {
-							if(URI.create(d).isAbsolute()) //skip if throws
-								l.add(d);
-						} catch(IllegalArgumentException e) {}
-					}
-				}
-				
-				// TODO somehow use a highlighter to calculate the excerpt (using 'keyword' search field)
-				hit.setExcerpt(null);
-				
-				return hit;
-			}
-			
-			// when no projection used
-			public List transformList(List collection) {
-				throw new UnsupportedOperationException("Must use projection with this results transformer!");
 			}
 		};
 	}
@@ -410,13 +342,16 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		fullTextQuery.setFirstResult(l);
 
 		/*
-		 * TODO create a highlighter (to get the excerpt); - store data in the
-		 * index (i.e., use store.YES in the annotations; this much increases
-		 * index size) - two-way field bridges must be defined and used
+		 * use a highlighter (to get the excerpt);
+		 * (also use store.YES in some annotations, esp. on 'keyword' field)
 		 */
-		// Highlighter highlighter = new Highlighter(fulltextQuery, indexReader, analyzer) {...};
+		QueryScorer scorer = new QueryScorer(luceneQuery, FIELD_KEYWORD);   
+	    SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
+	    Highlighter highlighter = new Highlighter(formatter, scorer);
+	    highlighter.setTextFragmenter(new SimpleSpanFragmenter(scorer, 80));
 
-		fullTextQuery.setResultTransformer(resultTransformer);
+	    // set the result to search hit beans transformer
+	    fullTextQuery.setResultTransformer(new SearchHitsTransformer(highlighter));
 
 		searchResponse.setMaxHitsPerPage(maxHitsPerPage);
 
@@ -759,7 +694,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		FullTextQuery fullTextQuery = fullTextSession.createFullTextQuery(luceneQuery, PathwayImpl.class);
 		fullTextQuery.setProjection(FullTextQuery.THIS, FullTextQuery.DOCUMENT);	
 		fullTextQuery.setReadOnly(true);
-		fullTextQuery.setResultTransformer(resultTransformer);
+		fullTextQuery.setResultTransformer(new SearchHitsTransformer(null)); //highlighter is not required here
 		
 		// do search and get (auto-transformed from BioPAX elements and index fields) hits
 		List<SearchHit> searchHits = searchResponse.getSearchHit();
@@ -770,7 +705,10 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		}
 		
 		searchResponse.setNumHits(searchHits.size());
-		searchResponse.setComment("Top or Root Pathways");
+		//TODO update the following comment if implementation has changed!
+		searchResponse.setComment("Top Pathways (technically, each has empty index " +
+				"field 'pathway'; that also means, they are neither components of " +
+				"other pathways nor controlled of any process)");
 		searchResponse.setMaxHitsPerPage(searchHits.size());
 		searchResponse.setPageNo(0);
 		

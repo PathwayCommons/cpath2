@@ -446,9 +446,8 @@ public class PremergeImpl implements Premerge {
 		}
 
 		// add additional info about the current version, source, identifier, etc...
-		String keyComment = CPathSettings.CPATH2_GENERATED_COMMENT + 
-			". Data (internal) id: " + metadata.getIdentifier();
-		if(!pro.getComment().contains(keyComment)) { // trying not to add multiple times...
+		String keyComment = CPathSettings.CPATH2_GENERATED_COMMENT + ". ";
+		if(!pro.getComment().contains(keyComment)) {
 			pro.addComment(keyComment);
 			pro.addComment(CPathSettings.CPATH2_GENERATED_COMMENT + 
 				". Data loaded from: " + metadata.getURLToData());
