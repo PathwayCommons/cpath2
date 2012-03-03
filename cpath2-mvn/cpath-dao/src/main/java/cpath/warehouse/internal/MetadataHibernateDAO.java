@@ -12,8 +12,6 @@ import org.hibernate.Hibernate;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.search.FullTextSession;
-import org.hibernate.search.Search;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
