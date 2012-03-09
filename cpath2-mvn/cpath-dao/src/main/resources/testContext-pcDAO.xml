@@ -54,9 +54,10 @@
 
     <bean id="pcDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="pcSessionFactory"/>
+        <property name="xmlBase" value="${xml.base}"/>
     </bean>
 
-    <bean id="whDAO" class="cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO">
+    <bean id="whDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="pcSessionFactory"/>
     </bean>
 

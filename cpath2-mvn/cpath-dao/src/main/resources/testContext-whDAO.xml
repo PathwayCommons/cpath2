@@ -90,15 +90,15 @@
 </bean> 
 --> 	
 
-    <bean id="proteinsDAO" class="cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO">
+    <bean id="proteinsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="testSessionFactory"/>
     </bean>
 
-    <bean id="metadataDAO" class="cpath.warehouse.internal.MetadataHibernateDAO">
+    <bean id="metadataDAO" class="cpath.dao.internal.MetadataHibernateDAO">
         <property name="sessionFactory" ref="testSessionFactory"/>
     </bean>
     
-    <bean id="moleculesDAO" class="cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO">
+    <bean id="moleculesDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="testSessionFactory"/>
     </bean>
 

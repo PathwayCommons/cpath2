@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.warehouse.internal;
+package cpath.dao.internal;
 
 import static org.junit.Assert.*;
 
@@ -37,6 +37,8 @@ import java.util.Set;
 import org.biopax.paxtools.model.level3.*;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import cpath.dao.internal.OntologyManagerCvRepository;
 
 import psidev.ontology_manager.OntologyTermI;
 import psidev.ontology_manager.impl.OntologyTermImpl;
@@ -75,7 +77,7 @@ public class WarehouseCVsTest {
 
 	/**
 	 * Test method for
-	 * {@link cpath.warehouse.internal.OntologyManagerCvRepository#ontologyTermsToUrns(java.util.Collection)}
+	 * {@link cpath.dao.internal.OntologyManagerCvRepository#ontologyTermsToUrns(java.util.Collection)}
 	 */
 	@Test
 	public final void testOntologyTermsToUrns() {
@@ -92,7 +94,7 @@ public class WarehouseCVsTest {
 
 	/**
 	 * Test method for
-	 * {@link cpath.warehouse.internal.OntologyManagerCvRepository#ontologyTermsToUrns(java.util.Collection)}
+	 * {@link cpath.dao.internal.OntologyManagerCvRepository#ontologyTermsToUrns(java.util.Collection)}
 	 */
 	@Test
 	public final void testSearchForTermByAccession() {

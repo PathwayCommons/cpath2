@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.warehouse.internal;
+package cpath.dao.internal;
 
 
 import org.junit.*;
