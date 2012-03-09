@@ -31,7 +31,6 @@ package cpath.importer.internal;
 import cpath.importer.Merger;
 import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.internal.PaxtoolsHibernateDAO;
 import cpath.warehouse.beans.*;
 import cpath.warehouse.beans.Metadata.TYPE;
 import cpath.warehouse.MetadataDAO;
@@ -232,7 +231,7 @@ final class MergerImpl implements Merger {
 				replacements.put(u, replacement);
 			}
 			
-			// remove entity features (cause hibernate exceptions; can be recovered after all)
+			// remove original entity features (cause hibernate exceptions; TODO recover later)
 			if (u instanceof EntityReference) {
 				EntityReference er = (EntityReference) u;
 				// loop, to ensure entityFeatureOf is also cleared (cannot simple set null or empty set!)
@@ -258,6 +257,8 @@ final class MergerImpl implements Merger {
 				"the replacement (warehouse) objects...");
 		target.merge(pathwayModel);
 		pathwayModel = null; //trash
+		
+		// TODO validate/normalize "target" model once more, particularly, - fix/recover entity features and add uni.xrefs to CVs	
 		
 		if(log.isInfoEnabled())
 			log.info("merge(pathwayModel): persisting...");

@@ -1,4 +1,4 @@
-package cpath.warehouse.internal;
+package cpath.dao.internal;
 
 // imports
 import cpath.warehouse.MetadataDAO;
@@ -25,7 +25,7 @@ import java.util.Collection;
  * Implementation of MetadatDAO interface.
  */
 @Repository
-public class MetadataHibernateDAO  implements MetadataDAO {
+class MetadataHibernateDAO  implements MetadataDAO {
 
     // log
     private static Log log = LogFactory.getLog(MetadataHibernateDAO.class);

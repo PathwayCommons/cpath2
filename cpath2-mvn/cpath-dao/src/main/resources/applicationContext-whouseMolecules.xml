@@ -50,7 +50,7 @@
         <property name="sessionFactory" ref="moleculesSessionFactory" />
     </bean>
 
-    <bean id="moleculesDAO" class="cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO">
+    <bean id="moleculesDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="moleculesSessionFactory"/>
         <property name="maxHitsPerPage" value="${maxSearchHitsPerPage}"/>
     </bean>

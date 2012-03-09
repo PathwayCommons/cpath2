@@ -41,7 +41,7 @@
         <property name="sessionFactory" ref="whouseSessionFactory" />
     </bean>
 
-    <bean id="metadataDAO" class="cpath.warehouse.internal.MetadataHibernateDAO">
+    <bean id="metadataDAO" class="cpath.dao.internal.MetadataHibernateDAO">
         <property name="sessionFactory" ref="whouseSessionFactory"/>
     </bean>
 

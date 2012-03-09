@@ -25,9 +25,8 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.warehouse.internal;
+package cpath.dao.internal;
 
-//import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.*;
 
@@ -56,10 +55,10 @@ import cpath.warehouse.WarehouseDAO;
 /**
  * This is to access OBO Cvs:
  * 
- * @author rodch
+ * @author rodche
  *
  */
-public class OntologyManagerCvRepository extends BiopaxOntologyManager 
+class OntologyManagerCvRepository extends BiopaxOntologyManager 
 	implements CvRepository, WarehouseDAO 
 {
 	private static final Log log = LogFactory.getLog(OntologyManagerCvRepository.class);
@@ -82,13 +81,6 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 		//Normalize (for safety :)) ontology names using IDs
 		for(String id : getOntologyIDs()) {
 			String officialName = MiriamLink.getName(id);
-//			String officialName = null;
-//			try {
-//				officialName = MiriamLink.getName(id); 
-//			} catch (Exception e) {
-//				System.out.println("MiriamLink.getName("+id+") FAILED!");
-//				throw new RuntimeException(e);
-//			}
 			Ontology o = getOntology(id);
 			o.setName(officialName);
 			
