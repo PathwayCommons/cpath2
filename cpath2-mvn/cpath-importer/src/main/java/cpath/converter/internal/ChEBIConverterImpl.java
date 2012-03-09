@@ -25,7 +25,7 @@ import cpath.dao.PaxtoolsDAO;
 /**
  * Implementation of Converter interface for ChEBI data.
  */
-public class ChEBIConverterImpl extends BaseConverterImpl
+class ChEBIConverterImpl extends BaseConverterImpl
 {
 	static enum WhatEntryToProcess {
 		PROCESS_SDF,
@@ -98,30 +98,30 @@ public class ChEBIConverterImpl extends BaseConverterImpl
 	private static final Pattern CHEBI_EXT_LINK_OR_REGISTRY_REGEX =
 		Pattern.compile("> <(\\w+|\\w+\\-\\w+) (Registry Numbers|Database Links)>$");
 	
-	public ChEBIConverterImpl() {
-		this(null);
-	}
-	
-	public ChEBIConverterImpl(Model model) {
-		this(model, CHEBI_OBO_RESOURCE_URL);
+
+	ChEBIConverterImpl() {
+		this(CHEBI_OBO_RESOURCE_URL);
 	}
 
 	
 	/**
-	 * Constructor to set a location of 
+	 * Protected test Constructor to set a location of 
 	 * the chebi.obo file or a mock file 
 	 * (for testing).
-	 * 
-	 *
-	 * @param model to merge converted data to
 	 */
-	ChEBIConverterImpl(Model model, String chebiOBOFileURL) {
-		super(model);
-		this.oboConverter = new ChEBIOBOConverterImpl(model, factory);
+	ChEBIConverterImpl(String chebiOBOFileURL) {
+		this.oboConverter = new ChEBIOBOConverterImpl(factory);
 		this.chebiOboFileUrl = chebiOBOFileURL;
 		if (log.isInfoEnabled()) {
 			log.info("CHEBI OBO FILE URL: " + chebiOboFileUrl);
 		}
+	}
+
+	
+	@Override
+	public void setModel(Model model) {
+		super.setModel(model);
+		this.oboConverter.setModel(model);
 	}
 
 	
@@ -136,9 +136,6 @@ public class ChEBIConverterImpl extends BaseConverterImpl
 		// Note - we are only converting ChEBI now, so assume OBO processing required
 		InputStream oboIS = null;
 		try {
-			if (oboConverter.getModel() == null) {
-				oboConverter.setModel(model);
-			}
 			oboIS = getChEBIOBOInputStream();
 			convert(oboIS, WhatEntryToProcess.PROCESS_OBO, CHEBI_OBO_ENTRY_START, CHEBI_OBO_ENTRY_END);
 		}
@@ -643,7 +640,6 @@ public class ChEBIConverterImpl extends BaseConverterImpl
 			}
 		}
 
-		// outta here
 		return toReturn;
 	}
 

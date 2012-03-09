@@ -1,7 +1,7 @@
 package cpath.cleaner.internal;
 
 // imports
-import cpath.cleaner.Cleaner;
+import cpath.importer.Cleaner;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
@@ -41,14 +41,14 @@ import java.io.*;
 // * differentiate between upper and lower case on primary keys.
  */
 @Deprecated
-public class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
+final class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
 	
 	// logger
     private static Log log = LogFactory.getLog(ReactomeCleanerImpl.class);
 
 	/**
 	 * (non-Javadoc>
-	 * @see cpath.cleaner.Cleaner#clean(java.lang.String)
+	 * @see cpath.importer.Cleaner#clean(java.lang.String)
 	 */
 	public String clean(final String pathwayData) 
 	{	

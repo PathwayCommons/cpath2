@@ -27,12 +27,10 @@
 package cpath.importer.internal;
 
 // imports
-import cpath.cleaner.Cleaner;
-import cpath.cleaner.internal.BaseCleanerImpl;
 import cpath.config.CPathSettings;
-import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
+import cpath.importer.Cleaner;
 import cpath.importer.Premerge;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
@@ -53,19 +51,15 @@ import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-
 import java.util.*;
 
 import java.io.*;
 
-import javax.sql.DataSource;
 
 /**
  * Class responsible for premerging pathway data.
  */
-public class PremergeImpl implements Premerge {
+final class PremergeImpl implements Premerge {
 
     private static Log log = LogFactory.getLog(PremergeImpl.class);
 
@@ -77,14 +71,13 @@ public class PremergeImpl implements Premerge {
 	private String version;
 
 	/**
-	 *
 	 * Constructor.
 	 *
 	 * @param metadata
 	 * @param metaDataDAO
 	 * @param validator Biopax Validator
 	 */
-	public PremergeImpl(final MetadataDAO metaDataDAO,
+	PremergeImpl(final MetadataDAO metaDataDAO,
 						final Validator validator) 
 	{
 		this.metaDataDAO = metaDataDAO;
@@ -136,7 +129,7 @@ public class PremergeImpl implements Premerge {
 		// create cleaner
 		if(log.isInfoEnabled())
 			log.info("run(), getting a cleaner with name: " + metadata.getCleanerClassname());
-		cleaner = BaseCleanerImpl.getCleaner(metadata.getCleanerClassname());
+		cleaner = ImportFactory.newCleaner(metadata.getCleanerClassname());
 		if (cleaner == null) {
 			// TDB: report failure
 			if(log.isInfoEnabled())
@@ -157,7 +150,7 @@ public class PremergeImpl implements Premerge {
 						premergeDbName);
 			DataServicesFactoryBean.createSchema(premergeDbName);
 			// next, get the PaxtoolsDAO instance
-			pemergeDAO = buildPremergeDAO(premergeDbName);
+			pemergeDAO = ImportFactory.buildPremergeDAO(premergeDbName);
 		}
 	
 		// iterate over and process all pathway data
@@ -375,34 +368,6 @@ public class PremergeImpl implements Premerge {
 		
 		return validation;
 	}
-	
-	/**
-	 * Creates new PaxtoolsDAO instance to work with existing "premerge"
-	 * database. This is used both during the "pre-merge" (here) and "merge".
-	 */
-	public static PaxtoolsDAO buildPremergeDAO(String premergeDbName) {
-		/* 
-		 * set system properties and data source 
-		 * (replaces existing one in the same thread),
-		 * load another specific application context
-		 */
-		String home = CPathSettings.getHomeDir();
-		if (home==null) {
-			throw new RuntimeException(
-				"Please set " + CPathSettings.HOME_VARIABLE_NAME + " environment variable " +
-            	" (point to a directory where cpath.properties, etc. files are placed)");
-		}
-		
-		// get the data source factory bean (aware of the driver, user, and password)
-		ApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
-		DataServices dataServices = (DataServices) context.getBean("&dsBean");
-		DataSource premergeDataSource = dataServices.getDataSource(premergeDbName);
-		DataServicesFactoryBean.getDataSourceMap().put(CPathSettings.PREMERGE_DB_KEY, premergeDataSource);
-		// get the premerge DAO
-		context = new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");	
-		return (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
-	}
 
 	public boolean isCreateDb() {
 		return createDb;
@@ -426,6 +391,13 @@ public class PremergeImpl implements Premerge {
 	}
 	
 	
+	/**
+	 * Extra fix for Provenance objects
+	 * (if it was absent or non-standard in the original data)
+	 * 
+	 * @param model BioPAX model (normalized!)
+	 * @param metadata
+	 */
 	private void fixDataSource(Model model, Metadata metadata) {
 		Provenance pro = null;
 		
@@ -442,24 +414,16 @@ public class PremergeImpl implements Premerge {
 			pro = (Provenance) model.getByID(urn);
 		else {
 			pro = model.addNew(Provenance.class, urn);
-			Normalizer.autoName(pro); // + standard name and synonyms
+			Normalizer.autoName(pro); // + standard name, comments, and synonyms
 		}
 
 		// add additional info about the current version, source, identifier, etc...
-		String keyComment = CPathSettings.CPATH2_GENERATED_COMMENT + ". ";
-		if(!pro.getComment().contains(keyComment)) {
-			pro.addComment(keyComment);
-			pro.addComment(CPathSettings.CPATH2_GENERATED_COMMENT + 
-				". Data loaded from: " + metadata.getURLToData());
-			pro.addComment(CPathSettings.CPATH2_GENERATED_COMMENT + 
-				". Data type: " + metadata.getType());
-			pro.addComment(CPathSettings.CPATH2_GENERATED_COMMENT + 
-					". Data version: " + metadata.getVersion() + 
-					", " + metadata.getReleaseDate());
-		}
+		pro.addComment(CPathSettings.CPATH2_GENERATED_COMMENT + 
+			". Original data URL: " + metadata.getURLToData() + 
+			"; type: " + metadata.getType() + "; version: " + 
+			metadata.getVersion() + ", " + metadata.getReleaseDate());
 		
-		// add new value to each entity (but not to the model yet - it's
-		// simpleMerger's job)
+		// set for all entities
 		for (Entity ent : model.getObjects(Entity.class)) {
 			ent.addDataSource(pro);
 		}

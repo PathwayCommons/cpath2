@@ -97,15 +97,7 @@ final class SearchHitsTransformer implements ResultTransformer {
 			final List<String> frags = new ArrayList<String>();
 			try {
 				if (doc.getField(FIELD_KEYWORD) != null) {
-					final String text = StringUtils.join(doc.getValues(FIELD_KEYWORD));
-					//a trick: name and comment field values were not actually stored in the index doc
-					String s = highlighter.getBestFragment(ANALYZER, FIELD_NAME, text);
-					if(s != null) 
-						frags.add(s);
-					s = highlighter.getBestFragment(ANALYZER, FIELD_COMMENT, text);
-					if(s != null) 
-						frags.add(s);
-					
+					final String text = StringUtils.join(doc.getValues(FIELD_KEYWORD), " ");					
 					for(String fr : highlighter.getBestFragments(ANALYZER,
 							FIELD_KEYWORD, text, 5)) {
 						frags.add(fr);

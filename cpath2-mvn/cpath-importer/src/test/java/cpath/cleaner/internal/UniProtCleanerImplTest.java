@@ -35,7 +35,7 @@ import java.util.zip.GZIPInputStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import cpath.cleaner.Cleaner;
+import cpath.importer.Cleaner;
 
 /**
  * Test UniProt data cleaner.

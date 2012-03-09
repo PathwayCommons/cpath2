@@ -1,7 +1,8 @@
 package cpath.converter.internal;
 
 // imports
-import cpath.converter.Converter;
+import cpath.importer.Converter;
+import cpath.importer.internal.ImportFactory;
 
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.Model;
@@ -38,8 +39,8 @@ public class ChEBIConverterImplTest {
 		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
 
 		// setup the converter using a special constructor to set mock chebi.obo data
-		Converter converter = new ChEBITestConverterImpl();
-		((BaseConverterImpl)converter).setModel(model);
+		Converter converter = ImportFactory.newConverter("cpath.converter.internal.ChEBITestConverterImpl");
+		converter.setModel(model);
 		converter.convert(is);
 		
 		// dump owl for review

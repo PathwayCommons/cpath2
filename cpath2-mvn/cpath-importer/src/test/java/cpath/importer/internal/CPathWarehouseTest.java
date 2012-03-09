@@ -1,3 +1,4 @@
+package cpath.importer.internal;
 /**
  ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
  ** and University of Toronto (UofT).
@@ -46,7 +47,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
-import cpath.fetcher.internal.CPathFetcherImpl;
+import cpath.importer.Fetcher;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.warehouse.*;
@@ -81,7 +82,7 @@ public class CPathWarehouseTest {
 		proteins = (WarehouseDAO) context.getBean("proteinsDAO");
 		
 		// load test data
-		CPathFetcherImpl fetcher = new CPathFetcherImpl();
+		Fetcher fetcher = new FetcherImpl();
         Collection<Metadata> metadata;
 		try {
 			metadata = fetcher.getMetadata("classpath:metadata.html");

@@ -30,9 +30,7 @@ package cpath.admin;
 
 import cpath.dao.*;
 import cpath.dao.internal.DataServicesFactoryBean;
-import cpath.fetcher.CPathFetcher;
-import cpath.fetcher.WarehouseDataService;
-import cpath.fetcher.internal.CPathFetcherImpl;
+import cpath.importer.Fetcher;
 import cpath.importer.Merger;
 import cpath.importer.Premerge;
 import cpath.importer.internal.*;
@@ -314,7 +312,7 @@ public class Admin implements Runnable {
 		ApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
 		final PaxtoolsDAO pcDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
 		// merger
-		Merger merger = new MergerImpl((Model)pcDAO);
+		Merger merger = ImportFactory.newMerger((Model)pcDAO);
 		merger.setIdentifier(provider);
 		merger.setVersion(version);
 		merger.setUseDb(usedb);
@@ -333,7 +331,7 @@ public class Admin implements Runnable {
 					"classpath:applicationContext-cvRepository.xml"});
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		Validator validator = (Validator) context.getBean("validator");
-        Premerge premerge = new PremergeImpl(metadataDAO, validator);
+        Premerge premerge = ImportFactory.newPremerge(metadataDAO, validator);
         premerge.setCreateDb(usedb);
         premerge.setIdentifier(provider);
         premerge.setVersion(version);
@@ -353,7 +351,7 @@ public class Admin implements Runnable {
             new ClassPathXmlApplicationContext(new String [] { 	
             	"classpath:applicationContext-whouseDAO.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-        CPathFetcher providerMetadataService = new CPathFetcherImpl();
+        Fetcher providerMetadataService = ImportFactory.newFetcher();
     	
         // grab the data
         Collection<Metadata> metadata = providerMetadataService.getMetadata(location);
@@ -377,7 +375,7 @@ public class Admin implements Runnable {
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-whouseDAO.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-        WarehouseDataService fetcher = new CPathFetcherImpl();
+        Fetcher fetcher = ImportFactory.newFetcher();
     	
 		// get metadata
 		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
@@ -418,7 +416,7 @@ public class Admin implements Runnable {
 				/* it won't replace existing files (name: metadata.getLocalDataFile()),
 				 * which allows for manual correction of re-importing of previously fetched data
 				 */
-				((CPathFetcher)fetcher).fetchData(metadata); 
+				fetcher.fetchData(metadata); 
 			} catch (Exception e) {
 				LOG.error("Failed fetching data for " + metadata.toString() 
 					+ ". Skipping...", e);
@@ -438,8 +436,7 @@ public class Admin implements Runnable {
 					if (!savedVersions.contains(metadata.getVersion())) {
 						// grab the data
 						Collection<PathwayData> pathwayData =
-							((CPathFetcher)fetcher)
-								.getProviderPathwayData(metadata);
+								fetcher.getProviderPathwayData(metadata);
 	        
 						// process pathway data
 						for (PathwayData pwData : pathwayData) {
@@ -509,8 +506,7 @@ public class Admin implements Runnable {
 		 * it must be a PaxtoolsDAO db name (i.e,, a premerge or cpath2 main one)
 		 */
 		if(pk == null) {
-			PaxtoolsDAO pemergeDAO = PremergeImpl
-				.buildPremergeDAO(src); // yup, it also works for the main db
+			PaxtoolsDAO pemergeDAO = ImportFactory.buildPremergeDAO(src); // yup, it also works for the main db
 			pemergeDAO.exportModel(output, uris);
 		} else {
 			// get pathwayData (bean)

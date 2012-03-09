@@ -1,16 +1,16 @@
 package cpath.cleaner.internal;
 
 // imports
-import cpath.cleaner.Cleaner;
+import cpath.importer.Cleaner;
 
 /**
  * Implementation of Cleaner interface for HPRD ppi data.
  */
-public class HPRDCleanerImpl extends BaseCleanerImpl implements Cleaner {
+final class HPRDCleanerImpl extends BaseCleanerImpl implements Cleaner {
 
 	/**
 	 * (non-Javadoc>
-	 * @see cpath.cleaner.Cleaner#clean(java.lang.String)
+	 * @see cpath.importer.Cleaner#clean(java.lang.String)
 	 */
 	public String clean(final String pathwayData) {
 

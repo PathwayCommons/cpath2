@@ -4,7 +4,7 @@ package cpath.converter.internal;
 import cpath.dao.PaxtoolsDAO;
 
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 /**
  * Converter for ChEBI-OBO data.
  */
-public class ChEBIOBOConverterImpl extends BaseConverterImpl {
+final class ChEBIOBOConverterImpl extends BaseConverterImpl {
 
 	// logger
     private static Log log = LogFactory.getLog(ChEBIOBOConverterImpl.class);
@@ -43,13 +43,16 @@ public class ChEBIOBOConverterImpl extends BaseConverterImpl {
 	
 	private BioPAXFactory factory;
 		
+	
+	ChEBIOBOConverterImpl() {
+		this(BioPAXLevel.L3.getDefaultFactory());
+	}
+	
 	/**
 	 * Constructor.
-	 * @param model Model
 	 * @param factory BioPAXFactory
 	 */
-	public ChEBIOBOConverterImpl(Model model, BioPAXFactory factory) {
-		this.model = model;
+	ChEBIOBOConverterImpl(BioPAXFactory factory) {
 		this.factory = factory;
 	}
 	

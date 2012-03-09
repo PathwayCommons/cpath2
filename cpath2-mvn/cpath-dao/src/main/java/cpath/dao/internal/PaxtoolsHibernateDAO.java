@@ -345,6 +345,7 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		 * use a highlighter (to get the excerpt);
 		 * (also use store.YES in some annotations, esp. on 'keyword' field)
 		 */
+		//TODO shall I rewrite the luceneQuery?
 		QueryScorer scorer = new QueryScorer(luceneQuery, FIELD_KEYWORD);   
 	    SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
 	    Highlighter highlighter = new Highlighter(formatter, scorer);
@@ -775,8 +776,8 @@ public class PaxtoolsHibernateDAO implements PaxtoolsDAO
 		    if (index % IDX_BATCH_SIZE == 0) {
 		        fullTextSession.flushToIndexes(); //apply changes to indexes
 		        fullTextSession.clear(); //free memory since the queue is processed
-		        if(log.isDebugEnabled())
-					log.debug("Indexed " + index);
+		        if(log.isInfoEnabled())
+					log.info("Indexed " + index);
 		    }
 		}
         fullTextSession.flushToIndexes();
