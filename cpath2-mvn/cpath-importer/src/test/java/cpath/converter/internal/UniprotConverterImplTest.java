@@ -37,14 +37,20 @@ import java.io.InputStream;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.ModificationFeature;
 import org.biopax.paxtools.model.level3.ProteinReference;
+import org.biopax.paxtools.model.level3.SequenceLocation;
+import org.biopax.paxtools.model.level3.SequenceSite;
+import org.biopax.paxtools.model.level3.UtilityClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import cpath.converter.Converter;
+import cpath.importer.Converter;
+import cpath.importer.internal.ImportFactory;
 
 /**
  * @author rodche
@@ -64,12 +70,36 @@ public class UniprotConverterImplTest {
 		
 		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
 		
-		Converter converter = new UniprotConverterImpl(model);
+		Converter converter = ImportFactory.newConverter("cpath.converter.internal.UniprotConverterImpl");
+		converter.setModel(model);
 		converter.convert(zis);
 		
 		Set<ProteinReference> proteinReferences = model.getObjects(ProteinReference.class);
 		assertEquals(9, proteinReferences.size());
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
+
+		//get by URI and check the sequence (CALL6_HUMAN)
+		ProteinReference pr = (ProteinReference) model.getByID("urn:miriam:uniprot:Q8TD86");
+		assertNotNull(pr);
+		final String expected = "MGLQQEISLQPWCHHPAESCQTTTDMTERLSAEQIKEYKGVFEMFDEEGNGEVKTGE" +
+				"LEWLMSLLGINPTKSELASMAKDVDRDNKGFFNCDGFLALMGVYHEKAQNQESELRAAFRVFDKEGKGYIDWN" +
+				"TLKYVLMNAGEPLNEVEAEQMMKEADKDGDRTIDYEEFVAMMTGESFKLIQ";
+		assertEquals(expected, pr.getSequence());
+		assertTrue(pr.getComment().contains("SEQUENCE   181 AA;  20690 MW;  F29C088AFC42BB13 CRC64;"));
+		
+		// test MOD_RES features are created
+		pr = (ProteinReference) model.getByID("urn:miriam:uniprot:P62158");
+		assertNotNull(pr);
+		assertEquals(8, pr.getEntityFeature().size());
+		String mfUri = ModelUtils.BIOPAX_URI_PREFIX + "ModificationFeature:" +
+				pr.getDisplayName() + "_1";
+		ModificationFeature mf = (ModificationFeature) model.getByID(mfUri);
+		assertNotNull(mf);
+		assertTrue(pr.getEntityFeature().contains(mf));
+		SequenceLocation sl = mf.getFeatureLocation();
+		assertTrue(sl instanceof SequenceSite);
+		assertEquals(2, ((SequenceSite)sl).getSequencePosition());
+		assertEquals("MOD_RES N-acetylalanine", mf.getModificationType().getTerm().iterator().next());
 		
 		//TODO add more checks that the conversion went ok..
 		

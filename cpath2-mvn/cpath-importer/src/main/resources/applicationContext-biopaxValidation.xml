@@ -54,6 +54,7 @@
 		<list>
 			<value>PUBMED</value>
 			<value>PMID</value>
+			<value>MEDLINE</value>
 		</list>
 		<list>
 			<value>UNIPROT</value>

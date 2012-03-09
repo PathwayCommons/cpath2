@@ -1,4 +1,4 @@
-package cpath.fetcher.internal;
+package cpath.importer.internal;
 
 import static org.junit.Assert.*;
 
@@ -14,6 +14,7 @@ import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.junit.*;
 
+import cpath.importer.internal.FetcherImpl;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.beans.Metadata.TYPE;
@@ -22,13 +23,13 @@ import cpath.warehouse.beans.Metadata.TYPE;
 public class CPathFetcherTest {
 	private static Log log = LogFactory.getLog(CPathFetcherTest.class);
 	
-	static CPathFetcherImpl fetcher;
+	static FetcherImpl fetcher;
 	static Model model;
 	static SimpleIOHandler exporter;
 	static int count = 0;
 	
 	static {
-		fetcher = new CPathFetcherImpl();
+		fetcher = new FetcherImpl();
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
 		// extend Model for the converter calling 'merge' method to work
 		model = BioPAXLevel.L3.getDefaultFactory().createModel();

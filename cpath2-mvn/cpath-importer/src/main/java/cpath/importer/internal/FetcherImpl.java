@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.fetcher.internal;
+package cpath.importer.internal;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
@@ -48,13 +48,10 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
-import cpath.cleaner.Cleaner;
-import cpath.cleaner.internal.BaseCleanerImpl;
 import cpath.config.CPathSettings;
-import cpath.converter.Converter;
-import cpath.converter.internal.BaseConverterImpl;
-import cpath.fetcher.CPathFetcher;
-import cpath.fetcher.WarehouseDataService;
+import cpath.importer.Cleaner;
+import cpath.importer.Converter;
+import cpath.importer.Fetcher;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
@@ -63,10 +60,10 @@ import cpath.warehouse.beans.PathwayData;
  * @author rodche, ben
  *
  */
-public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
+final class FetcherImpl implements Fetcher
 {
 	// logger
-    private static Log log = LogFactory.getLog(CPathFetcherImpl.class);
+    private static Log log = LogFactory.getLog(FetcherImpl.class);
 	
     // some bits for metadata reading
     private static final int METADATA_IDENTIFIER_INDEX = 0;
@@ -95,6 +92,11 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 	// LOADER can handle file://, ftp://, http://  URL resources
 	private static final ResourceLoader LOADER = new DefaultResourceLoader();
 	
+	/**
+	 * Protected Constructor.
+	 */
+	FetcherImpl() {
+	}
 	
 	@Override
     public Collection<Metadata> getMetadata(final String url) throws IOException 
@@ -507,7 +509,7 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 			// hook into a cleaner for given provider
 			if(log.isInfoEnabled())
 				log.info("getting a cleaner with name: " + metadata.getCleanerClassname());
-			Cleaner cleaner = BaseCleanerImpl.getCleaner(metadata.getCleanerClassname());
+			Cleaner cleaner = ImportFactory.newCleaner(metadata.getCleanerClassname());
 			if (cleaner == null) {
 				// TDB: report failure
 				if(log.isInfoEnabled())
@@ -528,16 +530,14 @@ public class CPathFetcherImpl implements WarehouseDataService, CPathFetcher
 			if (log.isInfoEnabled())
 				log.info("getting a converter with name: "
 						+ metadata.getConverterClassname());
-			Converter converter = BaseConverterImpl.getConverter(metadata.getConverterClassname());
-			if (converter == null) {
-				// TDB: report failure
-				log.fatal("could not create converter class "
-						+ metadata.getConverterClassname());
+			
+			Converter converter = ImportFactory.newConverter(metadata.getConverterClassname());
+			if(converter == null) {
+				log.info(("Converter is null; skipping this step..."));
 				return;
-			}
-			((BaseConverterImpl) converter).setModel(model);
-
-			converter.convert(is);
+			} 
+			converter.setModel(model);
+			converter.convert(is);			
 			
 		} finally {
 			closeQuietly(is);

@@ -2,7 +2,6 @@ package cpath.importer.internal;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
-import cpath.fetcher.internal.CPathFetcherImpl;
 import cpath.warehouse.*;
 import cpath.warehouse.beans.*;
 import cpath.warehouse.beans.Metadata.TYPE;
@@ -78,7 +77,7 @@ public class CPathMergerTest {
         /* load the test metadata and ONLY (!) 
 		 * test proteins and molecules data into the warehouse
 		 */
-		CPathFetcherImpl fetcher = new CPathFetcherImpl();
+		FetcherImpl fetcher = new FetcherImpl();
 		try {
 			Collection<Metadata> metadata = fetcher.getMetadata("classpath:metadata.html");
 			for (Metadata mdata : metadata) {

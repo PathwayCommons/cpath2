@@ -25,10 +25,12 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.fetcher;
+package cpath.importer;
 
 import java.io.IOException;
 import java.util.Collection;
+
+import org.biopax.paxtools.model.Model;
 
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
@@ -37,7 +39,7 @@ import cpath.warehouse.beans.PathwayData;
  * @author rodche
  *
  */
-public interface CPathFetcher {
+public interface Fetcher {
 
     /**
      *  For the given url, returns a collection of Metadata Objects.
@@ -69,5 +71,16 @@ public interface CPathFetcher {
      * @throws IOException
      */
     void fetchData(final Metadata metadata) throws IOException;
+    
+    
+    /**
+     * For the given Metadata, converts target data int EntityReference objects and 
+	 * adds into given paxtools model.
+     *
+	 * @param metadata Metadata
+     * @param model Model
+     * @throws IOException if an IO error occurs
+     */
+    void storeWarehouseData(final Metadata metadata, final Model model) throws IOException;
 	
 }

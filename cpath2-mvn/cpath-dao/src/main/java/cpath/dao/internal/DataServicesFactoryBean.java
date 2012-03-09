@@ -286,7 +286,8 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		DataServices dataServices = (DataServices) ctx.getBean("&dsBean");
 		dataServices.createDatabase(dbName, true);
 		DataSource premergeDataSource = dataServices.getDataSource(dbName);
-		getDataSourceMap().put(CPathSettings.CREATE_DB_KEY, premergeDataSource);
+		// the map key "createSchema" matches the dataSource bean name in internalContext-createSchema.xml
+		getDataSourceMap().put("createSchema", premergeDataSource);
 		// set property for the index dir
 		System.setProperty("cpath2.db.name", dbName);
 		// load the context (depends on the above key) that auto-creates tables

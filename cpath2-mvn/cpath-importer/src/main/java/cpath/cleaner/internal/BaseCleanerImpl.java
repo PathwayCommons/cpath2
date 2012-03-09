@@ -1,7 +1,7 @@
 package cpath.cleaner.internal;
 
 // imports
-import cpath.cleaner.Cleaner;
+import cpath.importer.Cleaner;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
@@ -10,11 +10,11 @@ import org.biopax.paxtools.model.level3.*;
  * Implementation of Cleaner interface for use when data
  * does not need to be cleaned.
  */
-public class BaseCleanerImpl implements Cleaner {
+class BaseCleanerImpl implements Cleaner {
 
 	/**
 	 * (non-Javadoc>
-	 * @see cpath.cleaner.Cleaner#clean(java.lang.String)
+	 * @see cpath.importer.Cleaner#clean(java.lang.String)
 	 */
 	public String clean(final String pathwayData) {
 		return pathwayData;
@@ -79,24 +79,5 @@ public class BaseCleanerImpl implements Cleaner {
 		// outta here
 		return toReturn;
 	}
-	
-	/**
-	 * For the given cleaner class name,
-	 * returns an instance of a class which
-	 * implements the cleaner interface.
-	 *
-	 * @param cleanerClassName String
-	 * @return Cleaner
-	 */
-	public static Cleaner getCleaner(final String cleanerClassName) {
-		try {
-			Class cleanerClass = Class.forName(cleanerClassName);
-			return (cleanerClass == null) ?
-				null : (Cleaner)cleanerClass.newInstance();
-		}
-		catch (Exception e) {
-//			log.fatal(e);
-			return null;
-		}
-	}
+
 }

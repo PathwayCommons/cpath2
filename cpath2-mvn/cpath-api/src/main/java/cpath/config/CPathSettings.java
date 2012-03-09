@@ -40,35 +40,27 @@ public final class CPathSettings {
 	
 	public static final String NEWLINE = System.getProperty ( "line.separator" );
 	
-	public static final String HOME_VARIABLE_NAME = "CPATH2_HOME";
-	
-	/*
-	 * These define only the "KEYS" for the DataServicesFactoryBean's 
-	 * data sources map. Values (actual db names) are defined
-	 * in cpath.properties file (in the CPATH2_HOME directory).
-	 * So, these keys are used in the corresponding Spring 
-	 * context configuration files (where SessionFactory is defined)
-	 * to define the dataSource beans, e.g.:
-	 * <bean id="cpath2_meta" class="cpath.dao.internal.DataServicesFactoryBean"/>
-	 * ('cpath2_meta' is a key to get the data source from the factory)
+	/**
+	 * Name for the system environment and/or JVM variable 
+	 * cPath2 uses to know its "home" directory location.
 	 */
-	public static final String MAIN_DB_KEY = "cpath2_main";
-	public static final String METADATA_DB_KEY = "cpath2_meta";
-	public static final String MOLECULES_DB_KEY = "cpath2_molecules";
-	public static final String PROTEINS_DB_KEY = "cpath2_proteins";
-	public static final String PREMERGE_DB_KEY = "premergeDataSource";
-	public static final String CREATE_DB_KEY = "createSchema";
+	public static final String HOME_VARIABLE_NAME = "CPATH2_HOME";
+
 	
-	/*
-	 * Use this default prefix for DB names that we create (drop),
-	 * e.g., for pre-merge and unit test databases.
-	 * (this does not affect db names specified in cpath.properties)
+	/**
+	 * This is the default name prefix for optional "pre-merge" DBs we 
+	 * can create (or drop) to persist cleaned, normalized, validated 
+	 * pathway data;
+	 * 
+	 * @deprecated we may remove this (pre-merge databases) feature in the future
 	 */
 	public static final String CPATH_DB_PREFIX = "cpath2_";
 
-	
+	/**
+	 * Common prefix for cPath2 generated BioPAX comments
+	 */
 	public static final String CPATH2_GENERATED_COMMENT = "cPath2-generated";
-	
+		
 	/**
 	 * Gets current Home Directory (full path).
 	 * 
@@ -78,8 +70,18 @@ public final class CPathSettings {
 		return System.getProperty(HOME_VARIABLE_NAME);
 	}
 	
+	/**
+	 * Name for the system environment and/or JVM variable 
+	 * cPath2 checks to enable extra/advanced debug output.
+	 */
 	public static final String JAVA_OPT_DEBUG = "cpath.debug";
 	
+	/**
+	 * Tests whether this cPath2 is in the debug mode.
+	 * 
+	 * @see CPathSettings#JAVA_OPT_DEBUGA
+	 * @return
+	 */
 	public static boolean isDebug() {
 		return "true".equalsIgnoreCase(System.getProperty(CPathSettings.JAVA_OPT_DEBUG));
 	}

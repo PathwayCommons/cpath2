@@ -55,7 +55,7 @@ import java.util.*;
 /**
  * Class responsible for Merging pathway data.
  */
-public class MergerImpl implements Merger {
+final class MergerImpl implements Merger {
 
     private static final Log log = LogFactory.getLog(MergerImpl.class);
 
@@ -76,7 +76,7 @@ public class MergerImpl implements Merger {
 	 *
 	 * @param pcDAO Model target, where to merge data
 	 */
-	public MergerImpl(final Model pcDAO) 
+	MergerImpl(final Model pcDAO) 
 	{
 		this.pcDAO = pcDAO;
 		
@@ -102,7 +102,7 @@ public class MergerImpl implements Merger {
 	}
 
 	/**
-	 * Constructor.
+	 * Test Constructor (package-private).
 	 *
 	 * This constructor was added to be used in a test context. At least called by
 	 * cpath.importer.internal.CPathInMemoryModelMergerTest.testMerger().
@@ -113,7 +113,7 @@ public class MergerImpl implements Merger {
 	 * @param proteinsDAO WarehouseDAO
 	 * @param cvRepository WarehouseDAO
 	 */
-	public MergerImpl(final Model pcDAO, final MetadataDAO metadataDAO, final WarehouseDAO moleculesDAO,
+	MergerImpl(final Model pcDAO, final MetadataDAO metadataDAO, final WarehouseDAO moleculesDAO,
 					  final WarehouseDAO proteinsDAO, final WarehouseDAO cvRepository) 
 	{
 		this.pcDAO = pcDAO;
@@ -445,7 +445,7 @@ public class MergerImpl implements Merger {
 			+ "_" + metadata.getVersion();
 		
 		// get the PaxtoolsDAO (Model) instance
-		PaxtoolsDAO premergePaxtoolsDAO = PremergeImpl.buildPremergeDAO(dbname);
+		PaxtoolsDAO premergePaxtoolsDAO = ImportFactory.buildPremergeDAO(dbname);
 		
 		// "detach" the model by export to/import from owl/xml
 		ModelUtils modelUtils = new ModelUtils(premergePaxtoolsDAO);
