@@ -107,7 +107,7 @@ public final class ImportFactory {
 	private static Object newInstance(final String className) {
 		try {
 			Class<?> clazz = Class.forName(className);
-			Constructor c = clazz.getDeclaredConstructor();
+			Constructor<?> c = clazz.getDeclaredConstructor();
 			c.setAccessible(true);
 			return c.newInstance();
 		}
