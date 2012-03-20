@@ -43,7 +43,7 @@
         <connection>scm:hg:https://pathway-commons.googlecode.com/hg/</connection>
         <developerConnection>scm:hg:https://pathway-commons.googlecode.com/hg/</developerConnection>
         	<url>http://code.google.com/p/pathway-commons/source/browse/</url>
-    	</scm>
+    </scm>
 
 	<distributionManagement>
 		<site>
