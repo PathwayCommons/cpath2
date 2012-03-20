@@ -24,7 +24,6 @@
 <bp:Protein rdf:ID="pid_60462">
  <bp:entityReference rdf:resource="urn:miriam:uniprot:P10276" />
  <bp:dataSource rdf:resource="urn:miriam:pid.pathway" />
- <bp:xref rdf:resource="urn:biopax:RelationshipXref:AUTO-GENERATED_URN%3AMIRIAM%3ATAXONOMY%3A9606" />
  <bp:comment rdf:datatype = "xsd:string">dataSource ADDED by a reasoner: urn:miriam:pid.pathway</bp:comment>
  <bp:displayName rdf:datatype = "xsd:string">Rar alpha1</bp:displayName>
 </bp:Protein>
@@ -32,7 +31,6 @@
 <bp:Protein rdf:ID="pid_60463">
  <bp:entityReference rdf:resource="urn:miriam:uniprot:P10826" />
  <bp:dataSource rdf:resource="urn:miriam:pid.pathway" />
- <bp:xref rdf:resource="urn:biopax:RelationshipXref:AUTO-GENERATED_URN%3AMIRIAM%3ATAXONOMY%3A9606" />
  <bp:comment rdf:datatype = "xsd:string">dataSource ADDED by a reasoner: urn:miriam:pid.pathway</bp:comment>
  <bp:displayName rdf:datatype = "xsd:string">Rar beta4</bp:displayName>
 </bp:Protein>
@@ -40,7 +38,6 @@
 <bp:Protein rdf:ID="pid_60464">
  <bp:entityReference rdf:resource="urn:miriam:uniprot:P10826" />
  <bp:dataSource rdf:resource="urn:miriam:pid.pathway" />
- <bp:xref rdf:resource="urn:biopax:RelationshipXref:AUTO-GENERATED_URN%3AMIRIAM%3ATAXONOMY%3A9606" />
  <bp:comment rdf:datatype = "xsd:string">dataSource ADDED by a reasoner: urn:miriam:pid.pathway</bp:comment>
  <bp:displayName rdf:datatype = "xsd:string">Rar beta3</bp:displayName>
 </bp:Protein>
@@ -49,7 +46,6 @@
  <bp:entityReference rdf:resource="urn:miriam:uniprot:P22932" />
  <bp:dataSource rdf:resource="urn:miriam:pid.pathway" />
  <bp:name rdf:datatype = "xsd:string">Rar gamma2</bp:name>
- <bp:xref rdf:resource="urn:biopax:RelationshipXref:AUTO-GENERATED_URN%3AMIRIAM%3ATAXONOMY%3A9606" />
  <bp:comment rdf:datatype = "xsd:string">dataSource ADDED by a reasoner: urn:miriam:pid.pathway</bp:comment>
  <bp:displayName rdf:datatype = "xsd:string">RAR gamma2</bp:displayName>
 </bp:Protein>
@@ -63,7 +59,6 @@
  <bp:entityReference rdf:resource="urn:miriam:uniprot:P13631" />
  <bp:dataSource rdf:resource="urn:miriam:pid.pathway" />
  <bp:name rdf:datatype = "xsd:string">RAR gamma1</bp:name>
- <bp:xref rdf:resource="urn:biopax:RelationshipXref:AUTO-GENERATED_URN%3AMIRIAM%3ATAXONOMY%3A9606" />
  <bp:comment rdf:datatype = "xsd:string">dataSource ADDED by a reasoner: urn:miriam:pid.pathway</bp:comment>
  <bp:displayName rdf:datatype = "xsd:string">Rar gamma1</bp:displayName>
 </bp:Protein>
@@ -102,7 +97,6 @@
  <bp:entityReference rdf:resource="urn:miriam:uniprot:P22932" />
  <bp:dataSource rdf:resource="urn:miriam:pid.pathway" />
  <bp:name rdf:datatype = "xsd:string">Rar gamma2</bp:name>
- <bp:xref rdf:resource="urn:biopax:RelationshipXref:AUTO-GENERATED_URN%3AMIRIAM%3ATAXONOMY%3A9606" />
  <bp:feature rdf:resource="#pid_60772" />
  <bp:feature rdf:resource="#pid_60773" />
  <bp:comment rdf:datatype = "xsd:string">dataSource ADDED by a reasoner: urn:miriam:pid.pathway</bp:comment>
@@ -158,10 +152,6 @@
  <bp:idVersion rdf:datatype = "xsd:string">4</bp:idVersion>
 </bp:UnificationXref>
 
-<bp:RelationshipTypeVocabulary rdf:about="urn:biopax:RelationshipTypeVocabulary:ORGANISM">
- <bp:term rdf:datatype = "xsd:string">ORGANISM</bp:term>
- <bp:comment rdf:datatype = "xsd:string">auto-generated</bp:comment>
-</bp:RelationshipTypeVocabulary>
 
 <bp:ProteinReference rdf:about="urn:miriam:uniprot:P22932">
  <bp:entityFeature rdf:resource="#pid_60772" />
@@ -195,7 +185,6 @@
 <bp:Protein rdf:ID="pid_60468">
  <bp:entityReference rdf:resource="urn:miriam:uniprot:P10276" />
  <bp:dataSource rdf:resource="urn:miriam:pid.pathway" />
- <bp:xref rdf:resource="urn:biopax:RelationshipXref:AUTO-GENERATED_URN%3AMIRIAM%3ATAXONOMY%3A9606" />
  <bp:comment rdf:datatype = "xsd:string">dataSource ADDED by a reasoner: urn:miriam:pid.pathway</bp:comment>
  <bp:displayName rdf:datatype = "xsd:string">Rar alpha2</bp:displayName>
 </bp:Protein>
@@ -203,7 +192,6 @@
 <bp:Protein rdf:ID="pid_60467">
  <bp:entityReference rdf:resource="urn:miriam:uniprot:P10826" />
  <bp:dataSource rdf:resource="urn:miriam:pid.pathway" />
- <bp:xref rdf:resource="urn:biopax:RelationshipXref:AUTO-GENERATED_URN%3AMIRIAM%3ATAXONOMY%3A9606" />
  <bp:comment rdf:datatype = "xsd:string">dataSource ADDED by a reasoner: urn:miriam:pid.pathway</bp:comment>
  <bp:displayName rdf:datatype = "xsd:string">Rar beta2</bp:displayName>
 </bp:Protein>
@@ -211,23 +199,14 @@
 <bp:Protein rdf:ID="pid_60466">
  <bp:entityReference rdf:resource="urn:miriam:uniprot:P10826" />
  <bp:dataSource rdf:resource="urn:miriam:pid.pathway" />
- <bp:xref rdf:resource="urn:biopax:RelationshipXref:AUTO-GENERATED_URN%3AMIRIAM%3ATAXONOMY%3A9606" />
  <bp:comment rdf:datatype = "xsd:string">dataSource ADDED by a reasoner: urn:miriam:pid.pathway</bp:comment>
  <bp:displayName rdf:datatype = "xsd:string">Rar beta1</bp:displayName>
 </bp:Protein>
-
-<bp:RelationshipXref rdf:about="urn:biopax:RelationshipXref:AUTO-GENERATED_URN%3AMIRIAM%3ATAXONOMY%3A9606">
- <bp:id rdf:datatype = "xsd:string">urn:miriam:taxonomy:9606</bp:id>
- <bp:db rdf:datatype = "xsd:string">auto-generated</bp:db>
- <bp:relationshipType rdf:resource="urn:biopax:RelationshipTypeVocabulary:ORGANISM" />
- <bp:comment rdf:datatype = "xsd:string">auto-generated</bp:comment>
-</bp:RelationshipXref>
 
 <bp:Protein rdf:ID="pid_60718">
  <bp:entityReference rdf:resource="urn:miriam:uniprot:P22932" />
  <bp:dataSource rdf:resource="urn:miriam:pid.pathway" />
  <bp:name rdf:datatype = "xsd:string">Rar gamma2</bp:name>
- <bp:xref rdf:resource="urn:biopax:RelationshipXref:AUTO-GENERATED_URN%3AMIRIAM%3ATAXONOMY%3A9606" />
  <bp:feature rdf:resource="#pid_60719" />
  <bp:comment rdf:datatype = "xsd:string">dataSource ADDED by a reasoner: urn:miriam:pid.pathway</bp:comment>
  <bp:displayName rdf:datatype = "xsd:string">RAR gamma2</bp:displayName>
@@ -253,7 +232,6 @@
  <bp:memberPhysicalEntity rdf:resource="#pid_60467" />
  <bp:memberPhysicalEntity rdf:resource="#pid_60466" />
  <bp:memberPhysicalEntity rdf:resource="#pid_60463" />
- <bp:xref rdf:resource="urn:biopax:RelationshipXref:AUTO-GENERATED_URN%3AMIRIAM%3ATAXONOMY%3A9606" />
  <bp:comment rdf:datatype = "xsd:string">dataSource ADDED by a reasoner: urn:miriam:pid.pathway</bp:comment>
  <bp:displayName rdf:datatype = "xsd:string">RARs</bp:displayName>
 </bp:Protein>

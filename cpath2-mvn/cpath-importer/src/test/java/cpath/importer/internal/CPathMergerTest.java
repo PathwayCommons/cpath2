@@ -238,6 +238,10 @@ public class CPathMergerTest {
 		assertEquals(6, smr.getXref().size()); // relationship xrefs were removed before merging
 		assertEquals("(R)-linalool", smr.getDisplayName());
 		assertEquals(4, smr.getEntityReferenceOf().size());
+		
+		
+		UnificationXref x = (UnificationXref) mergedModel.getByID("urn:biopax:UnificationXref:TAXONOMY_9606");
+		assertEquals(1, x.getXrefOf().size());
 	}
 	
 	

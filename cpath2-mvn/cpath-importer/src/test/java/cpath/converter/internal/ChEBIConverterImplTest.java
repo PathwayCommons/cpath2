@@ -24,7 +24,7 @@ import java.io.InputStream;
  * Test Chebi to BioPAX converter.
  *
  */
-//@Ignore
+@Ignore
 public class ChEBIConverterImplTest {
 
 	/**

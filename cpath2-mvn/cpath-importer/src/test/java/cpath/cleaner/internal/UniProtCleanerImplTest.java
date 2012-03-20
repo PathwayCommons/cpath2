@@ -40,7 +40,7 @@ import cpath.importer.Cleaner;
 /**
  * Test UniProt data cleaner.
  */
-//@Ignore
+@Ignore
 public class UniProtCleanerImplTest {
 
     // some statics of accessions before cleaning

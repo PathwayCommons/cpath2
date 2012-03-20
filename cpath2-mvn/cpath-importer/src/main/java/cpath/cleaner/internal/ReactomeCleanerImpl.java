@@ -5,7 +5,6 @@ import cpath.importer.Cleaner;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.*;
 
 import org.apache.commons.logging.Log;
@@ -15,6 +14,7 @@ import java.util.Set;
 import java.util.HashSet;
 
 import java.io.*;
+import java.lang.reflect.Method;
 
 /**
  * Implementation of Cleaner interface for Reactome data. 
@@ -71,25 +71,27 @@ final class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
 			log.info("Cleaning Reactome data, this may take some time, please be patient...");
 		}
 		
-		ModelUtils modelUtils = new ModelUtils(model);
 		Set<Level3Element> sourceElements = new HashSet<Level3Element>(model.getObjects(Level3Element.class));
+
 		for (Level3Element l3e : sourceElements) {
 			// we only modify entity and pathway step rdfIds
 			if (l3e instanceof Entity || l3e instanceof PathwayStep) {
 				String newRDFId = super.getRDFIdReplacement(model, l3e, taxID);
 				// before update, store original in a comment
 				l3e.addComment("Original RDFId (before applying ReactomeCleaner): " + l3e.getRDFId());
-				//quickly replace ID
-				modelUtils.replaceID(l3e.getRDFId(), newRDFId);
+				//replace ID
+//				modelUtils.replaceID(l3e.getRDFId(), newRDFId); //- not possible anymore using Paxtools API
+				replaceID(model, l3e, newRDFId);
 			}
 		}
 		//repair model (add lost children, fix properties and idMap...)
 		model.repair();
 		
-		// update ns prefix (to upper case) as well -
-		String xmlns = model.getNameSpacePrefixMap().remove("");
-		model.getNameSpacePrefixMap().put("", xmlns.toUpperCase());
-		model.setXmlBase(model.getXmlBase().toUpperCase());
+// not required anymore -
+//		// update ns prefix (to upper case) as well -
+//		String xmlns = model.getNameSpacePrefixMap().remove("");
+//		model.getNameSpacePrefixMap().put("", xmlns.toUpperCase());
+//		model.setXmlBase(model.getXmlBase().toUpperCase());
 		
 		// convert model back to OutputStream for return
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -101,5 +103,21 @@ final class ReactomeCleanerImpl extends BaseCleanerImpl implements Cleaner {
 		}
 
 		return outputStream.toString();
+	}
+
+
+	private void replaceID(Model model, Level3Element el, String newRDFId) {
+		if(el.getRDFId().equals(newRDFId))
+			return; // no action required
+		
+		model.remove(el);
+		try {
+			Method m = el.getClass().getDeclaredMethod("setRDFId", String.class);
+			m.setAccessible(true);
+			m.invoke(el, newRDFId);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+		model.add(el);
 	}
 }

@@ -65,7 +65,6 @@ class BaseCleanerImpl implements Cleaner {
 	 * @param taxID String
 	 * @return String
 	 */
-	@Deprecated
 	protected String getRDFIdReplacement(final Model model, final BioPAXElement bpe, final String taxID) {
 		
 		int inc = 0;

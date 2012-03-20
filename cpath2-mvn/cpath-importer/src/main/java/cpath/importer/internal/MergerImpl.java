@@ -38,6 +38,7 @@ import cpath.warehouse.WarehouseDAO;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.util.BioPaxIOException;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
@@ -212,26 +213,30 @@ final class MergerImpl implements Merger {
 	@Override
 	public void merge(Model pathwayModel) 
 	{	
-		// build a merged in-memory model
+		final ModelUtils pathwayModelUtils = new ModelUtils(pathwayModel);
+		
+		/* create a new in-memory model, where matching warehouse objects 
+		 * will be placed to then merge with pathway model objects
+		 */
 		final Model target = pathwayModel.getLevel().getDefaultFactory().createModel();
-		ModelUtils mu = new ModelUtils(target);
+		final ModelUtils targetModelUtils = new ModelUtils(target);
 		
 		// find/collect matching elements from the warehouse
 		if(log.isInfoEnabled())
 			log.info("merge(pathwayModel): looking for matching utility class elements in the warehouse...");
 	
-		// a map to relate utility class objects to ones from the warehouse
+		// relate utility class objects to ones from the warehouse (to replace later)
 		final Map<UtilityClass, UtilityClass> replacements = new HashMap<UtilityClass, UtilityClass>();
 		for (UtilityClass u: new HashSet<UtilityClass>(pathwayModel.getObjects(UtilityClass.class))) 
 		{
-			//find the replacement in the warehouse or target model
-			// (it also adds the replacement elements to the target model)
+			// Find the best replacement either in the warehouse or target model;
+			// it also adds the replacement elements to the target model
 			UtilityClass replacement = getFromWarehouse(u, target);
 			if(replacement != null) {
 				replacements.put(u, replacement);
 			}
 			
-			// remove original entity features (cause hibernate exceptions; TODO recover later)
+			// remove original entity features (cause hibernate exceptions bacause of entityFeatureOf; TODO)
 			if (u instanceof EntityReference) {
 				EntityReference er = (EntityReference) u;
 				// loop, to ensure entityFeatureOf is also cleared (cannot simple set null or empty set!)
@@ -246,7 +251,13 @@ final class MergerImpl implements Merger {
 			log.info("merge(pathwayModel): updating object property values in the pathwayModel...");
 		
 		// replace utility class object property values if replacements were found
-		ModelUtils pathwayModelUtils = new ModelUtils(pathwayModel);
+		/*
+		 * Why we need 'replacements' map and 'replace' method? 
+		 * It's mainly because, for some objects, the replacement 
+		 * equivalent one will have a different URI. Had they always
+		 * the same URI, we could just use target.merge(pathwayModel)
+		 * and nothing more...  
+		 */
 		pathwayModelUtils.replace(replacements);
 		pathwayModelUtils.removeObjectsIfDangling(UtilityClass.class);
 		
@@ -256,9 +267,14 @@ final class MergerImpl implements Merger {
 				"into the (in-memory) target model, which already contains " +
 				"the replacement (warehouse) objects...");
 		target.merge(pathwayModel);
-		pathwayModel = null; //trash
+		targetModelUtils.removeObjectsIfDangling(UtilityClass.class);
 		
-		// TODO validate/normalize "target" model once more, particularly, - fix/recover entity features and add uni.xrefs to CVs	
+	
+		// TODO validate/normalize "target" model once more, - recover entity features and add uni.xrefs to CVs
+		//...
+		
+		//sanity/integrity quick check (enabled by java -ea flag)
+		assert assertNoDanglingInverseProps(target);
 		
 		if(log.isInfoEnabled())
 			log.info("merge(pathwayModel): persisting...");
@@ -267,6 +283,35 @@ final class MergerImpl implements Merger {
 		
 		if(log.isInfoEnabled())
 			log.info("merge(pathwayModel): merge is complete, exiting...");
+	}
+
+	
+	//advanced assertions
+	private static boolean assertNoDanglingInverseProps(Model m) {
+		final class Print {
+			String print(Collection<? extends BioPAXElement> objs) {
+				StringBuilder sb = new StringBuilder();
+				for(BioPAXElement b : objs) {
+					sb.append(b.getRDFId()).append(' ')
+					.append(b.getClass().getSimpleName())
+					.append('@').append(b.hashCode()).append(", ");
+				}
+				return sb.toString();
+			}
+		};
+		final Print p = new Print();
+		
+		for(Xref x : m.getObjects(Xref.class)) {
+			for(XReferrable r : x.getXrefOf()) {
+				assert m.contains(r) :  
+					r.getRDFId() +
+					" is not in the target model anymore!" +
+					" but it has Xref " + x + ", which belongs to\n" +
+					p.print(x.getXrefOf());
+			}
+		}
+		
+		return true;
 	}
 
 	

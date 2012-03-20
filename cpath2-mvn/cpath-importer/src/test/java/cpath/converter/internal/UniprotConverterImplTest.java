@@ -56,7 +56,7 @@ import cpath.importer.internal.ImportFactory;
  * @author rodche
  *
  */
-//@Ignore
+@Ignore
 public class UniprotConverterImplTest {
 
 	/**
