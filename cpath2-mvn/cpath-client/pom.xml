@@ -16,6 +16,25 @@
         <cpath.api.version>5.1.0-SNAPSHOT</cpath.api.version>
 	</properties>
 
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+		</plugins>
+		<extensions>
+			<extension>
+				<groupId>org.apache.maven.wagon</groupId>
+				<artifactId>wagon-ssh</artifactId>
+				<version>2.0</version>
+			</extension>
+		</extensions>
+	</build>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.biopax.paxtools</groupId>
