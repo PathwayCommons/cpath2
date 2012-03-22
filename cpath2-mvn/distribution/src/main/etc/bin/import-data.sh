@@ -115,9 +115,9 @@ done
 
 # 6. Merge (merge normalized BioPAX networks with the warehouse, validate again (optionally), and merge into the main storage/network)
 while true; do
-read -p "Merge all?" yn
+read -p "Merge all (incl. invalid pathway data, using --force)?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath-admin.sh -merge; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath-admin.sh -merge --force; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -145,4 +145,10 @@ done
 ## [TODO] Create database dump, validation reports, and index directory archive.
 
 # 41...
+
+
+# print all commands
+#echo "INFO: all cpath2 commands:"
+#sh $CPATH2_HOME/cpath-admin.sh
+#sh $CPATH2_HOME/cpath-service.sh
 
