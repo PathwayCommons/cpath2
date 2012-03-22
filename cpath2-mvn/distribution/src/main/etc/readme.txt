@@ -60,15 +60,14 @@ but this not always works due to such issues as: "ftp://.." URL access fails
 from java on some servers with strict policy; problems with data archive structure;
 cpath2 cannot read multiple files from gzip archives; etc.
 
-The preferred method is as follows
+The PREFERRED method is as follows
 (when creating a new cpath2 instance DBs from scratch): 
+
 1. Edit the cPath2 metadata.conf (see "metadata format" below)
 Note: 'NAME' field for pathway data entries (BIOPAX and PSI_MI type)
 must contain MIRIAM standard name or synonym for the datasource. 
 
-2. Download ('wget') UniProt and ChEBI data into $CPATH2_HOME/tmp/ as follows 
-(one day, you may want to import other data sources into cpath2 'warehouse', then 
-there must be corresponding cpath.converter.Converter implementation):
+2. Download warehouse data, ('wget') UniProt and ChEBI, into $CPATH2_HOME/tmp/:
 - wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz
 and rename it to, e.g., UNIPROT_HUMAN.YYYYMMDD.gz (name is to be constructed from 
 the corresponding line in metadata.conf, i.e. IDENTIFIER.VERSION.EXT; 
@@ -76,11 +75,18 @@ the corresponding line in metadata.conf, i.e. IDENTIFIER.VERSION.EXT;
 and no extension or other one means the data is not compressed, process as is)
 - wget ftp://ftp.ebi.ac.uk/pub/databases/chebi/SDF/ChEBI_complete.sdf.gz, etc. 
 
-3. Download and prepare BioPAX (L1, L2 will be auto-upgraded to L3) 
+Note: One day, you may want to import other data sources into cpath2 'warehouse', then 
+there must be corresponding cpath.converter.Converter implementation (which 
+is not required to be implemented in the cpath2 sources; no need to recompile 
+cpath2 either; - just add your class/jar to cpath2 script's classpath).
+
+3. Download and prepare pathway data (note: L1, L2 will be auto-upgraded to L3) 
 or PSI-MI data $CPATH2_HOME/tmp/ as follows:
--
--
--
+- download (wget) files or archive(s) from the pathway resource 
+(e.g., wget http://www.reactome.org/download/current/biopax3.zip) 
+- extract what you need (e.g. some species data only)
+- create a simple zip/gzip archive, name it according to IDENTIFIER.VERSION.EXT schema
+(alternatively, use, e.g., file:///full-path-to/smth.zip URL in the metadata.conf) 
 
 4. Run import-data.sh script and follow the instructions/questions...
 
@@ -124,15 +130,24 @@ download, re-package, and either save the required data to $CPATH2_HOME/tmp/
 (following the cpath2 importer naming convention), or specify a local URL, 
 like file:///full/path/whatever.gz, instead.
 
-6) URL to the 'logo' image - can be pointing to an image resource or empty;
+6) IMAGE URL (optional) - can be pointing to a resource logo;
 
 7) TYPE - one of: BIOPAX, PSI_MI, PROTEIN, SMALL_MOLECULE, MAPPING;
+
+Note: MAPPING (id-mapping data) can be fetched and stored locally, but 
+is not actually used anywhere (cpath2 v3.1.0). We planned to eventually 
+use BridgeDB. However, cpath2, in fact, does alternative "id-mapping", - during 
+"premerge" (in normalization) and "merge" stages (matching/replacing original 
+small molecule and protein references with ones found in the cpath2 data 
+warehouse, either by URI or by unification xrefs). This is possible, because
+UniProt and ChEBI data contain cross-references to other databases, which cpath2
+used to generate BioPAX xrefs and then search them. 
 
 8) CLEANER_CLASS - - use cpath.converter.internal.BaseCleanerImpl here if a 
 more specific cleaner is not required/available (like cpath.cleaner.internal.UniProtCleanerImpl);
 
 9) CONVERTER_CLASS - use cpath.converter.internal.BaseConverterImpl here if a 
-more specific converter is not required/available (like converter.internal.UniprotConverterImpl);
+more specific converter is not required/available (like cpath.converter.internal.UniprotConverterImpl);
 
 
 
@@ -167,6 +182,7 @@ sh cpath-admin.sh -premerge
 #$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -cp /path-to/MyDataCleanerImpl.class;/path-to/MyDataConverterImpl.class -Xss65536k -Xmx2g -jar cpath-admin.jar -premerge
 
 sh cpath-admin.sh -merge
+#sh cpath-admin.sh -merge <IDENTIFIER>
 
 # create full-text index (currently, it's required for the "main" cpath2 db only, only for the webservice app)
 sh cpath-admin.sh -create-index main
