@@ -184,20 +184,17 @@ final class PremergeImpl implements Premerge {
 	private void pipeline(Metadata metadata, PathwayData pathwayData, PaxtoolsDAO premergeDAO) {
 		String data = null;
 		String info = pathwayData.toString();
-
-		// get the BioPAX OWL from the pathwayData bean
-		data = pathwayData.getPathwayData();
 		
 		/*
-		 * First, clean - 
-		 * in other words - apply data provider-specific "quick fixes"
+		 * First, copy and "clean" (but not modify the original) pathway data,
+		 * in other words, - apply data provider-specific "quick fixes"
 		 * (the Cleaner class is specified at the Metadata conf. level)
 		 * to the original data (in PSI_MI, BioPAX L2, or L3 formats)
 		 */
 		if(log.isInfoEnabled())
 			log.info("pipeline(), cleaning data " + info);
 		
-		data = cleaner.clean(data);
+		data = cleaner.clean(pathwayData.getPathwayData());
 		
 		// Second, if psi-mi, convert to biopax L3
 		if (metadata.getType() == Metadata.TYPE.PSI_MI) {

@@ -38,7 +38,6 @@ import cpath.warehouse.WarehouseDAO;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.util.BioPaxIOException;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
@@ -61,7 +60,7 @@ final class MergerImpl implements Merger {
 
 	// cpath2 repositories
 	private MetadataDAO metadataDAO;
-    private Model pcDAO;
+    private PaxtoolsDAO pcDAO;
     private WarehouseDAO cvRepository;
     private WarehouseDAO moleculesDAO;
     private WarehouseDAO proteinsDAO;
@@ -76,7 +75,7 @@ final class MergerImpl implements Merger {
 	 *
 	 * @param pcDAO Model target, where to merge data
 	 */
-	MergerImpl(final Model pcDAO) 
+	MergerImpl(final PaxtoolsDAO pcDAO) 
 	{
 		this.pcDAO = pcDAO;
 		
@@ -98,7 +97,7 @@ final class MergerImpl implements Merger {
 		this.useDb = false;
 		this.force = false;
 		
-		this.simpleMerger = new SimpleMerger(SimpleEditorMap.get(pcDAO.getLevel()));
+		this.simpleMerger = new SimpleMerger(SimpleEditorMap.get(((Model)pcDAO).getLevel()));
 	}
 
 	/**
@@ -113,7 +112,7 @@ final class MergerImpl implements Merger {
 	 * @param proteinsDAO WarehouseDAO
 	 * @param cvRepository WarehouseDAO
 	 */
-	MergerImpl(final Model pcDAO, final MetadataDAO metadataDAO, final WarehouseDAO moleculesDAO,
+	MergerImpl(final PaxtoolsDAO pcDAO, final MetadataDAO metadataDAO, final WarehouseDAO moleculesDAO,
 					  final WarehouseDAO proteinsDAO, final WarehouseDAO cvRepository) 
 	{
 		this.pcDAO = pcDAO;
@@ -121,7 +120,7 @@ final class MergerImpl implements Merger {
 		this.moleculesDAO = moleculesDAO;
 		this.proteinsDAO = proteinsDAO;
 		this.cvRepository = cvRepository;
-		this.simpleMerger = new SimpleMerger(SimpleEditorMap.get(pcDAO.getLevel()));
+		this.simpleMerger = new SimpleMerger(SimpleEditorMap.L3);
 	}
 	
 	/*
@@ -167,26 +166,29 @@ final class MergerImpl implements Merger {
 					data = metadataDAO.getPathwayDataByIdentifier(metadata.getIdentifier());
 			
 				for(PathwayData pwdata : data) {
+					log.info("merge(): now merging " 
+							+ pwdata.getId() + " - "+ pwdata.toString());
+					
 					if(pwdata.getValid() == null 
 						|| pwdata.getPremergeData() == null 
 						|| pwdata.getPremergeData().length() == 0) 
 					{
 						// must run pre-merge first!
-						log.info("Do '-premerge' first! Skipping: " 
+						log.warn("Do '-premerge' first! Skipping " 
 							+ pwdata.getId() + " - "+ pwdata.toString());
 						continue;
 					} else if (pwdata.getValid() == false) {
 						// has BioPAX errors
-						log.info("There were critical BioPAX errors in " 
+						log.warn("There were critical BioPAX errors in " 
 							+ pwdata.getId() + " - "+ pwdata.toString());
 						if(!isForce()) {
-							log.info("Skipping for " + pwdata.getId());
+							log.warn("Skipping " + pwdata.getId());
 							continue;
 						} else {
-							log.info("FORCE merging (ignoring all validation issues) for " + pwdata.getId());
+							log.warn("FORCE merging (ignoring all validation issues) for " + pwdata.getId());
 						}
 					}
-				
+					
 					InputStream inputStream;
 					try {
 						inputStream = new ByteArrayInputStream(
@@ -225,25 +227,49 @@ final class MergerImpl implements Merger {
 		if(log.isInfoEnabled())
 			log.info("merge(pathwayModel): looking for matching utility class elements in the warehouse...");
 	
-		// relate utility class objects to ones from the warehouse (to replace later)
-		final Map<UtilityClass, UtilityClass> replacements = new HashMap<UtilityClass, UtilityClass>();
-		for (UtilityClass u: new HashSet<UtilityClass>(pathwayModel.getObjects(UtilityClass.class))) 
+		// match some utility class objects to ones from the warehouse (to replace later)
+		// also, generate new URIs and replacement copies for all Entities
+		final Map<BioPAXElement, BioPAXElement> replacements = new HashMap<BioPAXElement, BioPAXElement>();
+		final ShallowCopy copier = new ShallowCopy();
+		for (BioPAXElement b: new HashSet<BioPAXElement>(pathwayModel.getObjects())) 
 		{
-			// Find the best replacement either in the warehouse or target model;
-			// it also adds the replacement elements to the target model
-			UtilityClass replacement = getFromWarehouse(u, target);
-			if(replacement != null) {
-				replacements.put(u, replacement);
-			}
-			
-			// remove original entity features (cause hibernate exceptions bacause of entityFeatureOf; TODO)
-			if (u instanceof EntityReference) {
-				EntityReference er = (EntityReference) u;
-				// loop, to ensure entityFeatureOf is also cleared (cannot simple set null or empty set!)
-				for (EntityFeature ef : new HashSet<EntityFeature>(er.getEntityFeature())) {
-					er.removeEntityFeature(ef);
-					assert ef.getEntityFeatureOf() == null;
+			BioPAXElement replacement = null;
+
+			if (b instanceof UtilityClass) {
+				// Find the best replacement either in the warehouse or target model;
+				// it also adds the replacement elements to the target model
+				final UtilityClass u = (UtilityClass) b;
+				replacement = getFromWarehouse(u, target);
+				if (replacement != null) {
+					// shelve to replace later
+					replacements.put(u, replacement);
+					
+					if (u instanceof EntityReference) { 
+						// merge entity features
+						EntityReference er = (EntityReference) u;
+						// loop, to ensure entityFeatureOf is also cleared (cannot set null or empty set!)
+						for (EntityFeature ef : new HashSet<EntityFeature>(
+								er.getEntityFeature())) {
+							er.removeEntityFeature(ef);
+							((EntityReference) replacement).addEntityFeature(ef);
+						}
+					}
+					
 				}
+
+			}
+			// extra quick fix for too long URIs...
+			if(replacement == null && b.getRDFId().length() > 256) { 
+				// set to replace objects (with cpath2-generated URI)
+				// having too long URIs 
+				String newId = ((Model)pcDAO).getXmlBase() +
+					b.getModelInterface().getSimpleName() + 
+					"/" + System.currentTimeMillis();
+				Level3Element e = (Level3Element) copier.copy(b, newId);
+				String rem = "Original URI was too long: " + b.getRDFId();
+				e.addComment(rem);
+				replacements.put(b, e);
+				log.warn("Using new URI=" + newId + "; " + rem);
 			}
 		}
 		
@@ -270,8 +296,10 @@ final class MergerImpl implements Merger {
 		targetModelUtils.removeObjectsIfDangling(UtilityClass.class);
 		
 	
-		// TODO validate/normalize "target" model once more, - recover entity features and add uni.xrefs to CVs
+		// TODO validate/normalize "target" model once more? 
+		// TODO recover entity features and add uni.xrefs to CVs? (not a trivial task: think of different pathwayData and how to update 'entityFeatureOf' of previously saved features...)
 		//...
+		
 		
 		//sanity/integrity quick check (enabled by java -ea flag)
 		assert assertNoDanglingInverseProps(target);
@@ -345,10 +373,13 @@ final class MergerImpl implements Merger {
 	}
 
 	private ProteinReference processProteinReference(ProteinReference bpe) 
-	{
-		// find specific subclass
-		ProteinReference toReturn =
-			proteinsDAO.getObject(bpe.getRDFId(), ProteinReference.class);
+	{	
+		//First, try to get a copy of previously imported object 
+		//(this will later allow to update some of properties w/o breaking old refs)
+		ProteinReference toReturn = ((WarehouseDAO)pcDAO).getObject(bpe.getRDFId(), ProteinReference.class);
+		
+		if(toReturn == null) // build a new object using the warehouse
+			toReturn = proteinsDAO.getObject(bpe.getRDFId(), ProteinReference.class);
 		
 		// if not found by id, - search by UnificationXrefs
 		if (toReturn == null) {
@@ -357,7 +388,10 @@ final class MergerImpl implements Merger {
 			Collection<String> prefs = proteinsDAO.getByXref(urefs, ProteinReference.class);
 			if (!prefs.isEmpty()) { 
 				if (prefs.size() == 1) {
-					toReturn = proteinsDAO.getObject(prefs.iterator().next(), ProteinReference.class);
+					String id = prefs.iterator().next();
+					toReturn = ((WarehouseDAO)pcDAO).getObject(id, ProteinReference.class);
+					if(toReturn == null)
+						toReturn = proteinsDAO.getObject(id, ProteinReference.class);
 				} else {
 					log.warn("Several ProteinReference: " + prefs 
 						+ " were found in the warehouse by unification xrefs: " + urefs 
@@ -404,9 +438,12 @@ final class MergerImpl implements Merger {
 	
 	private UtilityClass processSmallMoleculeReference(SmallMoleculeReference premergeSMR) 
 	{	
-		// try by ID first (should work if properly normalized)
-		SmallMoleculeReference toReturn = moleculesDAO
-			.getObject(premergeSMR.getRDFId(), SmallMoleculeReference.class);
+		//First, try to get a copy of previously imported object 
+		//(this will later allow to update some of properties w/o breaking old refs)
+		SmallMoleculeReference toReturn = ((WarehouseDAO)pcDAO).getObject(premergeSMR.getRDFId(), SmallMoleculeReference.class);
+				
+		if(toReturn == null) // build a new object using the warehouse
+			toReturn = moleculesDAO.getObject(premergeSMR.getRDFId(), SmallMoleculeReference.class);
 		
 		if(toReturn == null) {
 			// If not found by id, we search by UnificationXrefs
@@ -440,7 +477,9 @@ final class MergerImpl implements Merger {
 			} 
 		
 			if (chebiUrn != null) { 
-				toReturn = moleculesDAO.getObject(chebiUrn, SmallMoleculeReference.class);
+				toReturn = ((WarehouseDAO)pcDAO).getObject(chebiUrn, SmallMoleculeReference.class);
+				if(toReturn == null)
+					toReturn = moleculesDAO.getObject(chebiUrn, SmallMoleculeReference.class);
 			}
 		}
 		
@@ -494,17 +533,8 @@ final class MergerImpl implements Merger {
 		PaxtoolsDAO premergePaxtoolsDAO = ImportFactory.buildPremergeDAO(dbname);
 		
 		// "detach" the model by export to/import from owl/xml
-		ModelUtils modelUtils = new ModelUtils(premergePaxtoolsDAO);
+		ModelUtils modelUtils = new ModelUtils((Model) premergePaxtoolsDAO);
 		return modelUtils.writeRead();
-	}
-
-	
-	private <T extends BioPAXElement> T getById(Model model, String urn, Class<T> type) 
-	{
-		return 
-		(model instanceof WarehouseDAO) 
-			? ((WarehouseDAO)model).getObject(urn, type) //completely detached
-				: (T) model.getByID(urn) ;	
 	}
 
 	

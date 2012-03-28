@@ -88,21 +88,21 @@ public class PaxtoolsHibernateDAOTest {
 	
     @Test
 	public void testImportingAnotherFileAndTestInitialization() throws IOException {
-		assertTrue(paxtoolsDAO.containsID("urn:miriam:uniprot:P46880"));
-		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
-		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Protein_A"));
-		assertTrue(paxtoolsDAO.containsID("http://www.biopax.org/examples/myExample#Protein_B"));
-		assertTrue(paxtoolsDAO.containsID("urn:biopax:UnificationXref:Taxonomy_562"));
+		assertTrue(((Model)paxtoolsDAO).containsID("urn:miriam:uniprot:P46880"));
+		assertTrue(((Model)paxtoolsDAO).containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
+		assertTrue(((Model)paxtoolsDAO).containsID("http://www.biopax.org/examples/myExample#Protein_A"));
+		assertTrue(((Model)paxtoolsDAO).containsID("http://www.biopax.org/examples/myExample#Protein_B"));
+		assertTrue(((Model)paxtoolsDAO).containsID("urn:biopax:UnificationXref:Taxonomy_562"));
 		
-		BioPAXElement bpe = paxtoolsDAO.getByID("urn:biopax:UnificationXref:Taxonomy_562");
+		BioPAXElement bpe = ((Model)paxtoolsDAO).getByID("urn:biopax:UnificationXref:Taxonomy_562");
 		assertTrue(bpe instanceof UnificationXref);
 		
-		BioPAXElement e = paxtoolsDAO
+		BioPAXElement e = ((Model)paxtoolsDAO)
 				.getByID("http://www.biopax.org/examples/myExample2#Protein_A");
 		assertTrue(e instanceof Protein);
 		
-		e = paxtoolsDAO // try to initialize
-		.getByID("http://www.biopax.org/examples/myExample2#Protein_A");
+		e = ((Model)paxtoolsDAO) // try to initialize
+				.getByID("http://www.biopax.org/examples/myExample2#Protein_A");
 		paxtoolsDAO.initialize(bpe);
 		Protein p = (Protein) e;
 				
@@ -113,8 +113,8 @@ public class PaxtoolsHibernateDAOTest {
 		//assertEquals(4, p.getEntityReference().getEntityReferenceOf().size());
 			
 		// but when -
-		e = paxtoolsDAO // try to initialize
-		.getByID("urn:miriam:uniprot:P46880");
+		e = ((Model)paxtoolsDAO) // try to initialize
+				.getByID("urn:miriam:uniprot:P46880");
 		paxtoolsDAO.initialize(e);
 		assertTrue(e instanceof ProteinReference);
 		ProteinReference pr = (ProteinReference) e;
@@ -124,7 +124,7 @@ public class PaxtoolsHibernateDAOTest {
 		// assertEquals(4, pr.getEntityReferenceOf().size());
 		
 		// different approach works!
-		pr = (ProteinReference) paxtoolsDAO.getByID("urn:miriam:uniprot:P46880");
+		pr = (ProteinReference) ((Model)paxtoolsDAO).getByID("urn:miriam:uniprot:P46880");
 		//pr.getEntityReferenceOf().size() would fail here, but...
 		// initialize(bpe) can be called at any time (it's bidirectional, though not recursive)
 		paxtoolsDAO.initialize(pr);
@@ -142,18 +142,18 @@ public class PaxtoolsHibernateDAOTest {
 	@Test
 	public void testSimple() throws Exception {
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
-		BioPAXElement bpe = paxtoolsDAO
+		BioPAXElement bpe = ((Model)paxtoolsDAO)
 			.getByID("http://www.biopax.org/examples/myExample#Protein_A");
 		assertTrue(bpe instanceof Protein);
 		
-		bpe = paxtoolsDAO.getByID("urn:biopax:UnificationXref:UniProt_P46880");
+		bpe = ((Model)paxtoolsDAO).getByID("urn:biopax:UnificationXref:UniProt_P46880");
 		assertTrue(bpe instanceof UnificationXref);
 	}
 
 	
 	@Test // protein reference's xref's getXrefOf() is not empty
 	public void testGetXReferableAndXrefOf() throws Exception {
-		ProteinReference pr = (ProteinReference) paxtoolsDAO
+		ProteinReference pr = (ProteinReference) ((Model)paxtoolsDAO)
 			.getByID("urn:miriam:uniprot:P46880");
 		paxtoolsDAO.initialize(pr);
 		assertTrue(pr instanceof ProteinReference);
@@ -174,7 +174,7 @@ public class PaxtoolsHibernateDAOTest {
 		 * which is usable only within the session/transaction,
 		 * which is closed after the call :) So 'initialize' is required - 
 		 */
-		BioPAXElement bpe = paxtoolsDAO.getByID("urn:biopax:UnificationXref:UniProt_P46880");
+		BioPAXElement bpe = ((Model)paxtoolsDAO).getByID("urn:biopax:UnificationXref:UniProt_P46880");
 		paxtoolsDAO.initialize(bpe);
 		assertTrue(bpe instanceof UnificationXref);
 		
@@ -193,7 +193,7 @@ public class PaxtoolsHibernateDAOTest {
 	public void testGetByID() throws Exception {		
 		// get a protein
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
-		BioPAXElement bpe =  paxtoolsDAO.getByID(
+		BioPAXElement bpe =  ((Model)paxtoolsDAO).getByID(
 				"http://www.biopax.org/examples/myExample#Protein_A");
 		paxtoolsDAO.initialize(bpe);
 		assertTrue(bpe instanceof Protein);
@@ -289,23 +289,22 @@ public class PaxtoolsHibernateDAOTest {
 		
 	@Test
 	public void testImportingAnotherFile() throws IOException {
-		assertTrue(((PaxtoolsDAO)whDAO).containsID("urn:miriam:uniprot:P46880"));
-		assertTrue(((PaxtoolsDAO)whDAO).containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
-		assertTrue(((PaxtoolsDAO)whDAO).containsID("http://www.biopax.org/examples/myExample#Protein_A"));
-		assertTrue(((PaxtoolsDAO)whDAO).containsID("http://www.biopax.org/examples/myExample#Protein_B"));
-		assertTrue(((PaxtoolsDAO)whDAO).containsID("urn:biopax:UnificationXref:Taxonomy_562"));
+		assertTrue(((Model)whDAO).containsID("urn:miriam:uniprot:P46880"));
+		assertTrue(((Model)whDAO).containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
+		assertTrue(((Model)whDAO).containsID("http://www.biopax.org/examples/myExample#Protein_A"));
+		assertTrue(((Model)whDAO).containsID("http://www.biopax.org/examples/myExample#Protein_B"));
+		assertTrue(((Model)whDAO).containsID("urn:biopax:UnificationXref:Taxonomy_562"));
 			
 		BioPAXElement bpe = whDAO.getObject("urn:biopax:UnificationXref:Taxonomy_562", UnificationXref.class);
 		assertTrue(bpe instanceof UnificationXref);
-		BioPAXElement e = whDAO.getObject("http://www.biopax.org/examples/myExample2#Protein_A");
+		BioPAXElement e = whDAO.getObject("http://www.biopax.org/examples/myExample2#Protein_A", BioPAXElement.class);
 		assertTrue(e instanceof Protein);
 		
-		e = whDAO.getObject("http://www.biopax.org/examples/myExample2#Protein_A");
-		Protein p = (Protein) e;
+		Protein p = whDAO.getObject("http://www.biopax.org/examples/myExample2#Protein_A", Protein.class);
 		assertTrue(p.getEntityReference() != null);
 		assertEquals("urn:miriam:uniprot:P46880", p.getEntityReference().getRDFId());
 			
-		e = whDAO.getObject("urn:miriam:uniprot:P46880");
+		e = whDAO.getObject("urn:miriam:uniprot:P46880", ProteinReference.class);
 		assertTrue(e instanceof ProteinReference);
 		ProteinReference pr = (ProteinReference) e;
 		assertNotNull(pr.getOrganism());
@@ -323,7 +322,7 @@ public class PaxtoolsHibernateDAOTest {
 	public void testSimpleWh() throws Exception {
 		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
 		BioPAXElement bpe = whDAO
-				.getObject("http://www.biopax.org/examples/myExample#Protein_A");
+				.getObject("http://www.biopax.org/examples/myExample#Protein_A", BioPAXElement.class);
 		assertTrue(bpe instanceof Protein);
 
 		bpe = ((WarehouseDAO) whDAO).getObject(

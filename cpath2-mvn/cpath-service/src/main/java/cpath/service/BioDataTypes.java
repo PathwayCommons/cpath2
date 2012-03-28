@@ -34,6 +34,7 @@ import javax.annotation.PostConstruct;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.miriam.MiriamLink;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.UnificationXref;
@@ -99,7 +100,7 @@ public final class BioDataTypes {
 	{	
 		boolean useObsoleteResources = MiriamLink.useObsoleteResources;
 		MiriamLink.useObsoleteResources = false; //set to ignore obsolete URLs
-		for(Provenance prov : mainDAO.getObjects(Provenance.class)) {
+		for(Provenance prov : ((Model)mainDAO).getObjects(Provenance.class)) {
 			mainDAO.initialize(prov);
 			// it must have a standard name, uri (was normalized in the data import pipeline)!
 			String urn = prov.getRDFId();
@@ -125,7 +126,7 @@ public final class BioDataTypes {
 		
 		
 		// dynamically register organisms (available BioSource)
-		for(BioSource bioSource : mainDAO.getObjects(BioSource.class)) {
+		for(BioSource bioSource : ((Model)mainDAO).getObjects(BioSource.class)) {
 			mainDAO.initialize(bioSource);
 			String taxon = getTaxonId(bioSource);
 			if(taxon != null) {

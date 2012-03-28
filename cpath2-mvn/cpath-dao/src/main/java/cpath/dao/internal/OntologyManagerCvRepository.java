@@ -282,15 +282,5 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 
 		return toReturn;
 	}
-
-
-	/* (non-Javadoc)
-	 * @see cpath.dao.WarehouseDAO#getObject(java.lang.String)
-	 */
-	@Override
-	public BioPAXElement getObject(String urn) {
-		throw new UnsupportedOperationException(
-			"Use getObject(String urn, Class<T> cvSubclass) instead.");
-	}
 	
 }

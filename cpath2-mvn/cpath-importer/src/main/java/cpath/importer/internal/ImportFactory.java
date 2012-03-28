@@ -6,7 +6,6 @@ import javax.sql.DataSource;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.Model;
 import org.biopax.validator.Validator;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -38,7 +37,7 @@ public final class ImportFactory {
 		return new FetcherImpl();
 	}
 	
-	public static Merger newMerger(Model model) {
+	public static Merger newMerger(PaxtoolsDAO model) {
 		return new MergerImpl(model);
 	}
 	

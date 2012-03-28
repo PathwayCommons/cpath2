@@ -39,18 +39,10 @@ import org.biopax.paxtools.model.level3.*;
  * @author rodch
  */
 public interface WarehouseDAO {
-
-	/**
-	 * Gets fully initialized (and detached form the DAO) BioPAX object.
-	 * 
-	 * @param urn
-	 * @return
-	 */
-	BioPAXElement getObject(String urn);
 	
 	
 	/**
-	 * Gets fully initialized (and detached form the DAO) BioPAX object.
+	 * Gets fully initialized (and detached form any DAO) BioPAX object.
 	 * 
 	 * @param <T> BioPAXElement or its subclass (e.g., ProteinReference)
 	 * @param urn
