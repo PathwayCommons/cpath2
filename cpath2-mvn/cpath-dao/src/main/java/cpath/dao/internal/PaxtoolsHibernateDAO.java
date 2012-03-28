@@ -48,7 +48,6 @@ import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.impl.level3.PathwayImpl;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
-import org.biopax.validator.utils.Normalizer;
 import org.hibernate.*;
 import org.hibernate.search.*;
 import org.hibernate.search.query.dsl.QueryBuilder;
@@ -75,7 +74,8 @@ import java.io.*;
  */
 @Transactional
 @Repository
-class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
+class PaxtoolsHibernateDAO extends AbstractPaxtoolsDAO 
+implements Model, PaxtoolsDAO, WarehouseDAO
 {
 	private static final long serialVersionUID = 1L;
 	
@@ -107,9 +107,9 @@ class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	private final Map<String, String> nameSpacePrefixMap;
 	private final BioPAXLevel level;
 	private final BioPAXFactory factory;
-	protected SimpleIOHandler simpleIO;
+	private SimpleIOHandler simpleIO;
 	private boolean addDependencies = false;
-	protected MultiFieldQueryParser multiFieldQueryParser;
+	private MultiFieldQueryParser multiFieldQueryParser;
 	private String xmlBase;
 
 	/**
@@ -240,7 +240,7 @@ class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 
 	
 	@Transactional(propagation=Propagation.REQUIRED)
-	public void update(final Model model) 
+	private void update(final Model model) 
 	{	
 		Session ses = session();
 		
@@ -273,16 +273,14 @@ class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void merge(BioPAXElement aBioPAXElement) {
 		String rdfId = aBioPAXElement.getRDFId();
-		if (rdfId == null) {
-			throw new IllegalBioPAXArgumentException(
-					"null ID: every object must have an RDF ID");
-		} else {
-			if (log.isDebugEnabled())
-				log.debug("merge(aBioPAXElement): merging " + rdfId + " " 
-					+ aBioPAXElement.getModelInterface().getSimpleName());
+		
+		// this is almost impossible
+		assert rdfId != null : "null ID: every object must have an RDF ID";	
+		if (log.isDebugEnabled())
+			log.debug("merge(aBioPAXElement): merging " + rdfId + " " 
+				+ aBioPAXElement.getModelInterface().getSimpleName());
 			
-			session().merge(aBioPAXElement);
-		}
+		session().merge(aBioPAXElement);
 	}
 
 	
@@ -649,7 +647,7 @@ class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	
 	@Override
 	public void replace(BioPAXElement existing, BioPAXElement replacement) {
-		throw new UnsupportedOperationException("not supported");
+		throw new UnsupportedOperationException("not supported"); //TODO if required...
 	}
 
 	
@@ -811,9 +809,19 @@ class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			log.info("Done indexing.");
 	}
 	
-	@Override
+
+	/**
+	 * Gets a copy (detached) of existing
+	 * BioPAX object.
+	 * 
+	 * 
+	 * @deprecated
+	 * @param id
+	 * @return
+	 */
+	@Deprecated
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public BioPAXElement getObject(String id) 
+	private BioPAXElement getObject(String id) 
 	{
 		if(id == null || "".equals(id)) 
 			throw new RuntimeException("getObject(null) is called!");
@@ -860,7 +868,9 @@ class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	public <T extends BioPAXElement> T getObject(String urn, Class<T> clazz) 
 	{
-		BioPAXElement bpe = getObject(urn);
+//		BioPAXElement bpe = getObject(urn); // was ok until deprecated...	
+		BioPAXElement bpe = getValidSubModel(Collections.singleton(urn)).getByID(urn); //success too!
+		
 		if(clazz.isInstance(bpe)) {
 			return (T) bpe;
 		} else {
@@ -871,65 +881,16 @@ class PaxtoolsHibernateDAO implements PaxtoolsDAO, WarehouseDAO
 			return null;
 		}
 	}
-
+	
 
 	/* (non-Javadoc)
-	 * @see cpath.dao.WarehouseDAO#getByXref(java.util.Set, java.lang.Class)
-	 * 
-	 * xrefs (args) are expected to be "normalized"!
-	 * 
+	 * @see cpath.dao.WarehouseDAO#getByXref(java.util.Set, java.lang.Class) 
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
 	public Set<String> getByXref(Set<? extends Xref> xrefs, 
 		Class<? extends XReferrable> clazz) 
 	{
-		Set<String> toReturn = new HashSet<String>();
-		
-		for (Xref xref : xrefs) {			
-			// load persistent Xref by ID
-			
-			/* WARN: x will be always NULL (the BUG was here!)
-			 * if cpath2 importer and biopax normalizer 
-			 * use different methods to generate xref IDs!
-			 * 
-			 * The other thing is that the normalizer uses
-			 * idVersion property when generating xref IDs,
-			 * but we do not want/do this creating our warehouse...
-			 */
-			//String xurn = xref.getRDFId();
-			//Xref x = (Xref) getByID(xurn);
-			
-			/* this (an alternative) could be used to fix that bug,
-			 */
-			// map to a normalized RDFId for this type of xref:
-			if(xref.getDb() == null || xref.getId() == null) {
-				log.warn("getByXref: " + xref + " db or id is null! Skipping.");
-				continue;
-			}
-			
-			// generate "normalized" ID, and (unlike it's done in the normalizer) we here 
-			// ignore xref.idVersion!!! (TODO think of, e.g., uniprot isoforms, etc. later)
-			String xurn = Normalizer.generateURIForXref(xref.getDb(), 
-				xref.getId(), null, (Class<? extends Xref>) xref.getModelInterface());
-			
-			// now try to get it from the warehouse
-			Xref x = (Xref) getByID(xurn);
-			if (x != null) {
-				// collect owners's ids (of requested type only)
-				for (XReferrable xr : x.getXrefOf()) {
-					if (clazz.isInstance(xr)) {
-						toReturn.add(xr.getRDFId());
-					}
-				}
-			} else {
-				if(log.isDebugEnabled())
-					log.debug("getByXref: using normalized ID:" + xurn 
-					+ " " + "no matching xref found for: " +
-					xref + " - " + xref.getRDFId() + ". Skipping.");
-			}
-		}
-		
-		return toReturn;
+		return getByXref(this, xrefs, clazz);
 	}
 }

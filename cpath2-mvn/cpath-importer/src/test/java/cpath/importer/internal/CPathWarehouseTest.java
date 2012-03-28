@@ -90,9 +90,9 @@ public class CPathWarehouseTest {
 				metadataDAO.importMetadata(mdata);
 				fetcher.fetchData(mdata);
 				if (mdata.getType() == TYPE.PROTEIN) {
-					fetcher.storeWarehouseData(mdata, (PaxtoolsDAO) proteins);
+					fetcher.storeWarehouseData(mdata, (Model) proteins);
 				} else if (mdata.getType() == TYPE.SMALL_MOLECULE) {
-					fetcher.storeWarehouseData(mdata, (PaxtoolsDAO) molecules);
+					fetcher.storeWarehouseData(mdata, (Model) molecules);
 				} else if (mdata.getType() == TYPE.MAPPING) {
 					// skip
 				} else { // pathways

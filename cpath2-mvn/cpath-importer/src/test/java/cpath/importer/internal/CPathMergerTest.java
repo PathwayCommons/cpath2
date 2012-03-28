@@ -2,6 +2,7 @@ package cpath.importer.internal;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
+import cpath.dao.internal.PaxtoolsModelDAO;
 import cpath.warehouse.*;
 import cpath.warehouse.beans.*;
 import cpath.warehouse.beans.Metadata.TYPE;
@@ -46,10 +47,6 @@ public class CPathMergerTest {
 		public Set<String> getByXref(Set<? extends Xref> arg0,
 				Class<? extends XReferrable> arg1)  {
 			return Collections.EMPTY_SET;
-		}
-		@Override
-		public BioPAXElement getObject(String arg0) {
-			return null;
 		}
 		@Override
 		public <T extends BioPAXElement> T getObject(String arg0, Class<T> arg1) { 
@@ -135,7 +132,7 @@ public class CPathMergerTest {
 	@Test
 	public void testInMemoryModelMerge() throws IOException 
 	{
-		Model memoPcModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+		PaxtoolsDAO memoPcModel = new PaxtoolsModelDAO(BioPAXLevel.L3);
 		MergerImpl merger = new MergerImpl(memoPcModel, metadataDAO,
 				moleculesDAO, proteinsDAO, cvRepository);
 		
@@ -147,9 +144,9 @@ public class CPathMergerTest {
 		OutputStream out = new FileOutputStream(
 			getClass().getClassLoader().getResource("").getPath() 
 				+ File.separator + "InMemoryMergerTest.out.owl");
-		(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(memoPcModel, out);
+		(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL((Model) memoPcModel, out);
 		
-		assertMerge(memoPcModel);
+		assertMerge((Model) memoPcModel);
 	}
 	
 	private void assertMerge(Model mergedModel) {
@@ -227,7 +224,7 @@ public class CPathMergerTest {
 			((PaxtoolsDAO) mergedModel).initialize(sm);
 		smr = (SmallMoleculeReference)sm.getEntityReference();
 
-		smr = (SmallMoleculeReference)moleculesDAO.getObject("urn:miriam:chebi:28");
+		smr = moleculesDAO.getObject("urn:miriam:chebi:28", SmallMoleculeReference.class);
 //		System.out.println("warehouse chebi:28 xrefs: " + smr.getXref().toString());
 		assertEquals(14, smr.getXref().size());
 
@@ -253,7 +250,7 @@ public class CPathMergerTest {
 				new ClassPathXmlApplicationContext("classpath:testContext-pcDAO.xml"))
 				.getBean("pcDAO");
 		assertNotNull(pcDAO);
-		assertTrue(pcDAO.getObjects().isEmpty());
+		assertTrue(((Model)pcDAO).getObjects().isEmpty());
 		
 		MergerImpl merger = new MergerImpl(pcDAO, metadataDAO, moleculesDAO, proteinsDAO, cvRepository);
 		for(Model model : pathwayModels) {

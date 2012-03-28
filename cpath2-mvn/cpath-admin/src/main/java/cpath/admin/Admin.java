@@ -312,7 +312,7 @@ public class Admin implements Runnable {
 		ApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
 		final PaxtoolsDAO pcDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
 		// merger
-		Merger merger = ImportFactory.newMerger((Model)pcDAO);
+		Merger merger = ImportFactory.newMerger(pcDAO);
 		merger.setIdentifier(provider);
 		merger.setVersion(version);
 		merger.setUseDb(usedb);
@@ -450,12 +450,12 @@ public class Admin implements Runnable {
 			else if (metadata.getType() == Metadata.TYPE.PROTEIN) 
 			{
 				// parse/save
-				fetcher.storeWarehouseData(metadata, proteinsDAO);
+				fetcher.storeWarehouseData(metadata, (Model) proteinsDAO);
         	} 
 			else if (metadata.getType() == Metadata.TYPE.SMALL_MOLECULE) 
 			{
 		        // parse/save
-				fetcher.storeWarehouseData(metadata, smallMoleculesDAO);
+				fetcher.storeWarehouseData(metadata, (Model) smallMoleculesDAO);
 			} 
 			else if (metadata.getType() == Metadata.TYPE.MAPPING) 
 			{

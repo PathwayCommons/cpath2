@@ -28,7 +28,6 @@
  **/
 package cpath.dao;
 
-import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
@@ -39,12 +38,11 @@ import java.util.Collection;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
-import java.util.Set;
 
 /**
  * BioPAX data access (both model and repository).
  */
-public interface PaxtoolsDAO extends Model {	
+public interface PaxtoolsDAO  {	
 	
 	/**
 	 * Persists the given model to the db.
@@ -112,14 +110,6 @@ public interface PaxtoolsDAO extends Model {
      * @param bpe
      */
     void merge(BioPAXElement bpe);
-
-    
-    /**
-     * Updates
-     * 
-     * @param model
-     */
-    void update(Model model);
     
     
     /**
@@ -151,9 +141,11 @@ public interface PaxtoolsDAO extends Model {
      * @return source element uri, path, and corresponding values
      */
     TraverseResponse traverse(String propertyPath, String... uris);
+ 
     
     /**
      * Create or re-build the full-text index.
      */
     void index();
+    
 }

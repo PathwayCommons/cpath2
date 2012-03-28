@@ -1,7 +1,7 @@
 package cpath.cleaner.internal;
 
 // imports
-import cpath.importer.Cleaner;
+import cpath.warehouse.beans.PathwayData;
 
 import java.io.*;
 import java.util.*;
@@ -24,7 +24,7 @@ import org.apache.commons.logging.LogFactory;
  * uniprot_sprot_xxxx.dat, where xxxx is species.
  *
  */
-final class UniProtCleanerImpl extends BaseCleanerImpl implements Cleaner {
+final class UniProtCleanerImpl extends BaseCleanerImpl {
 
     // delimiter between accessions
     private static final String AC_DELIMITER = "; ";
@@ -41,8 +41,9 @@ final class UniProtCleanerImpl extends BaseCleanerImpl implements Cleaner {
     
 	/**
 	 * (non-Javadoc>
-	 * @see cpath.importer.Cleaner#clean(java.lang.String)
+	 * @see cpath.importer.Cleaner#clean(PathwayData)
 	 */
+    @Override
 	public String clean(final String uniProtData) {
 
         // string we will return

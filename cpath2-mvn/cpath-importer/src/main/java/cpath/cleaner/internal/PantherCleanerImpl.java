@@ -1,7 +1,6 @@
 package cpath.cleaner.internal;
 
 import cpath.config.CPathSettings;
-import cpath.importer.Cleaner;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
@@ -24,8 +23,9 @@ import java.io.*;
  * 
  * @author rodche
  */
-final class PantherCleanerImpl extends BaseCleanerImpl implements Cleaner {
+final class PantherCleanerImpl extends BaseCleanerImpl {
     
+	@Override
 	public String clean(final String pathwayData) 
 	{	
 		// create bp model from pathwayData
@@ -35,6 +35,16 @@ final class PantherCleanerImpl extends BaseCleanerImpl implements Cleaner {
 		Model model = simpleReader.convertFromOWL(inputStream);
 		ModelUtils modelUtils = new ModelUtils(model);
 
+		
+		// replace URIs (in Panther, they can be too long or the same URI for different objects in different files, or 
+		// two URIs differ only in string capitalization, etc...)
+		Set<Level3Element> sourceElements = new HashSet<Level3Element>(model.getObjects(Level3Element.class));
+		for (Level3Element l3e : sourceElements) {
+			String newRDFId = l3e.getRDFId().substring(0, 255) + "/" + System.currentTimeMillis();
+			replaceID(model, l3e, newRDFId);
+		}
+		
+		
 		// create a Relationship type CV "Homology"
 		final RelationshipTypeVocabulary rcv = model.addNew(RelationshipTypeVocabulary.class, 
 			ModelUtils.BIOPAX_URI_PREFIX + "RelationshipTypeVocabulary:BY_HOMOLOGY");
