@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 
 import cpath.importer.Cleaner;
 
+import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 
@@ -36,16 +37,17 @@ class BaseCleanerImpl implements Cleaner {
 	 * @param el
 	 * @param newRDFId
 	 */
-	protected final void replaceID(Model model, Level3Element el, String newRDFId) {
+	protected final void replaceID(Model model, BioPAXElement el, String newRDFId) {
 		if(el.getRDFId().equals(newRDFId))
 			return; // no action required
 		
 		model.remove(el);
 		try {
-			Method m = el.getClass().getDeclaredMethod("setRDFId", String.class);
+			Method m = BioPAXElementImpl.class.getDeclaredMethod("setRDFId", String.class);
 			m.setAccessible(true);
 			m.invoke(el, newRDFId);
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new RuntimeException(e);
 		}
 		model.add(el);
