@@ -64,7 +64,8 @@ final class ReactomeCleanerImpl extends BaseCleanerImpl {
 		for (Level3Element l3e : sourceElements) {
 			// we only modify entity and pathway step rdfIds
 			if (l3e instanceof Entity || l3e instanceof PathwayStep) {
-				String newRDFId = l3e.getRDFId().substring(0, 255) + "/" + System.currentTimeMillis();
+				String oldId = (l3e.getRDFId().length() > 255) ? l3e.getRDFId().substring(0, 255) : l3e.getRDFId();
+				String newRDFId = oldId + "/" + System.currentTimeMillis();
 				replaceID(model, l3e, newRDFId);
 			}
 		}

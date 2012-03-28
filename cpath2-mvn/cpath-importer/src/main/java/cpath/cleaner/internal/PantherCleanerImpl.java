@@ -40,7 +40,8 @@ final class PantherCleanerImpl extends BaseCleanerImpl {
 		// two URIs differ only in string capitalization, etc...)
 		Set<Level3Element> sourceElements = new HashSet<Level3Element>(model.getObjects(Level3Element.class));
 		for (Level3Element l3e : sourceElements) {
-			String newRDFId = l3e.getRDFId().substring(0, 255) + "/" + System.currentTimeMillis();
+			String oldId = (l3e.getRDFId().length() > 255) ? l3e.getRDFId().substring(0, 255) : l3e.getRDFId();
+			String newRDFId = oldId + "/" + System.currentTimeMillis();
 			replaceID(model, l3e, newRDFId);
 		}
 		
