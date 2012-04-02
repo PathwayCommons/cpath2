@@ -216,14 +216,18 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 			if(log.isDebugEnabled())
 				log.debug("merge(model): inserting BioPAX elements (stateless)...");
 			StatelessSession stls = getSessionFactory().openStatelessSession();
+			
+//			final Query query = stls.getNamedQuery("org.biopax.paxtools.impl.elementByRdfId");
+			
 			int i = 0;
 			Transaction tx = stls.beginTransaction();
 			for (BioPAXElement bpe : model.getObjects()) {
-				if(stls.get(bpe.getClass(), bpe.getRDFId()) == null) {
+				String key = ModelUtils.md5hex(bpe.getRDFId());
+				BioPAXElement e = (BioPAXElement) stls.get(bpe.getClass(), key);
+				if(e == null) {
 					stls.insert(bpe);
 					i++;
 				}
-				//else stls.update(bpe); // looks, not required at all (unless we want overwrite)
 			}
 			tx.commit();
 			stls.close();
@@ -445,9 +449,13 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 		if(id == null || "".equals(id)) 
 			throw new RuntimeException("getByID(null) is called!");
 
-		BioPAXElement toReturn = null;
-		// rdfid is the Primary Key see BioPAXElementImpl)
-		toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
+		BioPAXElement toReturn = (BioPAXElement) session()
+			.get(BioPAXElementImpl.class, ModelUtils.md5hex(id));
+		
+// compare with this later...
+//		Query query = session().getNamedQuery("org.biopax.paxtools.impl.elementByRdfId");
+//        query.setString("rdfid", id);
+//        toReturn = (BioPAXElement) query.uniqueResult();
 
 		return toReturn; // null means no such element
 	}

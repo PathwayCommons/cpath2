@@ -1,3 +1,4 @@
+
 // $Id$
 //------------------------------------------------------------------------------
 /** Copyright (c) 2009-2011 Memorial Sloan-Kettering Cancer Center
@@ -46,6 +47,8 @@ import cpath.service.jaxb.SearchResponse;
 import cpath.warehouse.WarehouseDAO;
 
 import java.io.*;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.*;
 
 import static org.junit.Assert.*;
@@ -87,7 +90,7 @@ public class PaxtoolsHibernateDAOTest {
     
 	
     @Test
-	public void testImportingAnotherFileAndTestInitialization() throws IOException {
+	public void testInitialization() throws IOException {
 		assertTrue(((Model)paxtoolsDAO).containsID("urn:miriam:uniprot:P46880"));
 		assertTrue(((Model)paxtoolsDAO).containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
 		assertTrue(((Model)paxtoolsDAO).containsID("http://www.biopax.org/examples/myExample#Protein_A"));
@@ -288,7 +291,7 @@ public class PaxtoolsHibernateDAOTest {
 	    
 		
 	@Test
-	public void testImportingAnotherFile() throws IOException {
+	public void testWarehouseDAO() throws IOException {
 		assertTrue(((Model)whDAO).containsID("urn:miriam:uniprot:P46880"));
 		assertTrue(((Model)whDAO).containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
 		assertTrue(((Model)whDAO).containsID("http://www.biopax.org/examples/myExample#Protein_A"));
@@ -333,7 +336,7 @@ public class PaxtoolsHibernateDAOTest {
 
 	@Test
 	// protein reference's xref's getXrefOf() is not empty
-	public void testGetObjectXReferableAndXrefOf() throws Exception {
+	public void testWarehouseXReferrableXrefOf() throws Exception {
 		ProteinReference pr = whDAO.getObject("urn:miriam:uniprot:P46880",
 				ProteinReference.class);
 		assertTrue(pr instanceof ProteinReference);
@@ -347,7 +350,7 @@ public class PaxtoolsHibernateDAOTest {
 
 	@Test
 	// getXrefOf() returns empty set, but it's not a bug!
-	public void testGetObjectXrefAndXrefOf() throws Exception {
+	public void testWarehouseXrefAndXrefOf() throws Exception {
 		/*
 		 * getByID would return an object with lazy collections, which is usable
 		 * only within the session/transaction, which is closed after the call
@@ -388,4 +391,22 @@ public class PaxtoolsHibernateDAOTest {
 		// System.out.println("Export single protein (incomplete BioPAX):");
 		// System.out.println(writer.toString());
 	}
+	
+	
+	@Test
+	public void testAddVeryLongURI() {
+		char[] c = new char[333];
+		Arrays.fill(c, 'a');	
+		final String s = new String(c);
+		assertEquals(333, s.length());
+		// add a new object with URI longer than 256 bytes
+		final String id1 = s;
+		((Model)paxtoolsDAO).addNew(Gene.class, id1);
+		//check index works as we want it (case sensitive, 256 bytes long...)
+		final String id2 = s.toUpperCase();
+		((Model)paxtoolsDAO).addNew(Gene.class, id2); 
+		//SO we have a PROBLEM:  JDBCExceptionReporter  - Duplicate entry ... for key 1
+		// Mysql PK index is case insensitive and only 64-chars long!
+	}
+	
 }
