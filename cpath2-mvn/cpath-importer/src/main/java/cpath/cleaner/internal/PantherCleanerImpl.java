@@ -35,15 +35,8 @@ final class PantherCleanerImpl extends BaseCleanerImpl {
 		Model model = simpleReader.convertFromOWL(inputStream);
 		ModelUtils modelUtils = new ModelUtils(model);
 
-		
-		// replace URIs (in Panther, they can be too long or the same URI for different objects in different files, or 
-		// two URIs differ only in string capitalization, etc...)
-		Set<Level3Element> sourceElements = new HashSet<Level3Element>(model.getObjects(Level3Element.class));
-		for (Level3Element l3e : sourceElements) {
-			String oldId = (l3e.getRDFId().length() > 255) ? l3e.getRDFId().substring(0, 255) : l3e.getRDFId();
-			String newRDFId = oldId + "/" + System.currentTimeMillis();
-			replaceID(model, l3e, newRDFId);
-		}
+// with new primary key column (md5), no need to shorten URIs		
+// code was removed here...
 		
 		
 		// create a Relationship type CV "Homology"

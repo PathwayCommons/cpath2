@@ -7,7 +7,6 @@ import cpath.importer.Cleaner;
 
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.*;
 
 /**
  * Implementation of Cleaner interface for use when data

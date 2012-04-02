@@ -8,7 +8,7 @@
 	<artifactId>parent</artifactId>
 	<packaging>pom</packaging>
 	<name>CPathSquared</name>
-	<version>3.2.0-SNAPSHOT</version>
+	<version>3.2.1-SNAPSHOT</version>
 	<description>A software suite for storing, visualizing, and analyzing biological pathways.</description>
 	<url>http://code.google.com/p/pathway-commons/</url>
 	
@@ -89,7 +89,7 @@
         <spring.version>3.0.5.RELEASE</spring.version>
         <slf4j.version>1.5.8</slf4j.version>
         <hibernate.version>3.6.9.Final</hibernate.version>
-        <paxtools.version>4.1.3-SNAPSHOT</paxtools.version>
+        <paxtools.version>4.1.4-SNAPSHOT</paxtools.version>
         <validator.version>2.0.2-SNAPSHOT</validator.version>
         <cpath.api.version>5.1.0-SNAPSHOT</cpath.api.version>
 	</properties>
@@ -165,11 +165,6 @@
             <name>Spring Maven Milestone Repository</name>
             <url>http://maven.springframework.org/milestone</url>
         </repository>
-<!--         <repository> -->
-<!--           <id>jboss-public-repository-group</id> -->
-<!--           <name>JBoss Public Maven Repository Group</name> -->
-<!--           <url>https://repository.jboss.org/nexus/content/repositories/releases</url> -->
-<!--         </repository>         -->
         <repository>
           <id>jboss-public-repository-group</id>
           <name>JBoss Public Maven Repository Group</name>

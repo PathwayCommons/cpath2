@@ -60,15 +60,9 @@ final class ReactomeCleanerImpl extends BaseCleanerImpl {
 			log.info("Cleaning Reactome data, this may take some time, please be patient...");
 		}
 		
-		Set<Level3Element> sourceElements = new HashSet<Level3Element>(model.getObjects(Level3Element.class));
-		for (Level3Element l3e : sourceElements) {
-			// we only modify entity and pathway step rdfIds
-			if (l3e instanceof Entity || l3e instanceof PathwayStep) {
-				String oldId = (l3e.getRDFId().length() > 255) ? l3e.getRDFId().substring(0, 255) : l3e.getRDFId();
-				String newRDFId = oldId + "/" + System.currentTimeMillis();
-				replaceID(model, l3e, newRDFId);
-			}
-		}
+// since we're using new md5 primary key, no need to replace/shorten URIs!		
+// code was removed here...
+		
 		
 		// convert model back to OutputStream for return
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
