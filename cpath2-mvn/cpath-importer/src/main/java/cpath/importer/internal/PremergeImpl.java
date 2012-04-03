@@ -54,6 +54,8 @@ import org.apache.commons.logging.LogFactory;
 import java.util.*;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URLEncoder;
 
 
 /**
@@ -400,11 +402,12 @@ final class PremergeImpl implements Premerge {
 		
 		String urn; 
 		try {
-		 urn = MiriamLink.getDataTypeURI(metadata.getName());
+			urn = MiriamLink.getDataTypeURI(metadata.getName());
 		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException(
-				"Metadata 'name' must be a valid Miriam standard name " +
-				"or synonym for the data source!", e);
+			log.error("Pathway data name (Metadata.name) must be " +
+					"a valid MIRIAM datasource name or synonym!", e);
+			// we need some URI...
+			urn = URI.create(URLEncoder.encode(metadata.getName())).toString();
 		}
 		
 		if(model.containsID(urn))

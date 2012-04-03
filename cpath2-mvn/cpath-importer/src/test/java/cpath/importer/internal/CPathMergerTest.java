@@ -83,11 +83,11 @@ public class CPathMergerTest {
 				fetcher.fetchData(mdata);
 				if (mdata.getType() == TYPE.PROTEIN) {
 					// store PRs in the warehouse
-					fetcher.storeWarehouseData(mdata, (Model)proteinsDAO);
+					fetcher.storeWarehouseData(mdata, (PaxtoolsDAO)proteinsDAO);
 				}
 				else if (mdata.getType() == TYPE.SMALL_MOLECULE) {
 					// store SMRs in the warehouse
-					fetcher.storeWarehouseData(mdata, (Model)moleculesDAO);
+					fetcher.storeWarehouseData(mdata, (PaxtoolsDAO)moleculesDAO);
 				} 
 			}
 		} catch (IOException e) {

@@ -2,10 +2,16 @@ package cpath.converter.internal;
 
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
-import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.level3.BioSource;
+import org.biopax.paxtools.model.level3.ModificationFeature;
+import org.biopax.paxtools.model.level3.PositionStatusType;
+import org.biopax.paxtools.model.level3.ProteinReference;
+import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
+import org.biopax.paxtools.model.level3.RelationshipXref;
+import org.biopax.paxtools.model.level3.SequenceInterval;
+import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
+import org.biopax.paxtools.model.level3.SequenceSite;
+import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.validator.utils.Normalizer;
 
 import org.apache.commons.logging.Log;
@@ -59,9 +65,6 @@ final class UniprotConverterImpl extends BaseConverterImpl {
             	linesReadSoFar++;
                 if (line.startsWith ("//")) //reached the end of a Uniprot entry
                 {
-					// create a temporary model to add the new ER with dependents
-                	Model proteinReferenceModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-
 					// grab properties from the map and prepare for parsing
                     String deField = ((StringBuffer) dataElements.get("DE")).toString();
                     String organismName = ((StringBuffer) dataElements.get("OS")).toString(); //mostly occurs once per entry 
@@ -75,16 +78,15 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     StringBuffer sequence = (StringBuffer) dataElements.get("  "); //SEQUENCE
                     StringBuffer features = (StringBuffer) dataElements.get("FT"); //strict format in 6-75 char in each FT line!
                     
-                    ProteinReference proteinReference = newUniProtWithXrefs(proteinReferenceModel, idParts[0], acNames, xrefs);
+                    ProteinReference proteinReference = newUniProtWithXrefs(idParts[0], acNames, xrefs);
                     
                     setNameAndSynonyms(proteinReference, deField);
                     
-                    setOrganism(proteinReferenceModel, organismName, organismTaxId, proteinReference);
+                    setOrganism(organismName, organismTaxId, proteinReference);
                     
                     String geneSyns = null;
                     if (geneName != null) {
-                        geneSyns= setGeneSymbolAndSynonyms(proteinReferenceModel, 
-                        		geneName.toString(), proteinReference);
+                        geneSyns= setGeneSymbolAndSynonyms(geneName.toString(), proteinReference);
                     }
                     
                     if (comments != null) {
@@ -99,15 +101,12 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     
                     //create modified residue features
                     if(features != null)
-                    	createModResFeatures(features.toString(), proteinReference, proteinReferenceModel);
+                    	createModResFeatures(features.toString(), proteinReference);
                     
                     // debug: write the one-protein-reference model
                     if(log.isDebugEnabled()) {
                     	log.debug("convert(). so far line# " + linesReadSoFar);
                     }
-                    
-					// we have finished creating local model, merge into global one now
-					model.merge(proteinReferenceModel);
                     
                     dataElements.clear();
                 }
@@ -151,6 +150,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				}
             }
         }
+        
 		if (log.isInfoEnabled()) {
 			log.info("convert(), exiting.");
 		}
@@ -193,17 +193,16 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     /**
      * Sets the Current Organism Information.
 	 *
-	 * @param proteinReferenceModel Model
 	 * @param organismName String
 	 * @param organismTaxId String
 	 * @param proteinReference ProteinReference
      */
-    private void setOrganism(Model proteinReferenceModel, String organismName, String organismTaxId, ProteinReference proteinReference) {
+    private void setOrganism(String organismName, String organismTaxId, ProteinReference proteinReference) {
         String parts[] = organismTaxId.replaceAll(";", "").split("=");
         String taxId = parts[1];
         parts = organismName.split("\\("); // - by first occurrence of '('
         String name = parts[0].trim();
-		BioSource bioSource = getBioSource(proteinReferenceModel, taxId, name);
+		BioSource bioSource = getBioSource(taxId, name);
 		proteinReference.setOrganism(bioSource);
     }
 
@@ -244,11 +243,10 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     /**
      * Sets Multiple Types of XRefs, e.g. Entrez Gene ID and RefSeq.
 	 *
-	 * @param proteinReferenceModel Model
 	 * @param dbRefs String (concatenated with a space 'DR' lines)
 	 * @param proteinReference
      */
-    private void setXRefs (Model proteinReferenceModel, String dbRefs, ProteinReference proteinReference) {
+    private void setXRefs (String dbRefs, ProteinReference proteinReference) {
         String xrefList[] = dbRefs.split("\\."); 
         // - there are no '.' in the string array values anymore
 
@@ -257,14 +255,12 @@ final class UniprotConverterImpl extends BaseConverterImpl {
             if (xref.startsWith("GeneID")) {
                 String parts[] = xref.split(";");
                 String entrezGeneId = parts[1];
-                setRelationshipXRef(proteinReferenceModel, "Entrez Gene", 
-                		entrezGeneId, proteinReference, RelationshipType.GENE);
+                setRelationshipXRef("Entrez Gene", entrezGeneId, proteinReference, RelationshipType.GENE);
             }
 			else if (xref.startsWith("RefSeq")) {
                 String parts[] = xref.split(";");
                 String refSeqId = parts[1];
-                setRelationshipXRef(proteinReferenceModel, "RefSeq", 
-                		refSeqId, proteinReference, RelationshipType.SEQUENCE);
+                setRelationshipXRef("RefSeq", refSeqId, proteinReference, RelationshipType.SEQUENCE);
             }
 			else if (xref.startsWith("HGNC") 
 					|| xref.startsWith("MGI") 
@@ -273,8 +269,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                 String parts[] = xref.split(";");
                 String db = parts[0].trim();
                 String id = parts[1];
-                setRelationshipXRef(proteinReferenceModel, db, 
-                		id, proteinReference, RelationshipType.GENE);
+                setRelationshipXRef(db, id, proteinReference, RelationshipType.GENE);
             }
         }
     }
@@ -285,8 +280,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 	 *
 	 * @param proteinReference ProteinReference
      */
-    private String setGeneSymbolAndSynonyms(Model proteinReferenceModel, 
-    		String geneName, ProteinReference proteinReference) 
+    private String setGeneSymbolAndSynonyms(String geneName, ProteinReference proteinReference) 
     {
         StringBuffer synBuffer = new StringBuffer();
         String parts[] = geneName.split(";");
@@ -311,26 +305,25 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     /**
      * Sets Relationship XRefs.
 	 *
-	 * @param proteinReferenceModel Model
      * @param dbName String
      * @param id String
      * @param proteinReference ProteinReference
      * @param relationshipType names from {@link RelationshipType} enum.
      */
-    private void setRelationshipXRef(Model proteinReferenceModel, String dbName, 
+    private void setRelationshipXRef(String dbName, 
     	String id, ProteinReference proteinReference, RelationshipType relationshipType) 
     {
         id = id.trim();
 		String rdfId = Normalizer.generateURIForXref(dbName, id, null, RelationshipXref.class);
-		RelationshipXref rXRef = (RelationshipXref)proteinReferenceModel.addNew(RelationshipXref.class, rdfId);
+		RelationshipXref rXRef = (RelationshipXref)model.addNew(RelationshipXref.class, rdfId);
 		rXRef.setDb(dbName);
 		rXRef.setId(id);
 		
 		//find/create a special relationship CV
 		String relCvId = ModelUtils.relationshipTypeVocabularyUri(relationshipType.name());
-		RelationshipTypeVocabulary relCv = (RelationshipTypeVocabulary) proteinReferenceModel.getByID(relCvId);
+		RelationshipTypeVocabulary relCv = (RelationshipTypeVocabulary) model.getByID(relCvId);
 		if(relCv == null) {
-			relCv = proteinReferenceModel.addNew(RelationshipTypeVocabulary.class, relCvId);
+			relCv = model.addNew(RelationshipTypeVocabulary.class, relCvId);
 			relCv.addTerm(relationshipType.name());
 		}
 		rXRef.setRelationshipType(relCv);
@@ -340,18 +333,22 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     /**
      * Sets Unification XRefs.
 	 * 
-	 * @param proteinReferenceModel Model
 	 * @param dbName String
 	 * @param id tring
 	 * @param proteinReference ProteinReference
      */
-    private void setUnificationXRef(Model proteinReferenceModel, String dbName, String id, ProteinReference proteinReference) {
-
+    private void setUnificationXRef(String dbName, String id, ProteinReference proteinReference) {
         id = id.trim();
 		String rdfId = Normalizer.generateURIForXref(dbName, id, null, UnificationXref.class);
-		UnificationXref rXRef = (UnificationXref)proteinReferenceModel.addNew(UnificationXref.class, rdfId);
-		rXRef.setDb(dbName);
-		rXRef.setId(id);
+		
+		UnificationXref rXRef = (UnificationXref) model.getByID(rdfId);
+		if (rXRef == null) {
+			rXRef = (UnificationXref) model
+					.addNew(UnificationXref.class, rdfId);
+			rXRef.setDb(dbName);
+			rXRef.setId(id);
+		}
+		
 		proteinReference.addXref(rXRef);
     }
 
@@ -359,50 +356,43 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 	 * Gets a protein (or ProteinReference in L3);
 	 * set its RDFId and all the xrefs.
 	 *
-	 * @param proteinReferenceModel
 	 * @param shortName
 	 * @param accessions AC field values
 	 * @param dbRefs DR field values
 	 * @return ProteinReference
 	 */
-	private ProteinReference newUniProtWithXrefs(Model proteinReferenceModel, 
-			String shortName, String accessions, StringBuffer dbRefs) 
-	{
-		BioPAXElement element = null;
-		
+	private ProteinReference newUniProtWithXrefs(String shortName, String accessions, StringBuffer dbRefs) 
+	{	
 		// accession numbers as array
 		String acList[] = accessions.split(";");
 		// the first one, primary id, becomes the RDFId
 		String id = "urn:miriam:uniprot:" + acList[0].trim().toUpperCase();
 		// create new pr
-		ProteinReference proteinReference = proteinReferenceModel.addNew(ProteinReference.class, id);
+		ProteinReference proteinReference = model.addNew(ProteinReference.class, id);
 		proteinReference.setDisplayName(shortName);
 
 		// add all unification xrefs
 		for (String acEntry : acList) {
 			String ac = acEntry.trim();
-			setUnificationXRef(proteinReferenceModel, "uniprot", ac, proteinReference);
+			setUnificationXRef("uniprot", ac, proteinReference);
 		}
 		
 		// add other xrefs
         if (dbRefs != null) {
-            setXRefs(proteinReferenceModel, dbRefs.toString(), proteinReference);
+            setXRefs(dbRefs.toString(), proteinReference);
         }
 		
-		// outta here
 		return proteinReference;
 	}
 
 	/**
 	 * Gets a biosource
 	 *
-	 * @param proteinReferenceModel Model
 	 * @param taxId String
 	 * @param name String
 	 * @return BioSource
 	 */
-	private BioSource getBioSource(Model proteinReferenceModel, String taxId,
-			String name) 
+	private BioSource getBioSource(String taxId, String name) 
 	{
 		// check taxonomy ID is integer value
 		Integer taxonomy = null;
@@ -422,13 +412,12 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			String uri = "urn:miriam:taxonomy:" + taxonomy;
 			if (model.containsID(uri)) {
 				toReturn = (BioSource) model.getByID(uri);
-				proteinReferenceModel.add(toReturn);
 			} else {
-				toReturn = (BioSource) proteinReferenceModel
+				toReturn = (BioSource) model
 						.addNew(BioSource.class, uri);
 				toReturn.setStandardName(name);
 				toReturn.setDisplayName(name);
-				UnificationXref taxonXref = (UnificationXref) proteinReferenceModel
+				UnificationXref taxonXref = (UnificationXref) model
 						.addNew(UnificationXref.class, Normalizer
 								.generateURIForXref("TAXONOMY", taxId, null,
 										UnificationXref.class));
@@ -448,7 +437,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 	 * 
 	 */
 	private void createModResFeatures(final String features, 
-			final ProteinReference pr, final Model prm) 
+			final ProteinReference pr) 
 	{
 		// using a special "not greedy" regex!
         Pattern pattern = Pattern.compile("MOD_RES.+?\\.");
@@ -467,19 +456,19 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			mfIndex++;
 			String uri = ModelUtils.BIOPAX_URI_PREFIX + 
 					"ModificationFeature:" + pr.getDisplayName() + "_" + mfIndex;
-			ModificationFeature modificationFeature = prm.addNew(ModificationFeature.class, uri);
+			ModificationFeature modificationFeature = model.addNew(ModificationFeature.class, uri);
 			modificationFeature.addComment(ftContent);
 			// get or create a new PSI-MOD SequenceModificationVocabulary, which 
 			// - can be shared by many protein references we create
 			uri = ModelUtils.BIOPAX_URI_PREFIX + 
 				"SequenceModificationVocabulary:" + URLEncoder.encode(mod);
 			// so, let's check if it exists in the temp. or target model:
-			SequenceModificationVocabulary cv = (SequenceModificationVocabulary) prm.getByID(uri);
+			SequenceModificationVocabulary cv = (SequenceModificationVocabulary) model.getByID(uri);
 			if(cv == null)
 				cv = (SequenceModificationVocabulary) model.getByID(uri);
 			if(cv == null) {
 				// create a new SequenceModificationVocabulary
-				cv = prm.addNew(SequenceModificationVocabulary.class, uri);
+				cv = model.addNew(SequenceModificationVocabulary.class, uri);
 				cv.addTerm(modTerm);
 				// TODO normalize to the preferred term and attach uni.xref (e.g., during the Merge, requires Ontology Manager!)
 			}
@@ -492,9 +481,9 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			uri = ModelUtils.BIOPAX_URI_PREFIX + "SequenceSite:" + 
 					pr.getDisplayName() + //e.g., CALM_HUMAN - from the ID line
 						"_" + start;
-			SequenceSite startSite = (SequenceSite) prm.getByID(uri);
+			SequenceSite startSite = (SequenceSite) model.getByID(uri);
 			if(startSite == null) {
-				startSite = prm.addNew(SequenceSite.class, uri);
+				startSite = model.addNew(SequenceSite.class, uri);
 				startSite.setPositionStatus(PositionStatusType.EQUAL);
 				startSite.setSequencePosition(start);
 			}
@@ -507,9 +496,9 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				uri = ModelUtils.BIOPAX_URI_PREFIX + "SequenceSite:" + 
 					pr.getDisplayName() + //e.g., CALM_HUMAN - from the ID line
 						"_" + end;
-				SequenceSite endSite = (SequenceSite) prm.getByID(uri);
+				SequenceSite endSite = (SequenceSite) model.getByID(uri);
 				if(endSite == null) {
-					endSite = prm.addNew(SequenceSite.class, uri);
+					endSite = model.addNew(SequenceSite.class, uri);
 					endSite.setPositionStatus(PositionStatusType.EQUAL);
 					endSite.setSequencePosition(end);
 				}
@@ -517,9 +506,9 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				uri = ModelUtils.BIOPAX_URI_PREFIX + "SequenceInterval:" + 
 						pr.getDisplayName() + 
 							"_" + start + "_" + end;
-				SequenceInterval sequenceInterval = (SequenceInterval) prm.getByID(uri);
+				SequenceInterval sequenceInterval = (SequenceInterval) model.getByID(uri);
 				if(sequenceInterval == null) {
-					sequenceInterval = prm.addNew(SequenceInterval.class, uri);
+					sequenceInterval = model.addNew(SequenceInterval.class, uri);
 					sequenceInterval.setSequenceIntervalBegin(startSite);
 					sequenceInterval.setSequenceIntervalEnd(endSite);
 				}

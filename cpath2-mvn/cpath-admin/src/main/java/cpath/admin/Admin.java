@@ -450,12 +450,12 @@ public class Admin implements Runnable {
 			else if (metadata.getType() == Metadata.TYPE.PROTEIN) 
 			{
 				// parse/save
-				fetcher.storeWarehouseData(metadata, (Model) proteinsDAO);
+				fetcher.storeWarehouseData(metadata, proteinsDAO);
         	} 
 			else if (metadata.getType() == Metadata.TYPE.SMALL_MOLECULE) 
 			{
 		        // parse/save
-				fetcher.storeWarehouseData(metadata, (Model) smallMoleculesDAO);
+				fetcher.storeWarehouseData(metadata, smallMoleculesDAO);
 			} 
 			else if (metadata.getType() == Metadata.TYPE.MAPPING) 
 			{

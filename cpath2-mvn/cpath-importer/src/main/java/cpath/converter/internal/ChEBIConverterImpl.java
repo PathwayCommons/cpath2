@@ -10,20 +10,21 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.controller.Fetcher;
 import org.biopax.paxtools.controller.ModelUtils;
-import org.biopax.paxtools.controller.SimpleEditorMap;
-import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.utils.Normalizer;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
-import cpath.dao.PaxtoolsDAO;
 
 /**
  * Implementation of Converter interface for ChEBI data.
+ * This converter goes over the data in two passes:
+ * - first, it creates SMRs, xrefs, etc.;
+ * - second, it uses ChEBI OBO ontology to set memberEntityReference properties 
+ * (to represent ChEBI molecules hierarchy in BioPAX)
  */
 class ChEBIConverterImpl extends BaseConverterImpl
 {
@@ -58,7 +59,7 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	
     
     // OBO converter
-    private ChEBIOBOConverterImpl oboConverter;	
+    private ChEBIOBOConverter oboConverter;	
 
 	/**
 	 * ChEBI OBO file official location
@@ -110,18 +111,11 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	 * (for testing).
 	 */
 	ChEBIConverterImpl(String chebiOBOFileURL) {
-		this.oboConverter = new ChEBIOBOConverterImpl(factory);
+		this.oboConverter = new ChEBIOBOConverter(factory);
 		this.chebiOboFileUrl = chebiOBOFileURL;
 		if (log.isInfoEnabled()) {
 			log.info("CHEBI OBO FILE URL: " + chebiOboFileUrl);
 		}
-	}
-
-	
-	@Override
-	public void setModel(Model model) {
-		super.setModel(model);
-		this.oboConverter.setModel(model);
 	}
 
 	
@@ -180,8 +174,8 @@ class ChEBIConverterImpl extends BaseConverterImpl
             	log.info("convert(), starting to read data...");
 			}
 			// read the file
-            String line = bufferedReader.readLine();
-            while (line != null) {
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
 				// start of entry
                 if (line.startsWith(entryStart)) {
 					StringBuffer entryBuffer = new StringBuffer(line + "\n");
@@ -206,12 +200,9 @@ class ChEBIConverterImpl extends BaseConverterImpl
 						oboConverter.processOBOEntry(entryBuffer);
 					}
                 }
-                line = bufferedReader.readLine();
             }
-            // quick fix - mainly for testing (without DAO)
-            if(!(model instanceof PaxtoolsDAO)) {
-            	model.repair();
-            }
+//            // quick fix - mainly for testing (without DAO)
+//           	model.repair();
         }
 		catch (IOException e) {
 			log.error(e);
@@ -239,24 +230,11 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	 * @throws IOException
 	 */
 	private void processSDFEntry(StringBuffer entryBuffer) throws IOException { 
-
         if (log.isDebugEnabled()) {
         	log.debug("calling processSDFEntry()");
         }
         // build a new SMR with its dependent elements
 		SmallMoleculeReference smr = buildSmallMoleculeReference(entryBuffer);
-		if (smr != null) {
-            if(model instanceof PaxtoolsDAO) {
-            	Fetcher fetcher = new Fetcher(SimpleEditorMap.get(model.getLevel()));
-            	Model smrModel = model.getLevel().getDefaultFactory().createModel();
-            	fetcher.fetch(smr, smrModel);
-            	((PaxtoolsDAO) model).merge(smrModel);
-            }
-            else {
-            	// don't merge now (later - all at once)
-            	model.add(smr);
-            }
-		}
 	}
 	
 	
@@ -337,7 +315,14 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		if (rdfID == null) {
 			return null;
 		}
-		toReturn = factory.create(SmallMoleculeReference.class, rdfID);
+		
+		toReturn = (SmallMoleculeReference) model.getByID(rdfID);
+		if(toReturn != null)
+			return toReturn;
+		
+		// else (create a new one)
+		
+		toReturn = model.addNew(SmallMoleculeReference.class, rdfID);
 		// primary id (u.xref)
 		toReturn.addXref(getXref(UnificationXref.class,getValue(entryBuffer, CHEBI_ID), "chebi"));
 		// names
@@ -500,7 +485,7 @@ class ChEBIConverterImpl extends BaseConverterImpl
 				log.debug("setStructure(), structure: " + structure);
 			}
 			// should only get one of these
-			ChemicalStructure chemStruct = factory.create(ChemicalStructure.class, chemicalStructureID);
+			ChemicalStructure chemStruct = model.addNew(ChemicalStructure.class, chemicalStructureID);
 			chemStruct.setStructureData(URLEncoder.encode(structure));
 			chemStruct.setStructureFormat(structureFormat);
 			smallMoleculeReference.setStructure(chemStruct);
@@ -625,12 +610,11 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		}
 		
 		String rdfID = Normalizer.generateURIForXref(db, id, null, aClass);
-
-		if (model.containsID(rdfID)) {
-			toReturn = getById(rdfID, aClass);
-		}
-		else {
-			toReturn = (T) factory.create(aClass, rdfID);
+		
+		toReturn = (T) model.getByID(rdfID);
+		
+		if(toReturn == null) {
+			toReturn = (T) model.addNew(aClass, rdfID);
 			toReturn.setDb(db);
 			toReturn.setId(id);
 			
@@ -746,5 +730,188 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	 */
 	private BufferedReader getBufferedReader(StringBuffer entry) throws IOException {
 		return new BufferedReader (new StringReader(entry.toString()));
-	}	
+	}
+	
+	
+	private class ChEBIOBOConverter {
+	    private final Log log = LogFactory.getLog(ChEBIOBOConverter.class);
+	    
+		private final Pattern CHEBI_OBO_ID_REGEX = Pattern.compile("^id: CHEBI:(\\w+)$");
+		private final Pattern CHEBI_OBO_ISA_REGEX = Pattern.compile("^is_a: CHEBI:(\\w+)$");
+		private final Pattern CHEBI_OBO_RELATIONSHIP_REGEX = Pattern.compile("^relationship: (\\w+) CHEBI:(\\w+)$");
+		private final String REGEX_GROUP_DELIMITER = ":";
+	    	
+		private BioPAXFactory factory;
+			
+		/**
+		 * Constructor.
+		 * @param factory BioPAXFactory
+		 */
+		ChEBIOBOConverter(BioPAXFactory factory) {
+			this.factory = factory;
+		}
+		
+		
+		/**
+		 * Given a ChEBI - OBO entry, creates proper member entity reference
+		 * between parent and child.
+		 * 
+		 * @param entryBuffer
+		 * @throws IOException
+		 */
+		public void processOBOEntry(StringBuffer entryBuffer) throws IOException 
+		{
+			if (log.isDebugEnabled()) {
+				log.debug("calling processOBOEntry()");
+			}
+			// get SMR for entry out of warehouse
+			Collection<String> childChebiIDs = getValuesByREGEX(entryBuffer, CHEBI_OBO_ID_REGEX);
+			if (childChebiIDs.size() != 1) {
+				if (log.isDebugEnabled()) {
+					log.debug("processOBOEntry(), problem parsing 'id:' tag for this entry: " + entryBuffer.toString());
+					log.debug("processOBOEntry(), returning...");
+				}
+				return;
+			}
+			SmallMoleculeReference childSMR = getSMRByChebiID(childChebiIDs.iterator().next());
+			if (childSMR == null) {
+				if (log.isDebugEnabled()) {
+					log.debug("processOBOEntry(), Cannot find SMR by ChebiID for this entry: " + entryBuffer.toString());
+					log.debug("processOBOEntry(), returning...");
+				}
+				return;
+			}
+			
+			// for each parent ChEBI, create a member entity reference to child
+			Collection<String> parentChebiIDs = getValuesByREGEX(entryBuffer, CHEBI_OBO_ISA_REGEX);
+			for (String parentChebiID : parentChebiIDs) {
+				SmallMoleculeReference parentSMR = getSMRByChebiID(parentChebiID);
+				if (parentSMR == null) {
+					if (log.isDebugEnabled()) {
+						log.debug("processOBOEntry(), Cannot find SMR by ChebiID via 'is_a', entry: " + entryBuffer.toString());
+						log.debug("processOBOEntry(), skipping...");
+					}
+					continue;
+				}
+				parentSMR.addMemberEntityReference(childSMR);
+			}
+
+			// we can also grab relationship (horizontal hierarchical info) 
+			Collection<String> relationships = getValuesByREGEX(entryBuffer, CHEBI_OBO_RELATIONSHIP_REGEX);
+			for (String relationship : relationships) {
+				String[] parts = relationship.split(REGEX_GROUP_DELIMITER);
+				RelationshipXref xref = getRelationshipXref(parts[0], parts[1]); 
+				childSMR.addXref(xref);
+			}
+		}
+		
+		/**
+		 * Given an OBO entry, returns the values matched by the given regex.
+		 * If regex contains more that one capture group, a ":" will be used to delimit them.
+		 *  
+		 * @param entryBuffer StringBuffer
+		 * @param regex Pattern
+		 * @return String
+		 * @throws IOException
+		 */
+		private Collection<String> getValuesByREGEX(StringBuffer entryBuffer, Pattern regex) throws IOException {
+			
+			Collection<String> toReturn = new ArrayList<String>();
+			BufferedReader reader = getBufferedReader(entryBuffer);
+
+			if (log.isDebugEnabled()) {
+				log.debug("getValue(), key: " + regex.toString());
+			}
+
+			String line = reader.readLine();
+			while (line != null) {
+				Matcher matcher = regex.matcher(line);
+				if (matcher.find()) {
+					String toAdd = "";
+					for (int lc = 1; lc <= matcher.groupCount(); lc++) {
+						toAdd += matcher.group(lc) + REGEX_GROUP_DELIMITER;
+					}
+					toReturn.add(toAdd.substring(0, toAdd.length()-1));
+				}
+				line = reader.readLine();
+			}
+
+			if (log.isDebugEnabled()) {
+				if (toReturn != null) {
+					log.debug("getValue(), returning: " + toReturn);
+				}
+				else {
+					log.debug("getValue(), value not found!");
+				}
+			}
+
+			// outta here
+			return toReturn;
+		}
+		
+		/**
+		 * Given a ChEBI Id, returns the matching SMR in the warehouse.
+		 * 
+		 * @param chebiID String
+		 * @return SmallMoleculeReference
+		 */
+		private SmallMoleculeReference getSMRByChebiID(String chebiID) {
+			String rdfID = "urn:miriam:chebi:" + chebiID;
+			return (SmallMoleculeReference) model.getByID(rdfID);
+		}
+		
+		/**
+		 * Given a relationship from a ChEBI OBO file, returns a relationship xref.
+		 * 
+		 * @param relationshipType String
+		 * @param chebiID String
+		 */
+		private RelationshipXref getRelationshipXref(String relationshipType, String chebiID) {
+			
+			RelationshipXref toReturn = null;
+			
+			// TODO: is this the best way to do this?
+			// we use relationship type in rdf id of xref since there can be many to many relation types
+			// bet SM.  For example CHEBI:X has_part CHEBI:Y and CHEBI:Z is_conjugate_acid_of CHEBI:Y
+			// we need distinct rxref to has_part CHEBI:Y and is_conjugate_acid_of CHEBI:Y
+			String xrefRdfID = Normalizer
+				.generateURIForXref(relationshipType, "CHEBI:" + chebiID, null, RelationshipXref.class);
+			
+			if (model.containsID(xrefRdfID)) {
+				return (RelationshipXref) model.getByID(xrefRdfID);
+			}
+			
+			// made it here, need to create relationship xref
+			toReturn = model.addNew(RelationshipXref.class, xrefRdfID);
+			toReturn.setDb("CHEBI");
+			toReturn.setId(chebiID);
+			
+			// set relationship type vocabulary on the relationship xref
+			String relTypeRdfID = ModelUtils.relationshipTypeVocabularyUri(relationshipType); //or "CHEBI_" + relationshipType?
+			
+			
+			RelationshipTypeVocabulary rtv = (RelationshipTypeVocabulary) model.getByID(relTypeRdfID);
+			if (rtv != null) {
+				toReturn.setRelationshipType(rtv);
+			} else {
+				rtv = model.addNew(RelationshipTypeVocabulary.class, relTypeRdfID);
+				rtv.addTerm(relationshipType);
+				toReturn.setRelationshipType(rtv);
+			}
+			
+			return toReturn;
+		}
+		
+		/**
+		 * Given a string buffer representation of an entry,
+		 * returns a buffered reader to the entry.
+		 *
+		 * @param entry StringBuffer
+		 * @return BufferedReader
+		 * @throws IOException
+		 */
+		private BufferedReader getBufferedReader(StringBuffer entry) throws IOException {
+			return new BufferedReader (new StringReader(entry.toString()));
+		}
+	}
 }

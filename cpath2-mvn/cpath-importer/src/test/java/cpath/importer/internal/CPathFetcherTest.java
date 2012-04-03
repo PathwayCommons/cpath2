@@ -14,6 +14,8 @@ import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.junit.*;
 
+import cpath.dao.PaxtoolsDAO;
+import cpath.dao.internal.PaxtoolsModelDAO;
 import cpath.importer.internal.FetcherImpl;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
@@ -24,7 +26,7 @@ public class CPathFetcherTest {
 	private static Log log = LogFactory.getLog(CPathFetcherTest.class);
 	
 	static FetcherImpl fetcher;
-	static Model model;
+	static PaxtoolsDAO model;
 	static SimpleIOHandler exporter;
 	static int count = 0;
 	
@@ -32,7 +34,7 @@ public class CPathFetcherTest {
 		fetcher = new FetcherImpl();
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
 		// extend Model for the converter calling 'merge' method to work
-		model = BioPAXLevel.L3.getDefaultFactory().createModel();
+		model = new PaxtoolsModelDAO(BioPAXLevel.L3);
 	}
 
 	
@@ -70,8 +72,8 @@ public class CPathFetcherTest {
 				"cpath.converter.internal.UniprotConverterImpl");
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
-		assertFalse(model.getObjects(ProteinReference.class).isEmpty());
-		assertTrue(model.containsID("urn:miriam:uniprot:P62158"));
+		assertFalse(((Model)model).getObjects(ProteinReference.class).isEmpty());
+		assertTrue(((Model)model).containsID("urn:miriam:uniprot:P62158"));
 	}
 	
 	@Test
@@ -88,8 +90,8 @@ public class CPathFetcherTest {
 				"cpath.converter.internal.ChEBITestConverterImpl");
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
-		assertFalse(model.getObjects(SmallMoleculeReference.class).isEmpty());
-		assertTrue(model.containsID("urn:miriam:chebi:20"));
+		assertFalse(((Model)model).getObjects(SmallMoleculeReference.class).isEmpty());
+		assertTrue(((Model)model).containsID("urn:miriam:chebi:20"));
 	}
 	
 	

@@ -42,13 +42,14 @@ import javax.imageio.ImageIO;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.miriam.MiriamLink;
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
 import cpath.config.CPathSettings;
+import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Cleaner;
 import cpath.importer.Converter;
 import cpath.importer.Fetcher;
@@ -210,16 +211,7 @@ final class FetcherImpl implements Fetcher
 							|| metadata.getType() == Metadata.TYPE.BIOPAX) {
 						if (log.isInfoEnabled())
 							log.info(metadata.getCleanerClassname());
-						
-						// sanity check (forces using standard names)
-						try {
-							MiriamLink.getDataTypeURI(metadata.getName());
-						} catch (IllegalArgumentException e) {
-							throw new IllegalArgumentException(
-								"Metadata " + metadata.getIdentifier() + 
-								" 'name' is not a Miriam standard name " +
-								"or synonym of a pathway data provider!", e);
-						}						
+												
 					} else if (metadata.getType() == Metadata.TYPE.PROTEIN) {
 						if (log.isInfoEnabled())
 							log.info(metadata.getConverterClassname());
@@ -456,7 +448,7 @@ final class FetcherImpl implements Fetcher
 	 * @see cpath.fetcher.WarehouseDataService#storeWarehouseData(cpath.warehouse.beans.Metadata, org.biopax.paxtools.model.Model)
 	 */
 	@Override
-    public void storeWarehouseData(final Metadata metadata, final Model model) 
+    public void storeWarehouseData(final Metadata metadata, final PaxtoolsDAO model) 
 		throws IOException 
 	{
 		// use the local file (previously fetched from metadata.urlTodata)
@@ -536,8 +528,22 @@ final class FetcherImpl implements Fetcher
 				log.info(("Converter is null; skipping this step..."));
 				return;
 			} 
-			converter.setModel(model);
-			converter.convert(is);			
+			
+			// create a new empty in-memory model
+			Model inMemModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+			// convert data into that
+			converter.setModel(inMemModel);
+			converter.convert(is);
+			//repair
+			log.info("storeWarehouseData(..): Preparing just created " +
+					metadata.getIdentifier() + 
+					" model to merging...");
+			inMemModel.repair();
+			// merging may take quite a time...
+			log.info("storeWarehouseData(..): Merging " +
+				metadata.getIdentifier());
+			model.merge(inMemModel);
+			log.info("storeWarehouseData(..): Exitting.");
 			
 		} finally {
 			closeQuietly(is);
