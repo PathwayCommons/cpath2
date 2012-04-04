@@ -258,19 +258,20 @@ final class MergerImpl implements Merger {
 				}
 
 			}
-			// extra quick fix for too long URIs...
-			if(replacement == null && b.getRDFId().length() > 256) { 
-				// set to replace objects (with cpath2-generated URI)
-				// having too long URIs 
-				String newId = ((Model)pcDAO).getXmlBase() +
-					b.getModelInterface().getSimpleName() + 
-					"/" + System.currentTimeMillis();
-				Level3Element e = (Level3Element) copier.copy(b, newId);
-				String rem = "Original URI was too long: " + b.getRDFId();
-				e.addComment(rem);
-				replacements.put(b, e);
-				log.warn("Using new URI=" + newId + "; " + rem);
-			}
+// the following is not really required anymore TODO think of it later...
+//			// extra quick fix for too long URIs...
+//			if(replacement == null && b.getRDFId().length() > 255) { 
+//				// set to replace objects (with cpath2-generated URI)
+//				// having too long URIs 
+//				String newId = ((Model)pcDAO).getXmlBase() +
+//					b.getModelInterface().getSimpleName() + 
+//					"/" + ModelUtils.md5hex(b.getRDFId());
+//				Level3Element e = (Level3Element) copier.copy(b, newId);
+//				String rem = "Original URI was too long: " + b.getRDFId();
+//				e.addComment(rem);
+//				replacements.put(b, e);
+//				log.warn("Using new URI=" + newId + "; " + rem);
+//			}
 		}
 		
 		if(log.isInfoEnabled())
