@@ -315,9 +315,12 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     {
         id = id.trim();
 		String rdfId = Normalizer.generateURIForXref(dbName, id, null, RelationshipXref.class);
-		RelationshipXref rXRef = (RelationshipXref)model.addNew(RelationshipXref.class, rdfId);
-		rXRef.setDb(dbName);
-		rXRef.setId(id);
+		RelationshipXref rXRef = (RelationshipXref) model.getByID(rdfId);
+		if (rXRef == null) {
+			rXRef = (RelationshipXref) model.addNew(RelationshipXref.class,	rdfId);
+			rXRef.setDb(dbName);
+			rXRef.setId(id);
+		}
 		
 		//find/create a special relationship CV
 		String relCvId = ModelUtils.relationshipTypeVocabularyUri(relationshipType.name());
