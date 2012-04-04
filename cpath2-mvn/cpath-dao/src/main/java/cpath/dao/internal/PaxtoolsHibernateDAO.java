@@ -217,8 +217,6 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 				log.debug("merge(model): inserting BioPAX elements (stateless)...");
 			StatelessSession stls = getSessionFactory().openStatelessSession();
 			
-//			final Query query = stls.getNamedQuery("org.biopax.paxtools.impl.elementByRdfId");
-			
 			int i = 0;
 			Transaction tx = stls.beginTransaction();
 			for (BioPAXElement bpe : model.getObjects()) {
@@ -451,11 +449,6 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 
 		BioPAXElement toReturn = (BioPAXElement) session()
 			.get(BioPAXElementImpl.class, ModelUtils.md5hex(id));
-		
-// compare with this later...
-//		Query query = session().getNamedQuery("org.biopax.paxtools.impl.elementByRdfId");
-//        query.setString("rdfid", id);
-//        toReturn = (BioPAXElement) query.uniqueResult();
 
 		return toReturn; // null means no such element
 	}
