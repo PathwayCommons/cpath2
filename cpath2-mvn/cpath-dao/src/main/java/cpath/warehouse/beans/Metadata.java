@@ -29,13 +29,10 @@ public class Metadata {
     }
 
 	@Id
-	@Column(name="provider_id")
-	@GeneratedValue(strategy=GenerationType.AUTO)
-	private Integer id;
-	@Column(nullable=false, unique=true)
+	@Column(length=40)
     private String identifier;
 	@Column(nullable=false)
-    private String name; // MUST be a Miriam standard name/synonym for the datasource!!!
+    private String name; // Miriam standard name or synonym for the datasource! (if possible)
 	@Column(nullable=false)
     private String version;
 	@Column(nullable=false)
@@ -124,11 +121,6 @@ public class Metadata {
 		}
 		this.converterClassname = converterClassname;
     }
-
-	public void setId(Integer id) {
-		this.id = id;
-	}
-    public Integer getId() { return id; }
 
 	public void setIdentifier(String identifier) {
 		this.identifier = identifier;

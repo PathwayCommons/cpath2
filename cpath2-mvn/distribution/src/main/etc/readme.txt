@@ -98,7 +98,7 @@ where accessible by the cpath2 admin script via URL. It has the following struct
 - one datasource per line (thus, EOLs/newline matter);
 - columns are separated simply by "<br>" element (which does not make it HTML though);
 - no column headers, but columns are, in order, the following: 
-1) IDENTIFIER - unique, short, and simple; spaces or dashes are not allowed;
+1) IDENTIFIER - unique, short (40), and simple; spaces or dashes are not allowed;
 
 2) NAME - for pathway type records (BIOPAX, PSI_MI), must be official MIRIAM 
 datasource name or synonym;
@@ -160,7 +160,7 @@ data import commands (as above), export some data or generate reports (e.g., val
 (run cpath-admin.sh w/o arguments to see the hint).
 
 Prepare MySQL Databases. If required, generate (all or some of) the cpath2 database schemas using
-the same db names as specified in the $CPATH2_HOME/cpath2.properties file:
+the same db names as specified in the $CPATH2_HOME/cpath.properties file:
 
 sh cpath-admin.sh -create-tables cpathmain,cpathproteins,cpathmolecules,cpathmetadata
 (WARNING: this destroys and re-creates the databases, if existed!)
@@ -186,5 +186,17 @@ sh cpath-admin.sh -merge
 
 # create full-text index (currently, it's required for the "main" cpath2 db only, only for the webservice app)
 sh cpath-admin.sh -create-index main
+
+
+
+DB DUMPS
+
+To backup, use mysqldump:
+
+mysqldump --max_allowed_packet=256M -u <user> -p cpath2_meta > cpath2_meta.sql
+
+To restore (or move to another machine), create a new database there first; then:
+
+mysql --max_allowed_packet=256M mysql -u <user> -p <new_database> < cpath2_meta.sql
 
 
