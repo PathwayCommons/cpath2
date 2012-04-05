@@ -22,7 +22,7 @@ public class PathwayData {
 	@Column(name="pathway_id")
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Integer id;
-	@Column(nullable=false)
+	@Column(nullable=false, length=40)
     private String identifier;
 	@Column(nullable=false)
     private String version;
