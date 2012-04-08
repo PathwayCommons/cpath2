@@ -124,10 +124,10 @@
 	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=urn:miriam:uniprot:Q06609">
 		<fmt:message key="cpath2.example.get1"/></a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http:%2F%2Fwww.reactome.org%2Fbiopax/48887Pathway1026">
+	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http:%2F%2Fwww.reactome.org%2Fbiopax/48887Pathway137">
 		<fmt:message key="cpath2.example.get2"/></a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http://pid.nci.nih.gov/biopaxpid_55888&format=BINARY_SIF">
+	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http://pid.nci.nih.gov/biopaxpid_55597&format=BINARY_SIF">
 		<fmt:message key="cpath2.example.get3"/></a>
 	  </li>
 	 </ol>
@@ -152,7 +152,7 @@
 	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
 	  <fmt:message key="cpath2.command_header_graph_query_description"/><br/>
 	  <ol>
-	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=http:%2F%2Fwww.reactome.org%2Fbiopax%2F48892protein6017&kind=neighborhood">
+	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=http:%2F%2Fwww.reactome.org%2Fbiopax%2F48892Protein3105&kind=neighborhood">
 		<fmt:message key="cpath2.example.graph1"/></a>
 	  </li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=urn:miriam:uniprot:O88207&kind=neighborhood">
@@ -194,7 +194,7 @@
 	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=urn:miriam:uniprot:P38398&uri=http://pid.nci.nih.gov/biopaxpid_68613&uri=http://www.reactome.org/biopax/48887Protein2992&uri=urn:miriam:taxonomy:9606&path=Named%2fname">
 		<fmt:message key="cpath2.example.traverse5"/></a>
 	  </li>		  
-	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://pid.nci.nih.gov/biopaxpid_55888&path=Pathway%2fpathwayComponent:Interaction/participant/displayName">
+	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://pid.nci.nih.gov/biopaxpid_55597&path=Pathway%2fpathwayComponent:Interaction/participant/displayName">
 		<fmt:message key="cpath2.example.traverse6"/></a>
 	  </li>	
 	  </ol>	
@@ -238,7 +238,6 @@
 	  <li><a href="<fmt:message key="cpath2.url"/>/help/kinds"><fmt:message key="cpath2.example.help3"/></a></li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/help/organisms"><fmt:message key="cpath2.example.help4"/></a></li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/help/datasources"><fmt:message key="cpath2.example.help9"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/datasources/reactome"><fmt:message key="cpath2.example.help10"/></a></li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/help/directions"><fmt:message key="cpath2.example.help5"/></a></li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/properties"><fmt:message key="cpath2.example.help6"/></a></li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/provenance/properties"><fmt:message key="cpath2.example.help7"/></a></li>
