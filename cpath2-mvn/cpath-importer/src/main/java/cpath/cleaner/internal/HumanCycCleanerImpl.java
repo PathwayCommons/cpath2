@@ -44,10 +44,12 @@ public class HumanCycCleanerImpl implements Cleaner
 	{
 		for (Xref xr : model.getObjects(Xref.class))
 		{
-			String id = xr.getId().trim();
-			
+			String id = xr.getId();
+
 			if (id == null) continue;
-			
+
+			id = id.trim();
+
 			if (id.contains(": "))
 			{
 				id = id.substring(id.indexOf(": ") + 2);
@@ -73,5 +75,4 @@ public class HumanCycCleanerImpl implements Cleaner
 			named.setDisplayName(s);
 		}
 	}
-
 }
