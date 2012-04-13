@@ -4,8 +4,10 @@ import cpath.importer.Cleaner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.io.SimpleIOHandler;
+import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
 import org.biopax.paxtools.model.level3.UnificationXref;
 
@@ -61,6 +63,18 @@ public class PhosphoSitePlusCleanerImpl implements Cleaner {
                 String pTerm = term.replace("phospho-", "phospho-L-");
                 vocabulary.removeComment(term);
                 vocabulary.addTerm(pTerm);
+            }
+        }
+
+        // And this is to make the Provenance compatible with Miriam
+        String miriamCompatibleName = "PhosphoSite Protein";
+        for (Provenance provenance : model.getObjects(Provenance.class)) {
+            String displayName = provenance.getDisplayName();
+
+            if(displayName.startsWith("Phosphosite")) {
+                log.trace("Replacing Provenance displayName " + displayName + " with " + miriamCompatibleName);
+                // http://www.ebi.ac.uk/miriam/main/collections/MIR:00000105
+                provenance.setDisplayName(miriamCompatibleName);
             }
         }
         
