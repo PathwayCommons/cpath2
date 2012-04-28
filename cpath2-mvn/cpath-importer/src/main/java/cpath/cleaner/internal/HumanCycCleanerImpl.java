@@ -4,12 +4,12 @@ import cpath.importer.Cleaner;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.Named;
-import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.model.level3.*;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.HashSet;
 
 public class HumanCycCleanerImpl implements Cleaner
 {
@@ -24,6 +24,7 @@ public class HumanCycCleanerImpl implements Cleaner
 
 			cleanXrefIDs(model);
 			cleanHtmlInDisplayNames(model);
+			fix_RDH14_NT5C1B_fusion(model);
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			simpleReader.convertToOWL(model, outputStream);
@@ -72,7 +73,51 @@ public class HumanCycCleanerImpl implements Cleaner
 			if (s == null) continue;
 
 			s = s.replaceAll("</i>", "").replaceAll("<i>","");
+			s = s.replaceAll("</SUB>", "").replaceAll("<SUB>","");
+			s = s.replaceAll("</sub>", "").replaceAll("<sub>","");
 			named.setDisplayName(s);
+		}
+	}
+
+	/**
+	 * The protein NT5C1B contains info of RDH14. This is due to an old incorrect prediction in 
+	 * TrEMBL. It is fixed in Uniprot, but remained in HumanCyc.
+	 * 
+	 * @param model
+	 */
+	protected void fix_RDH14_NT5C1B_fusion(Model model)
+	{
+		EntityReference er = (EntityReference) model.getByID("ProteinReference147987");
+		if (er != null)
+		{
+			clearRDH14(er);
+
+			for (SimplePhysicalEntity pe : er.getEntityReferenceOf())
+			{
+				clearRDH14(pe);
+			}
+		}
+	}
+	protected void clearRDH14(Named nd)
+	{
+		nd.setDisplayName("NT5C1B");
+		nd.setStandardName("NT5C1B");
+
+		// We need only one unification xref. Clear all others. 
+		for (Xref xref : new HashSet<Xref>(nd.getXref()))
+		{
+			if (xref instanceof UnificationXref && !xref.getRDFId().equals("UnificationXref147997"))
+			{
+				nd.getXref().remove(xref);
+			}
+		}
+
+		for (String name : new HashSet<String>(nd.getName()))
+		{
+			if (name.startsWith("RETINOL") || name.startsWith("PANCREAS"))
+			{
+				nd.getName().remove(name);
+			}
 		}
 	}
 }
