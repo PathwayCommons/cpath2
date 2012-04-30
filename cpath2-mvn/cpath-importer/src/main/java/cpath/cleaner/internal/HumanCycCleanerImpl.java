@@ -9,7 +9,10 @@ import org.biopax.paxtools.model.level3.*;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class HumanCycCleanerImpl implements Cleaner
 {
@@ -25,6 +28,7 @@ public class HumanCycCleanerImpl implements Cleaner
 			cleanXrefIDs(model);
 			cleanHtmlInDisplayNames(model);
 			fix_RDH14_NT5C1B_fusion(model);
+			cleanMultipleUnificationXrefs(model);
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			simpleReader.convertToOWL(model, outputStream);
@@ -56,7 +60,7 @@ public class HumanCycCleanerImpl implements Cleaner
 				id = id.substring(id.indexOf(": ") + 2);
 			}
 
-			if (xr.getDb().equals("PDB") || xr.equals("Protein Data Bank"))
+			if (xr.getDb().equals("PDB") || xr.getDb().equals("Protein Data Bank"))
 			{
 				id = id.toUpperCase();
 			}
@@ -70,13 +74,30 @@ public class HumanCycCleanerImpl implements Cleaner
 		for (Named named : model.getObjects(Named.class))
 		{
 			String s = named.getDisplayName();
-			if (s == null) continue;
-
-			s = s.replaceAll("</i>", "").replaceAll("<i>","");
-			s = s.replaceAll("</SUB>", "").replaceAll("<SUB>","");
-			s = s.replaceAll("</sub>", "").replaceAll("<sub>","");
-			named.setDisplayName(s);
+			if (s != null)
+			{
+				s = removeHTML(s);
+				named.setDisplayName(s);
+			}
+			
+			s = named.getStandardName();
+			if (s != null)
+			{
+				s = removeHTML(s);
+				named.setStandardName(s);
+			}
 		}
+	}
+
+	private String removeHTML(String s)
+	{
+		s = s.replaceAll("</i>", "").replaceAll("<i>","");
+		s = s.replaceAll("</I>", "").replaceAll("<I>","");
+		s = s.replaceAll("</SUB>", "").replaceAll("<SUB>","");
+		s = s.replaceAll("</sub>", "").replaceAll("<sub>","");
+		s = s.replaceAll("</sup>", "").replaceAll("<sup>","");
+		s = s.replaceAll("</SUP>", "").replaceAll("<SUP>","");
+		return s;
 	}
 
 	/**
@@ -87,7 +108,9 @@ public class HumanCycCleanerImpl implements Cleaner
 	 */
 	protected void fix_RDH14_NT5C1B_fusion(Model model)
 	{
-		EntityReference er = (EntityReference) model.getByID("ProteinReference147987");
+		EntityReference er = (EntityReference) model.getByID("" +
+			"http://biocyc.org/biopax/biopax-level3ProteinReference147987");
+
 		if (er != null)
 		{
 			clearRDH14(er);
@@ -98,6 +121,7 @@ public class HumanCycCleanerImpl implements Cleaner
 			}
 		}
 	}
+
 	protected void clearRDH14(Named nd)
 	{
 		nd.setDisplayName("NT5C1B");
@@ -108,7 +132,7 @@ public class HumanCycCleanerImpl implements Cleaner
 		{
 			if (xref instanceof UnificationXref && !xref.getRDFId().equals("UnificationXref147997"))
 			{
-				nd.getXref().remove(xref);
+				nd.removeXref(xref);
 			}
 		}
 
@@ -116,8 +140,60 @@ public class HumanCycCleanerImpl implements Cleaner
 		{
 			if (name.startsWith("RETINOL") || name.startsWith("PANCREAS"))
 			{
-				nd.getName().remove(name);
+				nd.removeName(name);
 			}
+		}
+	}
+
+	static Map<String, String> toKeep = new HashMap<String, String>();
+	static
+	{
+		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference149952", "P23141");
+		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference133651", "P18669");
+		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference133617", "P18669");
+		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference143113", "O43820");
+		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference150907", "P50224");
+		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference144950", "P18545");
+		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference161465", "P21127");
+		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference125453", "Q9UJY2");
+		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference165402", "O95825");
+		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference143290", "Q99519");
+	}
+
+	protected void cleanMultipleUnificationXrefs(Model model)
+	{
+		for (String id : toKeep.keySet())
+		{
+			EntityReference er = (EntityReference) model.getByID(id);
+			keepOnlyThis(er, toKeep.get(id));
+
+			for (SimplePhysicalEntity pe : er.getEntityReferenceOf())
+			{
+				keepOnlyThis(pe, toKeep.get(id));
+			}
+		}
+	}
+	
+	protected void keepOnlyThis(XReferrable ele, String ref)
+	{
+		Set<UnificationXref> removeSet = new HashSet<UnificationXref>();
+
+		for (Xref xref : ele.getXref())
+		{
+			if (xref instanceof UnificationXref)
+			{
+				removeSet.add((UnificationXref) xref);
+
+				if (!xref.getId().equals(ref)) 
+				{
+					removeSet.add((UnificationXref) xref);
+				}
+			}
+		}
+
+		for (UnificationXref xref : removeSet)
+		{
+			ele.removeXref(xref);
 		}
 	}
 }
