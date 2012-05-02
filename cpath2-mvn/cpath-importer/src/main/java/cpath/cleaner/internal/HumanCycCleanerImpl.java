@@ -26,6 +26,7 @@ public class HumanCycCleanerImpl implements Cleaner
 				new ByteArrayInputStream(pathwayData.getBytes())));
 
 			cleanXrefIDs(model);
+			cleanXrefDBName(model);
 			cleanHtmlInDisplayNames(model);
 			fix_RDH14_NT5C1B_fusion(model);
 			cleanMultipleUnificationXrefs(model);
@@ -69,6 +70,17 @@ public class HumanCycCleanerImpl implements Cleaner
 		}
 	}
 
+	/**
+	 * HumanCyc refers to Entrez Protein as Entrez.
+	 */
+	protected void cleanXrefDBName(Model model)
+	{
+		for (Xref xr : model.getObjects(Xref.class))
+		{
+			if (xr.getDb().equals("Entrez")) xr.setDb("Entrez Protein");
+		}
+	}
+	
 	protected void cleanHtmlInDisplayNames(Model model)
 	{
 		for (Named named : model.getObjects(Named.class))
