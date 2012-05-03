@@ -77,7 +77,7 @@ public class HumanCycCleanerImpl implements Cleaner
 	{
 		for (Xref xr : model.getObjects(Xref.class))
 		{
-			if (xr.getDb().equals("Entrez")) xr.setDb("GenBank");
+			if (xr.getDb() != null && xr.getDb().equals("Entrez")) xr.setDb("GenBank");
 		}
 	}
 	
