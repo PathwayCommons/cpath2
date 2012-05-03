@@ -71,13 +71,13 @@ public class HumanCycCleanerImpl implements Cleaner
 	}
 
 	/**
-	 * HumanCyc refers to Entrez Protein as Entrez.
+	 * HumanCyc refers to GenBank as Entrez.
 	 */
 	protected void cleanXrefDBName(Model model)
 	{
 		for (Xref xr : model.getObjects(Xref.class))
 		{
-			if (xr.getDb().equals("Entrez")) xr.setDb("Entrez Protein");
+			if (xr.getDb().equals("Entrez")) xr.setDb("GenBank");
 		}
 	}
 	
