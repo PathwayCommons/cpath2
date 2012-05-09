@@ -25,6 +25,7 @@ public class HumanCycCleanerImpl implements Cleaner
 			Model model = simpleReader.convertFromOWL(new BufferedInputStream(
 				new ByteArrayInputStream(pathwayData.getBytes())));
 
+			removeUnificationXrefInPhysicalEntities(model);
 			cleanXrefIDs(model);
 			cleanXrefDBName(model);
 			cleanHtmlInDisplayNames(model);
@@ -78,6 +79,20 @@ public class HumanCycCleanerImpl implements Cleaner
 		for (Xref xr : model.getObjects(Xref.class))
 		{
 			if (xr.getDb() != null && xr.getDb().equals("Entrez")) xr.setDb("GenBank");
+		}
+	}
+	
+	protected void removeUnificationXrefInPhysicalEntities(Model model)
+	{
+		for (PhysicalEntity pe : model.getObjects(PhysicalEntity.class))
+		{
+			for (Xref xref : new HashSet<Xref>(pe.getXref()))
+			{
+				if (xref instanceof UnificationXref)
+				{
+					pe.removeXref(xref);
+				}
+			}
 		}
 	}
 	
@@ -160,28 +175,30 @@ public class HumanCycCleanerImpl implements Cleaner
 	static Map<String, String> toKeep = new HashMap<String, String>();
 	static
 	{
-		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference149952", "P23141");
-		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference133651", "P18669");
-		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference133617", "P18669");
-		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference143113", "O43820");
-		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference150907", "P50224");
-		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference144950", "P18545");
-		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference161465", "P21127");
-		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference125453", "Q9UJY2");
-		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference165402", "O95825");
-		toKeep.put("http://biocyc.org/biopax/biopax-level3ProteinReference143290", "Q99519");
+		toKeep.put("Q9HBH5", "Q96P26");
+		toKeep.put("Q9UKY3", "P23141");
+		toKeep.put("Q8N0Y7", "P18669");
+		toKeep.put("Q12894", "O43820");
+		toKeep.put("Q9BQ83", "P50224");
+		toKeep.put("Q13956", "P18545");
+		toKeep.put("Q9UQ88", "P21127");
+		toKeep.put("P61550", "Q9UJY2");
+		toKeep.put("Q9NYP3", "O95825");
+		toKeep.put("Q96K59", "Q99519");
 	}
 
 	protected void cleanMultipleUnificationXrefs(Model model)
 	{
-		for (String id : toKeep.keySet())
+		for (EntityReference er : model.getObjects(EntityReference.class))
 		{
-			EntityReference er = (EntityReference) model.getByID(id);
-			keepOnlyThis(er, toKeep.get(id));
-
-			for (SimplePhysicalEntity pe : er.getEntityReferenceOf())
+			for (String key : toKeep.keySet())
 			{
-				keepOnlyThis(pe, toKeep.get(id));
+				String val = toKeep.get(key);
+
+				if (hasRef(er, key) && hasRef(er, val))
+				{
+					keepOnlyThis(er, val);
+				}
 			}
 		}
 	}
@@ -207,5 +224,14 @@ public class HumanCycCleanerImpl implements Cleaner
 		{
 			ele.removeXref(xref);
 		}
+	}
+	
+	protected boolean hasRef(XReferrable ele, String ref)
+	{
+		for (Xref xref : ele.getXref())
+		{
+			if (xref.getId() != null && xref.getId().equals(ref)) return true;
+		}
+		return false;
 	}
 }
