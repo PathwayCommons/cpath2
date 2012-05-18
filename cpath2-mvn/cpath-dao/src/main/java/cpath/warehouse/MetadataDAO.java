@@ -31,7 +31,7 @@ public interface MetadataDAO {
 	 *
      * @return Collection<Metadata>
      */
-    Collection<Metadata> getAll();
+    Collection<Metadata> getAllMetadata();
 
     /**
      * Persists the pathway data stored in the given pathway data object to the warehouse db.
@@ -40,6 +40,13 @@ public interface MetadataDAO {
      */
     void importPathwayData(final PathwayData pathwayData);
 
+    /**
+     * This method returns all the pathway data.
+	 *
+     * @return Collection<PathwayData>
+     */
+    Collection<PathwayData> getAllPathwayData();
+    
     /**
      * This method returns the pathway data objects with the given Identifier.
 	 *

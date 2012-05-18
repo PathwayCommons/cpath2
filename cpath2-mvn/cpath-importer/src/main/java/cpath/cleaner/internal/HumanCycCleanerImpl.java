@@ -1,6 +1,9 @@
 package cpath.cleaner.internal;
 
 import cpath.importer.Cleaner;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
@@ -16,6 +19,8 @@ import java.util.Set;
 
 public class HumanCycCleanerImpl implements Cleaner
 {
+	private static final Log LOG = LogFactory.getLog(HumanCycCleanerImpl.class);
+	
 	@Override
 	public String clean(String pathwayData)
 	{
@@ -72,13 +77,21 @@ public class HumanCycCleanerImpl implements Cleaner
 	}
 
 	/**
-	 * HumanCyc refers to GenBank as Entrez.
+	 * HumanCyc refers to GenBank proteins as "Entrez".
+	 * We change those xrefs to use "Protein GenBank Identifier"
+	 * see {@code http://www.ebi.ac.uk/ontology-lookup/browse.do?ontName=MI&termId=MI%3A0851&termName=protein%20genbank%20identifier}
+	 * 
 	 */
 	protected void cleanXrefDBName(Model model)
 	{
 		for (Xref xr : model.getObjects(Xref.class))
 		{
-			if (xr.getDb() != null && xr.getDb().equals("Entrez")) xr.setDb("GenBank");
+			if(xr.getDb() == null)
+				LOG.warn("Xref.db is NULL : " + xr.getRDFId());
+			else if(xr.getDb().equals("Entrez")) 
+				xr.setDb("Protein GenBank Identifier");
+			else if(xr.getDb().equalsIgnoreCase("NCBI Taxonomy")) 
+				xr.setDb("taxonomy");
 		}
 	}
 	

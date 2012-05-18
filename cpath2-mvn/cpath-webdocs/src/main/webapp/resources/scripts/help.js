@@ -40,10 +40,13 @@ function getCommandParameterDetails(helpWSPath, clazz, header, parameterDesc) {
             $.each(help.members, function(idx, member) {
                     var info = '';
                     if (helpWSPath.indexOf("organism") != -1) {
-                            info = ' ' + member.info
+                        info = ' ' + member.info
                     }
                     else if (helpWSPath.indexOf("kind") != -1 || helpWSPath.indexOf("formats") != -1) {
-                            info = ' [' + member.info + ']'
+                        info = ' ' + member.info
+                    }
+                    else if (helpWSPath.indexOf("datasource") != -1) {
+                        info = ' ' + member.info
                     }
                     $("." + class_name).append('<li style="margin-left: 2em;">' + member.id + info + '</li>');
             });

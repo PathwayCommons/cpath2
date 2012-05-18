@@ -1,8 +1,9 @@
 package cpath.importer.internal;
 
+import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
-import cpath.dao.internal.PaxtoolsModelDAO;
+import cpath.importer.Fetcher;
 import cpath.warehouse.*;
 import cpath.warehouse.beans.*;
 import cpath.warehouse.beans.Metadata.TYPE;
@@ -36,6 +37,7 @@ public class CPathMergerTest {
 	private static final WarehouseDAO cvRepository;
 	
 	private Set<Model> pathwayModels; // pathways to merge
+	private final static ResourceLoader resourceLoader = new DefaultResourceLoader();
 	
 	/**
 	 * Mocks an empty CV repository
@@ -44,12 +46,18 @@ public class CPathMergerTest {
 	 */
 	public static class MockCvWarehouse implements WarehouseDAO {
 		@Override
-		public Set<String> getByXref(Set<? extends Xref> arg0,
+		public Set<String> findByXref(Set<? extends Xref> arg0,
 				Class<? extends XReferrable> arg1)  {
-			return Collections.EMPTY_SET;
+			return Collections.emptySet();
 		}
 		@Override
-		public <T extends BioPAXElement> T getObject(String arg0, Class<T> arg1) { 
+		public <T extends BioPAXElement> T createBiopaxObject(String arg0, Class<T> arg1) { 
+			return null;
+		}
+		
+		@Override
+		public <T extends BioPAXElement> Model createSubModel(String urn,
+				Class<T> clazz) {
 			return null;
 		}
 	}
@@ -71,23 +79,23 @@ public class CPathMergerTest {
 		cvRepository = new MockCvWarehouse();
 		metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 
-        /* load the test metadata and ONLY (!) 
+        /* load the test metadata and ONLY (replace old tmp files if exist!) 
 		 * test proteins and molecules data into the warehouse
 		 */
-		FetcherImpl fetcher = new FetcherImpl();
+		Fetcher fetcher = ImportFactory.newFetcher(false);
 		try {
-			Collection<Metadata> metadata = fetcher.getMetadata("classpath:metadata.html");
+			Collection<Metadata> metadata = fetcher.getMetadata("classpath:metadata.conf");
 			for (Metadata mdata : metadata) {
 				// store metadata in the warehouse
 				metadataDAO.importMetadata(mdata);
 				fetcher.fetchData(mdata);
 				if (mdata.getType() == TYPE.PROTEIN) {
 					// store PRs in the warehouse
-					fetcher.storeWarehouseData(mdata, (PaxtoolsDAO)proteinsDAO);
+					fetcher.storeWarehouseData(mdata, (Model)proteinsDAO);
 				}
 				else if (mdata.getType() == TYPE.SMALL_MOLECULE) {
 					// store SMRs in the warehouse
-					fetcher.storeWarehouseData(mdata, (PaxtoolsDAO)moleculesDAO);
+					fetcher.storeWarehouseData(mdata, (Model)moleculesDAO);
 				} 
 			}
 		} catch (IOException e) {
@@ -96,14 +104,13 @@ public class CPathMergerTest {
 	}
 
 	
-	@Before
-	/*
+	/**
 	 * this is required before each (merge) test,
 	 * because the source models become incomplete/useless
 	 * during the merge!
 	 */
+	@Before
 	public void initPathwayModels() throws IOException {
-		final ResourceLoader resourceLoader = new DefaultResourceLoader();
 		pathwayModels = new HashSet<Model>();
 		SimpleIOHandler reader = new SimpleIOHandler();
 		reader.mergeDuplicates(true);
@@ -126,29 +133,57 @@ public class CPathMergerTest {
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:pid_6349.owl").getInputStream());
 		pathwayModels.add(model); //Xref for P01118 caused the trouble
+		model = null;
+		model = reader.convertFromOWL(resourceLoader
+			.getResource("classpath:hcyc.owl").getInputStream());
+		pathwayModels.add(model);	
 	}
 	
 	
 	@Test
-	public void testInMemoryModelMerge() throws IOException 
-	{
-		PaxtoolsDAO memoPcModel = new PaxtoolsModelDAO(BioPAXLevel.L3);
-		MergerImpl merger = new MergerImpl(memoPcModel, metadataDAO,
-				moleculesDAO, proteinsDAO, cvRepository);
+	public void testMerge() throws IOException {
+		// init the target test db
+		DataServicesFactoryBean.createSchema("cpath2_testpc"); // target db, for pcDAO
+		final PaxtoolsDAO pcDAO = (PaxtoolsDAO) (
+				new ClassPathXmlApplicationContext("classpath:testContext-pcDAO.xml"))
+				.getBean("pcDAO");
+		assertNotNull(pcDAO);
+		assertTrue(((Model)pcDAO).getObjects().isEmpty());
 		
-		for(Model model : pathwayModels) {
-			merger.merge(model);
-		}
+		// do merge several test BioPAX models
+		// note: in production we'd run it as ImportFactory.newMerger(pcDAO,...).merge();
+		// - which requires cpath2 metadata and premerge data be available there
+		Analysis merger = new MergerImpl(pcDAO, metadataDAO, moleculesDAO, proteinsDAO, cvRepository);
+		pcDAO.runAnalysis(merger, pathwayModels.toArray());
+
 		
-		// dump owl out for review
-		OutputStream out = new FileOutputStream(
-			getClass().getClassLoader().getResource("").getPath() 
-				+ File.separator + "InMemoryMergerTest.out.owl");
-		(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL((Model) memoPcModel, out);
+		// first, export the model to BioPAX OWL and check it
+		String outFilename = getClass().getClassLoader().getResource("").getPath() 
+			+ File.separator + "testMerge.out.owl";
+		//check first whether it's ok after export/import as owl?
+		pcDAO.exportModel(new FileOutputStream(outFilename));
+		SimpleIOHandler reader = new SimpleIOHandler();
+		reader.mergeDuplicates(true);
+		Model m = reader.convertFromOWL(new FileInputStream(outFilename));
 		
-		assertMerge((Model) memoPcModel);
+		assertMerge(m);
+		
+		
+		// second, check the persistent model (what's actually going on within the main DB?)
+		// this will be run within new DB transaction/session
+		final Analysis analysis = new Analysis() {
+			@Override
+			public Set<BioPAXElement> execute(Model model, Object... args) {
+				assertMerge(model);
+				return null;
+			}
+		};
+		pcDAO.runAnalysis(analysis);
+		
 	}
 	
+	
+	// test everything here -
 	private void assertMerge(Model mergedModel) {
 		// test proper merge of protein reference
 		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#Protein_54"));
@@ -163,7 +198,6 @@ public class CPathMergerTest {
 		assertEquals("Calreticulin", pr.getStandardName());
 		assertEquals(6, pr.getXref().size());
 		assertEquals("urn:miriam:taxonomy:9606", pr.getOrganism().getRDFId());
-		
 		assertTrue(mergedModel.containsID("urn:miriam:obo.go:GO%3A0005737"));
 		
 		// test proper merge of small molecule reference
@@ -176,11 +210,9 @@ public class CPathMergerTest {
 				
 		SmallMolecule sm = (SmallMolecule)mergedModel.getByID("http://pathwaycommons.org/test2#alpha-D-glucose_6-phosphate");
 		SmallMoleculeReference smr = (SmallMoleculeReference)sm.getEntityReference();
+		assertNotNull(smr);
 		assertEquals("urn:miriam:chebi:422", smr.getRDFId());
 		// smr must contain one member SMR
-		if(mergedModel instanceof PaxtoolsDAO) {
-			((PaxtoolsDAO) mergedModel).initialize(smr);
-		}
 		assertEquals(1, smr.getMemberEntityReference().size());
 //		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
 		assertEquals(3, smr.getXref().size());		
@@ -189,9 +221,6 @@ public class CPathMergerTest {
 		assertEquals("(+)-camphene", msmr.getStandardName());
 //		System.out.println("merged chebi:20 xrefs: " + msmr.getXref().toString());
 		assertEquals(4, msmr.getXref().size());
-		if(mergedModel instanceof PaxtoolsDAO) {
-			((PaxtoolsDAO) mergedModel).initialize(msmr);
-		}
 		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
 		
 		// if the following fails, try to cleanup your java.io.tmpdir...
@@ -208,8 +237,6 @@ public class CPathMergerTest {
 		assertTrue(mergedModel.containsID("urn:miriam:uniprot:P01116"));
 				
 		pr = (ProteinReference)mergedModel.getByID("urn:miriam:uniprot:P27797");
-		if(mergedModel instanceof PaxtoolsDAO)
-			((PaxtoolsDAO) mergedModel).initialize(pr);
 		assertEquals(9, pr.getName().size());
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
@@ -220,52 +247,58 @@ public class CPathMergerTest {
 		assertTrue(mergedModel.containsID("urn:miriam:obo.go:GO%3A0005737"));
 
 		sm = (SmallMolecule)mergedModel.getByID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
-		if(mergedModel instanceof PaxtoolsDAO)
-			((PaxtoolsDAO) mergedModel).initialize(sm);
 		smr = (SmallMoleculeReference)sm.getEntityReference();
 
-		smr = moleculesDAO.getObject("urn:miriam:chebi:28", SmallMoleculeReference.class);
+		smr = moleculesDAO.createBiopaxObject("urn:miriam:chebi:28", SmallMoleculeReference.class);
 //		System.out.println("warehouse chebi:28 xrefs: " + smr.getXref().toString());
 		assertEquals(14, smr.getXref().size());
 
 		smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:chebi:28");
-		if(mergedModel instanceof PaxtoolsDAO)
-			((PaxtoolsDAO) mergedModel).initialize(smr);
 //		System.out.println("merged chebi:28 xrefs: " + smr.getXref().toString());
 		assertEquals(6, smr.getXref().size()); // relationship xrefs were removed before merging
 		assertEquals("(R)-linalool", smr.getDisplayName());
-		assertEquals(4, smr.getEntityReferenceOf().size());
-		
-		
-		UnificationXref x = (UnificationXref) mergedModel.getByID("urn:biopax:UnificationXref:TAXONOMY_9606");
-		assertEquals(1, x.getXrefOf().size());
-	}
-	
-	
-	@Test
-	public void testMergeIntoDAO() throws IOException {
-		// init the target test db
-		DataServicesFactoryBean.createSchema("cpath2_testpc"); // target db, for pcDAO
-		final PaxtoolsDAO pcDAO = (PaxtoolsDAO) (
-				new ClassPathXmlApplicationContext("classpath:testContext-pcDAO.xml"))
-				.getBean("pcDAO");
-		assertNotNull(pcDAO);
-		assertTrue(((Model)pcDAO).getObjects().isEmpty());
-		
-		MergerImpl merger = new MergerImpl(pcDAO, metadataDAO, moleculesDAO, proteinsDAO, cvRepository);
-		for(Model model : pathwayModels) {
-			merger.merge(model);
-		}
 
-		String outFilename = getClass().getClassLoader().getResource("").getPath() 
-			+ File.separator + "pcDaoMergerTest.out.owl";
-		//check first whether it becomes ok after export/import as owl?
+		assertEquals(5, smr.getEntityReferenceOf().size());
 		
-		pcDAO.exportModel(new FileOutputStream(outFilename));
-		SimpleIOHandler reader = new SimpleIOHandler();
-		reader.mergeDuplicates(true);
-		Model m = reader.convertFromOWL(new FileInputStream(outFilename));
+		BioSource bs = (BioSource) mergedModel.getByID("urn:miriam:taxonomy:9606");
+		assertNotNull(bs);
+		assertEquals(1, bs.getXref().size());
+		UnificationXref x = (UnificationXref) bs.getXref().iterator().next();
+		assertEquals(1, x.getXrefOf().size());
+		assertEquals("urn:miriam:taxonomy:9606", x.getXrefOf().iterator().next().getRDFId());
+//		System.out.println(x.getRDFId() + " is " + x);
+		UnificationXref ux = (UnificationXref) mergedModel.getByID("urn:biopax:UnificationXref:TAXONOMY_9606");
+//		System.out.println(ux.getRDFId() + " - " + ux);
+		assertEquals(1, ux.getXrefOf().size());
 		
-		assertMerge(m);
+		// check features from the warehouse and pathway data were merged properly
+		pr = (ProteinReference)mergedModel.getByID("urn:miriam:uniprot:P01116");
+		assertEquals(5, pr.getEntityFeature().size()); // 3 from test uniprot + 2 from test data files
+		for(EntityFeature ef : pr.getEntityFeature()) {
+			assertTrue(pr == ef.getEntityFeatureOf());
+		}
+		
+		// inspired by humancyc case ;)
+		assertTrue(mergedModel.containsID("urn:miriam:pubmed:9763671"));
+		PublicationXref px = (PublicationXref) mergedModel.getByID("urn:miriam:pubmed:9763671");
+		assertEquals(1, px.getXrefOf().size()); //not "2", because the original ProteinReference was replaced/removed
+		
+		msmr = (SmallMoleculeReference)mergedModel
+				.getByID("http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684");
+		assertNotNull(msmr);
+		assertNull(mergedModel.getByID("http://biocyc.org/biopax/biopax-level3SmallMoleculeReference165390"));
+		smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:chebi:28"); // was replaced from Warehouse
+		sm = (SmallMolecule)mergedModel.getByID("http://biocyc.org/biopax/biopax-level3SmallMolecule173158");
+		assertFalse(smr.getXref().isEmpty());
+		assertFalse(smr.getMemberEntityReference().isEmpty());	
+		assertFalse(smr.getEntityReferenceOf().isEmpty());
+		assertTrue(smr.getEntityReferenceOf().contains(sm));
+		smr = (SmallMoleculeReference)mergedModel.getByID("urn:miriam:chebi:36141"); //wasn't replaced (not found in Warehouse!)
+		assertEquals(1, msmr.getMemberEntityReferenceOf().size()); // was 3 (in the file); but SmallMoleculeReference165390 was removed (became dangling after the replacement of chebi:28)
+		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
+		// the following would be also true if we copy old prop./inv.prop relationships, but we do not
+//		assertEquals(2, msmr.getMemberEntityReferenceOf().size());
+//		assertTrue(msmr.getMemberEntityReferenceOf().contains(mergedModel.getByID("urn:miriam:chebi:28")));	
 	}
+		
 }

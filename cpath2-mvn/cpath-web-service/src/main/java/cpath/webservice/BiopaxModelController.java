@@ -35,8 +35,10 @@ import cpath.service.CPathService;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
 import cpath.service.jaxb.*;
-import cpath.webservice.args.*;
-import cpath.webservice.args.binding.*;
+import cpath.webservice.args.Get;
+import cpath.webservice.args.GetProperty;
+import cpath.webservice.args.binding.BiopaxTypeEditor;
+import cpath.webservice.args.binding.OutputFormatEditor;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -77,8 +79,6 @@ public class BiopaxModelController extends BasicController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
-        binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
-        binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
     }
 	
 	
@@ -106,7 +106,7 @@ public class BiopaxModelController extends BasicController {
 	@RequestMapping("/top_pathways")
     public @ResponseBody SearchResponse topPathways()
     {
-    	return service.getTopPathways();
+    	return service.topPathways();
     }
     
     

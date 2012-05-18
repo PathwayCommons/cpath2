@@ -33,6 +33,8 @@ import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.validator.result.ValidatorResponse;
 
 import cpath.dao.PaxtoolsDAO;
+import cpath.service.jaxb.DataResponse;
+import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 
@@ -182,5 +184,33 @@ public interface CPathService {
 	 * 
 	 * @return
 	 */
-	SearchResponse getTopPathways();
+	SearchResponse topPathways();
+	
+	/**
+	 * Gets only configured and loaded into cpath2 
+	 * pathway data sources (data providers), i.e.,
+	 * not the list of all available Provenance objects,
+	 * - wrapped/converted into the service response bean. 
+	 * 
+	 * @return
+	 */
+	SearchResponse dataSources();
+	
+	/**
+	 * Gets all BioSource (organism) objects loaded 
+	 * into cpath2 from its pathway data sources,
+	 * - wrapped/converted into the service response bean. 
+	 * 
+	 * @return
+	 */
+	SearchResponse bioSources();
+
+	
+	/** 
+	 * Creates a stand-alone sub-model from the BioPAX elements (matched by URIs).
+	 * 
+	 * @param uris
+	 * @return wrapped as {@link DataResponse} or {@link ErrorResponse} if - null, error, or empty.
+	 */
+	ServiceResponse fetchBiopaxModel(String... uris);
 }

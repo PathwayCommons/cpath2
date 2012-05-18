@@ -116,7 +116,7 @@ public class WarehouseCVsTest {
 		assertFalse(dc.isEmpty());
 		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0044451"));
 		System.out.println("DirectChildren:\n" + dc.toString() + " " +
-			warehouse.getObject("urn:miriam:obo.go:GO%3A0044451", ControlledVocabulary.class));
+			warehouse.createBiopaxObject("urn:miriam:obo.go:GO%3A0044451", ControlledVocabulary.class));
 	}
 
 	@Test
@@ -136,7 +136,7 @@ public class WarehouseCVsTest {
 		assertFalse(dc.isEmpty());
 		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0031981"));
 		System.out.println("DirectParents:\n" +dc.toString() + "; e.g., " +
-			warehouse.getObject("urn:miriam:obo.go:GO%3A0031981", ControlledVocabulary.class));
+			warehouse.createBiopaxObject("urn:miriam:obo.go:GO%3A0031981", ControlledVocabulary.class));
 	}
 
 	@Test
@@ -152,21 +152,21 @@ public class WarehouseCVsTest {
 
 	@Test // using correct ID
 	public final void testGetObject() {
-		CellularLocationVocabulary cv = warehouse.getObject(
+		CellularLocationVocabulary cv = warehouse.createBiopaxObject(
 				"urn:miriam:obo.go:GO%3A0005737",CellularLocationVocabulary.class);
 		assertNotNull(cv);
 	}
 	
 	@Test // using bad ID
 	public final void testGetObject2() {
-		CellularLocationVocabulary cv = warehouse.getObject(
+		CellularLocationVocabulary cv = warehouse.createBiopaxObject(
 				"urn:miriam:obo.go:GO%3A0005737X",CellularLocationVocabulary.class);
 		assertNull(cv);
 	}
 
 	@Test 
 	public final void testEscapeChars() {
-		ControlledVocabulary cv = warehouse.getObject(
+		ControlledVocabulary cv = warehouse.createBiopaxObject(
 				"urn:miriam:obo.psi-mod:MOD%3A00048",SequenceModificationVocabulary.class);
 		assertNotNull(cv);
 		

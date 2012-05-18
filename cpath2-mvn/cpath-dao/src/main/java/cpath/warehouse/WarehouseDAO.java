@@ -30,6 +30,7 @@ package cpath.warehouse;
 import java.util.Set;
 
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 
 
@@ -42,15 +43,28 @@ public interface WarehouseDAO {
 	
 	
 	/**
-	 * Gets fully initialized (and detached form any DAO) BioPAX object.
+	 * Gets a fully initialized (and detached) BioPAX object.
 	 * 
 	 * @param <T> BioPAXElement or its subclass (e.g., ProteinReference)
 	 * @param urn
 	 * @param clazz
 	 * @return
 	 */
-	<T extends BioPAXElement> T getObject(String urn, Class<T> clazz);
+	<T extends BioPAXElement> T createBiopaxObject(String urn, Class<T> clazz);
 	
+	
+    /**
+     * Gets a fully initialized (and detached) BioPAX sub-model 
+     * that contains the BioPAX object and its children.
+     * 
+     * @param <T> BioPAXElement or its subclass (e.g., ProteinReference)
+     * @param urn URN
+     * @param clazz
+     * 
+     * @return model that contains the object and its dependents or null.
+     */
+	<T extends BioPAXElement> Model createSubModel(String urn, Class<T> clazz);
+    
 	
 	/**
 	 * Gets identifier(s) of the BioPAX object(s) stored in the warehouse 
@@ -66,6 +80,6 @@ public interface WarehouseDAO {
 	 * @param clazz subclass (of XReferable) of the requested object
 	 * @return
 	 */
-	Set<String> getByXref(Set<? extends Xref> xrefs, Class<? extends XReferrable> clazz);
+	Set<String> findByXref(Set<? extends Xref> xrefs, Class<? extends XReferrable> clazz);
 	
 }

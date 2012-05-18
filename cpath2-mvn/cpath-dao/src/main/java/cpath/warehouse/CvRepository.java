@@ -33,7 +33,7 @@ import org.biopax.paxtools.model.level3.ControlledVocabulary;
 
 /**
  * 
- * @author rodch
+ * @author rodche
  *
  */
 public interface CvRepository {

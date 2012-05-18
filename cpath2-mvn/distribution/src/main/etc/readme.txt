@@ -49,6 +49,11 @@ mysql> SET GLOBAL max_allowed_packet = 256000000;
 4. consider setting 'java.io.tmpdir' as: -Djava.io.tmpdir=$CPATH2_HOME/tmp
 (1..4 - all set for you in the shell scripts)
 
+5. try md5hex.uri.enabled=true and other options in cpath.properties
+(e.g., all "get" and "graph" queries will, along with RDFId, also accept the Primary Key values,
+i.e., - MD5hex (32-byte) digest string calculated from elements's URIs!) 
+
+
 Try the cpath-admin.sh (without arguments) to see what's there available.
 
 
@@ -64,8 +69,7 @@ The PREFERRED method is as follows
 (when creating a new cpath2 instance DBs from scratch): 
 
 1. Edit the cPath2 metadata.conf (see "metadata format" below)
-Note: 'NAME' field for pathway data entries (BIOPAX and PSI_MI type)
-must contain MIRIAM standard name or synonym for the datasource. 
+Note: if possible, use a standard name for the 'NAME' field of pathway data entries (BIOPAX and PSI_MI type). 
 
 2. Download warehouse data, ('wget') UniProt and ChEBI, into $CPATH2_HOME/tmp/:
 - wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz
@@ -95,13 +99,18 @@ METADATA FORMAT
 
 The cPath2 METADATA file is a plain text table, which can be placed anywhere
 where accessible by the cpath2 admin script via URL. It has the following structure:
-- one datasource per line (thus, EOLs/newline matter);
-- columns are separated simply by "<br>" element (which does not make it HTML though);
+- one data source metadata definition per line (thus, EOLs/newline matter);
+- lines that begin with "#" are remarks and will be ignored; blank lines - too;
+- there are exactly nine columns, which are separated by "<br>" (is not html tag!);
+- empty strings in the middle of a line (the result of using <br><br>) and the 
+trailing empty string (after the last '<br>', i.e., Converter class name, if any), 
+will be always added to the columns array.
 - no column headers, but columns are, in order, the following: 
 1) IDENTIFIER - unique, short (40), and simple; spaces or dashes are not allowed;
 
-2) NAME - for pathway type records (BIOPAX, PSI_MI), must be official MIRIAM 
-datasource name or synonym;
+2) NAME - for pathway type records (BIOPAX, PSI_MI), should be official MIRIAM 
+datasource name or synonym, if possible, or another standard name (will be used to 
+generate URI and name(s) for the Provenance object, which used for data filtering);
 
 3) VERSION - text or number; better keep it simple, because it becomes 
 essential part of the corresponding local file (in $CPATH2_HOME/tmp/);
@@ -135,7 +144,7 @@ like file:///full/path/whatever.gz, instead.
 7) TYPE - one of: BIOPAX, PSI_MI, PROTEIN, SMALL_MOLECULE, MAPPING;
 
 Note: MAPPING (id-mapping data) can be fetched and stored locally, but 
-is not actually used anywhere (cpath2 v3.1.0). We planned to eventually 
+is not actually used anywhere (cpath2 v3.x). We planned to eventually 
 use BridgeDB. However, cpath2, in fact, does alternative "id-mapping", - during 
 "premerge" (in normalization) and "merge" stages (matching/replacing original 
 small molecule and protein references with ones found in the cpath2 data 
@@ -143,11 +152,9 @@ warehouse, either by URI or by unification xrefs). This is possible, because
 UniProt and ChEBI data contain cross-references to other databases, which cpath2
 used to generate BioPAX xrefs and then search them. 
 
-8) CLEANER_CLASS - - use cpath.converter.internal.BaseCleanerImpl here if a 
-more specific cleaner is not required/available (like cpath.cleaner.internal.UniProtCleanerImpl);
+8) CLEANER_CLASS - leave empty or use a specific cleaner class name (like cpath.cleaner.internal.UniProtCleanerImpl);
 
-9) CONVERTER_CLASS - use cpath.converter.internal.BaseConverterImpl here if a 
-more specific converter is not required/available (like cpath.converter.internal.UniprotConverterImpl);
+9) CONVERTER_CLASS - leave empty or use a specific converter class (like cpath.converter.internal.UniprotConverterImpl);
 
 
 

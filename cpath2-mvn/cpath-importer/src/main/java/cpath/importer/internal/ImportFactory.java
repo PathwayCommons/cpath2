@@ -22,6 +22,11 @@ import cpath.importer.Premerge;
 import cpath.warehouse.MetadataDAO;
 
 /**
+ * Public static factory to 
+ * instantiate complex (and not public) objects 
+ * that participate in or control the cpath2 
+ * import data process.
+ * 
  * @author rodche
  *
  */
@@ -33,23 +38,97 @@ public final class ImportFactory {
 		throw new AssertionError("Non-instantiable static factory class!");
 	}
 	
+	
+	/**
+	 * Creates a new Fetcher instance with default options.
+	 * 
+	 * @return
+	 */
 	public static Fetcher newFetcher() {
 		return new FetcherImpl();
 	}
 	
-	public static Merger newMerger(PaxtoolsDAO model) {
-		return new MergerImpl(model);
-	}
-	
-	public static Premerge newPremerge(MetadataDAO metaDAO, Validator validator) {
-		return new PremergeImpl(metaDAO, validator);
+	/**
+	 * Creates a new Fetcher instance.
+	 * 
+	 * @see FetcherImpl#isReUseFetchedDataFiles()
+	 * 
+	 * @param reUseFetchedDataFiles
+	 * @return
+	 */
+	public static Fetcher newFetcher(boolean reUseFetchedDataFiles) {
+		FetcherImpl fetcher =  new FetcherImpl();
+		fetcher.setReUseFetchedDataFiles(reUseFetchedDataFiles);
+		return fetcher;
 	}
 	
 	/**
-	 * Creates new PaxtoolsDAO instance to work with existing "premerge"
-	 * database. This is used both during the "pre-merge" (here) and "merge".
+	 * Creates and configures a new cpath2 merger
+	 * for merging a pathway data with given metadata 
+	 * identifier and version.
+	 * 
+	 * @param target main DB
+	 * @param provider metadata identifier for the pathway data provider
+	 * @param version metadata version
+	 * @param force when 'true', it will try to merge despite the cpath2 BioPAX validator 
+	 * (in 'premerge') reported errors; otherwise ('false') - skip merging such data.
+	 * @return
 	 */
-	public static PaxtoolsDAO buildPremergeDAO(String premergeDbName) {
+	public static Merger newMerger(final PaxtoolsDAO target, final String provider, 
+			final String version, final boolean force) {
+		
+		MergerImpl merger = new MergerImpl(target);
+		merger.setPathwayData(provider, version);
+		merger.setForce(force);
+		
+		return merger;
+	}
+	
+	
+	/**
+	 * Creates and configures a new cpath2 merger,
+	 * which can merge all pre-merged pathway data
+	 * (all providers, versions available)
+	 * 
+	 * @see ImportFactory#newMerger(PaxtoolsDAO, String, String, boolean)
+	 */
+	public static Merger newMerger(PaxtoolsDAO target, boolean force) {
+		return newMerger(target, null, null, force);
+	}
+	
+	
+	/**
+	 * Creates and configures a new cpath2 "premerger"
+	 * to read/clean/convert/validate the pathway data 
+	 * with given metadata identifier and version.
+	 * 
+	 * @param metadataDAO
+	 * @param biopaxValidator
+	 * @param createPremergeDatabases optionally (when 'true'), it persists the result 
+	 * data in separate auto-generated "premerge" cpath2 Dbs instead (when 'false') in the pathwayData table.
+	 * @param metadataIdentifier pathway data provider identifier (from the metadata conf.)
+	 * @param version pathway data provider version (from the metadata conf.)
+	 * @return
+	 */
+	public static Premerge newPremerge(final MetadataDAO metadataDAO, final Validator biopaxValidator, 
+			final boolean createPremergeDatabases, final String metadataIdentifier, final String version) {
+		
+		PremergeImpl premerge = new PremergeImpl(metadataDAO, biopaxValidator);		
+		premerge.setCreateDb(createPremergeDatabases);
+		premerge.setIdentifier(metadataIdentifier);
+		premerge.setVersion(version);
+		
+		return premerge;
+	}
+	
+	/**
+	 * Creates new PaxtoolsDAO instance to work with an existing cpath2
+	 * database. This is used both during the "premerge" and "merge" stages,
+	 * in in export data utilities.
+	 * 
+	 * @param cPath2DbName
+	 */
+	public static PaxtoolsDAO buildPaxtoolsHibernateDAO(String cPath2DbName) {
 		/* 
 		 * set system properties and data source 
 		 * (replaces existing one in the same thread),
@@ -66,13 +145,14 @@ public final class ImportFactory {
 		ApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
 		DataServices dataServices = (DataServices) context.getBean("&dsBean");
-		DataSource premergeDataSource = dataServices.getDataSource(premergeDbName);
-		// "premergeDataSource" map key matches the dataSource bean name in the internalContext-premerge.xml
-		DataServicesFactoryBean.getDataSourceMap().put("premergeDataSource", premergeDataSource);
+		DataSource cPath2DataSource = dataServices.getDataSource(cPath2DbName);
+		// "cPath2DataSource" map key matches the dataSource bean name in the internalContext-cpathDAO.xml
+		DataServicesFactoryBean.getDataSourceMap().put("cPath2DataSource", cPath2DataSource);
 		// get the premerge DAO
-		context = new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");	
-		return (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
+		context = new ClassPathXmlApplicationContext("classpath:internalContext-cpathDAO.xml");	
+		return (PaxtoolsDAO)context.getBean("paxtoolsHibernateDAO");
 	}
+
 	
 	/**
 	 * For the given converter class name,
@@ -82,7 +162,7 @@ public final class ImportFactory {
 	 * @param converterClassName String
 	 * @return Converter
 	 */
-	public static Converter newConverter(final String converterClassName) {
+	public static Converter newConverter(String converterClassName) {
 		return (Converter) newInstance(converterClassName);
 	}
 		
@@ -94,7 +174,7 @@ public final class ImportFactory {
 	 * @param converterClassName String
 	 * @return Converter
 	 */
-	public static Cleaner newCleaner(final String cleanerClassName) {
+	public static Cleaner newCleaner(String cleanerClassName) {
 		return (Cleaner) newInstance(cleanerClassName);
 	}
 	
@@ -111,7 +191,7 @@ public final class ImportFactory {
 			return c.newInstance();
 		}
 		catch (Exception e) {
-			log.fatal(("Failed to instantiate " + className), e) ;
+			log.error(("Failed to instantiate " + className), e) ;
 		}
 		
 		return null;

@@ -1,7 +1,9 @@
 package cpath.warehouse.beans;
 
-// imports
+
 import javax.persistence.*;
+
+import org.hibernate.annotations.ColumnTransformer;
 
 /**
  * Data Providers's Pathway Data.
@@ -9,14 +11,16 @@ import javax.persistence.*;
 @Entity
 @Table(name="pathwayData")
 @NamedQueries({
+	@NamedQuery(name="cpath.warehouse.beans.allPathwayData",
+				query="from PathwayData as pathwaydata order by pathway_id"),
 	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifier",
-				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier)"),
+				query="from PathwayData as pathwaydata where identifier = :identifier order by pathway_id"),
 	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersion",
-				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and upper(pathwaydata.version) = upper(:version)"),
+				query="from PathwayData as pathwaydata where identifier = :identifier and version = :version  order by pathway_id"),
 	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersionAndFilenameAndDigest",
-				query="from PathwayData as pathwaydata where upper(pathwaydata.identifier) = upper(:identifier) and upper(pathwaydata.version) = upper(:version) and upper(pathwaydata.filename) = upper(:filename) and upper(pathwaydata.digest) = upper(:digest)")
+				query="from PathwayData as pathwaydata where identifier = :identifier and version = :version and filename = :filename and digest = :digest  order by pathway_id")
 })
-public class PathwayData {
+public final class PathwayData {
 
 	@Id
 	@Column(name="pathway_id")
@@ -28,13 +32,23 @@ public class PathwayData {
     private String version;
 	@Column(nullable=false)
     private String filename;
+	
+//	@Column(nullable=false)
+	@Column(name="pathwayData", columnDefinition = "LONGBLOB", nullable = false)
+	@ColumnTransformer(forColumn="pathwayData", read = "UNCOMPRESS(pathwayData)", write = "COMPRESS(?)")
 	@Lob
-	@Column(nullable=false)
-    private String pathwayData;
-	@Lob
-    private String premergeData;
-	@Lob
-	private String validationResults;
+    private byte[] pathwayData;
+	
+	@Column(name="premergeData", columnDefinition = "LONGBLOB")
+	@ColumnTransformer(forColumn="premergeData", read = "UNCOMPRESS(premergeData)", write = "COMPRESS(?)")
+	@Lob	
+    private byte[] premergeData;
+	
+	@Column(name="validationResults", columnDefinition = "LONGBLOB")
+	@ColumnTransformer(forColumn="validationResults", read = "UNCOMPRESS(validationResults)", write = "COMPRESS(?)")
+	@Lob	
+	private byte[] validationResults;
+	
 	// digest is not unique - at least some reactome pw have different names but are identical
 	@Column(nullable=false)
     private String digest;
@@ -54,80 +68,86 @@ public class PathwayData {
 	 * @param filename String
 	 * @param digest String
      * @param pathwayData String
+     * 
+     * @throws IllegalArgumentException
      */
     public PathwayData(final String identifier, final String version, final String filename, 
-    		final String digest, final String pathwayData) 
+    		final String digest, final byte[] pathwayData) 
     {
+    	setIdentifier(identifier);
+    	setVersion(version);
+    	setFilename(filename);
+    	setDigest(digest);
+    	setPathwayData(pathwayData);
+		// validation result, valid, and premergeData fields are empty
+    }
+
+    //generated id (not public setter/getter)
+	void setId(Integer id) {
+		this.id = id;
+	}
+    Integer getId() { return new Integer(id); }
+
+	void setIdentifier(String identifier) {
         if (identifier == null) {
             throw new IllegalArgumentException("identifier must not be null");
         }
         this.identifier = identifier;
+	}
+    public String getIdentifier() { 
+    	return (identifier != null) ? new String(identifier) : null;
+    }
 
+	void setVersion(String version) {
         if (version == null) {
             throw new IllegalArgumentException("version must not be null");
         }
         this.version = version;
+	}
+    public String getVersion() { 
+    	return (version != null) ? new String(version) : null; 
+    }
 
+	void setFilename(String filename) {
         if (filename == null) {
             throw new IllegalArgumentException("filename must not be null");
         }
         this.filename = filename;
+	}
+    public String getFilename() { return filename; }
 
+    public byte[] getPathwayData() { 
+   		return pathwayData;
+    }
+	public void setPathwayData(byte[] pathwayData) {
+        if (pathwayData == null || pathwayData.length == 0) {
+            throw new IllegalArgumentException("pathway data must not be null/empty");
+        }
+        this.pathwayData = pathwayData;
+	}
+
+	public byte[] getPremergeData() { 
+   		return premergeData; 
+    }
+	public void setPremergeData(byte[] premergeData) {
+		this.premergeData = premergeData;	
+	}
+	
+    public byte[] getValidationResults() { 
+    	return validationResults; 
+    }
+	public void setValidationResults(byte[] validationResults) {
+		this.validationResults = validationResults;
+	}
+
+	public void setDigest(String digest) {
         if (digest == null) {
             throw new IllegalArgumentException("digest must not be null");
         }
         this.digest = digest;
-
-        if (pathwayData == null || pathwayData.trim().length() == 0) {
-            throw new IllegalArgumentException("pathway data must not be null/empty");
-        }
-        this.pathwayData = pathwayData;
-
-		// validation results is empty by default
-		this.validationResults = "";
-		
-		this.premergeData = "";
-    }
-
-	public void setId(Integer id) {
-		this.id = id;
 	}
-    public Integer getId() { return id; }
-
-	public void setIdentifier(String identifier) {
-		this.identifier = identifier;
-	}
-    public String getIdentifier() { return identifier; }
-
-	public void setVersion(String version) {
-		this.version = version;
-	}
-    public String getVersion() { return version; }
-
-	public void setFilename(String filename) {
-		this.filename = filename;
-	}
-    public String getFilename() { return filename; }
-
-	public void setPathwayData(String pathwayData) {
-		this.pathwayData = pathwayData;
-	}
-    public String getPathwayData() { return pathwayData; }
-
-	public void setPremergeData(String premergeData) {
-		this.premergeData = premergeData;
-	}
-    public String getPremergeData() { return premergeData; }
-    
-	public void setValidationResults(String validationResults) {
-		this.validationResults = validationResults;
-	}
-    public String getValidationResults() { return validationResults; }
-
-	public void setDigest(String digest) {
-		this.digest = digest;
-	}
-    public String getDigest() { return digest; }
+    public String getDigest() { 
+    	return (digest != null) ? new String(digest) : null; }
 
     public Boolean getValid() {
 		return valid;
@@ -138,6 +158,7 @@ public class PathwayData {
 
 	@Override
     public String toString() {
-        return getIdentifier() + ", " + getVersion() + ", " + getFilename();
+        return getId() + ": " + getIdentifier() + ", " + getVersion() + ", " + getFilename();
     }
+
 }

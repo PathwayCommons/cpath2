@@ -3,14 +3,10 @@ package cpath.cleaner.internal;
 import cpath.warehouse.beans.PathwayData;
 
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.io.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
-import java.util.Set;
-import java.util.HashSet;
 
 import java.io.*;
 

@@ -5,6 +5,7 @@ import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
@@ -13,7 +14,12 @@ import org.apache.lucene.document.Document;
 import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.util.Version;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Named;
+import org.biopax.paxtools.model.level3.Provenance;
+import org.biopax.paxtools.model.level3.UnificationXref;
+import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.util.ClassFilterSet;
 import org.hibernate.transform.ResultTransformer;
 
 import cpath.dao.PaxtoolsDAO;
@@ -59,7 +65,23 @@ final class SearchHitsTransformer implements ResultTransformer {
 				hit.setName(std);
 			else
 				hit.setName(named.getDisplayName());
+			
+			// a hack for BioSource (store more info)
+			if(bpe instanceof BioSource) {
+				for(String name : named.getName())
+					hit.getOrganism().add(name);
+				String txid = getTaxonId((BioSource)named);
+				if(txid != null)
+					hit.getOrganism().add(txid);
+			}
+			
+			// a hack for Provenance (store more info)
+			if(bpe instanceof Provenance) {
+				for(String name : named.getName())
+					hit.getDataSource().add(name);
+			}	
 		}
+		
 		
 		// extract only organism URNs (no names, etc..)
 		if(doc.getField(FIELD_ORGANISM) != null) {
@@ -120,4 +142,22 @@ final class SearchHitsTransformer implements ResultTransformer {
 	public List<SearchHit> transformList(List collection) {
 		throw new UnsupportedOperationException("Must use projection with this results transformer!");
 	}
+
+	
+	private static String getTaxonId(BioSource bioSource) {
+		String id = null;
+		if(!bioSource.getXref().isEmpty()) {
+			Set<UnificationXref> uxs = new 
+				ClassFilterSet<Xref,UnificationXref>(bioSource.getXref(), 
+						UnificationXref.class);
+			for(UnificationXref ux : uxs) {
+				if("taxonomy".equalsIgnoreCase(ux.getDb())) {
+					id = ux.getId();
+					break;
+				}
+			}
+		}
+		return id;
+	}
+	
 }

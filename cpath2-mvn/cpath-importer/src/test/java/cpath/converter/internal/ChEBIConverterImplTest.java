@@ -78,6 +78,7 @@ public class ChEBIConverterImplTest {
         assertTrue(model.containsID("urn:miriam:chebi:422"));
         EntityReference er422 = (EntityReference) model.getByID("urn:miriam:chebi:422");
         
+        // 28 has member - 422 has member - 20
         assertTrue(er20.getMemberEntityReferenceOf().contains(er422));
         assertEquals(er20, er422.getMemberEntityReference().iterator().next());
         

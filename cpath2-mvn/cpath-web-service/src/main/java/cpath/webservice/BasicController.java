@@ -62,7 +62,7 @@ public abstract class BasicController {
 	
 	
 	protected ErrorResponse errorfromBindingResult(BindingResult bindingResult) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (FieldError fe : bindingResult.getFieldErrors()) {
 			Object rejectedVal = fe.getRejectedValue();
 			if(rejectedVal instanceof Object[]) {

@@ -178,7 +178,7 @@ class ChEBIConverterImpl extends BaseConverterImpl
             while ((line = bufferedReader.readLine()) != null) {
 				// start of entry
                 if (line.startsWith(entryStart)) {
-					StringBuffer entryBuffer = new StringBuffer(line + "\n");
+					StringBuilder entryBuffer = new StringBuilder(line + "\n");
 					line = bufferedReader.readLine();
 					while (line != null) {
 						entryBuffer.append(line + "\n");
@@ -226,10 +226,10 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	 * Given a string buffer for a single SDF entry,
 	 * create a BioPAX Entity reference.
 	 *
-	 * @param entryBuffer StringBuffer
+	 * @param entryBuffer StringBuilder
 	 * @throws IOException
 	 */
-	private void processSDFEntry(StringBuffer entryBuffer) throws IOException { 
+	private void processSDFEntry(StringBuilder entryBuffer) throws IOException { 
         if (log.isDebugEnabled()) {
         	log.debug("calling processSDFEntry()");
         }
@@ -302,10 +302,10 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	 * reference (and other related elements in it) 
 	 * from the SDF entry. 
 	 *
-	 * @param stringBuffer StringBuffer
+	 * @param StringBuilder StringBuilder
 	 * @throws IOException
 	 */
-	private SmallMoleculeReference buildSmallMoleculeReference(StringBuffer entryBuffer) 
+	private SmallMoleculeReference buildSmallMoleculeReference(StringBuilder entryBuffer) 
 		throws IOException 
 	{	
 		SmallMoleculeReference toReturn = null;
@@ -375,11 +375,11 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	 * Given an SDF entry,
 	 * finds and returns the id.
 	 *
-	 * @param entry StringBuffer
+	 * @param entry StringBuilder
 	 * @return String
 	 * @throws IOException
 	 */
-	private String getRDFID(StringBuffer entry) throws IOException {
+	private String getRDFID(StringBuilder entry) throws IOException {
 		
 		String rdfID = null;
 		
@@ -517,12 +517,12 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	/**
 	 * Given an SDF entry, finds and sets the given registry property
 	 *
-	 * @param entry StringBuffer
+	 * @param entry StringBuilder
 	 * @param registryPropKey String
 	 * @param smallMoleculeReference SmallMoleculeReference
 	 * @throws IOException
 	 */
-	private void setChEBIRegistryNumbers(StringBuffer entry, String registryPropKey, SmallMoleculeReference smallMoleculeReference) throws IOException {
+	private void setChEBIRegistryNumbers(StringBuilder entry, String registryPropKey, SmallMoleculeReference smallMoleculeReference) throws IOException {
 
 		String registryName = getKeyName(registryPropKey);
 		if (registryName != null) {
@@ -537,12 +537,12 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	 * Given an SDF entry, finds and sets all database links.
 	 * All links are relationship xrefs with exception of pubchem (uxref).
 	 *
-	 * @param entry StringBuffer
+	 * @param entry StringBuilder
 	 * @param databaseRegex String
 	 * @param smallMoleculeReference SmallMoleculeReference
 	 * @throws IOException
 	 */
-	private void setChEBIDatabaseLinks(StringBuffer entry, String databaseRegex, 
+	private void setChEBIDatabaseLinks(StringBuilder entry, String databaseRegex, 
 			SmallMoleculeReference smallMoleculeReference) throws IOException {
 		
 		BufferedReader reader = getBufferedReader(entry);
@@ -631,12 +631,12 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	 * Given an SDF entry, searches for given key and returns 
 	 * value associated with that key.
 	 *
-	 * @param entry StringBuffer
+	 * @param entry StringBuilder
 	 * @param key String
 	 * @return String
 	 * @throws IOException
 	 */
-	private String getValue(StringBuffer entry, String key) throws IOException {
+	private String getValue(StringBuilder entry, String key) throws IOException {
 		
 		String toReturn = null;
 		BufferedReader reader = getBufferedReader(entry);
@@ -671,12 +671,12 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	 * Given an SDF entry, searches for given key and returns
 	 * a collection of values associated with the key.
 	 *
-	 * @param entry StringBuffer
+	 * @param entry StringBuilder
 	 * @param key String
 	 * @return Collection<String>
 	 * @throws IOException
 	 */
-	private Collection<String> getValues(StringBuffer entry, String key) 
+	private Collection<String> getValues(StringBuilder entry, String key) 
 		throws IOException {
 
 		Collection<String> toReturn = new ArrayList<String>();
@@ -724,11 +724,11 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	 * Given a string buffer representation of an entry,
 	 * returns a buffered reader to the entry.
 	 *
-	 * @param entry StringBuffer
+	 * @param entry StringBuilder
 	 * @return BufferedReader
 	 * @throws IOException
 	 */
-	private BufferedReader getBufferedReader(StringBuffer entry) throws IOException {
+	private BufferedReader getBufferedReader(StringBuilder entry) throws IOException {
 		return new BufferedReader (new StringReader(entry.toString()));
 	}
 	
@@ -759,7 +759,7 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		 * @param entryBuffer
 		 * @throws IOException
 		 */
-		public void processOBOEntry(StringBuffer entryBuffer) throws IOException 
+		public void processOBOEntry(StringBuilder entryBuffer) throws IOException 
 		{
 			if (log.isDebugEnabled()) {
 				log.debug("calling processOBOEntry()");
@@ -809,12 +809,12 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		 * Given an OBO entry, returns the values matched by the given regex.
 		 * If regex contains more that one capture group, a ":" will be used to delimit them.
 		 *  
-		 * @param entryBuffer StringBuffer
+		 * @param entryBuffer StringBuilder
 		 * @param regex Pattern
 		 * @return String
 		 * @throws IOException
 		 */
-		private Collection<String> getValuesByREGEX(StringBuffer entryBuffer, Pattern regex) throws IOException {
+		private Collection<String> getValuesByREGEX(StringBuilder entryBuffer, Pattern regex) throws IOException {
 			
 			Collection<String> toReturn = new ArrayList<String>();
 			BufferedReader reader = getBufferedReader(entryBuffer);
@@ -906,11 +906,11 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		 * Given a string buffer representation of an entry,
 		 * returns a buffered reader to the entry.
 		 *
-		 * @param entry StringBuffer
+		 * @param entry StringBuilder
 		 * @return BufferedReader
 		 * @throws IOException
 		 */
-		private BufferedReader getBufferedReader(StringBuffer entry) throws IOException {
+		private BufferedReader getBufferedReader(StringBuilder entry) throws IOException {
 			return new BufferedReader (new StringReader(entry.toString()));
 		}
 	}
