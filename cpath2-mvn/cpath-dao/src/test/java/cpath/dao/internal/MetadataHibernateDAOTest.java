@@ -28,6 +28,8 @@
 package cpath.dao.internal;
 
 
+import java.util.Arrays;
+
 import org.junit.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -59,8 +61,13 @@ public class MetadataHibernateDAOTest {
 				"classpath:testContext-whDAO.xml");
         MetadataDAO dao = (MetadataDAO) context.getBean("metadataDAO");
 		
+        byte[] testData = "<rdf>          </rdf>".getBytes();
+        
 		// mock a PathwayData
-        PathwayData pathwayData = new PathwayData("testpw", "2010.04", "testpw", "testpw", "<rdf> </rdf>");
+        PathwayData pathwayData = new PathwayData("testpw", "2010.04", "testpw", "testpw", testData);
+        // test if internal pack/unpach (gzip) results in the same data
+        assertTrue(Arrays.equals(testData, pathwayData.getPathwayData()));
+        
         
         // import it
         dao.importPathwayData(pathwayData);
@@ -69,11 +76,13 @@ public class MetadataHibernateDAOTest {
         pathwayData = null;
         pathwayData = dao.getPathwayDataByIdentifierAndVersionAndFilenameAndDigest("testpw", "2010.04", "testpw", "testpw");
         assertNotNull(pathwayData);
-        assertTrue(pathwayData.getValidationResults().length() == 0);
+        assertNull(pathwayData.getValidationResults());
+        // check whether DB save/read changed data
+        assertTrue(Arrays.equals(testData, pathwayData.getPathwayData()));
         
         // add premerge data and validation result
-        pathwayData.setPremergeData("<rdf></rdf>");
-        pathwayData.setValidationResults("<?xml version=\"1.0\"?>");
+        pathwayData.setPremergeData("<rdf></rdf>".getBytes());
+        pathwayData.setValidationResults("<?xml version=\"1.0\"?>".getBytes());
         
         // update
         dao.importPathwayData(pathwayData);
@@ -82,7 +91,8 @@ public class MetadataHibernateDAOTest {
         pathwayData = null;
         pathwayData = dao.getPathwayDataByIdentifierAndVersionAndFilenameAndDigest("testpw", "2010.04", "testpw", "testpw");
         assertNotNull(pathwayData);
-        assertTrue(pathwayData.getValidationResults().length() > 0);
+        assertNotNull(pathwayData.getValidationResults());
+        assertTrue(pathwayData.getValidationResults().length > 0);
 	}
 	
 }

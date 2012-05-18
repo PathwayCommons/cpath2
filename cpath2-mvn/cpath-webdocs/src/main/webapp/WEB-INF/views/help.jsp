@@ -105,6 +105,7 @@
 	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=a*&page=3"><fmt:message key="cpath2.example.search7"/></a></li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=+binding%20NOT%20transcription*&type=control&page=0"><fmt:message key="cpath2.example.search8"/></a></li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=pathway:immune&type=conversion"><fmt:message key="cpath2.example.search9"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=*&type=pathway&datasource=panther"><fmt:message key="cpath2.example.search10"/></a></li>
 	  </ol>
 	  </li>
 	  <!-- get command -->

@@ -11,16 +11,16 @@
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
 
     <!-- This context configuration is created/used dynamically - 
-    	only from cpath.importer.internal.PremergeImpl ('premerge') 
+    	in cpath.importer.internal.PremergeImpl ('premerge') 
     	and cpath.importer.internal.MergerImpl ('merge') beans! -->
 
     <context:annotation-config/>
     
  	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
-    <bean id="premergeSessionFactory"
+    <bean id="cPath2SessionFactory"
         class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
-        <property name="dataSource" ref="premergeDataSource"/>
+        <property name="dataSource" ref="cPath2DataSource"/>
         <property name="hibernateProperties">
 		<util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
 		  <prop key="hibernate.search.default.directory_provider">org.hibernate.search.store.RAMDirectoryProvider</prop>
@@ -42,7 +42,7 @@
     </bean>
 
 	<!-- This looks-up for the existing, thread-local, data source by bean's name -->
-	<bean id="premergeDataSource" class="cpath.dao.internal.DataServicesFactoryBean"/>
+	<bean id="cPath2DataSource" class="cpath.dao.internal.DataServicesFactoryBean"/>
 
     <!-- enable the configuration of transactional behavior based on annotations -->
     <tx:annotation-driven transaction-manager="transactionManager"/>
@@ -51,11 +51,11 @@
 
     <bean id="transactionManager"
         class="org.springframework.orm.hibernate3.HibernateTransactionManager">
-        <property name="sessionFactory" ref="premergeSessionFactory" />
+        <property name="sessionFactory" ref="cPath2SessionFactory" />
     </bean>
 
-    <bean id="premergePaxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
-        <property name="sessionFactory" ref="premergeSessionFactory"/>
+    <bean id="paxtoolsHibernateDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
+        <property name="sessionFactory" ref="cPath2SessionFactory"/>
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>

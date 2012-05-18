@@ -30,14 +30,12 @@ package cpath.webservice;
 import java.io.IOException;
 
 import cpath.service.jaxb.*;
-import cpath.service.BioDataTypes;
+import cpath.service.CPathService;
 import cpath.service.Cmd;
 import cpath.service.CmdArgs;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
 import cpath.service.Status;
-import cpath.service.BioDataTypes.Type;
-import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
 
 import org.apache.commons.logging.Log;
@@ -47,11 +45,7 @@ import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.level3.BioSource;
-import org.biopax.paxtools.model.level3.Provenance;
-import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.bridgedb.DataSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -68,9 +62,12 @@ import org.springframework.web.bind.annotation.*;
  */
 @Controller
 public class HelpController {
-    private static final Log log = LogFactory.getLog(HelpController.class);   
+    private static final Log LOG = LogFactory.getLog(HelpController.class);   
     
-	public HelpController() {
+    private CPathService service; // main PC db access
+    
+	public HelpController(CPathService service) {
+		this.service = service;
 	}
 	
 	/**
@@ -85,8 +82,6 @@ public class HelpController {
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
         binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
-        binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
-        binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
         binder.registerCustomEditor(Direction.class, new DirectionEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
@@ -380,80 +375,42 @@ public class HelpController {
     public @ResponseBody Help getDatasources() {
     	Help help = new Help();
     	help.setId("datasources");
-    	for(DataSource ds : BioDataTypes.getDataSources(Type.DATASOURCE)) 
+
+    	for(SearchHit ds : service.dataSources().getSearchHit()) 
     	{
-    		help.addMember(getDatasource(new PathwayDataSource(ds)));
+    		Help hm = new Help(ds.getUri());
+    		hm.setTitle(ds.getName());
+    		hm.setInfo(ds.getDataSource().toString()); // using a hack to get other names
+    		help.addMember(hm);
     	}
     	help.setTitle("Pathway Data Sources");
-    	help.setInfo("Pathway data sources currently loaded into the system.");
+    	help.setInfo("Bio interactions data were imported into the system. " +
+    			"These values (standard name, URI) are recommended to use with the " +
+    			"full-text search command (e.g., by adding '&datasource=...' " +
+    			"filter parameters). " + 
+    			"Other (original pathway data provider's) BioPAX Provenance " +
+    			"objects there can be used as well, but may be associated with " +
+    			"only a sub-set of entities loaded from given data source.");
     	return help;
     }
-    
-
-    @RequestMapping("/help/datasources/{pds}") 
-    public @ResponseBody Help getDatasource(@PathVariable PathwayDataSource pds) 
-    {
-    	if(pds == null) return getDatasources();
-    	final String newLine = System.getProperty("line.separator");
-    	Help help = new Help();
-    	DataSource ds = pds.asDataSource();
-    	help.setId(ds.getSystemCode());
-    	help.setTitle(ds.getFullName());
-    	
-    	StringBuffer sb = new StringBuffer();
-    	// hack (BridgeDb): it has the Provenance stored in ds.organism ;)
-    	Provenance pro = ((Provenance)ds.getOrganism());
-    	sb.append("Known names: ");	
-    	for(String name : pro.getName()) {
-    		sb.append(name).append(", ");
-    	}
-    	sb.append(newLine);
-    	sb.append("Xrefs: ");	
-    	for(Xref x : pro.getXref()) {
-    		sb.append(x + ", "); //x.toString() is called implicitly
-    	}
-    	sb.append(newLine);
-    	sb.append("Comments: ");
-    	for(String rem : pro.getComment()) {
-    		sb.append(rem).append(newLine);
-    	}
-    	sb.append("URL: " + ds.getMainUrl());
-    	sb.append(newLine);
-    	
-    	help.setInfo(sb.toString());
-    	
-    	return help;
-    }
-    
+       
     
     @RequestMapping("/help/organisms") 
     public @ResponseBody Help getOrganisms() {
     	Help help = new Help();
     	help.setId("organisms");
-    	for(DataSource ds : BioDataTypes.getDataSources(Type.ORGANISM)) {
-    		help.addMember(getOrganism(new OrganismDataSource(ds)));
+    	
+    	for(SearchHit bs : service.bioSources().getSearchHit()) {
+    		Help hm = new Help(bs.getUri());
+    		hm.setTitle(bs.getName());
+    		hm.setInfo(bs.getOrganism().toString()); // using a hack to list other names
+    		help.addMember(hm);
     	}
     	help.setTitle("Organisms");
-    	help.setInfo("Bio sources currently loaded into the system are");
+    	help.setInfo("All organisms (BioSource) referenced in this system " +
+    		"(incl. those occur in other organism's pathways or in annotations)");
     	return help;
     }
-    
 
-    @RequestMapping("/help/organisms/{o}") 
-    public @ResponseBody Help getOrganism(@PathVariable OrganismDataSource o) {
-    	if(o == null) return getOrganisms();
-    	Help help = new Help();
-    	String taxid = o.asDataSource().getSystemCode();
-    	//help.setId(taxid); //taxonomy id
-        BioSource bs = (BioSource)o.asDataSource().getOrganism();
-        help.setId(bs.getRDFId()); // miriam
-    	help.setTitle(o.asDataSource().getFullName());
-    	// a hack (BioSource was stored in the o.organism field) -
-    	//help.setInfo(o.asDataSource().getOrganism().toString()); 
-        help.setInfo(bs.getName().toString());
-    	//- got the name and Miriam URN (only when data were normalized)
-
-    	return help;
-    }
 
 }

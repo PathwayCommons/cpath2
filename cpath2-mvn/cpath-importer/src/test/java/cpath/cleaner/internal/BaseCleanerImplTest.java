@@ -11,7 +11,13 @@ public class BaseCleanerImplTest {
 
 	@Test
 	public final void testReplaceID() {
-		BaseCleanerImpl cleaner = new BaseCleanerImpl();
+		BaseCleanerImpl cleaner = new BaseCleanerImpl() {
+			@Override
+			public String clean(String pathwayData) {
+				// TODO Auto-generated method stub
+				return null;
+			}};
+		
 		Model m = BioPAXLevel.L3.getDefaultFactory().createModel();
 		UnificationXref xref = m.addNew(UnificationXref.class, "one");
 		cleaner.replaceID(m, xref, "two");

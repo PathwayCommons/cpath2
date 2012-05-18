@@ -30,8 +30,9 @@ package cpath.importer;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.biopax.paxtools.model.Model;
 
-import cpath.dao.PaxtoolsDAO;
+
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
@@ -81,6 +82,6 @@ public interface Fetcher {
      * @param model target
      * @throws IOException if an IO error occurs
      */
-    void storeWarehouseData(final Metadata metadata, final PaxtoolsDAO model) throws IOException;
+    void storeWarehouseData(final Metadata metadata, final Model model) throws IOException;
 	
 }

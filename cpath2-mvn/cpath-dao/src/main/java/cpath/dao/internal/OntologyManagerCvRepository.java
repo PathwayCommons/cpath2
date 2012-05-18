@@ -33,9 +33,12 @@ import java.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.miriam.MiriamLink;
+import org.biopax.paxtools.controller.Fetcher;
+import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.XReferrable;
@@ -64,6 +67,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 	private static final Log log = LogFactory.getLog(OntologyManagerCvRepository.class);
 	private static final String URN_OBO_PREFIX = "urn:miriam:obo.";
 	private static BioPAXFactory biopaxFactory = BioPAXLevel.L3.getDefaultFactory();
+	private static final Fetcher FETCHER = new Fetcher(SimpleEditorMap.L3);
 	
 	/**
 	 * Constructor
@@ -259,13 +263,13 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 	 */
 	// TODO validate if the ontology term (form URN) can be used by this CV class?
 	@Override
-	public <T extends BioPAXElement> T getObject(String urn, Class<T> clazz) {
+	public <T extends BioPAXElement> T createBiopaxObject(String urn, Class<T> clazz) {
 		return (T) getControlledVocabulary(urn,(Class<ControlledVocabulary>) clazz);
 	}
 
 	
 	@Override
-	public Set<String> getByXref(Set<? extends Xref> xrefs, Class<? extends XReferrable> clazz)
+	public Set<String> findByXref(Set<? extends Xref> xrefs, Class<? extends XReferrable> clazz)
 	{
 		Set<String> toReturn = new HashSet<String>();
 		
@@ -281,6 +285,21 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 		}
 
 		return toReturn;
+	}
+
+
+	@Override
+	public <T extends BioPAXElement> Model createSubModel(String urn,
+			Class<T> clazz) {
+		
+		T t = createBiopaxObject(urn, clazz);
+		if(t == null)
+			return null;
+		
+		Model m = biopaxFactory.createModel();
+		FETCHER.fetch(t, m);
+		return m;
+		
 	}
 	
 }

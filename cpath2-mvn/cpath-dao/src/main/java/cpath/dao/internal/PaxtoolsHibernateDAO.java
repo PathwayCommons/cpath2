@@ -45,7 +45,6 @@ import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
-import org.biopax.paxtools.impl.level3.PathwayImpl;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.hibernate.*;
@@ -55,6 +54,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 
 import cpath.config.CPathSettings;
+import cpath.config.CPathSettings.CPath2Property;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
@@ -80,9 +80,8 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	private static final long serialVersionUID = 1L;
 	
 	private final static int BATCH_SIZE = 20;
-	private final static int DEFAULT_MAX_HITS_PER_PAGE = Integer.MAX_VALUE;
 	private final static int IDX_BATCH_SIZE = 200;
-	private int maxHitsPerPage = DEFAULT_MAX_HITS_PER_PAGE;
+	private int maxHitsPerPage = Integer.MAX_VALUE;
 
 	public final static String[] DEFAULT_SEARCH_FIELDS =
 		{
@@ -146,6 +145,8 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 				return bioPAXElements;
 			}
 		};
+		
+		this.xmlBase = CPathSettings.get(CPath2Property.XML_BASE); //set default xml:base
 	}
 	
 	
@@ -177,13 +178,11 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	 * 
 	 * @param maxHits
 	 */
-	/*
-	 * This parameter is currently set via Spring xml beans configuration,
-	 * which, in turn, reads it from the capth.property file in the current $CPATH2_HOME dir)
-	 */
 	public void setMaxHitsPerPage(int maxHits) {
 		if(maxHits <= 0)
-			this.maxHitsPerPage = DEFAULT_MAX_HITS_PER_PAGE;
+			log.warn("Ignored an attempt to set " +
+				"value: setMaxHitsPerPage(" + maxHits + ");"
+				+ " current value unchanged:" + maxHitsPerPage);
 		else 
 			this.maxHitsPerPage = maxHits;
 	}
@@ -197,13 +196,14 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 
 		// convert file to model
 		Model m = simpleIO.convertFromOWL(new FileInputStream(biopaxFile));
-		merge(m);
+//		merge(m);
+		insert(m);
+		update(m);
 	}
 
-	 
-	// non @Transactional here 
+
 	@Override
-	public void merge(final Model model)
+	public void insert(final Model model)
 	{
 		/* 
 		 * Level3 property/propertyOf ORM mapping and getters/setters 
@@ -233,23 +233,44 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 			if (log.isDebugEnabled()) {
 				log.debug("merge(model): inserted " + i + " objects");
 			}
-			
-			//run batch update in a separate transaction;
-			//this saves object relationships and collections
-			update(model);
 		}
+	}
+	
+	
+	/** 
+	 * 
+	 * This opens a new stateless session, which starts a new 
+	 * transaction to insert new objects (by URI).
+	 * 
+	 */
+	@Override
+	public void merge(final Model model)
+	{
+		insert(model);	
+		update(model);
 	}
 
 	
+	/**
+	 * 
+	 * @throws HibernateException if an object rerefs to not saved objects
+	 */
 	@Transactional(propagation=Propagation.REQUIRED)
-	private void update(final Model model) 
+	public void update(final Model model) 
 	{	
 		Session ses = session();
 		
 		int i = 0;
 		for (BioPAXElement bpe : model.getObjects()) {			
 			// save/update
-			merge(bpe);
+			if (log.isDebugEnabled())
+				log.debug("update(model): merging " + bpe.getRDFId() 
+					+ " " + bpe.getModelInterface().getSimpleName());
+			try {
+				session().merge(bpe);
+			} catch (Exception e) {
+				throw new IllegalBioPAXArgumentException("Failed meging: " + bpe.getRDFId(), e);
+			}
 			
 			i++;
 			if(i % BATCH_SIZE == 0) {
@@ -268,30 +289,46 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	
 	
 	/**
-	 * Saves or merges the element 
-	 * (use when it's updated or unsure if saved ever before...)
+	 * Updates or persists the object. 
 	 * 
+	 * Unless cascades are properly enabled in the model ORM,
+	 * this method will probably fail if child elements 
+	 * (values of BioPAX object properties and inverse
+	 * properties and their childs, etc..)
+	 * were not persisted already. If so, consider making a 
+	 * (self-consistent) model that contains all children and
+	 * some parents (where there an inverse property is involved)
+	 * and merging it with {@link #merge(Model)} method instead.
+	 * 
+	 * 
+	 * @throws HibernateException if the objects refers to unsaved objects
 	 */
 	@Transactional(propagation = Propagation.REQUIRED)
 	public void merge(BioPAXElement aBioPAXElement) {
 		String rdfId = aBioPAXElement.getRDFId();
 		
-		// this is almost impossible
-		assert rdfId != null : "null ID: every object must have an RDF ID";	
 		if (log.isDebugEnabled())
 			log.debug("merge(aBioPAXElement): merging " + rdfId + " " 
 				+ aBioPAXElement.getModelInterface().getSimpleName());
-			
+	
 		session().merge(aBioPAXElement);
 	}
 
 	
+	/**
+	 * 
+	 * @throws IllegalArgumentException if query is null
+	 */
 	@Override
 	@Transactional(propagation = Propagation.REQUIRED, readOnly = true)
 	public SearchResponse search(String query, int page,
 			Class<? extends BioPAXElement> filterByType, String[] dsources,
 			String[] organisms) 
 	{
+		if(query == null)
+			throw new IllegalArgumentException("Search string cannot be NULL!");
+		
+		
 		// collect matching elements here
 		SearchResponse searchResponse = new SearchResponse();
 
@@ -300,33 +337,37 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 					+ "; extra filters: ds in (" + Arrays.toString(dsources)
 					+ "), org. in (" + Arrays.toString(organisms) + ")");
 
-		org.apache.lucene.search.Query luceneQuery = null;
 
-		try {
-			luceneQuery = multiFieldQueryParser.parse(query);
-		} catch (ParseException e) {
-			log.info("parser exception: " + e.getMessage());
-			return searchResponse;
-		}
-
-		// get a full text session
+		// create a new full text session from current session
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		FullTextQuery fullTextQuery;
-
-		if (filterByType != null) {
-			// full-text query cannot filter by interfaces...
-			// so let's translate them to the annotated entity classes
-			Class<?> filterClass = getEntityClass(filterByType);
-			fullTextQuery = fullTextSession.createFullTextQuery(luceneQuery, filterClass);
+		
+		// convert the filter query class into concrete BioPAX persistent class
+		Class<?> filterClass = getEntityClass(filterByType);
+		assert filterClass != null; //not null, as BioPAXelementImpl.class is the default fall-back
+		
+		// build a new Lucene query
+		org.apache.lucene.search.Query luceneQuery = null;
+		// "*" query special case (find all) -
+		if(query != null && query.equals("*")) {
+			QueryBuilder queryBuilder = fullTextSession.getSearchFactory().buildQueryBuilder().forEntity(filterClass).get();
+			luceneQuery = queryBuilder.all().createQuery();
 		} else {
-			fullTextQuery = fullTextSession.createFullTextQuery(luceneQuery);
+			try {
+				luceneQuery = multiFieldQueryParser.parse(query);
+			} catch (ParseException e) {
+				log.info("parser exception: " + e.getMessage());
+				return searchResponse;
+			}
 		}
+
+		// create a full-text query from the Lucene one
+		FullTextQuery fullTextQuery = fullTextSession.createFullTextQuery(luceneQuery, filterClass);
 
 		// set read-only
 		fullTextQuery.setReadOnly(true);
 
 		// use Projection (allows extracting/highlighting matching text, etc.)
-		if (CPathSettings.isDebug())
+		if (CPathSettings.explainEnabled())
 			fullTextQuery.setProjection(FullTextQuery.THIS, FullTextQuery.DOCUMENT,
 					FullTextQuery.SCORE, FullTextQuery.EXPLANATION);
 		else
@@ -345,16 +386,16 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 		fullTextQuery.setMaxResults(maxHitsPerPage);
 		fullTextQuery.setFirstResult(l);
 
-		/*
-		 * use a highlighter (to get the excerpt);
-		 * (also use store.YES in some annotations, esp. on 'keyword' field)
-		 */
-		//TODO shall I rewrite the luceneQuery?
-		QueryScorer scorer = new QueryScorer(luceneQuery, FIELD_KEYWORD);   
-	    SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
-	    Highlighter highlighter = new Highlighter(formatter, scorer);
-	    highlighter.setTextFragmenter(new SimpleSpanFragmenter(scorer, 80));
-
+		Highlighter highlighter = null;
+		if(!query.equals("*")) {
+			// create a highlighter (store.YES must be enabled on 'keyword' search field, etc.!)
+			//TODO shall I rewrite the luceneQuery?
+			QueryScorer scorer = new QueryScorer(luceneQuery, FIELD_KEYWORD);   
+			SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
+			highlighter = new Highlighter(formatter, scorer);
+			highlighter.setTextFragmenter(new SimpleSpanFragmenter(scorer, 80));
+		}
+	    
 	    // set the result to search hit beans transformer
 	    fullTextQuery.setResultTransformer(new SearchHitsTransformer(highlighter));
 
@@ -398,7 +439,6 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 			if (log.isDebugEnabled())
 				log.debug("adding " + rdfId);
 			session().persist(aBioPAXElement); 
-			// - many elements are affected, because of cascades...
 		}
 	}
 
@@ -424,19 +464,35 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	}
 
 
+	/**
+	 * 
+	 * Is equivalent to calling {@link #containsID(String)} method
+	 * using the BioPAX element's {@link BioPAXElement#getRDFId()}.
+	 * 
+	 */
 	@Override
 	@Transactional(readOnly=true)
 	public boolean contains(BioPAXElement bpe)
 	{
-		return getByID(bpe.getRDFId()) != null;
+		return containsID(bpe.getRDFId());
+//		return getByID(bpe.getRDFId()) == bpe;
 	}
 
 
+	/**
+	 * Note:
+	 * Contains ID 'true' does not necessarily mean the object is ready to load 
+	 * at the moment, i.e., it could have been just inserted with a stateless session,
+	 * and not updated (relationships not saved)
+	 */
 	@Override
 	@Transactional(readOnly=true)
 	public boolean containsID(String id)
 	{
-		return getByID(id) != null;
+		return session().getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists")
+			.setString("md5uri", ModelUtils.md5hex(id)).uniqueResult() != null;
+				
+//		return getByID(id) != null;
 	}
 
 
@@ -445,10 +501,14 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	public BioPAXElement getByID(String id) 
 	{
 		if(id == null || "".equals(id)) 
-			throw new RuntimeException("getByID(null) is called!");
+			throw new IllegalArgumentException("getByID: id cannot be null or empty string!");
 
 		BioPAXElement toReturn = (BioPAXElement) session()
 			.get(BioPAXElementImpl.class, ModelUtils.md5hex(id));
+		
+		// if null and - in debug mode, try to treat the id as pre-computed MD5 hex pK value
+		if(toReturn == null && CPathSettings.digestUriEnabled())
+			toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
 
 		return toReturn; // null means no such element
 	}
@@ -512,11 +572,12 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	 * (implementation) by BioPAX Model interface class 
 	 * 
 	 */
-	protected Class<? extends BioPAXElement> getEntityClass(
+	Class<? extends BioPAXElement> getEntityClass(
 			Class<? extends BioPAXElement> filterBy) 
 	{
-		Class<? extends BioPAXElement> clazz = (BioPAXElement.class.equals(filterBy))
-			? BioPAXElementImpl.class : factory.getImplClass(filterBy);
+		Class<? extends BioPAXElement> clazz = 
+			(filterBy == null || BioPAXElement.class.equals(filterBy))
+				? BioPAXElementImpl.class : factory.getImplClass(filterBy);
 		
 		if(clazz == null) {
 			clazz = BioPAXElementImpl.class; // fall-back (to no filtering)
@@ -616,7 +677,7 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	 * @see cpath.dao.PaxtoolsDAO#runAnalysis(cpath.dao.Analysis, java.lang.Object[])
 	 */
 	@Override
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional(propagation = Propagation.REQUIRED)
 	public Model runAnalysis(Analysis analysis, Object... args) {
 		// perform
 		Set<BioPAXElement> result = analysis.execute(this, args);
@@ -667,56 +728,6 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	@Override
 	public String getXmlBase() {
 		return xmlBase;
-	}
-
-	
-	/**
-	 * "Top pathway" can mean different things...
-	 * 
-	 * 1) One may want simply collect pathways which are not 
-	 * values of any BioPAX property (i.e., a "graph-theoretic" approach, 
-	 * used by {@link ModelUtils#getRootElements(Class)} method) and by 
-	 * BioPAX normalizer, which (in the cPath2 "premerge" stage),
-	 * for all Entities, generates relationship xrefs to their "parent" pathways.
-	 * 
-	 * 2) Another approach would be to check whether specific (inverse) 
-	 * properties, such as controlledOf, pathwayComponentOf and stepProcessOf, are empty.
-	 * 
-	 * Here we follow the second method!
-	 * 
-	 */
-	@Override
-	@Transactional(readOnly = true)
-	public SearchResponse getTopPathways() {
-		SearchResponse searchResponse = new SearchResponse();
-		//TODO find all pathways where 'pathway' index field is empty (i.e., no controlledOf and pathwayComponentOf values)
-		
-		FullTextSession fullTextSession = Search.getFullTextSession(session());
-		QueryBuilder queryBuilder = fullTextSession.getSearchFactory().buildQueryBuilder().forEntity(PathwayImpl.class).get();
-		org.apache.lucene.search.Query luceneQuery = queryBuilder.all().createQuery();
-		
-		FullTextQuery fullTextQuery = fullTextSession.createFullTextQuery(luceneQuery, PathwayImpl.class);
-		fullTextQuery.setProjection(FullTextQuery.THIS, FullTextQuery.DOCUMENT);	
-		fullTextQuery.setReadOnly(true);
-		fullTextQuery.setResultTransformer(new SearchHitsTransformer(null)); //highlighter is not required here
-		
-		// do search and get (auto-transformed from BioPAX elements and index fields) hits
-		List<SearchHit> searchHits = searchResponse.getSearchHit();
-		//remove pathways having pathway field not empty
-		for(SearchHit h : (List<SearchHit>) fullTextQuery.list()) {
-			if(h.getPathway().isEmpty())
-				searchHits.add(h);
-		}
-		
-		searchResponse.setNumHits(searchHits.size());
-		//TODO update the following comment if implementation has changed!
-		searchResponse.setComment("Top Pathways (technically, each has empty index " +
-				"field 'pathway'; that also means, they are neither components of " +
-				"other pathways nor controlled of any process)");
-		searchResponse.setMaxHitsPerPage(searchHits.size());
-		searchResponse.setPageNo(0);
-		
-		return searchResponse;
 	}
 
 
@@ -811,67 +822,18 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	}
 	
 
-	/**
-	 * Gets a copy (detached) of existing
-	 * BioPAX object.
-	 * 
-	 * 
-	 * @deprecated
-	 * @param id
-	 * @return
-	 */
-	@Deprecated
-	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	private BioPAXElement getObject(String id) 
-	{
-		if(id == null || "".equals(id)) 
-			throw new RuntimeException("getObject(null) is called!");
-
-		BioPAXElement toReturn = null;
-		
-		// get the element
-		BioPAXElement bpe = getByID(id);
-		
-		// check it has inverse props set ("cloning" may break it...)
-		if(bpe instanceof Xref) {
-			assert(!((Xref)bpe).getXrefOf().isEmpty());
-			if(log.isDebugEnabled()) {
-				log.debug(id + " is xrefOf " + 
-					((Xref)bpe).getXrefOf().iterator().next().toString()
-				);
-			}
-		}
-		
-		if (bpe != null) { 
-			/* it used to be as -
-			//ElementCloner cloner = new ElementCloner();
-			//Model model = cloner.clone(this, bpe);
-			*/
-			
-			// write/read cycle should completely detach the sub-model 
-			// (new java objects are created by the simpleIO)
-			// and restore inverse properties 
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			exportModel(baos, id);
-			Model model = simpleIO.convertFromOWL(new ByteArrayInputStream(baos.toByteArray()));
-			toReturn = model.getByID(id);
-		}
-		
-		return toReturn; // null means no such element
-	}
-
-
-
 	/* (non-Javadoc)
 	 * @see cpath.warehouse.WarehouseDAO#getObject(java.lang.String, java.lang.Class)
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public <T extends BioPAXElement> T getObject(String urn, Class<T> clazz) 
-	{
-//		BioPAXElement bpe = getObject(urn); // was ok until deprecated...	
-		BioPAXElement bpe = getValidSubModel(Collections.singleton(urn)).getByID(urn); //success too!
+	public <T extends BioPAXElement> T createBiopaxObject(String urn, Class<T> clazz) 
+	{	
+		Model m = getValidSubModel(Collections.singleton(urn));
+		if(m == null)
+			return null;
 		
+		BioPAXElement bpe = m.getByID(urn);
 		if(clazz.isInstance(bpe)) {
 			return (T) bpe;
 		} else {
@@ -889,9 +851,17 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public Set<String> getByXref(Set<? extends Xref> xrefs, 
+	public Set<String> findByXref(Set<? extends Xref> xrefs, 
 		Class<? extends XReferrable> clazz) 
 	{
 		return getByXref(this, xrefs, clazz);
+	}
+
+
+	@Override
+	public <T extends BioPAXElement> Model createSubModel(String urn,
+			Class<T> clazz) {
+		Model m = getValidSubModel(Collections.singleton(urn));
+		return (m != null && clazz.isInstance(m.getByID(urn))) ? m : null;
 	}
 }

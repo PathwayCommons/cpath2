@@ -172,7 +172,7 @@ final class UniProtCleanerImpl extends BaseCleanerImpl {
      */
     private String getAccessionsListAsString(List<String> accessionsList) {
         
-        StringBuffer toReturn = new StringBuffer(AC_PREFIX);
+        StringBuilder toReturn = new StringBuilder(AC_PREFIX);
 
         for (String accession : accessionsList) {
             toReturn.append(accession + AC_DELIMITER);
@@ -206,7 +206,7 @@ final class UniProtCleanerImpl extends BaseCleanerImpl {
      */
     private String cleanAccessions(final String uniprotData, Map<String, List<String>> accessionsMap) throws IOException {
 
-        StringBuffer toReturn = new StringBuffer();
+        StringBuilder toReturn = new StringBuilder();
 
         // create a buffered reader
         BufferedReader bufferedReader = new BufferedReader(new StringReader(uniprotData));

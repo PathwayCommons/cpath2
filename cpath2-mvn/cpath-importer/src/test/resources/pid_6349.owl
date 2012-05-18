@@ -10,23 +10,33 @@
  <owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl#" />
 </owl:Ontology>
 
+<!-- original PID data may be modified for junit tests; please do not use it for research :) -->
+
 <bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UNIPROT_P01118">
  <bp:id rdf:datatype = "xsd:string">P01118</bp:id>
  <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
 </bp:UnificationXref>
+
+
+<bp:ModificationFeature rdf:ID="test-feature1"></bp:ModificationFeature>
+
+<bp:ModificationFeature rdf:ID="test-feature2"></bp:ModificationFeature>
 
 <bp:Protein rdf:ID="pid_6362">
  <bp:entityReference rdf:resource="urn:miriam:uniprot:P01116" />
  <bp:comment rdf:datatype = "xsd:string">dataSource ADDED by a reasoner: urn:miriam:pid.pathway</bp:comment>
  <bp:displayName rdf:datatype = "xsd:string">K-RAS isoform 2A</bp:displayName>
  <bp:dataSource rdf:resource="urn:miriam:pid.pathway" />
+ <bp:feature rdf:resource="#test-feature1" />
+ <bp:notFeature rdf:resource="#test-feature2" />
 </bp:Protein>
 
 <bp:Protein rdf:ID="pid_6361">
- <bp:entityReference rdf:resource="urn:miriam:uniprot:P01118" />
+ <bp:entityReference rdf:resource="urn:miriam:uniprot:P01118" /> 
  <bp:comment rdf:datatype = "xsd:string">dataSource ADDED by a reasoner: urn:miriam:pid.pathway</bp:comment>
  <bp:displayName rdf:datatype = "xsd:string">K-RAS isoform 2B</bp:displayName>
  <bp:dataSource rdf:resource="urn:miriam:pid.pathway" />
+ <bp:feature rdf:resource="#test-feature2" />
 </bp:Protein>
 
 <bp:Protein rdf:ID="pid_6349">
@@ -102,6 +112,7 @@
  <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_P01116" />
  <bp:displayName rdf:datatype = "xsd:string">K-RAS isoform 2A</bp:displayName>
  <bp:organism rdf:resource="urn:miriam:taxonomy:9606" />
+ <bp:entityFeature rdf:resource="#test-feature1" />
 </bp:ProteinReference>
 
 <bp:BioSource rdf:about="urn:miriam:taxonomy:9606">
@@ -125,10 +136,12 @@
  <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
 </bp:UnificationXref>
 
+<!-- P01118 is a secondary AC to P01116, and these ERs should be merged by cpath2, incl. features! -->
 <bp:ProteinReference rdf:about="urn:miriam:uniprot:P01118">
  <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_P01118" />
  <bp:displayName rdf:datatype = "xsd:string">K-RAS isoform 2B</bp:displayName>
  <bp:organism rdf:resource="urn:miriam:taxonomy:9606" />
+ <bp:entityFeature rdf:resource="#test-feature2" />
 </bp:ProteinReference>
 
 <bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UNIPROT_P01111">

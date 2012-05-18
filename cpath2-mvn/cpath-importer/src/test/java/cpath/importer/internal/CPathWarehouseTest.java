@@ -85,14 +85,14 @@ public class CPathWarehouseTest {
 		Fetcher fetcher = new FetcherImpl();
         Collection<Metadata> metadata;
 		try {
-			metadata = fetcher.getMetadata("classpath:metadata.html");
+			metadata = fetcher.getMetadata("classpath:metadata.conf");
 			for (Metadata mdata : metadata) {
 				metadataDAO.importMetadata(mdata);
 				fetcher.fetchData(mdata);
 				if (mdata.getType() == TYPE.PROTEIN) {
-					fetcher.storeWarehouseData(mdata, (PaxtoolsDAO) proteins);
+					fetcher.storeWarehouseData(mdata, (Model) proteins);
 				} else if (mdata.getType() == TYPE.SMALL_MOLECULE) {
-					fetcher.storeWarehouseData(mdata, (PaxtoolsDAO) molecules);
+					fetcher.storeWarehouseData(mdata, (Model) molecules);
 				} else if (mdata.getType() == TYPE.MAPPING) {
 					// skip
 				} else { // pathways
@@ -116,7 +116,7 @@ public class CPathWarehouseTest {
 	@Test
 	public void testGetProteinReference() {
 		ProteinReference pr = proteins
-			.getObject("urn:miriam:uniprot:P62158", ProteinReference.class);
+			.createBiopaxObject("urn:miriam:uniprot:P62158", ProteinReference.class);
 		assertNotNull(pr);
 		assertFalse(pr.getName().isEmpty());
 		assertNotNull(pr.getOrganism());
@@ -132,7 +132,7 @@ public class CPathWarehouseTest {
 		x.setId("A2A2M3"); // not a primary accession ;)
 		x.setDb("uniprot"); // db must be set for getByXref to work [since 19-May-2011]!
 		
-		Set<String> prIds =  proteins.getByXref(Collections.singleton(x), ProteinReference.class);
+		Set<String> prIds =  proteins.findByXref(Collections.singleton(x), ProteinReference.class);
 		assertFalse(prIds.isEmpty());
 		assertEquals(1, prIds.size());
 		// correct entity reference found?
@@ -152,13 +152,13 @@ public class CPathWarehouseTest {
 		assertTrue(prIds.contains("urn:biopax:RelationshipXref:REFSEQ_NP_619650"));
 		
 		// get that xref
-		Xref x = proteins.getObject("urn:biopax:RelationshipXref:REFSEQ_NP_619650", RelationshipXref.class);
+		Xref x = proteins.createBiopaxObject("urn:biopax:RelationshipXref:REFSEQ_NP_619650", RelationshipXref.class);
 		assertNotNull(x);
 		assertTrue(x.getXrefOf().isEmpty()); // when elements are detached using getObject, they do not remember its owners!
 		// if you get the owner (entity reference) by id, then this xref.xrefOf will contain the owner.
 		
 		// search/map for the corresponding entity reference
-		prIds =  proteins.getByXref(Collections.singleton(x), ProteinReference.class);
+		prIds =  proteins.findByXref(Collections.singleton(x), ProteinReference.class);
 		assertFalse(prIds.isEmpty());
 		assertEquals(1, prIds.size());
 		assertEquals("urn:miriam:uniprot:Q8TD86", prIds.iterator().next());

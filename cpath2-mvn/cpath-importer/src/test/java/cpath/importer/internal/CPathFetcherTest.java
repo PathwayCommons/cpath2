@@ -5,8 +5,6 @@ import static org.junit.Assert.*;
 import java.io.*;
 import java.util.Collection;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
@@ -14,8 +12,6 @@ import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.junit.*;
 
-import cpath.dao.PaxtoolsDAO;
-import cpath.dao.internal.PaxtoolsModelDAO;
 import cpath.importer.internal.FetcherImpl;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
@@ -23,31 +19,31 @@ import cpath.warehouse.beans.Metadata.TYPE;
 
 //@Ignore
 public class CPathFetcherTest {
-	private static Log log = LogFactory.getLog(CPathFetcherTest.class);
 	
 	static FetcherImpl fetcher;
-	static PaxtoolsDAO model;
+	static Model model;
 	static SimpleIOHandler exporter;
 	static int count = 0;
 	
 	static {
 		fetcher = new FetcherImpl();
+		fetcher.setReUseFetchedDataFiles(false); // replace old test data files
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
 		// extend Model for the converter calling 'merge' method to work
-		model = new PaxtoolsModelDAO(BioPAXLevel.L3);
+		model = BioPAXLevel.L3.getDefaultFactory().createModel();
 	}
 
 	
 	@Test
-	public void testGetProteinData() throws IOException {
+	public void testGetMetadata() throws IOException {
 		// any resource location now works (not only http://...)!
-		String url = "classpath:metadata.html";
+		String url = "classpath:metadata.conf";
 		System.out.println("Loading metadata from " + url);
 		Collection<Metadata> metadatas = fetcher.getMetadata(url);
-		assertTrue(metadatas.size() > 2);
+		assertEquals(7, metadatas.size());
 		Metadata metadata = null;
 		for(Metadata mt : metadatas) {
-			if(mt.getIdentifier().equalsIgnoreCase("TEST_UNIPROT")) {
+			if(mt.getIdentifier().equals("TEST_UNIPROT")) {
 				metadata = mt;
 				break;
 			}
@@ -68,7 +64,7 @@ public class CPathFetcherTest {
 				location,
 				new byte[]{}, 
 				Metadata.TYPE.PROTEIN, 
-				"cpath.cleaner.internal.BaseCleanerImpl", 
+				null,
 				"cpath.converter.internal.UniprotConverterImpl");
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
@@ -86,7 +82,7 @@ public class CPathFetcherTest {
 				location,
 				new byte[]{}, 
 				Metadata.TYPE.SMALL_MOLECULE, 
-				"cpath.cleaner.internal.BaseCleanerImpl", 
+				null, 
 				"cpath.converter.internal.ChEBITestConverterImpl");
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
@@ -103,10 +99,10 @@ public class CPathFetcherTest {
 				"classpath:yeast_id_mapping.txt",
 				new byte[]{}, 
 				Metadata.TYPE.MAPPING, 
-				"cpath.cleaner.internal.BaseCleanerImpl", 
-				"cpath.converter.internal.BaseConverterImpl");
+				"",
+				"");
 		
-		File f = new File(metadata.getLocalDataFile());
+		File f = new File(metadata.localDataFile());
 		if(f.exists()) {
 			f.delete();
 		}
@@ -125,14 +121,15 @@ public class CPathFetcherTest {
 				location,
 				new byte[]{}, 
 				Metadata.TYPE.BIOPAX, 
-				"cpath.cleaner.internal.BaseCleanerImpl", 
-				"cpath.converter.internal.BaseConverterImpl");
+				null, // no cleaner (same as using "")
+				"" // no converter
+				);
 		
 		fetcher.fetchData(metadata);
 		Collection<PathwayData> pathwayData =
 			fetcher.getProviderPathwayData(metadata);
 		PathwayData pd = pathwayData.iterator().next();
-		String owl = pd.getPathwayData();
+		String owl = new String(pd.getPathwayData());
 		assertTrue(owl != null && owl.length() > 0);
 		assertTrue(owl.contains("<bp:Protein"));
 		SimpleIOHandler reader = new SimpleIOHandler(BioPAXLevel.L3);

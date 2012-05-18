@@ -1,6 +1,5 @@
 package cpath.cleaner.internal;
 
-// imports
 import java.lang.reflect.Method;
 
 import cpath.importer.Cleaner;
@@ -12,20 +11,7 @@ import org.biopax.paxtools.model.*;
  * Implementation of Cleaner interface for use when data
  * does not need to be cleaned.
  */
-class BaseCleanerImpl implements Cleaner {
-
-	/**
-	 * This basic method simply returns a copy of the original (string) 
-	 * pathway data.
-	 * Other, more specific cleaners, extending this class must override this method. 
-	 * 
-	 * @see cpath.importer.Cleaner#clean(PathwayData)
-	 */
-	@Override
-	public String clean(final String pathwayData) {
-		return new String(pathwayData);
-	}
-	
+abstract class BaseCleanerImpl implements Cleaner {
 
 	/**
 	 * Replaces the URI of a BioPAX object

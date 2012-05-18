@@ -95,11 +95,34 @@ public interface PaxtoolsDAO  {
      */
     void initialize(Object element);
 
+
+    /**
+     * Inserts (without updates) new objects 
+     * from the source model to this one
+     * 
+     * @param source the source model
+     */
+    void insert(Model source);
+    
+ 
+    /**
+     * Updates object relationships from 
+     * the source model.
+     * 
+     * @param source the source model
+     */
+    void update(Model source);
+    
     
     /**
-     * Merges the source model into this one.
+     * Merges (inserts new and updates all) objects
+     * from the source model into this one.
+     * 
+     * @see #insert(Model)
+     * @see #update(Model)
      * 
      * @param source a model to merge
+     * 
      */
     void merge(Model source);
     
@@ -120,16 +143,6 @@ public interface PaxtoolsDAO  {
      * @return a detached (cloned) BioPAX sub-model
      */
     Model runAnalysis(Analysis analysis, Object... args);
-
-    
-    /**
-     * Finds top (root) pathways in the entire BioPAX model.
-     * (It's good idea to cache this method's result permanently,
-     * may be - in the middle tier)
-     * 
-     * @return
-     */
-    SearchResponse getTopPathways();
     
     
     /**

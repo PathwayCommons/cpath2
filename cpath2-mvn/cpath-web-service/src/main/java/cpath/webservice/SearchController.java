@@ -70,9 +70,6 @@ public class SearchController extends BasicController {
 	@InitBinder
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
-// disable binders for OrganismDataSource, PathwayDataSource (can now use any string values!)
-//        binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
-//        binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
     }
 
 

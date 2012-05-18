@@ -56,7 +56,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
             reader = new InputStreamReader(is, "UTF-8");
             BufferedReader bufferedReader = new BufferedReader(reader);
             String line = bufferedReader.readLine();
-            final HashMap<String, StringBuffer> dataElements = new HashMap<String, StringBuffer>();
+            final HashMap<String, StringBuilder> dataElements = new HashMap<String, StringBuilder>();
             if (log.isInfoEnabled()) {
             	log.info("convert(), starting to read data...");
 			}
@@ -66,17 +66,17 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                 if (line.startsWith ("//")) //reached the end of a Uniprot entry
                 {
 					// grab properties from the map and prepare for parsing
-                    String deField = ((StringBuffer) dataElements.get("DE")).toString();
-                    String organismName = ((StringBuffer) dataElements.get("OS")).toString(); //mostly occurs once per entry 
-                    String organismTaxId = ((StringBuffer) dataElements.get("OX")).toString(); //occurs once per entry 
-                    StringBuffer comments = (StringBuffer) dataElements.get("CC");
-                    StringBuffer geneName = (StringBuffer) dataElements.get("GN");
-                    String acNames = ((StringBuffer) dataElements.get("AC")).toString();
-                    StringBuffer xrefs = (StringBuffer) dataElements.get("DR");
-                    String idParts[] = ((StringBuffer) dataElements.get("ID")).toString().split("\\s+");
-                    StringBuffer sq = (StringBuffer) dataElements.get("SQ"); //SEQUENCE SUMMARY
-                    StringBuffer sequence = (StringBuffer) dataElements.get("  "); //SEQUENCE
-                    StringBuffer features = (StringBuffer) dataElements.get("FT"); //strict format in 6-75 char in each FT line!
+                    String deField = ((StringBuilder) dataElements.get("DE")).toString();
+                    String organismName = ((StringBuilder) dataElements.get("OS")).toString(); //mostly occurs once per entry 
+                    String organismTaxId = ((StringBuilder) dataElements.get("OX")).toString(); //occurs once per entry 
+                    StringBuilder comments = (StringBuilder) dataElements.get("CC");
+                    StringBuilder geneName = (StringBuilder) dataElements.get("GN");
+                    String acNames = ((StringBuilder) dataElements.get("AC")).toString();
+                    StringBuilder xrefs = (StringBuilder) dataElements.get("DR");
+                    String idParts[] = ((StringBuilder) dataElements.get("ID")).toString().split("\\s+");
+                    StringBuilder sq = (StringBuilder) dataElements.get("SQ"); //SEQUENCE SUMMARY
+                    StringBuilder sequence = (StringBuilder) dataElements.get("  "); //SEQUENCE
+                    StringBuilder features = (StringBuilder) dataElements.get("FT"); //strict format in 6-75 char in each FT line!
                     
                     ProteinReference proteinReference = newUniProtWithXrefs(idParts[0], acNames, xrefs);
                     
@@ -123,11 +123,11 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                         //  do nothing here...
                     } else {
                         if (dataElements.containsKey(key)) {
-                            StringBuffer existingData = (StringBuffer) dataElements.get(key);
+                            StringBuilder existingData = (StringBuilder) dataElements.get(key);
                             existingData.append (" " + data);
                         }
 						else {
-                            dataElements.put(key, new StringBuffer (data));
+                            dataElements.put(key, new StringBuilder (data));
                         }
                     }
                 }
@@ -217,7 +217,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     		ProteinReference proteinReference) 
     {
         String commentParts[] = comments.split("-!- ");
-        StringBuffer reducedComments = new StringBuffer();
+        StringBuilder reducedComments = new StringBuilder();
         for (int i=0; i<commentParts.length; i++) {
             String currentComment = commentParts[i];
             //  Filter out the Interaction comments.
@@ -282,7 +282,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
      */
     private String setGeneSymbolAndSynonyms(String geneName, ProteinReference proteinReference) 
     {
-        StringBuffer synBuffer = new StringBuffer();
+        StringBuilder synBuffer = new StringBuilder();
         String parts[] = geneName.split(";");
         for (int i=0; i<parts.length; i++) {
             String subParts[] = parts[i].split("=");
@@ -364,7 +364,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 	 * @param dbRefs DR field values
 	 * @return ProteinReference
 	 */
-	private ProteinReference newUniProtWithXrefs(String shortName, String accessions, StringBuffer dbRefs) 
+	private ProteinReference newUniProtWithXrefs(String shortName, String accessions, StringBuilder dbRefs) 
 	{	
 		// accession numbers as array
 		String acList[] = accessions.split(";");

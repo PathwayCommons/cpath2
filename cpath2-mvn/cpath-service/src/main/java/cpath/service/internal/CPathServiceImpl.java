@@ -29,17 +29,19 @@
 package cpath.service.internal;
 
 import java.io.*;
+import java.net.URLEncoder;
 import java.util.*;
-
-import javax.annotation.PostConstruct;
-import javax.xml.transform.stream.StreamSource;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.BioSource;
+import org.biopax.paxtools.model.level3.Pathway;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.validator.result.Validation;
 import org.biopax.validator.result.ValidatorResponse;
@@ -48,8 +50,8 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import com.googlecode.ehcache.annotations.Cacheable;
-import com.mchange.util.AssertException;
 
+import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.analyses.CommonStreamAnalysis;
@@ -58,6 +60,7 @@ import cpath.service.analyses.PathsBetweenAnalysis;
 import cpath.service.analyses.PathsFromToAnalysis;
 import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ErrorResponse;
+import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 import cpath.service.jaxb.TraverseResponse;
@@ -66,27 +69,38 @@ import cpath.service.OutputFormat;
 import static cpath.service.Status.*;
 
 import cpath.warehouse.MetadataDAO;
+import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
 /**
  * Service tier class - to uniformly access 
- * persisted BioPAX model (DAO) from console and webservice 
+ * persisted BioPAX model (DAO) from console 
+ * and web service controllers. This can be 
+ * configured (instantiated) to access any cpath2
+ * persistent BioPAX data storage (PaxtoolsDAO), 
+ * i.e., - either the "main" cpath2 db or a Warehouse one (proteins or molecules)
  * 
  * @author rodche
  */
 @Service
-public class CPathServiceImpl implements CPathService {
+class CPathServiceImpl implements CPathService {
 	private static final Log log = LogFactory.getLog(CPathServiceImpl.class);
 	
 	private PaxtoolsDAO mainDAO;
 	
 	private MetadataDAO metadataDAO;
-
+	
 	private SimpleIOHandler simpleIO;
 
 	private static volatile SearchResponse topPathways;
 	
     private Set<String> blacklist;
+    
+    //only includes pathway data providers configured/created 
+    //from the cpath2 metadata configuration (not all provenances...)
+    private static volatile SearchResponse dataSources;
+    
+    private static volatile SearchResponse bioSources;
 
     // this is probably required for the echcache to work
 	public CPathServiceImpl() {
@@ -95,7 +109,7 @@ public class CPathServiceImpl implements CPathService {
     /**
      * Constructor.
      */
-	public CPathServiceImpl(PaxtoolsDAO mainDAO, MetadataDAO metadataDAO) 
+	CPathServiceImpl(PaxtoolsDAO mainDAO, MetadataDAO metadataDAO) 
 	{
 		this.mainDAO = mainDAO;
 		this.metadataDAO = metadataDAO;
@@ -217,14 +231,13 @@ public class CPathServiceImpl implements CPathService {
 		serviceResponse.setData(baos.toString());
 	}
 
-	/** 
-	 * Gets BioPAX elements by id, 
-	 * creates a sub-model, and returns everything as map.
-	 * 
-	 * @param uris
-	 * @return
+
+	/*
+	 * (non-Javadoc)
+	 * @see cpath.service.CPathService#fetchBiopaxModel(java.lang.String[])
 	 */
-	ServiceResponse fetchBiopaxModel(String... uris) {
+	@Override
+	public ServiceResponse fetchBiopaxModel(String... uris) {
 		if (uris.length > 0) {	
 			// extract a sub-model
 			Model m = mainDAO.getValidSubModel(Arrays.asList(uris));
@@ -241,6 +254,7 @@ public class CPathServiceImpl implements CPathService {
 				"No URIs were specified for the query!");
 		}
 	}	
+
 	
 	/**
 	 * Converts service results that contain 
@@ -313,13 +327,13 @@ public class CPathServiceImpl implements CPathService {
 			// new container to collect different files validation results
 			ValidatorResponse response = new ValidatorResponse();
 			for (PathwayData pathwayData : pathwayDataCollection) {
-				String xmlResult = pathwayData.getValidationResults().trim();
-				if (xmlResult != null && xmlResult.length() > 0) {
+				byte[] xmlResult = pathwayData.getValidationResults();
+				if (xmlResult != null && xmlResult.length > 0) {
 					// unmarshal and add to the 'results' list
 					Validation validation = null;
 					try {
 						ValidatorResponse resp = (ValidatorResponse) BiopaxValidatorUtils.getUnmarshaller()
-							.unmarshal(new StreamSource(new StringReader(xmlResult)));
+							.unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
 						validation = resp.getValidationResult().get(0);
 					}
                     catch (Exception e) {
@@ -508,15 +522,51 @@ public class CPathServiceImpl implements CPathService {
 	}
 
 	
+	/*
+	 * (non-Javadoc)
+	 * @see cpath.service.CPathService#topPathways()
+	 */
 	/**
-	 * Gets top pathways.
+	 * "Top pathway" can mean different things...
+	 * 
+	 * 1) One may want simply collect pathways which are not 
+	 * values of any BioPAX property (i.e., a "graph-theoretic" approach, 
+	 * used by {@link ModelUtils#getRootElements(Class)} method) and by 
+	 * BioPAX normalizer, which (in the cPath2 "premerge" stage),
+	 * for all Entities, generates relationship xrefs to their "parent" pathways.
+	 * 
+	 * 2) Another approach would be to check whether specific (inverse) 
+	 * properties, such as controlledOf, pathwayComponentOf and stepProcessOf, are empty.
+	 * 
+	 * Here we follow the second method!
 	 * 
 	 */
 	@Override
-	public SearchResponse getTopPathways() {
-		// call this only once
+	public SearchResponse topPathways() {
+		// on-demand once initializing here saves the server startup time
 		if(topPathways == null) {
-			topPathways = mainDAO.getTopPathways();
+			topPathways = new SearchResponse();
+			final List<SearchHit> hits = topPathways.getSearchHit(); //empty
+			int page = 0; // will use search pagination
+			SearchResponse searchResponse = mainDAO.search("*", page, Pathway.class, null, null);
+			while(!searchResponse.isEmpty()) {
+				//remove pathways having 'pathway' index field not empty, 
+				//i.e., keep only pathways where 'pathway' index field is empty (no controlledOf and pathwayComponentOf values)
+				for(SearchHit h : searchResponse.getSearchHit()) {
+					if(h.getPathway().isEmpty())
+						hits.add(h); //add to topPathways list
+				}
+				// go next page
+				searchResponse = mainDAO.search("*", ++page, Pathway.class, null, null);
+			}
+			// final touches...
+			topPathways.setNumHits(hits.size());
+			//TODO update the following comment if implementation has changed!
+			topPathways.setComment("Top Pathways (technically, each has empty index " +
+					"field 'pathway'; that also means, they are neither components of " +
+					"other pathways nor controlled of any process)");
+			topPathways.setMaxHitsPerPage(hits.size());
+			topPathways.setPageNo(0);
 		} 
 		
 		return topPathways;
@@ -553,5 +603,74 @@ public class CPathServiceImpl implements CPathService {
 	public void setBlacklist(Set<String> blacklist) {
 		this.blacklist = blacklist;
 	}
-    
+
+	
+	@Override
+	public SearchResponse dataSources() {
+		// on-demand initializing here saves the server startup time
+		if(dataSources == null) {
+			dataSources = new SearchResponse();
+			
+			// collect metadata identifiers of pathway data sources
+			final Set<String> metadataIds = new HashSet<String>();
+			for(Metadata met : metadataDAO.getAllMetadata())
+				if(!met.getType().isWarehouseData())
+					metadataIds.add(CPathSettings.generateBiopaxURI(met.getName(), Provenance.class));
+			
+			// find all Provenance instances and filter them out
+			final List<SearchHit> hits = dataSources.getSearchHit(); //empty
+			int page = 0; // will use search pagination
+			SearchResponse searchResponse;
+			while(!(searchResponse = 
+				mainDAO.search("*", page++, Provenance.class, null, null))
+					.isEmpty())
+			{
+				//remove pathways having 'pathway' index field not empty, 
+				//i.e., keep only pathways where 'pathway' index field is empty (no controlledOf and pathwayComponentOf values)
+				for(SearchHit h : searchResponse.getSearchHit()) {
+					if(metadataIds.contains(h.getUri()))
+						hits.add(h);
+				}
+			
+				if(searchResponse.getSearchHit().size() == searchResponse.getNumHits()) 
+					break;
+			}
+			// final touches...
+			dataSources.setNumHits(hits.size());
+			dataSources.setMaxHitsPerPage(hits.size());
+			dataSources.setPageNo(0);
+		}
+		
+		return dataSources;
+	}
+
+	
+	@Override
+	public SearchResponse bioSources() {
+		// on-demand initializing here saves the server startup time
+		if(bioSources == null) {
+			bioSources = new SearchResponse();
+			
+			// find all Provenance instances and filter them out
+			final List<SearchHit> hits = bioSources.getSearchHit(); //empty
+			int page = 0; // will use search pagination
+			SearchResponse searchResponse;
+			while(!(searchResponse = 
+				mainDAO.search("*", page++, BioSource.class, null, null))
+					.isEmpty()) 
+			{
+				hits.addAll(searchResponse.getSearchHit());
+				// go next page
+				if(searchResponse.getSearchHit().size() == searchResponse.getNumHits())
+					break;
+			}
+			// final touches...
+			bioSources.setNumHits(hits.size());
+			bioSources.setMaxHitsPerPage(hits.size());
+			bioSources.setPageNo(0);
+		}
+		
+		return bioSources;
+	}
+		
 }

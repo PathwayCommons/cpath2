@@ -17,8 +17,9 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.HashSet;
 import java.util.Collection;
 
 /**
@@ -59,6 +60,7 @@ class MetadataHibernateDAO  implements MetadataDAO {
 				log.info("Metadata object with identifier: " + metadata.getIdentifier() 
 					+ " already exists, manually merging.");
 			existing.setVersion(metadata.getVersion());
+			existing.setName(metadata.getName());
 			existing.setReleaseDate(metadata.getReleaseDate());
 			existing.setURLToData(metadata.getURLToData());
 			existing.setIcon(metadata.getIcon());
@@ -96,12 +98,13 @@ class MetadataHibernateDAO  implements MetadataDAO {
 	 *
      * @return Collection<Metadata>
      */
-    @Transactional(propagation=Propagation.REQUIRED)
-    public Collection<Metadata> getAll() {
+    @SuppressWarnings("unchecked")
+	@Transactional(propagation=Propagation.REQUIRED)
+    public Collection<Metadata> getAllMetadata() {
 		Session session = getSession();
 		Query query = session.getNamedQuery("cpath.warehouse.beans.allProvider");
-		List toReturn = query.list();
-		return (toReturn.size() > 0) ? new HashSet(toReturn) : new HashSet();
+		List<Metadata> toReturn = query.list();
+		return (toReturn.size() > 0) ? new ArrayList<Metadata>(toReturn) : Collections.EMPTY_SET;
 	}
     
     
@@ -142,7 +145,7 @@ class MetadataHibernateDAO  implements MetadataDAO {
 			session.update(existing);
 		}
 		
-		// pathwayData contains very large test data fields; so it's better to flush and free memory...
+		// pathwayData contains very large data fields; so it's better to flush/free memory...
 		session.flush();
 		session.clear();
 		
@@ -150,33 +153,46 @@ class MetadataHibernateDAO  implements MetadataDAO {
 			log.info("pathway data object has been sucessessfully saved or updated.");
     }
 
-    /**
+	
+    @SuppressWarnings("unchecked") //the named query returns PathwayData list
+	@Transactional(propagation=Propagation.REQUIRED)
+    public Collection<PathwayData> getAllPathwayData() {
+		Session session = getSession();
+		Query query = session.getNamedQuery("cpath.warehouse.beans.allPathwayData");
+		List<PathwayData> toReturn = query.list();
+		return (toReturn.size() > 0) ? new ArrayList<PathwayData>(toReturn) : Collections.EMPTY_SET;
+    }
+    
+    
+    /*
      * (non-Javadoc)
      * @see cpath.warehouse.metadata.MetadataDAO#getPathwayDataByIdentifier;
      */
-    @Transactional(propagation=Propagation.REQUIRED)
+	@SuppressWarnings("unchecked") //the named query returns PathwayData list
+	@Transactional(propagation=Propagation.REQUIRED)
     public Collection<PathwayData> getPathwayDataByIdentifier(final String identifier) {
 
 		Session session = getSession();
 		Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayByIdentifier");
 		query.setParameter("identifier", identifier);
-		List toReturn = query.list();
-		return (toReturn.size() > 0) ? new HashSet(toReturn) : new HashSet();
+		List<PathwayData> toReturn = query.list();
+		return (toReturn.size() > 0) ? new ArrayList<PathwayData>(toReturn) : Collections.EMPTY_SET;
     }
 
-    /**
+    /*
      * (non-Javadoc)
      * @see cpath.warehouse.metadata.MetadataDAO#getPathwayDataByIdentifierAndVersion;
      */
-    @Transactional(propagation=Propagation.REQUIRED)
+    @SuppressWarnings("unchecked") //the named query returns PathwayData list
+	@Transactional(propagation=Propagation.REQUIRED)
     public Collection<PathwayData> getPathwayDataByIdentifierAndVersion(final String identifier, final String version) {
 
 		Session session = getSession();
 		Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayByIdentifierAndVersion");
 		query.setParameter("identifier", identifier);
 		query.setParameter("version", version);
-		List toReturn = query.list();
-		return (toReturn.size() > 0) ? new HashSet(toReturn) : new HashSet();
+		List<PathwayData> toReturn = query.list();
+		return (toReturn.size() > 0) ? new ArrayList<PathwayData>(toReturn) : Collections.EMPTY_SET;
     }
 
     /**

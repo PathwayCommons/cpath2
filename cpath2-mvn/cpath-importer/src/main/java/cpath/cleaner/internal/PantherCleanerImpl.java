@@ -15,13 +15,15 @@ import java.util.HashSet;
 import java.io.*;
 
 /**
- * Implementation of Cleaner interface for Panther Pathway (2012) data. 
+ * Implementation of Cleaner interface for Panther Pathway (2012/03/20) data. 
  * The main problem is - use of PANTHER_HIT_* (rdf:ID) UnificationXrefs, 
  * which actually should be RelationshipXref (otherwise, different PRs become equivalent/replaced).
  * (Other problems were: too many duplicate/equivalent CV and Evidence objects -
  * won't fix here)
  * 
  * @author rodche
+ * 
+ * @deprecated the PANTHER_HIT_ xref issue is fixed now (on 2012/04/18)
  */
 final class PantherCleanerImpl extends BaseCleanerImpl {
     
@@ -33,11 +35,7 @@ final class PantherCleanerImpl extends BaseCleanerImpl {
 			new BufferedInputStream(new ByteArrayInputStream(pathwayData.getBytes()));
 		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
 		Model model = simpleReader.convertFromOWL(inputStream);
-		ModelUtils modelUtils = new ModelUtils(model);
 
-// with new primary key column (md5), no need to shorten URIs		
-// code was removed here...
-		
 		
 		// create a Relationship type CV "Homology"
 		final RelationshipTypeVocabulary rcv = model.addNew(RelationshipTypeVocabulary.class, 
@@ -75,9 +73,9 @@ final class PantherCleanerImpl extends BaseCleanerImpl {
 		}
 		
 		// replace/repair/clean
-		modelUtils.replace(subs);
+		ModelUtils.replace(model, subs);
 		model.repair();
-		modelUtils.removeObjectsIfDangling(UnificationXref.class);
+		ModelUtils.removeObjectsIfDangling(model, UnificationXref.class);
 				
 		// convert model back to OutputStream for return
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

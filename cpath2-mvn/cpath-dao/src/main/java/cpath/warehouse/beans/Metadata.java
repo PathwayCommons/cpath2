@@ -2,8 +2,13 @@ package cpath.warehouse.beans;
 
 // imports
 import java.io.File;
+import java.net.URLEncoder;
+import java.util.regex.Pattern;
 
 import javax.persistence.*;
+
+import cpath.config.CPathSettings;
+import cpath.config.CPathSettings.CPath2Property;
 
 /**
  * Data Provider Metadata.
@@ -12,31 +17,44 @@ import javax.persistence.*;
 @Table(name="metadata")
 @NamedQueries({
 		@NamedQuery(name="cpath.warehouse.beans.providerByIdentifier",
-					query="from Metadata as metadata where upper(metadata.identifier) = upper(:identifier)"),
+					query="from Metadata as metadata where identifier = :identifier order by identifier"),
 		@NamedQuery(name="cpath.warehouse.beans.allProvider", 
-					query="from Metadata as metadata")
+					query="from Metadata as metadata order by identifier")
 })
-public class Metadata {
+public final class Metadata {
 
-    // TYPE Enum
+    private static final Pattern BAD_ID_PATTERN = Pattern.compile("\\s|-");
+	
+	// TYPE Enum
     public static enum TYPE {
         // command types
-        PSI_MI,
-		BIOPAX,
-		PROTEIN,
-		SMALL_MOLECULE,
-		MAPPING;
+        PSI_MI(false),
+		BIOPAX(false),
+		PROTEIN(true),
+		SMALL_MOLECULE(true),
+		MAPPING(true);
+        
+        private final boolean warehouseData;
+        
+        private TYPE(boolean warehouseData) {
+			this.warehouseData = warehouseData;
+		}
+        
+        public boolean isWarehouseData() {
+			return warehouseData;
+		}
+        
     }
 
 	@Id
 	@Column(length=40)
     private String identifier;
 	@Column(nullable=false)
-    private String name; // Miriam standard name or synonym for the datasource! (if possible)
+    private String name;
 	@Column(nullable=false)
     private String version;
 	@Column(nullable=false)
-    private String releaseDate;
+    private String releaseDate; // - and/or comments
 	@Column(nullable=false)
     private String urlToData;
 	@Lob
@@ -65,107 +83,140 @@ public class Metadata {
      * @param isPSI Boolean
 	 * @param cleanerClassname String
 	 * @param converterClassname String
+	 * 
+	 * @throws IllegalArgumentException
      */
     public Metadata(final String identifier, final String name, final String version, final String releaseDate, final String urlToData,
 					final byte[] icon, final TYPE type, final String cleanerClassname, final String converterClassname) {
 
-        if (identifier == null) {
-            throw new IllegalArgumentException("identifier must not be null");
-        }
-        
-        // MySQL can't handle dashes in database names (metadata identifier may become part of db name...)
-        if(identifier.contains("-")) {
-        	this.identifier = identifier.replaceAll("-", "_");
-        } else {
-        	this.identifier = identifier;
-        }
-        
+    	//set/validate all parameters
+    	setIdentifier(identifier); 
+        setName(name);
+        setVersion(version);
+        setReleaseDate(releaseDate);
+        setURLToData(urlToData);
+        setIcon(icon);
+        setType(type);
+        setCleanerClassname(cleanerClassname);
+        setConverterClassname(converterClassname);
+    }
+
+	/**
+	 * Sets the identifier.
+	 * No spaces, dashes, allowed. 
+	 * 
+	 * @param identifier
+	 * @throws IllegalArgumentException if it's null, empty string, or contains spaces or dashes
+	 */
+    void setIdentifier(String identifier) {
+    	// validate the parameter
+    	
+    	if(identifier == null 
+    		|| identifier.length() == 0
+    		|| BAD_ID_PATTERN.matcher(identifier).find())
+    		throw new IllegalAccessError("Bad metadata identifier: " + identifier);
+    		
+		// copy value
+    	this.identifier = identifier;
+	}
+	
+	/**
+	 * Data source metadata identifier.
+	 * 
+	 * It can be also used as filter ('datasource') 
+	 * value in cpath2 full-text search queries
+	 * (for pathway datasource types only)
+	 * 
+	 * @return
+	 */
+    public String getIdentifier() { return identifier; }
+
+	/**
+	 * Sets data provider/source name. 
+	 * 
+	 * Please use a standard name for pathway/interaction data types,
+	 * if possible (for warehouse data it's not so important), 
+	 * as this will be recommended to use as filter ('datasource') 
+	 * value in cpath2 full-text search queries 
+	 * 
+     * @param name
+     * @throws IllegalArgumentException
+     */
+	public void setName(String name) {
         if (name == null) {
             throw new IllegalArgumentException("name must not be null");
         }
-        this.name = name;
+		this.name = name;
+	}
+	
+	/**
+	 * Gets the data provider/source name.
+	 * 
+	 * @return
+	 */
+    public String getName() { return name; }
 
+	public void setVersion(String version) {
         if (version == null) {
             throw new IllegalArgumentException("version must not be null");
         }
         this.version = version;
+	}
+    public String getVersion() { return version; }
 
+	public void setReleaseDate(String releaseDate) {
         if (releaseDate == null) {
             throw new IllegalArgumentException("release data must not be null");
         }
         this.releaseDate = releaseDate;
-
-        if (urlToData == null) {
-            throw new IllegalArgumentException("URL to data must not be null");
-        }
-        this.urlToData = urlToData;
-
-        if (icon == null) {
-            throw new IllegalArgumentException("icon must not be null");
-        }
-        this.icon = icon;
-
-        if (type == null) {
-            throw new IllegalArgumentException("type must not be null");
-        }
-        this.type = type;
-
-		if (cleanerClassname == null) {
-			throw new IllegalArgumentException("cleaner class name cannot be null");
-		}
-		this.cleanerClassname = cleanerClassname;
-
-		
-		if (converterClassname == null) {
-			throw new IllegalArgumentException("converter class name cannot be null");
-		}
-		this.converterClassname = converterClassname;
-    }
-
-	public void setIdentifier(String identifier) {
-		this.identifier = identifier;
-	}
-    public String getIdentifier() { return identifier; }
-
-	public void setName(String name) {
-		this.name = name;
-	}
-    public String getName() { return name; }
-
-	public void setVersion(String version) {
-		this.version = version;
-	}
-    public String getVersion() { return version; }
-
-	public void setReleaseDate(String releaseData) {
-		this.releaseDate = releaseDate;
 	}
     public String getReleaseDate() { return releaseDate; }
 
 	public void setURLToData(String urlToData) {
-		this.urlToData = urlToData;
+        if (urlToData == null) {
+            throw new IllegalArgumentException("URL to data must not be null");
+        }
+        this.urlToData = urlToData;
 	}
     public String getURLToData() { return urlToData; }
 
 	public void setIcon(byte[] icon) {
-		this.icon = icon;
+        if (icon == null) {
+            throw new IllegalArgumentException("icon must not be null");
+        }
+        this.icon = icon;
 	}
-    public byte[] getIcon() { return icon; }
+    public byte[] getIcon() { return icon.clone(); }
 
 	public void setType(TYPE type) {
-		this.type = type;
+        if (type == null) {
+            throw new IllegalArgumentException("type must not be null");
+        }
+        this.type = type;
 	}
     public TYPE getType() { return type; }
 
 	public void setCleanerClassname(String cleanerClassname) {
-		this.cleanerClassname = cleanerClassname;
+		if(cleanerClassname == null || cleanerClassname.trim().length() == 0)
+			this.cleanerClassname = null;
+		else 
+			this.cleanerClassname = cleanerClassname.trim();
 	}
-    public String getCleanerClassname() { return cleanerClassname; }
+    public String getCleanerClassname() { 
+    	return (cleanerClassname == null || cleanerClassname.length() == 0) 
+    			? null : cleanerClassname; 
+    }
 
 	public void setConverterClassname(String converterClassname) {
-		this.converterClassname = converterClassname;
+		if(converterClassname == null || converterClassname.trim().length() == 0)
+			this.converterClassname = null;
+		else
+			this.converterClassname = converterClassname.trim();
 	}
-    public String getConverterClassname() { return converterClassname; }
+    public String getConverterClassname() { 
+    	return (converterClassname == null || converterClassname.length() == 0) 
+    			? null : converterClassname; 
+    }
 
     @Override
     public String toString() {
@@ -174,18 +225,17 @@ public class Metadata {
     
     
 	/**
-	 * Gets the full local directory name 
-	 * (within CPATH2_HOME directory)
-	 * where this type of data are/will be
-	 * stored.
+	 * Gets the full local directory path 
+	 * where this type of data will be
+	 * temporarily fetched, stored,
+	 * re-used.
 	 * 
 	 * @return
 	 */
     @Transient
-	public String getDataLocalDir() {
-		//return CPathSettings.getHomeDir() 
-		//	+ File.separator + type.name().toLowerCase();
-    	return System.getProperty("java.io.tmpdir");
+	public String localDataDir() {
+		return CPathSettings.getHomeDir() 
+			+ File.separator + CPathSettings.DATA_SUBDIR_NAME;
 	}
     
 	/**
@@ -194,8 +244,8 @@ public class Metadata {
 	 * @return
 	 */
     @Transient
-    public String getLocalDataFile() {
-    	String name = getDataLocalDir() 
+    public String localDataFile() {
+    	String name = localDataDir() 
     	+ File.separator + identifier + "." + version;
     	
     	// add the file extension, if any, if different from the version...
@@ -207,5 +257,18 @@ public class Metadata {
 		}
 		
 		return name;
+    }
+    
+    
+    /**
+     * Get the generated from the identifier URI
+     * (actual URI prefix depends on current cpath2 'xml.base' property value)
+     * 
+     * @return
+     */
+    @Transient
+    public String uri() {
+    	return CPathSettings.get(CPath2Property.XML_BASE)
+    			+ URLEncoder.encode(identifier);
     }
 }

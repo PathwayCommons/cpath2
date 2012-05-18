@@ -49,7 +49,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
 import cpath.config.CPathSettings;
-import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Cleaner;
 import cpath.importer.Converter;
 import cpath.importer.Fetcher;
@@ -93,10 +92,14 @@ final class FetcherImpl implements Fetcher
 	// LOADER can handle file://, ftp://, http://  URL resources
 	private static final ResourceLoader LOADER = new DefaultResourceLoader();
 	
+	private boolean reUseFetchedDataFiles = true;
+	
+	
 	/**
 	 * Protected Constructor.
 	 */
 	FetcherImpl() {
+		reUseFetchedDataFiles = true;
 	}
 	
 	@Override
@@ -136,91 +139,104 @@ final class FetcherImpl implements Fetcher
             {
                 // grab a line
                 String line = reader.readLine();
-                if(log.isDebugEnabled())
-                	log.debug("readFromService(), line: " + line);
-
-                // for now assume line is delimited by '<br>'
-                // TODO: update when data moved to wiki page
-                String[] tokens = line.split("<br>");
+                if("".equals(line.trim()))
+                	continue;
+                else if(line.trim().startsWith("#")) {
+                	if(log.isInfoEnabled())
+                    	log.info("readMetadata(), line: " + line);
+                	continue; //ignore/skip parsing
+                }
+                	
+                /* for now, assume line is delimited into 9 columns by '<br>';
+                 * empty strings in the middle (the result of using <br><br>) and 
+                 * trailing empty string after the last '<br>' (i.e., Converter 
+                 * class name, if any), will be added to the tokens array as well.
+                 */
+                // TODO: update when data moved to, e.g., a wiki page; by the way, <br> is wrong html tag...
+                String[] tokens = line.split("<br>",-1); 
 				if (log.isDebugEnabled()) {
-					log.debug("readFromService(), token size: " + tokens.length);
+					log.debug("readMetadata(), token size: " + tokens.length);
 					for (String token : tokens) {
-						log.debug("readFromService(), token: " + token);
+						log.debug("readMetadata(), token: " + token);
 					}
 				}
 
-                if (tokens.length == NUMBER_METADATA_ITEMS) {
+                assert tokens.length == NUMBER_METADATA_ITEMS : "readMetadata(): " +
+                		"wrong number of columns, " + tokens.length + " instead of "
+                		+ NUMBER_METADATA_ITEMS + ", in the metadata record: " + line;
 
-					// convert version string to float
-					String version = null;
-					try {
-						version = tokens[METADATA_VERSION_INDEX];
-					}
-					catch (NumberFormatException e) {
-						log.error("readFromService(), number format exception caught for provider: "
-								+ tokens[METADATA_IDENTIFIER_INDEX] + " skipping");
-						continue;
-					}
+				// convert version string to float
+				String version = null;
+				try {
+					version = tokens[METADATA_VERSION_INDEX];
+				}
+				catch (NumberFormatException e) {
+					log.error("readMetadata(), number format exception caught for provider: "
+							+ tokens[METADATA_IDENTIFIER_INDEX] + " skipping");
+					continue;
+				}
 
-					// get metadata type
-					Metadata.TYPE metadataType = Metadata.TYPE.valueOf(tokens[METADATA_TYPE_INDEX]);
+				// get metadata type
+				Metadata.TYPE metadataType = Metadata.TYPE.valueOf(tokens[METADATA_TYPE_INDEX]);
 
-					// get icon data from service
+				// get icon data from service
+				if(log.isInfoEnabled())
+					log.info("readMetadata(): fetching icon data from: " 
+						+ tokens[METADATA_ICON_URL_INDEX]);
+				byte[] iconData = null;
+				try {
+					InputStream stream = LOADER.getResource(tokens[METADATA_ICON_URL_INDEX]).getInputStream();
+					// we could simply read to byte[] directly, but let's do more interesting things - 
+					BufferedImage image = ImageIO.read(stream);
+					// TODO conversion of the icon into another format could easily happen here
+					if(image != null)
+						iconData = ((DataBufferByte)image.getRaster().getDataBuffer()).getData();
+				} catch (IOException e) {
+					log.error("readMetadata(): Cannot load image from " 
+							+  tokens[METADATA_ICON_URL_INDEX] + ". Skipping. " + e);
+				}
+					
+				if (iconData == null) { 
 					if(log.isInfoEnabled())
-						log.info("fetching icon data from: " + tokens[METADATA_ICON_URL_INDEX]);
-					byte[] iconData = null;
-					try {
-						InputStream stream = LOADER.getResource(tokens[METADATA_ICON_URL_INDEX]).getInputStream();
-						// we could simply read to byte[] directly, but let's do more interesting things - 
-						BufferedImage image = ImageIO.read(stream);
-						// TODO conversion of the icon into another format could easily happen here
-						if(image != null)
-							iconData = ((DataBufferByte)image.getRaster().getDataBuffer()).getData();
-					} catch (IOException e) {
-						log.error("Cannot load image from " +  tokens[METADATA_ICON_URL_INDEX] 
-						                                              + ". Skipping. " + e);
-					}
-					
-					if (iconData == null) { 
-						if(log.isInfoEnabled())
-							log.info("readFromService(), missing or unaccessible " +
-								"data (icon) to create Metadata bean: iconData.");
-						iconData = new byte[]{};
-					}
-					
-					if(log.isDebugEnabled())
-						log.debug("readFromService(), make a Metadata bean.");
-
-                        // create a metadata bean
-                    Metadata metadata = new Metadata(tokens[METADATA_IDENTIFIER_INDEX], tokens[METADATA_NAME_INDEX],
-                                                         version, tokens[METADATA_RELEASE_DATE_INDEX],
-                                                         tokens[METADATA_DATA_URL_INDEX], iconData, metadataType,
-														 tokens[METADATA_CLEANER_CLASS_NAME_INDEX],
-														 tokens[METADATA_CONVERTER_CLASS_NAME_INDEX]);
-					if (log.isInfoEnabled()) {
-						log.info("Adding Metadata : "
-							+ metadata.getIdentifier() 
-							+ "; " + metadata.getName()
-							+ "; " + metadata.getVersion()
-							+ "; " + metadata.getReleaseDate()
-							+ "; " + metadata.getURLToData()
-							+ "; " + tokens[METADATA_ICON_URL_INDEX]
-							+ "; " + metadata.getType());
-					}
-					if (metadata.getType() == Metadata.TYPE.PSI_MI
-							|| metadata.getType() == Metadata.TYPE.BIOPAX) {
-						if (log.isInfoEnabled())
-							log.info(metadata.getCleanerClassname());
-												
-					} else if (metadata.getType() == Metadata.TYPE.PROTEIN) {
-						if (log.isInfoEnabled())
-							log.info(metadata.getConverterClassname());
-					}
-					
-					// add metadata object toc collection we return
-					toReturn.add(metadata);
+						log.info("readMetadata(): missing or unaccessible " +
+							"data (icon) to create Metadata bean: iconData.");
+					iconData = new byte[]{};
 				}
-            }
+					
+				if(log.isDebugEnabled())
+					log.debug("readMetadata(): make a Metadata bean.");
+
+                // create a metadata bean
+                Metadata metadata = new Metadata(
+                		tokens[METADATA_IDENTIFIER_INDEX], 
+                		tokens[METADATA_NAME_INDEX],
+                		version, 
+                		tokens[METADATA_RELEASE_DATE_INDEX],
+                        tokens[METADATA_DATA_URL_INDEX], 
+                        iconData, 
+                        metadataType,
+						tokens[METADATA_CLEANER_CLASS_NAME_INDEX],
+						tokens[METADATA_CONVERTER_CLASS_NAME_INDEX]);
+                
+                
+                
+                
+				if (log.isInfoEnabled()) {
+					log.info("readMetadata(): adding Metadata: "
+					+ "identifier=" + metadata.getIdentifier() 
+					+ "; name=" + metadata.getName()
+					+ "; version=" + metadata.getVersion()
+					+ "; date/comment=" + metadata.getReleaseDate()
+					+ "; location=" + metadata.getURLToData()
+					+ "; icon=" + tokens[METADATA_ICON_URL_INDEX]
+					+ "; type=" + metadata.getType()
+					+ "; cleaner=" + metadata.getCleanerClassname() 
+					+ "; converter=" + metadata.getConverterClassname());
+				}
+					
+				// add metadata object toc collection we return
+				toReturn.add(metadata);
+            } 
         }
         catch (java.io.UnsupportedEncodingException e) {
         }
@@ -238,7 +254,7 @@ final class FetcherImpl implements Fetcher
     	throws IOException 
     {
         Collection<PathwayData> toReturn = new HashSet<PathwayData>();
-		String url = "file://" + metadata.getLocalDataFile();
+		String url = "file://" + metadata.localDataFile();
 		BufferedInputStream bis = new BufferedInputStream(LOADER.getResource(url).getInputStream());
 		
 		// pathway data is either owl, zip (multiple file entries allowed) or gz (single data entry)
@@ -275,14 +291,15 @@ final class FetcherImpl implements Fetcher
 		String filename = metadata.getURLToData().substring(idx+1); // not found (-1) gives entire string
 		String digest = getDigest(fetchedData.getBytes());
 		
-		return new PathwayData(metadata.getIdentifier(), metadata.getVersion(), filename, digest, fetchedData);
+		return new PathwayData(metadata.getIdentifier(), metadata.getVersion(),
+				filename, digest, fetchedData.getBytes());
 	}
 
     
     private String readContent(final InputStream inputStream) throws IOException 
     {
             BufferedReader reader = null;
-    		StringBuffer toReturn = new StringBuffer();
+    		StringBuilder toReturn = new StringBuilder();
             try {
                 // we'd like to read lines at a time
                 reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
@@ -361,7 +378,7 @@ final class FetcherImpl implements Fetcher
 							" version: " + metadata.getVersion() +
 							" digest: " + digest);
 					PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), 
-						metadata.getVersion(), entryName, digest, content);
+						metadata.getVersion(), entryName, digest, content.getBytes());
 				
 					// add object to return collection
 					toReturn.add(pathwayData);
@@ -448,15 +465,15 @@ final class FetcherImpl implements Fetcher
 	 * @see cpath.fetcher.WarehouseDataService#storeWarehouseData(cpath.warehouse.beans.Metadata, org.biopax.paxtools.model.Model)
 	 */
 	@Override
-    public void storeWarehouseData(final Metadata metadata, final PaxtoolsDAO model) 
+    public void storeWarehouseData(final Metadata metadata, final Model model) 
 		throws IOException 
 	{
 		// use the local file (previously fetched from metadata.urlTodata)
-		String urlStr = "file://" + metadata.getLocalDataFile();
+		String urlStr = "file://" + metadata.localDataFile();
 		InputStream is = new BufferedInputStream(LOADER.getResource(urlStr)
 				.getInputStream());
 		if (log.isInfoEnabled())
-			log.info("Input stream is now open for provider: "
+			log.info("storeWarehouseData(..): input stream is now open for provider: "
 					+ metadata.getIdentifier() + " version: "
 					+ metadata.getVersion());
 		
@@ -471,7 +488,8 @@ final class FetcherImpl implements Fetcher
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				while ((entry = zis.getNextEntry()) != null) {
 					if (log.isInfoEnabled())
-						log.info("Processing zip entry: " + entry.getName());
+						log.info("storeWarehouseData(..): processing zip entry: " 
+							+ entry.getName());
 					// write file to buffered output stream
 					int count;
 					byte data[] = new byte[BUFFER];
@@ -488,61 +506,75 @@ final class FetcherImpl implements Fetcher
 				
 			} else {
 				if (log.isInfoEnabled())
-					log.info("Not using un(g)zip (cannot guess " +
-						"from the extension) for " + urlStr);
+					log.info("storeWarehouseData(..): not using un(g)zip " +
+						"(cannot guess from the extension) for " + urlStr);
 			}
 
 			if (log.isInfoEnabled()) {
-				log.info("Creating EntityReference objects, provider: "
-						+ metadata.getIdentifier() + " version: "
+				log.info("storeWarehouseData(..): creating EntityReference objects, " +
+						"provider: " + metadata.getIdentifier() + " version: "
 						+ metadata.getVersion());
 			}
 
 			// hook into a cleaner for given provider
-			if(log.isInfoEnabled())
-				log.info("getting a cleaner with name: " + metadata.getCleanerClassname());
-			Cleaner cleaner = ImportFactory.newCleaner(metadata.getCleanerClassname());
-			if (cleaner == null) {
-				// TDB: report failure
-				if(log.isInfoEnabled())
-					log.info("could not create cleaner class " 
-						+ metadata.getCleanerClassname());
-				return;
+			// Try to instantiate the Cleaner (if any) sooner, and exit if it fails!
+			String cl = metadata.getCleanerClassname();
+			Cleaner cleaner = null;
+			if(cl != null && cl.length()>0) {
+				cleaner = ImportFactory.newCleaner(cl);
+				if (cleaner == null) {
+					log.error("storeWarehouseData(..): " +
+						"failed to create the specified Cleaner: " + cl);
+					return; // skip for this data entry and return before reading anything
+				}
+			} else {
+				log.info("storeWarehouseData(..): no Cleaner class was specified; " +
+					"continue converting...");
 			}
 			
 			// read the entire data from the input stream to a text string
 			String data = readContent(is);
-			// run the cleaner
-			data = cleaner.clean(data);
+			
+			// run the cleaner, if any -
+			if(cleaner != null) {
+				log.info("storeWarehouseData(..): running the Cleaner: " + cl);	
+				data = cleaner.clean(data);
+			}
 			
 			// re-open a new input stream for the cleaned data
 			is = new BufferedInputStream(new ByteArrayInputStream(data.getBytes("UTF-8")));
 			
 			// hook into a converter for given provider
-			if (log.isInfoEnabled())
-				log.info("getting a converter with name: "
-						+ metadata.getConverterClassname());
-			
-			Converter converter = ImportFactory.newConverter(metadata.getConverterClassname());
-			if(converter == null) {
-				log.info(("Converter is null; skipping this step..."));
-				return;
-			} 
-			
-			// create a new empty in-memory model
-			Model inMemModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-			// convert data into that
-			converter.setModel(inMemModel);
-			converter.convert(is);
-			//repair
-			log.info("storeWarehouseData(..): Preparing just created " +
-					metadata.getIdentifier() + 
-					" model to merging...");
-			inMemModel.repair();
-			// merging may take quite a time...
-			log.info("storeWarehouseData(..): Merging " +
-				metadata.getIdentifier());
-			model.merge(inMemModel);
+			cl = metadata.getConverterClassname();
+			Converter converter = null;
+			if(cl != null && cl.length()>0) {
+				converter = ImportFactory.newConverter(cl);
+				if(converter != null) {
+					log.info("storeWarehouseData(..): running " +
+							"the BioPAX Converter: " + cl);	
+					// create a new empty in-memory model
+					Model inMemModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+					// convert data into that
+					converter.setModel(inMemModel);
+					converter.convert(is);
+					//repair
+					log.info("storeWarehouseData(..): Preparing just created " +
+						metadata.getIdentifier() + " BioPAX Model to merging...");
+					inMemModel.repair();
+					// merging may take quite a time...
+					log.info("storeWarehouseData(..): Persisting " +
+						metadata.getIdentifier());
+					model.merge(inMemModel);
+				}
+				else 
+					log.error(("storeWarehouseData(..): failed to create " +
+						"the Converter class: " + cl
+						+ "; so skipping for this warehouse data..."));
+			} else {
+				log.info("storeWarehouseData(..): No Converter class was specified; " +
+					"so nothing else left to do");
+			}
+
 			log.info("storeWarehouseData(..): Exitting.");
 			
 		} finally {
@@ -554,14 +586,14 @@ final class FetcherImpl implements Fetcher
 	@Override
 	public void fetchData(Metadata metadata) throws IOException {
 		
-		File dir = new File(metadata.getDataLocalDir());
-		if(!(dir.exists() && dir.isDirectory())) {
+		File dir = new File(metadata.localDataDir());
+		if(!dir.exists()) {
 			dir.mkdir();
 		}
 		
-		String localFileName = metadata.getLocalDataFile();
+		String localFileName = metadata.localDataFile();
 		File localFile = new File(localFileName);
-		if(localFile.exists() && localFile.isFile()) {
+		if(reUseFetchedDataFiles && localFile.exists() && localFile.isFile()) {
 			if(log.isInfoEnabled())
 				log.info(metadata.getType() + " data : " + metadata.getIdentifier() 
 					+ "." + metadata.getVersion() + " - found in "
@@ -611,11 +643,11 @@ final class FetcherImpl implements Fetcher
 	  	}
 		
 		// use the local file (previously fetched from metadata.urlTodata)
-		String urlStr = "file://" + metadata.getLocalDataFile();
+		String urlStr = "file://" + metadata.localDataFile();
 		if (log.isInfoEnabled()) {
 			log.info("Processing mapping data: "
 					+ metadata.getIdentifier() + " file: "
-					+ metadata.getLocalDataFile());
+					+ metadata.localDataFile());
 		}
 		InputStream is = new BufferedInputStream(
 				LOADER.getResource(urlStr).getInputStream());
@@ -648,7 +680,7 @@ final class FetcherImpl implements Fetcher
   					 * 
   					 * (or at least - +metadata.getLocalDataFile() + ".bridge")
 					 */
-					String fname = metadata.getLocalDataFile() + ".bridge"; // .zip.bridge - ok
+					String fname = metadata.localDataFile() + ".bridge"; // .zip.bridge - ok
 					if (log.isInfoEnabled())
 						log.info("Processing zip entry: " + entry.getName()
 							+ "; expanding to: " + fname);
@@ -667,6 +699,26 @@ final class FetcherImpl implements Fetcher
 		} finally {
 			closeQuietly(is);
 		}
+	}
+
+	
+	/**
+	 * Flags whether to reuse previously fetched data files,
+	 * if exist in the special data sub-directory under cpath2 home,
+	 * or always download and replace (from specified
+	 * in the metadata locations). Existing files are detected
+	 * and related to the corresponding metadata by file name, 
+	 * which is auto-generated from the metadata identifier, version,
+	 * and file extention (if present).
+	 * 
+	 * @return
+	 */
+	final boolean isReUseFetchedDataFiles() {
+		return reUseFetchedDataFiles;
+	}
+
+	final void setReUseFetchedDataFiles(boolean reUseFetchedDataFiles) {
+		this.reUseFetchedDataFiles = reUseFetchedDataFiles;
 	}
 		
 }

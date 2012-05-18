@@ -37,6 +37,7 @@
 	</bean>
 
 	<bean id="helpController" class="cpath.webservice.HelpController">
+		<constructor-arg ref="service"/>
 	</bean>
 	
 	<bean id="validationResultsController" class="cpath.webservice.ValidationResultsController">

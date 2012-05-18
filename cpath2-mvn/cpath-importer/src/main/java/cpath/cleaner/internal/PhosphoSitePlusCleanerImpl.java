@@ -4,7 +4,6 @@ import cpath.importer.Cleaner;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.io.SimpleIOHandler;
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Provenance;
@@ -67,14 +66,13 @@ public class PhosphoSitePlusCleanerImpl implements Cleaner {
         }
 
         // And this is to make the Provenance compatible with Miriam
-        String miriamCompatibleName = "PhosphoSite Protein";
+        String standardName = "PhosphoSitePlus";
         for (Provenance provenance : model.getObjects(Provenance.class)) {
             String displayName = provenance.getDisplayName();
-
-            if(displayName.startsWith("Phosphosite")) {
-                log.trace("Replacing Provenance displayName " + displayName + " with " + miriamCompatibleName);
+            if(displayName != null && displayName.startsWith("Phosphosite")) {
+                log.trace("Replacing Provenance displayName " + displayName + " with " + standardName);
                 // http://www.ebi.ac.uk/miriam/main/collections/MIR:00000105
-                provenance.setDisplayName(miriamCompatibleName);
+                provenance.setDisplayName(standardName);
             }
         }
         

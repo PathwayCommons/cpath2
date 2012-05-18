@@ -18,8 +18,7 @@
 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
 	<bean id="log4jInitialization" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-	  <property name="targetClass"
-				value="org.springframework.util.Log4jConfigurer" />
+	  <property name="targetClass" value="org.springframework.util.Log4jConfigurer" />
 	  <property name="targetMethod" value="initLogging" />
 	  <property name="arguments">
 		<list>
@@ -50,6 +49,7 @@
 	</bean>
 
 	<bean id="helpController" class="cpath.webservice.HelpController">
+		<constructor-arg ref="service"/>
 	</bean>
 
     <bean id="validationResultsController" class="cpath.webservice.ValidationResultsController">

@@ -34,7 +34,6 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.bridgedb.DataSource;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -43,13 +42,14 @@ import org.apache.commons.logging.*;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
-import cpath.service.BioDataTypes;
-import cpath.service.BioDataTypes.Type;
 import cpath.service.CPathService;
 import cpath.service.OutputFormat;
 import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.ServiceResponse;
+import cpath.warehouse.MetadataDAO;
+import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.beans.Metadata.TYPE;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -70,14 +70,18 @@ public class CPathServiceTest {
 				new String[] {"classpath:testContext-pcDAO.xml", 
 					"classpath:testContext-whDAO.xml"});
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
+		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
 		log.info("Loading BioPAX data (importModel(file))...");
 		File biopaxFile = new File(CPathServiceTest.class.getResource("/test.owl").getFile());		
 		try {
 			dao.importModel(biopaxFile);
+			mdao.importMetadata(new Metadata("test", "Reactome", "00", "Foo", "", new byte[]{}, TYPE.BIOPAX, "", ""));
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
+
+		dao.index();
     }
 	
 	
@@ -119,7 +123,7 @@ public class CPathServiceTest {
 	@Test
 	public void testFetchAsSIF() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		CPathService service = new CPathServiceImpl(dao, null);//,null,null,null);
+		CPathService service = new CPathServiceImpl(dao, null);
 		ServiceResponse res = service.fetch(
 				OutputFormat.BINARY_SIF,
 				"http://www.biopax.org/examples/myExample#biochemReaction1");
@@ -138,23 +142,16 @@ public class CPathServiceTest {
 	
 	
 	@Test
-	public void testBioDataTypes() {
+	public void testDataAndBioSources() {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		BioDataTypes types = new BioDataTypes(dao);
-		types.init();		
-		assertFalse(types.getDataSourceKeys(Type.ORGANISM).isEmpty());
-		assertFalse(types.getDataSourceKeys(Type.DATASOURCE).isEmpty());
+		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
+		CPathService service = new CPathServiceImpl(dao, mdao);
 		
-		//
-		for(DataSource o : types.getDataSources(Type.ORGANISM)) {
-			System.out.println("organism: " + o.getSystemCode() + " "
-				+ o.getFullName() + " " + o.getMainUrl() 
-				+ "; bioSource: " + o.getOrganism().toString());
-		}
-		for(DataSource o : types.getDataSources(Type.DATASOURCE)) {
-			System.out.println("datatype: " + o.getSystemCode() + " "
-				+ o.getFullName() + " " + o.getMainUrl() 
-				+ "; provenance: " + o.getOrganism().toString());
-		}
+		assertFalse(service.bioSources().isEmpty());
+		assertFalse(service.dataSources().isEmpty());
+		
+		assertEquals(1, service.bioSources().getSearchHit().size());
+		assertEquals(1, service.dataSources().getSearchHit().size());
+		
 	}
 }

@@ -236,7 +236,7 @@ public class Main  {
 	
 	
 	private static void usage() {
-		StringBuffer toReturn = new StringBuffer();
+		StringBuilder toReturn = new StringBuilder();
 		toReturn.append(Main.class.getCanonicalName()).append(" <command> <one or more args>" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
 		toReturn.append(COMMAND.VALIDATION_REPORT.toString() + " <provider> <output.xml>" + NEWLINE);
@@ -251,7 +251,7 @@ public class Main  {
      */
     private static String readFileAsString(String filePath) throws java.io.IOException {
 
-        StringBuffer fileData = new StringBuffer();
+        StringBuilder fileData = new StringBuilder();
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
         char[] buf = new char[1024];
         int numRead=0;
