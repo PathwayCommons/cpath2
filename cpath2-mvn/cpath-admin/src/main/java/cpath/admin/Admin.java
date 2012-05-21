@@ -39,7 +39,9 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
 import org.biopax.paxtools.io.*;
+import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.Validator;
 
 import org.apache.commons.logging.Log;
@@ -53,16 +55,20 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 
+
 import static cpath.config.CPathSettings.*;
 
 /**
  * Class which provides command line admin capabilities.
  * 
- * TODO (not urgent) re-factor to use JLine
+ * TODO (not urgent) re-factor to use JLine or Apache CLI
  */
 public class Admin implements Runnable {
 	private static final Log LOG = LogFactory.getLog(Admin.class);
-	
+
+    private static Integer DEGREE_THRESHOLD = 100;
+    private static Integer CONTROL_DEGREE_THRESHOLD = 6;
+
     // COMMAND Enum
     public static enum COMMAND {
 
@@ -75,6 +81,7 @@ public class Admin implements Runnable {
 		MERGE("-merge"),
 		EXPORT("-export"),
 		EXPORT_VALIDATION("-export-validation"),
+        CREATE_BLACKLIST("-create-blacklist")
 		;
 
         // string ref for readable name
@@ -175,8 +182,14 @@ public class Admin implements Runnable {
 				this.command = COMMAND.EXPORT_VALIDATION;
 				this.commandParameters = new String[] {args[1], args[2]};
 			} 
-        }
-        else {
+        } else if(args[0].equals(COMMAND.CREATE_BLACKLIST.toString())) {
+            if(args.length != 3) {
+                validArgs = false;
+            } else {
+                this.command = COMMAND.CREATE_BLACKLIST;
+                this.commandParameters = new String[] {args[1], args[2]};
+            }
+        } else {
             validArgs = false;
         }
 
@@ -291,6 +304,10 @@ public class Admin implements Runnable {
             	Integer pk = Integer.valueOf(commandParameters[0]);
                 exportValidation(pk, os);
 				break;
+            case CREATE_BLACKLIST:
+                os = new FileOutputStream(commandParameters[1]);
+                createBlacklist(commandParameters[0], os);
+                break;
             }
         }
         catch (Exception e) {
@@ -299,8 +316,107 @@ public class Admin implements Runnable {
         }
     }
 
-    
-	private void runMerge(String provider, String version, boolean force) {
+    /*
+        Algorithm:
+          * Get all SmallMoleculeReferences
+          * Calculate the degrees (i.e. num of reactions and num of complexes it is associated with)
+          * if it is bigger than the overall threshold and lower than the regulation threshold
+          *     add it (and its members/entities/member entities to the list)
+     */
+    private void createBlacklist(final String src, OutputStream output) {
+        LOG.debug("Creating blacklist from the database: " + src);
+        PaxtoolsDAO paxtoolsDAO = ImportFactory.buildPaxtoolsHibernateDAO(src);
+
+        paxtoolsDAO.runAnalysis(new Analysis() {
+            @Override
+            public Set<BioPAXElement> execute(Model model, Object... args) {
+                // This is to keep track of ids and to prevent multiple addition of a single element
+                Set<BioPAXElement> blacklistedBPEs = new HashSet<BioPAXElement>();
+
+                // Get all small molecule references
+                for (SmallMoleculeReference ref : model.getObjects(SmallMoleculeReference.class)) {
+                    Set<EntityReference> refs = new HashSet<EntityReference>();
+                    // Collect its member refs (and their members refs if present)
+                    getAllMemberRefs(ref, refs);
+
+                    Set<PhysicalEntity> entities = new HashSet<PhysicalEntity>();
+                    for (EntityReference entityReference : refs) {
+                        for (SimplePhysicalEntity entity : entityReference.getEntityReferenceOf()) {
+                            //  Pool all entities and their member entities
+                            getAllSPEs(entity, entities);
+                        }
+                    }
+
+                    // Count the degrees of the entities and sum them all
+                    int regDegree = 0;
+                    int allDegree = 0;
+                    for (PhysicalEntity entity : entities) {
+                        // These are the complexes
+                        allDegree += entity.getComponentOf().size();
+
+                        // These are the interactions
+                        for (Interaction interaction : entity.getParticipantOf()) {
+                            if(!(interaction instanceof ComplexAssembly)) { // Since we already count the complexes
+                                allDegree++;
+
+                                // Also count the control iteractions
+                                if(interaction instanceof Control) {
+                                    regDegree++;
+                                }
+                            }
+                        }
+                    } // End of iteration, degree calculation
+
+                    // See if it needs to be blacklisted
+                    if(regDegree < CONTROL_DEGREE_THRESHOLD && allDegree > DEGREE_THRESHOLD) {
+                        LOG.debug("Adding " + ref.getDisplayName()
+                                + " to the blacklist (Degrees: " + allDegree + ":" + regDegree + ")");
+                        for (EntityReference entityReference : refs)
+                            blacklistedBPEs.add(entityReference);
+
+                        for (PhysicalEntity entity : entities)
+                            blacklistedBPEs.add(entity);
+                    }
+
+                }
+
+                // Write all the blacklisted ids to the output
+                OutputStream output = (OutputStream) args[0];
+                PrintStream printStream = new PrintStream(output);
+                for (BioPAXElement bpe : blacklistedBPEs)
+                    printStream.println(bpe.getRDFId());
+                printStream.close();
+
+                // we don't need it right now, but might become handy if we wanna extract the analysis later on
+                return blacklistedBPEs;
+            }
+
+            private void getAllSPEs(PhysicalEntity entity, Set<PhysicalEntity> entities) {
+                entities.add(entity);
+
+                for(PhysicalEntity memberEntity : entity.getMemberPhysicalEntity()) {
+                    if(!entities.contains(memberEntity)) {
+                        entities.add(memberEntity);
+                        getAllSPEs(memberEntity, entities);
+                    }
+                }
+            }
+
+            private void getAllMemberRefs(EntityReference ref, Set<EntityReference> refs) {
+                refs.add(ref);
+
+                for (EntityReference entityReference : ref.getMemberEntityReference()) {
+                    if(!refs.contains(entityReference)) {
+                        refs.add(entityReference);
+                        getAllMemberRefs(entityReference, refs);
+                    }
+                }
+            }
+
+        }, output);
+    }
+
+    private void runMerge(String provider, String version, boolean force) {
 		// pc dao
 		ApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
 		final PaxtoolsDAO pcDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
@@ -356,7 +472,6 @@ public class Admin implements Runnable {
      * Helper function to get warehouse (protein, small molecule) data.
 	 *
      * @param provider String
-     * @param resume continue previous data import or start afresh
      * @throws IOException
      */
     private void fetchWarehouseData(final String provider) throws IOException {
@@ -521,8 +636,7 @@ public class Admin implements Runnable {
 	 * writes the BioPAX validation report (XML).
 	 * 
 	 * @param pk
-	 * @param writer
-	 * 
+	 *
 	 * {@code
 	 * // Example, how to unmarshal that XML-
 	 * // {@link org.biopax.validator.result.Validation}
@@ -565,6 +679,7 @@ public class Admin implements Runnable {
 		StringBuilder toReturn = new StringBuilder();
 		toReturn.append("Usage: <-command_name> <command_args...>" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
+        toReturn.append(COMMAND.CREATE_BLACKLIST.toString() + " <databaseName> <outfile>");
 		toReturn.append(COMMAND.CREATE_TABLES.toString() + " <table1,table2,..>" + NEWLINE);
 		toReturn.append(COMMAND.CREATE_INDEX.toString() + 
 			" <type> (types are: proteins, molecules, main)" + NEWLINE);
@@ -615,9 +730,20 @@ public class Admin implements Runnable {
     	// configure logging
     	PropertyConfigurator.configure(home + File.separator 
     			+ "log4j.properties");
-    	
+
     	// set JVM property to be used by other modules (in spring context)
     	System.setProperty(HOME_VARIABLE_NAME, home);
+
+        // Extract blacklist values, if can't, then use the default values
+        try {
+            DEGREE_THRESHOLD = Integer.parseInt(get(CPath2Property.BLACKLIST_DEGREE_THRESHOLD));
+            CONTROL_DEGREE_THRESHOLD = Integer.parseInt(get(CPath2Property.BLACKLIST_CONTROL_THRESHOLD));
+        } catch (NumberFormatException e) {
+            LOG.warn("Could not found the properties " + CPath2Property.BLACKLIST_CONTROL_THRESHOLD + " and "
+                    + CPath2Property.BLACKLIST_DEGREE_THRESHOLD + " in the properties file. Using default values: "
+                    + CONTROL_DEGREE_THRESHOLD + " and " + DEGREE_THRESHOLD + "."
+            );
+        }
 
     	if(!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
     		if(LOG.isWarnEnabled())
