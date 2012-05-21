@@ -194,6 +194,16 @@ sh cpath-admin.sh -merge
 # create full-text index (currently, it's required for the "main" cpath2 db only, only for the webservice app)
 sh cpath-admin.sh -create-index main
 
+Optionally, you can also create a 'blacklist' (i.e. ignore list) for the graph queries. The graph queries
+will simply not traverse through the entities in this list and the entity references in the list will be eliminated
+from the SIF exports. The blacklist is generated solely based on the number of degrees of an entity
+(number of interactions and complexes an entity (grouped by entity reference) participates). A high-degree entity causes
+unnecessary traversing during the graph queries -- hence not wanted. However, the following command will keep
+the entities that control more than a threshold number of reactions out of the blacklist since this type of entities
+are often biologically relevant -- for more, see the blacklist.* options in the cpath.properties:
+
+sh cpath-admin.sh -create-blacklist <main_database_name> $CPATH2_HOME/blacklist.txt
+
 
 
 DB DUMPS

@@ -90,7 +90,9 @@ public final class CPathSettings {
 		XML_BASE("xml.base"),
 		MAX_SEARCH_HITS_PER_PAGE("maxSearchHitsPerPage"),
 		EXPLAIN_ENABLED("explain.enabled"),
-		DIGEST_URI_ENABLED("md5hex.uri.enabled")
+		DIGEST_URI_ENABLED("md5hex.uri.enabled"),
+        BLACKLIST_DEGREE_THRESHOLD("blacklist.degree.threshold"),
+        BLACKLIST_CONTROL_THRESHOLD("blacklist.control.threshold")
 		;
 		
 		private final String name;
