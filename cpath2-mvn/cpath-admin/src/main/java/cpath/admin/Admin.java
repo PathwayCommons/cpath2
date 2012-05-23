@@ -679,7 +679,6 @@ public class Admin implements Runnable {
 		StringBuilder toReturn = new StringBuilder();
 		toReturn.append("Usage: <-command_name> <command_args...>" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
-        toReturn.append(COMMAND.CREATE_BLACKLIST.toString() + " <databaseName> <outfile>");
 		toReturn.append(COMMAND.CREATE_TABLES.toString() + " <table1,table2,..>" + NEWLINE);
 		toReturn.append(COMMAND.CREATE_INDEX.toString() + 
 			" <type> (types are: proteins, molecules, main)" + NEWLINE);
@@ -693,6 +692,7 @@ public class Admin implements Runnable {
 			"pathway_id is a PK of the pathwayData table - to extract 'premerged' data)" + NEWLINE);
 		toReturn.append(COMMAND.EXPORT_VALIDATION.toString() 
 				+ " <pathway_id> <output>" + NEWLINE);
+        toReturn.append(COMMAND.CREATE_BLACKLIST.toString() + " <databaseName> <outfile>"  + NEWLINE);
 
 		return toReturn.toString();
 	}
