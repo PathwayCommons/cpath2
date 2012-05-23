@@ -438,7 +438,7 @@ public final class CPath2Client
      * @see #setDataSources(java.util.Collection)
      * @return valid values for the datasource parameter as a Help object.
      */
-    public Collection<String> getValidDataSources() {
+    public Map<String, String> getValidDataSources() {
         Help h = restTemplate.getForObject(endPointURL + "help/datasources", Help.class);
         return parseHelpSimple(h);
     }
@@ -449,7 +449,7 @@ public final class CPath2Client
      * @see #setOrganisms(java.util.Collection)
      * @return valid values for the organism parameter as a Help object.
      */
-    public Collection<String> getValidOrganisms() {
+    public Map<String,String> getValidOrganisms() {
         Help h = restTemplate.getForObject(endPointURL + "help/organisms", Help.class);
         return parseHelpSimple(h);
     }
@@ -462,14 +462,14 @@ public final class CPath2Client
      */
     public Collection<String> getValidTypes() {
     	Help help = restTemplate.getForObject(endPointURL + "help/types", Help.class);
-    	return parseHelpSimple(help);
+    	return parseHelpSimple(help).keySet();
     }
 
     
-    private Collection<String> parseHelpSimple(Help help) {
-        Set<String> types = new TreeSet<String>();
+    private Map<String, String> parseHelpSimple(Help help) {
+        Map<String,String> types = new TreeMap<String,String>();
     	for(Help h : help.getMembers()) {
-    		types.add(h.getId());
+    		types.put(h.getId(), h.getTitle().toUpperCase());
     	}
     	return types;
     }

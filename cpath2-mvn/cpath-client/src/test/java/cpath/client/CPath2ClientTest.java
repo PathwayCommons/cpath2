@@ -32,11 +32,11 @@ public class CPath2ClientTest {
 		assertFalse(vals.isEmpty());
 		assertTrue(vals.contains("BioSource"));
 		
-		vals = client.getValidDataSources();
+		vals = client.getValidDataSources().keySet();
 		assertFalse(vals.isEmpty());
 		assertTrue(vals.contains("urn:miriam:reactome"));
 		
-		vals = client.getValidOrganisms();
+		vals = client.getValidOrganisms().keySet();
 		assertFalse(vals.isEmpty());
 		assertTrue(vals.contains("urn:miriam:taxonomy:9606"));
 	}
