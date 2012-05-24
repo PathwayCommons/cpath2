@@ -49,6 +49,7 @@ import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.hibernate.*;
 import org.hibernate.search.*;
+import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.query.dsl.QueryBuilder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
@@ -65,6 +66,7 @@ import cpath.warehouse.WarehouseDAO;
 
 import java.util.*;
 import java.io.*;
+import java.lang.reflect.Modifier;
 
 
 /**
@@ -341,6 +343,9 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 		// create a new full text session from current session
 		FullTextSession fullTextSession = Search.getFullTextSession(session());
 		
+		// lucene query builder below does not understand interfaces and abstract types...
+//		Class<?> filterClass = (filterByType != null) ? filterByType : BioPAXElement.class;
+		
 		// convert the filter query class into concrete BioPAX persistent class
 		Class<?> filterClass = getEntityClass(filterByType);
 		assert filterClass != null; //not null, as BioPAXelementImpl.class is the default fall-back
@@ -348,8 +353,15 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 		// build a new Lucene query
 		org.apache.lucene.search.Query luceneQuery = null;
 		// "*" query special case (find all) -
-		if(query != null && query.equals("*")) {
-			QueryBuilder queryBuilder = fullTextSession.getSearchFactory().buildQueryBuilder().forEntity(filterClass).get();
+		if(query != null && query.equals("*")) {		
+			if(Modifier.isAbstract(filterClass.getModifiers()) 
+					|| !filterClass.isAnnotationPresent(Indexed.class)) 
+				throw new RuntimeException("With '*' (all) search query, " +
+					"one must use 'type=' filter with a specific, instantiable BioPAX type!");
+			
+			QueryBuilder queryBuilder = fullTextSession.getSearchFactory()
+				.buildQueryBuilder().forEntity(filterClass).get();
+			
 			luceneQuery = queryBuilder.all().createQuery();
 		} else {
 			try {

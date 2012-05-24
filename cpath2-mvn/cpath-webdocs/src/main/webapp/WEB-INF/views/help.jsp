@@ -106,6 +106,7 @@
 	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=+binding%20NOT%20transcription*&type=control&page=0"><fmt:message key="cpath2.example.search8"/></a></li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=pathway:immune&type=conversion"><fmt:message key="cpath2.example.search9"/></a></li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=*&type=pathway&datasource=panther"><fmt:message key="cpath2.example.search10"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=*&type=biosource"><fmt:message key="cpath2.example.search11"/></a></li>
 	  </ol>
 	  </li>
 	  <!-- get command -->
@@ -256,7 +257,6 @@
 	  <pre id="graph_parameter" style="text-align: left;"></pre>
 	  <pre id="direction_parameter" style="text-align: left;"></pre>
 	  <pre id="datasource_parameter" style="text-align: left;"></pre>
-	  <pre id="organism_parameter" style="text-align: left;"></pre>
 	  <pre id="biopax_parameter" style="text-align: left;"></pre>
 	  <pre id="properties_parameter" style="text-align: left;"></pre>
 	  <pre id="inverse_properties_parameter" style="text-align: left;"></pre>
