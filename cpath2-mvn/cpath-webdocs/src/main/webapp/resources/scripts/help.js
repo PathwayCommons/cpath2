@@ -3,7 +3,7 @@ $(document).ready(function() {
     getCommandParameterDetails("help/kinds", "graph_parameter", "#command_header_additional_parameters_graph", "#command_header_additional_parameters_graph_desc");
     getCommandParameterDetails("help/directions", "direction_parameter", "#command_header_additional_parameters_direction", "#command_header_additional_parameters_direction_desc");
     getCommandParameterDetails("help/datasources", "datasource_parameter", "#command_header_additional_parameters_datasource", "#command_header_additional_parameters_datasource_desc");
-    getCommandParameterDetails("help/organisms", "organism_parameter", "#command_header_additional_parameters_organism", "#command_header_additional_parameters_organism_desc");
+//    getCommandParameterDetails("help/organisms", "organism_parameter", "#command_header_additional_parameters_organism", "#command_header_additional_parameters_organism_desc");
     getCommandParameterDetails("help/types", "biopax_parameter", "#command_header_additional_parameters_biopax", "#command_header_additional_parameters_biopax_desc");
     getCommandParameterDetails("help/types/properties", "properties_parameter", "#command_header_additional_parameters_properties", "#command_header_additional_parameters_properties_desc");
     getCommandParameterDetails("help/types/inverse_properties", "inverse_properties_parameter", "#command_header_additional_parameters_inverse_properties", "#command_header_additional_parameters_inverse_properties_desc");
@@ -38,17 +38,18 @@ function getCommandParameterDetails(helpWSPath, clazz, header, parameterDesc) {
     // interate over results (as json) from web service call
     $.getJSON(base + "/" + helpWSPath, function(help) {
             $.each(help.members, function(idx, member) {
-                    var info = '';
-                    if (helpWSPath.indexOf("organism") != -1) {
-                        info = ' ' + member.info
+                    if (helpWSPath.indexOf("organism") != -1 
+                    		|| helpWSPath.indexOf("kind") != -1 
+                    		|| helpWSPath.indexOf("formats") != -1
+                    		|| helpWSPath.indexOf("datasource") != -1
+                    		) {
+                    	$("." + class_name).append('<li style="margin-left: 2em;">' 
+                    		+ '<em>' + member.id + '</em> - ' + member.info + '</li>');
+                    } else  {
+                    	$("." + class_name).append('<li style="margin-left: 2em;">' 
+                    		+ member.id + '</li>');
                     }
-                    else if (helpWSPath.indexOf("kind") != -1 || helpWSPath.indexOf("formats") != -1) {
-                        info = ' ' + member.info
-                    }
-                    else if (helpWSPath.indexOf("datasource") != -1) {
-                        info = ' ' + member.info
-                    }
-                    $("." + class_name).append('<li style="margin-left: 2em;">' + member.id + info + '</li>');
+        
             });
             $("." + class_name).append('</ul>');
             $("." + class_name).append('</div>');

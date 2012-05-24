@@ -28,6 +28,7 @@
 package cpath.webservice;
 
 import java.io.IOException;
+import java.util.Collections;
 
 import cpath.service.jaxb.*;
 import cpath.service.CPathService;
@@ -38,6 +39,7 @@ import cpath.service.OutputFormat;
 import cpath.service.Status;
 import cpath.webservice.args.binding.*;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.EditorMap;
@@ -380,15 +382,14 @@ public class HelpController {
     	{
     		Help hm = new Help(ds.getUri());
     		hm.setTitle(ds.getName());
-    		hm.setInfo(ds.getDataSource().toString()); // using a hack to get other names
+    		hm.setInfo(StringUtils.join(ds.getDataSource(),", ")); // using a hack to get other names
     		help.addMember(hm);
     	}
     	help.setTitle("Pathway Data Sources");
-    	help.setInfo("Bio interactions data were imported into the system. " +
+    	help.setInfo("Biological pathways/interactions data providers. " +
     			"These values (standard name, URI) are recommended to use with the " +
     			"full-text search command (e.g., by adding '&datasource=...' " +
-    			"filter parameters). " + 
-    			"Other (original pathway data provider's) BioPAX Provenance " +
+    			"filter parameters). Other (original pathway data provider's) BioPAX Provenance " +
     			"objects there can be used as well, but may be associated with " +
     			"only a sub-set of entities loaded from given data source.");
     	return help;
@@ -403,12 +404,13 @@ public class HelpController {
     	for(SearchHit bs : service.bioSources().getSearchHit()) {
     		Help hm = new Help(bs.getUri());
     		hm.setTitle(bs.getName());
-    		hm.setInfo(bs.getOrganism().toString()); // using a hack to list other names
+    		hm.setInfo(StringUtils.join(bs.getOrganism(), ", ")); // using a hack to list other names
     		help.addMember(hm);
     	}
     	help.setTitle("Organisms");
     	help.setInfo("All organisms (BioSource) referenced in this system " +
-    		"(incl. those occur in other organism's pathways or in annotations)");
+    		"(incl. those occur in other organism's pathways or in annotations); " +
+    		"one can also get them using '/search?q=*&type=biosource' command");
     	return help;
     }
 
