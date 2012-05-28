@@ -246,8 +246,18 @@ public final class CPath2Client
      * @return
      */
     public SearchResponse getTopPathways() {
-    	return restTemplate.getForObject(endPointURL 
-    		+ Cmd.TOP_PATHWAYS, SearchResponse.class);
+    	SearchResponse resp = restTemplate.getForObject(endPointURL 
+        		+ Cmd.TOP_PATHWAYS, SearchResponse.class);
+    	
+    	Collections.sort(resp.getSearchHit(), new Comparator<SearchHit>() {
+			@Override
+			public int compare(SearchHit h1, SearchHit h2) {
+				return h1.toString().compareTo(h2.toString());
+			}
+		});
+    	
+    	
+    	return resp;
     }    
 
     
