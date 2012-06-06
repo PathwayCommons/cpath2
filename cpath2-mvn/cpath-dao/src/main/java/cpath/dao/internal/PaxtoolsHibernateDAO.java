@@ -422,6 +422,7 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 		List<SearchHit> searchHits = (List<SearchHit>) fullTextQuery.list();
 
 		searchResponse.setSearchHit(searchHits);
+		searchResponse.setPageNo(page);
 
 		return searchResponse;
 	}
