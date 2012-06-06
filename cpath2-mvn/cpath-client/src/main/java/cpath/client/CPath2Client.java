@@ -269,7 +269,7 @@ public final class CPath2Client
      * @return
      * @throws CPathException 
      */
-    public ServiceResponse traverse(Collection<String> uris) throws CPathException {
+    public TraverseResponse traverse(Collection<String> uris) throws CPathException {
         String url = endPointURL + Cmd.TRAVERSE + "?" 
         		+ join(CmdArgs.uri + "=", uris, "&")
         		+ "&" + CmdArgs.path + "=" + path;
@@ -279,7 +279,7 @@ public final class CPath2Client
             throw CPathExceptions.newException((ErrorResponse) resp);
         }
         
-        return resp;
+        return (TraverseResponse) resp;
     }
     
     
