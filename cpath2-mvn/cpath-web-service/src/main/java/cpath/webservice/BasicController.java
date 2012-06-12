@@ -31,6 +31,8 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 
+import javax.servlet.http.HttpServletResponse;
+
 import static cpath.service.Status.*;
 import cpath.service.Status;
 import cpath.service.jaxb.*;
@@ -51,12 +53,15 @@ public abstract class BasicController {
 
 	/**
 	 * Writes an error response body from the error bean.
-	 * 
-	 * @param bindingResult
 	 * @param writer
+	 * @param response TODO
+	 * @param bindingResult
+	 * 
 	 * @throws IOException 
 	 */
-	protected void errorResponse(ErrorResponse error, Writer writer) throws IOException {
+	protected void errorResponse(ErrorResponse error, 
+			Writer writer, HttpServletResponse response) throws IOException {
+		response.setContentType("application/xml");
 		writer.write(Status.marshal(error));
 	}
 	
@@ -81,14 +86,17 @@ public abstract class BasicController {
 	}
     
 	
-	protected void stringResponse(ServiceResponse resp, Writer writer) throws IOException {
+	protected void stringResponse(ServiceResponse resp, 
+			Writer writer, HttpServletResponse response) throws IOException 
+	{
 		if(resp instanceof ErrorResponse) {
-    		errorResponse((ErrorResponse) resp, writer);
+    		errorResponse((ErrorResponse) resp, writer, response);
 		} else if(resp.isEmpty()) { // should not be here (normally, it gets converter to ErrorResponse...)
 			log.warn("stringResponse: I got an empty ServiceResponce! " +
 				"(must be already converted to the ErrorResponse)");
-			errorResponse(NO_RESULTS_FOUND.errorResponse(null), writer);
+			errorResponse(NO_RESULTS_FOUND.errorResponse(null), writer, response);
 		} else {
+			response.setContentType("text/plain");
 			DataResponse dresp = (DataResponse) resp;
 			if(log.isDebugEnabled())
 				log.debug("QUERY RETURNED " + dresp.getData().toString().length() + " chars");

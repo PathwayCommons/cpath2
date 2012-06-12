@@ -48,6 +48,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 /**
@@ -84,11 +85,11 @@ public class BiopaxModelController extends BasicController {
 	
 	// Get by ID (URI) command
     @RequestMapping("/get")
-    public void elementById(@Valid Get get, BindingResult bindingResult, Writer writer) 
-    	throws IOException
+    public void elementById(@Valid Get get, BindingResult bindingResult, 
+    	Writer writer, HttpServletResponse response) throws IOException
     {
     	if(bindingResult.hasErrors()) {
-    		errorResponse(errorfromBindingResult(bindingResult), writer);
+    		errorResponse(errorfromBindingResult(bindingResult), writer, response);
     	} else {
 			OutputFormat format = get.getFormat();
 			String[] uri = get.getUri();
@@ -98,7 +99,7 @@ public class BiopaxModelController extends BasicController {
 						+ Arrays.toString(uri));
 
 			ServiceResponse result = service.fetch(format, uri);
-			stringResponse(result, writer);
+			stringResponse(result, writer, response);
 		}
     }  
 
