@@ -94,15 +94,15 @@ class CPathServiceImpl implements CPathService {
 
 	private static volatile SearchResponse topPathways;
 	
-    private Set<String> blacklist;
+  private Set<String> blacklist;
     
-    //only includes pathway data providers configured/created 
-    //from the cpath2 metadata configuration (not all provenances...)
-    private static volatile SearchResponse dataSources;
+  //only includes pathway data providers configured/created 
+  //from the cpath2 metadata configuration (not all provenances...)
+  private static volatile SearchResponse dataSources;
     
-    private static volatile SearchResponse bioSources;
+  private static volatile SearchResponse bioSources;
 
-    // this is probably required for the echcache to work
+    // this is probably required for the ehcache to work
 	public CPathServiceImpl() {
 	}
 	
