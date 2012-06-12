@@ -32,11 +32,7 @@ public class BioPAXHttpMessageConverter implements HttpMessageConverter<Model> {
     
     static {
     	mediaList = new ArrayList<MediaType>();
-        mediaList.add(MediaType.APPLICATION_XHTML_XML);
-        mediaList.add(MediaType.APPLICATION_XML);
-        mediaList.add(MediaType.TEXT_HTML);
-        mediaList.add(MediaType.TEXT_XML);
-        mediaList.add(MediaType.TEXT_PLAIN);
+        mediaList.add(MediaType.ALL);
         
         jaxb = new Jaxb2Marshaller();
         jaxb.setClassesToBeBound(ErrorResponse.class);

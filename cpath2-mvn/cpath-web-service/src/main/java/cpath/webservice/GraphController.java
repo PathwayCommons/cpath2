@@ -48,6 +48,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 /**
@@ -91,11 +92,12 @@ public class GraphController extends BasicController {
 	
 	
 	@RequestMapping("/graph")
-	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, Writer writer) throws IOException
+	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, 
+			Writer writer, HttpServletResponse response) throws IOException
     {
 		//check for binding errors
 		if(bindingResult.hasErrors()) {
-			errorResponse(errorfromBindingResult(bindingResult), writer);;
+			errorResponse(errorfromBindingResult(bindingResult), writer, response);;
 			return;
 		} 
 		
@@ -124,7 +126,7 @@ public class GraphController extends BasicController {
 			break;
 		}
 		
-		stringResponse(result, writer);
+		stringResponse(result, writer, response);
     }
 
 	

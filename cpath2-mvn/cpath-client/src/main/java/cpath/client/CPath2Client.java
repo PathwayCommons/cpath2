@@ -50,10 +50,6 @@ public final class CPath2Client
     private CPath2Client() {
      	// create a new REST template with the xml message converter
      	restTemplate = new RestTemplate();
-     	// remove default (xml) message converters (xml root element based, do not work with cpath2 schema)!
-     	restTemplate.getMessageConverters().clear();
-     	// add custom cPath2 XML message converters
-     	restTemplate.getMessageConverters().add(new ServiceResponseHttpMessageConverter());
     }
     
     
@@ -72,6 +68,11 @@ public final class CPath2Client
      */
     public static CPath2Client newInstance(BioPAXIOHandler bioPAXIOHandler) {
     	CPath2Client client = new CPath2Client(); 
+    	
+     	// remove default (xml) message converters (xml root element based, do not work with cpath2 schema)!
+    	client.restTemplate.getMessageConverters().clear();
+     	// add custom cPath2 XML message converters
+    	client.restTemplate.getMessageConverters().add(new ServiceResponseHttpMessageConverter());
     	// add BioPAX http message converter
         client.restTemplate.getMessageConverters().add(new BioPAXHttpMessageConverter(bioPAXIOHandler));
     	
