@@ -29,7 +29,6 @@
 package cpath.service.internal;
 
 import java.io.*;
-import java.net.URLEncoder;
 import java.util.*;
 
 import org.apache.commons.logging.Log;
@@ -91,16 +90,14 @@ class CPathServiceImpl implements CPathService {
 	private MetadataDAO metadataDAO;
 	
 	private SimpleIOHandler simpleIO;
-
-	private static volatile SearchResponse topPathways;
 	
-  private Set<String> blacklist;
+	private Set<String> blacklist;
     
-  //only includes pathway data providers configured/created 
-  //from the cpath2 metadata configuration (not all provenances...)
-  private static volatile SearchResponse dataSources;
-    
-  private static volatile SearchResponse bioSources;
+	//lazy initialize the following three fields on first request (prevents web server startup timeout)
+  	//only includes pathway data providers configured/created from the cpath2 metadata configuration (not all provenances...)
+  	private volatile SearchResponse dataSources; 
+  	private volatile SearchResponse bioSources;
+  	private volatile SearchResponse topPathways;
 
     // this is probably required for the ehcache to work
 	public CPathServiceImpl() {
@@ -522,10 +519,6 @@ class CPathServiceImpl implements CPathService {
 	}
 
 	
-	/*
-	 * (non-Javadoc)
-	 * @see cpath.service.CPathService#topPathways()
-	 */
 	/**
 	 * "Top pathway" can mean different things...
 	 * 
@@ -540,36 +533,49 @@ class CPathServiceImpl implements CPathService {
 	 * 
 	 * Here we follow the second method!
 	 * 
+	 * Note:
+	 * This method generates the list of top pathways on the first call, 
+	 * and then all next calls return the same list (much faster).
+	 * (it uses lazy initialization, "double-check idiom", 
+	 * to prevent possible server startup timeout)
+	 * 
 	 */
 	@Override
 	public SearchResponse topPathways() {
-		// on-demand once initializing here saves the server startup time
-		if(topPathways == null) {
-			topPathways = new SearchResponse();
-			final List<SearchHit> hits = topPathways.getSearchHit(); //empty
-			int page = 0; // will use search pagination
-			SearchResponse searchResponse = mainDAO.search("*", page, Pathway.class, null, null);
-			while(!searchResponse.isEmpty()) {
-				//remove pathways having 'pathway' index field not empty, 
-				//i.e., keep only pathways where 'pathway' index field is empty (no controlledOf and pathwayComponentOf values)
-				for(SearchHit h : searchResponse.getSearchHit()) {
-					if(h.getPathway().isEmpty())
-						hits.add(h); //add to topPathways list
+		SearchResponse result = topPathways;
+		if(result == null) { //first check (no locking)
+			synchronized (this) {
+				result = topPathways; 
+				if(result == null) { //second check (with locking)
+					result = new SearchResponse();
+					final List<SearchHit> hits = result.getSearchHit(); //empty
+					int page = 0; // will use search pagination
+					SearchResponse searchResponse = mainDAO.search("*", page, Pathway.class, null, null);
+					while(!searchResponse.isEmpty()) {
+						//remove pathways having 'pathway' index field not empty, 
+						//i.e., keep only pathways where 'pathway' index field is empty (no controlledOf and pathwayComponentOf values)
+						for(SearchHit h : searchResponse.getSearchHit()) {
+							if(h.getPathway().isEmpty())
+								hits.add(h); //add to topPathways list
+						}
+						// go next page
+						searchResponse = mainDAO.search("*", ++page, Pathway.class, null, null);
+					}
+					// final touches...
+					result.setNumHits(hits.size());
+					//TODO update the following comment if implementation has changed!
+					result.setComment("Top Pathways (technically, each has empty index " +
+							"field 'pathway'; that also means, they are neither components of " +
+							"other pathways nor controlled of any process)");
+					result.setMaxHitsPerPage(hits.size());
+					result.setPageNo(0);
+					
+					topPathways = result;
 				}
-				// go next page
-				searchResponse = mainDAO.search("*", ++page, Pathway.class, null, null);
 			}
-			// final touches...
-			topPathways.setNumHits(hits.size());
-			//TODO update the following comment if implementation has changed!
-			topPathways.setComment("Top Pathways (technically, each has empty index " +
-					"field 'pathway'; that also means, they are neither components of " +
-					"other pathways nor controlled of any process)");
-			topPathways.setMaxHitsPerPage(hits.size());
-			topPathways.setPageNo(0);
 		} 
 		
-		return topPathways;
+		return result;
 	}
 
 	/**
@@ -604,73 +610,100 @@ class CPathServiceImpl implements CPathService {
 		this.blacklist = blacklist;
 	}
 
-	
+
+	/**
+	 * Note:
+	 * This method generates the list of datasources on the first call, 
+	 * and then all next calls return the same list (much faster).
+	 * (it uses lazy initialization, "double-check idiom", 
+	 * to prevent possible server startup timeout)
+	 */
 	@Override
 	public SearchResponse dataSources() {
-		// on-demand initializing here saves the server startup time
-		if(dataSources == null) {
-			dataSources = new SearchResponse();
-			
-			// collect metadata identifiers of pathway data sources
-			final Set<String> metadataIds = new HashSet<String>();
-			for(Metadata met : metadataDAO.getAllMetadata())
-				if(!met.getType().isWarehouseData())
-					metadataIds.add(CPathSettings.generateBiopaxURI(met.getName(), Provenance.class));
-			
-			// find all Provenance instances and filter them out
-			final List<SearchHit> hits = dataSources.getSearchHit(); //empty
-			int page = 0; // will use search pagination
-			SearchResponse searchResponse;
-			while(!(searchResponse = 
-				mainDAO.search("*", page++, Provenance.class, null, null))
-					.isEmpty())
-			{
-				//remove pathways having 'pathway' index field not empty, 
-				//i.e., keep only pathways where 'pathway' index field is empty (no controlledOf and pathwayComponentOf values)
-				for(SearchHit h : searchResponse.getSearchHit()) {
-					if(metadataIds.contains(h.getUri()))
-						hits.add(h);
+		SearchResponse result = dataSources;
+		if(result == null) {
+			synchronized (this) {
+				result = dataSources; //second check (with locking)
+				if(result == null) {
+					result = new SearchResponse();				
+					// collect metadata identifiers of pathway data sources
+					final Set<String> metadataIds = new HashSet<String>();
+					for(Metadata met : metadataDAO.getAllMetadata())
+						if(!met.getType().isWarehouseData())
+							metadataIds.add(CPathSettings.generateBiopaxURI(met.getName(), Provenance.class));
+					
+					// find all Provenance instances and filter them out
+					final List<SearchHit> hits = result.getSearchHit(); //empty
+					int page = 0; // will use search pagination
+					SearchResponse searchResponse;
+					while(!(searchResponse = 
+						mainDAO.search("*", page++, Provenance.class, null, null))
+							.isEmpty())
+					{
+						//remove pathways having 'pathway' index field not empty, 
+						//i.e., keep only pathways where 'pathway' index field is empty (no controlledOf and pathwayComponentOf values)
+						for(SearchHit h : searchResponse.getSearchHit()) {
+							if(metadataIds.contains(h.getUri()))
+								hits.add(h);
+						}
+					
+						if(searchResponse.getSearchHit().size() == searchResponse.getNumHits()) 
+							break;
+					}
+					// final touches...
+					result.setNumHits(hits.size());
+					result.setMaxHitsPerPage(hits.size());
+					result.setPageNo(0);
+					
+					dataSources = result;
 				}
-			
-				if(searchResponse.getSearchHit().size() == searchResponse.getNumHits()) 
-					break;
 			}
-			// final touches...
-			dataSources.setNumHits(hits.size());
-			dataSources.setMaxHitsPerPage(hits.size());
-			dataSources.setPageNo(0);
 		}
 		
-		return dataSources;
+		return result;
 	}
 
 	
+	/**
+	 * Note:
+	 * This method generates the list of organisms on the first call, 
+	 * and then all next calls return the same list (much faster).
+	 * (it uses lazy initialization, "double-check idiom", 
+	 * to prevent possible server startup timeout)
+	 */
 	@Override
 	public SearchResponse bioSources() {
-		// on-demand initializing here saves the server startup time
-		if(bioSources == null) {
-			bioSources = new SearchResponse();
-			
-			// find all Provenance instances and filter them out
-			final List<SearchHit> hits = bioSources.getSearchHit(); //empty
-			int page = 0; // will use search pagination
-			SearchResponse searchResponse;
-			while(!(searchResponse = 
-				mainDAO.search("*", page++, BioSource.class, null, null))
-					.isEmpty()) 
-			{
-				hits.addAll(searchResponse.getSearchHit());
-				// go next page
-				if(searchResponse.getSearchHit().size() == searchResponse.getNumHits())
-					break;
+		SearchResponse result = bioSources;
+		if(result == null) {
+			synchronized (this) {
+				result = bioSources;
+				if(result == null) { //second check (with locking)
+					result = new SearchResponse();
+					
+					// find all Provenance instances and filter them out
+					final List<SearchHit> hits = result.getSearchHit(); //empty
+					int page = 0; // will use search pagination
+					SearchResponse searchResponse;
+					while(!(searchResponse = 
+						mainDAO.search("*", page++, BioSource.class, null, null))
+							.isEmpty()) 
+					{
+						hits.addAll(searchResponse.getSearchHit());
+						// go next page
+						if(searchResponse.getSearchHit().size() == searchResponse.getNumHits())
+							break;
+					}
+					// final touches...
+					result.setNumHits(hits.size());
+					result.setMaxHitsPerPage(hits.size());
+					result.setPageNo(0);
+					
+					bioSources = result;
+				}
 			}
-			// final touches...
-			bioSources.setNumHits(hits.size());
-			bioSources.setMaxHitsPerPage(hits.size());
-			bioSources.setPageNo(0);
 		}
-		
-		return bioSources;
+			
+		return result;
 	}
 		
 }
