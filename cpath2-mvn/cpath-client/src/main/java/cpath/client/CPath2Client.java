@@ -84,16 +84,30 @@ public final class CPath2Client
     }
 
     
+    /**
+     * Builds a full-text <em>search</em> query
+     * using current filter values and provided 
+     * keywords (or Lucene query strings)
+     * 
+     * @param keywords
+     * @return
+     */
+    public String querySearch(Collection<String> keywords) {
+    	String url = endPointURL + Cmd.SEARCH + "?" 
+            	+ CmdArgs.q + "=" + join("", keywords, " ") // spaces means 'OR'
+                + (getPage() > 0 ? "&" + CmdArgs.page + "=" + getPage() : "")
+                + (getDataSources().isEmpty() ? "" : "&" + join(CmdArgs.datasource + "=", getDataSources(), "&"))
+                + (getOrganisms().isEmpty() ? "" : "&" + join(CmdArgs.organism + "=", getOrganisms(), "&"))
+                + (getType() != null ? "&" + CmdArgs.type + "=" + getType() : "");
+    	
+    	return url;
+    }  
+
+    
     private ServiceResponse searchTemplate(Collection<String> keywords) 
     		throws CPathException
     {
-        String url = endPointURL + Cmd.SEARCH + "?" 
-        	+ CmdArgs.q + "=" + join("", keywords, " ") // spaces means 'OR'
-            + (getPage() > 0 ? "&" + CmdArgs.page + "=" + getPage() : "")
-            + (getDataSources().isEmpty() ? "" : "&" + join(CmdArgs.datasource + "=", getDataSources(), "&"))
-            + (getOrganisms().isEmpty() ? "" : "&" + join(CmdArgs.organism + "=", getOrganisms(), "&"))
-            + (getType() != null ? "&" + CmdArgs.type + "=" + getType() : "");
-
+        String url = querySearch(keywords);
         ServiceResponse resp = restTemplate.getForObject(url, SearchResponse.class);
         
         if(resp instanceof ErrorResponse) {
@@ -143,6 +157,19 @@ public final class CPath2Client
 
     
     /**
+     * Builds a <em>get</em> BioPAX (default format) 
+     * by URI(s) query URL string.
+     * 
+     * @param ids
+     * @return
+     */
+    public String queryGet(Collection<String> ids) {
+        return endPointURL + Cmd.GET + "?" 
+        	+ join(CmdArgs.uri + "=" , ids, "&");
+    }
+    
+    
+    /**
      * Retrieves details regarding one or more records, such as pathway,
      * interaction or physical entity. For example, get the complete
      * Apoptosis pathway from Reactome.
@@ -151,13 +178,26 @@ public final class CPath2Client
      * @return BioPAX model containing the requested element
      */
     public Model get(Collection<String> ids) {
-        String url = endPointURL + Cmd.GET + "?" 
-        	+ join(CmdArgs.uri + "=" , ids, "&");
+        String url = queryGet(ids);
         return restTemplate.getForObject(url, Model.class);
     }
 
     
-	/**
+    /**
+     * Builds a 'PATHS BETWEEN' BioPAX <em>graph</em> query URL string.
+     * 
+     * @param sourceSet
+     * @return
+     */
+    public String queryPathsBetween(Collection<String> sourceSet) {
+    	return endPointURL + Cmd.GRAPH + "?" + CmdArgs.kind + "=" +
+    		GraphType.PATHSBETWEEN.name().toLowerCase() + "&"
+    		+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
+    		+ CmdArgs.limit + "=" + graphQueryLimit;
+    }  
+    
+    
+    /**
 	 *  Finds paths between a given source set of objects. The source set may contain Xref,
 	 *  EntityReference, and/or PhysicalEntity objects.
 	 *
@@ -166,14 +206,27 @@ public final class CPath2Client
 	 */
 	public Model getPathsBetween(Collection<String> sourceSet)
 	{
-		String url = endPointURL + Cmd.GRAPH + "?" + CmdArgs.kind + "=" +
-			GraphType.PATHSBETWEEN.name().toLowerCase() + "&"
-			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
-			+ CmdArgs.limit + "=" + graphQueryLimit;
-
+		String url = queryPathsBetween(sourceSet);
 		return restTemplate.getForObject(url, Model.class);
 	}
 
+	
+	/**
+	 * Builds a 'PATHS FROM TO' <em>graph</em> query URL string.
+	 * 
+	 * @param sourceSet
+	 * @param targetSet
+	 * @return
+	 */
+	public String queryPathsFromTo(Collection<String> sourceSet, Collection<String> targetSet)
+	{
+		return endPointURL + Cmd.GRAPH + "?" + CmdArgs.kind + "=" +
+			GraphType.PATHSFROMTO.name().toLowerCase() + "&"
+			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
+			+ join(CmdArgs.target + "=", targetSet, "&") + "&"
+			+ CmdArgs.limit + "=" + graphQueryLimit;
+	}
+	
 	
 	/**
 	 *  Finds paths from a given source set of objects to a given target set of objects. 
@@ -185,14 +238,25 @@ public final class CPath2Client
 	 */
 	public Model getPathsFromTo(Collection<String> sourceSet, Collection<String> targetSet)
 	{
-		String url = endPointURL + Cmd.GRAPH + "?" + CmdArgs.kind + "=" +
-			GraphType.PATHSFROMTO.name().toLowerCase() + "&"
-			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
-			+ join(CmdArgs.target + "=", targetSet, "&") + "&"
-			+ CmdArgs.limit + "=" + graphQueryLimit;
-
-		System.out.println(url);
+		String url = queryPathsFromTo(sourceSet, targetSet);
 		return restTemplate.getForObject(url, Model.class);
+	}
+
+
+	/**
+	 * Builds a 'NEIGHBORHOOD' BioPAX <em>graph</em> query URL string.
+	 * 
+	 * @param sourceSet
+	 * @param direction
+	 * @return
+	 */
+	public String queryNeighborhood(Collection<String> sourceSet, Direction direction)
+	{
+		return endPointURL + Cmd.GRAPH + "?" + CmdArgs.kind + "=" +
+			GraphType.NEIGHBORHOOD.name().toLowerCase() + "&"
+			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
+			+ CmdArgs.direction + "=" + direction + "&"
+			+ CmdArgs.limit + "=" + graphQueryLimit;
 	}
 
 	
@@ -205,15 +269,32 @@ public final class CPath2Client
 	 */
 	public Model getNeighborhood(Collection<String> sourceSet, Direction direction)
 	{
-		String url = endPointURL + Cmd.GRAPH + "?" + CmdArgs.kind + "=" +
-			GraphType.NEIGHBORHOOD.name().toLowerCase() + "&"
-			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
-			+ CmdArgs.direction + "=" + direction + "&"
-			+ CmdArgs.limit + "=" + graphQueryLimit;
-
+		String url = queryNeighborhood(sourceSet, direction);
 		return restTemplate.getForObject(url, Model.class);
 	}
 
+	
+	/**
+	 * Builds a 'COMMON STREAM' BioPAX <em>graph</em> query URL string.
+	 * 
+	 * @param sourceSet
+	 * @param direction
+	 * @return
+	 */
+	public String queryCommonStream(Collection<String> sourceSet, Direction direction)
+	{
+		if (direction == Direction.BOTHSTREAM)
+			throw new IllegalArgumentException(
+				"Direction of common-stream query should be either upstream or downstream.");
+
+		return endPointURL + Cmd.GRAPH + "?" + CmdArgs.kind + "=" +
+			GraphType.COMMONSTREAM.name().toLowerCase() + "&"
+			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
+			+ CmdArgs.direction + "=" + direction + "&"
+			+ CmdArgs.limit + "=" + graphQueryLimit;
+	}
+	
+	
 	/**
 	 * This query searches for the common upstream (common regulators) or
 	 * common downstream (common targets) objects of the given source set.
@@ -224,18 +305,7 @@ public final class CPath2Client
 	 */
 	public Model getCommonStream(Collection<String> sourceSet, Direction direction)
 	{
-		if (direction == Direction.BOTHSTREAM)
-		{
-			throw new IllegalArgumentException(
-				"Direction of common-stream query should be either upstream or downstream.");
-		}
-
-		String url = endPointURL + Cmd.GRAPH + "?" + CmdArgs.kind + "=" +
-			GraphType.COMMONSTREAM.name().toLowerCase() + "&"
-			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
-			+ CmdArgs.direction + "=" + direction + "&"
-			+ CmdArgs.limit + "=" + graphQueryLimit;
-
+		String url = queryCommonStream(sourceSet, direction);
 		return restTemplate.getForObject(url, Model.class);
 	}
 
