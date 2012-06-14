@@ -550,7 +550,9 @@ public final class CPath2Client
     private Map<String, String> parseHelpSimple(Help help) {
         Map<String,String> types = new TreeMap<String,String>();
     	for(Help h : help.getMembers()) {
-    		types.put(h.getId(), h.getTitle().toUpperCase());
+    		String title = (h.getTitle() != null) 
+    			? h.getTitle().toUpperCase() : h.getId();
+    		types.put(h.getId(), title);
     	}
     	return types;
     }
