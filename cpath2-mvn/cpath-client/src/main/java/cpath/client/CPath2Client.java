@@ -16,8 +16,6 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
 import org.springframework.web.client.RestTemplate;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.*;
 
 /**
@@ -66,8 +64,8 @@ public final class CPath2Client
     
     // suppress using constructors in favor of static factories
     private CPath2Client() {
-     	// create a new REST template with the xml message converter
-     	restTemplate = new RestTemplate();
+     	// create a new REST template
+     	restTemplate = new RestTemplate(); //custom message converters will be added there
     }
     
     
@@ -87,15 +85,14 @@ public final class CPath2Client
     public static CPath2Client newInstance(BioPAXIOHandler bioPAXIOHandler) {
     	CPath2Client client = new CPath2Client(); 
     	
-    	// DO NOT remove default message converters (not anymore!); because, 
-    	// if we do, 'executeQuery' method below fails if using this 'restTemplate'
-    	// (it will work though with a fresh RestTemplate, with default converters)
-    	//client.restTemplate.getMessageConverters().clear();
+    	// Remove default message converters
+//    	client.restTemplate.getMessageConverters().clear();
     	
-     	// add custom cPath2 XML message converters
-    	client.restTemplate.getMessageConverters().add(new ServiceResponseHttpMessageConverter());
+     	// add custom cPath2 XML message converter as the first one (accepts 'application/xml' content type)
+    	// because one of existing/default msg converters, XML root element based jaxb2, does not work for ServiceResponce types...
+    	client.restTemplate.getMessageConverters().add(0, new ServiceResponseHttpMessageConverter());
     	// add BioPAX http message converter
-        client.restTemplate.getMessageConverters().add(new BioPAXHttpMessageConverter(bioPAXIOHandler));
+        client.restTemplate.getMessageConverters().add(1, new BioPAXHttpMessageConverter(bioPAXIOHandler));
     	
     	// init the server URL
     	client.endPointURL = System.getProperty(JVM_PROPERTY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);
