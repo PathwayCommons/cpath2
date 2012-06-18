@@ -711,6 +711,9 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 			
 			if(log.isDebugEnabled())
 				log.debug("runAnalysis: returned");
+			
+			submodel.setXmlBase(xmlBase);
+			
 			return submodel; // new (sub-)model
 		} 
 		
