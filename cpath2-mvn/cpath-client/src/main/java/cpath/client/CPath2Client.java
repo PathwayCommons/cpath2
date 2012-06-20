@@ -60,7 +60,7 @@ public final class CPath2Client
     private Collection<String> dataSources = new HashSet<String>();
     private String type = null;
     private String path = null;
-    private Direction direction = Direction.DOWNSTREAM;
+    private Direction direction = null;
     
     // suppress using constructors in favor of static factories
     private CPath2Client() {
@@ -284,11 +284,16 @@ public final class CPath2Client
 	 */
 	public String queryNeighborhood(Collection<String> sourceSet)
 	{
-		return endPointURL + Cmd.GRAPH + "?" + CmdArgs.kind + "=" +
-			GraphType.NEIGHBORHOOD.name().toLowerCase() + "&"
-			+ join(CmdArgs.source + "=", sourceSet, "&")
-			+ "&" + CmdArgs.direction + "=" + direction 
-			+ "&" + CmdArgs.limit + "=" + graphQueryLimit;
+		StringBuilder sb = new StringBuilder(endPointURL);
+		sb.append(Cmd.GRAPH).append("?").append(CmdArgs.kind).append("=")
+		.append(GraphType.NEIGHBORHOOD).append("&")
+		.append(join(CmdArgs.source + "=", sourceSet, "&"))
+		.append("&").append(CmdArgs.limit).append("=").append(graphQueryLimit);
+		//the default (null) direction here would be BOTHSTREAM
+		if(direction != null) 
+			sb.append("&").append(CmdArgs.direction).append("=").append(direction); 
+		
+		return sb.toString();
 	}
 
 	
@@ -315,16 +320,21 @@ public final class CPath2Client
 	 * @return
 	 */
 	public String queryCommonStream(Collection<String> sourceSet)
-	{
+	{		
 		if (direction == Direction.BOTHSTREAM)
 			throw new IllegalArgumentException(
 				"Direction of common-stream query should be either upstream or downstream.");
 
-		return endPointURL + Cmd.GRAPH + "?" + CmdArgs.kind + "=" +
-			GraphType.COMMONSTREAM.name().toLowerCase() + "&"
-			+ join(CmdArgs.source + "=", sourceSet, "&") 
-			+ "&" + CmdArgs.direction + "=" + direction 
-			+ "&" + CmdArgs.limit + "=" + graphQueryLimit;
+		StringBuilder sb = new StringBuilder(endPointURL);
+		sb.append(Cmd.GRAPH).append("?").append(CmdArgs.kind).append("=")
+			.append(GraphType.COMMONSTREAM).append("&")
+			.append(join(CmdArgs.source + "=", sourceSet, "&"))
+			.append("&").append(CmdArgs.limit).append("=").append(graphQueryLimit);
+		
+		if(direction != null)
+			sb.append("&").append(CmdArgs.direction).append("=").append(direction);
+		
+		return sb.toString();
 	}
 	
 	
@@ -339,10 +349,6 @@ public final class CPath2Client
 	 */
 	public Model getCommonStream(Collection<String> sourceSet)
 	{
-		if (direction == Direction.BOTHSTREAM)
-			throw new IllegalArgumentException(
-				"Direction of common-stream query should be either upstream or downstream.");
-		
 		String url = queryCommonStream(sourceSet);
 		return restTemplate.getForObject(url, Model.class);
 	}
@@ -618,11 +624,10 @@ public final class CPath2Client
 
 	/**
 	 * @see #getDirection()
-	 * @param direction the direction to set (if null, then 'downstream' is used)
+	 * @param direction
 	 */
 	public void setDirection(Direction direction) {
-		this.direction = (direction == null)
-			? Direction.DOWNSTREAM : direction;
+		this.direction = direction;
 	}
 	
 }
