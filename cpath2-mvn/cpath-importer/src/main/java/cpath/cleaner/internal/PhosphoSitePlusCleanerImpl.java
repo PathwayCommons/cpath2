@@ -31,6 +31,11 @@ public class PhosphoSitePlusCleanerImpl implements Cleaner {
             String xmlBase = "http://www.phosphosite.org/phosphosite.owl#";
             log.debug("Xml base was null. Setting it to '" + xmlBase + "'");
             model.setXmlBase(xmlBase);
+
+            // Now let's put it in a write-read cycle to make this effective
+            ByteArrayOutputStream tmpStream = new ByteArrayOutputStream();
+            simpleReader.convertToOWL(model,tmpStream);
+            model = simpleReader.convertFromOWL(new ByteArrayInputStream(tmpStream.toByteArray()));
         }
 
         // Old terms -> replaced terms
