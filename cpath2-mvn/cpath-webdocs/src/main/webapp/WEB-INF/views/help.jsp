@@ -6,9 +6,9 @@
 <head>
    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
 	<meta name="author" content="Pathway Commons" />
-	<meta name="description" content="Pathway Commons-2::Home" />
-	<meta name="keywords" content="Pathway Commons, cPath2, webservice, help, documentation" />
-	<title>Pathway Commons-2::Home</title>
+	<meta name="description" content="cPath2::Demo (version ${project.version})" />
+	<meta name="keywords" content="Pathway Commons, cPath2, cPathSquared webservice, help, demo, documentation" />
+	<title>cPath2::Demo</title>
 	<!-- JQuery plugins -->
 	<script type="text/javascript" src="<c:url value="/resources/plugins/jquery-1.6.1.js" />"></script>
 	<script type="text/javascript" src="<c:url value="/resources/plugins/jquery-ui-1.8.11.custom.min.js" />"></script>
@@ -16,13 +16,13 @@
 	<link rel="stylesheet" href="<c:url value="/resources/plugins/jquery.ui.override.css" />" type="text/css"/>
 	<!-- other -->
 	<script type="text/javascript" src="<c:url value="/resources/scripts/json.min.js" />"></script>
-	<!-- pathwaycommons js code -->
+	<!-- cpath2 js code -->
 	<script type="text/javascript" src="<c:url value="/resources/scripts/help.js" />"></script>
 	<link rel="stylesheet" href="<c:url value="/resources/css/andreas08.css" />" type="text/css" media="screen,projection" />
 </head>
 
 <body>
-  <!-- set some variables to string constants from web.properties & messages.properties files -->
+  <!-- set some variables to string constants from messages.properties -->
   <p>
   <span id="web_service_url" style="display:none"><fmt:message key="cpath2.url"/></span>
   <span id="command_header_additional_parameters" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters"/></span>

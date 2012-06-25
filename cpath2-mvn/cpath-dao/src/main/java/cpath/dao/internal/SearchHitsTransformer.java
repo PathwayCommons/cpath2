@@ -6,6 +6,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
@@ -85,33 +86,36 @@ final class SearchHitsTransformer implements ResultTransformer {
 		
 		// extract only organism URNs (no names, etc..)
 		if(doc.getField(FIELD_ORGANISM) != null) {
-			List<String> l = hit.getOrganism();
+			Set<String> uniqueVals = new TreeSet<String>();
 			for(String o : doc.getValues(FIELD_ORGANISM)) {
-				if(o.startsWith("urn") && !l.contains(o)) {
-					l.add(o);
+				if(o.startsWith("urn")) {
+					uniqueVals.add(o);
 				}
 			}
+			hit.getOrganism().addAll(uniqueVals);
 		}
 		
 		// extract only dataSource URNs
 		if(doc.getField(FIELD_DATASOURCE) != null) {
-			List<String> l = hit.getDataSource();
+			Set<String> uniqueVals = new TreeSet<String>();
 			for(String d : doc.getValues(FIELD_DATASOURCE)) {
-				if(d.startsWith("urn") && !l.contains(d)) {
-					l.add(d);
+				if(d.startsWith("urn")) {
+					uniqueVals.add(d);
 				}
 			}
+			hit.getDataSource().addAll(uniqueVals);
 		}	
 		
 		// extract only pathway URIs
 		if(doc.getField(FIELD_PATHWAY) != null) {
-			List<String> l = hit.getPathway();
+			Set<String> uniqueVals = new TreeSet<String>();
 			for(String d : doc.getValues(FIELD_PATHWAY)) {
 				try {
-					if(URI.create(d).isAbsolute()) //skip if throws
-						l.add(d);
-				} catch(IllegalArgumentException e) {}
+					if(URI.create(d).isAbsolute()) 
+						uniqueVals.add(d);
+				} catch(IllegalArgumentException e) {/*skip*/}
 			}
+			hit.getPathway().addAll(uniqueVals);
 		}
 		
 		// use the highlighter (get matching fragments)
