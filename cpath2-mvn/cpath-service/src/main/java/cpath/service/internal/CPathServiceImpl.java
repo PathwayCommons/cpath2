@@ -365,9 +365,15 @@ class CPathServiceImpl implements CPathService {
 	{
 		try {
 			Model m = mainDAO.runAnalysis(analysis, params);
+			if(m == null || m.getObjects().isEmpty())
+				return NO_RESULTS_FOUND.errorResponse("Graph query " +
+					"returned empty BioPAX model (" 
+						+ analysis.getClass().getSimpleName() + ")");
+			
 			DataResponse resp = new DataResponse();
 			resp.setData(m);
 			convert(resp, format);
+			
 			return resp;
 		} catch (Exception e) {
 			log.error("runAnalysis failed. ", e);
@@ -552,6 +558,7 @@ class CPathServiceImpl implements CPathService {
 					int page = 0; // will use search pagination
 					SearchResponse searchResponse = mainDAO.search("*", page, Pathway.class, null, null);
 					while(!searchResponse.isEmpty()) {
+						log.info("Retrieving top pathways search results, page #" + page);
 						//remove pathways having 'pathway' index field not empty, 
 						//i.e., keep only pathways where 'pathway' index field is empty (no controlledOf and pathwayComponentOf values)
 						for(SearchHit h : searchResponse.getSearchHit()) {

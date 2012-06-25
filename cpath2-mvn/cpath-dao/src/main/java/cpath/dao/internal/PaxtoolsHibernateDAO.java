@@ -813,24 +813,25 @@ implements Model, PaxtoolsDAO, WarehouseDAO
         fullTextSession.flushToIndexes();
         fullTextSession.clear();
 
-		/* Much (> 10x) faster indexing (mass-parallel),
-		 * which unfortunately is too "fragile" due to various reasons 
-		 * (e.g., framework bugs...) and less flexible.
-		 * 
-		 * Warning: weird, however, having slightly higher (still reasonable) 
-		 * numbers below can easily lead to indexer hangs or fails with 
-		 * "too many db connections" log messages or even StackOverFlow...
+		/* MassIndexer would be MUCH (> 10x) faster indexing (mass-parallel),
+		 * which unfortunately is too "fragile" due to various reasons,
+		 * such as:
+		 *  - our custom FieldBridge implementation there fail due to lazy collections 
+		 *  (WHY? Is it framework bugs? I do not know...);
+		 *  and we cannot simply make some (in fact - all) collections in the BioPAX ORM EAGER,
+		 *  because then Hibernate creates huge SQL queries (> allowed 61 joins), etc..
+		 *  - 
 		 */
 //		try {
 //			fullTextSession.createIndexer()
 //				.purgeAllOnStart(true)
-//				.batchSizeToLoadObjects(4) // up to 10 once worked for me [Igor]
+//				.batchSizeToLoadObjects(2) // up to 10 once worked for me [Igor]
 //				.threadsForSubsequentFetching(1) // >1 caused issues [Igor]
 //				.threadsToLoadObjects(1) // >1 caused issues [Igor]
 ////				.optimizeOnFinish(true)
 //				.startAndWait();
-//		} catch (Exception e) {
-//			throw new RuntimeException("Index re-build is interrupted.", e);
+//		} catch (InterruptedException e) {
+//			throw new RuntimeException("Indexing was unexpectedly interrupted!", e);
 //		}
 		
 		if (log.isInfoEnabled())
