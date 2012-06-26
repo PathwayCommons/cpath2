@@ -116,13 +116,21 @@ public final class CPath2Client
 	 * 
 	 * @param url
 	 * @param outputFormat default is {@link OutputFormat#BIOPAX}
-	 * @return
+	 * @return data in the requested format
+	 * @throws CPathException if there is no results or another problem
 	 */
-	public String executeQuery(final String url, final OutputFormat outputFormat) {
+	public String executeQuery(final String url, final OutputFormat outputFormat) throws CPathException {
 		final String q = (outputFormat == null)
 			? url : url + "&" + CmdArgs.format + "=" + outputFormat;
 		
-		return restTemplate.getForObject(q, String.class);
+		String data = restTemplate.getForObject(q, String.class);
+		
+		if(data != null && data.contains("<errorResponse>")) {
+			ErrorResponse err = restTemplate.getForObject(q, ErrorResponse.class);
+			throw CPathExceptions.newException(err);
+		}
+		
+		return data;
 	}
     
     
