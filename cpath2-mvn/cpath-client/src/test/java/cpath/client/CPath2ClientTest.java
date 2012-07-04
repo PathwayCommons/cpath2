@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import java.util.Collection;
 import java.util.Collections;
 
+import org.biopax.paxtools.model.Model;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -22,7 +23,7 @@ import cpath.service.jaxb.TraverseResponse;
  * default (official) service still provides an older cpath2 API than this PC2 client expects.
  * Take care. 
  */
-@Ignore
+@Ignore //these tests depend on the data, thus disabled by default (not for daily builds)
 public class CPath2ClientTest {
 	
 	@Test
@@ -34,7 +35,7 @@ public class CPath2ClientTest {
 		
 		vals = client.getValidDataSources().keySet();
 		assertFalse(vals.isEmpty());
-		assertTrue(vals.contains("urn:miriam:reactome"));
+		assertTrue(vals.contains("urn:biopax:Provenance:REACTOME"));
 		
 		vals = client.getValidOrganisms().keySet();
 		assertFalse(vals.isEmpty());
@@ -81,7 +82,7 @@ public class CPath2ClientTest {
 		try {
 			resp = cl.traverse(Collections.singleton("bla-bla"));
 		} catch (CPathException e1) {
-			fail("must throw CPathException!");
+			fail("must not throw a CPathException!");
 		}
 		assertTrue(resp instanceof TraverseResponse); //got response
 		assertEquals(1, ((TraverseResponse)resp).getTraverseEntry().size()); // got entry for "bla-bla" uri
@@ -96,7 +97,7 @@ public class CPath2ClientTest {
 			resp = cl.traverse(Collections.singleton("urn:miriam:taxonomy:9606"));
 			fail("must throw CPathException and not something else!");
 		} catch (CPathException e) {
-			//ok - should be got ErrorResponse
+			//ok - should be ErrorResponse
 		}
 	}
 	
@@ -115,5 +116,25 @@ public class CPath2ClientTest {
 		
 		assertTrue(resp instanceof SearchResponse);
 		assertFalse(((SearchResponse)resp).getSearchHit().isEmpty());
+	}
+	
+	
+	@Test //this test is even more dependent on the data there
+	public final void testGetByUri() {
+		final CPath2Client cl = CPath2Client.newInstance();
+		String uri = "urn:biopax:RelationshipXref:HGNC_HGNC%3A13101";
+		//note: "%" will further be auto-encoded as "%25" (and decoded on the server side)
+		
+		Model m = cl.get(Collections.singleton(uri));
+		assertTrue(m.containsID(uri));
+		
+		
+		String q = cl.queryGet(Collections.singleton(uri));
+		try {
+			String res = cl.executeQuery(q, null);
+		} catch (CPathException e) {
+			fail();
+		}
+		
 	}
 }

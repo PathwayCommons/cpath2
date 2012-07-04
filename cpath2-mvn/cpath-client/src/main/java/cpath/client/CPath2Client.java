@@ -34,7 +34,7 @@ import java.util.*;
 public final class CPath2Client
 {
 	public static final String JVM_PROPERTY_ENDPOINT_URL = "cPath2Url";
-	public static final String DEFAULT_ENDPOINT_URL = "http://pathwaycommons.org/pc2/";
+	public static final String DEFAULT_ENDPOINT_URL = "http://www.pathwaycommons.org/pc2/"; //"www." is IMPORTANT! 
 
 	
 	/**
