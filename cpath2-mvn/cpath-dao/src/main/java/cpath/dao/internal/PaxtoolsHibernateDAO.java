@@ -47,6 +47,7 @@ import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
+import org.biopax.validator.utils.Normalizer;
 import org.hibernate.*;
 import org.hibernate.search.*;
 import org.hibernate.search.annotations.Indexed;
@@ -76,7 +77,7 @@ import java.lang.reflect.Modifier;
  */
 @Transactional
 @Repository
-class PaxtoolsHibernateDAO extends AbstractPaxtoolsDAO 
+class PaxtoolsHibernateDAO  
 implements Model, PaxtoolsDAO, WarehouseDAO
 {
 	private static final long serialVersionUID = 1L;
@@ -871,7 +872,40 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	public Set<String> findByXref(Set<? extends Xref> xrefs, 
 		Class<? extends XReferrable> clazz) 
 	{
-		return getByXref(this, xrefs, clazz);
+		Set<String> toReturn = new HashSet<String>();
+		
+		for (Xref xref : xrefs) {			
+			// Find the corresponding persistent Xref by ID.
+			
+			// - generate URI from xref properties the same way it's done
+			// during the cpath2 warehouse data import; it takes care to
+			// resolve official db synonyms to primary names (using Miriam registry);
+			// ignore 'idVersion', i.e., set it null (TODO think of uniprot isoforms later)
+			if(xref.getDb() == null || xref.getId() == null) {
+				log.warn("getByXref: " + xref + " db or id is null! Skipping.");
+				continue;
+			}
+			String xurn = Normalizer.generateURIForXref(xref.getDb(), 
+				xref.getId(), null, (Class<? extends Xref>) xref.getModelInterface());
+			
+			// now try to get it from the warehouse
+			Xref x = (Xref) this.getByID(xurn);
+			if (x != null) {
+				// collect owners's ids (of requested type only)
+				for (XReferrable xr : x.getXrefOf()) {
+					if (clazz.isInstance(xr)) {
+						toReturn.add(xr.getRDFId());
+					}
+				}
+			} else {
+				if(log.isDebugEnabled())
+					log.debug("getByXref: using normalized ID:" + xurn 
+					+ " " + "no matching xref found for: " +
+					xref + " - " + xref.getRDFId() + ". Skipping.");
+			}
+		}
+		
+		return toReturn;
 	}
 
 
@@ -881,4 +915,5 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 		Model m = getValidSubModel(Collections.singleton(urn));
 		return (m != null && clazz.isInstance(m.getByID(urn))) ? m : null;
 	}
+
 }
