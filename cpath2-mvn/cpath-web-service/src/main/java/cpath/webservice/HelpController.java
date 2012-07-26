@@ -28,7 +28,6 @@
 package cpath.webservice;
 
 import java.io.IOException;
-import java.util.Collections;
 
 import cpath.service.jaxb.*;
 import cpath.service.CPathService;

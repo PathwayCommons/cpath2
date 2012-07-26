@@ -36,12 +36,16 @@ import org.biopax.validator.utils.BiopaxValidatorUtils;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.core.io.DefaultResourceLoader;
 
 import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.ServiceResponse;
 
 import java.io.*;
+
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
 
 import static cpath.config.CPathSettings.*;
 
@@ -145,12 +149,18 @@ public class Main  {
         try {
             switch (command) {
             case VALIDATION_REPORT:
-            	FileOutputStream fos = new FileOutputStream(commandParameters[1]);
-                getValidationReport(commandParameters[0], fos);
+            	String outf = commandParameters[1];
+            	FileOutputStream fos = new FileOutputStream(outf);
+            	if(outf.endsWith(".html"))
+            		getValidationReport(commandParameters[0], fos, true);
+            	else
+                	getValidationReport(commandParameters[0], fos, false);
+            	
 				break;
             case GET:
             	fos = new FileOutputStream(commandParameters[1]);
                 fetchAsBiopax(fos, commandParameters[0]);
+                
 				break;
             case CONVERT:
                 String biopax = readFileAsString(commandParameters[0]);
@@ -207,16 +217,17 @@ public class Main  {
 
 
 	/**
-	 * Exports the consolidated validation report (XML) that includes
-	 * multiple validation results for the provider's pathway data from 
-	 * different files/versions.
+	 * Exports the consolidated validation report (XML or HTML) 
+	 * that includes multiple validation results for the 
+	 * provider's pathway data from different files/versions.
 	 * 
 	 * @param provider
 	 * @param output
+	 * @param asHtml generate HTML report (transformed from the XML)
 	 * @throws IOException
 	 */
 	public static void getValidationReport(final String provider, 
-    		final OutputStream output) throws IOException 
+    		final OutputStream output, boolean asHtml) throws IOException 
     {
     	if(LOG.isInfoEnabled()) {
     		LOG.info("Getting validation report for " + provider
@@ -228,8 +239,12 @@ public class Main  {
     	} else if(!res.isEmpty()) {
     		ValidatorResponse report = (ValidatorResponse) ((DataResponse)res).getData();
     		OutputStreamWriter writer = new OutputStreamWriter(output, "UTF-8");
-			// (the last parameter below can be a xsltSource)
-			BiopaxValidatorUtils.write(report, writer, null); 
+    		Source xsl = (asHtml) 
+    			? new StreamSource((new DefaultResourceLoader())
+    					.getResource("classpath:html-result.xsl").getInputStream())
+    			: null;
+
+			BiopaxValidatorUtils.write(report, writer, xsl); 
     		writer.flush();
     	}
 	}
@@ -239,7 +254,7 @@ public class Main  {
 		StringBuilder toReturn = new StringBuilder();
 		toReturn.append(Main.class.getCanonicalName()).append(" <command> <one or more args>" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
-		toReturn.append(COMMAND.VALIDATION_REPORT.toString() + " <provider> <output.xml>" + NEWLINE);
+		toReturn.append(COMMAND.VALIDATION_REPORT.toString() + " <provider> <output(.xml|.html)>" + NEWLINE);
 		toReturn.append(COMMAND.GET.toString() + " <uri1,uri2,..> <output.owl>" + NEWLINE);
 		toReturn.append(COMMAND.CONVERT.toString() + " <biopax.owl> <output-file> <output format>" + NEWLINE);
 		System.err.println(toReturn.toString());

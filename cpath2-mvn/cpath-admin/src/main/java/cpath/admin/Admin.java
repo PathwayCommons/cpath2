@@ -43,6 +43,9 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.Validator;
+import org.biopax.validator.result.Validation;
+import org.biopax.validator.result.ValidatorResponse;
+import org.biopax.validator.utils.BiopaxValidatorUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,10 +53,14 @@ import org.apache.log4j.PropertyConfigurator;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.core.io.DefaultResourceLoader;
 
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
+
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
 
 
 import static cpath.config.CPathSettings.*;
@@ -300,13 +307,19 @@ public class Admin implements Runnable {
             		exportData(commandParameters[0], os, commandParameters[1].split(","));
 				break;
             case EXPORT_VALIDATION:
-            	os = new FileOutputStream(commandParameters[1]);
+            	String outf = commandParameters[1];
+            	os = new FileOutputStream(outf);
             	Integer pk = Integer.valueOf(commandParameters[0]);
-                exportValidation(pk, os);
+            	if(outf.endsWith(".html"))
+            		exportValidation(pk, os, true);
+            	else
+            		exportValidation(pk, os, false);
+            	
 				break;
             case CREATE_BLACKLIST:
                 os = new FileOutputStream(commandParameters[1]);
                 createBlacklist(commandParameters[0], os);
+                
                 break;
             }
         }
@@ -633,35 +646,38 @@ public class Admin implements Runnable {
 	
 	/**
 	 * Exports from the PathwayData entity bean and 
-	 * writes the BioPAX validation report (XML).
+	 * writes the BioPAX validation report (as XML or HTML).
 	 * 
-	 * @param pk
-	 *
-	 * {@code
-	 * // Example, how to unmarshal that XML-
-	 * // {@link org.biopax.validator.result.Validation}
-	 * Validation validation = null;
-	 * if (xmlResult != null && xmlResult.length() > 0) {
-	 *	try {
-	 *		validation = (Validation) BiopaxValidatorUtils.getUnmarshaller()
-	 *			.unmarshal(new StreamSource(new StringReader(xmlResult)));
-	 *	} catch (Exception e) {
-	 *		LOG.error(e);
-	 *	}
-	 * }
-	 * //BiopaxValidatorUtils.write(validation, writer, null); 
-	 * }
+	 * @param pk pathway_id in the cpath2 pathwayData table
+	 * @param out output stream
+	 * @param asHtml write as HTML report (transform from the XML)
 	 *
 	 */
-	public static void exportValidation(final Integer pk, final OutputStream out) 
+	public static void exportValidation(final Integer pk, final OutputStream out, boolean asHtml) 
 		throws IOException 
 	{
-		// get validationResults from PathwayData beans
+		// get validationResults XML from PathwayData beans
 		PathwayData pathwayData = getPathwayData(pk);
 		if (pathwayData != null) {
+			//FYI: use SET GLOBAL max_allowed_packet = 256000000; for the MySQL instance; otherwise it returns null for large enough reports!
 			byte[] xmlResult = pathwayData.getValidationResults();
-			out.write(xmlResult);
-			out.flush();
+			if(!asHtml) {
+				out.write(xmlResult);
+				out.flush();
+			} else {
+				try { //converting to the HTML page
+					//the xslt stylesheet exists in the biopax-validator-core module
+					Source xsl = new StreamSource((new DefaultResourceLoader())
+							.getResource("classpath:html-result.xsl").getInputStream());
+					ValidatorResponse resp = (ValidatorResponse) BiopaxValidatorUtils.getUnmarshaller()
+							.unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
+					Writer writer = new OutputStreamWriter(out, "UTF-8");
+					BiopaxValidatorUtils.write(resp, writer, xsl); 
+					writer.flush();
+				} catch (Exception e) {
+					LOG.error(e);
+				}
+			}
 		}
 	}	
 
@@ -691,7 +707,9 @@ public class Admin implements Runnable {
 			" (dbName - any supported by PaxtoolsDAO DB; " +
 			"pathway_id is a PK of the pathwayData table - to extract 'premerged' data)" + NEWLINE);
 		toReturn.append(COMMAND.EXPORT_VALIDATION.toString() 
-				+ " <pathway_id> <output>" + NEWLINE);
+			+ " <pathway_id> <output_file> (pathway_id - same as above; output_file " +
+			"will contain the Validator Response XML unless '.html' file extension is used, " +
+			"in wich case the XML is there auto-transformed to offline HTML+Javascript content)" + NEWLINE);
         toReturn.append(COMMAND.CREATE_BLACKLIST.toString() + " <databaseName> <outfile>"  + NEWLINE);
 
 		return toReturn.toString();

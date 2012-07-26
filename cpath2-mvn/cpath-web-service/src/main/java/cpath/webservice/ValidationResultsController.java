@@ -27,6 +27,8 @@ public class ValidationResultsController extends BasicController
 		this.service = service;
 	}
 
+    
+    //TODO refactor to add one more RESTful level: /validation/{metadataId}/, /validation/{metadataId}/{pathway_pk}
 
     @RequestMapping("/validation/{metadataId}")
     public @ResponseBody ValidatorResponse queryForValidation(@PathVariable String metadataId) 
