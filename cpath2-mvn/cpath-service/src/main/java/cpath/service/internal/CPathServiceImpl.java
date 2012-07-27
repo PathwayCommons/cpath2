@@ -321,24 +321,21 @@ class CPathServiceImpl implements CPathService {
 		Collection<PathwayData> pathwayDataCollection = metadataDAO
 				.getPathwayDataByIdentifier(metadataIdentifier);
 		if (!pathwayDataCollection.isEmpty()) {
-			// new container to collect different files validation results
+			// a new container to collect separately stored file validations
 			ValidatorResponse response = new ValidatorResponse();
-			for (PathwayData pathwayData : pathwayDataCollection) {
-				byte[] xmlResult = pathwayData.getValidationResults();
-				if (xmlResult != null && xmlResult.length > 0) {
-					// unmarshal and add to the 'results' list
-					Validation validation = null;
-					try {
-						ValidatorResponse resp = (ValidatorResponse) BiopaxValidatorUtils.getUnmarshaller()
-							.unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
-						validation = resp.getValidationResult().get(0);
-					}
-                    catch (Exception e) {
-                    	log.error(e);
-						return INTERNAL_ERROR.errorResponse(e);
-					}
+			for (PathwayData pathwayData : pathwayDataCollection) {				
+				try {
+					byte[] xmlResult = pathwayData.getValidationResults();
+					// unmarshal and add
+					ValidatorResponse resp = (ValidatorResponse) BiopaxValidatorUtils.getUnmarshaller()
+						.unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
+					assert resp.getValidationResult().size() == 1; // current design (of the premerge pipeline)
+					Validation validation = resp.getValidationResult().get(0); 
 					if(validation != null)
 						response.getValidationResult().add(validation);
+				} catch (Exception e) {
+                    log.error(e);
+					return INTERNAL_ERROR.errorResponse(e);
 				}
 			}
 			
@@ -347,11 +344,31 @@ class CPathServiceImpl implements CPathService {
 			return toReturn;
 		} else {
 			return NO_RESULTS_FOUND.errorResponse(
-				"No validation data found by " + metadataIdentifier);
+				"No pathway data found by " + metadataIdentifier);
 		}
 	}
 
-	//TODO also add public ServiceResponse getValidationReport(Integer pathwayDataPk) 
+	
+	@Override
+	public ServiceResponse getValidationReport(Integer pathwayDataPk) {
+		PathwayData pathwayData = metadataDAO.getPathwayData(pathwayDataPk);
+		if(pathwayData != null) {
+			try {
+				byte[] xmlResult = pathwayData.getValidationResults();	
+				ValidatorResponse resp = (ValidatorResponse) BiopaxValidatorUtils
+					.getUnmarshaller().unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
+				DataResponse ret = new DataResponse();
+				ret.setData(resp);
+				return ret;
+			} catch (Throwable e) {
+                log.error(e);
+				return INTERNAL_ERROR.errorResponse(e);
+			}
+		} else {
+			return NO_RESULTS_FOUND.errorResponse(
+				"No pathway data exists with pathway_id:" + pathwayDataPk);
+		}
+	}
 	
 	//--- Graph queries ---------------------------------------------------------------------------|
 
@@ -713,6 +730,22 @@ class CPathServiceImpl implements CPathService {
 		}
 			
 		return result;
+	}
+
+	
+	@Override
+	public ServiceResponse getPathwayDataInfo(String metadataIdentifier) {
+		Collection<PathwayData> pathwayData = metadataDAO.getPathwayDataByIdentifier(metadataIdentifier);
+		Map<Integer, String> map = new TreeMap<Integer, String>();
+		for(PathwayData pd : pathwayData)
+			map.put(pd.getId(), pd.getFilename() 
+				+ " (" + pd.getIdentifier() 
+				+ "; version: " + pd.getVersion() 
+				+ "; passed: " + pd.getValid() + ")");
+		
+		DataResponse ret = new DataResponse();
+		ret.setData(map);
+		return ret;
 	}
 		
 }

@@ -37,6 +37,8 @@ import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
+import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.beans.PathwayData;
 
 
 /**
@@ -93,16 +95,26 @@ public interface CPathService {
 
 	
 	/**
-	 * Generates the BioPAX validation report for the pathway data provider:
-	 * - XML report will be associated with {@link ResultMapKey#DATA} key in the returned map;
-	 * - {@link ValidatorResponse} bean will be associated with {@link ResultMapKey#ELEMENT} key.
+	 * Generates the BioPAX validation report for the pathway data provider.
+	 * It is returned as {@link DataResponse} that contains {@link ValidatorResponse}
+	 * (can also return {@link ErrorResponse}).
 	 * 
-	 * @param metadataIdentifier
+	 * @param metadataIdentifier datasource identifier, {@link Metadata#getIdentifier()} 
 	 * @return
 	 */
 	ServiceResponse getValidationReport(String metadataIdentifier);
 	
 
+	/**
+	 * Generates the BioPAX validation report for a pathway data file.
+	 * 	It is returned as {@link DataResponse} that contains {@link ValidatorResponse}
+	 * (can also return {@link ErrorResponse}).
+	 * 
+	 * @param pathwayDataPk a primary key value from the pathwatData table {@link PathwayData}
+	 * @return
+	 */
+	ServiceResponse getValidationReport(Integer pathwayDataPk);
+	
 	/**
 	 * Runs a neighborhood query using the given parameters.
 	 *
@@ -213,4 +225,14 @@ public interface CPathService {
 	 * @return wrapped as {@link DataResponse} or {@link ErrorResponse} if - null, error, or empty.
 	 */
 	ServiceResponse fetchBiopaxModel(String... uris);
+	
+	
+	/**
+	 * Gets a map (pk -> info) of {@link PathwayData} for the data source
+	 * wrapped in {@link DataResponse}.
+	 * 
+	 * @param metadataIdentifier
+	 * @return
+	 */
+	ServiceResponse getPathwayDataInfo(String metadataIdentifier);
 }

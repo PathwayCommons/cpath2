@@ -86,7 +86,7 @@ public final class PathwayData {
 	void setId(Integer id) {
 		this.id = id;
 	}
-    Integer getId() { return new Integer(id); }
+    public Integer getId() { return new Integer(id); }
 
 	void setIdentifier(String identifier) {
         if (identifier == null) {

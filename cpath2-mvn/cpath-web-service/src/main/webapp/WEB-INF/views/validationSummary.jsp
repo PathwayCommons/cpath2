@@ -6,9 +6,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
-	<meta name="author" content="BioPAX" />
-	<meta name="description" content="BioPAX Validator" />
-	<meta name="keywords" content="BioPAX, Validation, Validator, Rule, OWL, Exchange" />
+	<meta name="author" content="Pathway Commons" />
+	<meta name="description" content="cPath2 BioPAX Data Validation Summary" />
+	<meta name="keywords" content="cPath2, BioPAX, Validation" />
 	<script type="text/javascript">
 	  function switchit(list) {
 		var listElementStyle = document.getElementById(list).style;
