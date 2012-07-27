@@ -89,10 +89,6 @@ public class Main  {
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-cpathDAO.xml",
         			"classpath:applicationContext-whouseDAO.xml",
-        			// the following three are not required anymore (temporarily or forever)
-        			//"classpath:applicationContext-whouseMolecules.xml",
-        			//"classpath:applicationContext-whouseProteins.xml",
-        			//"classpath:applicationContext-cvRepository.xml",
         			"classpath:applicationContext-cpathService.xml"});
 		return (CPathService) context.getBean("service");
 	}
