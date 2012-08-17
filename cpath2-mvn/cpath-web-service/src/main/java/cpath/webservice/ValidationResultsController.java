@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Map;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 
@@ -53,12 +54,13 @@ public class ValidationResultsController extends BasicController
     
     
     @RequestMapping("/validation/file/{pk}.html") // now view; the HTML is written to the response stream
-    public void queryForValidationByPkHtml(@PathVariable Integer pk, Writer writer) throws IOException 
+    public void queryForValidationByPkHtml(@PathVariable Integer pk, Writer writer, HttpServletResponse response) throws IOException 
     {	
     	ValidatorResponse resp = queryForValidationByPk(pk);
     	//the xslt stylesheet exists in the biopax-validator-core module
 		Source xsl = new StreamSource((new DefaultResourceLoader())
 			.getResource("classpath:html-result.xsl").getInputStream());
+		response.setContentType("text/html");
 		BiopaxValidatorUtils.write(resp, writer, xsl); 
     }
   
