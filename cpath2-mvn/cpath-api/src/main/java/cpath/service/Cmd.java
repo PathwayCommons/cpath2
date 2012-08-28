@@ -49,7 +49,7 @@ public enum Cmd {
 			new CmdArgs[]{q, page, type, organism, datasource}),	
 	GET("Gets a BioPAX element or sub-model " +
         "by ID(s).  This command has two parameters.",
-        "/get?uri=urn:miriam:uniprot:P38398",
+        "/get?uri=http://identifiers.org/uniprot/P38398",
         "BioPAX by default, other formats as specified by the format parameter.  " +
         "See the <a href=\"#valid_output_parameter\">valid values for format parameter</a> below.",
         new CmdArgs[]{uri, format}),
@@ -65,7 +65,7 @@ public enum Cmd {
         new CmdArgs[]{}),   
     TRAVERSE("Gets data property values (or elements's URIs) " +
     	"at the end of the property path.  This command has two parameters.",
-    	"/traverse?uri=urn:miriam:uniprot:P38398&path=ProteinReference%2Forganism%2FdisplayName",
+    	"/traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/organism/displayName",
     	"Traverse Response - XML (or JSON, when called as '/traverse.json?').", 
     	new CmdArgs[]{path, uri})
           

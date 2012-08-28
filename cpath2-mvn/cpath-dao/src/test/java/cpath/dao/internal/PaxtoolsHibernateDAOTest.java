@@ -89,7 +89,7 @@ public class PaxtoolsHibernateDAOTest {
 	
     @Test
 	public void testInitialization() throws IOException {
-		assertTrue(((Model)paxtoolsDAO).containsID("urn:miriam:uniprot:P46880"));
+		assertTrue(((Model)paxtoolsDAO).containsID("http://identifiers.org/uniprot/P46880"));
 		assertTrue(((Model)paxtoolsDAO).containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
 		assertTrue(((Model)paxtoolsDAO).containsID("http://www.biopax.org/examples/myExample#Protein_A"));
 		assertTrue(((Model)paxtoolsDAO).containsID("http://www.biopax.org/examples/myExample#Protein_B"));
@@ -108,14 +108,14 @@ public class PaxtoolsHibernateDAOTest {
 		Protein p = (Protein) e;
 				
 		assertTrue(p.getEntityReference() != null);
-		assertEquals("urn:miriam:uniprot:P46880", p.getEntityReference().getRDFId());
+		assertEquals("http://identifiers.org/uniprot/P46880", p.getEntityReference().getRDFId());
 		
 		// this would fail (lazy collections)
 		//assertEquals(4, p.getEntityReference().getEntityReferenceOf().size());
 			
 		// but when -
 		e = ((Model)paxtoolsDAO) // try to initialize
-				.getByID("urn:miriam:uniprot:P46880");
+				.getByID("http://identifiers.org/uniprot/P46880");
 		paxtoolsDAO.initialize(e);
 		assertTrue(e instanceof ProteinReference);
 		ProteinReference pr = (ProteinReference) e;
@@ -125,7 +125,7 @@ public class PaxtoolsHibernateDAOTest {
 		// assertEquals(4, pr.getEntityReferenceOf().size());
 		
 		// different approach works!
-		pr = (ProteinReference) ((Model)paxtoolsDAO).getByID("urn:miriam:uniprot:P46880");
+		pr = (ProteinReference) ((Model)paxtoolsDAO).getByID("http://identifiers.org/uniprot/P46880");
 		//pr.getEntityReferenceOf().size() would fail here, but...
 		// initialize(bpe) can be called at any time (it's bidirectional, though not recursive)
 		paxtoolsDAO.initialize(pr);
@@ -155,7 +155,7 @@ public class PaxtoolsHibernateDAOTest {
 	@Test // protein reference's xref's getXrefOf() is not empty
 	public void testGetXReferableAndXrefOf() throws Exception {
 		ProteinReference pr = (ProteinReference) ((Model)paxtoolsDAO)
-			.getByID("urn:miriam:uniprot:P46880");
+			.getByID("http://identifiers.org/uniprot/P46880");
 		paxtoolsDAO.initialize(pr);
 		assertTrue(pr instanceof ProteinReference);
 		assertFalse(pr.getXref().isEmpty());
@@ -217,7 +217,7 @@ public class PaxtoolsHibernateDAOTest {
 			Collections.singleton("http://www.biopax.org/examples/myExample#Protein_A"));
 		System.out.println("Clone the protein and export model:");
 		assertTrue(m.containsID("http://www.biopax.org/examples/myExample#Protein_A"));
-		assertTrue(m.containsID("urn:miriam:uniprot:P46880"));
+		assertTrue(m.containsID("http://identifiers.org/uniprot/P46880"));
 		assertTrue(m.containsID("urn:biopax:UnificationXref:UniProt_P46880"));
 		
 		OutputStream out = new FileOutputStream(
@@ -255,7 +255,7 @@ public class PaxtoolsHibernateDAOTest {
 		resp = paxtoolsDAO.search("glucokinase", 0, ProteinReference.class, null, null);
 		list = resp.getSearchHit();
 		assertEquals(1, list.size());
-		assertTrue(list.get(0).getUri().equals("urn:miriam:uniprot:P46880"));
+		assertTrue(list.get(0).getUri().equals("http://identifiers.org/uniprot/P46880"));
 		
 		
 		
@@ -290,7 +290,7 @@ public class PaxtoolsHibernateDAOTest {
 		
 	@Test
 	public void testWarehouseDAO() throws IOException {
-		assertTrue(((Model)whDAO).containsID("urn:miriam:uniprot:P46880"));
+		assertTrue(((Model)whDAO).containsID("http://identifiers.org/uniprot/P46880"));
 		assertTrue(((Model)whDAO).containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
 		assertTrue(((Model)whDAO).containsID("http://www.biopax.org/examples/myExample#Protein_A"));
 		assertTrue(((Model)whDAO).containsID("http://www.biopax.org/examples/myExample#Protein_B"));
@@ -303,9 +303,9 @@ public class PaxtoolsHibernateDAOTest {
 		
 		Protein p = whDAO.createBiopaxObject("http://www.biopax.org/examples/myExample2#Protein_A", Protein.class);
 		assertTrue(p.getEntityReference() != null);
-		assertEquals("urn:miriam:uniprot:P46880", p.getEntityReference().getRDFId());
+		assertEquals("http://identifiers.org/uniprot/P46880", p.getEntityReference().getRDFId());
 			
-		e = whDAO.createBiopaxObject("urn:miriam:uniprot:P46880", ProteinReference.class);
+		e = whDAO.createBiopaxObject("http://identifiers.org/uniprot/P46880", ProteinReference.class);
 		assertTrue(e instanceof ProteinReference);
 		ProteinReference pr = (ProteinReference) e;
 		assertNotNull(pr.getOrganism());
@@ -335,7 +335,7 @@ public class PaxtoolsHibernateDAOTest {
 	@Test
 	// protein reference's xref's getXrefOf() is not empty
 	public void testWarehouseXReferrableXrefOf() throws Exception {
-		ProteinReference pr = whDAO.createBiopaxObject("urn:miriam:uniprot:P46880",
+		ProteinReference pr = whDAO.createBiopaxObject("http://identifiers.org/uniprot/P46880",
 				ProteinReference.class);
 		assertTrue(pr instanceof ProteinReference);
 		assertFalse(pr.getXref().isEmpty());

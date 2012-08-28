@@ -77,24 +77,24 @@ public class WarehouseCVsTest {
 
 	/**
 	 * Test method for
-	 * {@link cpath.dao.internal.OntologyManagerCvRepository#ontologyTermsToUrns(java.util.Collection)}
+	 * {@link cpath.dao.internal.OntologyManagerCvRepository#ontologyTermsToUris(java.util.Collection)}
 	 */
 	@Test
-	public final void testOntologyTermsToUrns() {
+	public final void testOntologyTermsToUris() {
 		OntologyTermI term = new OntologyTermImpl("GO", "GO:0005654",
 				"nucleoplasm");
 		Set<OntologyTermI> terms = new HashSet<OntologyTermI>();
 		terms.add(term);
-		Set<String> urns = warehouse.ontologyTermsToUrns(terms);
+		Set<String> urns = warehouse.ontologyTermsToUris(terms);
 		assertFalse(urns.isEmpty());
 		assertTrue(urns.size() == 1);
 		String urn = urns.iterator().next();
-		assertEquals("urn:miriam:obo.go:GO%3A0005654", urn);
+		assertEquals("http://identifiers.org/obo.go/GO:0005654", urn);
 	}
 
 	/**
 	 * Test method for
-	 * {@link cpath.dao.internal.OntologyManagerCvRepository#ontologyTermsToUrns(java.util.Collection)}
+	 * {@link cpath.dao.internal.OntologyManagerCvRepository#ontologyTermsToUris(java.util.Collection)}
 	 */
 	@Test
 	public final void testSearchForTermByAccession() {
@@ -114,18 +114,18 @@ public class WarehouseCVsTest {
 	public final void testGetDirectChildren() {
 		Set<String> dc = warehouse.getDirectChildren("urn:miriam:obo.go:GO%3A0005654");
 		assertFalse(dc.isEmpty());
-		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0044451"));
-		System.out.println("DirectChildren:\n" + dc.toString() + " " +
-			warehouse.createBiopaxObject("urn:miriam:obo.go:GO%3A0044451", ControlledVocabulary.class));
+		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0044451"));
+//		System.out.println("DirectChildren:\n" + dc.toString() + " " +
+//			warehouse.createBiopaxObject("urn:miriam:obo.go:GO%3A0044451", ControlledVocabulary.class));
 	}
 
 	@Test
 	public final void testGetDirectAllChildren() {
-		Set<String> dc = warehouse.getAllChildren("urn:miriam:obo.go:GO%3A0005654");
+		Set<String> dc = warehouse.getAllChildren("http://identifiers.org/obo.go/GO:0005654");
 		assertFalse(dc.isEmpty());
-		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0044451"));
-		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0042555"));
-		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0070847"));
+		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0044451"));
+		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0042555"));
+		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0070847"));
 		//System.out.println("AllChildren:\n" +dc.toString() + "; e.g., " +
 		//		warehouse.getObject("urn:miriam:obo.go:GO%3A0042555", ControlledVocabulary.class));
 	}
@@ -134,30 +134,34 @@ public class WarehouseCVsTest {
 	public final void testGetDirectParents() {
 		Set<String> dc = warehouse.getDirectParents("urn:miriam:obo.go:GO%3A0005654");
 		assertFalse(dc.isEmpty());
-		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0031981"));
-		System.out.println("DirectParents:\n" +dc.toString() + "; e.g., " +
-			warehouse.createBiopaxObject("urn:miriam:obo.go:GO%3A0031981", ControlledVocabulary.class));
+		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0031981"));
+//		System.out.println("DirectParents:\n" +dc.toString() + "; e.g., " +
+//			warehouse.createBiopaxObject("http://identifiers.org/obo.go/GO:0031981", ControlledVocabulary.class));
 	}
 
 	@Test
 	public final void testGetAllParents() {
-		Set<String> dc = warehouse.getAllParents("urn:miriam:obo.go:GO%3A0005654");
+		Set<String> dc = warehouse.getAllParents("http://identifiers.org/obo.go/GO:0005654");
 		assertFalse(dc.isEmpty());
-		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0031981"));
-		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0044428"));
-		assertTrue(dc.contains("urn:miriam:obo.go:GO%3A0044422"));
+		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0031981"));
+		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0044428"));
+		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0044422"));
 		//System.out.println("AllParents:\n" +dc.toString());
 	}
 
 
-	@Test // using correct ID
+	@Test // using correct ID(s)
 	public final void testGetObject() {
 		CellularLocationVocabulary cv = warehouse.createBiopaxObject(
 				"urn:miriam:obo.go:GO%3A0005737",CellularLocationVocabulary.class);
 		assertNotNull(cv);
+		cv = null;
+		cv = warehouse.createBiopaxObject(
+				"http://identifiers.org/obo.go/GO:0005737",CellularLocationVocabulary.class);
+		assertNotNull(cv);
 	}
 	
-	@Test // using bad ID
+	@Test // using bad ID (with 'X' in it)
 	public final void testGetObject2() {
 		CellularLocationVocabulary cv = warehouse.createBiopaxObject(
 				"urn:miriam:obo.go:GO%3A0005737X",CellularLocationVocabulary.class);
@@ -167,11 +171,9 @@ public class WarehouseCVsTest {
 	@Test 
 	public final void testEscapeChars() {
 		ControlledVocabulary cv = warehouse.createBiopaxObject(
-				"urn:miriam:obo.psi-mod:MOD%3A00048",SequenceModificationVocabulary.class);
+				"http://identifiers.org/obo.psi-mod/MOD:00048",SequenceModificationVocabulary.class);
 		assertNotNull(cv);
-		
 //		System.out.println("MOD%253A00048 term:" + cv.getTerm().toString());
-		
 		assertTrue(cv.getTerm().contains("O4'-phospho-L-tyrosine")); // apostrophe
 	}
 	

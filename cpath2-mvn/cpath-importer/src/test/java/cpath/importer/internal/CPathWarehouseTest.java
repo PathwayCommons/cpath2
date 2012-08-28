@@ -116,7 +116,7 @@ public class CPathWarehouseTest {
 	@Test
 	public void testGetProteinReference() {
 		ProteinReference pr = proteins
-			.createBiopaxObject("urn:miriam:uniprot:P62158", ProteinReference.class);
+			.createBiopaxObject("http://identifiers.org/uniprot/P62158", ProteinReference.class);
 		assertNotNull(pr);
 		assertFalse(pr.getName().isEmpty());
 		assertNotNull(pr.getOrganism());
@@ -136,7 +136,7 @@ public class CPathWarehouseTest {
 		assertFalse(prIds.isEmpty());
 		assertEquals(1, prIds.size());
 		// correct entity reference found?
-		assertEquals("urn:miriam:uniprot:Q8TD86", prIds.iterator().next());
+		assertEquals("http://identifiers.org/uniprot/Q8TD86", prIds.iterator().next());
 	}
 
 	@Test
@@ -161,7 +161,7 @@ public class CPathWarehouseTest {
 		prIds =  proteins.findByXref(Collections.singleton(x), ProteinReference.class);
 		assertFalse(prIds.isEmpty());
 		assertEquals(1, prIds.size());
-		assertEquals("urn:miriam:uniprot:Q8TD86", prIds.iterator().next());
+		assertEquals("http://identifiers.org/uniprot/Q8TD86", prIds.iterator().next());
 	}
 
     @Test
@@ -170,15 +170,15 @@ public class CPathWarehouseTest {
 		Model m =((PaxtoolsDAO)proteins).getValidSubModel(
 				Arrays.asList(
 					"urn:biopax:UnificationXref:REFSEQ_NP_619650",
-					"urn:miriam:uniprot:Q8TD86",
+					"http://identifiers.org/uniprot/Q8TD86",
 					"urn:biopax:UnificationXref:UNIPROT_Q8TD86",
 					"urn:biopax:UnificationXref:UNIPROT_A2A2M3",
 					"urn:biopax:UnificationXref:UNIPROT_Q6Q2C4",
 					"urn:biopax:UnificationXref:ENTREZ+GENE_163688"));
 
-		// The following item should come from urn:miriam:uniprot:Q8TD86
+		// The following item should come from Q8TD86 ProteinReference
         // See TEST_UNIPROT*.gz file for the original reference
-		assertTrue(m.containsID("urn:miriam:taxonomy:9606")); // added by auto-complete
+		assertTrue(m.containsID("http://identifiers.org/taxonomy/9606")); // added by auto-complete
 
 		/*
 		try {

@@ -46,11 +46,11 @@ public interface WarehouseDAO {
 	 * Gets a fully initialized (and detached) BioPAX object.
 	 * 
 	 * @param <T> BioPAXElement or its subclass (e.g., ProteinReference)
-	 * @param urn
+	 * @param uri
 	 * @param clazz
 	 * @return
 	 */
-	<T extends BioPAXElement> T createBiopaxObject(String urn, Class<T> clazz);
+	<T extends BioPAXElement> T createBiopaxObject(String uri, Class<T> clazz);
 	
 	
     /**
@@ -58,12 +58,12 @@ public interface WarehouseDAO {
      * that contains the BioPAX object and its children.
      * 
      * @param <T> BioPAXElement or its subclass (e.g., ProteinReference)
-     * @param urn URN
+     * @param uri
      * @param clazz
      * 
      * @return model that contains the object and its dependents or null.
      */
-	<T extends BioPAXElement> Model createSubModel(String urn, Class<T> clazz);
+	<T extends BioPAXElement> Model createSubModel(String uri, Class<T> clazz);
     
 	
 	/**

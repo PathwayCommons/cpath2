@@ -14,25 +14,25 @@
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">UniProt</bp:db>
 </bp:UnificationXref>
 
-<bp:PublicationXref rdf:about="urn:miriam:pubmed:9763671">
+<bp:PublicationXref rdf:about="http://identifiers.org/pubmed/9763671">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">9763671</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PubMed</bp:db>
 </bp:PublicationXref>
 
-<!-- this PR must be matched by xrefs and replaced by the warehouse PR urn:miriam:uniprot:O75191 during the merge. 
-In fact, this PR should have been already normalized and have URI=urn:miriam:uniprot:O75191 (so matching by xrefs won't be needed),
+<!-- this PR must be matched by xrefs and replaced by the warehouse PR O75191 during the merge. 
+In fact, this PR should have been already normalized and have URI=http://identifiers.org/uniprot/O75191 (so matching by xrefs won't be needed),
 but, there was a bug in the normalizer... Anyway, we keep this PR as it was for testing!
 -->
 <bp:ProteinReference rdf:about="http://biocyc.org/biopax/biopax-level3ProteinReference155353">
  <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_O75191" />
- <bp:xref rdf:resource="urn:miriam:pubmed:9763671" />
+ <bp:xref rdf:resource="http://identifiers.org/pubmed/9763671" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Xylulose kinase</bp:displayName>
 </bp:ProteinReference>
 
 <bp:Protein rdf:about="http://biocyc.org/biopax/biopax-level3Protein155359">
  <bp:entityReference rdf:resource="http://biocyc.org/biopax/biopax-level3ProteinReference155353" />
  <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_O75191" />
- <bp:xref rdf:resource="urn:miriam:pubmed:9763671" />
+ <bp:xref rdf:resource="http://identifiers.org/pubmed/9763671" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Xylulose kinase</bp:displayName>
 </bp:Protein>
 
@@ -45,11 +45,11 @@ During the merge, SMR1 but not SMR2 gets replaced, A becomes dangling (to be rem
 and B.memberEntityReferenceOf() still refers to removed A. We want both A and B disappear and not making trouble ;) !
  -->
 <bp:SmallMolecule rdf:about="http://biocyc.org/biopax/biopax-level3SmallMolecule173158">
- <bp:entityReference rdf:resource="urn:miriam:chebi:28" />
+ <bp:entityReference rdf:resource="http://identifiers.org/obo.chebi/CHEBI:28" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SM1</bp:displayName>
 </bp:SmallMolecule>
 
-<bp:SmallMoleculeReference rdf:about="urn:miriam:chebi:28"> <!-- will be matched and replaced from Warehouse -->
+<bp:SmallMoleculeReference rdf:about="http://identifiers.org/obo.chebi/CHEBI:28"> <!-- will be matched and replaced from Warehouse -->
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMR1</bp:displayName>
  <bp:memberEntityReference rdf:resource="http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684" />
  <bp:memberEntityReference rdf:resource="http://biocyc.org/biopax/biopax-level3SmallMoleculeReference165390" />
@@ -66,11 +66,11 @@ and B.memberEntityReferenceOf() still refers to removed A. We want both A and B 
 </bp:SmallMoleculeReference>
 
 <bp:SmallMolecule rdf:about="http://biocyc.org/biopax/biopax-level3SmallMolecule165394">
- <bp:entityReference rdf:resource="urn:miriam:chebi:36141" /> <!-- 36141 is not in the ChEBI data! -->
+ <bp:entityReference rdf:resource="http://identifiers.org/obo.chebi/CHEBI:36141" /> <!-- 36141 is not in the ChEBI data! -->
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SM2</bp:displayName>
 </bp:SmallMolecule>
 
-<bp:SmallMoleculeReference rdf:about="urn:miriam:chebi:36141">
+<bp:SmallMoleculeReference rdf:about="http://identifiers.org/obo.chebi/CHEBI:36141">
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMR2</bp:displayName>
  <bp:memberEntityReference rdf:resource="http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684" />
 </bp:SmallMoleculeReference>

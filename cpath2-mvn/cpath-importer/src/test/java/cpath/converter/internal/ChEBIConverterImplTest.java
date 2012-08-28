@@ -24,7 +24,7 @@ import java.io.InputStream;
  * Test Chebi to BioPAX converter.
  *
  */
-@Ignore
+//@Ignore
 public class ChEBIConverterImplTest {
 
 	/**
@@ -53,7 +53,7 @@ public class ChEBIConverterImplTest {
 		assertEquals(3, model.getObjects(SmallMoleculeReference.class).size());
 
 		// get lactic acid sm
-		String rdfID = "urn:miriam:chebi:422";
+		String rdfID = "http://identifiers.org/obo.chebi/CHEBI:422";
 		assertTrue(model.containsID(rdfID));
 		SmallMoleculeReference smallMoleculeReference = (SmallMoleculeReference)model.getByID(rdfID);
 
@@ -71,12 +71,12 @@ public class ChEBIConverterImplTest {
 		assertEquals(12, relationshipXrefCount);
 		
 		// following checks work in this test only (using in-memory model); with DAO - use getObject...
-        assertTrue(model.containsID("urn:miriam:chebi:20"));
-        EntityReference er20 = (EntityReference) model.getByID("urn:miriam:chebi:20");
-        assertTrue(model.containsID("urn:miriam:chebi:28"));
-        EntityReference er28 = (EntityReference) model.getByID("urn:miriam:chebi:28");
-        assertTrue(model.containsID("urn:miriam:chebi:422"));
-        EntityReference er422 = (EntityReference) model.getByID("urn:miriam:chebi:422");
+        assertTrue(model.containsID("http://identifiers.org/obo.chebi/CHEBI:20"));
+        EntityReference er20 = (EntityReference) model.getByID("http://identifiers.org/obo.chebi/CHEBI:20");
+        assertTrue(model.containsID("http://identifiers.org/obo.chebi/CHEBI:28"));
+        EntityReference er28 = (EntityReference) model.getByID("http://identifiers.org/obo.chebi/CHEBI:28");
+        assertTrue(model.containsID("http://identifiers.org/obo.chebi/CHEBI:422"));
+        EntityReference er422 = (EntityReference) model.getByID("http://identifiers.org/obo.chebi/CHEBI:422");
         
         // 28 has member - 422 has member - 20
         assertTrue(er20.getMemberEntityReferenceOf().contains(er422));

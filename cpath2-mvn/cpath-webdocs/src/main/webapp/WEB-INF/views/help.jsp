@@ -123,7 +123,7 @@
 	  <fmt:message key="cpath2.command_get_output"/>
 	  <h3><fmt:message key="cpath2.command_header_query"/></h3><br/>
 	  <ol>
-	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=urn:miriam:uniprot:Q06609">
+	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http://identifiers.org/uniprot/Q06609">
 		<fmt:message key="cpath2.example.get1"/></a>
 	  </li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http:%2F%2Fwww.reactome.org%2Fbiopax/48887Pathway137">
@@ -157,10 +157,10 @@
 	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=http:%2F%2Fwww.reactome.org%2Fbiopax%2F48892Protein3105&kind=neighborhood">
 		<fmt:message key="cpath2.example.graph1"/></a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=urn:miriam:uniprot:O88207&kind=neighborhood">
+	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=http://identifiers.org/uniprot/O88207&kind=neighborhood">
 		<fmt:message key="cpath2.example.graph2"/></a>
 	  </li>
-	  	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=urn:miriam:uniprot:O88207&kind=neighborhood&format=EXTENDED_BINARY_SIF">
+	  	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=http://identifiers.org/uniprot/O88207&kind=neighborhood&format=EXTENDED_BINARY_SIF">
 		<fmt:message key="cpath2.example.graph3"/></a>
 	  </li>
 	  </ol>
@@ -181,19 +181,19 @@
 	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
 	  <fmt:message key="cpath2.command_header_traverse_query_description"/><br/>
 	  <ol>
-	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=urn:miriam:uniprot:P38398&path=ProteinReference/organism/displayName">
+	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/organism/displayName">
 		<fmt:message key="cpath2.example.traverse1"/></a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=urn:miriam:uniprot:P38398&uri=urn:miriam:uniprot:Q06609&path=ProteinReference/organism/">
+	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://identifiers.org/uniprot/Q06609&path=ProteinReference/organism/">
 		<fmt:message key="cpath2.example.traverse2"/></a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=urn:miriam:uniprot:Q06609&path=ProteinReference%2fentityReferenceOf:Protein%2fname">
+	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/Q06609&path=ProteinReference%2fentityReferenceOf:Protein%2fname">
 		<fmt:message key="cpath2.example.traverse3"/></a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=urn:miriam:uniprot:P38398&path=ProteinReference%2fentityReferenceOf:Protein/">
+	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference%2fentityReferenceOf:Protein/">
 		<fmt:message key="cpath2.example.traverse4"/></a>
 	  </li>	
-	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=urn:miriam:uniprot:P38398&uri=http://pid.nci.nih.gov/biopaxpid_68613&uri=http://www.reactome.org/biopax/48887Protein2992&uri=urn:miriam:taxonomy:9606&path=Named%2fname">
+	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://pid.nci.nih.gov/biopaxpid_68613&uri=http://www.reactome.org/biopax/48887Protein2992&uri=http://identifiers.org/taxonomy/9606&path=Named%2fname">
 		<fmt:message key="cpath2.example.traverse5"/></a>
 	  </li>		  
 	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://pid.nci.nih.gov/biopaxpid_55597&path=Pathway%2fpathwayComponent:Interaction/participant/displayName">

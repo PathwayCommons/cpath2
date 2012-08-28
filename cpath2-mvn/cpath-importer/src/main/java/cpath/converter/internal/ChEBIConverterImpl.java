@@ -311,20 +311,20 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		SmallMoleculeReference toReturn = null;
 		
         // grab rdf id, create SMR 
-		String rdfID = getRDFID(entryBuffer);
-		if (rdfID == null) {
+		// line contains id in form: CHEBI:15377
+		String chebiId = getValue(entryBuffer, CHEBI_ID);
+		if (chebiId == null) 
 			return null;
-		}
 		
+		String rdfID = "http://identifiers.org/obo.chebi/" + chebiId;
 		toReturn = (SmallMoleculeReference) model.getByID(rdfID);
 		if(toReturn != null)
 			return toReturn;
 		
-		// else (create a new one)
-		
+		// create a new SMR
 		toReturn = model.addNew(SmallMoleculeReference.class, rdfID);
 		// primary id (u.xref)
-		toReturn.addXref(getXref(UnificationXref.class,getValue(entryBuffer, CHEBI_ID), "chebi"));
+		toReturn.addXref(getXref(UnificationXref.class, chebiId, "ChEBI"));
 		// names
 		setName(getValue(entryBuffer, CHEBI_NAME), DISPLAY_NAME, toReturn);
 		setName(getValue(entryBuffer, CHEBI_NAME), STANDARD_NAME, toReturn);
@@ -332,12 +332,12 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		setComment(getValue(entryBuffer, CHEBI_DEFINITION), toReturn);
 		// secondary ids
 		for (String id : getValues(entryBuffer, CHEBI_SECONDARY_ID)) {
-			toReturn.addXref(getXref(UnificationXref.class, id, "chebi"));
+			toReturn.addXref(getXref(UnificationXref.class, id, "ChEBI"));
 		}		
 		// chemical structure - we use InChI, not smiles
 		String[] rdfIDParts = toReturn.getRDFId().split(COLON_DELIMITER);
 		String chemicalStructureID = ModelUtils.BIOPAX_URI_PREFIX 
-			+ "ChemicalStructure:" + rdfIDParts[2]+"_"+rdfIDParts[3];
+			+ "ChemicalStructure:CHEBI_" + chebiId.replace(":", "%3A");
 		String structure = getValue(entryBuffer, CHEBI_INCHI);
 		setChemicalStructure(structure, StructureFormatType.InChI, chemicalStructureID, toReturn);
 		// inchi key unification xref
@@ -370,32 +370,6 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		return toReturn;
 	}
 	
-
-	/**
-	 * Given an SDF entry,
-	 * finds and returns the id.
-	 *
-	 * @param entry StringBuilder
-	 * @return String
-	 * @throws IOException
-	 */
-	private String getRDFID(StringBuilder entry) throws IOException {
-		
-		String rdfID = null;
-		
-		// next line contains id in form: CHEBI:15377
-		String id = getValue(entry, CHEBI_ID);
-		if (id == null) return null;
-		String[] parts = id.split(":");
-		rdfID = "urn:miriam:chebi:" + parts[1].trim();
-
-		if (log.isDebugEnabled()) {
-			log.debug("getRDFID(), rdfID: " + rdfID);
-		}
-
-		// outta here
-		return rdfID;
-	}
 
 	/**
 	 * Adds the given names to the names set.
@@ -856,7 +830,7 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		 * @return SmallMoleculeReference
 		 */
 		private SmallMoleculeReference getSMRByChebiID(String chebiID) {
-			String rdfID = "urn:miriam:chebi:" + chebiID;
+			String rdfID = "http://identifiers.org/obo.chebi/CHEBI:" + chebiID;
 			return (SmallMoleculeReference) model.getByID(rdfID);
 		}
 		
