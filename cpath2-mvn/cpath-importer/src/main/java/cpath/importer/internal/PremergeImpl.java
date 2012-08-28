@@ -397,14 +397,14 @@ final class PremergeImpl implements Premerge {
 	private void setDataSource(Model model, Metadata metadata) {
 		Provenance pro = null;
 		
-		/* create URI from the NAME!
+		/* create URI from the Metadata NAME!
 		 * pathway data configured and imported using different metadata
 		 * with the same 'name' will have the same Provenance attached
 		 */
-		String urn = CPathSettings.generateBiopaxURI(metadata.getName(), Provenance.class);
+		String metadataNameLc = metadata.getName().toLowerCase();
+		String urn = CPathSettings.generateBiopaxURI(metadataNameLc, Provenance.class);
 		
 		pro = model.addNew(Provenance.class, urn);
-		
 		pro.setDisplayName(metadata.getName());
 		pro.setStandardName(metadata.getName());
 		Normalizer.autoName(pro); // add comments and synonyms, if possible

@@ -39,7 +39,7 @@ public class CPath2ClientTest {
 		
 		vals = client.getValidOrganisms().keySet();
 		assertFalse(vals.isEmpty());
-		assertTrue(vals.contains("urn:miriam:taxonomy:9606"));
+		assertTrue(vals.contains("http://identifiers.org/taxonomy/9606"));
 	}
 	
 	
@@ -67,7 +67,7 @@ public class CPath2ClientTest {
 		// must get a result w/o problems
 		ServiceResponse resp = null;
         try {
-			resp = cl.traverse(Collections.singleton("urn:miriam:taxonomy:9606"));
+			resp = cl.traverse(Collections.singleton("http://identifiers.org/taxonomy/9606"));
 		} catch (CPathException e) {
 			fail(e.toString());
 		}
@@ -94,7 +94,7 @@ public class CPath2ClientTest {
 		//intentionally wrong path -> failure (error)
 		cl.setPath("BioSource/participant"); 
         try {
-			resp = cl.traverse(Collections.singleton("urn:miriam:taxonomy:9606"));
+			resp = cl.traverse(Collections.singleton("http://identifiers.org/taxonomy/9606"));
 			fail("must throw CPathException and not something else!");
 		} catch (CPathException e) {
 			//ok - should be ErrorResponse

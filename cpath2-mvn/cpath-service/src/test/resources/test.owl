@@ -14,13 +14,13 @@
 	<bp:Provenance rdf:about="urn:biopax:Provenance:REACTOME">
 		<bp:displayName rdf:datatype="xsd:string">Test</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">Reactome</bp:standardName>
-		<bp:comment rdf:datatype="xsd:string">A test datasource, - as it would be generated from cpath2 metadata.conf and set for all entities here</bp:comment>
+		<bp:comment rdf:datatype="xsd:string">this additional datasource (required for full-text search/filtering) would be generated from cpath2 metadata.conf and set for all entities</bp:comment>
 	</bp:Provenance>
 
 
 	<bp:Protein rdf:ID="Protein_A">
-		<bp:entityReference rdf:resource="urn:miriam:uniprot:P46880" />
-		<bp:cellularLocation rdf:resource="urn:miriam:obo.go:GO%3A0005737" />
+		<bp:entityReference rdf:resource="http://identifiers.org/uniprot/P46880" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
 		<bp:displayName rdf:datatype="xsd:string">glucokinase A</bp:displayName>
 		<bp:dataSource rdf:resource="#reactome" />
 		<bp:comment rdf:datatype="xsd:string">Example to test paxtools/hibernate...</bp:comment>
@@ -28,22 +28,22 @@
 	</bp:Protein>
 
 	<bp:Protein rdf:ID="Protein_B">
-		<bp:entityReference rdf:resource="urn:miriam:uniprot:P46880" />
+		<bp:entityReference rdf:resource="http://identifiers.org/uniprot/P46880" />
 		<bp:displayName rdf:datatype="xsd:string">glucokinase B</bp:displayName>
 		<bp:dataSource rdf:resource="#reactome" />
 		<bp:dataSource rdf:resource="urn:biopax:Provenance:REACTOME" />
 	</bp:Protein>
 
-	<bp:ProteinReference rdf:about="urn:miriam:uniprot:P46880">
+	<bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P46880">
 		<bp:displayName rdf:datatype="xsd:string">glucokinase</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">GLK</bp:standardName>
 		<bp:xref rdf:resource="urn:biopax:UnificationXref:UniProt_P46880" />
 		<bp:sequence rdf:datatype="xsd:string">MTKYALVGDVGGTNARLALCDIASGEISQAKTYSGLDYPSLEAVIRVYLEEHKVEVKDGCIAIACPITGDWVAMTNHTWAFSIAEMKKNLGFSHLEIINDFTAVSMAIPMLKKEHLIQFGGAEPVEGKPIAVYGAGTGLGVAHLVHVDKRWVSLPGEGGHVDFAPNSEEEAIILEILRAEIGHVSAERVLSGPGLVNLYRAIVKADNRLPENLKPKDITERALADSCTDCRRALSLFCVIMGRFGGNLALNLGTFGGVFIAGGIVPRFLEFFKASGFRAAFEDKGRFKEYVHDIPVYLIVHDNPGLLGSGAHLRQTLGHIL
 		</bp:sequence>
-		<bp:organism rdf:resource="urn:miriam:taxonomy:562" />
+		<bp:organism rdf:resource="http://identifiers.org/taxonomy/562" />
 	</bp:ProteinReference>
 
-	<bp:BioSource rdf:about="urn:miriam:taxonomy:562">
+	<bp:BioSource rdf:about="http://identifiers.org/taxonomy/562">
 		<bp:displayName rdf:datatype="xsd:string">Escherichia coli
 		</bp:displayName>
 		<bp:xref rdf:resource="urn:biopax:UnificationXref:Taxonomy_562" />
@@ -54,7 +54,7 @@
 		<bp:id rdf:datatype="xsd:string">562</bp:id>
 	</bp:UnificationXref>
 
-	<bp:CellularLocationVocabulary rdf:about="urn:miriam:obo.go:GO%3A0005737">
+	<bp:CellularLocationVocabulary rdf:about="http://identifiers.org/obo.go/GO:0005737">
 		<bp:term rdf:datatype="xsd:string">cytoplasm</bp:term>
 		<bp:xref
 			rdf:resource="urn:biopax:UnificationXref:Gene+Ontology_GO%3A0005737" />
@@ -93,7 +93,7 @@
 	
 	<bp:SmallMolecule rdf:ID="ADP1">
 		<bp:entityReference rdf:resource="#ADP" />
-		<bp:cellularLocation rdf:resource="urn:miriam:obo.go:GO%3A0005737" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">ADP</bp:standardName>
 		<bp:name rdf:datatype="xsd:string">adenosine diphosphate</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">Adenosine
@@ -104,7 +104,7 @@
 	
 	<bp:SmallMolecule rdf:ID="ATP1">
 		<bp:entityReference rdf:resource="#ATP" />
-		<bp:cellularLocation rdf:resource="urn:miriam:obo.go:GO%3A0005737" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">ATP</bp:standardName>
 		<bp:name rdf:datatype="xsd:string">adenosine triphosphate</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">Adenosine

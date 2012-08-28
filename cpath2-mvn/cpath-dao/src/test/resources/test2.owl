@@ -9,7 +9,7 @@
 	</owl:Ontology>
 
 	<bp:Protein rdf:ID="Protein_A">
-		<bp:entityReference rdf:resource="urn:miriam:uniprot:P46880" />
+		<bp:entityReference rdf:resource="http://identifiers.org/uniprot/P46880" />
 		<bp:cellularLocation rdf:resource="urn:miriam:obo.go:GO%3A0005737" />
 		<bp:displayName rdf:datatype="xsd:string">glucokinase A</bp:displayName>
 		<bp:dataSource rdf:resource="#aMAZE" />
@@ -17,12 +17,12 @@
 	</bp:Protein>
 
 	<bp:Protein rdf:ID="Protein_B">
-		<bp:entityReference rdf:resource="urn:miriam:uniprot:P46880" />
+		<bp:entityReference rdf:resource="http://identifiers.org/uniprot/P46880" />
 		<bp:displayName rdf:datatype="xsd:string">glucokinase B</bp:displayName>
 		<bp:dataSource rdf:resource="#aMAZE" />
 	</bp:Protein>
 
-	<bp:ProteinReference rdf:about="urn:miriam:uniprot:P46880">
+	<bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P46880">
 		<bp:displayName rdf:datatype="xsd:string">glucokinase</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">GLK</bp:standardName>
 		<bp:xref rdf:resource="urn:biopax:UnificationXref:UniProt_P46880" />

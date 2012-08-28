@@ -79,7 +79,7 @@ public class UniprotConverterImplTest {
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
 
 		//get by URI and check the sequence (CALL6_HUMAN)
-		ProteinReference pr = (ProteinReference) model.getByID("urn:miriam:uniprot:Q8TD86");
+		ProteinReference pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/Q8TD86");
 		assertNotNull(pr);
 		final String expected = "MGLQQEISLQPWCHHPAESCQTTTDMTERLSAEQIKEYKGVFEMFDEEGNGEVKTGE" +
 				"LEWLMSLLGINPTKSELASMAKDVDRDNKGFFNCDGFLALMGVYHEKAQNQESELRAAFRVFDKEGKGYIDWN" +
@@ -88,7 +88,7 @@ public class UniprotConverterImplTest {
 		assertTrue(pr.getComment().contains("SEQUENCE   181 AA;  20690 MW;  F29C088AFC42BB13 CRC64;"));
 		
 		// test MOD_RES features are created
-		pr = (ProteinReference) model.getByID("urn:miriam:uniprot:P62158");
+		pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/P62158");
 		assertNotNull(pr);
 		assertEquals(8, pr.getEntityFeature().size());
 		String mfUri = ModelUtils.BIOPAX_URI_PREFIX + "ModificationFeature:" +

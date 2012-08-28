@@ -69,7 +69,7 @@ public class CPathFetcherTest {
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
 		assertFalse(((Model)model).getObjects(ProteinReference.class).isEmpty());
-		assertTrue(((Model)model).containsID("urn:miriam:uniprot:P62158"));
+		assertTrue(((Model)model).containsID("http://identifiers.org/uniprot/P62158"));
 	}
 	
 	@Test
@@ -87,7 +87,7 @@ public class CPathFetcherTest {
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
 		assertFalse(((Model)model).getObjects(SmallMoleculeReference.class).isEmpty());
-		assertTrue(((Model)model).containsID("urn:miriam:chebi:20"));
+		assertTrue(((Model)model).containsID("http://identifiers.org/obo.chebi/CHEBI:20"));
 	}
 	
 	

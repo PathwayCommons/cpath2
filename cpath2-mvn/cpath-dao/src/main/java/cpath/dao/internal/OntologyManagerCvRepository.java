@@ -66,6 +66,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 {
 	private static final Log log = LogFactory.getLog(OntologyManagerCvRepository.class);
 	private static final String URN_OBO_PREFIX = "urn:miriam:obo.";
+	private static final String URL_OBO_PREFIX = "http://identifiers.org/obo.";
 	private static BioPAXFactory biopaxFactory = BioPAXLevel.L3.getDefaultFactory();
 	private static final Fetcher FETCHER = new Fetcher(SimpleEditorMap.L3);
 	
@@ -145,7 +146,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 		OntologyTermI term = getTermByUrn(urn);
 		Ontology ontology = getOntology(term.getOntologyId());
 		Collection<OntologyTermI> terms = ontology.getDirectChildren(term);
-		return ontologyTermsToUrns(terms);
+		return ontologyTermsToUris(terms);
 	}
 
 	
@@ -153,7 +154,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 		OntologyTermI term = getTermByUrn(urn);
 		Ontology ontology = getOntology(term.getOntologyId());
 		Collection<OntologyTermI> terms = ontology.getDirectParents(term);
-		return ontologyTermsToUrns(terms);
+		return ontologyTermsToUris(terms);
 	}
 
 	
@@ -161,7 +162,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 		OntologyTermI term = getTermByUrn(urn);
 		Ontology ontology = getOntology(term.getOntologyId());
 		Collection<OntologyTermI> terms = ontology.getAllChildren(term);
-		return ontologyTermsToUrns(terms);
+		return ontologyTermsToUris(terms);
 	}
 
 	
@@ -169,7 +170,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 		OntologyTermI term = getTermByUrn(urn);
 		Ontology ontology = getOntology(term.getOntologyId());
 		Collection<OntologyTermI> terms = ontology.getAllParents(term);
-		return ontologyTermsToUrns(terms);
+		return ontologyTermsToUris(terms);
 	}
 	
 	
@@ -190,7 +191,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 		if(term == null)
 			return null;
 		
-		String urn = ontologyTermToUrn(term);
+		String urn = ontologyTermToUri(term);
 		T cv = biopaxFactory.create(cvClass, urn);
 		cv.addTerm(term.getPreferredName());
 		
@@ -208,11 +209,15 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 
 	OntologyTermI getTermByUrn(String urn) {
 		if(urn.startsWith(URN_OBO_PREFIX)) {
-			int l = URN_OBO_PREFIX.length();
-			int indexOfTheColon = urn.indexOf(':', l);
-			String acc = urn.substring(indexOfTheColon+1);
+			int pos = urn.indexOf(':', URN_OBO_PREFIX.length()); //e.g. the colon after 'go' in "...:obo.go:GO%3A0005654"
+			String acc = urn.substring(pos+1);
 			acc=URLDecoder.decode(acc);
-			String dtUrn = urn.substring(0, indexOfTheColon);				
+//			String dtUrn = urn.substring(0, pos);				
+			OntologyTermI term = findTermByAccession(acc); // acc. is globally unique in OntologyManager!..
+			return term;
+		} else if(urn.startsWith(URL_OBO_PREFIX)) {
+			int pos = urn.indexOf('/', URL_OBO_PREFIX.length()); //e.g. the slash after 'go' in ".../obo.go/GO:0005654"
+			String acc = urn.substring(pos+1);				
 			OntologyTermI term = findTermByAccession(acc); // acc. is globally unique in OntologyManager!..
 			return term;
 		} else {
@@ -238,23 +243,23 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 	}
 	
 	
-	Set<String> ontologyTermsToUrns(Collection<OntologyTermI> terms) {
+	Set<String> ontologyTermsToUris(Collection<OntologyTermI> terms) {
 		Set<String> urns = new HashSet<String>();
 		for(OntologyTermI term : terms) {
-			urns.add(ontologyTermToUrn(term));
+			urns.add(ontologyTermToUri(term));
 		}
 		return urns;
 	}
 	
 	
-	String ontologyTermToUrn(OntologyTermI term) {
-		String urn = null;
+	String ontologyTermToUri(OntologyTermI term) {
+		String uri = null;
 		if (term != null) {
 			String ontologyID = term.getOntologyId();
 			String accession = term.getTermAccession();
-			urn = MiriamLink.getURI(ontologyID, accession);
+			uri = MiriamLink.getIdentifiersOrgURI(ontologyID, accession);
 		}
-		return urn;
+		return uri;
 	}
 
 

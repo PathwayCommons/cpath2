@@ -845,18 +845,18 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	 */
 	@Override
 	@Transactional(propagation=Propagation.REQUIRED, readOnly=true)
-	public <T extends BioPAXElement> T createBiopaxObject(String urn, Class<T> clazz) 
+	public <T extends BioPAXElement> T createBiopaxObject(String uri, Class<T> clazz) 
 	{	
-		Model m = getValidSubModel(Collections.singleton(urn));
+		Model m = getValidSubModel(Collections.singleton(uri));
 		if(m == null)
 			return null;
 		
-		BioPAXElement bpe = m.getByID(urn);
+		BioPAXElement bpe = m.getByID(uri);
 		if(clazz.isInstance(bpe)) {
 			return (T) bpe;
 		} else {
 			if(bpe != null) log.error("getObject(" +
-				urn + ", " + clazz.getSimpleName() + 
+				uri + ", " + clazz.getSimpleName() + 
 				"): returned object has different type, " 
 				+ bpe.getModelInterface());
 			return null;

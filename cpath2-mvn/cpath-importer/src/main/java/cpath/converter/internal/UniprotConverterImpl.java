@@ -369,7 +369,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 		// accession numbers as array
 		String acList[] = accessions.split(";");
 		// the first one, primary id, becomes the RDFId
-		String id = "urn:miriam:uniprot:" + acList[0].trim().toUpperCase();
+		String id = "http://identifiers.org/uniprot/" + acList[0].trim().toUpperCase();
 		// create new pr
 		ProteinReference proteinReference = model.addNew(ProteinReference.class, id);
 		proteinReference.setDisplayName(shortName);
@@ -412,7 +412,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 		if(taxonomy==null || taxonomy <= 0) {
 			throw new RuntimeException("Illegal taxonomy ID: " + taxId);
 		} else {
-			String uri = "urn:miriam:taxonomy:" + taxonomy;
+			String uri = "http://identifiers.org/taxonomy/" + taxonomy;
 			if (model.containsID(uri)) {
 				toReturn = (BioSource) model.getByID(uri);
 			} else {

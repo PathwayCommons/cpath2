@@ -107,8 +107,8 @@ public class CPathServiceTest {
 	@Test
 	public void testFetchBiopax() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		CPathService service = new CPathServiceImpl(dao, null);//,null,null,null);
-		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "urn:miriam:uniprot:P46880");
+		CPathService service = new CPathServiceImpl(dao, null);
+		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P46880");
 		assertNotNull(res);
 		assertFalse(res instanceof ErrorResponse);
 		assertTrue(res instanceof DataResponse);
@@ -137,7 +137,7 @@ public class CPathServiceTest {
 		System.out.println(data);
 		assertTrue(data.contains("REACTS_WITH"));
 		assertFalse(data.contains("Protein_A"));
-		assertTrue(data.contains("urn:miriam:uniprot:P46880"));
+		assertTrue(data.contains("http://identifiers.org/uniprot/P46880"));
 	}
 	
 	
