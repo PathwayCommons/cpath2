@@ -9,7 +9,7 @@
 	<packaging>pom</packaging>
 	<name>CPathSquared</name>
 	<version>3.2.3-SNAPSHOT</version>
-	<description>A software suite for storing, visualizing, and analyzing biological pathways.</description>
+	<description>A server software suite for aggregating, storing, and querying biological pathways based on BioPAX L3 standard.</description>
 	<url>http://code.google.com/p/pathway-commons/</url>
 	
 	<issueManagement>
