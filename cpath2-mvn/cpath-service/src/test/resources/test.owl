@@ -11,7 +11,7 @@
 		<owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl#" />
 	</owl:Ontology>
 
-	<bp:Provenance rdf:about="urn:biopax:Provenance:REACTOME">
+	<bp:Provenance rdf:about="urn:biopax:Provenance:test_00">
 		<bp:displayName rdf:datatype="xsd:string">Test</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">Reactome</bp:standardName>
 		<bp:comment rdf:datatype="xsd:string">this additional datasource (required for full-text search/filtering) would be generated from cpath2 metadata.conf and set for all entities</bp:comment>
@@ -24,14 +24,14 @@
 		<bp:displayName rdf:datatype="xsd:string">glucokinase A</bp:displayName>
 		<bp:dataSource rdf:resource="#reactome" />
 		<bp:comment rdf:datatype="xsd:string">Example to test paxtools/hibernate...</bp:comment>
-		<bp:dataSource rdf:resource="urn:biopax:Provenance:REACTOME" />
+		<bp:dataSource rdf:resource="urn:biopax:Provenance:test_00" />
 	</bp:Protein>
 
 	<bp:Protein rdf:ID="Protein_B">
 		<bp:entityReference rdf:resource="http://identifiers.org/uniprot/P46880" />
 		<bp:displayName rdf:datatype="xsd:string">glucokinase B</bp:displayName>
 		<bp:dataSource rdf:resource="#reactome" />
-		<bp:dataSource rdf:resource="urn:biopax:Provenance:REACTOME" />
+		<bp:dataSource rdf:resource="urn:biopax:Provenance:test_00" />
 	</bp:Protein>
 
 	<bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P46880">
@@ -88,7 +88,7 @@
 		<bp:right rdf:resource="#ADP1" />
 		<bp:displayName rdf:datatype="xsd:string">pA turns ATP to ADP</bp:displayName>
 		<bp:dataSource rdf:resource="#reactome" />
-		<bp:dataSource rdf:resource="urn:biopax:Provenance:REACTOME" />
+		<bp:dataSource rdf:resource="urn:biopax:Provenance:test_00" />
 	</bp:BiochemicalReaction>
 	
 	<bp:SmallMolecule rdf:ID="ADP1">
@@ -99,7 +99,7 @@
 		<bp:displayName rdf:datatype="xsd:string">Adenosine
 			5&apos;-diphosphate</bp:displayName>
 		<bp:dataSource rdf:resource="#reactome" />
-		<bp:dataSource rdf:resource="urn:biopax:Provenance:REACTOME" />
+		<bp:dataSource rdf:resource="urn:biopax:Provenance:test_00" />
 	</bp:SmallMolecule>
 	
 	<bp:SmallMolecule rdf:ID="ATP1">
@@ -110,7 +110,7 @@
 		<bp:displayName rdf:datatype="xsd:string">Adenosine
 			5&apos;-triphosphate</bp:displayName>
 		<bp:dataSource rdf:resource="#reactome" />
-		<bp:dataSource rdf:resource="urn:biopax:Provenance:REACTOME" />
+		<bp:dataSource rdf:resource="urn:biopax:Provenance:test_00" />
 	</bp:SmallMolecule>
 	
 	<bp:SmallMoleculeReference rdf:ID="ADP">

@@ -2,13 +2,12 @@ package cpath.warehouse.beans;
 
 // imports
 import java.io.File;
-import java.net.URLEncoder;
+import java.net.URI;
 import java.util.regex.Pattern;
 
 import javax.persistence.*;
 
 import cpath.config.CPathSettings;
-import cpath.config.CPathSettings.CPath2Property;
 
 /**
  * Data Provider Metadata.
@@ -54,7 +53,7 @@ public final class Metadata {
 	@Column(nullable=false)
     private String version;
 	@Column(nullable=false)
-    private String releaseDate; // - and/or comments
+    private String description;
 	@Column(nullable=false)
     private String urlToData;
 	@Lob
@@ -77,7 +76,7 @@ public final class Metadata {
      * @param identifier String (string used in web service calls)
      * @param name String
      * @param version Float
-     * @param releaseDate String
+     * @param description String
      * @param urlToData String
      * @param icon byte[]
      * @param isPSI Boolean
@@ -86,14 +85,14 @@ public final class Metadata {
 	 * 
 	 * @throws IllegalArgumentException
      */
-    public Metadata(final String identifier, final String name, final String version, final String releaseDate, final String urlToData,
+    public Metadata(final String identifier, final String name, final String version, final String description, final String urlToData,
 					final byte[] icon, final TYPE type, final String cleanerClassname, final String converterClassname) {
 
     	//set/validate all parameters
     	setIdentifier(identifier); 
         setName(name);
         setVersion(version);
-        setReleaseDate(releaseDate);
+        setDescription(description);
         setURLToData(urlToData);
         setIcon(icon);
         setType(type);
@@ -164,13 +163,13 @@ public final class Metadata {
 	}
     public String getVersion() { return version; }
 
-	public void setReleaseDate(String releaseDate) {
+	public void setDescription(String releaseDate) {
         if (releaseDate == null) {
             throw new IllegalArgumentException("release data must not be null");
         }
-        this.releaseDate = releaseDate;
+        this.description = releaseDate;
 	}
-    public String getReleaseDate() { return releaseDate; }
+    public String getDescription() { return description; }
 
 	public void setURLToData(String urlToData) {
         if (urlToData == null) {
@@ -261,14 +260,16 @@ public final class Metadata {
     
     
     /**
-     * Get the generated from the identifier URI
-     * (actual URI prefix depends on current cpath2 'xml.base' property value)
+     * Generate a URI (for a Provenance instance.)
      * 
      * @return
+     * 
+     * TODO maybe add/use 'uri' property and constructor arg to set the URI from the conf. file instead. 
      */
     @Transient
     public String uri() {
-    	return CPathSettings.get(CPath2Property.XML_BASE)
-    			+ URLEncoder.encode(identifier);
+    	return URI.create("urn:biopax:Provenance:" + identifier + "_" + version)
+    			.toString();
+//    	return CPathSettings.generateInstanceSpecificURI(getName().toLowerCase(), Provenance.class);
     }
 }

@@ -29,13 +29,10 @@ package cpath.config;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URLEncoder;
 import java.util.Properties;
 
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
-import org.biopax.paxtools.model.BioPAXElement;
 
 
 /**
@@ -161,40 +158,6 @@ public final class CPathSettings {
 		return "true".equalsIgnoreCase(get(CPath2Property.DIGEST_URI_ENABLED));
 	}
 		
-
-	/**
-	 * Makes the cpath2 instance specific URI for 
-	 * an generated BioPAX object. This can be used for new BioPAX objects created: 
-	 * - in data converting/importing (in "premerge") into the system;
-	 * - in addition to original pathway data (in "merge");
-	 * - by various internal data crawlers/fixers (in "post-merge", to be implemented...); 
-	 * - if a cpath2 query generates and returns new (inferred) objects as its result; etc.
-	 * 
-	 * @param name
-	 * @return
-	 * 
-	 * TODO future use...
-	 */
-	public static String generateInstanceSpecificURI(String localPart, Class<? extends BioPAXElement> type) {
-		return URI.create(get(CPath2Property.XML_BASE) + type.getSimpleName()
-			+ "/" + URLEncoder.encode(localPart.toUpperCase())).toString();
-	}
-
-	/**
-	 * Makes an URI for an auto-generated BioPAX object
-	 * using BioPAX URN prefix (Normalizer)
-	 * (e.g., in "premerge" - Provenance).
-	 * 
-	 * @see 
-	 * 
-	 * @param name
-	 * @return
-	 */
-	public static String generateBiopaxURI(String localPart, Class<? extends BioPAXElement> type) {
-		return URI.create(ModelUtils.BIOPAX_URI_PREFIX + type.getSimpleName()
-			+ ":" + URLEncoder.encode(localPart.toUpperCase())).toString();
-	}
-	
 	
 	/**
 	 * Get a cpath2 instance property value.
