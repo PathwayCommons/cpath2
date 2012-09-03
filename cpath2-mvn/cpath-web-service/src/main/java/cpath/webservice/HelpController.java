@@ -377,16 +377,17 @@ public class HelpController {
     	Help help = new Help();
     	help.setId("datasources");
 
-    	for(SearchHit ds : service.dataSources().getSearchHit()) 
+    	for(SearchHit dsHit : service.dataSources().getSearchHit()) 
     	{
-    		Help hm = new Help(ds.getUri());
-    		hm.setTitle(ds.getName());
-    		hm.setInfo(StringUtils.join(ds.getDataSource(),", ")); // using a hack to get other names
+    		Help hm = new Help(dsHit.getUri());
+    		hm.setTitle(dsHit.getName());
+    		hm.setInfo(StringUtils.join(dsHit.getDataSource(),", ")
+    				+ " (description: " + dsHit.getExcerpt() + ")"); //a hack to get other names and description
     		help.addMember(hm);
     	}
     	help.setTitle("Pathway Data Sources");
-    	help.setInfo("Biological pathways/interactions data providers. " +
-    			"These values (standard name, URI) are recommended to use with the " +
+    	help.setInfo("Biological pathways and interactions data providers. " +
+    			"These names are recommended to use with the " +
     			"full-text search command (e.g., by adding '&datasource=...' " +
     			"filter parameters). Other (original pathway data provider's) BioPAX Provenance " +
     			"objects there can be used as well, but may be associated with " +
@@ -400,10 +401,10 @@ public class HelpController {
     	Help help = new Help();
     	help.setId("organisms");
     	
-    	for(SearchHit bs : service.bioSources().getSearchHit()) {
-    		Help hm = new Help(bs.getUri());
-    		hm.setTitle(bs.getName());
-    		hm.setInfo(StringUtils.join(bs.getOrganism(), ", ")); // using a hack to list other names
+    	for(SearchHit bsHit : service.bioSources().getSearchHit()) {
+    		Help hm = new Help(bsHit.getUri());
+    		hm.setTitle(bsHit.getName());
+    		hm.setInfo(StringUtils.join(bsHit.getOrganism(), ", ")); // using a hack to list other names
     		help.addMember(hm);
     	}
     	help.setTitle("Organisms");

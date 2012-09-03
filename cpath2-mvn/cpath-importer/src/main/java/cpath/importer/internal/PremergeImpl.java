@@ -42,7 +42,6 @@ import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.validator.result.*;
 import org.biopax.validator.Validator;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
-import org.biopax.validator.utils.Normalizer;
 import org.biopax.validator.utils.Normalizer.NormalizerOptions;
 
 import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
@@ -397,26 +396,29 @@ final class PremergeImpl implements Premerge {
 	private void setDataSource(Model model, Metadata metadata) {
 		Provenance pro = null;
 		
-		/* create URI from the Metadata NAME!
-		 * pathway data configured and imported using different metadata
-		 * with the same 'name' will have the same Provenance attached
-		 */
-		String metadataNameLc = metadata.getName().toLowerCase();
-		String urn = CPathSettings.generateBiopaxURI(metadataNameLc, Provenance.class);
+		// we create URI from the Metadata identifier and version.
+		pro = model.addNew(Provenance.class, metadata.uri());
 		
-		pro = model.addNew(Provenance.class, urn);
-		pro.setDisplayName(metadata.getName());
-		pro.setStandardName(metadata.getName());
-		Normalizer.autoName(pro); // add comments and synonyms, if possible
+		// parse/set names
+		String[] names = metadata.getName().split(";");
+		String name = names[0].trim();
+		pro.setDisplayName(name.toLowerCase());
+		if(names.length > 1)
+			pro.setStandardName(names[1].trim());
+		else
+			pro.setStandardName(name);
 		
-		//after other names were possibly added, we still 
-		// want to use original, configured display name
-		pro.setDisplayName(metadata.getName());
+		if(names.length > 2)
+			for(int i=2; i < names.length; i++)
+				pro.addName(names[i].trim());
 		
 		// add additional info about the current version, source, identifier, etc...
-		pro.addComment("Source: " + metadata.getURLToData() + 
-			"; type: " + metadata.getType() + "; version: " + 
-			metadata.getVersion() + ", " + metadata.getReleaseDate());
+		final String loc = metadata.getURLToData(); 
+		pro.addComment("Source " + 
+			//skip for a local or empty (default) location
+			((loc.startsWith("http:") || loc.startsWith("ftp:")) ? loc : "") 
+			+ " type: " + metadata.getType() + "; version: " + 
+			metadata.getVersion() + ", " + metadata.getDescription());
 		
 		// set for all entities
 		for (Entity ent : model.getObjects(Entity.class)) {

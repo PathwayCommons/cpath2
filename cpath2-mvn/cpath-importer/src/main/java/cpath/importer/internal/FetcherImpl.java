@@ -226,7 +226,7 @@ final class FetcherImpl implements Fetcher
 					+ "identifier=" + metadata.getIdentifier() 
 					+ "; name=" + metadata.getName()
 					+ "; version=" + metadata.getVersion()
-					+ "; date/comment=" + metadata.getReleaseDate()
+					+ "; date/comment=" + metadata.getDescription()
 					+ "; location=" + metadata.getURLToData()
 					+ "; icon=" + tokens[METADATA_ICON_URL_INDEX]
 					+ "; type=" + metadata.getType()

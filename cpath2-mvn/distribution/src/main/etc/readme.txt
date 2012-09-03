@@ -69,7 +69,7 @@ The PREFERRED method is as follows
 (when creating a new cpath2 instance DBs from scratch): 
 
 1. Edit the cPath2 metadata.conf (see "metadata format" below)
-Note: if possible, use a standard name for the 'NAME' field of pathway data entries (BIOPAX and PSI_MI type). 
+Note: if possible, use a standard name in the 'NAME' (the second) field of pathway data entries (BIOPAX and PSI_MI type). 
 
 2. Download warehouse data, ('wget') UniProt and ChEBI, into $CPATH2_HOME/tmp/:
 - wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz
@@ -108,19 +108,21 @@ will be always added to the columns array.
 - no column headers, but columns are, in order, the following: 
 1) IDENTIFIER - unique, short (40), and simple; spaces or dashes are not allowed;
 
-2) NAME - for pathway type records (BIOPAX, PSI_MI), should be official MIRIAM 
-datasource name or synonym, if possible, or another standard name (will be used to 
-generate URI and name(s) for the Provenance object, which used for data filtering);
+2) NAME - can contain one (must) or more (optional) data source names, separated 
+by semicolons, as follows: [displayName;]standardName[;name1;name2;..].
+for pathway type records (BIOPAX, PSI_MI), there must be at least one standard 
+data source name, if possible (names will be used for filtering by data source 
+in cpath2 full-text search);
 
 3) VERSION - text or number; better keep it simple, because it becomes 
 essential part of the corresponding local file (in $CPATH2_HOME/tmp/);
 
-4) DATE - a description text field, release date (any date format);
+4) DESCRIPTION - free text: organization name, release date, web site, comments;
 
 5) URL to the data (optional) - can be file://, http://, ftp://, classpath:;
 - when no 'extension' or it is not '.zip' or '.gz', - means data to be saved as 
   $CPATH2_HOME/tmp/IDENTIFIER.VERSION.EXT and processed "as is" (no unpacking);
-- empty or a fake URL (e.g., "foo.zip", to force unzip) is accepted, because 
+- empty or a fake URL (e.g., "foo.zip" or ".gz", to force unzip) is accepted, because 
   cpath2 checks if IDENTIFIER.VERSION ("foo.zip" -> IDENTIFIER.VERSION.zip) 
   file exists in $CPATH2_HOME/tmp/, and if found, ignores whatever URL is there! 
  

@@ -50,7 +50,6 @@ import org.springframework.stereotype.Service;
 
 import com.googlecode.ehcache.annotations.Cacheable;
 
-import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.analyses.CommonStreamAnalysis;
@@ -641,7 +640,7 @@ class CPathServiceImpl implements CPathService {
 	 * Note:
 	 * This method generates the list of datasources on the first call, 
 	 * and then all next calls return the same list (much faster).
-	 * (it uses lazy initialization, "double-check idiom", 
+	 * (it uses thread-safe lazy initialization, "double-check idiom", 
 	 * to prevent possible server startup timeout)
 	 */
 	@Override
@@ -653,10 +652,10 @@ class CPathServiceImpl implements CPathService {
 				if(result == null) {
 					result = new SearchResponse();				
 					// collect metadata identifiers of pathway data sources
-					final Set<String> metadataIds = new HashSet<String>();
+					final Map<String, Metadata> metadataMap = new HashMap<String, Metadata>();
 					for(Metadata met : metadataDAO.getAllMetadata())
 						if(!met.getType().isWarehouseData())
-							metadataIds.add(CPathSettings.generateBiopaxURI(met.getName(), Provenance.class));
+							metadataMap.put(met.uri(), met);
 					
 					// find all Provenance instances and filter them out
 					final List<SearchHit> hits = result.getSearchHit(); //empty
@@ -666,11 +665,11 @@ class CPathServiceImpl implements CPathService {
 						mainDAO.search("*", page++, Provenance.class, null, null))
 							.isEmpty())
 					{
-						//remove pathways having 'pathway' index field not empty, 
-						//i.e., keep only pathways where 'pathway' index field is empty (no controlledOf and pathwayComponentOf values)
 						for(SearchHit h : searchResponse.getSearchHit()) {
-							if(metadataIds.contains(h.getUri()))
+							if(metadataMap.containsKey(h.getUri())) {
+								h.setExcerpt(metadataMap.get(h.getUri()).getDescription()); //a hack (to save comments)
 								hits.add(h);
+							}
 						}
 					
 						if(searchResponse.getSearchHit().size() == searchResponse.getNumHits()) 

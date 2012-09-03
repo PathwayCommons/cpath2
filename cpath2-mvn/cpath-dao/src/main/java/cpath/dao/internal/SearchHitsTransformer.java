@@ -76,7 +76,8 @@ final class SearchHitsTransformer implements ResultTransformer {
 					hit.getOrganism().add(txid);
 			}
 			
-			// a hack for Provenance (store more info)
+			// a hack for Provenance: save/return other names 
+			// (to be used as filter by data source values) in the dataSource element 
 			if(bpe instanceof Provenance) {
 				for(String name : named.getName())
 					hit.getDataSource().add(name);
@@ -84,22 +85,22 @@ final class SearchHitsTransformer implements ResultTransformer {
 		}
 		
 		
-		// extract only organism URNs (no names, etc..)
+		// extract only organism URIs (no names, etc..)
 		if(doc.getField(FIELD_ORGANISM) != null) {
 			Set<String> uniqueVals = new TreeSet<String>();
 			for(String o : doc.getValues(FIELD_ORGANISM)) {
-				if(o.startsWith("urn")) {
+				if(o.startsWith("urn:") || o.startsWith("http:")) {
 					uniqueVals.add(o);
 				}
 			}
 			hit.getOrganism().addAll(uniqueVals);
 		}
 		
-		// extract only dataSource URNs
+		// extract values form the index
 		if(doc.getField(FIELD_DATASOURCE) != null) {
 			Set<String> uniqueVals = new TreeSet<String>();
 			for(String d : doc.getValues(FIELD_DATASOURCE)) {
-				if(d.startsWith("urn")) {
+				if(d.startsWith("urn:") && d.startsWith("http:")) { 
 					uniqueVals.add(d);
 				}
 			}

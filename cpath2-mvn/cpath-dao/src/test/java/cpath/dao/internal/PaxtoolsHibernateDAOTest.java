@@ -407,4 +407,18 @@ public class PaxtoolsHibernateDAOTest {
 		// Mysql PK index is case insensitive and only 64-chars long!
 	}
 	
+	
+	@Test
+	public void testProvenanceCommentsNotMerged() {
+		assertEquals(1, ((Model)paxtoolsDAO).getObjects(Provenance.class).size());
+		Provenance pro = (Provenance) ((Model)paxtoolsDAO).getByID("urn:biopax:Provenance:aMAZE");
+		assertNotNull(pro);
+		paxtoolsDAO.initialize(pro);
+		//there were two Provenance objects with the same URI in the two imported test files;
+		//hereby we prove that comments (as well as other data type props) are NOT merged automatically!
+		assertEquals(1, pro.getComment().size());
+		// in fact, the last imported object overwrites the first one:
+		assertEquals("test2", pro.getComment().iterator().next());
+	}
+	
 }
