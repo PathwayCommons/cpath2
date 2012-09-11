@@ -93,7 +93,7 @@ public final class Metadata {
         setName(name);
         setVersion(version);
         setDescription(description);
-        setURLToData(urlToData);
+        setUrlToData(urlToData);
         setIcon(icon);
         setType(type);
         setCleanerClassname(cleanerClassname);
@@ -171,13 +171,13 @@ public final class Metadata {
 	}
     public String getDescription() { return description; }
 
-	public void setURLToData(String urlToData) {
+	public void setUrlToData(String urlToData) {
         if (urlToData == null) {
             throw new IllegalArgumentException("URL to data must not be null");
         }
         this.urlToData = urlToData;
 	}
-    public String getURLToData() { return urlToData; }
+    public String getUrlToData() { return urlToData; }
 
 	public void setIcon(byte[] icon) {
         if (icon == null) {
@@ -267,9 +267,9 @@ public final class Metadata {
      * TODO maybe add/use 'uri' property and constructor arg to set the URI from the conf. file instead. 
      */
     @Transient
-    public String uri() {
+    public String getUri() {
     	return URI.create("urn:biopax:Provenance:" + identifier + "_" + version)
     			.toString();
-//    	return CPathSettings.generateInstanceSpecificURI(getName().toLowerCase(), Provenance.class);
     }
+
 }

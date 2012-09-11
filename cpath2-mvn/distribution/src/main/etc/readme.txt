@@ -162,7 +162,7 @@ used to generate BioPAX xrefs and then search them.
 
 MORE DETAILS
 
-One can also use cpath-admin.sh and cpath-service.sh scripts to execute 
+One can also use cpath-admin.sh or import-data.sh scripts to execute 
 data import commands (as above), export some data or generate reports (e.g., validation).
 
 

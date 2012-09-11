@@ -89,7 +89,8 @@ public final class CPathSettings {
 		EXPLAIN_ENABLED("explain.enabled"),
 		DIGEST_URI_ENABLED("md5hex.uri.enabled"),
         BLACKLIST_DEGREE_THRESHOLD("blacklist.degree.threshold"),
-        BLACKLIST_CONTROL_THRESHOLD("blacklist.control.threshold")
+        BLACKLIST_CONTROL_THRESHOLD("blacklist.control.threshold"),
+        READ_ONLY("read-only.enabled")
 		;
 		
 		private final String name;
@@ -191,6 +192,18 @@ public final class CPathSettings {
 		return v;
 	}
 
+	
+	/**
+	 * Sets a cpath2 instance property.
+	 * 
+	 * @param prop
+	 * @param value
+	 */
+	public static void set(CPath2Property prop, String value) {
+		cPathProperties.setProperty(prop.toString(), value);
+	}
+	
+	
 	/**
 	 * Flags if cPath2 explain full-text query 
 	 * results mode is enabled. 
@@ -201,4 +214,24 @@ public final class CPathSettings {
 		return "true".equalsIgnoreCase(get(CPath2Property.EXPLAIN_ENABLED));
 	}
 		
+	
+	/**
+	 * Flags if cPath2 runs in the read-only mode,
+	 * (data import, modification, and indexing Admin commands disabled)
+	 * 
+	 * @return
+	 */
+	public static boolean isReadOnly() {
+		return "true".equalsIgnoreCase(get(CPath2Property.READ_ONLY));
+	}
+
+	
+	/**
+	 * Enable/disable cPath2 read-only mode.
+	 * 
+	 * @param value
+	 */
+	public static void setReadOnly(boolean value) {
+		set(CPath2Property.READ_ONLY, Boolean.toString(value));
+	}
 }

@@ -1,40 +1,24 @@
 $(document).ready(function() {
-    getCommandParameterDetails("help/formats", "output_parameter", "#command_header_additional_parameters_output", "#command_header_additional_parameters_output_desc");
-    getCommandParameterDetails("help/kinds", "graph_parameter", "#command_header_additional_parameters_graph", "#command_header_additional_parameters_graph_desc");
-    getCommandParameterDetails("help/directions", "direction_parameter", "#command_header_additional_parameters_direction", "#command_header_additional_parameters_direction_desc");
-    getCommandParameterDetails("help/datasources", "datasource_parameter", "#command_header_additional_parameters_datasource", "#command_header_additional_parameters_datasource_desc");
-//    getCommandParameterDetails("help/organisms", "organism_parameter", "#command_header_additional_parameters_organism", "#command_header_additional_parameters_organism_desc");
-    getCommandParameterDetails("help/types", "biopax_parameter", "#command_header_additional_parameters_biopax", "#command_header_additional_parameters_biopax_desc");
-    getCommandParameterDetails("help/types/properties", "properties_parameter", "#command_header_additional_parameters_properties", "#command_header_additional_parameters_properties_desc");
-    getCommandParameterDetails("help/types/inverse_properties", "inverse_properties_parameter", "#command_header_additional_parameters_inverse_properties", "#command_header_additional_parameters_inverse_properties_desc");
+    getDatasources();
+	getCommandParameterDetails("help/formats", "output_parameter");
+    getCommandParameterDetails("help/kinds", "graph_parameter");
+    getCommandParameterDetails("help/directions", "direction_parameter");
+    getCommandParameterDetails("help/types", "biopax_parameter");
+    getCommandParameterDetails("help/types/properties", "properties_parameter");
+    getCommandParameterDetails("help/types/inverse_properties", "inverse_properties_parameter");
 });
 
-//
 // This function creates a body for the given command parameter output.
 //
 // @param helpWSPath - path to web service call
-// @param clazz - the name of the class that will be created in the DOM
-// @param header - the key into messages.properties to header string 
-// @param parameterFootnote - the key into the message.properties to the parameter description
-//
-function getCommandParameterDetails(helpWSPath, clazz, header, parameterDesc) {
-
+// @param id - the id of the list ('ul') in the DOM
+function getCommandParameterDetails(helpWSPath, id) {
     // get some var values from jsp page
     var base = $('#web_service_url').text();
-    var command_header = $(header).text();
-	var parameter_desc = $(parameterDesc).html();
-    var class_name = clazz + "_class"
-
+    
     // setup content element and append header
-    $('#content .' + class_name).remove();
-    var ui = $('<div class="' + class_name + '">');
-    $('#' + clazz).after(ui);
-    $("." + class_name).append('<h3><a name="available_' + clazz + '"></a>' + command_header + '</h3>');
-	if (parameter_desc.length > 0) {
-		$("." + class_name).append('<p>' + parameter_desc + '</p>');
-	}
-    $("." + class_name).append('<ul style="margin-bottom: 1px;">');
-
+    $('#' + id).empty();
+    //$("." + class_name).append('<ul style="margin-bottom: 1px;">');
     // interate over results (as json) from web service call
     $.getJSON(base + "/" + helpWSPath, function(help) {
             $.each(help.members, function(idx, member) {
@@ -43,15 +27,80 @@ function getCommandParameterDetails(helpWSPath, clazz, header, parameterDesc) {
                     		|| helpWSPath.indexOf("formats") != -1
                     		|| helpWSPath.indexOf("datasource") != -1
                     		) {
-                    	$("." + class_name).append('<li style="margin-left: 2em;">' 
+                    	$("#" + id).append('<li style="margin-left: 2em;">' 
                     		+ '<em>' + member.id + '</em> - ' + member.info + '</li>');
                     } else  {
-                    	$("." + class_name).append('<li style="margin-left: 2em;">' 
+                    	$("#" + id).append('<li style="margin-left: 2em;">' 
                     		+ member.id + '</li>');
-                    }
-        
+                    }       
             });
-            $("." + class_name).append('</ul>');
-            $("." + class_name).append('</div>');
     });
+}
+
+function getDatasources() {
+    var base = $('#web_service_url').text();
+    
+    // call the ws and interate over JSON results
+    $.getJSON(base + "/metadata", function(datasources) {
+        $('#datasources').empty();
+        $('#datasources').append('<tr><th>Logo</th><th>Names (filter by)</th>'
+        	+ '<th>Data Type</th><th>Pathways</th><th>Interactions</th><th>Molecules (states)</th></tr>'); 
+        $('#warehouse').empty();
+        $('#warehouse').append("<tr>");
+                
+        $.each(datasources, function(idx, ds) {
+        	if (ds.type.toLowerCase() == "biopax" || ds.type.toLowerCase() == "psi_mi") 
+        	{               		
+        		var tdid = ds.uri.replace(/:/g,"_");
+        		
+        		$('#datasources').append('<tr>' 
+           		+ '<td class="datasource_logo_table_cell"><img class="data_source_logo" src="data:image/gif;base64,' 
+           		+ ds.icon + '" title="URI=' + ds.uri + '; ' + ds.description + '"></img></td>'
+           		+ '<td class="datasource_logo_table_cell" style="white-space: nowrap">' + ds.name.split(";").join("<br/>")
+           		+ '</td><td class="datasource_logo_table_cell">' + ds.type 
+           		+ '</td><td id="' + tdid + '_pw" class="datasource_logo_table_cell">'
+           		+ '</td><td id="' + tdid + '_it" class="datasource_logo_table_cell">'
+           		+ '</td><td id="' + tdid + '_pe" class="datasource_logo_table_cell">'
+           		+ '</td></tr>');
+        		
+        		// get counts (async.)
+        		$.getJSON(base + "/search.json?q=*&type=pathway&datasource=" + ds.uri, function(res) {
+        			$('td#' + tdid + '_pw').text(res.numHits);
+        		});				
+        		$.getJSON(base + "/search.json?q=*&type=interaction&datasource=" + ds.uri, function(res) {
+        			$('td#' + tdid + '_it').text(res.numHits);
+        		});
+        		$.getJSON(base + "/search.json?q=*&type=physicalentity&datasource=" + ds.uri, function(res) {
+        			$('td#' + tdid + '_pe').text(res.numHits);
+        		});
+        	} else {
+        		$('#warehouse').append('<td class="datasource_logo_table_cell">'
+        		+ '<img class="data_source_logo" src="data:image/gif;base64,' + ds.icon 
+                + '" title="' + ds.description + '"></img></td>');
+        	}
+        });
+        
+        $('#warehouse').append("</tr>");    
+        
+        $('#datasources').append('<tr>' 
+           		+ '<td class="datasource_logo_table_cell">Total:</td>'
+           		+ '<td class="datasource_logo_table_cell" style="white-space: nowrap">'
+           		+ '</td><td class="datasource_logo_table_cell">'
+           		+ '</td><td id="_pw" class="datasource_logo_table_cell">'
+           		+ '</td><td id="_it" class="datasource_logo_table_cell">'
+           		+ '</td><td id="_pe" class="datasource_logo_table_cell">'
+           		+ '</td></tr>');
+    });
+    
+	$.getJSON(base + "/search.json?q=*&type=pathway", function(res) {
+		$('td#_pw').text(res.numHits);
+	});				
+	$.getJSON(base + "/search.json?q=*&type=interaction", function(res) {
+		$('td#_it').text(res.numHits);
+	});
+	$.getJSON(base + "/search.json?q=*&type=physicalentity", function(res) {
+		$('td#_pe').text(res.numHits);
+	});
+    
+    
 }

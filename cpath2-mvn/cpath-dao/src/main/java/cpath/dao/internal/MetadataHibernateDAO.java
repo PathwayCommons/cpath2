@@ -7,6 +7,9 @@ import cpath.warehouse.beans.PathwayData;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.validator.result.Validation;
+import org.biopax.validator.result.ValidatorResponse;
+import org.biopax.validator.utils.BiopaxValidatorUtils;
 
 import org.hibernate.Hibernate;
 import org.hibernate.Query;
@@ -17,10 +20,14 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Collection;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Implementation of MetadatDAO interface.
@@ -62,7 +69,7 @@ class MetadataHibernateDAO  implements MetadataDAO {
 			existing.setVersion(metadata.getVersion());
 			existing.setName(metadata.getName());
 			existing.setDescription(metadata.getDescription());
-			existing.setURLToData(metadata.getURLToData());
+			existing.setUrlToData(metadata.getUrlToData());
 			existing.setIcon(metadata.getIcon());
 			existing.setType(metadata.getType());
 			session.update(existing);
@@ -228,4 +235,66 @@ class MetadataHibernateDAO  implements MetadataDAO {
 		}
 	}
 
+	
+	
+	@Transactional
+	public ValidatorResponse getValidationReport(Integer pathwayDataPk) {
+		ValidatorResponse resp = null;
+		
+		PathwayData pathwayData = getPathwayData(pathwayDataPk);
+		if(pathwayData != null) {
+			try {
+				byte[] xmlResult = pathwayData.getValidationResults();	
+				resp = (ValidatorResponse) BiopaxValidatorUtils
+					.getUnmarshaller().unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
+			} catch (Throwable e) {
+                log.error(e);
+			}
+		} 
+		
+		return resp;
+	}
+	
+	
+	@Transactional
+	public ValidatorResponse getValidationReport(String metadataIdentifier) {
+		ValidatorResponse response = null;
+		
+		// get validationResults from PathwayData beans
+		Collection<PathwayData> pathwayDataCollection = getPathwayDataByIdentifier(metadataIdentifier);
+		if (!pathwayDataCollection.isEmpty()) {
+			// a new container to collect separately stored file validations
+			response = new ValidatorResponse();
+			for (PathwayData pathwayData : pathwayDataCollection) {				
+				try {
+					byte[] xmlResult = pathwayData.getValidationResults();
+					// unmarshal and add
+					ValidatorResponse resp = (ValidatorResponse) BiopaxValidatorUtils.getUnmarshaller()
+						.unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
+					assert resp.getValidationResult().size() == 1; // current design (of the premerge pipeline)
+					Validation validation = resp.getValidationResult().get(0); 
+					if(validation != null)
+						response.getValidationResult().add(validation);
+				} catch (Exception e) {
+                    log.error(e);
+				}
+			}
+		} 
+		
+		return response;
+	}
+	
+	
+	@Transactional
+	public Map<Integer, String> getPathwayDataInfo(String metadataIdentifier) {
+		Collection<PathwayData> pathwayData = getPathwayDataByIdentifier(metadataIdentifier);
+		Map<Integer, String> map = new TreeMap<Integer, String>();
+		for(PathwayData pd : pathwayData)
+			map.put(pd.getId(), pd.getFilename() 
+				+ " (" + pd.getIdentifier() 
+				+ "; version: " + pd.getVersion() 
+				+ "; passed: " + pd.getValid() + ")");
+
+		return map;
+	}
 }

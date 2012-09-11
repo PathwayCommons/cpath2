@@ -397,7 +397,7 @@ final class PremergeImpl implements Premerge {
 		Provenance pro = null;
 		
 		// we create URI from the Metadata identifier and version.
-		pro = model.addNew(Provenance.class, metadata.uri());
+		pro = model.addNew(Provenance.class, metadata.getUri());
 		
 		// parse/set names
 		String[] names = metadata.getName().split(";");
@@ -413,7 +413,7 @@ final class PremergeImpl implements Premerge {
 				pro.addName(names[i].trim());
 		
 		// add additional info about the current version, source, identifier, etc...
-		final String loc = metadata.getURLToData(); 
+		final String loc = metadata.getUrlToData(); 
 		pro.addComment("Source " + 
 			//skip for a local or empty (default) location
 			((loc.startsWith("http:") || loc.startsWith("ftp:")) ? loc : "") 
