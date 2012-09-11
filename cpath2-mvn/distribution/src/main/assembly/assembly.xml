@@ -55,14 +55,6 @@
 	  <outputFileNameMapping>cpath-admin.jar</outputFileNameMapping>
       <unpack>false</unpack>
     </dependencySet>
-        <dependencySet>
-      <includes>
-        <include>*:cpath-service:jar:jar-with-dependencies</include>
-      </includes>
-      <outputDirectory></outputDirectory>
-	  <outputFileNameMapping>cpath-service.jar</outputFileNameMapping>
-      <unpack>false</unpack>
-    </dependencySet>
   </dependencySets>
    
 </assembly>

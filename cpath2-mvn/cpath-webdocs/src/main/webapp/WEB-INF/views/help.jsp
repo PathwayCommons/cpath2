@@ -5,9 +5,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
-	<meta name="author" content="Pathway Commons" />
+	<meta name="author" content='<fmt:message key="cpath2.provider"/>'/>
 	<meta name="description" content="cPath2::Demo (version ${project.version})" />
-	<meta name="keywords" content="Pathway Commons, cPath2, cPathSquared webservice, help, demo, documentation" />
+	<meta name="keywords" content="<fmt:message key="cpath2.provider"/>, cPath2, cPathSquared webservice, help, demo, documentation" />
 	<title>cPath2::Demo</title>
 	<!-- JQuery plugins -->
 	<script type="text/javascript" src="<c:url value="/resources/plugins/jquery-1.6.1.js" />"></script>
@@ -16,265 +16,396 @@
 	<link rel="stylesheet" href="<c:url value="/resources/plugins/jquery.ui.override.css" />" type="text/css"/>
 	<!-- other -->
 	<script type="text/javascript" src="<c:url value="/resources/scripts/json.min.js" />"></script>
-	<!-- cpath2 js code -->
 	<script type="text/javascript" src="<c:url value="/resources/scripts/help.js" />"></script>
 	<link rel="stylesheet" href="<c:url value="/resources/css/andreas08.css" />" type="text/css" media="screen,projection" />
 </head>
 
 <body>
-  <!-- set some variables to string constants from messages.properties -->
-  <p>
-  <span id="web_service_url" style="display:none"><fmt:message key="cpath2.url"/></span>
-  <span id="command_header_additional_parameters" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters"/></span>
-  <span id="command_header_additional_parameters_output" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_output"/></span>
-  <span id="command_header_additional_parameters_output_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_output_desc"/></span>
-  <span id="command_header_additional_parameters_graph" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_graph"/></span>
-  <span id="command_header_additional_parameters_graph_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_graph_desc"/></span>
-  <span id="command_header_additional_parameters_direction" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_direction"/></span>
-  <span id="command_header_additional_parameters_direction_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_direction_desc"/></span>
-  <span id="command_header_additional_parameters_datasource" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_datasource"/></span>
-  <span id="command_header_additional_parameters_datasource_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_datasource_desc"/></span>
-  <span id="command_header_additional_parameters_organism" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_organism"/></span>
-  <span id="command_header_additional_parameters_organism_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_organism_desc"/></span>
-  <span id="command_header_additional_parameters_biopax" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_biopax"/></span>
-  <span id="command_header_additional_parameters_biopax_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_biopax_desc"/></span>
-  <span id="command_header_additional_parameters_properties" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_properties"/></span>
-  <span id="command_header_additional_parameters_properties_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_properties_desc"/></span>
-  <span id="command_header_additional_parameters_inverse_properties" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_inverse_properties"/></span>
-  <span id="command_header_additional_parameters_inverse_properties_desc" style="display:none"><fmt:message key="cpath2.command_header_additional_parameters_inverse_properties_desc"/></span>
-  </p>
+
+<span id="web_service_url" style="display:none"><fmt:message key="cpath2.url"/></span>
+  
 <!-- place the content -->
   <div id="container">
    <jsp:include page="header.jsp" flush="true"/>
     <div id="content">
-      <jsp:include page="feedback.jsp" flush="true"/>
-	  <!-- description of cpath2 -->
-      <h2><fmt:message key="cpath2.welcome"/></h2>
-      <p><fmt:message key="cpath2.description"/></p>
-	  <p><fmt:message key="cpath2.license_terms"/></p>
+	  <!-- Name and description of this cpath2 instance is taken from the $CPATH2_HOME/webdoc.properties -->
+      <h2><fmt:message key="cpath2.provider"/></h2>
+      <p>
+      <fmt:message key="cpath2.description"/>
+      </p>
+	  <p>Data is freely available, under the license terms of each contributing database.</p>
 	  <!-- start of web service api documentation -->
-      <h2><fmt:message key="cpath2.web_service_title"/></h2>
-      <p><fmt:message key="cpath2.web_service_sub_title"/></p>
+      <h2>Web Service API:</h2>
+      <p>You can programmatically access the data within Pathway Commons 
+using the Pathway Commons Web Service Application Programming Interface (API).  
+This page provides a reference guide to help you get started.</p>
+
 	  <!-- list of web service commands -->
 	  <ol>
-		<li><a href="#search"><fmt:message key="cpath2.command_header_search"/></a></li>
-		<li><a href="#get"><fmt:message key="cpath2.command_header_get"/></a></li>
-		<li><a href="#graph"><fmt:message key="cpath2.command_header_graph"/></a></li>
-		<li><a href="#traverse"><fmt:message key="cpath2.command_header_traverse"/></a></li>
-		<li><a href="#top_pathways"><fmt:message key="cpath2.command_header_tp"/></a></li>
-		<li><a href="#help"><fmt:message key="cpath2.command_header_help"/></a></li>
+		<li><a href="#search">Command: SEARCH</a></li>
+		<li><a href="#get">Command: GET</a></li>
+		<li><a href="#graph">Command: GRAPH</a></li>
+		<li><a href="#traverse">Command: TRAVERSE</a></li>
+		<li><a href="#top_pathways">Command: TOP_PATHWAYS</a></li>
+		<li><a href="#help">Command: HELP</a></li>
 	  </ol>
-		<a href="#additional_parameters"><fmt:message key="cpath2.command_header_additional_parameters"/></a><br/>
-		<a href="#errors"><fmt:message key="cpath2.error_code_header"/></a><br/>
+	  
+	  <a href="#additional_parameters">Available Data and Parameter Values</a><br/>
+	  <a href="#errors">Error Codes</a><br/>
+	  
 	  <br/>
 	  
 	  <!-- URIs -->
-      <h3><a name="miriam"></a><fmt:message key="cpath2.uri_title"/></h3>
-	  <p><fmt:message key="cpath2.uri_description"/></p>
-	  <h3><a name="enco"></a><fmt:message key="cpath2.encoding_title"/></h3>
-	  <p><fmt:message key="cpath2.encoding_description"/></p>
-	 
-	  <!-- command bodies -->
-	 
-	 <ol> 
-	  
+      <h3><a name="miriam"></a>Note about using URIs:</h3>
+	  <p>Some of web service commands require a parameter value to be valid, 
+existing URI; it is either an original data provider's URI (for most BioPAX 
+Entities) or a <a href="http://identifiers.org">Identifiers.org</a> URL that 
+we create for BioPAX UtilityClass objects, such as ProteinReference, 
+whenever it (<a href="http://code.google.com/p/pathway-commons/wiki/cPath2PreMerge?ts=1346339836&updated=cPath2PreMerge#Normalization">normalization</a>) 
+is possible (we do our best following <a href="http://www.ebi.ac.uk/miriam/main/">MIRIAM's</a> 
+set of <a href="http://biomodels.net/miriam/">guidelines</a> for the 
+annotation and curation of computational models.)</p>
+	  <h3><a name="enco"></a>Note about URL-encoding (a browser issue):</h3>
+	  <p>All HTTP GET query arguments, including URIs, must be URL-encoded, 
+and this is, fortunately, done automatically when a standard web client 
+library is used; whereas, web browsers do not do this properly. Normally, 
+there is another layer, a web app or page, which takes care of building and 
+sending proper GET or POST HTTP requests to the server, and users are not 
+supposed to type a web service query with parameters in the browser's address 
+line: although browsers can replace spaces with "%20" (or '+'), they will 
+not encode. e.g., "?uri=urn:biopax:RelationshipXref:HGNC_HGNC%3A13101" 
+query (- to replace % with %25!) Also, URIs are case-sensitive.</p>
+
+	  <!-- command bodies -->	 
+	 <ol> 	  
 	  <!-- search command -->
 	  <li>
-	  <h2><a name="search"></a><fmt:message key="cpath2.command_header_search"/></h2>
-	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>
-	  <fmt:message key="cpath2.command_search_summary"/>
-	  <h3><fmt:message key="cpath2.command_header_parameters"/></h3>
+	  <h2><a name="search"></a>Command: SEARCH</h2>
+	  <h3>Summary:</h3>
+Full text search in Pathway Commons using keywords, phrases, a Lucene query. 
+For example, find records that contain the keyword "BRCA2" (in any index 
+field), or, more specifically, - "BRCA2" in a Protein's 'name' (index) field. 
+BioPAX entity or utility class hits that match the search criteria and pass 
+filters are ranked and returned. Search (index) field names are 
+(case-sensitive): <em>comment, ecnumber, keyword, name, pathway, term, xrefdb, 
+xrefid, dataSource, and organism</em>. The latter two were introduced mainly 
+for filtering as un_tockenized, no wildcard/fuzzy support. (Note: index fields 
+are not exactly BioPAX properties!) To search within a specific BioPAX class 
+only, use the 'type' parameter (filter). Full-text search is a very powerful 
+feature and can save a lot of time, but it's not a replacement for a more 
+accurate BioPAX graph analysis, i.e., - using other web service commands (see 
+below), following official BioPAX semantics. (The more "advanced" search query 
+is the more cool but uncertain/error-prone result is.) 
+	  <h3>Parameters:</h3>
 	  <ul>
-		<li><fmt:message key="cpath2.command_search_query_parameter"/></li>
-		<li><fmt:message key="cpath2.command_search_page_parameter"/></li>
-		<li><fmt:message key="cpath2.command_header_datasource_parameter"/></li>
-		<li><fmt:message key="cpath2.command_header_organism_parameter"/></li>
-		<li><fmt:message key="cpath2.command_header_biopax_class_parameter"/></li>
+		<li><em>q=</em> [Required] a keyword, name, external identifier, or a search string (Lucene syntax).</li>
+		<li><em>page=N</em> [Optional] (N&gt;=0, default is 0), search result page number.  See below (&quote;Output&quote; section) for details.</li>
+		<li><em>datasource=</em> [Optional] data source filter (<a href="#available_datasource_parameter">values</a>). Multiple data source values are allowed per query; for example, <em>datasource=reactome&amp;datasource=pid</em> means: we want data from Reactome OR NCI_Nature (PID)</li>
+		<li><em>organism=</em> [Optional] organism filter. Multiple organisms are allowed per query; for example 'organism=9606&amp;organism=10016' (which means either 9606 or 10016; can also use "homo sapiens", "mus musculus" instead).</li>
+		<li><em>type=</em> [Optional] BioPAX class filter (<a href="#available_biopax_parameter">values</a>)</li>
 	  </ul>
-	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
-	  <fmt:message key="cpath2.command_search_output1"/><a href="resources/schemas/cpath2.xsd.txt"><fmt:message key="cpath2.command_search_response_schema"/></a><fmt:message key="cpath2.command_search_output2"/><br/>
-	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
+	  <h3>Output:</h3>
+XML result that follows the <a href="resources/schemas/cpath2.xsd.txt">Search Response XML Schema</a>.<br/> 
+JSON is returned by appending '.json' to the query URL.  The server returns up to 
+'numHitsPerPage' search hits per request (configured on the server).  
+But you can request hits beyond the first N, if any, using the 'page' 
+parameter.  The 'numHits' attribute in the returned XML or JSON contains the 
+total number of search results that matched the query and filters. If a page 
+is requested beyond the total number of results, "empty result" error xml is 
+returned. In other words, when numHits &gt; numHitsPerPage hits, 'page=n' 
+(n&gt;=0) parameter is to get hits ranked from numHitsPerPage*n to numHitsPerPage*(n+1)-1. 
+Total no. pages can be also calculated as<br/> INT[(numHits-1)/numHitsPerPage+1].
+	  <h3>Example Queries:</h3>
 	  <br/>
 	  <ol>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search.xml?q=Q06609"><fmt:message key="cpath2.example.search1"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=xrefid:Q06609"><fmt:message key="cpath2.example.search2"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search.json?q=Q06609"><fmt:message key="cpath2.example.search3"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search.json?q=Q06609&type=pathway"><fmt:message key="cpath2.example.search4"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=brca2&type=proteinreference&organism=homo%20sapiens&datasource=pid"><fmt:message key="cpath2.example.search5"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=brc*&type=control&organism=9606&datasource=reactome"><fmt:message key="cpath2.example.search6"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=a*&page=3"><fmt:message key="cpath2.example.search7"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=+binding%20NOT%20transcription*&type=control&page=0"><fmt:message key="cpath2.example.search8"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=pathway:immune&type=conversion"><fmt:message key="cpath2.example.search9"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=*&type=pathway&datasource=panther"><fmt:message key="cpath2.example.search10"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=*&type=biosource"><fmt:message key="cpath2.example.search11"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search.xml?q=Q06609">search for "Q06609" keyword, no filters, return XML result</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=xrefid:Q06609">specific search for "Q06609" in the 'xrefid' index field, no filters, return XML (default)</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search.json?q=Q06609">search for "Q06609" keyword, no filters, return JSON result</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search.json?q=Q06609&type=pathway">search for Pathways containing "Q06609" (search all fields), return JSON</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=brca2&type=proteinreference&organism=homo%20sapiens&datasource=pid">search for ProteinReference containing "brca2" (case-insensitive) keyword (in any field), filter by organism (human) and datasource (NCI_Nature actually)</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=brc*&type=control&organism=9606&datasource=reactome">search for Control interactions matching "brca*" (wildcard, case-insensitive, in any field), originated from Reactome, Human</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=a*&page=3">use of pagination: get the forth page (page=3) hits</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=+binding%20NOT%20transcription*&type=control&page=0">search for Control interactions having something to do with "binding" but not "transcription" (gets the first page hits)</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=pathway:immune&type=conversion">search for Conversion interactions that are direct or indirect participants of a "immune" (part of its name) pathway (cool!)</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=*&type=pathway&datasource=panther">find all Panther pathways</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=*&type=biosource">all organisms (i.e., including BioSource objects referenced from evidence/infection data there)</a></li>
 	  </ol>
 	  </li>
 	  <!-- get command -->
 	  <li>
-	  <h2><a name="get"></a><fmt:message key="cpath2.command_header_get"/></h2>
-	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>
-	  <fmt:message key="cpath2.command_get_summary"/>
-	  <h3><fmt:message key="cpath2.command_header_parameters"/></h3>
+	  <h2><a name="get"></a>Command: GET</h2>
+	  <h3>Summary:</h3>
+Retrieves details regarding one or more records, such as pathway, interaction 
+or physical entity.  For example, get the complete Apoptosis pathway from Reactome.
+	  <h3>Parameters:</h3>
 	  <ul>
-		<li><fmt:message key="cpath2.command_get_uri_parameter"/></li>
-		<li><fmt:message key="cpath2.command_header_format_parameter"/></li>
+		<li><em>uri=</em> [Required]  a BioPAX element ID (RDF ID; for utility 
+classes that have been "normalized", such as xrefs, entity refereneces and 
+controlled vocabularies, it is usually a Idntifiers.org URL.  Multiple IDs are 
+allowed per query, for example 'uri=http://identifiers.org/uniprot/Q06609&amp;uri=http://identifiers.org/uniprot/Q549Z0'. 
+See <a href="#miriam">a note about MIRIAM and Identifiers.org</a>.</li>
+		<li><em>format=</em> [Optional] output format (<a href="#available_output_parameter">values</a>)</li>
 	  </ul>
-	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
-	  <fmt:message key="cpath2.command_get_output"/>
-	  <h3><fmt:message key="cpath2.command_header_query"/></h3><br/>
+	  <h3>Output:</h3>
+By default, a complete BioPAX representation for the 
+record pointed to by the given uri.  Other output formats are available as 
+specified by the optional format parameter.  Please be advised that not all 
+output formats are relevant for this web service.  For example, it would not 
+make sense to request BINARY_SIF output when the given URI points to a protein.
+	  <h3>Example Queries:</h3><br/>
 	  <ol>
 	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http://identifiers.org/uniprot/Q06609">
-		<fmt:message key="cpath2.example.get1"/></a>
+		get a self-consistent BioPAX sub-model using URI=http://identifiers.org/uniprot/Q06609 (the ProteinReference and dependent objects)</a>
 	  </li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http://www.reactome.org/biopax/48887Pathway137">
-		<fmt:message key="cpath2.example.get2"/></a>
+		get a Reactome "pathway" (normalized by the server, as usual)</a>
 	  </li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http://pid.nci.nih.gov/biopaxpid_74716&format=BINARY_SIF">
-		<fmt:message key="cpath2.example.get3"/></a>
+		get the NCI-Nature Curated BMP signaling pathway in SIF format</a>
 	  </li>
 	 </ol>
 	 </li>
 	  
 	  <!-- graph command -->
 	  <li>
-	  <h2><a name="graph"></a><fmt:message key="cpath2.command_header_graph"/></h2>
-	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>
-	  <fmt:message key="cpath2.command_graph_summary"/>
-	  <h3><fmt:message key="cpath2.command_header_parameters"/></h3>
+	  <h2><a name="graph"></a>Command: GRAPH</h2>
+	  <h3>Summary:</h3>
+We implemented several graph theoretic algorithms that take BioPAX data model 
+into account, such as shortest path between two proteins. This command 
+executes one of graph queries based on the integrated BioPAX network stored 
+on our server. For example, get the neighborhood for a particular BRCA1 
+protein state or all states. As the original BioPAX data and our import 
+pipeline quality improves, graph query results also become more interesting 
+and connected. We merge BioPAX data based on our proteins and small molecules 
+data warehouse and consistently normalized UnificationXref, EntityReference, 
+Provenance, BioSource, and ControlledVocabulary objects when we are absolutely 
+sure two objects of the same type are equivalent. By favoring to store 
+unmodified original data when in doubt, we try NOT to accidently introduce any 
+artifacts or noise to this process and thus limit our users's options in the 
+future. Having said that, the really good thing is that anyone (including our 
+team) is free and encouraged to independently develop a dedicated web service 
+client app, which, e.g., would use a combination of an advanced id-mapping 
+tool, our basic search and query services, and any other advanced network 
+merge algorithm of ones choice.
+	  <h3>Parameters:</h3>
 	  <ul>
-		<li><fmt:message key="cpath2.command_graph_kind_parameter"/></li>
-		<li><fmt:message key="cpath2.command_graph_source_parameter"/></li>
-		<li><fmt:message key="cpath2.command_graph_target_parameter"/></li>
-        <li><fmt:message key="cpath2.command_graph_direction_parameter"/></li>
-        <li><fmt:message key="cpath2.command_graph_limit_parameter"/></li>
-        <li><fmt:message key="cpath2.command_header_format_parameter"/></li>
+		<li><em>kind=</em> [Required] graph query (<a href="#available_graph_parameter">values</a>)</li>
+		<li><em>source=</em> [Required] source object's URI. Multiple source URIs are allowed per query, for example 'source=uri=http://identifiers.org/uniprot/Q06609&amp;source=uri=http://identifiers.org/uniprot/Q549Z0'. See <a href="#miriam">a note about MIRIAM and Identifiers.org</a>.</li>
+		<li><em>target=</em> [Required for PATHSFROMTO graph query] target URI.  Multiple target URIs are allowed per query; for example  'target=uri=http://identifiers.org/uniprot/Q06609&amp;target=uri=http://identifiers.org/uniprot/Q549Z0'. See <a href="#miriam">a note about MIRIAM and Identifiers.org</a>.</li>
+        <li><em>direction=</em> [Optional, for NEIGHBORHOOD and COMMONSTREAM] - graph search direction (<a href="#available_direction_parameter">values</a>).</li>
+        <li><em>limit=</em> [Optional] graph query search distance limit (default = 1).</li>
+        <li><em>format=</em> [Optional] output format (<a href="#available_output_parameter">values</a>)</li>
 	  </ul>
-	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
-	  <fmt:message key="cpath2.command_graph_output"/>
-	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
-	  <fmt:message key="cpath2.command_header_graph_query_description"/><br/>
+	  <h3>Output:</h3>
+By default, a complete BioPAX representation of the desired graph query.  
+Other output formats are available as specified by the optional format 
+parameter.  Please be advised that not all output formats are relevant for 
+this web service.  For example, it would not make sense to request BINARY_SIF 
+output when the given URI points to a protein.
+	  <h3>Example Queries:</h3>
+Neighborhood of Col5a1 (O88207, CO5A1_MOUSE): <br/>
 	  <ol>
 	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=http://www.reactome.org/biopax/48892Protein3105&kind=neighborhood">
-		<fmt:message key="cpath2.example.graph1"/></a>
+		from the protein's state</a>
 	  </li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=http://identifiers.org/uniprot/O88207&kind=neighborhood">
-		<fmt:message key="cpath2.example.graph2"/></a>
+		from the protein reference, i.e., all its states (found in the BioPAX network(s) on the server)</a>
 	  </li>
 	  	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=http://identifiers.org/uniprot/O88207&kind=neighborhood&format=EXTENDED_BINARY_SIF">
-		<fmt:message key="cpath2.example.graph3"/></a>
+		from the same protein reference but using a different output format</a>
 	  </li>
 	  </ol>
 	  </li>
 	  
 	  <!-- traverse command -->
 	  <li>
-	  <h2><a name="traverse"></a><fmt:message key="cpath2.command_header_traverse"/></h2>
-	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>
-	  <fmt:message key="cpath2.command_traverse_summary"/>
-	  <h3><fmt:message key="cpath2.command_header_parameters"/></h3>
+	  <h2><a name="traverse"></a>Command: TRAVERSE</h2>
+	  <h3>Summary:</h3>
+Get BioPAX data property values or objects (URIs) using a XPath-like property 
+path expression. This command has two parameters. 
+	  <h3>Parameters:</h3>
 	  <ul>
-		<li><fmt:message key="cpath2.command_traverse_uri_param"/></li>
-		<li><fmt:message key="cpath2.command_traverse_path_param"/></li>
+		<li><em>uri=</em> [Required] a BioPAX element ID (it's like for <a href="#get">'GET' command above</a>). Multiple IDs are allowed (uri=...&amp;uri=...&amp;uri=...).</li>
+		<li><em>path=</em> [Required] a BioPAX propery path: like property1[:type1]/property2[:type2]; can also include convenient (unofficial) inverse BioPAX properties, such as xrefOf, componentOf, etc., and abstract types, such as Named, XReferrable, Process, etc.; see <a href="#available_properties_parameter">properties</a>, <a href="#available_inverse_properties_parameter">inverse properties</a>, <a href="http://www.biopax.org/paxtools">Paxtools</a>, org.biopax.paxtools.controller.PathAccessor.</li>
 	  </ul>
-	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
-	  <fmt:message key="cpath2.command_search_output1"/><a href="resources/schemas/cpath2.xsd.txt"><fmt:message key="cpath2.command_search_response_schema"/></a><fmt:message key="cpath2.command_traverse_output2"/><br/>
-	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
-	  <fmt:message key="cpath2.command_header_traverse_query_description"/><br/>
+	  <h3>Output:</h3>
+	  XML result that follows the <a href="resources/schemas/cpath2.xsd.txt">Search Response XML Schema</a>&nbsp;(TraverseResponse type; pagination is disabled: returns all values at once)<br/>
+	  <h3>Example Queries:</h3>
 	  <ol>
 	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/organism/displayName">
-		<fmt:message key="cpath2.example.traverse1"/></a>
+		for a URI (of a ProteinReference), get the organism's display name</a>
 	  </li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://identifiers.org/uniprot/Q06609&path=ProteinReference/organism">
-		<fmt:message key="cpath2.example.traverse2"/></a>
+		for each URI, get the organism (URI)</a>
 	  </li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/Q06609&path=ProteinReference/entityReferenceOf:Protein/name">
-		<fmt:message key="cpath2.example.traverse3"/></a>
+		get names of all states of RAD51 protein (by its ProteinReference URI, using property path="ProteinReference/entityReferenceOf:Protein/name")</a>
 	  </li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/entityReferenceOf:Protein">
-		<fmt:message key="cpath2.example.traverse4"/></a>
+		get URIs of states of BRCA1_HUMAN (path="ProteinReference/entityReferenceOf:Protein")</a>
 	  </li>	
 	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://www.reactome.org/biopax/48887Protein2992&uri=http://identifiers.org/taxonomy/9606&path=Named/name">
-		<fmt:message key="cpath2.example.traverse5"/></a>
+		get names of several different objects (using abstract type 'Named' from Paxtools API)</a>
 	  </li>		  
 	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://pid.nci.nih.gov/biopaxpid_74716&path=Pathway/pathwayComponent:Interaction/participant/displayName">
-		<fmt:message key="cpath2.example.traverse6"/></a>
+		get BMP pathway participants's names (cool, but be careful and not too much excited!)</a>
 	  </li>	
 	  </ol>	
 	  </li>
 
 	  <!-- top_pathways command -->
 	  <li>
-	  <h2><a name="top_pathways"></a><fmt:message key="cpath2.command_header_tp"/></h2>
-	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>
-	  <fmt:message key="cpath2.command_tp_summary"/>
-	  <h3><fmt:message key="cpath2.command_header_parameters"/></h3>
+	  <h2><a name="top_pathways"></a>Command: TOP_PATHWAYS</h2>
+	  <h3>Summary:</h3>
+Retrieves all "top" pathways (- not exactly in the graph-theoretic sense, but 
+- all such pathways that are neither 'controlled' nor 'pathwayComponent' of other processes)
+	  <h3>Parameters:</h3>
 		no parameters
-	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
-	  <fmt:message key="cpath2.command_search_output1"/><a href="resources/schemas/cpath2.xsd.txt">
-	  <fmt:message key="cpath2.command_search_response_schema"/></a><fmt:message key="cpath2.command_tp_output2"/><br/>
-	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
+	  <h3>Output:</h3>
+	  XML result that follows the <a href="resources/schemas/cpath2.xsd.txt">
+	  Search Response XML Schema</a>&nbsp;(SearchResponse type; pagination is disabled: returns all pathways at once)<br/>
+	  <h3>Example Queries:</h3>
 	  <ol>
 	  <li><a href="<fmt:message key="cpath2.url"/>/top_pathways">
-		<fmt:message key="cpath2.example.top_pathways1"/></a>
+		get top/root pathways (XML)</a>
 	  </li>
 	  <li><a href="<fmt:message key="cpath2.url"/>/top_pathways.json">
-		<fmt:message key="cpath2.example.top_pathways2"/></a>
+		get top/root pathways (JSON)</a>
 	  </li>
 	  </ol>
 	  </li>	
 
 	  <!-- help command -->
 	  <li>
-	  <h2><a name="help"></a><fmt:message key="cpath2.command_header_help"/></h2>
-	  <h3><fmt:message key="cpath2.command_header_summary"/></h3>
-	  <fmt:message key="cpath2.command_help_summary"/>
-	  <h3><fmt:message key="cpath2.command_header_output"/></h3>
-	  <fmt:message key="cpath2.command_help_output"/><a href="resources/schemas/cpath2.xsd.txt"><fmt:message key="cpath2.command_search_response_schema"/></a><br/>
-	  <h3><fmt:message key="cpath2.command_header_query"/></h3>
+	  <h2><a name="help"></a>Command: HELP</h2>
+	  <h3>Summary:</h3>
+Finally, this is a RESTful web service, which returns both static and 
+instance-specific information, some of which helped create this demo page 
+(- the list of types, constants, organisms, and data sources below)
+	  <h3>Output:</h3>
+	  XML/JSON (if '.json' suffix used) element 'Help' (nested tree); see: <a href="resources/schemas/cpath2.xsd.txt">Search Response XML Schema</a><br/>
+	  <h3>Example Queries:</h3>
 	  <br/>
 	  <ol>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/commands"><fmt:message key="cpath2.example.help1"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/commands.json"><fmt:message key="cpath2.example.help12"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/commands/search"><fmt:message key="cpath2.example.help11"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/types"><fmt:message key="cpath2.example.help2"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/kinds"><fmt:message key="cpath2.example.help3"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/organisms"><fmt:message key="cpath2.example.help4"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/datasources"><fmt:message key="cpath2.example.help9"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/directions"><fmt:message key="cpath2.example.help5"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/properties"><fmt:message key="cpath2.example.help6"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/provenance/properties"><fmt:message key="cpath2.example.help7"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/inverse_properties"><fmt:message key="cpath2.example.help8"/></a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help"><fmt:message key="cpath2.example.help0"/></a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/commands">/help/commands</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/commands.json">/help/commands.json</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/commands/search">/help/commands/search</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/types">/help/types</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/kinds">/help/kinds</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/organisms">/help/organisms (note: some of species there listed are only due to they were mentioned in human, mouse, etc., pathway data)</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/datasources">/help/datasources (data sources loaded into the system)</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/directions">/help/directions</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/properties">/help/types/properties</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/provenance/properties">/help/types/provenance/properties</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/inverse_properties">/help/types/inverse_properties</a></li>
+	  <li><a href="<fmt:message key="cpath2.url"/>/help">/help</a></li>
 	  </ol>
-	  </li>
-	  
+	  </li>	  
 	  </ol>
 	<br/>
 	
 	  <!-- additional parameter details -->
-      <h2><a name="additional_parameters"></a><fmt:message key="cpath2.command_header_additional_parameters"/>:</h2>
-	  <pre id="output_parameter" style="text-align: left;"></pre>
-	  <pre id="graph_parameter" style="text-align: left;"></pre>
-	  <pre id="direction_parameter" style="text-align: left;"></pre>
-	  <pre id="datasource_parameter" style="text-align: left;"></pre>
-	  <pre id="biopax_parameter" style="text-align: left;"></pre>
-	  <pre id="properties_parameter" style="text-align: left;"></pre>
-	  <pre id="inverse_properties_parameter" style="text-align: left;"></pre>
+      <h2 id="additional_parameters">Available Data and Parameter Values</h2>
+      
+	  <div class="parameters">
+	  	<h3>Loaded Data Sources ('datasource'):</h3>
+	  	<p>Listed below are URIs of the pathway data archives that we processed and merged into this system 
+and their corresponding names. The names are recommended values 
+for the filter by data source (used with 'search' command). 
+For example, 'NCI_Nature', 'reactome' can be used (case insensitive) there. 
+Using URIs for filter values is also possible and allows for more specific filters. 
+For example, if a provider's pathway data were actually imported from several physical locations and/or data formats, 
+there several URIs below map to the same name, and you may want to search only in some of them. 
+Other data source (Provenance) URIs and names "work" not as good as the recommended filter values, 
+because those are, in fact, not guaranteed to be associated with all BioPAX entities from the same source. 
+		</p>
+		<!-- items are to be added here by a javascript -->
+	  	<table id="datasources" class="datasource_homepage_table"></table>
+	  	<br/>
+	  	<p>In order to normalize and merge above data, we also imported and used following warehouse data:</p>
+	  	<table id="warehouse" class="datasource_homepage_table"></table>
+	  	<br/>
+	  </div>      
+        
+	  <div class="parameters">
+	  	<h3>Output formats ('format'):</h3>
+	  	<p>See <a href="resources/docs/README.txt">README.txt</a> for more information regarding these format parameters.</p>
+		<!-- items are to be added here by a javascript -->
+	  	<ul id="output_parameter"></ul>
+	  	<br/>
+	  </div> 
+	  
+	  <div class="parameters">
+	  	<h3>Built-in graph queries ('kind'):</h3>
+		<!-- items are to be added here by a javascript -->
+	  	<ul id="graph_parameter"></ul>
+	  	<br/>
+	  </div> 
+	  
+	  <div class="parameters">
+	  	<h3>Graph traversal directions ('direction'):</h3>
+		<!-- items are to be added here by a javascript -->
+	  	<ul id="direction_parameter"></ul>
+	  	<br/>
+	  </div> 
+	  
+	  <div class="parameters">
+	  	<h3>BioPAX classes ('type'):</h3>
+		<!-- items are to be added here by a javascript -->
+	  	<ul id="biopax_parameter"></ul>
+	  	<br/>
+	  </div> 
+	  
+	  <div class="parameters">
+	  	<h3>Official BioPAX Properties and Domain/Range Restrictions:</h3>
+	  	<p>Note: "XReferrable xref Xref D:ControlledVocabulary=UnificationXref 
+	  	D:Provenance=UnificationXref,PublicationXref" means XReferrable.xref, 
+	  	and that, for a ControlledVocabulary.xref, the value can only be of 
+	  	UnificationXref type, etc.</p>
+		<!-- items are to be added here by a javascript -->
+	  	<ul id="properties_parameter"></ul>
+	  	<br/>
+	  </div> 
+	  
+	  <div class="parameters">
+	  	<h3>Inverse BioPAX Object Properties and Domain/Range Restrictions (useful feature of Paxtools API):</h3>
+	  	<p>Note: Some of object range BioPAX properties can be reversed/inversed 
+	  	(and also used in the '/traverse?path=' context), e.g, 'xref' - 'xrefOf'. 
+	  	These are listed below. But, e.g., unlike the normal xref property, 
+	  	the same restriction ("XReferrable xref Xref D:ControlledVocabulary=UnificationXref 
+	  	D:Provenance=UnificationXref,PublicationXref") must read/comprehend differently: 
+	  	it's actually now means Xref.xrefOf, and that RelationshipXref.xrefOf 
+	  	cannot contain a ControlledVocabulary (or its sub-class) values, etc.</p>
+		<!-- items are to be added here by a javascript -->
+	  	<ul id="inverse_properties_parameter"></ul>
+	  	<br/>
+	  </div>
+	  
+	  <div class="parameters">
+	  	<h3>Official BioPAX Properties and Domain/Range Restrictions:</h3>
+	  	<p>Note: "XReferrable xref Xref D:ControlledVocabulary=UnificationXref 
+	  	D:Provenance=UnificationXref,PublicationXref" means XReferrable.xref, 
+	  	and that, for a ControlledVocabulary.xref, the value can only be of 
+	  	UnificationXref type, etc.</p>
+		<!-- items are to be added here by a javascript -->
+	  	<ul id="properties_parameter"></ul>
+	  	<br/>
+	  </div> 
 	  
 	  <!-- error codes -->
-	  <h2><a name="errors"></a><fmt:message key="cpath2.error_code_header"/>:</h2>
-	  <p><fmt:message key="cpath2.error_code_description"/><a href="resources/schemas/cpath2.xsd.txt">
-	  <fmt:message key="cpath2.command_search_response_schema"/></a></p>
-	  <p><fmt:message key="cpath2.error_code_footnote"/></p>
-	  <!-- error codes table -->
+	  <h2 id="errors">Error Codes:</h2>
+	  <p>An error while processing a request is reported as an XML document (ErrorResponse) 
+	  with information about the error cause as defined in the<a href="resources/schemas/cpath2.xsd.txt">
+	  Search Response XML Schema</a></p>
+	  <p>Only the first error encountered is reported. The table below provides a list of error codes, with their descriptions.</p>
 	  <div>
 		<table>
-		  <tr><th><fmt:message key="cpath2.error_code_label"/></th><th><fmt:message key="cpath2.error_code_description_label"/></th></tr>
-		  <tr><td><fmt:message key="cpath2.error_code_450"/></td><td><fmt:message key="cpath2.error_code_450_description"/></td></tr>
-		  <tr><td><fmt:message key="cpath2.error_code_452"/></td><td><fmt:message key="cpath2.error_code_452_description"/></td></tr>
-		  <tr><td><fmt:message key="cpath2.error_code_460"/></td><td><fmt:message key="cpath2.error_code_460_description"/></td></tr>
-		  <tr><td><fmt:message key="cpath2.error_code_500"/></td><td><fmt:message key="cpath2.error_code_500_description"/></td></tr>
-		</table>
+		  <tr><th>Error Code</th><th>Error Description</th></tr>
+		  <tr><td>450</td><td>Bad Command (command not recognized)</td></tr>
+		  <tr><td>452</td><td>Bad Request (missing arguments)</td></tr>
+		  <tr><td>460</td><td>No Results Found</td></tr>
+		  <tr><td>500</td><td>Internal Server Error</td></tr>
+		</table>		
 	  </div>
 	  <br/>
 </div>

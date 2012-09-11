@@ -26,7 +26,7 @@
 		  <value>file:${CPATH2_HOME}/log4j.properties</value>
 		</list>
 	  </property>
-	</bean>    
+	</bean>        
         
 	<bean id="searchController" class="cpath.webservice.SearchController">
 		<constructor-arg ref="service"/>
@@ -40,8 +40,8 @@
 		<constructor-arg ref="service"/>
 	</bean>
 	
-	<bean id="validationResultsController" class="cpath.webservice.ValidationResultsController">
-		<constructor-arg ref="service"/>
+	<bean id="metadataController" class="cpath.webservice.MetadataController">
+		<constructor-arg ref="metadataDAO"/>
 	</bean>
 
 	<bean id="biopaxModelController" class="cpath.webservice.BiopaxModelController">

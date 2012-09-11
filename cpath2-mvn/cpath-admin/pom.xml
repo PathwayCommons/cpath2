@@ -40,8 +40,40 @@
 
   <dependencies>
   	<dependency>
+		<groupId>org.biopax.paxtools</groupId>
+		<artifactId>sif-converter</artifactId>
+		<version>${paxtools.version}</version>
+	</dependency>
+  	<dependency>
+  		<groupId>org.biopax.paxtools</groupId>
+  		<artifactId>gsea-converter</artifactId>
+  		<version>${paxtools.version}</version>
+  		<type>jar</type>
+  		<scope>compile</scope>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.biopax.paxtools</groupId>
+  		<artifactId>paxtools-query</artifactId>
+  		<version>${paxtools.version}</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>pathwaycommons.cpath</groupId>
+  		<artifactId>cpath-api</artifactId>
+  		<version>${cpath.api.version}</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>pathwaycommons.cpath</groupId>
+  		<artifactId>cpath-dao</artifactId>
+  		<version>${project.version}</version>
+  	</dependency>
+  	<dependency>
   		<groupId>pathwaycommons.cpath</groupId>
   		<artifactId>cpath-importer</artifactId>
+  		<version>${project.version}</version>
+  	</dependency>
+  	<dependency>
+  		<groupId>pathwaycommons.cpath</groupId>
+  		<artifactId>cpath-service</artifactId>
   		<version>${project.version}</version>
   	</dependency>
   	<dependency>

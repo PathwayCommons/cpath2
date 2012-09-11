@@ -29,12 +29,17 @@ package cpath.importer.internal;
 
 import static org.junit.Assert.*;
 
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import javax.imageio.ImageIO;
 
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -68,6 +73,7 @@ public class CPathWarehouseTest {
 	static WarehouseDAO molecules;
 	static WarehouseDAO proteins;
 	static BioPAXFactory factory;
+	static MetadataDAO metadataDAO;
 	
 	static {
 		System.out.println("Preparing...");
@@ -78,7 +84,7 @@ public class CPathWarehouseTest {
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 			new String[]{"classpath:testContext-whDAO.xml"});
 		molecules = (WarehouseDAO) context.getBean("moleculesDAO");
-		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
+		metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		proteins = (WarehouseDAO) context.getBean("proteinsDAO");
 		
 		// load test data
@@ -188,4 +194,19 @@ public class CPathWarehouseTest {
 		*/
 	}
 
+    
+	@Test
+	public void testMetadataIcon() throws IOException {
+		Metadata ds = metadataDAO.getMetadataByIdentifier("TEST_BIOPAX");
+		assertNotNull(ds);
+		
+		byte[] icon = ds.getIcon();
+		assertNotNull(icon);
+		assertTrue(icon.length >0);
+		
+		BufferedImage bImageFromConvert = ImageIO.read(new ByteArrayInputStream(icon));
+		ImageIO.write(bImageFromConvert, "gif", 
+			new File(getClass().getClassLoader().getResource("").getPath() 
+				+ File.separator + "out.gif"));
+	}
 }

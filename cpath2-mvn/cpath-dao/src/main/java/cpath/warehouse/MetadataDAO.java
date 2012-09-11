@@ -5,6 +5,9 @@ import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
 import java.util.Collection;
+import java.util.Map;
+
+import org.biopax.validator.result.ValidatorResponse;
 
 /**
  * An interface which provides methods to persist and query provider metadata.
@@ -19,7 +22,7 @@ public interface MetadataDAO {
     void importMetadata(final Metadata metadata);
 
     /**
-     * This method returns the metadata object with the given Identifier.
+     * This method returns the metadata object, given the {@link Metadata} Identifier.
 	 *
      * @param identifier String
      * @return Metadata
@@ -82,5 +85,31 @@ public interface MetadataDAO {
      * @return PathwayData
      */
     PathwayData getPathwayData(final Integer pathway_id);
+    
+    
+	/**
+	 * Generates the BioPAX validation report for the pathway data provider.
+	 * 
+	 * @param metadataIdentifier datasource identifier, {@link Metadata#getIdentifier()} 
+	 * @return
+	 */
+    ValidatorResponse getValidationReport(String metadataIdentifier);
+	
 
+	/**
+	 * Generates the BioPAX validation report for a pathway data file.
+	 * 
+	 * @param pathwayDataPk a primary key value from the pathwatData table {@link PathwayData}
+	 * @return
+	 */
+    ValidatorResponse getValidationReport(Integer pathwayDataPk);
+
+    
+	/**
+	 * Gets a map (pk -> info) of {@link PathwayData} for the data source.
+	 * 
+	 * @param metadataIdentifier
+	 * @return
+	 */
+    Map<Integer, String> getPathwayDataInfo(String metadataIdentifier);
 }

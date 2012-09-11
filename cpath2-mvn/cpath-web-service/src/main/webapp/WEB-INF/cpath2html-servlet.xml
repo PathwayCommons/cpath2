@@ -33,8 +33,8 @@
 		<property name="suffix" value=".jsp" />
 	</bean> 	   	  
 	  	   	 
-	<bean id="validationResultsController" class="cpath.webservice.ValidationResultsController">
-		<constructor-arg ref="service"/>
+	<bean id="metadataController" class="cpath.webservice.MetadataController">
+		<constructor-arg ref="metadataDAO"/>
 	</bean>
 	
 	<!-- mvc:annotation-driven must the last -->

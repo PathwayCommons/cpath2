@@ -13,11 +13,14 @@
 </head>
 <body>
 
-<h2>Individual BioPAX File Validations (<c:out value="${identifier}"/>)</h2>
+<div>
+<img src='<c:url value="/logo/${identifier}"/>'/><br/>
+</div>
+<h2>BioPAX Validation Results for: <c:out value="${identifier}"/></h2>
 
 <ul>
   <c:forEach var="result" items="${results}">
-	<li><a href='<c:url value="/validation/file/${result.key}.html"/>'>${result.value}</a></li>
+	<li><a href='<c:url value="/validation/${result.key}.html"/>'>${result.value}</a></li>
   </c:forEach>
 </ul>
 

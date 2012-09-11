@@ -186,11 +186,13 @@ final class FetcherImpl implements Fetcher
 				byte[] iconData = null;
 				try {
 					InputStream stream = LOADER.getResource(tokens[METADATA_ICON_URL_INDEX]).getInputStream();
-					// we could simply read to byte[] directly, but let's do more interesting things - 
 					BufferedImage image = ImageIO.read(stream);
-					// TODO conversion of the icon into another format could easily happen here
-					if(image != null)
-						iconData = ((DataBufferByte)image.getRaster().getDataBuffer()).getData();
+					if(image != null) {
+						ByteArrayOutputStream baos = new ByteArrayOutputStream();
+						ImageIO.write(image, "gif", baos);
+						baos.flush();
+						iconData = baos.toByteArray();
+					}
 				} catch (IOException e) {
 					log.error("readMetadata(): Cannot load image from " 
 							+  tokens[METADATA_ICON_URL_INDEX] + ". Skipping. " + e);
@@ -227,7 +229,7 @@ final class FetcherImpl implements Fetcher
 					+ "; name=" + metadata.getName()
 					+ "; version=" + metadata.getVersion()
 					+ "; date/comment=" + metadata.getDescription()
-					+ "; location=" + metadata.getURLToData()
+					+ "; location=" + metadata.getUrlToData()
 					+ "; icon=" + tokens[METADATA_ICON_URL_INDEX]
 					+ "; type=" + metadata.getType()
 					+ "; cleaner=" + metadata.getCleanerClassname() 
@@ -287,8 +289,8 @@ final class FetcherImpl implements Fetcher
     	throws IOException 
     {
 		String fetchedData = readContent(inputStream);
-		int idx = metadata.getURLToData().lastIndexOf('/');
-		String filename = metadata.getURLToData().substring(idx+1); // not found (-1) gives entire string
+		int idx = metadata.getUrlToData().lastIndexOf('/');
+		String filename = metadata.getUrlToData().substring(idx+1); // not found (-1) gives entire string
 		String digest = getDigest(fetchedData.getBytes());
 		
 		return new PathwayData(metadata.getIdentifier(), metadata.getVersion(),
@@ -601,15 +603,15 @@ final class FetcherImpl implements Fetcher
 		} else {
 			if(log.isInfoEnabled())
 				log.info("Downloading " + metadata.getType() + " from " +
-					metadata.getURLToData() + " to " + localFileName);
+					metadata.getUrlToData() + " to " + localFileName);
 		
-			Resource resource = LOADER.getResource(metadata.getURLToData());
+			Resource resource = LOADER.getResource(metadata.getUrlToData());
 			
 			long size = 0; 
 			if(resource.isReadable()) {
 				size = resource.contentLength();
 				if(log.isInfoEnabled())
-					log.info(metadata.getURLToData() + " content length= " + size);
+					log.info(metadata.getUrlToData() + " content length= " + size);
 			}
 			
 			if(size < 0) 
@@ -620,7 +622,7 @@ final class FetcherImpl implements Fetcher
 			size = dest.getChannel().transferFrom(source, 0, size); // can throw runtime exceptions
 			
 			if(log.isInfoEnabled())
-				log.info(size + " bytes downloaded from " + metadata.getURLToData());
+				log.info(size + " bytes downloaded from " + metadata.getUrlToData());
 		}
 
 		if(metadata.getType() == Metadata.TYPE.MAPPING) {
@@ -665,7 +667,7 @@ final class FetcherImpl implements Fetcher
 					tmp = tmp.substring(idx+1);
 					if(!"bridge".equalsIgnoreCase(tmp) 
 						&& !"pgdb".equalsIgnoreCase(tmp)) {
-						log.error("There in " + metadata.getURLToData() + 
+						log.error("There in " + metadata.getUrlToData() + 
 							", " + entry.getName() + " is not " +
 							"a '.bridge' or '.pgdb' file! Skipped.");
 						continue;

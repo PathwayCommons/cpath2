@@ -42,9 +42,6 @@ import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.biopax.validator.result.Validation;
-import org.biopax.validator.result.ValidatorResponse;
-import org.biopax.validator.utils.BiopaxValidatorUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
@@ -68,7 +65,6 @@ import static cpath.service.Status.*;
 
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.PathwayData;
 
 /**
  * Service tier class - to uniformly access 
@@ -310,64 +306,6 @@ class CPathServiceImpl implements CPathService {
 
 	}
 
-	/*
-     * (non-Javadoc)
-	 * @see cpath.service.CPathService#getValidationReport(...)
-	 */
-	@Override
-	public ServiceResponse getValidationReport(String metadataIdentifier) {
-		// get validationResults from PathwayData beans
-		Collection<PathwayData> pathwayDataCollection = metadataDAO
-				.getPathwayDataByIdentifier(metadataIdentifier);
-		if (!pathwayDataCollection.isEmpty()) {
-			// a new container to collect separately stored file validations
-			ValidatorResponse response = new ValidatorResponse();
-			for (PathwayData pathwayData : pathwayDataCollection) {				
-				try {
-					byte[] xmlResult = pathwayData.getValidationResults();
-					// unmarshal and add
-					ValidatorResponse resp = (ValidatorResponse) BiopaxValidatorUtils.getUnmarshaller()
-						.unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
-					assert resp.getValidationResult().size() == 1; // current design (of the premerge pipeline)
-					Validation validation = resp.getValidationResult().get(0); 
-					if(validation != null)
-						response.getValidationResult().add(validation);
-				} catch (Exception e) {
-                    log.error(e);
-					return INTERNAL_ERROR.errorResponse(e);
-				}
-			}
-			
-			DataResponse toReturn = new DataResponse();
-			toReturn.setData(response);
-			return toReturn;
-		} else {
-			return NO_RESULTS_FOUND.errorResponse(
-				"No pathway data found by " + metadataIdentifier);
-		}
-	}
-
-	
-	@Override
-	public ServiceResponse getValidationReport(Integer pathwayDataPk) {
-		PathwayData pathwayData = metadataDAO.getPathwayData(pathwayDataPk);
-		if(pathwayData != null) {
-			try {
-				byte[] xmlResult = pathwayData.getValidationResults();	
-				ValidatorResponse resp = (ValidatorResponse) BiopaxValidatorUtils
-					.getUnmarshaller().unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
-				DataResponse ret = new DataResponse();
-				ret.setData(resp);
-				return ret;
-			} catch (Throwable e) {
-                log.error(e);
-				return INTERNAL_ERROR.errorResponse(e);
-			}
-		} else {
-			return NO_RESULTS_FOUND.errorResponse(
-				"No pathway data exists with pathway_id:" + pathwayDataPk);
-		}
-	}
 	
 	//--- Graph queries ---------------------------------------------------------------------------|
 
@@ -655,7 +593,7 @@ class CPathServiceImpl implements CPathService {
 					final Map<String, Metadata> metadataMap = new HashMap<String, Metadata>();
 					for(Metadata met : metadataDAO.getAllMetadata())
 						if(!met.getType().isWarehouseData())
-							metadataMap.put(met.uri(), met);
+							metadataMap.put(met.getUri(), met);
 					
 					// find all Provenance instances and filter them out
 					final List<SearchHit> hits = result.getSearchHit(); //empty
@@ -729,22 +667,6 @@ class CPathServiceImpl implements CPathService {
 		}
 			
 		return result;
-	}
-
-	
-	@Override
-	public ServiceResponse getPathwayDataInfo(String metadataIdentifier) {
-		Collection<PathwayData> pathwayData = metadataDAO.getPathwayDataByIdentifier(metadataIdentifier);
-		Map<Integer, String> map = new TreeMap<Integer, String>();
-		for(PathwayData pd : pathwayData)
-			map.put(pd.getId(), pd.getFilename() 
-				+ " (" + pd.getIdentifier() 
-				+ "; version: " + pd.getVersion() 
-				+ "; passed: " + pd.getValid() + ")");
-		
-		DataResponse ret = new DataResponse();
-		ret.setData(map);
-		return ret;
 	}
 		
 }

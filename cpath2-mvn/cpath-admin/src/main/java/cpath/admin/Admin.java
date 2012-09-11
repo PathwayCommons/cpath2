@@ -34,6 +34,11 @@ import cpath.importer.Fetcher;
 import cpath.importer.Merger;
 import cpath.importer.Premerge;
 import cpath.importer.internal.*;
+import cpath.service.CPathService;
+import cpath.service.OutputFormat;
+import cpath.service.jaxb.DataResponse;
+import cpath.service.jaxb.ErrorResponse;
+import cpath.service.jaxb.ServiceResponse;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
@@ -87,7 +92,8 @@ public class Admin implements Runnable {
 		MERGE("-merge"),
 		EXPORT("-export"),
 		EXPORT_VALIDATION("-export-validation"),
-        CREATE_BLACKLIST("-create-blacklist")
+        CREATE_BLACKLIST("-create-blacklist"),
+        CONVERT("-convert")
 		;
 
         // string ref for readable name
@@ -195,6 +201,13 @@ public class Admin implements Runnable {
                 this.command = COMMAND.CREATE_BLACKLIST;
                 this.commandParameters = new String[] {args[1], args[2]};
             }
+        } else if(args[0].equals(COMMAND.CONVERT.toString())) {
+			if (args.length != 4) {
+				validArgs = false;
+			} else {
+				this.command = COMMAND.CONVERT;
+				this.commandParameters = new String[] {args[1], args[2], args[3]};
+			} 
         } else {
             validArgs = false;
         }
@@ -308,17 +321,21 @@ public class Admin implements Runnable {
             case EXPORT_VALIDATION:
             	String outf = commandParameters[1];
             	os = new FileOutputStream(outf);
-            	Integer pk = Integer.valueOf(commandParameters[0]);
             	if(outf.endsWith(".html"))
-            		exportValidation(pk, os, true);
+            		exportValidation(commandParameters[0], os, true);
             	else
-            		exportValidation(pk, os, false);
+            		exportValidation(commandParameters[0], os, false);
             	
 				break;
             case CREATE_BLACKLIST:
                 os = new FileOutputStream(commandParameters[1]);
                 createBlacklist(commandParameters[0], os);
                 
+                break;
+            case CONVERT:
+                String biopax = readFileAsString(commandParameters[0]);
+                OutputStream fos = new FileOutputStream(commandParameters[1]);
+                convert(fos, biopax, commandParameters[2]);
                 break;
             }
         }
@@ -644,40 +661,60 @@ public class Admin implements Runnable {
 	
 	
 	/**
-	 * Exports from the PathwayData entity bean and 
+	 * Exports from the PathwayData entity(-ies) and 
 	 * writes the BioPAX validation report (as XML or HTML).
 	 * 
-	 * @param pk pathway_id in the cpath2 pathwayData table
+	 * @param key an existing cpath2 pathwayData.pathway_id or metadata.identifier (provider).
 	 * @param out output stream
 	 * @param asHtml write as HTML report (transform from the XML)
 	 *
 	 */
-	public static void exportValidation(final Integer pk, final OutputStream out, boolean asHtml) 
+	static void exportValidation(final String key, final OutputStream out, boolean asHtml) 
 		throws IOException 
 	{
-		// get validationResults XML from PathwayData beans
-		PathwayData pathwayData = getPathwayData(pk);
-		if (pathwayData != null) {
-			//FYI: use SET GLOBAL max_allowed_packet = 256000000; for the MySQL instance; otherwise it returns null for large enough reports!
-			byte[] xmlResult = pathwayData.getValidationResults();
-			if(!asHtml) {
-				out.write(xmlResult);
-				out.flush();
+		ApplicationContext context =
+	            new ClassPathXmlApplicationContext(new String [] { 	
+	            	"classpath:applicationContext-whouseDAO.xml"});
+	    MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
+	    
+	    ValidatorResponse report = null;
+		Integer pk = null;
+		try {
+			pk = Integer.valueOf(key);
+		} catch (NumberFormatException e) {}
+		
+		if(pk != null) {
+			PathwayData pathwayData = getPathwayData(pk);
+			if (pathwayData != null) {
+				if(LOG.isInfoEnabled())
+		    		LOG.info("Getting validation report for pathway_id: " + pk 
+		    			+ " (" + pathwayData.getIdentifier() + ") "
+		    			+ "...");
+				report = metadataDAO.getValidationReport(pk);
 			} else {
-				try { //converting to the HTML page
-					//the xslt stylesheet exists in the biopax-validator-core module
-					Source xsl = new StreamSource((new DefaultResourceLoader())
-							.getResource("classpath:html-result.xsl").getInputStream());
-					ValidatorResponse resp = (ValidatorResponse) BiopaxValidatorUtils.getUnmarshaller()
-							.unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
-					Writer writer = new OutputStreamWriter(out, "UTF-8");
-					BiopaxValidatorUtils.write(resp, writer, xsl); 
-					writer.flush();
-				} catch (Exception e) {
-					LOG.error(e);
-				}
+				if(LOG.isInfoEnabled())
+		    		LOG.info("Getting validation report: pathway_id: " + pk + " does not exist.");
+				System.err.println("Getting validation report for pathway_id=" + pk + ": not found.");
+				return;
 			}
+		} else {
+			if(LOG.isInfoEnabled())
+	    		LOG.info("Getting validation report for data source: " + key + "...");
+			report = metadataDAO.getValidationReport(key);
 		}
+
+    	if(report == null) {
+    		System.err.println("No validation report found or error.");
+    	} else {
+    		OutputStreamWriter writer = new OutputStreamWriter(out, "UTF-8");
+    		Source xsl = (asHtml) 
+    			? new StreamSource((new DefaultResourceLoader())
+    					.getResource("classpath:html-result.xsl").getInputStream())
+    			: null;
+
+			BiopaxValidatorUtils.write(report, writer, xsl); 
+    		writer.flush();
+    	}
 	}	
 
 	
@@ -706,10 +743,11 @@ public class Admin implements Runnable {
 			" (dbName - any supported by PaxtoolsDAO DB; " +
 			"pathway_id is a PK of the pathwayData table - to extract 'premerged' data)" + NEWLINE);
 		toReturn.append(COMMAND.EXPORT_VALIDATION.toString() 
-			+ " <pathway_id> <output_file> (pathway_id - same as above; output_file " +
-			"will contain the Validator Response XML unless '.html' file extension is used, " +
+			+ " <provider>|<pathway_id> <output_file[.xml|.html]> (<provider> - metadata identifier or <pathway_id> - see above; "
+			+ "output_file will contain the Validator Response XML unless '.html' file extension is used, " +
 			"in wich case the XML is there auto-transformed to offline HTML+Javascript content)" + NEWLINE);
         toReturn.append(COMMAND.CREATE_BLACKLIST.toString() + " <databaseName> <outfile>"  + NEWLINE);
+		toReturn.append(COMMAND.CONVERT.toString() + " <biopax.owl> <output-file> <output format>" + NEWLINE);
 
 		return toReturn.toString();
 	}
@@ -778,4 +816,59 @@ public class Admin implements Runnable {
 		System.exit(0);
     }
     
+    
+    /**
+     * Creates a CPathService instance using
+     * the "main" cpath2 DAO.
+     * 
+     * @return
+     */
+	private static CPathService getService() {
+		ApplicationContext context =
+            new ClassPathXmlApplicationContext(new String [] { 	
+            		"classpath:applicationContext-cpathDAO.xml",
+        			"classpath:applicationContext-whouseDAO.xml",
+        			"classpath:applicationContext-cpathService.xml"});
+		return (CPathService) context.getBean("service");
+	}
+	
+	
+	/**
+	 * 
+	 * 
+	 * @param output
+	 * @param csvIdsString
+	 * @throws IOException 
+	 */
+	private static void convert(OutputStream output, String biopax, String outputFormat) 
+			throws IOException 
+	{
+		ServiceResponse res = getService().convert(biopax, OutputFormat.valueOf(outputFormat));
+		if (!(res instanceof ErrorResponse)) {
+    		System.err.println(res.toString());
+    	} else if (!res.isEmpty()) {
+    		String owl = (String) ((DataResponse)res).getData();
+    		output.write(owl.getBytes("UTF-8"));
+    		output.flush();
+    	}
+	}
+	
+    /**
+     * Converts incoming biopax file to string.
+     */
+    private static String readFileAsString(String filePath) throws java.io.IOException {
+
+        StringBuilder fileData = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new FileReader(filePath));
+        char[] buf = new char[1024];
+        int numRead=0;
+        while ((numRead=reader.read(buf)) != -1) {
+            String readData = String.valueOf(buf, 0, numRead);
+            fileData.append(readData);
+            buf = new char[1024];
+        }
+        reader.close();
+        return fileData.toString();
+    }
+	
 }
