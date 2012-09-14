@@ -35,6 +35,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
+import org.biopax.paxtools.io.sbgn.L3ToSBGNPDConverter;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
@@ -42,6 +43,7 @@ import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.query.algorithm.Direction;
+import org.sbgn.bindings.Sbgn;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
@@ -65,6 +67,10 @@ import static cpath.service.Status.*;
 
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
 
 /**
  * Service tier class - to uniformly access 
@@ -199,6 +205,10 @@ class CPathServiceImpl implements CPathService {
 				break;
             case BIOPAX: // default handler
             	convertToBiopaxOWL(dataResponse);
+                break;
+            case SBGN:
+                convertToSBGN(dataResponse);
+                break;
 			default:
                 // do nothing
 			}
@@ -245,9 +255,29 @@ class CPathServiceImpl implements CPathService {
 			return NO_RESULTS_FOUND.errorResponse(
 				"No URIs were specified for the query!");
 		}
-	}	
+	}
 
-	
+    /**
+     * Converts service results that contain
+     * a not empty BioPAX Model to SBGN format.
+     *
+     * @param resp ServiceResponse
+     * @throws IOException
+     */
+
+    void convertToSBGN(DataResponse resp) throws IOException, JAXBException {
+        Model m = (Model) resp.getData();
+        Sbgn sbgn = L3ToSBGNPDConverter.createSBGN(m);
+        sbgn.toString();
+
+        JAXBContext context = JAXBContext.newInstance("org.sbgn.bindings");
+        Marshaller marshaller = context.createMarshaller();
+        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
+        OutputStream stream = new ByteArrayOutputStream();
+        marshaller.marshal(sbgn, stream);
+        resp.setData(stream.toString());
+    }
+
 	/**
 	 * Converts service results that contain 
 	 * a not empty BioPAX Model to GSEA format.
@@ -486,7 +516,7 @@ class CPathServiceImpl implements CPathService {
 	 * 
 	 * 1) One may want simply collect pathways which are not 
 	 * values of any BioPAX property (i.e., a "graph-theoretic" approach, 
-	 * used by {@link ModelUtils#getRootElements(Class)} method) and by 
+	 * used by {@link ModelUtils#getRootElements(org.biopax.paxtools.model.Model, Class)} method) and by
 	 * BioPAX normalizer, which (in the cPath2 "premerge" stage),
 	 * for all Entities, generates relationship xrefs to their "parent" pathways.
 	 * 
@@ -516,7 +546,8 @@ class CPathServiceImpl implements CPathService {
 					while(!searchResponse.isEmpty()) {
 						log.info("Retrieving top pathways search results, page #" + page);
 						//remove pathways having 'pathway' index field not empty, 
-						//i.e., keep only pathways where 'pathway' index field is empty (no controlledOf and pathwayComponentOf values)
+						//i.e., keep only pathways where 'pathway' index field
+						// is empty (no controlledOf and pathwayComponentOf values)
 						for(SearchHit h : searchResponse.getSearchHit()) {
 							if(h.getPathway().isEmpty())
 								hits.add(h); //add to topPathways list
