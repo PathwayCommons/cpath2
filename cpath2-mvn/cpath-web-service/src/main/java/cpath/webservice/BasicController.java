@@ -53,11 +53,7 @@ public abstract class BasicController {
 
 	/**
 	 * Writes an error response body from the error bean.
-	 * @param writer
-	 * @param response TODO
-	 * @param bindingResult
-	 * 
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	protected void errorResponse(ErrorResponse error, 
 			Writer writer, HttpServletResponse response) throws IOException {
