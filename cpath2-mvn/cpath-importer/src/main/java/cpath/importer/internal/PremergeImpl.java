@@ -324,8 +324,8 @@ final class PremergeImpl implements Premerge {
 		NormalizerOptions normalizerOptions = new NormalizerOptions();
 		// to infer/autofix biopax properties
 		normalizerOptions.setFixDisplayName(true); // important
-		normalizerOptions.setInferPropertyDataSource(true); // important
-		normalizerOptions.setInferPropertyOrganism(true); // important
+		normalizerOptions.setInferPropertyDataSource(false); // not important since we started generating Provenance from Metadata
+		normalizerOptions.setInferPropertyOrganism(true); // important (for filtering by organism)
 		// disable auto-generated xrefs (not required by cpath2, since 2012/01)
 		normalizerOptions.setGenerateRelatioshipToOrganismXrefs(false); //was to filter search results...
 		normalizerOptions.setGenerateRelatioshipToPathwayXrefs(false);
@@ -422,6 +422,7 @@ final class PremergeImpl implements Premerge {
 		
 		// set for all entities
 		for (Entity ent : model.getObjects(Entity.class)) {
+			ent.getDataSource().clear(); //remove other DSs (not normalized)
 			ent.addDataSource(pro);
 		}
 	}

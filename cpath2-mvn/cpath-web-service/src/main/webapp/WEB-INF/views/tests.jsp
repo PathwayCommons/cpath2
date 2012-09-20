@@ -17,7 +17,7 @@
 </head>
 <body>
 
-<h2><fmt:message key="cpath2.welcome"/> <fmt:message key="cpath2.provider"/> QUnit Tests!</h2>
+<h2><fmt:message key="cpath2.provider"/> QUnit Tests!</h2>
 
 <!-- basic html - just to show the test results -->
  <h2 id="qunit-banner"></h2>

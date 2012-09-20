@@ -3,7 +3,7 @@
   <parent>
     <artifactId>parent</artifactId>
     <groupId>pathwaycommons.cpath</groupId>
-    <version>3.2.3-SNAPSHOT</version>
+    <version>3.2.4-SNAPSHOT</version>
   </parent>
   
   <artifactId>distribution</artifactId>
@@ -11,38 +11,12 @@
   <name>CPath2 Distribution</name>
   <description>CPath2 Distribution</description>
   
-  <dependencies>
-  	<dependency>
-  		<groupId>pathwaycommons.cpath</groupId>
-  		<artifactId>cpath-admin</artifactId>
-  		<version>${project.version}</version>
-  		<classifier>jar-with-dependencies</classifier>
-  	</dependency>
-  	<dependency>
-  		<groupId>pathwaycommons.cpath</groupId>
-  		<artifactId>cpath-web-service</artifactId>
-  		<version>${project.version}</version>
-  		<type>war</type>
-  	</dependency>
-  	<dependency>
-  		<groupId>pathwaycommons.cpath</groupId>
-  		<artifactId>cpath-service</artifactId>
-  		<version>${project.version}</version>
-  		<classifier>jar-with-dependencies</classifier>
-  	</dependency>
-  	<dependency>
-  		<groupId>pathwaycommons.cpath</groupId>
-  		<artifactId>cpath-webdocs</artifactId>
-  		<version>${project.version}</version>
-  		<type>war</type>
-  	</dependency>
-  </dependencies>
-  
-  <build>
+
+	<build>
 		<plugins>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.2-beta-5</version>
+				<version>2.3</version>
 				<configuration>
 					<descriptors>
 						<descriptor>${basedir}/src/main/assembly/assembly.xml</descriptor>
@@ -50,7 +24,22 @@
 				</configuration>
 			</plugin>
 		</plugins>
-  </build>
+	</build>
   
   
+	<dependencies>
+		<dependency>
+			<groupId>pathwaycommons.cpath</groupId>
+			<artifactId>cpath-admin</artifactId>
+			<version>${project.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>pathwaycommons.cpath</groupId>
+			<artifactId>cpath-web-service</artifactId>
+			<version>${project.version}</version>
+			<scope>runtime</scope>
+			<type>war</type>
+		</dependency>
+	</dependencies>
 </project>

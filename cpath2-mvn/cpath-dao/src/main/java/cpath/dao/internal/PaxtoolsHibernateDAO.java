@@ -336,7 +336,8 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 		SearchResponse searchResponse = new SearchResponse();
 
 		if (log.isInfoEnabled())
-			log.info("search: " + query + ", filterBy: " + filterByType
+			log.info("search: " + query + ", page: " + page 
+					+ ", filterBy: " + filterByType
 					+ "; extra filters: ds in (" + Arrays.toString(dsources)
 					+ "), org. in (" + Arrays.toString(organisms) + ")");
 
@@ -753,13 +754,23 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	 * the property path apply, although the values set 
 	 * can be empty.
 	 * TODO may be to return a row for each query URI regardless path apply or not; e.g., use 'valid' attr...
+	 * 
+	 * @throws 
 	 */
 	@Transactional(readOnly = true)
 	@Override
 	public TraverseResponse traverse(String propertyPath, String... uris) {
 		TraverseResponse resp = new TraverseResponse();
 		resp.setPropertyPath(propertyPath);
-		PathAccessor pathAccessor = new PathAccessor(propertyPath, getLevel());
+		
+		PathAccessor pathAccessor = null; 
+		try {
+			pathAccessor = new PathAccessor(propertyPath, getLevel());
+		} catch (Exception e) {
+			throw new IllegalArgumentException("Failed to parse " +
+				"the BioPAX property path: " + propertyPath, e);
+		}
+		
 		for(String uri : uris) {
 			BioPAXElement bpe = getByID(uri);
 			try {

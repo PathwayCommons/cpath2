@@ -28,7 +28,6 @@
 package cpath.importer.internal;
 
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.io.*;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
@@ -71,11 +70,12 @@ final class FetcherImpl implements Fetcher
     private static final int METADATA_VERSION_INDEX = 2;
     private static final int METADATA_RELEASE_DATE_INDEX = 3;
     private static final int METADATA_DATA_URL_INDEX = 4;
-    private static final int METADATA_ICON_URL_INDEX = 5;
-    private static final int METADATA_TYPE_INDEX = 6;
-	private static final int METADATA_CLEANER_CLASS_NAME_INDEX = 7;
-	private static final int METADATA_CONVERTER_CLASS_NAME_INDEX = 8;
-    private static final int NUMBER_METADATA_ITEMS = 9;
+    private static final int METADATA_HOMEPAGE_URL_INDEX = 5;
+    private static final int METADATA_ICON_URL_INDEX = 6;
+    private static final int METADATA_TYPE_INDEX = 7;
+	private static final int METADATA_CLEANER_CLASS_NAME_INDEX = 8;
+	private static final int METADATA_CONVERTER_CLASS_NAME_INDEX = 9;
+    private static final int NUMBER_METADATA_ITEMS = 10;
 	
 
 	// used in unzip method
@@ -215,10 +215,10 @@ final class FetcherImpl implements Fetcher
                 		version, 
                 		tokens[METADATA_RELEASE_DATE_INDEX],
                         tokens[METADATA_DATA_URL_INDEX], 
-                        iconData, 
-                        metadataType,
-						tokens[METADATA_CLEANER_CLASS_NAME_INDEX],
-						tokens[METADATA_CONVERTER_CLASS_NAME_INDEX]);
+                        tokens[METADATA_HOMEPAGE_URL_INDEX], 
+                        iconData,
+						metadataType,
+						tokens[METADATA_CLEANER_CLASS_NAME_INDEX], tokens[METADATA_CONVERTER_CLASS_NAME_INDEX]);
                 
                 
                 
@@ -588,7 +588,7 @@ final class FetcherImpl implements Fetcher
 	@Override
 	public void fetchData(Metadata metadata) throws IOException {
 		
-		File dir = new File(metadata.localDataDir());
+		File dir = new File(CPathSettings.localTmpDataDir());
 		if(!dir.exists()) {
 			dir.mkdir();
 		}

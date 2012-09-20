@@ -7,9 +7,9 @@
 	<groupId>pathwaycommons.cpath</groupId>
 	<artifactId>parent</artifactId>
 	<packaging>pom</packaging>
-	<name>CPathSquared</name>
-	<version>3.2.3-SNAPSHOT</version>
-	<description>A server software suite for aggregating, storing, and querying biological pathways based on BioPAX L3 standard.</description>
+	<name>CPath2 Parent</name>
+	<version>3.2.4-SNAPSHOT</version>
+	<description>CPath2 Multi-mudule project, a server software suite for aggregating, storing, and querying biological pathways based on BioPAX L3 standard.</description>
 	<url>http://code.google.com/p/pathway-commons/</url>
 	
 	<issueManagement>
@@ -72,7 +72,6 @@
 	</licenses>
 	
 	<modules>
-		<module>cpath-webdocs</module>
 		<module>cpath-dao</module>
 		<module>cpath-admin</module>
 		<module>cpath-importer</module>

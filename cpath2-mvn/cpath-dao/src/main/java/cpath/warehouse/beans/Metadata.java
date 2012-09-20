@@ -56,6 +56,8 @@ public final class Metadata {
     private String description;
 	@Column(nullable=false)
     private String urlToData;
+	@Column(nullable=false)
+    private String urlToHomepage;
 	@Lob
 	@Column(nullable=false)
     private byte[] icon;
@@ -78,15 +80,15 @@ public final class Metadata {
      * @param version Float
      * @param description String
      * @param urlToData String
+     * @param urlToHomepage String
      * @param icon byte[]
+     * @param cleanerClassname String
+     * @param converterClassname String
      * @param isPSI Boolean
-	 * @param cleanerClassname String
-	 * @param converterClassname String
-	 * 
-	 * @throws IllegalArgumentException
+     * @throws IllegalArgumentException
      */
     public Metadata(final String identifier, final String name, final String version, final String description, final String urlToData,
-					final byte[] icon, final TYPE type, final String cleanerClassname, final String converterClassname) {
+					String urlToHomepage, final byte[] icon, final TYPE type, final String cleanerClassname, final String converterClassname) {
 
     	//set/validate all parameters
     	setIdentifier(identifier); 
@@ -94,6 +96,7 @@ public final class Metadata {
         setVersion(version);
         setDescription(description);
         setUrlToData(urlToData);
+        setUrlToHomepage(urlToHomepage);
         setIcon(icon);
         setType(type);
         setCleanerClassname(cleanerClassname);
@@ -179,7 +182,15 @@ public final class Metadata {
 	}
     public String getUrlToData() { return urlToData; }
 
-	public void setIcon(byte[] icon) {
+	public void setUrlToHomepage(String urlToHomepage) {
+        if (urlToHomepage == null) {
+            throw new IllegalArgumentException("URL to Homepage must not be null");
+        }
+        this.urlToHomepage = urlToHomepage;
+	}
+    public String getUrlToHomepage() { return urlToHomepage; } 
+    
+    public void setIcon(byte[] icon) {
         if (icon == null) {
             throw new IllegalArgumentException("icon must not be null");
         }
@@ -224,27 +235,13 @@ public final class Metadata {
     
     
 	/**
-	 * Gets the full local directory path 
-	 * where this type of data will be
-	 * temporarily fetched, stored,
-	 * re-used.
-	 * 
-	 * @return
-	 */
-    @Transient
-	public String localDataDir() {
-		return CPathSettings.getHomeDir() 
-			+ File.separator + CPathSettings.DATA_SUBDIR_NAME;
-	}
-    
-	/**
 	 * Gets the full path to the local data file
 	 * 
 	 * @return
 	 */
     @Transient
     public String localDataFile() {
-    	String name = localDataDir() 
+    	String name = CPathSettings.localTmpDataDir() 
     	+ File.separator + identifier + "." + version;
     	
     	// add the file extension, if any, if different from the version...

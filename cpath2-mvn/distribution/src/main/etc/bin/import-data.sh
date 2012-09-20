@@ -19,7 +19,7 @@
 
 echo "CPATH2 DATA IMPORT"
 
-## Execute the following stages using cpath-admin.sh script:
+## Execute the following stages using cpath2.sh script:
 echo "CPATH2_HOME Directory: $CPATH2_HOME"
 
 # get cpath2 properties
@@ -40,7 +40,7 @@ echo "       xml.base=$xmlbase"
 while true; do
 read -p "Create/replace $metadatadb database?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath-admin.sh -create-tables $metadatadb; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -create-tables $metadatadb; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -48,7 +48,7 @@ done
 while true; do
 read -p "Create/replace $maindb database?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath-admin.sh -create-tables $maindb; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -create-tables $maindb; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -61,7 +61,7 @@ case $yn
  while true; do
  read -p "Create/replace $moleculesdb database?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath-admin.sh -create-tables $moleculesdb; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -create-tables $moleculesdb; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -69,7 +69,7 @@ case $yn
  while true; do
  read -p "Create/replace $proteinsdb database?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath-admin.sh -create-tables $proteinsdb; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -create-tables $proteinsdb; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -84,7 +84,7 @@ done
 while true; do
 read -p "Fetch/update metadata using $CPATH2_HOME/metadata.conf?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath-admin.sh -fetch-metadata file://$CPATH2_HOME/metadata.conf; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -fetch-metadata file://$CPATH2_HOME/metadata.conf; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -97,7 +97,7 @@ done
 while true; do
 read -p "Fetch/convert all data?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath-admin.sh -fetch-data --all; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -fetch-data --all; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -107,7 +107,7 @@ done
 while true; do
 read -p "Premerge (convert/validate/normalize) all?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath-admin.sh -premerge; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -premerge; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -117,7 +117,7 @@ done
 while true; do
 read -p "Merge all (incl. invalid pathway data, using --force)?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath-admin.sh -merge --force; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -merge --force; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -128,17 +128,13 @@ done
 while true; do
 read -p "Create "main" full-text index?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath-admin.sh -create-index main; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -create-index; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
 echo "Indexing ended."
 done
 
-## [TODO] Export batch download and summary data 
-# (in $CPATH2_HOME/tmp/: summary, datasource/, datasource/reactome.owl.zip, organism/, 
-# organism/9606.sif.zip, etc... $CPATH2_HOME/tmp/datasource/* will be then exposed by 
-# cPath2 batch download web service)
 
 # 21...
 
@@ -149,6 +145,5 @@ done
 
 # print all commands
 #echo "INFO: all cpath2 commands:"
-#sh $CPATH2_HOME/cpath-admin.sh
-#sh $CPATH2_HOME/cpath-service.sh
+#sh $CPATH2_HOME/cpath2.sh
 

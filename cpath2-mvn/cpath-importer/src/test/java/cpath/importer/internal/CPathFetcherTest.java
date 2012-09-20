@@ -62,10 +62,10 @@ public class CPathFetcherTest {
 				"TEST_UNIPROT", "Proteins Test Data", 
 				"2010.10", "October 03, 2010",  
 				location,
+				"http://www.uniprot.org", 
 				new byte[]{}, 
-				Metadata.TYPE.PROTEIN, 
-				null,
-				"cpath.converter.internal.UniprotConverterImpl");
+				Metadata.TYPE.PROTEIN,
+				null, "cpath.converter.internal.UniprotConverterImpl");
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
 		assertFalse(((Model)model).getObjects(ProteinReference.class).isEmpty());
@@ -80,10 +80,10 @@ public class CPathFetcherTest {
 				"TEST_CHEBI", "ChEBI Test Data", 
 				"2010.10", "October 03, 2010",  
 				location,
+				"http://www.ebi.ac.uk/chebi/", 
 				new byte[]{}, 
 				Metadata.TYPE.SMALL_MOLECULE, 
-				null, 
-				"cpath.converter.internal.ChEBITestConverterImpl");
+				null, "cpath.converter.internal.ChEBITestConverterImpl");
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
 		assertFalse(((Model)model).getObjects(SmallMoleculeReference.class).isEmpty());
@@ -97,10 +97,10 @@ public class CPathFetcherTest {
 				"TEST_MAPPING_TXT", "Test Id Mapping Data", 
 				"2010.10", "October 03, 2010",  
 				"classpath:yeast_id_mapping.txt",
+				"", 
 				new byte[]{}, 
-				Metadata.TYPE.MAPPING, 
-				"",
-				"");
+				Metadata.TYPE.MAPPING,
+				"", "");
 		
 		File f = new File(metadata.localDataFile());
 		if(f.exists()) {
@@ -119,10 +119,11 @@ public class CPathFetcherTest {
 				"TEST_BIOPAX2", "Test Pathway Data 2", 
 				"1", "N/A",  
 				location,
+				"", 
 				new byte[]{}, 
-				Metadata.TYPE.BIOPAX, 
-				null, // no cleaner (same as using "")
-				"" // no converter
+				Metadata.TYPE.BIOPAX, // no cleaner (same as using "")
+				null
+, "" // no converter
 				);
 		
 		fetcher.fetchData(metadata);

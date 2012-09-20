@@ -28,17 +28,18 @@
  **/
 package cpath.admin;
 
+import cpath.config.CPathSettings;
 import cpath.dao.*;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Fetcher;
 import cpath.importer.Merger;
 import cpath.importer.Premerge;
-import cpath.importer.internal.*;
+import cpath.importer.internal.ImportFactory;
 import cpath.service.CPathService;
 import cpath.service.OutputFormat;
-import cpath.service.jaxb.DataResponse;
-import cpath.service.jaxb.ErrorResponse;
-import cpath.service.jaxb.ServiceResponse;
+import cpath.service.OutputFormatConverter;
+import cpath.service.internal.OutputFormatConverterImpl;
+import cpath.service.jaxb.*;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
@@ -51,6 +52,7 @@ import org.biopax.validator.Validator;
 import org.biopax.validator.result.ValidatorResponse;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;
@@ -58,16 +60,22 @@ import org.apache.log4j.PropertyConfigurator;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+
+import com.mchange.util.AssertException;
 
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 
 
 import static cpath.config.CPathSettings.*;
+import static cpath.service.OutputFormat.*;
 
 /**
  * Class which provides command line admin capabilities.
@@ -93,7 +101,8 @@ public class Admin implements Runnable {
 		EXPORT("-export"),
 		EXPORT_VALIDATION("-export-validation"),
         CREATE_BLACKLIST("-create-blacklist"),
-        CONVERT("-convert")
+        CONVERT("-convert"),
+        CREATE_DOWNLOADS("-create-downloads"),
 		;
 
         // string ref for readable name
@@ -106,22 +115,12 @@ public class Admin implements Runnable {
         public String toString() { return command; }
     }
     
-    // INDEX_TYPE enum
-    public static enum INDEX_TYPE {
-        // cpath2 fulltext index types
-    	MAIN,
-    	PROTEINS,
-    	MOLECULES,
-    	METADATA;
-    }
-
     // command, command parameter
     private COMMAND command;
     private String[] commandParameters;
 
 
     public void setCommandParameters(String[] args) {
-		this.commandParameters = args;
         // parse args
         parseArgs(args);
 	}
@@ -137,22 +136,14 @@ public class Admin implements Runnable {
 
         // TODO: use gnu getopt or some variant  
         if(args[0].equals(COMMAND.CREATE_TABLES.toString())) {
-			if (args.length != 2) {
-				validArgs = false;
-			} else {
-				this.command = COMMAND.CREATE_TABLES;
+        	this.command = COMMAND.CREATE_TABLES;
+			if (args.length > 1) {
 				// agrs[1] contains comma-separated db names
 				this.commandParameters = args[1].split(",");
 			} 
         } 
         else if(args[0].equals(COMMAND.CREATE_INDEX.toString())) {
-			if (args.length != 2) {
-				validArgs = false;
-			} else {
-				this.command = COMMAND.CREATE_INDEX;
-				// agrs[1] contains comma-separated db names
-				this.commandParameters = new String[]{args[1].toUpperCase()};
-			} 
+			this.command = COMMAND.CREATE_INDEX;
         } 
         else if (args[0].equals(COMMAND.FETCH_METADATA.toString())) {
 			if (args.length != 2) {
@@ -194,21 +185,25 @@ public class Admin implements Runnable {
 				this.command = COMMAND.EXPORT_VALIDATION;
 				this.commandParameters = new String[] {args[1], args[2]};
 			} 
-        } else if(args[0].equals(COMMAND.CREATE_BLACKLIST.toString())) {
-            if(args.length != 3) {
-                validArgs = false;
-            } else {
-                this.command = COMMAND.CREATE_BLACKLIST;
-                this.commandParameters = new String[] {args[1], args[2]};
-            }
-        } else if(args[0].equals(COMMAND.CONVERT.toString())) {
+        } 
+		else if(args[0].equals(COMMAND.CREATE_BLACKLIST.toString())) {
+            this.command = COMMAND.CREATE_BLACKLIST;
+        } 
+		else if(args[0].equals(COMMAND.CONVERT.toString())) {
 			if (args.length != 4) {
 				validArgs = false;
 			} else {
 				this.command = COMMAND.CONVERT;
 				this.commandParameters = new String[] {args[1], args[2], args[3]};
 			} 
-        } else {
+        } 
+		else if(args[0].equals(COMMAND.CREATE_DOWNLOADS.toString())) {
+        	this.command = COMMAND.CREATE_DOWNLOADS;
+        	if(args.length > 1) { //optional list of taxonomy ids
+        		this.commandParameters = args[1].split(",");
+            } 
+        } 
+		else {
             validArgs = false;
         }
 
@@ -262,40 +257,31 @@ public class Admin implements Runnable {
     public void run() {
         try {
             switch (command) {
+            
             case CREATE_TABLES:
             	if(commandParameters != null) {
             		for(String db : commandParameters) {
             			String dbName = db.trim();
-            			// create db schema and lucene index
             			DataServicesFactoryBean.createSchema(dbName);
             		}
+            	} else { // create all (as specified in the current cpath.properties)
+            		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.METADATA_DB));
+            		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.PROTEINS_DB));
+            		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.MOLECULES_DB));
+            		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.MAIN_DB));
             	}
             	break;
             case CREATE_INDEX:
-            	if(commandParameters != null) {
-            		// re-build the full-text index
-            		// it gets the DB name from the environment variables (set in cpath.properties)
-            		INDEX_TYPE mtype = INDEX_TYPE.valueOf(commandParameters[0]);
-            		ApplicationContext ctx = null;
-            		switch (mtype) {
-                    case MOLECULES:
-                    	//DataServicesFactoryBean.rebuildMoleculesIndex();
-                    	ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-whouseMolecules.xml");
-                		((PaxtoolsDAO)ctx.getBean("moleculesDAO")).index();
-                    	break;
-                    case PROTEINS:
-                		//DataServicesFactoryBean.rebuildProteinsIndex();
-                    	ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-whouseProteins.xml");
-                		((PaxtoolsDAO)ctx.getBean("proteinsDAO")).index();
-                    	break;
-                    case MAIN :
-                       	//DataServicesFactoryBean.rebuildMainIndex();
-                    	ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
-                		((PaxtoolsDAO)ctx.getBean("paxtoolsDAO")).index();
-                       	
-                    	break;
-            		}
-            	}
+           		// re-build the full-text index
+           		// it gets the DB name from the environment variables (set in cpath.properties)
+         		ApplicationContext ctx = null;
+                ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
+             	((PaxtoolsDAO)ctx.getBean("paxtoolsDAO")).index();
+// Currently, we do not full-text search in the Warehouse
+//              ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-whouseMolecules.xml");
+//           	((PaxtoolsDAO)ctx.getBean("moleculesDAO")).index();
+//              ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-whouseProteins.xml");
+//             	((PaxtoolsDAO)ctx.getBean("proteinsDAO")).index();
             	break;
             case FETCH_METADATA:
                 fetchMetadata(commandParameters[0]);
@@ -328,14 +314,17 @@ public class Admin implements Runnable {
             	
 				break;
             case CREATE_BLACKLIST:
-                os = new FileOutputStream(commandParameters[1]);
-                createBlacklist(commandParameters[0], os);
-                
+                createBlacklist();
                 break;
             case CONVERT:
-                String biopax = readFileAsString(commandParameters[0]);
                 OutputStream fos = new FileOutputStream(commandParameters[1]);
-                convert(fos, biopax, commandParameters[2]);
+                OutputFormat outputFormat = OutputFormat.valueOf(commandParameters[2]);
+                Resource blacklist = new DefaultResourceLoader().getResource("");
+                OutputFormatConverter cnv = new OutputFormatConverterImpl(blacklist);
+                convert(commandParameters[0], outputFormat, fos, cnv);
+                break;
+            case CREATE_DOWNLOADS:
+                createDownloads(commandParameters);
                 break;
             }
         }
@@ -345,16 +334,21 @@ public class Admin implements Runnable {
         }
     }
 
-    /*
+	/*
         Algorithm:
           * Get all SmallMoleculeReferences
           * Calculate the degrees (i.e. num of reactions and num of complexes it is associated with)
           * if it is bigger than the overall threshold and lower than the regulation threshold
           *     add it (and its members/entities/member entities to the list)
      */
-    private void createBlacklist(final String src, OutputStream output) {
-        LOG.debug("Creating blacklist from the database: " + src);
-        PaxtoolsDAO paxtoolsDAO = ImportFactory.buildPaxtoolsHibernateDAO(src);
+    private void createBlacklist() throws IOException {
+    	
+    	final String src = CPathSettings.get(CPath2Property.MAIN_DB);
+        LOG.debug("Creating blacklist from the " +  src + " database.");
+        
+        OutputStream output = new FileOutputStream(CPathSettings.getHomeDir() 
+        	+ File.separator + "blacklist.txt");
+        PaxtoolsDAO paxtoolsDAO = ImportFactory.buildPaxtoolsHibernateDAO(src); //- no indexes (no full-text search) here
 
         paxtoolsDAO.runAnalysis(new Analysis() {
             @Override
@@ -624,8 +618,9 @@ public class Admin implements Runnable {
 		 * it must be a PaxtoolsDAO db name (i.e,, a premerge or cpath2 main one)
 		 */
 		if(pk == null) {
-			PaxtoolsDAO pemergeDAO = ImportFactory.buildPaxtoolsHibernateDAO(src); // yes, it also works for the the main db
-			pemergeDAO.exportModel(output, uris);
+			PaxtoolsDAO dao = ImportFactory.buildPaxtoolsHibernateDAO(src); 
+			// - this instantiation method works with any cpath2 db, but full-text search will be disabled here (we do not need it now)
+			dao.exportModel(output, uris);
 		} else {
 			// get pathwayData (bean)
 			PathwayData pdata = getPathwayData(pk);
@@ -731,23 +726,23 @@ public class Admin implements Runnable {
 		StringBuilder toReturn = new StringBuilder();
 		toReturn.append("Usage: <-command_name> <command_args...>" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
-		toReturn.append(COMMAND.CREATE_TABLES.toString() + " <table1,table2,..>" + NEWLINE);
-		toReturn.append(COMMAND.CREATE_INDEX.toString() + 
-			" <type> (types are: proteins, molecules, main)" + NEWLINE);
+		// data import (instance creation) pipeline :
+		toReturn.append(COMMAND.CREATE_TABLES.toString() + " [<table1,table2,..>]" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_DATA.toString() + " <metadataId or --all>" + NEWLINE);
 		toReturn.append(COMMAND.PREMERGE.toString() + " [<metadataId> [<version>]] [--usedatabases]" + NEWLINE);
 		toReturn.append(COMMAND.MERGE.toString() + " [<metadataId> [<version>]] [--force]"+ NEWLINE);
-		toReturn.append(COMMAND.EXPORT.toString() 
-			+ " <dbName or pathway_id> <uri,uri,.. or --all> <outfile>" +
-			" (dbName - any supported by PaxtoolsDAO DB; " +
-			"pathway_id is a PK of the pathwayData table - to extract 'premerged' data)" + NEWLINE);
+		toReturn.append(COMMAND.CREATE_INDEX.toString() + NEWLINE);
+        toReturn.append(COMMAND.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
+        toReturn.append(COMMAND.CREATE_DOWNLOADS.toString() + "[<taxonomy_id,taxonomy_id,..>]"  + NEWLINE);        
+        // other useful (utility) commands
+		toReturn.append(COMMAND.EXPORT.toString() + " <dbName or pathway_id> <uri,uri,.. or --all> <outfile>" +
+			" (dbName - any supported by PaxtoolsDAO DB; pathway_id is a PK of the pathwayData table - to extract 'premerged' data)" + NEWLINE);
 		toReturn.append(COMMAND.EXPORT_VALIDATION.toString() 
 			+ " <provider>|<pathway_id> <output_file[.xml|.html]> (<provider> - metadata identifier or <pathway_id> - see above; "
 			+ "output_file will contain the Validator Response XML unless '.html' file extension is used, " +
 			"in wich case the XML is there auto-transformed to offline HTML+Javascript content)" + NEWLINE);
-        toReturn.append(COMMAND.CREATE_BLACKLIST.toString() + " <databaseName> <outfile>"  + NEWLINE);
-		toReturn.append(COMMAND.CONVERT.toString() + " <biopax.owl> <output-file> <output format>" + NEWLINE);
+		toReturn.append(COMMAND.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format>" + NEWLINE);
 
 		return toReturn.toString();
 	}
@@ -805,6 +800,13 @@ public class Admin implements Runnable {
     			LOG.warn("Default Charset, " + Charset.defaultCharset() 
     				+ " (is NOT 'UTF-8'...)");
     	
+    	// create the TMP dir inside the home dir if it does not exist yet
+		File dir = new File(CPathSettings.localTmpDataDir());
+		if(!dir.exists()) {
+			dir.mkdir();
+		}
+    	
+    	
 		Admin admin = new Admin();
 		try {
 			admin.setCommandParameters(args);
@@ -815,60 +817,140 @@ public class Admin implements Runnable {
 		// required because MySQL Statement Cancellation Timer thread is still running
 		System.exit(0);
     }
-    
-    
-    /**
-     * Creates a CPathService instance using
-     * the "main" cpath2 DAO.
-     * 
-     * @return
-     */
-	private static CPathService getService() {
-		ApplicationContext context =
-            new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:applicationContext-cpathDAO.xml",
-        			"classpath:applicationContext-whouseDAO.xml",
-        			"classpath:applicationContext-cpathService.xml"});
-		return (CPathService) context.getBean("service");
-	}
+    	
 	
-	
-	/**
-	 * 
-	 * 
-	 * @param output
-	 * @param csvIdsString
-	 * @throws IOException 
-	 */
-	private static void convert(OutputStream output, String biopax, String outputFormat) 
-			throws IOException 
+	private static void convert(String biopaxFile, OutputFormat outputFormat, 
+			OutputStream output, OutputFormatConverter formatConverter) throws IOException 
 	{
-		ServiceResponse res = getService().convert(biopax, OutputFormat.valueOf(outputFormat));
-		if (!(res instanceof ErrorResponse)) {
+		InputStream is = null;
+		if(biopaxFile.endsWith(".gz"))
+			is = new GZIPInputStream(new FileInputStream(biopaxFile));
+		else 
+			is = new FileInputStream(biopaxFile);
+		
+		ServiceResponse res = formatConverter.convert(is, outputFormat);
+		
+		if (res instanceof ErrorResponse) {
     		System.err.println(res.toString());
-    	} else if (!res.isEmpty()) {
-    		String owl = (String) ((DataResponse)res).getData();
-    		output.write(owl.getBytes("UTF-8"));
+    	} else {
+    		String data = (String) ((DataResponse)res).getData();
+    		output.write(data.getBytes("UTF-8"));
     		output.flush();
     	}
 	}
 	
-    /**
-     * Converts incoming biopax file to string.
-     */
-    private static String readFileAsString(String filePath) throws java.io.IOException {
+    
+    private static void createDownloads(String[] taxonomyIds) 
+    		throws IOException
+    {	
+    	// create the TMP dir inside the home dir if it does not exist yet
+		File f = new File(CPathSettings.getHomeDir() + File.separator + DOWNLOADS_SUBDIR);
+		if(!f.exists()) 
+			f.mkdir();
+    	
+		ApplicationContext context = new ClassPathXmlApplicationContext(
+				new String [] {
+					"classpath:applicationContext-cpathDAO.xml",
+	            	"classpath:applicationContext-whouseDAO.xml",
+	            	"classpath:applicationContext-cpathService.xml"
+	            }
+			);
+		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
+		OutputFormatConverter formatConverter = (OutputFormatConverter) context.getBean("outputFormatConverter");
+		CPathService service = (CPathService) context.getBean("service");
+		
+    	// 1) export everything
+		createArchives("all", dao, formatConverter, null, null);
+    	
+    	// 2) export by datasource
+        LOG.info("create-downloads: preparing 'by datasource' archives...");
+        for(SearchHit ds : service.dataSources().getSearchHit())
+        	createArchives(ds.getName().toLowerCase(), dao, formatConverter, new String[]{ds.getName()}, null);
+    	 	
+    	// 3) export by organism
+        LOG.info("create-downloads: preparing data 'by organism' archives...");
+        for(String org : taxonomyIds)
+        	createArchives(org.toLowerCase(), dao, formatConverter, null, new String[]{org});
+	}
 
-        StringBuilder fileData = new StringBuilder();
-        BufferedReader reader = new BufferedReader(new FileReader(filePath));
-        char[] buf = new char[1024];
-        int numRead=0;
-        while ((numRead=reader.read(buf)) != -1) {
-            String readData = String.valueOf(buf, 0, numRead);
-            fileData.append(readData);
-            buf = new char[1024];
-        }
-        reader.close();
-        return fileData.toString();
+
+	private static Collection<String> findAllUris(PaxtoolsDAO db, 
+    		Class<? extends BioPAXElement> type, String[] ds, String[] org) 
+    {
+    	Collection<String> uris = new ArrayList<String>();
+    	
+    	// using PaxtoolsDAO (no service-tier cache) instead CPathService here
+    	SearchResponse resp = db.search("*", 0, type, ds, org);
+    	int page = 0;
+		while(!resp.isEmpty()) {
+			for(SearchHit h : resp.getSearchHit())
+				uris.add(h.getUri());
+			//next page
+			resp = db.search("*", ++page, type, ds, org);
+		}
+    	
+    	return uris;
     }
+    
+
+    private static void createArchives(String filePrefix, PaxtoolsDAO dao, 
+    	OutputFormatConverter formatConverter, String[] datasources, String[] organisms) 
+    	throws IOException 
+    {
+    	// grab the BioPAX first -
+        final String biopaxDataArchive = CPathSettings.getHomeDir() + File.separator 
+        		+ DOWNLOADS_SUBDIR + File.separator 
+        		+ CPathSettings.CPATH_DB_PREFIX + filePrefix + ".BIOPAX.gz";
+        
+        // check file exists
+        if(!(new File(biopaxDataArchive)).exists()) {	
+        	Collection<String> uris = new HashSet<String>();
+        	
+        	if(organisms != null || datasources != null) {
+        		//find all pathways and interactions only (all child elements will be then exported too)
+        		uris.addAll(findAllUris(dao, Pathway.class, datasources, organisms));
+        		uris.addAll(findAllUris(dao, Interaction.class, datasources, organisms));
+        	}
+        	
+        	// save entire data, compressed, in several formats
+        	LOG.info("create-downloads: preparing '" + 	biopaxDataArchive);
+        	//it is important to use dao.exportModel(out) and not service.fetchBiopaxModel(),
+        	// because the latter w/o args will return empty result, whereas the former - ALL data.
+        	dao.exportModel(new GZIPOutputStream(
+        		new FileOutputStream(biopaxDataArchive)), uris.toArray(new String[]{}));
+        } else
+        	LOG.info(biopaxDataArchive + " already exists; skip creating it " +
+        		"again (delete existing files if you want to start over)");
+
+        //quickly test whether there will be pathways (to then skip exporting to GSEA)
+        SearchResponse resp = dao.search("*", 0, Pathway.class, datasources, organisms);
+        boolean hasPathways = (resp.getNumHits() > 0);
+        OutputFormat[] formats = (hasPathways) 
+        	? new OutputFormat[]{EXTENDED_BINARY_SIF, GSEA, SBGN} 
+        	: new OutputFormat[]{EXTENDED_BINARY_SIF, SBGN};
+        
+		for(OutputFormat outf : formats)
+			createArchive(biopaxDataArchive, outf, filePrefix, formatConverter);
+	}
 	
+	private static void createArchive(String biopaxDataArchive, OutputFormat format, 
+			String prefix, OutputFormatConverter formatConverter) throws IOException 
+	{	
+		if(format == OutputFormat.BIOPAX)
+			throw new AssertException("Converting BioPAX to BioPAX");
+	
+		String archiveName = CPathSettings.getHomeDir() + File.separator 
+				+ CPathSettings.DOWNLOADS_SUBDIR + File.separator 
+				+ CPathSettings.CPATH_DB_PREFIX + prefix + "." + format.toString() + ".gz";
+		LOG.info("create-downloads: generating " + archiveName);
+		
+		
+        if(!(new File(archiveName)).exists()) {
+        	GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(archiveName));
+        	convert(biopaxDataArchive, format, zos, formatConverter);
+        	IOUtils.closeQuietly(zos);
+        } else
+        	LOG.info(archiveName + " exists; skip creating it " +
+            	"(delete if you want to start over)");
+	}
 }

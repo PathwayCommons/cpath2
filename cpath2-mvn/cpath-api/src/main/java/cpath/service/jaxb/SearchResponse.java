@@ -81,4 +81,17 @@ public class SearchResponse extends ServiceResponse {
 		this.maxHitsPerPage = maxHitsPerPage;
 	}
 	
+
+	/**
+	 * Calculates the total number of search result
+	 * pages using current  {@link #getMaxHitsPerPage()} and {@link #numHits}
+	 * 
+	 * @return no. pages or 0 (if there're no hits yet, or it's a wrong state)
+	 */
+	public int numPages() {
+		if(numHits > 0 && maxHitsPerPage > 0)
+			return (numHits-1)/maxHitsPerPage + 1;
+		else 
+			return 0;
+	}
 }
