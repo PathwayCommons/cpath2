@@ -53,6 +53,7 @@ import cpath.warehouse.beans.Metadata.TYPE;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import static org.junit.Assert.*;
 
@@ -75,7 +76,7 @@ public class CPathServiceTest {
 		File biopaxFile = new File(CPathServiceTest.class.getResource("/test.owl").getFile());		
 		try {
 			dao.importModel(biopaxFile);
-			mdao.importMetadata(new Metadata("test", "Reactome", "00", "Foo", "", new byte[]{}, TYPE.BIOPAX, "", ""));
+			mdao.importMetadata(new Metadata("test", "Reactome", "00", "Foo", "", "", new byte[]{}, TYPE.BIOPAX, "", ""));
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
@@ -88,15 +89,8 @@ public class CPathServiceTest {
 	@Test
 	public void testFetchBiopaxModel() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		CPathServiceImpl service = new CPathServiceImpl(dao, null);
-		ServiceResponse res = service.fetchBiopaxModel("http://www.biopax.org/examples/myExample#Protein_A");
-		assertNotNull(res);
-		assertFalse(res instanceof ErrorResponse);
-		assertTrue(res instanceof DataResponse);
-		assertNotNull(((DataResponse)res).getData());
-		assertFalse(res.isEmpty());
-		
-		Model m = (Model) ((DataResponse)res).getData();
+		CPathServiceImpl service = new CPathServiceImpl(dao, null, null, null);		
+		Model m = service.fetchBiopaxModel("http://www.biopax.org/examples/myExample#Protein_A");
 		assertNotNull(m);
 		BioPAXElement e = m.getByID("http://www.biopax.org/examples/myExample#Protein_A");
 		assertTrue(e instanceof Protein);
@@ -107,7 +101,7 @@ public class CPathServiceTest {
 	@Test
 	public void testFetchBiopax() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		CPathService service = new CPathServiceImpl(dao, null);
+		CPathService service = new CPathServiceImpl(dao, null, new OutputFormatConverterImpl(null), null);
 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P46880");
 		assertNotNull(res);
 		assertFalse(res instanceof ErrorResponse);
@@ -123,7 +117,7 @@ public class CPathServiceTest {
 	@Test
 	public void testFetchAsSIF() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		CPathService service = new CPathServiceImpl(dao, null);
+		CPathService service = new CPathServiceImpl(dao, null, new OutputFormatConverterImpl(null), null);
 		ServiceResponse res = service.fetch(
 				OutputFormat.BINARY_SIF,
 				"http://www.biopax.org/examples/myExample#biochemReaction1");
@@ -142,10 +136,10 @@ public class CPathServiceTest {
 	
 	
 	@Test
-	public void testDataAndBioSources() {
+	public void testDataAndBioSources() throws IOException {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
 		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
-		CPathService service = new CPathServiceImpl(dao, mdao);
+		CPathService service = new CPathServiceImpl(dao, mdao, null, null);
 		
 		assertFalse(service.bioSources().isEmpty());
 		assertFalse(service.dataSources().isEmpty());

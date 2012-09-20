@@ -107,7 +107,7 @@ public class HelpController {
 	
     @RequestMapping("/")
     public String getHello() {
-    	return "redirect:help";
+    	return "redirect:home.html";
     }
 	
 	 

@@ -27,13 +27,13 @@
 
 package cpath.service;
 
+
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.algorithm.Direction;
 
 import cpath.dao.PaxtoolsDAO;
-import cpath.service.jaxb.DataResponse;
-import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 
@@ -141,19 +141,6 @@ public interface CPathService {
 	//---------------------------------------------------------------------------------------------|
 
 	/**
-	 * For the given biopax, converts to the desired output format.
-     *
-     * @param biopax
-	 * @param format
-	 * 
-	 * 
-	 * 
-	 * @return
-	 */
-	ServiceResponse convert(String biopax, OutputFormat format);
-	
-	
-	/**
 	 * Collects BioPAX property values at the end of the property path
 	 * applied to each BioPAX object in the list (defined by URIs), 
 	 * where applicable.
@@ -198,9 +185,9 @@ public interface CPathService {
 	 * Creates a stand-alone sub-model from the BioPAX elements (matched by URIs).
 	 * 
 	 * @param uris
-	 * @return wrapped as {@link DataResponse} or {@link ErrorResponse} if - null, error, or empty.
+	 * @return
 	 */
-	ServiceResponse fetchBiopaxModel(String... uris);
+	Model fetchBiopaxModel(String... uris);
 	
 
 }

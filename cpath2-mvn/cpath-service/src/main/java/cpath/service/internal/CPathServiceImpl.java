@@ -34,16 +34,12 @@ import java.util.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.ModelUtils;
-import org.biopax.paxtools.io.gsea.GSEAConverter;
-import org.biopax.paxtools.io.sbgn.L3ToSBGNPDConverter;
-import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.sbgn.bindings.Sbgn;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
@@ -55,7 +51,6 @@ import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
 import cpath.service.analyses.PathsFromToAnalysis;
-import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
@@ -63,14 +58,11 @@ import cpath.service.jaxb.ServiceResponse;
 import cpath.service.jaxb.TraverseResponse;
 import cpath.service.CPathService;
 import cpath.service.OutputFormat;
+import cpath.service.OutputFormatConverter;
 import static cpath.service.Status.*;
 
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 
 /**
  * Service tier class - to uniformly access 
@@ -99,6 +91,8 @@ class CPathServiceImpl implements CPathService {
   	private volatile SearchResponse dataSources; 
   	private volatile SearchResponse bioSources;
   	private volatile SearchResponse topPathways;
+  	
+  	private OutputFormatConverter formatConverter;
 
     // this is probably required for the ehcache to work
 	public CPathServiceImpl() {
@@ -106,13 +100,32 @@ class CPathServiceImpl implements CPathService {
 	
     /**
      * Constructor.
+     * @throws IOException 
      */
-	CPathServiceImpl(PaxtoolsDAO mainDAO, MetadataDAO metadataDAO) 
+	public CPathServiceImpl(PaxtoolsDAO mainDAO, MetadataDAO metadataDAO, 
+		OutputFormatConverter formatConverter, Resource blacklistResource) throws IOException 
 	{
 		this.mainDAO = mainDAO;
 		this.metadataDAO = metadataDAO;
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		simpleIO.mergeDuplicates(true);
+		this.formatConverter = formatConverter;
+		
+		if(blacklistResource != null && blacklistResource.exists()) {
+			Scanner scanner = new Scanner(blacklistResource.getFile());
+			blacklist = new HashSet<String>();
+			while(scanner.hasNextLine())
+				blacklist.add(scanner.nextLine().trim());
+			scanner.close();
+			if(log.isInfoEnabled())
+				log.info("Successfully loaded " + blacklist.size()
+				+ " URIs for a (graph queries) 'blacklist' resource: " 
+				+ blacklistResource.getDescription());
+		} else {
+			log.warn("'blacklist' file is not used (" + 
+				((blacklistResource == null) ? "not provided" 
+					: blacklistResource.getDescription()) + ")");
+		}
 	}
 	
 	
@@ -153,85 +166,18 @@ class CPathServiceImpl implements CPathService {
 	@Cacheable(cacheName = "elementByIdCache")
 	@Override
 	public ServiceResponse fetch(OutputFormat format, String... uris) {
-        ServiceResponse res = fetchBiopaxModel(uris);
-        if(!(res instanceof ErrorResponse)) 
-        	convert(res, format);
-        return res;
+		if (uris.length == 0)
+			return NO_RESULTS_FOUND.errorResponse(
+					"No URIs were specified for the query!");
+		
+		Model m = fetchBiopaxModel(uris);
+		
+		if(m != null && !m.getObjects().isEmpty())
+			return formatConverter.convert(m, format);  
+		else
+			return NO_RESULTS_FOUND.errorResponse(
+					"No results for: " + Arrays.toString(uris));
     }
-
-	/*
-     * (non-Javadoc)
-	 * @see cpath.service.CPathService#convert(..)
-	 */
-    @Override
-    public ServiceResponse convert(String biopax, OutputFormat format) {
-        // put incoming biopax into map
-    	DataResponse dataResponse = new DataResponse();
-        Model model = simpleIO.convertFromOWL(new ByteArrayInputStream(biopax.getBytes()));
-        if(!model.getObjects().isEmpty()) {
-            dataResponse.setData(model);
-            convert(dataResponse, format);
-            return dataResponse;
-        } else {
-        	return NO_RESULTS_FOUND.errorResponse("Empty BioPAX Model!");
-        }
-	}
-
-    
-    /*
-     * Function used by both convert(String, OutputFormat)
-     * and fetch(OutputFormat, String... uris).
-     */
-    ServiceResponse convert(ServiceResponse serviceResponse, OutputFormat format) 
-    {
-		if(serviceResponse instanceof ErrorResponse) {
-			return serviceResponse; //unchanged
-		} else if(serviceResponse.isEmpty()) {
-			return NO_RESULTS_FOUND.errorResponse("Empty BioPAX Model returned!");
-		}
-
-		// otherwise, do convert (it's a DataResponse)
-		DataResponse dataResponse = (DataResponse) serviceResponse;
-    	try {
-			switch (format) {
-			case BINARY_SIF:
-				convertToBinarySIF(dataResponse, false);
-				break;
-			case EXTENDED_BINARY_SIF:
-				convertToBinarySIF(dataResponse, true);
-				break;
-			case GSEA:
-				convertToGSEA(dataResponse, "uniprot");
-				break;
-            case BIOPAX: // default handler
-            	convertToBiopaxOWL(dataResponse);
-                break;
-            case SBGN:
-                convertToSBGN(dataResponse);
-                break;
-			default:
-                // do nothing
-			}
-			
-			return serviceResponse;
-		}
-        catch (Exception e) {
-        	return INTERNAL_ERROR.errorResponse(e);
-		}
-    }
-	
-    /**
-     * Replace the Model object contained in the service bean 
-     * with its OWL serialization (text data)
-     * 
-     * @param serviceResponse
-     */
-	void convertToBiopaxOWL(DataResponse serviceResponse) {
-		Model m = (Model) serviceResponse.getData();
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		simpleIO.convertToOWL(m, baos);
-		serviceResponse.setData(baos.toString());
-	}
 
 
 	/*
@@ -239,101 +185,9 @@ class CPathServiceImpl implements CPathService {
 	 * @see cpath.service.CPathService#fetchBiopaxModel(java.lang.String[])
 	 */
 	@Override
-	public ServiceResponse fetchBiopaxModel(String... uris) {
-		if (uris.length > 0) {	
-			// extract a sub-model
-			Model m = mainDAO.getValidSubModel(Arrays.asList(uris));
-			if(m != null && !m.getObjects().isEmpty()) {
-				DataResponse dataResponse = new DataResponse();
-				dataResponse.setData(m);
-				return dataResponse;
-			} else {
-				return NO_RESULTS_FOUND.errorResponse(
-					"No results for: " + Arrays.toString(uris));
-			}
-		} else {
-			return NO_RESULTS_FOUND.errorResponse(
-				"No URIs were specified for the query!");
-		}
-	}
-
-    /**
-     * Converts service results that contain
-     * a not empty BioPAX Model to SBGN format.
-     *
-     * @param resp ServiceResponse
-     * @throws IOException
-     */
-
-    void convertToSBGN(DataResponse resp) throws IOException, JAXBException {
-        Model m = (Model) resp.getData();
-        Sbgn sbgn = L3ToSBGNPDConverter.createSBGN(m);
-        sbgn.toString();
-
-        JAXBContext context = JAXBContext.newInstance("org.sbgn.bindings");
-        Marshaller marshaller = context.createMarshaller();
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-        OutputStream stream = new ByteArrayOutputStream();
-        marshaller.marshal(sbgn, stream);
-        resp.setData(stream.toString());
-    }
-
-	/**
-	 * Converts service results that contain 
-	 * a not empty BioPAX Model to GSEA format.
-	 * 
-     * @param resp ServiceResponse
-	 * @param outputIdType output identifiers type (db name)
-	 * @return
-	 * @throws IOException 
-	 */
-	void convertToGSEA(DataResponse resp, 
-		String outputIdType) throws IOException 
-	{	
-		// convert, replace DATA
-		Model m = (Model) resp.getData();
-		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true);
-		OutputStream stream = new ByteArrayOutputStream();
-		gseaConverter.writeToGSEA(m, stream);
-		resp.setData(stream.toString());
-	}
-
-	/**
-	 * Converts a not empty BioPAX Model (contained in the service bean) 
-	 * to SIF data format.
-	 * 
-	 * TODO 'rules' parameter is currently ignored (requires conversion 
-	 * from strings to the rules, e.g., using enum. BinaryInteractionRule from cpath-web-service)
-	 * 
-     * @param resp ServiceResponse
-     * @param extended if true, call SIFNX else SIF
-	 * @param rules (optional) the names of SIF rules to apply
-	 * @return
-	 * @throws IOException 
-	 */
-	void convertToBinarySIF(DataResponse resp, 
-		boolean extended, String... rules) throws IOException 
-	{
-		// convert, replace DATA value in the map to return
-		// TODO match 'rules' parameter to rule types (currently, it uses all)
-		Model m = (Model) resp.getData();
-		SimpleInteractionConverter sic = getSimpleInteractionConverter(m);
-		OutputStream edgeStream = new ByteArrayOutputStream();
-		if (extended) {
-			OutputStream nodeStream = new ByteArrayOutputStream();
-			sic.writeInteractionsInSIFNX(
-					m, edgeStream, nodeStream,
-					Arrays.asList("EntityReference/displayName", "EntityReference/xref:UnificationXref", "EntityReference/xref:RelationshipXref"),
-					Arrays.asList("Interaction/dataSource/displayName", "Interaction/xref:PublicationXref"), 
-					true);
-			String edgeColumns = "PARTICIPANT_A\tINTERACTION_TYPE\tPARTICIPANT_B\tINTERACTION_DATA_SOURCE\tINTERACTION_PUBMED_ID\n";
-			String nodeColumns = "PARTICIPANT\tPARTICIPANT_TYPE\tPARTICIPANT_NAME\tUNIFICATION_XREF\tRELATIONSHIP_XREF\n";
-			resp.setData(edgeColumns + removeDuplicateBinaryInteractions(edgeStream) + "\n" + nodeColumns + nodeStream.toString());
-		} else {
-			sic.writeInteractionsInSIF(m, edgeStream);
-			resp.setData(removeDuplicateBinaryInteractions(edgeStream));
-		}
-
+	public Model fetchBiopaxModel(String... uris) {
+		// extract a sub-model
+		return mainDAO.getValidSubModel(Arrays.asList(uris));
 	}
 
 	
@@ -354,13 +208,9 @@ class CPathServiceImpl implements CPathService {
 			if(m == null || m.getObjects().isEmpty())
 				return NO_RESULTS_FOUND.errorResponse("Graph query " +
 					"returned empty BioPAX model (" 
-						+ analysis.getClass().getSimpleName() + ")");
-			
-			DataResponse resp = new DataResponse();
-			resp.setData(m);
-			convert(resp, format);
-			
-			return resp;
+						+ analysis.getClass().getSimpleName() + ")");	
+			else
+				return formatConverter.convert(m, format);
 		} catch (Exception e) {
 			log.error("runAnalysis failed. ", e);
 			return INTERNAL_ERROR.errorResponse(e);
@@ -416,86 +266,6 @@ class CPathServiceImpl implements CPathService {
 	}
 
 	//---------------------------------------------------------------------------------------------|
-
-    /**
-     * Given paxtools model, returns as string
-     *
-     * @param model Model
-     * @return String
-     */
-	String exportToOWL(Model model) {
-
-		if (model == null) {
-			return null;
-        }
-		
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		simpleIO.convertToOWL(model, out);
-
-		return out.toString();
-	}
-
-    /**
-     * Returns proper simple interaction converter based on level
-     * of model. We don't have to be l2 compatible, but it doesn't hurt.
-     *
-     * @param model Model
-     * @return SimpleInteractionConverter
-     */
-    SimpleInteractionConverter getSimpleInteractionConverter(Model model) {
-        // Currently we don't have any options
-        // But I will just leave it here for the sake
-        // of API interface and future use
-        Map options = new HashMap();
-
-        if (model.getLevel() == BioPAXLevel.L2) {
-
-            return new SimpleInteractionConverter(
-                options,
-                blacklist,
-				new org.biopax.paxtools.io.sif.level2.ComponentRule(),
-				new org.biopax.paxtools.io.sif.level2.ConsecutiveCatalysisRule(),
-				new org.biopax.paxtools.io.sif.level2.ControlRule(),
-				new org.biopax.paxtools.io.sif.level2.ControlsTogetherRule(),
-				new org.biopax.paxtools.io.sif.level2.ParticipatesRule());
-        }
-        else if (model.getLevel() == BioPAXLevel.L3) {
-            return new SimpleInteractionConverter(
-                options,
-                blacklist,
-				new org.biopax.paxtools.io.sif.level3.ComponentRule(),
-				new org.biopax.paxtools.io.sif.level3.ConsecutiveCatalysisRule(),
-				new org.biopax.paxtools.io.sif.level3.ControlRule(),
-				new org.biopax.paxtools.io.sif.level3.ControlsTogetherRule(),
-				new org.biopax.paxtools.io.sif.level3.ParticipatesRule()
-				);
-        }
-
-        // should not make it here
-        return null;
-    }
-    
-	/**
-	 * Remove duplicate binary interactions from SIF/SIFNX converter output
-	 *
-	 * @param edgeStream OutputStream from converter
-	 * @return String
-	 */
-	private String removeDuplicateBinaryInteractions(OutputStream edgeStream) {
-
-		StringBuffer toReturn = new StringBuffer();
-		HashSet<String> interactions = new HashSet<String>();
-		for (String interaction : edgeStream.toString().split("\n")) {
-			interactions.add(interaction);
-		}
-		Iterator iterator = interactions.iterator();
-		while (iterator.hasNext()) {
-			toReturn.append(iterator.next() + "\n");
-		}
-		
-		return toReturn.toString();
-	}
-
 	
 	@Cacheable(cacheName = "traverseCache")
 	@Override
@@ -504,8 +274,13 @@ class CPathServiceImpl implements CPathService {
 			// get results from the DAO
 			TraverseResponse results = mainDAO.traverse(propertyPath, sourceUris);
 			return results;
+		} catch (IllegalArgumentException e) {
+			log.error("Failed to init path accessor: ", e);
+			ErrorResponse err = BAD_REQUEST.errorResponse(e);
+			err.setErrorDetails(e.getMessage()); //easy message (removes stack trace)
+			return err;
 		} catch (Exception e) {
-			log.error("Failed. ", e);
+			log.fatal("Failed. ", e);
 			return INTERNAL_ERROR.errorResponse(e);
 		}
 	}
@@ -572,38 +347,13 @@ class CPathServiceImpl implements CPathService {
 		return result;
 	}
 
-	/**
-	 * A special setter for the blacklist property
-	 * (to be used by Spring)
-	 * 
-	 * @param blacklistResource
-	 * @throws IOException
-	 */
-    public void setBlacklistLocation(Resource blacklistResource) throws IOException {
-		if(blacklistResource.exists()) {
-			Scanner scanner = new Scanner(blacklistResource.getFile());
-			blacklist = new HashSet<String>();
-			while(scanner.hasNextLine())
-				blacklist.add(scanner.nextLine().trim());
-			scanner.close();
-			if(log.isInfoEnabled())
-				log.info("Successfully loaded " + blacklist.size()
-				+ " URIs for a (graph queries) 'blacklist' resource: " 
-				+ blacklistResource.getDescription());
-		} else {
-			log.warn(blacklistResource.getDescription() + 
-				" does not exists (a 'blacklist' file)!");
-		}
-    }
 
-    // blacklist property standard getter/setter pair
 	public Set<String> getBlacklist() {
 		return blacklist;
 	}
 	public void setBlacklist(Set<String> blacklist) {
 		this.blacklist = blacklist;
 	}
-
 
 	/**
 	 * Note:
@@ -699,5 +449,5 @@ class CPathServiceImpl implements CPathService {
 			
 		return result;
 	}
-		
+
 }

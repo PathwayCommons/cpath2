@@ -1,5 +1,5 @@
 $(document).ready(function() {
-    getDatasources();
+	getDatasources();
 	getCommandParameterDetails("help/formats", "output_parameter");
     getCommandParameterDetails("help/kinds", "graph_parameter");
     getCommandParameterDetails("help/directions", "direction_parameter");
@@ -13,14 +13,13 @@ $(document).ready(function() {
 // @param helpWSPath - path to web service call
 // @param id - the id of the list ('ul') in the DOM
 function getCommandParameterDetails(helpWSPath, id) {
-    // get some var values from jsp page
-    var base = $('#web_service_url').text();
-    
+	// get some var values from jsp page
+	var base = $('#cpath2_endpoint_url').text();
     // setup content element and append header
     $('#' + id).empty();
     //$("." + class_name).append('<ul style="margin-bottom: 1px;">');
-    // interate over results (as json) from web service call
-    $.getJSON(base + "/" + helpWSPath, function(help) {
+    // iterate over results (as json) from web service call
+    $.getJSON(base + helpWSPath, function(help) {
             $.each(help.members, function(idx, member) {
                     if (helpWSPath.indexOf("organism") != -1 
                     		|| helpWSPath.indexOf("kind") != -1 
@@ -38,13 +37,13 @@ function getCommandParameterDetails(helpWSPath, id) {
 }
 
 function getDatasources() {
-    var base = $('#web_service_url').text();
-    
+	// get some var values from jsp page
+	var base = $('#cpath2_endpoint_url').text();
     // call the ws and interate over JSON results
-    $.getJSON(base + "/metadata", function(datasources) {
+    $.getJSON(base + "metadata", function(datasources) {
         $('#datasources').empty();
         $('#datasources').append('<tr><th>Logo</th><th>Names (filter by)</th>'
-        	+ '<th>Data Type</th><th>Pathways</th><th>Interactions</th><th>Molecules (states)</th></tr>'); 
+        	+ '<th>Data Type and Version</th><th>Pathways</th><th>Interactions</th><th>Molecules (states)</th></tr>'); 
         $('#warehouse').empty();
         $('#warehouse').append("<tr>");
                 
@@ -54,13 +53,14 @@ function getDatasources() {
         		var tdid = ds.uri.replace(/:/g,"_");
         		
         		$('#datasources').append('<tr>' 
-           		+ '<td class="datasource_logo_table_cell"><img class="data_source_logo" src="data:image/gif;base64,' 
-           		+ ds.icon + '" title="URI=' + ds.uri + '; ' + ds.description + '"></img></td>'
+           		+ '<td class="datasource_logo_table_cell"><a href="'+ds.urlToHomepage+'">'
+           		+ '<img class="data_source_logo" src="data:image/gif;base64,' 
+           		+ ds.icon + '" title="URI=' + ds.uri + '"></img></a></td>'
            		+ '<td class="datasource_logo_table_cell" style="white-space: nowrap">' + ds.name.split(";").join("<br/>")
-           		+ '</td><td class="datasource_logo_table_cell">' + ds.type 
-           		+ '</td><td id="' + tdid + '_pw" class="datasource_logo_table_cell">'
-           		+ '</td><td id="' + tdid + '_it" class="datasource_logo_table_cell">'
-           		+ '</td><td id="' + tdid + '_pe" class="datasource_logo_table_cell">'
+           		+ '</td><td class="datasource_logo_table_cell" style="width: 35%"><em>' + ds.type + '</em><br/>' + ds.description
+           		+ '</td><td id="' + tdid + '_pw" class="datasource_num_table_cell">'
+           		+ '</td><td id="' + tdid + '_it" class="datasource_num_table_cell">'
+           		+ '</td><td id="' + tdid + '_pe" class="datasource_num_table_cell">'
            		+ '</td></tr>');
         		
         		// get counts (async.)
@@ -75,8 +75,9 @@ function getDatasources() {
         		});
         	} else {
         		$('#warehouse').append('<td class="datasource_logo_table_cell">'
+        		+ '<a href="'+ds.urlToHomepage+'">'
         		+ '<img class="data_source_logo" src="data:image/gif;base64,' + ds.icon 
-                + '" title="' + ds.description + '"></img></td>');
+                + '" title="' + ds.description + '">' + ds.description + '</img></a></td>');
         	}
         });
         
@@ -86,9 +87,9 @@ function getDatasources() {
            		+ '<td class="datasource_logo_table_cell">Total:</td>'
            		+ '<td class="datasource_logo_table_cell" style="white-space: nowrap">'
            		+ '</td><td class="datasource_logo_table_cell">'
-           		+ '</td><td id="_pw" class="datasource_logo_table_cell">'
-           		+ '</td><td id="_it" class="datasource_logo_table_cell">'
-           		+ '</td><td id="_pe" class="datasource_logo_table_cell">'
+           		+ '</td><td id="_pw" class="datasource_num_table_cell">'
+           		+ '</td><td id="_it" class="datasource_num_table_cell">'
+           		+ '</td><td id="_pe" class="datasource_num_table_cell">'
            		+ '</td></tr>');
     });
     

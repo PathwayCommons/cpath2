@@ -3,15 +3,18 @@ package cpath.webservice;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
 import javax.imageio.ImageIO;
 
 //import cpath.service.jaxb.*;
+import cpath.config.CPathSettings;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.validator.result.ValidatorResponse;
@@ -137,5 +140,32 @@ public class MetadataController extends BasicController
     	
     	return service.getAllMetadata();
     }
-
+    
+    
+    @RequestMapping("/downloads")
+    public String redirectToDownloadsHtmlPage() {
+    	return "redirect:downloads.html";
+    }
+    
+    @RequestMapping(value = "/downloads.html")
+    public String downloads(Model model) {
+    	// get the sorted list of files to be shared on the web
+    	String path = CPathSettings.getHomeDir() 
+    		+ File.separator + CPathSettings.DOWNLOADS_SUBDIR; 
+    	File[] list = new File(path).listFiles();
+    	
+    	Map<String,String> files = new TreeMap<String,String>();
+    	
+    	for(int i = 0 ; i < list.length ; i++) {
+    		File f = list[i];
+    		String name = f.getName();
+    		long size = f.length();
+    		if(!name.startsWith("."))
+    			files.put(name, FileUtils.byteCountToDisplaySize(size));
+    	}
+    	model.addAttribute("files", files.entrySet());
+		
+		return "downloads";
+    }
+    
 }

@@ -70,6 +70,7 @@ class MetadataHibernateDAO  implements MetadataDAO {
 			existing.setName(metadata.getName());
 			existing.setDescription(metadata.getDescription());
 			existing.setUrlToData(metadata.getUrlToData());
+			existing.setUrlToHomepage(metadata.getUrlToHomepage());
 			existing.setIcon(metadata.getIcon());
 			existing.setType(metadata.getType());
 			session.update(existing);

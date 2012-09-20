@@ -17,6 +17,13 @@
     
 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
+	<!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources/ directory -->
+	<mvc:resources mapping="/resources/**" location="/resources/" />
+	
+	<!-- Access to the cpath2 data exported into different formats and organized by species and data sources -->	
+	<mvc:resources mapping="/downloads/**" location="file:${CPATH2_HOME}/downloads/" />
+	
+
 	<bean id="log4jInitialization" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
 	  <property name="targetClass"
 				value="org.springframework.util.Log4jConfigurer" />
@@ -26,7 +33,17 @@
 		  <value>file:${CPATH2_HOME}/log4j.properties</value>
 		</list>
 	  </property>
-	</bean>        
+	</bean>
+	
+	<!-- Application Message Bundle -->
+	<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>file:${CPATH2_HOME}/webdoc</value>
+			</list>
+		</property>
+		<property name="cacheSeconds" value="0" />
+	</bean>  
         
 	<bean id="searchController" class="cpath.webservice.SearchController">
 		<constructor-arg ref="service"/>

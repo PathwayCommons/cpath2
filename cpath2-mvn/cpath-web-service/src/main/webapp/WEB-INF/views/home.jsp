@@ -1,7 +1,9 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page language="java" contentType="text/html; charset=UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
    <meta http-equiv="content-type" content="text/html;charset=utf-8" />
@@ -22,7 +24,7 @@
 
 <body>
 
-<span id="web_service_url" style="display:none"><fmt:message key="cpath2.url"/></span>
+<span id="cpath2_endpoint_url" style="display:none"><c:url value="/"/></span>
   
 <!-- place the content -->
   <div id="container">
@@ -68,13 +70,14 @@ annotation and curation of computational models.)</p>
 	  <h3><a name="enco"></a>Note about URL-encoding (a browser issue):</h3>
 	  <p>All HTTP GET query arguments, including URIs, must be URL-encoded, 
 and this is, fortunately, done automatically when a standard web client 
-library is used; whereas, web browsers do not do this properly. Normally, 
-there is another layer, a web app or page, which takes care of building and 
-sending proper GET or POST HTTP requests to the server, and users are not 
-supposed to type a web service query with parameters in the browser's address 
-line: although browsers can replace spaces with "%20" (or '+'), they will 
-not encode. e.g., "?uri=urn:biopax:RelationshipXref:HGNC_HGNC%3A13101" 
-query (- to replace % with %25!) Also, URIs are case-sensitive.</p>
+library is used; but web browsers do not always do this for you. Usually, 
+a web app takes care of building and sending proper GET or POST HTTP 
+requests to the server, and users are not supposed to type a web service 
+query and manually encode parameters in the browser's address line. 
+For example, a web browser can replace spaces with "%20" (or '+'), but it will 
+not encode '%' in "?uri=urn:biopax:RelationshipXref:HGNC_HGNC%3A13101", so
+you must replace % with %25; same thing - about the sharp/pound sign ('#'- %23).
+Also, URIs are case-sensitive.</p>
 
 	  <!-- command bodies -->	 
 	 <ol> 	  
@@ -118,17 +121,17 @@ Total no. pages can be also calculated as<br/> INT[(numHits-1)/numHitsPerPage+1]
 	  <h3>Example Queries:</h3>
 	  <br/>
 	  <ol>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search.xml?q=Q06609">search for "Q06609" keyword, no filters, return XML result</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=xrefid:Q06609">specific search for "Q06609" in the 'xrefid' index field, no filters, return XML (default)</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search.json?q=Q06609">search for "Q06609" keyword, no filters, return JSON result</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search.json?q=Q06609&type=pathway">search for Pathways containing "Q06609" (search all fields), return JSON</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=brca2&type=proteinreference&organism=homo%20sapiens&datasource=pid">search for ProteinReference containing "brca2" (case-insensitive) keyword (in any field), filter by organism (human) and datasource (NCI_Nature actually)</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=brc*&type=control&organism=9606&datasource=reactome">search for Control interactions matching "brca*" (wildcard, case-insensitive, in any field), originated from Reactome, Human</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=a*&page=3">use of pagination: get the forth page (page=3) hits</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=+binding%20NOT%20transcription*&type=control&page=0">search for Control interactions having something to do with "binding" but not "transcription" (gets the first page hits)</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=pathway:immune&type=conversion">search for Conversion interactions that are direct or indirect participants of a "immune" (part of its name) pathway (cool!)</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=*&type=pathway&datasource=panther">find all Panther pathways</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/search?q=*&type=biosource">all organisms (i.e., including BioSource objects referenced from evidence/infection data there)</a></li>
+	  <li><a href="search.xml?q=Q06609">search for "Q06609" keyword, no filters, return XML result</a></li>
+	  <li><a href="search?q=xrefid:Q06609">specific search for "Q06609" in the 'xrefid' index field, no filters, return XML (default)</a></li>
+	  <li><a href="search.json?q=Q06609">search for "Q06609" keyword, no filters, return JSON result</a></li>
+	  <li><a href="search.json?q=Q06609&type=pathway">search for Pathways containing "Q06609" (search all fields), return JSON</a></li>
+	  <li><a href="search?q=brca2&type=proteinreference&organism=homo%20sapiens&datasource=pid">search for ProteinReference containing "brca2" (case-insensitive) keyword (in any field), filter by organism (human) and datasource (NCI_Nature actually)</a></li>
+	  <li><a href="search?q=brc*&type=control&organism=9606&datasource=reactome">search for Control interactions matching "brca*" (wildcard, case-insensitive, in any field), originated from Reactome, Human</a></li>
+	  <li><a href="search?q=a*&page=3">use of pagination: get the forth page (page=3) hits</a></li>
+	  <li><a href="search?q=+binding%20NOT%20transcription*&type=control&page=0">search for Control interactions having something to do with "binding" but not "transcription" (gets the first page hits)</a></li>
+	  <li><a href="search?q=pathway:immune&type=conversion">search for Conversion interactions that are direct or indirect participants of a "immune" (part of its name) pathway (cool!)</a></li>
+	  <li><a href="search?q=*&type=pathway&datasource=panther">find all Panther pathways</a></li>
+	  <li><a href="search?q=*&type=biosource">all organisms (i.e., including BioSource objects referenced from evidence/infection data there)</a></li>
 	  </ol>
 	  </li>
 	  <!-- get command -->
@@ -154,13 +157,13 @@ output formats are relevant for this web service.  For example, it would not
 make sense to request BINARY_SIF output when the given URI points to a protein.
 	  <h3>Example Queries:</h3><br/>
 	  <ol>
-	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http://identifiers.org/uniprot/Q06609">
+	  <li><a href="get?uri=http://identifiers.org/uniprot/Q06609">
 		get a self-consistent BioPAX sub-model using URI=http://identifiers.org/uniprot/Q06609 (the ProteinReference and dependent objects)</a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http://www.reactome.org/biopax/48887Pathway137">
+	  <li><a href="get?uri=http://www.reactome.org/biopax/48887Pathway137">
 		get a Reactome "pathway" (normalized by the server, as usual)</a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/get?uri=http://pid.nci.nih.gov/biopaxpid_74716&format=BINARY_SIF">
+	  <li><a href="get?uri=http://pid.nci.nih.gov/biopaxpid_74716&format=BINARY_SIF">
 		get the NCI-Nature Curated BMP signaling pathway in SIF format</a>
 	  </li>
 	 </ol>
@@ -205,13 +208,13 @@ output when the given URI points to a protein.
 	  <h3>Example Queries:</h3>
 Neighborhood of Col5a1 (O88207, CO5A1_MOUSE): <br/>
 	  <ol>
-	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=http://www.reactome.org/biopax/48892Protein3105&kind=neighborhood">
+	  <li><a href="graph?source=http://www.reactome.org/biopax/48892Protein3105&kind=neighborhood">
 		from the protein's state</a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=http://identifiers.org/uniprot/O88207&kind=neighborhood">
+	  <li><a href="graph?source=http://identifiers.org/uniprot/O88207&kind=neighborhood">
 		from the protein reference, i.e., all its states (found in the BioPAX network(s) on the server)</a>
 	  </li>
-	  	  <li><a href="<fmt:message key="cpath2.url"/>/graph?source=http://identifiers.org/uniprot/O88207&kind=neighborhood&format=EXTENDED_BINARY_SIF">
+	  	  <li><a href="graph?source=http://identifiers.org/uniprot/O88207&kind=neighborhood&format=EXTENDED_BINARY_SIF">
 		from the same protein reference but using a different output format</a>
 	  </li>
 	  </ol>
@@ -232,22 +235,22 @@ path expression. This command has two parameters.
 	  XML result that follows the <a href="resources/schemas/cpath2.xsd.txt">Search Response XML Schema</a>&nbsp;(TraverseResponse type; pagination is disabled: returns all values at once)<br/>
 	  <h3>Example Queries:</h3>
 	  <ol>
-	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/organism/displayName">
+	  <li><a href="traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/organism/displayName">
 		for a URI (of a ProteinReference), get the organism's display name</a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://identifiers.org/uniprot/Q06609&path=ProteinReference/organism">
+	  <li><a href="traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://identifiers.org/uniprot/Q06609&path=ProteinReference/organism">
 		for each URI, get the organism (URI)</a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/Q06609&path=ProteinReference/entityReferenceOf:Protein/name">
+	  <li><a href="traverse?uri=http://identifiers.org/uniprot/Q06609&path=ProteinReference/entityReferenceOf:Protein/name">
 		get names of all states of RAD51 protein (by its ProteinReference URI, using property path="ProteinReference/entityReferenceOf:Protein/name")</a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/entityReferenceOf:Protein">
+	  <li><a href="traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/entityReferenceOf:Protein">
 		get URIs of states of BRCA1_HUMAN (path="ProteinReference/entityReferenceOf:Protein")</a>
 	  </li>	
-	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://www.reactome.org/biopax/48887Protein2992&uri=http://identifiers.org/taxonomy/9606&path=Named/name">
+	  <li><a href="traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://www.reactome.org/biopax/48887Protein2992&uri=http://identifiers.org/taxonomy/9606&path=Named/name">
 		get names of several different objects (using abstract type 'Named' from Paxtools API)</a>
 	  </li>		  
-	  <li><a href="<fmt:message key="cpath2.url"/>/traverse?uri=http://pid.nci.nih.gov/biopaxpid_74716&path=Pathway/pathwayComponent:Interaction/participant/displayName">
+	  <li><a href="traverse?uri=http://pid.nci.nih.gov/biopaxpid_74716&path=Pathway/pathwayComponent:Interaction/participant/displayName">
 		get BMP pathway participants's names (cool, but be careful and not too much excited!)</a>
 	  </li>	
 	  </ol>	
@@ -266,10 +269,10 @@ Retrieves all "top" pathways (- not exactly in the graph-theoretic sense, but
 	  Search Response XML Schema</a>&nbsp;(SearchResponse type; pagination is disabled: returns all pathways at once)<br/>
 	  <h3>Example Queries:</h3>
 	  <ol>
-	  <li><a href="<fmt:message key="cpath2.url"/>/top_pathways">
+	  <li><a href="top_pathways">
 		get top/root pathways (XML)</a>
 	  </li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/top_pathways.json">
+	  <li><a href="top_pathways.json">
 		get top/root pathways (JSON)</a>
 	  </li>
 	  </ol>
@@ -287,18 +290,18 @@ instance-specific information, some of which helped create this demo page
 	  <h3>Example Queries:</h3>
 	  <br/>
 	  <ol>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/commands">/help/commands</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/commands.json">/help/commands.json</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/commands/search">/help/commands/search</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/types">/help/types</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/kinds">/help/kinds</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/organisms">/help/organisms (note: some of species there listed are only due to they were mentioned in human, mouse, etc., pathway data)</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/datasources">/help/datasources (data sources loaded into the system)</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/directions">/help/directions</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/properties">/help/types/properties</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/provenance/properties">/help/types/provenance/properties</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help/types/inverse_properties">/help/types/inverse_properties</a></li>
-	  <li><a href="<fmt:message key="cpath2.url"/>/help">/help</a></li>
+	  <li><a href="help/commands">/help/commands</a></li>
+	  <li><a href="help/commands.json">/help/commands.json</a></li>
+	  <li><a href="help/commands/search">/help/commands/search</a></li>
+	  <li><a href="help/types">/help/types</a></li>
+	  <li><a href="help/kinds">/help/kinds</a></li>
+	  <li><a href="help/organisms">/help/organisms (note: some of species there listed are only due to they were mentioned in human, mouse, etc., pathway data)</a></li>
+	  <li><a href="help/datasources">/help/datasources (data sources loaded into the system)</a></li>
+	  <li><a href="help/directions">/help/directions</a></li>
+	  <li><a href="help/types/properties">/help/types/properties</a></li>
+	  <li><a href="help/types/provenance/properties">/help/types/provenance/properties</a></li>
+	  <li><a href="help/types/inverse_properties">/help/types/inverse_properties</a></li>
+	  <li><a href="help">/help</a></li>
 	  </ol>
 	  </li>	  
 	  </ol>

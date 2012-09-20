@@ -54,7 +54,7 @@ mysql> SET GLOBAL max_allowed_packet = 256000000;
 i.e., - MD5hex (32-byte) digest string calculated from elements's URIs!) 
 
 
-Try the cpath-admin.sh (without arguments) to see what's there available.
+Try the cpath2.sh (without arguments) to see what's there available.
 
 
 
@@ -101,7 +101,7 @@ The cPath2 METADATA file is a plain text table, which can be placed anywhere
 where accessible by the cpath2 admin script via URL. It has the following structure:
 - one data source metadata definition per line (thus, EOLs/newline matter);
 - lines that begin with "#" are remarks and will be ignored; blank lines - too;
-- there are exactly nine columns, which are separated by "<br>" (is not html tag!);
+- there are exactly 10 columns, which are separated by "<br>" (is not HTML);
 - empty strings in the middle of a line (the result of using <br><br>) and the 
 trailing empty string (after the last '<br>', i.e., Converter class name, if any), 
 will be always added to the columns array.
@@ -119,7 +119,7 @@ essential part of the corresponding local file (in $CPATH2_HOME/tmp/);
 
 4) DESCRIPTION - free text: organization name, release date, web site, comments;
 
-5) URL to the data (optional) - can be file://, http://, ftp://, classpath:;
+5) URL to the Data (optional) - can be file://, http://, ftp://, classpath:;
 - when no 'extension' or it is not '.zip' or '.gz', - means data to be saved as 
   $CPATH2_HOME/tmp/IDENTIFIER.VERSION.EXT and processed "as is" (no unpacking);
 - empty or a fake URL (e.g., "foo.zip" or ".gz", to force unzip) is accepted, because 
@@ -141,9 +141,11 @@ download, re-package, and either save the required data to $CPATH2_HOME/tmp/
 (following the cpath2 importer naming convention), or specify a local URL, 
 like file:///full/path/whatever.gz, instead.
 
-6) IMAGE URL (optional) - can be pointing to a resource logo;
+6) URL to the Data Provider's Homepage (optional, good to have)
 
-7) TYPE - one of: BIOPAX, PSI_MI, PROTEIN, SMALL_MOLECULE, MAPPING;
+7) IMAGE URL (optional) - can be pointing to a resource logo;
+
+8) TYPE - one of: BIOPAX, PSI_MI, PROTEIN, SMALL_MOLECULE, MAPPING;
 
 Note: MAPPING (id-mapping data) can be fetched and stored locally, but 
 is not actually used anywhere (cpath2 v3.x). We planned to eventually 
@@ -154,47 +156,47 @@ warehouse, either by URI or by unification xrefs). This is possible, because
 UniProt and ChEBI data contain cross-references to other databases, which cpath2
 used to generate BioPAX xrefs and then search them. 
 
-8) CLEANER_CLASS - leave empty or use a specific cleaner class name (like cpath.cleaner.internal.UniProtCleanerImpl);
+9) CLEANER_CLASS - leave empty or use a specific cleaner class name (like cpath.cleaner.internal.UniProtCleanerImpl);
 
-9) CONVERTER_CLASS - leave empty or use a specific converter class (like cpath.converter.internal.UniprotConverterImpl);
+10) CONVERTER_CLASS - leave empty or use a specific converter class (like cpath.converter.internal.UniprotConverterImpl);
 
 
 
 MORE DETAILS
 
-One can also use cpath-admin.sh or import-data.sh scripts to execute 
+One can also use cpath2.sh or import-data.sh scripts to execute 
 data import commands (as above), export some data or generate reports (e.g., validation).
 
 
-(run cpath-admin.sh w/o arguments to see the hint).
+(run cpath2.sh w/o arguments to see the hint).
 
 Prepare MySQL Databases. If required, generate (all or some of) the cpath2 database schemas using
 the same db names as specified in the $CPATH2_HOME/cpath.properties file:
 
-sh cpath-admin.sh -create-tables cpathmain,cpathproteins,cpathmolecules,cpathmetadata
+sh cpath2.sh -create-tables cpathmain,cpathproteins,cpathmolecules,cpathmetadata
 (WARNING: this destroys and re-creates the databases, if existed!)
 
 1. Fetch/Update Instance Metadata:
-#sh cpath-admin.sh -fetch-metadata <metadataURL>
-sh cpath-admin.sh -fetch-metadata "file:///full-path/metadata.conf"
+#sh cpath2.sh -fetch-metadata <metadataURL>
+sh cpath2.sh -fetch-metadata "file:///full-path/metadata.conf"
 
 2. Fetch Data (download, parse, clean, convert, and store data locally)
-sh cpath-admin.sh -fetch-data --all
+sh cpath2.sh -fetch-data --all
 - gets all warehouse and pathway data sequentially; one can also import, e.g., CHEBI only: 
-sh cpath-admin.sh -fetch-data CHEBI
+sh cpath2.sh -fetch-data CHEBI
 (WARNING: do not run multiple parallel '-fetch-data' processes that import the same TYPE of data)
 
-sh cpath-admin.sh -premerge
-#sh cpath-admin.sh -premerge <IDENTIFIER>
+sh cpath2.sh -premerge
+#sh cpath2.sh -premerge <IDENTIFIER>
 
-# also possible to configure (in a "metadata.conf") and use an external cleaner/converter, i.e., after the cpath-admin.jar was compiled:
-#$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -cp /path-to/MyDataCleanerImpl.class;/path-to/MyDataConverterImpl.class -Xss65536k -Xmx2g -jar cpath-admin.jar -premerge
+# also possible to configure (in a "metadata.conf") and use an external cleaner/converter, i.e., after the cpath2.jar was compiled:
+#$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -cp /path-to/MyDataCleanerImpl.class;/path-to/MyDataConverterImpl.class -Xss65536k -Xmx2g -jar cpath2.jar -premerge
 
-sh cpath-admin.sh -merge
-#sh cpath-admin.sh -merge <IDENTIFIER>
+sh cpath2.sh -merge
+#sh cpath2.sh -merge <IDENTIFIER>
 
 # create full-text index (currently, it's required for the "main" cpath2 db only, only for the webservice app)
-sh cpath-admin.sh -create-index main
+sh cpath2.sh -create-index main
 
 Optionally, you can also create a 'blacklist' (i.e. ignore list) for the graph queries. The graph queries
 will simply not traverse through the entities in this list and the entity references in the list will be eliminated
@@ -204,7 +206,7 @@ unnecessary traversing during the graph queries -- hence not wanted. However, th
 the entities that control more than a threshold number of reactions out of the blacklist since this type of entities
 are often biologically relevant -- for more, see the blacklist.* options in the cpath.properties:
 
-sh cpath-admin.sh -create-blacklist <main_database_name> $CPATH2_HOME/blacklist.txt
+sh cpath2.sh -create-blacklist <main_database_name> $CPATH2_HOME/blacklist.txt
 
 
 

@@ -14,10 +14,15 @@
     <context:annotation-config/>
     <context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
+	<bean id="outputFormatConverter" class="cpath.service.internal.OutputFormatConverterImpl">
+        <constructor-arg value="file:${CPATH2_HOME}/blacklist.txt"/>
+	</bean>
+
 	<bean id="service" class="cpath.service.internal.CPathServiceImpl">
 		<constructor-arg ref="paxtoolsDAO"/>
 		<constructor-arg ref="metadataDAO"/>
-        <property name="blacklistLocation" value="file:${CPATH2_HOME}/blacklist.txt"/>
+		<constructor-arg ref="outputFormatConverter"/>
+        <constructor-arg value="file:${CPATH2_HOME}/blacklist.txt"/>
 	</bean>
 
 	<!-- in addition to Hibernate L2 cache, we can set up a general-purpose java ehcache; shelved for later... -->

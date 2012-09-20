@@ -61,9 +61,14 @@ public final class CPathSettings {
 	public static final String CPATH_PROPERTIES_FILE_NAME = "cpath.properties";
 	
 	/**
-	 * Name for a sub-directory (under cpath2 home dir.) to read/put data
+	 * Name for a cpath2 utility sub-directory (under cpath2 home dir.)
 	 */
-	public static final String DATA_SUBDIR_NAME = "tmp";
+	public static final String TMPDATA_SUBDIR = "tmp";
+	
+	/**
+	 * A sub-directory (under cpath2 Home dir.) to organize various data available to download via the web app.
+	 */
+	public static final String DOWNLOADS_SUBDIR = "downloads";
 	
 	
 	private CPathSettings(){
@@ -118,11 +123,10 @@ public final class CPathSettings {
 
 	
 	/**
-	 * This is the default name prefix for optional "pre-merge" DBs we 
-	 * can create (or drop) to persist cleaned, normalized, validated 
-	 * pathway data;
+	 * This a name prefix for optional "pre-merge" DBs 
+	 * (to temporarily persist the cleaned/normalized/validated pathway data)
+	 * and also for exported data archives we may generate;
 	 * 
-	 * @deprecated we may remove this (pre-merge databases) feature in the future
 	 */
 	public static final String CPATH_DB_PREFIX = "cpath2_";
 
@@ -139,6 +143,21 @@ public final class CPathSettings {
 	public static String getHomeDir() {
 		return System.getProperty(HOME_VARIABLE_NAME);
 	}
+	
+	
+	/**
+	 * Gets the full local directory path 
+	 * where this type of data will be
+	 * temporarily fetched, stored,
+	 * re-used.
+	 * 
+	 * @return
+	 */
+	public static String localTmpDataDir() {
+		return getHomeDir() 
+			+ File.separator + CPathSettings.TMPDATA_SUBDIR;
+	}
+	
 	
 	/**
 	 * Name for the system environment and/or JVM variable 
