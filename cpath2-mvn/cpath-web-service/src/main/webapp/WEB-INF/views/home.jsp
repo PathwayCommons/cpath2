@@ -41,8 +41,9 @@
       <p>You can programmatically access the data within Pathway Commons 
 using the Pathway Commons Web Service Application Programming Interface (API).  
 This page provides a reference guide to help you get started.</p>
-
+<ul>
 	  <!-- list of web service commands -->
+	  <li>Web Service Commands:
 	  <ol>
 		<li><a href="#search">Command: SEARCH</a></li>
 		<li><a href="#get">Command: GET</a></li>
@@ -51,10 +52,13 @@ This page provides a reference guide to help you get started.</p>
 		<li><a href="#top_pathways">Command: TOP_PATHWAYS</a></li>
 		<li><a href="#help">Command: HELP</a></li>
 	  </ol>
+	  </li>
 	  
-	  <a href="#additional_parameters">Available Data and Parameter Values</a><br/>
-	  <a href="#errors">Error Codes</a><br/>
-	  
+	  <li><a href="#additional_parameters">Available Data and Parameter Values</a><br/></li>
+	  <li><a href="#errors">Error Response Codes</a><br/></li>
+	  <li><a href="downloads">Downloads (data exported to several formats)</a></li>
+
+</ul>	  
 	  <br/>
 	  
 	  <!-- URIs -->
