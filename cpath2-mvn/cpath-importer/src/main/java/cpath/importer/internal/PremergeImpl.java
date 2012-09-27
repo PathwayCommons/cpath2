@@ -143,7 +143,7 @@ final class PremergeImpl implements Premerge {
 		if (isCreateDb()) {
 			// build the premerge DAO -
 			// first, create a new database schema
-			String premergeDbName = CPathSettings.CPATH_DB_PREFIX
+			String premergeDbName = "cpath2_"
 				+ metadata.getIdentifier() + "_" + metadata.getVersion();
 			if(log.isInfoEnabled())
 				log.info("Creating a new 'pre-merge' db and schema: " +

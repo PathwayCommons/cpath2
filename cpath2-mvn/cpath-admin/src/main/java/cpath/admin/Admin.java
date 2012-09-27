@@ -118,13 +118,7 @@ public class Admin implements Runnable {
     // command, command parameter
     private COMMAND command;
     private String[] commandParameters;
-
-
-    public void setCommandParameters(String[] args) {
-        // parse args
-        parseArgs(args);
-	}
-    
+   
     /**
      * Helper function to parse args.
      *
@@ -734,7 +728,8 @@ public class Admin implements Runnable {
 		toReturn.append(COMMAND.MERGE.toString() + " [<metadataId> [<version>]] [--force]"+ NEWLINE);
 		toReturn.append(COMMAND.CREATE_INDEX.toString() + NEWLINE);
         toReturn.append(COMMAND.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
-        toReturn.append(COMMAND.CREATE_DOWNLOADS.toString() + "[<taxonomy_id,taxonomy_id,..>]"  + NEWLINE);        
+        toReturn.append(COMMAND.CREATE_DOWNLOADS.toString() + "[<taxonomy_id|name,taxonomy_id|name,..>] (better use standard names, "
+        	+"e.g., (exactly) as \"homo sapiens,mus musculus\", because generated file names will look more user-friendly)"  + NEWLINE);        
         // other useful (utility) commands
 		toReturn.append(COMMAND.EXPORT.toString() + " <dbName or pathway_id> <uri,uri,.. or --all> <outfile>" +
 			" (dbName - any supported by PaxtoolsDAO DB; pathway_id is a PK of the pathwayData table - to extract 'premerged' data)" + NEWLINE);
@@ -753,7 +748,9 @@ public class Admin implements Runnable {
      * @param args String[]
      */    
     public static void main(String[] args) throws Exception {
-        // sanity check
+    	LOG.debug("Command-line arguments were: " + Arrays.toString(args));
+    	
+    	// sanity check
         if (args.length == 0) {
             System.err.println("Missing args to Admin.");
 			System.err.println(Admin.usage());
@@ -809,7 +806,7 @@ public class Admin implements Runnable {
     	
 		Admin admin = new Admin();
 		try {
-			admin.setCommandParameters(args);
+			admin.parseArgs(args);
 			admin.run();
 		} catch (Exception e) {
 			System.err.println(e + NEWLINE + usage());
@@ -822,25 +819,34 @@ public class Admin implements Runnable {
 	private static void convert(String biopaxFile, OutputFormat outputFormat, 
 			OutputStream output, OutputFormatConverter formatConverter) throws IOException 
 	{
-		InputStream is = null;
-		if(biopaxFile.endsWith(".gz"))
-			is = new GZIPInputStream(new FileInputStream(biopaxFile));
-		else 
-			is = new FileInputStream(biopaxFile);
-		
+		InputStream is = biopaxStream(biopaxFile);
 		ServiceResponse res = formatConverter.convert(is, outputFormat);
-		
 		if (res instanceof ErrorResponse) {
-    		System.err.println(res.toString());
-    	} else {
-    		String data = (String) ((DataResponse)res).getData();
-    		output.write(data.getBytes("UTF-8"));
-    		output.flush();
-    	}
+			System.err.println(res.toString());
+		} else {
+			String data = (String) ((DataResponse)res).getData();
+			output.write(data.getBytes("UTF-8"));
+			output.flush();
+		}
 	}
 	
-    
-    private static void createDownloads(String[] taxonomyIds) 
+	
+	private static void convertToExtSif(String biopaxFile, OutputFormatConverter formatConverter,
+			OutputStream edgeStream, OutputStream nodeStream) throws IOException 
+	{
+		InputStream is = biopaxStream(biopaxFile);		
+		Model m = (new SimpleIOHandler()).convertFromOWL(is);
+		formatConverter.convertToExtendedBinarySIF(m, edgeStream, nodeStream);
+	}
+
+	
+    private static InputStream biopaxStream(String biopaxFile) throws IOException {
+		return (biopaxFile.endsWith(".gz"))
+			? new GZIPInputStream(new FileInputStream(biopaxFile)) 
+			: new FileInputStream(biopaxFile);
+	}
+
+	private static void createDownloads(String[] organisms) 
     		throws IOException
     {	
     	// create the TMP dir inside the home dir if it does not exist yet
@@ -862,15 +868,15 @@ public class Admin implements Runnable {
     	// 1) export everything
 		createArchives("all", dao, formatConverter, null, null);
     	
-    	// 2) export by datasource
+    	// 2) export by organism
+        LOG.info("create-downloads: preparing data 'by organism' archives...");
+        for(String org : organisms)
+        	createArchives(org.toLowerCase(), dao, formatConverter, null, new String[]{org});
+		
+		// 3) export by datasource
         LOG.info("create-downloads: preparing 'by datasource' archives...");
         for(SearchHit ds : service.dataSources().getSearchHit())
         	createArchives(ds.getName().toLowerCase(), dao, formatConverter, new String[]{ds.getName()}, null);
-    	 	
-    	// 3) export by organism
-        LOG.info("create-downloads: preparing data 'by organism' archives...");
-        for(String org : taxonomyIds)
-        	createArchives(org.toLowerCase(), dao, formatConverter, null, new String[]{org});
 	}
 
 
@@ -900,7 +906,8 @@ public class Admin implements Runnable {
     	// grab the BioPAX first -
         final String biopaxDataArchive = CPathSettings.getHomeDir() + File.separator 
         		+ DOWNLOADS_SUBDIR + File.separator 
-        		+ CPathSettings.CPATH_DB_PREFIX + filePrefix + ".BIOPAX.gz";
+        		+ CPathSettings.get(CPath2Property.PROVIDER) + " " 
+        		+ filePrefix + ".BIOPAX.owl.gz";
         
         // check file exists
         if(!(new File(biopaxDataArchive)).exists()) {	
@@ -926,8 +933,8 @@ public class Admin implements Runnable {
         SearchResponse resp = dao.search("*", 0, Pathway.class, datasources, organisms);
         boolean hasPathways = (resp.getNumHits() > 0);
         OutputFormat[] formats = (hasPathways) 
-        	? new OutputFormat[]{EXTENDED_BINARY_SIF, GSEA, SBGN} 
-        	: new OutputFormat[]{EXTENDED_BINARY_SIF, SBGN};
+        	? new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF, GSEA, SBGN} 
+        	: new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF, SBGN};
         
 		for(OutputFormat outf : formats)
 			createArchive(biopaxDataArchive, outf, filePrefix, formatConverter);
@@ -941,16 +948,46 @@ public class Admin implements Runnable {
 	
 		String archiveName = CPathSettings.getHomeDir() + File.separator 
 				+ CPathSettings.DOWNLOADS_SUBDIR + File.separator 
-				+ CPathSettings.CPATH_DB_PREFIX + prefix + "." + format.toString() + ".gz";
+				+ CPathSettings.get(CPath2Property.PROVIDER) + " " 
+				+ prefix + "." + formatAndExt(format) + ".gz";
 		LOG.info("create-downloads: generating " + archiveName);
 		
 		
         if(!(new File(archiveName)).exists()) {
-        	GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(archiveName));
-        	convert(biopaxDataArchive, format, zos, formatConverter);
-        	IOUtils.closeQuietly(zos);
+    		//Extended SIF will be here split in two separate files (edges and nodes)
+    		if(format == EXTENDED_BINARY_SIF) {
+    			//write edges and nodes into separate archives
+    			GZIPOutputStream edgeStream = new GZIPOutputStream(new FileOutputStream(archiveName));
+    			GZIPOutputStream nodeStream = new GZIPOutputStream(new FileOutputStream(
+    				CPathSettings.getHomeDir() + File.separator 
+    					+ CPathSettings.DOWNLOADS_SUBDIR + File.separator 
+    					+ CPathSettings.get(CPath2Property.PROVIDER) + " " 
+    					+ prefix + "." + format + ".nodes.tsv.gz"));
+    		
+    			convertToExtSif(biopaxDataArchive, formatConverter, edgeStream, nodeStream);
+    			
+    			IOUtils.closeQuietly(edgeStream);
+    			IOUtils.closeQuietly(edgeStream);
+    		} else {    	
+    			GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(archiveName));
+    			convert(biopaxDataArchive, format, zos, formatConverter);
+        		IOUtils.closeQuietly(zos);
+    		}
         } else
         	LOG.info(archiveName + " exists; skip creating it " +
             	"(delete if you want to start over)");
+	}
+
+	private static String formatAndExt(OutputFormat format) {
+		switch (format) {
+		case BIOPAX:
+			return format + ".owl";
+		case GSEA:
+			return format + ".gmt";
+		case SBGN:
+			return format + ".xml";
+		default:
+			return format + ".tsv";
+		}
 	}
 }

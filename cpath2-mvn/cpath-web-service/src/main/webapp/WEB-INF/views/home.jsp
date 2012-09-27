@@ -30,7 +30,7 @@
   <div id="container">
    <jsp:include page="header.jsp" flush="true"/>
     <div id="content">
-	  <!-- Name and description of this cpath2 instance is taken from the $CPATH2_HOME/webdoc.properties -->
+	  <!-- Name and description of this cpath2 instance is taken from the $CPATH2_HOME/cpath.properties -->
       <h2><fmt:message key="cpath2.provider"/></h2>
       <p>
       <fmt:message key="cpath2.description"/>

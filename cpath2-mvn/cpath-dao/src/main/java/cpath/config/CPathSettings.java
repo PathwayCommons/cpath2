@@ -95,7 +95,8 @@ public final class CPathSettings {
 		DIGEST_URI_ENABLED("md5hex.uri.enabled"),
         BLACKLIST_DEGREE_THRESHOLD("blacklist.degree.threshold"),
         BLACKLIST_CONTROL_THRESHOLD("blacklist.control.threshold"),
-        READ_ONLY("read-only.enabled")
+        READ_ONLY("read-only.enabled"),
+        PROVIDER("cpath2.provider")
 		;
 		
 		private final String name;
@@ -121,14 +122,6 @@ public final class CPathSettings {
 		}
 	}
 
-	
-	/**
-	 * This a name prefix for optional "pre-merge" DBs 
-	 * (to temporarily persist the cleaned/normalized/validated pathway data)
-	 * and also for exported data archives we may generate;
-	 * 
-	 */
-	public static final String CPATH_DB_PREFIX = "cpath2_";
 
 	/**
 	 * Common prefix for cPath2 generated BioPAX comments
