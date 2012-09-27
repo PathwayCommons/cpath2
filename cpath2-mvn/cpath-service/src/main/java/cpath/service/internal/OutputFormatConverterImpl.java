@@ -195,12 +195,10 @@ public class OutputFormatConverterImpl implements OutputFormatConverter {
 	 * 
      * @param resp ServiceResponse
      * @param extended if true, call SIFNX else SIF
-	 * @param rules (optional) the names of SIF rules to apply
 	 * @return
 	 * @throws IOException 
 	 */
-	String convertToBinarySIF(Model m, 
-		boolean extended, String... rules) throws IOException 
+	String convertToBinarySIF(Model m, boolean extended) throws IOException 
 	{
 		// convert, replace DATA value in the map to return
 		// TODO match 'rules' parameter to rule types (currently, it uses all)
@@ -211,41 +209,32 @@ public class OutputFormatConverterImpl implements OutputFormatConverter {
 		OutputStream edgeStream = new ByteArrayOutputStream();
 		if (extended) {
 			OutputStream nodeStream = new ByteArrayOutputStream();
-			sic.writeInteractionsInSIFNX(
-					m, edgeStream, nodeStream,
-					Arrays.asList("EntityReference/displayName", "EntityReference/xref:UnificationXref", "EntityReference/xref:RelationshipXref"),
-					Arrays.asList("Interaction/dataSource/displayName", "Interaction/xref:PublicationXref"), 
-					true);
-			String edgeColumns = "PARTICIPANT_A\tINTERACTION_TYPE\tPARTICIPANT_B\tINTERACTION_DATA_SOURCE\tINTERACTION_PUBMED_ID\n";
-			String nodeColumns = "PARTICIPANT\tPARTICIPANT_TYPE\tPARTICIPANT_NAME\tUNIFICATION_XREF\tRELATIONSHIP_XREF\n";
-			return edgeColumns + removeDuplicateBinaryInteractions(edgeStream) + "\n" + nodeColumns + nodeStream.toString();
+			convertToExtendedBinarySIF(m, edgeStream, nodeStream);
+			// join two files together, one after another -
+			return edgeStream + "\n\n" + nodeStream;
 		} else {
 			sic.writeInteractionsInSIF(m, edgeStream);
-			return removeDuplicateBinaryInteractions(edgeStream);
+			return edgeStream.toString();
 		}
-
 	}
-   
-	/**
-	 * Remove duplicate binary interactions from SIF/SIFNX converter output
-	 *
-	 * @param edgeStream OutputStream from converter
-	 * @return String
-	 */
-	private String removeDuplicateBinaryInteractions(OutputStream edgeStream) {
 
-		StringBuffer toReturn = new StringBuffer();
-		HashSet<String> interactions = new HashSet<String>();
-		for (String interaction : edgeStream.toString().split("\n")) {
-			interactions.add(interaction);
-		}
-		Iterator<String> iterator = interactions.iterator();
-		while (iterator.hasNext()) {
-			toReturn.append(iterator.next() + "\n");
-		}
+	
+	public void convertToExtendedBinarySIF(Model m, OutputStream edgeStream, OutputStream nodeStream) throws IOException 
+	{
+		final String edgeColumns = "PARTICIPANT_A\tINTERACTION_TYPE\tPARTICIPANT_B\tINTERACTION_DATA_SOURCE\tINTERACTION_PUBMED_ID\n";
+		edgeStream.write(edgeColumns.getBytes());
+		final String nodeColumns = "PARTICIPANT\tPARTICIPANT_TYPE\tPARTICIPANT_NAME\tUNIFICATION_XREF\tRELATIONSHIP_XREF\n";	
+		nodeStream.write(nodeColumns.getBytes());
 		
-		return toReturn.toString();
+		SimpleInteractionConverter sic = new SimpleInteractionConverter(
+                new HashMap(), blacklist,
+                SimpleInteractionConverter.getRules(BioPAXLevel.L3).toArray(new InteractionRule[]{})
+		);
+		
+		sic.writeInteractionsInSIFNX(
+			m, edgeStream, nodeStream,
+			Arrays.asList("EntityReference/displayName", "EntityReference/xref:UnificationXref", "EntityReference/xref:RelationshipXref"),
+			Arrays.asList("Interaction/dataSource/displayName", "Interaction/xref:PublicationXref"), true);
 	}
-
 
 }

@@ -425,7 +425,7 @@ final class MergerImpl implements Merger, Analysis {
 	@Deprecated //probably won't use a separate "premerge" DBs in the future
 	private Model getPreMergeModel(final Metadata metadata) 
 	{
-		String dbname = CPathSettings.CPATH_DB_PREFIX + metadata.getIdentifier()
+		String dbname = "cpath2_" + metadata.getIdentifier()
 			+ "_" + metadata.getVersion();
 		
 		// get the PaxtoolsDAO (Model) instance

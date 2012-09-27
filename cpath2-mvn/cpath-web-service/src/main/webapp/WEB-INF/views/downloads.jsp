@@ -21,7 +21,7 @@
 Data exported from the CPath2 server are organized as follows.<br/>
 Archives below are sorted alphabetically, and their names follow 
 the simple naming pattern:<br/><br/>
-<em>cpath2_&lt;source&gt;.&lt;FORMAT&gt;.gz</em><br/><br/>, where:
+<em>cpath2_&lt;source&gt;.&lt;FORMAT&gt;.&lt;ext&gt;.gz</em><br/><br/>, where:
 </p>
 
 <ul>

@@ -44,7 +44,7 @@
 	<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>file:${CPATH2_HOME}/webdoc</value>
+				<value>file:${CPATH2_HOME}/cpath</value>
 			</list>
 		</property>
 		<property name="cacheSeconds" value="0" />

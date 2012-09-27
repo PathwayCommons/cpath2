@@ -1,6 +1,8 @@
 package cpath.service;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.biopax.paxtools.model.Model;
 
@@ -31,4 +33,15 @@ public interface OutputFormatConverter {
      */
     ServiceResponse convert(Model model, OutputFormat format);
 
+    
+    /**
+     * Converts a BioPAX model to the cPath2 Extended Binary SIF format
+     * using two output streams, - edges and nodes.
+     * 
+     * @param model
+     * @param edgeStream
+     * @param nodeStream
+     * @throws IOException
+     */
+    void convertToExtendedBinarySIF(Model model, OutputStream edgeStream, OutputStream nodeStream) throws IOException;
 }
