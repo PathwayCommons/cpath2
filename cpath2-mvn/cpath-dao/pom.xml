@@ -53,6 +53,16 @@
 			<artifactId>cpath-api</artifactId>
 			<version>${cpath.api.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>org.biopax</groupId>
+			<artifactId>miriam-lib</artifactId>
+			<version>${miriam-lib.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.biopax</groupId>
+			<artifactId>obo-fetcher</artifactId>
+			<version>${validator.version}</version>
+		</dependency>
 	</dependencies>
 
 </project>

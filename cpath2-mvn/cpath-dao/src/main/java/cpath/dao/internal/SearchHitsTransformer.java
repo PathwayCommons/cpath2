@@ -89,7 +89,7 @@ final class SearchHitsTransformer implements ResultTransformer {
 		if(doc.getField(FIELD_ORGANISM) != null) {
 			Set<String> uniqueVals = new TreeSet<String>();
 			for(String o : doc.getValues(FIELD_ORGANISM)) {
-				if(o.startsWith("urn:") || o.startsWith("http:")) {
+				if(o.startsWith("urn:")) {
 					uniqueVals.add(o);
 				}
 			}
@@ -100,7 +100,7 @@ final class SearchHitsTransformer implements ResultTransformer {
 		if(doc.getField(FIELD_DATASOURCE) != null) {
 			Set<String> uniqueVals = new TreeSet<String>();
 			for(String d : doc.getValues(FIELD_DATASOURCE)) {
-				if(d.startsWith("urn:") && d.startsWith("http:")) { 
+				if(d.startsWith("urn:")) { 
 					uniqueVals.add(d);
 				}
 			}
