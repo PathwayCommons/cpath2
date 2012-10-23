@@ -933,8 +933,8 @@ public class Admin implements Runnable {
         SearchResponse resp = dao.search("*", 0, Pathway.class, datasources, organisms);
         boolean hasPathways = (resp.getNumHits() > 0);
         OutputFormat[] formats = (hasPathways) 
-        	? new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF, GSEA, SBGN} 
-        	: new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF, SBGN};
+        	? new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF, GSEA} 
+        	: new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF};
         
 		for(OutputFormat outf : formats)
 			createArchive(biopaxDataArchive, outf, filePrefix, formatConverter);
