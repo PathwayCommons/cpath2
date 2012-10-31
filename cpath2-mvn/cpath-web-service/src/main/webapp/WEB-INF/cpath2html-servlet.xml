@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans 
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<!-- JSR-303 (validation) support will be detected on classpath and enabled automatically -->
+    <context:annotation-config/>
+    
+	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+	
+	<mvc:view-controller path="/home.html" view-name="home"/>
+	<mvc:view-controller path="/tests" view-name="tests"/>
+	
+	<!-- Configures Handler Interceptors -->	
+	<mvc:interceptors>
+		<!-- Changes the locale when a 'locale' request parameter is sent; e.g. /?locale=de -->
+		<bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor" />
+	</mvc:interceptors>
+
+	<!-- Saves a locale change using a cookie -->
+	<bean id="localeResolver" class="org.springframework.web.servlet.i18n.CookieLocaleResolver" />
+
+
+	<bean id="log4jInitialization" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+	  <property name="targetClass"
+				value="org.springframework.util.Log4jConfigurer" />
+	  <property name="targetMethod" value="initLogging" />
+	  <property name="arguments">
+		<list>
+		  <value>file:${CPATH2_HOME}/log4j.properties</value>
+		</list>
+	  </property>
+	</bean>
+	
+	<!-- Application Message Bundle -->
+	<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>file:${CPATH2_HOME}/cpath</value>
+			</list>
+		</property>
+		<property name="cacheSeconds" value="0" />
+	</bean>
+	
+	 
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+		<property name="prefix" value="/WEB-INF/views/" />
+		<property name="suffix" value=".jsp" />
+	</bean> 	   	  
+	  	   	 
+	<bean id="metadataController" class="cpath.webservice.MetadataController">
+		<constructor-arg ref="metadataDAO"/>
+	</bean>
+	
+	<!-- mvc:annotation-driven must the last -->
+    <mvc:annotation-driven/>	
+</beans>

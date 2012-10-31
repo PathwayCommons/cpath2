@@ -51,9 +51,9 @@
         <property name="sessionFactory" ref="proteinsSessionFactory" />
     </bean>
 
-    <bean id="proteinsDAO" class="cpath.warehouse.internal.WarehousePaxtoolsHibernateDAO">
+    <bean id="proteinsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="proteinsSessionFactory"/>
-        <property name="maxHits" value="${maxSearchHitsPerPage}"/>
+        <property name="maxHitsPerPage" value="${maxSearchHitsPerPage}"/>
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>

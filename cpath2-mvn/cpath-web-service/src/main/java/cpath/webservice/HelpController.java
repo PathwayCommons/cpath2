@@ -27,25 +27,26 @@
 
 package cpath.webservice;
 
-import cpath.service.jaxb.Help;
-import cpath.service.BioDataTypes;
+import java.io.IOException;
+
+import cpath.service.jaxb.*;
+import cpath.service.CPathService;
 import cpath.service.Cmd;
 import cpath.service.CmdArgs;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
-import cpath.service.BioDataTypes.Type;
-import cpath.webservice.args.*;
+import cpath.service.Status;
 import cpath.webservice.args.binding.*;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.biopax.paxtools.controller.EditorMap;
+import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.level3.BioSource;
-import org.biopax.paxtools.model.level3.Provenance;
-import org.biopax.paxtools.model.level3.Xref;
-import org.bridgedb.DataSource;
+import org.biopax.paxtools.query.algorithm.Direction;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -62,9 +63,12 @@ import org.springframework.web.bind.annotation.*;
  */
 @Controller
 public class HelpController {
-    private static final Log log = LogFactory.getLog(HelpController.class);   
+    private static final Log LOG = LogFactory.getLog(HelpController.class);   
     
-	public HelpController() {
+    private CPathService service; // main PC db access
+    
+	public HelpController(CPathService service) {
+		this.service = service;
 	}
 	
 	/**
@@ -79,19 +83,36 @@ public class HelpController {
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
         binder.registerCustomEditor(Cmd.class, new CmdEditor());
         binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
-        binder.registerCustomEditor(OrganismDataSource.class, new OrganismDataSourceEditor());
-        binder.registerCustomEditor(PathwayDataSource.class, new PathwayDataSourceEditor());
+        binder.registerCustomEditor(Direction.class, new DirectionEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
 
 	
+	/**
+	* This is for reporting an error "BAD COMMAND"
+	* for everything except for known cpath2 web service
+	* commands (known commands with parameters are mapped 
+	* to more specific controller methods in this class; see below)
+	* 
+	* @param cmd
+	* 
+	* @return 
+	 * @throws IOException 
+	*/
+	@RequestMapping("/{cmd}")
+	public @ResponseBody ErrorResponse illegalCommand(@PathVariable String cmd) {
+		return Status.BAD_COMMAND.errorResponse("Unknown command: " + cmd);
+	}
+	
+	
     @RequestMapping("/")
     public String getHello() {
-    	return "redirect:help";
+    	return "redirect:home.html";
     }
 	
+	 
     /*
-     * Using @ResponseBody with returning a bean
+     * Using @Response with returning a bean
      * makes it auto-generate xml or json, 
      * depending on the client's http request
      * (no extra coding required!)
@@ -194,15 +215,97 @@ public class HelpController {
     	}
     	help.setId("types");
     	help.setTitle("BioPAX classes");
-    	help.setInfo("Objects of the following BioPAX L3 " +
-    		"(and some additional abstract) " 
+    	help.setInfo("Objects of the following BioPAX L3 class " +
+    		"(and some abstract ones) " 
     		+ System.getProperty("line.separator") +
-    		"class are persisted/indexed in the system " +
+    		"are persisted/indexed/searchable in the system " +
     		"(names are case insensitive):");
     	help.setExample("search?type=pathway&q=b*");
     	return help;
     }
     
+    
+    @RequestMapping("/help/types/{type}") 
+    public @ResponseBody Help getBiopaxType(@PathVariable Class<? extends BioPAXElement> type) {
+    	if(type == null) return getBiopaxTypes();
+    	
+    	Help h = new Help(type.getSimpleName());
+    	h.setTitle(type.getSimpleName());
+    	h.setInfo("See: biopax.org, http://www.biopax.org/webprotege");
+    	
+    	return h;
+    }
+
+    
+    @RequestMapping("/help/types/{type}/properties") 
+    public @ResponseBody Help getBiopaxTypeProperties(@PathVariable Class<? extends BioPAXElement> type) {
+    	final String id = type.getSimpleName() + " properties";
+    	Help h = new Help(id);
+    	h.setTitle(id);
+    	h.setInfo("BioPAX properties " +
+    		"for class: " + type.getSimpleName());
+    	
+    	EditorMap em = SimpleEditorMap.get(BioPAXLevel.L3);
+    	for(PropertyEditor e : em.getEditorsOf(type)) 
+    		h.addMember(new Help(e.toString()));
+    	
+    	return h;
+    }
+    
+    
+    @RequestMapping("/help/types/properties") 
+    public @ResponseBody Help getBiopaxTypesProperties() {
+    	Help h = new Help("properties");
+    	h.setTitle("BioPAX Properites");
+    	h.setInfo("The list of all BioPAX properties");
+    	 	
+    	for(Class<? extends BioPAXElement> t : 
+    		SimpleEditorMap.L3.getKnownSubClassesOf(BioPAXElement.class)) 
+    	{
+    		if(BioPAXLevel.L3.getDefaultFactory().getImplClass(t) != null) {
+    			for(Help th : getBiopaxTypeProperties(t).getMembers()) {
+    				h.addMember(th);
+    			}
+    		}
+    	}
+    	
+    	return h;
+    }
+    
+    @RequestMapping("/help/types/{type}/inverse_properties") 
+    public @ResponseBody Help getBiopaxTypeInverseProperties(@PathVariable Class<? extends BioPAXElement> type) {
+    	final String id = type.getSimpleName() + " inverse_properties";
+    	Help h = new Help(id);
+    	h.setTitle(id);
+    	h.setInfo("Paxtools inverse properties " +
+    		"for class: " + type.getSimpleName());
+    	
+    	EditorMap em = SimpleEditorMap.get(BioPAXLevel.L3);
+    	for(PropertyEditor e : em.getInverseEditorsOf(type)) 
+    		h.addMember(new Help(e.toString()));
+    	
+    	return h;
+    }
+    
+    
+    @RequestMapping("/help/types/inverse_properties") 
+    public @ResponseBody Help getBiopaxTypesInverseProperties() {
+    	Help h = new Help("inverse_properties");
+    	h.setTitle("Paxtools inverse properites");
+    	h.setInfo("The list of all inverse (Paxtools) properties");
+    	 	
+    	for(Class<? extends BioPAXElement> t : 
+    		SimpleEditorMap.L3.getKnownSubClassesOf(BioPAXElement.class)) 
+    	{
+    		if(BioPAXLevel.L3.getDefaultFactory().getImplClass(t) != null) {
+    			for(Help th : getBiopaxTypeInverseProperties(t).getMembers()) {
+    				h.addMember(th);
+    			}
+    		}
+    	}
+    	
+    	return h;
+    }
     
 	/**
 	 * List of graph query types.
@@ -232,8 +335,38 @@ public class HelpController {
     	help.setInfo(kind.getDescription());
     	return help;
     }
- 
+
     
+	/**
+	 * List of graph directions.
+	 *
+	 * @return
+	 */
+    @RequestMapping("/help/directions")
+    public @ResponseBody Help getDirectionTypes() {
+    	Help help = new Help();
+    	for(Direction direction : Direction.values()) {
+    		help.addMember(getDirectionType(direction));
+    	}
+    	help.setId("directions");
+    	help.setTitle("Graph Query Traversal Directions");
+    	help.setInfo("Following are possible query directions:");
+    	help.setExample("help/directions/downstream");
+    	return help;
+    }
+
+
+    @RequestMapping("/help/directions/{direction}")
+    public @ResponseBody Help getDirectionType(@PathVariable Direction direction) {
+    	if(direction == null) return getDirectionTypes();
+    	Help help = new Help();
+    	help.setTitle(direction.name());
+    	help.setId(direction.name());
+    	help.setInfo(direction.getDescription());
+    	return help;
+    }
+
+
 	/**
 	 * List of loaded data sources.
 	 * 
@@ -243,88 +376,43 @@ public class HelpController {
     public @ResponseBody Help getDatasources() {
     	Help help = new Help();
     	help.setId("datasources");
-    	for(DataSource ds : BioDataTypes.getDataSources(Type.DATASOURCE)) 
+
+    	for(SearchHit dsHit : service.dataSources().getSearchHit()) 
     	{
-    		help.addMember(getDatasource(new PathwayDataSource(ds)));
+    		Help hm = new Help(dsHit.getUri());
+    		hm.setTitle(dsHit.getName());
+    		hm.setInfo(StringUtils.join(dsHit.getDataSource(),", ")
+    				+ " (description: " + dsHit.getExcerpt() + ")"); //a hack to get other names and description
+    		help.addMember(hm);
     	}
     	help.setTitle("Pathway Data Sources");
-    	help.setInfo("Pathway data sources currently loaded into the system.");
+    	help.setInfo("Biological pathways and interactions data providers. " +
+    			"These names are recommended to use with the " +
+    			"full-text search command (e.g., by adding '&datasource=...' " +
+    			"filter parameters). Other (original pathway data provider's) BioPAX Provenance " +
+    			"objects there can be used as well, but may be associated with " +
+    			"only a sub-set of entities loaded from given data source.");
     	return help;
     }
-    
-
-    @RequestMapping("/help/datasources/{pds}") 
-    public @ResponseBody Help getDatasource(@PathVariable PathwayDataSource pds) 
-    {
-    	if(pds == null) return getDatasources();
-    	final String newLine = System.getProperty("line.separator");
-    	Help help = new Help();
-    	DataSource ds = pds.asDataSource();
-    	help.setId(ds.getSystemCode());
-    	help.setTitle(ds.getFullName());
-    	
-    	StringBuffer sb = new StringBuffer();
-    	// hack (BridgeDb): it has the Provenance stored in ds.organism ;)
-    	Provenance pro = ((Provenance)ds.getOrganism());
-    	sb.append("Known names: ");	
-    	for(String name : pro.getName()) {
-    		sb.append(name).append(", ");
-    	}
-    	sb.append(newLine);
-    	sb.append("Xrefs: ");	
-    	for(Xref x : pro.getXref()) {
-    		sb.append(x + ", "); //x.toString() is called implicitly
-    	}
-    	sb.append(newLine);
-    	sb.append("Comments: ");
-    	for(String rem : pro.getComment()) {
-    		sb.append(rem).append(newLine);
-    	}
-    	sb.append("URL: " + ds.getMainUrl());
-    	sb.append(newLine);
-    	
-    	help.setInfo(sb.toString());
-    	
-    	return help;
-    }
-    
+       
     
     @RequestMapping("/help/organisms") 
     public @ResponseBody Help getOrganisms() {
     	Help help = new Help();
     	help.setId("organisms");
-    	for(DataSource ds : BioDataTypes.getDataSources(Type.ORGANISM)) {
-    		help.addMember(getOrganism(new OrganismDataSource(ds)));
+    	
+    	for(SearchHit bsHit : service.bioSources().getSearchHit()) {
+    		Help hm = new Help(bsHit.getUri());
+    		hm.setTitle(bsHit.getName());
+    		hm.setInfo(StringUtils.join(bsHit.getOrganism(), ", ")); // using a hack to list other names
+    		help.addMember(hm);
     	}
     	help.setTitle("Organisms");
-    	help.setInfo("Bio sources currently loaded into the system are");
+    	help.setInfo("All organisms (BioSource) referenced in this system " +
+    		"(incl. those occur in other organism's pathways or in annotations); " +
+    		"one can also get them using '/search?q=*&type=biosource' command");
     	return help;
     }
-    
 
-    @RequestMapping("/help/organisms/{o}") 
-    public @ResponseBody Help getOrganism(@PathVariable OrganismDataSource o) {
-    	if(o == null) return getOrganisms();
-    	Help help = new Help();
-    	String taxid = o.asDataSource().getSystemCode();
-    	//help.setId(taxid); //taxonomy id
-        BioSource bs = (BioSource)o.asDataSource().getOrganism();
-        help.setId(bs.getRDFId()); // miriam
-    	help.setTitle(o.asDataSource().getFullName());
-    	// a hack (BioSource was stored in the o.organism field) -
-    	//help.setInfo(o.asDataSource().getOrganism().toString()); 
-        help.setInfo(bs.getName().toString());
-    	//- got the name and Miriam URN (only when data were normalized)
 
-    	return help;
-    }
-    
-    
-    @RequestMapping("/help/statistics") 
-    public @ResponseBody Help getStatistics() {
-    	Help h = new Help("statistics");
-    	h.setInfo("TODO: get num. of molecules, pathways, interactions, etc...");
-    	// TODO statistics: num. of molecules, pathways, interactions, etc...
-    	return h;
-    }
 }

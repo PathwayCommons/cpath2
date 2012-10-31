@@ -1,16 +1,16 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<url>http://www.pathwaycommons.org</url>
 	<parent>
 		<artifactId>parent</artifactId>
 		<groupId>pathwaycommons.cpath</groupId>
-		<version>1.0.1-SNAPSHOT</version>
+		<version>3.2.4-SNAPSHOT</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>pathwaycommons.cpath</groupId>
 	<artifactId>cpath-web-service</artifactId>
 	<packaging>war</packaging>
-	<name>cPath2 Webservices</name>
-	<description>cPath Web Services</description>
+	<name>cPath2 Web Service</name>
+	<description>cPath Web Services and Basic Docs App</description>
 
 
 	<build>
@@ -24,8 +24,25 @@
 					<systemProperties>
 						<CPATH2_HOME>${CPATH2_HOME}</CPATH2_HOME>
 						<java.io.tmpdir>${CPATH2_HOME}/tmp</java.io.tmpdir>
-						<net.sf.ehcache.disabled>true</net.sf.ehcache.disabled>
+					<!--	<net.sf.ehcache.disabled>true</net.sf.ehcache.disabled> -->
 					</systemProperties>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-war-plugin</artifactId>
+				<version>2.2</version>
+				<configuration>
+					<webResources>
+						<resource>
+							<filtering>true</filtering>
+							<targetPath>WEB-INF/views</targetPath>
+							<directory>src/main/webapp/WEB-INF/views</directory>
+							<includes>
+								<include>*.jsp</include>
+							</includes>
+						</resource>
+					</webResources>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -53,6 +70,22 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<dependency>
+  			<groupId>pathwaycommons.cpath</groupId>
+  			<artifactId>cpath-api</artifactId>
+  			<version>${cpath.api.version}</version>
+  		</dependency>
+		<dependency>
+			<groupId>javax.validation</groupId>
+			<artifactId>validation-api</artifactId>
+			<version>1.0.0.GA</version>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-validator</artifactId>
+			<version>4.2.0.Final</version>
+		</dependency>		
+		
 		<!-- Jackson JSON Mapper -->
 		<dependency>
 			<groupId>org.codehaus.jackson</groupId>
@@ -94,12 +127,7 @@
 			<artifactId>spring-security-config</artifactId>
 			<version>${spring.version}</version>
 			<type>jar</type>
-			<scope>compile</scope>
 		</dependency>
-		<dependency>
-  			<groupId>pathwaycommons.cpath</groupId>
-  			<artifactId>cpath-schema</artifactId>
-  			<version>1.0.0</version>
-  		</dependency>
 	</dependencies>
+
 </project>

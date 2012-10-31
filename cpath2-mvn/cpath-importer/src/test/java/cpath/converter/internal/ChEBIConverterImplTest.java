@@ -1,7 +1,8 @@
 package cpath.converter.internal;
 
 // imports
-import cpath.converter.Converter;
+import cpath.importer.Converter;
+import cpath.importer.internal.ImportFactory;
 
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.Model;
@@ -38,8 +39,8 @@ public class ChEBIConverterImplTest {
 		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
 
 		// setup the converter using a special constructor to set mock chebi.obo data
-		Converter converter = new ChEBITestConverterImpl();
-		((BaseConverterImpl)converter).setModel(model);
+		Converter converter = ImportFactory.newConverter("cpath.converter.internal.ChEBITestConverterImpl");
+		converter.setModel(model);
 		converter.convert(is);
 		
 		// dump owl for review
@@ -52,7 +53,7 @@ public class ChEBIConverterImplTest {
 		assertEquals(3, model.getObjects(SmallMoleculeReference.class).size());
 
 		// get lactic acid sm
-		String rdfID = "urn:miriam:chebi:422";
+		String rdfID = "http://identifiers.org/obo.chebi/CHEBI:422";
 		assertTrue(model.containsID(rdfID));
 		SmallMoleculeReference smallMoleculeReference = (SmallMoleculeReference)model.getByID(rdfID);
 
@@ -70,13 +71,14 @@ public class ChEBIConverterImplTest {
 		assertEquals(12, relationshipXrefCount);
 		
 		// following checks work in this test only (using in-memory model); with DAO - use getObject...
-        assertTrue(model.containsID("urn:miriam:chebi:20"));
-        EntityReference er20 = (EntityReference) model.getByID("urn:miriam:chebi:20");
-        assertTrue(model.containsID("urn:miriam:chebi:28"));
-        EntityReference er28 = (EntityReference) model.getByID("urn:miriam:chebi:28");
-        assertTrue(model.containsID("urn:miriam:chebi:422"));
-        EntityReference er422 = (EntityReference) model.getByID("urn:miriam:chebi:422");
+        assertTrue(model.containsID("http://identifiers.org/obo.chebi/CHEBI:20"));
+        EntityReference er20 = (EntityReference) model.getByID("http://identifiers.org/obo.chebi/CHEBI:20");
+        assertTrue(model.containsID("http://identifiers.org/obo.chebi/CHEBI:28"));
+        EntityReference er28 = (EntityReference) model.getByID("http://identifiers.org/obo.chebi/CHEBI:28");
+        assertTrue(model.containsID("http://identifiers.org/obo.chebi/CHEBI:422"));
+        EntityReference er422 = (EntityReference) model.getByID("http://identifiers.org/obo.chebi/CHEBI:422");
         
+        // 28 has member - 422 has member - 20
         assertTrue(er20.getMemberEntityReferenceOf().contains(er422));
         assertEquals(er20, er422.getMemberEntityReference().iterator().next());
         

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+
+  <xs:element name="dataResponse" type="DataResponse"/>
+
+  <xs:element name="errorResponse" type="ErrorResponse"/>
+
+  <xs:element name="help" type="Help"/>
+
+  <xs:element name="searchResponse" type="SearchResponse"/>
+
+  <xs:element name="traverseResponse" type="TraverseResponse"/>
+
+  <xs:complexType name="DataResponse">
+    <xs:complexContent>
+      <xs:extension base="ServiceResponse">
+        <xs:sequence>
+          <xs:element name="data" type="xs:anyType" minOccurs="0"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="ServiceResponse" abstract="true">
+    <xs:sequence/>
+  </xs:complexType>
+
+  <xs:complexType name="ErrorResponse">
+    <xs:complexContent>
+      <xs:extension base="ServiceResponse">
+        <xs:sequence>
+          <xs:element name="error_code" type="xs:int"/>
+          <xs:element name="error_msg" type="xs:string"/>
+          <xs:element name="error_details" type="xs:string"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="Help">
+    <xs:complexContent>
+      <xs:extension base="ServiceResponse">
+        <xs:sequence>
+          <xs:element name="example" type="xs:string" minOccurs="0"/>
+          <xs:element name="id" type="xs:string"/>
+          <xs:element name="info" type="xs:string" minOccurs="0"/>
+          <xs:element name="members" type="Help" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+          <xs:element name="output" type="xs:string" minOccurs="0"/>
+          <xs:element name="title" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="SearchHit">
+    <xs:sequence>
+      <xs:element name="uri" type="xs:string"/>
+      <xs:element name="biopaxClass" type="xs:string"/>
+      <xs:element name="name" type="xs:string" minOccurs="0"/>
+      <xs:element name="dataSource" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="organism" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="pathway" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="excerpt" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="SearchResponse">
+    <xs:complexContent>
+      <xs:extension base="ServiceResponse">
+        <xs:sequence>
+          <xs:element name="searchHit" type="SearchHit" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="numHits" type="xs:int"/>
+        <xs:attribute name="maxHitsPerPage" type="xs:int"/>
+        <xs:attribute name="pageNo" type="xs:int"/>
+        <xs:attribute name="comment" type="xs:string"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+
+  <xs:complexType name="TraverseEntry">
+    <xs:sequence>
+      <xs:element name="value" type="xs:string" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="uri" type="xs:string" use="required"/>
+  </xs:complexType>
+
+  <xs:complexType name="TraverseResponse">
+    <xs:complexContent>
+      <xs:extension base="ServiceResponse">
+        <xs:sequence>
+          <xs:element name="traverseEntry" type="TraverseEntry" nillable="true" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="propertyPath" type="xs:string"/>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+</xs:schema>
+

@@ -28,23 +28,21 @@
  **/
 package cpath.dao;
 
-import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
-import cpath.dao.filters.SearchFilter;
-import cpath.service.jaxb.SearchResponseType;
+import cpath.service.jaxb.SearchResponse;
+import cpath.service.jaxb.TraverseResponse;
 
 import java.util.Collection;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
-import java.util.Set;
 
 /**
  * BioPAX data access (both model and repository).
  */
-public interface PaxtoolsDAO extends Model {	
+public interface PaxtoolsDAO  {	
 	
 	/**
 	 * Persists the given model to the db.
@@ -54,37 +52,22 @@ public interface PaxtoolsDAO extends Model {
 	 */
 	void importModel(File biopaxFile) throws FileNotFoundException;
 
-		
+	
+
 	 /**
-	 * Returns the list of BioPAX elements that match the query 
-	 * and satisfy the filters if any defined.
+	 * Full-text search for BioPAX elements.
 	 * 
-     * @param query String
+     * @param query String (keywords or Lucene query string)
 	 * @param page page number (when the number of hits exceeds a threshold)
 	 * @param filterByType - class filter for the full-text search (actual effect may depend on the concrete implementation!)
-	 * @param extraFilters custom filters (implies AND in between) that apply after the full-text query has returned;
-	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
+	 * @param datasources  - filter by datasource(s)
+	 * @param organisms - filter by organism(s)
 	 * @return ordered by the element's relevance list of hits
-     */
-	SearchResponseType findElements(String query, int page,
-    		Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters);        
+    */
+   SearchResponse search(String query, int page,
+   		Class<? extends BioPAXElement> filterByType, String[] dsources, String[] organisms);
 
     
-	 /**
-	 * Returns the list of BioPAX entities that 
-	 * either match the query by themselves or 
-	 * who's child utility class elements do 
-	 * (filters apply).
-	 * 
-     * @param query String
-	 * @param page page number (when the number of hits exceeds a threshold)
-	 * @param filterByType - class filter for the full-text search (actual effect may depend on the concrete implementation!)
-	 * @param extraFilters custom filters (implies AND in between) that apply after the full-text query has returned;
-	 * 		  these can be used, e.g., for post-search filtering by organism or data source, anything...
-	 * @return ordered by the element's relevance list of hits
-     */
-    SearchResponseType findEntities(String query, int page,
-    		Class<? extends BioPAXElement> filterByType, SearchFilter<? extends BioPAXElement,?>... extraFilters);
     
     /**
      * Exports the entire model (if no IDs are given) 
@@ -112,11 +95,34 @@ public interface PaxtoolsDAO extends Model {
      */
     void initialize(Object element);
 
+
+    /**
+     * Inserts (without updates) new objects 
+     * from the source model to this one
+     * 
+     * @param source the source model
+     */
+    void insert(Model source);
+    
+ 
+    /**
+     * Updates object relationships from 
+     * the source model.
+     * 
+     * @param source the source model
+     */
+    void update(Model source);
+    
     
     /**
-     * Merges the source model into this one.
+     * Merges (inserts new and updates all) objects
+     * from the source model into this one.
+     * 
+     * @see #insert(Model)
+     * @see #update(Model)
      * 
      * @param source a model to merge
+     * 
      */
     void merge(Model source);
     
@@ -127,14 +133,6 @@ public interface PaxtoolsDAO extends Model {
      * @param bpe
      */
     void merge(BioPAXElement bpe);
-
-    
-    /**
-     * Updates
-     * 
-     * @param model
-     */
-    void update(Model model);
     
     
     /**
@@ -142,8 +140,25 @@ public interface PaxtoolsDAO extends Model {
      * 
      * @param analysis defines a job/query to perform
      * @param args - optional parameters for the algorithm
-     * @return
+     * @return a detached (cloned) BioPAX sub-model
      */
     Model runAnalysis(Analysis analysis, Object... args);
-
+    
+    
+    /**
+     * Accesses and collects BioPAX property values 
+     * at the end of the path (applied to every element in the list)
+     * 
+     * @param propertyPath
+     * @param uris
+     * @return source element uri, path, and corresponding values
+     */
+    TraverseResponse traverse(String propertyPath, String... uris);
+ 
+    
+    /**
+     * Create or re-build the full-text index.
+     */
+    void index();
+    
 }

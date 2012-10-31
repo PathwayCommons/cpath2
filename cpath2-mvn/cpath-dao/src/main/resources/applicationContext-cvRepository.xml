@@ -12,8 +12,8 @@
 	
     <context:annotation-config/>
 
-	<!-- info: CvFetcher extends OntologyManager(Adapter) and also implements CvRepository interface -->
-	<bean id="cvFetcher" class="cpath.warehouse.internal.OntologyManagerCvRepository">
+	<!-- info: CvFetcher extends OntologyManager(Adapter) and also implements WarehouseDAO interface -->
+	<bean id="cvFetcher" class="cpath.dao.internal.OntologyManagerCvRepository">
 		<constructor-arg index="0" ref="ontologies"/>
 		<constructor-arg index="1"><null/></constructor-arg>
 		<constructor-arg index="2" value="true"/> 

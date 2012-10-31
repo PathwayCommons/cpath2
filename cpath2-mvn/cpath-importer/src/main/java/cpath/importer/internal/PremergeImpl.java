@@ -27,27 +27,21 @@
 package cpath.importer.internal;
 
 // imports
-import cpath.cleaner.Cleaner;
 import cpath.config.CPathSettings;
-import cpath.dao.DataServices;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
+import cpath.importer.Cleaner;
 import cpath.importer.Premerge;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
-//import org.biopax.paxtools.controller.*;
-//import org.biopax.paxtools.model.level3.Pathway;
-//import org.biopax.paxtools.io.simpleIO.*;
-import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.validator.result.*;
 import org.biopax.validator.Validator;
 import org.biopax.validator.utils.BiopaxValidatorUtils;
-import org.biopax.validator.utils.Normalizer;
 import org.biopax.validator.utils.Normalizer.NormalizerOptions;
 
 import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
@@ -55,19 +49,15 @@ import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
-
 import java.util.*;
 
 import java.io.*;
 
-import javax.sql.DataSource;
 
 /**
  * Class responsible for premerging pathway data.
  */
-public class PremergeImpl implements Premerge {
+final class PremergeImpl implements Premerge {
 
     private static Log log = LogFactory.getLog(PremergeImpl.class);
 
@@ -79,14 +69,13 @@ public class PremergeImpl implements Premerge {
 	private String version;
 
 	/**
-	 *
 	 * Constructor.
 	 *
 	 * @param metadata
 	 * @param metaDataDAO
 	 * @param validator Biopax Validator
 	 */
-	public PremergeImpl(final MetadataDAO metaDataDAO,
+	PremergeImpl(final MetadataDAO metaDataDAO,
 						final Validator validator) 
 	{
 		this.metaDataDAO = metaDataDAO;
@@ -102,7 +91,7 @@ public class PremergeImpl implements Premerge {
     public void premerge() {
 
 		// grab all metadata
-		Collection<Metadata> metadataCollection = metaDataDAO.getAll();
+		Collection<Metadata> metadataCollection = metaDataDAO.getAllMetadata();
 
 		// iterate over all metadata
 		for (Metadata metadata : metadataCollection) {
@@ -116,8 +105,7 @@ public class PremergeImpl implements Premerge {
 			}
 			
 			// only process interaction or pathway data
-			if (metadata.getType() == Metadata.TYPE.PSI_MI ||
-				metadata.getType() == Metadata.TYPE.BIOPAX) {
+			if (!metadata.getType().isWarehouseData()) {
 				process(metadata);
 			}
 		}
@@ -131,20 +119,23 @@ public class PremergeImpl implements Premerge {
 	  try {
 		// get pathway data
 		if(log.isInfoEnabled())
-			log.info("run(), getting pathway data for provider.");
+			log.info("run(), getting pathway data for provider " 
+					+ metadata);
 		Collection<PathwayData> pathwayDataCollection =
 			metaDataDAO.getPathwayDataByIdentifierAndVersion(metadata.getIdentifier(), metadata.getVersion());
 
-		// create cleaner
-		if(log.isInfoEnabled())
-			log.info("run(), getting a cleaner with name: " + metadata.getCleanerClassname());
-		cleaner = getCleaner(metadata.getCleanerClassname());
-		if (cleaner == null) {
-			// TDB: report failure
-			if(log.isInfoEnabled())
-				log.info("run(), could not create cleaner class " 
-					+ metadata.getCleanerClassname());
-			return;
+		// Try to instantiate the Cleaner now, and exit if it fails!
+		cleaner = null; //reset to null!
+		final String cl = metadata.getCleanerClassname();
+		if(cl != null && cl.length()>0) {
+			cleaner = ImportFactory.newCleaner(cl);
+			if (cleaner == null) {
+				log.error("run(), failed to create the Cleaner: " + cl
+					+ "; skipping for this data source...");
+				return; // skip this data entirely due to the error
+			} 			
+		} else {
+			log.info("run(), no Cleaner was specified; continue...");	
 		}
 		
 		PaxtoolsDAO pemergeDAO = null;
@@ -152,14 +143,14 @@ public class PremergeImpl implements Premerge {
 		if (isCreateDb()) {
 			// build the premerge DAO -
 			// first, create a new database schema
-			String premergeDbName = CPathSettings.CPATH_DB_PREFIX
+			String premergeDbName = "cpath2_"
 				+ metadata.getIdentifier() + "_" + metadata.getVersion();
 			if(log.isInfoEnabled())
 				log.info("Creating a new 'pre-merge' db and schema: " +
 						premergeDbName);
 			DataServicesFactoryBean.createSchema(premergeDbName);
 			// next, get the PaxtoolsDAO instance
-			pemergeDAO = buildPremergeDAO(premergeDbName);
+			pemergeDAO = ImportFactory.buildPaxtoolsHibernateDAO(premergeDbName);
 		}
 	
 		// iterate over and process all pathway data
@@ -168,7 +159,7 @@ public class PremergeImpl implements Premerge {
 				+ metadata.getIdentifier());
 		for (PathwayData pathwayData : pathwayDataCollection) {
 			try {
-				pipeline(metadata, pathwayData, pemergeDAO); //pemergeDAO);
+				pipeline(metadata, pathwayData, pemergeDAO);
 			}
 			catch(Exception e) {
 				log.error("pipeline(), failed for " + pathwayData, e);
@@ -191,22 +182,21 @@ public class PremergeImpl implements Premerge {
 	 * @param premergeDAO persistent BioPAX model for the data provider
 	 */
 	private void pipeline(Metadata metadata, PathwayData pathwayData, PaxtoolsDAO premergeDAO) {
-		String data = null;
+		// here go data to process
+		String data = new String(pathwayData.getPathwayData());
 		String info = pathwayData.toString();
-
-		// get the BioPAX OWL from the pathwayData bean
-		data = pathwayData.getPathwayData();
 		
 		/*
-		 * First, clean - 
-		 * in other words - apply data provider-specific "quick fixes"
-		 * (the Cleaner class is specified at the Metadata conf. level)
+		 * First, get and clean (not modifying the original) pathway data,
+		 * in other words, - apply data provider-specific "quick fixes"
+		 * (a Cleaner class can be specified in the metadata.conf)
 		 * to the original data (in PSI_MI, BioPAX L2, or L3 formats)
 		 */
-		if(log.isInfoEnabled())
-			log.info("pipeline(), cleaning data " + info);
-		
-		data = cleaner.clean(data);
+		if(cleaner != null) {
+			log.info("pipeline(), cleaning data " + info +
+				" with " + cleaner.getClass());
+			data = cleaner.clean(data);
+		}
 		
 		// Second, if psi-mi, convert to biopax L3
 		if (metadata.getType() == Metadata.TYPE.PSI_MI) {
@@ -222,9 +212,7 @@ public class PremergeImpl implements Premerge {
 			}
 		} 
 		
-		if(log.isInfoEnabled())
-			log.info("pipeline(), validating pathway data "
-				+ info);
+		log.info("pipeline(), validating pathway data "	+ info);
 		
 		
 		/* Validate, auto-fix, and normalize (incl. convesion to L3): 
@@ -233,18 +221,20 @@ public class PremergeImpl implements Premerge {
 		 */
 		Validation v = checkAndNormalize(pathwayData.toString(), data);
 		if(v == null) {
-			if(log.isInfoEnabled())
-				log.info("pipeline(), skipping: " + info);
+			log.info("pipeline(), skipping: " + info);
 			return;
 		}
 		
 		// (in addition to normalizer's job) find existing or create new Provenance 
 		// from the metadata.name to add it explicitly to all entities now!
-		fixDataSource(v.getModel(), metadata);	
+		setDataSource(v.getModel(), metadata);	
+		
+		// TODO calculate pathway membership (stored in the bpe.annotation)
+//		(new ModelUtils(v.getModel())).calculatePathwayMembership(Entity.class, false, true);
 		
 		// get the updated BioPAX OWL and save it in the pathwayData bean
 		v.updateModelSerialized();
-		pathwayData.setPremergeData(v.getModelSerialized());
+		pathwayData.setPremergeData(v.getModelSerialized().getBytes());
 		
 		/* Now - add the serialized validation results 
 		 * to the pathwayData entity bean, validationResults column.
@@ -261,16 +251,14 @@ public class PremergeImpl implements Premerge {
 		StringWriter writer = new StringWriter();
 		BiopaxValidatorUtils.write(v, writer, null);
 		writer.flush();		
-		pathwayData.setValidationResults(writer.toString());
+		final String validationResultStr = writer.toString();
+		pathwayData.setValidationResults(validationResultStr.getBytes());
 		
 		// count critical not fixed error cases (ignore warnings and fixed ones)
 		int noErrors = v.countErrors(null, null, null, null, true, true);
-		if(log.isInfoEnabled()) {
-			log.info("pipeline(), summary for " + info
-				+ ". Critical errors found:" + noErrors + ". " 
-				+ v.getComment().toString() + "; " 
-				+ v.toString());
-		}
+		log.info("pipeline(), summary for " + info
+			+ ". Critical errors found:" + noErrors + ". " 
+			+ v.getComment().toString() + "; " + v.toString());
 		
 		if(noErrors > 0) 
 			pathwayData.setValid(false); 
@@ -281,36 +269,14 @@ public class PremergeImpl implements Premerge {
 		metaDataDAO.importPathwayData(pathwayData);
 		
 		// persist
-		if(noErrors <= 0 && isCreateDb()) {			
+		if(isCreateDb()) {			
 			// Get the normalized and validated model and persist it
-			if (log.isInfoEnabled())
-				log.info("pipeline(), persisting pathway data "
-					+ info);
+			log.info("pipeline(), persisting pathway data "	+ info);
 			
 			Model pathwayDataModel = v.getModel();
 			
 			// persist all at once -
 			premergeDAO.merge(pathwayDataModel);
-		}
-	}
-
-	/**
-	 * For the given cleaner class name,
-	 * returns an instance of a class which
-	 * implements the cleaner interface.
-	 *
-	 * @param cleanerClassName String
-	 * @return Cleaner
-	 */
-	private Cleaner getCleaner(final String cleanerClassName) {
-		try {
-			Class cleanerClass = getClass().forName(cleanerClassName);
-			return (cleanerClass == null) ?
-				null : (Cleaner)cleanerClass.newInstance();
-		}
-		catch (Exception e) {
-			log.fatal(e);
-			return null;
 		}
 	}
 
@@ -325,7 +291,6 @@ public class PremergeImpl implements Premerge {
 		String toReturn = "";
 				
 		try {
-
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
 			InputStream is = new ByteArrayInputStream(psimiData.getBytes("UTF-8"));
 			PSIMIBioPAXConverter psimiConverter = new PSIMIBioPAXConverter(BioPAXLevel.L3);
@@ -357,12 +322,15 @@ public class PremergeImpl implements Premerge {
 		validation.setNormalize(true);
 		// use special normalizer options
 		NormalizerOptions normalizerOptions = new NormalizerOptions();
-		normalizerOptions.setFixDisplayName(true);
-		normalizerOptions.setInferPropertyDataSource(true);
-		normalizerOptions.setInferPropertyOrganism(true);
-		normalizerOptions.setGenerateRelatioshipToOrganismXrefs(true);
-		normalizerOptions.setGenerateRelatioshipToPathwayXrefs(true); 
-		normalizerOptions.setGenerateRelatioshipToInteractionXrefs(false); //no
+		// to infer/autofix biopax properties
+		normalizerOptions.setFixDisplayName(true); // important
+		normalizerOptions.setInferPropertyDataSource(false); // not important since we started generating Provenance from Metadata
+		normalizerOptions.setInferPropertyOrganism(true); // important (for filtering by organism)
+		// disable auto-generated xrefs (not required by cpath2, since 2012/01)
+		normalizerOptions.setGenerateRelatioshipToOrganismXrefs(false); //was to filter search results...
+		normalizerOptions.setGenerateRelatioshipToPathwayXrefs(false);
+		normalizerOptions.setGenerateRelatioshipToInteractionXrefs(false);
+		
 		validation.setNormalizerOptions(normalizerOptions);
 		// collect both errors and warnings
 		validation.setThreshold(Behavior.WARNING); // means - all err./warn.
@@ -391,93 +359,70 @@ public class PremergeImpl implements Premerge {
 		
 		return validation;
 	}
-	
-	/**
-	 * Creates new PaxtoolsDAO instance to work with existing "premerge"
-	 * database. This is used both during the "pre-merge" (here) and "merge".
-	 */
-	public static PaxtoolsDAO buildPremergeDAO(String premergeDbName) {
-		/* 
-		 * set system properties and data source 
-		 * (replaces existing one in the same thread),
-		 * load another specific application context
-		 */
-		String home = CPathSettings.getHomeDir();
-		if (home==null) {
-			throw new RuntimeException(
-				"Please set " + CPathSettings.HOME_VARIABLE_NAME + " environment variable " +
-            	" (point to a directory where cpath.properties, etc. files are placed)");
-		}
-		
-		// get the data source factory bean (aware of the driver, user, and password)
-		ApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
-		DataServices dataServices = (DataServices) context.getBean("&dsBean");
-		DataSource premergeDataSource = dataServices.getDataSource(premergeDbName);
-		DataServicesFactoryBean.getDataSourceMap().put(CPathSettings.PREMERGE_DB_KEY, premergeDataSource);
-		// get the premerge DAO
-		context = new ClassPathXmlApplicationContext("classpath:internalContext-premerge.xml");	
-		return (PaxtoolsDAO)context.getBean("premergePaxtoolsDAO");
-	}
 
-	public boolean isCreateDb() {
+	
+	boolean isCreateDb() {
 		return createDb;
 	}
-	public void setCreateDb(boolean createDb) {
+	void setCreateDb(boolean createDb) {
 		this.createDb = createDb;
 	}
 
-	public String getIdentifier() {
+	String getIdentifier() {
 		return identifier;
 	}
-	public void setIdentifier(String identifier) {
+	void setIdentifier(String identifier) {
 		this.identifier = identifier;
 	}
 
-	public String getVersion() {
+	String getVersion() {
 		return version;
 	}
-	public void setVersion(String version) {
+	void setVersion(String version) {
 		this.version = version;
 	}
 	
 	
-	private void fixDataSource(Model model, Metadata metadata) {
+	/**
+	 * Creates a new Provenance from the Metadata record and sets
+	 * if to all Entity class objects.
+	 * This makes sure all entities will be indexed with - and
+	 * are possible to search/filter by data source identifiers and 
+	 * names specified in the cpath2 metadata table.
+	 * 
+	 * @param model BioPAX model
+	 * @param metadata
+	 */
+	private void setDataSource(Model model, Metadata metadata) {
 		Provenance pro = null;
 		
-		String urn; 
-		try {
-		 urn = MiriamLink.getDataTypeURI(metadata.getName());
-		} catch (IllegalArgumentException e) {
-			throw new IllegalArgumentException(
-				"Metadata 'name' must be a valid Miriam standard name " +
-				"or synonym for the data source!", e);
-		}
+		// we create URI from the Metadata identifier and version.
+		pro = model.addNew(Provenance.class, metadata.getUri());
 		
-		if(model.containsID(urn))
-			pro = (Provenance) model.getByID(urn);
-		else {
-			pro = BioPAXLevel.L3.getDefaultFactory().create(Provenance.class, urn);
-			Normalizer.autoName(pro); // + standard name and synonyms
-		}
-
+		// parse/set names
+		String[] names = metadata.getName().split(";");
+		String name = names[0].trim();
+		pro.setDisplayName(name.toLowerCase());
+		if(names.length > 1)
+			pro.setStandardName(names[1].trim());
+		else
+			pro.setStandardName(name);
+		
+		if(names.length > 2)
+			for(int i=2; i < names.length; i++)
+				pro.addName(names[i].trim());
+		
 		// add additional info about the current version, source, identifier, etc...
-		String keyComment = CPathSettings.CPATH2_GENERATED_COMMENT + 
-			". Data (internal) id: " + metadata.getIdentifier();
-		if(!pro.getComment().contains(keyComment)) { // trying not to add multiple times...
-			pro.addComment(keyComment);
-			pro.addComment(CPathSettings.CPATH2_GENERATED_COMMENT + 
-				". Data loaded from: " + metadata.getURLToData());
-			pro.addComment(CPathSettings.CPATH2_GENERATED_COMMENT + 
-				". Data type: " + metadata.getType());
-			pro.addComment(CPathSettings.CPATH2_GENERATED_COMMENT + 
-					". Data version: " + metadata.getVersion() + 
-					", " + metadata.getReleaseDate());
-		}
+		final String loc = metadata.getUrlToData(); 
+		pro.addComment("Source " + 
+			//skip for a local or empty (default) location
+			((loc.startsWith("http:") || loc.startsWith("ftp:")) ? loc : "") 
+			+ " type: " + metadata.getType() + "; version: " + 
+			metadata.getVersion() + ", " + metadata.getDescription());
 		
-		// add new value to each entity (but not to the model yet - it's
-		// simpleMerger's job)
+		// set for all entities
 		for (Entity ent : model.getObjects(Entity.class)) {
+			ent.getDataSource().clear(); //remove other DSs (not normalized)
 			ent.addDataSource(pro);
 		}
 	}

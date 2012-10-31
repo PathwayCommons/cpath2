@@ -30,6 +30,7 @@ package cpath.warehouse;
 import java.util.Set;
 
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 
 
@@ -39,37 +40,46 @@ import org.biopax.paxtools.model.level3.*;
  * @author rodch
  */
 public interface WarehouseDAO {
-
-	/**
-	 * Gets fully initialized (and detached form the DAO) BioPAX object.
-	 * 
-	 * @param urn
-	 * @return
-	 */
-	BioPAXElement getObject(String urn);
 	
 	
 	/**
-	 * Gets fully initialized (and detached form the DAO) BioPAX object.
+	 * Gets a fully initialized (and detached) BioPAX object.
 	 * 
 	 * @param <T> BioPAXElement or its subclass (e.g., ProteinReference)
-	 * @param urn
+	 * @param uri
 	 * @param clazz
 	 * @return
 	 */
-	<T extends BioPAXElement> T getObject(String urn, Class<T> clazz);
+	<T extends BioPAXElement> T createBiopaxObject(String uri, Class<T> clazz);
 	
+	
+    /**
+     * Gets a fully initialized (and detached) BioPAX sub-model 
+     * that contains the BioPAX object and its children.
+     * 
+     * @param <T> BioPAXElement or its subclass (e.g., ProteinReference)
+     * @param uri
+     * @param clazz
+     * 
+     * @return model that contains the object and its dependents or null.
+     */
+	<T extends BioPAXElement> Model createSubModel(String uri, Class<T> clazz);
+    
 	
 	/**
-	 * Gets identifier(s) of the BioPAX object(s) using the xrefs to search by.
+	 * Gets identifier(s) of the BioPAX object(s) stored in the warehouse 
+	 * by using the xrefs as a query.
 	 * 
-	 * Thus, this method allows for "id-mapping": one can try finding an entity reference
-	 * using some identifier or keyword and then gets all the xrefs (other IDs) and primary URI.
+	 * In fact, this method does sort of "id-mapping", which is based on the
+	 * warehouse data though, i.e., on how and which Xrefs were generated for each
+	 * protein or small molecule entry during the warehous was built, which can be 
+	 * improved from one release to another (an may be still no perfect). And, 
+	 * one can always create better BioPAX data alignment/merge algorithm on top of it.
 	 * 
 	 * @param xrefs query set of xrefs
 	 * @param clazz subclass (of XReferable) of the requested object
 	 * @return
 	 */
-	Set<String> getByXref(Set<? extends Xref> xrefs, Class<? extends XReferrable> clazz);
+	Set<String> findByXref(Set<? extends Xref> xrefs, Class<? extends XReferrable> clazz);
 	
 }

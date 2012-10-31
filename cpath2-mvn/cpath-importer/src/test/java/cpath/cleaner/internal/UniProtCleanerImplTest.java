@@ -35,12 +35,12 @@ import java.util.zip.GZIPInputStream;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import cpath.cleaner.Cleaner;
+import cpath.importer.Cleaner;
 
 /**
  * Test UniProt data cleaner.
  */
-//@Ignore
+@Ignore
 public class UniProtCleanerImplTest {
 
     // some statics of accessions before cleaning
@@ -89,8 +89,8 @@ public class UniProtCleanerImplTest {
 		InputStream is = getClass().getResourceAsStream(file);
 		GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(is));
 
-        StringBuffer fileData = new StringBuffer();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(zis));
+        StringBuilder fileData = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(zis, "UTF-8"));
         char[] buf = new char[1024];
         int numRead=0;
         while ((numRead=reader.read(buf)) != -1) {

@@ -3,12 +3,11 @@
   <parent>
     <artifactId>parent</artifactId>
     <groupId>pathwaycommons.cpath</groupId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>3.2.4-SNAPSHOT</version>
   </parent>
-  <groupId>pathwaycommons.cpath</groupId>
   <artifactId>cpath-service</artifactId>
   <name>cPath2 Service Tier</name>
-  <description>CPath2 services that can be used both in web and console applications.</description>
+  <description>CPath2 services to be used in the web controllers and console application(s).</description>
   <url>http://www.pathwaycommons.org</url>
   <dependencies>
   	<dependency>
@@ -20,13 +19,16 @@
 		<groupId>org.biopax.paxtools</groupId>
 		<artifactId>sif-converter</artifactId>
 		<version>${paxtools.version}</version>
-	</dependency>
+    </dependency>
+      <dependency>
+          <groupId>org.biopax.paxtools</groupId>
+          <artifactId>sbgn-converter</artifactId>
+          <version>${paxtools.version}</version>
+    </dependency>
   	<dependency>
   		<groupId>org.biopax.paxtools</groupId>
   		<artifactId>gsea-converter</artifactId>
   		<version>${paxtools.version}</version>
-  		<type>jar</type>
-  		<scope>compile</scope>
   	</dependency>
   	<dependency>
   		<groupId>org.biopax.paxtools</groupId>
@@ -35,37 +37,9 @@
   	</dependency>
   	<dependency>
   		<groupId>pathwaycommons.cpath</groupId>
-  		<artifactId>cpath-schema</artifactId>
-         	<version>${cpath.schema.version}</version>
+  		<artifactId>cpath-api</artifactId>
+  		<version>${cpath.api.version}</version>
   	</dependency>
   </dependencies>
-  
-  <build>
-		<plugins>
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.2-beta-5</version>
-				<configuration>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-					<archive>
-						<manifest>
-							<mainClass>cpath.service.Main</mainClass>
-						</manifest>
-					</archive>
-				</configuration>
-				<executions>
-					<execution>
-						<id>make-assembly</id>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-  </build>
-  
+    
 </project>

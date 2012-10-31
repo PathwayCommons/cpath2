@@ -11,60 +11,69 @@
 		<owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl#" />
 	</owl:Ontology>
 
+	<bp:Provenance rdf:about="urn:biopax:Provenance:test_00">
+		<bp:displayName rdf:datatype="xsd:string">Test</bp:displayName>
+		<bp:standardName rdf:datatype="xsd:string">Reactome</bp:standardName>
+		<bp:comment rdf:datatype="xsd:string">this additional datasource (required for full-text search/filtering) would be generated from cpath2 metadata.conf and set for all entities</bp:comment>
+	</bp:Provenance>
+
+
 	<bp:Protein rdf:ID="Protein_A">
-		<bp:entityReference rdf:resource="urn:miriam:uniprot:P46880" />
-		<bp:cellularLocation rdf:resource="urn:miriam:obo.go:GO%3A0005737" />
+		<bp:entityReference rdf:resource="http://identifiers.org/uniprot/P46880" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
 		<bp:displayName rdf:datatype="xsd:string">glucokinase A</bp:displayName>
-		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="#reactome" />
 		<bp:comment rdf:datatype="xsd:string">Example to test paxtools/hibernate...</bp:comment>
+		<bp:dataSource rdf:resource="urn:biopax:Provenance:test_00" />
 	</bp:Protein>
 
 	<bp:Protein rdf:ID="Protein_B">
-		<bp:entityReference rdf:resource="urn:miriam:uniprot:P46880" />
+		<bp:entityReference rdf:resource="http://identifiers.org/uniprot/P46880" />
 		<bp:displayName rdf:datatype="xsd:string">glucokinase B</bp:displayName>
-		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="#reactome" />
+		<bp:dataSource rdf:resource="urn:biopax:Provenance:test_00" />
 	</bp:Protein>
 
-	<bp:ProteinReference rdf:about="urn:miriam:uniprot:P46880">
+	<bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P46880">
 		<bp:displayName rdf:datatype="xsd:string">glucokinase</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">GLK</bp:standardName>
-		<bp:xref rdf:resource="urn:pathwaycommons:UnificationXref:UniProt_P46880" />
+		<bp:xref rdf:resource="urn:biopax:UnificationXref:UniProt_P46880" />
 		<bp:sequence rdf:datatype="xsd:string">MTKYALVGDVGGTNARLALCDIASGEISQAKTYSGLDYPSLEAVIRVYLEEHKVEVKDGCIAIACPITGDWVAMTNHTWAFSIAEMKKNLGFSHLEIINDFTAVSMAIPMLKKEHLIQFGGAEPVEGKPIAVYGAGTGLGVAHLVHVDKRWVSLPGEGGHVDFAPNSEEEAIILEILRAEIGHVSAERVLSGPGLVNLYRAIVKADNRLPENLKPKDITERALADSCTDCRRALSLFCVIMGRFGGNLALNLGTFGGVFIAGGIVPRFLEFFKASGFRAAFEDKGRFKEYVHDIPVYLIVHDNPGLLGSGAHLRQTLGHIL
 		</bp:sequence>
-		<bp:organism rdf:resource="urn:miriam:taxonomy:562" />
+		<bp:organism rdf:resource="http://identifiers.org/taxonomy/562" />
 	</bp:ProteinReference>
 
-	<bp:BioSource rdf:about="urn:miriam:taxonomy:562">
+	<bp:BioSource rdf:about="http://identifiers.org/taxonomy/562">
 		<bp:displayName rdf:datatype="xsd:string">Escherichia coli
 		</bp:displayName>
-		<bp:xref rdf:resource="urn:pathwaycommons:UnificationXref:Taxonomy_562" />
+		<bp:xref rdf:resource="urn:biopax:UnificationXref:Taxonomy_562" />
 	</bp:BioSource>
 
-	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:Taxonomy_562">
+	<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:Taxonomy_562">
 		<bp:db rdf:datatype="xsd:string">Taxonomy</bp:db>
 		<bp:id rdf:datatype="xsd:string">562</bp:id>
 	</bp:UnificationXref>
 
-	<bp:CellularLocationVocabulary rdf:about="urn:miriam:obo.go:GO%3A0005737">
+	<bp:CellularLocationVocabulary rdf:about="http://identifiers.org/obo.go/GO:0005737">
 		<bp:term rdf:datatype="xsd:string">cytoplasm</bp:term>
 		<bp:xref
-			rdf:resource="urn:pathwaycommons:UnificationXref:Gene+Ontology_GO%3A0005737" />
+			rdf:resource="urn:biopax:UnificationXref:Gene+Ontology_GO%3A0005737" />
 	</bp:CellularLocationVocabulary>
 
-	<bp:UnificationXref rdf:about="urn:pathwaycommons:UnificationXref:UniProt_P46880">
+	<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UniProt_P46880">
 		<bp:db rdf:datatype="xsd:string">UniProt</bp:db>
 		<bp:id rdf:datatype="xsd:string">P46880</bp:id>
 		<bp:comment rdf:datatype="xsd:string">PMID: 15608167</bp:comment>
 	</bp:UnificationXref>
 
-	<bp:Provenance rdf:about="urn:miriam:reactome">
+	<bp:Provenance rdf:ID="reactome">
 		<bp:displayName rdf:datatype="xsd:string">Reactome</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">Reactome</bp:standardName>
 		<bp:comment rdf:datatype="xsd:string">originally - was aMAZE (renamed for junit tests)</bp:comment>
 	</bp:Provenance>
 
 	<bp:UnificationXref
-		rdf:about="urn:pathwaycommons:UnificationXref:Gene+Ontology_GO%3A0005737">
+		rdf:about="urn:biopax:UnificationXref:Gene+Ontology_GO%3A0005737">
 		<bp:db rdf:datatype="xsd:string">Gene Ontology</bp:db>
 		<bp:id rdf:datatype="xsd:string">GO:0005737</bp:id>
 		<bp:comment rdf:datatype="xsd:string">PMID: 11483584</bp:comment>
@@ -78,27 +87,30 @@
 		<bp:right rdf:resource="#Protein_A" />
 		<bp:right rdf:resource="#ADP1" />
 		<bp:displayName rdf:datatype="xsd:string">pA turns ATP to ADP</bp:displayName>
-		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="#reactome" />
+		<bp:dataSource rdf:resource="urn:biopax:Provenance:test_00" />
 	</bp:BiochemicalReaction>
 	
 	<bp:SmallMolecule rdf:ID="ADP1">
 		<bp:entityReference rdf:resource="#ADP" />
-		<bp:cellularLocation rdf:resource="urn:miriam:obo.go:GO%3A0005737" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">ADP</bp:standardName>
 		<bp:name rdf:datatype="xsd:string">adenosine diphosphate</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">Adenosine
 			5&apos;-diphosphate</bp:displayName>
-		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="#reactome" />
+		<bp:dataSource rdf:resource="urn:biopax:Provenance:test_00" />
 	</bp:SmallMolecule>
 	
 	<bp:SmallMolecule rdf:ID="ATP1">
 		<bp:entityReference rdf:resource="#ATP" />
-		<bp:cellularLocation rdf:resource="urn:miriam:obo.go:GO%3A0005737" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">ATP</bp:standardName>
 		<bp:name rdf:datatype="xsd:string">adenosine triphosphate</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">Adenosine
 			5&apos;-triphosphate</bp:displayName>
-		<bp:dataSource rdf:resource="urn:miriam:reactome" />
+		<bp:dataSource rdf:resource="#reactome" />
+		<bp:dataSource rdf:resource="urn:biopax:Provenance:test_00" />
 	</bp:SmallMolecule>
 	
 	<bp:SmallMoleculeReference rdf:ID="ADP">

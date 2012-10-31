@@ -31,7 +31,6 @@ public class Graph {
 	public Graph() {
 		format = OutputFormat.BIOPAX; // default
 		limit = 1;
-		direction = Direction.DOWNSTREAM;
 	}
 
 	public OutputFormat getFormat() {

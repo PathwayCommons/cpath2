@@ -42,18 +42,10 @@ public class GraphQueryLimitEditor extends PropertyEditorSupport {
 	private static final Log log = LogFactory.getLog(GraphQueryLimitEditor.class);
 
 	@Override
-	public void setAsText(String arg0) throws IllegalArgumentException
+	public void setAsText(String arg0)
 	{
 		LimitType value = null;
-
-		try
-		{
-			value = LimitType.valueOf(arg0.trim().toUpperCase());
-		}
-		catch (IllegalArgumentException e){
-			log.info(e);
-		}
-
+		value = LimitType.valueOf(arg0.trim().toUpperCase());
 		setValue(value);
 	}
 }

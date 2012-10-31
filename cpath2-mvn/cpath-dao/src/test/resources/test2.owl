@@ -9,20 +9,20 @@
 	</owl:Ontology>
 
 	<bp:Protein rdf:ID="Protein_A">
-		<bp:entityReference rdf:resource="urn:miriam:uniprot:P46880" />
+		<bp:entityReference rdf:resource="http://identifiers.org/uniprot/P46880" />
 		<bp:cellularLocation rdf:resource="urn:miriam:obo.go:GO%3A0005737" />
 		<bp:displayName rdf:datatype="xsd:string">glucokinase A</bp:displayName>
-		<bp:dataSource rdf:resource="#aMAZE" />
+		<bp:dataSource rdf:resource="urn:biopax:Provenance:aMAZE" />
 		<bp:comment rdf:datatype="xsd:string">Example to test paxtools/hibernate...</bp:comment>
 	</bp:Protein>
 
 	<bp:Protein rdf:ID="Protein_B">
-		<bp:entityReference rdf:resource="urn:miriam:uniprot:P46880" />
+		<bp:entityReference rdf:resource="http://identifiers.org/uniprot/P46880" />
 		<bp:displayName rdf:datatype="xsd:string">glucokinase B</bp:displayName>
-		<bp:dataSource rdf:resource="#aMAZE" />
+		<bp:dataSource rdf:resource="urn:biopax:Provenance:aMAZE" />
 	</bp:Protein>
 
-	<bp:ProteinReference rdf:about="urn:miriam:uniprot:P46880">
+	<bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P46880">
 		<bp:displayName rdf:datatype="xsd:string">glucokinase</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">GLK</bp:standardName>
 		<bp:xref rdf:resource="urn:biopax:UnificationXref:UniProt_P46880" />
@@ -54,8 +54,9 @@
 		<bp:comment rdf:datatype="xsd:string">PMID: 15608167</bp:comment>
 	</bp:UnificationXref>
 
-	<bp:Provenance rdf:ID="aMAZE">
+	<bp:Provenance rdf:about="urn:biopax:Provenance:aMAZE">
 		<bp:displayName rdf:datatype="xsd:string">aMAZE</bp:displayName>
+		<bp:comment>test2</bp:comment>
 	</bp:Provenance>
 
 	<bp:UnificationXref

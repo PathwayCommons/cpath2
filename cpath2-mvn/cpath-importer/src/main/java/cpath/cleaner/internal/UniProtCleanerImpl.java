@@ -1,11 +1,14 @@
 package cpath.cleaner.internal;
 
 // imports
-import cpath.cleaner.Cleaner;
+import cpath.warehouse.beans.PathwayData;
 
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Implementation of Cleaner interface for UniProt data.
@@ -21,7 +24,7 @@ import java.util.regex.*;
  * uniprot_sprot_xxxx.dat, where xxxx is species.
  *
  */
-public class UniProtCleanerImpl extends BaseCleanerImpl implements Cleaner {
+final class UniProtCleanerImpl extends BaseCleanerImpl {
 
     // delimiter between accessions
     private static final String AC_DELIMITER = "; ";
@@ -33,22 +36,34 @@ public class UniProtCleanerImpl extends BaseCleanerImpl implements Cleaner {
     private static final String ID_REGEX = "^ID\\s*(\\w*).*$";
     private static Pattern pattern = Pattern.compile(ID_REGEX);
 
+	// logger
+    private static Log log = LogFactory.getLog(UniProtCleanerImpl.class);
+    
 	/**
 	 * (non-Javadoc>
-	 * @see cpath.cleaner.Cleaner#clean(java.lang.String)
+	 * @see cpath.importer.Cleaner#clean(PathwayData)
 	 */
-	public String clean(final String pathwayData) {
+    @Override
+	public String clean(final String uniProtData) {
 
         // string we will return
-        String toReturn = pathwayData;
+        String toReturn = uniProtData;
+        
+        if (log.isInfoEnabled()) {
+        	log.info("clean(), starting...");
+		}
         
         try {
-            toReturn = cleanAccessions(pathwayData, populateAccessionsMap(pathwayData));
+            toReturn = cleanAccessions(uniProtData, populateAccessionsMap(uniProtData));
         }
         catch (IOException e) {
             throw new IllegalArgumentException("Error reading uniprot data");
         }
 
+        if (log.isInfoEnabled()) {
+        	log.info("clean(), done!");
+		}
+        
         // outta here
         return toReturn;
     }
@@ -157,7 +172,7 @@ public class UniProtCleanerImpl extends BaseCleanerImpl implements Cleaner {
      */
     private String getAccessionsListAsString(List<String> accessionsList) {
         
-        StringBuffer toReturn = new StringBuffer(AC_PREFIX);
+        StringBuilder toReturn = new StringBuilder(AC_PREFIX);
 
         for (String accession : accessionsList) {
             toReturn.append(accession + AC_DELIMITER);
@@ -191,7 +206,7 @@ public class UniProtCleanerImpl extends BaseCleanerImpl implements Cleaner {
      */
     private String cleanAccessions(final String uniprotData, Map<String, List<String>> accessionsMap) throws IOException {
 
-        StringBuffer toReturn = new StringBuffer();
+        StringBuilder toReturn = new StringBuilder();
 
         // create a buffered reader
         BufferedReader bufferedReader = new BufferedReader(new StringReader(uniprotData));

@@ -26,47 +26,108 @@
  **/
 package cpath.config;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Properties;
+
+import org.biopax.paxtools.controller.ModelUtils;
+import org.biopax.paxtools.impl.BioPAXElementImpl;
+
 
 /**
- * CPathSquared Build Constants
+ * CPath2 constants and properties access.
  * 
  * @author rodche
- *
  */
 public final class CPathSettings {
-	protected CPathSettings(){};
 	
+	private static final Properties cPathProperties = new Properties();
+
+	/**
+	 * Current Newline symbol ('line.separator' system property value)
+	 */
 	public static final String NEWLINE = System.getProperty ( "line.separator" );
 	
+	/**
+	 * Name for the system environment and/or JVM variable 
+	 * cPath2 uses to know its "home" directory location.
+	 */
 	public static final String HOME_VARIABLE_NAME = "CPATH2_HOME";
-	
-	/*
-	 * These define only the "KEYS" for the DataServicesFactoryBean's 
-	 * data sources map. Values (actual db names) are defined
-	 * in cpath.properties file (in the CPATH2_HOME directory).
-	 * So, these keys are used in the corresponding Spring 
-	 * context configuration files (where SessionFactory is defined)
-	 * to define the dataSource beans, e.g.:
-	 * <bean id="cpath2_meta" class="cpath.dao.internal.DataServicesFactoryBean"/>
-	 * ('cpath2_meta' is a key to get the data source from the factory)
-	 */
-	public static final String MAIN_DB_KEY = "cpath2_main";
-	public static final String METADATA_DB_KEY = "cpath2_meta";
-	public static final String MOLECULES_DB_KEY = "cpath2_molecules";
-	public static final String PROTEINS_DB_KEY = "cpath2_proteins";
-	public static final String PREMERGE_DB_KEY = "premergeDataSource";
-	public static final String CREATE_DB_KEY = "createSchema";
-	
-	/*
-	 * Use this default prefix for DB names that we create (drop),
-	 * e.g., for pre-merge and unit test databases.
-	 * (this does not affect db names specified in cpath.properties)
-	 */
-	public static final String CPATH_DB_PREFIX = "cpath2_";
 
+	/**
+	 * Name for the cpath2 instance properties file (located in the cpath2 home directory)
+	 */
+	public static final String CPATH_PROPERTIES_FILE_NAME = "cpath.properties";
 	
+	/**
+	 * Name for a cpath2 utility sub-directory (under cpath2 home dir.)
+	 */
+	public static final String TMPDATA_SUBDIR = "tmp";
+	
+	/**
+	 * A sub-directory (under cpath2 Home dir.) to organize various data available to download via the web app.
+	 */
+	public static final String DOWNLOADS_SUBDIR = "downloads";
+	
+	
+	private CPathSettings(){
+		throw new AssertionError("Noninstantiable!");
+	};
+	
+	
+	/**
+	 * Property names used in the cpath2 properties file,
+	 * except for some properties, such as db connection, 
+	 * are not listed (to prevent access via the public api, 
+	 * for security reasons).
+	 * 
+	 * @author rodche
+	 */
+	public static enum CPath2Property {
+		MAIN_DB("main.db"),
+		METADATA_DB("metadata.db"),
+		MOLECULES_DB("molecules.db"),
+		PROTEINS_DB("proteins.db"),
+		XML_BASE("xml.base"),
+		MAX_SEARCH_HITS_PER_PAGE("maxSearchHitsPerPage"),
+		EXPLAIN_ENABLED("explain.enabled"),
+		DIGEST_URI_ENABLED("md5hex.uri.enabled"),
+        BLACKLIST_DEGREE_THRESHOLD("blacklist.degree.threshold"),
+        BLACKLIST_CONTROL_THRESHOLD("blacklist.control.threshold"),
+        READ_ONLY("read-only.enabled"),
+        PROVIDER("cpath2.provider")
+		;
+		
+		private final String name;
+		
+		private CPath2Property(String name) {
+			this.name = name;
+		}
+		
+		@Override
+		public String toString() {
+			return name;
+		}
+	}
+	
+	
+	static {
+		String file = getHomeDir() + File.separator + CPATH_PROPERTIES_FILE_NAME;		
+		try {
+			cPathProperties.load(new FileReader(file));
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to load cPath2 properties " +
+					"from " + file, e);
+		}
+	}
+
+
+	/**
+	 * Common prefix for cPath2 generated BioPAX comments
+	 */
 	public static final String CPATH2_GENERATED_COMMENT = "cPath2-generated";
-	
+		
 	/**
 	 * Gets current Home Directory (full path).
 	 * 
@@ -76,9 +137,113 @@ public final class CPathSettings {
 		return System.getProperty(HOME_VARIABLE_NAME);
 	}
 	
+	
+	/**
+	 * Gets the full local directory path 
+	 * where this type of data will be
+	 * temporarily fetched, stored,
+	 * re-used.
+	 * 
+	 * @return
+	 */
+	public static String localTmpDataDir() {
+		return getHomeDir() 
+			+ File.separator + CPathSettings.TMPDATA_SUBDIR;
+	}
+	
+	
+	/**
+	 * Name for the system environment and/or JVM variable 
+	 * cPath2 checks to enable extra/advanced debug output.
+	 */
 	public static final String JAVA_OPT_DEBUG = "cpath.debug";
 	
-	public static boolean isDebug() {
-		return "true".equalsIgnoreCase(System.getProperty(CPathSettings.JAVA_OPT_DEBUG));
+	/**
+	 * Answers whether cPath2 will also accept  
+	 * digest IDs (i.e., 32-byte MD5 hex, primary key, string) 
+	 * in place of actual URI/RDFId in queries.
+	 * 
+	 * @see BioPAXElementImpl
+	 * 
+	 * @return
+	 */
+	public static boolean digestUriEnabled() {
+		return "true".equalsIgnoreCase(get(CPath2Property.DIGEST_URI_ENABLED));
+	}
+		
+	
+	/**
+	 * Get a cpath2 instance property value.
+	 * 
+	 * @param xmlBase
+	 * @return
+	 */
+	public static String get(CPath2Property prop) {
+		String v = cPathProperties.getProperty(prop.toString());
+		
+		if (v == null) {
+			// for some, set defaults
+			switch (prop) {
+			case XML_BASE:
+				v = ModelUtils.BIOPAX_URI_PREFIX; 
+				break;
+			case DIGEST_URI_ENABLED:
+				v = "false"; 
+				break;
+			case EXPLAIN_ENABLED:
+				v = "false"; 
+				break;
+			case MAX_SEARCH_HITS_PER_PAGE:
+				v = String.valueOf(Integer.MAX_VALUE); 
+				break;
+			default:
+				break;
+			}
+		}
+		
+		return v;
+	}
+
+	
+	/**
+	 * Sets a cpath2 instance property.
+	 * 
+	 * @param prop
+	 * @param value
+	 */
+	public static void set(CPath2Property prop, String value) {
+		cPathProperties.setProperty(prop.toString(), value);
+	}
+	
+	
+	/**
+	 * Flags if cPath2 explain full-text query 
+	 * results mode is enabled. 
+	 * 
+	 * @return
+	 */
+	public static boolean explainEnabled() {
+		return "true".equalsIgnoreCase(get(CPath2Property.EXPLAIN_ENABLED));
+	}
+		
+	
+	/**
+	 * Flags if cPath2 runs in the read-only mode,
+	 * (data import, modification, and indexing Admin commands disabled)
+	 * 
+	 * @return
+	 */
+	public static boolean isReadOnly() {
+		return "true".equalsIgnoreCase(get(CPath2Property.READ_ONLY));
+	}
+
+	
+	/**
+	 * Enable/disable cPath2 read-only mode.
+	 * 
+	 * @param value
+	 */
+	public static void setReadOnly(boolean value) {
+		set(CPath2Property.READ_ONLY, Boolean.toString(value));
 	}
 }

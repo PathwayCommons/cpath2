@@ -34,7 +34,6 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.bridgedb.DataSource;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -43,17 +42,18 @@ import org.apache.commons.logging.*;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
-import cpath.service.BioDataTypes;
-import cpath.service.BioDataTypes.Type;
 import cpath.service.CPathService;
-import cpath.service.CPathService.ResultMapKey;
 import cpath.service.OutputFormat;
-import static cpath.service.CPathService.ResultMapKey.*;
-import cpath.service.internal.CPathServiceImpl;
+import cpath.service.jaxb.DataResponse;
+import cpath.service.jaxb.ErrorResponse;
+import cpath.service.jaxb.ServiceResponse;
+import cpath.warehouse.MetadataDAO;
+import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.beans.Metadata.TYPE;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.*;
+import java.io.IOException;
 
 import static org.junit.Assert.*;
 
@@ -71,53 +71,43 @@ public class CPathServiceTest {
 				new String[] {"classpath:testContext-pcDAO.xml", 
 					"classpath:testContext-whDAO.xml"});
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
+		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
 		log.info("Loading BioPAX data (importModel(file))...");
 		File biopaxFile = new File(CPathServiceTest.class.getResource("/test.owl").getFile());		
 		try {
 			dao.importModel(biopaxFile);
+			mdao.importMetadata(new Metadata("test", "Reactome", "00", "Foo", "", "", new byte[]{}, TYPE.BIOPAX, "", ""));
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException(e);
 		}
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
+
+		dao.index();
     }
 	
 	
 	@Test
-	public void testFetchAsBiopax() throws Exception {
+	public void testFetchBiopaxModel() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		CPathService service = new CPathServiceImpl(dao, null);//,null,null,null);
-		Map<ResultMapKey, Object> map = service.fetch(
-				OutputFormat.BIOPAX,
-				"http://www.biopax.org/examples/myExample#Protein_A");
-		assertNotNull(map);
-		
-		assertNotNull(map.get(DATA));
-		assertNull(map.get(ELEMENT));
-		assertNotNull(map.get(MODEL));
-		
-		Model m = (Model) map.get(ResultMapKey.MODEL);
+		CPathServiceImpl service = new CPathServiceImpl(dao, null, null, null);		
+		Model m = service.fetchBiopaxModel("http://www.biopax.org/examples/myExample#Protein_A");
 		assertNotNull(m);
 		BioPAXElement e = m.getByID("http://www.biopax.org/examples/myExample#Protein_A");
 		assertTrue(e instanceof Protein);
 		
-//		e = null;
-//		e = (BioPAXElement) map.get(ELEMENT);
-//		assertTrue(e instanceof Protein);
 	}
 
 	
 	@Test
-	public void testFetchAsBiopax2() throws Exception {
+	public void testFetchBiopax() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		CPathService service = new CPathServiceImpl(dao, null);//,null,null,null);
-		Map<ResultMapKey, Object> map = service.fetch(OutputFormat.BIOPAX, "urn:miriam:uniprot:P46880");
-		assertNotNull(map);
-			
-//		BioPAXElement e = (BioPAXElement) map.get(ELEMENT);
-//		assertTrue(e instanceof ProteinReference);
-		
-		//System.out.println(map.get(ResultMapKey.DATA));
-		assertTrue(map.get(DATA).toString().length()>0);
+		CPathService service = new CPathServiceImpl(dao, null, new OutputFormatConverterImpl(null), null);
+		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P46880");
+		assertNotNull(res);
+		assertFalse(res instanceof ErrorResponse);
+		assertTrue(res instanceof DataResponse);
+		assertFalse(res.isEmpty());
+		assertTrue(((DataResponse)res).getData().toString().length()>0);
 	}
 
 	
@@ -127,39 +117,35 @@ public class CPathServiceTest {
 	@Test
 	public void testFetchAsSIF() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		CPathService service = new CPathServiceImpl(dao, null);//,null,null,null);
-		Map<ResultMapKey, Object> map = service.fetch(
+		CPathService service = new CPathServiceImpl(dao, null, new OutputFormatConverterImpl(null), null);
+		ServiceResponse res = service.fetch(
 				OutputFormat.BINARY_SIF,
 				"http://www.biopax.org/examples/myExample#biochemReaction1");
-		assertNotNull(map);
-		assertTrue(map.containsKey(DATA));
-		assertNotNull(map.get(DATA));
-		String data = (String) map.get(DATA);
+		assertNotNull(res);
+		assertFalse(res instanceof ErrorResponse);
+		assertFalse(res.isEmpty());
+		assertTrue(res instanceof DataResponse);
+		String data = (String) ((DataResponse)res).getData();		
+		assertNotNull(data);
+
 		System.out.println(data);
 		assertTrue(data.contains("REACTS_WITH"));
 		assertFalse(data.contains("Protein_A"));
-		assertTrue(data.contains("urn:miriam:uniprot:P46880"));
+		assertTrue(data.contains("http://identifiers.org/uniprot/P46880"));
 	}
 	
 	
 	@Test
-	public void testBioDataTypes() {
+	public void testDataAndBioSources() throws IOException {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
-		BioDataTypes types = new BioDataTypes(dao);
-		types.init();		
-		assertFalse(types.getDataSourceKeys(Type.ORGANISM).isEmpty());
-		assertFalse(types.getDataSourceKeys(Type.DATASOURCE).isEmpty());
+		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
+		CPathService service = new CPathServiceImpl(dao, mdao, null, null);
 		
-		//
-		for(DataSource o : types.getDataSources(Type.ORGANISM)) {
-			System.out.println("organism: " + o.getSystemCode() + " "
-				+ o.getFullName() + " " + o.getMainUrl() 
-				+ "; bioSource: " + o.getOrganism().toString());
-		}
-		for(DataSource o : types.getDataSources(Type.DATASOURCE)) {
-			System.out.println("datatype: " + o.getSystemCode() + " "
-				+ o.getFullName() + " " + o.getMainUrl() 
-				+ "; provenance: " + o.getOrganism().toString());
-		}
+		assertFalse(service.bioSources().isEmpty());
+		assertFalse(service.dataSources().isEmpty());
+		
+		assertEquals(1, service.bioSources().getSearchHit().size());
+		assertEquals(1, service.dataSources().getSearchHit().size());
+		
 	}
 }
