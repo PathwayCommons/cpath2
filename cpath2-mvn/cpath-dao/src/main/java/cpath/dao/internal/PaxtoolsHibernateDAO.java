@@ -54,7 +54,6 @@ import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.query.dsl.QueryBuilder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
-
 import cpath.config.CPathSettings;
 import cpath.config.CPathSettings.CPath2Property;
 import cpath.dao.Analysis;
@@ -64,7 +63,6 @@ import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.TraverseEntry;
 import cpath.service.jaxb.TraverseResponse;
 import cpath.warehouse.WarehouseDAO;
-
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.Modifier;
@@ -81,11 +79,9 @@ class PaxtoolsHibernateDAO
 implements Model, PaxtoolsDAO, WarehouseDAO
 {
 	private static final long serialVersionUID = 1L;
-	
 	private final static int BATCH_SIZE = 20;
 	private final static int IDX_BATCH_SIZE = 200;
 	private int maxHitsPerPage = Integer.MAX_VALUE;
-
 	public final static String[] DEFAULT_SEARCH_FIELDS =
 		{
 			// auto-generated index fields (from the annotations in paxtools-core)
@@ -136,6 +132,7 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 		//- seems, - query parser turns search keywords to lower case and expects index field values are also lower case...
 		
 		// this simply implements how to get a list of elements from the list of URIs
+        //Todo implement this with HQL for performance
 		this.getTheseElements = new Analysis() {
 			@Override
 			public Set<BioPAXElement> execute(Model model, Object... args) {
@@ -623,7 +620,9 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	@Transactional(propagation=Propagation.REQUIRES_NEW)
 	public void exportModel(OutputStream outputStream, String... ids) 
 	{
-		simpleIO.convertToOWL(this, outputStream, ids);
+        session().enableFetchProfile("completer");
+        simpleIO.convertToOWL(this, outputStream, ids);
+        session().disableFetchProfile("completer");
 	}
 	
 
@@ -724,7 +723,6 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 		return null;
 	}
 
-	
 	@Override
 	public void replace(BioPAXElement existing, BioPAXElement replacement) {
 		throw new UnsupportedOperationException("not supported"); //TODO if required...
