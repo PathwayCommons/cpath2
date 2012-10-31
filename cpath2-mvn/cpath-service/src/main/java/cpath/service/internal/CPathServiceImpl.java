@@ -31,6 +31,7 @@ package cpath.service.internal;
 import java.io.*;
 import java.util.*;
 
+import com.sun.deploy.util.BlackList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -173,10 +174,10 @@ class CPathServiceImpl implements CPathService {
 		Model m = fetchBiopaxModel(uris);
 		
 		if(m != null && !m.getObjects().isEmpty())
-			return formatConverter.convert(m, format);  
+			return formatConverter.convert(m, format, blacklist, true);
 		else
 			return NO_RESULTS_FOUND.errorResponse(
-					"No results for: " + Arrays.toString(uris));
+				"No results for: " + Arrays.toString(uris));
     }
 
 
@@ -210,7 +211,7 @@ class CPathServiceImpl implements CPathService {
 					"returned empty BioPAX model (" 
 						+ analysis.getClass().getSimpleName() + ")");	
 			else
-				return formatConverter.convert(m, format);
+				return formatConverter.convert(m, format, blacklist, true);
 		} catch (Exception e) {
 			log.error("runAnalysis failed. ", e);
 			return INTERNAL_ERROR.errorResponse(e);
@@ -245,7 +246,7 @@ class CPathServiceImpl implements CPathService {
 										  String[] targets, Integer limit)
 	{
 		Analysis analysis = new PathsFromToAnalysis();
-		return runAnalysis(analysis, format, sources, targets, limit);
+		return runAnalysis(analysis, format, sources, targets, limit, blacklist);
 	}
 	
 

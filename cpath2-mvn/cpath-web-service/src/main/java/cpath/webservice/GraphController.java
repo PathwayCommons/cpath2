@@ -97,7 +97,7 @@ public class GraphController extends BasicController {
     {
 		//check for binding errors
 		if(bindingResult.hasErrors()) {
-			errorResponse(errorfromBindingResult(bindingResult), writer, response);;
+			errorResponse(errorfromBindingResult(bindingResult), writer, response);
 			return;
 		} 
 		

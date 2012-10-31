@@ -20,7 +20,7 @@ public interface OutputFormatConverter {
 	 *  
 	 * @return
 	 */
-	ServiceResponse convert(InputStream biopax, OutputFormat format);
+	ServiceResponse convert(InputStream biopax, OutputFormat format, Object... args);
 	
 	
 	/**
@@ -31,7 +31,7 @@ public interface OutputFormatConverter {
      * 
      * @return data response with the converted data or {@link ErrorResponse}.
      */
-    ServiceResponse convert(Model model, OutputFormat format);
+    ServiceResponse convert(Model model, OutputFormat format, Object... args);
 
     
     /**

@@ -35,6 +35,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sbgn.L3ToSBGNPDConverter;
+import org.biopax.paxtools.io.sbgn.ListUbiqueDetector;
 import org.biopax.paxtools.io.sif.InteractionRule;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
@@ -98,7 +99,7 @@ public class OutputFormatConverterImpl implements OutputFormatConverter {
 	 * @see cpath.service.CPathService#convert(..)
 	 */
     @Override
-    public ServiceResponse convert(InputStream biopax, OutputFormat format) {
+    public ServiceResponse convert(InputStream biopax, OutputFormat format, Object... args) {
         // put incoming biopax into map
         Model model = (new SimpleIOHandler()).convertFromOWL(biopax);
         if(model != null && !model.getObjects().isEmpty()) {
@@ -110,7 +111,7 @@ public class OutputFormatConverterImpl implements OutputFormatConverter {
 
     
     @Override
-    public ServiceResponse convert(Model m, OutputFormat format) 
+    public ServiceResponse convert(Model m, OutputFormat format, Object... args) 
     {
     	if(m == null || m.getObjects().isEmpty()) {
 			return NO_RESULTS_FOUND.errorResponse("Empty/Null BioPAX Model returned.");
@@ -135,7 +136,15 @@ public class OutputFormatConverterImpl implements OutputFormatConverter {
 				data = convertToGSEA(m, "uniprot");
 				break;
             case SBGN:
-                data = convertToSBGN(m);
+				Set<String> blackList = null;
+				if (args != null && args.length > 0 && args[0] instanceof Set)
+					blackList = (Set<String>) args[0];
+				
+				boolean doLayout = true;
+				if (args != null && args.length > 1 && args[1] instanceof Boolean)
+					doLayout = (Boolean) args[1];
+				
+                data = convertToSBGN(m,blackList, doLayout);
                 break;
 			default: //to BioPAX OWL
 			}
@@ -157,14 +166,14 @@ public class OutputFormatConverterImpl implements OutputFormatConverter {
      * @return
      * @throws IOException
      */
-    String convertToSBGN(Model m) throws IOException, JAXBException {
-        Sbgn sbgn = L3ToSBGNPDConverter.createSBGN(m);
-        sbgn.toString();
-        JAXBContext context = JAXBContext.newInstance("org.sbgn.bindings");
-        Marshaller marshaller = context.createMarshaller();
-        marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
-        OutputStream stream = new ByteArrayOutputStream();
-        marshaller.marshal(sbgn, stream);
+    String convertToSBGN(Model m, Set<String> blackList, boolean doLayout)
+		throws IOException, JAXBException
+	{
+		L3ToSBGNPDConverter converter = new L3ToSBGNPDConverter(
+			new ListUbiqueDetector(blackList), null, doLayout);
+
+		OutputStream stream = new ByteArrayOutputStream();
+		converter.writeSBGN(m, stream);
         return stream.toString();
     }
 

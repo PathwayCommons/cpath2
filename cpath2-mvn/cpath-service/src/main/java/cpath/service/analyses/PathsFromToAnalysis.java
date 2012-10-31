@@ -67,16 +67,19 @@ public class PathsFromToAnalysis implements Analysis {
 		// Search limit
 		int limit = (Integer) args[2];
 
+		// Blacklist
+		Set<String> blacklist = (Set<String>) args[3];
+
 		// Execute the query
 
 		if (target == null || target.isEmpty())
 		{
-			return QueryExecuter.runPathsBetween(source, model, limit, Common.getUbiqueIDs());
+			return QueryExecuter.runPathsBetween(source, model, limit, blacklist);
 		}
 		else
 		{
 			return QueryExecuter.runPathsFromTo(source, target, model, LimitType.NORMAL, limit,
-				Common.getUbiqueIDs());
+				blacklist);
 		}
 	}
 
