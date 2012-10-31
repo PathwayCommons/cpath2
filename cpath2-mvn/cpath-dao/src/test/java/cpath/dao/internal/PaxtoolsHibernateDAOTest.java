@@ -214,7 +214,7 @@ public class PaxtoolsHibernateDAOTest {
 	@Test
 	public void testGetValidSubModel() throws Exception {	
 		Model m =  paxtoolsDAO.getValidSubModel(
-			Collections.singleton("http://www.biopax.org/examples/myExample#Protein_A"));
+	        Collections.singleton("http://www.biopax.org/examples/myExample#Protein_A"));
 		System.out.println("Clone the protein and export model:");
 		assertTrue(m.containsID("http://www.biopax.org/examples/myExample#Protein_A"));
 		assertTrue(m.containsID("http://identifiers.org/uniprot/P46880"));
