@@ -30,10 +30,20 @@
     <import resource="classpath:rules-context.xml"/>
     
     <!-- overrides validator's built-in default 'extraDbSynonyms' set 
-    	(defined in the validator's biopax-rules, rules-context.xml)
-		The first name in each list is the preferred one unless
-		the corresponding synonyms are found in Miriam 
-		(then Miriam's takes priority)
+    (the one defined in the validator's biopax-rules, rules-context.xml
+    and used by XrefRule and XrefSynonymDbRule)
+		
+	XrefRule, XrefSynonymDbRule additional (optional) configuration 
+	The following LISTS of DB (biodata source) synonyms and typos will
+	merge with overlapping groups from Miriam and PSI-MI ("database citation" 
+	ontology branch) and then used to warn about non-standard but 
+	somewhat close/known names and probably auto-fix all such cases. If
+	the first name in a list below is a STANDARD name (found in Miriam or MI),
+	then the corresponding PREFERRED name will be suggested as the replacement.
+	If the first name in a list below is a STANDARD Miriam datasource name, then 
+	the rules will be able also to check identifiers using the ID pattern.
+	Otherwise (- not Miriam, no pattern), it won't validate identifiers.
+	
 	-->
 	<util:set id="extraDbSynonyms">
 		<list>
@@ -46,6 +56,11 @@
 			<value>ENTREZ GENE/LOCUSLINK</value>
 		</list>
 		<list>
+			<value>NCBI GI</value>
+			<value>ENTREZ GI</value>
+			<value>GI</value>
+		</list>		
+		<list>
 			<value>PUBCHEM-COMPOUND</value>
 			<value>NCBI PUBCHEM</value>
 			<value>PUBCHEM COMPOUND</value>
@@ -54,6 +69,7 @@
 		<list>
 			<value>PUBMED</value>
 			<value>PMID</value>
+			<value>MEDLINE</value>
 		</list>
 		<list>
 			<value>UNIPROT</value>
@@ -107,17 +123,12 @@
 		</list>
 		<list>
 			<value>NUCLEOTIDE SEQUENCE DATABASE</value>
-			<value>NCBI GENBANK</value>
-			<value>GENBANK</value>
 			<value>DDBJ</value>
 			<value>EMBL-BANK</value>
 			<value>EMBL</value>
-		</list>
-		<list>
-			<value>NCBI GI</value>
-			<value>ENTREZ GI</value>
-			<value>GI</value>
-		</list>
+			<value>GENBANK</value>
+			<value>NCBI GENBANK</value>
+		</list>		
 		<list>
 			<value>PROTEIN GENBANK IDENTIFIER</value>
 			<value>GENPEPT</value>
@@ -178,10 +189,19 @@
 			<value>EVIDENCE CODE</value>
 		</list>
 		<list>
+			<value>REACTOME</value>
+			<value>REACTOME STABLE ID</value>
+		</list>
+		<list>
 			<value>CL</value>
 			<value>CELL TYPE ONTOLOGY</value>
 			<value>CELL ONTOLOGY</value>
 		</list>
+		<list>
+			<value>BIOCYC</value>
+			<value>HUMANCYC</value>
+			<value>MOUSECYC</value>
+		</list>	
 	</util:set>
     
     <!-- or, disable the above and use the following empty set

@@ -1,6 +1,5 @@
 package cpath.webservice.args;
 
-import javax.validation.Valid;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
@@ -9,14 +8,13 @@ import org.hibernate.validator.constraints.NotBlank;
 
 public class Search {
 	@NotNull(message="Parameter 'q' (Lucene full-text query string) is required!")
-	@NotBlank
+	@NotBlank(message="Parameter 'q' (Lucene full-text query string) is blank!")
 	private String q;
-	
+
 	private Class<? extends BioPAXElement> type;
-	@Valid
-	private OrganismDataSource[] organism;
-	@Valid
-	private PathwayDataSource[] datasource;
+
+	private String[] organism;
+	private String[] datasource;
 	
 	@Min(0)
 	private Integer page;
@@ -41,28 +39,29 @@ public class Search {
 		this.type = type;
 	}
 
-	public OrganismDataSource[] getOrganism() {
+
+	public String[] getOrganism() {
 		return organism;
 	}
 
-	public void setOrganism(OrganismDataSource[] organisms) {
-		this.organism = organisms;
+	public void setOrganism(String[] organism) {
+		this.organism = organism;
 	}
 
-	public PathwayDataSource[] getDatasource() {
+	public String[] getDatasource() {
 		return datasource;
 	}
 
-	public void setDatasource(PathwayDataSource[] dataSources) {
-		this.datasource = dataSources;
+	public void setDatasource(String[] datasource) {
+		this.datasource = datasource;
 	}
 
-	public int getPage() {
+	public Integer getPage() {
 		return page;
 	}
 
-	public void setPage(int page) {
+	public void setPage(Integer page) {
 		this.page = page;
 	}
-
+		
 }

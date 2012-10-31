@@ -53,6 +53,7 @@ public interface DataServices {
      */
     DataSource getDataSource(String databaseName);
 
+    @Deprecated
     void createIndex(String db);
     
     String getDbPassword();

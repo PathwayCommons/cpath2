@@ -33,7 +33,7 @@ import org.biopax.paxtools.model.level3.ControlledVocabulary;
 
 /**
  * 
- * @author rodch
+ * @author rodche
  *
  */
 public interface CvRepository {
@@ -42,17 +42,17 @@ public interface CvRepository {
 	 * Gets a CV
 	 * 
 	 * @param <T>
-	 * @param urn e.g., urn:miriam:obo.go:GO%3A0005654 (corresponds to GO:0005654)
+	 * @param uri e.g., urn:miriam:obo.go:GO%3A0005654 or http://identifiers.org/obo.go/GO:0005654
 	 * @param cvClass
 	 * @return
 	 */
-	<T extends ControlledVocabulary> T getControlledVocabulary(String urn, Class<T> cvClass);
+	<T extends ControlledVocabulary> T getControlledVocabulary(String uri, Class<T> cvClass);
 	
 	/**
 	 * Gets a CV by ontology name and term accession
 	 * 
 	 * @param <T>
-	 * @param db "database" name, like Xref's, i.e., OBO ontology name, synonym, or uri (e.g., "Gene Ontology", "go", or "urn:miriam:obo.go"!)
+	 * @param db OBO ontology name, synonym, or URI (e.g., "Gene Ontology", "go", "urn:miriam:obo.go", or "http://identifiers.org/obo.go/"!)
 	 * @param id term accession number (identifier)
 	 * @param cvClass
 	 * @return

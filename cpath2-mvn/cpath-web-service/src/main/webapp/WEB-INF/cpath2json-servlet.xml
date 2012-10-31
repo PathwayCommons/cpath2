@@ -13,14 +13,12 @@
         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-    <!-- JSR-303 (validation) support will be detected on classpath and enabled automatically -->
     <context:annotation-config/>
     
 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
 	<bean id="log4jInitialization" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-	  <property name="targetClass"
-				value="org.springframework.util.Log4jConfigurer" />
+	  <property name="targetClass" value="org.springframework.util.Log4jConfigurer" />
 	  <property name="targetMethod" value="initLogging" />
 	  <property name="arguments">
 		<list>
@@ -28,6 +26,19 @@
 		</list>
 	  </property>
 	</bean>
+
+    <bean id="marshallingHttpMessageConverter"
+        class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">
+    </bean>
+
+    <!-- Required for REST services in order to bind the return value to the ResponseBody. -->
+    <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+        <property name="messageConverters">
+            <util:list id="beanList">
+                <ref bean="marshallingHttpMessageConverter" />
+            </util:list>
+        </property>
+    </bean>	  	  	 
 	  	 
 	<bean id="searchController" class="cpath.webservice.SearchController">
 		<constructor-arg ref="service"/>
@@ -38,24 +49,17 @@
 	</bean>
 
 	<bean id="helpController" class="cpath.webservice.HelpController">
-	</bean>
-
-    <bean id="marshallingHttpMessageConverter"
-        class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">
-    </bean>
-    
-    <bean id="adminController" class="cpath.webservice.AdminController">
 		<constructor-arg ref="service"/>
 	</bean>
 
-    <!-- Required for REST services in order to bind the return value to the ResponseBody. -->
-    <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
-        <property name="messageConverters">
-            <util:list id="beanList">
-                <ref bean="marshallingHttpMessageConverter" />
-            </util:list>
-        </property>
-    </bean>
+    <bean id="metadataController" class="cpath.webservice.MetadataController">
+		<constructor-arg ref="metadataDAO"/>
+	</bean>
 
-	<mvc:annotation-driven/>
+	<bean id="biopaxModelController" class="cpath.webservice.BiopaxModelController">
+		<constructor-arg ref="service"/>
+	</bean>
+
+	<!-- mvc:annotation-driven must the last -->
+    <mvc:annotation-driven/>	
 </beans>

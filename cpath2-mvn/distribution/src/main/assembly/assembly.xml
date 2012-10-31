@@ -16,6 +16,7 @@
 	  	<include>*.properties</include>
 	  	<include>*.txt</include>
 	  	<include>*.xml</include>
+	  	<include>*.conf</include>
 	  </includes>
     </fileSet>
     <fileSet>
@@ -28,15 +29,25 @@
 	  <outputDirectory>tmp</outputDirectory>
 	  <fileMode>0644</fileMode>
     </fileSet>
+    <fileSet>
+	  <directory>src/main/etc/downloads</directory>
+	  <outputDirectory>downloads</outputDirectory>
+	  <fileMode>0644</fileMode>
+    </fileSet>
+    <fileSet>
+	  <directory>src/main/etc/licenses</directory>
+	  <outputDirectory>licenses</outputDirectory>
+	  <fileMode>0644</fileMode>
+    </fileSet>
   </fileSets>
    
   <dependencySets>
     <dependencySet>
       <includes>
-        <include>*:cpath-webdocs:war</include>
+        <include>*:cpath-admin:jar</include> <!-- 'shaded' jar (see the cpath-admin/pom.xml) -->
       </includes>
       <outputDirectory></outputDirectory>
-      <outputFileNameMapping>cpath2-demo.war</outputFileNameMapping>
+	  <outputFileNameMapping>cpath2.jar</outputFileNameMapping>
       <unpack>false</unpack>
     </dependencySet>
     <dependencySet>
@@ -45,22 +56,6 @@
       </includes>
       <outputDirectory></outputDirectory>
       <outputFileNameMapping>cpath2.war</outputFileNameMapping>
-      <unpack>false</unpack>
-    </dependencySet>
-    <dependencySet>
-      <includes>
-        <include>*:cpath-admin:jar:jar-with-dependencies</include>
-      </includes>
-      <outputDirectory></outputDirectory>
-	  <outputFileNameMapping>cpath-admin.jar</outputFileNameMapping>
-      <unpack>false</unpack>
-    </dependencySet>
-        <dependencySet>
-      <includes>
-        <include>*:cpath-service:jar:jar-with-dependencies</include>
-      </includes>
-      <outputDirectory></outputDirectory>
-	  <outputFileNameMapping>cpath-service.jar</outputFileNameMapping>
       <unpack>false</unpack>
     </dependencySet>
   </dependencySets>

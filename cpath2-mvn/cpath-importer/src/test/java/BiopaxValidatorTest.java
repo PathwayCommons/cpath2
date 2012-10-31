@@ -46,10 +46,21 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 
 /**
+ * Additional integration tests for the BioPAX Validator 
+ * (it's also a CV repository) configuration used by cPath2 importer. 
+ * 
+ * By default, this test class is now disabled/ignored to speed 
+ * up builds, and because the validator was tested separately, 
+ * and also due to some tests depend on the validator version 
+ * (and default settings) and the actual validation.properties 
+ * file (in the current CPATH2_HOME dir)! 
+ * 
+ * So, if required, comment out the @Ignore annotation to run tests!
+
  * @author rodche
  *
  */
-//@Ignore
+@Ignore
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
 		"classpath:applicationContext-biopaxValidation.xml",
@@ -97,7 +108,7 @@ public class BiopaxValidatorTest {
 		}
 	}
 
-	@Test
+	@Test //controlType
 	public final void testValidateModel() {		
 		Catalysis ca = level3.create(Catalysis.class, "catalysis1"); 
 		ca.setControlType(ControlType.INHIBITION);
@@ -112,7 +123,6 @@ public class BiopaxValidatorTest {
 		
 		Validation result = new Validation("test");
 		result.setModel(m);
-		//validator.associate(m, result); // - alternative to setModel
 		validator.validate(result);
 		
 		assertNotNull(result);

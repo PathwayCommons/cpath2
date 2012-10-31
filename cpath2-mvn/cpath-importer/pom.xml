@@ -2,10 +2,9 @@
   <parent>
     <artifactId>parent</artifactId>
     <groupId>pathwaycommons.cpath</groupId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>3.2.4-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>pathwaycommons.cpath</groupId>
   <artifactId>cpath-importer</artifactId>
   <name>cPath2 Importer</name>
   <description>cPath^2 Import Pipeline. It also helps fetch various data from Internet, including provider's metadata and pathway data, OBO terms, and Miriam.</description>
@@ -37,8 +36,8 @@
     </dependency>
   	<dependency>
   		<groupId>pathwaycommons.cpath</groupId>
-  		<artifactId>cpath-schema</artifactId>
-         	<version>${cpath.schema.version}</version>
+  		<artifactId>cpath-api</artifactId>
+  		<version>${cpath.api.version}</version>
   	</dependency>
   </dependencies>
 </project>

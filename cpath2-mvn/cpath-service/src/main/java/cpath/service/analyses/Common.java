@@ -17,6 +17,8 @@ public class Common
 {
 	static Log log = LogFactory.getLog(Common.class);
 
+	static Set<String> ubiqueIDs;
+
 	/**
 	 * This method prepares the source and target sets of the queries.
 	 *
@@ -48,5 +50,20 @@ public class Common
 		}
 
 		return elements;
+	}
+
+	/**
+	 * This method provides IDs of ubiquitous physical entities.
+	 * @return IDs of ubiquitous physical entities
+	 */
+	protected static Set<String> getUbiqueIDs()
+	{
+		return ubiqueIDs;
+	}
+
+	static
+	{
+		ubiqueIDs = new HashSet<String>();
+		// todo read in the IDs of black list into this set
 	}
 }

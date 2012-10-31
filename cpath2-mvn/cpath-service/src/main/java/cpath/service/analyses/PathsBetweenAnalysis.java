@@ -33,13 +33,12 @@ import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.QueryExecuter;
-import org.biopax.paxtools.query.algorithm.LimitType;
 
 import java.util.Set;
 
 /**
- * Paths-between query. User provides a source set and a target set, the query returns paths from
- * source to target. If no target set is provided, the search is performed between the source set.
+ * Paths-between query. 
+ * User provides a source set; the query returns paths between the source set objects.
  *
  * @author ozgun
  *
@@ -51,7 +50,6 @@ public class PathsBetweenAnalysis implements Analysis {
 	/**
 	 * Parameters to provide:
 	 * source: IDs of source objects
-	 * target: IDs of target objects
 	 * limit: search distance limit
 	 * limit-type: normal limit or shortest+k limit
 	 */
@@ -61,33 +59,15 @@ public class PathsBetweenAnalysis implements Analysis {
 		// Source elements
 		Set<BioPAXElement> source = Common.getAllByID(model, args[0]);
 
-		// Target elements
-		Set<BioPAXElement> target = null;
-
-		// If a different target set is provided, use it. Otherwise the search will be among the
-		// source set.
-
-		if (args[1] instanceof Set)
-		{
-			target = Common.getAllByID(model, args[1]);
-		}
-
 		// Search limit
-		int limit = (Integer) args[2];
+		int limit = (Integer) args[1];
 
         // Blacklist
-        Set<String> blacklist = (Set<String>) args[3];
+        Set<String> blacklist = (Set<String>) args[2];
 
 		// Execute the query
-
-		if (target == null)
-		{
-			return QueryExecuter.runPathsBetween(source, model, limit, blacklist);
-		}
-		else
-		{
-			return QueryExecuter.runPOI(source, target, model, LimitType.NORMAL, limit, blacklist);
-		}
+		return QueryExecuter.runPathsBetween(source, model, limit, blacklist);
+		
 	}
 
 }

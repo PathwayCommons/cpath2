@@ -27,180 +27,167 @@
 
 package cpath.service;
 
-import java.util.Map;
 
+import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.biopax.validator.result.ValidatorResponse;
 
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.filters.SearchFilter;
+import cpath.service.jaxb.SearchResponse;
+import cpath.service.jaxb.ServiceResponse;
 
 
 /**
- * CPath^2 Service is a mid-tier or adapter between DAOs and web controllers. 
+ * CPath^2 Service is an adapter between DAO and web controllers. 
+ * Can be used in a console application or integration tests 
+ * (web container is not required!)
  * 
- * Can be used in a console application or integration tests (web container is not required!)
+ * This interface defines several middle-tier data access and analysis methods 
+ * that accept valid parameters, handle exceptions, and return results packed 
+ * in a ServiceResponse bean. This creates an additional "elastic" layer between 
+ * the public (web, console) api and persistence methods, allowing to modify 
+ * either its implementation or the DAO implementation 
+ * without breaking end user's services (backward compatibility).
  * 
- * This is to implement several query methods 
- * that accept valid parameters and beans, handle exceptions,
- * and return results packed in the HashMap with predefined keys.
- * 
- * TODO Enables "second query" use case -
- * when no data found in the pathway data (main) storage,
- * it will hit Warehouse to find general information (about 
- * CVs, small molecules and proteins)
  * 
  * @author rodche
  *
  */
 public interface CPathService {
 
-	/**
-	 * Enumeration: map keys for the cPath^2 service results
-	 * that always returned as a {@link Map}
-	 * 
-	 */
-	public static enum ResultMapKey {
-		/**
-		 * key to a BioPAX (PaxTools) Model, if any is returned, or any other "model" object (up to the implementation)
-		 */
-		MODEL, 
-		/**
-		 *  key to a BioPAXElement (detached from DAO) or other object (e.g., ValidationResponse)
-		 */
-		ELEMENT, 
-		/**
-		 *  key to query results (to be treated by the caller), e.g., id-list, image, etc.
-		 */
-		DATA, 
-		/**
-		 *  key to an error string or Exception object (e.g., toString() will be used to get message)
-		 */
-		ERROR,
-		/**
-		 *  key to "records" count, e.g. items in the ID-list or no. of BioPAX elements
-		 */
-		COUNT, 
-		/**
-		 *  key to, e.g., lucene search statistics, etc.
-		 */
-		MISC; 
-	}
-
 	//--- Graph queries ---------------------------------------------------------------------------|
 
 	/**
-	 * Gets the BioPAX element by id 
-	 * (first-level object props are initialized),
+	 * Gets the BioPAX element by id,
 	 * converts to the required output format (if possible), 
 	 * and returns as map.
 	 * @param format
-	 * @param id the list of URIs to fetch
+	 * @param uris the list of URIs to fetch
 	 * 
-	 * @see ResultMapKey
+	 * 
 	 * 
 	 * @return
 	 */
-	Map<ResultMapKey, Object> fetch(OutputFormat format, String... id);
+	ServiceResponse fetch(OutputFormat format, String... uris);
 
 	
 	/**
 	 * Full-text search for the BioPAX elements. 
 	 * Returns the map result that contains the list of elements
 	 * 
-	 * @see ResultMapKey
+	 * 
 	 * 
 	 * @param queryStr
-	 * @param page TODO
+	 * @param page search results page no.
 	 * @param biopaxClass
-	 * @param filterValues can be arrays of URIs of organisms, data sources, etc.
+	 * @param dsources URIs of data sources
+	 * @param organisms URIs of organisms
 	 * @return
 	 * 
-	 * @see PaxtoolsDAO#find(String, Class[], SearchFilter[]...)
+	 * @see PaxtoolsDAO#search(String, Class[], String[], String[])
 	 */
-	Map<ResultMapKey, Object> findElements(String queryStr, 
-			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters);
+	ServiceResponse search(String queryStr, 
+			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms);
 
 	
-	/**
-	 * Full-text search for the BioPAX Entity class elements. 
-	 * Returns the map result that contains the list of elements
-	 * 
-	 * @see PaxtoolsDAO#findEntities(String, int, Class, SearchFilter...)
-	 * @see ResultMapKey
-	 * 
-	 * @param queryStr
-	 * @param page TODO
-	 * @param biopaxClass
-	 * @param filterValues can be arrays of URIs of organisms, data sources, etc.
-	 * @return
-	 * 
-	 * @see PaxtoolsDAO#find(String, Class[], SearchFilter[]...)
-	 */
-	Map<ResultMapKey, Object> findEntities(String queryStr, 
-			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters);
-	
-	
-	/**
-	 * Generates the BioPAX validation report for the pathway data provider:
-	 * - XML report will be associated with {@link ResultMapKey#DATA} key in the returned map;
-	 * - {@link ValidatorResponse} bean will be associated with {@link ResultMapKey#ELEMENT} key.
-	 * 
-	 * @param metadataIdentifier
-	 * @return
-	 */
-	Map<ResultMapKey, Object> getValidationReport(String metadataIdentifier);
-	
-
 	/**
 	 * Runs a neighborhood query using the given parameters.
 	 *
 	 * @param format output format
-	 * @param source IDs of seed of neighborhood
+	 * @param sources IDs of seed of neighborhood
 	 * @param limit search limit (integer value)
 	 * @param direction flag 
 	 * @return the neighborhood
 	 */
-	Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, 
-			String[] source, Integer limit, Direction direction);
+	ServiceResponse getNeighborhood(OutputFormat format, 
+			String[] sources, Integer limit, Direction direction);
 
 	/**
-	 * Runs a paths-between query from the given sources to the given targets.
+	 * Runs a paths-between query for the given sources.
 	 *
 	 * @param format output format
-	 * @param source IDs of source molecules
-	 * @param target IDs of target molecules
+	 * @param sources IDs of source molecules
 	 * @param limit search limit (integer value)
 	 * @return paths between
 	 */
-	Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source, 
-			String[] target, Integer limit);
+	ServiceResponse getPathsBetween(OutputFormat format, String[] sources, Integer limit);
 
+	/**
+	 * Runs a POI query from the given sources to the given targets.
+	 *
+	 * @param format output format
+	 * @param sources IDs of source molecules
+	 * @param targets IDs of target molecules
+	 * @param limit search limit (integer value)
+	 * @return paths between
+	 */
+	ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
+								   String[] targets, Integer limit);
+	
+	
 	/**
 	 * Runs a common upstream or downstream query.
 	 *
 	 * @param format output format
-	 * @param source IDs of query seed
+	 * @param sources IDs of query seed
 	 * @param limit search limit
 	 * @param direction - can be {@link Direction#DOWNSTREAM} or {@link Direction#UPSTREAM}
 	 * @return common stream
 	 */
-	Map<ResultMapKey, Object> getCommonStream(OutputFormat format, 
-			String[] source, Integer limit, Direction direction);
+	ServiceResponse getCommonStream(OutputFormat format, 
+			String[] sources, Integer limit, Direction direction);
 
 	//---------------------------------------------------------------------------------------------|
 
 	/**
-	 * For the given biopax, converts to the desired output format.
-     *
-     * @param biopax
-	 * @param format
+	 * Collects BioPAX property values at the end of the property path
+	 * applied to each BioPAX object in the list (defined by URIs), 
+	 * where applicable.
+	 *  
+	 * @see PathAccessor
 	 * 
-	 * @see ResultMapKey
+	 * @param propertyPath
+	 * @param sourceUris
+	 * @return
+	 */
+	ServiceResponse traverse(String propertyPath, String... sourceUris);
+	
+	
+	/**
+	 * Gets top (root) pathways (URIs, names) in the current BioPAX model.
 	 * 
 	 * @return
 	 */
-	Map<ResultMapKey, Object> convert(String biopax, OutputFormat format);
+	SearchResponse topPathways();
 	
+	/**
+	 * Gets only configured and loaded into cpath2 
+	 * pathway data sources (data providers), i.e.,
+	 * not the list of all available Provenance objects,
+	 * - wrapped/converted into the service response bean. 
+	 * 
+	 * @return
+	 */
+	SearchResponse dataSources();
+	
+	/**
+	 * Gets all BioSource (organism) objects loaded 
+	 * into cpath2 from its pathway data sources,
+	 * - wrapped/converted into the service response bean. 
+	 * 
+	 * @return
+	 */
+	SearchResponse bioSources();
+
+	
+	/** 
+	 * Creates a stand-alone sub-model from the BioPAX elements (matched by URIs).
+	 * 
+	 * @param uris
+	 * @return
+	 */
+	Model fetchBiopaxModel(String... uris);
+	
+
 }

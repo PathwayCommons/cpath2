@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+ xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+ xmlns:owl="http://www.w3.org/2002/07/owl#"
+ xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+ xmlns:bp="http://www.biopax.org/release/biopax-level3.owl#">
+<owl:Ontology rdf:about="">
+<!-- Modified/simplified HumanCyc data test case (same xrefs attached both to Protein and its PR) -->
+ <owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl#" />
+</owl:Ontology>
+
+<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UNIPROT_O75191">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">O75191</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">UniProt</bp:db>
+</bp:UnificationXref>
+
+<bp:PublicationXref rdf:about="http://identifiers.org/pubmed/9763671">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">9763671</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PubMed</bp:db>
+</bp:PublicationXref>
+
+<!-- this PR must be matched by xrefs and replaced by the warehouse PR O75191 during the merge. 
+In fact, this PR should have been already normalized and have URI=http://identifiers.org/uniprot/O75191 (so matching by xrefs won't be needed),
+but, there was a bug in the normalizer... Anyway, we keep this PR as it was for testing!
+-->
+<bp:ProteinReference rdf:about="http://biocyc.org/biopax/biopax-level3ProteinReference155353">
+ <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_O75191" />
+ <bp:xref rdf:resource="http://identifiers.org/pubmed/9763671" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Xylulose kinase</bp:displayName>
+</bp:ProteinReference>
+
+<bp:Protein rdf:about="http://biocyc.org/biopax/biopax-level3Protein155359">
+ <bp:entityReference rdf:resource="http://biocyc.org/biopax/biopax-level3ProteinReference155353" />
+ <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_O75191" />
+ <bp:xref rdf:resource="http://identifiers.org/pubmed/9763671" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Xylulose kinase</bp:displayName>
+</bp:Protein>
+
+<!--  original data was MODIFIED below to be able to test with test warehouse data! -->
+<!-- Test Case: a SM1 (SmallMolecule173158) has SMR1 (ketone, chebi:17087 cpath2 merger will replace) that has member A, 
+which has member B (phylloquinone); SMR1 also has the same B (and both B’s and A’s entityReferenceOf() are empty, 
+luckily, - otherwise, cpath2 merging becomes even more difficult task, and B and A do not have xrefs).  
+Another SM2 (SmallMolecule165394) has SMR2 (quinone, chebi:36141 (WRONG!), merger is to replace as well) that also has member B. 
+During the merge, SMR1 but not SMR2 gets replaced, A becomes dangling (to be removed), but B does not, 
+and B.memberEntityReferenceOf() still refers to removed A. We want both A and B disappear and not making trouble ;) !
+ -->
+<bp:SmallMolecule rdf:about="http://biocyc.org/biopax/biopax-level3SmallMolecule173158">
+ <bp:entityReference rdf:resource="http://identifiers.org/obo.chebi/CHEBI:28" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SM1</bp:displayName>
+</bp:SmallMolecule>
+
+<bp:SmallMoleculeReference rdf:about="http://identifiers.org/obo.chebi/CHEBI:28"> <!-- will be matched and replaced from Warehouse -->
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMR1</bp:displayName>
+ <bp:memberEntityReference rdf:resource="http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684" />
+ <bp:memberEntityReference rdf:resource="http://biocyc.org/biopax/biopax-level3SmallMoleculeReference165390" />
+</bp:SmallMoleculeReference>
+
+<bp:SmallMoleculeReference rdf:about="http://biocyc.org/biopax/biopax-level3SmallMoleculeReference165390">
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">A</bp:displayName>
+ <bp:memberEntityReference rdf:resource="http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684" />
+</bp:SmallMoleculeReference>
+
+<bp:SmallMoleculeReference rdf:about="http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684">
+ <bp:molecularWeight rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">450.703</bp:molecularWeight>
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">B</bp:displayName>
+</bp:SmallMoleculeReference>
+
+<bp:SmallMolecule rdf:about="http://biocyc.org/biopax/biopax-level3SmallMolecule165394">
+ <bp:entityReference rdf:resource="http://identifiers.org/obo.chebi/CHEBI:36141" /> <!-- 36141 is not in the ChEBI data! -->
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SM2</bp:displayName>
+</bp:SmallMolecule>
+
+<bp:SmallMoleculeReference rdf:about="http://identifiers.org/obo.chebi/CHEBI:36141">
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMR2</bp:displayName>
+ <bp:memberEntityReference rdf:resource="http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684" />
+</bp:SmallMoleculeReference>
+
+
+</rdf:RDF>

@@ -31,21 +31,15 @@ package cpath.service.internal;
 import java.io.*;
 import java.util.*;
 
-import javax.validation.constraints.NotNull;
-import javax.xml.bind.*;
-import javax.xml.transform.stream.StreamSource;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.io.gsea.GSEAConverter;
-import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.BioSource;
+import org.biopax.paxtools.model.level3.Pathway;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.biopax.validator.result.Validation;
-import org.biopax.validator.result.ValidatorResponse;
-import org.biopax.validator.utils.BiopaxValidatorUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
@@ -53,477 +47,71 @@ import com.googlecode.ehcache.annotations.Cacheable;
 
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.filters.SearchFilter;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
-import cpath.service.jaxb.ErrorType;
-import cpath.service.jaxb.SearchHitType;
-import cpath.service.jaxb.SearchResponseType;
+import cpath.service.analyses.PathsFromToAnalysis;
+import cpath.service.jaxb.ErrorResponse;
+import cpath.service.jaxb.SearchHit;
+import cpath.service.jaxb.SearchResponse;
+import cpath.service.jaxb.ServiceResponse;
+import cpath.service.jaxb.TraverseResponse;
 import cpath.service.CPathService;
 import cpath.service.OutputFormat;
+import cpath.service.OutputFormatConverter;
+import static cpath.service.Status.*;
 
-//import cpath.warehouse.CvRepository;
 import cpath.warehouse.MetadataDAO;
-import cpath.warehouse.beans.PathwayData;
-
-import static cpath.service.CPathService.ResultMapKey.*;
+import cpath.warehouse.beans.Metadata;
 
 /**
  * Service tier class - to uniformly access 
- * persisted BioPAX model (DAO) from console and webservice 
+ * persisted BioPAX model (DAO) from console 
+ * and web service controllers. This can be 
+ * configured (instantiated) to access any cpath2
+ * persistent BioPAX data storage (PaxtoolsDAO), 
+ * i.e., - either the "main" cpath2 db or a Warehouse one (proteins or molecules)
  * 
  * @author rodche
  */
 @Service
-public class CPathServiceImpl implements CPathService {
+class CPathServiceImpl implements CPathService {
 	private static final Log log = LogFactory.getLog(CPathServiceImpl.class);
 	
-	@NotNull
 	private PaxtoolsDAO mainDAO;
 	
-	@NotNull
 	private MetadataDAO metadataDAO;
-
-	private SimpleMerger merger;	
-	private JAXBContext jaxbContext;
+	
 	private SimpleIOHandler simpleIO;
+	
+	private Set<String> blacklist;
+    
+	//lazy initialize the following three fields on first request (prevents web server startup timeout)
+  	//only includes pathway data providers configured/created from the cpath2 metadata configuration (not all provenances...)
+  	private volatile SearchResponse dataSources; 
+  	private volatile SearchResponse bioSources;
+  	private volatile SearchResponse topPathways;
+  	
+  	private OutputFormatConverter formatConverter;
 
-    private Set<String> blacklist;
-
-    // this is probably required for the echcache to work
+    // this is probably required for the ehcache to work
 	public CPathServiceImpl() {
 	}
 	
     /**
      * Constructor.
-     * @throws JAXBException 
+     * @throws IOException 
      */
-	public CPathServiceImpl(
-			PaxtoolsDAO mainDAO, 
-			MetadataDAO metadataDAO) throws JAXBException 
+	public CPathServiceImpl(PaxtoolsDAO mainDAO, MetadataDAO metadataDAO, 
+		OutputFormatConverter formatConverter, Resource blacklistResource) throws IOException 
 	{
 		this.mainDAO = mainDAO;
-		//this.proteinsDAO = proteinsDAO;
-		//this.moleculesDAO = moleculesDAO;
-		//this.cvFetcher = cvFetcher;
 		this.metadataDAO = metadataDAO;
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		simpleIO.mergeDuplicates(true);
-		this.merger = new SimpleMerger(simpleIO.getEditorMap());
+		this.formatConverter = formatConverter;
 		
-		// init cpath legacy xml schema jaxb context
-		jaxbContext = JAXBContext.newInstance(ErrorType.class, SearchResponseType.class, SearchHitType.class);
-	}
-	
-	/*
-	 * Interface methods
-	 */	
-	@Cacheable(cacheName = "findElementsCache")
-	@Override
-	public Map<ResultMapKey, Object> findElements(String queryStr, 
-			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
-	{
-		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-		try {
-			// do search
-			SearchResponseType hits = mainDAO.findElements(queryStr, page, biopaxClass, searchFilters); 
-			map.put(DATA, hits);
-			map.put(COUNT, hits.getTotalNumHits()); // becomes Integer
-		} catch (Exception e) {
-			map.put(ERROR, e);
-		}
-		
-		return map;
-	}
-	
-	
-
-
-	@Cacheable(cacheName = "findEntitiesCache")
-	@Override
-	public Map<ResultMapKey, Object> findEntities(String queryStr, 
-			int page, Class<? extends BioPAXElement> biopaxClass, SearchFilter... searchFilters) 
-	{
-		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-		try {
-			// do search
-			SearchResponseType hits = mainDAO.findEntities(queryStr, page, biopaxClass, searchFilters); 
-			map.put(DATA, hits);
-			map.put(COUNT, hits.getTotalNumHits()); // becomes Integer
-		} catch (Exception e) {
-			map.put(ERROR, e);
-		}
-		
-		return map;
-	}
-	
-
-	/*
-     * (non-Javadoc)
-	 * @see cpath.service.CPathService#fetch(..)
-	 */
-	@Cacheable(cacheName = "elementByIdCache")
-	@Override
-	public Map<ResultMapKey, Object> fetch(OutputFormat format, String... uris) {
-
-        // before anything, get the biopax
-        Map<ResultMapKey, Object> map = fetchAsBiopax(uris);
-
-        // outta here
-        return (map.containsKey(ERROR) || format == OutputFormat.BIOPAX) 
-        	? map : convert(map, format);
-    }
-
-	/*
-     * (non-Javadoc)
-	 * @see cpath.service.CPathService#convert(..)
-	 */
-    @Override
-    public Map<ResultMapKey, Object> convert(String biopax, OutputFormat format) {
-
-        // put incoming biopax into map
-		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-        Model model = simpleIO.convertFromOWL(new ByteArrayInputStream(biopax.getBytes()));
-        map.put(MODEL, model);
-        map.put(DATA, biopax);
-
-        // outta here
-        return convert(map, format);
-	}
-
-    /*
-     * Function used by both convert(String, OutputFormat)
-     * and fetch(OutputFormat, String... uris).
-     */
-    Map<ResultMapKey, Object> convert(Map<ResultMapKey, 
-    		Object> map, OutputFormat format) 
-    {
-		try {
-			switch (format) {
-			case BINARY_SIF:
-				map = fetchAsBinarySIF(map, false);
-				break;
-			case EXTENDED_BINARY_SIF:
-				map = fetchAsBinarySIF(map, true);
-				break;
-			case GSEA:
-				map = fetchAsGSEA(map, "uniprot");
-				break;
-            case BIOPAX: // default handler
-			default:
-                // do nothing
-			}
-		}
-        catch (Exception e) {
-			map.put(ERROR, e);
-		}
-
-        // outta here
-		return map;
-    }
-	
-	/** 
-	 * Gets BioPAX elements by id, 
-	 * creates a sub-model, and returns everything as map.
-	 * 
-	 * @see ResultMapKey
-	 * 
-	 * @param uris
-	 * @return
-	 */
-	Map<ResultMapKey, Object> fetchAsBiopax(String... uris) {
-
-		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-		
-		if (uris.length >= 1) {	
-			// extract a sub-model
-			Model m = mainDAO.getValidSubModel(Arrays.asList(uris));
-			map.put(MODEL, m);
-			map.put(DATA, exportToOWL(m));
-		} 
-		
-//		if (uris.length == 1) {
-//			// also put the object (element) in the map
-//			BioPAXElement element = mainDAO.getByID(uris[0]);
-//			if (element != null) {
-//				mainDAO.initialize(element);
-//				map.put(ELEMENT, element);
-//			}
-//			if(log.isDebugEnabled())
-//				log.debug("mainDAO.initialize(" + uris[0] + ") done");
-//		}
-		
-		return map;
-	}	
-	
-	/**
-	 * Gets BioPAX elements by id (URIs), 
-	 * extracts a sub-model, converts to GSEA format, 
-	 * and returns everything as map values.
-	 * 
-     * @param map Map<ResultMapKey, Object>
-	 * @param outputIdType output identifiers type (db name)
-	 * @return
-	 * @throws IOException 
-	 */
-	Map<ResultMapKey, Object> fetchAsGSEA(Map<ResultMapKey, Object> map, 
-		String outputIdType) throws IOException 
-	{	
-		// convert, replace DATA
-		Model m = (Model) map.get(MODEL);
-		if (m != null && m.getObjects().size()>0) {
-			GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true);
-			OutputStream stream = new ByteArrayOutputStream();
-			gseaConverter.writeToGSEA(m, stream);
-			map.put(DATA, stream.toString());
-		} else {
-			log.info("Won't convert to GSEA: empty Model!");
-		}
-		
-		return map;
-	}
-
-	/**
-	 * Gets BioPAX elements by id, 
-	 * creates a sub-model, converts to SIF format, 
-	 * and returns everything as map values.
-	 * 
-	 * TODO 'rules' parameter is currently ignored (requires conversion 
-	 * from strings to the rules, e.g., using enum. BinaryInteractionRule from cpath-web-service)
-	 * 
-     * @param map Map<ResultMapKey, Object>
-     * @param extended if true, call SIFNX else SIF
-	 * @param rules (optional) the names of SIF rules to apply
-	 * @return
-	 * @throws IOException 
-	 */
-	Map<ResultMapKey, Object> fetchAsBinarySIF(Map<ResultMapKey, Object> map, 
-		boolean extended, String... rules) throws IOException 
-	{
-		// convert, replace DATA value in the map to return
-		// TODO match 'rules' parameter to rule types (currently, it uses all)
-		Model m = (Model) map.get(MODEL);
-		
-		if (m == null || m.getObjects().size() == 0) {
-			log.info("Won't convert to SIF: empty Model!");
-			return map; //unchanged
-		}
-		
-		SimpleInteractionConverter sic = getSimpleInteractionConverter(m);
-
-		OutputStream edgeStream = new ByteArrayOutputStream();
-		if (extended) {
-			OutputStream nodeStream = new ByteArrayOutputStream();
-			sic.writeInteractionsInSIFNX(m, edgeStream, nodeStream,
-			Arrays.asList("EntityReference/displayName", "EntityReference/xref:UnificationXref", "EntityReference/xref:RelationshipXref"),
-			Arrays.asList("Interaction/dataSource/displayName", "Interaction/xref:PublicationXref"), true);
-			String edgeColumns = "PARTICIPANT_A\tINTERACTION_TYPE\tPARTICIPANT_B\tINTERACTION_DATA_SOURCE\tINTERACTION_PUBMED_ID\n";
-			String nodeColumns = "PARTICIPANT\tPARTICIPANT_TYPE\tPARTICIPANT_NAME\tUNIFICATION_XREF\tRELATIONSHIP_XREF\n";
-			map.put(DATA, edgeColumns + removeDuplicateBinaryInteractions(edgeStream) + "\n" + nodeColumns + nodeStream.toString());
-		} else {
-			sic.writeInteractionsInSIF(m, edgeStream);
-			map.put(DATA, removeDuplicateBinaryInteractions(edgeStream));
-		}
-
-		return map;
-	}
-
-	/*
-     * (non-Javadoc)
-	 * @see cpath.service.CPathService#getValidationReport(...)
-	 */
-	@Override
-	public Map<ResultMapKey, Object> getValidationReport(String metadataIdentifier) {
-
-		Map<ResultMapKey, Object> toReturn = new HashMap<ResultMapKey, Object>();
-		
-		// get validationResults from PathwayData beans
-		Collection<PathwayData> pathwayDataCollection = metadataDAO.getPathwayDataByIdentifier(metadataIdentifier);
-		if (!pathwayDataCollection.isEmpty()) {
-			// new container to collect different files validation results
-			ValidatorResponse response = new ValidatorResponse();
-
-			for (PathwayData pathwayData : pathwayDataCollection) {
-				String xmlResult = pathwayData.getValidationResults().trim();
-				if (xmlResult != null && xmlResult.length() > 0) {
-					// unmarshal and add to the 'results' list
-					Validation validation = null;
-					try {
-						ValidatorResponse resp = (ValidatorResponse) BiopaxValidatorUtils.getUnmarshaller()
-							.unmarshal(new StreamSource(new StringReader(xmlResult)));
-						validation = resp.getValidationResult().get(0);
-					}
-                    catch (Exception e) {
-						toReturn.put(ERROR, e);
-						log.error(e);
-					}
-					if(validation != null)
-						response.getValidationResult().add(validation);
-				}
-			}
-
-			toReturn.put(ResultMapKey.ELEMENT, response);
-			// write report and add it to the map(DATA)
-			StringWriter writer = new StringWriter();
-			// (the last parameter below can be a xsltSource)
-			BiopaxValidatorUtils.write(response, writer, null); 
-			toReturn.put(DATA, writer.toString());
-		}
-		
-		return toReturn;
-	}
-
-	//--- Graph queries ---------------------------------------------------------------------------|
-
-	/**
-	 * Runs any analysis with the provided parameters.
-	 *
-	 * @param analysis the required analysis
-	 * @param format the required output format
-	 * @param params parameters for the analysis
-	 * @return analysis result
-	 */
-	Map<ResultMapKey, Object> runAnalysis(Analysis analysis, OutputFormat format, Object... params)
-	{
-		Map<ResultMapKey, Object> map = new HashMap<ResultMapKey, Object>();
-		try
-		{
-			Model m = mainDAO.runAnalysis(analysis, params);
-			map.put(MODEL, m);
-			map.put(DATA, exportToOWL(m));
-			if(format != null && format != OutputFormat.BIOPAX) {
-				map = convert(map, format);
-			}
-		}
-		catch (Exception e)
-		{
-			map.put(ERROR, e);
-			log.error("getNeighborhood failed. ", e);
-		}
-
-		return map;
-	}
-
-
-	@Cacheable(cacheName = "getNeighborhoodCache")
-	@Override
-	public Map<ResultMapKey, Object> getNeighborhood(OutputFormat format, String[] source,
-		Integer limit, Direction direction)
-	{
-		Analysis analysis = new NeighborhoodAnalysis();
-		return runAnalysis(analysis, format, source, limit, direction, blacklist);
-	}
-
-	@Cacheable(cacheName = "getPathsBetweenCache")
-	@Override
-	public Map<ResultMapKey, Object> getPathsBetween(OutputFormat format, String[] source,
-		String[] target, Integer limit)
-	{
-		
-		Analysis analysis = new PathsBetweenAnalysis();
-		return runAnalysis(analysis, format, source, target, limit, blacklist);
-	}
-
-	@Cacheable(cacheName = "getCommonStreamCache")
-	@Override
-	public Map<ResultMapKey, Object> getCommonStream(OutputFormat format, String[] source,
-		Integer limit, Direction direction)
-	{
-		Analysis analysis = new CommonStreamAnalysis();
-		return runAnalysis(analysis, format, source, limit, direction, blacklist);
-	}
-
-	//---------------------------------------------------------------------------------------------|
-
-    /**
-     * Given paxtools model, returns as string
-     *
-     * @param model Model
-     * @return String
-     */
-	String exportToOWL(Model model) {
-
-		if (model == null) {
-			return null;
-        }
-		
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		simpleIO.convertToOWL(model, out);
-
-		return out.toString();
-	}
-
-    /**
-     * Returns proper simple interaction converter based on level
-     * of model. We don't have to be l2 compatible, but it doesn't hurt.
-     *
-     * @param model Model
-     * @return SimpleInteractionConverter
-     */
-    SimpleInteractionConverter getSimpleInteractionConverter(Model model) {
-        // Currently we don't have any options
-        // But I will just leave it here for the sake
-        // of API interface and future use
-        Map options = new HashMap();
-
-        if (model.getLevel() == BioPAXLevel.L2) {
-
-            return new SimpleInteractionConverter(
-                options,
-                blacklist,
-				new org.biopax.paxtools.io.sif.level2.ComponentRule(),
-				new org.biopax.paxtools.io.sif.level2.ConsecutiveCatalysisRule(),
-				new org.biopax.paxtools.io.sif.level2.ControlRule(),
-				new org.biopax.paxtools.io.sif.level2.ControlsTogetherRule(),
-				new org.biopax.paxtools.io.sif.level2.ParticipatesRule());
-        }
-        else if (model.getLevel() == BioPAXLevel.L3) {
-            return new SimpleInteractionConverter(
-                options,
-                blacklist,
-				new org.biopax.paxtools.io.sif.level3.ComponentRule(),
-				new org.biopax.paxtools.io.sif.level3.ConsecutiveCatalysisRule(),
-				new org.biopax.paxtools.io.sif.level3.ControlRule(),
-				new org.biopax.paxtools.io.sif.level3.ControlsTogetherRule(),
-				new org.biopax.paxtools.io.sif.level3.ParticipatesRule());
-        }
-
-        // should not make it here
-        return null;
-    }
-    
-	/**
-	 * Remove duplicate binary interactions from SIF/SIFNX converter output
-	 *
-	 * @param edgeStream OutputStream from converter
-	 * @return String
-	 */
-	private String removeDuplicateBinaryInteractions(OutputStream edgeStream) {
-
-		StringBuffer toReturn = new StringBuffer();
-		HashSet<String> interactions = new HashSet<String>();
-		for (String interaction : edgeStream.toString().split("\n")) {
-			interactions.add(interaction);
-		}
-		Iterator iterator = interactions.iterator();
-		while (iterator.hasNext()) {
-			toReturn.append(iterator.next() + "\n");
-		}
-		
-		// outta here
-		return toReturn.toString();
-	}
-
-	/**
-	 * A special setter for the blacklist property
-	 * (to be used by Spring)
-	 * 
-	 * @param blacklistResource
-	 * @throws IOException
-	 */
-    public void setBlacklistLocation(Resource blacklistResource) throws IOException {
-		if(blacklistResource.exists()) {
+		if(blacklistResource != null && blacklistResource.exists()) {
 			Scanner scanner = new Scanner(blacklistResource.getFile());
 			blacklist = new HashSet<String>();
 			while(scanner.hasNextLine())
@@ -534,17 +122,332 @@ public class CPathServiceImpl implements CPathService {
 				+ " URIs for a (graph queries) 'blacklist' resource: " 
 				+ blacklistResource.getDescription());
 		} else {
-			log.warn(blacklistResource.getDescription() + 
-				" does not exists (a 'blacklist' file)!");
+			log.warn("'blacklist' file is not used (" + 
+				((blacklistResource == null) ? "not provided" 
+					: blacklistResource.getDescription()) + ")");
 		}
+	}
+	
+	
+	/*
+	 * Interface methods
+	 */	
+	@Cacheable(cacheName = "findElementsCache")
+	@Override
+	public ServiceResponse search(String queryStr, 
+			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms) 
+	{
+		ServiceResponse serviceResponse;
+		
+		try {
+			// do search
+			SearchResponse hits = mainDAO.search(queryStr, page, biopaxClass, dsources, organisms);
+			if(hits.isEmpty())
+				serviceResponse = NO_RESULTS_FOUND.errorResponse("No hits");
+			else {
+				hits.setComment("Search '" + queryStr  + "' in " + 
+					((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName()) 
+					+ "; ds: " + Arrays.toString(dsources)+ "; org.: " + Arrays.toString(organisms));
+				serviceResponse = hits;
+			}
+			
+		} catch (Exception e) {
+			serviceResponse = INTERNAL_ERROR.errorResponse(e);
+		}
+		
+		return serviceResponse;
+	}
+		
+
+	/*
+     * (non-Javadoc)
+	 * @see cpath.service.CPathService#fetch(..)
+	 */
+	@Cacheable(cacheName = "elementByIdCache")
+	@Override
+	public ServiceResponse fetch(OutputFormat format, String... uris) {
+		if (uris.length == 0)
+			return NO_RESULTS_FOUND.errorResponse(
+					"No URIs were specified for the query!");
+		
+		Model m = fetchBiopaxModel(uris);
+		
+		if(m != null && !m.getObjects().isEmpty())
+			return formatConverter.convert(m, format);  
+		else
+			return NO_RESULTS_FOUND.errorResponse(
+					"No results for: " + Arrays.toString(uris));
     }
 
-    // blacklist property standard getter/setter pair
+
+	/*
+	 * (non-Javadoc)
+	 * @see cpath.service.CPathService#fetchBiopaxModel(java.lang.String[])
+	 */
+	@Override
+	public Model fetchBiopaxModel(String... uris) {
+		// extract a sub-model
+		return mainDAO.getValidSubModel(Arrays.asList(uris));
+	}
+
+	
+	//--- Graph queries ---------------------------------------------------------------------------|
+
+	/**
+	 * Runs any analysis with the provided parameters.
+	 *
+	 * @param analysis the required analysis
+	 * @param format the required output format
+	 * @param params parameters for the analysis
+	 * @return analysis result
+	 */
+	ServiceResponse runAnalysis(Analysis analysis, OutputFormat format, Object... params)
+	{
+		try {
+			Model m = mainDAO.runAnalysis(analysis, params);
+			if(m == null || m.getObjects().isEmpty())
+				return NO_RESULTS_FOUND.errorResponse("Graph query " +
+					"returned empty BioPAX model (" 
+						+ analysis.getClass().getSimpleName() + ")");	
+			else
+				return formatConverter.convert(m, format);
+		} catch (Exception e) {
+			log.error("runAnalysis failed. ", e);
+			return INTERNAL_ERROR.errorResponse(e);
+		}
+	}
+
+
+	@Cacheable(cacheName = "getNeighborhoodCache")
+	@Override
+	public ServiceResponse getNeighborhood(OutputFormat format, String[] sources,
+		Integer limit, Direction direction)
+	{
+		if(direction == null) {
+			direction = Direction.BOTHSTREAM;	
+		}
+		Analysis analysis = new NeighborhoodAnalysis();
+		return runAnalysis(analysis, format, sources, limit, direction, blacklist);
+	}
+
+	@Cacheable(cacheName = "getPathsBetweenCache")
+	@Override
+	public ServiceResponse getPathsBetween(OutputFormat format, String[] sources, Integer limit)
+	{
+		
+		Analysis analysis = new PathsBetweenAnalysis();
+		return runAnalysis(analysis, format, sources, limit, blacklist);
+	}
+	
+	@Cacheable(cacheName = "getPathsFromToCache")
+	@Override
+	public ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
+										  String[] targets, Integer limit)
+	{
+		Analysis analysis = new PathsFromToAnalysis();
+		return runAnalysis(analysis, format, sources, targets, limit);
+	}
+	
+
+	@Cacheable(cacheName = "getCommonStreamCache")
+	@Override
+	public ServiceResponse getCommonStream(OutputFormat format, String[] sources,
+		Integer limit, Direction direction)
+	{
+		if (direction == Direction.BOTHSTREAM) {
+			return BAD_REQUEST.errorResponse(
+				"Direction cannot be BOTHSTREAM for the COMMONSTREAM query!");
+		} else if(direction == null) {
+			direction = Direction.DOWNSTREAM;	
+		}
+			
+		Analysis analysis = new CommonStreamAnalysis();
+		return runAnalysis(analysis, format, sources, limit, direction, blacklist);
+	}
+
+	//---------------------------------------------------------------------------------------------|
+	
+	@Cacheable(cacheName = "traverseCache")
+	@Override
+	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
+		try {
+			// get results from the DAO
+			TraverseResponse results = mainDAO.traverse(propertyPath, sourceUris);
+			return results;
+		} catch (IllegalArgumentException e) {
+			log.error("Failed to init path accessor: ", e);
+			ErrorResponse err = BAD_REQUEST.errorResponse(e);
+			err.setErrorDetails(e.getMessage()); //easy message (removes stack trace)
+			return err;
+		} catch (Exception e) {
+			log.fatal("Failed. ", e);
+			return INTERNAL_ERROR.errorResponse(e);
+		}
+	}
+
+	
+	/**
+	 * "Top pathway" can mean different things...
+	 * 
+	 * 1) One may want simply collect pathways which are not 
+	 * values of any BioPAX property (i.e., a "graph-theoretic" approach, 
+	 * used by {@link ModelUtils#getRootElements(org.biopax.paxtools.model.Model, Class)} method) and by
+	 * BioPAX normalizer, which (in the cPath2 "premerge" stage),
+	 * for all Entities, generates relationship xrefs to their "parent" pathways.
+	 * 
+	 * 2) Another approach would be to check whether specific (inverse) 
+	 * properties, such as controlledOf, pathwayComponentOf and stepProcessOf, are empty.
+	 * 
+	 * Here we follow the second method!
+	 * 
+	 * Note:
+	 * This method generates the list of top pathways on the first call, 
+	 * and then all next calls return the same list (much faster).
+	 * (it uses lazy initialization, "double-check idiom", 
+	 * to prevent possible server startup timeout)
+	 * 
+	 */
+	@Override
+	public SearchResponse topPathways() {
+		SearchResponse result = topPathways;
+		if(result == null) { //first check (no locking)
+			synchronized (this) {
+				result = topPathways; 
+				if(result == null) { //second check (with locking)
+					result = new SearchResponse();
+					final List<SearchHit> hits = result.getSearchHit(); //empty
+					int page = 0; // will use search pagination
+					SearchResponse searchResponse = mainDAO.search("*", page, Pathway.class, null, null);
+					while(!searchResponse.isEmpty()) {
+						log.info("Retrieving top pathways search results, page #" + page);
+						//remove pathways having 'pathway' index field not empty, 
+						//i.e., keep only pathways where 'pathway' index field
+						// is empty (no controlledOf and pathwayComponentOf values)
+						for(SearchHit h : searchResponse.getSearchHit()) {
+							if(h.getPathway().isEmpty())
+								hits.add(h); //add to topPathways list
+						}
+						// go next page
+						searchResponse = mainDAO.search("*", ++page, Pathway.class, null, null);
+					}
+					// final touches...
+					result.setNumHits(hits.size());
+					//TODO update the following comment if implementation has changed!
+					result.setComment("Top Pathways (technically, each has empty index " +
+							"field 'pathway'; that also means, they are neither components of " +
+							"other pathways nor controlled of any process)");
+					result.setMaxHitsPerPage(hits.size());
+					result.setPageNo(0);
+					
+					topPathways = result;
+				}
+			}
+		} 
+		
+		return result;
+	}
+
+
 	public Set<String> getBlacklist() {
 		return blacklist;
 	}
 	public void setBlacklist(Set<String> blacklist) {
 		this.blacklist = blacklist;
 	}
-    
+
+	/**
+	 * Note:
+	 * This method generates the list of datasources on the first call, 
+	 * and then all next calls return the same list (much faster).
+	 * (it uses thread-safe lazy initialization, "double-check idiom", 
+	 * to prevent possible server startup timeout)
+	 */
+	@Override
+	public SearchResponse dataSources() {
+		SearchResponse result = dataSources;
+		if(result == null) {
+			synchronized (this) {
+				result = dataSources; //second check (with locking)
+				if(result == null) {
+					result = new SearchResponse();				
+					// collect metadata identifiers of pathway data sources
+					final Map<String, Metadata> metadataMap = new HashMap<String, Metadata>();
+					for(Metadata met : metadataDAO.getAllMetadata())
+						if(!met.getType().isWarehouseData())
+							metadataMap.put(met.getUri(), met);
+					
+					// find all Provenance instances and filter them out
+					final List<SearchHit> hits = result.getSearchHit(); //empty
+					int page = 0; // will use search pagination
+					SearchResponse searchResponse;
+					while(!(searchResponse = 
+						mainDAO.search("*", page++, Provenance.class, null, null))
+							.isEmpty())
+					{
+						for(SearchHit h : searchResponse.getSearchHit()) {
+							if(metadataMap.containsKey(h.getUri())) {
+								h.setExcerpt(metadataMap.get(h.getUri()).getDescription()); //a hack (to save comments)
+								hits.add(h);
+							}
+						}
+					
+						if(searchResponse.getSearchHit().size() == searchResponse.getNumHits()) 
+							break;
+					}
+					// final touches...
+					result.setNumHits(hits.size());
+					result.setMaxHitsPerPage(hits.size());
+					result.setPageNo(0);
+					
+					dataSources = result;
+				}
+			}
+		}
+		
+		return result;
+	}
+
+	
+	/**
+	 * Note:
+	 * This method generates the list of organisms on the first call, 
+	 * and then all next calls return the same list (much faster).
+	 * (it uses lazy initialization, "double-check idiom", 
+	 * to prevent possible server startup timeout)
+	 */
+	@Override
+	public SearchResponse bioSources() {
+		SearchResponse result = bioSources;
+		if(result == null) {
+			synchronized (this) {
+				result = bioSources;
+				if(result == null) { //second check (with locking)
+					result = new SearchResponse();
+					
+					// find all Provenance instances and filter them out
+					final List<SearchHit> hits = result.getSearchHit(); //empty
+					int page = 0; // will use search pagination
+					SearchResponse searchResponse;
+					while(!(searchResponse = 
+						mainDAO.search("*", page++, BioSource.class, null, null))
+							.isEmpty()) 
+					{
+						hits.addAll(searchResponse.getSearchHit());
+						// go next page
+						if(searchResponse.getSearchHit().size() == searchResponse.getNumHits())
+							break;
+					}
+					// final touches...
+					result.setNumHits(hits.size());
+					result.setMaxHitsPerPage(hits.size());
+					result.setPageNo(0);
+					
+					bioSources = result;
+				}
+			}
+		}
+			
+		return result;
+	}
+
 }

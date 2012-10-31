@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
                  
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>pathwaycommons.cpath</groupId>
 	<artifactId>parent</artifactId>
 	<packaging>pom</packaging>
-	<name>CPathSquared</name>
-	<version>1.0.1-SNAPSHOT</version>
-	<description>A software suite for storing, visualizing, and analyzing biological pathways.</description>
+	<name>CPath2 Parent</name>
+	<version>3.2.4-SNAPSHOT</version>
+	<description>CPath2 Multi-mudule project, a server software suite for aggregating, storing, and querying biological pathways based on BioPAX L3 standard.</description>
 	<url>http://code.google.com/p/pathway-commons/</url>
 	
 	<issueManagement>
@@ -38,10 +40,10 @@
 	</profiles>
 	
 	<scm>
-        	<connection>scm:hg:https://pathway-commons.googlecode.com/hg/</connection>
-        	<developerConnection>scm:hg:https://${scm.username}@pathway-commons.googlecode.com/hg/</developerConnection>
+        <connection>scm:hg:https://pathway-commons.googlecode.com/hg/</connection>
+        <developerConnection>scm:hg:https://pathway-commons.googlecode.com/hg/</developerConnection>
         	<url>http://code.google.com/p/pathway-commons/source/browse/</url>
-    	</scm>
+    </scm>
 
 	<distributionManagement>
 		<site>
@@ -70,26 +72,26 @@
 	</licenses>
 	
 	<modules>
-		<module>cpath-webdocs</module>
 		<module>cpath-dao</module>
 		<module>cpath-admin</module>
 		<module>cpath-importer</module>
 		<module>cpath-web-service</module>
 		<module>distribution</module>
 		<module>cpath-service</module>
-		<module>cpath-schema</module>
+		<module>cpath-api</module>
 		<module>cpath-client</module>
 	</modules>
 
 	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring.version>3.0.5.RELEASE</spring.version>
         <slf4j.version>1.5.8</slf4j.version>
         <hibernate.version>3.6.9.Final</hibernate.version>
-        <paxtools.version>4.1.0-SNAPSHOT</paxtools.version>
-        <validator.version>2.0.0</validator.version>
-        <cpath.schema.version>1.0.1-SNAPSHOT</cpath.schema.version>
+        <paxtools.version>4.1.5-SNAPSHOT</paxtools.version>
+        <validator.version>2.2.0-SNAPSHOT</validator.version>
+        <cpath.api.version>5.1.0-SNAPSHOT</cpath.api.version>
+        <miriam-lib.version>2.2.0-SNAPSHOT</miriam-lib.version>
 	</properties>
 
 	<build>
@@ -114,7 +116,7 @@
 							</property>
 						</systemProperties>
 						<!-- enable assertions, tests run in sequential mode -->
-						<argLine>-Dfile.encoding=UTF-8 -Xmx1g -DCPATH2_HOME=${CPATH2_HOME} -Djava.io.tmpdir=${CPATH2_HOME}/tmp -ea -DforkMode=once</argLine>
+						<argLine>-Xmx1g -Dfile.encoding=UTF-8 -DCPATH2_HOME=${CPATH2_HOME} -Djava.io.tmpdir=${CPATH2_HOME}/tmp -ea -DforkMode=once</argLine>
 					</configuration>
 				</plugin>
 			</plugins>
@@ -163,11 +165,6 @@
             <name>Spring Maven Milestone Repository</name>
             <url>http://maven.springframework.org/milestone</url>
         </repository>
-<!-- 		<repository> -->
-<!--             <id>JBoss Repo</id> -->
-<!--             <url>https://repository.jboss.org/nexus/content/repositories/releases</url> -->
-<!--             <name>JBoss Repo</name> -->
-<!--         </repository> -->
         <repository>
           <id>jboss-public-repository-group</id>
           <name>JBoss Public Maven Repository Group</name>
@@ -304,43 +301,20 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>org.biopax</groupId>
-			<artifactId>miriam-lib</artifactId>
-			<version>${validator.version}</version>
-		</dependency>
-		<dependency>
 			<groupId>org.biopax.paxtools</groupId>
 			<artifactId>paxtools-core</artifactId>
 			<version>${paxtools.version}</version>
 		</dependency>
-
-		<dependency>
-    		<groupId>org.bridgedb</groupId>
-    		<artifactId>org.bridgedb</artifactId>
-    		<version>1.1.0</version>
-    	</dependency>
-    	<dependency>
-			<groupId>org.bridgedb</groupId>
-			<artifactId>org.bridgedb.bio</artifactId>
-			<version>1.1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>javax.validation</groupId>
-			<artifactId>validation-api</artifactId>
-			<version>1.0.0.GA</version>
-		</dependency>
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-validator</artifactId>
-			<version>4.2.0.Final</version>
-		</dependency>
-        <!-- 
-        <dependency>
-            <groupId>javax.transaction</groupId>
-            <artifactId>jta</artifactId>
-            <version>1.1</version>
-        </dependency>
-         -->
+<!-- 		<dependency> -->
+<!--     		<groupId>org.bridgedb</groupId> -->
+<!--     		<artifactId>org.bridgedb</artifactId> -->
+<!--     		<version>1.1.0</version> -->
+<!--     	</dependency> -->
+<!--     	<dependency> -->
+<!-- 			<groupId>org.bridgedb</groupId> -->
+<!-- 			<artifactId>org.bridgedb.bio</artifactId> -->
+<!-- 			<version>1.1.0</version> -->
+<!-- 		</dependency> -->
          
         <!-- for caching (ehcache) -->
 		<dependency>

@@ -32,19 +32,19 @@ import java.util.Map;
 import java.util.Properties;
 
 import javax.sql.DataSource;
-import javax.validation.constraints.NotNull;
 
 import cpath.config.CPathSettings;
 import cpath.dao.DataServices;
+import cpath.dao.PaxtoolsDAO;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
-import org.biopax.paxtools.model.BioPAXElement;
-import org.hibernate.CacheMode;
-import org.hibernate.FlushMode;
-import org.hibernate.ScrollMode;
-import org.hibernate.ScrollableResults;
+//import org.biopax.paxtools.model.BioPAXElement;
+//import org.hibernate.CacheMode;
+//import org.hibernate.FlushMode;
+//import org.hibernate.ScrollMode;
+//import org.hibernate.ScrollableResults;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -78,49 +78,41 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 
 	// fields are set by Spring from cpath.properties
     
-    @NotNull
 	private String dbUser;
 	@Value("${user}")
 	public void setDbUser(String dbUser) { this.dbUser = dbUser; }
 	public String getDbUser() { return dbUser; }
 
-	@NotNull
 	private String dbPassword;
 	@Value("${password}")
 	public void setDbPassword(String dbPassword) { this.dbPassword = dbPassword; }
 	public String getDbPassword() { return dbPassword; }
 
-	@NotNull
 	private String dbDriver;
 	@Value("${driver}")
 	public void setDbDriver(String dbDriver) { this.dbDriver = dbDriver; }
 	public String getDbDriver() { return dbDriver; }
 
-	@NotNull
 	private String dbConnection;
 	@Value("${connection}")
 	public void setDbConnection(String dbConnection) { this.dbConnection = dbConnection; }
 	public String getDbConnection() { return dbConnection; }
 
-	@NotNull
 	private String metaDb;
 	@Value("${metadata.db}")
 	public void setMetaDb(String db) {this.metaDb = db;}
 	public String getMetaDb() {return metaDb;}
 
-	@NotNull
 	private String mainDb;
 	@Value("${main.db}")
 	public void setMainDb(String db) {this.mainDb = db;}
 	public String getMainDb() {return mainDb;}
 
-	@NotNull
 	private String proteinsDb;
 	@Value("${proteins.db}")
 	public void setProteinsDb(String db) {this.proteinsDb = db;}
 	public String getProteinsDb() {return proteinsDb;}
 
-	@NotNull
 	private String moleculesDb;
 	@Value("${molecules.db}")
 	public void setMoleculesDb(String db) {this.moleculesDb = db;}
@@ -294,7 +286,8 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		DataServices dataServices = (DataServices) ctx.getBean("&dsBean");
 		dataServices.createDatabase(dbName, true);
 		DataSource premergeDataSource = dataServices.getDataSource(dbName);
-		getDataSourceMap().put(CPathSettings.CREATE_DB_KEY, premergeDataSource);
+		// the map key "createSchema" matches the dataSource bean name in internalContext-createSchema.xml
+		getDataSourceMap().put("createSchema", premergeDataSource);
 		// set property for the index dir
 		System.setProperty("cpath2.db.name", dbName);
 		// load the context (depends on the above key) that auto-creates tables
@@ -325,7 +318,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
     }
     
     
-    private static void dropFulltextIndex(String dbName) {
+    public static void dropFulltextIndex(String dbName) {
 		// drop existing index dir.
 		File dir = new File(CPathSettings.getHomeDir() + File.separator + dbName);
 		if(log.isInfoEnabled())
@@ -340,6 +333,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
      * (actual connection parameters are set 
      * from system/environment properties)
      * 
+     * @deprecated use {@link PaxtoolsDAO#index()} instead
      */
     public static void rebuildMainIndex() {
     	ApplicationContext ctx = 
@@ -353,6 +347,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
      * (actual connection parameters are set 
      * from system/environment properties)
      * 
+     * @deprecated use {@link PaxtoolsDAO#index()} instead
      */
     public static void rebuildProteinsIndex() {
     	ApplicationContext ctx = 
@@ -366,6 +361,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
      * (actual connection parameters are set 
      * from system/environment properties)
      * 
+     * @deprecated use {@link PaxtoolsDAO#index()} instead
      */
     public static void rebuildMoleculesIndex() {
     	ApplicationContext ctx = 
@@ -380,6 +376,8 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
      * system properties)
      * 
      * @param db
+     * 
+     * @deprecated use {@link PaxtoolsDAO#index()} instead
      */
     public static void rebuildIndex(String db) {
     	ApplicationContext ctx = 
@@ -412,6 +410,12 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
     /**
      * Awesome mass-parallel indexing method.
      * 
+     * Note: this high-speed method automatically re-builds the index  
+     * based only on the Hibernate/Search annotations; so
+     * all other/extra index fields and information (e.g., manually generated 
+     * using Lucene/Search API) will be lost (has to be re-created again)!
+     * 
+     * @deprecated use {@link PaxtoolsDAO#index()} instead
      */
     public void createIndex(String db) {
     	// delete existing index dir
@@ -440,41 +444,17 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		Session ses = sessionFactory.openSession();
 		FullTextSession fullTextSession = Search.getFullTextSession(ses);
 		Transaction tx = fullTextSession.beginTransaction();
-//		try {
-//			fullTextSession.createIndexer()
-//				.purgeAllOnStart(true)
-//				.batchSizeToLoadObjects( 10 )
+		try {
+			fullTextSession.createIndexer()
+				.purgeAllOnStart(true)
+				.batchSizeToLoadObjects( 4 )
 //				.threadsForSubsequentFetching( 1 )
 //				.threadsToLoadObjects( 1 )
-////				.optimizeOnFinish(true)
-//				.startAndWait();
-//		} catch (Exception e) {
-//			throw new RuntimeException("Index re-build is interrupted.", e);
-//		}	
-		
-// Begin manual indexing
-		fullTextSession.setFlushMode(FlushMode.MANUAL);
-		fullTextSession.setCacheMode(CacheMode.IGNORE);
-		//Scrollable results will avoid loading too many objects in memory
-		ScrollableResults results = fullTextSession.createCriteria( BioPAXElementImpl.class )
-		    .setFetchSize(200)
-		    .scroll( ScrollMode.FORWARD_ONLY );
-		int index = 0;
-		while( results.next() ) {
-		    index++;
-		    BioPAXElement bpe = (BioPAXElement) results.get(0);
-		    fullTextSession.index( bpe ); //index each element
-		    if (index % 200 == 0) {
-		        fullTextSession.flushToIndexes(); //apply changes to indexes
-		        fullTextSession.clear(); //free memory since the queue is processed
-		        if(log.isDebugEnabled())
-					log.debug("Indexed " + index);
-		    }
-		}
-        fullTextSession.flushToIndexes();
-        fullTextSession.clear();
-//
-        
+//				.optimizeOnFinish(true)
+				.startAndWait();
+		} catch (Exception e) {
+			throw new RuntimeException("Index re-build is interrupted.", e);
+		}	
 		tx.commit();
 		fullTextSession.close();
 		sessionFactory.close();
