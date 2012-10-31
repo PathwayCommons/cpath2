@@ -31,7 +31,6 @@ package cpath.service.internal;
 import java.io.*;
 import java.util.*;
 
-import com.sun.deploy.util.BlackList;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.ModelUtils;
