@@ -2,10 +2,13 @@ package cpath.client;
 
 import static org.junit.Assert.*;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.util.*;
 
+import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.query.QueryExecuter;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -18,12 +21,12 @@ import cpath.service.jaxb.TraverseResponse;
 /**
  * INFO: when "cPath2Url" Java property is not set,
  * (e.g., -DcPath2Url="http://localhost:8080/cpath-web-service/")
- * the default cpath2 endpoint URL is {@link CPath2ClientImpl#DEFAULT_ENDPOINT_URL}
+ * the default cpath2 endpoint URL is {@link CPath2Client#DEFAULT_ENDPOINT_URL}
  * (e.g., http://www.pathwaycommons.org/pc2/). So, it is possible that the 
  * default (official) service still provides an older cpath2 API than this PC2 client expects.
  * Take care. 
  */
-@Ignore //these tests depend on the data, thus disabled by default (not for daily builds)
+//@Ignore //these tests depend on the data, thus disabled by default (not for daily builds)
 public class CPath2ClientTest {
 	
 	@Test
@@ -136,5 +139,30 @@ public class CPath2ClientTest {
 			fail();
 		}
 		
+	}
+
+	@Test
+	public final void testPathsBetweenQuery()
+	{
+		final CPath2Client cl = CPath2Client.newInstance();
+		cl.setEndPointURL("http://awabi.cbio.mskcc.org/cpath2/");
+		cl.setGraphQueryLimit(1);
+
+		Set<String> source1 = new LinkedHashSet<String>(Arrays.asList(
+			"urn:biopax:RelationshipXref:HGNC_HGNC%3A6204",
+			"urn:biopax:RelationshipXref:HGNC_HGNC%3A9588"
+		));
+
+		for (String s : source1)
+		{
+			System.out.println(s);
+		}
+		Model model = cl.getPathsBetween(source1);
+		System.out.println("model.getObjects(.size()) = " + model.getObjects().size());
+
+		SimpleIOHandler h = new SimpleIOHandler();
+
+		try{h.convertToOWL(model, new FileOutputStream("/home/ozgun/Desktop/temp.owl"));
+		} catch (FileNotFoundException e){e.printStackTrace();}
 	}
 }
