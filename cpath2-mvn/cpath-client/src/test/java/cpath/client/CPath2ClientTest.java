@@ -142,6 +142,7 @@ public class CPath2ClientTest {
 	}
 
 	@Test
+	@Ignore
 	public final void testPathsBetweenQuery()
 	{
 		final CPath2Client cl = CPath2Client.newInstance();
