@@ -26,7 +26,7 @@ import cpath.service.jaxb.TraverseResponse;
  * default (official) service still provides an older cpath2 API than this PC2 client expects.
  * Take care. 
  */
-//@Ignore //these tests depend on the data, thus disabled by default (not for daily builds)
+@Ignore //these tests depend on the data, thus disabled by default (not for daily builds)
 public class CPath2ClientTest {
 	
 	@Test
