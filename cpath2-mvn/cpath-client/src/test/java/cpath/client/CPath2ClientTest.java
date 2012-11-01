@@ -38,7 +38,14 @@ public class CPath2ClientTest {
 		
 		vals = client.getValidDataSources().keySet();
 		assertFalse(vals.isEmpty());
-		assertTrue(vals.contains("urn:biopax:Provenance:REACTOME"));
+        Boolean hasReactome = false;
+        for (String val : vals) {
+            if(val.toLowerCase().startsWith("urn:biopax:provenance:reactome")) {
+                hasReactome = true;
+                break;
+            }
+        }
+		assertTrue(hasReactome);
 		
 		vals = client.getValidOrganisms().keySet();
 		assertFalse(vals.isEmpty());
