@@ -173,7 +173,7 @@ class CPathServiceImpl implements CPathService {
 		Model m = fetchBiopaxModel(uris);
 		
 		if(m != null && !m.getObjects().isEmpty())
-			return formatConverter.convert(m, format, blacklist, true);
+			return formatConverter.convert(m, format, true);
 		else
 			return NO_RESULTS_FOUND.errorResponse(
 				"No results for: " + Arrays.toString(uris));
@@ -210,7 +210,7 @@ class CPathServiceImpl implements CPathService {
 					"returned empty BioPAX model (" 
 						+ analysis.getClass().getSimpleName() + ")");	
 			else
-				return formatConverter.convert(m, format, blacklist, true);
+				return formatConverter.convert(m, format, true);
 		} catch (Exception e) {
 			log.error("runAnalysis failed. ", e);
 			return INTERNAL_ERROR.errorResponse(e);

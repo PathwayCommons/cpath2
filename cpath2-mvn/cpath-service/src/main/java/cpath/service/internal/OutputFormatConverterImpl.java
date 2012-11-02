@@ -136,15 +136,12 @@ public class OutputFormatConverterImpl implements OutputFormatConverter {
 				data = convertToGSEA(m, "uniprot");
 				break;
             case SBGN:
-				Set<String> blackList = null;
-				if (args != null && args.length > 0 && args[0] instanceof Set)
-					blackList = (Set<String>) args[0];
-				
+
 				boolean doLayout = true;
-				if (args != null && args.length > 1 && args[1] instanceof Boolean)
-					doLayout = (Boolean) args[1];
+				if (args != null && args.length > 0 && args[0] instanceof Boolean)
+					doLayout = (Boolean) args[0];
 				
-                data = convertToSBGN(m,blackList, doLayout);
+                data = convertToSBGN(m, blacklist, doLayout);
                 break;
 			default: //to BioPAX OWL
 			}
