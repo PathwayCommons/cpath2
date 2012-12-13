@@ -37,7 +37,6 @@ import java.io.InputStream;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
 
-import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
@@ -45,8 +44,8 @@ import org.biopax.paxtools.model.level3.ModificationFeature;
 import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.SequenceLocation;
 import org.biopax.paxtools.model.level3.SequenceSite;
-import org.biopax.paxtools.model.level3.UtilityClass;
-import org.junit.Ignore;
+import org.biopax.validator.utils.Normalizer;
+//import org.junit.Ignore;
 import org.junit.Test;
 
 import cpath.importer.Converter;
@@ -56,7 +55,7 @@ import cpath.importer.internal.ImportFactory;
  * @author rodche
  *
  */
-@Ignore
+//@Ignore
 public class UniprotConverterImplTest {
 
 	/**
@@ -75,7 +74,7 @@ public class UniprotConverterImplTest {
 		converter.convert(zis);
 		
 		Set<ProteinReference> proteinReferences = model.getObjects(ProteinReference.class);
-		assertEquals(9, proteinReferences.size());
+		assertEquals(10, proteinReferences.size());
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
 
 		//get by URI and check the sequence (CALL6_HUMAN)
@@ -91,8 +90,7 @@ public class UniprotConverterImplTest {
 		pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/P62158");
 		assertNotNull(pr);
 		assertEquals(8, pr.getEntityFeature().size());
-		String mfUri = ModelUtils.BIOPAX_URI_PREFIX + "ModificationFeature:" +
-				pr.getDisplayName() + "_1";
+		String mfUri = Normalizer.uri(model.getXmlBase(), null, pr.getDisplayName() + "_1", ModificationFeature.class);
 		ModificationFeature mf = (ModificationFeature) model.getByID(mfUri);
 		assertNotNull(mf);
 		assertTrue(pr.getEntityFeature().contains(mf));

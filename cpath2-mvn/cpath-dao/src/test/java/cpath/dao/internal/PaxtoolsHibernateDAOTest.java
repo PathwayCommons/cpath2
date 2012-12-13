@@ -93,9 +93,9 @@ public class PaxtoolsHibernateDAOTest {
 		assertTrue(((Model)paxtoolsDAO).containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
 		assertTrue(((Model)paxtoolsDAO).containsID("http://www.biopax.org/examples/myExample#Protein_A"));
 		assertTrue(((Model)paxtoolsDAO).containsID("http://www.biopax.org/examples/myExample#Protein_B"));
-		assertTrue(((Model)paxtoolsDAO).containsID("urn:biopax:UnificationXref:Taxonomy_562"));
+		assertTrue(((Model)paxtoolsDAO).containsID("UnificationXref:Taxonomy_562"));
 		
-		BioPAXElement bpe = ((Model)paxtoolsDAO).getByID("urn:biopax:UnificationXref:Taxonomy_562");
+		BioPAXElement bpe = ((Model)paxtoolsDAO).getByID("UnificationXref:Taxonomy_562");
 		assertTrue(bpe instanceof UnificationXref);
 		
 		BioPAXElement e = ((Model)paxtoolsDAO)
@@ -147,7 +147,7 @@ public class PaxtoolsHibernateDAOTest {
 			.getByID("http://www.biopax.org/examples/myExample#Protein_A");
 		assertTrue(bpe instanceof Protein);
 		
-		bpe = ((Model)paxtoolsDAO).getByID("urn:biopax:UnificationXref:UniProt_P46880");
+		bpe = ((Model)paxtoolsDAO).getByID("UnificationXref:UniProt_P46880");
 		assertTrue(bpe instanceof UnificationXref);
 	}
 
@@ -175,7 +175,7 @@ public class PaxtoolsHibernateDAOTest {
 		 * which is usable only within the session/transaction,
 		 * which is closed after the call :) So 'initialize' is required - 
 		 */
-		BioPAXElement bpe = ((Model)paxtoolsDAO).getByID("urn:biopax:UnificationXref:UniProt_P46880");
+		BioPAXElement bpe = ((Model)paxtoolsDAO).getByID("UnificationXref:UniProt_P46880");
 		paxtoolsDAO.initialize(bpe);
 		assertTrue(bpe instanceof UnificationXref);
 		
@@ -218,7 +218,7 @@ public class PaxtoolsHibernateDAOTest {
 		System.out.println("Clone the protein and export model:");
 		assertTrue(m.containsID("http://www.biopax.org/examples/myExample#Protein_A"));
 		assertTrue(m.containsID("http://identifiers.org/uniprot/P46880"));
-		assertTrue(m.containsID("urn:biopax:UnificationXref:UniProt_P46880"));
+		assertTrue(m.containsID("UnificationXref:UniProt_P46880"));
 		
 		OutputStream out = new FileOutputStream(
 				getClass().getClassLoader().getResource("").getPath() 
@@ -242,7 +242,7 @@ public class PaxtoolsHibernateDAOTest {
 		for(SearchHit e : list) {
 			m.add(e.getUri());
 		}
-		assertTrue(m.contains("urn:biopax:UnificationXref:UniProt_P46880"));
+		assertTrue(m.contains("UnificationXref:UniProt_P46880"));
 		System.out.println("search by 'P46880' returned: " + list.toString());
 		
 		// PR must match if one of its xref.id matches the query -
@@ -266,7 +266,7 @@ public class PaxtoolsHibernateDAOTest {
 //		 * despite that there was also a primary key field defined, e.g., 
 //		 * as "@Id @DocumentId public String getRDFId()..."! It was resolved by making getId() @Transient 
 //		 * and creating another pair of @Field annotated getter/setter, getIdx()/setIdx(String).
-//		 * So, "id" field/property is better to avoid or use a more specific name instead!
+//		 * So, "id" field/property name is better to avoid and use a more specific name instead!
 //		 */
 //		paxtoolsDAO.importModel(
 //			(new DefaultResourceLoader()).getResource("classpath:xrefs.owl")
@@ -294,9 +294,9 @@ public class PaxtoolsHibernateDAOTest {
 		assertTrue(((Model)whDAO).containsID("http://www.biopax.org/examples/myExample2#Protein_A"));
 		assertTrue(((Model)whDAO).containsID("http://www.biopax.org/examples/myExample#Protein_A"));
 		assertTrue(((Model)whDAO).containsID("http://www.biopax.org/examples/myExample#Protein_B"));
-		assertTrue(((Model)whDAO).containsID("urn:biopax:UnificationXref:Taxonomy_562"));
+		assertTrue(((Model)whDAO).containsID("UnificationXref:Taxonomy_562"));
 			
-		BioPAXElement bpe = whDAO.createBiopaxObject("urn:biopax:UnificationXref:Taxonomy_562", UnificationXref.class);
+		BioPAXElement bpe = whDAO.createBiopaxObject("UnificationXref:Taxonomy_562", UnificationXref.class);
 		assertTrue(bpe instanceof UnificationXref);
 		BioPAXElement e = whDAO.createBiopaxObject("http://www.biopax.org/examples/myExample2#Protein_A", BioPAXElement.class);
 		assertTrue(e instanceof Protein);
@@ -327,7 +327,7 @@ public class PaxtoolsHibernateDAOTest {
 		assertTrue(bpe instanceof Protein);
 
 		bpe = ((WarehouseDAO) whDAO).createBiopaxObject(
-				"urn:biopax:UnificationXref:UniProt_P46880",
+				"UnificationXref:UniProt_P46880",
 				UnificationXref.class);
 		assertTrue(bpe instanceof UnificationXref);
 	}
@@ -355,7 +355,7 @@ public class PaxtoolsHibernateDAOTest {
 		 * :) So we use getObject instead -
 		 */
 		BioPAXElement bpe = whDAO.createBiopaxObject(
-				"urn:biopax:UnificationXref:UniProt_P46880",
+				"UnificationXref:UniProt_P46880",
 				UnificationXref.class);
 		assertTrue(bpe instanceof UnificationXref);
 
@@ -411,7 +411,7 @@ public class PaxtoolsHibernateDAOTest {
 	@Test
 	public void testProvenanceCommentsNotMerged() {
 		assertEquals(1, ((Model)paxtoolsDAO).getObjects(Provenance.class).size());
-		Provenance pro = (Provenance) ((Model)paxtoolsDAO).getByID("urn:biopax:Provenance:aMAZE");
+		Provenance pro = (Provenance) ((Model)paxtoolsDAO).getByID("Provenance:aMAZE");
 		assertNotNull(pro);
 		paxtoolsDAO.initialize(pro);
 		//there were two Provenance objects with the same URI in the two imported test files;

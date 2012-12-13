@@ -31,7 +31,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
-import org.biopax.paxtools.controller.ModelUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 
 
@@ -41,6 +42,8 @@ import org.biopax.paxtools.impl.BioPAXElementImpl;
  * @author rodche
  */
 public final class CPathSettings {
+	private static final Log log = LogFactory.getLog(CPathSettings.class);
+	
 	
 	private static final Properties cPathProperties = new Properties();
 
@@ -181,11 +184,15 @@ public final class CPathSettings {
 	public static String get(CPath2Property prop) {
 		String v = cPathProperties.getProperty(prop.toString());
 		
-		if (v == null) {
+		if (v == null || v.isEmpty()) {
 			// for some, set defaults
 			switch (prop) {
 			case XML_BASE:
-				v = ModelUtils.BIOPAX_URI_PREFIX; 
+				v = ""; 
+				log.warn(prop + " is not defined in the cpath.properties files. " +
+					"This is not critical for the cpath2 web server application. " +
+					"However, one must perform data import using the same " +
+					"xml:base in all its stages (fetch, premerge, and merge).");
 				break;
 			case DIGEST_URI_ENABLED:
 				v = "false"; 

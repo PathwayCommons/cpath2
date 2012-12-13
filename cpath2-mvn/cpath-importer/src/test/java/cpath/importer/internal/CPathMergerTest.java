@@ -1,5 +1,7 @@
 package cpath.importer.internal;
 
+import cpath.config.CPathSettings;
+import cpath.config.CPathSettings.CPath2Property;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
@@ -11,6 +13,7 @@ import cpath.warehouse.beans.Metadata.TYPE;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.io.SimpleIOHandler;
+import org.biopax.validator.utils.Normalizer;
 
 import org.junit.*;
 import static org.junit.Assert.*;
@@ -38,6 +41,8 @@ public class CPathMergerTest {
 	
 	private Set<Model> pathwayModels; // pathways to merge
 	private final static ResourceLoader resourceLoader = new DefaultResourceLoader();
+	
+	static final String XML_BASE = CPathSettings.get(CPath2Property.XML_BASE);
 	
 	/**
 	 * Mocks an empty CV repository
@@ -71,11 +76,9 @@ public class CPathMergerTest {
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 			new String[] {
 				"classpath:testContext-whDAO.xml", 
-//				"classpath:applicationContext-cvRepository.xml"
 				});
 		proteinsDAO = (WarehouseDAO) context.getBean("proteinsDAO");
 		moleculesDAO = (WarehouseDAO) context.getBean("moleculesDAO");
-//		cvRepository = (WarehouseDAO) context.getBean("cvFetcher");
 		cvRepository = new MockCvWarehouse();
 		metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 
@@ -113,29 +116,36 @@ public class CPathMergerTest {
 	public void initPathwayModels() throws IOException {
 		pathwayModels = new HashSet<Model>();
 		SimpleIOHandler reader = new SimpleIOHandler();
+		Normalizer normalizer = new Normalizer();
+		normalizer.setXmlBase(XML_BASE);
 		reader.mergeDuplicates(true);
 		Model model;
 		model = reader.convertFromOWL(resourceLoader
-			.getResource("classpath:test-normalized.owl").getInputStream());
+			.getResource("classpath:pathwaydata1.owl").getInputStream());
 		if(model == null)
-			fail("Failed to import test data from classpath:test-normalized.owl");
+			fail("Failed to import test data from classpath:pathwaydata1.owl");
+		normalizer.normalize(model);
 		pathwayModels.add(model);
 		
 		model = null;
 		model = reader.convertFromOWL(resourceLoader
-			.getResource("classpath:test-normalized-2.owl").getInputStream());
+			.getResource("classpath:pathwaydata2.owl").getInputStream());
+		normalizer.normalize(model);
 		pathwayModels.add(model);
 		model = null;
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:pid_60446.owl").getInputStream());
+		normalizer.normalize(model);
 		pathwayModels.add(model); //PR P22932 caused the trouble
 		model = null;
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:pid_6349.owl").getInputStream());
+		normalizer.normalize(model);
 		pathwayModels.add(model); //Xref for P01118 caused the trouble
 		model = null;
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:hcyc.owl").getInputStream());
+		normalizer.normalize(model);
 		pathwayModels.add(model);	
 	}
 	
@@ -188,8 +198,7 @@ public class CPathMergerTest {
 		// test proper merge of protein reference
 		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#Protein_54"));
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P27797"));
-		assertTrue(mergedModel.containsID("urn:biopax:UnificationXref:UNIPROT_P27797"));
-		assertTrue(!mergedModel.containsID("urn:biopax:UnificationXref:Uniprot_P27797"));
+		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P27797", UnificationXref.class)));
 		assertTrue(mergedModel.containsID("http://identifiers.org/taxonomy/9606"));
 		
 		ProteinReference pr = (ProteinReference)mergedModel.getByID("http://identifiers.org/uniprot/P27797");
@@ -203,7 +212,7 @@ public class CPathMergerTest {
 		// test proper merge of small molecule reference
 		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate"));
 		assertTrue(mergedModel.containsID("http://identifiers.org/obo.chebi/CHEBI:20"));
-		assertTrue(mergedModel.containsID("urn:biopax:ChemicalStructure:CHEBI_CHEBI%3A20"));
+		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "CHEBI", "CHEBI:20", ChemicalStructure.class)));
 		assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_8"));
 		assertTrue(!mergedModel.containsID("http://identifiers.org/pubchem.substance/14438"));
 		assertTrue(!mergedModel.containsID("http://identifiers.org/pubchem.substance/14439"));
@@ -220,7 +229,7 @@ public class CPathMergerTest {
 		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/obo.chebi/CHEBI:20");
 		assertEquals("(+)-camphene", msmr.getStandardName());
 //		System.out.println("merged chebi:20 xrefs: " + msmr.getXref().toString());
-		assertEquals(4, msmr.getXref().size());
+		assertEquals(5, msmr.getXref().size());
 		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
 		
 		// if the following fails, try to cleanup your java.io.tmpdir...
@@ -230,10 +239,10 @@ public class CPathMergerTest {
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P13631"));
 		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P22932"));
 		
-		assertTrue(mergedModel.containsID("urn:biopax:UnificationXref:UNIPROT_P01118"));
+		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01118", UnificationXref.class)));
 		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P01118"));
 //		System.out.println("new xrefOf: " + newXref.getXrefOf().toString());
-		assertTrue(mergedModel.containsID("urn:biopax:UnificationXref:UNIPROT_P01116"));
+		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01116", UnificationXref.class)));
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P01116"));
 				
 		pr = (ProteinReference)mergedModel.getByID("http://identifiers.org/uniprot/P27797");
@@ -251,11 +260,11 @@ public class CPathMergerTest {
 
 		smr = moleculesDAO.createBiopaxObject("http://identifiers.org/obo.chebi/CHEBI:28", SmallMoleculeReference.class);
 //		System.out.println("warehouse chebi:28 xrefs: " + smr.getXref().toString());
-		assertEquals(14, smr.getXref().size());
+		assertEquals(15, smr.getXref().size());
 
 		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/obo.chebi/CHEBI:28");
 //		System.out.println("merged chebi:28 xrefs: " + smr.getXref().toString());
-		assertEquals(6, smr.getXref().size()); // relationship xrefs were removed before merging
+		assertEquals(7, smr.getXref().size()); // relationship xrefs were removed before merging
 		assertEquals("(R)-linalool", smr.getDisplayName());
 
 		assertEquals(5, smr.getEntityReferenceOf().size());
@@ -267,7 +276,7 @@ public class CPathMergerTest {
 		assertEquals(1, x.getXrefOf().size());
 		assertEquals("http://identifiers.org/taxonomy/9606", x.getXrefOf().iterator().next().getRDFId());
 //		System.out.println(x.getRDFId() + " is " + x);
-		UnificationXref ux = (UnificationXref) mergedModel.getByID("urn:biopax:UnificationXref:TAXONOMY_9606");
+		UnificationXref ux = (UnificationXref) mergedModel.getByID(Normalizer.uri(XML_BASE, "TAXONOMY", "9606", UnificationXref.class));
 //		System.out.println(ux.getRDFId() + " - " + ux);
 		assertEquals(1, ux.getXrefOf().size());
 		

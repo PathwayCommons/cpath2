@@ -48,9 +48,9 @@ import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.validator.Validator;
-import org.biopax.validator.result.ValidatorResponse;
-import org.biopax.validator.utils.BiopaxValidatorUtils;
+import org.biopax.validator.api.Validator;
+import org.biopax.validator.api.beans.ValidatorResponse;
+import org.biopax.validator.api.ValidatorUtils;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -80,7 +80,7 @@ import static cpath.service.OutputFormat.*;
 /**
  * Class which provides command line admin capabilities.
  * 
- * TODO (not urgent) re-factor to use JLine or Apache CLI
+ * TODO (not urgent) use Apache CLI or alike lib...
  */
 public class Admin implements Runnable {
 	private static final Log LOG = LogFactory.getLog(Admin.class);
@@ -127,8 +127,12 @@ public class Admin implements Runnable {
     private void parseArgs(final String[] args) {
 
         boolean validArgs = true;
-
-        // TODO: use gnu getopt or some variant  
+        
+		if (args.length > 5) { //max no. args (5th is reserved for future use)
+			validArgs = false;
+			return;
+		}
+ 
         if(args[0].equals(COMMAND.CREATE_TABLES.toString())) {
         	this.command = COMMAND.CREATE_TABLES;
 			if (args.length > 1) {
@@ -140,7 +144,7 @@ public class Admin implements Runnable {
 			this.command = COMMAND.CREATE_INDEX;
         } 
         else if (args[0].equals(COMMAND.FETCH_METADATA.toString())) {
-			if (args.length != 2) {
+			if (args.length < 2) {
 				validArgs = false;
 			}
 			else {
@@ -149,7 +153,7 @@ public class Admin implements Runnable {
 			}
         }
 		else if (args[0].equals(COMMAND.FETCH_DATA.toString())) {
-			if (args.length != 2) {
+			if (args.length < 2) {
 				validArgs = false;
 			} else {
 				this.command = COMMAND.FETCH_DATA;
@@ -158,14 +162,32 @@ public class Admin implements Runnable {
 		}
 		else if (args[0].equals(COMMAND.PREMERGE.toString())) {
 			this.command = COMMAND.PREMERGE;
-			validArgs = processOptionalArgs(this.command, args);
+			this.commandParameters = new String[] { null, null, "false" };
+			int j = 0;
+			for (int i = 1; i < args.length && i < 4; i++) {
+				if ("--usedatabases".equalsIgnoreCase(args[i])) {
+					this.commandParameters[2] = "true";
+					break; // flag is always the last arg.
+				} else {
+					this.commandParameters[j++] = args[i];
+				}
+			}
 		}
 		else if (args[0].equals(COMMAND.MERGE.toString())) {
 			this.command = COMMAND.MERGE;
-			validArgs = processOptionalArgs(this.command, args);
+			this.commandParameters = new String[] { null, null, "false" };
+			int j = 0;
+			for (int i = 1; i < args.length && i < 4; i++) {
+				if ("--force".equalsIgnoreCase(args[i])) {
+					this.commandParameters[2] = "true";
+					break; // flag is always the last arg.
+				} else {
+					this.commandParameters[j++] = args[i];
+				}
+			}
 		}
 		else if(args[0].equals(COMMAND.EXPORT.toString())) {
-			if (args.length != 4) {
+			if (args.length < 4) {
 				validArgs = false;
 			} else {
 				this.command = COMMAND.EXPORT;
@@ -173,7 +195,7 @@ public class Admin implements Runnable {
 			} 
         } 
 		else if(args[0].equals(COMMAND.EXPORT_VALIDATION.toString())) {
-			if (args.length != 3) {
+			if (args.length < 3) {
 				validArgs = false;
 			} else {
 				this.command = COMMAND.EXPORT_VALIDATION;
@@ -184,7 +206,7 @@ public class Admin implements Runnable {
             this.command = COMMAND.CREATE_BLACKLIST;
         } 
 		else if(args[0].equals(COMMAND.CONVERT.toString())) {
-			if (args.length != 4) {
+			if (args.length < 4) {
 				validArgs = false;
 			} else {
 				this.command = COMMAND.CONVERT;
@@ -202,41 +224,11 @@ public class Admin implements Runnable {
         }
 
         if (!validArgs) {
-            throw new IllegalArgumentException("Invalid command passed to Admin.");
+            throw new IllegalArgumentException("Invalid command: " + 
+            		Arrays.toString(args));
         }
     }
 
-    
-	private boolean  processOptionalArgs(COMMAND cmd, final String[] args) {
-		//args[0],the command name, plus max. 4 optional parameters...
-		
-		if(cmd != COMMAND.PREMERGE && cmd != COMMAND.MERGE) {
-			throw new UnsupportedOperationException(cmd + " is not supported!");
-		}
-		
-		if (args.length > 5) {
-			return false;
-		}
-		
-		String usePremergeDbflag = "--usedatabases"; // not used with for 'merge' anymore
-		String forceMergeFlag = "--force";
-		
-		// set default values first, i.e.,
-		// do all data providers and versions, do not create/use 
-		// the pre-merge DBs, merge valid BioPAX (no forcing)
-		this.commandParameters = new String[] {null, null, "false", "false"};	
-		for(int i=1 ; i < args.length ; i++) {
-			if(usePremergeDbflag.equalsIgnoreCase(args[i])) {
-				this.commandParameters[2] = "true";
-			} else if(forceMergeFlag.equalsIgnoreCase(args[i])) {
-				this.commandParameters[3] = "true";
-			} else {
-				this.commandParameters[i-1] = args[i];
-			}
-		}
-		
-		return true;
-	}
 
 	/**
      * Executes cPath^2 admin command.
@@ -289,7 +281,7 @@ public class Admin implements Runnable {
 				break;
 			case MERGE:
 				runMerge(commandParameters[0], commandParameters[1], 
-					Boolean.parseBoolean(commandParameters[3]));
+					Boolean.parseBoolean(commandParameters[2]));
 				break;
             case EXPORT:
             	OutputStream os = new FileOutputStream(commandParameters[2]);
@@ -441,7 +433,7 @@ public class Admin implements Runnable {
 		LOG.info("runMerge: provider=" + provider + "; version=" + version
 			+ "; --force=" + force);
 		
-		Merger merger = (provider == null)
+		Merger merger = (provider == null || provider.isEmpty())
 				? ImportFactory.newMerger(pcDAO, force)
 				: ImportFactory.newMerger(pcDAO, provider, version, force);
 		merger.merge();
@@ -563,10 +555,6 @@ public class Admin implements Runnable {
 		        // parse/save
 				fetcher.storeWarehouseData(metadata, (Model)smallMoleculesDAO);
 			} 
-			else if (metadata.getType() == Metadata.TYPE.MAPPING) 
-			{
-				// already done (by fetcher.fetchData(metadata)).
-			}
 			
 			if(LOG.isInfoEnabled())
 				LOG.info("FETCHING DONE : " + metadata.getIdentifier()
@@ -701,7 +689,7 @@ public class Admin implements Runnable {
     					.getResource("classpath:html-result.xsl").getInputStream())
     			: null;
 
-			BiopaxValidatorUtils.write(report, writer, xsl); 
+			ValidatorUtils.write(report, writer, xsl); 
     		writer.flush();
     	}
 	}	

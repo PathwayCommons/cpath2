@@ -16,7 +16,7 @@
 </bp:ModificationFeature>
 
 <bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P10826">
- <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_P10826_4" />
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_P10826_4" />
  <bp:displayName rdf:datatype = "xsd:string">Rar beta3</bp:displayName>
  <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
 </bp:ProteinReference>
@@ -71,18 +71,18 @@
 <bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P13631">
  <bp:entityFeature rdf:resource="#pid_60396" />
  <bp:name rdf:datatype = "xsd:string">RAR gamma1</bp:name>
- <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_P13631_1" />
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_P13631_1" />
  <bp:displayName rdf:datatype = "xsd:string">Rar gamma1</bp:displayName>
  <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
 </bp:ProteinReference>
 
-<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UNIPROT_P10276_1">
+<bp:UnificationXref rdf:about="UnificationXref:UNIPROT_P10276_1">
  <bp:id rdf:datatype = "xsd:string">P10276</bp:id>
  <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
  <bp:idVersion rdf:datatype = "xsd:string">1</bp:idVersion>
 </bp:UnificationXref>
 
-<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UNIPROT_P22932_1">
+<bp:UnificationXref rdf:about="UnificationXref:UNIPROT_P22932_1">
  <bp:id rdf:datatype = "xsd:string">P22932</bp:id>
  <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
  <bp:idVersion rdf:datatype = "xsd:string">1</bp:idVersion>
@@ -97,18 +97,18 @@
  <bp:displayName rdf:datatype = "xsd:string">RAR gamma2</bp:displayName>
 </bp:Protein>
 
-<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:PROTEIN+MODIFICATION+ONTOLOGY_MOD%3A00046">
+<bp:UnificationXref rdf:about="UnificationXref:PROTEIN+MODIFICATION+ONTOLOGY_MOD%3A00046">
  <bp:id rdf:datatype = "xsd:string">MOD:00046</bp:id>
  <bp:db rdf:datatype = "xsd:string">Protein Modification Ontology</bp:db>
 </bp:UnificationXref>
 
-<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:TAXONOMY_9606">
+<bp:UnificationXref rdf:about="UnificationXref:TAXONOMY_9606">
  <bp:id rdf:datatype = "xsd:string">9606</bp:id>
  <bp:db rdf:datatype = "xsd:string">Taxonomy</bp:db>
 </bp:UnificationXref>
 
 <bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P10276">
- <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_P10276_1" />
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_P10276_1" />
  <bp:displayName rdf:datatype = "xsd:string">Rar alpha1</bp:displayName>
  <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
 </bp:ProteinReference>
@@ -119,7 +119,7 @@
 </bp:SequenceSite>
 
 <bp:BioSource rdf:about="http://identifiers.org/taxonomy/9606">
- <bp:xref rdf:resource="urn:biopax:UnificationXref:TAXONOMY_9606" />
+ <bp:xref rdf:resource="UnificationXref:TAXONOMY_9606" />
  <bp:displayName rdf:datatype = "xsd:string">Homo sapiens</bp:displayName>
  <bp:standardName rdf:datatype = "xsd:string">Homo sapiens</bp:standardName>
 </bp:BioSource>
@@ -129,7 +129,7 @@
  <bp:sequencePosition rdf:datatype = "xsd:int">66</bp:sequencePosition>
 </bp:SequenceSite>
 
-<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UNIPROT_P13631_1">
+<bp:UnificationXref rdf:about="UnificationXref:UNIPROT_P13631_1">
  <bp:id rdf:datatype = "xsd:string">P13631</bp:id>
  <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
  <bp:idVersion rdf:datatype = "xsd:string">1</bp:idVersion>
@@ -140,7 +140,7 @@
  <bp:sequencePosition rdf:datatype = "xsd:int">68</bp:sequencePosition>
 </bp:SequenceSite>
 
-<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UNIPROT_P10826_4">
+<bp:UnificationXref rdf:about="UnificationXref:UNIPROT_P10826_4">
  <bp:id rdf:datatype = "xsd:string">P10826</bp:id>
  <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
  <bp:idVersion rdf:datatype = "xsd:string">4</bp:idVersion>
@@ -152,14 +152,14 @@
  <bp:entityFeature rdf:resource="#pid_60773" />
  <bp:entityFeature rdf:resource="#pid_60719" />
  <bp:name rdf:datatype = "xsd:string">Rar gamma2</bp:name>
- <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_P22932_1" />
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_P22932_1" />
  <bp:displayName rdf:datatype = "xsd:string">RAR gamma2</bp:displayName>
  <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
 </bp:ProteinReference>
 
 <bp:SequenceModificationVocabulary rdf:about="http://identifiers.org/obo.psi-mod/MOD:00046">
  <bp:term rdf:datatype = "xsd:string">O-phospho-L-serine</bp:term>
- <bp:xref rdf:resource="urn:biopax:UnificationXref:PROTEIN+MODIFICATION+ONTOLOGY_MOD%3A00046" />
+ <bp:xref rdf:resource="UnificationXref:PROTEIN+MODIFICATION+ONTOLOGY_MOD%3A00046" />
 </bp:SequenceModificationVocabulary>
 
 <bp:Provenance rdf:about="http://identifiers.org/pid.pathway/">

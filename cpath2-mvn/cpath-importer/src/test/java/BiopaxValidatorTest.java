@@ -28,15 +28,24 @@
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
+
+import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.*;
-import org.biopax.validator.result.*;
-import org.biopax.validator.*;
-import org.biopax.validator.rules.ControlTypeRule;
-import org.biopax.validator.utils.BiopaxValidatorException;
-import org.junit.Ignore;
+import org.biopax.paxtools.model.level3.Catalysis;
+import org.biopax.paxtools.model.level3.ControlType;
+import org.biopax.paxtools.model.level3.ModificationFeature;
+import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
+import org.biopax.paxtools.model.level3.TemplateReactionRegulation;
+import org.biopax.paxtools.model.level3.UnificationXref;
+import org.biopax.validator.api.CvRule;
+import org.biopax.validator.api.Rule;
+import org.biopax.validator.api.Validator;
+import org.biopax.validator.api.beans.Validation;
+import org.biopax.validator.impl.IdentifierImpl;
+import org.biopax.validator.utils.Normalizer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,21 +55,11 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 
 /**
- * Additional integration tests for the BioPAX Validator 
- * (it's also a CV repository) configuration used by cPath2 importer. 
+ * Extra integration tests for the BioPAX Validator 
+ * (- is a CV repository) and Normalizer used by cPath2 importer. 
  * 
- * By default, this test class is now disabled/ignored to speed 
- * up builds, and because the validator was tested separately, 
- * and also due to some tests depend on the validator version 
- * (and default settings) and the actual validation.properties 
- * file (in the current CPATH2_HOME dir)! 
- * 
- * So, if required, comment out the @Ignore annotation to run tests!
-
  * @author rodche
- *
  */
-@Ignore
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
 		"classpath:applicationContext-biopaxValidation.xml",
@@ -76,99 +75,105 @@ public class BiopaxValidatorTest {
 	
 	BioPAXFactory level3 = BioPAXLevel.L3.getDefaultFactory();
 
-	/**
-	 * Test method for {@link cpath.validator.BiopaxValidator#validate(org.biopax.paxtools.model.Model)}.
+	
+	
+	/*
+	 * This tests that the BioPAX Validator framework
+	 * is properly configured and usable in the
+	 * current context.
+	 * 
 	 */
-	@Test
-	public final void testCheckRule() {
-		Rule rule = new ControlTypeRule();	
-		Catalysis ca = level3.create(Catalysis.class, "catalysis1");
-		rule.check(ca, false); // controlType==null, no error expected
-		ca.setControlType(ControlType.ACTIVATION);
-		rule.check(ca, false); // no error expected
-		ca.setControlType(ControlType.INHIBITION);
-		ca.addComment("error: illegal controlType");
-		try {
-			rule.check(ca, false); 
-			fail("must throw BiopaxValidatorException");
-		} catch(BiopaxValidatorException e) {
-		}
-		
-		TemplateReactionRegulation tr = level3
-			.create(TemplateReactionRegulation.class, "regulation1");
-		tr.setControlType(ControlType.INHIBITION);
-		rule.check(tr, false); // no error...
-		
-		tr.setControlType(ControlType.ACTIVATION_ALLOSTERIC);
-		tr.addComment("error: illegal controlType");
-		try {
-			rule.check(tr, false); 
-			fail("must throw BiopaxValidatorException");
-		} catch(BiopaxValidatorException e) {
-		}
-	}
-
 	@Test //controlType
 	public final void testValidateModel() {		
 		Catalysis ca = level3.create(Catalysis.class, "catalysis1"); 
 		ca.setControlType(ControlType.INHIBITION);
 		ca.addComment("error: illegal controlType");	
-		TemplateReactionRegulation tr = level3
-			.create(TemplateReactionRegulation.class, "regulation1");
+		TemplateReactionRegulation tr = level3.create(TemplateReactionRegulation.class, "regulation1");
 		tr.setControlType(ControlType.ACTIVATION_ALLOSTERIC);
 		tr.addComment("error: illegal controlType");
 		Model m = level3.createModel();
 		m.add(ca);
 		m.add(tr);
 		
-		Validation result = new Validation("test");
-		result.setModel(m);
-		validator.validate(result);
-		
-		assertNotNull(result);
-		ErrorType error = result.findErrorType("range.violated", Behavior.WARNING);
-		assertNotNull(error);
-		assertEquals(2, error.getErrorCase().size());
-		for(ErrorCaseType errorCase : error.getErrorCase()) {
-			assertNotNull(errorCase.getObject());
-			System.out.println(errorCase);
-		}
-
+		Validation v = new Validation(new IdentifierImpl());//, "", true, null, 0, null);// do auto-fix
+		v.setModel(m);
+		validator.validate(v);
+		validator.getResults().remove(v);
+		System.out.println(v.getError());
+		assertEquals(2, v.countErrors(null, null, "range.violated", null, false, false));
 	}
 	
     /*
-     * Special case - check synonyms are there
+     * Checks DB names and synonyms were loaded there -
      */
     @Test
     public void testXrefRuleEntezGene() {
-    	Rule rule = null;
-		for(Rule r : validator.getRules()) {
-			if(r.getName().equals("xrefRule")) {
-				rule = r;
-				break;
-			}
-		}
-		rule.setBehavior(Behavior.WARNING); 
-        
+    	Rule rule = (Rule) context.getBean("xrefRule");
+		
         UnificationXref x = level3.create(UnificationXref.class, "1");
-        x.setDb("EntrezGene");
+        x.setDb("EntrezGene"); //official preferred name: "Entrez Gene"
         x.setId("0000000");
-        rule.check(x, false);
+        Validation v = new Validation(new IdentifierImpl());
+        rule.check(v, x);
+        assertTrue(v.getError().isEmpty()); //no error
     }
  
     
     @Test
 	public void testProteinModificationFeatureCvRule() {
     	CvRule rule = (CvRule) context.getBean("proteinModificationFeatureCvRule");
-    	//System.out.print("proteinModificationFeatureCvRule valid terms are: " 
-    			//+ rule.getValidTerms().toString());
+    	
+    	//System.out.print("proteinModificationFeatureCvRule valid terms are: " + rule.getValidTerms().toString());
     	assertTrue(rule.getValidTerms().contains("(2S,3R)-3-hydroxyaspartic acid".toLowerCase()));
     	
-    	SequenceModificationVocabulary cv = level3
-    		.create(SequenceModificationVocabulary.class, "MOD_00036");
+    	SequenceModificationVocabulary cv = level3.create(SequenceModificationVocabulary.class, "MOD_00036");
     	cv.addTerm("(2S,3R)-3-hydroxyaspartic acid");
     	ModificationFeature mf = level3.create(ModificationFeature.class, "MF_MOD_00036");
     	mf.setModificationType(cv);
-   		rule.check(mf, false); // should not fail
+    	Validation v = new Validation(new IdentifierImpl(), "", true, null, 0, null); // auto-fix=true - fixex "no xref" error
+   		rule.check(v, mf); 
+   		
+   		assertEquals(0, v.countErrors(mf.getRDFId(), null, "illegal.cv.term", null, false, false));
+   		assertEquals(1, v.countErrors(mf.getRDFId(), null, "no.xref.cv.terms", null, false, false)); //- one but fixed though -
+   		assertEquals(0, v.countErrors(null, null, null, null, false, true)); //- no unfixed errors
+	}
+    
+    
+	@Test
+	public final void testNormalizeTestFile() throws IOException {
+		SimpleIOHandler simpleReader = new SimpleIOHandler();
+		simpleReader.mergeDuplicates(true);
+		
+		Normalizer normalizer = new Normalizer();
+		String base = "test/";
+		normalizer.setXmlBase(base);
+		
+		Model m = simpleReader.convertFromOWL(getClass().getResourceAsStream("/biopax-level3-test.owl"));
+		normalizer.normalize(m);
+
+		/* Following assertions were changed since using the biopax-validator v3 (2012/11/14).
+		 * Normalizer there does not turn DB or ID values to upper case when generating a new xref URI anymore..." (that was actually a bad idea)
+		 * "c00022", by the way, is technically an illegal KEGG identifier (must be C00022), - 
+		 * and it won't pass our Premerge (import pipeline) stage without the critical error being reported.
+		 * Unfortunately, the normalizer alone cannot always fix such issues (it just generates consistent xref URIs), 
+		 * because there are less trivial cases than where one could simply convert the first symbol to upper case...;
+		 * and, more important, xref.id value capitalization does usually matter...
+		 */
+		assertTrue(m.containsID(Normalizer.uri(base, "KEGG COMPOUND", "c00022", UnificationXref.class)));
+		assertTrue(m.containsID(Normalizer.uri(base, "KEGG COMPOUND", "C00022", UnificationXref.class)));
+		m = null;
+		
+		// However, using the validator (with autofix=true) and then - normalizer (as it's done in Premerge) together
+		// will, in fact, fix and merge these two xrefs
+		m = simpleReader.convertFromOWL(getClass().getResourceAsStream("/biopax-level3-test.owl"));
+		Validation v = new Validation(new IdentifierImpl(), null, true, null, 0, null);
+		v.setModel(m);
+		validator.validate(v);
+		validator.getResults().remove(v);
+		m = (Model)v.getModel();
+		normalizer.normalize(m);
+
+		assertFalse(m.containsID(Normalizer.uri(base, "KEGG COMPOUND", "c00022", UnificationXref.class)));
+		assertTrue(m.containsID(Normalizer.uri(base, "KEGG COMPOUND", "C00022", UnificationXref.class)));
 	}
 }

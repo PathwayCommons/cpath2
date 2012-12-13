@@ -1,6 +1,5 @@
 package cpath.cleaner.internal;
 
-import cpath.warehouse.beans.PathwayData;
 
 /**
  * Implementation of Cleaner interface for HPRD ppi data.
@@ -18,7 +17,6 @@ final class HPRDCleanerImpl extends BaseCleanerImpl {
         // Duplicate id error due to a trailing space error
         toReturn = toReturn.replaceAll("\"07467 \"", "\"074670\"");
 
-		// outta here
 		return toReturn;
 	}
 

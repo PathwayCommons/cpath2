@@ -122,7 +122,6 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 		this.factory = level.getDefaultFactory();
 		// no namespace!
 		this.nameSpacePrefixMap = new HashMap<String, String>();
-		//this.nameSpacePrefixMap.put("", "urn:biopax:");
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
 		this.simpleIO.normalizeNameSpaces(false);
@@ -894,8 +893,8 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 				log.warn("getByXref: " + xref + " db or id is null! Skipping.");
 				continue;
 			}
-			String xurn = Normalizer.generateURIForXref(xref.getDb(), 
-				xref.getId(), null, (Class<? extends Xref>) xref.getModelInterface());
+			String xurn = Normalizer.uri(getXmlBase(), xref.getDb(), 
+				xref.getId(), xref.getModelInterface());
 			
 			// now try to get it from the warehouse
 			Xref x = (Xref) this.getByID(xurn);

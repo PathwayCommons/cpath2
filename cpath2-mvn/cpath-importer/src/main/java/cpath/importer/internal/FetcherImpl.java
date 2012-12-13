@@ -556,6 +556,7 @@ final class FetcherImpl implements Fetcher
 							"the BioPAX Converter: " + cl);	
 					// create a new empty in-memory model
 					Model inMemModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+					inMemModel.setXmlBase(model.getXmlBase());
 					// convert data into that
 					converter.setModel(inMemModel);
 					converter.convert(is);
@@ -625,82 +626,6 @@ final class FetcherImpl implements Fetcher
 				log.info(size + " bytes downloaded from " + metadata.getUrlToData());
 		}
 
-		if(metadata.getType() == Metadata.TYPE.MAPPING) {
-			storeMappingData(metadata);
-		}
-		
-	}
-	
-	/*
-	 * Currently, does not support gzip archives;
-	 * also, only one .bridge or .pgdb file per archive 
-	 * is expected (it ignores the rest); 
-	 * custom user mapping files should be fetched unpacked...
-	 * 
-	 */
-	private void storeMappingData(final Metadata metadata) throws IOException {
-		if (metadata.getType() != Metadata.TYPE.MAPPING) {
-			log.error("Not a Mapping data: " + metadata);
-			return;
-	  	}
-		
-		// use the local file (previously fetched from metadata.urlTodata)
-		String urlStr = "file://" + metadata.localDataFile();
-		if (log.isInfoEnabled()) {
-			log.info("Processing mapping data: "
-					+ metadata.getIdentifier() + " file: "
-					+ metadata.localDataFile());
-		}
-		InputStream is = new BufferedInputStream(
-				LOADER.getResource(urlStr).getInputStream());
-		try {
-			if (urlStr.endsWith(".zip")) {
-				ZipEntry entry = null;
-				ZipInputStream zis = new ZipInputStream(is);
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				while ((entry = zis.getNextEntry()) != null) {
-					if(entry.isDirectory())
-						continue;
-					// check ext
-					String tmp = entry.getName();
-					int idx = tmp.lastIndexOf('.');
-					tmp = tmp.substring(idx+1);
-					if(!"bridge".equalsIgnoreCase(tmp) 
-						&& !"pgdb".equalsIgnoreCase(tmp)) {
-						log.error("There in " + metadata.getUrlToData() + 
-							", " + entry.getName() + " is not " +
-							"a '.bridge' or '.pgdb' file! Skipped.");
-						continue;
-					}
-					
-					/* Add .bridge extension.
-					 * Later, when it comes to instantiate a mapper, 
-					 * we should be able to say - 
-					 * 
-					 * Class.forName("org.bridgedb.rdb.IDMapperRdb");
-  					 * IDMapper mapper = BridgeDb.connect("idmapper-pgdb:"+ metadata.getDataLocalDir()+ File.separator);
-  					 * 
-  					 * (or at least - +metadata.getLocalDataFile() + ".bridge")
-					 */
-					String fname = metadata.localDataFile() + ".bridge"; // .zip.bridge - ok
-					if (log.isInfoEnabled())
-						log.info("Processing zip entry: " + entry.getName()
-							+ "; expanding to: " + fname);
-					BufferedOutputStream dest = new BufferedOutputStream(
-						new FileOutputStream(fname), BUFFER);
-					int count;
-					byte data[] = new byte[BUFFER];
-					while ((count = zis.read(data, 0, BUFFER)) != -1) {
-						dest.write(data, 0, count);
-					}
-					dest.flush();
-					dest.close();
-					break; // at most one file is expected!
-				}
-			}
-		} finally {
-			closeQuietly(is);
-		}
 	}
 
 	

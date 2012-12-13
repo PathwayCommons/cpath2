@@ -7,7 +7,7 @@ import cpath.warehouse.beans.PathwayData;
 import java.util.Collection;
 import java.util.Map;
 
-import org.biopax.validator.result.ValidatorResponse;
+import org.biopax.validator.api.beans.ValidatorResponse;
 
 /**
  * An interface which provides methods to persist and query provider metadata.

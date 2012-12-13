@@ -27,7 +27,6 @@
 
 package cpath.importer.internal;
 
-import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Merger;
@@ -443,15 +442,14 @@ final class MergerImpl implements Merger, Analysis {
 	 * 
 	 * @param identifier
 	 * @param version
-	 * 
-	 * @throws IllegalArgumentException
 	 */
 	void setPathwayData(String identifier, String version) {
-		this.pathwayDataIdentifier = identifier;
-		if(this.pathwayDataIdentifier != null)
-			this.pathwayDataVersion = version;
-		else { //null id - version must be null as well
-			assert version == null : "'identifier' is null, whereas 'version' is not: " + version;
+		if(identifier != null && !identifier.isEmpty()) {
+			this.pathwayDataIdentifier = identifier;
+			this.pathwayDataVersion = (version == null || version.isEmpty()) 
+					? null : version;		
+		} else { //null id - version must be null as well
+			this.pathwayDataIdentifier = null;
 			this.pathwayDataVersion = null;
 		}
 	}

@@ -8,6 +8,7 @@ import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.validator.utils.Normalizer;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -37,6 +38,7 @@ public class ChEBIConverterImplTest {
 		// convert test data
 		InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_chebi_data.dat");
 		Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
+		model.setXmlBase("test/"); // some xml:base
 
 		// setup the converter using a special constructor to set mock chebi.obo data
 		Converter converter = ImportFactory.newConverter("cpath.converter.internal.ChEBITestConverterImpl");
@@ -85,7 +87,7 @@ public class ChEBIConverterImplTest {
 		assertTrue(er422.getMemberEntityReferenceOf().contains(er28));
         assertEquals(er422, er28.getMemberEntityReference().iterator().next());
 
-        assertTrue(model.containsID("urn:biopax:RelationshipXref:HAS_PART_CHEBI%3A20"));
-        assertTrue(model.containsID("urn:biopax:RelationshipXref:IS_CONJUGATE_ACID_OF_CHEBI%3A422"));
+        assertTrue(model.containsID(Normalizer.uri("test/", "CHEBI", "CHEBI:20has_part", RelationshipXref.class))); //has_part
+        assertTrue(model.containsID(Normalizer.uri("test/", "CHEBI", "CHEBI:422is_conjugate_acid_of", RelationshipXref.class))); //
 	}
 }

@@ -30,10 +30,14 @@ package cpath.webservice;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
+import java.util.regex.Pattern;
 
+import cpath.config.CPathSettings;
+import cpath.config.CPathSettings.CPath2Property;
 import cpath.service.CPathService;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
+import cpath.service.Status;
 import cpath.service.jaxb.*;
 import cpath.webservice.args.Get;
 import cpath.webservice.args.GetProperty;
@@ -60,6 +64,10 @@ import javax.validation.Valid;
 public class BiopaxModelController extends BasicController {
     private static final Log log = LogFactory.getLog(BiopaxModelController.class);    
 	
+    private static final String xmlBase = CPathSettings.get(CPath2Property.XML_BASE);
+    //the pattern for the cpath2 generated local part URI (normalized/warehouse Xrefs, etc.)
+    private static final Pattern idPattern = Pattern.compile("^[a-f0-9]{32}$"); 
+    
     private CPathService service; // main PC db access
 	
     public BiopaxModelController(CPathService service) {
@@ -83,12 +91,37 @@ public class BiopaxModelController extends BasicController {
     }
 	
 	
+	
+	/**
+	 * This method is for convenience and information purpose, 
+	 * for making our data LinkedData and Semantic Web ready.
+	 * 
+	 * This web service method is to resolve a 
+	 * local part of a cpath2-generated URI (created in the
+	 * cpath2 Warehouse or during data normalization, etc.)
+	 * 
+	 * @param digest - 32-byte hex string identifier (md5)
+	 */
+	@RequestMapping("/{digest}")
+	public void cpathIdInfo(@PathVariable String digest, 
+			Writer writer, HttpServletResponse response) throws IOException {
+		if(idPattern.matcher(digest).find()) {
+			//return "redirect:get.xml?uri=" + xmlBase + digest;
+			Get get = new Get();
+			get.setUri(new String[]{xmlBase + digest});
+			elementById(get, null, writer, response);
+		} else
+			errorResponse(Status.BAD_COMMAND
+				.errorResponse("Bad command/identifier: " + digest), writer, response);
+	}
+	
+	
 	// Get by ID (URI) command
     @RequestMapping("/get")
     public void elementById(@Valid Get get, BindingResult bindingResult, 
     	Writer writer, HttpServletResponse response) throws IOException
     {
-    	if(bindingResult.hasErrors()) {
+    	if(bindingResult != null &&  bindingResult.hasErrors()) {
     		errorResponse(errorfromBindingResult(bindingResult), writer, response);
     	} else {
 			OutputFormat format = get.getFormat();
