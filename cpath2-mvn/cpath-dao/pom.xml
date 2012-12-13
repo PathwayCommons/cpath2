@@ -59,7 +59,7 @@
 			<version>${miriam-lib.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>org.biopax</groupId>
+			<groupId>org.biopax.validator</groupId>
 			<artifactId>obo-fetcher</artifactId>
 			<version>${validator.version}</version>
 		</dependency>

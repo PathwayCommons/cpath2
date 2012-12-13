@@ -51,8 +51,6 @@ import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.TYPE;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import static org.junit.Assert.*;
@@ -63,7 +61,7 @@ public class CPathServiceTest {
     private static Log log = LogFactory.getLog(CPathServiceTest.class);
 
     static ApplicationContext context;
-    static SimpleIOHandler exporter;
+    static final SimpleIOHandler io = new SimpleIOHandler(BioPAXLevel.L3);
 	
     static {
     	DataServicesFactoryBean.createSchema("cpath2_testpc");
@@ -73,15 +71,13 @@ public class CPathServiceTest {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
 		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
 		log.info("Loading BioPAX data (importModel(file))...");
-		File biopaxFile = new File(CPathServiceTest.class.getResource("/test.owl").getFile());		
-		try {
-			dao.importModel(biopaxFile);
-			mdao.importMetadata(new Metadata("test", "Reactome", "00", "Foo", "", "", new byte[]{}, TYPE.BIOPAX, "", ""));
-		} catch (FileNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-		exporter = new SimpleIOHandler(BioPAXLevel.L3);
-
+		Model m = io.convertFromOWL(CPathServiceTest.class
+				.getResourceAsStream("/test.owl"));
+		Metadata md = new Metadata("test", "Reactome", "00", 
+				"Foo", "", "", new byte[]{}, TYPE.BIOPAX, "", "");
+		mdao.importMetadata(md);
+		md.setProvenanceFor(m); // normally, this happens in PreMerge
+		dao.merge(m);
 		dao.index();
     }
 	
@@ -112,7 +108,6 @@ public class CPathServiceTest {
 
 	
 	// TODO add 'find' tests that use different strings (matching different biopax fields)
-	//...
 	
 	@Test
 	public void testFetchAsSIF() throws Exception {

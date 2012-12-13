@@ -27,7 +27,6 @@
 
 package cpath.webservice;
 
-import java.io.IOException;
 
 import cpath.service.jaxb.*;
 import cpath.service.CPathService;
@@ -35,7 +34,6 @@ import cpath.service.Cmd;
 import cpath.service.CmdArgs;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
-import cpath.service.Status;
 import cpath.webservice.args.binding.*;
 
 import org.apache.commons.lang.StringUtils;
@@ -87,23 +85,6 @@ public class HelpController {
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
 
-	
-	/**
-	* This is for reporting an error "BAD COMMAND"
-	* for everything except for known cpath2 web service
-	* commands (known commands with parameters are mapped 
-	* to more specific controller methods in this class; see below)
-	* 
-	* @param cmd
-	* 
-	* @return 
-	 * @throws IOException 
-	*/
-	@RequestMapping("/{cmd}")
-	public @ResponseBody ErrorResponse illegalCommand(@PathVariable String cmd) {
-		return Status.BAD_COMMAND.errorResponse("Unknown command: " + cmd);
-	}
-	
 	
     @RequestMapping("/")
     public String getHello() {

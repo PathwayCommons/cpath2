@@ -12,6 +12,8 @@ import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.junit.*;
 
+import cpath.config.CPathSettings;
+import cpath.config.CPathSettings.CPath2Property;
 import cpath.importer.internal.FetcherImpl;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
@@ -31,16 +33,16 @@ public class CPathFetcherTest {
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
 		// extend Model for the converter calling 'merge' method to work
 		model = BioPAXLevel.L3.getDefaultFactory().createModel();
+		model.setXmlBase(CPathSettings.get(CPath2Property.XML_BASE));
 	}
 
 	
 	@Test
 	public void testGetMetadata() throws IOException {
-		// any resource location now works (not only http://...)!
 		String url = "classpath:metadata.conf";
 		System.out.println("Loading metadata from " + url);
 		Collection<Metadata> metadatas = fetcher.getMetadata(url);
-		assertEquals(7, metadatas.size());
+		assertEquals(6, metadatas.size());
 		Metadata metadata = null;
 		for(Metadata mt : metadatas) {
 			if(mt.getIdentifier().equals("TEST_UNIPROT")) {
@@ -89,31 +91,11 @@ public class CPathFetcherTest {
 		assertFalse(((Model)model).getObjects(SmallMoleculeReference.class).isEmpty());
 		assertTrue(((Model)model).containsID("http://identifiers.org/obo.chebi/CHEBI:20"));
 	}
-	
-	
-	@Test
-	public void testFetchMappingData() throws IOException {
-		Metadata metadata = new Metadata(
-				"TEST_MAPPING_TXT", "Test Id Mapping Data", 
-				"2010.10", "October 03, 2010",  
-				"classpath:yeast_id_mapping.txt",
-				"", 
-				new byte[]{}, 
-				Metadata.TYPE.MAPPING,
-				"", "");
-		
-		File f = new File(metadata.localDataFile());
-		if(f.exists()) {
-			f.delete();
-		}
-		fetcher.fetchData(metadata);
-		assertTrue(f.exists() && f.isFile());
-	}
 
 
 	@Test
 	public void testGetProviderPathwayData() throws IOException {
-		String location = "classpath:test-normalized-2.zip";
+		String location = "classpath:pathwaydata2.owl";
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata(
 				"TEST_BIOPAX2", "Test Pathway Data 2", 
@@ -123,7 +105,7 @@ public class CPathFetcherTest {
 				new byte[]{}, 
 				Metadata.TYPE.BIOPAX, // no cleaner (same as using "")
 				null
-, "" // no converter
+				, "" // no converter
 				);
 		
 		fetcher.fetchData(metadata);

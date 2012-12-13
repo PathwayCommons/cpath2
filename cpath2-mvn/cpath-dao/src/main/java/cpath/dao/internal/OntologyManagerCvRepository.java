@@ -43,13 +43,13 @@ import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.psidev.ontology_manager.Ontology;
+import org.biopax.psidev.ontology_manager.OntologyTermI;
 import org.biopax.validator.utils.BiopaxOntologyManager;
 import org.biopax.validator.utils.Normalizer;
 
-import psidev.ontology_manager.Ontology;
-import psidev.ontology_manager.OntologyTermI;
-
 import cpath.config.CPathSettings;
+import cpath.config.CPathSettings.CPath2Property;
 import cpath.warehouse.CvRepository;
 import cpath.warehouse.WarehouseDAO;
 
@@ -197,7 +197,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 		
 		String ontId = term.getOntologyId(); // like "GO" 
 		String db = getOntology(ontId).getName(); // names were fixed in the constructor!
-		String rdfid = Normalizer.generateURIForXref(db, term.getTermAccession(), null, UnificationXref.class);
+		String rdfid = Normalizer.uri(CPathSettings.get(CPath2Property.XML_BASE), db, term.getTermAccession(), UnificationXref.class);
 		UnificationXref uref = biopaxFactory.create(UnificationXref.class, rdfid);
 		uref.setDb(db); 
 		uref.setId(term.getTermAccession());

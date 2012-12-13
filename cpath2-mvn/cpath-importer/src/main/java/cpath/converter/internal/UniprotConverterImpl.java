@@ -1,6 +1,5 @@
 package cpath.converter.internal;
 
-import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
 import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.ModificationFeature;
@@ -23,7 +22,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.io.*;
-import java.net.URLEncoder;
 
 /**
  * Implementation of {@link Converter} interface for UniProt data.
@@ -314,7 +312,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     	String id, ProteinReference proteinReference, RelationshipType relationshipType) 
     {
         id = id.trim();
-		String rdfId = Normalizer.generateURIForXref(dbName, id, null, RelationshipXref.class);
+		String rdfId = Normalizer.uri(model.getXmlBase(), dbName, id, RelationshipXref.class);
 		RelationshipXref rXRef = (RelationshipXref) model.getByID(rdfId);
 		if (rXRef == null) {
 			rXRef = (RelationshipXref) model.addNew(RelationshipXref.class,	rdfId);
@@ -323,7 +321,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 		}
 		
 		//find/create a special relationship CV
-		String relCvId = ModelUtils.relationshipTypeVocabularyUri(relationshipType.name());
+		String relCvId = Normalizer.uri(model.getXmlBase(),	null, relationshipType.name(), RelationshipTypeVocabulary.class);
 		RelationshipTypeVocabulary relCv = (RelationshipTypeVocabulary) model.getByID(relCvId);
 		if(relCv == null) {
 			relCv = model.addNew(RelationshipTypeVocabulary.class, relCvId);
@@ -342,7 +340,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
      */
     private void setUnificationXRef(String dbName, String id, ProteinReference proteinReference) {
         id = id.trim();
-		String rdfId = Normalizer.generateURIForXref(dbName, id, null, UnificationXref.class);
+		String rdfId = Normalizer.uri(model.getXmlBase(), dbName, id, UnificationXref.class);
 		
 		UnificationXref rXRef = (UnificationXref) model.getByID(rdfId);
 		if (rXRef == null) {
@@ -421,9 +419,8 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				toReturn.setStandardName(name);
 				toReturn.setDisplayName(name);
 				UnificationXref taxonXref = (UnificationXref) model
-						.addNew(UnificationXref.class, Normalizer
-								.generateURIForXref("TAXONOMY", taxId, null,
-										UnificationXref.class));
+					.addNew(UnificationXref.class, Normalizer
+						.uri(model.getXmlBase(), "TAXONOMY", taxId, UnificationXref.class));
 				taxonXref.setDb("taxonomy");
 				taxonXref.setId(taxId);
 				// TODO update when taxonXref is removed (deprecated property)
@@ -457,14 +454,13 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			
 			// Create the feature with CV and location -
 			mfIndex++;
-			String uri = ModelUtils.BIOPAX_URI_PREFIX + 
-					"ModificationFeature:" + pr.getDisplayName() + "_" + mfIndex;
+			String uri = Normalizer.uri(model.getXmlBase(), 
+					null, pr.getDisplayName() + "_" + mfIndex, ModificationFeature.class);
 			ModificationFeature modificationFeature = model.addNew(ModificationFeature.class, uri);
 			modificationFeature.addComment(ftContent);
 			// get or create a new PSI-MOD SequenceModificationVocabulary, which 
 			// - can be shared by many protein references we create
-			uri = ModelUtils.BIOPAX_URI_PREFIX + 
-				"SequenceModificationVocabulary:" + URLEncoder.encode(mod);
+			uri = Normalizer.uri(model.getXmlBase(), "MOD", mod, SequenceModificationVocabulary.class);
 			// so, let's check if it exists in the temp. or target model:
 			SequenceModificationVocabulary cv = (SequenceModificationVocabulary) model.getByID(uri);
 			if(cv == null)
@@ -481,9 +477,10 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			final int start = Integer.parseInt(ftContent.substring(9, 15).trim());
 			final int end = Integer.parseInt(ftContent.substring(16, 22).trim());
 			// so, let's check if the site exists in the temp. model
-			uri = ModelUtils.BIOPAX_URI_PREFIX + "SequenceSite:" + 
-					pr.getDisplayName() + //e.g., CALM_HUMAN - from the ID line
-						"_" + start;
+			String idPart = pr.getDisplayName() + //e.g., CALM_HUMAN - from the ID line 
+								"_" + start;
+			uri = Normalizer.uri(model.getXmlBase(), null, idPart, SequenceSite.class);			
+						
 			SequenceSite startSite = (SequenceSite) model.getByID(uri);
 			if(startSite == null) {
 				startSite = model.addNew(SequenceSite.class, uri);
@@ -496,9 +493,10 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				//TODO modificationFeature.setFeatureLocationType(regionVocabulary?);
 			} else {
 				//create the second site (end) and sequence interval -
-				uri = ModelUtils.BIOPAX_URI_PREFIX + "SequenceSite:" + 
-					pr.getDisplayName() + //e.g., CALM_HUMAN - from the ID line
-						"_" + end;
+				idPart = pr.getDisplayName() + //e.g., CALM_HUMAN - from the ID line
+							"_" + end;
+				uri = Normalizer.uri(model.getXmlBase(), null, idPart, SequenceSite.class);
+					
 				SequenceSite endSite = (SequenceSite) model.getByID(uri);
 				if(endSite == null) {
 					endSite = model.addNew(SequenceSite.class, uri);
@@ -506,9 +504,9 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 					endSite.setSequencePosition(end);
 				}
 				
-				uri = ModelUtils.BIOPAX_URI_PREFIX + "SequenceInterval:" + 
-						pr.getDisplayName() + 
-							"_" + start + "_" + end;
+				idPart = pr.getDisplayName() + 	"_" + start + "_" + end;
+				uri = Normalizer.uri(model.getXmlBase(), null, idPart, SequenceInterval.class);
+						
 				SequenceInterval sequenceInterval = (SequenceInterval) model.getByID(uri);
 				if(sequenceInterval == null) {
 					sequenceInterval = model.addNew(SequenceInterval.class, uri);

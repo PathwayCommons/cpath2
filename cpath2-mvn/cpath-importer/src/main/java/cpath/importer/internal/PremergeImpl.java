@@ -28,6 +28,7 @@ package cpath.importer.internal;
 
 // imports
 import cpath.config.CPathSettings;
+import cpath.config.CPathSettings.CPath2Property;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Cleaner;
@@ -36,13 +37,13 @@ import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
+import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.Entity;
-import org.biopax.paxtools.model.level3.Provenance;
-import org.biopax.validator.result.*;
-import org.biopax.validator.Validator;
-import org.biopax.validator.utils.BiopaxValidatorUtils;
-import org.biopax.validator.utils.Normalizer.NormalizerOptions;
+import org.biopax.validator.api.Validator;
+import org.biopax.validator.api.beans.*;
+import org.biopax.validator.api.ValidatorUtils;
+import org.biopax.validator.impl.IdentifierImpl;
+import org.biopax.validator.utils.Normalizer;
 
 import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
 
@@ -60,6 +61,8 @@ import java.io.*;
 final class PremergeImpl implements Premerge {
 
     private static Log log = LogFactory.getLog(PremergeImpl.class);
+    
+	private final String xmlBase;
 
     private MetadataDAO metaDataDAO;
 	private Validator validator;
@@ -71,16 +74,15 @@ final class PremergeImpl implements Premerge {
 	/**
 	 * Constructor.
 	 *
-	 * @param metadata
 	 * @param metaDataDAO
 	 * @param validator Biopax Validator
 	 */
-	PremergeImpl(final MetadataDAO metaDataDAO,
-						final Validator validator) 
+	PremergeImpl(final MetadataDAO metaDataDAO, final Validator validator) 
 	{
 		this.metaDataDAO = metaDataDAO;
 		this.validator = validator;
 		this.createDb = true;
+		this.xmlBase = CPathSettings.get(CPath2Property.XML_BASE);
 	}
 
     /**
@@ -204,7 +206,7 @@ final class PremergeImpl implements Premerge {
 				log.info("pipeline(), converting psi-mi data "
 						+ info);
 			try {
-				data = convertPSIToBioPAX(data);
+				data = convertPSIToBioPAX(data, metadata);
 			} catch (RuntimeException e) {
 				log.error("pipeline(), cannot convert PSI-MI data: "
 						+ info + " to L3. - " + e);
@@ -219,22 +221,14 @@ final class PremergeImpl implements Premerge {
 		 * e.g., synonyms in xref.db may be replaced 
 		 * with the primary db name, as in Miriam, etc.
 		 */
-		Validation v = checkAndNormalize(pathwayData.toString(), data);
+		Validation v = checkAndNormalize(pathwayData.toString(), data, metadata);
 		if(v == null) {
-			log.info("pipeline(), skipping: " + info);
+			log.warn("pipeline(), skipping: " + info);
 			return;
 		}
-		
-		// (in addition to normalizer's job) find existing or create new Provenance 
-		// from the metadata.name to add it explicitly to all entities now!
-		setDataSource(v.getModel(), metadata);	
-		
-		// TODO calculate pathway membership (stored in the bpe.annotation)
-//		(new ModelUtils(v.getModel())).calculatePathwayMembership(Entity.class, false, true);
-		
+			
 		// get the updated BioPAX OWL and save it in the pathwayData bean
-		v.updateModelSerialized();
-		pathwayData.setPremergeData(v.getModelSerialized().getBytes());
+		pathwayData.setPremergeData(v.getModelData().getBytes());
 		
 		/* Now - add the serialized validation results 
 		 * to the pathwayData entity bean, validationResults column.
@@ -243,13 +237,13 @@ final class PremergeImpl implements Premerge {
 		 * further transformed to a human-readable report.)
 		 */
 		
-		/* First, let's clear the (huge) 'serializedModel' field,
+		/* but first, let's clear the (huge) 'serializedModel' field,
 		 * because it's already saved in the 'premergeData' column 
 		 */
-		v.setModelSerialized(null);
+		v.setModelData(null);
 		
 		StringWriter writer = new StringWriter();
-		BiopaxValidatorUtils.write(v, writer, null);
+		ValidatorUtils.write(v, writer, null);
 		writer.flush();		
 		final String validationResultStr = writer.toString();
 		pathwayData.setValidationResults(validationResultStr.getBytes());
@@ -273,7 +267,7 @@ final class PremergeImpl implements Premerge {
 			// Get the normalized and validated model and persist it
 			log.info("pipeline(), persisting pathway data "	+ info);
 			
-			Model pathwayDataModel = v.getModel();
+			Model pathwayDataModel = (Model) v.getModel();
 			
 			// persist all at once -
 			premergeDAO.merge(pathwayDataModel);
@@ -282,18 +276,23 @@ final class PremergeImpl implements Premerge {
 
 	
 	/**
-	 * Converts psi-mi string to biopax
+	 * Converts psi-mi string to biopax 
+	 * using a unique xml:base for URIS, which consists of 
+	 * both our current xml:base and provider-specific part -
+	 * to prevent URI clash from different PSI-MI data.
 	 *
 	 * @param psimiData String
+	 * @param provider
 	 */
-	private String convertPSIToBioPAX(final String psimiData) {
+	private String convertPSIToBioPAX(final String psimiData, Metadata provider) {
 
 		String toReturn = "";
 				
 		try {
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
 			InputStream is = new ByteArrayInputStream(psimiData.getBytes("UTF-8"));
-			PSIMIBioPAXConverter psimiConverter = new PSIMIBioPAXConverter(BioPAXLevel.L3);
+			PSIMIBioPAXConverter psimiConverter = 
+				new PSIMIBioPAXConverter(BioPAXLevel.L3, provider.uri()+"_"); 
 			psimiConverter.convert(is, os);
 			toReturn = os.toString();
 		}
@@ -301,51 +300,50 @@ final class PremergeImpl implements Premerge {
 			throw new RuntimeException(e);
 		}
 
-		// outta here
 		return toReturn;
 	}
 
 	
 	/**
-	 * Validates the given pathway data.
+	 * Validates, fixes, and normalizes given pathway data.
 	 *
 	 * @param title short description
 	 * @param data BioPAX OWL data
+	 * @param metadata data provider's metadata
 	 * @return
 	 */
-	private Validation checkAndNormalize(final String title, String data) 
+	private Validation checkAndNormalize(final String title, String data, Metadata metadata) 
 	{	
-		// create a new empty validation and associate with the model data
-		Validation validation = new Validation(title); // sets the title
-		// set auto-fix and normalize modes
-		validation.setFix(true);
-		validation.setNormalize(true);
-		// use special normalizer options
-		NormalizerOptions normalizerOptions = new NormalizerOptions();
-		// to infer/autofix biopax properties
-		normalizerOptions.setFixDisplayName(true); // important
-		normalizerOptions.setInferPropertyDataSource(false); // not important since we started generating Provenance from Metadata
-		normalizerOptions.setInferPropertyOrganism(true); // important (for filtering by organism)
-		// disable auto-generated xrefs (not required by cpath2, since 2012/01)
-		normalizerOptions.setGenerateRelatioshipToOrganismXrefs(false); //was to filter search results...
-		normalizerOptions.setGenerateRelatioshipToPathwayXrefs(false);
-		normalizerOptions.setGenerateRelatioshipToInteractionXrefs(false);
+		// create a new empty validation (use auto-fix, report all errors options) and associate with the model
+		Validation validation = new Validation(new IdentifierImpl(), 
+				title, true, Behavior.WARNING, 0, null); // sets the title
 		
-		validation.setNormalizerOptions(normalizerOptions);
-		// collect both errors and warnings
-		validation.setThreshold(Behavior.WARNING); // means - all err./warn.
+		// configure Normalizer
+		Normalizer normalizer = new Normalizer();
+		// set cpath2 xml:base for the normalizer to use instead of the model's one (important!)
+		normalizer.setXmlBase(xmlBase);
+		// to infer/auto-fix biopax properties
+		normalizer.setFixDisplayName(true); // important
+		normalizer.setInferPropertyDataSource(false); // not important since we started generating Provenance from Metadata
+		normalizer.setInferPropertyOrganism(true); // important (for filtering by organism)
 		
 		// because errors are also reported during the import (e.g., syntax)
 		try {
-			validator.importModel(validation, new ByteArrayInputStream(data.getBytes("UTF-8")));
-			// now post-validate
-			if(validation.getModel() != null) {
-				validator.validate(validation);
-			}
-			/* unregister the validation object 
-			 * (rules are still active (AOP), but we just don't want any messages)
-			 */
+			validator.importModel(validation, new ByteArrayInputStream(data.getBytes("UTF-8")));			
+			validator.validate(validation);
+			// unregister the validation object 
 			validator.getResults().remove(validation);
+			
+			// normalize
+			Model model = (Model) validation.getModel();
+			normalizer.normalize(model);
+			
+			// (in addition to normalizer's job) find existing or create new Provenance 
+			// from the metadata to add it explicitly to all entities -
+			metadata.setProvenanceFor(model);
+			
+			validation.setModelData(SimpleIOHandler.convertToOwl(model));
+			
 		} catch (Exception e) {
 			/*
 			  throw new RuntimeException("pipeline(), " +
@@ -372,58 +370,16 @@ final class PremergeImpl implements Premerge {
 		return identifier;
 	}
 	void setIdentifier(String identifier) {
-		this.identifier = identifier;
+		this.identifier = (identifier == null || identifier.isEmpty()) 
+				? null : identifier;
 	}
 
 	String getVersion() {
 		return version;
 	}
 	void setVersion(String version) {
-		this.version = version;
+		this.version = (version == null || version.isEmpty()) 
+				? null : version;
 	}
 	
-	
-	/**
-	 * Creates a new Provenance from the Metadata record and sets
-	 * if to all Entity class objects.
-	 * This makes sure all entities will be indexed with - and
-	 * are possible to search/filter by data source identifiers and 
-	 * names specified in the cpath2 metadata table.
-	 * 
-	 * @param model BioPAX model
-	 * @param metadata
-	 */
-	private void setDataSource(Model model, Metadata metadata) {
-		Provenance pro = null;
-		
-		// we create URI from the Metadata identifier and version.
-		pro = model.addNew(Provenance.class, metadata.getUri());
-		
-		// parse/set names
-		String[] names = metadata.getName().split(";");
-		String name = names[0].trim();
-		pro.setDisplayName(name.toLowerCase());
-		if(names.length > 1)
-			pro.setStandardName(names[1].trim());
-		else
-			pro.setStandardName(name);
-		
-		if(names.length > 2)
-			for(int i=2; i < names.length; i++)
-				pro.addName(names[i].trim());
-		
-		// add additional info about the current version, source, identifier, etc...
-		final String loc = metadata.getUrlToData(); 
-		pro.addComment("Source " + 
-			//skip for a local or empty (default) location
-			((loc.startsWith("http:") || loc.startsWith("ftp:")) ? loc : "") 
-			+ " type: " + metadata.getType() + "; version: " + 
-			metadata.getVersion() + ", " + metadata.getDescription());
-		
-		// set for all entities
-		for (Entity ent : model.getObjects(Entity.class)) {
-			ent.getDataSource().clear(); //remove other DSs (not normalized)
-			ent.addDataSource(pro);
-		}
-	}
 }

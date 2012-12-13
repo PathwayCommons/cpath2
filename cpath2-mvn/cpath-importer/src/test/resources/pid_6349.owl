@@ -12,7 +12,7 @@
 
 <!-- original PID data may be modified for junit tests; please do not use it for research :) -->
 
-<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UNIPROT_P01118">
+<bp:UnificationXref rdf:about="UnificationXref:UNIPROT_P01118">
  <bp:id rdf:datatype = "xsd:string">P01118</bp:id>
  <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
 </bp:UnificationXref>
@@ -48,7 +48,7 @@
  <bp:dataSource rdf:resource="http://identifiers.org/pid.pathway/" />
 </bp:Protein>
 
-<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UNIPROT_P01116">
+<bp:UnificationXref rdf:about="UnificationXref:UNIPROT_P01116">
  <bp:id rdf:datatype = "xsd:string">P01116</bp:id>
  <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
 </bp:UnificationXref>
@@ -60,13 +60,13 @@
 </bp:Protein>
 
 <bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P01112">
- <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_P01112" />
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_P01112" />
  <bp:displayName rdf:datatype = "xsd:string">H-RAS isoform 2</bp:displayName>
  <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
 </bp:ProteinReference>
 
 <bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P01111">
- <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_P01111" />
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_P01111" />
  <bp:displayName rdf:datatype = "xsd:string">N-RAS</bp:displayName>
  <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
 </bp:ProteinReference>
@@ -97,13 +97,13 @@
  <bp:dataSource rdf:resource="http://identifiers.org/pid.pathway/" />
 </bp:Protein>
 
-<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:TAXONOMY_9606">
+<bp:UnificationXref rdf:about="UnificationXref:TAXONOMY_9606">
  <bp:id rdf:datatype = "xsd:string">9606</bp:id>
  <bp:db rdf:datatype = "xsd:string">Taxonomy</bp:db>
 </bp:UnificationXref>
 
 <bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P01116">
- <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_P01116" />
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_P01116" />
  <bp:displayName rdf:datatype = "xsd:string">K-RAS isoform 2A</bp:displayName>
  <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
  <bp:entityFeature rdf:resource="#test-feature1" />
@@ -112,7 +112,7 @@
 <bp:BioSource rdf:about="http://identifiers.org/taxonomy/9606">
  <bp:standardName rdf:datatype = "xsd:string">Homo sapiens</bp:standardName>
  <bp:displayName rdf:datatype = "xsd:string">Homo sapiens</bp:displayName>
- <bp:xref rdf:resource="urn:biopax:UnificationXref:TAXONOMY_9606" />
+ <bp:xref rdf:resource="UnificationXref:TAXONOMY_9606" />
 </bp:BioSource>
 
 
@@ -125,20 +125,20 @@
  <bp:memberEntityReference rdf:resource="http://identifiers.org/uniprot/P01118" />
 </bp:ProteinReference>
 
-<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UNIPROT_P01112">
+<bp:UnificationXref rdf:about="UnificationXref:UNIPROT_P01112">
  <bp:id rdf:datatype = "xsd:string">P01112</bp:id>
  <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
 </bp:UnificationXref>
 
 <!-- P01118 is a secondary AC to P01116, and these ERs should be merged by cpath2, incl. features! -->
 <bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P01118">
- <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_P01118" />
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_P01118" />
  <bp:displayName rdf:datatype = "xsd:string">K-RAS isoform 2B</bp:displayName>
  <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
  <bp:entityFeature rdf:resource="#test-feature2" />
 </bp:ProteinReference>
 
-<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UNIPROT_P01111">
+<bp:UnificationXref rdf:about="UnificationXref:UNIPROT_P01111">
  <bp:id rdf:datatype = "xsd:string">P01111</bp:id>
  <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
 </bp:UnificationXref>

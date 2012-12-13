@@ -2,12 +2,17 @@ package cpath.warehouse.beans;
 
 // imports
 import java.io.File;
-import java.net.URI;
+import java.util.HashSet;
 import java.util.regex.Pattern;
 
 import javax.persistence.*;
 
+import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.Provenance;
+import org.biopax.validator.utils.Normalizer;
+
 import cpath.config.CPathSettings;
+import cpath.config.CPathSettings.CPath2Property;
 
 /**
  * Data Provider Metadata.
@@ -30,8 +35,7 @@ public final class Metadata {
         PSI_MI(false),
 		BIOPAX(false),
 		PROTEIN(true),
-		SMALL_MOLECULE(true),
-		MAPPING(true);
+		SMALL_MOLECULE(true);
         
         private final boolean warehouseData;
         
@@ -260,13 +264,52 @@ public final class Metadata {
      * Generate a URI (for a Provenance instance.)
      * 
      * @return
-     * 
-     * TODO maybe add/use 'uri' property and constructor arg to set the URI from the conf. file instead. 
      */
-    @Transient
-    public String getUri() {
-    	return URI.create("urn:biopax:Provenance:" + identifier + "_" + version)
-    			.toString();
+    public String uri() {
+    	return Normalizer.uri(CPathSettings.get(CPath2Property.XML_BASE), 
+    			identifier, version, Provenance.class);
     }
 
+    
+	/**
+	 * Creates a new Provenance from this Metadata and sets
+	 * if to all Entity class objects in the model; removes
+	 * all previous dataSource property values.
+	 * 
+	 * @param model BioPAX model to update
+	 */
+	public void setProvenanceFor(Model model) {
+		Provenance pro = null;
+		
+		// we create URI from the Metadata identifier and version.
+		pro = model.addNew(Provenance.class, uri());
+		
+		// parse/set names
+		String[] names = getName().split(";");
+		String name = names[0].trim();
+		pro.setDisplayName(name.toLowerCase());
+		if(names.length > 1)
+			pro.setStandardName(names[1].trim());
+		else
+			pro.setStandardName(name);
+		
+		if(names.length > 2)
+			for(int i=2; i < names.length; i++)
+				pro.addName(names[i].trim());
+		
+		// add additional info about the current version, source, identifier, etc...
+		final String loc = getUrlToData(); 
+		pro.addComment("Source " + 
+			//skip for a local or empty (default) location
+			((loc.startsWith("http:") || loc.startsWith("ftp:")) ? loc : "") 
+			+ " type: " + getType() + "; version: " + 
+			getVersion() + ", " + getDescription());
+		
+		// replace for all entities
+		for (org.biopax.paxtools.model.level3.Entity ent : model.getObjects(org.biopax.paxtools.model.level3.Entity.class)) {
+			for(Provenance ds : new HashSet<Provenance>(ent.getDataSource()))
+				ent.removeDataSource(ds);			
+			ent.addDataSource(pro);
+		}
+	}
 }

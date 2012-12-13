@@ -10,7 +10,6 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.utils.Normalizer;
@@ -336,8 +335,9 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		}		
 		// chemical structure - we use InChI, not smiles
 		String[] rdfIDParts = toReturn.getRDFId().split(COLON_DELIMITER);
-		String chemicalStructureID = ModelUtils.BIOPAX_URI_PREFIX 
-			+ "ChemicalStructure:CHEBI_" + chebiId.replace(":", "%3A");
+
+		String chemicalStructureID = Normalizer.uri(model.getXmlBase(), "chebi", chebiId, ChemicalStructure.class);
+
 		String structure = getValue(entryBuffer, CHEBI_INCHI);
 		setChemicalStructure(structure, StructureFormatType.InChI, chemicalStructureID, toReturn);
 		// inchi key unification xref
@@ -447,7 +447,7 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	 * Sets the structure.
 	 *
 	 * @param structure String
-	 * @param structureFormat TODO
+	 * @param structureFormat
 	 * @param chemicalStructureID String
 	 * @param smallMoleculeReference SmallMoleculeReference
 	 */
@@ -528,7 +528,11 @@ class ChEBIConverterImpl extends BaseConverterImpl
 					Collection<String> ids = getValues(entry, line);
 					for (String id : ids) {
 						if (db.equalsIgnoreCase("pubchem")) {
-							smallMoleculeReference.addXref(getXref(UnificationXref.class, id, db));	
+							// add two unification xrefs
+							// the first uses umbiguous name (as is), not standard, but is helpful for id-mapping 
+							smallMoleculeReference.addXref(getXref(UnificationXref.class, id, "pubchem"));
+							// the second one is correct (is what it means in chebi - pubchem substance ref)
+							smallMoleculeReference.addXref(getXref(UnificationXref.class, id, "pubchem-substance"));	
 						}
 						else {
 							setRelationshipXref(id, db, smallMoleculeReference);
@@ -583,7 +587,7 @@ class ChEBIConverterImpl extends BaseConverterImpl
 					+ ", type: " + aClass.getSimpleName());
 		}
 		
-		String rdfID = Normalizer.generateURIForXref(db, id, null, aClass);
+		String rdfID = Normalizer.uri(model.getXmlBase(), db, id, aClass);
 		
 		toReturn = (T) model.getByID(rdfID);
 		
@@ -774,7 +778,7 @@ class ChEBIConverterImpl extends BaseConverterImpl
 			Collection<String> relationships = getValuesByREGEX(entryBuffer, CHEBI_OBO_RELATIONSHIP_REGEX);
 			for (String relationship : relationships) {
 				String[] parts = relationship.split(REGEX_GROUP_DELIMITER);
-				RelationshipXref xref = getRelationshipXref(parts[0], parts[1]); 
+				RelationshipXref xref = getRelationshipXref(parts[0].toLowerCase(), parts[1]); 
 				childSMR.addXref(xref);
 			}
 		}
@@ -844,12 +848,11 @@ class ChEBIConverterImpl extends BaseConverterImpl
 			
 			RelationshipXref toReturn = null;
 			
-			// TODO: is this the best way to do this?
-			// we use relationship type in rdf id of xref since there can be many to many relation types
+			// We use the relationship type in the URI of xref since there can be many to many relation types
 			// bet SM.  For example CHEBI:X has_part CHEBI:Y and CHEBI:Z is_conjugate_acid_of CHEBI:Y
 			// we need distinct rxref to has_part CHEBI:Y and is_conjugate_acid_of CHEBI:Y
-			String xrefRdfID = Normalizer
-				.generateURIForXref(relationshipType, "CHEBI:" + chebiID, null, RelationshipXref.class);
+			String xrefRdfID = Normalizer.uri(model.getXmlBase(), 
+					"CHEBI", "CHEBI:"+chebiID+relationshipType, RelationshipXref.class);
 			
 			if (model.containsID(xrefRdfID)) {
 				return (RelationshipXref) model.getByID(xrefRdfID);
@@ -858,11 +861,11 @@ class ChEBIConverterImpl extends BaseConverterImpl
 			// made it here, need to create relationship xref
 			toReturn = model.addNew(RelationshipXref.class, xrefRdfID);
 			toReturn.setDb("CHEBI");
-			toReturn.setId(chebiID);
+			toReturn.setId("CHEBI:"+chebiID);
 			
 			// set relationship type vocabulary on the relationship xref
-			String relTypeRdfID = ModelUtils.relationshipTypeVocabularyUri(relationshipType); //or "CHEBI_" + relationshipType?
-			
+			String relTypeRdfID = 
+				Normalizer.uri(model.getXmlBase(), null, relationshipType, RelationshipTypeVocabulary.class);		
 			
 			RelationshipTypeVocabulary rtv = (RelationshipTypeVocabulary) model.getByID(relTypeRdfID);
 			if (rtv != null) {

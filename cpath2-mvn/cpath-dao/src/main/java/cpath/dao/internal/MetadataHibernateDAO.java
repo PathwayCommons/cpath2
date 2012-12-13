@@ -7,9 +7,9 @@ import cpath.warehouse.beans.PathwayData;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.validator.result.Validation;
-import org.biopax.validator.result.ValidatorResponse;
-import org.biopax.validator.utils.BiopaxValidatorUtils;
+import org.biopax.validator.api.beans.Validation;
+import org.biopax.validator.api.beans.ValidatorResponse;
+import org.biopax.validator.api.ValidatorUtils;
 
 import org.hibernate.Hibernate;
 import org.hibernate.Query;
@@ -246,7 +246,7 @@ class MetadataHibernateDAO  implements MetadataDAO {
 		if(pathwayData != null) {
 			try {
 				byte[] xmlResult = pathwayData.getValidationResults();	
-				resp = (ValidatorResponse) BiopaxValidatorUtils
+				resp = (ValidatorResponse) ValidatorUtils
 					.getUnmarshaller().unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
 			} catch (Throwable e) {
                 log.error(e);
@@ -270,7 +270,7 @@ class MetadataHibernateDAO  implements MetadataDAO {
 				try {
 					byte[] xmlResult = pathwayData.getValidationResults();
 					// unmarshal and add
-					ValidatorResponse resp = (ValidatorResponse) BiopaxValidatorUtils.getUnmarshaller()
+					ValidatorResponse resp = (ValidatorResponse) ValidatorUtils.getUnmarshaller()
 						.unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
 					assert resp.getValidationResult().size() == 1; // current design (of the premerge pipeline)
 					Validation validation = resp.getValidationResult().get(0); 

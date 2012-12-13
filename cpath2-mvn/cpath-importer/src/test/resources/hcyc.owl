@@ -9,7 +9,7 @@
  <owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl#" />
 </owl:Ontology>
 
-<bp:UnificationXref rdf:about="urn:biopax:UnificationXref:UNIPROT_O75191">
+<bp:UnificationXref rdf:about="UnificationXref:UNIPROT_O75191">
  <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">O75191</bp:id>
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">UniProt</bp:db>
 </bp:UnificationXref>
@@ -24,14 +24,14 @@ In fact, this PR should have been already normalized and have URI=http://identif
 but, there was a bug in the normalizer... Anyway, we keep this PR as it was for testing!
 -->
 <bp:ProteinReference rdf:about="http://biocyc.org/biopax/biopax-level3ProteinReference155353">
- <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_O75191" />
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_O75191" />
  <bp:xref rdf:resource="http://identifiers.org/pubmed/9763671" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Xylulose kinase</bp:displayName>
 </bp:ProteinReference>
 
 <bp:Protein rdf:about="http://biocyc.org/biopax/biopax-level3Protein155359">
  <bp:entityReference rdf:resource="http://biocyc.org/biopax/biopax-level3ProteinReference155353" />
- <bp:xref rdf:resource="urn:biopax:UnificationXref:UNIPROT_O75191" />
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_O75191" />
  <bp:xref rdf:resource="http://identifiers.org/pubmed/9763671" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Xylulose kinase</bp:displayName>
 </bp:Protein>

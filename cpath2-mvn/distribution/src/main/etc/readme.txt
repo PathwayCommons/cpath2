@@ -40,7 +40,7 @@ If you want run java or write own script, make sure to set JAVA_HOME and other o
 (provided that the system environment variable $CPATH2_HOME has been already set);
 
 2. using the mysql client:
-mysql> SET GLOBAL max_allowed_packet = 256000000;
+mysql> SET GLOBAL max_allowed_packet = 384000000;
 (alternatively, set this in the mysql conf. file)
 
 3. (in production) increase ulimits, e.g.: 
@@ -145,16 +145,7 @@ like file:///full/path/whatever.gz, instead.
 
 7) IMAGE URL (optional) - can be pointing to a resource logo;
 
-8) TYPE - one of: BIOPAX, PSI_MI, PROTEIN, SMALL_MOLECULE, MAPPING;
-
-Note: MAPPING (id-mapping data) can be fetched and stored locally, but 
-is not actually used anywhere (cpath2 v3.x). We planned to eventually 
-use BridgeDB. However, cpath2, in fact, does alternative "id-mapping", - during 
-"premerge" (in normalization) and "merge" stages (matching/replacing original 
-small molecule and protein references with ones found in the cpath2 data 
-warehouse, either by URI or by unification xrefs). This is possible, because
-UniProt and ChEBI data contain cross-references to other databases, which cpath2
-used to generate BioPAX xrefs and then search them. 
+8) TYPE - one of: BIOPAX, PSI_MI, PROTEIN, SMALL_MOLECULE;
 
 9) CLEANER_CLASS - leave empty or use a specific cleaner class name (like cpath.cleaner.internal.UniProtCleanerImpl);
 

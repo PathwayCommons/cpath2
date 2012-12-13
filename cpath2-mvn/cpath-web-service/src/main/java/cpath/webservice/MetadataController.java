@@ -17,7 +17,7 @@ import cpath.warehouse.beans.Metadata;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.validator.result.ValidatorResponse;
+import org.biopax.validator.api.beans.ValidatorResponse;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -54,27 +54,6 @@ public class MetadataController extends BasicController
     	return "validations";
     }
     
-    
-// replaced 
-//    @RequestMapping("/validation/file/{pk}.html") // now view; the HTML is written to the response stream
-//    public void queryForValidationByPkHtml(@PathVariable Integer pk, Writer writer, HttpServletResponse response) throws IOException 
-//    {	
-//    	ValidatorResponse resp = queryForValidationByPk(pk);
-//    	//the xslt stylesheet exists in the biopax-validator-core module
-//		Source xsl = new StreamSource((new DefaultResourceLoader())
-//			.getResource("classpath:html-result.xsl").getInputStream());
-//		response.setContentType("text/html");
-//		BiopaxValidatorUtils.write(resp, writer, xsl); 
-//    }
-//     
-//    @RequestMapping("/validation/file/{pk}") //XML report
-//    public @ResponseBody ValidatorResponse queryForValidationByPk(@PathVariable Integer pk) 
-//    {
-//    	ValidatorResponse body = service.getValidationReport(pk);
-//    	
-//    	return body; //XML output (marshaled automatically)
-//    }
-
     
     @RequestMapping("/validation/{key}")
     public @ResponseBody ValidatorResponse queryForValidation(@PathVariable String key) 
@@ -115,7 +94,7 @@ public class MetadataController extends BasicController
     		bytes = ds.getIcon();
     	} else {
     		for(Metadata m : service.getAllMetadata())
-    			if(m.getUri().equalsIgnoreCase(identifier)) {
+    			if(m.uri().equalsIgnoreCase(identifier)) {
     				bytes = m.getIcon();
     				break;
     			}

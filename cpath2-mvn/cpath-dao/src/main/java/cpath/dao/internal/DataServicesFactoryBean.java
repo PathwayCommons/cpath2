@@ -244,7 +244,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		dataSource.setDriverClassName(dbDriver);
 		// The following connection parameters are terribly important 
 		// (if not the most important part in cpath2 at all)!
-		dataSource.setUrl(dbUrl + "?autoReconnect=true&max_allowed_packet=256M");
+		dataSource.setUrl(dbUrl + "?autoReconnect=true&max_allowed_packet=384M");
 		//&useServerPrepStmts=true&useCursorFetch=true
 		dataSource.setUsername(dbUser);
 		dataSource.setPassword(dbPassword);

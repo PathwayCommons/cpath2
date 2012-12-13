@@ -41,15 +41,19 @@ import java.util.Set;
 
 import javax.imageio.ImageIO;
 
+//import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.junit.Ignore;
+import org.biopax.validator.utils.Normalizer;
+//import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import cpath.config.CPathSettings;
+import cpath.config.CPathSettings.CPath2Property;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Fetcher;
@@ -75,6 +79,8 @@ public class CPathWarehouseTest {
 	static BioPAXFactory factory;
 	static MetadataDAO metadataDAO;
 	
+	static final String XML_BASE = CPathSettings.get(CPath2Property.XML_BASE);
+	
 	static {
 		System.out.println("Preparing...");
 		// init the test database
@@ -99,8 +105,6 @@ public class CPathWarehouseTest {
 					fetcher.storeWarehouseData(mdata, (Model) proteins);
 				} else if (mdata.getType() == TYPE.SMALL_MOLECULE) {
 					fetcher.storeWarehouseData(mdata, (Model) molecules);
-				} else if (mdata.getType() == TYPE.MAPPING) {
-					// skip
 				} else { // pathways
 					Collection<PathwayData> pathwayData = fetcher
 							.getProviderPathwayData(mdata);
@@ -132,8 +136,7 @@ public class CPathWarehouseTest {
 		
 		// generate an xref to search Warehouse with -
 		// (it pretends to come from a pathway during merge...)
-		Xref x = factory.create(UnificationXref.class,
-			"urn:biopax:UnificationXref:UNIPROT_A2A2M3");
+		Xref x = factory.create(UnificationXref.class, Normalizer.uri(XML_BASE, "UNIPROT", "A2A2M3", UnificationXref.class));
 		x.setDbVersion("uniprot");
 		x.setId("A2A2M3"); // not a primary accession ;)
 		x.setDb("uniprot"); // db must be set for getByXref to work [since 19-May-2011]!
@@ -155,10 +158,13 @@ public class CPathWarehouseTest {
 		for(SearchHit e : prs) {
 			prIds.add(e.getUri());
 		}
-		assertTrue(prIds.contains("urn:biopax:RelationshipXref:REFSEQ_NP_619650"));
+		
+		String uri = Normalizer.uri(XML_BASE, "REFSEQ", "NP_619650", RelationshipXref.class);
+				
+		assertTrue(prIds.contains(uri));
 		
 		// get that xref
-		Xref x = proteins.createBiopaxObject("urn:biopax:RelationshipXref:REFSEQ_NP_619650", RelationshipXref.class);
+		Xref x = proteins.createBiopaxObject(uri, RelationshipXref.class);
 		assertNotNull(x);
 		assertTrue(x.getXrefOf().isEmpty()); // when elements are detached using getObject, they do not remember its owners!
 		// if you get the owner (entity reference) by id, then this xref.xrefOf will contain the owner.
@@ -175,23 +181,17 @@ public class CPathWarehouseTest {
 	public void testSubModel() {
 		Model m =((PaxtoolsDAO)proteins).getValidSubModel(
 				Arrays.asList(
-					"urn:biopax:UnificationXref:REFSEQ_NP_619650",
+					Normalizer.uri(XML_BASE, "REFSEQ", "NP_619650", UnificationXref.class),
 					"http://identifiers.org/uniprot/Q8TD86",
-					"urn:biopax:UnificationXref:UNIPROT_Q8TD86",
-					"urn:biopax:UnificationXref:UNIPROT_A2A2M3",
-					"urn:biopax:UnificationXref:UNIPROT_Q6Q2C4",
-					"urn:biopax:UnificationXref:ENTREZ+GENE_163688"));
-
+					Normalizer.uri(XML_BASE, "UNIPROT", "Q8TD86", UnificationXref.class),
+					Normalizer.uri(XML_BASE, "UNIPROT", "A2A2M3", UnificationXref.class),
+					Normalizer.uri(XML_BASE, "UNIPROT", "Q6Q2C4", UnificationXref.class),
+					Normalizer.uri(XML_BASE, "ENTREZ GENE", "163688", UnificationXref.class)));
 		// The following item should come from Q8TD86 ProteinReference
         // See TEST_UNIPROT*.gz file for the original reference
 		assertTrue(m.containsID("http://identifiers.org/taxonomy/9606")); // added by auto-complete
 
-		/*
-		try {
-			(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(m, System.out);
-		} catch (IOException e) {
-		}
-		*/
+		//(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(m, System.out);
 	}
 
     
