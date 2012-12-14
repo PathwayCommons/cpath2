@@ -292,7 +292,7 @@ final class PremergeImpl implements Premerge {
 			ByteArrayOutputStream os = new ByteArrayOutputStream();
 			InputStream is = new ByteArrayInputStream(psimiData.getBytes("UTF-8"));
 			PSIMIBioPAXConverter psimiConverter = 
-				new PSIMIBioPAXConverter(BioPAXLevel.L3, provider.uri()+"_"); 
+				new PSIMIBioPAXConverter(BioPAXLevel.L3, provider.getUri()+"_"); 
 			psimiConverter.convert(is, os);
 			toReturn = os.toString();
 		}

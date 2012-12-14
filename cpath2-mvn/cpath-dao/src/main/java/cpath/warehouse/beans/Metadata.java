@@ -265,7 +265,8 @@ public final class Metadata {
      * 
      * @return
      */
-    public String uri() {
+    @Transient
+    public String getUri() {
     	return Normalizer.uri(CPathSettings.get(CPath2Property.XML_BASE), 
     			identifier, version, Provenance.class);
     }
@@ -282,7 +283,7 @@ public final class Metadata {
 		Provenance pro = null;
 		
 		// we create URI from the Metadata identifier and version.
-		pro = model.addNew(Provenance.class, uri());
+		pro = model.addNew(Provenance.class, getUri());
 		
 		// parse/set names
 		String[] names = getName().split(";");

@@ -50,7 +50,7 @@ function getDatasources() {
         $.each(datasources, function(idx, ds) {
         	if (ds.type.toLowerCase() == "biopax" || ds.type.toLowerCase() == "psi_mi") 
         	{               		
-        		var tdid = ds.uri.replace(/:/g,"_");
+        		var tdid = ds.identifier+ds.version;
         		
         		$('#datasources').append('<tr>' 
            		+ '<td class="datasource_logo_table_cell"><a href="'+ds.urlToHomepage+'">'
@@ -87,20 +87,20 @@ function getDatasources() {
            		+ '<td class="datasource_logo_table_cell">Total:</td>'
            		+ '<td class="datasource_logo_table_cell" style="white-space: nowrap">'
            		+ '</td><td class="datasource_logo_table_cell">'
-           		+ '</td><td id="_pw" class="datasource_num_table_cell">'
-           		+ '</td><td id="_it" class="datasource_num_table_cell">'
-           		+ '</td><td id="_pe" class="datasource_num_table_cell">'
+           		+ '</td><td id="total_pw" class="datasource_num_table_cell">'
+           		+ '</td><td id="total_it" class="datasource_num_table_cell">'
+           		+ '</td><td id="total_pe" class="datasource_num_table_cell">'
            		+ '</td></tr>');
     });
     
 	$.getJSON(base + "/search.json?q=*&type=pathway", function(res) {
-		$('td#_pw').text(res.numHits);
+		$('td#total_pw').text(res.numHits);
 	});				
 	$.getJSON(base + "/search.json?q=*&type=interaction", function(res) {
-		$('td#_it').text(res.numHits);
+		$('td#total_it').text(res.numHits);
 	});
 	$.getJSON(base + "/search.json?q=*&type=physicalentity", function(res) {
-		$('td#_pe').text(res.numHits);
+		$('td#total_pe').text(res.numHits);
 	});
     
     

@@ -344,8 +344,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 		
 		UnificationXref rXRef = (UnificationXref) model.getByID(rdfId);
 		if (rXRef == null) {
-			rXRef = (UnificationXref) model
-					.addNew(UnificationXref.class, rdfId);
+			rXRef = (UnificationXref) model.addNew(UnificationXref.class, rdfId);
 			rXRef.setDb(dbName);
 			rXRef.setId(id);
 		}
