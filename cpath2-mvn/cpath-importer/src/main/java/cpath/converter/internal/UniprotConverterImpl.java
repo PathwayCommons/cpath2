@@ -122,7 +122,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     } else {
                         if (dataElements.containsKey(key)) {
                             StringBuilder existingData = (StringBuilder) dataElements.get(key);
-                            existingData.append (" " + data);
+                            existingData.append(data); //TODO (just remove " ") - test it!
                         }
 						else {
                             dataElements.put(key, new StringBuilder (data));

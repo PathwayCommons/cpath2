@@ -93,26 +93,25 @@ public class BiopaxModelController extends BasicController {
 	
 	
 	/**
-	 * This method is for convenience and information purpose, 
-	 * for making our data LinkedData and Semantic Web ready.
+	 * This convenience method is to make cpath2 data 
+	 * more suitable for LinkedData / Semantic Web, by 
+	 * resolving a cpath2-generated URI (such URIs are
+	 * created in the data warehouse and during validation
+	 * and normalization).
 	 * 
-	 * This web service method is to resolve a 
-	 * local part of a cpath2-generated URI (created in the
-	 * cpath2 Warehouse or during data normalization, etc.)
-	 * 
-	 * @param digest - 32-byte hex string identifier (md5)
+	 * @param localId - e.g., cpath2 Metadata identifier (datasource) 
+	 * or generated utility class local ID (32-byte hex string)
 	 */
-	@RequestMapping("/{digest}")
-	public void cpathIdInfo(@PathVariable String digest, 
+	@RequestMapping("/{localId}")
+	public void cpathIdInfo(@PathVariable String localId, 
 			Writer writer, HttpServletResponse response) throws IOException {
-		if(idPattern.matcher(digest).find()) {
-			//return "redirect:get.xml?uri=" + xmlBase + digest;
+//		if(idPattern.matcher(digest).find()) {
 			Get get = new Get();
-			get.setUri(new String[]{xmlBase + digest});
+			get.setUri(new String[]{xmlBase + localId});
 			elementById(get, null, writer, response);
-		} else
-			errorResponse(Status.BAD_COMMAND
-				.errorResponse("Bad command/identifier: " + digest), writer, response);
+//		} else
+//			errorResponse(Status.BAD_COMMAND
+//				.errorResponse("Bad command/identifier: " + digest), writer, response);
 	}
 	
 	
@@ -155,12 +154,4 @@ public class BiopaxModelController extends BasicController {
     	}
     }
     
-    
-    @RequestMapping("/help/statistics") 
-    public @ResponseBody Help getStatistics() {
-    	Help h = new Help("statistics");
-    	h.setInfo("TODO: get num. of molecules, pathways, interactions, etc...");
-    	// TODO statistics: num. of molecules, pathways, interactions, etc...
-    	return h;
-    }
 }
