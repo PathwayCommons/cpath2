@@ -28,7 +28,7 @@
 	<!-- in addition to Hibernate L2 cache, we can set up a general-purpose java ehcache; shelved for later... -->
 	<ehcache:annotation-driven cache-manager="ehCacheManager" default-cache-key-generator="defaultCacheKeyGenerator" />
 	<bean id="ehCacheManager" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean" >
-		<property name="configLocation" value="file:${CPATH2_HOME}/ehcache-service.xml"/>
+		<property name="configLocation" value="file:${CPATH2_HOME}/ehcache-hibernate.xml"/>
 	</bean>
 	
     <bean id="defaultCacheKeyGenerator" class="com.googlecode.ehcache.annotations.key.StringCacheKeyGenerator" />

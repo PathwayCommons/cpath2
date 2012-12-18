@@ -15,8 +15,7 @@ contains all the cpath2 configuration files you are planning to use, such as:
 and cache directories and files get created!);
 - obo.properties;
 - validation.properties (BioPAX Validator rules tuning);
-- ehcache-hibernate.xml (the 2nd-level cache configuration);
-- ehcache-service.xml (the mid-tier, service layer, cache configuration);
+- ehcache-hibernate.xml (the 2nd-level, mid-tier/service (query) layer cache configuration);
 - blacklist.txt (optional; BioPAX graph query performance tuning., usually - small 
 molecules to ignore, like ubiquitous ATP...)
 - security-config.xml (webapp security, admin login);
