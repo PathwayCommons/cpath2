@@ -51,12 +51,13 @@ function getDatasources() {
         	if (ds.type.toLowerCase() == "biopax" || ds.type.toLowerCase() == "psi_mi") 
         	{               		
         		var tdid = ds.identifier+ds.version;
+        		var dsNames = ds.name.split(';');
         		
         		$('#datasources').append('<tr>' 
            		+ '<td class="datasource_logo_table_cell"><a href="'+ds.urlToHomepage+'">'
            		+ '<img class="data_source_logo" src="data:image/gif;base64,' 
            		+ ds.icon + '" title="URI=' + ds.uri + '"></img></a></td>'
-           		+ '<td class="datasource_logo_table_cell" style="white-space: nowrap">' + ds.name.split(";").join("<br/>")
+           		+ '<td class="datasource_logo_table_cell" style="white-space: nowrap">' + dsNames.join("<br/>")
            		+ '</td><td class="datasource_logo_table_cell" style="width: 35%"><em>' + ds.type + '</em><br/>' + ds.description
            		+ '</td><td id="' + tdid + '_pw" class="datasource_num_table_cell">'
            		+ '</td><td id="' + tdid + '_it" class="datasource_num_table_cell">'
@@ -64,13 +65,13 @@ function getDatasources() {
            		+ '</td></tr>');
         		
         		// get counts (async.)
-        		$.getJSON(base + "/search.json?q=*&type=pathway&datasource=" + ds.uri, function(res) {
+        		$.getJSON(base + "/search.json?q=*&type=pathway&datasource=" + dsNames[0], function(res) {
         			$('td#' + tdid + '_pw').text(res.numHits);
         		});				
-        		$.getJSON(base + "/search.json?q=*&type=interaction&datasource=" + ds.uri, function(res) {
+        		$.getJSON(base + "/search.json?q=*&type=interaction&datasource=" + dsNames[0], function(res) {
         			$('td#' + tdid + '_it').text(res.numHits);
         		});
-        		$.getJSON(base + "/search.json?q=*&type=physicalentity&datasource=" + ds.uri, function(res) {
+        		$.getJSON(base + "/search.json?q=*&type=physicalentity&datasource=" + dsNames[0], function(res) {
         			$('td#' + tdid + '_pe').text(res.numHits);
         		});
         	} else {

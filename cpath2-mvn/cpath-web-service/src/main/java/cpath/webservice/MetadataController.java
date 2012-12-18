@@ -94,7 +94,7 @@ public class MetadataController extends BasicController
     		bytes = ds.getIcon();
     	} else {
     		for(Metadata m : service.getAllMetadata())
-    			if(m.getUri().equalsIgnoreCase(identifier)) {
+    			if(m.getIdentifier().equalsIgnoreCase(identifier)) {
     				bytes = m.getIcon();
     				break;
     			}

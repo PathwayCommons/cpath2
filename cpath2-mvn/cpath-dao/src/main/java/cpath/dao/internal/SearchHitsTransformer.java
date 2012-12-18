@@ -30,16 +30,17 @@ import cpath.service.jaxb.SearchHit;
 
 
 /**
+ * Custom {@link ResultTransformer} implementation.
+ * 
  * Creates {@link SearchHit} objects from {@link BioPAXElement}
- * and its cPath2 Licene Documents.
- * 
- * Custom {@link ResultTransformer} implementation 
- * for full-text search results and projections used 
+ * and its cPath2 Licene index documents.
+ *  
+ * This is related to full-text search results and projections used 
  * in {@link PaxtoolsDAO#search(String, int, Class, String[], String[])}
- * and {@link PaxtoolsDAO#getTopPathways()}.
- * 
- * We suppose, 'organism', 'dataSource' (URIs), and 'keyword' 
- * search fields values were stored in the Lucene index.
+ * and {@link PaxtoolsDAO#getTopPathways()} methods.
+ * Also, we suppose that 'organism', 'dataSource' (URIs), and 'keyword' 
+ * full-text search fields values were stored in the Lucene index, 
+ * and now available.
  */
 final class SearchHitsTransformer implements ResultTransformer {
 	private final Highlighter highlighter;
@@ -88,11 +89,11 @@ final class SearchHitsTransformer implements ResultTransformer {
 		}
 		
 		
-		// extract only organism URIs (no names, etc..)
+		// extract organisms (URI only) 
 		if(doc.getField(FIELD_ORGANISM) != null) {
 			Set<String> uniqueVals = new TreeSet<String>();
 			for(String o : doc.getValues(FIELD_ORGANISM)) {
-				if(o.startsWith("urn:") || o.startsWith("http:")) {
+				if(o.startsWith("http:")) {
 					uniqueVals.add(o);
 				}
 			}
