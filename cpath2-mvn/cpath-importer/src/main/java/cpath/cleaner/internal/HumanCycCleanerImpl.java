@@ -148,8 +148,7 @@ public class HumanCycCleanerImpl implements Cleaner
 	 */
 	protected void fix_RDH14_NT5C1B_fusion(Model model)
 	{
-		EntityReference er = (EntityReference) model.getByID("" +
-			"http://biocyc.org/biopax/biopax-level3ProteinReference147987");
+		EntityReference er = (EntityReference) model.getByID(model.getXmlBase()+"ProteinReference147987");
 
 		if (er != null)
 		{

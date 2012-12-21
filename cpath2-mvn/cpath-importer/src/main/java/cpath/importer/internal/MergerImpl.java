@@ -308,16 +308,27 @@ final class MergerImpl implements Merger, Analysis {
 			log.info("mergePathwayModel: merge is complete, exiting...");
 	}
 
-	
+
 	private <T extends UtilityClass & XReferrable> T findOrCreate(T orig, Class<T> type, 
 			Model mainModel, WarehouseDAO whDAO, Model subsModel) 
 	{	
 		String id = orig.getRDFId();
 		
+		// A hack for normalized uniprot isoform URIs
+		// (yes, we merge all isoform PRs into the same canonical PR, 
+		// as we actually did before 2012/12/21 too)
+		if(id.contains("uniprot.isoform")) {
+			id = id.substring(0,id.lastIndexOf('-')).replace(".isoform", "");
+		}
+		
+		
 		//First, try to re-use previously matched (in the current merge run) object
+		// because we did validate/normalize all the data in Premerge stage and can 
+		// now expect a quick result in most cases...
 		T toReturn = getById(id, type, subsModel, whDAO, mainModel);
 
-		// if not found by id, search by UnificationXrefs -
+		// if not found by id (was's normalized or did not match by URI anything 
+		// from our data warehouse), search by UnificationXrefs -
 		if (toReturn == null) { // no match - try with xrefs
 			Set<UnificationXref> urefs = new ClassFilterSet<Xref, UnificationXref>(
 					orig.getXref(), UnificationXref.class);
