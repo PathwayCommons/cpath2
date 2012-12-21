@@ -267,9 +267,7 @@ public final class Metadata {
      */
     @Transient
     public String getUri() {
-    	return Normalizer.uri(CPathSettings.get(CPath2Property.XML_BASE), 
-    			identifier, version, Provenance.class);
-//    	return CPathSettings.get(CPath2Property.XML_BASE)+identifier;
+    	return CPathSettings.get(CPath2Property.XML_BASE)+identifier;
     }
 
     

@@ -344,7 +344,7 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		String inchiKey = getValue(entryBuffer, CHEBI_INCHI_KEY);
 		if (inchiKey != null && inchiKey.length() > 0) {
 			String id = inchiKey.split(EQUALS_DELIMITER)[1];
-			toReturn.addXref(getXref(UnificationXref.class, id, "InChI"));
+			toReturn.addXref(getXref(UnificationXref.class, id, "InChIKey"));
 		}
 		else {
 			if (log.isInfoEnabled()) {

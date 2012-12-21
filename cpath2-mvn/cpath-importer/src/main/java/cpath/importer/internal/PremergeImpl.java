@@ -314,7 +314,7 @@ final class PremergeImpl implements Premerge {
 	 */
 	private Validation checkAndNormalize(final String title, String data, Metadata metadata) 
 	{	
-		// create a new empty validation (use auto-fix, report all errors options) and associate with the model
+		// create a new empty validation (options: auto-fix=true, report all) and associate with the model
 		Validation validation = new Validation(new IdentifierImpl(), 
 				title, true, Behavior.WARNING, 0, null); // sets the title
 		

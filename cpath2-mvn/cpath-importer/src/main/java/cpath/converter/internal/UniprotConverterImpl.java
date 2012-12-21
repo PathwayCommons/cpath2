@@ -26,7 +26,10 @@ import java.io.*;
 /**
  * Implementation of {@link Converter} interface for UniProt data.
  * 
+ * TODO TBD: for various data and semantic issues, neither information about protein isoforms nor separate protein refs are currently saved.
+ * 
  * @see http://web.expasy.org/docs/userman.html
+ * @see http://www.uniprot.org/faq/30
  */
 final class UniprotConverterImpl extends BaseConverterImpl {
 
@@ -353,12 +356,12 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     }
 
 	/**
-	 * Gets a protein (or ProteinReference in L3);
-	 * set its RDFId and all the xrefs.
+	 * Generates a new protein reference object (ProteinReference, BioPAX L3)
+	 * from a pre-processed UniProt record: assigns the standard URI and adds xrefs.
 	 *
 	 * @param shortName
-	 * @param accessions AC field values
-	 * @param dbRefs DR field values
+	 * @param accessions AC field value - from the UniProt text format
+	 * @param dbRefs DR field values - from the UniProt text format
 	 * @return ProteinReference
 	 */
 	private ProteinReference newUniProtWithXrefs(String shortName, String accessions, StringBuilder dbRefs) 

@@ -46,13 +46,19 @@ public class PhosphoSitePlusCleanerImpl implements Cleaner {
 
         log.debug("Fixing isoform specific UniProt and a few old PSI-MI Ids...");
         for (UnificationXref xref : model.getObjects(UnificationXref.class)) {
-            // Get rid of isoform specific notation: Q9EQS9-3 --> Q9EQS9
-            if(xref.getDb().startsWith("UniProt") && xref.getId().contains("-")) {
-                String isoformId = xref.getId();
-                xref.setId(isoformId.split("-")[0]);
-                log.trace("Converting " + isoformId + " to " + xref.getId());
-            // Replace some of the "nice-to-have" terms
-            } else if(xref.getDb().startsWith("PSI-MI") && xref.getId().startsWith("MI")) {
+        	if(xref.getDb()==null || xref.getId()==null)
+        		continue;
+        	
+        	
+// no need to do this in the cleaner or at all (normalizer/merger now takes care)
+//            // Get rid of isoform specific notation: Q9EQS9-3 --> Q9EQS9
+//            if(xref.getDb().startsWith("UniProt") && xref.getId().contains("-")) {
+//                String isoformId = xref.getId();
+//                xref.setId(isoformId.split("-")[0]);
+//                log.trace("Converting " + isoformId + " to " + xref.getId());
+//            // Replace some of the "nice-to-have" terms
+//            } else 
+            if(xref.getDb().toUpperCase().startsWith("PSI-MI") && xref.getId().startsWith("MI")) {
                 String newId = termMap.get(xref.getId());
                 if(newId != null)
                     xref.setId(newId);
@@ -70,16 +76,17 @@ public class PhosphoSitePlusCleanerImpl implements Cleaner {
             }
         }
 
-        // And this is to make the Provenance compatible with Miriam
-        String standardName = "PhosphoSitePlus";
-        for (Provenance provenance : model.getObjects(Provenance.class)) {
-            String displayName = provenance.getDisplayName();
-            if(displayName != null && displayName.startsWith("Phosphosite")) {
-                log.trace("Replacing Provenance displayName " + displayName + " with " + standardName);
-                // http://www.ebi.ac.uk/miriam/main/collections/MIR:00000105
-                provenance.setDisplayName(standardName);
-            }
-        }
+// no need to fix provenance anymore (it's to be replaced in Premerge anyway)
+//        // And this is to make the Provenance compatible with Miriam
+//        String standardName = "PhosphoSitePlus";
+//        for (Provenance provenance : model.getObjects(Provenance.class)) {
+//            String displayName = provenance.getDisplayName();
+//            if(displayName != null && displayName.startsWith("Phosphosite")) {
+//                log.trace("Replacing Provenance displayName " + displayName + " with " + standardName);
+//                // http://www.ebi.ac.uk/miriam/main/collections/MIR:00000105
+//                provenance.setDisplayName(standardName);
+//            }
+//        }
         
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {

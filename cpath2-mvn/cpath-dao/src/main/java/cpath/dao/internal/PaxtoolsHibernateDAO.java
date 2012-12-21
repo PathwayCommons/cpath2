@@ -885,10 +885,10 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 		for (Xref xref : xrefs) {			
 			// Find the corresponding persistent Xref by ID.
 			
-			// - generate URI from xref properties the same way it's done
+			// - generate URI from xref properties in a way it's done
 			// during the cpath2 warehouse data import; it takes care to
 			// resolve official db synonyms to primary names (using Miriam registry);
-			// ignore 'idVersion', i.e., set it null (TODO think of uniprot isoforms later)
+			// but ignore 'idVersion', i.e., set it null
 			if(xref.getDb() == null || xref.getId() == null) {
 				log.warn("getByXref: " + xref + " db or id is null! Skipping.");
 				continue;
