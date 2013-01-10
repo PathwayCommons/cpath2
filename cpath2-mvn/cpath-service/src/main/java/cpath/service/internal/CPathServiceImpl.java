@@ -223,6 +223,9 @@ class CPathServiceImpl implements CPathService {
 	public ServiceResponse getNeighborhood(OutputFormat format, String[] sources,
 		Integer limit, Direction direction)
 	{
+		// todo: Remove this line when ID mapping in cpath2 is implemented.
+		sources = convertHGNC(sources);
+
 		if(direction == null) {
 			direction = Direction.BOTHSTREAM;	
 		}
@@ -234,7 +237,9 @@ class CPathServiceImpl implements CPathService {
 	@Override
 	public ServiceResponse getPathsBetween(OutputFormat format, String[] sources, Integer limit)
 	{
-		
+		// todo: Remove this line when ID mapping in cpath2 is implemented.
+		sources = convertHGNC(sources);
+
 		Analysis analysis = new PathsBetweenAnalysis();
 		return runAnalysis(analysis, format, sources, limit, blacklist);
 	}
@@ -244,6 +249,10 @@ class CPathServiceImpl implements CPathService {
 	public ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
 										  String[] targets, Integer limit)
 	{
+		// todo: Remove these lines when ID mapping in cpath2 is implemented.
+		sources = convertHGNC(sources);
+		targets = convertHGNC(targets);
+
 		Analysis analysis = new PathsFromToAnalysis();
 		return runAnalysis(analysis, format, sources, targets, limit, blacklist);
 	}
@@ -254,6 +263,9 @@ class CPathServiceImpl implements CPathService {
 	public ServiceResponse getCommonStream(OutputFormat format, String[] sources,
 		Integer limit, Direction direction)
 	{
+		// todo: Remove this line when ID mapping in cpath2 is implemented.
+		sources = convertHGNC(sources);
+
 		if (direction == Direction.BOTHSTREAM) {
 			return BAD_REQUEST.errorResponse(
 				"Direction cannot be BOTHSTREAM for the COMMONSTREAM query!");
@@ -265,6 +277,47 @@ class CPathServiceImpl implements CPathService {
 		return runAnalysis(analysis, format, sources, limit, direction, blacklist);
 	}
 
+	//-- Temporary fix for the broken hack --------------------------------------------------------|
+
+	/**
+	 * This method is intended for a very short term use, and it will be deleted when HGNC --> PC ID
+	 * mapping is implemented.
+	 *
+	 * todo: Remove this method when ID mapping in cpath2 is implemented
+	 * 
+	 * @param oldIDs old ids for hgnc xrefs
+	 * @return new IDs for hgnc xrefs
+	 */
+	private String[] convertHGNC(String[] oldIDs)
+	{
+		if (oldIDs.length == 0 || oldIDs[0] == null || !oldIDs[0].contains("HGNC_HGNC:"))
+		{
+			return oldIDs;
+		}
+
+		List<String> list = new ArrayList<String>(oldIDs.length);
+
+		for (String oldID : oldIDs)
+		{
+			String hgncID = oldID.substring(oldID.lastIndexOf(":") + 1);
+
+			SearchResponse resp = mainDAO.search(
+				"xrefid:\"HGNC:" + hgncID + "\"", 0, null, null, null);
+
+			if (resp.getNumHits() != 1 && log.isWarnEnabled())
+			{
+				log.warn("The old id \"" + oldID + "\" is mapped to " + resp.getNumHits() +
+					" objects");
+			}
+			
+			for (SearchHit hit : resp.getSearchHit())
+			{
+				list.add(hit.getUri());
+			}
+		}
+		return list.toArray(new String[list.size()]);
+	}
+	
 	//---------------------------------------------------------------------------------------------|
 	
 	@Cacheable(cacheName = "traverseCache")
