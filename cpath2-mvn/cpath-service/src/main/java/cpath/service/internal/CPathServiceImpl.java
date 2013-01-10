@@ -290,7 +290,7 @@ class CPathServiceImpl implements CPathService {
 	 */
 	private String[] convertHGNC(String[] oldIDs)
 	{
-		if (oldIDs.length == 0 || oldIDs[0] == null || !oldIDs[0].contains("HGNC_HGNC:"))
+		if (oldIDs.length == 0 || oldIDs[0] == null || !oldIDs[0].contains("HGNC_HGNC%3A"))
 		{
 			return oldIDs;
 		}
@@ -299,7 +299,7 @@ class CPathServiceImpl implements CPathService {
 
 		for (String oldID : oldIDs)
 		{
-			String hgncID = oldID.substring(oldID.lastIndexOf(":") + 1);
+			String hgncID = oldID.substring(oldID.lastIndexOf("A") + 1);
 
 			SearchResponse resp = mainDAO.search(
 				"xrefid:\"HGNC:" + hgncID + "\"", 0, null, null, null);
