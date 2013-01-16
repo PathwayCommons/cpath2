@@ -18,17 +18,26 @@
 	  	<include>*.xml</include>
 	  	<include>*.conf</include>
 	  </includes>
+	  <filtered>true</filtered>
     </fileSet>
     <fileSet>
 	  <directory>src/main/etc/bin</directory>
 	  <outputDirectory></outputDirectory>
 	  <fileMode>0755</fileMode>
+	  <filtered>true</filtered>
     </fileSet>
     <fileSet>
 	  <directory>src/main/etc/tmp</directory>
 	  <outputDirectory>tmp</outputDirectory>
 	  <fileMode>0644</fileMode>
+	  <filtered>true</filtered>
     </fileSet>
+    <fileSet>
+	  <directory>src/main/etc/data</directory>
+	  <outputDirectory>tmp</outputDirectory>
+	  <fileMode>0644</fileMode>
+	  <filtered>true</filtered>
+    </fileSet>    
     <fileSet>
 	  <directory>src/main/etc/downloads</directory>
 	  <outputDirectory>downloads</outputDirectory>
@@ -38,6 +47,7 @@
 	  <directory>src/main/etc/licenses</directory>
 	  <outputDirectory>licenses</outputDirectory>
 	  <fileMode>0644</fileMode>
+	  <filtered>true</filtered>
     </fileSet>
   </fileSets>
    

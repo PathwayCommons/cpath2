@@ -1,21 +1,17 @@
 #!/bin/sh
 
-# This is going to be a powerful script.
-# TODO Use Python instead?
-
-# Create new cPath2 databases, import all data, build full-text index, 
-# summarize, organize, and backup.
+# cPath2 version ${version} data import script
+# to create new databases, import data, build the full-text index, summarize, organize, etc.
 #
 # Before you run this script, please define CPATH2_HOME; configure connection 
 # and logging properties, metadata table in $CPATH2_HOME/metadata.conf; 
-# download, repackage and properly name all the data archives to $CPATH2_HOME/tmp!
+# download, and perhaps re-package and re-name pathway data archives in $CPATH2_HOME/data dir!
 # See also: README.TXT.
-
-## TODO Options: 
-# --quiet (no questions, no interactive shell), 
-# --force (ignore validation errors), 
-# --no-backup (no db/index archives at the end), 
-# --no-export
+#
+# Edit this script as you like. 
+# Mind using "--force" and organism names in the section #5 tasks
+# (try running cpath2.sh without arguments for more details).
+#
 
 echo "CPATH2 DATA IMPORT"
 
@@ -26,16 +22,17 @@ echo "CPATH2_HOME Directory: $CPATH2_HOME"
 xmlbase=`sed '/^\#/d' $CPATH2_HOME/cpath.properties | grep 'xml.base'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
 metadatadb=`sed '/^\#/d' $CPATH2_HOME/cpath.properties | grep 'metadata.db'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
 maindb=`sed '/^\#/d' $CPATH2_HOME/cpath.properties | grep 'main.db'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
-moleculesdb=`sed '/^\#/d' $CPATH2_HOME/cpath.properties | grep 'molecules.db'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
-proteinsdb=`sed '/^\#/d' $CPATH2_HOME/cpath.properties | grep 'proteins.db'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
+warehousedb=`sed '/^\#/d' $CPATH2_HOME/cpath.properties | grep 'warehouse.db'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
 
 echo "CPATH2 Properities:"
 echo "       metadata.db=$metadatadb"
 echo "       main.db=$maindb"
-echo "       molecules.db=$moleculesdb"
-echo "       proteins.db=$proteinsdb"
+echo "       warehouse.db=$warehousedb"
 echo "       xml.base=$xmlbase"
 
+## %TODO - also check all required configuration and properties files are present and in good shape, and report errors, if any.
+
+# START
 # 1. Drop/Create cPath2 databases (double-check db connection and names in $CPATH2_HOME/cpath.properties!)
 while true; do
 read -p "Create/replace $metadatadb database?" yn
@@ -53,31 +50,13 @@ read -p "Create/replace $maindb database?" yn
         * ) echo "Please answer yes or no.";;
     esac
 done
-
 while true; do  
-read -p "Do you also want to replace warehouse databases?" yn
-case $yn 
-	in  [Yy]* )  
- while true; do
- read -p "Create/replace $moleculesdb database?" yn
-	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -create-tables $moleculesdb; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer yes or no.";;
-    esac
- done;
- while true; do
- read -p "Create/replace $proteinsdb database?" yn
-	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -create-tables $proteinsdb; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer yes or no.";;
-    esac
- done; 
- break;;
+  read -p "Do you also want to replace the warehouse database?" yn
+  case $yn in
+	[Yy]* )  sh $CPATH2_HOME/cpath2.sh -create-tables $warehousedb; break;;
 	[Nn]* )  break;;
 	* ) echo "Please answer yes or no.";;
-esac
+  esac
 done
 
 # 2. Fetch Metadata (parse $CPATH2_HOME/metadata.conf)
@@ -93,9 +72,9 @@ done
 # 3. Fetch Warehouse data (also converts to BioPAX and creates small molecule and protein warehouses)
 # for now - do this in the step #4, altogether
 
-# 4. Fetch Pathway Data (BioPAX, PSI-MI; unpack, persist the original unchanged content)
+# 4. Fetch Data (BioPAX, PSI-MI; unpack, persist) and Create the Warehouse
 while true; do
-read -p "Fetch/convert all data?" yn
+read -p "Fetch all data and also build the Warehouse?" yn
 	case $yn in
         [Yy]* ) sh $CPATH2_HOME/cpath2.sh -fetch-data --all; break;;
         [Nn]* ) break;;
@@ -103,42 +82,26 @@ read -p "Fetch/convert all data?" yn
     esac
 done
 
-# 5. Pre-merge (clean, convert, validate, normalize pathway data)
+# 5. Premerge, Merge, Index, create the blacklist and downloads (cannot be run in parallel!)
 while true; do
-read -p "Premerge (convert/validate/normalize) all?" yn
+read -p "Process ALL data (clean, convert, validate, normalize, merge, index, blacklist, an generate archives)?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -premerge; break;;
+        [Yy]* ) 
+        	sh $CPATH2_HOME/cpath2.sh -premerge; 
+        	sh $CPATH2_HOME/cpath2.sh -merge --force; 
+        	sh $CPATH2_HOME/cpath2.sh -create-index; 
+        	sh $CPATH2_HOME/cpath2.sh -create-blacklist; 
+        	sh $CPATH2_HOME/cpath2.sh -create-downloads "homo sapiens,mus musculus"; 
+        	break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
-done
-
-# 6. Merge (merge normalized BioPAX networks with the warehouse, validate again (optionally), and merge into the main storage/network)
-while true; do
-read -p "Merge all (incl. invalid pathway data, using --force)?" yn
-	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -merge --force; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
-
-
-# 7. Index
-while true; do
-read -p "Create "main" full-text index?" yn
-	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -create-index; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer yes or no.";;
-    esac
-echo "Indexing ended."
 done
 
 
 # 21...
+## %TODO Create database dump, validation reports, and index directory archive.
 
-## [TODO] Create database dump, validation reports, and index directory archive.
 
 # 41...
 

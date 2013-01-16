@@ -1,6 +1,7 @@
 #!/bin/sh
 
-#set the environment variable CPATH2_HOME first.
+# cPath2 ${version} admin script
+# Please set the environment variable CPATH2_HOME first.
 
 $JAVA_HOME/bin/java -Dfile.encoding=UTF-8 -Xss65536k -Xmx8g -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -jar cpath2.jar "$1" "$2" "$3" "$4" "$5"
 

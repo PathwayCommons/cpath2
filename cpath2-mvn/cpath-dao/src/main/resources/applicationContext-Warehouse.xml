@@ -12,39 +12,49 @@
     
     <context:annotation-config/>
     
- 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
- 	
- 	<!-- enable the configuration of transactional behavior based on annotations -->
-    <tx:annotation-driven transaction-manager="whouseTransactionManager"/>
-       
-    <bean id="whouseSessionFactory"
-        class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
+    <context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+
+    <!-- enable the configuration of transactional behavior based on annotations -->
+    <tx:annotation-driven transaction-manager="moleculesTransactionManager"/>
+    
+	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
+
+	<bean id="moleculesSessionFactory"
+		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="hibernateProperties">
         <util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
-		  <prop key="hibernate.connection.url">${connection}${metadata.db}?autoReconnect=true&amp;max_allowed_packet=256M</prop>
+		  <prop key="hibernate.connection.url">${connection}${molecules.db}?autoReconnect=true&amp;max_allowed_packet=256M</prop>
 		  <prop key="hibernate.connection.username">${user}</prop>
           <prop key="hibernate.connection.password">${password}</prop>
        	  <prop key="hibernate.connection.driver_class">${driver}</prop>
-		  <prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${metadata.db}</prop>
-		  <prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental tables drop -->
-		  <prop key="hibernate.search.indexing_strategy">manual</prop>
+		  <prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${warehouse.db}</prop>
+		  <prop key="hibernate.hbm2ddl.auto"></prop><!-- no value - to prevent accidental tables drop -->
+<!-- 		  <prop key="hibernate.search.indexing_strategy">manual</prop> -->
 		  <prop key="hibernate.cache.use_second_level_cache">false</prop>
         </util:properties>
         </property>
-		<property name="packagesToScan" value="cpath.warehouse.beans" /> 
+        <property name="annotatedClasses">
+        	<list>
+				<value>org.biopax.paxtools.impl.BioPAXElementImpl</value>
+			</list>
+         </property>
+		 <property name="packagesToScan">
+			<list>
+				<value>org.biopax.paxtools.impl.level3</value>
+			</list>
+		 </property> 
     </bean>
 
-	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
-
-    <bean id="whouseTransactionManager"
+    <bean id="moleculesTransactionManager"
         class="org.springframework.orm.hibernate3.HibernateTransactionManager">
-        <property name="sessionFactory" ref="whouseSessionFactory" />
+        <property name="sessionFactory" ref="moleculesSessionFactory" />
     </bean>
 
-    <bean id="metadataDAO" class="cpath.dao.internal.MetadataHibernateDAO">
-        <property name="sessionFactory" ref="whouseSessionFactory"/>
+    <bean id="warehouseDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
+        <property name="sessionFactory" ref="moleculesSessionFactory"/>
+        <property name="maxHitsPerPage" value="${maxSearchHitsPerPage}"/>
     </bean>
-
+  	
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
 	
 </beans>

@@ -361,7 +361,7 @@
 
 	<bp:SmallMolecule rdf:ID="alpha-D-glucose_">
 		<bp:entityReference rdf:resource="http://identifiers.org/obo.chebi/CHEBI:28" />
-		<bp:cellularLocation rdf:resource="uhttp://identifiers.org/obo.go/GO:0005737" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">b-D-glu
 		</bp:standardName>
 		<bp:name rdf:datatype="xsd:string">&lt;FONT

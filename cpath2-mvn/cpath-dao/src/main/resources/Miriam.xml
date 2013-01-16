@@ -510,7 +510,7 @@
 
 	<datatype id="MIR:00000011" pattern="^IPR\d{6}$">
 		<name>InterPro</name>
-		<definition>InterPro is a database of protein families, domains and functional sites in which identifiable features found in known proteins can be applied to unknown protein sequences.</definition>
+		<definition>InterPro is a database of protein families, domains and functional sites in which identifiable features found in known molecules can be applied to unknown protein sequences.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:interpro</uri>
 			<uri type="URL">http://identifiers.org/interpro/</uri>
@@ -983,7 +983,7 @@
 	<datatype id="MIR:00000021" pattern="^[0-9A-Za-z]+:\d+:\d{1,5}(\.\d)?$" obsolete="true" replacement="">
 		<comment>The EBI stopped providing this service.</comment>
 		<name>CluSTr</name>
-		<definition>The CluSTr database offers an automatic classification of UniProt Knowledgebase and IPI proteins into groups of related proteins. The clustering is based on analysis of all pairwise comparisons (Smith-Waterman) between protein sequences.</definition>
+		<definition>The CluSTr database offers an automatic classification of UniProt Knowledgebase and IPI molecules into groups of related molecules. The clustering is based on analysis of all pairwise comparisons (Smith-Waterman) between protein sequences.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:clustr</uri>
 			<uri type="URL">http://identifiers.org/clustr/</uri>
@@ -1532,7 +1532,7 @@
 
 	<datatype id="MIR:00000031" pattern="^CE\d{5}$">
 		<name>Wormpep</name>
-		<definition>Wormpep contains the predicted proteins from the Caenorhabditis elegans genome sequencing project.</definition>
+		<definition>Wormpep contains the predicted molecules from the Caenorhabditis elegans genome sequencing project.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:wormpep</uri>
 			<uri type="URL">http://identifiers.org/wormpep/</uri>
@@ -1895,7 +1895,7 @@
 		<synonyms>
 			<synonym>TCDB</synonym>
 		</synonyms>
-		<definition>The database details a comprehensive  IUBMB approved classification system for membrane transport proteins known as the Transporter Classification (TC) system. The TC system is analogous to the Enzyme Commission (EC) system for classification of enzymes, but incorporates phylogenetic information additionally.</definition>
+		<definition>The database details a comprehensive  IUBMB approved classification system for membrane transport molecules known as the Transporter Classification (TC) system. The TC system is analogous to the Enzyme Commission (EC) system for classification of enzymes, but incorporates phylogenetic information additionally.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:tcdb</uri>
 			<uri type="URL">http://identifiers.org/tcdb/</uri>
@@ -2038,7 +2038,7 @@
 		<synonyms>
 			<synonym>DIP</synonym>
 		</synonyms>
-		<definition>The database of interacting protein (DIP) database stores experimentally determined interactions between proteins. It combines information from a variety of sources to create a single, consistent set of protein-protein interactions</definition>
+		<definition>The database of interacting protein (DIP) database stores experimentally determined interactions between molecules. It combines information from a variety of sources to create a single, consistent set of protein-protein interactions</definition>
 		<uris>
 			<uri type="URN">urn:miriam:dip</uri>
 			<uri type="URL">http://identifiers.org/dip/</uri>
@@ -2052,7 +2052,7 @@
 				<dataResource>http://dip.doe-mbi.ucla.edu/</dataResource>
 				<dataEntityExample>DIP-743N</dataEntityExample>
 				<dataEntry>http://dip.doe-mbi.ucla.edu/dip/DIPview.cgi?ID=$id</dataEntry>
-				<dataInfo>Database of interacting proteins</dataInfo>
+				<dataInfo>Database of interacting molecules</dataInfo>
 				<dataInstitution>UCLA</dataInstitution>
 				<dataLocation>USA</dataLocation>
 			</resource>
@@ -2079,7 +2079,7 @@
 			<synonym>UCSD Signaling Gateway Molecule Pages</synonym>
 			<synonym>UCSD - Molecule Pages</synonym>
 		</synonyms>
-		<definition>The Signaling Gateway provides  information on  mammalian proteins involved in cellular signaling.</definition>
+		<definition>The Signaling Gateway provides  information on  mammalian molecules involved in cellular signaling.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:signaling-gateway</uri>
 			<uri type="URL">http://identifiers.org/signaling-gateway/</uri>
@@ -2595,7 +2595,7 @@
 
 	<datatype id="MIR:00000059" pattern="^S\d{2}\.\d{3}$">
 		<name>MEROPS</name>
-		<definition>The MEROPS database is an information resource for peptidases (also termed proteases, proteinases and proteolytic enzymes) and the proteins that inhibit them.</definition>
+		<definition>The MEROPS database is an information resource for peptidases (also termed proteases, proteinases and proteolytic enzymes) and the molecules that inhibit them.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:merops</uri>
 			<uri type="URL">http://identifiers.org/merops/</uri>
@@ -2700,7 +2700,7 @@
 		<synonyms>
 			<synonym>Ligand Depot</synonym>
 		</synonyms>
-		<definition>Ligand Expo is a data resource for finding information about small molecules bound to proteins and nucleic acids.</definition>
+		<definition>Ligand Expo is a data resource for finding information about small molecules bound to molecules and nucleic acids.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:ligandexpo</uri>
 			<uri type="URL">http://identifiers.org/ligandexpo/</uri>
@@ -3636,7 +3636,7 @@ All content is under the Creative Commons Attribution 3.0 Unported license.</def
 		<synonyms>
 			<synonym>LGICdb</synonym>
 		</synonyms>
-		<definition>The Ligand-Gated Ion Channel database provides nucleic and proteic sequences of the subunits of ligand-gated ion channels. These transmembrane proteins can exist under different conformations, at least one of which forms a pore through the membrane connecting two neighbouring compartments. The database can be used to generate multiple sequence alignments from selected subunits, and gives the atomic coordinates of subunits, or portion of subunits, where available.</definition>
+		<definition>The Ligand-Gated Ion Channel database provides nucleic and proteic sequences of the subunits of ligand-gated ion channels. These transmembrane molecules can exist under different conformations, at least one of which forms a pore through the membrane connecting two neighbouring compartments. The database can be used to generate multiple sequence alignments from selected subunits, and gives the atomic coordinates of subunits, or portion of subunits, where available.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:lgic</uri>
 			<uri type="URL">http://identifiers.org/lgic/</uri>
@@ -4029,7 +4029,7 @@ PharmGKB Pathways are drug centric, gene based, interactive pathways which focus
 
 	<datatype id="MIR:00000098" pattern="^D\d+$">
 		<name>CTD Chemical</name>
-		<definition>The Comparative Toxicogenomics Database (CTD) presents scientifically reviewed and curated information on chemicals, relevant genes and proteins, and their interactions in vertebrates and invertebrates. It integrates sequence, reference, species, microarray, and general toxicology information to provide a unique centralized resource for toxicogenomic research. The database also provides visualization capabilities that enable cross-species comparisons of gene and protein sequences.</definition>
+		<definition>The Comparative Toxicogenomics Database (CTD) presents scientifically reviewed and curated information on chemicals, relevant genes and molecules, and their interactions in vertebrates and invertebrates. It integrates sequence, reference, species, microarray, and general toxicology information to provide a unique centralized resource for toxicogenomic research. The database also provides visualization capabilities that enable cross-species comparisons of gene and protein sequences.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:ctd.chemical</uri>
 			<uri type="URL">http://identifiers.org/ctd.chemical/</uri>
@@ -4056,7 +4056,7 @@ PharmGKB Pathways are drug centric, gene based, interactive pathways which focus
 
 	<datatype id="MIR:00000099" pattern="^D\d+$">
 		<name>CTD Disease</name>
-		<definition>The Comparative Toxicogenomics Database (CTD) presents scientifically reviewed and curated information on chemicals, relevant genes and proteins, and their interactions in vertebrates and invertebrates. It integrates sequence, reference, species, microarray, and general toxicology information to provide a unique centralized resource for toxicogenomic research. The database also provides visualization capabilities that enable cross-species comparisons of gene and protein sequences.</definition>
+		<definition>The Comparative Toxicogenomics Database (CTD) presents scientifically reviewed and curated information on chemicals, relevant genes and molecules, and their interactions in vertebrates and invertebrates. It integrates sequence, reference, species, microarray, and general toxicology information to provide a unique centralized resource for toxicogenomic research. The database also provides visualization capabilities that enable cross-species comparisons of gene and protein sequences.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:ctd.disease</uri>
 			<uri type="URL">http://identifiers.org/ctd.disease/</uri>
@@ -4090,7 +4090,7 @@ PharmGKB Pathways are drug centric, gene based, interactive pathways which focus
 
 	<datatype id="MIR:00000100" pattern="^\d+$">
 		<name>CTD Gene</name>
-		<definition>The Comparative Toxicogenomics Database (CTD) presents scientifically reviewed and curated information on chemicals, relevant genes and proteins, and their interactions in vertebrates and invertebrates. It integrates sequence, reference, species, microarray, and general toxicology information to provide a unique centralized resource for toxicogenomic research. The database also provides visualization capabilities that enable cross-species comparisons of gene and protein sequences.</definition>
+		<definition>The Comparative Toxicogenomics Database (CTD) presents scientifically reviewed and curated information on chemicals, relevant genes and molecules, and their interactions in vertebrates and invertebrates. It integrates sequence, reference, species, microarray, and general toxicology information to provide a unique centralized resource for toxicogenomic research. The database also provides visualization capabilities that enable cross-species comparisons of gene and protein sequences.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:ctd.gene</uri>
 			<uri type="URL">http://identifiers.org/ctd.gene/</uri>
@@ -5265,7 +5265,7 @@ PharmGKB Pathways are drug centric, gene based, interactive pathways which focus
 
 	<datatype id="MIR:00000132" pattern="^BSU\d{5}$">
 		<name>SubtiWiki</name>
-		<definition>SubtiWiki is a scientific wiki for the model bacterium Bacillus subtilis. It provides comprehensive information on all genes and their proteins and RNA products, as well as information related to the current investigation of the gene/protein. 
+		<definition>SubtiWiki is a scientific wiki for the model bacterium Bacillus subtilis. It provides comprehensive information on all genes and their molecules and RNA products, as well as information related to the current investigation of the gene/protein. 
 Note: Currently, direct access to RNA products is restricted. This is expected to be rectified soon.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:subtiwiki</uri>
@@ -5579,7 +5579,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 
 	<datatype id="MIR:00000141" pattern="^PR\:\d+$">
 		<name>Protein Ontology</name>
-		<definition>The PRotein Ontology (PRO) has been designed to describe the relationships of proteins and protein evolutionary classes, to delineate the multiple protein forms of a gene locus (ontology for protein forms), and to interconnect existing ontologies.</definition>
+		<definition>The PRotein Ontology (PRO) has been designed to describe the relationships of molecules and protein evolutionary classes, to delineate the multiple protein forms of a gene locus (ontology for protein forms), and to interconnect existing ontologies.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:obo.pr</uri>
 			<uri type="URL">http://identifiers.org/obo.pr/</uri>
@@ -5747,7 +5747,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 		<synonyms>
 			<synonym>CGD</synonym>
 		</synonyms>
-		<definition>The Candida Genome Database (CGD) provides access to genomic sequence data and manually curated functional information about genes and proteins of the human pathogen Candida albicans. It collects gene names and aliases, and assigns gene ontology terms to describe the molecular function, biological process, and subcellular localization of gene products.</definition>
+		<definition>The Candida Genome Database (CGD) provides access to genomic sequence data and manually curated functional information about genes and molecules of the human pathogen Candida albicans. It collects gene names and aliases, and assigns gene ontology terms to describe the molecular function, biological process, and subcellular localization of gene products.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:cgd</uri>
 			<uri type="URL">http://identifiers.org/cgd/</uri>
@@ -7012,7 +7012,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 
 	<datatype id="MIR:00000181" pattern="^\d+$">
 		<name>Gramene protein</name>
-		<definition>Gramene is a comparative genome mapping database for grasses and crop plants. It combines a semi-automatically generated database of cereal genomic and expressed sequence tag sequences, genetic maps, map relations, quantitative trait loci (QTL), and publications, with a curated database of mutants (genes and alleles), molecular markers, and proteins. This datatype refers to proteins in Gramene.</definition>
+		<definition>Gramene is a comparative genome mapping database for grasses and crop plants. It combines a semi-automatically generated database of cereal genomic and expressed sequence tag sequences, genetic maps, map relations, quantitative trait loci (QTL), and publications, with a curated database of mutants (genes and alleles), molecular markers, and molecules. This datatype refers to molecules in Gramene.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:gramene.protein</uri>
 			<uri type="URL">http://identifiers.org/gramene.protein/</uri>
@@ -7041,7 +7041,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 
 	<datatype id="MIR:00000182" pattern="^GR\:\d+$">
 		<name>Gramene genes</name>
-		<definition>Gramene is a comparative genome mapping database for grasses and crop plants. It combines a semi-automatically generated database of cereal genomic and expressed sequence tag sequences, genetic maps, map relations, quantitative trait loci (QTL), and publications, with a curated database of mutants (genes and alleles), molecular markers, and proteins. This datatype refers to genes in Gramene.</definition>
+		<definition>Gramene is a comparative genome mapping database for grasses and crop plants. It combines a semi-automatically generated database of cereal genomic and expressed sequence tag sequences, genetic maps, map relations, quantitative trait loci (QTL), and publications, with a curated database of mutants (genes and alleles), molecular markers, and molecules. This datatype refers to genes in Gramene.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:gramene.gene</uri>
 			<uri type="URL">http://identifiers.org/gramene.gene/</uri>
@@ -7076,7 +7076,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 
 	<datatype id="MIR:00000183" pattern="^GR\_tax\:\d+$">
 		<name>Gramene Taxonomy</name>
-		<definition>Gramene is a comparative genome mapping database for grasses and crop plants. It combines a semi-automatically generated database of cereal genomic and expressed sequence tag sequences, genetic maps, map relations, quantitative trait loci (QTL), and publications, with a curated database of mutants (genes and alleles), molecular markers, and proteins. This datatype refers to taxonomic information in Gramene.</definition>
+		<definition>Gramene is a comparative genome mapping database for grasses and crop plants. It combines a semi-automatically generated database of cereal genomic and expressed sequence tag sequences, genetic maps, map relations, quantitative trait loci (QTL), and publications, with a curated database of mutants (genes and alleles), molecular markers, and molecules. This datatype refers to taxonomic information in Gramene.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:gramene.taxonomy</uri>
 			<uri type="URL">http://identifiers.org/gramene.taxonomy/</uri>
@@ -7110,7 +7110,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 
 	<datatype id="MIR:00000184" pattern="^\w+$">
 		<name>Gramene QTL</name>
-		<definition>Gramene is a comparative genome mapping database for grasses and crop plants. It combines a semi-automatically generated database of cereal genomic and expressed sequence tag sequences, genetic maps, map relations, quantitative trait loci (QTL), and publications, with a curated database of mutants (genes and alleles), molecular markers, and proteins. This datatype refers to quantitative trait loci identified in Gramene.</definition>
+		<definition>Gramene is a comparative genome mapping database for grasses and crop plants. It combines a semi-automatically generated database of cereal genomic and expressed sequence tag sequences, genetic maps, map relations, quantitative trait loci (QTL), and publications, with a curated database of mutants (genes and alleles), molecular markers, and molecules. This datatype refers to quantitative trait loci identified in Gramene.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:gramene.qtl</uri>
 			<uri type="URL">http://identifiers.org/gramene.qtl/</uri>
@@ -7525,7 +7525,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 			<synonym>Gene Ontology Annotation</synonym>
 			<synonym>UniProtKB-GOA</synonym>
 		</synonyms>
-		<definition>The GOA (Gene Ontology Annotation) project provides high-quality Gene Ontology (GO) annotations to proteins in the UniProt Knowledgebase (UniProtKB) and International Protein Index (IPI). This involves electronic annotation and the integration of high-quality manual GO annotation from all GO Consortium model organism groups and specialist groups.</definition>
+		<definition>The GOA (Gene Ontology Annotation) project provides high-quality Gene Ontology (GO) annotations to molecules in the UniProt Knowledgebase (UniProtKB) and International Protein Index (IPI). This involves electronic annotation and the integration of high-quality manual GO annotation from all GO Consortium model organism groups and specialist groups.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:goa</uri>
 			<uri type="URL">http://identifiers.org/goa/</uri>
@@ -7634,7 +7634,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 
 	<datatype id="MIR:00000199" pattern="^DP\d{5}$">
 		<name>DisProt</name>
-		<definition>The Database of Protein Disorder (DisProt) is a curated database that provides information about proteins that lack fixed 3D structure in their putatively native states, either in their entirety or in part.</definition>
+		<definition>The Database of Protein Disorder (DisProt) is a curated database that provides information about molecules that lack fixed 3D structure in their putatively native states, either in their entirety or in part.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:disprot</uri>
 			<uri type="URL">http://identifiers.org/disprot/</uri>
@@ -8129,7 +8129,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 			<resource id="MIR:00100271" state="up" reliability="97">
 				<dataResource>http://www.gpcr.org/7tm/</dataResource>
 				<dataEntityExample>RL3R1_HUMAN</dataEntityExample>
-				<dataEntry>http://www.gpcr.org/7tm/proteins/$id</dataEntry>
+				<dataEntry>http://www.gpcr.org/7tm/molecules/$id</dataEntry>
 				<dataInfo>GPCRDB at Radboud University</dataInfo>
 				<dataInstitution>Radboud University Nijmegen Medical Centre, Nijmegen,</dataInstitution>
 				<dataLocation>Holland</dataLocation>
@@ -8224,7 +8224,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 		<synonyms>
 			<synonym>Homology-derived Structure of Proteins</synonym>
 		</synonyms>
-		<definition>HSSP (homology-derived structures of proteins) is a derived database merging structural (2-D and 3-D) and sequence information (1-D). For each protein of known 3D structure from the Protein Data Bank, the database has a file with all sequence homologues, properly aligned to the PDB protein.</definition>
+		<definition>HSSP (homology-derived structures of molecules) is a derived database merging structural (2-D and 3-D) and sequence information (1-D). For each protein of known 3D structure from the Protein Data Bank, the database has a file with all sequence homologues, properly aligned to the PDB protein.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:hssp</uri>
 			<uri type="URL">http://identifiers.org/hssp/</uri>
@@ -8522,7 +8522,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 
 	<datatype id="MIR:00000223" pattern="^\w+$">
 		<name>PhylomeDB</name>
-		<definition>PhylomeDB is a database of complete phylomes derived for different genomes within a specific taxonomic range. It provides alignments, phylogentic trees and tree-based orthology predictions for all encoded proteins.</definition>
+		<definition>PhylomeDB is a database of complete phylomes derived for different genomes within a specific taxonomic range. It provides alignments, phylogentic trees and tree-based orthology predictions for all encoded molecules.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:phylomedb</uri>
 			<uri type="URL">http://identifiers.org/phylomedb/</uri>
@@ -8637,7 +8637,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 			<synonym>Protein Clusters Database</synonym>
 			<synonym>Entrez ProtClustDB</synonym>
 		</synonyms>
-		<definition>ProtClustDB is a collection of related protein sequences (clusters) consisting of Reference Sequence proteins encoded by complete genomes. This database contains both curated and non-curated clusters.</definition>
+		<definition>ProtClustDB is a collection of related protein sequences (clusters) consisting of Reference Sequence molecules encoded by complete genomes. This database contains both curated and non-curated clusters.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:protclustdb</uri>
 			<uri type="URL">http://identifiers.org/protclustdb/</uri>
@@ -8674,7 +8674,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 		<synonyms>
 			<synonym>Protein Model Portal</synonym>
 		</synonyms>
-		<definition>The number of known protein sequences exceeds those of experimentally solved protein structures. Homology (or comparative) modeling methods make use of experimental protein structures to build models for evolutionary related proteins. The Protein Model Portal (PMP) provides a single portal to access these models, which are accessed through their UniProt identifiers.</definition>
+		<definition>The number of known protein sequences exceeds those of experimentally solved protein structures. Homology (or comparative) modeling methods make use of experimental protein structures to build models for evolutionary related molecules. The Protein Model Portal (PMP) provides a single portal to access these models, which are accessed through their UniProt identifiers.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:pmp</uri>
 			<uri type="URL">http://identifiers.org/pmp/</uri>
@@ -8709,7 +8709,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 
 	<datatype id="MIR:00000228" pattern="^\d+$">
 		<name>ProtoNet ProteinCard</name>
-		<definition>ProtoNet provides automatic hierarchical classification of protein sequences in the UniProt database, partitioning the protein space into clusters of similar proteins. This collection references protein information.</definition>
+		<definition>ProtoNet provides automatic hierarchical classification of protein sequences in the UniProt database, partitioning the protein space into clusters of similar molecules. This collection references protein information.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:protonet.proteincard</uri>
 			<uri type="URL">http://identifiers.org/protonet.proteincard/</uri>
@@ -8742,7 +8742,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 
 	<datatype id="MIR:00000229" pattern="^\d+$">
 		<name>ProtoNet Cluster</name>
-		<definition>ProtoNet provides automatic hierarchical classification of protein sequences in the UniProt database, partitioning the protein space into clusters of similar proteins. This collection references cluster information.</definition>
+		<definition>ProtoNet provides automatic hierarchical classification of protein sequences in the UniProt database, partitioning the protein space into clusters of similar molecules. This collection references cluster information.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:protonet.cluster</uri>
 			<uri type="URL">http://identifiers.org/protonet.cluster/</uri>
@@ -8780,7 +8780,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 		<synonyms>
 			<synonym>Restriction Enzyme Database</synonym>
 		</synonyms>
-		<definition>REBASE is a comprehensive database of information about restriction enzymes, DNA methyltransferases and related proteins involved in the biological process of restriction-modification (R-M). It contains fully referenced information about recognition and cleavage sites, isoschizomers, neoschizomers, commercial availability, methylation sensitivity, crystal and sequence data.</definition>
+		<definition>REBASE is a comprehensive database of information about restriction enzymes, DNA methyltransferases and related molecules involved in the biological process of restriction-modification (R-M). It contains fully referenced information about recognition and cleavage sites, isoschizomers, neoschizomers, commercial availability, methylation sensitivity, crystal and sequence data.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:rebase</uri>
 			<uri type="URL">http://identifiers.org/rebase/</uri>
@@ -9014,7 +9014,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 
 	<datatype id="MIR:00000236" pattern="^NX_\w+">
 		<name>nextProt</name>
-		<definition>neXtProt is a resource on human proteins, and includes information such as proteins&#8217; function, subcellular location, expression, interactions and role in diseases.</definition>
+		<definition>neXtProt is a resource on human molecules, and includes information such as molecules&#8217; function, subcellular location, expression, interactions and role in diseases.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:nextprot</uri>
 			<uri type="URL">http://identifiers.org/nextprot/</uri>
@@ -9570,7 +9570,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 		<synonyms>
 			<synonym>Eukaryotic Linear Motifs</synonym>
 		</synonyms>
-		<definition>Linear motifs are short, evolutionarily plastic components of regulatory proteins. Mainly focused on the eukaryotic sequences,the Eukaryotic Linear Motif resource (ELM) is a database of curated motif classes and instances.</definition>
+		<definition>Linear motifs are short, evolutionarily plastic components of regulatory molecules. Mainly focused on the eukaryotic sequences,the Eukaryotic Linear Motif resource (ELM) is a database of curated motif classes and instances.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:elm</uri>
 			<uri type="URL">http://identifiers.org/elm/</uri>
@@ -9608,7 +9608,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 		<synonyms>
 			<synonym>Mimotope Database</synonym>
 		</synonyms>
-		<definition>MimoDB is a database collecting peptides that have been selected from random peptide libraries based on their ability to bind small compounds, nucleic acids, proteins, cells, tissues and organs. It also stores other information such as the corresponding target, template, library, and structures.</definition>
+		<definition>MimoDB is a database collecting peptides that have been selected from random peptide libraries based on their ability to bind small compounds, nucleic acids, molecules, cells, tissues and organs. It also stores other information such as the corresponding target, template, library, and structures.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:mimodb</uri>
 			<uri type="URL">http://identifiers.org/mimodb/</uri>
@@ -9770,7 +9770,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 			<resource id="MIR:00100326" state="up" reliability="99">
 				<dataResource>http://clipserve.clip.ubc.ca/topfind</dataResource>
 				<dataEntityExample>Q9UKQ2</dataEntityExample>
-				<dataEntry>http://clipserve.clip.ubc.ca/topfind/proteins/$id</dataEntry>
+				<dataEntry>http://clipserve.clip.ubc.ca/topfind/molecules/$id</dataEntry>
 				<dataInfo>TopFind at University of British Columbia</dataInfo>
 				<dataInstitution>Department of Oral Biological and Medical Sciences, University of British Columbia, Vancouver</dataInstitution>
 				<dataLocation>Canada</dataLocation>
@@ -9791,7 +9791,7 @@ Note: Currently, direct access to RNA products is restricted. This is expected t
 
 	<datatype id="MIR:00000256" pattern="^\w+$">
 		<name>MIPModDB</name>
-		<definition>MIPModDb is a database of comparative protein structure models of MIP (Major Intrinsic Protein) family of proteins, identified from complete genome sequence. It provides key information of MIPs based on their sequence and structures.</definition>
+		<definition>MIPModDb is a database of comparative protein structure models of MIP (Major Intrinsic Protein) family of molecules, identified from complete genome sequence. It provides key information of MIPs based on their sequence and structures.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:mipmod</uri>
 			<uri type="URL">http://identifiers.org/mipmod/</uri>
@@ -10167,7 +10167,7 @@ The interactions include direct (physical) and indirect (functional) association
 
 	<datatype id="MIR:00000266" pattern="^\w{14}$" restricted="true">
 		<name>STITCH</name>
-		<definition>STITCH is a resource to explore known and predicted interactions of chemicals and proteins. Chemicals are linked to other chemicals and proteins by evidence derived from experiments, databases and the literature.</definition>
+		<definition>STITCH is a resource to explore known and predicted interactions of chemicals and molecules. Chemicals are linked to other chemicals and molecules by evidence derived from experiments, databases and the literature.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:stitch</uri>
 			<uri type="URL">http://identifiers.org/stitch/</uri>
@@ -11181,7 +11181,7 @@ The interactions include direct (physical) and indirect (functional) association
 		<synonyms>
 			<synonym>High-quality Automated and Manual Annotation of microbial Proteomes</synonym>
 		</synonyms>
-		<definition>HAMAP is a system that identifies and semi-automatically annotates proteins that are part of well-conserved and orthologous microbial families or subfamilies. These are used to build rules which are used to propagate annotations to member bacterial, archaeal and plastid-encoded protein entries.</definition>
+		<definition>HAMAP is a system that identifies and semi-automatically annotates molecules that are part of well-conserved and orthologous microbial families or subfamilies. These are used to build rules which are used to propagate annotations to member bacterial, archaeal and plastid-encoded protein entries.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:hamap</uri>
 			<uri type="URL">http://identifiers.org/hamap/</uri>
@@ -11318,7 +11318,7 @@ The interactions include direct (physical) and indirect (functional) association
 		<synonyms>
 			<synonym>Clusters of Orthologous Groups</synonym>
 		</synonyms>
-		<definition>Clusters of Orthologous Groups of proteins (COGs) were delineated by comparing protein sequences encoded in complete genomes, representing major phylogenetic lineages. Each COG consists of individual proteins or groups of paralogs from at least 3 lineages and thus corresponds to an ancient conserved domain.</definition>
+		<definition>Clusters of Orthologous Groups of molecules (COGs) were delineated by comparing protein sequences encoded in complete genomes, representing major phylogenetic lineages. Each COG consists of individual molecules or groups of paralogs from at least 3 lineages and thus corresponds to an ancient conserved domain.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:cogs</uri>
 			<uri type="URL">http://identifiers.org/cogs/</uri>
@@ -11522,7 +11522,7 @@ The interactions include direct (physical) and indirect (functional) association
 
 	<datatype id="MIR:00000302" pattern="^\w+\d+$">
 		<name>MEROPS Family</name>
-		<definition>The MEROPS database is an information resource for peptidases (also termed proteases, proteinases and proteolytic enzymes) and the proteins that inhibit them. These are hierarchically classified and assigned to a Family on the basis of statistically significant similarities in amino acid sequence. Families thought to be homologous are grouped together in a Clan. This collection references peptidase families.</definition>
+		<definition>The MEROPS database is an information resource for peptidases (also termed proteases, proteinases and proteolytic enzymes) and the molecules that inhibit them. These are hierarchically classified and assigned to a Family on the basis of statistically significant similarities in amino acid sequence. Families thought to be homologous are grouped together in a Clan. This collection references peptidase families.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:merops.family</uri>
 			<uri type="URL">http://identifiers.org/merops.family/</uri>
@@ -11986,7 +11986,7 @@ The interactions include direct (physical) and indirect (functional) association
 
 	<datatype id="MIR:00000315" pattern="^TIGR\d+$">
 		<name>TIGRFAMS</name>
-		<definition>TIGRFAMs is a resource consisting of curated multiple sequence alignments, Hidden Markov Models (HMMs) for protein sequence classification, and associated information designed to support automated annotation of (mostly prokaryotic) proteins.</definition>
+		<definition>TIGRFAMs is a resource consisting of curated multiple sequence alignments, Hidden Markov Models (HMMs) for protein sequence classification, and associated information designed to support automated annotation of (mostly prokaryotic) molecules.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:tigrfam</uri>
 			<uri type="URL">http://identifiers.org/tigrfam/</uri>
@@ -12748,7 +12748,7 @@ The interactions include direct (physical) and indirect (functional) association
 		<synonyms>
 			<synonym>Orientations of Proteins in Membranes</synonym>
 		</synonyms>
-		<definition>The Orientations of Proteins in Membranes (OPM) database provides spatial positions of membrane-bound peptides and proteins of known three-dimensional structure in the lipid bilayer, together with their structural classification, topology and intracellular localization.</definition>
+		<definition>The Orientations of Proteins in Membranes (OPM) database provides spatial positions of membrane-bound peptides and molecules of known three-dimensional structure in the lipid bilayer, together with their structural classification, topology and intracellular localization.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:opm</uri>
 			<uri type="URL">http://identifiers.org/opm/</uri>
@@ -12866,7 +12866,7 @@ The interactions include direct (physical) and indirect (functional) association
 		<synonyms>
 			<synonym>Human Protein Atlas</synonym>
 		</synonyms>
-		<definition>The Human Protein Atlas (HPA) is a publicly available database with high-resolution images showing the spatial distribution of proteins in different normal and cancer human cell lines. Primary access to this collection is through Ensembl Gene identifiers.</definition>
+		<definition>The Human Protein Atlas (HPA) is a publicly available database with high-resolution images showing the spatial distribution of molecules in different normal and cancer human cell lines. Primary access to this collection is through Ensembl Gene identifiers.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:hpa</uri>
 			<uri type="URL">http://identifiers.org/hpa/</uri>
@@ -13050,7 +13050,7 @@ The interactions include direct (physical) and indirect (functional) association
 
 	<datatype id="MIR:00000341" pattern="^CH_\d+$">
 		<name>CharProt</name>
-		<definition>CharProt is a database of biochemically characterized proteins designed to support automated annotation pipelines. Entries are annotated with gene name, symbol and various controlled vocabulary terms, including Gene Ontology terms, Enzyme Commission number and TransportDB accession.</definition>
+		<definition>CharProt is a database of biochemically characterized molecules designed to support automated annotation pipelines. Entries are annotated with gene name, symbol and various controlled vocabulary terms, including Gene Ontology terms, Enzyme Commission number and TransportDB accession.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:charprot</uri>
 			<uri type="URL">http://identifiers.org/charprot/</uri>
@@ -13544,7 +13544,7 @@ The interactions include direct (physical) and indirect (functional) association
 
 	<datatype id="MIR:00000354" pattern="^[A-Z]C\d{1,3}$">
 		<name>ProGlycProt</name>
-		<definition>ProGlycProt (Prokaryotic Glycoprotein) is a repository of bacterial and archaeal glycoproteins with at least one experimentally validated glycosite (glycosylated residue). Each entry in the database is fully cross-referenced and enriched with available published information about source organism, coding gene, protein, glycosites, glycosylation type, attached glycan, associated oligosaccharyl/glycosyl transferases (OSTs/GTs), supporting references, and applicable additional information.</definition>
+		<definition>ProGlycProt (Prokaryotic Glycoprotein) is a repository of bacterial and archaeal glycomolecules with at least one experimentally validated glycosite (glycosylated residue). Each entry in the database is fully cross-referenced and enriched with available published information about source organism, coding gene, protein, glycosites, glycosylation type, attached glycan, associated oligosaccharyl/glycosyl transferases (OSTs/GTs), supporting references, and applicable additional information.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:proglyc</uri>
 			<uri type="URL">http://identifiers.org/proglyc/</uri>
@@ -13625,7 +13625,7 @@ The interactions include direct (physical) and indirect (functional) association
 			<resource id="MIR:00100453" state="up" reliability="97">
 				<dataResource>http://www.receptors.org/nucleardb/</dataResource>
 				<dataEntityExample>prgr_human</dataEntityExample>
-				<dataEntry>http://www.receptors.org/nucleardb/proteins/$id</dataEntry>
+				<dataEntry>http://www.receptors.org/nucleardb/molecules/$id</dataEntry>
 				<dataInfo>NucleaRDB at Radboud University Nijmegen Medical Centre</dataInfo>
 				<dataInstitution>CMBI, Radboud University Nijmegen Medical Centre,  Dreijenplein, Wageningen</dataInstitution>
 				<dataLocation>Holland</dataLocation>
@@ -13650,7 +13650,7 @@ The interactions include direct (physical) and indirect (functional) association
 		<synonyms>
 			<synonym>SUPERFAMILY</synonym>
 		</synonyms>
-		<definition>SUPERFAMILY provides structural, functional and evolutionary information for proteins from all completely sequenced genomes, and large sequence collections such as UniProt.</definition>
+		<definition>SUPERFAMILY provides structural, functional and evolutionary information for molecules from all completely sequenced genomes, and large sequence collections such as UniProt.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:supfam</uri>
 			<uri type="URL">http://identifiers.org/supfam/</uri>
@@ -14153,7 +14153,7 @@ The interactions include direct (physical) and indirect (functional) association
 		<synonyms>
 			<synonym>Structural Classification of Proteins</synonym>
 		</synonyms>
-		<definition>The SCOP (Structural Classification of Protein) database is a comprehensive ordering of all proteins of known structure according to their evolutionary, functional and structural relationships. The basic classification unit is the protein domain. Domains are hierarchically classified into species, proteins, families, superfamilies, folds, and classes.</definition>
+		<definition>The SCOP (Structural Classification of Protein) database is a comprehensive ordering of all molecules of known structure according to their evolutionary, functional and structural relationships. The basic classification unit is the protein domain. Domains are hierarchically classified into species, molecules, families, superfamilies, folds, and classes.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:scop</uri>
 			<uri type="URL">http://identifiers.org/scop/</uri>
@@ -14722,7 +14722,7 @@ The interactions include direct (physical) and indirect (functional) association
 
 	<datatype id="MIR:00000385" pattern="^\w+$">
 		<name>PhosphoPoint Kinase</name>
-		<definition>PhosphoPOINT is a database of the human kinase and phospho-protein interactome. It describes the interactions among kinases, their potential substrates and their interacting (phospho)-proteins. It also incorporates gene expression and uses gene ontology (GO) terms to annotate interactions. This collection references kinase information.</definition>
+		<definition>PhosphoPOINT is a database of the human kinase and phospho-protein interactome. It describes the interactions among kinases, their potential substrates and their interacting (phospho)-molecules. It also incorporates gene expression and uses gene ontology (GO) terms to annotate interactions. This collection references kinase information.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:phosphopoint.kinase</uri>
 			<uri type="URL">http://identifiers.org/phosphopoint.kinase/</uri>
@@ -14757,7 +14757,7 @@ The interactions include direct (physical) and indirect (functional) association
 
 	<datatype id="MIR:00000386" pattern="^\w+$">
 		<name>PhosphoPoint Phosphoprotein</name>
-		<definition>PhosphoPOINT is a database of the human kinase and phospho-protein interactome. It describes the interactions among kinases, their potential substrates and their interacting (phospho)-proteins. It also incorporates gene expression and uses gene ontology (GO) terms to annotate interactions. This collection references phosphoprotein information.</definition>
+		<definition>PhosphoPOINT is a database of the human kinase and phospho-protein interactome. It describes the interactions among kinases, their potential substrates and their interacting (phospho)-molecules. It also incorporates gene expression and uses gene ontology (GO) terms to annotate interactions. This collection references phosphoprotein information.</definition>
 		<uris>
 			<uri type="URN">urn:miriam:phosphopoint.protein</uri>
 			<uri type="URL">http://identifiers.org/phosphopoint.protein/</uri>
@@ -14936,7 +14936,7 @@ The interactions include direct (physical) and indirect (functional) association
 		</tagDefinition>
 		<tagDefinition>
 			<name>domain</name>
-			<definition>A domain is a protein subsequence that forms a three-dimensional structure, and can provide specific catalytic or binding sites as found in enzymes or regulatory proteins. A specific domain may appear in a variety of evolutionarily related proteins.</definition>
+			<definition>A domain is a protein subsequence that forms a three-dimensional structure, and can provide specific catalytic or binding sites as found in enzymes or regulatory molecules. A specific domain may appear in a variety of evolutionarily related molecules.</definition>
 		</tagDefinition>
 		<tagDefinition>
 			<name>drug</name>
@@ -14948,7 +14948,7 @@ The interactions include direct (physical) and indirect (functional) association
 		</tagDefinition>
 		<tagDefinition>
 			<name>enzyme</name>
-			<definition>An enzyme is a biological catalyst of a chemical reaction. Most enzymes are proteins.</definition>
+			<definition>An enzyme is a biological catalyst of a chemical reaction. Most enzymes are molecules.</definition>
 		</tagDefinition>
 		<tagDefinition>
 			<name>eukaryotic</name>
@@ -15053,7 +15053,7 @@ The interactions include direct (physical) and indirect (functional) association
 		</tagDefinition>
 		<tagDefinition>
 			<name>protein</name>
-			<definition>Data collections with this tag reference data pertaining to proteins.</definition>
+			<definition>Data collections with this tag reference data pertaining to molecules.</definition>
 		</tagDefinition>
 		<tagDefinition>
 			<name>reaction</name>

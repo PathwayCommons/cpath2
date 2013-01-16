@@ -68,8 +68,6 @@ public interface DataServices {
     
     String getMainDb();
     
-    String getProteinsDb();
-    
-    String getMoleculesDb();
+    String getWarehouseDb();
     
 }

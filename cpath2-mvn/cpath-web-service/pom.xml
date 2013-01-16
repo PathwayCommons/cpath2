@@ -4,23 +4,23 @@
 	<parent>
 		<artifactId>parent</artifactId>
 		<groupId>pathwaycommons.cpath</groupId>
-		<version>3.2.4-SNAPSHOT</version>
+		<version>4.0.0-SNAPSHOT</version>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>cpath-web-service</artifactId>
 	<packaging>war</packaging>
 	<name>cPath2 Web Service</name>
-	<description>cPath Web Services and Basic Docs App</description>
-
+	<description>cPath Web Services and Basic Help online</description>
 
 	<build>
 		<plugins>
 			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>tomcat-maven-plugin</artifactId>
-				<version>1.1</version>
+				<groupId>org.apache.tomcat.maven</groupId>
+				<artifactId>tomcat6-maven-plugin</artifactId>
+				<version>2.0</version>
 				<configuration>
 					<port>${tomcat.http.port}</port>
+					<path>/cpath2</path>
 					<systemProperties>
 						<CPATH2_HOME>${CPATH2_HOME}</CPATH2_HOME>
 						<java.io.tmpdir>${CPATH2_HOME}/tmp</java.io.tmpdir>

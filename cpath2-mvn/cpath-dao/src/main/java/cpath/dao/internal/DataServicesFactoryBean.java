@@ -108,17 +108,11 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	public void setMainDb(String db) {this.mainDb = db;}
 	public String getMainDb() {return mainDb;}
 
-	private String proteinsDb;
-	@Value("${proteins.db}")
-	public void setProteinsDb(String db) {this.proteinsDb = db;}
-	public String getProteinsDb() {return proteinsDb;}
+	private String warehouseDb;
+	@Value("${warehouse.db}")
+	public void setMoleculesDb(String db) {this.warehouseDb = db;}
+	public String getWarehouseDb() {return warehouseDb;}
 
-	private String moleculesDb;
-	@Value("${molecules.db}")
-	public void setMoleculesDb(String db) {this.moleculesDb = db;}
-	public String getMoleculesDb() {return moleculesDb;}
-
-	
 	private JdbcTemplate jdbcTemplate;
 	public JdbcTemplate getJdbcTemplate() {
 		return jdbcTemplate;
@@ -342,19 +336,6 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
     	ds.createIndex(ds.getMainDb());
     }
     
-    /**
-     * Creates full-text index for the "proteins" DB
-     * (actual connection parameters are set 
-     * from system/environment properties)
-     * 
-     * @deprecated use {@link PaxtoolsDAO#index()} instead
-     */
-    public static void rebuildProteinsIndex() {
-    	ApplicationContext ctx = 
-			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
-		DataServices ds = (DataServices) ctx.getBean("&dsBean");
-    	ds.createIndex(ds.getProteinsDb());
-    }
     
     /**
      * Creates full-text index for the "molecules" DB
@@ -363,11 +344,11 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
      * 
      * @deprecated use {@link PaxtoolsDAO#index()} instead
      */
-    public static void rebuildMoleculesIndex() {
+    public static void rebuildWarehouseIndex() {
     	ApplicationContext ctx = 
 			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
 		DataServices ds = (DataServices) ctx.getBean("&dsBean");
-    	ds.createIndex(ds.getMoleculesDb());
+    	ds.createIndex(ds.getWarehouseDb());
     }
     
     /**

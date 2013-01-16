@@ -7,7 +7,7 @@ import java.io.InputStream;
 import org.biopax.paxtools.model.Model;
 
 /**
- * Converters convert molecules annotation into
+ * Converters convert warehouse annotation into
  * biopax objects.
  */
 public interface Converter {

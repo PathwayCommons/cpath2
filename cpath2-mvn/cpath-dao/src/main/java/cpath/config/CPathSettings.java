@@ -64,9 +64,9 @@ public final class CPathSettings {
 	public static final String CPATH_PROPERTIES_FILE_NAME = "cpath.properties";
 	
 	/**
-	 * Name for a cpath2 utility sub-directory (under cpath2 home dir.)
+	 * Name for a cpath2 data sub-directory (under cpath2 home dir.)
 	 */
-	public static final String TMPDATA_SUBDIR = "tmp";
+	public static final String DATA_SUBDIR = "data";
 	
 	/**
 	 * A sub-directory (under cpath2 Home dir.) to organize various data available to download via the web app.
@@ -90,8 +90,7 @@ public final class CPathSettings {
 	public static enum CPath2Property {
 		MAIN_DB("main.db"),
 		METADATA_DB("metadata.db"),
-		MOLECULES_DB("molecules.db"),
-		PROTEINS_DB("proteins.db"),
+		WAREHOUSE_DB("warehouse.db"),
 		XML_BASE("xml.base"),
 		MAX_SEARCH_HITS_PER_PAGE("maxSearchHitsPerPage"),
 		EXPLAIN_ENABLED("explain.enabled"),
@@ -99,7 +98,9 @@ public final class CPathSettings {
         BLACKLIST_DEGREE_THRESHOLD("blacklist.degree.threshold"),
         BLACKLIST_CONTROL_THRESHOLD("blacklist.control.threshold"),
         READ_ONLY("read-only.enabled"),
-        PROVIDER("cpath2.provider")
+        PROVIDER("cpath2.provider"),
+        DESCRIPTION("cpath2.description"),
+        VERSION("cpath2.data.version")
 		;
 		
 		private final String name;
@@ -142,16 +143,14 @@ public final class CPathSettings {
 	
 	
 	/**
-	 * Gets the full local directory path 
-	 * where this type of data will be
-	 * temporarily fetched, stored,
-	 * re-used.
+	 * Gets the full path to a local directory 
+	 * where pathway and other data will be fetched and looked for.
 	 * 
 	 * @return
 	 */
-	public static String localTmpDataDir() {
+	public static String localDataDir() {
 		return getHomeDir() 
-			+ File.separator + CPathSettings.TMPDATA_SUBDIR;
+			+ File.separator + CPathSettings.DATA_SUBDIR;
 	}
 	
 	

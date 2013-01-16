@@ -46,6 +46,7 @@ import org.biopax.validator.api.Validator;
 import org.biopax.validator.api.beans.Validation;
 import org.biopax.validator.impl.IdentifierImpl;
 import org.biopax.validator.utils.Normalizer;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+
+@Ignore //disabled to build faster - TODO remove this annotation to enable tests, e.g., after switching to a new validator version
 
 /**
  * Extra integration tests for the BioPAX Validator 

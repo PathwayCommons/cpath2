@@ -3,7 +3,7 @@
 
 	<groupId>pathwaycommons.cpath</groupId>
 	<artifactId>cpath-client</artifactId>
-	<version>3.2.0-SNAPSHOT</version>
+	<version>4.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>cPath Client</name>
 	<description>cPath/cPath2 Client</description>
@@ -13,7 +13,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring.version>3.0.5.RELEASE</spring.version>
         <paxtools.version>4.1.5-SNAPSHOT</paxtools.version>
-        <cpath.api.version>5.1.0-SNAPSHOT</cpath.api.version>
+        <cpath.api.version>6.0.0-SNAPSHOT</cpath.api.version>
 	</properties>
 
 	<build>

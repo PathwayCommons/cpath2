@@ -245,7 +245,7 @@ public final class Metadata {
 	 */
     @Transient
     public String localDataFile() {
-    	String name = CPathSettings.localTmpDataDir() 
+    	String name = CPathSettings.localDataDir() 
     	+ File.separator + identifier + "." + version;
     	
     	// add the file extension, if any, if different from the version...
