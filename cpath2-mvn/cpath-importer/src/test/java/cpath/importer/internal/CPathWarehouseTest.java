@@ -74,8 +74,7 @@ import cpath.warehouse.beans.Metadata.TYPE;
 //@Ignore
 public class CPathWarehouseTest {
 
-	static WarehouseDAO molecules;
-	static WarehouseDAO proteins;
+	static WarehouseDAO warehouse;
 	static BioPAXFactory factory;
 	static MetadataDAO metadataDAO;
 	
@@ -89,9 +88,8 @@ public class CPathWarehouseTest {
 		// load beans
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 			new String[]{"classpath:testContext-whDAO.xml"});
-		molecules = (WarehouseDAO) context.getBean("moleculesDAO");
+		warehouse = (WarehouseDAO) context.getBean("warehouseDAO");
 		metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-		proteins = (WarehouseDAO) context.getBean("proteinsDAO");
 		
 		// load test data
 		Fetcher fetcher = new FetcherImpl();
@@ -101,10 +99,8 @@ public class CPathWarehouseTest {
 			for (Metadata mdata : metadata) {
 				metadataDAO.importMetadata(mdata);
 				fetcher.fetchData(mdata);
-				if (mdata.getType() == TYPE.PROTEIN) {
-					fetcher.storeWarehouseData(mdata, (Model) proteins);
-				} else if (mdata.getType() == TYPE.SMALL_MOLECULE) {
-					fetcher.storeWarehouseData(mdata, (Model) molecules);
+				if (mdata.getType() == TYPE.PROTEIN || mdata.getType() == TYPE.SMALL_MOLECULE) {
+					fetcher.storeWarehouseData(mdata, (Model) warehouse);
 				} else { // pathways
 					Collection<PathwayData> pathwayData = fetcher
 							.getProviderPathwayData(mdata);
@@ -119,13 +115,13 @@ public class CPathWarehouseTest {
 		
 		factory = BioPAXLevel.L3.getDefaultFactory();
 		
-		//DataServicesFactoryBean.rebuildIndex("cpath2_test"); //molecules are in the same test db
-		((PaxtoolsDAO)proteins).index();
+		//DataServicesFactoryBean.rebuildIndex("cpath2_test"); //warehouse are in the same test db
+		((PaxtoolsDAO)warehouse).index();
 	}
 
 	@Test
 	public void testGetProteinReference() {
-		ProteinReference pr = proteins
+		ProteinReference pr = warehouse
 			.createBiopaxObject("http://identifiers.org/uniprot/P62158", ProteinReference.class);
 		assertNotNull(pr);
 		assertFalse(pr.getName().isEmpty());
@@ -141,7 +137,7 @@ public class CPathWarehouseTest {
 		x.setId("A2A2M3"); // not a primary accession ;)
 		x.setDb("uniprot"); // db must be set for getByXref to work [since 19-May-2011]!
 		
-		Set<String> prIds =  proteins.findByXref(Collections.singleton(x), ProteinReference.class);
+		Set<String> prIds =  warehouse.findByXref(Collections.singleton(x), ProteinReference.class);
 		assertFalse(prIds.isEmpty());
 		assertEquals(1, prIds.size());
 		// correct entity reference found?
@@ -151,7 +147,7 @@ public class CPathWarehouseTest {
 	@Test
 	public void testSearchForProteinReference() {
 		// search with a secondary (RefSeq) accession number
-		SearchResponse resp =  ((PaxtoolsDAO)proteins).search("NP_619650", 0, RelationshipXref.class, null, null);
+		SearchResponse resp =  ((PaxtoolsDAO)warehouse).search("NP_619650", 0, RelationshipXref.class, null, null);
 		Collection<SearchHit> prs = resp.getSearchHit();
 		assertFalse(prs.isEmpty());
 		Collection<String> prIds = new HashSet<String>();
@@ -164,13 +160,13 @@ public class CPathWarehouseTest {
 		assertTrue(prIds.contains(uri));
 		
 		// get that xref
-		Xref x = proteins.createBiopaxObject(uri, RelationshipXref.class);
+		Xref x = warehouse.createBiopaxObject(uri, RelationshipXref.class);
 		assertNotNull(x);
 		assertTrue(x.getXrefOf().isEmpty()); // when elements are detached using getObject, they do not remember its owners!
 		// if you get the owner (entity reference) by id, then this xref.xrefOf will contain the owner.
 		
 		// search/map for the corresponding entity reference
-		prIds =  proteins.findByXref(Collections.singleton(x), ProteinReference.class);
+		prIds =  warehouse.findByXref(Collections.singleton(x), ProteinReference.class);
 		assertFalse(prIds.isEmpty());
 		assertEquals(1, prIds.size());
 		assertEquals("http://identifiers.org/uniprot/Q8TD86", prIds.iterator().next());
@@ -179,7 +175,7 @@ public class CPathWarehouseTest {
     @Test
 	// just another test (not very useful...)
 	public void testSubModel() {
-		Model m =((PaxtoolsDAO)proteins).getValidSubModel(
+		Model m =((PaxtoolsDAO)warehouse).getValidSubModel(
 				Arrays.asList(
 					Normalizer.uri(XML_BASE, "REFSEQ", "NP_619650", UnificationXref.class),
 					"http://identifiers.org/uniprot/Q8TD86",

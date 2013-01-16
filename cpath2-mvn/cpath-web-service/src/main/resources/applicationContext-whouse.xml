@@ -15,9 +15,9 @@
  	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
  	
  	<!-- enable the configuration of transactional behavior based on annotations -->
-    <tx:annotation-driven transaction-manager="whouseTransactionManager"/>
+    <tx:annotation-driven transaction-manager="metadataTransactionManager"/>
        
-    <bean id="whouseSessionFactory"
+    <bean id="metadataSessionFactory"
         class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="hibernateProperties">
         <util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
@@ -36,13 +36,13 @@
 
 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
 
-    <bean id="whouseTransactionManager"
+    <bean id="metadataTransactionManager"
         class="org.springframework.orm.hibernate3.HibernateTransactionManager">
-        <property name="sessionFactory" ref="whouseSessionFactory" />
+        <property name="sessionFactory" ref="metadataSessionFactory" />
     </bean>
 
     <bean id="metadataDAO" class="cpath.dao.internal.MetadataHibernateDAO">
-        <property name="sessionFactory" ref="whouseSessionFactory"/>
+        <property name="sessionFactory" ref="metadataSessionFactory"/>
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>

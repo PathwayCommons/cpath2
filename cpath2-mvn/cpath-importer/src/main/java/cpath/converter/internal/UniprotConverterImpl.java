@@ -1,6 +1,5 @@
 package cpath.converter.internal;
 
-import org.biopax.paxtools.controller.ModelUtils.RelationshipType;
 import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.ModificationFeature;
 import org.biopax.paxtools.model.level3.PositionStatusType;
@@ -39,8 +38,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     /**
      * Constructor
      */
-	UniprotConverterImpl() {
-	}
+	UniprotConverterImpl() {}
 
 	/**
 	 * (non-Javadoc>
@@ -79,17 +77,26 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     StringBuilder sequence = (StringBuilder) dataElements.get("  "); //SEQUENCE
                     StringBuilder features = (StringBuilder) dataElements.get("FT"); //strict format in 6-75 char in each FT line!
                     
-                    ProteinReference proteinReference = newUniProtWithXrefs(idParts[0], acNames, xrefs);
+                    ProteinReference proteinReference = newUniProtWithXrefs(idParts[0], acNames);
                     
+            		// add some external xrefs from DR fileds
+                    if (xrefs != null) {
+                        setXRefsFromDRs(xrefs.toString(), proteinReference);
+                    }
+                    
+                    //TODO add a rel. xref from the short name (e.g., db="UniProt Symbol")        
                     setNameAndSynonyms(proteinReference, deField);
                     
                     setOrganism(organismName, organismTaxId, proteinReference);
                     
-                    String geneSyns = null;
+                    // add GN gene names to the PR name, comment, and as rel. xrefs
+                    Collection<String> geneSyns = null;
                     if (geneName != null) {
-                        geneSyns= setGeneSymbolAndSynonyms(geneName.toString(), proteinReference);
+                    	geneSyns = setGeneSymbolAndSynonyms(geneName.toString(), proteinReference);
+                        // add "HGNC Symbol" rel. xrefs, despite they can be MGI, RGD,.. too (cannot do this in setXRefsFromDRs, - no gene synonyms in DR fields)
+                        setXRefsFromGeneNames(geneSyns, proteinReference);
                     }
-                    
+                    // add some info from CC fields to BioPAX comments (add gene symbols as a comment too)
                     if (comments != null) {
                         setComments (comments.toString(), geneSyns, proteinReference);
                     }
@@ -125,7 +132,11 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     } else {
                         if (dataElements.containsKey(key)) {
                             StringBuilder existingData = (StringBuilder) dataElements.get(key);
-                            existingData.append(data); //TODO (just remove " ") - test it!
+                            if("DR".equals(key))
+                            	//EOLs do matter for correct splitting into records; adding back (because bufferedReader.readLine() removed it)
+                            	existingData.append(data).append('\n'); 
+                            else
+                            	existingData.append(data);
                         }
 						else {
                             dataElements.put(key, new StringBuilder (data));
@@ -208,13 +219,15 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     }
 
     /**
-     * Sets Multiple Comments.
+     * Sets some BioPAX comments 
+     * ("INTERACTION" sections of UniProt CC fields, 
+     * gene symbols, and copyright.)
 	 *
 	 * @param comments String
 	 * @param geneSynonyms String
 	 * @param proteinReference ProteinReference
      */
-    private void setComments (String comments, String geneSynonyms, 
+    private void setComments (String comments, Collection<String> geneSynonyms, 
     		ProteinReference proteinReference) 
     {
         String commentParts[] = comments.split("-!- ");
@@ -228,7 +241,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                 reducedComments.append (currentComment);
             }
         }
-        if (geneSynonyms != null && geneSynonyms.length() > 0) {
+        if (geneSynonyms != null && !geneSynonyms.isEmpty()) {
             reducedComments.append (" GENE SYNONYMS:" + geneSynonyms + ".");
         }
         if (reducedComments.length() > 0) {
@@ -244,93 +257,111 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     /**
      * Sets Multiple Types of XRefs, e.g. Entrez Gene ID and RefSeq.
 	 *
-	 * @param dbRefs String (concatenated with a space 'DR' lines)
+	 * @param dbRefs String (concatenated 'DR' lines)
 	 * @param proteinReference
      */
-    private void setXRefs (String dbRefs, ProteinReference proteinReference) {
-        String xrefList[] = dbRefs.split("\\."); 
-        // - there are no '.' in the string array values anymore
-
+    private void setXRefsFromDRs (String dbRefs, ProteinReference proteinReference) {
+        //split the line into like: "DB; ID1; ID2;" lines (also removing ending ".\n" or "-.\n")
+    	final String xrefList[] = dbRefs.split("-?\\.\\s*\n"); 
+        
         for (int i=0; i<xrefList.length; i++) {
-            String xref = xrefList[i].trim();
-            if (xref.startsWith("GeneID")) {
-                String parts[] = xref.split(";");
-                String entrezGeneId = parts[1];
-                setRelationshipXRef("Entrez Gene", entrezGeneId, proteinReference, RelationshipType.GENE);
-            }
-			else if (xref.startsWith("RefSeq")) {
-                String parts[] = xref.split(";");
-                String refSeqId = parts[1];
-                setRelationshipXRef("RefSeq", refSeqId, proteinReference, RelationshipType.SEQUENCE);
-            }
-			else if (xref.startsWith("HGNC") 
-					|| xref.startsWith("MGI") 
-						|| xref.startsWith("RGD")) {
-				//TODO this xref is created only for hs, mm, rn species; do we need this at all?..
-                String parts[] = xref.split(";");
-                String db = parts[0].trim();
-                String id = parts[1];
-                setRelationshipXRef(db, id, proteinReference, RelationshipType.GENE);
-            }
+        	String xref = xrefList[i].trim();
+        	String parts[] = xref.split(";");
+        	String db = parts[0].trim();
+    		
+        	//adding for id in part[1], part[2],..
+			if (db.equals("GeneID") || db.equals("RefSeq") || db.equals("Ensembl")) {
+				if (db.equals("GeneID"))
+					db = "Entrez Gene";
+				for (int j = 1; j < parts.length; j++) {
+			        String id = parts[j].trim();
+			    	// extracting RefSeq AC from AC.Version identifier:
+			    	if(db.equals("RefSeq")) {
+			    		int idx = id.lastIndexOf('.');
+			    		if(idx > 0)
+			    			id = id.substring(0, idx);
+			    	} 
+			    	else if (db.equals("Ensembl") && !id.startsWith("ENS"))
+						continue;
+					
+			    	// add xref
+					setRelationshipXRef(db, id, proteinReference, null);
+				}
+			}
+        }
+        	
+    }
+
+    
+    /** Sets "HGNC Symbol" rel. xrefs, despite they can be actually MGI, RGD,.. 
+     * (cannot do this in {@link #setXRefsFromDRs(String, ProteinReference)}, 
+     * - no gene synonyms in DR fields)
+     */
+    private void setXRefsFromGeneNames (Collection<String> geneNames, ProteinReference proteinReference) {
+        for (String s : geneNames) {
+        	setRelationshipXRef("HGNC Symbol", s, proteinReference, null);
         }
     }
 
     
-    /**
-     * Sets the HUGO Gene Symbol and Synonyms.
-	 *
-	 * @param proteinReference ProteinReference
+    /*
+     * Gets Gene Symbols and Synonyms.
      */
-    private String setGeneSymbolAndSynonyms(String geneName, ProteinReference proteinReference) 
+    private Collection<String> setGeneSymbolAndSynonyms(String geneName, ProteinReference proteinReference) 
     {
-        StringBuilder synBuffer = new StringBuilder();
+    	Collection<String> syns = new ArrayList<String>();
         String parts[] = geneName.split(";");
         for (int i=0; i<parts.length; i++) {
             String subParts[] = parts[i].split("=");
             // add, e.g., HUGO Gene Name to protein names
             if (subParts[0].trim().equals("Name")) {
             	proteinReference.addName(subParts[1]);
-            	synBuffer.append(subParts[1]);
+            	syns.add(subParts[1]);
             }
 			else if (subParts[0].trim().equals("Synonyms")) {
                 String synList[] = subParts[1].split(",");
                 for (int j=0; j<synList.length; j++) {
                     String currentSynonym = synList[j].trim();
-                    synBuffer.append(" " + currentSynonym);
+                    syns.add(currentSynonym);
                 }
             }
         }
-        return synBuffer.toString();
+        return syns;
     }
 
+    
     /**
      * Sets Relationship XRefs.
 	 *
-     * @param dbName String
-     * @param id String
-     * @param proteinReference ProteinReference
-     * @param relationshipType names from {@link RelationshipType} enum.
+     * @param dbName must be a MIRIAM preferred name for the data collection
+     * @param id
+     * @param proteinReference
+     * @param relationshipType some term (e.g., "SEQUENCE", "GENE", "MRNA", etc.) or null.
      */
     private void setRelationshipXRef(String dbName, 
-    	String id, ProteinReference proteinReference, RelationshipType relationshipType) 
+    	String id, ProteinReference proteinReference, String relationshipType) 
     {
-        id = id.trim();
-		String rdfId = Normalizer.uri(model.getXmlBase(), dbName, id, RelationshipXref.class);
-		RelationshipXref rXRef = (RelationshipXref) model.getByID(rdfId);
+        //generate a URI using only the classname, (normalized) db name, and id (no rel. type)
+		String uri = Normalizer.uri(model.getXmlBase(), dbName, id, RelationshipXref.class);
+		RelationshipXref rXRef = (RelationshipXref) model.getByID(uri);
 		if (rXRef == null) {
-			rXRef = (RelationshipXref) model.addNew(RelationshipXref.class,	rdfId);
+			rXRef = (RelationshipXref) model.addNew(RelationshipXref.class,	uri);
 			rXRef.setDb(dbName);
 			rXRef.setId(id);
 		}
 		
 		//find/create a special relationship CV
-		String relCvId = Normalizer.uri(model.getXmlBase(),	null, relationshipType.name(), RelationshipTypeVocabulary.class);
-		RelationshipTypeVocabulary relCv = (RelationshipTypeVocabulary) model.getByID(relCvId);
-		if(relCv == null) {
-			relCv = model.addNew(RelationshipTypeVocabulary.class, relCvId);
-			relCv.addTerm(relationshipType.name());
+		if (relationshipType != null) {
+			String relCvId = Normalizer.uri(model.getXmlBase(), null,
+					relationshipType.toUpperCase(), RelationshipTypeVocabulary.class);
+			RelationshipTypeVocabulary relCv = (RelationshipTypeVocabulary) model.getByID(relCvId);
+			if (relCv == null) {
+				relCv = model.addNew(RelationshipTypeVocabulary.class, relCvId);
+				relCv.addTerm(relationshipType.toUpperCase());
+			}
+			rXRef.setRelationshipType(relCv);
 		}
-		rXRef.setRelationshipType(relCv);
+		
 		proteinReference.addXref(rXRef);
     }
 
@@ -357,14 +388,14 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 
 	/**
 	 * Generates a new protein reference object (ProteinReference, BioPAX L3)
-	 * from a pre-processed UniProt record: assigns the standard URI and adds xrefs.
+	 * from a pre-processed UniProt record: assigns the standard URI and 
+	 * unification xrefs.
 	 *
 	 * @param shortName
 	 * @param accessions AC field value - from the UniProt text format
-	 * @param dbRefs DR field values - from the UniProt text format
 	 * @return ProteinReference
 	 */
-	private ProteinReference newUniProtWithXrefs(String shortName, String accessions, StringBuilder dbRefs) 
+	private ProteinReference newUniProtWithXrefs(String shortName, String accessions) 
 	{	
 		// accession numbers as array
 		String acList[] = accessions.split(";");
@@ -377,13 +408,9 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 		// add all unification xrefs
 		for (String acEntry : acList) {
 			String ac = acEntry.trim();
-			setUnificationXRef("uniprot", ac, proteinReference);
+			setUnificationXRef("UniProt", ac, proteinReference);
+//TODO not sure (may add as rel. xref)			setUnificationXRef("UniProt Symbol", shortName, proteinReference);
 		}
-		
-		// add other xrefs
-        if (dbRefs != null) {
-            setXRefs(dbRefs.toString(), proteinReference);
-        }
 		
 		return proteinReference;
 	}

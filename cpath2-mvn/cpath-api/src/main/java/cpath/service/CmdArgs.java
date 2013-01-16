@@ -34,7 +34,7 @@ package cpath.service;
  *
  */
 public enum CmdArgs {
-	uri("a BioPAX element ID as specified as a miriam URI (multiple 'uri=' per query are allowed)"),
+	uri("an identifier, usually a BioPAX element URI (default); multiple '&id=' arguments per query are supported"),
     q("query string (full-text search)."),
     //allfields("true (default) or false: either use all index fields or explicitly specify search fields, operators, keywords in the 'q' string, respectively"),
     page("search results page number (>=0)."),
@@ -50,6 +50,7 @@ public enum CmdArgs {
     path("a BioPAX property path expression (like xPath)"),
     direction("graph query parameter 'direction'"),
     //alg("a user-defined BioPAX data analysis (byte code) to run."), //TODO
+    //TODO add 'id_type' - identifier type one could use in a query instead of full URIs)
 	;
 	
 	private final String info;

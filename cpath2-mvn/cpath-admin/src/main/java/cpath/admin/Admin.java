@@ -252,8 +252,7 @@ public class Admin implements Runnable {
             		}
             	} else { // create all (as specified in the current cpath.properties)
             		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.METADATA_DB));
-            		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.PROTEINS_DB));
-            		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.MOLECULES_DB));
+            		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.WAREHOUSE_DB));
             		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.MAIN_DB));
             	}
             	break;
@@ -264,10 +263,8 @@ public class Admin implements Runnable {
                 ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
              	((PaxtoolsDAO)ctx.getBean("paxtoolsDAO")).index();
 // Currently, we do not full-text search in the Warehouse
-//              ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-whouseMolecules.xml");
-//           	((PaxtoolsDAO)ctx.getBean("moleculesDAO")).index();
-//              ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-whouseProteins.xml");
-//             	((PaxtoolsDAO)ctx.getBean("proteinsDAO")).index();
+//              ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-Warehouse.xml");
+//           	((PaxtoolsDAO)ctx.getBean("warehouseDAO")).index();
             	break;
             case FETCH_METADATA:
                 fetchMetadata(commandParameters[0]);
@@ -443,7 +440,7 @@ public class Admin implements Runnable {
 	private void runPremerge(String provider, String version, boolean createPremergeDbs) {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:applicationContext-whouseDAO.xml", 
+            		"classpath:applicationContext-Metadata.xml", 
             		"classpath:applicationContext-biopaxValidation.xml", 
 					"classpath:applicationContext-cvRepository.xml"});
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
@@ -463,7 +460,7 @@ public class Admin implements Runnable {
     private void fetchMetadata(final String location) throws IOException {
         ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
-            	"classpath:applicationContext-whouseDAO.xml"});
+            	"classpath:applicationContext-Metadata.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
         Fetcher fetcher = ImportFactory.newFetcher();
     	
@@ -486,7 +483,7 @@ public class Admin implements Runnable {
     private void fetchWarehouseData(final String provider) throws IOException {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:applicationContext-whouseDAO.xml"});
+            		"classpath:applicationContext-Metadata.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
         Fetcher fetcher = ImportFactory.newFetcher();
     	
@@ -501,13 +498,13 @@ public class Admin implements Runnable {
 
 		// process small molecule references data
 		ApplicationContext contextM = new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:applicationContext-whouseMolecules.xml"});
-        PaxtoolsDAO smallMoleculesDAO = (PaxtoolsDAO) contextM.getBean("moleculesDAO");
+            		"classpath:applicationContext-Warehouse.xml"});
+        PaxtoolsDAO smallMoleculesDAO = (PaxtoolsDAO) contextM.getBean("warehouseDAO");
         
         
         ApplicationContext contextP = new ClassPathXmlApplicationContext(new String [] {
 		"classpath:applicationContext-whouseProteins.xml"});
-		PaxtoolsDAO proteinsDAO = (PaxtoolsDAO) contextP.getBean("proteinsDAO");
+		PaxtoolsDAO moleculesDAO = (PaxtoolsDAO) contextP.getBean("warehouseDAO");
 		
 		// interate over all metadata
 		for (Metadata metadata : metadataCollection) {			
@@ -548,7 +545,7 @@ public class Admin implements Runnable {
 			else if (metadata.getType() == Metadata.TYPE.PROTEIN) 
 			{
 				// parse/save
-				fetcher.storeWarehouseData(metadata, (Model)proteinsDAO);
+				fetcher.storeWarehouseData(metadata, (Model)moleculesDAO);
         	} 
 			else if (metadata.getType() == Metadata.TYPE.SMALL_MOLECULE) 
 			{
@@ -651,7 +648,7 @@ public class Admin implements Runnable {
 	{
 		ApplicationContext context =
 	            new ClassPathXmlApplicationContext(new String [] { 	
-	            	"classpath:applicationContext-whouseDAO.xml"});
+	            	"classpath:applicationContext-Metadata.xml"});
 	    MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 	    
 	    ValidatorResponse report = null;
@@ -697,7 +694,7 @@ public class Admin implements Runnable {
 	
 	private static PathwayData getPathwayData(final Integer pk) {
 		ApplicationContext ctx = new ClassPathXmlApplicationContext(
-				"classpath:applicationContext-whouseDAO.xml");
+				"classpath:applicationContext-Metadata.xml");
 		MetadataDAO dao = (MetadataDAO) ctx.getBean("metadataDAO");
 		return dao.getPathwayData(pk);
 	}
@@ -786,7 +783,7 @@ public class Admin implements Runnable {
     				+ " (is NOT 'UTF-8'...)");
     	
     	// create the TMP dir inside the home dir if it does not exist yet
-		File dir = new File(CPathSettings.localTmpDataDir());
+		File dir = new File(CPathSettings.localDataDir());
 		if(!dir.exists()) {
 			dir.mkdir();
 		}
@@ -845,7 +842,7 @@ public class Admin implements Runnable {
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 				new String [] {
 					"classpath:applicationContext-cpathDAO.xml",
-	            	"classpath:applicationContext-whouseDAO.xml",
+	            	"classpath:applicationContext-Metadata.xml",
 	            	"classpath:applicationContext-cpathService.xml"
 	            }
 			);

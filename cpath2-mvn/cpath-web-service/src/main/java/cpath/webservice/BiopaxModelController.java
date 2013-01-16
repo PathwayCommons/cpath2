@@ -30,14 +30,12 @@ package cpath.webservice;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
-import java.util.regex.Pattern;
 
 import cpath.config.CPathSettings;
 import cpath.config.CPathSettings.CPath2Property;
 import cpath.service.CPathService;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
-import cpath.service.Status;
 import cpath.service.jaxb.*;
 import cpath.webservice.args.Get;
 import cpath.webservice.args.GetProperty;
@@ -65,8 +63,6 @@ public class BiopaxModelController extends BasicController {
     private static final Log log = LogFactory.getLog(BiopaxModelController.class);    
 	
     private static final String xmlBase = CPathSettings.get(CPath2Property.XML_BASE);
-    //the pattern for the cpath2 generated local part URI (normalized/warehouse Xrefs, etc.)
-    private static final Pattern idPattern = Pattern.compile("^[a-f0-9]{32}$"); 
     
     private CPathService service; // main PC db access
 	
@@ -105,13 +101,9 @@ public class BiopaxModelController extends BasicController {
 	@RequestMapping("/{localId}")
 	public void cpathIdInfo(@PathVariable String localId, 
 			Writer writer, HttpServletResponse response) throws IOException {
-//		if(idPattern.matcher(digest).find()) {
 			Get get = new Get();
 			get.setUri(new String[]{xmlBase + localId});
 			elementById(get, null, writer, response);
-//		} else
-//			errorResponse(Status.BAD_COMMAND
-//				.errorResponse("Bad command/identifier: " + digest), writer, response);
 	}
 	
 	

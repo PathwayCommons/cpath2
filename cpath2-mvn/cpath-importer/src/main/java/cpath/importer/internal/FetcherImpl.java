@@ -589,7 +589,7 @@ final class FetcherImpl implements Fetcher
 	@Override
 	public void fetchData(Metadata metadata) throws IOException {
 		
-		File dir = new File(CPathSettings.localTmpDataDir());
+		File dir = new File(CPathSettings.localDataDir());
 		if(!dir.exists()) {
 			dir.mkdir();
 		}

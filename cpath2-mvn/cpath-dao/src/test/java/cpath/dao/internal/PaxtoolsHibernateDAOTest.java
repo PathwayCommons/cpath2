@@ -231,8 +231,13 @@ public class PaxtoolsHibernateDAOTest {
 	public void testSearch() throws Exception {
 		paxtoolsDAO.index();
 		
-		SearchResponse resp = paxtoolsDAO.search("P46880", 0, UnificationXref.class, null, null);
+		
+		SearchResponse resp = paxtoolsDAO.search("xrefid:P46880", 0, UnificationXref.class, null, null);
 		List<SearchHit> elist = resp.getSearchHit();
+		assertEquals(1, elist.size());
+		
+		resp = paxtoolsDAO.search("P46880", 0, UnificationXref.class, null, null);
+		elist = resp.getSearchHit();
 		assertEquals(1, elist.size());
 		
 		resp = paxtoolsDAO.search("P46880", 0, BioPAXElement.class, null, null);

@@ -1,5 +1,7 @@
 Pathway Commons software
-cPath2 (cPathSquared) Admin How To
+cPath2 (cPathSquared) version ${version}
+
+Admin How To
 
 
 GENERAL INFORMATION
@@ -163,7 +165,7 @@ data import commands (as above), export some data or generate reports (e.g., val
 Prepare MySQL Databases. If required, generate (all or some of) the cpath2 database schemas using
 the same db names as specified in the $CPATH2_HOME/cpath.properties file:
 
-sh cpath2.sh -create-tables cpathmain,cpathproteins,cpathmolecules,cpathmetadata
+sh cpath2.sh -create-tables cpathmain,cpathwarehouse,cpathmetadata
 (WARNING: this destroys and re-creates the databases, if existed!)
 
 1. Fetch/Update Instance Metadata:
@@ -183,10 +185,10 @@ sh cpath2.sh -premerge
 #$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -cp /path-to/MyDataCleanerImpl.class;/path-to/MyDataConverterImpl.class -Xss65536k -Xmx2g -jar cpath2.jar -premerge
 
 sh cpath2.sh -merge
-#sh cpath2.sh -merge <IDENTIFIER>
+#sh cpath2.sh -merge <IDENTIFIER> --force
 
-# create full-text index (currently, it's required for the "main" cpath2 db only, only for the webservice app)
-sh cpath2.sh -create-index main
+# create full-text index:
+sh cpath2.sh -create-index
 
 Optionally (though highly recommended), you can also create a 'blacklist' (i.e. ignore list) for the graph queries. The graph queries
 will simply not traverse through the entities in this list and the entity references in the list will be eliminated
@@ -198,6 +200,7 @@ are often biologically relevant -- for more, see the blacklist.* options in the 
 
 sh cpath2.sh -create-blacklist <main_database_name> $CPATH2_HOME/blacklist.txt
 
+sh cpath2.sh -create-downloads "homo sapiens,mus musculus"
 
 
 DB DUMPS

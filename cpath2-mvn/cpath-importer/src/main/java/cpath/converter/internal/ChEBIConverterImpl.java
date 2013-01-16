@@ -23,7 +23,7 @@ import org.springframework.core.io.ResourceLoader;
  * This converter goes over the data in two passes:
  * - first, it creates SMRs, xrefs, etc.;
  * - second, it uses ChEBI OBO ontology to set memberEntityReference properties 
- * (to represent ChEBI molecules hierarchy in BioPAX)
+ * (to represent ChEBI warehouse hierarchy in BioPAX)
  */
 class ChEBIConverterImpl extends BaseConverterImpl
 {

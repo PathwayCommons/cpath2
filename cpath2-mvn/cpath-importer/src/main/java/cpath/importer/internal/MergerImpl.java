@@ -61,9 +61,7 @@ final class MergerImpl implements Merger, Analysis {
     
     // cpath2 repositories
 	private MetadataDAO metadataDAO;
-    private WarehouseDAO cvRepository;
-    private WarehouseDAO moleculesDAO;
-    private WarehouseDAO proteinsDAO;
+    private WarehouseDAO warehouseDAO;
     
     // configuration/flags
 	private String pathwayDataIdentifier;
@@ -84,18 +82,12 @@ final class MergerImpl implements Merger, Analysis {
 		
 		// metadata
 		ApplicationContext whApplicationContext = 
-			new ClassPathXmlApplicationContext("classpath:applicationContext-whouseDAO.xml");
+			new ClassPathXmlApplicationContext("classpath:applicationContext-Metadata.xml");
 		this.metadataDAO = (MetadataDAO)whApplicationContext.getBean("metadataDAO");
 		
-		// molecules
-		ApplicationContext context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-whouseMolecules.xml"});
-		this.moleculesDAO = (WarehouseDAO)context.getBean("moleculesDAO");
-		// proteins
-		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-whouseProteins.xml"});
-		this.proteinsDAO = (WarehouseDAO)context.getBean("proteinsDAO");
-		// cvRepository - disable for now (replacing CVs may be not required...)
-//		context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-cvRepository.xml"});
-//		this.cvRepository = (WarehouseDAO)context.getBean("cvFetcher");
+		// warehouse
+		ApplicationContext context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-Warehouse.xml"});
+		this.warehouseDAO = (WarehouseDAO)context.getBean("warehouseDAO");
 		
 		this.simpleMerger = new SimpleMerger(SimpleEditorMap.L3);
 	}
@@ -105,24 +97,18 @@ final class MergerImpl implements Merger, Analysis {
 	 *
 	 * This constructor was added to be used in a test context. At least called by
 	 * cpath.importer.internal.CPathInMemoryModelMergerTest.testMerger().
-	 *
-	 * @param pcDAO final "global" Model (e.g., {@link PaxtoolsHibernateDAO} may be used here)
 	 * @param metadataDAO MetadataDAO
-	 * @param moleculesDAO WarehouseDAO
-	 * @param proteinsDAO WarehouseDAO
-	 * @param cvRepository WarehouseDAO
+	 * @param warehouseDAO WarehouseDAO
+	 * @param pcDAO final "global" Model (e.g., {@link PaxtoolsHibernateDAO} may be used here)
 	 */
-	MergerImpl(final PaxtoolsDAO dest, final MetadataDAO metadataDAO, final WarehouseDAO moleculesDAO,
-					  final WarehouseDAO proteinsDAO, final WarehouseDAO cvRepository) 
+	MergerImpl(final PaxtoolsDAO dest, final MetadataDAO metadataDAO, final WarehouseDAO warehouseDAO) 
 	{
 		assert dest instanceof Model : 
 			"PaxtoolsDAO must also implement org.biopax.paxtools.Model!";
 	
 		this.mainDAO = dest;
 		this.metadataDAO = metadataDAO;
-		this.moleculesDAO = moleculesDAO;
-		this.proteinsDAO = proteinsDAO;
-		this.cvRepository = cvRepository;
+		this.warehouseDAO = warehouseDAO;
 		this.simpleMerger = new SimpleMerger(SimpleEditorMap.L3);
 	}
 	
@@ -222,15 +208,11 @@ final class MergerImpl implements Merger, Analysis {
 			// Find the best replacement either in the warehouse or target model;
 			if (bpe instanceof ProteinReference) {
 				replacement = findOrCreate((ProteinReference)bpe, 
-						ProteinReference.class, (Model)mainModel, proteinsDAO, generatedModel);
+						ProteinReference.class, (Model)mainModel, warehouseDAO, generatedModel);
 			} else if (bpe instanceof SmallMoleculeReference) {
 				replacement = findOrCreate((SmallMoleculeReference)bpe, 
-						SmallMoleculeReference.class, (Model)mainModel, moleculesDAO, generatedModel);
+						SmallMoleculeReference.class, (Model)mainModel, warehouseDAO, generatedModel);
 			}
-// replace CVs? I doubt now (cannot help if the validator/normalizer haven't done already)...
-//			else if (bpe instanceof ControlledVocabulary) {
-//				replacement = processControlledVocabulary((ControlledVocabulary) bpe, target);
-//			}
 				
 			if (replacement != null) {	
 				final String id = replacement.getRDFId();
@@ -245,11 +227,9 @@ final class MergerImpl implements Merger, Analysis {
 						if(replacement instanceof SmallMoleculeReference)
 							removeRelXrefs((EntityReference) replacement);
 					
-						// clear the AA sequence?
-//						if(replacement instanceof ProteinReference) {
-//							if(toReturn != null)
-//								toReturn.setSequence(null);
-//						}
+						// clear the AA sequence (save space and time; not really very useful...)
+						if(replacement instanceof ProteinReference)
+							((ProteinReference) replacement).setSequence(null);
 					
 						// in-memory merge to reuse same child xrefs, etc.
 						simpleMerger.merge(generatedModel, replacement);
@@ -374,35 +354,6 @@ final class MergerImpl implements Merger, Analysis {
 	}
 
 	
-	@Deprecated // why to replace CVs? (won't help if the validator/normalizer haven't already)
-	private ControlledVocabulary processControlledVocabulary(ControlledVocabulary bpe, Model target) 
-	{
-		// get the CV subclass (e.g. CellVocabulary)!
-		Class<? extends ControlledVocabulary> clazz =
-			(Class<? extends ControlledVocabulary>) bpe.getModelInterface();
-		
-		ControlledVocabulary toReturn = cvRepository.createBiopaxObject(bpe.getRDFId(), clazz);
-		
-		// if not found by id, - search by UnificationXrefs
-		if (toReturn == null) {
-			Set<UnificationXref> urefs = 
-				new ClassFilterSet<Xref,UnificationXref>(((XReferrable)bpe).getXref(), UnificationXref.class);
-			Collection<String> cvUrns = cvRepository.findByXref(urefs, clazz);
-			if (!cvUrns.isEmpty()) {
-				if (cvUrns.size() == 1) {
-					toReturn = cvRepository.createBiopaxObject(cvUrns.iterator().next(), clazz);
-				} else {
-					log.warn("Several ControlledVocabulary: " + cvUrns.toString()
-						+ "were found in the warehouse by unification xrefs: "
-						+ urefs + " of the original CV: " + bpe.getRDFId());
-				}
-			}
-		}
-		
-		return toReturn;
-	}
-
-	
 	/*
 	 * Removes those (thousands!) relationship xrefs
 	 * generated by the samll mol. data converter
@@ -421,28 +372,6 @@ final class MergerImpl implements Merger, Analysis {
 		for(EntityReference member : er.getMemberEntityReference()) {
 			removeRelXrefs(member);
 		}
-	}
-
-	
-	/**
-	 * For the given provider, gets the completely detached
-	 * in-memory copy of the persisted (pre-merge) model.
-	 *
-	 * @param metadata Metadata
-	 * @return BioPAX Model created during the Premerge stage
-	 * 
-	 */
-	@Deprecated //probably won't use a separate "premerge" DBs in the future
-	private Model getPreMergeModel(final Metadata metadata) 
-	{
-		String dbname = "cpath2_" + metadata.getIdentifier()
-			+ "_" + metadata.getVersion();
-		
-		// get the PaxtoolsDAO (Model) instance
-		PaxtoolsDAO premergePaxtoolsDAO = ImportFactory.buildPaxtoolsHibernateDAO(dbname);
-		
-		// "detach" the model by export to/import from owl/xml
-		return ModelUtils.writeRead((Model) premergePaxtoolsDAO);
 	}
 
 
