@@ -19,32 +19,21 @@
     	AspectJ Load-Time Weaving (LTW) is NOT used here; instead, Spring's default 
     	proxy-based AOP is used (thus there is no need in the  -javaagent JVM argument).
     -->  
-    
-    <context:annotation-config/>
-     
-    <aop:aspectj-autoproxy/>
-    
+    <context:annotation-config/>       
     <context:spring-configured/>
           
-    <!-- Use BioPAX Rules's Configuration -->
-    <import resource="classpath:rules-context.xml"/>
+    <import resource="classpath:META-INF/spring/appContext-validator.xml"/>
 
  	<!-- This is for the rules's and error messages's auto-configuration -->
-	<bean id="messageSource"
+	<bean id="rulesMessageSource"
 		class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>rules</value> <!-- classpath:rules.properties resources -->
-				<value>codes</value> <!-- classpath:codes.properties resources -->
-				<value>file:${CPATH2_HOME}/validation</value> <!-- validation profiles -->
+				<value>rules</value>
+				<value>codes</value>
+				<value>file:${CPATH2_HOME}/validation</value> <!-- overrides validation profiles -->
 			</list>
 		</property>
-	</bean>
-      
-	<bean id="utils" class="org.biopax.validator.api.ValidatorUtils">
-		<property name="messageSource" ref="messageSource" />
-		<property name="locale" value="en" />
-		<property name="maxErrors" value="50" />
 	</bean>
 
 	<!-- a helper and a proxy to access MIRIAM and MI database citation and regexps 

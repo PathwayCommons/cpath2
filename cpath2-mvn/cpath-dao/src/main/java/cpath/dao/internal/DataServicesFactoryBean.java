@@ -68,7 +68,6 @@ import org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBea
  * helps create any cPath database schema, 
  * and it is also a dynamic data source factory!
  * 
- * Note: it is MySQL-specific.
  * 
  * @author rodche
  */
@@ -98,6 +97,11 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	public void setDbConnection(String dbConnection) { this.dbConnection = dbConnection; }
 	public String getDbConnection() { return dbConnection; }
 
+	private String dbDialect;
+	@Value("${dialect}")
+	public void setDbDialect(String dbDialect) { this.dbDialect = dbDialect; }
+	public String getDbDialect() { return dbDialect; }
+	
 	private String metaDb;
 	@Value("${metadata.db}")
 	public void setMetaDb(String db) {this.metaDb = db;}
@@ -238,7 +242,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		dataSource.setDriverClassName(dbDriver);
 		// The following connection parameters are terribly important 
 		// (if not the most important part in cpath2 at all)!
-		dataSource.setUrl(dbUrl + "?autoReconnect=true&max_allowed_packet=384M");
+		dataSource.setUrl(dbUrl);// + "?autoReconnect=true&max_allowed_packet=384M");
 		//&useServerPrepStmts=true&useCursorFetch=true
 		dataSource.setUsername(dbUser);
 		dataSource.setPassword(dbPassword);
@@ -247,7 +251,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 //		ComboPooledDataSource dataSource = new ComboPooledDataSource();
 //		try {
 //			dataSource.setDriverClass(dbDriver);
-//			dataSource.setJdbcUrl(dbUrl + "?autoReconnect=true&max_allowed_packet=256M");
+//			dataSource.setJdbcUrl(dbUrl); // + "?autoReconnect=true&max_allowed_packet=256M");
 //			dataSource.setUser(dbUser);
 //			dataSource.setPassword(dbPassword);
 //			dataSource.setMaxPoolSize(10);
@@ -405,7 +409,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
     	Properties properties = new Properties();
     	// pooling (c3p0) is disabled (it leads to a deadlock during the mass-indexing...)
     	properties.put("hibernate.connection.release_mode", "after_transaction");
-    	properties.put("hibernate.dialect", "org.hibernate.dialect.MySQL5Dialect");
+    	properties.put("hibernate.dialect", dbDialect);
     	properties.put("hibernate.connection.url", dbConnection+db);
     	properties.put("hibernate.connection.username", dbUser);
     	properties.put("hibernate.connection.password", dbPassword);

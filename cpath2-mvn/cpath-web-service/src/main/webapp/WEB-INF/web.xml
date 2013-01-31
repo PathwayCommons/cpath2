@@ -41,8 +41,8 @@
 	<context-param>
 		<param-name>contextConfigLocation</param-name>
 		<param-value>
-			classpath:applicationContext-main.xml
-			classpath:applicationContext-whouse.xml
+			classpath:applicationContext-cpathDAO.xml
+			classpath:applicationContext-Metadata.xml
 			classpath:applicationContext-cpathService.xml
 		</param-value>
 	</context-param>

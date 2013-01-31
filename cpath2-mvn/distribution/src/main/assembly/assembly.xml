@@ -54,7 +54,7 @@
   <dependencySets>
     <dependencySet>
       <includes>
-        <include>*:cpath-admin:jar</include> <!-- 'shaded' jar (see the cpath-admin/pom.xml) -->
+        <include>*:cpath-admin:jar:executable</include> <!-- 'shaded' jar (see the cpath-admin/pom.xml) -->
       </includes>
       <outputDirectory></outputDirectory>
 	  <outputFileNameMapping>cpath2.jar</outputFileNameMapping>

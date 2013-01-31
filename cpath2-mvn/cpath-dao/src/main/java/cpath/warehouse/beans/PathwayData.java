@@ -7,6 +7,9 @@ import org.hibernate.annotations.ColumnTransformer;
 
 /**
  * Data Providers's Pathway Data.
+ * 
+ * Note: unfortunately, it's database-specific...
+ * 
  */
 @Entity
 @Table(name="pathwayData")
@@ -35,6 +38,7 @@ public final class PathwayData {
 	
 //	@Column(nullable=false)
 	@Column(name="pathwayData", columnDefinition = "LONGBLOB", nullable = false)
+	// function UNCOMPRESS works in MySQL, but it's called EXPAND in H2...
 	@ColumnTransformer(forColumn="pathwayData", read = "UNCOMPRESS(pathwayData)", write = "COMPRESS(?)")
 	@Lob
     private byte[] pathwayData;
