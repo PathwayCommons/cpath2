@@ -9,7 +9,6 @@ import javax.persistence.*;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Provenance;
-import org.biopax.validator.utils.Normalizer;
 
 import cpath.config.CPathSettings;
 import cpath.config.CPathSettings.CPath2Property;

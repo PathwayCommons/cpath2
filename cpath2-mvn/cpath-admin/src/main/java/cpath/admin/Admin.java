@@ -742,7 +742,7 @@ public class Admin implements Runnable {
             System.exit(-1);
         }
     	
-    	// "CPATH2_HOME" env. var. must be set (mainly for log4j config)
+    	// "CPATH2_HOME" env. var. must be set
         String home = System.getenv(HOME_VARIABLE_NAME);
     	if (home==null) {
             System.err.println("Please set " + HOME_VARIABLE_NAME 
@@ -760,8 +760,7 @@ public class Admin implements Runnable {
     	}
     	
     	// configure logging
-    	PropertyConfigurator.configure(home + File.separator 
-    			+ "log4j.properties");
+    	PropertyConfigurator.configure(home + File.separator + "log4j.properties");
 
     	// set JVM property to be used by other modules (in spring context)
     	System.setProperty(HOME_VARIABLE_NAME, home);

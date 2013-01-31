@@ -33,6 +33,7 @@
 			<artifactId>cpath-admin</artifactId>
 			<version>${project.version}</version>
 			<scope>runtime</scope>
+			<classifier>executable</classifier>
 		</dependency>
 		<dependency>
 			<groupId>pathwaycommons.cpath</groupId>
@@ -42,4 +43,5 @@
 			<type>war</type>
 		</dependency>
 	</dependencies>
+		
 </project>
