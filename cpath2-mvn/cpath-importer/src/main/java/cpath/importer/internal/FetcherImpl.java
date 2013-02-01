@@ -153,7 +153,8 @@ final class FetcherImpl implements Fetcher
                  * class name, if any), will be added to the tokens array as well.
                  */
                 // TODO: update when data moved to, e.g., a wiki page; by the way, <br> is wrong html tag...
-                String[] tokens = line.split("<br>",-1); 
+                String[] tokens = line.split("<br>",-1);
+                
 				if (log.isDebugEnabled()) {
 					log.debug("readMetadata(), token size: " + tokens.length);
 					for (String token : tokens) {
@@ -177,7 +178,7 @@ final class FetcherImpl implements Fetcher
 				}
 
 				// get metadata type
-				Metadata.TYPE metadataType = Metadata.TYPE.valueOf(tokens[METADATA_TYPE_INDEX]);
+				Metadata.METADATA_TYPE metadataType = Metadata.METADATA_TYPE.valueOf(tokens[METADATA_TYPE_INDEX]);
 
 				// get icon data from service
 				if(log.isInfoEnabled())
@@ -466,18 +467,30 @@ final class FetcherImpl implements Fetcher
 	/* (non-Javadoc)
 	 * @see cpath.fetcher.WarehouseDataService#storeWarehouseData(cpath.warehouse.beans.Metadata, org.biopax.paxtools.model.Model)
 	 */
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * Note: this method is now called from {@link PremergeImpl}.
+	 */
 	@Override
     public void storeWarehouseData(final Metadata metadata, final Model model) 
 		throws IOException 
 	{
-		// use the local file (previously fetched from metadata.urlTodata)
+		//shortcut for other/system warehouse data (not to be converted to BioPAX)
+		if(metadata.getConverterClassname() == null 
+				|| metadata.getConverterClassname().isEmpty()) 
+		{
+			log.info("storeWarehouseData(..), skip (no need to clean/convert) for: "
+				+ metadata.getIdentifier() + " version: " + metadata.getVersion());
+			return;
+		}
+		
+		
+		// use the local file (MUST have been previously fetched!)
 		String urlStr = "file://" + metadata.localDataFile();
-		InputStream is = new BufferedInputStream(LOADER.getResource(urlStr)
-				.getInputStream());
-		if (log.isInfoEnabled())
-			log.info("storeWarehouseData(..): input stream is now open for provider: "
-					+ metadata.getIdentifier() + " version: "
-					+ metadata.getVersion());
+		InputStream is = new BufferedInputStream(LOADER.getResource(urlStr).getInputStream());
+		log.info("storeWarehouseData(..): input stream is now open for provider: "
+			+ metadata.getIdentifier() + " version: " + metadata.getVersion());
 		
 		try {
 			// get an input stream from a resource file that is either .gz or
@@ -489,9 +502,8 @@ final class FetcherImpl implements Fetcher
 				ZipInputStream zis = new ZipInputStream(is);
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				while ((entry = zis.getNextEntry()) != null) {
-					if (log.isInfoEnabled())
-						log.info("storeWarehouseData(..): processing zip entry: " 
-							+ entry.getName());
+					log.info("storeWarehouseData(..): processing zip entry: " 
+						+ entry.getName());
 					// write file to buffered output stream
 					int count;
 					byte data[] = new byte[BUFFER];
@@ -507,16 +519,13 @@ final class FetcherImpl implements Fetcher
 				is = new ByteArrayInputStream(baos.toByteArray());
 				
 			} else {
-				if (log.isInfoEnabled())
-					log.info("storeWarehouseData(..): not using un(g)zip " +
-						"(cannot guess from the extension) for " + urlStr);
+				log.info("storeWarehouseData(..): not using un(g)zip " +
+					"(cannot guess from the extension) for " + urlStr);
 			}
 
-			if (log.isInfoEnabled()) {
-				log.info("storeWarehouseData(..): creating EntityReference objects, " +
-						"provider: " + metadata.getIdentifier() + " version: "
-						+ metadata.getVersion());
-			}
+			log.info("storeWarehouseData(..): creating EntityReference objects, " +
+				"provider: " + metadata.getIdentifier() + " version: "
+					+ metadata.getVersion());
 
 			// hook into a cleaner for given provider
 			// Try to instantiate the Cleaner (if any) sooner, and exit if it fails!
@@ -572,7 +581,7 @@ final class FetcherImpl implements Fetcher
 				else 
 					log.error(("storeWarehouseData(..): failed to create " +
 						"the Converter class: " + cl
-						+ "; so skipping for this warehouse data..."));
+							+ "; so skipping for this warehouse data..."));
 			} else {
 				log.info("storeWarehouseData(..): No Converter class was specified; " +
 					"so nothing else left to do");

@@ -61,7 +61,7 @@ import cpath.importer.internal.ImportFactory;
 public class UniprotConverterImplTest {
 
 	/**
-	 * Test method for {@link cpath.converter.internal.UniprotConverterImpl#convert(java.io.InputStream)}.
+	 * Test method for {@link cpath.converter.internal.UniprotConverterImpl#convert(java.io.InputStream, Object...)}.
 	 * @throws IOException 
 	 */
 	@Test

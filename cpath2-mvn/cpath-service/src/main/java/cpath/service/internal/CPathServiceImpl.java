@@ -426,7 +426,7 @@ class CPathServiceImpl implements CPathService {
 					// collect metadata identifiers of pathway data sources
 					final Map<String, Metadata> metadataMap = new HashMap<String, Metadata>();
 					for(Metadata met : metadataDAO.getAllMetadata())
-						if(!met.getType().isWarehouseData())
+						if(!met.getType().isNotPathwayData())
 							metadataMap.put(met.getUri(), met);
 					
 					// find all Provenance instances and filter them out

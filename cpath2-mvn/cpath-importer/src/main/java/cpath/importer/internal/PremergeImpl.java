@@ -32,6 +32,7 @@ import cpath.config.CPathSettings.CPath2Property;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Cleaner;
+import cpath.importer.Fetcher;
 import cpath.importer.Premerge;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
@@ -65,11 +66,11 @@ final class PremergeImpl implements Premerge {
 	private final String xmlBase;
 
     private MetadataDAO metaDataDAO;
+    private PaxtoolsDAO moleculesDAO;
 	private Validator validator;
 	private Cleaner cleaner;
 	private boolean createDb;
 	private String identifier;
-	private String version;
 
 	/**
 	 * Constructor.
@@ -77,14 +78,16 @@ final class PremergeImpl implements Premerge {
 	 * @param metaDataDAO
 	 * @param validator Biopax Validator
 	 */
-	PremergeImpl(final MetadataDAO metaDataDAO, final Validator validator) 
+	PremergeImpl(final MetadataDAO metaDataDAO, final PaxtoolsDAO moleculesDAO, final Validator validator) 
 	{
 		this.metaDataDAO = metaDataDAO;
+		this.moleculesDAO = moleculesDAO;
 		this.validator = validator;
 		this.createDb = true;
 		this.xmlBase = CPathSettings.get(CPath2Property.XML_BASE);
 	}
 
+	
     /**
 	 * (non-Javadoc)
 	 * @see cpath.importer.Premerge#premerge
@@ -92,6 +95,8 @@ final class PremergeImpl implements Premerge {
 	@Override
     public void premerge() {
 
+		Fetcher fetcher = ImportFactory.newFetcher();
+		
 		// grab all metadata
 		Collection<Metadata> metadataCollection = metaDataDAO.getAllMetadata();
 
@@ -101,28 +106,52 @@ final class PremergeImpl implements Premerge {
 			if(identifier != null) {
 				if(!metadata.getIdentifier().equals(identifier))
 					continue;
-				if(version != null)
-					if(!metadata.getVersion().equals(version))
-						continue;
+			}
+				
+			try {
+			
+			if (metadata.getType().isNotPathwayData()) {
+				log.info("premerge(): converting and saving Warehouse data...");
+				fetcher.storeWarehouseData(metadata, (Model)moleculesDAO);
+			} else  {
+					
+				// collect pathway data versions of the same provider
+				Collection<String> savedVersions = new HashSet<String>();
+				for(PathwayData pd: metaDataDAO.getPathwayDataByIdentifier(metadata.getIdentifier()))
+					savedVersions.add(pd.getVersion());
+					
+				// lets not fetch the same version data
+				if (!savedVersions.contains(metadata.getVersion())) {
+					log.info("premerge(): reading the new original pathway data: " +
+						metadata.getIdentifier() + ", ver. " + metadata.getVersion());
+					
+					// grab the data
+					Collection<PathwayData> pathwayData =
+						fetcher.getProviderPathwayData(metadata);
+	        
+					// process pathway data
+					for (PathwayData pwData : pathwayData) {
+						metaDataDAO.importPathwayData(pwData);
+					}
+				} 
+					
+				processPathwayData(metadata);		
 			}
 			
-			// only process interaction or pathway data
-			if (!metadata.getType().isWarehouseData()) {
-				process(metadata);
+			} catch (Exception e) {
+				log.error("premerge(), error: ", e);
 			}
 		}
 	}
 
+	
 	/**
 	 * (non-Javadoc)
 	 * @see java.lang.Thread#run()
 	 */
-	private void process(Metadata metadata) {
-	  try {
+	private void processPathwayData(Metadata metadata) {
 		// get pathway data
-		if(log.isInfoEnabled())
-			log.info("run(), getting pathway data for provider " 
-					+ metadata);
+		log.info("run(), getting pathway data for provider " + metadata);
 		Collection<PathwayData> pathwayDataCollection =
 			metaDataDAO.getPathwayDataByIdentifierAndVersion(metadata.getIdentifier(), metadata.getVersion());
 
@@ -147,18 +176,14 @@ final class PremergeImpl implements Premerge {
 			// first, create a new database schema
 			String premergeDbName = "cpath2_"
 				+ metadata.getIdentifier() + "_" + metadata.getVersion();
-			if(log.isInfoEnabled())
-				log.info("Creating a new 'pre-merge' db and schema: " +
-						premergeDbName);
+			log.info("Creating a new 'pre-merge' db and schema: " + premergeDbName);
 			DataServicesFactoryBean.createSchema(premergeDbName);
 			// next, get the PaxtoolsDAO instance
 			pemergeDAO = ImportFactory.buildPaxtoolsHibernateDAO(premergeDbName);
 		}
 	
 		// iterate over and process all pathway data
-		if(log.isInfoEnabled())
-			log.info("run(), interating over pathway data " 
-				+ metadata.getIdentifier());
+		log.info("run(), interating over pathway data " + metadata.getIdentifier());
 		for (PathwayData pathwayData : pathwayDataCollection) {
 			try {
 				pipeline(metadata, pathwayData, pemergeDAO);
@@ -168,15 +193,10 @@ final class PremergeImpl implements Premerge {
 				e.printStackTrace();
 			}
 		}
-
-	  }
-	  finally {
-		if(log.isInfoEnabled()) {
-			log.info("run(), exitting (" + metadata.getIdentifier() + ") ...");
-		}
-	  }
+	
 	}
 
+	
 	/**
 	 * Pushes given PathwayData through pipeline.
 	 *
@@ -201,10 +221,8 @@ final class PremergeImpl implements Premerge {
 		}
 		
 		// Second, if psi-mi, convert to biopax L3
-		if (metadata.getType() == Metadata.TYPE.PSI_MI) {
-			if (log.isInfoEnabled())
-				log.info("pipeline(), converting psi-mi data "
-						+ info);
+		if (metadata.getType() == Metadata.METADATA_TYPE.PSI_MI) {
+			log.info("pipeline(), converting psi-mi data " + info);
 			try {
 				data = convertPSIToBioPAX(data, metadata);
 			} catch (RuntimeException e) {
@@ -374,12 +392,4 @@ final class PremergeImpl implements Premerge {
 				? null : identifier;
 	}
 
-	String getVersion() {
-		return version;
-	}
-	void setVersion(String version) {
-		this.version = (version == null || version.isEmpty()) 
-				? null : version;
-	}
-	
 }

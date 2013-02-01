@@ -55,7 +55,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 
-//@Ignore //disabled to build faster - TODO remove this annotation to enable tests, e.g., after switching to a new validator version
+@Ignore //disabled to build faster - TODO remove this annotation to enable tests, e.g., after switching to a new validator version
 
 /**
  * Extra integration tests for the BioPAX Validator 

@@ -49,7 +49,7 @@ import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.ServiceResponse;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.Metadata.TYPE;
+import cpath.warehouse.beans.Metadata.METADATA_TYPE;
 
 import java.io.IOException;
 
@@ -74,7 +74,7 @@ public class CPathServiceTest {
 		Model m = io.convertFromOWL(CPathServiceTest.class
 				.getResourceAsStream("/test.owl"));
 		Metadata md = new Metadata("test", "Reactome", "00", 
-				"Foo", "", "", new byte[]{}, TYPE.BIOPAX, "", "");
+				"Foo", "", "", new byte[]{}, METADATA_TYPE.BIOPAX, "", "");
 		mdao.importMetadata(md);
 		md.setProvenanceFor(m); // normally, this happens in PreMerge
 		dao.merge(m);

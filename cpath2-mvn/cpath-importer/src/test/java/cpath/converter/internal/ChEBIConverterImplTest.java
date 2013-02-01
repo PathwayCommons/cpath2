@@ -29,7 +29,7 @@ import java.io.InputStream;
 public class ChEBIConverterImplTest {
 
 	/**
-	 * Test method for {@link cpath.converter.internal.ChEBIConverterImpl#convert(java.io.InputStream)}.
+	 * Test method for {@link cpath.converter.internal.ChEBIConverterImpl#convert(java.io.InputStream, Object...)}.
 	 * @throws IOException 
 	 */
 	@Test
@@ -41,9 +41,9 @@ public class ChEBIConverterImplTest {
 		model.setXmlBase("test/"); // some xml:base
 
 		// setup the converter using a special constructor to set mock chebi.obo data
-		Converter converter = ImportFactory.newConverter("cpath.converter.internal.ChEBITestConverterImpl");
+		Converter converter = ImportFactory.newConverter("cpath.converter.internal.ChEBIConverterImpl");
 		converter.setModel(model);
-		converter.convert(is);
+		converter.convert(is, "classpath:chebi.obo");
 		
 		// dump owl for review
 		String outFilename = getClass().getClassLoader().getResource("").getPath() 

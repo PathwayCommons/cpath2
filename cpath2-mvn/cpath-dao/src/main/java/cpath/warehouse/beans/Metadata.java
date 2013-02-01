@@ -28,22 +28,22 @@ public final class Metadata {
 
     private static final Pattern BAD_ID_PATTERN = Pattern.compile("\\s|-");
 	
-	// TYPE Enum
-    public static enum TYPE {
-        // command types
-        PSI_MI(false),
-		BIOPAX(false),
-		PROTEIN(true),
-		SMALL_MOLECULE(true);
+	// METADATA_TYPE Enum
+    public static enum METADATA_TYPE {
+        // data types
+        PSI_MI(true),
+		BIOPAX(true),
+		WAREHOUSE(false),
+		MAPPING(false);
         
-        private final boolean warehouseData;
+        private final boolean pathwayData;
         
-        private TYPE(boolean warehouseData) {
-			this.warehouseData = warehouseData;
+        private METADATA_TYPE(boolean isPathwayData) {
+			this.pathwayData = isPathwayData;
 		}
         
-        public boolean isWarehouseData() {
-			return warehouseData;
+        public boolean isNotPathwayData() {
+			return !pathwayData;
 		}
         
     }
@@ -66,7 +66,7 @@ public final class Metadata {
     private byte[] icon;
 	@Column(nullable=false)
 	@Enumerated(EnumType.STRING)
-    private TYPE type;
+    private METADATA_TYPE metadata_type;
     private String cleanerClassname;
     private String converterClassname;
 
@@ -91,7 +91,7 @@ public final class Metadata {
      * @throws IllegalArgumentException
      */
     public Metadata(final String identifier, final String name, final String version, final String description, final String urlToData,
-					String urlToHomepage, final byte[] icon, final TYPE type, final String cleanerClassname, final String converterClassname) {
+					String urlToHomepage, final byte[] icon, final METADATA_TYPE metadata_type, final String cleanerClassname, final String converterClassname) {
 
     	//set/validate all parameters
     	setIdentifier(identifier); 
@@ -101,7 +101,7 @@ public final class Metadata {
         setUrlToData(urlToData);
         setUrlToHomepage(urlToHomepage);
         setIcon(icon);
-        setType(type);
+        setType(metadata_type);
         setCleanerClassname(cleanerClassname);
         setConverterClassname(converterClassname);
     }
@@ -201,13 +201,13 @@ public final class Metadata {
 	}
     public byte[] getIcon() { return icon.clone(); }
 
-	public void setType(TYPE type) {
-        if (type == null) {
-            throw new IllegalArgumentException("type must not be null");
+	public void setType(METADATA_TYPE metadata_type) {
+        if (metadata_type == null) {
+            throw new IllegalArgumentException("metadata_type must not be null");
         }
-        this.type = type;
+        this.metadata_type = metadata_type;
 	}
-    public TYPE getType() { return type; }
+    public METADATA_TYPE getType() { return metadata_type; }
 
 	public void setCleanerClassname(String cleanerClassname) {
 		if(cleanerClassname == null || cleanerClassname.trim().length() == 0)
@@ -245,13 +245,16 @@ public final class Metadata {
     @Transient
     public String localDataFile() {
     	String name = CPathSettings.localDataDir() 
-    	+ File.separator + identifier + "." + version;
+    	+ File.separator + identifier;
     	
-    	// add the file extension, if any, if different from the version...
+    	if(version != null && !version.isEmpty())
+    		name += "." + version;
+    	
+    	// add the file extension, if any
 		int idx = urlToData.lastIndexOf('.');
 		if(idx >= 0) {
 			String ext = urlToData.substring(idx+1);
-			if(!version.equals(ext))
+			if(!ext.isEmpty())
 				name += "." + ext;
 		}
 		
@@ -301,7 +304,7 @@ public final class Metadata {
 		pro.addComment("Source " + 
 			//skip for a local or empty (default) location
 			((loc.startsWith("http:") || loc.startsWith("ftp:")) ? loc : "") 
-			+ " type: " + getType() + "; version: " + 
+			+ " metadata_type: " + getType() + "; version: " + 
 			getVersion() + ", " + getDescription());
 		
 		// replace for all entities

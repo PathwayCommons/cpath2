@@ -173,7 +173,7 @@ sh cpath2.sh -create-tables cpathmain,cpathwarehouse,cpathmetadata
 sh cpath2.sh -fetch-metadata "file:///full-path/metadata.conf"
 
 2. Fetch Data (download, parse, clean, convert, and store data locally)
-sh cpath2.sh -fetch-data --all
+sh cpath2.sh -fetch-data
 - gets all warehouse and pathway data sequentially; one can also import, e.g., CHEBI only: 
 sh cpath2.sh -fetch-data CHEBI
 (WARNING: do not run multiple parallel '-fetch-data' processes that import the same TYPE of data)

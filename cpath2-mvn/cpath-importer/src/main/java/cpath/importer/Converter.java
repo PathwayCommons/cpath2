@@ -26,6 +26,7 @@ public interface Converter {
 	 * Model is set/passed by reference.
 	 *
 	 * @param is InputStream
+	 * @param optionalArgs optional implementation-specific parameters (might be external resource locations, etc.)
 	 */
-	void convert(final InputStream is);
+	void convert(final InputStream is, Object... optionalArgs);
 }
