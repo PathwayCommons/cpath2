@@ -103,20 +103,19 @@ public final class ImportFactory {
 	 * with given metadata identifier and version.
 	 * 
 	 * @param metadataDAO
+	 * @param warehouseDAO
 	 * @param biopaxValidator
 	 * @param createPremergeDatabases optionally (when 'true'), it persists the result 
 	 * data in separate auto-generated "premerge" cpath2 Dbs instead (when 'false') in the pathwayData table.
 	 * @param metadataIdentifier pathway data provider identifier (from the metadata conf.)
-	 * @param version pathway data provider version (from the metadata conf.)
 	 * @return
 	 */
-	public static Premerge newPremerge(final MetadataDAO metadataDAO, final Validator biopaxValidator, 
-			final boolean createPremergeDatabases, final String metadataIdentifier, final String version) {
+	public static Premerge newPremerge(final MetadataDAO metadataDAO, PaxtoolsDAO warehouseDAO, 
+			final Validator biopaxValidator, final boolean createPremergeDatabases, final String metadataIdentifier) {
 		
-		PremergeImpl premerge = new PremergeImpl(metadataDAO, biopaxValidator);		
+		PremergeImpl premerge = new PremergeImpl(metadataDAO, warehouseDAO, biopaxValidator);		
 		premerge.setCreateDb(createPremergeDatabases);
 		premerge.setIdentifier(metadataIdentifier);
-		premerge.setVersion(version);
 		
 		return premerge;
 	}
@@ -163,7 +162,8 @@ public final class ImportFactory {
 	 * @return Converter
 	 */
 	public static Converter newConverter(String converterClassName) {
-		return (Converter) newInstance(converterClassName);
+		Converter converter = (Converter) newInstance(converterClassName);
+		return converter;
 	}
 		
 	/**

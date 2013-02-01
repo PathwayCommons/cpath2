@@ -8,7 +8,6 @@ import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Fetcher;
 import cpath.warehouse.*;
 import cpath.warehouse.beans.*;
-import cpath.warehouse.beans.Metadata.TYPE;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
@@ -72,9 +71,7 @@ public class CPathMergerTest {
 
 		// load beans
 		ApplicationContext context = new ClassPathXmlApplicationContext(
-			new String[] {
-				"classpath:testContext-whDAO.xml", 
-				});
+				new String[] {"classpath:testContext-whDAO.xml"});
 		warehouseDAO = (WarehouseDAO) context.getBean("warehouseDAO");
 		metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 
@@ -88,7 +85,7 @@ public class CPathMergerTest {
 				// store metadata in the warehouse
 				metadataDAO.importMetadata(mdata);
 				fetcher.fetchData(mdata);
-				if (mdata.getType() == TYPE.PROTEIN || mdata.getType() == TYPE.SMALL_MOLECULE) {
+				if (mdata.getType().isNotPathwayData()) {
 					// build/store ERs in the warehouse
 					fetcher.storeWarehouseData(mdata, (Model)warehouseDAO);
 				}

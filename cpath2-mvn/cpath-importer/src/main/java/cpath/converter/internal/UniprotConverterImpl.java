@@ -42,10 +42,10 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 
 	/**
 	 * (non-Javadoc>
-	 * @see cpath.importer.Converter#convert(java.io.InputStream)
+	 * @see cpath.importer.Converter#convert(java.io.InputStream, Object...)
 	 */
 	@Override
-	public void convert(final InputStream is) {
+	public void convert(final InputStream is, Object... optionalArgs) {
 
 		// ref to reader here so
 		// we can close in finally clause

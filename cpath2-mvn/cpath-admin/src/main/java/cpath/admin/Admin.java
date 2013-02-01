@@ -144,29 +144,27 @@ public class Admin implements Runnable {
 			this.command = COMMAND.CREATE_INDEX;
         } 
         else if (args[0].equals(COMMAND.FETCH_METADATA.toString())) {
-			if (args.length < 2) {
+			if (args.length == 1) {
 				validArgs = false;
-			}
-			else {
+			} else {
 				this.command = COMMAND.FETCH_METADATA;
-				this.commandParameters = new String[] { args[1] };
+				this.commandParameters = new String[] {args[1]};
 			}
         }
 		else if (args[0].equals(COMMAND.FETCH_DATA.toString())) {
-			if (args.length < 2) {
-				validArgs = false;
-			} else {
-				this.command = COMMAND.FETCH_DATA;
-				this.commandParameters = new String[] { args[1] };
-			}
+			this.command = COMMAND.FETCH_DATA;
+			if (args.length >= 2) 
+				this.commandParameters = new String[] {args[1]};
+			else // command without extra parameter
+				this.commandParameters = new String[] {null};
 		}
 		else if (args[0].equals(COMMAND.PREMERGE.toString())) {
 			this.command = COMMAND.PREMERGE;
-			this.commandParameters = new String[] { null, null, "false" };
+			this.commandParameters = new String[] { null, "false" };
 			int j = 0;
-			for (int i = 1; i < args.length && i < 4; i++) {
+			for (int i = 1; i < args.length && i < 3; i++) {
 				if ("--usedatabases".equalsIgnoreCase(args[i])) {
-					this.commandParameters[2] = "true";
+					this.commandParameters[1] = "true";
 					break; // flag is always the last arg.
 				} else {
 					this.commandParameters[j++] = args[i];
@@ -175,11 +173,11 @@ public class Admin implements Runnable {
 		}
 		else if (args[0].equals(COMMAND.MERGE.toString())) {
 			this.command = COMMAND.MERGE;
-			this.commandParameters = new String[] { null, null, "false" };
+			this.commandParameters = new String[] { null, "false" };
 			int j = 0;
-			for (int i = 1; i < args.length && i < 4; i++) {
+			for (int i = 1; i < args.length && i < 3; i++) {
 				if ("--force".equalsIgnoreCase(args[i])) {
-					this.commandParameters[2] = "true";
+					this.commandParameters[1] = "true";
 					break; // flag is always the last arg.
 				} else {
 					this.commandParameters[j++] = args[i];
@@ -270,7 +268,7 @@ public class Admin implements Runnable {
                 fetchMetadata(commandParameters[0]);
 				break;
 			case FETCH_DATA:
-				fetchWarehouseData(commandParameters[0]);
+				fetchData(commandParameters[0]);
 				break;
 			case PREMERGE:
 				runPremerge(commandParameters[0], commandParameters[1], 
@@ -441,16 +439,19 @@ public class Admin implements Runnable {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-Metadata.xml", 
+            		"classpath:applicationContext-Warehouse.xml",
             		"classpath:applicationContext-biopaxValidation.xml", 
 					"classpath:applicationContext-cvRepository.xml"});
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
+		PaxtoolsDAO warehouseDAO = (PaxtoolsDAO) context.getBean("warehouseDAO");
 		Validator validator = (Validator) context.getBean("validator");
-        Premerge premerge = ImportFactory.newPremerge(metadataDAO, validator, createPremergeDbs, provider, version);
+        Premerge premerge = ImportFactory.newPremerge(metadataDAO, warehouseDAO, validator, createPremergeDbs, provider);
         LOG.info("runPremerge: provider=" + provider + "; version=" + version
     			+ "; DBs=" + createPremergeDbs);
         premerge.premerge();
 	}
 
+	
 	/**
      * Helper function to get provider metadata.
      *
@@ -475,12 +476,13 @@ public class Admin implements Runnable {
 
 
     /**
-     * Helper function to get warehouse (protein, small molecule) data.
+     * Downloads pathway or warehouse (protein, small molecule) data
+     * from the location specified in the metadata.
 	 *
      * @param provider String
      * @throws IOException
      */
-    private void fetchWarehouseData(final String provider) throws IOException {
+    private void fetchData(final String provider) throws IOException {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-Metadata.xml"});
@@ -489,29 +491,16 @@ public class Admin implements Runnable {
     	
 		// get metadata
 		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
-
 		// sanity check
 		if (metadataCollection == null || metadataCollection.isEmpty()) {
 			LOG.error("Unknown provider identifier: " + provider);
 			return;
 		}
-
-		// process small molecule references data
-		ApplicationContext contextM = new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:applicationContext-Warehouse.xml"});
-        PaxtoolsDAO smallMoleculesDAO = (PaxtoolsDAO) contextM.getBean("warehouseDAO");
-        
-        
-        ApplicationContext contextP = new ClassPathXmlApplicationContext(new String [] {
-		"classpath:applicationContext-whouseProteins.xml"});
-		PaxtoolsDAO moleculesDAO = (PaxtoolsDAO) contextP.getBean("warehouseDAO");
 		
 		// interate over all metadata
 		for (Metadata metadata : metadataCollection) {			
 			try {
-				/* it won't replace existing files (name: metadata.getLocalDataFile()),
-				 * which allows for manual correction of re-importing of previously fetched data
-				 */
+				//by default, it reuses files (name: metadata.getLocalDataFile()),
 				fetcher.fetchData(metadata); 
 			} catch (Exception e) {
 				LOG.error("Failed fetching data for " + metadata.toString() 
@@ -519,42 +508,7 @@ public class Admin implements Runnable {
 				continue;
 			}
 			
-			if (!metadata.getType().isWarehouseData()) 
-			{
-					// collect pathway data versions of the same provider
-					Collection<String> savedVersions = new HashSet<String>();
-					for(PathwayData pd: metadataDAO
-							.getPathwayDataByIdentifier(metadata.getIdentifier())) {
-						savedVersions.add(pd.getVersion());
-					}
-					// lets not fetch the same version data
-					if (!savedVersions.contains(metadata.getVersion())) {
-						// grab the data
-						Collection<PathwayData> pathwayData =
-								fetcher.getProviderPathwayData(metadata);
-	        
-						// process pathway data
-						for (PathwayData pwData : pathwayData) {
-							metadataDAO.importPathwayData(pwData);
-						}
-					} else {
-						if(LOG.isInfoEnabled())
-							LOG.info("Skipping existing pathway data (- same identifier and version)");
-					}
-			} 
-			else if (metadata.getType() == Metadata.TYPE.PROTEIN) 
-			{
-				// parse/save
-				fetcher.storeWarehouseData(metadata, (Model)moleculesDAO);
-        	} 
-			else if (metadata.getType() == Metadata.TYPE.SMALL_MOLECULE) 
-			{
-		        // parse/save
-				fetcher.storeWarehouseData(metadata, (Model)smallMoleculesDAO);
-			} 
-			
-			if(LOG.isInfoEnabled())
-				LOG.info("FETCHING DONE : " + metadata.getIdentifier()
+			LOG.info("FETCHING DONE : " + metadata.getIdentifier()
 					+ "." + metadata.getVersion());
 		}
 	}
@@ -569,7 +523,7 @@ public class Admin implements Runnable {
 	private Collection<Metadata> getMetadata(final MetadataDAO metadataDAO, final String provider) 
 	{
 		Collection<Metadata> toReturn = new HashSet<Metadata>();
-		if (provider.equalsIgnoreCase("--all")) {
+		if (provider == null || provider.isEmpty()) {
 			toReturn = metadataDAO.getAllMetadata();
 		} else {
 			Metadata md = metadataDAO.getMetadataByIdentifier(provider);
@@ -709,8 +663,8 @@ public class Admin implements Runnable {
 		toReturn.append(COMMAND.CREATE_TABLES.toString() + " [<table1,table2,..>]" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_DATA.toString() + " <metadataId or --all>" + NEWLINE);
-		toReturn.append(COMMAND.PREMERGE.toString() + " [<metadataId> [<version>]] [--usedatabases]" + NEWLINE);
-		toReturn.append(COMMAND.MERGE.toString() + " [<metadataId> [<version>]] [--force]"+ NEWLINE);
+		toReturn.append(COMMAND.PREMERGE.toString() + " [<metadataId>] [--usedatabases]" + NEWLINE);
+		toReturn.append(COMMAND.MERGE.toString() + " [<metadataId>] [--force]"+ NEWLINE);
 		toReturn.append(COMMAND.CREATE_INDEX.toString() + NEWLINE);
         toReturn.append(COMMAND.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
         toReturn.append(COMMAND.CREATE_DOWNLOADS.toString() + "[<taxonomy_id|name,taxonomy_id|name,..>] (better use standard names, "

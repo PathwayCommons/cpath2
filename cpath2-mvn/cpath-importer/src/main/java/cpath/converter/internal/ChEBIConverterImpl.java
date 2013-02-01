@@ -2,8 +2,6 @@ package cpath.converter.internal;
 
 import java.io.*;
 import java.net.URLEncoder;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -14,8 +12,9 @@ import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.utils.Normalizer;
 import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+
+import cpath.config.CPathSettings;
 
 
 /**
@@ -53,25 +52,9 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	 // loader can handle classpath:, file://, ftp://, http://  URL resources
 	private static final ResourceLoader LOADER = new DefaultResourceLoader();
 	
-	// url to chebi obo file
-	private final String chebiOboFileUrl;
-	
     
     // OBO converter
     private ChEBIOBOConverter oboConverter;	
-
-	/**
-	 * ChEBI OBO file official location
-	 */
-	public static final String CHEBI_OBO_RESOURCE_URL = 
-		"ftp://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi.obo";
-	
-	/**
-	 *  path to find in / download to (if not present) the chebi.obo file
-	 */
-	public static final String CHEBI_OBO_LOCAL_FILE = 
-		System.getProperty("java.io.tmpdir") 
-			+ System.getProperty("file.separator") + "chebi.obo";
 	
 	
 	// logger
@@ -98,38 +81,29 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	private static final Pattern CHEBI_EXT_LINK_OR_REGISTRY_REGEX =
 		Pattern.compile("> <(\\w+|\\w+\\-\\w+) (Registry Numbers|Database Links)>$");
 	
-
-	ChEBIConverterImpl() {
-		this(CHEBI_OBO_RESOURCE_URL);
-	}
-
 	
-	/**
-	 * Protected test Constructor to set a location of 
-	 * the chebi.obo file or a mock file 
-	 * (for testing).
-	 */
-	ChEBIConverterImpl(String chebiOBOFileURL) {
+	
+	ChEBIConverterImpl() {
 		this.oboConverter = new ChEBIOBOConverter(factory);
-		this.chebiOboFileUrl = chebiOBOFileURL;
-		if (log.isInfoEnabled()) {
-			log.info("CHEBI OBO FILE URL: " + chebiOboFileUrl);
-		}
 	}
-
+	
 	
 	@Override
-	public void convert(final InputStream is) {
+	public void convert(final InputStream is, Object... optionalArgs) {
 		
 		// first convert given SDF input stream and store SM in warehouse
 		if(System.getProperty(JAVA_OPT_SKIP_SDF) == null) {
 			convert(is, WhatEntryToProcess.PROCESS_SDF, SDF_ENTRY_START, SDF_ENTRY_END);
 		}
 		
+		String chebiOboFileUrl = "classpath:chebi.obo"; //default
+		if(optionalArgs.length == 1 && optionalArgs[0] != null)
+			chebiOboFileUrl = optionalArgs[0].toString();
+		
 		// Note - we are only converting ChEBI now, so assume OBO processing required
 		InputStream oboIS = null;
 		try {
-			oboIS = getChEBIOBOInputStream();
+			oboIS = LOADER.getResource(chebiOboFileUrl).getInputStream();
 			convert(oboIS, WhatEntryToProcess.PROCESS_OBO, CHEBI_OBO_ENTRY_START, CHEBI_OBO_ENTRY_END);
 		}
 		catch (IOException e) {
@@ -193,15 +167,15 @@ class ChEBIConverterImpl extends BaseConverterImpl
 						line = bufferedReader.readLine();
 					}
 					if (whatEntryToProcess==WhatEntryToProcess.PROCESS_SDF) {
-						processSDFEntry(entryBuffer);
+				       	log.debug("calling processSDFEntry()");
+				        // build a new SMR with its dependent elements
+						buildSmallMoleculeReference(entryBuffer);
 					}
 					else if (whatEntryToProcess==WhatEntryToProcess.PROCESS_OBO) {
 						oboConverter.processOBOEntry(entryBuffer);
 					}
                 }
             }
-//            // quick fix - mainly for testing (without DAO)
-//           	model.repair();
         }
 		catch (IOException e) {
 			log.error(e);
@@ -221,80 +195,6 @@ class ChEBIConverterImpl extends BaseConverterImpl
         }
     }
 
-	/**
-	 * Given a string buffer for a single SDF entry,
-	 * create a BioPAX Entity reference.
-	 *
-	 * @param entryBuffer StringBuilder
-	 * @throws IOException
-	 */
-	private void processSDFEntry(StringBuilder entryBuffer) throws IOException { 
-        if (log.isDebugEnabled()) {
-        	log.debug("calling processSDFEntry()");
-        }
-        // build a new SMR with its dependent elements
-		SmallMoleculeReference smr = buildSmallMoleculeReference(entryBuffer);
-	}
-	
-	
-	/**
-	 * Method to download and return an InputStream to the OBO file.
-	 * @return InputStream
-	 * @throws IOException
-	 */
-	private InputStream getChEBIOBOInputStream() throws IOException 
-	{
-		File localFile = new File(ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
-		
-		if (!CHEBI_OBO_RESOURCE_URL.equalsIgnoreCase(chebiOboFileUrl)) { // - means testing
-			log.info("Using test OBO file at: " + chebiOboFileUrl);
-			return LOADER.getResource(chebiOboFileUrl).getInputStream();
-		}
-		else if(!localFile.exists() || !localFile.isFile() || localFile.length() == 0) {
-			log.info("Using OBO file at: " + CHEBI_OBO_RESOURCE_URL);
-			// get the file and save locally
-			Resource resource = LOADER.getResource(CHEBI_OBO_RESOURCE_URL);
-			if (resource.exists()) {
-					long size = resource.contentLength();
-					if(log.isInfoEnabled()) {
-						if (size == -1) {
-							log.info(CHEBI_OBO_RESOURCE_URL + " content length = " + size);
-						}
-						else {
-							log.info(CHEBI_OBO_RESOURCE_URL + " content length = -1, " +
-									 "this does not necessarily mean resource does not exist, " +
-									 "attempting to fetch by setting content length to Long.MAX_VALUE");
-						}
-					}
-					// resource.contentLength() does not work on (at least) miso-dev, it returns -1
-					// if so, set to MAX_VALUE (else transferFrom() will throw an exception).  this
-					// will not break the call to transferFrom below - 
-					// fewer than the requested number of bytes will be transferred if the source channel 
-					// has fewer than count bytes remaining
-					size = (size == -1) ? Long.MAX_VALUE : size;
-					ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
-					FileOutputStream dest = new FileOutputStream(ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
-					size = dest.getChannel().transferFrom(source, 0, size); // can throw runtime exceptions
-					if (log.isInfoEnabled()) {
-						log.info(size + " bytes downloaded from " + CHEBI_OBO_RESOURCE_URL 
-								 + " and saved to " + ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
-					}
-			}
-			else {
-				// resource does not exist
-				if (log.isInfoEnabled()) {
-					log.info("resource does not exist: " + CHEBI_OBO_RESOURCE_URL);
-				}
-				throw new IOException("resource does not exist: " + CHEBI_OBO_RESOURCE_URL);
-			}
-		} else { 
-			// use the existing file 
-			log.info("Re-using the existing ontology file: " + ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
-		}
-		
-		return new FileInputStream(ChEBIConverterImpl.CHEBI_OBO_LOCAL_FILE);
-	}
-	
 	
 	/**
 	 * Creates a new small molecule 
@@ -333,8 +233,6 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		for (String id : getValues(entryBuffer, CHEBI_SECONDARY_ID)) {
 			toReturn.addXref(getXref(UnificationXref.class, id, "ChEBI"));
 		}		
-		// chemical structure - we use InChI, not smiles
-		String[] rdfIDParts = toReturn.getRDFId().split(COLON_DELIMITER);
 
 		String chemicalStructureID = Normalizer.uri(model.getXmlBase(), "chebi", chebiId, ChemicalStructure.class);
 
@@ -366,7 +264,6 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		// database links
 		setChEBIDatabaseLinks(entryBuffer, CHEBI_DATABASE_REGEX, toReturn);
 		
-		// outta here
 		return toReturn;
 	}
 	

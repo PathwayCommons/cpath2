@@ -17,7 +17,7 @@ import cpath.config.CPathSettings.CPath2Property;
 import cpath.importer.internal.FetcherImpl;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
-import cpath.warehouse.beans.Metadata.TYPE;
+import cpath.warehouse.beans.Metadata.METADATA_TYPE;
 
 //@Ignore
 public class CPathFetcherTest {
@@ -42,7 +42,7 @@ public class CPathFetcherTest {
 		String url = "classpath:metadata.conf";
 		System.out.println("Loading metadata from " + url);
 		Collection<Metadata> metadatas = fetcher.getMetadata(url);
-		assertEquals(6, metadatas.size());
+		assertEquals(7, metadatas.size());
 		Metadata metadata = null;
 		for(Metadata mt : metadatas) {
 			if(mt.getIdentifier().equals("TEST_UNIPROT")) {
@@ -51,7 +51,7 @@ public class CPathFetcherTest {
 			}
 		}
 		assertNotNull(metadata);
-		assertEquals(TYPE.PROTEIN, metadata.getType());
+		assertEquals(METADATA_TYPE.WAREHOUSE, metadata.getType());
 	}
 	
 	@Test
@@ -66,7 +66,7 @@ public class CPathFetcherTest {
 				location,
 				"http://www.uniprot.org", 
 				new byte[]{}, 
-				Metadata.TYPE.PROTEIN,
+				Metadata.METADATA_TYPE.WAREHOUSE,
 				null, "cpath.converter.internal.UniprotConverterImpl");
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
@@ -84,8 +84,8 @@ public class CPathFetcherTest {
 				location,
 				"http://www.ebi.ac.uk/chebi/", 
 				new byte[]{}, 
-				Metadata.TYPE.SMALL_MOLECULE, 
-				null, "cpath.converter.internal.ChEBITestConverterImpl");
+				Metadata.METADATA_TYPE.WAREHOUSE, 
+				null, "cpath.converter.internal.ChEBIConverterImpl");
 		fetcher.fetchData(metadata);
 		fetcher.storeWarehouseData(metadata, model);
 		assertFalse(((Model)model).getObjects(SmallMoleculeReference.class).isEmpty());
@@ -103,7 +103,7 @@ public class CPathFetcherTest {
 				location,
 				"", 
 				new byte[]{}, 
-				Metadata.TYPE.BIOPAX, // no cleaner (same as using "")
+				Metadata.METADATA_TYPE.BIOPAX, // no cleaner (same as using "")
 				null
 				, "" // no converter
 				);

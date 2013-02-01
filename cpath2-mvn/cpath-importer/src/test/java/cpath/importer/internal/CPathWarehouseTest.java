@@ -61,7 +61,6 @@ import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.warehouse.*;
 import cpath.warehouse.beans.*;
-import cpath.warehouse.beans.Metadata.TYPE;
 
 /**
  * Test the WarehouseDAO implementation,
@@ -99,7 +98,7 @@ public class CPathWarehouseTest {
 			for (Metadata mdata : metadata) {
 				metadataDAO.importMetadata(mdata);
 				fetcher.fetchData(mdata);
-				if (mdata.getType() == TYPE.PROTEIN || mdata.getType() == TYPE.SMALL_MOLECULE) {
+				if (mdata.getType().isNotPathwayData()) {
 					fetcher.storeWarehouseData(mdata, (Model) warehouse);
 				} else { // pathways
 					Collection<PathwayData> pathwayData = fetcher
