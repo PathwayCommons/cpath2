@@ -26,7 +26,6 @@ import java.io.*;
  * Implementation of {@link Converter} interface for UniProt data.
  * 
  * TODO TBD: for various data and semantic issues, neither information about protein isoforms nor separate protein refs are currently saved.
- * 
  * @see http://web.expasy.org/docs/userman.html
  * @see http://www.uniprot.org/faq/30
  */
@@ -40,17 +39,14 @@ final class UniprotConverterImpl extends BaseConverterImpl {
      */
 	UniprotConverterImpl() {}
 
-	/**
-	 * (non-Javadoc>
-	 * @see cpath.importer.Converter#convert(java.io.InputStream, Object...)
-	 */
+
 	@Override
 	public void convert(final InputStream is, Object... optionalArgs) {
 
 		// ref to reader here so
 		// we can close in finally clause
         InputStreamReader reader= null;
-
+        
         try {
             reader = new InputStreamReader(is, "UTF-8");
             BufferedReader bufferedReader = new BufferedReader(reader);
@@ -83,8 +79,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     if (xrefs != null) {
                         setXRefsFromDRs(xrefs.toString(), proteinReference);
                     }
-                    
-                    //TODO add a rel. xref from the short name (e.g., db="UniProt Symbol")        
+                          
                     setNameAndSynonyms(proteinReference, deField);
                     
                     setOrganism(organismName, organismTaxId, proteinReference);
@@ -398,18 +393,19 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 	private ProteinReference newUniProtWithXrefs(String shortName, String accessions) 
 	{	
 		// accession numbers as array
-		String acList[] = accessions.split(";");
+		final String acList[] = accessions.split(";");
 		// the first one, primary id, becomes the RDFId
-		String id = "http://identifiers.org/uniprot/" + acList[0].trim().toUpperCase();
-		// create new pr
-		ProteinReference proteinReference = model.addNew(ProteinReference.class, id);
+		final String primaryId = acList[0].trim();
+		final String uri = "http://identifiers.org/uniprot/" + primaryId;
+		// create a new PR
+		ProteinReference proteinReference = model.addNew(ProteinReference.class, uri);
 		proteinReference.setDisplayName(shortName);
-
+		proteinReference.getAnnotations().put("primaryId", primaryId);
+		
 		// add all unification xrefs
 		for (String acEntry : acList) {
 			String ac = acEntry.trim();
 			setUnificationXRef("UniProt", ac, proteinReference);
-//TODO not sure (may add as rel. xref)			setUnificationXRef("UniProt Symbol", shortName, proteinReference);
 		}
 		
 		return proteinReference;
@@ -452,7 +448,6 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 						.uri(model.getXmlBase(), "TAXONOMY", taxId, UnificationXref.class));
 				taxonXref.setDb("taxonomy");
 				taxonXref.setId(taxId);
-				// TODO update when taxonXref is removed (deprecated property)
 				toReturn.addXref((UnificationXref) taxonXref);
 			}
 		}

@@ -41,8 +41,8 @@ public class CPathFetcherTest {
 	public void testGetMetadata() throws IOException {
 		String url = "classpath:metadata.conf";
 		System.out.println("Loading metadata from " + url);
-		Collection<Metadata> metadatas = fetcher.getMetadata(url);
-		assertEquals(7, metadatas.size());
+		Collection<Metadata> metadatas = fetcher.readMetadata(url);
+		assertEquals(8, metadatas.size());
 		Metadata metadata = null;
 		for(Metadata mt : metadatas) {
 			if(mt.getIdentifier().equals("TEST_UNIPROT")) {
@@ -110,7 +110,7 @@ public class CPathFetcherTest {
 		
 		fetcher.fetchData(metadata);
 		Collection<PathwayData> pathwayData =
-			fetcher.getProviderPathwayData(metadata);
+			fetcher.readPathwayData(metadata);
 		PathwayData pd = pathwayData.iterator().next();
 		String owl = new String(pd.getPathwayData());
 		assertTrue(owl != null && owl.length() > 0);

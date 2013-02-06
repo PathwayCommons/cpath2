@@ -49,7 +49,7 @@ public interface Fetcher {
      * @return Collection<Metadata>
      * @throws IOException if an IO error occurs
      */
-    Collection<Metadata> getMetadata(final String url) throws IOException;
+    Collection<Metadata> readMetadata(final String url) throws IOException;
     
     
     
@@ -60,7 +60,7 @@ public interface Fetcher {
      * @return Collection<PathwayData>
      * @throws IOException if an IO error occurs
      */
-    Collection<PathwayData> getProviderPathwayData(final Metadata metadata) throws IOException;
+    Collection<PathwayData> readPathwayData(final Metadata metadata) throws IOException;
     
     
     /**

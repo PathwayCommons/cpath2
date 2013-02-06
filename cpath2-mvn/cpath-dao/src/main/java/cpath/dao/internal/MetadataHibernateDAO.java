@@ -2,6 +2,7 @@ package cpath.dao.internal;
 
 // imports
 import cpath.warehouse.MetadataDAO;
+import cpath.warehouse.beans.IdMapping;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
@@ -24,9 +25,12 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -297,5 +301,67 @@ class MetadataHibernateDAO  implements MetadataDAO {
 				+ "; passed: " + pd.getValid() + ")");
 
 		return map;
+	}
+
+	@Transactional
+	@Override
+	public void importIdMapping(Map<String, String> idMap) {
+		Session ses = getSession();
+		for(Map.Entry<String, String> ent : idMap.entrySet()) {
+			ses.merge(new IdMapping(ent.getKey(), ent.getValue()));
+		}
+	}
+
+	@Transactional
+	@Override
+	public IdMapping getMapping(String id) {
+		return (IdMapping) getSession().get(IdMapping.class, id);
+	}
+
+
+	@Transactional
+	@Override
+	public Collection<IdMapping> getInverseMapping(String primaryId) {
+		Session session = getSession();
+		Query query = session.getNamedQuery("cpath.warehouse.beans.inverseMapping");
+		query.setParameter("accession", primaryId);
+		List<IdMapping> res = query.list();
+		return (!res.isEmpty()) 
+				? new ArrayList<IdMapping>(res) 
+					: Collections.EMPTY_SET;
+	}
+	
+
+	@Override
+	public Collection<String> getIdsByPrimaryId(String primaryId) {
+		Collection<IdMapping> res = getInverseMapping(primaryId);		
+		Set<String> ids = new HashSet<String>(res.size());		
+		if(!res.isEmpty())
+			for(IdMapping m : res)
+				ids.add(m.getIdentifier());
+		
+		return ids;
+	}
+
+	
+	@Transactional
+	@Override
+	public Collection<IdMapping> getAllMappings() {
+		Query query = getSession().getNamedQuery("cpath.warehouse.beans.allMapping");
+		List<PathwayData> toReturn = query.list();
+		return (!toReturn.isEmpty()) 
+				? new ArrayList<PathwayData>(toReturn) 
+					: Collections.EMPTY_SET;
+	}
+
+	
+	@Override
+	public Map<String,String> getIdMap() {
+		Collection<IdMapping> entries = getAllMappings();
+		Map<String,String> mapMap = new HashMap<String, String>(entries.size());
+		for(IdMapping m : entries)
+			mapMap.put(m.getIdentifier(), m.getAccession());
+		
+		return mapMap;
 	}
 }

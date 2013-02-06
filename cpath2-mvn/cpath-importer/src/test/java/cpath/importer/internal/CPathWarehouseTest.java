@@ -94,7 +94,7 @@ public class CPathWarehouseTest {
 		Fetcher fetcher = new FetcherImpl();
         Collection<Metadata> metadata;
 		try {
-			metadata = fetcher.getMetadata("classpath:metadata.conf");
+			metadata = fetcher.readMetadata("classpath:metadata.conf");
 			for (Metadata mdata : metadata) {
 				metadataDAO.importMetadata(mdata);
 				fetcher.fetchData(mdata);
@@ -102,7 +102,7 @@ public class CPathWarehouseTest {
 					fetcher.storeWarehouseData(mdata, (Model) warehouse);
 				} else { // pathways
 					Collection<PathwayData> pathwayData = fetcher
-							.getProviderPathwayData(mdata);
+							.readPathwayData(mdata);
 					for (PathwayData pwData : pathwayData) {
 						metadataDAO.importPathwayData(pwData);
 					}

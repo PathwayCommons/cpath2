@@ -30,12 +30,12 @@ package cpath.importer.internal;
 import cpath.config.CPathSettings;
 import cpath.config.CPathSettings.CPath2Property;
 import cpath.dao.PaxtoolsDAO;
-import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Cleaner;
 import cpath.importer.Fetcher;
 import cpath.importer.Premerge;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
+import cpath.warehouse.beans.Metadata.METADATA_TYPE;
 import cpath.warehouse.beans.PathwayData;
 
 import org.biopax.paxtools.io.SimpleIOHandler;
@@ -66,10 +66,9 @@ final class PremergeImpl implements Premerge {
 	private final String xmlBase;
 
     private MetadataDAO metaDataDAO;
-    private PaxtoolsDAO moleculesDAO;
+    private PaxtoolsDAO warehouseDAO;
 	private Validator validator;
 	private Cleaner cleaner;
-	private boolean createDb;
 	private String identifier;
 
 	/**
@@ -81,9 +80,8 @@ final class PremergeImpl implements Premerge {
 	PremergeImpl(final MetadataDAO metaDataDAO, final PaxtoolsDAO moleculesDAO, final Validator validator) 
 	{
 		this.metaDataDAO = metaDataDAO;
-		this.moleculesDAO = moleculesDAO;
+		this.warehouseDAO = moleculesDAO;
 		this.validator = validator;
-		this.createDb = true;
 		this.xmlBase = CPathSettings.get(CPath2Property.XML_BASE);
 	}
 
@@ -95,7 +93,7 @@ final class PremergeImpl implements Premerge {
 	@Override
     public void premerge() {
 
-		Fetcher fetcher = ImportFactory.newFetcher();
+		Fetcher fetcher = ImportFactory.newFetcher(true);
 		
 		// grab all metadata
 		Collection<Metadata> metadataCollection = metaDataDAO.getAllMetadata();
@@ -110,90 +108,50 @@ final class PremergeImpl implements Premerge {
 				
 			try {
 			
-			if (metadata.getType().isNotPathwayData()) {
-				log.info("premerge(): converting and saving Warehouse data...");
-				fetcher.storeWarehouseData(metadata, (Model)moleculesDAO);
-			} else  {
-					
-				// collect pathway data versions of the same provider
-				Collection<String> savedVersions = new HashSet<String>();
-				for(PathwayData pd: metaDataDAO.getPathwayDataByIdentifier(metadata.getIdentifier()))
-					savedVersions.add(pd.getVersion());
-					
-				// lets not fetch the same version data
-				if (!savedVersions.contains(metadata.getVersion())) {
-					log.info("premerge(): reading the new original pathway data: " +
+				if (metadata.getType().isNotPathwayData()) {
+					log.info("premerge(): converting and saving Warehouse data: " 
+						+ metadata.getUri());
+					if(metadata.getType() == METADATA_TYPE.MAPPING)
+						;// TODO load into the mapping table (GeneIdMapping) using metaDataDAO
+					else // it's WAREHOUSE data
+						fetcher.storeWarehouseData(metadata, (Model) warehouseDAO);
+				} 
+				else {
+					log.info("premerge(): reading original pathway data: " +
 						metadata.getIdentifier() + ", ver. " + metadata.getVersion());
 					
-					// grab the data
-					Collection<PathwayData> pathwayData =
-						fetcher.getProviderPathwayData(metadata);
-	        
-					// process pathway data
-					for (PathwayData pwData : pathwayData) {
-						metaDataDAO.importPathwayData(pwData);
+					// Try to instantiate the Cleaner now, and exit if it fails!
+					cleaner = null; //reset to null!
+					final String cl = metadata.getCleanerClassname();
+					if(cl != null && cl.length()>0) {
+						cleaner = ImportFactory.newCleaner(cl);
+						if (cleaner == null) {
+							log.error("run(), failed to create the Cleaner: " + cl
+								+ "; skipping for this data source...");
+							return; // skip this data entirely due to the error
+						} 			
+					} else {
+						log.info("run(), no Cleaner was specified; continue...");	
 					}
-				} 
+										
+					// read all files
+					Collection<PathwayData> pathwayDataCollection 
+						= fetcher.readPathwayData(metadata);
 					
-				processPathwayData(metadata);		
-			}
+					// process pathway data
+					for (PathwayData pathwayData : pathwayDataCollection) {
+						pipeline(metadata, pathwayData);		
+					}								
+				} 
 			
+				
+				//TODO fill the id-mapping table from Warehouse EntityReference xrefs
+				
 			} catch (Exception e) {
 				log.error("premerge(), error: ", e);
-			}
-		}
-	}
-
-	
-	/**
-	 * (non-Javadoc)
-	 * @see java.lang.Thread#run()
-	 */
-	private void processPathwayData(Metadata metadata) {
-		// get pathway data
-		log.info("run(), getting pathway data for provider " + metadata);
-		Collection<PathwayData> pathwayDataCollection =
-			metaDataDAO.getPathwayDataByIdentifierAndVersion(metadata.getIdentifier(), metadata.getVersion());
-
-		// Try to instantiate the Cleaner now, and exit if it fails!
-		cleaner = null; //reset to null!
-		final String cl = metadata.getCleanerClassname();
-		if(cl != null && cl.length()>0) {
-			cleaner = ImportFactory.newCleaner(cl);
-			if (cleaner == null) {
-				log.error("run(), failed to create the Cleaner: " + cl
-					+ "; skipping for this data source...");
-				return; // skip this data entirely due to the error
-			} 			
-		} else {
-			log.info("run(), no Cleaner was specified; continue...");	
-		}
-		
-		PaxtoolsDAO pemergeDAO = null;
-
-		if (isCreateDb()) {
-			// build the premerge DAO -
-			// first, create a new database schema
-			String premergeDbName = "cpath2_"
-				+ metadata.getIdentifier() + "_" + metadata.getVersion();
-			log.info("Creating a new 'pre-merge' db and schema: " + premergeDbName);
-			DataServicesFactoryBean.createSchema(premergeDbName);
-			// next, get the PaxtoolsDAO instance
-			pemergeDAO = ImportFactory.buildPaxtoolsHibernateDAO(premergeDbName);
-		}
-	
-		// iterate over and process all pathway data
-		log.info("run(), interating over pathway data " + metadata.getIdentifier());
-		for (PathwayData pathwayData : pathwayDataCollection) {
-			try {
-				pipeline(metadata, pathwayData, pemergeDAO);
-			}
-			catch(Exception e) {
-				log.error("pipeline(), failed for " + pathwayData, e);
 				e.printStackTrace();
 			}
 		}
-	
 	}
 
 	
@@ -201,9 +159,8 @@ final class PremergeImpl implements Premerge {
 	 * Pushes given PathwayData through pipeline.
 	 *
 	 * @param pathwayData provider's pathway data (usually from a single data file)
-	 * @param premergeDAO persistent BioPAX model for the data provider
 	 */
-	private void pipeline(Metadata metadata, PathwayData pathwayData, PaxtoolsDAO premergeDAO) {
+	private void pipeline(Metadata metadata, PathwayData pathwayData) {
 		// here go data to process
 		String data = new String(pathwayData.getPathwayData());
 		String info = pathwayData.toString();
@@ -279,17 +236,6 @@ final class PremergeImpl implements Premerge {
 		
 		// update pathwayData (with premergeData and validationResults)
 		metaDataDAO.importPathwayData(pathwayData);
-		
-		// persist
-		if(isCreateDb()) {			
-			// Get the normalized and validated model and persist it
-			log.info("pipeline(), persisting pathway data "	+ info);
-			
-			Model pathwayDataModel = (Model) v.getModel();
-			
-			// persist all at once -
-			premergeDAO.merge(pathwayDataModel);
-		}
 	}
 
 	
@@ -374,14 +320,6 @@ final class PremergeImpl implements Premerge {
 		}
 		
 		return validation;
-	}
-
-	
-	boolean isCreateDb() {
-		return createDb;
-	}
-	void setCreateDb(boolean createDb) {
-		this.createDb = createDb;
 	}
 
 	String getIdentifier() {

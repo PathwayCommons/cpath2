@@ -80,7 +80,7 @@ public class CPathMergerTest {
 		 */
 		Fetcher fetcher = ImportFactory.newFetcher(false);
 		try {
-			Collection<Metadata> metadata = fetcher.getMetadata("classpath:metadata.conf");
+			Collection<Metadata> metadata = fetcher.readMetadata("classpath:metadata.conf");
 			for (Metadata mdata : metadata) {
 				// store metadata in the warehouse
 				metadataDAO.importMetadata(mdata);
