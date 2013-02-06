@@ -40,15 +40,6 @@ public final class ImportFactory {
 	
 	
 	/**
-	 * Creates a new Fetcher instance with default options.
-	 * 
-	 * @return
-	 */
-	public static Fetcher newFetcher() {
-		return new FetcherImpl();
-	}
-	
-	/**
 	 * Creates a new Fetcher instance.
 	 * 
 	 * @see FetcherImpl#isReUseFetchedDataFiles()
@@ -105,16 +96,13 @@ public final class ImportFactory {
 	 * @param metadataDAO
 	 * @param warehouseDAO
 	 * @param biopaxValidator
-	 * @param createPremergeDatabases optionally (when 'true'), it persists the result 
-	 * data in separate auto-generated "premerge" cpath2 Dbs instead (when 'false') in the pathwayData table.
 	 * @param metadataIdentifier pathway data provider identifier (from the metadata conf.)
 	 * @return
 	 */
 	public static Premerge newPremerge(final MetadataDAO metadataDAO, PaxtoolsDAO warehouseDAO, 
-			final Validator biopaxValidator, final boolean createPremergeDatabases, final String metadataIdentifier) {
+			final Validator biopaxValidator, final String metadataIdentifier) {
 		
 		PremergeImpl premerge = new PremergeImpl(metadataDAO, warehouseDAO, biopaxValidator);		
-		premerge.setCreateDb(createPremergeDatabases);
 		premerge.setIdentifier(metadataIdentifier);
 		
 		return premerge;

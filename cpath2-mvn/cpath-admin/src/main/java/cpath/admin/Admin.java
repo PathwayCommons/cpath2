@@ -445,7 +445,7 @@ public class Admin implements Runnable {
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		PaxtoolsDAO warehouseDAO = (PaxtoolsDAO) context.getBean("warehouseDAO");
 		Validator validator = (Validator) context.getBean("validator");
-        Premerge premerge = ImportFactory.newPremerge(metadataDAO, warehouseDAO, validator, createPremergeDbs, provider);
+        Premerge premerge = ImportFactory.newPremerge(metadataDAO, warehouseDAO, validator, provider);
         LOG.info("runPremerge: provider=" + provider + "; version=" + version
     			+ "; DBs=" + createPremergeDbs);
         premerge.premerge();
@@ -463,10 +463,10 @@ public class Admin implements Runnable {
             new ClassPathXmlApplicationContext(new String [] { 	
             	"classpath:applicationContext-Metadata.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-        Fetcher fetcher = ImportFactory.newFetcher();
+        Fetcher fetcher = ImportFactory.newFetcher(false);
     	
         // grab the data
-        Collection<Metadata> metadata = fetcher.getMetadata(location);
+        Collection<Metadata> metadata = fetcher.readMetadata(location);
         
         // process metadata
         for (Metadata mdata : metadata) {
@@ -487,7 +487,7 @@ public class Admin implements Runnable {
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-Metadata.xml"});
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-        Fetcher fetcher = ImportFactory.newFetcher();
+        Fetcher fetcher = ImportFactory.newFetcher(true);
     	
 		// get metadata
 		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
@@ -500,7 +500,6 @@ public class Admin implements Runnable {
 		// interate over all metadata
 		for (Metadata metadata : metadataCollection) {			
 			try {
-				//by default, it reuses files (name: metadata.getLocalDataFile()),
 				fetcher.fetchData(metadata); 
 			} catch (Exception e) {
 				LOG.error("Failed fetching data for " + metadata.toString() 

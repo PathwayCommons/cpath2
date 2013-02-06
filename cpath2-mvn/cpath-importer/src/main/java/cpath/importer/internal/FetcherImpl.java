@@ -103,7 +103,7 @@ final class FetcherImpl implements Fetcher
 	}
 	
 	@Override
-    public Collection<Metadata> getMetadata(final String url) throws IOException 
+    public Collection<Metadata> readMetadata(final String url) throws IOException 
     {
         Collection<Metadata> toReturn = new HashSet<Metadata>();
 
@@ -115,7 +115,6 @@ final class FetcherImpl implements Fetcher
         // get data from service
 		readMetadata(LOADER.getResource(url).getInputStream(), toReturn);
 
-        // outta here
         return toReturn;
     }
 
@@ -253,7 +252,7 @@ final class FetcherImpl implements Fetcher
 
 
 	@Override
-    public Collection<PathwayData> getProviderPathwayData(final Metadata metadata) 
+    public Collection<PathwayData> readPathwayData(final Metadata metadata) 
     	throws IOException 
     {
         Collection<PathwayData> toReturn = new HashSet<PathwayData>();

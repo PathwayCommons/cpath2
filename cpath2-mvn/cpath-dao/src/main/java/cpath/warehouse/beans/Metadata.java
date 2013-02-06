@@ -31,10 +31,10 @@ public final class Metadata {
 	// METADATA_TYPE Enum
     public static enum METADATA_TYPE {
         // data types
-        PSI_MI(true),
-		BIOPAX(true),
-		WAREHOUSE(false),
-		MAPPING(false);
+        PSI_MI(true), // interactions to be converted to Biopax L3 format
+		BIOPAX(true), // pathways and interactions in Biopax L2 or L3 format
+		WAREHOUSE(false), // warehouse data to be converted to BioPAX and used during the merge stage
+		MAPPING(false); //extra gene/protein id-mapping data (two column, TSV format: "some id or name" \t "primary uniprot AC")
         
         private final boolean pathwayData;
         

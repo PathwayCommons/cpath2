@@ -1,6 +1,7 @@
 package cpath.warehouse;
 
 // imports
+import cpath.warehouse.beans.IdMapping;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
@@ -112,4 +113,61 @@ public interface MetadataDAO {
 	 * @return
 	 */
     Map<Integer, String> getPathwayDataInfo(String metadataIdentifier);
+    
+    
+    /**
+     * Persists the id map. 
+     * 
+     * @param idMap
+     */
+    void importIdMapping(Map<String, String> idMap);
+    
+    
+    /**
+     * Gets the mapping record (to the primary accession) 
+     * by gene's other name or id.
+     * 
+     * @param id
+     * @return
+     */
+    IdMapping getMapping(String id);
+ 
+    
+    /**
+     * Gets the mapping records 
+     * (from gene names or other identifiers)
+     * by the primary accession id.
+     * 
+     * @param primaryId
+     * @return
+     */
+    Collection<IdMapping> getInverseMapping(String primaryId);
+
+    
+    /**
+     * Gets gene names or other identifiers
+     * by the primary accession id.
+     * 
+     * @param primaryId
+     * @return
+     */
+    Collection<String> getIdsByPrimaryId(String primaryId);
+    
+    
+    /**
+     * Gets all id-mapping records.
+     * 
+     * @return
+     */
+    Collection<IdMapping> getAllMappings();
+ 
+    
+    /**
+     * Gets all mapping records as hash map
+     * (name/id -> primary id).
+     * 
+     * @return
+     */
+    Map<String,String> getIdMap();
+
 }

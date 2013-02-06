@@ -14,8 +14,6 @@ import org.biopax.validator.utils.Normalizer;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 
-import cpath.config.CPathSettings;
-
 
 /**
  * Implementation of Converter interface for ChEBI data.
@@ -88,6 +86,12 @@ class ChEBIConverterImpl extends BaseConverterImpl
 	}
 	
 	
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * @param optionalArgs - the first element can be the location (URL)
+	 * 						 of the chebi.obo file; others are ignored.
+	 */
 	@Override
 	public void convert(final InputStream is, Object... optionalArgs) {
 		
@@ -97,7 +101,7 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		}
 		
 		String chebiOboFileUrl = "classpath:chebi.obo"; //default
-		if(optionalArgs.length == 1 && optionalArgs[0] != null)
+		if(optionalArgs.length >= 1 && optionalArgs[0] != null)
 			chebiOboFileUrl = optionalArgs[0].toString();
 		
 		// Note - we are only converting ChEBI now, so assume OBO processing required
