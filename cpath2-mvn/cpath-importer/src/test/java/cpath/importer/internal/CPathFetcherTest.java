@@ -8,8 +8,6 @@ import java.util.Collection;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.ProteinReference;
-import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.junit.*;
 
 import cpath.config.CPathSettings;
@@ -38,7 +36,7 @@ public class CPathFetcherTest {
 
 	
 	@Test
-	public void testGetMetadata() throws IOException {
+	public void testReadMetadata() throws IOException {
 		String url = "classpath:metadata.conf";
 		System.out.println("Loading metadata from " + url);
 		Collection<Metadata> metadatas = fetcher.readMetadata(url);
@@ -53,48 +51,10 @@ public class CPathFetcherTest {
 		assertNotNull(metadata);
 		assertEquals(METADATA_TYPE.WAREHOUSE, metadata.getType());
 	}
-	
-	@Test
-	public void testImportProteinData() throws IOException {
-		// any resource location inside the metadata page works now!
-		//String location = "file://" + getClass().getResource("/test_uniprot_data.dat.gz").getPath();
-		String location = "classpath:test_uniprot_data.dat.gz";
-		// in case there's no "metadata page" prepared -
-		Metadata metadata = new Metadata(
-				"TEST_UNIPROT", "Proteins Test Data", 
-				"2010.10", "October 03, 2010",  
-				location,
-				"http://www.uniprot.org", 
-				new byte[]{}, 
-				Metadata.METADATA_TYPE.WAREHOUSE,
-				null, "cpath.converter.internal.UniprotConverterImpl");
-		fetcher.fetchData(metadata);
-		fetcher.storeWarehouseData(metadata, model);
-		assertFalse(((Model)model).getObjects(ProteinReference.class).isEmpty());
-		assertTrue(((Model)model).containsID("http://identifiers.org/uniprot/P62158"));
-	}
-	
-	@Test
-	public void testImportChebiData() throws IOException {
-		String location = "classpath:test_chebi_data.dat.zip";
-		// in case there's no "metadata page" prepared -
-		Metadata metadata = new Metadata(
-				"TEST_CHEBI", "ChEBI Test Data", 
-				"2010.10", "October 03, 2010",  
-				location,
-				"http://www.ebi.ac.uk/chebi/", 
-				new byte[]{}, 
-				Metadata.METADATA_TYPE.WAREHOUSE, 
-				null, "cpath.converter.internal.ChEBIConverterImpl");
-		fetcher.fetchData(metadata);
-		fetcher.storeWarehouseData(metadata, model);
-		assertFalse(((Model)model).getObjects(SmallMoleculeReference.class).isEmpty());
-		assertTrue(((Model)model).containsID("http://identifiers.org/obo.chebi/CHEBI:20"));
-	}
 
 
 	@Test
-	public void testGetProviderPathwayData() throws IOException {
+	public void testReadPathwayData() throws IOException {
 		String location = "classpath:pathwaydata2.owl";
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata(
@@ -109,8 +69,7 @@ public class CPathFetcherTest {
 				);
 		
 		fetcher.fetchData(metadata);
-		Collection<PathwayData> pathwayData =
-			fetcher.readPathwayData(metadata);
+		Collection<PathwayData> pathwayData = fetcher.readPathwayData(metadata);
 		PathwayData pd = pathwayData.iterator().next();
 		String owl = new String(pd.getPathwayData());
 		assertTrue(owl != null && owl.length() > 0);

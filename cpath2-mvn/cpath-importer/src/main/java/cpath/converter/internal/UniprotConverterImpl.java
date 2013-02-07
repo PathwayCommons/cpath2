@@ -400,7 +400,6 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 		// create a new PR
 		ProteinReference proteinReference = model.addNew(ProteinReference.class, uri);
 		proteinReference.setDisplayName(shortName);
-		proteinReference.getAnnotations().put("primaryId", primaryId);
 		
 		// add all unification xrefs
 		for (String acEntry : acList) {

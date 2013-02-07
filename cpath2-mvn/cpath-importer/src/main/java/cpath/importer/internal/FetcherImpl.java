@@ -41,15 +41,11 @@ import javax.imageio.ImageIO;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.Model;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
 import cpath.config.CPathSettings;
-import cpath.importer.Cleaner;
-import cpath.importer.Converter;
 import cpath.importer.Fetcher;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
@@ -151,7 +147,7 @@ final class FetcherImpl implements Fetcher
                  * trailing empty string after the last '<br>' (i.e., Converter 
                  * class name, if any), will be added to the tokens array as well.
                  */
-                // TODO: update when data moved to, e.g., a wiki page; by the way, <br> is wrong html tag...
+                // TODO: technically, <br> is a wrong element (<br/> would be ok); ideally, we'd create metadata using an online form instead of a config file.
                 String[] tokens = line.split("<br>",-1);
                 
 				if (log.isDebugEnabled()) {
@@ -259,7 +255,7 @@ final class FetcherImpl implements Fetcher
 		String url = "file://" + metadata.localDataFile();
 		BufferedInputStream bis = new BufferedInputStream(LOADER.getResource(url).getInputStream());
 		
-		// pathway data is either owl, zip (multiple file entries allowed) or gz (single data entry)
+		// pathway data is either owl, zip (multiple files allowed!) or gz (single data entry only!)
 		if(url.toLowerCase().endsWith(".gz")) {
 			if(log.isInfoEnabled())
 				log.info("getProviderPathwayData(): extracting data from gzip archive.");
@@ -269,7 +265,7 @@ final class FetcherImpl implements Fetcher
 		else if(url.toLowerCase().endsWith(".zip")) {
 			if(log.isInfoEnabled())
 				log.info("getProviderPathwayData(): extracting data from zip archive.");
-			toReturn = readContent(metadata, new ZipInputStream(bis));
+			toReturn = readZipContent(metadata, new ZipInputStream(bis));
 		} else { // expecting BioPAX content (RDF+XML) 
 			if(log.isInfoEnabled())
 				log.info("getProviderPathwayData(): returning as is (supposed to be RDF+XML)");
@@ -281,53 +277,49 @@ final class FetcherImpl implements Fetcher
     }
 
 	
-    /*
+    /**
      * Reads the input stream content as PathwayData
+     * 
      * @param inputStream plain text (uncompressed) data stream
+     * @return
+     * @throws IOException
      */
     private PathwayData readContent(Metadata metadata, final InputStream inputStream) 
     	throws IOException 
     {
-		String fetchedData = readContent(inputStream);
+        BufferedReader reader = null;
+		StringBuilder sbuff = new StringBuilder();
+        try {
+            // we'd like to read lines at a time
+            reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
+            // are we ready to read?
+            while (reader.ready()) {
+            	// NEWLINE here is critical for the protein/molecule cleaner/converter!
+                sbuff.append(reader.readLine()).append(CPathSettings.NEWLINE);
+			}
+        } finally { closeQuietly(reader); }
+
+        String fetchedData = sbuff.toString();
+		
 		int idx = metadata.getUrlToData().lastIndexOf('/');
 		String filename = metadata.getUrlToData().substring(idx+1); // not found (-1) gives entire string
 		String digest = getDigest(fetchedData.getBytes());
 		
 		return new PathwayData(metadata.getIdentifier(), metadata.getVersion(),
-				filename, digest, fetchedData.getBytes());
+			filename, digest, fetchedData.getBytes());
 	}
 
-    
-    private String readContent(final InputStream inputStream) throws IOException 
-    {
-            BufferedReader reader = null;
-    		StringBuilder toReturn = new StringBuilder();
-            try {
-                // we'd like to read lines at a time
-                reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
-
-                // are we ready to read?
-                while (reader.ready()) {
-                	// NEWLINE here is critical for the protein/molecule cleaner/converter!
-                    toReturn.append(reader.readLine()).append(CPathSettings.NEWLINE);
-    			}
-    		}
-            catch (IOException e) {
-                throw e;
-            }
-            finally {
-                closeQuietly(reader);
-            }
-
-    		return toReturn.toString();
-    }    
-
-    
-    /*
-     * Given a zip stream, unzips it into individual files and creates PathwayData objects from each
+        
+    /**
+     * Given a zip stream, unzips it into individual 
+     * files and creates PathwayData objects from each
+     * 
+     * @param metadata
+     * @return
+     * @throws IOException
      */
-    private Collection<PathwayData> readContent(final Metadata metadata, 
-    	final ZipInputStream zis) throws IOException 
+    private Collection<PathwayData> readZipContent(final Metadata metadata, final ZipInputStream zis) 
+    		throws IOException 
     {
     	Collection<PathwayData> toReturn = new HashSet<PathwayData>();
     	
@@ -397,8 +389,11 @@ final class FetcherImpl implements Fetcher
         return toReturn;
     }
 
-   /*
+    
+   /**
     * Close the specified ZipInputStream quietly.
+    * 
+    * @param zis
     */
     private static void closeQuietly(final InputStream zis) {
         try {
@@ -409,8 +404,10 @@ final class FetcherImpl implements Fetcher
         }
     }
 
-   /*
+    
+   /**
     * Close the specified reader quietly.
+    * @param reader
     */
     private static void closeQuietly(final Reader reader) {
         try {
@@ -425,7 +422,7 @@ final class FetcherImpl implements Fetcher
 	 * Given the following string, computes an MD5 digest.
 	 *
 	 * @param data byte[]
-	 * @return String
+	 * @return
 	 */
 	private String getDigest(byte[] data) {
 
@@ -447,7 +444,7 @@ final class FetcherImpl implements Fetcher
 	 * Converts byte[] to displayable string.
 	 *
 	 * @param raw byte[]
-	 * @return String
+	 * @return
 	 * @throws java.io.UnsupportedEncodingException
 	 */
 	public static String getHexString(byte[] raw) throws java.io.UnsupportedEncodingException {
@@ -462,138 +459,7 @@ final class FetcherImpl implements Fetcher
         return new String(hex, "ASCII").toUpperCase();
 	}
  
-    
-	/* (non-Javadoc)
-	 * @see cpath.fetcher.WarehouseDataService#storeWarehouseData(cpath.warehouse.beans.Metadata, org.biopax.paxtools.model.Model)
-	 */
-	/**
-	 * {@inheritDoc}
-	 * 
-	 * Note: this method is now called from {@link PremergeImpl}.
-	 */
-	@Override
-    public void storeWarehouseData(final Metadata metadata, final Model model) 
-		throws IOException 
-	{
-		//shortcut for other/system warehouse data (not to be converted to BioPAX)
-		if(metadata.getConverterClassname() == null 
-				|| metadata.getConverterClassname().isEmpty()) 
-		{
-			log.info("storeWarehouseData(..), skip (no need to clean/convert) for: "
-				+ metadata.getIdentifier() + " version: " + metadata.getVersion());
-			return;
-		}
-		
-		
-		// use the local file (MUST have been previously fetched!)
-		String urlStr = "file://" + metadata.localDataFile();
-		InputStream is = new BufferedInputStream(LOADER.getResource(urlStr).getInputStream());
-		log.info("storeWarehouseData(..): input stream is now open for provider: "
-			+ metadata.getIdentifier() + " version: " + metadata.getVersion());
-		
-		try {
-			// get an input stream from a resource file that is either .gz or
-			// .zip
-			if (urlStr.endsWith(".gz")) {
-				is = new GZIPInputStream(is);
-			} else if (urlStr.endsWith(".zip")) {
-				ZipEntry entry = null;
-				ZipInputStream zis = new ZipInputStream(is);
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				while ((entry = zis.getNextEntry()) != null) {
-					log.info("storeWarehouseData(..): processing zip entry: " 
-						+ entry.getName());
-					// write file to buffered output stream
-					int count;
-					byte data[] = new byte[BUFFER];
-					BufferedOutputStream dest = new BufferedOutputStream(baos,
-							BUFFER);
-					while ((count = zis.read(data, 0, BUFFER)) != -1) {
-						dest.write(data, 0, count);
-					}
-					dest.flush();
-					dest.close();
-				}
-				
-				is = new ByteArrayInputStream(baos.toByteArray());
-				
-			} else {
-				log.info("storeWarehouseData(..): not using un(g)zip " +
-					"(cannot guess from the extension) for " + urlStr);
-			}
-
-			log.info("storeWarehouseData(..): creating EntityReference objects, " +
-				"provider: " + metadata.getIdentifier() + " version: "
-					+ metadata.getVersion());
-
-			// hook into a cleaner for given provider
-			// Try to instantiate the Cleaner (if any) sooner, and exit if it fails!
-			String cl = metadata.getCleanerClassname();
-			Cleaner cleaner = null;
-			if(cl != null && cl.length()>0) {
-				cleaner = ImportFactory.newCleaner(cl);
-				if (cleaner == null) {
-					log.error("storeWarehouseData(..): " +
-						"failed to create the specified Cleaner: " + cl);
-					return; // skip for this data entry and return before reading anything
-				}
-			} else {
-				log.info("storeWarehouseData(..): no Cleaner class was specified; " +
-					"continue converting...");
-			}
-			
-			// read the entire data from the input stream to a text string
-			String data = readContent(is);
-			
-			// run the cleaner, if any -
-			if(cleaner != null) {
-				log.info("storeWarehouseData(..): running the Cleaner: " + cl);	
-				data = cleaner.clean(data);
-			}
-			
-			// re-open a new input stream for the cleaned data
-			is = new BufferedInputStream(new ByteArrayInputStream(data.getBytes("UTF-8")));
-			
-			// hook into a converter for given provider
-			cl = metadata.getConverterClassname();
-			Converter converter = null;
-			if(cl != null && cl.length()>0) {
-				converter = ImportFactory.newConverter(cl);
-				if(converter != null) {
-					log.info("storeWarehouseData(..): running " +
-							"the BioPAX Converter: " + cl);	
-					// create a new empty in-memory model
-					Model inMemModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-					inMemModel.setXmlBase(model.getXmlBase());
-					// convert data into that
-					converter.setModel(inMemModel);
-					converter.convert(is);
-					//repair
-					log.info("storeWarehouseData(..): Preparing just created " +
-						metadata.getIdentifier() + " BioPAX Model to merging...");
-					inMemModel.repair();
-					// merging may take quite a time...
-					log.info("storeWarehouseData(..): Persisting " +
-						metadata.getIdentifier());
-					model.merge(inMemModel);
-				}
-				else 
-					log.error(("storeWarehouseData(..): failed to create " +
-						"the Converter class: " + cl
-							+ "; so skipping for this warehouse data..."));
-			} else {
-				log.info("storeWarehouseData(..): No Converter class was specified; " +
-					"so nothing else left to do");
-			}
-
-			log.info("storeWarehouseData(..): Exitting.");
-			
-		} finally {
-			closeQuietly(is);
-		}
-	}
-
-	
+    	
 	@Override
 	public void fetchData(Metadata metadata) throws IOException {
 		
@@ -624,7 +490,7 @@ final class FetcherImpl implements Fetcher
 			}
 			
 			if(size < 0) 
-				size = 100 * 1024 * 1024 * 1024; // TODO (may be make it a parameter) max bytes = 100Gb
+				size = 100 * 1024 * 1024 * 1024;
 				
 			ReadableByteChannel source = Channels.newChannel(resource.getInputStream());
 			FileOutputStream dest = new FileOutputStream(localFileName);
