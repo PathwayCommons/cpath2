@@ -7,4 +7,8 @@ public interface Premerge {
 	 */
 	void premerge();
 	
+	/**
+	 * Creates or updates the id-mapping table(s).
+	 */
+	void updateMappingData();
 }
