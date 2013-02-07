@@ -87,7 +87,7 @@ public class CPathMergerTest {
 				fetcher.fetchData(mdata);
 				if (mdata.getType().isNotPathwayData()) {
 					// build/store ERs in the warehouse
-					fetcher.storeWarehouseData(mdata, (Model)warehouseDAO);
+					PremergeImpl.storeWarehouseData(mdata, (Model)warehouseDAO);
 				}
 			}
 		} catch (IOException e) {

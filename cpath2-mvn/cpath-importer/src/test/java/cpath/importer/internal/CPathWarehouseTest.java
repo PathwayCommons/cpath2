@@ -99,14 +99,15 @@ public class CPathWarehouseTest {
 				metadataDAO.importMetadata(mdata);
 				fetcher.fetchData(mdata);
 				if (mdata.getType().isNotPathwayData()) {
-					fetcher.storeWarehouseData(mdata, (Model) warehouse);
-				} else { // pathways
-					Collection<PathwayData> pathwayData = fetcher
-							.readPathwayData(mdata);
-					for (PathwayData pwData : pathwayData) {
-						metadataDAO.importPathwayData(pwData);
-					}
-				}
+					PremergeImpl.storeWarehouseData(mdata, (Model) warehouse);
+				} 
+//  We do not need test pathway data for these tests -
+//				else { // pathways
+//					Collection<PathwayData> pathwayData = fetcher.readPathwayData(mdata);
+//					for (PathwayData pwData : pathwayData) {
+//						metadataDAO.importPathwayData(pwData);
+//					}
+//				}
 			}
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -114,10 +115,19 @@ public class CPathWarehouseTest {
 		
 		factory = BioPAXLevel.L3.getDefaultFactory();
 		
-		//DataServicesFactoryBean.rebuildIndex("cpath2_test"); //warehouse are in the same test db
 		((PaxtoolsDAO)warehouse).index();
 	}
 
+		
+	@Test
+	public void testWarehouseData() throws IOException {
+		assertFalse(((Model)warehouse).getObjects(ProteinReference.class).isEmpty());
+		assertTrue(((Model)warehouse).containsID("http://identifiers.org/uniprot/P62158"));
+		assertFalse(((Model)warehouse).getObjects(SmallMoleculeReference.class).isEmpty());
+		assertTrue(((Model)warehouse).containsID("http://identifiers.org/obo.chebi/CHEBI:20"));
+	}
+		
+	
 	@Test
 	public void testGetProteinReference() {
 		ProteinReference pr = warehouse

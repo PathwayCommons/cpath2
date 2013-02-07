@@ -29,8 +29,10 @@ package cpath.importer.internal;
 // imports
 import cpath.config.CPathSettings;
 import cpath.config.CPathSettings.CPath2Property;
+import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Cleaner;
+import cpath.importer.Converter;
 import cpath.importer.Fetcher;
 import cpath.importer.Premerge;
 import cpath.warehouse.MetadataDAO;
@@ -40,6 +42,9 @@ import cpath.warehouse.beans.PathwayData;
 
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.ProteinReference;
+import org.biopax.paxtools.model.level3.PublicationXref;
+import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.validator.api.Validator;
 import org.biopax.validator.api.beans.*;
 import org.biopax.validator.api.ValidatorUtils;
@@ -47,11 +52,16 @@ import org.biopax.validator.impl.IdentifierImpl;
 import org.biopax.validator.utils.Normalizer;
 
 import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.ResourceLoader;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.util.*;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import java.io.*;
 
@@ -62,6 +72,8 @@ import java.io.*;
 final class PremergeImpl implements Premerge {
 
     private static Log log = LogFactory.getLog(PremergeImpl.class);
+    private static final int BUFFER = 2048;
+    private static final ResourceLoader LOADER = new DefaultResourceLoader();
     
 	private final String xmlBase;
 
@@ -109,15 +121,16 @@ final class PremergeImpl implements Premerge {
 			try {
 			
 				if (metadata.getType().isNotPathwayData()) {
-					log.info("premerge(): converting and saving Warehouse data: " 
+					log.info("premerge(), converting and saving Warehouse data: " 
 						+ metadata.getUri());
 					if(metadata.getType() == METADATA_TYPE.MAPPING)
-						;// TODO load into the mapping table (GeneIdMapping) using metaDataDAO
-					else // it's WAREHOUSE data
-						fetcher.storeWarehouseData(metadata, (Model) warehouseDAO);
+						// read and import the mapping table to metaDataDAO
+						storeMappingData(metadata);
+					else // it's WAREHOUSE data; - convert and persist to the BioPAX Warehouse
+						storeWarehouseData(metadata, (Model) warehouseDAO);
 				} 
 				else {
-					log.info("premerge(): reading original pathway data: " +
+					log.info("premerge(), reading original pathway data: " +
 						metadata.getIdentifier() + ", ver. " + metadata.getVersion());
 					
 					// Try to instantiate the Cleaner now, and exit if it fails!
@@ -126,12 +139,12 @@ final class PremergeImpl implements Premerge {
 					if(cl != null && cl.length()>0) {
 						cleaner = ImportFactory.newCleaner(cl);
 						if (cleaner == null) {
-							log.error("run(), failed to create the Cleaner: " + cl
+							log.error("premerge(), failed to create the Cleaner: " + cl
 								+ "; skipping for this data source...");
 							return; // skip this data entirely due to the error
 						} 			
 					} else {
-						log.info("run(), no Cleaner was specified; continue...");	
+						log.info("premerge(), no Cleaner was specified; continue...");	
 					}
 										
 					// read all files
@@ -142,19 +155,93 @@ final class PremergeImpl implements Premerge {
 					for (PathwayData pathwayData : pathwayDataCollection) {
 						pipeline(metadata, pathwayData);		
 					}								
-				} 
-			
-				
-				//TODO fill the id-mapping table from Warehouse EntityReference xrefs
+				} 				
 				
 			} catch (Exception e) {
 				log.error("premerge(), error: ", e);
 				e.printStackTrace();
 			}
 		}
+		// at this point, warehouse and pathway data were converted, validated and saved.
+		
+		log.info("premerge(), generating id-mapping table from the warehouse data...");
+		//fill the id-mapping table from Warehouse EntityReference xrefs
+		final Map<String,String> idMap = new HashMap<String, String>();
+		// populate the idMap within a db transaction
+		warehouseDAO.runAnalysis(new CreateIdMapAnalysis(), idMap);
+		metaDataDAO.importIdMapping(idMap);
+		
+		log.info("premerge(), done.");	
 	}
 
 	
+	/**
+	 * Extracts id-mapping information (name/id -> primary id) 
+	 * from the Warehouse entity references's xrefs and
+	 * puts into a hash map (provided via the optional argument 
+	 * in the 'execute' method)
+	 * 
+	 * @author rodche
+	 *
+	 */
+	class CreateIdMapAnalysis implements Analysis {
+
+		@Override
+		public Set<BioPAXElement> execute(Model model, Object... args) {
+			// the first argument must be Map
+			final Map<String,String> idMap = (Map<String, String>) args[0];
+			final Set<String> exclude = new HashSet<String>();
+			// for each (UniProt) ProteinReference in the Warehouse,
+			for(ProteinReference pr : model.getObjects(ProteinReference.class)) {
+				//extract the primary id from the standard (identifiers.org) URI
+				final String ac = pr.getRDFId().substring(pr.getRDFId().lastIndexOf('/')+1);
+				for(Xref x : pr.getXref()) {
+					//by (warehouse) design, there are various unif. and rel. xrefs added by the data converter
+					if(!(x instanceof PublicationXref) && x.getDb() != null) {
+						String id = x.getId();
+						//ban an identifier associated with several different proteins
+						if(exclude.contains(id)) {
+							log.warn("premerge(), already excluded: " + id);
+						} else if(idMap.containsKey(id) && !idMap.get(id).equals(ac)) {
+							log.warn("premerge(), excluding " + id + 
+								" from idMap because it maps to: " + ac + 
+								" and " + idMap.get(id) + ", at least");
+							idMap.remove(id);
+							exclude.add(id);
+						} else {
+							idMap.put(id, ac);
+						}
+					}
+				}
+			}
+			
+			return null; //no return value required
+		}
+		
+	}
+		
+	
+	/**
+	 * Reads gene id-mapping records from a two-column text file
+	 * and inserts into the db table (using MetadataDAO repository).
+	 * 
+	 * @param metadata
+	 * @throws IOException 
+	 */
+	private void storeMappingData(Metadata metadata) throws IOException {
+		Map<String,String> idMap = new HashMap<String, String>();
+		BufferedReader reader = new BufferedReader(new InputStreamReader(
+			LOADER.getResource("file://" + metadata.localDataFile()).getInputStream()));
+
+		while (reader.ready()) {
+			String[] cols = reader.readLine().trim().split("\\s+");
+			idMap.put(cols[0], cols[1]);
+        }
+		
+		metaDataDAO.importIdMapping(idMap);
+	}
+
+
 	/**
 	 * Pushes given PathwayData through pipeline.
 	 *
@@ -325,9 +412,178 @@ final class PremergeImpl implements Premerge {
 	String getIdentifier() {
 		return identifier;
 	}
+	
 	void setIdentifier(String identifier) {
 		this.identifier = (identifier == null || identifier.isEmpty()) 
 				? null : identifier;
 	}
+	
+	
+    /**
+     * For the given Metadata, converts target data 
+     * to EntityReference objects and adds to given model.
+     *
+	 * @param metadata
+     * @param model target model
+     * @throws IOException if an IO error occurs
+     */
+    static void storeWarehouseData(final Metadata metadata, final Model model) 
+		throws IOException 
+	{
+		//shortcut for other/system warehouse data (not to be converted to BioPAX)
+		if(metadata.getConverterClassname() == null 
+				|| metadata.getConverterClassname().isEmpty()) 
+		{
+			log.info("storeWarehouseData(..), skip (no need to clean/convert) for: "
+				+ metadata.getIdentifier() + " version: " + metadata.getVersion());
+			return;
+		}
+				
+		// use the local file (MUST have been previously fetched by Fetcher!)
+		String urlStr = "file://" + metadata.localDataFile();
+		InputStream is = new BufferedInputStream(LOADER.getResource(urlStr).getInputStream());
+		log.info("storeWarehouseData(..): input stream is now open for provider: "
+			+ metadata.getIdentifier() + " version: " + metadata.getVersion());
+		
+		try {
+			// get an input stream from a resource file that is either .gz or
+			// .zip
+			if (urlStr.endsWith(".gz")) {
+				is = new GZIPInputStream(is);
+			} else if (urlStr.endsWith(".zip")) {
+				ZipEntry entry = null;
+				ZipInputStream zis = new ZipInputStream(is);
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				while ((entry = zis.getNextEntry()) != null) {
+					log.info("storeWarehouseData(..): processing zip entry: " 
+						+ entry.getName());
+					// write file to buffered output stream
+					int count;
+					byte data[] = new byte[BUFFER];
+					BufferedOutputStream dest = new BufferedOutputStream(baos,
+							BUFFER);
+					while ((count = zis.read(data, 0, BUFFER)) != -1) {
+						dest.write(data, 0, count);
+					}
+					dest.flush();
+					dest.close();
+				}
+				
+				is = new ByteArrayInputStream(baos.toByteArray());
+				
+			} else {
+				log.info("storeWarehouseData(..): not using un(g)zip " +
+					"(cannot guess from the extension) for " + urlStr);
+			}
+
+			log.info("storeWarehouseData(..): creating EntityReference objects, " +
+				"provider: " + metadata.getIdentifier() + " version: "
+					+ metadata.getVersion());
+
+			// hook into a cleaner for given provider
+			// Try to instantiate the Cleaner (if any) sooner, and exit if it fails!
+			String cl = metadata.getCleanerClassname();
+			Cleaner cleaner = null;
+			if(cl != null && cl.length()>0) {
+				cleaner = ImportFactory.newCleaner(cl);
+				if (cleaner == null) {
+					log.error("storeWarehouseData(..): " +
+						"failed to create the specified Cleaner: " + cl);
+					return; // skip for this data entry and return before reading anything
+				}
+			} else {
+				log.info("storeWarehouseData(..): no Cleaner class was specified; " +
+					"continue converting...");
+			}
+			
+			// read the entire data from the input stream to a text string
+			String data = readContent(is);
+			
+			// run the cleaner, if any -
+			if(cleaner != null) {
+				log.info("storeWarehouseData(..): running the Cleaner: " + cl);	
+				data = cleaner.clean(data);
+			}
+			
+			// re-open a new input stream for the cleaned data
+			is = new BufferedInputStream(new ByteArrayInputStream(data.getBytes("UTF-8")));
+			
+			// hook into a converter for given provider
+			cl = metadata.getConverterClassname();
+			Converter converter = null;
+			if(cl != null && cl.length()>0) {
+				converter = ImportFactory.newConverter(cl);
+				if(converter != null) {
+					log.info("storeWarehouseData(..): running " +
+							"the BioPAX Converter: " + cl);	
+					// create a new empty in-memory model
+					Model inMemModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+					inMemModel.setXmlBase(model.getXmlBase());
+					// convert data into that
+					converter.setModel(inMemModel);
+					converter.convert(is);
+					//repair
+					log.info("storeWarehouseData(..): Preparing just created " +
+						metadata.getIdentifier() + " BioPAX Model to merging...");
+					inMemModel.repair();
+					// merging may take quite a time...
+					log.info("storeWarehouseData(..): Persisting " +
+						metadata.getIdentifier());
+					model.merge(inMemModel);
+				}
+				else 
+					log.error(("storeWarehouseData(..): failed to create " +
+						"the Converter class: " + cl
+							+ "; so skipping for this warehouse data..."));
+			} else {
+				log.info("storeWarehouseData(..): No Converter class was specified; " +
+					"so nothing else left to do");
+			}
+
+			log.info("storeWarehouseData(..): Exitting.");
+			
+		} finally {
+	        try {
+	            is.close();
+	        } catch (Exception e) {
+	           log.warn("is.close() failed." + e);
+	        }
+		}
+	}
+    
+    
+    /**
+     * Reads from the stream to a string (UTF-8).
+     * 
+     * @param inputStream
+     * @return
+     * @throws IOException
+     */
+    private static String readContent(final InputStream inputStream) throws IOException 
+    {
+            BufferedReader reader = null;
+    		StringBuilder toReturn = new StringBuilder();
+            try {
+                // we'd like to read lines at a time
+                reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
+                // are we ready to read?
+                while (reader.ready()) {
+                	// NEWLINE here is critical for the protein/molecule cleaner/converter!
+                    toReturn.append(reader.readLine()).append(CPathSettings.NEWLINE);
+    			}
+    		}
+            catch (IOException e) {
+                throw e;
+            }
+            finally {
+    	        try {
+    	            reader.close();
+    	        } catch (Exception e) {
+    	           log.warn("reader.close() failed." + e);
+    	        }
+            }
+
+    		return toReturn.toString();
+    }
 
 }
