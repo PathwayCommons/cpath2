@@ -160,16 +160,10 @@ public class Admin implements Runnable {
 		}
 		else if (args[0].equals(COMMAND.PREMERGE.toString())) {
 			this.command = COMMAND.PREMERGE;
-			this.commandParameters = new String[] { null, "false" };
-			int j = 0;
-			for (int i = 1; i < args.length && i < 3; i++) {
-				if ("--usedatabases".equalsIgnoreCase(args[i])) {
-					this.commandParameters[1] = "true";
-					break; // flag is always the last arg.
-				} else {
-					this.commandParameters[j++] = args[i];
-				}
-			}
+			if (args.length >= 2) 
+				this.commandParameters = new String[] {args[1]};
+			else // command without extra parameter
+				this.commandParameters = new String[] {null};
 		}
 		else if (args[0].equals(COMMAND.MERGE.toString())) {
 			this.command = COMMAND.MERGE;
@@ -271,8 +265,7 @@ public class Admin implements Runnable {
 				fetchData(commandParameters[0]);
 				break;
 			case PREMERGE:
-				runPremerge(commandParameters[0], commandParameters[1], 
-					Boolean.parseBoolean(commandParameters[2]));
+				runPremerge(commandParameters[0], commandParameters[1]);
 				break;
 			case MERGE:
 				runMerge(commandParameters[0], commandParameters[1], 
@@ -435,7 +428,7 @@ public class Admin implements Runnable {
 	}
 
 	
-	private void runPremerge(String provider, String version, boolean createPremergeDbs) {
+	private void runPremerge(String provider, String version) {
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-Metadata.xml", 
@@ -446,8 +439,7 @@ public class Admin implements Runnable {
 		PaxtoolsDAO warehouseDAO = (PaxtoolsDAO) context.getBean("warehouseDAO");
 		Validator validator = (Validator) context.getBean("validator");
         Premerge premerge = ImportFactory.newPremerge(metadataDAO, warehouseDAO, validator, provider);
-        LOG.info("runPremerge: provider=" + provider + "; version=" + version
-    			+ "; DBs=" + createPremergeDbs);
+        LOG.info("runPremerge: provider=" + provider + "; version=" + version);
         premerge.premerge();
 	}
 
@@ -493,7 +485,10 @@ public class Admin implements Runnable {
 		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
 		// sanity check
 		if (metadataCollection == null || metadataCollection.isEmpty()) {
-			LOG.error("Unknown provider identifier: " + provider);
+			if(provider != null)
+				LOG.error("Unknown provider identifier: " + provider);
+			else
+				LOG.error("No metadata found in the db.");
 			return;
 		}
 		
@@ -661,8 +656,8 @@ public class Admin implements Runnable {
 		// data import (instance creation) pipeline :
 		toReturn.append(COMMAND.CREATE_TABLES.toString() + " [<table1,table2,..>]" + NEWLINE);
 		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + NEWLINE);
-		toReturn.append(COMMAND.FETCH_DATA.toString() + " <metadataId or --all>" + NEWLINE);
-		toReturn.append(COMMAND.PREMERGE.toString() + " [<metadataId>] [--usedatabases]" + NEWLINE);
+		toReturn.append(COMMAND.FETCH_DATA.toString() + " [<metadataId>]" + NEWLINE);
+		toReturn.append(COMMAND.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
 		toReturn.append(COMMAND.MERGE.toString() + " [<metadataId>] [--force]"+ NEWLINE);
 		toReturn.append(COMMAND.CREATE_INDEX.toString() + NEWLINE);
         toReturn.append(COMMAND.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);

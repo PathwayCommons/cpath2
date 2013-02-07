@@ -57,6 +57,7 @@ import cpath.config.CPathSettings.CPath2Property;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Fetcher;
+import cpath.importer.Premerge;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.warehouse.*;
@@ -101,14 +102,11 @@ public class CPathWarehouseTest {
 				if (mdata.getType().isNotPathwayData()) {
 					PremergeImpl.storeWarehouseData(mdata, (Model) warehouse);
 				} 
-//  We do not need test pathway data for these tests -
-//				else { // pathways
-//					Collection<PathwayData> pathwayData = fetcher.readPathwayData(mdata);
-//					for (PathwayData pwData : pathwayData) {
-//						metadataDAO.importPathwayData(pwData);
-//					}
-//				}
 			}
+			
+			// id-mapping init
+			ImportFactory.newPremerge(metadataDAO, (PaxtoolsDAO) warehouse, null, null).updateMappingData();
+			
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}

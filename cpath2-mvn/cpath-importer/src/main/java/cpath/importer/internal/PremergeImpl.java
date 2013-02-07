@@ -163,61 +163,67 @@ final class PremergeImpl implements Premerge {
 			}
 		}
 		// at this point, warehouse and pathway data were converted, validated and saved.
-		
-		log.info("premerge(), generating id-mapping table from the warehouse data...");
-		//fill the id-mapping table from Warehouse EntityReference xrefs
-		final Map<String,String> idMap = new HashMap<String, String>();
-		// populate the idMap within a db transaction
-		warehouseDAO.runAnalysis(new CreateIdMapAnalysis(), idMap);
-		metaDataDAO.importIdMapping(idMap);
-		
-		log.info("premerge(), done.");	
+		updateMappingData();
 	}
 
 	
 	/**
+	 * {@inheritDoc}
+	 * 
 	 * Extracts id-mapping information (name/id -> primary id) 
 	 * from the Warehouse entity references's xrefs and
-	 * puts into a hash map (provided via the optional argument 
-	 * in the 'execute' method)
-	 * 
-	 * @author rodche
+	 * puts first into a hash map (provided via the optional argument 
+	 * in the Analysis.execute method) and then to the idmapping table.
 	 *
 	 */
-	class CreateIdMapAnalysis implements Analysis {
-
-		@Override
-		public Set<BioPAXElement> execute(Model model, Object... args) {
-			// the first argument must be Map
-			final Map<String,String> idMap = (Map<String, String>) args[0];
-			final Set<String> exclude = new HashSet<String>();
-			// for each (UniProt) ProteinReference in the Warehouse,
-			for(ProteinReference pr : model.getObjects(ProteinReference.class)) {
-				//extract the primary id from the standard (identifiers.org) URI
-				final String ac = pr.getRDFId().substring(pr.getRDFId().lastIndexOf('/')+1);
-				for(Xref x : pr.getXref()) {
-					//by (warehouse) design, there are various unif. and rel. xrefs added by the data converter
-					if(!(x instanceof PublicationXref) && x.getDb() != null) {
-						String id = x.getId();
-						//ban an identifier associated with several different proteins
-						if(exclude.contains(id)) {
-							log.warn("premerge(), already excluded: " + id);
-						} else if(idMap.containsKey(id) && !idMap.get(id).equals(ac)) {
-							log.warn("premerge(), excluding " + id + 
-								" from idMap because it maps to: " + ac + 
-								" and " + idMap.get(id) + ", at least");
-							idMap.remove(id);
-							exclude.add(id);
-						} else {
-							idMap.put(id, ac);
+	@Override
+	public void updateMappingData() {
+		log.info("premerge(), generating id-mapping table from the warehouse data...");
+		//fill the id-mapping table from Warehouse EntityReference xrefs
+		final Map<String,String> idMap = new HashMap<String, String>();
+		
+		// create a new Analysis object to populate the idMap within a DB transaction
+		Analysis createIdMap = new Analysis() {
+			
+			@Override
+			public Set<BioPAXElement> execute(Model model, Object... args) {
+				// the first argument must be the Map
+				final Map<String,String> idMap = (Map<String, String>) args[0];
+				final Set<String> exclude = new HashSet<String>();
+				
+				// for each (UniProt) ProteinReference in the Warehouse,
+				for(ProteinReference pr : model.getObjects(ProteinReference.class)) {
+					//extract the primary id from the standard (identifiers.org) URI
+					final String ac = pr.getRDFId().substring(pr.getRDFId().lastIndexOf('/')+1);
+					for(Xref x : pr.getXref()) {
+						//by (warehouse) design, there are various unif. and rel. xrefs added by the data converter
+						if(!(x instanceof PublicationXref) && x.getDb() != null) {
+							String id = x.getId();
+							//ban an identifier associated with several different proteins
+							if(exclude.contains(id)) {
+								log.warn("premerge(), already excluded: " + id);
+							} else if(idMap.containsKey(id) && !idMap.get(id).equals(ac)) {
+								log.warn("premerge(), excluding " + id + 
+									" from idMap because it maps to: " + ac + 
+									" and " + idMap.get(id) + ", at least");
+								idMap.remove(id);
+								exclude.add(id);
+							} else {
+								idMap.put(id, ac);
+							}
 						}
 					}
 				}
-			}
-			
-			return null; //no return value required
-		}
+				
+				return null; //no return value required
+			}			
+		};
 		
+		// execute it
+		warehouseDAO.runAnalysis(createIdMap, idMap);
+		
+		// persist mapping map
+		metaDataDAO.importIdMapping(idMap);
 	}
 		
 	

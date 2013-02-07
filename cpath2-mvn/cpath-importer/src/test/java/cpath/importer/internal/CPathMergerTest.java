@@ -6,6 +6,7 @@ import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Fetcher;
+import cpath.importer.Premerge;
 import cpath.warehouse.*;
 import cpath.warehouse.beans.*;
 
@@ -81,15 +82,20 @@ public class CPathMergerTest {
 		Fetcher fetcher = ImportFactory.newFetcher(false);
 		try {
 			Collection<Metadata> metadata = fetcher.readMetadata("classpath:metadata.conf");
+			Premerge premerger = ImportFactory.newPremerge(metadataDAO, (PaxtoolsDAO) warehouseDAO, null, null);
+			
 			for (Metadata mdata : metadata) {
 				// store metadata in the warehouse
 				metadataDAO.importMetadata(mdata);
 				fetcher.fetchData(mdata);
 				if (mdata.getType().isNotPathwayData()) {
-					// build/store ERs in the warehouse
+					// build/store ERs in the warehouse (model)
 					PremergeImpl.storeWarehouseData(mdata, (Model)warehouseDAO);
 				}
 			}
+			
+			premerger.updateMappingData();
+			
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
