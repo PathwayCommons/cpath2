@@ -171,7 +171,7 @@ final class MergerImpl implements Merger, Analysis {
 	 * Note: active transaction must exist around this method if the main model is a 
 	 * persistent model implementation (PaxtoolsHibernateDAO).
 	 *  
-	 * TODO metadataDAO's id-mapping b) : add primary uniprot AC RelationshipXref to all PhysicalEntity where mapping is possible (- use its entityReference.xref for mapping first); this is for graph queries and full-text search!
+	 * TODO id-mapping: add primary uniprot AC RelationshipXref to all PhysicalEntity where mapping is possible (- use its entityReference.xref for mapping first); this is for graph queries and full-text search!
 	 */
 	private void mergePathwayModel(PaxtoolsDAO mainModel, Model pathwayModel) 
 	{	
