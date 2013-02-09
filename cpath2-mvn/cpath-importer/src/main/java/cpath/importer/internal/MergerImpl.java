@@ -28,6 +28,7 @@
 package cpath.importer.internal;
 
 import cpath.dao.Analysis;
+import cpath.dao.IdMapping;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Merger;
 import cpath.warehouse.beans.*;
@@ -39,9 +40,6 @@ import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
-
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -69,28 +67,11 @@ final class MergerImpl implements Merger, Analysis {
 	private boolean force;
 	
 	private SimpleMerger simpleMerger;
+	
+//TODO try local in-memory id-mapping tables (optimization?)
+//	private final Map<String,String> geneIdMap;
+//	private final Map<String,String> chemIdMap;
 
-	/**
-	 * Constructor.
-	 */
-	MergerImpl(PaxtoolsDAO dest) 
-	{	
-		assert dest instanceof Model : 
-			"PaxtoolsDAO must also implement org.biopax.paxtools.Model!";
-		
-		this.mainDAO = dest;
-		
-		// metadata
-		ApplicationContext whApplicationContext = 
-			new ClassPathXmlApplicationContext("classpath:applicationContext-Metadata.xml");
-		this.metadataDAO = (MetadataDAO)whApplicationContext.getBean("metadataDAO");
-		
-		// warehouse
-		ApplicationContext context = new ClassPathXmlApplicationContext(new String [] {"classpath:applicationContext-Warehouse.xml"});
-		this.warehouseDAO = (WarehouseDAO)context.getBean("warehouseDAO");
-		
-		this.simpleMerger = new SimpleMerger(SimpleEditorMap.L3);
-	}
 
 	/**
 	 * Test Constructor (package-private).
@@ -110,14 +91,18 @@ final class MergerImpl implements Merger, Analysis {
 		this.metadataDAO = metadataDAO;
 		this.warehouseDAO = warehouseDAO;
 		this.simpleMerger = new SimpleMerger(SimpleEditorMap.L3);
+// future optimization/try		
+//		this.geneIdMap = metadataDAO.getIdMap(GeneMapping.class);
+//		this.chemIdMap = metadataDAO.getIdMap(ChemMapping.class);
 	}
 	
 	
 	/**
-	 * 'args' is the list of BioPAX/Paxtools Models.
+	 * {@inheritDoc}
+	 * 
+	 * @param args - BioPAX Paxtools Models.
 	 * 
 	 * @throws ClassCastException
-	 * 
 	 */
 	@Override
 	public Set<BioPAXElement> execute(Model model, Object... args) {
@@ -127,7 +112,7 @@ final class MergerImpl implements Merger, Analysis {
 			mergePathwayModel((PaxtoolsDAO)model, pathwayModel);
 		}
 
-		return null; // to ignore
+		return null; // ignore
 	}
 	
 	
@@ -185,6 +170,8 @@ final class MergerImpl implements Merger, Analysis {
 	 * 
 	 * Note: active transaction must exist around this method if the main model is a 
 	 * persistent model implementation (PaxtoolsHibernateDAO).
+	 *  
+	 * TODO metadataDAO's id-mapping b) : add primary uniprot AC RelationshipXref to all PhysicalEntity where mapping is possible (- use its entityReference.xref for mapping first); this is for graph queries and full-text search!
 	 */
 	private void mergePathwayModel(PaxtoolsDAO mainModel, Model pathwayModel) 
 	{	
@@ -207,11 +194,9 @@ final class MergerImpl implements Merger, Analysis {
 			UtilityClass replacement = null;
 			// Find the best replacement either in the warehouse or target model;
 			if (bpe instanceof ProteinReference) {
-				replacement = findOrCreate((ProteinReference)bpe, 
-						ProteinReference.class, (Model)mainModel, warehouseDAO, generatedModel);
+				replacement = findOrCreateProteinReference((ProteinReference)bpe, (Model)mainModel, generatedModel);
 			} else if (bpe instanceof SmallMoleculeReference) {
-				replacement = findOrCreate((SmallMoleculeReference)bpe, 
-						SmallMoleculeReference.class, (Model)mainModel, warehouseDAO, generatedModel);
+				replacement = findOrCreateSmallMoleculeReference((SmallMoleculeReference)bpe, (Model)mainModel, generatedModel);
 			}
 				
 			if (replacement != null) {	
@@ -289,43 +274,174 @@ final class MergerImpl implements Merger, Analysis {
 	}
 
 
-	private <T extends UtilityClass & XReferrable> T findOrCreate(T orig, Class<T> type, 
-			Model mainModel, WarehouseDAO whDAO, Model subsModel) 
-	{	
-		String id = orig.getRDFId();
+	/**
+	 * Finds previously created or generates (searching in the data warehouse) 
+	 * a new {@link ProteinReference} BioPAX element that is equivalent 
+	 * to the original one and has standard URI and properties, 
+	 * which allows to simply merge it with other semantically equivalent ones, by ID (URI).
+	 * 
+	 * @param orig
+	 * @param type
+	 * @param mainModel
+	 * @param subsModel
+	 * @return the replacement object or null if none can found
+	 */
+	private ProteinReference findOrCreateProteinReference(ProteinReference orig, Model mainModel, Model subsModel) 
+	{				
+		ProteinReference toReturn = null;	
 		
-		// A hack for normalized uniprot isoform URIs
-		// (yes, we merge all isoform PRs into the same canonical PR, 
-		// as we actually did before 2012/12/21 too)
-		if(id.contains("uniprot.isoform")) {
-			id = id.substring(0,id.lastIndexOf('-')).replace(".isoform", "");
+		final String standardPrefix = "http://identifiers.org/";
+		final String canonicalPrefix = standardPrefix + "uniprot/";
+		
+		String uri = orig.getRDFId();
+		
+		// 1) try to re-use previously matched (in the current merge run) object
+		// because we did validate/normalize all the data in Premerge stage and 
+		// can expect a quick result in most cases...
+		// warehouse ERs have such URIs only
+		if(uri.startsWith(canonicalPrefix)) {
+			toReturn = getById(uri, ProteinReference.class, subsModel, warehouseDAO, mainModel);
+			if(toReturn != null)
+				return toReturn;
 		}
+ 
+		// otherwise - try more
 		
-		
-		//First, try to re-use previously matched (in the current merge run) object
-		// because we did validate/normalize all the data in Premerge stage and can 
-		// now expect a quick result in most cases...
-		T toReturn = getById(id, type, subsModel, whDAO, mainModel);
-
-		// if not found by id (was's normalized or did not match by URI anything 
-		// from our data warehouse), search by UnificationXrefs -
-		if (toReturn == null) { // no match - try with xrefs
-			Set<UnificationXref> urefs = new ClassFilterSet<Xref, UnificationXref>(
-					orig.getXref(), UnificationXref.class);
-			Collection<String> ids = whDAO.findByXref(urefs, type);
-			id = null;
-			if (!ids.isEmpty()) {
-				if (ids.size() == 1) {
-					id = ids.iterator().next();
-					// again, try to find the existing (already merged) one first
-					toReturn = getById(id, type, subsModel, whDAO, mainModel);
-				} else {
-					log.warn("Several " + type.getSimpleName() + ": " + ids
-							+ ", were found in the warehouse by unification xrefs: "
-							+ urefs + " of the original object: "
-							+ orig.getRDFId());
+		// if nothing's found in the warehouse by original or normalized URI, 
+		// 2) try id-mapping (to uniprot ac). 
+		if (uri.startsWith(standardPrefix)) {
+			String id = uri.substring(uri.lastIndexOf('/')+1);
+			String db = null;
+			
+			//a hack for proteins (with suboptimal xrefs...)
+			if(orig instanceof ProteinReference) {
+				if(uri.contains("uniprot.isoform")) {
+					db = "uniprot isoform";
+				} else if(uri.contains("refseq")) {
+					db = "refseq";
+				} else if(uri.contains("kegg") && id.contains(":")) {
+					db = "kegg genes"; //uses entrez gene ids
 				}
 			}
+			
+			// do id-mapping
+// can later optimize by using an in-memory map instead of DAO -
+//			id = IdMappingFactory.suggest(db, id); //can improve mapping is several known cases		
+//			id = geneIdMap.get(id);	
+			IdMapping mp = metadataDAO.getIdMapping(db, id, GeneMapping.class); //IdMappingFactory.suggest is called int.
+			if(mp != null) {
+				id = mp.getAccession();
+				toReturn = getById(canonicalPrefix + id, ProteinReference.class, subsModel, warehouseDAO, mainModel);
+			}
+		}
+				
+		// if yet nothing's found, 
+		// 3) try using (already normalized) all Unification Xrefs and id-mapping (to uniprot ac). 
+		if (toReturn == null) {
+			Set<UnificationXref> urefs = new ClassFilterSet<Xref, UnificationXref>(
+					orig.getXref(), UnificationXref.class);
+			for(UnificationXref x : urefs) {
+				IdMapping mp = metadataDAO.getIdMapping(x.getDb(), x.getId(), GeneMapping.class);
+				if(mp != null) {
+					// use the first one; stop looking
+					toReturn = getById(canonicalPrefix + mp.getAccession(), 
+							ProteinReference.class, subsModel, warehouseDAO, mainModel);
+					break; 
+					//TODO better collect resulting ids to see they are same or not (too bad) ...
+				}
+			}	
+		}	
+		
+		// if nothing's found in the warehouse by URI and unif. xrefs, - 
+		// 4) try relationship xrefs and id-mapping 
+		// TODO make sure (- currently it's OK for proteins refs., as we do not attach "bad" xrefs and remove one-to-many ids when building the warehouse). 
+		if (toReturn == null) {
+			Set<RelationshipXref> refs = new ClassFilterSet<Xref, RelationshipXref>(
+					orig.getXref(), RelationshipXref.class);
+			for(RelationshipXref x : refs) {
+				IdMapping mp = metadataDAO.getIdMapping(x.getDb(), x.getId(), GeneMapping.class);
+				if(mp != null) {
+					// use the first one; stop looking
+					toReturn = getById(canonicalPrefix + mp.getAccession(), 
+							ProteinReference.class, subsModel, warehouseDAO, mainModel);
+					break; 
+					//TODO better collect resulting ids to see they are same or not (too bad) ...
+				}
+			}	
+		}
+		
+		return toReturn;
+	}
+	
+
+	/**
+	 * Finds previously created or generates (searching in the data warehouse) 
+	 * a new {@link SmallMoleculeReference} BioPAX element that is equivalent 
+	 * to the original one and has standard URI and properties, 
+	 * which allows to simply merge it with other semantically equivalent ones, by ID (URI).
+	 * 
+	 * @param orig
+	 * @param type
+	 * @param mainModel
+	 * @param subsModel
+	 * @return the replacement object or null if none can found
+	 */
+	private SmallMoleculeReference findOrCreateSmallMoleculeReference(SmallMoleculeReference orig, Model mainModel, Model subsModel) 
+	{				
+		SmallMoleculeReference toReturn = null;	
+		
+		final String standardPrefix = "http://identifiers.org/";
+		final String canonicalPrefix = standardPrefix + "obo.chebi/";
+		
+		String uri = orig.getRDFId();
+		
+		// 1) try to re-use previously matched (in the current merge run) object
+		// because we did validate/normalize all the data in Premerge stage and 
+		// can expect a quick result in most cases...
+		// warehouse ERs have such URIs only
+		if(uri.startsWith(canonicalPrefix)) {
+			toReturn = getById(uri, SmallMoleculeReference.class, subsModel, warehouseDAO, mainModel);
+			if(toReturn != null)
+				return toReturn;
+		}
+ 
+		// otherwise - try more
+		
+		// if nothing's found in the warehouse by original or normalized URI, 
+		// 2) try id-mapping (to uniprot ac). 
+		if (uri.startsWith(standardPrefix)) {
+			String id = uri.substring(uri.lastIndexOf('/')+1);	
+// can later optimize by using an in-memory map instead of DAO -
+//			id = IdMappingFactory.suggest(db, id);
+//			id = chemIdMap.get(id);	
+			IdMapping mp = metadataDAO.getIdMapping(null, id, ChemMapping.class); //'db' is not currently used with chem.
+			if(mp != null) {
+				id = mp.getAccession();
+				toReturn = getById(canonicalPrefix + id, SmallMoleculeReference.class, subsModel, warehouseDAO, mainModel);
+			}
+		}
+				
+		// if yet nothing's found, 
+		// 3) try using (already normalized) all Unification Xrefs and id-mapping (to primary chebi). 
+		if (toReturn == null) {
+			Set<UnificationXref> urefs = new ClassFilterSet<Xref, UnificationXref>(
+					orig.getXref(), UnificationXref.class);
+			for(UnificationXref x : urefs) {
+				IdMapping mp = metadataDAO.getIdMapping(x.getDb(), x.getId(), ChemMapping.class);
+				if(mp != null) {
+					// use the first one; stop looking
+					toReturn = getById(canonicalPrefix + mp.getAccession(), 
+							SmallMoleculeReference.class, subsModel, warehouseDAO, mainModel);
+					break; 
+					//TODO better collect resulting ids to see they are same or not (too bad) ...
+				}
+			}	
+		}	
+		
+		// if nothing's found in the warehouse by URI or unif. xrefs, - 
+		// 4) try using relationship xrefs and id-mapping. 
+		if (toReturn == null) {
+			// TODO not sure about mapping/merging SMRs by rel. xrefs, as currently, for mol., as we might attach ambiguous xrefs there in the warehouse...
 		}
 		
 		return toReturn;

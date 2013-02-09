@@ -1,7 +1,7 @@
 package cpath.warehouse;
 
 // imports
-import cpath.warehouse.beans.IdMapping;
+import cpath.dao.IdMapping;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
@@ -116,58 +116,42 @@ public interface MetadataDAO {
     
     
     /**
-     * Persists the id map. 
+     * Persists the gene/protein id map. 
      * 
      * @param idMap
+     * @param type
      */
-    void importIdMapping(Map<String, String> idMap);
+    void importIdMapping(Map<String, String> idMap, Class<? extends IdMapping> type);
     
     
     /**
      * Gets the mapping record (to the primary accession) 
      * by gene's other name or id.
      * 
-     * @param id
+     * @param db a standard db/resource name (id type) or null (it's optional really)
+     * @param id identifier to be mapped
+     * @param type
      * @return
      */
-    IdMapping getMapping(String id);
+    IdMapping getIdMapping(String db, String id, Class<? extends IdMapping> type);
  
-    
-    /**
-     * Gets the mapping records 
-     * (from gene names or other identifiers)
-     * by the primary accession id.
-     * 
-     * @param primaryId
-     * @return
-     */
-    Collection<IdMapping> getInverseMapping(String primaryId);
-
-    
-    /**
-     * Gets gene names or other identifiers
-     * by the primary accession id.
-     * 
-     * @param primaryId
-     * @return
-     */
-    Collection<String> getIdsByPrimaryId(String primaryId);
-    
-    
+        
     /**
      * Gets all id-mapping records.
      * 
+     * @param type
      * @return
      */
-    Collection<IdMapping> getAllMappings();
+    Collection<IdMapping> getAllIdMappings(Class<? extends IdMapping> type);
  
     
     /**
      * Gets all mapping records as hash map
      * (name/id -> primary id).
      * 
+     * @param type
      * @return
      */
-    Map<String,String> getIdMap();
+    Map<String,String> getIdMap(Class<? extends IdMapping> type);
 
 }

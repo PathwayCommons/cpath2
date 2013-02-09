@@ -24,7 +24,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import java.io.*;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -48,11 +47,6 @@ public class CPathMergerTest {
 	 * @author rodche
 	 */
 	public static class MockCvWarehouse implements WarehouseDAO {
-		@Override
-		public Set<String> findByXref(Set<? extends Xref> arg0,
-				Class<? extends XReferrable> arg1)  {
-			return Collections.emptySet();
-		}
 		@Override
 		public <T extends BioPAXElement> T createBiopaxObject(String arg0, Class<T> arg1) { 
 			return null;

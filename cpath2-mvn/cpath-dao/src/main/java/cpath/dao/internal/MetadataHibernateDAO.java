@@ -1,8 +1,9 @@
 package cpath.dao.internal;
 
 // imports
+import cpath.dao.IdMapping;
+import cpath.dao.IdMappingFactory;
 import cpath.warehouse.MetadataDAO;
-import cpath.warehouse.beans.IdMapping;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
@@ -26,11 +27,9 @@ import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 
 /**
@@ -303,65 +302,46 @@ class MetadataHibernateDAO  implements MetadataDAO {
 		return map;
 	}
 
+	
 	@Transactional
 	@Override
-	public void importIdMapping(Map<String, String> idMap) {
+	public void importIdMapping(Map<String, String> idMap, Class<? extends IdMapping> type) {
 		Session ses = getSession();
 		for(Map.Entry<String, String> ent : idMap.entrySet()) {
-			ses.merge(new IdMapping(ent.getKey(), ent.getValue()));
+			ses.merge(IdMappingFactory.newIdMapping(type, ent.getKey(), ent.getValue()));
 		}
 	}
 
-	@Transactional
-	@Override
-	public IdMapping getMapping(String id) {
-		return (IdMapping) getSession().get(IdMapping.class, id);
-	}
-
-
-	@Transactional
-	@Override
-	public Collection<IdMapping> getInverseMapping(String primaryId) {
-		Session session = getSession();
-		Query query = session.getNamedQuery("cpath.warehouse.beans.inverseMapping");
-		query.setParameter("accession", primaryId);
-		List<IdMapping> res = query.list();
-		return (!res.isEmpty()) 
-				? new ArrayList<IdMapping>(res) 
-					: Collections.EMPTY_SET;
-	}
 	
-
+	@Transactional
 	@Override
-	public Collection<String> getIdsByPrimaryId(String primaryId) {
-		Collection<IdMapping> res = getInverseMapping(primaryId);		
-		Set<String> ids = new HashSet<String>(res.size());		
-		if(!res.isEmpty())
-			for(IdMapping m : res)
-				ids.add(m.getIdentifier());
-		
-		return ids;
+	public IdMapping getIdMapping(String db, String id, Class<? extends IdMapping> type) {
+		id = IdMappingFactory.suggest(db, id);
+		return (IdMapping) getSession().get(type, id);
 	}
 
 	
 	@Transactional
 	@Override
-	public Collection<IdMapping> getAllMappings() {
-		Query query = getSession().getNamedQuery("cpath.warehouse.beans.allMapping");
-		List<PathwayData> toReturn = query.list();
+	public Collection<IdMapping> getAllIdMappings(Class<? extends IdMapping> type) {
+		String queryName = IdMappingFactory.getAllMappingsQueryName(type);
+		Query query = getSession().getNamedQuery(queryName);
+		List<? extends IdMapping> toReturn = query.list();
 		return (!toReturn.isEmpty()) 
-				? new ArrayList<PathwayData>(toReturn) 
+				? new ArrayList<IdMapping>(toReturn) 
 					: Collections.EMPTY_SET;
 	}
 
 	
+	@Transactional
 	@Override
-	public Map<String,String> getIdMap() {
-		Collection<IdMapping> entries = getAllMappings();
+	public Map<String,String> getIdMap(Class<? extends IdMapping> type) {
+		Collection<IdMapping> entries = getAllIdMappings(type);
 		Map<String,String> mapMap = new HashMap<String, String>(entries.size());
 		for(IdMapping m : entries)
 			mapMap.put(m.getIdentifier(), m.getAccession());
 		
 		return mapMap;
 	}
+	
 }
