@@ -144,11 +144,31 @@ public class CPathWarehouseTest {
 		x.setId("A2A2M3"); // not a primary accession ;)
 		x.setDb("uniprot"); // db must be set for getByXref to work [since 19-May-2011]!
 		
-		Set<String> prIds =  warehouse.findByXref(Collections.singleton(x), ProteinReference.class);
-		assertFalse(prIds.isEmpty());
-		assertEquals(1, prIds.size());
-		// correct entity reference found?
-		assertEquals("http://identifiers.org/uniprot/Q8TD86", prIds.iterator().next());
+// method was removed
+//		Set<String> prIds =  warehouse.findByXref(Collections.singleton(x), ProteinReference.class);
+//		assertFalse(prIds.isEmpty());
+//		assertEquals(1, prIds.size());
+//		assertEquals("http://identifiers.org/uniprot/Q8TD86", prIds.iterator().next());		
+//		// same but using uniprot.isoform, which must be internally converted to canonical to match anything -
+//		x = factory.create(UnificationXref.class, Normalizer.uri(XML_BASE, "UniProt Isoform", "Q8TD86-1", UnificationXref.class));
+//		x.setId("Q8TD86-1");
+//		x.setDb("UniProt Isoform");
+//		prIds =  warehouse.findByXref(Collections.singleton(x), ProteinReference.class);
+//		assertFalse(prIds.isEmpty());
+//		assertEquals(1, prIds.size());
+//		assertEquals("http://identifiers.org/uniprot/Q8TD86", prIds.iterator().next());
+		
+		// id-mapping
+		String ac = metadataDAO.getIdMapping("uniprot", "A2A2M3", GeneMapping.class).getAccession();
+		assertEquals("Q8TD86", ac);
+		assertTrue(((Model)warehouse).containsID("http://identifiers.org/uniprot/" + ac));
+		
+		assertNull(metadataDAO.getIdMapping("uniprot", "Q8TD86-1", GeneMapping.class));
+		assertNull(metadataDAO.getIdMapping(null, "Q8TD86-1", GeneMapping.class));
+		
+		assertNotNull(metadataDAO.getIdMapping("uniprot isoform", "Q8TD86-1", GeneMapping.class)); //infers Q8TD86!
+		ac = metadataDAO.getIdMapping("uniprot isoform", "Q8TD86-1", GeneMapping.class).getAccession();
+		assertEquals("Q8TD86", ac);		
 	}
 
 	@Test
@@ -172,11 +192,28 @@ public class CPathWarehouseTest {
 		assertTrue(x.getXrefOf().isEmpty()); // when elements are detached using getObject, they do not remember its owners!
 		// if you get the owner (entity reference) by id, then this xref.xrefOf will contain the owner.
 		
-		// search/map for the corresponding entity reference
-		prIds =  warehouse.findByXref(Collections.singleton(x), ProteinReference.class);
-		assertFalse(prIds.isEmpty());
-		assertEquals(1, prIds.size());
-		assertEquals("http://identifiers.org/uniprot/Q8TD86", prIds.iterator().next());
+// method was removed
+//		// search/map for the corresponding entity reference
+//		prIds =  warehouse.findByXref(Collections.singleton(x), ProteinReference.class);
+//		assertFalse(prIds.isEmpty());
+//		assertEquals(1, prIds.size());
+//		assertEquals("http://identifiers.org/uniprot/Q8TD86", prIds.iterator().next());
+//		
+//		// same but using uniprot.isoform, which must be internally converted to canonical to match anything -
+//		x = factory.create(UnificationXref.class, Normalizer.uri(XML_BASE, "RefSeq", "NP_619650.2", UnificationXref.class));
+//		x.setId("NP_619650.2");
+//		x.setDb("RefSeq");
+//		prIds =  warehouse.findByXref(Collections.singleton(x), ProteinReference.class);
+//		assertFalse(prIds.isEmpty());
+//		assertEquals(1, prIds.size());
+//		assertEquals("http://identifiers.org/uniprot/Q8TD86", prIds.iterator().next());
+		
+		// alternatively -
+		String ac = metadataDAO.getIdMapping("refseq", "NP_619650", GeneMapping.class).getAccession(); 
+		assertNull(metadataDAO.getIdMapping(null, "NP_619650.1", GeneMapping.class));
+		assertNotNull(metadataDAO.getIdMapping("refseq", "NP_619650.1", GeneMapping.class)); //used 'suggest' method internally to infer NP_619650!
+		assertEquals("Q8TD86", ac);
+		assertTrue(((Model)warehouse).containsID("http://identifiers.org/uniprot/" + ac));
 	}
 
     @Test

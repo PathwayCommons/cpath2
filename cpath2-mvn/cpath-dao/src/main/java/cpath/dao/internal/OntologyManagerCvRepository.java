@@ -41,8 +41,6 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.paxtools.model.level3.XReferrable;
-import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.psidev.ontology_manager.Ontology;
 import org.biopax.psidev.ontology_manager.OntologyTermI;
 import org.biopax.validator.utils.BiopaxOntologyManager;
@@ -273,26 +271,6 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 	}
 
 	
-	@Override
-	public Set<String> findByXref(Set<? extends Xref> xrefs, Class<? extends XReferrable> clazz)
-	{
-		Set<String> toReturn = new HashSet<String>();
-		
-		for (Xref xref : xrefs) {
-			ControlledVocabulary cv = getControlledVocabulary(xref.getDb(), xref.getId(),
-					(Class<ControlledVocabulary>) clazz);
-			
-			// TODO validate if the ontology terms (form xrefs) can be used by this CV class?
-			
-			if (cv != null) {
-				toReturn.add(cv.getRDFId());
-			}
-		}
-
-		return toReturn;
-	}
-
-
 	@Override
 	public <T extends BioPAXElement> Model createSubModel(String urn,
 			Class<T> clazz) {

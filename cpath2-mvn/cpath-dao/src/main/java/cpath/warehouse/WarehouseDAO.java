@@ -27,11 +27,8 @@
 
 package cpath.warehouse;
 
-import java.util.Set;
-
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.*;
 
 
 /**
@@ -64,22 +61,5 @@ public interface WarehouseDAO {
      * @return model that contains the object and its dependents or null.
      */
 	<T extends BioPAXElement> Model createSubModel(String uri, Class<T> clazz);
-    
-	
-	/**
-	 * Gets identifier(s) of the BioPAX object(s) stored in the warehouse 
-	 * by using the xrefs as a query.
-	 * 
-	 * In fact, this method does sort of "id-mapping", which is based on the
-	 * warehouse data though, i.e., on how and which Xrefs were generated for each
-	 * protein or small molecule entry during the warehous was built, which can be 
-	 * improved from one release to another (an may be still no perfect). And, 
-	 * one can always create better BioPAX data alignment/merge algorithm on top of it.
-	 * 
-	 * @param xrefs query set of xrefs
-	 * @param clazz subclass (of XReferable) of the requested object
-	 * @return
-	 */
-	Set<String> findByXref(Set<? extends Xref> xrefs, Class<? extends XReferrable> clazz);
 	
 }

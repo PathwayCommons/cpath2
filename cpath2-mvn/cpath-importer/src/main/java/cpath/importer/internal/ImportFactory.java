@@ -20,6 +20,7 @@ import cpath.importer.Fetcher;
 import cpath.importer.Merger;
 import cpath.importer.Premerge;
 import cpath.warehouse.MetadataDAO;
+import cpath.warehouse.WarehouseDAO;
 
 /**
  * Public static factory to 
@@ -65,10 +66,18 @@ public final class ImportFactory {
 	 * (in 'premerge') reported errors; otherwise ('false') - skip merging such data.
 	 * @return
 	 */
-	public static Merger newMerger(final PaxtoolsDAO target, final String provider, 
-			final String version, final boolean force) {
+	public static Merger newMerger(
+			final PaxtoolsDAO target, final String provider, 
+			final String version, final boolean force) 
+	{
 		
-		MergerImpl merger = new MergerImpl(target);
+		ApplicationContext ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-Metadata.xml");
+		MetadataDAO mdao = (MetadataDAO)ctx.getBean("metadataDAO");
+		
+		ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-Warehouse.xml");
+		WarehouseDAO wdao = (WarehouseDAO)ctx.getBean("warehouseDAO");
+		
+		MergerImpl merger = new MergerImpl(target, mdao, wdao);
 		merger.setPathwayData(provider, version);
 		merger.setForce(force);
 		

@@ -219,13 +219,13 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		if (chebiId == null) 
 			return null;
 		
-		String rdfID = "http://identifiers.org/obo.chebi/" + chebiId;
-		toReturn = (SmallMoleculeReference) model.getByID(rdfID);
+		String uri = "http://identifiers.org/obo.chebi/" + chebiId;
+		toReturn = (SmallMoleculeReference) model.getByID(uri);
 		if(toReturn != null)
 			return toReturn;
 		
 		// create a new SMR
-		toReturn = model.addNew(SmallMoleculeReference.class, rdfID);
+		toReturn = model.addNew(SmallMoleculeReference.class, uri);
 		// primary id (u.xref)
 		toReturn.addXref(getXref(UnificationXref.class, chebiId, "ChEBI"));
 		// names
@@ -250,7 +250,7 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		}
 		else {
 			if (log.isInfoEnabled()) {
-				log.info("ChEBI entry without InChIKey : " + rdfID);
+				log.info("ChEBI entry without InChIKey : " + uri);
 			}
 		}
 		// mass
@@ -463,9 +463,8 @@ class ChEBIConverterImpl extends BaseConverterImpl
 			id = id.replaceFirst("(?i)rhea:", "");
 		} 
 		
-		if (log.isDebugEnabled()) {
-			log.debug("setRelationshipXref(), id, db: " + id + ", " + db);
-		}
+		log.debug("setRelationshipXref(), id, db: " + id + ", " + db);
+
 		smallMoleculeReference.addXref(getXref(RelationshipXref.class, id, db));
 	}
 
@@ -483,10 +482,8 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		String id = parts[0].trim();
 		String db = parts[1].trim();
 		
-		if (log.isDebugEnabled()) {
-			log.debug("getXref(), id: " + id + ", db: " + db 
-					+ ", type: " + aClass.getSimpleName());
-		}
+		log.debug("getXref(), id: " + id + ", db: " + db 
+				+ ", type: " + aClass.getSimpleName());
 		
 		String rdfID = Normalizer.uri(model.getXmlBase(), db, id, aClass);
 		
@@ -533,19 +530,17 @@ class ChEBIConverterImpl extends BaseConverterImpl
 			line = reader.readLine();
 		}
 
-		if (log.isDebugEnabled()) {
-			if (toReturn != null) {
-				log.debug("getValue(), returning: " + toReturn);
-			}
-			else {
-				log.debug("getValue(), value not found!");
-			}
+		if (toReturn != null) {
+			log.debug("getValue(), returning: " + toReturn);
+		}
+		else {
+			log.debug("getValue(), value not found!");
 		}
 
-		// outta here
 		return toReturn;
 	}
 
+	
 	/**
 	 * Given an SDF entry, searches for given key and returns
 	 * a collection of values associated with the key.
@@ -583,7 +578,6 @@ class ChEBIConverterImpl extends BaseConverterImpl
 			log.debug("getValues, toReturn size: " + toReturn.size());
 		}
 
-		// outta here
 		return toReturn;
 	}
 	
@@ -724,7 +718,6 @@ class ChEBIConverterImpl extends BaseConverterImpl
 				}
 			}
 
-			// outta here
 			return toReturn;
 		}
 		
