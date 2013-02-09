@@ -305,7 +305,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     private Collection<String> setGeneSymbolAndSynonyms(String geneName, ProteinReference proteinReference) 
     {
     	Collection<String> syns = new ArrayList<String>();
-        String parts[] = geneName.split(";");
+        String parts[] = geneName.split(";\\s*(and)?");
         for (int i=0; i<parts.length; i++) {
             String subParts[] = parts[i].split("=");
             // add, e.g., HUGO Gene Name to protein names

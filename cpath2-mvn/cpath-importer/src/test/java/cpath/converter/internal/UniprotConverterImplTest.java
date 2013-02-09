@@ -90,6 +90,8 @@ public class UniprotConverterImplTest {
 		
 		// test MOD_RES features are created
 		pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/P62158");
+		assertTrue(pr.getName().contains("CALM2"));
+		assertTrue(pr.getName().contains("CALM3"));
 		assertNotNull(pr);
 		assertEquals(8, pr.getEntityFeature().size());
 		//check for a feature object by using URI generated the same way as it's in the converter:
