@@ -131,15 +131,13 @@ public class GraphController extends BasicController {
 
 	
 	private void log(String method, Graph graph) {
-		if(log.isInfoEnabled()) {
-			log.info(method + " query; format:" + graph.getFormat() 
-				+ ", kind:" + graph.getKind()
-				+ ", source:" + Arrays.toString(graph.getSource())
-				+ ", target:" + Arrays.toString(graph.getTarget())
-				+ ", limit: " + graph.getLimit() 
-				+ ", direction: " + graph.getDirection()
-			);
-		}
+		log.info(method + " query; format:" + graph.getFormat() 
+			+ ", kind:" + graph.getKind()
+			+ ", source:" + Arrays.toString(graph.getSource())
+			+ ", target:" + Arrays.toString(graph.getTarget())
+			+ ", limit: " + graph.getLimit() 
+			+ ", direction: " + graph.getDirection()
+		);
 	}
 
 }

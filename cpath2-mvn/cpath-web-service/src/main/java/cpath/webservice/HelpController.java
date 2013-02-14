@@ -37,8 +37,6 @@ import cpath.service.OutputFormat;
 import cpath.webservice.args.binding.*;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.controller.SimpleEditorMap;
@@ -60,8 +58,7 @@ import org.springframework.web.bind.annotation.*;
  * @author rodche
  */
 @Controller
-public class HelpController {
-    private static final Log LOG = LogFactory.getLog(HelpController.class);   
+public class HelpController {  
     
     private CPathService service; // main PC db access
     

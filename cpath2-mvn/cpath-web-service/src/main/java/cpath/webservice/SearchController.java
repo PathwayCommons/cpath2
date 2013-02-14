@@ -79,10 +79,9 @@ public class SearchController extends BasicController {
 		if(bindingResult.hasErrors()) {
 			return errorfromBindingResult(bindingResult);
 		} else {
-			if (log.isDebugEnabled())
-				log.debug("/search called (for type: " 
-					+ ((search.getType() == null)? "ALL" : search.getType()) 
-					+ "), query:" + search.getQ() + ", page #" + search.getPage());
+			log.debug("/search called (for type: " 
+				+ ((search.getType() == null)? "ALL" : search.getType()) 
+				+ "), query:" + search.getQ() + ", page #" + search.getPage());
 
 			// get results from the service
 			ServiceResponse results = service.search(
