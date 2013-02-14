@@ -48,7 +48,9 @@ import java.io.*;
 import java.util.*;
 
 /**
- * Class responsible for Merging pathway data into the main DB/Model.
+ * This class is responsible for semantic Merging 
+ * of the normalized original provider's pathway data 
+ * into the main database/model.
  */
 final class MergerImpl implements Merger, Analysis {
 
@@ -150,18 +152,57 @@ final class MergerImpl implements Merger, Analysis {
 				}
 			}
 
+			// import the BioPAX L3 pathway data into the in-memory paxtools model
 			InputStream inputStream = new ByteArrayInputStream(pwdata.getPremergeData());
 			Model pathwayModel = simpleReader.convertFromOWL(inputStream);
+			
+			//TODO id-mapping: add primary uniprot/chebi RelationshipXref to all SimplePE (SM, Protein, Dna,..) and Gene if possible 
+			//(use 'entityReference.xref' if present, then PE's 'xref'; this much improves graph queries and full-text search)		
+			for(PhysicalEntity pe : new HashSet<PhysicalEntity>(pathwayModel.getObjects(PhysicalEntity.class))) {
+				/* well, let's generate canonical primary uniprot/chebi relationship xrefs
+				 * from all available rel. and unif. xrefs using our id-mapping;
+				 * even if it leads to mutually exclusive identifiers (which would be a data issue), 
+				 * we keep those (not a big deal, for we are not merging based on this, but search/query), 
+				 * and just log a warning for future fix)
+				 */ 
+				if(pe instanceof SimplePhysicalEntity) {
+					
+					
+				} else if(pe instanceof Gene) {
+					
+				}
+			}
+			
+			// merge/persist the new biopax; run within a transaction:
 			mainDAO.runAnalysis(this, pathwayModel);
 		}
 
-		if (log.isInfoEnabled()) {
-			log.info("merge() complete, exiting...");
-		}
+		log.info("merge() complete, exiting...");
 	}
 
+	
+	private static boolean isGeneric(BioPAXElement bpe) {
+		boolean ret = false;
 		
-	/* 
+		if(bpe instanceof PhysicalEntity) {
+			if(!((PhysicalEntity) bpe).getMemberPhysicalEntity().isEmpty())
+				ret = true;
+			else if(bpe instanceof SimplePhysicalEntity) {
+				ret = isGeneric(((SimplePhysicalEntity) bpe).getEntityReference());
+			} else {			
+				//TODO decide/do what generic Complex or Gene means...
+			}
+			
+		} else if(bpe instanceof EntityReference) {
+			if(!((EntityReference) bpe).getMemberEntityReference().isEmpty())
+				ret = true;
+		}
+		
+		return ret;
+	}
+	
+		
+	/** 
 	 * Merges a new pathway model into persistent main model: 
 	 * inserts new objects and updates object properties
 	 * (and should not break inverse properties).
@@ -171,7 +212,8 @@ final class MergerImpl implements Merger, Analysis {
 	 * Note: active transaction must exist around this method if the main model is a 
 	 * persistent model implementation (PaxtoolsHibernateDAO).
 	 *  
-	 * TODO id-mapping: add primary uniprot AC RelationshipXref to all PhysicalEntity where mapping is possible (- use its entityReference.xref for mapping first); this is for graph queries and full-text search!
+	 * @param mainModel target model (in production, - persistent model)
+	 * @param pathwayModel normalized self-integral in-memory biopax model to be merged
 	 */
 	private void mergePathwayModel(PaxtoolsDAO mainModel, Model pathwayModel) 
 	{	
@@ -180,10 +222,9 @@ final class MergerImpl implements Merger, Analysis {
 		//(this is almost for sure true if it's just came from a string/file)
 		
 		// find matching utility class elements in the warehouse or main db
-		if(log.isInfoEnabled())
-			log.info("mergePathwayModel: looking for equivalent utility class elements, " +
-					"either in the main Model or Warehouse, to re-use or merge/use them, " +
-					"respectively...");
+		log.info("mergePathwayModel: looking to re-use/merge with " +
+			"semantically equivalent utility class elements " +
+			"in the target Model or Warehouse");
 		//new "replacements" Model
 		Model generatedModel = BioPAXLevel.L3.getDefaultFactory().createModel(); 
 		final Map<BioPAXElement, BioPAXElement> replacements = new HashMap<BioPAXElement, BioPAXElement>();
@@ -227,8 +268,7 @@ final class MergerImpl implements Merger, Analysis {
 		}
 				
 		// fix entityFeature/entityFeatureOf for sure, and may be other properties...
-		if(log.isInfoEnabled())
-			log.info("mergePathwayModel: migrating some properties (features)...");
+		log.info("mergePathwayModel: migrating some properties (features)...");
 		for (BioPAXElement old : replacements.keySet()) {
 			if (old instanceof EntityReference) {
 				for (EntityFeature ef : new HashSet<EntityFeature>(
@@ -249,28 +289,23 @@ final class MergerImpl implements Merger, Analysis {
 		}
 		
 		// do replace (object refs) in the original pathwayModel
-		if(log.isInfoEnabled())
-			log.info("mergePathwayModel: replacing utility objects with matching ones...");	
+		log.info("mergePathwayModel: replacing utility objects with matching ones...");	
 		ModelUtils.replace(pathwayModel, replacements);
 		
-		if(log.isInfoEnabled())
-			log.info("mergePathwayModel: removing replaced/dangling objects...");	
+		log.info("mergePathwayModel: removing replaced/dangling objects...");	
 		ModelUtils.removeObjectsIfDangling(pathwayModel, UtilityClass.class);
 		//force re-using of matching by id Xrefs, CVs, etc.. from the generated model
 		simpleMerger.merge(generatedModel, pathwayModel); 
 	
 		// create completely detached in-memory model (fixes dangling properties...)
-		if(log.isInfoEnabled())
-			log.info("mergePathwayModel: updating in-memory model...");
+		log.info("mergePathwayModel: updating in-memory model...");
 		pathwayModel = ModelUtils.writeRead(generatedModel);
 			
-		if(log.isInfoEnabled())
-			log.info("mergePathwayModel: persisting...");
+		log.info("mergePathwayModel: persisting...");
 		// merge to the main model (save/update object relationships)
 		mainModel.merge(pathwayModel);
 		
-		if(log.isInfoEnabled())
-			log.info("mergePathwayModel: merge is complete, exiting...");
+		log.info("mergePathwayModel: merge is complete, exiting...");
 	}
 
 
@@ -391,7 +426,7 @@ final class MergerImpl implements Merger, Analysis {
 		SmallMoleculeReference toReturn = null;	
 		
 		final String standardPrefix = "http://identifiers.org/";
-		final String canonicalPrefix = standardPrefix + "obo.chebi/";
+		final String canonicalPrefix = standardPrefix + "chebi/";
 		
 		String uri = orig.getRDFId();
 		

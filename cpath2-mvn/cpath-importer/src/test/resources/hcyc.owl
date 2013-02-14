@@ -45,11 +45,11 @@ During the merge, SMR1 but not SMR2 gets replaced, A becomes dangling (to be rem
 and B.memberEntityReferenceOf() still refers to removed A. We want both A and B disappear and not making trouble ;) !
  -->
 <bp:SmallMolecule rdf:about="http://biocyc.org/biopax/biopax-level3SmallMolecule173158">
- <bp:entityReference rdf:resource="http://identifiers.org/obo.chebi/CHEBI:28" />
+ <bp:entityReference rdf:resource="http://identifiers.org/chebi/CHEBI:28" />
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SM1</bp:displayName>
 </bp:SmallMolecule>
 
-<bp:SmallMoleculeReference rdf:about="http://identifiers.org/obo.chebi/CHEBI:28"> <!-- will be matched and replaced from Warehouse -->
+<bp:SmallMoleculeReference rdf:about="http://identifiers.org/chebi/CHEBI:28"> <!-- will be matched and replaced from Warehouse -->
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMR1</bp:displayName>
  <bp:memberEntityReference rdf:resource="http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684" />
  <bp:memberEntityReference rdf:resource="http://biocyc.org/biopax/biopax-level3SmallMoleculeReference165390" />
@@ -66,11 +66,11 @@ and B.memberEntityReferenceOf() still refers to removed A. We want both A and B 
 </bp:SmallMoleculeReference>
 
 <bp:SmallMolecule rdf:about="http://biocyc.org/biopax/biopax-level3SmallMolecule165394">
- <bp:entityReference rdf:resource="http://identifiers.org/obo.chebi/CHEBI:36141" /> <!-- 36141 is not in the ChEBI data! -->
+ <bp:entityReference rdf:resource="http://identifiers.org/chebi/CHEBI:36141" /> <!-- 36141 is not in the ChEBI data! -->
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SM2</bp:displayName>
 </bp:SmallMolecule>
 
-<bp:SmallMoleculeReference rdf:about="http://identifiers.org/obo.chebi/CHEBI:36141">
+<bp:SmallMoleculeReference rdf:about="http://identifiers.org/chebi/CHEBI:36141">
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">SMR2</bp:displayName>
  <bp:memberEntityReference rdf:resource="http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684" />
 </bp:SmallMoleculeReference>

@@ -219,7 +219,7 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		if (chebiId == null) 
 			return null;
 		
-		String uri = "http://identifiers.org/obo.chebi/" + chebiId;
+		String uri = "http://identifiers.org/chebi/" + chebiId;
 		toReturn = (SmallMoleculeReference) model.getByID(uri);
 		if(toReturn != null)
 			return toReturn;
@@ -728,7 +728,7 @@ class ChEBIConverterImpl extends BaseConverterImpl
 		 * @return SmallMoleculeReference
 		 */
 		private SmallMoleculeReference getSMRByChebiID(String chebiID) {
-			String rdfID = "http://identifiers.org/obo.chebi/CHEBI:" + chebiID;
+			String rdfID = "http://identifiers.org/chebi/CHEBI:" + chebiID;
 			return (SmallMoleculeReference) model.getByID(rdfID);
 		}
 		

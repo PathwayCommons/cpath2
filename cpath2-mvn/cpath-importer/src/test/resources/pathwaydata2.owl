@@ -57,7 +57,7 @@
 		<bp:comment rdf:datatype="xsd:string">PMID: 9847135</bp:comment>
 	</bp:UnificationXref>
 
-	<bp:SmallMoleculeReference rdf:about="http://identifiers.org/obo.chebi/CHEBI:422">
+	<bp:SmallMoleculeReference rdf:about="http://identifiers.org/chebi/CHEBI:422">
 		<bp:displayName rdf:datatype="xsd:string">beta-D-glucose 6-phosphate
 		</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">b-D-glu-6-p
@@ -90,7 +90,7 @@
 		<bp:dataSource rdf:resource="http://identifiers.org/kegg.pathway/" />
 	</bp:BiochemicalReaction>
 
-	<bp:SmallMoleculeReference rdf:about="http://identifiers.org/obo.chebi/CHEBI:28">
+	<bp:SmallMoleculeReference rdf:about="http://identifiers.org/chebi/CHEBI:28">
 		<bp:displayName rdf:datatype="xsd:string">beta-D-glucose
 		</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">b-D-glu
@@ -102,7 +102,7 @@
 		</bp:chemicalFormula>
 	</bp:SmallMoleculeReference>
 
-	<bp:SmallMoleculeReference rdf:about="http://identifiers.org/obo.chebi/CHEBI:20">
+	<bp:SmallMoleculeReference rdf:about="http://identifiers.org/chebi/CHEBI:20">
 		<bp:displayName rdf:datatype="xsd:string">beta-D-fructose
 			6-phosphate</bp:displayName>
 		<bp:standardName rdf:datatype="xsd:string">b-D-fru-6-p
@@ -138,7 +138,7 @@
 	</bp:UnificationXref>
 
 	<bp:SmallMolecule rdf:ID="beta-D-fructose_6-phosphate">
-		<bp:entityReference rdf:resource="http://identifiers.org/obo.chebi/CHEBI:20" />
+		<bp:entityReference rdf:resource="http://identifiers.org/chebi/CHEBI:20" />
 		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">b-D-fru-6-p
 		</bp:standardName>
@@ -338,7 +338,7 @@
 	</bp:UnificationXref>
 
 	<bp:SmallMolecule rdf:ID="alpha-D-glucose_6-phosphate">
-		<bp:entityReference rdf:resource="http://identifiers.org/obo.chebi/CHEBI:422" />
+		<bp:entityReference rdf:resource="http://identifiers.org/chebi/CHEBI:422" />
 		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">a-D-glu-6-p
 		</bp:standardName>
@@ -360,7 +360,7 @@
 	</bp:BiochemicalPathwayStep>
 
 	<bp:SmallMolecule rdf:ID="alpha-D-glucose_">
-		<bp:entityReference rdf:resource="http://identifiers.org/obo.chebi/CHEBI:28" />
+		<bp:entityReference rdf:resource="http://identifiers.org/chebi/CHEBI:28" />
 		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">b-D-glu
 		</bp:standardName>

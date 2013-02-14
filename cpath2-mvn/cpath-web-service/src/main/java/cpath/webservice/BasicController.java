@@ -86,16 +86,21 @@ public abstract class BasicController {
 			Writer writer, HttpServletResponse response) throws IOException 
 	{
 		if(resp instanceof ErrorResponse) {
-    		errorResponse((ErrorResponse) resp, writer, response);
+    		
+			errorResponse((ErrorResponse) resp, writer, response);
+    		
 		} else if(resp.isEmpty()) { // should not be here (normally, it gets converter to ErrorResponse...)
 			log.warn("stringResponse: I got an empty ServiceResponce! " +
 				"(must be already converted to the ErrorResponse)");
+			
 			errorResponse(NO_RESULTS_FOUND.errorResponse(null), writer, response);
+			
 		} else {
 			response.setContentType("text/plain");
 			DataResponse dresp = (DataResponse) resp;
-			if(log.isDebugEnabled())
-				log.debug("QUERY RETURNED " + dresp.getData().toString().length() + " chars");
+
+			log.debug("QUERY RETURNED " + dresp.getData().toString().length() + " chars");
+			
 			writer.write(dresp.getData().toString());
 		}
 	}

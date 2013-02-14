@@ -200,7 +200,7 @@ public class CPathMergerTest {
 		
 		// test proper merge of small molecule reference
 		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate"));
-		assertTrue(mergedModel.containsID("http://identifiers.org/obo.chebi/CHEBI:20"));
+		assertTrue(mergedModel.containsID("http://identifiers.org/chebi/CHEBI:20"));
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "CHEBI", "CHEBI:20", ChemicalStructure.class)));
 		assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_8"));
 		assertTrue(!mergedModel.containsID("http://identifiers.org/pubchem.substance/14438"));
@@ -209,13 +209,13 @@ public class CPathMergerTest {
 		SmallMolecule sm = (SmallMolecule)mergedModel.getByID("http://pathwaycommons.org/test2#alpha-D-glucose_6-phosphate");
 		SmallMoleculeReference smr = (SmallMoleculeReference)sm.getEntityReference();
 		assertNotNull(smr);
-		assertEquals("http://identifiers.org/obo.chebi/CHEBI:422", smr.getRDFId());
+		assertEquals("http://identifiers.org/chebi/CHEBI:422", smr.getRDFId());
 		// smr must contain one member SMR
 		assertEquals(1, smr.getMemberEntityReference().size());
 //		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
 		assertEquals(3, smr.getXref().size());		
 		
-		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/obo.chebi/CHEBI:20");
+		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:20");
 		assertEquals("(+)-camphene", msmr.getStandardName());
 //		System.out.println("merged chebi:20 xrefs: " + msmr.getXref().toString());
 		assertEquals(5, msmr.getXref().size());
@@ -237,11 +237,11 @@ public class CPathMergerTest {
 		sm = (SmallMolecule)mergedModel.getByID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
 		smr = (SmallMoleculeReference)sm.getEntityReference();
 
-		smr = warehouseDAO.createBiopaxObject("http://identifiers.org/obo.chebi/CHEBI:28", SmallMoleculeReference.class);
+		smr = warehouseDAO.createBiopaxObject("http://identifiers.org/chebi/CHEBI:28", SmallMoleculeReference.class);
 //		System.out.println("warehouse chebi:28 xrefs: " + smr.getXref().toString());
 		assertEquals(15, smr.getXref().size());
 
-		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/obo.chebi/CHEBI:28");
+		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28");
 //		System.out.println("merged chebi:28 xrefs: " + smr.getXref().toString());
 		assertEquals(7, smr.getXref().size()); // relationship xrefs were removed before merging
 		assertEquals("(R)-linalool", smr.getDisplayName());
@@ -275,18 +275,18 @@ public class CPathMergerTest {
 				.getByID("http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684");
 		assertNotNull(msmr);
 		assertNull(mergedModel.getByID("http://biocyc.org/biopax/biopax-level3SmallMoleculeReference165390"));
-		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/obo.chebi/CHEBI:28"); // was replaced from Warehouse
+		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28"); // was replaced from Warehouse
 		sm = (SmallMolecule)mergedModel.getByID("http://biocyc.org/biopax/biopax-level3SmallMolecule173158");
 		assertFalse(smr.getXref().isEmpty());
 		assertFalse(smr.getMemberEntityReference().isEmpty());	
 		assertFalse(smr.getEntityReferenceOf().isEmpty());
 		assertTrue(smr.getEntityReferenceOf().contains(sm));
-		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/obo.chebi/CHEBI:36141"); //wasn't replaced (not found in Warehouse!)
+		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:36141"); //wasn't replaced (not found in Warehouse!)
 		assertEquals(1, msmr.getMemberEntityReferenceOf().size()); // was 3 (in the file); but SmallMoleculeReference165390 was removed (became dangling after the replacement of chebi:28)
 		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
 		// the following would be also true if we copy old prop./inv.prop relationships, but we do not
 //		assertEquals(2, msmr.getMemberEntityReferenceOf().size());
-//		assertTrue(msmr.getMemberEntityReferenceOf().contains(mergedModel.getByID("http://identifiers.org/obo.chebi/CHEBI:28")));	
+//		assertTrue(msmr.getMemberEntityReferenceOf().contains(mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28")));	
 	}
 		
 }

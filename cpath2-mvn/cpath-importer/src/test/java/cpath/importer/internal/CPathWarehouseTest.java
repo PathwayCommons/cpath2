@@ -122,7 +122,7 @@ public class CPathWarehouseTest {
 		assertFalse(((Model)warehouse).getObjects(ProteinReference.class).isEmpty());
 		assertTrue(((Model)warehouse).containsID("http://identifiers.org/uniprot/P62158"));
 		assertFalse(((Model)warehouse).getObjects(SmallMoleculeReference.class).isEmpty());
-		assertTrue(((Model)warehouse).containsID("http://identifiers.org/obo.chebi/CHEBI:20"));
+		assertTrue(((Model)warehouse).containsID("http://identifiers.org/chebi/CHEBI:20"));
 	}
 		
 	
