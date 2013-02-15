@@ -130,6 +130,7 @@ Total no. pages can be also calculated as<br/> INT[(numHits-1)/numHitsPerPage+1]
 	  <li><a href="search.json?q=Q06609">search for "Q06609" keyword, no filters, return JSON result</a></li>
 	  <li><a href="search.json?q=Q06609&type=pathway">search for Pathways containing "Q06609" (search all fields), return JSON</a></li>
 	  <li><a href="search?q=brca2&type=proteinreference&organism=homo%20sapiens&datasource=pid">search for ProteinReference containing "brca2" (case-insensitive) keyword (in any field), filter by organism (human) and datasource (NCI_Nature actually)</a></li>
+	  <li><a href="search.xml?q=name:'col5a1'&type=proteinreference&organism=9606">more precise search for a human ProteinReference containing "col5a1" among its names (case-insensitive)</a></li>
 	  <li><a href="search?q=brc*&type=control&organism=9606&datasource=reactome">search for Control interactions matching "brca*" (wildcard, case-insensitive, in any field), originated from Reactome, Human</a></li>
 	  <li><a href="search?q=a*&page=3">use of pagination: get the forth page (page=3) hits</a></li>
 	  <li><a href="search?q=+binding%20NOT%20transcription*&type=control&page=0">search for Control interactions having something to do with "binding" but not "transcription" (gets the first page hits)</a></li>
@@ -210,15 +211,15 @@ parameter.  Please be advised that not all output formats are relevant for
 this web service.  For example, it would not make sense to request BINARY_SIF 
 output when the given URI points to a protein.
 	  <h3>Example Queries:</h3>
-Neighborhood of Col5a1 (O88207, CO5A1_MOUSE): <br/>
+Neighborhood of COL5A1 (P20908, CO5A1_HUMAN): <br/>
 	  <ol>
-	  <li><a href="graph?source=http://www.reactome.org/biopax/48892Protein3105&kind=neighborhood">
+	  <li><a href="graph?source=http://www.reactome.org/biopax/48887Protein2044&kind=neighborhood">
 		from the protein's state</a>
 	  </li>
-	  <li><a href="graph?source=http://identifiers.org/uniprot/O88207&kind=neighborhood">
+	  <li><a href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood">
 		from the protein reference, i.e., all its states (found in the BioPAX network(s) on the server)</a>
 	  </li>
-	  	  <li><a href="graph?source=http://identifiers.org/uniprot/O88207&kind=neighborhood&format=EXTENDED_BINARY_SIF">
+	  	  <li><a href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood&format=EXTENDED_BINARY_SIF">
 		from the same protein reference but using a different output format</a>
 	  </li>
 	  </ol>

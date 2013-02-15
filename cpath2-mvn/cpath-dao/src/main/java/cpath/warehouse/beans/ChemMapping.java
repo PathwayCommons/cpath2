@@ -83,4 +83,9 @@ public final class ChemMapping implements IdMapping {
 		return accession;
 	}
 
+    
+    @Override
+    public String toString() {
+    	return identifier + " -> " + accession;
+    }
 }
