@@ -105,7 +105,7 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	private SimpleIOHandler simpleIO;
 	private boolean addDependencies = false;
 	private MultiFieldQueryParser multiFieldQueryParser;
-	private String xmlBase;
+	private final String xmlBase;
 
 	/**
 	 *  A supplementary {@link Analysis} (algorithm) to be executed 
@@ -733,7 +733,7 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	
 	@Override
 	public void setXmlBase(String base) {
-		this.xmlBase = base;
+		throw new UnsupportedOperationException("Unmodifiable xml:base is: " + xmlBase);
 	}
 
 	

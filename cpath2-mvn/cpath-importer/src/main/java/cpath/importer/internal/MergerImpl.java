@@ -44,6 +44,8 @@ import org.biopax.validator.utils.Normalizer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.mchange.util.AssertException;
+
 import java.io.*;
 import java.util.*;
 
@@ -70,6 +72,8 @@ final class MergerImpl implements Merger, Analysis {
 	
 	private SimpleMerger simpleMerger;
 	
+	private final String xmlBase;
+	
 //TODO try local in-memory id-mapping tables (optimization?)
 //	private final Map<String,String> geneIdMap;
 //	private final Map<String,String> chemIdMap;
@@ -83,16 +87,21 @@ final class MergerImpl implements Merger, Analysis {
 	 * @param metadataDAO MetadataDAO
 	 * @param warehouseDAO WarehouseDAO
 	 * @param pcDAO final "global" Model (e.g., {@link PaxtoolsHibernateDAO} may be used here)
+	 * @throws AssertException when dest is not instanceof {@link Model};
 	 */
 	MergerImpl(final PaxtoolsDAO dest, final MetadataDAO metadataDAO, final WarehouseDAO warehouseDAO) 
 	{
-		assert dest instanceof Model : 
-			"PaxtoolsDAO must also implement org.biopax.paxtools.Model!";
+		if(!(dest instanceof Model))
+			throw new AssertException(
+			"The first parameter must be an instance of " +
+			"org.biopax.paxtools.Model or cpath.dao.PaxtoolsDAO.");
 	
 		this.mainDAO = dest;
 		this.metadataDAO = metadataDAO;
 		this.warehouseDAO = warehouseDAO;
 		this.simpleMerger = new SimpleMerger(SimpleEditorMap.L3);
+		this.xmlBase = ((Model)dest).getXmlBase();
+		
 // future optimization/try		
 //		this.geneIdMap = metadataDAO.getIdMap(GeneMapping.class);
 //		this.chemIdMap = metadataDAO.getIdMap(ChemMapping.class);
@@ -132,7 +141,7 @@ final class MergerImpl implements Merger, Analysis {
 			data = metadataDAO.getAllPathwayData();
 
 		for (PathwayData pwdata : data) {
-			log.info("merge(): now merging " + pwdata.toString());
+			log.info("Merging pathway data: " + pwdata.toString());
 
 			if (pwdata.getValid() == null || pwdata.getPremergeData() == null
 					|| pwdata.getPremergeData().length == 0) {
@@ -156,59 +165,12 @@ final class MergerImpl implements Merger, Analysis {
 			InputStream inputStream = new ByteArrayInputStream(pwdata.getPremergeData());
 			Model pathwayModel = simpleReader.convertFromOWL(inputStream);
 			
-			// the following can improve graph queries and full-text relevance -
-			
-			/* using xrefs abd id-mapping, add primary uniprot/chebi RelationshipXref 
-			 * to all SimplePE (SM, Protein, Dna,..) and Gene if possible;
-			 * skip if pe.entityReference.xref if not empty (then id-mapping is done
-			 * later on, in  )
-			 */ 		
-			for(PhysicalEntity pe : new HashSet<PhysicalEntity>(pathwayModel.getObjects(PhysicalEntity.class))) {
-				/* well, let's generate canonical primary uniprot/chebi relationship xrefs
-				 * from all available rel. and unif. xrefs using our id-mapping;
-				 * even if it leads to mutually exclusive identifiers (which would be a data issue), 
-				 * we keep those (not a big deal, for we are not merging based on this, but search/query), 
-				 * and just log a warning for future fix)
-				 */ 
-				if(pe instanceof SimplePhysicalEntity) {
-					EntityReference er = ((SimplePhysicalEntity) pe).getEntityReference();
-					if(er != null && !er.getXref().isEmpty())
-						continue;
-					
-					//TODO
-			
-				} else if(pe instanceof Gene) {
-					//TODO
-				}
-			}
-			
 			// merge/persist the new biopax; run within a transaction:
 			mainDAO.runAnalysis(this, pathwayModel);
 		}
 
-		log.info("merge() complete, exiting...");
+		log.info("Complete.");
 	}
-
-	
-//	private static boolean isGeneric(BioPAXElement bpe) {
-//		boolean ret = false;
-//		
-//		if(bpe instanceof PhysicalEntity) {
-//			if(!((PhysicalEntity) bpe).getMemberPhysicalEntity().isEmpty())
-//				ret = true;
-//			else if(bpe instanceof SimplePhysicalEntity) {
-//				ret = isGeneric(((SimplePhysicalEntity) bpe).getEntityReference());
-//			} else {			
-//				//TODO decide/do what generic Complex or Gene means...
-//			}
-//			
-//		} else if(bpe instanceof EntityReference) {
-//			if(!((EntityReference) bpe).getMemberEntityReference().isEmpty())
-//				ret = true;
-//		}
-//		
-//		return ret;
-//	}
 	
 		
 	/** 
@@ -226,16 +188,63 @@ final class MergerImpl implements Merger, Analysis {
 	 */
 	private void mergePathwayModel(PaxtoolsDAO mainModel, Model pathwayModel) 
 	{	
-		//we suppose, the pathwayModel is self-integral, 
+		//We suppose, the pathwayModel is self-integral, 
 		//i.e, - no external refs and implicit children
 		//(this is almost for sure true if it's just came from a string/file)
 		
+		//Create a new in-memory "replacements" Model, 
+		// to merge new things into this one first
+		Model generatedModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+		generatedModel.setXmlBase(xmlBase);
+		
+		// The following can improve graph queries and full-text search relevance -
+		log.info("Generating canonical UniProt/ChEBI " +
+				"rel. xrefs for some of physical entities using existing xrefs " +
+				"and id-mapping...");
+		
+		/* using xrefs and id-mapping, add primary uniprot/chebi RelationshipXref 
+		 * to all PE (SM, Protein, Dna,..) and Gene if possible;
+		 * skip complexes and if pe.entityReference.xref if not empty (then id-mapping is done
+		 * later on, when mapping/replacing entity references from the warehouse).
+		 * 
+		 * So, let's generate canonical uniprot/chebi relationship xrefs
+		 * from existing rel. and unif. xrefs using the id-mapping; 
+		 * it might eventually result in mutually exclusive identifiers, 
+		 * but we'll keep those and just log a warning for future (data) fix, -
+		 * for this is not a big deal as long as we are not merging data 
+		 * but only use in search/query.
+		 */		
+		for(Entity pe : new HashSet<Entity>(pathwayModel
+				.getObjects(Entity.class))) 
+		{
+			if(pe instanceof PhysicalEntity) {
+				if(pe instanceof SimplePhysicalEntity) {
+					EntityReference er = ((SimplePhysicalEntity) pe).getEntityReference();
+					if(er != null && !er.getXref().isEmpty())
+						continue;
+					if(pe instanceof SmallMolecule) {
+						addCanonicalRelXrefs((PhysicalEntity) pe, ChemMapping.class, generatedModel, (Model) mainModel);
+					} else {
+						// for Protein, Dna, DnaRegion, Rna*...
+						addCanonicalRelXrefs((PhysicalEntity) pe, GeneMapping.class, generatedModel, (Model) mainModel);
+					}						
+				} else if(pe instanceof Complex) {
+					continue; // skip complexes
+				} else {
+					// do for base PEs
+					addCanonicalRelXrefs((PhysicalEntity) pe, GeneMapping.class, generatedModel, (Model) mainModel);
+					addCanonicalRelXrefs((PhysicalEntity) pe, ChemMapping.class, generatedModel, (Model) mainModel);
+				}
+			} else if(pe instanceof Gene) {
+				addCanonicalRelXrefs((XReferrable) pe, GeneMapping.class, generatedModel, (Model) mainModel);
+			}
+		}		
+		
 		// find matching utility class elements in the warehouse or main db
-		log.info("mergePathwayModel: looking to re-use/merge with " +
+		log.info("Looking to re-use/merge with " +
 			"semantically equivalent utility class elements " +
 			"in the target Model or Warehouse");
-		//new "replacements" Model
-		Model generatedModel = BioPAXLevel.L3.getDefaultFactory().createModel(); 
+
 		final Map<BioPAXElement, BioPAXElement> replacements = new HashMap<BioPAXElement, BioPAXElement>();
 		
 		// match some utility class objects to ones from the warehouse or previously imported
@@ -277,7 +286,7 @@ final class MergerImpl implements Merger, Analysis {
 		}
 				
 		// fix entityFeature/entityFeatureOf for sure, and may be other properties...
-		log.info("mergePathwayModel: migrating some properties (features)...");
+		log.info("Migrating some properties (features)...");
 		for (BioPAXElement old : replacements.keySet()) {
 			if (old instanceof EntityReference) {
 				for (EntityFeature ef : new HashSet<EntityFeature>(
@@ -298,23 +307,91 @@ final class MergerImpl implements Merger, Analysis {
 		}
 		
 		// do replace (object refs) in the original pathwayModel
-		log.info("mergePathwayModel: replacing utility objects with matching ones...");	
+		log.info("Replacing utility objects with matching ones...");	
 		ModelUtils.replace(pathwayModel, replacements);
 		
-		log.info("mergePathwayModel: removing replaced/dangling objects...");	
+		log.info("Removing replaced/dangling objects...");	
 		ModelUtils.removeObjectsIfDangling(pathwayModel, UtilityClass.class);
 		//force re-using of matching by id Xrefs, CVs, etc.. from the generated model
 		simpleMerger.merge(generatedModel, pathwayModel); 
 	
 		// create completely detached in-memory model (fixes dangling properties...)
-		log.info("mergePathwayModel: updating in-memory model...");
+		log.info("Updating in-memory model...");
 		pathwayModel = ModelUtils.writeRead(generatedModel);
 			
-		log.info("mergePathwayModel: persisting...");
+		log.info("Persisting...");
 		// merge to the main model (save/update object relationships)
 		mainModel.merge(pathwayModel);
 		
-		log.info("mergePathwayModel: merge is complete, exiting...");
+		log.info("Merge is complete, exiting...");
+	}
+
+
+	/**
+	 * Performs id-mapping from the  
+	 * unification and relationship xrefs 
+	 * of a physical entity or gene to the primary/canonical
+	 * id (uniprot or chebi), creates new relationship xrefs,
+	 * and adds them back to the entity.
+	 * 
+	 * @param bpe a {@link Gene} or {@link PhysicalEntity}
+	 * @param mappType
+	 * @param generatedModel
+	 * @param mainModel
+	 * @throws AssertException when bpe is neither Gene nor PhysicalEntity
+	 */
+	private void addCanonicalRelXrefs(XReferrable bpe, 
+			Class<? extends IdMapping> mappType,
+			Model generatedModel, Model mainModel) 
+	{
+		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity))
+			throw new AssertException("Not Gene or PE: " + bpe);
+		
+		String db = (ChemMapping.class.isAssignableFrom(mappType))
+				?  "chebi" : "uniprot";
+			
+		// map and generate/add xrefs
+		Set<IdMapping> mappingSet = idMappingByXrefs(bpe, mappType, UnificationXref.class);
+		addRelXref(bpe, db, mappingSet, generatedModel, mainModel);
+		
+		mappingSet = idMappingByXrefs(bpe, mappType, RelationshipXref.class);
+		addRelXref(bpe, db, mappingSet, generatedModel, mainModel);
+
+	}
+
+
+	/**
+	 * Finds or creates relationship xrefs
+	 * from the id-mapping results 
+	 * and adds them to the object (and model).
+	 * 
+	 * @param bpe a gene or physical entity
+	 * @param db database name for all (primary/canonical) xrefs; 'uniprot' or 'chebi'
+	 * @param mappingSet
+	 * @param generatedModel
+	 * @param mainModel
+	 * @throws AssertException when bpe is neither Gene nor PhysicalEntity
+	 */
+	private void addRelXref(XReferrable bpe, String db,
+			Set<IdMapping> mappingSet, Model generatedModel, Model mainModel) 
+	{	
+		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity))
+			throw new AssertException("Not Gene or PE: " + bpe);
+		
+		for(IdMapping im : mappingSet) {
+			String ac = im.getAccession();
+			// find or create
+			String rxUri = Normalizer.uri(xmlBase, db, ac, RelationshipXref.class);
+			RelationshipXref rx = getByIdFromMemoryOrMainOrWarehouseModel(rxUri, 
+					RelationshipXref.class, generatedModel, null, mainModel);
+			if(rx == null) {
+				rx = generatedModel.addNew(RelationshipXref.class, rxUri);
+				rx.setDb(db);
+				rx.setId(ac);
+			}				
+			if(rx != null)
+				bpe.addXref(rx);
+		}
 	}
 
 
@@ -344,7 +421,7 @@ final class MergerImpl implements Merger, Analysis {
 		// can expect a quick result in most cases...
 		// warehouse ERs have such URIs only
 		if(uri.startsWith(canonicalPrefix)) {
-			toReturn = getById(uri, ProteinReference.class, generatedModel, warehouseDAO, mainModel);
+			toReturn = getByIdFromMemoryOrMainOrWarehouseModel(uri, ProteinReference.class, generatedModel, warehouseDAO, mainModel);
 			if(toReturn != null)
 				return toReturn;
 		}
@@ -384,41 +461,40 @@ final class MergerImpl implements Merger, Analysis {
 			IdMapping mp = metadataDAO.getIdMapping(db, id, GeneMapping.class); //IdMappingFactory.suggest is called inside.
 			if(mp != null) {
 				id = mp.getAccession();
-				toReturn = getById(canonicalPrefix + id, ProteinReference.class, generatedModel, warehouseDAO, mainModel);
+				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + id, ProteinReference.class, generatedModel, warehouseDAO, mainModel);
 				//keep specific isoform/version id (NP_123456.2, P04150-3,..) after merging/replacing original PRs
-				addRelXrefToParents(orig, mainModel, generatedModel);
+				copyRelXrefToParentEntities(orig, generatedModel, mainModel);
 			}
 		}
 				
 		// if yet nothing's found, 
 		// 3) try using (already normalized) all Unification Xrefs and id-mapping (to uniprot ac). 
 		if (toReturn == null) {
-			Set<IdMapping> mappingSet = idMappingByXrefs(orig, UnificationXref.class, GeneMapping.class);
+			Set<IdMapping> mappingSet = idMappingByXrefs(orig, GeneMapping.class, UnificationXref.class);
 			if(!mappingSet.isEmpty()) {
 				// use only the first result (a warning logged already)
-				toReturn = getById(canonicalPrefix + mappingSet.iterator().next().getAccession(), 
+				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + mappingSet.iterator().next().getAccession(), 
 					ProteinReference.class, generatedModel, warehouseDAO, mainModel);
 				//keep specific isoform/version id (NP_123456.2, P04150-3,..) after merging/replacing original PRs
-				addRelXrefToParents(orig, mainModel, generatedModel); //call only once mapping succeeded				
+				copyRelXrefToParentEntities(orig, generatedModel, mainModel); //call only once mapping succeeded				
 			}
 		}	
 		
 		// if nothing's found in the warehouse by URI and unif. xrefs, - 
 		// 4) try relationship xrefs and id-mapping 
 		if (toReturn == null) {
-			Set<IdMapping> mappingSet = idMappingByXrefs(orig, RelationshipXref.class, GeneMapping.class);
+			Set<IdMapping> mappingSet = idMappingByXrefs(orig, GeneMapping.class, RelationshipXref.class);
 			if(!mappingSet.isEmpty()) {
 				// use only the first result (a warning logged already)
-				toReturn = getById(canonicalPrefix + mappingSet.iterator().next().getAccession(), 
+				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + mappingSet.iterator().next().getAccession(), 
 						ProteinReference.class, generatedModel, warehouseDAO, mainModel);
-				addRelXrefToParents(orig, mainModel, generatedModel); //call only once mapping succeeded
+				copyRelXrefToParentEntities(orig, generatedModel, mainModel); //call only once mapping succeeded
 			}	
 		}
 		
 		return toReturn;
 	}
 	
-
 	
 	/**
 	 * Using id-mapping and specific type xrefs 
@@ -428,12 +504,12 @@ final class MergerImpl implements Merger, Analysis {
 	 * this flags error in the biopax model) 
 	 * 
 	 * @param orig
-	 * @param xrefType
 	 * @param mappClass
+	 * @param xrefType
 	 * @return
 	 */
-	private Set<IdMapping> idMappingByXrefs(final EntityReference orig,
-			final Class<? extends Xref> xrefType, Class<? extends IdMapping> mappClass) 
+	private Set<IdMapping> idMappingByXrefs(final XReferrable orig,
+			Class<? extends IdMapping> mappClass, final Class<? extends Xref> xrefType) 
 	{
 		final Set<IdMapping> mappings = new HashSet<IdMapping>();
 		
@@ -447,7 +523,7 @@ final class MergerImpl implements Merger, Analysis {
 		}
 		
 		if(mappings.size() > 1)
-			log.error("getPrimaryId, not unique id-mapping of " + 
+			log.error("Not unique id-mapping of " + 
 				orig.getRDFId() + ": " + mappings);
 
 		return mappings;
@@ -475,18 +551,19 @@ final class MergerImpl implements Merger, Analysis {
 	/**
 	 * Copy xrefs of original entity reference to
 	 * all its parent entities (mol. states), converting 
-	 * unification xrefs to relationship xrefs.
+	 * unification xrefs to relationship xrefs, and 
+	 * re-using previously generated xrefs.
 	 * 
-	 * @param original
-	 * @param generatedModel 
+	 * @param origEr 
+	 * @param generatedModel
 	 * @param mainModel 
 	 */
-	private void addRelXrefToParents(EntityReference original, Model mainModel, Model generatedModel) {
-		for(Xref x : original.getXref()) {
+	private void copyRelXrefToParentEntities(EntityReference origEr, Model generatedModel, Model mainModel) {
+		for(Xref x : origEr.getXref()) {
 			if(x instanceof UnificationXref) {
 				// create/re-use RelationshipXref (same db/id as x's)
-				String rxUri = Normalizer.uri(mainModel.getXmlBase(), x.getDb(), x.getId(), RelationshipXref.class);
-				RelationshipXref rx = getById(rxUri, RelationshipXref.class, generatedModel, null, mainModel);
+				String rxUri = Normalizer.uri(xmlBase, x.getDb(), x.getId(), RelationshipXref.class);
+				RelationshipXref rx = getByIdFromMemoryOrMainOrWarehouseModel(rxUri, RelationshipXref.class, generatedModel, null, mainModel);
 				if(rx == null) {
 					rx = generatedModel.addNew(RelationshipXref.class, rxUri);
 					rx.setDb(x.getDb());
@@ -498,7 +575,7 @@ final class MergerImpl implements Merger, Analysis {
 			}
 			
 			//add the xref (not unification xref) to every parent
-			for(SimplePhysicalEntity parent : original.getEntityReferenceOf())
+			for(SimplePhysicalEntity parent : origEr.getEntityReferenceOf())
 				parent.addXref(x);
 		}
 	}
@@ -530,7 +607,7 @@ final class MergerImpl implements Merger, Analysis {
 		// can expect a quick result in most cases...
 		// warehouse ERs have such URIs only
 		if(uri.startsWith(canonicalPrefix)) {
-			toReturn = getById(uri, SmallMoleculeReference.class, generatedModel, warehouseDAO, mainModel);
+			toReturn = getByIdFromMemoryOrMainOrWarehouseModel(uri, SmallMoleculeReference.class, generatedModel, warehouseDAO, mainModel);
 			if(toReturn != null)
 				return toReturn;
 		}
@@ -554,21 +631,21 @@ final class MergerImpl implements Merger, Analysis {
 			IdMapping mp = metadataDAO.getIdMapping(db, id, ChemMapping.class);
 			if(mp != null) {
 				id = mp.getAccession();
-				toReturn = getById(canonicalPrefix + id, SmallMoleculeReference.class, generatedModel, warehouseDAO, mainModel);
+				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + id, SmallMoleculeReference.class, generatedModel, warehouseDAO, mainModel);
 				//keep specific isoform/version id (NP_123456.2, P04150-3,..) after merging/replacing original PRs				
-				addRelXrefToParents(orig, mainModel, generatedModel);
+				copyRelXrefToParentEntities(orig, generatedModel, mainModel);
 			}
 		}
 				
 		// if yet nothing's found, 
 		// 3) try using (already normalized) all Unification Xrefs and id-mapping (to primary chebi). 
 		if (toReturn == null) {
-			Set<IdMapping> mappingSet = idMappingByXrefs(orig, UnificationXref.class, ChemMapping.class);
+			Set<IdMapping> mappingSet = idMappingByXrefs(orig, ChemMapping.class, UnificationXref.class);
 			if(!mappingSet.isEmpty()) {
 				// use only the first result (a warning logged already)
-				toReturn = getById(canonicalPrefix + mappingSet.iterator().next().getAccession(), 
+				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + mappingSet.iterator().next().getAccession(), 
 					SmallMoleculeReference.class, generatedModel, warehouseDAO, mainModel);
-				addRelXrefToParents(orig, mainModel, generatedModel); //call only once mapping succeeded
+				copyRelXrefToParentEntities(orig, generatedModel, mainModel); //call only once mapping succeeded
 			}	
 		}	
 		
@@ -596,7 +673,7 @@ final class MergerImpl implements Merger, Analysis {
 	 * @param main
 	 * @return object or null
 	 */
-	private <T extends UtilityClass> T getById(final String id, final Class<T> type, 
+	private <T extends UtilityClass> T getByIdFromMemoryOrMainOrWarehouseModel(final String id, final Class<T> type, 
 			final Model tmp, final WarehouseDAO wh, final Model main) 
 	{
 		assert id != null;
@@ -609,9 +686,6 @@ final class MergerImpl implements Merger, Analysis {
 			if (t == null && wh != null )
 				// third, create new if available in the warehouse
 				t = wh.createBiopaxObject(id, type);
-			else {
-				log.debug(id);
-			}
 		}
 		
 		return t;
