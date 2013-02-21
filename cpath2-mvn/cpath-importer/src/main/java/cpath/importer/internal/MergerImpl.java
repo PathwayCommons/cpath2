@@ -365,17 +365,17 @@ final class MergerImpl implements Merger, Analysis {
 	 * from the id-mapping results 
 	 * and adds them to the object (and model).
 	 * 
-	 * @param bpe a gene or physical entity
+	 * @param bpe a gene, physical entity or entity reference
 	 * @param db database name for all (primary/canonical) xrefs; 'uniprot' or 'chebi'
 	 * @param mappingSet
 	 * @param generatedModel
 	 * @param mainModel
-	 * @throws AssertException when bpe is neither Gene nor PhysicalEntity
+	 * @throws AssertException when bpe is neither Gene nor PhysicalEntity nor EntityReference
 	 */
 	private void addRelXref(XReferrable bpe, String db,
 			Set<IdMapping> mappingSet, Model generatedModel, Model mainModel) 
 	{	
-		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity))
+		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference))
 			throw new AssertException("Not Gene or PE: " + bpe);
 		
 		for(IdMapping im : mappingSet) {
@@ -652,7 +652,15 @@ final class MergerImpl implements Merger, Analysis {
 		// if nothing's found in the warehouse by URI or unif. xrefs, - 
 		// 4) try using relationship xrefs and id-mapping. 
 		if (toReturn == null) {
-			// TODO not sure about mapping/merging SMRs by rel. xrefs, as, currently for mol., we might have ambiguous xrefs in the warehouse...
+			/* Not merging SMRs based on their rel. xrefs 
+			 * (currently for molecules, we might have ambiguous xrefs in the warehouse),
+			 * but we, at least, we can generate rel. xrefs to primary chebi id here.
+			 */
+			Set<IdMapping> mappingSet = idMappingByXrefs(orig, ChemMapping.class, RelationshipXref.class);
+			if(!mappingSet.isEmpty()) {
+				//add the primary chebi rel.xrefs to this ER
+				addRelXref(orig, "chebi", mappingSet, generatedModel, mainModel);
+			}	
 		}
 		
 		return toReturn;
