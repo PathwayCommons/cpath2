@@ -118,7 +118,7 @@ public class BiopaxModelController extends BasicController {
 			OutputFormat format = get.getFormat();
 			String[] uri = get.getUri();
 
-			log.info("Query: /get; format:" + format + ", urn:" + Arrays.toString(uri));
+			log.debug("Query: /get; format:" + format + ", urn:" + Arrays.toString(uri));
 
 			ServiceResponse result = service.fetch(format, uri);
 			stringResponse(result, writer, response);

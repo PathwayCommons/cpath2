@@ -23,6 +23,10 @@
 	<!-- Access to the cpath2 data exported into different formats and organized by species and data sources -->	
 	<mvc:resources mapping="/downloads/**" location="file:${CPATH2_HOME}/downloads/" />
 	
+	<mvc:interceptors>
+      <bean class="cpath.webservice.interceptor.CPathWebserviceLoggingHandlerInterceptor" />
+    </mvc:interceptors> 
+	
 
 	<bean id="log4jInitialization" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
 	  <property name="targetClass" value="org.springframework.util.Log4jConfigurer" />
