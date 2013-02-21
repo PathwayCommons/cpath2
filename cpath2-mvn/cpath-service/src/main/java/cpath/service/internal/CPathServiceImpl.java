@@ -31,6 +31,7 @@ package cpath.service.internal;
 import java.io.*;
 import java.util.*;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -39,13 +40,16 @@ import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.Provenance;
+import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import com.googlecode.ehcache.annotations.Cacheable;
+import com.mchange.util.AssertException;
 
 import cpath.dao.Analysis;
+import cpath.dao.IdMapping;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
@@ -62,6 +66,8 @@ import cpath.service.OutputFormatConverter;
 import static cpath.service.Status.*;
 
 import cpath.warehouse.MetadataDAO;
+import cpath.warehouse.beans.ChemMapping;
+import cpath.warehouse.beans.GeneMapping;
 import cpath.warehouse.beans.Metadata;
 
 /**
@@ -223,8 +229,7 @@ class CPathServiceImpl implements CPathService {
 	public ServiceResponse getNeighborhood(OutputFormat format, String[] sources,
 		Integer limit, Direction direction)
 	{
-		// todo: Remove this line when ID mapping in cpath2 is implemented.
-		sources = convertHGNC(sources);
+		sources = findUrisByIds(sources);
 
 		if(direction == null) {
 			direction = Direction.BOTHSTREAM;	
@@ -237,8 +242,7 @@ class CPathServiceImpl implements CPathService {
 	@Override
 	public ServiceResponse getPathsBetween(OutputFormat format, String[] sources, Integer limit)
 	{
-		// todo: Remove this line when ID mapping in cpath2 is implemented.
-		sources = convertHGNC(sources);
+		sources = findUrisByIds(sources);
 
 		Analysis analysis = new PathsBetweenAnalysis();
 		return runAnalysis(analysis, format, sources, limit, blacklist);
@@ -249,9 +253,8 @@ class CPathServiceImpl implements CPathService {
 	public ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
 										  String[] targets, Integer limit)
 	{
-		// todo: Remove these lines when ID mapping in cpath2 is implemented.
-		sources = convertHGNC(sources);
-		targets = convertHGNC(targets);
+		sources = findUrisByIds(sources);
+		targets = findUrisByIds(targets);
 
 		Analysis analysis = new PathsFromToAnalysis();
 		return runAnalysis(analysis, format, sources, targets, limit, blacklist);
@@ -263,8 +266,7 @@ class CPathServiceImpl implements CPathService {
 	public ServiceResponse getCommonStream(OutputFormat format, String[] sources,
 		Integer limit, Direction direction)
 	{
-		// todo: Remove this line when ID mapping in cpath2 is implemented.
-		sources = convertHGNC(sources);
+		sources = findUrisByIds(sources);
 
 		if (direction == Direction.BOTHSTREAM) {
 			return BAD_REQUEST.errorResponse(
@@ -277,48 +279,97 @@ class CPathServiceImpl implements CPathService {
 		return runAnalysis(analysis, format, sources, limit, direction, blacklist);
 	}
 
-	//-- Temporary fix for the broken hack --------------------------------------------------------|
-
-	/**
-	 * This method is intended for a very short term use, and it will be deleted when HGNC --> PC ID
-	 * mapping is implemented.
-	 *
-	 * todo: Remove this method when ID mapping in cpath2 is implemented
-	 * 
-	 * @param oldIDs old ids for hgnc xrefs
-	 * @return new IDs for hgnc xrefs
-	 */
-	private String[] convertHGNC(String[] oldIDs)
-	{
-		if (oldIDs.length == 0 || oldIDs[0] == null || !oldIDs[0].contains("HGNC_HGNC%3A"))
-		{
-			return oldIDs;
-		}
-
-		List<String> list = new ArrayList<String>(oldIDs.length);
-
-		for (String oldID : oldIDs)
-		{
-			String hgncID = oldID.substring(oldID.lastIndexOf("A") + 1);
-
-			SearchResponse resp = mainDAO.search(
-				"xrefid:\"HGNC:" + hgncID + "\"", 0, null, null, null);
-
-			if (resp.getNumHits() != 1 && log.isWarnEnabled())
-			{
-				log.warn("The old id \"" + oldID + "\" is mapped to " + resp.getNumHits() +
-					" objects");
-			}
-			
-			for (SearchHit hit : resp.getSearchHit())
-			{
-				list.add(hit.getUri());
-			}
-		}
-		return list.toArray(new String[list.size()]);
-	}
 	
-	//---------------------------------------------------------------------------------------------|
+	/**
+	 * Mapping to BioPAX URIs.
+	 *
+	 * TODO explain more...
+	 * It does not "understand" RefSeq Versions and UniProt
+	 * Isoforms though (do not submit them; use without "-#" or ".#" instead).
+	 * 
+	 * 
+	 * @param identifiers a list of gene names, UniProt, RefSeq, ENS* and NCBI Gene identifiers; or CHEBI and InChIKey.
+	 * @return URIs
+	 */
+	private String[] findUrisByIds(String[] identifiers)
+	{
+		if (identifiers.length == 0)
+			return identifiers;
+
+		Set<String> uris = new TreeSet<String>();
+
+		// id-mapping: get primary IDs where possible; 
+		// build a Lucene query string (will be eq. to xrefid:"A" OR xrefid:"B" OR ...)
+		final StringBuilder q = new StringBuilder();
+		for (String identifier : identifiers) {
+			if(identifier.startsWith("http://") || identifier.startsWith("urn:")) {
+				// it must be an existing URI; skip id-mapping 
+				//TODO we could try to map non-existing/secondary URIs to primary ones too... (however, users must not guess URIs)
+				uris.add(identifier);
+			} else {
+				// add to the query string
+				q.append("xrefid:\"");
+				// do gene/protein id-mapping
+				IdMapping m = map(identifier);
+				if (m != null) {
+					q.append(m.getAccession());
+					log.debug("findUrisByIds, mapped " + identifier + " -> " + m.getAccession());
+				}
+				else {
+					q.append(identifier);
+					log.info("findUrisByIds, no primary id found (will use 'as is'): " + identifier);
+				}
+				q.append("\" "); 
+			}
+		}
+		
+		/* 
+		 * find existing Xref URIs by ids using cpath2 full-text search
+		 * and pagination; iterate until all hits/pages are read,
+		 * because our query is very specific - uses field and class -
+		 * we want all hits)
+		*/
+		final String query = q.toString();
+		log.debug("findUrisByIds, will run: " + query);
+		int page = 0; // will use search pagination
+		SearchResponse resp = mainDAO.search(query, page, Xref.class, null, null);
+		log.debug("findUrisByIds, hits: " + resp.getNumHits());
+		while(!resp.isEmpty()) {
+			log.debug("Retrieving xref search results, page #" + page);
+			for(SearchHit h : resp.getSearchHit())
+				uris.add(h.getUri());
+			// go next page
+			resp = mainDAO.search(query, ++page, Xref.class, null, null);
+		}
+				
+		return uris.toArray(new String[]{});
+	}
+
+	
+	/**
+	 * Detects the identifier type (chemical vs gene/protein) 
+	 * and executes corresponding id-mapping method.
+	 * 
+	 * @param identifier
+	 * @return
+	 * @throws AssertException when the identifier is suspected to be a full URI
+	 */
+	private IdMapping map(String identifier) {
+		if(identifier.startsWith("http://"))
+			throw new AssertException("URI is not allowed here");
+		
+		if(identifier.startsWith("CHEBI:") || identifier.length() == 25) {
+			// chebi or InChIKey identifier -> to primary chebi id
+			return metadataDAO.getIdMapping(null, identifier, ChemMapping.class);
+		} else if(identifier.startsWith("PUBCHEM:")) { //TODO explain in the web service docs
+			// - a hack to tell PubChem ID from NCBI Gene ID in graph queries
+			return metadataDAO.getIdMapping(null, identifier.replaceFirst("PUBCHEM:", ""), ChemMapping.class); 
+		} else {
+			// gene/protein name, id, etc. -> to primary uniprot AC
+			return metadataDAO.getIdMapping(null, identifier, GeneMapping.class);
+		}
+	}
+
 	
 	@Cacheable(cacheName = "traverseCache")
 	@Override
@@ -372,7 +423,7 @@ class CPathServiceImpl implements CPathService {
 					int page = 0; // will use search pagination
 					SearchResponse searchResponse = mainDAO.search("*", page, Pathway.class, null, null);
 					while(!searchResponse.isEmpty()) {
-						log.info("Retrieving top pathways search results, page #" + page);
+						log.debug("Retrieving top pathways search results, page #" + page);
 						//remove pathways having 'pathway' index field not empty, 
 						//i.e., keep only pathways where 'pathway' index field
 						// is empty (no controlledOf and pathwayComponentOf values)
