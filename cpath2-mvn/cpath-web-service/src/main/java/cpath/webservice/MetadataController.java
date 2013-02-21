@@ -42,7 +42,7 @@ public class MetadataController extends BasicController
     @RequestMapping("/validation/{metadataId}/files.html") //a JSP view
     public String queryForValidations(@PathVariable String metadataId, Model model) 
     {
-		log.info("Query - all validations (separate files) by datasource: " + metadataId);
+		log.debug("Query - all validations (separate files) by datasource: " + metadataId);
     	
     	Map<Integer,String> result = service.getPathwayDataInfo(metadataId);
     	
@@ -57,7 +57,7 @@ public class MetadataController extends BasicController
     @RequestMapping("/validation/{key}")
     public @ResponseBody ValidatorResponse queryForValidation(@PathVariable String key) 
     {
-		log.info("Getting a validation report for: " + key);
+		log.debug("Getting a validation report for: " + key);
     	
     	//distinguish between a metadata and pathwayData primary key cases:
     	try {
@@ -72,7 +72,7 @@ public class MetadataController extends BasicController
     @RequestMapping("/validation/{key}.html") //a JSP view
     public String queryForValidation(@PathVariable String key, Model model) 
     {
-		log.info("Getting a validation report, as html, for:" + key);
+		log.debug("Getting a validation report, as html, for:" + key);
 
     	ValidatorResponse body = queryForValidation(key);
 		model.addAttribute("response", body);
@@ -111,7 +111,7 @@ public class MetadataController extends BasicController
     
     @RequestMapping(value = "/metadata")
     public  @ResponseBody Collection<Metadata> queryPathwayMetadata() {
-		log.info("Getting pathway type Metadata.");
+		log.debug("Getting pathway type Metadata.");
     	
     	return service.getAllMetadata();
     }

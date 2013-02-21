@@ -31,7 +31,6 @@ package cpath.service.internal;
 import java.io.*;
 import java.util.*;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -329,17 +328,19 @@ class CPathServiceImpl implements CPathService {
 		 * because our query is very specific - uses field and class -
 		 * we want all hits)
 		*/
-		final String query = q.toString();
-		log.debug("findUrisByIds, will run: " + query);
-		int page = 0; // will use search pagination
-		SearchResponse resp = mainDAO.search(query, page, Xref.class, null, null);
-		log.debug("findUrisByIds, hits: " + resp.getNumHits());
-		while(!resp.isEmpty()) {
-			log.debug("Retrieving xref search results, page #" + page);
-			for(SearchHit h : resp.getSearchHit())
-				uris.add(h.getUri());
-			// go next page
-			resp = mainDAO.search(query, ++page, Xref.class, null, null);
+		if (q.length() > 0) {
+			final String query = q.toString();
+			log.debug("findUrisByIds, will run: " + query);
+			int page = 0; // will use search pagination
+			SearchResponse resp = mainDAO.search(query, page, Xref.class, null, null);
+			log.debug("findUrisByIds, hits: " + resp.getNumHits());
+			while (!resp.isEmpty()) {
+				log.debug("Retrieving xref search results, page #" + page);
+				for (SearchHit h : resp.getSearchHit())
+					uris.add(h.getUri());
+				// go next page
+				resp = mainDAO.search(query, ++page, Xref.class, null, null);
+			}
 		}
 				
 		return uris.toArray(new String[]{});

@@ -17,6 +17,10 @@
     
 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
 
+	<mvc:interceptors>
+		<bean class="cpath.webservice.interceptor.CPathWebserviceLoggingHandlerInterceptor" />
+	</mvc:interceptors>
+
 	<bean id="log4jInitialization" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
 	  <property name="targetClass" value="org.springframework.util.Log4jConfigurer" />
 	  <property name="targetMethod" value="initLogging" />

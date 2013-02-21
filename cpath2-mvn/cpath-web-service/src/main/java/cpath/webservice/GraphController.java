@@ -82,13 +82,6 @@ public class GraphController extends BasicController {
         binder.registerCustomEditor(Direction.class, new GraphQueryDirectionEditor());
         binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
     }
-
-
-//TODO re-factor as (same - for the rest of graph kinds)
-//	@RequestMapping("/neighborhood")
-//	public void neighborhood(@Valid NeighborhoodGraph graph, BindingResult bindingResult, Writer writer) throws IOException {
-//		
-//	}
 	
 	
 	@RequestMapping("/graph")
@@ -131,7 +124,7 @@ public class GraphController extends BasicController {
 
 	
 	private void log(String method, Graph graph) {
-		log.info(method + " query; format:" + graph.getFormat() 
+		log.debug(method + " query; format:" + graph.getFormat() 
 			+ ", kind:" + graph.getKind()
 			+ ", source:" + Arrays.toString(graph.getSource())
 			+ ", target:" + Arrays.toString(graph.getTarget())
