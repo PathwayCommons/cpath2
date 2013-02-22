@@ -1,16 +1,17 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <parent>
-    <artifactId>parent</artifactId>
-    <groupId>pathwaycommons.cpath</groupId>
-    <version>4.0.0-SNAPSHOT</version>
-  </parent>
-  
-  <artifactId>distribution</artifactId>
-  <packaging>pom</packaging>
-  <name>CPath2 Distribution</name>
-  <description>CPath2 Distribution</description>
-  
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<artifactId>parent</artifactId>
+		<groupId>pathwaycommons.cpath</groupId>
+		<version>4.0.0-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>distribution</artifactId>
+	<packaging>pom</packaging>
+	<name>CPath2 Distribution</name>
+	<description>CPath2 Distribution</description>
+
 
 	<build>
 		<plugins>
@@ -22,11 +23,20 @@
 						<descriptor>${basedir}/src/main/assembly/assembly.xml</descriptor>
 					</descriptors>
 				</configuration>
+				<executions>
+					<execution>
+						<id>assembly-distribution</id>
+						<phase>package</phase>
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
-  
-  
+
+
 	<dependencies>
 		<dependency>
 			<groupId>pathwaycommons.cpath</groupId>
@@ -34,6 +44,15 @@
 			<version>${project.version}</version>
 			<scope>runtime</scope>
 			<classifier>executable</classifier>
+			<type>jar</type>
+		</dependency>
+		<dependency>
+			<groupId>pathwaycommons.cpath</groupId>
+			<artifactId>cpath-admin</artifactId>
+			<version>${project.version}</version>
+			<scope>runtime</scope>
+			<classifier>exec-war</classifier>
+			<type>jar</type>
 		</dependency>
 		<dependency>
 			<groupId>pathwaycommons.cpath</groupId>
@@ -42,6 +61,14 @@
 			<scope>runtime</scope>
 			<type>war</type>
 		</dependency>
+		<dependency>
+			<groupId>pathwaycommons.cpath</groupId>
+			<artifactId>cpath-web-service</artifactId>
+			<version>${project.version}</version>
+			<scope>runtime</scope>
+			<classifier>exec-war</classifier>
+			<type>jar</type>
+		</dependency>
 	</dependencies>
-		
+
 </project>

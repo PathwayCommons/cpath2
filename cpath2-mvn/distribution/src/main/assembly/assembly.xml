@@ -57,15 +57,31 @@
         <include>*:cpath-admin:jar:executable</include> <!-- 'shaded' jar (see the cpath-admin/pom.xml) -->
       </includes>
       <outputDirectory></outputDirectory>
-	  <outputFileNameMapping>cpath2.jar</outputFileNameMapping>
+	  <outputFileNameMapping>cpath2-cli.jar</outputFileNameMapping>
       <unpack>false</unpack>
     </dependencySet>
+    <dependencySet>
+      <includes>
+        <include>*:cpath-admin:jar:exec-war</include>
+      </includes>
+      <outputDirectory></outputDirectory>
+	  <outputFileNameMapping>cpath2-webmin.jar</outputFileNameMapping>
+      <unpack>false</unpack>
+    </dependencySet>    
     <dependencySet>
       <includes>
         <include>*:cpath-web-service:war</include>
       </includes>
       <outputDirectory></outputDirectory>
       <outputFileNameMapping>cpath2.war</outputFileNameMapping>
+      <unpack>false</unpack>
+    </dependencySet>
+        <dependencySet>
+      <includes>
+        <include>*:cpath-web-service:jar:exec-war</include>
+      </includes>
+      <outputDirectory></outputDirectory>
+      <outputFileNameMapping>cpath2-server.jar</outputFileNameMapping>
       <unpack>false</unpack>
     </dependencySet>
   </dependencySets>

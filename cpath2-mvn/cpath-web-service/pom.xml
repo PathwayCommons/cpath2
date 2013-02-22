@@ -47,12 +47,13 @@
 						</goals>
 						<phase>package</phase>
 						<configuration>
-							<path>foo</path>
+							<path>/cpath2</path>
 							<!-- <serverXml>src/main/tomcatconf/server.xml</serverXml> -->
+<!-- 							<enableNaming>false</enableNaming> -->
 							<attachArtifactClassifier>exec-war</attachArtifactClassifier>
 							<attachArtifactClassifierType>jar</attachArtifactClassifierType>
 							<port>${tomcat.http.port}</port>
-							<path>/cpath2</path>
+							<charset>utf-8</charset>
 						</configuration>
 					</execution>
 				</executions>
