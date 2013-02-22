@@ -10,12 +10,12 @@
 #
 # Edit this script as you like. 
 # Mind using "--force" and organism names in the section #5 tasks
-# (try running cpath2.sh without arguments for more details).
+# (try running cpath2-cli.sh without arguments for more details).
 #
 
 echo "CPATH2 DATA IMPORT"
 
-## Execute the following stages using cpath2.sh script:
+## Execute the following stages using cpath2-cli.sh script:
 echo "CPATH2_HOME Directory: $CPATH2_HOME"
 
 # get cpath2 properties
@@ -37,7 +37,7 @@ echo "       xml.base=$xmlbase"
 while true; do
 read -p "Create/replace $metadatadb database?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -create-tables $metadatadb; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2-cli.sh -create-tables $metadatadb; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -45,7 +45,7 @@ done
 while true; do
 read -p "Create/replace $maindb database?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -create-tables $maindb; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2-cli.sh -create-tables $maindb; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -53,7 +53,7 @@ done
 while true; do  
   read -p "Do you also want to replace the warehouse database?" yn
   case $yn in
-	[Yy]* )  sh $CPATH2_HOME/cpath2.sh -create-tables $warehousedb; break;;
+	[Yy]* )  sh $CPATH2_HOME/cpath2-cli.sh -create-tables $warehousedb; break;;
 	[Nn]* )  break;;
 	* ) echo "Please answer yes or no.";;
   esac
@@ -63,7 +63,7 @@ done
 while true; do
 read -p "Fetch/update metadata using $CPATH2_HOME/metadata.conf?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -fetch-metadata file://$CPATH2_HOME/metadata.conf; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2-cli.sh -fetch-metadata file://$CPATH2_HOME/metadata.conf; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -76,7 +76,7 @@ done
 while true; do
 read -p "Fetch all data and also build the Warehouse?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2.sh -fetch-data --all; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2-cli.sh -fetch-data --all; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
@@ -87,11 +87,11 @@ while true; do
 read -p "Process ALL data (clean, convert, validate, normalize, merge, index, blacklist, an generate archives)?" yn
 	case $yn in
         [Yy]* ) 
-        	sh $CPATH2_HOME/cpath2.sh -premerge; 
-        	sh $CPATH2_HOME/cpath2.sh -merge --force; 
-        	sh $CPATH2_HOME/cpath2.sh -create-index; 
-        	sh $CPATH2_HOME/cpath2.sh -create-blacklist; 
-        	sh $CPATH2_HOME/cpath2.sh -create-downloads "homo sapiens,mus musculus"; 
+        	sh $CPATH2_HOME/cpath2-cli.sh -premerge; 
+        	sh $CPATH2_HOME/cpath2-cli.sh -merge --force; 
+        	sh $CPATH2_HOME/cpath2-cli.sh -create-index; 
+        	sh $CPATH2_HOME/cpath2-cli.sh -create-blacklist; 
+        	sh $CPATH2_HOME/cpath2-cli.sh -create-downloads "homo sapiens,mus musculus"; 
         	break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
@@ -108,5 +108,5 @@ done
 
 # print all commands
 #echo "INFO: all cpath2 commands:"
-#sh $CPATH2_HOME/cpath2.sh
+#sh $CPATH2_HOME/cpath2-cli.sh
 

@@ -45,6 +45,30 @@
 					</execution>
 				</executions>
 			</plugin>
+
+			<plugin>
+				<groupId>org.apache.tomcat.maven</groupId>
+				<artifactId>tomcat7-maven-plugin</artifactId>
+				<version>2.0</version>
+				<executions>
+					<execution>
+						<id>tomcat-run</id>
+						<goals>
+							<goal>exec-war-only</goal>
+						</goals>
+						<phase>package</phase>
+						<configuration>
+							<path>/cpath-admin</path>
+<!-- 							<enableNaming>false</enableNaming> -->
+<!-- 							<finalName>cpath-admin-web.jar</finalName> -->
+							<attachArtifactClassifier>exec-war</attachArtifactClassifier>
+							<attachArtifactClassifierType>jar</attachArtifactClassifierType>
+							<charset>utf-8</charset>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
 		</plugins>
 	</build>
 

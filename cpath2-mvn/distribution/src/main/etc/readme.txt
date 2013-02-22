@@ -7,7 +7,7 @@ Admin How To
 GENERAL INFORMATION
 
 
-Before running cPath2 from console or deploying the WAR on a Tomcat,
+  Before running cPath2 from console or deploying the WAR on a Tomcat,
 SET the system environment variable 'CPATH2_HOME' - to be a directory that 
 contains all the cpath2 configuration files you are planning to use, such as: 
 - cpath.properties (set db names, connection url prefix, username, password there); 
@@ -23,7 +23,7 @@ molecules to ignore, like ubiquitous ATP...)
 - security-config.xml (webapp security, admin login);
 - webdoc.properties (for the cpath2 demo webapp to find a cpath2 webservice).
 
-The cpath2 distribution directory can be cpath2 home as well (edit files there).
+  The cpath2 distribution directory can be cpath2 home as well (edit files there).
 One can later switch between different cpath2 home directories 
 (and therefore - cpath2 databases) by re-defining the CPATH2_HOME; 
 one can also edit cpath.properties file to specify different DB login/password
@@ -32,16 +32,16 @@ index directories will be created automatically (named after corresponding datab
 for existing cpath2 databases, the "main" Lucene index directory is expected 
 to be found in CPATH2_HOME; otherwise, full-text search won't work properly. 
 
-Using the cPath2 shell script is more convenient than executing the 
+  Using the cPath2 shell script is more convenient than executing the 
 jar or class directly. We provide several shell scripts for your convenience.
 
-If you want run java or write own script, make sure to set JAVA_HOME and other options: 
+  If you want run java or write own script, make sure to set JAVA_HOME and other options: 
 
 1. ALWAYS add CPATH2_HOME JVM environment variable: -DCPATH2_HOME=$CPATH2_HOME
 (provided that the system environment variable $CPATH2_HOME has been already set);
 
 2. using the mysql client:
-mysql> SET GLOBAL max_allowed_packet = 384000000;
+mysql> SET GLOBAL max_allowed_packet = 256000000;
 (alternatively, set this in the mysql conf. file)
 
 3. (in production) increase ulimits, e.g.: 
@@ -55,18 +55,17 @@ mysql> SET GLOBAL max_allowed_packet = 384000000;
 i.e., - MD5hex (32-byte) digest string calculated from elements's URIs!) 
 
 
-Try the cpath2.sh (without arguments) to see what's there available.
-
+  Try the cpath2-cli.sh (without arguments) to see what's there available.
 
 
 DATA IMPORTING
 
-cPath2 was planned to automatically download and process data from any URL,
+  cPath2 was planned to automatically download and process data from any URL,
 but this not always works due to such issues as: "ftp://.." URL access fails 
 from java on some servers with strict policy; problems with data archive structure;
 cpath2 cannot read multiple files from gzip archives; etc.
 
-The PREFERRED method is as follows
+  The PREFERRED method is as follows
 (when creating a new cpath2 instance DBs from scratch): 
 
 1. Edit the cPath2 metadata.conf (see "metadata format" below)
@@ -80,10 +79,14 @@ the corresponding line in metadata.conf, i.e. IDENTIFIER.VERSION.EXT;
 and no extension or other one means the data is not compressed, process as is)
 - wget ftp://ftp.ebi.ac.uk/pub/databases/chebi/SDF/ChEBI_complete.sdf.gz, etc. 
 
-Note: One day, you may want to import other data sources into cpath2 'warehouse', then 
-there must be corresponding cpath.converter.Converter implementation (which 
-is not required to be implemented in the cpath2 sources; no need to recompile 
-cpath2 either; - just add your class/jar to cpath2 script's classpath).
+NOTE: 
+  A cpath.converter.Converter or Cleaner implementation is not required 
+to be implemented in the main cpath2 project sources. It's possible 
+to configure (metadata.conf) and plug into --premerge an external 
+cleaner/converter classes even after the cpath2-cli.jar is compiled and shipped:
+simply include to cpath2 admin shell script's Java options something like:
+"-cp /path-to/MyDataCleanerImpl.class;/path-to/MyDataConverterImpl.class" 
+
 
 3. Download and prepare pathway data (note: L1, L2 will be auto-upgraded to L3) 
 or PSI-MI data $CPATH2_HOME/tmp/ as follows:
@@ -153,54 +156,58 @@ like file:///full/path/whatever.gz, instead.
 10) CONVERTER_CLASS - leave empty or use a specific converter class (like cpath.converter.internal.UniprotConverterImpl);
 
 
-
 MORE DETAILS
 
-One can also use cpath2.sh or import-data.sh scripts to execute 
-data import commands (as above), export some data or generate reports (e.g., validation).
+About how to use the admin tool. 
+
+One can also use import-data.sh scripts to execute 
+the entire data import pipeline.
 
 
-(run cpath2.sh w/o arguments to see the hint).
+(run cpath2-cli.sh w/o arguments to see the hint).
 
 Prepare MySQL Databases. If required, generate (all or some of) the cpath2 database schemas using
 the same db names as specified in the $CPATH2_HOME/cpath.properties file:
 
-sh cpath2.sh -create-tables cpathmain,cpathwarehouse,cpathmetadata
+sh cpath2-cli.sh -create-tables cpathmain,cpathwarehouse,cpathmetadata
 (WARNING: this destroys and re-creates the databases, if existed!)
 
 1. Fetch/Update Instance Metadata:
-#sh cpath2.sh -fetch-metadata <metadataURL>
-sh cpath2.sh -fetch-metadata "file:///full-path/metadata.conf"
+#sh cpath2-cli.sh -fetch-metadata <metadataURL>
+sh cpath2-cli.sh -fetch-metadata "file:///full-path/metadata.conf"
 
-2. Fetch Data (download, parse, clean, convert, and store data locally)
-sh cpath2.sh -fetch-data
+2. Fetch Data (download and store data locally)
+sh cpath2-cli.sh -fetch-data
 - gets all warehouse and pathway data sequentially; one can also import, e.g., CHEBI only: 
-sh cpath2.sh -fetch-data CHEBI
-(WARNING: do not run multiple parallel '-fetch-data' processes that import the same TYPE of data)
+sh cpath2-cli.sh -fetch-data CHEBI
 
-sh cpath2.sh -premerge
-#sh cpath2.sh -premerge <IDENTIFIER>
 
-# also possible to configure (in a "metadata.conf") and use an external cleaner/converter, i.e., after the cpath2.jar was compiled:
-#$JAVA_HOME/bin/java -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -cp /path-to/MyDataCleanerImpl.class;/path-to/MyDataConverterImpl.class -Xss65536k -Xmx2g -jar cpath2.jar -premerge
+3.Premerge (parse, clean, convert, and store data in the database)
+sh cpath2-cli.sh -premerge
+#sh cpath2-cli.sh -premerge <IDENTIFIER>
+#WARN: do not run multiple parallel '-premerge' processes that import WAREHOUSE data)
 
-sh cpath2.sh -merge
-#sh cpath2.sh -merge <IDENTIFIER> --force
+sh cpath2-cli.sh -merge
+#sh cpath2-cli.sh -merge <IDENTIFIER> --force
 
 # create full-text index:
-sh cpath2.sh -create-index
+sh cpath2-cli.sh -create-index
 
-Optionally (though highly recommended), you can also create a 'blacklist' (i.e. ignore list) for the graph queries. The graph queries
-will simply not traverse through the entities in this list and the entity references in the list will be eliminated
-from the SIF exports. The blacklist is generated solely based on the number of degrees of an entity
-(number of interactions and complexes an entity (grouped by entity reference) participates). A high-degree entity causes
-unnecessary traversing during the graph queries -- hence not wanted. However, the following command will keep
-the entities that control more than a threshold number of reactions out of the blacklist since this type of entities
-are often biologically relevant -- for more, see the blacklist.* options in the cpath.properties:
+  Optionally (though highly recommended), you can also create a 'blacklist' 
+(i.e. ignore list) for the graph queries. The graph queries will simply not
+traverse through the entities in this list and the entity references in the
+list will be eliminated from the SIF exports. The blacklist is generated 
+solely based on the number of degrees of an entity (number of interactions 
+and complexes an entity (grouped by entity reference) participates). 
+A high-degree entity causes unnecessary traversing during the graph queries 
+-- hence not wanted. However, the following command will keep the entities 
+that control more than a threshold number of reactions out of the blacklist 
+since this type of entities are often biologically relevant -- for more, see 
+the blacklist.* options in the cpath.properties:
 
-sh cpath2.sh -create-blacklist <main_database_name> $CPATH2_HOME/blacklist.txt
+sh cpath2-cli.sh -create-blacklist <main_database_name> $CPATH2_HOME/blacklist.txt
 
-sh cpath2.sh -create-downloads "homo sapiens,mus musculus"
+sh cpath2-cli.sh -create-downloads "homo sapiens,mus musculus"
 
 
 DB DUMPS
