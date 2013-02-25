@@ -14,7 +14,10 @@ public class TraverseResponse extends ServiceResponse {
 
     private List<TraverseEntry> traverseEntry;
     
-	public String getPropertyPath() {
+	public TraverseResponse() {
+	}
+    
+    public String getPropertyPath() {
 		return propertyPath;
 	}
 	public void setPropertyPath(String propertyPath) {

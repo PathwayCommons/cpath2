@@ -17,6 +17,9 @@ public class DataResponse extends ServiceResponse {
 //	@XmlTransient
 	private Object data; // BioPAX OWL, String, List, or any other data
 	
+	public DataResponse() {
+	}
+	
 	public Object getData() {
 		return data;
 	}

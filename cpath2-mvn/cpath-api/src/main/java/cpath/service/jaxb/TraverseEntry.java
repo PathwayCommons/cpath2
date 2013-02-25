@@ -1,5 +1,6 @@
 package cpath.service.jaxb;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -10,12 +11,14 @@ import javax.xml.bind.annotation.XmlType;
 
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "TraverseEntry")
-public class TraverseEntry {
+public class TraverseEntry implements Serializable {
     @XmlAttribute(required = true)
     private String uri;
     
     private List<String> value;
 
+    public TraverseEntry() {
+	}
 
     public String getUri() {
         return uri;
