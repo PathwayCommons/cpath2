@@ -20,6 +20,8 @@ public class ErrorResponse extends ServiceResponse {
     @XmlElement(name = "error_details", required = true)
     private String errorDetails;
 
+    public ErrorResponse() {
+	}
     
     public Integer getErrorCode() {
         return errorCode;

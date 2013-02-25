@@ -22,7 +22,10 @@ public class SearchResponse extends ServiceResponse {
     @XmlAttribute
     private String comment;
 	
-	public String getComment() {
+	public SearchResponse() {
+	}
+    
+    public String getComment() {
 		return comment;
 	}
 	

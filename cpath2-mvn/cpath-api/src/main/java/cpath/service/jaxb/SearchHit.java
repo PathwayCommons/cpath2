@@ -1,5 +1,6 @@
 package cpath.service.jaxb;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -26,7 +27,7 @@ import org.apache.commons.lang.StringEscapeUtils;
     "pathway",
     "excerpt"
 })
-public class SearchHit {
+public class SearchHit implements Serializable {
     @XmlElement(required = true)
     private String uri;
     @XmlElement(required = true)
@@ -37,6 +38,8 @@ public class SearchHit {
     private List<String> pathway;
     private String excerpt;
 
+    public SearchHit() {
+	}
 
     public String getUri() {
         return uri;
