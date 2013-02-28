@@ -6,7 +6,6 @@ import java.io.OutputStream;
 
 import org.biopax.paxtools.model.Model;
 
-import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.ServiceResponse;
 
 public interface OutputFormatConverter {

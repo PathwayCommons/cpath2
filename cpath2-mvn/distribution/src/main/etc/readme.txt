@@ -6,13 +6,13 @@ Admin How To
 
 GENERAL INFORMATION
 
-
   Before running cPath2 from console or deploying the WAR on a Tomcat,
 SET the system environment variable 'CPATH2_HOME' - to be a directory that 
 contains all the cpath2 configuration files you are planning to use, such as: 
 - cpath.properties (set db names, connection url prefix, username, password there); 
 - hibernate.properties;
 - log4j.properties;
+- 'data' dir (it is where downloaded original data files are stored);
 - 'tmp' dir (it is where downloaded data and ontology files are stored, 
 and cache directories and files get created!);
 - obo.properties;
@@ -20,8 +20,6 @@ and cache directories and files get created!);
 - ehcache-hibernate.xml (the 2nd-level, mid-tier/service (query) layer cache configuration);
 - blacklist.txt (optional; BioPAX graph query performance tuning., usually - small 
 molecules to ignore, like ubiquitous ATP...)
-- security-config.xml (webapp security, admin login);
-- webdoc.properties (for the cpath2 demo webapp to find a cpath2 webservice).
 
   The cpath2 distribution directory can be cpath2 home as well (edit files there).
 One can later switch between different cpath2 home directories 
@@ -58,7 +56,7 @@ i.e., - MD5hex (32-byte) digest string calculated from elements's URIs!)
   Try the cpath2-cli.sh (without arguments) to see what's there available.
 
 
-DATA IMPORTING
+DATA IMPORTING from console
 
   cPath2 was planned to automatically download and process data from any URL,
 but this not always works due to such issues as: "ftp://.." URL access fails 
@@ -95,6 +93,8 @@ or PSI-MI data $CPATH2_HOME/tmp/ as follows:
 - extract what you need (e.g. some species data only)
 - create a simple zip/gzip archive, name it according to IDENTIFIER.VERSION.EXT schema
 (alternatively, use, e.g., file:///full-path-to/smth.zip URL in the metadata.conf) 
+
+4. set "maintenance-mode.enabled=true" in the cpath properties.
 
 4. Run import-data.sh script and follow the instructions/questions...
 
@@ -158,11 +158,11 @@ like file:///full/path/whatever.gz, instead.
 
 MORE DETAILS
 
-About how to use the admin tool. 
+About how to use the admin tool 
+(most commands work only if maintenance mode is enabled). 
 
 One can also use import-data.sh scripts to execute 
 the entire data import pipeline.
-
 
 (run cpath2-cli.sh w/o arguments to see the hint).
 

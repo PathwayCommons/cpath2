@@ -86,6 +86,14 @@ public class BiopaxModelController extends BasicController {
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
 	
+
+    @ModelAttribute("maintenanceMode")
+    public String getMaintenanceModeMsgIfEnabled() {
+    	if(CPathSettings.isMaintenanceModeEnabled())
+    		return "Maintenance mode is enabled";
+    	else 
+    		return "";
+    }
 	
 	
 	/**
@@ -113,7 +121,7 @@ public class BiopaxModelController extends BasicController {
     	Writer writer, HttpServletResponse response) throws IOException
     {
     	if(bindingResult != null &&  bindingResult.hasErrors()) {
-    		errorResponse(errorfromBindingResult(bindingResult), writer, response);
+    		errorResponse(errorfromBindingResult(bindingResult), response);
     	} else {
 			OutputFormat format = get.getFormat();
 			String[] uri = get.getUri();
@@ -134,11 +142,13 @@ public class BiopaxModelController extends BasicController {
     
     
     @RequestMapping("/traverse")
-    public @ResponseBody ServiceResponse traverse(@Valid GetProperty query, BindingResult bindingResult) 
+    public @ResponseBody ServiceResponse traverse(@Valid GetProperty query, 
+    	BindingResult bindingResult, HttpServletResponse response) 
     		throws IOException 
     {
     	if(bindingResult.hasErrors()) {
-    		return errorfromBindingResult(bindingResult);
+    		errorResponse(errorfromBindingResult(bindingResult), response);
+    		return null;
     	} else {
 			return service.traverse(query.getPath(), query.getUri());
     	}

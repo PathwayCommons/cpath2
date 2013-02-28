@@ -54,12 +54,12 @@ import cpath.service.analyses.CommonStreamAnalysis;
 import cpath.service.analyses.NeighborhoodAnalysis;
 import cpath.service.analyses.PathsBetweenAnalysis;
 import cpath.service.analyses.PathsFromToAnalysis;
-import cpath.service.jaxb.ErrorResponse;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 import cpath.service.jaxb.TraverseResponse;
 import cpath.service.CPathService;
+import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
 import cpath.service.OutputFormatConverter;
 import static cpath.service.Status.*;
@@ -148,7 +148,7 @@ class CPathServiceImpl implements CPathService {
 			// do search
 			SearchResponse hits = mainDAO.search(queryStr, page, biopaxClass, dsources, organisms);
 			if(hits.isEmpty())
-				serviceResponse = NO_RESULTS_FOUND.errorResponse("No hits");
+				serviceResponse = new ErrorResponse(NO_RESULTS_FOUND, "No hits");
 			else {
 				hits.setComment("Search '" + queryStr  + "' in " + 
 					((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName()) 
@@ -157,7 +157,7 @@ class CPathServiceImpl implements CPathService {
 			}
 			
 		} catch (Exception e) {
-			serviceResponse = INTERNAL_ERROR.errorResponse(e);
+			serviceResponse = new ErrorResponse(INTERNAL_ERROR, e);
 		}
 		
 		return serviceResponse;
@@ -172,7 +172,7 @@ class CPathServiceImpl implements CPathService {
 	@Override
 	public ServiceResponse fetch(OutputFormat format, String... uris) {
 		if (uris.length == 0)
-			return NO_RESULTS_FOUND.errorResponse(
+			return new ErrorResponse(NO_RESULTS_FOUND,
 					"No URIs were specified for the query!");
 		
 		Model m = fetchBiopaxModel(uris);
@@ -180,7 +180,7 @@ class CPathServiceImpl implements CPathService {
 		if(m != null && !m.getObjects().isEmpty())
 			return formatConverter.convert(m, format, true);
 		else
-			return NO_RESULTS_FOUND.errorResponse(
+			return new ErrorResponse(NO_RESULTS_FOUND,
 				"No results for: " + Arrays.toString(uris));
     }
 
@@ -211,14 +211,14 @@ class CPathServiceImpl implements CPathService {
 		try {
 			Model m = mainDAO.runAnalysis(analysis, params);
 			if(m == null || m.getObjects().isEmpty())
-				return NO_RESULTS_FOUND.errorResponse("Graph query " +
+				return new ErrorResponse(NO_RESULTS_FOUND, "Graph query " +
 					"returned empty BioPAX model (" 
 						+ analysis.getClass().getSimpleName() + ")");	
 			else
 				return formatConverter.convert(m, format, true);
 		} catch (Exception e) {
 			log.error("runAnalysis failed. ", e);
-			return INTERNAL_ERROR.errorResponse(e);
+			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
 	}
 
@@ -268,7 +268,7 @@ class CPathServiceImpl implements CPathService {
 		sources = findUrisByIds(sources);
 
 		if (direction == Direction.BOTHSTREAM) {
-			return BAD_REQUEST.errorResponse(
+			return new ErrorResponse(BAD_REQUEST, 
 				"Direction cannot be BOTHSTREAM for the COMMONSTREAM query!");
 		} else if(direction == null) {
 			direction = Direction.DOWNSTREAM;	
@@ -381,12 +381,10 @@ class CPathServiceImpl implements CPathService {
 			return results;
 		} catch (IllegalArgumentException e) {
 			log.error("Failed to init path accessor: ", e);
-			ErrorResponse err = BAD_REQUEST.errorResponse(e);
-			err.setErrorDetails(e.getMessage()); //easy message (removes stack trace)
-			return err;
+			return new ErrorResponse(BAD_REQUEST, e.getMessage());
 		} catch (Exception e) {
 			log.fatal("Failed. ", e);
-			return INTERNAL_ERROR.errorResponse(e);
+			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
 	}
 

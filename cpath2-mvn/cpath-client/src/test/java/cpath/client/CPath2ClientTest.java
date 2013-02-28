@@ -107,7 +107,7 @@ public class CPath2ClientTest {
 			resp = cl.traverse(Collections.singleton("http://identifiers.org/taxonomy/9606"));
 			fail("must throw CPathException and not something else!");
 		} catch (CPathException e) {
-			//ok - should be ErrorResponse
+			//ok
 		}
 	}
 	

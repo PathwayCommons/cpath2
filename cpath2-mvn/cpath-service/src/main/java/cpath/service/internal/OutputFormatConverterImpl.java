@@ -40,19 +40,17 @@ import org.biopax.paxtools.io.sif.InteractionRule;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
-import org.sbgn.bindings.Sbgn;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ServiceResponse;
+import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
 import cpath.service.OutputFormatConverter;
 import static cpath.service.Status.*;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
 
 /**
  * Service tier class - to convert from BioPAX 
@@ -105,7 +103,7 @@ public class OutputFormatConverterImpl implements OutputFormatConverter {
         if(model != null && !model.getObjects().isEmpty()) {
             return convert(model, format);
         } else {
-        	return NO_RESULTS_FOUND.errorResponse("Empty BioPAX Model.");
+        	return new ErrorResponse(NO_RESULTS_FOUND, "Empty BioPAX Model.");
         }
 	}
 
@@ -114,7 +112,7 @@ public class OutputFormatConverterImpl implements OutputFormatConverter {
     public ServiceResponse convert(Model m, OutputFormat format, Object... args) 
     {
     	if(m == null || m.getObjects().isEmpty()) {
-			return NO_RESULTS_FOUND.errorResponse("Empty/Null BioPAX Model returned.");
+			return new ErrorResponse(NO_RESULTS_FOUND, "Empty/Null BioPAX Model returned.");
 		}
 
 		// otherwise, do convert (it's a DataResponse)
@@ -151,7 +149,7 @@ public class OutputFormatConverterImpl implements OutputFormatConverter {
 			return dataResponse;
 		}
         catch (Exception e) {
-        	return INTERNAL_ERROR.errorResponse(e);
+        	return new ErrorResponse(INTERNAL_ERROR, e);
 		}
     }
 

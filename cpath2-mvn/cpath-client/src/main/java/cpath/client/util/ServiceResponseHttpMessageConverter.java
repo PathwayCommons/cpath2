@@ -34,7 +34,7 @@ public class ServiceResponseHttpMessageConverter
         mediaList.add(MediaType.APPLICATION_XML);
         
         jaxb = new Jaxb2Marshaller();
-        jaxb.setClassesToBeBound(Help.class, ErrorResponse.class, 
+        jaxb.setClassesToBeBound(Help.class,
         		SearchResponse.class, SearchHit.class,
         		TraverseResponse.class, TraverseEntry.class,
         		DataResponse.class, ServiceResponse.class); //the latter two classes may be not required in practice

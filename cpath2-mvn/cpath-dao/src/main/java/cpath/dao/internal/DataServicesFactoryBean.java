@@ -78,27 +78,27 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	// fields are set by Spring from cpath.properties
     
 	private String dbUser;
-	@Value("${user}")
+	@Value("${db.user}")
 	public void setDbUser(String dbUser) { this.dbUser = dbUser; }
 	public String getDbUser() { return dbUser; }
 
 	private String dbPassword;
-	@Value("${password}")
+	@Value("${db.password}")
 	public void setDbPassword(String dbPassword) { this.dbPassword = dbPassword; }
 	public String getDbPassword() { return dbPassword; }
 
 	private String dbDriver;
-	@Value("${driver}")
+	@Value("${db.driver}")
 	public void setDbDriver(String dbDriver) { this.dbDriver = dbDriver; }
 	public String getDbDriver() { return dbDriver; }
 
 	private String dbConnection;
-	@Value("${connection}")
+	@Value("${db.connection}")
 	public void setDbConnection(String dbConnection) { this.dbConnection = dbConnection; }
 	public String getDbConnection() { return dbConnection; }
 
 	private String dbDialect;
-	@Value("${dialect}")
+	@Value("${db.dialect}")
 	public void setDbDialect(String dbDialect) { this.dbDialect = dbDialect; }
 	public String getDbDialect() { return dbDialect; }
 	
@@ -318,7 +318,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
     
     public static void dropFulltextIndex(String dbName) {
 		// drop existing index dir.
-		File dir = new File(CPathSettings.getHomeDir() + File.separator + dbName);
+		File dir = new File(CPathSettings.homeDir() + File.separator + dbName);
 		if(log.isInfoEnabled())
 			log.info("Removing full-text index directory : " 
 				+ dir.getAbsolutePath());
@@ -414,7 +414,7 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
     	properties.put("hibernate.connection.username", dbUser);
     	properties.put("hibernate.connection.password", dbPassword);
     	properties.put("hibernate.connection.driver_class", dbDriver);
-    	properties.put("hibernate.search.default.indexBase", CPathSettings.getHomeDir()+File.separator+db);
+    	properties.put("hibernate.search.default.indexBase", CPathSettings.homeDir()+File.separator+db);
     	properties.put("hibernate.search.default.directory_provider", "filesystem");
     	properties.put("hibernate.search.indexing_strategy", "manual");
     	properties.put("hibernate.cache.use_second_level_cache", "false");

@@ -3,8 +3,6 @@
 
   <xs:element name="dataResponse" type="DataResponse"/>
 
-  <xs:element name="errorResponse" type="ErrorResponse"/>
-
   <xs:element name="help" type="Help"/>
 
   <xs:element name="searchResponse" type="SearchResponse"/>
@@ -23,18 +21,6 @@
 
   <xs:complexType name="ServiceResponse" abstract="true">
     <xs:sequence/>
-  </xs:complexType>
-
-  <xs:complexType name="ErrorResponse">
-    <xs:complexContent>
-      <xs:extension base="ServiceResponse">
-        <xs:sequence>
-          <xs:element name="error_code" type="xs:int"/>
-          <xs:element name="error_msg" type="xs:string"/>
-          <xs:element name="error_details" type="xs:string"/>
-        </xs:sequence>
-      </xs:extension>
-    </xs:complexContent>
   </xs:complexType>
 
   <xs:complexType name="Help">
@@ -96,4 +82,3 @@
     </xs:complexContent>
   </xs:complexType>
 </xs:schema>
-

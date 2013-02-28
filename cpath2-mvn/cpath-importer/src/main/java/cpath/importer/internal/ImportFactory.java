@@ -130,7 +130,7 @@ public final class ImportFactory {
 		 * (replaces existing one in the same thread),
 		 * load another specific application context
 		 */
-		String home = CPathSettings.getHomeDir();
+		String home = CPathSettings.homeDir();
 		if (home==null) {
 			throw new RuntimeException(
 				"Please set " + CPathSettings.HOME_VARIABLE_NAME + " environment variable " +

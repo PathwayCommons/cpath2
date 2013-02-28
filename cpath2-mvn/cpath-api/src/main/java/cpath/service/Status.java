@@ -27,23 +27,12 @@
 
 package cpath.service;
 
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import javax.xml.bind.JAXBContext;
-//import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-//import javax.xml.namespace.QName;
+import cpath.service.jaxb.ServiceResponse;
 
-import cpath.service.jaxb.ErrorResponse;
 
-/**
- * Enumeration of Protocol Status Codes.
- *
- * @author rodche
- */
 public enum Status {
     /**
      * Status Code:  OK.
@@ -69,22 +58,16 @@ public enum Status {
     /**
      * Status Code:  Internal Server Error.
      */
-    INTERNAL_ERROR(500, "Internal Server Error");
+    INTERNAL_ERROR(500, "Internal Server Error"),
 
+    
+    /**
+     * Status Code:  Internal Server Error.
+     */
+    MAINTENANCE(503, "Server is temporarily unavailable due to regular maintenance");
 
     private final Integer errorCode;
     private final String errorMsg;
-    
-    
-    private static final JAXBContext jaxbContext;
-    
-	static {
-		try {
-			jaxbContext = JAXBContext.newInstance(ErrorResponse.class);//, SearchHit.class, SearchResponse.class);
-		} catch (JAXBException e) {
-			throw new RuntimeException(e);
-		}
-	}
     
 
 	/**
@@ -130,63 +113,13 @@ public enum Status {
         return list;
     }
 
+    
 	public static Status fromCode(int code) {
 		for(Status type : Status.values()) {
 			if(type.getErrorCode() == code)
 				return type;
 		}
 		return null;
-	}
-	
-	
-	public static String marshal(ErrorResponse error) {
-		StringWriter writer = new StringWriter();
-		try {
-			Marshaller ma = jaxbContext.createMarshaller();
-			ma.setProperty("jaxb.formatted.output", true);
-//			ma.marshal(new JAXBElement<ErrorResponse>(new QName("","errorResponse"), ErrorResponse.class, error), writer);
-			ma.marshal(error, writer);
-		} catch (JAXBException e) {
-			throw new RuntimeException(e);
-		}
-		return writer.toString();
-	}
-
-	
-	/**
-	 * Gets the error as XML string.
-	 * 
-	 * @param str error details (exception or string)
-	 * @return XML error message
-	 */
-	public String errorResponseXml(Object str) {
-		ErrorResponse errorResponse = errorResponse(str);
-		return marshal(errorResponse);
-	}
-	
-    
-	/**
-	 * Creates a desired error bean from an object
-	 * (e.g., exception or string)
-	 * 
-	 * @param o
-	 * @return
-	 */
-	public ErrorResponse errorResponse(Object o) 
-    {
-		ErrorResponse error = new ErrorResponse();
-		error.setErrorCode(errorCode);
-		error.setErrorMsg(errorMsg);
-		
-		if(o instanceof Exception) {
-			error.setErrorDetails(o.toString() + "; " 
-				+ Arrays.toString(((Exception)o).getStackTrace()));
-		} else {
-			if(o != null)
-				error.setErrorDetails(o.toString());
-		}
-		
-		return error;
-    } 
+	} 
 
 }
