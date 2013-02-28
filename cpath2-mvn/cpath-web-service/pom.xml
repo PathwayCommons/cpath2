@@ -35,7 +35,7 @@
 			<plugin>
 			<!-- Can (not deploying on any Tomcat) run the jar as:
 			java -Xms256m -Xmx3g -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -jar target/cpath-web-service-4.0.0-SNAPSHOT-war-exec.jar
-			 (this way needs testing though) -->
+			-->
 				<groupId>org.apache.tomcat.maven</groupId>
 				<artifactId>tomcat7-maven-plugin</artifactId>
 				<version>2.0</version>
@@ -115,6 +115,18 @@
 			<groupId>taglibs</groupId>
 			<artifactId>standard</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+				<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-taglibs</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-config</artifactId>
 		</dependency>
 	</dependencies>
 

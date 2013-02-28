@@ -34,7 +34,7 @@ import java.util.Arrays;
 import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
-import cpath.service.Status;
+import cpath.service.ErrorResponse;
 import cpath.service.jaxb.*;
 
 import org.apache.commons.logging.Log;
@@ -50,15 +50,13 @@ import org.springframework.validation.FieldError;
 public abstract class BasicController {
     private static final Log log = LogFactory.getLog(BasicController.class);
    
-
+    
 	/**
-	 * Writes an error response body from the error bean.
-	 * @throws IOException
+	 * Http error response from the error bean.
 	 */
 	protected void errorResponse(ErrorResponse error, 
-			Writer writer, HttpServletResponse response) throws IOException {
-		response.setContentType("application/xml");
-		writer.write(Status.marshal(error));
+			HttpServletResponse response) throws IOException {
+		response.sendError(error.getErrorCode(), error.toString());	
 	}
 	
 	
@@ -77,7 +75,7 @@ public abstract class BasicController {
 					+ fe.getDefaultMessage() + ". ");
 		}
 		
-		ErrorResponse error = BAD_REQUEST.errorResponse(sb.toString());
+		ErrorResponse error = new ErrorResponse(BAD_REQUEST, sb.toString());
 		return error;
 	}
     
@@ -87,13 +85,13 @@ public abstract class BasicController {
 	{
 		if(resp instanceof ErrorResponse) {
     		
-			errorResponse((ErrorResponse) resp, writer, response);
+			errorResponse((ErrorResponse) resp, response);
     		
 		} else if(resp.isEmpty()) { // should not be here (normally, it gets converter to ErrorResponse...)
 			log.warn("stringResponse: I got an empty ServiceResponce! " +
 				"(must be already converted to the ErrorResponse)");
 			
-			errorResponse(NO_RESULTS_FOUND.errorResponse(null), writer, response);
+			errorResponse(new ErrorResponse(NO_RESULTS_FOUND, null), response);
 			
 		} else {
 			response.setContentType("text/plain");

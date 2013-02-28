@@ -8,6 +8,9 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
 
+import cpath.config.CPathSettings;
+
+
 /**
  * @author rodche
  *
@@ -32,7 +35,14 @@ public final class CPathWebserviceLoggingHandlerInterceptor implements
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
 			Object handler) throws Exception {
 		
-		LOG.info("URI: " + request.getRequestURI() 
+		String requestUri = request.getRequestURI();
+		
+		if(//!CPathSettings.isMaintenanceModeEnabled() &&
+			!(requestUri.contains("/resources/") //do not log about accessing css, images, scripts...
+			//		|| requestUri.contains("/help")
+			)	
+		) 
+			LOG.info("URI: " + requestUri 
 //				+ "; Content-Type: " + request.getHeader("Content-Type")
 				+ "; Referer: " + request.getHeader("Referer")
 				+ "; X-Forwarded-For: " + request.getHeader("X-Forwarded-For")
@@ -40,8 +50,6 @@ public final class CPathWebserviceLoggingHandlerInterceptor implements
 				+ "; X-Requested-With: " + request.getHeader("X-Requested-With"));
 		
 		return true; 
-		
-		//TODO can conditionally return false in order to disable all cpath2 queries (using a system variable or static property)
 	}
 
 }

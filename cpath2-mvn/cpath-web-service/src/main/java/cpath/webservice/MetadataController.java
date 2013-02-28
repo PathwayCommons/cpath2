@@ -9,7 +9,6 @@ import java.util.*;
 
 import javax.imageio.ImageIO;
 
-//import cpath.service.jaxb.*;
 import cpath.config.CPathSettings;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.Metadata;
@@ -38,6 +37,15 @@ public class MetadataController extends BasicController
     public MetadataController(MetadataDAO service) {
 		this.service = service;
 	}
+    
+    
+    @ModelAttribute("maintenanceMode")
+    public String getMaintenanceModeMsgIfEnabled() {
+    	if(CPathSettings.isMaintenanceModeEnabled())
+    		return "Maintenance mode is enabled";
+    	else 
+    		return "";
+    }    
     
     @RequestMapping("/validation/{metadataId}/files.html") //a JSP view
     public String queryForValidations(@PathVariable String metadataId, Model model) 
@@ -125,8 +133,7 @@ public class MetadataController extends BasicController
     @RequestMapping(value = "/downloads.html")
     public String downloads(Model model) {
     	// get the sorted list of files to be shared on the web
-    	String path = CPathSettings.getHomeDir() 
-    		+ File.separator + CPathSettings.DOWNLOADS_SUBDIR; 
+    	String path = CPathSettings.downloadsDir(); 
     	File[] list = new File(path).listFiles();
     	
     	Map<String,String> files = new TreeMap<String,String>();

@@ -93,14 +93,14 @@ public final class CPathSettings {
 		WAREHOUSE_DB("warehouse.db"),
 		XML_BASE("xml.base"),
 		MAX_SEARCH_HITS_PER_PAGE("maxSearchHitsPerPage"),
-		EXPLAIN_ENABLED("explain.enabled"),
+		EXPLAIN_ENABLED("explain.enabled"), //can be also used for debug/verbose output
 		DIGEST_URI_ENABLED("md5hex.uri.enabled"),
         BLACKLIST_DEGREE_THRESHOLD("blacklist.degree.threshold"),
         BLACKLIST_CONTROL_THRESHOLD("blacklist.control.threshold"),
-        READ_ONLY("read-only.enabled"),
         PROVIDER("cpath2.provider"),
         DESCRIPTION("cpath2.description"),
-        VERSION("cpath2.data.version")
+        VERSION("cpath2.data.version"),
+        MAINTENANCE_MODE_ENABLED("maintenance-mode.enabled")
 		;
 		
 		private final String name;
@@ -117,7 +117,7 @@ public final class CPathSettings {
 	
 	
 	static {
-		String file = getHomeDir() + File.separator + CPATH_PROPERTIES_FILE_NAME;		
+		String file = homeDir() + File.separator + CPATH_PROPERTIES_FILE_NAME;		
 		try {
 			cPathProperties.load(new FileReader(file));
 		} catch (IOException e) {
@@ -137,28 +137,34 @@ public final class CPathSettings {
 	 * 
 	 * @return
 	 */
-	public static String getHomeDir() {
+	public static String homeDir() {
 		return System.getProperty(HOME_VARIABLE_NAME);
 	}
 	
 	
 	/**
-	 * Gets the full path to a local directory 
+	 * Gets the full path to the local directory 
 	 * where pathway and other data will be fetched and looked for.
 	 * 
 	 * @return
 	 */
 	public static String localDataDir() {
-		return getHomeDir() 
+		return homeDir() 
 			+ File.separator + CPathSettings.DATA_SUBDIR;
 	}
 	
 	
 	/**
-	 * Name for the system environment and/or JVM variable 
-	 * cPath2 checks to enable extra/advanced debug output.
+	 * Gets the full path to the cpath2 query/converter
+	 * blacklist (whether it exists or yet to be generated) 
+	 * 
+	 * @return
 	 */
-	public static final String JAVA_OPT_DEBUG = "cpath.debug";
+	public static String blacklistFile() {
+		return homeDir() + File.separator + "blacklist.txt";
+	}	
+	
+	
 	
 	/**
 	 * Answers whether cPath2 will also accept  
@@ -202,6 +208,15 @@ public final class CPathSettings {
 			case MAX_SEARCH_HITS_PER_PAGE:
 				v = String.valueOf(Integer.MAX_VALUE); 
 				break;
+			case MAINTENANCE_MODE_ENABLED:
+				v = "false"; 
+				break;
+			case BLACKLIST_CONTROL_THRESHOLD:
+				v = "15";
+				break;
+			case BLACKLIST_DEGREE_THRESHOLD:
+				v = "100";
+				break;
 			default:
 				break;
 			}
@@ -232,24 +247,36 @@ public final class CPathSettings {
 		return "true".equalsIgnoreCase(get(CPath2Property.EXPLAIN_ENABLED));
 	}
 		
-	
+		
 	/**
-	 * Flags if cPath2 runs in the read-only mode,
-	 * (data import, modification, and indexing Admin commands disabled)
+	 * Flags if cPath2 runs in the maintenance mode,
+	 * (all services except for admin are disabled)
 	 * 
 	 * @return
 	 */
-	public static boolean isReadOnly() {
-		return "true".equalsIgnoreCase(get(CPath2Property.READ_ONLY));
+	public static boolean isMaintenanceModeEnabled() {
+		return "true".equalsIgnoreCase(get(CPath2Property.MAINTENANCE_MODE_ENABLED));
 	}
 
 	
 	/**
-	 * Enable/disable cPath2 read-only mode.
+	 * Enable/disable cPath2 maintenance mode.
 	 * 
 	 * @param value
 	 */
-	public static void setReadOnly(boolean value) {
-		set(CPath2Property.READ_ONLY, Boolean.toString(value));
+	public static void setMaintenanceModeEnabled(boolean value) {
+		set(CPath2Property.MAINTENANCE_MODE_ENABLED, Boolean.toString(value));
+	}
+	
+	
+	/**
+	 * Gets the full path to the local directory 
+	 * where cpath2 (batch data downloads) archives are stored.
+	 * 
+	 * @return
+	 */
+	public static String downloadsDir() {
+		return CPathSettings.homeDir() 
+	    	+ File.separator + CPathSettings.DOWNLOADS_SUBDIR;
 	}
 }

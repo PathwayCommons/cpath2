@@ -29,14 +29,14 @@ package cpath.webservice;
 
 
 import cpath.service.jaxb.*;
-import cpath.service.CPathService;
+//import cpath.service.CPathService;
 import cpath.service.Cmd;
 import cpath.service.CmdArgs;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
 import cpath.webservice.args.binding.*;
 
-import org.apache.commons.lang.StringUtils;
+//import org.apache.commons.lang.StringUtils;
 import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.controller.SimpleEditorMap;
@@ -60,10 +60,13 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 public class HelpController {  
     
-    private CPathService service; // main PC db access
+//    private CPathService service; // main PC db access
     
-	public HelpController(CPathService service) {
-		this.service = service;
+//	public HelpController(CPathService service) {
+//		this.service = service;
+//	}
+	
+	public HelpController() {
 	}
 	
 	/**
@@ -104,8 +107,8 @@ public class HelpController {
     	help.setExample("help/commands");
     	// Help tree's five main branches:
     	help.addMember(getCommands()); // sub-tree for commands and their args info
-    	help.addMember(getDatasources());
-       	help.addMember(getOrganisms());
+//    	help.addMember(getDatasources());
+//       	help.addMember(getOrganisms());
     	help.addMember(getFormats());
     	help.addMember(getGraphTypes());
     	help.addMember(getBiopaxTypes());
@@ -345,52 +348,56 @@ public class HelpController {
     }
 
 
-	/**
-	 * List of loaded data sources.
-	 * 
-	 * @return
-	 */
-    @RequestMapping("/help/datasources") 
-    public @ResponseBody Help getDatasources() {
-    	Help help = new Help();
-    	help.setId("datasources");
-
-    	for(SearchHit dsHit : service.dataSources().getSearchHit()) 
-    	{
-    		Help hm = new Help(dsHit.getUri());
-    		hm.setTitle(dsHit.getName());
-    		hm.setInfo(StringUtils.join(dsHit.getDataSource(),", ")
-    				+ " (description: " + dsHit.getExcerpt() + ")"); //a hack to get other names and description
-    		help.addMember(hm);
-    	}
-    	help.setTitle("Pathway Data Sources");
-    	help.setInfo("Biological pathways and interactions data providers. " +
-    			"These names are recommended to use with the " +
-    			"full-text search command (e.g., by adding '&datasource=...' " +
-    			"filter parameters). Other (original pathway data provider's) BioPAX Provenance " +
-    			"objects there can be used as well, but may be associated with " +
-    			"only a sub-set of entities loaded from given data source.");
-    	return help;
-    }
-       
+//  /help/datasources and /help/organisms are not required anymore; 
+// please use /metadata.json or /metadata to get info on the loaded data sources;
+// please use /search?q=*&type=biosource to get all BioSources (organisms) in the db
     
-    @RequestMapping("/help/organisms") 
-    public @ResponseBody Help getOrganisms() {
-    	Help help = new Help();
-    	help.setId("organisms");
-    	
-    	for(SearchHit bsHit : service.bioSources().getSearchHit()) {
-    		Help hm = new Help(bsHit.getUri());
-    		hm.setTitle(bsHit.getName());
-    		hm.setInfo(StringUtils.join(bsHit.getOrganism(), ", ")); // using a hack to list other names
-    		help.addMember(hm);
-    	}
-    	help.setTitle("Organisms");
-    	help.setInfo("All organisms (BioSource) referenced in this system " +
-    		"(incl. those occur in other organism's pathways or in annotations); " +
-    		"one can also get them using '/search?q=*&type=biosource' command");
-    	return help;
-    }
+//	/**
+//	 * List of loaded data sources.
+//	 * 
+//	 * @return
+//	 */
+//    @RequestMapping("/help/datasources") 
+//    public @ResponseBody Help getDatasources() {
+//    	Help help = new Help();
+//    	help.setId("datasources");
+//
+//    	for(SearchHit dsHit : service.dataSources().getSearchHit()) 
+//    	{
+//    		Help hm = new Help(dsHit.getUri());
+//    		hm.setTitle(dsHit.getName());
+//    		hm.setInfo(StringUtils.join(dsHit.getDataSource(),", ")
+//    				+ " (description: " + dsHit.getExcerpt() + ")"); //a hack to get other names and description
+//    		help.addMember(hm);
+//    	}
+//    	help.setTitle("Pathway Data Sources");
+//    	help.setInfo("Biological pathways and interactions data providers. " +
+//    			"These names are recommended to use with the " +
+//    			"full-text search command (e.g., by adding '&datasource=...' " +
+//    			"filter parameters). Other (original pathway data provider's) BioPAX Provenance " +
+//    			"objects there can be used as well, but may be associated with " +
+//    			"only a sub-set of entities loaded from given data source.");
+//    	return help;
+//    }
+//       
+//    
+//    @RequestMapping("/help/organisms") 
+//    public @ResponseBody Help getOrganisms() {
+//    	Help help = new Help();
+//    	help.setId("organisms");
+//    	
+//    	for(SearchHit bsHit : service.bioSources().getSearchHit()) {
+//    		Help hm = new Help(bsHit.getUri());
+//    		hm.setTitle(bsHit.getName());
+//    		hm.setInfo(StringUtils.join(bsHit.getOrganism(), ", ")); // using a hack to list other names
+//    		help.addMember(hm);
+//    	}
+//    	help.setTitle("Organisms");
+//    	help.setInfo("All organisms (BioSource) referenced in this system " +
+//    		"(incl. those occur in other organism's pathways or in annotations); " +
+//    		"one can also get them using '/search?q=*&type=biosource' command");
+//    	return help;
+//    }
 
 
 }

@@ -2,7 +2,6 @@ package cpath.client;
 
 import cpath.client.util.BioPAXHttpMessageConverter;
 import cpath.client.util.CPathException;
-import cpath.client.util.CPathExceptions;
 import cpath.client.util.ServiceResponseHttpMessageConverter;
 import cpath.service.Cmd;
 import cpath.service.CmdArgs;
@@ -14,6 +13,7 @@ import org.apache.commons.lang.StringUtils;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
@@ -119,18 +119,18 @@ public final class CPath2Client
 	 * @return data in the requested format
 	 * @throws CPathException if there is no results or another problem
 	 */
-	public String executeQuery(final String url, final OutputFormat outputFormat) throws CPathException {
+	public String executeQuery(final String url, final OutputFormat outputFormat) 
+	throws CPathException 
+	{
 		final String q = (outputFormat == null)
 			? url : url + "&" + CmdArgs.format + "=" + outputFormat;
 		
-		String data = restTemplate.getForObject(q, String.class);
-		
-		if(data != null && data.contains("<errorResponse>")) {
-			ErrorResponse err = restTemplate.getForObject(q, ErrorResponse.class);
-			throw CPathExceptions.newException(err);
+		try {
+			return restTemplate.getForObject(q, String.class);
+		} catch (Exception e) {
+			throw new CPathException(q, e);
 		}
 		
-		return data;
 	}
     
     
@@ -175,12 +175,12 @@ public final class CPath2Client
                 + (getOrganisms().isEmpty() ? "" : "&" + join(CmdArgs.organism + "=", getOrganisms(), "&"))
                 + (getType() != null ? "&" + CmdArgs.type + "=" + getType() : "");
     	
-        ServiceResponse resp = restTemplate.getForObject(url, SearchResponse.class);
-        if(resp instanceof ErrorResponse) {
-            throw CPathExceptions.newException((ErrorResponse) resp);
-        }
-        
-        return resp;
+        try {
+			return restTemplate.getForObject(url, SearchResponse.class);
+		} catch (RestClientException e) {
+			throw new CPathException(url, e);
+		}
+
     }
 
     
@@ -390,19 +390,18 @@ public final class CPath2Client
      * 
      * @param uris
      * @return
-     * @throws CPathException 
+     * @throws CPathException when there was returned a HTTP error
      */
     public TraverseResponse traverse(Collection<String> uris) throws CPathException {
         String url = endPointURL + Cmd.TRAVERSE + "?" 
         		+ join(CmdArgs.uri + "=", uris, "&")
         		+ "&" + CmdArgs.path + "=" + path;
-        
-        ServiceResponse resp = restTemplate.getForObject(url, TraverseResponse.class);
-        if(resp instanceof ErrorResponse) {
-            throw CPathExceptions.newException((ErrorResponse) resp);
-        }
-        
-        return (TraverseResponse) resp;
+
+        try {
+        	return restTemplate.getForObject(url, TraverseResponse.class);
+		} catch (RestClientException e) {
+			throw new CPathException(url, e);
+		}
     }
     
     

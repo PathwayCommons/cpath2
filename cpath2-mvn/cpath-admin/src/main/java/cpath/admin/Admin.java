@@ -36,6 +36,7 @@ import cpath.importer.Merger;
 import cpath.importer.Premerge;
 import cpath.importer.internal.ImportFactory;
 import cpath.service.CPathService;
+import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
 import cpath.service.OutputFormatConverter;
 import cpath.service.internal.OutputFormatConverterImpl;
@@ -78,15 +79,12 @@ import static cpath.config.CPathSettings.*;
 import static cpath.service.OutputFormat.*;
 
 /**
- * Class which provides command line admin capabilities.
- * 
- * TODO (not urgent) use Apache CLI or alike lib...
+ * Class which provides cpath2 command line
+ * access for the system administrators and 
+ * user scripts.
  */
-public class Admin implements Runnable {
+public final class Admin {
 	private static final Log LOG = LogFactory.getLog(Admin.class);
-
-    private static Integer DEGREE_THRESHOLD = 100;
-    private static Integer CONTROL_DEGREE_THRESHOLD = 6;
 
     // COMMAND Enum
     public static enum COMMAND {
@@ -115,66 +113,66 @@ public class Admin implements Runnable {
         public String toString() { return command; }
     }
     
-    // command, command parameter
-    private COMMAND command;
-    private String[] commandParameters;
-   
+    
     /**
-     * Helper function to parse args.
+     * Parses cpath2 command name and arguments.
      *
      * @param args String[]
      */
-    private void parseArgs(final String[] args) {
+    public static void run(final String[] args) {
 
-        boolean validArgs = true;
+        boolean validArgs = true;       
+        COMMAND command = null;
+        String[] commandParameters = null;
         
-		if (args.length > 5) { //max no. args (5th is reserved for future use)
+        //max no. args (5th is reserved for future use)
+        if (args.length > 5) {
 			validArgs = false;
 			return;
 		}
  
         if(args[0].equals(COMMAND.CREATE_TABLES.toString())) {
-        	this.command = COMMAND.CREATE_TABLES;
+        	command = COMMAND.CREATE_TABLES;
 			if (args.length > 1) {
 				// agrs[1] contains comma-separated db names
-				this.commandParameters = args[1].split(",");
+				commandParameters = args[1].split(",");
 			} 
         } 
         else if(args[0].equals(COMMAND.CREATE_INDEX.toString())) {
-			this.command = COMMAND.CREATE_INDEX;
+			command = COMMAND.CREATE_INDEX;
         } 
         else if (args[0].equals(COMMAND.FETCH_METADATA.toString())) {
 			if (args.length == 1) {
 				validArgs = false;
 			} else {
-				this.command = COMMAND.FETCH_METADATA;
-				this.commandParameters = new String[] {args[1]};
+				command = COMMAND.FETCH_METADATA;
+				commandParameters = new String[] {args[1]};
 			}
         }
 		else if (args[0].equals(COMMAND.FETCH_DATA.toString())) {
-			this.command = COMMAND.FETCH_DATA;
+			command = COMMAND.FETCH_DATA;
 			if (args.length >= 2) 
-				this.commandParameters = new String[] {args[1]};
+				commandParameters = new String[] {args[1]};
 			else // command without extra parameter
-				this.commandParameters = new String[] {null};
+				commandParameters = new String[] {null};
 		}
 		else if (args[0].equals(COMMAND.PREMERGE.toString())) {
-			this.command = COMMAND.PREMERGE;
+			command = COMMAND.PREMERGE;
 			if (args.length >= 2) 
-				this.commandParameters = new String[] {args[1]};
+				commandParameters = new String[] {args[1]};
 			else // command without extra parameter
-				this.commandParameters = new String[] {null};
+				commandParameters = new String[] {null};
 		}
 		else if (args[0].equals(COMMAND.MERGE.toString())) {
-			this.command = COMMAND.MERGE;
-			this.commandParameters = new String[] { null, "false" };
+			command = COMMAND.MERGE;
+			commandParameters = new String[] { null, "false" };
 			int j = 0;
 			for (int i = 1; i < args.length && i < 3; i++) {
 				if ("--force".equalsIgnoreCase(args[i])) {
-					this.commandParameters[1] = "true";
+					commandParameters[1] = "true";
 					break; // flag is always the last arg.
 				} else {
-					this.commandParameters[j++] = args[i];
+					commandParameters[j++] = args[i];
 				}
 			}
 		}
@@ -182,33 +180,33 @@ public class Admin implements Runnable {
 			if (args.length < 4) {
 				validArgs = false;
 			} else {
-				this.command = COMMAND.EXPORT;
-				this.commandParameters = new String[] {args[1], args[2], args[3]};
+				command = COMMAND.EXPORT;
+				commandParameters = new String[] {args[1], args[2], args[3]};
 			} 
         } 
 		else if(args[0].equals(COMMAND.EXPORT_VALIDATION.toString())) {
 			if (args.length < 3) {
 				validArgs = false;
 			} else {
-				this.command = COMMAND.EXPORT_VALIDATION;
-				this.commandParameters = new String[] {args[1], args[2]};
+				command = COMMAND.EXPORT_VALIDATION;
+				commandParameters = new String[] {args[1], args[2]};
 			} 
         } 
 		else if(args[0].equals(COMMAND.CREATE_BLACKLIST.toString())) {
-            this.command = COMMAND.CREATE_BLACKLIST;
+            command = COMMAND.CREATE_BLACKLIST;
         } 
 		else if(args[0].equals(COMMAND.CONVERT.toString())) {
 			if (args.length < 4) {
 				validArgs = false;
 			} else {
-				this.command = COMMAND.CONVERT;
-				this.commandParameters = new String[] {args[1], args[2], args[3]};
+				command = COMMAND.CONVERT;
+				commandParameters = new String[] {args[1], args[2], args[3]};
 			} 
         } 
 		else if(args[0].equals(COMMAND.CREATE_DOWNLOADS.toString())) {
-        	this.command = COMMAND.CREATE_DOWNLOADS;
-        	if(args.length > 1) { //optional list of taxonomy ids
-        		this.commandParameters = args[1].split(",");
+        	command = COMMAND.CREATE_DOWNLOADS;
+        	if(args.length > 1) { //optional list of organisms (names or taxonomy ids)
+        		commandParameters = args[1].split(",");
             } 
         } 
 		else {
@@ -219,44 +217,17 @@ public class Admin implements Runnable {
             throw new IllegalArgumentException("Invalid command: " + 
             		Arrays.toString(args));
         }
-    }
-
-
-	/**
-     * Executes cPath^2 admin command.
-     * 
-     * At this point, 'command' and 'commandParameters' (array) 
-     * have been already (re-)set
-     * by previous {@link #parseArgs(String[])} method call
-     * 
-     * @see java.lang.Runnable#run()
-     */
-    @Override
-    public void run() {
+        
+        
+        // execute
         try {
             switch (command) {
             
             case CREATE_TABLES:
-            	if(commandParameters != null) {
-            		for(String db : commandParameters) {
-            			String dbName = db.trim();
-            			DataServicesFactoryBean.createSchema(dbName);
-            		}
-            	} else { // create all (as specified in the current cpath.properties)
-            		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.METADATA_DB));
-            		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.WAREHOUSE_DB));
-            		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.MAIN_DB));
-            	}
+            	createDatabases(commandParameters);
             	break;
             case CREATE_INDEX:
-           		// re-build the full-text index
-           		// it gets the DB name from the environment variables (set in cpath.properties)
-         		ApplicationContext ctx = null;
-                ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
-             	((PaxtoolsDAO)ctx.getBean("paxtoolsDAO")).index();
-// Currently, we do not full-text search in the Warehouse
-//              ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-Warehouse.xml");
-//           	((PaxtoolsDAO)ctx.getBean("warehouseDAO")).index();
+            	index();
             	break;
             case FETCH_METADATA:
                 fetchMetadata(commandParameters[0]);
@@ -293,9 +264,7 @@ public class Admin implements Runnable {
             case CONVERT:
                 OutputStream fos = new FileOutputStream(commandParameters[1]);
                 OutputFormat outputFormat = OutputFormat.valueOf(commandParameters[2]);
-                Resource blacklist = new DefaultResourceLoader().getResource("");
-                OutputFormatConverter cnv = new OutputFormatConverterImpl(blacklist);
-                convert(commandParameters[0], outputFormat, fos, cnv);
+                convert(commandParameters[0], outputFormat, fos);
                 break;
             case CREATE_DOWNLOADS:
                 createDownloads(commandParameters);
@@ -306,27 +275,96 @@ public class Admin implements Runnable {
             e.printStackTrace();
             System.exit(-1);
         }
+        
     }
 
-	/*
-        Algorithm:
-          * Get all SmallMoleculeReferences
-          * Calculate the degrees (i.e. num of reactions and num of complexes it is associated with)
-          * if it is bigger than the overall threshold and lower than the regulation threshold
-          *     add it (and its members/entities/member entities to the list)
+    
+    /**
+     * Builds new cpath2 full-text index.
+     * 
+     * @throws IllegalStateException when not in maintenance mode
      */
-    private void createBlacklist() throws IOException {
+    public static void index() {
+		if(!CPathSettings.isMaintenanceModeEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+   		// re-build the full-text index
+   		// it gets the DB name from the environment variables (set in cpath.properties)
+ 		ApplicationContext ctx = null;
+        ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
+     	((PaxtoolsDAO)ctx.getBean("paxtoolsDAO")).index();
+//Currently, we do not full-text search in the Warehouse
+//      ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-Warehouse.xml");
+//   	((PaxtoolsDAO)ctx.getBean("warehouseDAO")).index();	
+	}
+
+    
+    /**
+     * Creates a new set of cpath2 database schemas;
+     * 
+     * @param names
+     * @throws IllegalStateException when cpath2 is not in the maintenance mode.
+     */
+	public static void createDatabases(String[] names) {
+		if(!CPathSettings.isMaintenanceModeEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+		
+    	if(names != null) {
+    		for(String db : names) {
+    			String dbName = db.trim();
+    			DataServicesFactoryBean.createSchema(dbName);
+    		}
+    	} else { // create all (as specified in the current cpath.properties)
+    		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.METADATA_DB));
+    		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.WAREHOUSE_DB));
+    		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.MAIN_DB));
+    	}
+	}
+	
+	/**
+     * Generates cpath2 graph query blacklist file
+     * (to exclude ubiquitous small molecules, like ATP).
+     * 
+     * Algorithm:
+     * Get all SmallMoleculeReferences
+     * Calculate the degrees (i.e. num of reactions and num of complexes it is associated with)
+     * if it is bigger than the overall threshold and lower than the regulation threshold
+     *     add it (and its members/entities/member entities to the list)
+     *     
+     * @throws IOException, IllegalStateException (when not in maintenance mode)
+     */
+    public static void createBlacklist() throws IOException {
+		if(!CPathSettings.isMaintenanceModeEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
     	
+    	// Extract blacklist values, if can't, then use the default values
+    	int degreeThreshold;
+    	int controlDegreeThreshold;  	
+        try {
+        	degreeThreshold = Integer.parseInt(get(CPath2Property.BLACKLIST_DEGREE_THRESHOLD));
+        	controlDegreeThreshold = Integer.parseInt(get(CPath2Property.BLACKLIST_CONTROL_THRESHOLD));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Not a number: " 
+            	+ CPath2Property.BLACKLIST_CONTROL_THRESHOLD + " or "
+            	+ CPath2Property.BLACKLIST_DEGREE_THRESHOLD 
+            	+ " set in the cpath.properties file."
+            );
+        }
+        
     	final String src = CPathSettings.get(CPath2Property.MAIN_DB);
         LOG.debug("Creating blacklist from the " +  src + " database.");
         
-        OutputStream output = new FileOutputStream(CPathSettings.getHomeDir() 
-        	+ File.separator + "blacklist.txt");
         PaxtoolsDAO paxtoolsDAO = ImportFactory.buildPaxtoolsHibernateDAO(src); //- no indexes (no full-text search) here
 
+        // os will be used directly inside the runAnalysis call
+        final OutputStream outputStream = new FileOutputStream(CPathSettings.blacklistFile());
+        
         paxtoolsDAO.runAnalysis(new Analysis() {
             @Override
-            public Set<BioPAXElement> execute(Model model, Object... args) {
+            public Set<BioPAXElement> execute(Model model, Object... args) 
+            {
+           	 	final int degreeThreshold = (Integer) args[0]; 
+            	final int controlDegreeThreshold = (Integer) args[1];
+            	
                 // This is to keep track of ids and to prevent multiple addition of a single element
                 Set<BioPAXElement> blacklistedBPEs = new HashSet<BioPAXElement>();
 
@@ -365,7 +403,7 @@ public class Admin implements Runnable {
                     } // End of iteration, degree calculation
 
                     // See if it needs to be blacklisted
-                    if(regDegree < CONTROL_DEGREE_THRESHOLD && allDegree > DEGREE_THRESHOLD) {
+                    if(regDegree < controlDegreeThreshold && allDegree > degreeThreshold) {
                         LOG.debug("Adding " + ref.getDisplayName()
                                 + " to the blacklist (Degrees: " + allDegree + ":" + regDegree + ")");
                         for (EntityReference entityReference : refs)
@@ -378,8 +416,7 @@ public class Admin implements Runnable {
                 }
 
                 // Write all the blacklisted ids to the output
-                OutputStream output = (OutputStream) args[0];
-                PrintStream printStream = new PrintStream(output);
+                PrintStream printStream = new PrintStream(outputStream);
                 for (BioPAXElement bpe : blacklistedBPEs)
                     printStream.println(bpe.getRDFId());
                 printStream.close();
@@ -410,16 +447,28 @@ public class Admin implements Runnable {
                 }
             }
 
-        }, output);
+        }, degreeThreshold, controlDegreeThreshold);
     }
 
-    private void runMerge(String provider, String version, boolean force) {
+    
+    /**
+     * Performs cpath2 Merge stage.
+     * 
+     * @param provider
+     * @param version
+     * @param force
+     * @throws IllegalStateException when not maintenance mode
+     */
+    public static void runMerge(String provider, String version, boolean force) {
+		if(!CPathSettings.isMaintenanceModeEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+    	
 		// pc dao
 		ApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
 		final PaxtoolsDAO pcDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
 
-		LOG.info("runMerge: provider=" + provider + "; version=" + version
-			+ "; --force=" + force);
+		LOG.info("runMerge: provider=" + provider + 
+			"; version=" + version + "; --force=" + force);
 		
 		Merger merger = (provider == null || provider.isEmpty())
 				? ImportFactory.newMerger(pcDAO, force)
@@ -428,7 +477,18 @@ public class Admin implements Runnable {
 	}
 
 	
-	private void runPremerge(String provider, String version) {
+    /**
+     * Performs cpath2 Premerge stage
+     * (data converting, id-mapping initialization, validating/normalizing).
+     * 
+     * @param provider
+     * @param version
+     * @throws IllegalStateException when not maintenance mode
+     */
+	public static void runPremerge(String provider, String version) {
+		if(!CPathSettings.isMaintenanceModeEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+		
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-Metadata.xml", 
@@ -448,9 +508,12 @@ public class Admin implements Runnable {
      * Helper function to get provider metadata.
      *
      * @param location String URL or local file.
-     * @throws IOException
+     * @throws IOException, IllegalStateException (when not maintenance mode)
      */
-    private void fetchMetadata(final String location) throws IOException {
+    public static void fetchMetadata(final String location) throws IOException {
+		if(!CPathSettings.isMaintenanceModeEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+		
         ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             	"classpath:applicationContext-Metadata.xml"});
@@ -472,9 +535,12 @@ public class Admin implements Runnable {
      * from the location specified in the metadata.
 	 *
      * @param provider String
-     * @throws IOException
+     * @throws IOException, IllegalStateException (when not maintenance mode)
      */
-    private void fetchData(final String provider) throws IOException {
+    public static void fetchData(final String provider) throws IOException {
+		if(!CPathSettings.isMaintenanceModeEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+    	
 		ApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:applicationContext-Metadata.xml"});
@@ -514,7 +580,7 @@ public class Admin implements Runnable {
 	 * @param provider String
 	 * @return Collection<Metadata>
 	 */
-	private Collection<Metadata> getMetadata(final MetadataDAO metadataDAO, final String provider) 
+	private static Collection<Metadata> getMetadata(final MetadataDAO metadataDAO, final String provider) 
 	{
 		Collection<Metadata> toReturn = new HashSet<Metadata>();
 		if (provider == null || provider.isEmpty()) {
@@ -527,10 +593,22 @@ public class Admin implements Runnable {
 		return toReturn;
 	}
 
-	
-	public static void exportData(final String src,  final OutputStream output, String... uris) 
-		throws IOException
-	{		
+
+	/**
+	 * Extracts a cpath2 BioPAX sub-model
+	 * and writes to the specified file/format.
+	 * 
+	 * @param src
+	 * @param output
+	 * @param uris
+	 * @throws IOException, IllegalStateException (in maintenance mode)
+	 */
+	public static void exportData(final String src, final OutputStream output, 
+			String... uris) throws IOException {
+		
+		if(CPathSettings.isMaintenanceModeEnabled())
+			throw new IllegalStateException("Maintenance mode.");
+		
 		Integer pk = null; // aka pathway_id
 		try {
 			pk = Integer.valueOf(src);
@@ -589,14 +667,14 @@ public class Admin implements Runnable {
 	 * @param key an existing cpath2 pathwayData.pathway_id or metadata.identifier (provider).
 	 * @param out output stream
 	 * @param asHtml write as HTML report (transform from the XML)
-	 *
+	 * @throws IOException
 	 */
-	static void exportValidation(final String key, final OutputStream out, boolean asHtml) 
-		throws IOException 
-	{
+	public static void exportValidation(final String key, final OutputStream out, 
+			boolean asHtml) throws IOException {
+		
 		ApplicationContext context =
-	            new ClassPathXmlApplicationContext(new String [] { 	
-	            	"classpath:applicationContext-Metadata.xml"});
+	        new ClassPathXmlApplicationContext(new String [] { 	
+	        	"classpath:applicationContext-Metadata.xml"});
 	    MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 	    
 	    ValidatorResponse report = null;
@@ -690,7 +768,7 @@ public class Admin implements Runnable {
             System.exit(-1);
         }
     	
-    	// "CPATH2_HOME" env. var. must be set
+    	// "CPATH2_HOME" env. var must be set (mostly for logging)
         String home = System.getenv(HOME_VARIABLE_NAME);
     	if (home==null) {
             System.err.println("Please set " + HOME_VARIABLE_NAME 
@@ -698,31 +776,16 @@ public class Admin implements Runnable {
             	" (point to a directory where cpath.properties, etc. files are placed)");
             System.exit(-1);
     	}
+    	
     	// the JVM option must be set to the same value as well!
-    	if (!home.equals(System.getProperty(HOME_VARIABLE_NAME))) {
-            System.err.println("Please also set the java property " 
-            	+ HOME_VARIABLE_NAME 
-            	+ ", i.e., run with -D" + HOME_VARIABLE_NAME + "=" 
-            	+ home + " option.");
+    	if (!home.equals(CPathSettings.homeDir())) {
+            System.err.println("Please set the java property " + HOME_VARIABLE_NAME 
+            	+ ", i.e., run with -D" + HOME_VARIABLE_NAME + "=" + home + " option.");
             System.exit(-1);
     	}
     	
     	// configure logging
     	PropertyConfigurator.configure(home + File.separator + "log4j.properties");
-
-    	// set JVM property to be used by other modules (in spring context)
-    	System.setProperty(HOME_VARIABLE_NAME, home);
-
-        // Extract blacklist values, if can't, then use the default values
-        try {
-            DEGREE_THRESHOLD = Integer.parseInt(get(CPath2Property.BLACKLIST_DEGREE_THRESHOLD));
-            CONTROL_DEGREE_THRESHOLD = Integer.parseInt(get(CPath2Property.BLACKLIST_CONTROL_THRESHOLD));
-        } catch (NumberFormatException e) {
-            LOG.warn("Could not found the properties " + CPath2Property.BLACKLIST_CONTROL_THRESHOLD + " and "
-                    + CPath2Property.BLACKLIST_DEGREE_THRESHOLD + " in the properties file. Using default values: "
-                    + CONTROL_DEGREE_THRESHOLD + " and " + DEGREE_THRESHOLD + "."
-            );
-        }
 
     	if(!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
     		if(LOG.isWarnEnabled())
@@ -733,25 +796,31 @@ public class Admin implements Runnable {
 		File dir = new File(CPathSettings.localDataDir());
 		if(!dir.exists()) {
 			dir.mkdir();
-		}
+		}   	
     	
-    	
-		Admin admin = new Admin();
-		try {
-			admin.parseArgs(args);
-			admin.run();
-		} catch (Exception e) {
-			System.err.println(e + NEWLINE + usage());
-		}
-		// required because MySQL Statement Cancellation Timer thread is still running
+		run(args);
+		
+		// required because MySQL Statement 
+		// Cancellation Timer thread is still running
 		System.exit(0);
     }
     	
 	
-	private static void convert(String biopaxFile, OutputFormat outputFormat, 
-			OutputStream output, OutputFormatConverter formatConverter) throws IOException 
+    /**
+     * TODO describe
+     * 
+     * @param biopaxFile
+     * @param outputFormat
+     * @param output
+     * @throws IOException
+     */
+	public static void convert(String biopaxFile, OutputFormat outputFormat, 
+			OutputStream output) throws IOException 
 	{
 		InputStream is = biopaxStream(biopaxFile);
+		Resource blacklist = new DefaultResourceLoader()
+    		.getResource(CPathSettings.blacklistFile());
+		OutputFormatConverter formatConverter = new OutputFormatConverterImpl(blacklist);
 		ServiceResponse res = formatConverter.convert(is, outputFormat);
 		if (res instanceof ErrorResponse) {
 			System.err.println(res.toString());
@@ -763,11 +832,13 @@ public class Admin implements Runnable {
 	}
 	
 	
-	private static void convertToExtSif(String biopaxFile, OutputFormatConverter formatConverter,
+	private static void convertToExtSif(String biopaxFile,
 			OutputStream edgeStream, OutputStream nodeStream) throws IOException 
 	{
 		InputStream is = biopaxStream(biopaxFile);		
 		Model m = (new SimpleIOHandler()).convertFromOWL(is);
+		Resource blacklist = new DefaultResourceLoader().getResource(CPathSettings.blacklistFile());
+		OutputFormatConverter formatConverter = new OutputFormatConverterImpl(blacklist);
 		formatConverter.convertToExtendedBinarySIF(m, edgeStream, nodeStream);
 	}
 
@@ -778,11 +849,22 @@ public class Admin implements Runnable {
 			: new FileInputStream(biopaxFile);
 	}
 
-	private static void createDownloads(String[] organisms) 
+    
+    /**
+     * Create cpath2 downloads 
+     * (exports the db to various formats)
+     * 
+     * @param organisms names or taxonomy ids
+     * @throws IOException, IllegalStateException (when not in maintenance mode)
+     */
+	public static void createDownloads(String[] organisms) 
     		throws IOException
     {	
-    	// create the TMP dir inside the home dir if it does not exist yet
-		File f = new File(CPathSettings.getHomeDir() + File.separator + DOWNLOADS_SUBDIR);
+		if(!CPathSettings.isMaintenanceModeEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+		
+		// create the TMP dir inside the home dir if it does not exist yet
+		File f = new File(CPathSettings.downloadsDir());
 		if(!f.exists()) 
 			f.mkdir();
     	
@@ -794,21 +876,20 @@ public class Admin implements Runnable {
 	            }
 			);
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-		OutputFormatConverter formatConverter = (OutputFormatConverter) context.getBean("outputFormatConverter");
 		CPathService service = (CPathService) context.getBean("service");
 		
     	// 1) export everything
-		createArchives("all", dao, formatConverter, null, null);
+		createArchives("all", dao, null, null);
     	
     	// 2) export by organism
         LOG.info("create-downloads: preparing data 'by organism' archives...");
         for(String org : organisms)
-        	createArchives(org.toLowerCase(), dao, formatConverter, null, new String[]{org});
+        	createArchives(org.toLowerCase(), dao, null, new String[]{org});
 		
 		// 3) export by datasource
         LOG.info("create-downloads: preparing 'by datasource' archives...");
         for(SearchHit ds : service.dataSources().getSearchHit())
-        	createArchives(ds.getName().toLowerCase(), dao, formatConverter, new String[]{ds.getName()}, null);
+        	createArchives(ds.getName().toLowerCase(), dao, new String[]{ds.getName()}, null);
 	}
 
 
@@ -832,14 +913,12 @@ public class Admin implements Runnable {
     
 
     private static void createArchives(String filePrefix, PaxtoolsDAO dao, 
-    	OutputFormatConverter formatConverter, String[] datasources, String[] organisms) 
-    	throws IOException 
+    	String[] datasources, String[] organisms) throws IOException 
     {
     	// grab the BioPAX first -
-        final String biopaxDataArchive = CPathSettings.getHomeDir() + File.separator 
-        		+ DOWNLOADS_SUBDIR + File.separator 
-        		+ CPathSettings.get(CPath2Property.PROVIDER) + " " 
-        		+ filePrefix + ".BIOPAX.owl.gz";
+        final String biopaxDataArchive = CPathSettings.downloadsDir() 
+        		+ File.separator + CPathSettings.get(CPath2Property.PROVIDER) 
+        		+ " " + filePrefix + ".BIOPAX.owl.gz";
         
         // check file exists
         if(!(new File(biopaxDataArchive)).exists()) {	
@@ -865,21 +944,20 @@ public class Admin implements Runnable {
         SearchResponse resp = dao.search("*", 0, Pathway.class, datasources, organisms);
         boolean hasPathways = (resp.getNumHits() > 0);
         OutputFormat[] formats = (hasPathways) 
-        	? new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF, GSEA} 
+        	? new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF, GSEA}
         	: new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF};
         
 		for(OutputFormat outf : formats)
-			createArchive(biopaxDataArchive, outf, filePrefix, formatConverter);
+			createArchive(biopaxDataArchive, outf, filePrefix);
 	}
 	
 	private static void createArchive(String biopaxDataArchive, OutputFormat format, 
-			String prefix, OutputFormatConverter formatConverter) throws IOException 
+			String prefix) throws IOException 
 	{	
 		if(format == OutputFormat.BIOPAX)
 			throw new AssertException("Converting BioPAX to BioPAX");
 	
-		String archiveName = CPathSettings.getHomeDir() + File.separator 
-				+ CPathSettings.DOWNLOADS_SUBDIR + File.separator 
+		String archiveName = CPathSettings.downloadsDir() + File.separator 
 				+ CPathSettings.get(CPath2Property.PROVIDER) + " " 
 				+ prefix + "." + formatAndExt(format) + ".gz";
 		LOG.info("create-downloads: generating " + archiveName);
@@ -891,18 +969,18 @@ public class Admin implements Runnable {
     			//write edges and nodes into separate archives
     			GZIPOutputStream edgeStream = new GZIPOutputStream(new FileOutputStream(archiveName));
     			GZIPOutputStream nodeStream = new GZIPOutputStream(new FileOutputStream(
-    				CPathSettings.getHomeDir() + File.separator 
+    				CPathSettings.homeDir() + File.separator 
     					+ CPathSettings.DOWNLOADS_SUBDIR + File.separator 
     					+ CPathSettings.get(CPath2Property.PROVIDER) + " " 
     					+ prefix + "." + format + ".nodes.tsv.gz"));
     		
-    			convertToExtSif(biopaxDataArchive, formatConverter, edgeStream, nodeStream);
+    			convertToExtSif(biopaxDataArchive, edgeStream, nodeStream);
     			
     			IOUtils.closeQuietly(edgeStream);
     			IOUtils.closeQuietly(edgeStream);
     		} else {    	
     			GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(archiveName));
-    			convert(biopaxDataArchive, format, zos, formatConverter);
+    			convert(biopaxDataArchive, format, zos);
         		IOUtils.closeQuietly(zos);
     		}
         } else

@@ -27,7 +27,11 @@
 
 package cpath.webservice;
 
+import java.io.IOException;
+
+import cpath.config.CPathSettings;
 import cpath.service.CPathService;
+import cpath.service.ErrorResponse;
 import cpath.service.jaxb.*;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
@@ -39,9 +43,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 /**
@@ -73,11 +79,21 @@ public class SearchController extends BasicController {
     }
 
 
+    @ModelAttribute("maintenanceMode")
+    public String getMaintenanceModeMsgIfEnabled() {
+    	if(CPathSettings.isMaintenanceModeEnabled())
+    		return "Maintenance mode is enabled";
+    	else 
+    		return "";
+    }	
+	
     @RequestMapping(value="/search")
-    public @ResponseBody ServiceResponse search(@Valid Search search, BindingResult bindingResult)
+    public @ResponseBody ServiceResponse search(@Valid Search search, 
+    		BindingResult bindingResult, HttpServletResponse response) throws IOException
     {		
 		if(bindingResult.hasErrors()) {
-			return errorfromBindingResult(bindingResult);
+			errorResponse(errorfromBindingResult(bindingResult), response);
+			return null;
 		} else {
 			log.debug("/search called (for type: " 
 				+ ((search.getType() == null)? "ALL" : search.getType()) 
@@ -88,6 +104,11 @@ public class SearchController extends BasicController {
 					search.getQ(), search.getPage(), search.getType(),
 					search.getDatasource(), search.getOrganism());
 
+			if(results instanceof ErrorResponse) {
+				errorResponse((ErrorResponse) results, response);
+				return null;
+			}
+			
 			return results;
 		}
 	}

@@ -31,7 +31,9 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 
+import cpath.config.CPathSettings;
 import cpath.service.CPathService;
+import cpath.service.ErrorResponse;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
 import cpath.service.Status;
@@ -82,7 +84,15 @@ public class GraphController extends BasicController {
         binder.registerCustomEditor(Direction.class, new GraphQueryDirectionEditor());
         binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
     }
+
 	
+    @ModelAttribute("maintenanceMode")
+    public String getMaintenanceModeMsgIfEnabled() {
+    	if(CPathSettings.isMaintenanceModeEnabled())
+    		return "Maintenance mode is enabled";
+    	else 
+    		return "";
+    }
 	
 	@RequestMapping("/graph")
 	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, 
@@ -90,7 +100,7 @@ public class GraphController extends BasicController {
     {
 		//check for binding errors
 		if(bindingResult.hasErrors()) {
-			errorResponse(errorfromBindingResult(bindingResult), writer, response);
+			errorResponse(errorfromBindingResult(bindingResult), response);
 			return;
 		} 
 		
@@ -113,10 +123,10 @@ public class GraphController extends BasicController {
 			break;
 		default:
 			// impossible (should has failed earlier)
-			result= Status.INTERNAL_ERROR
-				.errorResponse(getClass().getCanonicalName() + 
-					" does not support " + graph.getKind());
-			break;
+			errorResponse(new ErrorResponse(Status.INTERNAL_ERROR, 
+				getClass().getCanonicalName() + " does not support " 
+					+ graph.getKind()), response);
+			return;
 		}
 		
 		stringResponse(result, writer, response);
