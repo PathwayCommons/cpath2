@@ -84,14 +84,7 @@ public class HelpController {
         binder.registerCustomEditor(Direction.class, new DirectionEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
-
-	
-    @RequestMapping("/")
-    public String getHello() {
-    	return "redirect:home.html";
-    }
-	
-	 
+    
     /*
      * Using @Response with returning a bean
      * makes it auto-generate xml or json, 

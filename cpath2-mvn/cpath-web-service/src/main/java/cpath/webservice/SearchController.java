@@ -29,7 +29,6 @@ package cpath.webservice;
 
 import java.io.IOException;
 
-import cpath.config.CPathSettings;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.jaxb.*;
@@ -43,7 +42,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -78,15 +76,6 @@ public class SearchController extends BasicController {
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
 
-
-    @ModelAttribute("maintenanceMode")
-    public String getMaintenanceModeMsgIfEnabled() {
-    	if(CPathSettings.isMaintenanceModeEnabled())
-    		return "Maintenance mode is enabled";
-    	else 
-    		return "";
-    }	
-	
     @RequestMapping(value="/search")
     public @ResponseBody ServiceResponse search(@Valid Search search, 
     		BindingResult bindingResult, HttpServletResponse response) throws IOException

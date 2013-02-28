@@ -11,18 +11,13 @@
 <meta name="description"
 	content="cPath2 BioPAX Data Validations per Data Source" />
 <meta name="keywords" content="cPath2, BioPAX, Validation" />
-<link media="screen" href="resources/css/cpath2.css" type="text/css" rel="stylesheet" />
+<link media="screen" href="<c:url value="/resources/css/cpath2.css"/>" type="text/css" rel="stylesheet" />
 <title>cPath2::Validation Results</title>
 </head>
 <body>
-	<div id="header">
-		<h1>
-			<fmt:message key="cpath2.provider" /> version 
-			<fmt:message key="cpath2.data.version" /><br/>
-			- Input Data Validation Results
-		</h1>
-	</div>
+	<jsp:include page="header.jsp" />
 	<div id="content">
+	<h2>Pathway Data Validation Results</h2>
 		<div>
 			<img src='<c:url value="/logo/${identifier}"/>' /><br />
 		</div>

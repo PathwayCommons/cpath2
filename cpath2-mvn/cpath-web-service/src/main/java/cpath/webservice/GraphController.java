@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 
-import cpath.config.CPathSettings;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.GraphType;
@@ -85,14 +84,6 @@ public class GraphController extends BasicController {
         binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
     }
 
-	
-    @ModelAttribute("maintenanceMode")
-    public String getMaintenanceModeMsgIfEnabled() {
-    	if(CPathSettings.isMaintenanceModeEnabled())
-    		return "Maintenance mode is enabled";
-    	else 
-    		return "";
-    }
 	
 	@RequestMapping("/graph")
 	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, 

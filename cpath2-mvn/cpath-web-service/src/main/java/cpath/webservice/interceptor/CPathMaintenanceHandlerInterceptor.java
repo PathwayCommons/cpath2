@@ -27,12 +27,12 @@ public final class CPathMaintenanceHandlerInterceptor extends HandlerInterceptor
 		
 		if(CPathSettings.isMaintenanceModeEnabled() 
 			&& !(requestUri.contains("/resources/") 
-				|| requestUri.contains("/data")
-				|| requestUri.contains("/help"))	
+				|| requestUri.contains("/help")
+				|| requestUri.contains("/admin/"))	
 		) 
 		{
 			response.sendError(503, CPathSettings.get(CPath2Property.PROVIDER)
-				+ " service maintenance. " + "Sorry for the inconvenience.");
+				+ " service maintenance.");
 			return false;
 		}
 		else

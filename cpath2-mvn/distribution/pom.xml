@@ -43,14 +43,6 @@
 			<artifactId>cpath-admin</artifactId>
 			<version>${project.version}</version>
 			<scope>runtime</scope>
-			<classifier>executable</classifier>
-			<type>jar</type>
-		</dependency>
-		<dependency>
-			<groupId>pathwaycommons.cpath</groupId>
-			<artifactId>cpath-admin</artifactId>
-			<version>${project.version}</version>
-			<scope>runtime</scope>
 			<classifier>exec-war</classifier>
 			<type>jar</type>
 		</dependency>

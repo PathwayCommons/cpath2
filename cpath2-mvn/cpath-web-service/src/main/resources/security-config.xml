@@ -16,7 +16,7 @@
 	<http access-denied-page="/denied.html" auto-config='true'>
 		<form-login login-page="/login.html" authentication-failure-url="/login.html?login_error=t"/>
 		<intercept-url pattern="/admin.html" access="ROLE_ADMIN" />
-		<intercept-url pattern="/data.html" access="ROLE_USER" />
+		<intercept-url pattern="/admin/**" access="ROLE_ADMIN" />
 		<intercept-url pattern="/validations.html" access="ROLE_USER" />
 		<intercept-url pattern="/validationSummary.html" access="ROLE_USER" />
 		<intercept-url pattern="/tests.html" access="ROLE_USER" />

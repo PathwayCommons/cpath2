@@ -2,42 +2,34 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!-- <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> -->
+<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD XHTML Mobile 1.2//EN" "http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html>
 <head>
 <meta http-equiv="content-type" content="text/html;charset=utf-8" />
-<meta name="author" content='<fmt:message key="cpath2.provider"/>' />
+<meta name="author" content='<fmt:message key="provider.name"/>' />
 <meta name="description" content="cPath2 Service Description" />
-<meta name="keywords" content="<fmt:message key="cpath2.provider"/>, cPath2, cPathSquared, webservice, help, documentation" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximim-scale=1.0, user-scalable=no"/>
-<meta name="HandheldFriendly" content="True" />
-<meta name="MobileOptimized" content="width" />
-<meta http-equiv="clear type" content="on" />
-<script type="text/javascript" src="resources/plugins/jquery-1.6.1.js"></script>
-<script type="text/javascript" src="resources/scripts/json.min.js"></script>
-<script type="text/javascript" src="resources/scripts/help.js"></script>
-<link rel="stylesheet" href="resources/css/cpath2.css" type="text/css" media="screen" />
+<meta name="keywords" content="<fmt:message key="provider.name"/>, cPath2, cPathSquared, webservice, help, documentation" />
+<script type="text/javascript" src="<c:url value="/resources/plugins/jquery-1.6.1.js"/>"></script>
+<script type="text/javascript" src="<c:url value="/resources/scripts/json.min.js"/>"></script>
+<script type="text/javascript" src="<c:url value="/resources/scripts/help.js"/>"></script>
+<link rel="stylesheet" href="<c:url value="/resources/css/cpath2.css"/>" type="text/css" media="screen" />
 
 <title>cPath2::Info</title>
 </head>
 <body>
+
 	<!-- store actual server URL value and use in scripts -->
 	<p>
-		<span id="cpath2_endpoint_url" style="display: none"><c:url
-				value="/" /></span>
+		<span id="cpath2_endpoint_url" style="display: none"><c:url value="/" /></span>
 	</p>
 
-	<div id="header">
-		<h1>
-			<fmt:message key="cpath2.provider" /> version 
-			<fmt:message key="cpath2.data.version" /><br/>
-			- Description
-		</h1>
-	</div>
+	<jsp:include page="header.jsp" />
+	
 	<div id="content">
-		<p><fmt:message key="cpath2.description" /></p>
-		
+	<h2>Resource Description</h2>
+		<p><fmt:message key="provider.description" /></p>		
 		<p>Data is freely available, under the license terms of each
 			contributing database.</p>
 		<!-- start of web service api documentation -->
@@ -46,27 +38,16 @@
 			using the Pathway Commons Web Service Application Programming
 			Interface (API). This page provides a reference guide to help you get
 			started.</p>
-		<ul>
-			<!-- list of web service commands -->
-			<li>Web Service Commands:
-				<ol>
-					<li><a href="#search">Command: SEARCH</a></li>
-					<li><a href="#get">Command: GET</a></li>
-					<li><a href="#graph">Command: GRAPH</a></li>
-					<li><a href="#traverse">Command: TRAVERSE</a></li>
-					<li><a href="#top_pathways">Command: TOP_PATHWAYS</a></li>
-					<li><a href="#help">Command: HELP</a></li>
-				</ol>
-			</li>
 
-			<li><a href="#additional_parameters">Available Data and
-					Parameter Values</a><br /></li>
-			<li><a href="#errors">Error Response Codes</a><br /></li>
-			<li><a href="downloads.html">Downloads (data exported to several
-					formats)</a></li>
-
-		</ul>
-		<br />
+		<h3 id="commands">Commands:</h3>
+		<ol>
+			<li><a href="#search">Command: SEARCH</a></li>
+			<li><a href="#get">Command: GET</a></li>
+			<li><a href="#graph">Command: GRAPH</a></li>
+			<li><a href="#traverse">Command: TRAVERSE</a></li>
+			<li><a href="#top_pathways">Command: TOP_PATHWAYS</a></li>
+			<li><a href="#help">Command: HELP</a></li>
+		</ol>
 
 		<!-- URIs -->
 		<h3>
@@ -143,7 +124,7 @@
 						href="#available_biopax_parameter">values</a>)</li>
 				</ul>
 				<h3>Output:</h3> XML result that follows the <a
-				href="resources/docs/cpath2.xsd">Search Response XML
+				href="<c:url value="/resources/docs/cpath2.xsd"/>">Search Response XML
 					Schema</a>.<br /> JSON is returned by appending '.json' to the query
 				URL. The server returns up to 'numHitsPerPage' search hits per
 				request (configured on the server). But you can request hits beyond
@@ -155,7 +136,7 @@
 				hits, 'page=n' (n&gt;=0) parameter is to get hits ranked from
 				numHitsPerPage*n to numHitsPerPage*(n+1)-1. Total no. pages can be
 				also calculated as<br /> INT[(numHits-1)/numHitsPerPage+1].
-				<h3>Example Queries:</h3> <br />
+				<h4>Query Examples:</h4> <br />
 				<ol>
 					<li><a rel="example" href="search.xml?q=Q06609">search for "Q06609"
 							keyword, no filters, return XML result</a></li>
@@ -221,7 +202,7 @@
 				advised that not all output formats are relevant for this web
 				service. For example, it would not make sense to request BINARY_SIF
 				output when the given URI points to a protein.
-				<h3>Example Queries:</h3>
+				<h4>Query Examples:</h4>
 				<br />
 				<ol>
 					<li><a rel="example" href="get?uri=http://identifiers.org/uniprot/Q06609">
@@ -289,7 +270,7 @@
 				output formats are relevant for this web service. For example, it
 				would not make sense to request BINARY_SIF output when the given URI
 				points to a protein.
-				<h3>Example Queries:</h3> Neighborhood of COL5A1 (P20908,
+				<h4>Query Examples:</h4> Neighborhood of COL5A1 (P20908,
 				CO5A1_HUMAN): <br />
 				<ol>
 					<li><a rel="example"
@@ -329,10 +310,10 @@
 						org.biopax.paxtools.controller.PathAccessor.</li>
 				</ul>
 				<h3>Output:</h3> XML result that follows the <a
-				href="resources/docs/cpath2.xsd">Search Response XML
+				href="<c:url value="/resources/docs/cpath2.xsd"/>">Search Response XML
 					Schema</a>&nbsp;(TraverseResponse type; pagination is disabled: returns
 				all values at once)<br />
-				<h3>Example Queries:</h3>
+				<h4>Query Examples:</h4>
 				<ol>
 					<li><a rel="example"
 						href="traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/organism/displayName">
@@ -371,10 +352,10 @@
 				'controlled' nor 'pathwayComponent' of other processes)
 				<h3>Parameters:</h3> no parameters
 				<h3>Output:</h3> XML result that follows the <a
-				href="resources/docs/cpath2.xsd"> Search Response XML
+				href="<c:url value="/resources/docs/cpath2.xsd"/>"> Search Response XML
 					Schema</a>&nbsp;(SearchResponse type; pagination is disabled: returns
 				all pathways at once)<br />
-				<h3>Example Queries:</h3>
+				<h4>Query Examples:</h4>
 				<ol>
 					<li><a href="top_pathways"> get top/root pathways (XML)</a></li>
 					<li><a href="top_pathways.json"> get top/root pathways (JSON)</a></li>
@@ -390,11 +371,11 @@
 				returns the information about web service commands, parameters,
 				and BioPAX properties.
 				<h3>Output:</h3> XML/JSON (if '.json' suffix used) element 'Help'
-				(nested tree); see: <a href="resources/docs/cpath2.xsd">Search
+				(nested tree); see: <a href="<c:url value="/resources/docs/cpath2.xsd"/>">Search
 					Response XML Schema</a><br />
-				<h3>Example Queries:</h3> <br />
+				<h4>Query Examples:</h4> <br />
 				<ol>
-					<li><a rel="example"href="help/commands">/help/commands</a></li>
+					<li><a rel="example" href="help/commands">/help/commands</a></li>
 					<li><a rel="example" href="help/commands.json">/help/commands.json</a></li>
 					<li><a rel="example" href="help/commands/search">/help/commands/search</a></li>
 					<li><a rel="example" href="help/types">/help/types</a></li>
@@ -410,8 +391,7 @@
 		<br />
 
 		<!-- additional parameter details -->
-		<h2 id="additional_parameters">Available Data and Parameter
-			Values</h2>
+		<h2 id="data_sources">Data Sources</h2>
 
 		<div class="parameters">
 			<h3>Loaded Data Sources ('datasource'):</h3>
@@ -437,10 +417,13 @@
 			<br />
 		</div>
 
+		<!-- additional parameter details -->
+		<h2 id="additional_parameters">Query Parameter Values</h2>
+
 		<div class="parameters">
 			<h3>Output formats ('format'):</h3>
 			<p>
-				See <a href="resources/docs/README.txt">README.txt</a> for more
+				See <a href="<c:url value="/resources/docs/README.txt"/>">README.txt</a> for more
 				information regarding these format parameters.
 			</p>
 			<!-- items are to be added here by a javascript -->

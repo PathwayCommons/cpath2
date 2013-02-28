@@ -68,10 +68,7 @@
 	<!-- mvc:annotation-driven must the last -->
     <mvc:annotation-driven/>
     
-    <mvc:view-controller path="/home.html" view-name="home"/>
 	<mvc:view-controller path="/tests.html" view-name="tests"/>
-	<mvc:view-controller path="/admin.html" view-name="admin"/>
-	<mvc:view-controller path="/maintenance.html" view-name="maintenance"/>
 	<mvc:view-controller path="/login.html" view-name="login"/>
 	<mvc:view-controller path="/denied.html" view-name="denied"/>
 <!-- 	<mvc:view-controller path="/error.html" view-name="error"/>	 -->

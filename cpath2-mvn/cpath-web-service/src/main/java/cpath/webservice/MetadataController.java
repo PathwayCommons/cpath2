@@ -37,17 +37,32 @@ public class MetadataController extends BasicController
     public MetadataController(MetadataDAO service) {
 		this.service = service;
 	}
-    
-    
-    @ModelAttribute("maintenanceMode")
-    public String getMaintenanceModeMsgIfEnabled() {
-    	if(CPathSettings.isMaintenanceModeEnabled())
-    		return "Maintenance mode is enabled";
-    	else 
-    		return "";
+       
+    @ModelAttribute("maintenanceModeEnabled")
+    public boolean isMaintenanceModeEnabled() {
+    	return CPathSettings.isMaintenanceModeEnabled();
     }    
+
+    @RequestMapping("/home")
+    public String getHomePage() {
+    	return "home";
+    }
     
-    @RequestMapping("/validation/{metadataId}/files.html") //a JSP view
+    /* 
+     * As this controller class is mapped to all cpath2 servlets 
+     * (i.e., - to those associated with  /, *.json, and *.html paths via the web.xml),
+     * we have to avoid ambiguous request mappings and also 
+     * use explicit redirects to .html methods if needed
+     * (i.e, if a method is not supposed to return xml/json objects too)
+     */
+    
+    @RequestMapping("/")
+    public String home() {
+    	return "forward:home.html";
+    }	
+     
+    
+    @RequestMapping("/validation/{metadataId}/files") //a JSP view
     public String queryForValidations(@PathVariable String metadataId, Model model) 
     {
 		log.debug("Query - all validations (separate files) by datasource: " + metadataId);
@@ -124,11 +139,6 @@ public class MetadataController extends BasicController
     	return service.getAllMetadata();
     }
     
-    
-    @RequestMapping("/downloads")
-    public String redirectToDownloadsHtmlPage() {
-    	return "redirect:downloads.html";
-    }
     
     @RequestMapping(value = "/downloads.html")
     public String downloads(Model model) {

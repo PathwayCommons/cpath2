@@ -97,9 +97,11 @@ public final class CPathSettings {
 		DIGEST_URI_ENABLED("md5hex.uri.enabled"),
         BLACKLIST_DEGREE_THRESHOLD("blacklist.degree.threshold"),
         BLACKLIST_CONTROL_THRESHOLD("blacklist.control.threshold"),
-        PROVIDER("cpath2.provider"),
-        DESCRIPTION("cpath2.description"),
-        VERSION("cpath2.data.version"),
+        PROVIDER("provider.name"),
+        DESCRIPTION("provider.description"),
+        VERSION("provider.version"),
+        URL("provider.url"),
+        LOGO_URL("provider.logo.url"),
         MAINTENANCE_MODE_ENABLED("maintenance-mode.enabled")
 		;
 		
@@ -278,5 +280,15 @@ public final class CPathSettings {
 	public static String downloadsDir() {
 		return CPathSettings.homeDir() 
 	    	+ File.separator + CPathSettings.DOWNLOADS_SUBDIR;
+	}
+	
+	
+	/**
+	 * Gets the current TMP directory (full path).
+	 * 
+	 * @return
+	 */
+	public static String tmpDir() {
+		return System.getProperty("java.io.tmpdir");
 	}
 }
