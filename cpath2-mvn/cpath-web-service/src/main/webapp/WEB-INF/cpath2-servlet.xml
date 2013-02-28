@@ -77,10 +77,11 @@
 	
 	<!-- serve all cpath2 generated data archives (organized by species, data sources, formats) -->	
 	<mvc:resources mapping="/downloads/**" location="file:${CPATH2_HOME}/downloads/" />
-	<!-- do not want original data files downloadable, - disable the following line -->
-<!-- 	<mvc:resources mapping="/data/**" location="file:${CPATH2_HOME}/data/" /> -->
 	<!-- make internal css, script resources available for the html/jsp pages -->
 	<mvc:resources mapping="/resources/**" location="/resources/" />
+	<!-- do not want config. and data files seen at all (even securely, by admin), 
+		- disable the following line -->
+	<mvc:resources mapping="/admin/homedir/**" location="file:${CPATH2_HOME}/" />
 	
 	<mvc:interceptors>
       	<bean class="cpath.webservice.interceptor.CPathWebserviceLoggingHandlerInterceptor" />

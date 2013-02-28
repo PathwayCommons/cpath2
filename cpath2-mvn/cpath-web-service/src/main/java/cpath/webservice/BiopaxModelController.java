@@ -86,15 +86,6 @@ public class BiopaxModelController extends BasicController {
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
 	
-
-    @ModelAttribute("maintenanceMode")
-    public String getMaintenanceModeMsgIfEnabled() {
-    	if(CPathSettings.isMaintenanceModeEnabled())
-    		return "Maintenance mode is enabled";
-    	else 
-    		return "";
-    }
-	
 	
 	/**
 	 * This convenience method is to make cpath2 data 

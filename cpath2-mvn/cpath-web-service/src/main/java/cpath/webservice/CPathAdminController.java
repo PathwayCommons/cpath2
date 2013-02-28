@@ -22,25 +22,23 @@ public class CPathAdminController {
 		this.metadataDAO = metadataDAO;
 	}
 	
-    @ModelAttribute("maintenanceMode")
-    public String getMaintenanceModeMsgIfEnabled() {
-    	if(CPathSettings.isMaintenanceModeEnabled())
-    		return "Maintenance mode is enabled";
-    	else 
-    		return "";
+	
+    @ModelAttribute("maintenanceModeEnabled")
+    public boolean isMaintenanceModeEnabled() {
+    	return CPathSettings.isMaintenanceModeEnabled();
     }
+    
+    
+    @RequestMapping("/admin")
+    public String adminPage() {
+    	return "admin";
+    }
+    
 	
-	
-    @RequestMapping("/data")
-    public String redirectToDownloadsHtmlPage() {
-    	return "redirect:data.html";
-    }	
-	
-	@RequestMapping(value = "/data.html")
-    public String downloads(Model model) {
+	@RequestMapping(value = "/admin/data")
+    public String data(Model model) {
     	// get the sorted list of files
-    	String path = CPathSettings.homeDir() 
-    		+ File.separator + CPathSettings.DATA_SUBDIR; 
+    	String path = CPathSettings.localDataDir(); 
     	File[] list = new File(path).listFiles();
     	
     	Map<String,String> files = new TreeMap<String,String>();
@@ -55,6 +53,46 @@ public class CPathAdminController {
     	model.addAttribute("files", files.entrySet());
 		
 		return "data";
-    }
+    }	
 	
+	@RequestMapping(value = "/admin/tmp")
+    public String tmp(Model model) {
+    	// get the sorted list of files
+    	String path = CPathSettings.tmpDir(); 
+    	File[] list = new File(path).listFiles();
+    	
+    	Map<String,String> files = new TreeMap<String,String>();
+    	
+    	for(int i = 0 ; i < list.length ; i++) {
+    		File f = list[i];
+    		String name = f.getName();
+    		long size = f.length();
+    		if(!name.startsWith("."))
+    			files.put(name, FileUtils.byteCountToDisplaySize(size));
+    	}
+    	model.addAttribute("files", files.entrySet());
+		
+		return "tmp";
+    }
+		
+	
+	@RequestMapping(value = "/admin/homedir")
+    public String homedir(Model model) {
+    	// get the sorted list of files
+    	String path = CPathSettings.homeDir(); 
+    	File[] list = new File(path).listFiles();
+    	
+    	Map<String,String> files = new TreeMap<String,String>();
+    	
+    	for(int i = 0 ; i < list.length ; i++) {
+    		File f = list[i];
+    		String name = f.getName();
+    		long size = f.length();
+    		if(!name.startsWith("."))
+    			files.put(name, FileUtils.byteCountToDisplaySize(size));
+    	}
+    	model.addAttribute("files", files.entrySet());
+		
+		return "homedir";
+    }
 }

@@ -9,22 +9,25 @@
 				Go back to <a href="<c:url value='/' />">Home Page</a> / <a href="#header">Top of this page</a> 
 			</li>
 			<li>
-				<security:authorize ifAnyGranted="ROLE_ADMIN">
-					You've got <strong>Admin privileges</strong>.
-				</security:authorize> 
 				<security:authorize ifAnyGranted="ROLE_USER">
-					User: <strong><security:authentication property="principal.username"/></strong>. 
+					Logged as: <strong><security:authentication property="principal.username"/></strong>
+						<security:authorize ifAnyGranted="ROLE_ADMIN">
+							<strong>and have Admin rights</strong>. 
+						</security:authorize>  
 					<a href="<c:url value='/j_spring_security_logout' />">Sign Out</a> 
 				</security:authorize>
 			</li>
 			<li>
-				<fmt:message key="cpath2.provider"/> version <fmt:message key="cpath2.data.version"/> server. 
-				<strong>${maintenanceMode}</strong>
+				<fmt:message key="provider.name"/> version <fmt:message key="provider.version"/> server.
 			</li>
-			<li>Powered by <a
-				href="http://code.google.com/p/pathway-commons/">cPath2</a> version ${project.version}. 
-<!-- 				@Copyright 2009-2013 <a href="http://baderlab.org/">University of -->
-<!-- 				Toronto</a> and <a href="http://www.cbio.mskcc.org">Memorial Sloan-Kettering Cancer Center</a> -->
+			<li>
+			  <div class="marquee">
+				Powered by <a rel="external"
+				href="http://code.google.com/p/pathway-commons/">cPath2</a>, version ${project.version}. 
+				@Copyright 2009-2013 <a href="http://baderlab.org/" rel="external">University of
+				Toronto</a> and <a href="http://www.cbio.mskcc.org" rel="external">Memorial Sloan-Kettering Cancer Center</a>
+			  </div>
+				
 			</li>
 		</ul>
 	</div>

@@ -10,20 +10,15 @@
 <meta name="author" content="Pathway Commons" />
 <meta name="description" content="cPath2 BioPAX Data Validations per Data Source" />
 <meta name="keywords" content="cPath2, BioPAX, Validation" />
-<link media="screen" href="resources/css/cpath2.css" type="text/css" rel="stylesheet" />
+<link media="screen" href="<c:url value="/resources/css/cpath2.css"/>" type="text/css" rel="stylesheet" />
 <title>Downloads</title>
 </head>
 <body>
 
-	<div id="header">
-		<h1>
-			<fmt:message key="cpath2.provider" /> version 
-			<fmt:message key="cpath2.data.version" /><br/>
-			- Downloads
-		</h1>
-	</div>
+	<jsp:include page="header.jsp" />
 	<div id="content">
-		<h2>Description</h2>
+		<h2>Downloads</h2>
+		<h3>Description</h3>
 		<p>
 			Data exported from the CPath2 server are organized as follows.<br />
 			Archives below are sorted alphabetically, and their names follow the
@@ -34,7 +29,7 @@
 			was converted.
 		</p>
 
-		<p>The <a href="resources/docs/README.txt">README.txt</a> briefly describes the output formats.</p>
+		<p>The <a href="<c:url value="/resources/docs/README.txt"/>">README.txt</a> briefly describes the output formats.</p>
 
 		<h4>Notes:</h4>
 		<ul>
@@ -50,7 +45,8 @@
 			<li><strong>Archives by species and source</strong> - were generated based on the 
 				full-text search results, using 'organism' and 'datasource' filters, respectively.</li>
 		</ul>
-<h3>FILES:</h3>
+		
+		<h3>FILES:</h3>
 		<ul>
 			<c:forEach var="f" items="${files}">
 				<li><a href='<c:url value="/downloads/${f.key}"/>'>${f.key}</a>&nbsp;(${f.value})</li>
