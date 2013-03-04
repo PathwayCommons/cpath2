@@ -28,7 +28,7 @@
 		<authentication-provider>
 			<user-service>
 				<!-- change the default password before starting the web app! -->
-				<user name="${webmin.username}" authorities="ROLE_USER, ROLE_ADMIN" password="${webmin.password}" />
+				<user name="${cpath2.webmin.username}" authorities="ROLE_USER, ROLE_ADMIN" password="${cpath2.webmin.password}" />
 			</user-service>
 		</authentication-provider>
 	</authentication-manager>

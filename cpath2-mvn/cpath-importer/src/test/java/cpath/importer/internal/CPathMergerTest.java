@@ -1,7 +1,6 @@
 package cpath.importer.internal;
 
 import cpath.config.CPathSettings;
-import cpath.config.CPathSettings.CPath2Property;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
@@ -39,7 +38,7 @@ public class CPathMergerTest {
 	private Set<Model> pathwayModels; // pathways to merge
 	private final static ResourceLoader resourceLoader = new DefaultResourceLoader();
 	
-	static final String XML_BASE = CPathSettings.get(CPath2Property.XML_BASE);
+	static final String XML_BASE = CPathSettings.xmlBase();
 	
 	/**
 	 * Mocks an empty CV repository

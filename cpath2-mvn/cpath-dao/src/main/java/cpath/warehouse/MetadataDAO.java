@@ -59,25 +59,17 @@ public interface MetadataDAO {
      */
     Collection<PathwayData> getPathwayDataByIdentifier(final String identifier);
 
-    /**
-     * This method returns the pathway data objects with the given Identifier and Version
-	 *
-     * @param identifier String
-     * @param version Float
-     * @return Collection<PathwayData>
-     */
-    Collection<PathwayData> getPathwayDataByIdentifierAndVersion(final String identifier, final String version);
 
     /**
-     * This method returns a pathway data object with the given Identifier, Version, Filename and Digest.
+     * This method returns a pathway data object with the given Identifier, Filename and Digest.
 	 *
      * @param identifier String
-     * @param version Float
-	 * @param filename String
-	 * @param digest String
+     * @param filename String
+     * @param digest String
      * @return PathwayData
      */
-    PathwayData getPathwayDataByIdentifierAndVersionAndFilenameAndDigest(final String identifier, final String version, final String filename, final String digest);
+    PathwayData getPathwayDataByIdentifierAndFilenameAndDigest(
+    	final String identifier, final String filename, final String digest);
 
     /**
      * This method gets a PathwayData bean (initialized) by primary key.

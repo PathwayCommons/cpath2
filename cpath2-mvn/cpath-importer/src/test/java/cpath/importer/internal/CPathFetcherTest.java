@@ -11,13 +11,12 @@ import org.biopax.paxtools.model.Model;
 import org.junit.*;
 
 import cpath.config.CPathSettings;
-import cpath.config.CPathSettings.CPath2Property;
 import cpath.importer.internal.FetcherImpl;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.beans.Metadata.METADATA_TYPE;
 
-//@Ignore
+
 public class CPathFetcherTest {
 	
 	static FetcherImpl fetcher;
@@ -31,7 +30,7 @@ public class CPathFetcherTest {
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
 		// extend Model for the converter calling 'merge' method to work
 		model = BioPAXLevel.L3.getDefaultFactory().createModel();
-		model.setXmlBase(CPathSettings.get(CPath2Property.XML_BASE));
+		model.setXmlBase(CPathSettings.xmlBase());
 	}
 
 	
@@ -59,13 +58,12 @@ public class CPathFetcherTest {
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata(
 				"TEST_BIOPAX2", "Test Pathway Data 2", 
-				"1", "N/A",  
-				location,
-				"", 
+				"N/A", location,  
+				"",
 				new byte[]{}, 
-				Metadata.METADATA_TYPE.BIOPAX, // no cleaner (same as using "")
-				null
-				, "" // no converter
+				Metadata.METADATA_TYPE.BIOPAX, 
+				null, // no cleaner (same as using "")
+				"" // no converter
 				);
 		
 		fetcher.fetchData(metadata);

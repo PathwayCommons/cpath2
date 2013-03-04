@@ -18,10 +18,8 @@ import org.hibernate.annotations.ColumnTransformer;
 				query="from PathwayData as pathwaydata order by pathway_id"),
 	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifier",
 				query="from PathwayData as pathwaydata where identifier = :identifier order by pathway_id"),
-	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersion",
-				query="from PathwayData as pathwaydata where identifier = :identifier and version = :version  order by pathway_id"),
-	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndVersionAndFilenameAndDigest",
-				query="from PathwayData as pathwaydata where identifier = :identifier and version = :version and filename = :filename and digest = :digest  order by pathway_id")
+	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndFilenameAndDigest",
+				query="from PathwayData as pathwaydata where identifier = :identifier and filename = :filename and digest = :digest  order by pathway_id")
 })
 public final class PathwayData {
 
@@ -31,8 +29,6 @@ public final class PathwayData {
 	private Integer id;
 	@Column(nullable=false, length=40)
     private String identifier;
-	@Column(nullable=false)
-    private String version;
 	@Column(nullable=false)
     private String filename;
 	
@@ -68,18 +64,15 @@ public final class PathwayData {
      * Create a Metadata obj with the specified properties;
      *
      * @param identifier String (string used in web service calls)
-	 * @param version Float
-	 * @param filename String
-	 * @param digest String
+     * @param filename String
+     * @param digest String
      * @param pathwayData String
-     * 
-     * @throws IllegalArgumentException
+	 * @throws IllegalArgumentException
      */
-    public PathwayData(final String identifier, final String version, final String filename, 
-    		final String digest, final byte[] pathwayData) 
+    public PathwayData(final String identifier, final String filename, final String digest, 
+    		final byte[] pathwayData) 
     {
     	setIdentifier(identifier);
-    	setVersion(version);
     	setFilename(filename);
     	setDigest(digest);
     	setPathwayData(pathwayData);
@@ -100,16 +93,6 @@ public final class PathwayData {
 	}
     public String getIdentifier() { 
     	return (identifier != null) ? new String(identifier) : null;
-    }
-
-	void setVersion(String version) {
-        if (version == null) {
-            throw new IllegalArgumentException("version must not be null");
-        }
-        this.version = version;
-	}
-    public String getVersion() { 
-    	return (version != null) ? new String(version) : null; 
     }
 
 	void setFilename(String filename) {
@@ -162,7 +145,7 @@ public final class PathwayData {
 
 	@Override
     public String toString() {
-        return getId() + ": " + getIdentifier() + ", " + getVersion() + ", " + getFilename();
+        return getId() + ": " + getIdentifier() + ", " + getFilename();
     }
 
 }

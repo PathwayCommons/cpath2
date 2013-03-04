@@ -43,7 +43,7 @@
 			<artifactId>cpath-admin</artifactId>
 			<version>${project.version}</version>
 			<scope>runtime</scope>
-			<classifier>exec-war</classifier>
+			<classifier>exec</classifier>
 			<type>jar</type>
 		</dependency>
 		<dependency>

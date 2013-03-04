@@ -44,7 +44,7 @@ public enum Cmd {
 			"matching the query and passing all filters. A hit's uri (same as the corresponding BioPAX " +
 			"object's RDF ID) can be used with other webservice commands to " +
 			"extract the corresponding sub-model to BioPAX or another supported format. ",
-			"/search?q=brca*&organism=9606", //full URL shouldn't be specified here (it depends on the server configuration)!
+			"/search?q=brca*&organism=9606", //full PROVIDER_URL shouldn't be specified here (it depends on the server configuration)!
 			"Search Response that lists Search Hits - XML (default) or JSON (when called as '/search.json?')",
 			new CmdArgs[]{q, page, type, organism, datasource}),	
 	GET("Gets a BioPAX element or sub-model " +

@@ -67,7 +67,6 @@ final class MergerImpl implements Merger, Analysis {
     
     // configuration/flags
 	private String pathwayDataIdentifier;
-	private String pathwayDataVersion;
 	private boolean force;
 	
 	private SimpleMerger simpleMerger;
@@ -133,9 +132,7 @@ final class MergerImpl implements Merger, Analysis {
 
 		// build models and merge from pathwayData.premergeData
 		Collection<PathwayData> data;
-		if (pathwayDataIdentifier != null && pathwayDataVersion != null)
-			data = metadataDAO.getPathwayDataByIdentifierAndVersion(pathwayDataIdentifier, pathwayDataVersion);
-		else if (pathwayDataIdentifier != null)
+		if (pathwayDataIdentifier != null)
 			data = metadataDAO.getPathwayDataByIdentifier(pathwayDataIdentifier);
 		else
 			data = metadataDAO.getAllPathwayData();
@@ -723,20 +720,16 @@ final class MergerImpl implements Merger, Analysis {
 
 	/**
 	 * Set/select the pathway data (by metadata 
-	 * identifier and version) to merge. Default is
+	 * identifier) to merge. Default is
 	 * - both are null, which means merge all premerged data.
 	 * 
 	 * @param identifier
-	 * @param version
 	 */
-	void setPathwayData(String identifier, String version) {
+	void setPathwayData(String identifier) {
 		if(identifier != null && !identifier.isEmpty()) {
-			this.pathwayDataIdentifier = identifier;
-			this.pathwayDataVersion = (version == null || version.isEmpty()) 
-					? null : version;		
-		} else { //null id - version must be null as well
+			this.pathwayDataIdentifier = identifier;	
+		} else {
 			this.pathwayDataIdentifier = null;
-			this.pathwayDataVersion = null;
 		}
 	}
 

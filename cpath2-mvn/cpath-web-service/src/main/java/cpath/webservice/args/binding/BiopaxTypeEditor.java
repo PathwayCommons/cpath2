@@ -39,7 +39,7 @@ import org.biopax.paxtools.model.BioPAXLevel;
 
 
 /**
- * Helps convert request URL path values to a BioPAX type.
+ * Helps convert request PROVIDER_URL path values to a BioPAX type.
  * 
  * @author rodche
  *

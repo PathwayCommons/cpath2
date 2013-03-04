@@ -7,7 +7,7 @@
 #
 ##
 
-CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss65536k -Xmx6g -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Dnet.sf.ehcache.skipUpdateCheck=true"
+CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss65536k -Xmx6g -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Dnet.sf.ehcache.skipUpdateCheck=true -Dbiopax.normalizer.uri.strategy=simple"
 
 CPATH2_PROFILING_OPTS="-agentpath:/data/local/jprofiler6/bin/linux-x64/libjprofilerti.so=port=48000,wait"
 

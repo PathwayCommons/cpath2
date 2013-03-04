@@ -64,7 +64,6 @@ final class UniProtCleanerImpl extends BaseCleanerImpl {
         	log.info("clean(), done!");
 		}
         
-        // outta here
         return toReturn;
     }
 

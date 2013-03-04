@@ -69,20 +69,17 @@ read -p "Fetch/update metadata using $CPATH2_HOME/metadata.conf?" yn
     esac
 done
 
-# 3. Fetch Warehouse data (also converts to BioPAX and creates small molecule and protein warehouses)
-# for now - do this in the step #4, altogether
-
-# 4. Fetch Data (BioPAX, PSI-MI; unpack, persist) and Create the Warehouse
+# 3. Fetch all data and save to the local directory
 while true; do
 read -p "Fetch all data and also build the Warehouse?" yn
 	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2-cli.sh -fetch-data --all; break;;
+        [Yy]* ) sh $CPATH2_HOME/cpath2-cli.sh -fetch-data; break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
 done
 
-# 5. Premerge, Merge, Index, create the blacklist and downloads (cannot be run in parallel!)
+# 4. Premerge, Merge, Index, create the blacklist and downloads (cannot be run in parallel!)
 while true; do
 read -p "Process ALL data (clean, convert, validate, normalize, merge, index, blacklist, an generate archives)?" yn
 	case $yn in

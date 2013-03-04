@@ -73,8 +73,8 @@ public class CPathServiceTest {
 		log.info("Loading BioPAX data (importModel(file))...");
 		Model m = io.convertFromOWL(CPathServiceTest.class
 				.getResourceAsStream("/test.owl"));
-		Metadata md = new Metadata("test", "Reactome", "00", 
-				"Foo", "", "", new byte[]{}, METADATA_TYPE.BIOPAX, "", "");
+		Metadata md = new Metadata("test", "Reactome", "Foo", 
+				"", "", new byte[]{}, METADATA_TYPE.BIOPAX, "", "");
 		mdao.importMetadata(md);
 		md.setProvenanceFor(m); // normally, this happens in PreMerge
 		dao.merge(m);

@@ -8,7 +8,6 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import cpath.config.CPathSettings;
-import cpath.config.CPathSettings.CPath2Property;
 
 /**
  * @author rodche
@@ -25,13 +24,13 @@ public final class CPathMaintenanceHandlerInterceptor extends HandlerInterceptor
 		
 		String requestUri = request.getRequestURI();
 		
-		if(CPathSettings.isMaintenanceModeEnabled() 
+		if(CPathSettings.isMaintenanceEnabled() 
 			&& !(requestUri.contains("/resources/") 
 				|| requestUri.contains("/help")
 				|| requestUri.contains("/admin/"))	
 		) 
 		{
-			response.sendError(503, CPathSettings.get(CPath2Property.PROVIDER)
+			response.sendError(503, CPathSettings.property(CPathSettings.PROVIDER_NAME)
 				+ " service maintenance.");
 			return false;
 		}

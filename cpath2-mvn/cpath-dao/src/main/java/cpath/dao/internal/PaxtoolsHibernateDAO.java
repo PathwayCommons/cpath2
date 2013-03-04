@@ -51,8 +51,8 @@ import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.query.dsl.QueryBuilder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
+
 import cpath.config.CPathSettings;
-import cpath.config.CPathSettings.CPath2Property;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
@@ -64,11 +64,10 @@ import java.util.*;
 import java.io.*;
 import java.lang.reflect.Modifier;
 
-
 /**
- * Paxtools BioPAX main Model and DAO
- * (not a warehouse)
- *
+ * Paxtools BioPAX main Model and DAO (BioPAX objects repository)
+ * 
+ * This is one of most important classes on which cpath2 system is based.
  */
 @Transactional
 @Repository
@@ -142,7 +141,7 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 			}
 		};
 		
-		this.xmlBase = CPathSettings.get(CPath2Property.XML_BASE); //set default xml:base
+		this.xmlBase = CPathSettings.xmlBase(); //set default xml:base
 	}
 	
 	
@@ -483,7 +482,6 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	public boolean contains(BioPAXElement bpe)
 	{
 		return containsID(bpe.getRDFId());
-//		return getByID(bpe.getRDFId()) == bpe;
 	}
 
 
@@ -497,10 +495,18 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	@Transactional(readOnly=true)
 	public boolean containsID(String id)
 	{
-		return session().getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists")
-			.setString("md5uri", ModelUtils.md5hex(id)).uniqueResult() != null;
-				
-//		return getByID(id) != null;
+		boolean ret = (getByID(id) != null);
+		
+		if(ret == false) {
+				if(!CPathSettings.digestUriEnabled()) //normal mode
+					ret = (session().getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists")
+						.setString("md5uri", ModelUtils.md5hex(id)).uniqueResult() != null);
+				else // can be here in a db debug mode
+					ret = (session().getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists")
+					.setString("md5uri", id).uniqueResult() != null);
+		}
+		
+		return ret;
 	}
 
 
@@ -514,7 +520,8 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 		BioPAXElement toReturn = (BioPAXElement) session()
 			.get(BioPAXElementImpl.class, ModelUtils.md5hex(id));
 		
-		// if null and - in debug mode, try to treat the id as pre-computed MD5 hex pK value
+		// For db debug mode only (when md5hex.uri.enabled=true), try "as is" 
+		// (i.e., if the id is already the precomputed MD5 hex pK value)
 		if(toReturn == null && CPathSettings.digestUriEnabled())
 			toReturn = (BioPAXElement) session().get(BioPAXElementImpl.class, id);
 

@@ -32,7 +32,6 @@ import java.io.Writer;
 import java.util.*;
 
 import cpath.config.CPathSettings;
-import cpath.config.CPathSettings.CPath2Property;
 import cpath.service.CPathService;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
@@ -62,7 +61,7 @@ import javax.validation.Valid;
 public class BiopaxModelController extends BasicController {
     private static final Log log = LogFactory.getLog(BiopaxModelController.class);    
 	
-    private static final String xmlBase = CPathSettings.get(CPath2Property.XML_BASE);
+    private static final String xmlBase = CPathSettings.xmlBase();
     
     private CPathService service; // main PC db access
 	

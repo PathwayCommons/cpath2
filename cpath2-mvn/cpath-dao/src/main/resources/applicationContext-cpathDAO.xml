@@ -22,12 +22,12 @@
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
         <property name="hibernateProperties">
           <util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
-        	<prop key="hibernate.connection.url">${db.connection}${main.db}</prop>
-        	<prop key="hibernate.connection.username">${db.user}</prop>
-        	<prop key="hibernate.connection.password">${db.password}</prop>
-        	<prop key="hibernate.connection.driver_class">${db.driver}</prop>
-        	<prop key="hibernate.dialect">${db.dialect}</prop>
-        	<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${main.db}</prop>
+        	<prop key="hibernate.connection.url">${cpath2.db.connection}${cpath2.main.db}</prop>
+        	<prop key="hibernate.connection.username">${cpath2.db.user}</prop>
+        	<prop key="hibernate.connection.password">${cpath2.db.password}</prop>
+        	<prop key="hibernate.connection.driver_class">${cpath2.db.driver}</prop>
+        	<prop key="hibernate.dialect">${cpath2.db.dialect}</prop>
+        	<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${cpath2.main.db}</prop>
 			<prop key="hibernate.hbm2ddl.auto"></prop> <!-- no value - to prevent accidental db drops -->   
 			<prop key="hibernate.search.indexing_strategy">manual</prop>
 			<prop key="hibernate.cache.region.factory_class">net.sf.ehcache.hibernate.SingletonEhCacheRegionFactory</prop>

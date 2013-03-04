@@ -28,7 +28,7 @@
  **/
 package cpath.admin;
 
-import cpath.config.CPathSettings;
+import static cpath.config.CPathSettings.*;
 import cpath.dao.*;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Fetcher;
@@ -74,8 +74,6 @@ import java.util.zip.GZIPOutputStream;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 
-
-import static cpath.config.CPathSettings.*;
 import static cpath.service.OutputFormat.*;
 
 /**
@@ -86,9 +84,8 @@ import static cpath.service.OutputFormat.*;
 public final class Admin {
 	private static final Log LOG = LogFactory.getLog(Admin.class);
 
-    // COMMAND Enum
-    public static enum COMMAND {
-
+    // Cmd Enum
+    public static enum Cmd {
         // command types
     	CREATE_TABLES("-create-tables"),
     	CREATE_INDEX("-create-index"),
@@ -107,7 +104,7 @@ public final class Admin {
         private String command;
         
         // contructor
-        COMMAND(String command) { this.command = command; }
+        Cmd(String command) { this.command = command; }
 
         // method to get enum readable name
         public String toString() { return command; }
@@ -118,174 +115,105 @@ public final class Admin {
      * Parses cpath2 command name and arguments.
      *
      * @param args String[]
+     * @throws IOException 
      */
-    public static void run(final String[] args) {
-
-        boolean validArgs = true;       
-        COMMAND command = null;
-        String[] commandParameters = null;
-        
-        //max no. args (5th is reserved for future use)
-        if (args.length > 5) {
-			validArgs = false;
-			return;
-		}
+    public static void run(final String[] args) throws IOException {
  
-        if(args[0].equals(COMMAND.CREATE_TABLES.toString())) {
-        	command = COMMAND.CREATE_TABLES;
+        if(args[0].equals(Cmd.CREATE_TABLES.toString())) {
 			if (args.length > 1) {
 				// agrs[1] contains comma-separated db names
-				commandParameters = args[1].split(",");
+				createDatabases(args[1].split(","));
 			} 
         } 
-        else if(args[0].equals(COMMAND.CREATE_INDEX.toString())) {
-			command = COMMAND.CREATE_INDEX;
+        else if(args[0].equals(Cmd.CREATE_INDEX.toString())) {
+			index();
         } 
-        else if (args[0].equals(COMMAND.FETCH_METADATA.toString())) {
+        else if (args[0].equals(Cmd.FETCH_METADATA.toString())) {
 			if (args.length == 1) {
-				validArgs = false;
+				fetchMetadata("file:" + property(PROP_METADATA_LOCATION));
 			} else {
-				command = COMMAND.FETCH_METADATA;
-				commandParameters = new String[] {args[1]};
+				fetchMetadata(args[1]);
 			}
         }
-		else if (args[0].equals(COMMAND.FETCH_DATA.toString())) {
-			command = COMMAND.FETCH_DATA;
+		else if (args[0].equals(Cmd.FETCH_DATA.toString())) {
 			if (args.length >= 2) 
-				commandParameters = new String[] {args[1]};
+				fetchData(args[1]);
 			else // command without extra parameter
-				commandParameters = new String[] {null};
+				fetchData(null);
 		}
-		else if (args[0].equals(COMMAND.PREMERGE.toString())) {
-			command = COMMAND.PREMERGE;
-			if (args.length >= 2) 
-				commandParameters = new String[] {args[1]};
+		else if (args[0].equals(Cmd.PREMERGE.toString())) {
+			if (args.length > 1) 
+				runPremerge(args[1]);
 			else // command without extra parameter
-				commandParameters = new String[] {null};
+				runPremerge(null);
 		}
-		else if (args[0].equals(COMMAND.MERGE.toString())) {
-			command = COMMAND.MERGE;
-			commandParameters = new String[] { null, "false" };
+		else if (args[0].equals(Cmd.MERGE.toString())) {
+			String params[] = new String[] { null, "false" };
 			int j = 0;
 			for (int i = 1; i < args.length && i < 3; i++) {
 				if ("--force".equalsIgnoreCase(args[i])) {
-					commandParameters[1] = "true";
+					params[1] = "true";
 					break; // flag is always the last arg.
 				} else {
-					commandParameters[j++] = args[i];
+					params[j++] = args[i];
 				}
 			}
+			runMerge(params[0], Boolean.parseBoolean(params[2]));
 		}
-		else if(args[0].equals(COMMAND.EXPORT.toString())) {
-			if (args.length < 4) {
-				validArgs = false;
-			} else {
-				command = COMMAND.EXPORT;
-				commandParameters = new String[] {args[1], args[2], args[3]};
-			} 
+		else if(args[0].equals(Cmd.EXPORT.toString())) {
+			if (args.length < 3)
+				fail(args,"must provide at least two arguments.");
+			else if(args.length == 3)
+				exportData(args[1], args[2]);
+			else 
+				exportData(args[1], args[2], args[3].split(","));
         } 
-		else if(args[0].equals(COMMAND.EXPORT_VALIDATION.toString())) {
-			if (args.length < 3) {
-				validArgs = false;
-			} else {
-				command = COMMAND.EXPORT_VALIDATION;
-				commandParameters = new String[] {args[1], args[2]};
-			} 
+		else if(args[0].equals(Cmd.EXPORT_VALIDATION.toString())) {
+			if (args.length < 3)
+				fail(args,"must provide at least two arguments for this command.");
+			
+        	if(args[2].endsWith(".html"))
+        		exportValidation(args[1], new FileOutputStream(args[2]), true);
+        	else
+        		exportValidation(args[1], new FileOutputStream(args[2]), false);
         } 
-		else if(args[0].equals(COMMAND.CREATE_BLACKLIST.toString())) {
-            command = COMMAND.CREATE_BLACKLIST;
+		else if(args[0].equals(Cmd.CREATE_BLACKLIST.toString())) {
+            createBlacklist();
         } 
-		else if(args[0].equals(COMMAND.CONVERT.toString())) {
-			if (args.length < 4) {
-				validArgs = false;
-			} else {
-				command = COMMAND.CONVERT;
-				commandParameters = new String[] {args[1], args[2], args[3]};
-			} 
+		else if(args[0].equals(Cmd.CONVERT.toString())) {
+			if (args.length < 4)
+				fail(args,"provide at least three arguments.");
+			
+            OutputStream fos = new FileOutputStream(args[2]);
+            OutputFormat outputFormat = OutputFormat.valueOf(args[3]);
+            convert(args[1], outputFormat, fos);
         } 
-		else if(args[0].equals(COMMAND.CREATE_DOWNLOADS.toString())) {
-        	command = COMMAND.CREATE_DOWNLOADS;
+		else if(args[0].equals(Cmd.CREATE_DOWNLOADS.toString())) {
         	if(args.length > 1) { //optional list of organisms (names or taxonomy ids)
-        		commandParameters = args[1].split(",");
-            } 
+        		createDownloads(args[1].split(","));
+            } else 
+            	createDownloads(new String[]{});
         } 
 		else {
-            validArgs = false;
-        }
-
-        if (!validArgs) {
-            throw new IllegalArgumentException("Invalid command: " + 
-            		Arrays.toString(args));
-        }
-        
-        
-        // execute
-        try {
-            switch (command) {
-            
-            case CREATE_TABLES:
-            	createDatabases(commandParameters);
-            	break;
-            case CREATE_INDEX:
-            	index();
-            	break;
-            case FETCH_METADATA:
-                fetchMetadata(commandParameters[0]);
-				break;
-			case FETCH_DATA:
-				fetchData(commandParameters[0]);
-				break;
-			case PREMERGE:
-				runPremerge(commandParameters[0], commandParameters[1]);
-				break;
-			case MERGE:
-				runMerge(commandParameters[0], commandParameters[1], 
-					Boolean.parseBoolean(commandParameters[2]));
-				break;
-            case EXPORT:
-            	OutputStream os = new FileOutputStream(commandParameters[2]);
-            	if("--all".equalsIgnoreCase(commandParameters[1]))
-            		exportData(commandParameters[0], os);
-            	else
-            		exportData(commandParameters[0], os, commandParameters[1].split(","));
-				break;
-            case EXPORT_VALIDATION:
-            	String outf = commandParameters[1];
-            	os = new FileOutputStream(outf);
-            	if(outf.endsWith(".html"))
-            		exportValidation(commandParameters[0], os, true);
-            	else
-            		exportValidation(commandParameters[0], os, false);
-            	
-				break;
-            case CREATE_BLACKLIST:
-                createBlacklist();
-                break;
-            case CONVERT:
-                OutputStream fos = new FileOutputStream(commandParameters[1]);
-                OutputFormat outputFormat = OutputFormat.valueOf(commandParameters[2]);
-                convert(commandParameters[0], outputFormat, fos);
-                break;
-            case CREATE_DOWNLOADS:
-                createDownloads(commandParameters);
-                break;
-            }
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
-        
+            fail(args, "no such command");
+        }        
     }
 
     
-    /**
+    private static void fail(String[] args, String details) {
+        throw new IllegalArgumentException(
+        	"Invalid cpath2 command: " +  Arrays.toString(args)
+        	+ "; " + details);		
+	}
+
+
+	/**
      * Builds new cpath2 full-text index.
      * 
      * @throws IllegalStateException when not in maintenance mode
      */
     public static void index() {
-		if(!CPathSettings.isMaintenanceModeEnabled())
+		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
    		// re-build the full-text index
    		// it gets the DB name from the environment variables (set in cpath.properties)
@@ -305,7 +233,7 @@ public final class Admin {
      * @throws IllegalStateException when cpath2 is not in the maintenance mode.
      */
 	public static void createDatabases(String[] names) {
-		if(!CPathSettings.isMaintenanceModeEnabled())
+		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
 		
     	if(names != null) {
@@ -314,9 +242,9 @@ public final class Admin {
     			DataServicesFactoryBean.createSchema(dbName);
     		}
     	} else { // create all (as specified in the current cpath.properties)
-    		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.METADATA_DB));
-    		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.WAREHOUSE_DB));
-    		DataServicesFactoryBean.createSchema(CPathSettings.get(CPath2Property.MAIN_DB));
+    		DataServicesFactoryBean.createSchema(property(PROP_METADATA_DB));
+    		DataServicesFactoryBean.createSchema(property(PROP_WAREHOUSE_DB));
+    		DataServicesFactoryBean.createSchema(property(PROP_MAIN_DB));
     	}
 	}
 	
@@ -333,31 +261,28 @@ public final class Admin {
      * @throws IOException, IllegalStateException (when not in maintenance mode)
      */
     public static void createBlacklist() throws IOException {
-		if(!CPathSettings.isMaintenanceModeEnabled())
+		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
     	
     	// Extract blacklist values, if can't, then use the default values
     	int degreeThreshold;
     	int controlDegreeThreshold;  	
         try {
-        	degreeThreshold = Integer.parseInt(get(CPath2Property.BLACKLIST_DEGREE_THRESHOLD));
-        	controlDegreeThreshold = Integer.parseInt(get(CPath2Property.BLACKLIST_CONTROL_THRESHOLD));
+        	degreeThreshold = Integer.parseInt(property(PROP_BLACKLIST_DEGREE_THRESHOLD));
+        	controlDegreeThreshold = Integer.parseInt(property(PROP_BLACKLIST_CONTROL_THRESHOLD));
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Not a number: " 
-            	+ CPath2Property.BLACKLIST_CONTROL_THRESHOLD + " or "
-            	+ CPath2Property.BLACKLIST_DEGREE_THRESHOLD 
+            	+ PROP_BLACKLIST_CONTROL_THRESHOLD + " or "
+            	+ PROP_BLACKLIST_DEGREE_THRESHOLD 
             	+ " set in the cpath.properties file."
             );
         }
         
-    	final String src = CPathSettings.get(CPath2Property.MAIN_DB);
-        LOG.debug("Creating blacklist from the " +  src + " database.");
-        
-        PaxtoolsDAO paxtoolsDAO = ImportFactory.buildPaxtoolsHibernateDAO(src); //- no indexes (no full-text search) here
+        ApplicationContext ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
+        PaxtoolsDAO paxtoolsDAO = ((PaxtoolsDAO)ctx.getBean("paxtoolsDAO"));
 
         // os will be used directly inside the runAnalysis call
-        final OutputStream outputStream = new FileOutputStream(CPathSettings.blacklistFile());
-        
+        final OutputStream outputStream = new FileOutputStream(blacklistFile());        
         paxtoolsDAO.runAnalysis(new Analysis() {
             @Override
             public Set<BioPAXElement> execute(Model model, Object... args) 
@@ -455,24 +380,22 @@ public final class Admin {
      * Performs cpath2 Merge stage.
      * 
      * @param provider
-     * @param version
      * @param force
      * @throws IllegalStateException when not maintenance mode
      */
-    public static void runMerge(String provider, String version, boolean force) {
-		if(!CPathSettings.isMaintenanceModeEnabled())
+    public static void runMerge(String provider, boolean force) {
+		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
     	
 		// pc dao
 		ApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
 		final PaxtoolsDAO pcDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
 
-		LOG.info("runMerge: provider=" + provider + 
-			"; version=" + version + "; --force=" + force);
+		LOG.info("runMerge: provider=" + provider + "; --force=" + force);
 		
 		Merger merger = (provider == null || provider.isEmpty())
 				? ImportFactory.newMerger(pcDAO, force)
-				: ImportFactory.newMerger(pcDAO, provider, version, force);
+				: ImportFactory.newMerger(pcDAO, provider, force);
 		merger.merge();
 	}
 
@@ -482,11 +405,10 @@ public final class Admin {
      * (data converting, id-mapping initialization, validating/normalizing).
      * 
      * @param provider
-     * @param version
      * @throws IllegalStateException when not maintenance mode
      */
-	public static void runPremerge(String provider, String version) {
-		if(!CPathSettings.isMaintenanceModeEnabled())
+	public static void runPremerge(String provider) {
+		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
 		
 		ApplicationContext context =
@@ -499,7 +421,7 @@ public final class Admin {
 		PaxtoolsDAO warehouseDAO = (PaxtoolsDAO) context.getBean("warehouseDAO");
 		Validator validator = (Validator) context.getBean("validator");
         Premerge premerge = ImportFactory.newPremerge(metadataDAO, warehouseDAO, validator, provider);
-        LOG.info("runPremerge: provider=" + provider + "; version=" + version);
+        LOG.info("runPremerge: provider=" + provider);
         premerge.premerge();
 	}
 
@@ -507,11 +429,11 @@ public final class Admin {
 	/**
      * Helper function to get provider metadata.
      *
-     * @param location String URL or local file.
+     * @param location String PROVIDER_URL or local file.
      * @throws IOException, IllegalStateException (when not maintenance mode)
      */
     public static void fetchMetadata(final String location) throws IOException {
-		if(!CPathSettings.isMaintenanceModeEnabled())
+		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
 		
         ApplicationContext context =
@@ -538,7 +460,7 @@ public final class Admin {
      * @throws IOException, IllegalStateException (when not maintenance mode)
      */
     public static void fetchData(final String provider) throws IOException {
-		if(!CPathSettings.isMaintenanceModeEnabled())
+		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
     	
 		ApplicationContext context =
@@ -568,8 +490,7 @@ public final class Admin {
 				continue;
 			}
 			
-			LOG.info("FETCHING DONE : " + metadata.getIdentifier()
-					+ "." + metadata.getVersion());
+			LOG.info("FETCHING DONE : " + metadata.getIdentifier());
 		}
 	}
 
@@ -598,36 +519,37 @@ public final class Admin {
 	 * Extracts a cpath2 BioPAX sub-model
 	 * and writes to the specified file/format.
 	 * 
-	 * @param src
+	 * @param src pathway_id from the Metadata db, pathwayData table, or null
 	 * @param output
 	 * @param uris
 	 * @throws IOException, IllegalStateException (in maintenance mode)
 	 */
-	public static void exportData(final String src, final OutputStream output, 
+	public static void exportData(final String src, final String output, 
 			String... uris) throws IOException {
 		
-		if(CPathSettings.isMaintenanceModeEnabled())
+		if(isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode.");
-		
-		Integer pk = null; // aka pathway_id
-		try {
-			pk = Integer.valueOf(src);
-			if(LOG.isDebugEnabled())
-				LOG.debug("Export from the original data," +
-					" pathway_id=" + src);
-		} catch (NumberFormatException e) {
-			if(LOG.isDebugEnabled())
-				LOG.debug("Export from the database: " + src);
-		}
-		/* if the first argument was not a (integer) pathway_id from pathwayData,
-		 * it must be a PaxtoolsDAO db name (i.e,, a premerge or cpath2 main one)
-		 */
-		if(pk == null) {
-			PaxtoolsDAO dao = ImportFactory.buildPaxtoolsHibernateDAO(src); 
-			// - this instantiation method works with any cpath2 db, but full-text search will be disabled here (we do not need it now)
-			dao.exportModel(output, uris);
+		 
+		OutputStream os = new FileOutputStream(output);
+				
+		if(src == null || src.isEmpty() || src.equals("--main_db")) {
+			// export a sub-model from the main biopax database
+	        ApplicationContext ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
+	        PaxtoolsDAO dao = ((PaxtoolsDAO)ctx.getBean("paxtoolsDAO"));
+			dao.exportModel(os, uris);
 		} else {
-			// get pathwayData (bean)
+			// get original pathway data by pathway_id from the Metadata db, pathwayData table		
+			Integer pk = null;
+			try {
+				pk = Integer.valueOf(src);
+				if(LOG.isDebugEnabled())
+					LOG.debug("Export from the original data," +
+						" pathway_id=" + src);
+			} catch (NumberFormatException e) {
+				if(LOG.isDebugEnabled())
+					LOG.debug("Export from the database: " + src);
+			}			
+			
 			PathwayData pdata = getPathwayData(pk);
 			if(pdata != null) {
 				// get premergeData (OWL text)
@@ -637,13 +559,13 @@ public final class Admin {
 						SimpleIOHandler handler = new SimpleIOHandler(); // auto-detect Level
 						Model model = handler.convertFromOWL(new ByteArrayInputStream(data));
 						//handler.setFactory(model.getLevel().getDefaultFactory());
-						handler.convertToOWL(model, output, uris);
+						handler.convertToOWL(model, os, uris);
 					} else { 
 						/*	write all (premergeData -
 							cleaned/converted/validated/normalized from
 							the original provider's file )	*/
-						output.write(data);
-						output.flush();
+						os.write(data);
+						os.flush();
 					}
 				}
 				else {
@@ -728,27 +650,28 @@ public final class Admin {
 		
 	private static String usage() 
 	{
+		final String NEWLINE = System.getProperty ( "line.separator" );
 		StringBuilder toReturn = new StringBuilder();
 		toReturn.append("Usage: <-command_name> <command_args...>" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
 		// data import (instance creation) pipeline :
-		toReturn.append(COMMAND.CREATE_TABLES.toString() + " [<table1,table2,..>]" + NEWLINE);
-		toReturn.append(COMMAND.FETCH_METADATA.toString() + " <url>" + NEWLINE);
-		toReturn.append(COMMAND.FETCH_DATA.toString() + " [<metadataId>]" + NEWLINE);
-		toReturn.append(COMMAND.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
-		toReturn.append(COMMAND.MERGE.toString() + " [<metadataId>] [--force]"+ NEWLINE);
-		toReturn.append(COMMAND.CREATE_INDEX.toString() + NEWLINE);
-        toReturn.append(COMMAND.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
-        toReturn.append(COMMAND.CREATE_DOWNLOADS.toString() + "[<taxonomy_id|name,taxonomy_id|name,..>] (better use standard names, "
+		toReturn.append(Cmd.CREATE_TABLES.toString() + " [<table1,table2,..>]" + NEWLINE);
+		toReturn.append(Cmd.FETCH_METADATA.toString() + " <url>" + NEWLINE);
+		toReturn.append(Cmd.FETCH_DATA.toString() + " [<metadataId>]" + NEWLINE);
+		toReturn.append(Cmd.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
+		toReturn.append(Cmd.MERGE.toString() + " [<metadataId>] [--force]"+ NEWLINE);
+		toReturn.append(Cmd.CREATE_INDEX.toString() + NEWLINE);
+        toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
+        toReturn.append(Cmd.CREATE_DOWNLOADS.toString() + "[<taxonomy_id|name,taxonomy_id|name,..>] (better use standard names, "
         	+"e.g., (exactly) as \"homo sapiens,mus musculus\", because generated file names will look more user-friendly)"  + NEWLINE);        
         // other useful (utility) commands
-		toReturn.append(COMMAND.EXPORT.toString() + " <dbName or pathway_id> <uri,uri,.. or --all> <outfile>" +
-			" (dbName - any supported by PaxtoolsDAO DB; pathway_id is a PK of the pathwayData table - to extract 'premerged' data)" + NEWLINE);
-		toReturn.append(COMMAND.EXPORT_VALIDATION.toString() 
+		toReturn.append(Cmd.EXPORT.toString() + "<source> <output> [<uri,uri,..>]" +
+			" (<source> can be either --main_db or a pathway_id, i.e., 'premerged' data PK in the pathwayData table)" + NEWLINE);
+		toReturn.append(Cmd.EXPORT_VALIDATION.toString() 
 			+ " <provider>|<pathway_id> <output_file[.xml|.html]> (<provider> - metadata identifier or <pathway_id> - see above; "
 			+ "output_file will contain the Validator Response XML unless '.html' file extension is used, " +
 			"in wich case the XML is there auto-transformed to offline HTML+Javascript content)" + NEWLINE);
-		toReturn.append(COMMAND.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format>" + NEWLINE);
+		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format>" + NEWLINE);
 
 		return toReturn.toString();
 	}
@@ -778,7 +701,7 @@ public final class Admin {
     	}
     	
     	// the JVM option must be set to the same value as well!
-    	if (!home.equals(CPathSettings.homeDir())) {
+    	if (!home.equals(homeDir())) {
             System.err.println("Please set the java property " + HOME_VARIABLE_NAME 
             	+ ", i.e., run with -D" + HOME_VARIABLE_NAME + "=" + home + " option.");
             System.exit(-1);
@@ -793,7 +716,7 @@ public final class Admin {
     				+ " (is NOT 'UTF-8'...)");
     	
     	// create the TMP dir inside the home dir if it does not exist yet
-		File dir = new File(CPathSettings.localDataDir());
+		File dir = new File(localDataDir());
 		if(!dir.exists()) {
 			dir.mkdir();
 		}   	
@@ -819,7 +742,7 @@ public final class Admin {
 	{
 		InputStream is = biopaxStream(biopaxFile);
 		Resource blacklist = new DefaultResourceLoader()
-    		.getResource(CPathSettings.blacklistFile());
+    		.getResource(blacklistFile());
 		OutputFormatConverter formatConverter = new OutputFormatConverterImpl(blacklist);
 		ServiceResponse res = formatConverter.convert(is, outputFormat);
 		if (res instanceof ErrorResponse) {
@@ -837,7 +760,7 @@ public final class Admin {
 	{
 		InputStream is = biopaxStream(biopaxFile);		
 		Model m = (new SimpleIOHandler()).convertFromOWL(is);
-		Resource blacklist = new DefaultResourceLoader().getResource(CPathSettings.blacklistFile());
+		Resource blacklist = new DefaultResourceLoader().getResource(blacklistFile());
 		OutputFormatConverter formatConverter = new OutputFormatConverterImpl(blacklist);
 		formatConverter.convertToExtendedBinarySIF(m, edgeStream, nodeStream);
 	}
@@ -860,11 +783,11 @@ public final class Admin {
 	public static void createDownloads(String[] organisms) 
     		throws IOException
     {	
-		if(!CPathSettings.isMaintenanceModeEnabled())
+		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
 		
 		// create the TMP dir inside the home dir if it does not exist yet
-		File f = new File(CPathSettings.downloadsDir());
+		File f = new File(downloadsDir());
 		if(!f.exists()) 
 			f.mkdir();
     	
@@ -916,8 +839,8 @@ public final class Admin {
     	String[] datasources, String[] organisms) throws IOException 
     {
     	// grab the BioPAX first -
-        final String biopaxDataArchive = CPathSettings.downloadsDir() 
-        		+ File.separator + CPathSettings.get(CPath2Property.PROVIDER) 
+        final String biopaxDataArchive = downloadsDir() 
+        		+ File.separator + property(PROVIDER_NAME) 
         		+ " " + filePrefix + ".BIOPAX.owl.gz";
         
         // check file exists
@@ -957,8 +880,8 @@ public final class Admin {
 		if(format == OutputFormat.BIOPAX)
 			throw new AssertException("Converting BioPAX to BioPAX");
 	
-		String archiveName = CPathSettings.downloadsDir() + File.separator 
-				+ CPathSettings.get(CPath2Property.PROVIDER) + " " 
+		String archiveName = downloadsDir() + File.separator 
+				+ property(PROVIDER_NAME) + " " 
 				+ prefix + "." + formatAndExt(format) + ".gz";
 		LOG.info("create-downloads: generating " + archiveName);
 		
@@ -969,9 +892,9 @@ public final class Admin {
     			//write edges and nodes into separate archives
     			GZIPOutputStream edgeStream = new GZIPOutputStream(new FileOutputStream(archiveName));
     			GZIPOutputStream nodeStream = new GZIPOutputStream(new FileOutputStream(
-    				CPathSettings.homeDir() + File.separator 
-    					+ CPathSettings.DOWNLOADS_SUBDIR + File.separator 
-    					+ CPathSettings.get(CPath2Property.PROVIDER) + " " 
+    				homeDir() + File.separator 
+    					+ DOWNLOADS_SUBDIR + File.separator 
+    					+ property(PROVIDER_NAME) + " " 
     					+ prefix + "." + format + ".nodes.tsv.gz"));
     		
     			convertToExtSif(biopaxDataArchive, edgeStream, nodeStream);

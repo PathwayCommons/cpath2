@@ -33,7 +33,7 @@
 							<resource>META-INF/spring.schemas</resource>
 						</transformer>
 					</transformers>
-					<shadedClassifierName>executable</shadedClassifierName>
+					<shadedClassifierName>exec</shadedClassifierName>
 					<shadedArtifactAttached>true</shadedArtifactAttached>
 				</configuration>
 				<executions>

@@ -61,7 +61,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean;
 
-
+import static cpath.config.CPathSettings.*;
 
 /**
  * This is a fantastic (crazy) factory that 
@@ -78,44 +78,29 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	// fields are set by Spring from cpath.properties
     
 	private String dbUser;
-	@Value("${db.user}")
+	@Value($DB_USER)
 	public void setDbUser(String dbUser) { this.dbUser = dbUser; }
 	public String getDbUser() { return dbUser; }
 
 	private String dbPassword;
-	@Value("${db.password}")
+	@Value($DB_PASSW)
 	public void setDbPassword(String dbPassword) { this.dbPassword = dbPassword; }
 	public String getDbPassword() { return dbPassword; }
 
 	private String dbDriver;
-	@Value("${db.driver}")
+	@Value($DB_DRIVER)
 	public void setDbDriver(String dbDriver) { this.dbDriver = dbDriver; }
 	public String getDbDriver() { return dbDriver; }
 
 	private String dbConnection;
-	@Value("${db.connection}")
+	@Value($DB_CONNECTION)
 	public void setDbConnection(String dbConnection) { this.dbConnection = dbConnection; }
 	public String getDbConnection() { return dbConnection; }
 
 	private String dbDialect;
-	@Value("${db.dialect}")
+	@Value($DB_DIALECT)
 	public void setDbDialect(String dbDialect) { this.dbDialect = dbDialect; }
 	public String getDbDialect() { return dbDialect; }
-	
-	private String metaDb;
-	@Value("${metadata.db}")
-	public void setMetaDb(String db) {this.metaDb = db;}
-	public String getMetaDb() {return metaDb;}
-
-	private String mainDb;
-	@Value("${main.db}")
-	public void setMainDb(String db) {this.mainDb = db;}
-	public String getMainDb() {return mainDb;}
-
-	private String warehouseDb;
-	@Value("${warehouse.db}")
-	public void setMoleculesDb(String db) {this.warehouseDb = db;}
-	public String getWarehouseDb() {return warehouseDb;}
 
 	private JdbcTemplate jdbcTemplate;
 	public JdbcTemplate getJdbcTemplate() {
@@ -266,7 +251,9 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 	
 	
 	/**
-	 * Fantastic way to create a database schema!
+	 * Tricky but working way to create a database schema
+	 * by the static method using Spring and Hibernate
+	 * frameworks.
 	 * 
 	 * This implicitly calls 
 	 * {@link #createDatabase(String, String, String, String, String)} 
@@ -278,7 +265,8 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 		// drop existing index dir.
 		dropFulltextIndex(dbName);
 		
-		// get the data source factory bean (aware of the driver, user, and password)
+		// get the data source factory bean 
+		// (it knows the db driver, user and password from env.)
 		ApplicationContext ctx = 
 			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
 		DataServices dataServices = (DataServices) ctx.getBean("&dsBean");
@@ -323,52 +311,6 @@ public class DataServicesFactoryBean implements DataServices, BeanNameAware, Fac
 			log.info("Removing full-text index directory : " 
 				+ dir.getAbsolutePath());
 		deleteDirectory(dir);
-    }
- 
-    
-    /**
-     * Creates full-text index for the "main" DB
-     * (actual connection parameters are set 
-     * from system/environment properties)
-     * 
-     * @deprecated use {@link PaxtoolsDAO#index()} instead
-     */
-    public static void rebuildMainIndex() {
-    	ApplicationContext ctx = 
-			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
-		DataServices ds = (DataServices) ctx.getBean("&dsBean");
-    	ds.createIndex(ds.getMainDb());
-    }
-    
-    
-    /**
-     * Creates full-text index for the "molecules" DB
-     * (actual connection parameters are set 
-     * from system/environment properties)
-     * 
-     * @deprecated use {@link PaxtoolsDAO#index()} instead
-     */
-    public static void rebuildWarehouseIndex() {
-    	ApplicationContext ctx = 
-			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
-		DataServices ds = (DataServices) ctx.getBean("&dsBean");
-    	ds.createIndex(ds.getWarehouseDb());
-    }
-    
-    /**
-     * Creates full-text index for the database name
-     * (other connection parameters are set from 
-     * system properties)
-     * 
-     * @param db
-     * 
-     * @deprecated use {@link PaxtoolsDAO#index()} instead
-     */
-    public static void rebuildIndex(String db) {
-    	ApplicationContext ctx = 
-			new ClassPathXmlApplicationContext("classpath:internalContext-dsFactory.xml");
-		DataServices ds = (DataServices) ctx.getBean("&dsBean");
-    	ds.createIndex(db);
     }
 
     

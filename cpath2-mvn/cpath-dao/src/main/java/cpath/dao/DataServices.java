@@ -64,10 +64,4 @@ public interface DataServices {
     
     String getDbConnection();
     
-    String getMetaDb();
-    
-    String getMainDb();
-    
-    String getWarehouseDb();
-    
 }
