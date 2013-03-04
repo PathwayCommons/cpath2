@@ -26,9 +26,8 @@
  **/
 package cpath.importer.internal;
 
-// imports
+
 import cpath.config.CPathSettings;
-import cpath.config.CPathSettings.CPath2Property;
 import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Cleaner;
@@ -100,7 +99,7 @@ final class PremergeImpl implements Premerge {
 		this.metaDataDAO = metaDataDAO;
 		this.warehouseDAO = moleculesDAO;
 		this.validator = validator;
-		this.xmlBase = CPathSettings.get(CPath2Property.XML_BASE);
+		this.xmlBase = CPathSettings.xmlBase();
 	}
 
 	
@@ -137,7 +136,7 @@ final class PremergeImpl implements Premerge {
 				} 
 				else {
 					log.info("premerge(), reading original pathway data: " +
-						metadata.getIdentifier() + ", ver. " + metadata.getVersion());
+						metadata.getIdentifier() );
 					
 					// Try to instantiate the Cleaner now, and exit if it fails!
 					cleaner = null; //reset to null!
@@ -463,7 +462,7 @@ final class PremergeImpl implements Premerge {
 				|| metadata.getConverterClassname().isEmpty()) 
 		{
 			log.info("storeWarehouseData(..), skip (no need to clean/convert) for: "
-				+ metadata.getIdentifier() + " version: " + metadata.getVersion());
+				+ metadata.getIdentifier() );
 			return;
 		}
 				
@@ -471,11 +470,10 @@ final class PremergeImpl implements Premerge {
 		String urlStr = "file://" + metadata.localDataFile();
 		InputStream is = new BufferedInputStream(LOADER.getResource(urlStr).getInputStream());
 		log.info("storeWarehouseData(..): input stream is now open for provider: "
-			+ metadata.getIdentifier() + " version: " + metadata.getVersion());
+			+ metadata.getIdentifier());
 		
 		try {
-			// get an input stream from a resource file that is either .gz or
-			// .zip
+			// get an input stream from a resource file that is either .gz or .zip
 			if (urlStr.endsWith(".gz")) {
 				is = new GZIPInputStream(is);
 			} else if (urlStr.endsWith(".zip")) {
@@ -505,8 +503,7 @@ final class PremergeImpl implements Premerge {
 			}
 
 			log.info("storeWarehouseData(..): creating EntityReference objects, " +
-				"provider: " + metadata.getIdentifier() + " version: "
-					+ metadata.getVersion());
+				"provider: " + metadata.getIdentifier());
 
 			// hook into a cleaner for given provider
 			// Try to instantiate the Cleaner (if any) sooner, and exit if it fails!
@@ -532,32 +529,48 @@ final class PremergeImpl implements Premerge {
 				log.info("storeWarehouseData(..): running the Cleaner: " + cl);	
 				data = cleaner.clean(data);
 			}
-			
-			// re-open a new input stream for the cleaned data
-			is = new BufferedInputStream(new ByteArrayInputStream(data.getBytes("UTF-8")));
-			
+					
 			// hook into a converter for given provider
 			cl = metadata.getConverterClassname();
-			Converter converter = null;
 			if(cl != null && cl.length()>0) {
-				converter = ImportFactory.newConverter(cl);
+				final Converter converter = ImportFactory.newConverter(cl);
 				if(converter != null) {
 					log.info("storeWarehouseData(..): running " +
 							"the BioPAX Converter: " + cl);	
+					// open a new input stream for the cleaned data
+					final InputStream dataStream = new BufferedInputStream(
+							new ByteArrayInputStream(data.getBytes("UTF-8")));	
 					// create a new empty in-memory model
-					Model inMemModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-					inMemModel.setXmlBase(model.getXmlBase());
+//					Model inMemModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+//					inMemModel.setXmlBase(model.getXmlBase());
 					// convert data into that
-					converter.setModel(inMemModel);
-					converter.convert(is);
+//					converter.setModel(inMemModel);
+					converter.setModel(model);
+					
+					if(model instanceof PaxtoolsDAO) {
+						log.info("Now processing the ChEBI OBO " +
+							"within a Hibernate transaction (cpath2 warehouse DAO)...");
+						
+						((PaxtoolsDAO)model).runAnalysis(new Analysis() {
+							@Override
+							public Set<BioPAXElement> execute(Model model, Object... args) {
+								converter.convert(dataStream);
+								return null;
+							}
+						});
+					}
+					else
+						converter.convert(dataStream);
+					
+					
 					//repair
 					log.info("storeWarehouseData(..): Preparing just created " +
 						metadata.getIdentifier() + " BioPAX Model to merging...");
-					inMemModel.repair();
+//					inMemModel.repair();
 					// merging may take quite a time...
 					log.info("storeWarehouseData(..): Persisting " +
 						metadata.getIdentifier());
-					model.merge(inMemModel);
+//					model.merge(inMemModel);
 				}
 				else 
 					log.error(("storeWarehouseData(..): failed to create " +
@@ -570,6 +583,8 @@ final class PremergeImpl implements Premerge {
 
 			log.info("storeWarehouseData(..): Exitting.");
 			
+		} catch(Exception e) {
+			log.error(e);
 		} finally {
 	        try {
 	            is.close();
@@ -591,13 +606,14 @@ final class PremergeImpl implements Premerge {
     {
             BufferedReader reader = null;
     		StringBuilder toReturn = new StringBuilder();
+    		final String NEWLINE = System.getProperty ( "line.separator" );
             try {
                 // we'd like to read lines at a time
                 reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
                 // are we ready to read?
                 while (reader.ready()) {
                 	// NEWLINE here is critical for the protein/molecule cleaner/converter!
-                    toReturn.append(reader.readLine()).append(CPathSettings.NEWLINE);
+                    toReturn.append(reader.readLine()).append(NEWLINE);
     			}
     		}
             catch (IOException e) {

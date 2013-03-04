@@ -69,7 +69,6 @@ class MetadataHibernateDAO  implements MetadataDAO {
 			if(log.isInfoEnabled())
 				log.info("Metadata object with identifier: " + metadata.getIdentifier() 
 					+ " already exists, manually merging.");
-			existing.setVersion(metadata.getVersion());
 			existing.setName(metadata.getName());
 			existing.setDescription(metadata.getDescription());
 			existing.setUrlToData(metadata.getUrlToData());
@@ -128,15 +127,14 @@ class MetadataHibernateDAO  implements MetadataDAO {
 
 		Session session = getSession();
 		// check for existing object
-		PathwayData existing = getPathwayDataByIdentifierAndVersionAndFilenameAndDigest(pathwayData.getIdentifier(), 
-				pathwayData.getVersion(), pathwayData.getFilename(), pathwayData.getDigest());
+		PathwayData existing = getPathwayDataByIdentifierAndFilenameAndDigest(
+				pathwayData.getIdentifier(), pathwayData.getFilename(), pathwayData.getDigest());
 		
 		if (existing == null) {
 			if(log.isInfoEnabled())
 				log.info("Saving PathwayData with identifier: " 
 					+ pathwayData.getIdentifier() +
 					 " and file: " + pathwayData.getFilename() +
-					 " and version: " + pathwayData.getVersion() +
 					 " and digest: " + pathwayData.getDigest());
 			
 			session.save(pathwayData);
@@ -146,7 +144,6 @@ class MetadataHibernateDAO  implements MetadataDAO {
 				log.info("Updating PathwayData with identifier: "
 					+ pathwayData.getIdentifier() +
 					 " and file: " + pathwayData.getFilename() +
-					 " and version: " + pathwayData.getVersion() + 
 					 " and digest: " + pathwayData.getDigest());
 			
 			existing.setPathwayData(pathwayData.getPathwayData());
@@ -190,43 +187,20 @@ class MetadataHibernateDAO  implements MetadataDAO {
 		return (toReturn.size() > 0) ? new ArrayList<PathwayData>(toReturn) : Collections.EMPTY_SET;
     }
 
-    /*
-     * (non-Javadoc)
-     * @see cpath.warehouse.metadata.MetadataDAO#getPathwayDataByIdentifierAndVersion;
-     */
-    @SuppressWarnings("unchecked") //the named query returns PathwayData list
-	@Transactional(propagation=Propagation.REQUIRED)
-    public Collection<PathwayData> getPathwayDataByIdentifierAndVersion(final String identifier, final String version) {
 
-		Session session = getSession();
-		Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayByIdentifierAndVersion");
-		query.setParameter("identifier", identifier);
-		query.setParameter("version", version);
-		List<PathwayData> toReturn = query.list();
-		return (toReturn.size() > 0) ? new ArrayList<PathwayData>(toReturn) : Collections.EMPTY_SET;
-    }
-
-    /**
-     * (non-Javadoc)
-     * @see cpath.warehouse.metadata.MetadataDAO#getPathwayDataByIdentifierAndVersionAndFilenameAndDigest;
-     */
     @Transactional(propagation=Propagation.REQUIRED)
-    public PathwayData getPathwayDataByIdentifierAndVersionAndFilenameAndDigest(final String identifier, 
-    		final String version, final String filename, final String digest) 
+    public PathwayData getPathwayDataByIdentifierAndFilenameAndDigest(final String identifier, 
+    		final String digest, final String filename) 
     {
 		Session session = getSession();
-		Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayByIdentifierAndVersionAndFilenameAndDigest");
+		Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayByIdentifierAndFilenameAndDigest");
 		query.setParameter("identifier", identifier);
-		query.setParameter("version", version);
 		query.setParameter("filename", filename);
 		query.setParameter("digest", digest);
 		return (PathwayData)query.uniqueResult();
     }
 
     
-	/* (non-Javadoc)
-	 * @see cpath.warehouse.MetadataDAO#getPathwayData;
-	 */
 	@Override
 	@Transactional
 	public PathwayData getPathwayData(Integer pathwayId) {
@@ -296,7 +270,6 @@ class MetadataHibernateDAO  implements MetadataDAO {
 		for(PathwayData pd : pathwayData)
 			map.put(pd.getId(), pd.getFilename() 
 				+ " (" + pd.getIdentifier() 
-				+ "; version: " + pd.getVersion() 
 				+ "; passed: " + pd.getValid() + ")");
 
 		return map;

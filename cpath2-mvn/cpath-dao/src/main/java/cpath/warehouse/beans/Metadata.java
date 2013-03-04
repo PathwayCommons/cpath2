@@ -11,7 +11,6 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Provenance;
 
 import cpath.config.CPathSettings;
-import cpath.config.CPathSettings.CPath2Property;
 
 /**
  * Data Provider Metadata.
@@ -20,9 +19,9 @@ import cpath.config.CPathSettings.CPath2Property;
 @Table(name="metadata")
 @NamedQueries({
 		@NamedQuery(name="cpath.warehouse.beans.providerByIdentifier",
-					query="from Metadata as metadata where identifier = :identifier order by identifier"),
+					query="from Metadata as metadata where identifier = :identifier order by id"),
 		@NamedQuery(name="cpath.warehouse.beans.allProvider", 
-					query="from Metadata as metadata order by identifier")
+					query="from Metadata as metadata order by id")
 })
 public final class Metadata {
 
@@ -49,12 +48,12 @@ public final class Metadata {
     }
 
 	@Id
-	@Column(length=40)
+	@GeneratedValue(strategy=GenerationType.AUTO)
+    private Integer id;
+	@Column(length=40, unique = true, nullable = false)
     private String identifier;
 	@Column(nullable=false)
     private String name;
-	@Column(nullable=false)
-    private String version;
 	@Column(nullable=false)
     private String description;
 	@Column(nullable=false)
@@ -80,7 +79,6 @@ public final class Metadata {
      *
      * @param identifier String (string used in web service calls)
      * @param name String
-     * @param version Float
      * @param description String
      * @param urlToData String
      * @param urlToHomepage String
@@ -90,13 +88,12 @@ public final class Metadata {
      * @param isPSI Boolean
      * @throws IllegalArgumentException
      */
-    public Metadata(final String identifier, final String name, final String version, final String description, final String urlToData,
-					String urlToHomepage, final byte[] icon, final METADATA_TYPE metadata_type, final String cleanerClassname, final String converterClassname) {
+    public Metadata(final String identifier, final String name, final String description, final String urlToData, String urlToHomepage,
+					final byte[] icon, final METADATA_TYPE metadata_type, final String cleanerClassname, final String converterClassname) {
 
     	//set/validate all parameters
     	setIdentifier(identifier); 
         setName(name);
-        setVersion(version);
         setDescription(description);
         setUrlToData(urlToData);
         setUrlToHomepage(urlToHomepage);
@@ -106,7 +103,14 @@ public final class Metadata {
         setConverterClassname(converterClassname);
     }
 
-	/**
+
+	void setId(Integer id) {
+		this.id = id;
+	}
+    public Integer getId() { return new Integer(id); }
+     
+    
+    /**
 	 * Sets the identifier.
 	 * No spaces, dashes, allowed. 
 	 * 
@@ -161,13 +165,6 @@ public final class Metadata {
 	 */
     public String getName() { return name; }
 
-	public void setVersion(String version) {
-        if (version == null) {
-            throw new IllegalArgumentException("version must not be null");
-        }
-        this.version = version;
-	}
-    public String getVersion() { return version; }
 
 	public void setDescription(String releaseDate) {
         if (releaseDate == null) {
@@ -179,7 +176,7 @@ public final class Metadata {
 
 	public void setUrlToData(String urlToData) {
         if (urlToData == null) {
-            throw new IllegalArgumentException("URL to data must not be null");
+            throw new IllegalArgumentException("PROVIDER_URL to data must not be null");
         }
         this.urlToData = urlToData;
 	}
@@ -187,7 +184,7 @@ public final class Metadata {
 
 	public void setUrlToHomepage(String urlToHomepage) {
         if (urlToHomepage == null) {
-            throw new IllegalArgumentException("URL to Homepage must not be null");
+            throw new IllegalArgumentException("PROVIDER_URL to Homepage must not be null");
         }
         this.urlToHomepage = urlToHomepage;
 	}
@@ -233,7 +230,7 @@ public final class Metadata {
 
     @Override
     public String toString() {
-        return identifier + "." + version;
+        return identifier;
     }
     
     
@@ -247,8 +244,6 @@ public final class Metadata {
     	String name = CPathSettings.localDataDir() 
     	+ File.separator + identifier;
     	
-    	if(version != null && !version.isEmpty())
-    		name += "." + version;
     	
     	// add the file extension, if any
 		int idx = urlToData.lastIndexOf('.');
@@ -269,7 +264,7 @@ public final class Metadata {
      */
     @Transient
     public String getUri() {
-    	return CPathSettings.get(CPath2Property.XML_BASE)+identifier;
+    	return CPathSettings.xmlBase() + identifier;
     }
 
     
@@ -304,8 +299,7 @@ public final class Metadata {
 		pro.addComment("Source " + 
 			//skip for a local or empty (default) location
 			((loc.startsWith("http:") || loc.startsWith("ftp:")) ? loc : "") 
-			+ " metadata_type: " + getType() + "; version: " + 
-			getVersion() + ", " + getDescription());
+			+ " metadata_type: " + getType() + ", " + getDescription());
 		
 		// replace for all entities
 		for (org.biopax.paxtools.model.level3.Entity ent : model.getObjects(org.biopax.paxtools.model.level3.Entity.class)) {

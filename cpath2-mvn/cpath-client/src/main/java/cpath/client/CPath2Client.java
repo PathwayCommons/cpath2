@@ -94,9 +94,9 @@ public final class CPath2Client
     	// add BioPAX http message converter
         client.restTemplate.getMessageConverters().add(1, new BioPAXHttpMessageConverter(bioPAXIOHandler));
     	
-    	// init the server URL
+    	// init the server PROVIDER_URL
     	client.endPointURL = System.getProperty(JVM_PROPERTY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);
-    	assert client.endPointURL != null :  "BUG: cpath2 URL is not defined!";
+    	assert client.endPointURL != null :  "BUG: cpath2 PROVIDER_URL is not defined!";
     	
     	return client;
     }
@@ -104,7 +104,7 @@ public final class CPath2Client
     
 	/**
 	 * Executes a 'get' and 'graph' type cPath2 
-	 * Web Service API URL query and returns 
+	 * Web Service API PROVIDER_URL query and returns 
 	 * the resulting sub-model (sub-network) as String.
 	 * 
 	 * @see #queryGet(Collection)
@@ -199,7 +199,7 @@ public final class CPath2Client
     
     /**
      * Builds a <em>get</em> BioPAX (default format) 
-     * by URI(s) query URL string.
+     * by URI(s) query PROVIDER_URL string.
      * 
      * @param ids
      * @return
@@ -225,7 +225,7 @@ public final class CPath2Client
 
     
     /**
-     * Builds a 'PATHS BETWEEN' BioPAX <em>graph</em> query URL string.
+     * Builds a 'PATHS BETWEEN' BioPAX <em>graph</em> query PROVIDER_URL string.
      * 
      * @param sourceSet
      * @return
@@ -253,7 +253,7 @@ public final class CPath2Client
 
 	
 	/**
-	 * Builds a 'PATHS FROM TO' <em>graph</em> query URL string.
+	 * Builds a 'PATHS FROM TO' <em>graph</em> query PROVIDER_URL string.
 	 * 
 	 * @param sourceSet
 	 * @param targetSet
@@ -285,7 +285,7 @@ public final class CPath2Client
 
 
 	/**
-	 * Builds a 'NEIGHBORHOOD' BioPAX <em>graph</em> query URL string.
+	 * Builds a 'NEIGHBORHOOD' BioPAX <em>graph</em> query PROVIDER_URL string.
 	 * 
 	 * @param sourceSet
 	 * @return
@@ -320,7 +320,7 @@ public final class CPath2Client
 
 	
 	/**
-	 * Builds a 'COMMON STREAM' BioPAX <em>graph</em> query URL string.
+	 * Builds a 'COMMON STREAM' BioPAX <em>graph</em> query PROVIDER_URL string.
 	 * 
 	 * @see #setDirection(Direction)
 	 * 
@@ -416,9 +416,9 @@ public final class CPath2Client
 
     
     /**
-     * The WEB Service URL prefix.
+     * The WEB Service PROVIDER_URL prefix.
      * 
-     * @return the end point URL as a string
+     * @return the end point PROVIDER_URL as a string
      */
     public String getEndPointURL() {
         return endPointURL;
@@ -427,7 +427,7 @@ public final class CPath2Client
     
     /**
      * @see #getEndPointURL()
-     * @param endPointURL the end point URL as a string
+     * @param endPointURL the end point PROVIDER_URL as a string
      */
     public void setEndPointURL(String endPointURL) {
         this.endPointURL = endPointURL;

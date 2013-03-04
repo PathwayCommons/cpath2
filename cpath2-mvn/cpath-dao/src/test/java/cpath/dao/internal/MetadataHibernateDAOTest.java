@@ -64,7 +64,7 @@ public class MetadataHibernateDAOTest {
         byte[] testData = "<rdf>          </rdf>".getBytes();
         
 		// mock a PathwayData
-        PathwayData pathwayData = new PathwayData("testpw", "2010.04", "testpw", "testpw", testData);
+        PathwayData pathwayData = new PathwayData("testpw", "testpw", "testpw", testData);
         // test if internal pack/unpach (gzip) results in the same data
         assertTrue(Arrays.equals(testData, pathwayData.getPathwayData()));
         
@@ -74,7 +74,7 @@ public class MetadataHibernateDAOTest {
         
         // get
         pathwayData = null;
-        pathwayData = dao.getPathwayDataByIdentifierAndVersionAndFilenameAndDigest("testpw", "2010.04", "testpw", "testpw");
+        pathwayData = dao.getPathwayDataByIdentifierAndFilenameAndDigest("testpw", "testpw", "testpw");
         assertNotNull(pathwayData);
         assertNull(pathwayData.getValidationResults());
         // check whether DB save/read changed data
@@ -89,7 +89,7 @@ public class MetadataHibernateDAOTest {
         
         // check
         pathwayData = null;
-        pathwayData = dao.getPathwayDataByIdentifierAndVersionAndFilenameAndDigest("testpw", "2010.04", "testpw", "testpw");
+        pathwayData = dao.getPathwayDataByIdentifierAndFilenameAndDigest("testpw", "testpw", "testpw");
         assertNotNull(pathwayData);
         assertNotNull(pathwayData.getValidationResults());
         assertTrue(pathwayData.getValidationResults().length > 0);

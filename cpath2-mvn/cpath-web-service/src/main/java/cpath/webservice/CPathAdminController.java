@@ -25,7 +25,7 @@ public class CPathAdminController {
 	
     @ModelAttribute("maintenanceModeEnabled")
     public boolean isMaintenanceModeEnabled() {
-    	return CPathSettings.isMaintenanceModeEnabled();
+    	return CPathSettings.isMaintenanceEnabled();
     }
     
     

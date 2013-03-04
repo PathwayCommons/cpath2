@@ -21,7 +21,7 @@
         <property name="hibernateProperties">
 		  <props>
 		  	<prop key="hibernate.connection.release_mode">after_transaction</prop>
-		  	<prop key="hibernate.dialect">${db.dialect}</prop>
+		  	<prop key="hibernate.dialect">${cpath2.db.dialect}</prop>
 			<prop key="hibernate.hbm2ddl.auto">create</prop>
 			<prop key="hibernate.search.default.directory_provider">org.hibernate.search.store.RAMDirectoryProvider</prop>
 			<prop key="hibernate.search.indexing_strategy">manual</prop>

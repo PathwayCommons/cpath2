@@ -24,7 +24,6 @@ import org.biopax.paxtools.util.ClassFilterSet;
 import org.hibernate.transform.ResultTransformer;
 
 import cpath.config.CPathSettings;
-import cpath.config.CPathSettings.CPath2Property;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
 
@@ -46,7 +45,6 @@ final class SearchHitsTransformer implements ResultTransformer {
 	private final Highlighter highlighter;
 	private static final Analyzer ANALYZER =
 			new StandardAnalyzer(Version.LUCENE_31);
-	private static final String XML_BASE = CPathSettings.get(CPath2Property.XML_BASE);
 	
 	public SearchHitsTransformer(Highlighter highlighter) {
 		this.highlighter = highlighter;
@@ -104,7 +102,7 @@ final class SearchHitsTransformer implements ResultTransformer {
 		if(doc.getField(FIELD_DATASOURCE) != null) {
 			Set<String> uniqueVals = new TreeSet<String>();
 			for(String d : doc.getValues(FIELD_DATASOURCE)) {
-				if(d.startsWith(XML_BASE)) { 
+				if(d.startsWith(CPathSettings.xmlBase())) { 
 					uniqueVals.add(d);
 				}
 			}

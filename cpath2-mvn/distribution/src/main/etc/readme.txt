@@ -72,7 +72,7 @@ Note: if possible, use a standard name in the 'NAME' (the second) field of pathw
 2. Download warehouse data, ('wget') UniProt and ChEBI, into $CPATH2_HOME/tmp/:
 - wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz
 and rename it to, e.g., UNIPROT_HUMAN.YYYYMMDD.gz (name is to be constructed from 
-the corresponding line in metadata.conf, i.e. IDENTIFIER.VERSION.EXT; 
+the corresponding line in metadata.conf, i.e. IDENTIFIER.EXT; 
 .gz (single file), .zip (multi- or single-file) archives are currently supported, 
 and no extension or other one means the data is not compressed, process as is)
 - wget ftp://ftp.ebi.ac.uk/pub/databases/chebi/SDF/ChEBI_complete.sdf.gz, etc. 
@@ -91,10 +91,10 @@ or PSI-MI data $CPATH2_HOME/tmp/ as follows:
 - download (wget) files or archive(s) from the pathway resource 
 (e.g., wget http://www.reactome.org/download/current/biopax3.zip) 
 - extract what you need (e.g. some species data only)
-- create a simple zip/gzip archive, name it according to IDENTIFIER.VERSION.EXT schema
+- create a simple zip/gzip archive, name it according to IDENTIFIER.EXT schema
 (alternatively, use, e.g., file:///full-path-to/smth.zip URL in the metadata.conf) 
 
-4. set "maintenance-mode.enabled=true" in the cpath properties.
+4. set "maintenance.enabled=true" in the cpath properties.
 
 4. Run import-data.sh script and follow the instructions/questions...
 
@@ -105,9 +105,9 @@ The cPath2 METADATA file is a plain text table, which can be placed anywhere
 where accessible by the cpath2 admin script via URL. It has the following structure:
 - one data source metadata definition per line (thus, EOLs/newline matter);
 - lines that begin with "#" are remarks and will be ignored; blank lines - too;
-- there are exactly 10 columns, which are separated by "<br>" (is not HTML);
-- empty strings in the middle of a line (the result of using <br><br>) and the 
-trailing empty string (after the last '<br>', i.e., Converter class name, if any), 
+- there are exactly 9 columns, which are tab-separated values (TSV);
+- empty strings in the middle of a line (the result of using \t\t) and the 
+trailing empty string (after the last '\t', i.e., Converter class name, if any), 
 will be always added to the columns array.
 - no column headers, but columns are, in order, the following: 
 1) IDENTIFIER - unique, short (40), and simple; spaces or dashes are not allowed;
@@ -118,16 +118,13 @@ for pathway type records (BIOPAX, PSI_MI), there must be at least one standard
 data source name, if possible (names will be used for filtering by data source 
 in cpath2 full-text search);
 
-3) VERSION - text or number; better keep it simple, because it becomes 
-essential part of the corresponding local file (in $CPATH2_HOME/tmp/);
+3) DESCRIPTION - free text: organization name, release date, web site, comments;
 
-4) DESCRIPTION - free text: organization name, release date, web site, comments;
-
-5) URL to the Data (optional) - can be file://, http://, ftp://, classpath:;
+4) URL to the Data (optional) - can be file://, http://, ftp://, classpath:;
 - when no 'extension' or it is not '.zip' or '.gz', - means data to be saved as 
-  $CPATH2_HOME/tmp/IDENTIFIER.VERSION.EXT and processed "as is" (no unpacking);
+  $CPATH2_HOME/tmp/IDENTIFIER.EXT and processed "as is" (no unpacking);
 - empty or a fake URL (e.g., "foo.zip" or ".gz", to force unzip) is accepted, because 
-  cpath2 checks if IDENTIFIER.VERSION ("foo.zip" -> IDENTIFIER.VERSION.zip) 
+  cpath2 checks if IDENTIFIER ("foo.zip" -> IDENTIFIER.zip) 
   file exists in $CPATH2_HOME/tmp/, and if found, ignores whatever URL is there! 
  
 So, how data is actually processed depends on the metadata TYPE 
@@ -145,15 +142,15 @@ download, re-package, and either save the required data to $CPATH2_HOME/tmp/
 (following the cpath2 importer naming convention), or specify a local URL, 
 like file:///full/path/whatever.gz, instead.
 
-6) URL to the Data Provider's Homepage (optional, good to have)
+5) URL to the Data Provider's Homepage (optional, good to have)
 
-7) IMAGE URL (optional) - can be pointing to a resource logo;
+6) IMAGE URL (optional) - can be pointing to a resource logo;
 
-8) TYPE - one of: BIOPAX, PSI_MI, PROTEIN, SMALL_MOLECULE;
+7) TYPE - one of: BIOPAX, PSI_MI, PROTEIN, SMALL_MOLECULE;
 
-9) CLEANER_CLASS - leave empty or use a specific cleaner class name (like cpath.cleaner.internal.UniProtCleanerImpl);
+8) CLEANER_CLASS - leave empty or use a specific cleaner class name (like cpath.cleaner.internal.UniProtCleanerImpl);
 
-10) CONVERTER_CLASS - leave empty or use a specific converter class (like cpath.converter.internal.UniprotConverterImpl);
+9) CONVERTER_CLASS - leave empty or use a specific converter class (like cpath.converter.internal.UniprotConverterImpl);
 
 
 MORE DETAILS

@@ -31,8 +31,10 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -63,15 +65,14 @@ final class FetcherImpl implements Fetcher
     // some bits for metadata reading
     private static final int METADATA_IDENTIFIER_INDEX = 0;
     private static final int METADATA_NAME_INDEX = 1;
-    private static final int METADATA_VERSION_INDEX = 2;
-    private static final int METADATA_RELEASE_DATE_INDEX = 3;
-    private static final int METADATA_DATA_URL_INDEX = 4;
-    private static final int METADATA_HOMEPAGE_URL_INDEX = 5;
-    private static final int METADATA_ICON_URL_INDEX = 6;
-    private static final int METADATA_TYPE_INDEX = 7;
-	private static final int METADATA_CLEANER_CLASS_NAME_INDEX = 8;
-	private static final int METADATA_CONVERTER_CLASS_NAME_INDEX = 9;
-    private static final int NUMBER_METADATA_ITEMS = 10;
+    private static final int METADATA_DESCRIPTION_INDEX = 2;
+    private static final int METADATA_DATA_URL_INDEX = 3;
+    private static final int METADATA_HOMEPAGE_URL_INDEX = 4;
+    private static final int METADATA_ICON_URL_INDEX = 5;
+    private static final int METADATA_TYPE_INDEX = 6;
+	private static final int METADATA_CLEANER_CLASS_NAME_INDEX = 7;
+	private static final int METADATA_CONVERTER_CLASS_NAME_INDEX = 8;
+    private static final int NUMBER_METADATA_ITEMS = 9;
 	
 
 	// used in unzip method
@@ -85,7 +86,7 @@ final class FetcherImpl implements Fetcher
 		(byte)'c', (byte)'d', (byte)'e', (byte)'f'
     }; 
     
-	// LOADER can handle file://, ftp://, http://  URL resources
+	// LOADER can handle file://, ftp://, http://  PROVIDER_URL resources
 	private static final ResourceLoader LOADER = new DefaultResourceLoader();
 	
 	private boolean reUseFetchedDataFiles = true;
@@ -101,7 +102,9 @@ final class FetcherImpl implements Fetcher
 	@Override
     public Collection<Metadata> readMetadata(final String url) throws IOException 
     {
-        Collection<Metadata> toReturn = new HashSet<Metadata>();
+        // order of lines/records in the Metadata table does matter (since 2013/03);
+		// so List is used here instead of HashSet
+		List<Metadata> toReturn = new ArrayList<Metadata>();
 
         // check args
         if (url == null) {
@@ -115,14 +118,15 @@ final class FetcherImpl implements Fetcher
     }
 
     /**
-     * Populates a collection of metadata objects given an input stream
+     * Populates the ordered list of metadata objects 
+     * given the metadata file input stream
 	 *
      * @param inputStream InputStream
-	 * @param toReturn Collection<Metadata>
+	 * @param toReturn
 	 * @param throws IOException
      */
     private void readMetadata(final InputStream inputStream, 
-    	final Collection<Metadata> toReturn) throws IOException 
+    	final List<Metadata> toReturn) throws IOException 
     {
         BufferedReader reader = null;
         try {
@@ -142,13 +146,12 @@ final class FetcherImpl implements Fetcher
                 	continue; //ignore/skip parsing
                 }
                 	
-                /* for now, assume line is delimited into 9 columns by '<br>';
-                 * empty strings in the middle (the result of using <br><br>) and 
-                 * trailing empty string after the last '<br>' (i.e., Converter 
+                /* for now, assume line is delimited into 9 columns by '\t' (tab);
+                 * empty strings in the middle (the result of using \t\t) and 
+                 * trailing empty string after the last tabulation (i.e., Converter 
                  * class name, if any), will be added to the tokens array as well.
                  */
-                // TODO: technically, <br> is a wrong element (<br/> would be ok); ideally, we'd create metadata using an online form instead of a config file.
-                String[] tokens = line.split("<br>",-1);
+                String[] tokens = line.split("\t",-1);
                 
 				if (log.isDebugEnabled()) {
 					log.debug("readMetadata(), token size: " + tokens.length);
@@ -161,16 +164,6 @@ final class FetcherImpl implements Fetcher
                 		"wrong number of columns, " + tokens.length + " instead of "
                 		+ NUMBER_METADATA_ITEMS + ", in the metadata record: " + line;
 
-				// convert version string to float
-				String version = null;
-				try {
-					version = tokens[METADATA_VERSION_INDEX];
-				}
-				catch (NumberFormatException e) {
-					log.error("readMetadata(), number format exception caught for provider: "
-							+ tokens[METADATA_IDENTIFIER_INDEX] + " skipping");
-					continue;
-				}
 
 				// get metadata type
 				Metadata.METADATA_TYPE metadataType = Metadata.METADATA_TYPE.valueOf(tokens[METADATA_TYPE_INDEX]);
@@ -208,13 +201,13 @@ final class FetcherImpl implements Fetcher
                 Metadata metadata = new Metadata(
                 		tokens[METADATA_IDENTIFIER_INDEX], 
                 		tokens[METADATA_NAME_INDEX],
-                		version, 
-                		tokens[METADATA_RELEASE_DATE_INDEX],
-                        tokens[METADATA_DATA_URL_INDEX], 
+                		tokens[METADATA_DESCRIPTION_INDEX], 
+                		tokens[METADATA_DATA_URL_INDEX],
                         tokens[METADATA_HOMEPAGE_URL_INDEX], 
-                        iconData,
-						metadataType,
-						tokens[METADATA_CLEANER_CLASS_NAME_INDEX], tokens[METADATA_CONVERTER_CLASS_NAME_INDEX]);
+                        iconData, 
+                        metadataType,
+						tokens[METADATA_CLEANER_CLASS_NAME_INDEX],
+						tokens[METADATA_CONVERTER_CLASS_NAME_INDEX]);
                 
                 
                 
@@ -223,7 +216,6 @@ final class FetcherImpl implements Fetcher
 					log.info("readMetadata(): adding Metadata: "
 					+ "identifier=" + metadata.getIdentifier() 
 					+ "; name=" + metadata.getName()
-					+ "; version=" + metadata.getVersion()
 					+ "; date/comment=" + metadata.getDescription()
 					+ "; location=" + metadata.getUrlToData()
 					+ "; icon=" + tokens[METADATA_ICON_URL_INDEX]
@@ -289,13 +281,14 @@ final class FetcherImpl implements Fetcher
     {
         BufferedReader reader = null;
 		StringBuilder sbuff = new StringBuilder();
+		final String NEWLINE = System.getProperty ( "line.separator" );
         try {
             // we'd like to read lines at a time
             reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
             // are we ready to read?
             while (reader.ready()) {
             	// NEWLINE here is critical for the protein/molecule cleaner/converter!
-                sbuff.append(reader.readLine()).append(CPathSettings.NEWLINE);
+                sbuff.append(reader.readLine()).append(NEWLINE);
 			}
         } finally { closeQuietly(reader); }
 
@@ -305,8 +298,8 @@ final class FetcherImpl implements Fetcher
 		String filename = metadata.getUrlToData().substring(idx+1); // not found (-1) gives entire string
 		String digest = getDigest(fetchedData.getBytes());
 		
-		return new PathwayData(metadata.getIdentifier(), metadata.getVersion(),
-			filename, digest, fetchedData.getBytes());
+		return new PathwayData(metadata.getIdentifier(), filename,
+			digest, fetchedData.getBytes());
 	}
 
         
@@ -369,10 +362,9 @@ final class FetcherImpl implements Fetcher
 						log.info("unzip(), creating pathway data object, zip entry: " 
 							+ entryName +
 							" provider: " + metadata.getIdentifier() +
-							" version: " + metadata.getVersion() +
 							" digest: " + digest);
 					PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), 
-						metadata.getVersion(), entryName, digest, content.getBytes());
+						entryName, digest, content.getBytes());
 				
 					// add object to return collection
 					toReturn.add(pathwayData);
@@ -473,8 +465,7 @@ final class FetcherImpl implements Fetcher
 		if(reUseFetchedDataFiles && localFile.exists() && localFile.isFile()) {
 			if(log.isInfoEnabled())
 				log.info(metadata.getType() + " data : " + metadata.getIdentifier() 
-					+ "." + metadata.getVersion() + " - found in "
-					+ localFileName + ". Skip downloading.");
+					+ " - found in " + localFileName + ". Skip downloading.");
 		} else {
 			if(log.isInfoEnabled())
 				log.info("Downloading " + metadata.getType() + " from " +

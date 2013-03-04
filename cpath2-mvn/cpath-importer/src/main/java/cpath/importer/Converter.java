@@ -22,11 +22,10 @@ public interface Converter {
 	
 	/**
 	 * Converts the given protein or chemical annotation data
-	 * into a paxtools model which contains EntityReferences only.
-	 * Model is set/passed by reference.
+	 * into a paxtools model which contains only utility classes
+	 * (no entities). Model is set/passed by reference.
 	 *
 	 * @param is InputStream
-	 * @param optionalArgs optional implementation-specific parameters (might be external resource locations, etc.)
 	 */
-	void convert(final InputStream is, Object... optionalArgs);
+	void convert(final InputStream is);
 }

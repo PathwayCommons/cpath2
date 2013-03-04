@@ -35,29 +35,23 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.Set;
 
 import javax.imageio.ImageIO;
 
-//import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.utils.Normalizer;
-//import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import cpath.config.CPathSettings;
-import cpath.config.CPathSettings.CPath2Property;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Fetcher;
-import cpath.importer.Premerge;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.warehouse.*;
@@ -71,14 +65,13 @@ import cpath.warehouse.beans.*;
  * @author rodche
  *
  */
-//@Ignore
 public class CPathWarehouseTest {
 
 	static WarehouseDAO warehouse;
 	static BioPAXFactory factory;
 	static MetadataDAO metadataDAO;
 	
-	static final String XML_BASE = CPathSettings.get(CPath2Property.XML_BASE);
+	static final String XML_BASE = CPathSettings.xmlBase();
 	
 	static {
 		System.out.println("Preparing...");
@@ -150,7 +143,7 @@ public class CPathWarehouseTest {
 //		assertEquals(1, prIds.size());
 //		assertEquals("http://identifiers.org/uniprot/Q8TD86", prIds.iterator().next());		
 //		// same but using uniprot.isoform, which must be internally converted to canonical to match anything -
-//		x = factory.create(UnificationXref.class, Normalizer.uri(XML_BASE, "UniProt Isoform", "Q8TD86-1", UnificationXref.class));
+//		x = factory.create(UnificationXref.class, Normalizer.uri(PROP_XML_BASE, "UniProt Isoform", "Q8TD86-1", UnificationXref.class));
 //		x.setId("Q8TD86-1");
 //		x.setDb("UniProt Isoform");
 //		prIds =  warehouse.findByXref(Collections.singleton(x), ProteinReference.class);
@@ -200,7 +193,7 @@ public class CPathWarehouseTest {
 //		assertEquals("http://identifiers.org/uniprot/Q8TD86", prIds.iterator().next());
 //		
 //		// same but using uniprot.isoform, which must be internally converted to canonical to match anything -
-//		x = factory.create(UnificationXref.class, Normalizer.uri(XML_BASE, "RefSeq", "NP_619650.2", UnificationXref.class));
+//		x = factory.create(UnificationXref.class, Normalizer.uri(PROP_XML_BASE, "RefSeq", "NP_619650.2", UnificationXref.class));
 //		x.setId("NP_619650.2");
 //		x.setDb("RefSeq");
 //		prIds =  warehouse.findByXref(Collections.singleton(x), ProteinReference.class);

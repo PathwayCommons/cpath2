@@ -41,7 +41,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 
 
 	@Override
-	public void convert(final InputStream is, Object... optionalArgs) {
+	public void convert(final InputStream is) {
 
 		// ref to reader here so
 		// we can close in finally clause

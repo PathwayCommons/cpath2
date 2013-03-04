@@ -15,7 +15,7 @@
     
     <context:annotation-config/>  
     
-	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+	<context:property-placeholder/>
 
 	<bean id="log4jInitialization" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
 	  <property name="targetClass" value="org.springframework.util.Log4jConfigurer" />
@@ -42,7 +42,7 @@
 	</bean>
 
 	
-	<!-- Application Message Bundle -->
+	<!-- Application Message Bundle - required to auto-resolve variables in JSP pages via <fmt: > element ...-->
 	<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -50,7 +50,7 @@
 			</list>
 		</property>
 		<property name="cacheSeconds" value="0" />
-	</bean>  
+	</bean>	
         
 	<bean id="searchController" class="cpath.webservice.SearchController">
 		<constructor-arg ref="service"/>

@@ -47,11 +47,8 @@ import org.biopax.validator.utils.BiopaxOntologyManager;
 import org.biopax.validator.utils.Normalizer;
 
 import cpath.config.CPathSettings;
-import cpath.config.CPathSettings.CPath2Property;
 import cpath.warehouse.CvRepository;
 import cpath.warehouse.WarehouseDAO;
-
-
 
 /**
  * This is to access OBO Cvs:
@@ -195,7 +192,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 		
 		String ontId = term.getOntologyId(); // like "GO" 
 		String db = getOntology(ontId).getName(); // names were fixed in the constructor!
-		String rdfid = Normalizer.uri(CPathSettings.get(CPath2Property.XML_BASE), db, term.getTermAccession(), UnificationXref.class);
+		String rdfid = Normalizer.uri(CPathSettings.xmlBase(), db, term.getTermAccession(), UnificationXref.class);
 		UnificationXref uref = biopaxFactory.create(UnificationXref.class, rdfid);
 		uref.setDb(db); 
 		uref.setId(term.getTermAccession());

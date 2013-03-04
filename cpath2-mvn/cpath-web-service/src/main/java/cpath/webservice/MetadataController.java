@@ -27,20 +27,20 @@ import org.springframework.web.bind.annotation.*;
  * @author rodche
  */
 @Controller
-public class MetadataController extends BasicController 
+public class MetadataController extends BasicController
 {
     
 	private static final Log log = LogFactory.getLog(MetadataController.class);    
 	
     private MetadataDAO service; // main PC db access
-	
+    
     public MetadataController(MetadataDAO service) {
 		this.service = service;
 	}
        
     @ModelAttribute("maintenanceModeEnabled")
     public boolean isMaintenanceModeEnabled() {
-    	return CPathSettings.isMaintenanceModeEnabled();
+    	return CPathSettings.isMaintenanceEnabled();
     }    
 
     @RequestMapping("/home")

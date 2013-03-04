@@ -3,8 +3,6 @@ package cpath.converter.internal;
 // imports
 import cpath.importer.Converter;
 
-import org.biopax.paxtools.model.BioPAXFactory;
-import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 
 /**
@@ -13,8 +11,6 @@ import org.biopax.paxtools.model.Model;
 abstract class BaseConverterImpl implements Converter {
 	
 	protected Model model;
-	protected static final BioPAXFactory factory = 
-		BioPAXLevel.L3.getDefaultFactory();
 		
 	@Override
 	public void setModel(Model model) {
