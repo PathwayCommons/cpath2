@@ -242,9 +242,9 @@ final class PremergeImpl implements Premerger {
 						String id = x.getId();
 						//ban an identifier associated with several different proteins
 						if(exclude.contains(id)) {
-							log.warn("premerge(), already excluded: " + id);
+							log.warn("updateIdMapping(), already excluded: " + id);
 						} else if(idMap.containsKey(id) && !idMap.get(id).equals(ac)) {
-							log.warn("premerge(), excluding " + id + 
+							log.warn("updateIdMapping(), excluding " + id + 
 								" from idMap because it maps to: " + ac + 
 								" and " + idMap.get(id) + ", at least");
 							idMap.remove(id);
