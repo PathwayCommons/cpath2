@@ -76,7 +76,7 @@ public class PhosphoSitePlusCleanerImpl implements Cleaner {
             }
         }
 
-// no need to fix provenance anymore (it's to be replaced in Premerge anyway)
+// no need to fix provenance anymore (it's to be replaced in Premerger anyway)
 //        // And this is to make the Provenance compatible with Miriam
 //        String standardName = "PhosphoSitePlus";
 //        for (Provenance provenance : model.getObjects(Provenance.class)) {

@@ -414,7 +414,7 @@ final class MergerImpl implements Merger, Analysis {
 		String uri = orig.getRDFId();
 		
 		// 1) try to re-use previously matched (in the current merge run) object
-		// because we did validate/normalize all the data in Premerge stage and 
+		// because we did validate/normalize all the data in Premerger stage and 
 		// can expect a quick result in most cases...
 		// warehouse ERs have such URIs only
 		if(uri.startsWith(canonicalPrefix)) {
@@ -600,7 +600,7 @@ final class MergerImpl implements Merger, Analysis {
 		String uri = orig.getRDFId();
 		
 		// 1) try to re-use previously matched (in the current merge run) object
-		// because we did validate/normalize all the data in Premerge stage and 
+		// because we did validate/normalize all the data in Premerger stage and 
 		// can expect a quick result in most cases...
 		// warehouse ERs have such URIs only
 		if(uri.startsWith(canonicalPrefix)) {

@@ -33,7 +33,7 @@ import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Cleaner;
 import cpath.importer.Converter;
 import cpath.importer.Fetcher;
-import cpath.importer.Premerge;
+import cpath.importer.Premerger;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.beans.ChemMapping;
 import cpath.warehouse.beans.GeneMapping;
@@ -74,7 +74,7 @@ import java.io.*;
 /**
  * Class responsible for premerging pathway data.
  */
-final class PremergeImpl implements Premerge {
+final class PremergeImpl implements Premerger {
 
     private static Log log = LogFactory.getLog(PremergeImpl.class);
     private static final int BUFFER = 2048;
@@ -105,7 +105,7 @@ final class PremergeImpl implements Premerge {
 	
     /**
 	 * (non-Javadoc)
-	 * @see cpath.importer.Premerge#premerge
+	 * @see cpath.importer.Premerger#premerge
 	 */
 	@Override
     public void premerge() {
@@ -123,19 +123,9 @@ final class PremergeImpl implements Premerge {
 					continue;
 			}
 				
-			try {
-			
-				if (metadata.getType().isNotPathwayData()) {
-					log.info("premerge(), converting and saving Warehouse data: " 
-						+ metadata.getUri());
-					if(metadata.getType() == METADATA_TYPE.MAPPING)
-						// read and import the mapping table to metaDataDAO
-						storeMappingData(metadata);
-					else // it's WAREHOUSE data; - convert and persist to the BioPAX Warehouse
-						storeWarehouseData(metadata, (Model) warehouseDAO);
-				} 
-				else {
-					log.info("premerge(), reading original pathway data: " +
+			try {			
+				if (!metadata.getType().isNotPathwayData()) {
+					log.info("premerge(), reading pathway data: " +
 						metadata.getIdentifier() );
 					
 					// Try to instantiate the Cleaner now, and exit if it fails!
@@ -167,22 +157,50 @@ final class PremergeImpl implements Premerge {
 				e.printStackTrace();
 			}
 		}
-		// at this point, warehouse and pathway data were converted, validated and saved.
-		updateMappingData();
 	}
 
-	
+
 	/**
 	 * {@inheritDoc}
-	 * 
-	 * Extracts id-mapping information (name/id -> primary id) 
-	 * from the Warehouse entity references's xrefs and
-	 * puts first into a hash map (provided via the optional argument 
-	 * in the Analysis.execute method) and then to the mapping tables.
 	 */
 	@Override
-	public void updateMappingData() {
-		log.info("premerge(), updating id-mapping tables by analyzing warehouse data...");
+	public void buildWarehouse() {		
+		// grab all metadata
+		Collection<Metadata> metadataCollection = metaDataDAO.getAllMetadata();
+
+		// iterate over all metadata
+		for (Metadata metadata : metadataCollection) {
+			// use filter if set (identifier and version)
+			if(identifier != null) {
+				if(!metadata.getIdentifier().equals(identifier))
+					continue;
+			}
+				
+			try {		
+				if (metadata.getType().isNotPathwayData()) {
+					log.info("premerge(), converting and saving Warehouse data: " 
+						+ metadata.getUri());
+					if(metadata.getType() == METADATA_TYPE.MAPPING)
+						// read and import the mapping table to metaDataDAO
+						storeMappingData(metadata); //TODO implement this optional method (it is empty)
+					else // it's WAREHOUSE data; - convert and persist to the BioPAX Warehouse
+						storeWarehouseData(metadata, (Model) warehouseDAO);
+				} 			
+				
+			} catch (Exception e) {
+				log.error("premerge(), error: ", e);
+				e.printStackTrace();
+			}
+		}
+	}
+		
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void updateIdMapping() {		
+		log.info("updateIdMapping(), updating id-mapping tables by analyzing the warehouse data...");
 		// create a new Analysis object to populate the idMap within a DB transaction
 		Analysis createIdMap = new Analysis() {
 			
@@ -216,7 +234,6 @@ final class PremergeImpl implements Premerge {
 				
 				return null; //no return value required
 			}
-
 			
 			private void addMappingsFromXrefs(String ac, Set<? extends Xref> xrefs, Map<String, String> idMap, Set<String> exclude) {
 				for(Xref x : xrefs) {
@@ -242,9 +259,11 @@ final class PremergeImpl implements Premerge {
 		
 		// execute it
 		warehouseDAO.runAnalysis(createIdMap);
-
-	}
 		
+		log.info("updateIdMapping(), exitting...");
+	}
+	
+	
 	
 	/**
 	 * Reads gene id-mapping records from a two-column text file
@@ -502,9 +521,6 @@ final class PremergeImpl implements Premerge {
 					"(cannot guess from the extension) for " + urlStr);
 			}
 
-			log.info("storeWarehouseData(..): creating EntityReference objects, " +
-				"provider: " + metadata.getIdentifier());
-
 			// hook into a cleaner for given provider
 			// Try to instantiate the Cleaner (if any) sooner, and exit if it fails!
 			String cl = metadata.getCleanerClassname();
@@ -535,42 +551,28 @@ final class PremergeImpl implements Premerge {
 			if(cl != null && cl.length()>0) {
 				final Converter converter = ImportFactory.newConverter(cl);
 				if(converter != null) {
-					log.info("storeWarehouseData(..): running " +
-							"the BioPAX Converter: " + cl);	
+					log.info("storeWarehouseData(..): running " + "Converter: " + cl);	
 					// open a new input stream for the cleaned data
 					final InputStream dataStream = new BufferedInputStream(
 							new ByteArrayInputStream(data.getBytes("UTF-8")));	
-					// create a new empty in-memory model
-//					Model inMemModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-//					inMemModel.setXmlBase(model.getXmlBase());
-					// convert data into that
-//					converter.setModel(inMemModel);
+					
 					converter.setModel(model);
 					
 					if(model instanceof PaxtoolsDAO) {
-						log.info("Now processing the ChEBI OBO " +
+						log.info("storeWarehouseData(..): running " +
 							"within a Hibernate transaction (cpath2 warehouse DAO)...");
 						
 						((PaxtoolsDAO)model).runAnalysis(new Analysis() {
 							@Override
 							public Set<BioPAXElement> execute(Model model, Object... args) {
 								converter.convert(dataStream);
+								log.info("storeWarehouseData(..): Persisting " + metadata.getIdentifier());
 								return null;
 							}
 						});
 					}
 					else
 						converter.convert(dataStream);
-					
-					
-					//repair
-					log.info("storeWarehouseData(..): Preparing just created " +
-						metadata.getIdentifier() + " BioPAX Model to merging...");
-//					inMemModel.repair();
-					// merging may take quite a time...
-					log.info("storeWarehouseData(..): Persisting " +
-						metadata.getIdentifier());
-//					model.merge(inMemModel);
 				}
 				else 
 					log.error(("storeWarehouseData(..): failed to create " +

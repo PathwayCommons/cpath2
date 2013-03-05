@@ -83,7 +83,7 @@ public final class PathwayData {
 	void setId(Integer id) {
 		this.id = id;
 	}
-    public Integer getId() { return new Integer(id); }
+    public Integer getId() { return id ;}
 
 	void setIdentifier(String identifier) {
         if (identifier == null) {
@@ -92,7 +92,7 @@ public final class PathwayData {
         this.identifier = identifier;
 	}
     public String getIdentifier() { 
-    	return (identifier != null) ? new String(identifier) : null;
+    	return identifier;
     }
 
 	void setFilename(String filename) {
