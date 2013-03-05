@@ -110,13 +110,10 @@ public final class CPathSettings {
 	public static final String PROP_ADMIN_ENABLED = "cpath2.admin.enabled";
 	public static final String PROP_XML_BASE="xml.base";	
 	public static final String PROP_MAX_SEARCH_HITS_PER_PAGE = "maxSearchHitsPerPage";
-	public static final int DEFAULT_MAX_SEARCH_HITS_PER_PAGE = 500;
 	public static final String PROP_EXPLAIN_ENABLED = "explain.enabled";
 	public static final String PROP_DIGEST_URI_ENABLED = "md5hex.uri.enabled";
-	public static final String PROP_BLACKLIST_DEGREE_THRESHOLD = "blacklist.degree.threshold";
-	public static final int DEFAULT_BLACKLIST_DEGREE_THRESHOLD = 100;    
+	public static final String PROP_BLACKLIST_DEGREE_THRESHOLD = "blacklist.degree.threshold";   
 	public static final String PROP_BLACKLIST_CONTROL_THRESHOLD = "blacklist.control.threshold";
-	public static final int DEFAULT_BLACKLIST_CONTROL_THRESHOLD = 15;
 	public static final String PROP_BLACKLIST_LOCATION = "blacklist.location";
 	public static final String PROP_METADATA_LOCATION = "metadata.location";
 	
@@ -156,21 +153,24 @@ public final class CPathSettings {
 	 * static initializer.
 	 */
 	static {
-		Properties defaults = new Properties();
 		
+		// put default values
+		Properties defaults = new Properties();
 		defaults.put(PROP_XML_BASE, "http://purl.org/pc2/");
-		defaults.put(PROP_BLACKLIST_LOCATION, 
-				homeDir() + File.separator + BLACKLIST_FILE);
+		defaults.put(PROP_BLACKLIST_LOCATION, homeDir() + File.separator + BLACKLIST_FILE);
 		defaults.put(PROVIDER_NAME, "cPath2 Demo");
 		defaults.put(PROVIDER_VERSION, "0");
 		defaults.put(PROVIDER_DESCRIPTION, "cPath2 Demo");
-		defaults.put(PROP_BLACKLIST_CONTROL_THRESHOLD, 15);
-		defaults.put(PROP_BLACKLIST_DEGREE_THRESHOLD, 100);
-		defaults.put(PROP_MAX_SEARCH_HITS_PER_PAGE, 500);
-		defaults.put(PROP_METADATA_LOCATION, 
-				homeDir() + File.separator + METADATA_FILE);
+		defaults.put(PROP_BLACKLIST_CONTROL_THRESHOLD, "15");
+		defaults.put(PROP_BLACKLIST_DEGREE_THRESHOLD, "100");
+		defaults.put(PROP_MAX_SEARCH_HITS_PER_PAGE, "500");
+		defaults.put(PROP_METADATA_LOCATION, homeDir() + File.separator + METADATA_FILE);
+		defaults.put(PROP_EXPLAIN_ENABLED, "false");
+		defaults.put(PROP_ADMIN_ENABLED, "false");
+		defaults.put(PROP_DIGEST_URI_ENABLED, "false");	
 		
-		settings = new Properties(defaults);		
+		settings = new Properties(defaults);
+		
 		loadCPathProperties();
 	}
 
