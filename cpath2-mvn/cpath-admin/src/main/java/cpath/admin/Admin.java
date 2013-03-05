@@ -33,7 +33,7 @@ import cpath.dao.*;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Fetcher;
 import cpath.importer.Merger;
-import cpath.importer.Premerge;
+import cpath.importer.Premerger;
 import cpath.importer.internal.ImportFactory;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
@@ -91,6 +91,8 @@ public final class Admin {
     	CREATE_INDEX("-create-index"),
         FETCH_METADATA("-fetch-metadata"),
 		FETCH_DATA("-fetch-data"),
+		CREATE_WAREHOUSE("-create-warehouse"),
+		UPDATE_MAPPING("-update-mapping"),
 		PREMERGE("-premerge"),
 		MERGE("-merge"),
 		EXPORT("-export"),
@@ -140,6 +142,15 @@ public final class Admin {
 				fetchData(args[1]);
 			else // command without extra parameter
 				fetchData(null);
+		}
+		else if (args[0].equals(Cmd.CREATE_WAREHOUSE.toString())) {
+			if (args.length > 1) 
+				createWarehouse(args[1]);
+			else // command without extra parameter
+				createWarehouse(null);
+		}
+		else if (args[0].equals(Cmd.UPDATE_MAPPING.toString())) {
+				updateMapping();
 		}
 		else if (args[0].equals(Cmd.PREMERGE.toString())) {
 			if (args.length > 1) 
@@ -401,8 +412,8 @@ public final class Admin {
 
 	
     /**
-     * Performs cpath2 Premerge stage
-     * (data converting, id-mapping initialization, validating/normalizing).
+     * Performs cpath2 Premerger stage:
+     * pathway data cleaning, converting, validating, normalizing.
      * 
      * @param provider
      * @throws IllegalStateException when not maintenance mode
@@ -420,11 +431,49 @@ public final class Admin {
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		PaxtoolsDAO warehouseDAO = (PaxtoolsDAO) context.getBean("warehouseDAO");
 		Validator validator = (Validator) context.getBean("validator");
-        Premerge premerge = ImportFactory.newPremerge(metadataDAO, warehouseDAO, validator, provider);
+        Premerger premerger = ImportFactory.newPremerge(metadataDAO, warehouseDAO, validator, provider);
         LOG.info("runPremerge: provider=" + provider);
-        premerge.premerge();
+        premerger.premerge();
 	}
 
+	
+    /**
+     * Creates cpath2 Warehouse and id-mapping.
+     * 
+     * @param provider
+     * @throws IllegalStateException when not maintenance mode
+     */
+	public static void createWarehouse(String provider) {
+		if(!isMaintenanceEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+		
+		ApplicationContext context =
+            new ClassPathXmlApplicationContext(new String [] { 	
+            		"classpath:applicationContext-Metadata.xml", 
+            		"classpath:applicationContext-Warehouse.xml"});
+		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
+		PaxtoolsDAO warehouseDAO = (PaxtoolsDAO) context.getBean("warehouseDAO");
+        Premerger premerger = ImportFactory.newPremerge(metadataDAO, warehouseDAO, null, provider);
+        premerger.buildWarehouse();
+	}
+
+	
+	/**
+	 * Updates id-mapping tables using the warehouse data (xrefs).
+	 */
+	public static void updateMapping() {
+		if(!isMaintenanceEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+		
+		ApplicationContext context =
+            new ClassPathXmlApplicationContext(new String [] { 	
+            		"classpath:applicationContext-Metadata.xml", 
+            		"classpath:applicationContext-Warehouse.xml"});
+		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
+		PaxtoolsDAO warehouseDAO = (PaxtoolsDAO) context.getBean("warehouseDAO");
+        Premerger premerger = ImportFactory.newPremerge(metadataDAO, warehouseDAO, null, null);
+        premerger.updateIdMapping();
+	}
 	
 	/**
      * Helper function to get provider metadata.
@@ -658,6 +707,8 @@ public final class Admin {
 		toReturn.append(Cmd.CREATE_TABLES.toString() + " [<table1,table2,..>]" + NEWLINE);
 		toReturn.append(Cmd.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(Cmd.FETCH_DATA.toString() + " [<metadataId>]" + NEWLINE);
+		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + " [<metadataId>]" + NEWLINE);
+		toReturn.append(Cmd.UPDATE_MAPPING.toString() + " (re-builds id-mapping tables using cpath2 warehouse data)"+ NEWLINE);
 		toReturn.append(Cmd.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
 		toReturn.append(Cmd.MERGE.toString() + " [<metadataId>] [--force]"+ NEWLINE);
 		toReturn.append(Cmd.CREATE_INDEX.toString() + NEWLINE);

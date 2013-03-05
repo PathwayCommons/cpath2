@@ -13,7 +13,7 @@ import cpath.importer.Cleaner;
 import cpath.importer.Converter;
 import cpath.importer.Fetcher;
 import cpath.importer.Merger;
-import cpath.importer.Premerge;
+import cpath.importer.Premerger;
 import cpath.warehouse.MetadataDAO;
 import cpath.warehouse.WarehouseDAO;
 
@@ -101,7 +101,7 @@ public final class ImportFactory {
 	 * @param metadataIdentifier pathway data provider identifier (from the metadata conf.)
 	 * @return
 	 */
-	public static Premerge newPremerge(final MetadataDAO metadataDAO, PaxtoolsDAO warehouseDAO, 
+	public static Premerger newPremerge(final MetadataDAO metadataDAO, PaxtoolsDAO warehouseDAO, 
 			final Validator biopaxValidator, final String metadataIdentifier) {
 		
 		PremergeImpl premerge = new PremergeImpl(metadataDAO, warehouseDAO, biopaxValidator);		

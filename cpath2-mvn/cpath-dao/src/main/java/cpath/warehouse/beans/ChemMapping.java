@@ -37,7 +37,7 @@ import cpath.dao.IdMapping;
 public final class ChemMapping implements IdMapping {
 
 	@Id
-	@Column(length=25) //InChiKey has max length 25 chars
+	@Column(length=27) //InChiKey has max length 25 chars
     private String identifier;
 	
 	@Column(length=15) // should be ok for all ChEBI IDs

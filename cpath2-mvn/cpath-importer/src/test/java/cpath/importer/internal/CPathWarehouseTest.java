@@ -52,6 +52,7 @@ import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 import cpath.dao.internal.DataServicesFactoryBean;
 import cpath.importer.Fetcher;
+import cpath.importer.Premerger;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.warehouse.*;
@@ -88,17 +89,17 @@ public class CPathWarehouseTest {
 		Fetcher fetcher = new FetcherImpl();
         Collection<Metadata> metadata;
 		try {
+			//fetch and save test metadata and files
 			metadata = fetcher.readMetadata("classpath:metadata.conf");
 			for (Metadata mdata : metadata) {
 				metadataDAO.importMetadata(mdata);
 				fetcher.fetchData(mdata);
-				if (mdata.getType().isNotPathwayData()) {
-					PremergeImpl.storeWarehouseData(mdata, (Model) warehouse);
-				} 
 			}
 			
-			// id-mapping init
-			ImportFactory.newPremerge(metadataDAO, (PaxtoolsDAO) warehouse, null, null).updateMappingData();
+			// build the test warehouse and id-mapping tables
+			Premerger premerger = ImportFactory.newPremerge(metadataDAO, (PaxtoolsDAO) warehouse, null, null);
+			premerger.buildWarehouse();
+			premerger.updateIdMapping();
 			
 		} catch (IOException e) {
 			throw new RuntimeException(e);

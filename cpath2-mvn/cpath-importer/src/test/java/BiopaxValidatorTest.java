@@ -157,7 +157,7 @@ public class BiopaxValidatorTest {
 		/* Following assertions were changed since using the biopax-validator v3 (2012/11/14).
 		 * Normalizer there does not turn DB or ID values to upper case when generating a new xref URI anymore..." (that was actually a bad idea)
 		 * "c00022", by the way, is technically an illegal KEGG identifier (must be C00022), - 
-		 * and it won't pass our Premerge (import pipeline) stage without the critical error being reported.
+		 * and it won't pass our Premerger (import pipeline) stage without the critical error being reported.
 		 * Unfortunately, the normalizer alone cannot always fix such issues (it just generates consistent xref URIs), 
 		 * because there are less trivial cases than where one could simply convert the first symbol to upper case...;
 		 * and, more important, xref.id value capitalization does usually matter...
@@ -166,7 +166,7 @@ public class BiopaxValidatorTest {
 		assertTrue(m.containsID(Normalizer.uri(base, "KEGG COMPOUND", "C00022", UnificationXref.class)));
 		m = null;
 		
-		// However, using the validator (with autofix=true) and then - normalizer (as it's done in Premerge) together
+		// However, using the validator (with autofix=true) and then - normalizer (as it's done in Premerger) together
 		// will, in fact, fix and merge these two xrefs
 		m = simpleReader.convertFromOWL(getClass().getResourceAsStream("/biopax-level3-test.owl"));
 		Validation v = new Validation(new IdentifierImpl(), null, true, null, 0, null);

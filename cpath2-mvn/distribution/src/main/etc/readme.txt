@@ -10,7 +10,8 @@ GENERAL INFORMATION
 SET the system environment variable 'CPATH2_HOME' - to be a directory that 
 contains all the cpath2 configuration files you are planning to use, such as: 
 - cpath.properties (set db names, connection url prefix, username, password there); 
-- hibernate.properties;
+- hibernate.properties; these can be overwritten by the corresponding 
+properties in the Spring (XML) configuration.
 - log4j.properties;
 - 'data' dir (it is where downloaded original data files are stored);
 - 'tmp' dir (it is where downloaded data and ontology files are stored, 
@@ -96,7 +97,7 @@ or PSI-MI data $CPATH2_HOME/tmp/ as follows:
 
 4. set "maintenance.enabled=true" in the cpath properties.
 
-4. Run import-data.sh script and follow the instructions/questions...
+5. Run import-data.sh script and follow the instructions/questions...
 
 
 METADATA FORMAT
@@ -180,6 +181,12 @@ sh cpath2-cli.sh -fetch-data CHEBI
 
 
 3.Premerge (parse, clean, convert, and store data in the database)
+
+sh cpath2-cli.sh -create-warehouse
+#sh cpath2-cli.sh -create-warehouse <IDENTIFIER>
+
+sh cpath2-cli.sh -update-mapping
+
 sh cpath2-cli.sh -premerge
 #sh cpath2-cli.sh -premerge <IDENTIFIER>
 #WARN: do not run multiple parallel '-premerge' processes that import WAREHOUSE data)

@@ -84,6 +84,8 @@ while true; do
 read -p "Process ALL data (clean, convert, validate, normalize, merge, index, blacklist, an generate archives)?" yn
 	case $yn in
         [Yy]* ) 
+        	sh $CPATH2_HOME/cpath2-cli.sh -create-warehouse
+			sh $CPATH2_HOME/cpath2-cli.sh -update-mapping
         	sh $CPATH2_HOME/cpath2-cli.sh -premerge; 
         	sh $CPATH2_HOME/cpath2-cli.sh -merge --force; 
         	sh $CPATH2_HOME/cpath2-cli.sh -create-index; 
