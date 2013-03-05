@@ -159,17 +159,19 @@ public final class Admin {
 				runPremerge(null);
 		}
 		else if (args[0].equals(Cmd.MERGE.toString())) {
-			String params[] = new String[] { null, "false" };
-			int j = 0;
-			for (int i = 1; i < args.length && i < 3; i++) {
+			boolean force = false;
+			String provider = null;
+			for (int i = 1; i < args.length; i++) {
 				if ("--force".equalsIgnoreCase(args[i])) {
-					params[1] = "true";
-					break; // flag is always the last arg.
+					force = true;
 				} else {
-					params[j++] = args[i];
+					//use only one, the first id, and ignore others
+					if(provider == null) 
+						provider = args[i];
 				}
 			}
-			runMerge(params[0], Boolean.parseBoolean(params[2]));
+			
+			runMerge(provider, force);
 		}
 		else if(args[0].equals(Cmd.EXPORT.toString())) {
 			if (args.length < 3)
@@ -206,7 +208,7 @@ public final class Admin {
             	createDownloads(new String[]{});
         } 
 		else {
-            usage();
+			System.err.println(usage());
         }        
     }
 
@@ -282,7 +284,7 @@ public final class Admin {
         	degreeThreshold = Integer.parseInt(property(PROP_BLACKLIST_DEGREE_THRESHOLD));
         	controlDegreeThreshold = Integer.parseInt(property(PROP_BLACKLIST_CONTROL_THRESHOLD));
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Not a number: " 
+            throw new IllegalArgumentException("Not a number " 
             	+ PROP_BLACKLIST_CONTROL_THRESHOLD + " or "
             	+ PROP_BLACKLIST_DEGREE_THRESHOLD 
             	+ " set in the cpath.properties file."
@@ -736,7 +738,7 @@ public final class Admin {
     	LOG.debug("Command-line arguments were: " + Arrays.toString(args));
     	
     	// sanity check
-        if (args.length == 0) {
+        if (args.length == 0 || args[0].isEmpty()) {
             System.err.println("Missing args to Admin.");
 			System.err.println(Admin.usage());
             System.exit(-1);

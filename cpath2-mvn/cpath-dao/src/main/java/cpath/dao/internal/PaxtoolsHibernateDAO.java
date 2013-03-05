@@ -142,6 +142,8 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 		};
 		
 		this.xmlBase = CPathSettings.xmlBase(); //set default xml:base
+		this.maxHitsPerPage = Integer.parseInt(CPathSettings.property(
+				CPathSettings.PROP_MAX_SEARCH_HITS_PER_PAGE));
 	}
 	
 	
