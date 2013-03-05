@@ -206,7 +206,7 @@ public final class Admin {
             	createDownloads(new String[]{});
         } 
 		else {
-            fail(args, "no such command");
+            usage();
         }        
     }
 
