@@ -220,20 +220,20 @@ final class MergerImpl implements Merger, Analysis {
 					if(er != null && !er.getXref().isEmpty())
 						continue;
 					if(pe instanceof SmallMolecule) {
-						addCanonicalRelXrefs((PhysicalEntity) pe, ChemMapping.class, generatedModel, (Model) mainModel);
+						addCanonicalRelXrefs((PhysicalEntity) pe, ChemMapping.class, generatedModel);
 					} else {
 						// for Protein, Dna, DnaRegion, Rna*...
-						addCanonicalRelXrefs((PhysicalEntity) pe, GeneMapping.class, generatedModel, (Model) mainModel);
+						addCanonicalRelXrefs((PhysicalEntity) pe, GeneMapping.class, generatedModel);
 					}						
 				} else if(pe instanceof Complex) {
 					continue; // skip complexes
 				} else {
 					// do for base PEs
-					addCanonicalRelXrefs((PhysicalEntity) pe, GeneMapping.class, generatedModel, (Model) mainModel);
-					addCanonicalRelXrefs((PhysicalEntity) pe, ChemMapping.class, generatedModel, (Model) mainModel);
+					addCanonicalRelXrefs((PhysicalEntity) pe, GeneMapping.class, generatedModel);
+					addCanonicalRelXrefs((PhysicalEntity) pe, ChemMapping.class, generatedModel);
 				}
 			} else if(pe instanceof Gene) {
-				addCanonicalRelXrefs((XReferrable) pe, GeneMapping.class, generatedModel, (Model) mainModel);
+				addCanonicalRelXrefs((XReferrable) pe, GeneMapping.class, generatedModel);
 			}
 		}		
 		
@@ -334,12 +334,11 @@ final class MergerImpl implements Merger, Analysis {
 	 * @param bpe a {@link Gene} or {@link PhysicalEntity}
 	 * @param mappType
 	 * @param generatedModel
-	 * @param mainModel
 	 * @throws AssertException when bpe is neither Gene nor PhysicalEntity
 	 */
 	private void addCanonicalRelXrefs(XReferrable bpe, 
 			Class<? extends IdMapping> mappType,
-			Model generatedModel, Model mainModel) 
+			Model generatedModel) 
 	{
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity))
 			throw new AssertException("Not Gene or PE: " + bpe);
@@ -349,10 +348,10 @@ final class MergerImpl implements Merger, Analysis {
 			
 		// map and generate/add xrefs
 		Set<IdMapping> mappingSet = idMappingByXrefs(bpe, mappType, UnificationXref.class);
-		addRelXref(bpe, db, mappingSet, generatedModel, mainModel);
+		addRelXref(bpe, db, mappingSet, generatedModel);
 		
 		mappingSet = idMappingByXrefs(bpe, mappType, RelationshipXref.class);
-		addRelXref(bpe, db, mappingSet, generatedModel, mainModel);
+		addRelXref(bpe, db, mappingSet, generatedModel);
 
 	}
 
@@ -360,17 +359,16 @@ final class MergerImpl implements Merger, Analysis {
 	/**
 	 * Finds or creates relationship xrefs
 	 * from the id-mapping results 
-	 * and adds them to the object (and model).
+	 * and adds them to the object (and new model).
 	 * 
 	 * @param bpe a gene, physical entity or entity reference
 	 * @param db database name for all (primary/canonical) xrefs; 'uniprot' or 'chebi'
 	 * @param mappingSet
-	 * @param generatedModel
-	 * @param mainModel
+	 * @param generatedModel an in-memory model where to add new xrefs
 	 * @throws AssertException when bpe is neither Gene nor PhysicalEntity nor EntityReference
 	 */
 	private void addRelXref(XReferrable bpe, String db,
-			Set<IdMapping> mappingSet, Model generatedModel, Model mainModel) 
+			Set<IdMapping> mappingSet, Model generatedModel) 
 	{	
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference))
 			throw new AssertException("Not Gene or PE: " + bpe);
@@ -379,8 +377,7 @@ final class MergerImpl implements Merger, Analysis {
 			String ac = im.getAccession();
 			// find or create
 			String rxUri = Normalizer.uri(xmlBase, db, ac, RelationshipXref.class);
-			RelationshipXref rx = getByIdFromMemoryOrMainOrWarehouseModel(rxUri, 
-					RelationshipXref.class, generatedModel, null, mainModel);
+			RelationshipXref rx = (RelationshipXref) generatedModel.getByID(rxUri);
 			if(rx == null) {
 				rx = generatedModel.addNew(RelationshipXref.class, rxUri);
 				rx.setDb(db);
@@ -460,7 +457,7 @@ final class MergerImpl implements Merger, Analysis {
 				id = mp.getAccession();
 				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + id, ProteinReference.class, generatedModel, warehouseDAO, mainModel);
 				//keep specific isoform/version id (NP_123456.2, P04150-3,..) after merging/replacing original PRs
-				copyRelXrefToParentEntities(orig, generatedModel, mainModel);
+				copyRelXrefToParentEntities(orig, generatedModel);
 			}
 		}
 				
@@ -473,7 +470,7 @@ final class MergerImpl implements Merger, Analysis {
 				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + mappingSet.iterator().next().getAccession(), 
 					ProteinReference.class, generatedModel, warehouseDAO, mainModel);
 				//keep specific isoform/version id (NP_123456.2, P04150-3,..) after merging/replacing original PRs
-				copyRelXrefToParentEntities(orig, generatedModel, mainModel); //call only once mapping succeeded				
+				copyRelXrefToParentEntities(orig, generatedModel); //call only once mapping succeeded				
 			}
 		}	
 		
@@ -485,7 +482,7 @@ final class MergerImpl implements Merger, Analysis {
 				// use only the first result (a warning logged already)
 				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + mappingSet.iterator().next().getAccession(), 
 						ProteinReference.class, generatedModel, warehouseDAO, mainModel);
-				copyRelXrefToParentEntities(orig, generatedModel, mainModel); //call only once mapping succeeded
+				copyRelXrefToParentEntities(orig, generatedModel); //call only once mapping succeeded
 			}	
 		}
 		
@@ -553,14 +550,13 @@ final class MergerImpl implements Merger, Analysis {
 	 * 
 	 * @param origEr 
 	 * @param generatedModel
-	 * @param mainModel 
 	 */
-	private void copyRelXrefToParentEntities(EntityReference origEr, Model generatedModel, Model mainModel) {
+	private void copyRelXrefToParentEntities(EntityReference origEr, Model generatedModel) {
 		for(Xref x : origEr.getXref()) {
 			if(x instanceof UnificationXref) {
 				// create/re-use RelationshipXref (same db/id as x's)
 				String rxUri = Normalizer.uri(xmlBase, x.getDb(), x.getId(), RelationshipXref.class);
-				RelationshipXref rx = getByIdFromMemoryOrMainOrWarehouseModel(rxUri, RelationshipXref.class, generatedModel, null, mainModel);
+				RelationshipXref rx = (RelationshipXref)generatedModel.getByID(rxUri);
 				if(rx == null) {
 					rx = generatedModel.addNew(RelationshipXref.class, rxUri);
 					rx.setDb(x.getDb());
@@ -604,7 +600,8 @@ final class MergerImpl implements Merger, Analysis {
 		// can expect a quick result in most cases...
 		// warehouse ERs have such URIs only
 		if(uri.startsWith(canonicalPrefix)) {
-			toReturn = getByIdFromMemoryOrMainOrWarehouseModel(uri, SmallMoleculeReference.class, generatedModel, warehouseDAO, mainModel);
+			toReturn = getByIdFromMemoryOrMainOrWarehouseModel(uri, 
+					SmallMoleculeReference.class, generatedModel, warehouseDAO, mainModel);
 			if(toReturn != null)
 				return toReturn;
 		}
@@ -628,9 +625,10 @@ final class MergerImpl implements Merger, Analysis {
 			IdMapping mp = metadataDAO.getIdMapping(db, id, ChemMapping.class);
 			if(mp != null) {
 				id = mp.getAccession();
-				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + id, SmallMoleculeReference.class, generatedModel, warehouseDAO, mainModel);
+				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + id, 
+						SmallMoleculeReference.class, generatedModel, warehouseDAO, mainModel);
 				//keep specific isoform/version id (NP_123456.2, P04150-3,..) after merging/replacing original PRs				
-				copyRelXrefToParentEntities(orig, generatedModel, mainModel);
+				copyRelXrefToParentEntities(orig, generatedModel);
 			}
 		}
 				
@@ -642,7 +640,7 @@ final class MergerImpl implements Merger, Analysis {
 				// use only the first result (a warning logged already)
 				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + mappingSet.iterator().next().getAccession(), 
 					SmallMoleculeReference.class, generatedModel, warehouseDAO, mainModel);
-				copyRelXrefToParentEntities(orig, generatedModel, mainModel); //call only once mapping succeeded
+				copyRelXrefToParentEntities(orig, generatedModel); //call only once mapping succeeded
 			}	
 		}	
 		
@@ -656,7 +654,7 @@ final class MergerImpl implements Merger, Analysis {
 			Set<IdMapping> mappingSet = idMappingByXrefs(orig, ChemMapping.class, RelationshipXref.class);
 			if(!mappingSet.isEmpty()) {
 				//add the primary chebi rel.xrefs to this ER
-				addRelXref(orig, "chebi", mappingSet, generatedModel, mainModel);
+				addRelXref(orig, "chebi", mappingSet, generatedModel);
 			}	
 		}
 		
