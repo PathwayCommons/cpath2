@@ -72,11 +72,6 @@ final class MergerImpl implements Merger, Analysis {
 	private SimpleMerger simpleMerger;
 	
 	private final String xmlBase;
-	
-//TODO try local in-memory id-mapping tables (optimization?)
-//	private final Map<String,String> geneIdMap;
-//	private final Map<String,String> chemIdMap;
-
 
 	/**
 	 * Test Constructor (package-private).
@@ -100,10 +95,6 @@ final class MergerImpl implements Merger, Analysis {
 		this.warehouseDAO = warehouseDAO;
 		this.simpleMerger = new SimpleMerger(SimpleEditorMap.L3);
 		this.xmlBase = ((Model)dest).getXmlBase();
-		
-// future optimization/try		
-//		this.geneIdMap = metadataDAO.getIdMap(GeneMapping.class);
-//		this.chemIdMap = metadataDAO.getIdMap(ChemMapping.class);
 	}
 	
 	
@@ -181,7 +172,7 @@ final class MergerImpl implements Merger, Analysis {
 	 * persistent model implementation (PaxtoolsHibernateDAO).
 	 *  
 	 * @param mainModel target model (in production, - persistent model)
-	 * @param pathwayModel normalized self-integral in-memory biopax model to be merged
+	 * @param pathwayModel the one to be merged (validated and normalized in-memory biopax model)
 	 */
 	private void mergePathwayModel(PaxtoolsDAO mainModel, Model pathwayModel) 
 	{	
@@ -220,7 +211,7 @@ final class MergerImpl implements Merger, Analysis {
 					if(er != null && !er.getXref().isEmpty())
 						continue;
 					if(pe instanceof SmallMolecule) {
-						addCanonicalRelXrefs((PhysicalEntity) pe, ChemMapping.class, generatedModel);
+						addCanonicalRelXrefs((SmallMolecule) pe, ChemMapping.class, generatedModel);
 					} else {
 						// for Protein, Dna, DnaRegion, Rna*...
 						addCanonicalRelXrefs((PhysicalEntity) pe, GeneMapping.class, generatedModel);
@@ -242,12 +233,12 @@ final class MergerImpl implements Merger, Analysis {
 			"semantically equivalent utility class elements " +
 			"in the target Model or Warehouse");
 
-		final Map<BioPAXElement, BioPAXElement> replacements = new HashMap<BioPAXElement, BioPAXElement>();
+		final Map<EntityReference, EntityReference> replacements = new HashMap<EntityReference, EntityReference>();
 		
 		// match some utility class objects to ones from the warehouse or previously imported
-		for (UtilityClass bpe: new HashSet<UtilityClass>(pathwayModel.getObjects(UtilityClass.class))) 
+		for (EntityReference bpe: new HashSet<EntityReference>(pathwayModel.getObjects(EntityReference.class))) 
 		{
-			UtilityClass replacement = null;
+			EntityReference replacement = null;
 			// Find the best replacement either in the warehouse or target model;
 			if (bpe instanceof ProteinReference) {
 				replacement = findOrCreateProteinReference((ProteinReference)bpe, (Model)mainModel, generatedModel);
@@ -266,7 +257,7 @@ final class MergerImpl implements Merger, Analysis {
 						// Do some fixes and merge into the in-memory model;
 						// e.g., remove thousands of special ChEBI relationship xrefs
 						if(replacement instanceof SmallMoleculeReference)
-							removeRelXrefs((EntityReference) replacement);
+							removeRelXrefs(replacement);
 					
 						// clear the AA sequence (save space and time; not really very useful...)
 						if(replacement instanceof ProteinReference)
@@ -277,33 +268,38 @@ final class MergerImpl implements Merger, Analysis {
 					} 
 					
 					// associate, continue
-					replacements.put(bpe, generatedModel.getByID(id));
+					replacements.put(bpe, (EntityReference) generatedModel.getByID(id));
 				}
 			}
 		}
 				
-		// fix entityFeature/entityFeatureOf for sure, and may be other properties...
+		// post-fix for some potentially troubling
+		// inverse properties of the original things scheduled for replacement
 		log.info("Migrating some properties (features)...");
-		for (BioPAXElement old : replacements.keySet()) {
-			if (old instanceof EntityReference) {
-				for (EntityFeature ef : new HashSet<EntityFeature>(
-						((EntityReference) old).getEntityFeature())) {
-					
-					// the following updates the existing (already merged) object
-					if(ef.getEntityFeatureOf() == old) //it may not
-						((EntityReference) old).removeEntityFeature(ef);
-					else
-						log.warn(old.getRDFId() + " contains entityFeature (f) " + ef.getRDFId()
-							+ ", but f.entityFeatureOf is another entity refernece " +
-							"(there is probably an erorr in both the BioPAX data and validator/normalizer)!");
-					
-					EntityReference replacement = ((EntityReference) replacements.get(old));
-					replacement.addEntityFeature(ef); // this fixes entityFeatureOf (-single cardinality) as well!
-				}
+		for (EntityReference old : replacements.keySet()) {
+			// fix for entityFeature/entityFeatureOf
+			for (EntityFeature ef : new HashSet<EntityFeature>(old.getEntityFeature())) {
+				//ef should not be entityFeatureOf the old ER (because it's going to be replaced soon)
+				if(ef.getEntityFeatureOf() == old) 
+					old.removeEntityFeature(ef);
+				
+				EntityReference replacement = replacements.get(old);
+				replacement.addEntityFeature(ef); // this fixes entityFeatureOf (-single cardinality) as well!
 			}
+				
+			// fix for xref/xrefOf: remove xrefs from old ERs, then
+			// copy all Pub. and Rel. xrefs to new ERs (this is to keep original xrefs too)
+			for(Xref x : new HashSet<Xref>(old.getXref())) {
+				old.removeXref(x);
+				if(!(x instanceof UnificationXref)) {
+					EntityReference rep = replacements.get(old);
+					rep.addXref(x);
+				}
+			}				
 		}
+
 		
-		// do replace (object refs) in the original pathwayModel
+		// DO replace (object refs) in the original pathwayModel
 		log.info("Replacing utility objects with matching ones...");	
 		ModelUtils.replace(pathwayModel, replacements);
 		log.info("Done replacing utility objects.");	
@@ -454,15 +450,11 @@ final class MergerImpl implements Merger, Analysis {
 				db = dbById(id, orig.getXref()); //find by id
 			
 			// do id-mapping
-// can later optimize by using an in-memory map instead of DAO -
-//			id = IdMappingFactory.suggest(db, id); //can improve mapping is several known cases		
-//			id = geneIdMap.get(id);	
 			IdMapping mp = metadataDAO.getIdMapping(db, id, GeneMapping.class); //IdMappingFactory.suggest is called inside.
 			if(mp != null) {
 				id = mp.getAccession();
-				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + id, ProteinReference.class, generatedModel, warehouseDAO, mainModel);
-				//keep specific isoform/version id (NP_123456.2, P04150-3,..) after merging/replacing original PRs
-				copyRelXrefToParentEntities(orig, generatedModel);
+				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + id, 
+					ProteinReference.class, generatedModel, warehouseDAO, mainModel);
 			}
 		}
 				
@@ -473,9 +465,7 @@ final class MergerImpl implements Merger, Analysis {
 			if(!mappingSet.isEmpty()) {
 				// use only the first result (a warning logged already)
 				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + mappingSet.iterator().next().getAccession(), 
-					ProteinReference.class, generatedModel, warehouseDAO, mainModel);
-				//keep specific isoform/version id (NP_123456.2, P04150-3,..) after merging/replacing original PRs
-				copyRelXrefToParentEntities(orig, generatedModel); //call only once mapping succeeded				
+					ProteinReference.class, generatedModel, warehouseDAO, mainModel);			
 			}
 		}	
 		
@@ -486,8 +476,7 @@ final class MergerImpl implements Merger, Analysis {
 			if(!mappingSet.isEmpty()) {
 				// use only the first result (a warning logged already)
 				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + mappingSet.iterator().next().getAccession(), 
-						ProteinReference.class, generatedModel, warehouseDAO, mainModel);
-				copyRelXrefToParentEntities(orig, generatedModel); //call only once mapping succeeded
+					ProteinReference.class, generatedModel, warehouseDAO, mainModel);
 			}	
 		}
 		
@@ -548,38 +537,6 @@ final class MergerImpl implements Merger, Analysis {
 
 
 	/**
-	 * Copy xrefs of original entity reference to
-	 * all its parent entities (mol. states), converting 
-	 * unification xrefs to relationship xrefs, and 
-	 * re-using previously generated xrefs.
-	 * 
-	 * @param origEr 
-	 * @param generatedModel
-	 */
-	private void copyRelXrefToParentEntities(EntityReference origEr, Model generatedModel) {
-		for(Xref x : origEr.getXref()) {
-			if(x instanceof UnificationXref) {
-				// create/re-use RelationshipXref (same db/id as x's)
-				String rxUri = Normalizer.uri(xmlBase, x.getDb(), x.getId(), RelationshipXref.class);
-				RelationshipXref rx = (RelationshipXref)generatedModel.getByID(rxUri);
-				if(rx == null) {
-					rx = generatedModel.addNew(RelationshipXref.class, rxUri);
-					rx.setDb(x.getDb());
-					rx.setId(x.getId());
-					if(!x.getComment().isEmpty())
-						rx.getComment().addAll(x.getComment());
-				}				
-				x = rx; //replace for the next operation
-			}
-			
-			//add the xref (not unification xref) to every parent
-			for(SimplePhysicalEntity parent : origEr.getEntityReferenceOf())
-				parent.addXref(x);
-		}
-	}
-
-
-	/**
 	 * Finds previously created or generates (searching in the data warehouse) 
 	 * a new {@link SmallMoleculeReference} BioPAX element that is equivalent 
 	 * to the original one and has standard URI and properties, 
@@ -631,9 +588,7 @@ final class MergerImpl implements Merger, Analysis {
 			if(mp != null) {
 				id = mp.getAccession();
 				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + id, 
-						SmallMoleculeReference.class, generatedModel, warehouseDAO, mainModel);
-				//keep specific isoform/version id (NP_123456.2, P04150-3,..) after merging/replacing original PRs				
-				copyRelXrefToParentEntities(orig, generatedModel);
+					SmallMoleculeReference.class, generatedModel, warehouseDAO, mainModel);
 			}
 		}
 				
@@ -645,7 +600,6 @@ final class MergerImpl implements Merger, Analysis {
 				// use only the first result (a warning logged already)
 				toReturn = getByIdFromMemoryOrMainOrWarehouseModel(canonicalPrefix + mappingSet.iterator().next().getAccession(), 
 					SmallMoleculeReference.class, generatedModel, warehouseDAO, mainModel);
-				copyRelXrefToParentEntities(orig, generatedModel); //call only once mapping succeeded
 			}	
 		}	
 		
