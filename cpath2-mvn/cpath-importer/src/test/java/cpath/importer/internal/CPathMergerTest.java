@@ -265,10 +265,14 @@ public class CPathMergerTest {
 		// inspired by humancyc case ;)
 		assertTrue(mergedModel.containsID("http://identifiers.org/pubmed/9763671"));
 		PublicationXref px = (PublicationXref) mergedModel.getByID("http://identifiers.org/pubmed/9763671");
-		assertEquals(1, px.getXrefOf().size()); //not "2", because the original ProteinReference was replaced/removed
+		assertEquals(2, px.getXrefOf().size()); 
+		//these are not the two original ProteinReference (got replaced/removed)
+//		System.out.println(px.getXrefOf());
+		assertTrue(px.getXrefOf().contains(mergedModel.getByID("http://identifiers.org/uniprot/O75191")));
+		assertTrue(px.getXrefOf().contains(mergedModel.getByID("http://biocyc.org/biopax/biopax-level3Protein155359")));
 		
 		msmr = (SmallMoleculeReference)mergedModel
-				.getByID("http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684");
+			.getByID("http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684");
 		assertNotNull(msmr);
 		assertNull(mergedModel.getByID("http://biocyc.org/biopax/biopax-level3SmallMoleculeReference165390"));
 		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28"); // was replaced from Warehouse
@@ -278,9 +282,12 @@ public class CPathMergerTest {
 		assertFalse(smr.getEntityReferenceOf().isEmpty());
 		assertTrue(smr.getEntityReferenceOf().contains(sm));
 		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:36141"); //wasn't replaced (not found in Warehouse!)
-		assertEquals(1, msmr.getMemberEntityReferenceOf().size()); // was 3 (in the file); but SmallMoleculeReference165390 was removed (became dangling after the replacement of chebi:28)
+		
+		// was 3 (in the file); but SmallMoleculeReference165390 was removed (became dangling after the replacement of chebi:28)
+		assertEquals(1, msmr.getMemberEntityReferenceOf().size()); 
 		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
-		// the following would be also true if we copy old prop./inv.prop relationships, but we do not
+		
+		// the following would be also true if we'd copy old prop./inv.prop relationships, but we do not
 //		assertEquals(2, msmr.getMemberEntityReferenceOf().size());
 //		assertTrue(msmr.getMemberEntityReferenceOf().contains(mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28")));	
 	}

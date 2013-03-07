@@ -112,106 +112,161 @@ public final class Admin {
         public String toString() { return command; }
     }
     
-    
-    /**
-     * Parses cpath2 command name and arguments.
-     *
-     * @param args String[]
-     * @throws IOException 
-     */
-    public static void run(final String[] args) throws IOException {
  
-        if(args[0].equals(Cmd.CREATE_TABLES.toString())) {
-			if (args.length > 1) {
-				// agrs[1] contains comma-separated db names
-				createDatabases(args[1].split(","));
-			} 
-        } 
-        else if(args[0].equals(Cmd.CREATE_INDEX.toString())) {
-			index();
-        } 
-        else if (args[0].equals(Cmd.FETCH_METADATA.toString())) {
-			if (args.length == 1) {
-				fetchMetadata("file:" + property(PROP_METADATA_LOCATION));
-			} else {
-				fetchMetadata(args[1]);
-			}
-        }
-		else if (args[0].equals(Cmd.FETCH_DATA.toString())) {
-			if (args.length >= 2) 
-				fetchData(args[1]);
-			else // command without extra parameter
-				fetchData(null);
-		}
-		else if (args[0].equals(Cmd.CREATE_WAREHOUSE.toString())) {
-			if (args.length > 1) 
-				createWarehouse(args[1]);
-			else // command without extra parameter
-				createWarehouse(null);
-		}
-		else if (args[0].equals(Cmd.UPDATE_MAPPING.toString())) {
-				updateMapping();
-		}
-		else if (args[0].equals(Cmd.PREMERGE.toString())) {
-			if (args.length > 1) 
-				runPremerge(args[1]);
-			else // command without extra parameter
-				runPremerge(null);
-		}
-		else if (args[0].equals(Cmd.MERGE.toString())) {
-			boolean force = false;
-			String provider = null;
-			for (int i = 1; i < args.length; i++) {
-				if ("--force".equalsIgnoreCase(args[i])) {
-					force = true;
-				} else {
-					//use only one, the first id, and ignore others
-					if(provider == null) 
-						provider = args[i];
-				}
-			}
-			
-			runMerge(provider, force);
-		}
-		else if(args[0].equals(Cmd.EXPORT.toString())) {
-			if (args.length < 3)
-				fail(args,"must provide at least two arguments.");
-			else if(args.length == 3)
-				exportData(args[1], args[2]);
-			else 
-				exportData(args[1], args[2], args[3].split(","));
-        } 
-		else if(args[0].equals(Cmd.EXPORT_VALIDATION.toString())) {
-			if (args.length < 3)
-				fail(args,"must provide at least two arguments for this command.");
-			
-        	if(args[2].endsWith(".html"))
-        		exportValidation(args[1], new FileOutputStream(args[2]), true);
-        	else
-        		exportValidation(args[1], new FileOutputStream(args[2]), false);
-        } 
-		else if(args[0].equals(Cmd.CREATE_BLACKLIST.toString())) {
-            createBlacklist();
-        } 
-		else if(args[0].equals(Cmd.CONVERT.toString())) {
-			if (args.length < 4)
-				fail(args,"provide at least three arguments.");
-			
-            OutputStream fos = new FileOutputStream(args[2]);
-            OutputFormat outputFormat = OutputFormat.valueOf(args[3]);
-            convert(args[1], outputFormat, fos);
-        } 
-		else if(args[0].equals(Cmd.CREATE_DOWNLOADS.toString())) {
-        	if(args.length > 1) { //optional list of organisms (names or taxonomy ids)
-        		createDownloads(args[1].split(","));
-            } else 
-            	createDownloads(new String[]{});
-        } 
-		else {
-			System.err.println(usage());
-        }        
-    }
+    /**
+     * The big deal main.
+     * 
+     * @param params String[]
+     */    
+    public static void main(String[] params) throws Exception {
+    	// "CPATH2_HOME" env. var must be set (mostly for logging)
+        String home = System.getenv(HOME_VARIABLE_NAME);
+    	if (home==null) {
+            System.err.println("Please set " + HOME_VARIABLE_NAME 
+            	+ " environment variable " +
+            	" (point to a directory where cpath.properties, etc. files are placed)");
+            System.exit(-1);
+    	}
+    	
+    	// the JVM option must be set to the same value as well!
+    	if (!home.equals(homeDir())) {
+            System.err.println("Please set the java property " + HOME_VARIABLE_NAME 
+            	+ ", i.e., run with -D" + HOME_VARIABLE_NAME + "=" + home + " option.");
+            System.exit(-1);
+    	}
+    	
+    	// configure logging
+    	PropertyConfigurator.configure(home + File.separator + "log4j.properties");
 
+    	if(!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
+    		if(LOG.isWarnEnabled())
+    			LOG.warn("Default Charset, " + Charset.defaultCharset() 
+    				+ " (is NOT 'UTF-8'...)");
+    	
+    	
+    	// Cleanup arguments by removing empty/null strings from the end
+    	// - possible result of calling this method from a script
+    	List<String> argl = new ArrayList<String>();
+    	for(String a : params) {
+    		if(a == null || a.isEmpty() || a.equalsIgnoreCase("null"))
+    			break;
+    		else
+    			argl.add(a);
+    	}
+    	final String[] args = argl.toArray(new String[]{});
+//		System.out.println(Arrays.toString(args));
+  			
+    	LOG.debug("Command-line arguments were: " + Arrays.toString(args));
+    	
+    	// sanity check
+        if (args.length == 0 || args[0].isEmpty()) {
+            System.err.println("Missing args to Admin.");
+			System.err.println(Admin.usage());
+            System.exit(-1);
+        }
+    	
+
+        // create the TMP dir inside the home dir if it does not exist yet
+		File dir = new File(localDataDir());
+		if(!dir.exists()) {
+			dir.mkdir();
+		}   	
+    	
+	       if(args[0].equals(Cmd.CREATE_TABLES.toString())) {
+				if (args.length > 1) {
+					// agrs[1] contains comma-separated db names
+					createDatabases(args[1].split(","));
+				} 
+	        } 
+	        else if(args[0].equals(Cmd.CREATE_INDEX.toString())) {
+				index();
+	        } 
+	        else if (args[0].equals(Cmd.FETCH_METADATA.toString())) {
+				if (args.length == 1) {
+					fetchMetadata("file:" + property(PROP_METADATA_LOCATION));
+				} else {
+					fetchMetadata(args[1]);
+				}
+	        }
+			else if (args[0].equals(Cmd.FETCH_DATA.toString())) {
+				if (args.length >= 2) 
+					fetchData(args[1]);
+				else // command without extra parameter
+					fetchData(null);
+			}
+			else if (args[0].equals(Cmd.CREATE_WAREHOUSE.toString())) {
+				if (args.length > 1) 
+					createWarehouse(args[1]);
+				else // command without extra parameter
+					createWarehouse(null);
+			}
+			else if (args[0].equals(Cmd.UPDATE_MAPPING.toString())) {
+					updateMapping();
+			}
+			else if (args[0].equals(Cmd.PREMERGE.toString())) {
+				if (args.length > 1) 
+					runPremerge(args[1]);
+				else // command without extra parameter
+					runPremerge(null);
+			}
+			else if (args[0].equals(Cmd.MERGE.toString())) {
+				boolean force = false;
+				String provider = null;
+				for (int i = 1; i < args.length; i++) {
+					if ("--force".equalsIgnoreCase(args[i])) {
+						force = true;
+					} else {
+						//use only one, the first id, and ignore others
+						if(provider == null) 
+							provider = args[i];
+					}
+				}
+				
+				runMerge(provider, force);
+			}
+			else if(args[0].equals(Cmd.EXPORT.toString())) {
+				if (args.length < 3)
+					fail(args,"must provide at least two arguments.");
+				else if(args.length == 3)
+					exportData(args[1], args[2], new String[]{});
+				else 
+					exportData(args[1], args[2], args[3].split(","));
+	        } 
+			else if(args[0].equals(Cmd.EXPORT_VALIDATION.toString())) {
+				if (args.length < 3)
+					fail(args,"must provide at least two arguments for this command.");
+				
+	        	if(args[2].endsWith(".html"))
+	        		exportValidation(args[1], new FileOutputStream(args[2]), true);
+	        	else
+	        		exportValidation(args[1], new FileOutputStream(args[2]), false);
+	        } 
+			else if(args[0].equals(Cmd.CREATE_BLACKLIST.toString())) {
+	            createBlacklist();
+	        } 
+			else if(args[0].equals(Cmd.CONVERT.toString())) {
+				if (args.length < 4)
+					fail(args,"provide at least three arguments.");
+				
+	            OutputStream fos = new FileOutputStream(args[2]);
+	            OutputFormat outputFormat = OutputFormat.valueOf(args[3]);
+	            convert(args[1], outputFormat, fos);
+	        } 
+			else if(args[0].equals(Cmd.CREATE_DOWNLOADS.toString())) {
+	        	if(args.length > 1) { //optional list of organisms (names or taxonomy ids)
+	        		createDownloads(args[1].split(","));
+	            } else 
+	            	createDownloads(new String[]{});
+	        } 
+			else {
+				System.err.println(usage());
+	        }    
+		
+		// required because MySQL Statement 
+		// Cancellation Timer thread is still running
+		System.exit(0);
+    }    
+    
     
     private static void fail(String[] args, String details) {
         throw new IllegalArgumentException(
@@ -575,21 +630,26 @@ public final class Admin {
 	 * @param uris
 	 * @throws IOException, IllegalStateException (in maintenance mode)
 	 */
-	public static void exportData(final String src, final String output, 
-			String... uris) throws IOException {
+	public static void exportData(final String src, final String output, String[] uris) 
+			throws IOException {
 		
-		if(isMaintenanceEnabled())
-			throw new IllegalStateException("Maintenance mode.");
+		if(uris == null) 
+			uris = new String[]{};
 		 
 		OutputStream os = new FileOutputStream(output);
 				
-		if(src == null || src.isEmpty() || src.equals("--main_db")) {
+		if(src == null || src.isEmpty() || src.equals("--main_db")) {			
+			if(isMaintenanceEnabled())
+				throw new IllegalStateException("Maintenance mode.");
+			
 			// export a sub-model from the main biopax database
 	        ApplicationContext ctx = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
 	        PaxtoolsDAO dao = ((PaxtoolsDAO)ctx.getBean("paxtoolsDAO"));
 			dao.exportModel(os, uris);
 		} else {
-			// get original pathway data by pathway_id from the Metadata db, pathwayData table		
+			// get original pathway data by pathway_id 
+			// from the Metadata db, pathwayData table
+			// (ok to do even in the maintenance mode)
 			Integer pk = null;
 			try {
 				pk = Integer.valueOf(src);
@@ -605,6 +665,7 @@ public final class Admin {
 			if(pdata != null) {
 				// get premergeData (OWL text)
 				byte[] data = pdata.getPremergeData();
+				
 				if (data != null && data.length > 0) {
 					if (uris.length > 0) { // extract a sub-model
 						SimpleIOHandler handler = new SimpleIOHandler(); // auto-detect Level
@@ -703,7 +764,8 @@ public final class Admin {
 	{
 		final String NEWLINE = System.getProperty ( "line.separator" );
 		StringBuilder toReturn = new StringBuilder();
-		toReturn.append("Usage: <-command_name> <command_args...>" + NEWLINE);
+		toReturn.append("Usage: <-command_name> [<command_args...>] " +
+				"(- parameters within the square braces are optional.)" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
 		// data import (instance creation) pipeline :
 		toReturn.append(Cmd.CREATE_TABLES.toString() + " [<table1,table2,..>]" + NEWLINE);
@@ -715,10 +777,10 @@ public final class Admin {
 		toReturn.append(Cmd.MERGE.toString() + " [<metadataId>] [--force]"+ NEWLINE);
 		toReturn.append(Cmd.CREATE_INDEX.toString() + NEWLINE);
         toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
-        toReturn.append(Cmd.CREATE_DOWNLOADS.toString() + "[<taxonomy_id|name,taxonomy_id|name,..>] (better use standard names, "
+        toReturn.append(Cmd.CREATE_DOWNLOADS.toString() + " [<taxonomy_id|name,taxonomy_id|name,..>] (better use standard names, "
         	+"e.g., (exactly) as \"homo sapiens,mus musculus\", because generated file names will look more user-friendly)"  + NEWLINE);        
         // other useful (utility) commands
-		toReturn.append(Cmd.EXPORT.toString() + "<source> <output> [<uri,uri,..>]" +
+		toReturn.append(Cmd.EXPORT.toString() + " <source> <output> [<uri,uri,..>]" +
 			" (<source> can be either --main_db or a pathway_id, i.e., 'premerged' data PK in the pathwayData table)" + NEWLINE);
 		toReturn.append(Cmd.EXPORT_VALIDATION.toString() 
 			+ " <provider>|<pathway_id> <output_file[.xml|.html]> (<provider> - metadata identifier or <pathway_id> - see above; "
@@ -729,62 +791,10 @@ public final class Admin {
 		return toReturn.toString();
 	}
 
-    /**
-     * The big deal main.
-     * 
-     * @param args String[]
-     */    
-    public static void main(String[] args) throws Exception {
-    	LOG.debug("Command-line arguments were: " + Arrays.toString(args));
-    	
-    	// sanity check
-        if (args.length == 0 || args[0].isEmpty()) {
-            System.err.println("Missing args to Admin.");
-			System.err.println(Admin.usage());
-            System.exit(-1);
-        }
-    	
-    	// "CPATH2_HOME" env. var must be set (mostly for logging)
-        String home = System.getenv(HOME_VARIABLE_NAME);
-    	if (home==null) {
-            System.err.println("Please set " + HOME_VARIABLE_NAME 
-            	+ " environment variable " +
-            	" (point to a directory where cpath.properties, etc. files are placed)");
-            System.exit(-1);
-    	}
-    	
-    	// the JVM option must be set to the same value as well!
-    	if (!home.equals(homeDir())) {
-            System.err.println("Please set the java property " + HOME_VARIABLE_NAME 
-            	+ ", i.e., run with -D" + HOME_VARIABLE_NAME + "=" + home + " option.");
-            System.exit(-1);
-    	}
-    	
-    	// configure logging
-    	PropertyConfigurator.configure(home + File.separator + "log4j.properties");
-
-    	if(!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
-    		if(LOG.isWarnEnabled())
-    			LOG.warn("Default Charset, " + Charset.defaultCharset() 
-    				+ " (is NOT 'UTF-8'...)");
-    	
-    	// create the TMP dir inside the home dir if it does not exist yet
-		File dir = new File(localDataDir());
-		if(!dir.exists()) {
-			dir.mkdir();
-		}   	
-    	
-		run(args);
-		
-		// required because MySQL Statement 
-		// Cancellation Timer thread is still running
-		System.exit(0);
-    }
-    	
 	
     /**
-     * TODO describe
-     * 
+     * Converts a BioPAX file to other formats.
+     *       
      * @param biopaxFile
      * @param outputFormat
      * @param output
