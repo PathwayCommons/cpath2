@@ -498,17 +498,13 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	public boolean containsID(String id)
 	{
 		boolean ret;
-		
-// do NOT do getById(id);  - it caused Merger / Hibernate failure and is in fact unnecessary
-//		ret = (getByID(id) != null);	
-//		if(ret == false) {
-				if(!CPathSettings.digestUriEnabled()) //normal mode
-					ret = (session().getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists")
-						.setString("md5uri", ModelUtils.md5hex(id)).uniqueResult() != null);
-				else // can be here in a db debug mode
-					ret = (session().getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists")
-					.setString("md5uri", id).uniqueResult() != null);
-//		} //- removed intentionally
+
+		if(!CPathSettings.digestUriEnabled()) //normal mode
+			ret = (session().getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists")
+				.setString("md5uri", ModelUtils.md5hex(id)).uniqueResult() != null);
+		else // can be here in a db debug mode
+			ret = (session().getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists")
+			.setString("md5uri", id).uniqueResult() != null);
 		
 		return ret;
 	}
