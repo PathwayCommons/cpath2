@@ -306,14 +306,19 @@ final class MergerImpl implements Merger, Analysis {
 		// do replace (object refs) in the original pathwayModel
 		log.info("Replacing utility objects with matching ones...");	
 		ModelUtils.replace(pathwayModel, replacements);
+		log.info("Done replacing utility objects.");	
 		
 		log.info("Removing replaced/dangling objects...");	
 		ModelUtils.removeObjectsIfDangling(pathwayModel, UtilityClass.class);
+		log.info("Done removing dangling objects.");	
+		
 		//force re-using of matching by id Xrefs, CVs, etc.. from the generated model
+		log.info("Merging original model into the in-memory generated one...");
 		simpleMerger.merge(generatedModel, pathwayModel); 
-	
+		log.info("Done in-memory merging...");
+		
 		// create completely detached in-memory model (fixes dangling properties...)
-		log.info("Updating in-memory model...");
+		log.info("Updating/Detaching in-memory model...");
 		pathwayModel = ModelUtils.writeRead(generatedModel);
 			
 		log.info("Persisting...");
