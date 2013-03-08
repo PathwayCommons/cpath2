@@ -16,11 +16,21 @@ import org.biopax.validator.api.beans.ValidatorResponse;
 public interface MetadataDAO {
 
     /**
-     * Persists the given metadata object to the db.
+     * Persists or updates the given metadata object to the db.
      *
      * @param metadata Metadata
      */
-    void importMetadata(final Metadata metadata);
+    void saveMetadata(final Metadata metadata);
+    
+    
+    /**
+     * Gets a Metadata bean by id (primary key).
+     * 
+     * @param id Metadata PK
+     * @return
+     */
+    Metadata getMetadata(final Integer id);
+    
 
     /**
      * This method returns the metadata object, given the {@link Metadata} Identifier.
@@ -38,11 +48,11 @@ public interface MetadataDAO {
     Collection<Metadata> getAllMetadata();
 
     /**
-     * Persists the pathway data stored in the given pathway data object to the warehouse db.
+     * Saves or updates the pathway data object in the metadata db.
      *
      * @param pathwayData PathwayData
      */
-    void importPathwayData(final PathwayData pathwayData);
+    void savePathwayData(final PathwayData pathwayData);
 
     /**
      * This method returns all the pathway data.
@@ -59,17 +69,6 @@ public interface MetadataDAO {
      */
     Collection<PathwayData> getPathwayDataByIdentifier(final String identifier);
 
-
-    /**
-     * This method returns a pathway data object with the given Identifier, Filename and Digest.
-	 *
-     * @param identifier String
-     * @param filename String
-     * @param digest String
-     * @return PathwayData
-     */
-    PathwayData getPathwayDataByIdentifierAndFilenameAndDigest(
-    	final String identifier, final String filename, final String digest);
 
     /**
      * This method gets a PathwayData bean (initialized) by primary key.

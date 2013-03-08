@@ -266,7 +266,7 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 			try {
 				session().merge(bpe);
 			} catch (Exception e) {
-				throw new IllegalBioPAXArgumentException("Failed meging: " + bpe.getRDFId(), e);
+				throw new IllegalBioPAXArgumentException("update(model): Failed merging: " + bpe.getRDFId(), e);
 			}
 			
 			i++;

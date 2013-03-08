@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+ xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+ xmlns:owl="http://www.w3.org/2002/07/owl#"
+ xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+ xmlns:bp="http://www.biopax.org/release/biopax-level3.owl#"
+ xml:base="http://biocyc.org/biopax/biopax-level3">
+<owl:Ontology rdf:about="">
+ <owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl#" />
+</owl:Ontology>
+
+<bp:Provenance rdf:about="http://purl.org/pc2/test">
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">biocyc</bp:name>
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">humancyc</bp:displayName>
+ <bp:standardName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">HumanCyc</bp:standardName>
+ <bp:comment rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Source  metadata_type: BIOPAX, HumanCycTest</bp:comment>
+ <bp:comment rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Source metadata_type: BIOPAX, HumanCycTest</bp:comment>
+</bp:Provenance>
+
+<bp:SmallMoleculeReference rdf:ID="SmallMoleculeReference132807">
+ <bp:structure rdf:resource="#ChemicalStructure132809" />
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefBioCycSaturated-Fatty-Acyl-CoA" />
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">a 2,3,4-saturated fatty acyl CoA</bp:displayName>
+ <bp:standardName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">a 2,3,4-saturated fatty acyl CoA</bp:standardName>
+ <bp:comment rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">The fatty acid moiety typically has 14-24 carbon atoms. The 16- and 18-carbon fatty acids are the most common. This type of fatty acid will not contain any double bonds in the 2, 3, and 4 positions.</bp:comment>
+ <bp:memberEntityReference rdf:resource="#SmallMoleculeReference148612" />
+ <bp:memberEntityReference rdf:resource="http://identifiers.org/chebi/CHEBI:57385" />
+ <bp:memberEntityReference rdf:resource="http://identifiers.org/chebi/CHEBI:61430" />
+</bp:SmallMoleculeReference>
+
+<bp:ChemicalStructure rdf:ID="ChemicalStructure132809">
+ <bp:structureFormat rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CML</bp:structureFormat>
+</bp:ChemicalStructure>
+
+<bp:SmallMoleculeReference rdf:about="http://identifiers.org/chebi/CHEBI:61430">
+ <bp:structure rdf:resource="#ChemicalStructure148520" />
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefPubChem-substance25244140" />
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefBioCycCPD-10267" />
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefKEGG+CompoundC05274" />
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefChEBICHEBI%3A61430" />
+ <bp:molecularWeight rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">917.754</bp:molecularWeight>
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">decanoyl-CoA</bp:displayName>
+ <bp:standardName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">decanoyl-CoA</bp:standardName>
+</bp:SmallMoleculeReference>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefPubChem-substance25244140">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">25244140</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PubChem-substance</bp:db>
+</bp:UnificationXref>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefBioCycCPD-10267">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CPD-10267</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">BioCyc</bp:db>
+</bp:UnificationXref>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefPubChem-substance25244582">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">25244582</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PubChem-substance</bp:db>
+</bp:UnificationXref>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefKEGG+CompoundC00412">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">C00412</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">KEGG Compound</bp:db>
+</bp:UnificationXref>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefPubChem-substance25245778">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">25245778</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PubChem-substance</bp:db>
+</bp:UnificationXref>
+
+<bp:CellularLocationVocabulary rdf:about="http://identifiers.org/obo.go/GO:0005829">
+ <bp:term rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">cytosol</bp:term>
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefGene+OntologyGO%3A0005829" />
+</bp:CellularLocationVocabulary>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefKEGG+CompoundC05274">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">C05274</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">KEGG Compound</bp:db>
+</bp:UnificationXref>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefKEGG+CompoundC02593">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">C02593</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">KEGG Compound</bp:db>
+</bp:UnificationXref>
+
+<bp:SmallMoleculeReference rdf:about="http://identifiers.org/chebi/CHEBI:57385">
+ <bp:structure rdf:resource="#ChemicalStructure148586" />
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Tetradecanoyl-CoA (n-C14:0CoA)</bp:name>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">tetradecanoyl-CoA</bp:name>
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefBioCycTETRADECANOYL-COA" />
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefPubChem-substance25244582" />
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefChEBICHEBI%3A57385" />
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefKEGG+CompoundC02593" />
+ <bp:molecularWeight rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">973.861</bp:molecularWeight>
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">myristoyl-CoA</bp:displayName>
+ <bp:standardName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">myristoyl-CoA</bp:standardName>
+</bp:SmallMoleculeReference>
+
+<bp:SmallMoleculeReference rdf:ID="SmallMoleculeReference148612">
+ <bp:structure rdf:resource="#ChemicalStructure148617" />
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">stearyl-CoA</bp:name>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">stearyl coenzyme A</bp:name>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Stearoyl-CoA (n-C18:0CoA)</bp:name>
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefKEGG+CompoundC00412" />
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefPubChem-substance25245778" />
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefCAS362-66-3" />
+ <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefBioCycSTEAROYL-COA" />
+ <bp:molecularWeight rdf:datatype = "http://www.w3.org/2001/XMLSchema#float">1029.968</bp:molecularWeight>
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">stearoyl-CoA</bp:displayName>
+ <bp:standardName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">stearoyl-CoA</bp:standardName>
+</bp:SmallMoleculeReference>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefBioCycSaturated-Fatty-Acyl-CoA">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Saturated-Fatty-Acyl-CoA</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">BioCyc</bp:db>
+</bp:UnificationXref>
+
+<bp:ChemicalStructure rdf:ID="ChemicalStructure148617">
+ <bp:structureFormat rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CML</bp:structureFormat>
+</bp:ChemicalStructure>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefChEBICHEBI%3A57385">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CHEBI:57385</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">ChEBI</bp:db>
+</bp:UnificationXref>
+
+<bp:ChemicalStructure rdf:ID="ChemicalStructure148586">
+ <bp:structureFormat rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CML</bp:structureFormat>
+</bp:ChemicalStructure>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefBioCycSTEAROYL-COA">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">STEAROYL-COA</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">BioCyc</bp:db>
+</bp:UnificationXref>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefChEBICHEBI%3A61430">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CHEBI:61430</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">ChEBI</bp:db>
+</bp:UnificationXref>
+
+<bp:SmallMolecule rdf:ID="SmallMolecule132810">
+ <bp:entityReference rdf:resource="#SmallMoleculeReference132807" />
+ <bp:dataSource rdf:resource="http://purl.org/pc2/test" />
+ <bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005829" />
+ <bp:comment rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">The fatty acid moiety typically has 14-24 carbon atoms. The 16- and 18-carbon fatty acids are the most common. This type of fatty acid will not contain any double bonds in the 2, 3, and 4 positions.</bp:comment>
+ <bp:standardName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">a 2,3,4-saturated fatty acyl CoA</bp:standardName>
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">a 2,3,4-saturated fatty acyl CoA</bp:displayName>
+</bp:SmallMolecule>
+
+<bp:SmallMolecule rdf:ID="SmallMolecule148587">
+ <bp:entityReference rdf:resource="http://identifiers.org/chebi/CHEBI:57385" />
+ <bp:dataSource rdf:resource="http://purl.org/pc2/test" />
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Tetradecanoyl-CoA (n-C14:0CoA)</bp:name>
+ <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">tetradecanoyl-CoA</bp:name>
+ <bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005829" />
+ <bp:standardName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">myristoyl-CoA</bp:standardName>
+ <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">myristoyl-CoA</bp:displayName>
+</bp:SmallMolecule>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefCAS362-66-3">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">362-66-3</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CAS</bp:db>
+</bp:UnificationXref>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefGene+OntologyGO%3A0005829">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">GO:0005829</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Gene Ontology</bp:db>
+</bp:UnificationXref>
+
+<bp:UnificationXref rdf:about="http://purl.org/pc2/UnificationXrefBioCycTETRADECANOYL-COA">
+ <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">TETRADECANOYL-COA</bp:id>
+ <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">BioCyc</bp:db>
+</bp:UnificationXref>
+
+<bp:ChemicalStructure rdf:ID="ChemicalStructure148520">
+ <bp:structureFormat rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">CML</bp:structureFormat>
+</bp:ChemicalStructure>
+</rdf:RDF>

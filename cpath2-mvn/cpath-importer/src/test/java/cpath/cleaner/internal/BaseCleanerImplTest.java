@@ -14,7 +14,6 @@ public class BaseCleanerImplTest {
 		BaseCleanerImpl cleaner = new BaseCleanerImpl() {
 			@Override
 			public String clean(String pathwayData) {
-				// TODO Auto-generated method stub
 				return null;
 			}};
 		

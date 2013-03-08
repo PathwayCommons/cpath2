@@ -87,7 +87,7 @@ public final class Admin {
     // Cmd Enum
     public static enum Cmd {
         // command types
-    	CREATE_TABLES("-create-tables"),
+    	CREATE_SCHEMA("-create-tables"),
     	CREATE_INDEX("-create-index"),
         FETCH_METADATA("-fetch-metadata"),
 		FETCH_DATA("-fetch-data"),
@@ -172,11 +172,12 @@ public final class Admin {
 			dir.mkdir();
 		}   	
     	
-	       if(args[0].equals(Cmd.CREATE_TABLES.toString())) {
-				if (args.length > 1) {
+	       if(args[0].equals(Cmd.CREATE_SCHEMA.toString())) {
+				if (args.length > 1)
 					// agrs[1] contains comma-separated db names
 					createDatabases(args[1].split(","));
-				} 
+				else 
+					createDatabases(null);
 	        } 
 	        else if(args[0].equals(Cmd.CREATE_INDEX.toString())) {
 				index();
@@ -310,7 +311,6 @@ public final class Admin {
     			DataServicesFactoryBean.createSchema(dbName);
     		}
     	} else { // create all (as specified in the current cpath.properties)
-    		DataServicesFactoryBean.createSchema(property(PROP_METADATA_DB));
     		DataServicesFactoryBean.createSchema(property(PROP_WAREHOUSE_DB));
     		DataServicesFactoryBean.createSchema(property(PROP_MAIN_DB));
     	}
@@ -553,7 +553,7 @@ public final class Admin {
         
         // process metadata
         for (Metadata mdata : metadata) {
-            metadataDAO.importMetadata(mdata);
+            metadataDAO.saveMetadata(mdata);
         }
     }
 
@@ -722,7 +722,7 @@ public final class Admin {
 			if (pathwayData != null) {
 				if(LOG.isInfoEnabled())
 		    		LOG.info("Getting validation report for pathway_id: " + pk 
-		    			+ " (" + pathwayData.getIdentifier() + ") "
+		    			+ " (" + pathwayData.getMetadata().getIdentifier() + ") "
 		    			+ "...");
 				report = metadataDAO.getValidationReport(pk);
 			} else {
@@ -768,7 +768,7 @@ public final class Admin {
 				"(- parameters within the square braces are optional.)" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
 		// data import (instance creation) pipeline :
-		toReturn.append(Cmd.CREATE_TABLES.toString() + " [<table1,table2,..>]" + NEWLINE);
+		toReturn.append(Cmd.CREATE_SCHEMA.toString() + " [<maindb,warehousedb,other,..>] (drop-creates standard empty cpath2 databases)" + NEWLINE);
 		toReturn.append(Cmd.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(Cmd.FETCH_DATA.toString() + " [<metadataId>]" + NEWLINE);
 		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + " [<metadataId>]" + NEWLINE);

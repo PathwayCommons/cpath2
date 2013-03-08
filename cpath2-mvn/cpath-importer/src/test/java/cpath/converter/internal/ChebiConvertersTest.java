@@ -61,7 +61,7 @@ public class ChebiConvertersTest {
 		
 	@Test
 	public void testConvertToPersistentModel() throws IOException {
-		DataServicesFactoryBean.createSchema("cpath2_test");
+		DataServicesFactoryBean.createSchema("test_cpath2ware");
 
 		// get the warehouse DAO bean (implements WarehouseDAO, PaxtoolsDAO, Model interfaces)
 		ApplicationContext context = new ClassPathXmlApplicationContext(
@@ -123,7 +123,7 @@ public class ChebiConvertersTest {
 		}
 
 		// get all small molecule references out
-		assertEquals(3, model.getObjects(SmallMoleculeReference.class).size());
+		assertEquals(6, model.getObjects(SmallMoleculeReference.class).size());
 
 		// get lactic acid sm
 		String rdfID = "http://identifiers.org/chebi/CHEBI:422";

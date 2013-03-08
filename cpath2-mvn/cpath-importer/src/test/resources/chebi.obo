@@ -55,6 +55,48 @@ xref: KEGG COMPOUND:7681-49-4 "CAS Registry Number"
 xref: KEGG COMPOUND:C08142 "KEGG COMPOUND"
 is_a: CHEBI:28
 
+[Term]
+id: CHEBI:57385
+name: myristoyl-CoA(4-)
+def: "An acyl-CoA oxoanion that is the tetraanion of myristoyl-CoA, arising from deprotonation of phosphate and diphosphate functions." []
+synonym: "tetradecanoyl-CoA tetraanion" RELATED [ChEBI:]
+synonym: "tetradecanoyl-coenzyme A tetraanion" RELATED [ChEBI:]
+synonym: "myristoyl-CoA tetraanioni" RELATED [ChEBI:]
+synonym: "3'-phosphonatoadenosine 5'-(3-{(3R)-3-hydroxy-2,2-dimethyl-4-oxo-4-[(3-oxo-3-{[2-(tetradecanoylsulfanyl)ethyl]amino}propyl)amino]butyl} diphosphate)" EXACT IUPAC_NAME [IUPAC:]
+synonym: "myristoyl-coenzyme tetraanion" RELATED [ChEBI:]
+synonym: "C35H58N7O17P3S" RELATED FORMULA [ChEBI:]
+synonym: "CCCCCCCCCCCCCC(=O)SCCNC(=O)CCNC(=O)[C@H](O)C(C)(C)COP([O-])(=O)OP([O-])(=O)OC[C@H]1O[C@H]([C@H](O)[C@@H]1OP([O-])([O-])=O)n1cnc2c(N)ncnc12" RELATED SMILES [ChEBI:]
+synonym: "InChI=1S/C35H62N7O17P3S/c1-4-5-6-7-8-9-10-11-12-13-14-15-26(44)63-19-18-37-25(43)16-17-38-33(47)30(46)35(2,3)21-56-62(53,54)59-61(51,52)55-20-24-29(58-60(48,49)50)28(45)34(57-24)42-23-41-27-31(36)39-22-40-32(27)42/h22-24,28-30,34,45-46H,4-21H2,1-3H3,(H,37,43)(H,38,47)(H,51,52)(H,53,54)(H2,36,39,40)(H2,48,49,50)/p-4/t24-,28-,29-,30+,34-/m1/s1" RELATED InChI [ChEBI:]
+synonym: "InChIKey=DUAFKXOFBZQTQE-QSGBVPJFSA-J" RELATED InChIKey [ChEBI:]
+relationship: is_conjugate_base_of CHEBI:15532
+is_a: CHEBI:58342
+
+[Term]
+id: CHEBI:61430
+name: decanoyl-CoA(4-)
+def: "An acyl-CoA(4-) species arising from deprotonation of the phosphate and diphosphate OH groups of decanoyl-CoA." []
+synonym: "decanoyl-CoA" RELATED [UniProt:]
+synonym: "decanoyl-CoA tetraanion" RELATED [ChEBI:]
+synonym: "decanoyl-coenzyme A tetraanion" RELATED [ChEBI:]
+synonym: "decanoyl-coenzyme A(4-)" RELATED [SUBMITTER:]
+synonym: "C31H50N7O17P3S" RELATED FORMULA [ChEBI:]
+synonym: "CCCCCCCCCC(=O)SCCNC(=O)CCNC(=O)[C@H](O)C(C)(C)COP([O-])(=O)OP([O-])(=O)OC[C@H]1O[C@H]([C@H](O)[C@@H]1OP([O-])([O-])=O)n1cnc2c(N)ncnc12" RELATED SMILES [ChEBI:]
+synonym: "InChI=1S/C31H54N7O17P3S/c1-4-5-6-7-8-9-10-11-22(40)59-15-14-33-21(39)12-13-34-29(43)26(42)31(2,3)17-52-58(49,50)55-57(47,48)51-16-20-25(54-56(44,45)46)24(41)30(53-20)38-19-37-23-27(32)35-18-36-28(23)38/h18-20,24-26,30,41-42H,4-17H2,1-3H3,(H,33,39)(H,34,43)(H,47,48)(H,49,50)(H2,32,35,36)(H2,44,45,46)/p-4/t20-,24-,25-,26+,30-/m1/s1" RELATED InChI [ChEBI:]
+synonym: "InChIKey=CNKJPHSEFDPYDB-HSJNEKGZSA-J" RELATED InChIKey [ChEBI:]
+xref: SUBMITTER:CPD-10267 "MetaCyc"
+is_a: CHEBI:58342
+relationship: is_conjugate_base_of CHEBI:28493
+
+[Term]
+id: CHEBI:58342
+name: acyl-CoA(4-)
+def: "An acyl-CoA(4-) oxoanion arising from deprotonation of the phosphate and  diphosphate OH groups of any acyl-CoA; major species at pH 7.3." []
+synonym: "acyl-CoA" RELATED [UniProt:]
+synonym: "C22H31N7O17P3SR" RELATED FORMULA [ChEBI:]
+synonym: "CC(C)(COP([O-])(=O)OP([O-])(=O)OC[C@H]1O[C@H]([C@H](O)[C@@H]1OP([O-])([O-])=O)n1cnc2c(N)ncnc12)[C@@H](O)C(=O)NCCC(=O)NCCSC([*])=O" RELATED SMILES [ChEBI:]
+relationship: is_conjugate_base_of CHEBI:17984
+is_a: CHEBI:58946
+
 [Typedef]
 id: has_part
 name: has part

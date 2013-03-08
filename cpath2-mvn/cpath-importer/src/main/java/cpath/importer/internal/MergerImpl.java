@@ -110,6 +110,7 @@ final class MergerImpl implements Merger, Analysis {
 		
 		for(Object arg : args) {
 			Model pathwayModel = (Model) arg;
+			log.debug("execute: begin merging model, xml:base=" + pathwayModel.getXmlBase());
 			mergePathwayModel((PaxtoolsDAO)model, pathwayModel);
 		}
 

@@ -64,10 +64,11 @@ public class CPathServiceTest {
     static final SimpleIOHandler io = new SimpleIOHandler(BioPAXLevel.L3);
 	
     static {
-    	DataServicesFactoryBean.createSchema("cpath2_testpc");
+    	DataServicesFactoryBean.createSchema("test_cpath2main");
 		context = new ClassPathXmlApplicationContext(
 				new String[] {"classpath:testContext-pcDAO.xml", 
-					"classpath:testContext-whDAO.xml"});
+						"classpath:testContext-whDAO.xml"});
+		
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("pcDAO");
 		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
 		log.info("Loading BioPAX data (importModel(file))...");
@@ -75,7 +76,7 @@ public class CPathServiceTest {
 				.getResourceAsStream("/test.owl"));
 		Metadata md = new Metadata("test", "Reactome", "Foo", 
 				"", "", new byte[]{}, METADATA_TYPE.BIOPAX, "", "");
-		mdao.importMetadata(md);
+		mdao.saveMetadata(md);
 		md.setProvenanceFor(m); // normally, this happens in PreMerge
 		dao.merge(m);
 		dao.index();

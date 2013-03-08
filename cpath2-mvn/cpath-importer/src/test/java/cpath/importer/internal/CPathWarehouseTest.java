@@ -77,7 +77,7 @@ public class CPathWarehouseTest {
 	static {
 		System.out.println("Preparing...");
 		// init the test database
-		DataServicesFactoryBean.createSchema("cpath2_test");
+		DataServicesFactoryBean.createSchema("test_cpath2ware");
 		
 		// load beans
 		ApplicationContext context = new ClassPathXmlApplicationContext(
@@ -92,7 +92,7 @@ public class CPathWarehouseTest {
 			//fetch and save test metadata and files
 			metadata = fetcher.readMetadata("classpath:metadata.conf");
 			for (Metadata mdata : metadata) {
-				metadataDAO.importMetadata(mdata);
+				metadataDAO.saveMetadata(mdata);
 				fetcher.fetchData(mdata);
 			}
 			

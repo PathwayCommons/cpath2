@@ -492,7 +492,6 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				// create a new SequenceModificationVocabulary
 				cv = model.addNew(SequenceModificationVocabulary.class, uri);
 				cv.addTerm(modTerm);
-				// TODO normalize to the preferred term and attach uni.xref (e.g., during the Merge, requires Ontology Manager!)
 			}
 			modificationFeature.setModificationType(cv);
 			

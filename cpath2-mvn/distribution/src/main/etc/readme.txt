@@ -167,7 +167,7 @@ the entire data import pipeline.
 Prepare MySQL Databases. If required, generate (all or some of) the cpath2 database schemas using
 the same db names as specified in the $CPATH2_HOME/cpath.properties file:
 
-sh cpath2-cli.sh -create-tables cpathmain,cpathwarehouse,cpathmetadata
+sh cpath2-cli.sh -create-tables cpathmain,cpathwarehouse
 (WARNING: this destroys and re-creates the databases, if existed!)
 
 1. Fetch/Update Instance Metadata:

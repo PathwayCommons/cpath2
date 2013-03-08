@@ -296,10 +296,8 @@ final class FetcherImpl implements Fetcher
 		
 		int idx = metadata.getUrlToData().lastIndexOf('/');
 		String filename = metadata.getUrlToData().substring(idx+1); // not found (-1) gives entire string
-		String digest = getDigest(fetchedData.getBytes());
 		
-		return new PathwayData(metadata.getIdentifier(), filename,
-			digest, fetchedData.getBytes());
+		return new PathwayData(metadata, filename, fetchedData.getBytes());
 	}
 
         
@@ -353,22 +351,14 @@ final class FetcherImpl implements Fetcher
 					continue;
 				}
 				
-				// create digest
-				String digest = getDigest(bos.toByteArray());
-
-				if (digest != null) {
-					// create pathway data object
-					if(log.isInfoEnabled())
-						log.info("unzip(), creating pathway data object, zip entry: " 
-							+ entryName +
-							" provider: " + metadata.getIdentifier() +
-							" digest: " + digest);
-					PathwayData pathwayData = new PathwayData(metadata.getIdentifier(), 
-						entryName, digest, content.getBytes());
+				// create pathway data object
+				if(log.isInfoEnabled())
+					log.info("unzip(), creating pathway data object, zip entry: " 
+						+ entryName + " provider: " + metadata.getIdentifier());
+				PathwayData pathwayData = new PathwayData(metadata, entryName, content.getBytes());
 				
-					// add object to return collection
-					toReturn.add(pathwayData);
-				}
+				// add object to return collection
+				toReturn.add(pathwayData);
             }
         }
         catch (IOException e) {
