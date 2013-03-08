@@ -61,8 +61,7 @@ public class CPathMergerTest {
 	
 	static {
 		// init the test database
-		DataServicesFactoryBean.createSchema("cpath2_test");
-
+		DataServicesFactoryBean.createSchema("test_cpath2ware");
 		// load beans
 		ApplicationContext context = new ClassPathXmlApplicationContext(
 				new String[] {"classpath:testContext-whDAO.xml"});
@@ -79,7 +78,7 @@ public class CPathMergerTest {
 			
 			for (Metadata mdata : metadata) {
 				// store metadata in the warehouse
-				metadataDAO.importMetadata(mdata);
+				metadataDAO.saveMetadata(mdata);
 				fetcher.fetchData(mdata);
 			}
 			
@@ -131,6 +130,11 @@ public class CPathMergerTest {
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:hcyc.owl").getInputStream());
 		normalizer.normalize(model);
+		pathwayModels.add(model);
+		model = null;
+		model = reader.convertFromOWL(resourceLoader
+			.getResource("classpath:hcyc2.owl").getInputStream());
+//		normalizer.normalize(model);
 		pathwayModels.add(model);	
 	}
 	
@@ -138,7 +142,7 @@ public class CPathMergerTest {
 	@Test
 	public void testMerge() throws IOException {
 		// init the target test db
-		DataServicesFactoryBean.createSchema("cpath2_testpc"); // target db, for pcDAO
+		DataServicesFactoryBean.createSchema("test_cpath2main"); // target db, for pcDAO
 		final PaxtoolsDAO pcDAO = (PaxtoolsDAO) (
 				new ClassPathXmlApplicationContext("classpath:testContext-pcDAO.xml"))
 				.getBean("pcDAO");

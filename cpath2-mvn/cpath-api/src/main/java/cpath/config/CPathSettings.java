@@ -99,7 +99,6 @@ public final class CPathSettings {
 	public static final String PROP_ADMIN_USER = "cpath2.admin.user";
 	public static final String PROP_ADMIN_PASSW = "cpath2.admin.password";
 	public static final String PROP_MAIN_DB = "cpath2.main.db";
-	public static final String PROP_METADATA_DB = "cpath2.metadata.db";
 	public static final String PROP_WAREHOUSE_DB = "cpath2.warehouse.db";
 	
 	/* Unlike the above, following properties are not used by Spring/Hibernate right away;
@@ -138,7 +137,6 @@ public final class CPathSettings {
 	public static final String $ADMIN_USER = "${" + PROP_ADMIN_USER + "}";
 	public static final String $ADMIN_PASSW = "${" + PROP_ADMIN_PASSW + "}";	
 	public static final String $MAIN_DB = "${" + PROP_MAIN_DB + "}";
-	public static final String $METADATA_DB = "${" + PROP_METADATA_DB + "}";
 	public static final String $WAREHOUSE_DB = "${" + PROP_WAREHOUSE_DB + "}";		
 	
 	

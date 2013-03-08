@@ -11,11 +11,6 @@
        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd">
     
-    <!--  Unlike "production" warehouse configuration, this (test) one defines single 
-    session factory that works for metadata, molecules, and molecules altogether, and 
-    full-text auto-indexing is enabled.  -->
-    
-    
     <context:annotation-config/>
     <context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
      	
@@ -28,12 +23,12 @@
 		class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean">
 		<property name="hibernateProperties">
 		<util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
-			<prop key="hibernate.connection.url">${cpath2.db.connection}cpath2_test</prop>
+			<prop key="hibernate.connection.url">${cpath2.db.connection}test_cpath2ware</prop>
 			<prop key="hibernate.connection.username">${cpath2.db.user}</prop>
             <prop key="hibernate.connection.password">${cpath2.db.password}</prop>
        	    <prop key="hibernate.connection.driver_class">${cpath2.db.driver}</prop>
        	    <prop key="hibernate.dialect">${cpath2.db.dialect}</prop>
-			<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/cpath2_test</prop>
+			<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/test_cpath2ware</prop>
 			<prop key="hibernate.hbm2ddl.auto"></prop>
 <!-- 			<prop key="hibernate.search.indexing_strategy">manual</prop> -->
 			<prop key="hibernate.cache.use_second_level_cache">false</prop>
@@ -58,12 +53,12 @@
         class="org.springframework.orm.hibernate3.HibernateTransactionManager">
         <property name="sessionFactory" ref="testSessionFactory" />
     </bean>	
-
-    <bean id="metadataDAO" class="cpath.dao.internal.MetadataHibernateDAO">
-        <property name="sessionFactory" ref="testSessionFactory"/>
-    </bean>
     
     <bean id="warehouseDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
+        <property name="sessionFactory" ref="testSessionFactory"/>
+    </bean>
+
+    <bean id="metadataDAO" class="cpath.dao.internal.MetadataHibernateDAO">
         <property name="sessionFactory" ref="testSessionFactory"/>
     </bean>
 

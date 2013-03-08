@@ -2,6 +2,8 @@ package cpath.warehouse.beans;
 
 // imports
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 
@@ -16,6 +18,7 @@ import cpath.config.CPathSettings;
  * Data Provider Metadata.
  */
 @Entity
+@org.hibernate.annotations.Entity(dynamicUpdate = true, dynamicInsert = true)
 @Table(name="metadata")
 @NamedQueries({
 		@NamedQuery(name="cpath.warehouse.beans.providerByIdentifier",
@@ -61,18 +64,24 @@ public final class Metadata {
 	@Column(nullable=false)
     private String urlToHomepage;
 	@Lob
-	@Column(nullable=false)
     private byte[] icon;
 	@Column(nullable=false)
 	@Enumerated(EnumType.STRING)
     private METADATA_TYPE metadata_type;
+	
     private String cleanerClassname;
+    
     private String converterClassname;
 
+    @OneToMany(mappedBy="metadata", cascade=CascadeType.ALL)
+    private Collection<PathwayData> pathwayData;
+    
 	/**
 	 * Default Constructor.
 	 */
-	public Metadata() {}
+	public Metadata() {
+		pathwayData = new ArrayList<PathwayData>();
+	}
 
     /**
      * Create a Metadata obj with the specified properties;
@@ -88,10 +97,12 @@ public final class Metadata {
      * @param isPSI Boolean
      * @throws IllegalArgumentException
      */
-    public Metadata(final String identifier, final String name, final String description, final String urlToData, String urlToHomepage,
-					final byte[] icon, final METADATA_TYPE metadata_type, final String cleanerClassname, final String converterClassname) {
-
-    	//set/validate all parameters
+    public Metadata(final String identifier, final String name, final String description, 
+    		final String urlToData, String urlToHomepage, final byte[] icon, 
+    		final METADATA_TYPE metadata_type, final String cleanerClassname, 
+    		final String converterClassname) 
+    {
+    	this();
     	setIdentifier(identifier); 
         setName(name);
         setDescription(description);
@@ -107,8 +118,24 @@ public final class Metadata {
 	void setId(Integer id) {
 		this.id = id;
 	}
-    public Integer getId() { return new Integer(id); }
+    Integer getId() { return id; }
      
+
+    public Collection<PathwayData> getPathwayData() {
+		return pathwayData;
+	}
+    void setPathwayData(Collection<PathwayData> pathwayData) {
+		this.pathwayData = pathwayData;
+	}
+    
+    public void addPathwayData(PathwayData pd) {
+    	if(!this.pathwayData.contains(pd))
+    		pathwayData.add(pd);
+    }
+    
+    public void removePathwayData(PathwayData pd) {
+    	pathwayData.remove(pd);
+    }
     
     /**
 	 * Sets the identifier.
@@ -191,9 +218,6 @@ public final class Metadata {
     public String getUrlToHomepage() { return urlToHomepage; } 
     
     public void setIcon(byte[] icon) {
-        if (icon == null) {
-            throw new IllegalArgumentException("icon must not be null");
-        }
         this.icon = icon;
 	}
     public byte[] getIcon() { return icon.clone(); }
@@ -228,6 +252,7 @@ public final class Metadata {
     			? null : converterClassname; 
     }
 
+    
     @Override
     public String toString() {
         return identifier;
@@ -279,7 +304,10 @@ public final class Metadata {
 		Provenance pro = null;
 		
 		// we create URI from the Metadata identifier and version.
-		pro = model.addNew(Provenance.class, getUri());
+		final String uri = getUri();
+		pro = (model.containsID(uri)) 
+			? (Provenance) model.getByID(uri)
+			: model.addNew(Provenance.class, uri);
 		
 		// parse/set names
 		String[] names = getName().split(";");

@@ -20,12 +20,10 @@ echo "CPATH2_HOME Directory: $CPATH2_HOME"
 
 # get cpath2 properties
 xmlbase=`sed '/^\#/d' $CPATH2_HOME/cpath.properties | grep 'xml.base'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
-metadatadb=`sed '/^\#/d' $CPATH2_HOME/cpath.properties | grep 'metadata.db'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
 maindb=`sed '/^\#/d' $CPATH2_HOME/cpath.properties | grep 'main.db'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
 warehousedb=`sed '/^\#/d' $CPATH2_HOME/cpath.properties | grep 'warehouse.db'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
 
 echo "CPATH2 Properities:"
-echo "       metadata.db=$metadatadb"
 echo "       main.db=$maindb"
 echo "       warehouse.db=$warehousedb"
 echo "       xml.base=$xmlbase"
@@ -35,14 +33,6 @@ echo "       xml.base=$xmlbase"
 # START
 # 1. Drop/Create cPath2 databases (double-check db connection and names in $CPATH2_HOME/cpath.properties!)
 while true; do
-read -p "Create/replace $metadatadb database?" yn
-	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2-cli.sh -create-tables $metadatadb; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
-while true; do
 read -p "Create/replace $maindb database?" yn
 	case $yn in
         [Yy]* ) sh $CPATH2_HOME/cpath2-cli.sh -create-tables $maindb; break;;
@@ -51,7 +41,7 @@ read -p "Create/replace $maindb database?" yn
     esac
 done
 while true; do  
-  read -p "Do you also want to replace the warehouse database?" yn
+read -p "Create/replace $warehousedb database?" yn
   case $yn in
 	[Yy]* )  sh $CPATH2_HOME/cpath2-cli.sh -create-tables $warehousedb; break;;
 	[Nn]* )  break;;

@@ -8,18 +8,15 @@ import org.hibernate.annotations.ColumnTransformer;
 /**
  * Data Providers's Pathway Data.
  * 
- * Note: unfortunately, it's database-specific...
- * 
  */
 @Entity
+@org.hibernate.annotations.Entity(dynamicUpdate = true, dynamicInsert = true)
 @Table(name="pathwayData")
 @NamedQueries({
 	@NamedQuery(name="cpath.warehouse.beans.allPathwayData",
 				query="from PathwayData as pathwaydata order by pathway_id"),
 	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifier",
-				query="from PathwayData as pathwaydata where identifier = :identifier order by pathway_id"),
-	@NamedQuery(name="cpath.warehouse.beans.pathwayByIdentifierAndFilenameAndDigest",
-				query="from PathwayData as pathwaydata where identifier = :identifier and filename = :filename and digest = :digest  order by pathway_id")
+				query="from PathwayData as pd where pd.metadata.identifier = :identifier order by pathway_id")
 })
 public final class PathwayData {
 
@@ -27,8 +24,10 @@ public final class PathwayData {
 	@Column(name="pathway_id")
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Integer id;
-	@Column(nullable=false, length=40)
-    private String identifier;
+	
+	@ManyToOne
+    private Metadata metadata;
+	
 	@Column(nullable=false)
     private String filename;
 	
@@ -49,9 +48,6 @@ public final class PathwayData {
 	@Lob	
 	private byte[] validationResults;
 	
-	// digest is not unique - at least some reactome pw have different names but are identical
-	@Column(nullable=false)
-    private String digest;
 	@Column
 	private Boolean valid;
 
@@ -63,18 +59,15 @@ public final class PathwayData {
     /**
      * Create a Metadata obj with the specified properties;
      *
-     * @param identifier String (string used in web service calls)
+     * @param metadata the provider's metadata object it belongs to
      * @param filename String
-     * @param digest String
      * @param pathwayData String
 	 * @throws IllegalArgumentException
      */
-    public PathwayData(final String identifier, final String filename, final String digest, 
-    		final byte[] pathwayData) 
+    public PathwayData(Metadata metadata, final String filename, final byte[] pathwayData) 
     {
-    	setIdentifier(identifier);
+    	this.metadata = metadata;
     	setFilename(filename);
-    	setDigest(digest);
     	setPathwayData(pathwayData);
 		// validation result, valid, and premergeData fields are empty
     }
@@ -83,17 +76,25 @@ public final class PathwayData {
 	void setId(Integer id) {
 		this.id = id;
 	}
+	
+	/**
+	 * Gets the internal id (primary key) 
+	 * of this pathway data (file) entry.
+	 * 
+	 * This is made public to be used in 
+	 * web pages/queries about individual files 
+	 * validation results, etc. 
+	 * 
+	 * @return
+	 */
     public Integer getId() { return id ;}
 
-	void setIdentifier(String identifier) {
-        if (identifier == null) {
-            throw new IllegalArgumentException("identifier must not be null");
-        }
-        this.identifier = identifier;
+    public Metadata getMetadata() {
+		return metadata;
 	}
-    public String getIdentifier() { 
-    	return identifier;
-    }
+    public void setMetadata(Metadata metadtaa) {
+		this.metadata = metadtaa;
+	}
 
 	void setFilename(String filename) {
         if (filename == null) {
@@ -127,15 +128,6 @@ public final class PathwayData {
 		this.validationResults = validationResults;
 	}
 
-	public void setDigest(String digest) {
-        if (digest == null) {
-            throw new IllegalArgumentException("digest must not be null");
-        }
-        this.digest = digest;
-	}
-    public String getDigest() { 
-    	return (digest != null) ? new String(digest) : null; }
-
     public Boolean getValid() {
 		return valid;
 	}
@@ -145,7 +137,19 @@ public final class PathwayData {
 
 	@Override
     public String toString() {
-        return getId() + ": " + getIdentifier() + ", " + getFilename();
+        return getId() + ": " + 
+        		((metadata != null) ? metadata.getIdentifier() : "Metadata N/A") 
+        		+ ", " + getFilename();
     }
+
+	/**
+	 * Gets the parent metadata's 
+	 * (data source's) identifier.
+	 * 
+	 * @return
+	 */
+	public String getIdentifier() {
+		return (metadata != null) ? metadata.getIdentifier() : null;
+	}
 
 }

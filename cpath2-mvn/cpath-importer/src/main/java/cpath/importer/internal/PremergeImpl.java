@@ -368,7 +368,7 @@ final class PremergeImpl implements Premerger {
 			pathwayData.setValid(true);
 		
 		// update pathwayData (with premergeData and validationResults)
-		metaDataDAO.importPathwayData(pathwayData);
+		metaDataDAO.savePathwayData(pathwayData);
 	}
 
 	

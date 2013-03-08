@@ -50,7 +50,7 @@ public class PaxtoolsHibernateDAOMoreTest {
     @Test
     public void testImportExportRead() throws IOException {
         SimpleIOHandler io = new SimpleIOHandler(BioPAXLevel.L3);
-        DataServicesFactoryBean.createSchema("cpath2_testpc");
+        DataServicesFactoryBean.createSchema("test_cpath2main");
         ApplicationContext context = new ClassPathXmlApplicationContext(
                                 "classpath:testContext-pcDAO.xml");
         PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO) context.getBean("pcDAO");
