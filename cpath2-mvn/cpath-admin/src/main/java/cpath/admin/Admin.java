@@ -455,6 +455,11 @@ public final class Admin {
 		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
     	
+		//disable 2nd level hibernate cache (ehcache)
+		// otherwise the merger eventually fails with a weird exception
+		// (this probably depends on the cache config. parameters)
+		System.setProperty("net.sf.ehcache.disabled", "true");
+		
 		// pc dao
 		ApplicationContext context = new ClassPathXmlApplicationContext("classpath:applicationContext-cpathDAO.xml");
 		final PaxtoolsDAO pcDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
@@ -488,7 +493,7 @@ public final class Admin {
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		PaxtoolsDAO warehouseDAO = (PaxtoolsDAO) context.getBean("warehouseDAO");
 		Validator validator = (Validator) context.getBean("validator");
-        Premerger premerger = ImportFactory.newPremerge(metadataDAO, warehouseDAO, validator, provider);
+        Premerger premerger = ImportFactory.newPremerger(metadataDAO, warehouseDAO, validator, provider);
         LOG.info("runPremerge: provider=" + provider);
         premerger.premerge();
 	}
@@ -510,7 +515,7 @@ public final class Admin {
             		"classpath:applicationContext-Warehouse.xml"});
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		PaxtoolsDAO warehouseDAO = (PaxtoolsDAO) context.getBean("warehouseDAO");
-        Premerger premerger = ImportFactory.newPremerge(metadataDAO, warehouseDAO, null, provider);
+        Premerger premerger = ImportFactory.newPremerger(metadataDAO, warehouseDAO, null, provider);
         premerger.buildWarehouse();
 	}
 
@@ -528,7 +533,7 @@ public final class Admin {
             		"classpath:applicationContext-Warehouse.xml"});
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		PaxtoolsDAO warehouseDAO = (PaxtoolsDAO) context.getBean("warehouseDAO");
-        Premerger premerger = ImportFactory.newPremerge(metadataDAO, warehouseDAO, null, null);
+        Premerger premerger = ImportFactory.newPremerger(metadataDAO, warehouseDAO, null, null);
         premerger.updateIdMapping();
 	}
 	

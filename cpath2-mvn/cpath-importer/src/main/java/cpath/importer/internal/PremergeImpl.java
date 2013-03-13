@@ -43,13 +43,6 @@ import cpath.warehouse.beans.PathwayData;
 
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.EntityReference;
-import org.biopax.paxtools.model.level3.ProteinReference;
-import org.biopax.paxtools.model.level3.PublicationXref;
-import org.biopax.paxtools.model.level3.SmallMoleculeReference;
-import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.paxtools.model.level3.Xref;
-import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.validator.api.Validator;
 import org.biopax.validator.api.beans.*;
 import org.biopax.validator.api.ValidatorUtils;
@@ -201,69 +194,21 @@ final class PremergeImpl implements Premerger {
 	@Override
 	public void updateIdMapping() {		
 		log.info("updateIdMapping(), updating id-mapping tables by analyzing the warehouse data...");
-		// create a new Analysis object to populate the idMap within a DB transaction
-		Analysis createIdMap = new Analysis() {
-			
-			@Override
-			public Set<BioPAXElement> execute(Model model, Object... args) {
-				//fill the id-mapping table from Warehouse EntityReference xrefs
-				final Map<String,String> geneIdMap = new HashMap<String, String>();
-				final Map<String,String> chemIdMap = new HashMap<String, String>();
-				final Set<String> genesExclude = new HashSet<String>();
-				final Set<String> chemsExclude = new HashSet<String>();
-				
-				// for each ER in the Warehouse,
-				for(EntityReference er : model.getObjects(EntityReference.class)) 
-				{	
-					//extract the primary id from the standard (identifiers.org) URI
-					final String ac = er.getRDFId().substring(er.getRDFId().lastIndexOf('/')+1);
-					
-					if(er instanceof ProteinReference) {
-						// use both unif. and rel. xrefs
-						addMappingsFromXrefs(ac, er.getXref(), geneIdMap, genesExclude);
-					} else if(er instanceof SmallMoleculeReference) {
-						// use only unif.xrefs (chebi,pubchem,inchikey) for chemicals id-mapping
-						Set<UnificationXref> xrefs = new ClassFilterSet<Xref, UnificationXref>(er.getXref(), UnificationXref.class);
-						addMappingsFromXrefs(ac, xrefs, chemIdMap, chemsExclude);
-					}
-				}
-				
-				// persist id maps
-				metaDataDAO.importIdMapping(geneIdMap, GeneMapping.class);
-				metaDataDAO.importIdMapping(chemIdMap, ChemMapping.class);
-				
-				return null; //no return value required
-			}
-			
-			private void addMappingsFromXrefs(String ac, Set<? extends Xref> xrefs, Map<String, String> idMap, Set<String> exclude) {
-				for(Xref x : xrefs) {
-					//by (warehouse) design, there are various unif. and rel. xrefs added by the data converter
-					if(!(x instanceof PublicationXref) && x.getDb() != null) {
-						String id = x.getId();
-						//ban an identifier associated with several different proteins
-						if(exclude.contains(id)) {
-							log.warn("updateIdMapping(), already excluded: " + id);
-						} else if(idMap.containsKey(id) && !idMap.get(id).equals(ac)) {
-							log.warn("updateIdMapping(), excluding " + id + 
-								" from idMap because it maps to: " + ac + 
-								" and " + idMap.get(id) + ", at least");
-							idMap.remove(id);
-							exclude.add(id);
-						} else {
-							idMap.put(id, ac);
-						}
-					}
-				}		
-			}			
-		};
 		
-		// execute it
-		warehouseDAO.runAnalysis(createIdMap);
+		final Map<String,String> geneIdMap = new HashMap<String, String>();
+		final Map<String,String> chemIdMap = new HashMap<String, String>();
+				
+		// create and execute a new Analysis that populates the id maps within 
+		// a warehouse DB transaction		
+		warehouseDAO.runAnalysis(new WarehouseBasedIdMapping(geneIdMap, chemIdMap));
+		
+		// persist id maps
+		metaDataDAO.importIdMapping(geneIdMap, GeneMapping.class);
+		metaDataDAO.importIdMapping(chemIdMap, ChemMapping.class);
 		
 		log.info("updateIdMapping(), exitting...");
 	}
-	
-	
+		
 	
 	/**
 	 * Reads gene id-mapping records from a two-column text file
@@ -423,6 +368,7 @@ final class PremergeImpl implements Premerger {
 		normalizer.setFixDisplayName(true); // important
 		normalizer.setInferPropertyDataSource(false); // not important since we started generating Provenance from Metadata
 		normalizer.setInferPropertyOrganism(true); // important (for filtering by organism)
+		normalizer.setDescription(title);
 		
 		// because errors are also reported during the import (e.g., syntax)
 		try {

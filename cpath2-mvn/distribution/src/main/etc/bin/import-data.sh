@@ -61,7 +61,7 @@ done
 
 # 3. Fetch all data and save to the local directory
 while true; do
-read -p "Fetch all data and also build the Warehouse?" yn
+read -p "Fetch all data to the local directory ($CPATH2_HOME/data/)?" yn
 	case $yn in
         [Yy]* ) sh $CPATH2_HOME/cpath2-cli.sh -fetch-data; break;;
         [Nn]* ) break;;
@@ -69,13 +69,24 @@ read -p "Fetch all data and also build the Warehouse?" yn
     esac
 done
 
-# 4. Premerge, Merge, Index, create the blacklist and downloads (cannot be run in parallel!)
+# 4. Build the Warehouse and id-mapping tables
 while true; do
-read -p "Process ALL data (clean, convert, validate, normalize, merge, index, blacklist, an generate archives)?" yn
+read -p "Build the Warehouse and id-mapping tables?" yn
 	case $yn in
         [Yy]* ) 
         	sh $CPATH2_HOME/cpath2-cli.sh -create-warehouse
 			sh $CPATH2_HOME/cpath2-cli.sh -update-mapping
+        	break;;
+        [Nn]* ) break;;
+        * ) echo "Please answer yes or no.";;
+    esac
+done
+
+# 5. Premerge, Merge, Index, create the blacklist and downloads (cannot be run in parallel!)
+while true; do
+read -p "Process ALL pathway data (clean, convert, validate, normalize, merge, index, blacklist, an generate archives)?" yn
+	case $yn in
+        [Yy]* ) 
         	sh $CPATH2_HOME/cpath2-cli.sh -premerge; 
         	sh $CPATH2_HOME/cpath2-cli.sh -merge --force; 
         	sh $CPATH2_HOME/cpath2-cli.sh -create-index; 

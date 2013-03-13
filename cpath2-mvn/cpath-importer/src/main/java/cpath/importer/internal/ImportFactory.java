@@ -101,7 +101,7 @@ public final class ImportFactory {
 	 * @param metadataIdentifier pathway data provider identifier (from the metadata conf.)
 	 * @return
 	 */
-	public static Premerger newPremerge(final MetadataDAO metadataDAO, PaxtoolsDAO warehouseDAO, 
+	public static Premerger newPremerger(final MetadataDAO metadataDAO, PaxtoolsDAO warehouseDAO, 
 			final Validator biopaxValidator, final String metadataIdentifier) {
 		
 		PremergeImpl premerge = new PremergeImpl(metadataDAO, warehouseDAO, biopaxValidator);		

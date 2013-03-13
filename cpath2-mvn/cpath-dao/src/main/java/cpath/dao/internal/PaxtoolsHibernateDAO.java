@@ -193,9 +193,7 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 
 		// convert file to model
 		Model m = simpleIO.convertFromOWL(new FileInputStream(biopaxFile));
-//		merge(m);
-		insert(m);
-		update(m);
+		merge(m);
 	}
 
 
@@ -243,7 +241,14 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 	@Override
 	public void merge(final Model model)
 	{
+		//clear all caches
+		evictCaches();
+		
+		// insert all using a stateless session
 		insert(model);	
+		
+		// update relationships and values using 
+		// a new transaction (and stateful session)
 		update(model);
 	}
 
@@ -885,6 +890,14 @@ implements Model, PaxtoolsDAO, WarehouseDAO
 			Class<T> clazz) {
 		Model m = getValidSubModel(Collections.singleton(urn));
 		return (m != null && clazz.isInstance(m.getByID(urn))) ? m : null;
+	}
+
+
+	@Override
+	public void evictCaches() {
+		sessionFactory.getCache().evictEntityRegions();
+		sessionFactory.getCache().evictCollectionRegions();
+		sessionFactory.getCache().evictDefaultQueryRegion();
 	}
 
 }
