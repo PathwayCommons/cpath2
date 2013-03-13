@@ -97,7 +97,7 @@ public class CPathWarehouseTest {
 			}
 			
 			// build the test warehouse and id-mapping tables
-			Premerger premerger = ImportFactory.newPremerge(metadataDAO, (PaxtoolsDAO) warehouse, null, null);
+			Premerger premerger = ImportFactory.newPremerger(metadataDAO, (PaxtoolsDAO) warehouse, null, null);
 			premerger.buildWarehouse();
 			premerger.updateIdMapping();
 			

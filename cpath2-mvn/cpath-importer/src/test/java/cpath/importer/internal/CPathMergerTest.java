@@ -74,7 +74,7 @@ public class CPathMergerTest {
 		Fetcher fetcher = ImportFactory.newFetcher(false);
 		try {
 			Collection<Metadata> metadata = fetcher.readMetadata("classpath:metadata.conf");
-			Premerger premerger = ImportFactory.newPremerge(metadataDAO, (PaxtoolsDAO) warehouseDAO, null, null);
+			Premerger premerger = ImportFactory.newPremerger(metadataDAO, (PaxtoolsDAO) warehouseDAO, null, null);
 			
 			for (Metadata mdata : metadata) {
 				// store metadata in the warehouse
@@ -104,6 +104,7 @@ public class CPathMergerTest {
 		normalizer.setXmlBase(XML_BASE);
 		reader.mergeDuplicates(true);
 		Model model;
+
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:pathwaydata1.owl").getInputStream());
 		if(model == null)
@@ -144,7 +145,7 @@ public class CPathMergerTest {
 		// init the target test db
 		DataServicesFactoryBean.createSchema("test_cpath2main"); // target db, for pcDAO
 		final PaxtoolsDAO pcDAO = (PaxtoolsDAO) (
-				new ClassPathXmlApplicationContext("classpath:testContext-pcDAO.xml"))
+			new ClassPathXmlApplicationContext("classpath:testContext-pcDAO.xml"))
 				.getBean("pcDAO");
 		assertNotNull(pcDAO);
 		assertTrue(((Model)pcDAO).getObjects().isEmpty());
@@ -153,32 +154,29 @@ public class CPathMergerTest {
 		// note: in production we'd run it as ImportFactory.newMerger(pcDAO,...).merge();
 		// - which requires cpath2 metadata and premerge data be available there
 		Analysis merger = new MergerImpl(pcDAO, metadataDAO, warehouseDAO);
-		pcDAO.runAnalysis(merger, pathwayModels.toArray());
-
+		int i = 0;
+		for(Model m : pathwayModels) {
+			pcDAO.runAnalysis(merger, m, "test model " + (++i));
+		}
 		
-		// first, export the model to BioPAX OWL and check it
-		String outFilename = getClass().getClassLoader().getResource("").getPath() 
-			+ File.separator + "testMerge.out.owl";
-		//check first whether it's ok after export/import as owl?
-		pcDAO.exportModel(new FileOutputStream(outFilename));
+		//check first whether it's ok after export/import as owl?	
+		String outFilename = CPathSettings.tmpDir() + File.separator + "testMerge.out.owl";	
+		pcDAO.exportModel(new FileOutputStream(outFilename));					
 		SimpleIOHandler reader = new SimpleIOHandler();
 		reader.mergeDuplicates(true);
-		Model m = reader.convertFromOWL(new FileInputStream(outFilename));
-		
+		Model m = reader.convertFromOWL(new FileInputStream(outFilename));		
 		assertMerge(m);
 		
 		
 		// second, check the persistent model (what's actually going on within the main DB?)
 		// this will be run within new DB transaction/session
-		final Analysis analysis = new Analysis() {
+		pcDAO.runAnalysis(new Analysis() {
 			@Override
 			public Set<BioPAXElement> execute(Model model, Object... args) {
 				assertMerge(model);
 				return null;
 			}
-		};
-		pcDAO.runAnalysis(analysis);
-		
+		});		
 	}
 	
 	

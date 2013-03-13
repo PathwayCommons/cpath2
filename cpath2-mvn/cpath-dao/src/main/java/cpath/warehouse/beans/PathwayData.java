@@ -137,9 +137,8 @@ public final class PathwayData {
 
 	@Override
     public String toString() {
-        return getId() + ": " + 
-        		((metadata != null) ? metadata.getIdentifier() : "Metadata N/A") 
-        		+ ", " + getFilename();
+        return "PathwayData " + getId() + " source " + getIdentifier() 
+        	+ ((filename != null && filename.length()>4) ? " file " + filename : "");
     }
 
 	/**
@@ -148,6 +147,7 @@ public final class PathwayData {
 	 * 
 	 * @return
 	 */
+	@Transient
 	public String getIdentifier() {
 		return (metadata != null) ? metadata.getIdentifier() : null;
 	}

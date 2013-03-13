@@ -18,7 +18,6 @@ properties in the Spring (XML) configuration.
 and cache directories and files get created!);
 - obo.properties;
 - validation.properties (BioPAX Validator rules tuning);
-- ehcache-hibernate.xml (the 2nd-level, mid-tier/service (query) layer cache configuration);
 - blacklist.txt (optional; BioPAX graph query performance tuning., usually - small 
 molecules to ignore, like ubiquitous ATP...)
 

@@ -161,4 +161,10 @@ public interface PaxtoolsDAO  {
      */
     void index();
     
+    
+    /**
+     * Clears 2nd level caches.
+     */
+    void evictCaches();
+    
 }
