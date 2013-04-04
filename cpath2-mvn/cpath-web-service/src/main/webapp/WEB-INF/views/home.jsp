@@ -202,6 +202,8 @@ merge algorithm of ones choice.
         <li><em>direction=</em> [Optional, for NEIGHBORHOOD and COMMONSTREAM] - graph search direction (<a href="#available_direction_parameter">values</a>).</li>
         <li><em>limit=</em> [Optional] graph query search distance limit (default = 1).</li>
         <li><em>format=</em> [Optional] output format (<a href="#available_output_parameter">values</a>)</li>
+        <li><em>organism=</em> [Optional] organism filter. Multiple organisms are allowed per query; for example 'organism=Homo%20sapiens&amp;organism=Mus%20musculus'.</li>
+        <li><em>datasource=</em> [Optional] data source filter (<a href="#available_datasource_parameter">values</a>). Multiple data source values are allowed per query; for example, <em>datasource=reactome&amp;datasource=pid</em> means: we want data from Reactome OR NCI_Nature (PID)</li>
 	  </ul>
 	  <h3>Output:</h3>
 By default, a complete BioPAX representation of the desired graph query.  
