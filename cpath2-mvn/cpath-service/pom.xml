@@ -33,7 +33,7 @@
   	<dependency>
   		<groupId>org.biopax.paxtools</groupId>
   		<artifactId>paxtools-query</artifactId>
-  		<version>4.2.0-SNAPSHOT</version>
+  		<version>${paxtools.version}</version>
   	</dependency>
   	<dependency>
   		<groupId>pathwaycommons.cpath</groupId>
