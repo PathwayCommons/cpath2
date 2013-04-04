@@ -12,7 +12,7 @@
 	<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <spring.version>3.0.5.RELEASE</spring.version>
-        <paxtools.version>4.1.5-SNAPSHOT</paxtools.version>
+        <paxtools.version>4.2.0-SNAPSHOT</paxtools.version>
         <cpath.api.version>5.1.0-SNAPSHOT</cpath.api.version>
 	</properties>
 
@@ -104,5 +104,16 @@
 			<url>${biopax.release.url}</url>
 		</repository>
 	</distributionManagement>
+
+    <repositories>
+    <repository>
+        <id>biopax.snapshots</id>
+        <name>BioPAX Snapshots Repository at Sourceforge</name>
+        <url>http://biopax.sourceforge.net/m2repo/snapshots/</url>
+        <releases>
+            <enabled>false</enabled>
+        </releases>
+    </repository>
+    </repositories>
 
 </project>

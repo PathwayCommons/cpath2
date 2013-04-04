@@ -34,7 +34,10 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.QueryExecuter;
 import org.biopax.paxtools.query.algorithm.Direction;
+import org.biopax.paxtools.query.wrapperL3.Filter;
+import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -62,20 +65,25 @@ public class NeighborhoodAnalysis implements Analysis {
 	@Override
 	public Set<BioPAXElement> execute(Model model, Object... args)
 	{
-		// Source elements
+		// source elements
 		Set<BioPAXElement> source = Common.getAllByID(model, args[0]);
 
-		// Search limit
+		// search limit
 		int limit = (Integer) args[1];
 
-		// Direction
+		// direction
 		Direction direction = (Direction) args[2];
 
-        // Blacklist
-        Set<String> blacklist = (Set<String>) args[3];
+		// organism and datasource filters
+		List<Filter> filters = Common.getOrganismAndDataSourceFilters(
+			(String[]) args[3], (String[]) args[4]);
 
-		// Execute the query
-		return QueryExecuter.runNeighborhood(source, model, limit, direction, blacklist);
+		// ubique filter
+		filters.add(new UbiqueFilter((Set<String>) args[5]));
+
+		// execute the query
+		return QueryExecuter.runNeighborhood(source, model, limit, direction,
+			filters.toArray(new Filter[filters.size()]));
 	}
 
 }

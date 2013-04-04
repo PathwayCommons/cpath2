@@ -107,16 +107,20 @@ public class GraphController extends BasicController {
 		
 		switch (graph.getKind()) {
 		case NEIGHBORHOOD:
-			result = service.getNeighborhood(graph.getFormat(), graph.getSource(), graph.getLimit(), graph.getDirection());
+			result = service.getNeighborhood(graph.getFormat(), graph.getSource(), graph.getLimit(),
+				graph.getDirection(), graph.getOrganism(), graph.getDatasource());
 			break;
 		case PATHSBETWEEN:
-			result = service.getPathsBetween(graph.getFormat(), graph.getSource(), graph.getLimit());
+			result = service.getPathsBetween(graph.getFormat(), graph.getSource(), graph.getLimit(),
+				graph.getOrganism(), graph.getDatasource());
 			break;
 		case PATHSFROMTO:
-			result = service.getPathsFromTo(graph.getFormat(), graph.getSource(), graph.getTarget(), graph.getLimit());
+			result = service.getPathsFromTo(graph.getFormat(), graph.getSource(), graph.getTarget(),
+				graph.getLimit(), graph.getOrganism(), graph.getDatasource());
 			break;
 		case COMMONSTREAM:
-			result = service.getCommonStream(graph.getFormat(), graph.getSource(), graph.getLimit(), graph.getDirection());
+			result = service.getCommonStream(graph.getFormat(), graph.getSource(), graph.getLimit(),
+				graph.getDirection(), graph.getOrganism(), graph.getDatasource());
 			break;
 		default:
 			// impossible (should has failed earlier)
@@ -128,6 +132,7 @@ public class GraphController extends BasicController {
 		
 		stringResponse(result, writer, response);
     }
+
 
 	
 	private void log(String method, Graph graph) {
