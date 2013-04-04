@@ -26,8 +26,11 @@ public class Graph {
 	
 	@NotNull(message="Illegal Output Format")
 	private OutputFormat format;
-	
-	
+
+	private String[] organism;
+
+	private String[] datasource;
+
 	public Graph() {
 		format = OutputFormat.BIOPAX; // default
 		limit = 1;
@@ -80,5 +83,20 @@ public class Graph {
 	public void setDirection(Direction direction) {
 		this.direction = direction;
 	}
-	
+
+	public String[] getOrganism() {
+		return organism;
+	}
+
+	public void setOrganism(String[] organism) {
+		this.organism = organism;
+	}
+
+	public String[] getDatasource() {
+		return datasource;
+	}
+
+	public void setDatasource(String[] datasource) {
+		this.datasource = datasource;
+	}
 }

@@ -33,8 +33,11 @@ import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.QueryExecuter;
+import org.biopax.paxtools.query.wrapperL3.Filter;
+import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
 import org.biopax.paxtools.query.algorithm.Direction;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -66,11 +69,16 @@ public class CommonStreamAnalysis implements Analysis {
 		// Direction
 		Direction direction = (Direction) args[2];
 
-        // Blacklist
-        Set<String> blacklist = (Set<String>) args[3];
+		// organism and data source filters
+		List<Filter> filters = Common.getOrganismAndDataSourceFilters(
+			(String[]) args[3], (String[]) args[4]);
+
+		// ubique filter
+		filters.add(new UbiqueFilter((Set<String>) args[5]));
 
 		// Execute the query
-		return QueryExecuter.runCommonStreamWithPOI(source, model, direction, limit, blacklist);
+		return QueryExecuter.runCommonStreamWithPOI(source, model, direction, limit,
+			filters.toArray(new Filter[filters.size()]));
 	}
 
 }

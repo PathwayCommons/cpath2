@@ -98,10 +98,12 @@ public interface CPathService {
 	 * @param sources IDs of seed of neighborhood
 	 * @param limit search limit (integer value)
 	 * @param direction flag 
+	 * @param organism organism
+	 * @param datasource data source
 	 * @return the neighborhood
 	 */
-	ServiceResponse getNeighborhood(OutputFormat format, 
-			String[] sources, Integer limit, Direction direction);
+	ServiceResponse getNeighborhood(OutputFormat format, String[] sources, Integer limit,
+		Direction direction, String[] organism, String[] datasource);
 
 	/**
 	 * Runs a paths-between query for the given sources.
@@ -109,9 +111,12 @@ public interface CPathService {
 	 * @param format output format
 	 * @param sources IDs of source molecules
 	 * @param limit search limit (integer value)
+	 * @param organism organism
+	 * @param datasource data source
 	 * @return paths between
 	 */
-	ServiceResponse getPathsBetween(OutputFormat format, String[] sources, Integer limit);
+	ServiceResponse getPathsBetween(OutputFormat format, String[] sources, Integer limit,
+		String[] organism, String[] datasource);
 
 	/**
 	 * Runs a POI query from the given sources to the given targets.
@@ -120,10 +125,12 @@ public interface CPathService {
 	 * @param sources IDs of source molecules
 	 * @param targets IDs of target molecules
 	 * @param limit search limit (integer value)
+	 * @param organism organism
+	 * @param datasource data source
 	 * @return paths between
 	 */
-	ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
-								   String[] targets, Integer limit);
+	ServiceResponse getPathsFromTo(OutputFormat format, String[] sources, String[] targets,
+		Integer limit, String[] organism, String[] datasource);
 	
 	
 	/**
@@ -133,10 +140,12 @@ public interface CPathService {
 	 * @param sources IDs of query seed
 	 * @param limit search limit
 	 * @param direction - can be {@link Direction#DOWNSTREAM} or {@link Direction#UPSTREAM}
+	 * @param organism organism
+	 * @param datasource data source
 	 * @return common stream
 	 */
-	ServiceResponse getCommonStream(OutputFormat format, 
-			String[] sources, Integer limit, Direction direction);
+	ServiceResponse getCommonStream(OutputFormat format, String[] sources, Integer limit,
+		Direction direction, String[] organism, String[] datasource);
 
 	//---------------------------------------------------------------------------------------------|
 

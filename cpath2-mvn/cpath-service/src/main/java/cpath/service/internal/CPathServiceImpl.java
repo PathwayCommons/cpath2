@@ -221,7 +221,7 @@ class CPathServiceImpl implements CPathService {
 	@Cacheable(cacheName = "getNeighborhoodCache")
 	@Override
 	public ServiceResponse getNeighborhood(OutputFormat format, String[] sources,
-		Integer limit, Direction direction)
+		Integer limit, Direction direction, String[] organism, String[] datasource)
 	{
 		// todo: Remove this line when ID mapping in cpath2 is implemented.
 		sources = convertHGNC(sources);
@@ -230,38 +230,41 @@ class CPathServiceImpl implements CPathService {
 			direction = Direction.BOTHSTREAM;	
 		}
 		Analysis analysis = new NeighborhoodAnalysis();
-		return runAnalysis(analysis, format, sources, limit, direction, blacklist);
+		return runAnalysis(analysis, format, sources, limit, direction, organism, datasource,
+			blacklist);
 	}
 
 	@Cacheable(cacheName = "getPathsBetweenCache")
 	@Override
-	public ServiceResponse getPathsBetween(OutputFormat format, String[] sources, Integer limit)
+	public ServiceResponse getPathsBetween(OutputFormat format, String[] sources, Integer limit,
+		String[] organism, String[] datasource)
 	{
 		// todo: Remove this line when ID mapping in cpath2 is implemented.
 		sources = convertHGNC(sources);
 
 		Analysis analysis = new PathsBetweenAnalysis();
-		return runAnalysis(analysis, format, sources, limit, blacklist);
+		return runAnalysis(analysis, format, sources, limit, organism, datasource, blacklist);
 	}
 	
 	@Cacheable(cacheName = "getPathsFromToCache")
 	@Override
-	public ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
-										  String[] targets, Integer limit)
+	public ServiceResponse getPathsFromTo(OutputFormat format, String[] sources, String[] targets,
+		Integer limit, String[] organism, String[] datasource)
 	{
 		// todo: Remove these lines when ID mapping in cpath2 is implemented.
 		sources = convertHGNC(sources);
 		targets = convertHGNC(targets);
 
 		Analysis analysis = new PathsFromToAnalysis();
-		return runAnalysis(analysis, format, sources, targets, limit, blacklist);
+		return runAnalysis(analysis, format, sources, targets, limit, organism, datasource,
+			blacklist);
 	}
 	
 
 	@Cacheable(cacheName = "getCommonStreamCache")
 	@Override
 	public ServiceResponse getCommonStream(OutputFormat format, String[] sources,
-		Integer limit, Direction direction)
+		Integer limit, Direction direction, String[] organism, String[] datasource)
 	{
 		// todo: Remove this line when ID mapping in cpath2 is implemented.
 		sources = convertHGNC(sources);
@@ -274,7 +277,8 @@ class CPathServiceImpl implements CPathService {
 		}
 			
 		Analysis analysis = new CommonStreamAnalysis();
-		return runAnalysis(analysis, format, sources, limit, direction, blacklist);
+		return runAnalysis(analysis, format, sources, limit, direction, organism, datasource,
+			blacklist);
 	}
 
 	//-- Temporary fix for the broken hack --------------------------------------------------------|

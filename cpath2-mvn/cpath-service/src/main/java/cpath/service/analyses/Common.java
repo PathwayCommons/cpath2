@@ -4,8 +4,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.query.wrapperL3.DataSourceFilter;
+import org.biopax.paxtools.query.wrapperL3.Filter;
+import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -53,17 +58,18 @@ public class Common
 	}
 
 	/**
-	 * This method provides IDs of ubiquitous physical entities.
-	 * @return IDs of ubiquitous physical entities
+	 * Prepares organism and datasource filters for graph queries.
+	 * @param organism desired organism names
+	 * @param datasource desired data sources
+	 * @return filters
 	 */
-	protected static Set<String> getUbiqueIDs()
+	protected static List<Filter> getOrganismAndDataSourceFilters(String[] organism, String[] datasource)
 	{
-		return ubiqueIDs;
-	}
+		List<Filter> list = new ArrayList<Filter>();
 
-	static
-	{
-		ubiqueIDs = new HashSet<String>();
-		// todo read in the IDs of black list into this set
+		if (organism.length > 0) list.add(new OrganismFilter(organism));
+		if (datasource.length > 0) list.add(new DataSourceFilter(datasource));
+
+		return list;
 	}
 }

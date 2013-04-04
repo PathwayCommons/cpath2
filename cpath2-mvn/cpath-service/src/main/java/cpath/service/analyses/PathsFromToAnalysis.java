@@ -34,7 +34,10 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.QueryExecuter;
 import org.biopax.paxtools.query.algorithm.LimitType;
+import org.biopax.paxtools.query.wrapperL3.Filter;
+import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -67,19 +70,24 @@ public class PathsFromToAnalysis implements Analysis {
 		// Search limit
 		int limit = (Integer) args[2];
 
-		// Blacklist
-		Set<String> blacklist = (Set<String>) args[3];
+		// organism and data source filters
+		List<Filter> filters = Common.getOrganismAndDataSourceFilters(
+			(String[]) args[3], (String[]) args[4]);
+
+		// ubique filter
+		filters.add(new UbiqueFilter((Set<String>) args[5]));
 
 		// Execute the query
 
 		if (target == null || target.isEmpty())
 		{
-			return QueryExecuter.runPathsBetween(source, model, limit, blacklist);
+			return QueryExecuter.runPathsBetween(source, model, limit,
+				filters.toArray(new Filter[filters.size()]));
 		}
 		else
 		{
 			return QueryExecuter.runPathsFromTo(source, target, model, LimitType.NORMAL, limit,
-				blacklist);
+				filters.toArray(new Filter[filters.size()]));
 		}
 	}
 
