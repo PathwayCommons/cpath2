@@ -29,5 +29,9 @@
   		<artifactId>cpath-api</artifactId>
   		<version>${cpath.api.version}</version>
   	</dependency>
+  	<dependency>
+  		<groupId>org.biopax.validator</groupId>
+  		<artifactId>biopax-validator</artifactId>
+  	</dependency>
   </dependencies>
 </project>
