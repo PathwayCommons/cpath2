@@ -161,7 +161,7 @@
 							</property>
 						</systemProperties>
 						<!-- enable assertions, tests run in sequential mode -->
-						<argLine>-Xmx1g -Dfile.encoding=UTF-8 -DCPATH2_HOME=${CPATH2_HOME} -Djava.io.tmpdir=${CPATH2_HOME}/tmp -ea -DforkMode=once</argLine>
+						<argLine>-Xmx1g -Dfile.encoding=UTF-8 -DCPATH2_HOME=${CPATH2_HOME} -Djava.io.tmpdir=${CPATH2_HOME}/tmp -ea -DforkMode=once -Dnet.sf.ehcache.disabled=true</argLine>
 					</configuration>
 				</plugin>
 			</plugins>
