@@ -1,0 +1,1 @@
+This directory is used by cpath2 for query caches.

@@ -1,0 +1,34 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <artifactId>parent</artifactId>
+    <groupId>pathwaycommons.cpath</groupId>
+    <version>4.0.0-SNAPSHOT</version>
+  </parent>
+  
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>cpath-importer</artifactId>
+  <name>cPath2 Importer</name>
+  <description>cPath^2 Import Pipeline. It also helps fetch various data from Internet, including provider's metadata and pathway data, OBO terms, and Miriam.</description>
+  
+  <dependencies>
+  	<dependency>
+  		<groupId>org.biopax.paxtools</groupId>
+  		<artifactId>psimi-converter</artifactId>
+  	</dependency>
+  	<dependency>
+        <groupId>pathwaycommons.cpath</groupId>
+        <artifactId>cpath-dao</artifactId>
+        <version>${project.version}</version>
+  	</dependency>
+  	<dependency>
+      <groupId>commons-httpclient</groupId>
+      <artifactId>commons-httpclient</artifactId>
+    </dependency>
+  	<dependency>
+  		<groupId>pathwaycommons.cpath</groupId>
+  		<artifactId>cpath-api</artifactId>
+  		<version>${project.version}</version>
+  	</dependency>
+  </dependencies>
+  
+</project>
