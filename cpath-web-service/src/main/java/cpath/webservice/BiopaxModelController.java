@@ -29,6 +29,7 @@ package cpath.webservice;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URLEncoder;
 import java.util.*;
 
 import cpath.config.CPathSettings;
@@ -101,6 +102,17 @@ public class BiopaxModelController extends BasicController {
 	public void cpathIdInfo(@PathVariable String localId, 
 			Writer writer, HttpServletResponse response) throws IOException {
 			Get get = new Get();
+			
+			// a hack for this URI resolving service to overcome
+			// e.g., Virtuoso/fct that prepends
+			// inserts '#' between xml:base and local part URI,
+			// and browsers that unencode the local part URI returning
+			// ':' and spaces back (should not)
+			if(localId.startsWith("#"))
+				localId = localId.substring(1);
+			if(localId.contains(":") || localId.contains(" "))
+				localId = URLEncoder.encode(localId);
+			
 			get.setUri(new String[]{xmlBase + localId});
 			elementById(get, null, writer, response);
 	}
