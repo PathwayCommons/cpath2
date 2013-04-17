@@ -34,7 +34,8 @@ import java.util.*;
 public final class CPath2Client
 {
 	public static final String JVM_PROPERTY_ENDPOINT_URL = "cPath2Url";
-	public static final String DEFAULT_ENDPOINT_URL = "http://www.pathwaycommons.org/pc2/"; //"www." is IMPORTANT! 
+	public static final String DEFAULT_ENDPOINT_URL = "http://purl.org/pc2/2/";
+//	public static final String DEFAULT_ENDPOINT_URL = "http://localhost:8080/cpath-web-service/";
 
 	
 	/**
@@ -44,7 +45,6 @@ public final class CPath2Client
 	 * depending on paxtools-query module at runtime.)
 	 * 
 	 */
-	//TODO move it to the cpath-api (cause, e.g., OutputFormat is already there)?
 	public static enum Direction
     {
 		UPSTREAM, DOWNSTREAM, BOTHSTREAM;
@@ -551,28 +551,6 @@ public final class CPath2Client
      */
     public void setDataSources(Collection<String> dataSources) {
         this.dataSources = dataSources;
-    }
-
-    
-    /**
-     * @see #getDataSources()
-     * @see #setDataSources(java.util.Collection)
-     * @return valid values for the datasource parameter as a Help object.
-     */
-    public Map<String, String> getValidDataSources() {
-        Help h = restTemplate.getForObject(endPointURL + "help/datasources", Help.class);
-        return parseHelpSimple(h);
-    }
-
-    
-    /**
-     * @see #getOrganisms()
-     * @see #setOrganisms(java.util.Collection)
-     * @return valid values for the organism parameter as a Help object.
-     */
-    public Map<String,String> getValidOrganisms() {
-        Help h = restTemplate.getForObject(endPointURL + "help/organisms", Help.class);
-        return parseHelpSimple(h);
     }
 
     

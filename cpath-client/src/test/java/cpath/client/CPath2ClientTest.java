@@ -8,6 +8,7 @@ import java.util.*;
 
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.UnificationXref;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -19,7 +20,8 @@ import cpath.service.jaxb.TraverseResponse;
 
 /**
  * INFO: when "cPath2Url" Java property is not set,
- * (e.g., -DcPath2Url="http://localhost:8080/cpath-web-service/")
+ * (e.g., -DcPath2Url="http://localhost:8080/cpath-web-service/" 
+ * -DcPath2Url="http://webservice.baderlab.org:48080/", -DcPath2Url="http://www.pathwaycommons.org/pc2/")
  * the default cpath2 endpoint PROVIDER_URL is {@link CPath2Client#DEFAULT_ENDPOINT_URL}
  * (e.g., http://www.pathwaycommons.org/pc2/). So, it is possible that the 
  * default (official) service still provides an older cpath2 API than this PC2 client expects.
@@ -34,21 +36,6 @@ public class CPath2ClientTest {
 		Collection<String> vals = client.getValidTypes();
 		assertFalse(vals.isEmpty());
 		assertTrue(vals.contains("BioSource"));
-		
-		vals = client.getValidDataSources().keySet();
-		assertFalse(vals.isEmpty());
-        Boolean hasReactome = false;
-        for (String val : vals) {
-            if(val.toLowerCase().startsWith("urn:biopax:provenance:reactome")) {
-                hasReactome = true;
-                break;
-            }
-        }
-		assertTrue(hasReactome);
-		
-		vals = client.getValidOrganisms().keySet();
-		assertFalse(vals.isEmpty());
-		assertTrue(vals.contains("http://identifiers.org/taxonomy/9606"));
 	}
 	
 	
@@ -71,7 +58,7 @@ public class CPath2ClientTest {
 	@Test
 	public final void testTraverse() {
 		final CPath2Client cl = CPath2Client.newInstance();
-		cl.setPath("Named/standardName");
+		cl.setPath("Named/name");
 		
 		// must get a result w/o problems
 		ServiceResponse resp = null;
@@ -131,13 +118,15 @@ public class CPath2ClientTest {
 	@Test //this test is even more dependent on the data there
 	public final void testGetByUri() {
 		final CPath2Client cl = CPath2Client.newInstance();
-		String uri = "BRCA2"; //should work since v4 (with id-mapping)
+		String id = "BRCA2"; 
 		
-		Model m = cl.get(Collections.singleton(uri));
-		assertTrue(m.containsID(uri));
-		
-		
-		String q = cl.queryGet(Collections.singleton(uri));
+		Model m = cl.get(Collections.singleton(id));
+		assertFalse(m == null);
+		assertFalse(m.getObjects().isEmpty());
+		assertEquals(1, m.getObjects().size()); //xref
+		assertTrue(m.getObjects().iterator().next() instanceof UnificationXref);
+			
+		String q = cl.queryGet(Collections.singleton(id));
 		try {
 			String res = cl.executeQuery(q, null);
 		} catch (CPathException e) {
@@ -147,28 +136,22 @@ public class CPath2ClientTest {
 	}
 
 	@Test
-	@Ignore
+	//@Ignore
 	public final void testPathsBetweenQuery()
 	{
 		final CPath2Client cl = CPath2Client.newInstance();
-		cl.setEndPointURL("http://awabi.cbio.mskcc.org/cpath2/");
 		cl.setGraphQueryLimit(1);
 
 		Set<String> source1 = new LinkedHashSet<String>(Arrays.asList(
-			"urn:biopax:RelationshipXref:HGNC_HGNC%3A6204",
-			"urn:biopax:RelationshipXref:HGNC_HGNC%3A9588"
+			"JUN", "PTEN"
 		));
 
-		for (String s : source1)
-		{
-			System.out.println(s);
-		}
 		Model model = cl.getPathsBetween(source1);
 		System.out.println("model.getObjects(.size()) = " + model.getObjects().size());
 
 		SimpleIOHandler h = new SimpleIOHandler();
 
-		try{h.convertToOWL(model, new FileOutputStream("/home/ozgun/Desktop/temp.owl"));
+		try{h.convertToOWL(model, new FileOutputStream("target/testPathsBetweenQuery.out.owl"));
 		} catch (FileNotFoundException e){e.printStackTrace();}
 	}
 }
