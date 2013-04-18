@@ -82,7 +82,7 @@ class ChebiOboConverterImpl extends BaseConverterImpl implements Analysis
 			}
 			// should only get one of these
 			ChemicalStructure chemStruct = model.addNew(ChemicalStructure.class, chemicalStructureID);
-			chemStruct.setStructureData(URLEncoder.encode(structure));
+			chemStruct.setStructureData(structure);
 			chemStruct.setStructureFormat(structureFormat);
 			smallMoleculeReference.setStructure(chemStruct);
 		}
