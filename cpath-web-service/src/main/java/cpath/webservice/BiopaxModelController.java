@@ -100,7 +100,7 @@ public class BiopaxModelController extends BasicController {
 	 */
 	@RequestMapping("/{localId}")
 	public void cpathIdInfo(@PathVariable String localId, 
-			Writer writer, HttpServletResponse response) throws IOException {
+			Writer writer, HttpServletResponse response) throws Exception {
 			Get get = new Get();
 			
 			// a hack for this URI resolving service to overcome
@@ -110,8 +110,9 @@ public class BiopaxModelController extends BasicController {
 			// ':' and spaces back (should not)
 			if(localId.startsWith("#"))
 				localId = localId.substring(1);
-			if(localId.contains(":") || localId.contains(" "))
-				localId = URLEncoder.encode(localId);
+			if(localId.contains(":") || localId.contains("#") || localId.contains(" ")) {
+				localId = URLEncoder.encode(localId, "UTF-8");
+			}
 			
 			get.setUri(new String[]{xmlBase + localId});
 			elementById(get, null, writer, response);

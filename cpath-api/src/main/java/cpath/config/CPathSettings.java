@@ -121,6 +121,7 @@ public final class CPathSettings {
 	public static final String PROP_BLACKLIST_CONTROL_THRESHOLD = "cpath2.blacklist.control.threshold";
 	public static final String PROP_BLACKLIST_LOCATION = "cpath2.blacklist.location";
 	public static final String PROP_METADATA_LOCATION = "cpath2.metadata.location";
+	public static final String PROP_ABSOLUTE_URI_ENABLED="cpath2.absolute.uri.enabled";
 	
 	/*
 	 * Following properties can be even updated at runtime (because cpath.properties resource is read by the webapp periodically)
@@ -160,6 +161,7 @@ public final class CPathSettings {
 		defaults.put(PROP_EXPLAIN_ENABLED, "false");
 		defaults.put(PROP_ADMIN_ENABLED, "false");
 		defaults.put(PROP_DIGEST_URI_ENABLED, "false");	
+		defaults.put(PROP_ABSOLUTE_URI_ENABLED, "true");
 		
 		settings = new Properties(defaults);
 		

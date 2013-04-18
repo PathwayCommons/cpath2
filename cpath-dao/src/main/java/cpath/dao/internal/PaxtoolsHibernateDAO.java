@@ -132,12 +132,14 @@ implements Model, PaxtoolsDAO
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
 		this.simpleIO.normalizeNameSpaces(false);
+		//may (recommended) or may not always use absolute URIs when writing RDF/XML
+		this.simpleIO.absoluteUris(Boolean.parseBoolean(
+			(CPathSettings.property(CPathSettings.PROP_ABSOLUTE_URI_ENABLED)))); 
 		this.multiFieldQueryParser = new MultiFieldQueryParser(
 			Version.LUCENE_36, DEFAULT_SEARCH_FIELDS, new StandardAnalyzer(Version.LUCENE_36));
 		//- seems, - query parser turns search keywords to lower case and expects index field values are also lower case...		
 		this.xmlBase = CPathSettings.xmlBase(); //set default xml:base
-		this.maxHitsPerPage = Integer.parseInt(CPathSettings.property(
-				CPathSettings.PROP_MAX_SEARCH_HITS_PER_PAGE));
+		this.maxHitsPerPage = Integer.parseInt(CPathSettings.property(CPathSettings.PROP_MAX_SEARCH_HITS_PER_PAGE));
 	}
 	
 	
@@ -619,10 +621,10 @@ implements Model, PaxtoolsDAO
 	@Transactional
 	public void exportModel(OutputStream outputStream, String... ids) 
 	{
-		Session ses = sessionFactory.getCurrentSession();
-//        ses.enableFetchProfile("mul_properties_join");
+//		Session ses = sessionFactory.getCurrentSession();
+//      ses.enableFetchProfile("mul_properties_join");
         simpleIO.convertToOWL(this, outputStream, ids);
-//        ses.disableFetchProfile("mul_properties_join");
+//      ses.disableFetchProfile("mul_properties_join");
 	}
 	
 
