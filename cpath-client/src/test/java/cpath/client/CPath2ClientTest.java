@@ -21,10 +21,10 @@ import cpath.service.jaxb.TraverseResponse;
 /**
  * INFO: when "cPath2Url" Java property is not set,
  * (e.g., -DcPath2Url="http://localhost:8080/cpath-web-service/" 
- * -DcPath2Url="http://webservice.baderlab.org:48080/", -DcPath2Url="http://www.pathwaycommons.org/pc2/")
+ * -DcPath2Url="http://purl.org/pc2/current/", -DcPath2Url="http://www.pathwaycommons.org/pc2/")
  * the default cpath2 endpoint PROVIDER_URL is {@link CPath2Client#DEFAULT_ENDPOINT_URL}
- * (e.g., http://www.pathwaycommons.org/pc2/). So, it is possible that the 
- * default (official) service still provides an older cpath2 API than this PC2 client expects.
+ * So, it is possible that the default (official) service still provides 
+ * an older cpath2 API than this PC2 client expects.
  * Take care. 
  */
 @Ignore //these tests depend on the data, thus disabled by default (not for daily builds)

@@ -34,9 +34,7 @@ import java.util.*;
 public final class CPath2Client
 {
 	public static final String JVM_PROPERTY_ENDPOINT_URL = "cPath2Url";
-	public static final String DEFAULT_ENDPOINT_URL = "http://purl.org/pc2/2/";
-//	public static final String DEFAULT_ENDPOINT_URL = "http://localhost:8080/cpath-web-service/";
-
+	public static final String DEFAULT_ENDPOINT_URL = "http://purl.org/pc2/current/";
 	
 	/**
 	 * This is an <em>equivalent</em> to {@link Direction}
@@ -135,29 +133,23 @@ public final class CPath2Client
     
     
     /**
-     * Full text search.
-     * @see #search(Collection)
-     *
-     * @param keyword keywords (e.g., ); can also be a Lucene query
-     * @return 
-     * @throws CPathException when the WEB API gives an error
-     */
-    public ServiceResponse search(String keyword) throws CPathException {
-        return search(Collections.singleton(keyword));
-    }
-
-    
-    /**
      * Full text search. 
      * 
-     * Retrieve the ordered by score list (hits)
-     * of BioPAX objects that match the search query
-     * and pass currently set filters.
+     * Retrieves one "page" of full-text search results
+     * (the page number is given by {@link #getPage()} method) - 
+     * ordered by Lucene score list of (BioPAX element) hits 
+     * matched the query expression and passed current filters.
      * 
      * See the cPath2 web service online description 
-     * for the list of available index fields and filter values
-     * (currently loaded data sources and organisms).
+     * for the list of available index field names and filter 
+     * values (i.e., officially supported data sources and organisms).
+     * 
+     * If no keywords or "*" is used, 
+     * then at least BioPAX type filter must be set using 
+     * {@link #setType(String)}. 
      *
+     * @see #setType(String)
+     * @see #setPage(Integer)
      * @see #setDataSources(Collection)
      * @see #setOrganisms(Collection)
      *
@@ -165,11 +157,11 @@ public final class CPath2Client
      * @return
      * @throws CPathException when the WEB API gives an error
      */
-    public ServiceResponse search(Collection<String> keywords) 
+    public SearchResponse search(String... keywords) 
     		throws CPathException 
     {
     	String url = endPointURL + Cmd.SEARCH + "?" 
-            	+ CmdArgs.q + "=" + join("", keywords, " ") // spaces means 'OR'
+            	+ CmdArgs.q + "=" + join("", Arrays.asList(keywords), " ") // spaces means 'OR'
                 + (getPage() > 0 ? "&" + CmdArgs.page + "=" + getPage() : "")
                 + (getDataSources().isEmpty() ? "" : "&" + join(CmdArgs.datasource + "=", getDataSources(), "&"))
                 + (getOrganisms().isEmpty() ? "" : "&" + join(CmdArgs.organism + "=", getOrganisms(), "&"))
@@ -183,6 +175,49 @@ public final class CPath2Client
 
     }
 
+    
+    /**
+     * Full text search - grab all hits at once.
+     * 
+     * Retrieves ALL or first N pages of hits that match the  
+     * query and pass current type, organism and datasource 
+     * filters (if specified). If no keywords or "*" is used, 
+     * then at least BioPAX type filter must be set using 
+     * {@link #setType(String)}. 
+     * 
+     * This method is to quickly extract all identifiers, names, 
+     * parent pathways (URIs) of a sub-class of BioPAX elements
+     * rather than to find the best match (top-scored hits of a 
+     * specific search).
+     * 
+     * @see #setType(String) - filter by BioPAX type
+     * @see #setPage(Integer) - if >0, gets search hits from 0 to this page number.
+     * @see #setDataSources(Collection)
+     * @see #setOrganisms(Collection)
+     * @param keywords
+     * @return
+     */
+    public List<SearchHit> findAll(String... keywords) {
+    	List<SearchHit> hits = new ArrayList<SearchHit>();
+    	int numPages = getPage();
+    	int page = 0;
+    	SearchResponse res;
+    	do {
+    		setPage(page);
+    		try {
+				res = search(keywords);
+			} catch (CPathException e) {
+				break; //no result or error
+			}
+    		if(!res.isEmpty())
+    			hits.addAll(res.getSearchHit());
+    		else //should not happen (cpath2 returns error status when empty result)
+    			break; 
+    	} while(numPages < 1 || ++page < numPages);
+    	
+    	return hits;
+    }
+    
     
     /**
      * Retrieves details regarding one or more records, such as pathway,
@@ -413,7 +448,7 @@ public final class CPath2Client
 
         return StringUtils.join(prefixed, delimiter);
     }
-
+    
     
     /**
      * The WEB Service PROVIDER_URL prefix.
