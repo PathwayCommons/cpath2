@@ -160,8 +160,11 @@ public final class CPath2Client
     public SearchResponse search(String... keywords) 
     		throws CPathException 
     {
+    	final String kw = (keywords == null || keywords.length == 0)
+    			? "*" : join("", Arrays.asList(keywords), " ");
+    	
     	String url = endPointURL + Cmd.SEARCH + "?" 
-            	+ CmdArgs.q + "=" + join("", Arrays.asList(keywords), " ") // spaces means 'OR'
+            	+ CmdArgs.q + "=" + kw // spaces means 'OR'
                 + (getPage() > 0 ? "&" + CmdArgs.page + "=" + getPage() : "")
                 + (getDataSources().isEmpty() ? "" : "&" + join(CmdArgs.datasource + "=", getDataSources(), "&"))
                 + (getOrganisms().isEmpty() ? "" : "&" + join(CmdArgs.organism + "=", getOrganisms(), "&"))
@@ -199,13 +202,15 @@ public final class CPath2Client
      */
     public List<SearchHit> findAll(String... keywords) {
     	List<SearchHit> hits = new ArrayList<SearchHit>();
+    	final String kw = (keywords == null || keywords.length == 0)
+    			? "*" : join("", Arrays.asList(keywords), " ");
     	int numPages = getPage();
     	int page = 0;
     	SearchResponse res;
     	do {
     		setPage(page);
     		try {
-				res = search(keywords);
+				res = search(kw);
 			} catch (CPathException e) {
 				break; //no result or error
 			}
