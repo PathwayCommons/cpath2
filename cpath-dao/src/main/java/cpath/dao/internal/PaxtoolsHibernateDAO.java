@@ -229,6 +229,7 @@ implements Model, PaxtoolsDAO
 	 * This opens a new stateless session, which starts a new 
 	 * transaction to insert new objects (by URI).
 	 * 
+	 * This method must NOT be annotated with @Transactional
 	 */
 	@Override
 	public void merge(final Model model)
@@ -421,10 +422,7 @@ implements Model, PaxtoolsDAO
 	@Transactional
 	public void add(BioPAXElement aBioPAXElement)
 	{
-		String rdfId = aBioPAXElement.getRDFId();
-		
-		if (log.isDebugEnabled())
-			log.debug("about to add: " + rdfId);
+		String rdfId = aBioPAXElement.getRDFId();		
 		
 		if (!level.hasElement(aBioPAXElement))
 		{
@@ -438,8 +436,8 @@ implements Model, PaxtoolsDAO
 		}
 		else
 		{
-			if (log.isDebugEnabled())
-				log.debug("adding " + rdfId);
+			log.debug("adding/persisting new " + rdfId + " " 
+				+ aBioPAXElement.getModelInterface().getSimpleName());
 			sessionFactory.getCurrentSession().persist(aBioPAXElement); 
 		}
 	}

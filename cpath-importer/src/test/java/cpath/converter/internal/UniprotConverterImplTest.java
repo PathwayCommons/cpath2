@@ -79,17 +79,18 @@ public class UniprotConverterImplTest {
 		assertEquals(10, proteinReferences.size());
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
 
+// seq. are not saved anymore	- no test
 		//get by URI and check the sequence (CALL6_HUMAN)
-		ProteinReference pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/Q8TD86");
-		assertNotNull(pr);
-		final String expected = "MGLQQEISLQPWCHHPAESCQTTTDMTERLSAEQIKEYKGVFEMFDEEGNGEVKTGE" +
-				"LEWLMSLLGINPTKSELASMAKDVDRDNKGFFNCDGFLALMGVYHEKAQNQESELRAAFRVFDKEGKGYIDWN" +
-				"TLKYVLMNAGEPLNEVEAEQMMKEADKDGDRTIDYEEFVAMMTGESFKLIQ";
-		assertEquals(expected, pr.getSequence());
-		assertTrue(pr.getComment().contains("SEQUENCE   181 AA;  20690 MW;  F29C088AFC42BB13 CRC64;"));
+//		ProteinReference pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/Q8TD86");
+//		assertNotNull(pr);
+//		final String expected = "MGLQQEISLQPWCHHPAESCQTTTDMTERLSAEQIKEYKGVFEMFDEEGNGEVKTGE" +
+//				"LEWLMSLLGINPTKSELASMAKDVDRDNKGFFNCDGFLALMGVYHEKAQNQESELRAAFRVFDKEGKGYIDWN" +
+//				"TLKYVLMNAGEPLNEVEAEQMMKEADKDGDRTIDYEEFVAMMTGESFKLIQ";
+//		assertEquals(expected, pr.getSequence());
+//		assertTrue(pr.getComment().contains("SEQUENCE   181 AA;  20690 MW;  F29C088AFC42BB13 CRC64;"));
 		
 		// test MOD_RES features are created
-		pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/P62158");
+		ProteinReference pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/P62158");
 		assertTrue(pr.getName().contains("CALM2"));
 		assertTrue(pr.getName().contains("CALM3"));
 		assertNotNull(pr);
