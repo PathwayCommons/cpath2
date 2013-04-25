@@ -95,11 +95,10 @@ public class CPathMergerTest {
 		}
 		
 		//check first whether it's ok after export/import as owl?	
-		String outFilename = CPathSettings.tmpDir() + File.separator + "testMerge.out.owl";	
-		paxtoolsDAO.exportModel(new FileOutputStream(outFilename));					
+		paxtoolsDAO.exportModel(new FileOutputStream("target/testMerge.out.owl"));					
 		SimpleIOHandler reader = new SimpleIOHandler();
 		reader.mergeDuplicates(true);
-		Model m = reader.convertFromOWL(new FileInputStream(outFilename));			
+		Model m = reader.convertFromOWL(new FileInputStream("target/testMerge.out.owl"));			
 		// run assertions for this in-memory model
 		assertMerge(m, paxtoolsDAO);		
 		

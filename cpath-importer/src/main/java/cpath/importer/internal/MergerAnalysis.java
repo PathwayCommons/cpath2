@@ -45,6 +45,10 @@ import java.util.*;
 /**
  * Semantic merge of a normalized BioPAX model into the target model, 
  * using cpath2 BioPAX data warehouse and id-mapping.
+ * 
+ * Note: this class is probably not thread-safe (so,
+ * create a new instance for each execution).
+ * 
  */
 @Transactional
 class MergerAnalysis implements Analysis {
@@ -52,14 +56,13 @@ class MergerAnalysis implements Analysis {
     private static final Log log = LogFactory.getLog(MergerAnalysis.class);
 
 	private final Model source;
-	
 	private final String description;
-    
 	private final MetadataDAO metadataDAO;
-    
-    private final SimpleMerger simpleMerger;
+	private final String xmlBase;
+	private final SimpleMerger simpleMerger;
 	
-    private final String xmlBase;
+    private Model target;
+    private Model mem;
 	
 	
 	MergerAnalysis(String description, Model source, 
@@ -68,8 +71,8 @@ class MergerAnalysis implements Analysis {
 		this.description = description;
 		this.source = source;
 		this.metadataDAO = metadataDAO;
-		this.simpleMerger = new SimpleMerger(SimpleEditorMap.L3);
 		this.xmlBase = xmlBase;
+		this.simpleMerger = new SimpleMerger(SimpleEditorMap.L3);
 	}
 	
 	
@@ -79,108 +82,93 @@ class MergerAnalysis implements Analysis {
 	 * Merges a new pathway model into persistent main model: 
 	 * inserts new objects and updates object properties
 	 * (and should not break inverse properties).
-	 * It re-uses previously merged canonical UtilityClass objects 
-	 * (e.g., EntityReference) to replace equivalent ones in the pathway data.
+	 * It re-uses previously merged UtilityClass objects, such as 
+	 * canonical EntityReferences, CVs (warehouse data), to replace 
+	 * equivalent ones in the original pathway data.
 	 * 
-	 * @param args - two parameters: a BioPAX Model and its description.
-	 * 
+	 * @param model - target BioPAX Model.
 	 * @throws ClassCastException
 	 */
 	@Override
 	public Set<BioPAXElement> execute(Model model) {
-		log.debug("execute: begin merging model " + description + 
-			", xml:base=" + source.getXmlBase());		
-		
-		//We suppose, the pathwayModel is self-integral, 
-		//i.e, - no external refs and implicit children
-		//(this is almost for sure true if it's just came from a string/file)
-		
-		//Create a new in-memory "replacements" Model, 
-		// to merge new things into this one first
-		Model generatedModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-		generatedModel.setXmlBase(xmlBase);
+		//set the target and in-memory (temp.) models to be used by private methods	
+		target = model;
+		mem = BioPAXLevel.L3.getDefaultFactory().createModel();
+		mem.setXmlBase(xmlBase);
 		
 		// find matching utility class elements in the db
-		log.info("Looking to re-use/merge with " +
-			"semantically equivalent utility class elements " +
-			"in the Model");
-
-		final Map<EntityReference, EntityReference> replacements = new HashMap<EntityReference, EntityReference>();
+		log.info("Source model: " + description + ", xml:base=" + source.getXmlBase() 
+			+ ". Looking for existing equivalent utility class elements...");
+		final Map<UtilityClass, UtilityClass> replacements = new HashMap<UtilityClass, UtilityClass>();
 		
 		// match some utility class objects to existing ones (previously imported)
-		for (EntityReference bpe: new HashSet<EntityReference>(source.getObjects(EntityReference.class))) 
+		for (UtilityClass bpe: new HashSet<UtilityClass>(source.getObjects(UtilityClass.class))) 
 		{
-			EntityReference replacement = null;
-			// Find the best replacement
+			UtilityClass replacement = null;
+			
+			// Find the best replacement ER:
 			if (bpe instanceof ProteinReference) {
-				replacement = findOrCreateProteinReference((ProteinReference)bpe, model, generatedModel);
-			} else if (bpe instanceof SmallMoleculeReference) {
-				replacement = findOrCreateSmallMoleculeReference((SmallMoleculeReference)bpe, model, generatedModel);
+				replacement = findOrCreateProteinReference((ProteinReference)bpe);
+			} 
+			else if (bpe instanceof SmallMoleculeReference) {
+				replacement = findOrCreateSmallMoleculeReference((SmallMoleculeReference)bpe);
+			} 
+			else { //e.g., BioSource, CV, or Provenance - simply match by URI (no id-mapping or additional checks)
+				replacement = (UtilityClass) target.getByID(bpe.getRDFId());
 			}
 				
-			if (replacement != null) {	
-				final String id = replacement.getRDFId();
-				if(model.containsID(id)) {
-					// just put the existing object to the replacements map and continue;
-					// skip in-memory merging, - preserves existing inverse BioPAX properties
-					replacements.put(bpe, replacement);
-				} else {
-					if(!generatedModel.containsID(id)) {//- just pulled from the db? -
-						// clear the AA sequence (save space and time; not really very useful...)
-						if(replacement instanceof ProteinReference)
-							((ProteinReference) replacement).setSequence(null);
+			if (replacement != null) {
+				UtilityClass r = (UtilityClass) mem.getByID(replacement.getRDFId());
+				if(r != null) //re-use
+					replacement = r;
+				else //merge (incl. all children) in memory
+					simpleMerger.merge(mem, replacement);
 					
-						// in-memory merge to reuse same child xrefs, etc.
-						simpleMerger.merge(generatedModel, replacement);
-					} 
-					
-					// associate, continue
-					replacements.put(bpe, (EntityReference) generatedModel.getByID(id));
-				}
+				replacements.put(bpe, replacement);
 			}
 		}
-				
-		// post-fix for some potentially troubling
-		// inverse properties of the original things scheduled for replacement
-		log.info("Migrating some properties (entityFeature and xref)...");
-		for (EntityReference old : replacements.keySet()) {
-			// fix for entityFeature/entityFeatureOf
-			for (EntityFeature ef : new HashSet<EntityFeature>(old.getEntityFeature())) {
-				// old ER is going to be replaced; migrate its features to the new ER
-//				if(ef.getEntityFeatureOf() == old) 
-				old.removeEntityFeature(ef);				
-				EntityReference replacement = replacements.get(old);
-				replacement.addEntityFeature(ef);
+
+		assert mem.getObjects(Entity.class).isEmpty() 
+			: "in-memory model contains Entity objects!";
+		
+		
+		// Replace objects in the source model
+		log.info("Replacing objects...");	
+		ModelUtils.replace(source, replacements);
+
+		log.info("Migrate some properties (original entityFeature and xref)...");
+		for (UtilityClass old : replacements.keySet()) {
+			if(old instanceof EntityReference) {
+				for (EntityFeature ef : new HashSet<EntityFeature>(
+						((EntityReference) old).getEntityFeature())) {
+					// copy entity features of the replaced ER to the new one
+					((EntityReference) old).removeEntityFeature(ef); //(this is to avoid paxtools warnings)			
+					((EntityReference) replacements.get(old)).addEntityFeature(ef);
+				}
+								
+				// clear memberEntityReference for old ERs (new ones come with own hierarchy)
+				for(EntityReference er : new HashSet<EntityReference>(
+						((EntityReference) old).getMemberEntityReference())) 
+				{
+					((EntityReference) old).removeMemberEntityReference(er);
+				}
 			}
 				
-			// remove xrefs from old ERs, then
-			// copy all Pub. and Rel. xrefs to new ERs (this is to keep original xrefs too)
-			for(Xref x : new HashSet<Xref>(old.getXref())) {
-				old.removeXref(x);
-				if(!(x instanceof UnificationXref)) {
-					EntityReference rep = replacements.get(old);
-					//first, look for the same xref in the target in-memory model
-					Xref xr = (Xref) generatedModel.getByID(x.getRDFId());
-					if(xr != null)
-						rep.addXref(xr);
-					else {
-						rep.addXref(x);
-						generatedModel.add(x);
-					}
-				}
-			}				
+			// copy PublicationXrefs and RelationshipXrefs (otherwise we lost some original xrefs)
+			if(old instanceof XReferrable) {
+				for(Xref x : new HashSet<Xref>(((XReferrable) old).getXref()))
+					if(!(x instanceof UnificationXref))
+						((XReferrable) replacements.get(old)).addXref(x);
+			}
 		}			
 		
-		// The following can improve graph queries and full-text search relevance -
+		// The following hack can improve graph queries and full-text search relevance
+		// for generic and poorly defined physical entities (e.g., those lacking entity reference)
 		log.info("Generating canonical UniProt/ChEBI " +
 				"rel. xrefs for physical entities using existing xrefs " +
-				"and id-mapping...");
-		
+				"and id-mapping...");		
 		/* Using xrefs and id-mapping, add primary uniprot/chebi RelationshipXref 
-		 * to all PE (SM, Protein, Dna,..) and Gene if possible;
-		 * skip complexes, and skip if pe.entityReference.xref is not empty 
-		 * (so id-mapping is done when mapping/replacing entity references).
-		 * 
+		 * to all simple PE (SM, Protein, Dna,..) and Gene if possible (skip complexes).
 		 * This might eventually result in mutually exclusive identifiers, 
 		 * but we'll keep those and just log a warning for future (data) fix, -
 		 * for this is not a big deal as long as we are not merging data 
@@ -190,50 +178,80 @@ class MergerAnalysis implements Analysis {
 		{
 			if(pe instanceof PhysicalEntity) {
 				if(pe instanceof SimplePhysicalEntity) {
-					EntityReference er = ((SimplePhysicalEntity) pe).getEntityReference();
-					if(er != null && !er.getXref().isEmpty())
-						continue;
 					if(pe instanceof SmallMolecule) {
-						addCanonicalRelXrefs((SmallMolecule) pe, Mapping.Type.CHEBI, generatedModel);
+						addCanonicalRelXrefs((SmallMolecule) pe, Mapping.Type.CHEBI);
 					} else {
 						// for Protein, Dna, DnaRegion, Rna*...
-						addCanonicalRelXrefs((PhysicalEntity) pe, Mapping.Type.UNIPROT, generatedModel);
+						addCanonicalRelXrefs((PhysicalEntity) pe, Mapping.Type.UNIPROT);
 					}						
 				} else if(pe instanceof Complex) {
 					continue; // skip complexes
 				} else {
 					// do for base PEs
-					addCanonicalRelXrefs((PhysicalEntity) pe, Mapping.Type.UNIPROT, generatedModel);
-					addCanonicalRelXrefs((PhysicalEntity) pe, Mapping.Type.CHEBI, generatedModel);
+					addCanonicalRelXrefs((PhysicalEntity) pe, Mapping.Type.UNIPROT);
+					addCanonicalRelXrefs((PhysicalEntity) pe, Mapping.Type.CHEBI);
 				}
 			} else if(pe instanceof Gene) {
-				addCanonicalRelXrefs((XReferrable) pe, Mapping.Type.UNIPROT, generatedModel);
+				addCanonicalRelXrefs((XReferrable) pe, Mapping.Type.UNIPROT);
 			}
-		}		
-					
-		// DO replace (object refs) in the original pathwayModel
-		log.info("Replacing utility objects with matching ones...");	
-		ModelUtils.replace(source, replacements);	
+		}
 		
-		log.info("Removing replaced/dangling objects...");	
-		ModelUtils.removeObjectsIfDangling(source, UtilityClass.class);
+		// cleaning up	
+		log.info("Removing dangling objects...");
+		final Set<BioPAXElement> removed = ModelUtils
+			.removeObjectsIfDangling(source, UtilityClass.class);		
+		assert removed.containsAll(replacements.keySet()) 
+			: "Some replaced objects were not actually removed from the model!";
+				
+		// merge source with the in-memory model
+		// (makes the model complete, self-integral)
+		mem.merge(source);
 		
-		//force re-using of matching by id Xrefs, CVs, etc.. from the generated model
-		log.info("Merging original model into the in-memory generated one...");
-		simpleMerger.merge(generatedModel, source); 
-		log.info("Done in-memory merging...");
+		// fix dangling inverse properties (some objects there
+		// in the source model might still refer to the removed ones,
+		// which will prevent the new model from being successfully 
+		// inserted into the DB!)
+		fixInverseProperties();
 		
+		log.info("Merging (insert/update) into the DB...");
+		// merge to the target model (insert new objects and update relationships)
+		target.merge(mem);
 		
-		log.info("Detaching and persisting the updated source model...");
-		// a) get completely detached in-memory model (fixes dangling properties...)
-		// b) merge to the target model (insert new objects and update relationships)
-		model.merge(ModelUtils.writeRead(generatedModel));
+		log.info("Merge is done; flushing...");	
 		
-		log.info("Merge is complete, exiting...");				
 		return null; // ignore (not needed)
 	}
 
 	
+	/**
+	 * Fixes inverse biopax properties. 
+	 * This is to cut old object references,
+	 * such as xrefOf, memberEntityReferenceOf, etc.,
+	 * to those original biopax objects that were replaced/removed. 
+	 */
+	private void fixInverseProperties() {	
+		Visitor visitor = new Visitor() {			
+			@SuppressWarnings("unchecked")
+			@Override
+			public void visit(BioPAXElement v, Object o, Model model, PropertyEditor editor) {
+				// this is about inverse property (e.g., xrefOf)
+				// Object o is the owner/parent BioPAX element
+				if(!mem.contains((BioPAXElement) o) 
+					&& !target.containsID(((BioPAXElement) o).getRDFId())) 
+				{
+					editor.removeValueFromBean(v, (BioPAXElement)o);
+				}
+			}
+		};
+		
+		TraverserBilinked traverserBilinked = new TraverserBilinked(SimpleEditorMap.L3, visitor);
+		traverserBilinked.setInverseOnly(true);
+		
+		for(BioPAXElement element : mem.getObjects(UtilityClass.class))
+			traverserBilinked.traverse(element, mem);
+	}
+
+
 	/**
 	 * Performs id-mapping from the  
 	 * unification and relationship xrefs 
@@ -243,10 +261,9 @@ class MergerAnalysis implements Analysis {
 	 * 
 	 * @param bpe a {@link Gene} or {@link PhysicalEntity}
 	 * @param mappType
-	 * @param model where to add new xrefs
 	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity
 	 */
-	private void addCanonicalRelXrefs(XReferrable bpe, Mapping.Type mappType, Model model) 
+	private void addCanonicalRelXrefs(XReferrable bpe, Mapping.Type mappType) 
 	{
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity))
 			throw new AssertionError("Not Gene or PE: " + bpe);
@@ -255,10 +272,10 @@ class MergerAnalysis implements Analysis {
 			
 		// map and generate/add xrefs
 		Set<String> mappingSet = idMappingByXrefs(bpe, mappType, UnificationXref.class);
-		addRelXref(bpe, db, mappingSet, model);
+		addRelXref(bpe, db, mappingSet);
 		
 		mappingSet = idMappingByXrefs(bpe, mappType, RelationshipXref.class);
-		addRelXref(bpe, db, mappingSet, model);
+		addRelXref(bpe, db, mappingSet);
 	}
 
 
@@ -270,11 +287,9 @@ class MergerAnalysis implements Analysis {
 	 * @param bpe a gene, physical entity or entity reference
 	 * @param db database name for all (primary/canonical) xrefs; 'uniprot' or 'chebi'
 	 * @param mappingSet
-	 * @param model an in-memory model where to add new xrefs
 	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity nor EntityReference
 	 */
-	private void addRelXref(XReferrable bpe, String db,
-			Set<String> mappingSet, Model model) 
+	private void addRelXref(XReferrable bpe, String db, Set<String> mappingSet) 
 	{	
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference))
 			throw new AssertionError("Not Gene or PE: " + bpe);
@@ -282,14 +297,19 @@ class MergerAnalysis implements Analysis {
 		for(String ac : mappingSet) {
 			// find or create
 			String rxUri = Normalizer.uri(xmlBase, db, ac, RelationshipXref.class);
-			RelationshipXref rx = (RelationshipXref) model.getByID(rxUri);
-			if(rx == null) {
-				rx = model.addNew(RelationshipXref.class, rxUri);
-				rx.setDb(db);
-				rx.setId(ac);
-			}				
-			if(rx != null)
-				bpe.addXref(rx);
+			RelationshipXref rx = (RelationshipXref) mem.getByID(rxUri);	
+			if(rx == null) { 	
+				rx = (RelationshipXref) target.getByID(rxUri);	
+				if(rx == null) { 
+					rx = mem.addNew(RelationshipXref.class, rxUri);
+					rx.setDb(db);
+					rx.setId(ac);
+				} else {
+					//merge to the in-memory tmp model
+					simpleMerger.merge(mem, rx);
+				}
+			}
+			bpe.addXref(rx);
 		}
 	}
 
@@ -302,11 +322,9 @@ class MergerAnalysis implements Analysis {
 	 * 
 	 * @param orig
 	 * @param type
-	 * @param mainModel
-	 * @param generatedModel
 	 * @return the replacement object or null if none can found
 	 */
-	private ProteinReference findOrCreateProteinReference(ProteinReference orig, Model mainModel, Model generatedModel) 
+	private ProteinReference findOrCreateProteinReference(ProteinReference orig) 
 	{				
 		ProteinReference toReturn = null;	
 		
@@ -315,12 +333,9 @@ class MergerAnalysis implements Analysis {
 		
 		String uri = orig.getRDFId();
 		
-		// 1) try to re-use previously matched (in the current merge run) object
-		// because we did validate/normalize all the data in Premerger stage and 
-		// can expect a quick result in most cases...
-		// canonical (warehouse) ERs have such URIs only
+		// 1) try to match an existing PR by URI
 		if(uri.startsWith(canonicalPrefix)) {
-			toReturn = getById(uri, ProteinReference.class, generatedModel, mainModel);
+			toReturn = (ProteinReference) target.getByID(uri);
 			if(toReturn != null)
 				return toReturn;
 		}
@@ -358,8 +373,7 @@ class MergerAnalysis implements Analysis {
 			if(!mp.isEmpty()) {
 				//TODO log if > 1 ac
 				id = mp.iterator().next();
-				toReturn = getById(canonicalPrefix + id, 
-					ProteinReference.class, generatedModel, mainModel);
+				toReturn = (ProteinReference) target.getByID(canonicalPrefix + id);
 			}
 		}
 				
@@ -369,8 +383,8 @@ class MergerAnalysis implements Analysis {
 			Set<String> mappingSet = idMappingByXrefs(orig, Mapping.Type.UNIPROT, UnificationXref.class);
 			if(!mappingSet.isEmpty()) {
 				// use only the first result (a warning logged already)
-				toReturn = getById(canonicalPrefix + mappingSet.iterator().next(), 
-					ProteinReference.class, generatedModel, mainModel);			
+				toReturn = (ProteinReference) target
+					.getByID(canonicalPrefix + mappingSet.iterator().next());			
 			}
 		}	
 		
@@ -380,8 +394,8 @@ class MergerAnalysis implements Analysis {
 			Set<String> mappingSet = idMappingByXrefs(orig, Mapping.Type.UNIPROT, RelationshipXref.class);
 			if(!mappingSet.isEmpty()) {
 				// use only the first result (a warning logged already)
-				toReturn = getById(canonicalPrefix + mappingSet.iterator().next(), 
-					ProteinReference.class, generatedModel, mainModel);
+				toReturn = (ProteinReference) target
+					.getByID(canonicalPrefix + mappingSet.iterator().next());
 			}	
 		}
 		
@@ -452,11 +466,9 @@ class MergerAnalysis implements Analysis {
 	 * 
 	 * @param orig
 	 * @param type
-	 * @param mainModel
-	 * @param generatedModel
 	 * @return the replacement object or null if none can found
 	 */
-	private SmallMoleculeReference findOrCreateSmallMoleculeReference(SmallMoleculeReference orig, Model mainModel, Model generatedModel) 
+	private SmallMoleculeReference findOrCreateSmallMoleculeReference(SmallMoleculeReference orig) 
 	{				
 		SmallMoleculeReference toReturn = null;	
 		
@@ -465,13 +477,9 @@ class MergerAnalysis implements Analysis {
 		
 		String uri = orig.getRDFId();
 		
-		// 1) try to re-use previously matched (in the current merge run) object
-		// because we did validate/normalize all the data in Premerger stage and 
-		// can expect a quick result in most cases...
-		// warehouse ERs have such URIs only
+		// 1) try to re-use existing object
 		if(uri.startsWith(canonicalPrefix)) {
-			toReturn = getById(uri, 
-					SmallMoleculeReference.class, generatedModel, mainModel);
+			toReturn = (SmallMoleculeReference) target.getByID(uri);
 			if(toReturn != null)
 				return toReturn;
 		}
@@ -496,8 +504,7 @@ class MergerAnalysis implements Analysis {
 			if(!mp.isEmpty()) {
 				//TODO log warn when > 1 ac
 				id = mp.iterator().next();
-				toReturn = getById(canonicalPrefix + id, 
-					SmallMoleculeReference.class, generatedModel, mainModel);
+				toReturn = (SmallMoleculeReference) target.getByID(canonicalPrefix + id);
 			}
 		}
 				
@@ -507,8 +514,8 @@ class MergerAnalysis implements Analysis {
 			Set<String> mappingSet = idMappingByXrefs(orig, Mapping.Type.CHEBI, UnificationXref.class);
 			if(!mappingSet.isEmpty()) {
 				// use only the first result (a warning logged already)
-				toReturn = getById(canonicalPrefix + mappingSet.iterator().next(), 
-					SmallMoleculeReference.class, generatedModel, mainModel);
+				toReturn = (SmallMoleculeReference) target
+					.getByID(canonicalPrefix + mappingSet.iterator().next());
 			}	
 		}	
 		
@@ -522,38 +529,11 @@ class MergerAnalysis implements Analysis {
 			Set<String> mappingSet = idMappingByXrefs(orig, Mapping.Type.CHEBI, RelationshipXref.class);
 			if(!mappingSet.isEmpty()) {
 				//add the primary chebi rel.xrefs to this ER
-				addRelXref(orig, "chebi", mappingSet, generatedModel);
+				addRelXref(orig, "chebi", mappingSet);
 			}	
 		}
 		
 		return toReturn;
-	}
-	
-	
-	/**
-	 * Finds or generates a biopax object by first looking in
-	 * the in-memory (tmp) model, next - main (is the target one too)
-	 * The last one can be null (to skip looking there). 
-	 * 
-	 * @param id
-	 * @param type
-	 * @param tmp
-	 * @param main
-	 * @return object or null
-	 */
-	private <T extends UtilityClass> T getById(final String id, final Class<T> type, 
-			final Model tmp, final Model main) 
-	{
-		assert id != null;
-		
-		// get from the in-memory model
-		T t = type.cast(tmp.getByID(id));
-		if (t == null && main != null) {
-			// second, try - in the main model
-			t = type.cast(main.getByID(id));
-		}
-		
-		return t;
 	}
 	
 }

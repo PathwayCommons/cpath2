@@ -110,11 +110,13 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                         setComments (comments.toString(), proteinReference);
                     }
 
-                    if(sequence != null) { //set sequence (remove spaces)
-                    	String seq = sequence.toString().replaceAll("\\s", "");
-                    	proteinReference.setSequence(seq);
-                    	proteinReference.addComment(sq.toString()); //sequence summary
-                    }
+// won't store canonical sequences (in practice, it does not help and may even mislead: 
+// in fact, one usually needs to know an isoform sequence (variant) and its version exactly)
+//                    if(sequence != null) { //set sequence (remove spaces)
+//                    	String seq = sequence.toString().replaceAll("\\s", "");
+//                    	proteinReference.setSequence(seq);
+//                    	proteinReference.addComment(sq.toString()); //sequence summary
+//                    }
                     
                     //create modified residue features
                     if(features != null)
