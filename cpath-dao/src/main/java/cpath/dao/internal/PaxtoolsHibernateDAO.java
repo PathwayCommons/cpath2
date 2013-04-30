@@ -188,7 +188,6 @@ implements Model, PaxtoolsDAO
 	}
 
 
-	@Transactional
 	@Override
 	public void insert(final Model model)
 	{
@@ -459,22 +458,23 @@ implements Model, PaxtoolsDAO
 	public <T extends BioPAXElement> T addNew(Class<T> type, String id)
 	{
 		T bpe = factory.create(type, id);
-		add(bpe); // many elements, because of cascade=ALL
+		add(bpe);
 		return bpe;
 	}
 
 
 	/**
-	 * 
-	 * Is equivalent to calling {@link #containsID(String)} method
-	 * using the BioPAX element's {@link BioPAXElement#getRDFId()}.
+	 * Returns true iif the DB contains a biopax object with the same URI,
+	 * and that object is equivalent (same biopax class and eqv. properties) 
+	 * to the query one. These two objects are not necessarily equal.
 	 * 
 	 */
 	@Override
 	@Transactional(readOnly=true)
 	public boolean contains(BioPAXElement bpe)
 	{
-		return containsID(bpe.getRDFId());
+		return containsID(bpe.getRDFId()) 
+			&& bpe.isEquivalent(getByID(bpe.getRDFId()));
 	}
 
 
@@ -491,13 +491,11 @@ implements Model, PaxtoolsDAO
 		boolean ret;
 
 		Session ses = sessionFactory.getCurrentSession();
+		String pk = 
+			(CPathSettings.digestUriEnabled()) ? id : ModelUtils.md5hex(id);
 		
-		if(!CPathSettings.digestUriEnabled()) //normal mode
-			ret = (ses.getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists")
-				.setString("md5uri", ModelUtils.md5hex(id)).uniqueResult() != null);
-		else // can be here in a db debug mode
-			ret = (ses.getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists")
-			.setString("md5uri", id).uniqueResult() != null);
+		ret = (ses.getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists")
+				.setString("md5uri", pk).uniqueResult() != null);
 		
 		return ret;
 	}
@@ -509,9 +507,6 @@ implements Model, PaxtoolsDAO
 	{
 		if(id == null || "".equals(id)) 
 			throw new IllegalArgumentException("getByID: id cannot be null or empty string");
-
-		if(log.isDebugEnabled())
-			log.debug("getByID: " + id);
 		
 		Session ses = sessionFactory.getCurrentSession();
 		
@@ -654,20 +649,17 @@ implements Model, PaxtoolsDAO
 	
 	
 	/* 
-	 * All properties and inverse properties 
+	 * All object collection properties and inverse properties 
 	 * (not very deep) initialization
-	 * 
 	 */
 	@Transactional(readOnly=true)
 	@Override
 	public void initialize(Object obj) 
 	{
 		if(obj instanceof BioPAXElement) {		
-			//just reassociate:
-			sessionFactory.getCurrentSession()
-				.buildLockRequest(LockOptions.NONE).lock(obj);
-			Hibernate.initialize(obj);
-	
+			//just re-associate:
+			sessionFactory.getCurrentSession().buildLockRequest(LockOptions.NONE).lock(obj);
+//			Hibernate.initialize(obj);	
 			BioPAXElement element = (BioPAXElement) obj;
 
 			// init. biopax properties
@@ -676,9 +668,10 @@ implements Model, PaxtoolsDAO
 			if (editors != null) {
 				for (PropertyEditor editor : editors) {
 					Set<?> value = editor.getValueFromBean(element);
-					Hibernate.initialize(value); //yup, it inits collections as well ;)
+//					Hibernate.initialize(value);
 					for(Object v : value) {
-						Hibernate.initialize(v); 
+						if(v instanceof Collection)
+							Hibernate.initialize(v); 
 					}
 				}
 			}
@@ -690,10 +683,11 @@ implements Model, PaxtoolsDAO
 				for (ObjectPropertyEditor editor : invEditors) {
 					// does collections as well!
 					Set<?> value = editor.getInverseAccessor().getValueFromBean(element);
-					Hibernate.initialize(value);
-					//values the set can be BioPAX elements only
+//					Hibernate.initialize(value);
+					//values the set can be biopax elements or sets of BPEs only
 					for(Object v : value) {
-						Hibernate.initialize(v); 
+						if(v instanceof Collection)
+							Hibernate.initialize(v); 
 					}
 				}
 			}
@@ -726,10 +720,9 @@ implements Model, PaxtoolsDAO
 	@Transactional(readOnly = true)
 	public Model runReadOnly(Analysis analysis) {
 		Model submodel = null;
-		
 		Session ses = sessionFactory.getCurrentSession();
 //		ses.enableFetchProfile("mul_properties_join");
-//		ses.enableFetchProfile("inverse_mul_properties_join");
+//		ses.enableFetchProfile("inverse_mul_properties_join");	
 		
 		log.debug("runReadOnly: Analysis started");
 		// perform the analysis algorithm
@@ -738,16 +731,14 @@ implements Model, PaxtoolsDAO
 		
 		// auto-complete/detach
 		if(result != null) {
-			log.debug("runReadOnly: detaching the sub-model, using auto-complete...");
+			log.debug("runReadOnly: detaching the sub-model...");
 			if(!result.isEmpty()) {
 				Completer c = new Completer(simpleIO.getEditorMap());
-				//the second arg is null becaue is never used there there anyway
-				result = c.complete(result, null); 				
+				result = c.complete(result, null); //null - model is not used anyway (only follow props)		
 				log.debug("runReadOnly: and cloning...");
 				Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
 				submodel = cln.clone(null, result);
-				submodel.setXmlBase(xmlBase);
-				
+				submodel.setXmlBase(xmlBase);				
 				log.debug("runReadOnly: returning");
 			}
 		}
