@@ -556,7 +556,7 @@ public final class PremergeImpl implements Premerger {
 						// returns a new in-memory biopax model
 						log.info("updateBiopaxWarehouse: in-memory converting... ");
 						Model generatedModel = converter.convert();
-						log.info("updateBiopaxWarehouse: Merging the in-memory warehouse model " +
+						log.info("updateBiopaxWarehouse: Merging the warehouse model " +
 								"converted from: " + metadata.getIdentifier());
 						warehouseModel.merge(generatedModel);
 					}
