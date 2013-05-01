@@ -3,7 +3,6 @@ package cpath.warehouse.beans;
 
 import javax.persistence.*;
 
-import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
@@ -39,16 +38,9 @@ public final class PathwayData {
 	
 	@Transient
     private byte[] pathwayData;
-	
-    // UNCOMPRESS works in MySQL; it's called EXPAND in H2...
-	@Column(name="premergeData", columnDefinition = "LONGBLOB")
-	@ColumnTransformer(forColumn="premergeData", read = "UNCOMPRESS(premergeData)", write = "COMPRESS(?)")
-	@Lob	
+	@Transient
     private byte[] premergeData;
-	
-	@Column(name="validationResults", columnDefinition = "LONGBLOB")
-	@ColumnTransformer(forColumn="validationResults", read = "UNCOMPRESS(validationResults)", write = "COMPRESS(?)")
-	@Lob	
+	@Transient
 	private byte[] validationResults;
 	
 	@Column
@@ -107,7 +99,6 @@ public final class PathwayData {
 	}
     public String getFilename() { return filename; }
 
-    @Transient
     public byte[] getPathwayData() { 
    		return pathwayData;
     }

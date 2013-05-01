@@ -485,5 +485,12 @@ public final class FetcherImpl implements Fetcher
 		}
 
 	}
+
+
+	@Override
+	public void savePathwayData(Metadata metadata) {
+		// TODO Auto-generated method stub
+		
+	}
 		
 }

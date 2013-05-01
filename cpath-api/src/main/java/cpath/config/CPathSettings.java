@@ -60,7 +60,7 @@ public final class CPathSettings {
 	/**
 	 * Name for the cpath2 instance properties file (located in the cpath2 home directory)
 	 */
-	public static final String CPATH_PROPERTIES_FILE = "cpath.properties";	
+	public static final String CPATH_PROPERTIES_FILE = "cpath2.properties";	
 
 	/**
 	 * Name for a cpath2 data sub-directory (under cpath2 home dir.)

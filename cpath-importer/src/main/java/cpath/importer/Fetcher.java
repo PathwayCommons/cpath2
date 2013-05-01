@@ -69,5 +69,14 @@ public interface Fetcher {
      * @throws IOException
      */
     void fetchData(final Metadata metadata) throws IOException;
+
+
+    /**
+     * Saves modified (in the premerge stage)
+     * pathway data and validation results.
+     * 
+     * @param metadata
+     */
+	void savePathwayData(Metadata metadata);
     	
 }

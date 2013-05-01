@@ -156,8 +156,10 @@ public final class PremergeImpl implements Premerger {
 					for (PathwayData pathwayData : metadata.getPathwayData()) {
 						pipeline(metadata, pathwayData, cleaner);	
 					}
-					
+					// save validation results
 					metaDataDAO.saveMetadata(metadata);
+					
+					fetcher.savePathwayData(metadata);
 				} 				
 				
 			} catch (Exception e) {
