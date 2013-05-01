@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+ xmlns="http://pid.nci.nih.gov/biopax/9C01D76A-8C84-11E0-B73D-CBEE6AF8070D#"
+ xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+ xmlns:owl="http://www.w3.org/2002/07/owl#"
+ xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+ xmlns:bp="http://www.biopax.org/release/biopax-level3.owl#"
+ xml:base="http://pid.nci.nih.gov/biopax/9C01D76A-8C84-11E0-B73D-CBEE6AF8070D#">
+<owl:Ontology rdf:about="">
+ <owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl#" />
+</owl:Ontology>
+
+<!-- original PID data may be modified for junit tests; please do not use it for research :) -->
+
+<bp:UnificationXref rdf:about="UnificationXref:UNIPROT_P01118">
+ <bp:id rdf:datatype = "xsd:string">P01118</bp:id>
+ <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
+</bp:UnificationXref>
+
+
+<bp:ModificationFeature rdf:ID="test-feature1"></bp:ModificationFeature>
+
+<bp:ModificationFeature rdf:ID="test-feature2"></bp:ModificationFeature>
+
+<bp:Protein rdf:ID="pid_6362">
+ <bp:entityReference rdf:resource="http://identifiers.org/uniprot/P01116" />
+ <bp:displayName rdf:datatype = "xsd:string">K-RAS isoform 2A</bp:displayName>
+ <bp:dataSource rdf:resource="http://identifiers.org/pid.pathway/" />
+ <bp:feature rdf:resource="#test-feature1" />
+ <bp:notFeature rdf:resource="#test-feature2" />
+</bp:Protein>
+
+<bp:Protein rdf:ID="pid_6361">
+ <bp:entityReference rdf:resource="http://identifiers.org/uniprot/P01118" /> 
+ <bp:displayName rdf:datatype = "xsd:string">K-RAS isoform 2B</bp:displayName>
+ <bp:dataSource rdf:resource="http://identifiers.org/pid.pathway/" />
+ <bp:feature rdf:resource="#test-feature2" />
+</bp:Protein>
+
+<bp:Protein rdf:ID="pid_6349">
+ <bp:entityReference rdf:resource="#pid_6350" />
+ <bp:displayName rdf:datatype = "xsd:string">RAS family</bp:displayName>
+ <bp:memberPhysicalEntity rdf:resource="#pid_6360" />
+ <bp:memberPhysicalEntity rdf:resource="#pid_6359" />
+ <bp:memberPhysicalEntity rdf:resource="#pid_6362" />
+ <bp:memberPhysicalEntity rdf:resource="#pid_6361" />
+ <bp:memberPhysicalEntity rdf:resource="#pid_6363" />
+ <bp:dataSource rdf:resource="http://identifiers.org/pid.pathway/" />
+</bp:Protein>
+
+<bp:UnificationXref rdf:about="UnificationXref:UNIPROT_P01116">
+ <bp:id rdf:datatype = "xsd:string">P01116</bp:id>
+ <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
+</bp:UnificationXref>
+
+<bp:Protein rdf:ID="pid_6360">
+ <bp:entityReference rdf:resource="http://identifiers.org/uniprot/P01112" />
+ <bp:displayName rdf:datatype = "xsd:string">H-RAS isoform 1</bp:displayName>
+ <bp:dataSource rdf:resource="http://identifiers.org/pid.pathway/" />
+</bp:Protein>
+
+<bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P01112">
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_P01112" />
+ <bp:displayName rdf:datatype = "xsd:string">H-RAS isoform 2</bp:displayName>
+ <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
+</bp:ProteinReference>
+
+<bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P01111">
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_P01111" />
+ <bp:displayName rdf:datatype = "xsd:string">N-RAS</bp:displayName>
+ <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
+</bp:ProteinReference>
+
+<bp:Protein rdf:ID="pid_6363">
+ <bp:entityReference rdf:resource="http://identifiers.org/uniprot/P01112" />
+ <bp:displayName rdf:datatype = "xsd:string">H-RAS isoform 2</bp:displayName>
+ <bp:dataSource rdf:resource="http://identifiers.org/pid.pathway/" />
+</bp:Protein>
+
+<bp:Provenance rdf:about="http://identifiers.org/pid.pathway/">
+ <bp:name rdf:datatype = "xsd:string">PID</bp:name>
+ <bp:name rdf:datatype = "xsd:string">NCI_Nature curated</bp:name>
+ <bp:name rdf:datatype = "xsd:string">NCI-Nature PID</bp:name>
+ <bp:name rdf:datatype = "xsd:string">NCI_Nature</bp:name>
+ <bp:name rdf:datatype = "xsd:string">NCI-Nature Pathway Interaction Database</bp:name>
+ <bp:comment rdf:datatype = "xsd:string">cPath2-generated. Data (internal) id: NCI_NATURE</bp:comment>
+ <bp:comment rdf:datatype = "xsd:string">cPath2-generated. Data version: 20110601, June 01, 2011</bp:comment>
+ <bp:comment rdf:datatype = "xsd:string">cPath2-generated. Data loaded from: ftp://ftp1.nci.nih.gov/pub/PID/BioPAX_Level_3/NCI-Nature_Curated.bp3.owl.gz</bp:comment>
+ <bp:comment rdf:datatype = "xsd:string">cPath2-generated. Data type: BIOPAX</bp:comment>
+ <bp:displayName rdf:datatype = "xsd:string">Pathway Interaction Database NCI-Nature Curated Data</bp:displayName>
+ <bp:standardName rdf:datatype = "xsd:string">NCI Pathway Interaction Database: Pathway</bp:standardName>
+</bp:Provenance>
+
+<bp:Protein rdf:ID="pid_6359">
+ <bp:entityReference rdf:resource="http://identifiers.org/uniprot/P01111" />
+ <bp:displayName rdf:datatype = "xsd:string">N-RAS</bp:displayName>
+ <bp:dataSource rdf:resource="http://identifiers.org/pid.pathway/" />
+</bp:Protein>
+
+<bp:UnificationXref rdf:about="UnificationXref:TAXONOMY_9606">
+ <bp:id rdf:datatype = "xsd:string">9606</bp:id>
+ <bp:db rdf:datatype = "xsd:string">Taxonomy</bp:db>
+</bp:UnificationXref>
+
+<bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P01116">
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_P01116" />
+ <bp:displayName rdf:datatype = "xsd:string">K-RAS isoform 2A</bp:displayName>
+ <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
+ <bp:entityFeature rdf:resource="#test-feature1" />
+</bp:ProteinReference>
+
+<bp:BioSource rdf:about="http://identifiers.org/taxonomy/9606">
+ <bp:standardName rdf:datatype = "xsd:string">Homo sapiens</bp:standardName>
+ <bp:displayName rdf:datatype = "xsd:string">Homo sapiens</bp:displayName>
+ <bp:xref rdf:resource="UnificationXref:TAXONOMY_9606" />
+</bp:BioSource>
+
+
+<bp:ProteinReference rdf:ID="pid_6350">
+ <bp:displayName rdf:datatype = "xsd:string">RAS family</bp:displayName>
+ <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
+ <bp:memberEntityReference rdf:resource="http://identifiers.org/uniprot/P01112" />
+ <bp:memberEntityReference rdf:resource="http://identifiers.org/uniprot/P01111" />
+ <bp:memberEntityReference rdf:resource="http://identifiers.org/uniprot/P01116" />
+ <bp:memberEntityReference rdf:resource="http://identifiers.org/uniprot/P01118" />
+</bp:ProteinReference>
+
+<bp:UnificationXref rdf:about="UnificationXref:UNIPROT_P01112">
+ <bp:id rdf:datatype = "xsd:string">P01112</bp:id>
+ <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
+</bp:UnificationXref>
+
+<!-- P01118 is a secondary AC to P01116, and these ERs should be merged by cpath2, incl. features! -->
+<bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P01118">
+ <bp:xref rdf:resource="UnificationXref:UNIPROT_P01118" />
+ <bp:displayName rdf:datatype = "xsd:string">K-RAS isoform 2B</bp:displayName>
+ <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
+ <bp:entityFeature rdf:resource="#test-feature2" />
+</bp:ProteinReference>
+
+<bp:UnificationXref rdf:about="UnificationXref:UNIPROT_P01111">
+ <bp:id rdf:datatype = "xsd:string">P01111</bp:id>
+ <bp:db rdf:datatype = "xsd:string">UniProt</bp:db>
+</bp:UnificationXref>
+</rdf:RDF>
