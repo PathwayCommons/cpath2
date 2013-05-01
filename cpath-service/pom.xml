@@ -1,0 +1,43 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  
+  <parent>
+    <artifactId>parent</artifactId>
+    <groupId>pathwaycommons.cpath</groupId>
+    <version>4.0.0-SNAPSHOT</version>
+  </parent>
+  
+  <artifactId>cpath-service</artifactId>
+  <name>cPath2 Service Tier</name>
+  <description>CPath2 services to be used in the web controllers and console application(s).</description>
+
+  <dependencies>
+  	<dependency>
+  		<groupId>pathwaycommons.cpath</groupId>
+  		<artifactId>cpath-dao</artifactId>
+  		<version>${project.version}</version>
+  	</dependency>
+  	<dependency>
+		<groupId>org.biopax.paxtools</groupId>
+		<artifactId>sif-converter</artifactId>
+    </dependency>
+      <dependency>
+          <groupId>org.biopax.paxtools</groupId>
+          <artifactId>sbgn-converter</artifactId>
+    </dependency>
+  	<dependency>
+  		<groupId>org.biopax.paxtools</groupId>
+  		<artifactId>gsea-converter</artifactId>
+  	</dependency>
+  	<dependency>
+  		<groupId>org.biopax.paxtools</groupId>
+  		<artifactId>paxtools-query</artifactId>
+  	</dependency>
+  	<dependency>
+  		<groupId>pathwaycommons.cpath</groupId>
+  		<artifactId>cpath-api</artifactId>
+  		<version>${project.version}</version>
+  	</dependency>
+  </dependencies>
+    
+</project>

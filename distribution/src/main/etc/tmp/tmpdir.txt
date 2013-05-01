@@ -1,0 +1,3 @@
+Use -Djava.io.tmpdir=$CPATH2_HOME/tmp to make it java app tmp dir.
+
+Temporary directory is also used by cpath2 to store biological ontologies, etc.

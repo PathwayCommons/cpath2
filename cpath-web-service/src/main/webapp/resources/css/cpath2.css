@@ -1,0 +1,252 @@
+/**************** Body and tag styles ****************/
+
+*{margin:0; padding:0;}
+
+body{
+line-height:1.4em;
+color:#303030;
+background:#e8eaec;
+}
+
+a{color:#6699CC; background-color:inherit;}
+a:hover{color:#336699; text-decoration:none; background-color:inherit;}
+a[rel="external"] {color: #0033FF;}
+a[rel="example"] {color: #330099;}
+a img{border:none;}
+
+p{padding:0 0 0.8em 0;}
+p form{margin-top:0; margin-bottom:20px;}
+
+img.left,img.center,img.right{padding:4px; border:1px solid #a0a0a0;}
+img.left{float:left; margin:0 12px 5px 0;}
+img.center{display:block; margin:0 auto 5px auto;}
+img.right{float:right; margin:0 0 5px 12px;}
+
+
+header {
+height:5.5em;
+width: 90%;
+padding:1em 0 0 1em;	
+margin:1em auto;
+background:#003399;
+color:#ffffff;
+}
+
+
+header img {
+float:left;
+padding:0em 1em 1em 0em;
+}
+
+header h1{
+padding:1em 1em 1em 1em;
+font-size:1.8em;
+background-color:inherit;
+color:#ffffff;
+font-weight:normal;
+}
+
+header strong { font-size: 1em; color: red; float: left; padding: 1em 1em 1em 1em;}
+
+header h2{
+margin:1em 0 0 2em;
+font-size:1.2em;
+background-color:inherit;
+color:#f0f2f4;
+font-weight:normal;
+}
+
+#menu {
+	display: block;
+	float: right;
+}
+#menu ul {
+	margin: 0;
+	list-style: none;
+}
+#menu li {
+	display: block;
+	float: left;
+	white-space: nowrap;
+}
+#menu li a {
+	display: block;
+	padding: 1em 1em 1em 1em;
+	text-decoration: none;
+	font-weight: bold;
+	color: #003399;
+}
+
+* html #menu a {width:1%;}
+
+#menu li a:hover {
+	text-decoration: underline;
+}
+
+
+#content{
+padding:1em 0 0 1em;	
+margin:1em auto;
+text-align:left;
+background:#ffffff;
+color:#303030;
+border:2px solid #a0a0a0;
+width:90%;
+}
+
+#content h1{
+display:block;
+margin:5px 0 5px 0;
+font-size:1.1em;
+font-weight:bold;
+color:#505050;
+background-color:inherit;
+}
+
+#content h2{
+display:block;
+margin:8px 0 5px 0;
+padding-left:2px;
+font-size:1.0em;
+font-weight:bold;
+color:#505050;
+background-color:#EEEEEE;
+}
+
+#content h3{
+font-size:1.0em;
+font-weight:bold;
+display:block;
+margin:5px 0 5px 0;
+height:1.7em;
+line-height:1.7em;
+}
+
+#content h4{
+display:block;
+margin:10px 0 5px 0;
+padding-left:2px;
+font-size:0.9em;
+font-weight:bold;
+color:#505050;
+background-color:#EEEEEE;
+}
+
+#content a:hover{text-decoration:underline;}
+#content ul,#content ol{margin:0 5px 16px 35px;}
+#content dl{margin:0 5px 10px 25px;}
+#content dt{font-weight:bold; margin-bottom:5px;}
+#content dd{margin:0 0 10px 15px;}
+
+
+#content p, #content ol, #content ul, #content table {
+	width: 80%;
+}
+
+footer {
+clear:both;
+padding:1em 0 0 1em;	
+margin:1em auto;
+font-size:0.9em;
+color:#f0f0f0;
+background:#003399;
+text-align:center;
+width: 90%;
+}
+
+footer p{padding:0; margin:0; text-align:center;}
+footer a{color:inherit; background-color:inherit; font-weight:bold;}
+footer a:hover{color:inherit; background-color:inherit; text-decoration: underline;}
+footer ul{padding:0; margin:0; text-align:center; list-style: none;}
+footer strong {color: red;}
+
+footer .marquee {
+font-size:0.7em;
+	
+/* display: none; */
+display: -wap-marquee;
+-wap-marquee-dir: rtl;
+-wap-marquee-speed: medium;
+-wap-marquee-loop: infinite;
+-wap-marquee-style: slide;
+
+/* W3C  */
+overflow-x: marquee-line;
+marquee-direction: backward;
+marquee-style: slide;
+marquee-speed: medium;
+marquee-play-count: infinite;
+} 
+
+.box{
+margin:0 0 10px 0;
+padding-left:5px;
+border:1px solid #c0c0c0;
+background-color:#fafbfc;
+color:#505050;
+line-height:1.5em;
+}
+
+.box h3{
+width:100%;
+}
+
+.datasources  {
+	background-color: #FFFFFF;
+    margin-bottom:10px;
+    border: 1px 1px 1px 1px solid;
+	border-color: #CCCCCC;
+	border-collapse: collapse;
+}
+.datasources dt {
+	clear: left;
+}
+.datasources dt img {
+	border: 1 1 1 1 solid black;
+/* 	width: 125px; */
+/* 	height: 60px; */
+	width: 100px;
+	height: 50px;	
+	margin: 7px;
+	float: left;
+}
+.datasources dd {
+	font-size: small;
+	font-style: italic;
+}
+
+.mask {
+    z-index:0;
+    display:none;
+    position:absolute;
+    top:0;
+    left:0;
+    -moz-opacity: 0.5;
+    opacity:.50;
+    filter: alpha(opacity=50);
+    background-color:#CCC;
+}
+
+#validate div {
+	padding-top: 2em;
+}
+#aboutFix {
+	display: none;
+}
+#normalizerOptions {
+	display: none;
+}
+#syngroups {
+	list-style: inside; 
+	display: none;
+}
+.errorMsg {
+	color: red;
+}
+#validations ul {
+	display: none;
+	list-style: decimal;
+}
+#vOwl {
+	list-style: inside;
+}
