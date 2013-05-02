@@ -83,7 +83,7 @@
 	<mvc:resources mapping="/admin/homedir/**" location="file:${CPATH2_HOME}/" />
 	
 	<mvc:interceptors>
-      	<bean class="cpath.webservice.interceptor.CPathWebserviceHandlerInterceptor" />
+<!--       	<bean class="cpath.webservice.interceptor.CPathWebserviceHandlerInterceptor" /> -->
 		<bean class="cpath.webservice.interceptor.CPathMaintenanceHandlerInterceptor" />                
     </mvc:interceptors> 
       
