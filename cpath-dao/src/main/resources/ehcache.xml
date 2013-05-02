@@ -6,12 +6,11 @@
 		for | detailed information on how to configurigure caches in this file + -->
 	
 	<!-- Cache directory location -->
-	<diskStore path="${CPATH2_HOME}/cache/hibernate-second-level-ehcache" />
+<!-- 	<diskStore path="${CPATH2_HOME}/cache/hibernate-second-level-ehcache" /> -->
 
 	<!-- the default is used by the Hibernate 2nd-level cache -->
-	<defaultCache eternal="false" maxElementsInMemory="10000"
-		overflowToDisk="true" diskPersistent="false" 
-		timeToIdleSeconds="0" timeToLiveSeconds="300" 
-		memoryStoreEvictionPolicy="LRU" />
+	<defaultCache eternal="false" maxElementsInMemory="100000"
+		overflowToDisk="false" diskPersistent="false" 
+		timeToIdleSeconds="0" timeToLiveSeconds="300" />
 
 </ehcache>
