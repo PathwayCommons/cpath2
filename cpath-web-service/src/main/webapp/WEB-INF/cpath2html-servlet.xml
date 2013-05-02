@@ -70,9 +70,9 @@
 	<mvc:view-controller path="/tests.html" view-name="tests"/>
 	
 	<!-- Configures Handler Interceptors -->	
-	<mvc:interceptors>
-		<bean class="cpath.webservice.interceptor.CPathWebserviceHandlerInterceptor" />
-	</mvc:interceptors>
+<!-- 	<mvc:interceptors> -->
+<!-- 		<bean class="cpath.webservice.interceptor.CPathWebserviceHandlerInterceptor" /> -->
+<!-- 	</mvc:interceptors> -->
 
 	<!-- mvc:annotation-driven must the last -->
     <mvc:annotation-driven/>	

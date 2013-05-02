@@ -31,9 +31,6 @@ public final class CPathWebserviceHandlerInterceptor extends
 					+ "; Parameters: " + request.getQueryString()
 					+ "; Referer: " + request.getHeader("Referer")
 					+ "; User-Agent: " + request.getHeader("User-Agent")
-//					+ "; X-Forwarded-For: " + request.getHeader("X-Forwarded-For") 
-//					+ "; Via: " + request.getHeader("Via") 
-//					+ "; X-Requested-With: " + request.getHeader("X-Requested-With")
 					);
 
 		return true;
