@@ -32,7 +32,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -49,7 +48,6 @@ import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
-import cpath.importer.Fetcher;
 import cpath.importer.Premerger;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
@@ -81,26 +79,13 @@ public class CPathWarehouseTest {
 		PaxtoolsDAO warehouse = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		
-		// load test data
-		Fetcher fetcher = new FetcherImpl(false);
-        Collection<Metadata> metadata;
-		try {
-			//fetch and save test metadata and files
-			metadata = fetcher.readMetadata("classpath:metadata.conf");
-			for (Metadata mdata : metadata) {
-				metadataDAO.saveMetadata(mdata);
-				fetcher.fetchData(mdata);
-			}
+		//fetch and save test metadata and files
+		metadataDAO.importMetadata("classpath:metadata.conf");	
 			
-			// build the test warehouse and id-mapping tables
-			Premerger premerger = new PremergeImpl(metadataDAO, warehouse, null, null);
-			premerger.buildWarehouse();
-			premerger.updateIdMapping(false);
-			
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		
+		// build the test warehouse and id-mapping tables
+		Premerger premerger = new PremergeImpl(metadataDAO, warehouse, null, null);
+		premerger.buildWarehouse();
+		premerger.updateIdMapping(false);
 
 		// re-index all
 		warehouse.index();
@@ -122,21 +107,7 @@ public class CPathWarehouseTest {
 		assertTrue(((Model)warehouse).containsID("http://identifiers.org/uniprot/P62158"));
 		assertFalse(((Model)warehouse).getObjects(SmallMoleculeReference.class).isEmpty());
 		assertTrue(((Model)warehouse).containsID("http://identifiers.org/chebi/CHEBI:20"));				
-				
-		Model m = warehouse.getValidSubModel(
-			Arrays.asList(
-				Normalizer.uri(XML_BASE, "REFSEQ", "NP_619650", UnificationXref.class),
-				"http://identifiers.org/uniprot/Q8TD86",
-				Normalizer.uri(XML_BASE, "UNIPROT", "Q8TD86", UnificationXref.class),
-				Normalizer.uri(XML_BASE, "UNIPROT", "A2A2M3", UnificationXref.class),
-				Normalizer.uri(XML_BASE, "UNIPROT", "Q6Q2C4", UnificationXref.class),
-				Normalizer.uri(XML_BASE, "ENTREZ GENE", "163688", UnificationXref.class))
-		);
-		// The following item should come from Q8TD86 ProteinReference
-		// See TEST_UNIPROT*.gz file for the original reference
-		assertTrue(m.containsID("http://identifiers.org/taxonomy/9606")); // added by auto-complete				
-		
-		
+							
 		ProteinReference pr = (ProteinReference) ((Model)warehouse).getByID("http://identifiers.org/uniprot/P62158");
 		warehouse.initialize(pr);
 		warehouse.initialize(pr.getName());

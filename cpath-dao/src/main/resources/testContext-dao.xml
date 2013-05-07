@@ -12,7 +12,7 @@
        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd">
 
 	<context:annotation-config />
- 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+ 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath2.properties"/>
 
     <tx:annotation-driven transaction-manager="pcTransactionManager"/>
 

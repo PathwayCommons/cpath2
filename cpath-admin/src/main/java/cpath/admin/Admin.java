@@ -31,10 +31,8 @@ package cpath.admin;
 import static cpath.config.CPathSettings.*;
 import cpath.config.CPathSettings;
 import cpath.dao.*;
-import cpath.importer.Fetcher;
 import cpath.importer.Merger;
 import cpath.importer.Premerger;
-import cpath.importer.internal.FetcherImpl;
 import cpath.importer.internal.MergerImpl;
 import cpath.importer.internal.PremergeImpl;
 import cpath.service.ErrorResponse;
@@ -83,7 +81,6 @@ public final class Admin {
     // Cmd Enum
     public static enum Cmd {
         // command types
-    	CREATE_DATABASES("-create-db"),
         FETCH_METADATA("-fetch-metadata"),
 		FETCH_DATA("-fetch-data"),
 		CREATE_WAREHOUSE("-create-warehouse"),
@@ -165,106 +162,105 @@ public final class Admin {
     	
 
         // create the TMP dir inside the home dir if it does not exist yet
-		File dir = new File(localDataDir());
+		File dir = new File(dataDir());
 		if(!dir.exists()) {
 			dir.mkdir();
-		}   	
-    	
-	       if(args[0].equals(Cmd.CREATE_DATABASES.toString())) {
-				if (args.length > 1)
-					// agrs[1] contains comma-separated db names
-					createDatabases(args[1].split(","));
-				else 
-					createDatabases(null);
-	        } 
-	        else if(args[0].equals(Cmd.CREATE_INDEX.toString())) {
-				index();
-	        } 
-	        else if (args[0].equals(Cmd.FETCH_METADATA.toString())) {
-				if (args.length == 1) {
-					fetchMetadata("file:" + property(PROP_METADATA_LOCATION));
+		}
+
+		if (args[0].equals(Cmd.CREATE_INDEX.toString())) {
+			
+			index();
+			
+		} else if (args[0].equals(Cmd.FETCH_METADATA.toString())) {
+			
+			if (args.length == 1) {
+				fetchMetadata("file:" + property(PROP_METADATA_LOCATION));
+			} else {
+				fetchMetadata(args[1]);
+			}
+			
+		} else if (args[0].equals(Cmd.CREATE_WAREHOUSE.toString())) {
+			
+			if (args.length > 1)
+				createWarehouse(args[1]);
+			else
+				// command without extra parameter
+				createWarehouse(null);
+			
+		} else if (args[0].equals(Cmd.UPDATE_MAPPING.toString())) {
+			
+			updateMapping();
+			
+		} else if (args[0].equals(Cmd.PREMERGE.toString())) {
+			
+			if (args.length > 1)
+				runPremerge(args[1]);
+			else
+				// command without extra parameter
+				runPremerge(null);
+			
+		} else if (args[0].equals(Cmd.MERGE.toString())) {
+			boolean force = false;
+			String provider = null;
+			for (int i = 1; i < args.length; i++) {
+				if ("--force".equalsIgnoreCase(args[i])) {
+					force = true;
 				} else {
-					fetchMetadata(args[1]);
+					// use only one, the first id, and ignore others
+					if (provider == null)
+						provider = args[i];
 				}
-	        }
-			else if (args[0].equals(Cmd.FETCH_DATA.toString())) {
-				if (args.length >= 2) 
-					fetchData(args[1]);
-				else // command without extra parameter
-					fetchData(null);
 			}
-			else if (args[0].equals(Cmd.CREATE_WAREHOUSE.toString())) {
-				if (args.length > 1) 
-					createWarehouse(args[1]);
-				else // command without extra parameter
-					createWarehouse(null);
-			}
-			else if (args[0].equals(Cmd.UPDATE_MAPPING.toString())) {
-					updateMapping();
-			}
-			else if (args[0].equals(Cmd.PREMERGE.toString())) {
-				if (args.length > 1) 
-					runPremerge(args[1]);
-				else // command without extra parameter
-					runPremerge(null);
-			}
-			else if (args[0].equals(Cmd.MERGE.toString())) {
-				boolean force = false;
-				String provider = null;
-				for (int i = 1; i < args.length; i++) {
-					if ("--force".equalsIgnoreCase(args[i])) {
-						force = true;
-					} else {
-						//use only one, the first id, and ignore others
-						if(provider == null) 
-							provider = args[i];
-					}
-				}
-				
-				runMerge(provider, force);
-			}
-			else if(args[0].equals(Cmd.EXPORT.toString())) {
-				if (args.length < 3)
-					fail(args,"must provide at least two arguments.");
-				else if(args.length == 3)
-					exportData(args[1], args[2], new String[]{});
-				else 
-					exportData(args[1], args[2], args[3].split(","));
-	        } 
-			else if(args[0].equals(Cmd.EXPORT_VALIDATION.toString())) {
-				if (args.length < 3)
-					fail(args,"must provide at least two arguments for this command.");
-				
-	        	if(args[2].endsWith(".html"))
-	        		exportValidation(args[1], new FileOutputStream(args[2]), true);
-	        	else
-	        		exportValidation(args[1], new FileOutputStream(args[2]), false);
-	        } 
-			else if(args[0].equals(Cmd.CREATE_BLACKLIST.toString())) {
-	            createBlacklist();
-	        } 
-			else if(args[0].equals(Cmd.CONVERT.toString())) {
-				if (args.length < 4)
-					fail(args,"provide at least three arguments.");
-				
-	            OutputStream fos = new FileOutputStream(args[2]);
-	            OutputFormat outputFormat = OutputFormat.valueOf(args[3]);
-	            convert(args[1], outputFormat, fos);
-	        } 
-			else if(args[0].equals(Cmd.CREATE_DOWNLOADS.toString())) {
-	            createDownloads();
-	        } 
-			else if(args[0].equals(Cmd.UPDATE_COUNTS.toString())) {
-				updateCounts();
-	        } 
-			else if(args[0].equals(Cmd.CLEAR_CACHE.toString())) {
-				clearCache();
-	        } 
-			else {
-				System.err.println(usage());
-	        }    
-		
-		// required because MySQL Statement 
+
+			runMerge(provider, force);
+			
+		} else if (args[0].equals(Cmd.EXPORT.toString())) {
+			
+			if (args.length < 3)
+				fail(args, "must provide at least two arguments.");
+			else if (args.length == 3)
+				exportData(args[1], args[2], new String[] {});
+			else
+				exportData(args[1], args[2], args[3].split(","));
+			
+		} else if (args[0].equals(Cmd.EXPORT_VALIDATION.toString())) {
+			
+			if (args.length < 3)
+				fail(args,"must provide at least two arguments for this command.");
+			if (args[2].endsWith(".html"))
+				exportValidation(args[1], new FileOutputStream(args[2]), true);
+			else
+				exportValidation(args[1], new FileOutputStream(args[2]), false);
+			
+		} else if (args[0].equals(Cmd.CREATE_BLACKLIST.toString())) {
+			
+			createBlacklist();
+			
+		} else if (args[0].equals(Cmd.CONVERT.toString())) {
+			if (args.length < 4)
+				fail(args, "provide at least three arguments.");
+			OutputStream fos = new FileOutputStream(args[2]);
+			OutputFormat outputFormat = OutputFormat.valueOf(args[3]);
+			
+			convert(args[1], outputFormat, fos);
+			
+		} else if (args[0].equals(Cmd.CREATE_DOWNLOADS.toString())) {
+			
+			createDownloads();
+			
+		} else if (args[0].equals(Cmd.UPDATE_COUNTS.toString())) {
+			
+			updateCounts();
+			
+		} else if (args[0].equals(Cmd.CLEAR_CACHE.toString())) {
+			
+			clearCache();
+			
+		} else {
+			System.err.println(usage());
+		}
+
+		// required because MySQL Statement
 		// Cancellation Timer thread is still running
 		System.exit(0);
     }    
@@ -321,7 +317,7 @@ public final class Admin {
      	
      	//update counts of pathways, interactions, molecules
      	MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
-     	for(Metadata md : mdao.getAllMetadataInitialized()) {
+     	for(Metadata md : mdao.getAllMetadata()) {
      		
      		if(md.getType().isNotPathwayData())
      			continue;
@@ -362,26 +358,6 @@ public final class Admin {
      	CPathUtils.deleteDirectory(cacheDir);
     }
     
-    
-    /**
-     * Creates a new set of cpath2 database schemas;
-     * 
-     * @param names
-     * @throws IllegalStateException when cpath2 is not in the maintenance mode.
-     */
-	public static void createDatabases(String[] names) {
-		if(!isMaintenanceEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
-		
-    	if(names != null) {
-    		for(String db : names) {
-    			String dbName = db.trim();
-    			CPathUtils.createDatabase(dbName);
-    		}
-    	} else { // create all (as specified in the current cpath.properties)
-    		CPathUtils.createDatabase(property(PROP_MAIN_DB));
-    	}
-	}
 	
 	/**
      * Generates cpath2 graph query blacklist file
@@ -532,85 +508,11 @@ public final class Admin {
 		System.setProperty("hibernate.hbm2ddl.auto", "update");	
 		ClassPathXmlApplicationContext context =
             new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
-        MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-        Fetcher fetcher = new FetcherImpl(false);
-        
-        
+        MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");              
         // grab the data
-        Collection<Metadata> metadata = fetcher.readMetadata(location);
-        
-        // process metadata
-        for (Metadata mdata : metadata) {
-        	Metadata m = metadataDAO.getMetadataByIdentifier(mdata.getIdentifier());
-        	if(m != null) {
-        		LOG.info("fetchMetadata: overwriting metadata " +
-        			"(this won't change the counts and pathwayData collection): " 
-        				+ m.getIdentifier());
-        		m.setDescription(mdata.getDescription());
-        		m.setName(mdata.getName());
-        		m.setIcon(mdata.getIcon());
-        		m.setType(mdata.getType());
-        		m.setUrlToData(mdata.getUrlToData());
-        		m.setUrlToHomepage(mdata.getUrlToHomepage());
-        		m.setConverterClassname(mdata.getConverterClassname());
-        		m.setCleanerClassname(mdata.getCleanerClassname());
-        		//m.setNumInteractions, etc.. - won't modify; one should run -update-counts
-        		//m.setPathwayData - won't touch either; one should run -premerge
-        		metadataDAO.saveMetadata(m);
-        	}  else {
-        		metadataDAO.saveMetadata(mdata);
-        	}
-        }
-        
+        metadataDAO.importMetadata(location);
         context.close(); 
     }
-
-
-    /**
-     * Downloads pathway or warehouse (protein, small molecule) data
-     * from the location specified in the metadata.
-	 *
-     * @param provider String
-     * @throws IOException, IllegalStateException (when not maintenance mode)
-     */
-    public static void fetchData(final String provider) throws IOException {
-		if(!isMaintenanceEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
-    	
-//		System.setProperty("hibernate.hbm2ddl.auto", "update");
-		ClassPathXmlApplicationContext context =
-            new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
-        MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-        Fetcher fetcher = new FetcherImpl(true);
-    	
-		// get metadata
-		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
-		// sanity check
-		if (metadataCollection == null || metadataCollection.isEmpty()) {
-			if(provider != null)
-				LOG.error("Unknown provider identifier: " + provider);
-			else
-				LOG.error("No metadata found in the db.");
-			
-			context.close(); 
-			return;
-		}
-		
-		// interate over all metadata
-		for (Metadata metadata : metadataCollection) {			
-			try {
-				fetcher.fetchData(metadata); 
-			} catch (Exception e) {
-				LOG.error("Failed fetching data for " + metadata.toString() 
-					+ ". Skipping...", e);
-				continue;
-			}
-			
-			LOG.info("FETCHING DONE : " + metadata.getIdentifier());
-		}
-		
-		context.close(); 
-	}
 
     
 	/**
@@ -623,7 +525,7 @@ public final class Admin {
 	{
 		Collection<Metadata> toReturn = new HashSet<Metadata>();
 		if (provider == null || provider.isEmpty()) {
-			toReturn = metadataDAO.getAllMetadataInitialized();
+			toReturn = metadataDAO.getAllMetadata();
 		} else {
 			Metadata md = metadataDAO.getMetadataByIdentifier(provider);
 			if(md != null)
@@ -780,10 +682,7 @@ public final class Admin {
 				"(- parameters within the square braces are optional.)" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
 		// data import (instance creation) pipeline :
-		toReturn.append(Cmd.CREATE_DATABASES.toString() + " [name] " +
-				"(drops, creates an empty database; this destroys all data there)" + NEWLINE);
 		toReturn.append(Cmd.FETCH_METADATA.toString() + " <url>" + NEWLINE);
-		toReturn.append(Cmd.FETCH_DATA.toString() + " [<metadataId>]" + NEWLINE);
 		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + " [<metadataId>]" + NEWLINE);
 		toReturn.append(Cmd.UPDATE_MAPPING.toString() + " (re-builds id-mapping tables using cpath2 warehouse data)"+ NEWLINE);
 		toReturn.append(Cmd.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
@@ -886,7 +785,7 @@ public final class Admin {
 		
 		// 3) export by datasource
         LOG.info("create-downloads: preparing 'by datasource' archives...");
-        for(Metadata md : mdao.getAllMetadataInitialized()) {
+        for(Metadata md : mdao.getAllMetadata()) {
         	if(!md.getType().isNotPathwayData()) {
         		// display name or, if exists, - standard name
         		String name = md.standardName(); 

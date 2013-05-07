@@ -27,9 +27,6 @@
 
 package cpath.dao;
 
-import java.util.Set;
-
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
 /**
@@ -47,11 +44,9 @@ public interface Analysis {
 	
 	/**
 	 * Runs an analysis or query algorithm 
-	 * on the BioPAX {@link Model};
-	 * optionally, returns the result (biopax elements).
+	 * on the BioPAX {@link Model}.
 	 * 
 	 * @param model persistent BioPAX model to work with (will be injected)
-	 * @return
 	 */
-	Set<BioPAXElement> execute(Model model);
+	void execute(Model model);
 }

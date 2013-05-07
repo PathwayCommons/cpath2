@@ -191,17 +191,12 @@ the same db names as specified in the $CPATH2_HOME/cpath.properties file:
 sh cpath2-cli.sh -create-db cpathmain,cpathwarehouse
 (WARNING: this destroys and re-creates the database, if existed!)
 
-1. Fetch/Update Instance Metadata:
+# fetch/update Metadata:
+
 #sh cpath2-cli.sh -fetch-metadata <metadataURL>
 sh cpath2-cli.sh -fetch-metadata "file:///full-path/metadata.conf"
 
-2. Fetch Data (download and store data locally)
-sh cpath2-cli.sh -fetch-data
-- gets all warehouse and pathway data sequentially; one can also import, e.g., CHEBI only: 
-sh cpath2-cli.sh -fetch-data CHEBI
-
-
-3.Premerge (parse, clean, convert, and store data in the database)
+#parse, clean, convert, and store data in the database
 
 sh cpath2-cli.sh -create-warehouse
 #sh cpath2-cli.sh -create-warehouse <IDENTIFIER>
@@ -221,6 +216,7 @@ sh cpath2-cli.sh -create-index
 # updates counts/stats for no. pathways, interactions, molecules, etc.
 sh cpath2-cli.sh -update-counts
 
+# optional
 sh cpath2-cli.sh -clear-cache
 
   Optionally (though highly recommended), you can also create a 'blacklist' 

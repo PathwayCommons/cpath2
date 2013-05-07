@@ -91,7 +91,8 @@ public class GraphController extends BasicController {
     {
 		//check for binding errors
 		if(bindingResult.hasErrors()) {
-			errorResponse(errorfromBindingResult(bindingResult), response);
+			errorResponse(Status.BAD_REQUEST, 
+					errorFromBindingResult(bindingResult), response);
 			return;
 		} 
 		
@@ -118,9 +119,9 @@ public class GraphController extends BasicController {
 			break;
 		default:
 			// impossible (should has failed earlier)
-			errorResponse(new ErrorResponse(Status.INTERNAL_ERROR, 
+			errorResponse(Status.INTERNAL_ERROR, 
 				getClass().getCanonicalName() + " does not support " 
-					+ graph.getKind()), response);
+					+ graph.getKind(), response);
 			return;
 		}
 		

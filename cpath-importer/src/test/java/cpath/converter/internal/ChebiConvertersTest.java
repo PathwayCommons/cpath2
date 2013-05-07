@@ -9,7 +9,6 @@ import cpath.importer.Converter;
 import cpath.importer.internal.ImportFactory;
 
 import org.biopax.paxtools.io.*;
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.*;
@@ -25,7 +24,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Set;
 
 
 /**
@@ -88,9 +86,8 @@ public class ChebiConvertersTest {
 		// do various checks (transactionally)
 		((PaxtoolsDAO)model).run(new Analysis() {			
 			@Override
-			public Set<BioPAXElement> execute(Model model) {
+			public void execute(Model model) {
 				checkResultModel((Model)model, "testConvertChebiToPersistentModel.out.owl");
-				return null;
 			}
 		});
 		

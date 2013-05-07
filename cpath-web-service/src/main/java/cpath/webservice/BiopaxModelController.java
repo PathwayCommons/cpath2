@@ -37,6 +37,7 @@ import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
+import cpath.service.Status;
 import cpath.service.jaxb.*;
 import cpath.webservice.args.Get;
 import cpath.webservice.args.GetProperty;
@@ -125,7 +126,8 @@ public class BiopaxModelController extends BasicController {
     	Writer writer, HttpServletResponse response) throws IOException
     {
     	if(bindingResult != null &&  bindingResult.hasErrors()) {
-    		errorResponse(errorfromBindingResult(bindingResult), response);
+    		errorResponse(Status.BAD_REQUEST, 
+    				errorFromBindingResult(bindingResult), response);
     	} else {
 			OutputFormat format = get.getFormat();
 			String[] uri = get.getUri();
@@ -151,17 +153,23 @@ public class BiopaxModelController extends BasicController {
     		throws IOException 
     {
     	if(bindingResult.hasErrors()) {
-    		errorResponse(errorfromBindingResult(bindingResult), response);
-    		return null;
+    		errorResponse(Status.BAD_REQUEST, 
+    				errorFromBindingResult(bindingResult), response);
     	} else {
     		ServiceResponse sr = service.traverse(query.getPath(), query.getUri());
     		if(sr instanceof ErrorResponse) {
-				errorResponse((ErrorResponse) sr, response);
-				return null;
-			} else {
+				errorResponse(Status.INTERNAL_ERROR, 
+						((ErrorResponse) sr).toString(), response);
+			}
+    		else if(sr.isEmpty()) {
+    			errorResponse(Status.NO_RESULTS_FOUND, 
+    					"no results found", response);
+    		}
+    		else {
 				return sr;
 			}
     	}
+    	return null;
     }
     
 }

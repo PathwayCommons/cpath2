@@ -283,7 +283,7 @@ public class MetadataController extends BasicController
     private List<ValInfo> validationInfo() {
     	final List<ValInfo> list = new ArrayList<ValInfo>();
     	
-		for(Metadata m : service.getAllMetadataInitialized()) {
+		for(Metadata m : service.getAllMetadata()) {
 			if(m.getType().isNotPathwayData())
 				continue;
 			

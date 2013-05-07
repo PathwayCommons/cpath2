@@ -52,7 +52,7 @@ public class CPathAdminController extends BasicController {
 	@RequestMapping(value = "/admin/data")
     public String data(Model model) {
     	// get the sorted list of files
-    	String path = CPathSettings.localDataDir(); 
+    	String path = CPathSettings.dataDir(); 
     	File[] list = new File(path).listFiles();
     	
     	Map<String,String> files = new TreeMap<String,String>();

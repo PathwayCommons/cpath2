@@ -45,8 +45,6 @@ import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.EntityReference;
 import org.biopax.paxtools.model.level3.PathwayStep;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
-import org.biopax.paxtools.controller.Cloner;
-import org.biopax.paxtools.controller.Completer;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.ObjectPropertyEditor;
 import org.biopax.paxtools.controller.PathAccessor;
@@ -204,6 +202,7 @@ implements Model, PaxtoolsDAO
 			int i = 0;
 			StatelessSession stls = sessionFactory.openStatelessSession();
 			Query q = stls.getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists");
+			stls.createSQLQuery("SET REFERENTIAL_INTEGRITY FALSE").executeUpdate();
 			
 			Transaction tx = stls.beginTransaction();
 			for (BioPAXElement bpe : model.getObjects()) {
@@ -599,16 +598,9 @@ implements Model, PaxtoolsDAO
 
 	/**
 	 * When an non-empty list of IDs (RDFId, URI) is provided,
-	 * it will use {@link SimpleIOHandler#convertToOWL(Model, OutputStream, String...)} 
-	 * which in turn uses {@link Fetcher#fetch(BioPAXElement, Model)}
-	 * (rather than {@link #getValidSubModel(Collection)}) method
-	 * to recursively extract each listed element (with all children and properties)
-	 * and put into a new sub-model, which is then serialized and 
-	 * written to the output stream. Note: using the Fetcher, there is a risk 
-	 * (depending on the data stored) of pulling almost entire network 
-	 * by providing one or a few IDs... Also implemented here is 
-	 * that the Fetcher/traverser does not follow BioPAX
-	 * property 'nextStep', which otherwise could lead to infinite loops.
+	 * it will use {@link SimpleIOHandler#convertToOWL(Model, OutputStream, String...)}
+	 * method to extract listed elements (with all children and properties)model
+	 * and write as RDF/XML to the output stream.
 	 */
 	@Override
 	@Transactional
@@ -618,33 +610,6 @@ implements Model, PaxtoolsDAO
 //      ses.enableFetchProfile("mul_properties_join");
         simpleIO.convertToOWL(this, outputStream, ids);
 //      ses.disableFetchProfile("mul_properties_join");
-	}
-	
-
-	/** 
-	 * 
-	 * Creates a new detached BioPAX sub-model from the list of URIs
-	 * using Paxtools's {@link Completer} and {@link Cloner} approach
-	 * (thus ignoring those not in the same list); runs within a 
-	 * read-only transaction.
-	 * 
-	 */
-	@Override
-	@Transactional(readOnly = true)
-	public Model getValidSubModel(final Collection<String> ids) {		
-		// run the analysis (in a new transaction)
-		return runReadOnly(new Analysis() {
-			@Override
-			public Set<BioPAXElement> execute(Model model) {
-				Set<BioPAXElement> bioPAXElements = new HashSet<BioPAXElement>();
-				for(Object id : ids) {
-					BioPAXElement bpe = getByID(id.toString());
-					if(bpe != null)
-						bioPAXElements.add(bpe);
-				}
-				return bioPAXElements;
-			}
-		});
 	}
 	
 	
@@ -698,7 +663,7 @@ implements Model, PaxtoolsDAO
 	/**
 	 * {@inheritDoc}
 	 * 
-	 * Runs within a new transaction; can modify data.
+	 * Runs within a new transaction (can modify/save).
 	 * 
 	 */
 	@Override
@@ -718,35 +683,18 @@ implements Model, PaxtoolsDAO
 	 */
 	@Override
 	@Transactional(readOnly = true)
-	public Model runReadOnly(Analysis analysis) {
-		Model submodel = null;
-		Session ses = sessionFactory.getCurrentSession();
+	public void runReadOnly(Analysis analysis) {
+//		Session ses = sessionFactory.getCurrentSession();
 //		ses.enableFetchProfile("mul_properties_join");
 //		ses.enableFetchProfile("inverse_mul_properties_join");	
 		
-		log.debug("runReadOnly: Analysis started");
+		log.debug("runReadOnly: started");
 		// perform the analysis algorithm
-		Set<BioPAXElement> result = analysis.execute(this);		
-		log.debug("runReadOnly: Analysis finished");
+		analysis.execute(this);		
+		log.debug("runReadOnly: finished");
 		
-		// auto-complete/detach
-		if(result != null) {
-			log.debug("runReadOnly: detaching the sub-model...");
-			if(!result.isEmpty()) {
-				Completer c = new Completer(simpleIO.getEditorMap());
-				result = c.complete(result, null); //null - model is not used anyway (only follow props)		
-				log.debug("runReadOnly: and cloning...");
-				Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
-				submodel = cln.clone(null, result);
-				submodel.setXmlBase(xmlBase);				
-				log.debug("runReadOnly: returning");
-			}
-		}
-
 //		ses.disableFetchProfile("mul_properties_join");
 //		ses.disableFetchProfile("inverse_mul_properties_join");
-		
-		return submodel;
 	}
 
 	

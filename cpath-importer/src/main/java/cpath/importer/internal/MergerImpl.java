@@ -100,7 +100,7 @@ public final class MergerImpl implements Merger {
 		if (provider != null)
 			providersMetadata.add(metadataDAO.getMetadataByIdentifier(provider));
 		else
-			providersMetadata = metadataDAO.getAllMetadataInitialized();
+			providersMetadata = metadataDAO.getAllMetadata();
 
 		for (Metadata metadata : providersMetadata) {
 			log.info("Start merging " + metadata);

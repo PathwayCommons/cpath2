@@ -13,7 +13,7 @@
 
 	<context:annotation-config />
 
-	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+	<context:property-placeholder location="file:${CPATH2_HOME}/cpath2.properties"/>
 	
     <!-- enable the configuration of transactional behavior based on annotations -->
     <tx:annotation-driven transaction-manager="mainTransactionManager"/>

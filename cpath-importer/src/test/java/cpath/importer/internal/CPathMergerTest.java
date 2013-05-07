@@ -5,7 +5,6 @@ import cpath.dao.Analysis;
 import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
-import cpath.importer.Fetcher;
 import cpath.importer.Premerger;
 import cpath.warehouse.beans.*;
 
@@ -26,7 +25,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 
 /**
@@ -49,25 +47,11 @@ public class CPathMergerTest {
 		final PaxtoolsDAO warehouseDAO = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
 		final MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 
-        /* load the test metadata and ONLY (replace old tmp files if exist!) 
-		 */
-		Fetcher fetcher = new FetcherImpl(false);
-		try {
-			Collection<Metadata> metadata = fetcher.readMetadata("classpath:metadata.conf");
-			Premerger premerger = new PremergeImpl(metadataDAO, (PaxtoolsDAO) warehouseDAO, null, null);
-			
-			for (Metadata mdata : metadata) {
-				// store metadata in the warehouse
-				metadataDAO.saveMetadata(mdata);
-				fetcher.fetchData(mdata);
-			}
-			
-			premerger.buildWarehouse();
-			premerger.updateIdMapping(false);
-			
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+        // load the test metadata and create warehouse
+		Premerger premerger = new PremergeImpl(metadataDAO, (PaxtoolsDAO) warehouseDAO, null, null);
+		metadataDAO.importMetadata("classpath:metadata.conf");			
+		premerger.buildWarehouse();
+		premerger.updateIdMapping(false);
 		
 		context.close();		
 	}
@@ -106,9 +90,8 @@ public class CPathMergerTest {
 		// this will be all run within a new DB transaction/session
 		paxtoolsDAO.run(new Analysis() {
 			@Override
-			public Set<BioPAXElement> execute(Model model) {
+			public void execute(Model model) {
 				assertMerge(model, paxtoolsDAO);
-				return null;
 			}
 		});
 		
