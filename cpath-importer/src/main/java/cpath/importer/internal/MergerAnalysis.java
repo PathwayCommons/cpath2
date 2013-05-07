@@ -91,7 +91,7 @@ class MergerAnalysis implements Analysis {
 	 * @throws ClassCastException
 	 */
 	@Override
-	public Set<BioPAXElement> execute(Model model) {		
+	public void execute(Model model) {		
 		// The following hack can improve graph queries and full-text search relevance
 		// for generic and poorly defined physical entities (e.g., those lacking entity reference)
 		log.info("Generating canonical UniProt/ChEBI " +
@@ -229,7 +229,6 @@ class MergerAnalysis implements Analysis {
 		target.merge(mem);
 		
 		log.info("Merge is done; flushing...");			
-		return null; // ignore (not needed)
 	}
 
 		

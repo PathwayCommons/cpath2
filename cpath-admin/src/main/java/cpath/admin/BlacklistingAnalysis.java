@@ -37,7 +37,7 @@ final class BlacklistingAnalysis implements Analysis {
 	static final Log LOG = LogFactory.getLog(BlacklistingAnalysis.class);
 	
 	@Override
-    public Set<BioPAXElement> execute(Model model) 
+    public void execute(Model model) 
     {	
    	 	final int degreeThreshold = Integer.parseInt(property(PROP_BLACKLIST_DEGREE_THRESHOLD));
     	final int controlDegreeThreshold = Integer.parseInt(property(PROP_BLACKLIST_CONTROL_THRESHOLD));
@@ -103,8 +103,6 @@ final class BlacklistingAnalysis implements Analysis {
 					+ blacklistFile(), e);
 		} 
 
-        // we don't need it right now, but might become handy if we wanna extract the analysis later on
-        return blacklistedBPEs;
     }
 
     private void getAllSPEs(PhysicalEntity entity, Set<PhysicalEntity> entities) {

@@ -1,10 +1,15 @@
 package cpath.warehouse.beans;
 
 
+import java.io.File;
+
 import javax.persistence.*;
 
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
+
+import cpath.config.CPathSettings;
+import cpath.dao.CPathUtils;
 
 /**
  * Data Providers's Pathway Data.
@@ -14,14 +19,6 @@ import org.hibernate.annotations.DynamicUpdate;
 @DynamicUpdate
 @DynamicInsert
 @Table(name="pathwayData", uniqueConstraints=@UniqueConstraint(columnNames = {"metadata_id", "filename"}))
-@NamedQueries({
-	@NamedQuery(name="cpath.warehouse.beans.allPathwayData",
-				query="from PathwayData as pathwaydata order by pathway_id"),
-	@NamedQuery(name="cpath.warehouse.beans.pathwayDataByIdentifier",
-				query="from PathwayData as pd where pd.metadata.identifier = :identifier order by pathway_id"),
-	@NamedQuery(name="cpath.warehouse.beans.uniquePathwayData",
-				query="from PathwayData as pd where pd.metadata.identifier = :identifier and filename = :filemane")
-})
 public final class PathwayData {
 
 	@Id
@@ -38,19 +35,23 @@ public final class PathwayData {
 	
 	@Transient
     private byte[] pathwayData;
+	
 	@Transient
     private byte[] premergeData;
+	
 	@Transient
-	private byte[] validationResults;
+	private byte[] validationResults;	
 	
 	@Column
 	private Boolean valid;
 
+	
 	/**
 	 * Default Constructor.
 	 */
 	public PathwayData() {}
 
+	
     /**
      * Create a Metadata obj with the specified properties;
      *
@@ -59,18 +60,17 @@ public final class PathwayData {
      * @param pathwayData String
 	 * @throws IllegalArgumentException
      */
-    public PathwayData(Metadata metadata, final String filename, final byte[] pathwayData) 
+    public PathwayData(Metadata metadata, final String filename) 
     {
     	this.metadata = metadata;
     	setFilename(filename);
-    	setPathwayData(pathwayData);
-		// validation result, valid, and premergeData fields are empty
     }
 
-    //generated id (not public setter/getter)
+
 	void setId(Integer id) {
 		this.id = id;
 	}
+
 	
 	/**
 	 * Gets the internal id (primary key) 
@@ -84,58 +84,86 @@ public final class PathwayData {
 	 */
     public Integer getId() { return id ;}
 
+    
     public Metadata getMetadata() {
-		return metadata;
+
+    	return metadata;
 	}
     public void setMetadata(Metadata metadtaa) {
 		this.metadata = metadtaa;
 	}
 
+    
 	void setFilename(String filename) {
         if (filename == null) {
             throw new IllegalArgumentException("filename must not be null");
         }
         this.filename = filename;
 	}
-    public String getFilename() { return filename; }
 
+	
+	public String getFilename() { return filename; }
+
+    
     public byte[] getPathwayData() { 
    		return pathwayData;
     }
-	public void setPathwayData(byte[] pathwayData) {
-        if (pathwayData == null || pathwayData.length == 0) {
-            throw new IllegalArgumentException("pathway data must not be null/empty");
-        }
+
+    
+    public void setPathwayData(byte[] pathwayData) {
         this.pathwayData = pathwayData;
 	}
 
-	public byte[] getPremergeData() { 
+	
+	public byte[] getPremergeData() {
+		if(premergeData == null)
+			//read file
+			premergeData = CPathUtils.zread(premergedFile());
+		
    		return premergeData; 
     }
+
+	
 	public void setPremergeData(byte[] premergeData) {
 		this.premergeData = premergeData;	
-	}
-	
-    public byte[] getValidationResults() { 
-    	return validationResults; 
-    }
-	public void setValidationResults(byte[] validationResults) {
-		this.validationResults = validationResults;
+		// save BioPAX RDF/XML
+		CPathUtils.zwrite(premergedFile(), premergeData);
 	}
 
+	
+    public byte[] getValidationResults() { 
+    	if(validationResults == null)
+    		//read file 
+    		validationResults = CPathUtils.zread(validationFile());
+    	
+    	return validationResults; 
+    }
+
+    
+	public void setValidationResults(byte[] validationResults) {
+		this.validationResults = validationResults;
+		// save file
+		CPathUtils.zwrite(validationFile(), validationResults);		
+	}
+
+	
     public Boolean getValid() {
 		return valid;
 	}
-	public void setValid(Boolean valid) {
+
+    
+    public void setValid(Boolean valid) {
 		this.valid = valid;
 	}
 
+	
 	@Override
     public String toString() {
         return "PathwayData " + getId() + " source " + getIdentifier() 
         	+ ((filename != null && filename.length()>4) ? " file " + filename : "");
     }
 
+	
 	/**
 	 * Gets the parent metadata's 
 	 * (data source's) identifier.
@@ -146,5 +174,17 @@ public final class PathwayData {
 	public String getIdentifier() {
 		return (metadata != null) ? metadata.getIdentifier() : null;
 	}
+
+
+    public String premergedFile() {
+    	return CPathSettings.dataDir() 
+    	+ File.separator + getIdentifier() 
+    	+ File.separator + filename + ".rdf.gz";
+    }
+
+    
+    public String validationFile() {
+		return premergedFile() + ".validation.xml.gz";
+    }
 
 }

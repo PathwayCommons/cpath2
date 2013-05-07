@@ -11,7 +11,6 @@ import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.PublicationXref;
@@ -52,7 +51,7 @@ final class GeneIdMappingAnalysis implements Analysis {
 	 *
 	 */
 	@Override
-	public Set<BioPAXElement> execute(Model model) {
+	public void execute(Model model) {
 		
 		// for each ER, using xrefs, map other identifiers to the primary accession
 		for(ProteinReference pr : model.getObjects(ProteinReference.class)) 
@@ -84,8 +83,6 @@ final class GeneIdMappingAnalysis implements Analysis {
 				}
 			}
 		}
-
-		return null; //no return value required
 	}
 
 

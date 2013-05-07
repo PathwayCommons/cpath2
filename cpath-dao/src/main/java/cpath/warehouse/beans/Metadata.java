@@ -1,7 +1,8 @@
 package cpath.warehouse.beans;
 
-// imports
+
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -16,6 +17,7 @@ import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 
 import cpath.config.CPathSettings;
+import cpath.dao.CPathUtils;
 
 /**
  * Data Provider Metadata.
@@ -24,12 +26,6 @@ import cpath.config.CPathSettings;
 @DynamicInsert
 @DynamicUpdate
 @Table(name="metadata")
-@NamedQueries({
-		@NamedQuery(name="cpath.warehouse.beans.providerByIdentifier",
-					query="from Metadata as metadata where identifier = :identifier order by id"),
-		@NamedQuery(name="cpath.warehouse.beans.allProvider", 
-					query="from Metadata as metadata order by id")
-})
 public final class Metadata {
 
     private static final Pattern BAD_ID_PATTERN = Pattern.compile("\\s|-");
@@ -291,25 +287,48 @@ public final class Metadata {
     
     
 	/**
-	 * Gets the full path to the local data file
+	 * Full path to the pathway data file/archive
 	 * 
 	 * @return
 	 */
     @Transient
-    public String localDataFile() {
-    	String name = CPathSettings.localDataDir() 
-    	+ File.separator + identifier;
+    public String origDataLocation() {
+    	String name = null; 
     	
+    	if(urlToData.startsWith("classpath:")
+    		|| urlToData.startsWith("file:")) 
+    	{
+    		//local resource (a test case or manual config.)
+    		name = urlToData; 
+    	} 
+    	else 
+    	{	
+    		// remote resources are to be manually uploaded to the 
+    		// CPATH2_HOME dir., (usually) re-packed, and saved under special name:
+    		name = "file://" 
+    		+ CPathSettings.dataDir() + File.separator + identifier;
+    		// add the file extension, if any
+    		int idx = urlToData.lastIndexOf('.');
+    		if(idx >= 0) {
+    			String ext = urlToData.substring(idx+1);
+    			if(!ext.isEmpty()) name += "." + ext;
+    		}
+    	}
     	
-    	// add the file extension, if any
-		int idx = urlToData.lastIndexOf('.');
-		if(idx >= 0) {
-			String ext = urlToData.substring(idx+1);
-			if(!ext.isEmpty())
-				name += "." + ext;
-		}
-		
 		return name;
+    }
+    
+
+    /**
+     * Path to the directory where processed data 
+     * (converted/normalized and validation)
+     * are saved.
+     * 
+     * @return
+     */
+    @Transient
+    public String outputDir() {
+    	return CPathSettings.dataDir() + File.separator + identifier;
     }
     
     
@@ -399,5 +418,29 @@ public final class Metadata {
 
 	public void setNumPhysicalEntities(Integer numPhysicalEntities) {
 		this.numPhysicalEntities = numPhysicalEntities;
+	}
+
+	
+	/**
+	 * Drops old output data and loads original
+	 * pathway data from file archives into {@link #pathwayData}
+	 * collection.
+	 * 
+	 * @param loadData
+	 */
+	@Transient
+	public void init(boolean loadData) {
+		File dir = new File(outputDir());
+		if(dir.exists()) {
+			CPathUtils.deleteDirectory(dir);
+		}		
+		dir.mkdir();
+		
+		if(loadData)
+			try {
+				CPathUtils.readPathwayData(this);
+			} catch (IOException e) {
+				throw new RuntimeException("init: failed", e);
+			}
 	}
 }

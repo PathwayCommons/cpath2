@@ -27,6 +27,7 @@
 
 package cpath.dao.internal;
 
+import java.io.IOException;
 import java.util.*;
 
 import org.junit.*;
@@ -48,15 +49,11 @@ import static org.junit.Assert.*;
  */
 public class MetadataHibernateDAOTest {
 	
-	static {
-		//must also set -Dhibernate.hbm2ddl.auto=update (already done 
-		// in the parent pom, surefire plugin; set JVM optin id run this test alone, from IDE)		
-		CPathUtils.createDatabase(CPathSettings.TEST_DB);
-	}
-	
 	
 	@Test
-	public void testImportPathwayData() {
+	public void testImportPathwayData() throws IOException {
+
+		CPathUtils.createDatabase(CPathSettings.TEST_DB);
 		
 		ClassPathXmlApplicationContext context = 
 				new ClassPathXmlApplicationContext("classpath:testContext-dao.xml");
@@ -65,12 +62,16 @@ public class MetadataHibernateDAOTest {
         // mock metadata and pathway data
         Metadata md = new Metadata("testpw", "test", "test", "", "",
         		new byte[]{}, METADATA_TYPE.BIOPAX, null, null);        
-        byte[] testData = "<rdf>          </rdf>".getBytes();       
-        PathwayData pathwayData = new PathwayData(md, "test.gz",  testData);
+        byte[] testData = "<rdf>          </rdf>".getBytes(); 
+        md.init(false);
+        PathwayData pathwayData = new PathwayData(md, "test0");
+        pathwayData.setPathwayData(testData);
         pathwayData.setPremergeData(testData);
         md.addPathwayData(pathwayData);
         //add the second pd (for the tests at the end of this method)
-        md.addPathwayData(new PathwayData(md, "test1.gz",  "aaaaaaaaaa".getBytes()));
+        PathwayData pd = new PathwayData(md, "test1");
+        pd.setPathwayData("aaaaaaaaaa".getBytes());
+        md.addPathwayData(pd);
         
         // test if internal pack/unpach, if any, works well
         assertTrue(Arrays.equals(testData, pathwayData.getPathwayData()));
@@ -81,11 +82,12 @@ public class MetadataHibernateDAOTest {
         // test get pathwaydata directly (by PK)
         pathwayData = dao.getPathwayData(1);
         assertNotNull(pathwayData);
-        assertEquals("test.gz", pathwayData.getFilename());
+        assertEquals("test0", pathwayData.getFilename());
         assertNull(pathwayData.getPathwayData()); // ok: it's transient field (not to be saved)
-        assertNotNull(pathwayData.getPremergeData());
+        byte[] read = pathwayData.getPremergeData();
+        assertNotNull(read);
         // check whether DB save/read changed data
-        assertTrue(Arrays.equals(testData, pathwayData.getPremergeData()));    
+        assertTrue(Arrays.equals(testData, read));    
         
         //get initialized persistent detached metadata
         md = dao.getMetadataByIdentifier(md.getIdentifier());
@@ -102,9 +104,9 @@ public class MetadataHibernateDAOTest {
         //read the latest state
         md = dao.getMetadata(1);
         assertNotNull(md);
-        List<PathwayData>  pd = md.getPathwayData();
-        assertFalse(pd.isEmpty());
-        pathwayData = pd.get(1); // the second entry
+        List<PathwayData>  lpd = md.getPathwayData();
+        assertFalse(lpd.isEmpty());
+        pathwayData = lpd.get(1); // the second entry
         assertNotNull(pathwayData);
         assertNotNull(pathwayData.getValidationResults());
         assertNull(pathwayData.getPremergeData()); // ok, - for the 2nd we did not set premergeData
@@ -126,6 +128,9 @@ public class MetadataHibernateDAOTest {
 	
 	@Test
 	public void testImportIdMapping() {		
+		
+		CPathUtils.createDatabase(CPathSettings.TEST_DB);
+		
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext("classpath:testContext-dao.xml");
         MetadataDAO dao = (MetadataDAO) context.getBean("metadataDAO"); 
 

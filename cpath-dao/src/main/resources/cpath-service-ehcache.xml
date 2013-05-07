@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="http://ehcache.org/ehcache.xsd"
+	updateCheck="false" name="cpath-service-cache">
+	<!-- | Please see http://ehcache.sourceforge.net/documentation/configuration.html 
+		for | detailed information on how to configurigure caches in this file + -->
+	
+	<!-- Cache directory location -->
+<!-- 	<diskStore path="${CPATH2_HOME}/cache/cpath-service-ehcache" /> -->
+
+	<!-- the default (if a public query method is missed below but does have @Cacheable annotation)  -->
+	<defaultCache eternal="false" maxElementsInMemory="100"
+		overflowToDisk="false" diskPersistent="false" 
+		timeToIdleSeconds="0" timeToLiveSeconds="300" />
+
+	<!-- /search command cache (does not have to be disk persistent as search queries are fast) -->
+	<cache name="findElementsCache" eternal="false"
+		timeToIdleSeconds="0" timeToLiveSeconds="300" 
+		maxElementsInMemory="10000" overflowToDisk="false" />
+
+	<!-- cpath2 service tier (e.g., graph queries) cache settings -->
+	<cache name="elementByIdCache" eternal="true"
+		maxElementsInMemory="10000" overflowToDisk="false" />
+
+	<cache name="getCommonStreamCache" eternal="true"
+		maxElementsInMemory="10000" overflowToDisk="false" />
+
+	<cache name="getPathsBetweenCache" eternal="true"
+		maxElementsInMemory="10000" overflowToDisk="false" />
+
+	<cache name="getNeighborhoodCache" eternal="true"
+		maxElementsInMemory="10000" overflowToDisk="false" />
+
+	<cache name="traverseCache" eternal="true" 
+		maxElementsInMemory="10000" overflowToDisk="false" />
+
+	<cache name="getPathsFromToCache" eternal="true"
+		maxElementsInMemory="10000" overflowToDisk="false" />
+
+</ehcache>

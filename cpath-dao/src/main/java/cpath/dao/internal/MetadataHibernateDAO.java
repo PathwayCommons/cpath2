@@ -1,6 +1,7 @@
 package cpath.dao.internal;
 
 
+import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.warehouse.beans.Mapping;
 import cpath.warehouse.beans.Mapping.Type;
@@ -17,9 +18,10 @@ import org.hibernate.Hibernate;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Restrictions;
 
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedInputStream;
@@ -47,7 +49,7 @@ class MetadataHibernateDAO  implements MetadataDAO {
 	  
     
     @Override
-    @Transactional(propagation=Propagation.REQUIRED)
+    @Transactional
 	public void saveMetadata(final Metadata metadata) {
 		Session session = sessionFactory.getCurrentSession();
 		session.merge(metadata);
@@ -60,51 +62,32 @@ class MetadataHibernateDAO  implements MetadataDAO {
 
 
     @Override
-    @Transactional(propagation=Propagation.REQUIRED)
+    @Transactional
     public Metadata getMetadataByIdentifier(final String identifier) {
 		Session session = sessionFactory.getCurrentSession();
-		Query query = session.getNamedQuery("cpath.warehouse.beans.providerByIdentifier");
-		query.setParameter("identifier", identifier);
-		Metadata m = (Metadata)query.uniqueResult();
+		Metadata m = (Metadata) session.createCriteria(Metadata.class)
+			.add(Restrictions.eq("identifier", identifier))
+			.addOrder(Order.asc("id"))
+				.uniqueResult();
 		if(m != null) {
-//			Hibernate.initialize(m); //no need
 			Hibernate.initialize(m.getPathwayData());
 //			Hibernate.initialize(m.getName()); // not needed - name is EAGER collection
 		}	
 		return m;
     }
 
-
+    
     @SuppressWarnings("unchecked")
-	@Transactional(propagation=Propagation.REQUIRED)
+	@Transactional
     @Override
     public Collection<Metadata> getAllMetadata() {
 		Session session = sessionFactory.getCurrentSession();
-		Query query = session.getNamedQuery("cpath.warehouse.beans.allProvider");
-		List<Metadata> toReturn = query.list();
-		if (toReturn.isEmpty()) 
-			return Collections.EMPTY_SET;
-		else {
-//			for(Metadata m : toReturn) {
-//				Hibernate.initialize(m.getName()); //name is now EAGER coll.
-//			}
-			return toReturn;
-		}
-	}
-
-    
-    @SuppressWarnings("unchecked")
-	@Transactional(propagation=Propagation.REQUIRED)
-    @Override
-    public Collection<Metadata> getAllMetadataInitialized() {
-		Session session = sessionFactory.getCurrentSession();
-		Query query = session.getNamedQuery("cpath.warehouse.beans.allProvider");
-		List<Metadata> toReturn = query.list();
+		List<Metadata> toReturn = session.createCriteria(Metadata.class)
+			.addOrder(Order.asc("id")).list();
 		if (toReturn.isEmpty()) 
 			return Collections.EMPTY_SET;
 		else {
 			for(Metadata m : toReturn) {
-//				Hibernate.initialize(m); //no need
 				Hibernate.initialize(m.getPathwayData());
 //				Hibernate.initialize(m.getName()); //no need (name is EAGER collection)
 			}
@@ -118,8 +101,6 @@ class MetadataHibernateDAO  implements MetadataDAO {
 	public PathwayData getPathwayData(Integer pathwayId) {
 		Session ses = sessionFactory.getCurrentSession();
 		PathwayData pd = (PathwayData) ses.get(PathwayData.class, pathwayId);
-//		if(pd != null)
-//			Hibernate.initialize(pd); //looks, no need here
 		return pd;
 	}	
 	
@@ -128,28 +109,28 @@ class MetadataHibernateDAO  implements MetadataDAO {
 	@Transactional
 	public PathwayData getPathwayData(final String provider, final String filename) {		
 		Session session = sessionFactory.getCurrentSession();
-		Query query = session.getNamedQuery("cpath.warehouse.beans.uniquePathwayData");
-		query.setParameter("identifier", provider);
-		query.setParameter("filename", filename);
-		PathwayData pd = (PathwayData) query.uniqueResult();
-//		if(pd != null) 
-//			Hibernate.initialize(pd); //not needed (no collections) 		
+		
+		PathwayData pd = (PathwayData) session.createCriteria(PathwayData.class)
+			.add(Restrictions.eq("metadata.identifier", provider))
+			.add(Restrictions.eq("filename", filename)).uniqueResult();
+		
 		return pd;
 	}
 	
 	
 	@Override
 	@Transactional(readOnly=true)
-	public ValidatorResponse validationReport(String provider,
-			Integer pathwayDataPk) {
+	public ValidatorResponse validationReport(String provider, Integer pathwayDataPk) {
 		ValidatorResponse response = null;
 
 		if (provider != null && pathwayDataPk == null) {
 			// get validationResults from PathwayData beans
 			Session session = sessionFactory.getCurrentSession();
-			Query query = session.getNamedQuery("cpath.warehouse.beans.pathwayDataByIdentifier");
-			query.setParameter("identifier", provider);
-			List<PathwayData> pathwayDataCollection = (List<PathwayData>) query.list();					
+			List<PathwayData> pathwayDataCollection = (List<PathwayData>) session
+				.createCriteria(PathwayData.class)
+				.add(Restrictions.eq("metadata.identifier", provider))
+				.addOrder(Order.asc("pathway_id"))
+				.list();					
 			if (!pathwayDataCollection.isEmpty()) {
 				// a new container to collect separately stored file validations
 				response = new ValidatorResponse();
@@ -186,12 +167,12 @@ class MetadataHibernateDAO  implements MetadataDAO {
 	}
 
 
-	@Transactional(propagation=Propagation.REQUIRED)
-	void deleteAllIdMappings() {
+	@Transactional
+	public void deleteAllIdMappings() {
 		log.debug("deleteAllIdMappings: purge all...");
 		Session ses = sessionFactory.getCurrentSession();
-		ses.createQuery("delete from GeneMapping").executeUpdate();
-		ses.createQuery("delete from ChemMapping").executeUpdate();
+		ses.createQuery("delete from mapping").executeUpdate();
+		ses.createQuery("delete from mapping_map").executeUpdate();
 		ses.flush(); //might not required due to the new transaction, but.. let it be
 	}
 	
@@ -291,7 +272,7 @@ class MetadataHibernateDAO  implements MetadataDAO {
     }
 
      
-    @Transactional(propagation=Propagation.REQUIRED)
+    @Transactional
 	@Override
 	public void saveMapping(Mapping mapping) {
     	Session session = sessionFactory.getCurrentSession();
@@ -329,6 +310,33 @@ class MetadataHibernateDAO  implements MetadataDAO {
     	}
     	
 		return results;
+	}
+    
+
+	@Transactional
+    @Override
+	public void importMetadata(String location) {
+     // process metadata
+     for (Metadata mdata : CPathUtils.readMetadata(location)) {
+     	Metadata m = getMetadataByIdentifier(mdata.getIdentifier());
+     	if(m != null) {
+     		log.info("readMetadata: updating metadata: " 
+     			+ m.getIdentifier() + " from " + location);
+     		m.setDescription(mdata.getDescription());
+     		m.setName(mdata.getName());
+     		m.setIcon(mdata.getIcon());
+     		m.setType(mdata.getType());
+     		m.setUrlToData(mdata.getUrlToData());
+     		m.setUrlToHomepage(mdata.getUrlToHomepage());
+     		m.setConverterClassname(mdata.getConverterClassname());
+     		m.setCleanerClassname(mdata.getCleanerClassname());
+     		//m.setNumInteractions, etc.. - won't modify; one should run -update-counts
+     		//m.setPathwayData - won't touch either; one should run -premerge
+     		saveMetadata(m);
+     	}  else {
+     		saveMetadata(mdata);
+     	}
+     }			
 	}
 
 }

@@ -71,11 +71,6 @@
 			<artifactId>spring-web</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>pathwaycommons.cpath</groupId>
-			<artifactId>cpath-service</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
   			<groupId>pathwaycommons.cpath</groupId>
   			<artifactId>cpath-api</artifactId>
   			<version>${project.version}</version>

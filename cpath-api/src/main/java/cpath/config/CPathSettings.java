@@ -248,7 +248,7 @@ public final class CPathSettings {
 	 * 
 	 * @return
 	 */
-	public static String localDataDir() {
+	public static String dataDir() {
 		return homeDir() + File.separator + DATA_SUBDIR;
 	}
 	

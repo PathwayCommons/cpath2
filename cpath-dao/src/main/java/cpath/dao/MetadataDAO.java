@@ -22,8 +22,9 @@ public interface MetadataDAO {
      * Persists or updates the given metadata object to the db.
      *
      * @param metadata Metadata
+     * @return persistent object (saved or updated)
      */
-    void saveMetadata(final Metadata metadata);
+	void saveMetadata(final Metadata metadata);
     
     
     /**
@@ -63,24 +64,13 @@ public interface MetadataDAO {
      */
     Metadata getMetadataByIdentifier(final String identifier);
 
+    
     /**
-     * This method quickly returns all metadata,
-     * but the corresponding Metadata.pathwayData lazy collections 
-     * might not be initialized yet, thus cannot be iterated over 
-     * outside an active database session/transaction.
+     * This method returns all metadata objects.
 	 *
      * @return Collection<Metadata>
      */
     Collection<Metadata> getAllMetadata();
-
-    
-    /**
-     * This method returns all metadata objects
-     * and makes sure all (lazy) collections are initialized (loaded).
-	 *
-     * @return Collection<Metadata>
-     */
-    Collection<Metadata> getAllMetadataInitialized();
 
 
     /**
@@ -139,5 +129,12 @@ public interface MetadataDAO {
      * @return a set of primary IDs of the type; normally one or none elements
      */
     Set<String> mapIdentifier(String identifier, Mapping.Type type, String idType);
+
+
+	/**
+	 * Imports metadata description from the resource.
+	 * @param location
+	 */
+	void importMetadata(String location);
     
 }

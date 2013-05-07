@@ -11,7 +11,6 @@ import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.UnificationXref;
@@ -53,7 +52,7 @@ final class ChemIdMappingAnalysis implements Analysis {
 	 *
 	 */
 	@Override
-	public Set<BioPAXElement> execute(Model model) {
+	public void execute(Model model) {
 		final Set<String> exclude = new HashSet<String>();
 		
 		// for each SmallMoleculeReference, using xrefs, map other identifiers to the primary accession
@@ -88,8 +87,6 @@ final class ChemIdMappingAnalysis implements Analysis {
 				}
 			}	
 		}
-		
-		return null; //no return value required
 	}
 	
 	/**
