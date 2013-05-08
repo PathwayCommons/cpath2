@@ -6,35 +6,48 @@
 		for | detailed information on how to configurigure caches in this file + -->
 	
 	<!-- Cache directory location -->
-<!-- 	<diskStore path="${CPATH2_HOME}/cache/cpath-service-ehcache" /> -->
+	<diskStore path="${CPATH2_HOME}/cache/cpath-service-ehcache" />
 
 	<!-- the default (if a public query method is missed below but does have @Cacheable annotation)  -->
-	<defaultCache eternal="false" maxElementsInMemory="100"
-		overflowToDisk="false" diskPersistent="false" 
+	<defaultCache eternal="false" maxElementsInMemory="1000"
+		overflowToDisk="false" diskPersistent="false"
 		timeToIdleSeconds="0" timeToLiveSeconds="300" />
 
 	<!-- /search command cache (does not have to be disk persistent as search queries are fast) -->
 	<cache name="findElementsCache" eternal="false"
 		timeToIdleSeconds="0" timeToLiveSeconds="300" 
-		maxElementsInMemory="10000" overflowToDisk="false" />
+		maxElementsInMemory="1000" 
+		overflowToDisk="false" diskPersistent="true"/>
 
 	<!-- cpath2 service tier (e.g., graph queries) cache settings -->
-	<cache name="elementByIdCache" eternal="true"
-		maxElementsInMemory="10000" overflowToDisk="false" />
+	<cache name="elementByIdCache" eternal="false"
+		timeToIdleSeconds="0" timeToLiveSeconds="300" 
+		maxElementsInMemory="1000" 
+		overflowToDisk="false" diskPersistent="true"/>
 
-	<cache name="getCommonStreamCache" eternal="true"
-		maxElementsInMemory="10000" overflowToDisk="false" />
+	<cache name="getCommonStreamCache" eternal="false"
+		timeToIdleSeconds="0" timeToLiveSeconds="300" 
+		maxElementsInMemory="1000" 
+		overflowToDisk="false" diskPersistent="true"/>
 
-	<cache name="getPathsBetweenCache" eternal="true"
-		maxElementsInMemory="10000" overflowToDisk="false" />
+	<cache name="getPathsBetweenCache" eternal="false"
+		timeToIdleSeconds="0" timeToLiveSeconds="300" 
+		maxElementsInMemory="1000" 
+		overflowToDisk="false" diskPersistent="true"/>
 
-	<cache name="getNeighborhoodCache" eternal="true"
-		maxElementsInMemory="10000" overflowToDisk="false" />
+	<cache name="getNeighborhoodCache" eternal="false"
+		timeToIdleSeconds="0" timeToLiveSeconds="300" 
+		maxElementsInMemory="1000" 
+		overflowToDisk="false" diskPersistent="true"/>
 
-	<cache name="traverseCache" eternal="true" 
-		maxElementsInMemory="10000" overflowToDisk="false" />
+	<cache name="traverseCache" eternal="false"
+		timeToIdleSeconds="0" timeToLiveSeconds="300" 
+		maxElementsInMemory="1000" 
+		overflowToDisk="false" diskPersistent="true"/>
 
-	<cache name="getPathsFromToCache" eternal="true"
-		maxElementsInMemory="10000" overflowToDisk="false" />
+	<cache name="getPathsFromToCache" eternal="false"
+		timeToIdleSeconds="0" timeToLiveSeconds="300" 
+		maxElementsInMemory="1000" 
+		overflowToDisk="false" diskPersistent="true"/>
 
 </ehcache>
