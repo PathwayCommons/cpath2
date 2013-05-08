@@ -8,7 +8,7 @@
 	<artifactId>parent</artifactId>
 	<packaging>pom</packaging>
 	<name>cPath2 - Parent</name>
-	<version>4.0.0-SNAPSHOT</version>
+	<version>4.1.0-SNAPSHOT</version>
 	<description>CPath2 Multi-mudule project, a server software suite for aggregating, storing, and querying biological pathways based on BioPAX L3 standard.</description>
 	<url>http://biopax.sourceforge.net/m2site/cpath2-${project.version}</url>
 	<inceptionYear>2009</inceptionYear>
@@ -57,7 +57,6 @@
 		<hibernate.version>4.2.0.Final</hibernate.version>
 		<hibernate-search.version>4.2.0.Final</hibernate-search.version>
 		<c3p0.version>0.9.5-pre1</c3p0.version>
-		<ehcache-spring-annotations.version>1.2.0</ehcache-spring-annotations.version>
 		<ehcache-core.version>2.6.5</ehcache-core.version>
 		<paxtools.version>4.2.0-SNAPSHOT</paxtools.version>
 		<validator.version>3.0.1-SNAPSHOT</validator.version>

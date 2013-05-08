@@ -79,7 +79,7 @@ import cpath.warehouse.beans.Mapping;
  * @author rodche
  */
 @Service
-class CPathServiceImpl implements CPathService {
+public class CPathServiceImpl implements CPathService {
 	private static final Log log = LogFactory.getLog(CPathServiceImpl.class);
 	
 	private PaxtoolsDAO mainDAO;
