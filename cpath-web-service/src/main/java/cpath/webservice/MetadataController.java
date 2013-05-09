@@ -291,8 +291,7 @@ public class MetadataController extends BasicController
 			vi.setIdentifier(m.getIdentifier());
 			
 			for(PathwayData pd : m.getPathwayData())
-				vi.getFiles().put(pd.getId(), pd.getFilename() 
-					+ " (" + pd.getIdentifier() + "; passed: " + pd.getValid() + ")");
+				vi.getFiles().put(pd.getId(), pd + "; passed: " + pd.getValid() + ")");
 			
 			list.add(vi);
 		}

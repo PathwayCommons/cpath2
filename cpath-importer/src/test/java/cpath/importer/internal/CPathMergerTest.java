@@ -49,7 +49,7 @@ public class CPathMergerTest {
 
         // load the test metadata and create warehouse
 		Premerger premerger = new PremergeImpl(metadataDAO, (PaxtoolsDAO) warehouseDAO, null, null);
-		metadataDAO.importMetadata("classpath:metadata.conf");			
+		metadataDAO.addOrUpdateMetadata("classpath:metadata.conf");			
 		premerger.buildWarehouse();
 		premerger.updateIdMapping(false);
 		

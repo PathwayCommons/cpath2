@@ -22,9 +22,8 @@ public interface MetadataDAO {
      * Persists or updates the given metadata object to the db.
      *
      * @param metadata Metadata
-     * @return persistent object (saved or updated)
      */
-	void saveMetadata(final Metadata metadata);
+	void saveMetadata(Metadata metadata);
     
     
     /**
@@ -33,7 +32,7 @@ public interface MetadataDAO {
      * @param id Metadata PK
      * @return
      */
-    Metadata getMetadata(final Integer id);
+    Metadata getMetadata(Integer id);
     
 
     /**
@@ -43,17 +42,17 @@ public interface MetadataDAO {
      * @param id Metadata PK
      * @return
      */
-    void deleteMetadata(final Integer id);
+    void deleteMetadata(Integer id);
 
     
     /**
-     * Deletes the pathway data entry, 
-     * from the db by id (primary key).
+     * Deletes all pathway data entries 
+     * that belong to the specified metadata.
      * 
-     * @param id PathwayData PK
+     * @param metadata
      * @return
      */
-    void deletePathwayData(final Integer id);
+    void deletePathwayData(Metadata metadata);
     
     
     /**
@@ -62,7 +61,7 @@ public interface MetadataDAO {
      * @param identifier String
      * @return Metadata
      */
-    Metadata getMetadataByIdentifier(final String identifier);
+    Metadata getMetadataByIdentifier(String identifier);
 
     
     /**
@@ -79,7 +78,7 @@ public interface MetadataDAO {
      * @param pathway_id PK
      * @return PathwayData
      */
-    PathwayData getPathwayData(final Integer pathway_id);
+    PathwayData getPathwayData(Integer pathway_id);
     	
 
     /**
@@ -90,7 +89,7 @@ public interface MetadataDAO {
      * @param filename a file name of the pathway data record (usually, as it's read from the archive)
      * @return PathwayData
      */
-    PathwayData getPathwayData(final String provider, final String filename);
+    PathwayData getPathwayData(String provider, String filename);
     
     
 	/**
@@ -135,6 +134,17 @@ public interface MetadataDAO {
 	 * Imports metadata description from the resource.
 	 * @param location
 	 */
-	void importMetadata(String location);
+	void addOrUpdateMetadata(String location);
+
+
+	/**
+	 * Removes fromthe system all entries and 
+	 * previously converted / premerged / validated 
+	 * files accociated with this data provider;
+	 * then loads original data into memory.
+	 * 
+	 * @param metadata
+	 */
+	void init(Metadata metadata);
     
 }

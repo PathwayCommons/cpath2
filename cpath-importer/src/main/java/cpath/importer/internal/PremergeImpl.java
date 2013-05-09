@@ -105,10 +105,12 @@ public final class PremergeImpl implements Premerger {
 	@Override
     public void premerge() {
 
-		// grab all metadata
+		// grab all metadata (initially, there are no pathway data files yet;
+		// but if premerge was already called, there are can be not empty pathwayData 
+		// and result files for the corresp. metadata objects, which will be cleared anyway.)
 		Collection<Metadata> metadataCollection = metaDataDAO.getAllMetadata();
-
 		// iterate over all metadata
+		// 
 		for (Metadata metadata : metadataCollection) {
 			// use filter if set (identifier and version)
 			if(identifier != null) {
@@ -136,14 +138,12 @@ public final class PremergeImpl implements Premerger {
 						log.info("premerge(), no Cleaner class was specified; continue...");	
 					}
 										
-					// parse input files (into collection of pathwayData),
-					// clear all old output (dir), reset counters, etc.
-					metadata.init(true);
-					metaDataDAO.saveMetadata(metadata);
+					// clear all existing output files, parse input files, reset counters, save.
+					metaDataDAO.init(metadata);
 					// Premerge for each pathway data: clean, convert, validate, 
 					// and then update premergeData, validationResults db fields.
 					for (PathwayData pathwayData : metadata.getPathwayData()) {
-						pipeline(metadata, pathwayData, cleaner);
+						pipeline(pathwayData, cleaner);
 					}
 					// save/update validation status
 					metaDataDAO.saveMetadata(metadata);
@@ -266,12 +266,12 @@ public final class PremergeImpl implements Premerger {
 	 * Updates the PathwayData object adding the 
 	 * normalized data (BioPAX L3) and the validation results 
 	 * (XML report and status)
-	 *
-	 * @param metadata
 	 * @param pathwayData provider's pathway data (usually from a single data file) to be processed and modified
 	 * @param cleaner data specific cleaner class (to apply before the validation/normalization)
 	 */
-	private void pipeline(Metadata metadata, PathwayData pathwayData, Cleaner cleaner) {
+	private void pipeline(PathwayData pathwayData, Cleaner cleaner) {
+		Metadata metadata = pathwayData.getMetadata();
+		
 		// here go data to process
 		String data = new String(pathwayData.getPathwayData());
 		String info = pathwayData.toString();

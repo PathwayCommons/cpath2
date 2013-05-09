@@ -510,7 +510,7 @@ public final class Admin {
             new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
         MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");              
         // grab the data
-        metadataDAO.importMetadata(location);
+        metadataDAO.addOrUpdateMetadata(location);
         context.close(); 
     }
 

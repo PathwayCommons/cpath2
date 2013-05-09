@@ -80,7 +80,7 @@ public class CPathWarehouseTest {
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		
 		//fetch and save test metadata and files
-		metadataDAO.importMetadata("classpath:metadata.conf");	
+		metadataDAO.addOrUpdateMetadata("classpath:metadata.conf");	
 			
 		// build the test warehouse and id-mapping tables
 		Premerger premerger = new PremergeImpl(metadataDAO, warehouse, null, null);
