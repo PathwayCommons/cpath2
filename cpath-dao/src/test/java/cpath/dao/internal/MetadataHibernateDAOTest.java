@@ -52,7 +52,6 @@ public class MetadataHibernateDAOTest {
 	
 	@Test
 	public void testImportPathwayData() throws IOException {
-
 		CPathUtils.createDatabase(CPathSettings.TEST_DB);
 		
 		ClassPathXmlApplicationContext context = 
@@ -63,15 +62,16 @@ public class MetadataHibernateDAOTest {
         Metadata md = new Metadata("testpw", "test", "test", "", "",
         		new byte[]{}, METADATA_TYPE.BIOPAX, null, null);        
         byte[] testData = "<rdf>          </rdf>".getBytes(); 
-        md.init(false);
+        md.cleanupOutputDir();
+        
         PathwayData pathwayData = new PathwayData(md, "test0");
         pathwayData.setPathwayData(testData);
         pathwayData.setPremergeData(testData);
-        md.addPathwayData(pathwayData);
+        md.getPathwayData().add(pathwayData);
         //add the second pd (for the tests at the end of this method)
         PathwayData pd = new PathwayData(md, "test1");
         pd.setPathwayData("aaaaaaaaaa".getBytes());
-        md.addPathwayData(pd);
+        md.getPathwayData().add(pd);
         
         // test if internal pack/unpach, if any, works well
         assertTrue(Arrays.equals(testData, pathwayData.getPathwayData()));
@@ -82,7 +82,6 @@ public class MetadataHibernateDAOTest {
         // test get pathwaydata directly (by PK)
         pathwayData = dao.getPathwayData(1);
         assertNotNull(pathwayData);
-        assertEquals("test0", pathwayData.getFilename());
         assertNull(pathwayData.getPathwayData()); // ok: it's transient field (not to be saved)
         byte[] read = pathwayData.getPremergeData();
         assertNotNull(read);
@@ -94,31 +93,26 @@ public class MetadataHibernateDAOTest {
         assertNotNull(md);
         assertEquals("testpw", md.getIdentifier());
         assertEquals(2, md.getPathwayData().size());       
-        pathwayData = md.getPathwayData().get(1); // the second entry
-        // add validation result());          
-        testData = "<rdf></rdf>".getBytes();
-        pathwayData.setValidationResults("<?xml version=\"1.0\"?>".getBytes());        
+
+        // add validation result());  
+        for(PathwayData o : md.getPathwayData())
+        	o.setValidationResults("<?xml version=\"1.0\"?>".getBytes());        
         // update
         dao.saveMetadata(md);
          
         //read the latest state
         md = dao.getMetadata(1);
         assertNotNull(md);
-        List<PathwayData>  lpd = md.getPathwayData();
+        Set<PathwayData>  lpd = md.getPathwayData();
         assertFalse(lpd.isEmpty());
-        pathwayData = lpd.get(1); // the second entry
+        pathwayData = lpd.iterator().next();
         assertNotNull(pathwayData);
         assertNotNull(pathwayData.getValidationResults());
-        assertNull(pathwayData.getPremergeData()); // ok, - for the 2nd we did not set premergeData
         assertTrue(pathwayData.getValidationResults().length > 0);  
         assertTrue(Arrays.equals("<?xml version=\"1.0\"?>".getBytes(), pathwayData.getValidationResults()));         
         
-        //delete all member pathwaydata
-        md.getPathwayData().clear();
-        //this should remove orphan (all) pathwaydata entities
-        // (as specified by the ORM annotation: cascade, deleteOrphans
-        dao.saveMetadata(md);
-        md=null;
+        //cleanup
+        dao.init(md);
         md = dao.getMetadata(1);
         assertTrue(md.getPathwayData().isEmpty()); 
         

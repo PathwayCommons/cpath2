@@ -3,10 +3,7 @@
  */
 package cpath.dao;
 
-import static cpath.config.CPathSettings.PROP_DB_CONNECTION;
 import static cpath.config.CPathSettings.PROP_DB_DRIVER;
-import static cpath.config.CPathSettings.PROP_DB_PASSW;
-import static cpath.config.CPathSettings.PROP_DB_USER;
 import static cpath.config.CPathSettings.property;
 
 import java.awt.image.BufferedImage;
@@ -37,8 +34,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
 import cpath.config.CPathSettings;
 import cpath.warehouse.beans.Metadata;
@@ -90,21 +85,10 @@ public final class CPathUtils {
 	 * @param db
 	 */
 	public static void createDatabase(final String db) {
-		String driver = property(PROP_DB_DRIVER);
-		
+		String driver = property(PROP_DB_DRIVER);		
 		if(driver.startsWith("org.h2")) {
 			newH2db(db);
 		} 
-//		else if(driver.startsWith("com.mysql")) {	
-//			DriverManagerDataSource dataSource = new DriverManagerDataSource();
-//			dataSource.setDriverClassName(driver);
-//			dataSource.setUrl(property(PROP_DB_CONNECTION));
-//			dataSource.setUsername(property(PROP_DB_USER));
-//			dataSource.setPassword(property(PROP_DB_PASSW));
-//			JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-//			jdbcTemplate.execute("DROP DATABASE IF EXISTS " + db);
-//			jdbcTemplate.execute("CREATE DATABASE " + db);
-//		} 
 		else {
 			throw new UnsupportedOperationException("Unsupported driver: " + driver);
 		}
@@ -276,22 +260,23 @@ public final class CPathUtils {
      *  them to the metadata's pathwayData collection.
      *
 	 * @param metadata Metadata
-     * @throws IOException if an IO error occurs
+     * @throws RuntimeException if an IO error occurs
      */
     public static void readPathwayData(final Metadata metadata) 
-    	throws IOException 
     {
-		metadata.getPathwayData().clear();
-		
 		Collection<PathwayData> pathwayDataCollection = new HashSet<PathwayData>();
 		String url = metadata.origDataLocation();
+		
+		try {
+		
 		BufferedInputStream bis = new BufferedInputStream(LOADER.getResource(url).getInputStream());
 		
 		// pathway data is either owl, zip (multiple files allowed!) or gz (single data entry only)
 		if(url.toLowerCase().endsWith(".zip")) {
 			log.info("getProviderPathwayData(): extracting data from zip archive.");
 			pathwayDataCollection = readZipContent(metadata, new ZipInputStream(bis));
-		} else { // expecting BioPAX content (RDF+XML or gzipped RDF/XML) 
+		} else { 
+			// expected content: BioPAX or PSI-MI (compressed or not)
 			InputStream is;
 			if(url.toLowerCase().endsWith(".gz")) {
 				log.info("getProviderPathwayData(): extracting data from gzip archive.");
@@ -300,15 +285,29 @@ public final class CPathUtils {
 				log.info("getProviderPathwayData(): returning as is (supposed to be RDF+XML)");
 				is = bis;
 			}
+			
 			byte[] bytes = readContent(is);
-			int idx = metadata.getUrlToData().lastIndexOf('/');
-			String filename = metadata.getUrlToData().substring(idx+1); // not found (-1) gives entire string
-			PathwayData pathwayData = new PathwayData(metadata, filename);
-			pathwayData.setPathwayData(bytes);
-			pathwayDataCollection.add(pathwayData);
+			
+			if(bytes.length > 0) {
+				String filename = metadata.getIdentifier();
+				int idx = metadata.getUrlToData().lastIndexOf('/');
+				if(idx > 0)
+					filename = filename + "." + url.substring(idx+1);
+				PathwayData pathwayData = new PathwayData(metadata, filename);
+				pathwayData.setPathwayData(bytes);
+				pathwayDataCollection.add(pathwayData);
+			}
 		} 
 		
-		metadata.getPathwayData().addAll(pathwayDataCollection);
+		} catch (IOException e) {
+			throw new RuntimeException("readPathwayData failed reading from: " 
+					+ metadata.getIdentifier() , e);
+		}
+		
+		if(pathwayDataCollection != null && !pathwayDataCollection.isEmpty())
+			metadata.getPathwayData().addAll(pathwayDataCollection);
+		else
+			log.warn("readPathwayData: no data found for " + metadata);
     }
 
 	

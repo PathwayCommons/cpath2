@@ -2,11 +2,11 @@ package cpath.warehouse.beans;
 
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import javax.persistence.*;
@@ -55,7 +55,7 @@ public final class Metadata {
     private Integer id;
 	
 	@Column(length=40, unique = true, nullable = false)
-    private String identifier;
+    public String identifier;
 	
 	@ElementCollection(fetch=FetchType.EAGER)
 	@JoinTable(name="metadata_name")
@@ -82,8 +82,9 @@ public final class Metadata {
     
     private String converterClassname;
 
-    @OneToMany(mappedBy="metadata", cascade=CascadeType.ALL, orphanRemoval=true, fetch=FetchType.LAZY)
-    private List<PathwayData> pathwayData;
+    //Note: pathway data records are removed automatically only when this metadata (id) is removed. 
+    @OneToMany(mappedBy="metadata", cascade=CascadeType.ALL, orphanRemoval=true, fetch=FetchType.EAGER)
+    private Set<PathwayData> pathwayData;
 
     private Integer numPathways;
     
@@ -97,7 +98,7 @@ public final class Metadata {
 	 * Default Constructor.
 	 */
 	public Metadata() {
-		pathwayData = new ArrayList<PathwayData>();
+		pathwayData = new TreeSet<PathwayData>();
 	}
 
     /**
@@ -145,24 +146,17 @@ public final class Metadata {
 	void setId(Integer id) {
 		this.id = id;
 	}
-    Integer getId() { return id; }
+    public Integer getId() { return id; }
      
 
-    public List<PathwayData> getPathwayData() {
+    public Set<PathwayData> getPathwayData() {
 		return pathwayData;
 	}
-    void setPathwayData(List<PathwayData> pathwayData) {
-		this.pathwayData = pathwayData;
+    void setPathwayData(Set<PathwayData> pathwayData) {
+		this.pathwayData = new TreeSet<PathwayData>();
+		this.pathwayData.addAll(pathwayData);
 	}
-    
-    public void addPathwayData(PathwayData pd) {
-    	if(!this.pathwayData.contains(pd))
-    		pathwayData.add(pd);
-    }
-    
-    public void removePathwayData(PathwayData pd) {
-    	pathwayData.remove(pd);
-    }
+
     
     /**
 	 * Sets the identifier.
@@ -422,25 +416,15 @@ public final class Metadata {
 
 	
 	/**
-	 * Drops old output data and loads original
-	 * pathway data from file archives into {@link #pathwayData}
-	 * collection.
-	 * 
-	 * @param loadData
+	 * Drops all associated output data files - 
+	 * re-creates the output data directory.
 	 */
 	@Transient
-	public void init(boolean loadData) {
+	public void cleanupOutputDir() {
 		File dir = new File(outputDir());
 		if(dir.exists()) {
 			CPathUtils.deleteDirectory(dir);
 		}		
 		dir.mkdir();
-		
-		if(loadData)
-			try {
-				CPathUtils.readPathwayData(this);
-			} catch (IOException e) {
-				throw new RuntimeException("init: failed", e);
-			}
 	}
 }

@@ -35,13 +35,9 @@ import java.util.*;
 @Repository
 class MetadataHibernateDAO  implements MetadataDAO {
 
-	// log
     private static Log log = LogFactory.getLog(MetadataHibernateDAO.class);
 
-    // session factory prop/methods used by spring
     private SessionFactory sessionFactory;
-    
-    public SessionFactory getSessionFactory() { return sessionFactory; }
     
     public void setSessionFactory(SessionFactory sessionFactory) {
     	this.sessionFactory = sessionFactory;
@@ -50,14 +46,12 @@ class MetadataHibernateDAO  implements MetadataDAO {
     
     @Override
     @Transactional
-	public void saveMetadata(final Metadata metadata) {
+	public void saveMetadata(Metadata metadata) {
 		Session session = sessionFactory.getCurrentSession();
-		session.merge(metadata);
-		session.flush();
-		session.clear();		
+		session.saveOrUpdate(metadata);		
 		if(log.isInfoEnabled())
-			log.info("metadata object " + metadata.getIdentifier() +
-				" has been sucessessfully saved or merged.");
+			log.info("metadata " + metadata.getIdentifier() +
+				" was saved.");
     }
 
 
@@ -69,10 +63,6 @@ class MetadataHibernateDAO  implements MetadataDAO {
 			.add(Restrictions.eq("identifier", identifier))
 			.addOrder(Order.asc("id"))
 				.uniqueResult();
-		if(m != null) {
-			Hibernate.initialize(m.getPathwayData());
-//			Hibernate.initialize(m.getName()); // not needed - name is EAGER collection
-		}	
 		return m;
     }
 
@@ -81,18 +71,11 @@ class MetadataHibernateDAO  implements MetadataDAO {
 	@Transactional
     @Override
     public Collection<Metadata> getAllMetadata() {
-		Session session = sessionFactory.getCurrentSession();
-		List<Metadata> toReturn = session.createCriteria(Metadata.class)
-			.addOrder(Order.asc("id")).list();
-		if (toReturn.isEmpty()) 
-			return Collections.EMPTY_SET;
-		else {
-			for(Metadata m : toReturn) {
-				Hibernate.initialize(m.getPathwayData());
-//				Hibernate.initialize(m.getName()); //no need (name is EAGER collection)
-			}
-			return toReturn;
-		}
+		// safe to return as all collections are EAGER fetched
+		return sessionFactory.getCurrentSession()
+			.createCriteria(Metadata.class)
+				.addOrder(Order.asc("id"))
+					.list();
 	}
    
     
@@ -213,13 +196,16 @@ class MetadataHibernateDAO  implements MetadataDAO {
 	
 	@Transactional
 	@Override
-	public void deletePathwayData(Integer id) {
-		Session session = sessionFactory.getCurrentSession();		
-		PathwayData m = (PathwayData) session.get(PathwayData.class, id);
-		if(m != null) {
-			session.delete(m);
-			session.flush();
+	public void deletePathwayData(Metadata metadata) {
+		Session session = sessionFactory.getCurrentSession();
+		List<PathwayData> list = session
+			.createQuery("from PathwayData where metadata.identifier=:provider")
+				.setString("provider", metadata.getIdentifier())
+					.list();
+		for(PathwayData pd : list) {
+			session.delete(pd);
 		}
+		
 	}
 	
 	
@@ -313,30 +299,28 @@ class MetadataHibernateDAO  implements MetadataDAO {
 	}
     
 
-	@Transactional
+    @Transactional
     @Override
-	public void importMetadata(String location) {
-     // process metadata
-     for (Metadata mdata : CPathUtils.readMetadata(location)) {
-     	Metadata m = getMetadataByIdentifier(mdata.getIdentifier());
-     	if(m != null) {
-     		log.info("readMetadata: updating metadata: " 
-     			+ m.getIdentifier() + " from " + location);
-     		m.setDescription(mdata.getDescription());
-     		m.setName(mdata.getName());
-     		m.setIcon(mdata.getIcon());
-     		m.setType(mdata.getType());
-     		m.setUrlToData(mdata.getUrlToData());
-     		m.setUrlToHomepage(mdata.getUrlToHomepage());
-     		m.setConverterClassname(mdata.getConverterClassname());
-     		m.setCleanerClassname(mdata.getCleanerClassname());
-     		//m.setNumInteractions, etc.. - won't modify; one should run -update-counts
-     		//m.setPathwayData - won't touch either; one should run -premerge
-     		saveMetadata(m);
-     	}  else {
-     		saveMetadata(mdata);
-     	}
-     }			
-	}
+	public void addOrUpdateMetadata(String location) {
+    	// process metadata
+    	for (Metadata mdata : CPathUtils.readMetadata(location))
+      		saveMetadata(mdata);
+ 	}
 
+    @Transactional
+	@Override
+	public void init(Metadata metadata) {    	
+		metadata.getPathwayData().clear();
+    	metadata.cleanupOutputDir();
+    	metadata.setNumInteractions(null);
+    	metadata.setNumPathways(null);
+    	metadata.setNumPhysicalEntities(null);
+    	// save and reset the variable to get 
+    	saveMetadata(metadata);
+    	
+		//remove old pathwayData collection
+		deletePathwayData(metadata);	
+		// read orig. files into memory (not saving to db).
+		CPathUtils.readPathwayData(metadata);
+	}
 }
