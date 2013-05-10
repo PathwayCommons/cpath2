@@ -40,15 +40,12 @@ import cpath.service.OutputFormat;
 import cpath.service.internal.BiopaxConverter;
 import cpath.service.jaxb.*;
 import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.PathwayData;
 
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.api.Validator;
-import org.biopax.validator.api.beans.ValidatorResponse;
-import org.biopax.validator.api.ValidatorUtils;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -64,9 +61,6 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
 
 import static cpath.service.OutputFormat.*;
 
@@ -93,7 +87,6 @@ public final class Admin {
         CLEAR_CACHE("-clear-cache"),
         UPDATE_COUNTS("-update-counts"),
 		EXPORT("-export"),
-		EXPORT_VALIDATION("-export-validation"),
         CONVERT("-convert"),
 		;
 
@@ -216,21 +209,12 @@ public final class Admin {
 			
 		} else if (args[0].equals(Cmd.EXPORT.toString())) {
 			
-			if (args.length < 3)
-				fail(args, "must provide at least two arguments.");
-			else if (args.length == 3)
-				exportData(args[1], args[2], new String[] {});
+			if (args.length < 2)
+				fail(args, "must provide at least one arguments.");
+			else if (args.length == 2)
+				exportData(args[1], new String[] {});
 			else
-				exportData(args[1], args[2], args[3].split(","));
-			
-		} else if (args[0].equals(Cmd.EXPORT_VALIDATION.toString())) {
-			
-			if (args.length < 3)
-				fail(args,"must provide at least two arguments for this command.");
-			if (args[2].endsWith(".html"))
-				exportValidation(args[1], new FileOutputStream(args[2]), true);
-			else
-				exportValidation(args[1], new FileOutputStream(args[2]), false);
+				exportData(args[1], args[2].split(","));
 			
 		} else if (args[0].equals(Cmd.CREATE_BLACKLIST.toString())) {
 			
@@ -537,14 +521,13 @@ public final class Admin {
 
 	/**
 	 * Extracts a cpath2 BioPAX sub-model
-	 * and writes to the specified file/format.
-	 * 
-	 * @param src pathway_id from the Metadata db, pathwayData table, or null
+	 * and writes to the specified file.
 	 * @param output
 	 * @param uris
+	 * 
 	 * @throws IOException, IllegalStateException (in maintenance mode)
 	 */
-	public static void exportData(final String src, final String output, String[] uris) 
+	public static void exportData(final String output, String[] uris) 
 			throws IOException 
 	{	
 		if(isMaintenanceEnabled())
@@ -555,125 +538,15 @@ public final class Admin {
 		
 		ClassPathXmlApplicationContext ctx = 
 			new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
-				
-		if(src == null || src.isEmpty() || src.equals("--main_db")) {			
-			OutputStream os = new FileOutputStream(output);
-			// export a sub-model from the main biopax database
-	        PaxtoolsDAO dao = ((PaxtoolsDAO)ctx.getBean("paxtoolsDAO"));
-			dao.exportModel(os, uris);
-			ctx.close(); 
-		} else {			
-			// get original pathway data by pathway_id 
-			// from the Metadata db, pathwayData table
-			// (ok to do even in the maintenance mode)
-			Integer pk = null;
-			try {
-				pk = Integer.valueOf(src);
-				if(LOG.isDebugEnabled())
-					LOG.debug("Export from the original data," +
-						" pathway_id=" + src);
-			} catch (NumberFormatException e) {
-				if(LOG.isDebugEnabled())
-					LOG.debug("Export from the database: " + src);
-			}			
-			
-			MetadataDAO dao = (MetadataDAO) ctx.getBean("metadataDAO");
-			PathwayData pdata = dao.getPathwayData(pk);
-			
-			if(pdata != null) {
-				// get premergeData (OWL text)
-				byte[] data = pdata.getPremergeData();
-				OutputStream os = new FileOutputStream(output);
-				if (data != null && data.length > 0) {
-					if (uris.length > 0) { // extract a sub-model
-						SimpleIOHandler handler = new SimpleIOHandler(); // auto-detect Level
-						Model model = handler.convertFromOWL(new ByteArrayInputStream(data));
-						//handler.setFactory(model.getLevel().getDefaultFactory());
-						handler.convertToOWL(model, os, uris);
-					} else { 
-						/*	write all (premergeData -
-							cleaned/converted/validated/normalized from
-							the original provider's file )	*/
-						os.write(data);
-						os.flush();
-					}
-				}
-				else {
-					// no data found
-					LOG.error("Data not found! Have you run '-premerge' for "
-						+ pdata + "?");
-				}
-			} 
-			else {
-				LOG.error("Record not found: pathway_id=" + pk);
-			}
-			
-			ctx.close();
-		}
+							
+		OutputStream os = new FileOutputStream(output);
+		// export a sub-model from the main biopax database
+	    PaxtoolsDAO dao = ((PaxtoolsDAO)ctx.getBean("paxtoolsDAO"));
+	    dao.exportModel(os, uris);
+		ctx.close(); 
 	}	
 	
-	
-	
-	/**
-	 * Exports from the PathwayData entity(-ies) and 
-	 * writes the BioPAX validation report (as XML or HTML).
-	 * 
-	 * @param key an existing cpath2 pathwayData.pathway_id or metadata.identifier (provider).
-	 * @param out output stream
-	 * @param asHtml write as HTML report (transform from the XML)
-	 * @throws IOException
-	 */
-	public static void exportValidation(final String key, final OutputStream out, 
-			boolean asHtml) throws IOException {
-		
-		ClassPathXmlApplicationContext context =
-	        new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
-	    MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-	    
-	    ValidatorResponse report = null;
-		Integer pk = null;
-		try {
-			pk = Integer.valueOf(key);
-		} catch (NumberFormatException e) {}
-		
-		if(pk != null) {
-			PathwayData pathwayData = metadataDAO.getPathwayData(pk);
-			if (pathwayData != null) {
-				if(LOG.isInfoEnabled())
-		    		LOG.info("Getting validation report for pathway_id: " + pk 
-		    			+ " (" + pathwayData.getMetadata().getIdentifier() + ") "
-		    			+ "...");
-				report = metadataDAO.validationReport(null, pk);
-			} else {
-				if(LOG.isInfoEnabled())
-		    		LOG.info("Getting validation report: pathway_id: " + pk + " does not exist.");
-				System.err.println("Getting validation report for pathway_id=" + pk + ": not found.");
-				context.close();
-				return;
-			}
-		} else {
-			if(LOG.isInfoEnabled())
-	    		LOG.info("Getting validation report for data source: " + key + "...");
-			report = metadataDAO.validationReport(key, null);
-		}
-
-    	if(report == null) {
-    		System.err.println("No validation report found or error.");
-    	} else {
-    		OutputStreamWriter writer = new OutputStreamWriter(out, "UTF-8");
-    		Source xsl = (asHtml) 
-    			? new StreamSource((new DefaultResourceLoader())
-    					.getResource("classpath:html-result.xsl").getInputStream())
-    			: null;
-
-			ValidatorUtils.write(report, writer, xsl); 
-    		writer.flush();
-    	}
-    	
-    	context.close();
-	}	
-	
-		
+			
 	private static String usage() 
 	{
 		final String NEWLINE = System.getProperty ( "line.separator" );
@@ -694,12 +567,7 @@ public final class Admin {
         toReturn.append(Cmd.CREATE_DOWNLOADS.toString() + " (creates cpath2 BioPAX DB archives using several " +
         	"data formats, and also split by data source, organism)"  + NEWLINE);        
         // other useful (utility) commands
-		toReturn.append(Cmd.EXPORT.toString() + " <source> <output> [<uri,uri,..>]" +
-			" (<source> can be either --main_db or a pathway_id, i.e., 'premerged' data PK in the pathwayData table)" + NEWLINE);
-		toReturn.append(Cmd.EXPORT_VALIDATION.toString() 
-			+ " <provider>|<pathway_id> <output_file[.xml|.html]> (<provider> - metadata identifier or <pathway_id> - see above; "
-			+ "output_file will contain the Validator Response XML unless '.html' file extension is used, " +
-			"in wich case the XML is there auto-transformed to offline HTML+Javascript content)" + NEWLINE);
+		toReturn.append(Cmd.EXPORT.toString() + " <output> [<uri,uri,..>]" + NEWLINE);
 		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format>" + NEWLINE);
 
 		return toReturn.toString();

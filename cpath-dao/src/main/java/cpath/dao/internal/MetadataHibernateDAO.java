@@ -70,80 +70,41 @@ class MetadataHibernateDAO  implements MetadataDAO {
     @SuppressWarnings("unchecked")
 	@Transactional
     @Override
-    public Collection<Metadata> getAllMetadata() {
+    public List<Metadata> getAllMetadata() {
 		// safe to return as all collections are EAGER fetched
-		return sessionFactory.getCurrentSession()
+		List<Metadata> list = sessionFactory.getCurrentSession()
 			.createCriteria(Metadata.class)
 				.addOrder(Order.asc("id"))
 					.list();
-	}
-   
-    
-	@Override
-	@Transactional
-	public PathwayData getPathwayData(Integer pathwayId) {
-		Session ses = sessionFactory.getCurrentSession();
-		PathwayData pd = (PathwayData) ses.get(PathwayData.class, pathwayId);
-		return pd;
-	}	
-	
-	
-	@Override
-	@Transactional
-	public PathwayData getPathwayData(final String provider, final String filename) {		
-		Session session = sessionFactory.getCurrentSession();
 		
-		PathwayData pd = (PathwayData) session.createCriteria(PathwayData.class)
-			.add(Restrictions.eq("metadata.identifier", provider))
-			.add(Restrictions.eq("filename", filename)).uniqueResult();
-		
-		return pd;
+		return new ArrayList<Metadata>(list);
 	}
-	
+
 	
 	@Override
 	@Transactional(readOnly=true)
-	public ValidatorResponse validationReport(String provider, Integer pathwayDataPk) {
-		ValidatorResponse response = null;
-
-		if (provider != null && pathwayDataPk == null) {
-			// get validationResults from PathwayData beans
-			Session session = sessionFactory.getCurrentSession();
-			List<PathwayData> pathwayDataCollection = (List<PathwayData>) session
-				.createCriteria(PathwayData.class)
-				.add(Restrictions.eq("metadata.identifier", provider))
-				.addOrder(Order.asc("pathway_id"))
-				.list();					
-			if (!pathwayDataCollection.isEmpty()) {
-				// a new container to collect separately stored file validations
-				response = new ValidatorResponse();
-				for (PathwayData pathwayData : pathwayDataCollection) {				
-					try {
-						byte[] xmlResult = pathwayData.getValidationResults();
-						// unmarshal and add
-						ValidatorResponse resp = (ValidatorResponse) ValidatorUtils.getUnmarshaller()
-							.unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
-						assert resp.getValidationResult().size() == 1; // current design (of the premerge pipeline)
-						Validation validation = resp.getValidationResult().get(0); 
-						if(validation != null)
-							response.getValidationResult().add(validation);
-					} catch (Exception e) {
-	                    log.error(e);
-					}
-				}
-			} 
-		} 
-		else {
-			PathwayData pathwayData = getPathwayData(pathwayDataPk);
-			if (pathwayData != null) {
-				try {
-					byte[] xmlResult = pathwayData.getValidationResults();
-					response = (ValidatorResponse) ValidatorUtils.getUnmarshaller()
-						.unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
-				} catch (Throwable e) {
-					log.error(e);
-				}
+	public ValidatorResponse validationReport(String provider, String file) {
+		ValidatorResponse response = new ValidatorResponse();
+		Metadata metadata = getMetadataByIdentifier(provider);
+		for (PathwayData pathwayData : metadata.getPathwayData()) {
+			String current = pathwayData.getFilename();			
+			
+			if(file != null && !file.equals(current))
+				continue;
+			
+			try {
+				byte[] xmlResult = pathwayData.getValidationReport();
+				// unmarshal and add
+				ValidatorResponse resp = (ValidatorResponse) ValidatorUtils.getUnmarshaller()
+					.unmarshal(new BufferedInputStream(new ByteArrayInputStream(xmlResult)));
+				assert resp.getValidationResult().size() == 1;				
+				response.getValidationResult().addAll(resp.getValidationResult());				
+			} catch (Exception e) {
+				log.error(e);
 			}
+			
+			if(current.equals(file))
+				break;
 		}
 
 		return response;
@@ -154,58 +115,9 @@ class MetadataHibernateDAO  implements MetadataDAO {
 	public void deleteAllIdMappings() {
 		log.debug("deleteAllIdMappings: purge all...");
 		Session ses = sessionFactory.getCurrentSession();
-		ses.createQuery("delete from mapping").executeUpdate();
-		ses.createQuery("delete from mapping_map").executeUpdate();
+		ses.createQuery("delete Mapping").executeUpdate();
+		ses.createSQLQuery("delete from mapping_map").executeUpdate();
 		ses.flush(); //might not required due to the new transaction, but.. let it be
-	}
-	
-
-	/**
-	 * {@inheritDoc}
-	 * 
-	 * Returns the initialized 
-	 * (i.e, with its lazy collection usable outside active sessions) 
-	 * Metadata object by PK.
-	 */
-	@Transactional
-	@Override
-	public Metadata getMetadata(Integer id) {
-		Session session = sessionFactory.getCurrentSession();		
-		Metadata m = (Metadata) session.get(Metadata.class, id);
-		if(m != null) {
-//			Hibernate.initialize(m); //not needed
-			Hibernate.initialize(m.getPathwayData());
-//			Hibernate.initialize(m.getName()); // no need: name is EAGER
-		}
-		
-		return m;
-	}
-	
-	
-	@Transactional
-	@Override
-	public void deleteMetadata(Integer id) {
-		Session session = sessionFactory.getCurrentSession();		
-		Metadata m = (Metadata) session.get(Metadata.class, id);
-		if(m != null) {
-			session.delete(m);
-			session.flush();
-		}
-	}
-	
-	
-	@Transactional
-	@Override
-	public void deletePathwayData(Metadata metadata) {
-		Session session = sessionFactory.getCurrentSession();
-		List<PathwayData> list = session
-			.createQuery("from PathwayData where metadata.identifier=:provider")
-				.setString("provider", metadata.getIdentifier())
-					.list();
-		for(PathwayData pd : list) {
-			session.delete(pd);
-		}
-		
 	}
 	
 	
@@ -310,17 +222,14 @@ class MetadataHibernateDAO  implements MetadataDAO {
     @Transactional
 	@Override
 	public void init(Metadata metadata) {    	
-		metadata.getPathwayData().clear();
     	metadata.cleanupOutputDir();
     	metadata.setNumInteractions(null);
     	metadata.setNumPathways(null);
     	metadata.setNumPhysicalEntities(null);
-    	// save and reset the variable to get 
-    	saveMetadata(metadata);
-    	
-		//remove old pathwayData collection
-		deletePathwayData(metadata);	
+    	metadata.getPathwayData().clear();    		
 		// read orig. files into memory (not saving to db).
 		CPathUtils.readPathwayData(metadata);
+    	// save and reset the variable to get 
+    	saveMetadata(metadata);
 	}
 }

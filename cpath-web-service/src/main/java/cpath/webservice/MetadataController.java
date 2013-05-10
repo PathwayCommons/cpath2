@@ -122,25 +122,25 @@ public class MetadataController extends BasicController
     
     
     // returns XML or Json 
-    @RequestMapping("/metadata/validations/{identifier}/{key}")
+    @RequestMapping("/metadata/validations/{identifier}/{file}")
     public @ResponseBody ValidatorResponse queryForValidation(
-    		@PathVariable String identifier, @PathVariable Integer key) 
+    		@PathVariable String identifier, @PathVariable String file) 
     {
 		log.debug("Getting validation report (XML/Json) for: " 
-			+ identifier + " (" + key + ")");
+			+ identifier + " (" + file + ")");
     	
-    	return service.validationReport(identifier, key);
+    	return service.validationReport(identifier, file);
     }
        
     
-    @RequestMapping("/metadata/validations/{identifier}/{key}.html") //a JSP view
+    @RequestMapping("/metadata/validations/{identifier}/{file}.html") //a JSP view
     public String queryForValidationByProviderAndFile(
-    		@PathVariable String identifier, @PathVariable Integer key, Model model) 
+    		@PathVariable String identifier, @PathVariable String file, Model model) 
     {
 		log.debug("Getting a validation report (html) for:" 
-				+ identifier + " (" + key + ")");
+				+ identifier + " (" + file + ")");
 
-    	ValidatorResponse body = service.validationReport(identifier, key);
+    	ValidatorResponse body = service.validationReport(identifier, file);
 		model.addAttribute("response", body);
 		
 		return "validation";
@@ -291,7 +291,7 @@ public class MetadataController extends BasicController
 			vi.setIdentifier(m.getIdentifier());
 			
 			for(PathwayData pd : m.getPathwayData())
-				vi.getFiles().put(pd.getId(), pd + "; passed: " + pd.getValid() + ")");
+				vi.getFiles().put(pd.getFilename(), pd + "; " + pd.status() + ")");
 			
 			list.add(vi);
 		}
@@ -306,10 +306,11 @@ public class MetadataController extends BasicController
      */
     public static final class ValInfo {
     	String identifier;
-    	Map<Integer,String> files;
+    	//filename to status/description map
+    	Map<String,String> files;
     	
     	public ValInfo() {
-			files = new TreeMap<Integer,String>();
+			files = new TreeMap<String,String>();
 		}
     	
     	public String getIdentifier() {
@@ -319,10 +320,10 @@ public class MetadataController extends BasicController
 			this.identifier = identifier;
 		}
     	
-    	public Map<Integer, String> getFiles() {
+    	public Map<String, String> getFiles() {
 			return files;
 		}
-    	public void setFiles(Map<Integer, String> files) {
+    	public void setFiles(Map<String, String> files) {
 			this.files = files;
 		}
     }

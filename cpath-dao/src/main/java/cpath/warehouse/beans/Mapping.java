@@ -44,7 +44,7 @@ public final class Mapping {
 	@ElementCollection(fetch = FetchType.LAZY)
 	@CollectionTable(name="mapping_map")
 	@OrderColumn
-	//make map columns case-sensitive in order to properly handle bio/chem. identifiers!
+//	//for MySQL: make map columns case-sensitive in order to properly handle bio/chem. identifiers!
 //	@MapKeyColumn(name="identifier", columnDefinition="varchar(30) character set utf8 collate utf8_bin NOT NULL")
 //	@Column(name="accession", columnDefinition="varchar(30) character set utf8 collate utf8_bin NOT NULL")
 	@MapKeyColumn(name="identifier")

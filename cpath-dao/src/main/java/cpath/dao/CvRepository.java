@@ -29,7 +29,6 @@ package cpath.dao;
 
 import java.util.Set;
 
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 
 /**

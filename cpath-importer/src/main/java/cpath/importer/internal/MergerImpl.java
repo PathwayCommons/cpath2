@@ -108,8 +108,8 @@ public final class MergerImpl implements Merger {
 				log.info("Merging pathway data: " + pwdata.toString());
 
 				if (pwdata.getValid() == null
-						|| pwdata.getPremergeData() == null
-						|| pwdata.getPremergeData().length == 0) {
+						|| pwdata.getNormalizedData() == null
+						|| pwdata.getNormalizedData().length == 0) {
 					// must run pre-merge first!
 					log.warn("Do '-premerge' first. Skipping "
 							+ pwdata.toString());
@@ -129,7 +129,7 @@ public final class MergerImpl implements Merger {
 
 				// import the BioPAX L3 pathway data into the in-memory paxtools model
 				InputStream inputStream = new ByteArrayInputStream(
-						pwdata.getPremergeData());
+						pwdata.getNormalizedData());
 				
 				Model pathwayModel = simpleReader.convertFromOWL(inputStream);
 

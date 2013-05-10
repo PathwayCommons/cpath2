@@ -276,7 +276,7 @@ public final class CPathUtils {
 			log.info("getProviderPathwayData(): extracting data from zip archive.");
 			pathwayDataCollection = readZipContent(metadata, new ZipInputStream(bis));
 		} else { 
-			// expected content: BioPAX or PSI-MI (compressed or not)
+			// expected content: one-file BioPAX or PSI-MI (compressed or not)
 			InputStream is;
 			if(url.toLowerCase().endsWith(".gz")) {
 				log.info("getProviderPathwayData(): extracting data from gzip archive.");
@@ -289,12 +289,13 @@ public final class CPathUtils {
 			byte[] bytes = readContent(is);
 			
 			if(bytes.length > 0) {
-				String filename = metadata.getIdentifier();
-				int idx = metadata.getUrlToData().lastIndexOf('/');
-				if(idx > 0)
-					filename = filename + "." + url.substring(idx+1);
-				PathwayData pathwayData = new PathwayData(metadata, filename);
-				pathwayData.setPathwayData(bytes);
+				//create a new base output filename (for future pathway data results)
+				int idx = url.lastIndexOf('/'); //-1 (not found) is no problem
+				String filename = url.substring(idx+1); //removed orig. path
+				if(filename.isEmpty())
+					filename = metadata.getIdentifier();
+				PathwayData pathwayData = new PathwayData(metadata.outputDir(), filename);
+				pathwayData.setData(bytes);
 				pathwayDataCollection.add(pathwayData);
 			}
 		} 
@@ -339,7 +340,7 @@ public final class CPathUtils {
 
         String fetchedData = sbuff.toString();
 		
-		return fetchedData.getBytes();
+		return fetchedData.getBytes("UTF-8");
 	}
 
     
@@ -398,10 +399,10 @@ public final class CPathUtils {
 				}
 				
 				// create pathway data object
-				log.info("unzip(), creating pathway data object, zip entry: " 
-					+ entryName + " provider: " + metadata.getIdentifier());
-				PathwayData pathwayData = new PathwayData(metadata, entryName);
-				pathwayData.setPathwayData(content.getBytes());
+				log.info("unzip(), adding pathwaydata entry: " 
+					+ entryName + " of " + metadata.getIdentifier());
+				PathwayData pathwayData = new PathwayData(metadata.outputDir(), entryName);
+				pathwayData.setData(content.getBytes());
 				
 				// add object to return collection
 				toReturn.add(pathwayData);
