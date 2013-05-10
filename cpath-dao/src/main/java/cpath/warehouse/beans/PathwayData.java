@@ -2,51 +2,49 @@ package cpath.warehouse.beans;
 
 
 import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
 
 import javax.persistence.*;
+import javax.xml.transform.stream.StreamSource;
 
-import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.DynamicUpdate;
+import org.biopax.validator.api.ValidatorUtils;
+import org.biopax.validator.api.beans.Validation;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.util.Assert;
 
-import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
 
 /**
  * Data Providers's Pathway Data.
  * 
- * Note: this class has a natural ordering incompatible with equals
- * (based on the toString() method).
- * 
  */
 @Entity
-@DynamicUpdate
-@DynamicInsert
-@Table(name="pathwayData", uniqueConstraints=@UniqueConstraint(columnNames = {"metadata_id", "filename"}))
-public final class PathwayData implements Comparable<PathwayData>{
+@Table(name="data", uniqueConstraints=@UniqueConstraint(columnNames = {"directory", "filename"}))
+public final class PathwayData {
 
 	@Id
 	@Column(name="pathway_id")
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Integer id;
 	
-	@ManyToOne
-	@JoinColumn(name="metadata_id")
-    private Metadata metadata;
-	
 	@Column(nullable=false)
     private String filename;
 	
 	@Transient
-    private byte[] pathwayData;
+    private byte[] data;
 	
 	@Transient
-    private byte[] premergeData;
+    private byte[] normalizedData;
 	
 	@Transient
-	private byte[] validationResults;	
+	private byte[] validationReport;	
 	
 	@Column
 	private Boolean valid; //BioPAX validation status.
+
+	@Column
+	private String directory;
 
 	
 	/**
@@ -56,88 +54,89 @@ public final class PathwayData implements Comparable<PathwayData>{
 	
 	
     /**
-     * Create a Metadata obj with the specified properties;
-     *
-     * @param metadata the provider's metadata object it belongs to
-     * @param filename String
-     * @param pathwayData String
-	 * @throws IllegalArgumentException when a parameter is null
+     * Create a PathwayData domain object (value object).
+     * 
+     * @param directory must be output directory for normalized data and validation reports
+     * @param filename file name base (prefix for the normalized data and validation report file names)
      */
-    public PathwayData(Metadata metadata, final String filename) 
-    {
-    	if (metadata == null)
-            throw new IllegalArgumentException("metadata must not be null");
-    	this.metadata = metadata;
-    	
-        if (filename == null)
-            throw new IllegalArgumentException("filename must not be null");
-        this.filename = filename;
+    public PathwayData(String directory, String filename) 
+    {    	
+        Assert.notNull(directory);
+    	Assert.notNull(filename);
+    	this.directory = directory;
+        this.filename = filename.replaceAll("[^a-zA-Z0-9.-]", "_");
     }
 
-
-	void setId(Integer id) { this.id = id; }
 	
 	/**
-	 * Gets the internal id (primary key) 
-	 * of this pathway data (file) entry.
-	 * 
-	 * This is made public to be used in 
-	 * web pages/queries about individual files 
-	 * validation results, etc. 
+	 * Gets the internal id (primary key).
 	 * 
 	 * @return
 	 */
-    public Integer getId() { return id; }
+    public Integer getId() { return id ;}
 
     
-    public Metadata getMetadata() {
-
-    	return metadata;
-	}
-    public void setMetadata(Metadata metadtaa) {
-		this.metadata = metadtaa;
-	}
-
     
-    public byte[] getPathwayData() { 
-   		return pathwayData;
+    public byte[] getData() { 
+    	if(data == null)
+    		data = CPathUtils.zread(convertedFile());
+   		return data;
     }
 
     
-    public void setPathwayData(byte[] pathwayData) {
-        this.pathwayData = pathwayData;
+    public void setData(byte[] bytes) {
+        this.data = bytes;
+        CPathUtils.zwrite(convertedFile(), bytes);
 	}
 
 	
-	public byte[] getPremergeData() {
-		if(premergeData == null)
+	public byte[] getNormalizedData() {
+		if(normalizedData == null)
 			//read file
-			premergeData = CPathUtils.zread(premergedFile());
+			normalizedData = CPathUtils.zread(normalizedFile());
 		
-   		return premergeData; 
+   		return normalizedData; 
     }
 
 	
-	public void setPremergeData(byte[] premergeData) {
-		this.premergeData = premergeData;	
+	public void setNormalizedData(byte[] bytes) {
+		this.normalizedData = bytes;	
 		// save BioPAX RDF/XML
-		CPathUtils.zwrite(premergedFile(), premergeData);
+		CPathUtils.zwrite(normalizedFile(), bytes);
 	}
 
 	
-    public byte[] getValidationResults() { 
-    	if(validationResults == null)
+    public byte[] getValidationReport() { 
+    	if(validationReport == null)
     		//read file 
-    		validationResults = CPathUtils.zread(validationFile());
+    		validationReport = CPathUtils.zread(validationXmlFile());
     	
-    	return validationResults; 
+    	return validationReport; 
     }
 
     
-	public void setValidationResults(byte[] validationResults) {
-		this.validationResults = validationResults;
-		// save file
-		CPathUtils.zwrite(validationFile(), validationResults);		
+	public void setValidationReport(Validation v) {
+		StringWriter writer = new StringWriter();		
+		ValidatorUtils.write(v, writer, null);
+		writer.flush();	
+		
+		this.validationReport = writer.toString().getBytes();
+		// save xml to file
+		CPathUtils.zwrite(validationXmlFile(), validationReport);	
+		
+		StreamSource xsl;
+		try {
+			xsl = new StreamSource((new DefaultResourceLoader())
+					.getResource("classpath:html-result.xsl").getInputStream());
+		} catch (IOException e) {
+			throw new RuntimeException("setValidationResults: failed opening xsl", e);
+		}
+		writer = new StringWriter();
+		ValidatorUtils.write(v, writer, xsl); 
+		writer.flush();
+		
+		// save html to file
+		CPathUtils.zwrite(validationHtmlFile(), writer.toString().getBytes());	
 	}
 
 	/**
@@ -156,37 +155,49 @@ public final class PathwayData implements Comparable<PathwayData>{
 	
 	@Override
     public String toString() {
-        return getId() + ": " + filename
-        	+ " (" + identifier() + ")";
+		return directory + "/" + filename + " (" + status() + ")";
     }
 
-	
-	/**
-	 * Gets the parent metadata's 
-	 * (data source's) identifier.
-	 * 
-	 * @return
-	 */
-	@Transient
-	public String identifier() {
-		return (metadata != null) ? metadata.getIdentifier() : null;
-	}
 
-
-    public String premergedFile() {
-    	return CPathSettings.dataDir() 
-    	+ File.separator + identifier() 
-    	+ File.separator + filename + ".rdf.gz";
+    public String normalizedFile() {
+    	return directory 
+    		+ File.separator + filename 
+    			+ ".normalized.owl.gz";
     }
 
     
-    public String validationFile() {
-		return premergedFile() + ".validation.xml.gz";
+    public String validationXmlFile() {
+		return directory 
+		    + File.separator + filename 
+		    	+ ".validation.xml.gz";
     }
+    
+ 
+    public String validationHtmlFile() {
+		return directory 
+		    + File.separator + filename 
+		    	+ ".validation.html.gz";
+    }
+    
 
-
-	@Override
-	public int compareTo(PathwayData o) {
-		return toString().compareTo(o.toString());
+    public String convertedFile() {
+		return directory 
+		    + File.separator + filename 
+		    	+ ".converted.owl.gz";
+    }     
+    
+    
+    public String getFilename() {
+		return filename;
 	}
+    
+    
+    public String status() {
+    	String s = "not checked";
+    	if(valid == Boolean.TRUE)
+    		s = "no errors";
+    	else if(valid == Boolean.FALSE)
+    		s = "has errors";
+    	return s;
+    }
 }

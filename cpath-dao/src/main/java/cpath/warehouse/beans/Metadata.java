@@ -6,15 +6,12 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.regex.Pattern;
 
 import javax.persistence.*;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Provenance;
-import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.DynamicUpdate;
 
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
@@ -23,8 +20,6 @@ import cpath.dao.CPathUtils;
  * Data Provider Metadata.
  */
 @Entity
-@DynamicInsert
-@DynamicUpdate
 @Table(name="metadata")
 public final class Metadata {
 
@@ -82,8 +77,8 @@ public final class Metadata {
     
     private String converterClassname;
 
-    //Note: pathway data records are removed automatically only when this metadata (id) is removed. 
-    @OneToMany(mappedBy="metadata", cascade=CascadeType.ALL, orphanRemoval=true, fetch=FetchType.EAGER)
+    @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, fetch=FetchType.EAGER)
+    @JoinColumn(name="metadata_id")
     private Set<PathwayData> pathwayData;
 
     private Integer numPathways;
@@ -98,7 +93,7 @@ public final class Metadata {
 	 * Default Constructor.
 	 */
 	public Metadata() {
-		pathwayData = new TreeSet<PathwayData>();
+		pathwayData = new HashSet<PathwayData>();
 	}
 
     /**
@@ -153,7 +148,7 @@ public final class Metadata {
 		return pathwayData;
 	}
     void setPathwayData(Set<PathwayData> pathwayData) {
-		this.pathwayData = new TreeSet<PathwayData>();
+		this.pathwayData = new HashSet<PathwayData>();
 		this.pathwayData.addAll(pathwayData);
 	}
 
@@ -166,8 +161,7 @@ public final class Metadata {
 	 * @throws IllegalArgumentException if it's null, empty string, or contains spaces or dashes
 	 */
     void setIdentifier(String identifier) {
-    	// validate the parameter
-    	
+    	// validate the parameter    	
     	if(identifier == null 
     		|| identifier.length() == 0
     		|| BAD_ID_PATTERN.matcher(identifier).find())

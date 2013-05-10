@@ -3,9 +3,7 @@ package cpath.dao;
 
 import cpath.warehouse.beans.Mapping;
 import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.PathwayData;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -27,35 +25,6 @@ public interface MetadataDAO {
     
     
     /**
-     * Gets a Metadata bean by id (primary key).
-     * 
-     * @param id Metadata PK
-     * @return
-     */
-    Metadata getMetadata(Integer id);
-    
-
-    /**
-     * Deletes the Metadata and its pathway data entries, 
-     * if any (previously processed), from the db by id (primary key).
-     * 
-     * @param id Metadata PK
-     * @return
-     */
-    void deleteMetadata(Integer id);
-
-    
-    /**
-     * Deletes all pathway data entries 
-     * that belong to the specified metadata.
-     * 
-     * @param metadata
-     * @return
-     */
-    void deletePathwayData(Metadata metadata);
-    
-    
-    /**
      * This method returns the metadata object, given the {@link Metadata} Identifier.
 	 *
      * @param identifier String
@@ -69,37 +38,17 @@ public interface MetadataDAO {
 	 *
      * @return Collection<Metadata>
      */
-    Collection<Metadata> getAllMetadata();
-
-
-    /**
-     * This method gets a PathwayData bean (initialized) by primary key.
-     * 
-     * @param pathway_id PK
-     * @return PathwayData
-     */
-    PathwayData getPathwayData(Integer pathway_id);
-    	
-
-    /**
-     * This method gets a unique PathwayData bean (initialized) by 
-     * both metadata identifier and data file name.
-     * 
-     * @param provider Metadata identifier (unique provider's internal id)
-     * @param filename a file name of the pathway data record (usually, as it's read from the archive)
-     * @return PathwayData
-     */
-    PathwayData getPathwayData(String provider, String filename);
+    List<Metadata> getAllMetadata();
     
     
 	/**
 	 * Generates the BioPAX validation report for a pathway data file.
-	 * @param provider 
 	 * 
-	 * @param pathwayDataPk a primary key value from the pathwatData table {@link PathwayData}
+	 * @param provider 
+	 * @param file - base filename as in {@link PathwayData}
 	 * @return
 	 */
-    ValidatorResponse validationReport(String provider, Integer pathwayDataPk);
+    ValidatorResponse validationReport(String provider, String file);
     
     
     /**

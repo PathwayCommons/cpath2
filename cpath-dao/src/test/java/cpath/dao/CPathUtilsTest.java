@@ -63,11 +63,13 @@ public class CPathUtilsTest {
 				"" // no converter
 				);
 		
+		metadata.cleanupOutputDir();
+		
 		assertTrue(metadata.getPathwayData().isEmpty());
 		CPathUtils.readPathwayData(metadata);
 		assertFalse(metadata.getPathwayData().isEmpty());
 		PathwayData pd = metadata.getPathwayData().iterator().next();
-		String owl = new String(pd.getPathwayData());
+		String owl = new String(pd.getData());
 		assertTrue(owl != null && owl.length() > 0);
 		assertTrue(owl.contains("<bp:Protein"));
 		SimpleIOHandler reader = new SimpleIOHandler(BioPAXLevel.L3);

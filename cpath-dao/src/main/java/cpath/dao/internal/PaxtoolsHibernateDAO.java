@@ -79,8 +79,7 @@ import java.lang.reflect.Modifier;
  */
 @Transactional
 @Repository
-class PaxtoolsHibernateDAO  
-implements Model, PaxtoolsDAO
+class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 {
 	private static final long serialVersionUID = 1L;
 	

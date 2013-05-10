@@ -30,6 +30,7 @@ package cpath.dao.internal;
 import java.io.IOException;
 import java.util.*;
 
+import org.biopax.validator.api.beans.Validation;
 import org.junit.*;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -59,61 +60,79 @@ public class MetadataHibernateDAOTest {
         MetadataDAO dao = (MetadataDAO) context.getBean("metadataDAO");
         
         // mock metadata and pathway data
-        Metadata md = new Metadata("testpw", "test", "test", "", "",
+        Metadata md = new Metadata("TEST", "test", "test", "", "",
         		new byte[]{}, METADATA_TYPE.BIOPAX, null, null);        
         byte[] testData = "<rdf>          </rdf>".getBytes(); 
+        
+        //cleanup previous tests data if any
         md.cleanupOutputDir();
         
-        PathwayData pathwayData = new PathwayData(md, "test0");
-        pathwayData.setPathwayData(testData);
-        pathwayData.setPremergeData(testData);
+        PathwayData pathwayData = new PathwayData(md.outputDir(), "test0");
+        pathwayData.setData(testData);
+        pathwayData.setNormalizedData(testData);
         md.getPathwayData().add(pathwayData);
         //add the second pd (for the tests at the end of this method)
-        PathwayData pd = new PathwayData(md, "test1");
-        pd.setPathwayData("aaaaaaaaaa".getBytes());
+        final PathwayData pd = new PathwayData(md.outputDir(), "test1");
+        pd.setData("aaaaaaaaaa".getBytes());
         md.getPathwayData().add(pd);
         
         // test if internal pack/unpach, if any, works well
-        assertTrue(Arrays.equals(testData, pathwayData.getPathwayData()));
-        assertTrue(Arrays.equals(testData, pathwayData.getPremergeData()));
+        assertTrue(Arrays.equals(testData, pathwayData.getData()));
+        assertTrue(Arrays.equals(testData, pathwayData.getNormalizedData()));
+        
         // persist
-        dao.saveMetadata(md); //this md is still detached
+        dao.saveMetadata(md);
         
-        // test get pathwaydata directly (by PK)
-        pathwayData = dao.getPathwayData(1);
-        assertNotNull(pathwayData);
-        assertNull(pathwayData.getPathwayData()); // ok: it's transient field (not to be saved)
-        byte[] read = pathwayData.getPremergeData();
+        // test pathwaydata content is not accidentally erased
+        Iterator<PathwayData> it = md.getPathwayData().iterator();
+        pathwayData = it.next();
+        //we want test0 for following assertions
+        if("test1".equals(pathwayData.getFilename()))
+        	pathwayData = it.next();
+        assertEquals("test0",pathwayData.getFilename());    
+        assertNotNull(pathwayData.getData()); // data is still there
+        byte[] read = pathwayData.getNormalizedData();
         assertNotNull(read);
-        // check whether DB save/read changed data
-        assertTrue(Arrays.equals(testData, read));    
+        assertTrue(Arrays.equals(testData, read)); 
         
-        //get initialized persistent detached metadata
+        //even if we update from the db, data must not be empty
         md = dao.getMetadataByIdentifier(md.getIdentifier());
         assertNotNull(md);
-        assertEquals("testpw", md.getIdentifier());
-        assertEquals(2, md.getPathwayData().size());       
+        assertEquals("TEST", md.getIdentifier());
+        assertEquals(2, md.getPathwayData().size()); 
+        it = md.getPathwayData().iterator();
+        pathwayData = it.next();
+        //we want test0 for following assertions
+        if("test1".equals(pathwayData.getFilename()))
+        	pathwayData =it.next();
+        assertEquals("test0",pathwayData.getFilename());
+        //data (persisted to file system) survives re-assigning of 'md' variable
+        assertNotNull(pathwayData.getData()); 
+        //preperge data persisted in the file system
+        read = pathwayData.getNormalizedData();        
+        assertNotNull(read);
+        assertTrue(Arrays.equals(testData, read));        
 
         // add validation result());  
         for(PathwayData o : md.getPathwayData())
-        	o.setValidationResults("<?xml version=\"1.0\"?>".getBytes());        
+        	o.setValidationReport(new Validation(null));        
         // update
         dao.saveMetadata(md);
          
         //read the latest state
-        md = dao.getMetadata(1);
+        md = dao.getMetadataByIdentifier("TEST");
         assertNotNull(md);
         Set<PathwayData>  lpd = md.getPathwayData();
         assertFalse(lpd.isEmpty());
         pathwayData = lpd.iterator().next();
         assertNotNull(pathwayData);
-        assertNotNull(pathwayData.getValidationResults());
-        assertTrue(pathwayData.getValidationResults().length > 0);  
-        assertTrue(Arrays.equals("<?xml version=\"1.0\"?>".getBytes(), pathwayData.getValidationResults()));         
+        assertNotNull(pathwayData.getValidationReport()); //reads from file if needed
+        assertTrue(pathwayData.getValidationReport().length > 0);    
         
         //cleanup
         dao.init(md);
-        md = dao.getMetadata(1);
+        assertTrue(md.getPathwayData().isEmpty()); 
+        md = dao.getMetadataByIdentifier("TEST");
         assertTrue(md.getPathwayData().isEmpty()); 
         
         context.close();
