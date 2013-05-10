@@ -22,22 +22,21 @@
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>jaxb2-maven-plugin</artifactId>
-				<version>1.5</version>
 				<executions>
 					<execution>
 						<goals>
 							<goal>schemagen</goal>
 						</goals>
 						<phase>generate-resources</phase>
-						<configuration>
-							<includes>
-								<include>cpath/service/jaxb/*.java</include>
-							</includes>
-							<verbose>true</verbose>
-							<outputDirectory>${project.build.outputDirectory}/cpath/service</outputDirectory>
-						</configuration>
 					</execution>
 				</executions>
+				<configuration>
+					<includes>
+						<include>cpath/service/jaxb/*.java</include>
+					</includes>
+					<verbose>true</verbose>
+<!-- 					<outputDirectory>${project.build.directory}/generated-resources/schemagen</outputDirectory> -->
+				</configuration>				
 				<dependencies>
 					<dependency>
 						<groupId>javax.xml.bind</groupId>
@@ -46,7 +45,38 @@
 					</dependency>
 				</dependencies>
 			</plugin>
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-resources</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.outputDirectory}/cpath/service</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${project.build.directory}/generated-resources/schemagen</directory>
+									<filtering>false</filtering>
+									<includes>
+										<include>*.xsd</include>
+									</includes>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
+	
+	<dependencies>
+		<dependency>
+			<groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId>
+		</dependency>
+	</dependencies>
 
 </project>
