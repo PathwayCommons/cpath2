@@ -187,11 +187,6 @@
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
-		<repository>
-			<id>springsource-repo</id>
-			<name>SpringSource Repository</name>
-			<url>http://repo.springframework.org/release</url>
-		</repository>
 	</repositories>
 
 	<dependencyManagement>
