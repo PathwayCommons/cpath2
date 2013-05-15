@@ -130,7 +130,7 @@ public class MetadataHibernateDAOTest {
         assertTrue(pathwayData.getValidationReport().length > 0);    
         
         //cleanup
-        dao.init(md);
+        md = dao.init(md);
         assertTrue(md.getPathwayData().isEmpty()); 
         md = dao.getMetadataByIdentifier("TEST");
         assertTrue(md.getPathwayData().isEmpty()); 

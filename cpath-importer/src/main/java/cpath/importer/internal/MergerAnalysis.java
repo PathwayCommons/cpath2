@@ -167,25 +167,25 @@ class MergerAnalysis implements Analysis {
 		// Replace objects in the source model
 		log.info("Replacing objects...");	
 		ModelUtils.replace(source, replacements);
-	
-		// cleaning up	
+
+		//in addition, explicitly remove old (replaced) onjects from the model
+		for(UtilityClass old : replacements.keySet()) {
+			source.remove(old);
+		}
+		
+		// cleaning up dangling objects
 		log.info("Removing dangling objects...");
 		final Set<BioPAXElement> removed = ModelUtils
 			.removeObjectsIfDangling(source, UtilityClass.class);
-	
-		assert removed.containsAll(replacements.keySet()) 
-			: "not all replaced actually became dangling and were removed";		
-//		if(log.isDebugEnabled()) {
-//		  for(UtilityClass ruc : replacements.keySet()) {
-//			if(source.contains(ruc)) {
-//				log.debug("replaced object was not removed from the model : " + ruc.getRDFId());
-//				if(ruc instanceof EntityReference)
-//					log.debug("is ER of : " + ((EntityReference)ruc).getEntityReferenceOf());
-//				if(ruc instanceof Xref)
-//					log.debug("is xref of : " + ((Xref)ruc).getXrefOf());
-//			}
-//		  }	
-//		}
+		
+		//important
+		removed.addAll(replacements.keySet());
+		
+		/* the assertion wouldn't hold after removeObjectsIfDangling call
+		 * if not old (replaced) objects were then explicitely removed: 
+		 * since BioPAXElementImpl.equals and hashCode were overridden,
+		 * removeObjectsIfDangling behaves differently... */
+		assert removed.containsAll(replacements.keySet()) : "not all replaced actually became dangling and were removed";	
 		
 		// post-fix
 		log.info("Migrate some properties (original entityFeature and xref)...");

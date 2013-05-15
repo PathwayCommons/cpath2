@@ -10,10 +10,10 @@ import cpath.warehouse.beans.PathwayData;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.validator.api.beans.Validation;
 import org.biopax.validator.api.beans.ValidatorResponse;
 import org.biopax.validator.api.ValidatorUtils;
 
+import org.hibernate.Criteria;
 import org.hibernate.Hibernate;
 import org.hibernate.Query;
 import org.hibernate.Session;
@@ -31,7 +31,11 @@ import java.util.*;
 
 /**
  * Implementation of MetadatDAO interface.
+ * 
+ * transactions are read-only for all public non-transient methods, 
+ * unless a method has own @Transactional annotation 
  */
+@Transactional(readOnly=true) 
 @Repository
 class MetadataHibernateDAO  implements MetadataDAO {
 
@@ -46,43 +50,65 @@ class MetadataHibernateDAO  implements MetadataDAO {
     
     @Override
     @Transactional
-	public void saveMetadata(Metadata metadata) {
-		Session session = sessionFactory.getCurrentSession();
-		session.saveOrUpdate(metadata);		
+	public Metadata saveMetadata(Metadata metadata) {
+		
 		if(log.isInfoEnabled())
-			log.info("metadata " + metadata.getIdentifier() +
-				" was saved.");
+			log.info("saving metadata: " + metadata.getIdentifier());
+    	
+    	Session session = sessionFactory.getCurrentSession();
+		
+		if(metadata.getId() == null)
+			session.persist(metadata);
+		else
+			metadata = (Metadata) session.merge(metadata);
+		
+		//initialize collections
+		Hibernate.initialize(metadata.getName());
+		Hibernate.initialize(metadata.getPathwayData());
+		
+		return metadata;
     }
 
 
     @Override
-    @Transactional
     public Metadata getMetadataByIdentifier(final String identifier) {
 		Session session = sessionFactory.getCurrentSession();
-		Metadata m = (Metadata) session.createCriteria(Metadata.class)
+		Metadata metadata = (Metadata) session.createCriteria(Metadata.class)
 			.add(Restrictions.eq("identifier", identifier))
-			.addOrder(Order.asc("id"))
-				.uniqueResult();
-		return m;
+				//prevents duplicate (esp. when fetchType=EAGER child collections are there)
+				.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY) 
+					.uniqueResult();
+		
+		//initialize collections
+		Hibernate.initialize(metadata.getName());
+		Hibernate.initialize(metadata.getPathwayData());
+		
+		return metadata;
     }
 
     
     @SuppressWarnings("unchecked")
-	@Transactional
     @Override
     public List<Metadata> getAllMetadata() {
 		// safe to return as all collections are EAGER fetched
 		List<Metadata> list = sessionFactory.getCurrentSession()
 			.createCriteria(Metadata.class)
-				.addOrder(Order.asc("id"))
+				//prevents duplicate (esp. when fetchType=EAGER child collections are there)
+				.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY) 
 					.list();
+		log.debug("no. metadata records: " + list.size());
 		
-		return new ArrayList<Metadata>(list);
+		//initialize collections
+		for(Metadata md : list) {
+			Hibernate.initialize(md.getName());
+			Hibernate.initialize(md.getPathwayData());
+		}
+		
+		return list;
 	}
 
 	
 	@Override
-	@Transactional(readOnly=true)
 	public ValidatorResponse validationReport(String provider, String file) {
 		ValidatorResponse response = new ValidatorResponse();
 		Metadata metadata = getMetadataByIdentifier(provider);
@@ -179,7 +205,6 @@ class MetadataHibernateDAO  implements MetadataDAO {
 	}
 
     
-    @Transactional
 	@Override
 	public List<Mapping> getMappings(Type type) {
 		Session session = sessionFactory.getCurrentSession();
@@ -189,7 +214,6 @@ class MetadataHibernateDAO  implements MetadataDAO {
 	}
 
     
-    @Transactional(readOnly=true)
 	@Override
 	public Set<String> mapIdentifier(String identifier, Type type, String idType) {
     	//if possible, suggest a canonical id, i.e, 
@@ -214,22 +238,25 @@ class MetadataHibernateDAO  implements MetadataDAO {
     @Transactional
     @Override
 	public void addOrUpdateMetadata(String location) {
-    	// process metadata
     	for (Metadata mdata : CPathUtils.readMetadata(location))
       		saveMetadata(mdata);
  	}
 
-    @Transactional
+    
+    @Transactional //not read-only
 	@Override
-	public void init(Metadata metadata) {    	
+	public Metadata init(Metadata metadata) {    	
     	metadata.cleanupOutputDir();
     	metadata.setNumInteractions(null);
     	metadata.setNumPathways(null);
     	metadata.setNumPhysicalEntities(null);
-    	metadata.getPathwayData().clear();    		
-		// read orig. files into memory (not saving to db).
-		CPathUtils.readPathwayData(metadata);
-    	// save and reset the variable to get 
-    	saveMetadata(metadata);
+    	metadata.getPathwayData().clear(); 
+		metadata = saveMetadata(metadata);
+		
+		//initialize collections
+		Hibernate.initialize(metadata.getName());
+		Hibernate.initialize(metadata.getPathwayData());
+		
+		return metadata;
 	}
 }

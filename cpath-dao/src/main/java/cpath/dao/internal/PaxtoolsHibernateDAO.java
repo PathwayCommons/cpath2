@@ -60,6 +60,7 @@ import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.query.dsl.QueryBuilder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
+import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
@@ -76,8 +77,11 @@ import java.lang.reflect.Modifier;
  * Paxtools BioPAX main Model and DAO (BioPAX objects repository)
  * 
  * This is one of most important classes on which cpath2 system is based.
+ * 
+ * Transactions are read-only for all public non-transient methods, 
+ * unless a method has own @Transactional annotation 
  */
-@Transactional
+@Transactional(readOnly=true) 
 @Repository
 class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 {
@@ -138,12 +142,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		this.xmlBase = CPathSettings.xmlBase(); //set default xml:base
 		this.maxHitsPerPage = Integer.parseInt(CPathSettings.property(CPathSettings.PROP_MAX_SEARCH_HITS_PER_PAGE));
 	}
-	
-	
-	// get/set methods used by spring
-	public SessionFactory getSessionFactory() {
-		return sessionFactory;
-	}
+
 
 	public void setSessionFactory(SessionFactory sessionFactory) {
 		this.sessionFactory = sessionFactory;
@@ -248,7 +247,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * 
 	 * @throws HibernateException if an object rerefs to not saved objects
 	 */
-	@Transactional(propagation=Propagation.REQUIRED)
+	@Transactional
 	public void update(final Model model) 
 	{	
 		Session ses = sessionFactory.getCurrentSession();
@@ -308,14 +307,11 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * @throws IllegalArgumentException if query is null
 	 */
 	@Override
-	@Transactional(readOnly = true)
 	public SearchResponse search(String query, int page,
 			Class<? extends BioPAXElement> filterByType, String[] dsources,
 			String[] organisms) 
 	{
-		if(query == null)
-			throw new IllegalArgumentException("Search string cannot be NULL");
-		
+		Assert.notNull(query, "Search string cannot be NULL");
 		
 		// collect matching elements here
 		SearchResponse searchResponse = new SearchResponse();
@@ -440,9 +436,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	}
 
 
-	/* (non-Javadoc)
-	 * @see org.biopax.paxtools.model.Model#remove(org.biopax.paxtools.model.BioPAXElement)
-	 */
 	@Override
 	@Transactional
 	public void remove(BioPAXElement aBioPAXElement)
@@ -453,6 +446,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 
 
 	@Override
+	@Transactional
 	public <T extends BioPAXElement> T addNew(Class<T> type, String id)
 	{
 		T bpe = factory.create(type, id);
@@ -468,7 +462,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * 
 	 */
 	@Override
-	@Transactional(readOnly=true)
 	public boolean contains(BioPAXElement bpe)
 	{
 		return containsID(bpe.getRDFId()) 
@@ -483,7 +476,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * and not updated (relationships not saved)
 	 */
 	@Override
-	@Transactional(readOnly=true)
 	public boolean containsID(String id)
 	{
 		boolean ret;
@@ -542,7 +534,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 
 
 	@Override
-	@Transactional
 	public <T extends BioPAXElement> Set<T> getObjects(Class<T> clazz)
 	{
 		String query = "from " + clazz.getCanonicalName();
@@ -602,7 +593,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * and write as RDF/XML to the output stream.
 	 */
 	@Override
-	@Transactional
 	public void exportModel(OutputStream outputStream, String... ids) 
 	{
 //		Session ses = sessionFactory.getCurrentSession();
@@ -616,7 +606,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * All object collection properties and inverse properties 
 	 * (not very deep) initialization
 	 */
-	@Transactional(readOnly=true)
 	@Override
 	public void initialize(Object obj) 
 	{
@@ -677,11 +666,11 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	/**
 	 * {@inheritDoc}
 	 * 
-	 * Executes a graph query within a read-only transaction.
+	 * Executes a graph query within a read-only 
+	 * (- set on the class level) transaction.
 	 * 
 	 */
 	@Override
-	@Transactional(readOnly = true)
 	public void runReadOnly(Analysis analysis) {
 //		Session ses = sessionFactory.getCurrentSession();
 //		ses.enableFetchProfile("mul_properties_join");
@@ -729,7 +718,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * 
 	 * @throws 
 	 */
-	@Transactional(readOnly = true)
 	@Override
 	public TraverseResponse traverse(String propertyPath, String... uris) {
 		TraverseResponse resp = new TraverseResponse();
@@ -837,6 +825,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	
 	
 	@Override
+	@Transactional
 	public void evictCaches() {
 		sessionFactory.getCache().evictEntityRegions();
 		sessionFactory.getCache().evictCollectionRegions();

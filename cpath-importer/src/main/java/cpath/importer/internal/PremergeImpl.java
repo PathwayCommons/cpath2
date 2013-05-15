@@ -29,6 +29,7 @@ package cpath.importer.internal;
 
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
+import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Cleaner;
@@ -137,7 +138,10 @@ public final class PremergeImpl implements Premerger {
 					}
 										
 					// clear all existing output files, parse input files, reset counters, save.
-					metaDataDAO.init(metadata);
+					log.debug("no. pd before init, " + metadata.getIdentifier() + ": " + metadata.getPathwayData().size());
+					metadata = metaDataDAO.init(metadata);
+					//load orig. pathway data
+					CPathUtils.readPathwayData(metadata);
 					// Premerge for each pathway data: clean, convert, validate, 
 					// and then update premergeData, validationResults db fields.
 					for (PathwayData pathwayData : metadata.getPathwayData()) {
@@ -145,6 +149,7 @@ public final class PremergeImpl implements Premerger {
 					}
 					// save/update validation status
 					metaDataDAO.saveMetadata(metadata);
+					log.debug("no. pd after saved, " + metadata.getIdentifier() + ": " + metadata.getPathwayData().size());
 				} 				
 				
 			} catch (Exception e) {
@@ -269,7 +274,7 @@ public final class PremergeImpl implements Premerger {
 	 * @param pathwayData provider's pathway data (usually from a single data file) to be processed and modified
 	 * @param cleaner data specific cleaner class (to apply before the validation/normalization)
 	 */
-	private void pipeline(Metadata metadata, PathwayData pathwayData, Cleaner cleaner)
+	private void pipeline(final Metadata metadata, final PathwayData pathwayData, Cleaner cleaner)
 	{
 		
 		// here go data to process

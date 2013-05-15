@@ -112,7 +112,7 @@ public final class Admin {
     	if (home==null) {
             System.err.println("Please set " + HOME_VARIABLE_NAME 
             	+ " environment variable " +
-            	" (point to a directory where cpath.properties, etc. files are placed)");
+            	" (point to a directory where cpath2.properties, etc. files are placed)");
             System.exit(-1);
     	}
     	
@@ -266,7 +266,7 @@ public final class Admin {
 		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
    		// re-build the full-text index
-   		// it gets the main DB name from cpath.properties (via CPathSettings class)
+   		// it gets the main DB name from cpath2.properties (via CPathSettings class)
 		
 		String indexDir = property(PROP_MAIN_DB); 
 		LOG.info("Removing full-text index directory : " + indexDir);
@@ -293,7 +293,7 @@ public final class Admin {
 		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
    		// re-build the full-text index
-   		// it gets the DB name from the environment variables (set in cpath.properties)
+   		// it gets the DB name from the environment variables (set in cpath2.properties)
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
      	
@@ -647,7 +647,7 @@ public final class Admin {
         String[] organisms = CPathSettings.organisms();
         for(String org : organisms) {
         	//make one archives set (diff. formats) per name
-        	//TODO: in the future, after simple changes (also - to cpath.properties), can join several species data in one archive
+        	//TODO: in the future, after simple changes (also - to cpath2.properties), can join several species data in one archive
         	createArchives(org.toLowerCase(), dao, null, new String[]{org});
         }
 		

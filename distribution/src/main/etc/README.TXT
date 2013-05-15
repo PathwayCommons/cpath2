@@ -9,7 +9,7 @@ GENERAL INFORMATION
   Before running cPath2 from console or deploying the WAR on a Tomcat,
 SET the system environment variable 'CPATH2_HOME' - to be a directory that 
 contains all the cpath2 configuration files you are planning to use, such as: 
-- cpath.properties (set db names, connection url prefix, username, password there); 
+- cpath2.properties (set db names, connection url prefix, username, password there); 
 - hibernate.properties; these can be overwritten by the corresponding 
 properties in the Spring (XML) configuration.
 - log4j.properties;
@@ -23,7 +23,7 @@ molecules to ignore, like ubiquitous ATP...)
   The cpath2 distribution directory can be cpath2 home as well (edit files there).
 One can later switch between different cpath2 home directories 
 (and therefore - cpath2 databases) by re-defining the CPATH2_HOME; 
-one can also edit cpath.properties file to specify different DB login/password
+one can also edit cpath2.properties file to specify different DB login/password
 and cpath2 databases. For a new database, the corresponding Lucene 
 index directories will be created automatically (named after corresponding databases); 
 for existing cpath2 databases, the "main" Lucene index directory is expected 
@@ -69,7 +69,7 @@ mysql> SET GLOBAL ...
 4. consider setting 'java.io.tmpdir' as: -Djava.io.tmpdir=$CPATH2_HOME/tmp
 (1..4 - all set for you in the shell scripts)
 
-5. try cpath2.md5hex.uri.enabled=true and other options in cpath.properties
+5. try cpath2.md5hex.uri.enabled=true and other options in cpath2.properties
 (e.g., all "get" and "graph" queries will, along with RDFId, also accept the Primary Key values,
 i.e., - MD5hex (32-byte) digest string calculated from elements's URIs!) 
 
@@ -186,7 +186,7 @@ the entire data import pipeline.
 (run cpath2-cli.sh w/o arguments to see the hint).
 
 Prepare MySQL Databases. If required, generate (all or some of) the cpath2 database schemas using
-the same db names as specified in the $CPATH2_HOME/cpath.properties file:
+the same db names as specified in the $CPATH2_HOME/cpath2.properties file:
 
 sh cpath2-cli.sh -create-db cpathmain,cpathwarehouse
 (WARNING: this destroys and re-creates the database, if existed!)
@@ -229,11 +229,11 @@ A high-degree entity causes unnecessary traversing during the graph queries
 -- hence not wanted. However, the following command will keep the entities 
 that control more than a threshold number of reactions out of the blacklist 
 since this type of entities are often biologically relevant -- for more, see 
-the blacklist.* options in the cpath.properties:
+the blacklist.* options in the cpath2.properties:
 
 sh cpath2-cli.sh -create-blacklist
 
-Next (do not forget setting in cpath.properties,  cpath2.provider.organisms=homo sapiens,mus musculus,..)
+Next (do not forget setting in cpath2.properties,  cpath2.provider.organisms=homo sapiens,mus musculus,..)
 generate data archives:
 
 sh cpath2-cli.sh -create-downloads

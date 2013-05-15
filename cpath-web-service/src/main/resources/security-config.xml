@@ -11,7 +11,7 @@
     http://www.springframework.org/schema/context
     http://www.springframework.org/schema/context/spring-context-3.1.xsd">
 
-	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+	<context:property-placeholder location="file:${CPATH2_HOME}/cpath2.properties"/>
 
 	<http access-denied-page="/denied.html" auto-config='true'>
 		<form-login login-page="/login.html" authentication-failure-url="/login.html?login_error=t"/>

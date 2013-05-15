@@ -95,7 +95,7 @@ public final class CPathSettings {
 
 	
 	/* System / Environment property names used by cPath2
-	 * (loaded by Spring (property placeholder) from the cpath.properties,
+	 * (loaded by Spring (property placeholder) from the cpath2.properties,
 	 * but can be also via java options too)
 	 */
 	public static final String PROP_DB_USER = "cpath2.db.user";
@@ -124,7 +124,7 @@ public final class CPathSettings {
 	public static final String PROP_ABSOLUTE_URI_ENABLED="cpath2.absolute.uri.enabled";
 	
 	/*
-	 * Following properties can be even updated at runtime (because cpath.properties resource is read by the webapp periodically)
+	 * Following properties can be even updated at runtime (because cpath2.properties resource is read by the webapp periodically)
 	 */	
 	public static final String PROVIDER_NAME = "cpath2.provider.name";
 	public static final String PROVIDER_DESCRIPTION = "cpath2.provider.description";
@@ -173,7 +173,7 @@ public final class CPathSettings {
 	 * Gets a cpath2 property value
 	 * by name from:
 	 * - System (JVM), then (if not set) -
-	 * - from the cpath.properties file 
+	 * - from the cpath2.properties file 
 	 * (lastly, the default value is used if the property 
 	 * is not set in the file)
 	 * 
@@ -358,7 +358,7 @@ public final class CPathSettings {
 	 * 
 	 * Imported pathway data may also have other BioSource objects,
 	 * and those can be used in a search query as the filter by organism value;
-	 * but only these organisms, specified in the cpath.properties file, are
+	 * but only these organisms, specified in the cpath2.properties file, are
 	 * considered to generate export data archives and to be shown on web pages.
 	 * 
 	 * Default is {"Homo sapiens"} (when the property is not set)
