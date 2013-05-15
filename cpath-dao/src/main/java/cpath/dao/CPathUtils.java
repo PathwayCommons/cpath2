@@ -294,7 +294,7 @@ public final class CPathUtils {
 				String filename = url.substring(idx+1); //removed orig. path
 				if(filename.isEmpty())
 					filename = metadata.getIdentifier();
-				PathwayData pathwayData = new PathwayData(metadata.outputDir(), filename);
+				PathwayData pathwayData = new PathwayData(metadata, filename);
 				pathwayData.setData(bytes);
 				pathwayDataCollection.add(pathwayData);
 			}
@@ -401,7 +401,7 @@ public final class CPathUtils {
 				// create pathway data object
 				log.info("unzip(), adding pathwaydata entry: " 
 					+ entryName + " of " + metadata.getIdentifier());
-				PathwayData pathwayData = new PathwayData(metadata.outputDir(), entryName);
+				PathwayData pathwayData = new PathwayData(metadata, entryName);
 				pathwayData.setData(content.getBytes());
 				
 				// add object to return collection

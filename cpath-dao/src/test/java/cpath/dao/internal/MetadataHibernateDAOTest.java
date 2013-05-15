@@ -67,12 +67,12 @@ public class MetadataHibernateDAOTest {
         //cleanup previous tests data if any
         md.cleanupOutputDir();
         
-        PathwayData pathwayData = new PathwayData(md.outputDir(), "test0");
+        PathwayData pathwayData = new PathwayData(md, "test0");
         pathwayData.setData(testData);
         pathwayData.setNormalizedData(testData);
         md.getPathwayData().add(pathwayData);
         //add the second pd (for the tests at the end of this method)
-        final PathwayData pd = new PathwayData(md.outputDir(), "test1");
+        final PathwayData pd = new PathwayData(md, "test1");
         pd.setData("aaaaaaaaaa".getBytes());
         md.getPathwayData().add(pd);
         

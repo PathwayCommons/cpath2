@@ -33,7 +33,6 @@ import java.util.*;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.controller.Cloner;
 import org.biopax.paxtools.controller.Completer;
 import org.biopax.paxtools.controller.Fetcher;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -89,17 +88,15 @@ public class CPathServiceImpl implements CPathService {
 	private SimpleIOHandler simpleIO;
 	
 	private Set<String> blacklist;
+	
+	private Model proxyModel;
     
 	//lazy initialize the following three fields on first request (prevents web server startup timeout)
   	//only includes pathway data providers configured/created from the cpath2 metadata configuration (not all provenances...)
   	private volatile SearchResponse topPathways;
-  	
-  	//paxtools cloner utility (stateless, and looks thread-safe)
-  	private final Cloner cloner; 
 
     // this is probably required for the ehcache to work
 	public CPathServiceImpl() {
-		this.cloner = new Cloner(SimpleEditorMap.L3, BioPAXLevel.L3.getDefaultFactory());
 	}
 	
     /**
@@ -122,8 +119,6 @@ public class CPathServiceImpl implements CPathService {
 			);
 		}
 		// if blacklist is still null/empty, go ahead without using any blackist...
-		
-		this.cloner = new Cloner(SimpleEditorMap.L3, BioPAXLevel.L3.getDefaultFactory());
 	}
 	
 	
@@ -640,4 +635,17 @@ public class CPathServiceImpl implements CPathService {
 		return m;
 	}
 
+	
+	/*
+	 * This may take quite awhile...
+	 */
+	private void initProxyModel() {
+		if(proxyModel == null) { //first check (no locking)
+			synchronized (this) {
+				if(proxyModel == null) { //second check (with locking)		
+				//TODO load all from mainDAO
+				}
+			}
+		}
+	}
 }
