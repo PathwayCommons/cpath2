@@ -13,6 +13,7 @@ import org.biopax.validator.api.beans.Validation;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.util.Assert;
 
+import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
 
 /**
@@ -20,7 +21,7 @@ import cpath.dao.CPathUtils;
  * 
  */
 @Entity
-@Table(name="pathwayData", uniqueConstraints=@UniqueConstraint(columnNames = {"directory", "filename"}))
+@Table(name="pathwayData", uniqueConstraints=@UniqueConstraint(columnNames = {"provider", "filename"}))
 public final class PathwayData {
 
 	@Id
@@ -43,7 +44,7 @@ public final class PathwayData {
 	private Boolean valid; //BioPAX validation status.
 
 	@Column(nullable=false)
-	private String directory;
+	private String provider;
 
 	
 	/**
@@ -55,14 +56,14 @@ public final class PathwayData {
     /**
      * Create a PathwayData domain object (value object).
      * 
-     * @param directory must be output directory for normalized data and validation reports
+     * @param provider must be output provider for normalized data and validation reports
      * @param filename file name base (prefix for the normalized data and validation report file names)
      */
-    public PathwayData(String directory, String filename) 
+    public PathwayData(Metadata metadata, String filename) 
     {    	
-        Assert.notNull(directory);
+        Assert.notNull(metadata);
     	Assert.notNull(filename);
-    	this.directory = directory;
+    	this.provider = metadata.getIdentifier();
         this.filename = filename.replaceAll("[^a-zA-Z0-9.-]", "_");
     }
 
@@ -154,33 +155,37 @@ public final class PathwayData {
 	
 	@Override
     public String toString() {
-		return directory + "/" + filename + " (" + status() + ")";
+		return provider + "/" + filename + " (" + status() + ")";
     }
 
 
     public String normalizedFile() {
-    	return directory 
+    	return CPathSettings.dataDir() + 
+    		File.separator + provider 
     		+ File.separator + filename 
     			+ ".normalized.owl.gz";
     }
 
     
     public String validationXmlFile() {
-		return directory 
+		return CPathSettings.dataDir() + 
+			File.separator + provider 
 		    + File.separator + filename 
 		    	+ ".validation.xml.gz";
     }
     
  
     public String validationHtmlFile() {
-		return directory 
+		return CPathSettings.dataDir() + 
+			File.separator +provider 
 		    + File.separator + filename 
 		    	+ ".validation.html.gz";
     }
     
 
     public String convertedFile() {
-		return directory 
+		return CPathSettings.dataDir() + 
+			File.separator + provider 
 		    + File.separator + filename 
 		    	+ ".converted.owl.gz";
     }     
