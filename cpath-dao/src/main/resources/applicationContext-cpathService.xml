@@ -10,7 +10,7 @@
         http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd">
 
     <context:annotation-config/>
-    <context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+    <context:property-placeholder location="file:${CPATH2_HOME}/cpath2.properties"/>
 
 	<cache:annotation-driven />
 	

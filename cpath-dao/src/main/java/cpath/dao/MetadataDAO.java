@@ -20,8 +20,9 @@ public interface MetadataDAO {
      * Persists or updates the given metadata object to the db.
      *
      * @param metadata Metadata
+     * @return
      */
-	void saveMetadata(Metadata metadata);
+	Metadata saveMetadata(Metadata metadata);
     
     
     /**
@@ -87,13 +88,13 @@ public interface MetadataDAO {
 
 
 	/**
-	 * Removes fromthe system all entries and 
+	 * Removes from the system all entries and 
 	 * previously converted / premerged / validated 
-	 * files accociated with this data provider;
-	 * then loads original data into memory.
+	 * files accociated with this data provider.
 	 * 
 	 * @param metadata
+	 * @return updated/saved object
 	 */
-	void init(Metadata metadata);
+	Metadata init(Metadata metadata);
     
 }

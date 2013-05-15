@@ -20,11 +20,10 @@ import cpath.dao.CPathUtils;
  * 
  */
 @Entity
-@Table(name="data", uniqueConstraints=@UniqueConstraint(columnNames = {"directory", "filename"}))
+@Table(name="pathwayData", uniqueConstraints=@UniqueConstraint(columnNames = {"directory", "filename"}))
 public final class PathwayData {
 
 	@Id
-	@Column(name="pathway_id")
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Integer id;
 	
@@ -43,7 +42,7 @@ public final class PathwayData {
 	@Column
 	private Boolean valid; //BioPAX validation status.
 
-	@Column
+	@Column(nullable=false)
 	private String directory;
 
 	

@@ -52,7 +52,7 @@ public final class Metadata {
 	@Column(length=40, unique = true, nullable = false)
     public String identifier;
 	
-	@ElementCollection(fetch=FetchType.EAGER)
+	@ElementCollection
 	@JoinTable(name="metadata_name")
 	@OrderColumn
     private List<String> name;
@@ -77,7 +77,7 @@ public final class Metadata {
     
     private String converterClassname;
 
-    @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, fetch=FetchType.EAGER)
+    @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true)
     @JoinColumn(name="metadata_id")
     private Set<PathwayData> pathwayData;
 
@@ -92,7 +92,7 @@ public final class Metadata {
 	/**
 	 * Default Constructor.
 	 */
-	public Metadata() {
+	protected Metadata() {
 		pathwayData = new HashSet<PathwayData>();
 	}
 
@@ -420,5 +420,15 @@ public final class Metadata {
 			CPathUtils.deleteDirectory(dir);
 		}		
 		dir.mkdir();
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		return (o instanceof Metadata) && identifier.equals(((Metadata)o).getIdentifier());
+	}
+	
+	@Override
+	public int hashCode() {
+		return (getClass().getCanonicalName() + identifier).hashCode();
 	}
 }
