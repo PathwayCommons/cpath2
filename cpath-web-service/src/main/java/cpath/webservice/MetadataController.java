@@ -11,7 +11,6 @@ import java.util.*;
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletResponse;
 
-import cpath.config.CPath;
 import cpath.config.CPathSettings;
 import cpath.dao.MetadataDAO;
 import cpath.service.Status;
@@ -55,8 +54,8 @@ public class MetadataController extends BasicController
      * @return
      */
     @ModelAttribute("cpath")
-    public CPath instance() {
-    	return CPath.build();
+    public CPathSettings instance() {
+    	return CPathSettings.getInstance();
     }
         
     /* 
@@ -175,7 +174,7 @@ public class MetadataController extends BasicController
     public  @ResponseBody byte[] icon(HttpServletResponse response) 
     		throws IOException {
     	
-    	String cpathLogoUrl = CPath.build().getLogoUrl();
+    	String cpathLogoUrl = CPathSettings.getInstance().getLogoUrl();
     	
 		byte[] iconData = null;
 

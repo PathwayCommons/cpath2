@@ -32,6 +32,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.apache.commons.lang.StringUtils;
+
 
 /**
  * CPath2 server-side instance-specific 
@@ -53,7 +55,7 @@ public final class CPathSettings {
 	 * Name for the system environment and/or JVM variable 
 	 * cPath2 uses to know its "home" directory location.
 	 */
-	public static final String HOME_VARIABLE_NAME = "CPATH2_HOME";
+	public static final String HOME_DIR = "CPATH2_HOME";
 	
 	public static final String TEST_DB = "test_cpath2";
 	
@@ -146,10 +148,20 @@ public final class CPathSettings {
 	 * static initializer.
 	 */
 	static {
+		// check/init cpath2 home dir JVM property
+		String home = System.getenv(HOME_DIR);		
+		if(home == null || home.isEmpty()) {
+			throw new IllegalStateException(HOME_DIR + " environment variable is undefined!");
+		} else {
+			//replace/override the JVM option
+			synchronized (home) {
+				System.setProperty(HOME_DIR, home);
+			}	
+		}
 		
 		// put default values
 		Properties defaults = new Properties();
-		defaults.put(PROP_XML_BASE, "http://purl.org/pc2/");
+		defaults.put(PROP_XML_BASE, "http://purl.org/pc2/test/");
 		defaults.put(PROP_BLACKLIST_LOCATION, homeDir() + File.separator + BLACKLIST_FILE);
 		defaults.put(PROVIDER_NAME, "cPath2 Demo");
 		defaults.put(PROVIDER_VERSION, "");
@@ -170,7 +182,118 @@ public final class CPathSettings {
 		loadCPathProperties();
 	}
 
+	private static CPathSettings instance;
+	
+	
+	/**
+	 * Gets the cPath2 settings singleton.
+	 * A change (calling a setter method) will have global effect.
+	 * 
+	 * @return
+	 */
+	public static synchronized CPathSettings getInstance() {
+		if(instance == null) {
+			instance = new CPathSettings();
+		}		
+		return instance;
+	}
 
+
+	public String getName() {
+		return property(PROVIDER_NAME);
+	}
+
+	public void setName(String name) {
+		setCPathProperty(PROVIDER_NAME, name);
+	}
+
+
+	public String getDescription() {
+		return property(PROVIDER_DESCRIPTION);
+	}
+
+	public void setDescription(String description) {
+		setCPathProperty(PROVIDER_DESCRIPTION, description);
+	}
+
+
+	public String getLogoUrl() {
+		return property(PROVIDER_LOGO_URL);
+	}
+
+	public void setLogoUrl(String logoUrl) {
+		setCPathProperty(PROVIDER_LOGO_URL, logoUrl);
+	}
+
+
+	public String getUrl() {
+		return property(PROVIDER_URL);
+	}
+
+	public void setUrl(String url) {
+		setCPathProperty(PROVIDER_URL, url);
+	}
+
+
+	public String[] getOrganisms() {
+		return organisms();
+	}
+
+	public void setOrganisms(String[] organisms) {
+		setCPathProperty(PROVIDER_ORGANISMS, StringUtils.join(organisms, ','));
+	}
+
+
+	public String getVersion() {
+		return property(PROVIDER_VERSION);
+	}
+
+	public void setVersion(String version) {
+		setCPathProperty(PROVIDER_VERSION, version);
+	}
+
+
+	public boolean isAdminEnabled() {
+		return isMaintenanceEnabled();
+	}
+	
+	public void setAdminEnabled(boolean enabled) {
+		setCPathProperty(PROP_ADMIN_ENABLED, Boolean.toString(enabled));
+	}
+
+
+	public String getMainDb() {
+		return property(PROP_MAIN_DB);
+	}
+
+	public void setMainDb(String mainDb) {
+		setCPathProperty(PROP_MAIN_DB, mainDb);
+	}
+
+
+	public String getMaxHitsPerPage() {
+		return property(PROP_MAX_SEARCH_HITS_PER_PAGE);
+	}
+
+	public void setMaxHitsPerPage(String maxHitsPerPage) {
+		setCPathProperty(PROP_MAX_SEARCH_HITS_PER_PAGE, maxHitsPerPage);
+	}
+
+
+	public String getXmlBase() {
+		return property(PROP_XML_BASE);
+	}
+
+	public void setXmlBase(String xmlBase) {
+		setCPathProperty(PROP_XML_BASE, xmlBase);
+	}
+	
+	
+	public void setProxyModelEnabled(boolean enabled) {
+		setCPathProperty(PROP_PROXY_MODEL_ENABLED, Boolean.toString(enabled));
+	}
+	
+	
 	/**
 	 * Gets a cpath2 property value
 	 * by name from:
@@ -182,11 +305,11 @@ public final class CPathSettings {
 	 * @param name cpath2 property name
 	 * @return
 	 */
-	public static String property(String name) {	
+	public static synchronized String property(String name) {	
 		String val = System.getProperty(name);
 		
 		if(val == null || val.isEmpty())
-			val =  settings.getProperty(name);
+			val =  settings.getProperty(name);		
 		
 		return val;
 	}
@@ -209,8 +332,14 @@ public final class CPathSettings {
 	/**
 	 * Stores cpath2 properties back to the file 
 	 * (overwrites).
+	 * 
+	 * @throws IllegalStateException when maintenance mode is disabled
 	 */
 	public static void saveCPathProperties() {
+		
+		if(!isMaintenanceEnabled())
+			throw new IllegalStateException("Not in Maintenance mode.");
+		
 		String file = homeDir() + File.separator + CPATH_PROPERTIES_FILE;		
 		try {
 			settings.store(new FileOutputStream(file), 
@@ -230,17 +359,8 @@ public final class CPathSettings {
 	 * 
 	 * @return
 	 */
-	public static String homeDir() {
-		String home = System.getenv(HOME_VARIABLE_NAME);
-		
-		if(home == null || home.isEmpty()) {
-			home = System.getProperty(HOME_VARIABLE_NAME);
-		} else {
-			//replace/override the JVM option, if any
-			System.setProperty(HOME_VARIABLE_NAME, home);
-		}
-		
-		return home;
+	public static String homeDir() {		
+		return property(HOME_DIR);
 	}
 	
 	
@@ -280,14 +400,23 @@ public final class CPathSettings {
 		
 	
 	/**
-	 * Sets or updates a cpath2 instance property.
+	 * Sets or updates a cpath2 instance property
+	 * but only if Admin mode is enabled; Admin mode
+	 * though can be altered always.
 	 * 
 	 * @param name
 	 * @param value
+	 * 
+	 * @throws IllegalStateException when this cpath2 instance is not in the Admin state.
 	 */
-	public static void setCPathProperty(String name, String value) {
-		settings.setProperty(name, value);
-		saveCPathProperties();
+	public static synchronized void setCPathProperty(String name, String value) {
+		if(PROP_ADMIN_ENABLED.equals(name) || isMaintenanceEnabled())
+		{
+			System.setProperty(name, value);
+			settings.setProperty(name, value);
+		} else {
+			throw new IllegalStateException("Not in Maintenance state.");
+		}
 	}
 	
 	
@@ -372,4 +501,14 @@ public final class CPathSettings {
 		return orgs.split("\\s*,\\s*");
 	}
 	
+	
+	/**
+	 * Flags if cPath2 services are to use the in-memory
+	 * (proxy) Model in front of the persistent biopax model.
+	 * 
+	 * @return
+	 */
+	public static boolean isProxyModelEnabled() {
+		return "true".equalsIgnoreCase(property(PROP_PROXY_MODEL_ENABLED));
+	}
 }
