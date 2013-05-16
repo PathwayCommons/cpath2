@@ -10,7 +10,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import cpath.config.CPath;
 import cpath.config.CPathSettings;
 import cpath.dao.MetadataDAO;
 
@@ -25,8 +24,8 @@ public class CPathAdminController extends BasicController {
 	
 	
     @ModelAttribute("cpath")
-    public CPath instance() {
-    	return CPath.build();
+    public CPathSettings instance() {
+    	return CPathSettings.getInstance();
     }
     
     @RequestMapping("/admin")

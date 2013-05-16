@@ -108,20 +108,7 @@ public final class Admin {
      */    
     public static void main(String[] params) throws Exception {
     	// "CPATH2_HOME" env. var must be set (mostly for logging)
-        String home = System.getenv(HOME_VARIABLE_NAME);
-    	if (home==null) {
-            System.err.println("Please set " + HOME_VARIABLE_NAME 
-            	+ " environment variable " +
-            	" (point to a directory where cpath2.properties, etc. files are placed)");
-            System.exit(-1);
-    	}
-    	
-    	// the JVM option must be set to the same value as well!
-    	if (!home.equals(homeDir())) {
-            System.err.println("Please set the java property " + HOME_VARIABLE_NAME 
-            	+ ", i.e., run with -D" + HOME_VARIABLE_NAME + "=" + home + " option.");
-            System.exit(-1);
-    	}
+        String home = CPathSettings.property(HOME_DIR); //throws IllegalStateEx. is not set.
     	
     	// configure logging
     	PropertyConfigurator.configure(home + File.separator + "log4j.properties");
@@ -639,6 +626,9 @@ public final class Admin {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
 		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
 		
+		final List<Metadata> allMetadata = mdao.getAllMetadata();
+		//TODO 0) create an imported data summary file.txt (issue#23)
+		
     	// 1) export everything
 		createArchives("all", dao, null, null);
     	
@@ -653,7 +643,7 @@ public final class Admin {
 		
 		// 3) export by datasource
         LOG.info("create-downloads: preparing 'by datasource' archives...");
-        for(Metadata md : mdao.getAllMetadata()) {
+        for(Metadata md : allMetadata) {
         	if(!md.getType().isNotPathwayData()) {
         		// display name or, if exists, - standard name
         		String name = md.standardName(); 

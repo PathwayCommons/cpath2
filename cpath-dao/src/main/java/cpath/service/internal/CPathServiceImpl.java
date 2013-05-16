@@ -643,7 +643,7 @@ public class CPathServiceImpl implements CPathService {
 		if(proxyModel == null) { //first check (no locking)
 			synchronized (this) {
 				if(proxyModel == null) { //second check (with locking)		
-				//TODO load all from mainDAO
+				//TODO export all from mainDAO into the in-memory model
 				}
 			}
 		}
