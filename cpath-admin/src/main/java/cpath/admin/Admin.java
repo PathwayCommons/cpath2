@@ -624,7 +624,8 @@ public final class Admin {
 			f.mkdir();
     	
 		//copy the blacklist.txt
-		FileUtils.copyFileToDirectory(new File(blacklistFile()), f);	
+		FileUtils.copyFileToDirectory(new File(blacklistFile()), f);
+		LOG.info("create-downloads: copied the blacklist.txt file...");
 		
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
@@ -646,6 +647,7 @@ public final class Admin {
 		}		
 		writer.flush();
 		writer.close();		
+		LOG.info("create-downloads: generated the datasources summary file...");
 		
     	// 1) export everything
 		createArchives("all", dao, null, null);

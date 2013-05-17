@@ -32,6 +32,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -65,6 +66,9 @@ import cpath.service.jaxb.TraverseResponse;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
+import static cpath.config.CPathSettings.PROVIDER_NAME;
+import static cpath.config.CPathSettings.downloadsDir;
+import static cpath.config.CPathSettings.property;
 import static cpath.service.Status.*;
 
 import cpath.warehouse.beans.Mapping;
@@ -678,19 +682,27 @@ public class CPathServiceImpl implements CPathService {
 				new Runnable() {
 				@Override
 				public void run() {
-					log.info("initProxyModel: loading entire biopax Model from the database...");
-					ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-					mainDAO.exportModel(outputStream);
-					log.info("initProxyModel: Model was successfully written to RDF/XML stream...");
+					log.info("initProxyModel: loading entire biopax Model...");
+//					ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+//					mainDAO.exportModel(outputStream); //this takes HOURS...
+//					log.info("initProxyModel: Model was successfully written to RDF/XML stream...");
 					try {
-						proxyModel = simpleIO.convertFromOWL(new ByteArrayInputStream(
-							outputStream.toString().getBytes("UTF-8")));
-						outputStream = null;
+//						proxyModel = simpleIO.convertFromOWL(new ByteArrayInputStream(
+//							outputStream.toString().getBytes("UTF-8")));
+//						outputStream = null;
+						
+						final String archive = downloadsDir() 
+				        	+ File.separator + property(PROVIDER_NAME) 
+				        		+ " " + "all.BIOPAX.owl.gz";
+						proxyModel = simpleIO.convertFromOWL(new GZIPInputStream(new FileInputStream(archive)));
+												
 						//allow queries use the proxy
 						CPathSettings.getInstance().setProxyModelEnabled(true);
 						log.info("initProxyModel: in-memory proxy Model is now ready for queries");
-					} catch (UnsupportedEncodingException e) {
-						log.error("initProxyModel: UTF-8 encoding problem; proxy model is now disabled.", e);
+					} 
+					catch (IOException e) {
+//					catch (UnsupportedEncodingException e) {
+						log.error("initProxyModel: failed, proxy model is now disabled.", e);
 					}
 				}
 			});
