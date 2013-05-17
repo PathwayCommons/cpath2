@@ -93,7 +93,7 @@ public class CPathServiceTest {
 	@Test
 	public void testFetchBiopax() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-		CPathService service = new CPathServiceImpl(dao, null, null);
+		CPathService service = new CPathServiceImpl(dao, null);
 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P46880");
 		assertNotNull(res);
 		assertFalse(res instanceof ErrorResponse);
@@ -106,7 +106,7 @@ public class CPathServiceTest {
 	@Test
 	public void testFetchAsSIF() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-		CPathService service = new CPathServiceImpl(dao, null, null);
+		CPathService service = new CPathServiceImpl(dao, null);
 		ServiceResponse res = service.fetch(
 				OutputFormat.BINARY_SIF,
 				"http://www.biopax.org/examples/myExample#biochemReaction1");

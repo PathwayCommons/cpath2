@@ -33,6 +33,8 @@ import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 
 /**
@@ -48,6 +50,7 @@ import org.apache.commons.lang.StringUtils;
  */
 public final class CPathSettings {
 
+	private static final Log LOG = LogFactory.getLog(CPathSettings.class);
 	
 	private static Properties settings;
 	
@@ -121,7 +124,6 @@ public final class CPathSettings {
 	public static final String PROP_DIGEST_URI_ENABLED = "cpath2.md5hex.uri.enabled";
 	public static final String PROP_BLACKLIST_DEGREE_THRESHOLD = "cpath2.blacklist.degree.threshold";   
 	public static final String PROP_BLACKLIST_CONTROL_THRESHOLD = "cpath2.blacklist.control.threshold";
-	public static final String PROP_BLACKLIST_LOCATION = "cpath2.blacklist.location";
 	public static final String PROP_METADATA_LOCATION = "cpath2.metadata.location";
 	public static final String PROP_ABSOLUTE_URI_ENABLED="cpath2.absolute.uri.enabled";
 	public static final String PROP_PROXY_MODEL_ENABLED="cpath2.proxy.model.enabled";
@@ -162,7 +164,6 @@ public final class CPathSettings {
 		// put default values
 		Properties defaults = new Properties();
 		defaults.put(PROP_XML_BASE, "http://purl.org/pc2/test/");
-		defaults.put(PROP_BLACKLIST_LOCATION, homeDir() + File.separator + BLACKLIST_FILE);
 		defaults.put(PROVIDER_NAME, "cPath2 Demo");
 		defaults.put(PROVIDER_VERSION, "");
 		defaults.put(PROVIDER_DESCRIPTION, "cPath2 Demo");
@@ -199,6 +200,10 @@ public final class CPathSettings {
 	}
 
 
+	/**
+	 * The service provider name (cPath2 instance owner)
+	 * @return
+	 */
 	public String getName() {
 		return property(PROVIDER_NAME);
 	}
@@ -208,6 +213,10 @@ public final class CPathSettings {
 	}
 
 
+	/**
+	 * The service provider description (cPath2 instance owner)
+	 * @return
+	 */
 	public String getDescription() {
 		return property(PROVIDER_DESCRIPTION);
 	}
@@ -235,6 +244,15 @@ public final class CPathSettings {
 	}
 
 
+	/**
+	 * Species supported by this cPath2 instance 
+	 * (i.e., the organisms of which data were prepared and 
+	 * intentionally imported in to the system, can be filtered by
+	 * in the web queries, and corresponding data archives
+	 * were made available to download by users)
+	 *  
+	 * @return
+	 */
 	public String[] getOrganisms() {
 		return organisms();
 	}
@@ -243,7 +261,13 @@ public final class CPathSettings {
 		setCPathProperty(PROVIDER_ORGANISMS, StringUtils.join(organisms, ','));
 	}
 
-
+	
+	/**
+	 * This cPath2 instance version
+	 * (not cpath2 software's but the resource's)
+	 * 
+	 * @return
+	 */
 	public String getVersion() {
 		return property(PROVIDER_VERSION);
 	}
@@ -262,6 +286,11 @@ public final class CPathSettings {
 	}
 
 
+	/**
+	 * This cPath2 instance's database name.
+	 * 
+	 * @return
+	 */
 	public String getMainDb() {
 		return property(PROP_MAIN_DB);
 	}
@@ -280,6 +309,13 @@ public final class CPathSettings {
 	}
 
 
+	/**
+	 * This cPath2 instance's xml:base 
+	 * (cpath2 service should use a cpath2 db
+	 * build using the same xml:base as the instance's)
+	 * 
+	 * @return
+	 */
 	public String getXmlBase() {
 		return property(PROP_XML_BASE);
 	}
@@ -382,7 +418,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public static String blacklistFile() {
-		return property(PROP_BLACKLIST_LOCATION);
+		return homeDir() + File.separator + BLACKLIST_FILE;
 	}	
 	
 	
@@ -406,16 +442,28 @@ public final class CPathSettings {
 	 * 
 	 * @param name
 	 * @param value
-	 * 
-	 * @throws IllegalStateException when this cpath2 instance is not in the Admin state.
 	 */
 	public static synchronized void setCPathProperty(String name, String value) {
 		if(PROP_ADMIN_ENABLED.equals(name) || isMaintenanceEnabled())
 		{
 			System.setProperty(name, value);
 			settings.setProperty(name, value);
-		} else {
-			throw new IllegalStateException("Not in Maintenance state.");
+		} 
+		else 
+		{	//ok to alter some props in the 'normal' state too
+			if(PROP_PROXY_MODEL_ENABLED.equals(name)
+					|| PROP_DIGEST_URI_ENABLED.equals(name)
+					|| PROP_EXPLAIN_ENABLED.equals(name)
+					|| PROP_MAX_SEARCH_HITS_PER_PAGE.equals(name)
+			) {
+				System.setProperty(name, value);
+				settings.setProperty(name, value);
+			} else {
+				// not allowed in this mode (not maintenance)
+				LOG.error("Attempt to set property "
+					+ name + " when " + PROP_ADMIN_ENABLED 
+						+ " = false");
+			}
 		}
 	}
 	

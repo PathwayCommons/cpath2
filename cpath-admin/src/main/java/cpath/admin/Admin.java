@@ -47,7 +47,9 @@ import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.api.Validator;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;
@@ -621,13 +623,29 @@ public final class Admin {
 		if(!f.exists()) 
 			f.mkdir();
     	
+		//copy the blacklist.txt
+		FileUtils.copyFileToDirectory(new File(blacklistFile()), f);	
+		
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
 		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
 		
 		final List<Metadata> allMetadata = mdao.getAllMetadata();
-		//TODO 0) create an imported data summary file.txt (issue#23)
+		//0) create an imported data summary file.txt (issue#23)
+		PrintWriter writer = new PrintWriter(downloadsDir() + File.separator 
+				+ "datasources.txt");
+		writer.println(StringUtils.join(Arrays.asList(
+			"#CPATH2 instance:", getInstance().getName(), "version", getInstance().getVersion()), " "));
+		writer.println("#Columns:" + StringUtils.join(Arrays.asList(
+			"ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PHYS.ENTITIES"), "\t"));
+		for(Metadata m : allMetadata) {
+			writer.println(StringUtils.join(Arrays.asList(
+				m.getUri(), m.getDescription(), m.getType(), m.getUrlToHomepage(), 
+				m.getNumPathways(), m.getNumInteractions(), m.getNumPhysicalEntities()), "\t"));
+		}		
+		writer.flush();
+		writer.close();		
 		
     	// 1) export everything
 		createArchives("all", dao, null, null);

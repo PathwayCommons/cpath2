@@ -17,7 +17,6 @@
 	<bean id="service" class="cpath.service.internal.CPathServiceImpl">
 		<constructor-arg ref="paxtoolsDAO"/>
 		<constructor-arg ref="metadataDAO"/>
-        <constructor-arg value="file:${CPATH2_HOME}/blacklist.txt"/>
 	</bean>
 
 	<!-- EhCache library setup -->

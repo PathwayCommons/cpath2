@@ -30,6 +30,8 @@ package cpath.service.internal;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -87,8 +89,10 @@ public class CPathServiceImpl implements CPathService {
 	
 	private SimpleIOHandler simpleIO;
 	
-	private Set<String> blacklist;
+	//init. on first access to getBlacklist(); so do not use it directly
+	private Set<String> blacklist; 
 	
+	//init. on first access when proxy model mode is enabled (so do not use the var. directly!)
 	private Model proxyModel;
     
 	//lazy initialize the following three fields on first request (prevents web server startup timeout)
@@ -98,53 +102,20 @@ public class CPathServiceImpl implements CPathService {
     // this is probably required for the ehcache to work
 	public CPathServiceImpl() {
 	}
+
 	
     /**
      * Constructor.
-     * @throws IOException 
      */
-	public CPathServiceImpl(PaxtoolsDAO mainDAO, MetadataDAO metadataDAO, Resource blacklistResource) 
-			throws IOException 
+	public CPathServiceImpl(PaxtoolsDAO mainDAO, MetadataDAO metadataDAO) 
 	{
 		this.mainDAO = mainDAO;
 		this.metadataDAO = metadataDAO;
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
-		
-		loadBlacklist(blacklistResource);		
-		// fallback
-		if(this.blacklist == null || this.blacklist.isEmpty()) {
-			loadBlacklist(new DefaultResourceLoader()
-				.getResource("file:" + CPathSettings.blacklistFile())
-			);
-		}
-		// if blacklist is still null/empty, go ahead without using any blackist...
 	}
 	
 	
-	private void loadBlacklist(Resource blacklistResource) 
-			throws IOException 
-	{
-		if(blacklistResource != null && blacklistResource.exists()) {
-			this.blacklist = new HashSet<String>();
-			Scanner scanner = new Scanner(blacklistResource.getFile());
-			while(scanner.hasNextLine())
-				blacklist.add(scanner.nextLine().trim());
-			scanner.close();
-			if(log.isInfoEnabled())
-				log.info("Successfully loaded " + blacklist.size()
-				+ " URIs for a (graph queries) 'blacklist' resource: " 
-				+ blacklistResource.getDescription());
-		} else {
-			log.warn("'blacklist' file is not found (" + 
-				((blacklistResource == null) 
-					? "not provided" 
-					: "at " + blacklistResource.getDescription()) + ")"
-			);
-		}		
-	}
-
-		
 	@Override
 	public ServiceResponse search(String queryStr, 
 			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms) 
@@ -182,19 +153,24 @@ public class CPathServiceImpl implements CPathService {
 		final ServiceResponse[] callback = new ServiceResponse[1];
 		
 		// extract/convert a sub-model within a hibernate read-only transaction 
-		mainDAO.runReadOnly(new Analysis() {			
+		Analysis analysis = new Analysis() {			
 			@Override
 			public void execute(Model model) {
 				try {
 					Set<BioPAXElement> elements = urisToBpes(model, mappedUris);
 					Model m = fullSubModel(model, elements);
-					callback[0] = (new BiopaxConverter(blacklist))
+					callback[0] = (new BiopaxConverter(getBlacklist()))
 						.convert(m, format, true);
 				} catch (Exception e) {
 					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
 				}
 			}
-		});
+		};
+		
+		if(isProxyModel())
+			analysis.execute(proxyModel);
+		else
+			mainDAO.runReadOnly(analysis);
 		
 		return callback[0];
     }
@@ -203,8 +179,8 @@ public class CPathServiceImpl implements CPathService {
 	private Filter[] createFilters(String[] organisms, String[] datasources) {
 		ArrayList<Filter> filters = new ArrayList<Filter>();
 		
-		if(blacklist != null && !blacklist.isEmpty())
-			filters.add(new UbiqueFilter(blacklist));
+		if(getBlacklist() != null && !getBlacklist().isEmpty())
+			filters.add(new UbiqueFilter(getBlacklist()));
 		
 		if(organisms != null && organisms.length > 0)
 			filters.add(new OrganismFilter(organisms));
@@ -231,7 +207,7 @@ public class CPathServiceImpl implements CPathService {
 		
 		// execute the paxtools graph query in a read-only db transaction
 		final Direction dir = direction;		
-		mainDAO.runReadOnly(new Analysis() {			
+		Analysis analysis = new Analysis() {			
 			@Override
 			public void execute(Model model) {
 				try {
@@ -243,16 +219,19 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					elements = (new Completer(SimpleEditorMap.L3)).complete(
 							elements, model);
-					// make it Model: cut less-important meat (child objects)
-					// Model m = cloner.clone(model, elements); // TODO do we still need this here?
 					Model m = simpleSubModel(elements);
-					callback[0] = (new BiopaxConverter(blacklist))
+					callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
 				} catch (Exception e) {
 					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
 				}
 			}
-		});
+		};
+		
+		if(isProxyModel()) 
+			analysis.execute(proxyModel);
+		else
+			mainDAO.runReadOnly(analysis);
 		
 		return callback[0];
 	}
@@ -268,7 +247,7 @@ public class CPathServiceImpl implements CPathService {
 		final ServiceResponse[] callback = new ServiceResponse[1];
 		
 		// execute the paxtools graph query in a read-only db transaction
-		mainDAO.runReadOnly(new Analysis() {			
+		Analysis analysis = new Analysis() {			
 			@Override
 			public void execute(Model model) {
 				try {
@@ -280,16 +259,19 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					elements = (new Completer(SimpleEditorMap.L3)).complete(
 							elements, model);
-					// make it Model: cut less-important meat (child objects)
-					// Model m = cloner.clone(model, elements); // TODO do we still need this here?
 					Model m = simpleSubModel(elements);
-					callback[0] = (new BiopaxConverter(blacklist))
+					callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
 				} catch (Exception e) {
 					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
 				}
 			}
-		});
+		};
+		
+		if(isProxyModel()) 
+			analysis.execute(proxyModel);
+		else
+			mainDAO.runReadOnly(analysis);
 		
 		return callback[0];
 	}
@@ -307,7 +289,7 @@ public class CPathServiceImpl implements CPathService {
 		final ServiceResponse[] callback = new ServiceResponse[1];
 		
 		// execute the paxtools graph query in a read-only db transaction		
-		mainDAO.runReadOnly(new Analysis() {			
+		Analysis analysis = new Analysis() {			
 			@Override
 			public void execute(Model model) {
 				try {
@@ -326,16 +308,20 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					elements = (new Completer(SimpleEditorMap.L3)).complete(
 							elements, model);
-					// make it Model: cut less-important meat (child objects)
-					// Model m = cloner.clone(model, elements); // TODO do we still need this here?
+
 					Model m = simpleSubModel(elements);
-					callback[0] = (new BiopaxConverter(blacklist))
+					callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
 				} catch (Exception e) {
 					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
 				}
 			}
-		});
+		};
+		
+		if(isProxyModel()) 
+			analysis.execute(proxyModel);
+		else
+			mainDAO.runReadOnly(analysis);
 		
 		return callback[0];
 	}
@@ -358,8 +344,8 @@ public class CPathServiceImpl implements CPathService {
 		final ServiceResponse[] callback = new ServiceResponse[1];
 		
 		// execute the paxtools graph query in a read-only db transaction
-		final Direction dir = direction;		
-		mainDAO.runReadOnly(new Analysis() {			
+		final Direction dir = direction;
+		Analysis analysis = new Analysis() {			
 			@Override
 			public void execute(Model model) {
 				try {
@@ -372,16 +358,20 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					elements = (new Completer(SimpleEditorMap.L3)).complete(
 							elements, model);
-					// make it Model: cut less-important meat (child objects)
-					// Model m = cloner.clone(model, elements); // TODO do we still need this here?
+
 					Model m = simpleSubModel(elements);
-					callback[0] = (new BiopaxConverter(blacklist))
+					callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
 				} catch (Exception e) {
 					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
 				}
 			}
-		});
+		};
+		
+		if(isProxyModel()) 
+			analysis.execute(proxyModel);
+		else
+			mainDAO.runReadOnly(analysis);
 		
 		return callback[0];
 	}
@@ -557,8 +547,12 @@ public class CPathServiceImpl implements CPathService {
 
 
 	public Set<String> getBlacklist() {
+		if(blacklist == null) 
+			loadBlacklist();
+		
 		return blacklist;
 	}
+	
 	public void setBlacklist(Set<String> blacklist) {
 		this.blacklist = blacklist;
 	}
@@ -636,16 +630,98 @@ public class CPathServiceImpl implements CPathService {
 	}
 
 	
-	/*
-	 * This may take quite awhile...
-	 */
-	private void initProxyModel() {
-		if(proxyModel == null) { //first check (no locking)
-			synchronized (this) {
-				if(proxyModel == null) { //second check (with locking)		
-				//TODO export all from mainDAO into the in-memory model
-				}
+	private synchronized void loadBlacklist() 
+	{
+		this.blacklist = new HashSet<String>();
+		
+		Resource blacklistResource = new DefaultResourceLoader()
+			.getResource("file:" + CPathSettings.blacklistFile());
+		
+		if(blacklistResource.exists()) {
+			
+			Scanner scanner;
+			try {
+				scanner = new Scanner(blacklistResource.getFile());
+			} catch (IOException e) {
+				throw new RuntimeException("loadBlacklist, failed opening file: " 
+					+ blacklistResource.getFilename(), e);
 			}
+			
+			while(scanner.hasNextLine())
+				blacklist.add(scanner.nextLine().trim());
+			scanner.close();
+			
+			if(log.isInfoEnabled())
+				log.info("loadBlacklist, loaded " + blacklist.size()
+				+ " URIs for a (graph queries) 'blacklist' resource: " 
+				+ blacklistResource.getDescription());
+		} else {
+			log.warn("loadBlacklist, " + CPathSettings.blacklistFile() 
+				+ " is not found");
 		}
 	}
+	
+	
+	/*
+	 * Exports all from mainDAO into the in-memory proxy model
+	 * (only once, on demand).
+	 */
+	private synchronized void initProxyModelOnce() {
+		//first check (no locking)
+		if(proxyModel == null && CPathSettings.isProxyModelEnabled()) { 
+			//prevent queries from using the proxy until it's ready
+			CPathSettings.getInstance().setProxyModelEnabled(false);
+					
+			//fork the model loading... (this takes quite a while)
+			ExecutorService executor = Executors.newSingleThreadExecutor();
+			executor.execute(
+				new Runnable() {
+				@Override
+				public void run() {
+					log.info("initProxyModel: loading entire biopax Model from the database...");
+					ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+					mainDAO.exportModel(outputStream);
+					log.info("initProxyModel: Model was successfully written to RDF/XML stream...");
+					try {
+						proxyModel = simpleIO.convertFromOWL(new ByteArrayInputStream(
+							outputStream.toString().getBytes("UTF-8")));
+						outputStream = null;
+						//allow queries use the proxy
+						CPathSettings.getInstance().setProxyModelEnabled(true);
+						log.info("initProxyModel: in-memory proxy Model is now ready for queries");
+					} catch (UnsupportedEncodingException e) {
+						log.error("initProxyModel: UTF-8 encoding problem; proxy model is now disabled.", e);
+					}
+				}
+			});
+			executor.shutdown();
+			//won't wait till it's done!
+		}
+	}
+	
+
+	/**
+	 * @return true iif the proxy mode is on and the in-memory model ready (initialized)
+	 */
+	private boolean isProxyModel() {
+		if(proxyModel == null && CPathSettings.isProxyModelEnabled()) {
+			initProxyModelOnce(); //it runs in a separate thread and temporarily disables the proxy model mode
+			//the proxy is being built but not ready yet
+			log.debug("isProxyModel: proxy mode was enabled, model not initialized yet (initializing in the background)");
+			return false;
+		}
+		else if(proxyModel == null && !CPathSettings.isProxyModelEnabled()) {
+			log.debug("isProxyModel: proxy mode is disabled, model not initialized");
+			return false;
+		}
+		else if(proxyModel != null && CPathSettings.isProxyModelEnabled()) {
+			log.debug("isProxyModel: true!");
+			return true;
+		}
+		else {//proxyModel != null && !CPathSettings.isProxyModelEnabled()
+			log.debug("isProxyModel: proxy mode is currently off, but the in-memory model is ready");
+			return false;
+		}
+	}	
 }
+
