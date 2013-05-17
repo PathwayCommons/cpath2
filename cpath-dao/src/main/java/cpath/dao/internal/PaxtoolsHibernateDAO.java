@@ -78,10 +78,7 @@ import java.lang.reflect.Modifier;
  * 
  * This is one of most important classes on which cpath2 system is based.
  * 
- * Transactions are read-only for all public non-transient methods, 
- * unless a method has own @Transactional annotation 
  */
-@Transactional(readOnly=true) 
 @Repository
 class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 {
@@ -171,7 +168,8 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			this.maxHitsPerPage = maxHits;
 	}
 
-	//not transactional (but it's 'merge' method that creates a new transaction)
+
+	@Transactional
 	public void importModel(File biopaxFile) throws FileNotFoundException
 	{
 		if (log.isInfoEnabled()) {
@@ -184,6 +182,14 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	}
 
 
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * Not annotated as transactional, because
+	 * it manually opens own internal transaction
+	 * using stateless session.
+	 * 
+	 */
 	@Override
 	public void insert(final Model model)
 	{
@@ -225,8 +231,8 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * This opens a new stateless session, which starts a new 
 	 * transaction to insert new objects (by URI).
 	 * 
-	 * This method must NOT be annotated with @Transactional
 	 */
+	@Transactional
 	@Override
 	public void merge(final Model model)
 	{
@@ -306,6 +312,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * 
 	 * @throws IllegalArgumentException if query is null
 	 */
+	@Transactional(readOnly=true) 
 	@Override
 	public SearchResponse search(String query, int page,
 			Class<? extends BioPAXElement> filterByType, String[] dsources,
@@ -323,9 +330,12 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 					+ "), org. in (" + Arrays.toString(organisms) + ")");
 
 
+		Session session = sessionFactory.getCurrentSession();
 		// create a new full text session from current session
-		FullTextSession fullTextSession = Search
-			.getFullTextSession(sessionFactory.getCurrentSession());
+		FullTextSession fullTextSession = Search.getFullTextSession(session);
+		
+		//set read-only for all entities
+		fullTextSession.setDefaultReadOnly(true);
 		
 		// lucene query builder below does not understand interfaces and abstract types...
 //		Class<?> filterClass = (filterByType != null) ? filterByType : BioPAXElement.class;
@@ -406,7 +416,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			
 			searchResponse.setSearchHit(searchHits);
 		} 
-
+		
 		return searchResponse;
 	}
 	
@@ -461,6 +471,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * to the query one. These two objects are not necessarily equal.
 	 * 
 	 */
+	@Transactional(readOnly=true)
 	@Override
 	public boolean contains(BioPAXElement bpe)
 	{
@@ -475,6 +486,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * at the moment, i.e., it could have been just inserted with a stateless session,
 	 * and not updated (relationships not saved)
 	 */
+	@Transactional(readOnly=true)
 	@Override
 	public boolean containsID(String id)
 	{
@@ -526,6 +538,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	}
 
 
+	@Transactional
 	@Override
 	public Set<BioPAXElement> getObjects()
 	{
@@ -533,6 +546,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	}
 
 
+	@Transactional
 	@Override
 	public <T extends BioPAXElement> Set<T> getObjects(Class<T> clazz)
 	{
@@ -592,10 +606,12 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * method to extract listed elements (with all children and properties)model
 	 * and write as RDF/XML to the output stream.
 	 */
+	@Transactional(readOnly=true)
 	@Override
 	public void exportModel(OutputStream outputStream, String... ids) 
 	{
-//		Session ses = sessionFactory.getCurrentSession();
+		Session ses = sessionFactory.getCurrentSession();
+		ses.setDefaultReadOnly(true);
 //      ses.enableFetchProfile("mul_properties_join");
         simpleIO.convertToOWL(this, outputStream, ids);
 //      ses.disableFetchProfile("mul_properties_join");
@@ -606,6 +622,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * All object collection properties and inverse properties 
 	 * (not very deep) initialization
 	 */
+	@Transactional
 	@Override
 	public void initialize(Object obj) 
 	{
@@ -651,11 +668,12 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	/**
 	 * {@inheritDoc}
 	 * 
-	 * Runs within a new transaction (can modify/save).
+	 * Runs within a new read/write transaction 
+	 * (can modify and save entity states).
 	 * 
 	 */
 	@Override
-	@Transactional
+	@Transactional(readOnly=false)
 	public void run(Analysis analysis) {
 		log.debug("run: started");
 		analysis.execute(this);
@@ -670,15 +688,19 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * (- set on the class level) transaction.
 	 * 
 	 */
+	@Transactional(readOnly=true)
 	@Override
 	public void runReadOnly(Analysis analysis) {
-//		Session ses = sessionFactory.getCurrentSession();
+		Session ses = sessionFactory.getCurrentSession();
+		ses.setDefaultReadOnly(true);
 //		ses.enableFetchProfile("mul_properties_join");
 //		ses.enableFetchProfile("inverse_mul_properties_join");	
 		
 		log.debug("runReadOnly: started");
+		
 		// perform the analysis algorithm
 		analysis.execute(this);		
+		
 		log.debug("runReadOnly: finished");
 		
 //		ses.disableFetchProfile("mul_properties_join");
@@ -718,8 +740,12 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * 
 	 * @throws 
 	 */
+	@Transactional(readOnly=true)
 	@Override
 	public TraverseResponse traverse(String propertyPath, String... uris) {
+		
+		sessionFactory.getCurrentSession().setDefaultReadOnly(true);
+		
 		TraverseResponse resp = new TraverseResponse();
 		resp.setPropertyPath(propertyPath);
 		
@@ -774,9 +800,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		Session ses = sessionFactory.getCurrentSession();	
 		FullTextSession fullTextSession = Search.getFullTextSession(ses);
 		fullTextSession.setFlushMode(FlushMode.MANUAL);
-// Forcing JOIN fetch type will slow down indexing by approx. 2x
-//		fullTextSession.enableFetchProfile( "mul_properties_join" );
-//		fullTextSession.enableFetchProfile( "inverse_mul_properties_join" );
 		Number numRows = (Number) fullTextSession.createCriteria(L3ElementImpl.class)
 			.setProjection(Projections.rowCount()).uniqueResult();
 		int total = numRows.intValue();

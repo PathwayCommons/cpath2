@@ -60,6 +60,7 @@ import org.springframework.core.io.Resource;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -487,26 +488,6 @@ public final class Admin {
         context.close(); 
     }
 
-    
-	/**
-	 * Given a provider, returns a collection of Metadata.
-	 *
-	 * @param provider String
-	 * @return Collection<Metadata>
-	 */
-	private static Collection<Metadata> getMetadata(final MetadataDAO metadataDAO, final String provider) 
-	{
-		Collection<Metadata> toReturn = new HashSet<Metadata>();
-		if (provider == null || provider.isEmpty()) {
-			toReturn = metadataDAO.getAllMetadata();
-		} else {
-			Metadata md = metadataDAO.getMetadataByIdentifier(provider);
-			if(md != null)
-				toReturn.add(md);
-		}
-		return toReturn;
-	}
-
 
 	/**
 	 * Extracts a cpath2 BioPAX sub-model
@@ -636,9 +617,10 @@ public final class Admin {
 		//0) create an imported data summary file.txt (issue#23)
 		PrintWriter writer = new PrintWriter(downloadsDir() + File.separator 
 				+ "datasources.txt");
+		String date = new SimpleDateFormat("d MMM yyyy").format(Calendar.getInstance().getTime());
 		writer.println(StringUtils.join(Arrays.asList(
-			"#CPATH2 instance:", getInstance().getName(), "version", getInstance().getVersion()), " "));
-		writer.println("#Columns:" + StringUtils.join(Arrays.asList(
+			"#CPATH2:", getInstance().getName(), "version", getInstance().getVersion(), date), " "));
+		writer.println("#Columns:\t" + StringUtils.join(Arrays.asList(
 			"ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PHYS.ENTITIES"), "\t"));
 		for(Metadata m : allMetadata) {
 			writer.println(StringUtils.join(Arrays.asList(
