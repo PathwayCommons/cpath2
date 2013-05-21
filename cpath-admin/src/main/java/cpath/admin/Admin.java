@@ -31,10 +31,8 @@ package cpath.admin;
 import static cpath.config.CPathSettings.*;
 import cpath.config.CPathSettings;
 import cpath.dao.*;
-import cpath.importer.Fetcher;
 import cpath.importer.Merger;
 import cpath.importer.Premerger;
-import cpath.importer.internal.FetcherImpl;
 import cpath.importer.internal.MergerImpl;
 import cpath.importer.internal.PremergeImpl;
 import cpath.service.ErrorResponse;
@@ -42,17 +40,16 @@ import cpath.service.OutputFormat;
 import cpath.service.internal.BiopaxConverter;
 import cpath.service.jaxb.*;
 import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.PathwayData;
 
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.api.Validator;
-import org.biopax.validator.api.beans.ValidatorResponse;
-import org.biopax.validator.api.ValidatorUtils;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;
@@ -63,12 +60,10 @@ import org.springframework.core.io.Resource;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import javax.xml.transform.Source;
-import javax.xml.transform.stream.StreamSource;
 
 import static cpath.service.OutputFormat.*;
 
@@ -83,7 +78,6 @@ public final class Admin {
     // Cmd Enum
     public static enum Cmd {
         // command types
-    	CREATE_DATABASES("-create-db"),
         FETCH_METADATA("-fetch-metadata"),
 		FETCH_DATA("-fetch-data"),
 		CREATE_WAREHOUSE("-create-warehouse"),
@@ -96,7 +90,6 @@ public final class Admin {
         CLEAR_CACHE("-clear-cache"),
         UPDATE_COUNTS("-update-counts"),
 		EXPORT("-export"),
-		EXPORT_VALIDATION("-export-validation"),
         CONVERT("-convert"),
 		;
 
@@ -118,20 +111,7 @@ public final class Admin {
      */    
     public static void main(String[] params) throws Exception {
     	// "CPATH2_HOME" env. var must be set (mostly for logging)
-        String home = System.getenv(HOME_VARIABLE_NAME);
-    	if (home==null) {
-            System.err.println("Please set " + HOME_VARIABLE_NAME 
-            	+ " environment variable " +
-            	" (point to a directory where cpath.properties, etc. files are placed)");
-            System.exit(-1);
-    	}
-    	
-    	// the JVM option must be set to the same value as well!
-    	if (!home.equals(homeDir())) {
-            System.err.println("Please set the java property " + HOME_VARIABLE_NAME 
-            	+ ", i.e., run with -D" + HOME_VARIABLE_NAME + "=" + home + " option.");
-            System.exit(-1);
-    	}
+        String home = CPathSettings.property(HOME_DIR); //throws IllegalStateEx. is not set.
     	
     	// configure logging
     	PropertyConfigurator.configure(home + File.separator + "log4j.properties");
@@ -165,106 +145,96 @@ public final class Admin {
     	
 
         // create the TMP dir inside the home dir if it does not exist yet
-		File dir = new File(localDataDir());
+		File dir = new File(dataDir());
 		if(!dir.exists()) {
 			dir.mkdir();
-		}   	
-    	
-	       if(args[0].equals(Cmd.CREATE_DATABASES.toString())) {
-				if (args.length > 1)
-					// agrs[1] contains comma-separated db names
-					createDatabases(args[1].split(","));
-				else 
-					createDatabases(null);
-	        } 
-	        else if(args[0].equals(Cmd.CREATE_INDEX.toString())) {
-				index();
-	        } 
-	        else if (args[0].equals(Cmd.FETCH_METADATA.toString())) {
-				if (args.length == 1) {
-					fetchMetadata("file:" + property(PROP_METADATA_LOCATION));
+		}
+
+		if (args[0].equals(Cmd.CREATE_INDEX.toString())) {
+			
+			index();
+			
+		} else if (args[0].equals(Cmd.FETCH_METADATA.toString())) {
+			
+			if (args.length == 1) {
+				fetchMetadata("file:" + property(PROP_METADATA_LOCATION));
+			} else {
+				fetchMetadata(args[1]);
+			}
+			
+		} else if (args[0].equals(Cmd.CREATE_WAREHOUSE.toString())) {
+			
+			if (args.length > 1)
+				createWarehouse(args[1]);
+			else
+				// command without extra parameter
+				createWarehouse(null);
+			
+		} else if (args[0].equals(Cmd.UPDATE_MAPPING.toString())) {
+			
+			updateMapping();
+			
+		} else if (args[0].equals(Cmd.PREMERGE.toString())) {
+			
+			if (args.length > 1)
+				runPremerge(args[1]);
+			else
+				// command without extra parameter
+				runPremerge(null);
+			
+		} else if (args[0].equals(Cmd.MERGE.toString())) {
+			boolean force = false;
+			String provider = null;
+			for (int i = 1; i < args.length; i++) {
+				if ("--force".equalsIgnoreCase(args[i])) {
+					force = true;
 				} else {
-					fetchMetadata(args[1]);
+					// use only one, the first id, and ignore others
+					if (provider == null)
+						provider = args[i];
 				}
-	        }
-			else if (args[0].equals(Cmd.FETCH_DATA.toString())) {
-				if (args.length >= 2) 
-					fetchData(args[1]);
-				else // command without extra parameter
-					fetchData(null);
 			}
-			else if (args[0].equals(Cmd.CREATE_WAREHOUSE.toString())) {
-				if (args.length > 1) 
-					createWarehouse(args[1]);
-				else // command without extra parameter
-					createWarehouse(null);
-			}
-			else if (args[0].equals(Cmd.UPDATE_MAPPING.toString())) {
-					updateMapping();
-			}
-			else if (args[0].equals(Cmd.PREMERGE.toString())) {
-				if (args.length > 1) 
-					runPremerge(args[1]);
-				else // command without extra parameter
-					runPremerge(null);
-			}
-			else if (args[0].equals(Cmd.MERGE.toString())) {
-				boolean force = false;
-				String provider = null;
-				for (int i = 1; i < args.length; i++) {
-					if ("--force".equalsIgnoreCase(args[i])) {
-						force = true;
-					} else {
-						//use only one, the first id, and ignore others
-						if(provider == null) 
-							provider = args[i];
-					}
-				}
-				
-				runMerge(provider, force);
-			}
-			else if(args[0].equals(Cmd.EXPORT.toString())) {
-				if (args.length < 3)
-					fail(args,"must provide at least two arguments.");
-				else if(args.length == 3)
-					exportData(args[1], args[2], new String[]{});
-				else 
-					exportData(args[1], args[2], args[3].split(","));
-	        } 
-			else if(args[0].equals(Cmd.EXPORT_VALIDATION.toString())) {
-				if (args.length < 3)
-					fail(args,"must provide at least two arguments for this command.");
-				
-	        	if(args[2].endsWith(".html"))
-	        		exportValidation(args[1], new FileOutputStream(args[2]), true);
-	        	else
-	        		exportValidation(args[1], new FileOutputStream(args[2]), false);
-	        } 
-			else if(args[0].equals(Cmd.CREATE_BLACKLIST.toString())) {
-	            createBlacklist();
-	        } 
-			else if(args[0].equals(Cmd.CONVERT.toString())) {
-				if (args.length < 4)
-					fail(args,"provide at least three arguments.");
-				
-	            OutputStream fos = new FileOutputStream(args[2]);
-	            OutputFormat outputFormat = OutputFormat.valueOf(args[3]);
-	            convert(args[1], outputFormat, fos);
-	        } 
-			else if(args[0].equals(Cmd.CREATE_DOWNLOADS.toString())) {
-	            createDownloads();
-	        } 
-			else if(args[0].equals(Cmd.UPDATE_COUNTS.toString())) {
-				updateCounts();
-	        } 
-			else if(args[0].equals(Cmd.CLEAR_CACHE.toString())) {
-				clearCache();
-	        } 
-			else {
-				System.err.println(usage());
-	        }    
-		
-		// required because MySQL Statement 
+
+			runMerge(provider, force);
+			
+		} else if (args[0].equals(Cmd.EXPORT.toString())) {
+			
+			if (args.length < 2)
+				fail(args, "must provide at least one arguments.");
+			else if (args.length == 2)
+				exportData(args[1], new String[] {});
+			else
+				exportData(args[1], args[2].split(","));
+			
+		} else if (args[0].equals(Cmd.CREATE_BLACKLIST.toString())) {
+			
+			createBlacklist();
+			
+		} else if (args[0].equals(Cmd.CONVERT.toString())) {
+			if (args.length < 4)
+				fail(args, "provide at least three arguments.");
+			OutputStream fos = new FileOutputStream(args[2]);
+			OutputFormat outputFormat = OutputFormat.valueOf(args[3]);
+			
+			convert(args[1], outputFormat, fos);
+			
+		} else if (args[0].equals(Cmd.CREATE_DOWNLOADS.toString())) {
+			
+			createDownloads();
+			
+		} else if (args[0].equals(Cmd.UPDATE_COUNTS.toString())) {
+			
+			updateCounts();
+			
+		} else if (args[0].equals(Cmd.CLEAR_CACHE.toString())) {
+			
+			clearCache();
+			
+		} else {
+			System.err.println(usage());
+		}
+
+		// required because MySQL Statement
 		// Cancellation Timer thread is still running
 		System.exit(0);
     }    
@@ -286,7 +256,7 @@ public final class Admin {
 		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
    		// re-build the full-text index
-   		// it gets the main DB name from cpath.properties (via CPathSettings class)
+   		// it gets the main DB name from cpath2.properties (via CPathSettings class)
 		
 		String indexDir = property(PROP_MAIN_DB); 
 		LOG.info("Removing full-text index directory : " + indexDir);
@@ -313,7 +283,7 @@ public final class Admin {
 		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
    		// re-build the full-text index
-   		// it gets the DB name from the environment variables (set in cpath.properties)
+   		// it gets the DB name from the environment variables (set in cpath2.properties)
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
      	
@@ -321,7 +291,7 @@ public final class Admin {
      	
      	//update counts of pathways, interactions, molecules
      	MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
-     	for(Metadata md : mdao.getAllMetadataInitialized()) {
+     	for(Metadata md : mdao.getAllMetadata()) {
      		
      		if(md.getType().isNotPathwayData())
      			continue;
@@ -362,26 +332,6 @@ public final class Admin {
      	CPathUtils.deleteDirectory(cacheDir);
     }
     
-    
-    /**
-     * Creates a new set of cpath2 database schemas;
-     * 
-     * @param names
-     * @throws IllegalStateException when cpath2 is not in the maintenance mode.
-     */
-	public static void createDatabases(String[] names) {
-		if(!isMaintenanceEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
-		
-    	if(names != null) {
-    		for(String db : names) {
-    			String dbName = db.trim();
-    			CPathUtils.createDatabase(dbName);
-    		}
-    	} else { // create all (as specified in the current cpath.properties)
-    		CPathUtils.createDatabase(property(PROP_MAIN_DB));
-    	}
-	}
 	
 	/**
      * Generates cpath2 graph query blacklist file
@@ -532,117 +482,22 @@ public final class Admin {
 		System.setProperty("hibernate.hbm2ddl.auto", "update");	
 		ClassPathXmlApplicationContext context =
             new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
-        MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-        Fetcher fetcher = new FetcherImpl(false);
-        
-        
+        MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");              
         // grab the data
-        Collection<Metadata> metadata = fetcher.readMetadata(location);
-        
-        // process metadata
-        for (Metadata mdata : metadata) {
-        	Metadata m = metadataDAO.getMetadataByIdentifier(mdata.getIdentifier());
-        	if(m != null) {
-        		LOG.info("fetchMetadata: overwriting metadata " +
-        			"(this won't change the counts and pathwayData collection): " 
-        				+ m.getIdentifier());
-        		m.setDescription(mdata.getDescription());
-        		m.setName(mdata.getName());
-        		m.setIcon(mdata.getIcon());
-        		m.setType(mdata.getType());
-        		m.setUrlToData(mdata.getUrlToData());
-        		m.setUrlToHomepage(mdata.getUrlToHomepage());
-        		m.setConverterClassname(mdata.getConverterClassname());
-        		m.setCleanerClassname(mdata.getCleanerClassname());
-        		//m.setNumInteractions, etc.. - won't modify; one should run -update-counts
-        		//m.setPathwayData - won't touch either; one should run -premerge
-        		metadataDAO.saveMetadata(m);
-        	}  else {
-        		metadataDAO.saveMetadata(mdata);
-        	}
-        }
-        
+        metadataDAO.addOrUpdateMetadata(location);
         context.close(); 
     }
 
 
-    /**
-     * Downloads pathway or warehouse (protein, small molecule) data
-     * from the location specified in the metadata.
-	 *
-     * @param provider String
-     * @throws IOException, IllegalStateException (when not maintenance mode)
-     */
-    public static void fetchData(final String provider) throws IOException {
-		if(!isMaintenanceEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
-    	
-//		System.setProperty("hibernate.hbm2ddl.auto", "update");
-		ClassPathXmlApplicationContext context =
-            new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
-        MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-        Fetcher fetcher = new FetcherImpl(true);
-    	
-		// get metadata
-		Collection<Metadata> metadataCollection = getMetadata(metadataDAO, provider);
-		// sanity check
-		if (metadataCollection == null || metadataCollection.isEmpty()) {
-			if(provider != null)
-				LOG.error("Unknown provider identifier: " + provider);
-			else
-				LOG.error("No metadata found in the db.");
-			
-			context.close(); 
-			return;
-		}
-		
-		// interate over all metadata
-		for (Metadata metadata : metadataCollection) {			
-			try {
-				fetcher.fetchData(metadata); 
-			} catch (Exception e) {
-				LOG.error("Failed fetching data for " + metadata.toString() 
-					+ ". Skipping...", e);
-				continue;
-			}
-			
-			LOG.info("FETCHING DONE : " + metadata.getIdentifier());
-		}
-		
-		context.close(); 
-	}
-
-    
-	/**
-	 * Given a provider, returns a collection of Metadata.
-	 *
-	 * @param provider String
-	 * @return Collection<Metadata>
-	 */
-	private static Collection<Metadata> getMetadata(final MetadataDAO metadataDAO, final String provider) 
-	{
-		Collection<Metadata> toReturn = new HashSet<Metadata>();
-		if (provider == null || provider.isEmpty()) {
-			toReturn = metadataDAO.getAllMetadataInitialized();
-		} else {
-			Metadata md = metadataDAO.getMetadataByIdentifier(provider);
-			if(md != null)
-				toReturn.add(md);
-		}
-		return toReturn;
-	}
-
-
 	/**
 	 * Extracts a cpath2 BioPAX sub-model
-	 * and writes to the specified file/format.
-	 * 
-	 * @param src pathway_id from the Metadata db, pathwayData table, or null
+	 * and writes to the specified file.
 	 * @param output
 	 * @param uris
+	 * 
 	 * @throws IOException, IllegalStateException (in maintenance mode)
 	 */
-	public static void exportData(final String src, final String output, String[] uris) 
+	public static void exportData(final String output, String[] uris) 
 			throws IOException 
 	{	
 		if(isMaintenanceEnabled())
@@ -653,125 +508,15 @@ public final class Admin {
 		
 		ClassPathXmlApplicationContext ctx = 
 			new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
-				
-		if(src == null || src.isEmpty() || src.equals("--main_db")) {			
-			OutputStream os = new FileOutputStream(output);
-			// export a sub-model from the main biopax database
-	        PaxtoolsDAO dao = ((PaxtoolsDAO)ctx.getBean("paxtoolsDAO"));
-			dao.exportModel(os, uris);
-			ctx.close(); 
-		} else {			
-			// get original pathway data by pathway_id 
-			// from the Metadata db, pathwayData table
-			// (ok to do even in the maintenance mode)
-			Integer pk = null;
-			try {
-				pk = Integer.valueOf(src);
-				if(LOG.isDebugEnabled())
-					LOG.debug("Export from the original data," +
-						" pathway_id=" + src);
-			} catch (NumberFormatException e) {
-				if(LOG.isDebugEnabled())
-					LOG.debug("Export from the database: " + src);
-			}			
-			
-			MetadataDAO dao = (MetadataDAO) ctx.getBean("metadataDAO");
-			PathwayData pdata = dao.getPathwayData(pk);
-			
-			if(pdata != null) {
-				// get premergeData (OWL text)
-				byte[] data = pdata.getPremergeData();
-				OutputStream os = new FileOutputStream(output);
-				if (data != null && data.length > 0) {
-					if (uris.length > 0) { // extract a sub-model
-						SimpleIOHandler handler = new SimpleIOHandler(); // auto-detect Level
-						Model model = handler.convertFromOWL(new ByteArrayInputStream(data));
-						//handler.setFactory(model.getLevel().getDefaultFactory());
-						handler.convertToOWL(model, os, uris);
-					} else { 
-						/*	write all (premergeData -
-							cleaned/converted/validated/normalized from
-							the original provider's file )	*/
-						os.write(data);
-						os.flush();
-					}
-				}
-				else {
-					// no data found
-					LOG.error("Data not found! Have you run '-premerge' for "
-						+ pdata + "?");
-				}
-			} 
-			else {
-				LOG.error("Record not found: pathway_id=" + pk);
-			}
-			
-			ctx.close();
-		}
+							
+		OutputStream os = new FileOutputStream(output);
+		// export a sub-model from the main biopax database
+	    PaxtoolsDAO dao = ((PaxtoolsDAO)ctx.getBean("paxtoolsDAO"));
+	    dao.exportModel(os, uris);
+		ctx.close(); 
 	}	
 	
-	
-	
-	/**
-	 * Exports from the PathwayData entity(-ies) and 
-	 * writes the BioPAX validation report (as XML or HTML).
-	 * 
-	 * @param key an existing cpath2 pathwayData.pathway_id or metadata.identifier (provider).
-	 * @param out output stream
-	 * @param asHtml write as HTML report (transform from the XML)
-	 * @throws IOException
-	 */
-	public static void exportValidation(final String key, final OutputStream out, 
-			boolean asHtml) throws IOException {
-		
-		ClassPathXmlApplicationContext context =
-	        new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
-	    MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-	    
-	    ValidatorResponse report = null;
-		Integer pk = null;
-		try {
-			pk = Integer.valueOf(key);
-		} catch (NumberFormatException e) {}
-		
-		if(pk != null) {
-			PathwayData pathwayData = metadataDAO.getPathwayData(pk);
-			if (pathwayData != null) {
-				if(LOG.isInfoEnabled())
-		    		LOG.info("Getting validation report for pathway_id: " + pk 
-		    			+ " (" + pathwayData.getMetadata().getIdentifier() + ") "
-		    			+ "...");
-				report = metadataDAO.validationReport(null, pk);
-			} else {
-				if(LOG.isInfoEnabled())
-		    		LOG.info("Getting validation report: pathway_id: " + pk + " does not exist.");
-				System.err.println("Getting validation report for pathway_id=" + pk + ": not found.");
-				context.close();
-				return;
-			}
-		} else {
-			if(LOG.isInfoEnabled())
-	    		LOG.info("Getting validation report for data source: " + key + "...");
-			report = metadataDAO.validationReport(key, null);
-		}
-
-    	if(report == null) {
-    		System.err.println("No validation report found or error.");
-    	} else {
-    		OutputStreamWriter writer = new OutputStreamWriter(out, "UTF-8");
-    		Source xsl = (asHtml) 
-    			? new StreamSource((new DefaultResourceLoader())
-    					.getResource("classpath:html-result.xsl").getInputStream())
-    			: null;
-
-			ValidatorUtils.write(report, writer, xsl); 
-    		writer.flush();
-    	}
-    	
-    	context.close();
-	}	
-	
-		
+			
 	private static String usage() 
 	{
 		final String NEWLINE = System.getProperty ( "line.separator" );
@@ -780,10 +525,7 @@ public final class Admin {
 				"(- parameters within the square braces are optional.)" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
 		// data import (instance creation) pipeline :
-		toReturn.append(Cmd.CREATE_DATABASES.toString() + " [name] " +
-				"(drops, creates an empty database; this destroys all data there)" + NEWLINE);
 		toReturn.append(Cmd.FETCH_METADATA.toString() + " <url>" + NEWLINE);
-		toReturn.append(Cmd.FETCH_DATA.toString() + " [<metadataId>]" + NEWLINE);
 		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + " [<metadataId>]" + NEWLINE);
 		toReturn.append(Cmd.UPDATE_MAPPING.toString() + " (re-builds id-mapping tables using cpath2 warehouse data)"+ NEWLINE);
 		toReturn.append(Cmd.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
@@ -795,12 +537,7 @@ public final class Admin {
         toReturn.append(Cmd.CREATE_DOWNLOADS.toString() + " (creates cpath2 BioPAX DB archives using several " +
         	"data formats, and also split by data source, organism)"  + NEWLINE);        
         // other useful (utility) commands
-		toReturn.append(Cmd.EXPORT.toString() + " <source> <output> [<uri,uri,..>]" +
-			" (<source> can be either --main_db or a pathway_id, i.e., 'premerged' data PK in the pathwayData table)" + NEWLINE);
-		toReturn.append(Cmd.EXPORT_VALIDATION.toString() 
-			+ " <provider>|<pathway_id> <output_file[.xml|.html]> (<provider> - metadata identifier or <pathway_id> - see above; "
-			+ "output_file will contain the Validator Response XML unless '.html' file extension is used, " +
-			"in wich case the XML is there auto-transformed to offline HTML+Javascript content)" + NEWLINE);
+		toReturn.append(Cmd.EXPORT.toString() + " <output> [<uri,uri,..>]" + NEWLINE);
 		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format>" + NEWLINE);
 
 		return toReturn.toString();
@@ -867,10 +604,32 @@ public final class Admin {
 		if(!f.exists()) 
 			f.mkdir();
     	
+		//copy the blacklist.txt
+		FileUtils.copyFileToDirectory(new File(blacklistFile()), f);
+		LOG.info("create-downloads: copied the blacklist.txt file...");
+		
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:applicationContext-dao.xml");
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
 		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
+		
+		final List<Metadata> allMetadata = mdao.getAllMetadata();
+		//0) create an imported data summary file.txt (issue#23)
+		PrintWriter writer = new PrintWriter(downloadsDir() + File.separator 
+				+ "datasources.txt");
+		String date = new SimpleDateFormat("d MMM yyyy").format(Calendar.getInstance().getTime());
+		writer.println(StringUtils.join(Arrays.asList(
+			"#CPATH2:", getInstance().getName(), "version", getInstance().getVersion(), date), " "));
+		writer.println("#Columns:\t" + StringUtils.join(Arrays.asList(
+			"ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PHYS.ENTITIES"), "\t"));
+		for(Metadata m : allMetadata) {
+			writer.println(StringUtils.join(Arrays.asList(
+				m.getUri(), m.getDescription(), m.getType(), m.getUrlToHomepage(), 
+				m.getNumPathways(), m.getNumInteractions(), m.getNumPhysicalEntities()), "\t"));
+		}		
+		writer.flush();
+		writer.close();		
+		LOG.info("create-downloads: generated the datasources summary file...");
 		
     	// 1) export everything
 		createArchives("all", dao, null, null);
@@ -880,13 +639,13 @@ public final class Admin {
         String[] organisms = CPathSettings.organisms();
         for(String org : organisms) {
         	//make one archives set (diff. formats) per name
-        	//TODO: in the future, after simple changes (also - to cpath.properties), can join several species data in one archive
+        	//TODO: in the future, after simple changes (also - to cpath2.properties), can join several species data in one archive
         	createArchives(org.toLowerCase(), dao, null, new String[]{org});
         }
 		
 		// 3) export by datasource
         LOG.info("create-downloads: preparing 'by datasource' archives...");
-        for(Metadata md : mdao.getAllMetadataInitialized()) {
+        for(Metadata md : allMetadata) {
         	if(!md.getType().isNotPathwayData()) {
         		// display name or, if exists, - standard name
         		String name = md.standardName(); 

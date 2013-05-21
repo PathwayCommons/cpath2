@@ -31,6 +31,7 @@ import java.io.IOException;
 
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
+import cpath.service.Status;
 import cpath.service.jaxb.*;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
@@ -81,7 +82,8 @@ public class SearchController extends BasicController {
     		BindingResult bindingResult, HttpServletResponse response) throws IOException
     {		
 		if(bindingResult.hasErrors()) {
-			errorResponse(errorfromBindingResult(bindingResult), response);
+			errorResponse(Status.BAD_REQUEST, 
+					errorFromBindingResult(bindingResult), response);
 			return null;
 		} else {
 			log.debug("/search called (for type: " 
@@ -94,11 +96,15 @@ public class SearchController extends BasicController {
 					search.getDatasource(), search.getOrganism());
 
 			if(results instanceof ErrorResponse) {
-				errorResponse((ErrorResponse) results, response);
-				return null;
+				errorResponse(Status.INTERNAL_ERROR, 
+						((ErrorResponse) results).toString(), response);
+			} else if(results.isEmpty()) {
+				errorResponse(Status.NO_RESULTS_FOUND, 
+						"no hits", response);
 			} else {
 				return results;
 			}
+			return null;
 		}
 	}
 	

@@ -32,6 +32,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 
 /**
  * CPath2 server-side instance-specific 
@@ -46,6 +50,7 @@ import java.util.Properties;
  */
 public final class CPathSettings {
 
+	private static final Log LOG = LogFactory.getLog(CPathSettings.class);
 	
 	private static Properties settings;
 	
@@ -53,14 +58,14 @@ public final class CPathSettings {
 	 * Name for the system environment and/or JVM variable 
 	 * cPath2 uses to know its "home" directory location.
 	 */
-	public static final String HOME_VARIABLE_NAME = "CPATH2_HOME";
+	public static final String HOME_DIR = "CPATH2_HOME";
 	
 	public static final String TEST_DB = "test_cpath2";
 	
 	/**
 	 * Name for the cpath2 instance properties file (located in the cpath2 home directory)
 	 */
-	public static final String CPATH_PROPERTIES_FILE = "cpath.properties";	
+	public static final String CPATH_PROPERTIES_FILE = "cpath2.properties";	
 
 	/**
 	 * Name for a cpath2 data sub-directory (under cpath2 home dir.)
@@ -95,7 +100,7 @@ public final class CPathSettings {
 
 	
 	/* System / Environment property names used by cPath2
-	 * (loaded by Spring (property placeholder) from the cpath.properties,
+	 * (loaded by Spring (property placeholder) from the cpath2.properties,
 	 * but can be also via java options too)
 	 */
 	public static final String PROP_DB_USER = "cpath2.db.user";
@@ -119,12 +124,12 @@ public final class CPathSettings {
 	public static final String PROP_DIGEST_URI_ENABLED = "cpath2.md5hex.uri.enabled";
 	public static final String PROP_BLACKLIST_DEGREE_THRESHOLD = "cpath2.blacklist.degree.threshold";   
 	public static final String PROP_BLACKLIST_CONTROL_THRESHOLD = "cpath2.blacklist.control.threshold";
-	public static final String PROP_BLACKLIST_LOCATION = "cpath2.blacklist.location";
 	public static final String PROP_METADATA_LOCATION = "cpath2.metadata.location";
 	public static final String PROP_ABSOLUTE_URI_ENABLED="cpath2.absolute.uri.enabled";
+	public static final String PROP_PROXY_MODEL_ENABLED="cpath2.proxy.model.enabled";
 	
 	/*
-	 * Following properties can be even updated at runtime (because cpath.properties resource is read by the webapp periodically)
+	 * Following properties can be even updated at runtime (because cpath2.properties resource is read by the webapp periodically)
 	 */	
 	public static final String PROVIDER_NAME = "cpath2.provider.name";
 	public static final String PROVIDER_DESCRIPTION = "cpath2.provider.description";
@@ -145,11 +150,20 @@ public final class CPathSettings {
 	 * static initializer.
 	 */
 	static {
+		// check/init cpath2 home dir JVM property
+		String home = System.getenv(HOME_DIR);		
+		if(home == null || home.isEmpty()) {
+			throw new IllegalStateException(HOME_DIR + " environment variable is undefined!");
+		} else {
+			//replace/override the JVM option
+			synchronized (home) {
+				System.setProperty(HOME_DIR, home);
+			}	
+		}
 		
 		// put default values
 		Properties defaults = new Properties();
-		defaults.put(PROP_XML_BASE, "http://purl.org/pc2/");
-		defaults.put(PROP_BLACKLIST_LOCATION, homeDir() + File.separator + BLACKLIST_FILE);
+		defaults.put(PROP_XML_BASE, "http://purl.org/pc2/test/");
 		defaults.put(PROVIDER_NAME, "cPath2 Demo");
 		defaults.put(PROVIDER_VERSION, "");
 		defaults.put(PROVIDER_DESCRIPTION, "cPath2 Demo");
@@ -162,29 +176,176 @@ public final class CPathSettings {
 		defaults.put(PROP_ADMIN_ENABLED, "false");
 		defaults.put(PROP_DIGEST_URI_ENABLED, "false");	
 		defaults.put(PROP_ABSOLUTE_URI_ENABLED, "true");
+		defaults.put(PROP_PROXY_MODEL_ENABLED, "false");
 		
 		settings = new Properties(defaults);
 		
 		loadCPathProperties();
 	}
 
+	private static CPathSettings instance;
+	
+	
+	/**
+	 * Gets the cPath2 settings singleton.
+	 * A change (calling a setter method) will have global effect.
+	 * 
+	 * @return
+	 */
+	public static synchronized CPathSettings getInstance() {
+		if(instance == null) {
+			instance = new CPathSettings();
+		}		
+		return instance;
+	}
 
+
+	/**
+	 * The service provider name (cPath2 instance owner)
+	 * @return
+	 */
+	public String getName() {
+		return property(PROVIDER_NAME);
+	}
+
+	public void setName(String name) {
+		setCPathProperty(PROVIDER_NAME, name);
+	}
+
+
+	/**
+	 * The service provider description (cPath2 instance owner)
+	 * @return
+	 */
+	public String getDescription() {
+		return property(PROVIDER_DESCRIPTION);
+	}
+
+	public void setDescription(String description) {
+		setCPathProperty(PROVIDER_DESCRIPTION, description);
+	}
+
+
+	public String getLogoUrl() {
+		return property(PROVIDER_LOGO_URL);
+	}
+
+	public void setLogoUrl(String logoUrl) {
+		setCPathProperty(PROVIDER_LOGO_URL, logoUrl);
+	}
+
+
+	public String getUrl() {
+		return property(PROVIDER_URL);
+	}
+
+	public void setUrl(String url) {
+		setCPathProperty(PROVIDER_URL, url);
+	}
+
+
+	/**
+	 * Species supported by this cPath2 instance 
+	 * (i.e., the organisms of which data were prepared and 
+	 * intentionally imported in to the system, can be filtered by
+	 * in the web queries, and corresponding data archives
+	 * were made available to download by users)
+	 *  
+	 * @return
+	 */
+	public String[] getOrganisms() {
+		return organisms();
+	}
+
+	public void setOrganisms(String[] organisms) {
+		setCPathProperty(PROVIDER_ORGANISMS, StringUtils.join(organisms, ','));
+	}
+
+	
+	/**
+	 * This cPath2 instance version
+	 * (not cpath2 software's but the resource's)
+	 * 
+	 * @return
+	 */
+	public String getVersion() {
+		return property(PROVIDER_VERSION);
+	}
+
+	public void setVersion(String version) {
+		setCPathProperty(PROVIDER_VERSION, version);
+	}
+
+
+	public boolean isAdminEnabled() {
+		return isMaintenanceEnabled();
+	}
+	
+	public void setAdminEnabled(boolean enabled) {
+		setCPathProperty(PROP_ADMIN_ENABLED, Boolean.toString(enabled));
+	}
+
+
+	/**
+	 * This cPath2 instance's database name.
+	 * 
+	 * @return
+	 */
+	public String getMainDb() {
+		return property(PROP_MAIN_DB);
+	}
+
+	public void setMainDb(String mainDb) {
+		setCPathProperty(PROP_MAIN_DB, mainDb);
+	}
+
+
+	public String getMaxHitsPerPage() {
+		return property(PROP_MAX_SEARCH_HITS_PER_PAGE);
+	}
+
+	public void setMaxHitsPerPage(String maxHitsPerPage) {
+		setCPathProperty(PROP_MAX_SEARCH_HITS_PER_PAGE, maxHitsPerPage);
+	}
+
+
+	/**
+	 * This cPath2 instance's xml:base 
+	 * (cpath2 service should use a cpath2 db
+	 * build using the same xml:base as the instance's)
+	 * 
+	 * @return
+	 */
+	public String getXmlBase() {
+		return property(PROP_XML_BASE);
+	}
+
+	public void setXmlBase(String xmlBase) {
+		setCPathProperty(PROP_XML_BASE, xmlBase);
+	}
+	
+	
+	public void setProxyModelEnabled(boolean enabled) {
+		setCPathProperty(PROP_PROXY_MODEL_ENABLED, Boolean.toString(enabled));
+	}
+	
+	
 	/**
 	 * Gets a cpath2 property value
 	 * by name from:
 	 * - System (JVM), then (if not set) -
-	 * - from the cpath.properties file 
+	 * - from the cpath2.properties file 
 	 * (lastly, the default value is used if the property 
 	 * is not set in the file)
 	 * 
 	 * @param name cpath2 property name
 	 * @return
 	 */
-	public static String property(String name) {	
+	public static synchronized String property(String name) {	
 		String val = System.getProperty(name);
 		
 		if(val == null || val.isEmpty())
-			val =  settings.getProperty(name);
+			val =  settings.getProperty(name);		
 		
 		return val;
 	}
@@ -207,8 +368,14 @@ public final class CPathSettings {
 	/**
 	 * Stores cpath2 properties back to the file 
 	 * (overwrites).
+	 * 
+	 * @throws IllegalStateException when maintenance mode is disabled
 	 */
 	public static void saveCPathProperties() {
+		
+		if(!isMaintenanceEnabled())
+			throw new IllegalStateException("Not in Maintenance mode.");
+		
 		String file = homeDir() + File.separator + CPATH_PROPERTIES_FILE;		
 		try {
 			settings.store(new FileOutputStream(file), 
@@ -228,17 +395,8 @@ public final class CPathSettings {
 	 * 
 	 * @return
 	 */
-	public static String homeDir() {
-		String home = System.getenv(HOME_VARIABLE_NAME);
-		
-		if(home == null || home.isEmpty()) {
-			home = System.getProperty(HOME_VARIABLE_NAME);
-		} else {
-			//replace/override the JVM option, if any
-			System.setProperty(HOME_VARIABLE_NAME, home);
-		}
-		
-		return home;
+	public static String homeDir() {		
+		return property(HOME_DIR);
 	}
 	
 	
@@ -248,7 +406,7 @@ public final class CPathSettings {
 	 * 
 	 * @return
 	 */
-	public static String localDataDir() {
+	public static String dataDir() {
 		return homeDir() + File.separator + DATA_SUBDIR;
 	}
 	
@@ -260,7 +418,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public static String blacklistFile() {
-		return property(PROP_BLACKLIST_LOCATION);
+		return homeDir() + File.separator + BLACKLIST_FILE;
 	}	
 	
 	
@@ -278,14 +436,35 @@ public final class CPathSettings {
 		
 	
 	/**
-	 * Sets or updates a cpath2 instance property.
+	 * Sets or updates a cpath2 instance property
+	 * but only if Admin mode is enabled; Admin mode
+	 * though can be altered always.
 	 * 
 	 * @param name
 	 * @param value
 	 */
-	public static void setCPathProperty(String name, String value) {
-		settings.setProperty(name, value);
-		saveCPathProperties();
+	public static synchronized void setCPathProperty(String name, String value) {
+		if(PROP_ADMIN_ENABLED.equals(name) || isMaintenanceEnabled())
+		{
+			System.setProperty(name, value);
+			settings.setProperty(name, value);
+		} 
+		else 
+		{	//ok to alter some props in the 'normal' state too
+			if(PROP_PROXY_MODEL_ENABLED.equals(name)
+					|| PROP_DIGEST_URI_ENABLED.equals(name)
+					|| PROP_EXPLAIN_ENABLED.equals(name)
+					|| PROP_MAX_SEARCH_HITS_PER_PAGE.equals(name)
+			) {
+				System.setProperty(name, value);
+				settings.setProperty(name, value);
+			} else {
+				// not allowed in this mode (not maintenance)
+				LOG.error("Attempt to set property "
+					+ name + " when " + PROP_ADMIN_ENABLED 
+						+ " = false");
+			}
+		}
 	}
 	
 	
@@ -358,7 +537,7 @@ public final class CPathSettings {
 	 * 
 	 * Imported pathway data may also have other BioSource objects,
 	 * and those can be used in a search query as the filter by organism value;
-	 * but only these organisms, specified in the cpath.properties file, are
+	 * but only these organisms, specified in the cpath2.properties file, are
 	 * considered to generate export data archives and to be shown on web pages.
 	 * 
 	 * Default is {"Homo sapiens"} (when the property is not set)
@@ -370,4 +549,14 @@ public final class CPathSettings {
 		return orgs.split("\\s*,\\s*");
 	}
 	
+	
+	/**
+	 * Flags if cPath2 services are to use the in-memory
+	 * (proxy) Model in front of the persistent biopax model.
+	 * 
+	 * @return
+	 */
+	public static boolean isProxyModelEnabled() {
+		return "true".equalsIgnoreCase(property(PROP_PROXY_MODEL_ENABLED));
+	}
 }

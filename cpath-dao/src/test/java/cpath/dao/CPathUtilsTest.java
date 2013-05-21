@@ -1,4 +1,4 @@
-package cpath.importer.internal;
+package cpath.dao;
 
 import static org.junit.Assert.*;
 
@@ -11,21 +11,19 @@ import org.biopax.paxtools.model.Model;
 import org.junit.*;
 
 import cpath.config.CPathSettings;
-import cpath.importer.internal.FetcherImpl;
+import cpath.dao.CPathUtils;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.beans.Metadata.METADATA_TYPE;
 
 
-public class CPathFetcherTest {
+public class CPathUtilsTest {
 	
-	static FetcherImpl fetcher;
 	static Model model;
 	static SimpleIOHandler exporter;
 	static int count = 0;
 	
 	static {
-		fetcher = new FetcherImpl(false);
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
 		// extend Model for the converter calling 'merge' method to work
 		model = BioPAXLevel.L3.getDefaultFactory().createModel();
@@ -35,9 +33,9 @@ public class CPathFetcherTest {
 	
 	@Test
 	public void testReadMetadata() throws IOException {
-		String url = "classpath:metadata.conf";
+		String url = "classpath:meta.conf";
 		System.out.println("Loading metadata from " + url);
-		Collection<Metadata> metadatas = fetcher.readMetadata(url);
+		Collection<Metadata> metadatas = CPathUtils.readMetadata(url);
 		assertEquals(8, metadatas.size());
 		Metadata metadata = null;
 		for(Metadata mt : metadatas) {
@@ -53,10 +51,10 @@ public class CPathFetcherTest {
 
 	@Test
 	public void testReadPathwayData() throws IOException {
-		String location = "classpath:pathwaydata2.owl";
+		String location = "classpath:test2.owl";
 		// in case there's no "metadata page" prepared -
 		Metadata metadata = new Metadata(
-				"TEST_BIOPAX2", "Test Pathway Data 2", 
+				"TEST", "Test", 
 				"N/A", location,  
 				"",
 				new byte[]{}, 
@@ -65,12 +63,13 @@ public class CPathFetcherTest {
 				"" // no converter
 				);
 		
-		fetcher.fetchData(metadata);
+		metadata.cleanupOutputDir();
+		
 		assertTrue(metadata.getPathwayData().isEmpty());
-		fetcher.readPathwayData(metadata);
+		CPathUtils.readPathwayData(metadata);
 		assertFalse(metadata.getPathwayData().isEmpty());
 		PathwayData pd = metadata.getPathwayData().iterator().next();
-		String owl = new String(pd.getPathwayData());
+		String owl = new String(pd.getData());
 		assertTrue(owl != null && owl.length() > 0);
 		assertTrue(owl.contains("<bp:Protein"));
 		SimpleIOHandler reader = new SimpleIOHandler(BioPAXLevel.L3);

@@ -340,8 +340,8 @@
 						property1[:type1]/property2[:type2]; can also include convenient
 						(unofficial) inverse BioPAX properties, such as xrefOf,
 						componentOf, etc., and abstract types, such as Named, XReferrable,
-						Process, etc.; see <a href="#available_properties_parameter">properties</a>,
-						<a href="#available_inverse_properties_parameter">inverse
+						Process, etc.; see <a href="#properties_parameter">properties</a>,
+						<a href="#inverse_properties_parameter">inverse
 							properties</a>, <a href="http://www.biopax.org/paxtools">Paxtools</a>,
 						org.biopax.paxtools.controller.PathAccessor.</li>
 				</ul>

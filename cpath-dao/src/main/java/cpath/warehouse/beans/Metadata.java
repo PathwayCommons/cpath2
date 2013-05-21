@@ -1,35 +1,26 @@
 package cpath.warehouse.beans;
 
-// imports
+
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.persistence.*;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Provenance;
-import org.hibernate.annotations.DynamicInsert;
-import org.hibernate.annotations.DynamicUpdate;
 
 import cpath.config.CPathSettings;
+import cpath.dao.CPathUtils;
 
 /**
  * Data Provider Metadata.
  */
 @Entity
-@DynamicInsert
-@DynamicUpdate
 @Table(name="metadata")
-@NamedQueries({
-		@NamedQuery(name="cpath.warehouse.beans.providerByIdentifier",
-					query="from Metadata as metadata where identifier = :identifier order by id"),
-		@NamedQuery(name="cpath.warehouse.beans.allProvider", 
-					query="from Metadata as metadata order by id")
-})
 public final class Metadata {
 
     private static final Pattern BAD_ID_PATTERN = Pattern.compile("\\s|-");
@@ -59,9 +50,9 @@ public final class Metadata {
     private Integer id;
 	
 	@Column(length=40, unique = true, nullable = false)
-    private String identifier;
+    public String identifier;
 	
-	@ElementCollection(fetch=FetchType.EAGER)
+	@ElementCollection
 	@JoinTable(name="metadata_name")
 	@OrderColumn
     private List<String> name;
@@ -86,8 +77,9 @@ public final class Metadata {
     
     private String converterClassname;
 
-    @OneToMany(mappedBy="metadata", cascade=CascadeType.ALL, orphanRemoval=true, fetch=FetchType.LAZY)
-    private List<PathwayData> pathwayData;
+    @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true)
+    @JoinColumn(name="metadata_id")
+    private Set<PathwayData> pathwayData;
 
     private Integer numPathways;
     
@@ -100,8 +92,8 @@ public final class Metadata {
 	/**
 	 * Default Constructor.
 	 */
-	public Metadata() {
-		pathwayData = new ArrayList<PathwayData>();
+	protected Metadata() {
+		pathwayData = new HashSet<PathwayData>();
 	}
 
     /**
@@ -149,24 +141,17 @@ public final class Metadata {
 	void setId(Integer id) {
 		this.id = id;
 	}
-    Integer getId() { return id; }
+    public Integer getId() { return id; }
      
 
-    public List<PathwayData> getPathwayData() {
+    public Set<PathwayData> getPathwayData() {
 		return pathwayData;
 	}
-    void setPathwayData(List<PathwayData> pathwayData) {
-		this.pathwayData = pathwayData;
+    void setPathwayData(Set<PathwayData> pathwayData) {
+		this.pathwayData = new HashSet<PathwayData>();
+		this.pathwayData.addAll(pathwayData);
 	}
-    
-    public void addPathwayData(PathwayData pd) {
-    	if(!this.pathwayData.contains(pd))
-    		pathwayData.add(pd);
-    }
-    
-    public void removePathwayData(PathwayData pd) {
-    	pathwayData.remove(pd);
-    }
+
     
     /**
 	 * Sets the identifier.
@@ -176,8 +161,7 @@ public final class Metadata {
 	 * @throws IllegalArgumentException if it's null, empty string, or contains spaces or dashes
 	 */
     void setIdentifier(String identifier) {
-    	// validate the parameter
-    	
+    	// validate the parameter    	
     	if(identifier == null 
     		|| identifier.length() == 0
     		|| BAD_ID_PATTERN.matcher(identifier).find())
@@ -291,25 +275,48 @@ public final class Metadata {
     
     
 	/**
-	 * Gets the full path to the local data file
+	 * Full path to the pathway data file/archive
 	 * 
 	 * @return
 	 */
     @Transient
-    public String localDataFile() {
-    	String name = CPathSettings.localDataDir() 
-    	+ File.separator + identifier;
+    public String origDataLocation() {
+    	String name = null; 
     	
+    	if(urlToData.startsWith("classpath:")
+    		|| urlToData.startsWith("file:")) 
+    	{
+    		//local resource (a test case or manual config.)
+    		name = urlToData; 
+    	} 
+    	else 
+    	{	
+    		// remote resources are to be manually uploaded to the 
+    		// CPATH2_HOME dir., (usually) re-packed, and saved under special name:
+    		name = "file://" 
+    		+ CPathSettings.dataDir() + File.separator + identifier;
+    		// add the file extension, if any
+    		int idx = urlToData.lastIndexOf('.');
+    		if(idx >= 0) {
+    			String ext = urlToData.substring(idx+1);
+    			if(!ext.isEmpty()) name += "." + ext;
+    		}
+    	}
     	
-    	// add the file extension, if any
-		int idx = urlToData.lastIndexOf('.');
-		if(idx >= 0) {
-			String ext = urlToData.substring(idx+1);
-			if(!ext.isEmpty())
-				name += "." + ext;
-		}
-		
 		return name;
+    }
+    
+
+    /**
+     * Path to the directory where processed data 
+     * (converted/normalized and validation)
+     * are saved.
+     * 
+     * @return
+     */
+    @Transient
+    public String outputDir() {
+    	return CPathSettings.dataDir() + File.separator + identifier;
     }
     
     
@@ -399,5 +406,29 @@ public final class Metadata {
 
 	public void setNumPhysicalEntities(Integer numPhysicalEntities) {
 		this.numPhysicalEntities = numPhysicalEntities;
+	}
+
+	
+	/**
+	 * Drops all associated output data files - 
+	 * re-creates the output data directory.
+	 */
+	@Transient
+	public void cleanupOutputDir() {
+		File dir = new File(outputDir());
+		if(dir.exists()) {
+			CPathUtils.deleteDirectory(dir);
+		}		
+		dir.mkdir();
+	}
+	
+	@Override
+	public boolean equals(Object o) {
+		return (o instanceof Metadata) && identifier.equals(((Metadata)o).getIdentifier());
+	}
+	
+	@Override
+	public int hashCode() {
+		return (getClass().getCanonicalName() + identifier).hashCode();
 	}
 }

@@ -46,7 +46,7 @@
 <!-- 	<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource"> -->
 <!-- 		<property name="basenames"> -->
 <!-- 			<list> -->
-<!-- 				<value>file:${CPATH2_HOME}/cpath</value> -->
+<!-- 				<value>file:${CPATH2_HOME}/cpath2</value> -->
 <!-- 			</list> -->
 <!-- 		</property> -->
 <!-- 		<property name="cacheSeconds" value="0" /> -->

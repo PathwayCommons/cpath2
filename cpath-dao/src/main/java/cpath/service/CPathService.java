@@ -30,8 +30,8 @@ package cpath.service;
 
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.algorithm.Direction;
+import org.springframework.cache.annotation.Cacheable;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchResponse;
@@ -45,38 +45,29 @@ import cpath.service.jaxb.ServiceResponse;
  * 
  * This interface defines several middle-tier data access and analysis methods 
  * that accept valid parameters, handle exceptions, and return results packed 
- * in a ServiceResponse bean. This creates an additional "elastic" layer between 
- * the public (web, console) api and persistence methods, allowing to modify 
- * either its implementation or the DAO implementation 
- * without breaking end user's services (backward compatibility).
- * 
+ * in a ServiceResponse bean.
  * 
  * @author rodche
  *
  */
 public interface CPathService {
 
-	//--- Graph queries ---------------------------------------------------------------------------|
-
 	/**
-	 * Gets the BioPAX element by id,
-	 * converts to the required output format (if possible), 
-	 * and returns as map.
+	 * Retrieves the BioPAX element(s) by URI or identifier (e.g., gene symbol)
+	 * - a complete BioPAX sub-model with all available child elements and 
+	 * properties - and then converts it to the specified output format 
+	 * (if applicable), such as BioPAX (RDF/XML), SIF, GSEA (.gmt).
+	 * 
 	 * @param format
 	 * @param uris the list of URIs to fetch
-	 * 
-	 * 
-	 * 
 	 * @return
 	 */
+	@Cacheable(value = "elementByIdCache")
 	ServiceResponse fetch(OutputFormat format, String... uris);
 
 	
 	/**
 	 * Full-text search for the BioPAX elements. 
-	 * Returns the map result that contains the list of elements
-	 * 
-	 * 
 	 * 
 	 * @param queryStr
 	 * @param page search results page no.
@@ -87,12 +78,15 @@ public interface CPathService {
 	 * 
 	 * @see PaxtoolsDAO#search(String, Class[], String[], String[])
 	 */
+	@Cacheable(value = "findElementsCache")
 	ServiceResponse search(String queryStr, 
 			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms);
 
 	
 	/**
-	 * Runs a neighborhood query using the given parameters.
+	 * Runs a neighborhood query using the given parameters
+	 * (returns a sub-model in the specified format, 
+	 * wrapped as service object). 
 	 *
 	 * @param format output format
 	 * @param sources IDs of seed of neighborhood
@@ -102,12 +96,15 @@ public interface CPathService {
 	 * @param datasources optional filter
 	 * @return the neighborhood
 	 */
+	@Cacheable(value = "getNeighborhoodCache")
 	ServiceResponse getNeighborhood(OutputFormat format, 
 		String[] sources, Integer limit, Direction direction,
 			String[] organisms, String[] datasources);
 
 	/**
-	 * Runs a paths-between query for the given sources.
+	 * Runs a paths-between query for the given sources	
+	 * (returns a sub-model in the specified format, 
+	 * wrapped as service object). 
 	 *
 	 * @param format output format
 	 * @param sources IDs of source molecules
@@ -116,11 +113,13 @@ public interface CPathService {
 	 * @param datasources optional filter
 	 * @return paths between
 	 */
+	@Cacheable(value = "getPathsBetweenCache")
 	ServiceResponse getPathsBetween(OutputFormat format, String[] sources, 
 		Integer limit, String[] organisms, String[] datasources);
 
 	/**
-	 * Runs a POI query from the given sources to the given targets.
+	 * Runs a POI query from the given sources to the given targets
+	 * (returns a sub-model in the specified format, wrapped as service object). 
 	 *
 	 * @param format output format
 	 * @param sources IDs of source molecules
@@ -130,12 +129,15 @@ public interface CPathService {
 	 * @param datasources optional filter
 	 * @return paths between
 	 */
+	@Cacheable(value = "getPathsFromToCache")
 	ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
 		String[] targets, Integer limit, String[] organisms, String[] datasources);
 	
 	
 	/**
-	 * Runs a common upstream or downstream query.
+	 * Runs a common upstream or downstream query
+	 * (returns a sub-model in the specified format, 
+	 * wrapped as service object). 
 	 *
 	 * @param format output format
 	 * @param sources IDs of query seed
@@ -145,6 +147,7 @@ public interface CPathService {
 	 * @param datasources optional filter
 	 * @return common stream
 	 */
+	@Cacheable(value = "getCommonStreamCache")
 	ServiceResponse getCommonStream(OutputFormat format, 
 		String[] sources, Integer limit, Direction direction, 
 			String[] organisms, String[] datasources);
@@ -162,6 +165,7 @@ public interface CPathService {
 	 * @param sourceUris
 	 * @return
 	 */
+	@Cacheable(value = "traverseCache")
 	ServiceResponse traverse(String propertyPath, String... sourceUris);
 	
 	
@@ -171,14 +175,5 @@ public interface CPathService {
 	 * @return
 	 */
 	SearchResponse topPathways();
-
-	
-	/** 
-	 * Creates a stand-alone sub-model from the BioPAX elements (matched by URIs).
-	 * 
-	 * @param uris
-	 * @return
-	 */
-	Model fetchBiopaxModel(String... uris);
 	
 }

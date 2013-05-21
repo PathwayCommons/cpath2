@@ -58,11 +58,6 @@ public abstract class BasicController {
 	/**
 	 * Http error response from the error bean.
 	 */
-	protected void errorResponse(ErrorResponse error, 
-			HttpServletResponse response) throws IOException {
-		response.sendError(error.getErrorCode(), error.toString());	
-	}
-	
 	protected void errorResponse(Status status, String detailedMsg,
 			HttpServletResponse response) throws IOException {
 		response.sendError(status.getErrorCode(), 
@@ -70,7 +65,7 @@ public abstract class BasicController {
 	}
 	
 	
-	protected ErrorResponse errorfromBindingResult(BindingResult bindingResult) {
+	protected String errorFromBindingResult(BindingResult bindingResult) {
 		StringBuilder sb = new StringBuilder();
 		for (FieldError fe : bindingResult.getFieldErrors()) {
 			Object rejectedVal = fe.getRejectedValue();
@@ -85,8 +80,7 @@ public abstract class BasicController {
 					+ fe.getDefaultMessage() + ". ");
 		}
 		
-		ErrorResponse error = new ErrorResponse(BAD_REQUEST, sb.toString());
-		return error;
+		return sb.toString();
 	}
     
 	
@@ -94,16 +88,18 @@ public abstract class BasicController {
 			Writer writer, HttpServletResponse response) throws IOException 
 	{
 		if(resp instanceof ErrorResponse) {
-    		
-			errorResponse((ErrorResponse) resp, response);
-    		
-		} else if(resp.isEmpty()) { // should not be here (normally, it gets converter to ErrorResponse...)
+			
+			errorResponse(INTERNAL_ERROR, ((ErrorResponse) resp).toString(), response);
+			
+		} 
+		else if(resp.isEmpty()) {
 			log.warn("stringResponse: I got an empty ServiceResponce " +
 				"(must be already converted to the ErrorResponse)");
 			
-			errorResponse(new ErrorResponse(NO_RESULTS_FOUND, null), response);
+			errorResponse(NO_RESULTS_FOUND, "no results found", response);
 			
-		} else {
+		} 
+		else {
 			response.setContentType("text/plain");
 			DataResponse dresp = (DataResponse) resp;
 

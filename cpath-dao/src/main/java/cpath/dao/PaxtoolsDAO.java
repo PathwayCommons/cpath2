@@ -34,7 +34,6 @@ import org.biopax.paxtools.model.Model;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.TraverseResponse;
 
-import java.util.Collection;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.OutputStream;
@@ -64,7 +63,7 @@ public interface PaxtoolsDAO  {
 	 * @param organisms - filter by organism(s)
 	 * @return ordered by the element's relevance list of hits
     */
-   SearchResponse search(String query, int page,
+	SearchResponse search(String query, int page,
    		Class<? extends BioPAXElement> filterByType, String[] dsources, String[] organisms);
 
     
@@ -78,16 +77,8 @@ public interface PaxtoolsDAO  {
      */
     void exportModel(OutputStream outputStream, String... ids);   
     
+
     
-    /**
-     * Creates a "valid" sub-model from the BioPAX elements
-     * 
-     * @param ids a set of valid RDFId
-     * @return
-     */
-    Model getValidSubModel(Collection<String> ids);
- 
-        
     /**
      * Initializes the properties and inverse properties, 
      * including collections!
@@ -150,7 +141,7 @@ public interface PaxtoolsDAO  {
      * @param analysis defines a job/query to perform
      * @return a detached (cloned) BioPAX sub-model
      */
-    Model runReadOnly(Analysis analysis);
+    void runReadOnly(Analysis analysis);
     
     
     /**

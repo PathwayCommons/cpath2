@@ -29,11 +29,11 @@ package cpath.importer.internal;
 
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
+import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Cleaner;
 import cpath.importer.Converter;
-import cpath.importer.Fetcher;
 import cpath.importer.Premerger;
 import cpath.warehouse.beans.Mapping;
 import cpath.warehouse.beans.Metadata;
@@ -44,7 +44,6 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.*;
 import org.biopax.validator.api.Validator;
 import org.biopax.validator.api.beans.*;
-import org.biopax.validator.api.ValidatorUtils;
 import org.biopax.validator.impl.IdentifierImpl;
 import org.biopax.validator.utils.Normalizer;
 
@@ -106,11 +105,10 @@ public final class PremergeImpl implements Premerger {
 	@Override
     public void premerge() {
 
-		Fetcher fetcher = new FetcherImpl(true);
-		
-		// grab all metadata
-		Collection<Metadata> metadataCollection = metaDataDAO.getAllMetadataInitialized();
-
+		// grab all metadata (initially, there are no pathway data files yet;
+		// but if premerge was already called, there are can be not empty pathwayData 
+		// and result files for the corresp. metadata objects, which will be cleared anyway.)
+		List<Metadata> metadataCollection = metaDataDAO.getAllMetadata();
 		// iterate over all metadata
 		for (Metadata metadata : metadataCollection) {
 			// use filter if set (identifier and version)
@@ -122,16 +120,7 @@ public final class PremergeImpl implements Premerger {
 			try {	
 				//if it is pathway data (not 'mapping' or 'warehouse' data)
 				if (!metadata.getType().isNotPathwayData()) {
-					if(!metadata.getPathwayData().isEmpty()) {
-						log.info("premerge(), cleaning up older pathway data for: " +
-							metadata.getIdentifier() );
-						metadata.getPathwayData().clear();
-						//delete from pathwayData table all records related to this metadata
-						metaDataDAO.saveMetadata(metadata);
-						metadata = metaDataDAO.getMetadataByIdentifier(metadata.getIdentifier());
-					}
-					
-					log.info("premerge(), reading pathway data: " +
+					log.info("premerge(), now processing " +
 						metadata.getIdentifier() );
 					
 					// Try to instantiate the Cleaner now, and exit if it fails!
@@ -145,23 +134,26 @@ public final class PremergeImpl implements Premerger {
 							return; // skip this data entirely due to the error
 						} 			
 					} else {
-						log.info("premerge(), no Cleaner was specified; continue...");	
+						log.info("premerge(), no Cleaner class was specified; continue...");	
 					}
 										
-					// read all files
-					fetcher.readPathwayData(metadata);
-										
+					// clear all existing output files, parse input files, reset counters, save.
+					log.debug("no. pd before init, " + metadata.getIdentifier() + ": " + metadata.getPathwayData().size());
+					metadata = metaDataDAO.init(metadata);
+					//load orig. pathway data
+					CPathUtils.readPathwayData(metadata);
 					// Premerge for each pathway data: clean, convert, validate, 
 					// and then update premergeData, validationResults db fields.
 					for (PathwayData pathwayData : metadata.getPathwayData()) {
-						pipeline(metadata, pathwayData, cleaner);	
+						pipeline(metadata, pathwayData, cleaner);
 					}
-					
+					// save/update validation status
 					metaDataDAO.saveMetadata(metadata);
+					log.debug("no. pd after saved, " + metadata.getIdentifier() + ": " + metadata.getPathwayData().size());
 				} 				
 				
 			} catch (Exception e) {
-				log.error("premerge(), error: ", e);
+				log.error("premerge(): failed", e);
 				e.printStackTrace();
 			}
 		}
@@ -174,7 +166,7 @@ public final class PremergeImpl implements Premerger {
 	@Override
 	public void buildWarehouse() {		
 		// grab all metadata
-		Collection<Metadata> metadataCollection = metaDataDAO.getAllMetadataInitialized();
+		Collection<Metadata> metadataCollection = metaDataDAO.getAllMetadata();
 
 		// iterate over all metadata
 		for (Metadata metadata : metadataCollection) {
@@ -277,14 +269,16 @@ public final class PremergeImpl implements Premerger {
 	 * Updates the PathwayData object adding the 
 	 * normalized data (BioPAX L3) and the validation results 
 	 * (XML report and status)
-	 *
+	 * 
 	 * @param metadata
 	 * @param pathwayData provider's pathway data (usually from a single data file) to be processed and modified
 	 * @param cleaner data specific cleaner class (to apply before the validation/normalization)
 	 */
-	private void pipeline(Metadata metadata, PathwayData pathwayData, Cleaner cleaner) {
+	private void pipeline(final Metadata metadata, final PathwayData pathwayData, Cleaner cleaner)
+	{
+		
 		// here go data to process
-		String data = new String(pathwayData.getPathwayData());
+		String data = new String(pathwayData.getData());
 		String info = pathwayData.toString();
 		
 		/*
@@ -299,6 +293,8 @@ public final class PremergeImpl implements Premerger {
 			data = cleaner.clean(data);
 		}
 		
+		pathwayData.setData(data.getBytes()); //writes data file
+		
 		// Second, if psi-mi, convert to biopax L3
 		if (metadata.getType() == Metadata.METADATA_TYPE.PSI_MI) {
 			log.info("pipeline(), converting psi-mi data " + info);
@@ -311,39 +307,30 @@ public final class PremergeImpl implements Premerger {
 			}
 		} 
 		
-		log.info("pipeline(), validating pathway data "	+ info);
+		pathwayData.setData(data.getBytes()); //writes data file
 		
+		log.info("pipeline(), validating pathway data "	+ info);		
 		
 		/* Validate, auto-fix, and normalize (incl. convesion to L3): 
 		 * e.g., synonyms in xref.db may be replaced 
 		 * with the primary db name, as in Miriam, etc.
 		 */
-		Validation v = checkAndNormalize(pathwayData.toString(), data, metadata);
+		Validation v = checkAndNormalize(pathwayData, metadata);
 		if(v == null) {
 			log.warn("pipeline(), skipping: " + info);
 			return;
 		}
 			
-		// get the updated BioPAX OWL and save it in the pathwayData bean
-		pathwayData.setPremergeData(v.getModelData().getBytes());
+		// save the normalized BioPAX
+		pathwayData.setNormalizedData(v.getModelData().getBytes());
 		
-		/* Now - add the serialized validation results 
-		 * to the pathwayData entity bean, validationResults column.
-		 * (using the last parameter, javax.xml.transform.Source
-		 * of a XSLT stylesheet, the validation object can be 
-		 * further transformed to a human-readable report.)
-		 */
-		
-		/* but first, let's clear the (huge) 'serializedModel' field,
-		 * because it's already saved in the 'premergeData' column 
+		/* clear the huge 'serializedModel',
+		 * because it's already saved 
 		 */
 		v.setModelData(null);
 		
-		StringWriter writer = new StringWriter();
-		ValidatorUtils.write(v, writer, null);
-		writer.flush();		
-		final String validationResultStr = writer.toString();
-		pathwayData.setValidationResults(validationResultStr.getBytes());
+		//save report data
+		pathwayData.setValidationReport(v);
 		
 		// count critical not fixed error cases (ignore warnings and fixed ones)
 		int noErrors = v.countErrors(null, null, null, null, true, true);
@@ -395,8 +382,11 @@ public final class PremergeImpl implements Premerger {
 	 * @param metadata data provider's metadata
 	 * @return
 	 */
-	private Validation checkAndNormalize(final String title, String data, Metadata metadata) 
+	private Validation checkAndNormalize(PathwayData pathwayData, Metadata metadata) 
 	{	
+		final String title = pathwayData.toString();
+		final byte[] data = pathwayData.getData();
+		
 		// create a new empty validation (options: auto-fix=true, report all) and associate with the model
 		Validation validation = new Validation(new IdentifierImpl(), 
 				title, true, Behavior.WARNING, 0, null); // sets the title
@@ -413,7 +403,7 @@ public final class PremergeImpl implements Premerger {
 		
 		// because errors are also reported during the import (e.g., syntax)
 		try {
-			validator.importModel(validation, new ByteArrayInputStream(data.getBytes("UTF-8")));			
+			validator.importModel(validation, new ByteArrayInputStream(data));			
 			validator.validate(validation);
 			// unregister the validation object 
 			validator.getResults().remove(validation);
@@ -452,7 +442,7 @@ public final class PremergeImpl implements Premerger {
      * @param warehouseModel target model
      * @throws IOException if an IO error occurs
      */
-    void updateBiopaxWarehouse(final Metadata metadata, final Model warehouseModel) 
+    private void updateBiopaxWarehouse(final Metadata metadata, final Model warehouseModel) 
 		throws IOException 
 	{
 		//shortcut for other/system warehouse data (not to be converted to BioPAX)
@@ -465,8 +455,8 @@ public final class PremergeImpl implements Premerger {
 			return;
 		}
 				
-		// use the local file (MUST have been previously fetched by Fetcher)
-		String urlStr = "file://" + metadata.localDataFile();
+		// use the local file
+		String urlStr = metadata.origDataLocation();
 		InputStream is = new BufferedInputStream(LOADER.getResource(urlStr).getInputStream());
 		log.info("updateBiopaxWarehouse: input stream is now open for provider: "
 			+ metadata.getIdentifier());

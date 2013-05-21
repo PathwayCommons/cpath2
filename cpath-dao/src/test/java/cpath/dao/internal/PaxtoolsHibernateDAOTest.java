@@ -211,22 +211,6 @@ public class PaxtoolsHibernateDAOTest {
 	
 	
 	@Test
-	public void testGetValidSubModel() throws Exception {	
-		Model m =  dao.getValidSubModel(
-	        Collections.singleton("http://www.biopax.org/examples/myExample#Protein_A"));
-		
-		OutputStream out = new FileOutputStream(
-				getClass().getClassLoader().getResource("").getPath() 
-					+ File.separator + "testGetValidSubModel.out.owl");
-		exporter.convertToOWL(m, out);
-		
-		assertTrue(m.containsID("http://www.biopax.org/examples/myExample#Protein_A"));
-		assertTrue(m.containsID("http://identifiers.org/uniprot/P46880"));
-		assertTrue(m.containsID("UnificationXref:UniProt_P46880"));
-	}
-
-	
-	@Test
 	public void testSearch() throws Exception {
 		dao.index();
 		

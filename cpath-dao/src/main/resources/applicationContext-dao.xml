@@ -13,19 +13,33 @@
 
 	<context:annotation-config />
 
-	<context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+	<context:property-placeholder location="file:${CPATH2_HOME}/cpath2.properties"/>
 	
     <!-- enable the configuration of transactional behavior based on annotations -->
     <tx:annotation-driven transaction-manager="mainTransactionManager"/>
 
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+		<property name="driverClass" value="${cpath2.db.driver}" />
+		<property name="jdbcUrl" value="${cpath2.db.connection}${cpath2.db}" />
+		<property name="user" value="${cpath2.db.user}" />
+		<property name="password" value="${cpath2.db.password}" />
+		<!-- these are C3P0 properties -->
+		<property name="acquireIncrement" value="5" />
+		<property name="initialPoolSize" value="5" />
+		<property name="minPoolSize" value="20" />
+		<property name="maxPoolSize" value="100" />
+		<property name="maxIdleTime" value="1800" />
+		<property name="maxIdleTimeExcessConnections" value="300" />		
+		<property name="maxStatements" value="100"/>
+		<property name="idleConnectionTestPeriod" value="300" />
+		<property name="numHelperThreads" value="6" />
+	</bean>
+
 	<bean id="mainSessionFactory"
 		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
         <property name="hibernateProperties">
           <util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
-        	<prop key="hibernate.connection.url">${cpath2.db.connection}${cpath2.db}</prop>
-        	<prop key="hibernate.connection.username">${cpath2.db.user}</prop>
-        	<prop key="hibernate.connection.password">${cpath2.db.password}</prop>
-        	<prop key="hibernate.connection.driver_class">${cpath2.db.driver}</prop>
         	<prop key="hibernate.dialect">${cpath2.db.dialect}</prop>
         	<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${cpath2.db}</prop>
 			<prop key="hibernate.search.indexing_strategy">manual</prop>

@@ -45,8 +45,6 @@ import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.EntityReference;
 import org.biopax.paxtools.model.level3.PathwayStep;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
-import org.biopax.paxtools.controller.Cloner;
-import org.biopax.paxtools.controller.Completer;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.ObjectPropertyEditor;
 import org.biopax.paxtools.controller.PathAccessor;
@@ -62,6 +60,7 @@ import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.query.dsl.QueryBuilder;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
+import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
@@ -78,11 +77,10 @@ import java.lang.reflect.Modifier;
  * Paxtools BioPAX main Model and DAO (BioPAX objects repository)
  * 
  * This is one of most important classes on which cpath2 system is based.
+ * 
  */
-@Transactional
 @Repository
-class PaxtoolsHibernateDAO  
-implements Model, PaxtoolsDAO
+class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 {
 	private static final long serialVersionUID = 1L;
 	
@@ -141,12 +139,7 @@ implements Model, PaxtoolsDAO
 		this.xmlBase = CPathSettings.xmlBase(); //set default xml:base
 		this.maxHitsPerPage = Integer.parseInt(CPathSettings.property(CPathSettings.PROP_MAX_SEARCH_HITS_PER_PAGE));
 	}
-	
-	
-	// get/set methods used by spring
-	public SessionFactory getSessionFactory() {
-		return sessionFactory;
-	}
+
 
 	public void setSessionFactory(SessionFactory sessionFactory) {
 		this.sessionFactory = sessionFactory;
@@ -175,7 +168,8 @@ implements Model, PaxtoolsDAO
 			this.maxHitsPerPage = maxHits;
 	}
 
-	//not transactional (but it's 'merge' method that creates a new transaction)
+
+	@Transactional
 	public void importModel(File biopaxFile) throws FileNotFoundException
 	{
 		if (log.isInfoEnabled()) {
@@ -188,6 +182,14 @@ implements Model, PaxtoolsDAO
 	}
 
 
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * Not annotated as transactional, because
+	 * it manually opens own internal transaction
+	 * using stateless session.
+	 * 
+	 */
 	@Override
 	public void insert(final Model model)
 	{
@@ -204,6 +206,7 @@ implements Model, PaxtoolsDAO
 			int i = 0;
 			StatelessSession stls = sessionFactory.openStatelessSession();
 			Query q = stls.getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists");
+			stls.createSQLQuery("SET REFERENTIAL_INTEGRITY FALSE").executeUpdate();
 			
 			Transaction tx = stls.beginTransaction();
 			for (BioPAXElement bpe : model.getObjects()) {
@@ -228,8 +231,8 @@ implements Model, PaxtoolsDAO
 	 * This opens a new stateless session, which starts a new 
 	 * transaction to insert new objects (by URI).
 	 * 
-	 * This method must NOT be annotated with @Transactional
 	 */
+	@Transactional
 	@Override
 	public void merge(final Model model)
 	{
@@ -250,7 +253,7 @@ implements Model, PaxtoolsDAO
 	 * 
 	 * @throws HibernateException if an object rerefs to not saved objects
 	 */
-	@Transactional(propagation=Propagation.REQUIRED)
+	@Transactional
 	public void update(final Model model) 
 	{	
 		Session ses = sessionFactory.getCurrentSession();
@@ -309,15 +312,13 @@ implements Model, PaxtoolsDAO
 	 * 
 	 * @throws IllegalArgumentException if query is null
 	 */
+	@Transactional(readOnly=true) 
 	@Override
-	@Transactional(readOnly = true)
 	public SearchResponse search(String query, int page,
 			Class<? extends BioPAXElement> filterByType, String[] dsources,
 			String[] organisms) 
 	{
-		if(query == null)
-			throw new IllegalArgumentException("Search string cannot be NULL");
-		
+		Assert.notNull(query, "Search string cannot be NULL");
 		
 		// collect matching elements here
 		SearchResponse searchResponse = new SearchResponse();
@@ -329,9 +330,12 @@ implements Model, PaxtoolsDAO
 					+ "), org. in (" + Arrays.toString(organisms) + ")");
 
 
+		Session session = sessionFactory.getCurrentSession();
 		// create a new full text session from current session
-		FullTextSession fullTextSession = Search
-			.getFullTextSession(sessionFactory.getCurrentSession());
+		FullTextSession fullTextSession = Search.getFullTextSession(session);
+		
+		//set read-only for all entities
+		fullTextSession.setDefaultReadOnly(true);
 		
 		// lucene query builder below does not understand interfaces and abstract types...
 //		Class<?> filterClass = (filterByType != null) ? filterByType : BioPAXElement.class;
@@ -412,7 +416,7 @@ implements Model, PaxtoolsDAO
 			
 			searchResponse.setSearchHit(searchHits);
 		} 
-
+		
 		return searchResponse;
 	}
 	
@@ -442,9 +446,6 @@ implements Model, PaxtoolsDAO
 	}
 
 
-	/* (non-Javadoc)
-	 * @see org.biopax.paxtools.model.Model#remove(org.biopax.paxtools.model.BioPAXElement)
-	 */
 	@Override
 	@Transactional
 	public void remove(BioPAXElement aBioPAXElement)
@@ -455,6 +456,7 @@ implements Model, PaxtoolsDAO
 
 
 	@Override
+	@Transactional
 	public <T extends BioPAXElement> T addNew(Class<T> type, String id)
 	{
 		T bpe = factory.create(type, id);
@@ -469,8 +471,8 @@ implements Model, PaxtoolsDAO
 	 * to the query one. These two objects are not necessarily equal.
 	 * 
 	 */
-	@Override
 	@Transactional(readOnly=true)
+	@Override
 	public boolean contains(BioPAXElement bpe)
 	{
 		return containsID(bpe.getRDFId()) 
@@ -484,8 +486,8 @@ implements Model, PaxtoolsDAO
 	 * at the moment, i.e., it could have been just inserted with a stateless session,
 	 * and not updated (relationships not saved)
 	 */
-	@Override
 	@Transactional(readOnly=true)
+	@Override
 	public boolean containsID(String id)
 	{
 		boolean ret;
@@ -536,6 +538,7 @@ implements Model, PaxtoolsDAO
 	}
 
 
+	@Transactional
 	@Override
 	public Set<BioPAXElement> getObjects()
 	{
@@ -543,8 +546,8 @@ implements Model, PaxtoolsDAO
 	}
 
 
-	@Override
 	@Transactional
+	@Override
 	public <T extends BioPAXElement> Set<T> getObjects(Class<T> clazz)
 	{
 		String query = "from " + clazz.getCanonicalName();
@@ -599,52 +602,19 @@ implements Model, PaxtoolsDAO
 
 	/**
 	 * When an non-empty list of IDs (RDFId, URI) is provided,
-	 * it will use {@link SimpleIOHandler#convertToOWL(Model, OutputStream, String...)} 
-	 * which in turn uses {@link Fetcher#fetch(BioPAXElement, Model)}
-	 * (rather than {@link #getValidSubModel(Collection)}) method
-	 * to recursively extract each listed element (with all children and properties)
-	 * and put into a new sub-model, which is then serialized and 
-	 * written to the output stream. Note: using the Fetcher, there is a risk 
-	 * (depending on the data stored) of pulling almost entire network 
-	 * by providing one or a few IDs... Also implemented here is 
-	 * that the Fetcher/traverser does not follow BioPAX
-	 * property 'nextStep', which otherwise could lead to infinite loops.
+	 * it will use {@link SimpleIOHandler#convertToOWL(Model, OutputStream, String...)}
+	 * method to extract listed elements (with all children and properties)model
+	 * and write as RDF/XML to the output stream.
 	 */
+	@Transactional(readOnly=true)
 	@Override
-	@Transactional
 	public void exportModel(OutputStream outputStream, String... ids) 
 	{
-//		Session ses = sessionFactory.getCurrentSession();
+		Session ses = sessionFactory.getCurrentSession();
+		ses.setDefaultReadOnly(true);
 //      ses.enableFetchProfile("mul_properties_join");
         simpleIO.convertToOWL(this, outputStream, ids);
 //      ses.disableFetchProfile("mul_properties_join");
-	}
-	
-
-	/** 
-	 * 
-	 * Creates a new detached BioPAX sub-model from the list of URIs
-	 * using Paxtools's {@link Completer} and {@link Cloner} approach
-	 * (thus ignoring those not in the same list); runs within a 
-	 * read-only transaction.
-	 * 
-	 */
-	@Override
-	@Transactional(readOnly = true)
-	public Model getValidSubModel(final Collection<String> ids) {		
-		// run the analysis (in a new transaction)
-		return runReadOnly(new Analysis() {
-			@Override
-			public Set<BioPAXElement> execute(Model model) {
-				Set<BioPAXElement> bioPAXElements = new HashSet<BioPAXElement>();
-				for(Object id : ids) {
-					BioPAXElement bpe = getByID(id.toString());
-					if(bpe != null)
-						bioPAXElements.add(bpe);
-				}
-				return bioPAXElements;
-			}
-		});
 	}
 	
 	
@@ -652,7 +622,7 @@ implements Model, PaxtoolsDAO
 	 * All object collection properties and inverse properties 
 	 * (not very deep) initialization
 	 */
-	@Transactional(readOnly=true)
+	@Transactional
 	@Override
 	public void initialize(Object obj) 
 	{
@@ -698,11 +668,12 @@ implements Model, PaxtoolsDAO
 	/**
 	 * {@inheritDoc}
 	 * 
-	 * Runs within a new transaction; can modify data.
+	 * Runs within a new read/write transaction 
+	 * (can modify and save entity states).
 	 * 
 	 */
 	@Override
-	@Transactional
+	@Transactional(readOnly=false)
 	public void run(Analysis analysis) {
 		log.debug("run: started");
 		analysis.execute(this);
@@ -713,40 +684,27 @@ implements Model, PaxtoolsDAO
 	/**
 	 * {@inheritDoc}
 	 * 
-	 * Executes a graph query within a read-only transaction.
+	 * Executes a graph query within a read-only 
+	 * (- set on the class level) transaction.
 	 * 
 	 */
+	@Transactional(readOnly=true)
 	@Override
-	@Transactional(readOnly = true)
-	public Model runReadOnly(Analysis analysis) {
-		Model submodel = null;
+	public void runReadOnly(Analysis analysis) {
 		Session ses = sessionFactory.getCurrentSession();
+		ses.setDefaultReadOnly(true);
 //		ses.enableFetchProfile("mul_properties_join");
 //		ses.enableFetchProfile("inverse_mul_properties_join");	
 		
-		log.debug("runReadOnly: Analysis started");
-		// perform the analysis algorithm
-		Set<BioPAXElement> result = analysis.execute(this);		
-		log.debug("runReadOnly: Analysis finished");
+		log.debug("runReadOnly: started");
 		
-		// auto-complete/detach
-		if(result != null) {
-			log.debug("runReadOnly: detaching the sub-model...");
-			if(!result.isEmpty()) {
-				Completer c = new Completer(simpleIO.getEditorMap());
-				result = c.complete(result, null); //null - model is not used anyway (only follow props)		
-				log.debug("runReadOnly: and cloning...");
-				Cloner cln = new Cloner(simpleIO.getEditorMap(), factory);
-				submodel = cln.clone(null, result);
-				submodel.setXmlBase(xmlBase);				
-				log.debug("runReadOnly: returning");
-			}
-		}
-
+		// perform the analysis algorithm
+		analysis.execute(this);		
+		
+		log.debug("runReadOnly: finished");
+		
 //		ses.disableFetchProfile("mul_properties_join");
 //		ses.disableFetchProfile("inverse_mul_properties_join");
-		
-		return submodel;
 	}
 
 	
@@ -782,9 +740,12 @@ implements Model, PaxtoolsDAO
 	 * 
 	 * @throws 
 	 */
-	@Transactional(readOnly = true)
+	@Transactional(readOnly=true)
 	@Override
 	public TraverseResponse traverse(String propertyPath, String... uris) {
+		
+		sessionFactory.getCurrentSession().setDefaultReadOnly(true);
+		
 		TraverseResponse resp = new TraverseResponse();
 		resp.setPropertyPath(propertyPath);
 		
@@ -839,9 +800,6 @@ implements Model, PaxtoolsDAO
 		Session ses = sessionFactory.getCurrentSession();	
 		FullTextSession fullTextSession = Search.getFullTextSession(ses);
 		fullTextSession.setFlushMode(FlushMode.MANUAL);
-// Forcing JOIN fetch type will slow down indexing by approx. 2x
-//		fullTextSession.enableFetchProfile( "mul_properties_join" );
-//		fullTextSession.enableFetchProfile( "inverse_mul_properties_join" );
 		Number numRows = (Number) fullTextSession.createCriteria(L3ElementImpl.class)
 			.setProjection(Projections.rowCount()).uniqueResult();
 		int total = numRows.intValue();
@@ -890,6 +848,7 @@ implements Model, PaxtoolsDAO
 	
 	
 	@Override
+	@Transactional
 	public void evictCaches() {
 		sessionFactory.getCache().evictEntityRegions();
 		sessionFactory.getCache().evictCollectionRegions();

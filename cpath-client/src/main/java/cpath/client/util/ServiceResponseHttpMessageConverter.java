@@ -37,7 +37,7 @@ public class ServiceResponseHttpMessageConverter
         jaxb.setClassesToBeBound(Help.class,
         		SearchResponse.class, SearchHit.class,
         		TraverseResponse.class, TraverseEntry.class,
-        		DataResponse.class, ServiceResponse.class); //the latter two classes may be not required in practice
+        		DataResponse.class, ServiceResponse.class);
     }
 
     public boolean canRead(Class<?> clazz, MediaType mediaType) {

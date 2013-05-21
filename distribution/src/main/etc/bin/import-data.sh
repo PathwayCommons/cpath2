@@ -19,8 +19,8 @@ echo "CPATH2 DATA IMPORT"
 echo "CPATH2_HOME Directory: $CPATH2_HOME"
 
 # get cpath2 properties
-xmlbase=`sed '/^\#/d' $CPATH2_HOME/cpath.properties | grep 'cpath2.xml.base'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
-maindb=`sed '/^\#/d' $CPATH2_HOME/cpath.properties | grep 'cpath2.db='  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
+xmlbase=`sed '/^\#/d' $CPATH2_HOME/cpath2.properties | grep 'cpath2.xml.base'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
+maindb=`sed '/^\#/d' $CPATH2_HOME/cpath2.properties | grep 'cpath2.db='  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
 
 echo "This cPath2 Instance Uses:"
 echo "       main.db=$maindb"
@@ -29,75 +29,25 @@ echo "       xml.base=$xmlbase"
 ## %TODO - also check all required configuration and properties files are present and in good shape, and report errors, if any.
 
 # START
-# 1. Drop/Create cPath2 database (double-check db connection and names in $CPATH2_HOME/cpath.properties!)
+# Drop/Create a new cPath2 database instance (using current metadata.conf and cpath2.properties)
 while true; do
-read -p "Create/replace $maindb database?" yn
-	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2-cli.sh -create-db; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
-
-# 2. Fetch Metadata (parse $CPATH2_HOME/metadata.conf)
-while true; do
-read -p "Fetch/update metadata using $CPATH2_HOME/metadata.conf?" yn
-	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2-cli.sh -fetch-metadata file://$CPATH2_HOME/metadata.conf; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
-
-# 3. Fetch all data and save to the local directory
-while true; do
-read -p "Fetch all data to the local directory ($CPATH2_HOME/data/)?" yn
-	case $yn in
-        [Yy]* ) sh $CPATH2_HOME/cpath2-cli.sh -fetch-data; break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
-
-# 4. Build the Warehouse and id-mapping tables
-while true; do
-read -p "Build the Warehouse and id-mapping tables?" yn
+read -p "Create a new cPath2 instance using $CPATH2_HOME/cpath2.properties and $CPATH2_HOME/cpath2.properties?" yn
 	case $yn in
         [Yy]* ) 
-        	sh $CPATH2_HOME/cpath2-cli.sh -create-warehouse
-			sh $CPATH2_HOME/cpath2-cli.sh -update-mapping
-        	break;;
+        sh $CPATH2_HOME/cpath2-cli.sh -fetch-metadata file://$CPATH2_HOME/metadata.conf;
+        sh $CPATH2_HOME/cpath2-cli.sh -create-warehouse;
+		sh $CPATH2_HOME/cpath2-cli.sh -update-mapping;   
+        sh $CPATH2_HOME/cpath2-cli.sh -premerge; 
+        sh $CPATH2_HOME/cpath2-cli.sh -merge --force;
+        sh $CPATH2_HOME/cpath2-cli.sh -create-index;
+        sh $CPATH2_HOME/cpath2-cli.sh -update-counts;
+        sh $CPATH2_HOME/cpath2-cli.sh -create-blacklist;
+        sh $CPATH2_HOME/cpath2-cli.sh -create-downloads;
+        sh $CPATH2_HOME/cpath2-cli.sh -clear-cache;
+        break;;
         [Nn]* ) break;;
         * ) echo "Please answer yes or no.";;
     esac
 done
 
-# 5. Premerge, Merge, Index, create the blacklist and downloads (cannot be run in parallel!)
-while true; do
-read -p "Process ALL pathway data (clean, convert, validate, normalize, merge, index, blacklist, an generate archives)?" yn
-	case $yn in
-        [Yy]* ) 
-        	sh $CPATH2_HOME/cpath2-cli.sh -premerge; 
-        	sh $CPATH2_HOME/cpath2-cli.sh -merge --force; 
-        	sh $CPATH2_HOME/cpath2-cli.sh -create-index; 
-        	sh $CPATH2_HOME/cpath2-cli.sh -update-counts; 
-        	sh $CPATH2_HOME/cpath2-cli.sh -create-blacklist; 
-        	sh $CPATH2_HOME/cpath2-cli.sh -create-downloads;
-        	sh $CPATH2_HOME/cpath2-cli.sh -clear-cache; 
-        	break;;
-        [Nn]* ) break;;
-        * ) echo "Please answer yes or no.";;
-    esac
-done
-
-
-# 21...
-## %TODO Create database dump, validation reports, and index directory archive.
-
-
-# 41...
-
-# print all commands
-#echo "INFO: all cpath2 commands:"
-#sh $CPATH2_HOME/cpath2-cli.sh
 
