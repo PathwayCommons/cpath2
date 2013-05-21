@@ -59,7 +59,7 @@
 		<c3p0.version>0.9.5-pre2</c3p0.version>
 		<ehcache-core.version>2.6.5</ehcache-core.version>
 		<paxtools.version>4.2.1-SNAPSHOT</paxtools.version>
-		<validator.version>3.0.1-SNAPSHOT</validator.version>
+		<validator.version>3.0.1</validator.version>
 		<miriam-lib.version>3.0.0</miriam-lib.version>		
 		<junit.version>4.10</junit.version>
 		<log4j.version>1.2.13</log4j.version>
