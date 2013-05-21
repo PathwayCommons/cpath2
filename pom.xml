@@ -8,7 +8,7 @@
 	<artifactId>parent</artifactId>
 	<packaging>pom</packaging>
 	<name>cPath2 - Parent</name>
-	<version>4.0.0-SNAPSHOT</version>
+	<version>4.1.0-SNAPSHOT</version>
 	<description>CPath2 Multi-mudule project, a server software suite for aggregating, storing, and querying biological pathways based on BioPAX L3 standard.</description>
 	<url>http://biopax.sourceforge.net/m2site/cpath2-${project.version}</url>
 	<inceptionYear>2009</inceptionYear>
@@ -44,7 +44,6 @@
 		<module>cpath-importer</module>
 		<module>cpath-web-service</module>
 		<module>distribution</module>
-		<module>cpath-service</module>
 		<module>cpath-api</module>
 		<module>cpath-client</module>
 	</modules>
@@ -53,15 +52,13 @@
 		<license.licenseName>lgpl_v3</license.licenseName>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
 		<spring.version>3.2.2.RELEASE</spring.version>
-		<spring-security.version>3.1.3.RELEASE</spring-security.version>
+		<spring-security.version>3.1.3.RELEASE</spring-security.version>		
 		<hibernate.version>4.2.0.Final</hibernate.version>
 		<hibernate-search.version>4.2.0.Final</hibernate-search.version>
-		<c3p0.version>0.9.5-pre1</c3p0.version>
-		<ehcache-spring-annotations.version>1.2.0</ehcache-spring-annotations.version>
+		<c3p0.version>0.9.5-pre2</c3p0.version>
 		<ehcache-core.version>2.6.5</ehcache-core.version>
-		<paxtools.version>4.2.0-SNAPSHOT</paxtools.version>
+		<paxtools.version>4.2.1-SNAPSHOT</paxtools.version>
 		<validator.version>3.0.1-SNAPSHOT</validator.version>
 		<miriam-lib.version>3.0.0</miriam-lib.version>		
 		<junit.version>4.10</junit.version>
@@ -71,8 +68,7 @@
 		<commons-lang.version>2.6</commons-lang.version>
 		<collections-generic.version>4.01</collections-generic.version>
 		<commons-collections.version>3.2.1</commons-collections.version>
-		<mysql-connector-java.version>5.1.24</mysql-connector-java.version>
-		<!-- <h2.version>1.3.170</h2.version> -->
+		<h2.version>1.3.171</h2.version>
 		<commons-httpclient.version>3.1</commons-httpclient.version>
 		<servlet-api.version>2.5</servlet-api.version>
 		<jstl.version>1.1.2</jstl.version>
@@ -84,7 +80,6 @@
 		<slf4j.version>1.6.6</slf4j.version>
 		<!-- <sysout.slf4j.version>1.0.2</sysout.slf4j.version> -->
 		<!-- <logback.version>1.0.6</logback.version> -->
-
 		<maven-compiler-plugin.version>3.0</maven-compiler-plugin.version>
 		<maven-war-plugin.version>2.3</maven-war-plugin.version>
 		<maven-release-plugin.version>2.4</maven-release-plugin.version>
@@ -296,6 +291,11 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework</groupId>
+				<artifactId>spring-jdbc</artifactId>
+				<version>${spring.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework</groupId>
 				<artifactId>spring-tx</artifactId>
 				<version>${spring.version}</version>
 			</dependency>
@@ -357,12 +357,6 @@
 				<version>${commons-collections.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>mysql</groupId>
-				<artifactId>mysql-connector-java</artifactId>
-				<version>${mysql-connector-java.version}</version>
-				<scope>runtime</scope>
-			</dependency>
-			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-jdbc</artifactId>
 				<version>${spring.version}</version>
@@ -387,13 +381,11 @@
 				<groupId>com.mchange</groupId>
 				<artifactId>c3p0</artifactId>
 				<version>${c3p0.version}</version>
-				<scope>runtime</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.hibernate</groupId>
 				<artifactId>hibernate-c3p0</artifactId>
 				<version>${hibernate.version}</version>
-				<scope>runtime</scope>
 				<exclusions>
 					<exclusion>
 						<artifactId>c3p0</artifactId>
@@ -438,7 +430,7 @@
 				<groupId>commons-lang</groupId>
 				<artifactId>commons-lang</artifactId>
 				<version>${commons-lang.version}</version>
-			</dependency>			
+			</dependency>
 			<dependency>
 				<groupId>taglibs</groupId>
 				<artifactId>standard</artifactId>
@@ -472,11 +464,11 @@
 				<artifactId>jackson-mapper-asl</artifactId>
 				<version>${jackson-mapper.version}</version>
 			</dependency>
-			<!-- <dependency> -->
-			<!-- <groupId>com.h2database</groupId> -->
-			<!-- <artifactId>h2</artifactId> -->
-			<!-- <version>${h2.version}</version> -->
-			<!-- </dependency> -->
+			<dependency>
+				<groupId>com.h2database</groupId>
+				<artifactId>h2</artifactId>
+				<version>${h2.version}</version>
+			</dependency>
 			<!-- Logging with SLF4J & LogBack -->
 			<dependency>
 				<groupId>log4j</groupId>
@@ -522,10 +514,12 @@
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
+			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>

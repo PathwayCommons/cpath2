@@ -3,9 +3,7 @@ package cpath.dao;
 
 import cpath.warehouse.beans.Mapping;
 import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.PathwayData;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -22,37 +20,9 @@ public interface MetadataDAO {
      * Persists or updates the given metadata object to the db.
      *
      * @param metadata Metadata
-     */
-    void saveMetadata(final Metadata metadata);
-    
-    
-    /**
-     * Gets a Metadata bean by id (primary key).
-     * 
-     * @param id Metadata PK
      * @return
      */
-    Metadata getMetadata(final Integer id);
-    
-
-    /**
-     * Deletes the Metadata and its pathway data entries, 
-     * if any (previously processed), from the db by id (primary key).
-     * 
-     * @param id Metadata PK
-     * @return
-     */
-    void deleteMetadata(final Integer id);
-
-    
-    /**
-     * Deletes the pathway data entry, 
-     * from the db by id (primary key).
-     * 
-     * @param id PathwayData PK
-     * @return
-     */
-    void deletePathwayData(final Integer id);
+	Metadata saveMetadata(Metadata metadata);
     
     
     /**
@@ -61,56 +31,25 @@ public interface MetadataDAO {
      * @param identifier String
      * @return Metadata
      */
-    Metadata getMetadataByIdentifier(final String identifier);
-
-    /**
-     * This method quickly returns all metadata,
-     * but the corresponding Metadata.pathwayData lazy collections 
-     * might not be initialized yet, thus cannot be iterated over 
-     * outside an active database session/transaction.
-	 *
-     * @return Collection<Metadata>
-     */
-    Collection<Metadata> getAllMetadata();
+    Metadata getMetadataByIdentifier(String identifier);
 
     
     /**
-     * This method returns all metadata objects
-     * and makes sure all (lazy) collections are initialized (loaded).
+     * This method returns all metadata objects.
 	 *
      * @return Collection<Metadata>
      */
-    Collection<Metadata> getAllMetadataInitialized();
-
-
-    /**
-     * This method gets a PathwayData bean (initialized) by primary key.
-     * 
-     * @param pathway_id PK
-     * @return PathwayData
-     */
-    PathwayData getPathwayData(final Integer pathway_id);
-    	
-
-    /**
-     * This method gets a unique PathwayData bean (initialized) by 
-     * both metadata identifier and data file name.
-     * 
-     * @param provider Metadata identifier (unique provider's internal id)
-     * @param filename a file name of the pathway data record (usually, as it's read from the archive)
-     * @return PathwayData
-     */
-    PathwayData getPathwayData(final String provider, final String filename);
+    List<Metadata> getAllMetadata();
     
     
 	/**
 	 * Generates the BioPAX validation report for a pathway data file.
-	 * @param provider 
 	 * 
-	 * @param pathwayDataPk a primary key value from the pathwatData table {@link PathwayData}
+	 * @param provider 
+	 * @param file - base filename as in {@link PathwayData}
 	 * @return
 	 */
-    ValidatorResponse validationReport(String provider, Integer pathwayDataPk);
+    ValidatorResponse validationReport(String provider, String file);
     
     
     /**
@@ -139,5 +78,23 @@ public interface MetadataDAO {
      * @return a set of primary IDs of the type; normally one or none elements
      */
     Set<String> mapIdentifier(String identifier, Mapping.Type type, String idType);
+
+
+	/**
+	 * Imports metadata description from the resource.
+	 * @param location
+	 */
+	void addOrUpdateMetadata(String location);
+
+
+	/**
+	 * Removes from the system all entries and 
+	 * previously converted / premerged / validated 
+	 * files accociated with this data provider.
+	 * 
+	 * @param metadata
+	 * @return updated/saved object
+	 */
+	Metadata init(Metadata metadata);
     
 }

@@ -1,14 +1,12 @@
 package cpath.converter.internal;
 
 import java.io.*;
-import java.net.URLEncoder;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.utils.Normalizer;
@@ -228,7 +226,7 @@ class ChebiOboConverterImpl extends BaseConverterImpl implements Analysis
 
 
 	@Override
-	public Set<BioPAXElement> execute(Model model) {
+	public void execute(Model model) {
 		log.info("convert(), starting to read data...");
 		
 		if(inputStream == null)
@@ -263,8 +261,6 @@ class ChebiOboConverterImpl extends BaseConverterImpl implements Analysis
 		}
 		
 		log.info("convert(), exiting.");
-		
-		return null;
 	}
 
 }

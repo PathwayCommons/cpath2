@@ -28,12 +28,9 @@
  **/
 package cpath.service.internal;
 
-// imports
 import org.biopax.paxtools.io.SimpleIOHandler;
-import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.*;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -78,7 +75,7 @@ public class CPathServiceTest {
 		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
 		
 		log.info("Loading test warehouse and model data...");
-		Model m = io.convertFromOWL(CPathServiceTest.class.getResourceAsStream("/test.owl"));
+		Model m = io.convertFromOWL(CPathServiceTest.class.getResourceAsStream("/test3.owl"));
 		Metadata md = new Metadata("test", "Reactome", "Foo", "", "", new byte[]{}, METADATA_TYPE.BIOPAX, "", "");
 		
 		mdao.saveMetadata(md);
@@ -91,23 +88,12 @@ public class CPathServiceTest {
 		
 		log.info("Test init done.");
     }
-	
-	
-	@Test
-	public void testFetchBiopaxModel() throws Exception {
-		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-		CPathServiceImpl service = new CPathServiceImpl(dao, null, null);		
-		Model m = service.fetchBiopaxModel("http://www.biopax.org/examples/myExample#Protein_A");
-		assertNotNull(m);
-		BioPAXElement e = m.getByID("http://www.biopax.org/examples/myExample#Protein_A");
-		assertTrue(e instanceof Protein);		
-	}
 
 	
 	@Test
 	public void testFetchBiopax() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-		CPathService service = new CPathServiceImpl(dao, null, null);
+		CPathService service = new CPathServiceImpl(dao, null);
 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P46880");
 		assertNotNull(res);
 		assertFalse(res instanceof ErrorResponse);
@@ -120,7 +106,7 @@ public class CPathServiceTest {
 	@Test
 	public void testFetchAsSIF() throws Exception {
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-		CPathService service = new CPathServiceImpl(dao, null, null);
+		CPathService service = new CPathServiceImpl(dao, null);
 		ServiceResponse res = service.fetch(
 				OutputFormat.BINARY_SIF,
 				"http://www.biopax.org/examples/myExample#biochemReaction1");

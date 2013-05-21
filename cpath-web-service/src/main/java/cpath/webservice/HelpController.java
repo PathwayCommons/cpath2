@@ -35,7 +35,7 @@ import java.io.Writer;
 
 import javax.servlet.http.HttpServletResponse;
 
-import cpath.config.CPath;
+import cpath.config.CPathSettings;
 import cpath.service.jaxb.*;
 //import cpath.service.CPathService;
 import cpath.service.Cmd;
@@ -95,8 +95,8 @@ public class HelpController extends BasicController {
      * @return
      */
     @ModelAttribute("cpath")
-    public CPath instance() {
-    	return CPath.build();
+    public CPathSettings instance() {
+    	return CPathSettings.getInstance();
     }
 	
 	

@@ -5,7 +5,7 @@
 	<parent>
 		<artifactId>parent</artifactId>
 		<groupId>pathwaycommons.cpath</groupId>
-		<version>4.0.0-SNAPSHOT</version>
+		<version>4.1.0-SNAPSHOT</version>
 	</parent>
 	
 	<artifactId>cpath-web-service</artifactId>
@@ -71,11 +71,6 @@
 			<artifactId>spring-web</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>pathwaycommons.cpath</groupId>
-			<artifactId>cpath-service</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<dependency>
   			<groupId>pathwaycommons.cpath</groupId>
   			<artifactId>cpath-api</artifactId>
   			<version>${project.version}</version>
@@ -87,7 +82,12 @@
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-validator</artifactId>
-		</dependency>		
+		</dependency>
+		<dependency>
+			<groupId>net.sf.ehcache</groupId>
+			<artifactId>ehcache-core</artifactId>
+			<scope>runtime</scope>
+		</dependency>
 		
 		<!-- Jackson JSON Mapper -->
 		<dependency>
@@ -116,7 +116,7 @@
 			<artifactId>standard</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-				<dependency>
+		<dependency>
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-core</artifactId>
 		</dependency>

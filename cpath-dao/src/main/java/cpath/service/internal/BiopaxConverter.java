@@ -132,14 +132,14 @@ public class BiopaxConverter {
     public ServiceResponse convert(Model m, OutputFormat format, Object... args) 
     {
     	if(m == null || m.getObjects().isEmpty()) {
-			return new ErrorResponse(NO_RESULTS_FOUND, "Empty BioPAX Model returned.");
+			return new ErrorResponse(NO_RESULTS_FOUND, "Empty BioPAX Model");
 		}
 
 		// otherwise, do convert (it's a DataResponse)
     	String data = null;
     	try {
 			switch (format) {
-			case BIOPAX: //to OWL
+			case BIOPAX: //to OWL (RDF/XML)
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				new SimpleIOHandler().convertToOWL(m, baos);
 				data = baos.toString();
@@ -154,14 +154,14 @@ public class BiopaxConverter {
 				data = convertToGSEA(m, "uniprot");
 				break;
             case SBGN:
-
 				boolean doLayout = true;
 				if (args != null && args.length > 0 && args[0] instanceof Boolean)
 					doLayout = (Boolean) args[0];
 				
                 data = convertToSBGN(m, blacklist, doLayout);
                 break;
-			default: //to BioPAX OWL
+			default: throw new UnsupportedOperationException(
+					"convert, yet unsupported format: " + format);
 			}
 			
 			DataResponse dataResponse = new DataResponse();

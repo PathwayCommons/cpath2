@@ -10,14 +10,13 @@
         http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd">
 
     <context:annotation-config/>
-    <context:property-placeholder location="file:${CPATH2_HOME}/cpath.properties"/>
+    <context:property-placeholder location="file:${CPATH2_HOME}/cpath2.properties"/>
 
 	<cache:annotation-driven />
 	
 	<bean id="service" class="cpath.service.internal.CPathServiceImpl">
 		<constructor-arg ref="paxtoolsDAO"/>
 		<constructor-arg ref="metadataDAO"/>
-        <constructor-arg value="file:${CPATH2_HOME}/blacklist.txt"/>
 	</bean>
 
 	<!-- EhCache library setup -->
