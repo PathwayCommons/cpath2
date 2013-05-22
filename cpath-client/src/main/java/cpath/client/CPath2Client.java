@@ -10,6 +10,7 @@ import cpath.service.OutputFormat;
 import cpath.service.jaxb.*;
 
 import org.apache.commons.lang.StringUtils;
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
@@ -35,7 +36,7 @@ public final class CPath2Client
 {
 	public static final String JVM_PROPERTY_ENDPOINT_URL = "cPath2Url";
 	public static final String DEFAULT_ENDPOINT_URL = "http://purl.org/pc2/current/";
-	
+
 	/**
 	 * This is an <em>equivalent</em> to {@link Direction}
 	 * enumeration, and is defined here for convenience (i.e.,
@@ -59,8 +60,13 @@ public final class CPath2Client
     private String type = null;
     private String path = null;
     private Direction direction = null;
-    
-    // suppress using constructors in favor of static factories
+
+	/**
+	 * Option to merge equivalent interactions (with same participants) in the result model.
+	 */
+	private boolean mergeEquivalentInteractions = false;
+
+	// suppress using constructors in favor of static factories
     private CPath2Client() {
      	// create a new REST template
      	restTemplate = new RestTemplate(); //custom message converters will be added there
@@ -99,7 +105,6 @@ public final class CPath2Client
     	return client;
     }
 
-    
 	/**
 	 * Executes a 'get' and 'graph' type cPath2 
 	 * Web Service API PROVIDER_URL query and returns 
@@ -248,7 +253,23 @@ public final class CPath2Client
         return endPointURL + Cmd.GET + "?" 
         	+ join(CmdArgs.uri + "=" , ids, "&");
     }
-    
+
+	/**
+	 * Retrieves the model using the given url. Make sure that the url gives a model.
+	 * @param url url of the model
+	 * @return model
+	 */
+	protected Model getModel(String url)
+	{
+		Model model = restTemplate.getForObject(url, Model.class);
+
+		if (mergeEquivalentInteractions)
+		{
+			ModelUtils.mergeEquivalentInteractions(model);
+		}
+
+		return model;
+	}
     
     /**
      * Retrieves details regarding one or more records, such as pathway,
@@ -260,7 +281,7 @@ public final class CPath2Client
      */
     public Model get(Collection<String> ids) {
         String url = queryGet(ids);
-        return restTemplate.getForObject(url, Model.class);
+        return getModel(url);
     }
 
     
@@ -288,7 +309,7 @@ public final class CPath2Client
 	public Model getPathsBetween(Collection<String> sourceSet)
 	{
 		String url = queryPathsBetween(sourceSet);
-		return restTemplate.getForObject(url, Model.class);
+		return getModel(url);
 	}
 
 	
@@ -320,7 +341,7 @@ public final class CPath2Client
 	public Model getPathsFromTo(Collection<String> sourceSet, Collection<String> targetSet)
 	{
 		String url = queryPathsFromTo(sourceSet, targetSet);
-		return restTemplate.getForObject(url, Model.class);
+		return getModel(url);
 	}
 
 
@@ -349,13 +370,12 @@ public final class CPath2Client
 	 * Searches directed paths from and/or to the given source set of entities, in the specified search limit.
 	 *
 	 * @param sourceSet Set of source physical entities
-	 * @param direction direction to extends network towards neighbors
 	 * @return BioPAX model representing the neighborhood.
 	 */
 	public Model getNeighborhood(Collection<String> sourceSet)
 	{
 		String url = queryNeighborhood(sourceSet);
-		return restTemplate.getForObject(url, Model.class);
+		return getModel(url);
 	}
 
 	
@@ -398,7 +418,7 @@ public final class CPath2Client
 	public Model getCommonStream(Collection<String> sourceSet)
 	{
 		String url = queryCommonStream(sourceSet);
-		return restTemplate.getForObject(url, Model.class);
+		return getModel(url);
 	}
 
 	
@@ -654,5 +674,22 @@ public final class CPath2Client
 	public void setDirection(Direction direction) {
 		this.direction = direction;
 	}
-	
+
+	/**
+	 * Checks the option to merge equivalent interactions in the result model.
+	 * @return true if merging equivalent interactions
+	 */
+	public boolean isMergeEquivalentInteractions()
+	{
+		return mergeEquivalentInteractions;
+	}
+
+	/**
+	 * Sets the option to merge equivalent interactions in the result model.
+	 * @param mergeEquivalentInteractions option
+	 */
+	public void setMergeEquivalentInteractions(boolean mergeEquivalentInteractions)
+	{
+		this.mergeEquivalentInteractions = mergeEquivalentInteractions;
+	}
 }
