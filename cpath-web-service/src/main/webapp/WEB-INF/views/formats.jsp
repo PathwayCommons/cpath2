@@ -63,6 +63,16 @@ within gene set enrichment algorithms, such as GSEA. Available for all
 pathways within Pathway Commons (only from pathway database sources,
 not interaction database sources). Full data format details are
 available at <a rel="external" href="http://www.broad.mit.edu/cancer/software/gsea/wiki/index.php/Data_formats">Broad GSEA Wiki</a>.
+This cPath2 instance uses its <strong>normalized and merged</strong> BioPAX data and the 
+<a rel="external" href="http://sourceforge.net/p/biopax/paxtools/ci/v4.2.0/tree/gsea-converter/">
+simple GSEA converter from the Paxtools library</a> to generate the corresponding GSEA archives.
+It creates one or many GSEA entries (rows) in each output file from ProteinReferences's 
+UniProt Xrefs - one line (UniProt id-list) per pathway per organism, 
+one UniProt accession per ProteinReference. If there are no pathways, then simply - per organism.  
+(Note: the converter does not do any additional id-mapping; thus a protein without
+a UniProt identifier in its URI or Xref will be ignored; also, to effectively enforce cross-species 
+check, BioSources must have a UnificationXref with "taxonomy" database name
+and id, and Pathways, ProteinReferences - not empty 'organism' property value).
 </p>
 
 <h3>Simple Interaction Format (BINARY_SIF)</h3>
