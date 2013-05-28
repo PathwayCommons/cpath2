@@ -31,8 +31,6 @@ package cpath.service.internal;
 import java.io.*;
 import java.util.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sbgn.L3ToSBGNPDConverter;
 import org.biopax.paxtools.io.sbgn.ListUbiqueDetector;
@@ -40,6 +38,8 @@ import org.biopax.paxtools.io.sif.InteractionRule;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 
 import cpath.service.jaxb.DataResponse;
@@ -59,7 +59,7 @@ import javax.xml.bind.JAXBException;
  * @author rodche
  */
 public class BiopaxConverter {
-	private static final Log log = LogFactory.getLog(BiopaxConverter.class);
+	private static final Logger log = LoggerFactory.getLogger(BiopaxConverter.class);
 	
 	private final Set<String> blacklist;
 	

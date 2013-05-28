@@ -409,11 +409,23 @@
 				<groupId>org.biopax</groupId>
 				<artifactId>miriam-lib</artifactId>
 				<version>${miriam-lib.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.validator</groupId>
 				<artifactId>obo-fetcher</artifactId>
 				<version>${validator.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>commons-httpclient</groupId>
@@ -508,23 +520,27 @@
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
-		</dependency>
-
-		<!-- logging Goodness -->
+		</dependency>	
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
-			<scope>runtime</scope>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-			<scope>runtime</scope>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jcl-over-slf4j</artifactId>
+			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jul-to-slf4j</artifactId>
+			<scope>test</scope>
+		</dependency>		
 	</dependencies>
 
 	<distributionManagement>

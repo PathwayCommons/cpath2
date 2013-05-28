@@ -36,10 +36,9 @@ import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.Filter;
 import org.biopax.paxtools.controller.*;
 import org.biopax.validator.utils.Normalizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import java.util.*;
 
@@ -54,7 +53,7 @@ import java.util.*;
 @Transactional
 class MergerAnalysis implements Analysis {
 
-    private static final Log log = LogFactory.getLog(MergerAnalysis.class);
+    private static final Logger log = LoggerFactory.getLogger(MergerAnalysis.class);
 
 	private final Model source;
 	private final String description;

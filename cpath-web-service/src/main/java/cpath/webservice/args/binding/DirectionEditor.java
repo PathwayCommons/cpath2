@@ -29,8 +29,6 @@ package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.query.algorithm.Direction;
 
 
@@ -39,7 +37,6 @@ import org.biopax.paxtools.query.algorithm.Direction;
  *
  */
 public class DirectionEditor extends PropertyEditorSupport {
-	private static final Log log = LogFactory.getLog(DirectionEditor.class);
 	
 	/* (non-Javadoc)
 	 * @see java.beans.PropertyEditorSupport#setAsText(java.lang.String)

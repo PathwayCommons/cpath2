@@ -1,14 +1,13 @@
 package cpath.cleaner.internal;
 
 import cpath.importer.Cleaner;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
 import org.biopax.paxtools.model.level3.UnificationXref;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -18,7 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class PhosphoSitePlusCleanerImpl implements Cleaner {
-    private static final Log log = LogFactory.getLog(PhosphoSitePlusCleanerImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(PhosphoSitePlusCleanerImpl.class);
 
     @Override
     public String clean(String pathwayData) {

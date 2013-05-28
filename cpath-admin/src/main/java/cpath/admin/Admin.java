@@ -50,10 +50,10 @@ import org.biopax.validator.api.Validator;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.PropertyConfigurator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
@@ -73,7 +73,7 @@ import static cpath.service.OutputFormat.*;
  * user scripts.
  */
 public final class Admin {
-	private static final Log LOG = LogFactory.getLog(Admin.class);
+	private static final Logger LOG = LoggerFactory.getLogger(Admin.class);
 
     // Cmd Enum
     public static enum Cmd {

@@ -9,13 +9,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.util.ClassFilterSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cpath.dao.Analysis;
 
@@ -32,7 +32,7 @@ import cpath.dao.Analysis;
  */
 final class ChemIdMappingAnalysis implements Analysis {
 
-	private static final Log log = LogFactory.getLog(ChemIdMappingAnalysis.class);
+	private static final Logger log = LoggerFactory.getLogger(ChemIdMappingAnalysis.class);
 		
 	final Map<String,String> idMap;
 	final Map<String,Set<String>> ambiguousIdMap;

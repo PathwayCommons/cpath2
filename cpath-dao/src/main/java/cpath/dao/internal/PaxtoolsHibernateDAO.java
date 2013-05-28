@@ -28,8 +28,6 @@
  **/
 package cpath.dao.internal;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.queryParser.MultiFieldQueryParser;
 import org.apache.lucene.queryParser.ParseException;
@@ -58,6 +56,8 @@ import org.hibernate.criterion.Projections;
 import org.hibernate.search.*;
 import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.query.dsl.QueryBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 import org.springframework.util.Assert;
@@ -110,7 +110,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			FIELD_PATHWAY, // i.e., helps find an object by a parent pathway name or filter a search results by pathway ;) 
 		};
 
-	private static Log log = LogFactory.getLog(PaxtoolsHibernateDAO.class);
+	private static Logger log = LoggerFactory.getLogger(PaxtoolsHibernateDAO.class);
 	private SessionFactory sessionFactory;
 	private final Map<String, String> nameSpacePrefixMap;
 	private final BioPAXLevel level;

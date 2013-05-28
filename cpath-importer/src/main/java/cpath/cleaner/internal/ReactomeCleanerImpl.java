@@ -6,9 +6,8 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.biopax.paxtools.io.*;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.HashSet;
@@ -25,7 +24,7 @@ import java.util.Set;
 final class ReactomeCleanerImpl extends BaseCleanerImpl {
 	
 	// logger
-    private static Log log = LogFactory.getLog(ReactomeCleanerImpl.class);
+    private static Logger log = LoggerFactory.getLogger(ReactomeCleanerImpl.class);
 
     @Override
 	public String clean(final String pathwayData) 

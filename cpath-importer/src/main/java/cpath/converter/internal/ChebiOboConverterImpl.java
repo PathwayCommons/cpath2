@@ -5,11 +5,11 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.utils.Normalizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cpath.dao.Analysis;
 
@@ -40,7 +40,7 @@ class ChebiOboConverterImpl extends BaseConverterImpl implements Analysis
 	protected static final String COLON_DELIMITER = ":";
 	protected static final String EQUALS_DELIMITER = "=";	
 	
-    private static Log log = LogFactory.getLog(ChebiOboConverterImpl.class);
+    private static Logger log = LoggerFactory.getLogger(ChebiOboConverterImpl.class);
 	  
 	private final Pattern CHEBI_OBO_ID_REGEX = Pattern.compile("^id: CHEBI:(\\w+)$");
 	private final Pattern CHEBI_OBO_ISA_REGEX = Pattern.compile("^is_a: CHEBI:(\\w+)$");

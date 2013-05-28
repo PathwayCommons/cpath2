@@ -42,8 +42,8 @@ import cpath.service.ErrorResponse;
 import cpath.service.Status;
 import cpath.service.jaxb.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
@@ -53,7 +53,7 @@ import org.springframework.validation.FieldError;
  * @author rodche
  */
 public abstract class BasicController {
-    private static final Log log = LogFactory.getLog(BasicController.class);
+    private static final Logger log = LoggerFactory.getLogger(BasicController.class);
        
 	/**
 	 * Http error response from the error bean.

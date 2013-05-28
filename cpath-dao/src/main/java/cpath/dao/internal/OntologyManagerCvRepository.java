@@ -30,8 +30,6 @@ package cpath.dao.internal;
 import java.net.URLDecoder;
 import java.util.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -41,6 +39,8 @@ import org.biopax.psidev.ontology_manager.Ontology;
 import org.biopax.psidev.ontology_manager.OntologyTermI;
 import org.biopax.validator.utils.BiopaxOntologyManager;
 import org.biopax.validator.utils.Normalizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cpath.config.CPathSettings;
 import cpath.dao.CvRepository;
@@ -54,7 +54,7 @@ import cpath.dao.CvRepository;
 class OntologyManagerCvRepository extends BiopaxOntologyManager 
 	implements CvRepository 
 {
-	private static final Log log = LogFactory.getLog(OntologyManagerCvRepository.class);
+	private static final Logger log = LoggerFactory.getLogger(OntologyManagerCvRepository.class);
 	private static final String URN_OBO_PREFIX = "urn:miriam:obo.";
 	private static final String URL_OBO_PREFIX = "http://identifiers.org/obo.";
 	private static BioPAXFactory biopaxFactory = BioPAXLevel.L3.getDefaultFactory();

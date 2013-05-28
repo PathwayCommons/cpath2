@@ -35,9 +35,8 @@ import cpath.warehouse.beans.*;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.io.*;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
@@ -49,7 +48,7 @@ import java.util.*;
  */
 public final class MergerImpl implements Merger {
 
-    private static final Log log = LogFactory.getLog(MergerImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(MergerImpl.class);
 
 	// where to merge pathway data
     private final PaxtoolsDAO mainDAO; //also implements Model interface

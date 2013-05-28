@@ -5,12 +5,12 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.utils.Normalizer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -34,7 +34,7 @@ class ChebiSdfConverterImpl extends BaseConverterImpl
 	protected static final String COLON_DELIMITER = ":";
 	protected static final String EQUALS_DELIMITER = "=";
 	
-    private static Log log = LogFactory.getLog(ChebiSdfConverterImpl.class);
+    private static Logger log = LoggerFactory.getLogger(ChebiSdfConverterImpl.class);
 
 	private static final String CHEBI_ID = "> <ChEBI ID>";
 	private static final String CHEBI_NAME = "> <ChEBI Name>";
@@ -88,7 +88,7 @@ class ChebiSdfConverterImpl extends BaseConverterImpl
             }
         }
 		catch (IOException e) {
-			log.error(e);
+			log.error("convert: failed", e);
 		}
 		finally {
 			log.info("convert(), closing reader.");

@@ -19,9 +19,9 @@ import cpath.warehouse.beans.PathwayData;
 import cpath.warehouse.beans.Mapping;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.validator.api.beans.ValidatorResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -39,7 +39,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class MetadataController extends BasicController
 {
     
-	private static final Log log = LogFactory.getLog(MetadataController.class);   
+	private static final Logger log = LoggerFactory.getLogger(MetadataController.class);   
 	
     private final MetadataDAO service; // main PC db access
     

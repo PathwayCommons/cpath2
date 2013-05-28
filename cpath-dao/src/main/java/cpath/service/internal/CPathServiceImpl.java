@@ -34,8 +34,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.controller.Completer;
 import org.biopax.paxtools.controller.Fetcher;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -51,6 +49,8 @@ import org.biopax.paxtools.query.wrapperL3.DataSourceFilter;
 import org.biopax.paxtools.query.wrapperL3.Filter;
 import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -85,7 +85,7 @@ import cpath.warehouse.beans.Mapping;
  */
 @Service
 public class CPathServiceImpl implements CPathService {
-	private static final Log log = LogFactory.getLog(CPathServiceImpl.class);
+	private static final Logger log = LoggerFactory.getLogger(CPathServiceImpl.class);
 	
 	private PaxtoolsDAO mainDAO;
 	
@@ -485,7 +485,7 @@ public class CPathServiceImpl implements CPathService {
 			log.error("Failed to init path accessor: ", e);
 			return new ErrorResponse(BAD_REQUEST, e.getMessage());
 		} catch (Exception e) {
-			log.fatal("Failed. ", e);
+			log.error("Failed. ", e);
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
 	}

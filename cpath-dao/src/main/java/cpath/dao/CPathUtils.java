@@ -30,8 +30,8 @@ import java.util.zip.ZipInputStream;
 
 import javax.imageio.ImageIO;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 
@@ -45,7 +45,7 @@ import cpath.warehouse.beans.PathwayData;
  */
 public final class CPathUtils {
 	// logger
-    private static Log log = LogFactory.getLog(CPathUtils.class);
+    private static Logger log = LoggerFactory.getLogger(CPathUtils.class);
 	
     // some bits for metadata reading
     private static final int METADATA_IDENTIFIER_INDEX = 0;

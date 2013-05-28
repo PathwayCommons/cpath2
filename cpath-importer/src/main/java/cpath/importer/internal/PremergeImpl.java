@@ -48,11 +48,11 @@ import org.biopax.validator.impl.IdentifierImpl;
 import org.biopax.validator.utils.Normalizer;
 
 import org.mskcc.psibiopax.converter.PSIMIBioPAXConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
@@ -68,7 +68,7 @@ import java.io.*;
  */
 public final class PremergeImpl implements Premerger {
 
-    private static Log log = LogFactory.getLog(PremergeImpl.class);
+    private static Logger log = LoggerFactory.getLogger(PremergeImpl.class);
     private static final int BUFFER = 2048;
     private static final ResourceLoader LOADER = new DefaultResourceLoader();
     
@@ -566,7 +566,7 @@ public final class PremergeImpl implements Premerger {
 			log.info("updateBiopaxWarehouse: Exitting.");
 			
 		} catch(Exception e) {
-			log.error(e);
+			log.error("updateBiopaxWarehouse: failed", e);
 		} finally {
 	        try {
 	            is.close();
