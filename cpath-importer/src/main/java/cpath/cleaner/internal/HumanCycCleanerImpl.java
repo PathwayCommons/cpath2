@@ -2,12 +2,12 @@ package cpath.cleaner.internal;
 
 import cpath.importer.Cleaner;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -19,7 +19,7 @@ import java.util.Set;
 
 public class HumanCycCleanerImpl implements Cleaner
 {
-	private static final Log LOG = LogFactory.getLog(HumanCycCleanerImpl.class);
+	private static final Logger LOG = LoggerFactory.getLogger(HumanCycCleanerImpl.class);
 	
 	@Override
 	public String clean(String pathwayData)

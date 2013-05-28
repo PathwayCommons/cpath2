@@ -36,9 +36,9 @@ import cpath.service.jaxb.*;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.level3.Protein;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
@@ -56,7 +56,7 @@ import javax.validation.Valid;
  */
 @Controller
 public class SearchController extends BasicController {
-    private static final Log log = LogFactory.getLog(SearchController.class);    
+    private static final Logger log = LoggerFactory.getLogger(SearchController.class);    
 	
     private CPathService service; // main PC db access
 	

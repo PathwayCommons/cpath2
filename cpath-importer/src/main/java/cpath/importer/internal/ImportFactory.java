@@ -2,8 +2,8 @@ package cpath.importer.internal;
 
 import java.lang.reflect.Constructor;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cpath.importer.Cleaner;
 import cpath.importer.Converter;
@@ -18,7 +18,7 @@ import cpath.importer.Converter;
  *
  */
 public final class ImportFactory {
-	private static Log log = LogFactory.getLog(ImportFactory.class);
+	private static Logger log = LoggerFactory.getLogger(ImportFactory.class);
 	
 	private ImportFactory() {
 		// when called via reflection -

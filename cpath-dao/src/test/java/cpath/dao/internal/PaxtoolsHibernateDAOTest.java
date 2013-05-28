@@ -36,10 +36,10 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.junit.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-
-import org.apache.commons.logging.*;
 
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
@@ -57,7 +57,7 @@ import static org.junit.Assert.*;
  */
 public class PaxtoolsHibernateDAOTest {
 
-    static Log log = LogFactory.getLog(PaxtoolsHibernateDAOTest.class);
+    static Logger log = LoggerFactory.getLogger(PaxtoolsHibernateDAOTest.class);
     static PaxtoolsDAO dao;
     static SimpleIOHandler exporter = new SimpleIOHandler(BioPAXLevel.L3);
 

@@ -9,12 +9,12 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.PublicationXref;
 import org.biopax.paxtools.model.level3.Xref;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cpath.dao.Analysis;
 
@@ -31,7 +31,7 @@ import cpath.dao.Analysis;
  */
 final class GeneIdMappingAnalysis implements Analysis {
 
-	private static final Log log = LogFactory.getLog(GeneIdMappingAnalysis.class);
+	private static final Logger log = LoggerFactory.getLogger(GeneIdMappingAnalysis.class);
 	
 	final Map<String,String> idMap;
 	final Map<String,Set<String>> ambiguousIdMap;

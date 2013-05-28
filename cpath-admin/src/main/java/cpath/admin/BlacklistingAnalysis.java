@@ -14,8 +14,6 @@ import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ComplexAssembly;
@@ -33,8 +31,6 @@ import cpath.dao.Analysis;
  *
  */
 final class BlacklistingAnalysis implements Analysis {
-   
-	static final Log LOG = LogFactory.getLog(BlacklistingAnalysis.class);
 	
 	@Override
     public void execute(Model model) 
@@ -81,8 +77,7 @@ final class BlacklistingAnalysis implements Analysis {
 
             // See if it needs to be blacklisted
             if(regDegree < controlDegreeThreshold && allDegree > degreeThreshold) {
-                LOG.debug("Adding " + ref.getDisplayName()
-                        + " to the blacklist (Degrees: " + allDegree + ":" + regDegree + ")");
+                // Adding to the blacklist 
                 for (EntityReference entityReference : refs)
                     blacklistedBPEs.add(entityReference);
 

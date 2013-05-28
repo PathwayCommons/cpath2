@@ -33,9 +33,9 @@ import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-
-import org.apache.commons.logging.*;
 
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
@@ -57,7 +57,7 @@ import static org.junit.Assert.*;
 
 public class CPathServiceTest {
 
-    private static Log log = LogFactory.getLog(CPathServiceTest.class);
+    private static Logger log = LoggerFactory.getLogger(CPathServiceTest.class);
 
     static ClassPathXmlApplicationContext context;
     static final SimpleIOHandler io = new SimpleIOHandler(BioPAXLevel.L3);

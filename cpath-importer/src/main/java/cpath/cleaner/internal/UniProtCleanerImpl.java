@@ -7,8 +7,8 @@ import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of Cleaner interface for UniProt data.
@@ -37,7 +37,7 @@ final class UniProtCleanerImpl extends BaseCleanerImpl {
     private static Pattern pattern = Pattern.compile(ID_REGEX);
 
 	// logger
-    private static Log log = LogFactory.getLog(UniProtCleanerImpl.class);
+    private static Logger log = LoggerFactory.getLogger(UniProtCleanerImpl.class);
     
 	/**
 	 * (non-Javadoc>

@@ -32,7 +32,6 @@ import java.io.Writer;
 import java.util.Arrays;
 
 import cpath.service.CPathService;
-import cpath.service.ErrorResponse;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
 import cpath.service.Status;
@@ -40,10 +39,10 @@ import cpath.service.jaxb.*;
 import cpath.webservice.args.*;
 import cpath.webservice.args.binding.*;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
@@ -59,7 +58,7 @@ import javax.validation.Valid;
  */
 @Controller
 public class GraphController extends BasicController {
-    private static final Log log = LogFactory.getLog(GraphController.class);    
+	private static final Logger log = LoggerFactory.getLogger(GraphController.class);    
 	
     private CPathService service; // main PC db access
 	

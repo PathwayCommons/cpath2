@@ -8,8 +8,6 @@ import cpath.warehouse.beans.Mapping.Type;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.biopax.validator.api.beans.ValidatorResponse;
 import org.biopax.validator.api.ValidatorUtils;
 
@@ -21,6 +19,8 @@ import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +39,7 @@ import java.util.*;
 @Repository
 class MetadataHibernateDAO  implements MetadataDAO {
 
-    private static Log log = LogFactory.getLog(MetadataHibernateDAO.class);
+    private static Logger log = LoggerFactory.getLogger(MetadataHibernateDAO.class);
 
     private SessionFactory sessionFactory;
     
@@ -126,7 +126,7 @@ class MetadataHibernateDAO  implements MetadataDAO {
 				assert resp.getValidationResult().size() == 1;				
 				response.getValidationResult().addAll(resp.getValidationResult());				
 			} catch (Exception e) {
-				log.error(e);
+				log.error("validationReport: failed converting the XML response to objects", e);
 			}
 			
 			if(current.equals(file))

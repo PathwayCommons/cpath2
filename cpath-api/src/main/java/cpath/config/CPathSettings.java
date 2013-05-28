@@ -33,8 +33,6 @@ import java.io.IOException;
 import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 
 /**
@@ -49,8 +47,6 @@ import org.apache.commons.logging.LogFactory;
  * @author rodche
  */
 public final class CPathSettings {
-
-	private static final Log LOG = LogFactory.getLog(CPathSettings.class);
 	
 	private static Properties settings;
 	
@@ -460,7 +456,7 @@ public final class CPathSettings {
 				settings.setProperty(name, value);
 			} else {
 				// not allowed in this mode (not maintenance)
-				LOG.error("Attempt to set property "
+				throw new IllegalStateException("Attempt to set property "
 					+ name + " when " + PROP_ADMIN_ENABLED 
 						+ " = false");
 			}
