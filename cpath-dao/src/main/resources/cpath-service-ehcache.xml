@@ -9,9 +9,9 @@
 	<diskStore path="${CPATH2_HOME}/cache/service-ehcache" />
 
 	<!-- the default (if a public query method is missed below but does have @Cacheable annotation)  -->
-	<defaultCache eternal="false" maxElementsInMemory="100"
+	<defaultCache eternal="false" maxElementsInMemory="1000"
 		overflowToDisk="false" diskPersistent="false" 
-		timeToIdleSeconds="0" timeToLiveSeconds="300" />
+		timeToIdleSeconds="120" timeToLiveSeconds="120" />
 
 	<!-- /search command cache (does not have to be disk persistent as search queries are fast) -->
 	<cache name="findElementsCache" eternal="false"
@@ -19,29 +19,35 @@
 		maxElementsInMemory="1000" 
 		overflowToDisk="false" diskPersistent="false" />
 
-	<!-- cpath2 service tier (e.g., graph queries) cache settings -->
+	<!-- cpath2 service tier (e.g., graph queries) permanent cache settings -->
 	<cache name="elementByIdCache" eternal="true"
 		maxElementsInMemory="1000" 
-		overflowToDisk="false" diskPersistent="true"/>
+		timeToIdleSeconds="0" timeToLiveSeconds="0"
+		overflowToDisk="true" diskPersistent="true"/>
 
 	<cache name="getCommonStreamCache" eternal="true"
 		maxElementsInMemory="1000" 
-		overflowToDisk="false" diskPersistent="true"/>
+		timeToIdleSeconds="0" timeToLiveSeconds="0"
+		overflowToDisk="true" diskPersistent="true"/>
 
 	<cache name="getPathsBetweenCache" eternal="true"
 		maxElementsInMemory="1000" 
-		overflowToDisk="false" diskPersistent="true"/>
+		timeToIdleSeconds="0" timeToLiveSeconds="0"
+		overflowToDisk="true" diskPersistent="true"/>
 
 	<cache name="getNeighborhoodCache" eternal="true"
 		maxElementsInMemory="1000" 
-		overflowToDisk="false" diskPersistent="true"/>
+		timeToIdleSeconds="0" timeToLiveSeconds="0"
+		overflowToDisk="true" diskPersistent="true"/>
 
 	<cache name="traverseCache" eternal="true" 
 		maxElementsInMemory="1000" 
-		overflowToDisk="false" diskPersistent="true"/>
+		timeToIdleSeconds="0" timeToLiveSeconds="0"
+		overflowToDisk="true" diskPersistent="true"/>
 
 	<cache name="getPathsFromToCache" eternal="true"
 		maxElementsInMemory="1000" 
-		overflowToDisk="false" diskPersistent="true"/>
+		timeToIdleSeconds="0" timeToLiveSeconds="0"
+		overflowToDisk="true" diskPersistent="true"/>
 
 </ehcache>

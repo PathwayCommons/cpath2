@@ -84,7 +84,7 @@ public class WarehouseCVsTest {
 		assertFalse(urns.isEmpty());
 		assertTrue(urns.size() == 1);
 		String urn = urns.iterator().next();
-		assertEquals("http://identifiers.org/obo.go/GO:0005654", urn);
+		assertEquals("http://identifiers.org/go/GO:0005654", urn);
 	}
 
 	/**
@@ -109,32 +109,32 @@ public class WarehouseCVsTest {
 	public final void testGetDirectChildren() {
 		Set<String> dc = cvRepository.getDirectChildren("urn:miriam:obo.go:GO%3A0005654");
 		assertFalse(dc.isEmpty());
-		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0044451"));
+		assertTrue(dc.contains("http://identifiers.org/go/GO:0044451"));
 	}
 
 	@Test
 	public final void testGetDirectAllChildren() {
 		Set<String> dc = cvRepository.getAllChildren("http://identifiers.org/obo.go/GO:0005654");
 		assertFalse(dc.isEmpty());
-		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0044451"));
-		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0071821"));
-		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0070847"));
+		assertTrue(dc.contains("http://identifiers.org/go/GO:0044451"));
+		assertTrue(dc.contains("http://identifiers.org/go/GO:0071821"));
+		assertTrue(dc.contains("http://identifiers.org/go/GO:0070847"));
 	}
 
 	@Test
 	public final void testGetDirectParents() {
 		Set<String> dc = cvRepository.getDirectParents("urn:miriam:obo.go:GO%3A0005654");
 		assertFalse(dc.isEmpty());
-		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0031981"));
+		assertTrue(dc.contains("http://identifiers.org/go/GO:0031981"));
 	}
 
 	@Test
 	public final void testGetAllParents() {
 		Set<String> dc = cvRepository.getAllParents("http://identifiers.org/obo.go/GO:0005654");
 		assertFalse(dc.isEmpty());
-		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0031981"));
-		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0044428"));
-		assertTrue(dc.contains("http://identifiers.org/obo.go/GO:0044422"));
+		assertTrue(dc.contains("http://identifiers.org/go/GO:0031981"));
+		assertTrue(dc.contains("http://identifiers.org/go/GO:0044428"));
+		assertTrue(dc.contains("http://identifiers.org/go/GO:0044422"));
 	}
 
 
@@ -144,8 +144,12 @@ public class WarehouseCVsTest {
 				"urn:miriam:obo.go:GO%3A0005737",CellularLocationVocabulary.class);
 		assertNotNull(cv);
 		cv = null;
-		cv = cvRepository.getControlledVocabulary(
+		cv = cvRepository.getControlledVocabulary( //using now deprecated URL
 				"http://identifiers.org/obo.go/GO:0005737",CellularLocationVocabulary.class);
+		assertNotNull(cv);
+		//same
+		cv = cvRepository.getControlledVocabulary(
+				"http://identifiers.org/go/GO:0005737",CellularLocationVocabulary.class);
 		assertNotNull(cv);
 	}
 	

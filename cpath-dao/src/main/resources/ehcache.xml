@@ -11,6 +11,6 @@
 	<!-- the default is used by the Hibernate 2nd-level cache -->
 	<defaultCache eternal="false" maxElementsInMemory="100000"
 		overflowToDisk="false" diskPersistent="false" 
-		timeToIdleSeconds="0" timeToLiveSeconds="300" />
+		timeToIdleSeconds="300" timeToLiveSeconds="300" />
 
 </ehcache>
