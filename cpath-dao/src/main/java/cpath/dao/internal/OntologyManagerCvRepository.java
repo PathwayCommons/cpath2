@@ -55,8 +55,6 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 	implements CvRepository 
 {
 	private static final Logger log = LoggerFactory.getLogger(OntologyManagerCvRepository.class);
-	private static final String URN_OBO_PREFIX = "urn:miriam:obo.";
-	private static final String URL_OBO_PREFIX = "http://identifiers.org/obo.";
 	private static BioPAXFactory biopaxFactory = BioPAXLevel.L3.getDefaultFactory();
 	
 	/**
@@ -123,7 +121,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 	public <T extends ControlledVocabulary> T getControlledVocabulary(String urn,
 			Class<T> cvClass) 
 	{
-		OntologyTermI term = getTermByUrn(urn);
+		OntologyTermI term = getTermByUri(urn);
 		T cv = getControlledVocabulary(term, cvClass);
 		if(cv != null)
 			cv.addComment(CPathSettings.CPATH2_GENERATED_COMMENT);
@@ -132,7 +130,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 	
 	
 	public Set<String> getDirectChildren(String urn) {
-		OntologyTermI term = getTermByUrn(urn);
+		OntologyTermI term = getTermByUri(urn);
 		Ontology ontology = getOntology(term.getOntologyId());
 		Collection<OntologyTermI> terms = ontology.getDirectChildren(term);
 		return ontologyTermsToUris(terms);
@@ -140,7 +138,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 
 	
 	public Set<String> getDirectParents(String urn) {
-		OntologyTermI term = getTermByUrn(urn);
+		OntologyTermI term = getTermByUri(urn);
 		Ontology ontology = getOntology(term.getOntologyId());
 		Collection<OntologyTermI> terms = ontology.getDirectParents(term);
 		return ontologyTermsToUris(terms);
@@ -148,7 +146,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 
 	
 	public Set<String> getAllChildren(String urn) {
-		OntologyTermI term = getTermByUrn(urn);
+		OntologyTermI term = getTermByUri(urn);
 		Ontology ontology = getOntology(term.getOntologyId());
 		Collection<OntologyTermI> terms = ontology.getAllChildren(term);
 		return ontologyTermsToUris(terms);
@@ -156,7 +154,7 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 
 	
 	public Set<String> getAllParents(String urn) {
-		OntologyTermI term = getTermByUrn(urn);
+		OntologyTermI term = getTermByUri(urn);
 		Ontology ontology = getOntology(term.getOntologyId());
 		Collection<OntologyTermI> terms = ontology.getAllParents(term);
 		return ontologyTermsToUris(terms);
@@ -196,22 +194,38 @@ class OntologyManagerCvRepository extends BiopaxOntologyManager
 	}
 	
 
-	OntologyTermI getTermByUrn(String urn) {
-		if(urn.startsWith(URN_OBO_PREFIX)) {
-			int pos = urn.indexOf(':', URN_OBO_PREFIX.length()); //e.g. the colon after 'go' in "...:obo.go:GO%3A0005654"
-			String acc = urn.substring(pos+1);
+	/*
+	 * 	Some CV URI/URLs can include 
+	 *  'obo.' in it (now deprecated) or not, like e.g.
+	 *  'obo.so', 'obo.go' vs. simply 'so', 'go'
+	 */
+	OntologyTermI getTermByUri(String uri) {
+		if(uri.startsWith("urn:miriam:obo.")) {
+			int pos = uri.indexOf(':', 15); //e.g. the colon after 'go' in "...:obo.go:GO%3A0005654"
+			String acc = uri.substring(pos+1);
 			acc=URLDecoder.decode(acc);
 //			String dtUrn = urn.substring(0, pos);				
 			OntologyTermI term = findTermByAccession(acc); // acc. is globally unique in OntologyManager!..
 			return term;
-		} else if(urn.startsWith(URL_OBO_PREFIX)) {
-			int pos = urn.indexOf('/', URL_OBO_PREFIX.length()); //e.g. the slash after 'go' in ".../obo.go/GO:0005654"
-			String acc = urn.substring(pos+1);				
-			OntologyTermI term = findTermByAccession(acc); // acc. is globally unique in OntologyManager!..
+		} else if(uri.startsWith("http://identifiers.org/obo.")) {
+			int pos = uri.indexOf('/', 27); //e.g. the slash after 'go' in "...obo.go/GO:0005654"
+			String acc = uri.substring(pos+1);				
+			OntologyTermI term = findTermByAccession(acc);
+			return term;
+		} else if(uri.startsWith("urn:miriam:")) {
+			int pos = uri.indexOf(':', 11); //e.g. the last colon in "...:go:GO%3A0005654"
+			String acc = uri.substring(pos+1);
+			acc=URLDecoder.decode(acc);				
+			OntologyTermI term = findTermByAccession(acc);
+			return term;
+		} else if(uri.startsWith("http://identifiers.org/")) {
+			int pos = uri.indexOf('/', 23); //e.g. the slash after 'org/go' in "...org/go/GO:0005654"
+			String acc = uri.substring(pos+1);				
+			OntologyTermI term = findTermByAccession(acc); 
 			return term;
 		} else {
 			if(log.isDebugEnabled())
-				log.debug("Cannot Decode not a Controlled Vocabulary's URI : " + urn);
+				log.debug("Cannot Decode not a Controlled Vocabulary's URI : " + uri);
 			return null;
 		}
 	}

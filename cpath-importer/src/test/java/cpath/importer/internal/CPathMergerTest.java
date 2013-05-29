@@ -106,7 +106,7 @@ public class CPathMergerTest {
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P27797"));
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P27797", UnificationXref.class)));
 		assertTrue(mergedModel.containsID("http://identifiers.org/taxonomy/9606"));
-		assertTrue(mergedModel.containsID("http://identifiers.org/obo.go/GO:0005737"));
+		assertTrue(mergedModel.containsID("http://identifiers.org/go/GO:0005737"));
 		
 		ProteinReference pr = (ProteinReference)mergedModel.getByID("http://identifiers.org/uniprot/P27797");
 		assertEquals(10, pr.getName().size()); //make sure this one is passed (important!)
