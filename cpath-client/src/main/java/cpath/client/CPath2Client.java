@@ -14,27 +14,30 @@ import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.UnknownHttpStatusCodeException;
 
 import java.util.*;
 
+
 /**
- * CPath2 Client (read as: CPath Squared). 
+ * CPath2 Web Service Client. 
  * 
- * Development CPath2 WEB API demo is http://awabi.cbio.mskcc.org/pc2-demo/, 
- * and the released one was http://www.pathwaycommons.org/pc2-demo/
- * 
- * For "/get" and "/graph" queries, this client 
- * returns data in BioPAX L3 format only (or - error).
- * But BioPAX can be converted to other formats on the client side
- * (e.g., using converters provided by Paxtools)
- * 
- * TODO add support for other output formats that '/get','/graph' can return (at least - for BINARY_SIF)
  */
 public final class CPath2Client
 {
-	public static final String JVM_PROPERTY_ENDPOINT_URL = "cPath2Url";
+	private static final Logger LOGGER = LoggerFactory.getLogger(CPath2Client.class);
+	
+	// one can set the JVM property: -DcPath2Url="http://some_URL"
+	public static final String JVM_PROPERTY_ENDPOINT_URL = "cPath2Url";	
 	public static final String DEFAULT_ENDPOINT_URL = "http://purl.org/pc2/current/";
 
 	/**
@@ -50,7 +53,7 @@ public final class CPath2Client
     }
 	
 	
-	private final RestTemplate restTemplate;
+	final RestTemplate restTemplate;
 	
 	private String endPointURL;
 	private Integer page = 0;
@@ -89,9 +92,6 @@ public final class CPath2Client
     public static CPath2Client newInstance(BioPAXIOHandler bioPAXIOHandler) {
     	CPath2Client client = new CPath2Client(); 
     	
-    	// Remove default message converters
-//    	client.restTemplate.getMessageConverters().clear();
-    	
      	// add custom cPath2 XML message converter as the first one (accepts 'application/xml' content type)
     	// because one of existing/default msg converters, XML root element based jaxb2, does not work for ServiceResponce types...
     	client.restTemplate.getMessageConverters().add(0, new ServiceResponseHttpMessageConverter());
@@ -100,7 +100,34 @@ public final class CPath2Client
     	
     	// init the server PROVIDER_URL
     	client.endPointURL = System.getProperty(JVM_PROPERTY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);
+    	
     	assert client.endPointURL != null :  "BUG: cpath2 PROVIDER_URL is not defined";
+    	
+    	// find the actual URL (or at least the first one that works via POST)
+    	String origUrl = client.endPointURL;
+    	while(true) {
+    		ResponseEntity<String> re = client.restTemplate
+    			.exchange(client.endPointURL, HttpMethod.HEAD, null, String.class);  		
+    		
+    		if(re.getStatusCode().equals(HttpStatus.FOUND)
+    			|| re.getStatusCode().equals(HttpStatus.MOVED_PERMANENTLY)) {
+    			client.endPointURL = re.getHeaders().getLocation().toString();
+    			LOGGER.info("Found new location: " + client.endPointURL 
+        				+ "; " + re.getStatusCode());
+    		}
+    		else if(re.getStatusCode().equals(HttpStatus.OK)) {
+    			LOGGER.info("Success: " + client.endPointURL 
+    				+ "; " + re.getStatusCode());
+    			break; //exit the infinite loop
+    		}
+    		else {
+    			throw new RuntimeException("HTTP POST failed " +
+    				"after the client was redirected " +
+    				"from " + origUrl +	" to " + client.endPointURL 
+    				+ " (status: " + re.getStatusCode() + ")");
+    		}
+    	}
+    	
     	
     	return client;
     }
@@ -117,28 +144,61 @@ public final class CPath2Client
 	 * @see #queryPathsBetween(Collection)
 	 * 
 	 * 
-	 * @param url
+	 * @param urlQuery
 	 * @param outputFormat default is {@link OutputFormat#BIOPAX}
 	 * @return data in the requested format
 	 * @throws CPathException if there is no results or another problem
+	 * 
+	 * @deprecated good for testing; otherwise is but low-level and error-prone method
 	 */
-	public String executeQuery(final String url, final OutputFormat outputFormat) 
-	throws CPathException 
+	public String executeQuery(final String urlQuery, final OutputFormat outputFormat)
+			throws CPathException 
+	{		
+		final String q = (outputFormat == null) ? urlQuery : urlQuery + "&"
+				+ CmdArgs.format + "=" + outputFormat;
+
+		return doGet(q, String.class);
+	}
+	
+	
+	private <T> T doPost(Cmd command, Class<T> respClass, Object request)
+		throws CPathException 
 	{
-		final String q = (outputFormat == null)
-			? url : url + "&" + CmdArgs.format + "=" + outputFormat;
+		final String url = endPointURL + command;
 		
 		try {
-			return restTemplate.getForObject(q, String.class);
-		} catch (Exception e) {
-			throw new CPathException(q, e);
+			return restTemplate.postForObject(url, request, respClass);
+		} catch (UnknownHttpStatusCodeException e) {
+			if (e.getRawStatusCode() == 460) {
+				return null; //empty result
+			} else
+				throw new CPathException(url + " and " + request.toString(), e);
+		} catch (RestClientException e) {
+			throw new CPathException(url + " and " + request.toString(), e);
 		}
-		
 	}
     
+	
+	private <T> T doGet(String url, Class<T> respClass)
+		throws CPathException 
+	{
+		try {
+			return restTemplate.getForObject(url, respClass);
+		} catch (UnknownHttpStatusCodeException e) {
+			if (e.getRawStatusCode() == 460) {
+				return null; //empty result
+			} else
+				throw new CPathException(url, e);
+		} catch (RestClientException e) {
+			throw new CPathException(url, e);
+		}
+	}
+	
     
     /**
      * Full text search. 
+     * Used primarily to locate starting points 
+     * for traversals.
      * 
      * Retrieves one "page" of full-text search results
      * (the page number is given by {@link #getPage()} method) - 
@@ -175,12 +235,7 @@ public final class CPath2Client
                 + (getOrganisms().isEmpty() ? "" : "&" + join(CmdArgs.organism + "=", getOrganisms(), "&"))
                 + (getType() != null ? "&" + CmdArgs.type + "=" + getType() : "");
     	
-        try {
-			return restTemplate.getForObject(url, SearchResponse.class);
-		} catch (RestClientException e) {
-			throw new CPathException(url, e);
-		}
-
+    	return doGet(url, SearchResponse.class);
     }
 
     
@@ -207,23 +262,27 @@ public final class CPath2Client
      */
     public List<SearchHit> findAll(String... keywords) {
     	List<SearchHit> hits = new ArrayList<SearchHit>();
-    	final String kw = (keywords == null || keywords.length == 0)
-    			? "*" : join("", Arrays.asList(keywords), " ");
-    	int numPages = getPage();
+
+    	int numPages = getPage(); //0 (all) if wasn't set by user
     	int page = 0;
     	SearchResponse res;
     	do {
     		setPage(page);
+    		
     		try {
-				res = search(kw);
+				res = search(keywords);
 			} catch (CPathException e) {
-				break; //no result or error
+				break;
 			}
+    		
     		if(!res.isEmpty())
     			hits.addAll(res.getSearchHit());
     		else //should not happen (cpath2 returns error status when empty result)
-    			break; 
-    	} while(numPages < 1 || ++page < numPages);
+    			break;
+    		
+    		page++;
+    		
+    	} while(numPages <= 0 || page < numPages);
     	
     	return hits;
     }
@@ -234,70 +293,133 @@ public final class CPath2Client
      * interaction or physical entity. For example, get the complete
      * Apoptosis pathway from Reactome.
      *
-     * @param id a BioPAX element ID
+     * @param id a BioPAX element URI or standard identifier (UniProt, NCBI Gene,..)
      * @return BioPAX model containing the requested element
-     */
-    public Model get(String id) {
-        return get(Collections.singleton(id));
-    }
-
-    
-    /**
-     * Builds a <em>get</em> BioPAX (default format) 
-     * by URI(s) query PROVIDER_URL string.
+     * @throws CPathException 
      * 
-     * @param ids
-     * @return
      */
-    public String queryGet(Collection<String> ids) {
-        return endPointURL + Cmd.GET + "?" 
-        	+ join(CmdArgs.uri + "=" , ids, "&");
+    public Model get(String id) throws CPathException {
+		return get(Collections.singleton(id));
     }
 
-	/**
-	 * Retrieves the model using the given url. Make sure that the url gives a model.
-	 * @param url url of the model
+
+    /**
+	 * Retrieves the model using the given command and parameters object.
+	 * 
+	 * @param command that returns a model (i.e., /get or /graph)
+	 * @param request web parameters map
 	 * @return model
+	 * @throws CPathException 
+	 * 
 	 */
-	protected Model getModel(String url)
+	private Model getModel(Cmd command, Object request) 
+			throws CPathException
 	{
-		Model model = restTemplate.getForObject(url, Model.class);
-
+		Model model = doPost(command, Model.class, request);
 		if (mergeEquivalentInteractions)
-		{
 			ModelUtils.mergeEquivalentInteractions(model);
-		}
-
+		
 		return model;
 	}
-    
+ 
+	
     /**
-     * Retrieves details regarding one or more records, such as pathway,
-     * interaction or physical entity. For example, get the complete
-     * Apoptosis pathway from Reactome.
+     * Retrieves a sub-model based on one or more pathways,
+     * interactions, or physical entities. For example, one can 
+     * retrieve the complete Reactome's Apoptosis pathway model
+     * (by its original URI), or - get xrefs (by identifiers or gene names).
      *
      * @param ids a set of BioPAX element IDs
-     * @return BioPAX model containing the requested element
+     * @return BioPAX model containing the requested elements and child elements. 
+     * @throws CPathException 
      */
-    public Model get(Collection<String> ids) {
-        String url = queryGet(ids);
-        return getModel(url);
+    public Model get(Collection<String> ids) throws CPathException 
+    {
+		return getModel(Cmd.GET, 
+			buildRequest(Cmd.GET, null, ids, null, null));
     }
 
     
     /**
-     * Builds a 'PATHS BETWEEN' BioPAX <em>graph</em> query PROVIDER_URL string.
+     * Retrieves a sub-model based on one or more pathways,
+     * interactions, or physical entities. For example, one can 
+     * retrieve the complete Reactome's Apoptosis pathway model.
+     * The result is returned in the requested text format.
      * 
-     * @param sourceSet
+     * @param ids identifiers of URIs
+     * @param outputFormat format (if null, - BioPAX is the default)
+     * @return
+     * @throws CPathException 
+     */
+    public String getAsString(Collection<String> ids, final OutputFormat outputFormat) 
+    		throws CPathException 
+    {
+    	return doPost(Cmd.GET, String.class, 
+    		buildRequest(Cmd.GET, null, ids, null, outputFormat));
+    }
+
+    
+    /**
+     * Builds a cpath2 web query parameters objects.
+     * 
+     * @param command
+     * @param graphType
+     * @param sources
+     * @param targets
+     * @param outputFormat
      * @return
      */
-    public String queryPathsBetween(Collection<String> sourceSet) {
-    	return endPointURL + Cmd.GRAPH + "?" + CmdArgs.kind + "=" +
-    		GraphType.PATHSBETWEEN.name().toLowerCase() + "&"
-    		+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
-    		+ CmdArgs.limit + "=" + graphQueryLimit;
-    }  
-    
+    private Object buildRequest(Cmd command, GraphType graphType, Collection<String> sources, Collection<String> targets, 
+    		OutputFormat outputFormat) 
+    {	
+    	MultiValueMap<String, String> request = new LinkedMultiValueMap<String, String>();
+    	
+    	if(outputFormat == null)
+    		outputFormat = OutputFormat.BIOPAX;  	
+		request.add(CmdArgs.format.name(), outputFormat.name());
+    	
+    	switch(command) {
+    	case GRAPH:
+    		// common options for all graph commands
+    		request.add(CmdArgs.kind.name(), graphType.name());
+    		request.add(CmdArgs.limit.name(), graphQueryLimit.toString());
+    		request.put(CmdArgs.source.name(), new ArrayList<String>(sources));
+    		
+    		switch(graphType) {
+    			case COMMONSTREAM:
+    		    	if(direction != null) {
+    		    		if (direction == Direction.BOTHSTREAM)
+    		    			throw new IllegalArgumentException(
+    		    				"Direction of common-stream query should be either upstream or downstream.");
+    		    		else
+    		    			request.add(CmdArgs.direction.name(), direction.name());
+    		    	}
+    				break;
+    			case PATHSBETWEEN:
+    				break;
+    			case PATHSFROMTO:
+    		    	request.put(CmdArgs.target.name(), new ArrayList<String>(targets));    		    	
+    				break;
+    			case NEIGHBORHOOD:
+    			default:
+    		    	if(direction != null) 
+    		    		request.add(CmdArgs.direction.name(), direction.name());
+    				break;
+    		}
+    		break;
+    	case TRAVERSE:
+    		request.put(CmdArgs.uri.name(), new ArrayList<String>(sources));
+        	request.add(CmdArgs.path.name(), path);
+    		break;
+    	case GET:
+    	default: //GET is the default query
+    		request.put(CmdArgs.uri.name(), new ArrayList<String>(sources));
+    		break;
+    	}
+    	
+    	return request;
+	}
+
     
     /**
 	 *  Finds paths between a given source set of objects. The source set may contain Xref,
@@ -305,29 +427,30 @@ public final class CPath2Client
 	 *
 	 * @param sourceSet set of xrefs, entity references, or physical entities
 	 * @return a BioPAX model that contains the path(s).
+     * @throws CPathException 
 	 */
-	public Model getPathsBetween(Collection<String> sourceSet)
+	public Model getPathsBetween(Collection<String> sourceSet) throws CPathException
 	{
-		String url = queryPathsBetween(sourceSet);
-		return getModel(url);
+		return getModel(Cmd.GRAPH, 
+			buildRequest(Cmd.GRAPH, GraphType.PATHSBETWEEN, sourceSet, null, null));
 	}
 
 	
 	/**
-	 * Builds a 'PATHS FROM TO' <em>graph</em> query PROVIDER_URL string.
+	 *  Finds paths between a given source set of objects
+	 *  and returns the sub-model in the requested text format. 
 	 * 
 	 * @param sourceSet
-	 * @param targetSet
+	 * @param outputFormat the default is BIOPAX (when null)
 	 * @return
+	 * @throws CPathException 
 	 */
-	public String queryPathsFromTo(Collection<String> sourceSet, Collection<String> targetSet)
-	{
-		return endPointURL + Cmd.GRAPH + "?" + CmdArgs.kind + "=" +
-			GraphType.PATHSFROMTO.name().toLowerCase() + "&"
-			+ join(CmdArgs.source + "=", sourceSet, "&") + "&"
-			+ join(CmdArgs.target + "=", targetSet, "&") + "&"
-			+ CmdArgs.limit + "=" + graphQueryLimit;
-	}
+    public String getPathsBetweenAsString(Collection<String> sourceSet, 
+    		final OutputFormat outputFormat) throws CPathException 
+    {
+    	return doPost(Cmd.GRAPH, String.class, 
+    		buildRequest(Cmd.GRAPH, GraphType.PATHSBETWEEN, sourceSet, null, null));
+    }
 	
 	
 	/**
@@ -337,73 +460,65 @@ public final class CPath2Client
 	 * @param sourceSet set of xrefs, entity references, or physical entities
 	 * @param targetSet set of xrefs, entity references, or physical entities
 	 * @return a BioPAX model that contains the path(s).
+	 * @throws CPathException 
 	 */
-	public Model getPathsFromTo(Collection<String> sourceSet, Collection<String> targetSet)
+	public Model getPathsFromTo(Collection<String> sourceSet, Collection<String> targetSet) 
+			throws CPathException 
 	{
-		String url = queryPathsFromTo(sourceSet, targetSet);
-		return getModel(url);
-	}
-
-
-	/**
-	 * Builds a 'NEIGHBORHOOD' BioPAX <em>graph</em> query PROVIDER_URL string.
-	 * 
-	 * @param sourceSet
-	 * @return
-	 */
-	public String queryNeighborhood(Collection<String> sourceSet)
-	{
-		StringBuilder sb = new StringBuilder(endPointURL);
-		sb.append(Cmd.GRAPH).append("?").append(CmdArgs.kind).append("=")
-		.append(GraphType.NEIGHBORHOOD).append("&")
-		.append(join(CmdArgs.source + "=", sourceSet, "&"))
-		.append("&").append(CmdArgs.limit).append("=").append(graphQueryLimit);
-		//the default (null) direction here would be BOTHSTREAM
-		if(direction != null) 
-			sb.append("&").append(CmdArgs.direction).append("=").append(direction); 
-		
-		return sb.toString();
+		return getModel(Cmd.GRAPH, 
+			buildRequest(Cmd.GRAPH, GraphType.PATHSFROMTO, sourceSet, targetSet, null));
 	}
 
 	
 	/**
-	 * Searches directed paths from and/or to the given source set of entities, in the specified search limit.
+	 * Finds paths from a given source set of objects to 
+	 * a given target set of objects and returns the result 
+	 * (string) in the given text format.
+	 * 
+	 * @param sourceSet
+	 * @param targetSet
+	 * @param outputFormat the default is BIOPAX (when null)
+	 * @return
+	 * @throws CPathException 
+	 */
+    public String getPathsFromToAsString(Collection<String> sourceSet, Collection<String> targetSet, 
+    		OutputFormat outputFormat) throws CPathException 
+    {
+    	return doPost(Cmd.GRAPH, String.class, 
+    		buildRequest(Cmd.GRAPH, GraphType.PATHSFROMTO, sourceSet, targetSet, outputFormat));
+    }
+
+	
+	/**
+	 * Searches directed paths from and/or to the given source set of entities, 
+	 * in the specified search limit.
 	 *
 	 * @param sourceSet Set of source physical entities
 	 * @return BioPAX model representing the neighborhood.
+	 * @throws CPathException 
 	 */
-	public Model getNeighborhood(Collection<String> sourceSet)
+	public Model getNeighborhood(Collection<String> sourceSet) 
+			throws CPathException
 	{
-		String url = queryNeighborhood(sourceSet);
-		return getModel(url);
+		return getModel(Cmd.GRAPH, buildRequest(Cmd.GRAPH, GraphType.NEIGHBORHOOD, sourceSet, null, null));
 	}
 
 	
 	/**
-	 * Builds a 'COMMON STREAM' BioPAX <em>graph</em> query PROVIDER_URL string.
-	 * 
-	 * @see #setDirection(Direction)
+	 * A nearest neighborhood biopax query that returns the result
+	 * in the specified text format.
 	 * 
 	 * @param sourceSet
+	 * @param outputFormat the default is BIOPAX (when null)
 	 * @return
+	 * @throws CPathException 
 	 */
-	public String queryCommonStream(Collection<String> sourceSet)
-	{		
-		if (direction == Direction.BOTHSTREAM)
-			throw new IllegalArgumentException(
-				"Direction of common-stream query should be either upstream or downstream.");
-
-		StringBuilder sb = new StringBuilder(endPointURL);
-		sb.append(Cmd.GRAPH).append("?").append(CmdArgs.kind).append("=")
-			.append(GraphType.COMMONSTREAM).append("&")
-			.append(join(CmdArgs.source + "=", sourceSet, "&"))
-			.append("&").append(CmdArgs.limit).append("=").append(graphQueryLimit);
-		
-		if(direction != null)
-			sb.append("&").append(CmdArgs.direction).append("=").append(direction);
-		
-		return sb.toString();
-	}
+    public String getNeighborhoodAsString(Collection<String> sourceSet, 
+    		final OutputFormat outputFormat) throws CPathException 
+    {
+    	return doPost(Cmd.GRAPH, String.class, 
+    		buildRequest(Cmd.GRAPH, GraphType.NEIGHBORHOOD, sourceSet, null, outputFormat));
+    }
 	
 	
 	/**
@@ -414,13 +529,33 @@ public final class CPath2Client
 	 *
 	 * @param sourceSet set of physical entities
 	 * @return a BioPAX model that contains the common stream
+	 * @throws CPathException 
 	 */
-	public Model getCommonStream(Collection<String> sourceSet)
+	public Model getCommonStream(Collection<String> sourceSet) 
+			throws CPathException
 	{
-		String url = queryCommonStream(sourceSet);
-		return getModel(url);
+		return getModel(Cmd.GRAPH, 
+			buildRequest(Cmd.GRAPH, GraphType.COMMONSTREAM, sourceSet, null, null));
 	}
 
+	
+	/**
+	 * Searches for the common upstream (common regulators) or
+	 * common downstream (common targets) biopax objects of 
+	 * the given source set and returns the result
+	 * in the given text format.
+	 * 
+	 * @param sourceSet
+	 * @param outputFormat the default is BIOPAX (when null)
+	 * @return
+	 * @throws CPathException 
+	 */
+    public String getCommonStreamAsString(Collection<String> sourceSet, 
+    		final OutputFormat outputFormat) throws CPathException 
+    {
+    	return doPost(Cmd.GRAPH, String.class,
+    		buildRequest(Cmd.GRAPH, GraphType.COMMONSTREAM, sourceSet, null, outputFormat));
+    }
 	
     /**
      * Gets the list of top (root) pathways 
@@ -429,6 +564,7 @@ public final class CPath2Client
      * @return
      */
     public SearchResponse getTopPathways() {
+    	
     	SearchResponse resp = restTemplate.getForObject(endPointURL 
         		+ Cmd.TOP_PATHWAYS, SearchResponse.class);
     	
@@ -437,8 +573,7 @@ public final class CPath2Client
 			public int compare(SearchHit h1, SearchHit h2) {
 				return h1.toString().compareTo(h2.toString());
 			}
-		});
-    	
+		});    	
     	
     	return resp;
     }    
@@ -452,24 +587,28 @@ public final class CPath2Client
      * @return
      * @throws CPathException when there was returned a HTTP error
      */
-    public TraverseResponse traverse(Collection<String> uris) throws CPathException {
-        String url = endPointURL + Cmd.TRAVERSE + "?" 
-        		+ join(CmdArgs.uri + "=", uris, "&")
-        		+ "&" + CmdArgs.path + "=" + path;
-
-        try {
-        	return restTemplate.getForObject(url, TraverseResponse.class);
-		} catch (RestClientException e) {
-			throw new CPathException(url, e);
-		}
+    public TraverseResponse traverse(Collection<String> uris) 
+    		throws CPathException 
+    {
+    	return doPost(Cmd.TRAVERSE, TraverseResponse.class, 
+    			buildRequest(Cmd.TRAVERSE, null, uris, null, null));
     }
+
     
-    
+    /**
+     * Joins the collection of strings into one string 
+     * using the prefix and delimiter.
+     * 
+     * @param prefix 
+     * @param strings
+     * @param delimiter
+     * @return
+     */
     private String join(String prefix, Collection<String> strings, String delimiter) {
         List<String> prefixed = new ArrayList<String>();
 
        	for(String s: strings)
-			prefixed.add(prefix + s);
+       		prefixed.add(prefix + s);
 
         return StringUtils.join(prefixed, delimiter);
     }

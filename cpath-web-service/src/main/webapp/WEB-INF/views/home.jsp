@@ -66,28 +66,30 @@
 				href="http://biomodels.net/miriam/">guidelines</a> for the
 			annotation and curation of computational models.)
 		</p>
-		<h3><a id="enco"></a>About this page example links and URL-encoding</h3>
-		<p>cPath2 is a web service. All query parameters, including URIs, must be
-			URL-encoded, and this is normally done automatically when a 
-			web client application rests on a standard HTTP client library 
-			to send well-formed GET or POST HTTP requests to the server.
-			Developers and web users are not supposed to manually encode
+		<h3><a id="enco"></a>About this demo page and example links</h3>
+		<p>This is a unique biological pathway data research resource, 
+			biopax data web service, and not a web pages portal. 
+			It is to be used from bioinformatic programs, such as Cytoscape and 
+			other network analyzing and visualizing tools, and normally not by
+			users via web browsers.	All query parameters, such as URIs and search terms, 
+			must be URL-encoded, which is normally done automatically if a web client  
+			uses a standard HTTP client library to send well-formed HTTP 
+			requests to the web service endpoint. So, users are not supposed to manually encode
 			query parameters nor type long queries in a browser's address line.
-			So do not do this. However, as you can see, this page contains manually 
+			However, as you can see, this page contains manually 
 			formed and encoded example query links one can click or copy to the browser's 
 			address line to try. And the URIs you can see there in queries like "?uri=..." 
-			are already encoded (- a BioPAX URI in the database can be different).
+			were already encoded (corresponding URI in the database can differ).
 			Despite the above, if we still want to use a web browser to quickly 
 			get an idea about what the web service is about, remember that web browsers 
 			do only basic encoding for you; they can replace spaces with "%20" (or '+') 
 			but it will not encode '%', '#', '+' if it is already part of the query (URI parameter); 
 			so you must replace '%' with %25, '#' - %23, '+' - %2B, etc. To summarize,
-			the local part of URI is URL-encoded, but when you need to use the URI as parameter in 
-			a URL (query), it has to be encoded again (and decoded on the server side), which is 
-			normally not a user's business. By the way, 
-			URIs are case-sensitive and cannot contain spaces.</p>
-
+			the local part of an object's URI is URL-encoded, but when you need to use that URI 
+			as parameter in a URL (query), it has to be encoded again (and decoded on the server side), 
+			which is normally not a user's business. URIs are case-sensitive and cannot contain spaces.</p>
 		</section>
+		
 		<section id="commands_description_section">
 
 		<!-- command bodies -->
@@ -98,23 +100,26 @@
 					<a id="search"></a>Command: SEARCH
 				</h2>
 				<h3>Summary:</h3> 
-				Full text search in Pathway Commons using
-				keywords, phrases, a Lucene query. For example, find records that
+				<p>Full text search is possible using simple keywords, wildcards, 
+				quoted phrases (this supports Lucene query syntax). 
+				This is used primarily to locate starting points for the BioPAX 
+				graph traversals. For example, find records that
 				contain the keyword "BRCA2" (in any index field), or, more
-				specifically, - "BRCA2" in a Protein's 'name' (index) field. BioPAX
-				entity or utility class hits that match the search criteria and pass
-				filters are ranked and returned. Search (index) field names are
-				(case-sensitive): <em>comment, ecnumber, keyword, name,
-					pathway, term, xrefdb, xrefid, dataSource, and organism</em>. The latter
-				two were introduced mainly for filtering as un_tockenized, no
+				specifically, - "BRCA2" in a Protein's 'name' (index) field.</p>
+				<p>BioPAX entity or utility class that match the search criteria (hits) and pass
+				all filters are <strong>ranked</strong>> and returned in XML or JSON format. 
+				Search (index) field names are (case-sensitive): <em>comment, ecnumber, 
+				keyword, name, pathway, term, xrefdb, xrefid, dataSource, and organism</em>. 
+				The latter two were introduced mainly for filtering as un_tockenized, no
 				wildcard/fuzzy support. (Note: index fields are not exactly BioPAX
 				properties!) To search within a specific BioPAX class only, use the
-				'type' parameter (filter). Full-text search is a very powerful
+				'type' parameter (filter).</p> 
+				<p>Full-text search is a very powerful
 				feature and can save a lot of time, but it's not a replacement for a
 				more accurate BioPAX graph analysis, i.e., - using other web service
 				commands (see below), following official BioPAX semantics. (The more
 				"advanced" search query is the more cool but uncertain/error-prone
-				result is.)
+				result is.)</p>
 				<h3>Parameters:</h3>
 				<ul>
 					<li><em>q=</em> [Required] a keyword, name, external

@@ -36,13 +36,15 @@ public class TraverseResponse extends ServiceResponse {
 	
 	@Override
 	public boolean isEmpty() {
-		boolean noValues = true;
+		if(getTraverseEntry().isEmpty())
+			return true;
+		
 		for(TraverseEntry ent : traverseEntry) {
 			if(!ent.isEmpty())
 				return false;
 		}
 		
-		return getTraverseEntry().isEmpty() || noValues;
+		return  true; //empty
 	} 
 
 }
