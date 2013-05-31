@@ -40,7 +40,7 @@ import cpath.service.OutputFormat;
 import cpath.service.Status;
 import cpath.service.jaxb.*;
 import cpath.webservice.args.Get;
-import cpath.webservice.args.GetProperty;
+import cpath.webservice.args.Traverse;
 import cpath.webservice.args.binding.BiopaxTypeEditor;
 import cpath.webservice.args.binding.OutputFormatEditor;
 
@@ -148,7 +148,7 @@ public class BiopaxModelController extends BasicController {
     
     
     @RequestMapping("/traverse")
-    public @ResponseBody ServiceResponse traverse(@Valid GetProperty query, 
+    public @ResponseBody ServiceResponse traverse(@Valid Traverse query, 
     	BindingResult bindingResult, HttpServletResponse response) 
     		throws IOException 
     {

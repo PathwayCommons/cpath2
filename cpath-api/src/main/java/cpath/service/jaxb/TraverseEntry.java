@@ -44,6 +44,6 @@ public class TraverseEntry implements Serializable {
 	
 	//package-private
 	boolean isEmpty() {
-		return value.isEmpty();
+		return getValue().isEmpty();
 	}
 }

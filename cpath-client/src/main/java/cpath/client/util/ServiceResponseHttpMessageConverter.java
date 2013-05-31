@@ -32,7 +32,7 @@ public class ServiceResponseHttpMessageConverter
     static {
     	mediaList = new ArrayList<MediaType>();
         mediaList.add(MediaType.APPLICATION_XML);
-        
+//        mediaList.add(MediaType.TEXT_XML);
         jaxb = new Jaxb2Marshaller();
         jaxb.setClassesToBeBound(Help.class,
         		SearchResponse.class, SearchHit.class,
@@ -55,10 +55,7 @@ public class ServiceResponseHttpMessageConverter
     public ServiceResponse read(Class<? extends ServiceResponse> clazz, HttpInputMessage inputMessage) 
     	throws IOException, HttpMessageNotReadableException
     {
-        // as for cpath-api 5.0.0, the response is either 
-        // 'clazz' (ServiceResponce's subclass) or ErrorResponse type!
-        return (ServiceResponse) jaxb
-        	.unmarshal(new StreamSource(inputMessage.getBody()));
+        return (ServiceResponse) jaxb.unmarshal(new StreamSource(inputMessage.getBody()));
     }
 
     public void write(ServiceResponse model, MediaType contentType, HttpOutputMessage outputMessage) 

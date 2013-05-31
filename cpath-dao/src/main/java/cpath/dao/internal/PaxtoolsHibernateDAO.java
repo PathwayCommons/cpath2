@@ -323,8 +323,8 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		// collect matching elements here
 		SearchResponse searchResponse = new SearchResponse();
 
-		if (log.isInfoEnabled())
-			log.info("search: " + query + ", page: " + page 
+		if (log.isDebugEnabled())
+			log.debug("search: " + query + ", page: " + page 
 					+ ", filterBy: " + filterByType
 					+ "; extra filters: ds in (" + Arrays.toString(dsources)
 					+ "), org. in (" + Arrays.toString(organisms) + ")");
@@ -361,7 +361,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			try {
 				luceneQuery = multiFieldQueryParser.parse(query);
 			} catch (ParseException e) {
-				log.info("parser exception: " + e.getMessage());
+				log.error("parser exception: " + e.getMessage());
 				return searchResponse;
 			}
 		}
@@ -393,7 +393,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		fullTextQuery.setFirstResult(l);
 	    
 		int count = fullTextQuery.getResultSize(); // cheap operation
-		log.info("Query '" + query + "', results size = " + count);
+		log.debug("Query '" + query + "', results size = " + count);
 		searchResponse.setNumHits(count);
 		searchResponse.setMaxHitsPerPage(maxHitsPerPage);
 		searchResponse.setPageNo(page);

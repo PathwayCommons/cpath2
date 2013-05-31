@@ -420,7 +420,7 @@ public class CPathServiceImpl implements CPathService {
 				}
 				else {
 					q.append("xrefid:\"").append(identifier).append("\" "); 
-					log.info("findUrisByIds, no primary id found (will use 'as is'): " + identifier);
+					log.debug("findUrisByIds, no primary id found (will use 'as is'): " + identifier);
 				}				
 			}
 		}
@@ -580,7 +580,7 @@ public class CPathServiceImpl implements CPathService {
 			if(e != null)
 				elements.add(e);
 			else
-				log.warn("not found: " + id);
+				log.warn("urisToBpes: unknown/broken URI: " + id);
 		}
 
 		return elements;

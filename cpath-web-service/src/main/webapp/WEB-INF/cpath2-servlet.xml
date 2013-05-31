@@ -71,6 +71,8 @@
 		<constructor-arg ref="service"/>
 	</bean>  
 	    
+	<mvc:view-controller path="/robots.txt" view-name="robots"/>    
+	    
 	<!-- mvc:annotation-driven must the last -->
     <mvc:annotation-driven/>	
 	

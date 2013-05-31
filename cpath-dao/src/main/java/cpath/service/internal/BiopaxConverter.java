@@ -31,6 +31,7 @@ package cpath.service.internal;
 import java.io.*;
 import java.util.*;
 
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sbgn.L3ToSBGNPDConverter;
 import org.biopax.paxtools.io.sbgn.ListUbiqueDetector;
@@ -62,6 +63,8 @@ public class BiopaxConverter {
 	private static final Logger log = LoggerFactory.getLogger(BiopaxConverter.class);
 	
 	private final Set<String> blacklist;
+	
+	private boolean mergeEquivalentInteractions;
 	
     /**
      * Constructor.
@@ -184,7 +187,11 @@ public class BiopaxConverter {
     String convertToSBGN(Model m, Set<String> blackList, boolean doLayout)
 		throws IOException, JAXBException
 	{
-		L3ToSBGNPDConverter converter = new L3ToSBGNPDConverter(
+
+		if(mergeEquivalentInteractions)
+			ModelUtils.mergeEquivalentInteractions(m);
+    	
+    	L3ToSBGNPDConverter converter = new L3ToSBGNPDConverter(
 			new ListUbiqueDetector(blackList), null, doLayout);
 
 		OutputStream stream = new ByteArrayOutputStream();
@@ -214,13 +221,12 @@ public class BiopaxConverter {
 	
 	/**
 	 * Converts a not empty BioPAX Model (contained in the service bean) 
-	 * to SIF data format.
+	 * to the SIF or <strong>single-file</strong> extended SIF format.
 	 * 
-	 * TODO 'rules' parameter is currently ignored (requires conversion 
-	 * from strings to the rules, e.g., using enum. BinaryInteractionRule from cpath-web-service)
+	 * This method is primarily designed for the web service.
 	 * 
      * @param m biopax paxtools to convert
-     * @param extended if true, call SIFNX else SIF
+     * @param extended if true, calls SIFNX else - SIF
 	 * @return
 	 * @throws IOException 
 	 */
@@ -235,10 +241,13 @@ public class BiopaxConverter {
 		OutputStream edgeStream = new ByteArrayOutputStream();
 		if (extended) {
 			OutputStream nodeStream = new ByteArrayOutputStream();
+			//no need to mergeEquivalentInteractions before the convertToExtendedBinarySIF call (because it does it)
 			convertToExtendedBinarySIF(m, edgeStream, nodeStream);
 			// join two files together, one after another -
 			return edgeStream + "\n\n" + nodeStream;
 		} else {
+			if(mergeEquivalentInteractions)
+				ModelUtils.mergeEquivalentInteractions(m);
 			sic.writeInteractionsInSIF(m, edgeStream);
 			return edgeStream.toString();
 		}
@@ -266,10 +275,25 @@ public class BiopaxConverter {
                 SimpleInteractionConverter.getRules(BioPAXLevel.L3).toArray(new InteractionRule[]{})
 		);
 		
+		if(mergeEquivalentInteractions)
+			ModelUtils.mergeEquivalentInteractions(m);
+		
 		sic.writeInteractionsInSIFNX(
 			m, edgeStream, nodeStream,
 			Arrays.asList("EntityReference/displayName", "EntityReference/xref:UnificationXref", "EntityReference/xref:RelationshipXref"),
 			Arrays.asList("Interaction/dataSource/displayName", "Interaction/xref:PublicationXref"), true);
 	}
-
+	
+	
+	/**
+	 * Sets whether to run {@link ModelUtils#mergeEquivalentInteractions(Model)}
+	 * before converting a biopax model to another format.
+	 * Warn: use with care (or do not use) with the main (persistent) biopax model.
+	 * 
+	 * @param mergeEquivalentInteractions
+	 */
+	public void mergeEquivalentInteractions(
+			boolean mergeEquivalentInteractions) {
+		this.mergeEquivalentInteractions = mergeEquivalentInteractions;
+	}
 }

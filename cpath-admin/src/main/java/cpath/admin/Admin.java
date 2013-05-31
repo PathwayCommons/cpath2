@@ -557,7 +557,9 @@ public final class Admin {
 	{
 		InputStream is = biopaxStream(biopaxFile);
 		Resource blacklist = new DefaultResourceLoader().getResource("file:" + blacklistFile());
-		ServiceResponse res = (new BiopaxConverter(blacklist)).convert(is, outputFormat);
+		BiopaxConverter converter = new BiopaxConverter(blacklist);
+		converter.mergeEquivalentInteractions(true);
+		ServiceResponse res = converter.convert(is, outputFormat);
 		if (res instanceof ErrorResponse) {
 			System.err.println(res.toString());
 		} else {
@@ -574,7 +576,9 @@ public final class Admin {
 		InputStream is = biopaxStream(biopaxFile);		
 		Model m = (new SimpleIOHandler()).convertFromOWL(is);
 		Resource blacklist = new DefaultResourceLoader().getResource("file:" + blacklistFile());
-		(new BiopaxConverter(blacklist)).convertToExtendedBinarySIF(m, edgeStream, nodeStream);
+		BiopaxConverter converter = new BiopaxConverter(blacklist);
+		converter.mergeEquivalentInteractions(true);
+		converter.convertToExtendedBinarySIF(m, edgeStream, nodeStream);
 	}
 
 	
