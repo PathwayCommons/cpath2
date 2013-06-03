@@ -390,12 +390,12 @@ public final class CPath2Client
     {	
     	MultiValueMap<String, String> request = new LinkedMultiValueMap<String, String>();
     	
-    	if(outputFormat == null)
-    		outputFormat = OutputFormat.BIOPAX;  	
-		request.add(CmdArgs.format.name(), outputFormat.name());
-    	
     	switch(command) {
     	case GRAPH:
+    		if(outputFormat == null) 
+    			outputFormat = OutputFormat.BIOPAX;
+			request.add(CmdArgs.format.name(), outputFormat.name());
+    		
     		// common options for all graph commands
     		request.add(CmdArgs.kind.name(), graphType.name());
     		request.add(CmdArgs.limit.name(), graphQueryLimit.toString());
@@ -431,6 +431,10 @@ public final class CPath2Client
     		break;
     	case GET:
     	default: //GET is the default query
+    		if(outputFormat == null) 
+    			outputFormat = OutputFormat.BIOPAX;
+			request.add(CmdArgs.format.name(), outputFormat.name());
+			
     		request.put(CmdArgs.uri.name(), new ArrayList<String>(sources));
     		break;
     	}
