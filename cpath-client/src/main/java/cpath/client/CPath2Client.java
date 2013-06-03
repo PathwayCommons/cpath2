@@ -161,7 +161,20 @@ public final class CPath2Client
 	}
 	
 	
-	private <T> T doPost(Cmd command, Class<T> respClass, Object request)
+	/**
+	 * Sends a HTTP POST request to the server.
+	 * 
+	 * This is a lower-level query method than 
+	 * others provided by this class, such as 
+	 * {@link #getNeighborhoodAsString(Collection, OutputFormat)}, etc.
+	 * 
+	 * @param command cpath2 web service command
+	 * @param respClass result class (e.g., String.class, Model)
+	 * @param request query object, e.g., a Map; use {@link #buildRequest(Cmd, GraphType, Collection, Collection, OutputFormat)} to create one.
+	 * @return
+	 * @throws CPathException
+	 */
+	public <T> T doPost(Cmd command, Class<T> respClass, Object request)
 		throws CPathException 
 	{
 		final String url = endPointURL + command;
@@ -362,6 +375,9 @@ public final class CPath2Client
     /**
      * Builds a cpath2 web query parameters objects.
      * 
+     * This is to build a request parameters object for
+     * the {@link #doPost(Cmd, Class, Object)} method.
+     * 
      * @param command
      * @param graphType
      * @param sources
@@ -369,8 +385,8 @@ public final class CPath2Client
      * @param outputFormat
      * @return
      */
-    private Object buildRequest(Cmd command, GraphType graphType, Collection<String> sources, Collection<String> targets, 
-    		OutputFormat outputFormat) 
+    public Object buildRequest(Cmd command, GraphType graphType, Collection<String> sources, 
+    		Collection<String> targets, OutputFormat outputFormat) 
     {	
     	MultiValueMap<String, String> request = new LinkedMultiValueMap<String, String>();
     	
@@ -384,6 +400,8 @@ public final class CPath2Client
     		request.add(CmdArgs.kind.name(), graphType.name());
     		request.add(CmdArgs.limit.name(), graphQueryLimit.toString());
     		request.put(CmdArgs.source.name(), new ArrayList<String>(sources));
+    		request.put(CmdArgs.organism.name(), new ArrayList<String>(organisms));
+    		request.put(CmdArgs.datasource.name(), new ArrayList<String>(dataSources));
     		
     		switch(graphType) {
     			case COMMONSTREAM:
