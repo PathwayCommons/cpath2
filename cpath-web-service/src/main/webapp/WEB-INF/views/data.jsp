@@ -20,12 +20,10 @@
 		<h2>The Data Directory Content</h2>
 		<h3>Description:</h3>
 			<p>
-				Data uploaded to the CPath2 server get organized as follows:
-				<br /><br /> <code>&lt;IDENTIFIER&gt;.&lt;VERSION&gt;.&lt;[EXT]&gt;</code><br /><br />
-				where:
-				<em>IDENTIFIER</em> - Metadata Identifier;
-				<em>VERSION</em> - Metadata Version;
-				<em>EXT</em> (optional).
+				Input data files uploaded to the CPath2 server get new names like 
+				<code>&lt;IDENTIFIER&gt;.&lt;[EXT]&gt;</code>, where 
+				<em>IDENTIFIER</em> is the corresponding Metadata ID 
+				(and <em>EXT</em> is optional file extention).
 			</p>
 		<h3>FILES:</h3>
 		<dl>
