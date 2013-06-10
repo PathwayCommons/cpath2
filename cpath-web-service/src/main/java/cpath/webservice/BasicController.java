@@ -89,7 +89,7 @@ public abstract class BasicController {
 	{
 		if(resp instanceof ErrorResponse) {
 			
-			errorResponse(INTERNAL_ERROR, ((ErrorResponse) resp).toString(), response);
+			errorResponse(((ErrorResponse) resp).getStatus(), ((ErrorResponse) resp).toString(), response);
 			
 		} 
 		else if(resp.isEmpty()) {

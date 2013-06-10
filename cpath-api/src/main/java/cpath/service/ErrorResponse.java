@@ -45,6 +45,10 @@ public final class ErrorResponse extends ServiceResponse {
 		return statusCode.equals(status);
 	}
 	
+	public Status getStatus() {
+		return status;
+	}
+	
 	@Override
 	public String toString() {
 		return 	getErrorMsg() + " - " + errorDetails;
