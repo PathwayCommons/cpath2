@@ -38,13 +38,21 @@
 
 
 	<dependencies>
+<!-- 		<dependency> -->
+<!-- 			<groupId>pathwaycommons.cpath</groupId> -->
+<!-- 			<artifactId>cpath-admin</artifactId> -->
+<!-- 			<version>${project.version}</version> -->
+<!-- 			<scope>runtime</scope> -->
+<!-- 			<classifier>exec</classifier> -->
+<!-- 			<type>jar</type> -->
+<!-- 		</dependency> -->
 		<dependency>
 			<groupId>pathwaycommons.cpath</groupId>
-			<artifactId>cpath-admin</artifactId>
+			<artifactId>cpath-impl</artifactId>
 			<version>${project.version}</version>
 			<scope>runtime</scope>
-			<classifier>exec</classifier>
 			<type>jar</type>
+			<classifier>exec-jar</classifier>
 		</dependency>
 		<dependency>
 			<groupId>pathwaycommons.cpath</groupId>
@@ -58,8 +66,8 @@
 			<artifactId>cpath-web-service</artifactId>
 			<version>${project.version}</version>
 			<scope>runtime</scope>
-			<classifier>exec-war</classifier>
 			<type>jar</type>
+			<classifier>exec-war</classifier>
 		</dependency>
 	</dependencies>
 

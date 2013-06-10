@@ -1,18 +1,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	
+
 	<parent>
 		<artifactId>parent</artifactId>
 		<groupId>pathwaycommons.cpath</groupId>
 		<version>4.1.0-SNAPSHOT</version>
 	</parent>
-	
+
 	<artifactId>cpath-web-service</artifactId>
 	<packaging>war</packaging>
-	
+
 	<name>cPath2 Web Service</name>
-	<description>cPath Web Services and Basic Help online</description>
+	<description>cPath Web Services, online Demo, and Admin apps</description>
 
 	<build>
 		<plugins>
@@ -30,12 +30,13 @@
 							</includes>
 						</resource>
 					</webResources>
+<!-- 					<attachClasses>true</attachClasses> -->
+<!--   					<archiveClasses>true</archiveClasses> -->
 				</configuration>
 			</plugin>
 			<plugin>
-			<!-- Can run the exec-jar as:
-			java -Xms256m -Xmx3g -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -jar target/cpath-web-service-<VERSION>-exec-war.jar
-			-->
+				<!-- Can run the exec-jar as: java -Xms256m -Xmx3g -DCPATH2_HOME=$CPATH2_HOME 
+					-Djava.io.tmpdir=$CPATH2_HOME/tmp -jar target/cpath-web-service-<VERSION>-exec-war.jar -->
 				<groupId>org.apache.tomcat.maven</groupId>
 				<artifactId>tomcat7-maven-plugin</artifactId>
 				<version>2.0</version>
@@ -49,7 +50,7 @@
 						<configuration>
 							<path>/</path>
 							<!-- <serverXml>src/main/tomcatconf/server.xml</serverXml> -->
-<!-- 							<enableNaming>false</enableNaming> -->
+							<!-- <enableNaming>false</enableNaming> -->
 							<attachArtifactClassifier>exec-war</attachArtifactClassifier>
 							<attachArtifactClassifierType>jar</attachArtifactClassifierType>
 							<port>${tomcat.http.port}</port>
@@ -57,11 +58,63 @@
 						</configuration>
 					</execution>
 				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.slf4j</groupId>
+						<artifactId>jcl-over-slf4j</artifactId>
+						<version>${slf4j.version}</version>
+						<scope>runtime</scope>
+					</dependency>
+					<dependency>
+						<groupId>org.slf4j</groupId>
+						<artifactId>slf4j-api</artifactId>
+						<version>${slf4j.version}</version>
+						<scope>runtime</scope>
+					</dependency>
+					<dependency>
+						<groupId>org.slf4j</groupId>
+						<artifactId>jul-to-slf4j</artifactId>
+						<version>${slf4j.version}</version>
+						<scope>runtime</scope>
+					</dependency>
+					<dependency>
+						<groupId>ch.qos.logback</groupId>
+						<artifactId>logback-classic</artifactId>
+						<version>${logback.version}</version>
+						<scope>runtime</scope>
+					</dependency>
+					<dependency>
+						<groupId>ch.qos.logback</groupId>
+						<artifactId>logback-access</artifactId>
+						<version>${logback.version}</version>
+						<scope>runtime</scope>
+					</dependency>
+				</dependencies>
 			</plugin>
 		</plugins>
 	</build>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-ehcache</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>pathwaycommons.cpath</groupId>
+			<artifactId>cpath-api</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-httpclient</groupId>
+			<artifactId>commons-httpclient</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>net.sf.ehcache</groupId>
+			<artifactId>ehcache-core</artifactId>
+			<scope>runtime</scope>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-webmvc</artifactId>
@@ -71,11 +124,6 @@
 			<artifactId>spring-web</artifactId>
 		</dependency>
 		<dependency>
-  			<groupId>pathwaycommons.cpath</groupId>
-  			<artifactId>cpath-api</artifactId>
-  			<version>${project.version}</version>
-  		</dependency>
-		<dependency>
 			<groupId>javax.validation</groupId>
 			<artifactId>validation-api</artifactId>
 		</dependency>
@@ -83,12 +131,7 @@
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-validator</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>net.sf.ehcache</groupId>
-			<artifactId>ehcache-core</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-		
+
 		<!-- Jackson JSON Mapper -->
 		<dependency>
 			<groupId>org.codehaus.jackson</groupId>
@@ -104,7 +147,7 @@
 			<artifactId>servlet-api</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		
+
 		<!-- JSP and security -->
 		<dependency>
 			<groupId>javax.servlet</groupId>
@@ -128,26 +171,8 @@
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-config</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>pathwaycommons.cpath</groupId>
-			<artifactId>cpath-admin</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-		<!-- logging Goodness -->
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-		</dependency>		
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-log4j12</artifactId>
-			<scope>runtime</scope>
-		</dependency>
+		
+		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>jcl-over-slf4j</artifactId>
@@ -157,6 +182,21 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>jul-to-slf4j</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+		<dependency> <!-- this is mainly for the org.obo library in the biopax-validator that directly uses log4j api-->
+			<groupId>org.slf4j</groupId>
+			<artifactId>log4j-over-slf4j</artifactId>
+			<scope>runtime</scope>
+		</dependency>		
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>pathwaycommons.cpath</groupId>
+			<artifactId>cpath-impl</artifactId>
+			<version>${project.version}</version>
 		</dependency>
 	</dependencies>
 

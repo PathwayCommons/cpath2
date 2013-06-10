@@ -54,12 +54,12 @@
   <dependencySets>
     <dependencySet>
       <includes>
-        <include>*:cpath-admin:jar:exec</include> <!-- 'shaded' jar (see the cpath-admin/pom.xml) -->
+        <include>*:cpath-impl:jar:exec-jar</include> <!-- 'shaded' jar -->
       </includes>
       <outputDirectory></outputDirectory>
 	  <outputFileNameMapping>cpath2-cli.jar</outputFileNameMapping>
       <unpack>false</unpack>
-    </dependencySet>  
+    </dependencySet> 
     <dependencySet>
       <includes>
         <include>*:cpath-web-service:war</include>
