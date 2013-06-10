@@ -10,9 +10,9 @@
 		<param-value>cpath2.root</param-value>
 	</context-param>
 
-	<listener>
-		<listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
-	</listener>
+<!-- 	<listener> -->
+<!-- 		<listener-class>org.springframework.web.util.Log4jConfigListener</listener-class> -->
+<!-- 	</listener> -->
 
 	<listener>
 		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
@@ -41,8 +41,8 @@
 	<context-param>
 		<param-name>contextConfigLocation</param-name>
 		<param-value>
-			classpath:applicationContext-dao.xml
-			classpath:applicationContext-cpathService.xml
+			classpath:META-INF/spring/applicationContext-dao.xml
+			classpath:META-INF/spring/applicationContext-cpathService.xml
 			classpath:security-config.xml
 		</param-value>
 	</context-param>
@@ -61,6 +61,14 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 
+<!-- 	<filter> -->
+<!--     	<filter-name>TeeFilter</filter-name> -->
+<!--     	<filter-class>ch.qos.logback.access.servlet.TeeFilter</filter-class> -->
+<!-- 	</filter>  -->
+<!-- 	<filter-mapping> -->
+<!--     	<filter-name>TeeFilter</filter-name> -->
+<!--     	<url-pattern>/*</url-pattern> -->
+<!-- 	</filter-mapping> -->
 
 	<servlet>
 		<servlet-name>cpath2json</servlet-name>

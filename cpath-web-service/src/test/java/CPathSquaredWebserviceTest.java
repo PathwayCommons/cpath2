@@ -11,11 +11,10 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import cpath.config.CPathSettings;
 
 /**
  * Requires system property "cPath2Url", e.g, 
- * -DcPath2Url="http://localhost:8080/cpath2/ver1"
+ * -DcPath2Url="http://localhost:8080/"
  * JVM property
  */
 @Ignore // TODO comment out @Ignore and run tests when the WS is up and running
@@ -24,7 +23,7 @@ public class CPathSquaredWebserviceTest {
 	static RestTemplate template;
 
 	//default test endpoint
-	static String serviceUrl = "http://localhost:8080/cpath2";
+	static String serviceUrl = "http://localhost:8080/";
 	
 	static {
 		template = new RestTemplate();
@@ -51,7 +50,7 @@ public class CPathSquaredWebserviceTest {
 	}
 	
 
-	//@Test
+	@Test
 	public void testSearchPathway() {
 		String result = null;
 		result = template.getForObject(serviceUrl + 
@@ -64,21 +63,19 @@ public class CPathSquaredWebserviceTest {
 
 	//HTTP GET
 	@Test
-	public void testGetQueryById1() {
+	public void testGetQueryById() {
 		String result = template.getForObject(serviceUrl+"/get?uri={uri}", 
 				String.class, 
-				//"http://www.biopax.org/examples/myExample#ADP"); 
-				"HTTP://WWW.REACTOME.ORG/BIOPAX/48887#PATHWAY1076_1_9606");
+				"http://identifiers.org/uniprot/P27797");
 		assertNotNull(result);
-		System.out.println(result);
 	}
 	
 	
 	//HTTP POST
-	//@Test
+	@Test
 	public void testPostQueryById() {
 		MultiValueMap<String, String> map = new LinkedMultiValueMap<String, String>();
-		map.add("uri", "http://www.biopax.org/examples/myExample#Pathway50");
+		map.add("uri", "http://identifiers.org/uniprot/P27797");
 		String result = template.postForObject(serviceUrl+"/get", 
 				map, String.class);
 		assertNotNull(result);
