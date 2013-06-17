@@ -329,8 +329,11 @@ public final class CPath2Client
 			throws CPathException
 	{
 		Model model = doPost(command, Model.class, request);
-		if (mergeEquivalentInteractions)
+
+		if (mergeEquivalentInteractions && model != null)
+		{
 			ModelUtils.mergeEquivalentInteractions(model);
+		}
 		
 		return model;
 	}
