@@ -69,7 +69,7 @@ public class MetadataController extends BasicController
     
     //important: home.html (there are several controllers, and /home would create a circular redirects...)
     @RequestMapping("/home.html")
-    public String home(Model model) {
+    public String home() {
     	return "home";
     }	    
  
@@ -192,11 +192,6 @@ public class MetadataController extends BasicController
 				"Failed to load icon image from " +  cpathLogoUrl, response);
 			log.error("Failed to load icon image from " +  cpathLogoUrl, e);
 		}
-
-//		if(iconData == null || iconData.length == 0)
-//			errorResponse(Status.INTERNAL_ERROR, 
-//					"No icon image available from " +  cpathLogoUrl, response);
-//		else 
 		
         return iconData;
     }
@@ -247,8 +242,8 @@ public class MetadataController extends BasicController
 		
 		return "downloads";
     }
-    
 
+    
     @RequestMapping(value="/idmapping")
     public @ResponseBody Map<String, String> search(@RequestParam String[] id, 
     		HttpServletResponse response) throws IOException

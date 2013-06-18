@@ -35,13 +35,14 @@ public class CPath2ClientTest {
 	public final void testConnectionEtc() {
 		final CPath2Client client = CPath2Client.newInstance();
 		String endPointURL = client.getEndPointURL();
-		System.out.println("Using cpath2 instance at: " + endPointURL);
+//		System.out.println("Using cpath2 instance at: " + endPointURL);
 		
 		//GET usually works ok with different kind of redirects...
     	String res = client.restTemplate.getForObject(endPointURL + "help", String.class);
     	assertTrue(res.startsWith("<?xml version="));
 
     	//POST
+    	endPointURL = client.getActualEndPointURL();
     	res = client.restTemplate.postForObject(endPointURL + "help", null, String.class);
 //    	System.out.println(res);
     	assertTrue(res.startsWith("<?xml version="));

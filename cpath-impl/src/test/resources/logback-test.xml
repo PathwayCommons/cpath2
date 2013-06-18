@@ -11,7 +11,6 @@
   <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
       <pattern>%.-1level|[%thread]|%-40.40logger{0}|%msg%n</pattern>
-<!--       <pattern>%-4relative [%thread] %-5level %class - %msg%n</pattern> -->
     </encoder>
   </appender>
  

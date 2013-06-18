@@ -9,4 +9,5 @@ syntax: glob
 .settings/
 .springBeans
 .extract
+.externalToolBuilders
 target
