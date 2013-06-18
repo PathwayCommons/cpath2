@@ -30,8 +30,8 @@
 							</includes>
 						</resource>
 					</webResources>
-<!-- 					<attachClasses>true</attachClasses> -->
-<!--   					<archiveClasses>true</archiveClasses> -->
+					<!-- <attachClasses>true</attachClasses> -->
+					<!-- <archiveClasses>true</archiveClasses> -->
 				</configuration>
 			</plugin>
 			<plugin>
@@ -42,29 +42,21 @@
 				<version>2.0</version>
 				<executions>
 					<execution>
-						<id>tomcat-run</id>
+						<id>create-exec-war</id>
 						<goals>
 							<goal>exec-war-only</goal>
 						</goals>
 						<phase>package</phase>
 						<configuration>
 							<path>/</path>
-							<!-- <serverXml>src/main/tomcatconf/server.xml</serverXml> -->
 							<!-- <enableNaming>false</enableNaming> -->
 							<attachArtifactClassifier>exec-war</attachArtifactClassifier>
 							<attachArtifactClassifierType>jar</attachArtifactClassifierType>
-							<port>${tomcat.http.port}</port>
 							<charset>utf-8</charset>
 						</configuration>
 					</execution>
 				</executions>
 				<dependencies>
-					<dependency>
-						<groupId>org.slf4j</groupId>
-						<artifactId>jcl-over-slf4j</artifactId>
-						<version>${slf4j.version}</version>
-						<scope>runtime</scope>
-					</dependency>
 					<dependency>
 						<groupId>org.slf4j</groupId>
 						<artifactId>slf4j-api</artifactId>
@@ -73,8 +65,26 @@
 					</dependency>
 					<dependency>
 						<groupId>org.slf4j</groupId>
+						<artifactId>jcl-over-slf4j</artifactId>
+						<version>${slf4j.version}</version>
+						<scope>runtime</scope>
+					</dependency>
+					<dependency>
+						<groupId>org.slf4j</groupId>
 						<artifactId>jul-to-slf4j</artifactId>
 						<version>${slf4j.version}</version>
+						<scope>runtime</scope>
+					</dependency>
+					<dependency>
+						<groupId>org.slf4j</groupId>
+						<artifactId>log4j-over-slf4j</artifactId>
+						<version>${slf4j.version}</version>
+						<scope>runtime</scope>
+					</dependency>
+					<dependency>
+						<groupId>ch.qos.logback</groupId>
+						<artifactId>logback-core</artifactId>
+						<version>${logback.version}</version>
 						<scope>runtime</scope>
 					</dependency>
 					<dependency>
@@ -171,7 +181,7 @@
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-config</artifactId>
 		</dependency>
-		
+
 		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -183,14 +193,24 @@
 			<artifactId>jul-to-slf4j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-		<dependency> <!-- this is mainly for the org.obo library in the biopax-validator that directly uses log4j api-->
+		<dependency> <!-- this is mainly for the org.obo library in the biopax-validator that directly uses log4j api -->
 			<groupId>org.slf4j</groupId>
 			<artifactId>log4j-over-slf4j</artifactId>
 			<scope>runtime</scope>
-		</dependency>		
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-core</artifactId>
+			<scope>runtime</scope>
+		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-access</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>

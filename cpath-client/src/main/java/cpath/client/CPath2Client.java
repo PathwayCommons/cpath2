@@ -56,6 +56,7 @@ public final class CPath2Client
 	final RestTemplate restTemplate;
 	
 	private String endPointURL;
+	private String actualEndPointURL;
 	private Integer page = 0;
     private Integer graphQueryLimit = 1;
     private Collection<String> organisms = new HashSet<String>();
@@ -98,36 +99,11 @@ public final class CPath2Client
     	// add BioPAX http message converter
         client.restTemplate.getMessageConverters().add(1, new BioPAXHttpMessageConverter(bioPAXIOHandler));
     	
-    	// init the server PROVIDER_URL
-    	client.endPointURL = System.getProperty(JVM_PROPERTY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);
+        // set the server URL (default one or - from the java option)
+    	String url = System.getProperty(JVM_PROPERTY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);  	
+    	client.setEndPointURL(url);
     	
-    	assert client.endPointURL != null :  "BUG: cpath2 PROVIDER_URL is not defined";
-    	
-    	// find the actual URL (or at least the first one that works via POST)
-    	String origUrl = client.endPointURL;
-    	while(true) {
-    		ResponseEntity<String> re = client.restTemplate
-    			.exchange(client.endPointURL, HttpMethod.HEAD, null, String.class);  		
-    		
-    		if(re.getStatusCode().equals(HttpStatus.FOUND)
-    			|| re.getStatusCode().equals(HttpStatus.MOVED_PERMANENTLY)) {
-    			client.endPointURL = re.getHeaders().getLocation().toString();
-    			LOGGER.info("Found new location: " + client.endPointURL 
-        				+ "; " + re.getStatusCode());
-    		}
-    		else if(re.getStatusCode().equals(HttpStatus.OK)) {
-    			LOGGER.info("Success: " + client.endPointURL 
-    				+ "; " + re.getStatusCode());
-    			break; //exit the infinite loop
-    		}
-    		else {
-    			throw new RuntimeException("HTTP POST failed " +
-    				"after the client was redirected " +
-    				"from " + origUrl +	" to " + client.endPointURL 
-    				+ " (status: " + re.getStatusCode() + ")");
-    		}
-    	}
-    	
+    	assert client.actualEndPointURL != null :  "cPath2 endpoint URL is undefined";
     	
     	return client;
     }
@@ -177,7 +153,7 @@ public final class CPath2Client
 	public <T> T doPost(Cmd command, Class<T> respClass, Object request)
 		throws CPathException 
 	{
-		final String url = endPointURL + command;
+		final String url = actualEndPointURL + command;
 		
 		try {
 			return restTemplate.postForObject(url, request, respClass);
@@ -241,7 +217,7 @@ public final class CPath2Client
     	final String kw = (keywords == null || keywords.length == 0)
     			? "*" : join("", Arrays.asList(keywords), " ");
     	
-    	String url = endPointURL + Cmd.SEARCH + "?" 
+    	String url = actualEndPointURL + Cmd.SEARCH + "?" 
             	+ CmdArgs.q + "=" + kw // spaces means 'OR'
                 + (getPage() > 0 ? "&" + CmdArgs.page + "=" + getPage() : "")
                 + (getDataSources().isEmpty() ? "" : "&" + join(CmdArgs.datasource + "=", getDataSources(), "&"))
@@ -590,7 +566,7 @@ public final class CPath2Client
      */
     public SearchResponse getTopPathways() {
     	
-    	SearchResponse resp = restTemplate.getForObject(endPointURL 
+    	SearchResponse resp = restTemplate.getForObject(actualEndPointURL 
         		+ Cmd.TOP_PATHWAYS, SearchResponse.class);
     	
     	Collections.sort(resp.getSearchHit(), new Comparator<SearchHit>() {
@@ -638,23 +614,63 @@ public final class CPath2Client
         return StringUtils.join(prefixed, delimiter);
     }
     
-    
+ 
     /**
-     * The WEB Service PROVIDER_URL prefix.
+     * cPath2 Web Service URL.
      * 
-     * @return the end point PROVIDER_URL as a string
+     * @return the cpath2 end point URL as a string
      */
     public String getEndPointURL() {
         return endPointURL;
+    }
+    
+    
+    /**
+     * Actual cPath2 Web Service URL that is 
+     * resolved from the {@link #endPointURL} by
+     * following HTTP (302, 301) redirects.
+     * 
+     * @return the resolved cpath2 end point URL
+     */
+    public String getActualEndPointURL() {
+        return actualEndPointURL;
     }
 
     
     /**
      * @see #getEndPointURL()
-     * @param endPointURL the end point PROVIDER_URL as a string
+     * @param endPointURL the cpath2 end point URL as string
      */
     public void setEndPointURL(String endPointURL) {
         this.endPointURL = endPointURL;
+        
+        if(this.endPointURL.equals(this.actualEndPointURL))
+        	return; // nothing else to do.
+    	
+    	// discover the actual URL (the first one that works via the POST method)
+    	actualEndPointURL = this.endPointURL; //initial value
+    	while(true) {
+    		ResponseEntity<String> re = restTemplate
+    			.exchange(actualEndPointURL, HttpMethod.HEAD, null, String.class);  		
+    		
+    		if(re.getStatusCode().equals(HttpStatus.FOUND)
+    			|| re.getStatusCode().equals(HttpStatus.MOVED_PERMANENTLY)) {
+    			actualEndPointURL = re.getHeaders().getLocation().toString();
+    			LOGGER.info("Found new location: " + actualEndPointURL 
+        				+ "; " + re.getStatusCode());
+    		}
+    		else if(re.getStatusCode().equals(HttpStatus.OK)) {
+    			LOGGER.info("OK: will be using" + actualEndPointURL 
+    				+ " instead of " + endPointURL);
+    			break; //exit the infinite loop
+    		}
+    		else { //for all other status codes
+    			throw new RuntimeException("HTTP POST failed " +
+    				"after the client was redirected " +
+    				"from " + endPointURL +	" to " + actualEndPointURL 
+    				+ " (status: " + re.getStatusCode() + ")");
+    		}
+    	}
     }
 
     
@@ -784,7 +800,7 @@ public final class CPath2Client
      * @return valid values for the BioPAX type parameter.
      */
     public Collection<String> getValidTypes() {
-    	Help help = restTemplate.getForObject(endPointURL + "help/types", Help.class);
+    	Help help = restTemplate.getForObject(actualEndPointURL + "help/types", Help.class);
     	return parseHelpSimple(help).keySet();
     }
 
