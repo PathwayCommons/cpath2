@@ -30,23 +30,12 @@
 <!-- 		<property name="exceptionAttribute"><value>convertedException</value></property> -->
 <!-- 	</bean> -->
 
-	
-	<!-- Application Message Bundle - required to auto-resolve variables in JSP pages via <fmt: > element ...-->
-<!-- 	<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource"> -->
-<!-- 		<property name="basenames"> -->
-<!-- 			<list> -->
-<!-- 				<value>file:${CPATH2_HOME}/cpath2</value> -->
-<!-- 			</list> -->
-<!-- 		</property> -->
-<!-- 		<property name="cacheSeconds" value="0" /> -->
-<!-- 	</bean>	 -->
-        
-<!-- 	<bean id="viewResolver" -->
-<!-- 		class="org.springframework.web.servlet.view.UrlBasedViewResolver"> -->
-<!-- 		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/> -->
-<!-- 		<property name="prefix" value="/WEB-INF/views/" /> -->
-<!-- 		<property name="suffix" value=".jsp" /> -->
-<!-- 	</bean>          -->
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+		<property name="prefix" value="/WEB-INF/views/" />
+		<property name="suffix" value=".jsp" />
+	</bean> 	
         
     <bean id="metadataController" class="cpath.webservice.MetadataController">
 		<constructor-arg ref="metadataDAO"/>
@@ -67,6 +56,10 @@
 		<constructor-arg ref="service"/>
 	</bean>  
 	    
+	<bean id="adminController" class="cpath.webservice.CPathAdminController">
+		<constructor-arg ref="metadataDAO"/>
+	</bean>	    
+	    
 	<!-- mvc:annotation-driven must the last -->
     <mvc:annotation-driven/>	
 	
@@ -74,13 +67,12 @@
 	<mvc:resources mapping="/downloads/**" location="file:${CPATH2_HOME}/downloads/" />
 	<!-- make internal css, script resources available for the html/jsp pages -->
 	<mvc:resources mapping="/resources/**" location="/resources/" />
-	<!-- do not want config. and data files seen at all (even securely, by admin), 
-		- disable the following line -->
+	<!-- do not want config. and data files seen at all (even securely, by admin), then disable the following line -->
 	<mvc:resources mapping="/admin/homedir/**" location="file:${CPATH2_HOME}/" />
 	
 	<mvc:interceptors>
-<!--       	<bean class="cpath.webservice.interceptor.CPathWebserviceHandlerInterceptor" /> -->
-		<bean class="cpath.webservice.interceptor.CPathMaintenanceHandlerInterceptor" />                
+		<bean class="cpath.webservice.interceptor.CPathMaintenanceHandlerInterceptor" />
+		<bean class="cpath.webservice.interceptor.CPathWebserviceHandlerInterceptor" />           
     </mvc:interceptors> 
       
 </beans>

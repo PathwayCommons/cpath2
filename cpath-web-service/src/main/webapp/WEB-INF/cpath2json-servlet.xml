@@ -51,7 +51,6 @@
 	</bean>
     
 	<mvc:interceptors>
-<!--       <bean class="cpath.webservice.interceptor.CPathWebserviceHandlerInterceptor" /> -->
       <bean class="cpath.webservice.interceptor.CPathMaintenanceHandlerInterceptor" />                   
     </mvc:interceptors> 
         

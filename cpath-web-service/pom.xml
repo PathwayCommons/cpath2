@@ -49,10 +49,11 @@
 						<phase>package</phase>
 						<configuration>
 							<path>/</path>
-							<!-- <enableNaming>false</enableNaming> -->
+							<enableNaming>false</enableNaming>
 							<attachArtifactClassifier>exec-war</attachArtifactClassifier>
 							<attachArtifactClassifierType>jar</attachArtifactClassifierType>
 							<charset>utf-8</charset>
+							<accessLogValveFormat>%a %l %u %t %r %q %s %b %I %D</accessLogValveFormat>
 						</configuration>
 					</execution>
 				</executions>

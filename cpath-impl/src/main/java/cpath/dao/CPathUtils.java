@@ -3,9 +3,6 @@
  */
 package cpath.dao;
 
-import static cpath.config.CPathSettings.PROP_DB_DRIVER;
-import static cpath.config.CPathSettings.property;
-
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -76,55 +73,38 @@ public final class CPathUtils {
 	private CPathUtils() {
 		throw new AssertionError("Not instantiable");
 	}
-	
-	/**
-	 * Creates a new empty database.
-	 * If the database exists, it will be destroyed,
-	 * and new empty (no tables) one will be created.
-	 * 
-	 * @param db
-	 */
-	public static void createDatabase(final String db) {
-		String driver = property(PROP_DB_DRIVER);		
-		if(driver.startsWith("org.h2")) {
-			newH2db(db);
-		} 
-		else {
-			throw new UnsupportedOperationException("Unsupported driver: " + driver);
-		}
-	}
 
 	
-	private static void newH2db(final String db) {
-		String dbfile = CPathSettings.homeDir() + File.separator + db;
-		try {
-			new File(dbfile + ".h2.db").delete();
-			new File(dbfile + ".lock.db").delete();
-			new File(dbfile + ".trace.db").delete();
-		} catch (Exception e) {
-			log.warn("newH2db", e);
-		}
-	}
-	
     /**
-     * Deletes a not empty file directory
+     * Deletes a directory and all files there.
      * 
      * @param path
      * @return
      */
     public static boolean deleteDirectory(File path) {
+    	cleanupDirectory(path);
+        return( path.delete() );
+    }
+ 
+    
+    /**
+     * Empties the directory.
+     * 
+     * @param path
+     * @return
+     */
+    public static void cleanupDirectory(File path) {
         if( path.exists() ) {
           File[] files = path.listFiles();
           for(int i=0; i<files.length; i++) {
              if(files[i].isDirectory()) {
-               deleteDirectory(files[i]);
+            	 cleanupDirectory(files[i]);
              }
              else {
                files[i].delete();
              }
           }
         }
-        return( path.delete() );
     }
     
     
@@ -486,16 +466,10 @@ public final class CPathUtils {
     	}   	
     }
 
-    
-	public static void createTestDatabase() {
-		CPathUtils.deleteTestIndexDir();
-		createDatabase(CPathSettings.TEST_DB);
-		log.info("Created test DB " + CPathSettings.TEST_DB);
-	}
 
-	public static void deleteTestIndexDir() {
-		deleteDirectory(new File(CPathSettings.homeDir() + File.separator + CPathSettings.TEST_DB));
-		log.info("Removed test index dir.");
+	public static void cleanupIndexDir(String db) {
+		cleanupDirectory(new File(CPathSettings.homeDir() + File.separator + db));
+		log.info("Emptied the index dir:" + db);
 	}    
 	
 }

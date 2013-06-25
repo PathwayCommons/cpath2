@@ -52,6 +52,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
@@ -99,11 +100,11 @@ public class BiopaxModelController extends BasicController {
 	 * @param localId - e.g., cpath2 Metadata identifier (datasource) 
 	 * or generated utility class local ID (32-byte hex string)
 	 */
-	@RequestMapping("/{localId}")
-	public void cpathIdInfo(@PathVariable String localId, 
-			Writer writer, HttpServletResponse response) throws Exception {
-			Get get = new Get();
-			
+	@RequestMapping(method=RequestMethod.GET, value="/{localId}")
+	public void cpathIdInfo(@PathVariable String localId, Writer writer, 
+			HttpServletRequest request, HttpServletResponse response) 
+					throws Exception 
+	{
 			// a hack for this URI resolving service to overcome
 			// e.g., Virtuoso/fct that prepends
 			// inserts '#' between xml:base and local part URI,
@@ -115,16 +116,20 @@ public class BiopaxModelController extends BasicController {
 				localId = URLEncoder.encode(localId, "UTF-8");
 			}
 			
+			Get get = new Get();			
 			get.setUri(new String[]{xmlBase + localId});
-			elementById(get, null, writer, response);
+			elementById(get, null, writer, request, response);			
 	}
 	
 	
 	// Get by ID (URI) command
     @RequestMapping("/get")
     public void elementById(@Valid Get get, BindingResult bindingResult, 
-    	Writer writer, HttpServletResponse response) throws IOException
+    	Writer writer, HttpServletRequest request, HttpServletResponse response) 
+    		throws IOException
     {
+    	logHttpRequest(request);
+    	
     	if(bindingResult != null &&  bindingResult.hasErrors()) {
     		errorResponse(Status.BAD_REQUEST, 
     				errorFromBindingResult(bindingResult), response);
@@ -141,17 +146,20 @@ public class BiopaxModelController extends BasicController {
 
 
 	@RequestMapping("/top_pathways")
-    public @ResponseBody SearchResponse topPathways(HttpServletResponse response)
+    public @ResponseBody SearchResponse topPathways(HttpServletRequest request, HttpServletResponse response)
     {
+		logHttpRequest(request);
 		return service.topPathways();
     }
     
     
     @RequestMapping("/traverse")
     public @ResponseBody ServiceResponse traverse(@Valid Traverse query, 
-    	BindingResult bindingResult, HttpServletResponse response) 
+    	BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
     		throws IOException 
     {
+    	logHttpRequest(request);
+    	
     	if(bindingResult.hasErrors()) {
     		errorResponse(Status.BAD_REQUEST, 
     				errorFromBindingResult(bindingResult), response);

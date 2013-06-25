@@ -2,7 +2,6 @@ package cpath.dao;
 
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
-import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Premerger;
@@ -25,12 +24,19 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.validator.utils.Normalizer;
 
 import org.junit.*;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.*;
 
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -45,26 +51,35 @@ import javax.imageio.ImageIO;
 /**
  * @author rodche
  */
+//@Ignore
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations={"classpath:testContext-2.xml"})
+@DirtiesContext(classMode=ClassMode.AFTER_EACH_TEST_METHOD)
 public class CPathMergerTest {
+	static Logger log = LoggerFactory.getLogger(CPathMergerTest.class);
+	
+	static final ResourceLoader resourceLoader = new DefaultResourceLoader();	
+	static final String XML_BASE = CPathSettings.xmlBase();
+	
+	@Autowired
+	CPathService service;
+	
+	@Autowired
+	PaxtoolsDAO paxtoolsDAO;
+	
+	@Autowired
+	MetadataDAO metadataDAO;
 
-	final static ResourceLoader resourceLoader = new DefaultResourceLoader();	
-	static final String XML_BASE = CPathSettings.xmlBase();	
-		
+	
 	@Test
-	public void testPremergeAndMerge() throws IOException {		
-		CPathUtils.createTestDatabase(); 
+	public void testPremergeAndMerge() throws IOException {
 		
 		//prepare the metadata
-		ClassPathXmlApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:testContext-dao.xml");
-		PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
         // load the test metadata and create warehouse
 		Premerger premerger = new PremergeImpl(metadataDAO, paxtoolsDAO, null, null);
 		metadataDAO.addOrUpdateMetadata("classpath:metadata.conf");			
 		premerger.buildWarehouse();
-		premerger.updateIdMapping(false);
-		
+		premerger.updateIdMapping(false);		
 		paxtoolsDAO.index();
 				
 		assertFalse(((Model)paxtoolsDAO).getObjects(ProteinReference.class).isEmpty());
@@ -114,7 +129,10 @@ public class CPathMergerTest {
 		// alternatively -
 		ac = metadataDAO.mapIdentifier("NP_619650", Mapping.Type.UNIPROT, "refseq").iterator().next(); 
 		assertTrue(metadataDAO.mapIdentifier("NP_619650.1", Mapping.Type.UNIPROT, null).isEmpty());
-		assertFalse(metadataDAO.mapIdentifier("NP_619650.1", Mapping.Type.UNIPROT, "refseq").isEmpty()); //used 'suggest' method internally to infer NP_619650
+		
+		//mapIdentifier uses 'suggest' method internally to infer NP_619650 from NP_619650.1 
+		//(the id-mapping table only has canonical uniprot IDs)
+		assertFalse(metadataDAO.mapIdentifier("NP_619650.1", Mapping.Type.UNIPROT, "refseq").isEmpty());
 		assertEquals("Q8TD86", ac);
 		assertTrue(((Model)paxtoolsDAO).containsID("http://identifiers.org/uniprot/" + ac));
 			
@@ -130,12 +148,11 @@ public class CPathMergerTest {
 			new File(getClass().getClassLoader().getResource("").getPath() 
 				+ File.separator + "out.gif"));		
 		
-		//load test models from files
+		
+		// MERGE
+		
+		//Load test models from files
 		final List<Model> pathwayModels = initPathwayModels();
-			
-//		context = new ClassPathXmlApplicationContext("classpath:testContext-dao.xml");
-//		paxtoolsDAO = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-//		metadataDAO = (MetadataDAO) context.getBean("metadataDAO");		
 		
 		// note: in production we'd run it as ImportFactory.newMerger(paxtoolsDAO,...).merge();
 		// cpath2 metadata contains the warehouse and id-mapping tables
@@ -146,11 +163,15 @@ public class CPathMergerTest {
 			paxtoolsDAO.run(merger);
 		}
 		
-		//check first whether it's ok after export/import as owl?	
-		paxtoolsDAO.exportModel(new FileOutputStream("target/testMerge.out.owl"));					
+		//check first whether it's ok after export/import as owl?
+		final String outf = getClass().getClassLoader().getResource("").getPath() 
+				+ File.separator + "testMerge.out.owl";
+		FileOutputStream fos = new FileOutputStream(outf);
+		paxtoolsDAO.exportModel(fos);
+		fos.close();
 		SimpleIOHandler reader = new SimpleIOHandler();
 		reader.mergeDuplicates(true);
-		Model m = reader.convertFromOWL(new FileInputStream("target/testMerge.out.owl"));			
+		Model m = reader.convertFromOWL(new FileInputStream(outf));			
 		// run assertions for this in-memory model
 		assertMerge(m);		
 		
@@ -163,17 +184,15 @@ public class CPathMergerTest {
 			}
 		});
 		
-		// test the service-tier features
+		// SERVICE-TIER features
 		
 		//additional metadata entry
 		Metadata md = new Metadata("test", "Reactome", "Foo", "", "", new byte[]{}, METADATA_TYPE.BIOPAX, "", "");		
 		metadataDAO.saveMetadata(md);	
 		md.setProvenanceFor(m); // normally, this happens in PreMerge
-		paxtoolsDAO.merge(m);
-		
+		paxtoolsDAO.merge(m);		
 		// reindex all
 		paxtoolsDAO.index();		
-		CPathService service = (CPathService) context.getBean("service");
 		
 		// fetch as BIOPAX
 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P27797");
@@ -185,10 +204,8 @@ public class CPathMergerTest {
 		
 		// fetch as SIF
 		res = service.fetch(OutputFormat.BINARY_SIF, "http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p");
-		assertNotNull(res);
-		assertFalse(res instanceof ErrorResponse);
-		assertFalse(res.isEmpty());
 		assertTrue(res instanceof DataResponse);
+		assertFalse(res.isEmpty());
 		String data = (String) ((DataResponse)res).getData();		
 		assertNotNull(data);
 
@@ -196,8 +213,6 @@ public class CPathMergerTest {
 		assertTrue(data.contains("REACTS_WITH"));
 		assertTrue(data.contains("GENERIC_OF"));
 		assertTrue(data.contains("http://identifiers.org/uniprot/P27797"));
-		
-		context.close();
 	}
 	
 	

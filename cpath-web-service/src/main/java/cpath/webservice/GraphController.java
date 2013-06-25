@@ -29,7 +29,6 @@ package cpath.webservice;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Arrays;
 
 import cpath.service.CPathService;
 import cpath.service.GraphType;
@@ -48,6 +47,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
@@ -86,16 +86,16 @@ public class GraphController extends BasicController {
 	
 	@RequestMapping("/graph")
 	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, 
-			Writer writer, HttpServletResponse response) throws IOException
+			Writer writer, HttpServletRequest request, HttpServletResponse response) throws IOException
     {
+		logHttpRequest(request);
+		
 		//check for binding errors
 		if(bindingResult.hasErrors()) {
 			errorResponse(Status.BAD_REQUEST, 
 					errorFromBindingResult(bindingResult), response);
 			return;
 		} 
-		
-		log("/graph", graph);
 		
 		ServiceResponse result;
 		
@@ -126,16 +126,5 @@ public class GraphController extends BasicController {
 		
 		stringResponse(result, writer, response);
     }
-
-	
-	private void log(String method, Graph graph) {
-		log.debug(method + " query; format:" + graph.getFormat() 
-			+ ", kind:" + graph.getKind()
-			+ ", source:" + Arrays.toString(graph.getSource())
-			+ ", target:" + Arrays.toString(graph.getTarget())
-			+ ", limit: " + graph.getLimit() 
-			+ ", direction: " + graph.getDirection()
-		);
-	}
 
 }

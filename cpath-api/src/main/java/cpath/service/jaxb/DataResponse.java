@@ -29,6 +29,6 @@ public class DataResponse extends ServiceResponse {
 	
 	@XmlTransient
 	public boolean isEmpty() {
-		return  (data == null || data.toString().trim().length() == 0);
+		return  (data == null || data.toString().trim().isEmpty());
 	}
 }

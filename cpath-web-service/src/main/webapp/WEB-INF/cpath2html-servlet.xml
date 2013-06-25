@@ -28,16 +28,6 @@
 <!-- 		<property name="exceptionAttribute"><value>convertedException</value></property> -->
 <!-- 	</bean>	 -->
 	
-	<!-- Application Message Bundle - required to auto-resolve variables in JSP pages via <fmt: > element ...-->
-<!-- 	<bean id="messageSource" class="org.springframework.context.support.ReloadableResourceBundleMessageSource"> -->
-<!-- 		<property name="basenames"> -->
-<!-- 			<list> -->
-<!-- 				<value>file:${CPATH2_HOME}/cpath2</value> -->
-<!-- 			</list> -->
-<!-- 		</property> -->
-<!-- 		<property name="cacheSeconds" value="0" /> -->
-<!-- 	</bean>	 -->
-	 
 	<bean id="viewResolver"
 		class="org.springframework.web.servlet.view.UrlBasedViewResolver">
 		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
@@ -59,11 +49,6 @@
 	<mvc:view-controller path="/tests.html" view-name="tests"/>
 	<mvc:view-controller path="/robots.txt" view-name="robots"/>
 	
-	<!-- Configures Handler Interceptors -->	
-<!-- 	<mvc:interceptors> -->
-<!-- 		<bean class="cpath.webservice.interceptor.CPathWebserviceHandlerInterceptor" /> -->
-<!-- 	</mvc:interceptors> -->
-
 	<!-- mvc:annotation-driven must the last -->
     <mvc:annotation-driven/>	
 </beans>

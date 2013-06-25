@@ -56,8 +56,6 @@ public final class CPathSettings {
 	 */
 	public static final String HOME_DIR = "CPATH2_HOME";
 	
-	public static final String TEST_DB = "test_cpath2";
-	
 	/**
 	 * Name for the cpath2 instance properties file (located in the cpath2 home directory)
 	 */

@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
@@ -132,5 +133,33 @@ public abstract class BasicController {
 	        g.dispose();
 	    }
 	    return newImage;
+	}
+	
+	void logHttpRequest(HttpServletRequest request) {
+		String ip = request.getHeader("X-Forwarded-For");
+		
+		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+            ip = request.getHeader("Proxy-Client-IP");  
+        }  
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+            ip = request.getHeader("WL-Proxy-Client-IP");  
+        }  
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+            ip = request.getHeader("HTTP_CLIENT_IP");  
+        }  
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");  
+        }  
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+            ip = request.getRemoteAddr();  
+        }  
+		
+		log.info("IP: " + ip
+				+ "\t" + request.getMethod() 
+				+ "\t" + request.getRequestURI()
+				+ "\t" + request.getQueryString()
+//				+ "\t" + request.getHeader("Referer")
+//				+ "\t" + request.getHeader("User-Agent")
+				);
 	}
 }

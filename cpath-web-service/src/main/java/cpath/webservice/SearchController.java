@@ -46,6 +46,7 @@ import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
@@ -79,9 +80,13 @@ public class SearchController extends BasicController {
 
     @RequestMapping(value="/search")
     public @ResponseBody ServiceResponse search(@Valid Search search, 
-    		BindingResult bindingResult, HttpServletResponse response) throws IOException
+    		BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
+    			throws IOException
     {		
-		if(bindingResult.hasErrors()) {
+		if(!search.getQ().startsWith("*")) //a quick fix: do not log UI and not specific requests
+			logHttpRequest(request);
+    	
+    	if(bindingResult.hasErrors()) {
 			errorResponse(Status.BAD_REQUEST, 
 					errorFromBindingResult(bindingResult), response);
 			return null;

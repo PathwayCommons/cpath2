@@ -51,46 +51,43 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring.version>3.2.3.RELEASE</spring.version>
-		<spring-security.version>3.1.3.RELEASE</spring-security.version>
-		<hibernate.version>4.2.0.Final</hibernate.version>
-		<hibernate-search.version>4.2.0.Final</hibernate-search.version>
-		<c3p0.version>0.9.5-pre2</c3p0.version>
-		<ehcache-core.version>2.6.5</ehcache-core.version>
+		<spring-security.version>3.1.4.RELEASE</spring-security.version>
+		<hibernate.version>4.2.2.Final</hibernate.version>
+		<hibernate-search.version>4.3.0.Final</hibernate-search.version>
+		<c3p0.version>0.9.5-pre3</c3p0.version>
+		<ehcache-core.version>2.6.6</ehcache-core.version>
 		<paxtools.version>4.2.1-SNAPSHOT</paxtools.version>
-		<validator.version>3.0.1</validator.version>
-		<miriam-lib.version>3.0.0</miriam-lib.version>
-		<junit.version>4.10</junit.version>
-		<log4j.version>1.2.13</log4j.version>
-		<bridgedb.version>1.1.0</bridgedb.version>
+		<validator.version>3.0.2-SNAPSHOT</validator.version>
+		<junit.version>4.11</junit.version>
 		<commons-logging.version>1.1.1</commons-logging.version>
 		<commons-lang.version>2.6</commons-lang.version>
 		<collections-generic.version>4.01</collections-generic.version>
 		<commons-collections.version>3.2.1</commons-collections.version>
-		<h2.version>1.3.171</h2.version>
+		<h2.version>1.3.172</h2.version>
 		<commons-httpclient.version>3.1</commons-httpclient.version>
 		<servlet-api.version>2.5</servlet-api.version>
-		<jstl.version>1.1.2</jstl.version>
+		<jstl.version>1.2</jstl.version>
 		<taglibs.standard.version>1.1.2</taglibs.standard.version>
-		<javax.validation-api.version>1.1.0.CR3</javax.validation-api.version>
-		<hibernate-validator.version>4.3.0.Final</hibernate-validator.version>
+		<javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
+		<hibernate-validator.version>4.3.1.Final</hibernate-validator.version>
 		<jackson-mapper.version>1.9.12</jackson-mapper.version>
-		<jaxb-api.version>2.2.7</jaxb-api.version>
-		<slf4j.version>1.6.6</slf4j.version>
+		<jaxb-api.version>2.2.9</jaxb-api.version>
+		<slf4j.version>1.7.5</slf4j.version>
 		<logback.version>1.0.13</logback.version>
-		<maven-compiler-plugin.version>3.0</maven-compiler-plugin.version>
+		<maven-compiler-plugin.version>3.1</maven-compiler-plugin.version>
 		<maven-war-plugin.version>2.3</maven-war-plugin.version>
-		<maven-release-plugin.version>2.4</maven-release-plugin.version>
-		<wagon-ssh.version>2.0</wagon-ssh.version>
-		<maven-surefire-plugin.version>2.12</maven-surefire-plugin.version>
+		<maven-release-plugin.version>2.4.1</maven-release-plugin.version>
+		<wagon-ssh.version>2.4</wagon-ssh.version>
+		<maven-surefire-plugin.version>2.15</maven-surefire-plugin.version>
 		<maven-jar-plugin.version>2.4</maven-jar-plugin.version>
 		<maven-source-plugin.version>2.2.1</maven-source-plugin.version>
-		<maven-site-plugin.version>3.2</maven-site-plugin.version>
+		<maven-site-plugin.version>3.3</maven-site-plugin.version>
 		<maven-javadoc-plugin.version>2.9</maven-javadoc-plugin.version>
 		<maven-jxr-plugin.version>2.3</maven-jxr-plugin.version>
-		<maven-project-info-reports-plugin.version>2.6</maven-project-info-reports-plugin.version>
+		<maven-project-info-reports-plugin.version>2.7</maven-project-info-reports-plugin.version>
 		<maven-resources-plugin>2.6</maven-resources-plugin>
 		<jaxb2-maven-plugin>1.5</jaxb2-maven-plugin>
-		<maven.enforcer.plugin>1.2</maven.enforcer.plugin>
+		<maven-enforcer-plugin>1.2</maven-enforcer-plugin>
 		<maven.version.range>[2.2.1,3.1.0)</maven.version.range>
 		<java.version>1.6</java.version>
 	</properties>
@@ -111,21 +108,11 @@
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>${maven-surefire-plugin.version}</version>
 					<configuration>
-						<systemProperties>
-							<property>
-								<name>log4j.configuration</name>
-								<value>file:${CPATH2_HOME}/log4j.properties</value>
-							</property>
-						</systemProperties>
-						<forkMode>once</forkMode>
-						<!-- enable assertions, tests run in sequential mode -->
 						<argLine>
-							-Xmx1g -Dfile.encoding=UTF-8 -DCPATH2_HOME=${CPATH2_HOME}
+							-Xmx2g -Dfile.encoding=UTF-8 -DCPATH2_HOME=${CPATH2_HOME}
 							-Djava.io.tmpdir=${CPATH2_HOME}/tmp
-							-ea -DforkMode=once
-							-Dnet.sf.ehcache.disabled=true
+							-ea -Dnet.sf.ehcache.disabled=true
 							-Dbiopax.normalizer.uri.strategy=simple
-							-Dhibernate.hbm2ddl.auto=update
 						</argLine>
 					</configuration>
 				</plugin>
@@ -162,7 +149,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>${maven.enforcer.plugin}</version>
+				<version>${maven-enforcer-plugin}</version>
 				<executions>
 					<execution>
 						<id>enforce-banned-dependencies</id>
@@ -358,6 +345,11 @@
 				<version>${spring.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-aspects</artifactId>
+				<version>${spring.version}</version>
+			</dependency>			
+			<dependency>
 				<groupId>org.springframework.security</groupId>
 				<artifactId>spring-security-core</artifactId>
 				<version>${spring-security.version}</version>
@@ -446,7 +438,7 @@
 			<dependency>
 				<groupId>org.biopax</groupId>
 				<artifactId>miriam-lib</artifactId>
-				<version>${miriam-lib.version}</version>
+				<version>${validator.version}</version>
 				<exclusions>
 					<exclusion>
 						<groupId>commons-logging</groupId>
