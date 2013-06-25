@@ -9,7 +9,7 @@
 <meta name="author" content="${cpath.name}" />
 <meta name="description" content="cPath2 Service Description" />
 <meta name="keywords" content="${cpath.name}, cPath2, cPathSquared, webservice, help, documentation" />
-<script  src="<c:url value="/resources/scripts/jquery-1.9.1.min.js"/>"></script>
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
 <script  src="<c:url value="/resources/scripts/json.min.js"/>"></script>
 <script  src="<c:url value="/resources/scripts/help.js"/>"></script>
 <link rel="stylesheet" href="<c:url value="/resources/css/cpath2.css"/>"  media="screen" />
@@ -34,20 +34,32 @@
 		<p>Data is freely available, under the license terms of each
 			contributing database.</p>
 		<!-- start of web service api documentation -->
-		<h2>Web Service API:</h2>
-		<p>You can programmatically access the data within Pathway Commons
-			using the Pathway Commons Web Service Application Programming
-			Interface (API). This page provides a reference guide to help you get
-			started.</p>
+		<h2>The cPath2 Web Service API:</h2>
+		<p>You can programmatically access the data within this cPath2 instance
+			using the Web Service Application Programming Interface (API). 
+			This page provides a reference guide to help you get started.</p>
 
-		<h3 id="commands">Commands:</h3>
+		<h3 id="commands">Main Commands (the API for a bioinformatician):</h3>
 		<ol>
 			<li><a href="#search">Command: SEARCH</a></li>
 			<li><a href="#get">Command: GET</a></li>
 			<li><a href="#graph">Command: GRAPH</a></li>
 			<li><a href="#traverse">Command: TRAVERSE</a></li>
 			<li><a href="#top_pathways">Command: TOP_PATHWAYS</a></li>
-			<li><a href="#help">Command: HELP</a></li>
+		</ol>
+		
+		<h3 id="more_commands">Other Features (for core developers):</h3>
+		<ol>
+			<li><a href="#help">HELP (RESTful registry of various info pages)</a></li>
+			<li><a href="#idmapping">IDMAPPING (to UniProt AC)</a></li>
+			<li><strong>Everything else</strong> 
+			after the base URL, except for 'robots.txt', 'favicon.ico', 'resources/*', etc. 
+			(app's internal resources), is treated as a biopax element's local 
+			ID (URI without xml:base prefix) and redirected to the <a href="#get">GET</a> 
+			command with parameter '?uri=${cpath.xmlBase}ID' (e.g., it works for
+			all RelationshipXrefs in the system; this is to make all the
+			normalized by us URIs Linked Data friendly and resolvable
+			either by this web service or Identifiers.org).</li>
 		</ol>
 
 		<!-- URIs -->
@@ -107,7 +119,7 @@
 				contain the keyword "BRCA2" (in any index field), or, more
 				specifically, - "BRCA2" in a Protein's 'name' (index) field.</p>
 				<p>BioPAX entity or utility class that match the search criteria (hits) and pass
-				all filters are <strong>ranked</strong>> and returned in XML or JSON format. 
+				all filters are <strong>ranked</strong> and returned in XML or JSON format. 
 				Search (index) field names are (case-sensitive): <em>comment, ecnumber, 
 				keyword, name, pathway, term, xrefdb, xrefid, dataSource, and organism</em>. 
 				The latter two were introduced mainly for filtering as un_tockenized, no
@@ -128,7 +140,7 @@
 						result page number. See below ("Output" section) for
 						details.</li>
 					<li><em>datasource=</em> [Optional] data source filter (<a
-						href="#available_datasource_parameter">values</a>). Multiple data
+						href="#data_sources">values</a>). Multiple data
 						source values are allowed per query; for example, <em>datasource=reactome&amp;datasource=pid</em>
 						means: we want data from Reactome OR NCI_Nature (PID)</li>
 					<li><em>organism=</em> [Optional] organism filter. Multiple
@@ -136,7 +148,7 @@
 						'organism=9606&amp;organism=10016' (which means either 9606 or
 						10016; can also use "homo sapiens", "mus musculus" instead).</li>
 					<li><em>type=</em> [Optional] BioPAX class filter (<a
-						href="#available_biopax_parameter">values</a>)</li>
+						href="#biopax_parameter">values</a>)</li>
 				</ul>
 				<h3>Output:</h3> XML result that follows the <a
 				href="help/schema">Search Response XML
@@ -209,7 +221,7 @@
 						('uri=Q06609&amp;uri=Q549Z0' - also works but will return Xrefs instead of ProteinReferences).
 						<a href="#miriam">See also</a> about MIRIAM and Identifiers.org.</li>
 					<li><em>format=</em> [Optional] output format (<a
-						href="#available_output_parameter">values</a>)</li>
+						href="#output_parameter">values</a>)</li>
 				</ul>
 				<h3>Output:</h3> By default, a complete BioPAX representation for
 				the record pointed to by the given uri. Other output formats are
@@ -274,7 +286,7 @@
 				<h3>Parameters:</h3>
 				<ul>
 					<li><em>kind=</em> [Required] graph query (<a
-						href="#available_graph_parameter">values</a>)</li>
+						href="#graph_parameter">values</a>)</li>
 					<li><em>source=</em> [Required] source object's URI. Multiple
 						source URIs are allowed per query, for example
 						'source=uri=http://identifiers.org/uniprot/Q06609&amp;source=uri=http://identifiers.org/uniprot/Q549Z0'.
@@ -286,13 +298,13 @@
 						See <a href="#miriam">a note about MIRIAM and Identifiers.org</a>.</li>
 					<li><em>direction=</em> [Optional, for NEIGHBORHOOD and
 						COMMONSTREAM] - graph search direction (<a
-						href="#available_direction_parameter">values</a>).</li>
+						href="#direction_parameter">values</a>).</li>
 					<li><em>limit=</em> [Optional] graph query search distance
 						limit (default = 1).</li>
 					<li><em>format=</em> [Optional] output format (<a
-						href="#available_output_parameter">values</a>)</li>
+						href="#output_parameter">values</a>)</li>
 					<li><em>datasource=</em> [Optional] data source filter (<a
-						href="#available_datasource_parameter">values</a>). Multiple data
+						href="#data_sources">values</a>). Multiple data
 						source values are allowed per query; for example, <em>datasource=reactome&amp;datasource=pid</em>
 						means: we want data from Reactome OR NCI_Nature (PID)</li>
 					<li><em>organism=</em> [Optional] organism filter. Multiple
@@ -405,9 +417,7 @@
 
 			<!-- help command -->
 			<li>
-				<h2>
-					<a id="help"></a>Command: HELP
-				</h2>
+				<h2><a id="help"></a>HELP</h2>
 				<h3>Summary:</h3> Finally, this is a RESTful web service that
 				returns the information about web service commands, parameters,
 				and BioPAX properties.
@@ -426,6 +436,24 @@
 					<li><a rel="example" href="help/types/provenance/properties">/help/types/provenance/properties</a></li>
 					<li><a rel="example" href="help/types/inverse_properties">/help/types/inverse_properties</a></li>
 					<li><a rel="example" href="help">/help</a></li>
+				</ol>
+			</li>
+			
+			<!-- idmapping command -->
+			<li>
+				<h2><a id="idmapping"></a>IDMAPPING</h2>
+				<h3>Summary:</h3> Unambiguously maps, e.g., HGNC gene symbols, NCBI Gene, RefSeq, ENS*, and
+				secondary UniProt identifiers to the primary UniProt accessions, or - 
+				ChEBI and PubChem IDs to primary ChEBI. You can mix different standard ID types in one query.
+				NOTE: This is a specific id-mapping (not general-purpose) for reference proteins and small molecules; 
+				it was first designed for internal use, such as to improve biopax data integration and allow for graph 
+				queries accept not only URIs but also standard IDs. The mapping tables were derived
+				exclusively from Swiss-Prot (DR fields) and ChEBI data (manually created tables and other mapping types and 
+				sources can be added in the future versions if necessary).
+				<h3>Output:</h3> JSON (serialized Map)
+				<h4>Examples:</h4> <br />
+				<ol>
+					<li><a rel="example" href="idmapping?id=BRCA2&id=TP53">/idmapping?id=BRCA2&amp;id=TP53</a></li>
 				</ol>
 			</li>
 		</ol>

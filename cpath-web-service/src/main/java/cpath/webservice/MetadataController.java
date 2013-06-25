@@ -9,6 +9,7 @@ import java.net.URL;
 import java.util.*;
 
 import javax.imageio.ImageIO;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import cpath.config.CPathSettings;
@@ -77,7 +78,7 @@ public class MetadataController extends BasicController
     @RequestMapping("/metadata/validations") // returns xml or json
     public @ResponseBody List<ValInfo> queryForValidationInfo() 
     {
-		log.debug("Query for all validations summary (xml/json)");
+		log.debug("Query for all validations summary");
     	return validationInfo();
     }
 
@@ -96,10 +97,12 @@ public class MetadataController extends BasicController
     
     @RequestMapping("/metadata/validations/{identifier}.html") //a JSP view
     public String queryForValidation(
-    		@PathVariable String identifier, Model model) 
+    		@PathVariable String identifier, Model model, HttpServletRequest request) 
     {
 		log.debug("Getting a validation report (html) for:" 
 				+ identifier);
+		
+		logHttpRequest(request);
 
     	ValidatorResponse body = service.validationReport(identifier, null);
 		model.addAttribute("response", body);
@@ -111,10 +114,9 @@ public class MetadataController extends BasicController
     // returns XML or Json 
     @RequestMapping("/metadata/validations/{identifier}")
     public @ResponseBody ValidatorResponse queryForValidation(
-    		@PathVariable String identifier) 
+    		@PathVariable String identifier, HttpServletRequest request) 
     {
-		log.debug("Getting complete validation report (XML/Json) for: " 
-			+ identifier);
+		logHttpRequest(request);
 		
     	return service.validationReport(identifier, null);
     } 
@@ -123,10 +125,10 @@ public class MetadataController extends BasicController
     // returns XML or Json 
     @RequestMapping("/metadata/validations/{identifier}/{file}")
     public @ResponseBody ValidatorResponse queryForValidation(
-    		@PathVariable String identifier, @PathVariable String file) 
+    		@PathVariable String identifier, @PathVariable String file,
+    		HttpServletRequest request) 
     {
-		log.debug("Getting validation report (XML/Json) for: " 
-			+ identifier + " (" + file + ")");
+		logHttpRequest(request);
     	
     	return service.validationReport(identifier, file);
     }
@@ -134,10 +136,10 @@ public class MetadataController extends BasicController
     
     @RequestMapping("/metadata/validations/{identifier}/{file}.html") //a JSP view
     public String queryForValidationByProviderAndFile(
-    		@PathVariable String identifier, @PathVariable String file, Model model) 
+    		@PathVariable String identifier, @PathVariable String file, 
+    		Model model, HttpServletRequest request) 
     {
-		log.debug("Getting a validation report (html) for:" 
-				+ identifier + " (" + file + ")");
+    	logHttpRequest(request);
 
     	ValidatorResponse body = service.validationReport(identifier, file);
 		model.addAttribute("response", body);
@@ -148,8 +150,8 @@ public class MetadataController extends BasicController
     
     @RequestMapping(value = "/metadata/logo/{identifier}")
     public  @ResponseBody byte[] queryForLogo(@PathVariable String identifier) 
-    		throws IOException {
-    	
+    		throws IOException 
+    {	
     	Metadata ds = service.getMetadataByIdentifier(identifier);
     	byte[] bytes = null;
     	
@@ -224,7 +226,9 @@ public class MetadataController extends BasicController
     
     
     @RequestMapping(value = "/downloads.html")
-    public String downloads(Model model) {
+    public String downloads(Model model, HttpServletRequest request) {
+    	logHttpRequest(request);
+    	
     	// get the sorted list of files to be shared on the web
     	String path = CPathSettings.downloadsDir(); 
     	File[] list = new File(path).listFiles();
@@ -246,9 +250,10 @@ public class MetadataController extends BasicController
     
     @RequestMapping(value="/idmapping")
     public @ResponseBody Map<String, String> search(@RequestParam String[] id, 
-    		HttpServletResponse response) throws IOException
+    		HttpServletRequest request, HttpServletResponse response) throws IOException
     {		
-			log.debug("/idmapping called for: " + Arrays.toString(id));
+			logHttpRequest(request);
+			
 			if(id == null || id.length == 0) {
 				errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", response);
 				return null;

@@ -6,7 +6,7 @@
 	<footer>
 		<ul>
 			<li>
-				Go back to <a href="<c:url value='/' />">Home Page</a> / <a href="#">Top of this page</a> 
+				Go back to <a href="<c:url value='/' />">Home Page</a> / <a href="#">Top</a> 
 			</li>
 			<li>
 				<security:authorize ifAnyGranted="ROLE_USER">
@@ -24,10 +24,9 @@
 			  <div class="marquee">
 				Powered by <a rel="external"
 				href="http://code.google.com/p/pathway-commons/">cPath2</a>, version ${project.version}. 
-				@Copyright 2009-2013 <a href="http://baderlab.org/" rel="external">University of
+				@Copyright 2009 <a href="http://baderlab.org/" rel="external">University of
 				Toronto</a> and <a href="http://www.cbio.mskcc.org" rel="external">Memorial Sloan-Kettering Cancer Center</a>
-			  </div>
-				
+			  </div>				
 			</li>
 		</ul>
 	</footer>

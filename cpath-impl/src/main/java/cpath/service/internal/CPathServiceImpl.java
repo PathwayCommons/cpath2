@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
 
+import org.biopax.paxtools.controller.Cloner;
 import org.biopax.paxtools.controller.Completer;
 import org.biopax.paxtools.controller.Fetcher;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -51,6 +52,7 @@ import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -93,6 +95,9 @@ public class CPathServiceImpl implements CPathService {
 	
 	private SimpleIOHandler simpleIO;
 	
+	private Cloner cloner;
+//	private Completer completer;
+	
 	//init. on first access to getBlacklist(); so do not use it directly
 	private Set<String> blacklist; 
 	
@@ -117,10 +122,13 @@ public class CPathServiceImpl implements CPathService {
 		this.metadataDAO = metadataDAO;
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
+		this.cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
+//		this.completer = new Completer(simpleIO.getEditorMap());
 	}
 	
 	
 	@Override
+	@Cacheable(value = "findElementsCache")
 	public ServiceResponse search(String queryStr, 
 			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms) 
 	{
@@ -147,6 +155,7 @@ public class CPathServiceImpl implements CPathService {
 		
 
 	@Override
+	@Cacheable(value = "elementByIdCache")
 	public ServiceResponse fetch(final OutputFormat format, final String... uris) {
 		if (uris.length == 0)
 			return new ErrorResponse(NO_RESULTS_FOUND,
@@ -162,7 +171,8 @@ public class CPathServiceImpl implements CPathService {
 			public void execute(Model model) {
 				try {
 					Set<BioPAXElement> elements = urisToBpes(model, mappedUris);
-					Model m = fullSubModel(model, elements);
+					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
+					Model m = cloner.clone(model, elements);
 					callback[0] = (new BiopaxConverter(getBlacklist()))
 						.convert(m, format, true);
 				} catch (Exception e) {
@@ -197,6 +207,7 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
+	@Cacheable(value = "getNeighborhoodCache")
 	public ServiceResponse getNeighborhood(final OutputFormat format, 
 		final String[] sources, final Integer limit, Direction direction, 
 		final String[] organisms, final String[] datasources)
@@ -221,9 +232,8 @@ public class CPathServiceImpl implements CPathService {
 					elements = QueryExecuter.runNeighborhood(elements, model,
 							limit, dir, createFilters(organisms, datasources));
 					// auto-complete (gets a reasonable size sub-model)
-					elements = (new Completer(SimpleEditorMap.L3)).complete(
-							elements, model);
-					Model m = fullSubModel(model, elements);
+					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
+					Model m = cloner.clone(model, elements);
 					callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
 				} catch (Exception e) {
@@ -242,6 +252,7 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
+	@Cacheable(value = "getPathsBetweenCache")
 	public ServiceResponse getPathsBetween(final OutputFormat format, 
 			final String[] sources, final Integer limit, 
 			final String[] organisms, final String[] datasources)
@@ -261,9 +272,8 @@ public class CPathServiceImpl implements CPathService {
 					elements = QueryExecuter.runPathsBetween(elements, model, limit,
 							createFilters(organisms, datasources));
 					// auto-complete (gets a reasonable size sub-model)
-					elements = (new Completer(SimpleEditorMap.L3)).complete(
-							elements, model);
-					Model m = fullSubModel(model, elements);
+					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
+					Model m = cloner.clone(model, elements);
 					callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
 				} catch (Exception e) {
@@ -282,6 +292,7 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
+	@Cacheable(value = "getPathsFromToCache")
 	public ServiceResponse getPathsFromTo(final OutputFormat format, 
 		final String[] sources, final String[] targets, final Integer limit,
 		final String[] organisms, final String[] datasources)
@@ -310,10 +321,8 @@ public class CPathServiceImpl implements CPathService {
 								createFilters(organisms, datasources));
 						
 					// auto-complete (gets a reasonable size sub-model)
-					elements = (new Completer(SimpleEditorMap.L3)).complete(
-							elements, model);
-
-					Model m = fullSubModel(model, elements);
+					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
+					Model m = cloner.clone(model, elements);
 					callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
 				} catch (Exception e) {
@@ -360,10 +369,8 @@ public class CPathServiceImpl implements CPathService {
 						.runCommonStreamWithPOI(elements, model, dir, limit,
 							createFilters(organisms, datasources));
 					// auto-complete (gets a reasonable size sub-model)
-					elements = (new Completer(SimpleEditorMap.L3)).complete(
-							elements, model);
-
-					Model m = fullSubModel(model, elements);
+					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
+					Model m = cloner.clone(model, elements);
 					callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
 				} catch (Exception e) {
@@ -476,6 +483,7 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
+	@Cacheable(value = "traverseCache")
 	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
 		try {
 			// get results from the DAO
@@ -596,6 +604,7 @@ public class CPathServiceImpl implements CPathService {
 	 * @param elements
 	 * @return
 	 */
+	@Deprecated //we use Cloner instead
 	private Model fullSubModel(Model model, Set<BioPAXElement> elements) 
 	{
 		Model m = model.getLevel().getDefaultFactory().createModel();
@@ -610,27 +619,6 @@ public class CPathServiceImpl implements CPathService {
 		return m;
 	}
 	
-	/*
-	 * Creates a new biopax model using only unique 
-	 * provided biopax elements (a child element  
-	 * is not added to the model unless it is in 
-	 * the initial set too). 
-	 * 
-	 * @param elements
-	 * @return
-	 */
-	private Model simpleSubModel(final Set<BioPAXElement> elements) 
-	{
-		Model m = BioPAXLevel.L3.getDefaultFactory().createModel();
-		m.setXmlBase(CPathSettings.xmlBase());
-
-		for (BioPAXElement bpe : elements) 
-			if(!m.containsID(bpe.getRDFId()))
-				m.add(bpe);
-
-		return m;
-	}
-
 	
 	private synchronized void loadBlacklist() 
 	{

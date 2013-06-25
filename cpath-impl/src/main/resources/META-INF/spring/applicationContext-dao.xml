@@ -41,10 +41,13 @@
         <property name="hibernateProperties">
           <util:properties local-override="true" location="file:${CPATH2_HOME}/hibernate.properties">
         	<prop key="hibernate.dialect">${cpath2.db.dialect}</prop>
+        	<prop key="hibernate.connection.release_mode">after_transaction</prop>
+			<prop key="hibernate.connection.autoReconnect">true</prop>
         	<prop key="hibernate.search.default.indexBase">${CPATH2_HOME}/${cpath2.db}</prop>
 			<prop key="hibernate.search.indexing_strategy">manual</prop>
 			<prop key="hibernate.search.lucene_version">LUCENE_36</prop>
 			<prop key="hibernate.cache.region.factory_class">org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory</prop>
+<!-- 			<prop key="hibernate.cache.provider_class">net.sf.ehcache.hibernate.EhCacheProvider</prop> -->
           </util:properties>
         </property>
         <property name="annotatedClasses">

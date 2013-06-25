@@ -39,10 +39,8 @@ import org.biopax.validator.api.beans.Validation;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
@@ -60,39 +58,36 @@ import static org.junit.Assert.*;
 /**
  * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
  */
+@Ignore
 public class PaxtoolsHibernateDAOTest {
 
     static Logger log = LoggerFactory.getLogger(PaxtoolsHibernateDAOTest.class);
+    static SimpleIOHandler exporter = new SimpleIOHandler(BioPAXLevel.L3);
     static PaxtoolsDAO dao;
     static MetadataDAO meta;
-    static SimpleIOHandler exporter = new SimpleIOHandler(BioPAXLevel.L3);
-
-	/* test methods will use the same data (read-only, 
-	 * with one exception: testImportingAnotherFileAndTestInitialization
-	 * imports the same data again...)
-	 */
-	@BeforeClass
-	public static void init() {
-		// init the DAO (it loads now because databases are created above)
-    	CPathUtils.createTestDatabase();
-		
-		ApplicationContext context = new ClassPathXmlApplicationContext("classpath:testContext-dao.xml");
-		dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-		meta = (MetadataDAO) context.getBean("metadataDAO");
-		
-		// load some data into the test storage
-		log.info("Loading BioPAX data (importModel(file))...");
-		try {
-	    	/* import two files to ensure it does not fail
-	    	 * (suspecting a "duplicate entry for the key (rdfid)" exception) */
-			dao.importModel(new File(PaxtoolsHibernateDAOTest.class.getResource("/test.owl").getFile()));
-			dao.importModel(new File(PaxtoolsHibernateDAOTest.class.getResource("/test2.owl").getFile()));
-		} catch (FileNotFoundException e) {
-			fail("Test file not found");
-		}
-    }
-    
+    static ClassPathXmlApplicationContext ctx;
 	
+
+    @BeforeClass
+	public static void init() throws FileNotFoundException {
+    	ctx = new ClassPathXmlApplicationContext("classpath:testContext-1.xml");
+    	dao = (PaxtoolsDAO) ctx.getBean("paxtoolsDAO");
+    	// load some data into the test storage
+		log.info("Loading test1 data...");
+		dao.importModel(new File(PaxtoolsHibernateDAOTest.class.getResource("/test.owl").getFile()));
+    	//import almost the same file to ensure it does not fail due to "duplicate entry for the key" ex.
+		log.info("Loading test2 data...");
+		dao.importModel(new File(PaxtoolsHibernateDAOTest.class.getResource("/test2.owl").getFile()));
+    	meta = (MetadataDAO) ctx.getBean("metadataDAO");
+	}
+	
+    @AfterClass
+    public static void end() {
+    	if(ctx!=null && ctx.isActive())
+    		ctx.close();
+    }
+       
+    
     @Test
 	public void testInitialization() throws IOException {
 		assertTrue(((Model)dao).containsID("http://identifiers.org/uniprot/P46880"));
@@ -144,18 +139,6 @@ public class PaxtoolsHibernateDAOTest {
 		dao.initialize(bs);
 		assertTrue(bs.getXref().size() > 0);
 	}
-    
-    
-	@Test
-	public void testSimple() throws Exception {
-		log.info("Testing PaxtoolsDAO as Model.getByID(id)");
-		BioPAXElement bpe = ((Model)dao)
-			.getByID("http://www.biopax.org/examples/myExample#Protein_A");
-		assertTrue(bpe instanceof Protein);
-		
-		bpe = ((Model)dao).getByID("UnificationXref:UniProt_P46880");
-		assertTrue(bpe instanceof UnificationXref);
-	}
 
 	
 	@Test // protein reference's xref's getXrefOf() is not empty
@@ -187,8 +170,6 @@ public class PaxtoolsHibernateDAOTest {
 		
 		OutputStream out = new ByteArrayOutputStream();
 		dao.exportModel(out, bpe.getRDFId());
-		//System.out.println("Export single Xref (incomplete BioPAX):");
-		//System.out.println(out.toString());
 		
 		// check if it has xrefOf values...
 		Set<XReferrable> xrOfs = ((UnificationXref) bpe).getXrefOf();
@@ -212,13 +193,12 @@ public class PaxtoolsHibernateDAOTest {
 		
 		OutputStream out = new ByteArrayOutputStream();
 		dao.exportModel(out, bpe.getRDFId());
-		//System.out.println("Export single protein (incomplete BioPAX):");
-		//System.out.println(out.toString());
 	}
 	
 	
 	@Test
 	public void testSearch() throws Exception {
+//		CPathUtils.cleanupIndexDir(CPathSettings.property(CPathSettings.TEST_DB));
 		dao.index();
 		
 		SearchResponse resp = dao.search("xrefid:P46880", 0, UnificationXref.class, null, null);
@@ -305,7 +285,8 @@ public class PaxtoolsHibernateDAOTest {
 		// in fact, the last imported object overwrites the first one:
 		assertEquals("test2", pro.getComment().iterator().next());
 	}    
-    
+ 
+	
 	@Test
 	public void testImportPathwayData() throws IOException {
         // mock metadata and pathway data
@@ -384,6 +365,7 @@ public class PaxtoolsHibernateDAOTest {
         md = meta.getMetadataByIdentifier("TEST");
         assertTrue(md.getPathwayData().isEmpty());         
 	}
+
 	
 	@Test
 	public void testImportIdMapping() {		

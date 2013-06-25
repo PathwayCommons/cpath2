@@ -23,17 +23,36 @@ public final class CPathWebserviceHandlerInterceptor extends
 
 		String requestUri = request.getRequestURI();
 
-		// do not log about accessing css, images, scripts...
-		if (!(requestUri.contains("/resources/") 
-		))
-			LOG.info("URI: "
-					+ requestUri
-					+ "; Parameters: " + request.getQueryString()
-					+ "; Referer: " + request.getHeader("Referer")
-					+ "; User-Agent: " + request.getHeader("User-Agent")
+		// log accessing some of static resources (defined in the spring xml/conf.)
+		if( requestUri.contains("/downloads/") ) 
+		{
+			String ip = request.getHeader("X-Forwarded-For");
+			
+			if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+	            ip = request.getHeader("Proxy-Client-IP");  
+	        }  
+	        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+	            ip = request.getHeader("WL-Proxy-Client-IP");  
+	        }  
+	        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+	            ip = request.getHeader("HTTP_CLIENT_IP");  
+	        }  
+	        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+	            ip = request.getHeader("HTTP_X_FORWARDED_FOR");  
+	        }  
+	        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+	            ip = request.getRemoteAddr();  
+	        }  
+			
+			LOG.info("IP: " + ip
+					+ "\t" + request.getMethod() 
+					+ "\t" + request.getRequestURI()
+					+ "\t" + request.getQueryString()
+//					+ "\t" + request.getHeader("Referer")
+//					+ "\t" + request.getHeader("User-Agent")
 					);
+		}
 
 		return true;
 	}
-	
 }

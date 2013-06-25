@@ -417,7 +417,7 @@ public final class Metadata {
 	public void cleanupOutputDir() {
 		File dir = new File(outputDir());
 		if(dir.exists()) {
-			CPathUtils.deleteDirectory(dir);
+			CPathUtils.cleanupDirectory(dir);
 		}		
 		dir.mkdir();
 	}

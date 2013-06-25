@@ -255,9 +255,9 @@ public final class Admin {
    		// it gets the main DB name from cpath2.properties (via CPathSettings class)
 		
 		String indexDir = property(PROP_MAIN_DB); 
-		LOG.info("Removing full-text index directory : " + indexDir);
+		LOG.info("Cleaning up the full-text index directory: " + indexDir);
 		File dir = new File(CPathSettings.homeDir() + File.separator + indexDir);
-		CPathUtils.deleteDirectory(dir);
+		CPathUtils.cleanupDirectory(dir);
 		
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
 				"classpath:META-INF/spring/applicationContext-dao.xml");    	

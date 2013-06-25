@@ -33,7 +33,7 @@ public class CPathUtilsTest {
 	
 	@Test
 	public void testReadMetadata() throws IOException {
-		String url = "classpath:meta.conf";
+		String url = "classpath:metadata.conf";
 		System.out.println("Loading metadata from " + url);
 		Collection<Metadata> metadatas = CPathUtils.readMetadata(url);
 		assertEquals(8, metadatas.size());

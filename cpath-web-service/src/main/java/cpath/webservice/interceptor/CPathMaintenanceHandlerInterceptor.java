@@ -22,14 +22,17 @@ public final class CPathMaintenanceHandlerInterceptor extends HandlerInterceptor
 		
 		//disable user web service queries in admin mode is enabled
 		if(CPathSettings.isMaintenanceEnabled() 				
-			&& !(  requestUri.contains("/resources/") 
+			&& !(  requestUri.contains("/resources") 
 				|| requestUri.contains("/help")
-				|| requestUri.contains("/admin/")
+				|| requestUri.contains("/admin")
 				|| requestUri.contains("/error")
 				|| requestUri.contains("/login")
 				|| requestUri.contains("/denied")
 				|| requestUri.contains("/home")
 				|| requestUri.contains("/metadata/")
+				|| requestUri.contains("/robots")
+				|| requestUri.contains("/favicon")
+				|| requestUri.contains("/logback")
 				)
 		)
 		{

@@ -64,6 +64,7 @@ import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
+import cpath.dao.CPathUtils;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
@@ -796,7 +797,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 ogranisms, datasources)
 	*/
 	@Transactional
-	public void index() {			
+	public void index() {
 		Session ses = sessionFactory.getCurrentSession();	
 		FullTextSession fullTextSession = Search.getFullTextSession(ses);
 		fullTextSession.setFlushMode(FlushMode.MANUAL);
