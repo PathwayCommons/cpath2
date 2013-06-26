@@ -1,33 +1,32 @@
 Pathway Commons software
 cPath2 (cPathSquared) version ${version}
 
-Admin How To
+How To Create a new Instance
 
 
 GENERAL INFORMATION
 
+Note: since v4, cpath2 uses H2 database (file) instead of MySQL.
+
   Before running cPath2 from console or deploying the WAR on a Tomcat,
-SET the system environment variable 'CPATH2_HOME' - to be a directory that 
-contains all the cpath2 configuration files you are planning to use, such as: 
+SET the System Environment variable 'CPATH2_HOME' - to be a directory that 
+contains cpath2 configuration files, such as: 
 - cpath2.properties (set db names, connection url prefix, username, password there); 
-- hibernate.properties; these can be overwritten by the corresponding 
-properties in the Spring (XML) configuration.
-- log4j.properties;
+- hibernate.properties; these can be overwritten by the corresponding properties in the Spring (XML) configuration.
+- logback.xml (optional; can be enabled by -Dlogback.configurationFile=$CPATH2_HOME/logback.xml JVM option);
 - 'data' dir (it is where downloaded original data files are stored);
 - 'tmp' dir (it is where downloaded data and ontology files are stored, 
 - 'cache' dir (it is where cache directories and files get created);
 - validation.properties (BioPAX Validator rules tuning);
 - blacklist.txt (optional; BioPAX graph query performance tuning., usually - small 
-molecules to ignore, like ubiquitous ATP...)
+  molecules to ignore, like ubiquitous ATP...)
 
-  The cpath2 distribution directory can be cpath2 home as well (edit files there).
-One can later switch between different cpath2 home directories 
-(and therefore - cpath2 databases) by re-defining the CPATH2_HOME; 
-one can also edit cpath2.properties file to specify different DB login/password
-and cpath2 databases. For a new database, the corresponding Lucene 
-index directories will be created automatically (named after corresponding databases); 
-for existing cpath2 databases, the "main" Lucene index directory is expected 
-to be found in CPATH2_HOME; otherwise, full-text search won't work properly. 
+  The cpath2 distribution contains example configuration files.
+One can edit cpath2.properties file, e.g., to specify different DB connection URL. 
+For each database, the corresponding Lucene index directories will be created 
+automatically (named after corresponding databases); for existing cpath2 databases, 
+the "main" Lucene index directory is expected to be found in CPATH2_HOME dir.; 
+otherwise, full-text search won't work properly (until re-indexed).
 
   Using the cPath2 shell script is more convenient than executing the 
 jar or class directly. We provide several shell scripts for your convenience.
@@ -37,42 +36,17 @@ jar or class directly. We provide several shell scripts for your convenience.
 1. ALWAYS add CPATH2_HOME JVM environment variable: -DCPATH2_HOME=$CPATH2_HOME
 (provided that the system environment variable $CPATH2_HOME has been already set);
 
-2. Configure MySQL server parameters that work for BioPAX and metadata:
-a) enable default UTF-8 charset and collation for both server and client -
-
-Add to the /etc/my.cnf (or create one) 
-or use mysql client as root and SET GLOBAL commands
-to set the following:
-
-[client]
-default-character-set=utf8
-
-[mysql]
-default-character-set=utf8
-
-[mysqld]
-collation-server=utf8_unicode_ci
-init-connect='SET NAMES utf8'
-character-set-server=utf8
-max_allowed_packet=330M
-
-
-b) Using the mysql client do:
-
-mysql> SET GLOBAL max_allowed_packet = 330000000;
-mysql> SET GLOBAL ...
-- etc.
+2. Review and edit if needed cpath2.properties, and other configuration files and metadata:
 
 3. (in production) increase ulimits, e.g.: 
 'ulimit -s unlimited' (Linux), or 'launchctl limit stack unlimited' (MacOSX)
 
 4. consider setting 'java.io.tmpdir' as: -Djava.io.tmpdir=$CPATH2_HOME/tmp
-(1..4 - all set for you in the shell scripts)
+(it's already set in the shell scripts)
 
-5. try cpath2.md5hex.uri.enabled=true and other options in cpath2.properties
+Try cpath2.md5hex.uri.enabled=true and other debug options in cpath2.properties
 (e.g., all "get" and "graph" queries will, along with RDFId, also accept the Primary Key values,
 i.e., - MD5hex (32-byte) digest string calculated from elements's URIs!) 
-
 
   Try the cpath2-cli.sh (without arguments) to see what's there available.
 
@@ -90,12 +64,12 @@ cpath2 cannot read multiple files from gzip archives; etc.
 1. Edit the cPath2 metadata.conf (see "metadata format" below)
 Note: if possible, use a standard name in the 'NAME' (the second) field of pathway data entries (BIOPAX and PSI_MI type). 
 
-2. Download warehouse data, ('wget') UniProt and ChEBI, into $CPATH2_HOME/tmp/:
+2. Download warehouse data, ('wget') UniProt and ChEBI, into $CPATH2_HOME/data/:
 - wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz
-and rename it to, e.g., UNIPROT_HUMAN.YYYYMMDD.gz (name is to be constructed from 
-the corresponding line in metadata.conf, i.e. IDENTIFIER.EXT; 
-.gz (single file), .zip (multi- or single-file) archives are currently supported, 
-and no extension or other one means the data is not compressed, process as is)
+  and rename it to, e.g., UNIPROT_HUMAN.gz (name is to be consistent with 
+  the corresponding record in the metadata.conf, i.e. IDENTIFIER.EXT; 
+  .gz (single file), .zip (multi- or single-file) archives are currently supported, 
+  and no extension or other one means the data is not compressed, process as is)
 - wget ftp://ftp.ebi.ac.uk/pub/databases/chebi/SDF/ChEBI_complete.sdf.gz, etc. 
 
 NOTE: 
@@ -112,11 +86,11 @@ or PSI-MI data $CPATH2_HOME/tmp/ as follows:
 - download (wget) files or archive(s) from the pathway resource 
 (e.g., wget http://www.reactome.org/download/current/biopax3.zip) 
 - extract what you need (e.g. some species data only)
-- create a simple zip/gzip archive, name it according to IDENTIFIER.EXT schema
+- create a simple zip/gzip archive, name it according to the cpath2 metadata "IDENTIFIER.EXT" convention
 (alternatively, use, e.g., file:///full-path-to/smth.zip URL in the metadata.conf) 
 
 4. set "cpath2.admin.enabled=true" in the cpath properties 
-or using JVM option "-Dcpath2.admin.enabled=true".
+(or via JVM option: "-Dcpath2.admin.enabled=true").
 
 5. Run import-data.sh script and follow the instructions/questions...
 
@@ -177,19 +151,10 @@ like file:///full/path/whatever.gz, instead.
 
 MORE DETAILS
 
-About how to use the admin tool 
+About how to use the admin tool directly, i.e., not using import_data.sh  
 (most commands work only if maintenance mode is enabled). 
 
-One can also use import-data.sh scripts to execute 
-the entire data import pipeline.
-
-(run cpath2-cli.sh w/o arguments to see the hint).
-
-Prepare MySQL Databases. If required, generate (all or some of) the cpath2 database schemas using
-the same db names as specified in the $CPATH2_HOME/cpath2.properties file:
-
-sh cpath2-cli.sh -create-db cpathmain,cpathwarehouse
-(WARNING: this destroys and re-creates the database, if existed!)
+Run cpath2-cli.sh w/o arguments to see the hint.
 
 # fetch/update Metadata:
 
@@ -219,8 +184,8 @@ sh cpath2-cli.sh -update-counts
 # optional
 sh cpath2-cli.sh -clear-cache
 
-  Optionally (though highly recommended), you can also create a 'blacklist' 
-(i.e. ignore list) for the graph queries. The graph queries will simply not
+  Optionally (though highly recommended), generate a 'blacklist' 
+for the graph queries and SIF format converter. The algorithms will not
 traverse through the entities in this list and the entity references in the
 list will be eliminated from the SIF exports. The blacklist is generated 
 solely based on the number of degrees of an entity (number of interactions 
@@ -236,17 +201,12 @@ sh cpath2-cli.sh -create-blacklist
 Next (do not forget setting in cpath2.properties,  cpath2.provider.organisms=homo sapiens,mus musculus,..)
 generate data archives:
 
-sh cpath2-cli.sh -create-downloads
+sh cpath2-cli.sh -create-downloads 
+(this might take many hours)
 
 
 DB DUMPS
 
-To backup, use mysqldump:
-
-mysqldump --max_allowed_packet=256M -u <user> -p cpath2_meta > cpath2_meta.sql
-
-To restore (or move to another machine), create a new database there first; then:
-
-mysql --max_allowed_packet=256M mysql -u <user> -p <new_database> < cpath2_meta.sql
+To backup, simply archive the configuration files, index directory, and *.h2.db files.
 
 
