@@ -38,7 +38,7 @@ public final class CPath2Client
 	
 	// one can set the JVM property: -DcPath2Url="http://some_URL"
 	public static final String JVM_PROPERTY_ENDPOINT_URL = "cPath2Url";	
-	public static final String DEFAULT_ENDPOINT_URL = "http://purl.org/pc2/current/";
+	public static final String DEFAULT_ENDPOINT_URL = "http://www.pathwaycommons.org/pc2/";
 
 	/**
 	 * This is an <em>equivalent</em> to {@link Direction}
