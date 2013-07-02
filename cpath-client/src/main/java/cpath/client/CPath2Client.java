@@ -78,19 +78,34 @@ public final class CPath2Client
     
     
     /**
-     * Default static factory, initializes the class using
+     * Instantiates the class using the
      * {@link org.biopax.paxtools.io.SimpleIOHandler}
+     * and default endpoint URL.
      */
     public static CPath2Client newInstance() {
-    	return newInstance(new SimpleIOHandler());
+    	return newInstance(null, new SimpleIOHandler());
     }
 
     
     /**
-     * Static factory.
-     * @param bioPAXIOHandler BioPAXIOHandler for reading BioPAX Models
+     * Instantiates a cpath-client using
+     * {@link org.biopax.paxtools.io.SimpleIOHandler}
+     * 
+     * @param url cpath2 web service endpoint URL or null (to use defaults)
+     * @return
      */
-    public static CPath2Client newInstance(BioPAXIOHandler bioPAXIOHandler) {
+    public static CPath2Client newInstance(String url) {
+    	return newInstance(url, new SimpleIOHandler());
+    }    
+    
+    
+    /**
+     * Static factory that builds and initializes a new instance.
+     * 
+     * @param url cpath2 web service endpoint URL or null (to use defaults)
+     * @param bioPAXIOHandler a BioPAX Model reader
+     */
+    public static CPath2Client newInstance(String url, BioPAXIOHandler bioPAXIOHandler) {
     	CPath2Client client = new CPath2Client(); 
     	
      	// add custom cPath2 XML message converter as the first one (accepts 'application/xml' content type)
@@ -99,8 +114,10 @@ public final class CPath2Client
     	// add BioPAX http message converter
         client.restTemplate.getMessageConverters().add(1, new BioPAXHttpMessageConverter(bioPAXIOHandler));
     	
-        // set the server URL (default one or - from the java option)
-    	String url = System.getProperty(JVM_PROPERTY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);  	
+        // set the cpath2 server URL (or default one or from the java option)
+    	if(url == null || url.isEmpty())
+    		url = System.getProperty(JVM_PROPERTY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);  	
+    	
     	client.setEndPointURL(url);
     	
     	assert client.actualEndPointURL != null :  "cPath2 endpoint URL is undefined";
@@ -208,7 +225,7 @@ public final class CPath2Client
      * @see #setOrganisms(Collection)
      *
      * @param keywords names, identifiers, or Lucene queries (will be joint with 'OR')
-     * @return
+     * @return search results (hits) or null if no matches found
      * @throws CPathException when the WEB API gives an error
      */
     public SearchResponse search(String... keywords) 
@@ -243,7 +260,8 @@ public final class CPath2Client
      * specific search).
      * 
      * @see #setType(String) - filter by BioPAX type
-     * @see #setPage(Integer) - if >0, gets search hits from 0 to this page number.
+     * @see #setPage(Integer) - if >0, gets search hits from 0 
+     *      to the last one on the specified page number.
      * @see #setDataSources(Collection)
      * @see #setOrganisms(Collection)
      * @param keywords
@@ -252,7 +270,7 @@ public final class CPath2Client
     public List<SearchHit> findAll(String... keywords) {
     	List<SearchHit> hits = new ArrayList<SearchHit>();
 
-    	int numPages = getPage(); //0 (all) if wasn't set by user
+    	int numPages = getPage(); // 0 (ALL) initially, unless set by user
     	int page = 0;
     	SearchResponse res;
     	do {
@@ -261,17 +279,23 @@ public final class CPath2Client
     		try {
 				res = search(keywords);
 			} catch (CPathException e) {
+				LOGGER.error("findAll " + Arrays.toString(keywords) + " failed", e);
 				break;
 			}
     		
-    		if(!res.isEmpty())
+    		if(res!= null) {
     			hits.addAll(res.getSearchHit());
-    		else //should not happen (cpath2 returns error status when empty result)
-    			break;
+    			//update 'numPages' using the last actual result
+    			int availablePages = res.numPages();
+    			numPages = (numPages == 0 || numPages > availablePages) 
+    					? availablePages 
+    						: numPages;
+    		} else //should not happen (cpath2 returns error status when empty result)
+    			break; //there are no hits (no more)
     		
     		page++;
     		
-    	} while(numPages <= 0 || page < numPages);
+    	} while(page < numPages);
     	
     	return hits;
     }

@@ -64,7 +64,6 @@ import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
-import cpath.dao.CPathUtils;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
@@ -91,7 +90,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	//no. indexed objects before flushing the full-text session
 	private final static int IDX_BATCH_SIZE = 10000;
 	
-	private int maxHitsPerPage = Integer.MAX_VALUE;
+	private int maxHitsPerPage;
 	
 	public final static String[] DEFAULT_SEARCH_FIELDS =
 		{
@@ -150,25 +149,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		return simpleIO;
 	}
 	
-
-	public int getMaxHitsPerPage() {
-		return maxHitsPerPage;
-	}
-
-	/**
-	 * Sets the max. number of hits returned at once (per page).
-	 * 
-	 * @param maxHits
-	 */
-	public void setMaxHitsPerPage(int maxHits) {
-		if(maxHits <= 0)
-			log.warn("Ignored an attempt to set " +
-				"value: setMaxHitsPerPage(" + maxHits + ");"
-				+ " current value unchanged:" + maxHitsPerPage);
-		else 
-			this.maxHitsPerPage = maxHits;
-	}
-
 
 	@Transactional
 	public void importModel(File biopaxFile) throws FileNotFoundException
@@ -388,18 +368,24 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			fullTextQuery.enableFullTextFilter(FILTER_BY_ORGANISM)
 					.setParameter("values", organisms);
 
-		// set pagination
-		int l = page * maxHitsPerPage; // - the first hit no., if any
-		fullTextQuery.setMaxResults(maxHitsPerPage);
-		fullTextQuery.setFirstResult(l);
-	    
-		int count = fullTextQuery.getResultSize(); // cheap operation
+		// get hits count (cheap operation)
+		int count = fullTextQuery.getResultSize(); 
 		log.debug("Query '" + query + "', results size = " + count);
+		
 		searchResponse.setNumHits(count);
 		searchResponse.setMaxHitsPerPage(maxHitsPerPage);
 		searchResponse.setPageNo(page);
 		
-		if(count > 0) {
+		// now consider pagination
+		int startWith = page * maxHitsPerPage;
+		//do unless there are no hits or the page no. was too large (i.e., startWith >= count)
+		if(count > 0 && startWith < count) {
+			//skip up to the first desired one
+			fullTextQuery.setFirstResult(startWith);
+			// set max no. hits to retrieve
+			fullTextQuery.setMaxResults(maxHitsPerPage);
+			
+			// create/init the highlighter and transformer
 			Highlighter highlighter = null;
 			if(!query.equals("*")) {
 				// create a highlighter (store.YES must be enabled on 'keyword' search field, etc.!)
@@ -411,7 +397,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			}
 			// set the result to search hit beans transformer
 			fullTextQuery.setResultTransformer(new SearchHitsTransformer(highlighter));
-			
+						
 			// do search and get (auto-transformed) hits
 			List<SearchHit> searchHits = (List<SearchHit>) fullTextQuery.list();
 			
