@@ -23,4 +23,6 @@ CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss65536k -Xmx6g -DCPATH2_HOME=$CPATH2_HOME 
 
 CPATH2_PROFILING_OPTS="-agentpath:/data/local/jprofiler6/bin/linux-x64/libjprofilerti.so=port=48000,wait"
 
+JAVA_DEBUG_OPTS="-Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=12345"
+
 $JAVA_HOME/bin/java $CPATH2_OPTS -jar cpath2-cli.jar "$1" "$2" "$3" "$4" "$5"
