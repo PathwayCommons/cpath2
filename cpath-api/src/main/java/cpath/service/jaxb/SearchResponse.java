@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.xml.bind.annotation.*;
 
+import cpath.config.CPathSettings;
+
 @XmlRootElement(name="searchResponse")
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "SearchResponse")
@@ -23,6 +25,7 @@ public class SearchResponse extends ServiceResponse {
     private String comment;
 	
 	public SearchResponse() {
+		setMaxHitsPerPage(Integer.parseInt(CPathSettings.getInstance().getMaxHitsPerPage()));
 	}
     
     public String getComment() {

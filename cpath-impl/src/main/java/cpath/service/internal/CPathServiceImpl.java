@@ -137,17 +137,21 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			// do search
 			SearchResponse hits = mainDAO.search(queryStr, page, biopaxClass, dsources, organisms);
-			if(hits.isEmpty())
-				serviceResponse = new ErrorResponse(NO_RESULTS_FOUND, "No hits found.");
-			else {
-				hits.setComment("Search '" + queryStr  + "' in " + 
-					((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName()) 
-					+ "; ds: " + Arrays.toString(dsources)+ "; org.: " + Arrays.toString(organisms));
-				serviceResponse = hits;
+			
+			if(hits.isEmpty()) {//no hits
+				hits = new SearchResponse();
+				hits.setPageNo(page);
 			}
+			
+			hits.setComment("Search '" + queryStr  + "' in " + 
+				((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName()) 
+				+ "; ds: " + Arrays.toString(dsources)+ "; org.: " + Arrays.toString(organisms));
+			
+			serviceResponse = hits;
 			
 		} catch (Exception e) {
 			serviceResponse = new ErrorResponse(INTERNAL_ERROR, e);
+			log.error("search: ", e);
 		}
 		
 		return serviceResponse;
