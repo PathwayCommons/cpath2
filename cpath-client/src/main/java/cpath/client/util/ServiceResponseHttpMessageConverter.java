@@ -18,10 +18,7 @@ import java.util.List;
 import javax.xml.transform.stream.StreamSource;
 
 /**
- * Converts the REST response into a {@link ServiceResponse} subclass 
- * or throws a PathwayCommons exception.
- *
- * @see cpath.cpath.client.util.CPathException.PathwayCommonsException
+ * Converts the REST response into a {@link ServiceResponse} subclass. 
  */
 public class ServiceResponseHttpMessageConverter 
 	implements HttpMessageConverter<ServiceResponse> 

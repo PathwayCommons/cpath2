@@ -31,7 +31,9 @@ import java.util.*;
 /**
  * CPath2 Web Service Client. 
  * 
+ * @deprecated in favor of the stateless {@link CPathClient} instead
  */
+@Deprecated
 public final class CPath2Client
 {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CPath2Client.class);
@@ -41,11 +43,9 @@ public final class CPath2Client
 	public static final String DEFAULT_ENDPOINT_URL = "http://www.pathwaycommons.org/pc2/";
 
 	/**
-	 * This is an <em>equivalent</em> to {@link Direction}
-	 * enumeration, and is defined here for convenience (i.e.,
-	 * to free all users of this web service client from 
-	 * depending on paxtools-query module at runtime.)
-	 * 
+	 * This is equivalent to the corresponding
+	 * enumeration in paxtools-query, and is 
+	 * to free users from depending on that module.
 	 */
 	public static enum Direction
     {
@@ -290,7 +290,7 @@ public final class CPath2Client
     			numPages = (numPages == 0 || numPages > availablePages) 
     					? availablePages 
     						: numPages;
-    		} else //should not happen (cpath2 returns error status when empty result)
+    		} else //no results - null
     			break; //there are no hits (no more)
     		
     		page++;

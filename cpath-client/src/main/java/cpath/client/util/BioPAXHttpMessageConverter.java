@@ -14,11 +14,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Converts the REST response into a BioPAX model, if the model is not valid
- * throws an exception.
- *
- * @see cpath.cpath.client.util.CPathException.PathwayCommonsException
- * 
+ * Converts the cpath2 REST response into a BioPAX model.
  */
 public class BioPAXHttpMessageConverter implements HttpMessageConverter<Model> {
     private final BioPAXIOHandler bioPAXIOHandler;
