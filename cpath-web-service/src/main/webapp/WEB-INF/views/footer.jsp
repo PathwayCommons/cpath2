@@ -6,8 +6,8 @@
 	<footer>
 		<ul>
 			<li>
-				Go back to <a href="<c:url value='/' />">Home Page</a> / <a href="#">Top</a> 
-			</li>
+				Go to <a href="#">Top</a>
+			</li>		
 			<li>
 				<security:authorize ifAnyGranted="ROLE_USER">
 					Logged as: <strong><security:authentication property="principal.username"/></strong>
@@ -23,9 +23,9 @@
 			<li>
 			  <div class="marquee">
 				Powered by <a rel="external"
-				href="http://code.google.com/p/pathway-commons/">cPath2</a>, version ${project.version}. 
+				href="http://code.google.com/p/pathway-commons/">cPath2</a>, v${project.version}. 
 				@Copyright 2009 <a href="http://baderlab.org/" rel="external">University of
-				Toronto</a> and <a href="http://www.cbio.mskcc.org" rel="external">Memorial Sloan-Kettering Cancer Center</a>
+				Toronto</a> and <a href="http://www.cbio.mskcc.org" rel="external">cBIO MSKCC</a>
 			  </div>				
 			</li>
 		</ul>

@@ -44,12 +44,10 @@ public final class CPathWebserviceHandlerInterceptor extends
 	            ip = request.getRemoteAddr();  
 	        }  
 			
-			LOG.info("IP: " + ip
+			LOG.info("DOWNLOAD " + ip
 					+ "\t" + request.getMethod() 
 					+ "\t" + request.getRequestURI()
 					+ "\t" + request.getQueryString()
-//					+ "\t" + request.getHeader("Referer")
-//					+ "\t" + request.getHeader("User-Agent")
 					);
 		}
 

@@ -6,6 +6,7 @@ import cpath.client.util.ServiceResponseHttpMessageConverter;
 import cpath.query.CPathGetQuery;
 import cpath.query.CPathGraphQuery;
 import cpath.query.CPathSearchQuery;
+import cpath.query.CPathTopPathwaysQuery;
 import cpath.query.CPathTraverseQuery;
 import cpath.service.Cmd;
 import cpath.service.jaxb.*;
@@ -171,27 +172,6 @@ public class CPathClient
     	return get("help/" + ((hpath != null) ? hpath : ""), null, Help.class);
     }
 	
-	
-    /**
-     * Gets the list of all top (root) pathways.
-     * 
-     * @return
-     * @throws CPathException 
-     */
-    public SearchResponse executeTopPathways() throws CPathException {
-    	
-    	SearchResponse resp = get(Cmd.TOP_PATHWAYS.toString(), null, SearchResponse.class);
-    	
-    	Collections.sort(resp.getSearchHit(), new Comparator<SearchHit>() {
-			@Override
-			public int compare(SearchHit h1, SearchHit h2) {
-				return h1.toString().compareTo(h2.toString());
-			}
-		});    	
-    	
-    	return resp;
-    }    
-
        
     /**
      * Joins the collection of strings into one string 
@@ -312,5 +292,18 @@ public class CPathClient
 	 */
 	public CPathGetQuery createGetQuery() {
 		return new CPathGetQuery(this);
+	}
+		
+	/**
+	 * Creates a new "top pathways" query object
+	 * (e.g., call as cli.createTopPathwaysQuery()
+	 * 					 .dataSourceFilter("reactome")
+	 * 					 .result();
+	 * )
+	 * 
+	 * @return
+	 */
+	public CPathTopPathwaysQuery createTopPathwaysQuery() {
+		return new CPathTopPathwaysQuery(this);
 	}
 }

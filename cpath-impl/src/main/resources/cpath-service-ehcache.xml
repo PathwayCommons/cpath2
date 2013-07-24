@@ -49,5 +49,10 @@
 		maxElementsInMemory="1000" 
 		timeToIdleSeconds="0" timeToLiveSeconds="0"
 		overflowToDisk="true" diskPersistent="true"/>
+		
+	<cache name="topPathwaysCache" eternal="true" 
+		maxElementsInMemory="1000" 
+		timeToIdleSeconds="0" timeToLiveSeconds="0"
+		overflowToDisk="true" diskPersistent="true"/>		
 
 </ehcache>

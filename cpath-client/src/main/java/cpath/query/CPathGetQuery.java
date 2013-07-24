@@ -21,7 +21,7 @@ import cpath.service.OutputFormat;
  * 
  * @author rodche
  */
-public final class CPathGetQuery extends BasicCPathQuery<Model> implements CPathQuery<Model> {
+public final class CPathGetQuery extends BaseCPathQuery<Model> implements CPathQuery<Model> {
 	
 	private boolean mergeEquivalentInteractions = false;
 	private String[] source;

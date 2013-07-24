@@ -20,7 +20,7 @@ import cpath.service.jaxb.TraverseResponse;
  * 
  * @author rodche
  */
-public final class CPathTraverseQuery extends BasicCPathQuery<TraverseResponse> implements CPathQuery<TraverseResponse> {
+public final class CPathTraverseQuery extends BaseCPathQuery<TraverseResponse> implements CPathQuery<TraverseResponse> {
 
 	private String path;
 	private String[] source;

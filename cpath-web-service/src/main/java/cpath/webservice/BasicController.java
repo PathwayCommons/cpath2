@@ -136,8 +136,7 @@ public abstract class BasicController {
 	}
 	
 	void logHttpRequest(HttpServletRequest request) {
-		String ip = request.getHeader("X-Forwarded-For");
-		
+		String ip = request.getHeader("X-Forwarded-For");		
 		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
             ip = request.getHeader("Proxy-Client-IP");  
         }  
@@ -154,12 +153,10 @@ public abstract class BasicController {
             ip = request.getRemoteAddr();  
         }  
 		
-		log.info("IP: " + ip
+		log.info("REQUEST " + ip
 				+ "\t" + request.getMethod() 
 				+ "\t" + request.getRequestURI()
 				+ "\t" + request.getQueryString()
-//				+ "\t" + request.getHeader("Referer")
-//				+ "\t" + request.getHeader("User-Agent")
 				);
 	}
 }

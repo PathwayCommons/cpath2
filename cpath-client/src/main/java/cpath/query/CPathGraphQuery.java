@@ -23,7 +23,7 @@ import cpath.service.OutputFormat;
  * 
  * @author rodche
  */
-public final class CPathGraphQuery extends BasicCPathQuery<Model> implements
+public final class CPathGraphQuery extends BaseCPathQuery<Model> implements
 		CPathQuery<Model> {
 
 	private boolean mergeEquivalentInteractions = false;

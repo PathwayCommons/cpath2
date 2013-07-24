@@ -432,14 +432,21 @@ public final class CPath2Client
     		request.put(CmdArgs.uri.name(), new ArrayList<String>(sources));
         	request.add(CmdArgs.path.name(), path);
     		break;
+    	case TOP_PATHWAYS:
+    		request.put(CmdArgs.organism.name(), new ArrayList<String>(organisms));
+    		request.put(CmdArgs.datasource.name(), new ArrayList<String>(dataSources));
+    		break;	
     	case GET:
-    	default: //GET is the default query
     		if(outputFormat == null) 
     			outputFormat = OutputFormat.BIOPAX;
-			request.add(CmdArgs.format.name(), outputFormat.name());
-			
+			request.add(CmdArgs.format.name(), outputFormat.name());			
     		request.put(CmdArgs.uri.name(), new ArrayList<String>(sources));
     		break;
+    	case SEARCH:
+    		throw new IllegalArgumentException("'SEARCH' command " +
+    			"is not supported by buildRequest method (for HTTP POST)");
+    	default:
+    		throw new IllegalArgumentException("Unknown command: " + command);
     	}
     	
     	return request;
@@ -582,23 +589,39 @@ public final class CPath2Client
     		buildRequest(Cmd.GRAPH, GraphType.COMMONSTREAM, sourceSet, null, outputFormat));
     }
 	
+    
     /**
      * Gets the list of top (root) pathways 
-     * (in the same xml format used by the full-text search commands)
+     * (in the same xml format used by the full-text search commands),
+     * using optional filters by datasource and organism.
      * 
      * @return
      */
-    public SearchResponse getTopPathways() {
+    public SearchResponse getTopPathways() {   	  	
+// added filters.., then - switched to POST method
+//    	String url = actualEndPointURL 
+//        	+ Cmd.TOP_PATHWAYS + "?" 
+//          + (getDataSources().isEmpty() ? "" : "&" + join(CmdArgs.datasource + "=", getDataSources(), "&"))
+//          + (getOrganisms().isEmpty() ? "" : "&" + join(CmdArgs.organism + "=", getOrganisms(), "&"));   	
+//    	SearchResponse resp = restTemplate.getForObject(url, SearchResponse.class);
     	
-    	SearchResponse resp = restTemplate.getForObject(actualEndPointURL 
-        		+ Cmd.TOP_PATHWAYS, SearchResponse.class);
+    	SearchResponse resp;
     	
-    	Collections.sort(resp.getSearchHit(), new Comparator<SearchHit>() {
-			@Override
-			public int compare(SearchHit h1, SearchHit h2) {
-				return h1.toString().compareTo(h2.toString());
-			}
-		});    	
+		try {
+			resp = doPost(Cmd.TOP_PATHWAYS, SearchResponse.class, 
+					buildRequest(Cmd.TOP_PATHWAYS, null, null, null, null));
+		} catch (CPathException e) {
+			throw new RuntimeException(e);
+		} 	
+    	
+		if(resp != null ) {
+			Collections.sort(resp.getSearchHit(), new Comparator<SearchHit>() {
+				@Override
+				public int compare(SearchHit h1, SearchHit h2) {
+					return h1.toString().compareTo(h2.toString());
+				}
+			});    	
+		}
     	
     	return resp;
     }    

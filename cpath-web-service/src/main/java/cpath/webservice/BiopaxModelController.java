@@ -146,10 +146,12 @@ public class BiopaxModelController extends BasicController {
 
 
 	@RequestMapping("/top_pathways")
-    public @ResponseBody SearchResponse topPathways(HttpServletRequest request, HttpServletResponse response)
+    public @ResponseBody SearchResponse topPathways(
+    		@RequestParam String[] datasources, @RequestParam String[] organisms, 
+    		HttpServletRequest request, HttpServletResponse response)
     {
 		logHttpRequest(request);
-		return service.topPathways();
+		return service.topPathways(organisms, datasources);
     }
     
     

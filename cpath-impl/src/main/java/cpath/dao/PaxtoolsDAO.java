@@ -64,7 +64,7 @@ public interface PaxtoolsDAO  {
 	 * @return ordered by the element's relevance list of hits
     */
 	SearchResponse search(String query, int page,
-   		Class<? extends BioPAXElement> filterByType, String[] dsources, String[] organisms);
+   		Class<? extends BioPAXElement> filterByType, String[] datasources, String[] organisms);
 
     
     
