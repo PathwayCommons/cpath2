@@ -22,7 +22,7 @@ import cpath.service.jaxb.SearchResponse;
  * 
  * @author rodche
  */
-public final class CPathSearchQuery extends BasicCPathQuery<SearchResponse> implements CPathQuery<SearchResponse> {
+public final class CPathSearchQuery extends BaseCPathQuery<SearchResponse> implements CPathQuery<SearchResponse> {
 
 	// these are for 'search' queries
 	private String queryString;

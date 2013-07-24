@@ -54,10 +54,19 @@ public class CPathClientTest {
 	@Test
 	public final void testGetTopPathways() throws CPathException {		
 		SearchResponse result = null;
-		result = client.executeTopPathways();
-		
+		result = client.createTopPathwaysQuery().result();
 		assertNotNull(result);
 		assertFalse(result.getSearchHit().isEmpty());
+		
+		result = client.createTopPathwaysQuery()
+			.datasourceFilter(new String[]{"reactome"}).result();		
+		assertNotNull(result);
+		assertFalse(result.getSearchHit().isEmpty());
+		
+//TODO uncomment after the server is updated to the latest one (where 'toppathways' supports filters)
+//		result = client.createTopPathwaysQuery()
+//			.datasourceFilter(new String[]{"foo"}).result();		
+//		assertNull(result);
 	}
 
 	

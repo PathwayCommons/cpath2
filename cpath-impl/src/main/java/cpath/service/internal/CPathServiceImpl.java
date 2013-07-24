@@ -42,6 +42,7 @@ import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Pathway;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.query.QueryExecuter;
 import org.biopax.paxtools.query.algorithm.Direction;
@@ -103,10 +104,6 @@ public class CPathServiceImpl implements CPathService {
 	
 	//init. on first access when proxy model mode is enabled (so do not use the var. directly!)
 	private Model proxyModel;
-    
-	//lazy initialize the following three fields on first request (prevents web server startup timeout)
-  	//only includes pathway data providers configured/created from the cpath2 metadata configuration (not all provenances...)
-  	private volatile SearchResponse topPathways;
 
     // this is probably required for the ehcache to work
 	public CPathServiceImpl() {
@@ -177,6 +174,7 @@ public class CPathServiceImpl implements CPathService {
 					Set<BioPAXElement> elements = urisToBpes(model, mappedUris);
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 					Model m = cloner.clone(model, elements);
+					logDatasourcesUsed(m);
 					callback[0] = (new BiopaxConverter(getBlacklist()))
 						.convert(m, format, true);
 				} catch (Exception e) {
@@ -192,6 +190,26 @@ public class CPathServiceImpl implements CPathService {
 		
 		return callback[0];
     }
+
+
+	/*
+	 * Logs the list of datasources
+	 * (which a result a query result contains).
+	 * 
+	 * @param m
+	 */
+	private void logDatasourcesUsed(Model m) {
+		if(m != null) {
+			Set<Provenance> provs = m.getObjects(Provenance.class);		
+			if(provs!= null && !provs.isEmpty()) {
+				Set<String> dsNames = new TreeSet<String>();
+				for(Provenance prov : provs)
+					dsNames.add(prov.getStandardName());
+				//log
+				log.info("DATASOURCE " + dsNames.toString()); 
+			}
+		}
+	}
 
 
 	private Filter[] createFilters(String[] organisms, String[] datasources) {
@@ -238,6 +256,7 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 					Model m = cloner.clone(model, elements);
+					logDatasourcesUsed(m);
 					callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
 				} catch (Exception e) {
@@ -278,6 +297,7 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 					Model m = cloner.clone(model, elements);
+					logDatasourcesUsed(m);
 					callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
 				} catch (Exception e) {
@@ -327,6 +347,7 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 					Model m = cloner.clone(model, elements);
+					logDatasourcesUsed(m);
 					callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
 				} catch (Exception e) {
@@ -375,6 +396,7 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 					Model m = cloner.clone(model, elements);
+					logDatasourcesUsed(m);
 					callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
 				} catch (Exception e) {
@@ -516,47 +538,37 @@ public class CPathServiceImpl implements CPathService {
 	 * properties, such as controlledOf, pathwayComponentOf and stepProcessOf, are empty.
 	 * 
 	 * Here we follow the second method.
-	 * 
-	 * Note:
-	 * This method generates the list of top pathways on the first call, 
-	 * and then all next calls return the same list (much faster).
-	 * (it uses lazy initialization, "double-check idiom", 
-	 * to prevent possible server startup timeout)
-	 * 
 	 */
+	@Cacheable(value = "topPathwaysCache")
 	@Override
-	public SearchResponse topPathways() {
-		if(topPathways == null) { //first check (no locking)
-			synchronized (this) {
-				if(topPathways == null) { //second check (with locking)
-					topPathways = new SearchResponse();
-					final List<SearchHit> hits = topPathways.getSearchHit(); //empty
-					int page = 0; // will use search pagination
-					SearchResponse searchResponse = mainDAO.search("*", page, Pathway.class, null, null);
-					while(!searchResponse.isEmpty()) {
-						log.debug("Retrieving top pathways search results, page #" + page);
-						//remove pathways having 'pathway' index field not empty, 
-						//i.e., keep only pathways where 'pathway' index field
-						// is empty (no controlledOf and pathwayComponentOf values)
-						for(SearchHit h : searchResponse.getSearchHit()) {
-							//contains only itself
-							if(h.getPathway().size() == 1 && h.getPathway().get(0).equals(h.getUri())) 
-								hits.add(h); //add to topPathways list
-						}
-						// go next page
-						searchResponse = mainDAO.search("*", ++page, Pathway.class, null, null);
-					}
-					// final touches...
-					topPathways.setNumHits(hits.size());
-					//TODO update the following comment if implementation has changed
-					topPathways.setComment("Top Pathways (technically, each has empty index " +
-							"field 'pathway'; that also means, they are neither components of " +
-							"other pathways nor controlled of any process)");
-					topPathways.setMaxHitsPerPage(hits.size());
-					topPathways.setPageNo(0);
-				}
+	public SearchResponse topPathways(final String[] organisms, final String[] datasources) {
+		SearchResponse topPathways = new SearchResponse();
+		
+		final List<SearchHit> hits = topPathways.getSearchHit(); //empty list
+		int page = 0; // will use search pagination
+		SearchResponse searchResponse = mainDAO.search("*", page, Pathway.class, datasources, organisms);
+		//go over all hits, all pages
+		while(!searchResponse.isEmpty()) {
+			log.debug("Retrieving top pathways search results, page #" + page);
+			//remove pathways having 'pathway' index field not empty, 
+			//i.e., keep only pathways where 'pathway' index field
+			// is empty (no controlledOf and pathwayComponentOf values)
+			for(SearchHit h : searchResponse.getSearchHit()) {
+				//contains only itself
+				if(h.getPathway().size() == 1 && h.getPathway().get(0).equals(h.getUri())) 
+					hits.add(h); //add to topPathways list
 			}
-		} 
+			// go next page
+			searchResponse = mainDAO.search("*", ++page, Pathway.class, datasources, organisms);
+		}
+		// final touches...
+		topPathways.setNumHits(hits.size());
+		//TODO update the following comment if implementation has changed
+		topPathways.setComment("Top Pathways (technically, each has empty index " +
+				"field 'pathway'; that also means, they are neither components of " +
+				"other pathways nor controlled of any process)");
+		topPathways.setMaxHitsPerPage(hits.size());
+		topPathways.setPageNo(0);
 		
 		return topPathways;
 	}

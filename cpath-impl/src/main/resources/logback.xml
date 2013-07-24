@@ -10,7 +10,7 @@
  
 <!--   <appender name="console" class="ch.qos.logback.core.ConsoleAppender"> -->
 <!--     <encoder> -->
-<!--       <pattern>%.-1level|[%thread]|%-40.40logger{0}|%msg%n</pattern> -->
+<!--       <pattern>%d %.-1level|[%thread]|%-40.40logger{0}|%msg%n</pattern> -->
 <!--     </encoder> -->
 <!--   </appender> -->
   
@@ -21,7 +21,8 @@
 		<FileNamePattern>${CPATH2_HOME}/cpath2.%d{yyyy-MM-dd}.log</FileNamePattern>
 	</rollingPolicy>
 	<encoder>
-      <pattern>%-5relative %-1level %logger{35} - %msg%n</pattern>
+      <pattern>%d %-5level %logger{25} - %msg%n</pattern>
+      <outputPatternAsHeader>true</outputPatternAsHeader>
     </encoder>
   </appender>
  

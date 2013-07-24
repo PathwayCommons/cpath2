@@ -13,14 +13,9 @@
     </rollingPolicy>
     <encoder>
         <pattern>combined</pattern>
+        <outputPatternAsHeader>true</outputPatternAsHeader>
     </encoder>
   </appender>
- 
-<!--   <appender name="console" class="ch.qos.logback.core.ConsoleAppender"> -->
-<!--     <encoder> -->
-<!--       <pattern>%n%fullRequest%n%fullResponse%n</pattern> -->
-<!--     </encoder> -->
-<!--   </appender> -->
  
   <appender name="reqrespfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>${CPATH2_HOME}/cpath2-req-resp.log</file>
@@ -29,6 +24,7 @@
     </rollingPolicy>
     <encoder>
       <pattern>%n%fullRequest%n%fullResponse%n</pattern>
+      <outputPatternAsHeader>true</outputPatternAsHeader>
     </encoder>
   </appender>
  

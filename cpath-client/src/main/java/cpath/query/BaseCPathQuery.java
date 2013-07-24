@@ -10,7 +10,7 @@ import cpath.client.CPathClient;
  * 
  * @author rodche
  */
-abstract class BasicCPathQuery<T> {
+abstract class BaseCPathQuery<T> {
 
 	protected CPathClient client;	
 	protected String command;

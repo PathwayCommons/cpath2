@@ -172,8 +172,10 @@ public interface CPathService {
 	/**
 	 * Gets top (root) pathways (URIs, names) in the current BioPAX model.
 	 * 
+	 * @param organisms filter values (URIs, names, or taxonomy IDs)
+	 * @param datasources filter values (URIs, names)
 	 * @return
 	 */
-	SearchResponse topPathways();
+	SearchResponse topPathways(String[] organisms, String[] datasources);
 	
 }

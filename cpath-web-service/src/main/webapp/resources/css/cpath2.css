@@ -161,7 +161,7 @@ footer ul{padding:0; margin:0; text-align:center; list-style: none;}
 footer strong {color: red;}
 
 footer .marquee {
-font-size:0.7em;
+/* font-size:0.7em; */
 	
 /* display: none; */
 display: -wap-marquee;
