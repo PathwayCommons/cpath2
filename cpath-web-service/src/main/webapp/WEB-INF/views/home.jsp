@@ -31,35 +31,31 @@
 	
 	<h2>Resource Description</h2>
 		<p>${cpath.description}</p>		
-		<p>Data is freely available, under the license terms of each
-			contributing database.</p>
-		<!-- start of web service api documentation -->
-		<h2>The cPath2 Web Service API:</h2>
+		<p>Data are freely available under the license terms of each contributing database.</p>
+		<h2>cPath2 - Web Service</h2>
 		<p>You can programmatically access the data within this cPath2 instance
-			using the Web Service Application Programming Interface (API). 
-			This page provides a reference guide to help you get started.</p>
+			using its Web Application Programming Interface (API). 
+			This page provides the web service documentation and examples to help you get started.</p>
 
-		<h3 id="commands">Main Commands (the API for a bioinformatician):</h3>
+		<h3 id="commands">Main Commands:</h3>
 		<ol>
-			<li><a href="#search">Command: SEARCH</a></li>
-			<li><a href="#get">Command: GET</a></li>
-			<li><a href="#graph">Command: GRAPH</a></li>
-			<li><a href="#traverse">Command: TRAVERSE</a></li>
-			<li><a href="#top_pathways">Command: TOP_PATHWAYS</a></li>
+			<li><a href="#search">SEARCH</a></li>
+			<li><a href="#get">GET</a></li>
+			<li><a href="#graph">GRAPH</a></li>
+			<li><a href="#traverse">TRAVERSE</a></li>
+			<li><a href="#top_pathways">TOP_PATHWAYS</a></li>
 		</ol>
 		
 		<h3 id="more_commands">Other Features (for core developers):</h3>
 		<ol>
-			<li><a href="#help">HELP (RESTful registry of various info pages)</a></li>
+			<li><a href="#help">HELP (nested info pages)</a></li>
 			<li><a href="#idmapping">IDMAPPING (to UniProt AC)</a></li>
 			<li><strong>Everything else</strong> 
-			after the base URL, except for 'robots.txt', 'favicon.ico', 'resources/*', etc. 
-			(app's internal resources), is treated as a biopax element's local 
-			ID (URI without xml:base prefix) and redirected to the <a href="#get">GET</a> 
-			command with parameter '?uri=${cpath.xmlBase}ID' (e.g., it works for
-			all RelationshipXrefs in the system; this is to make all the
-			normalized by us URIs Linked Data friendly and resolvable
-			either by this web service or Identifiers.org).</li>
+			after the base URL - except for 'robots.txt', 'favicon.ico', 'resources/*', and  
+			other app's internal resources - is treated as a BioPAX element's local 
+			ID (URI without xml:base prefix) and forwarded to <a href="#get">get?uri=${cpath.xmlBase}ID</a> 
+			query (this is to make all the normalized by us URIs, such as RelationshipXref's, 
+			Linked Data friendly and resolvable either by this web service or Identifiers.org).</li>
 		</ol>
 
 		<!-- URIs -->
@@ -67,39 +63,39 @@
 			<a id="miriam"></a>Note about using URIs:
 		</h3>
 		<p>
-			Some of web service commands require a parameter value to be valid,
-			existing URI; it is either an original data provider's URI (for most
-			BioPAX Entities) or a <a href="http://identifiers.org" rel="external">Identifiers.org</a>
-			URL that we create for BioPAX UtilityClass objects, such as
-			ProteinReference, whenever it (<a rel="external"
-				href="http://code.google.com/p/pathway-commons/wiki/cPath2PreMerge?ts=1346339836&updated=cPath2PreMerge#Normalization">normalization</a>)
-			is possible (we do our best following <a rel="external"
+			Some queries require valid IDs (of existing BioPAX element's) among other parameters; 
+			these are usually original data provider's URIs (for most biological entity states); 
+			<a href="http://identifiers.org" rel="external">Identifiers.org</a>
+			standard URLs that we created for BioPAX UtilityClass objects, such as
+			ProteinReference, whenever 
+			<a rel="external" href="http://code.google.com/p/pathway-commons/wiki/cPath2PreMerge#Normalization">normalization</a> 
+			was possible (we do our best following the <a rel="external"
 				href="http://www.ebi.ac.uk/miriam/main/">MIRIAM's</a> set of <a rel="external"
-				href="http://biomodels.net/miriam/">guidelines</a> for the
-			annotation and curation of computational models.)
+				href="http://biomodels.net/miriam/">guidelines</a> for the annotation of computational models). 
+			BioPAX URIs to use with cPath2 queries are not something to guess; consider using <em>search</em>  
+			or <em>top_pathways</em> first, to discover some.
+			Official gene symbols and SwissProt, RefSeq, Ensembl, NCBI gene identifiers 
+			might work as well in place of the URIs in all <em>get</em> and <em>graph</em> queries, 
+			provided that corresponding URIs can be inferred from currently available pathway and id-mapping data.
+			Thus, using URIs makes a more accurate query, whereas IDs - easy and more exploratory 
+			(can return too much or no data as the result).
 		</p>
-		<h3><a id="enco"></a>About this demo page and example links</h3>
-		<p>This is a unique biological pathway data research resource, 
-			biopax data web service, and not a web pages portal. 
-			It is to be used from bioinformatic programs, such as Cytoscape and 
-			other network analyzing and visualizing tools, and normally not by
-			users via web browsers.	All query parameters, such as URIs and search terms, 
-			must be URL-encoded, which is normally done automatically if a web client  
-			uses a standard HTTP client library to send well-formed HTTP 
-			requests to the web service endpoint. So, users are not supposed to manually encode
-			query parameters nor type long queries in a browser's address line.
-			However, as you can see, this page contains manually 
-			formed and encoded example query links one can click or copy to the browser's 
-			address line to try. And the URIs you can see there in queries like "?uri=..." 
-			were already encoded (corresponding URI in the database can differ).
-			Despite the above, if we still want to use a web browser to quickly 
-			get an idea about what the web service is about, remember that web browsers 
-			do only basic encoding for you; they can replace spaces with "%20" (or '+') 
-			but it will not encode '%', '#', '+' if it is already part of the query (URI parameter); 
-			so you must replace '%' with %25, '#' - %23, '+' - %2B, etc. To summarize,
-			the local part of an object's URI is URL-encoded, but when you need to use that URI 
-			as parameter in a URL (query), it has to be encoded again (and decoded on the server side), 
-			which is normally not a user's business. URIs are case-sensitive and cannot contain spaces.</p>
+		<h3><a id="enco"></a>About examples on this page</h3>
+		<p>This is a research resource for biological pathway data, a web service  
+			to be consumed via bioinformatic software, such as Cytoscape, PCViz, ChIBE, 
+			or javascript clients; i.e., normally users are not expected to type in 
+			a web query in a browser. However, this page does contain 
+			examples one can click or copy to the browser's address line to modify 
+			and run (which will result in a HTTP GET request sent to the server).		
+			This works because a) all these queries are quite simple, and b) parameters (e.g., URIs)
+			were already encoded (which is not what one should do manually; in fact, browsers 
+			do but basic encoding: it will replace spaces with "%20", but won't encode '%', '#', '+', 
+			etc., contained in the query parameter; so someone who types in the browser's 
+			address line is to also replace them with %25, %23, %2B, respectively). 
+			We just wanted you to quickly touch what our web service and database are without
+			coding or installing anything. Besides, consider querying the web service 
+			using HTTP POST method instead of GET (neither encoding nor max size issues in this case).
+			Also, URIs are case-sensitive and have no spaces.</p>
 		</section>
 		
 		<section id="commands_description_section">

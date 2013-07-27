@@ -4,7 +4,9 @@
 package cpath.query;
 
 import java.util.Arrays;
+import java.util.Collection;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.model.Model;
 import org.springframework.util.LinkedMultiValueMap;
@@ -48,7 +50,7 @@ public final class CPathGetQuery extends BaseCPathQuery<Model> implements CPathQ
 	}
 
 	/**
-	 * The list of URIs (of biopax elements) 
+	 * A list of URIs (of biopax elements) 
 	 * or IDs (e.g., gene symbols).
 	 * 
 	 * @param sources
@@ -58,7 +60,59 @@ public final class CPathGetQuery extends BaseCPathQuery<Model> implements CPathQ
 		this.source = sources;
 		return this;
 	}
+	
+	/**
+	 * A collection of URIs (of biopax elements) 
+	 * or IDs (e.g., gene symbols).
+	 * 
+	 * @param sources
+	 * @return
+	 */
+	public CPathGetQuery sources(Collection<String> sources) {
+		this.source = sources.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+		return this;
+	}	
 
+	/**
+	 * Sets the filter by organism.
+	 * @param organisms a set of organism names/taxonomy or null (no filter)
+	 * @return
+	 */
+	public CPathGetQuery organismFilter(String[] organisms) {
+		this.organism = organisms;
+		return this;
+	}
+	
+	/**
+	 * Sets the filter by pathway data source.
+	 * @param datasources a set of data source names/URIs, or null (no filter)
+	 * @return
+	 */
+	public CPathGetQuery datasourceFilter(String[] datasources) {
+		this.datasource = datasources;
+		return this;
+	}	
+	
+	/**
+	 * Sets the filter by organism.
+	 * @param organisms a set of organism names/taxonomy or null (no filter)
+	 * @return
+	 */
+	public CPathGetQuery organismFilter(Collection<String> organisms) {
+		this.organism = organisms.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+		return this;
+	}
+	
+	/**
+	 * Sets the filter by pathway data source.
+	 * @param datasources a set of data source names/URIs, or null (no filter)
+	 * @return
+	 */
+	public CPathGetQuery datasourceFilter(Collection<String> datasources) {
+		this.datasource = datasources.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+		return this;
+	}		
+	
 	/**
 	 * Sets the option to merge equivalent interactions in the result model.
 	 * @param mergeEquivalentInteractions

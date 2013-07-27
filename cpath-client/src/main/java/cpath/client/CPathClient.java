@@ -8,7 +8,6 @@ import cpath.query.CPathGraphQuery;
 import cpath.query.CPathSearchQuery;
 import cpath.query.CPathTopPathwaysQuery;
 import cpath.query.CPathTraverseQuery;
-import cpath.service.Cmd;
 import cpath.service.jaxb.*;
 
 import org.apache.commons.lang.StringUtils;

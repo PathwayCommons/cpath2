@@ -1,6 +1,9 @@
 package cpath.query;
 
 
+import java.util.Collection;
+
+import org.apache.commons.lang.ArrayUtils;
 import org.springframework.util.MultiValueMap;
 
 import cpath.client.CPathClient;
@@ -35,26 +38,5 @@ abstract class BaseCPathQuery<T> {
 	public void setClient(CPathClient client) {
 		this.client = client;
 	}
-	
-	/**
-	 * Sets the filter by organism.
-	 * @param organisms a set of organism names/taxonomy or null (no filter)
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	public CPathQuery<T> organismFilter(String[] organisms) {
-		this.organism = organisms;
-		return (CPathQuery<T>) this;
-	}
-	
-	/**
-	 * Sets the filter by pathway data source.
-	 * @param datasources a set of data source names/URIs, or null (no filter)
-	 * @return
-	 */
-	@SuppressWarnings("unchecked")
-	public CPathQuery<T> datasourceFilter(String[] datasources) {
-		this.datasource = datasources;
-		return (CPathQuery<T>) this;
-	}
+
 }
