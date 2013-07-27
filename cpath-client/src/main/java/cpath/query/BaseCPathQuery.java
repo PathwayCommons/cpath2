@@ -1,9 +1,6 @@
 package cpath.query;
 
 
-import java.util.Collection;
-
-import org.apache.commons.lang.ArrayUtils;
 import org.springframework.util.MultiValueMap;
 
 import cpath.client.CPathClient;
