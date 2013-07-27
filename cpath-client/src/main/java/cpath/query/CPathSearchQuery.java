@@ -4,7 +4,9 @@
 package cpath.query;
 
 import java.util.Arrays;
+import java.util.Collection;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -26,7 +28,7 @@ public final class CPathSearchQuery extends BaseCPathQuery<SearchResponse> imple
 
 	// these are for 'search' queries
 	private String queryString;
-	private Class<? extends BioPAXElement> type; // filter by
+	private String type; // filter by
 	private Integer page = 0; // search hits page #
 	private boolean multi = false; //if true, and page>0 - all hits on pages 0..page; if true and page<0 - all hits (all pages).
 	
@@ -38,7 +40,7 @@ public final class CPathSearchQuery extends BaseCPathQuery<SearchResponse> imple
 			throw new IllegalArgumentException("'queryString' parameter is required.");
 		request.add(CmdArgs.q.name(), queryString);
 		if(type != null)
-			request.add(CmdArgs.type.name(), type.getSimpleName());
+			request.add(CmdArgs.type.name(), type);
 		if(page != null && page > 0)
 			request.add(CmdArgs.page.name(), page.toString());
 		if(organism != null)
@@ -75,10 +77,21 @@ public final class CPathSearchQuery extends BaseCPathQuery<SearchResponse> imple
 	/**
 	 * Sets the filter by BioPAX class
 	 * 
-	 * @param type a instantiable BioPAX L3 type (e.g., Pathway, ProteinReference, etc.).
+	 * @param type instantiable BioPAX L3 class (e.g., Pathway, ProteinReference, etc.).
 	 * @return
 	 */
 	public CPathSearchQuery typeFilter(Class<? extends BioPAXElement> type) {
+		this.type = type.getSimpleName();
+		return this;
+	}
+	
+	/**
+	 * Sets the filter by BioPAX class
+	 * 
+	 * @param type name of an instantiable BioPAX L3 type (e.g., Pathway, ProteinReference, etc.).
+	 * @return
+	 */
+	public CPathSearchQuery typeFilter(String type) {
 		this.type = type;
 		return this;
 	}
@@ -109,10 +122,13 @@ public final class CPathSearchQuery extends BaseCPathQuery<SearchResponse> imple
 	 * 
 	 * @param lastPage
 	 * @throws IllegalArgumentException when lastPage <= 0
+	 * @return
 	 */
-	public void allPages() {
+	public CPathSearchQuery allPages() {
 		multi = true;
 		page = ALL_PAGES; //special val.
+		
+		return this;
 	}
 	
 	/**
@@ -120,15 +136,58 @@ public final class CPathSearchQuery extends BaseCPathQuery<SearchResponse> imple
 	 * top hits on pages 0..N.
 	 * 
 	 * @param lastPage
+	 * @return
 	 * @throws IllegalArgumentException when lastPage <= 0
 	 */
-	public void topPages(int lastPage) {
+	public CPathSearchQuery topPages(int lastPage) {
 		if (page <= 0)
 			throw new IllegalArgumentException(
 				"The last page number must be greater than zero");
 		multi = true;
 		page = lastPage;
+		
+		return this;
 	}
+
+	/**
+	 * Sets the filter by organism.
+	 * @param organisms a set of organism names/taxonomy or null (no filter)
+	 * @return
+	 */
+	public CPathSearchQuery organismFilter(String[] organisms) {
+		this.organism = organisms;
+		return this;
+	}
+	
+	/**
+	 * Sets the filter by pathway data source.
+	 * @param datasources a set of data source names/URIs, or null (no filter)
+	 * @return
+	 */
+	public CPathSearchQuery datasourceFilter(String[] datasources) {
+		this.datasource = datasources;
+		return this;
+	}	
+	
+	/**
+	 * Sets the filter by organism.
+	 * @param organisms a set of organism names/taxonomy or null (no filter)
+	 * @return
+	 */
+	public CPathSearchQuery organismFilter(Collection<String> organisms) {
+		this.organism = organisms.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+		return this;
+	}
+	
+	/**
+	 * Sets the filter by pathway data source.
+	 * @param datasources a set of data source names/URIs, or null (no filter)
+	 * @return
+	 */
+	public CPathSearchQuery datasourceFilter(Collection<String> datasources) {
+		this.datasource = datasources.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+		return this;
+	}	
 	
 	
 	@Override

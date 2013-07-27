@@ -4,7 +4,9 @@
 package cpath.query;
 
 import java.util.Arrays;
+import java.util.Collection;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.model.Model;
 import org.springframework.util.LinkedMultiValueMap;
@@ -99,7 +101,7 @@ public final class CPathGraphQuery extends BaseCPathQuery<Model> implements
 	}
 
 	/**
-	 * The list of URIs or IDs (e.g., gene symbols) 
+	 * A list of URIs or IDs (e.g., gene symbols) 
 	 * of <em>source</em> biopax elements (required  
 	 * for all graph query types).
 	 * @param sources
@@ -111,7 +113,7 @@ public final class CPathGraphQuery extends BaseCPathQuery<Model> implements
 	}
 
 	/**
-	 * The list of URIs or IDs (e.g., gene symbols) 
+	 * A list of URIs or IDs (e.g., gene symbols) 
 	 * of <em>target</em> elements used by PathsFromTo 
 	 * queries.
 	 * @param targets
@@ -122,6 +124,30 @@ public final class CPathGraphQuery extends BaseCPathQuery<Model> implements
 		return this;
 	}
 
+	/**
+	 * A set of URIs or IDs (e.g., gene symbols) 
+	 * of <em>source</em> biopax elements (required  
+	 * for all graph query types).
+	 * @param sources
+	 * @return
+	 */
+	public CPathGraphQuery sources(Collection<String> sources) {
+		this.source = sources.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+		return this;
+	}
+
+	/**
+	 * A set of URIs or IDs (e.g., gene symbols) 
+	 * of <em>target</em> elements used by PathsFromTo 
+	 * queries.
+	 * @param targets
+	 * @return
+	 */
+	public CPathGraphQuery targets(Collection<String> targets) {
+		this.target = targets.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+		return this;
+	}	
+	
 	/**
      * Graph query search distance limit (default = 1);
      * required by all but PathsFromTo queries.
@@ -148,6 +174,46 @@ public final class CPathGraphQuery extends BaseCPathQuery<Model> implements
 		return this;
 	}
 
+	/**
+	 * Sets the filter by organism.
+	 * @param organisms a set of organism names/taxonomy or null (no filter)
+	 * @return
+	 */
+	public CPathGraphQuery organismFilter(String[] organisms) {
+		this.organism = organisms;
+		return this;
+	}
+	
+	/**
+	 * Sets the filter by pathway data source.
+	 * @param datasources a set of data source names/URIs, or null (no filter)
+	 * @return
+	 */
+	public CPathGraphQuery datasourceFilter(String[] datasources) {
+		this.datasource = datasources;
+		return this;
+	}	
+	
+	/**
+	 * Sets the filter by organism.
+	 * @param organisms a set of organism names/taxonomy or null (no filter)
+	 * @return
+	 */
+	public CPathGraphQuery organismFilter(Collection<String> organisms) {
+		this.organism = organisms.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+		return this;
+	}
+	
+	/**
+	 * Sets the filter by pathway data source.
+	 * @param datasources a set of data source names/URIs, or null (no filter)
+	 * @return
+	 */
+	public CPathGraphQuery datasourceFilter(Collection<String> datasources) {
+		this.datasource = datasources.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+		return this;
+	}		
+	
 	/**
 	 * Sets the option to merge equivalent interactions in the result model.
 	 * 

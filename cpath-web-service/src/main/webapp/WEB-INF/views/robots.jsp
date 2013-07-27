@@ -8,3 +8,4 @@ Disallow: /metadata/
 Disallow: /admin/
 Disallow: /downloads/
 Disallow: /help/
+Disallow: /top_pathways

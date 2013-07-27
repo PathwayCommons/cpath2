@@ -1,7 +1,9 @@
 package cpath.query;
 
 import java.util.Arrays;
+import java.util.Collection;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.biopax.paxtools.controller.PathAccessor;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -57,6 +59,17 @@ public final class CPathTraverseQuery extends BaseCPathQuery<TraverseResponse> i
 		this.source = source;
 		return this;
 	}
+	
+	/**
+	 * URIs of biopax elements to start with
+	 * (i.e., to apply the path to each one and get property values).
+	 * @param source
+	 * @return
+	 */
+	public CPathTraverseQuery sources(Collection<String> sources) {
+		this.source = sources.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+		return this;
+	}	
 
 	/**
 	 * A biopax properties path to follow
