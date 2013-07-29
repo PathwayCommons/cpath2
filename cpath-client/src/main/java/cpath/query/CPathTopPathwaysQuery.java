@@ -25,6 +25,9 @@ import cpath.service.jaxb.SearchResponse;
  */
 public final class CPathTopPathwaysQuery extends BaseCPathQuery<SearchResponse> implements CPathQuery<SearchResponse> {
 
+	private String[] organism; // filter by
+	private String[] datasource; // filter by
+	
 	protected MultiValueMap<String, String> getRequestParams() {
 		MultiValueMap<String, String> request = new LinkedMultiValueMap<String, String>();
 		if(organism != null)

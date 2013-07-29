@@ -34,6 +34,8 @@ public final class CPathGraphQuery extends BaseCPathQuery<Model> implements
     private GraphType graphType = GraphType.NEIGHBORHOOD;
 	private String[] source;
 	private String[] target;
+	private String[] organism; // filter by
+	private String[] datasource; // filter by
 
 	/**
 	 * @return the request
