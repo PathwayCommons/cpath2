@@ -29,6 +29,8 @@ public final class CPathSearchQuery extends BaseCPathQuery<SearchResponse> imple
 	// these are for 'search' queries
 	private String queryString;
 	private String type; // filter by
+	private String[] organism; // filter by
+	private String[] datasource; // filter by	
 	private Integer page = 0; // search hits page #
 	private boolean multi = false; //if true, and page>0 - all hits on pages 0..page; if true and page<0 - all hits (all pages).
 	

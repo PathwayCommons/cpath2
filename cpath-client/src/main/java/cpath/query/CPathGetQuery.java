@@ -73,45 +73,6 @@ public final class CPathGetQuery extends BaseCPathQuery<Model> implements CPathQ
 		return this;
 	}	
 
-	/**
-	 * Sets the filter by organism.
-	 * @param organisms a set of organism names/taxonomy or null (no filter)
-	 * @return
-	 */
-	public CPathGetQuery organismFilter(String[] organisms) {
-		this.organism = organisms;
-		return this;
-	}
-	
-	/**
-	 * Sets the filter by pathway data source.
-	 * @param datasources a set of data source names/URIs, or null (no filter)
-	 * @return
-	 */
-	public CPathGetQuery datasourceFilter(String[] datasources) {
-		this.datasource = datasources;
-		return this;
-	}	
-	
-	/**
-	 * Sets the filter by organism.
-	 * @param organisms a set of organism names/taxonomy or null (no filter)
-	 * @return
-	 */
-	public CPathGetQuery organismFilter(Collection<String> organisms) {
-		this.organism = organisms.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
-		return this;
-	}
-	
-	/**
-	 * Sets the filter by pathway data source.
-	 * @param datasources a set of data source names/URIs, or null (no filter)
-	 * @return
-	 */
-	public CPathGetQuery datasourceFilter(Collection<String> datasources) {
-		this.datasource = datasources.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
-		return this;
-	}		
 	
 	/**
 	 * Sets the option to merge equivalent interactions in the result model.

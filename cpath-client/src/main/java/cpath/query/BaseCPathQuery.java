@@ -14,9 +14,6 @@ abstract class BaseCPathQuery<T> {
 
 	protected CPathClient client;	
 	protected String command;
-	protected String[] organism; // filter by
-	protected String[] datasource; // filter by
-	
 
 	/**
 	 * Builds the query parameters object.
