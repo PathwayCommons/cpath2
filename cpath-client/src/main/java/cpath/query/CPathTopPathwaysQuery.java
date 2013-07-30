@@ -97,12 +97,14 @@ public final class CPathTopPathwaysQuery extends BaseCPathQuery<SearchResponse> 
 	public SearchResponse result() throws CPathException {
 		SearchResponse resp = client.post(command, getRequestParams(), SearchResponse.class);
 		
-    	Collections.sort(resp.getSearchHit(), new Comparator<SearchHit>() {
-			@Override
-			public int compare(SearchHit h1, SearchHit h2) {
-				return h1.toString().compareTo(h2.toString());
-			}
-		}); 
+		if(resp != null) {
+			Collections.sort(resp.getSearchHit(), new Comparator<SearchHit>() {
+				@Override
+				public int compare(SearchHit h1, SearchHit h2) {
+					return h1.toString().compareTo(h2.toString());
+				}
+			}); 
+		}
     	
     	return resp;
 	}

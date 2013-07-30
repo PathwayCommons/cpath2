@@ -129,7 +129,8 @@ public final class CPathSearchQuery extends BaseCPathQuery<SearchResponse> imple
 	public CPathSearchQuery allPages() {
 		multi = true;
 		page = ALL_PAGES; //special val.
-		
+		if(queryString == null || queryString.isEmpty())
+			queryString = "*";
 		return this;
 	}
 	

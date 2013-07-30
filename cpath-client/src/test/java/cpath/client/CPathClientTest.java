@@ -31,7 +31,7 @@ import cpath.service.jaxb.TraverseResponse;
 @Ignore //these tests depend on the data, thus disabled by default (not for daily builds)
 public class CPathClientTest {
 	
-	final static CPathClient client = CPathClient.newInstance(); //new stateless client	
+	final static CPathClient client = CPathClient.newInstance("http://purl.org/pc2/test/"); //new stateless client	
 	
 	@Test
 	public final void testConnectionEtc() throws CPathException {
@@ -63,10 +63,9 @@ public class CPathClientTest {
 		assertNotNull(result);
 		assertFalse(result.getSearchHit().isEmpty());
 		
-//TODO uncomment after the server is updated to the latest one (where 'toppathways' supports filters)
-//		result = client.createTopPathwaysQuery()
-//			.datasourceFilter(new String[]{"foo"}).result();		
-//		assertNull(result);
+		result = client.createTopPathwaysQuery()
+			.datasourceFilter(new String[]{"foo"}).result();		
+		assertNull(result);
 	}
 
 	

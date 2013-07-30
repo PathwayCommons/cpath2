@@ -147,11 +147,24 @@ public class BiopaxModelController extends BasicController {
 
 	@RequestMapping("/top_pathways")
     public @ResponseBody SearchResponse topPathways(
-    		@RequestParam String[] datasources, @RequestParam String[] organisms, 
-    		HttpServletRequest request, HttpServletResponse response)
+    		@RequestParam(required=false) String[] datasource, @RequestParam(required=false) String[] organism, 
+    		HttpServletRequest request, HttpServletResponse response) throws IOException
     {
 		logHttpRequest(request);
-		return service.topPathways(organisms, datasources);
+		
+		ServiceResponse results = service.topPathways(organism, datasource);
+		
+		if(results instanceof ErrorResponse) {
+			errorResponse(Status.INTERNAL_ERROR, 
+					((ErrorResponse) results).toString(), response);
+		} else if(results.isEmpty()) {
+			errorResponse(Status.NO_RESULTS_FOUND, 
+					"no hits", response);
+		} else {
+			return (SearchResponse) results;
+		}
+		
+		return null;
     }
     
     
