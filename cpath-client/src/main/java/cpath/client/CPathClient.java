@@ -111,7 +111,7 @@ public class CPathClient
 				return null; //empty result
 			} else
 				throw new CPathException(url + " and " + requestParams.toString(), e);
-		} catch (RestClientException e) {
+		} catch (Exception e) {
 			throw new CPathException(url + " and " + requestParams.toString(), e);
 		}
 	}
@@ -153,7 +153,7 @@ public class CPathClient
 				return null; //empty result
 			} else
 				throw new CPathException(url, e);
-		} catch (RestClientException e) {
+		} catch (Exception e) {
 			throw new CPathException(url, e);
 		}
 	}
