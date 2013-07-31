@@ -112,6 +112,7 @@ public class BiopaxModelController extends BasicController {
 			// ':' and spaces back (should not)
 			if(localId.startsWith("#"))
 				localId = localId.substring(1);
+			
 			if(localId.contains(":") || localId.contains("#") || localId.contains(" ")) {
 				localId = URLEncoder.encode(localId, "UTF-8");
 			}
@@ -128,7 +129,7 @@ public class BiopaxModelController extends BasicController {
     	Writer writer, HttpServletRequest request, HttpServletResponse response) 
     		throws IOException
     {
-    	logHttpRequest(request);
+    	logHttpRequest(request, "format="+get.getFormat(), (get.getUri().length<6)?"uri="+Arrays.toString(get.getUri()):"uri=...(>5)");
     	
     	if(bindingResult != null &&  bindingResult.hasErrors()) {
     		errorResponse(Status.BAD_REQUEST, 
@@ -150,7 +151,7 @@ public class BiopaxModelController extends BasicController {
     		@RequestParam(required=false) String[] datasource, @RequestParam(required=false) String[] organism, 
     		HttpServletRequest request, HttpServletResponse response) throws IOException
     {
-		logHttpRequest(request);
+		logHttpRequest(request, "organisms="+Arrays.toString(organism), "datasource="+Arrays.toString(datasource));
 		
 		ServiceResponse results = service.topPathways(organism, datasource);
 		
@@ -173,7 +174,7 @@ public class BiopaxModelController extends BasicController {
     	BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
     		throws IOException 
     {
-    	logHttpRequest(request);
+    	logHttpRequest(request, "path="+query.getPath());
     	
     	if(bindingResult.hasErrors()) {
     		errorResponse(Status.BAD_REQUEST, 

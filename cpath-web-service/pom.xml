@@ -149,16 +149,6 @@
 			<artifactId>jackson-mapper-asl</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>javax.xml.bind</groupId>
-			<artifactId>jaxb-api</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-		<dependency>
-   			<groupId>com.sun.xml.bind</groupId>
-   			<artifactId>jaxb-impl</artifactId>
-   			<scope>runtime</scope>
-		</dependency>			
-		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
 			<scope>provided</scope>

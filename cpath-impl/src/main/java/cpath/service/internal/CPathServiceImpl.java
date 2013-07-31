@@ -172,6 +172,10 @@ public class CPathServiceImpl implements CPathService {
 			public void execute(Model model) {
 				try {
 					Set<BioPAXElement> elements = urisToBpes(model, mappedUris);
+					if(elements.isEmpty()) {
+						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
+							"No BioPAX objects found by URI(s): " + Arrays.toString(uris));
+					}						
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 					Model m = cloner.clone(model, elements);
 					logDatasourcesUsed(m);
@@ -250,6 +254,10 @@ public class CPathServiceImpl implements CPathService {
 				try {
 					// init source elements
 					Set<BioPAXElement> elements = urisToBpes(model, src);
+					if(elements.isEmpty()) {
+						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
+							"No BioPAX objects found by URI(s): " + Arrays.toString(src));
+					}
 					// Execute the query, get result elements
 					elements = QueryExecuter.runNeighborhood(elements, model,
 							limit, dir, createFilters(organisms, datasources));
@@ -291,6 +299,10 @@ public class CPathServiceImpl implements CPathService {
 				try {
 					// init source elements
 					Set<BioPAXElement> elements = urisToBpes(model, src);
+					if(elements.isEmpty()) {
+						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
+							"No BioPAX objects found by URI(s): " + Arrays.toString(src));
+					}
 					// Execute the query, get result elements
 					elements = QueryExecuter.runPathsBetween(elements, model, limit,
 							createFilters(organisms, datasources));
@@ -334,7 +346,15 @@ public class CPathServiceImpl implements CPathService {
 				try {
 					// init source and target elements
 					Set<BioPAXElement> source = urisToBpes(model, src);
+					if(source.isEmpty()) {
+						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
+							"No source BioPAX objects found by URI(s): " + Arrays.toString(src));
+					}
 					Set<BioPAXElement> target = urisToBpes(model, tgt);
+					if(target.isEmpty()) {
+						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
+							"No target BioPAX objects found by URI(s): " + Arrays.toString(tgt));
+					}
 					
 					// Execute the query
 					Set<BioPAXElement> elements = (target==null || target.isEmpty()) 
@@ -389,6 +409,10 @@ public class CPathServiceImpl implements CPathService {
 				try {
 					// init source elements
 					Set<BioPAXElement> elements = urisToBpes(model, src);
+					if(elements.isEmpty()) {
+						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
+							"No BioPAX objects found by URI(s): " + Arrays.toString(src));
+					}
 					// Execute the query, get result elements
 					elements = QueryExecuter
 						.runCommonStreamWithPOI(elements, model, dir, limit,
@@ -417,7 +441,7 @@ public class CPathServiceImpl implements CPathService {
 	/**
 	 * Mapping to BioPAX URIs.
 	 *
-	 * TODO it does not "understand" RefSeq Versions and UniProt Isoforms 
+	 * It does not "understand" RefSeq Versions and UniProt Isoforms 
 	 * (one has to submit canonical identifiers, i.e, ones without "-#" or ".#").
 	 * 
 	 * 
@@ -437,7 +461,7 @@ public class CPathServiceImpl implements CPathService {
 		for (String identifier : identifiers) {
 			if(identifier.startsWith("http://") || identifier.startsWith("urn:")) {
 				// it must be an existing URI; skip id-mapping 
-				//TODO could map secondary URIs to primary ones too (generally, users should not guess URIs nor submit non-existing ones to the query)
+				//TODO could also map a secondary ID to the primary one (generally, users should not guess URIs nor submit non-existing ones)
 				uris.add(identifier);
 			} else {
 				// do gene/protein id-mapping;

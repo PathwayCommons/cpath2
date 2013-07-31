@@ -228,9 +228,8 @@ public final class CPathSearchQuery extends BaseCPathQuery<SearchResponse> imple
 	 	do {
 			//update current 'page' # in the request map (but do not touch 'this.page' anymore!)
 			request.put(CmdArgs.page.name(), Arrays.asList(p.toString())); //using 'add' instead of 'put' would be a bug
-	 		SearchResponse res = client.post(command, request, SearchResponse.class);
-	 		
-	 		if(res != null) { //collect hits
+			SearchResponse res = client.post(command, request, SearchResponse.class);	 		
+	 		if(res != null && !res.isEmpty()) { //collect hits
 	 			if(mulRes == null) {
 	 				mulRes = res;
 	 				int totPages = res.numPages();

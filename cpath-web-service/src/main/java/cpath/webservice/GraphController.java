@@ -29,6 +29,7 @@ package cpath.webservice;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Arrays;
 
 import cpath.service.CPathService;
 import cpath.service.GraphType;
@@ -88,7 +89,12 @@ public class GraphController extends BasicController {
 	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, 
 			Writer writer, HttpServletRequest request, HttpServletResponse response) throws IOException
     {
-		logHttpRequest(request);
+		logHttpRequest(request, 
+			"kind="+graph.getKind(), "format="+graph.getFormat(), 
+			"organisms="+Arrays.toString(graph.getOrganism()), 
+			"datasource="+Arrays.toString(graph.getDatasource()),
+			"direction="+graph.getDirection(), "limit="+graph.getLimit()
+			);
 		
 		//check for binding errors
 		if(bindingResult.hasErrors()) {

@@ -136,6 +136,21 @@ public class CPathClientTest {
 		
 		assertTrue(resp instanceof SearchResponse);
 		assertFalse(((SearchResponse)resp).getSearchHit().isEmpty());
+		
+		
+		resp = null;
+        try {
+			resp = client.createSearchQuery()
+				.typeFilter("Provenance")
+				.allPages()
+				.result();
+		} catch (CPathException e) {
+			fail(e.toString());
+		}
+		
+		assertTrue(resp instanceof SearchResponse);
+		assertFalse(((SearchResponse)resp).getSearchHit().isEmpty());
+		
 	}
 	
 	

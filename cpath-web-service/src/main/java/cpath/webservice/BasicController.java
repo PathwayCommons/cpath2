@@ -135,7 +135,12 @@ public abstract class BasicController {
 	    return newImage;
 	}
 	
-	void logHttpRequest(HttpServletRequest request) {
+	
+	/** 
+	 * @param request
+	 * @param params optional (POST) query arguments (if provided, will replace request.getQueryString() value)
+	 */
+	void logHttpRequest(HttpServletRequest request, Object... params) {
 		String ip = request.getHeader("X-Forwarded-For");		
 		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
             ip = request.getHeader("Proxy-Client-IP");  
@@ -154,9 +159,9 @@ public abstract class BasicController {
         }  
 		
 		log.info("REQUEST " + ip
-				+ "\t" + request.getMethod() 
-				+ "\t" + request.getRequestURI()
-				+ "\t" + request.getQueryString()
-				);
+			+ "\t" + request.getMethod() 
+			+ "\t" + request.getRequestURI()
+			+ "\t" + ((params.length == 0) ? request.getQueryString() : Arrays.toString(params))
+		);
 	}
 }
