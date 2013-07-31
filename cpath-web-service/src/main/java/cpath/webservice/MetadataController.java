@@ -249,10 +249,10 @@ public class MetadataController extends BasicController
 
     
     @RequestMapping(value="/idmapping")
-    public @ResponseBody Map<String, String> search(@RequestParam String[] id, 
+    public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id, 
     		HttpServletRequest request, HttpServletResponse response) throws IOException
     {		
-			logHttpRequest(request);
+			logHttpRequest(request,"id="+Arrays.toString(id));
 			
 			if(id == null || id.length == 0) {
 				errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", response);

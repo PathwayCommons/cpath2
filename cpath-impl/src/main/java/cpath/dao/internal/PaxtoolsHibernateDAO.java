@@ -723,7 +723,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	 * It generates results only for those URIs where
 	 * the property path apply, although the values set 
 	 * can be empty.
-	 * TODO may be to return a row for each query URI regardless path apply or not; e.g., use 'valid' attr...
 	 * 
 	 * @throws 
 	 */

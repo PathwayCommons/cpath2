@@ -16,12 +16,10 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 /**
- * Provides querying and fetching relevant OWL model(s) from Pathway
- * Commons database (http://www.pathwaycommons.org) using the features
- * of Pathway Commons web service API:
+ * Provides querying and fetching relevant OWL model(s) 
+ * from old Pathway Commons database (http://www.pathwaycommons.org) 
+ * using the features of Pathway Commons web service API:
  * (http://www.pathwaycommons.org/pc/webservice.do?cmd=help)
- *
- * TODO remove or generalize (i.e., extract public api; make it usable not only for Pathway Commons cPath1 servers...)
  */
 public class PathwayCommonsIOHandler
 {

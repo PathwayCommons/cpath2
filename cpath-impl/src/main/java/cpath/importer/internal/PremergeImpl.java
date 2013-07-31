@@ -446,7 +446,6 @@ public final class PremergeImpl implements Premerger {
 		throws IOException 
 	{
 		//shortcut for other/system warehouse data (not to be converted to BioPAX)
-    	//TODO e.g., simply merge if already BioPAX data (currently, we do not expect this)
 		if(metadata.getConverterClassname() == null 
 				|| metadata.getConverterClassname().isEmpty()) 
 		{

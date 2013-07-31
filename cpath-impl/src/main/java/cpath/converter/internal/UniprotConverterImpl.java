@@ -214,7 +214,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 	 * @param organismName String
      * @param organismTaxId String
      * @param proteinReference ProteinReference
-     * @param model TODO
+     * @param model
      */
     private void setOrganism(String organismName, String organismTaxId, 
     		ProteinReference proteinReference, Model model) {
@@ -350,7 +350,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
      * @param id
      * @param proteinReference
      * @param relationshipType some term (e.g., "SEQUENCE", "GENE", "MRNA", etc.) or null.
-     * @param model TODO
+     * @param model
      */
     private void setRelationshipXRef(String dbName, 
     	String id, ProteinReference proteinReference, String relationshipType, Model model) 

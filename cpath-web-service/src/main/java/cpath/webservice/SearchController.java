@@ -28,6 +28,7 @@
 package cpath.webservice;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
@@ -83,8 +84,12 @@ public class SearchController extends BasicController {
     		BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
     			throws IOException
     {		
-		if(!search.getQ().startsWith("*")) //a quick fix: do not log UI and not specific requests
-			logHttpRequest(request);
+//		if(!search.getQ().startsWith("*")) //do not log UI and not specific requests
+		logHttpRequest(request, "q="+search.getQ(), 
+			"type="+((search.getType()!=null)?search.getType():"ALL"), 
+			"page="+search.getPage(),
+			"organisms="+Arrays.toString(search.getOrganism()), 
+			"datasource="+Arrays.toString(search.getDatasource()));
     	
     	if(bindingResult.hasErrors()) {
 			errorResponse(Status.BAD_REQUEST, 

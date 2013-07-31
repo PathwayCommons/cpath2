@@ -70,11 +70,6 @@ public enum Cmd {
     	new CmdArgs[]{path, uri})
           
     ;
-    /* TODO should we expose "/convert" command?
-	CONVERT("Converts from BioPAX to simple formats.  This command has two parameters",
-			new CmdArgs[]{biopax, format}),
-	;
-    */
 	
 	private final CmdArgs[] args; //Array is better for use in json/jsp than List/Set
 	private final String info;

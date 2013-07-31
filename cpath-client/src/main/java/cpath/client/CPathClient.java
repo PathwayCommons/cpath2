@@ -18,7 +18,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.UnknownHttpStatusCodeException;
 
@@ -110,9 +109,9 @@ public class CPathClient
 			if (e.getRawStatusCode() == 460) {
 				return null; //empty result
 			} else
-				throw new CPathException(url + " and " + requestParams.toString(), e);
+				throw new CPathException(url + " and " + requestParams, e);
 		} catch (Exception e) {
-			throw new CPathException(url + " and " + requestParams.toString(), e);
+			throw new CPathException(url + " and " + requestParams, e);
 		}
 	}
     
