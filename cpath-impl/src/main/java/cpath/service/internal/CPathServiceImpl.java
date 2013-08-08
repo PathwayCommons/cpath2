@@ -104,9 +104,12 @@ public class CPathServiceImpl implements CPathService {
 	
 	//init. on first access when proxy model mode is enabled (so do not use the var. directly!)
 	private Model proxyModel;
+	
+	private final int maxHitsPerPage;
 
     // this is probably required for the ehcache to work
 	public CPathServiceImpl() {
+		this.maxHitsPerPage = Integer.parseInt(CPathSettings.getInstance().getMaxHitsPerPage());
 	}
 
 	
@@ -115,6 +118,7 @@ public class CPathServiceImpl implements CPathService {
      */
 	public CPathServiceImpl(PaxtoolsDAO mainDAO, MetadataDAO metadataDAO) 
 	{
+		this();
 		this.mainDAO = mainDAO;
 		this.metadataDAO = metadataDAO;
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
@@ -137,6 +141,7 @@ public class CPathServiceImpl implements CPathService {
 			
 			if(hits.isEmpty()) {//no hits
 				hits = new SearchResponse();
+				hits.setMaxHitsPerPage(maxHitsPerPage);
 				hits.setPageNo(page);
 			}
 			
@@ -567,7 +572,6 @@ public class CPathServiceImpl implements CPathService {
 	@Override
 	public SearchResponse topPathways(final String[] organisms, final String[] datasources) {
 		SearchResponse topPathways = new SearchResponse();
-		
 		final List<SearchHit> hits = topPathways.getSearchHit(); //empty list
 		int page = 0; // will use search pagination
 		SearchResponse searchResponse = mainDAO.search("*", page, Pathway.class, datasources, organisms);

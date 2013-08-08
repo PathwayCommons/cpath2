@@ -303,6 +303,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		
 		// collect matching elements here
 		SearchResponse searchResponse = new SearchResponse();
+		searchResponse.setMaxHitsPerPage(maxHitsPerPage);
 
 		if (log.isDebugEnabled())
 			log.debug("search: " + query + ", page: " + page 

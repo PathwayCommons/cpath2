@@ -34,8 +34,8 @@ public class CPathClient
 	private static final Logger LOGGER = LoggerFactory.getLogger(CPathClient.class);
 	
 	// one can set the JVM property: -DcPath2Url="http://some_URL"
-	private static final String JVM_PROPERTY_ENDPOINT_URL = "cPath2Url";	
-	private static final String DEFAULT_ENDPOINT_URL = "http://www.pathwaycommons.org/pc2/";
+	public static final String JVM_PROPERTY_ENDPOINT_URL = "cPath2Url";	
+	public static final String DEFAULT_ENDPOINT_URL = "http://www.pathwaycommons.org/pc2/";
 		
 	private final RestTemplate restTemplate;
 	

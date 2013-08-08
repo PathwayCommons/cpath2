@@ -27,6 +27,7 @@ public class DataResponse extends ServiceResponse {
 		this.data = data;
 	}
 	
+	@Override
 	@XmlTransient
 	public boolean isEmpty() {
 		return  (data == null || data.toString().trim().isEmpty());
