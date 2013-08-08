@@ -35,6 +35,7 @@ public class TraverseResponse extends ServiceResponse {
 	}
 	
 	@Override
+	@XmlTransient
 	public boolean isEmpty() {
 		if(getTraverseEntry().isEmpty())
 			return true;
