@@ -114,7 +114,7 @@ final class SearchHitsTransformer implements ResultTransformer {
 			hit.getDataSource().addAll(uniqueVals);
 		}	
 		
-		// extract only pathway URIs
+		// extract only pathway URIs (TODO exclude itself if pathway type)
 		if(doc.getField(FIELD_PATHWAY) != null) {
 			Set<String> uniqueVals = new TreeSet<String>();
 			for(String d : doc.getValues(FIELD_PATHWAY)) {
