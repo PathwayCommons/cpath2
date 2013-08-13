@@ -180,6 +180,7 @@ public class CPathServiceImpl implements CPathService {
 					if(elements.isEmpty()) {
 						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
 							"No BioPAX objects found by URI(s): " + Arrays.toString(uris));
+						return;
 					}						
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 					Model m = cloner.clone(model, elements);
@@ -262,6 +263,7 @@ public class CPathServiceImpl implements CPathService {
 					if(elements.isEmpty()) {
 						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
 							"No BioPAX objects found by URI(s): " + Arrays.toString(src));
+						return;
 					}
 					// Execute the query, get result elements
 					elements = QueryExecuter.runNeighborhood(elements, model,
@@ -307,6 +309,7 @@ public class CPathServiceImpl implements CPathService {
 					if(elements.isEmpty()) {
 						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
 							"No BioPAX objects found by URI(s): " + Arrays.toString(src));
+						return;
 					}
 					// Execute the query, get result elements
 					elements = QueryExecuter.runPathsBetween(elements, model, limit,
@@ -354,11 +357,13 @@ public class CPathServiceImpl implements CPathService {
 					if(source.isEmpty()) {
 						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
 							"No source BioPAX objects found by URI(s): " + Arrays.toString(src));
+						return;
 					}
 					Set<BioPAXElement> target = urisToBpes(model, tgt);
 					if(target.isEmpty()) {
 						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
 							"No target BioPAX objects found by URI(s): " + Arrays.toString(tgt));
+						return;
 					}
 					
 					// Execute the query
@@ -417,6 +422,7 @@ public class CPathServiceImpl implements CPathService {
 					if(elements.isEmpty()) {
 						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
 							"No BioPAX objects found by URI(s): " + Arrays.toString(src));
+						return;
 					}
 					// Execute the query, get result elements
 					elements = QueryExecuter
