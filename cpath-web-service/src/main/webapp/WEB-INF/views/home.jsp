@@ -31,12 +31,23 @@
 	
 	<h2>Resource Description</h2>
 		<p>${cpath.description}</p>		
-		<p>Data are freely available under the license terms of each contributing database.</p>
+		<p>Data is freely available, under the license terms of each contributing <a href = "#data_sources"> database<\a>. </p>
 		<h2>cPath2 - Web Service</h2>
 		<p>You can programmatically access the data within this cPath2 instance
 			using its Web Application Programming Interface (API). 
 			This page provides the web service documentation and examples to help you get started.</p>
 
+	<h2>Accessing ${cpath.name}</h2>
+		<p> ${cpath.name} data can be accessed through several methods:
+			<ol>
+				<li><a href ="/downloads.html">Downloads:</a> We provide batch downloads of the ${cpath.name} data in several different formats. You might want to use this option if you are a computational biologist and you need comprehensive biological pathway data for analysis.</li>
+				<li><a href ="#tools">Software Tools:</a> There are several tools that can search and accesses Pathway Commons data and display them in an intuitive form. You might want to consider this option if you are a biologist who wants to explore the pathways.</li>
+				<li><a href ="#api">Web Application Programming interface:</a>We provide powerful search facilities and multiple export options through our Web API. You might want to use this option if you are developing software that needs to search and retrieve pathway information.</li>
+			</ol>
+
+
+		<!-- start of web service api documentation  - move it to a different page?-->
+		
 		<h3 id="commands">Main Commands:</h3>
 		<ol>
 			<li><a href="#search">SEARCH</a></li>
