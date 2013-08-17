@@ -18,6 +18,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.UnknownHttpStatusCodeException;
 
@@ -41,6 +42,7 @@ public class CPathClient
 	
 	private String endPointURL;
 	private String actualEndPointURL;
+	private String name;
 
 	public static enum Direction
     {
@@ -93,15 +95,18 @@ public class CPathClient
 	 * request to the server.
 	 * 
 	 * @param requestPath cpath2 web service command path (e.g., search, help/types, etc.)
-	 * @param requestParams query parameters object (e.g. {@link MultiValueMap} or a java bean).
+	 * @param requestParams query parameters object.
 	 * @param responseType result class (e.g., String.class, Model)
 	 * @return
 	 * @throws CPathException
 	 */
-	public <T> T post(String requestPath, Object requestParams, Class<T> responseType)
+	public <T> T post(String requestPath, MultiValueMap<String, String> requestParams, Class<T> responseType)
 		throws CPathException 
 	{
 		final String url = actualEndPointURL + requestPath;
+		
+		if(name != null && requestParams != null)
+			requestParams.put("client", Collections.singletonList(name));
 		
 		try {
 			return restTemplate.postForObject(url, requestParams, responseType);
@@ -110,7 +115,7 @@ public class CPathClient
 				return null; //empty result
 			} else
 				throw new CPathException(url + " and " + requestParams, e);
-		} catch (Exception e) {
+		} catch (RestClientException e) {
 			throw new CPathException(url + " and " + requestParams, e);
 		}
 	}
@@ -141,6 +146,8 @@ public class CPathClient
 				String params = join(entry.getKey() + "=", entry.getValue(), "&");
 				sb.append(params).append("&");
 			}
+			if(name!=null)
+				sb.append("client=").append(name);
 		}
 		
 		String url = sb.toString();
@@ -152,7 +159,7 @@ public class CPathClient
 				return null; //empty result
 			} else
 				throw new CPathException(url, e);
-		} catch (Exception e) {
+		} catch (RestClientException e) {
 			throw new CPathException(url, e);
 		}
 	}
@@ -304,4 +311,22 @@ public class CPathClient
 	public CPathTopPathwaysQuery createTopPathwaysQuery() {
 		return new CPathTopPathwaysQuery(this);
 	}
+
+
+	/**
+	 * Gives a name to this cpath2 client instance
+	 * to be reported to the server with all requests. 
+	 * Developers can optionally use this to help the cpath2 
+	 * server analyze - in addition to where requests come from (IP address)
+	 * and what they are (command, parameters) - also how often it's 
+	 * from a particular class of client app (though the server 
+	 * can safely ignore this information, it might be also useful 
+	 * and practical to report some statistics back to authors.)
+	 * 
+	 * @param name
+	 */
+	public void setName(String name) {
+		this.name = name;
+	}
+	
 }

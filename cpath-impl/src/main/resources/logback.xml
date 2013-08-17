@@ -7,18 +7,12 @@
  
   <!-- To enable JMX Management -->
   <jmxConfigurator/>
- 
-<!--   <appender name="console" class="ch.qos.logback.core.ConsoleAppender"> -->
-<!--     <encoder> -->
-<!--       <pattern>%d %.-1level|[%thread]|%-40.40logger{0}|%msg%n</pattern> -->
-<!--     </encoder> -->
-<!--   </appender> -->
   
   <!--Daily rolling file appender -->
   <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
 	<File>${CPATH2_HOME}/cpath2.log</File>
 	<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-		<FileNamePattern>${CPATH2_HOME}/cpath2.%d{yyyy-MM-dd}.log</FileNamePattern>
+		<FileNamePattern>${CPATH2_HOME}/cpath2.%d{yyyy-MM}.log</FileNamePattern>
 	</rollingPolicy>
 	<encoder>
       <pattern>%d %-5level %logger{25} - %msg%n</pattern>
@@ -35,7 +29,6 @@
   <logger name="java.sql" level="warn" />
  
   <root level="info">
-<!--     <appender-ref ref="console" /> -->
     <appender-ref ref="file" />
   </root>
   

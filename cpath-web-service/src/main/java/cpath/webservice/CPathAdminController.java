@@ -1,6 +1,7 @@
 package cpath.webservice;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import cpath.config.CPathSettings;
+import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 
 @Controller
@@ -124,5 +126,23 @@ public class CPathAdminController extends BasicController {
     	
     	return files;
 	}
+	
 
+	@RequestMapping(value = "/admin/stats", method=RequestMethod.GET)
+    public String stats(HttpServletRequest request) throws IOException {
+		logHttpRequest(request);    	
+		return "stats";
+    }
+	
+	@RequestMapping(value = "/admin/stats", method=RequestMethod.POST)
+    public String stats(Model model, HttpServletRequest request) throws IOException {
+		logHttpRequest(request);
+		
+    	// update (unique IP, cmd, datasource, etc.) counts from log files
+    	Map<String,Integer> counts = CPathUtils.simpleStatsFromAccessLogs();
+    	model.addAttribute("counts", counts.entrySet());
+		
+		return "stats";
+    }
+	
 }

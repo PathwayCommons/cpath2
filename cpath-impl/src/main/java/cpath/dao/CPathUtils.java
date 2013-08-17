@@ -11,15 +11,23 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
@@ -27,12 +35,14 @@ import java.util.zip.ZipInputStream;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 
 import cpath.config.CPathSettings;
+import cpath.service.Cmd;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
@@ -470,6 +480,111 @@ public final class CPathUtils {
 	public static void cleanupIndexDir(String db) {
 		cleanupDirectory(new File(CPathSettings.homeDir() + File.separator + db));
 		log.info("Emptied the index dir:" + db);
-	}    
+	}
+	
+	
+	/**
+	 * Reads and analyzes all the cpath2 web service logs to
+	 * extract and report access counts per: IP, query type,
+	 * datasource, etc.
+	 * 
+	 * @return
+	 * @throws IOException 
+	 */
+	public static Map<String, Integer> simpleStatsFromAccessLogs() throws IOException {
+		Map<String, Integer> map = new TreeMap<String, Integer>();
+		
+		//read, analyze all $CPATH2_HOME/cpath2*.log files
+        File dir = new File(CPathSettings.homeDir());
+       	FilenameFilter filter = new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return (name.startsWith("cpath2") && name.endsWith(".log"));
+            }
+        };
+        
+        for (String log : dir.list(filter))
+        	simpleStatsFromLog(map, dir.getPath() + dir.separator + log);
+        
+		return map;
+	}
+
+
+	/**
+	 * Extracts various counts from a single cpath2 log file
+	 * to the map. 
+	 * 
+	 * @param logFile absolute path to the log
+	 */
+	public static void simpleStatsFromLog(Map<String, Integer> map, String logFile) throws IOException {
+
+		//to match: IP, COMMAND, [PARAMETERS] (optional)
+		final Pattern reqPattern = Pattern.compile("REQUEST\\s+([\\d\\.]+)\\s+(GET|POST)\\s+/(\\S+)\\s+(\\[(.+)\\])?");
+		//matches the list of [DATASOURCES]
+		final Pattern resPattern = Pattern.compile("DATASOURCE\\s+\\[(.+)\\]");
+		//matches IP and the archive downloaded (count for each file)
+		final Pattern dlPattern = Pattern.compile("DOWNLOAD\\s+([\\d\\.]+)\\s+(GET|POST)\\s+/(\\S+)");
+
+		final BufferedReader reader = new BufferedReader(new FileReader(logFile));
+
+		String line;
+		while ((line = reader.readLine()) != null && !"".equals(line.trim())) {
+			//match, parse & count...
+			Matcher matcher = reqPattern.matcher(line);       	
+			if(matcher.find()) {
+				//count IP
+				count(map, "IP " + matcher.group(1).trim());
+
+				//count cmd
+				String val = matcher.group(3).trim();
+				try {
+					Cmd cmd = Cmd.valueOf(val.toUpperCase()); //not fails if valid cpath2 command
+					String params = matcher.group(5).trim();
+					String kind = "";          			
+					if(!params.isEmpty()) {
+						for(String par: params.split(",\\s+")) {
+							if(par.startsWith("format="))
+								count(map, "FORMAT " + par.substring(7));
+							else if ( cmd == Cmd.GRAPH && par.startsWith("kind="))
+								kind = par.substring(5);
+							//TODO ? count 'datasource' filter values too
+						}
+					}            			
+					if(!kind.isEmpty())
+						count(map, "COMMAND " + val + " " + kind);
+
+					count(map, "COMMAND " + val);
+				} catch (IllegalArgumentException e) {
+					count(map, "OTHER");
+				}
+
+			} else {
+				matcher = resPattern.matcher(line); 
+				if(matcher.find()) {
+					String[] dss = matcher.group(1).trim().split(",\\s+");
+					for(String ds : dss) {
+						count(map, "DATASOURCE " + ds);
+					}
+				} else {
+					matcher = dlPattern.matcher(line); 
+					if(matcher.find()) {
+						//count IP
+						count(map, "IP " + matcher.group(1).trim());
+						//count file name
+						String file = matcher.group(3).trim();
+						file = file.substring(file.lastIndexOf('/')+1);
+						file = URLDecoder.decode(file);
+						count(map, "DOWNLOAD " + file);					
+					}
+				}
+			}
+		}
+		reader.close();
+	}
+
+
+	private static void count(Map<String, Integer> map, String key) {
+		Integer count = new Integer( (map.containsKey(key)) ? map.get(key).intValue() + 1 : 1);
+		map.put(key, count);
+	}
 	
 }

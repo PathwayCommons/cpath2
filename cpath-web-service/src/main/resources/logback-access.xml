@@ -9,7 +9,8 @@
   <appender name="accessfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>${CPATH2_HOME}/cpath2-access.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-        <fileNamePattern>${CPATH2_HOME}/cpath2-access.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+        <fileNamePattern>${CPATH2_HOME}/cpath2-access.%d{yyyy-MM}.log.zip</fileNamePattern>
+        <maxHistory>2</maxHistory>
     </rollingPolicy>
     <encoder>
         <pattern>combined</pattern>
@@ -20,7 +21,8 @@
   <appender name="reqrespfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>${CPATH2_HOME}/cpath2-req-resp.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>${CPATH2_HOME}/cpath2-req-resp.%d{yyyy-MM-dd}.log.zip</fileNamePattern>
+      <fileNamePattern>${CPATH2_HOME}/cpath2-reqresp.%d{yyyy-MM}.log.zip</fileNamePattern>
+      <maxHistory>2</maxHistory>
     </rollingPolicy>
     <encoder>
       <pattern>%n%fullRequest%n%fullResponse%n</pattern>
@@ -28,7 +30,8 @@
     </encoder>
   </appender>
  
-  <appender-ref ref="accessfile" />
-  <appender-ref ref="reqrespfile" />
-<!--   <appender-ref ref="console" /> -->
+  <root level="info">
+  	<appender-ref ref="accessfile" />
+  	<appender-ref ref="reqrespfile" />
+  </root>
 </configuration>

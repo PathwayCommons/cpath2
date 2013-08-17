@@ -153,14 +153,10 @@ public class BiopaxModelController extends BasicController {
     {
 		logHttpRequest(request, "organisms="+Arrays.toString(organism), "datasource="+Arrays.toString(datasource));
 		
-		ServiceResponse results = service.topPathways(organism, datasource);
+		SearchResponse results = service.topPathways(organism, datasource);
 		
-		if(results instanceof ErrorResponse) {
-			errorResponse(Status.INTERNAL_ERROR, 
-					((ErrorResponse) results).toString(), response);
-		} else if(results.isEmpty()) {
-			errorResponse(Status.NO_RESULTS_FOUND, 
-					"no hits", response);
+		if(results == null || results.isEmpty()) {
+			errorResponse(Status.NO_RESULTS_FOUND, "no hits", response);
 		} else {
 			return (SearchResponse) results;
 		}
@@ -182,12 +178,11 @@ public class BiopaxModelController extends BasicController {
     	} else {
     		ServiceResponse sr = service.traverse(query.getPath(), query.getUri());
     		if(sr instanceof ErrorResponse) {
-				errorResponse(Status.INTERNAL_ERROR, 
+				errorResponse(((ErrorResponse) sr).getStatus(), 
 						((ErrorResponse) sr).toString(), response);
 			}
-    		else if(sr.isEmpty()) {
-    			errorResponse(Status.NO_RESULTS_FOUND, 
-    					"no results found", response);
+    		else if(sr == null || sr.isEmpty()) {
+    			errorResponse(Status.NO_RESULTS_FOUND, "no results found", response);
     		}
     		else {
 				return sr;

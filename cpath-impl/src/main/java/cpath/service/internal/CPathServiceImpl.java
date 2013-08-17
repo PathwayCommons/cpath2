@@ -213,9 +213,17 @@ public class CPathServiceImpl implements CPathService {
 			Set<Provenance> provs = m.getObjects(Provenance.class);		
 			if(provs!= null && !provs.isEmpty()) {
 				Set<String> dsNames = new TreeSet<String>();
-				for(Provenance prov : provs)
-					dsNames.add(prov.getStandardName());
-				//log
+				for(Provenance prov : provs) {
+					String name = prov.getStandardName();
+					if(name != null)
+						dsNames.add(name);
+					else {
+						name = prov.getDisplayName();
+						if(name != null)
+							dsNames.add(name);
+					}
+				}
+
 				log.info("DATASOURCE " + dsNames.toString()); 
 			}
 		}
@@ -272,8 +280,7 @@ public class CPathServiceImpl implements CPathService {
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 					Model m = cloner.clone(model, elements);
 					logDatasourcesUsed(m);
-					callback[0] = (new BiopaxConverter(getBlacklist()))
-							.convert(m, format, true);
+					callback[0] = (new BiopaxConverter(getBlacklist())).convert(m, format, true);
 				} catch (Exception e) {
 					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
 				}

@@ -34,6 +34,7 @@
 			<li><a href="admin/homedir.html">View Home Dir. Content</a></li>
 			<li><a href="admin/data.html">View Data Dir. Content</a></li>
 			<li><a href="admin/tmp.html">View Tmp Dir. Content</a></li>
+			<li><a href="admin/stats.html">Assess Log Summary</a></li>
 		</ol>
 	</div>	
 

@@ -31,7 +31,15 @@ import cpath.service.jaxb.TraverseResponse;
 @Ignore //these tests depend on the data, thus disabled by default (not for daily builds)
 public class CPathClientTest {
 	
-	final static CPathClient client = CPathClient.newInstance("http://purl.org/pc2/test/"); //new stateless client	
+	static CPathClient client;
+	
+	static {
+//		client = CPathClient.newInstance("http://purl.org/pc2/test/"); //new stateless client
+//		client = CPathClient.newInstance("http://192.168.81.153:48080/");
+//		client = CPathClient.newInstance("http://webservice.baderlab.org:48080/");
+		client = CPathClient.newInstance("http://localhost:8080/");
+		client.setName("CPathClientTest");
+	}
 	
 	@Test
 	public final void testConnectionEtc() throws CPathException {
@@ -95,7 +103,7 @@ public class CPathClientTest {
 					.sources(new String[]{"bla-bla"})
 					.result();
 		} catch (CPathException e1) {
-			fail("must not throw a CPathException");
+			fail("must not throw a CPathException: " + e1.toString());
 		}
 		assertNull(resp); //empty response
         

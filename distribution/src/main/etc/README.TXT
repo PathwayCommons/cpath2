@@ -13,7 +13,7 @@ SET the System Environment variable 'CPATH2_HOME' - to be a directory that
 contains cpath2 configuration files, such as: 
 - cpath2.properties (set db names, connection url prefix, username, password there); 
 - hibernate.properties; these can be overwritten by the corresponding properties in the Spring (XML) configuration.
-- logback.xml (optional; can be enabled by -Dlogback.configurationFile=$CPATH2_HOME/logback.xml JVM option);
+- logback.xml (optional; alternative logging can be enabled by -Dlogback.configurationFile=$CPATH2_HOME/logback.xml JVM option);
 - 'data' dir (it is where downloaded original data files are stored);
 - 'tmp' dir (it is where downloaded data and ontology files are stored, 
 - 'cache' dir (it is where cache directories and files get created);
