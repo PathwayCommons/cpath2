@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+   
+  <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+    <resetJUL>true</resetJUL>
+  </contextListener>
+ 
+  <!-- To enable JMX Management -->
+  <jmxConfigurator/>
+  
+  <!--Daily rolling file appender -->
+  <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+	<File>${CPATH2_HOME}/cpath2.log</File>
+	<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+		<FileNamePattern>${CPATH2_HOME}/cpath2.%d{yyyy-MM}.log</FileNamePattern>
+	</rollingPolicy>
+	<encoder>
+      <pattern>%d %-5level %logger{25} - %msg%n</pattern>
+      <outputPatternAsHeader>true</outputPatternAsHeader>
+    </encoder>
+  </appender>
+ 
+  <logger name="org.biopax" level="warn" />
+  <logger name="org.springframework" level="warn" />
+  <logger name="org.hibernate" level="warn" />
+  <logger name="com.mchange" level="warn" />
+  <logger name="net.sf.ehcache" level="warn" />
+  <logger name="org.obo" level="warn" />
+  <logger name="java.sql" level="warn" />
+ 
+  <root level="info">
+    <appender-ref ref="file" />
+  </root>
+  
+</configuration>

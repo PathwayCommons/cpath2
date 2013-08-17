@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <statusListener class="ch.qos.logback.core.status.OnConsoleStatusListener" />
+ 
+  <filter class="ch.qos.logback.access.filter.CountingFilter">
+    <name>countingFilter</name>
+  </filter>
+ 
+  <appender name="accessfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${CPATH2_HOME}/cpath2-access.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+        <fileNamePattern>${CPATH2_HOME}/cpath2-access.%d{yyyy-MM}.log.zip</fileNamePattern>
+        <maxHistory>2</maxHistory>
+    </rollingPolicy>
+    <encoder>
+        <pattern>combined</pattern>
+        <outputPatternAsHeader>true</outputPatternAsHeader>
+    </encoder>
+  </appender>
+ 
+  <appender name="reqrespfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${CPATH2_HOME}/cpath2-req-resp.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>${CPATH2_HOME}/cpath2-reqresp.%d{yyyy-MM}.log.zip</fileNamePattern>
+      <maxHistory>2</maxHistory>
+    </rollingPolicy>
+    <encoder>
+      <pattern>%n%fullRequest%n%fullResponse%n</pattern>
+      <outputPatternAsHeader>true</outputPatternAsHeader>
+    </encoder>
+  </appender>
+ 
+  <root level="info">
+  	<appender-ref ref="accessfile" />
+  	<appender-ref ref="reqrespfile" />
+  </root>
+</configuration>
