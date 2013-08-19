@@ -38,7 +38,7 @@ public class CPathClientTest {
 //		client = CPathClient.newInstance("http://192.168.81.153:48080/");
 //		client = CPathClient.newInstance("http://webservice.baderlab.org:48080/");
 		client = CPathClient.newInstance("http://localhost:8080/");
-		client.setName("CPathClientTest");
+//		client.setName("CPathClientTest");
 	}
 	
 	@Test
@@ -103,11 +103,12 @@ public class CPathClientTest {
 					.sources(new String[]{"bla-bla"})
 					.result();
 		} catch (CPathException e1) {
-			fail("must not throw a CPathException: " + e1.toString());
+//			fail("must not throw a CPathException: " + e1.toString());
+			throw new RuntimeException(e1); //fail
 		}
 		assertNull(resp); //empty response
         
-		//intentionally wrong path -> failure (error)
+		//intentionally wrong path -> failure (error 452)
         try {
 			resp = client.createTraverseQuery()
 					.propertyPath("BioSource/participant")

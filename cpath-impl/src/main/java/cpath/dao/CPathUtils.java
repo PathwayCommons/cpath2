@@ -19,7 +19,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -35,7 +34,6 @@ import java.util.zip.ZipInputStream;
 
 import javax.imageio.ImageIO;
 
-import org.apache.commons.lang.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -52,7 +50,7 @@ import cpath.warehouse.beans.PathwayData;
  */
 public final class CPathUtils {
 	// logger
-    private static Logger log = LoggerFactory.getLogger(CPathUtils.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(CPathUtils.class);
 	
     // some bits for metadata reading
     private static final int METADATA_IDENTIFIER_INDEX = 0;
@@ -150,7 +148,7 @@ public final class CPathUtils {
                 if("".equals(line.trim()))
                 	continue;
                 else if(line.trim().startsWith("#")) {
-                   	log.info("readMetadata(), line: " + line);
+					LOGGER.info("readMetadata(), line: " + line);
                 	continue; //ignore/skip parsing
                 }
                 	
@@ -161,10 +159,10 @@ public final class CPathUtils {
                  */
                 String[] tokens = line.split("\t",-1);
                 
-				if (log.isDebugEnabled()) {
-					log.debug("readMetadata(), token size: " + tokens.length);
+				if (LOGGER.isDebugEnabled()) {
+					LOGGER.debug("readMetadata(), token size: " + tokens.length);
 					for (String token : tokens) {
-						log.debug("readMetadata(), token: " + token);
+						LOGGER.debug("readMetadata(), token: " + token);
 					}
 				}
 
@@ -177,7 +175,7 @@ public final class CPathUtils {
 				Metadata.METADATA_TYPE metadataType = Metadata.METADATA_TYPE.valueOf(tokens[METADATA_TYPE_INDEX]);
 
 				// get icon data from service
-				log.info("readMetadata(): fetching icon data from: " 
+				LOGGER.info("readMetadata(): fetching icon data from: " 
 					+ tokens[METADATA_ICON_URL_INDEX]);
 				byte[] iconData = null;
 				try {
@@ -190,17 +188,17 @@ public final class CPathUtils {
 						iconData = baos.toByteArray();
 					}
 				} catch (IOException e) {
-					log.error("readMetadata(): Cannot load image from " 
+					LOGGER.error("readMetadata(): Cannot load image from " 
 							+  tokens[METADATA_ICON_URL_INDEX] + ". Skipping. " + e);
 				}
 					
 				if (iconData == null) { 
-					log.info("readMetadata(): missing or unaccessible " +
+					LOGGER.info("readMetadata(): missing or unaccessible " +
 						"data (icon) to create Metadata bean: iconData.");
 					iconData = new byte[]{};
 				}
 					
-				log.debug("readMetadata(): make a Metadata bean.");
+				LOGGER.debug("readMetadata(): make a Metadata bean.");
 
                 // create a metadata bean
                 Metadata metadata = new Metadata(
@@ -215,8 +213,8 @@ public final class CPathUtils {
 						tokens[METADATA_CONVERTER_CLASS_NAME_INDEX]);
            
                 
-				if (log.isInfoEnabled()) {
-					log.info("readMetadata(): adding Metadata: "
+				if (LOGGER.isInfoEnabled()) {
+					LOGGER.info("readMetadata(): adding Metadata: "
 					+ "identifier=" + metadata.getIdentifier() 
 					+ "; name=" + metadata.getName()
 					+ "; date/comment=" + metadata.getDescription()
@@ -263,16 +261,16 @@ public final class CPathUtils {
 		
 		// pathway data is either owl, zip (multiple files allowed!) or gz (single data entry only)
 		if(url.toLowerCase().endsWith(".zip")) {
-			log.info("getProviderPathwayData(): extracting data from zip archive.");
+			LOGGER.info("getProviderPathwayData(): extracting data from zip archive.");
 			pathwayDataCollection = readZipContent(metadata, new ZipInputStream(bis));
 		} else { 
 			// expected content: one-file BioPAX or PSI-MI (compressed or not)
 			InputStream is;
 			if(url.toLowerCase().endsWith(".gz")) {
-				log.info("getProviderPathwayData(): extracting data from gzip archive.");
+				LOGGER.info("getProviderPathwayData(): extracting data from gzip archive.");
 				is = new GZIPInputStream(bis);
 			} else {
-				log.info("getProviderPathwayData(): returning as is (supposed to be RDF+XML)");
+				LOGGER.info("getProviderPathwayData(): returning as is (supposed to be RDF+XML)");
 				is = bis;
 			}
 			
@@ -298,7 +296,7 @@ public final class CPathUtils {
 		if(pathwayDataCollection != null && !pathwayDataCollection.isEmpty())
 			metadata.getPathwayData().addAll(pathwayDataCollection);
 		else
-			log.warn("readPathwayData: no data found for " + metadata);
+			LOGGER.warn("readPathwayData: no data found for " + metadata);
     }
 
 	
@@ -359,7 +357,7 @@ public final class CPathUtils {
             while ((entry = zis.getNextEntry()) != null) 
             {
             	String entryName = entry.getName();
-           		log.info("Processing zip entry: " + entryName);
+           		LOGGER.info("Processing zip entry: " + entryName);
 
 				// write file to buffered outputstream
 				int count;
@@ -383,13 +381,13 @@ public final class CPathUtils {
 							)
 					) 
 				{
-            		log.info("Skipping not BioPAX (owl) zip entry: " 
+            		LOGGER.info("Skipping not BioPAX (owl) zip entry: " 
             			+ entryName);
 					continue;
 				}
 				
 				// create pathway data object
-				log.info("unzip(), adding pathwaydata entry: " 
+				LOGGER.info("unzip(), adding pathwaydata entry: " 
 					+ entryName + " of " + metadata.getIdentifier());
 				PathwayData pathwayData = new PathwayData(metadata, entryName);
 				pathwayData.setData(content.getBytes());
@@ -414,7 +412,7 @@ public final class CPathUtils {
     * @param is
     */
     private static void closeQuietly(final InputStream is) {
-    	try{is.close();}catch(Exception e){log.warn("is.close() failed." + e);}
+    	try{is.close();}catch(Exception e){LOGGER.warn("is.close() failed." + e);}
     }
 
     /**
@@ -422,7 +420,7 @@ public final class CPathUtils {
      * @param os
      */
      private static void closeQuietly(final OutputStream os) {
-         try{os.close();}catch(Exception e){log.warn("os.close() failed." + e);}
+         try{os.close();}catch(Exception e){LOGGER.warn("os.close() failed." + e);}
      }
     
    /**
@@ -430,7 +428,7 @@ public final class CPathUtils {
     * @param reader
     */
     private static void closeQuietly(final Reader reader) {
-    	try{reader.close();}catch(Exception e){log.warn("reader.close() failed." + e);}
+    	try{reader.close();}catch(Exception e){LOGGER.warn("reader.close() failed." + e);}
     }
     
     
@@ -444,7 +442,7 @@ public final class CPathUtils {
      */
     public static void zwrite(String file, byte[] bytes) {
     	if(!file.endsWith(".gz"))
-    		log.warn("zwrite: file ext. is not '.gz'");
+    		LOGGER.warn("zwrite: file ext. is not '.gz'");
     	
     	GZIPOutputStream os = null;
     	try {
@@ -466,12 +464,12 @@ public final class CPathUtils {
      */
     public static byte[] zread(String file) {
     	if(!file.endsWith(".gz"))
-    		log.warn("zread: file ext. is not '.gz'");
+    		LOGGER.warn("zread: file ext. is not '.gz'");
     	
     	try {  	
     		return readContent(new GZIPInputStream(new FileInputStream(file)), false);
     	} catch (IOException e) {
-    		log.error("zread: failed", e);
+    		LOGGER.error("zread: failed", e);
     		return null;
     	}   	
     }
@@ -479,7 +477,7 @@ public final class CPathUtils {
 
 	public static void cleanupIndexDir(String db) {
 		cleanupDirectory(new File(CPathSettings.homeDir() + File.separator + db));
-		log.info("Emptied the index dir:" + db);
+		LOGGER.info("Emptied the index dir:" + db);
 	}
 	
 	
@@ -494,16 +492,19 @@ public final class CPathUtils {
 	public static Map<String, Integer> simpleStatsFromAccessLogs() throws IOException {
 		Map<String, Integer> map = new TreeMap<String, Integer>();
 		
-		//read, analyze all $CPATH2_HOME/cpath2*.log files
+		//read, analyze all $CPATH2_HOME/*.log files
         File dir = new File(CPathSettings.homeDir());
        	FilenameFilter filter = new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                return (name.startsWith("cpath2") && name.endsWith(".log"));
+                return (name.endsWith(".log"));
             }
         };
         
-        for (String log : dir.list(filter))
-        	simpleStatsFromLog(map, dir.getPath() + dir.separator + log);
+        for (String f : dir.list(filter)) {
+        	final String logfile = dir.getAbsolutePath() + File.separator + f;
+        	LOGGER.info("Analysing " + logfile + "...");
+        	simpleStatsFromLog(map, logfile);
+        }
         
 		return map;
 	}
@@ -527,7 +528,7 @@ public final class CPathUtils {
 		final BufferedReader reader = new BufferedReader(new FileReader(logFile));
 
 		String line;
-		while ((line = reader.readLine()) != null && !"".equals(line.trim())) {
+		while ((line = reader.readLine()) != null) {
 			//match, parse & count...
 			Matcher matcher = reqPattern.matcher(line);       	
 			if(matcher.find()) {
