@@ -1,6 +1,9 @@
 #logback.classic pattern: %d %-5level %logger{25} - %msg%n
 2013-08-14 00:15:09,531 INFO  c.w.BasicController - REQUEST 66.249.73.7	GET	/downloads.html;jsessionid=A46E53732A9D14565D1D15F9ED38E232	null
+
 2013-08-14 09:01:24,188 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509metadata/datasources	[format=BIOPAX, uri=[http://purl.org/pc2/3/datasources]]
+#another empty line goes next
+
 2013-08-14 09:01:24,189 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/datasources
 2013-08-14 09:01:34,426 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509help/formats	[format=BIOPAX, uri=[http://purl.org/pc2/3/formats]]
 2013-08-14 09:01:34,427 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/formats
