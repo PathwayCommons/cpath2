@@ -33,7 +33,7 @@
 
 	<p>${cpath.description}</p>
 
-	<p>Data is freely available, under the license terms of each contributing <a href="#data_sources"> database<\a>.</p>
+	<p>Data is freely available, under the license terms of each contributing <a href="#data_sources"> database</a>.</p>
 
 	<h2>cPath2 - Web Service</h2>
 
@@ -49,8 +49,8 @@
 			different formats. You might want to use this option if you are a computational biologist and you need
 			comprehensive biological pathway data for analysis.
 		</li>
-		<li><a href="#tools">Software Tools:</a> There are several tools that can search and accesses Pathway Commons
-			data and display them in an intuitive form. You might want to consider this option if you are a biologist
+		<li><a href="#tools">Software Tools:</a> There are several tools that can search, accesses, and 
+			display the data in an intuitive form. You might want to consider this option if you are a biologist
 			who wants to explore the pathways.
 		</li>
 		<li><a href="#api">Web Application Programming interface:</a>We provide powerful search facilities and multiple
