@@ -98,13 +98,13 @@ public class CPathUtilsTest {
 		assertEquals(1, stats.get("DATASOURCE PANTHER Pathway").intValue());
 		assertEquals(11, stats.get("IP 192.168.1.2").intValue());
 		assertEquals(4, stats.get("COMMAND search").intValue());
-		assertEquals(17, stats.get("OTHER").intValue()); //the line where downloads.html occur has 'null' instead [params..] 
-		assertEquals(3, stats.get("FORMAT BIOPAX").intValue()); //not counted in "others" requests
-		assertEquals(2, stats.get("COMMAND graph NEIGHBORHOOD").intValue());
 		assertEquals(2, stats.get("COMMAND graph").intValue());
+		assertEquals(2, stats.get("COMMAND graph NEIGHBORHOOD").intValue());
 		assertEquals(1, stats.get("COMMAND top_pathways").intValue());
 		assertEquals(11, stats.get("COMMAND traverse").intValue());
 		assertEquals(1, stats.get("DOWNLOAD Pathway Commons 2 HPRD.BINARY_SIF.tsv.gz").intValue());
+		assertEquals(3, stats.get("FORMAT BIOPAX").intValue()); //not counted in "others" requests
+		assertEquals(17, stats.get("OTHER").intValue()); //the line where downloads.html occur has 'null' instead [params..] 
 	}
 	
 }

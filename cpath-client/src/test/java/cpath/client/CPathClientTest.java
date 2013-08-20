@@ -34,7 +34,8 @@ public class CPathClientTest {
 	static CPathClient client;
 	
 	static {
-//		client = CPathClient.newInstance("http://purl.org/pc2/test/"); //new stateless client
+//		client = CPathClient.newInstance("http://www.pathwaycommons.org/pc2/");
+//		client = CPathClient.newInstance("http://purl.org/pc2/test/");
 //		client = CPathClient.newInstance("http://192.168.81.153:48080/");
 //		client = CPathClient.newInstance("http://webservice.baderlab.org:48080/");
 		client = CPathClient.newInstance("http://localhost:8080/");
@@ -103,8 +104,7 @@ public class CPathClientTest {
 					.sources(new String[]{"bla-bla"})
 					.result();
 		} catch (CPathException e1) {
-//			fail("must not throw a CPathException: " + e1.toString());
-			throw new RuntimeException(e1); //fail
+			fail(e1.toString()); //should not throw e1
 		}
 		assertNull(resp); //empty response
         

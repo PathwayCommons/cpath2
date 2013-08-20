@@ -537,6 +537,8 @@ public final class CPathUtils {
 
 				//count cmd
 				String val = matcher.group(3).trim();
+				//remove the system-dependent context path
+				val = val.substring(val.lastIndexOf('/')+1);
 				try {
 					Cmd cmd = Cmd.valueOf(val.toUpperCase()); //not fails if valid cpath2 command
 					String params = matcher.group(5).trim();
