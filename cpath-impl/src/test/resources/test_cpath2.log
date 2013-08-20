@@ -55,7 +55,8 @@
 2013-08-14 16:19:53,484 INFO  c.w.BasicController - REQUEST 192.168.1.3	POST	/traverse	[path=EntityReference/memberEntityReference:Named/displayName]
 2013-08-14 16:19:53,495 INFO  c.w.BasicController - REQUEST 192.168.1.3	POST	/traverse	[path=EntityReference/memberEntityReference]
 2013-08-14 16:19:55,864 INFO  c.w.BasicController - REQUEST 192.168.1.3	POST	/traverse	[path=EntityReference/entityReferenceOf]
-2013-08-14 16:20:06,268 INFO  c.w.BasicController - REQUEST 192.168.1.3	POST	/graph	[kind=NEIGHBORHOOD, format=BIOPAX, organisms=null, datasource=null, direction=null, limit=1]
+#next line was edited as "/cpath2/graph" instead of "/graph", because the actual cpath2 context path can vary from system to system...
+2013-08-14 16:20:06,268 INFO  c.w.BasicController - REQUEST 192.168.1.3	POST	/cpath2/graph	[kind=NEIGHBORHOOD, format=BIOPAX, organisms=null, datasource=null, direction=null, limit=1]
 2013-08-14 16:20:06,392 INFO  c.s.i.CPathServiceImpl - DATASOURCE [HPRD, NCI_Nature, PhosphoSitePlus, Reactome]
 2013-08-15 16:46:49,008 INFO  c.w.BasicController - REQUEST 192.168.1.3	GET	/downloads.html	null
 2013-08-15 16:46:56,072 INFO  c.w.i.CPathWebserviceHandlerInterceptor - DOWNLOAD 192.168.1.3	GET	/downloads/Pathway%20Commons%202%20HPRD.BINARY_SIF.tsv.gz	null
