@@ -34,7 +34,7 @@ public class HumanCycCleanerImpl implements Cleaner
 			cleanXrefIDs(model);
 			cleanXrefDBName(model);
 			cleanHtmlInDisplayNames(model);
-			fix_RDH14_NT5C1B_fusion(model);
+//			fix_RDH14_NT5C1B_fusion(model); //the problem is not present in 17.1 HymanCyc biopax
 			cleanMultipleUnificationXrefs(model);
 
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -51,6 +51,7 @@ public class HumanCycCleanerImpl implements Cleaner
 	/**
 	 * Some UnificationXref ids starts with a blank, and some are like "CAS: 103-82-2".
 	 * Xrefs to PDB contains small letters.
+	 *  - not anymore in the 17.1 BioCyc release
 	 */
 	protected void cleanXrefIDs(Model model)
 	{
@@ -129,6 +130,7 @@ public class HumanCycCleanerImpl implements Cleaner
 		}
 	}
 
+	/*no need to use this with the 17.1 BioCyc biopax release*/
 	private String removeHTML(String s)
 	{
 		s = s.replaceAll("</i>", "").replaceAll("<i>","");
