@@ -31,7 +31,7 @@ echo "       xml.base=$xmlbase"
 # START
 # Drop/Create a new cPath2 database instance (using current metadata.conf and cpath2.properties)
 while true; do
-read -p "Create a new cPath2 instance using $CPATH2_HOME/cpath2.properties and $CPATH2_HOME/cpath2.properties?" yn
+read -p "Create a new cPath2 instance using $CPATH2_HOME/cpath2.properties?" yn
 	case $yn in
         [Yy]* ) 
         sh $CPATH2_HOME/cpath2-cli.sh -fetch-metadata file://$CPATH2_HOME/metadata.conf;
