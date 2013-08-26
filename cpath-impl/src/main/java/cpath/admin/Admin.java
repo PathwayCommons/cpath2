@@ -407,6 +407,9 @@ public final class Admin {
 	public static void runPremerge(String provider) {
 		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");		
+		
+        LOG.info("runPremerge: provider=" + provider + " - initializing (DAO, validator, premerger)...");
+        
 		System.setProperty("hibernate.hbm2ddl.auto", "update");
 		System.setProperty("net.sf.ehcache.disabled", "true");
 		ClassPathXmlApplicationContext context =
@@ -418,7 +421,7 @@ public final class Admin {
 		Validator validator = (Validator) context.getBean("validator");
 		// only metadataDAO is required for the Premerge (main/warehouse biopax DAO is not needed)
         Premerger premerger = new PremergeImpl(metadataDAO, null, validator, provider);
-        LOG.info("runPremerge: provider=" + provider);
+        LOG.info("runPremerge: provider=" + provider + " - running...");
         premerger.premerge();
         
         context.close(); 
@@ -693,15 +696,22 @@ public final class Admin {
         	uris.addAll(findAllUris(dao, Interaction.class, datasources, organisms));
         	
         	// save entire data, compressed, in several formats
-        	LOG.info("create-downloads: preparing '" + 	biopaxDataArchive);
-        	//it is important to use dao.exportModel(out) and not service.fetchBiopaxModel(),
-        	// because the latter w/o args will return empty result, whereas the former - ALL data.
-        	dao.exportModel(new GZIPOutputStream(
-        		new FileOutputStream(biopaxDataArchive)), uris.toArray(new String[]{}));
-        } else
-        	LOG.info(biopaxDataArchive + " already exists; skip creating it " +
-        		"again (delete existing files if you want to start over)");
+        	LOG.info("create-downloads: preparing " + 	biopaxDataArchive);
+        	if(!uris.isEmpty()) {
+        		dao.exportModel(new GZIPOutputStream(
+        			new FileOutputStream(biopaxDataArchive)), uris.toArray(new String[]{}));
+        	} else {
+        		LOG.info("create-downloads: no pathways/interactions found; skipping " + 	biopaxDataArchive);
+        	}
+        } else {
+        	LOG.info("create-downloads: found previously generated " + biopaxDataArchive + 
+        		" (delete if you want to re-generate it)");
+        }
 
+        //still, no biopax file created earlier or above? -
+        if(!(new File(biopaxDataArchive)).exists()) 
+        	return; //skip creating this archive due to no data found;
+        
         //quickly test whether there will be pathways (to then skip exporting to GSEA)
         SearchResponse resp = dao.search("*", 0, Pathway.class, datasources, organisms);
         boolean hasPathways = (resp.getNumHits() > 0);

@@ -12,7 +12,7 @@
   <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
 	<File>${CPATH2_HOME}/cpath2.log</File>
 	<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-		<FileNamePattern>${CPATH2_HOME}/cpath2.%d{yyyy-MM}.log</FileNamePattern>
+		<FileNamePattern>${CPATH2_HOME}/cpath2.%d{yyyy-ww}.log.gz</FileNamePattern>
 	</rollingPolicy>
 	<encoder>
       <pattern>%d %-5level %logger{25} - %msg%n</pattern>

@@ -11,7 +11,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,11 +19,14 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -496,11 +498,13 @@ public final class CPathUtils {
         File dir = new File(CPathSettings.homeDir());
        	FilenameFilter filter = new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                return (name.endsWith(".log"));
+                return (name.endsWith(".log") || name.endsWith(".log.gz"));
             }
         };
         
-        for (String f : dir.list(filter)) {
+        //sorted list of log files
+        Set<String> logs = new TreeSet<String>(Arrays.asList(dir.list(filter)));       
+        for (String f : logs) {
         	final String logfile = dir.getAbsolutePath() + File.separator + f;
         	LOGGER.info("Analysing " + logfile + "...");
         	simpleStatsFromLog(map, logfile);
@@ -525,7 +529,12 @@ public final class CPathUtils {
 		//matches IP and the archive downloaded (count for each file)
 		final Pattern dlPattern = Pattern.compile("DOWNLOAD\\s+([\\d\\.]+)\\s+(GET|POST)\\s+/(\\S+)");
 
-		final BufferedReader reader = new BufferedReader(new FileReader(logFile));
+		//consider the case when logFile was compressed (ends with .gz)
+		InputStream logInputStream = new FileInputStream(logFile);
+		if(logFile.endsWith(".gz")) {
+			logInputStream = new GZIPInputStream(logInputStream);
+		}	
+		BufferedReader reader = new BufferedReader(new InputStreamReader(logInputStream));
 
 		String line;
 		while ((line = reader.readLine()) != null) {

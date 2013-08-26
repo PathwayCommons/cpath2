@@ -21,7 +21,5 @@
 		<constructor-arg index="2" value="true"/> 
 		<!-- change to "false" in production - to refresh all CVs at every run -->
 	</bean>
-	
-	
-	
+		
 </beans>
