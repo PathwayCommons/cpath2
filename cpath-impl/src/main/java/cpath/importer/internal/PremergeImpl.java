@@ -178,7 +178,7 @@ public final class PremergeImpl implements Premerger {
 				
 			try {		
 				if (metadata.getType().isNotPathwayData()) {
-					log.info("premerge(), converting and saving Warehouse data: " 
+					log.info("buildWarehouse(), converting and saving Warehouse data: " 
 						+ metadata.getUri());
 					if(metadata.getType() == METADATA_TYPE.MAPPING)
 						// read and import the mapping table to metaDataDAO
