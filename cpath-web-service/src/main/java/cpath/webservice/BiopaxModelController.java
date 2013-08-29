@@ -91,32 +91,41 @@ public class BiopaxModelController extends BasicController {
 	
 	
 	/**
-	 * This convenience method is to make cpath2 data 
+	 * This is a convenience method is to make cpath2 data 
 	 * more suitable for LinkedData / Semantic Web, by 
-	 * resolving a cpath2-generated URI (such URIs are
-	 * created in the data warehouse and during validation
-	 * and normalization).
+	 * resolving cpath2-generated URIs (created in the data 
+	 * warehouse and during validation and normalization). 
+	 * Ideally, all URIs are to be resolvable URLs.
 	 * 
-	 * @param localId - e.g., cpath2 Metadata identifier (datasource) 
-	 * or generated utility class local ID (32-byte hex string)
+	 * Normally, one should use #elementById(Get, BindingResult, Writer, HttpServletRequest, HttpServletResponse).
+	 * 
+	 * @param localId - the part of URI following xml:base
+	 * 
+	 * TODO return a summary (view) instead of plain raw BioPAX content.
 	 */
 	@RequestMapping(method=RequestMethod.GET, value="/{localId}")
 	public void cpathIdInfo(@PathVariable String localId, Writer writer, 
 			HttpServletRequest request, HttpServletResponse response) 
 					throws Exception 
 	{
-			// a hack for this URI resolving service to overcome
-			// e.g., Virtuoso/fct that prepends
-			// inserts '#' between xml:base and local part URI,
-			// and browsers that unencode the local part URI returning
-			// ':' and spaces back (should not)
+			/* A hack (specific to our normalizer and also 
+			 * might not work for all client links/browsers...
+			 * a better solution would be never generate tricky URIs,
+			 * containing encoded sharps, colons, spaces, etc.): 
+			 * the 'localId' parameter is usually un-encoded by the frameworks;
+			 * so we need to encode ":","#"," " back to 
+			 * %3A, %23, and "+" respectively, to get the original URI
+			 * (otherwise, if we simply combine localId and xml:base, the 
+			 * the resulting "URI" will be non-existing or wrong one)
+			 */
 			if(localId.startsWith("#"))
 				localId = localId.substring(1);
-			
-			if(localId.contains(":") || localId.contains("#") || localId.contains(" ")) {
-				localId = URLEncoder.encode(localId, "UTF-8");
-			}
-			
+				
+			if(localId.contains(":") || localId.contains("#") || localId.contains(" "))
+				localId = localId
+						.replaceAll(":", "%3A")
+							.replaceAll("#", "%23")
+								.replaceAll(" ", "+");
 			Get get = new Get();			
 			get.setUri(new String[]{xmlBase + localId});
 			elementById(get, null, writer, request, response);			

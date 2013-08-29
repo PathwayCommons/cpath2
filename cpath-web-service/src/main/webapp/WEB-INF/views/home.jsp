@@ -243,11 +243,6 @@
 			Not all gene symbols are present in the database as the primary ids for entity references are UniProt
 			accession, RefSeq ID, NCBI Gene ID and Ensemble IDs. Other ids might work if mapped by the internal
 			id-mapping system.
-
-		<li><a rel="example"
-		       href="get?uri=http://www.reactome.org/biopax/48887%23Pathway468">
-			This query retrieves the Reactome "Signaling by BMP" pathway (as of version 44)</a>
-		</li>
 		<li><a rel="example"
 		       href="get?uri=http://pid.nci.nih.gov/biopaxpid_74716&format=BINARY_SIF">
 			This query retrieves the NCI-Nature Curated BMP signaling pathway and returns it in SIF format</a></li>
