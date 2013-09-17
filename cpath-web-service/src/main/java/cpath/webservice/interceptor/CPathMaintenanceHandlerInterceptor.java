@@ -29,6 +29,7 @@ public final class CPathMaintenanceHandlerInterceptor extends HandlerInterceptor
 				|| requestUri.contains("/login")
 				|| requestUri.contains("/denied")
 				|| requestUri.contains("/home")
+				|| requestUri.contains("/datasources")
 				|| requestUri.contains("/metadata/")
 				|| requestUri.contains("/robots")
 				|| requestUri.contains("/favicon")

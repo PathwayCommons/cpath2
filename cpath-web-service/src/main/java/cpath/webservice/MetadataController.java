@@ -68,12 +68,18 @@ public class MetadataController extends BasicController
      */  
     
     
-    //important: home.html (there are several controllers, and /home would create a circular redirects...)
+    //important: home.html (there are several controllers, and /home would create circular redirects)
     @RequestMapping("/home.html")
     public String home() {
     	return "home";
     }	    
  
+    //important: datasources.html (there are several controllers, and /datasources would create circular redirects)
+    @RequestMapping("/datasources.html")
+    public String datasources() {
+    	return "datasources";
+    }
+    
     
     @RequestMapping("/metadata/validations") // returns xml or json
     public @ResponseBody List<ValInfo> queryForValidationInfo() 
