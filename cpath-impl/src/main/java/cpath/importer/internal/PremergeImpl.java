@@ -279,7 +279,7 @@ public final class PremergeImpl implements Premerger {
 		
 		// here go data to process
 		String data = new String(pathwayData.getData());
-		String info = pathwayData.toString();
+		String info = pathwayData.toString() + " - " + pathwayData.status();
 		
 		/*
 		 * First, get and clean (not modifying the original) pathway data,

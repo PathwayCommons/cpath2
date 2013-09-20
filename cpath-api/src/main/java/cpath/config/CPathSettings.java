@@ -95,7 +95,7 @@ public final class CPathSettings {
 	
 	/* System / Environment property names used by cPath2
 	 * (loaded by Spring (property placeholder) from the cpath2.properties,
-	 * but can be also via java options too)
+	 * but can be also via java -D options too)
 	 */
 	public static final String PROP_DB_USER = "cpath2.db.user";
 	public static final String PROP_DB_PASSW = "cpath2.db.password";
@@ -109,7 +109,6 @@ public final class CPathSettings {
 	/* Unlike the above, following properties are not used by Spring/Hibernate right away;
 	 * normally, cpath2 starts despite these are not provided and will try 
 	 * to use reasonable defaults instead, which are defined here as well.
-	 * 
 	 */
 	public static final String PROP_ADMIN_ENABLED = "cpath2.admin.enabled";
 	public static final String PROP_XML_BASE="cpath2.xml.base";	
@@ -552,5 +551,19 @@ public final class CPathSettings {
 	 */
 	public static boolean isProxyModelEnabled() {
 		return "true".equalsIgnoreCase(property(PROP_PROXY_MODEL_ENABLED));
+	}
+
+
+	/**
+	 * Gets the filename of the archive where entire 
+	 * BioPAX db/model is exported. 
+	 * 
+	 * @param datasource - datasource (metadata) ID or "All", "Backup".
+	 * @return
+	 */
+	public static String biopaxExportFileName(String datasource) {
+		return downloadsDir() + File.separator 
+				+ property(PROVIDER_NAME) + "." + property(PROVIDER_VERSION) 
+				+ "." + datasource + ".BIOPAX.owl.gz";
 	}
 }

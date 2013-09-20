@@ -10,7 +10,7 @@
 	<name>cPath2 - Parent</name>
 	<version>4.1.0-SNAPSHOT</version>
 	<description>CPath2 Multi-mudule project, a server software suite for aggregating, storing, and querying biological pathways based on BioPAX L3 standard.</description>
-	<url>http://biopax.sourceforge.net/m2site/cpath2-${project.version}</url>
+	<url>${siteUrl}</url>
 	<inceptionYear>2009</inceptionYear>
 
 	<issueManagement>
@@ -20,7 +20,7 @@
 
 	<organization>
 		<name>Pathway Commons</name>
-		<url>http://code.google.com/p/pathway-commons/</url>
+		<url>http://www.pathwaycommons.org</url>
 	</organization>
 
 
@@ -47,6 +47,7 @@
 	</modules>
 
 	<properties>
+		<siteUrl>http://docs.pathway-commons.googlecode.com/hg/cpath2/</siteUrl>
 		<license.licenseName>lgpl_v3</license.licenseName>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -111,7 +112,6 @@
 							-Xmx2g -Dfile.encoding=UTF-8 -DCPATH2_HOME=${CPATH2_HOME}
 							-Djava.io.tmpdir=${CPATH2_HOME}/tmp
 							-ea -Dnet.sf.ehcache.disabled=true
-							-Dbiopax.normalizer.uri.strategy=simple
 						</argLine>
 					</configuration>
 				</plugin>
@@ -570,44 +570,30 @@
 	</dependencies>
 
 	<distributionManagement>
+		<!-- First, create a new (active) profile 
+		in your ~/.m2/settings.xml and do 'hg clone' remote  
+		'repo' and 'docs' pathway-commons project's source code repositories;
+		then define pathway-commons.site and pathway-commons.repo properties 
+		in the profile to point to htose local hg clones -->
 		<site>
-			<id>biopax.sf.net</id>
-			<name>BioPAX Sourceforge site</name>
-			<url>${biopax.site.url}/cpath2-${project.version}</url>
+			<id>pathway-commons.site</id>
+			<name>Pathway Commons - cPath2 Maven site</name>
+			<url>${pathway-commons.site}/cpath2</url>
 		</site>
 		<snapshotRepository>
-			<id>biopax.snapshots</id>
-			<name>BioPAX Snapshots Repository</name>
-			<url>${biopax.snapshot.url}</url>
+			<id>pathway-commons.snapshots</id>
+			<name>Pathway Commons Snapshots Repository</name>
+			<url>${pathway-commons.repo}/snapshots</url>
 		</snapshotRepository>
 		<repository>
-			<id>biopax.releases</id>
-			<name>BioPAX Releases Repository</name>
-			<url>${biopax.release.url}</url>
+			<id>pathway-commons.releases</id>
+			<name>Pathway Commons Releases Repository</name>
+			<url>${pathway-commons.repo}/releases</url>
 		</repository>
+		<downloadUrl>http://code.google.com/p/pathway-commons/downloads/</downloadUrl>
 	</distributionManagement>
 
 	<profiles>
-		<profile>
-			<id>sourceforge</id>
-			<distributionManagement>
-				<site>
-					<id>biopax.sf.net</id>
-					<name>BioPAX Sourceforge site</name>
-					<url>scp://shell.sourceforge.net/home/project-web/biopax/htdocs/m2site/cpath2-${project.version}</url>
-				</site>
-				<snapshotRepository>
-					<id>biopax.snapshots</id>
-					<name>BioPAX Snapshots Repository</name>
-					<url>scp://shell.sourceforge.net/home/project-web/biopax/htdocs/m2repo/snapshots</url>
-				</snapshotRepository>
-				<repository>
-					<id>biopax.releases</id>
-					<name>BioPAX Releases Repository</name>
-					<url>scp://shell.sourceforge.net/home/project-web/biopax/htdocs/m2repo/releases</url>
-				</repository>
-			</distributionManagement>
-		</profile>
 		<profile>
 			<id>maven-3</id>
 			<activation>
@@ -643,25 +629,48 @@
 		</profile>
 	</profiles>
 
+	<!-- the following is used both by Maven 3.x and 2.x -->
 	<reporting>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>${maven-javadoc-plugin.version}</version>
+				<configuration>
+              		<linksource>true</linksource>
+              		<notimestamp>true</notimestamp>
+              	<links combine.children="append">
+              		<link>http://docs.jboss.org/hibernate/search/4.2/api/</link>
+              		<link>http://docs.jboss.org/hibernate/core/4.2/javadocs/</link>
+              	</links>
+            	</configuration>
+            	<reportSets>
+              		<reportSet>
+                		<id>aggregate</id>
+                		<inherited>false</inherited>
+                		<reports>
+                  			<report>aggregate</report>
+                		</reports>
+              		</reportSet>
+            	</reportSets>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jxr-plugin</artifactId>
-				<version>${maven-jxr-plugin.version}</version>
+				<reportSets>
+              		<reportSet>
+                		<id>aggregate</id>
+                		<inherited>false</inherited>
+                		<reports>
+                  			<report>aggregate</report>
+                		</reports>
+              		</reportSet>
+            	</reportSets>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-project-info-reports-plugin</artifactId>
-				<version>${maven-project-info-reports-plugin.version}</version>
 			</plugin>
 		</plugins>
 	</reporting>
-
 
 </project>

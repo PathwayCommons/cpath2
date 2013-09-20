@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.lang.reflect.Method;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +37,9 @@ import java.util.zip.ZipInputStream;
 
 import javax.imageio.ImageIO;
 
+import org.biopax.paxtools.impl.BioPAXElementImpl;
+import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.Model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -597,6 +601,32 @@ public final class CPathUtils {
 	private static void count(Map<String, Integer> map, String key) {
 		Integer count = new Integer( (map.containsKey(key)) ? map.get(key).intValue() + 1 : 1);
 		map.put(key, count);
+	}
+
+	
+	/**
+	 * Replaces the URI of a BioPAX object
+	 * using java reflection. Normally, one should avoid this;
+	 * please use when absolutely necessary and with great care. 
+	 * 
+	 * @param model
+	 * @param el
+	 * @param newRDFId
+	 */
+	public static  void replaceID(Model model, BioPAXElement el, String newRDFId) {
+		if(el.getRDFId().equals(newRDFId))
+			return; // no action required
+		
+		model.remove(el);
+		try {
+			Method m = BioPAXElementImpl.class.getDeclaredMethod("setRDFId", String.class);
+			m.setAccessible(true);
+			m.invoke(el, newRDFId);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
+		}
+		model.add(el);
 	}
 	
 }

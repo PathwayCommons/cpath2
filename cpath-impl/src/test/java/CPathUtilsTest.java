@@ -10,6 +10,7 @@ import java.util.TreeMap;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.UnificationXref;
 import org.junit.*;
 
 import cpath.config.CPathSettings;
@@ -105,6 +106,17 @@ public class CPathUtilsTest {
 		assertEquals(1, stats.get("DOWNLOAD Pathway Commons 2 HPRD.BINARY_SIF.tsv.gz").intValue());
 		assertEquals(3, stats.get("FORMAT BIOPAX").intValue()); //not counted in "others" requests
 		assertEquals(17, stats.get("OTHER").intValue()); //the line where downloads.html occur has 'null' instead [params..] 
+	}
+	
+	@Test
+	public final void testReplaceID() {
+		
+		Model m = BioPAXLevel.L3.getDefaultFactory().createModel();
+		UnificationXref xref = m.addNew(UnificationXref.class, "one");
+		CPathUtils.replaceID(m, xref, "two");
+		
+		assertTrue(xref.getRDFId().equals("two"));
+		assertTrue(m.containsID("two"));
 	}
 	
 }

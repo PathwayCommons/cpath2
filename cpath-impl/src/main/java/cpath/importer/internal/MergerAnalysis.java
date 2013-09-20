@@ -28,6 +28,7 @@
 package cpath.importer.internal;
 
 import cpath.dao.Analysis;
+import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.warehouse.beans.*;
 
@@ -61,10 +62,6 @@ public class MergerAnalysis implements Analysis {
 	private final String xmlBase;
 	private final SimpleMerger simpleMerger;
 	
-    private Model target;
-    private Model mem;
-	
-	
 	public MergerAnalysis(String description, Model source, 
 			MetadataDAO metadataDAO, String xmlBase) 
 	{
@@ -86,16 +83,43 @@ public class MergerAnalysis implements Analysis {
 	 * canonical EntityReferences, CVs (warehouse data), to replace 
 	 * equivalent ones in the original pathway data.
 	 * 
-	 * @param model - target BioPAX Model.
+	 * @param targetModel - target BioPAX Model (where to finally merge new data).
 	 * @throws ClassCastException
 	 */
 	@Override
-	public void execute(Model model) {		
+	public void execute(final Model targetModel) {	
+		
+		final String srcModelInfo = "source: " + description;		
+		/* 
+		 * Replace not normalized (during 'premerge') URIs in the sourc emodel 
+		 * with generated new ones (also add a bp:comment about original URIs)
+		 */
+		log.info("Assigning new URIs (xml:base=" + xmlBase + 
+				"*) to not normalized BioPAX elements (" + 
+				srcModelInfo + ", xml:base=" + source.getXmlBase() + ")...");
+		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
+		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
+			String currUri = bpe.getRDFId();
+			
+			// skip already normalized
+			if(currUri.startsWith(xmlBase) || currUri.startsWith("http://identifiers.org/")) 
+				continue; 
+			
+			// Generate new URI:
+//TODO description+currUri to avoid clashes? (on the other hand, two equal unnormalized URIs might exist in different files from the same provider, which means to merge them)...
+			String newRDFId = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
+			// Replace URI
+			CPathUtils.replaceID(source, bpe, newRDFId);
+			// save old URI in comments
+			if(bpe instanceof Level3Element) //though it's always true (by current design)
+				((Level3Element) bpe).addComment(currUri);
+		}
+		
 		// The following hack can improve graph queries and full-text search relevance
 		// for generic and poorly defined physical entities (e.g., those lacking entity reference)
 		log.info("Generating canonical UniProt/ChEBI " +
-				"rel. xrefs for physical entities using existing xrefs " +
-				"and id-mapping...");		
+				"rel. xrefs from existing xrefs for physical entities " +
+				"using id-mapping (" + srcModelInfo + ")...");		
 		/* Using xrefs and id-mapping, add primary uniprot/chebi RelationshipXref 
 		 * to all simple PE (SM, Protein, Dna,..) and Gene if possible (skip complexes).
 		 * This might eventually result in mutually exclusive identifiers, 
@@ -124,16 +148,12 @@ public class MergerAnalysis implements Analysis {
 				addCanonicalRelXrefs((XReferrable) pe, Mapping.Type.UNIPROT);
 			}
 		}
-		
-		//set the target and in-memory (temp.) models to be used by private methods	
-		target = model;
-		
+			
 		// find matching utility class elements in the target DB
 		// (use a temporary in-memory model to merge/reuse existing objects)
-		mem = BioPAXLevel.L3.getDefaultFactory().createModel();
+		final Model mem = BioPAXLevel.L3.getDefaultFactory().createModel();
 		mem.setXmlBase(xmlBase);
-		log.info("Source model: " + description + ", xml:base=" + source.getXmlBase() 
-			+ ". Looking for existing equivalent utility class elements...");
+		log.info("Searching in the Warehouse for equivalent utility class elements ("+srcModelInfo+")...");
 		final Map<UtilityClass, UtilityClass> replacements = new HashMap<UtilityClass, UtilityClass>();
 		
 		// match some utility class objects to existing ones (previously imported)
@@ -143,13 +163,13 @@ public class MergerAnalysis implements Analysis {
 			
 			// Find the best replacement ER:
 			if (bpe instanceof ProteinReference) {
-				replacement = findOrCreateProteinReference((ProteinReference)bpe);
+				replacement = findOrCreateProteinReference((ProteinReference)bpe, targetModel);
 			} 
 			else if (bpe instanceof SmallMoleculeReference) {
-				replacement = findOrCreateSmallMoleculeReference((SmallMoleculeReference)bpe);
+				replacement = findOrCreateSmallMoleculeReference((SmallMoleculeReference)bpe, targetModel);
 			} 
 			else { //e.g., BioSource, CV, or Provenance - simply match by URI (no id-mapping or additional checks)
-				replacement = (UtilityClass) target.getByID(bpe.getRDFId());
+				replacement = (UtilityClass) targetModel.getByID(bpe.getRDFId());
 			}
 				
 			if (replacement != null) {
@@ -164,7 +184,7 @@ public class MergerAnalysis implements Analysis {
 		}
 
 		// Replace objects in the source model
-		log.info("Replacing objects...");	
+		log.info("Replacing objects ("+srcModelInfo+")...");	
 		ModelUtils.replace(source, replacements);
 
 		//in addition, explicitly remove old (replaced) onjects from the model
@@ -173,7 +193,7 @@ public class MergerAnalysis implements Analysis {
 		}
 		
 		// cleaning up dangling objects
-		log.info("Removing dangling objects...");
+		log.info("Removing dangling objects ("+srcModelInfo+")...");
 		final Set<BioPAXElement> removed = ModelUtils
 			.removeObjectsIfDangling(source, UtilityClass.class);
 		
@@ -184,10 +204,11 @@ public class MergerAnalysis implements Analysis {
 		 * if not old (replaced) objects were then explicitely removed: 
 		 * since BioPAXElementImpl.equals and hashCode were overridden,
 		 * removeObjectsIfDangling behaves differently... */
-		assert removed.containsAll(replacements.keySet()) : "not all replaced actually became dangling and were removed";	
+		assert removed.containsAll(replacements.keySet()) 
+			: "not all replaced actually became dangling and were removed";	
 		
 		// post-fix
-		log.info("Migrate some properties (original entityFeature and xref)...");
+		log.info("Migrate some properties, such as original entityFeature and xref ("+srcModelInfo+")...");
 		for (UtilityClass old : replacements.keySet()) {
 			if(old instanceof EntityReference) {
 				for (EntityFeature ef : new HashSet<EntityFeature>(
@@ -216,18 +237,18 @@ public class MergerAnalysis implements Analysis {
 								
 		// merge source with the in-memory model
 		// (makes the model complete, self-integral)
-		log.info("In-memory merging...");
+		log.info("In-memory merging ("+srcModelInfo+")...");
 		mem.merge(source);
 		
 		// fix dangling inverse properties (some objects there
 		// in the source model might still refer to the removed ones)
 		fixInverseProperties(removed);	
 		
-		log.info("Merging (insert/update) into the DB...");
+		log.info("Merging from the in-memory ( "+srcModelInfo+") into the persistent BioPAX DB/model...");
 		// merge to the target model (insert new objects and update relationships)
-		target.merge(mem);
+		targetModel.merge(mem);
 		
-		log.info("Merge is done; flushing...");			
+		log.info("Merge is done ("+srcModelInfo+").");			
 	}
 
 		
@@ -325,10 +346,11 @@ public class MergerAnalysis implements Analysis {
 	 * which allows to simply merge it with other semantically equivalent ones, by ID (URI).
 	 * 
 	 * @param orig
+	 * @param target
 	 * @param type
 	 * @return the replacement object or null if none can found
 	 */
-	private ProteinReference findOrCreateProteinReference(ProteinReference orig) 
+	private ProteinReference findOrCreateProteinReference(final ProteinReference orig, final Model target) 
 	{				
 		ProteinReference toReturn = null;	
 		
@@ -469,10 +491,11 @@ public class MergerAnalysis implements Analysis {
 	 * which allows to simply merge it with other semantically equivalent ones, by ID (URI).
 	 * 
 	 * @param orig
+	 * @param target
 	 * @param type
 	 * @return the replacement object or null if none can found
 	 */
-	private SmallMoleculeReference findOrCreateSmallMoleculeReference(SmallMoleculeReference orig) 
+	private SmallMoleculeReference findOrCreateSmallMoleculeReference(final SmallMoleculeReference orig, final Model target) 
 	{				
 		SmallMoleculeReference toReturn = null;	
 		

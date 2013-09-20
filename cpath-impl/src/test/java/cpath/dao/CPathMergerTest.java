@@ -203,7 +203,8 @@ public class CPathMergerTest {
 		assertTrue(((DataResponse)res).getData().toString().length()>0);		
 		
 		// fetch as SIF
-		res = service.fetch(OutputFormat.BINARY_SIF, "http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p");
+		res = service.fetch(OutputFormat.BINARY_SIF, 
+			Normalizer.uri(XML_BASE, null, "http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p", Catalysis.class));
 		assertTrue(res instanceof DataResponse);
 		assertFalse(res.isEmpty());
 		String data = (String) ((DataResponse)res).getData();		
@@ -219,7 +220,7 @@ public class CPathMergerTest {
 	// test everything here -
 	private void assertMerge(Model mergedModel) {
 		// test proper merge of protein reference
-		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#Protein_54"));
+		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, null, "http://www.biopax.org/examples/myExample#Protein_54", Protein.class)));
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P27797"));
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P27797", UnificationXref.class)));
 		assertTrue(mergedModel.containsID("http://identifiers.org/taxonomy/9606"));
@@ -233,14 +234,14 @@ public class CPathMergerTest {
 		assertEquals("http://identifiers.org/taxonomy/9606", pr.getOrganism().getRDFId());
 		
 		// test proper merge of small molecule reference
-		assertTrue(mergedModel.containsID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate"));
+		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, null, "http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate",SmallMolecule.class)));
 		assertTrue(mergedModel.containsID("http://identifiers.org/chebi/CHEBI:20"));
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "CHEBI", "CHEBI:20", ChemicalStructure.class)));
-		assertTrue(!mergedModel.containsID("http://www.biopax.org/examples/myExample#ChemicalStructure_8"));
+		assertTrue(!mergedModel.containsID(Normalizer.uri(XML_BASE, null, "http://www.biopax.org/examples/myExample#ChemicalStructure_8",ChemicalStructure.class)));
 		assertTrue(!mergedModel.containsID("http://identifiers.org/pubchem.substance/14438"));
 		assertTrue(!mergedModel.containsID("http://identifiers.org/pubchem.substance/14439"));
 				
-		SmallMolecule sm = (SmallMolecule)mergedModel.getByID("http://pathwaycommons.org/test2#alpha-D-glucose_6-phosphate");
+		SmallMolecule sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, null, "http://pathwaycommons.org/test2#alpha-D-glucose_6-phosphate",SmallMolecule.class));
 		SmallMoleculeReference smr = (SmallMoleculeReference)sm.getEntityReference();
 		assertNotNull(smr);
 		assertEquals("http://identifiers.org/chebi/CHEBI:422", smr.getRDFId());
@@ -264,7 +265,7 @@ public class CPathMergerTest {
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01116", UnificationXref.class)));
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P01116"));
 		
-		sm = (SmallMolecule)mergedModel.getByID("http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate");
+		sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, null, "http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate",SmallMolecule.class));
 		smr = (SmallMoleculeReference)sm.getEntityReference();
 
 		smr = (SmallMoleculeReference) mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28");
@@ -301,14 +302,14 @@ public class CPathMergerTest {
 		//these are not the two original ProteinReference (got replaced/removed)
 //		System.out.println(px.getXrefOf());
 		assertTrue(px.getXrefOf().contains(mergedModel.getByID("http://identifiers.org/uniprot/O75191")));
-		assertTrue(px.getXrefOf().contains(mergedModel.getByID("http://biocyc.org/biopax/biopax-level3Protein155359")));
+		assertTrue(px.getXrefOf().contains(mergedModel.getByID(Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3Protein155359",Protein.class))));
 		
 		msmr = (SmallMoleculeReference)mergedModel
-			.getByID("http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684");
+			.getByID(Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684",SmallMoleculeReference.class));
 		assertNotNull(msmr);
-		assertNull(mergedModel.getByID("http://biocyc.org/biopax/biopax-level3SmallMoleculeReference165390"));
+		assertNull(mergedModel.getByID(Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3SmallMoleculeReference165390",SmallMoleculeReference.class)));
 		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28"); // was replaced from Warehouse
-		sm = (SmallMolecule)mergedModel.getByID("http://biocyc.org/biopax/biopax-level3SmallMolecule173158");
+		sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3SmallMolecule173158",SmallMolecule.class));
 		assertFalse(smr.getXref().isEmpty());
 		assertFalse(smr.getMemberEntityReference().isEmpty());	
 		assertFalse(smr.getEntityReferenceOf().isEmpty());

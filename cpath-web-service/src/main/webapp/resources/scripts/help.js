@@ -1,10 +1,10 @@
 $(document).ready(function() {
-	getCommandParameterDetails("/help/formats", "output_parameter");
-    getCommandParameterDetails("/help/kinds", "graph_parameter");
-    getCommandParameterDetails("/help/directions", "direction_parameter");
-    getCommandParameterDetails("/help/types", "biopax_parameter");
-    getCommandParameterDetails("/help/types/properties", "properties_parameter");
-    getCommandParameterDetails("/help/types/inverse_properties", "inverse_properties_parameter");
+	getCommandParameterDetails("/help/formats", "formats");
+    getCommandParameterDetails("/help/kinds", "kinds");
+    getCommandParameterDetails("/help/directions", "directions");
+    getCommandParameterDetails("/help/types", "types");
+    getCommandParameterDetails("/help/types/properties", "properties");
+    getCommandParameterDetails("/help/types/inverse_properties", "inverse_properties");
 });
 
 // This function creates a body for the given command parameter output.

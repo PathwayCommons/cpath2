@@ -135,30 +135,30 @@
 		retrieve starting points for graph searches. Search strings are case insensitive unless put inside quotes.
 	</p>
 
-	<p>
-
-	<h3>Returns:</h3> A set of BioPAX individuals that matches the string search criteria. By default the results are
+	<h3>Returns:</h3> 	
+	<p>A set of BioPAX individuals that match the string search criteria. By default the results are
 	returned as a XML document that follows the <a href="help/schema">Search Response XML Schema</a>. It is also
-	possible to obtain the results in JSON by appending '.json' to the query URL. The results are paginated (page size
-	is configured on the server side).
+	possible to obtain the results in JSON by appending '.json' to the query URL. The results are paginated 
+	(the page size is configured on the server side; current value is returned with every result, as attribute).
 	</p>
 
-	<h3>Parameters:</h3>
+	<h3 id="search_parameters">Parameters:</h3>
 	<ul>
 		<li><em>q=</em> [Required] a keyword, name, external identifier, or a Lucene query string.</li>
 		<li><em>page=N</em> [Optional] (N&gt;=0, default is 0), search result page number.
 		</li>
-		<li><em>datasource=</em> [Optional] data source filter (<a href="/datasources.html">values</a>). If multiple data
-			source values are specified, a union of hits from specified sources is returned. For example
-			<em>datasource=reactome&amp;datasource=pid</em> returns results from both Reactome and PID.
+		<li><em>datasource=</em> [Optional] filter by data source (use names or URIs 
+			of <a href="/datasources.html">pathway data sources</a> or of any existing Provenance object). 
+			If multiple data source values are specified, a union of hits from specified sources is returned. For example, 
+			<em>datasource=reactome&amp;datasource=pid</em> returns hits associated with Reactome or PID.
 		</li>
 		<li><em>organism=</em> [Optional] organism filter. The organism can be specified either by official name, e.g.
-			"homo sapiens" or by NCBI taxonomy id, e.g. "9606".Similar to data sources, if multiple organisms are
+			"homo sapiens" or by NCBI taxonomy id, e.g. "9606". Similar to data sources, if multiple organisms are
 			declared a union of all hits from specified organisms is returned. For example
-			'organism=9606&amp;organism=10016' returns results for both human and mice.
+			'organism=9606&amp;organism=10016' returns results for both human and mice. 
+			Note the <a href="#organisms">officially supported species</a>.
 		</li>
-		<li><em>type=</em> [Optional] BioPAX class filter (<a
-				href="#biopax_parameter">values</a>)
+		<li><em>type=</em> [Optional] BioPAX class filter (<a href="#biopax_types">values</a>)
 		</li>
 	</ul>
 
@@ -211,22 +211,22 @@
 
 	<h3>Parameters:</h3>
 	<ul>
-		<li><em>uri=</em> [Required] a BioPAX element ID (RDF ID; for
-			utility classes that have been "normalized", such as xrefs, entity
+		<li><em>uri=</em> [Required] valid/existing BioPAX element's URI 
+			(RDF ID; for utility classes that were "normalized", such as entity
 			refereneces and controlled vocabularies, it is usually a
 			Idntifiers.org URL. Multiple IDs are allowed per query, for
-			example 'uri=http://identifiers.org/uniprot/Q06609&amp;uri=http://identifiers.org/uniprot/Q549Z0'
+			example, 'uri=http://identifiers.org/uniprot/Q06609&amp;uri=http://identifiers.org/uniprot/Q549Z0'
 			<a href="#miriam">See also</a> about MIRIAM and Identifiers.org.
 		</li>
 		<li><em>format=</em> [Optional] output format (<a
-				href="#output_parameter">values</a>)
+				href="#output_formats">values</a>)
 		</li>
 	</ul>
 	<h3>Output:</h3> By default, a complete BioPAX representation for
 	the record pointed to by the given URI is returned. Other output formats are produced by converting the BioPAX
 	record on demand and can be specified by the optional format parameter. Please be advised that with some output
 	formats it might return "no result found" error if the conversion is not applicable for the BioPAX result. 
-	For example, BINARY_SIF output works if there are some interactions, complexes, or pathways in the retrieved set
+	For example, BINARY_SIF output usually works if there are some interactions, complexes, or pathways in the retrieved set
 	and not only physical entities.
 	<h4>Query Examples:</h4>
 	<br/>
@@ -272,7 +272,7 @@
 	<h3>Parameters:</h3>
 	<ul>
 		<li><em>kind=</em> [Required] graph query (<a
-				href="#graph_parameter">values</a>)
+				href="#graph_kinds">values</a>)
 		</li>
 		<li><em>source=</em> [Required] source object's URI. Multiple source URIs are allowed per query, for example
 			'source=http://identifiers.org/uniprot/Q06609&amp;source=http://identifiers.org/uniprot/Q549Z0'.
@@ -285,21 +285,16 @@
 			See <a href="#miriam">a note about MIRIAM and Identifiers.org</a>.
 		</li>
 		<li><em>direction=</em> [Optional, for NEIGHBORHOOD and COMMONSTREAM algorithms] - graph search direction (<a
-				href="#direction_parameter">values</a>).
+				href="#graph_directions">values</a>).
 		</li>
 		<li><em>limit=</em> [Optional] graph query search distance limit (default = 1).
 		</li>
 		<li><em>format=</em> [Optional] output format (<a
-				href="#output_parameter">values</a>)
+				href="#graph_formats">values</a>)
 		</li>
-		<li><em>datasource=</em> [Optional] data source filter (<a
-				href="/datasources.html">values</a>). Multiple data source values are allowed per query; for example,
-			<em>datasource=reactome&amp;datasource=pid</em> means: we want data from Reactome OR NCI_Nature (PID)
+		<li><em>datasource=</em> [Optional] datasource filter (same as for <a href="#search_parameters">'search'</a>).
 		</li>
-		<li><em>organism=</em> [Optional] organism filter. Multiple
-			organisms are allowed per query; for example
-			'organism=9606&amp;organism=10016' (which means either 9606 or
-			10016; can also use "Homo sapiens", "mus musculus" instead).
+		<li><em>organism=</em> [Optional] organism filter (same as for <a href="#search_parameters">'search'</a>).
 		</li>
 	</ul>
 	<h3>Output:</h3> By default, graph queries return a complete BioPAX representation of the
@@ -364,9 +359,8 @@
 			allowed (uri=...&amp;uri=...&amp;uri=...).
 		</li>
 		<li><em>path=</em> [Required] a BioPAX propery path in the form of
-			property1[:type1]/property2[:type2];  see <a href="#properties_parameter">properties</a>,
-			<a href="#inverse_properties_parameter">inverse
-				properties</a>, <a href="http://www.biopax.org/paxtools">Paxtools</a>,
+			property1[:type1]/property2[:type2];  see <a href="#biopax_properties">properties</a>,
+			<a href="#biopax_inverse_properties">inverse properties</a>, <a href="http://www.biopax.org/paxtools">Paxtools</a>,
 			<a href="http://www.biopax.org/paxtools/apidocs/org/biopax/paxtools/controller/PathAccessor.html">
 			org.biopax.paxtools.controller.PathAccessor</a>.
 		</li>
@@ -409,7 +403,13 @@
 
 	<h3>Summary:</h3> This command returns all "top" pathways -- pathways that are neither
 	'controlled' nor 'pathwayComponent' of another process.
-	<h3>Parameters:</h3> no parameters
+	<h3>Parameters:</h3>
+	<ul>
+		<li><em>datasource=</em> [Optional] filter by data source (same as for <a href="#search_parameters">'search'</a>).
+		</li>
+		<li><em>organism=</em> [Optional] organism filter (same as for <a href="#search_parameters">'search'</a>).
+		</li>
+	</ul>	
 	<h3>Output:</h3> XML result that follows the <a
 		href="help/schema"> Search Response XML
 	Schema</a>&nbsp;(SearchResponse type; pagination is disabled: returns
@@ -468,9 +468,9 @@
 <br/>
 </section>
 <section id="parameters_description_section">
-	<h2 id="organisms">Organisms</h2>
+	<h2>Organisms</h2>
 
-	<div class="parameters">
+	<div class="parameters" id="organisms">
 		<h3>Officially supported organisms</h3>
 
 		<p>Having the above data sources, we chose to integrate
@@ -490,42 +490,42 @@
 	<!-- additional parameter details -->
 	<h2 id="additional_parameters">Query Parameter Values</h2>
 
-	<div class="parameters">
+	<div class="parameters" id="output_formats">
 		<h3>Output Formats ('format'):</h3>
 
 		<p>
 			See also <a href="help/formats.html">output formats.</a>
 		</p>
 		<!-- items are to be added here by a javascript -->
-		<ul id="output_parameter"></ul>
+		<ul id="formats"></ul>
 		<br/>
 	</div>
 
-	<div class="parameters">
+	<div class="parameters" id="graph_kinds">
 		<h3>Built-in graph queries ('kind'):</h3>
 		<!-- items are to be added here by a javascript -->
-		<ul id="graph_parameter"></ul>
+		<ul id="kinds"></ul>
 		<br/>
 	</div>
 
-	<div class="parameters">
+	<div class="parameters" id="graph_directions">
 		<h3>Graph traversal directions ('direction'):</h3>
 		<!-- items are to be added here by a javascript -->
-		<ul id="direction_parameter"></ul>
+		<ul id="directions"></ul>
 		<br/>
 	</div>
 
-	<div class="parameters">
+	<div class="parameters" id="biopax_types">
 		<h3>BioPAX classes ('type'):</h3>
 
-		<p><a href="javascript:switchit('biopax_parameter')">Click here</a>
+		<p><a href="javascript:switchit('types')">Click here</a>
 			to show/hide the list</p>
 		<!-- items are to be added here by a javascript -->
-		<ul id="biopax_parameter" style="display: none;"></ul>
+		<ul id="types" style="display: none;"></ul>
 		<br/>
 	</div>
 
-	<div class="parameters">
+	<div class="parameters" id="biopax_properties">
 		<h3>Official BioPAX Properties and Domain/Range Restrictions:</h3>
 
 		<p>Note: "XReferrable xref Xref
@@ -534,14 +534,14 @@
 			XReferrable.xref, and that, for a ControlledVocabulary.xref, the
 			value can only be of UnificationXref type, etc.</p>
 
-		<p><a href="javascript:switchit('properties_parameter')">Click here</a>
+		<p><a href="javascript:switchit('properties')">Click here</a>
 			to show/hide the list of properties</p>
 		<!-- items are to be added here by a javascript -->
-		<ul id="properties_parameter" style="display: none;"></ul>
+		<ul id="properties" style="display: none;"></ul>
 		<br/>
 	</div>
 
-	<div class="parameters">
+	<div class="parameters" id="biopax_inverse_properties">
 		<h3>Inverse BioPAX Object Properties and Domain/Range
 			Restrictions (useful feature of Paxtools API):</h3>
 
@@ -554,10 +554,10 @@
 			RelationshipXref.xrefOf cannot contain a ControlledVocabulary (or
 			its sub-class) values, etc.</p>
 
-		<p><a href="javascript:switchit('inverse_properties_parameter')">Click here</a>
+		<p><a href="javascript:switchit('inverse_properties')">Click here</a>
 			to show/hide the list of properties</p>
 		<!-- items are to be added here by a javascript -->
-		<ul id="inverse_properties_parameter" style="display: none;"></ul>
+		<ul id="inverse_properties" style="display: none;"></ul>
 		<br/>
 	</div>
 

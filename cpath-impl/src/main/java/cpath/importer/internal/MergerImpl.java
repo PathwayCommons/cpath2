@@ -104,25 +104,26 @@ public final class MergerImpl implements Merger {
 		for (Metadata metadata : providersMetadata) {
 			log.info("Start merging " + metadata);
 			for (PathwayData pwdata : metadata.getPathwayData()) {
-				log.info("Merging pathway data: " + pwdata.toString());
+				
+				final String description = pwdata.toString() + " - " + pwdata.status();
+				log.info("Merging pathway data: " + description);
 
 				if (pwdata.getValid() == null
 						|| pwdata.getNormalizedData() == null
 						|| pwdata.getNormalizedData().length == 0) {
 					// must run pre-merge first!
 					log.warn("Do '-premerge' first. Skipping "
-							+ pwdata.toString());
+							+ description);
 					continue;
 				} else if (pwdata.getValid() == false) {
 					// has BioPAX errors
-					log.warn("There were critical BioPAX errors in " + " - "
-							+ pwdata.toString());
+					log.warn("There were critical BioPAX errors in " + " - " + description);
 					if (!force) {
-						log.warn("Skipping " + pwdata);
+						log.warn("Skipping " + description);
 						continue;
 					} else {
 						log.warn("FORCE merging (ignoring all "
-								+ "validation issues) for " + pwdata);
+								+ "validation issues) for " + description);
 					}
 				}
 
