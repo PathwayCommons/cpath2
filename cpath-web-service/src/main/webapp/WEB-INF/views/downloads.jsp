@@ -23,10 +23,10 @@
 			Data exported from the CPath2 server are organized as follows.<br />
 			Archives below are sorted alphabetically, and their names follow the
 			simple naming pattern:
-			<br /><br /><code>cpath2_&lt;source&gt;.&lt;FORMAT&gt;.&lt;ext&gt;.gz</code><br /><br />
-			where <em>source</em> - is either a data source standard name, organism
-			taxonomy ID, or 'all'; <em>FORMAT</em> - 'biopax' and other formats, to which the BioPAX L3
-			was converted.
+			<br /><br /><code>${cpath.name}.${cpath.version}.&lt;SOURCE&gt;.&lt;FORMAT&gt;.&lt;EXT&gt;.gz</code><br /><br />
+			where <em>SOURCE</em> is either a data source standard name, organism
+			taxonomy ID, or 'All'; <em>FORMAT</em> - BIOPAX or format to which it was converted, 
+			and <em>EXT</em> can be 'owl', 'xml', 'edges.tsv', 'nodes.tsv', etc. (depends on the format)
 		</p>
 
 		<p><a href="help/formats.html">Output formats.</a></p>

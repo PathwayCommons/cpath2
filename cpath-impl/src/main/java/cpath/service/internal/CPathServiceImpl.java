@@ -69,9 +69,6 @@ import cpath.service.jaxb.TraverseResponse;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
-import static cpath.config.CPathSettings.PROVIDER_NAME;
-import static cpath.config.CPathSettings.downloadsDir;
-import static cpath.config.CPathSettings.property;
 import static cpath.service.Status.*;
 
 import cpath.warehouse.beans.Mapping;
@@ -726,17 +723,9 @@ public class CPathServiceImpl implements CPathService {
 				@Override
 				public void run() {
 					log.info("initProxyModel: loading entire biopax Model...");
-//					ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-//					mainDAO.exportModel(outputStream); //this takes HOURS...
-//					log.info("initProxyModel: Model was successfully written to RDF/XML stream...");
 					try {
-//						proxyModel = simpleIO.convertFromOWL(new ByteArrayInputStream(
-//							outputStream.toString().getBytes("UTF-8")));
-//						outputStream = null;
-						
-						final String archive = downloadsDir() 
-				        	+ File.separator + property(PROVIDER_NAME) 
-				        		+ " " + "all.BIOPAX.owl.gz";
+						//TODO add an option to load "All" or "Backup" (with warehouse data) archives
+						final String archive = CPathSettings.biopaxExportFileName("All");  
 						proxyModel = simpleIO.convertFromOWL(new GZIPInputStream(new FileInputStream(archive)));
 												
 						//allow queries use the proxy
@@ -744,7 +733,6 @@ public class CPathServiceImpl implements CPathService {
 						log.info("initProxyModel: in-memory proxy Model is now ready for queries");
 					} 
 					catch (IOException e) {
-//					catch (UnsupportedEncodingException e) {
 						log.error("initProxyModel: failed, proxy model is now disabled.", e);
 					}
 				}

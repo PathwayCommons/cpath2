@@ -13,26 +13,20 @@ function getDatasources(){
     		var displayName = ds.name[0];
     		var otherNames = (ds.name.length > 1) ? " ("+ds.name.slice(1).join(", ")+")" : "";         	
         	if (ds.notPathwaydata) {
-        		$('#warehouse_datasources').append(
-        			'<dt>'
-                    +'<a href="'+ds.urlToHomepage+'">'
-                    +'<img src="data:image/gif;base64,'+ds.icon+'" title="'+displayName+' logo"></img>'
-                    +'</a><strong> '+displayName+otherNames+'</strong>; type: '+ds.type
-                    +'</dt>');
+        		$('#warehouse_datasources').append('<dt><a href="'+ds.urlToHomepage+'">'
+                    +'<img src="data:image/gif;base64,'+ds.icon+'" title="'+displayName
+                    +' logo"></img></a><strong> '+displayName+otherNames+'</strong></dt>');
         		$('#warehouse_datasources').append('<dd><p>'+ds.description+'</p></dd>');
         	}else{               		    		
+        		$('#pathway_datasources').append('<dt><a href="'+ds.urlToHomepage+'">'
+        			+'<img src="data:image/gif;base64,'+ds.icon+'" title="'+displayName
+        			+' logo"></img></a><strong> '+displayName+otherNames
+        			+'</strong>; format: '+ds.type+'; uri: '+ds.uri+ '</dt>');
         		$('#pathway_datasources').append(
-        			'<dt>'
-        			+'<a href="'+ds.urlToHomepage+'">'
-        			+'<img src="data:image/gif;base64,'+ds.icon+'" title="'+displayName+' logo"></img>'
-        			+'</a><strong> '+displayName+otherNames + '</strong>; data format: '+ds.type+'; uri: '+ds.uri
-        		+ '</dt>');
-        		$('#pathway_datasources').append(
-        			'<dd><p>'+ds.description+'. Adding this data to the system resulted in <strong>' 
-           			+ds.counts[0]+'</strong> pathways, <strong>' 
-           			+ds.counts[1]+'</strong> interactions and <strong>' 
-           			+ds.counts[2]+'</strong> physical entities.</dd></p>'
-           		);
+        			'<dd><p>'+ds.description+'<br/><strong>' 
+           			+ds.counts[0]+' pathways, ' 
+           			+ds.counts[1]+' interactions, ' 
+           			+ds.counts[2]+' physical entities (states).</dd></strong></p>');
         	}
         });
     });

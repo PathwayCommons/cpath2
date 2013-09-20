@@ -20,39 +20,32 @@
 <jsp:include page="header.jsp"/>
 
 <div id="content">
-	<!-- additional parameter details -->
-	<h2>Pathway and Interaction Data Sources</h2>
 
-	<p>Imported pathway data with corresponding logo and names.
-		These names are recommended to use for the 'datasource' filter
-		parameter (see about <a href="#search">'/search'</a> command).
-		For example, 'NCI_Nature', 'reactome' can be successfully
-		used (case insensitive) there. Using URIs instead of names is also
-		possible. If there are several items having a name in commom,
-		e.g. 'Reactome', that means we imported the provider's data
-		from different locations or archives. Not all data are ready to be
-		imported into the cPath2 system right away; so one has to unpack,
-		add/remove/edit, pack original BioPAX or PSI-MI files. Data location
-		URLs are shown for information and copyright purpose only.
-		One can find all BioPAX Provenance objects in the system by using
-		<a href="search?q=*&type=provenance">search for all Provenance objects</a>.
-	</p>
-
+	<h2>Pathway and Interaction Data</h2>
 	<div id="data_sources" class="parameters">
+		<p>The summary of sources normalized and merged 
+		into one big BioPAX model:</p>
 		<!-- items are to be added here by a javascript -->
 		<dl id="pathway_datasources" class="datasources"></dl>
 	</div>
 	<br/>
 
-	<h2>Warehouse Data Sources</h2>
-
+	<h2>Warehouse Data</h2>
 	<div class="parameters">
+		<p>In order to integrate curated pathways and interactions 
+		from various sources, the following files were first 
+		converted to a BioPAX model of canonical biomolecules 
+		and to unambiguous id-mapping table:</p>
 		<!-- items are to be added here by a javascript -->
-		<p>In order to consistently normalize and merge all pathways and interactions,
-			we created a BioPAX warehouse using the following data:</p>
 		<dl id="warehouse_datasources" class="datasources"></dl>
 	</div>
 	<br/>
+	
+	<p>To find all the BioPAX Provenance objects in the system 
+	use <a href="search?q=*&type=provenance">this query</a>; hits's names 
+	or URIs can be 'datasource' filter values in other cpath2 queries. 
+	</p>
+	
 </div>
 <jsp:include page="footer.jsp"/>
 

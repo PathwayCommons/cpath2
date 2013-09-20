@@ -155,7 +155,7 @@ public final class PathwayData {
 	
 	@Override
     public String toString() {
-		return provider + "/" + filename + " (" + status() + ")";
+		return provider + "/" + filename;
     }
 
 

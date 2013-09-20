@@ -1,6 +1,7 @@
 package cpath.cleaner.internal;
 
 // imports
+import cpath.importer.Cleaner;
 import cpath.warehouse.beans.PathwayData;
 
 import java.io.*;
@@ -24,7 +25,7 @@ import org.slf4j.LoggerFactory;
  * uniprot_sprot_xxxx.dat, where xxxx is species.
  *
  */
-final class UniProtCleanerImpl extends BaseCleanerImpl {
+final class UniProtCleanerImpl implements Cleaner {
 
     // delimiter between accessions
     private static final String AC_DELIMITER = "; ";
@@ -114,7 +115,6 @@ final class UniProtCleanerImpl extends BaseCleanerImpl {
             line = bufferedReader.readLine();
         }
 
-        // outta here
         return toReturn;
     }
 
@@ -151,7 +151,6 @@ final class UniProtCleanerImpl extends BaseCleanerImpl {
         // we've read past the last AC line, rollback
         bufferedReader.reset();
 
-        // outta here
         return toReturn;
     }
 
@@ -177,7 +176,6 @@ final class UniProtCleanerImpl extends BaseCleanerImpl {
             toReturn.append(accession + AC_DELIMITER);
         }
 
-        // outta here
         return toReturn.toString().trim() + "\n";
     }
 
@@ -232,7 +230,6 @@ final class UniProtCleanerImpl extends BaseCleanerImpl {
             line = bufferedReader.readLine();
         }
 
-        // outta here
         return toReturn.toString();
     }
 }

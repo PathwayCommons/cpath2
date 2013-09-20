@@ -211,8 +211,8 @@ width:100%;
 	float: left;
 }
 .datasources dd {
-	font-size: small;
-	font-style: italic;
+	font-size: 0.9em;
+/* 	font-style: italic; */
 }
 
 .mask {

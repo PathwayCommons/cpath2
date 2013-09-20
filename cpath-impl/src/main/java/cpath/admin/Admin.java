@@ -632,10 +632,19 @@ public final class Admin {
 		}		
 		writer.flush();
 		writer.close();		
-		LOG.info("create-downloads: generated the datasources summary file...");
+		LOG.info("create-downloads: successfully generated the datasources summary file.");
 		
-    	// 1) export everything
-		createArchives("all", dao, null, null);
+		// 0) TODO export everything including warehouse objects not participating in any interaction for the webservice's proxy model	
+//		final String archive = biopaxExportFileName("everything");  
+//        if(!(new File(archive)).exists()) {
+//        	// export entire database (with warehouse) to the archive file
+//        	LOG.info("create-downloads: exporting all BioPAX (with warehouse)" +
+//        			" data to " + 	archive + "...");
+//       		dao.exportModel(new GZIPOutputStream(new FileOutputStream(archive)));
+//        }
+		
+    	// 1) export everything that participates in interactions and pathways
+		createArchives("All", dao, null, null); // no filters
     	
     	// 2) export by organism
         LOG.info("create-downloads: preparing data 'by organism' archives...");
@@ -650,7 +659,9 @@ public final class Admin {
         LOG.info("create-downloads: preparing 'by datasource' archives...");
         for(Metadata md : allMetadata) {
         	if(!md.getType().isNotPathwayData()) {
-        		// display name or, if exists, - standard name
+        		// use standard name and not the metadata ID (!), 
+        		// because we want all data from same DB merge into one file,
+        		// e.g., Reactome human, mouse, fungi data together, though might imported them via separate metadata)
         		String name = md.standardName(); 
         		createArchives(name, dao, md.getName().toArray(new String[]{}), null);
         	}
@@ -679,13 +690,15 @@ public final class Admin {
     }
     
 
-    private static void createArchives(String filePrefix, PaxtoolsDAO dao, 
+    private static void createArchives(String sourcePrefix, PaxtoolsDAO dao, 
     	String[] datasources, String[] organisms) throws IOException 
     {
-    	// grab the BioPAX first -
-        final String biopaxDataArchive = downloadsDir() 
-        		+ File.separator + property(PROVIDER_NAME) 
-        		+ " " + filePrefix + ".BIOPAX.owl.gz";
+    	// get the BioPAX export done first -    	
+        final String prefix = downloadsDir() + File.separator 
+        		+ property(PROVIDER_NAME) + "." + property(PROVIDER_VERSION);
+        
+        final String biopaxDataArchive = prefix	+ "." 
+        		+ sourcePrefix + ".BIOPAX.owl.gz";
         
         // check file exists
         if(!(new File(biopaxDataArchive)).exists()) {	
@@ -714,13 +727,13 @@ public final class Admin {
         
         //quickly test whether there will be pathways (to then skip exporting to GSEA)
         SearchResponse resp = dao.search("*", 0, Pathway.class, datasources, organisms);
-        boolean hasPathways = (resp.getNumHits() > 0);
+        final boolean hasPathways = (resp.getNumHits() > 0);
         OutputFormat[] formats = (hasPathways) 
         	? new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF, GSEA}
-        	: new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF};
+        		: new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF};
         
-		for(OutputFormat outf : formats) {
-			createArchive(biopaxDataArchive, outf, filePrefix);
+		for(OutputFormat format : formats) {
+			createArchive(biopaxDataArchive, format, prefix);
 		}
 	}
 	
@@ -728,27 +741,18 @@ public final class Admin {
 			String prefix) throws IOException 
 	{	
 		if(format == OutputFormat.BIOPAX)
-			throw new AssertionError("Converting BioPAX to BioPAX");
+			throw new IllegalArgumentException(format.name() + " is not allowed here.");
 	
-		String archiveName = downloadsDir() + File.separator 
-				+ property(PROVIDER_NAME) + " " 
-				+ prefix + "." + formatAndExt(format) + ".gz";
-		LOG.info("create-downloads: generating " + archiveName);
-		
+		String archiveName = prefix + "." + formatAndExt(format) + ".gz";
+		LOG.info("create-downloads: generating " + archiveName);	
 		
         if(!(new File(archiveName)).exists()) {
     		//Extended SIF will be here split in two separate files (edges and nodes)
     		if(format == EXTENDED_BINARY_SIF) {
     			//write edges and nodes into separate archives
     			GZIPOutputStream edgeStream = new GZIPOutputStream(new FileOutputStream(archiveName));
-    			GZIPOutputStream nodeStream = new GZIPOutputStream(new FileOutputStream(
-    				homeDir() + File.separator 
-    					+ DOWNLOADS_SUBDIR + File.separator 
-    					+ property(PROVIDER_NAME) + " " 
-    					+ prefix + "." + format + ".nodes.tsv.gz"));
-    		
+    			GZIPOutputStream nodeStream = new GZIPOutputStream(new FileOutputStream(prefix + "." + format + ".nodes.tsv.gz"));   		
     			convertToExtSif(biopaxDataArchive, edgeStream, nodeStream);
-    			
     			IOUtils.closeQuietly(edgeStream);
     			IOUtils.closeQuietly(edgeStream);
     		} else {    	
@@ -767,14 +771,16 @@ public final class Admin {
 	
 	private static String formatAndExt(OutputFormat format) {
 		switch (format) {
-		case BIOPAX:
-			return format + ".owl";
 		case GSEA:
 			return format + ".gmt";
 		case SBGN:
 			return format + ".xml";
-		default:
+		case BINARY_SIF:
 			return format + ".tsv";
+		case EXTENDED_BINARY_SIF:
+			return format + ".edges.tsv";
+		default://fail - biopax is treated specially, not here
+			throw new IllegalArgumentException(format.toString() + " not allowed.");
 		}
 	}
 
