@@ -22,7 +22,7 @@ echo "       main.db=$maindb"
 echo "       xml.base=$xmlbase"
 
 
-CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss65536k -Xmx8g -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Dnet.sf.ehcache.skipUpdateCheck=true"
+CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss65536k -Xmx11g -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Dnet.sf.ehcache.skipUpdateCheck=true"
 
 CPATH2_TUNING_OPTS="-Xms2g -Xmn1g -XX:PermSize=128m -XX:MaxPermSize=256m -XX:SurvivorRatio=16 -Xincgc -Xnoclassgc -XX:CMSTriggerRatio=50 -XX:ParallelGCThreads=2 -XX:NewRatio=5"
 

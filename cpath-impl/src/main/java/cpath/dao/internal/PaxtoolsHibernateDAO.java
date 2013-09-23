@@ -332,7 +332,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		if(query != null && query.equals("*")) {		
 			if(Modifier.isAbstract(filterClass.getModifiers()) 
 					|| !filterClass.isAnnotationPresent(Indexed.class)) 
-				throw new RuntimeException("With '*' (all) search query, " +
+				throw new IllegalBioPAXArgumentException("With '*' (all) search query, " +
 					"one must use 'type=' filter with a specific, instantiable BioPAX type");
 			
 			QueryBuilder queryBuilder = fullTextSession.getSearchFactory()
@@ -344,7 +344,8 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 				luceneQuery = multiFieldQueryParser.parse(query);
 			} catch (ParseException e) {
 				log.error("parser exception: " + e.getMessage());
-				return searchResponse;
+				throw new IllegalBioPAXArgumentException("search: query parser error, " +
+						"query: '"+query+"'", e);
 			}
 		}
 
