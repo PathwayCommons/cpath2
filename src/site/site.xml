@@ -1,4 +1,4 @@
-<project name="CPathSquared">
+<project name="cPath2">
 
 
 <bannerLeft>
@@ -24,13 +24,9 @@
 	<fluidoSkin>
 		<sideBarEnabled>true</sideBarEnabled>
 		<topBarEnabled>true</topBarEnabled>
-      		<ohloh>
-        		<projectId>pathway-commons</projectId>
-        		<widget>factoids</widget>
-			</ohloh>
 		<profile>production</profile>
 		<googleSearch>
-       			<sitesearch/>
+       		<sitesearch/>
 		</googleSearch>
 		<facebookLike />
 		<googlePlusOne />
@@ -46,8 +42,7 @@
 
 <links>
 <item name="BioPAX" href="http://www.biopax.org/" />
-<item name="Demo" href="http://purl.org/pc2/" />
-<item name="Ohloh" href="http://www.ohloh.net/p/pathway-commons" />
+<item name="Demo" href="http://purl.org/pc2/test/" />
 </links>
 
 <menu ref="modules" />

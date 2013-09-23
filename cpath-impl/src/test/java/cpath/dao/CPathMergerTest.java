@@ -205,6 +205,7 @@ public class CPathMergerTest {
 		// fetch as SIF
 		res = service.fetch(OutputFormat.BINARY_SIF, 
 			Normalizer.uri(XML_BASE, null, "http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p", Catalysis.class));
+		assertNotNull(res);
 		assertTrue(res instanceof DataResponse);
 		assertFalse(res.isEmpty());
 		String data = (String) ((DataResponse)res).getData();		

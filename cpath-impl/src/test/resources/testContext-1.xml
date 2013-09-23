@@ -25,7 +25,7 @@
 		<property name="maxPoolSize" value="12" />
 		<property name="maxIdleTime" value="900" />
 		<property name="maxIdleTimeExcessConnections" value="100" />		
-		<property name="maxStatements" value="75"/>
+		<property name="maxStatements" value="150"/>
 		<property name="idleConnectionTestPeriod" value="100" />
 		<property name="numHelperThreads" value="3" />
 	</bean>
