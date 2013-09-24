@@ -183,6 +183,7 @@
 		<maven-enforcer-plugin>1.2</maven-enforcer-plugin>
 		<maven.version.range>[3.0,3.1)</maven.version.range>
 		<java.version>1.6</java.version>
+		<maven-deploy-plugin.version>2.7</maven-deploy-plugin.version>
 	</properties>
 
 	<build>
@@ -253,29 +254,30 @@
 				<plugin>
 					<artifactId>maven-site-plugin</artifactId>
 					<version>${maven-site-plugin.version}</version>
-            		<dependencies>
-            			<dependency>
-              				<groupId>org.apache.maven.wagon</groupId>
-             				 <artifactId>wagon-ssh</artifactId>
-              				<version>2.5</version>
-            			</dependency>     
-            			<dependency>
-              				<groupId>org.apache.maven.wagon</groupId>
-             				 <artifactId>wagon-scm</artifactId>
-              				<version>2.5</version>
-            			</dependency>             				
-	                	<dependency>
-	                    	<groupId>org.apache.maven.scm</groupId>
-                    		<artifactId>maven-scm-api</artifactId>
-                    		<version>1.8.1</version>
-                			</dependency>
-                		<dependency>
-                    		<groupId>org.apache.maven.scm</groupId>
-                    		<artifactId>maven-scm-provider-hg</artifactId>
-                   	 		<version>1.8.1</version>
-                		</dependency>
-            		</dependencies>						
-				</plugin>												
+<!-- not required, for deploying directly to the Hg repository does not work right (messes up member modules' content...) -->
+<!--             		<dependencies> -->
+<!--             			<dependency> -->
+<!--               				<groupId>org.apache.maven.wagon</groupId> -->
+<!--              				 <artifactId>wagon-ssh</artifactId> -->
+<!--               				<version>2.5</version> -->
+<!--             			</dependency>      -->
+<!--             			<dependency> -->
+<!--               				<groupId>org.apache.maven.wagon</groupId> -->
+<!--              				 <artifactId>wagon-scm</artifactId> -->
+<!--               				<version>2.5</version> -->
+<!--             			</dependency>             				 -->
+<!-- 	                	<dependency> -->
+<!-- 	                    	<groupId>org.apache.maven.scm</groupId> -->
+<!--                     		<artifactId>maven-scm-api</artifactId> -->
+<!--                     		<version>1.8.1</version> -->
+<!--                 			</dependency> -->
+<!--                 		<dependency> -->
+<!--                     		<groupId>org.apache.maven.scm</groupId> -->
+<!--                     		<artifactId>maven-scm-provider-hg</artifactId> -->
+<!--                    	 		<version>1.8.1</version> -->
+<!--                 		</dependency> -->
+<!--             		</dependencies>						 -->
+				</plugin>
 			</plugins>
 		</pluginManagement>
 		<extensions>
@@ -746,29 +748,51 @@
 	</dependencies>
 
 	<distributionManagement>
-		<!-- Do NOT use mvn site-deploy (due to number of issues)! Though mvn deploy is ok.
-		First, 'hg clone' the remote pathway-commons.cpath2-site code repository
-		to some local dir, e.g., 'maven-site' inside this priject's root.
-		Next, do site site:stage -DstagingDirectory=<path> - path the above dir. 
-		Finally, swith there and do: hg add *, hg commit, hg push ...-->
-<!-- this didn't quite work: member modules' generated docs, pushed there, overwrite one another and the parent's site... -->
+<!-- This didn't quite work: member modules' generated docs, pushed there, overwrite one another and the parent's site... -->
 <!-- 		<site> -->
 <!-- 			<id>pathway-commons.googlecode.com</id> -->
 <!-- 			<name>cPath2 auto-generated site</name> -->
 <!-- 			<url>scm:hg:https://cpath2-site.pathway-commons.googlecode.com/hg</url> -->
 <!-- 		</site> -->
+	
+		<!-- This cfg. works, but please do NOT use mvn site-deploy (due to number of issues)! 
+		First, 'hg clone' the remote pathway-commons.cpath2-site code repository
+		to some local dir, e.g., 'maven-site' inside this priject's root.
+		Next, do site site:stage -DstagingDirectory=<path> - path the above dir. 
+		Finally, swith there and do: hg add *, hg commit, hg push ...-->
 		<site>
 			<id>pathway-commons.googlecode.com</id>
 			<name>cPath2 auto-generated site</name>
 			<url>http://cpath2-site.pathway-commons.googlecode.com/hg</url>
 		</site>
+		
+		<!-- This is also for mvn site:stage generate nice links. So please do: 
+		'hg clone' the remote pathway-commons.repo repository to a local dir.
+		Next, do mvn deploy -Plocal-deploy, which, if the pathway-commons.repo variable 
+		is set (in the settings.xml) to the cloned repo directory, will deploy there.
+		Finally, swith there and do: hg add *, hg commit, hg push ...-->		
 		<repository>
 			<id>pathway-commons.googlecode.com</id>
 			<name>Pathway Commons Maven Repository</name>
-			<url>scm:hg:https://repo.pathway-commons.googlecode.com/hg</url>
+			<url>http://repo.pathway-commons.googlecode.com/hg</url>
 		</repository>
 		<downloadUrl>http://code.google.com/p/pathway-commons/downloads/</downloadUrl>
 	</distributionManagement>
+	
+	<profiles>
+		<profile>
+			<!-- A profile to deploy to a local clone of the pathway-commons.repo 
+			- Mercurial Hg repo (then - have to commit/push manually) -->
+			<id>local-deploy</id>
+			<distributionManagement>	
+				<repository>
+					<id>pathway-commons.googlecode.com</id>
+					<name>Pathway Commons Maven Repository</name>
+					<url>${local.pathway-commons.repo}</url>
+				</repository>
+			</distributionManagement>		
+		</profile>
+	</profiles>	
 
 	<!-- the following is used both by Maven 3.x and 2.x -->
 	<reporting>
