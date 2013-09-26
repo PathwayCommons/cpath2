@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
@@ -38,7 +40,9 @@ import java.util.zip.ZipInputStream;
 import javax.imageio.ImageIO;
 
 import org.biopax.paxtools.impl.BioPAXElementImpl;
+import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -629,4 +633,30 @@ public final class CPathUtils {
 		model.add(el);
 	}
 	
+	
+	/**
+	 * Loads the BioPAX model from a Gzip archive 
+	 * previously created by the same cpath2 instance.
+	 * 
+	 * @return big BioPAX model
+	 */
+	public static Model importFromTheArchive() {
+		//TODO an option to load other archives (e.g., Reactome only, for testing)
+		final String archive = CPathSettings.biopaxExportFileName("All"); 
+		
+		Model model = null;
+
+		try {
+			//read from ..All.BIOPAX.owl.gz archive
+			LOGGER.info("Loading the BioPAX Model from " + archive);
+			model = (new SimpleIOHandler(BioPAXLevel.L3))
+					.convertFromOWL(new GZIPInputStream(new FileInputStream(archive)));
+		} 
+		catch (IOException e) {
+			LOGGER.error("Failed to import model from " + archive, e);
+		}
+
+		return model;
+	}
+		
 }

@@ -23,16 +23,17 @@
 		<property name="jdbcUrl" value="${cpath2.db.connection}${cpath2.db}" />
 		<property name="user" value="${cpath2.db.user}" />
 		<property name="password" value="${cpath2.db.password}" />
-		<!-- these are C3P0 properties -->
+		<!-- these are C3P0 properties (see also: http://javatech.org/2007/11/c3p0-connectionpool-configuration-rules-of-thumb/ ) -->
 		<property name="acquireIncrement" value="5" />
 		<property name="initialPoolSize" value="5" />
 		<property name="minPoolSize" value="20" />
 		<property name="maxPoolSize" value="100" />
-		<property name="maxIdleTime" value="1800" />
-		<property name="maxIdleTimeExcessConnections" value="300" />		
 		<property name="maxStatements" value="1000"/>
 		<property name="maxStatementsPerConnection" value="100"/>
-		<property name="idleConnectionTestPeriod" value="300" />
+		<property name="maxIdleTime" value="3600" />
+		<property name="maxIdleTimeExcessConnections" value="300" />	
+		<property name="idleConnectionTestPeriod" value="360" />
+		<property name="unreturnedConnectionTimeout" value="3600" />
 		<property name="numHelperThreads" value="6" />
 	</bean>
 

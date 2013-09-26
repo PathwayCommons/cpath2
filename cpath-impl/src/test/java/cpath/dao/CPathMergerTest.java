@@ -31,7 +31,6 @@ import static org.junit.Assert.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
@@ -56,7 +55,6 @@ import javax.imageio.ImageIO;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"classpath:testContext-2.xml"})
 @DirtiesContext(classMode=ClassMode.AFTER_EACH_TEST_METHOD)
-@Profile("servicecache")
 public class CPathMergerTest {
 	static Logger log = LoggerFactory.getLogger(CPathMergerTest.class);
 	
@@ -94,6 +92,7 @@ public class CPathMergerTest {
 		paxtoolsDAO.initialize(pr.getName());
 		paxtoolsDAO.initialize(pr.getXref());
 		assertNotNull(pr);
+		assertNotNull(pr.getName());
 		assertFalse(pr.getName().isEmpty());
 		assertNotNull(pr.getOrganism());
 		assertEquals("Homo sapiens", pr.getOrganism().getStandardName());

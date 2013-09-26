@@ -25,10 +25,11 @@
 		<property name="initialPoolSize" value="3" />
 		<property name="minPoolSize" value="3" />
 		<property name="maxPoolSize" value="15" />
-		<property name="maxIdleTime" value="900" />
-		<property name="maxIdleTimeExcessConnections" value="100" />		
-		<property name="maxStatements" value="150"/>
-		<property name="idleConnectionTestPeriod" value="100" />
+		<property name="maxIdleTime" value="600" />
+		<property name="maxIdleTimeExcessConnections" value="120" />		
+		<property name="maxStatements" value="300"/>
+		<property name="maxStatementsPerConnection" value="20"/>
+		<property name="idleConnectionTestPeriod" value="120" />
 		<property name="numHelperThreads" value="3" />
 	</bean>
 
@@ -82,16 +83,5 @@
 	</bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor" />
-
-	<beans profile="servicecache">
-		<bean id="serviceCacheManagerFactory" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
-			<property name="configLocation" value="classpath:cpath-service-ehcache.xml"/>
-			<property name="cacheManagerName" value="cpath-service-cache"/>
-		</bean>
-		<bean id="serviceCacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
-			<property name="cacheManager" ref="serviceCacheManagerFactory"/>
-		</bean>		
-		<cache:annotation-driven cache-manager="serviceCacheManager"/>		
-	</beans>
 	
 </beans>

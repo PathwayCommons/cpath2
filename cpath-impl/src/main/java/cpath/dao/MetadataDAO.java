@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.biopax.validator.api.beans.ValidatorResponse;
+import org.springframework.cache.annotation.Cacheable;
 
 /**
  * An interface which provides methods 
@@ -77,6 +78,7 @@ public interface MetadataDAO {
      *        isoforms even if they're not stored in the mapping tables; can be null)
      * @return a set of primary IDs of the type; normally one or none elements
      */
+	@Cacheable(value = "idmappingCache")
     Set<String> mapIdentifier(String identifier, Mapping.Type type, String idType);
 
 
