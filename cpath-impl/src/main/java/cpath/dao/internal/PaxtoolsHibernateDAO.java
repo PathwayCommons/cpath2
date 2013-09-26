@@ -117,7 +117,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	private final BioPAXFactory factory;
 	private SimpleIOHandler simpleIO;
 	private boolean addDependencies = false;
-	private MultiFieldQueryParser multiFieldQueryParser;
 	private final String xmlBase;
 
 	
@@ -133,8 +132,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		//may (recommended) or may not always use absolute URIs when writing RDF/XML
 		this.simpleIO.absoluteUris(Boolean.parseBoolean(
 			(CPathSettings.property(CPathSettings.PROP_ABSOLUTE_URI_ENABLED)))); 
-		this.multiFieldQueryParser = new MultiFieldQueryParser(
-			Version.LUCENE_36, DEFAULT_SEARCH_FIELDS, new StandardAnalyzer(Version.LUCENE_36));
 		//- seems, - query parser turns search keywords to lower case and expects index field values are also lower case...		
 		this.xmlBase = CPathSettings.xmlBase(); //set default xml:base
 		this.maxHitsPerPage = Integer.parseInt(CPathSettings.property(CPathSettings.PROP_MAX_SEARCH_HITS_PER_PAGE));
@@ -340,6 +337,8 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			
 			luceneQuery = queryBuilder.all().createQuery();
 		} else {
+			MultiFieldQueryParser multiFieldQueryParser = new MultiFieldQueryParser(
+					Version.LUCENE_36, DEFAULT_SEARCH_FIELDS, new StandardAnalyzer(Version.LUCENE_36));
 			try {
 				luceneQuery = multiFieldQueryParser.parse(query);
 			} catch (ParseException e) {

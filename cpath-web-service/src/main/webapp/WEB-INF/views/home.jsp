@@ -13,7 +13,7 @@
 	<meta name="author" content="${cpath.name}"/>
 	<meta name="description" content="cPath2 Service Description"/>
 	<meta name="keywords" content="${cpath.name}, cPath2, cPathSquared, webservice, help, documentation"/>
-	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 	<script src="<c:url value="/resources/scripts/json.min.js"/>"></script>
 	<script src="<c:url value="/resources/scripts/help.js"/>"></script>
 	<link rel="stylesheet" href="<c:url value="/resources/css/cpath2.css"/>" media="screen"/>
@@ -74,22 +74,19 @@
 	</h3>
 
 	<p>
-		Some commands require URIs of existing BioPAX elements to be provided as parameters.
-		These can be either original data provider's URIs (of biological entity states, pathways, 
-		interactions), some of <a href="http://identifiers.org" rel="external">Identifiers.org</a>
-		standard URLs (e.g., for ProteinReference and controlled vocabularies), or auto-generated ones (- for most xrefs), whenever 
-		<a rel="external" href="http://code.google.com/p/pathway-commons/wiki/cPath2PreMerge#Normalization">normalization</a>
-		was possible. BioPAX elements's URIs are not something to guess or hack. Consider using <em>search, top_pathways</em>, 
-		or results of previous BioPAX queries to find objects or interest and their valid URIs. For example, 
-		although one might know something about a "foo" thing, and that the cpath2 instance 
-		has xml:base="${cpath.xmlBase}" and currently located at ${base}, 
-		he or she should not normally connect to ${base}foo or ${cpath.xmlBase}foo, 
-		nor use it as ${base}get?uri=${cpath.xmlBase}foo unless "${cpath.xmlBase}foo" 
-		is known for sure to be the URI of existing (in this system) BioPAX individual. 
-		Official gene symbols and SwissProt, RefSeq, Ensembl, NCBI gene <strong>identifiers
+		Some of the commands require URIs of <strong>existing</strong> BioPAX elements (parameters: 
+		'source', 'uri', 'target'). Such URIs are either <a href="http://identifiers.org" rel="external">Identifiers.org</a>
+		standard URLs (of canonical entity references, controlled vocabularies, etc., of participants of interactions and pathways), 
+		or URLs that start with current xml:base, ${cpath.xmlBase} (e.g., URIs of most Entities and Xrefs).
+		BioPAX elements's URIs are not something to guess or about or hit by chance. 
+		For example, despite knowing current URI namespace ${cpath.xmlBase} and actual service location ${base}, 
+		one should not normally hit ${base}foo, ${cpath.xmlBase}foo, or 
+		${base}get?uri=${cpath.xmlBase}foo unless the corresponding BioPAX individual in fact there exists.
+		Consider using <em>search, top_pathways</em>, and other query results to find objects of interest and extract valid URIs.
+		Alternatively, official gene symbols, SwissProt, RefSeq, Ensembl, NCBI gene/protein <strong>identifiers
 		might work as well in place of the full URIs</strong> in <em>get</em> and <em>graph</em> queries.
 		As a rule, using full URIs makes a precise query, whereas using identifiers - more exploratory one 
-		(that includes default internal id-mapping and search and depends on actual data loaded to the db).
+		(which internally performs a simple id-mapping to UniProt and full-text search to discover the URIs for the query).
 	</p>
 
 	<h3><a id="enco"></a>About examples on this page</h3>
@@ -103,8 +100,8 @@
 		(which results in a HTTP GET request sent to the server).
 		This works because a) all example queries are quite simple, and b) their parameters, 
 		such as non-trivial URIs, were properly URL-encoded. 
-		Besides, <strong>consider querying the web service using HTTP POST method</strong> 
-		(which does not have encoding nor max size issues) instead of GET. 
+		Besides, <strong>consider using HTTP POST method only</strong> 
+		(which does not have caching, encoding, nor too long URL issues) instead of GET. 
 		Also, all URIs are case-sensitive and have no spaces.</p>
 </section>
 
@@ -232,20 +229,12 @@
 	<br/>
 	<ol>
 		<li><a rel="example" href="get?uri=http://identifiers.org/uniprot/Q06609">
-			This command returns a self-consistent BioPAX sub-model using
-			URI=http://identifiers.org/uniprot/Q06609 (the <strong>ProteinReference</strong>
-			and dependent objects)</a></li>
+			This command returns the BioPAX representation of http://identifiers.org/uniprot/Q06609</a> 
+			(<strong>ProteinReference</strong>)</li>
 		<li><a rel="example" href="get?uri=COL5A1">
-			This command returns the <strong>Xref</strong> element for gene symbol (COL5A1)</a> Note that the URI for
-			Xref objects are directly their ids whereas the URIs for the actual objects (e.g. ProteinReferences) are
-			miriam URIs.
-
-			Not all gene symbols are present in the database as the primary ids for entity references are UniProt
-			accession, RefSeq ID, NCBI Gene ID and Ensemble IDs. Other ids might work if mapped by the internal
-			id-mapping system.
-		<li><a rel="example"
-		       href="get?uri=http://pid.nci.nih.gov/biopaxpid_74716&format=BINARY_SIF">
-			This query retrieves the NCI-Nature Curated BMP signaling pathway and returns it in SIF format</a></li>
+			This command returns Xref(s) in BioPAX format found by gene symbol COL5A1</a> 		
+			<strong>Note:</strong> UniProt, RefSeq, NCBI Gene, and Ensemble identifiers ususally work here too 
+			if these, or their corresponding primary UniProt accession, match at least one Xref.id BioPAX property value.</li>
 	</ol>
 </li>
 
@@ -274,14 +263,13 @@
 		<li><em>kind=</em> [Required] graph query (<a
 				href="#graph_kinds">values</a>)
 		</li>
-		<li><em>source=</em> [Required] source object's URI. Multiple source URIs are allowed per query, for example
+		<li><em>source=</em> [Required] source object's URI/ID. Multiple source URIs/IDs are allowed per query, for example
 			'source=http://identifiers.org/uniprot/Q06609&amp;source=http://identifiers.org/uniprot/Q549Z0'.
 			See <a href="#miriam">a note about MIRIAM and Identifiers.org</a>.
 		</li>
 		<li><em>target=</em> [Required for PATHSFROMTO graph query]
-			target URI. Multiple target URIs are allowed per query; for
-			example
-			'target=http://identifiers.org/uniprot/Q06609&amp;target=http://identifiers.org/uniprot/Q549Z0'.
+			target URI/ID. Multiple target URIs are allowed per query; for
+			example 'target=http://identifiers.org/uniprot/Q06609&amp;target=http://identifiers.org/uniprot/Q549Z0'.
 			See <a href="#miriam">a note about MIRIAM and Identifiers.org</a>.
 		</li>
 		<li><em>direction=</em> [Optional, for NEIGHBORHOOD and COMMONSTREAM algorithms] - graph search direction (<a
@@ -305,24 +293,23 @@
 	<h3>Query Examples:</h3> Neighborhood of COL5A1 (P20908,
 	CO5A1_HUMAN): <br/>
 	<ol>
-		<li><a rel="example"
-		       href="graph?source=http://www.reactome.org/biopax/48887%23Protein2044&kind=neighborhood">
-			from the protein's state</a></li>
+		<li><a rel="example" href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood&format=EXTENDED_BINARY_SIF">
+			This query finds the BioPAX nearest neighborhood of the protein reference</a> http://identifiers.org/uniprot/P20908, i.e., 
+			all reactions where the corresponding protein forms participate; returned in the Simple Interaction Format (SIF)</li>	
+		<li><a rel="example" href="graph?source=P20908&kind=neighborhood">
+			This query finds the 1 distance neighborhood of P20908</a> - starting from the corresponding Xref, 
+			finds all reactions that its oners (e.g., a protein reference) and their states (protein forms) 
+			participate in, and returns the BioPAX model.</li>		
 		<li><a rel="example" href="graph?source=COL5A1&kind=neighborhood">
-			the neghborhood of all owners of the Unification Xref found by gene symbol COL5A1</a> - a popular query,
-			but it is less specific (implies internal id-mapping to UniProt IDs) compared to using exact URIs (if you
-			know/found any);
-			one can try and mix: UniProt accession, RefSeq ID, NCBI Gene ID and Ensemble IDs (other identifiers may also
-			work by chance,
-			if present in the original data, though we did not specifically map them to UniProt's)
+			A similar query using the gene symbol COL5A1 instead of URI or UniProt ID</a> 
+			(this also implies internal id-mapping to primary UniProt IDs). Compared with above examples, 
+			particularly the first one, a query like this potentially returns a larger subnetwork, for
+			it possibly starts its graph traversing from several unification and relationship Xrefs 
+			rather than from the ProteinReference (http://identifiers.org/uniprot/P20908).
+			One can mix: submit URI along with UniProt accession, RefSeq ID, NCBI Gene ID and Ensemble IDs
+			in a single /graph or /get query; other identifiers might also work, by chance (if present 
+			in the db).
 		</li>
-		<li><a rel="example"
-		       href="graph?source=P20908&kind=neighborhood">
-			This query finds the 1 distance neighborhood of protein reference P20908, i.e., all reactions that its
-			states participate in</a></li>
-		<li><a rel="example"
-		       href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood&format=EXTENDED_BINARY_SIF">
-			The same search returned in Simple Interaction Format</a></li>
 	</ol>
 </li>
 
@@ -388,6 +375,7 @@
 		       href="traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://www.reactome.org/biopax/48887%23Protein2992&uri=http://identifiers.org/taxonomy/9606&path=Named/name">
 			This query returns the names of several different objects (using abstract type 'Named' from Paxtools
 			API)</a></li>
+		<!-- TODO update the example below - find new URI -->
 		<li><a rel="example"
 		       href="traverse?uri=http://pid.nci.nih.gov/biopaxpid_74716&path=Pathway/pathwayComponent:Interaction/participant*/displayName">
 			This query returns the display name of all the participants of the BMP pathway including
