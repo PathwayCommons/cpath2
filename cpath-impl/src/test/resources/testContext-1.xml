@@ -22,11 +22,12 @@
 		<property name="acquireIncrement" value="3" />
 		<property name="initialPoolSize" value="3" />
 		<property name="minPoolSize" value="3" />
-		<property name="maxPoolSize" value="12" />
-		<property name="maxIdleTime" value="900" />
-		<property name="maxIdleTimeExcessConnections" value="100" />		
-		<property name="maxStatements" value="150"/>
-		<property name="idleConnectionTestPeriod" value="100" />
+		<property name="maxPoolSize" value="15" />
+		<property name="maxIdleTime" value="600" />
+		<property name="maxIdleTimeExcessConnections" value="120" />		
+		<property name="maxStatements" value="300"/>
+		<property name="maxStatementsPerConnection" value="20"/>		
+		<property name="idleConnectionTestPeriod" value="120" />
 		<property name="numHelperThreads" value="3" />
 	</bean>
 

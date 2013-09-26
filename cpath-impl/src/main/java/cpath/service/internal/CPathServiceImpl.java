@@ -32,7 +32,8 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.zip.GZIPInputStream;
+
+import javax.annotation.PostConstruct;
 
 import org.biopax.paxtools.controller.Cloner;
 import org.biopax.paxtools.controller.Completer;
@@ -60,6 +61,7 @@ import org.springframework.stereotype.Service;
 
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
+import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
@@ -94,7 +96,6 @@ public class CPathServiceImpl implements CPathService {
 	private SimpleIOHandler simpleIO;
 	
 	private Cloner cloner;
-//	private Completer completer;
 	
 	//init. on first access to getBlacklist(); so do not use it directly
 	private Set<String> blacklist; 
@@ -121,7 +122,36 @@ public class CPathServiceImpl implements CPathService {
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
 		this.cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-//		this.completer = new Completer(simpleIO.getEditorMap());
+	}
+
+	
+
+	@PostConstruct
+	synchronized void init() {
+		if(CPathSettings.isProxyModelEnabled() && proxyModel == null) { 			
+			//fork the model loading (which takes quite a while)
+			ExecutorService executor = Executors.newSingleThreadExecutor();
+			executor.execute(
+				new Runnable() {
+				@Override
+				public void run() {
+					Model model = CPathUtils.importFromTheArchive();
+					// set for this service
+					setProxyModel(model);
+					if(model != null)
+						log.info("RAM BioPAX Model (proxy) is now ready for queries");
+				}
+			});
+			executor.shutdown();
+			//won't wait (nothing else to do)
+		}
+	}
+	
+	
+	
+	@Override
+	public void setProxyModel(Model proxyModel) {
+		this.proxyModel = proxyModel;
 	}
 	
 	
@@ -190,7 +220,7 @@ public class CPathServiceImpl implements CPathService {
 			}
 		};
 		
-		if(isProxyModel())
+		if(proxyModelReady())
 			analysis.execute(proxyModel);
 		else
 			mainDAO.runReadOnly(analysis);
@@ -284,7 +314,7 @@ public class CPathServiceImpl implements CPathService {
 			}
 		};
 		
-		if(isProxyModel()) 
+		if(proxyModelReady()) 
 			analysis.execute(proxyModel);
 		else
 			mainDAO.runReadOnly(analysis);
@@ -330,7 +360,7 @@ public class CPathServiceImpl implements CPathService {
 			}
 		};
 		
-		if(isProxyModel()) 
+		if(proxyModelReady()) 
 			analysis.execute(proxyModel);
 		else
 			mainDAO.runReadOnly(analysis);
@@ -390,7 +420,7 @@ public class CPathServiceImpl implements CPathService {
 			}
 		};
 		
-		if(isProxyModel()) 
+		if(proxyModelReady()) 
 			analysis.execute(proxyModel);
 		else
 			mainDAO.runReadOnly(analysis);
@@ -444,7 +474,7 @@ public class CPathServiceImpl implements CPathService {
 			}
 		};
 		
-		if(isProxyModel()) 
+		if(proxyModelReady()) 
 			analysis.execute(proxyModel);
 		else
 			mainDAO.runReadOnly(analysis);
@@ -704,65 +734,14 @@ public class CPathServiceImpl implements CPathService {
 				+ " is not found");
 		}
 	}
-	
-	
-	/*
-	 * Exports all from mainDAO into the in-memory proxy model
-	 * (only once, on demand).
-	 */
-	private synchronized void initProxyModelOnce() {
-		//first check (no locking)
-		if(proxyModel == null && CPathSettings.isProxyModelEnabled()) { 
-			//prevent queries from using the proxy until it's ready
-			CPathSettings.getInstance().setProxyModelEnabled(false);
-					
-			//fork the model loading... (this takes quite a while)
-			ExecutorService executor = Executors.newSingleThreadExecutor();
-			executor.execute(
-				new Runnable() {
-				@Override
-				public void run() {
-					try {
-						//TODO add an option to load "All" or "Backup" (with warehouse data) archives
-						final String archive = CPathSettings.biopaxExportFileName("All"); 
-						log.info("initProxyModel: loading the biopax Model from " + archive);
-						proxyModel = simpleIO.convertFromOWL(new GZIPInputStream(new FileInputStream(archive)));
-												
-						//allow queries use the proxy
-						CPathSettings.getInstance().setProxyModelEnabled(true);
-						log.info("initProxyModel: in-memory proxy Model is now ready for queries");
-					} 
-					catch (IOException e) {
-						log.error("initProxyModel: failed, proxy model is now disabled.", e);
-					}
-				}
-			});
-			executor.shutdown();
-			//won't wait till it's done!
-		}
-	}
-	
 
-	/**
-	 * @return true iif the proxy mode is on and the in-memory model ready (initialized)
-	 */
-	private boolean isProxyModel() {
-		if(proxyModel == null && CPathSettings.isProxyModelEnabled()) {
-			initProxyModelOnce(); //it runs in a separate thread and temporarily disables the proxy model mode
-			//the proxy is being built but not ready yet
-			log.debug("isProxyModel: proxy mode was enabled, model not initialized yet (initializing in the background)");
-			return false;
-		}
-		else if(proxyModel == null && !CPathSettings.isProxyModelEnabled()) {
-			log.debug("isProxyModel: proxy mode is disabled, model not initialized");
-			return false;
-		}
-		else if(proxyModel != null && CPathSettings.isProxyModelEnabled()) {
-			log.debug("isProxyModel: true!");
+	
+	private boolean proxyModelReady() {
+		if(proxyModel != null && CPathSettings.isProxyModelEnabled()) {
+			log.debug("isProxyModel: enabled and ready.");
 			return true;
-		}
-		else {//proxyModel != null && !CPathSettings.isProxyModelEnabled()
-			log.debug("isProxyModel: proxy mode is currently off, but the in-memory model is ready");
+		} else {
+			log.debug("isProxyModel: disabled or/and unloaded.");
 			return false;
 		}
 	}	

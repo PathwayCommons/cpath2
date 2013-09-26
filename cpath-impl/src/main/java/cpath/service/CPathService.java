@@ -30,9 +30,11 @@ package cpath.service;
 
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.springframework.cache.annotation.Cacheable;
 
+import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
@@ -177,5 +179,19 @@ public interface CPathService {
 	 * @return
 	 */
 	SearchResponse topPathways(String[] organisms, String[] datasources);
+
+
+	/**
+	 * Sets an in-memory BioPAX model to use instead of
+	 * the persistent (DAO) model in graph queries, which
+	 * only works if the model is not null and 
+	 * {@link CPathSettings#PROP_PROXY_MODEL_ENABLED} 
+	 * option is set (true). 
+	 * 
+	 * @see CPathSettings#setProxyModelEnabled(boolean)
+	 * 
+	 * @param proxyModel in-memory BioPAX model or null (back to the persistent model)
+	 */
+	void setProxyModel(Model proxyModel);
 	
 }

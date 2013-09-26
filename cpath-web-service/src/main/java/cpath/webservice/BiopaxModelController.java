@@ -29,7 +29,6 @@ package cpath.webservice;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.net.URLEncoder;
 import java.util.*;
 
 import cpath.config.CPathSettings;

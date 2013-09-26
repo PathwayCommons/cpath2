@@ -24,6 +24,10 @@ public class CPathAdminController extends BasicController {
 
 	private final MetadataDAO metadataDAO;
 	
+	//TODO add CPathService field and controllers to set cpath2.proxy.model.enabled=true/false and load/unload the model in RAM
+	
+	//TODO add option to toggle net.sf.ehcache.disabled=true/false system option
+	
 	public CPathAdminController(MetadataDAO metadataDAO) {
 		this.metadataDAO = metadataDAO;
 	}
