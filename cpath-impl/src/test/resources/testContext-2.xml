@@ -81,15 +81,17 @@
 		<constructor-arg ref="metadataDAO"/>
 	</bean>
 
-	<bean id="serviceCacheManagerFactory" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
-		<property name="configLocation" value="classpath:cpath-service-ehcache.xml"/>
-		<property name="cacheManagerName" value="cpath-service-cache"/>
-	</bean>
-	<bean id="serviceCacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
-		<property name="cacheManager" ref="serviceCacheManagerFactory"/>
-	</bean>
-	<cache:annotation-driven cache-manager="serviceCacheManager"/>
-
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor" />
 
+	<beans profile="servicecache">
+		<bean id="serviceCacheManagerFactory" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
+			<property name="configLocation" value="classpath:cpath-service-ehcache.xml"/>
+			<property name="cacheManagerName" value="cpath-service-cache"/>
+		</bean>
+		<bean id="serviceCacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
+			<property name="cacheManager" ref="serviceCacheManagerFactory"/>
+		</bean>		
+		<cache:annotation-driven cache-manager="serviceCacheManager"/>		
+	</beans>
+	
 </beans>

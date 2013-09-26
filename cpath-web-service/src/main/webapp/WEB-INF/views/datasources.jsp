@@ -9,7 +9,7 @@
 	<meta name="author" content="${cpath.name}"/>
 	<meta name="description" content="cPath2 Data Providers"/>
 	<meta name="keywords" content="${cpath.name}, cPath2, cPathSquared, webservice, datasources, data providers"/>
-	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 	<script src="<c:url value="/resources/scripts/json.min.js"/>"></script>
 	<script src="<c:url value="/resources/scripts/datasources.js"/>"></script>
 	<link rel="stylesheet" href="<c:url value="/resources/css/cpath2.css"/>" media="screen"/>

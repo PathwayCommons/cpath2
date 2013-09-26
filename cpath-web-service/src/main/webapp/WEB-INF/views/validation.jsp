@@ -9,8 +9,7 @@
 <meta name="author" content="${cpath.name}" />
 <meta name="description" content="cPath2 BioPAX Data Validation Summary" />
 <meta name="keywords" content="cPath2, BioPAX, Validation" />
-<link media="screen" href="<c:url value="/resources/css/cpath2.css"/>"
-	 rel="stylesheet" />
+<link media="screen" href="<c:url value="/resources/css/cpath2.css"/>" rel="stylesheet" />
 <script >
 	function switchit(list) {
 		var listElementStyle = document.getElementById(list).style;

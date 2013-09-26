@@ -17,18 +17,22 @@
 		<constructor-arg ref="metadataDAO"/>
 	</bean>
 
-	<!-- ehcache in the service-tier -->
-	<bean id="serviceCacheManagerFactory" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
-		<property name="configLocation" value="classpath:cpath-service-ehcache.xml"/>
-		<!-- shared=true would only be required when cpath-service and cpath-dao share same ehcache.xml, same cache manager name -->
-		<!-- <property name="shared" value="true"/>  -->
-		<property name="cacheManagerName" value="cpath-service-cache"/>
-	</bean>
+	<beans profile="servicecache">
+		<!-- ehcache in the service-tier -->
+		<bean id="serviceCacheManagerFactory"
+			class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
+			<property name="configLocation" value="classpath:cpath-service-ehcache.xml" />
+			<!-- shared=true would only be required when cpath-service and cpath-dao 
+				share same ehcache.xml, same cache manager name -->
+			<!-- <property name="shared" value="true"/> -->
+			<property name="cacheManagerName" value="cpath-service-cache" />
+		</bean>
 
-	<bean id="serviceCacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
-		<property name="cacheManager" ref="serviceCacheManagerFactory"/>
-	</bean>
-	
-	<cache:annotation-driven cache-manager="serviceCacheManager" />
+		<bean id="serviceCacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
+			<property name="cacheManager" ref="serviceCacheManagerFactory" />
+		</bean>
+
+		<cache:annotation-driven cache-manager="serviceCacheManager" />
+	</beans>
 
 </beans>

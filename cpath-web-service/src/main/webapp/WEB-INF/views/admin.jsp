@@ -12,9 +12,6 @@
 <meta name="keywords" content="${cpath.name}, cPath2, cPathSquared, admin, configuration" />
 <link media="screen" href="<c:url value="/resources/css/cpath2.css"/>"  rel="stylesheet" />
 <script  src="<c:url value="/resources/scripts/json.min.js"/>"></script>
-<!-- <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script> -->
-<!-- <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script> -->
-<!-- <link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" /> -->
 
 <title>cPath2::Admin</title>
 </head>

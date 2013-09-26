@@ -504,7 +504,7 @@ public class CPathServiceImpl implements CPathService {
 		 * we want all hits)
 		*/
 		if (q.length() > 0) {
-			final String query = q.toString();
+			final String query = q.toString().trim();
 			log.debug("findUrisByIds, will run: " + query);
 			int page = 0; // will use search pagination
 			SearchResponse resp = mainDAO.search(query, page, Xref.class, null, null);
@@ -722,10 +722,10 @@ public class CPathServiceImpl implements CPathService {
 				new Runnable() {
 				@Override
 				public void run() {
-					log.info("initProxyModel: loading entire biopax Model...");
 					try {
 						//TODO add an option to load "All" or "Backup" (with warehouse data) archives
-						final String archive = CPathSettings.biopaxExportFileName("All");  
+						final String archive = CPathSettings.biopaxExportFileName("All"); 
+						log.info("initProxyModel: loading the biopax Model from " + archive);
 						proxyModel = simpleIO.convertFromOWL(new GZIPInputStream(new FileInputStream(archive)));
 												
 						//allow queries use the proxy
