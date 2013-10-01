@@ -73,6 +73,8 @@ import static cpath.service.OutputFormat.*;
  */
 public final class Admin {
 	private static final Logger LOG = LoggerFactory.getLogger(Admin.class);
+	
+	private static final OutputFormat[] EXPORT_TO_FORMATS = new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF, GSEA};
 
     // Cmd Enum
     public static enum Cmd {
@@ -110,7 +112,7 @@ public final class Admin {
      */    
     public static void main(String[] params) throws Exception {
     	// "CPATH2_HOME" env. var must be set (mostly for logging)
-        String home = CPathSettings.property(HOME_DIR); //throws IllegalStateEx. is not set.
+        CPathSettings.property(HOME_DIR); //throws IllegalStateEx. is not set.
 
     	if(!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
     		if(LOG.isWarnEnabled())
@@ -210,9 +212,9 @@ public final class Admin {
 			if (args.length < 4)
 				fail(args, "provide at least three arguments.");
 			OutputStream fos = new FileOutputStream(args[2]);
-			OutputFormat outputFormat = OutputFormat.valueOf(args[3]);
-			
-			convert(args[1], outputFormat, fos);
+			OutputFormat outputFormat = OutputFormat.valueOf(args[3]);	
+			Model model = (new SimpleIOHandler()).convertFromOWL(biopaxStream(args[1])); 
+			convert(model, outputFormat, fos);
 			
 		} else if (args[0].equals(Cmd.CREATE_DOWNLOADS.toString())) {
 			
@@ -546,19 +548,18 @@ public final class Admin {
     /**
      * Converts a BioPAX file to other formats.
      *       
-     * @param biopaxFile
+     * @param model
      * @param outputFormat
      * @param output
      * @throws IOException
      */
-	public static void convert(String biopaxFile, OutputFormat outputFormat, 
+	public static void convert(Model model, OutputFormat outputFormat, 
 			OutputStream output) throws IOException 
 	{
-		InputStream is = biopaxStream(biopaxFile);
 		Resource blacklist = new DefaultResourceLoader().getResource("file:" + blacklistFile());
 		BiopaxConverter converter = new BiopaxConverter(blacklist);
 		converter.mergeEquivalentInteractions(true);
-		ServiceResponse res = converter.convert(is, outputFormat);
+		ServiceResponse res = converter.convert(model, outputFormat);
 		if (res instanceof ErrorResponse) {
 			System.err.println(res.toString());
 		} else {
@@ -569,11 +570,9 @@ public final class Admin {
 	}
 	
 	
-	private static void convertToExtSif(String biopaxFile,
+	private static void convertToExtSif(Model m,
 			OutputStream edgeStream, OutputStream nodeStream) throws IOException 
 	{
-		InputStream is = biopaxStream(biopaxFile);		
-		Model m = (new SimpleIOHandler()).convertFromOWL(is);
 		Resource blacklist = new DefaultResourceLoader().getResource("file:" + blacklistFile());
 		BiopaxConverter converter = new BiopaxConverter(blacklist);
 		converter.mergeEquivalentInteractions(true);
@@ -593,7 +592,6 @@ public final class Admin {
      * Create cpath2 downloads 
      * (exports the db to various formats)
      * 
-     * @param organisms names or taxonomy ids
      * @throws IOException, IllegalStateException (when not in maintenance mode)
      */
 	public static void createDownloads() 
@@ -613,8 +611,8 @@ public final class Admin {
 		
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:META-INF/spring/applicationContext-dao.xml");
-		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
 		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
+		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
 		
 		final List<Metadata> allMetadata = mdao.getAllMetadata();
 		//0) create an imported data summary file.txt (issue#23)
@@ -634,40 +632,22 @@ public final class Admin {
 		writer.close();		
 		LOG.info("create-downloads: successfully generated the datasources summary file.");
 		
-		// 0) TODO export everything including warehouse objects not participating in any interaction for the webservice's proxy model	
-//		final String archive = biopaxExportFileName("everything");  
-//        if(!(new File(archive)).exists()) {
-//        	// export entire database (with warehouse) to the archive file
-//        	LOG.info("create-downloads: exporting all BioPAX (with warehouse)" +
-//        			" data to " + 	archive + "...");
-//       		dao.exportModel(new GZIPOutputStream(new FileOutputStream(archive)));
-//        }
+		// generate/find all BioPAX archives:
+		List<String> biopaxArchives = exportBiopax(dao, allMetadata);
 		
-    	// 1) export everything that participates in interactions and pathways
-		createArchives("All", dao, null, null); // no filters
-    	
-    	// 2) export by organism
-        LOG.info("create-downloads: preparing data 'by organism' archives...");
-        String[] organisms = CPathSettings.organisms();
-        for(String org : organisms) {
-        	//make one archives set (diff. formats) per name
-        	//TODO: in the future, after simple changes (also - to cpath2.properties), can join several species data in one archive
-        	createArchives(org.toLowerCase(), dao, null, new String[]{org});
-        }
-		
-		// 3) export by datasource
-        LOG.info("create-downloads: preparing 'by datasource' archives...");
-        for(Metadata md : allMetadata) {
-        	if(!md.getType().isNotPathwayData()) {
-        		// use standard name and not the metadata ID (!), 
-        		// because we want all data from same DB merge into one file,
-        		// e.g., Reactome human, mouse, fungi data together, though might imported them via separate metadata)
-        		String name = md.standardName(); 
-        		createArchives(name, dao, md.getName().toArray(new String[]{}), null);
-        	}
-        }
-        
-        context.close();
+		context.close(); //DAO is not needed anymore
+		    	
+    	// 2) export to all other formats
+        for(String biopaxArchive : biopaxArchives) {
+        	//load model and convert to other formats
+    		Model m = (new SimpleIOHandler()).convertFromOWL(biopaxStream(biopaxArchive));
+    		for(OutputFormat format : EXPORT_TO_FORMATS) {
+    			int idx = biopaxArchive.indexOf(".BIOPAX");
+    			String prefix = biopaxArchive.substring(0, idx);
+    			export(m, format, prefix);
+    		}
+    		m = null;
+        } 	
 	}
 
 
@@ -688,87 +668,108 @@ public final class Admin {
     	
     	return uris;
     }
-    
 
-    private static void createArchives(String sourcePrefix, PaxtoolsDAO dao, 
-    	String[] datasources, String[] organisms) throws IOException 
-    {
-    	// get the BioPAX export done first -    	
-        final String prefix = downloadsDir() + File.separator 
-        		+ property(PROVIDER_NAME) + "." + property(PROVIDER_VERSION);
-        
-        final String biopaxDataArchive = prefix	+ "." 
-        		+ sourcePrefix + ".BIOPAX.owl.gz";
-        
-        // check file exists
-        if(!(new File(biopaxDataArchive)).exists()) {	
-        	Collection<String> uris = new HashSet<String>();
-        	
-        	//find all pathways and interactions only (all child elements will be then exported too)
-        	uris.addAll(findAllUris(dao, Pathway.class, datasources, organisms));
-        	uris.addAll(findAllUris(dao, Interaction.class, datasources, organisms));
-        	
-        	// save entire data, compressed, in several formats
-        	LOG.info("create-downloads: preparing " + 	biopaxDataArchive);
-        	if(!uris.isEmpty()) {
-        		dao.exportModel(new GZIPOutputStream(
-        			new FileOutputStream(biopaxDataArchive)), uris.toArray(new String[]{}));
-        	} else {
-        		LOG.info("create-downloads: no pathways/interactions found; skipping " + 	biopaxDataArchive);
-        	}
-        } else {
-        	LOG.info("create-downloads: found previously generated " + biopaxDataArchive + 
-        		" (delete if you want to re-generate it)");
-        }
-
-        //still, no biopax file created earlier or above? -
-        if(!(new File(biopaxDataArchive)).exists()) 
-        	return; //skip creating this archive due to no data found;
-        
-        //quickly test whether there will be pathways (to then skip exporting to GSEA)
-        SearchResponse resp = dao.search("*", 0, Pathway.class, datasources, organisms);
-        final boolean hasPathways = (resp.getNumHits() > 0);
-        OutputFormat[] formats = (hasPathways) 
-        	? new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF, GSEA}
-        		: new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF};
-        
-		for(OutputFormat format : formats) {
-			createArchive(biopaxDataArchive, format, prefix);
-		}
-	}
 	
-	private static void createArchive(String biopaxDataArchive, OutputFormat format, 
-			String prefix) throws IOException 
+	private static void export(Model m, OutputFormat format, String prefix) 
+			throws IOException 
 	{	
 		if(format == OutputFormat.BIOPAX)
 			throw new IllegalArgumentException(format.name() + " is not allowed here.");
+
+		if(format == OutputFormat.GSEA && m.getObjects(Pathway.class).isEmpty()) {
+			LOG.info("create-downloads: " + prefix + 
+					" BioPAX model has no Pathways; so, skipping for GSEA archive...");
+			return;
+		}
 	
 		String archiveName = prefix + "." + formatAndExt(format) + ".gz";
-		LOG.info("create-downloads: generating " + archiveName);	
 		
         if(!(new File(archiveName)).exists()) {
+    		LOG.info("create-downloads: generating new " + archiveName);
     		//Extended SIF will be here split in two separate files (edges and nodes)
     		if(format == EXTENDED_BINARY_SIF) {
     			//write edges and nodes into separate archives
     			GZIPOutputStream edgeStream = new GZIPOutputStream(new FileOutputStream(archiveName));
-    			GZIPOutputStream nodeStream = new GZIPOutputStream(new FileOutputStream(prefix + "." + format + ".nodes.tsv.gz"));   		
-    			convertToExtSif(biopaxDataArchive, edgeStream, nodeStream);
+    			GZIPOutputStream nodeStream = new GZIPOutputStream(new FileOutputStream(prefix + "." + format + ".nodes.tsv.gz"));   
+    			convertToExtSif(m, edgeStream, nodeStream);
     			IOUtils.closeQuietly(edgeStream);
     			IOUtils.closeQuietly(edgeStream);
     		} else {    	
     			GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(archiveName));
-    			convert(biopaxDataArchive, format, zos);
+    			convert(m, format, zos);
         		IOUtils.closeQuietly(zos);
     		}
     		
-    		LOG.info("create-downloads: successully created " + archiveName);
-    		
+    		LOG.info("create-downloads: successully created " + archiveName);    		
         } else
-        	LOG.info(archiveName + " exists; skip creating it " +
-            	"(delete if you want to start over)");
+        	LOG.info("create-downloads: skip for existing " + archiveName);
 	}
+	
+	
+	private static List<String> exportBiopax(final PaxtoolsDAO dao, Collection<Metadata> allMetadata) 
+			throws IOException 
+	{
+		List<String> files = new ArrayList<String>();
+		
+		// generate the complete biopax db export (all processes, no filters)
+		String archiveName = CPathSettings.biopaxExportFileName("All");
+		exportBiopax(dao, archiveName, null, null);
+		files.add(archiveName);
+		
+    	// export by organism
+        LOG.info("create-downloads: preparing data 'by organism' archives...");
+        for(String org :  CPathSettings.organisms()) {
+        	//generate archives for current organism
+        	archiveName = CPathSettings.biopaxExportFileName(org.toLowerCase());
+        	exportBiopax(dao, archiveName, null, new String[]{org});
+        	files.add(archiveName);
+        }
+		
+		// export by datasource
+        LOG.info("create-downloads: preparing 'by datasource' archives...");    
+        
+        for(Metadata md : allMetadata) {
+        	// generate archives for current pathway datasource;
+        	if(!md.getType().isNotPathwayData()) {
+        		// use standard name and not the metadata ID in the file name, 
+        		// because we want all data from same DB merge into one file,
+        		// e.g., Reactome human, mouse, fungi data together, though might imported them via separate metadata)
+        		archiveName = CPathSettings.biopaxExportFileName(md.standardName());
+        		exportBiopax(dao, archiveName,  md.getName().toArray(new String[]{}), null);
+        		files.add(archiveName);
+        	}
+        }	
+        
+        return files;
+	}	
 
 	
+	private static void exportBiopax(PaxtoolsDAO dao, String biopaxArchive,
+			String[] datasources, String[] organisms) throws IOException
+	{
+        // check file exists
+        if(!(new File(biopaxArchive)).exists()) {
+        	LOG.info("create-downloads: creating new " + 	biopaxArchive);
+        	
+        	//find all pathways and interactions only (all child elements will be then exported too)    	  	
+       		Collection<String> uris = new HashSet<String>();
+           	uris.addAll(findAllUris(dao, Pathway.class, datasources, organisms));
+           	uris.addAll(findAllUris(dao, Interaction.class, datasources, organisms));   	
+        	
+    		// export objects found above to a new biopax archive        	
+        	if(!uris.isEmpty()) {
+       			dao.exportModel(new GZIPOutputStream(
+               			new FileOutputStream(biopaxArchive)), uris.toArray(new String[]{}));
+       			LOG.info("create-downloads: successfully created " + 	biopaxArchive);
+        	} else {
+        		LOG.info("create-downloads: no pathways/interactions found; skipping " + 	biopaxArchive);
+        	}
+        } else {
+        	LOG.info("create-downloads: found previously generated " + biopaxArchive);
+        }   		
+	}
+
+
 	private static String formatAndExt(OutputFormat format) {
 		switch (format) {
 		case GSEA:

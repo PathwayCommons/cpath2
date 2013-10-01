@@ -208,8 +208,9 @@ public class CPathServiceImpl implements CPathService {
 						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
 							"No BioPAX objects found by URI(s): " + Arrays.toString(uris));
 						return;
-					}						
-					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
+					}
+					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model); 
+					assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
 					Model m = cloner.clone(model, elements);
 					logDatasourcesUsed(m);
 					callback[0] = (new BiopaxConverter(getBlacklist()))
@@ -300,14 +301,22 @@ public class CPathServiceImpl implements CPathService {
 							"No BioPAX objects found by URI(s): " + Arrays.toString(src));
 						return;
 					}
+					
 					// Execute the query, get result elements
 					elements = QueryExecuter.runNeighborhood(elements, model,
 							limit, dir, createFilters(organisms, datasources));
-					// auto-complete (gets a reasonable size sub-model)
-					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
-					Model m = cloner.clone(model, elements);
-					logDatasourcesUsed(m);
-					callback[0] = (new BiopaxConverter(getBlacklist())).convert(m, format, true);
+					
+					if(elements != null) {
+						// auto-complete (gets a reasonable size sub-model)
+						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
+						Model m = cloner.clone(model, elements);
+						logDatasourcesUsed(m);
+						callback[0] = (new BiopaxConverter(getBlacklist())).convert(m, format, true);
+					} else {
+						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
+								"No results found by URI(s): " + Arrays.toString(src));
+						return;
+					}
 				} catch (Exception e) {
 					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
 				}
@@ -345,15 +354,23 @@ public class CPathServiceImpl implements CPathService {
 							"No BioPAX objects found by URI(s): " + Arrays.toString(src));
 						return;
 					}
+					
 					// Execute the query, get result elements
 					elements = QueryExecuter.runPathsBetween(elements, model, limit,
 							createFilters(organisms, datasources));
+					
 					// auto-complete (gets a reasonable size sub-model)
-					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
-					Model m = cloner.clone(model, elements);
-					logDatasourcesUsed(m);
-					callback[0] = (new BiopaxConverter(getBlacklist()))
+					if(elements != null) {
+						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
+						Model m = cloner.clone(model, elements);
+						logDatasourcesUsed(m);
+						callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
+					} else {
+						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
+								"No results found by URI(s): " + Arrays.toString(src));
+						return;
+					}
 				} catch (Exception e) {
 					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
 				}
@@ -407,13 +424,20 @@ public class CPathServiceImpl implements CPathService {
 						: QueryExecuter.runPathsFromTo(source, target, 
 							model, LimitType.NORMAL, limit,
 								createFilters(organisms, datasources));
-						
-					// auto-complete (gets a reasonable size sub-model)
-					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
-					Model m = cloner.clone(model, elements);
-					logDatasourcesUsed(m);
-					callback[0] = (new BiopaxConverter(getBlacklist()))
-							.convert(m, format, true);
+					
+					if(elements != null) {
+						// auto-complete (gets a reasonable size sub-model)
+						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
+						Model m = cloner.clone(model, elements);
+						logDatasourcesUsed(m);
+						callback[0] = (new BiopaxConverter(getBlacklist()))
+								.convert(m, format, true);
+					} else {
+						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
+								"No results found; source: " + Arrays.toString(src)
+								+  ", target: " + Arrays.toString(tgt));
+						return;
+					}	
 				} catch (Exception e) {
 					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
 				}
@@ -458,16 +482,24 @@ public class CPathServiceImpl implements CPathService {
 							"No BioPAX objects found by URI(s): " + Arrays.toString(src));
 						return;
 					}
+					
 					// Execute the query, get result elements
 					elements = QueryExecuter
 						.runCommonStreamWithPOI(elements, model, dir, limit,
 							createFilters(organisms, datasources));
-					// auto-complete (gets a reasonable size sub-model)
-					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
-					Model m = cloner.clone(model, elements);
-					logDatasourcesUsed(m);
-					callback[0] = (new BiopaxConverter(getBlacklist()))
-							.convert(m, format, true);
+					
+					if(elements != null) {
+						// auto-complete (gets a reasonable size sub-model)
+						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
+						Model m = cloner.clone(model, elements);
+						logDatasourcesUsed(m);
+						callback[0] = (new BiopaxConverter(getBlacklist()))
+								.convert(m, format, true);
+					} else {
+						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
+								"No results found by URI(s): " + Arrays.toString(src));
+						return;
+					}
 				} catch (Exception e) {
 					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
 				}
