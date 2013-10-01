@@ -118,7 +118,7 @@ public final class CPathSettings {
 	public static final String PROP_BLACKLIST_DEGREE_THRESHOLD = "cpath2.blacklist.degree.threshold";   
 	public static final String PROP_BLACKLIST_CONTROL_THRESHOLD = "cpath2.blacklist.control.threshold";
 	public static final String PROP_METADATA_LOCATION = "cpath2.metadata.location";
-	public static final String PROP_ABSOLUTE_URI_ENABLED="cpath2.absolute.uri.enabled";
+	public static final String PROP_ABSOLUTE_URI_ENABLED="cpath2.absolute.uri.enabled"; //when generating biopx archives in "downloads"
 	public static final String PROP_PROXY_MODEL_ENABLED="cpath2.proxy.model.enabled";
 	
 	/*
