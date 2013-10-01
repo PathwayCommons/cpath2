@@ -129,7 +129,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
 		this.simpleIO.normalizeNameSpaces(false);
-		//may (recommended) or may not always use absolute URIs when writing RDF/XML
+		//use absolute URIs when exporting to RDF/XML
 		this.simpleIO.absoluteUris(Boolean.parseBoolean(
 			(CPathSettings.property(CPathSettings.PROP_ABSOLUTE_URI_ENABLED)))); 
 		//- seems, - query parser turns search keywords to lower case and expects index field values are also lower case...		
@@ -140,10 +140,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 
 	public void setSessionFactory(SessionFactory sessionFactory) {
 		this.sessionFactory = sessionFactory;
-	}
-
-	public BioPAXIOHandler getReader() {
-		return simpleIO;
 	}
 	
 

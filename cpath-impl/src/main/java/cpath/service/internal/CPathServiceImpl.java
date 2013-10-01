@@ -136,6 +136,7 @@ public class CPathServiceImpl implements CPathService {
 				@Override
 				public void run() {
 					Model model = CPathUtils.importFromTheArchive();
+					model.setXmlBase(CPathSettings.xmlBase());
 					// set for this service
 					setProxyModel(model);
 					if(model != null)
@@ -212,6 +213,7 @@ public class CPathServiceImpl implements CPathService {
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model); 
 					assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
 					Model m = cloner.clone(model, elements);
+					m.setXmlBase(model.getXmlBase());
 					logDatasourcesUsed(m);
 					callback[0] = (new BiopaxConverter(getBlacklist()))
 						.convert(m, format, true);
@@ -310,6 +312,7 @@ public class CPathServiceImpl implements CPathService {
 						// auto-complete (gets a reasonable size sub-model)
 						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 						Model m = cloner.clone(model, elements);
+						m.setXmlBase(model.getXmlBase());
 						logDatasourcesUsed(m);
 						callback[0] = (new BiopaxConverter(getBlacklist())).convert(m, format, true);
 					} else {
@@ -363,6 +366,7 @@ public class CPathServiceImpl implements CPathService {
 					if(elements != null) {
 						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 						Model m = cloner.clone(model, elements);
+						m.setXmlBase(model.getXmlBase());
 						logDatasourcesUsed(m);
 						callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
@@ -429,6 +433,7 @@ public class CPathServiceImpl implements CPathService {
 						// auto-complete (gets a reasonable size sub-model)
 						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 						Model m = cloner.clone(model, elements);
+						m.setXmlBase(model.getXmlBase());
 						logDatasourcesUsed(m);
 						callback[0] = (new BiopaxConverter(getBlacklist()))
 								.convert(m, format, true);
@@ -492,6 +497,7 @@ public class CPathServiceImpl implements CPathService {
 						// auto-complete (gets a reasonable size sub-model)
 						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 						Model m = cloner.clone(model, elements);
+						m.setXmlBase(model.getXmlBase());
 						logDatasourcesUsed(m);
 						callback[0] = (new BiopaxConverter(getBlacklist()))
 								.convert(m, format, true);

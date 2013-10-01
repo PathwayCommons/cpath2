@@ -72,14 +72,14 @@ $(document).ready(function() {
 	function execGet(url, data) {
 		stop();
 		var res = $.get(url, data);
-		ok(res, "success");
+		ok(res, "success");//TODO check for more details (error 500 or 460 vs. result found)
 		start();
 	}
 	
 	function execPost(url, data) {
 		stop();
 		var res = $.post(url, data);
-		ok(res, "success");
+		ok(res, "success");//TODO check for more details
 		start();
 	}
 
