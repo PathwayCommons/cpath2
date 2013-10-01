@@ -18,24 +18,45 @@
     <!-- enable the configuration of transactional behavior based on annotations -->
     <tx:annotation-driven transaction-manager="mainTransactionManager"/>
 
-	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
-		<property name="driverClass" value="${cpath2.db.driver}" />
-		<property name="jdbcUrl" value="${cpath2.db.connection}${cpath2.db}" />
-		<property name="user" value="${cpath2.db.user}" />
-		<property name="password" value="${cpath2.db.password}" />
+<!-- 	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close"> -->
+<!-- 		<property name="driverClass" value="${cpath2.db.driver}" /> -->
+<!-- 		<property name="jdbcUrl" value="${cpath2.db.connection}${cpath2.db}" /> -->
+<!-- 		<property name="user" value="${cpath2.db.user}" /> -->
+<!-- 		<property name="password" value="${cpath2.db.password}" /> -->
 		<!-- these are C3P0 properties (see also: http://javatech.org/2007/11/c3p0-connectionpool-configuration-rules-of-thumb/ ) -->
-		<property name="acquireIncrement" value="5" />
-		<property name="initialPoolSize" value="5" />
-		<property name="minPoolSize" value="20" />
-		<property name="maxPoolSize" value="100" />
-		<property name="maxStatements" value="1000"/>
-		<property name="maxStatementsPerConnection" value="100"/>
-		<property name="maxIdleTime" value="3600" />
-		<property name="maxIdleTimeExcessConnections" value="300" />	
-		<property name="idleConnectionTestPeriod" value="360" />
-		<property name="unreturnedConnectionTimeout" value="3600" />
-		<property name="numHelperThreads" value="6" />
-	</bean>
+<!-- 		<property name="acquireIncrement" value="5" /> -->
+<!-- 		<property name="initialPoolSize" value="5" /> -->
+<!-- 		<property name="minPoolSize" value="20" /> -->
+<!-- 		<property name="maxPoolSize" value="100" /> -->
+<!-- 		<property name="maxStatements" value="3000"/> -->
+<!-- 		<property name="maxStatementsPerConnection" value="100"/> -->
+<!-- 		<property name="maxIdleTime" value="7200" /> 2 hours -->
+<!-- 		<property name="idleConnectionTestPeriod" value="900" />		 -->
+<!-- 		<property name="maxIdleTimeExcessConnections" value="600" />	 -->
+<!-- 		<property name="numHelperThreads" value="6" /> -->
+<!-- 	</bean> -->
+
+    <bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool" destroy-method="dispose">
+        <constructor-arg>
+            <bean class="org.h2.jdbcx.JdbcDataSource">
+                <property name="URL" value="${cpath2.db.connection}${cpath2.db}"/>
+                <property name="user" value="${cpath2.db.user}"/>
+                <property name="password" value="${cpath2.db.password}"/>
+             </bean>
+        </constructor-arg>
+    </bean> 
+	
+<!-- also try later : -->
+<!-- <bean id="dataSource" class="org.apache.tomcat.jdbc.pool.DataSource" destroy-method="close"> -->
+<!--     <property name="driverClassName" value="${cpath2.db.driver}" /> -->
+<!--     <property name="url" value="${cpath2.db.connection}${cpath2.db}" /> -->
+<!--     <property name="username" value="${cpath2.db.user}" /> -->
+<!--     <property name="password" value="${cpath2.db.password}" /> -->
+<!--     <property name="initialSize" value="10" /> -->
+<!--     <property name="maxActive" value="50" /> -->
+<!--     <property name="maxIdle" value="5" /> -->
+<!--     <property name="minIdle" value="2" /> -->
+<!--  </bean>	 -->
 
 	<bean id="mainSessionFactory"
 		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">

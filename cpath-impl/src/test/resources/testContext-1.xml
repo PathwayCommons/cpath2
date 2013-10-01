@@ -14,22 +14,35 @@
 
 	<tx:annotation-driven transaction-manager="pcTransactionManager" />
 
-	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
-		<property name="driverClass" value="${cpath2.db.driver}" />
-		<property name="jdbcUrl" value="${cpath2.db.connection}tmp/tests/test1" />
-		<property name="user" value="${cpath2.db.user}" />
-		<property name="password" value="${cpath2.db.password}" />
-		<property name="acquireIncrement" value="3" />
-		<property name="initialPoolSize" value="3" />
-		<property name="minPoolSize" value="3" />
-		<property name="maxPoolSize" value="15" />
-		<property name="maxIdleTime" value="600" />
-		<property name="maxIdleTimeExcessConnections" value="120" />		
-		<property name="maxStatements" value="300"/>
-		<property name="maxStatementsPerConnection" value="20"/>		
-		<property name="idleConnectionTestPeriod" value="120" />
-		<property name="numHelperThreads" value="3" />
-	</bean>
+<!-- 	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close"> -->
+<!-- 		<property name="driverClass" value="${cpath2.db.driver}" /> -->
+<!-- 		<property name="jdbcUrl" value="${cpath2.db.connection}tmp/tests/test1" /> -->
+<!-- 		<property name="user" value="${cpath2.db.user}" /> -->
+<!-- 		<property name="password" value="${cpath2.db.password}" /> -->
+<!-- 		<property name="acquireIncrement" value="3" /> -->
+<!-- 		<property name="initialPoolSize" value="3" /> -->
+<!-- 		<property name="minPoolSize" value="3" /> -->
+<!-- 		<property name="maxPoolSize" value="15" /> -->
+<!-- 		<property name="maxIdleTime" value="600" /> -->
+<!-- 		<property name="maxIdleTimeExcessConnections" value="120" />		 -->
+<!-- 		<property name="maxStatements" value="300"/> -->
+<!-- 		<property name="maxStatementsPerConnection" value="20"/>		 -->
+<!-- 		<property name="idleConnectionTestPeriod" value="120" /> -->
+<!-- 		<property name="numHelperThreads" value="3" /> -->
+<!-- 	</bean> -->
+
+    <bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool" destroy-method="dispose">
+        <constructor-arg>
+            <bean class="org.h2.jdbcx.JdbcDataSource">
+            	<!-- using embedded in-memory db for testing; 
+            	delegate h2 logging to cpath2's slf4/logback;  
+            	make this db alive while JVM is alive -->
+                <property name="URL" value="jdbc:h2:mem:test1;TRACE_LEVEL_FILE=4;DB_CLOSE_DELAY=-1"/>
+                <property name="user" value="sa"/>
+                <property name="password" value=""/>
+             </bean>
+        </constructor-arg>
+    </bean> 
 
 	<bean id="pcSessionFactory"
 		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
