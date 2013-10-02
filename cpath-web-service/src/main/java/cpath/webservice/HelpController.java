@@ -28,14 +28,6 @@
 package cpath.webservice;
 
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Writer;
-
-import javax.servlet.http.HttpServletResponse;
-
-import cpath.config.CPathSettings;
 import cpath.service.jaxb.*;
 //import cpath.service.CPathService;
 import cpath.service.Cmd;
@@ -51,7 +43,6 @@ import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -86,42 +77,6 @@ public class HelpController extends BasicController {
         binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
         binder.registerCustomEditor(Direction.class, new DirectionEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
-    }
-    
-
-    /**
-     * Makes current cpath2 instance properies 
-     * available to all (JSP) views.
-     * @return
-     */
-    @ModelAttribute("cpath")
-    public CPathSettings instance() {
-    	return CPathSettings.getInstance();
-    }
-	
-	
-    /**
-     * Prints the XML schema.
-     * 
-     * @param writer
-     * @throws IOException
-     */
-    @RequestMapping(value="/help/schema")
-    public void getSchema(Writer writer, HttpServletResponse response) 
-    		throws IOException 
-    {
-    	BufferedReader bis = new BufferedReader(new InputStreamReader(
-    		(new DefaultResourceLoader())
-    			.getResource("classpath:cpath/service/schema1.xsd")
-    				.getInputStream(), "UTF-8"));
-    	
-    	response.setContentType("application/xml");
-    	
-    	final String newLine = System.getProperty("line.separator");
-    	String line = null;
-    	while((line = bis.readLine()) != null) {
-    		writer.write(line + newLine);
-    	}
     }
     
     
@@ -199,13 +154,6 @@ public class HelpController extends BasicController {
     	return help;
     }
 
-    
-    @RequestMapping(value="/help/formats.html")
-    public String getOutputFormatsDescr() 
-    {
-    	return "formats";
-    }
- 
     
     @RequestMapping("/help/formats/{fmt}")
     public @ResponseBody Help getFormat(@PathVariable OutputFormat fmt) {

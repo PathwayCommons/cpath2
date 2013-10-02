@@ -22,16 +22,14 @@
 	
 	<form method="POST">
 		<input type="hidden" name="toggle" value="toggle"/>
-<%-- 		<label for="bt_toggle">Maintenance Mode is <c:choose><c:when test="${cpath.adminEnabled}">Enabled</c:when><c:otherwise>Disabled</c:otherwise></c:choose></label>	 --%>
 		<input id="bt_toggle" type="submit" value="Toggle Maintenance Mode" />
 	</form>
 	<br/>
 	<div id="nav">
 		<ol>
-			<li><a href="admin/homedir.html">View Home Dir. Content</a></li>
-			<li><a href="admin/data.html">View Data Dir. Content</a></li>
-			<li><a href="admin/tmp.html">View Tmp Dir. Content</a></li>
-			<li><a href="admin/stats.html">Assess Log Summary</a></li>
+			<li><a href="admin/homedir.html">Home Directory</a>(hidden, temp., and cache files are not listed)</li>
+			<li><a href="admin/stats.html">Assess Log Summary</a>(simple counts)</li>
+			<li><a href="tests.html">Tests (QUnit)</a></li>
 		</ol>
 	</div>	
 

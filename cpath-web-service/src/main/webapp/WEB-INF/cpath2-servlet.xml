@@ -18,17 +18,17 @@
 	<context:property-placeholder/>
 
 	<!-- Exceptions handler -->
-<!-- 	<bean -->
-<!-- 		class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver"> -->
-<!-- 		<property name="exceptionMappings"> -->
-<!-- 			<map> -->
-<!-- 				<entry key="Exception" value="error" /> -->
-<!-- 			</map> -->
-<!-- 		</property> -->
-<!-- 		<property name="defaultErrorView" value="error" /> -->
-<!-- 		<property name="defaultStatusCode"><value>500</value></property> -->
-<!-- 		<property name="exceptionAttribute"><value>convertedException</value></property> -->
-<!-- 	</bean> -->
+	<bean
+		class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<property name="exceptionMappings">
+			<map>
+				<entry key="Exception" value="error" />
+			</map>
+		</property>
+		<property name="defaultErrorView" value="error" />
+		<property name="defaultStatusCode"><value>500</value></property>
+		<property name="exceptionAttribute"><value>convertedException</value></property>
+	</bean>
 
 	<bean id="viewResolver"
 		class="org.springframework.web.servlet.view.UrlBasedViewResolver">
@@ -39,10 +39,10 @@
         
     <bean id="metadataController" class="cpath.webservice.MetadataController">
 		<constructor-arg ref="metadataDAO"/>
-	</bean>    
-     
+	</bean> 
+	
 	<bean id="helpController" class="cpath.webservice.HelpController">
-	</bean>     
+	</bean>	     
         
 	<bean id="searchController" class="cpath.webservice.SearchController">
 		<constructor-arg ref="service"/>
@@ -56,7 +56,7 @@
 		<constructor-arg ref="service"/>
 	</bean>  
 	    
-	<bean id="adminController" class="cpath.webservice.CPathAdminController">
+	<bean id="adminController" class="cpath.webservice.AdminController">
 		<constructor-arg ref="metadataDAO"/>
 	</bean>	    
 	    

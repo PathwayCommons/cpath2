@@ -20,7 +20,7 @@ import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 
 @Controller
-public class CPathAdminController extends BasicController {
+public class AdminController extends BasicController {
 
 	private final MetadataDAO metadataDAO;
 	
@@ -28,7 +28,7 @@ public class CPathAdminController extends BasicController {
 	
 	//TODO add option to toggle net.sf.ehcache.disabled=true/false system option
 	
-	public CPathAdminController(MetadataDAO metadataDAO) {
+	public AdminController(MetadataDAO metadataDAO) {
 		this.metadataDAO = metadataDAO;
 	}
 	
@@ -55,45 +55,19 @@ public class CPathAdminController extends BasicController {
     	return "admin";
     }
     
-    @RequestMapping("/login.html")
+    @RequestMapping("/login")
     public String login() {
     	return "login";
     }
     
-    @RequestMapping("/denied.html")
+    @RequestMapping("/denied")
     public String denied() {
     	return "denied";
     }
        
-    @RequestMapping("/error.html")
+    @RequestMapping("/error")
     public String error() {
     	return "error";
-    }
-    
-	@RequestMapping(value = "/admin/data")
-    public String data(Model model, HttpServletRequest request) {
-		logHttpRequest(request);
-		
-    	String path = CPathSettings.dataDir(); 
-    	
-    	Map<String,String> files = files(path);
-
-    	model.addAttribute("files", files.entrySet());
-		
-		return "data";
-    }	
-	
-	@RequestMapping(value = "/admin/tmp")
-    public String tmp(Model model, HttpServletRequest request) {
-		logHttpRequest(request);
-		
-    	String path = CPathSettings.tmpDir();
-    	
-    	Map<String,String> files = files(path);
-    	
-    	model.addAttribute("files", files.entrySet());
-		
-		return "tmp";
     }
 
 
@@ -103,7 +77,7 @@ public class CPathAdminController extends BasicController {
 		
     	String path = CPathSettings.homeDir(); 
     	
-    	Map<String,String> files = files(path);
+    	Map<String,String> files = files(path, null);
 
     	model.addAttribute("files", files.entrySet());
 		
@@ -112,20 +86,38 @@ public class CPathAdminController extends BasicController {
 	
 
 	/*
-	 * Given a directory path, gets a sorted  
-	 * filename->size map of its content.
+	 * Recursively gets the sorted filename->size map
+	 * from the cpath2 home dir (ignores hidden, tmp, 
+	 * cache, and index directories).
+	 * 
+	 * TODO consider using a Tree object (set of nodes) in the future
 	 */
-	private Map<String, String> files(String path) {
-    	File[] list = new File(path).listFiles();
-    	
-    	Map<String,String> files = new TreeMap<String,String>();
-    	
+	private Map<String, String> files(final String path, final String relativePath) {
+		Map<String,String> files = new TreeMap<String,String>();
+		
+		String fullPath = (relativePath == null) ? path 
+				: path + File.separator + relativePath;		
+		File[] list = new File(fullPath).listFiles();
+		
     	for(int i = 0 ; i < list.length ; i++) {
     		File f = list[i];
     		String name = f.getName();
-    		long size = f.length();
-    		if(!name.startsWith("."))
-    			files.put(name, FileUtils.byteCountToDisplaySize(size));
+    		
+    		if(name.startsWith(".")) 
+    			continue; //skip
+    		
+    		//add curr. rel. path to this filename
+    		name = (relativePath == null) ? name 
+					: relativePath + File.separator + name;
+    		
+    		if(f.isDirectory() && name.startsWith("data")) { 
+    			//deep traverse into the data dir. only
+    			files.putAll(files(path, name));
+    		} else {	
+    			String size =  (f.isDirectory()) ? "directory"
+    					: FileUtils.byteCountToDisplaySize(f.length());  			
+    			files.put(name, size);
+    		}
     	}
     	
     	return files;

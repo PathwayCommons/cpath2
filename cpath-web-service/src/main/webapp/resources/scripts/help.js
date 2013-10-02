@@ -1,10 +1,10 @@
 $(document).ready(function() {
-	getCommandParameterDetails("/help/formats", "formats");
-    getCommandParameterDetails("/help/kinds", "kinds");
-    getCommandParameterDetails("/help/directions", "directions");
-    getCommandParameterDetails("/help/types", "types");
-    getCommandParameterDetails("/help/types/properties", "properties");
-    getCommandParameterDetails("/help/types/inverse_properties", "inverse_properties");
+	getCommandParameterDetails("help/formats", "formats");
+    getCommandParameterDetails("help/kinds", "kinds");
+    getCommandParameterDetails("help/directions", "directions");
+    getCommandParameterDetails("help/types", "types");
+    getCommandParameterDetails("help/types/properties", "properties");
+    getCommandParameterDetails("help/types/inverse_properties", "inverse_properties");
 });
 
 // This function creates a body for the given command parameter output.

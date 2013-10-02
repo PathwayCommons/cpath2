@@ -12,7 +12,7 @@
 	<meta charset="utf-8"/>
 	<meta name="author" content="${cpath.name}"/>
 	<meta name="description" content="cPath2 Service Description"/>
-	<meta name="keywords" content="${cpath.name}, cPath2, cPathSquared, webservice, help, documentation"/>
+	<meta name="keywords" content="${cpath.name}, cPath2, cPathSquared, web service, help, documentation"/>
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 	<script src="<c:url value="/resources/scripts/json.min.js"/>"></script>
 	<script src="<c:url value="/resources/scripts/help.js"/>"></script>
@@ -29,44 +29,61 @@
 <section id="description_section">
 
 	<h2>About ${cpath.name}</h2>
-	(this cPath2 instance is run by)<br/>
 	<p>${cpath.description}</p>
 	<p>Data is freely available, under the license terms of each contributing <a href="/datasources.html"> database</a>.</p>
 
 	<h2>cPath2 Web Service Description</h2>
-	<p>You can programmatically access the data within this cPath2 instance
-		using the Web Application Programming Interface (API).
-		This page provides the documentation and examples to help you get started.</p>
+	<p>To query the integrated biological pathway data from this server 
+		use the Web application programming interface (API) described below.
+		This page also provides some examples to help you get started.</p>
 
 	<!-- start of web service api documentation  - move it to a different page?-->
 
-	<h3 id="commands">Main Commands:</h3>
+	<h2 id="commands">Commands</h2>
+	<h3>For most users</h3>
+	<p>Researchers and application developers can 
+	use the following web services (the stable API):</p>
 	<ol>
 		<li><a href="#search">SEARCH</a></li>
 		<li><a href="#get">GET</a></li>
 		<li><a href="#graph">GRAPH</a></li>
 		<li><a href="#traverse">TRAVERSE</a></li>
 		<li><a href="#top_pathways">TOP_PATHWAYS</a></li>
-	</ol>
-
-	<h3 id="more_commands">Other Features (for core developers):</h3>
+	</ol>	
+	
+	<h3>For advanced users</h3>
+	<p>Pathway data integrators and developers who build a  
+	service or website on top of <strong>their own cPath2 instance</strong> 
+	may also send requests to the following URL paths, which return 
+	HTML/plain text or JSON objects (please refer to the 
+	<a href="http://cpath2-site.pathway-commons.googlecode.com/hg/index.html">developer's documentation</a>,
+	e.g., <a href="http://cpath2-site.pathway-commons.googlecode.com/hg/cpath-web-service/xref/index.html">web 
+	controllers source code</a>, and use with care, for all these features are supplementary and may change):</p>
 	<ol>
-		<li><a href="#help">HELP (nested info pages)</a></li>
-		<li><a href="#idmapping">IDMAPPING (to UniProt AC)</a></li>
-		<li><strong>Everything else</strong>
-			after the web service URL - except for 'robots.txt', 'favicon.ico', 'resources/*', and
-			other internal resource paths - will be considered a BioPAX element's local
-			ID and translated to the corresponding <a href="#get">GET</a> query. For example, 
-			${base}pid (as well as ${cpath.xmlBase}pid) is currently forwarded to 
-			<a href="get?uri=${cpath.xmlBase}pid">${base}get?uri=${cpath.xmlBase}pid</a>
-			and returns the Provenance object (in BioPAX format). 
-			This together with setting up a partial redirect for ${cpath.xmlBase} can make 
-			most of the URIs in the database resolvable (Linked Data friendly). Normally, client 
-			application developers are to use "get?uri=...&uri=..." directly and favor HTTP POST 
-			queries instead of sending HTTP GET requests to ${cpath.xmlBase}* or ${base} URLs
-			(which are not guaranteed to always work or return BioPAX; in future versions, there would be HTML instead).
-		</li>
+		<li><a href="#idmapping">/idmapping</a> (can map some identifiers to primary UniProt IDs)</li>		
+		<li>/robots.txt and /favicon.ico</li>
+		<li>/resources/* (css and scripts)</li>
+		<li>/admin and /admin/** (a work-in-progress Web console...)</li>
+		<li>/metadata/* (e.g., /metadata/datasources, /metadata/validations)</li>
+		<li>/help (a REST web service that returns a XML/JSON Help object, 
+		nested information pages about main web service commands, parameters, 
+		BioPAX types and properties; e.g., /help/schema, 
+		<a href="help/commands">/help/commands</a>, /help/types, all /help.json, etc.)</li>
+		<li>/logs/* (server access logs summary and statistics, e.g.,)</li>
 	</ol>
+	
+	<h3>Also</h3>
+	<p>Everything else attached to the base web service URL is considered 
+		a BioPAX element's <em>local ID</em> and translated to the corresponding <a href="#get">GET</a> 
+		query. For example, ${base}pid (as well as ${cpath.xmlBase}pid) is currently 
+		forwarded to <a href="get?uri=${cpath.xmlBase}pid">${base}get?uri=${cpath.xmlBase}pid</a>
+		and returns the Provenance object (in BioPAX format). 
+		This together with setting up a partial redirect for ${cpath.xmlBase} can make 
+		most of the URIs in the database resolvable (Linked Data friendly). Normally, client 
+		application developers are to use "get?uri=...&uri=..." directly and favor HTTP POST 
+		queries instead of sending HTTP GET requests to ${cpath.xmlBase}* or ${base} URLs
+		(which are not guaranteed to always work or return BioPAX; in future versions, there would be HTML instead).
+	</p>
 
 	<!-- URIs -->
 	<h3>
@@ -406,31 +423,6 @@
 	<ol>
 		<li><a href="top_pathways"> get top/root pathways (XML)</a></li>
 		<li><a href="top_pathways.json"> get top/root pathways in JSON format</a></li>
-	</ol>
-</li>
-
-<!-- help command -->
-<li>
-	<h2><a id="help"></a>HELP</h2>
-
-	<h3>Summary:</h3> Finally, this is a RESTful web service that
-	returns the information about web service commands, parameters,
-	and BioPAX properties.
-	<h3>Output:</h3> XML/JSON (if '.json' suffix used) element 'Help'
-	(nested tree); see: <a href="help/schema">Search
-	Response XML Schema</a><br/>
-	<h4>Query Examples:</h4> <br/>
-	<ol>
-		<li><a rel="example" href="help/commands">/help/commands</a></li>
-		<li><a rel="example" href="help/commands.json">/help/commands.json</a></li>
-		<li><a rel="example" href="help/commands/search">/help/commands/search</a></li>
-		<li><a rel="example" href="help/types">/help/types</a></li>
-		<li><a rel="example" href="help/kinds">/help/kinds</a></li>
-		<li><a rel="example" href="help/directions">/help/directions</a></li>
-		<li><a rel="example" href="help/types/properties">/help/types/properties</a></li>
-		<li><a rel="example" href="help/types/provenance/properties">/help/types/provenance/properties</a></li>
-		<li><a rel="example" href="help/types/inverse_properties">/help/types/inverse_properties</a></li>
-		<li><a rel="example" href="help">/help</a></li>
 	</ol>
 </li>
 

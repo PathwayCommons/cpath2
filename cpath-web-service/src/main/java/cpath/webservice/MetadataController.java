@@ -1,10 +1,13 @@
 package cpath.webservice;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Writer;
 import java.net.URL;
 import java.util.*;
 
@@ -13,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import cpath.config.CPathSettings;
+import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.service.Status;
 import cpath.warehouse.beans.Metadata;
@@ -23,11 +27,13 @@ import org.apache.commons.io.FileUtils;
 import org.biopax.validator.api.beans.ValidatorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -73,12 +79,45 @@ public class MetadataController extends BasicController
     public String home() {
     	return "home";
     }	    
+
+    
+    /**
+     * Prints the XML schema.
+     * 
+     * @param writer
+     * @throws IOException
+     */
+    @RequestMapping(value="/help/schema")
+    public void getSchema(Writer writer, HttpServletResponse response) 
+    		throws IOException 
+    {
+    	BufferedReader bis = new BufferedReader(new InputStreamReader(
+    		(new DefaultResourceLoader())
+    			.getResource("classpath:cpath/service/schema1.xsd")
+    				.getInputStream(), "UTF-8"));
+    	
+    	response.setContentType("application/xml");
+    	
+    	final String newLine = System.getProperty("line.separator");
+    	String line = null;
+    	while((line = bis.readLine()) != null) {
+    		writer.write(line + newLine);
+    	}
+    }
+    
+
+    @RequestMapping(value="/help/formats.html")
+    public String getOutputFormatsDescr() 
+    {
+    	return "formats";
+    }
  
+    
     //important: datasources.html (there are several controllers, and /datasources would create circular redirects)
     @RequestMapping("/datasources.html")
     public String datasources() {
     	return "datasources";
-    }
+    }    
     
     
     @RequestMapping("/metadata/validations") // returns xml or json
@@ -229,8 +268,29 @@ public class MetadataController extends BasicController
 		
     	return list;
     }
+
     
-    
+    /*
+     * Parses cpath2 log files available on the server to 
+     * return a (JSON) map that contains simple counts of how many 
+     * times it was accessed from a particular IP address, 
+     * web service command/path, and which pathway data sources
+     * and how often were associated with the results. 
+     * 
+     * This is internal api (for server owners/developers; 
+     * please do not hit too often...)
+     */
+	@RequestMapping(value = "/logs/summary", method=RequestMethod.POST)
+    public @ResponseBody Map<String,Integer> stats(Model model, HttpServletRequest request) 
+    		throws IOException 
+    {
+		logHttpRequest(request);		
+    	// update (unique IP, cmd, datasource, etc.) counts 
+		// from all there available log files (takes some time to parse)
+    	return CPathUtils.simpleStatsFromAccessLogs();
+    }
+ 
+	
     @RequestMapping(value = "/downloads.html")
     public String downloads(Model model, HttpServletRequest request) {
     	logHttpRequest(request);
@@ -282,8 +342,7 @@ public class MetadataController extends BasicController
 
 			return res;
 	}
-    
-    
+ 
     
     private List<ValInfo> validationInfo() {
     	final List<ValInfo> list = new ArrayList<ValInfo>();

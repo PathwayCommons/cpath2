@@ -14,10 +14,12 @@
 	<jsp:include page="header.jsp" />
 	<div id="content">
 	<h2>Login</h2>
-		<c:if test="${!empty param.login_error}">
+		<c:if test="${not empty param.login_error}">
 			<h3 style="color: red">
-				<spring:message code="login.invalid" />
+				Your login attempt was not successful, try again. 
+				Reason: <c:out value="${SPRING_SECURITY_LAST_EXCEPTION.message}"/><br />
 			</h3>
+			
 		</c:if>
 		<form action="<c:url value='/j_spring_security_check'/>" method="post">
 			<dl>
