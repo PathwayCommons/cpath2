@@ -114,14 +114,29 @@
         <location>/error.jsp</location>
     </error-page>
 	<error-page>
+        <error-code>404</error-code>
+        <location>/error.jsp</location>
+    </error-page>
+	<error-page>
+        <error-code>405</error-code>
+        <location>/error.jsp</location>
+    </error-page>
+	<error-page>
+        <error-code>406</error-code>
+        <location>/error.jsp</location>
+    </error-page>
+    <error-page>
+    	<!-- illegal/missing arguments error response -->
+        <error-code>452</error-code>
+        <location>/error.jsp</location>
+    </error-page>     
+	<error-page>
+		<!-- "no result" error response -->
         <error-code>460</error-code>
         <location>/error.jsp</location>
     </error-page>
     <error-page>
-        <error-code>452</error-code>
-        <location>/error.jsp</location>
-    </error-page>
-    <error-page>
+    	<!-- "internal error" error response (usually due to exceptions/bugs) -->
         <error-code>500</error-code>
         <location>/error.jsp</location>
     </error-page>

@@ -16,7 +16,7 @@
 
 	<jsp:include page="header.jsp" />
 	<div id="content">
-		<h2>The Home Directory Content</h2>
+		<h2>cPath2 Home Directory</h2>
 		<h3>Description:</h3>
 			<p>
 				...

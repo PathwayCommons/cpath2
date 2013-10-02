@@ -18,17 +18,17 @@
 	<context:property-placeholder/>
 
 	<!-- Exceptions handler -->
-<!-- 	<bean -->
-<!-- 		class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver"> -->
-<!-- 		<property name="exceptionMappings"> -->
-<!-- 			<map> -->
-<!-- 				<entry key="Exception" value="error" /> -->
-<!-- 			</map> -->
-<!-- 		</property> -->
-<!-- 		<property name="defaultErrorView" value="error" /> -->
-<!-- 		<property name="defaultStatusCode"><value>500</value></property> -->
-<!-- 		<property name="exceptionAttribute"><value>convertedException</value></property> -->
-<!-- 	</bean> -->
+	<bean
+		class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<property name="exceptionMappings">
+			<map>
+				<entry key="Exception" value="error" />
+			</map>
+		</property>
+		<property name="defaultErrorView" value="error" />
+		<property name="defaultStatusCode"><value>500</value></property>
+		<property name="exceptionAttribute"><value>convertedException</value></property>
+	</bean>
 
   	  	 	  	 
 	<bean id="searchController" class="cpath.webservice.SearchController">

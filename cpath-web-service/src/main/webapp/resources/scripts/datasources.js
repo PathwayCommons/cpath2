@@ -5,7 +5,7 @@ $(document).ready(function() {
 function getDatasources(){
 	// get some var values from jsp page
     // call the ws and interate over JSON results
-    $.getJSON("/metadata/datasources", function(datasources){
+    $.getJSON("metadata/datasources", function(datasources){
         $('#pathway_datasources').empty();
         $('#warehouse_datasources').empty();                
         $.each(datasources, function(idx, ds){

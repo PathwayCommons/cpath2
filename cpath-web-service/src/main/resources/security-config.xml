@@ -13,13 +13,14 @@
 
 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath2.properties"/>
 
-	<http access-denied-page="/denied.html" auto-config='true'>
-		<form-login login-page="/login.html" authentication-failure-url="/login.html?login_error=t"/>
+	<http access-denied-page="/denied" auto-config='true'>
+		<form-login login-page="/login" authentication-failure-url="/login?login_error=t" always-use-default-target="false"/>
 		<intercept-url pattern="/logbackStatus" access="ROLE_ADMIN" />
-		<intercept-url pattern="/admin.html" access="ROLE_ADMIN" />
+		<intercept-url pattern="/admin" access="ROLE_ADMIN" />
 		<intercept-url pattern="/admin/**" access="ROLE_ADMIN" />
+		<intercept-url pattern="/metadata/*" access="IS_AUTHENTICATED_ANONYMOUSLY" />
 		<intercept-url pattern="/metadata/validations/**" access="ROLE_USER" />
-		<intercept-url pattern="/tests.html" access="ROLE_USER" />
+		<intercept-url pattern="/tests" access="ROLE_USER" />
 		<intercept-url pattern="/**" access="IS_AUTHENTICATED_ANONYMOUSLY"/>
 		<logout/>
 	</http>
