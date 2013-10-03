@@ -339,18 +339,22 @@
 	<h3>Summary:</h3> This command provides XPath-like access to the PC. With travers users can
 	explicitly state the paths they would like to access.
 	The format of the path query is in the form:
-	[Initial Class]/[property1]:[classRestriction(optional)]/[property2]...
+	<em>[Initial Class]/[property1]:[classRestriction(optional)]/[property2]...</em>
 	A "*" sign after the property instructs path accessor to transitively
 	traverse that property.
 
-	For example, the following path accessor will
-	traverse through all physical entity components within a complex:
+	For example, the following path accessor will traverse through all physical entity components within a complex:<br/>
+	"Complex/component*/entityReference/xref:UnificationXref"<br/>
+	
+	The following will list display names of all participants of interactions, 
+	which are components (<em>pathwayComponent</em>) of a pathway (note: 
+	<em>pathwayOrder</em> property, where same or other interactions can be reached,
+	is not considered here):<br/>
+	"Pathway/pathwayComponent:Interaction/participant*/displayName"<br/>
 
-	"Complex/component*/entityReference/xref:UnificationXref
-
-	The optional classRestriction will allow you to restrict the returned
-	values of a property to a certain subclass of the range of the property.
-	In the example above, this is used to get only the Unification Xrefs.
+	The optional parameter <em>classRestriction</em> allows to restrict/filter the 
+	returned property values to a certain subclass of the range of that property.
+	In the first example above, this is used to get only the Unification Xrefs. 
 
 	<a href="http://www.biopax.org/paxtools/apidocs/org/biopax/paxtools/controller/PathAccessor.html">
 	Path accessors</a> can use all the official BioPAX properties as well as additional derived classes and parameters in
@@ -389,15 +393,12 @@
 		       href="traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/entityReferenceOf:Protein">
 			This query returns the URIs of states of BRCA1_HUMAN</a></li>
 		<li><a rel="example"
-		       href="traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://www.reactome.org/biopax/48887%23Protein2992&uri=http://identifiers.org/taxonomy/9606&path=Named/name">
+		       href="traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://identifiers.org/taxonomy/9606&path=Named/name">
 			This query returns the names of several different objects (using abstract type 'Named' from Paxtools
 			API)</a></li>
-		<!-- TODO update the example below - find new URI -->
-		<li><a rel="example"
-		       href="traverse?uri=http://pid.nci.nih.gov/biopaxpid_74716&path=Pathway/pathwayComponent:Interaction/participant*/displayName">
-			This query returns the display name of all the participants of the BMP pathway including
-			participants of the subpathways</a></li>
+	
 	</ol>
+	
 </li>
 
 <!-- top_pathways command -->

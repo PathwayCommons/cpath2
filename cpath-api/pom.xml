@@ -11,7 +11,7 @@
 	</parent>
 
 
-	<name>CPath2 API</name>
+	<name>cPath2 - API</name>
 	<description>CPath2 Service API: enumerations, beans (JAXB), XML schema, and utility classes</description>
 
 	<url>http://code.google.com/p/pathway-commons/</url>

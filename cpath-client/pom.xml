@@ -11,7 +11,7 @@
 	<artifactId>cpath-client</artifactId>
 	<packaging>jar</packaging>
 
-	<name>cPath Client</name>
+	<name>cPath2 - Client</name>
 	<description>cPath/cPath2 Client</description>
 
 	<dependencies>
