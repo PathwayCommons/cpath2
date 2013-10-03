@@ -11,7 +11,7 @@
 	<artifactId>cpath-impl</artifactId>
 	<packaging>jar</packaging>
 
-	<name>cPath2 Implementation</name>
+	<name>cPath2 - Implementation</name>
 	<description>cPath2 - biological pathway data integration, access, and export based on BioPAX L3 standard.</description>
 
 	<build>

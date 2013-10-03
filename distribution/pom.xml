@@ -9,8 +9,8 @@
 
 	<artifactId>distribution</artifactId>
 	<packaging>pom</packaging>
-	<name>CPath2 Distribution</name>
-	<description>CPath2 Distribution</description>
+	<name>cPath2 - Distribution</name>
+	<description>cPath2 Distribution</description>
 
 
 	<build>
