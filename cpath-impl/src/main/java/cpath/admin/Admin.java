@@ -317,9 +317,7 @@ public final class Admin {
     
  
     /**
-     * Deletes the mid-tier cache directories 
-     * (web service layer queries: 'get', 'traverse', and 'graph' are cached) 
-     * 
+     * Purges all cache directories.
      */
     public static void clearCache() {
 		if(!isMaintenanceEnabled())

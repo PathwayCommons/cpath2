@@ -54,7 +54,6 @@ import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -105,7 +104,10 @@ public class CPathServiceImpl implements CPathService {
 	
 	private final int maxHitsPerPage;
 
-    // this is probably required for the ehcache to work
+	/**
+	 * Default Constructor
+	 */
+    // at least required for using with Ehcache
 	public CPathServiceImpl() {
 		this.maxHitsPerPage = Integer.parseInt(CPathSettings.getInstance().getMaxHitsPerPage());
 	}
@@ -157,7 +159,6 @@ public class CPathServiceImpl implements CPathService {
 	
 	
 	@Override
-	@Cacheable(value = "findElementsCache")
 	public ServiceResponse search(String queryStr, 
 			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms) 
 	{
@@ -189,7 +190,6 @@ public class CPathServiceImpl implements CPathService {
 		
 
 	@Override
-	@Cacheable(value = "elementByIdCache")
 	public ServiceResponse fetch(final OutputFormat format, final String... uris) {
 		if (uris.length == 0)
 			return new ErrorResponse(NO_RESULTS_FOUND,
@@ -277,7 +277,6 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
-	@Cacheable(value = "getNeighborhoodCache")
 	public ServiceResponse getNeighborhood(final OutputFormat format, 
 		final String[] sources, final Integer limit, Direction direction, 
 		final String[] organisms, final String[] datasources)
@@ -336,7 +335,6 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
-	@Cacheable(value = "getPathsBetweenCache")
 	public ServiceResponse getPathsBetween(final OutputFormat format, 
 			final String[] sources, final Integer limit, 
 			final String[] organisms, final String[] datasources)
@@ -391,7 +389,6 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
-	@Cacheable(value = "getPathsFromToCache")
 	public ServiceResponse getPathsFromTo(final OutputFormat format, 
 		final String[] sources, final String[] targets, final Integer limit,
 		final String[] organisms, final String[] datasources)
@@ -616,7 +613,6 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
-	@Cacheable(value = "traverseCache")
 	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
 		try {
 			// get results from the DAO
@@ -646,7 +642,6 @@ public class CPathServiceImpl implements CPathService {
 	 * 
 	 * Here we follow the second method.
 	 */
-	@Cacheable(value = "topPathwaysCache")
 	@Override
 	public SearchResponse topPathways(final String[] organisms, final String[] datasources) {
 		SearchResponse topPathways = new SearchResponse();
