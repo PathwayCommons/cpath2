@@ -20,7 +20,6 @@ import org.hibernate.criterion.Restrictions;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -215,7 +214,6 @@ class MetadataHibernateDAO  implements MetadataDAO {
 
     
 	@Override
-	@Cacheable(value = "idmappingCache")
 	public Set<String> mapIdentifier(String identifier, Type type, String idType) {
     	//if possible, suggest a canonical id, i.e, 
     	// more chances it would map to uniprot or chebi primary accession.

@@ -87,8 +87,7 @@ public class AdminController extends BasicController {
 
 	/*
 	 * Recursively gets the sorted filename->size map
-	 * from the cpath2 home dir (ignores hidden, tmp, 
-	 * cache, and index directories).
+	 * from the cpath2 home and dir and 'data' sub-directory.
 	 * 
 	 * TODO consider using a Tree object (set of nodes) in the future
 	 */

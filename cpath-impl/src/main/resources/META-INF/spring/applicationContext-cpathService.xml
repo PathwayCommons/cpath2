@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:cache="http://www.springframework.org/schema/cache"
     xmlns:context="http://www.springframework.org/schema/context"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="
         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
-        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd
-        http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache.xsd">
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd">
 
     <context:annotation-config/>
     <context:property-placeholder location="file:${CPATH2_HOME}/cpath2.properties"/>
@@ -16,23 +14,5 @@
 		<constructor-arg ref="paxtoolsDAO"/>
 		<constructor-arg ref="metadataDAO"/>
 	</bean>
-
-	<beans profile="servicecache">
-		<!-- ehcache in the service-tier -->
-		<bean id="serviceCacheManagerFactory"
-			class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
-			<property name="configLocation" value="classpath:cpath-service-ehcache.xml" />
-			<!-- shared=true would only be required when cpath-service and cpath-dao 
-				share same ehcache.xml, same cache manager name -->
-			<!-- <property name="shared" value="true"/> -->
-			<property name="cacheManagerName" value="cpath-service-cache" />
-		</bean>
-
-		<bean id="serviceCacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
-			<property name="cacheManager" ref="serviceCacheManagerFactory" />
-		</bean>
-
-		<cache:annotation-driven cache-manager="serviceCacheManager" />
-	</beans>
 
 </beans>

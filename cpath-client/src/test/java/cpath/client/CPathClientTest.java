@@ -47,7 +47,7 @@ public class CPathClientTest {
 		
 		String endPointURL = client.getEndPointURL();
 		System.out.println("cpath2 instance: " + endPointURL
-			+ " ( is a " + client.getActualEndPointURL() + ")");
+			+ " (actual location: " + client.getActualEndPointURL() + ")");
 		
 		//GET usually works ok with different kind of redirects...
     	String res = client.get("help", null, String.class);
@@ -121,7 +121,7 @@ public class CPathClientTest {
 		try {
 			resp = client.createTraverseQuery()
 				.propertyPath("Pathway/pathwayComponent")
-				.sources(new String[]{"http://www.reactome.org/biopax/48887#Pathway541"})
+				.sources(new String[]{"http://purl.org/pc2/4/Pathway_06f2ffa90bac992014a9a777128bc316"})
 				.result();
 		} catch (CPathException e) {
 			fail(e.toString());
@@ -212,7 +212,7 @@ public class CPathClientTest {
 	@Test //this test id data-dependent
 	public final void testGetPathwayByUri() throws CPathException {
 		Model m = client.createGetQuery()
-			.sources(new String[]{"http://www.reactome.org/biopax/48887#Pathway541"})
+			.sources(new String[]{"http://purl.org/pc2/4/Pathway_06f2ffa90bac992014a9a777128bc316"})
 			.result();
         assertNotNull(m);
         assertFalse(m.getObjects(Pathway.class).isEmpty());

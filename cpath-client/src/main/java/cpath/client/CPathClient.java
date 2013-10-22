@@ -14,14 +14,12 @@ import org.apache.commons.lang.StringUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.UnknownHttpStatusCodeException;
 
+import java.net.URI;
 import java.util.*;
 import java.util.Map.Entry;
 
@@ -40,8 +38,8 @@ public class CPathClient
 		
 	private final RestTemplate restTemplate;
 	
-	private String endPointURL;
-	private String actualEndPointURL;
+	private String endPointURL; //original or official url
+	private String actualEndPointURL; // actual location (after 301/302/303 redirects)
 	private String name;
 
 	public static enum Direction
@@ -80,12 +78,10 @@ public class CPathClient
     	
         // set the cpath2 server URL (or default one or from the java option)
     	if(url == null || url.isEmpty())
-    		url = System.getProperty(JVM_PROPERTY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);  	
+    		url = System.getProperty(JVM_PROPERTY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);  
     	
-    	client.setEndPointURL(url);
-    	
-    	assert client.actualEndPointURL != null :  "cPath2 endpoint URL is undefined";
-    	
+    	client.setEndPointUrlAndRedirect(url);
+
     	return client;
     }
     
@@ -220,38 +216,27 @@ public class CPathClient
 
     
     /**
+     * Sets the web service URL and then
+     * finds actual resource location (after HTTP redirects)
+     * for sending future HTTP requests.
+     * 
      * @see #getEndPointURL()
-     * @param endPointURL the cpath2 end point URL as string
+     * @see #getActualEndPointURL()
+     * @param endPointURL a cPath2 web service URL
      */
-    public void setEndPointURL(String endPointURL) {
-        this.endPointURL = endPointURL;
-        
-        if(this.endPointURL.equals(this.actualEndPointURL))
-        	return; // nothing else to do.
-    	
-    	// discover the actual URL (the first one that works via the POST method)
-    	actualEndPointURL = this.endPointURL; //initial value
-    	while(true) {
-    		ResponseEntity<String> re = restTemplate
-    			.exchange(actualEndPointURL, HttpMethod.HEAD, null, String.class);  		
-    		
-    		if(re.getStatusCode().equals(HttpStatus.FOUND)
-    			|| re.getStatusCode().equals(HttpStatus.MOVED_PERMANENTLY)) {
-    			actualEndPointURL = re.getHeaders().getLocation().toString();
-    			LOGGER.info("Found new location: " + actualEndPointURL 
-        				+ "; " + re.getStatusCode());
-    		}
-    		else if(re.getStatusCode().equals(HttpStatus.OK)) {
-    			LOGGER.info("OK: will be using" + actualEndPointURL 
-    				+ " instead of " + endPointURL);
-    			break; //exit the infinite loop
-    		}
-    		else { //for all other status codes
-    			throw new RuntimeException("HTTP POST failed " +
-    				"after the client was redirected " +
-    				"from " + endPointURL +	" to " + actualEndPointURL 
-    				+ " (status: " + re.getStatusCode() + ")");
-    		}
+    public void setEndPointUrlAndRedirect(final String url) {
+        endPointURL = url;
+        actualEndPointURL = endPointURL; //initially the same
+    	// discover actual resource location from the initial one (also, trying to avoid going in circles):
+        int i=0;
+        for(URI loc = URI.create(endPointURL); loc != null && i<5; i++ ) 
+        { 				
+        	loc = restTemplate.postForLocation(loc, null);
+        	
+        	if(loc != null)
+        		actualEndPointURL = loc.toString();
+        	
+   			LOGGER.info("Location: " + loc);
     	}
     }
 	

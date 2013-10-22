@@ -32,7 +32,6 @@ import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.springframework.cache.annotation.Cacheable;
 
 import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
@@ -64,7 +63,6 @@ public interface CPathService {
 	 * @param uris the list of URIs to fetch
 	 * @return
 	 */
-	@Cacheable(value = "elementByIdCache")
 	ServiceResponse fetch(OutputFormat format, String... uris);
 
 	
@@ -80,7 +78,6 @@ public interface CPathService {
 	 * 
 	 * @see PaxtoolsDAO#search(String, Class[], String[], String[])
 	 */
-	@Cacheable(value = "findElementsCache")
 	ServiceResponse search(String queryStr, 
 			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms);
 
@@ -98,7 +95,6 @@ public interface CPathService {
 	 * @param datasources optional filter
 	 * @return the neighborhood
 	 */
-	@Cacheable(value = "getNeighborhoodCache")
 	ServiceResponse getNeighborhood(OutputFormat format, 
 		String[] sources, Integer limit, Direction direction,
 			String[] organisms, String[] datasources);
@@ -115,7 +111,6 @@ public interface CPathService {
 	 * @param datasources optional filter
 	 * @return paths between
 	 */
-	@Cacheable(value = "getPathsBetweenCache")
 	ServiceResponse getPathsBetween(OutputFormat format, String[] sources, 
 		Integer limit, String[] organisms, String[] datasources);
 
@@ -131,7 +126,6 @@ public interface CPathService {
 	 * @param datasources optional filter
 	 * @return paths between
 	 */
-	@Cacheable(value = "getPathsFromToCache")
 	ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
 		String[] targets, Integer limit, String[] organisms, String[] datasources);
 	
@@ -149,7 +143,6 @@ public interface CPathService {
 	 * @param datasources optional filter
 	 * @return common stream
 	 */
-	@Cacheable(value = "getCommonStreamCache")
 	ServiceResponse getCommonStream(OutputFormat format, 
 		String[] sources, Integer limit, Direction direction, 
 			String[] organisms, String[] datasources);
@@ -167,7 +160,6 @@ public interface CPathService {
 	 * @param sourceUris
 	 * @return
 	 */
-	@Cacheable(value = "traverseCache")
 	ServiceResponse traverse(String propertyPath, String... sourceUris);
 	
 	

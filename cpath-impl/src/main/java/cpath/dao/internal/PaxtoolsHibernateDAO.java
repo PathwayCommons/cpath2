@@ -49,7 +49,6 @@ import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.impl.level3.L3ElementImpl;
-import org.biopax.paxtools.io.BioPAXIOHandler;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.hibernate.*;
 import org.hibernate.criterion.Projections;
