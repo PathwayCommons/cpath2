@@ -85,7 +85,7 @@ public class SearchController extends BasicController {
     			throws IOException
     {		
 //		if(!search.getQ().startsWith("*")) //do not log UI and not specific requests
-		logHttpRequest(request, "q="+search.getQ(), 
+		log(request, "q="+search.getQ(), 
 			"type="+((search.getType()!=null)?search.getType().getSimpleName():"ALL"), 
 			"page="+search.getPage(),
 			"organisms="+Arrays.toString(search.getOrganism()), 

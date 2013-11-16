@@ -39,6 +39,7 @@ import org.biopax.paxtools.io.sif.InteractionRule;
 import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -169,6 +170,9 @@ public class BiopaxConverter {
 			
 			DataResponse dataResponse = new DataResponse();
 			dataResponse.setData(data);
+			// extract and save data providers' names
+			dataResponse.setProviders(providers(m));
+			
 			return dataResponse;
 		}
         catch (Exception e) {
@@ -295,5 +299,40 @@ public class BiopaxConverter {
 	public void mergeEquivalentInteractions(
 			boolean mergeEquivalentInteractions) {
 		this.mergeEquivalentInteractions = mergeEquivalentInteractions;
+	}
+
+	
+	/**
+	 * The list of datasources (data providers)
+	 * the BioPAX model contains.
+	 * 
+	 * @param m
+	 */
+	@SuppressWarnings("unchecked")
+	private Set<String> providers(Model m) {
+		Set<String> names = null;
+		
+		if(m != null) {
+			Set<Provenance> provs = m.getObjects(Provenance.class);		
+			if(provs!= null && !provs.isEmpty()) {
+				names = new TreeSet<String>();
+				for(Provenance prov : provs) {
+					String name = prov.getStandardName();
+					if(name != null)
+						names.add(name);
+					else {
+						name = prov.getDisplayName();
+						if(name != null)
+							names.add(name);
+						else 
+							log.warn("No standard|display name found for " + prov);
+					}
+				}
+//				log.info("DATASOURCE " + dsNames.toString());
+			}
+		}
+		
+		return (names != null && !names.isEmpty()) 
+				? names : Collections.EMPTY_SET;
 	}
 }

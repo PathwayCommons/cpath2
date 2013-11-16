@@ -4,8 +4,6 @@ import static org.junit.Assert.*;
 
 import java.io.*;
 import java.util.Collection;
-import java.util.Map;
-import java.util.TreeMap;
 
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -79,33 +77,6 @@ public class CPathUtilsTest {
 		reader.mergeDuplicates(true);
 		Model m = reader.convertFromOWL(new ByteArrayInputStream(owl.getBytes("UTF-8")));
 		assertFalse(m.getObjects().isEmpty());
-	}
-	
-	
-	@Test
-	public void testSimpleStatsFromAccessLogs() throws IOException {
-		Map<String,Integer> stats = new TreeMap<String, Integer>();
-		
-		String testLogFile = getClass().getClassLoader().getResource("").getPath() 
-				+ File.separator + "test_cpath2.log";
-		
-		CPathUtils.simpleStatsFromLog(stats, testLogFile);
-		
-		assertFalse(stats.isEmpty());
-		assertEquals(1, stats.get("DATASOURCE HPRD").intValue());
-		assertEquals(1, stats.get("DATASOURCE NCI_Nature").intValue());
-		assertEquals(1, stats.get("DATASOURCE PhosphoSitePlus").intValue());
-		assertEquals(2, stats.get("DATASOURCE Reactome").intValue());
-		assertEquals(1, stats.get("DATASOURCE PANTHER Pathway").intValue());
-		assertEquals(11, stats.get("IP 192.168.1.2").intValue());
-		assertEquals(4, stats.get("COMMAND search").intValue());
-		assertEquals(2, stats.get("COMMAND graph").intValue());
-		assertEquals(2, stats.get("COMMAND graph NEIGHBORHOOD").intValue());
-		assertEquals(1, stats.get("COMMAND top_pathways").intValue());
-		assertEquals(11, stats.get("COMMAND traverse").intValue());
-		assertEquals(1, stats.get("DOWNLOAD Pathway Commons 2 HPRD.BINARY_SIF.tsv.gz").intValue());
-		assertEquals(3, stats.get("FORMAT BIOPAX").intValue()); //not counted in "others" requests
-		assertEquals(17, stats.get("OTHER").intValue()); //the line where downloads.html occur has 'null' instead [params..] 
 	}
 	
 	@Test

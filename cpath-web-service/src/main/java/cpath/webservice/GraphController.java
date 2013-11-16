@@ -89,12 +89,13 @@ public class GraphController extends BasicController {
 	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, 
 			Writer writer, HttpServletRequest request, HttpServletResponse response) throws IOException
     {
-		logHttpRequest(request, 
+		log(request, 
 			"kind="+graph.getKind(), "format="+graph.getFormat(), 
 			"organisms="+Arrays.toString(graph.getOrganism()), 
 			"datasource="+Arrays.toString(graph.getDatasource()),
 			"direction="+graph.getDirection(), "limit="+graph.getLimit()
 			);
+		//TODO add dsNames.toString() if available; add status code
 		
 		//check for binding errors
 		if(bindingResult.hasErrors()) {
@@ -127,6 +128,7 @@ public class GraphController extends BasicController {
 			errorResponse(Status.INTERNAL_ERROR, 
 				getClass().getCanonicalName() + " does not support " 
 					+ graph.getKind(), response);
+			
 			return;
 		}
 		

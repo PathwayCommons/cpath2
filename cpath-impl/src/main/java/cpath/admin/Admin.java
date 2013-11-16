@@ -35,6 +35,7 @@ import cpath.importer.Merger;
 import cpath.importer.Premerger;
 import cpath.importer.internal.MergerImpl;
 import cpath.importer.internal.PremergeImpl;
+import cpath.log.jpa.LogEntitiesRepository;
 import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
 import cpath.service.internal.BiopaxConverter;
@@ -92,6 +93,7 @@ public final class Admin {
         UPDATE_COUNTS("-update-counts"),
 		EXPORT("-export"),
         CONVERT("-convert"),
+        INIT_LOG("-init-log"),
 		;
 
         // string ref for readable name
@@ -227,6 +229,10 @@ public final class Admin {
 		} else if (args[0].equals(Cmd.CLEAR_CACHE.toString())) {
 			
 			clearCache();
+		
+		} else if (args[0].equals(Cmd.INIT_LOG.toString())) {	
+			
+			initLog();	
 			
 		} else {
 			System.err.println(usage());
@@ -236,9 +242,32 @@ public final class Admin {
 		// Cancellation Timer thread is still running
 		System.exit(0);
     }    
+
     
-    
-    private static void fail(String[] args, String details) {
+    //clean/update service access counts by location,date in the DB from available .log files
+    private static void initLog() throws IOException {
+		if(!isMaintenanceEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+
+        // load the log repositories from the app. context
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+				"classpath:META-INF/spring/applicationContext-log.xml");
+        // get auto-generated jpa CRUD repositories (using spring-data feature/config.)
+ 		LogEntitiesRepository logEntitiesRepository = context.getBean(LogEntitiesRepository.class);
+ 		
+ 		//TODO backup cpath2 access db to a TSV file
+ 		
+ 		// clean
+ 		logEntitiesRepository.deleteAll();
+		
+ 		// TODO import the log files (looks, this is not required anymore)
+// 		CPathUtils.importAllLogs(...);
+        
+        context.close();
+	}
+
+
+	private static void fail(String[] args, String details) {
         throw new IllegalArgumentException(
         	"Invalid cpath2 command: " +  Arrays.toString(args)
         	+ "; " + details);		
@@ -531,14 +560,16 @@ public final class Admin {
 		toReturn.append(Cmd.MERGE.toString() + " [<metadataId>] [--force]"+ NEWLINE);
 		toReturn.append(Cmd.CREATE_INDEX.toString() + NEWLINE);
         toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
-        toReturn.append(Cmd.CLEAR_CACHE.toString() + " ()" + NEWLINE);
-        toReturn.append(Cmd.UPDATE_COUNTS.toString() + " ()" + NEWLINE);
+        toReturn.append(Cmd.CLEAR_CACHE.toString() + " (removes the cache directory)" + NEWLINE);
+        toReturn.append(Cmd.UPDATE_COUNTS.toString() + " (re-calculates pathway, molecule, " +
+        		"interaction counts per data source)" + NEWLINE);
         toReturn.append(Cmd.CREATE_DOWNLOADS.toString() + " (creates cpath2 BioPAX DB archives using several " +
         	"data formats, and also split by data source, organism)"  + NEWLINE);        
         // other useful (utility) commands
 		toReturn.append(Cmd.EXPORT.toString() + " <output> [<uri,uri,..>]" + NEWLINE);
 		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format>" + NEWLINE);
-
+		toReturn.append(Cmd.INIT_LOG.toString() + " (cleares/updates cpath2 service assess summary tables)" + NEWLINE);
+		
 		return toReturn.toString();
 	}
 

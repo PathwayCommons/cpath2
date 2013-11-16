@@ -16,7 +16,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.service.Status;
 import cpath.warehouse.beans.Metadata;
@@ -33,7 +32,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -144,10 +142,6 @@ public class MetadataController extends BasicController
     public String queryForValidation(
     		@PathVariable String identifier, Model model, HttpServletRequest request) 
     {
-		log.debug("Getting a validation report (html) for:" 
-				+ identifier);
-		
-		logHttpRequest(request);
 
     	ValidatorResponse body = service.validationReport(identifier, null);
 		model.addAttribute("response", body);
@@ -160,9 +154,7 @@ public class MetadataController extends BasicController
     @RequestMapping("/metadata/validations/{identifier}")
     public @ResponseBody ValidatorResponse queryForValidation(
     		@PathVariable String identifier, HttpServletRequest request) 
-    {
-		logHttpRequest(request);
-		
+    {	
     	return service.validationReport(identifier, null);
     } 
     
@@ -172,9 +164,7 @@ public class MetadataController extends BasicController
     public @ResponseBody ValidatorResponse queryForValidation(
     		@PathVariable String identifier, @PathVariable String file,
     		HttpServletRequest request) 
-    {
-		logHttpRequest(request);
-    	
+    {	
     	return service.validationReport(identifier, file);
     }
        
@@ -184,8 +174,6 @@ public class MetadataController extends BasicController
     		@PathVariable String identifier, @PathVariable String file, 
     		Model model, HttpServletRequest request) 
     {
-    	logHttpRequest(request);
-
     	ValidatorResponse body = service.validationReport(identifier, file);
 		model.addAttribute("response", body);
 		
@@ -270,31 +258,17 @@ public class MetadataController extends BasicController
     }
 
     
-    /*
-     * Parses cpath2 log files available on the server to 
-     * return a (JSON) map that contains simple counts of how many 
-     * times it was accessed from a particular IP address, 
-     * web service command/path, and which pathway data sources
-     * and how often were associated with the results. 
-     * 
-     * This is internal api (for server owners/developers; 
-     * please do not hit too often...)
-     */
-	@RequestMapping(value = "/logs/summary", method=RequestMethod.POST)
-    public @ResponseBody Map<String,Integer> stats(Model model, HttpServletRequest request) 
+	@RequestMapping(value = "/logs/timeline")
+    public @ResponseBody Map<String,List<Object[]>> stats(Model model, HttpServletRequest request) 
     		throws IOException 
-    {
-		logHttpRequest(request);		
-    	// update (unique IP, cmd, datasource, etc.) counts 
-		// from all there available log files (takes some time to parse)
-    	return CPathUtils.simpleStatsFromAccessLogs();
+    {		
+    	return logEntitiesRepository.downloadsTimeline();
     }
  
 	
     @RequestMapping(value = "/downloads.html")
     public String downloads(Model model, HttpServletRequest request) {
-    	logHttpRequest(request);
-    	
+
     	// get the sorted list of files to be shared on the web
     	String path = CPathSettings.downloadsDir(); 
     	File[] list = new File(path).listFiles();
@@ -318,7 +292,7 @@ public class MetadataController extends BasicController
     public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id, 
     		HttpServletRequest request, HttpServletResponse response) throws IOException
     {		
-			logHttpRequest(request,"id="+Arrays.toString(id));
+			log(request,"id="+Arrays.toString(id));
 			
 			if(id == null || id.length == 0) {
 				errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", response);

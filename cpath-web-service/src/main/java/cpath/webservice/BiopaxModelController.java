@@ -137,7 +137,7 @@ public class BiopaxModelController extends BasicController {
     	Writer writer, HttpServletRequest request, HttpServletResponse response) 
     		throws IOException
     {
-    	logHttpRequest(request, "format="+get.getFormat(), (get.getUri().length<6)?"uri="+Arrays.toString(get.getUri()):"uri=...(>5)");
+    	log(request, "format="+get.getFormat(), (get.getUri().length<6)?"uri="+Arrays.toString(get.getUri()):"uri=...(>5)");
     	
     	if(bindingResult != null &&  bindingResult.hasErrors()) {
     		errorResponse(Status.BAD_REQUEST, 
@@ -159,7 +159,7 @@ public class BiopaxModelController extends BasicController {
     		@RequestParam(required=false) String[] datasource, @RequestParam(required=false) String[] organism, 
     		HttpServletRequest request, HttpServletResponse response) throws IOException
     {
-		logHttpRequest(request, "organisms="+Arrays.toString(organism), "datasource="+Arrays.toString(datasource));
+		log(request, "organisms="+Arrays.toString(organism), "datasource="+Arrays.toString(datasource));
 		
 		SearchResponse results = service.topPathways(organism, datasource);
 		
@@ -178,7 +178,7 @@ public class BiopaxModelController extends BasicController {
     	BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
     		throws IOException 
     {
-    	logHttpRequest(request, "path="+query.getPath());
+    	log(request, "path="+query.getPath());
     	
     	if(bindingResult.hasErrors()) {
     		errorResponse(Status.BAD_REQUEST, 

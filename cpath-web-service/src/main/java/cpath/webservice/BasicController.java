@@ -34,17 +34,20 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
+import cpath.log.jpa.LogEntitiesRepository;
 import cpath.service.ErrorResponse;
 import cpath.service.Status;
 import cpath.service.jaxb.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
@@ -55,14 +58,24 @@ import org.springframework.validation.FieldError;
  */
 public abstract class BasicController {
     private static final Logger log = LoggerFactory.getLogger(BasicController.class);
-       
+    
+    protected LogEntitiesRepository logEntitiesRepository;  
+    
+    @Autowired
+    public void setLogRepository(LogEntitiesRepository logEntitiesRepository) {
+		this.logEntitiesRepository = logEntitiesRepository;
+	}
+    
+    
 	/**
 	 * Http error response from the error bean.
 	 */
 	protected void errorResponse(Status status, String detailedMsg,
 			HttpServletResponse response) throws IOException {
 		response.sendError(status.getErrorCode(), 
-			status.getErrorMsg() + "; " + detailedMsg);	
+			status.getErrorMsg() + "; " + detailedMsg);
+		
+		//TODO save error details in DB/file or even post to a mailing list?
 	}
 	
 	
@@ -106,6 +119,9 @@ public abstract class BasicController {
 
 			log.debug("QUERY RETURNED " + dresp.getData().toString().length() + " chars");
 			
+			Set<String> providers = dresp.getProviders(); 
+			//TODO log/count that provider's data were accessed
+			
 			writer.write(dresp.getData().toString());
 		}
 	}
@@ -138,30 +154,47 @@ public abstract class BasicController {
 	
 	/** 
 	 * @param request
-	 * @param params optional (POST) query arguments (if provided, will replace request.getQueryString() value)
+	 * @param params query arguments to replace request.getQueryString() value, which is empty for POST requests
 	 */
-	void logHttpRequest(HttpServletRequest request, Object... params) {
-		String ip = request.getHeader("X-Forwarded-For");		
-		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-            ip = request.getHeader("Proxy-Client-IP");  
-        }  
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-            ip = request.getHeader("WL-Proxy-Client-IP");  
-        }  
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-            ip = request.getHeader("HTTP_CLIENT_IP");  
-        }  
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-            ip = request.getHeader("HTTP_X_FORWARDED_FOR");  
-        }  
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
-            ip = request.getRemoteAddr();  
-        }  
+	void log(HttpServletRequest request, Object... params) {
+		String ip = clientIpAddress(request);
 		
 		log.info("REQUEST " + ip
 			+ "\t" + request.getMethod() 
 			+ "\t" + request.getRequestURI()
 			+ "\t" + ((params.length == 0) ? request.getQueryString() : Arrays.toString(params))
 		);
+	}
+
+	
+	//TODO add log to the DB method
+	
+	
+	/**
+	 * Extracts the client's IP from the request headers.
+	 * 
+	 * @param request
+	 * @return
+	 */
+	public static String clientIpAddress(HttpServletRequest request) {
+		
+		String ip = request.getHeader("X-Forwarded-For");		
+		if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {  
+            ip = request.getHeader("Proxy-Client-IP");  
+        }  
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {  
+            ip = request.getHeader("WL-Proxy-Client-IP");  
+        }  
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {  
+            ip = request.getHeader("HTTP_CLIENT_IP");  
+        }  
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {  
+            ip = request.getHeader("HTTP_X_FORWARDED_FOR");  
+        }  
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {  
+            ip = request.getRemoteAddr();  
+        }  
+		
+        return ip;
 	}
 }
