@@ -166,6 +166,7 @@ public class BiopaxModelController extends BasicController {
 		if(results == null || results.isEmpty()) {
 			errorResponse(Status.NO_RESULTS_FOUND, "no hits", response);
 		} else {
+			//TODO log to db
 			return (SearchResponse) results;
 		}
 		
@@ -193,6 +194,7 @@ public class BiopaxModelController extends BasicController {
     			errorResponse(Status.NO_RESULTS_FOUND, "no results found", response);
     		}
     		else {
+    			//TODO log to db
 				return sr;
 			}
     	}

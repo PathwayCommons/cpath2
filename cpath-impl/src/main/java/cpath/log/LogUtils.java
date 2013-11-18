@@ -8,7 +8,10 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
+
+import org.springframework.util.Assert;
 
 import com.maxmind.geoip.Country;
 import com.maxmind.geoip.LookupService;
@@ -16,6 +19,7 @@ import com.maxmind.geoip.LookupService;
 import cpath.log.jpa.Geoloc;
 import cpath.log.jpa.LogEntitiesRepository;
 import cpath.log.jpa.LogEntity;
+import cpath.log.jpa.LogEvent;
 
 /**
  * @author rodche
@@ -46,50 +50,68 @@ public final class LogUtils {
 	}
 
 	
+	/*
+	 * Increases the number (counter) 
+	 * of today user's requests of some 
+	 * sort and location (IP address's country).
+	 */
+	static LogEntity count(LogEntitiesRepository repository, String date, 
+			LogEvent event, String ipAddress) {
+		
+		Geoloc loc = Geoloc.fromIpAddress(ipAddress);
+		
+		return count(repository, date, event, loc);
+	}
+
+	
 	/**
 	 * Increases the number (counter) 
 	 * of today user's requests of some 
 	 * sort and location.
 	 * 
-	 * Right now, only country code (resolved from the IP address) 
-	 * matters for location matching (city and region are ignored).
+	 * Right now, only country code there
+	 * matters for location matching 
+	 * (city and region are ignored).
 	 * 
 	 * @param repository
-	 * @param date 
+	 * @param date
+	 * @param event
+	 * @param loc only country is there used, and region, city - ignored.
 	 * @return
 	 */
-	public static LogEntity count(LogEntitiesRepository repository, String date, 
-			LogType type, String name, String ipAddress) {
+	static LogEntity count(LogEntitiesRepository repository, 
+			String date, LogEvent event, Geoloc loc) {
 		
-		Geoloc loc = Geoloc.fromIpAddress(ipAddress);		
-		
-		// TODO only country code matters in the location right now (change later?)
-		// (clear 'city' and 'region' for now, if they were set)
-		loc.setRegion(null);
-		loc.setCity(null);
+		// TODO only country code matters right now (change later?)
+//		assert loc.getRegion()==null && loc.getCity()==null : "loc.region or loc.city is not null";
+//		loc.setRegion(null);
+//		loc.setCity(null);		
 		
 		// find or create a record, count+1
-		LogEntity t = (LogEntity) repository.findByTypeAndNameAndGeolocCountryAndDate(
-				type, name, loc.getCountry(), date);
+		LogEntity t = (LogEntity) repository.findByEventTypeAndEventNameAndGeolocCountryAndDate(
+				event.getType(), event.getName(), loc.getCountry(), date);
 		if(t == null) {			
-			t = new LogEntity(type, name, date, loc);
+			t = new LogEntity(date, event, loc);
 		}
 		
 		t.setCount(t.getCount() + 1);
 		
 		return repository.save(t);
-	}
+	}	
+	
 	
 	/**
-	 * Gets the country code by IP 
-	 * (region, city is empty).
+	 * Gets location by IP address 
+	 * (currently, gets only country code and name; 
+	 * region, city will be null).
 	 * 
 	 * @param ipAddress
 	 * @return
 	 */
-	public static Geoloc countryLookup(String ipAddress) {
+	public static Geoloc lookup(String ipAddress) {
 		Country country = geoliteCountry.getCountry(ipAddress);
-		return new Geoloc(country.getCode(), country.getName(), null, null);
+		Geoloc loc = new Geoloc(country.getCode(), country.getName(), null, null);
+		return loc;
 	}
 	
 	
@@ -137,4 +159,34 @@ public final class LogUtils {
 		return addIsoDate(date, days);
 	}
 	
+		
+	/**
+	 * Saves and counts a series of data access events 
+	 * (usually associated with the same web request) 
+	 * to the log db.
+	 * 
+	 * @param repository
+	 * @param events
+	 * @param loc
+	 */
+	public static void log(LogEntitiesRepository repository, Collection<LogEvent> events, Geoloc loc) {
+		log(repository, today(), events, loc);
+	}
+	
+	
+	/*
+	 * package private - for tests
+	 */
+	static void log(LogEntitiesRepository repository, String day, Collection<LogEvent> events, Geoloc loc) {
+		
+		for(LogEvent event : events) {
+			//'total' should not be there (auto-counts once anyway!)
+			Assert.isTrue(event.getType() != LogType.TOTAL); 
+			
+			count(repository, day, event, loc);
+		}
+		
+		count(repository, day, LogEvent.total(), loc);
+		
+	}
 }
