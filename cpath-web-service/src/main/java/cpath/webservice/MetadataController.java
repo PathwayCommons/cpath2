@@ -314,6 +314,8 @@ public class MetadataController extends BasicController
 				}			
 			}		
 
+			//TODO log to db
+						
 			return res;
 	}
  

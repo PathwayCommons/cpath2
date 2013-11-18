@@ -95,7 +95,6 @@ public class GraphController extends BasicController {
 			"datasource="+Arrays.toString(graph.getDatasource()),
 			"direction="+graph.getDirection(), "limit="+graph.getLimit()
 			);
-		//TODO add dsNames.toString() if available; add status code
 		
 		//check for binding errors
 		if(bindingResult.hasErrors()) {

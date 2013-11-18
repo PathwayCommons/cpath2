@@ -15,6 +15,6 @@ import cpath.log.LogType;
 public interface LogEntitiesRepository extends BaseRepository<LogEntity, Long>, 
 	QueryDslPredicateExecutor<LogEntity>, LogEntitiesRepositoryCustom {
 	
-	LogEntity findByTypeAndNameAndGeolocCountryAndDate(LogType type, String name, String countryCode, String date);
+	LogEntity findByEventTypeAndEventNameAndGeolocCountryAndDate(LogType type, String name, String country, String date);
 		
 }

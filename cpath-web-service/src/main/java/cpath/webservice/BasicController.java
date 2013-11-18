@@ -75,7 +75,7 @@ public abstract class BasicController {
 		response.sendError(status.getErrorCode(), 
 			status.getErrorMsg() + "; " + detailedMsg);
 		
-		//TODO save error details in DB/file or even post to a mailing list?
+		//TODO log to DB (also send to a mailing list?)
 	}
 	
 	
@@ -119,8 +119,9 @@ public abstract class BasicController {
 
 			log.debug("QUERY RETURNED " + dresp.getData().toString().length() + " chars");
 			
-			Set<String> providers = dresp.getProviders(); 
-			//TODO log/count that provider's data were accessed
+			Set<String> providers = dresp.getProviders();
+			
+			//TODO success - log to db
 			
 			writer.write(dresp.getData().toString());
 		}

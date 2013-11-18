@@ -108,6 +108,7 @@ public class SearchController extends BasicController {
 				errorResponse(Status.NO_RESULTS_FOUND, 
 						"no hits", response);
 			} else {
+				//TODO log to db
 				return results;
 			}
 			return null;

@@ -66,10 +66,6 @@ interface LogEntitiesRepositoryCustom {
 	Map<String, List<Object[]>> downloadsTimeline(LogType logType, String name); 
 	
 	
-	
 	//TODO add log summary by geoloc methods
 	
-	
-	
-	void log(String date, LogType logType, String name, String ipAddress);
 }
