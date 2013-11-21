@@ -21,22 +21,17 @@ public class Geoloc {
 
 	@Column(nullable=false)
 	private String country; //country code, e.g., "US", "CA", etc.
-//	private String region; //if empty - all regions
-//	private String city; //if empty - all cities
-	private String countryName; //e.g., "Canada"
+	@Column(nullable=true)
+	private String region; //if empty - all regions
 	
 	public Geoloc() {
 	}
 	
-//	public Geoloc(String country, String countryName, String region, String city) {
-	public Geoloc(String country, String countryName, String region, String city) {
+	public Geoloc(String country, String region) {
 		Assert.notNull(country);
-		Assert.notNull(countryName);
 		
 		this.country = country;
-		this.countryName = countryName;
-//		this.region = region;
-//		this.city = city;
+		this.region = region;
 	}
 	
 	public String getCountry() {
@@ -46,25 +41,12 @@ public class Geoloc {
 		this.country = country;
 	}
 	
-	public String getCountryName() {
-		return countryName;
+	public String getRegion() {
+		return region;
 	}
-	public void setCountryName(String countryName) {
-		this.countryName = countryName;
+	public void setRegion(String region) {
+		this.region = region;
 	}
-
-//	public String getRegion() {
-//		return region;
-//	}
-//	public void setRegion(String region) {
-//		this.region = region;
-//	}
-//	public String getCity() {
-//		return city;
-//	}
-//	public void setCity(String city) {
-//		this.city = city;
-//	}
 		
 	public static Geoloc fromIpAddress(String ipAddress) {
 		return LogUtils.lookup(ipAddress);
@@ -74,13 +56,10 @@ public class Geoloc {
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		
-//		if(city != null)
-//			sb.append(city).append(" ");
-//		
-//		if(region != null)
-//			sb.append(region).append(" ");
+		if(region != null)
+			sb.append(region).append(" ");
 		
-		sb.append(countryName).append(" (").append(country).append(")");
+		sb.append(country);
 		
 		return sb.toString();
 	}

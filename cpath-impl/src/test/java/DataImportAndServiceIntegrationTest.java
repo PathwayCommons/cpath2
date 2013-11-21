@@ -1,7 +1,8 @@
-package cpath.dao;
+
 
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
+import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Premerger;
@@ -34,7 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -54,9 +54,8 @@ import javax.imageio.ImageIO;
 //@Ignore
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"classpath:testContext-2.xml"})
-@DirtiesContext(classMode=ClassMode.AFTER_EACH_TEST_METHOD)
-public class CPathMergerTest {
-	static Logger log = LoggerFactory.getLogger(CPathMergerTest.class);
+public class DataImportAndServiceIntegrationTest {
+	static Logger log = LoggerFactory.getLogger(DataImportAndServiceIntegrationTest.class);
 	
 	static final ResourceLoader resourceLoader = new DefaultResourceLoader();	
 	static final String XML_BASE = CPathSettings.xmlBase();
@@ -72,6 +71,7 @@ public class CPathMergerTest {
 
 	
 	@Test
+	@DirtiesContext
 	public void testPremergeAndMerge() throws IOException {
 		
 		//prepare the metadata
@@ -185,15 +185,28 @@ public class CPathMergerTest {
 			}
 		});
 		
-		// SERVICE-TIER features
 		
+		/*
+		 * SERVICE-TIER features tests
+		 */
+		//pid, reactome,humancyc,.. were there in the test models
+		assertEquals(4, m.getObjects(Provenance.class).size());
 		//additional metadata entry
 		Metadata md = new Metadata("test", "Reactome", "Foo", "", "", new byte[]{}, METADATA_TYPE.BIOPAX, "", "");		
 		metadataDAO.saveMetadata(md);	
-		md.setProvenanceFor(m); // normally, this happens in PreMerge
-		paxtoolsDAO.merge(m);		
+		// normally, setProvenanceFor gets called during Premerge stage
+		md.setProvenanceFor(m); 
+		// which EXPLICITELY REMOVEs all other datasources from object properties;
+		// former Provenances normally become DANGLING...
+		// next, merge there updates all biopax object relationships and data properties
+		paxtoolsDAO.merge(m);
+		// but does not remove dangling objects from the persistent model
+		assertEquals(5, m.getObjects(Provenance.class).size()); 
+		//still five (should not matter for queries/analyses)
 		// reindex all
-		paxtoolsDAO.index();		
+//		CPathUtils.cleanupDirectory(new File(CPathSettings.tmpDir() 
+//				+ File.separator + "tests" + File.separator + "test2.idx"));
+		paxtoolsDAO.index();
 		
 		// fetch as BIOPAX
 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P27797");
@@ -205,17 +218,29 @@ public class CPathMergerTest {
 		
 		// fetch as SIF
 		res = service.fetch(OutputFormat.BINARY_SIF, 
-			Normalizer.uri(XML_BASE, null, "http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p", Catalysis.class));
+			Normalizer.uri(XML_BASE, null, 
+				"http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p", 
+					Catalysis.class));
 		assertNotNull(res);
 		assertTrue(res instanceof DataResponse);
 		assertFalse(res.isEmpty());
 		String data = (String) ((DataResponse)res).getData();		
 		assertNotNull(data);
+		assertNotNull(((DataResponse)res).getProviders());
+		assertFalse(((DataResponse)res).getProviders().isEmpty());
 
-		System.out.println(data);
+		log.info(data);
 		assertTrue(data.contains("REACTS_WITH"));
 		assertTrue(data.contains("GENERIC_OF"));
 		assertTrue(data.contains("http://identifiers.org/uniprot/P27797"));
+		
+		// test search res. contains the list of data providers (standard names)
+		res = service.search("*", 0, PhysicalEntity.class, null, null);
+		assertNotNull(res);
+		assertTrue(res instanceof SearchResponse);
+		assertNotNull(((SearchResponse)res).getProviders());
+		assertFalse(((SearchResponse)res).getProviders().isEmpty());
+		log.info("Providers found by second search: " + ((SearchResponse)res).getProviders().toString());
 	}
 	
 	

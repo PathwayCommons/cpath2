@@ -21,7 +21,7 @@ public enum LogType {
 	FORMAT("All Output Formats"),
 	FILE("All Files"),
 	ERROR("All Errors"),
-	TOTAL("All"); //TODO think if we want this (can calculate instead)?
+	TOTAL("All");
 	
 	public final String description;
 	

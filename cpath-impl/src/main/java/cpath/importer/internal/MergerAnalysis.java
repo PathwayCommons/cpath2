@@ -106,7 +106,6 @@ public class MergerAnalysis implements Analysis {
 				continue; 
 			
 			// Generate new URI:
-//TODO description+currUri to avoid clashes? (on the other hand, two equal unnormalized URIs might exist in different files from the same provider, which means to merge them)...
 			String newRDFId = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
 			// Replace URI
 			CPathUtils.replaceID(source, bpe, newRDFId);
@@ -397,9 +396,11 @@ public class MergerAnalysis implements Analysis {
 			// do id-mapping
 			Set<String> mp = metadataDAO.mapIdentifier(id, Mapping.Type.UNIPROT, db); 
 			if(!mp.isEmpty()) {
-				//TODO log if > 1 ac
 				id = mp.iterator().next();
 				toReturn = (ProteinReference) target.getByID(canonicalPrefix + id);
+				if(mp.size() > 1)
+					log.warn("findOrCreateProteinReference: ambiguous id-mapping; " +
+							"will use this " + id + ", one of: " + mp);
 			}
 		}
 				
@@ -451,8 +452,11 @@ public class MergerAnalysis implements Analysis {
 			if (xrefType.isInstance(x)) {
 				Set<String> mp = metadataDAO.mapIdentifier(x.getId(), mappClass, x.getDb());
 				if (!mp.isEmpty()) {
-					mappedTo.add(mp.iterator().next());
-					//TODO log warn when >1 ac
+					String id = mp.iterator().next();
+					mappedTo.add(id);
+					if(mp.size() > 1)
+						log.warn("idMappingByXrefs: ambiguous id-mapping; " +
+								"will use this " + id + ", one of: " + mp);
 				}
 			}
 		}
@@ -529,9 +533,11 @@ public class MergerAnalysis implements Analysis {
 //			id = chemIdMap.get(id);	
 			Set<String> mp = metadataDAO.mapIdentifier(id, Mapping.Type.CHEBI, db);
 			if(!mp.isEmpty()) {
-				//TODO log warn when > 1 ac
 				id = mp.iterator().next();
 				toReturn = (SmallMoleculeReference) target.getByID(canonicalPrefix + id);
+				if(mp.size() > 1)
+					log.warn("findOrCreateSmallMoleculeReference: ambiguous id-mapping; " +
+							"will use this " + id + ", one of: " + mp);
 			}
 		}
 				

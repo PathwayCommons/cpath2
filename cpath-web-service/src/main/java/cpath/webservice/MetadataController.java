@@ -17,6 +17,9 @@ import javax.servlet.http.HttpServletResponse;
 
 import cpath.config.CPathSettings;
 import cpath.dao.MetadataDAO;
+import cpath.log.LogUtils;
+import cpath.log.jpa.Geoloc;
+import cpath.log.jpa.LogEvent;
 import cpath.service.Status;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
@@ -223,8 +226,8 @@ public class MetadataController extends BasicController
 				iconData = baos.toByteArray();
 			}
 		} catch (IOException e) {
-			errorResponse(Status.INTERNAL_ERROR, 
-				"Failed to load icon image from " +  cpathLogoUrl, response);
+//			errorResponse(Status.INTERNAL_ERROR, 
+//				"Failed to load icon image from " +  cpathLogoUrl, request, response);
 			log.error("Failed to load icon image from " +  cpathLogoUrl, e);
 		}
 		
@@ -258,14 +261,6 @@ public class MetadataController extends BasicController
     }
 
     
-	@RequestMapping(value = "/logs/timeline")
-    public @ResponseBody Map<String,List<Object[]>> stats(Model model, HttpServletRequest request) 
-    		throws IOException 
-    {		
-    	return logEntitiesRepository.downloadsTimeline();
-    }
- 
-	
     @RequestMapping(value = "/downloads.html")
     public String downloads(Model model, HttpServletRequest request) {
 
@@ -291,32 +286,38 @@ public class MetadataController extends BasicController
     @RequestMapping(value="/idmapping")
     public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id, 
     		HttpServletRequest request, HttpServletResponse response) throws IOException
-    {		
-			log(request,"id="+Arrays.toString(id));
-			
-			if(id == null || id.length == 0) {
-				errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", response);
-				return null;
-			}
-			
-			Map<String, String> res = new TreeMap<String, String>();
+    {			
+    	//log events: command, format
+    	Set<LogEvent> events = new HashSet<LogEvent>();
+    	events.add(LogEvent.IDMAPPING);
+    	events.add(LogEvent.FORMAT_OTHER);
 
-			for(String i : id) {							
-				Set<String> im = service.mapIdentifier(i, Mapping.Type.UNIPROT, null);
-				if(im.isEmpty())
-					im = service.mapIdentifier(i, Mapping.Type.CHEBI, null);
-				
-				if(im == null) {
-					res.put(i, null);
-				} else {
-					for(String ac : im)
-						res.put(i, ac);
-				}			
-			}		
+    	if(id == null || id.length == 0) {
+    		errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", 
+    				request, response, events);
+    		return null;
+    	}
 
-			//TODO log to db
-						
-			return res;
+    	Map<String, String> res = new TreeMap<String, String>();
+
+    	for(String i : id) {							
+    		Set<String> im = service.mapIdentifier(i, Mapping.Type.UNIPROT, null);
+    		if(im.isEmpty())
+    			im = service.mapIdentifier(i, Mapping.Type.CHEBI, null);
+
+    		if(im == null) {
+    			res.put(i, null);
+    		} else {
+    			for(String ac : im)
+    				res.put(i, ac);
+    		}			
+    	}		
+
+    	//log to db (for usage reports)
+    	LogUtils.log(logEntitiesRepository, 
+    			events, Geoloc.fromIpAddress(clientIpAddress(request)));
+
+    	return res;
 	}
  
     

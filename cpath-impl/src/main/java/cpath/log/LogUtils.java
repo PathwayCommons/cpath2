@@ -29,7 +29,8 @@ public final class LogUtils {
 	
 	// GeoLite IP location (country) lookup service
 	static LookupService geoliteCountry; 
-	//TODO might add the GeoLite city DB (it's much larger)
+	
+	static LookupService geoliteCity; 
 	
 	public static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 	
@@ -42,6 +43,8 @@ public final class LogUtils {
 		} catch (IOException e) {
 			throw new RuntimeException("Fauled initializing GeoLite LookupService", e);
 		}
+		
+		//TODO ? add the GeoLite city (large) DB later on...
 	}
 	
 	
@@ -82,14 +85,13 @@ public final class LogUtils {
 	static LogEntity count(LogEntitiesRepository repository, 
 			String date, LogEvent event, Geoloc loc) {
 		
-		// TODO only country code matters right now (change later?)
-//		assert loc.getRegion()==null && loc.getCity()==null : "loc.region or loc.city is not null";
-//		loc.setRegion(null);
-//		loc.setCity(null);		
+// Only country code matters right now (current version):
+		assert loc.getRegion()==null : "loc.region is not null";
+		loc.setRegion(null);	
 		
 		// find or create a record, count+1
-		LogEntity t = (LogEntity) repository.findByEventTypeAndEventNameAndGeolocCountryAndDate(
-				event.getType(), event.getName(), loc.getCountry(), date);
+		LogEntity t = (LogEntity) repository.findByEventNameAndGeolocCountryAndGeolocRegionAndDate(
+				event.getName(), loc.getCountry(), loc.getRegion(), date);
 		if(t == null) {			
 			t = new LogEntity(date, event, loc);
 		}
@@ -109,8 +111,13 @@ public final class LogUtils {
 	 * @return
 	 */
 	public static Geoloc lookup(String ipAddress) {
+		assert geoliteCountry != null : "geoliteCountry is null";
+		
 		Country country = geoliteCountry.getCountry(ipAddress);
-		Geoloc loc = new Geoloc(country.getCode(), country.getName(), null, null);
+		String region = (geoliteCity!=null) ? geoliteCity.getRegion(ipAddress).region : null;
+		
+		Geoloc loc = new Geoloc(country.getCode(), region);
+		
 		return loc;
 	}
 	
@@ -159,7 +166,7 @@ public final class LogUtils {
 		return addIsoDate(date, days);
 	}
 	
-		
+	
 	/**
 	 * Saves and counts a series of data access events 
 	 * (usually associated with the same web request) 
@@ -186,7 +193,8 @@ public final class LogUtils {
 			count(repository, day, event, loc);
 		}
 		
-		count(repository, day, LogEvent.total(), loc);
+		//total counts (is not sum of the above); counts once per request/response
+		count(repository, day, LogEvent.TOTAL, loc);
 		
 	}
 }

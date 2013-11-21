@@ -37,6 +37,7 @@ import cpath.service.jaxb.SearchHit;
  * This is related to full-text search results and projections used 
  * in {@link PaxtoolsDAO#search(String, int, Class, String[], String[])}
  * and {@link PaxtoolsDAO#getTopPathways()} methods.
+ * 
  * Also, we suppose that 'organism', 'dataSource' (URIs), and 'keyword' 
  * full-text search fields values were stored in the Lucene index, 
  * and now available.
@@ -93,7 +94,7 @@ final class SearchHitsTransformer implements ResultTransformer {
 		
 		
 		// extract organisms (URI only) 
-		if(doc.getField(FIELD_ORGANISM) != null) {
+		if(doc.getFieldable(FIELD_ORGANISM) != null) {
 			Set<String> uniqueVals = new TreeSet<String>();
 			for(String o : doc.getValues(FIELD_ORGANISM)) {
 				if(o.startsWith("http:")) {
@@ -104,7 +105,7 @@ final class SearchHitsTransformer implements ResultTransformer {
 		}
 		
 		// extract values form the index
-		if(doc.getField(FIELD_DATASOURCE) != null) {
+		if(doc.getFieldable(FIELD_DATASOURCE) != null) {
 			Set<String> uniqueVals = new TreeSet<String>();
 			for(String d : doc.getValues(FIELD_DATASOURCE)) {
 				if(d.startsWith(CPathSettings.xmlBase())) { 
@@ -114,8 +115,8 @@ final class SearchHitsTransformer implements ResultTransformer {
 			hit.getDataSource().addAll(uniqueVals);
 		}	
 		
-		// extract only pathway URIs (TODO exclude itself if pathway type)
-		if(doc.getField(FIELD_PATHWAY) != null) {
+		// extract only pathway URIs
+		if(doc.getFieldable(FIELD_PATHWAY) != null) {
 			Set<String> uniqueVals = new TreeSet<String>();
 			for(String d : doc.getValues(FIELD_PATHWAY)) {
 				try {
@@ -130,7 +131,7 @@ final class SearchHitsTransformer implements ResultTransformer {
 		if (highlighter != null) {
 			final List<String> frags = new ArrayList<String>();
 			try {
-				if (doc.getField(FIELD_KEYWORD) != null) {
+				if (doc.getFieldable(FIELD_KEYWORD) != null) {
 					final String text = StringUtils.join(doc.getValues(FIELD_KEYWORD), " ");					
 					for(String fr : highlighter.getBestFragments(ANALYZER,
 							FIELD_KEYWORD, text, 5)) {

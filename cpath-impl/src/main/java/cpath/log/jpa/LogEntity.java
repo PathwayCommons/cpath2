@@ -3,12 +3,9 @@ package cpath.log.jpa;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
@@ -25,7 +22,7 @@ import org.springframework.util.Assert;
 @Entity
 @DynamicUpdate
 @DynamicInsert
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"date", "type", "name", "country"}))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"date", "name", "country", "region"}))
 public class LogEntity extends AbstractEntity {
 		
 	@Embedded
@@ -38,9 +35,7 @@ public class LogEntity extends AbstractEntity {
 	@Embedded
 	@AttributeOverrides({
 	    @AttributeOverride(name="country", column=@Column(name="country")),
-	    @AttributeOverride(name="countryName", column=@Column(name="countryName")),
-//	    @AttributeOverride(name="region", column=@Column(name="region")),
-//	    @AttributeOverride(name="city", column=@Column(name="city"))
+	    @AttributeOverride(name="region", column=@Column(name="region")),
 	})
 	private Geoloc geoloc;
 

@@ -103,7 +103,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			FIELD_XREFID, //xref.id (incl. direct child xref's id, if any)
 			FIELD_ECNUMBER,
 			FIELD_SEQUENCE,
-			// plus, filter fields (TODO experiment with not including these fields into default search fields; use for filtering only)
+			// plus, filter fields (TODO ? not include these (filter) fields into default search?
 			FIELD_ORGANISM,
 			FIELD_DATASOURCE,
 			FIELD_PATHWAY, // i.e., helps find an object by a parent pathway name or filter a search results by pathway ;) 
@@ -385,7 +385,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			Highlighter highlighter = null;
 			if(!query.equals("*")) {
 				// create a highlighter (store.YES must be enabled on 'keyword' search field, etc.!)
-				//TODO shall I rewrite the luceneQuery?
+				//TODO ? shall we rewrite luceneQuery before executing (shelve for later)?
 				QueryScorer scorer = new QueryScorer(luceneQuery, FIELD_KEYWORD);   
 				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
 				highlighter = new Highlighter(formatter, scorer);
@@ -693,7 +693,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	
 	@Override
 	public void replace(BioPAXElement existing, BioPAXElement replacement) {
-		throw new UnsupportedOperationException("not supported"); //TODO if required...
+		throw new UnsupportedOperationException("not supported");
 	}
 
 	
