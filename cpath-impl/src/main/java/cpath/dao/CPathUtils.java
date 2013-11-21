@@ -513,7 +513,7 @@ public final class CPathUtils {
 	 * @return big BioPAX model
 	 */
 	public static Model importFromTheArchive() {
-		//TODO an option to load other archives (e.g., Reactome only, for testing)
+		//TODO ? an option to load other archives (e.g., Reactome only, for testing)
 		final String archive = CPathSettings.biopaxExportFileName("All"); 
 		
 		Model model = null;

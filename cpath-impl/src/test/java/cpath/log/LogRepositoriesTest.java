@@ -17,6 +17,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import cpath.config.CPathSettings;
 import cpath.log.LogType;
 import cpath.log.LogUtils;
 import cpath.log.jpa.Geoloc;
@@ -24,6 +25,7 @@ import cpath.log.jpa.LogEntitiesRepository;
 import cpath.log.jpa.LogEntity;
 import cpath.log.jpa.LogEvent;
 import cpath.service.Cmd;
+import cpath.service.GraphType;
 import cpath.service.OutputFormat;
 import cpath.service.Status;
 
@@ -75,9 +77,9 @@ public class LogRepositoriesTest {
 		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
 	
 		// count twice
-		LogEntity logEntity = LogUtils.count(repository, LogUtils.today(), LogEvent.total(), ipAddr);
+		LogEntity logEntity = LogUtils.count(repository, LogUtils.today(), LogEvent.TOTAL, ipAddr);
 		assertEquals(1L, logEntity.getCount().longValue());
-		logEntity = LogUtils.count(repository, LogUtils.today(), LogEvent.total(), ipAddr);
+		logEntity = LogUtils.count(repository, LogUtils.today(), LogEvent.TOTAL, ipAddr);
 		assertEquals(2L, logEntity.getCount().longValue());
 		
 		// test that there is only one record yet
@@ -94,25 +96,25 @@ public class LogRepositoriesTest {
 		// Today
 		String today = LogUtils.today();
 		LogUtils.count(repository, today, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
-		LogUtils.count(repository, today, LogEvent.total(), ipAddr);
+		LogUtils.count(repository, today, LogEvent.TOTAL, ipAddr);
 		LogUtils.count(repository, today, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
-		LogUtils.count(repository, today, LogEvent.total(), ipAddr);
+		LogUtils.count(repository, today, LogEvent.TOTAL, ipAddr);
 		LogUtils.count(repository, today, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
-		LogUtils.count(repository, today, LogEvent.total(), ipAddr);
+		LogUtils.count(repository, today, LogEvent.TOTAL, ipAddr);
 		LogUtils.count(repository, today, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
-		LogUtils.count(repository, today, LogEvent.total(), ipAddr);
-		LogUtils.count(repository, today, LogEvent.from(Cmd.SEARCH, null), ipAddr);
+		LogUtils.count(repository, today, LogEvent.TOTAL, ipAddr);
+		LogUtils.count(repository, today, LogEvent.from(Cmd.SEARCH), ipAddr);
 		// Yesterday
 		String yesterDay = LogUtils.addIsoDate(today, -1);
 		LogUtils.count(repository, yesterDay, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
-		LogUtils.count(repository, yesterDay, LogEvent.total(), ipAddr);
+		LogUtils.count(repository, yesterDay, LogEvent.TOTAL, ipAddr);
 		LogUtils.count(repository, yesterDay, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
-		LogUtils.count(repository, yesterDay, LogEvent.total(), ipAddr);
+		LogUtils.count(repository, yesterDay, LogEvent.TOTAL, ipAddr);
 		LogUtils.count(repository, yesterDay, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
-		LogUtils.count(repository, yesterDay, LogEvent.total(), ipAddr);
+		LogUtils.count(repository, yesterDay, LogEvent.TOTAL, ipAddr);
 		LogUtils.count(repository, yesterDay, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
-		LogUtils.count(repository, yesterDay, LogEvent.total(), ipAddr);
-		LogUtils.count(repository, yesterDay, LogEvent.from(Cmd.SEARCH, null), ipAddr);
+		LogUtils.count(repository, yesterDay, LogEvent.TOTAL, ipAddr);
+		LogUtils.count(repository, yesterDay, LogEvent.from(Cmd.SEARCH), ipAddr);
 		
 		assertEquals(12, repository.count());
 		
@@ -171,7 +173,7 @@ public class LogRepositoriesTest {
 					LogEvent.from(OutputFormat.BIOPAX),
 					new LogEvent(LogType.PROVIDER, "Reactome"),
 					new LogEvent(LogType.PROVIDER, "HumanCyc"),
-					LogEvent.from(Cmd.GET, null)
+					LogEvent.from(GraphType.NEIGHBORHOOD)
 			)
 		);
 		
@@ -204,5 +206,36 @@ public class LogRepositoriesTest {
 		tl = res.get("HumanCyc");
 		assertNotNull(tl);
 		assertEquals(1L, tl.get(0)[1]); //PROVIDER type, yesterday counts
+	}
+	
+	@Test
+	public final void testLogEventFromDownloads() {
+		String file = CPathSettings.exportArchivePrefix() + "Reactome.BIOPAX.owl.gz";
+		Set<LogEvent> events = LogEvent.fromDownloads(file);
+		assertEquals(4, events.size());
+		
+		//'All' 
+		file = CPathSettings.exportArchivePrefix() + "All.BIOPAX.owl.gz";
+		events = LogEvent.fromDownloads(file);
+		assertEquals(3, events.size());
+		
+		file = CPathSettings.exportArchivePrefix() + "Reactome.GSEA.gmt.gz";
+		events = LogEvent.fromDownloads(file);
+		assertEquals(4, events.size());
+		
+		//illegal format - still logged as OTHER
+		file = CPathSettings.exportArchivePrefix() + "Reactome.foo.gmt.gz";
+		events = LogEvent.fromDownloads(file);
+		assertEquals(4, events.size());
+		
+		//other (metadata etc.)
+		file = "blacklist.txt";
+		events = LogEvent.fromDownloads(file);
+		assertEquals(3, events.size());//counted for: file, command (DOWNLOAD), format (OTHER)
+		
+		//when a provider's name does not start from a capital letter, LogType.PROVIDER event won't be there
+		file = CPathSettings.exportArchivePrefix() + "reactome.foo.gmt.gz";
+		events = LogEvent.fromDownloads(file);
+		assertEquals(3, events.size());
 	}
 }

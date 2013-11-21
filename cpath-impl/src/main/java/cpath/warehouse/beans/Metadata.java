@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 
 import javax.persistence.*;
 
+import org.apache.commons.lang.StringUtils;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Provenance;
 
@@ -333,8 +334,11 @@ public final class Metadata {
     
 	/**
 	 * Creates a new Provenance from this Metadata and sets
-	 * if to all Entity class objects in the model; removes
-	 * all previous dataSource property values.
+	 * if to all Entity class objects in the model. 
+	 * 
+	 * Removes all other Provenance instances and 
+	 * corresponding dataSource property values
+	 * from the model.
 	 * 
 	 * @param model BioPAX model to update
 	 */
@@ -378,10 +382,11 @@ public final class Metadata {
 	 * @return
 	 */
 	public String standardName() {
+		//also capitalize (can be extremely useful...)
 		if(name.size() > 1)
-			return name.get(1);
-		else
-			return name.get(0);
+			return StringUtils.capitalize(name.get(1));
+		else 
+			return StringUtils.capitalize(name.get(0));
 	}
 
 	public Integer getNumPathways() {

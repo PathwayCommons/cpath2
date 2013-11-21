@@ -182,7 +182,7 @@ public final class PremergeImpl implements Premerger {
 						+ metadata.getUri());
 					if(metadata.getType() == METADATA_TYPE.MAPPING)
 						// read and import the mapping table to metaDataDAO
-						updateIdMapping(metadata, metaDataDAO); //TODO implement this optional method (it is empty)
+						updateIdMapping(metadata, metaDataDAO); //TODO implement
 					else // it's WAREHOUSE data; - convert and persist to the BioPAX Warehouse
 						updateBiopaxWarehouse(metadata, (Model) paxtoolsDAO);
 				} 			

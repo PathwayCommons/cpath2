@@ -555,15 +555,29 @@ public final class CPathSettings {
 
 
 	/**
-	 * Gets the filename of the archive where entire 
-	 * BioPAX db/model is exported. 
+	 * Full path to the archive file where BioPAX db/model is exported. 
 	 * 
-	 * @param datasource - datasource (metadata) ID or "All", "Backup".
+	 * @param datasource - data source Standard Name or "All", "Backup".
 	 * @return
 	 */
 	public static String biopaxExportFileName(String datasource) {
-		return downloadsDir() + File.separator 
-				+ property(PROVIDER_NAME) + "." + property(PROVIDER_VERSION) 
-				+ "." + datasource + ".BIOPAX.owl.gz";
+		return downloadsDir() + File.separator + 
+				exportArchivePrefix() + datasource 
+					+ ".BIOPAX.owl.gz";
+	}
+	
+	
+	/**
+	 * Gets the common file name prefix (includes instance's provider
+	 * name and version, i.e., that comes after the directory path 
+	 * and file separator but before source name and format) 
+	 * for all cpath2-generated export data archives.
+	 * 
+	 * @return
+	 */
+	public static String exportArchivePrefix() {
+		return property(PROVIDER_NAME) + 
+				"." + property(PROVIDER_VERSION) + 
+				".";
 	}
 }

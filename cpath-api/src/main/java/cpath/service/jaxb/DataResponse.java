@@ -18,7 +18,7 @@ import javax.xml.bind.annotation.*;
 public class DataResponse extends ServiceResponse {
 
 	private Object data; // BioPAX OWL, String, List, or any other data
-	private Set<String> providers; //pathway data provider names (for logging/stats)
+	private Set<String> providers; //pathway data provider standard names (for logging/stats)
 	
 	public DataResponse() {
 	}

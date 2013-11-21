@@ -2,8 +2,6 @@ package cpath.log.jpa;
 
 import org.springframework.data.querydsl.QueryDslPredicateExecutor;
 
-import cpath.log.LogType;
-
 
 /**
  * Main repository interface to be used by spring-data 
@@ -15,6 +13,6 @@ import cpath.log.LogType;
 public interface LogEntitiesRepository extends BaseRepository<LogEntity, Long>, 
 	QueryDslPredicateExecutor<LogEntity>, LogEntitiesRepositoryCustom {
 	
-	LogEntity findByEventTypeAndEventNameAndGeolocCountryAndDate(LogType type, String name, String country, String date);
+	LogEntity findByEventNameAndGeolocCountryAndGeolocRegionAndDate(String name, String country, String region, String date);
 		
 }

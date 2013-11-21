@@ -47,6 +47,7 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.api.Validator;
+import org.h2.tools.Csv;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -60,6 +61,9 @@ import org.springframework.core.io.Resource;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
@@ -93,7 +97,8 @@ public final class Admin {
         UPDATE_COUNTS("-update-counts"),
 		EXPORT("-export"),
         CONVERT("-convert"),
-        INIT_LOG("-init-log"),
+        EXPORT_LOG("-export-log"),
+        //TODO ? add -import-log (from CSV)
 		;
 
         // string ref for readable name
@@ -230,9 +235,11 @@ public final class Admin {
 			
 			clearCache();
 		
-		} else if (args[0].equals(Cmd.INIT_LOG.toString())) {	
-			
-			initLog();	
+		} else if (args[0].equals(Cmd.EXPORT_LOG.toString())) {	
+			if (args.length == 2 && "--clear".equalsIgnoreCase(args[1]))
+				initLog(true);
+			else
+				initLog(false);	
 			
 		} else {
 			System.err.println(usage());
@@ -245,28 +252,40 @@ public final class Admin {
 
     
     //clean/update service access counts by location,date in the DB from available .log files
-    private static void initLog() throws IOException {
+    public static void initLog(boolean clear) throws IOException {
 		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
-
-        // load the log repositories from the app. context
-        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-				"classpath:META-INF/spring/applicationContext-log.xml");
-        // get auto-generated jpa CRUD repositories (using spring-data feature/config.)
- 		LogEntitiesRepository logEntitiesRepository = context.getBean(LogEntitiesRepository.class);
  		
- 		//TODO backup cpath2 access db to a TSV file
+ 		//backup cpath2 access db to a CSV file
+ 		CPathSettings cps = getInstance();
+ 		String filename = dataDir() + cps.getMainDb() + ".log.csv";
+ 		Connection conn = null;
+ 		try {
+//			Class.forName("org.h2.Driver");
+			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) 
+					+ cps.getMainDb());
+			new Csv()
+				.write(conn, filename, "select * from logentity", "UTF-8");
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		} finally {
+			try {conn.close();} catch (SQLException e) {}
+		}
  		
- 		// clean
- 		logEntitiesRepository.deleteAll();
-		
- 		// TODO import the log files (looks, this is not required anymore)
-// 		CPathUtils.importAllLogs(...);
-        
-        context.close();
+ 		// clear
+ 		if(clear) {
+ 	        // load the log repositories from the app. context
+ 	        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+ 					"classpath:META-INF/spring/applicationContext-log.xml");
+ 	        // get auto-generated jpa CRUD repositories (using spring-data feature/config.)
+ 	 		LogEntitiesRepository logEntitiesRepository = context.getBean(LogEntitiesRepository.class);
+ 			
+ 			logEntitiesRepository.deleteAll();
+ 			context.close();
+ 		}
 	}
 
-
+    
 	private static void fail(String[] args, String details) {
         throw new IllegalArgumentException(
         	"Invalid cpath2 command: " +  Arrays.toString(args)
@@ -568,7 +587,8 @@ public final class Admin {
         // other useful (utility) commands
 		toReturn.append(Cmd.EXPORT.toString() + " <output> [<uri,uri,..>]" + NEWLINE);
 		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format>" + NEWLINE);
-		toReturn.append(Cmd.INIT_LOG.toString() + " (cleares/updates cpath2 service assess summary tables)" + NEWLINE);
+		toReturn.append(Cmd.EXPORT_LOG.toString() + " [--clear] (export cpath2 assess log to a " +
+				"CSV file and optionally clear the table)" + NEWLINE);
 		
 		return toReturn.toString();
 	}
@@ -748,7 +768,8 @@ public final class Admin {
     	// export by organism
         LOG.info("create-downloads: preparing data 'by organism' archives...");
         for(String org :  CPathSettings.organisms()) {
-        	//generate archives for current organism
+        	// generate archives for current organism
+        	// hack: org.toLowerCase() is to tell by-organism from by-datasource archives (for usage stats...) 
         	archiveName = CPathSettings.biopaxExportFileName(org.toLowerCase());
         	exportBiopax(dao, archiveName, null, new String[]{org});
         	files.add(archiveName);

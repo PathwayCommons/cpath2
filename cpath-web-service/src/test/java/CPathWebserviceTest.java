@@ -18,7 +18,7 @@ import org.springframework.web.client.RestTemplate;
  * JVM property
  */
 @Ignore // TODO comment out @Ignore and run tests when the WS is up and running
-public class CPathSquaredWebserviceTest {
+public class CPathWebserviceTest {
 	
 	static RestTemplate template;
 

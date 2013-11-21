@@ -1,5 +1,6 @@
 package cpath.log.jpa;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -10,6 +11,7 @@ import javax.persistence.Enumerated;
 
 import org.springframework.util.Assert;
 
+import cpath.config.CPathSettings;
 import cpath.log.LogType;
 import cpath.service.Cmd;
 import cpath.service.ErrorResponse;
@@ -43,6 +45,26 @@ public class LogEvent {
 	@Column(nullable=false)
 	private String name;
 	
+	/**
+	 * a special constant event type, because there is no DOWNLOAD command in the cpath2 api.
+	 */
+	public static LogEvent DOWNLOAD = new LogEvent(LogType.COMMAND, "DOWNLOAD");
+	
+	/**
+	 * a special constant event type, because there is no IDMAPPING command in the cpath2 api.
+	 */
+	public static LogEvent IDMAPPING = new LogEvent(LogType.COMMAND, "IDMAPPING");
+	
+	/**
+	 * a special constant event type for total access counts
+	 */
+	public static LogEvent TOTAL = new LogEvent(LogType.TOTAL, LogType.TOTAL.description);
+	
+	/**
+	 * a special constant event type for other formats access counts (e.g., XML, JSON search, id-mapping query results)
+	 */
+	public static LogEvent FORMAT_OTHER = new LogEvent(LogType.FORMAT, "OTHER");
+	
 	
 	public LogEvent() {
 	}
@@ -56,12 +78,12 @@ public class LogEvent {
 	}
 	
 	
-	public static LogEvent from(Cmd command, GraphType graphType) {	
-		if(command != Cmd.GRAPH)
-			return new LogEvent(LogType.COMMAND, command.toString());
-		else {
-			return new LogEvent(LogType.COMMAND, graphType.toString());
-		}
+	public static LogEvent from(GraphType graphType) {	
+		return new LogEvent(LogType.COMMAND, graphType.toString());
+	}
+	
+	public static LogEvent from(Cmd command) {	
+		return new LogEvent(LogType.COMMAND, command.toString());
 	}
 	
 	public static LogEvent from(OutputFormat outputFormat) {
@@ -82,25 +104,59 @@ public class LogEvent {
 		return from(errorResponse.getStatus());
 	}
 	
-	public static Set<LogEvent> fromProviders(Set<String> providers) {
+	public static Set<LogEvent> fromProviders(Collection<String> providers) {
 		Set<LogEvent> set = new HashSet<LogEvent>();
 		for(String prov : providers)
 			set.add(new LogEvent(LogType.PROVIDER, prov));
 		return set;
 	}
 	
-	public static LogEvent download() {
-		return new LogEvent(LogType.COMMAND, "DOWNLOAD");
-	}
 	
-	public static LogEvent total() {
-		return new LogEvent(LogType.TOTAL, LogType.TOTAL.description);
-	}
-	
-	public static Set<LogEvent> fromDownloadsArchive(String filename) {
+	/**
+	 * Creates a list of things to update counts for -
+	 * name, format, provider - from the 
+	 * auto-generated data archive file.
+	 * 
+	 * @param filename see {@link CPathSettings#biopaxExportFileName(String)}
+	 * 			for how it's created.
+	 * @return
+	 */
+	public static Set<LogEvent> fromDownloads(String filename) {
 		Set<LogEvent> set = new HashSet<LogEvent>();
+
+		set.add(new LogEvent(LogType.FILE, filename));
+		set.add(LogEvent.DOWNLOAD);
 		
-		//TODO extract name, format, provider from cPath2 archive name
+		// extract the orig. data source's standard name -
+		// first, remove common prefix (incl. cPath2 instance name and ver.)
+		if(filename.startsWith(CPathSettings.exportArchivePrefix())) {
+			int idx = CPathSettings.exportArchivePrefix().length();
+			String s = filename.substring(idx);
+			String[] parts = s.split("\\.");
+			assert parts.length > 1 : "split by '.' failed to produce " +
+			"at least 2 parts from the filename: " + filename;
+			//a hack: in order to skip for by-organism and '*.All.*' archives
+			if(Character.isUpperCase(parts[0].charAt(0)) 
+					&& !"All".equalsIgnoreCase(parts[0])) {
+				set.add(new LogEvent(LogType.PROVIDER, parts[0]));
+			}
+
+			// extract the format
+			OutputFormat format = null; 
+			try { 
+				format = OutputFormat.valueOf(parts[1]);
+			} catch(Exception e) {
+
+			}
+			if(format != null)
+				set.add(LogEvent.from(format));
+			else {
+				set.add(LogEvent.FORMAT_OTHER);
+			}
+		} else {
+			set.add(LogEvent.FORMAT_OTHER);
+		}
+			
 		
 		return set;
 	}
@@ -122,4 +178,9 @@ public class LogEvent {
 		this.name = name;
 	}
 	
+	
+	@Override
+	public String toString() {
+		return type + " " + name;
+	};
 }

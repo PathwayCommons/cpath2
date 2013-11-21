@@ -105,8 +105,6 @@ public class UniprotConverterImplTest {
 		assertEquals(2, ((SequenceSite)sl).getSequencePosition());
 		assertEquals("MOD_RES N-acetylalanine", mf.getModificationType().getTerm().iterator().next());
 		
-		//TODO add more checks that the conversion went ok..
-		
 		//this is just to test for a bug in the DR text format parser...
 		boolean rel = false;
 		for(Xref x : pr.getXref()) {

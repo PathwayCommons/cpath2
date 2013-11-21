@@ -65,6 +65,7 @@ import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
+import cpath.service.jaxb.TraverseEntry;
 import cpath.service.jaxb.TraverseResponse;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
@@ -171,6 +172,8 @@ class CPathServiceImpl implements CPathService {
 				hits = new SearchResponse();
 				hits.setMaxHitsPerPage(maxHitsPerPage);
 				hits.setPageNo(page);
+			} else {
+				setProviders(hits);
 			}
 			
 			hits.setComment("Search '" + queryStr  + "' in " + 
@@ -187,6 +190,21 @@ class CPathServiceImpl implements CPathService {
 		return serviceResponse;
 	}
 		
+
+	private void setProviders(SearchResponse hits) {
+		//get providers' standard names from their uris
+		Set<String> uris = hits.provenanceUris();
+		log.debug("setProviders; hits.provenanceUris(): " + uris);
+		String propertyPath = "Provenance/standardName";		
+		TraverseResponse tr = 
+			(TraverseResponse) traverse(propertyPath, uris.toArray(new String[] {}));
+		Set<String> names = new HashSet<String>();
+		for(TraverseEntry te : tr.getTraverseEntry()) {
+			names.addAll(te.getValue());
+		}
+		hits.setProviders(names); 
+	}
+
 
 	@Override
 	public ServiceResponse fetch(final OutputFormat format, final String... uris) {
@@ -636,6 +654,8 @@ class CPathServiceImpl implements CPathService {
 				"other pathways nor controlled of any process)");
 		topPathways.setMaxHitsPerPage(hits.size());
 		topPathways.setPageNo(0);
+		
+		setProviders(topPathways);
 		
 		return topPathways;
 	}
