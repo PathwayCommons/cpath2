@@ -1,0 +1,62 @@
+#logback.classic pattern: %d %-5level %logger{25} - %msg%n
+2013-08-14 00:15:09,531 INFO  c.w.BasicController - REQUEST 66.249.73.7	GET	/downloads.html;jsessionid=A46E53732A9D14565D1D15F9ED38E232	null
+
+2013-08-14 09:01:24,188 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509metadata/datasources	[format=BIOPAX, uri=[http://purl.org/pc2/3/datasources]]
+#another empty line goes next
+
+2013-08-14 09:01:24,189 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/datasources
+2013-08-14 09:01:34,426 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509help/formats	[format=BIOPAX, uri=[http://purl.org/pc2/3/formats]]
+2013-08-14 09:01:34,427 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/formats
+2013-08-14 09:01:44,660 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509help/types	[format=BIOPAX, uri=[http://purl.org/pc2/3/types]]
+2013-08-14 09:01:44,660 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/types
+2013-08-14 09:01:54,892 WARN  o.s.w.s.PageNotFound - No mapping found for HTTP request with URI [//types/properties] in DispatcherServlet with name 'cpath2'
+2013-08-14 09:01:55,343 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509help/directions	[format=BIOPAX, uri=[http://purl.org/pc2/3/directions]]
+2013-08-14 09:01:55,343 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/directions
+2013-08-14 09:02:05,788 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509help/kinds	[format=BIOPAX, uri=[http://purl.org/pc2/3/kinds]]
+2013-08-14 09:02:05,789 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/kinds
+2013-08-14 09:02:16,017 WARN  o.s.w.s.PageNotFound - No mapping found for HTTP request with URI [//types/inverse_properties] in DispatcherServlet with name 'cpath2'
+2013-08-14 09:02:24,525 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509metadata/datasources	[format=BIOPAX, uri=[http://purl.org/pc2/3/datasources]]
+2013-08-14 09:02:24,526 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/datasources
+2013-08-14 09:02:34,770 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509help/formats	[format=BIOPAX, uri=[http://purl.org/pc2/3/formats]]
+2013-08-14 09:02:34,771 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/formats
+2013-08-14 09:02:45,000 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509help/types	[format=BIOPAX, uri=[http://purl.org/pc2/3/types]]
+2013-08-14 09:02:45,000 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/types
+2013-08-14 09:02:55,602 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509help/directions	[format=BIOPAX, uri=[http://purl.org/pc2/3/directions]]
+2013-08-14 09:02:55,602 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/directions
+2013-08-14 09:03:06,123 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509help/kinds	[format=BIOPAX, uri=[http://purl.org/pc2/3/kinds]]
+2013-08-14 09:03:06,124 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/kinds
+2013-08-14 09:03:24,862 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509metadata/datasources	[format=BIOPAX, uri=[http://purl.org/pc2/3/datasources]]
+2013-08-14 09:03:24,863 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/datasources
+2013-08-14 09:03:35,095 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509help/formats	[format=BIOPAX, uri=[http://purl.org/pc2/3/formats]]
+2013-08-14 09:03:35,095 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/formats
+2013-08-14 09:03:45,336 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509help/types	[format=BIOPAX, uri=[http://purl.org/pc2/3/types]]
+2013-08-14 09:03:45,336 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/types
+2013-08-14 09:03:55,936 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509help/directions	[format=BIOPAX, uri=[http://purl.org/pc2/3/directions]]
+2013-08-14 09:03:55,936 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/directions
+2013-08-14 09:04:06,460 INFO  c.w.BasicController - REQUEST 66.249.74.168	GET	/;jsessionid=5752F8E0F628D391445C9D5D4E3EC509help/kinds	[format=BIOPAX, uri=[http://purl.org/pc2/3/kinds]]
+2013-08-14 09:04:06,460 WARN  c.s.i.CPathServiceImpl - urisToBpes: unknown/broken URI: http://purl.org/pc2/3/kinds
+2013-08-14 15:41:25,169 INFO  c.w.BasicController - REQUEST 192.168.1.2	POST	/search	[q=*, type=Provenance, page=0, organisms=null, datasource=null]
+2013-08-14 15:41:25,213 INFO  c.w.BasicController - REQUEST 192.168.1.2	POST	/search	[q=*, type=BioSource, page=0, organisms=null, datasource=null]
+2013-08-14 15:58:20,652 INFO  c.w.BasicController - REQUEST 192.168.1.2	POST	/top_pathways	[organisms=null, datasource=null]
+2013-08-14 16:02:26,998 INFO  c.w.BasicController - REQUEST 192.168.1.2	POST	/traverse	[path=Pathway/pathwayComponent:Named/displayName]
+2013-08-14 16:02:30,867 INFO  c.w.BasicController - REQUEST 192.168.1.2	POST	/traverse	[path=Pathway/pathwayComponent:Named/displayName]
+2013-08-14 16:02:33,108 INFO  c.w.BasicController - REQUEST 192.168.1.2	POST	/get	[format=BIOPAX, uri=[http://identifiers.org/panther.pathway/P04371]]
+2013-08-14 16:02:33,114 INFO  c.s.i.CPathServiceImpl - DATASOURCE [PANTHER Pathway]
+2013-08-14 16:19:34,091 INFO  c.w.BasicController - REQUEST 192.168.1.2	POST	/search	[q=BRCA1, type=Interaction, page=0, organisms=null, datasource=null]
+2013-08-14 16:19:34,779 INFO  c.w.BasicController - REQUEST 192.168.1.2	POST	/traverse	[path=Named/displayName]
+2013-08-14 16:19:34,792 INFO  c.w.BasicController - REQUEST 192.168.1.2	POST	/traverse	[path=Pathway/pathwayComponent]
+2013-08-14 16:19:34,806 INFO  c.w.BasicController - REQUEST 192.168.1.2	POST	/traverse	[path=Interaction/participant:Named/displayName]
+2013-08-14 16:19:43,362 INFO  c.w.BasicController - REQUEST 192.168.1.2	POST	/graph	[kind=NEIGHBORHOOD, format=BIOPAX, organisms=null, datasource=null, direction=null, limit=1]
+2013-08-14 16:19:43,517 INFO  c.s.i.CPathServiceImpl - DATASOURCE [Reactome]
+2013-08-14 16:19:52,852 INFO  c.w.BasicController - REQUEST 192.168.1.3	POST	/search	[q=BRCA1, type=EntityReference, page=0, organisms=null, datasource=null]
+2013-08-14 16:19:53,007 INFO  c.w.BasicController - REQUEST 192.168.1.3	POST	/traverse	[path=EntityReference/entityReferenceOf]
+2013-08-14 16:19:53,028 INFO  c.w.BasicController - REQUEST 192.168.1.3	POST	/traverse	[path=Named/displayName]
+2013-08-14 16:19:53,054 INFO  c.w.BasicController - REQUEST 192.168.1.3	POST	/traverse	[path=Pathway/pathwayComponent]
+2013-08-14 16:19:53,484 INFO  c.w.BasicController - REQUEST 192.168.1.3	POST	/traverse	[path=EntityReference/memberEntityReference:Named/displayName]
+2013-08-14 16:19:53,495 INFO  c.w.BasicController - REQUEST 192.168.1.3	POST	/traverse	[path=EntityReference/memberEntityReference]
+2013-08-14 16:19:55,864 INFO  c.w.BasicController - REQUEST 192.168.1.3	POST	/traverse	[path=EntityReference/entityReferenceOf]
+#next line was edited as "/cpath2/graph" instead of "/graph", because the actual cpath2 context path can vary from system to system...
+2013-08-14 16:20:06,268 INFO  c.w.BasicController - REQUEST 192.168.1.3	POST	/cpath2/graph	[kind=NEIGHBORHOOD, format=BIOPAX, organisms=null, datasource=null, direction=null, limit=1]
+2013-08-14 16:20:06,392 INFO  c.s.i.CPathServiceImpl - DATASOURCE [HPRD, NCI_Nature, PhosphoSitePlus, Reactome]
+2013-08-15 16:46:49,008 INFO  c.w.BasicController - REQUEST 192.168.1.3	GET	/downloads.html	null
+2013-08-15 16:46:56,072 INFO  c.w.i.CPathWebserviceHandlerInterceptor - DOWNLOAD 192.168.1.3	GET	/downloads/Pathway%20Commons%202%20HPRD.BINARY_SIF.tsv.gz	null
