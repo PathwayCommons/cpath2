@@ -90,4 +90,32 @@ public class CPathUtilsTest {
 		assertTrue(m.containsID("two"));
 	}
 	
+	
+	@Test
+	public void testDownload() throws IOException {
+		
+		final String relPathAndName = "data" + File.separator + 
+				"TEST" + File.separator + "test-download";
+		
+		long length = CPathUtils.download("classpath:test_uniprot_data.dat.gz", 
+				relPathAndName, false, true);
+		assertTrue(length > 0);
+		
+		length = CPathUtils.download("classpath:test_uniprot_data.dat.gz", 
+				relPathAndName, false, false); //don't replace
+		assertTrue(length == 0);
+		
+		length = CPathUtils.download("classpath:test_uniprot_data.dat.gz", 
+				relPathAndName, true, true);
+		assertTrue(length > 0);
+
+		length = CPathUtils.download("classpath:test_uniprot_data.dat.gz", 
+				relPathAndName, true, false);
+		assertTrue(length == 0);
+		
+		File f = new File(CPathSettings.homeDir() + File.separator + relPathAndName);
+		assertTrue(f.exists());
+		
+		f.deleteOnExit();
+	}
 }

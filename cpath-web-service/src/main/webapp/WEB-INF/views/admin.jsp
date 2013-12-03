@@ -28,7 +28,6 @@
 	<div id="nav">
 		<ol>
 			<li><a href="admin/homedir.html">Home Directory</a>(hidden, temp., and cache files are not listed)</li>
-			<li><a href="admin/stats.html">Assess Log Summary</a>(simple counts)</li>
 			<li><a href="tests.html">Tests (QUnit)</a></li>
 		</ol>
 	</div>	

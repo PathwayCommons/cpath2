@@ -52,6 +52,7 @@ import cpath.service.jaxb.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
@@ -67,9 +68,10 @@ public abstract class BasicController {
     
     @Autowired
     public void setLogRepository(LogEntitiesRepository logEntitiesRepository) {
+    	Assert.notNull(logEntitiesRepository);
 		this.logEntitiesRepository = logEntitiesRepository;
 	}
- 
+
     
     /**
      * Http error response from the error bean.

@@ -48,7 +48,13 @@ public class LogRepositoriesTest {
 		Geoloc loc = LogUtils.lookup("66.249.74.168");
 		assertNotNull(loc);
 		assertEquals("US", loc.getCountry());
-//		assertNull(loc.getRegion());
+		assertEquals("CA", loc.getRegion());
+		
+		// localhost (and also for any LAN IPs, or not IPv4 ones...)
+		loc = LogUtils.lookup("127.0.0.1");
+		assertNull(loc);
+		loc = Geoloc.fromIpAddress("foo");
+		assertNull(loc);
 	}
 
 	

@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.servlet.ModelAndView;
+import org.springframework.util.Assert;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import cpath.log.LogUtils;
@@ -30,9 +30,11 @@ public final class CPathWebserviceHandlerInterceptor extends
 			.getLogger(CPathWebserviceHandlerInterceptor.class);
 	
 	private LogEntitiesRepository logEntitiesRepository;
+	
 	@Autowired
 	public void setLogEntitiesRepository(
 			LogEntitiesRepository logEntitiesRepository) {
+		Assert.notNull(logEntitiesRepository, "logEntitiesRepository is null");
 		this.logEntitiesRepository = logEntitiesRepository;
 	}
 
@@ -51,31 +53,18 @@ public final class CPathWebserviceHandlerInterceptor extends
 					+ "\t" + request.getRequestURI()
 					+ "\t" + request.getQueryString()
 					);
-		}
-
-		return true;
-	}
-	
-	@Override
-	public void postHandle(HttpServletRequest request,
-			HttpServletResponse response, Object handler,
-			ModelAndView modelAndView) throws Exception {
-		
-		String uri = request.getRequestURI();
-		if( uri.contains("/downloads/") ) 
-		{
-			//extract the IP address
-			String ip = BasicController.clientIpAddress(request);
 			
 			//extract file name from the URI
-			String file = uri.substring(uri.lastIndexOf(File.separator)+1);
+			String file = requestUri.substring(requestUri.lastIndexOf(File.separator)+1);
 			file = URLDecoder.decode(file);
 			
 			//update counts for: file, format, provider, command (event types)
 			Set<LogEvent> events = LogEvent.fromDownloads(file);
 			LogUtils.log(logEntitiesRepository, events, Geoloc.fromIpAddress(ip));
+			
 		}
-				
-		super.postHandle(request, response, handler, modelAndView);
+
+		return true;
 	}
+
 }

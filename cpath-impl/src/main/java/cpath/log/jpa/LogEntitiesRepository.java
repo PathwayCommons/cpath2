@@ -1,5 +1,6 @@
 package cpath.log.jpa;
 
+
 import org.springframework.data.querydsl.QueryDslPredicateExecutor;
 
 
@@ -13,6 +14,6 @@ import org.springframework.data.querydsl.QueryDslPredicateExecutor;
 public interface LogEntitiesRepository extends BaseRepository<LogEntity, Long>, 
 	QueryDslPredicateExecutor<LogEntity>, LogEntitiesRepositoryCustom {
 	
-	LogEntity findByEventNameAndGeolocCountryAndGeolocRegionAndDate(String name, String country, String region, String date);
+	LogEntity findByEventNameAndGeolocCountryAndGeolocRegionAndGeolocCityAndDate(String name, String country, String region, String city, String date);
 		
 }
