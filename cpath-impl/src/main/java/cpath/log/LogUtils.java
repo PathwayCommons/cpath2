@@ -3,6 +3,7 @@
  */
 package cpath.log;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -13,9 +14,11 @@ import java.util.Date;
 
 import org.springframework.util.Assert;
 
-import com.maxmind.geoip.Country;
+import com.maxmind.geoip.Location;
 import com.maxmind.geoip.LookupService;
 
+import cpath.config.CPathSettings;
+import cpath.dao.CPathUtils;
 import cpath.log.jpa.Geoloc;
 import cpath.log.jpa.LogEntitiesRepository;
 import cpath.log.jpa.LogEntity;
@@ -27,24 +30,23 @@ import cpath.log.jpa.LogEvent;
  */
 public final class LogUtils {
 	
-	// GeoLite IP location (country) lookup service
-	static LookupService geoliteCountry; 
-	
-	static LookupService geoliteCity; 
+	static LookupService geolite; 
 	
 	public static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 	
 	static {
-		//GeoIP.dat must be present at the classpath root (see the pom.xml, use "mvn download:wget" and gunzip)
-		String dbfile = LogUtils.class.getResource("/GeoIP.dat").getPath();
-//		System.out.println("GeoLite: reading the database from " + dbfile);
+		//will be downloaded if not exists already (one can delete the file to auto-update)
+		String localFileName = "GeoLiteCity.dat";
 		try {
-			geoliteCountry = new LookupService(dbfile, LookupService.GEOIP_MEMORY_CACHE);
+			CPathUtils.download("http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz", 
+					localFileName, true, false); // - also gunzip			
+			geolite = new LookupService(
+				CPathSettings.homeDir() + File.separator + localFileName,
+				LookupService.GEOIP_MEMORY_CACHE
+			);
 		} catch (IOException e) {
 			throw new RuntimeException("Fauled initializing GeoLite LookupService", e);
 		}
-		
-		//TODO ? add the GeoLite city (large) DB later on...
 	}
 	
 	
@@ -83,15 +85,14 @@ public final class LogUtils {
 	 * @return
 	 */
 	static LogEntity count(LogEntitiesRepository repository, 
-			String date, LogEvent event, Geoloc loc) {
+			String date, LogEvent event, Geoloc loc) {	
 		
-// Only country code matters right now (current version):
-		assert loc.getRegion()==null : "loc.region is not null";
-		loc.setRegion(null);	
+		if(loc == null)
+			loc = new Geoloc();
 		
 		// find or create a record, count+1
-		LogEntity t = (LogEntity) repository.findByEventNameAndGeolocCountryAndGeolocRegionAndDate(
-				event.getName(), loc.getCountry(), loc.getRegion(), date);
+		LogEntity t = (LogEntity) repository.findByEventNameAndGeolocCountryAndGeolocRegionAndGeolocCityAndDate(
+				event.getName(), loc.getCountry(), loc.getRegion(), loc.getCity(), date);
 		if(t == null) {			
 			t = new LogEntity(date, event, loc);
 		}
@@ -103,22 +104,17 @@ public final class LogUtils {
 	
 	
 	/**
-	 * Gets location by IP address 
-	 * (currently, gets only country code and name; 
-	 * region, city will be null).
+	 * Gets a geographical location by IP address
+	 * using the GeoLite database.
 	 * 
 	 * @param ipAddress
-	 * @return
+	 * @return location or null (when it cannot be found; e.g., if it's local IP)
 	 */
 	public static Geoloc lookup(String ipAddress) {
-		assert geoliteCountry != null : "geoliteCountry is null";
-		
-		Country country = geoliteCountry.getCountry(ipAddress);
-		String region = (geoliteCity!=null) ? geoliteCity.getRegion(ipAddress).region : null;
-		
-		Geoloc loc = new Geoloc(country.getCode(), region);
-		
-		return loc;
+		Location geoloc = geolite.getLocation(ipAddress);
+		return (geoloc != null) 
+			? new Geoloc(geoloc.countryCode, geoloc.region, geoloc.city) 
+				: null;
 	}
 	
 	

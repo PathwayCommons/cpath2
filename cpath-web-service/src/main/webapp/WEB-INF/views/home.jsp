@@ -69,7 +69,7 @@
 		nested information pages about main web service commands, parameters, 
 		BioPAX types and properties; e.g., /help/schema, 
 		<a href="help/commands">/help/commands</a>, /help/types, all /help.json, etc.)</li>
-		<li>/logs/* (server access logs summary and statistics, e.g.,)</li>
+		<li>/log/* (server access logs summary and statistics, e.g.,)</li>
 	</ol>
 	
 	<h3>Also</h3>

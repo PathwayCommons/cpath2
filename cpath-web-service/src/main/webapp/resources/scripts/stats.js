@@ -145,16 +145,16 @@ var AppStats = (function() {
    *
    * The timeline data has this format:
    * {
-   *   'version-1': [
+   *   'name1': [
    *      ['iso-date-1', count], // <-- The number of downloads that occurred on this date for this version
    *      ['iso-date-2', count],
    *      ...
    *    ],
-   *   'version-N': ...
+   *   'name2': ...
    * }
    *
    * The DataTable returned has this format:
-   *  Date  | version-1 | ... | version-N
+   *  Date  | name1 | ... | nameN
    * -------+-----------+-----+-----------
    * date-1 | count     | ... | count
    * date-2 | count     | ... | count
@@ -265,30 +265,30 @@ var AppStats = (function() {
     return worldChart;
   }
 
-//  function showCountry(countryChart, countryCode) {
-//    var countryName = CountryCodes[countryCode];
-//    $('#geography-country-name').text(countryName);
-//    $('#country-loading').show();
-//
-//    $.getJSON('geography/country/' + countryCode, function(countryData) {
-//      var countryTable = google.visualization.arrayToDataTable(countryData);
-//      var countryChartOptions = {
-//        'displayMode': 'markers',
-//        'resolution': 'provinces',
-//        'colorAxis': {'colors': ['blue', 'yellow']},
-//        'region': countryCode
-//      };
-//      countryChart.draw(countryTable, countryChartOptions);
-//    });
-//  }
+  function showCountry(countryChart, countryCode) {
+    var countryName = CountryCodes[countryCode];
+    $('#geography-country-name').text(countryName);
+    $('#country-loading').show();
 
-//  function setupCountryChart() {
-//    var countryChart = new google.visualization.GeoChart(document.getElementById('geography-country-chart'));
-//    google.visualization.events.addListener(countryChart, 'ready', function() {
-//      $('#country-loading').hide();
-//    });
-//    return countryChart;
-//  }
+    $.getJSON('geography/country/' + countryCode, function(countryData) {
+      var countryTable = google.visualization.arrayToDataTable(countryData);
+      var countryChartOptions = {
+        'displayMode': 'markers',
+        'resolution': 'provinces',
+        'colorAxis': {'colors': ['blue', 'yellow']},
+        'region': countryCode
+      };
+      countryChart.draw(countryTable, countryChartOptions);
+    });
+  }
+
+  function setupCountryChart() {
+    var countryChart = new google.visualization.GeoChart(document.getElementById('geography-country-chart'));
+    google.visualization.events.addListener(countryChart, 'ready', function() {
+      $('#country-loading').hide();
+    });
+    return countryChart;
+  }
 
   function setupGeographySaveCSV() {
     $('#geography-csv').click(function() {
@@ -313,19 +313,19 @@ var AppStats = (function() {
 
       // instantiate the world and country chart objects
       var worldChart = setupWorldChart(worldTable);
-//      var countryChart = setupCountryChart();
+      var countryChart = setupCountryChart();
 
-      //DISABLED: when the user clicks on a country in the world chart, load that country's city data in the country chart
-//      google.visualization.events.addListener(worldChart, 'select', function() {
-//        var row = worldChart.getSelection()[0].row;
-//        var countryCode = worldTable.getValue(row, 0);
-//        showCountry(countryChart, countryCode);
-//      });
+      //when the user clicks on a country in the world chart, load that country's city data in the country chart
+      google.visualization.events.addListener(worldChart, 'select', function() {
+        var row = worldChart.getSelection()[0].row;
+        var countryCode = worldTable.getValue(row, 0);
+        showCountry(countryChart, countryCode);
+      });
 
-      //DISABLED: when the world map is loaded, load the default country
-//      google.visualization.events.addListener(worldChart, 'ready', function() {
-//        showCountry(countryChart, 'US'); // 'murica
-//      });
+      //when the world map is loaded, load the default country
+      google.visualization.events.addListener(worldChart, 'ready', function() {
+        showCountry(countryChart, 'US');
+      });
     });
 
     setupGeographySaveCSV();

@@ -57,7 +57,7 @@ public class MetadataController extends BasicController
     
     
     /**
-     * Makes current cpath2 instance properies 
+     * Makes current cpath2 instance properties 
      * available to all (JSP) views.
      * @return
      */
@@ -274,9 +274,38 @@ public class MetadataController extends BasicController
     		File f = list[i];
     		String name = f.getName();
     		long size = f.length();
-    		if(!name.startsWith("."))
-    			files.put(name, FileUtils.byteCountToDisplaySize(size));
+    		
+    		if(!name.startsWith(".")) {
+    			StringBuilder sb = new StringBuilder();
+    			sb.append("size: ").append(FileUtils.byteCountToDisplaySize(size));
+    			List<Object[]> dl = logEntitiesRepository.downloadsWorld(null, name);
+    			String topCountry = null;
+    			long topCount = 0;
+    			long total = 0;
+    			Iterator<Object[]> it = dl.iterator();
+    			it.next(); //skip title line
+    			while(it.hasNext()) {
+    				Object[] a = it.next();
+    				long count = (Long) a[1];
+    				total += count;
+    				if(count > topCount) {
+    					topCount = count;
+    					topCountry = (String) a[0];
+    				}   					
+    			}
+    			
+    			sb.append("; downloads: ").append(total);
+    			if(topCount > 0) {
+    				sb.append("; mostly from: ")
+    				.append((topCountry != null && !topCountry.isEmpty()) 
+    						? topCountry : "Local/Unknown")
+    				.append(" [").append(topCount).append("]");
+    			}
+    			
+    			files.put(name, sb.toString());
+    		}
     	}
+    	
     	model.addAttribute("files", files.entrySet());
 		
 		return "downloads";

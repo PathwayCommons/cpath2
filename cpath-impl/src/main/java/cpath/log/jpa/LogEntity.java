@@ -22,7 +22,8 @@ import org.springframework.util.Assert;
 @Entity
 @DynamicUpdate
 @DynamicInsert
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"date", "name", "country", "region"}))
+//uniqueConstraints: 'type' is not listed because 'name' is enough (should never use same log name with different types)
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"date", "name", "country", "region", "city"}))
 public class LogEntity extends AbstractEntity {
 		
 	@Embedded
@@ -36,12 +37,14 @@ public class LogEntity extends AbstractEntity {
 	@AttributeOverrides({
 	    @AttributeOverride(name="country", column=@Column(name="country")),
 	    @AttributeOverride(name="region", column=@Column(name="region")),
+	    @AttributeOverride(name="city", column=@Column(name="city"))
 	})
 	private Geoloc geoloc;
 
 	@Column(nullable=false)
 	private String date;
 	
+	@Column(nullable=false)
 	private Long count;	
 	
 	public LogEntity() {

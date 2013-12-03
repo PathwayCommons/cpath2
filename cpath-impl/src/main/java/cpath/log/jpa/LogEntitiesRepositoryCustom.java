@@ -88,14 +88,41 @@ interface LogEntitiesRepositoryCustom {
 	 * {[['Country', 'Downloads'], ['US', 123], ['CA', 456], ['RU', 45],..]}
 	 * </pre> 
 	 */
-	List<Object[]> downloadsCountry(LogType logType, String name);
-	
+	List<Object[]> downloadsWorld(LogType logType, String name);
+
+	/**
+	 * The number of client requests served, grouped by city,
+	 * filtered by country.
+	 * 
+	 * The result is a list of [country, count] optionally filtered 
+	 * by the service type and name if the arguments were provided, 
+	 * as follows:
+	 * <ul>
+	 * <li>neither type nor name - total counts;</li>
+	 * <li>only name is provided - counts for this name 
+	 *		(ignoring type, which usually implies one particular type, 
+	 *		because a name cannot belong to different types...);</li>
+	 * <li>type, except TOTAL, and name -> counts for all events of 
+	 * 		the name and type (in fact, it does not depend on the type; hence same as above).</li>
+	 * <li>type, except TOTAL, but no name -> counts for all events of the type;</li>
+	 * </ul>
+	 * 
+	 *
+	 * @param countryCode not null
+	 * @param logType filter by (limit to one) category, e.g., provider, file, command, or total, etc.
+	 * @param name filter by name (e.g, provider's name, command, format, or filename)
+	 * @return	array of Object[2] items: 
+	 * <pre>
+	 * {[['City', 'Downloads'], ['Mountain View', 23], ['Los Angeles', 56],..]}
+	 * </pre> 
+	 */
+	List<Object[]> downloadsCountry(String countryCode, LogType logType, String name);	
 	
 	/**
 	 * The number of client requests served, grouped by location.
-	 * The result is a list of [country, region, count] optionally 
-	 * filtered by the service type and name, if the arguments 
-	 * were provided, as follows:
+	 * The result is a list of [country, region, city, count] 
+	 * optionally filtered by the service type and name, 
+	 * if the arguments were provided, as follows:
 	 * <ul>
 	 * <li>neither type nor name - total counts;</li>
 	 * <li>only name is provided - counts for this name 
@@ -110,9 +137,17 @@ interface LogEntitiesRepositoryCustom {
 	 * @param name
 	 * @return
 	 * <pre>
-	 * {[['Country', 'Region', 'Downloads'], ['US', 'California', 33],..]}
+	 * {[['Country', 'Region', 'City', 'Downloads'], ['US', 'CA', 'Mountain View', 33],..]}
 	 * </pre>  
 	 */
 	List<Object[]> downloadsGeography(LogType logType, String name);
+	
+	/**
+	 * All distinct events logged so far (unique type+name).
+	 * 
+	 * @param logType
+	 * @return
+	 */
+	List<LogEvent> logEvents(LogType logType);
 	
 }

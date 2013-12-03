@@ -17,6 +17,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.lang.reflect.Method;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,6 +38,7 @@ import org.biopax.paxtools.model.Model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
 import cpath.config.CPathSettings;
@@ -337,7 +340,7 @@ public final class CPathUtils {
     	return readContent(inputStream, true);
     }
         
-    /**
+    /*
      * Given a zip stream, unzips it into individual 
      * files and creates PathwayData objects from each
      * 
@@ -529,6 +532,71 @@ public final class CPathUtils {
 		}
 
 		return model;
+	}
+	
+	
+	/**
+	 * Downloads a file (content) from Internet
+	 * and saves in the cpath2 home directory. The content
+	 * can be anything, but only single-file GZIP archives 
+	 * can be optionally expanded with this method, before saved.
+	 * 
+	 * @param url remote URL
+	 * @param localFileName name or relative path and name
+	 * @param unpack if true, expands the archive
+	 * @param replace
+	 * @return bytes saved or 0 if existed before file weren't replaced
+	 * @throws IOException
+	 */
+	public static long download(String url, String localFileName, 
+			boolean unpack, boolean replace) throws IOException {
+		
+		File localFile = new File(CPathSettings.homeDir() 
+				+ File.separator + localFileName);
+		
+		if(localFile.exists() && !replace) {
+			LOGGER.info("Keep existing " + localFileName);
+			return 0L;
+		}
+		
+		Resource resource = LOADER.getResource(url);
+        long size = 0; 
+        if(resource.isReadable()) {
+        	size = resource.contentLength();
+        	LOGGER.info(url + " content length= " + size);
+        }       
+        if(size < 0) 
+        	size = 100 * 1024 * 1024 * 1024;
+        
+        //downoad to a tmp file
+        ReadableByteChannel source = Channels.newChannel(resource.getInputStream());      
+       	File tmpf = File.createTempFile("cpath2_", ".download");
+       	tmpf.deleteOnExit();
+        FileOutputStream dest = new FileOutputStream(tmpf);        
+        size = dest.getChannel().transferFrom(source, 0, size);
+        dest.close();
+        LOGGER.info(size + " bytes downloaded from " + url);
+        
+        if(unpack) {
+        	GZIPInputStream ginstream = new GZIPInputStream(new FileInputStream(tmpf));
+        	FileOutputStream outstream = new FileOutputStream(localFile);
+        	byte[] buf = new byte[1024]; 
+        	int len;
+        	while ((len = ginstream.read(buf)) > 0) 
+        		outstream.write(buf, 0, len);
+        	ginstream.close();
+        	outstream.close();
+        } else {
+        	if(replace)
+        		if(localFile.exists() && !localFile.delete())
+            		throw new RuntimeException("Failed to delete old " 
+            			+ localFile.getAbsolutePath());
+        	if(!tmpf.renameTo(localFile))
+        		throw new RuntimeException("Failed to move " 
+        			+ tmpf.getAbsolutePath() + " to " + localFile.getAbsolutePath());
+        }
+              
+        return size;
 	}
 		
 }

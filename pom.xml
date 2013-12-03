@@ -804,7 +804,7 @@
 					<linksource>true</linksource>
 					<notimestamp>true</notimestamp>
 					<links combine.children="append">
-						<link>http://docs.jboss.org/hibernate/search/4.2/api/</link>
+						<link>http://docs.jboss.org/hibernate/search/4.3/api/</link>
 						<link>http://docs.jboss.org/hibernate/core/4.2/javadocs/</link>
 					</links>
 				</configuration>
