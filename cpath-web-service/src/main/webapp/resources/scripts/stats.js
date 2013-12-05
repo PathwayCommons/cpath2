@@ -330,13 +330,49 @@ var AppStats = (function() {
 
     setupGeographySaveCSV();
   }
+  
 
+  function setupSelectEvents() {
+	  $('.selectpicker').html(''); //clear
+	  
+	  //init bootstrap-select selectpicker
+	  $('.selectpicker').selectpicker();
+	  
+  	  $.getJSON('/log/types', function(types) {  
+    		$.each(types, function(i, t){
+    			$('.selectpicker')
+    				.append('<option data-subtext="(category)" value="/log/'
+    					+ t + '/stats">' + t + '</option>');
+    		});
+    		$('.selectpicker').append('<option data-divider="true"></option>');
+    		$('.selectpicker').selectpicker('refresh');
+  	  });
+	  	  
+  	  $.getJSON('events', function(events) {
+  		$.each(events, function(i, ev){
+  			$('.selectpicker')
+  				.append('<option data-subtext="' + ev.type 
+  				+ '" value="/log/' + ev.type + '/' + ev.name + '/stats">' 
+  				+ ev.name + '</option>');
+  		});
+  		$('.selectpicker').selectpicker('refresh');
+  	  });
+  	  
+  	  //attach the action to button clicked event
+  	  $('.show-cpath-log').click(function() {
+  		  var url = $('.cpath-logs').val();
+  		  if (url) { 
+  			  window.location = url; // redirect
+  		  }
+  		  return false;
+  	  }); 	  
+  }  
+  
   return {
     'setupTimeline': setupTimeline,
-    'setupGeography': setupGeography
+    'setupGeography': setupGeography,
+    'setupSelectEvents': setupSelectEvents
   };
 
 })();
-
-
 
