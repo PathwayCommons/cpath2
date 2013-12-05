@@ -31,7 +31,7 @@ interface LogEntitiesRepositoryCustom {
 	 * }
 	 * </pre>
 	 */
-	Map<String, List<Object[]>> downloadsTimeline(); 
+//	Map<String, List<Object[]>> downloadsTimeline(); 
 	
 		
 	/**

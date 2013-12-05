@@ -88,7 +88,7 @@ public class MetadataController extends BasicController
      * @param writer
      * @throws IOException
      */
-    @RequestMapping(value="/help/schema")
+    @RequestMapping("/help/schema")
     public void getSchema(Writer writer, HttpServletResponse response) 
     		throws IOException 
     {
@@ -107,7 +107,7 @@ public class MetadataController extends BasicController
     }
     
 
-    @RequestMapping(value="/help/formats.html")
+    @RequestMapping("/help/formats.html")
     public String getOutputFormatsDescr() 
     {
     	return "formats";
@@ -184,7 +184,7 @@ public class MetadataController extends BasicController
     }
 	
     
-    @RequestMapping(value = "/metadata/logo/{identifier}")
+    @RequestMapping("/metadata/logo/{identifier}")
     public  @ResponseBody byte[] queryForLogo(@PathVariable String identifier) 
     		throws IOException 
     {	
@@ -208,7 +208,7 @@ public class MetadataController extends BasicController
     }
 
     
-    @RequestMapping(value = "/favicon.ico")
+    @RequestMapping("/favicon.ico")
     public  @ResponseBody byte[] icon(HttpServletResponse response) 
     		throws IOException {
     	
@@ -235,7 +235,7 @@ public class MetadataController extends BasicController
     }
     
     // to return a xml or json data http response
-    @RequestMapping(value = "/metadata/datasources")
+    @RequestMapping("/metadata/datasources")
     public  @ResponseBody List<MetInfo> queryForDatasources() {
 		log.debug("Getting pathway datasources info.");
     	
@@ -261,7 +261,7 @@ public class MetadataController extends BasicController
     }
 
     
-    @RequestMapping(value = "/downloads.html")
+    @RequestMapping("/downloads.html")
     public String downloads(Model model, HttpServletRequest request) {
 
     	// get the sorted list of files to be shared on the web
@@ -312,7 +312,7 @@ public class MetadataController extends BasicController
     }
 
     
-    @RequestMapping(value="/idmapping")
+    @RequestMapping("/idmapping")
     public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id, 
     		HttpServletRequest request, HttpServletResponse response) throws IOException
     {			

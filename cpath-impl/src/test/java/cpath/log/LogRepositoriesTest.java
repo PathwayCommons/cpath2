@@ -124,10 +124,10 @@ public class LogRepositoriesTest {
 		
 		assertEquals(12, repository.count());
 		
-		//timeline per type (incl. for TOTAL)
-		Map<String, List<Object[]>>	res = repository.downloadsTimeline();
+		//timeline per type
+		Map<String, List<Object[]>>	res = repository.downloadsTimeline(LogType.TOTAL, null);
 		assertNotNull(res);
-		assertEquals(4, res.size());
+		assertEquals(1, res.size());
 		
 		List<Object[]> tl = res.get(LogType.TOTAL.description);
 		assertNotNull(tl);
@@ -139,11 +139,10 @@ public class LogRepositoriesTest {
 		
 		// for one category only
 		res = repository.downloadsTimeline(LogType.PROVIDER, null);
-		//two entries: for all types, for PROVIDER type
-		assertEquals(3, res.size());
+		//two entries (reactome and humancyc)
+		assertEquals(2, res.size());
 		tl = res.get(LogType.TOTAL.description);
-		assertNotNull(tl);
-		assertEquals(4L, tl.get(0)[1]); //total
+		assertNull(tl); //global TOTAL not included
 		tl = res.get("Reactome");
 		assertNotNull(tl);
 		assertEquals(1L, tl.get(0)[1]); //PROVIDER type, today counts
@@ -156,10 +155,9 @@ public class LogRepositoriesTest {
 		// for error 500 only
 		res = repository.downloadsTimeline(LogType.ERROR, "INTERNAL_ERROR");
 		//two map entries: for all downloads, for error 500
-		assertEquals(2, res.size());
+		assertEquals(1, res.size());
 		tl = res.get(LogType.TOTAL.description);
-		assertNotNull(tl);
-		assertEquals(4L, tl.get(0)[1]); //total everything (not only in ERROR cat.)
+		assertNull(tl); //global TOTAL not included
 		tl = res.get("INTERNAL_ERROR");
 		assertNotNull(tl);
 		assertEquals(1L, tl.get(0)[1]); //PROVIDER type, today counts
@@ -189,9 +187,9 @@ public class LogRepositoriesTest {
 		assertEquals(5, repository.count());
 		
 		//timeline per type (incl. TOTAL)
-		Map<String, List<Object[]>>	res = repository.downloadsTimeline();
+		Map<String, List<Object[]>>	res = repository.downloadsTimeline(LogType.TOTAL, null);
 		assertNotNull(res);
-		assertEquals(4, res.size());
+		assertEquals(1, res.size());
 		
 		List<Object[]> tl = res.get(LogType.TOTAL.description);
 		assertNotNull(tl);
@@ -201,11 +199,10 @@ public class LogRepositoriesTest {
 		
 		// for one category only
 		res = repository.downloadsTimeline(LogType.PROVIDER, null);
-		//two entries: for all types, for PROVIDER type
-		assertEquals(3, res.size());
+		//two entries: reactome, humancyc
+		assertEquals(2, res.size());
 		tl = res.get(LogType.TOTAL.description);
-		assertNotNull(tl);
-		assertEquals(1L, tl.get(0)[1]); //total
+		assertNull(tl); //global TOTAL not included
 		tl = res.get("Reactome");
 		assertNotNull(tl);
 		assertEquals(1L, tl.get(0)[1]); //PROVIDER type, today counts

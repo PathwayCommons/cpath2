@@ -42,6 +42,8 @@ import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.Control;
+import org.biopax.paxtools.model.level3.Interaction;
 import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.query.QueryExecuter;
@@ -51,6 +53,7 @@ import org.biopax.paxtools.query.wrapperL3.DataSourceFilter;
 import org.biopax.paxtools.query.wrapperL3.Filter;
 import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
+import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -227,8 +230,23 @@ class CPathServiceImpl implements CPathService {
 							"No BioPAX objects found by URI(s): " + Arrays.toString(uris));
 						return;
 					}
+					//auto-complete (add important child elements)	
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model); 
 					assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
+					
+					// TODO add/use extra query parameter to add hidden Control objects
+					// a hack (mostly for PANTHER db): add missing Controls 
+					// (when model has pathways, no Controls, but some can be 
+					// found from a reaction.controlledOf)
+					if(!(new ClassFilterSet<BioPAXElement, Pathway>(elements, Pathway.class)).isEmpty() 
+						&& (new ClassFilterSet<BioPAXElement, Control>(elements, Control.class)).isEmpty()) {
+						log.debug("Auto adding Controls to the model...");
+						for(BioPAXElement e : new HashSet<BioPAXElement>(elements)) {
+							if(e instanceof Interaction)
+								elements.addAll(((Interaction) e).getControlledOf());
+						}
+					}					
+					
 					Model m = cloner.clone(model, elements);
 					m.setXmlBase(model.getXmlBase());
 					callback[0] = (new BiopaxConverter(getBlacklist()))

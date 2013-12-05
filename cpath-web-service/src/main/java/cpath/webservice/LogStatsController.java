@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 
@@ -53,29 +54,30 @@ public class LogStatsController extends BasicController {
     	return CPathSettings.getInstance();
     }
     
-    @ModelAttribute("log_types")
-    public String[] logTypes() {
-    	LogType[] t  = LogType.values();
-    	String s[] = new String[t.length];
-    	for(int i = 0; i < t.length; i++) {
-    		s[i] = (t[i]).toString();
-    	}
-    	return s;
-    }
-        
-    
     // JSP Views
+    
+    // is /log
+    @RequestMapping(method = RequestMethod.GET) 
+    public String log() {
+    	return "redirect:/log/stats";
+    }
+    
+    // is /log/
+    @RequestMapping(value="/")
+    public String logSlash() {
+    	return "redirect:/log/stats";
+    }
+    
     
     @RequestMapping("/stats")
     public String allStats(Model model) {
-    	model.addAttribute("summary_for", "Everything");
+    	model.addAttribute("summary_for", "All Categories (Total)");
     	return "stats";
     }	
         
     @RequestMapping("/{logType}/stats")
     public String statsByType(Model model, @PathVariable LogType logType) {
     	model.addAttribute("summary_for", "Category: " + logType);
-    	model.addAttribute("log_type", logType);
     	return "stats";
     }
     
@@ -83,84 +85,97 @@ public class LogStatsController extends BasicController {
     public String statsByType(Model model, @PathVariable LogType logType, 
     		@PathVariable String name) {
     	model.addAttribute("summary_for", "Category: " + logType + ", name: " + name);
-    	model.addAttribute("log_type", logType);
-    	model.addAttribute("log_name", name);
     	return "stats";
     }
 
     
-    // XML/JSON web services
+    // XML/JSON web services (for the stats.jsp view using stats.js, given current context path)
+ 
+    @RequestMapping("/types")
+    public @ResponseBody String[] logTypes() {
+    	LogType[] t  = LogType.values();
+    	String s[] = new String[t.length];
+    	for(int i = 0; i < t.length; i++) {
+    		s[i] = (t[i]).toString();
+    	}
+    	return s;
+    }     
     
-	@RequestMapping(value = "/{logType}/events")
+	@RequestMapping("/{logType}/{name}/events")
+    public @ResponseBody List<LogEvent> logEvents(@PathVariable LogType logType, @PathVariable String name) {		
+    	return logEntitiesRepository.logEvents(logType); //same as without any name
+    } 
+    
+    @RequestMapping("/{logType}/events")
     public @ResponseBody List<LogEvent> logEvents(@PathVariable LogType logType) {		
     	return logEntitiesRepository.logEvents(logType);
     } 
 	
-	@RequestMapping(value = "/events")
+	@RequestMapping("/events")
     public @ResponseBody List<LogEvent> logEvents() {		
     	return logEntitiesRepository.logEvents(null);
     }     
     
-	@RequestMapping(value = "/{logType}/{name}/timeline")
+	@RequestMapping("/{logType}/{name}/timeline")
     public @ResponseBody Map<String,List<Object[]>> timeline(@PathVariable LogType logType, @PathVariable String name) {		
     	return logEntitiesRepository.downloadsTimeline(logType, name);
     }    
     
-    @RequestMapping(value = "/{logType}/timeline")
+    @RequestMapping("/{logType}/timeline")
     public @ResponseBody Map<String,List<Object[]>> timeline(@PathVariable LogType logType) {		
     	return logEntitiesRepository.downloadsTimeline(logType, null);
     }
 	
-	@RequestMapping(value = "/timeline")
+	@RequestMapping("/timeline")
     public @ResponseBody Map<String,List<Object[]>> timeline() {		
     	return logEntitiesRepository.downloadsTimeline(LogType.TOTAL, null);
     }
 	
-	@RequestMapping(value = "/geography/world")
+	@RequestMapping("/geography/world")
     public @ResponseBody List<Object[]> geographyWorld() {		
     	return logEntitiesRepository.downloadsWorld(null, null);
     }
     
-	@RequestMapping(value = "/{logType}/geography/world")
+	@RequestMapping("/{logType}/geography/world")
     public @ResponseBody List<Object[]> geographyWorld(@PathVariable LogType logType) {		
     	return logEntitiesRepository.downloadsWorld(logType, null);
     }
     
-	@RequestMapping(value = "/{logType}/{name}/geography/world")
+	@RequestMapping("/{logType}/{name}/geography/world")
     public @ResponseBody List<Object[]> geographyWorld(@PathVariable LogType logType, @PathVariable String name) {		
     	return logEntitiesRepository.downloadsWorld(logType, name);
     }
     
     
-	@RequestMapping(value = "/geography/all")
+	@RequestMapping("/geography/all")
     public @ResponseBody List<Object[]> geographyAll() {		
     	return logEntitiesRepository.downloadsGeography(null, null);
     }
     
-	@RequestMapping(value = "/{logType}/geography/all")
+	@RequestMapping("/{logType}/geography/all")
     public @ResponseBody List<Object[]> geographyAll(@PathVariable LogType logType) {		
     	return logEntitiesRepository.downloadsGeography(logType, null);
     }
     
-	@RequestMapping(value = "/{logType}/{name}/geography/all")
+	@RequestMapping("/{logType}/{name}/geography/all")
     public @ResponseBody List<Object[]> geographyAll(@PathVariable LogType logType, 
     		@PathVariable String name) {		
     	return logEntitiesRepository.downloadsGeography(logType, name);
     }    
     
  
-	@RequestMapping(value = "/geography/country/{code}")
+	@RequestMapping("/geography/country/{code}")
     public @ResponseBody List<Object[]> geographyCountry(@PathVariable String code) {		
     	return logEntitiesRepository.downloadsCountry(code, null, null);
     }
     
-	@RequestMapping(value = "/{logType}/geography/country/{code}")
+	@RequestMapping("/{logType}/geography/country/{code}")
     public @ResponseBody List<Object[]> geographyCountry(@PathVariable LogType logType,
     		@PathVariable String code) {		
     	return logEntitiesRepository.downloadsCountry(code, logType, null);
     }
     
-	@RequestMapping(value = "/{logType}/{name}/geography/country/{code}")
+	@RequestMapping("/{logType}/{name}/geography/country/{code}")
     public @ResponseBody List<Object[]> geographyCountry(@PathVariable LogType logType, 
     		@PathVariable String name, @PathVariable String code) {		
     	return logEntitiesRepository.downloadsCountry(code, logType, name);

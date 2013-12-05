@@ -10,18 +10,32 @@
 <meta name="author" content="${cpath.name}" />
 <meta name="description" content="cPath2 simple access log summary" />
 <meta name="keywords" content="cPath2, BioPAX, Validation" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link media="screen" href="<c:url value="/resources/css/cpath2.css"/>" rel="stylesheet" />
+<link href="<c:url value="/resources/css/bootstrap.min.css"/>" rel="stylesheet" />
+<link href="<c:url value="/resources/css/bootstrap-select.min.css"/>" rel="stylesheet" />
 <script	type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
-<script type="text/javascript" src="<c:url value="/resources/scripts/json.min.js"/>"></script>
-<script type="text/javascript" src="<c:url value="/resources/scripts/stats.js"/>"></script>
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript" src="<c:url value="/resources/scripts/json.min.js"/>"></script>
+<script type="text/javascript" src="<c:url value="/resources/scripts/bootstrap.min.js"/>"></script>
+<script type="text/javascript" src="<c:url value="/resources/scripts/bootstrap-select.min.js"/>"></script>
 <script type="text/javascript" src="<c:url value="/resources/scripts/codes2names.js"/>"></script>
+<script type="text/javascript" src="<c:url value="/resources/scripts/stats.js"/>"></script>
 <title>cPath2: Stats</title>
 </head>
 <body>
 	<jsp:include page="header.jsp" />
 	<div id="content">
 		<h2>Access Summary for ${summary_for}</h2>
+		
+		<!-- to be filled by Javascript and styled with Tweeter Bootstrap -->
+		<div class="row-fluid">
+		  <select class="selectpicker show-menu-arrow cpath-logs"
+			data-live-search="true" data-width="30%" data-container="body">
+		  </select>
+		  <button class="btn btn-success show-cpath-log">Go</button>
+		</div>
+		<br/>
 		
 		<div class="row">
 			<div class="span6">
@@ -83,13 +97,18 @@
 	</div>
 	<jsp:include page="footer.jsp" />
 
+
 	<script type="text/javascript">
+		AppStats.setupSelectEvents();
+	
 		google.load('visualization', '1', {
 			'packages' : [ 'corechart', 'geochart', 'annotatedtimeline' ]
 		});
+		
 		google.setOnLoadCallback(function() {
 			AppStats.setupTimeline();
 			AppStats.setupGeography();
+			
 		});
 	</script>
 
