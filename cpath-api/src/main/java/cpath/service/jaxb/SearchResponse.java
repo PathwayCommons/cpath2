@@ -1,8 +1,13 @@
 package cpath.service.jaxb;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import javax.xml.bind.annotation.*;
+
+import sun.util.logging.resources.logging;
 
 @XmlRootElement(name="searchResponse")
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -21,6 +26,8 @@ public class SearchResponse extends ServiceResponse {
 
     @XmlAttribute
     private String comment;
+    
+    private Set<String> providers; //pathway data provider standard names (for logging/stats)
 	
 	public SearchResponse() {
 	}
@@ -97,5 +104,27 @@ public class SearchResponse extends ServiceResponse {
 			return (numHits-1)/maxHitsPerPage + 1;
 		else 
 			return 0;
+	}
+	
+
+	@XmlTransient
+	public Set<String> getProviders() {
+		return providers;
+	}
+	public void setProviders(Set<String> providers) {
+		this.providers = providers;
+	}
+	
+	
+	public Set<String> provenanceUris() {
+		Set<String> provUris = new HashSet<String>();
+		
+		if(searchHit != null) {
+			for(SearchHit hit : searchHit) {
+				provUris.addAll(hit.getDataSource());
+			}
+		}
+		
+		return provUris;
 	}
 }

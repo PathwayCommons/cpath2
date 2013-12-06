@@ -9,9 +9,9 @@
   </filter>
  
   <appender name="accessfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${CPATH2_HOME}/cpath2-access.log</file>
+    <file>cpath2-access.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-        <fileNamePattern>${CPATH2_HOME}/cpath2-access.%d{yyyy-ww}.log.gz</fileNamePattern>
+        <fileNamePattern>cpath2-access.%d{yyyy-ww}.log.gz</fileNamePattern>
         <maxHistory>2</maxHistory>
     </rollingPolicy>
     <encoder>
@@ -21,9 +21,9 @@
   </appender>
  
   <appender name="reqrespfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>${CPATH2_HOME}/cpath2-req-resp.log</file>
+    <file>cpath2-req-resp.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-      <fileNamePattern>${CPATH2_HOME}/cpath2-reqresp.%d{yyyy-ww}.log.gz</fileNamePattern>
+      <fileNamePattern>cpath2-reqresp.%d{yyyy-ww}.log.gz</fileNamePattern>
       <maxHistory>2</maxHistory>
     </rollingPolicy>
     <encoder>

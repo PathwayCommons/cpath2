@@ -22,7 +22,7 @@ import cpath.importer.Cleaner;
  * Can normalize URIs for Reactome Entity class objects 
  * to http://identifiers.org/reactome/REACT_* form
  * if the unification xref with the stable Reactome ID is attached. 
- * TODO add/remove features as needed, as reactome versions change...
+ * TODO ? add/remove features as needed, as reactome versions change...
  */
 final class ReactomeCleanerImpl implements Cleaner {
 	

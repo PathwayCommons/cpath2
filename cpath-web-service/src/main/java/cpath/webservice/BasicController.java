@@ -34,17 +34,25 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
+import cpath.log.LogUtils;
+import cpath.log.jpa.Geoloc;
+import cpath.log.jpa.LogEntitiesRepository;
+import cpath.log.jpa.LogEvent;
 import cpath.service.ErrorResponse;
 import cpath.service.Status;
 import cpath.service.jaxb.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.Assert;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 
@@ -55,18 +63,53 @@ import org.springframework.validation.FieldError;
  */
 public abstract class BasicController {
     private static final Logger log = LoggerFactory.getLogger(BasicController.class);
-       
-	/**
-	 * Http error response from the error bean.
-	 */
-	protected void errorResponse(Status status, String detailedMsg,
-			HttpServletResponse response) throws IOException {
+    
+    protected LogEntitiesRepository logEntitiesRepository;  
+    
+    @Autowired
+    public void setLogRepository(LogEntitiesRepository logEntitiesRepository) {
+    	Assert.notNull(logEntitiesRepository);
+		this.logEntitiesRepository = logEntitiesRepository;
+	}
+
+    
+    /**
+     * Http error response from the error bean.
+     * 
+     * @param status
+     * @param detailedMsg
+     * @param request
+     * @param response
+     * @param updateCountsFor
+     * @throws IOException
+     */
+	protected final void errorResponse(Status status, String detailedMsg,
+			HttpServletRequest request, HttpServletResponse response, Set<LogEvent> updateCountsFor) 
+					throws IOException {
+		
+		if(updateCountsFor == null)
+			updateCountsFor = new HashSet<LogEvent>();
+		
+		// to count the error (code), also add -
+		updateCountsFor.add(LogEvent.from(status));
+		
+		LogUtils.log(logEntitiesRepository, 
+				updateCountsFor, Geoloc.fromIpAddress(clientIpAddress(request)));
+		
 		response.sendError(status.getErrorCode(), 
-			status.getErrorMsg() + "; " + detailedMsg);	
+			status.getErrorMsg() + "; " + detailedMsg);
 	}
 	
 	
-	protected String errorFromBindingResult(BindingResult bindingResult) {
+	/**
+	 * Builds an error message from  
+	 * the web parameters binding result
+	 * if there're errors.
+	 * 
+	 * @param bindingResult
+	 * @return
+	 */
+	protected final String errorFromBindingResult(BindingResult bindingResult) {
 		StringBuilder sb = new StringBuilder();
 		for (FieldError fe : bindingResult.getFieldErrors()) {
 			Object rejectedVal = fe.getRejectedValue();
@@ -85,19 +128,33 @@ public abstract class BasicController {
 	}
     
 	
-	protected void stringResponse(ServiceResponse resp, 
-			Writer writer, HttpServletResponse response) throws IOException 
+	/**
+	 * Writes the query results to the HTTP response
+	 * output stream.
+	 * 
+	 * @param resp
+	 * @param writer
+	 * @param request
+	 * @param response
+	 * @param updateCountsFor
+	 * @throws IOException
+	 */
+	protected final void stringResponse(ServiceResponse resp, 
+			Writer writer, HttpServletRequest request, 
+			HttpServletResponse response, Set<LogEvent> updateCountsFor) throws IOException 
 	{
 		if(resp instanceof ErrorResponse) {
 			
-			errorResponse(((ErrorResponse) resp).getStatus(), ((ErrorResponse) resp).toString(), response);
+			errorResponse(((ErrorResponse) resp).getStatus(), 
+					((ErrorResponse) resp).toString(), request, response, updateCountsFor);
 			
 		} 
 		else if(resp.isEmpty()) {
 			log.warn("stringResponse: I got an empty ServiceResponce " +
 				"(must be already converted to the ErrorResponse)");
 			
-			errorResponse(NO_RESULTS_FOUND, "no results found", response);
+			errorResponse(NO_RESULTS_FOUND, "no results found", 
+					request, response, updateCountsFor);
 			
 		} 
 		else {
@@ -106,11 +163,29 @@ public abstract class BasicController {
 
 			log.debug("QUERY RETURNED " + dresp.getData().toString().length() + " chars");
 			
+			// take care to count provider's data accessed events
+			Set<String> providers = dresp.getProviders();
+			updateCountsFor.addAll(LogEvent.fromProviders(providers));
+			
+			//log to the db (for analysis and reporting)
+			LogUtils.log(logEntitiesRepository, updateCountsFor,
+					Geoloc.fromIpAddress(clientIpAddress(request)));
+			
 			writer.write(dresp.getData().toString());
 		}
 	}
+
 	
-	public BufferedImage scaleImage(BufferedImage img, int width, int height,
+	/**
+	 * Resizes the image.
+	 * 
+	 * @param img
+	 * @param width
+	 * @param height
+	 * @param background
+	 * @return
+	 */
+	public final BufferedImage scaleImage(BufferedImage img, int width, int height,
 	        Color background) {
 	    int imgWidth = img.getWidth();
 	    int imgHeight = img.getHeight();
@@ -136,32 +211,31 @@ public abstract class BasicController {
 	}
 	
 	
-	/** 
+	/**
+	 * Extracts the client's IP from the request headers.
+	 * 
 	 * @param request
-	 * @param params optional (POST) query arguments (if provided, will replace request.getQueryString() value)
+	 * @return
 	 */
-	void logHttpRequest(HttpServletRequest request, Object... params) {
+	public static final String clientIpAddress(HttpServletRequest request) {
+		
 		String ip = request.getHeader("X-Forwarded-For");		
-		if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+		if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {  
             ip = request.getHeader("Proxy-Client-IP");  
         }  
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {  
             ip = request.getHeader("WL-Proxy-Client-IP");  
         }  
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {  
             ip = request.getHeader("HTTP_CLIENT_IP");  
         }  
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {  
             ip = request.getHeader("HTTP_X_FORWARDED_FOR");  
         }  
-        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {  
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {  
             ip = request.getRemoteAddr();  
         }  
 		
-		log.info("REQUEST " + ip
-			+ "\t" + request.getMethod() 
-			+ "\t" + request.getRequestURI()
-			+ "\t" + ((params.length == 0) ? request.getQueryString() : Arrays.toString(params))
-		);
+        return ip;
 	}
 }

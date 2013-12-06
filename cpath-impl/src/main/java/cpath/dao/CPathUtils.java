@@ -11,27 +11,18 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.lang.reflect.Method;
-import java.net.URLDecoder;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
@@ -47,10 +38,10 @@ import org.biopax.paxtools.model.Model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
 import cpath.config.CPathSettings;
-import cpath.service.Cmd;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
 
@@ -87,6 +78,7 @@ public final class CPathUtils {
     
 	// LOADER can handle file://, ftp://, http://  PROVIDER_URL resources
 	private static final ResourceLoader LOADER = new DefaultResourceLoader();
+		
 	
 	private CPathUtils() {
 		throw new AssertionError("Not instantiable");
@@ -348,7 +340,7 @@ public final class CPathUtils {
     	return readContent(inputStream, true);
     }
         
-    /**
+    /*
      * Given a zip stream, unzips it into individual 
      * files and creates PathwayData objects from each
      * 
@@ -489,123 +481,6 @@ public final class CPathUtils {
 		cleanupDirectory(new File(CPathSettings.homeDir() + File.separator + db));
 		LOGGER.info("Emptied the index dir:" + db);
 	}
-	
-	
-	/**
-	 * Reads and analyzes all the cpath2 web service logs to
-	 * extract and report access counts per: IP, query type,
-	 * datasource, etc.
-	 * 
-	 * @return
-	 * @throws IOException 
-	 */
-	public static Map<String, Integer> simpleStatsFromAccessLogs() throws IOException {
-		Map<String, Integer> map = new TreeMap<String, Integer>();
-		
-		//read, analyze all $CPATH2_HOME/*.log files
-        File dir = new File(CPathSettings.homeDir());
-       	FilenameFilter filter = new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return (name.endsWith(".log") || name.endsWith(".log.gz"));
-            }
-        };
-        
-        //sorted list of log files
-        Set<String> logs = new TreeSet<String>(Arrays.asList(dir.list(filter)));       
-        for (String f : logs) {
-        	final String logfile = dir.getAbsolutePath() + File.separator + f;
-        	LOGGER.info("Analysing " + logfile + "...");
-        	simpleStatsFromLog(map, logfile);
-        }
-        
-		return map;
-	}
-
-
-	/**
-	 * Extracts various counts from a single cpath2 log file
-	 * to the map. 
-	 * 
-	 * @param logFile absolute path to the log
-	 */
-	public static void simpleStatsFromLog(Map<String, Integer> map, String logFile) throws IOException {
-
-		//to match: IP, COMMAND, [PARAMETERS] (optional)
-		final Pattern reqPattern = Pattern.compile("REQUEST\\s+([\\d\\.]+)\\s+(GET|POST)\\s+/(\\S+)\\s+(\\[(.+)\\])?");
-		//matches the list of [DATASOURCES]
-		final Pattern resPattern = Pattern.compile("DATASOURCE\\s+\\[(.+)\\]");
-		//matches IP and the archive downloaded (count for each file)
-		final Pattern dlPattern = Pattern.compile("DOWNLOAD\\s+([\\d\\.]+)\\s+(GET|POST)\\s+/(\\S+)");
-
-		//consider the case when logFile was compressed (ends with .gz)
-		InputStream logInputStream = new FileInputStream(logFile);
-		if(logFile.endsWith(".gz")) {
-			logInputStream = new GZIPInputStream(logInputStream);
-		}	
-		BufferedReader reader = new BufferedReader(new InputStreamReader(logInputStream));
-
-		String line;
-		while ((line = reader.readLine()) != null) {
-			//match, parse & count...
-			Matcher matcher = reqPattern.matcher(line);       	
-			if(matcher.find()) {
-				//count IP
-				count(map, "IP " + matcher.group(1).trim());
-
-				//count cmd
-				String val = matcher.group(3).trim();
-				//remove the system-dependent context path
-				val = val.substring(val.lastIndexOf('/')+1);
-				try {
-					Cmd cmd = Cmd.valueOf(val.toUpperCase()); //not fails if valid cpath2 command
-					String params = matcher.group(5).trim();
-					String kind = "";          			
-					if(!params.isEmpty()) {
-						for(String par: params.split(",\\s+")) {
-							if(par.startsWith("format="))
-								count(map, "FORMAT " + par.substring(7));
-							else if ( cmd == Cmd.GRAPH && par.startsWith("kind="))
-								kind = par.substring(5);
-							//TODO ? count 'datasource' filter values too
-						}
-					}            			
-					if(!kind.isEmpty())
-						count(map, "COMMAND " + val + " " + kind);
-
-					count(map, "COMMAND " + val);
-				} catch (IllegalArgumentException e) {
-					count(map, "OTHER");
-				}
-
-			} else {
-				matcher = resPattern.matcher(line); 
-				if(matcher.find()) {
-					String[] dss = matcher.group(1).trim().split(",\\s+");
-					for(String ds : dss) {
-						count(map, "DATASOURCE " + ds);
-					}
-				} else {
-					matcher = dlPattern.matcher(line); 
-					if(matcher.find()) {
-						//count IP
-						count(map, "IP " + matcher.group(1).trim());
-						//count file name
-						String file = matcher.group(3).trim();
-						file = file.substring(file.lastIndexOf('/')+1);
-						file = URLDecoder.decode(file);
-						count(map, "DOWNLOAD " + file);					
-					}
-				}
-			}
-		}
-		reader.close();
-	}
-
-
-	private static void count(Map<String, Integer> map, String key) {
-		Integer count = new Integer( (map.containsKey(key)) ? map.get(key).intValue() + 1 : 1);
-		map.put(key, count);
-	}
 
 	
 	/**
@@ -641,7 +516,7 @@ public final class CPathUtils {
 	 * @return big BioPAX model
 	 */
 	public static Model importFromTheArchive() {
-		//TODO an option to load other archives (e.g., Reactome only, for testing)
+		//TODO ? an option to load other archives (e.g., Reactome only, for testing)
 		final String archive = CPathSettings.biopaxExportFileName("All"); 
 		
 		Model model = null;
@@ -657,6 +532,71 @@ public final class CPathUtils {
 		}
 
 		return model;
+	}
+	
+	
+	/**
+	 * Downloads a file (content) from Internet
+	 * and saves in the cpath2 home directory. The content
+	 * can be anything, but only single-file GZIP archives 
+	 * can be optionally expanded with this method, before saved.
+	 * 
+	 * @param url remote URL
+	 * @param localFileName name or relative path and name
+	 * @param unpack if true, expands the archive
+	 * @param replace
+	 * @return bytes saved or 0 if existed before file weren't replaced
+	 * @throws IOException
+	 */
+	public static long download(String url, String localFileName, 
+			boolean unpack, boolean replace) throws IOException {
+		
+		File localFile = new File(CPathSettings.homeDir() 
+				+ File.separator + localFileName);
+		
+		if(localFile.exists() && !replace) {
+			LOGGER.info("Keep existing " + localFileName);
+			return 0L;
+		}
+		
+		Resource resource = LOADER.getResource(url);
+        long size = 0; 
+        if(resource.isReadable()) {
+        	size = resource.contentLength();
+        	LOGGER.info(url + " content length= " + size);
+        }       
+        if(size < 0) 
+        	size = 100 * 1024 * 1024 * 1024;
+        
+        //downoad to a tmp file
+        ReadableByteChannel source = Channels.newChannel(resource.getInputStream());      
+       	File tmpf = File.createTempFile("cpath2_", ".download");
+       	tmpf.deleteOnExit();
+        FileOutputStream dest = new FileOutputStream(tmpf);        
+        size = dest.getChannel().transferFrom(source, 0, size);
+        dest.close();
+        LOGGER.info(size + " bytes downloaded from " + url);
+        
+        if(unpack) {
+        	GZIPInputStream ginstream = new GZIPInputStream(new FileInputStream(tmpf));
+        	FileOutputStream outstream = new FileOutputStream(localFile);
+        	byte[] buf = new byte[1024]; 
+        	int len;
+        	while ((len = ginstream.read(buf)) > 0) 
+        		outstream.write(buf, 0, len);
+        	ginstream.close();
+        	outstream.close();
+        } else {
+        	if(replace)
+        		if(localFile.exists() && !localFile.delete())
+            		throw new RuntimeException("Failed to delete old " 
+            			+ localFile.getAbsolutePath());
+        	if(!tmpf.renameTo(localFile))
+        		throw new RuntimeException("Failed to move " 
+        			+ tmpf.getAbsolutePath() + " to " + localFile.getAbsolutePath());
+        }
+              
+        return size;
 	}
 		
 }

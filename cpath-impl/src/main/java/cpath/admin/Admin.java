@@ -35,6 +35,7 @@ import cpath.importer.Merger;
 import cpath.importer.Premerger;
 import cpath.importer.internal.MergerImpl;
 import cpath.importer.internal.PremergeImpl;
+import cpath.log.jpa.LogEntitiesRepository;
 import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
 import cpath.service.internal.BiopaxConverter;
@@ -46,6 +47,7 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.validator.api.Validator;
+import org.h2.tools.Csv;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -59,6 +61,9 @@ import org.springframework.core.io.Resource;
 
 import java.io.*;
 import java.nio.charset.Charset;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
@@ -92,6 +97,8 @@ public final class Admin {
         UPDATE_COUNTS("-update-counts"),
 		EXPORT("-export"),
         CONVERT("-convert"),
+        EXPORT_LOG("-export-log"),
+        //TODO ? add -import-log (from CSV)
 		;
 
         // string ref for readable name
@@ -227,6 +234,12 @@ public final class Admin {
 		} else if (args[0].equals(Cmd.CLEAR_CACHE.toString())) {
 			
 			clearCache();
+		
+		} else if (args[0].equals(Cmd.EXPORT_LOG.toString())) {	
+			if (args.length == 2 && "--clear".equalsIgnoreCase(args[1]))
+				initLog(true);
+			else
+				initLog(false);	
 			
 		} else {
 			System.err.println(usage());
@@ -236,9 +249,44 @@ public final class Admin {
 		// Cancellation Timer thread is still running
 		System.exit(0);
     }    
+
     
+    //clean/update service access counts by location,date in the DB from available .log files
+    public static void initLog(boolean clear) throws IOException {
+		if(!isMaintenanceEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+ 		
+ 		//backup cpath2 access db to a CSV file
+ 		CPathSettings cps = getInstance();
+ 		String filename = dataDir() + cps.getMainDb() + ".log.csv";
+ 		Connection conn = null;
+ 		try {
+//			Class.forName("org.h2.Driver");
+			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) 
+					+ cps.getMainDb());
+			new Csv()
+				.write(conn, filename, "select * from logentity", "UTF-8");
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		} finally {
+			try {conn.close();} catch (SQLException e) {}
+		}
+ 		
+ 		// clear
+ 		if(clear) {
+ 	        // load the log repositories from the app. context
+ 	        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+ 					"classpath:META-INF/spring/applicationContext-log.xml");
+ 	        // get auto-generated jpa CRUD repositories (using spring-data feature/config.)
+ 	 		LogEntitiesRepository logEntitiesRepository = context.getBean(LogEntitiesRepository.class);
+ 			
+ 			logEntitiesRepository.deleteAll();
+ 			context.close();
+ 		}
+	}
+
     
-    private static void fail(String[] args, String details) {
+	private static void fail(String[] args, String details) {
         throw new IllegalArgumentException(
         	"Invalid cpath2 command: " +  Arrays.toString(args)
         	+ "; " + details);		
@@ -531,14 +579,17 @@ public final class Admin {
 		toReturn.append(Cmd.MERGE.toString() + " [<metadataId>] [--force]"+ NEWLINE);
 		toReturn.append(Cmd.CREATE_INDEX.toString() + NEWLINE);
         toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
-        toReturn.append(Cmd.CLEAR_CACHE.toString() + " ()" + NEWLINE);
-        toReturn.append(Cmd.UPDATE_COUNTS.toString() + " ()" + NEWLINE);
+        toReturn.append(Cmd.CLEAR_CACHE.toString() + " (removes the cache directory)" + NEWLINE);
+        toReturn.append(Cmd.UPDATE_COUNTS.toString() + " (re-calculates pathway, molecule, " +
+        		"interaction counts per data source)" + NEWLINE);
         toReturn.append(Cmd.CREATE_DOWNLOADS.toString() + " (creates cpath2 BioPAX DB archives using several " +
         	"data formats, and also split by data source, organism)"  + NEWLINE);        
         // other useful (utility) commands
 		toReturn.append(Cmd.EXPORT.toString() + " <output> [<uri,uri,..>]" + NEWLINE);
 		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format>" + NEWLINE);
-
+		toReturn.append(Cmd.EXPORT_LOG.toString() + " [--clear] (export cpath2 assess log to a " +
+				"CSV file and optionally clear the table)" + NEWLINE);
+		
 		return toReturn.toString();
 	}
 
@@ -717,7 +768,8 @@ public final class Admin {
     	// export by organism
         LOG.info("create-downloads: preparing data 'by organism' archives...");
         for(String org :  CPathSettings.organisms()) {
-        	//generate archives for current organism
+        	// generate archives for current organism
+        	// hack: org.toLowerCase() is to tell by-organism from by-datasource archives (for usage stats...) 
         	archiveName = CPathSettings.biopaxExportFileName(org.toLowerCase());
         	exportBiopax(dao, archiveName, null, new String[]{org});
         	files.add(archiveName);

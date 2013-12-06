@@ -43,6 +43,8 @@
 		<constructor-arg ref="metadataDAO"/>
 	</bean>
 	   
+	<bean id="logStatsController" class="cpath.webservice.LogStatsController"/>	   
+	   
 	<mvc:view-controller path="/tests.html" view-name="tests"/>
 	<mvc:view-controller path="/robots.txt" view-name="robots"/>
 	

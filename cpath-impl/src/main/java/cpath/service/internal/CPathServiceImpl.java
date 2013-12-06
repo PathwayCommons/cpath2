@@ -42,8 +42,9 @@ import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.Control;
+import org.biopax.paxtools.model.level3.Interaction;
 import org.biopax.paxtools.model.level3.Pathway;
-import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.query.QueryExecuter;
 import org.biopax.paxtools.query.algorithm.Direction;
@@ -52,6 +53,7 @@ import org.biopax.paxtools.query.wrapperL3.DataSourceFilter;
 import org.biopax.paxtools.query.wrapperL3.Filter;
 import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
+import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -66,6 +68,7 @@ import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
+import cpath.service.jaxb.TraverseEntry;
 import cpath.service.jaxb.TraverseResponse;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
@@ -85,7 +88,7 @@ import cpath.warehouse.beans.Mapping;
  * @author rodche
  */
 @Service
-public class CPathServiceImpl implements CPathService {
+class CPathServiceImpl implements CPathService {
 	private static final Logger log = LoggerFactory.getLogger(CPathServiceImpl.class);
 	
 	private PaxtoolsDAO mainDAO;
@@ -103,7 +106,7 @@ public class CPathServiceImpl implements CPathService {
 	private Model proxyModel;
 	
 	private final int maxHitsPerPage;
-
+	
 	/**
 	 * Default Constructor
 	 */
@@ -172,6 +175,8 @@ public class CPathServiceImpl implements CPathService {
 				hits = new SearchResponse();
 				hits.setMaxHitsPerPage(maxHitsPerPage);
 				hits.setPageNo(page);
+			} else {
+				setProviders(hits);
 			}
 			
 			hits.setComment("Search '" + queryStr  + "' in " + 
@@ -188,6 +193,21 @@ public class CPathServiceImpl implements CPathService {
 		return serviceResponse;
 	}
 		
+
+	private void setProviders(SearchResponse hits) {
+		//get providers' standard names from their uris
+		Set<String> uris = hits.provenanceUris();
+		log.debug("setProviders; hits.provenanceUris(): " + uris);
+		String propertyPath = "Provenance/standardName";		
+		TraverseResponse tr = 
+			(TraverseResponse) traverse(propertyPath, uris.toArray(new String[] {}));
+		Set<String> names = new HashSet<String>();
+		for(TraverseEntry te : tr.getTraverseEntry()) {
+			names.addAll(te.getValue());
+		}
+		hits.setProviders(names); 
+	}
+
 
 	@Override
 	public ServiceResponse fetch(final OutputFormat format, final String... uris) {
@@ -210,11 +230,25 @@ public class CPathServiceImpl implements CPathService {
 							"No BioPAX objects found by URI(s): " + Arrays.toString(uris));
 						return;
 					}
+					//auto-complete (add important child elements)	
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model); 
 					assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
+					
+					// TODO add/use extra query parameter to add hidden Control objects
+					// a hack (mostly for PANTHER db): add missing Controls 
+					// (when model has pathways, no Controls, but some can be 
+					// found from a reaction.controlledOf)
+					if(!(new ClassFilterSet<BioPAXElement, Pathway>(elements, Pathway.class)).isEmpty() 
+						&& (new ClassFilterSet<BioPAXElement, Control>(elements, Control.class)).isEmpty()) {
+						log.debug("Auto adding Controls to the model...");
+						for(BioPAXElement e : new HashSet<BioPAXElement>(elements)) {
+							if(e instanceof Interaction)
+								elements.addAll(((Interaction) e).getControlledOf());
+						}
+					}					
+					
 					Model m = cloner.clone(model, elements);
 					m.setXmlBase(model.getXmlBase());
-					logDatasourcesUsed(m);
 					callback[0] = (new BiopaxConverter(getBlacklist()))
 						.convert(m, format, true);
 				} catch (Exception e) {
@@ -230,34 +264,6 @@ public class CPathServiceImpl implements CPathService {
 		
 		return callback[0];
     }
-
-
-	/*
-	 * Logs the list of datasources
-	 * (which a result a query result contains).
-	 * 
-	 * @param m
-	 */
-	private void logDatasourcesUsed(Model m) {
-		if(m != null) {
-			Set<Provenance> provs = m.getObjects(Provenance.class);		
-			if(provs!= null && !provs.isEmpty()) {
-				Set<String> dsNames = new TreeSet<String>();
-				for(Provenance prov : provs) {
-					String name = prov.getStandardName();
-					if(name != null)
-						dsNames.add(name);
-					else {
-						name = prov.getDisplayName();
-						if(name != null)
-							dsNames.add(name);
-					}
-				}
-
-				log.info("DATASOURCE " + dsNames.toString()); 
-			}
-		}
-	}
 
 
 	private Filter[] createFilters(String[] organisms, String[] datasources) {
@@ -312,7 +318,6 @@ public class CPathServiceImpl implements CPathService {
 						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 						Model m = cloner.clone(model, elements);
 						m.setXmlBase(model.getXmlBase());
-						logDatasourcesUsed(m);
 						callback[0] = (new BiopaxConverter(getBlacklist())).convert(m, format, true);
 					} else {
 						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
@@ -365,7 +370,6 @@ public class CPathServiceImpl implements CPathService {
 						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 						Model m = cloner.clone(model, elements);
 						m.setXmlBase(model.getXmlBase());
-						logDatasourcesUsed(m);
 						callback[0] = (new BiopaxConverter(getBlacklist()))
 							.convert(m, format, true);
 					} else {
@@ -431,7 +435,6 @@ public class CPathServiceImpl implements CPathService {
 						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 						Model m = cloner.clone(model, elements);
 						m.setXmlBase(model.getXmlBase());
-						logDatasourcesUsed(m);
 						callback[0] = (new BiopaxConverter(getBlacklist()))
 								.convert(m, format, true);
 					} else {
@@ -495,7 +498,6 @@ public class CPathServiceImpl implements CPathService {
 						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
 						Model m = cloner.clone(model, elements);
 						m.setXmlBase(model.getXmlBase());
-						logDatasourcesUsed(m);
 						callback[0] = (new BiopaxConverter(getBlacklist()))
 								.convert(m, format, true);
 					} else {
@@ -670,6 +672,8 @@ public class CPathServiceImpl implements CPathService {
 				"other pathways nor controlled of any process)");
 		topPathways.setMaxHitsPerPage(hits.size());
 		topPathways.setPageNo(0);
+		
+		setProviders(topPathways);
 		
 		return topPathways;
 	}

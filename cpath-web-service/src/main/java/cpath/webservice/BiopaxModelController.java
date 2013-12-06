@@ -32,18 +32,29 @@ import java.io.Writer;
 import java.util.*;
 
 import cpath.config.CPathSettings;
+import cpath.log.LogUtils;
+import cpath.log.jpa.Geoloc;
+import cpath.log.jpa.LogEvent;
 import cpath.service.CPathService;
+import cpath.service.Cmd;
 import cpath.service.ErrorResponse;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
 import cpath.service.Status;
 import cpath.service.jaxb.*;
 import cpath.webservice.args.Get;
+import cpath.webservice.args.Graph;
+import cpath.webservice.args.Search;
 import cpath.webservice.args.Traverse;
 import cpath.webservice.args.binding.BiopaxTypeEditor;
+import cpath.webservice.args.binding.GraphQueryDirectionEditor;
+import cpath.webservice.args.binding.GraphQueryLimitEditor;
+import cpath.webservice.args.binding.GraphTypeEditor;
 import cpath.webservice.args.binding.OutputFormatEditor;
 
 import org.biopax.paxtools.model.level3.Protein;
+import org.biopax.paxtools.query.algorithm.Direction;
+import org.biopax.paxtools.query.algorithm.LimitType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -84,6 +95,9 @@ public class BiopaxModelController extends BasicController {
 	 */
 	@InitBinder
     public void initBinder(WebDataBinder binder) {
+        binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
+        binder.registerCustomEditor(Direction.class, new GraphQueryDirectionEditor());
+        binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
@@ -137,19 +151,19 @@ public class BiopaxModelController extends BasicController {
     	Writer writer, HttpServletRequest request, HttpServletResponse response) 
     		throws IOException
     {
-    	logHttpRequest(request, "format="+get.getFormat(), (get.getUri().length<6)?"uri="+Arrays.toString(get.getUri()):"uri=...(>5)");
+		//log events: command, format
+    	Set<LogEvent> events = new HashSet<LogEvent>();
+    	events.add(LogEvent.from(Cmd.GET));
     	
     	if(bindingResult != null &&  bindingResult.hasErrors()) {
     		errorResponse(Status.BAD_REQUEST, 
-    				errorFromBindingResult(bindingResult), response);
+    				errorFromBindingResult(bindingResult), request, response, events);
     	} else {
 			OutputFormat format = get.getFormat();
 			String[] uri = get.getUri();
-
-			log.debug("Query: /get; format:" + format + ", urn:" + Arrays.toString(uri));
-
 			ServiceResponse result = service.fetch(format, uri);
-			stringResponse(result, writer, response);
+			events.add(LogEvent.from(format));
+			stringResponse(result, writer, request, response, events);
 		}
     }  
 
@@ -159,14 +173,23 @@ public class BiopaxModelController extends BasicController {
     		@RequestParam(required=false) String[] datasource, @RequestParam(required=false) String[] organism, 
     		HttpServletRequest request, HttpServletResponse response) throws IOException
     {
-		logHttpRequest(request, "organisms="+Arrays.toString(organism), "datasource="+Arrays.toString(datasource));
+//		log(request, "organisms="+Arrays.toString(organism), "datasource="+Arrays.toString(datasource));
+    	Set<LogEvent> events = new HashSet<LogEvent>();
+    	events.add(LogEvent.from(Cmd.TOP_PATHWAYS));
+    	events.add(LogEvent.FORMAT_OTHER);
 		
 		SearchResponse results = service.topPathways(organism, datasource);
 		
 		if(results == null || results.isEmpty()) {
-			errorResponse(Status.NO_RESULTS_FOUND, "no hits", response);
+			errorResponse(Status.NO_RESULTS_FOUND, "no hits", request, response, events);
 		} else {
-			return (SearchResponse) results;
+			//log to db
+			//TODO ? not sure we have to update provides' counters...
+    		events.addAll(LogEvent.fromProviders(results.getProviders()));
+	    	LogUtils.log(logEntitiesRepository, 
+					events, Geoloc.fromIpAddress(clientIpAddress(request)));
+			
+			return results;
 		}
 		
 		return null;
@@ -178,25 +201,126 @@ public class BiopaxModelController extends BasicController {
     	BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
     		throws IOException 
     {
-    	logHttpRequest(request, "path="+query.getPath());
+//    	log(request, "path="+query.getPath());
+    	Set<LogEvent> events = new HashSet<LogEvent>();
+    	events.add(LogEvent.from(Cmd.TRAVERSE));
+    	events.add(LogEvent.FORMAT_OTHER);
     	
     	if(bindingResult.hasErrors()) {
     		errorResponse(Status.BAD_REQUEST, 
-    				errorFromBindingResult(bindingResult), response);
+    				errorFromBindingResult(bindingResult), request, response, events);
     	} else {
     		ServiceResponse sr = service.traverse(query.getPath(), query.getUri());
     		if(sr instanceof ErrorResponse) {
 				errorResponse(((ErrorResponse) sr).getStatus(), 
-						((ErrorResponse) sr).toString(), response);
+						((ErrorResponse) sr).toString(), request, response, events);
 			}
     		else if(sr == null || sr.isEmpty()) {
-    			errorResponse(Status.NO_RESULTS_FOUND, "no results found", response);
+    			errorResponse(Status.NO_RESULTS_FOUND, "no results found", request, response, events);
     		}
     		else {
-				return sr;
+    			//log to db
+    			LogUtils.log(logEntitiesRepository, 
+    					events, Geoloc.fromIpAddress(clientIpAddress(request)));
+    			
+    			return sr;
 			}
     	}
     	return null;
     }
+    
+	@RequestMapping("/graph")
+	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, 
+			Writer writer, HttpServletRequest request, HttpServletResponse response) throws IOException
+    {
+
+    	Set<LogEvent> events = new HashSet<LogEvent>();
+    	events.add(LogEvent.from(Cmd.GRAPH));
+		
+		//check for binding errors
+		if(bindingResult.hasErrors()) {
+			errorResponse(Status.BAD_REQUEST, 
+					errorFromBindingResult(bindingResult), request, response, events);
+			return;
+		} 
+		
+    	// on parameter binding success, add a few more events to log/count -
+		events.add(LogEvent.from(graph.getKind()));
+    	events.add(LogEvent.from(graph.getFormat()));
+		
+		ServiceResponse result;
+		
+		switch (graph.getKind()) {
+		case NEIGHBORHOOD:
+			result = service.getNeighborhood(graph.getFormat(), graph.getSource(), 
+				graph.getLimit(), graph.getDirection(), graph.getOrganism(), graph.getDatasource());
+			break;
+		case PATHSBETWEEN:
+			result = service.getPathsBetween(graph.getFormat(), graph.getSource(), 
+				graph.getLimit(), graph.getOrganism(), graph.getDatasource());
+			break;
+		case PATHSFROMTO:
+			result = service.getPathsFromTo(graph.getFormat(), graph.getSource(), 
+				graph.getTarget(), graph.getLimit(), graph.getOrganism(), graph.getDatasource());
+			break;
+		case COMMONSTREAM:
+			result = service.getCommonStream(graph.getFormat(), graph.getSource(), 
+				graph.getLimit(), graph.getDirection(), graph.getOrganism(), graph.getDatasource());
+			break;
+		default:
+			// impossible (should have failed earlier)
+			errorResponse(Status.INTERNAL_ERROR, 
+				getClass().getCanonicalName() + " does not support " 
+					+ graph.getKind(), request, response, events);			
+			return;
+		}
+		
+		stringResponse(result, writer, request, response, events);
+    }
+	
+	
+    @RequestMapping(value="/search")
+    public @ResponseBody ServiceResponse search(@Valid Search search, 
+    		BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
+    			throws IOException
+    {		
+		//prepare to count following service assess events
+    	Set<LogEvent> events = new HashSet<LogEvent>();
+    	events.add(LogEvent.from(Cmd.SEARCH));
+    	events.add(LogEvent.FORMAT_OTHER); //XML or JSON (not BioPAX, SIF, etc.)
+    	//do NOT add yet for the 'datasource' filter values can be anything (hard to analyze)		
+    	   	
+    	if(bindingResult.hasErrors()) {
+			errorResponse(Status.BAD_REQUEST, 
+				errorFromBindingResult(bindingResult), 
+					request, response, events);
+			return null;
+		} else {
+			// get results from the service
+			ServiceResponse results = service.search(
+					search.getQ(), search.getPage(), search.getType(),
+					search.getDatasource(), search.getOrganism());
+
+			if(results instanceof ErrorResponse) {
+				errorResponse(Status.INTERNAL_ERROR, 
+					((ErrorResponse) results).toString(), 
+						request, response, events);
+			} else if(results.isEmpty()) {
+				errorResponse(Status.NO_RESULTS_FOUND, 
+						"no hits", request, response, events);
+			} else {
+				//count for all unique provider names from the ServiceResponse
+				//TODO ? not sure we have to count these...
+	    		events.addAll(LogEvent.fromProviders(
+	    				((SearchResponse)results).getProviders()
+	    			));
+				//log to db
+		    	LogUtils.log(logEntitiesRepository, 
+						events, Geoloc.fromIpAddress(clientIpAddress(request)));
+				return results;
+			}
+			return null;
+		}
+	}	
     
 }
