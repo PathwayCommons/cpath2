@@ -310,7 +310,7 @@ class ChebiSdfConverterImpl extends BaseConverterImpl
 	 * @param entry StringBuilder
 	 * @param databaseRegex String
 	 * @param smallMoleculeReference SmallMoleculeReference
-	 * @param model TODO
+	 * @param model
 	 * @throws IOException
 	 */
 	private void setChEBIDatabaseLinks(StringBuilder entry, String databaseRegex, 

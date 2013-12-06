@@ -16,8 +16,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
+import cpath.log.LogUtils;
+import cpath.log.jpa.Geoloc;
+import cpath.log.jpa.LogEvent;
 import cpath.service.Status;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.PathwayData;
@@ -33,7 +35,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -56,7 +57,7 @@ public class MetadataController extends BasicController
     
     
     /**
-     * Makes current cpath2 instance properies 
+     * Makes current cpath2 instance properties 
      * available to all (JSP) views.
      * @return
      */
@@ -87,7 +88,7 @@ public class MetadataController extends BasicController
      * @param writer
      * @throws IOException
      */
-    @RequestMapping(value="/help/schema")
+    @RequestMapping("/help/schema")
     public void getSchema(Writer writer, HttpServletResponse response) 
     		throws IOException 
     {
@@ -106,7 +107,7 @@ public class MetadataController extends BasicController
     }
     
 
-    @RequestMapping(value="/help/formats.html")
+    @RequestMapping("/help/formats.html")
     public String getOutputFormatsDescr() 
     {
     	return "formats";
@@ -144,10 +145,6 @@ public class MetadataController extends BasicController
     public String queryForValidation(
     		@PathVariable String identifier, Model model, HttpServletRequest request) 
     {
-		log.debug("Getting a validation report (html) for:" 
-				+ identifier);
-		
-		logHttpRequest(request);
 
     	ValidatorResponse body = service.validationReport(identifier, null);
 		model.addAttribute("response", body);
@@ -160,9 +157,7 @@ public class MetadataController extends BasicController
     @RequestMapping("/metadata/validations/{identifier}")
     public @ResponseBody ValidatorResponse queryForValidation(
     		@PathVariable String identifier, HttpServletRequest request) 
-    {
-		logHttpRequest(request);
-		
+    {	
     	return service.validationReport(identifier, null);
     } 
     
@@ -172,9 +167,7 @@ public class MetadataController extends BasicController
     public @ResponseBody ValidatorResponse queryForValidation(
     		@PathVariable String identifier, @PathVariable String file,
     		HttpServletRequest request) 
-    {
-		logHttpRequest(request);
-    	
+    {	
     	return service.validationReport(identifier, file);
     }
        
@@ -184,8 +177,6 @@ public class MetadataController extends BasicController
     		@PathVariable String identifier, @PathVariable String file, 
     		Model model, HttpServletRequest request) 
     {
-    	logHttpRequest(request);
-
     	ValidatorResponse body = service.validationReport(identifier, file);
 		model.addAttribute("response", body);
 		
@@ -193,7 +184,7 @@ public class MetadataController extends BasicController
     }
 	
     
-    @RequestMapping(value = "/metadata/logo/{identifier}")
+    @RequestMapping("/metadata/logo/{identifier}")
     public  @ResponseBody byte[] queryForLogo(@PathVariable String identifier) 
     		throws IOException 
     {	
@@ -217,7 +208,7 @@ public class MetadataController extends BasicController
     }
 
     
-    @RequestMapping(value = "/favicon.ico")
+    @RequestMapping("/favicon.ico")
     public  @ResponseBody byte[] icon(HttpServletResponse response) 
     		throws IOException {
     	
@@ -235,8 +226,8 @@ public class MetadataController extends BasicController
 				iconData = baos.toByteArray();
 			}
 		} catch (IOException e) {
-			errorResponse(Status.INTERNAL_ERROR, 
-				"Failed to load icon image from " +  cpathLogoUrl, response);
+//			errorResponse(Status.INTERNAL_ERROR, 
+//				"Failed to load icon image from " +  cpathLogoUrl, request, response);
 			log.error("Failed to load icon image from " +  cpathLogoUrl, e);
 		}
 		
@@ -244,7 +235,7 @@ public class MetadataController extends BasicController
     }
     
     // to return a xml or json data http response
-    @RequestMapping(value = "/metadata/datasources")
+    @RequestMapping("/metadata/datasources")
     public  @ResponseBody List<MetInfo> queryForDatasources() {
 		log.debug("Getting pathway datasources info.");
     	
@@ -270,31 +261,9 @@ public class MetadataController extends BasicController
     }
 
     
-    /*
-     * Parses cpath2 log files available on the server to 
-     * return a (JSON) map that contains simple counts of how many 
-     * times it was accessed from a particular IP address, 
-     * web service command/path, and which pathway data sources
-     * and how often were associated with the results. 
-     * 
-     * This is internal api (for server owners/developers; 
-     * please do not hit too often...)
-     */
-	@RequestMapping(value = "/logs/summary", method=RequestMethod.POST)
-    public @ResponseBody Map<String,Integer> stats(Model model, HttpServletRequest request) 
-    		throws IOException 
-    {
-		logHttpRequest(request);		
-    	// update (unique IP, cmd, datasource, etc.) counts 
-		// from all there available log files (takes some time to parse)
-    	return CPathUtils.simpleStatsFromAccessLogs();
-    }
- 
-	
-    @RequestMapping(value = "/downloads.html")
+    @RequestMapping("/downloads.html")
     public String downloads(Model model, HttpServletRequest request) {
-    	logHttpRequest(request);
-    	
+
     	// get the sorted list of files to be shared on the web
     	String path = CPathSettings.downloadsDir(); 
     	File[] list = new File(path).listFiles();
@@ -305,42 +274,79 @@ public class MetadataController extends BasicController
     		File f = list[i];
     		String name = f.getName();
     		long size = f.length();
-    		if(!name.startsWith("."))
-    			files.put(name, FileUtils.byteCountToDisplaySize(size));
+    		
+    		if(!name.startsWith(".")) {
+    			StringBuilder sb = new StringBuilder();
+    			sb.append("size: ").append(FileUtils.byteCountToDisplaySize(size));
+    			List<Object[]> dl = logEntitiesRepository.downloadsWorld(null, name);
+    			String topCountry = null;
+    			long topCount = 0;
+    			long total = 0;
+    			Iterator<Object[]> it = dl.iterator();
+    			it.next(); //skip title line
+    			while(it.hasNext()) {
+    				Object[] a = it.next();
+    				long count = (Long) a[1];
+    				total += count;
+    				if(count > topCount) {
+    					topCount = count;
+    					topCountry = (String) a[0];
+    				}   					
+    			}
+    			
+    			sb.append("; downloads: ").append(total);
+    			if(topCount > 0) {
+    				sb.append("; mostly from: ")
+    				.append((topCountry != null && !topCountry.isEmpty()) 
+    						? topCountry : "Local/Unknown")
+    				.append(" [").append(topCount).append("]");
+    			}
+    			
+    			files.put(name, sb.toString());
+    		}
     	}
+    	
     	model.addAttribute("files", files.entrySet());
 		
 		return "downloads";
     }
 
     
-    @RequestMapping(value="/idmapping")
+    @RequestMapping("/idmapping")
     public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id, 
     		HttpServletRequest request, HttpServletResponse response) throws IOException
-    {		
-			logHttpRequest(request,"id="+Arrays.toString(id));
-			
-			if(id == null || id.length == 0) {
-				errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", response);
-				return null;
-			}
-			
-			Map<String, String> res = new TreeMap<String, String>();
+    {			
+    	//log events: command, format
+    	Set<LogEvent> events = new HashSet<LogEvent>();
+    	events.add(LogEvent.IDMAPPING);
+    	events.add(LogEvent.FORMAT_OTHER);
 
-			for(String i : id) {							
-				Set<String> im = service.mapIdentifier(i, Mapping.Type.UNIPROT, null);
-				if(im.isEmpty())
-					im = service.mapIdentifier(i, Mapping.Type.CHEBI, null);
-				
-				if(im == null) {
-					res.put(i, null);
-				} else {
-					for(String ac : im)
-						res.put(i, ac);
-				}			
-			}		
+    	if(id == null || id.length == 0) {
+    		errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", 
+    				request, response, events);
+    		return null;
+    	}
 
-			return res;
+    	Map<String, String> res = new TreeMap<String, String>();
+
+    	for(String i : id) {							
+    		Set<String> im = service.mapIdentifier(i, Mapping.Type.UNIPROT, null);
+    		if(im.isEmpty())
+    			im = service.mapIdentifier(i, Mapping.Type.CHEBI, null);
+
+    		if(im == null) {
+    			res.put(i, null);
+    		} else {
+    			for(String ac : im)
+    				res.put(i, ac);
+    		}			
+    	}		
+
+    	//log to db (for usage reports)
+    	LogUtils.log(logEntitiesRepository, 
+    			events, Geoloc.fromIpAddress(clientIpAddress(request)));
+
+    	return res;
 	}
  
     

@@ -4,7 +4,7 @@
 	<parent>
 		<artifactId>parent</artifactId>
 		<groupId>pathwaycommons.cpath</groupId>
-		<version>4.1.0-SNAPSHOT</version>
+		<version>4.2.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>distribution</artifactId>
@@ -33,6 +33,20 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+           		<artifactId>maven-deploy-plugin</artifactId>
+           		<version>${maven-deploy-plugin.version}</version>
+           		<configuration>
+             		<skip>true</skip>
+          		</configuration>
+        	</plugin>
+			<plugin>
+				<artifactId>maven-site-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+					<skipDeploy>true</skipDeploy>
+				</configuration>
+			</plugin>         				
 		</plugins>
 	</build>
 
