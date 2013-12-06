@@ -14,25 +14,6 @@ import cpath.log.LogType;
  *
  */
 interface LogEntitiesRepositoryCustom {
-	
-	/**
-	 * Aggregates the history (log) of services/downloads provided 
-	 * for users by service {@link LogType} and date, and 
-	 * represents it as the list of [date, count] pairs for each category.
-	 * 
-	 * @return	log type - to array of Object[2] map, e.g.: 
-	 * <pre>
-	 * {
-	 * "All":[["2013-11-14", 123], ["2013-11-15", 234],..], 
-	 * "All Providers":[["2013-11-14", 23], ["2013-11-15", 34],..],  
-	 * "All Files":[["2013-11-14", 23],..], 
-	 * "All Commands":[["2013-11-14", 23],..],
-	 * "All Errors":[["2013-11-14", 23],..],..
-	 * }
-	 * </pre>
-	 */
-//	Map<String, List<Object[]>> downloadsTimeline(); 
-	
 		
 	/**
 	 * Aggregates the history (log) of a particular service category,
