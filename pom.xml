@@ -747,7 +747,7 @@
 		<!-- This cfg. works, but please do NOT use mvn site-deploy (due to number 
 			of issues)! First, 'hg clone' the remote pathway-commons.cpath2-site code 
 			repository to some local dir, e.g., 'maven-site' inside this priject's root. 
-			Next, do site site:stage -DstagingDirectory=<path> - path the above dir. 
+			Next, do site site:stage -DstagingDirectory=<full-path> - path the above dir. 
 			Finally, swith there and do: hg add *, hg commit, hg push ... -->
 		<site>
 			<id>pathway-commons.googlecode.com</id>
