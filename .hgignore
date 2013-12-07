@@ -11,3 +11,6 @@ syntax: glob
 .extract
 .externalToolBuilders
 target
+maven-site
+maven-repo
+
