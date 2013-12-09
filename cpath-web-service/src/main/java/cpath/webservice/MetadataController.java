@@ -251,9 +251,14 @@ public class MetadataController extends BasicController
 			mi.setNotPathwaydata(m.getType().isNotPathwayData());
 			mi.setUri(m.getUri());
 			mi.setUrlToHomepage(m.getUrlToHomepage());
-			mi.getCounts().add(m.getNumPathways());
-			mi.getCounts().add(m.getNumInteractions());
-			mi.getCounts().add(m.getNumPhysicalEntities());
+			if(!m.getType().isNotPathwayData()) {
+				mi.getCounts().add(m.getNumPathways());
+				mi.getCounts().add(m.getNumInteractions());
+				mi.getCounts().add(m.getNumPhysicalEntities());
+				//downloaded/accessed count - for pathway data only
+				Long accessed = logEntitiesRepository.downloads(m.standardName());
+				mi.getCounts().add(accessed);
+			}
 			list.add(mi);
 		}
 		
@@ -410,11 +415,11 @@ public class MetadataController extends BasicController
     	byte[] icon;
     	String identifier;
     	List<String> name;
-    	List<Integer> counts;
+    	List<Number> counts;
     	boolean notPathwaydata;
     	
     	public MetInfo() {
-			counts = new ArrayList<Integer>(3);
+			counts = new ArrayList<Number>(4);
 		}
     	
     	public String getType() {
@@ -466,10 +471,10 @@ public class MetadataController extends BasicController
 			this.name = name;
 		}
 
-		public List<Integer> getCounts() {
+		public List<Number> getCounts() {
 			return counts;
 		}
-		public void setCounts(List<Integer> counts) {
+		public void setCounts(List<Number> counts) {
 			this.counts = counts;
 		}  
 		
