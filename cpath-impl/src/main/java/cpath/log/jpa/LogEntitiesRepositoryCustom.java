@@ -130,5 +130,15 @@ interface LogEntitiesRepositoryCustom {
 	 * @return
 	 */
 	List<LogEvent> logEvents(LogType logType);
+
+	
+	/**
+	 * The total number of client requests served, 
+	 * filtered (optionally) by the service name.
+	 * 
+	 * @param name log event name (a command, provider name, filename, error name, etc.)
+	 * @return
+	 */
+	Long downloads(String name);
 	
 }

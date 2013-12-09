@@ -26,7 +26,8 @@ function getDatasources(){
         			'<dd><p>'+ds.description+'<br/><strong>' 
            			+ds.counts[0]+' pathways, ' 
            			+ds.counts[1]+' interactions, ' 
-           			+ds.counts[2]+' physical entities (states).</dd></strong></p>');
+           			+ds.counts[2]+' physical entities (states)</strong>; accessed '
+           			+ds.counts[3]+' times.</dd></p>');
         	}
         });
     });

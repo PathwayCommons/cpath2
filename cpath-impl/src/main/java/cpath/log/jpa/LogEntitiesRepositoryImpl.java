@@ -34,13 +34,10 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 	@Override
 	public Map<String, List<Object[]>> downloadsTimeline(LogType logType,
 			String name) {
-		Assert.notNull(logType);
-		
-		Map<String, List<Object[]>> timeline = new TreeMap<String, List<Object[]>>();	
-		
+		Map<String, List<Object[]>> timeline = new TreeMap<String, List<Object[]>>();			
 		QLogEntity $ = QLogEntity.logEntity;
-		
 		if(name == null || name.isEmpty()) {
+			Assert.notNull(logType);
 			for(Tuple t : from($).where($.event.type.eq(logType))
 					.groupBy($.event.name,$.date)
 					.orderBy($.event.name.asc(),$.date.desc())
@@ -55,12 +52,11 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 				val.add(new Object[] {t.get($.date), t.get($.count.sum())});
 			}
 		} 
-		else { //name was provided
+		else { //name was provided; type does not matter anymore
 			List<Object[]> val = new ArrayList<Object[]>();
-			timeline.put(name, val);
-			
+			timeline.put(name, val);			
 			for(Tuple t : from($)
-					.where($.event.type.eq(logType).and($.event.name.eq(name)))
+					.where($.event.name.eq(name))
 					.groupBy($.date).orderBy($.date.desc())
 					.list($.date,$.count.sum())) {
 				val.add(new Object[] {t.get($.date), t.get($.count.sum())});
@@ -96,8 +92,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 			list.add(new Object[] {t.get($.geoloc.country), t.get($.count.sum())});
 		}
 		
-//		if(!list.isEmpty())
-			list.add(0, new Object[] {"Country", "Downloads"});
+		list.add(0, new Object[] {"Country", "Downloads"});
 		
 		return list;
 	}
@@ -131,8 +126,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 					t.get($.geoloc.city), t.get($.count.sum())});
 		}
 		
-//		if(!list.isEmpty())
-			list.add(0, new Object[] {"Country", "Region", "City", "Downloads"});
+		list.add(0, new Object[] {"Country", "Region", "City", "Downloads"});
 		
 		return list;
 	}
@@ -164,8 +158,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 			list.add(new Object[] {t.get($.geoloc.city), t.get($.count.sum())});
 		}
 		
-//		if(!list.isEmpty())
-			list.add(0, new Object[] {"City", "Downloads"});
+		list.add(0, new Object[] {"City", "Downloads"});
 		
 		return list;		
 	}
@@ -180,6 +173,14 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		else 
 			return from($).distinct()
 				.orderBy($.event.type.asc(),$.event.name.asc()).list($.event);
+	}
+
+
+	@Override
+	public Long downloads(String name) {
+		Assert.hasLength(name);
+		QLogEntity $ = QLogEntity.logEntity;
+		return from($).where($.event.name.eq(name)).uniqueResult($.count.sum());
 	}
 		
 }
