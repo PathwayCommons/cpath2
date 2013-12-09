@@ -30,7 +30,7 @@
 
 	<h2>About ${cpath.name}</h2>
 	<p>${cpath.description}</p>
-	<p>Data is freely available, under the license terms of each contributing <a href="/datasources.html"> database</a>.</p>
+	<p>Data is freely available, under the license terms of each contributing <a href="datasources.html"> database</a>.</p>
 
 	<h2>cPath2 Web Service Description</h2>
 	<p>To query the integrated biological pathway data from this server 
@@ -69,7 +69,7 @@
 		nested information pages about main web service commands, parameters, 
 		BioPAX types and properties; e.g., /help/schema, 
 		<a href="help/commands">/help/commands</a>, /help/types, all /help.json, etc.)</li>
-		<li>/log/* (server access logs summary and statistics, e.g.,)</li>
+		<li>/log and /log/* (server access logs summary and statistics, e.g.,)</li>
 	</ol>
 	
 	<h3>Also</h3>
