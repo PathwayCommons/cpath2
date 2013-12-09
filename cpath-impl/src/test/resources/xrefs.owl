@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF 
+	xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" xmlns:bp="http://www.biopax.org/release/biopax-level3.owl#"
+	xmlns:p1="http://www.owl-ontologies.com/assert.owl#" xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+	xmlns:owl="http://www.w3.org/2002/07/owl#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+
+	<rdf:comment>This is similar to but NOT a REAL data (for software testing only)!</rdf:comment>
+
+	<owl:Ontology rdf:about="">
+		<owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl#" />
+	</owl:Ontology>
+
+	<bp:UnificationXref rdf:about="UnificationXref:Taxonomy_562">
+		<bp:db rdf:datatype="xsd:string">Taxonomy</bp:db>
+		<bp:id rdf:datatype="xsd:string">562</bp:id>
+	</bp:UnificationXref>
+
+	<bp:UnificationXref rdf:about="UnificationXref:UniProt_P46880">
+		<bp:db rdf:datatype="xsd:string">UniProt</bp:db>
+		<bp:id rdf:datatype="xsd:string">P46880</bp:id>
+		<bp:comment rdf:datatype="xsd:string">PMID: 15608167</bp:comment>
+	</bp:UnificationXref>
+	
+	<bp:PublicationXref rdf:about="pubmed:9847135">
+		<bp:db rdf:datatype="xsd:string">Pubmed</bp:db>
+		<bp:id rdf:datatype="xsd:string">9847135</bp:id>
+		<bp:year rdf:datatype="xsd:string">2011</bp:year>
+	</bp:PublicationXref>
+
+</rdf:RDF>
