@@ -30,10 +30,11 @@
 		
 		<!-- to be filled by Javascript and styled with Tweeter Bootstrap -->
 		<div class="row-fluid">
-		  <select class="selectpicker show-menu-arrow cpath-logs"
+		  <select class="selectpicker cpath-logs" 
+		  	data-header="Find, select and press the button to refresh"
 			data-live-search="true" data-width="30%" data-container="body">
 		  </select>
-		  <button class="btn btn-success show-cpath-log">Go</button>
+		  <button class="btn btn-success show-cpath-log">Update</button>
 		</div>
 		<br/>
 		
@@ -99,8 +100,6 @@
 
 
 	<script type="text/javascript">
-		AppStats.setupSelectEvents();
-	
 		google.load('visualization', '1', {
 			'packages' : [ 'corechart', 'geochart', 'annotatedtimeline' ]
 		});
@@ -108,7 +107,7 @@
 		google.setOnLoadCallback(function() {
 			AppStats.setupTimeline();
 			AppStats.setupGeography();
-			
+			AppStats.setupSelectEvents();
 		});
 	</script>
 

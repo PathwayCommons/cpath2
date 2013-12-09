@@ -63,11 +63,13 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.PreparedStatement;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import javax.transaction.Transaction;
 
 import static cpath.service.OutputFormat.*;
 
@@ -98,7 +100,7 @@ public final class Admin {
 		EXPORT("-export"),
         CONVERT("-convert"),
         EXPORT_LOG("-export-log"),
-        //TODO ? add -import-log (from CSV)
+        IMPORT_LOG("-import-log"),
 		;
 
         // string ref for readable name
@@ -237,10 +239,15 @@ public final class Admin {
 		
 		} else if (args[0].equals(Cmd.EXPORT_LOG.toString())) {	
 			if (args.length == 2 && "--clear".equalsIgnoreCase(args[1]))
-				initLog(true);
+				exportLog(true);
 			else
-				initLog(false);	
-			
+				exportLog(false);	
+		} else if (args[0].equals(Cmd.IMPORT_LOG.toString())) {	
+			if (args.length < 2) {
+				LOG.info("No input file provided (.csv)");
+				importLog(null);	
+			} else 
+				importLog(args[1]);	
 		} else {
 			System.err.println(usage());
 		}
@@ -252,24 +259,25 @@ public final class Admin {
 
     
     //clean/update service access counts by location,date in the DB from available .log files
-    public static void initLog(boolean clear) throws IOException {
+    public static void exportLog(boolean clear) throws IOException {
 		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
  		
  		//backup cpath2 access db to a CSV file
  		CPathSettings cps = getInstance();
- 		String filename = dataDir() + cps.getMainDb() + ".log.csv";
+ 		String filename = dataDir() + File.separator + cps.getMainDb() + ".log.csv";
  		Connection conn = null;
  		try {
 //			Class.forName("org.h2.Driver");
 			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) 
-					+ cps.getMainDb());
+					+ cps.getMainDb(), property(PROP_DB_USER), property(PROP_DB_PASSW));
 			new Csv()
 				.write(conn, filename, "select * from logentity", "UTF-8");
+			LOG.info("Access log DB was successfully exported to " + filename);
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
-			try {conn.close();} catch (SQLException e) {}
+			try {conn.close();} catch (Exception e) {}
 		}
  		
  		// clear
@@ -278,13 +286,39 @@ public final class Admin {
  	        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
  					"classpath:META-INF/spring/applicationContext-log.xml");
  	        // get auto-generated jpa CRUD repositories (using spring-data feature/config.)
- 	 		LogEntitiesRepository logEntitiesRepository = context.getBean(LogEntitiesRepository.class);
- 			
+ 	 		LogEntitiesRepository logEntitiesRepository = context.getBean(LogEntitiesRepository.class);		
  			logEntitiesRepository.deleteAll();
  			context.close();
  		}
 	}
 
+    public static void importLog(String inputFile) throws IOException {
+		if(!isMaintenanceEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+ 		
+ 		//load cpath2 access db from a CSV file
+ 		CPathSettings cps = getInstance();
+ 		String filename = (inputFile == null || inputFile.isEmpty()) 
+ 				? dataDir() + File.separator + cps.getMainDb() + ".log.csv"
+ 					: inputFile;
+ 		Connection conn = null;
+ 		try {
+			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) 
+				+ cps.getMainDb(), property(PROP_DB_USER), property(PROP_DB_PASSW));
+			//clear all existing data
+			conn.createStatement().executeUpdate("delete from logentity;");
+	 		conn.createStatement().executeUpdate("insert into logentity " +
+	 				"select * from CSVREAD('"+ filename +"')");	 		
+	 		conn.commit();
+	        LOG.info("Access log DB was successfully imported from " + filename);
+		} catch (Exception e) {
+			try {conn.rollback(); conn.close();} catch (Exception ex) {}
+			throw new RuntimeException(e);
+		} finally {
+			try {conn.close();} catch (Exception e) {}
+		}
+ 		
+	}
     
 	private static void fail(String[] args, String details) {
         throw new IllegalArgumentException(
@@ -587,8 +621,10 @@ public final class Admin {
         // other useful (utility) commands
 		toReturn.append(Cmd.EXPORT.toString() + " <output> [<uri,uri,..>]" + NEWLINE);
 		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format>" + NEWLINE);
-		toReturn.append(Cmd.EXPORT_LOG.toString() + " [--clear] (export cpath2 assess log to a " +
-				"CSV file and optionally clear the table)" + NEWLINE);
+		toReturn.append(Cmd.EXPORT_LOG.toString() + " [--clear] (export cpath2 assess log to the " +
+				"CSV file in the data directory and, optionally, clear the table)" + NEWLINE);
+		toReturn.append(Cmd.IMPORT_LOG.toString() + " [filename] (import cpath2 assess log from the specified " +
+				"CSV file or from the default, if exists, in the data dir.)" + NEWLINE);
 		
 		return toReturn.toString();
 	}

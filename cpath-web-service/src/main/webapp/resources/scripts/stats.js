@@ -333,39 +333,31 @@ var AppStats = (function() {
   
 
   function setupSelectEvents() {
-	  $('.selectpicker').html(''); //clear
-	  
+	  $('.cpath-logs').html(''); //clear	  
 	  //init bootstrap-select selectpicker
-	  $('.selectpicker').selectpicker();
-	  
-  	  $.getJSON('/log/types', function(types) {  
-    		$.each(types, function(i, t){
-    			$('.selectpicker')
-    				.append('<option data-subtext="(category)" value="/log/'
-    					+ t + '/stats">' + t + '</option>');
-    		});
-    		$('.selectpicker').append('<option data-divider="true"></option>');
-    		$('.selectpicker').selectpicker('refresh');
-  	  });
-	  	  
+	  $('.selectpicker').selectpicker();	  
   	  $.getJSON('events', function(events) {
   		$.each(events, function(i, ev){
-  			$('.selectpicker')
-  				.append('<option data-subtext="' + ev.type 
-  				+ '" value="/log/' + ev.type + '/' + ev.name + '/stats">' 
-  				+ ev.name + '</option>');
+  			if(ev[1])
+  			  $('.cpath-logs')
+  				.append('<option data-subtext="' + ev[0] 
+  				  + '" value="/log/' + ev[0] + '/' + ev[1] + '/stats">' 
+  				  + ev[1] + '</option>');
+  			else
+  			  $('.cpath-logs')
+			    .append('<option data-subtext="(category)" value="/log/'
+				  + ev[0] + '/stats">' + ev[0] + '</option>');
   		});
-  		$('.selectpicker').selectpicker('refresh');
-  	  });
-  	  
+  		$('.cpath-logs').selectpicker('refresh');
+  	  });  	  
   	  //attach the action to button clicked event
   	  $('.show-cpath-log').click(function() {
   		  var url = $('.cpath-logs').val();
-  		  if (url) { 
+  		  if (url) {
   			  window.location = url; // redirect
   		  }
   		  return false;
-  	  }); 	  
+  	  });
   }  
   
   return {

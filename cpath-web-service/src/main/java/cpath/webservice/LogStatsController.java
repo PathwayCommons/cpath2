@@ -59,62 +59,77 @@ public class LogStatsController extends BasicController {
     // is /log
     @RequestMapping(method = RequestMethod.GET) 
     public String log() {
-    	return "redirect:/log/stats";
-    }
+    	return "redirect:/log/TOTAL/stats";
+    }    
     
-    // is /log/
-    @RequestMapping(value="/")
-    public String logSlash() {
-    	return "redirect:/log/stats";
-    }
-    
-    
-    @RequestMapping("/stats")
+    @RequestMapping("/")
     public String allStats(Model model) {
-    	model.addAttribute("summary_for", "All Categories (Total)");
-    	return "stats";
+    	return "redirect:/log/TOTAL/stats";
     }	
         
     @RequestMapping("/{logType}/stats")
     public String statsByType(Model model, @PathVariable LogType logType) {
     	model.addAttribute("summary_for", "Category: " + logType);
+    	model.addAttribute("current", "/log/"+logType.toString()+"/stats");
     	return "stats";
     }
     
     @RequestMapping("/{logType}/{name}/stats")
-    public String statsByType(Model model, @PathVariable LogType logType, 
+    public String statsByType(Model model, @PathVariable LogType logType,
     		@PathVariable String name) {
     	model.addAttribute("summary_for", "Category: " + logType + ", name: " + name);
+    	model.addAttribute("current", "/log/"+logType.toString()+"/"+name+"/stats");
     	return "stats";
     }
 
     
     // XML/JSON web services (for the stats.jsp view using stats.js, given current context path)
  
-    @RequestMapping("/types")
-    public @ResponseBody String[] logTypes() {
-    	LogType[] t  = LogType.values();
-    	String s[] = new String[t.length];
-    	for(int i = 0; i < t.length; i++) {
-    		s[i] = (t[i]).toString();
-    	}
-    	return s;
+    //if arg is not null, then it's the first element in the returned list
+    private List<String[]> categories(LogType logType) {
+    	List<String[]> ret = new ArrayList<String[]>();
+    	for(LogType t : LogType.values()) {
+    		String s[] = new String[2];
+    		s[0] = t.toString();
+    		s[1] = "";
+    		if(t==logType) ret.add(0, s); else ret.add(s);
+    	}   	
+    	return ret;
     }     
     
-	@RequestMapping("/{logType}/{name}/events")
-    public @ResponseBody List<LogEvent> logEvents(@PathVariable LogType logType, @PathVariable String name) {		
-    	return logEntitiesRepository.logEvents(logType); //same as without any name
-    } 
-    
-    @RequestMapping("/{logType}/events")
-    public @ResponseBody List<LogEvent> logEvents(@PathVariable LogType logType) {		
-    	return logEntitiesRepository.logEvents(logType);
-    } 
-	
 	@RequestMapping("/events")
-    public @ResponseBody List<LogEvent> logEvents() {		
-    	return logEntitiesRepository.logEvents(null);
-    }     
+    public @ResponseBody List<String[]> logEvents() {
+    	List<String[]> ret = categories(null);
+    	return ret;
+    } 
+
+    @RequestMapping("/{logType}/events")
+    public @ResponseBody List<String[]> logEvents(@PathVariable LogType logType) {	
+    	//add all the events in the same category (type); 
+    	//but make given type the first element in the list (selected)
+    	List<String[]> ret = categories(logType);
+    	for(LogEvent e : logEntitiesRepository.logEvents(logType)) {
+    		ret.add(new String[]{e.getType().toString(), e.getName()});
+    	}
+    	return ret;
+    }    
+    
+    @RequestMapping("/{logType}/{name}/events")
+    public @ResponseBody List<String[]> logEvents(@PathVariable LogType logType, 
+    		@PathVariable String name) {
+    	List<String[]> ret = categories(logType);
+    	//add all the events in the same category (type); 
+    	// but make the one with given type,name the first element in the list
+    	for(LogEvent e : logEntitiesRepository.logEvents(logType)) {
+    		if(e.getName().equals(name))
+    			ret.add(0, new String[]{e.getType().toString(), e.getName()});
+    		else 
+    			ret.add(new String[]{e.getType().toString(), e.getName()});
+    	}
+    	return ret;
+    } 
+       
+    //timeline
     
 	@RequestMapping("/{logType}/{name}/timeline")
     public @ResponseBody Map<String,List<Object[]>> timeline(@PathVariable LogType logType, @PathVariable String name) {		
@@ -130,6 +145,8 @@ public class LogStatsController extends BasicController {
     public @ResponseBody Map<String,List<Object[]>> timeline() {		
     	return logEntitiesRepository.downloadsTimeline(LogType.TOTAL, null);
     }
+	
+	//geo
 	
 	@RequestMapping("/geography/world")
     public @ResponseBody List<Object[]> geographyWorld() {		
