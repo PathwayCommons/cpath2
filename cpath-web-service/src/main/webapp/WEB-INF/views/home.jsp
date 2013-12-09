@@ -30,7 +30,7 @@
 
 	<h2>About ${cpath.name}</h2>
 	<p>${cpath.description}</p>
-	<p>Data is freely available, under the license terms of each contributing <a href="/datasources.html"> database</a>.</p>
+	<p>Data is freely available, under the license terms of each contributing <a href="datasources.html"> database</a>.</p>
 
 	<h2>cPath2 Web Service Description</h2>
 	<p>To query the integrated biological pathway data from this server 
