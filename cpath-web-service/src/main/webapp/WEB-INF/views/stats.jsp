@@ -27,7 +27,10 @@
 	<jsp:include page="header.jsp" />
 	<div id="content">
 		<h2>Access Summary for ${summary_for}</h2>
-		
+		<p>
+		<!-- TODO a general description of what we log and that all sort of clients contribute to this stats... -->
+		</p>
+		<br/>
 		<!-- to be filled by Javascript and styled with Tweeter Bootstrap -->
 		<div class="row-fluid">
 		  <select class="selectpicker cpath-logs" 
