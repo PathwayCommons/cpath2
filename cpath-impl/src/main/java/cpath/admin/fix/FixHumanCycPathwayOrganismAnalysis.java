@@ -15,7 +15,7 @@ import cpath.dao.Analysis;
  * @author rodche
  *
  */
-final class FixHumanCycPathwayOrganismAnalysis implements Analysis {
+public final class FixHumanCycPathwayOrganismAnalysis implements Analysis {
 	
 	@Override
     public void execute(Model model) 

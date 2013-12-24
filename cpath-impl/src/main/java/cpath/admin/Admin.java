@@ -29,13 +29,14 @@
 package cpath.admin;
 
 import static cpath.config.CPathSettings.*;
+import cpath.admin.fix.FixHumanCycPathwayOrganismAnalysis;
+import cpath.admin.fix.FixReactomeConversionDirectionAnalysis;
 import cpath.config.CPathSettings;
 import cpath.dao.*;
 import cpath.importer.Merger;
 import cpath.importer.Premerger;
 import cpath.importer.internal.MergerImpl;
 import cpath.importer.internal.PremergeImpl;
-import cpath.log.jpa.LogEntitiesRepository;
 import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
 import cpath.service.internal.BiopaxConverter;
@@ -63,13 +64,11 @@ import java.io.*;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import javax.transaction.Transaction;
 
 import static cpath.service.OutputFormat.*;
 
@@ -101,6 +100,7 @@ public final class Admin {
         CONVERT("-convert"),
         EXPORT_LOG("-export-log"),
         IMPORT_LOG("-import-log"),
+        AFTERMERGE("-aftermerge"),
 		;
 
         // string ref for readable name
@@ -243,11 +243,16 @@ public final class Admin {
 			else
 				exportLog(false);	
 		} else if (args[0].equals(Cmd.IMPORT_LOG.toString())) {	
-			if (args.length < 2) {
-				LOG.info("No input file provided (.csv)");
-				importLog(null);	
-			} else 
-				importLog(args[1]);	
+			
+			if (args.length < 2) 
+				fail(args, "No input file provided.");	
+			else 
+				importLog(args[1]);
+			
+		} else if (args[0].equals(Cmd.AFTERMERGE.toString())) {	
+			
+			aftermerge(); //TODO make it configurable, specific
+		
 		} else {
 			System.err.println(usage());
 		}
@@ -258,59 +263,83 @@ public final class Admin {
     }    
 
     
-    //clean/update service access counts by location,date in the DB from available .log files
+    private static void aftermerge() {
+    	if(!isMaintenanceEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+    	
+    	ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+				"classpath:META-INF/spring/applicationContext-dao.xml");    	
+ 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean("paxtoolsDAO"));
+ 		
+ 		mainDAO.run(new FixHumanCycPathwayOrganismAnalysis());
+ 		
+ 		mainDAO.run(new FixReactomeConversionDirectionAnalysis());
+ 		
+ 		context.close();
+	}
+
+
+	//clean/update service access counts by location,date in the DB from available .log files
     public static void exportLog(boolean clear) throws IOException {
 		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
  		
  		//backup cpath2 access db to a CSV file
  		CPathSettings cps = getInstance();
- 		String filename = dataDir() + File.separator + cps.getMainDb() + ".log.csv";
+ 		String filename = homeDir() + File.separator + "logentity.csv";
  		Connection conn = null;
  		try {
-//			Class.forName("org.h2.Driver");
+			Class.forName("org.h2.Driver");
 			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) 
 					+ cps.getMainDb(), property(PROP_DB_USER), property(PROP_DB_PASSW));
+//			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) + "accesslog", 
+//					property(PROP_DB_USER), property(PROP_DB_PASSW));
 			new Csv()
 				.write(conn, filename, "select * from logentity", "UTF-8");
-			LOG.info("Access log DB was successfully exported to " + filename);
+			LOG.info("Saved current access log DB to " + filename);
+			
+			if(clear) {
+				//purge existing access time and location history
+				conn.createStatement().executeUpdate("delete from logentity;");
+				conn.commit();
+				LOG.info("Cleared access log DB");
+			}
+			
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
 			try {conn.close();} catch (Exception e) {}
 		}
- 		
- 		// clear
- 		if(clear) {
- 	        // load the log repositories from the app. context
- 	        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
- 					"classpath:META-INF/spring/applicationContext-log.xml");
- 	        // get auto-generated jpa CRUD repositories (using spring-data feature/config.)
- 	 		LogEntitiesRepository logEntitiesRepository = context.getBean(LogEntitiesRepository.class);		
- 			logEntitiesRepository.deleteAll();
- 			context.close();
- 		}
 	}
 
-    public static void importLog(String inputFile) throws IOException {
+    public static void importLog(String filename) throws IOException {
 		if(!isMaintenanceEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
  		
  		//load cpath2 access db from a CSV file
  		CPathSettings cps = getInstance();
- 		String filename = (inputFile == null || inputFile.isEmpty()) 
- 				? dataDir() + File.separator + cps.getMainDb() + ".log.csv"
- 					: inputFile;
+ 		String backup = homeDir() + File.separator + "logentity.csv.bak";
  		Connection conn = null;
  		try {
+ 			Class.forName("org.h2.Driver");
 			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) 
 				+ cps.getMainDb(), property(PROP_DB_USER), property(PROP_DB_PASSW));
+// 			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) + "accesslog", 
+// 					property(PROP_DB_USER), property(PROP_DB_PASSW));
+			
+			//backup
+			new Csv()
+				.write(conn, backup, "select * from logentity", "UTF-8");
+			LOG.info("Saved current access log DB to " + backup);
+			
 			//clear all existing data
 			conn.createStatement().executeUpdate("delete from logentity;");
-	 		conn.createStatement().executeUpdate("insert into logentity " +
+			LOG.info("Cleared access log DB");
+			
+			conn.createStatement().executeUpdate("insert into logentity " +
 	 				"select * from CSVREAD('"+ filename +"')");	 		
 	 		conn.commit();
-	        LOG.info("Access log DB was successfully imported from " + filename);
+	        LOG.info("Imported access log entries from " + filename);
 		} catch (Exception e) {
 			try {conn.rollback(); conn.close();} catch (Exception ex) {}
 			throw new RuntimeException(e);
@@ -459,9 +488,7 @@ public final class Admin {
 		// pc dao
 
 		ClassPathXmlApplicationContext context = 
-				new ClassPathXmlApplicationContext(new String[] 
-				{"classpath:META-INF/spring/applicationContext-dao.xml",
-					"classpath:META-INF/spring/applicationContext-dao.xml"});
+			new ClassPathXmlApplicationContext("classpath:META-INF/spring/applicationContext-dao.xml");
 		
 		final PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
 
@@ -625,6 +652,8 @@ public final class Admin {
 				"CSV file in the data directory and, optionally, clear the table)" + NEWLINE);
 		toReturn.append(Cmd.IMPORT_LOG.toString() + " [filename] (import cpath2 assess log from the specified " +
 				"CSV file or from the default, if exists, in the data dir.)" + NEWLINE);
+		toReturn.append(Cmd.AFTERMERGE.toString() + " (apply custom post-fixes to the cpath2 DB; " +
+				"requires re-indexing and re-generationg of the data dump archives, i.e., downloads, after this is done)" + NEWLINE);
 		
 		return toReturn.toString();
 	}
