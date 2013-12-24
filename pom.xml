@@ -148,8 +148,8 @@
 		<hibernate.version>4.2.7.Final</hibernate.version>
 		<hibernate-search.version>4.3.0.Final</hibernate-search.version>
 		<ehcache-core.version>2.6.6</ehcache-core.version>
-		<paxtools.version>4.2.2-SNAPSHOT</paxtools.version>
-		<validator.version>3.0.3-SNAPSHOT</validator.version>
+		<paxtools.version>4.2.1</paxtools.version>
+		<validator.version>3.0.3</validator.version>
 		<junit.version>4.11</junit.version>
 		<commons-logging.version>1.1.1</commons-logging.version>
 		<commons-lang.version>2.6</commons-lang.version>
@@ -196,8 +196,8 @@
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>${maven-compiler-plugin.version}</version>
 					<configuration>
-						<source>${java.version}</source>
-						<target>${java.version}</target>
+						<source>1.6</source>
+						<target>1.6</target>
 					</configuration>
 				</plugin>
 				<plugin>
@@ -257,6 +257,7 @@
 					<version>${maven-project-info-reports-plugin.version}</version>
 				</plugin>
 				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>				
 					<artifactId>maven-site-plugin</artifactId>
 					<version>${maven-site-plugin.version}</version>
 				</plugin>

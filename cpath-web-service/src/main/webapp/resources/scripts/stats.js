@@ -212,8 +212,8 @@ var AppStats = (function() {
       // create by-day and cumulative tables
       var timelineByDay = buildTimelineByDay(timelineData);
       var timelineCum = buildTimelineCumulative(timelineByDay);
-      addTotalColumn(timelineByDay);
-      addTotalColumn(timelineCum);
+//      addTotalColumn(timelineByDay);
+//      addTotalColumn(timelineCum);
 
       // create timeline visualization
       var timelineChart = new google.visualization.AnnotatedTimeLine(document.getElementById('timeline-chart'));

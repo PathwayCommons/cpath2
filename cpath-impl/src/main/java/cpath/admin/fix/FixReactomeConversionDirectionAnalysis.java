@@ -15,7 +15,7 @@ import cpath.dao.Analysis;
  * @author rodche
  *
  */
-final class FixReactomeConversionDirectionAnalysis implements Analysis {
+public final class FixReactomeConversionDirectionAnalysis implements Analysis {
 	
 	@Override
     public void execute(Model model) 

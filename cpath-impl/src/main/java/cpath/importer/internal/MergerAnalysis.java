@@ -105,13 +105,13 @@ public class MergerAnalysis implements Analysis {
 			if(currUri.startsWith(xmlBase) || currUri.startsWith("http://identifiers.org/")) 
 				continue; 
 			
-			// Generate new URI:
+			// Generate new consistent URI for not generated not previously normalized objects:
 			String newRDFId = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
 			// Replace URI
 			CPathUtils.replaceID(source, bpe, newRDFId);
-			// save old URI in comments
+			// save original URI in comments
 			if(bpe instanceof Level3Element) //though it's always true (by current design)
-				((Level3Element) bpe).addComment(currUri);
+				((Level3Element) bpe).addComment("Original URI " + currUri);
 		}
 		
 		// The following hack can improve graph queries and full-text search relevance
