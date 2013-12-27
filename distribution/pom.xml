@@ -52,14 +52,6 @@
 
 
 	<dependencies>
-<!-- 		<dependency> -->
-<!-- 			<groupId>pathwaycommons.cpath</groupId> -->
-<!-- 			<artifactId>cpath-admin</artifactId> -->
-<!-- 			<version>${project.version}</version> -->
-<!-- 			<scope>runtime</scope> -->
-<!-- 			<classifier>exec</classifier> -->
-<!-- 			<type>jar</type> -->
-<!-- 		</dependency> -->
 		<dependency>
 			<groupId>pathwaycommons.cpath</groupId>
 			<artifactId>cpath-impl</artifactId>

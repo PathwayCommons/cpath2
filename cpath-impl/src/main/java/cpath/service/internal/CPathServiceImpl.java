@@ -53,6 +53,8 @@ import org.biopax.paxtools.query.wrapperL3.DataSourceFilter;
 import org.biopax.paxtools.query.wrapperL3.Filter;
 import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
+import org.biopax.paxtools.trove.TProvider;
+import org.biopax.paxtools.util.BPCollections;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,6 +135,10 @@ class CPathServiceImpl implements CPathService {
 
 	@PostConstruct
 	synchronized void init() {
+		
+		//use memory-efficient paxtools/biopax collections
+		BPCollections.setProvider(new TProvider());
+		
 		if(CPathSettings.isProxyModelEnabled() && proxyModel == null) { 			
 			//fork the model loading (which takes quite a while)
 			ExecutorService executor = Executors.newSingleThreadExecutor();

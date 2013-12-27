@@ -47,6 +47,8 @@ import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.trove.TProvider;
+import org.biopax.paxtools.util.BPCollections;
 import org.biopax.validator.api.Validator;
 import org.h2.tools.Csv;
 
@@ -157,6 +159,9 @@ public final class Admin {
 			dir.mkdir();
 		}
 
+		//use new memory-efficient collections provider with biopax/paxtools
+		BPCollections.setProvider(new TProvider());
+		
 		if (args[0].equals(Cmd.CREATE_INDEX.toString())) {
 			
 			index();
