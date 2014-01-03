@@ -351,10 +351,12 @@ var AppStats = (function() {
   		$('.cpath-logs').selectpicker('refresh');
   	  });  	  
   	  //attach the action to button clicked event
-  	  $('.show-cpath-log').click(function() {
+ 	  $('.show-cpath-log').click(function() {
   		  var url = $('.cpath-logs').val();
   		  if (url) {
-  			  window.location = url; // redirect
+  	 		  // app's root context path (defined on the JSP page)  
+  	 		  // depends on how this app was actually deployed.  			  
+  			  window.location = contextPath + url;
   		  }
   		  return false;
   	  });
