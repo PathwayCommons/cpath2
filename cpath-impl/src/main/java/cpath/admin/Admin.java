@@ -153,7 +153,7 @@ public final class Admin {
         }
     	
 
-        // create the TMP dir inside the home dir if it does not exist yet
+        // create the data dir. inside the home dir. if it does not exist
 		File dir = new File(dataDir());
 		if(!dir.exists()) {
 			dir.mkdir();

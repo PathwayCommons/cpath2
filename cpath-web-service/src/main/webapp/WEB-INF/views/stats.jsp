@@ -107,6 +107,9 @@
 			'packages' : [ 'corechart', 'geochart', 'annotatedtimeline' ]
 		});
 		
+		//cpath2 app's root context path
+		var contextPath = '<%=request.getContextPath()%>';
+		
 		google.setOnLoadCallback(function() {
 			AppStats.setupTimeline();
 			AppStats.setupGeography();
