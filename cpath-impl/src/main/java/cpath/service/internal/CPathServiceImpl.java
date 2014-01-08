@@ -136,9 +136,6 @@ class CPathServiceImpl implements CPathService {
 	@PostConstruct
 	synchronized void init() {
 		
-		//use memory-efficient paxtools/biopax collections
-		BPCollections.setProvider(new TProvider());
-		
 		if(CPathSettings.isProxyModelEnabled() && proxyModel == null) { 			
 			//fork the model loading (which takes quite a while)
 			ExecutorService executor = Executors.newSingleThreadExecutor();

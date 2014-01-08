@@ -2,7 +2,6 @@
 
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
-import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Premerger;

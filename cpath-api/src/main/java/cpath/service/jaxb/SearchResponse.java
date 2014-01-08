@@ -7,7 +7,6 @@ import java.util.Set;
 
 import javax.xml.bind.annotation.*;
 
-import sun.util.logging.resources.logging;
 
 @XmlRootElement(name="searchResponse")
 @XmlAccessorType(XmlAccessType.FIELD)
