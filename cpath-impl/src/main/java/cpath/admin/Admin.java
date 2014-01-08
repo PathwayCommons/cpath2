@@ -159,9 +159,6 @@ public final class Admin {
 			dir.mkdir();
 		}
 
-		//use new memory-efficient collections provider with biopax/paxtools
-		BPCollections.setProvider(new TProvider());
-		
 		if (args[0].equals(Cmd.CREATE_INDEX.toString())) {
 			
 			index();

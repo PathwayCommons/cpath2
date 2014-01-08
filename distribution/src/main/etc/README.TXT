@@ -44,6 +44,10 @@ jar or class directly. We provide several shell scripts for your convenience.
 4. consider setting 'java.io.tmpdir' as: -Djava.io.tmpdir=$CPATH2_HOME/tmp
 (it's already set in the shell scripts)
 
+5. Normally, use -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider JVM option 
+(it's already set as default in the cpath2 shell scripts; make sure it's also enabled for the Tomcat  
+where cpath2.war is to be deployed, for this improves memory usage and performance)
+
 Try cpath2.md5hex.uri.enabled=true and other debug options in cpath2.properties
 (e.g., all "get" and "graph" queries will, along with RDFId, also accept the Primary Key values,
 i.e., - MD5hex (32-byte) digest string calculated from elements's URIs!) 
