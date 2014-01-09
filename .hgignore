@@ -1,0 +1,16 @@
+syntax:regexp
+?\.iml
+?\.class
+/target/
+\.idea/
+syntax: glob
+.project
+.DS_Store
+.settings/
+.springBeans
+.extract
+.externalToolBuilders
+target
+maven-site
+maven-repo
+
