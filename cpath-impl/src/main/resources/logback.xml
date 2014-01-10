@@ -21,6 +21,7 @@
   </appender>
  
   <logger name="org.biopax" level="warn" />
+  <logger name="org.biopax.paxtools.util.BPCollections" level="info" />
   <logger name="org.springframework" level="warn" />
   <logger name="org.hibernate" level="warn" />
   <logger name="com.mchange" level="warn" />

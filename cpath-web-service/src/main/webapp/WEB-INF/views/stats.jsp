@@ -3,17 +3,16 @@
 <%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 
 <!DOCTYPE html>
-
 <html>
 <head>
 <meta charset="utf-8" />
 <meta name="author" content="${cpath.name}" />
 <meta name="description" content="cPath2 simple access log summary" />
-<meta name="keywords" content="cPath2, BioPAX, Validation" />
+<meta name="keywords" content="${cpath.name}, cPath2, BioPAX, accesslog, stats" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link media="screen" href="<c:url value="/resources/css/cpath2.css"/>" rel="stylesheet" />
 <link href="<c:url value="/resources/css/bootstrap.min.css"/>" rel="stylesheet" />
 <link href="<c:url value="/resources/css/bootstrap-select.min.css"/>" rel="stylesheet" />
+<link href="<c:url value="/resources/css/cpath2.css"/>" rel="stylesheet" media="screen"/>
 <script	type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript" src="<c:url value="/resources/scripts/json.min.js"/>"></script>
@@ -24,15 +23,27 @@
 <title>cPath2: Stats</title>
 </head>
 <body>
+	
 	<jsp:include page="header.jsp" />
+	
 	<div id="content">
 		<h2>Access Summary for ${summary_for}</h2>
-		<p>
-		<!-- TODO a general description of what we log and that all sort of clients contribute to this stats... -->
-		</p>
-		<br/>
+		<section id="read_and_jump">
 		<!-- to be filled by Javascript and styled with Tweeter Bootstrap -->
 		<div class="row-fluid">
+		  <p>
+			Charts below can display counts of remote user requests that used one of 
+		  	<a href="<c:url value="/home.html#commands"/>">cpath2 web service commands</a>,  
+		  	organized by category (e.g., Total, Providers, Files), or just for one thing
+		  	(e.g., selected data source, filename, format).
+		  	Calls from all cPath2 client applications, such as Cytoscape apps, PCViz, ChiBE, 
+		  	scripts, are equally treated. A single web query increments the total number of 
+		  	requests sent on that date from user's location (country, region, city) and,  
+		  	usually, kicks other access counts, such as per: pathway/interaction data provider 
+		  	(when corresponding data contributed to the result, or data source mentioned 
+		  	in a search response), command name (e.g., search, graph type, traverse), data format 
+		  	requested, file downloaded, error type, etc. 
+		  </p>
 		  <select class="selectpicker cpath-logs" 
 		  	data-header="Find, select and press the button to refresh"
 			data-live-search="true" data-width="30%" data-container="body">
@@ -40,7 +51,8 @@
 		  <button class="btn btn-success show-cpath-log">Update</button>
 		</div>
 		<br/>
-		
+		</section>
+		<section id="by_date">
 		<div class="row">
 			<div class="span6">
 				<h3 style="display: inline; margin-right: 1em;">Timeline</h3>
@@ -62,7 +74,8 @@
 					style="width: 100%; height: 540px; margin-top: 2em; margin-bottom: 10em;"></div>
 			</div>
 		</div>
-
+		</section>
+		<section id="by_geolocation">
 		<div class="row">
 			<div class="span6">
 				<h3>Geography</h3>
@@ -97,10 +110,10 @@
 					style="width: 100%; height: 540px;"></div>
 			</div>
 		</div>
-
+	</section>
 	</div>
+	
 	<jsp:include page="footer.jsp" />
-
 
 	<script type="text/javascript">
 		google.load('visualization', '1', {
