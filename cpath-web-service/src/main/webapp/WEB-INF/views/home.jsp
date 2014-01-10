@@ -17,7 +17,6 @@
 	<script src="<c:url value="/resources/scripts/json.min.js"/>"></script>
 	<script src="<c:url value="/resources/scripts/help.js"/>"></script>
 	<link rel="stylesheet" href="<c:url value="/resources/css/cpath2.css"/>" media="screen"/>
-
 	<title>cPath2::Info</title>
 </head>
 <body>
