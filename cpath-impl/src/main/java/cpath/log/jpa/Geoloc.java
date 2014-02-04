@@ -31,11 +31,9 @@ public class Geoloc {
 	
 	public Geoloc(String country, String region, String city) {
 		Assert.hasText(country);
-		Assert.hasText(region);
-		Assert.hasText(city);
 		this.country = country;
-		this.region = region;
-		this.city = city;
+		this.region = region; //can be null/empty
+		this.city = city; //can be null/empty 
 	}
 	
 	public String getCountry() {
