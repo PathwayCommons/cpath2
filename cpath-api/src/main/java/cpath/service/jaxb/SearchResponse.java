@@ -26,6 +26,7 @@ public class SearchResponse extends ServiceResponse {
     @XmlAttribute
     private String comment;
     
+    @XmlTransient
     private Set<String> providers; //pathway data provider standard names (for logging/stats)
 	
 	public SearchResponse() {
