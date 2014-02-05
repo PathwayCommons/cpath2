@@ -296,11 +296,24 @@ public final class PremergeImpl implements Premerger {
 		pathwayData.setData(data.getBytes()); //writes data file
 		
 		// Second, if psi-mi, convert to biopax L3
-		if (metadata.getType() == Metadata.METADATA_TYPE.PSI_MI) {
-			log.info("pipeline(), converting psi-mi data " + info);
+		if (metadata.getType() == Metadata.METADATA_TYPE.PSI_MI
+				|| metadata.getType() == Metadata.METADATA_TYPE.PSI_MITAB) {
+			log.info("pipeline(), converting PSI-MI " + info);
 			try {
-				data = convertPSIToBioPAX(data, metadata);
-			} catch (RuntimeException e) {
+				ByteArrayOutputStream os = new ByteArrayOutputStream();
+				InputStream is = new ByteArrayInputStream(data.getBytes("UTF-8"));
+				
+				PSIMIBioPAXConverter psimiConverter = 
+					new PSIMIBioPAXConverter(BioPAXLevel.L3, metadata.getUri()+"_"); 
+				
+				if (metadata.getType() == Metadata.METADATA_TYPE.PSI_MI)
+					psimiConverter.convert(is, os);
+				else //PSI-MITAB
+					psimiConverter.convertTab(is, os);
+				
+				data = os.toString();
+				
+			} catch (Exception e) {
 				log.error("pipeline(), cannot convert PSI-MI data: "
 						+ info + " to L3. - " + e);
 				return;
@@ -342,35 +355,6 @@ public final class PremergeImpl implements Premerger {
 			pathwayData.setValid(false); 
 		else 
 			pathwayData.setValid(true);
-	}
-
-	
-	/**
-	 * Converts psi-mi string to biopax 
-	 * using a unique xml:base for URIS, which consists of 
-	 * both our current xml:base and provider-specific part -
-	 * to prevent URI clash from different PSI-MI data.
-	 *
-	 * @param psimiData String
-	 * @param provider
-	 */
-	private String convertPSIToBioPAX(final String psimiData, Metadata provider) {
-
-		String toReturn = "";
-				
-		try {
-			ByteArrayOutputStream os = new ByteArrayOutputStream();
-			InputStream is = new ByteArrayInputStream(psimiData.getBytes("UTF-8"));
-			PSIMIBioPAXConverter psimiConverter = 
-				new PSIMIBioPAXConverter(BioPAXLevel.L3, provider.getUri()+"_"); 
-			psimiConverter.convert(is, os);
-			toReturn = os.toString();
-		}
-		catch(Exception e) {
-			throw new RuntimeException(e);
-		}
-
-		return toReturn;
 	}
 
 	
