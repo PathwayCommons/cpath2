@@ -27,7 +27,6 @@
 
 package cpath.importer.internal;
 
-import cpath.dao.Analysis;
 import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.warehouse.beans.*;
@@ -39,7 +38,6 @@ import org.biopax.paxtools.controller.*;
 import org.biopax.validator.utils.Normalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -51,10 +49,9 @@ import java.util.*;
  * create a new instance for each execution).
  * 
  */
-@Transactional
-public class MergerAnalysis implements Analysis {
+public class Merge {
 
-    private static final Logger log = LoggerFactory.getLogger(MergerAnalysis.class);
+    private static final Logger log = LoggerFactory.getLogger(Merge.class);
 
 	private final Model source;
 	private final String description;
@@ -62,7 +59,7 @@ public class MergerAnalysis implements Analysis {
 	private final String xmlBase;
 	private final SimpleMerger simpleMerger;
 	
-	public MergerAnalysis(String description, Model source, 
+	public Merge(String description, Model source, 
 			MetadataDAO metadataDAO, String xmlBase) 
 	{
 		this.description = description;
@@ -74,19 +71,14 @@ public class MergerAnalysis implements Analysis {
 	
 	
 	/**
-	 * {@inheritDoc}
-	 * 
-	 * Merges a new pathway model into persistent main model: 
-	 * inserts new objects and updates object properties
-	 * (and should not break inverse properties).
+	 * Merges a new pathway model into target model.
 	 * It re-uses previously merged UtilityClass objects, such as 
 	 * canonical EntityReferences, CVs (warehouse data), to replace 
 	 * equivalent ones in the original pathway data.
 	 * 
-	 * @param targetModel - target BioPAX Model (where to finally merge new data).
+	 * @param targetModel - target BioPAX Model.
 	 * @throws ClassCastException
 	 */
-	@Override
 	public void execute(final Model targetModel) {	
 		
 		final String srcModelInfo = "source: " + description;		
@@ -241,10 +233,8 @@ public class MergerAnalysis implements Analysis {
 		
 		// fix dangling inverse properties (some objects there
 		// in the source model might still refer to the removed ones)
-		fixInverseProperties(removed);	
+		fixInverseProperties(removed);
 		
-		log.info("Merging from the in-memory ( "+srcModelInfo+") into the persistent BioPAX DB/model...");
-		// merge to the target model (insert new objects and update relationships)
 		targetModel.merge(mem);
 		
 		log.info("Merge is done ("+srcModelInfo+").");			

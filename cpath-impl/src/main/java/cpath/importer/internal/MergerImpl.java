@@ -27,7 +27,6 @@
 
 package cpath.importer.internal;
 
-import cpath.dao.Analysis;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Merger;
@@ -62,12 +61,12 @@ public final class MergerImpl implements Merger {
 	private final String xmlBase;
 
 	/**
-	 * Constructor (package-private).
+	 * Constructor.
 	 *
 	 * This constructor was added to be used in a test context. At least called by
 	 * cpath.importer.internal.CPathInMemoryModelMergerTest.testMerger().
 	 * 
-	 * @param dest final "global" Model (e.g., {@link PaxtoolsHibernateDAO} may be used here)
+	 * @param dest final big Model (i.e., {@link PaxtoolsHibernateDAO})
 	 * @param metadataDAO MetadataDAO
 	 * @param provider merge pathway data from this provider only
 	 * @param force whether to forcibly merge BioPAX data the validation reported critical about or skip.
@@ -89,10 +88,16 @@ public final class MergerImpl implements Merger {
 	}
 	
 	
-	@Override
+	/**
+	 * {@inheritDoc}
+	 * 
+	 */
 	public void merge() {
-		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
-
+		
+		//load the persistent model (initially - only warehouse) into mem.
+		final Model model = MergerImpl.load(mainDAO);
+		model.setXmlBase(xmlBase);
+		
 		// build models and merge from pathwayData.premergeData
 		Collection<Metadata> providersMetadata = new ArrayList<Metadata>();
 		
@@ -131,20 +136,33 @@ public final class MergerImpl implements Merger {
 				InputStream inputStream = new ByteArrayInputStream(
 						pwdata.getNormalizedData());
 				
-				Model pathwayModel = simpleReader.convertFromOWL(inputStream);
+				Model source = (new SimpleIOHandler(BioPAXLevel.L3))
+						.convertFromOWL(inputStream);
 
 				// merge/persist the new biopax; run within a transaction:
-				Analysis mergerAnalysis = new MergerAnalysis(pwdata.toString(), 
-						pathwayModel, metadataDAO, xmlBase);
-				
-				mainDAO.run(mergerAnalysis);
-				
+				Merge merge = new Merge(pwdata.toString(), 
+						source, metadataDAO, xmlBase);				
+				merge.execute(model);
 			}
 			
 			log.info("Done merging " + metadata);
 		}
 
+		log.info("Merging from the in-memory into the persistent BioPAX DB...");
+		// final merge (persist): insert new objects and update relationships
+		mainDAO.merge(model); //this takes quite a while (hours)...
+		
 		log.info("Complete.");
+	}
+
+
+	public static Model load(PaxtoolsDAO mainDAO) {
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		mainDAO.exportModel(bos); //bos becomes closed after this
+		InputStream inputStream = new ByteArrayInputStream(bos.toByteArray());
+		bos = null;
+		SimpleIOHandler reader = new SimpleIOHandler(BioPAXLevel.L3);
+		return reader.convertFromOWL(inputStream);
 	}
 	
 }

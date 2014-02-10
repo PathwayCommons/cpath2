@@ -5,7 +5,8 @@ import cpath.dao.Analysis;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Premerger;
-import cpath.importer.internal.MergerAnalysis;
+import cpath.importer.internal.Merge;
+import cpath.importer.internal.MergerImpl;
 import cpath.importer.internal.PremergeImpl;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
@@ -78,7 +79,8 @@ public class DataImportAndServiceIntegrationTest {
 		Premerger premerger = new PremergeImpl(metadataDAO, paxtoolsDAO, null, null);
 		metadataDAO.addOrUpdateMetadata("classpath:metadata.conf");			
 		premerger.buildWarehouse();
-		premerger.updateIdMapping(false);		
+		premerger.updateIdMapping(false);
+		// now metadata contains id-mapping tables, and paxtoolsDAO - warehouse data
 		paxtoolsDAO.index();
 				
 		assertFalse(((Model)paxtoolsDAO).getObjects(ProteinReference.class).isEmpty());
@@ -152,16 +154,21 @@ public class DataImportAndServiceIntegrationTest {
 		// MERGE
 		
 		//Load test models from files
-		final List<Model> pathwayModels = initPathwayModels();
-		
-		// note: in production we'd run it as ImportFactory.newMerger(paxtoolsDAO,...).merge();
-		// cpath2 metadata contains the warehouse and id-mapping tables
+		final List<Model> pathwayModels = initPathwayModels();	
+		// note: in production, we'd simply run it as ImportFactory.newMerger(paxtoolsDAO,...).merge();
+		// but here, due to a different way of how we initialized input models, we have to bypass that single call
+		// and replace it with the following:
+		//#BEGIN merge all models amd persist
+		Model model = MergerImpl.load(paxtoolsDAO); //load warehouse (initial) model
+		model.setXmlBase(XML_BASE);
 		int i = 0;
 		for(Model m : pathwayModels) {
-			Analysis merger = new MergerAnalysis("model #" + i++, 
-				m, metadataDAO, ((Model)paxtoolsDAO).getXmlBase());
-			paxtoolsDAO.run(merger);
+			Merge merger = new Merge("model #" + i++, 
+				m, metadataDAO, XML_BASE);
+			merger.execute(model); //merge into the 'model'
 		}
+		paxtoolsDAO.merge(model); //persist
+		//#END
 		
 		//check first whether it's ok after export/import as owl?
 		final String outf = getClass().getClassLoader().getResource("").getPath() 
