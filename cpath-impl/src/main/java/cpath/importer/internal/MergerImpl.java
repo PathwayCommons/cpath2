@@ -103,30 +103,27 @@ public final class MergerImpl implements Merger {
 
 		for (Metadata metadata : providersMetadata) {
 			log.info("Start merging " + metadata);
-			for (PathwayData pwdata : metadata.getPathwayData()) {
-				
-				final String description = pwdata.toString() + " - " + pwdata.status();
-				log.info("Merging pathway data: " + description);
+			for (PathwayData pwdata : metadata.getPathwayData()) {		
+				final String description = pwdata.toString();
 
 				if (pwdata.getValid() == null
 						|| pwdata.getNormalizedData() == null
 						|| pwdata.getNormalizedData().length == 0) {
-					// must run pre-merge first!
-					log.warn("Do '-premerge' first. Skipping "
-							+ description);
+					log.warn("Skipped " + description + " (didn't pass through Premerge)");
 					continue;
 				} else if (pwdata.getValid() == false) {
 					// has BioPAX errors
-					log.warn("There were critical BioPAX errors in " + " - " + description);
+					log.warn("There were critical BioPAX errors in - " + description);
 					if (!force) {
-						log.warn("Skipping " + description);
+						log.warn("Skipped " + description + " (due to BioPAX errors)");
 						continue;
 					} else {
-						log.warn("FORCE merging (ignoring all "
-								+ "validation issues) for " + description);
+						log.warn("FORCE merging " + description + " (ignoring BioPAX errors)");
 					}
 				}
 
+				log.info("Merging: " + description);
+				
 				// import the BioPAX L3 pathway data into the in-memory paxtools model
 				InputStream inputStream = new ByteArrayInputStream(
 						pwdata.getNormalizedData());

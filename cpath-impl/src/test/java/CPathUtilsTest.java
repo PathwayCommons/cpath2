@@ -61,7 +61,9 @@ public class CPathUtilsTest {
 				new byte[]{}, 
 				Metadata.METADATA_TYPE.BIOPAX, 
 				null, // no cleaner (same as using "")
-				"" // no converter
+				"", // no converter
+				null,
+				"free"
 				);
 		
 		metadata.cleanupOutputDir();

@@ -194,14 +194,4 @@ public final class PathwayData {
     public String getFilename() {
 		return filename;
 	}
-    
-    
-    public String status() {
-    	String s = "not checked";
-    	if(valid == Boolean.TRUE)
-    		s = "no errors";
-    	else if(valid == Boolean.FALSE)
-    		s = "has errors";
-    	return s;
-    }
 }

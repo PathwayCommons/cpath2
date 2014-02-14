@@ -16,18 +16,21 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import cpath.config.CPathSettings;
 import cpath.dao.MetadataDAO;
+import cpath.dao.PaxtoolsDAO;
 
 @Controller
 public class AdminController extends BasicController {
 
 	private final MetadataDAO metadataDAO;
+	private final PaxtoolsDAO paxtoolsDAO;
 	
 	//TODO add CPathService field and controllers to set cpath2.proxy.model.enabled=true/false and load/unload the model in RAM
 	
 	//TODO add option to toggle net.sf.ehcache.disabled=true/false system option
 	
-	public AdminController(MetadataDAO metadataDAO) {
+	public AdminController(MetadataDAO metadataDAO, PaxtoolsDAO paxtoolsDAO) {
 		this.metadataDAO = metadataDAO;
+		this.paxtoolsDAO = paxtoolsDAO;
 	}
 	
 	

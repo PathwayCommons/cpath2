@@ -291,7 +291,7 @@ public class PaxtoolsHibernateDAOTest {
 	public void testImportPathwayData() throws IOException {
         // mock metadata and pathway data
         Metadata md = new Metadata("TEST", "test", "test", "", "",
-        		new byte[]{}, METADATA_TYPE.BIOPAX, null, null);        
+        		new byte[]{}, METADATA_TYPE.BIOPAX, null, null, null, "free");        
         byte[] testData = "<rdf>          </rdf>".getBytes(); 
         
         //cleanup previous tests data if any

@@ -49,7 +49,8 @@ final class ReactomeCleanerImpl implements Cleaner {
 		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
 		Model model = simpleReader.convertFromOWL(inputStream);
 		log.info("Cleaning Reactome data, this may take some time, please be patient...");
-//		
+
+// let provider do this :/		
 //		//normalize entity URIs using Reactome stable id, where possible		
 //		Set<Entity> entities = new HashSet<Entity>(model.getObjects(Entity.class));
 //		for(Entity ent : entities) {
