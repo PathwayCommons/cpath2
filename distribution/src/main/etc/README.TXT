@@ -86,7 +86,7 @@ simply include to cpath2-cli.sh (admin shell script) Java options something like
 
 
 3. Download and prepare pathway data (note: L1, L2 will be auto-upgraded to L3) 
-or PSI-MI data $CPATH2_HOME/tmp/ as follows:
+or PSI-MI/PSI-MITAB data $CPATH2_HOME/tmp/ as follows:
 - download (wget) files or archive(s) from the pathway resource 
 (e.g., wget http://www.reactome.org/download/current/biopax3.zip) 
 - extract what you need (e.g. some species data only)
@@ -105,7 +105,7 @@ The cPath2 METADATA file is a plain text table, which can be placed anywhere
 where accessible by the cpath2 admin script via URL. It has the following structure:
 - one data source metadata definition per line (thus, EOLs/newline matter);
 - lines that begin with "#" are remarks and will be ignored; blank lines - too;
-- there are exactly 9 columns, which are tab-separated values (TSV);
+- there are exactly 11 columns, which are tab-separated values (TSV);
 - empty strings in the middle of a line (the result of using \t\t) and the 
 trailing empty string (after the last '\t', i.e., Converter class name, if any), 
 will be always added to the columns array.
@@ -152,6 +152,9 @@ like file:///full/path/whatever.gz, instead.
 
 9) CONVERTER_CLASS - leave empty or use a specific converter class (like cpath.converter.internal.UniprotConverterImpl);
 
+10) PUBMED ID - PubMed record ID (only number) of the main publication
+
+11) AVAILABILITY - values: 'free', 'academic', 'purchase'
 
 MORE DETAILS
 

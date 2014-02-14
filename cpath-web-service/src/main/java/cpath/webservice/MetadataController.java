@@ -366,13 +366,22 @@ public class MetadataController extends BasicController
 			vi.setIdentifier(m.getIdentifier());
 			
 			for(PathwayData pd : m.getPathwayData())
-				vi.getFiles().put(pd.getFilename(), pd + "; " + pd.status() + ")");
+				vi.getFiles().put(pd.getFilename(), pd + "; " + status(pd));
 			
 			list.add(vi);
 		}
     		
 		return list;
 	}
+    
+    private String status(PathwayData pd) {
+    	if(pd.getValid() == null)
+    		return "not validated or skipped";
+    	else if(pd.getValid())
+    		return "no critical errors";
+    	else 
+    		return "has critical errors";
+    }
     
     
     /**

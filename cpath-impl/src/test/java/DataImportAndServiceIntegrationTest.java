@@ -198,7 +198,8 @@ public class DataImportAndServiceIntegrationTest {
 		//pid, reactome,humancyc,.. were there in the test models
 		assertEquals(4, m.getObjects(Provenance.class).size());
 		//additional metadata entry
-		Metadata md = new Metadata("test", "Reactome", "Foo", "", "", new byte[]{}, METADATA_TYPE.BIOPAX, "", "");		
+		Metadata md = new Metadata("test", "Reactome", "Foo", "", "", 
+				new byte[]{}, METADATA_TYPE.BIOPAX, "", "", null, "free");		
 		metadataDAO.saveMetadata(md);	
 		// normally, setProvenanceFor gets called during Premerge stage
 		md.setProvenanceFor(m); 
