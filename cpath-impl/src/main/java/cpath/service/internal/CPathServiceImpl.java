@@ -37,9 +37,7 @@ import javax.annotation.PostConstruct;
 
 import org.biopax.paxtools.controller.Cloner;
 import org.biopax.paxtools.controller.Completer;
-import org.biopax.paxtools.controller.Fetcher;
 import org.biopax.paxtools.controller.ModelUtils;
-import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Control;
@@ -53,8 +51,6 @@ import org.biopax.paxtools.query.wrapperL3.DataSourceFilter;
 import org.biopax.paxtools.query.wrapperL3.Filter;
 import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
-import org.biopax.paxtools.trove.TProvider;
-import org.biopax.paxtools.util.BPCollections;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -237,18 +233,12 @@ class CPathServiceImpl implements CPathService {
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model); 
 					assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
 					
-					// TODO add/use extra query parameter to add hidden Control objects
-					// a hack (mostly for PANTHER db): add missing Controls 
-					// (when model has pathways, no Controls, but some can be 
-					// found from a reaction.controlledOf)
-					if(!(new ClassFilterSet<BioPAXElement, Pathway>(elements, Pathway.class)).isEmpty() 
-						&& (new ClassFilterSet<BioPAXElement, Control>(elements, Control.class)).isEmpty()) {
-						log.debug("Auto adding Controls to the model...");
-						for(BioPAXElement e : new HashSet<BioPAXElement>(elements)) {
-							if(e instanceof Interaction)
-								elements.addAll(((Interaction) e).getControlledOf());
-						}
-					}					
+					// Add all Controls too
+					log.debug("Auto adding Controls to the model...");
+					for(BioPAXElement e : new HashSet<BioPAXElement>(elements)) {
+						if(e instanceof Interaction)
+							elements.addAll(((Interaction) e).getControlledOf());
+					}
 					
 					Model m = cloner.clone(model, elements);
 					m.setXmlBase(model.getXmlBase());
@@ -718,32 +708,7 @@ class CPathServiceImpl implements CPathService {
 		return elements;
 	}
 	
-	
-	/*
-	 * Builds a complete self-integral biopax
-	 * sub-model starting from the set of elements
-	 * and adding all their children. 
-	 * 
-	 * @param model
-	 * @param elements
-	 * @return
-	 */
-	@Deprecated //we use Cloner instead
-	private Model fullSubModel(Model model, Set<BioPAXElement> elements) 
-	{
-		Model m = model.getLevel().getDefaultFactory().createModel();
-		m.setXmlBase(model.getXmlBase());
 
-		@SuppressWarnings("unchecked")
-		Fetcher fetcher = new Fetcher(SimpleEditorMap.get(model.getLevel()),
-				Fetcher.nextStepFilter); 
-		for (BioPAXElement bpe : elements) 
-				fetcher.fetch(bpe, m);
-
-		return m;
-	}
-	
-	
 	private synchronized void loadBlacklist() 
 	{
 		this.blacklist = new HashSet<String>();

@@ -144,12 +144,19 @@ public final class PremergeImpl implements Premerger {
 					CPathUtils.readPathwayData(metadata);
 					// Premerge for each pathway data: clean, convert, validate, 
 					// and then update premergeData, validationResults db fields.
-					for (PathwayData pathwayData : metadata.getPathwayData()) {
-						pipeline(metadata, pathwayData, cleaner);
+					for (PathwayData pathwayData : new HashSet<PathwayData>(metadata.getPathwayData())) {
+						try {					
+							pipeline(metadata, pathwayData, cleaner);
+						} catch (Exception e) {
+							metadata.getPathwayData().remove(pathwayData);
+							log.warn("premerge(), removed " + pathwayData 
+									+ " due to: " + e);
+						}		
 					}
 					// save/update validation status
 					metaDataDAO.saveMetadata(metadata);
-					log.debug("no. pd after saved, " + metadata.getIdentifier() + ": " + metadata.getPathwayData().size());
+					log.debug("premerge(), for " + metadata.getIdentifier() + 
+						", saved " + metadata.getPathwayData().size() + " files");
 				} 				
 				
 			} catch (Exception e) {
@@ -274,12 +281,10 @@ public final class PremergeImpl implements Premerger {
 	 * @param pathwayData provider's pathway data (usually from a single data file) to be processed and modified
 	 * @param cleaner data specific cleaner class (to apply before the validation/normalization)
 	 */
-	private void pipeline(final Metadata metadata, final PathwayData pathwayData, Cleaner cleaner)
-	{
-		
+	private void pipeline(final Metadata metadata, final PathwayData pathwayData, Cleaner cleaner) {	
 		// here go data to process
 		String data = new String(pathwayData.getData());
-		String info = pathwayData.toString() + " - " + pathwayData.status();
+		String info = pathwayData.toString();
 		
 		/*
 		 * First, get and clean (not modifying the original) pathway data,
@@ -288,12 +293,14 @@ public final class PremergeImpl implements Premerger {
 		 * to the original data (in PSI_MI, BioPAX L2, or L3 formats)
 		 */
 		if(cleaner != null) {
-			log.info("pipeline(), cleaning data " + info +
-				" with " + cleaner.getClass());
+			log.info("pipeline(), cleaning/filtering data " + info +
+				" with " + cleaner.getClass());			
 			data = cleaner.clean(data);
+			//fail if data is null or empty
+			if(data == null || data.isEmpty())
+				throw new RuntimeException("pipeline(), " +
+					info + " became empty after cleaning");
 		}
-		
-		pathwayData.setData(data.getBytes()); //writes data file
 		
 		// Second, if psi-mi, convert to biopax L3
 		if (metadata.getType() == Metadata.METADATA_TYPE.PSI_MI
@@ -301,8 +308,7 @@ public final class PremergeImpl implements Premerger {
 			log.info("pipeline(), converting PSI-MI " + info);
 			try {
 				ByteArrayOutputStream os = new ByteArrayOutputStream();
-				InputStream is = new ByteArrayInputStream(data.getBytes("UTF-8"));
-				
+				InputStream is = new ByteArrayInputStream(data.getBytes("UTF-8"));				
 				PSIMIBioPAXConverter psimiConverter = 
 					new PSIMIBioPAXConverter(BioPAXLevel.L3, metadata.getUri()+"_"); 
 				
@@ -311,12 +317,10 @@ public final class PremergeImpl implements Premerger {
 				else //PSI-MITAB
 					psimiConverter.convertTab(is, os);
 				
-				data = os.toString();
-				
+				data = os.toString();			
 			} catch (Exception e) {
-				log.error("pipeline(), cannot convert PSI-MI data: "
-						+ info + " to L3. - " + e);
-				return;
+				throw new RuntimeException("pipeline(), " +
+					"cannot convert PSI-MI data: " + info + " to L3. - " + e);
 			}
 		} 
 		
@@ -329,10 +333,6 @@ public final class PremergeImpl implements Premerger {
 		 * with the primary db name, as in Miriam, etc.
 		 */
 		Validation v = checkAndNormalize(pathwayData, metadata);
-		if(v == null) {
-			log.warn("pipeline(), skipping: " + info);
-			return;
-		}
 			
 		// save the normalized BioPAX
 		pathwayData.setNormalizedData(v.getModelData().getBytes());
@@ -403,14 +403,8 @@ public final class PremergeImpl implements Premerger {
 			validation.setModelData(SimpleIOHandler.convertToOwl(model));
 			
 		} catch (Exception e) {
-			/*
-			  throw new RuntimeException("pipeline(), " +
-				"Failed to check/normalize " + title, e);
-			*/ 
-			//e.printStackTrace();
-			log.error("pipeline(), Failed to process " + title, e);
-			e.printStackTrace();
-			return null;
+			throw new RuntimeException("checkAndNormalize(), " +
+				"Failed " + title, e);
 		}
 		
 		return validation;

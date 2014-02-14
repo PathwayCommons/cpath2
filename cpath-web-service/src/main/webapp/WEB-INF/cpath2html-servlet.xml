@@ -41,6 +41,7 @@
 	
 	<bean id="adminController" class="cpath.webservice.AdminController">
 		<constructor-arg ref="metadataDAO"/>
+		<constructor-arg ref="paxtoolsDAO"/>
 	</bean>
 	   
 	<bean id="logStatsController" class="cpath.webservice.LogStatsController"/>	   

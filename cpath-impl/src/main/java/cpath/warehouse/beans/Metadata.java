@@ -89,7 +89,10 @@ public final class Metadata {
     
     private Integer numPhysicalEntities;
     
+    private String pubmedId;
     
+    private String availability;
+        
     
 	/**
 	 * Default Constructor.
@@ -103,19 +106,22 @@ public final class Metadata {
      *
      * @param identifier  unique short string, will be used in URIs
      * @param name the not empty list of names: display name (must present), standard name, other names.
-     * @param description String
-     * @param urlToData String
-     * @param urlToHomepage String
-     * @param icon byte[]
-     * @param cleanerClassname String
-     * @param converterClassname String
-     * @param isPSI Boolean
+     * @param description
+     * @param urlToData
+     * @param urlToHomepage
+     * @param icon
+     * @param metadata_type
+     * @param cleanerClassname
+     * @param converterClassname
+     * @param pubmedId
+     * @param availability
      * @throws IllegalArgumentException
      */
 	public Metadata(final String identifier, final List<String> name, final String description, 
     		final String urlToData, String urlToHomepage, final byte[] icon, 
     		final METADATA_TYPE metadata_type, final String cleanerClassname, 
-    		final String converterClassname) 
+    		final String converterClassname, 
+    		final String pubmedId, final String availability) 
     {
     	this();
     	setIdentifier(identifier); 
@@ -129,15 +135,19 @@ public final class Metadata {
         setType(metadata_type);
         setCleanerClassname(cleanerClassname);
         setConverterClassname(converterClassname);
+        setPubmedId(pubmedId);
+        setAvailability(availability);
     }
     
 	public Metadata(final String identifier, final String name, final String description, 
     		final String urlToData, String urlToHomepage, final byte[] icon, 
     		final METADATA_TYPE metadata_type, final String cleanerClassname, 
-    		final String converterClassname) 
+    		final String converterClassname, 
+    		final String pubmedId, final String availability) 
     {
 		this(identifier, Arrays.asList(name.split("\\s*;\\s*")), description, urlToData, 
-			urlToHomepage, icon, metadata_type, cleanerClassname, converterClassname);
+			urlToHomepage, icon, metadata_type, cleanerClassname, converterClassname,
+			pubmedId, availability);
     }
 
 	void setId(Integer id) {
@@ -413,8 +423,23 @@ public final class Metadata {
 	public void setNumPhysicalEntities(Integer numPhysicalEntities) {
 		this.numPhysicalEntities = numPhysicalEntities;
 	}
-
 	
+	public String getPubmedId() {
+		return pubmedId;
+	}
+
+	public void setPubmedId(String pubmedId) {
+		this.pubmedId = pubmedId;
+	}
+
+	public String getAvailability() {
+		return availability;
+	}
+
+	public void setAvailability(String availability) {
+		this.availability = availability;
+	}
+
 	/**
 	 * Drops all associated output data files - 
 	 * re-creates the output data directory.

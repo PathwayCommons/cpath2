@@ -63,7 +63,9 @@ public final class CPathUtils {
     private static final int METADATA_TYPE_INDEX = 6;
 	private static final int METADATA_CLEANER_CLASS_NAME_INDEX = 7;
 	private static final int METADATA_CONVERTER_CLASS_NAME_INDEX = 8;
-    private static final int NUMBER_METADATA_ITEMS = 9;
+	private static final int METADATA_PUBMEDID_INDEX = 9;
+	private static final int METADATA_AVAILABILITY_INDEX = 10;
+    private static final int NUMBER_METADATA_ITEMS = 11;
 	
 	// used in unzip method
 	private static final int BUFFER = 2048;
@@ -212,8 +214,9 @@ public final class CPathUtils {
                         iconData, 
                         metadataType,
 						tokens[METADATA_CLEANER_CLASS_NAME_INDEX],
-						tokens[METADATA_CONVERTER_CLASS_NAME_INDEX]);
-           
+						tokens[METADATA_CONVERTER_CLASS_NAME_INDEX],
+						tokens[METADATA_PUBMEDID_INDEX],		
+                		tokens[METADATA_AVAILABILITY_INDEX]);
                 
 				if (LOGGER.isInfoEnabled()) {
 					LOGGER.info("readMetadata(): adding Metadata: "
@@ -224,7 +227,10 @@ public final class CPathUtils {
 					+ "; icon=" + tokens[METADATA_ICON_URL_INDEX]
 					+ "; type=" + metadata.getType()
 					+ "; cleaner=" + metadata.getCleanerClassname() 
-					+ "; converter=" + metadata.getConverterClassname());
+					+ "; converter=" + metadata.getConverterClassname()
+					+ "; pubmedId=" + metadata.getPubmedId() 
+					+ "; availability=" + metadata.getAvailability()
+					);
 				}
 					
 				// add metadata object toc collection we return
@@ -276,7 +282,7 @@ public final class CPathUtils {
 				is = bis;
 			}
 			
-			byte[] bytes = readContent(is);
+			byte[] bytes = readContent(is, true);
 			
 			if(bytes.length > 0) {
 				//create a new base output filename (for future pathway data results)
@@ -302,15 +308,15 @@ public final class CPathUtils {
     }
 
 	
-    /*
+    /**
      * Reads the input stream content.
      * 
-     * @param inputStream plain text (uncompressed) data stream
-     * @param useLineSeparator if true, adds back newline symbols
+     * @param inputStream plain text (uncompressed, unbuffered) stream
+     * @param useLineSeparator if true, adds back newline symbols after each line's read
      * @return
      * @throws IOException
      */
-    private static byte[] readContent(final InputStream inputStream, boolean useLineSeparator) 
+    public static byte[] readContent(final InputStream inputStream, boolean useLineSeparator) 
     	throws IOException 
     {
         BufferedReader reader = null;
@@ -333,13 +339,7 @@ public final class CPathUtils {
 		return fetchedData.getBytes("UTF-8");
 	}
 
-    
-    private static byte[] readContent(final InputStream inputStream) 
-        	throws IOException 
-    {
-    	return readContent(inputStream, true);
-    }
-        
+
     /*
      * Given a zip stream, unzips it into individual 
      * files and creates PathwayData objects from each
@@ -443,6 +443,11 @@ public final class CPathUtils {
      * @throws RuntimeException when there was an IO problem
      */
     public static void zwrite(String file, byte[] bytes) {
+    	if(bytes == null || bytes.length == 0) {
+    		LOGGER.info("zwrite: won't write "+ file +" (null/empty content)");
+    		return;
+    	}   	
+    	
     	if(!file.endsWith(".gz"))
     		LOGGER.warn("zwrite: file ext. is not '.gz'");
     	
