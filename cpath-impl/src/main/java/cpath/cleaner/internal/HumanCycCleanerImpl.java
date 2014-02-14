@@ -36,7 +36,9 @@ public class HumanCycCleanerImpl implements Cleaner
 			cleanHtmlInDisplayNames(model);
 //			fix_RDH14_NT5C1B_fusion(model); //the problem is not present in 17.1 HymanCyc biopax
 			cleanMultipleUnificationXrefs(model);
-
+			// set organism to all pathways, where it's null
+			setOrganismHomoSapiens(model);
+			
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			simpleReader.convertToOWL(model, outputStream);
 			return outputStream.toString();
@@ -45,6 +47,25 @@ public class HumanCycCleanerImpl implements Cleaner
 		{
 			System.out.println();
 			throw new RuntimeException("Exception in HumanCycCleanerImpl.clean", e);
+		}
+	}
+
+	private void setOrganismHomoSapiens(Model model) {
+		Set<BioSource> organisms = model.getObjects(BioSource.class);
+		if(organisms.size() > 1) {
+			LOG.error("Skip setting 'Homo sapiens' for HumanCyc Pathways, " +
+					"for there are several BioSources: " + organisms);
+			return;
+		} else if(organisms.isEmpty()) {
+			LOG.warn("Will create a new 'Homo sapiens' BioSource " +
+					"and set it for all no-organism Pathways in HumanCyc.");
+		}
+		
+		//there is only one BioSource (must be human); use it -
+		BioSource human = organisms.iterator().next();
+		for(Pathway pathway : model.getObjects(Pathway.class)) {
+			if(pathway.getOrganism() == null)
+				pathway.setOrganism(human);
 		}
 	}
 

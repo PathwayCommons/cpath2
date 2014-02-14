@@ -44,6 +44,10 @@ jar or class directly. We provide several shell scripts for your convenience.
 4. consider setting 'java.io.tmpdir' as: -Djava.io.tmpdir=$CPATH2_HOME/tmp
 (it's already set in the shell scripts)
 
+5. Normally, use -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider JVM option 
+(it's already set as default in the cpath2 shell scripts; make sure it's also enabled for the Tomcat  
+where cpath2.war is to be deployed, for this improves memory usage and performance)
+
 Try cpath2.md5hex.uri.enabled=true and other debug options in cpath2.properties
 (e.g., all "get" and "graph" queries will, along with RDFId, also accept the Primary Key values,
 i.e., - MD5hex (32-byte) digest string calculated from elements's URIs!) 
@@ -62,7 +66,7 @@ cpath2 cannot read multiple files from gzip archives; etc.
 (when creating a new cpath2 instance DBs from scratch): 
 
 1. Edit the cPath2 metadata.conf (see "metadata format" below)
-Note: if possible, use a standard name in the 'NAME' (the second) field of pathway data entries (BIOPAX and PSI_MI type). 
+Note: if possible, use a standard name in the 'NAME' (the second) field of pathway data entries (of BIOPAX, PSI_MI and PSI_MITAB type). 
 
 2. Download warehouse data, ('wget') UniProt and ChEBI, into $CPATH2_HOME/data/:
 - wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz
@@ -110,7 +114,7 @@ will be always added to the columns array.
 
 2) NAME - can contain one (must) or more (optional) data source names, separated 
 by semicolons, as follows: [displayName;]standardName[;name1;name2;..].
-for pathway type records (BIOPAX, PSI_MI), there must be at least one standard 
+for pathway type records (BIOPAX, PSI_MI, PSI_MITAB), there must be at least one standard 
 data source name, if possible (names will be used for filtering by data source 
 in cpath2 full-text search);
 
@@ -126,7 +130,7 @@ in cpath2 full-text search);
 So, how data is actually processed depends on the metadata TYPE 
 (see the description of this column below), file extension, and
 corresponding cleaner/converter implementations. For "pathway data" type 
-(BIOPAX, PSI_MI), cpath2 fetcher expects either .zip (multiple file/dir entries are
+(BIOPAX, PSI_MI, PSI_MITAB), cpath2 fetcher expects either .zip (multiple file/dir entries are
 allowed and processed separately!) or .gz (single data entry only!), other extensions
 or none (means not archived data in the expected format). For "warehouse data"
 type (PROTEIN, SMALL_MOLECULE, MAPPING), it expects: .zip (multiple file/dir
@@ -142,7 +146,7 @@ like file:///full/path/whatever.gz, instead.
 
 6) IMAGE URL (optional) - can be pointing to a resource logo;
 
-7) TYPE - one of: BIOPAX, PSI_MI, PROTEIN, SMALL_MOLECULE;
+7) TYPE - one of: BIOPAX, PSI_MI, PSI_MITAB, PROTEIN, SMALL_MOLECULE;
 
 8) CLEANER_CLASS - leave empty or use a specific cleaner class name (like cpath.cleaner.internal.UniProtCleanerImpl);
 

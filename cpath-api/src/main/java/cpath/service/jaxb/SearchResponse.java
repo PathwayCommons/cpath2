@@ -7,7 +7,6 @@ import java.util.Set;
 
 import javax.xml.bind.annotation.*;
 
-import sun.util.logging.resources.logging;
 
 @XmlRootElement(name="searchResponse")
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -27,6 +26,7 @@ public class SearchResponse extends ServiceResponse {
     @XmlAttribute
     private String comment;
     
+    @XmlTransient
     private Set<String> providers; //pathway data provider standard names (for logging/stats)
 	
 	public SearchResponse() {

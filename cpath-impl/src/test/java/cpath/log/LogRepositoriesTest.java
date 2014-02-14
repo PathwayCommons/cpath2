@@ -55,6 +55,13 @@ public class LogRepositoriesTest {
 		assertNull(loc);
 		loc = Geoloc.fromIpAddress("foo");
 		assertNull(loc);
+		
+		//Basel, Switzerland - no reion
+		loc = LogUtils.lookup("5.148.173.100");
+		assertNotNull(loc);
+		assertEquals("CH", loc.getCountry());
+		assertNull(loc.getRegion());
+		assertNull(loc.getCity());
 	}
 
 	

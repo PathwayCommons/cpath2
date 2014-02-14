@@ -26,7 +26,7 @@ img.right{float:right; margin:0 0 5px 12px;}
 header {
 height:5.5em;
 width: 90%;
-padding:1em 0 0 1em;	
+padding:1em 0 0 1em; /*top right bottom left*/
 margin:1em auto;
 background:#003399;
 color:#ffffff;
@@ -35,15 +35,17 @@ color:#ffffff;
 
 header img {
 float:left;
-padding:0em 1em 1em 0em;
+padding:0 1em 0 0;
 }
 
 header h1{
-padding:1em 1em 1em 1em;
+margin:0;
+padding:1em 0 1em 0;
 font-size:1.8em;
-background-color:inherit;
+/* background-color:inherit; */
 color:#ffffff;
 font-weight:normal;
+line-height: inherit;
 }
 
 header strong { font-size: 1em; color: red; float: left; padding: 1em 1em 1em 1em;}
@@ -54,9 +56,11 @@ font-size:1.2em;
 background-color:inherit;
 color:#f0f2f4;
 font-weight:normal;
+line-height: inherit;
 }
 
 #menu {
+	padding:1em 0 1em 0;
 	display: block;
 	float: right;
 }
@@ -92,6 +96,7 @@ background:#ffffff;
 color:#303030;
 border:2px solid #a0a0a0;
 width:90%;
+line-height: inherit;
 }
 
 #content h1{
@@ -101,6 +106,7 @@ font-size:1.1em;
 font-weight:bold;
 color:#505050;
 background-color:inherit;
+line-height: inherit;
 }
 
 #content h2{
@@ -111,6 +117,7 @@ font-size:1.0em;
 font-weight:bold;
 color:#505050;
 background-color:#EEEEEE;
+line-height: inherit;
 }
 
 #content h3{
@@ -120,6 +127,7 @@ display:block;
 margin:5px 0 5px 0;
 height:1.7em;
 line-height:1.7em;
+line-height: inherit;
 }
 
 #content h4{
@@ -130,6 +138,7 @@ font-size:0.9em;
 font-weight:bold;
 color:#505050;
 background-color:#EEEEEE;
+line-height: inherit;
 }
 
 #content a:hover{text-decoration:underline;}
