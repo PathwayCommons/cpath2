@@ -22,28 +22,62 @@
 <div id="content">
 
 	<h2>Pathway and Interaction Data</h2>
+	
+	<p> The following curated biological pathway and interaction models 
+		were converted to BioPAX (if required), normalized, and used for 
+		creating a single larger BioPAX model (database), in which most of  
+		original interactions, states and annotations were preserved 
+		(not merged unless there're apparent duplicates), while reference molecules, 
+		terms and features were substituted <em>where possible</em> with corresponding 
+		standard BioPAX utility class objects (see about the warehouse data sources below).
+	</p>
+	
 	<div id="data_sources" class="parameters">
-		<p>The summary of sources normalized and merged 
-		into one big BioPAX model:</p>
+		<h3>Sources:</h3>
 		<!-- items are to be added here by a javascript -->
 		<dl id="pathway_datasources" class="datasources"></dl>
-	</div>
-	<br/>
+	</div>	
+	<p> <em>accessed N times</em> - is the total number of times 
+		the provider's data were successfully served to a user; 
+		i.e., <strong>it counts</strong> if a result (before converting 
+		from BioPAX to another format, if requested) contains some 
+		states, interactions, pathways (sub-model) from the original 
+		data source; or it is a search or traverse request, 
+		and the data source is mentioned; or a file 
+		<a href='<c:url value="/downloads.html"/>'>is downloaded</a>.</p>
 
 	<h2>Warehouse Data</h2>
+
+	<p> The following databases were converted to BioPAX format 
+		(to <em>EntityReference</em> and related utility class 
+		objects, such as controlled vocabularies, features, etc.) 
+		to form the basis for integrating pathway and interaction 
+		data sources and also for id-mapping.<br/>
+	</p>
+		
 	<div class="parameters">
-		<p>In order to integrate curated pathways and interactions 
-		from various sources, the following files were first 
-		converted to a BioPAX model of canonical biomolecules 
-		and to unambiguous id-mapping table:</p>
+		<h3>Sources:</h3>
 		<!-- items are to be added here by a javascript -->
 		<dl id="warehouse_datasources" class="datasources"></dl>
-	</div>
-	<br/>
-	
-	<p>To find all the BioPAX Provenance objects in the system 
-	use <a href="search?q=*&type=provenance">this query</a>; hits's names 
-	or URIs can be 'datasource' filter values in other cpath2 queries. 
+	</div>	
+	<p> - access counts are not shown, for merely all users 
+		deal with reference proteins and small 
+		molecules, ontology terms, and identifiers on a regular basis; 
+		so, <a href='<c:url value="/log"/>'>total number of all requests</a> 
+		minus the access errors will be not far from the fair value 
+		for each warehouse data source listed above.
+	</p>
+
+	<h3>Acknowledgment</h3>
+	<p>
+		${cpath.name} team much appreciate the contribution of 
+		all the data providers, authors, also 
+		<a href="http://www.ebi.ac.uk/miriam/">MIRIAM</a> and 
+		<a href="http://identifiers.org/">Identifiers.org</a> projects, 
+		all the open biological ontologies, and open-source
+		projects and standards, which (who) made creating of this 
+		integrated BioPAX web service and database feasible. <br/>
+		Thank you people and all supporters.
 	</p>
 	
 </div>

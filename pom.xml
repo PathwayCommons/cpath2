@@ -148,8 +148,8 @@
 		<hibernate.version>4.2.7.Final</hibernate.version>
 		<hibernate-search.version>4.3.0.Final</hibernate-search.version>
 		<ehcache-core.version>2.6.6</ehcache-core.version>
-		<paxtools.version>4.2.2-SNAPSHOT</paxtools.version>
-		<validator.version>3.0.3-SNAPSHOT</validator.version>
+		<paxtools.version>4.3.0-SNAPSHOT</paxtools.version>
+		<validator.version>3.0.3</validator.version>
 		<junit.version>4.11</junit.version>
 		<commons-logging.version>1.1.1</commons-logging.version>
 		<commons-lang.version>2.6</commons-lang.version>
@@ -257,6 +257,7 @@
 					<version>${maven-project-info-reports-plugin.version}</version>
 				</plugin>
 				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>				
 					<artifactId>maven-site-plugin</artifactId>
 					<version>${maven-site-plugin.version}</version>
 				</plugin>
@@ -378,6 +379,36 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.biopax.paxtools</groupId>
+				<artifactId>paxtools-core</artifactId>
+				<version>${paxtools.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+					<exclusion>
+						<artifactId>log4j</artifactId>
+						<groupId>log4j</groupId>
+					</exclusion>					
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.biopax.paxtools</groupId>
+				<artifactId>paxtools-trove</artifactId>
+				<version>${paxtools.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+					<exclusion>
+						<artifactId>log4j</artifactId>
+						<groupId>log4j</groupId>
+					</exclusion>						
+				</exclusions>
+			</dependency>			
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>sif-converter</artifactId>
@@ -536,18 +567,7 @@
 						<artifactId>commons-logging</artifactId>
 					</exclusion>
 				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.biopax.paxtools</groupId>
-				<artifactId>paxtools-core</artifactId>
-				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
+			</dependency>		
 			<dependency>
 				<groupId>commons-collections</groupId>
 				<artifactId>commons-collections</artifactId>

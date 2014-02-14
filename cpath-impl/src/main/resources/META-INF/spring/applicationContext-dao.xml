@@ -19,8 +19,6 @@
 	
     <!-- enable the configuration of transactional behavior based on annotations -->
     <tx:annotation-driven transaction-manager="mainTransactionManager"/>
-    
-    <jpa:repositories base-package="cpath.log.jpa" />
 
 <!-- 	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close"> -->
 <!-- 		<property name="driverClass" value="${cpath2.db.driver}" /> -->
@@ -39,16 +37,6 @@
 <!-- 		<property name="maxIdleTimeExcessConnections" value="600" />	 -->
 <!-- 		<property name="numHelperThreads" value="6" /> -->
 <!-- 	</bean> -->
-
-    <bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool" destroy-method="dispose">
-        <constructor-arg>
-            <bean class="org.h2.jdbcx.JdbcDataSource">
-                <property name="URL" value="${cpath2.db.connection}${cpath2.db}"/>
-                <property name="user" value="${cpath2.db.user}"/>
-                <property name="password" value="${cpath2.db.password}"/>
-             </bean>
-        </constructor-arg>
-    </bean> 
 	
 <!-- also try later : -->
 <!-- <bean id="dataSource" class="org.apache.tomcat.jdbc.pool.DataSource" destroy-method="close"> -->
@@ -62,6 +50,16 @@
 <!--     <property name="minIdle" value="2" /> -->
 <!--  </bean>	 -->
 
+    <bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool" destroy-method="dispose">
+        <constructor-arg>
+            <bean class="org.h2.jdbcx.JdbcDataSource">
+                <property name="URL" value="${cpath2.db.connection}${cpath2.db}"/>
+                <property name="user" value="${cpath2.db.user}"/>
+                <property name="password" value="${cpath2.db.password}"/>
+             </bean>
+        </constructor-arg>
+    </bean>
+
 	<bean id="mainSessionFactory"
 		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
 		<property name="dataSource" ref="dataSource" />
@@ -74,7 +72,6 @@
 			<prop key="hibernate.search.indexing_strategy">manual</prop>
 			<prop key="hibernate.search.lucene_version">LUCENE_36</prop>
 			<prop key="hibernate.cache.region.factory_class">org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory</prop>
-<!-- 			<prop key="hibernate.cache.provider_class">net.sf.ehcache.hibernate.EhCacheProvider</prop> -->
           </util:properties>
         </property>
         <property name="annotatedClasses">
@@ -84,22 +81,19 @@
          </property>
 		 <property name="packagesToScan">
 			<list>
+<!-- 				<value>org.biopax.paxtools.impl</value> -->
 				<value>org.biopax.paxtools.impl.level3</value>
 				<value>cpath.warehouse.beans</value>
-				<value>cpath.log.jpa</value>
 			</list>
 		 </property>        
     </bean>
-
-<!-- try later (when using JPA instead of native hibernate...)
-    <bean class="org.springframework.orm.jpa.support.PersistenceAnnotationBeanPostProcessor" />
--->
-	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>
-    
+          
     <bean id="mainTransactionManager"
         class="org.springframework.orm.hibernate4.HibernateTransactionManager">
         <property name="sessionFactory" ref="mainSessionFactory" />
     </bean>
+        
+<!-- 	<bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor"/>	 -->
 
     <bean id="paxtoolsDAO" class="cpath.dao.internal.PaxtoolsHibernateDAO">
         <property name="sessionFactory" ref="mainSessionFactory"/>
@@ -110,10 +104,5 @@
     </bean>
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
-	
-	<bean id="service" class="cpath.service.internal.CPathServiceImpl">
-		<constructor-arg ref="paxtoolsDAO"/>
-		<constructor-arg ref="metadataDAO"/>
-	</bean>
   	
 </beans>

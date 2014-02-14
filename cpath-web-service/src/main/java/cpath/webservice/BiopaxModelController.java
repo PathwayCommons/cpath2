@@ -73,7 +73,7 @@ import javax.validation.Valid;
  */
 @Controller
 public class BiopaxModelController extends BasicController {
-	private static final Logger log = LoggerFactory.getLogger(BiopaxModelController.class);    
+	private static final Logger LOG = LoggerFactory.getLogger(BiopaxModelController.class);    
 	
     private static final String xmlBase = CPathSettings.xmlBase();
     

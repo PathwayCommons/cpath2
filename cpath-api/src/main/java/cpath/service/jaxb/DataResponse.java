@@ -11,13 +11,11 @@ import javax.xml.bind.annotation.*;
  * but rather for exchanging data between DB, service, and web tiers.
  *
  */
-//@XmlRootElement(name="dataResponse")
-//@XmlAccessorType(XmlAccessType.FIELD)
-//@XmlType(name = "DataResponse")
 @XmlTransient
 public class DataResponse extends ServiceResponse {
 
 	private Object data; // BioPAX OWL, String, List, or any other data
+	@XmlTransient
 	private Set<String> providers; //pathway data provider standard names (for logging/stats)
 	
 	public DataResponse() {

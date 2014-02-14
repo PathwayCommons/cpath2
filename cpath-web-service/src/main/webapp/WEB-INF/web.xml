@@ -39,6 +39,7 @@
 		<param-value>
 			classpath:META-INF/spring/applicationContext-dao.xml
 			classpath:META-INF/spring/applicationContext-log.xml
+			classpath:META-INF/spring/applicationContext-service.xml
 			classpath:security-config.xml
 		</param-value>
 	</context-param>
