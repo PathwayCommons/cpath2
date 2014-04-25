@@ -1,18 +1,15 @@
-var Admin = (function() {
+// Extend JS String with repeat method
+//String.prototype.repeat = function(num) {
+//  return new Array(num + 1).join(this);
+//};
 
-  function setup() {
-	  $('.datasources').html(''); //clear	  	  
-  	  $.getJSON('foo', function(entries) {
-  		$.each(entries, function(i, ev){
-  			  $('.datasources')
-			    .append("TODO");
-  		});
-  	  });  	  
-  }  
-  
-  return {
-    'setup': setup
-  };
-
-})();
-
+$(function() {		
+    // Disable link clicks to prevent page scrolling
+    $(document).on('click', 'a[href="#fakelink"]', function (e) {
+      e.preventDefault();
+    });
+	    	    
+    // Switch
+    $("[data-toggle='switch']").bootstrapSwitch();
+	    	    	    
+});

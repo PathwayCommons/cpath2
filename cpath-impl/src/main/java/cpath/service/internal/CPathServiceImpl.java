@@ -40,10 +40,10 @@ import org.biopax.paxtools.controller.Completer;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.Control;
 import org.biopax.paxtools.model.level3.Interaction;
 import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.QueryExecuter;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
@@ -51,7 +51,6 @@ import org.biopax.paxtools.query.wrapperL3.DataSourceFilter;
 import org.biopax.paxtools.query.wrapperL3.Filter;
 import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
-import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -98,7 +97,7 @@ class CPathServiceImpl implements CPathService {
 	private Cloner cloner;
 	
 	//init. on first access to getBlacklist(); so do not use it directly
-	private Set<String> blacklist; 
+	private Blacklist blacklist; 
 	
 	//init. on first access when proxy model mode is enabled (so do not use the var. directly!)
 	private Model proxyModel;
@@ -130,9 +129,10 @@ class CPathServiceImpl implements CPathService {
 	
 
 	@PostConstruct
-	synchronized void init() {
-		
-		if(CPathSettings.isProxyModelEnabled() && proxyModel == null) { 			
+	synchronized void init() {		
+		if(CPathSettings.getInstance().isProxyModelEnabled() 
+				&& proxyModel == null
+				&& !CPathSettings.getInstance().isAdminEnabled()) { 			
 			//fork the model loading (which takes quite a while)
 			ExecutorService executor = Executors.newSingleThreadExecutor();
 			executor.execute(
@@ -140,7 +140,7 @@ class CPathServiceImpl implements CPathService {
 				@Override
 				public void run() {
 					Model model = CPathUtils.importFromTheArchive();
-					model.setXmlBase(CPathSettings.xmlBase());
+					model.setXmlBase(CPathSettings.getInstance().getXmlBase());
 					// set for this service
 					setProxyModel(model);
 					if(model != null)
@@ -150,6 +150,8 @@ class CPathServiceImpl implements CPathService {
 			executor.shutdown();
 			//won't wait (nothing else to do)
 		}
+		
+		loadBlacklist();
 	}
 	
 	
@@ -186,7 +188,7 @@ class CPathServiceImpl implements CPathService {
 			
 		} catch (Exception e) {
 			serviceResponse = new ErrorResponse(INTERNAL_ERROR, e);
-			log.error("search: " + e.toString());
+			log.error("search() failed", e);
 		}
 		
 		return serviceResponse;
@@ -262,8 +264,8 @@ class CPathServiceImpl implements CPathService {
 	private Filter[] createFilters(String[] organisms, String[] datasources) {
 		ArrayList<Filter> filters = new ArrayList<Filter>();
 		
-		if(getBlacklist() != null && !getBlacklist().isEmpty())
-			filters.add(new UbiqueFilter(getBlacklist()));
+		if(getBlacklist() != null)
+			filters.add(new UbiqueFilter(getBlacklist().getListed()));
 		
 		if(organisms != null && organisms.length > 0)
 			filters.add(new OrganismFilter(organisms));
@@ -607,17 +609,17 @@ class CPathServiceImpl implements CPathService {
 	}
 
 	
+	//TODO re-factor to use the in-memory proxy Model when it's activated; have to replace dao.traverse with dao.runReadOnly(traverseAnalysis)
 	@Override
 	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
 		try {
-			// get results from the DAO
 			TraverseResponse results = mainDAO.traverse(propertyPath, sourceUris);
 			return results;
 		} catch (IllegalArgumentException e) {
-			log.error("Failed to init path accessor: ", e);
+			log.error("traverse() failed to init path accessor", e);
 			return new ErrorResponse(BAD_REQUEST, e.getMessage());
 		} catch (Exception e) {
-			log.error("Failed. ", e);
+			log.error("traverse() failed", e);
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
 	}
@@ -657,6 +659,7 @@ class CPathServiceImpl implements CPathService {
 			// go next page
 			searchResponse = mainDAO.search("*", ++page, Pathway.class, datasources, organisms);
 		}
+		
 		// final touches...
 		topPathways.setNumHits(hits.size());
 		//TODO update the following comment if implementation has changed
@@ -672,14 +675,11 @@ class CPathServiceImpl implements CPathService {
 	}
 
 
-	public Set<String> getBlacklist() {
-		if(blacklist == null) 
-			loadBlacklist();
-		
+	public Blacklist getBlacklist() {	
 		return blacklist;
 	}
 	
-	public void setBlacklist(Set<String> blacklist) {
+	public void setBlacklist(Blacklist blacklist) {
 		this.blacklist = blacklist;
 	}
 
@@ -710,39 +710,28 @@ class CPathServiceImpl implements CPathService {
 	
 
 	private synchronized void loadBlacklist() 
-	{
-		this.blacklist = new HashSet<String>();
-		
+	{	
 		Resource blacklistResource = new DefaultResourceLoader()
-			.getResource("file:" + CPathSettings.blacklistFile());
+			.getResource("file:" + CPathSettings.getInstance().blacklistFile());
 		
-		if(blacklistResource.exists()) {
-			
-			Scanner scanner;
+		if(blacklistResource.exists()) {			
 			try {
-				scanner = new Scanner(blacklistResource.getFile());
+				this.blacklist = new Blacklist(blacklistResource.getInputStream());
+				log.info("loadBlacklist, loaded: " 
+						+ blacklistResource.getDescription());
 			} catch (IOException e) {
-				throw new RuntimeException("loadBlacklist, failed opening file: " 
-					+ blacklistResource.getFilename(), e);
+				log.error("loadBlacklist, failed using: " 
+					+ blacklistResource.getDescription(), e);
 			}
-			
-			while(scanner.hasNextLine())
-				blacklist.add(scanner.nextLine().trim());
-			scanner.close();
-			
-			if(log.isInfoEnabled())
-				log.info("loadBlacklist, loaded " + blacklist.size()
-				+ " URIs for a (graph queries) 'blacklist' resource: " 
-				+ blacklistResource.getDescription());
 		} else {
-			log.warn("loadBlacklist, " + CPathSettings.blacklistFile() 
+			log.warn("loadBlacklist, " + CPathSettings.getInstance().blacklistFile() 
 				+ " is not found");
 		}
 	}
 
 	
 	private boolean proxyModelReady() {
-		if(proxyModel != null && CPathSettings.isProxyModelEnabled()) {
+		if(proxyModel != null && CPathSettings.getInstance().isProxyModelEnabled()) {
 			log.debug("isProxyModel: enabled and ready.");
 			return true;
 		} else {

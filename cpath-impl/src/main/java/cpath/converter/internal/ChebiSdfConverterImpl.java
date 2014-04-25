@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
@@ -19,6 +20,8 @@ import org.slf4j.LoggerFactory;
  * set memberEntityReference relationships (chebi hierarchy) 
  * among molecules (this is done in a separate converter using 
  * ChEBI OBO file, which has to be run AFTER this one)
+ * 
+ * @deprecated will load all the information from only ChEBI OBO instead
  */
 class ChebiSdfConverterImpl extends BaseConverterImpl
 {	
@@ -54,15 +57,14 @@ class ChebiSdfConverterImpl extends BaseConverterImpl
 		Pattern.compile("> <(\\w+|\\w+\\-\\w+) (Registry Numbers|Database Links)>$");
 	
 	
-	@Override
-	public Model convert() {
+	public void convert(InputStream is, OutputStream os) {
 		// ref to reader here so, we can close in finally clause
         InputStreamReader reader = null;
         Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
         model.setXmlBase(xmlBase);
         try {
 			// setup the reader
-            reader = new InputStreamReader(inputStream, "UTF-8");
+            reader = new InputStreamReader(is, "UTF-8");
             BufferedReader bufferedReader = new BufferedReader(reader);
             log.info("convert(), starting to read data...");
 
@@ -72,14 +74,12 @@ class ChebiSdfConverterImpl extends BaseConverterImpl
 				// start of entry
                 if (line.startsWith(SDF_ENTRY_START)) {
 					StringBuilder entryBuffer = new StringBuilder(line + "\n");
-					line = bufferedReader.readLine();
-					while (line != null) {
-						entryBuffer.append(line + "\n");
+					while ((line = bufferedReader.readLine()) != null) {
 						// keep reading until we reach last modified
 						if (line.startsWith(SDF_ENTRY_END)) {
 							break;
 						}
-						line = bufferedReader.readLine();
+						entryBuffer.append(line + "\n");
 					}
 					
 				    // build a new SMR with its dependent elements
@@ -88,7 +88,7 @@ class ChebiSdfConverterImpl extends BaseConverterImpl
             }
         }
 		catch (IOException e) {
-			log.error("convert: failed", e);
+			throw new RuntimeException("Failed to convert ChEBI SDF to BioPAX", e);
 		}
 		finally {
 			log.info("convert(), closing reader.");
@@ -103,9 +103,11 @@ class ChebiSdfConverterImpl extends BaseConverterImpl
             }
         }
 		
-		log.info("convert(), exiting.");
+        log.info("convert(), repairing...");
 		model.repair();
-		return model;
+
+		log.info("convert(), writing OWL...");
+		new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model, os);		
 	}
 
 	

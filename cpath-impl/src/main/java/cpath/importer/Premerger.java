@@ -13,12 +13,4 @@ public interface Premerger {
 	 */
 	void buildWarehouse();
 	
-	
-	/**
-	 * Extracts id-mapping information (name/id -> primary id) 
-	 * from the Warehouse entity references's xrefs to the mapping tables.
-	 * 
-	 * @param writeExcludedIdsToFile
-	 */
-	void updateIdMapping(boolean writeExcludedIdsToFile);
 }

@@ -1,0 +1,40 @@
+/*prevent navbar overlapping with content*/
+body { padding-top: 70px; padding-bottom: 70px;}
+
+.navbar strong {color: red;}
+
+.navbar-brand img {width: 33px; height: 33px;}
+
+.nav-target div {padding-top: 50px;}
+
+#form_cpath_properties .checkbox {padding-right: 2em;}
+
+#validations ul {
+	display: none;
+	list-style: decimal;
+}
+
+img.datasource-logo {width: 100px; height: 50px;}
+
+.thumbnail li {white-space: nowrap; display: compact;}
+
+.btn-file {
+    position: relative;
+    overflow: hidden;
+}
+.btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 999px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    outline: none;
+    background: white;
+    cursor: inherit;
+    display: block;
+}
+

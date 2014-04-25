@@ -2,7 +2,7 @@ package cpath.converter.internal;
 
 // imports
 import cpath.config.CPathSettings;
-import cpath.dao.Analysis;
+import cpath.dao.CPathUtils;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Converter;
 import cpath.importer.internal.ImportFactory;
@@ -17,11 +17,14 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.zip.ZipInputStream;
 
 
 /**
@@ -33,24 +36,35 @@ public class ChebiConvertersTest {
 	@Test
 	public void testConvertToInMemoryModel() throws IOException {
 		// convert test data
-		InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_chebi_data.dat");
-
-		// init and run the SDF converter first
-		Converter converter = ImportFactory.newConverter("cpath.converter.internal.ChebiSdfConverterImpl");
-		converter.setInputStream(is);
-		converter.setXmlBase(CPathSettings.xmlBase());
-		Model model = converter.convert();
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		CPathUtils.unzip(new ZipInputStream(new FileInputStream(
+				getClass().getResource("/test_chebi_data.dat.zip").getFile())), bos);
+		byte[] data = bos.toByteArray();
 		
-		// second, run the OBO converter
-		is = this.getClass().getClassLoader().getResourceAsStream("chebi.obo");
-		converter = ImportFactory.newConverter("cpath.converter.internal.ChebiOboConverterImpl");
-		assertTrue(converter instanceof Analysis);
-		converter.setInputStream(is);
-//not needed here:		converter.setXmlBase(CPathSettings.xmlBase());
-		((Analysis)converter).execute(model);
+		//run the SDF converter
+		bos.reset(); //re-use
+		Converter converter = ImportFactory.newConverter("cpath.converter.internal.ChebiSdfConverterImpl");
+		converter.setXmlBase(CPathSettings.getInstance().getXmlBase());		
+		converter.convert(new ByteArrayInputStream(data), bos);
+		//make model
+		Model model = new SimpleIOHandler().convertFromOWL(new ByteArrayInputStream(bos.toByteArray()));
+		assertNotNull(model);
+		assertFalse(model.getObjects().isEmpty());
+		
+		//run the OBO Analysis
+		bos.reset();
+		CPathUtils.unzip(new ZipInputStream(new FileInputStream(
+				getClass().getResource("/chebi.obo.zip").getFile())), bos);
+		data = bos.toByteArray();
+		assertTrue(data.length>0);
+		ChebiOntologyAnalysis oboAnalysis = new ChebiOntologyAnalysis();
+		oboAnalysis.setInputStream(new ByteArrayInputStream(data));
+		oboAnalysis.execute(model);
+		bos.close(); data=null;
 		
 		checkResultModel(model, "testConvertChebiToInMemoryModel.out.owl");
 	}
+	
 	
 	private void checkResultModel(Model model, String outf) {
 		

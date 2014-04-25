@@ -4,19 +4,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" />
-<meta name="author" content="${cpath.name}" />
-<meta name="description" content="cPath2 Output Formats" />
-<meta name="keywords" content="${cpath.name}, cPath2, cPathSquared, webservice, help, documentation" />
-<script  src="<c:url value="/resources/scripts/jquery-1.9.1.min.js"/>"></script>
-<script  src="<c:url value="/resources/scripts/json.min.js"/>"></script>
-<link rel="stylesheet" href="<c:url value="/resources/css/cpath2.css"/>"  media="screen" />
+<jsp:include page="head.jsp" />
 <title>cPath2::Formats</title>
 </head>
-<body>
+<body data-spy="scroll" data-target=".navbar">
 <jsp:include page="header.jsp" />
-	
-<div id="content">
+
 <h2>Output Formats Description</h2>
 <p>
 The GET and GRAPH commands return output in several
@@ -25,7 +18,7 @@ formats. Below is a description of each output format available.
 
 <h3>BioPAX OWL (RDF/XML)</h3>
 <p>
-<a rel="external" href="http://www.biopax.org">BioPAX</a> is the default output 
+<a target="_blank" href="http://www.biopax.org">BioPAX</a> is the default output 
 format of ${cpath.name} and offers
 complete access to all the details that can be stored in the system. 
 This format is ideal for users wishing to to access specific data not
@@ -36,7 +29,7 @@ the database are available in BioPAX Level 3.  Due to the richness
 of representation in BioPAX, reading and using such a large BioPAX
 document requires knowledge of the format and software development
 tools available for processing it, such as 
-<a rel="external" href="http://www.biopax.org/paxtools">Paxtools</a>, a Java library
+<a target="_blank" href="http://www.biopax.org/paxtools">Paxtools</a>, a Java library
 for working with BioPAX.
 </p>
 
@@ -51,7 +44,7 @@ lists is Gene Set Enrichment Analysis (GSEA).  The Gene sets used by
 GSEA are stored for convenience in the Molecular Signature Database
 (MSigDB) in the Gene Matrix Transposed file format (*.gmt).  This is
 the main tab-delimited file format specified by the 
-<a rel="external" href="http://www.broad.mit.edu/gsea/msigdb/">Broad Molecular Signature Database</a>.
+<a target="_blank" href="http://www.broad.mit.edu/gsea/msigdb/">Broad Molecular Signature Database</a>.
 </p><p>
 In this output format, all participants in the pathway are specified with
 a UniProt Accession.  All participants for a pathway must come from
@@ -61,9 +54,9 @@ will enable computational biologists to use pathway commons data
 within gene set enrichment algorithms, such as GSEA. Available for all
 pathways within Pathway Commons (only from pathway database sources,
 not interaction database sources). Full data format details are
-available at <a rel="external" href="http://www.broad.mit.edu/cancer/software/gsea/wiki/index.php/Data_formats">Broad GSEA Wiki</a>.
+available at <a target="_blank" href="http://www.broad.mit.edu/cancer/software/gsea/wiki/index.php/Data_formats">Broad GSEA Wiki</a>.
 This cPath2 instance uses its <strong>normalized and merged</strong> BioPAX data and the 
-<a rel="external" href="http://sourceforge.net/p/biopax/paxtools/ci/v4.2.0/tree/gsea-converter/">
+<a target="_blank" href="http://sourceforge.net/p/biopax/paxtools/ci/v4.2.0/tree/gsea-converter/">
 simple GSEA converter from the Paxtools library</a> to generate the corresponding GSEA archives.
 It creates one or many GSEA entries (rows) in each output file from ProteinReferences's 
 UniProt Xrefs - one line (UniProt id-list) per pathway per organism, 
@@ -86,7 +79,7 @@ are always binary it is not possible to fully represent all of BioPAX,
 thus this translation is lossy in general.  Nonetheless, the SIF
 network is useful for those applications that require pairwise
 interaction input.  SIF format can be easily imported into popular
-network analysis tools, like <a rel="external" href="http://wiki.cytoscape.org/Cytoscape_User_Manual/Network_Formats">Cytoscape</a>.
+network analysis tools, like <a target="_blank" href="http://wiki.cytoscape.org/Cytoscape_User_Manual/Network_Formats">Cytoscape</a>.
 </p><p>
 In this output format, all participants will be specified as URIs.
 This format does not contain any cross-species
@@ -117,7 +110,7 @@ missing attribute values, users should specify during import that all
 columns are strings.  This format is available for all pathways and
 interactions within Pathway Commons.
 </p>
-</div>
+
 <jsp:include page="footer.jsp" />
 </body>
 </html>

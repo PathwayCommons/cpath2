@@ -1,37 +1,30 @@
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@page language="java" contentType="text/html; charset=UTF-8"%>
 <%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
-
 <!DOCTYPE html>
-
 <html>
 <head>
-<meta charset="utf-8" />
-<meta name="author" content="${cpath.name}" />
-<meta name="description" content="cPath2 BioPAX Data Validations per Data Source" />
-<meta name="keywords" content="cPath2, BioPAX, Validation" />
-<link media="screen" href="<c:url value="/resources/css/cpath2.css"/>"  rel="stylesheet" />
+<jsp:include page="head.jsp" />
 <title>Downloads</title>
 </head>
 <body>
-
 	<jsp:include page="header.jsp" />
-	<div id="content">
-		<h2>Downloads</h2>
-		<h3>Description</h3>
-		<p>
-			Data exported from the CPath2 server are organized as follows.<br />
-			Archives below are sorted alphabetically, and their names follow the
-			simple naming pattern:
-			<br /><br /><code>${cpath.name}.${cpath.version}.&lt;SOURCE&gt;.&lt;FORMAT&gt;.&lt;EXT&gt;.gz</code><br /><br />
-			where <em>SOURCE</em> is either a data source standard name, organism
-			taxonomy ID, or 'All'; <em>FORMAT</em> - BIOPAX or format to which it was converted, 
-			and <em>EXT</em> can be 'owl', 'xml', 'edges.tsv', 'nodes.tsv', etc. (depends on the format)
-		</p>
-
-		<p><a href="help/formats.html">Output formats.</a></p>
-
-		<h4>Notes:</h4>
+	<h2>Batch download</h2>
+	
+	  <div class="row">
+		<div class="jumbotron">
+		<h3>File names</h3>
+		<blockquote><p>
+			Data Archives below are sorted alphabetically and named as follows:</p>
+			<code>${cpath.name}.${cpath.version}.&lt;SOURCE&gt;.&lt;FORMAT&gt;.&lt;ext&gt;.gz</code>
+			</blockquote>
+			<em>&lt;SOURCE&gt;</em> is a standard name, taxonomy ID, or 'All';
+			<em>&lt;FORMAT&gt;</em> is one of the <a href="formats">output formats</a>; 
+			<em>&lt;ext&gt;</em> is the file type.
+		</div>
+	  </div>
+		
+		<h3>Notes</h3>
 		<ul>
 			<li><strong>GSEA format</strong> - we export only UniProt accession
 				numbers (of <em>ProteinReferences</em>) and do not check for whether
@@ -46,13 +39,13 @@
 				full-text search results, using 'organism' and 'datasource' filters, respectively.</li>
 		</ul>
 		
-		<h3>FILES:</h3>
+		<h3>Files</h3>
 		<ul>
 			<c:forEach var="f" items="${files}">
 				<li><a href='<c:url value="/downloads/${f.key}"/>'>${f.key}</a>&nbsp;(${f.value})</li>
 			</c:forEach>
 		</ul>
-	</div>
+
 	<jsp:include page="footer.jsp" />
 </body>
 </html>
