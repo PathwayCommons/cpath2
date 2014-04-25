@@ -57,7 +57,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 /**
- * cPathSquared Help Web Service.
+ * cPath2 Help REST Web Service.
  * 
  * Can return XML (default) or
  * JSON (on request) serialized

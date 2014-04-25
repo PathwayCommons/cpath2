@@ -2,8 +2,6 @@ package cpath.webservice;
 
 import java.util.*;
 
-
-import cpath.config.CPathSettings;
 import cpath.log.LogType;
 import cpath.log.jpa.LogEvent;
 import cpath.webservice.args.binding.LogTypeEditor;
@@ -11,17 +9,15 @@ import cpath.webservice.args.binding.LogTypeEditor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 
 /**
+ * RESTful web controller for the access log pages.
  * 
  * @author rodche
  */
@@ -43,45 +39,6 @@ public class LogStatsController extends BasicController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(LogType.class, new LogTypeEditor());
 	}
-    
-    /**
-     * Makes current cpath2 instance properties 
-     * available to all (JSP) views.
-     * @return
-     */
-    @ModelAttribute("cpath")
-    public CPathSettings instance() {
-    	return CPathSettings.getInstance();
-    }
-    
-    // JSP Views
-    
-    // is /log
-    @RequestMapping(method = RequestMethod.GET) 
-    public String log() {
-    	return "redirect:/log/TOTAL/stats";
-    }    
-    
-    @RequestMapping("/")
-    public String allStats(Model model) {
-    	return "redirect:/log/TOTAL/stats";
-    }	
-        
-    @RequestMapping("/{logType}/stats")
-    public String statsByType(Model model, @PathVariable LogType logType) {
-    	model.addAttribute("summary_for", "Category: " + logType);
-    	model.addAttribute("current", "/log/"+logType.toString()+"/stats");
-    	return "stats";
-    }
-    
-    @RequestMapping("/{logType}/{name}/stats")
-    public String statsByType(Model model, @PathVariable LogType logType,
-    		@PathVariable String name) {
-    	model.addAttribute("summary_for", "Category: " + logType + ", name: " + name);
-    	model.addAttribute("current", "/log/"+logType.toString()+"/"+name+"/stats");
-    	return "stats";
-    }
-
     
     // XML/JSON web services (for the stats.jsp view using stats.js, given current context path)
  

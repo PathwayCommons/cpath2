@@ -43,7 +43,7 @@
 		<constructor-arg ref="service"/>
 	</bean>  
 	    
-	<bean id="adminController" class="cpath.webservice.AdminController">
+	<bean id="pagesController" class="cpath.webservice.PagesController">
 	</bean>	 
 	
     <bean id="metadataController" class="cpath.webservice.MetadataController">

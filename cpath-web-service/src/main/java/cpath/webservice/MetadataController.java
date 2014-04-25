@@ -64,17 +64,19 @@ public class MetadataController extends BasicController {
 	}
     
     
-    /**
+	//JSP Views
+	
+    /*
      * Makes current cpath2 instance properties 
-     * available to all (JSP) views.
+     * available to the JSP views.
      * @return
      */
     @ModelAttribute("cpath")
     public CPathSettings instance() {
     	return CPathSettings.getInstance();
     }
-        
- 
+
+    
 	@RequestMapping("/metadata/validations")
     public String queryForValidationInfoHtml(Model model) 
     {
@@ -97,9 +99,21 @@ public class MetadataController extends BasicController {
 		
 		return "validation";
     }
+    
+    @RequestMapping("/metadata/validations/{identifier}/{file}.html") //a JSP view
+    public String queryForValidationByProviderAndFile(
+    		@PathVariable String identifier, @PathVariable String file, 
+    		Model model, HttpServletRequest request) 
+    {
+    	ValidatorResponse body = service.validationReport(identifier, file);
+		model.addAttribute("response", body);
+		
+		return "validation";
+    }    
 
     
-    // returns XML or Json 
+    // REST XML or Json web services
+    
     @RequestMapping("/metadata/validations/{identifier}")
     public @ResponseBody ValidatorResponse queryForValidation(
     		@PathVariable String identifier, HttpServletRequest request) 
@@ -117,18 +131,6 @@ public class MetadataController extends BasicController {
     	return service.validationReport(identifier, file);
     }
        
-    
-    @RequestMapping("/metadata/validations/{identifier}/{file}.html") //a JSP view
-    public String queryForValidationByProviderAndFile(
-    		@PathVariable String identifier, @PathVariable String file, 
-    		Model model, HttpServletRequest request) 
-    {
-    	ValidatorResponse body = service.validationReport(identifier, file);
-		model.addAttribute("response", body);
-		
-		return "validation";
-    }
-	
     
     @RequestMapping("/metadata/logo/{identifier}")
     public  @ResponseBody byte[] queryForLogo(@PathVariable String identifier) 
@@ -343,6 +345,7 @@ public class MetadataController extends BasicController {
     		
 		return list;
 	}
+    
     
     private String status(Content pd) {
     	if(pd.getValid() == null)

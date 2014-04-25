@@ -23,10 +23,21 @@
 					  <li><a href="<c:url value="/admin"/>">Admin</a></li>
 					</security:authorize>
 					<li class="dropdown">
-                  		<a href="#" class="dropdown-toggle" data-toggle="dropdown">Home<b class="caret"></b></a>
+                  		<a href="#" class="dropdown-toggle" data-toggle="dropdown">Web App<b class="caret"></b></a>
                   		<span class="dropdown-arrow"></span>
                   		<ul class="dropdown-menu">
-                  		 <li><a href="/home" class="smooth-scroll">Introduction</a></li>
+                  		 <li><a href="<c:url value="/view"/>">About</a></li>
+                  		 <li><a href="<c:url value="/view/#/pw"/>">Pathways</a></li>	
+                    	 <li class="divider"></li>
+                    	 <li><a href="<c:url value="/metadata/validations"/>">Validations</a></li>
+                    	 <li><a href="<c:url value="/log"/>">Log</a></li>
+                    	</ul>
+                	</li>									
+					<li class="dropdown">
+                  		<a href="#" class="dropdown-toggle" data-toggle="dropdown">Web Service<b class="caret"></b></a>
+                  		<span class="dropdown-arrow"></span>
+                  		<ul class="dropdown-menu">
+                  		 <li><a href="/home" class="smooth-scroll">About</a></li>
                   		 <li class="divider"></li>
                			 <li><a href="/home#search" class="smooth-scroll">Search</a></li>
                			 <li><a href="/home#get" class="smooth-scroll">Get</a></li>
@@ -39,7 +50,6 @@
                 	</li>
 					<li><a href="<c:url value="/datasources"/>">Providers</a></li>
 					<li><a href="<c:url value="/downloads"/>">Downloads</a></li>
-					<li><a href="<c:url value="/log"/>">Log</a></li>
 					<li><a href="#" class="top-scroll">Top</a></li>
                   </ul>
           	  </div> <!-- collapse -->
