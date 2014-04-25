@@ -20,22 +20,23 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import cpath.config.CPathSettings;
+import cpath.log.LogType;
 
 @Controller
-public class AdminController extends BasicController {
-	private static final Logger log = LoggerFactory.getLogger(AdminController.class);
+public class PagesController extends BasicController {
+	private static final Logger log = LoggerFactory.getLogger(PagesController.class);
 	
 	private final CPathSettings cpath;
 	
-	//TODO add option to toggle net.sf.ehcache.disabled=true/false system option?
 	
-	public AdminController() {
+	public PagesController() {
 		cpath = CPathSettings.getInstance();
 	}
 	
@@ -160,6 +161,30 @@ public class AdminController extends BasicController {
 		return "downloads";
     }	
 	
+    // Access Log UI 
+    
+    @RequestMapping("/log")
+    public String allStats(Model model) {
+    	return "redirect:/log/TOTAL/stats";
+    }	
+        
+    @RequestMapping("/log/{logType}/stats")
+    public String statsByType(Model model, @PathVariable LogType logType) {
+    	model.addAttribute("summary_for", "Category: " + logType);
+    	model.addAttribute("current", "/log/"+logType.toString()+"/stats");
+    	return "stats";
+    }
+    
+    @RequestMapping("/log/{logType}/{name}/stats")
+    public String statsByType(Model model, @PathVariable LogType logType,
+    		@PathVariable String name) {
+    	model.addAttribute("summary_for", "Category: " + logType + ", name: " + name);
+    	model.addAttribute("current", "/log/"+logType.toString()+"/"+name+"/stats");
+    	return "stats";
+    } 
+    
+    
+    // OTHER resources
     
     @RequestMapping("/favicon.ico")
     public  @ResponseBody byte[] icon(HttpServletResponse response) 

@@ -1,5 +1,6 @@
 /*prevent navbar overlapping with content*/
-body { padding-top: 70px; padding-bottom: 70px;}
+/* body { padding-top: 70px; padding-bottom: 70px;} */
+#content {padding-top: 70px; padding-bottom: 70px;}
 
 .navbar strong {color: red;}
 

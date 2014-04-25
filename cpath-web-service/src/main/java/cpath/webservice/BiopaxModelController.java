@@ -55,8 +55,7 @@ import cpath.webservice.args.binding.OutputFormatEditor;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
@@ -73,8 +72,7 @@ import javax.validation.Valid;
  */
 @Controller
 public class BiopaxModelController extends BasicController {
-	private static final Logger LOG = LoggerFactory.getLogger(BiopaxModelController.class);    
-	
+   	
     private static final String xmlBase = CPathSettings.getInstance().getXmlBase();
     
     private CPathService service; // main PC db access
@@ -228,6 +226,7 @@ public class BiopaxModelController extends BasicController {
     	}
     	return null;
     }
+ 
     
 	@RequestMapping("/graph")
 	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, 

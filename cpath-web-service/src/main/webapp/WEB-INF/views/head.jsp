@@ -17,3 +17,8 @@ biologicaal networks, ontology, knowledge, analysis, cancer research, systems bi
 <link href="<c:url value="/resources/css/bootstrap.min.css"/>" rel="stylesheet" />
 <link href="<c:url value="/resources/css/bootstrap-switch.min.css"/>" rel="stylesheet" />
 <link href="<c:url value="/resources/css/pc.css"/>" rel="stylesheet" />
+
+<!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+<!--[if lt IE 9]>
+	<script src='<c:url value="/resources/scripts/html5shiv.js"/>'></script>
+<![endif]-->
