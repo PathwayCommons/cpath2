@@ -25,6 +25,16 @@ public interface MetadataDAO {
 	Metadata saveMetadata(Metadata metadata);
     
     
+	/**
+	 * Deletes the Metadata (data source) and all 
+	 * corresponding pathway data entries and generated files, 
+	 * if any, from the db and filesystem.
+	 * 
+	 * @param metadata
+	 */
+	void deleteMetadata(Metadata metadata);
+	
+	
     /**
      * This method returns the metadata object, given the {@link Metadata} Identifier.
 	 *
@@ -46,7 +56,7 @@ public interface MetadataDAO {
 	 * Generates the BioPAX validation report for a pathway data file.
 	 * 
 	 * @param provider 
-	 * @param file - base filename as in {@link PathwayData}
+	 * @param file - base filename as in {@link Content}
 	 * @return
 	 */
     ValidatorResponse validationReport(String provider, String file);
@@ -57,15 +67,6 @@ public interface MetadataDAO {
      * @param mapping
      */
     void saveMapping(Mapping mapping);
-    
-    
-    /**
-     * Gets available mapping entities by type.
-     * 
-     * @param type
-     * @return
-     */
-    List<Mapping> getMappings(Mapping.Type type);
     
     
     /**

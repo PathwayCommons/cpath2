@@ -4,16 +4,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" />
-<meta name="author" content="${cpath.name}" />
+<jsp:include page="head.jsp" />
 <title>cPath2::Access Denied</title>
-<link media="screen" href="<c:url value="/resources/css/cpath2.css"/>"  rel="stylesheet" />
 </head>
 <body>
 	<jsp:include page="header.jsp" />
-	<div id="content">
-		<h2>Access Denied</h2>
-	</div>
+	<h2>Access Denied</h2>
 	<jsp:include page="footer.jsp" />
 </body>
 </html>

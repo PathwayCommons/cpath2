@@ -117,10 +117,12 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	private SimpleIOHandler simpleIO;
 	private boolean addDependencies = false;
 	private final String xmlBase;
+	private final CPathSettings cpath;
 
 	
 	protected PaxtoolsHibernateDAO()
 	{
+		this.cpath = CPathSettings.getInstance();
 		this.level = BioPAXLevel.L3;
 		this.factory = level.getDefaultFactory();
 		// no namespace!
@@ -130,10 +132,10 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		this.simpleIO.normalizeNameSpaces(false);
 		//use absolute URIs when exporting to RDF/XML
 		this.simpleIO.absoluteUris(Boolean.parseBoolean(
-			(CPathSettings.property(CPathSettings.PROP_ABSOLUTE_URI_ENABLED)))); 
+			(cpath.property(CPathSettings.PROP_ABSOLUTE_URI_ENABLED)))); 
 		//- seems, - query parser turns search keywords to lower case and expects index field values are also lower case...		
-		this.xmlBase = CPathSettings.xmlBase(); //set default xml:base
-		this.maxHitsPerPage = Integer.parseInt(CPathSettings.property(CPathSettings.PROP_MAX_SEARCH_HITS_PER_PAGE));
+		this.xmlBase = CPathSettings.getInstance().getXmlBase(); //set default xml:base
+		this.maxHitsPerPage = Integer.parseInt(cpath.property(CPathSettings.PROP_MAX_SEARCH_HITS_PER_PAGE));
 	}
 
 
@@ -350,7 +352,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		fullTextQuery.setReadOnly(true);
 
 		// use Projection (allows extracting/highlighting matching text, etc.)
-		if (CPathSettings.explainEnabled())
+		if (cpath.isDebugEnabled())
 			fullTextQuery.setProjection(FullTextQuery.THIS, FullTextQuery.DOCUMENT,
 					FullTextQuery.SCORE, FullTextQuery.EXPLANATION);
 		else
@@ -477,7 +479,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 
 		Session ses = sessionFactory.getCurrentSession();
 		String pk = 
-			(CPathSettings.digestUriEnabled()) ? id : ModelUtils.md5hex(id);
+			(cpath.isDebugEnabled()) ? id : ModelUtils.md5hex(id);
 		
 		ret = (ses.getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists")
 				.setString("md5uri", pk).uniqueResult() != null);
@@ -500,7 +502,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		
 		// For db debug mode only (when md5hex.uri.enabled=true), try "as is" 
 		// (i.e., if the id is already the precomputed MD5 hex pK value)
-		if(toReturn == null && CPathSettings.digestUriEnabled())
+		if(toReturn == null && cpath.isDebugEnabled())
 			toReturn = (BioPAXElement) ses.get(BioPAXElementImpl.class, id);
 
 		return toReturn; // null means no such element

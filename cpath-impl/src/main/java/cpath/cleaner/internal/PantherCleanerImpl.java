@@ -1,9 +1,7 @@
 package cpath.cleaner.internal;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -41,16 +39,15 @@ final class PantherCleanerImpl implements Cleaner {
 	
     private static Logger log = LoggerFactory.getLogger(PantherCleanerImpl.class);
 
-    @Override
-	public String clean(final String pathwayData) 
+    
+    public void clean(InputStream data, OutputStream cleanedData)
 	{	
-		InputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(pathwayData.getBytes()));
 		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
-		Model originalModel = simpleReader.convertFromOWL(inputStream);
+		Model originalModel = simpleReader.convertFromOWL(data);
 		
 		//find "human" (BioSource); it's already there normalized - uses Identifiers.org URI
 		final BioSource human = (BioSource) originalModel.getByID("http://identifiers.org/taxonomy/9606");
-		if(human == null) //fail shortly (importer must skip this pathwayData)
+		if(human == null) //fail shortly (importer must skip this dataFile)
 			throw new RuntimeException("http://identifiers.org/taxonomy/9606 (human) BioSource not found");
 		
 		//Remove/replace non-human BioSources, SequenceEntityReferences 
@@ -165,14 +162,11 @@ final class PantherCleanerImpl implements Cleaner {
 		ModelUtils.removeObjectsIfDangling(cleanModel, UtilityClass.class);
 		
 		// convert model back to OutputStream for return
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 		try {
-			simpleReader.convertToOWL(cleanModel, outputStream);
+			simpleReader.convertToOWL(cleanModel, cleanedData);
 		} catch (Exception e) {
-			throw new RuntimeException("Failed writing BioPAX model to RDF/XML", e);
+			throw new RuntimeException("Failed writing cleaned PANTHER BioPAX model to RDF/XML", e);
 		}
-
-		return outputStream.toString();		
 	}
 
 }

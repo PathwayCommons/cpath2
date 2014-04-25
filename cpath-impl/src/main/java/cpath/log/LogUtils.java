@@ -12,6 +12,9 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.util.Assert;
 
 import com.maxmind.geoip.Location;
@@ -30,18 +33,21 @@ import cpath.log.jpa.LogEvent;
  */
 public final class LogUtils {
 	
+	private static final Logger LOG = LoggerFactory.getLogger(LogUtils.class);
+	
 	static LookupService geolite; 
 	
 	public static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 	
 	static {
 		//will be downloaded if not exists already (one can delete the file to auto-update)
-		String localFileName = "GeoLiteCity.dat";
+		String localFileName = CPathSettings.getInstance().homeDir() + File.separator + "GeoLiteCity.dat";
 		try {
-			CPathUtils.download("http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz", 
+			CPathUtils.download(
+				"http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz", 
 					localFileName, true, false); // - also gunzip			
 			geolite = new LookupService(
-				CPathSettings.homeDir() + File.separator + localFileName,
+				localFileName,
 				LookupService.GEOIP_MEMORY_CACHE
 			);
 		} catch (IOException e) {
@@ -91,8 +97,16 @@ public final class LogUtils {
 			loc = new Geoloc();
 		
 		// find or create a record, count+1
-		LogEntity t = (LogEntity) repository.findByEventNameAndGeolocCountryAndGeolocRegionAndGeolocCityAndDate(
+		LogEntity t = null;
+		try {
+			t = (LogEntity) repository.findByEventNameAndGeolocCountryAndGeolocRegionAndGeolocCityAndDate(
 				event.getName(), loc.getCountry(), loc.getRegion(), loc.getCity(), date);
+		} catch (DataAccessException e) {
+			LOG.error("count(), findByEventNameAndGeolocCountryAndGeolocRegionAndGeolocCityAndDat " +
+				"failed to update for event: " + event.getName() + 
+				", loc: " + loc.toString() + ", date: " + date, e);
+		}
+		
 		if(t == null) {			
 			t = new LogEntity(date, event, loc);
 		}

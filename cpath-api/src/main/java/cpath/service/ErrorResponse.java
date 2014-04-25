@@ -12,7 +12,7 @@ public final class ErrorResponse extends ServiceResponse {
 		this.status = status;
     	
     	String msg = null;
-		if(o instanceof Exception) {
+		if(o instanceof Throwable) {
 			msg = o.toString() + "; " 
 				+ Arrays.toString(((Exception)o).getStackTrace());
 		} else {

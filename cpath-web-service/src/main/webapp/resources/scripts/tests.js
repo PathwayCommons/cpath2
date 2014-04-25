@@ -3,8 +3,7 @@
  * misusing the QUnit framework...; this must be done in integration tests, 
  * using, e.g., cpath-clinet, or better tests could be generated with Selenium...)
  * */
-
-$(document).ready(function() {
+$(function() {
 	//to prevent adding '[]' to a request param. name when an array is the values
 	
 	test("Example test", 1, function() {

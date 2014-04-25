@@ -21,7 +21,7 @@ public final class CPathMaintenanceHandlerInterceptor extends HandlerInterceptor
 		String requestUri = request.getRequestURI();
 		
 		//disable user web service queries in admin mode is enabled
-		if(CPathSettings.isMaintenanceEnabled() 				
+		if(CPathSettings.getInstance().isAdminEnabled() 				
 			&& !(  requestUri.contains("/resources") 
 				|| requestUri.contains("/help")
 				|| requestUri.contains("/admin")
@@ -35,10 +35,13 @@ public final class CPathMaintenanceHandlerInterceptor extends HandlerInterceptor
 				|| requestUri.contains("/favicon")
 				|| requestUri.contains("/logback")
 				|| requestUri.contains("/log")
+				|| requestUri.contains("/formats")
+				|| requestUri.contains("/downloads")
 				)
 		)
 		{
-			response.sendError(503, CPathSettings.property(CPathSettings.PROVIDER_NAME)
+			response.sendError(503, CPathSettings
+				.getInstance().property(CPathSettings.PROVIDER_NAME)
 				+ " service maintenance.");
 			return false;
 		}

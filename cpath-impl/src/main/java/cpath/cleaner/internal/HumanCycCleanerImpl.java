@@ -9,9 +9,8 @@ import org.biopax.paxtools.model.level3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -21,15 +20,12 @@ public class HumanCycCleanerImpl implements Cleaner
 {
 	private static final Logger LOG = LoggerFactory.getLogger(HumanCycCleanerImpl.class);
 	
-	@Override
-	public String clean(String pathwayData)
+	public void clean(InputStream data, OutputStream cleanedData)
 	{
 		try
 		{
 			SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
-			Model model = simpleReader.convertFromOWL(new BufferedInputStream(
-				new ByteArrayInputStream(pathwayData.getBytes())));
-
+			Model model = simpleReader.convertFromOWL(data);
 			removeUnificationXrefInPhysicalEntities(model);
 			cleanXrefIDs(model);
 			cleanXrefDBName(model);
@@ -38,14 +34,10 @@ public class HumanCycCleanerImpl implements Cleaner
 			cleanMultipleUnificationXrefs(model);
 			// set organism to all pathways, where it's null
 			setOrganismHomoSapiens(model);
-			
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			simpleReader.convertToOWL(model, outputStream);
-			return outputStream.toString();
+			simpleReader.convertToOWL(model, cleanedData);
 		}
 		catch (Exception e)
 		{
-			System.out.println();
 			throw new RuntimeException("Exception in HumanCycCleanerImpl.clean", e);
 		}
 	}

@@ -4,8 +4,8 @@
  **
  ** This is free software; you can redistribute it and/or modify it
  ** under the terms of the GNU Lesser General Public License as published
- ** by the Free Software Foundation; either pathwayDataVersion 2.1 of the License, or
- ** any later pathwayDataVersion.
+ ** by the Free Software Foundation; either version 2.1 of the License, or
+ ** any later version.
  **
  ** This library is distributed in the hope that it will be useful, but
  ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.*;
+import java.util.zip.GZIPInputStream;
 
 /**
  * This class is responsible for semantic Merging 
@@ -93,23 +94,28 @@ public final class MergerImpl implements Merger {
 	public void merge() {
 		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
 
-		// build models and merge from pathwayData.premergeData
+		// build models and merge from dataFile.premergeData
 		Collection<Metadata> providersMetadata = new ArrayList<Metadata>();
 		
-		if (provider != null)
+		if (provider != null) {			
 			providersMetadata.add(metadataDAO.getMetadataByIdentifier(provider));
-		else
+		}
+		else {
 			providersMetadata = metadataDAO.getAllMetadata();
+		}
 
 		for (Metadata metadata : providersMetadata) {
+			
+			if(metadata.isNotPathwayData()) {
+				log.info("Skip for warehouse data: " + metadata);
+				continue;
+			}
+			
 			log.info("Start merging " + metadata);
-			for (PathwayData pwdata : metadata.getPathwayData()) {		
+			for (Content pwdata : metadata.getContent()) {		
 				final String description = pwdata.toString();
-
-				if (pwdata.getValid() == null
-						|| pwdata.getNormalizedData() == null
-						|| pwdata.getNormalizedData().length == 0) {
-					log.warn("Skipped " + description + " (didn't pass through Premerge)");
+				if (pwdata.getValid() == null) {
+					log.warn("Skipped " + description + " - haven't gone through the premerge yet");
 					continue;
 				} else if (pwdata.getValid() == false) {
 					// has BioPAX errors
@@ -125,8 +131,14 @@ public final class MergerImpl implements Merger {
 				log.info("Merging: " + description);
 				
 				// import the BioPAX L3 pathway data into the in-memory paxtools model
-				InputStream inputStream = new ByteArrayInputStream(
-						pwdata.getNormalizedData());
+				InputStream inputStream;
+				try {
+					inputStream = new GZIPInputStream(new FileInputStream(pwdata.normalizedFile()));
+				} catch (IOException e) {
+					log.error("Skipped " + description + " - " +
+						"failed to read from " + pwdata.normalizedFile());
+					continue;
+				}
 				
 				Model pathwayModel = simpleReader.convertFromOWL(inputStream);
 

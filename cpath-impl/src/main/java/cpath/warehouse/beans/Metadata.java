@@ -9,10 +9,13 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang.StringUtils;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Provenance;
+import org.hibernate.validator.constraints.NotBlank;
+import org.hibernate.validator.constraints.NotEmpty;
 
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
@@ -33,7 +36,7 @@ public final class Metadata {
         PSI_MITAB(true), // interactions to be converted to PSI-MI then to BioPAX L3 format
 		BIOPAX(true), // pathways and interactions in BioPAX L2 or L3 format
 		WAREHOUSE(false), // warehouse data to be converted to BioPAX and used during the merge stage
-		MAPPING(false); //extra gene/protein id-mapping data (two column, TSV format: "some id or name" \t "primary uniprot AC")
+		MAPPING(false); //extra gene/protein id-mapping data (two column, TSV format: "some id or name" \t "primary uniprot/chebi AC")
         
         private final boolean pathwayData;
         
@@ -51,9 +54,11 @@ public final class Metadata {
 	@GeneratedValue(strategy=GenerationType.AUTO)
     private Integer id;
 	
+	@NotBlank
 	@Column(length=40, unique = true, nullable = false)
     public String identifier;
 	
+	@NotEmpty
 	@ElementCollection
 	@JoinTable(name="metadata_name")
 	@OrderColumn
@@ -62,43 +67,46 @@ public final class Metadata {
 	@Column(nullable=false)
     private String description;
 	
-	@Column(nullable=false)
     private String urlToData;
 
 	@Column(nullable=false)
     private String urlToHomepage;
-
-	@Lob
-    private byte[] icon;
-
+	
+	@Column(nullable=false)
+    private String iconUrl;	
+	
+	@NotNull
 	@Column(nullable=false)
 	@Enumerated(EnumType.STRING)
     private METADATA_TYPE type;
 	
-    private String cleanerClassname;
-    
+    private String cleanerClassname;    
     private String converterClassname;
 
     @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true)
     @JoinColumn(name="metadata_id")
-    private Set<PathwayData> pathwayData;
+    private Set<Content> content;
 
-    private Integer numPathways;
-    
-    private Integer numInteractions;
-    
-    private Integer numPhysicalEntities;
-    
     private String pubmedId;
-    
     private String availability;
-        
+    private Integer numPathways;  
+    private Integer numInteractions;
+    private Integer numPhysicalEntities;    
+    
+    //extra (jpa transient) fields
+    @Transient
+    private Long numAccessed;
+    @Transient
+    private Boolean uploaded;
+    @Transient
+    private Boolean premerged;
+    
     
 	/**
 	 * Default Constructor.
 	 */
-	protected Metadata() {
-		pathwayData = new HashSet<PathwayData>();
+	Metadata() {
+		content = new HashSet<Content>();
 	}
 
     /**
@@ -118,7 +126,7 @@ public final class Metadata {
      * @throws IllegalArgumentException
      */
 	public Metadata(final String identifier, final List<String> name, final String description, 
-    		final String urlToData, String urlToHomepage, final byte[] icon, 
+    		final String urlToData, String urlToHomepage, final String urlToLogo, 
     		final METADATA_TYPE metadata_type, final String cleanerClassname, 
     		final String converterClassname, 
     		final String pubmedId, final String availability) 
@@ -131,7 +139,7 @@ public final class Metadata {
         setDescription(description);
         setUrlToData(urlToData);
         setUrlToHomepage(urlToHomepage);
-        setIcon(icon);
+        setIconUrl(urlToLogo);
         setType(metadata_type);
         setCleanerClassname(cleanerClassname);
         setConverterClassname(converterClassname);
@@ -140,13 +148,13 @@ public final class Metadata {
     }
     
 	public Metadata(final String identifier, final String name, final String description, 
-    		final String urlToData, String urlToHomepage, final byte[] icon, 
+    		final String urlToData, String urlToHomepage, final String urlToLogo, 
     		final METADATA_TYPE metadata_type, final String cleanerClassname, 
     		final String converterClassname, 
     		final String pubmedId, final String availability) 
     {
 		this(identifier, Arrays.asList(name.split("\\s*;\\s*")), description, urlToData, 
-			urlToHomepage, icon, metadata_type, cleanerClassname, converterClassname,
+			urlToHomepage, urlToLogo, metadata_type, cleanerClassname, converterClassname,
 			pubmedId, availability);
     }
 
@@ -156,12 +164,12 @@ public final class Metadata {
     public Integer getId() { return id; }
      
 
-    public Set<PathwayData> getPathwayData() {
-		return pathwayData;
+    public Set<Content> getContent() {
+		return content;
 	}
-    void setPathwayData(Set<PathwayData> pathwayData) {
-		this.pathwayData = new HashSet<PathwayData>();
-		this.pathwayData.addAll(pathwayData);
+    void setContent(Set<Content> content) {
+		this.content = new HashSet<Content>();
+		this.content.addAll(content);
 	}
 
     
@@ -229,26 +237,16 @@ public final class Metadata {
     public String getDescription() { return description; }
 
 	public void setUrlToData(String urlToData) {
-        if (urlToData == null) {
-            throw new IllegalArgumentException("PROVIDER_URL to data must not be null");
-        }
         this.urlToData = urlToData;
 	}
     public String getUrlToData() { return urlToData; }
 
 	public void setUrlToHomepage(String urlToHomepage) {
-        if (urlToHomepage == null) {
-            throw new IllegalArgumentException("PROVIDER_URL to Homepage must not be null");
-        }
         this.urlToHomepage = urlToHomepage;
 	}
     public String getUrlToHomepage() { return urlToHomepage; } 
-    
-    public void setIcon(byte[] icon) {
-        this.icon = icon;
-	}
-    public byte[] getIcon() { return icon.clone(); }
 
+    
 	public void setType(METADATA_TYPE metadata_type) {
         if (metadata_type == null) {
             throw new IllegalArgumentException("type must not be null");
@@ -287,36 +285,18 @@ public final class Metadata {
     
     
 	/**
-	 * Full path to the pathway data file/archive
+	 * Full path to the input data file/archive
+	 * in the data directory.
 	 * 
+	 * @see CPathSettings#dataDir()
 	 * @return
 	 */
     @Transient
-    public String origDataLocation() {
-    	String name = null; 
-    	
-    	if(urlToData.startsWith("classpath:")
-    		|| urlToData.startsWith("file:")) 
-    	{
-    		//local resource (a test case or manual config.)
-    		name = urlToData; 
-    	} 
-    	else 
-    	{	
-    		// remote resources are to be manually uploaded to the 
-    		// CPATH2_HOME dir., (usually) re-packed, and saved under special name:
-    		name = "file://" 
-    		+ CPathSettings.dataDir() + File.separator + identifier;
-    		// add the file extension, if any
-    		int idx = urlToData.lastIndexOf('.');
-    		if(idx >= 0) {
-    			String ext = urlToData.substring(idx+1);
-    			if(!ext.isEmpty()) name += "." + ext;
-    		}
-    	}
-    	
-		return name;
+    public String getDataArchiveName() {
+    	return CPathSettings.getInstance()
+    		.dataDir() + File.separator + identifier + ".zip";
     }
+    void setDataFile(String filename) {throw new UnsupportedOperationException();}
     
 
     /**
@@ -328,7 +308,7 @@ public final class Metadata {
      */
     @Transient
     public String outputDir() {
-    	return CPathSettings.dataDir() + File.separator + identifier;
+    	return CPathSettings.getInstance().dataDir() + File.separator + identifier;
     }
     
     
@@ -339,7 +319,7 @@ public final class Metadata {
      */
     @Transient
     public String getUri() {
-    	return CPathSettings.xmlBase() + identifier;
+    	return CPathSettings.getInstance().getXmlBase() + identifier;
     }
 
     
@@ -363,13 +343,13 @@ public final class Metadata {
 			: model.addNew(Provenance.class, uri);
 		
 		// parse/set names
-		String displayName = name.get(0);
+		String displayName = getName().iterator().next();
 		pro.setDisplayName(displayName);
 		pro.setStandardName(standardName());
 		
-		if(name.size() > 2)
-			for(int i=2; i < name.size(); i++)
-				pro.addName(name.get(i));
+		if(getName().size() > 2)
+			for(int i=2; i < getName().size(); i++)
+				pro.addName(getName().get(i));
 		
 		// add additional info about the current version, source, identifier, etc...
 		final String loc = getUrlToData(); 
@@ -439,12 +419,50 @@ public final class Metadata {
 	public void setAvailability(String availability) {
 		this.availability = availability;
 	}
+	
+	public String getIconUrl() {
+		return iconUrl;
+	}
+	public void setIconUrl(String iconUrl) {
+		this.iconUrl = iconUrl;
+	}
 
+	@Transient
+	public Long getNumAccessed() {
+		return numAccessed;
+	}
+	public void setNumAccessed(Long numAccessed) {
+		this.numAccessed = numAccessed;
+	}
+	
+	@Transient
+	public Boolean getUploaded() {
+		return uploaded;
+	}
+	public void setUploaded(Boolean uploaded) {
+		this.uploaded = uploaded;
+	}
+
+	@Transient
+	public Boolean getPremerged() {
+		return premerged;
+	}
+	public void setPremerged(Boolean premerged) {
+		this.premerged = premerged;
+	}
+
+	@Transient
+	public boolean isNotPathwayData() {
+		return type.isNotPathwayData();
+	}	
+	public void setNotPathwayData(boolean foo) {
+		//a fake to make it bean property (to use in javascript, JSON)
+	}
+			
 	/**
 	 * Drops all associated output data files - 
 	 * re-creates the output data directory.
 	 */
-	@Transient
 	public void cleanupOutputDir() {
 		File dir = new File(outputDir());
 		if(dir.exists()) {
@@ -462,4 +480,5 @@ public final class Metadata {
 	public int hashCode() {
 		return (getClass().getCanonicalName() + identifier).hashCode();
 	}
+
 }

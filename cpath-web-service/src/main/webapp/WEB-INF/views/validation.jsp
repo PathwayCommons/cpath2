@@ -5,35 +5,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" />
-<meta name="author" content="${cpath.name}" />
-<meta name="description" content="cPath2 BioPAX Data Validation Summary" />
-<meta name="keywords" content="cPath2, BioPAX, Validation" />
-<link media="screen" href="<c:url value="/resources/css/cpath2.css"/>" rel="stylesheet" />
-<script >
-	function switchit(list) {
-		var listElementStyle = document.getElementById(list).style;
-		if (listElementStyle.display == "none") {
-			listElementStyle.display = "block";
-		} else {
-			listElementStyle.display = "none";
-		}
-	}
-</script>
+<jsp:include page="head.jsp"/>
 <title>cPath2::Validation Summary</title>
 </head>
 <body>
-	<jsp:include page="header.jsp" />
-	<div id="content">
-		<h2>Pathway Data Validation Summary</h2>
-		<ul id="validations">
-			<c:forEach var="result" items="${response.validationResult}"
-				varStatus="rstatus">
-				<li style="text-decoration: underline"
-					title="Click to see more detail"><a
-					href="javascript:switchit('result${rstatus.index}')">Resource:&nbsp;${result.description};&nbsp;${result.summary}</a>
-				</li>
-		<ul id="vcomments" style="display: block;">
+<jsp:include page="header.jsp" />
+<h2>Pathway Data Validation Summary</h2>
+<ul id="validations">
+  <c:forEach var="result" items="${response.validationResult}" varStatus="rstatus">
+	<li style="text-decoration: underline" title="Click for more details">
+	<a href="javascript:switchit('result${rstatus.index}')">Resource:&nbsp;${result.description};&nbsp;${result.summary}</a>
+	</li>
+	<ul id="vcomments" style="display: block;">
 	<li>
 	  <c:forEach var="comment" items="${result.comment}">
 		${comment}&nbsp;
@@ -57,15 +40,15 @@
 		</c:otherwise>
 	  </c:choose>
 	</li>
-	
-	<c:if test="${result.fix}">
-	  	<li><a href="javascript:switchit('result${rstatus.index}owl')">Modified BioPAX</a>&nbsp;(HTML-escaped BioPAX RDF/XML)</li>
-		<ul id="result${rstatus.index}owl" class="vOwl">
-			<li><div>${result.modelDataHtmlEscaped}</div></li>
-		</ul>
-	</c:if>
+<%-- no fixed/normalized biopax ever shows up below (because cpath2 clears it and saves the xml to separate files instead)--%>	
+<%-- 	<c:if test="${result.fix}"> --%>
+<%-- 	  	<li><a href="javascript:switchit('result${rstatus.index}owl')">Modified BioPAX</a>&nbsp;(HTML-escaped BioPAX RDF/XML)</li> --%>
+<%-- 		<ul style="display:none;" id="result${rstatus.index}owl" class="vOwl"> --%>
+<%-- 			<li><div>${result.modelDataHtmlEscaped}</div></li> --%>
+<!-- 		</ul> -->
+<%-- 	</c:if> --%>
   </ul>				
-	<ul id="result${rstatus.index}">
+	<ul style="display:none;" id="result${rstatus.index}">
 	  <c:forEach var="errorType" items="${result.error}" varStatus="estatus">
 		<li title="Click to see the error cases">
 			<a href="javascript:switchit('result${rstatus.index}type${estatus.index}')">
@@ -81,7 +64,7 @@
 	  		</c:choose>
 			</a><br/>${errorType.message}
 		</li>
-		<ul id="result${rstatus.index}type${estatus.index}">
+		<ul style="display:none;" id="result${rstatus.index}type${estatus.index}">
 		<c:forEach var="errorCase" items="${errorType.errorCase}">
 			<li>
 				<c:if test="${errorCase.fixed}"><b>[FIXED!]</b>&nbsp;</c:if>
@@ -92,10 +75,20 @@
 		</ul>
 	  </c:forEach>
 	</ul>
-				<br />
-			</c:forEach>
-		</ul>
-	</div>
-	<jsp:include page="footer.jsp" />
+	<br />
+  </c:forEach>
+</ul>
+
+<jsp:include page="footer.jsp" />
+<script>
+function switchit(id) {
+	var style = document.getElementById(id).style;
+	if (!style.display || style.display == "none") {
+		style.display = "block";
+	} else {
+		style.display = "none";
+	}
+}
+</script>
 </body>
 </html>

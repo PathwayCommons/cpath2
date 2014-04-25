@@ -93,8 +93,13 @@ public abstract class BasicController {
 		// to count the error (code), also add -
 		updateCountsFor.add(LogEvent.from(status));
 		
-		LogUtils.log(logEntitiesRepository, 
+		//problems with logging subsystem should not fail the entire service
+		try {
+			LogUtils.log(logEntitiesRepository, 
 				updateCountsFor, Geoloc.fromIpAddress(clientIpAddress(request)));
+		} catch (Throwable ex) {
+			log.error("LogUtils.log failed", ex);
+		}
 		
 		response.sendError(status.getErrorCode(), 
 			status.getErrorMsg() + "; " + detailedMsg);
@@ -168,8 +173,13 @@ public abstract class BasicController {
 			updateCountsFor.addAll(LogEvent.fromProviders(providers));
 			
 			//log to the db (for analysis and reporting)
-			LogUtils.log(logEntitiesRepository, updateCountsFor,
+			//problems with logging subsystem should not fail the entire service
+			try {
+				LogUtils.log(logEntitiesRepository, updateCountsFor,
 					Geoloc.fromIpAddress(clientIpAddress(request)));
+			} catch (Throwable ex) {
+				log.error("LogUtils.log failed", ex);
+			}
 			
 			writer.write(dresp.getData().toString());
 		}

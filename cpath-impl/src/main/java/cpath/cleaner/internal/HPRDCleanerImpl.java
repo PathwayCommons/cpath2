@@ -1,5 +1,10 @@
 package cpath.cleaner.internal;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Scanner;
+
 import cpath.importer.Cleaner;
 
 
@@ -8,18 +13,29 @@ import cpath.importer.Cleaner;
  */
 final class HPRDCleanerImpl implements Cleaner {
 
-	@Override
-	public String clean(final String pathwayData) {
-
+	public void clean(InputStream data, OutputStream cleanedData) {
+		//HPRD data is less than 2Gb (max String length)
+		Scanner sc = new Scanner(data);
+	    StringBuilder sb = new StringBuilder();
+	    while (sc.hasNextLine())
+	        sb.append(sc.nextLine());
+	    sc.close(); sc = null;
+		
+	    String pathwayDataString = sb.toString();
 		// we want to add refType=identity to uniprot secondaryRef
-		String toReturn = pathwayData.replaceAll("^(\\s*)<secondaryRef db=\"uniprot\" dbAc=\"(.*)\" id=\"(.*)\"\\/>\\s*$",
+		pathwayDataString = pathwayDataString.replaceAll("^(\\s*)<secondaryRef db=\"uniprot\" dbAc=\"(.*)\" id=\"(.*)\"\\/>\\s*$",
 						 "$1<secondaryRef db=\"uniprot\" dbAc=\"$2\" id=\"$3\" refType=\"identity\"/>");
 
         // A quick and dirty fix for the latest export: HPRD_SINGLE_PSIMI_041210.xml
         // Duplicate id error due to a trailing space error
-        toReturn = toReturn.replaceAll("\"07467 \"", "\"074670\"");
-
-		return toReturn;
+		pathwayDataString = pathwayDataString.replaceAll("\"07467 \"", "\"074670\"");
+		
+		try {
+			cleanedData.write(pathwayDataString.getBytes());
+			cleanedData.close();
+		} catch (IOException e) {
+			throw new RuntimeException("Failed writing to output stream", e);
+		}
 	}
 
 }

@@ -1,42 +1,46 @@
 package cpath.webservice;
 
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Writer;
-import java.net.URL;
 import java.util.*;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 
 import cpath.config.CPathSettings;
+import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.log.LogUtils;
 import cpath.log.jpa.Geoloc;
 import cpath.log.jpa.LogEvent;
 import cpath.service.Status;
 import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.PathwayData;
+import cpath.warehouse.beans.Content;
 import cpath.warehouse.beans.Mapping;
+import cpath.webservice.args.binding.MetadataTypeEditor;
 
-import org.apache.commons.io.FileUtils;
 import org.biopax.validator.api.beans.ValidatorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.Assert;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 
 /**
@@ -44,8 +48,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
  * @author rodche
  */
 @Controller
-public class MetadataController extends BasicController
-{
+public class MetadataController extends BasicController {
     
 	private static final Logger log = LoggerFactory.getLogger(MetadataController.class);   
 	
@@ -53,6 +56,11 @@ public class MetadataController extends BasicController
     
     public MetadataController(MetadataDAO service) {
 		this.service = service;
+	}
+    
+	@InitBinder
+    public void initBinder(WebDataBinder binder) {
+        binder.registerCustomEditor(Metadata.METADATA_TYPE.class, new MetadataTypeEditor());
 	}
     
     
@@ -66,70 +74,8 @@ public class MetadataController extends BasicController
     	return CPathSettings.getInstance();
     }
         
-    /* 
-     * As this controller class is mapped to all cpath2 servlets 
-     * (i.e., - to those associated with  /*, *.json, and *.html paths via the web.xml),
-     * we have to avoid ambiguous request mappings and also 
-     * use explicit redirects to .html methods if needed
-     * (i.e, if a method is not supposed to return xml/json objects too)
-     */  
-    
-    
-    //important: home.html (there are several controllers, and /home would create circular redirects)
-    @RequestMapping("/home.html")
-    public String home() {
-    	return "home";
-    }	    
-
-    
-    /**
-     * Prints the XML schema.
-     * 
-     * @param writer
-     * @throws IOException
-     */
-    @RequestMapping("/help/schema")
-    public void getSchema(Writer writer, HttpServletResponse response) 
-    		throws IOException 
-    {
-    	BufferedReader bis = new BufferedReader(new InputStreamReader(
-    		(new DefaultResourceLoader())
-    			.getResource("classpath:cpath/service/schema1.xsd")
-    				.getInputStream(), "UTF-8"));
-    	
-    	response.setContentType("application/xml");
-    	
-    	final String newLine = System.getProperty("line.separator");
-    	String line = null;
-    	while((line = bis.readLine()) != null) {
-    		writer.write(line + newLine);
-    	}
-    }
-    
-
-    @RequestMapping("/help/formats.html")
-    public String getOutputFormatsDescr() 
-    {
-    	return "formats";
-    }
  
-    
-    //important: datasources.html (there are several controllers, and /datasources would create circular redirects)
-    @RequestMapping("/datasources.html")
-    public String datasources() {
-    	return "datasources";
-    }    
-    
-    
-    @RequestMapping("/metadata/validations") // returns xml or json
-    public @ResponseBody List<ValInfo> queryForValidationInfo() 
-    {
-		log.debug("Query for all validations summary");
-    	return validationInfo();
-    }
-
-
-	@RequestMapping("/metadata/validations.html") //a JSP view
+	@RequestMapping("/metadata/validations")
     public String queryForValidationInfoHtml(Model model) 
     {
 		log.debug("Query for all validations summary (html)");
@@ -192,9 +138,8 @@ public class MetadataController extends BasicController
     	byte[] bytes = null;
     	
     	if(ds != null) {
-    		bytes = ds.getIcon();
 			BufferedImage bufferedImage = ImageIO
-				.read(new ByteArrayInputStream(bytes));
+				.read(CPathUtils.LOADER.getResource(ds.getIconUrl()).getInputStream());
 			
 			//resize (originals are around 125X60)
 			bufferedImage = scaleImage(bufferedImage, 100, 50, null);
@@ -208,114 +153,139 @@ public class MetadataController extends BasicController
     }
 
     
-    @RequestMapping("/favicon.ico")
-    public  @ResponseBody byte[] icon(HttpServletResponse response) 
-    		throws IOException {
-    	
-    	String cpathLogoUrl = CPathSettings.getInstance().getLogoUrl();
-    	
-		byte[] iconData = null;
-
-		try {
-			BufferedImage image = ImageIO.read(new URL(cpathLogoUrl));
-			if(image != null) {
-				image = scaleImage(image, 16, 16, null);
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				ImageIO.write(image, "gif", baos);
-				baos.flush();
-				iconData = baos.toByteArray();
-			}
-		} catch (IOException e) {
-//			errorResponse(Status.INTERNAL_ERROR, 
-//				"Failed to load icon image from " +  cpathLogoUrl, request, response);
-			log.error("Failed to load icon image from " +  cpathLogoUrl, e);
-		}
-		
-        return iconData;
-    }
-    
     // to return a xml or json data http response
     @RequestMapping("/metadata/datasources")
-    public  @ResponseBody List<MetInfo> queryForDatasources() {
+    public  @ResponseBody List<Metadata> queryForDatasources() {
 		log.debug("Getting pathway datasources info.");
     	
-		List<MetInfo> list = new ArrayList<MetInfo>();
+		List<Metadata> list = service.getAllMetadata();
 		
 		for(Metadata m : service.getAllMetadata()) {
-			MetInfo mi = new MetInfo();
-			mi.setIdentifier(m.getIdentifier());
-			mi.setDescription(m.getDescription());
-			mi.setIcon(m.getIcon());
-			mi.setName(m.getName());
-			mi.setType(m.getType().name());
-			mi.setNotPathwaydata(m.getType().isNotPathwayData());
-			mi.setUri(m.getUri());
-			mi.setUrlToHomepage(m.getUrlToHomepage());
-			if(!m.getType().isNotPathwayData()) {
-				mi.getCounts().add(m.getNumPathways());
-				mi.getCounts().add(m.getNumInteractions());
-				mi.getCounts().add(m.getNumPhysicalEntities());
-				//downloaded/accessed count - for pathway data only
+			//set dynamic extra fields
+			if(m.isNotPathwayData()) {
+				m.setUploaded((new File(m.getDataArchiveName()).exists()));
+			} else {		
 				Long accessed = logEntitiesRepository.downloads(m.standardName());
-				mi.getCounts().add(accessed);
+				m.setNumAccessed(accessed);
+				m.setUploaded((new File(m.getDataArchiveName()).exists()));
+				m.setPremerged(!m.getContent().isEmpty());
 			}
-			list.add(mi);
 		}
 		
     	return list;
     }
-
     
-    @RequestMapping("/downloads.html")
-    public String downloads(Model model, HttpServletRequest request) {
-
-    	// get the sorted list of files to be shared on the web
-    	String path = CPathSettings.downloadsDir(); 
-    	File[] list = new File(path).listFiles();
-    	
-    	Map<String,String> files = new TreeMap<String,String>();
-    	
-    	for(int i = 0 ; i < list.length ; i++) {
-    		File f = list[i];
-    		String name = f.getName();
-    		long size = f.length();
-    		
-    		if(!name.startsWith(".")) {
-    			StringBuilder sb = new StringBuilder();
-    			sb.append("size: ").append(FileUtils.byteCountToDisplaySize(size));
-    			List<Object[]> dl = logEntitiesRepository.downloadsWorld(null, name);
-    			String topCountry = null;
-    			long topCount = 0;
-    			long total = 0;
-    			Iterator<Object[]> it = dl.iterator();
-    			it.next(); //skip title line
-    			while(it.hasNext()) {
-    				Object[] a = it.next();
-    				long count = (Long) a[1];
-    				total += count;
-    				if(count > topCount) {
-    					topCount = count;
-    					topCountry = (String) a[0];
-    				}   					
-    			}
-    			
-    			sb.append("; downloads: ").append(total);
-    			if(topCount > 0) {
-    				sb.append("; mostly from: ")
-    				.append((topCountry != null && !topCountry.isEmpty()) 
-    						? topCountry : "Local/Unknown")
-    				.append(" [").append(topCount).append("]");
-    			}
-    			
-    			files.put(name, sb.toString());
-    		}
+    @RequestMapping("/metadata/datasources/{identifier}")
+    public  @ResponseBody Metadata datasource(@PathVariable String identifier) {
+		Metadata m = service.getMetadataByIdentifier(identifier);
+		if(m==null)
+			return null;
+		
+		//set dynamic extra fields
+		if(m.isNotPathwayData()) {
+			m.setUploaded((new File(m.getDataArchiveName()).exists()));
+		} else {		
+			Long accessed = logEntitiesRepository.downloads(m.standardName());
+			m.setNumAccessed(accessed);
+			m.setUploaded((new File(m.getDataArchiveName()).exists()));
+			m.setPremerged(!m.getContent().isEmpty());
+		}
+		
+    	return m;
+    }    
+    
+    
+    @RequestMapping(value = "/admin/datasources", consumes="application/json", method = RequestMethod.POST)
+    public void update(@RequestBody @Valid Metadata metadata, 
+    		BindingResult bindingResult, HttpServletResponse response) throws IOException 
+    {	
+    	if(bindingResult != null &&  bindingResult.hasErrors()) {
+    		log.error(Status.BAD_REQUEST.getErrorCode() + "; " +  
+        			Status.BAD_REQUEST.getErrorMsg() + "; " + errorFromBindingResult(bindingResult));
+    		response.sendError(Status.BAD_REQUEST.getErrorCode(), 
+    			Status.BAD_REQUEST.getErrorMsg() + "; " + errorFromBindingResult(bindingResult));
     	}
     	
-    	model.addAttribute("files", files.entrySet());
-		
-		return "downloads";
+    	Metadata existing = service.getMetadataByIdentifier(metadata.identifier);
+    	if(existing == null) {
+    		service.saveMetadata(metadata);
+    	} else {
+    		existing.setAvailability(metadata.getAvailability());
+    		existing.setCleanerClassname(metadata.getCleanerClassname());
+    		existing.setConverterClassname(metadata.getConverterClassname());
+    		existing.setDescription(metadata.getDescription());
+    		existing.setIconUrl(metadata.getIconUrl());
+    		existing.setName(metadata.getName());
+    		existing.setPubmedId(metadata.getPubmedId());
+    		existing.setType(metadata.getType());
+    		existing.setUrlToData(metadata.getUrlToData());
+    		existing.setUrlToHomepage(metadata.getUrlToHomepage());   		
+    		service.saveMetadata(existing);
+    	}
+    }
+    
+    @RequestMapping(value = "/admin/datasources", consumes="application/json", method = RequestMethod.PUT)
+    public void put(@RequestBody @Valid Metadata metadata, 
+    		BindingResult bindingResult, HttpServletResponse response) throws IOException 
+    {	
+    	if(bindingResult != null &&  bindingResult.hasErrors()) {
+    		log.error(Status.BAD_REQUEST.getErrorCode() + "; " +  
+        			Status.BAD_REQUEST.getErrorMsg() + "; " + errorFromBindingResult(bindingResult));
+    		response.sendError(Status.BAD_REQUEST.getErrorCode(), 
+    			Status.BAD_REQUEST.getErrorMsg() + "; " + errorFromBindingResult(bindingResult));
+    	}
+    	
+    	Metadata existing = service.getMetadataByIdentifier(metadata.identifier);
+    	if(existing == null) {
+    		service.saveMetadata(metadata);
+    	} else {
+    		response.sendError(Status.BAD_REQUEST.getErrorCode(), 
+                "PUT failed: Metadata already exists for pk: " + metadata.identifier
+                	+ " (use POST to update instead)");
+    	}
+    }
+    
+    @RequestMapping(value = "/admin/datasources/{identifier}", method = RequestMethod.DELETE)
+    public void delete(@PathVariable String identifier, HttpServletResponse response) throws IOException 
+    {	
+    	Metadata existing = service.getMetadataByIdentifier(identifier);
+    	if(existing != null) {
+    		service.deleteMetadata(existing);//clear files
+    	} else {
+    		response.sendError(Status.NO_RESULTS_FOUND.getErrorCode(), 
+            	"DELETE failed: no Metadata record found for pk: " + identifier);
+    	}
     }
 
+    
+    //Upload a data archive
+    @RequestMapping(value = "/admin/datasources/{identifier}/file", method = RequestMethod.POST)
+    public void uploadDataArchive(@PathVariable String identifier, MultipartHttpServletRequest multiRequest, 
+    		HttpServletResponse response) throws IOException
+    {	    	
+    	Metadata m = service.getMetadataByIdentifier(identifier);
+    	if(m==null) {
+    		response.sendError(Status.NO_RESULTS_FOUND.getErrorCode(), Status.NO_RESULTS_FOUND.getErrorMsg() + 
+        		"; Metadata object with identifier: " + identifier + " not found.");
+    	}
+    	
+		Map<String, MultipartFile> files = multiRequest.getFileMap();
+		Assert.state(!files.isEmpty(), "No files to validate");
+		String filename = files.keySet().iterator().next();
+		MultipartFile file = files.get(filename);
+		String origFilename = file.getOriginalFilename();			
+		if(file.getBytes().length==0 || filename==null || "".equals(filename) || !origFilename.endsWith(".zip")) {
+			log.error("uploadDataArchive(), empty data file or null: " + origFilename);
+			response.sendError(Status.BAD_REQUEST.getErrorCode(), 
+	            	"File (" + origFilename + ") UPLOAD failed; id:" + identifier);
+		} else {
+			//create or update the input source data file (must be ZIP archive!)
+			CPathUtils.write(file.getBytes(), m.getDataArchiveName());
+			log.info("uploadDataArchive(), saved uploaded file:" 
+					+ origFilename + " as " + m.getDataArchiveName());
+		}
+    }
+    
     
     @RequestMapping("/idmapping")
     public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id, 
@@ -359,13 +329,13 @@ public class MetadataController extends BasicController
     	final List<ValInfo> list = new ArrayList<ValInfo>();
     	
 		for(Metadata m : service.getAllMetadata()) {
-			if(m.getType().isNotPathwayData())
+			if(m.isNotPathwayData())
 				continue;
 			
 			ValInfo vi = new ValInfo();
 			vi.setIdentifier(m.getIdentifier());
 			
-			for(PathwayData pd : m.getPathwayData())
+			for(Content pd : m.getContent())
 				vi.getFiles().put(pd.getFilename(), pd + "; " + status(pd));
 			
 			list.add(vi);
@@ -374,7 +344,7 @@ public class MetadataController extends BasicController
 		return list;
 	}
     
-    private String status(PathwayData pd) {
+    private String status(Content pd) {
     	if(pd.getValid() == null)
     		return "not validated or skipped";
     	else if(pd.getValid())
@@ -390,6 +360,7 @@ public class MetadataController extends BasicController
      */
     public static final class ValInfo {
     	String identifier;
+    	
     	//filename to status/description map
     	Map<String,String> files;
     	
@@ -411,88 +382,5 @@ public class MetadataController extends BasicController
 			this.files = files;
 		}
     }
-    
-    /**
-     * A POJO for a JSON view (datasources).
-     * 
-     */   
-    public static final class MetInfo {
-    	String type;
-    	String urlToHomepage;
-    	String uri;
-    	String description;
-    	byte[] icon;
-    	String identifier;
-    	List<String> name;
-    	List<Number> counts;
-    	boolean notPathwaydata;
-    	
-    	public MetInfo() {
-			counts = new ArrayList<Number>(4);
-		}
-    	
-    	public String getType() {
-			return type;
-		}
-		public void setType(String type) {
-			this.type = type;
-		}
-
-		public String getUrlToHomepage() {
-			return urlToHomepage;
-		}
-		public void setUrlToHomepage(String urlToHomepage) {
-			this.urlToHomepage = urlToHomepage;
-		}
-
-		public String getUri() {
-			return uri;
-		}
-		public void setUri(String uri) {
-			this.uri = uri;
-		}
-
-		public String getDescription() {
-			return description;
-		}
-		public void setDescription(String description) {
-			this.description = description;
-		}
-
-		public byte[] getIcon() {
-			return icon;
-		}
-		public void setIcon(byte[] icon) {
-			this.icon = icon;
-		}
-
-		public String getIdentifier() {
-			return identifier;
-		}
-		public void setIdentifier(String identifier) {
-			this.identifier = identifier;
-		}
-
-		public List<String> getName() {
-			return name;
-		}
-		public void setName(List<String> name) {
-			this.name = name;
-		}
-
-		public List<Number> getCounts() {
-			return counts;
-		}
-		public void setCounts(List<Number> counts) {
-			this.counts = counts;
-		}  
-		
-		public boolean isNotPathwaydata() {
-			return notPathwaydata;
-		}
-		public void setNotPathwaydata(boolean pathwayData) {
-			this.notPathwaydata = pathwayData;
-		}
-    }
-    
+        
 }

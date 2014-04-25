@@ -184,7 +184,7 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 		
 		String ontId = term.getOntologyId(); // like "GO" 
 		String db = getOntology(ontId).getName(); // names were fixed in the constructor!
-		String rdfid = Normalizer.uri(CPathSettings.xmlBase(), db, term.getTermAccession(), UnificationXref.class);
+		String rdfid = Normalizer.uri(CPathSettings.getInstance().getXmlBase(), db, term.getTermAccession(), UnificationXref.class);
 		UnificationXref uref = biopaxFactory.create(UnificationXref.class, rdfid);
 		uref.setDb(db); 
 		uref.setId(term.getTermAccession());
