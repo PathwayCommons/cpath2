@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -36,7 +37,8 @@ import static org.junit.Assert.*;
  *
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"classpath:testContext-log.xml"})
+@ContextConfiguration(locations={"classpath:META-INF/spring/applicationContext-log.xml"})
+@ActiveProfiles("dev")
 public class LogRepositoriesTest {
 	
 	@Autowired
@@ -220,21 +222,23 @@ public class LogRepositoriesTest {
 	
 	@Test
 	public final void testLogEventFromDownloads() {
-		String file = CPathSettings.exportArchivePrefix() + "Reactome.BIOPAX.owl.gz";
+		CPathSettings cpath = CPathSettings.getInstance();
+		
+		String file = cpath.exportArchivePrefix() + "Reactome.BIOPAX.owl.gz";
 		Set<LogEvent> events = LogEvent.fromDownloads(file);
 		assertEquals(4, events.size());
 		
 		//'All' 
-		file = CPathSettings.exportArchivePrefix() + "All.BIOPAX.owl.gz";
+		file = cpath.exportArchivePrefix() + "All.BIOPAX.owl.gz";
 		events = LogEvent.fromDownloads(file);
 		assertEquals(3, events.size());
 		
-		file = CPathSettings.exportArchivePrefix() + "Reactome.GSEA.gmt.gz";
+		file = cpath.exportArchivePrefix() + "Reactome.GSEA.gmt.gz";
 		events = LogEvent.fromDownloads(file);
 		assertEquals(4, events.size());
 		
 		//illegal format - still logged as OTHER
-		file = CPathSettings.exportArchivePrefix() + "Reactome.foo.gmt.gz";
+		file = cpath.exportArchivePrefix() + "Reactome.foo.gmt.gz";
 		events = LogEvent.fromDownloads(file);
 		assertEquals(4, events.size());
 		
@@ -244,7 +248,7 @@ public class LogRepositoriesTest {
 		assertEquals(3, events.size());//counted for: file, command (DOWNLOAD), format (OTHER)
 		
 		//when a provider's name does not start from a capital letter, LogType.PROVIDER event won't be there
-		file = CPathSettings.exportArchivePrefix() + "reactome.foo.gmt.gz";
+		file = cpath.exportArchivePrefix() + "reactome.foo.gmt.gz";
 		events = LogEvent.fromDownloads(file);
 		assertEquals(3, events.size());
 	}

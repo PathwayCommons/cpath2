@@ -14,6 +14,7 @@ import cpath.dao.Analysis;
 /**
  * @author rodche
  *
+ * @deprecated moved to the Cleaner implementation
  */
 public final class FixReactomeConversionDirectionAnalysis implements Analysis {
 	

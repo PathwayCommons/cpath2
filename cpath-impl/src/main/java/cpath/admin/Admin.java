@@ -29,6 +29,7 @@
 package cpath.admin;
 
 import static cpath.config.CPathSettings.*;
+
 import cpath.admin.fix.FixHumanCycPathwayOrganismAnalysis;
 import cpath.admin.fix.FixReactomeConversionDirectionAnalysis;
 import cpath.config.CPathSettings;
@@ -47,6 +48,8 @@ import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.pattern.miner.BlacklistGenerator;
+import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.validator.api.Validator;
 import org.h2.tools.Csv;
 
@@ -81,15 +84,18 @@ public final class Admin {
 	private static final Logger LOG = LoggerFactory.getLogger(Admin.class);
 	
 	private static final OutputFormat[] EXPORT_TO_FORMATS = new OutputFormat[]{BINARY_SIF, EXTENDED_BINARY_SIF, GSEA};
+	
+	private static final CPathSettings cpath = CPathSettings.getInstance();
 
     // Cmd Enum
     public static enum Cmd {
         // command types
+    	INIT("-init"),
         FETCH_METADATA("-fetch-metadata"),
 		FETCH_DATA("-fetch-data"),
-		CREATE_WAREHOUSE("-create-warehouse"),
-		UPDATE_MAPPING("-update-mapping"),
 		PREMERGE("-premerge"),
+		CREATE_WAREHOUSE("-create-warehouse"),		
+		UPDATE_MAPPING("-update-mapping"),		
 		MERGE("-merge"),
     	CREATE_INDEX("-create-index"),
         CREATE_BLACKLIST("-create-blacklist"),
@@ -110,6 +116,7 @@ public final class Admin {
         Cmd(String command) { this.command = command; }
 
         // method to get enum readable name
+        @Override
         public String toString() { return command; }
     }
     
@@ -121,7 +128,7 @@ public final class Admin {
      */    
     public static void main(String[] params) throws Exception {
     	// "CPATH2_HOME" env. var must be set (mostly for logging)
-        CPathSettings.property(HOME_DIR); //throws IllegalStateEx. is not set.
+    	cpath.property(HOME_DIR); //throws IllegalStateEx. is not set.
 
     	if(!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
     		if(LOG.isWarnEnabled())
@@ -152,7 +159,7 @@ public final class Admin {
     	
 
         // create the data dir. inside the home dir. if it does not exist
-		File dir = new File(dataDir());
+		File dir = new File(cpath.dataDir());
 		if(!dir.exists()) {
 			dir.mkdir();
 		}
@@ -161,25 +168,27 @@ public final class Admin {
 			
 			index();
 			
+		} else if (args[0].equals(Cmd.INIT.toString())) {
+			
+				initDb();
+				
 		} else if (args[0].equals(Cmd.FETCH_METADATA.toString())) {
 			
 			if (args.length == 1) {
-				fetchMetadata("file:" + property(PROP_METADATA_LOCATION));
+				fetchMetadata("file:" + cpath.property(PROP_METADATA_LOCATION));
 			} else {
 				fetchMetadata(args[1]);
 			}
 			
 		} else if (args[0].equals(Cmd.CREATE_WAREHOUSE.toString())) {
 			
-			if (args.length > 1)
-				createWarehouse(args[1]);
-			else
-				// command without extra parameter
-				createWarehouse(null);
+				createWarehouse();
+				
+		} else if (args[0].equals(Cmd.UPDATE_MAPPING.toString())) {	
 			
-		} else if (args[0].equals(Cmd.UPDATE_MAPPING.toString())) {
+			//TODO load and update id-mapping tables from a TSV file (archive of plain text files)
 			
-			updateMapping();
+			LOG.warn(Cmd.UPDATE_MAPPING.toString() + " - not implemented yet (future TODO).");
 			
 		} else if (args[0].equals(Cmd.PREMERGE.toString())) {
 			
@@ -263,8 +272,30 @@ public final class Admin {
     }    
 
     
+    /**
+     * This drops and creates empty cpath2 database tables and 
+     * cache directories.
+     */
+    private static void initDb() {
+    	if(!cpath.isAdminEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+    	  	
+		System.setProperty("hibernate.hbm2ddl.auto", "update");
+		System.setProperty("net.sf.ehcache.disabled", "true");
+		ClassPathXmlApplicationContext context =
+            new ClassPathXmlApplicationContext(new String [] { 	
+            		"classpath:META-INF/spring/applicationContext-dao.xml", 
+            		"classpath:META-INF/spring/applicationContext-log.xml"
+            	});
+ 				
+		CPathUtils.cleanupIndexDir(CPathSettings.getInstance().getMainDb());
+ 		
+ 		context.close();
+	}
+    
+    
     private static void aftermerge() {
-    	if(!isMaintenanceEnabled())
+    	if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
     	
     	ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
@@ -281,17 +312,17 @@ public final class Admin {
 
 	//clean/update service access counts by location,date in the DB from available .log files
     public static void exportLog(boolean clear) throws IOException {
-		if(!isMaintenanceEnabled())
+		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
  		
  		//backup cpath2 access db to a CSV file
  		CPathSettings cps = getInstance();
- 		String filename = homeDir() + File.separator + "logentity.csv";
+ 		String filename = cpath.homeDir() + File.separator + "logentity.csv";
  		Connection conn = null;
  		try {
 			Class.forName("org.h2.Driver");
-			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) 
-					+ cps.getMainDb(), property(PROP_DB_USER), property(PROP_DB_PASSW));
+			conn = DriverManager.getConnection(cpath.property(PROP_DB_CONNECTION) 
+					+ cps.getMainDb(), cpath.property(PROP_DB_USER), cpath.property(PROP_DB_PASSW));
 //			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) + "accesslog", 
 //					property(PROP_DB_USER), property(PROP_DB_PASSW));
 			new Csv()
@@ -304,7 +335,6 @@ public final class Admin {
 				conn.commit();
 				LOG.info("Cleared access log DB");
 			}
-			
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
@@ -313,17 +343,16 @@ public final class Admin {
 	}
 
     public static void importLog(String filename) throws IOException {
-		if(!isMaintenanceEnabled())
+		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
  		
  		//load cpath2 access db from a CSV file
- 		CPathSettings cps = getInstance();
- 		String backup = homeDir() + File.separator + "logentity.csv.bak";
+ 		String backup = cpath.homeDir() + File.separator + "logentity.csv.bak";
  		Connection conn = null;
  		try {
  			Class.forName("org.h2.Driver");
-			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) 
-				+ cps.getMainDb(), property(PROP_DB_USER), property(PROP_DB_PASSW));
+			conn = DriverManager.getConnection(cpath.property(PROP_DB_CONNECTION) 
+				+ cpath.getMainDb(), cpath.property(PROP_DB_USER), cpath.property(PROP_DB_PASSW));
 // 			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) + "accesslog", 
 // 					property(PROP_DB_USER), property(PROP_DB_PASSW));
 			
@@ -362,14 +391,14 @@ public final class Admin {
      * @throws IllegalStateException when not in maintenance mode
      */
     public static void index() {
-		if(!isMaintenanceEnabled())
+		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
    		// re-build the full-text index
    		// it gets the main DB name from cpath2.properties (via CPathSettings class)
 		
-		String indexDir = property(PROP_MAIN_DB); 
+		String indexDir = cpath.property(PROP_MAIN_DB); 
 		LOG.info("Cleaning up the full-text index directory: " + indexDir);
-		File dir = new File(CPathSettings.homeDir() + File.separator + indexDir);
+		File dir = new File(cpath.homeDir() + File.separator + indexDir);
 		CPathUtils.cleanupDirectory(dir);
 		
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
@@ -389,7 +418,7 @@ public final class Admin {
      * @throws IllegalStateException when not in maintenance mode
      */
     public static void updateCounts() {
-		if(!isMaintenanceEnabled())
+		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
    		// re-build the full-text index
    		// it gets the DB name from the environment variables (set in cpath2.properties)
@@ -402,7 +431,7 @@ public final class Admin {
      	MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
      	for(Metadata md : mdao.getAllMetadata()) {
      		
-     		if(md.getType().isNotPathwayData())
+     		if(md.isNotPathwayData())
      			continue;
      		
      		String name = md.standardName();
@@ -431,10 +460,10 @@ public final class Admin {
      * Purges all cache directories.
      */
     public static void clearCache() {
-		if(!isMaintenanceEnabled())
+		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
      	//remove the disk cache
-     	File cacheDir = new File(CPathSettings.cacheDir());
+     	File cacheDir = new File(cpath.cacheDir());
 		LOG.info("Removing cache directory : " + cacheDir.getAbsolutePath());
      	CPathUtils.deleteDirectory(cacheDir);
     }
@@ -453,7 +482,7 @@ public final class Admin {
      * @throws IOException, IllegalStateException (when not in maintenance mode)
      */
     public static void createBlacklist() throws IOException {
-		if(!isMaintenanceEnabled())
+		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
     	
     	// Extract blacklist values, if can't, then use the default values       
@@ -462,7 +491,23 @@ public final class Admin {
         PaxtoolsDAO paxtoolsDAO = ((PaxtoolsDAO)context.getBean("paxtoolsDAO"));
 
         // os will be used directly inside the runAnalysis call
-        Analysis blacklisting = new BlacklistingAnalysis();
+        Analysis blacklisting = new Analysis() {     	
+        	@Override
+            public void execute(Model model) 
+            {	
+        		BlacklistGenerator gen = new BlacklistGenerator();
+        		Blacklist blacklist = gen.generateBlacklist(model);
+   		
+        		// Write all the blacklisted ids to the output
+        		try {		
+        			blacklist.write(new FileOutputStream(cpath.blacklistFile()));
+        		} catch (FileNotFoundException e) {
+        			throw new RuntimeException("Failed creating the file: " 
+        					+ cpath.blacklistFile(), e);
+        		} 
+            }
+        };
+        
         paxtoolsDAO.run(blacklisting);
         
         context.close(); 
@@ -477,7 +522,7 @@ public final class Admin {
      * @throws IllegalStateException when not maintenance mode
      */
     public static void runMerge(String provider, boolean force) {
-		if(!isMaintenanceEnabled())
+		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
     	
 		//disable 2nd level hibernate cache (ehcache)
@@ -514,7 +559,7 @@ public final class Admin {
      * @throws IllegalStateException when not maintenance mode
      */
 	public static void runPremerge(String provider) {
-		if(!isMaintenanceEnabled())
+		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");		
 		
         LOG.info("runPremerge: provider=" + provider + " - initializing (DAO, validator, premerger)...");
@@ -538,44 +583,24 @@ public final class Admin {
 
 	
     /**
-     * Creates cpath2 Warehouse and id-mapping.
+     * Creates cpath2 Warehouse and id-mapping tables.
      * 
-     * @param provider
      * @throws IllegalStateException when not maintenance mode
      */
-	public static void createWarehouse(String provider) {
-		if(!isMaintenanceEnabled())
+	public static void createWarehouse() {
+		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
-//		System.setProperty("hibernate.hbm2ddl.auto", "update");
+		System.setProperty("hibernate.hbm2ddl.auto", "update");
 		System.setProperty("net.sf.ehcache.disabled", "true");
 		ClassPathXmlApplicationContext context =
             new ClassPathXmlApplicationContext("classpath:META-INF/spring/applicationContext-dao.xml");
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-		//CVs are not required now (null)
-        Premerger premerger = new PremergeImpl(metadataDAO, dao, null, provider);
+        Premerger premerger = new PremergeImpl(metadataDAO, dao, null, null);
         premerger.buildWarehouse();        
         context.close(); 
 	}
 
-	
-	/**
-	 * Updates id-mapping tables using the warehouse data (xrefs).
-	 */
-	public static void updateMapping() {
-		if(!isMaintenanceEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
-//		System.setProperty("net.sf.ehcache.disabled", "true");
-//		System.setProperty("hibernate.hbm2ddl.auto", "update");
-		clearCache();
-		ClassPathXmlApplicationContext context =
-            new ClassPathXmlApplicationContext("classpath:META-INF/spring/applicationContext-dao.xml");
-		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-        Premerger premerger = new PremergeImpl(metadataDAO, dao, null, null);
-        premerger.updateIdMapping(true);       
-        context.close(); 
-	}
 	
 	/**
      * Helper function to get provider metadata.
@@ -584,7 +609,7 @@ public final class Admin {
      * @throws IOException, IllegalStateException (when not maintenance mode)
      */
     public static void fetchMetadata(final String location) throws IOException {
-		if(!isMaintenanceEnabled())
+		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
 		
 		System.setProperty("hibernate.hbm2ddl.auto", "update");	
@@ -608,7 +633,7 @@ public final class Admin {
 	public static void exportData(final String output, String[] uris) 
 			throws IOException 
 	{	
-		if(isMaintenanceEnabled())
+		if(cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode.");
 		
 		if(uris == null) 
@@ -633,10 +658,11 @@ public final class Admin {
 				"(- parameters within the square braces are optional.)" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
 		// data import (instance creation) pipeline :
+		toReturn.append(Cmd.INIT.toString() + " (creates a new empty database; this destroys all previous data)" + NEWLINE);
 		toReturn.append(Cmd.FETCH_METADATA.toString() + " <url>" + NEWLINE);
-		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + " [<metadataId>]" + NEWLINE);
-		toReturn.append(Cmd.UPDATE_MAPPING.toString() + " (re-builds id-mapping tables using cpath2 warehouse data)"+ NEWLINE);
 		toReturn.append(Cmd.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
+		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + NEWLINE);		
+		toReturn.append(Cmd.UPDATE_MAPPING.toString() + " <filename> (updates the id-mapping tables in the cpath2 warehouse)"+ NEWLINE);		
 		toReturn.append(Cmd.MERGE.toString() + " [<metadataId>] [--force]"+ NEWLINE);
 		toReturn.append(Cmd.CREATE_INDEX.toString() + NEWLINE);
         toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
@@ -670,7 +696,7 @@ public final class Admin {
 	public static void convert(Model model, OutputFormat outputFormat, 
 			OutputStream output) throws IOException 
 	{
-		Resource blacklist = new DefaultResourceLoader().getResource("file:" + blacklistFile());
+		Resource blacklist = new DefaultResourceLoader().getResource("file:" + cpath.blacklistFile());
 		BiopaxConverter converter = new BiopaxConverter(blacklist);
 		converter.mergeEquivalentInteractions(true);
 		ServiceResponse res = converter.convert(model, outputFormat);
@@ -681,16 +707,6 @@ public final class Admin {
 			output.write(data.getBytes("UTF-8"));
 			output.flush();
 		}
-	}
-	
-	
-	private static void convertToExtSif(Model m,
-			OutputStream edgeStream, OutputStream nodeStream) throws IOException 
-	{
-		Resource blacklist = new DefaultResourceLoader().getResource("file:" + blacklistFile());
-		BiopaxConverter converter = new BiopaxConverter(blacklist);
-		converter.mergeEquivalentInteractions(true);
-		converter.convertToExtendedBinarySIF(m, edgeStream, nodeStream);
 	}
 
 	
@@ -711,16 +727,16 @@ public final class Admin {
 	public static void createDownloads() 
     		throws IOException
     {	
-		if(!isMaintenanceEnabled())
+		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
 		
 		// create the TMP dir inside the home dir if it does not exist yet
-		File f = new File(downloadsDir());
+		File f = new File(cpath.downloadsDir());
 		if(!f.exists()) 
 			f.mkdir();
     	
 		//copy the blacklist.txt
-		FileUtils.copyFileToDirectory(new File(blacklistFile()), f);
+		FileUtils.copyFileToDirectory(new File(cpath.blacklistFile()), f);
 		LOG.info("create-downloads: copied the blacklist.txt file...");
 		
 		ClassPathXmlApplicationContext context = 
@@ -730,7 +746,7 @@ public final class Admin {
 		
 		final List<Metadata> allMetadata = mdao.getAllMetadata();
 		//0) create an imported data summary file.txt (issue#23)
-		PrintWriter writer = new PrintWriter(downloadsDir() + File.separator 
+		PrintWriter writer = new PrintWriter(cpath.downloadsDir() + File.separator 
 				+ "datasources.txt");
 		String date = new SimpleDateFormat("d MMM yyyy").format(Calendar.getInstance().getTime());
 		writer.println(StringUtils.join(Arrays.asList(
@@ -800,20 +816,10 @@ public final class Admin {
 		
         if(!(new File(archiveName)).exists()) {
     		LOG.info("create-downloads: generating new " + archiveName);
-    		//Extended SIF will be here split in two separate files (edges and nodes)
-    		if(format == EXTENDED_BINARY_SIF) {
-    			//write edges and nodes into separate archives
-    			GZIPOutputStream edgeStream = new GZIPOutputStream(new FileOutputStream(archiveName));
-    			GZIPOutputStream nodeStream = new GZIPOutputStream(new FileOutputStream(prefix + "." + format + ".nodes.tsv.gz"));   
-    			convertToExtSif(m, edgeStream, nodeStream);
-    			IOUtils.closeQuietly(edgeStream);
-    			IOUtils.closeQuietly(edgeStream);
-    		} else {    	
-    			GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(archiveName));
-    			convert(m, format, zos);
-        		IOUtils.closeQuietly(zos);
-    		}
-    		
+    		//note: extended SIF will be one file (edges, nodes)
+   			GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(archiveName));
+   			convert(m, format, zos);
+       		IOUtils.closeQuietly(zos);  		
     		LOG.info("create-downloads: successully created " + archiveName);    		
         } else
         	LOG.info("create-downloads: skip for existing " + archiveName);
@@ -826,16 +832,16 @@ public final class Admin {
 		List<String> files = new ArrayList<String>();
 		
 		// generate the complete biopax db export (all processes, no filters)
-		String archiveName = CPathSettings.biopaxExportFileName("All");
+		String archiveName = cpath.biopaxExportFileName("All");
 		exportBiopax(dao, archiveName, null, null);
 		files.add(archiveName);
 		
     	// export by organism
         LOG.info("create-downloads: preparing data 'by organism' archives...");
-        for(String org :  CPathSettings.organisms()) {
+        for(String org :  cpath.getOrganisms()) {
         	// generate archives for current organism
         	// hack: org.toLowerCase() is to tell by-organism from by-datasource archives (for usage stats...) 
-        	archiveName = CPathSettings.biopaxExportFileName(org.toLowerCase());
+        	archiveName = cpath.biopaxExportFileName(org.toLowerCase());
         	exportBiopax(dao, archiveName, null, new String[]{org});
         	files.add(archiveName);
         }
@@ -845,11 +851,11 @@ public final class Admin {
         
         for(Metadata md : allMetadata) {
         	// generate archives for current pathway datasource;
-        	if(!md.getType().isNotPathwayData()) {
+        	if(!md.isNotPathwayData()) {
         		// use standard name and not the metadata ID in the file name, 
         		// because we want all data from same DB merge into one file,
         		// e.g., Reactome human, mouse, fungi data together, though might imported them via separate metadata)
-        		archiveName = CPathSettings.biopaxExportFileName(md.standardName());
+        		archiveName = cpath.biopaxExportFileName(md.standardName());
         		exportBiopax(dao, archiveName,  md.getName().toArray(new String[]{}), null);
         		files.add(archiveName);
         	}

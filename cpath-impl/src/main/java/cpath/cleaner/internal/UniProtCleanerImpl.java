@@ -1,15 +1,12 @@
 package cpath.cleaner.internal;
 
-// imports
 import cpath.importer.Cleaner;
-import cpath.warehouse.beans.PathwayData;
 
 import java.io.*;
 import java.util.*;
 import java.util.regex.*;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.io.IOUtils;
 
 /**
  * Implementation of Cleaner interface for UniProt data.
@@ -34,38 +31,30 @@ final class UniProtCleanerImpl implements Cleaner {
     private static final String AC_PREFIX = "AC   ";
     
     // regex to capture protein identifier
-    private static final String ID_REGEX = "^ID\\s*(\\w*).*$";
-    private static Pattern pattern = Pattern.compile(ID_REGEX);
-
-	// logger
-    private static Logger log = LoggerFactory.getLogger(UniProtCleanerImpl.class);
+    private static Pattern idPattern = Pattern.compile("^ID\\s*(\\w*).*$");
     
-	/**
-	 * (non-Javadoc>
-	 * @see cpath.importer.Cleaner#clean(PathwayData)
-	 */
-    @Override
-	public String clean(final String uniProtData) {
+    private final Map<String, List<String>> acToIdMap = new HashMap<String, List<String>>();
+    private final Map<String, List<String>> idToAcMap = new HashMap<String, List<String>>();
+    
+    /**
+     * {@inheritDoc} 
+     */
+    public void clean(InputStream data, OutputStream cleanedData) {
+        try {    	     	
+        	//read all data from the input stream to a byte[] stream
+        	//(this will work, because usually UniProt dat file in less than 2Gb)
+        	ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        	IOUtils.copy(data, bos);
+        	bos.close();
+        	data.close();
+        	
+        	populateAccessionsMaps(new ByteArrayInputStream(bos.toByteArray()));
 
-        // string we will return
-        String toReturn = uniProtData;
-        
-        if (log.isInfoEnabled()) {
-        	log.info("clean(), starting...");
-		}
-        
-        try {
-            toReturn = cleanAccessions(uniProtData, populateAccessionsMap(uniProtData));
+        	cleanAccessions(new ByteArrayInputStream(bos.toByteArray()), cleanedData);      	
         }
-        catch (IOException e) {
-            throw new IllegalArgumentException("Error reading uniprot data");
+        catch (Exception e) {
+        	throw new RuntimeException("clean(), Exception thrown while cleaning UniProt data", e);
         }
-
-        if (log.isInfoEnabled()) {
-        	log.info("clean(), done.");
-		}
-        
-        return toReturn;
     }
 
     /**
@@ -77,45 +66,53 @@ final class UniProtCleanerImpl implements Cleaner {
      *
      * A map would contain:
      *
-     * P38398 -> BRCA1_HUMAN
-     * O15129 -> BRCA1_HUMAN
-     * Q3LRJ0 -> BRCA1_HUMAN
-     * Q7KYU9 -> BRCA1_HUMAN
+     * P38398 -> [BRCA1_HUMAN]
+     * O15129 -> [BRCA1_HUMAN]
+     * Q3LRJ0 -> [BRCA1_HUMAN]
+     * Q7KYU9 -> [BRCA1_HUMAN,..]
+     *  
+     * later on, if a list (value) contains >1 elements, 
+     * then the corresponding accession number is to be removed 
+     * from all proteins.
+     * 
      *
      * @param uniprotData String
      * @return Map<String, List<String>>
      */
-    private Map<String, List<String>> populateAccessionsMap(final String uniprotData) throws IOException {
-
-        Map<String, List<String>> toReturn = new HashMap<String, List<String>>();
+    private void populateAccessionsMaps(InputStream uniprotData) throws IOException {
 
         // create a buffered reader
-        BufferedReader bufferedReader = new BufferedReader(new StringReader(uniprotData));
-        String line = bufferedReader.readLine();
-        while (line != null) {
+        BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(uniprotData));
+        String line;
+        while ((line = bufferedReader.readLine()) != null) {
             // process each id
-            Matcher matcher = pattern.matcher(line);
+            Matcher matcher = idPattern.matcher(line);
             if (matcher.matches()) {
                 // grab the id
                 String id = matcher.group(1);
                 List<String> accessions = getAccessionsList(bufferedReader);
                 // insert entry into map
                 for (String accession : accessions) {
-                    if (toReturn.containsKey(accession)) {
-                        toReturn.get(accession).add(id);
+                    if (acToIdMap.containsKey(accession)) {
+                        acToIdMap.get(accession).add(id);
                     }
                     else {
                         List<String> ids = new ArrayList<String>();
                         ids.add(id);
-                        toReturn.put(accession, ids);
+                        acToIdMap.put(accession, ids);
+                    }
+                    
+                    if (idToAcMap.containsKey(id)) {
+                        idToAcMap.get(id).add(accession);
+                    }
+                    else {
+                        List<String> accs = new ArrayList<String>();
+                        accs.add(accession);
+                        idToAcMap.put(id, accs);
                     }
                 }
             }
-            // get ready for next loop
-            line = bufferedReader.readLine();
         }
-
-        return toReturn;
     }
 
     /**
@@ -176,12 +173,12 @@ final class UniProtCleanerImpl implements Cleaner {
             toReturn.append(accession + AC_DELIMITER);
         }
 
-        return toReturn.toString().trim() + "\n";
+        return toReturn.toString().trim();
     }
 
     /**
-     * Given a string representing a uniprot export and a map containing accessions
-     * to remove, method returns a uniprot export with desired accessions removed.
+     * Given uniprot data and a map containing accessions
+     * to remove, method returns clean uniprot export with those accessions removed.
      *
      * As a side effect, protein records that have accessions spanning multiple lines
      * will have the accessions all concatenated on the same line.
@@ -197,39 +194,44 @@ final class UniProtCleanerImpl implements Cleaner {
      *
      * With any accessions removed determined by given map.
      *
-     * @param uniprotData String
+     * @param uniprotData
      * @param accessionsMap Map<String, List<String>>
+     * @param out where to write the result
      * @return String
      */
-    private String cleanAccessions(final String uniprotData, Map<String, List<String>> accessionsMap) throws IOException {
-
-        StringBuilder toReturn = new StringBuilder();
-
+    private void cleanAccessions(InputStream uniprotData, OutputStream out) 
+    				throws IOException 
+    {
         // create a buffered reader
-        BufferedReader bufferedReader = new BufferedReader(new StringReader(uniprotData));
-        String line = bufferedReader.readLine();
-        while (line != null) {
-            toReturn.append(line + "\n");
-            // process each id
-            Matcher matcher = pattern.matcher(line);
-            if (matcher.matches()) {
-                String id = matcher.group(1);
-                List<String> currentAccessions = getAccessionsList(bufferedReader);
-                // check if any of these accessions should be removed
-                List<String> accessionsToKeep = new ArrayList<String>(currentAccessions);
-                for (String accession : currentAccessions) {
-                    // get the list of protein id's associated w/this accession
-                    // if accessions points to more than 1 protein record, clobber it
-                    if (accessionsMap.get(accession).size() > 1) {
-                        accessionsToKeep.remove(accession);
-                    }
-                }
-                toReturn.append(getAccessionsListAsString(accessionsToKeep));
-            }
-            // get ready for next loop
-            line = bufferedReader.readLine();
-        }
-
-        return toReturn.toString();
+    	BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(uniprotData));
+    	PrintWriter writer = new PrintWriter(out);
+    	String line;
+    	String id;
+    	while ((line = bufferedReader.readLine()) != null) {
+    		//skip AC lines (we've already collected all ACs)
+    		if(!line.startsWith(AC_PREFIX)) {
+    			// process each id
+    			Matcher matcher = idPattern.matcher(line);
+    			if (matcher.matches()) {
+    				id = matcher.group(1);        		
+    				List<String> currentAccessions = idToAcMap.get(id);
+    				// check if any of these accessions should be removed
+    				List<String> accessionsToKeep = new ArrayList<String>(currentAccessions);
+    				for (String accession : currentAccessions) {
+    					// get the list of protein id's associated w/this accession
+    					// if accessions points to more than 1 protein record, clobber it
+    					if (acToIdMap.get(accession).size() > 1) {
+    						accessionsToKeep.remove(accession);
+    					}
+    				}
+    				writer.println(line); //write as is (not ID line)
+    				writer.println(getAccessionsListAsString(accessionsToKeep));
+    			} else {
+    				writer.println(line); //write as is (not ID line)
+    			}
+    		}
+    	}
+    	
+    	writer.close();
     }
 }

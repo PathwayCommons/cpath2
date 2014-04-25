@@ -39,7 +39,7 @@ import org.biopax.validator.api.beans.Validation;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.context.support.GenericXmlApplicationContext;
 
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
@@ -47,7 +47,7 @@ import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.warehouse.beans.Mapping;
 import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.PathwayData;
+import cpath.warehouse.beans.Content;
 import cpath.warehouse.beans.Metadata.METADATA_TYPE;
 
 import java.io.*;
@@ -65,12 +65,17 @@ public class PaxtoolsHibernateDAOTest {
     static SimpleIOHandler exporter = new SimpleIOHandler(BioPAXLevel.L3);
     static PaxtoolsDAO dao;
     static MetadataDAO meta;
-    static ClassPathXmlApplicationContext ctx;
+    static GenericXmlApplicationContext ctx;
 	
 
     @BeforeClass
 	public static void init() throws FileNotFoundException {
-    	ctx = new ClassPathXmlApplicationContext("classpath:testContext-1.xml");
+    	//load application context (test/dev profile)
+    	ctx = new GenericXmlApplicationContext();
+    	ctx.getEnvironment().setActiveProfiles("dev");
+    	ctx.load("classpath:META-INF/spring/applicationContext-dao.xml");
+    	ctx.refresh();
+    	
     	dao = (PaxtoolsDAO) ctx.getBean("paxtoolsDAO");
     	// load some data into the test storage
 		log.info("Loading test1 data...");
@@ -288,82 +293,62 @@ public class PaxtoolsHibernateDAOTest {
  
 	
 	@Test
-	public void testImportPathwayData() throws IOException {
+	public void testImportContent() throws IOException {
         // mock metadata and pathway data
         Metadata md = new Metadata("TEST", "test", "test", "", "",
-        		new byte[]{}, METADATA_TYPE.BIOPAX, null, null, null, "free");        
-        byte[] testData = "<rdf>          </rdf>".getBytes(); 
+        		"", METADATA_TYPE.BIOPAX, null, null, null, "free");        
         
         //cleanup previous tests data if any
         md.cleanupOutputDir();
         
-        PathwayData pathwayData = new PathwayData(md, "test0");
-        pathwayData.setData(testData);
-        pathwayData.setNormalizedData(testData);
-        md.getPathwayData().add(pathwayData);
+        Content content = new Content(md, "test0");
+        md.getContent().add(content);
         //add the second pd (for the tests at the end of this method)
-        final PathwayData pd = new PathwayData(md, "test1");
-        pd.setData("aaaaaaaaaa".getBytes());
-        md.getPathwayData().add(pd);
-        
-        // test if internal pack/unpach, if any, works well
-        assertTrue(Arrays.equals(testData, pathwayData.getData()));
-        assertTrue(Arrays.equals(testData, pathwayData.getNormalizedData()));
-        
+        final Content pd = new Content(md, "test1");
+        md.getContent().add(pd);
+               
         // persist
         meta.saveMetadata(md);
         
         // test pathwaydata content is not accidentally erased
-        Iterator<PathwayData> it = md.getPathwayData().iterator();
-        pathwayData = it.next();
+        Iterator<Content> it = md.getContent().iterator();
+        content = it.next();
         //we want test0 for following assertions
-        if("test1".equals(pathwayData.getFilename()))
-        	pathwayData = it.next();
-        assertEquals("test0",pathwayData.getFilename());    
-        assertNotNull(pathwayData.getData()); // data is still there
-        byte[] read = pathwayData.getNormalizedData();
-        assertNotNull(read);
-        assertTrue(Arrays.equals(testData, read)); 
+        if("test1".equals(content.getFilename()))
+        	content = it.next();
+        assertEquals("test0",content.getFilename());    
         
         //even if we update from the db, data must not be empty
         md = meta.getMetadataByIdentifier(md.getIdentifier());
         assertNotNull(md);
         assertEquals("TEST", md.getIdentifier());
-        assertEquals(2, md.getPathwayData().size()); 
-        it = md.getPathwayData().iterator();
-        pathwayData = it.next();
+        assertEquals(2, md.getContent().size()); 
+        it = md.getContent().iterator();
+        content = it.next();
         //we want test0 for following assertions
-        if("test1".equals(pathwayData.getFilename()))
-        	pathwayData =it.next();
-        assertEquals("test0",pathwayData.getFilename());
-        //data (persisted to file system) survives re-assigning of 'md' variable
-        assertNotNull(pathwayData.getData()); 
-        //preperge data persisted in the file system
-        read = pathwayData.getNormalizedData();        
-        assertNotNull(read);
-        assertTrue(Arrays.equals(testData, read));        
+        if("test1".equals(content.getFilename()))
+        	content =it.next();
+        assertEquals("test0",content.getFilename());      
 
         // add validation result());  
-        for(PathwayData o : md.getPathwayData())
-        	o.setValidationReport(new Validation(null));        
+        for(Content o : md.getContent())
+        	o.saveValidationReport(new Validation(null));        
         // update
         meta.saveMetadata(md);
          
         //read the latest state
         md = meta.getMetadataByIdentifier("TEST");
         assertNotNull(md);
-        Set<PathwayData>  lpd = md.getPathwayData();
+        Set<Content>  lpd = md.getContent();
         assertFalse(lpd.isEmpty());
-        pathwayData = lpd.iterator().next();
-        assertNotNull(pathwayData);
-        assertNotNull(pathwayData.getValidationReport()); //reads from file if needed
-        assertTrue(pathwayData.getValidationReport().length > 0);    
+        content = lpd.iterator().next();
+        assertNotNull(content);  
         
         //cleanup
         md = meta.init(md);
-        assertTrue(md.getPathwayData().isEmpty()); 
+        assertTrue(md.getContent().isEmpty()); 
         md = meta.getMetadataByIdentifier("TEST");
-        assertTrue(md.getPathwayData().isEmpty());         
+        assertTrue(md.getContent().isEmpty());         
 	}
 
 	

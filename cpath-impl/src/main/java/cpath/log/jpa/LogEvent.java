@@ -129,8 +129,8 @@ public class LogEvent {
 		
 		// extract the orig. data source's standard name -
 		// first, remove common prefix (incl. cPath2 instance name and ver.)
-		if(filename.startsWith(CPathSettings.exportArchivePrefix())) {
-			int idx = CPathSettings.exportArchivePrefix().length();
+		if(filename.startsWith(CPathSettings.getInstance().exportArchivePrefix())) {
+			int idx = CPathSettings.getInstance().exportArchivePrefix().length();
 			String s = filename.substring(idx);
 			String[] parts = s.split("\\.");
 			assert parts.length > 1 : "split by '.' failed to produce " +

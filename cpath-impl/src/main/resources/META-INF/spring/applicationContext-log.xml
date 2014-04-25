@@ -5,9 +5,9 @@
 	xmlns:util="http://www.springframework.org/schema/util" xmlns:jdbc="http://www.springframework.org/schema/jdbc"
 	xmlns:jpa="http://www.springframework.org/schema/data/jpa"
 	xsi:schemaLocation="
-       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
-       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.1.xsd
-       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.1.xsd
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+       http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+       http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd
        http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
        http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
        http://www.springframework.org/schema/data/jpa http://www.springframework.org/schema/data/jpa/spring-jpa.xsd">
@@ -26,22 +26,37 @@
 		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
 		<property name="dataSource" ref="dataSource" />
 		<property name="packagesToScan" value="cpath.log.jpa" />
-		<property name="jpaVendorAdapter">
-			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
-				<property name="database" value="H2" />
-				<property name="generateDdl" value="true" />
-			</bean>
-		</property>
+		<property name="jpaVendorAdapter" ref="hibernateJpaVendorAdapter" />
 	</bean>
 
-	<bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool" destroy-method="dispose">
-		<constructor-arg>
+	<beans profile="prod">
+		<bean id="hibernateJpaVendorAdapter"
+			class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+			<property name="database" value="H2" />
+<!-- 				<property name="generateDdl" value="true" /> --> <!-- will use the system property hibernate.hbm2ddl.auto=update instead -->
+		</bean>
+
+		<bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool" destroy-method="dispose">
+		  <constructor-arg>
 			<bean class="org.h2.jdbcx.JdbcDataSource">
 				<property name="URL" value="${cpath2.db.connection}${cpath2.db}" />
 				<property name="user" value="${cpath2.db.user}" />
 				<property name="password" value="${cpath2.db.password}" />
 			</bean>
-		</constructor-arg>
+		  </constructor-arg>
 	</bean>
 
+	</beans>
+
+	<beans profile="dev">
+		<bean id="hibernateJpaVendorAdapter"
+			class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+			<property name="database" value="H2" />
+			<property name="generateDdl" value="true" />
+		</bean>
+
+		<jdbc:embedded-database id="dataSource" type="H2" />
+
+	</beans>
+	
 </beans>

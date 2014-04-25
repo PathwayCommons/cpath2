@@ -30,11 +30,12 @@ package cpath.cleaner.internal;
 import static org.junit.Assert.*;
 
 import java.io.*;
-import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipInputStream;
 
 import org.junit.Ignore;
 import org.junit.Test;
 
+import cpath.dao.CPathUtils;
 import cpath.importer.Cleaner;
 
 /**
@@ -58,48 +59,32 @@ public class UniProtCleanerImplTest {
 	 */
 	@Test
 	public void testCleaner() throws IOException {
-
         // read data from file and look for accessions before being cleaned
-        String uniProtData = readFileAsString("/test_uniprot_data.dat.gz");
-        assertTrue(uniProtData.indexOf(CALR3_HUMAN_BEFORE) != -1);
-        assertTrue(uniProtData.indexOf(CALRL_HUMAN_BEFORE) != -1);
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+		CPathUtils.unzip(new ZipInputStream(CPathUtils.LOADER
+				.getResource("/test_uniprot_data.dat.zip").getInputStream()), os);
+        byte[] bytes = os.toByteArray();
+        String data = new String(bytes);
+        assertTrue(data.indexOf(CALR3_HUMAN_BEFORE) != -1);
+        assertTrue(data.indexOf(CALRL_HUMAN_BEFORE) != -1);
 
 		Cleaner cleaner = new UniProtCleanerImpl();
-		String cleanedUniProtData = cleaner.clean(uniProtData);
-
-        assertTrue(cleanedUniProtData.indexOf(CALR3_HUMAN_AFTER) != -1);
-        assertTrue(cleanedUniProtData.indexOf(CALRL_HUMAN_AFTER) != -1);
+		os.reset();
+		cleaner.clean(new ByteArrayInputStream(bytes), os);
+		bytes = os.toByteArray();
 		
+		data = new String(bytes);
+        assertTrue(data.indexOf(CALR3_HUMAN_AFTER) != -1);
+        assertTrue(data.indexOf(CALRL_HUMAN_AFTER) != -1);
+		
+        //TODO add assertions (now it only tests for apparent failures)
+        
 		// dump owl for review
 		String outFilename = getClass().getClassLoader().getResource("").getPath() 
 			+ File.separator + "testCleanUniProt.out.dat";
         Writer out = new OutputStreamWriter(new FileOutputStream(outFilename));
-        out.write(cleanedUniProtData);
+        out.write(data);
         out.close();
 	}
-
-    /**
-     * Given file (gzip), converts to string.
-     *
-     * @param file String
-     * @return String
-     */
-    private String readFileAsString(String file) throws IOException {
-
-		InputStream is = getClass().getResourceAsStream(file);
-		GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(is));
-
-        StringBuilder fileData = new StringBuilder();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(zis, "UTF-8"));
-        char[] buf = new char[1024];
-        int numRead=0;
-        while ((numRead=reader.read(buf)) != -1) {
-            String readData = String.valueOf(buf, 0, numRead);
-            fileData.append(readData);
-            buf = new char[1024];
-        }
-        reader.close();
-        return fileData.toString();
-    }
 
 }

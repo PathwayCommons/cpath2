@@ -1,19 +1,24 @@
 package cpath.importer;
 
-// imports
+import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
- * Cleaners clean original biopax or psimi:
- * - remove or replace short labels
- * - update refTypeValues
+ * Cleaner interface.
+ * 
+ * Can be implemented and used for a particular
+ * biological data source, when some filtering 
+ * and fixing are required, not waiting for the next
+ * provider's official data release.
+ *
  */
 public interface Cleaner {
 
 	/**
-	 * Cleans the given pathway data.
+	 * To clean, filter, fix the data.
 	 *
-	 * @param pathwayData String
-	 * @return String
+	 * @param data
+	 * @param cleanedData - result; the stream must be closed inside this method.
 	 */
-	String clean(final String pathwayData);
+	void clean(InputStream data, OutputStream cleanedData);
 }

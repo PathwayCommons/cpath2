@@ -108,7 +108,7 @@ final class SearchHitsTransformer implements ResultTransformer {
 		if(doc.getFieldable(FIELD_DATASOURCE) != null) {
 			Set<String> uniqueVals = new TreeSet<String>();
 			for(String d : doc.getValues(FIELD_DATASOURCE)) {
-				if(d.startsWith(CPathSettings.xmlBase())) { 
+				if(d.startsWith(CPathSettings.getInstance().getXmlBase())) { 
 					uniqueVals.add(d);
 				}
 			}
@@ -146,6 +146,15 @@ final class SearchHitsTransformer implements ResultTransformer {
 			if(!frags.isEmpty())
 				hit.setExcerpt(frags.toString());
 		}
+		
+		
+		if(CPathSettings.getInstance().isDebugEnabled() && tuple.length==4) {
+			String excerpt = hit.getExcerpt();
+			if(excerpt == null) excerpt = "";
+			hit.setExcerpt(excerpt + " -SCORE- " + tuple[2] 
+					+ " -EXPLANATION- " + tuple[3]);
+		}
+		
 		
 		return hit;
 	}

@@ -10,8 +10,7 @@ public interface Merger {
 	
 	/**
 	 * Starts the standard cpath2 merge process
-	 * (merge all the data configured and pre-merged)
-	 * 
+	 * (merge all the data configured and pre-merged) 
 	 */
 	void merge();
 	

@@ -1,12 +1,13 @@
 
 
 import cpath.config.CPathSettings;
+import cpath.converter.internal.ChebiOntologyAnalysis;
 import cpath.dao.Analysis;
+import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Premerger;
-import cpath.importer.internal.Merge;
-import cpath.importer.internal.MergerImpl;
+import cpath.importer.internal.MergerAnalysis;
 import cpath.importer.internal.PremergeImpl;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
@@ -35,17 +36,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.awt.image.BufferedImage;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-
-import javax.imageio.ImageIO;
+import java.util.zip.ZipInputStream;
 
 
 /**
@@ -53,12 +53,13 @@ import javax.imageio.ImageIO;
  */
 //@Ignore
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"classpath:testContext-2.xml"})
+@ContextConfiguration(locations={"classpath:META-INF/spring/applicationContext-dao.xml"})
+@ActiveProfiles("dev")
 public class DataImportAndServiceIntegrationTest {
 	static Logger log = LoggerFactory.getLogger(DataImportAndServiceIntegrationTest.class);
 	
 	static final ResourceLoader resourceLoader = new DefaultResourceLoader();	
-	static final String XML_BASE = CPathSettings.xmlBase();
+	static final String XML_BASE = CPathSettings.getInstance().getXmlBase();
 	
 	@Autowired
 	CPathService service;
@@ -72,17 +73,32 @@ public class DataImportAndServiceIntegrationTest {
 	
 	@Test
 	@DirtiesContext
-	public void testPremergeAndMerge() throws IOException {
-		
+	public void testPremergeAndMerge() throws IOException {		
 		//prepare the metadata
         // load the test metadata and create warehouse
 		Premerger premerger = new PremergeImpl(metadataDAO, paxtoolsDAO, null, null);
-		metadataDAO.addOrUpdateMetadata("classpath:metadata.conf");			
-		premerger.buildWarehouse();
-		premerger.updateIdMapping(false);
-		// now metadata contains id-mapping tables, and paxtoolsDAO - warehouse data
-		paxtoolsDAO.index();
+		metadataDAO.addOrUpdateMetadata("classpath:metadata.conf");	
+		Metadata ds = metadataDAO.getMetadataByIdentifier("TEST_UNIPROT");
+		assertNotNull(ds);
+		ds = metadataDAO.getMetadataByIdentifier("TEST_CHEBI");
+		assertNotNull(ds);				
+		
+		premerger.premerge();
+		premerger.buildWarehouse();//runs after the premerge
 				
+		//import ChEBI OBO (run ChebiOntologyAnalysis run)!
+		
+		//TODO use new ChebiOboConverterImpl (or future ChEBI OWL conv.) instead of the SDF and this one; update test data and assertions!
+		
+		ChebiOntologyAnalysis chebiOboAnalysis = new ChebiOntologyAnalysis();
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		CPathUtils.unzip(new ZipInputStream(CPathUtils.LOADER
+				.getResource("classpath:chebi.obo.zip").getInputStream()), bos);
+		chebiOboAnalysis.setInputStream(new ByteArrayInputStream(bos.toByteArray()));
+		paxtoolsDAO.run(chebiOboAnalysis);
+		
+		//Some assertions about the initial biopax warehouse model (before the merger is run)
+		
 		assertFalse(((Model)paxtoolsDAO).getObjects(ProteinReference.class).isEmpty());
 		assertTrue(((Model)paxtoolsDAO).containsID("http://identifiers.org/uniprot/P62158"));
 		assertFalse(((Model)paxtoolsDAO).getObjects(SmallMoleculeReference.class).isEmpty());
@@ -109,7 +125,12 @@ public class DataImportAndServiceIntegrationTest {
 		assertFalse(metadataDAO.mapIdentifier("Q8TD86-1", Mapping.Type.UNIPROT, "uniprot isoform").isEmpty());
 		assertEquals("Q8TD86", metadataDAO.mapIdentifier("Q8TD86-1", Mapping.Type.UNIPROT, "uniprot isoform").iterator().next());			
 				
-		// Test full-text search		
+		// Test full-text search	
+		
+		// reindex all
+//		CPathUtils.cleanupDirectory(new File(CPathSettings.getInstance().tmpDir() + File.separator + "test.idx"));
+		paxtoolsDAO.index();
+		
 		// search with a secondary (RefSeq) accession number
 		SearchResponse resp =  paxtoolsDAO.search("NP_619650", 0, RelationshipXref.class, null, null);
 		Collection<SearchHit> prs = resp.getSearchHit();
@@ -138,37 +159,19 @@ public class DataImportAndServiceIntegrationTest {
 		assertEquals("Q8TD86", ac);
 		assertTrue(((Model)paxtoolsDAO).containsID("http://identifiers.org/uniprot/" + ac));
 			
-		Metadata ds = metadataDAO.getMetadataByIdentifier("TEST_BIOPAX");
-		assertNotNull(ds);
-				
-		// test icon/image I/O
-		byte[] icon = ds.getIcon();
-		assertNotNull(icon);
-		assertTrue(icon.length >0);				
-		BufferedImage bImageFromConvert = ImageIO.read(new ByteArrayInputStream(icon));
-		ImageIO.write(bImageFromConvert, "gif", 
-			new File(getClass().getClassLoader().getResource("").getPath() 
-				+ File.separator + "out.gif"));		
-		
-		
-		// MERGE
+		// **** MERGE ***
 		
 		//Load test models from files
-		final List<Model> pathwayModels = initPathwayModels();	
-		// note: in production, we'd simply run it as ImportFactory.newMerger(paxtoolsDAO,...).merge();
-		// but here, due to a different way of how we initialized input models, we have to bypass that single call
-		// and replace it with the following:
-		//#BEGIN merge all models amd persist
-		Model model = MergerImpl.load(paxtoolsDAO); //load warehouse (initial) model
-		model.setXmlBase(XML_BASE);
+		final List<Model> pathwayModels = initPathwayModels();
+		
+		// note: in production we'd run it as ImportFactory.newMerger(paxtoolsDAO,...).merge();
+		// cpath2 metadata contains the warehouse and id-mapping tables
 		int i = 0;
 		for(Model m : pathwayModels) {
-			Merge merger = new Merge("model #" + i++, 
-				m, metadataDAO, XML_BASE);
-			merger.execute(model); //merge into the 'model'
+			Analysis merger = new MergerAnalysis("model #" + i++, 
+				m, metadataDAO, ((Model)paxtoolsDAO).getXmlBase());
+			paxtoolsDAO.run(merger);
 		}
-		paxtoolsDAO.merge(model); //persist
-		//#END
 		
 		//check first whether it's ok after export/import as owl?
 		final String outf = getClass().getClassLoader().getResource("").getPath() 
@@ -199,7 +202,7 @@ public class DataImportAndServiceIntegrationTest {
 		assertEquals(4, m.getObjects(Provenance.class).size());
 		//additional metadata entry
 		Metadata md = new Metadata("test", "Reactome", "Foo", "", "", 
-				new byte[]{}, METADATA_TYPE.BIOPAX, "", "", null, "free");		
+				"", METADATA_TYPE.BIOPAX, "", "", null, "free");		
 		metadataDAO.saveMetadata(md);	
 		// normally, setProvenanceFor gets called during Premerge stage
 		md.setProvenanceFor(m); 
@@ -237,9 +240,9 @@ public class DataImportAndServiceIntegrationTest {
 		assertFalse(((DataResponse)res).getProviders().isEmpty());
 
 		log.info(data);
-		assertTrue(data.contains("REACTS_WITH"));
-		assertTrue(data.contains("GENERIC_OF"));
-		assertTrue(data.contains("http://identifiers.org/uniprot/P27797"));
+		assertTrue(data.contains("reacts-with"));
+		assertTrue(data.contains("used-to-produce"));
+		assertTrue(data.contains("CALR"));
 		
 		// test search res. contains the list of data providers (standard names)
 		res = service.search("*", 0, PhysicalEntity.class, null, null);
@@ -280,6 +283,7 @@ public class DataImportAndServiceIntegrationTest {
 		assertNotNull(smr);
 		assertEquals("http://identifiers.org/chebi/CHEBI:422", smr.getRDFId());
 		// smr must contain one member SMR
+		// but only if ChEBI OBO was also imported (ChebiOntologyAnalysis run)!
 		assertEquals(1, smr.getMemberEntityReference().size());
 //		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
 		assertEquals(3, smr.getXref().size());		
@@ -370,33 +374,33 @@ public class DataImportAndServiceIntegrationTest {
 		Model model;
 
 		model = reader.convertFromOWL(resourceLoader
-			.getResource("classpath:pathwaydata1.owl").getInputStream());
+			.getResource("classpath:merge/pathwaydata1.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model);
 		
 		model = null;
 		model = reader.convertFromOWL(resourceLoader
-			.getResource("classpath:pathwaydata2.owl").getInputStream());
+			.getResource("classpath:merge/pathwaydata2.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model);
 		model = null;
 		model = reader.convertFromOWL(resourceLoader
-			.getResource("classpath:pid_60446.owl").getInputStream());
+			.getResource("classpath:merge/pid_60446.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model); //PR P22932 caused the trouble
 		model = null;
 		model = reader.convertFromOWL(resourceLoader
-			.getResource("classpath:pid_6349.owl").getInputStream());
+			.getResource("classpath:merge/pid_6349.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model); //Xref for P01118 caused the trouble
 		model = null;
 		model = reader.convertFromOWL(resourceLoader
-			.getResource("classpath:hcyc.owl").getInputStream());
+			.getResource("classpath:merge/hcyc.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model);
 		model = null;
 		model = reader.convertFromOWL(resourceLoader
-			.getResource("classpath:hcyc2.owl").getInputStream());
+			.getResource("classpath:merge/hcyc2.owl").getInputStream());
 //		normalizer.normalize(model);
 		pathwayModels.add(model);	
 		

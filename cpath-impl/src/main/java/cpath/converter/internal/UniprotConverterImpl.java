@@ -1,5 +1,6 @@
 package cpath.converter.internal;
 
+import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.BioSource;
@@ -39,8 +40,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 	UniprotConverterImpl() {}
 
 
-	@Override
-	public Model convert() {
+	public void convert(InputStream is, OutputStream os) {
 		// ref to reader here so
 		// we can close in finally clause
         InputStreamReader reader= null;
@@ -48,7 +48,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
         model.setXmlBase(xmlBase);
         
         try {
-            reader = new InputStreamReader(inputStream, "UTF-8");
+            reader = new InputStreamReader(is, "UTF-8");
             BufferedReader bufferedReader = new BufferedReader(reader);
             String line = bufferedReader.readLine();
             final HashMap<String, StringBuilder> dataElements = new HashMap<String, StringBuilder>();
@@ -155,7 +155,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
             }
         }
 		catch(IOException e) {
-			log.error("convert: failed", e);
+			throw new RuntimeException("Failed to convert UniProt data to BioPAX", e);
 		}
 		finally {
 			log.debug("convert(), closing reader.");
@@ -169,9 +169,11 @@ final class UniprotConverterImpl extends BaseConverterImpl {
             }
         }       
 
-        log.info("convert(), exiting.");
+        log.info("convert(), repairing.");
         model.repair();
-        return model;
+        
+        log.info("convert(), writing.");
+        new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model, os);
     }
 
 	

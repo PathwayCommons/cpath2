@@ -5,14 +5,27 @@
 	id="cPathSquaredWs" version="2.5">
 	<display-name>cPath^2 Webservices</display-name>
 
+	<listener>
+		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	</listener>
+	
+	<listener>
+		<listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
+	</listener>		
+	
 	<context-param>
 		<param-name>webAppRootKey</param-name>
 		<param-value>cpath2.root</param-value>
 	</context-param>
 
-	<listener>
-		<listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
-	</listener>
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>
+			classpath:META-INF/spring/applicationContext-dao.xml
+			classpath:META-INF/spring/applicationContext-log.xml
+			classpath:security-config.xml
+		</param-value>
+	</context-param>
 
 	<!-- Reads request input using UTF-8 encoding -->
 	<filter>
@@ -27,31 +40,16 @@
 			<param-value>true</param-value>
 		</init-param>
 	</filter>
-
-	<filter-mapping>
-		<filter-name>characterEncodingFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-
-
-	<context-param>
-		<param-name>contextConfigLocation</param-name>
-		<param-value>
-			classpath:META-INF/spring/applicationContext-dao.xml
-			classpath:META-INF/spring/applicationContext-log.xml
-			classpath:META-INF/spring/applicationContext-service.xml
-			classpath:security-config.xml
-		</param-value>
-	</context-param>
-
+	
 	<filter>
 		<filter-name>springSecurityFilterChain</filter-name>
 		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
 	</filter>
 
-	<listener>
-		<listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
-	</listener>
+	<filter-mapping>
+		<filter-name>characterEncodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
 
 	<filter-mapping>
 		<filter-name>springSecurityFilterChain</filter-name>
@@ -67,29 +65,6 @@
 <!--     	<filter-name>TeeFilter</filter-name> -->
 <!--     	<url-pattern>/*</url-pattern> -->
 <!-- 	</filter-mapping> -->
-
-	<servlet>
-		<servlet-name>cpath2json</servlet-name>
-		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-		<load-on-startup>2</load-on-startup>
-	</servlet>
-
-	<servlet-mapping>
-		<servlet-name>cpath2json</servlet-name>
-		<url-pattern>*.json</url-pattern>
-	</servlet-mapping>
-
-	<servlet>
-		<servlet-name>cpath2html</servlet-name>
-		<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-		<load-on-startup>3</load-on-startup>
-	</servlet>
-
-	<servlet-mapping>
-		<servlet-name>cpath2html</servlet-name>
-		<url-pattern>*.html</url-pattern>
-		<url-pattern>/robots.txt</url-pattern>
-	</servlet-mapping>
 
 	<servlet>
 		<servlet-name>cpath2</servlet-name>

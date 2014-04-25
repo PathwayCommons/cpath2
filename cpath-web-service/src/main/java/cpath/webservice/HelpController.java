@@ -28,6 +28,13 @@
 package cpath.webservice;
 
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Writer;
+
+import javax.servlet.http.HttpServletResponse;
+
 import cpath.service.jaxb.*;
 //import cpath.service.CPathService;
 import cpath.service.Cmd;
@@ -43,6 +50,7 @@ import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.query.algorithm.Direction;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.*;
@@ -101,6 +109,31 @@ public class HelpController extends BasicController {
     	return help;
     }
 
+    
+    /**
+     * Prints the XML schema.
+     * 
+     * @param writer
+     * @throws IOException
+     */
+    @RequestMapping("/help/schema")
+    public void getSchema(Writer writer, HttpServletResponse response) 
+    		throws IOException 
+    {
+    	BufferedReader bis = new BufferedReader(new InputStreamReader(
+    		(new DefaultResourceLoader())
+    			.getResource("classpath:cpath/service/schema1.xsd")
+    				.getInputStream(), "UTF-8"));
+    	
+    	response.setContentType("application/xml");
+    	
+    	final String newLine = System.getProperty("line.separator");
+    	String line = null;
+    	while((line = bis.readLine()) != null) {
+    		writer.write(line + newLine);
+    	}
+    }    
+    
     
     @RequestMapping("/help/commands")
     public @ResponseBody Help getCommands() {

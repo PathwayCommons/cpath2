@@ -3,7 +3,12 @@
 import static org.junit.Assert.*;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -14,7 +19,7 @@ import org.junit.*;
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
 import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.PathwayData;
+import cpath.warehouse.beans.Content;
 import cpath.warehouse.beans.Metadata.METADATA_TYPE;
 
 
@@ -23,12 +28,47 @@ public class CPathUtilsTest {
 	static Model model;
 	static SimpleIOHandler exporter;
 	static int count = 0;
+	static final CPathSettings cpath = CPathSettings.getInstance();
 	
 	static {
 		exporter = new SimpleIOHandler(BioPAXLevel.L3);
 		// extend Model for the converter calling 'merge' method to work
 		model = BioPAXLevel.L3.getDefaultFactory().createModel();
-		model.setXmlBase(CPathSettings.xmlBase());
+		model.setXmlBase(cpath.getXmlBase());
+	}
+	
+	
+	@Test
+	public void testCopyWithGzip() throws IOException {
+		String outFilename = getClass().getClassLoader().getResource("").getPath() 
+				+ File.separator + "testCopyWithGzip.gz";
+		byte[] testData = "<rdf>          </rdf>".getBytes(); 
+		ByteArrayInputStream is = new ByteArrayInputStream(testData);
+		OutputStream gzip = new GZIPOutputStream(new FileOutputStream(outFilename));
+		CPathUtils.copy(is, gzip);
+		is.close();
+		gzip.close();
+		ByteArrayOutputStream os = new ByteArrayOutputStream();	
+		CPathUtils.copy(new GZIPInputStream(new FileInputStream(outFilename)), os);		
+        byte[] read = os.toByteArray();
+        assertNotNull(read);
+        assertTrue(Arrays.equals(testData, read)); 	
+	}
+	
+	
+	@Test
+	public void testCopy() throws IOException {
+		String outFilename = getClass().getClassLoader().getResource("").getPath() 
+				+ File.separator + "testCopy.txt";
+		byte[] testData = "<rdf>          </rdf>".getBytes(); 
+		ByteArrayInputStream is = new ByteArrayInputStream(testData);
+		CPathUtils.copy(is, new FileOutputStream(outFilename));	
+		is.close();		
+		ByteArrayOutputStream os = new ByteArrayOutputStream();	
+		CPathUtils.copy(new FileInputStream(outFilename), os);		
+        byte[] read = os.toByteArray();
+        assertNotNull(read);
+        assertTrue(Arrays.equals(testData, read)); 	
 	}
 
 	
@@ -37,7 +77,7 @@ public class CPathUtilsTest {
 		String url = "classpath:metadata.conf";
 		System.out.println("Loading metadata from " + url);
 		Collection<Metadata> metadatas = CPathUtils.readMetadata(url);
-		assertEquals(8, metadatas.size());
+		assertEquals(2, metadatas.size());
 		Metadata metadata = null;
 		for(Metadata mt : metadatas) {
 			if(mt.getIdentifier().equals("TEST_UNIPROT")) {
@@ -51,14 +91,15 @@ public class CPathUtilsTest {
 
 
 	@Test
-	public void testReadPathwayData() throws IOException {
-		String location = "classpath:test2.owl";
+	public void testReadContent() throws IOException {
+		String location = "classpath:test2.owl.zip";	
 		// in case there's no "metadata page" prepared -
-		Metadata metadata = new Metadata(
-				"TEST", "Test", 
-				"N/A", location,  
+		Metadata metadata = new Metadata("TEST", 
+				"Test;testReadContent", 
+				"N/A", 
+				location,  
 				"",
-				new byte[]{}, 
+				"", 
 				Metadata.METADATA_TYPE.BIOPAX, 
 				null, // no cleaner (same as using "")
 				"", // no converter
@@ -67,17 +108,15 @@ public class CPathUtilsTest {
 				);
 		
 		metadata.cleanupOutputDir();
+		assertTrue(metadata.getContent().isEmpty());		
+		CPathUtils.analyzeAndOrganizeContent(metadata);
 		
-		assertTrue(metadata.getPathwayData().isEmpty());
-		CPathUtils.readPathwayData(metadata);
-		assertFalse(metadata.getPathwayData().isEmpty());
-		PathwayData pd = metadata.getPathwayData().iterator().next();
-		String owl = new String(pd.getData());
-		assertTrue(owl != null && owl.length() > 0);
-		assertTrue(owl.contains("<bp:Protein"));
+		assertFalse(metadata.getContent().isEmpty());
+		Content pd = metadata.getContent().iterator().next();
 		SimpleIOHandler reader = new SimpleIOHandler(BioPAXLevel.L3);
 		reader.mergeDuplicates(true);
-		Model m = reader.convertFromOWL(new ByteArrayInputStream(owl.getBytes("UTF-8")));
+		InputStream is = new GZIPInputStream(new FileInputStream(pd.originalFile()));
+		Model m = reader.convertFromOWL(is);
 		assertFalse(m.getObjects().isEmpty());
 	}
 	
@@ -94,30 +133,10 @@ public class CPathUtilsTest {
 	
 	
 	@Test
-	public void testDownload() throws IOException {
-		
-		final String relPathAndName = "data" + File.separator + 
-				"TEST" + File.separator + "test-download";
-		
-		long length = CPathUtils.download("classpath:test_uniprot_data.dat.gz", 
-				relPathAndName, false, true);
-		assertTrue(length > 0);
-		
-		length = CPathUtils.download("classpath:test_uniprot_data.dat.gz", 
-				relPathAndName, false, false); //don't replace
-		assertTrue(length == 0);
-		
-		length = CPathUtils.download("classpath:test_uniprot_data.dat.gz", 
-				relPathAndName, true, true);
-		assertTrue(length > 0);
-
-		length = CPathUtils.download("classpath:test_uniprot_data.dat.gz", 
-				relPathAndName, true, false);
-		assertTrue(length == 0);
-		
-		File f = new File(CPathSettings.homeDir() + File.separator + relPathAndName);
-		assertTrue(f.exists());
-		
-		f.deleteOnExit();
+	public void testPatternForChebiOboXrefLines() {
+		Pattern p = Pattern.compile(".+?:(.+?)\\s+\"(.+?)\"");
+		Matcher m = p.matcher("NIST Chemistry WebBook:22325-47-9 \"CAS Registry Number\"");
+		assertTrue(m.find());		
+		System.out.println("ID="+m.group(1)+"; DB="+m.group(2));		
 	}
 }

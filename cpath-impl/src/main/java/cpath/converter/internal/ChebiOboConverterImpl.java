@@ -1,266 +1,251 @@
 package cpath.converter.internal;
 
 import java.io.*;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.biopax.paxtools.io.SimpleIOHandler;
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.model.level3.ChemicalStructure;
+import org.biopax.paxtools.model.level3.RelationshipXref;
+import org.biopax.paxtools.model.level3.SmallMoleculeReference;
+import org.biopax.paxtools.model.level3.StructureFormatType;
+import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.validator.utils.Normalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cpath.dao.Analysis;
+import cpath.dao.CPathUtils;
 
 
 /**
- * Implementation of Converter interface 
- * for ChEBI ontology (OBO) data.
- * 
- * This goes after ChEBI SDF data has been already processed.
- * 
- * It uses ChEBI OBO ontology to set memberEntityReference 
- * properties (to represent ChEBI warehouse hierarchy in BioPAX)
+ * Implementation of Converter interface for ChEBI OBO data.
+ * This converter creates SMRs, xrefs, etc., and also 
+ * sets memberEntityReference relationships  
+ * among the compounds and classes.
  */
-class ChebiOboConverterImpl extends BaseConverterImpl implements Analysis
-{
+class ChebiOboConverterImpl extends BaseConverterImpl
+{	
+	private static Logger log = LoggerFactory.getLogger(ChebiOboConverterImpl.class);
 	
-	//use java option -Dcpath.converter.sdf.skip to process OBO only
-	public static final String JAVA_OPT_SKIP_SDF = "cpath.converter.sdf.skip";
+	private final String _IDENTIFIERS_ORG = "http://identifiers.org/";
+	private final String _ENTRY_START = "[Term]";
+	private final String _ID = "id: ";
+	private final String _ALT_ID = "alt_id: ";
+	private final String _XREF = "xref: ";
+	private final String _NAME = "name: ";
+	private final String _DEF = "def: ";
+	private final String _SYNONYM = "synonym: ";
 	
-	private static final String CHEBI_OBO_ENTRY_START = "[Term]";
+	//to extract a text value between quotation marks from 'def:' and 'synonym:' lines:
+	private final Pattern namePattern = Pattern.compile("\"(.+?)\"");
+	//to extract ID, DB values from 'xref:' lines:
+	private final Pattern xrefPattern = Pattern.compile(".+?:(.+?)\\s+\"(.+?)\"");
 	
-	// some statics to identify names methods
-	protected static final String DISPLAY_NAME = "DISPLAY_NAME";
-	protected static final String STANDARD_NAME = "STANDARD_NAME";
-	protected static final String ADDITIONAL_NAME = "ADDITIONAL_NAME";
-
-	// some statics to identify secondary id delimiters
-	protected static final String COLON_DELIMITER = ":";
-	protected static final String EQUALS_DELIMITER = "=";	
-	
-    private static Logger log = LoggerFactory.getLogger(ChebiOboConverterImpl.class);
-	  
-	private final Pattern CHEBI_OBO_ID_REGEX = Pattern.compile("^id: CHEBI:(\\w+)$");
-	private final Pattern CHEBI_OBO_ISA_REGEX = Pattern.compile("^is_a: CHEBI:(\\w+)$");
-	private final Pattern CHEBI_OBO_RELATIONSHIP_REGEX = Pattern.compile("^relationship: (\\w+) CHEBI:(\\w+)$");
-	private final String REGEX_GROUP_DELIMITER = ":";
-	
-	
-	/**
-	 * This method is intentionally not implemented.
-	 * This Converter class does not add new objects to
-	 * the Warehouse model, but does modify it. 
-	 * Instead calling this method, cPath2 uses 
-	 * {@link #execute(Model)} interface, i.e., 
-	 * calls via PaxtoolsDAO.run(analysis). 
-	 */
-	@Override
-	public Model convert() {				
-		throw new UnsupportedOperationException();
-	}
-	
-
-	/**
-	 * Sets the structure.
-	 *
-	 * @param structure String
-	 * @param structureFormat
-	 * @param chemicalStructureID String
-	 * @param smallMoleculeReference SmallMoleculeReference
-	 * @param model biopax warehouse model
-	 */
-	protected void setChemicalStructure(String structure, StructureFormatType structureFormat, 
-			String chemicalStructureID, SmallMoleculeReference  smallMoleculeReference, Model model) {
-
-		if (structure != null) {
-			if (log.isDebugEnabled()) {
-				log.debug("setStructure(), structure: " + structure);
-			}
-			// should only get one of these
-			ChemicalStructure chemStruct = model.addNew(ChemicalStructure.class, chemicalStructureID);
-			chemStruct.setStructureData(structure);
-			chemStruct.setStructureFormat(structureFormat);
-			smallMoleculeReference.setStructure(chemStruct);
-		}
-	}
-	
-	
-	/**
-	 * Given a ChEBI - OBO entry, creates proper member entity reference between
-	 * parent and child.
-	 * 
-	 * @param entryBuffer
-	 * @param model existing biopax Warehouse model
-	 * @throws IOException
-	 */
-	public void processOBOEntry(StringBuilder entryBuffer, Model model) throws IOException {
-		if (log.isDebugEnabled()) {
-			log.debug("calling processOBOEntry()");
-		}
-		// get SMR for entry out of Warehouse
-		Collection<String> childChebiIDs = getValuesByREGEX(entryBuffer, CHEBI_OBO_ID_REGEX);
-		if (childChebiIDs.size() != 1) {
-			log.warn("processOBOEntry(), got none or >1 id in: "
-				+ entryBuffer.toString());
-			return;
-		}
-		final String childID = childChebiIDs.iterator().next();
-		SmallMoleculeReference childSMR = (SmallMoleculeReference) model
-			.getByID("http://identifiers.org/chebi/CHEBI:" + childID);
-		if (childSMR == null) {
-			log.info("processOBOEntry(), Skipped (not found): " + childID);
-			return;
-		}
-
-		// for each parent ChEBI, create a member entity reference to child
-		Collection<String> parentChebiIDs = getValuesByREGEX(entryBuffer, CHEBI_OBO_ISA_REGEX);
-		for (String parentChebiID : parentChebiIDs) {
-			SmallMoleculeReference parentSMR = (SmallMoleculeReference) model
-				.getByID("http://identifiers.org/chebi/CHEBI:" + parentChebiID);
-			if (parentSMR == null) {
-				log.warn("processOBOEntry(), " + childID 
-					+ " IS_A " + parentChebiID + ", but "
-					+ " it's not found");
-				continue;
-			}
-			parentSMR.addMemberEntityReference(childSMR);
-		}
-
-		// we can also grab relationship (horizontal hierarchical info)
-		Collection<String> relationships = getValuesByREGEX(entryBuffer,
-				CHEBI_OBO_RELATIONSHIP_REGEX);
-		for (String relationship : relationships) {
-			String[] parts = relationship.split(REGEX_GROUP_DELIMITER);
-			RelationshipXref xref = getRelationshipXref(parts[0].toLowerCase(),
-					parts[1], model);
-			childSMR.addXref(xref);
-		}
-	}
-
-	/**
-	 * Given an OBO entry, returns the values matched by the given regex. If
-	 * regex contains more that one capture group, a ":" will be used to delimit
-	 * them.
-	 * 
-	 * @param entryBuffer
-	 * @param regex
-	 * @return
-	 * @throws IOException
-	 */
-	private Collection<String> getValuesByREGEX(StringBuilder entryBuffer,
-			Pattern regex) throws IOException {
-
-		Collection<String> toReturn = new ArrayList<String>();
-		BufferedReader reader = new BufferedReader (new StringReader(entryBuffer.toString()));
-
-		if (log.isDebugEnabled()) {
-			log.debug("getValue(), key: " + regex.toString());
-		}
-
-		String line = reader.readLine();
-		while (line != null) {
-			Matcher matcher = regex.matcher(line);
-			if (matcher.find()) {
-				String toAdd = "";
-				for (int lc = 1; lc <= matcher.groupCount(); lc++) {
-					toAdd += matcher.group(lc) + REGEX_GROUP_DELIMITER;
-				}
-				toReturn.add(toAdd.substring(0, toAdd.length() - 1));
-			}
-			line = reader.readLine();
-		}
-
-		return toReturn;
-	}
-
-
-	/**
-	 * Given a relationship from a ChEBI OBO file, 
-	 * returns a relationship xref.
-	 * 
-	 * @param relationshipType
-	 * @param chebiID
-	 * @param model warehouse biopax model
-	 */
-	private RelationshipXref getRelationshipXref(String relationshipType,
-			String chebiID, Model model) {
-
-		RelationshipXref toReturn = null;
-
-		// We use the relationship type in the URI of xref since there can be
-		// many to many relation types
-		// bet SM. For example CHEBI:X has_part CHEBI:Y and CHEBI:Z
-		// is_conjugate_acid_of CHEBI:Y
-		// we need distinct rxref to has_part CHEBI:Y and is_conjugate_acid_of
-		// CHEBI:Y
-		String xrefRdfID = Normalizer.uri(model.getXmlBase(), "CHEBI", "CHEBI:"
-				+ chebiID + relationshipType, RelationshipXref.class);
-
-		if (model.containsID(xrefRdfID)) {
-			return (RelationshipXref) model.getByID(xrefRdfID);
-		}
-
-		// made it here, need to create relationship xref
-		toReturn = model.addNew(RelationshipXref.class, xrefRdfID);
-		toReturn.setDb("CHEBI");
-		toReturn.setId("CHEBI:" + chebiID);
-
-		// set relationship type vocabulary on the relationship xref
-		String relTypeRdfID = Normalizer.uri(model.getXmlBase(), null,
-				relationshipType, RelationshipTypeVocabulary.class);
-
-		RelationshipTypeVocabulary rtv = (RelationshipTypeVocabulary) model
-				.getByID(relTypeRdfID);
-		if (rtv != null) {
-			toReturn.setRelationshipType(rtv);
-		} else {
-			rtv = model.addNew(RelationshipTypeVocabulary.class, relTypeRdfID);
-			rtv.addTerm(relationshipType);
-			toReturn.setRelationshipType(rtv);
-		}
-
-		return toReturn;
-	}
-
-
-	@Override
-	public void execute(Model model) {
-		log.info("convert(), starting to read data...");
-		
-		if(inputStream == null)
-			throw new IllegalArgumentException("The second parameter must be not null input stream");
-		
-		try {
-			BufferedReader reader = new BufferedReader(
-					new InputStreamReader(inputStream, "UTF-8"));			
-			
+	public void convert(InputStream is, OutputStream os) {		
+        Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
+        model.setXmlBase(xmlBase);
+        
+        try {
+        	//read&copy the input stream content to a tmp file 
+        	//(this will uncompress if zip stream and make it re-usable)
+        	File f = File.createTempFile("chebi", "obo");
+        	f.deleteOnExit();
+        	FileOutputStream fos = new FileOutputStream(f);
+        	CPathUtils.copy(is, fos);
+        	fos.close();
+        	
+        	//First pass.
+        	//Read each [TERM] data to create SMR with xrefs;
+        	//skipping terms w/o InChI (e.g., pharma categories, pills, etc. generics)
+        	BufferedReader reader = new BufferedReader(new FileReader(f));						
 			String line;
 			while ((line = reader.readLine()) != null) {
-				// start of entry
-				if (line.startsWith(CHEBI_OBO_ENTRY_START)) {
-					StringBuilder entryBuffer = new StringBuilder(line + "\n");
-					line = reader.readLine();
-					while (line != null) {
-						entryBuffer.append(line + "\n");
-						// keep reading until we reach last modified
-						if (line.isEmpty())
-							break;
-						line = reader.readLine();
-					}
-
-					processOBOEntry(entryBuffer, model);
+				
+				if (!line.startsWith(_ENTRY_START)) {
+					log.debug("Skip: " + line);
+					continue;
 				}
+
+				Map<String, String> chebiEntryMap = new HashMap<String, String>();
+				
+				while ((line = reader.readLine()) != null) {
+					if (line.isEmpty()) 
+						break;
+					// start of entry
+					if (line.startsWith(_ID)) {
+						chebiEntryMap.put(_ID, removePrefix(_ID, line));
+					}
+					else if (line.startsWith(_NAME)) {
+						chebiEntryMap.put(_NAME, removePrefix(_NAME, line));
+					} 
+					else if (line.startsWith(_DEF)) {
+						Matcher matcher = namePattern.matcher(line);
+						if(!matcher.find())
+							throw new IllegalStateException("Pattern failed to match a quoted comment in: " + line);
+						chebiEntryMap.put(_DEF, matcher.group(1));
+					} 
+					else if (line.startsWith(_ALT_ID)) {
+						updateMapEntry(chebiEntryMap, _ALT_ID, line);
+					} 
+					else if (line.startsWith(_SYNONYM)) {
+						updateMapEntry(chebiEntryMap, _SYNONYM, line);
+					}
+					else if (line.startsWith(_XREF)) {
+						updateMapEntry(chebiEntryMap, _XREF, line);
+					}
+				}
+				
+				buildSmallMoleculeReference(model, chebiEntryMap);				
 			}
 
-			if (reader != null)
-				reader.close();
-		} catch (IOException e) {
-			log.warn("is.close() failed." + e);
+			reader.close();
+			
+			//Second pass - to generate member relationships and rel. xrefs to other chebi classes
+			ChebiOntologyAnalysis analysis = new ChebiOntologyAnalysis();
+			analysis.setInputStream(new FileInputStream(f));
+			analysis.execute(model);
+			
+        }
+		catch (Exception e) {
+			throw new RuntimeException("Failed to convert ChEBI OBO to BioPAX", e);
+		}
+
+		new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model, os);		
+	}
+
+
+	private void updateMapEntry(Map<String, String> map, String key, String line) {
+		StringBuilder sb = new StringBuilder();
+		String val = map.get(key);
+		if(val != null)
+			sb.append(val).append('\t');
+		sb.append(removePrefix(key, line));
+		map.put(key, sb.toString());
+	}
+	
+
+	private void buildSmallMoleculeReference(Model model,
+			Map<String, String> chebiEntryMap) {
+		
+		//skip entries w/o InChIKey (e.g., top-level classes, pill/pharma terms)
+		if(chebiEntryMap.get(_SYNONYM) == null 
+				|| !chebiEntryMap.get(_SYNONYM).contains("InChIKey=")) 
+		{
+			log.debug("Skipped " + chebiEntryMap.get(_ID) + " - no InChIKey");
+			return;
+		}		
+		
+		//create new SMR and URI
+		String id = chebiEntryMap.get(_ID);
+		SmallMoleculeReference smr = model
+			.addNew(SmallMoleculeReference.class, _IDENTIFIERS_ORG+"chebi/"+id);
+		String xuri = Normalizer.uri(xmlBase, "CHEBI", id, UnificationXref.class);
+		UnificationXref x = model.addNew(UnificationXref.class, xuri);
+		x.setId(id);
+		x.setDb("ChEBI");
+		smr.addXref(x);
+		
+		// set displayName
+		smr.setDisplayName(chebiEntryMap.get(_NAME));
+
+		//comment
+		smr.addComment(chebiEntryMap.get(_DEF));
+ 
+		//add unification xrefs using alt_id (if any present)
+		if(chebiEntryMap.get(_ALT_ID) != null) {
+			String[] alt = chebiEntryMap.get(_ALT_ID).split("\t");
+			for(String altid : alt) {
+				//unless there is an error in the ontology, when an alt_id belongs 
+				//to different entries, this should not throw "already have such element" exception:
+				xuri = Normalizer.uri(xmlBase, "CHEBI", altid, UnificationXref.class);
+				x = model.addNew(UnificationXref.class, xuri);
+				x.setId(altid);
+				x.setDb("ChEBI");
+				smr.addXref(x);
+			} 
 		}
 		
-		log.info("convert(), exiting.");
+		//use synonyms to create names, structure, formula, and InChIKey rel.xref
+		String[] synonyms = chebiEntryMap.get(_SYNONYM).split("\t");
+		for(String sy : synonyms) {
+			Matcher matcher = namePattern.matcher(sy);
+			if(!matcher.find())
+				throw new IllegalStateException("Pattern failed to find a quoted text within: " + sy);		
+			
+			String name = matcher.group(1);
+			if(sy.contains("IUPAC_NAME")) {
+				smr.setStandardName(name);
+			}
+			else if(sy.contains("InChIKey=")) {
+				String inchikey = name.substring(9);//exclude the prefix			
+				xuri = Normalizer.uri(xmlBase, "InChIKey", inchikey, RelationshipXref.class);
+				RelationshipXref rx = (RelationshipXref) model.getByID(xuri);
+				if(rx == null) {
+					rx = model.addNew(RelationshipXref.class, xuri);
+					rx.setDb("InChIKey");
+					rx.setId(inchikey);
+				}
+				smr.addXref(rx);				
+			}
+			else if(sy.contains("InChI=")) {
+				String structureUri = Normalizer
+					.uri(xmlBase, null, name, ChemicalStructure.class);
+				ChemicalStructure structure = (ChemicalStructure) model.getByID(structureUri);
+				if(structure == null) {
+					structure = model.addNew(ChemicalStructure.class, structureUri);
+					structure.setStructureFormat(StructureFormatType.InChI);
+					structure.setStructureData(name); //contains "InChI=" prefix
+				}
+				smr.setStructure(structure);
+			}
+			else if(sy.contains("FORMULA")) {
+				smr.setChemicalFormula(name);
+			}
+			else {
+				smr.addName(name); //incl. for SMILES
+			}
+		}		
+			
+		// add rel. xrefs
+		if(chebiEntryMap.get(_XREF) != null) {
+			String[] xrefs = chebiEntryMap.get(_XREF).split("\t");
+			for(String xs : xrefs) {
+				Matcher matcher = xrefPattern.matcher(xs);
+				if(!matcher.find())
+					throw new IllegalStateException("Pattern failed " +
+							"to match xref id and db within " + xs);
+				//ID w/o the "source:" prefix
+				id = matcher.group(1);
+				//remove quotes around the db name
+				String db = matcher.group(2);
+
+				if(db.contains("PubMed"))
+					db = "PubMed"; //fixes illegal "PubMed citation" name
+				else if(db.equalsIgnoreCase("PubChem"))
+					db = "PubChem Compound";
+
+				if(db.equalsIgnoreCase("ChEMBL") && !id.startsWith("CHEMBL")) {
+					id = "CHEMBL" + id;
+				} 
+
+				xuri = Normalizer.uri(xmlBase, db, id, RelationshipXref.class);
+				RelationshipXref rx = (RelationshipXref) model.getByID(xuri);
+				if(rx == null) {
+					rx = model.addNew(RelationshipXref.class, xuri);
+					rx.setDb(db);
+					rx.setId(id);
+				}
+				smr.addXref(rx);
+			}
+		}
+	}
+
+	private String removePrefix(String prefix, String line) {
+		return line.substring(prefix.length()).trim();
 	}
 
 }

@@ -75,7 +75,7 @@ import javax.validation.Valid;
 public class BiopaxModelController extends BasicController {
 	private static final Logger LOG = LoggerFactory.getLogger(BiopaxModelController.class);    
 	
-    private static final String xmlBase = CPathSettings.xmlBase();
+    private static final String xmlBase = CPathSettings.getInstance().getXmlBase();
     
     private CPathService service; // main PC db access
 	

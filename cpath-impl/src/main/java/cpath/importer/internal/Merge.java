@@ -4,8 +4,8 @@
  **
  ** This is free software; you can redistribute it and/or modify it
  ** under the terms of the GNU Lesser General Public License as published
- ** by the Free Software Foundation; either pathwayDataVersion 2.1 of the License, or
- ** any later pathwayDataVersion.
+ ** by the Free Software Foundation; either version 2.1 of the License, or
+ ** any later version.
  **
  ** This library is distributed in the hope that it will be useful, but
  ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
@@ -83,7 +83,7 @@ public class Merge {
 		
 		final String srcModelInfo = "source: " + description;		
 		/* 
-		 * Replace not normalized (during 'premerge') URIs in the sourc emodel 
+		 * Replace not normalized (during 'premerge') URIs in the source model 
 		 * with generated new ones (also add a bp:comment about original URIs)
 		 */
 		log.info("Assigning new URIs (xml:base=" + xmlBase + 
