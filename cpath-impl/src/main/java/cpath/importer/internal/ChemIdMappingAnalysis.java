@@ -67,28 +67,42 @@ final class ChemIdMappingAnalysis implements Analysis {
 			final String ac = smr.getRDFId().substring(smr.getRDFId().lastIndexOf('/')+1);
 				
 			for(UnificationXref x : xrefs) {
-				if(x.getDb() != null) {
-					String id = x.getId();
-					//ban an identifier associated with several different proteins
-					if(exclude.contains(id)) {
-						Set<String> ambiguous = ambiguousIdMap.get(id);
-						ambiguous.add(ac);
-						log.debug("excluded " + id + ": maps to " + ambiguous);
-					} else if(idMap.containsKey(id) && !idMap.get(id).equals(ac)) {
-						Set<String> ambiguous = new HashSet<String>(2);
-						ambiguous.add(idMap.get(id));
-						ambiguous.add(ac);
-						ambiguousIdMap.put(id, ambiguous);
-						idMap.remove(id);
-						log.debug("excluded " + id + ": maps to " + ambiguous);
-					} else {
-						idMap.put(id, ac);
-					}
+				if(x.getDb() != null && x.getId() != null) {
+					addOrExclude(x.getId(), ac, exclude);
 				}
-			}	
+			}
+			
+			//map some names (display and std.)
+			String name = smr.getDisplayName().toLowerCase();
+			addOrExclude(name, ac, exclude);			
+			if(smr.getStandardName() != null && 
+					!smr.getStandardName().equalsIgnoreCase(name)) 
+			{
+				addOrExclude(smr.getStandardName().toLowerCase(), ac, exclude);
+			}
 		}
 	}
+
 	
+	private void addOrExclude(String id, String ac, final Set<String> exclude) {
+		//ban an identifier associated with several different molecules
+		if(exclude.contains(id)) {
+			Set<String> ambiguous = ambiguousIdMap.get(id);
+			ambiguous.add(ac);
+			log.debug("excluded '" + id + "': maps to " + ambiguous);
+		} else if(idMap.containsKey(id) && !idMap.get(id).equals(ac)) {
+			Set<String> ambiguous = new HashSet<String>(2);
+			ambiguous.add(idMap.get(id));
+			ambiguous.add(ac);
+			ambiguousIdMap.put(id, ambiguous);
+			idMap.remove(id);
+			log.debug("excluded '" + id + "': maps to " + ambiguous);
+		} else {
+			idMap.put(id, ac);
+		}
+	}
+
+
 	/**
 	 * Unmodifiable id-mapping map
 	 * (identifier -> CHEBI accession)

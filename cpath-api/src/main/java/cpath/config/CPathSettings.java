@@ -507,12 +507,12 @@ public final class CPathSettings {
 	/**
 	 * Full path to the archive file where BioPAX db/model is exported. 
 	 * 
-	 * @param datasource - data source Standard Name or "All", "Backup".
+	 * @param name - a Metadata's Standard Name, or "All", "Warehouse".
 	 * @return
 	 */
-	public String biopaxExportFileName(String datasource) {
+	public String biopaxExportFileName(String name) {
 		return downloadsDir() + File.separator + 
-				exportArchivePrefix() + datasource 
+				exportArchivePrefix() + name 
 					+ ".BIOPAX.owl.gz";
 	}
 	

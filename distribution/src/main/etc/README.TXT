@@ -157,7 +157,6 @@ new instance from scratch:
 -fetch-metadata
 -premerge 
 -create-warehouse
--update-mapping
 -merge --force (unfortunately, --force is usually required...)
 -aftermerge (if there is some analysis to apply after the merge stage)
 -create-index

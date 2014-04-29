@@ -28,7 +28,6 @@ package cpath.importer.internal;
 
 
 import cpath.config.CPathSettings;
-import cpath.converter.internal.ChebiOntologyAnalysis;
 import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
@@ -37,6 +36,7 @@ import cpath.importer.Converter;
 import cpath.importer.Premerger;
 import cpath.warehouse.beans.Content;
 import cpath.warehouse.beans.Mapping;
+import cpath.warehouse.beans.Mapping.Type;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.METADATA_TYPE;
 
@@ -56,7 +56,6 @@ import org.apache.commons.lang.StringUtils;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-import java.util.zip.ZipInputStream;
 
 import java.io.*;
 
@@ -191,9 +190,7 @@ public final class PremergeImpl implements Premerger {
 			if (metadata.getType() != METADATA_TYPE.WAREHOUSE)
 				continue; 
 			
-			log.info("buildWarehouse(), persisting Warehouse data: " 
-						+ metadata.getUri());
-			
+			log.info("buildWarehouse(), adding data: " + metadata.getUri());			
 			InputStream inputStream;
 			for(Content content : metadata.getContent()) {
 				try {
@@ -207,35 +204,91 @@ public final class PremergeImpl implements Premerger {
 				}
 			}
 		}
-				
-		//Optionally, import ChEBI OBO ontology, i.e., mol. class hierarchy
-		// if the data is present there (cpath2 home dir)
-		try {
-			ChebiOntologyAnalysis chebiOboAnalysis = new ChebiOntologyAnalysis();
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			CPathUtils.unzip(new ZipInputStream(CPathUtils.LOADER
-					.getResource("file:"+CPathSettings.getInstance().homeDir()
-						+ File.separator + "chebi.obo.zip").getInputStream()), bos);
-			chebiOboAnalysis.setInputStream(new ByteArrayInputStream(bos.toByteArray()));
-			paxtoolsDAO.run(chebiOboAnalysis);
-		} catch(Exception e) {
-			log.warn("Did not import chebi.obo.zip (" +
-				"OK if it's intentionally not present there); " + e.toString());
-		}	
 		
-		// Using the warehouse data, generate the id-mapping tables
-		buildIdMapping(true);
-	}	
+		// Using the Warehouse, generate the id-mapping tables
+		// from that BioPAX model:
+		buildIdMappingFromWarehouse(true);
+		
+		// Next, process all MAPPING data files
+		for (Metadata metadata : metadataCollection) 
+		{
+			//skip not id-mapping data
+			if (metadata.getType() != METADATA_TYPE.MAPPING)
+				continue; 
+			
+			log.info("buildWarehouse(), adding id-mapping: " + metadata.getUri());			
+			for(Content content : metadata.getContent()) {
+				try {
+					Mapping mapping = simpleMapping(content, new GZIPInputStream(
+							new FileInputStream(content.originalFile())));
+					metaDataDAO.saveMapping(mapping);
+				} catch (Exception e) {
+					log.error("buildWarehouse(), failed to get id-mapping, " +
+							"using: " + content.toString(), e);
+					continue;
+				}
+			}
+		}				
+	}
 
-	
+
+	/**
+	 * Creates a mapping object 
+	 * from a simple two-column (tab-separated) text file, 
+	 * where the first line contains standard names of 
+	 * the source and target ID types, and on each next line -
+	 * source and target IDs, respectively.
+	 * Currently, only ChEBI and UniProt are supported
+	 * (valid) as the target ID type.
+	 * 
+	 * This is a package-private method, mainly for jUnit testing
+	 * (not API).
+	 * 
+	 * @param content
+	 * @param inputStream
+	 * @return
+	 * @throws IOException 
+	 */
+	Mapping simpleMapping(Content content, InputStream inputStream) 
+			throws IOException 
+	{
+		Map<String, String> map = new HashMap<String, String>();
+		Set<String> added = new HashSet<String>();		
+		
+		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));				
+		String line = reader.readLine(); //get the first, title line
+		String head[] = line.split("\t");
+		assert head.length == 2 : "bad header";
+		Type type = Type.valueOf(head[1].toUpperCase().trim());
+		while ((line = reader.readLine()) != null) {
+			String pair[] = line.split("\t");
+			String src = pair[0].trim();
+			String tgt = pair[1].trim();
+			
+			if(added.contains(tgt))
+				log.warn("skip " + src + "; another id was already mapped to " + tgt);
+			
+			if(map.containsKey(src) && !map.get(src).equals(tgt)) 
+				log.warn("skip " + src + "; already mapped to " + map.get(src));
+
+			map.put(src, tgt);
+			added.add(tgt);
+		}
+		reader.close();
+		
+		return new Mapping(type, content.toString(), map);
+	}
+
+
 	/**
 	 * Extracts id-mapping information (name/id -> primary id) 
 	 * from the Warehouse entity references's xrefs to the mapping tables.
 	 * 
 	 * @param exportAmbiguousMappings whether to file errors or not (ambiguous id mappings)
 	 */
-	private void buildIdMapping(boolean exportAmbiguousMappings) {		
-		log.info("updateIdMapping(), updating id-mapping tables by analyzing the warehouse data...");
+	private void buildIdMappingFromWarehouse(boolean exportAmbiguousMappings) {		
+		log.info("updateIdMapping(), updating id-mapping " +
+				"tables by analyzing the warehouse data...");
 		
 		// create and execute a new Analysis that populates the id maps within 
 		// a new DB transaction
