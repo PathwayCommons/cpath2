@@ -391,16 +391,17 @@ public final class CPathUtils {
 	 * Loads the BioPAX model from a Gzip archive 
 	 * previously created by the same cpath2 instance.
 	 * 
+	 * @param biopaxModelName  - e.g., 'All', 'Warehouse', or a Metadata's standard name.
 	 * @return big BioPAX model
 	 */
-	public static Model importFromTheArchive() {
-		//TODO ? an option to load other archives (e.g., Reactome only, for testing)
-		final String archive = CPathSettings.getInstance().biopaxExportFileName("All"); 
+	public static Model importFromTheArchive(String biopaxModelName) {
+
+		final String archive = CPathSettings.getInstance().biopaxExportFileName(biopaxModelName); 
 		
 		Model model = null;
 
 		try {
-			//read from ..All.BIOPAX.owl.gz archive
+			//read from e.g. ..All.BIOPAX.owl.gz archive
 			LOGGER.info("Loading the BioPAX Model from " + archive);
 			model = (new SimpleIOHandler(BioPAXLevel.L3))
 					.convertFromOWL(new GZIPInputStream(new FileInputStream(archive)));

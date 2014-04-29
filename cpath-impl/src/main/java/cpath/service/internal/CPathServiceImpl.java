@@ -139,7 +139,7 @@ class CPathServiceImpl implements CPathService {
 				new Runnable() {
 				@Override
 				public void run() {
-					Model model = CPathUtils.importFromTheArchive();
+					Model model = CPathUtils.importFromTheArchive("All");
 					model.setXmlBase(CPathSettings.getInstance().getXmlBase());
 					// set for this service
 					setProxyModel(model);

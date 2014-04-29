@@ -94,8 +94,7 @@ public final class Admin {
         FETCH_METADATA("-fetch-metadata"),
 		FETCH_DATA("-fetch-data"),
 		PREMERGE("-premerge"),
-		CREATE_WAREHOUSE("-create-warehouse"),		
-		UPDATE_MAPPING("-update-mapping"),		
+		CREATE_WAREHOUSE("-create-warehouse"),			
 		MERGE("-merge"),
     	CREATE_INDEX("-create-index"),
         CREATE_BLACKLIST("-create-blacklist"),
@@ -183,12 +182,6 @@ public final class Admin {
 		} else if (args[0].equals(Cmd.CREATE_WAREHOUSE.toString())) {
 			
 				createWarehouse();
-				
-		} else if (args[0].equals(Cmd.UPDATE_MAPPING.toString())) {	
-			
-			//TODO load and update id-mapping tables from a TSV file (archive of plain text files)
-			
-			LOG.warn(Cmd.UPDATE_MAPPING.toString() + " - not implemented yet (future TODO).");
 			
 		} else if (args[0].equals(Cmd.PREMERGE.toString())) {
 			
@@ -661,8 +654,7 @@ public final class Admin {
 		toReturn.append(Cmd.INIT.toString() + " (creates a new empty database; this destroys all previous data)" + NEWLINE);
 		toReturn.append(Cmd.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(Cmd.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
-		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + NEWLINE);		
-		toReturn.append(Cmd.UPDATE_MAPPING.toString() + " <filename> (updates the id-mapping tables in the cpath2 warehouse)"+ NEWLINE);		
+		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + NEWLINE);			
 		toReturn.append(Cmd.MERGE.toString() + " [<metadataId>] [--force]"+ NEWLINE);
 		toReturn.append(Cmd.CREATE_INDEX.toString() + NEWLINE);
         toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
