@@ -31,6 +31,7 @@ import cpath.dao.Analysis;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Merger;
+import cpath.jpa.MappingsRepository;
 import cpath.warehouse.beans.*;
 
 import org.biopax.paxtools.model.*;
@@ -56,6 +57,8 @@ public final class MergerImpl implements Merger {
     
     // cpath2 repositories
 	private final MetadataDAO metadataDAO;
+	
+	private final MappingsRepository mappingsRepository;
     
     // configuration/flags
 	private final String provider;
@@ -70,12 +73,13 @@ public final class MergerImpl implements Merger {
 	 * 
 	 * @param dest final "global" Model (e.g., {@link PaxtoolsHibernateDAO} may be used here)
 	 * @param metadataDAO MetadataDAO
+	 * @param mappingsRepository
 	 * @param provider merge pathway data from this provider only
 	 * @param force whether to forcibly merge BioPAX data the validation reported critical about or skip.
 	 * @throws AssertionError when dest is not instanceof {@link Model};
 	 */
 	public MergerImpl(final PaxtoolsDAO dest, final MetadataDAO metadataDAO, 
-			String provider, boolean force) 
+			MappingsRepository mappingsRepository, String provider, boolean force) 
 	{
 		if(!(dest instanceof Model))
 			throw new AssertionError(
@@ -84,6 +88,7 @@ public final class MergerImpl implements Merger {
 	
 		this.mainDAO = dest;
 		this.metadataDAO = metadataDAO;
+		this.mappingsRepository = mappingsRepository;
 		this.xmlBase = ((Model)dest).getXmlBase();
 		this.provider = provider;
 		this.force = force;
@@ -144,7 +149,7 @@ public final class MergerImpl implements Merger {
 
 				// merge/persist the new biopax; run within a transaction:
 				Analysis mergerAnalysis = new MergerAnalysis(pwdata.toString(), 
-						pathwayModel, metadataDAO, xmlBase);
+						pathwayModel, mappingsRepository, xmlBase);
 				
 				mainDAO.run(mergerAnalysis);
 				

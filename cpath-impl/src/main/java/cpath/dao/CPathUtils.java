@@ -3,7 +3,6 @@
  */
 package cpath.dao;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
 import cpath.warehouse.beans.Metadata;
@@ -391,12 +391,10 @@ public final class CPathUtils {
 	 * Loads the BioPAX model from a Gzip archive 
 	 * previously created by the same cpath2 instance.
 	 * 
-	 * @param biopaxModelName  - e.g., 'All', 'Warehouse', or a Metadata's standard name.
+	 * @param archive
 	 * @return big BioPAX model
 	 */
-	public static Model importFromTheArchive(String biopaxModelName) {
-
-		final String archive = CPathSettings.getInstance().biopaxExportFileName(biopaxModelName); 
+	public static Model importFromTheArchive(String archive) {
 		
 		Model model = null;
 
@@ -498,5 +496,20 @@ public final class CPathUtils {
 		os.flush();
 		//do not close streams	(can be re-used outside)
 	}	
-		
+
+	
+	/**
+	 * For a warehouse (normalized) EntityReference's or CV's URI 
+	 * gets the corresponding identifier (e.g., UniProt or ChEBI primary ID).
+	 * (this depends on current biopax normalizer and cpath2 premerge
+	 * that make/consume 'http://identifiers.org/*' URIs for those utility class biopax objects.)
+	 * 
+	 * @param uri
+	 * @return
+	 */
+	public static String idfromNormalizedUri(String uri) {
+		Assert.isTrue(uri.contains("http://identifiers.org/"));
+		return uri.substring(uri.lastIndexOf('/')+1);
+	}
+	
 }

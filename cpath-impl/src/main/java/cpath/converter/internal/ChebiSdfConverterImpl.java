@@ -383,7 +383,7 @@ class ChebiSdfConverterImpl extends BaseConverterImpl
 		T toReturn = null;
 
 		String id = parts[0].trim();
-		String db = parts[1].trim();
+		String db = parts[1].trim().toUpperCase();
 		
 		log.debug("getXref(), id: " + id + ", db: " + db 
 				+ ", type: " + aClass.getSimpleName());

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package cpath.log.jpa;
+package cpath.jpa;
 
 
 import javax.persistence.Embeddable;
@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
-import cpath.log.LogUtils;
+import cpath.dao.LogUtils;
 
 
 /**

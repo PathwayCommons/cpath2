@@ -3,8 +3,6 @@ package cpath.dao.internal;
 
 import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
-import cpath.warehouse.beans.Mapping;
-import cpath.warehouse.beans.Mapping.Type;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Content;
 
@@ -13,7 +11,6 @@ import org.biopax.validator.api.ValidatorUtils;
 
 import org.hibernate.Criteria;
 import org.hibernate.Hibernate;
-import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Restrictions;
@@ -22,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import java.io.FileInputStream;
 import java.util.*;
@@ -42,8 +40,6 @@ class MetadataHibernateDAO  implements MetadataDAO {
     private static Logger log = LoggerFactory.getLogger(MetadataHibernateDAO.class);
 
     private SessionFactory sessionFactory;
-    
-    private Map<Type,List<Mapping>> typeToMappings;
     
     public void setSessionFactory(SessionFactory sessionFactory) {
     	this.sessionFactory = sessionFactory;
@@ -73,6 +69,8 @@ class MetadataHibernateDAO  implements MetadataDAO {
 
     
     public Metadata getMetadataByIdentifier(final String identifier) {
+    	Assert.hasText(identifier);
+    	
 		Session session = sessionFactory.getCurrentSession();
 		
 		Metadata metadata = (Metadata) session.createCriteria(Metadata.class)
@@ -122,6 +120,8 @@ class MetadataHibernateDAO  implements MetadataDAO {
 			if(file != null && !file.equals(current))
 				continue;
 			
+			//file==null means all files			
+			
 			try {
 				// unmarshal and add
 				ValidatorResponse resp = (ValidatorResponse) ValidatorUtils.getUnmarshaller()
@@ -137,118 +137,6 @@ class MetadataHibernateDAO  implements MetadataDAO {
 		}
 
 		return response;
-	}
-
-
-	public void deleteAllIdMappings() {
-		log.debug("deleteAllIdMappings: purge all...");
-		Session ses = sessionFactory.getCurrentSession();
-		ses.createQuery("delete Mapping").executeUpdate();
-		ses.createSQLQuery("delete from mapping_map").executeUpdate();
-		ses.flush(); //might not required due to the new transaction, but.. let it be
-	}
-	
-	
-	/**
-     * This method uses knowledge about the id-mapping
-     * internal design (id -> to primary id table, no db names used) 
-     * and about some of bio identifiers to increase the possibility
-     * of successful (not null) mapping result.
-     * 
-     * Notes.
-     * 
-     * Might in the future, if we store all mappings in the same table, 
-     * and therefore have to deal with several types of numerical identifiers,
-     * which requires db name to be part of the primary key, this method can 
-     * shield from the implementation details of making the key (i.e, we might 
-     * want to use pubchem:123456, SABIO-RK:12345 as pk, despite the prefixes
-     * are normally not part of the identifier).
-     * 
-     * @param db
-     * @param id
-     * @return suggested id to be used in a id-mapping call
-     */
-     static String suggest(String db, String id) {
-    	
-    	if(db == null || db.isEmpty() || id == null || id.isEmpty())
-    		return id;
-    	
-		// our warehouse-specific hack for matching uniprot.isoform, kegg, refseq xrefs,
-		// e.g., ".../uniprot.isoform/P04150-2" becomes  ".../uniprot/P04150"
-		if(db.equalsIgnoreCase("uniprot isoform") || db.equalsIgnoreCase("uniprot.isoform")) {
-			int idx = id.lastIndexOf('-');
-			if(idx > 0)
-				id = id.substring(0, idx);
-//			db = "UniProt";
-		}
-		else if(db.equalsIgnoreCase("refseq")) {
-			//also want refseq:NP_012345.2 to become refseq:NP_012345
-			int idx = id.lastIndexOf('.');
-			if(idx > 0)
-				id = id.substring(0, idx);
-		} 
-		else if(db.toLowerCase().startsWith("kegg") && id.matches(":\\d+$")) {
-			int idx = id.lastIndexOf(':');
-			if(idx > 0)
-				id = id.substring(idx + 1);
-//			db = "NCBI Gene";
-		}
-    		
-    	return id;
-    }
-
-    
-	public void saveMapping(Mapping mapping) {
-    	Session session = sessionFactory.getCurrentSession();
-    	session.save(mapping);
-    	session.flush();
-	}
-
-
-    @Transactional(readOnly=true)
-    private synchronized void initMappings() {		
-		Session session = sessionFactory.getCurrentSession();
-		Query query = session.getNamedQuery("cpath.warehouse.beans.mappingsByType");
-		typeToMappings = new HashMap<Mapping.Type, List<Mapping>>();
-    	for(Type t : Type.values()) {
-    		query.setParameter("type", t);
-    		List<Mapping> list = (List<Mapping>) query.list();
-    		if(list != null) {
-    			for(Mapping m : list) {
-    				Hibernate.initialize(m);
-    				Hibernate.initialize(m.getMap());
-    			}
-    		}
-    			
-    		typeToMappings.put(t, list);
-    	}
-	}
-    
-    
-    private synchronized List<Mapping> getMappings(Type type) {		
-		if(typeToMappings == null) 
-			initMappings();
-		
-		return typeToMappings.get(type);
-	}
-
-    
-	public Set<String> mapIdentifier(String identifier, Type type, String idType) {
-    	//if possible, suggest a canonical id, i.e, 
-    	// more chances it would map to uniprot or chebi primary accession.
-    	final String id = suggest(idType, identifier);
-    	
-    	List<Mapping> maps = getMappings(type);
-    	
-    	Set<String> results = new TreeSet<String>();
-    	
-    	for(Mapping m : maps) {
-    		String ac = m.getMap().get(id);
-    		if(ac != null && !ac.isEmpty())
-    			results.add(ac);
-    	}
-    	
-		return results;
 	}
     
 
@@ -275,4 +163,5 @@ class MetadataHibernateDAO  implements MetadataDAO {
     	sessionFactory.getCurrentSession().delete(metadata);
     	metadata.cleanupOutputDir();
 	}
+
 }

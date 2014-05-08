@@ -223,23 +223,31 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 				//remove quotes around the db name
 				String db = matcher.group(2);
 
-				if(db.contains("PubMed"))
-					db = "PubMed"; //fixes illegal "PubMed citation" name
-				else if(db.equalsIgnoreCase("PubChem"))
-					db = "PubChem Compound";
+// These will be skipped below anyway -
+//				if(db.contains("PubMed"))
+//					db = "PubMed"; //fixes illegal "PubMed citation" name
+//				else if(db.equalsIgnoreCase("PubChem"))
+//					db = "PubChem Compound";//?though ChEBI claims it must be Substance, or even no PubChem xrefs in the OBO at all
 
 				if(db.equalsIgnoreCase("ChEMBL") && !id.startsWith("CHEMBL")) {
 					id = "CHEMBL" + id;
 				} 
 
-				xuri = Normalizer.uri(xmlBase, db, id, RelationshipXref.class);
-				RelationshipXref rx = (RelationshipXref) model.getByID(xuri);
-				if(rx == null) {
-					rx = model.addNew(RelationshipXref.class, xuri);
-					rx.setDb(db);
-					rx.setId(id);
+				db = db.toUpperCase();
+				
+				//Skip all xrefs but: CAS, KEGG (C* and D*), DRUGBANK, WIKIPEDIA,..  
+				if(db.startsWith("CAS") || db.startsWith("KEGG")
+					|| db.startsWith("WIKIPEDIA") || db.equals("DRUGBANK")) 
+				{
+					xuri = Normalizer.uri(xmlBase, db, id, RelationshipXref.class);
+					RelationshipXref rx = (RelationshipXref) model.getByID(xuri);
+					if(rx == null) {
+						rx = model.addNew(RelationshipXref.class, xuri);
+						rx.setDb(db);
+						rx.setId(id);
+					}
+					smr.addXref(rx);
 				}
-				smr.addXref(rx);
 			}
 		}
 	}

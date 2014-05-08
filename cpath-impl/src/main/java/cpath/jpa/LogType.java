@@ -1,7 +1,7 @@
 /**
  * 
  */
-package cpath.log;
+package cpath.jpa;
 
 /**
  * Categories of the data download/access events. 

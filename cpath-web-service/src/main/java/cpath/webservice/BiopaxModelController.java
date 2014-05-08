@@ -32,9 +32,9 @@ import java.io.Writer;
 import java.util.*;
 
 import cpath.config.CPathSettings;
-import cpath.log.LogUtils;
-import cpath.log.jpa.Geoloc;
-import cpath.log.jpa.LogEvent;
+import cpath.dao.LogUtils;
+import cpath.jpa.Geoloc;
+import cpath.jpa.LogEvent;
 import cpath.service.CPathService;
 import cpath.service.Cmd;
 import cpath.service.ErrorResponse;
@@ -56,6 +56,7 @@ import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
@@ -77,6 +78,7 @@ public class BiopaxModelController extends BasicController {
     
     private CPathService service; // main PC db access
 	
+    @Autowired
     public BiopaxModelController(CPathService service) {
 		this.service = service;
 	}

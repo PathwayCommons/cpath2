@@ -30,14 +30,13 @@ package cpath.admin;
 
 import static cpath.config.CPathSettings.*;
 
-import cpath.admin.fix.FixHumanCycPathwayOrganismAnalysis;
-import cpath.admin.fix.FixReactomeConversionDirectionAnalysis;
 import cpath.config.CPathSettings;
 import cpath.dao.*;
 import cpath.importer.Merger;
 import cpath.importer.Premerger;
 import cpath.importer.internal.MergerImpl;
 import cpath.importer.internal.PremergeImpl;
+import cpath.jpa.MappingsRepository;
 import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
 import cpath.service.internal.BiopaxConverter;
@@ -105,7 +104,7 @@ public final class Admin {
         CONVERT("-convert"),
         EXPORT_LOG("-export-log"),
         IMPORT_LOG("-import-log"),
-        AFTERMERGE("-aftermerge"),
+        ANALYSIS("-run-analysis"),
 		;
 
         // string ref for readable name
@@ -251,9 +250,14 @@ public final class Admin {
 			else 
 				importLog(args[1]);
 			
-		} else if (args[0].equals(Cmd.AFTERMERGE.toString())) {	
+		} else if (args[0].equals(Cmd.ANALYSIS.toString())) {	
 			
-			aftermerge(); //TODO make it configurable, specific
+			if (args.length < 2) 
+				fail(args, "No Analysis implementation class provided.");	
+			else if(args.length == 2)
+				executeAnalysis(args[1], true);
+			else if(args.length > 2 && "--update".equalsIgnoreCase(args[2]))
+				executeAnalysis(args[1], false);
 		
 		} else {
 			System.err.println(usage());
@@ -278,7 +282,7 @@ public final class Admin {
 		ClassPathXmlApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:META-INF/spring/applicationContext-dao.xml", 
-            		"classpath:META-INF/spring/applicationContext-log.xml"
+            		"classpath:META-INF/spring/applicationContext-jpa.xml"
             	});
  				
 		CPathUtils.cleanupIndexDir(CPathSettings.getInstance().getMainDb());
@@ -287,17 +291,26 @@ public final class Admin {
 	}
     
     
-    private static void aftermerge() {
-    	if(!cpath.isAdminEnabled())
+    public static void executeAnalysis(String analysisClass, boolean readOnly) {
+    	if(!(readOnly || cpath.isAdminEnabled()))
 			throw new IllegalStateException("Maintenance mode is not enabled.");
+    	
+    	Analysis analysis = null;
+		try {
+			Class<Analysis> c = (Class<Analysis>) Class.forName(analysisClass);
+			analysis = c.newInstance();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
     	
     	ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
 				"classpath:META-INF/spring/applicationContext-dao.xml");    	
  		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean("paxtoolsDAO"));
  		
- 		mainDAO.run(new FixHumanCycPathwayOrganismAnalysis());
- 		
- 		mainDAO.run(new FixReactomeConversionDirectionAnalysis());
+ 		if(readOnly)
+ 			mainDAO.runReadOnly(analysis);
+ 		else
+ 			mainDAO.run(analysis);
  		
  		context.close();
 	}
@@ -316,8 +329,6 @@ public final class Admin {
 			Class.forName("org.h2.Driver");
 			conn = DriverManager.getConnection(cpath.property(PROP_DB_CONNECTION) 
 					+ cps.getMainDb(), cpath.property(PROP_DB_USER), cpath.property(PROP_DB_PASSW));
-//			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) + "accesslog", 
-//					property(PROP_DB_USER), property(PROP_DB_PASSW));
 			new Csv()
 				.write(conn, filename, "select * from logentity", "UTF-8");
 			LOG.info("Saved current access log DB to " + filename);
@@ -346,8 +357,6 @@ public final class Admin {
  			Class.forName("org.h2.Driver");
 			conn = DriverManager.getConnection(cpath.property(PROP_DB_CONNECTION) 
 				+ cpath.getMainDb(), cpath.property(PROP_DB_USER), cpath.property(PROP_DB_PASSW));
-// 			conn = DriverManager.getConnection(property(PROP_DB_CONNECTION) + "accesslog", 
-// 					property(PROP_DB_USER), property(PROP_DB_PASSW));
 			
 			//backup
 			new Csv()
@@ -526,16 +535,20 @@ public final class Admin {
 		// pc dao
 
 		ClassPathXmlApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:META-INF/spring/applicationContext-dao.xml");
+			new ClassPathXmlApplicationContext(new String[] {
+				"classpath:META-INF/spring/applicationContext-dao.xml",
+				"classpath:META-INF/spring/applicationContext-jpa.xml"});
 		
 		final PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
 
 		LOG.info("runMerge: provider=" + provider + "; --force=" + force);
 			
 		MetadataDAO mdao = (MetadataDAO)context.getBean("metadataDAO");
+		
+		MappingsRepository mappingsRepository = (MappingsRepository) context.getBean("mappingsRepository");
 			
 		String datasource = (provider == null || provider.isEmpty()) ? null : provider;
-		Merger merger = new MergerImpl(paxtoolsDAO, mdao, datasource, force);
+		Merger merger = new MergerImpl(paxtoolsDAO, mdao, mappingsRepository, datasource, force);
 		
 		// go!
 		merger.merge();
@@ -562,12 +575,13 @@ public final class Admin {
 		ClassPathXmlApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:META-INF/spring/applicationContext-dao.xml", 
+// not required in this step           		"classpath:META-INF/spring/applicationContext-jpa.xml",
             		"classpath:META-INF/spring/applicationContext-validator.xml", 
 					"classpath:META-INF/spring/applicationContext-cvRepository.xml"});
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		Validator validator = (Validator) context.getBean("validator");
 		// only metadataDAO is required for the Premerge (main/warehouse biopax DAO is not needed)
-        Premerger premerger = new PremergeImpl(metadataDAO, null, validator, provider);
+        Premerger premerger = new PremergeImpl(metadataDAO, null, null, validator, provider);
         LOG.info("runPremerge: provider=" + provider + " - running...");
         premerger.premerge();
         
@@ -586,11 +600,15 @@ public final class Admin {
 		System.setProperty("hibernate.hbm2ddl.auto", "update");
 		System.setProperty("net.sf.ehcache.disabled", "true");
 		ClassPathXmlApplicationContext context =
-            new ClassPathXmlApplicationContext("classpath:META-INF/spring/applicationContext-dao.xml");
+            new ClassPathXmlApplicationContext(new String [] {
+            		"classpath:META-INF/spring/applicationContext-dao.xml",
+            		"classpath:META-INF/spring/applicationContext-jpa.xml"});
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-        Premerger premerger = new PremergeImpl(metadataDAO, dao, null, null);
-        premerger.buildWarehouse();        
+		MappingsRepository mappingsRepository = (MappingsRepository) context.getBean("mappingsRepository");
+		PremergeImpl premerger = new PremergeImpl(metadataDAO, dao, mappingsRepository, null, null);
+		premerger.setWarehouseArchive(cpath.warehouseModelFile()); //will export to 'downloads'
+        premerger.buildWarehouse();     
         context.close(); 
 	}
 
@@ -670,8 +688,8 @@ public final class Admin {
 				"CSV file in the data directory and, optionally, clear the table)" + NEWLINE);
 		toReturn.append(Cmd.IMPORT_LOG.toString() + " [filename] (import cpath2 assess log from the specified " +
 				"CSV file or from the default, if exists, in the data dir.)" + NEWLINE);
-		toReturn.append(Cmd.AFTERMERGE.toString() + " (apply custom post-fixes to the cpath2 DB; " +
-				"requires re-indexing and re-generationg of the data dump archives, i.e., downloads, after this is done)" + NEWLINE);
+		toReturn.append(Cmd.ANALYSIS.toString() + " <classname> [--update] (execute custom code within the cPath2 BioPAX database; " +
+				"if --update is set, one then should re-index and generate new 'downloads')" + NEWLINE);
 		
 		return toReturn.toString();
 	}
@@ -824,7 +842,7 @@ public final class Admin {
 		List<String> files = new ArrayList<String>();
 		
 		// generate the complete biopax db export (all processes, no filters)
-		String archiveName = cpath.biopaxExportFileName("All");
+		String archiveName = cpath.mainModelFile();
 		exportBiopax(dao, archiveName, null, null);
 		files.add(archiveName);
 		

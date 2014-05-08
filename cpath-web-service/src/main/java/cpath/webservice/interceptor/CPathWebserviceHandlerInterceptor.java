@@ -13,10 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
-import cpath.log.LogUtils;
-import cpath.log.jpa.Geoloc;
-import cpath.log.jpa.LogEntitiesRepository;
-import cpath.log.jpa.LogEvent;
+import cpath.dao.LogUtils;
+import cpath.jpa.Geoloc;
+import cpath.jpa.LogEntitiesRepository;
+import cpath.jpa.LogEvent;
 import cpath.webservice.BasicController;
 
 /**

@@ -1,14 +1,12 @@
-
-
 import cpath.config.CPathSettings;
-import cpath.converter.internal.ChebiOntologyAnalysis;
 import cpath.dao.Analysis;
-import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Premerger;
 import cpath.importer.internal.MergerAnalysis;
 import cpath.importer.internal.PremergeImpl;
+import cpath.jpa.Mapping;
+import cpath.jpa.MappingsRepository;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
@@ -16,7 +14,6 @@ import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
-import cpath.warehouse.beans.Mapping;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.METADATA_TYPE;
 
@@ -45,7 +42,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.zip.ZipInputStream;
+import java.util.Set;
 
 
 /**
@@ -53,7 +50,8 @@ import java.util.zip.ZipInputStream;
  */
 //@Ignore
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"classpath:META-INF/spring/applicationContext-dao.xml"})
+@ContextConfiguration(locations={"classpath:META-INF/spring/applicationContext-dao.xml",
+		"classpath:META-INF/spring/applicationContext-jpa.xml"})
 @ActiveProfiles("dev")
 public class DataImportAndServiceIntegrationTest {
 	static Logger log = LoggerFactory.getLogger(DataImportAndServiceIntegrationTest.class);
@@ -69,6 +67,9 @@ public class DataImportAndServiceIntegrationTest {
 	
 	@Autowired
 	MetadataDAO metadataDAO;
+	
+	@Autowired
+	MappingsRepository mappingsRepository;
 
 	
 	@Test
@@ -76,26 +77,21 @@ public class DataImportAndServiceIntegrationTest {
 	public void testPremergeAndMerge() throws IOException {		
 		//prepare the metadata
         // load the test metadata and create warehouse
-		Premerger premerger = new PremergeImpl(metadataDAO, paxtoolsDAO, null, null);
+		Premerger premerger = new PremergeImpl(metadataDAO, paxtoolsDAO, mappingsRepository, null, null);
 		metadataDAO.addOrUpdateMetadata("classpath:metadata.conf");	
 		Metadata ds = metadataDAO.getMetadataByIdentifier("TEST_UNIPROT");
 		assertNotNull(ds);
 		ds = metadataDAO.getMetadataByIdentifier("TEST_CHEBI");
-		assertNotNull(ds);				
+		assertNotNull(ds);		
+		ds = metadataDAO.getMetadataByIdentifier("TEST_MAPPING");
+		assertNotNull(ds);
 		
 		premerger.premerge();
+		//save warehouse biopax
+		((PremergeImpl)premerger).setWarehouseArchive(
+			getClass().getClassLoader().getResource("").getPath() 
+				+ File.separator + "testWarehouse.owl.gz");
 		premerger.buildWarehouse();//runs after the premerge
-				
-		//import ChEBI OBO (run ChebiOntologyAnalysis run)!
-		
-		//TODO use new ChebiOboConverterImpl (or future ChEBI OWL conv.) instead of the SDF and this one; update test data and assertions!
-		
-		ChebiOntologyAnalysis chebiOboAnalysis = new ChebiOntologyAnalysis();
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		CPathUtils.unzip(new ZipInputStream(CPathUtils.LOADER
-				.getResource("classpath:chebi.obo.zip").getInputStream()), bos);
-		chebiOboAnalysis.setInputStream(new ByteArrayInputStream(bos.toByteArray()));
-		paxtoolsDAO.run(chebiOboAnalysis);
 		
 		//Some assertions about the initial biopax warehouse model (before the merger is run)
 		
@@ -115,50 +111,41 @@ public class DataImportAndServiceIntegrationTest {
 		assertEquals("Homo sapiens", pr.getOrganism().getStandardName());
 		assertFalse(pr.getXref().isEmpty());
 		
-		// test id-mapping
-		String ac = metadataDAO.mapIdentifier("A2A2M3", Mapping.Type.UNIPROT, "uniprot").iterator().next(); 
+		// test some id-mapping
+		String ac = mappingsRepository.map("uniprot", "A2A2M3", "UNIPROT").iterator().next(); 
 		assertEquals("Q8TD86", ac);
 		assertTrue(((Model)paxtoolsDAO).containsID("http://identifiers.org/uniprot/" + ac));	
-		assertTrue(metadataDAO.mapIdentifier("Q8TD86-1", Mapping.Type.UNIPROT, null).isEmpty());
-		assertTrue(metadataDAO.mapIdentifier("Q8TD86-1", Mapping.Type.UNIPROT, "uniprot").isEmpty());
+		assertTrue(mappingsRepository.map(null, "Q8TD86-1", "UNIPROT").isEmpty());
+		assertTrue(mappingsRepository.map("uniprot", "Q8TD86-1", "UNIPROT").isEmpty());
 		//infers Q8TD86
-		assertFalse(metadataDAO.mapIdentifier("Q8TD86-1", Mapping.Type.UNIPROT, "uniprot isoform").isEmpty());
-		assertEquals("Q8TD86", metadataDAO.mapIdentifier("Q8TD86-1", Mapping.Type.UNIPROT, "uniprot isoform").iterator().next());			
-				
-		// Test full-text search	
-		
-		// reindex all
-//		CPathUtils.cleanupDirectory(new File(CPathSettings.getInstance().tmpDir() + File.separator + "test.idx"));
-		paxtoolsDAO.index();
-		
-		// search with a secondary (RefSeq) accession number
-		SearchResponse resp =  paxtoolsDAO.search("NP_619650", 0, RelationshipXref.class, null, null);
-		Collection<SearchHit> prs = resp.getSearchHit();
-		assertFalse(prs.isEmpty());
-		Collection<String> prIds = new HashSet<String>();
-		for(SearchHit e : prs)
-			prIds.add(e.getUri());
-		
-		String uri = Normalizer.uri(XML_BASE, "REFSEQ", "NP_619650", RelationshipXref.class);				
-		assertTrue(prIds.contains(uri));
-		
-		// get that xref
-		Xref x = (RelationshipXref) ((Model)paxtoolsDAO).getByID(uri);
-		assertNotNull(x);
-		paxtoolsDAO.initialize(x);
-		paxtoolsDAO.initialize(x.getXrefOf());
-		assertFalse(x.getXrefOf().isEmpty()); 
-		
-		// alternatively -
-		ac = metadataDAO.mapIdentifier("NP_619650", Mapping.Type.UNIPROT, "refseq").iterator().next(); 
-		assertTrue(metadataDAO.mapIdentifier("NP_619650.1", Mapping.Type.UNIPROT, null).isEmpty());
-		
-		//mapIdentifier uses 'suggest' method internally to infer NP_619650 from NP_619650.1 
-		//(the id-mapping table only has canonical uniprot IDs)
-		assertFalse(metadataDAO.mapIdentifier("NP_619650.1", Mapping.Type.UNIPROT, "refseq").isEmpty());
+		assertFalse(mappingsRepository.map("uniprot isoform", "Q8TD86-1", "UNIPROT").isEmpty());
+		assertEquals("Q8TD86", mappingsRepository.map("uniprot isoform", "Q8TD86-1", "UNIPROT").iterator().next());					
+		// also -
+		assertTrue(mappingsRepository.map(null, "NP_619650.1", "UNIPROT").isEmpty());		
+		// when the last arg. is not null, map(..) calls 'suggest' method to replace NP_619650.1 with NP_619650
+		// (the id-mapping table only has canonical uniprot IDs, no isoform IDs)
+		assertFalse(mappingsRepository.map("refseq", "NP_619650.1", "UNIPROT").isEmpty());
+		ac = mappingsRepository.map("refseq", "NP_619650", "UNIPROT").iterator().next(); 
 		assertEquals("Q8TD86", ac);
 		assertTrue(((Model)paxtoolsDAO).containsID("http://identifiers.org/uniprot/" + ac));
-			
+		
+		Set<String> ids = mappingsRepository.map("P01118");
+		assertTrue(ids.size()==1);
+		assertTrue(ids.contains("P01116"));
+		ids = mappingsRepository.map("uniprot", "P01118", "uniprot");
+		assertTrue(ids.size()==1);
+		assertTrue(ids.contains("P01116"));
+		List<Mapping> mps = mappingsRepository.findByDestIgnoreCaseAndDestId("UNIPROT", "P01116");
+		assertTrue(mps.size()>2);
+//		System.out.println(mps);
+		mps = mappingsRepository.findBySrcIdAndDestIgnoreCase("P01118", "UniProt");
+		assertTrue(mps.size()==1);
+		assertTrue("P01116".equals(mps.iterator().next().getDestId()));
+		mps = mappingsRepository.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase("UNIPROT", "P01118", "UNIPROT");
+		assertTrue(mps.size()==1);
+		assertTrue("P01116".equals(mps.iterator().next().getDestId()));
+		
+		
 		// **** MERGE ***
 		
 		//Load test models from files
@@ -169,7 +156,7 @@ public class DataImportAndServiceIntegrationTest {
 		int i = 0;
 		for(Model m : pathwayModels) {
 			Analysis merger = new MergerAnalysis("model #" + i++, 
-				m, metadataDAO, ((Model)paxtoolsDAO).getXmlBase());
+				m, mappingsRepository, ((Model)paxtoolsDAO).getXmlBase());
 			paxtoolsDAO.run(merger);
 		}
 		
@@ -218,6 +205,22 @@ public class DataImportAndServiceIntegrationTest {
 //				+ File.separator + "tests" + File.separator + "test2.idx"));
 		paxtoolsDAO.index();
 		
+		// Test full-text search	
+		// search with a secondary (RefSeq) accession number
+		SearchResponse resp =  paxtoolsDAO.search("NP_619650", 0, RelationshipXref.class, null, null);
+		Collection<SearchHit> prs = resp.getSearchHit();
+		assertFalse(prs.isEmpty());
+		Collection<String> prIds = new HashSet<String>();
+		for(SearchHit e : prs)
+			prIds.add(e.getUri());		
+		String uri = Normalizer.uri(XML_BASE, "REFSEQ", "NP_619650", RelationshipXref.class);				
+		assertTrue(prIds.contains(uri));
+		Xref x = (RelationshipXref) ((Model)paxtoolsDAO).getByID(uri);
+		assertNotNull(x);
+		paxtoolsDAO.initialize(x);
+		paxtoolsDAO.initialize(x.getXrefOf());
+		assertFalse(x.getXrefOf().isEmpty()); 
+		
 		// fetch as BIOPAX
 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P27797");
 		assertNotNull(res);
@@ -254,7 +257,8 @@ public class DataImportAndServiceIntegrationTest {
 	}
 	
 	
-	// test everything here -
+	// test everything
+	// WARN: CHEBI ID, names, relationships here might be FAKE ones - just for these tests!
 	private void assertMerge(Model mergedModel) {
 		// test proper merge of protein reference
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, null, "http://www.biopax.org/examples/myExample#Protein_54", Protein.class)));
@@ -263,56 +267,64 @@ public class DataImportAndServiceIntegrationTest {
 		assertTrue(mergedModel.containsID("http://identifiers.org/taxonomy/9606"));
 		assertTrue(mergedModel.containsID("http://identifiers.org/go/GO:0005737"));
 		
+		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P13631"));
+		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P22932"));		
+		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01118", UnificationXref.class)));
+		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P01118")); //must be replaced with P01116 and gone
+		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01116", UnificationXref.class)));
+		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P01116"));
+		
 		ProteinReference pr = (ProteinReference)mergedModel.getByID("http://identifiers.org/uniprot/P27797");
 		assertEquals(10, pr.getName().size()); //make sure this one is passed (important!)
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
-		assertEquals(11, pr.getXref().size());
+//		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
+		assertEquals(12, pr.getXref().size());
 		assertEquals("http://identifiers.org/taxonomy/9606", pr.getOrganism().getRDFId());
 		
 		// test proper merge of small molecule reference
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, null, "http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate",SmallMolecule.class)));
 		assertTrue(mergedModel.containsID("http://identifiers.org/chebi/CHEBI:20"));
-		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "CHEBI", "CHEBI:20", ChemicalStructure.class)));
+//		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "CHEBI", "CHEBI:20", ChemicalStructure.class))); //OLD SDF converter used such URI
+		SmallMoleculeReference smr = (SmallMoleculeReference) mergedModel.getByID("http://identifiers.org/chebi/CHEBI:20");
+		assertNotNull(smr.getStructure());
+		assertTrue(StructureFormatType.InChI == smr.getStructure().getStructureFormat());
+		assertNotNull(smr.getStructure().getStructureData());
+		
 		assertTrue(!mergedModel.containsID(Normalizer.uri(XML_BASE, null, "http://www.biopax.org/examples/myExample#ChemicalStructure_8",ChemicalStructure.class)));
-		assertTrue(!mergedModel.containsID("http://identifiers.org/pubchem.substance/14438"));
-		assertTrue(!mergedModel.containsID("http://identifiers.org/pubchem.substance/14439"));
+
+		// the following two lines pass if the warehouse was build from older ChEBI SDF data with older converter 
+		// (but actual ChEBI has no PubChem SID xrefs anymore), or if a special id-mapping file is present (it should)
+		assertTrue(!mergedModel.containsID("http://identifiers.org/pubchem.substance/14438")); //maps to CHEBI:20
+		assertTrue(!mergedModel.containsID("http://identifiers.org/pubchem.substance/14439")); //maps to CHEBI:28
 				
-		SmallMolecule sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, null, "http://pathwaycommons.org/test2#alpha-D-glucose_6-phosphate",SmallMolecule.class));
-		SmallMoleculeReference smr = (SmallMoleculeReference)sm.getEntityReference();
+		SmallMolecule sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, null, 
+				"http://pathwaycommons.org/test2#alpha-D-glucose_6-phosphate",SmallMolecule.class));
+		smr = (SmallMoleculeReference)sm.getEntityReference();
 		assertNotNull(smr);
 		assertEquals("http://identifiers.org/chebi/CHEBI:422", smr.getRDFId());
 		// smr must contain one member SMR
 		// but only if ChEBI OBO was also imported (ChebiOntologyAnalysis run)!
 		assertEquals(1, smr.getMemberEntityReference().size());
 //		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
-		assertEquals(3, smr.getXref().size());		
+		assertEquals(13, smr.getXref().size());
 		
 		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:20");
-		assertEquals("(+)-camphene", msmr.getStandardName());
+		assertEquals("(+)-camphene", msmr.getDisplayName());
+		assertEquals("(1R,4S)-2,2-dimethyl-3-methylidenebicyclo[2.2.1]heptane", msmr.getStandardName());
 //		System.out.println("merged chebi:20 xrefs: " + msmr.getXref().toString());
-		assertEquals(5, msmr.getXref().size());
+		assertEquals(11, msmr.getXref().size());
 		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
-		
-		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P13631"));
-		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P22932"));
-		
-		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01118", UnificationXref.class)));
-		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P01118"));
-//		System.out.println("new xrefOf: " + newXref.getXrefOf().toString());
-		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01116", UnificationXref.class)));
-		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P01116"));
 		
 		sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, null, "http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate",SmallMolecule.class));
 		smr = (SmallMoleculeReference)sm.getEntityReference();
+		assertNotNull(smr);
+		assertEquals(smr, msmr);//CHEBI:20
 
 		smr = (SmallMoleculeReference) mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28");
-		assertEquals(7, smr.getXref().size());
-
-		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28");
-		assertEquals(7, smr.getXref().size()); // relationship xrefs were removed before merging
+		System.out.println("merged chebi:28 xrefs: " + smr.getXref().toString());
+		assertEquals(15, smr.getXref().size()); // relationship xrefs were removed before merging
 		assertEquals("(R)-linalool", smr.getDisplayName());
-
 		assertEquals(5, smr.getEntityReferenceOf().size());
 		
 		BioSource bs = (BioSource) mergedModel.getByID("http://identifiers.org/taxonomy/9606");
@@ -346,19 +358,20 @@ public class DataImportAndServiceIntegrationTest {
 			.getByID(Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684",SmallMoleculeReference.class));
 		assertNotNull(msmr);
 		assertNull(mergedModel.getByID(Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3SmallMoleculeReference165390",SmallMoleculeReference.class)));
-		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28"); // was replaced from Warehouse
+		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28"); // was matched/replaced the same URI Warehouse SMR
 		sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3SmallMolecule173158",SmallMolecule.class));
 		assertFalse(smr.getXref().isEmpty());
 		assertFalse(smr.getMemberEntityReference().isEmpty());	
 		assertFalse(smr.getEntityReferenceOf().isEmpty());
 		assertTrue(smr.getEntityReferenceOf().contains(sm));
-		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:36141"); //wasn't replaced (not found in Warehouse!)
+		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:36141"); //wasn't replaced (not found in Warehouse!)		
 		
-		// was 3 (in the file); but SmallMoleculeReference165390 was removed (became dangling after the replacement of chebi:28)
+		// there were 3 member ERs in the orig. file, but, 
+		// e.g., SmallMoleculeReference165390 was removed (became dangling after the replacement of CHEBI:28)
 		assertEquals(1, msmr.getMemberEntityReferenceOf().size()); 
 		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
 		
-		// the following would be also true if we'd copy old prop./inv.prop relationships, but we do not
+		// the following would be also true if we'd keep old property/inverse prop. relationships, but we do not
 //		assertEquals(2, msmr.getMemberEntityReferenceOf().size());
 //		assertTrue(msmr.getMemberEntityReferenceOf().contains(mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28")));	
 	}

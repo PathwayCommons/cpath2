@@ -90,7 +90,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                         for (String symbol : geneNames) {
                         	// also add Gene Names to PR names (can be >1 due to isoforms)
                         	proteinReference.addName(symbol);
-                        	setRelationshipXRef("HGNC Symbol", symbol, proteinReference, null, model);
+                        	setRelationshipXRef("HGNC SYMBOL", symbol, proteinReference, null, model);
                         }
                     }
                     
@@ -274,22 +274,22 @@ final class UniprotConverterImpl extends BaseConverterImpl {
         for (int i=0; i<xrefList.length; i++) {
         	String xref = xrefList[i].trim();
         	String parts[] = xref.split(";");
-        	String db = parts[0].trim();
+        	String db = parts[0].trim().toUpperCase();
     		
         	//adding for id in part[1], part[2],..
-			if (db.equals("GeneID") || db.equals("RefSeq") 
-					|| db.equals("Ensembl") || db.equals("HGNC")) {
-				if (db.equals("GeneID"))
-					db = "NCBI Gene"; //preferred name (synonym: Entrez Gene)
+			if (db.equals("GENEID") || db.equals("REFSEQ") 
+					|| db.equals("ENSEMBL") || db.equals("HGNC")) {
+				if (db.equals("GENEID"))
+					db = "NCBI GENE"; //- preferred name (synonym: Entrez Gene)
 				for (int j = 1; j < parts.length; j++) {
 			        String id = parts[j].trim();
 			    	// extracting RefSeq AC from AC.Version identifier:
-			    	if(db.equals("RefSeq")) {
+			    	if(db.equals("REFSEQ")) {
 			    		int idx = id.lastIndexOf('.');
 			    		if(idx > 0)
 			    			id = id.substring(0, idx);
 			    	} 
-			    	else if (db.equals("Ensembl") && !id.startsWith("ENS"))
+			    	else if (db.equals("ENSEMBL") && !id.startsWith("ENS"))
 						continue;
 					
 			    	// add xref
@@ -357,7 +357,8 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     private void setRelationshipXRef(String dbName, 
     	String id, ProteinReference proteinReference, String relationshipType, Model model) 
     {
-        //generate a URI using only the classname, (normalized) db name, and id (no rel. type)
+        dbName = dbName.trim().toUpperCase();
+    	//generate a URI using only the classname, (normalized) db name, and id (no rel. type)
 		String uri = Normalizer.uri(model.getXmlBase(), dbName, id, RelationshipXref.class);
 		RelationshipXref rXRef = (RelationshipXref) model.getByID(uri);
 		if (rXRef == null) {
@@ -391,6 +392,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
      */
     private void setUnificationXRef(String dbName, String id, ProteinReference proteinReference, Model model) {
         id = id.trim();
+        dbName = dbName.trim().toUpperCase();
 		String rdfId = Normalizer.uri(model.getXmlBase(), dbName, id, UnificationXref.class);
 		
 		UnificationXref rXRef = (UnificationXref) model.getByID(rdfId);
@@ -427,7 +429,8 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 		// add all unification xrefs
 		for (String acEntry : acList) {
 			String ac = acEntry.trim();
-			setUnificationXRef("UniProt", ac, proteinReference, model);
+			//use db='UNIPROT' for these xrefs instead of 'UniProt Knowledgebase' (preferred in MIRIAM)
+			setUnificationXRef("UNIPROT", ac, proteinReference, model);
 		}
 		
 		return proteinReference;

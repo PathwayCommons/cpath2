@@ -53,6 +53,7 @@ import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -60,8 +61,8 @@ import org.springframework.stereotype.Service;
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
 import cpath.dao.CPathUtils;
-import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
+import cpath.jpa.MappingsRepository;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
@@ -72,7 +73,6 @@ import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
 import static cpath.service.Status.*;
 
-import cpath.warehouse.beans.Mapping;
 
 /**
  * Service tier class - to uniformly access 
@@ -90,7 +90,7 @@ class CPathServiceImpl implements CPathService {
 	
 	private PaxtoolsDAO mainDAO;
 	
-	private MetadataDAO metadataDAO;
+	private MappingsRepository mappingRepository;
 	
 	private SimpleIOHandler simpleIO;
 	
@@ -116,11 +116,12 @@ class CPathServiceImpl implements CPathService {
     /**
      * Constructor.
      */
-	public CPathServiceImpl(PaxtoolsDAO mainDAO, MetadataDAO metadataDAO) 
+	@Autowired
+	public CPathServiceImpl(PaxtoolsDAO paxtoolsDAO, MappingsRepository mappingRepository) 
 	{
 		this();
-		this.mainDAO = mainDAO;
-		this.metadataDAO = metadataDAO;
+		this.mainDAO = paxtoolsDAO;
+		this.mappingRepository = mappingRepository;
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
 		this.cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
@@ -139,7 +140,8 @@ class CPathServiceImpl implements CPathService {
 				new Runnable() {
 				@Override
 				public void run() {
-					Model model = CPathUtils.importFromTheArchive("All");
+					String archive = CPathSettings.getInstance().mainModelFile(); 
+					Model model = CPathUtils.importFromTheArchive(archive);
 					model.setXmlBase(CPathSettings.getInstance().getXmlBase());
 					// set for this service
 					setProxyModel(model);
@@ -522,7 +524,9 @@ class CPathServiceImpl implements CPathService {
 	 * (one has to submit canonical identifiers, i.e, ones without "-#" or ".#").
 	 * 
 	 * 
-	 * @param identifiers a list of gene names, UniProt, RefSeq, ENS* and NCBI Gene identifiers; or CHEBI and InChIKey.
+	 * @param identifiers - a list of genes/protein or molecules as: \
+	 * 		HGNC symbols, UniProt, RefSeq, ENS* and NCBI Gene identifiers; or\
+	 * 		CHEBI, InChIKey, ChEMBL, DrugBank, CID: (PubChem), SID: (PubChem), KEGG Compound, PharmGKB, or chem. name.
 	 * @return URIs
 	 */
 	private String[] findUrisByIds(String[] identifiers)
@@ -541,9 +545,9 @@ class CPathServiceImpl implements CPathService {
 				//TODO could also map a secondary ID to the primary one (generally, users should not guess URIs nor submit non-existing ones)
 				uris.add(identifier);
 			} else {
-				// do gene/protein id-mapping;
+				// do gene/protein/chemical id-mapping;
 				// mapping can be ambiguous, but this is OK for queries (unlike when merging data)
-				Set<String> m = map(identifier);
+				Set<String> m = mappingRepository.map(identifier);
 				if (!m.isEmpty()) {
 					for(String ac : m) {
 						// add to the query string; 
@@ -581,31 +585,6 @@ class CPathServiceImpl implements CPathService {
 		}
 				
 		return uris.toArray(new String[]{});
-	}
-
-	
-	/*
-	 * Detects the identifier type (chemical vs gene/protein) 
-	 * and executes corresponding id-mapping method.
-	 * 
-	 * @param identifier
-	 * @return
-	 * @throws AssertionError when the identifier is suspected to be a full URI
-	 */
-	private Set<String> map(String identifier) {
-		if(identifier.startsWith("http://"))
-			throw new AssertionError("URI is not allowed here");
-		
-		if(identifier.startsWith("CHEBI:") || identifier.length() == 25 || identifier.length() == 27) {
-			// chebi or InChIKey identifier (25 or 27 chars long) -> to primary chebi id
-			return metadataDAO.mapIdentifier(identifier, Mapping.Type.CHEBI, null);
-		} else if(identifier.startsWith("PUBCHEM:")) { //TODO explain in the web service docs
-			// - a hack to tell PubChem ID from NCBI Gene ID in graph queries
-			return metadataDAO.mapIdentifier(identifier.replaceFirst("PUBCHEM:", ""), Mapping.Type.CHEBI, null);
-		} else {
-			// gene/protein name, id, etc. -> to primary uniprot AC
-			return metadataDAO.mapIdentifier(identifier, Mapping.Type.UNIPROT, null);
-		}
 	}
 
 	

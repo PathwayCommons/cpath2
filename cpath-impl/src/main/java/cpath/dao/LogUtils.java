@@ -1,7 +1,7 @@
 /**
  * 
  */
-package cpath.log;
+package cpath.dao;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,11 +21,11 @@ import com.maxmind.geoip.Location;
 import com.maxmind.geoip.LookupService;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CPathUtils;
-import cpath.log.jpa.Geoloc;
-import cpath.log.jpa.LogEntitiesRepository;
-import cpath.log.jpa.LogEntity;
-import cpath.log.jpa.LogEvent;
+import cpath.jpa.Geoloc;
+import cpath.jpa.LogEntitiesRepository;
+import cpath.jpa.LogEntity;
+import cpath.jpa.LogEvent;
+import cpath.jpa.LogType;
 
 /**
  * @author rodche

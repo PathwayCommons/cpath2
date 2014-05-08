@@ -45,7 +45,6 @@ import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
-import cpath.warehouse.beans.Mapping;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Content;
 import cpath.warehouse.beans.Metadata.METADATA_TYPE;
@@ -349,33 +348,5 @@ public class PaxtoolsHibernateDAOTest {
         assertTrue(md.getContent().isEmpty()); 
         md = meta.getMetadataByIdentifier("TEST");
         assertTrue(md.getContent().isEmpty());         
-	}
-
-	
-	@Test
-	public void testImportIdMapping() {		
-        Map<String,String> idMap = new TreeMap<String, String>();
-        Mapping map = new Mapping(Mapping.Type.UNIPROT, "test", idMap);
-        idMap.put("ZHX1", "P12345");
-        idMap.put("ZHX1-C8orf76", "Q12345");  
-        //capitalization is important in 99% of identifier types (we should not ignore it)
-        // we should be able to save it and not get 'duplicate key' exception here
-        idMap.put("ZHX1-C8ORF76", "Q12345"); 
-        meta.saveMapping(map);
-        
-        //check it's saved
-        assertEquals(1, meta.mapIdentifier("ZHX1-C8orf76", Mapping.Type.UNIPROT, null).size());
-        assertEquals(1, meta.mapIdentifier("ZHX1-C8ORF76", Mapping.Type.UNIPROT, null).size());
-        
-        // repeat (should successfully update)
-        idMap = new TreeMap<String, String>();
-        idMap.put("FooBar", "CHEBI:12345");  
-        map = new Mapping(Mapping.Type.CHEBI, "test2", idMap);
-        //add new Mapping entity
-        meta.saveMapping(map);
-        assertTrue(meta.mapIdentifier("FooBar", Mapping.Type.UNIPROT, null).isEmpty());
-        Set<String> mapsTo = meta.mapIdentifier("FooBar", Mapping.Type.CHEBI, null);
-        assertEquals(1, mapsTo.size());
-        assertEquals("CHEBI:12345", mapsTo.iterator().next());
 	}
 }

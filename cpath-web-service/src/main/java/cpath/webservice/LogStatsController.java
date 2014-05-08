@@ -2,8 +2,8 @@ package cpath.webservice;
 
 import java.util.*;
 
-import cpath.log.LogType;
-import cpath.log.jpa.LogEvent;
+import cpath.jpa.LogEvent;
+import cpath.jpa.LogType;
 import cpath.webservice.args.binding.LogTypeEditor;
 
 import org.slf4j.Logger;

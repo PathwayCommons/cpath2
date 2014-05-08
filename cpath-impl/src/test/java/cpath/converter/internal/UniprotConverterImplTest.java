@@ -102,19 +102,19 @@ public class UniprotConverterImplTest {
 		//this is just to test for a bug in the DR text format parser...
 		boolean rel = false;
 		for(Xref x : pr.getXref()) {
-			if("NCBI Gene".equals(x.getDb())) {
+			if("NCBI GENE".equalsIgnoreCase(x.getDb())) {
 				rel = true;
 				break;
 			}
 		}
 		assertTrue(rel);
 		
-		String uri = Normalizer.uri(model.getXmlBase(), "RefSeq", "NP_619650", RelationshipXref.class);
+		String uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "NP_619650", RelationshipXref.class);
 		assertNotNull(model.getByID(uri));
 		//but the parser should not create xrefs from for the last parts in DR like "...; -.", "; Homo sapiens.\n", etc.
-		uri = Normalizer.uri(model.getXmlBase(), "RefSeq", "-", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "-", RelationshipXref.class);
 		assertNull(model.getByID(uri));	
-		uri = Normalizer.uri(model.getXmlBase(), "Ensembl", "Homo sapiens", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "Homo sapiens", RelationshipXref.class);
 		assertNull(model.getByID(uri));	
 	}
 

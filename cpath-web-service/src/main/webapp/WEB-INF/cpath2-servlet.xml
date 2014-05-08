@@ -40,14 +40,16 @@
 	<bean id="helpController" class="cpath.webservice.HelpController"/>     
 
 	<bean id="biopaxModelController" class="cpath.webservice.BiopaxModelController">
-		<constructor-arg ref="service"/>
+	<!-- autowired Constructor args. -->
+<!-- 		<constructor-arg ref="service"/> -->
 	</bean>  
 	    
-	<bean id="pagesController" class="cpath.webservice.PagesController">
-	</bean>	 
+	<bean id="pagesController" class="cpath.webservice.PagesController"/> 
 	
     <bean id="metadataController" class="cpath.webservice.MetadataController">
-		<constructor-arg ref="metadataDAO"/>
+    <!-- autowired Constructor args. -->
+<!-- 		<constructor-arg ref="metadataDAO"/> -->
+<!-- 		<constructor-arg ref="mappingRepository"/> -->
 	</bean> 	
 	
 	<bean id="logStatsController" class="cpath.webservice.LogStatsController"/>

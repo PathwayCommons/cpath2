@@ -28,6 +28,8 @@
 package cpath.service;
 
 
+import java.util.Set;
+
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
