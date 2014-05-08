@@ -393,7 +393,7 @@ public class MergerAnalysis implements Analysis {
 			// do id-mapping
 			Set<String> mp = mappingsRepository.map(db, id, "UNIPROT"); 			
 			if(!mp.isEmpty()) {
-				toReturn = (ProteinReference) getByIdsFromModel(mp, canonicalPrefix, target);
+				toReturn = (ProteinReference) getByIdsFromModel(orig.getRDFId(), "URI", mp, canonicalPrefix, target);
 			}
 		}
 				
@@ -402,7 +402,8 @@ public class MergerAnalysis implements Analysis {
 		if (toReturn == null) {
 			Set<String> mappingSet = idMappingByXrefs(orig, "UNIPROT", UnificationXref.class);
 			if(!mappingSet.isEmpty()) {
-				toReturn = (ProteinReference) getByIdsFromModel(mappingSet, canonicalPrefix, target);		
+				toReturn = (ProteinReference) getByIdsFromModel(
+						orig.getRDFId(), "Unif. Xrefs", mappingSet, canonicalPrefix, target);		
 			}
 		}	
 		
@@ -411,15 +412,17 @@ public class MergerAnalysis implements Analysis {
 		if (toReturn == null) {
 			Set<String> mappingSet = idMappingByXrefs(orig,"UNIPROT", RelationshipXref.class);
 			if(!mappingSet.isEmpty()) {
-				toReturn = (ProteinReference) getByIdsFromModel(mappingSet, canonicalPrefix, target);
+				toReturn = (ProteinReference) getByIdsFromModel(
+						orig.getRDFId(), "Rel. Xrefs", mappingSet, canonicalPrefix, target);
 			}	
 		}
 				
-		//5) finally, map by display name (CALM_HUMAN, etc.)!
+		//5) finally, map by names (CALM_HUMAN, etc.)!
 		if (toReturn == null) {
 			Set<String> mp = mapByName(orig, "UNIPROT", target);		
 			if(!mp.isEmpty()) {
-				toReturn = (ProteinReference) getByIdsFromModel(mp, canonicalPrefix, target);
+				toReturn = (ProteinReference) getByIdsFromModel(
+						orig.getRDFId(), "names", mp, canonicalPrefix, target);
 			}
 		}
 		
@@ -525,7 +528,8 @@ public class MergerAnalysis implements Analysis {
 			String db = dbById(id, orig.getXref()); //find by id			
 			Set<String> mp = mappingsRepository.map(db, id, "CHEBI");
 			if(!mp.isEmpty()) {
-				toReturn = (SmallMoleculeReference) getByIdsFromModel(mp, canonicalPrefix, target);
+				toReturn = (SmallMoleculeReference) getByIdsFromModel(
+						orig.getRDFId(), "URI", mp, canonicalPrefix, target);
 			}
 		}
 				
@@ -534,7 +538,8 @@ public class MergerAnalysis implements Analysis {
 		if (toReturn == null) {
 			Set<String> mappingSet = idMappingByXrefs(orig, "CHEBI", UnificationXref.class);
 			if(!mappingSet.isEmpty()) {
-				toReturn = (SmallMoleculeReference) getByIdsFromModel(mappingSet, canonicalPrefix, target);
+				toReturn = (SmallMoleculeReference) getByIdsFromModel(
+						orig.getRDFId(), "Unif. Xrefs", mappingSet, canonicalPrefix, target);
 			}	
 		}	
 		
@@ -545,7 +550,8 @@ public class MergerAnalysis implements Analysis {
 			if(!mappingSet.isEmpty()) {
 				//not needed if we replace the ER
 //				addRelXref(orig, "CHEBI", mappingSet);
-				toReturn = (SmallMoleculeReference) getByIdsFromModel(mappingSet, canonicalPrefix, target);
+				toReturn = (SmallMoleculeReference) getByIdsFromModel(
+						orig.getRDFId(), "Rel. Xrefs", mappingSet, canonicalPrefix, target);
 			}	
 		}
 		
@@ -553,7 +559,8 @@ public class MergerAnalysis implements Analysis {
 		if (toReturn == null) {		
 			Set<String> mp = mapByName(orig, "CHEBI", target);
 			if(!mp.isEmpty()) {
-				toReturn = (SmallMoleculeReference) getByIdsFromModel(mp, canonicalPrefix, target);
+				toReturn = (SmallMoleculeReference) getByIdsFromModel(
+						orig.getRDFId(), "names", mp, canonicalPrefix, target);
 			}
 		}
 		
@@ -564,15 +571,17 @@ public class MergerAnalysis implements Analysis {
 	@SuppressWarnings("unchecked")
 	private Set<String> mapByName(EntityReference orig, String toDb, Model target) {
 		Set<String> mp = new TreeSet<String>();
-		
-		String name = orig.getDisplayName();
+
+		String name = orig.getStandardName();
 		if(name != null)
 			mp.addAll(mappingsRepository.map(null, name.toLowerCase(), toDb));
 
-		name = orig.getStandardName();
-		if(name != null)
-			mp.addAll(mappingsRepository.map(null, name.toLowerCase(), toDb));
-			
+		if(mp.isEmpty()) {
+			name = orig.getDisplayName();
+			if(name != null)
+				mp.addAll(mappingsRepository.map(null, name.toLowerCase(), toDb));
+		}
+		
 		if(mp.isEmpty() && //and only for PRs and SMRs -
 				(orig instanceof ProteinReference || orig instanceof SmallMoleculeReference)) 
 		{
@@ -599,13 +608,15 @@ public class MergerAnalysis implements Analysis {
 	}
 
 
-	private EntityReference getByIdsFromModel(Set<String> mp, String uriPrefix,
+	private EntityReference getByIdsFromModel(String origUri, String mapBy, Set<String> mapsTo, String uriPrefix,
 			Model target) 
 	{
-		String uri = uriPrefix + mp.iterator().next();
+		String uri = uriPrefix + mapsTo.iterator().next();
 		EntityReference toReturn = (EntityReference) target.getByID(uri);
-		if(toReturn!= null && mp.size() > 1)
-			log.warn("ambiguous id-mapping using URI; picked " + uri + " of " + mp);
+		if(toReturn!= null && mapsTo.size() > 1)
+			log.warn("Merger picked the FIRST " + toReturn.getModelInterface().getSimpleName() 
+				+ " with " + uri + " of " + mapsTo + " (id-mapping by " 
+					+ mapBy + ") to REPLACE " + origUri);
 		
 		return toReturn;
 	}
