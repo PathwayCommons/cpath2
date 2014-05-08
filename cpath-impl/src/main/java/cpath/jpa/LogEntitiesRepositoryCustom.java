@@ -1,12 +1,11 @@
 /**
  * 
  */
-package cpath.log.jpa;
+package cpath.jpa;
 
 import java.util.List;
 import java.util.Map;
 
-import cpath.log.LogType;
 
 
 /**

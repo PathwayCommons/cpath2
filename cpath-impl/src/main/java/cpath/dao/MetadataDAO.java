@@ -1,11 +1,9 @@
 package cpath.dao;
 
 
-import cpath.warehouse.beans.Mapping;
 import cpath.warehouse.beans.Metadata;
 
 import java.util.List;
-import java.util.Set;
 
 import org.biopax.validator.api.beans.ValidatorResponse;
 
@@ -55,32 +53,13 @@ public interface MetadataDAO {
 	/**
 	 * Generates the BioPAX validation report for a pathway data file.
 	 * 
-	 * @param provider 
-	 * @param file - base filename as in {@link Content}
+	 * @param provider data source (Metadata) identifier, not null
+	 * @param file - base filename as in {@link Content}, or null (for all files)
 	 * @return
 	 */
     ValidatorResponse validationReport(String provider, String file);
     
     
-    /**
-     * Persists the id-mapping entity.
-     * @param mapping
-     */
-    void saveMapping(Mapping mapping);
-    
-    
-    /**
-     * Maps the identifier.
-     * 
-     * @param identifier
-     * @param type
-     * @param idType data collection name (it helps match id versions, \
-     *        isoforms even if they're not stored in the mapping tables; can be null)
-     * @return a set of primary IDs of the type; normally one or none elements
-     */
-    Set<String> mapIdentifier(String identifier, Mapping.Type type, String idType);
-
-
 	/**
 	 * Imports metadata description from the resource.
 	 * @param location
@@ -97,5 +76,5 @@ public interface MetadataDAO {
 	 * @return updated/saved object
 	 */
 	Metadata init(Metadata metadata);
-    
+
 }

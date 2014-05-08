@@ -41,10 +41,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
-import cpath.log.LogUtils;
-import cpath.log.jpa.Geoloc;
-import cpath.log.jpa.LogEntitiesRepository;
-import cpath.log.jpa.LogEvent;
+import cpath.dao.LogUtils;
+import cpath.jpa.Geoloc;
+import cpath.jpa.LogEntitiesRepository;
+import cpath.jpa.LogEvent;
 import cpath.service.ErrorResponse;
 import cpath.service.Status;
 import cpath.service.jaxb.*;

@@ -55,7 +55,7 @@ or the fat JAR with embedded application server was started) -->
 	controllers' source code</a>:
 	</p></blockquote>
 	<ul>
-		<li><a href="#idmapping">/idmapping</a> - maps some identifiers to primary UniProt IDs;</li>
+		<li><a href="#idmapping">/idmapping</a> - maps some identifiers to primary UniProt or ChEBI IDs;</li>
 		<li><em>/help</em> - returns a tree of Help objects describing the main commands, parameters, 
 		BioPAX types, and properties, etc.; e.g., /help/schema, /help/commands, 
 		/help/types (one can add .json/.xml extention or set 'Accept' HTTP header to request JSON/XML).</li>
@@ -83,8 +83,10 @@ or the fat JAR with embedded application server was started) -->
 		one should not normally hit ${base}foo, ${cpath.xmlBase}foo, or ${base}get?uri=${cpath.xmlBase}foo 
 		unless the corresponding BioPAX individual there exists, which 
 		one can find out using <em>search, top_pathways</em>, and other queries (i.e., get some objects of interest first).
-		However, HUGO gene symbols, SwissProt, RefSeq, Ensembl, and NCBI gene/protein <strong>identifiers
-		are acceptable in place of full URIs</strong> in <em>get</em> and <em>graph</em> queries.
+		However, HUGO gene symbols, SwissProt, RefSeq, Ensembl, and NCBI Gene (number) <strong>identifiers;
+		and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem Compound or Substance 
+		(ID must be prefixed with 'CID:' or 'SID:' to distinguish from each other and NCBI Gene), 
+		are also acceptable in place of full URIs</strong> in <em>get</em> and <em>graph</em> queries.
 		As a rule of thumb, using full URIs makes a precise query, whereas with identifiers - more exploratory one 
 		(which performs id-mapping to UniProt and search for the Xref's URIs).
 		</p>
@@ -212,8 +214,10 @@ or the fat JAR with embedded application server was started) -->
 			(<strong>ProteinReference</strong>)</li>
 		<li><a rel="example" href="get?uri=COL5A1">
 			This command returns Xref(s) in BioPAX format found by gene symbol COL5A1</a> 		
-			<strong>Note:</strong> UniProt, RefSeq, NCBI Gene, and Ensemble identifiers ususally work here too 
-			if these, or their corresponding primary UniProt accession, match at least one Xref.id BioPAX property value.</li>
+			<strong>Note:</strong> Some other identifiers might work here too 
+			if these or their corresponding primary UniProt accession match at least one existing BioPAX Xref.
+			See also: <a href="#about_uris">about URIs</a> and <a href="#idmapping">id-mapping</a>.
+			</li>
 	</ol>
 </div>
 <hr/>
@@ -282,9 +286,9 @@ or the fat JAR with embedded application server was started) -->
 			particularly the first one, a query like this potentially returns a larger subnetwork, for
 			it possibly starts its graph traversing from several unification and relationship Xrefs 
 			rather than from the ProteinReference (http://identifiers.org/uniprot/P20908).
-			One can mix: submit URI along with UniProt accession, RefSeq ID, NCBI Gene ID and Ensemble IDs
+			One can mix: submit URI along with, e.g., UniProt, RefSeq, NCBI Gene, and Ensemble IDs
 			in a single /graph or /get query; other identifiers might also work, by chance (if present 
-			in the db).
+			in the db). See: <a href="#about_uris">about URIs</a> and <a href="#idmapping">id-mapping</a>.
 		</li>
 	</ol>
 </div>
@@ -371,14 +375,16 @@ or the fat JAR with embedded application server was started) -->
 <div class="row nav-target" id="idmapping">
 	<h3>IDMAPPING:</h3>
 	<blockquote><p>
-	Unambiguously maps, e.g., HGNC gene symbols, NCBI Gene, RefSeq, ENS*, and
-	secondary UniProt identifiers to the primary UniProt accessions, or -
-	ChEBI and PubChem IDs to the primary ChEBI IDs. You can mix different standard ID types in one query.
-	This is a specific id-mapping (not general-purpose) for canonical reference proteins and small molecules;
-	it was first designed for internal use, to improve BioPAX data integration and allow graph
-	queries accept not only URIs but also standard IDs. The mapping tables were derived
-	exclusively from Swiss-Prot (DR fields) and ChEBI data (custom mapping tables can be added in the 
-	future versions if necessary).</p></blockquote>
+	Maps bioentity identifiers to the primary UniProt or ChEBI accessions. 
+	Currently supported are: HUGO gene symbols, UniProt (SwissProt AC and ID), RefSeq, Ensembl, NCBI Gene 
+	identifiers; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem 
+	(PubChem ID must be prefixed with either 'CID:' or 'SID:' to distinguish from each other and NCBI Gene ID).
+	You can mix different standard ID types in one query.
+	This is NOT an all-purpose id-mapping. It's to map to canonical reference proteins and small molecules
+	that might exists in our database; it was first designed for internal use, to improve BioPAX data 
+	integration and allow graph queries accept not only URIs but also some IDs. The mapping table was derived
+	from Swiss-Prot (DR fields) and ChEBI (OBO) data, and custom mapping files (e.g., based on UniChem).
+	</p></blockquote>
 	<h4>Output:</h4> 
 	Simple JSON (serialized Map) format.
 	<h4>Examples:</h4> <br/>

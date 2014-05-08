@@ -1,4 +1,4 @@
-package cpath.log.jpa;
+package cpath.jpa;
 
 import java.io.Serializable;
 

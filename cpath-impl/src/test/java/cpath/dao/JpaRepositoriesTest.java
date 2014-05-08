@@ -1,7 +1,7 @@
 /**
  * 
  */
-package cpath.log;
+package cpath.dao;
 
 
 import java.util.Arrays;
@@ -19,12 +19,14 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import cpath.config.CPathSettings;
-import cpath.log.LogType;
-import cpath.log.LogUtils;
-import cpath.log.jpa.Geoloc;
-import cpath.log.jpa.LogEntitiesRepository;
-import cpath.log.jpa.LogEntity;
-import cpath.log.jpa.LogEvent;
+import cpath.dao.LogUtils;
+import cpath.jpa.Geoloc;
+import cpath.jpa.LogEntitiesRepository;
+import cpath.jpa.LogEntity;
+import cpath.jpa.LogEvent;
+import cpath.jpa.LogType;
+import cpath.jpa.Mapping;
+import cpath.jpa.MappingsRepository;
 import cpath.service.Cmd;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
@@ -37,12 +39,15 @@ import static org.junit.Assert.*;
  *
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations={"classpath:META-INF/spring/applicationContext-log.xml"})
+@ContextConfiguration(locations={"classpath:META-INF/spring/applicationContext-jpa.xml"})
 @ActiveProfiles("dev")
-public class LogRepositoriesTest {
+public class JpaRepositoriesTest {
 	
 	@Autowired
-	private LogEntitiesRepository repository;
+	private LogEntitiesRepository logEntitiesRepository;
+	
+	@Autowired
+	private MappingsRepository mappingsRepository;
 	
 	
 	@Test
@@ -76,10 +81,10 @@ public class LogRepositoriesTest {
 				LogEvent.from(Status.INTERNAL_ERROR), Geoloc.fromIpAddress(ipAddr)); //"US"
 		assertNull(logEntity.getId());
 		//save and check that new log entrie's initial count it set to 0
-		logEntity = repository.save(logEntity);
+		logEntity = logEntitiesRepository.save(logEntity);
 		assertEquals(0L, logEntity.getCount().longValue());	
 		assertNotNull(logEntity.getId());
-		assertEquals(1, repository.count());
+		assertEquals(1, logEntitiesRepository.count());
 	}
 
 	
@@ -92,13 +97,13 @@ public class LogRepositoriesTest {
 		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
 	
 		// count twice
-		LogEntity logEntity = LogUtils.count(repository, LogUtils.today(), LogEvent.TOTAL, ipAddr);
+		LogEntity logEntity = LogUtils.count(logEntitiesRepository, LogUtils.today(), LogEvent.TOTAL, ipAddr);
 		assertEquals(1L, logEntity.getCount().longValue());
-		logEntity = LogUtils.count(repository, LogUtils.today(), LogEvent.TOTAL, ipAddr);
+		logEntity = LogUtils.count(logEntitiesRepository, LogUtils.today(), LogEvent.TOTAL, ipAddr);
 		assertEquals(2L, logEntity.getCount().longValue());
 		
 		// test that there is only one record yet
-		assertEquals(1, repository.count());
+		assertEquals(1, logEntitiesRepository.count());
 	}
 	
 	
@@ -110,31 +115,31 @@ public class LogRepositoriesTest {
 		// add some logs (for two days, several categories):
 		// Today
 		String today = LogUtils.today();
-		LogUtils.count(repository, today, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
-		LogUtils.count(repository, today, LogEvent.TOTAL, ipAddr);
-		LogUtils.count(repository, today, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
-		LogUtils.count(repository, today, LogEvent.TOTAL, ipAddr);
-		LogUtils.count(repository, today, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
-		LogUtils.count(repository, today, LogEvent.TOTAL, ipAddr);
-		LogUtils.count(repository, today, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
-		LogUtils.count(repository, today, LogEvent.TOTAL, ipAddr);
-		LogUtils.count(repository, today, LogEvent.from(Cmd.SEARCH), ipAddr);
+		LogUtils.count(logEntitiesRepository, today, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
+		LogUtils.count(logEntitiesRepository, today, LogEvent.TOTAL, ipAddr);
+		LogUtils.count(logEntitiesRepository, today, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
+		LogUtils.count(logEntitiesRepository, today, LogEvent.TOTAL, ipAddr);
+		LogUtils.count(logEntitiesRepository, today, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
+		LogUtils.count(logEntitiesRepository, today, LogEvent.TOTAL, ipAddr);
+		LogUtils.count(logEntitiesRepository, today, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
+		LogUtils.count(logEntitiesRepository, today, LogEvent.TOTAL, ipAddr);
+		LogUtils.count(logEntitiesRepository, today, LogEvent.from(Cmd.SEARCH), ipAddr);
 		// Yesterday
 		String yesterDay = LogUtils.addIsoDate(today, -1);
-		LogUtils.count(repository, yesterDay, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
-		LogUtils.count(repository, yesterDay, LogEvent.TOTAL, ipAddr);
-		LogUtils.count(repository, yesterDay, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
-		LogUtils.count(repository, yesterDay, LogEvent.TOTAL, ipAddr);
-		LogUtils.count(repository, yesterDay, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
-		LogUtils.count(repository, yesterDay, LogEvent.TOTAL, ipAddr);
-		LogUtils.count(repository, yesterDay, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
-		LogUtils.count(repository, yesterDay, LogEvent.TOTAL, ipAddr);
-		LogUtils.count(repository, yesterDay, LogEvent.from(Cmd.SEARCH), ipAddr);
+		LogUtils.count(logEntitiesRepository, yesterDay, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
+		LogUtils.count(logEntitiesRepository, yesterDay, LogEvent.TOTAL, ipAddr);
+		LogUtils.count(logEntitiesRepository, yesterDay, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
+		LogUtils.count(logEntitiesRepository, yesterDay, LogEvent.TOTAL, ipAddr);
+		LogUtils.count(logEntitiesRepository, yesterDay, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
+		LogUtils.count(logEntitiesRepository, yesterDay, LogEvent.TOTAL, ipAddr);
+		LogUtils.count(logEntitiesRepository, yesterDay, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
+		LogUtils.count(logEntitiesRepository, yesterDay, LogEvent.TOTAL, ipAddr);
+		LogUtils.count(logEntitiesRepository, yesterDay, LogEvent.from(Cmd.SEARCH), ipAddr);
 		
-		assertEquals(12, repository.count());
+		assertEquals(12, logEntitiesRepository.count());
 		
 		//timeline per type
-		Map<String, List<Object[]>>	res = repository.downloadsTimeline(LogType.TOTAL, null);
+		Map<String, List<Object[]>>	res = logEntitiesRepository.downloadsTimeline(LogType.TOTAL, null);
 		assertNotNull(res);
 		assertEquals(1, res.size());
 		
@@ -147,7 +152,7 @@ public class LogRepositoriesTest {
 		assertEquals(today, tl.get(0)[0]);
 		
 		// for one category only
-		res = repository.downloadsTimeline(LogType.PROVIDER, null);
+		res = logEntitiesRepository.downloadsTimeline(LogType.PROVIDER, null);
 		//two entries (reactome and humancyc)
 		assertEquals(2, res.size());
 		tl = res.get(LogType.TOTAL.description);
@@ -162,7 +167,7 @@ public class LogRepositoriesTest {
 		assertEquals(yesterDay, tl.get(1)[0]);
 				
 		// for error 500 only
-		res = repository.downloadsTimeline(LogType.ERROR, "INTERNAL_ERROR");
+		res = logEntitiesRepository.downloadsTimeline(LogType.ERROR, "INTERNAL_ERROR");
 		//two map entries: for all downloads, for error 500
 		assertEquals(1, res.size());
 		tl = res.get(LogType.TOTAL.description);
@@ -191,12 +196,12 @@ public class LogRepositoriesTest {
 		);
 		
 		//save/count all + total (once)
-		LogUtils.log(repository, events, loc);
+		LogUtils.log(logEntitiesRepository, events, loc);
 
-		assertEquals(5, repository.count());
+		assertEquals(5, logEntitiesRepository.count());
 		
 		//timeline per type (incl. TOTAL)
-		Map<String, List<Object[]>>	res = repository.downloadsTimeline(LogType.TOTAL, null);
+		Map<String, List<Object[]>>	res = logEntitiesRepository.downloadsTimeline(LogType.TOTAL, null);
 		assertNotNull(res);
 		assertEquals(1, res.size());
 		
@@ -207,7 +212,7 @@ public class LogRepositoriesTest {
 		assertEquals(LogUtils.today(), tl.get(0)[0]);
 		
 		// for one category only
-		res = repository.downloadsTimeline(LogType.PROVIDER, null);
+		res = logEntitiesRepository.downloadsTimeline(LogType.PROVIDER, null);
 		//two entries: reactome, humancyc
 		assertEquals(2, res.size());
 		tl = res.get(LogType.TOTAL.description);
@@ -251,5 +256,28 @@ public class LogRepositoriesTest {
 		file = cpath.exportArchivePrefix() + "reactome.foo.gmt.gz";
 		events = LogEvent.fromDownloads(file);
 		assertEquals(3, events.size());
+	}
+	
+	
+	@Test
+	public void testIdMapping() {		
+        //capitalization is important in 99% of identifier types (we should not ignore it)
+        // we should be able to save it and not get 'duplicate key' exception here
+		mappingsRepository.save(new Mapping("GeneCards", "ZHX1", "UNIPROT", "P12345"));
+		mappingsRepository.save(new Mapping("GeneCards", "ZHX1-C8orf76", "UNIPROT", "Q12345"));
+		mappingsRepository.save(new Mapping("GeneCards", "ZHX1-C8ORF76", "UNIPROT", "Q12345"));
+        
+        //check it's saved
+        assertEquals(1, mappingsRepository.map(null, "ZHX1-C8orf76", "UNIPROT").size());
+        assertEquals(1, mappingsRepository.map(null, "ZHX1-C8ORF76", "UNIPROT").size());
+        assertEquals(1, mappingsRepository.map("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
+        
+        // repeat (should successfully update)- add a Mapping
+        mappingsRepository.save(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
+        assertTrue(mappingsRepository.map(null, "FooBar", "UNIPROT").isEmpty());
+        assertTrue(mappingsRepository.map("TEST", "FooBar", "UNIPROT").isEmpty());
+        Set<String> mapsTo = mappingsRepository.map(null, "FooBar", "CHEBI");
+        assertEquals(1, mapsTo.size());
+        assertEquals("CHEBI:12345", mapsTo.iterator().next());
 	}
 }

@@ -34,14 +34,21 @@ import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Cleaner;
 import cpath.importer.Converter;
 import cpath.importer.Premerger;
+import cpath.jpa.Mapping;
+import cpath.jpa.MappingsRepository;
 import cpath.warehouse.beans.Content;
-import cpath.warehouse.beans.Mapping;
-import cpath.warehouse.beans.Mapping.Type;
 import cpath.warehouse.beans.Metadata;
 import cpath.warehouse.beans.Metadata.METADATA_TYPE;
 
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.*;
+import org.biopax.paxtools.model.level3.EntityReference;
+import org.biopax.paxtools.model.level3.ProteinReference;
+import org.biopax.paxtools.model.level3.PublicationXref;
+import org.biopax.paxtools.model.level3.RelationshipXref;
+import org.biopax.paxtools.model.level3.SmallMoleculeReference;
+import org.biopax.paxtools.model.level3.UnificationXref;
+import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.validator.api.Validator;
 import org.biopax.validator.api.beans.*;
 import org.biopax.validator.impl.IdentifierImpl;
@@ -49,9 +56,10 @@ import org.biopax.validator.utils.Normalizer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.util.Assert;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
 import java.util.zip.GZIPInputStream;
@@ -69,23 +77,28 @@ public final class PremergeImpl implements Premerger {
     
 	private final String xmlBase;
 
-    private MetadataDAO metaDataDAO;
-    private PaxtoolsDAO paxtoolsDAO;
-	private Validator validator;
+    private final MetadataDAO metaDataDAO;
+    private final PaxtoolsDAO paxtoolsDAO;
+    private final MappingsRepository mappingsRepository;
+	private final Validator validator;
 	private String identifier;
+	
+	private String warehouseArchive;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param metaDataDAO
+	 * @param mappingsRepository
 	 * @param validator Biopax Validator
 	 * @param provider pathway data provider's identifier
 	 */
 	public PremergeImpl(final MetadataDAO metaDataDAO, final PaxtoolsDAO paxtoolsDAO, 
-		final Validator validator, String provider) 
+		final MappingsRepository mappingsRepository, final Validator validator, String provider) 
 	{
 		this.metaDataDAO = metaDataDAO;
 		this.paxtoolsDAO = paxtoolsDAO;
+		this.mappingsRepository = mappingsRepository;
 		this.validator = validator;
 		this.xmlBase = CPathSettings.getInstance().getXmlBase();
 		this.identifier = (provider == null || provider.isEmpty()) 
@@ -179,8 +192,16 @@ public final class PremergeImpl implements Premerger {
 		}
 	}
 
-	
-	public void buildWarehouse() {		
+	/**
+	 * Builds a BioPAX Warehouse model using all available
+	 * WAREHOUSE type data sources, builds id-mapping tables from 
+	 * MAPPING type data sources, generates extra xrefs, and saves the 
+	 * result model.
+	 */
+	public void buildWarehouse() {
+		
+		Model warehouse = BioPAXLevel.L3.getDefaultFactory().createModel();
+		
 		// grab all metadata
 		Collection<Metadata> metadataCollection = metaDataDAO.getAllMetadata();
 		// iterate over all metadata
@@ -196,7 +217,7 @@ public final class PremergeImpl implements Premerger {
 				try {
 					inputStream = new GZIPInputStream(new FileInputStream(content.convertedFile()));
 					Model m = new SimpleIOHandler(BioPAXLevel.L3).convertFromOWL(inputStream);				
-					paxtoolsDAO.merge(m);
+					warehouse.merge(m);
 				} catch (IOException e) {
 					log.error("buildWarehouse, skip for " + content.toString() + 
 						"; failed to read/merge from " + content.convertedFile(), e);
@@ -204,36 +225,108 @@ public final class PremergeImpl implements Premerger {
 				}
 			}
 		}
+		warehouse.repair();
+		
+		//clear all id-mapping tables
+		mappingsRepository.deleteAll();
 		
 		// Using the Warehouse, generate the id-mapping tables
 		// from that BioPAX model:
-		buildIdMappingFromWarehouse(true);
-		
-		// Next, process all MAPPING data files
+		buildIdMappingFromWarehouse(warehouse);
+			
+		// Next, process all extra MAPPING data files, build, save tables
 		for (Metadata metadata : metadataCollection) 
 		{
 			//skip not id-mapping data
 			if (metadata.getType() != METADATA_TYPE.MAPPING)
 				continue; 
 			
-			log.info("buildWarehouse(), adding id-mapping: " + metadata.getUri());			
+			log.info("buildWarehouse(), adding id-mapping: " + metadata.getUri());
 			for(Content content : metadata.getContent()) {
 				try {
-					Mapping mapping = simpleMapping(content, new GZIPInputStream(
+					Set<Mapping> mappings = simpleMapping(content, new GZIPInputStream(
 							new FileInputStream(content.originalFile())));
-					metaDataDAO.saveMapping(mapping);
+					saveIgnoringDuplicates(mappings);
 				} catch (Exception e) {
 					log.error("buildWarehouse(), failed to get id-mapping, " +
 							"using: " + content.toString(), e);
 					continue;
 				}
 			}
-		}				
+		}
+		
+		// add more relationship xrefs to the warehouse ERs; 
+		// this makes ineding/finding an ER by ID possible
+		addXrefsToEntityReferences(warehouse);
+		
+		if(warehouseArchive != null && !warehouseArchive.isEmpty()) { // export
+			log.info("buildWarehouse(), creating Warehouse BioPAX archive: " 
+					+ warehouseArchive);		
+			try {
+				new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(warehouse, 
+						new GZIPOutputStream(new FileOutputStream(warehouseArchive)));
+			} catch (IOException e) {
+				log.error("buildWarehouse(), failed writing " + warehouseArchive, e);
+			}
+		}
+		
+		//persist
+		paxtoolsDAO.merge(warehouse);
+	}
+
+
+	private void saveIgnoringDuplicates(Set<Mapping> mappings) {
+		for(Mapping mapping : mappings) {
+			try {
+				mappingsRepository.save(mapping);
+			} catch (DataIntegrityViolationException e) {} //ignore same entries
+		}
+	}
+
+
+	// generate rel. xrefs from the mappings, add to PRs or SMRs in the warehouse model;
+	// this is for warehouse (normalized) EntityReference or CV URIs only -
+	private void addXrefsToEntityReferences(Model warehouse) {
+		for(SmallMoleculeReference smr : new HashSet<SmallMoleculeReference>(
+				warehouse.getObjects(SmallMoleculeReference.class))) 
+		{
+			//extract primary ID; get other DB/IDs that map to it, add xrefs
+			Assert.isTrue(smr.getRDFId().contains("/chebi"));
+			List<Mapping> map = mappingsRepository
+				.findByDestIgnoreCaseAndDestId("CHEBI", CPathUtils.idfromNormalizedUri(smr.getRDFId()));
+			addXrefs(warehouse, smr, map);
+		}
+		
+		for(ProteinReference pr :new HashSet<ProteinReference>(
+				warehouse.getObjects(ProteinReference.class))) 
+		{
+			//extract primary ID; get other DB/IDs that map to it, add xrefs
+			Assert.isTrue(pr.getRDFId().contains("/uniprot"));
+			List<Mapping> map = mappingsRepository
+					.findByDestIgnoreCaseAndDestId("UNIPROT", CPathUtils.idfromNormalizedUri(pr.getRDFId()));
+			addXrefs(warehouse, pr, map);
+		}
+	}
+
+	
+	private void addXrefs(Model warehouse, EntityReference er, List<Mapping> map) {
+		for(Mapping m : map) {
+			String rxUri = Normalizer.uri(xmlBase, m.getSrc(), m.getSrcId(), RelationshipXref.class);
+			RelationshipXref rx = (RelationshipXref) warehouse.getByID(rxUri);
+			String uxUri = Normalizer.uri(xmlBase, m.getSrc(), m.getSrcId(), UnificationXref.class);
+			UnificationXref ux = (UnificationXref) warehouse.getByID(uxUri);
+			if(rx == null && ux == null) {
+				rx = warehouse.addNew(RelationshipXref.class, rxUri);
+				rx.setDb(m.getSrc());
+				rx.setId(m.getSrcId());
+			}
+			er.addXref(rx);
+		}
 	}
 
 
 	/**
-	 * Creates a mapping object 
+	 * Creates mapping objects
 	 * from a simple two-column (tab-separated) text file, 
 	 * where the first line contains standard names of 
 	 * the source and target ID types, and on each next line -
@@ -249,34 +342,26 @@ public final class PremergeImpl implements Premerger {
 	 * @return
 	 * @throws IOException 
 	 */
-	Mapping simpleMapping(Content content, InputStream inputStream) 
+	Set<Mapping> simpleMapping(Content content, InputStream inputStream) 
 			throws IOException 
 	{
-		Map<String, String> map = new HashMap<String, String>();
-		Set<String> added = new HashSet<String>();		
+		Set<Mapping> mappings = new HashSet<Mapping>();
 		
 		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));				
 		String line = reader.readLine(); //get the first, title line
 		String head[] = line.split("\t");
 		assert head.length == 2 : "bad header";
-		Type type = Type.valueOf(head[1].toUpperCase().trim());
+		String from = head[0].trim();
+		String to = head[1].trim();
 		while ((line = reader.readLine()) != null) {
 			String pair[] = line.split("\t");
-			String src = pair[0].trim();
-			String tgt = pair[1].trim();
-			
-			if(added.contains(tgt))
-				log.warn("skip " + src + "; another id was already mapped to " + tgt);
-			
-			if(map.containsKey(src) && !map.get(src).equals(tgt)) 
-				log.warn("skip " + src + "; already mapped to " + map.get(src));
-
-			map.put(src, tgt);
-			added.add(tgt);
+			String srcId = pair[0].trim();
+			String tgtId = pair[1].trim();
+			mappings.add(new Mapping(from, srcId, to, tgtId));
 		}
 		reader.close();
 		
-		return new Mapping(type, content.toString(), map);
+		return mappings;
 	}
 
 
@@ -284,60 +369,66 @@ public final class PremergeImpl implements Premerger {
 	 * Extracts id-mapping information (name/id -> primary id) 
 	 * from the Warehouse entity references's xrefs to the mapping tables.
 	 * 
+	 * @param warehouse target model
 	 * @param exportAmbiguousMappings whether to file errors or not (ambiguous id mappings)
 	 */
-	private void buildIdMappingFromWarehouse(boolean exportAmbiguousMappings) {		
-		log.info("updateIdMapping(), updating id-mapping " +
+	private void buildIdMappingFromWarehouse(Model warehouse) {		
+		log.info("buildIdMappingFromWarehouse(), updating id-mapping " +
 				"tables by analyzing the warehouse data...");
+				
+		//Generates Mapping tables (objects) using ERs:
+		//a. ChEBI secondary IDs, PUBCHEM Compound, InChIKey, chem. name - to primary CHEBI AC;
+		//b. UniProt secondary IDs, RefSeq, NCBI Gene, etc. - to primary UniProt AC.
+		final Set<Mapping> mappings = new HashSet<Mapping>();
 		
-		// create and execute a new Analysis that populates the id maps within 
-		// a new DB transaction
-		GeneIdMappingAnalysis geneIdMappingAnalysis = new GeneIdMappingAnalysis();
-		paxtoolsDAO.run(geneIdMappingAnalysis);
-		//save new Mapping entity with type UNIPROT
-		Mapping uniprotMapping = new Mapping(Mapping.Type.UNIPROT, 
-			"From Gene symbols, secondary IDs, RefSeq, NCBI Gene, etc. to primary UniProt ID." +
-			"(generated from the cPath2 UniProt warehouse (xrefs)", geneIdMappingAnalysis.getIdMap());
-		metaDataDAO.saveMapping(uniprotMapping);
-		
-		//save ambiguous mappings to a special error file.
-		if(exportAmbiguousMappings)
-			exportAmbiguousMappings(Mapping.Type.UNIPROT, 
-					geneIdMappingAnalysis.getAmbiguousIdMap());
-		
-		ChemIdMappingAnalysis chemIdMappingAnalysis = new ChemIdMappingAnalysis();
-		paxtoolsDAO.run(chemIdMappingAnalysis);
-		//save new Mapping entity with type CHEBI
-		Mapping chebiMapping = new Mapping(Mapping.Type.CHEBI, 
-			"From secondary IDs, PUBCHEM, InChIKey to primary CHEBI ID." +
-			"(generated from the cPath2 UniProt warehouse (xrefs)", chemIdMappingAnalysis.getIdMap());
-		metaDataDAO.saveMapping(chebiMapping);
-		
-		//save ambiguous mappings to a file in the cpath2 home dir.
-		if(exportAmbiguousMappings)
-			exportAmbiguousMappings(Mapping.Type.CHEBI, 
-					chemIdMappingAnalysis.getAmbiguousIdMap());
-		
-		log.info("updateIdMapping(), exitting...");
-	}
-	
-	
-	private void exportAmbiguousMappings(Mapping.Type type,
-			Map<String, Set<String>> ambiguousIdMap) {
-		try {
-			PrintWriter writer = new PrintWriter(CPathSettings.getInstance().downloadsDir() 
-				+ File.separator + "ambiguous_id_mapping."
-				+ type + ".txt");
-			writer.println("#Identifier\tPrimary accessions it maps to (separated by tab)");
-			for(String id : ambiguousIdMap.keySet()) {
-				writer.println(id + "\t" + StringUtils.join(ambiguousIdMap.get(id), '\t'));
+		// for each ER, using xrefs, map other identifiers to the primary accession
+		for(EntityReference er : warehouse.getObjects(EntityReference.class)) 
+		{	
+			String destDb = null;
+			if(er instanceof ProteinReference)
+				destDb = "UNIPROT";
+			else if(er instanceof SmallMoleculeReference)
+				destDb = "CHEBI";
+			
+			//extract the primary id from the standard (identifiers.org) URI
+			final String ac = CPathUtils.idfromNormalizedUri(er.getRDFId());
+			
+			for(Xref x : er.getXref()) {
+				// By design (warehouse), there are unif. and rel. xrefs added 
+				// by the Uniprot Converter, and we will uses those, 
+				// skipping publication and illegal xrefs:
+				if(!(x instanceof PublicationXref) && x.getDb() != null) {
+					String id = x.getId();
+					String srcDb = x.getDb();
+					mappings.add(new Mapping(srcDb, id, destDb, ac));
+				}
 			}
-			writer.close();
-		} catch (IOException e) {
-			log.error("Failed to create output file for ambiguous id mappings.", e);
-		}	
-	}
 
+			if(er instanceof SmallMoleculeReference) {
+				SmallMoleculeReference smr = (SmallMoleculeReference) er;
+				//map some names (display and std.)
+				String name = smr.getDisplayName().toLowerCase();
+				mappings.add(new Mapping("chemical name", name, destDb, ac));	
+				if(smr.getStandardName() != null && 
+						!smr.getStandardName().equalsIgnoreCase(name)) {
+					name = smr.getStandardName().toLowerCase();
+					mappings.add(new Mapping("chemical name", name, destDb, ac));
+				}
+			}
+			
+			if(er instanceof ProteinReference) {
+				ProteinReference pr = (ProteinReference) er;
+				//map unofficial IDs, e.g., CALM_HUMAN, too
+				String name = pr.getDisplayName().toUpperCase();
+				mappings.add(new Mapping("UNIPROT", name, destDb, ac));	
+			}
+		}
+
+		saveIgnoringDuplicates(mappings);
+		
+		log.info("buildIdMappingFromWarehouse(), exitting...");
+	}
+	
 
 	/**
 	 * Pushes given Content through pipeline:
@@ -465,6 +556,12 @@ public final class PremergeImpl implements Premerger {
 		}
 		
 		return validation;
+	}
+
+
+	//mainly, for junit tests:
+	public void setWarehouseArchive(String warehouseArchive) {
+		this.warehouseArchive = warehouseArchive;
 	}
 
 }

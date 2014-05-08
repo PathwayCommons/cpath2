@@ -16,7 +16,7 @@
 
 	<tx:annotation-driven />
 
-	<jpa:repositories base-package="cpath.log.jpa" />
+	<jpa:repositories base-package="cpath.jpa" />
 
 	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
 		<property name="entityManagerFactory" ref="entityManagerFactory" />
@@ -25,7 +25,7 @@
 	<bean id="entityManagerFactory"
 		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
 		<property name="dataSource" ref="dataSource" />
-		<property name="packagesToScan" value="cpath.log.jpa" />
+		<property name="packagesToScan" value="cpath.jpa" />
 		<property name="jpaVendorAdapter" ref="hibernateJpaVendorAdapter" />
 	</bean>
 

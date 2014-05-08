@@ -29,8 +29,7 @@ package cpath.importer.internal;
 
 import cpath.dao.Analysis;
 import cpath.dao.CPathUtils;
-import cpath.dao.MetadataDAO;
-import cpath.warehouse.beans.*;
+import cpath.jpa.MappingsRepository;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
@@ -39,7 +38,6 @@ import org.biopax.paxtools.controller.*;
 import org.biopax.validator.utils.Normalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -51,23 +49,22 @@ import java.util.*;
  * create a new instance for each execution).
  * 
  */
-@Transactional
 public class MergerAnalysis implements Analysis {
 
     private static final Logger log = LoggerFactory.getLogger(MergerAnalysis.class);
 
 	private final Model source;
 	private final String description;
-	private final MetadataDAO metadataDAO;
+	private final MappingsRepository mappingsRepository;
 	private final String xmlBase;
 	private final SimpleMerger simpleMerger;
 	
 	public MergerAnalysis(String description, Model source, 
-			MetadataDAO metadataDAO, String xmlBase) 
+			MappingsRepository mappingsRepository, String xmlBase) 
 	{
 		this.description = description;
 		this.source = source;
-		this.metadataDAO = metadataDAO;
+		this.mappingsRepository = mappingsRepository;
 		this.xmlBase = xmlBase;
 		this.simpleMerger = new SimpleMerger(SimpleEditorMap.L3);
 	}
@@ -116,35 +113,37 @@ public class MergerAnalysis implements Analysis {
 		
 		// The following hack can improve graph queries and full-text search relevance
 		// for generic and poorly defined physical entities (e.g., those lacking entity reference)
-		log.info("Generating canonical UniProt/ChEBI " +
-				"rel. xrefs from existing xrefs for physical entities " +
-				"using id-mapping (" + srcModelInfo + ")...");		
-		/* Using xrefs and id-mapping, add primary uniprot/chebi RelationshipXref 
-		 * to all simple PE (SM, Protein, Dna,..) and Gene if possible (skip complexes).
+		log.info("Adding canonical UniProt/ChEBI " +
+				"relationship xrefs to physical entities using their existing xrefs " +
+				"and id-mapping (" + srcModelInfo + ")...");		
+		/* 
+		 * Using existing xrefs and id-mapping, add primary uniprot/chebi RelationshipXref 
+		 * to all simple PE (SM, Protein, Dna, Rna,..) and Gene if possible (skip complexes).
 		 * This might eventually result in mutually exclusive identifiers, 
-		 * but we'll keep those and just log a warning for future (data) fix, -
-		 * for this is not a big deal as long as we are not merging data 
-		 * but only use in search/query.
+		 * but we'll keep those and just log a warning for future (data) fix;
+		 * - not a big deal as long as we do not merge data based on these new xrefs,
+		 * but just index/search/query (this especially helps 
+		 * when no entity references defined for a molecule).
 		 */		
 		for(Entity pe : new HashSet<Entity>(source.getObjects(Entity.class))) 
 		{
 			if(pe instanceof PhysicalEntity) {
 				if(pe instanceof SimplePhysicalEntity) {
 					if(pe instanceof SmallMolecule) {
-						addCanonicalRelXrefs((SmallMolecule) pe, Mapping.Type.CHEBI);
+						addCanonicalRelXrefs((SmallMolecule) pe, "CHEBI");
 					} else {
 						// for Protein, Dna, DnaRegion, Rna*...
-						addCanonicalRelXrefs((PhysicalEntity) pe, Mapping.Type.UNIPROT);
+						addCanonicalRelXrefs((PhysicalEntity) pe, "UNIPROT");
 					}						
 				} else if(pe instanceof Complex) {
 					continue; // skip complexes
 				} else {
 					// do for base PEs
-					addCanonicalRelXrefs((PhysicalEntity) pe, Mapping.Type.UNIPROT);
-					addCanonicalRelXrefs((PhysicalEntity) pe, Mapping.Type.CHEBI);
+					addCanonicalRelXrefs((PhysicalEntity) pe, "UNIPROT");
+					addCanonicalRelXrefs((PhysicalEntity) pe, "CHEBI");
 				}
 			} else if(pe instanceof Gene) {
-				addCanonicalRelXrefs((XReferrable) pe, Mapping.Type.UNIPROT);
+				addCanonicalRelXrefs(pe, "UNIPROT");
 			}
 		}
 			
@@ -155,7 +154,7 @@ public class MergerAnalysis implements Analysis {
 		log.info("Searching in the Warehouse for equivalent utility class elements ("+srcModelInfo+")...");
 		final Map<UtilityClass, UtilityClass> replacements = new HashMap<UtilityClass, UtilityClass>();
 		
-		// match some utility class objects to existing ones (previously imported)
+		// match some UtilityClass objects to existing ones (previously imported, warehouse)
 		for (UtilityClass bpe: new HashSet<UtilityClass>(source.getObjects(UtilityClass.class))) 
 		{
 			UtilityClass replacement = null;
@@ -186,7 +185,7 @@ public class MergerAnalysis implements Analysis {
 		log.info("Replacing objects ("+srcModelInfo+")...");	
 		ModelUtils.replace(source, replacements);
 
-		//in addition, explicitly remove old (replaced) onjects from the model
+		//in addition, explicitly remove old (replaced) objects from the model
 		for(UtilityClass old : replacements.keySet()) {
 			source.remove(old);
 		}
@@ -290,21 +289,23 @@ public class MergerAnalysis implements Analysis {
 	 * and adds them back to the entity.
 	 * 
 	 * @param bpe a {@link Gene} or {@link PhysicalEntity}
-	 * @param mappType
+	 * @param db map identifiers to (e.g., CHEBI, UNIPROT)
 	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity
 	 */
-	private void addCanonicalRelXrefs(XReferrable bpe, Mapping.Type mappType) 
+	private void addCanonicalRelXrefs(Named bpe, String db) 
 	{
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity))
 			throw new AssertionError("Not Gene or PE: " + bpe);
-		
-		String db = (Mapping.Type.CHEBI ==  mappType) ?  "chebi" : "uniprot";
 			
 		// map and generate/add xrefs
-		Set<String> mappingSet = idMappingByXrefs(bpe, mappType, UnificationXref.class);
+		Set<String> mappingSet = idMappingByXrefs(bpe, db, UnificationXref.class);
 		addRelXref(bpe, db, mappingSet);
 		
-		mappingSet = idMappingByXrefs(bpe, mappType, RelationshipXref.class);
+		mappingSet = idMappingByXrefs(bpe, db, RelationshipXref.class);
+		addRelXref(bpe, db, mappingSet);
+		
+		//map by display and standard names
+		mappingSet = mappingsRepository.map(null, bpe.getDisplayName(), db);
 		addRelXref(bpe, db, mappingSet);
 	}
 
@@ -365,13 +366,7 @@ public class MergerAnalysis implements Analysis {
 				return toReturn;
 		}
  
-		// otherwise - try more - with id-mapping
-		
-		/* getting here also means biopax normalization was
-		 * not quite successful, due to lack of uniprot unif. xref, 
-		 * having geneId/ensemble (relationship xrefs),
-		 * or using a non standard gene/protein db names.
-		 */
+		// Otherwise, use id-mapping
 		
 		// if nothing's found in the db by original or normalized URI, 
 		// 2) try id-mapping (to uniprot ac). 
@@ -379,51 +374,53 @@ public class MergerAnalysis implements Analysis {
 			String id = uri.substring(uri.lastIndexOf('/')+1);
 			String db = null;	
 			
-			//a hack for proteins (with suboptimal xrefs...)
+			//a hack/shortcut for normalized PRs
 			if(orig instanceof ProteinReference) {
-				if(uri.contains("uniprot.isoform")) {
+				if(uri.toLowerCase().contains("uniprot.isoform")) {
 					db = "uniprot isoform";
-				} else if(uri.contains("refseq")) {
-					db = "refseq";
-				} else if(uri.contains("kegg") && id.contains(":")) {
-					db = "kegg genes"; //uses entrez gene ids
+				} else if(uri.toLowerCase().contains("uniprot")) {
+					db = "uniprot";
+				} else if(uri.toLowerCase().contains("refseq")) {
+					db = "refseq";	
+				} else if(uri.toLowerCase().contains("kegg") && id.contains(":")) {
+					db = "NCBI Gene"; //KEGG actually uses NCBI Gene (aka Entrez Gene)
 				}
 			}
 			
-			if(db == null)
-				db = dbById(id, orig.getXref()); //find by id
+			if(db == null) //then detect db by id matching in all xrefs
+				db = dbById(id, orig.getXref());
 			
 			// do id-mapping
-			Set<String> mp = metadataDAO.mapIdentifier(id, Mapping.Type.UNIPROT, db); 
+			Set<String> mp = mappingsRepository.map(db, id, "UNIPROT"); 			
 			if(!mp.isEmpty()) {
-				id = mp.iterator().next();
-				toReturn = (ProteinReference) target.getByID(canonicalPrefix + id);
-				if(mp.size() > 1)
-					log.warn("findOrCreateProteinReference: ambiguous id-mapping; " +
-							"will use this " + id + ", one of: " + mp);
+				toReturn = (ProteinReference) getByIdsFromModel(mp, canonicalPrefix, target);
 			}
 		}
 				
 		// if yet nothing's found, 
 		// 3) try using (already normalized) all Unification Xrefs and id-mapping (to uniprot ac). 
 		if (toReturn == null) {
-			Set<String> mappingSet = idMappingByXrefs(orig, Mapping.Type.UNIPROT, UnificationXref.class);
+			Set<String> mappingSet = idMappingByXrefs(orig, "UNIPROT", UnificationXref.class);
 			if(!mappingSet.isEmpty()) {
-				// use only the first result (a warning logged already)
-				toReturn = (ProteinReference) target
-					.getByID(canonicalPrefix + mappingSet.iterator().next());			
+				toReturn = (ProteinReference) getByIdsFromModel(mappingSet, canonicalPrefix, target);		
 			}
 		}	
 		
 		// if nothing's found in the warehouse by URI and unif. xrefs, - 
 		// 4) try relationship xrefs and id-mapping 
 		if (toReturn == null) {
-			Set<String> mappingSet = idMappingByXrefs(orig, Mapping.Type.UNIPROT, RelationshipXref.class);
+			Set<String> mappingSet = idMappingByXrefs(orig,"UNIPROT", RelationshipXref.class);
 			if(!mappingSet.isEmpty()) {
-				// use only the first result (a warning logged already)
-				toReturn = (ProteinReference) target
-					.getByID(canonicalPrefix + mappingSet.iterator().next());
+				toReturn = (ProteinReference) getByIdsFromModel(mappingSet, canonicalPrefix, target);
 			}	
+		}
+				
+		//5) finally, map by display name (CALM_HUMAN, etc.)!
+		if (toReturn == null) {
+			Set<String> mp = mapByName(orig, "UNIPROT", target);		
+			if(!mp.isEmpty()) {
+				toReturn = (ProteinReference) getByIdsFromModel(mp, canonicalPrefix, target);
+			}
 		}
 		
 		return toReturn;
@@ -438,32 +435,30 @@ public class MergerAnalysis implements Analysis {
 	 * this flags error in the biopax model) 
 	 * 
 	 * @param orig
-	 * @param mappClass
+	 * @param mapTo
 	 * @param xrefType
 	 * @return
 	 */
 	private Set<String> idMappingByXrefs(final XReferrable orig,
-			Mapping.Type mappClass, final Class<? extends Xref> xrefType) 
+			String mapTo, final Class<? extends Xref> xrefType) 
 	{
-		 //collect unique mapping results (only one is normally expected)
-		final Set<String> mappedTo = new HashSet<String>();
+		final Set<String> mappedTo = new TreeSet<String>();
 		
 		for (Xref x : orig.getXref()) {
 			if (xrefType.isInstance(x)) {
-				Set<String> mp = metadataDAO.mapIdentifier(x.getId(), mappClass, x.getDb());
+				Set<String> mp = mappingsRepository.map(x.getDb(), x.getId(), mapTo);
 				if (!mp.isEmpty()) {
-					String id = mp.iterator().next();
-					mappedTo.add(id);
-					if(mp.size() > 1)
-						log.warn("idMappingByXrefs: ambiguous id-mapping; " +
-								"will use this " + id + ", one of: " + mp);
+					mappedTo.addAll(mp);
+					if(mp.size() > 1) //one xref maps to several primary ACs
+						log.warn("idMappingByXrefs: ambiguous; id: " +
+								x.getId() + " maps to: " + mp);
 				}
 			}
 		}
 		
-		if(mappedTo.size() > 1)
-			log.warn("Ambiguous id-mapping of " + orig.getRDFId() + 
-				"; using " + xrefType.getSimpleName() + "s got: " 
+		if(mappedTo.size() > 1) // xrefs map to different primary ACs
+			log.warn("idMappingByXrefs: ambiguous; " + orig.getRDFId() +
+				" (using its " + xrefType.getSimpleName() + "s) maps to: " 
 					+ mappedTo);
 
 		return mappedTo;
@@ -524,47 +519,93 @@ public class MergerAnalysis implements Analysis {
 		 */
 		
 		// if nothing's found in the db by original or normalized URI, 
-		// 2) try id-mapping (to uniprot ac). 
+		// 2) try id-mapping (to chebi ac). 
 		if (uri.startsWith(standardPrefix)) {
 			String id = uri.substring(uri.lastIndexOf('/')+1);	
-			String db = dbById(id, orig.getXref()); //find by id
-// can later optimize by using an in-memory map instead of DAO -
-//			id = IdMappingFactory.suggest(db, id);
-//			id = chemIdMap.get(id);	
-			Set<String> mp = metadataDAO.mapIdentifier(id, Mapping.Type.CHEBI, db);
+			String db = dbById(id, orig.getXref()); //find by id			
+			Set<String> mp = mappingsRepository.map(db, id, "CHEBI");
 			if(!mp.isEmpty()) {
-				id = mp.iterator().next();
-				toReturn = (SmallMoleculeReference) target.getByID(canonicalPrefix + id);
-				if(mp.size() > 1)
-					log.warn("findOrCreateSmallMoleculeReference: ambiguous id-mapping; " +
-							"will use this " + id + ", one of: " + mp);
+				toReturn = (SmallMoleculeReference) getByIdsFromModel(mp, canonicalPrefix, target);
 			}
 		}
 				
 		// if yet nothing's found, 
 		// 3) try using (already normalized) all Unification Xrefs and id-mapping (to primary chebi). 
 		if (toReturn == null) {
-			Set<String> mappingSet = idMappingByXrefs(orig, Mapping.Type.CHEBI, UnificationXref.class);
+			Set<String> mappingSet = idMappingByXrefs(orig, "CHEBI", UnificationXref.class);
 			if(!mappingSet.isEmpty()) {
-				// use only the first result (a warning logged already)
-				toReturn = (SmallMoleculeReference) target
-					.getByID(canonicalPrefix + mappingSet.iterator().next());
+				toReturn = (SmallMoleculeReference) getByIdsFromModel(mappingSet, canonicalPrefix, target);
 			}	
 		}	
 		
 		// if nothing's found in the db by URI or unif. xrefs, - 
 		// 4) try using relationship xrefs and id-mapping. 
 		if (toReturn == null) {
-			/* Not merging SMRs based on their rel. xrefs 
-			 * (currently for molecules, we might have ambiguous xrefs generated from ChEBI SDF file),
-			 * but we, at least, we can generate rel. xrefs to primary chebi id here.
-			 */
-			Set<String> mappingSet = idMappingByXrefs(orig, Mapping.Type.CHEBI, RelationshipXref.class);
+			Set<String> mappingSet = idMappingByXrefs(orig, "CHEBI", RelationshipXref.class);
 			if(!mappingSet.isEmpty()) {
-				//add the primary chebi rel.xrefs to this ER
-				addRelXref(orig, "chebi", mappingSet);
+				//not needed if we replace the ER
+//				addRelXref(orig, "CHEBI", mappingSet);
+				toReturn = (SmallMoleculeReference) getByIdsFromModel(mappingSet, canonicalPrefix, target);
 			}	
 		}
+		
+		//5) map by display and standard name (e..g, 'ethanol') to ChEBI ID
+		if (toReturn == null) {		
+			Set<String> mp = mapByName(orig, "CHEBI", target);
+			if(!mp.isEmpty()) {
+				toReturn = (SmallMoleculeReference) getByIdsFromModel(mp, canonicalPrefix, target);
+			}
+		}
+		
+		return toReturn;
+	}
+
+
+	@SuppressWarnings("unchecked")
+	private Set<String> mapByName(EntityReference orig, String toDb, Model target) {
+		Set<String> mp = new TreeSet<String>();
+		
+		String name = orig.getDisplayName();
+		if(name != null)
+			mp.addAll(mappingsRepository.map(null, name.toLowerCase(), toDb));
+
+		name = orig.getStandardName();
+		if(name != null)
+			mp.addAll(mappingsRepository.map(null, name.toLowerCase(), toDb));
+			
+		if(mp.isEmpty() && //and only for PRs and SMRs -
+				(orig instanceof ProteinReference || orig instanceof SmallMoleculeReference)) 
+		{
+			//To find a warehouse SMR(s) with exactly the same name (case-insensitive).			
+			//first, collect all orig names, lowercase
+			Set<String> origNames = new HashSet<String>();
+			for(String n : orig.getName()) 
+				origNames.add(n.toLowerCase());
+			//then, check existing entity references of the same as orig's class
+			for(EntityReference er : target
+				.getObjects((Class<? extends EntityReference>) orig.getModelInterface())) 
+			{
+				for(String s : er.getName()) {
+					if(origNames.contains(s.toLowerCase())) {
+						//extract the accession from URI, add
+						mp.add(CPathUtils.idfromNormalizedUri(er.getRDFId()));
+						break;
+					}
+				}
+			}
+		}
+		
+		return mp;
+	}
+
+
+	private EntityReference getByIdsFromModel(Set<String> mp, String uriPrefix,
+			Model target) 
+	{
+		String uri = uriPrefix + mp.iterator().next();
+		EntityReference toReturn = (EntityReference) target.getByID(uri);
+		if(toReturn!= null && mp.size() > 1)
+			log.warn("ambiguous id-mapping using URI; picked " + uri + " of " + mp);
 		
 		return toReturn;
 	}

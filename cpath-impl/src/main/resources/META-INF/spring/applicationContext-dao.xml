@@ -34,8 +34,9 @@
     </bean>
     
 	<bean id="service" class="cpath.service.internal.CPathServiceImpl">
-		<constructor-arg ref="paxtoolsDAO"/>
-		<constructor-arg ref="metadataDAO"/>
+	<!-- autowired -->
+<!-- 		<constructor-arg ref="paxtoolsDAO"/> -->
+<!-- 		<constructor-arg ref="mappingRepository"/> -->
 	</bean>    
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
@@ -75,7 +76,6 @@
 			</property>
 			<property name="packagesToScan">
 				<list>
-					<!-- <value>org.biopax.paxtools.impl</value> -->
 					<value>org.biopax.paxtools.impl.level3</value>
 					<value>cpath.warehouse.beans</value>
 				</list>

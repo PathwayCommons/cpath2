@@ -1,6 +1,5 @@
 package cpath.converter.internal;
 
-// imports
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
 import cpath.dao.PaxtoolsDAO;
@@ -30,6 +29,7 @@ import java.util.zip.ZipInputStream;
 /**
  * Test Chebi to BioPAX converter.
  *
+ * TODO add tests for the Chebi OBO converter!
  */
 public class ChebiConvertersTest {
 
@@ -101,7 +101,7 @@ public class ChebiConvertersTest {
 			if (xref instanceof UnificationXref) ++ unificationXrefCount;
 		}
 		assertEquals(3, unificationXrefCount);
-		assertEquals(0, relationshipXrefCount); //modified sdf converter skips for most ext. refs (at least for this test data).
+		assertEquals(2, relationshipXrefCount);
 		
 		// following checks work in this test only (using in-memory model); with DAO - use getObject...
         assertTrue(model.containsID("http://identifiers.org/chebi/CHEBI:20"));

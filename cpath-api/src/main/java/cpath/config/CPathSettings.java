@@ -507,7 +507,7 @@ public final class CPathSettings {
 	/**
 	 * Full path to the archive file where BioPAX db/model is exported. 
 	 * 
-	 * @param name - a Metadata's Standard Name, or "All", "Warehouse".
+	 * @param name - a Metadata's Standard Name, or a special archive name, such as "All", "Warehouse".
 	 * @return
 	 */
 	public String biopaxExportFileName(String name) {
@@ -530,4 +530,26 @@ public final class CPathSettings {
 				"." + property(PROVIDER_VERSION) + 
 				".";
 	}
+	
+	
+	/**
+	 * Full path to the large archive where 
+	 * the complete merged BioPAX model is stored. 
+	 * 
+	 * @return
+	 */
+	public String mainModelFile() {
+		return biopaxExportFileName("All");
+	}
+	
+	/**
+	 * Full path to the archive where 
+	 * the Warehouse BioPAX model is stored. 
+	 * 
+	 * @return
+	 */
+	public String warehouseModelFile() {
+		return biopaxExportFileName("Warehouse");
+	}
+	
 }

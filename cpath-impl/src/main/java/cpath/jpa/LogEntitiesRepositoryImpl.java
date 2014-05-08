@@ -1,7 +1,7 @@
 /**
  * 
  */
-package cpath.log.jpa;
+package cpath.jpa;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +14,7 @@ import org.springframework.util.Assert;
 import com.mysema.query.Tuple;
 import com.mysema.query.jpa.JPQLQuery;
 
-import cpath.log.LogType;
+import cpath.jpa.QLogEntity;
 
 /**
  * @author rodche

@@ -77,7 +77,7 @@ public class CPathUtilsTest {
 		String url = "classpath:metadata.conf";
 		System.out.println("Loading metadata from " + url);
 		Collection<Metadata> metadatas = CPathUtils.readMetadata(url);
-		assertEquals(2, metadatas.size());
+		assertEquals(3, metadatas.size());
 		Metadata metadata = null;
 		for(Metadata mt : metadatas) {
 			if(mt.getIdentifier().equals("TEST_UNIPROT")) {
