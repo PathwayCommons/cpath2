@@ -45,7 +45,6 @@ import org.biopax.paxtools.model.level3.PathwayStep;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.ObjectPropertyEditor;
-import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.impl.level3.L3ElementImpl;
@@ -66,8 +65,6 @@ import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
-import cpath.service.jaxb.TraverseEntry;
-import cpath.service.jaxb.TraverseResponse;
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.Modifier;
@@ -714,59 +711,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	@Override
 	public String getXmlBase() {
 		return xmlBase;
-	}
-
-
-	/**
-	 * It generates results only for those URIs where
-	 * the property path apply, although the values set 
-	 * can be empty.
-	 * 
-	 * @throws 
-	 */
-	@Transactional(readOnly=true)
-	@Override
-	public TraverseResponse traverse(String propertyPath, String... uris) {
-		
-		sessionFactory.getCurrentSession().setDefaultReadOnly(true);
-		
-		TraverseResponse resp = new TraverseResponse();
-		resp.setPropertyPath(propertyPath);
-		
-		PathAccessor pathAccessor = null; 
-		try {
-			pathAccessor = new PathAccessor(propertyPath, getLevel());
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Failed to parse " +
-				"the BioPAX property path: " + propertyPath, e);
-		}
-		
-		for(String uri : uris) {
-			BioPAXElement bpe = getByID(uri);
-			try {
-				Set<?> v = pathAccessor.getValueFromBean(bpe);
-				TraverseEntry entry = new TraverseEntry();
-				entry.setUri(uri);
-				if(!pathAccessor.isUnknown(v)) {
-//					entry.getValue().addAll(v);
-					for(Object o : v) {
-						if(o instanceof BioPAXElement) 
-							entry.getValue().add(((BioPAXElement) o).getRDFId());
-						else
-							entry.getValue().add(String.valueOf(o));
-					}
-				}
-				// add (it might have no values, but the path is correct)
-				resp.getTraverseEntry().add(entry); 
-			} catch (IllegalBioPAXArgumentException e) {
-				// log, ignore if the path does not apply
-				if(log.isDebugEnabled())
-					log.debug("Failed to get values at: " + 
-						propertyPath + " from the element: " + uri, e);
-			}
-		}
-		
-		return resp;
 	}
 
 	

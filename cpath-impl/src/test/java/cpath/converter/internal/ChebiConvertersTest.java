@@ -4,7 +4,7 @@ import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
 import cpath.dao.PaxtoolsDAO;
 import cpath.importer.Converter;
-import cpath.importer.internal.ImportFactory;
+import cpath.importer.ImportFactory;
 
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.Model;

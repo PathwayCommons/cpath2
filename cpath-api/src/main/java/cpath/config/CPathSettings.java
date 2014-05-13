@@ -52,6 +52,8 @@ public final class CPathSettings {
 	private static CPathSettings instance;
 	private Properties settings;
 	
+	private static boolean _develop = false;
+	
 	/**
 	 * Name for the system environment and/or JVM variable 
 	 * cPath2 uses to know its "home" directory location.
@@ -410,7 +412,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String dataDir() {
-		return homeDir() + File.separator + DATA_SUBDIR;
+		return (_develop) ? tmpDir() : homeDir() + File.separator + DATA_SUBDIR;
 	}
 	
 	
@@ -421,7 +423,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String blacklistFile() {
-		return homeDir() + File.separator + BLACKLIST_FILE;
+		return downloadsDir() + File.separator + BLACKLIST_FILE;
 	}	
 	
 	
@@ -480,7 +482,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String downloadsDir() {
-		return homeDir() + File.separator + DOWNLOADS_SUBDIR;
+		return (_develop) ? tmpDir() : homeDir() + File.separator + DOWNLOADS_SUBDIR;
 	}
 	
 	
@@ -550,6 +552,17 @@ public final class CPathSettings {
 	 */
 	public String warehouseModelFile() {
 		return biopaxExportFileName("Warehouse");
+	}
+	
+	
+	/**
+	 * Configure the system for the development and testing ('true')
+	 * or production (is default, 'false').
+	 * 
+	 * @param develop
+	 */
+	public static void setDevelop(boolean develop) {
+		_develop = develop;
 	}
 	
 }

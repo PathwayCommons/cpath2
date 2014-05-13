@@ -24,16 +24,12 @@
  ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
-package cpath.importer.internal;
+package cpath.importer;
 
 
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
-import cpath.dao.PaxtoolsDAO;
-import cpath.importer.Cleaner;
-import cpath.importer.Converter;
-import cpath.importer.Premerger;
 import cpath.jpa.Mapping;
 import cpath.jpa.MappingsRepository;
 import cpath.warehouse.beans.Content;
@@ -71,19 +67,16 @@ import java.io.*;
 /**
  * Class responsible for premerging pathway and warehouse data.
  */
-public final class PremergeImpl implements Premerger {
+public final class PreMerger {
 
-    private static Logger log = LoggerFactory.getLogger(PremergeImpl.class);
+    private static Logger log = LoggerFactory.getLogger(PreMerger.class);
     
 	private final String xmlBase;
 
     private final MetadataDAO metaDataDAO;
-    private final PaxtoolsDAO paxtoolsDAO;
     private final MappingsRepository mappingsRepository;
 	private final Validator validator;
 	private String identifier;
-	
-	private String warehouseArchive;
 
 	/**
 	 * Constructor.
@@ -93,11 +86,10 @@ public final class PremergeImpl implements Premerger {
 	 * @param validator Biopax Validator
 	 * @param provider pathway data provider's identifier
 	 */
-	public PremergeImpl(final MetadataDAO metaDataDAO, final PaxtoolsDAO paxtoolsDAO, 
-		final MappingsRepository mappingsRepository, final Validator validator, String provider) 
+	public PreMerger(final MetadataDAO metaDataDAO, final MappingsRepository mappingsRepository, 
+		final Validator validator, String provider) 
 	{
 		this.metaDataDAO = metaDataDAO;
-		this.paxtoolsDAO = paxtoolsDAO;
 		this.mappingsRepository = mappingsRepository;
 		this.validator = validator;
 		this.xmlBase = CPathSettings.getInstance().getXmlBase();
@@ -259,19 +251,18 @@ public final class PremergeImpl implements Premerger {
 		// this makes ineding/finding an ER by ID possible
 		addXrefsToEntityReferences(warehouse);
 		
-		if(warehouseArchive != null && !warehouseArchive.isEmpty()) { // export
-			log.info("buildWarehouse(), creating Warehouse BioPAX archive: " 
-					+ warehouseArchive);		
-			try {
-				new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(warehouse, 
-						new GZIPOutputStream(new FileOutputStream(warehouseArchive)));
-			} catch (IOException e) {
-				log.error("buildWarehouse(), failed writing " + warehouseArchive, e);
-			}
+		// save to compressed file
+		String whFile  = CPathSettings.getInstance().warehouseModelFile();
+		log.info("buildWarehouse(), creating Warehouse BioPAX archive: " + whFile);		
+		try {
+			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(warehouse, 
+					new GZIPOutputStream(new FileOutputStream(whFile)));
+		} catch (IOException e) {
+			log.error("buildWarehouse(), failed", e);
 		}
 		
-		//persist
-		paxtoolsDAO.merge(warehouse);
+		//Don't persist (yet, do later in Merger or another step)
+//		paxtoolsDAO.merge(warehouse);
 	}
 
 
@@ -556,12 +547,6 @@ public final class PremergeImpl implements Premerger {
 		}
 		
 		return validation;
-	}
-
-
-	//mainly, for junit tests:
-	public void setWarehouseArchive(String warehouseArchive) {
-		this.warehouseArchive = warehouseArchive;
 	}
 
 }

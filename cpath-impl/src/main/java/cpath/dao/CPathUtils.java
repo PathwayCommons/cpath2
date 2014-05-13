@@ -6,6 +6,7 @@ package cpath.dao;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -355,12 +356,7 @@ public final class CPathUtils {
     	} finally {closeQuietly(os);}
     }
 
-	public static void cleanupIndexDir(String db) {
-		cleanupDirectory(new File(CPathSettings.getInstance().homeDir() + File.separator + db));
-		LOGGER.info("Emptied the index dir:" + db);
-	}
 
-	
 	/**
 	 * Replaces the URI of a BioPAX object
 	 * using java reflection. Normally, one should avoid this;
@@ -512,4 +508,17 @@ public final class CPathUtils {
 		return uri.substring(uri.lastIndexOf('/')+1);
 	}
 	
+	
+	public static Model loadMainBiopaxModel() throws IOException {
+		return (new SimpleIOHandler()).convertFromOWL(
+				new GZIPInputStream(new FileInputStream(
+						CPathSettings.getInstance().mainModelFile())));
+	}
+	
+	public static Model loadWarehouseBiopaxModel() throws IOException {
+		return (new SimpleIOHandler()).convertFromOWL(
+				new GZIPInputStream(new FileInputStream(
+						CPathSettings.getInstance().warehouseModelFile())));
+	}
+		
 }
