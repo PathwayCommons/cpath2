@@ -52,7 +52,7 @@ import org.junit.Test;
 
 import cpath.dao.CPathUtils;
 import cpath.importer.Converter;
-import cpath.importer.internal.ImportFactory;
+import cpath.importer.ImportFactory;
 
 /**
  * @author rodche

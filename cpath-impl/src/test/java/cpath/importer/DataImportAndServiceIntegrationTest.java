@@ -1,10 +1,10 @@
+package cpath.importer;
+
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
+import cpath.dao.CPathUtils;
 import cpath.dao.MetadataDAO;
 import cpath.dao.PaxtoolsDAO;
-import cpath.importer.Premerger;
-import cpath.importer.internal.MergerAnalysis;
-import cpath.importer.internal.PremergeImpl;
 import cpath.jpa.Mapping;
 import cpath.jpa.MappingsRepository;
 import cpath.service.CPathService;
@@ -59,6 +59,11 @@ public class DataImportAndServiceIntegrationTest {
 	static final ResourceLoader resourceLoader = new DefaultResourceLoader();	
 	static final String XML_BASE = CPathSettings.getInstance().getXmlBase();
 	
+	static {
+		CPathSettings.setDevelop(true);
+	}
+	
+	
 	@Autowired
 	CPathService service;
 	
@@ -77,7 +82,7 @@ public class DataImportAndServiceIntegrationTest {
 	public void testPremergeAndMerge() throws IOException {		
 		//prepare the metadata
         // load the test metadata and create warehouse
-		Premerger premerger = new PremergeImpl(metadataDAO, paxtoolsDAO, mappingsRepository, null, null);
+		PreMerger premerger = new PreMerger(metadataDAO, mappingsRepository, null, null);
 		metadataDAO.addOrUpdateMetadata("classpath:metadata.conf");	
 		Metadata ds = metadataDAO.getMetadataByIdentifier("TEST_UNIPROT");
 		assertNotNull(ds);
@@ -86,24 +91,16 @@ public class DataImportAndServiceIntegrationTest {
 		ds = metadataDAO.getMetadataByIdentifier("TEST_MAPPING");
 		assertNotNull(ds);
 		
-		premerger.premerge();
-		//save warehouse biopax
-		((PremergeImpl)premerger).setWarehouseArchive(
-			getClass().getClassLoader().getResource("").getPath() 
-				+ File.separator + "testWarehouse.owl.gz");
-		premerger.buildWarehouse();//runs after the premerge
+		premerger.premerge();		
+		premerger.buildWarehouse();
 		
-		//Some assertions about the initial biopax warehouse model (before the merger is run)
-		
-		assertFalse(((Model)paxtoolsDAO).getObjects(ProteinReference.class).isEmpty());
-		assertTrue(((Model)paxtoolsDAO).containsID("http://identifiers.org/uniprot/P62158"));
-		assertFalse(((Model)paxtoolsDAO).getObjects(SmallMoleculeReference.class).isEmpty());
-		assertTrue(((Model)paxtoolsDAO).containsID("http://identifiers.org/chebi/CHEBI:20"));				
-							
-		ProteinReference pr = (ProteinReference) ((Model)paxtoolsDAO).getByID("http://identifiers.org/uniprot/P62158");
-		paxtoolsDAO.initialize(pr);
-		paxtoolsDAO.initialize(pr.getName());
-		paxtoolsDAO.initialize(pr.getXref());
+		//Some assertions about the initial biopax warehouse model (before the merger is run)	
+		Model warehouse = CPathUtils.loadWarehouseBiopaxModel();		
+		assertFalse(warehouse.getObjects(ProteinReference.class).isEmpty());
+		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/P62158"));
+		assertFalse(warehouse.getObjects(SmallMoleculeReference.class).isEmpty());
+		assertTrue(warehouse.containsID("http://identifiers.org/chebi/CHEBI:20"));											
+		ProteinReference pr = (ProteinReference) warehouse.getByID("http://identifiers.org/uniprot/P62158");
 		assertNotNull(pr);
 		assertNotNull(pr.getName());
 		assertFalse(pr.getName().isEmpty());
@@ -114,7 +111,7 @@ public class DataImportAndServiceIntegrationTest {
 		// test some id-mapping
 		String ac = mappingsRepository.map("uniprot", "A2A2M3", "UNIPROT").iterator().next(); 
 		assertEquals("Q8TD86", ac);
-		assertTrue(((Model)paxtoolsDAO).containsID("http://identifiers.org/uniprot/" + ac));	
+		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/" + ac));	
 		assertTrue(mappingsRepository.map(null, "Q8TD86-1", "UNIPROT").isEmpty());
 		assertTrue(mappingsRepository.map("uniprot", "Q8TD86-1", "UNIPROT").isEmpty());
 		//infers Q8TD86
@@ -127,7 +124,7 @@ public class DataImportAndServiceIntegrationTest {
 		assertFalse(mappingsRepository.map("refseq", "NP_619650.1", "UNIPROT").isEmpty());
 		ac = mappingsRepository.map("refseq", "NP_619650", "UNIPROT").iterator().next(); 
 		assertEquals("Q8TD86", ac);
-		assertTrue(((Model)paxtoolsDAO).containsID("http://identifiers.org/uniprot/" + ac));
+		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/" + ac));
 		
 		Set<String> ids = mappingsRepository.map("P01118");
 		assertTrue(ids.size()==1);
@@ -153,40 +150,21 @@ public class DataImportAndServiceIntegrationTest {
 		
 		// note: in production we'd run it as ImportFactory.newMerger(paxtoolsDAO,...).merge();
 		// cpath2 metadata contains the warehouse and id-mapping tables
+		Merger merger = new Merger(metadataDAO, mappingsRepository, null, true);
 		int i = 0;
 		for(Model m : pathwayModels) {
-			Analysis merger = new MergerAnalysis("model #" + i++, 
-				m, mappingsRepository, ((Model)paxtoolsDAO).getXmlBase());
-			paxtoolsDAO.run(merger);
+			merger.merge("model #" + i++, m);
 		}
+		merger.save(); //to the file
 		
-		//check first whether it's ok after export/import as owl?
-		final String outf = getClass().getClassLoader().getResource("").getPath() 
-				+ File.separator + "testMerge.out.owl";
-		FileOutputStream fos = new FileOutputStream(outf);
-		paxtoolsDAO.exportModel(fos);
-		fos.close();
-		SimpleIOHandler reader = new SimpleIOHandler();
-		reader.mergeDuplicates(true);
-		Model m = reader.convertFromOWL(new FileInputStream(outf));			
-		// run assertions for this in-memory model
-		assertMerge(m);		
-		
-		// second, check the persistent model (what's actually going on within the main DB?)
-		// this will be all run within a new DB transaction/session
-		paxtoolsDAO.run(new Analysis() {
-			@Override
-			public void execute(Model model) {
-				assertMerge(model);
-			}
-		});
-		
-		
-		/*
-		 * SERVICE-TIER features tests
-		 */
+		//get the model from the archive and test it
+		Model m = CPathUtils.loadMainBiopaxModel();	
+		//check the model
+		assertMerge(m);	
+
 		//pid, reactome,humancyc,.. were there in the test models
 		assertEquals(4, m.getObjects(Provenance.class).size());
+		
 		//additional metadata entry
 		Metadata md = new Metadata("test", "Reactome", "Foo", "", "", 
 				"", METADATA_TYPE.BIOPAX, "", "", null, "free");		
@@ -195,31 +173,51 @@ public class DataImportAndServiceIntegrationTest {
 		md.setProvenanceFor(m); 
 		// which EXPLICITELY REMOVEs all other datasources from object properties;
 		// former Provenances normally become DANGLING...
-		// next, merge there updates all biopax object relationships and data properties
-		paxtoolsDAO.merge(m);
+		
+		// persist
+		paxtoolsDAO.merge(m);		
+		
 		// but does not remove dangling objects from the persistent model
 		assertEquals(5, m.getObjects(Provenance.class).size()); 
 		//still five (should not matter for queries/analyses)
 		// reindex all
-//		CPathUtils.cleanupDirectory(new File(CPathSettings.tmpDir() 
-//				+ File.separator + "tests" + File.separator + "test2.idx"));
 		paxtoolsDAO.index();
+
+		
+		// Test the persistent model (must run within a transaction)
+		paxtoolsDAO.run(new Analysis() {
+			@Override
+			public void execute(Model model) {
+				assertMerge(model);
+			}
+		});		
+			
+		
+		/*
+		 * SERVICE-TIER features tests
+		 */
 		
 		// Test full-text search	
 		// search with a secondary (RefSeq) accession number
+		//NP_619650 occurs in the warehouse only, not in the merged model
 		SearchResponse resp =  paxtoolsDAO.search("NP_619650", 0, RelationshipXref.class, null, null);
+		assertTrue(resp.getSearchHit().isEmpty());
+		//now find another one in the main model
+		resp =  paxtoolsDAO.search("NP_005099", 0, RelationshipXref.class, null, null);
 		Collection<SearchHit> prs = resp.getSearchHit();
 		assertFalse(prs.isEmpty());
 		Collection<String> prIds = new HashSet<String>();
 		for(SearchHit e : prs)
 			prIds.add(e.getUri());		
-		String uri = Normalizer.uri(XML_BASE, "REFSEQ", "NP_619650", RelationshipXref.class);				
+		String uri = Normalizer.uri(XML_BASE, "REFSEQ", "NP_005099", RelationshipXref.class);				
 		assertTrue(prIds.contains(uri));
 		Xref x = (RelationshipXref) ((Model)paxtoolsDAO).getByID(uri);
 		assertNotNull(x);
 		paxtoolsDAO.initialize(x);
 		paxtoolsDAO.initialize(x.getXrefOf());
-		assertFalse(x.getXrefOf().isEmpty()); 
+		assertFalse(x.getXrefOf().isEmpty());
+		pr = (ProteinReference) ((Model)paxtoolsDAO).getByID("http://identifiers.org/uniprot/O75191");
+		assertTrue(x.getXrefOf().contains(pr));
 		
 		// fetch as BIOPAX
 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P27797");
@@ -322,7 +320,7 @@ public class DataImportAndServiceIntegrationTest {
 		assertEquals(smr, msmr);//CHEBI:20
 
 		smr = (SmallMoleculeReference) mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28");
-		System.out.println("merged chebi:28 xrefs: " + smr.getXref().toString());
+//		System.out.println("merged chebi:28 xrefs: " + smr.getXref().toString());
 		assertEquals(15, smr.getXref().size()); // relationship xrefs were removed before merging
 		assertEquals("(R)-linalool", smr.getDisplayName());
 		assertEquals(5, smr.getEntityReferenceOf().size());
@@ -350,11 +348,22 @@ public class DataImportAndServiceIntegrationTest {
 		PublicationXref px = (PublicationXref) mergedModel.getByID("http://identifiers.org/pubmed/9763671");
 		assertEquals(2, px.getXrefOf().size()); 
 		//these are not the two original ProteinReference (got replaced/removed)
-//		System.out.println(px.getXrefOf());
+		//the first owner of the px (PR)
 		assertTrue(px.getXrefOf().contains(mergedModel.getByID("http://identifiers.org/uniprot/O75191")));
-		assertTrue(px.getXrefOf().contains(mergedModel.getByID(Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3Protein155359",Protein.class))));
+		//the second owner of the px (Protein)
+		String pUri = Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3Protein155359", Protein.class);
+		System.out.println("pUri=" + pUri);
+		Protein p = (Protein) mergedModel.getByID(pUri);
+		assertNotNull(p);
+		System.out.println(px + ", xrefOf=" + px.getXrefOf());
+//		assertTrue(px.getXrefOf().contains(p));
+		for(XReferrable r : px.getXrefOf()) {
+			if(r.getRDFId().equals(pUri))
+				assertEquals(p, r);
+		}
 		
-		msmr = (SmallMoleculeReference)mergedModel
+		// check a SMR and member SMR
+		msmr = (SmallMoleculeReference) mergedModel
 			.getByID(Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684",SmallMoleculeReference.class));
 		assertNotNull(msmr);
 		assertNull(mergedModel.getByID(Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3SmallMoleculeReference165390",SmallMoleculeReference.class)));

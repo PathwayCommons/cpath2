@@ -540,27 +540,38 @@ class CPathServiceImpl implements CPathService {
 		// build a Lucene query string (will be eq. to xrefid:"A" OR xrefid:"B" OR ...)
 		final StringBuilder q = new StringBuilder();
 		for (String identifier : identifiers) {
-			if(identifier.startsWith("http://") || identifier.startsWith("urn:")) {
-				// it must be an existing URI; skip id-mapping 
-				//TODO could also map a secondary ID to the primary one (generally, users should not guess URIs nor submit non-existing ones)
+			
+			String id = identifier;
+			
+			if(identifier.toLowerCase().startsWith("http://") 
+					|| identifier.toLowerCase().startsWith("urn:")) 
+			{
+				// it must be an existing URI (a user hopes so)
 				uris.add(identifier);
-			} else {
-				// do gene/protein/chemical id-mapping;
-				// mapping can be ambiguous, but this is OK for queries (unlike when merging data)
-				Set<String> m = mappingRepository.map(identifier);
-				if (!m.isEmpty()) {
-					for(String ac : m) {
-						// add to the query string; 
-						// quotation marks around the query id are required
-						q.append("xrefid:\"").append(ac).append("\" "); 
-						log.debug("findUrisByIds, mapped " + identifier + " -> " + ac);
-					}
+				
+				if(identifier.startsWith("http://identifier.org/"))
+					//extract the id from URI to map (below) to the primary id/URI
+					id = CPathUtils.idfromNormalizedUri(identifier);
+				else //no id-mapping required
+					continue; //go to next identifier
+			} 
+			
+			// do gene/protein/chemical id-mapping;
+			// mapping can be ambiguous, but this is OK for queries (unlike when merging data)
+			Set<String> m = mappingRepository.map(id);
+			if (!m.isEmpty()) {
+				for(String ac : m) {
+					// add to the query string; 
+					// quotation marks around the query id are required
+					q.append("xrefid:\"").append(ac).append("\" "); 
+					log.debug("findUrisByIds, mapped " + id + " -> " + ac);
 				}
-				else {
-					q.append("xrefid:\"").append(identifier).append("\" "); 
-					log.debug("findUrisByIds, no primary id found (will use 'as is'): " + identifier);
-				}				
 			}
+			
+			// use the original id regardless the mapping results
+			if(!q.toString().contains(id))
+				q.append("xrefid:\"").append(id).append("\" "); 
+
 		}
 		
 		/* 
@@ -588,12 +599,22 @@ class CPathServiceImpl implements CPathService {
 	}
 
 	
-	//TODO re-factor to use the in-memory proxy Model when it's activated; have to replace dao.traverse with dao.runReadOnly(traverseAnalysis)
 	@Override
 	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
+		
+		TraverseResponse res = new TraverseResponse();
+		res.setPropertyPath(propertyPath);
+				
 		try {
-			TraverseResponse results = mainDAO.traverse(propertyPath, sourceUris);
-			return results;
+			TraverseAnalysis traverseAnalysis = new TraverseAnalysis(res, sourceUris);
+			
+			if(proxyModelReady()) 
+				traverseAnalysis.execute(proxyModel);
+			else
+				mainDAO.runReadOnly(traverseAnalysis);
+			
+			return res;
+			
 		} catch (IllegalArgumentException e) {
 			log.error("traverse() failed to init path accessor", e);
 			return new ErrorResponse(BAD_REQUEST, e.getMessage());
@@ -601,6 +622,7 @@ class CPathServiceImpl implements CPathService {
 			log.error("traverse() failed", e);
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
+		
 	}
 
 	
@@ -641,7 +663,6 @@ class CPathServiceImpl implements CPathService {
 		
 		// final touches...
 		topPathways.setNumHits(hits.size());
-		//TODO update the following comment if implementation has changed
 		topPathways.setComment("Top Pathways (technically, each has empty index " +
 				"field 'pathway'; that also means, they are neither components of " +
 				"other pathways nor controlled of any process)");

@@ -1,12 +1,10 @@
-package cpath.importer.internal;
+package cpath.importer;
 
 import java.lang.reflect.Constructor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cpath.importer.Cleaner;
-import cpath.importer.Converter;
 
 /**
  * Public static factory to 

@@ -33,9 +33,7 @@ import static cpath.config.CPathSettings.*;
 import cpath.config.CPathSettings;
 import cpath.dao.*;
 import cpath.importer.Merger;
-import cpath.importer.Premerger;
-import cpath.importer.internal.MergerImpl;
-import cpath.importer.internal.PremergeImpl;
+import cpath.importer.PreMerger;
 import cpath.jpa.MappingsRepository;
 import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
@@ -52,7 +50,6 @@ import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.validator.api.Validator;
 import org.h2.tools.Csv;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -95,6 +92,7 @@ public final class Admin {
 		PREMERGE("-premerge"),
 		CREATE_WAREHOUSE("-create-warehouse"),			
 		MERGE("-merge"),
+		PERSIST("-persist"),
     	CREATE_INDEX("-create-index"),
         CREATE_BLACKLIST("-create-blacklist"),
         CREATE_DOWNLOADS("-create-downloads"),
@@ -204,6 +202,9 @@ public final class Admin {
 			}
 
 			runMerge(provider, force);
+		} else if(args[0].equals(Cmd.PERSIST.toString())) {
+			
+			//TODO implement PERSIST command
 			
 		} else if (args[0].equals(Cmd.EXPORT.toString())) {
 			
@@ -285,7 +286,10 @@ public final class Admin {
             		"classpath:META-INF/spring/applicationContext-jpa.xml"
             	});
  				
-		CPathUtils.cleanupIndexDir(CPathSettings.getInstance().getMainDb());
+		CPathUtils.cleanupDirectory(
+			new File(CPathSettings.getInstance().homeDir() 
+				+ File.separator + CPathSettings.getInstance().getMainDb()));
+		LOG.info("Emptied the index.");
  		
  		context.close();
 	}
@@ -323,7 +327,7 @@ public final class Admin {
  		
  		//backup cpath2 access db to a CSV file
  		CPathSettings cps = getInstance();
- 		String filename = cpath.homeDir() + File.separator + "logentity.csv";
+ 		String filename = cpath.dataDir() + File.separator + "logentity.csv";
  		Connection conn = null;
  		try {
 			Class.forName("org.h2.Driver");
@@ -351,7 +355,7 @@ public final class Admin {
 			throw new IllegalStateException("Maintenance mode is not enabled.");
  		
  		//load cpath2 access db from a CSV file
- 		String backup = cpath.homeDir() + File.separator + "logentity.csv.bak";
+ 		String backup = cpath.dataDir() + File.separator + "logentity.csv.bak";
  		Connection conn = null;
  		try {
  			Class.forName("org.h2.Driver");
@@ -398,9 +402,9 @@ public final class Admin {
    		// re-build the full-text index
    		// it gets the main DB name from cpath2.properties (via CPathSettings class)
 		
-		String indexDir = cpath.property(PROP_MAIN_DB); 
-		LOG.info("Cleaning up the full-text index directory: " + indexDir);
-		File dir = new File(cpath.homeDir() + File.separator + indexDir);
+		String db = cpath.getMainDb(); 
+		File dir = new File(cpath.homeDir() + File.separator + db);
+		LOG.info("Cleaning up the full-text index directory");
 		CPathUtils.cleanupDirectory(dir);
 		
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
@@ -531,29 +535,23 @@ public final class Admin {
 		// otherwise the merger eventually fails with a weird exception
 		// (this probably depends on the cache config. parameters)
 		System.setProperty("net.sf.ehcache.disabled", "true");
-//		System.setProperty("hibernate.hbm2ddl.auto", "update");
-		// pc dao
 
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext(new String[] {
 				"classpath:META-INF/spring/applicationContext-dao.xml",
 				"classpath:META-INF/spring/applicationContext-jpa.xml"});
 		
-		final PaxtoolsDAO paxtoolsDAO = (PaxtoolsDAO)context.getBean("paxtoolsDAO");
-
 		LOG.info("runMerge: provider=" + provider + "; --force=" + force);
 			
-		MetadataDAO mdao = (MetadataDAO)context.getBean("metadataDAO");
-		
+		MetadataDAO mdao = (MetadataDAO)context.getBean("metadataDAO");		
 		MappingsRepository mappingsRepository = (MappingsRepository) context.getBean("mappingsRepository");
 			
 		String datasource = (provider == null || provider.isEmpty()) ? null : provider;
-		Merger merger = new MergerImpl(paxtoolsDAO, mdao, mappingsRepository, datasource, force);
-		
-		// go!
+				
+		Merger merger = new Merger(mdao, mappingsRepository, datasource, force);		
 		merger.merge();
 		
-		context.close(); 
+		context.close();		
 	}
 
 	
@@ -581,7 +579,7 @@ public final class Admin {
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		Validator validator = (Validator) context.getBean("validator");
 		// only metadataDAO is required for the Premerge (main/warehouse biopax DAO is not needed)
-        Premerger premerger = new PremergeImpl(metadataDAO, null, null, validator, provider);
+        PreMerger premerger = new PreMerger(metadataDAO, null, validator, provider);
         LOG.info("runPremerge: provider=" + provider + " - running...");
         premerger.premerge();
         
@@ -606,8 +604,7 @@ public final class Admin {
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
 		MappingsRepository mappingsRepository = (MappingsRepository) context.getBean("mappingsRepository");
-		PremergeImpl premerger = new PremergeImpl(metadataDAO, dao, mappingsRepository, null, null);
-		premerger.setWarehouseArchive(cpath.warehouseModelFile()); //will export to 'downloads'
+		PreMerger premerger = new PreMerger(metadataDAO, mappingsRepository, null, null);
         premerger.buildWarehouse();     
         context.close(); 
 	}
@@ -674,6 +671,7 @@ public final class Admin {
 		toReturn.append(Cmd.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
 		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + NEWLINE);			
 		toReturn.append(Cmd.MERGE.toString() + " [<metadataId>] [--force]"+ NEWLINE);
+		toReturn.append(Cmd.PERSIST.toString() + " (saves the merged BioPAX Model to the database, using Hibernate)");
 		toReturn.append(Cmd.CREATE_INDEX.toString() + NEWLINE);
         toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
         toReturn.append(Cmd.CLEAR_CACHE.toString() + " (removes the cache directory)" + NEWLINE);
@@ -744,11 +742,7 @@ public final class Admin {
 		File f = new File(cpath.downloadsDir());
 		if(!f.exists()) 
 			f.mkdir();
-    	
-		//copy the blacklist.txt
-		FileUtils.copyFileToDirectory(new File(cpath.blacklistFile()), f);
-		LOG.info("create-downloads: copied the blacklist.txt file...");
-		
+    		
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext("classpath:META-INF/spring/applicationContext-dao.xml");
 		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
@@ -843,8 +837,7 @@ public final class Admin {
 		
 		// generate the complete biopax db export (all processes, no filters)
 		String archiveName = cpath.mainModelFile();
-		exportBiopax(dao, archiveName, null, null);
-		files.add(archiveName);
+		files.add(archiveName); //the archive already there exists (made during Merge step)
 		
     	// export by organism
         LOG.info("create-downloads: preparing data 'by organism' archives...");
