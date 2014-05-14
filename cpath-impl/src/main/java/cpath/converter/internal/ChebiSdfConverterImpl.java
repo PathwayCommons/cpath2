@@ -357,7 +357,6 @@ class ChebiSdfConverterImpl extends BaseConverterImpl
 			SmallMoleculeReference smallMoleculeReference, Model model) 
 	{	
 		/*
-		 * TODO do it in cleaner; here is ugly quick fix 
 		 * It must be CHEBI:XXXXX (not just XXXXX), 
 		 * but - not RHEA:XXXXX (just XXXXX  is right)
 		 */

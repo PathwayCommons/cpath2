@@ -100,7 +100,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			FIELD_XREFID, //xref.id (incl. direct child xref's id, if any)
 			FIELD_ECNUMBER,
 			FIELD_SEQUENCE,
-			// plus, filter fields (TODO ? not include these (filter) fields into default search?
+			// plus, filter fields
 			FIELD_ORGANISM,
 			FIELD_DATASOURCE,
 			FIELD_PATHWAY, // i.e., helps find an object by a parent pathway name or filter a search results by pathway ;) 
@@ -384,7 +384,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			Highlighter highlighter = null;
 			if(!query.equals("*")) {
 				// create a highlighter (store.YES must be enabled on 'keyword' search field, etc.!)
-				//TODO ? shall we rewrite luceneQuery before executing (shelve for later)?
+				//TODO shall we rewrite luceneQuery before executing?
 				QueryScorer scorer = new QueryScorer(luceneQuery, FIELD_KEYWORD);   
 				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
 				highlighter = new Highlighter(formatter, scorer);
@@ -781,6 +781,18 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		sessionFactory.getCache().evictEntityRegions();
 		sessionFactory.getCache().evictCollectionRegions();
 		sessionFactory.getCache().evictDefaultQueryRegion();
+	}
+
+
+	@Transactional
+	@Override
+	public void removeAll() {
+		Session session = sessionFactory.getCurrentSession();
+		@SuppressWarnings("unchecked")
+		List<BioPAXElement> all = session.createCriteria(BioPAXElement.class).list();
+		for(BioPAXElement bpe : all) {
+			session.delete(bpe);
+		}
 	}
 
 }

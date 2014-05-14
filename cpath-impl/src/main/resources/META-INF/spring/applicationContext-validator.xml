@@ -42,6 +42,16 @@
 		<constructor-arg ref="extraDbSynonyms"/>
         <constructor-arg ref="cvFetcher" />
     </bean>
+    
+	<!-- info: CvFetcher extends OntologyManager(Adapter) and also implements WarehouseDAO interface -->
+	<bean id="cvFetcher" class="cpath.dao.internal.OntologyManagerCvRepository">
+		<constructor-arg index="0">
+		 	<util:properties local-override="false" location="classpath:obo.properties"/>
+		</constructor-arg>
+		<constructor-arg index="1"><null/></constructor-arg>
+		<constructor-arg index="2" value="true"/> 
+		<!-- change to "false" in production - to refresh all CVs at every run -->
+	</bean>    
 	
 	<bean id="validator" class="org.biopax.validator.impl.ValidatorImpl"/>
 	

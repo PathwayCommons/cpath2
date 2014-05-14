@@ -51,7 +51,8 @@ import java.util.Set;
 //@Ignore
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={"classpath:META-INF/spring/applicationContext-dao.xml",
-		"classpath:META-INF/spring/applicationContext-jpa.xml"})
+		"classpath:META-INF/spring/applicationContext-jpa.xml",
+		"classpath:META-INF/spring/applicationContext-service.xml"})
 @ActiveProfiles("dev")
 public class DataImportAndServiceIntegrationTest {
 	static Logger log = LoggerFactory.getLogger(DataImportAndServiceIntegrationTest.class);
@@ -92,7 +93,7 @@ public class DataImportAndServiceIntegrationTest {
 		assertNotNull(ds);
 		
 		premerger.premerge();		
-		premerger.buildWarehouse();
+		premerger.buildWarehouse(); //- also writes Warehouse archive
 		
 		//Some assertions about the initial biopax warehouse model (before the merger is run)	
 		Model warehouse = CPathUtils.loadWarehouseBiopaxModel();		
@@ -173,16 +174,16 @@ public class DataImportAndServiceIntegrationTest {
 		md.setProvenanceFor(m); 
 		// which EXPLICITELY REMOVEs all other datasources from object properties;
 		// former Provenances normally become DANGLING...
+		// but does not remove dangling objects from the persistent model
+		assertEquals(5, m.getObjects(Provenance.class).size()); 
+		
 		
 		// persist
 		paxtoolsDAO.merge(m);		
-		
-		// but does not remove dangling objects from the persistent model
-		assertEquals(5, m.getObjects(Provenance.class).size()); 
+		assertEquals(5, ((Model)paxtoolsDAO).getObjects(Provenance.class).size()); 
 		//still five (should not matter for queries/analyses)
-		// reindex all
+		// index
 		paxtoolsDAO.index();
-
 		
 		// Test the persistent model (must run within a transaction)
 		paxtoolsDAO.run(new Analysis() {

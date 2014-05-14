@@ -32,7 +32,7 @@ import cpath.importer.Cleaner;
  * Can normalize URIs for Reactome Entity class objects 
  * to http://identifiers.org/reactome/REACT_* form
  * if the unification xref with the stable Reactome ID is attached. 
- * TODO ? add/remove features as needed, as reactome versions change...
+ * TODO add/remove features as needed, as reactome versions change...
  */
 final class ReactomeCleanerImpl implements Cleaner {
 	
@@ -46,7 +46,7 @@ final class ReactomeCleanerImpl implements Cleaner {
 		Model model = simpleReader.convertFromOWL(data);
 		log.info("Cleaning Reactome data, this may take some time, please be patient...");
 
-		// TODO why cannot the data provider always do this, not we?	
+		// (why the data provider could not always do this?)	
 		// Normalize Entity URIs using Reactome stable id, where possible
 		// (not required for utility class objects)
 		Set<Entity> entities = new HashSet<Entity>(model.getObjects(Entity.class));
