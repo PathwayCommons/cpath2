@@ -204,7 +204,6 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 					else {
 						proteinReference.addName(fieldValue);
                     }
-                    //TODO ? do we really want to add all names from Contains: and Includes: sections?
                 }
             }
         }
@@ -539,7 +538,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			
 			if(start == end) {
 				modificationFeature.setFeatureLocation(startSite);
-				//TODO ? modificationFeature.setFeatureLocationType(regionVocabulary);
+				//TODO set modificationFeature.setFeatureLocationType(regionVocabulary) ?
 			} else {
 				//create the second site (end) and sequence interval -
 				idPart = pr.getDisplayName() + //e.g., CALM_HUMAN - from the ID line

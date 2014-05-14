@@ -15,7 +15,7 @@ contains cpath2 configuration and data files, such as:
 - hibernate.properties; these can be overwritten by the corresponding properties in the Spring (XML) configuration.
 - logback.xml (optional; alternative logging can be enabled by -Dlogback.configurationFile=$CPATH2_HOME/logback.xml JVM option);
 - data/ directory (it is where downloaded original data files are stored);
-- tmp/ dir (where downloaded data and ontology files are stored), 
+- tmp/ dir (where ontology, temporary and some test files are stored), 
 - downloads/ dir (where batch download archives are created),
 - cache/ dir (where cache directories and files get created);
 - validation.properties (BioPAX Validator rules tuning);
@@ -65,7 +65,7 @@ do not want all files in an original archive, etc.
 
   When creating a new cpath2 instance from scratch,
   the preferred data uploading method is as follows
-  (until we develop cPAth2 WebAdmin app): 
+  (TODO: until we develop cPath2 WebAdmin feature): 
 
 1. Edit the cPath2 metadata.conf (see "metadata format" below)
 Note: if possible, use a standard name in the 'NAME' (the second) field 
@@ -99,7 +99,7 @@ or PSI-MI/PSI-MITAB data $CPATH2_HOME/tmp/ as follows:
 4. set "cpath2.admin.enabled=true" in the cpath properties 
 (or via JVM option: "-Dcpath2.admin.enabled=true").
 
-5. Run import-data.sh script and follow the instructions/questions...
+5. Run cpath2-cli.sh script... (see the available commands and their order below)
 
 
 METADATA FORMAT
@@ -158,12 +158,15 @@ new instance from scratch:
 -premerge 
 -create-warehouse
 -merge --force (unfortunately, --force is usually required...)
--aftermerge (if there is some analysis to apply after the merge stage)
--create-index
+-dbindex
 -update-counts
 -create-blacklist
 -create-downloads
 -clear-cache
+-run-analysis (to execute a class that implements cpath.dao.Analysis interface, 
+e.g., to post-fix something in the merged biopax model/db or to produce some output; 
+if it does modify the model though, i.e. not a read-only analysis, 
+you are to run -dbindex and following steps again.)
 
 
 Example. 

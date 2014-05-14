@@ -154,4 +154,10 @@ public interface PaxtoolsDAO  {
      */
     void evictCaches();
     
+    
+    /**
+     * Delete all BioPAX objects from this database/model.
+     */
+    void removeAll();
+    
 }

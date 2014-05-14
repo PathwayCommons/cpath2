@@ -32,12 +32,6 @@
     <bean id="metadataDAO" class="cpath.dao.internal.MetadataHibernateDAO">
         <property name="sessionFactory" ref="pcSessionFactory"/>
     </bean>
-    
-	<bean id="service" class="cpath.service.internal.CPathServiceImpl">
-	<!-- autowired -->
-<!-- 		<constructor-arg ref="paxtoolsDAO"/> -->
-<!-- 		<constructor-arg ref="mappingRepository"/> -->
-	</bean>    
 
 	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
 

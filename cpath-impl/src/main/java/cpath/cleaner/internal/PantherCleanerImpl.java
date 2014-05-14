@@ -119,19 +119,18 @@ final class PantherCleanerImpl implements Cleaner {
 			
 			// check for nested generic ERs
 			if(!generic.getMemberEntityReferenceOf().isEmpty()) {
-				log.warn("Found nested generic " + generic 
-					+ "; skip (TODO: modify cleaner?)");
+				log.warn("Found nested generic " + generic + "; skip it.");
 				continue;
 			}
 			
-			// will use that single member instead of the generic;
+			// Use that single member ER instead of this generic ER;
 			// copy names and xrefs
 			EntityReference member = generic.getMemberEntityReference().iterator().next();
 			
-			//PANTHER contains DnaRegionReferences having ProteinRefrence members; This is wrong BioPAX model (not allowed)
-			// skip such beasts (TODO or treat somehow?):
-			if(generic.getModelInterface().isInstance(member)) {
+			//PANTHER contains DnaRegionReferences having ProteinRefrence members (wrong BioPAX model)
+			if(generic.getModelInterface().isInstance(member)) { //correct classes, then -
 //				member.getComment().addAll(generic.getComment()); //skip misleading/old comments
+				member.getComment().add("REPLACED generic " + generic.getRDFId());
 				member.getXref().addAll(generic.getXref());
 				member.getName().addAll(generic.getName());
 				if(member.getDisplayName() == null)
@@ -144,8 +143,8 @@ final class PantherCleanerImpl implements Cleaner {
 				
 				generic.removeMemberEntityReference(member);				
 				cleanModel.remove(generic);
-			} else {
-				//TODO e.g., copy names, xrefs, organism from member to the generic and delete the member (generic becomes non-generic)?
+			} else { // skip such beasts ()
+				//TODO ? copy properties from member to generic, delete member (which type to keep?)
 			}
 		}
 				

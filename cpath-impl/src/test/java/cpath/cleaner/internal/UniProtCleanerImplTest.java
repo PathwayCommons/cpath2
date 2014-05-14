@@ -76,9 +76,7 @@ public class UniProtCleanerImplTest {
 		data = new String(bytes);
         assertTrue(data.indexOf(CALR3_HUMAN_AFTER) != -1);
         assertTrue(data.indexOf(CALRL_HUMAN_AFTER) != -1);
-		
-        //TODO add assertions (now it only tests for apparent failures)
-        
+		       
 		// dump owl for review
 		String outFilename = getClass().getClassLoader().getResource("").getPath() 
 			+ File.separator + "testCleanUniProt.out.dat";

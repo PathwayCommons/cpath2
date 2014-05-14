@@ -92,8 +92,7 @@ public final class Admin {
 		PREMERGE("-premerge"),
 		CREATE_WAREHOUSE("-create-warehouse"),			
 		MERGE("-merge"),
-		PERSIST("-persist"),
-    	CREATE_INDEX("-create-index"),
+    	DBINDEX("-dbindex"),
         CREATE_BLACKLIST("-create-blacklist"),
         CREATE_DOWNLOADS("-create-downloads"),
         CLEAR_CACHE("-clear-cache"),
@@ -160,9 +159,9 @@ public final class Admin {
 			dir.mkdir();
 		}
 
-		if (args[0].equals(Cmd.CREATE_INDEX.toString())) {
+		if (args[0].equals(Cmd.DBINDEX.toString())) {
 			
-			index();
+			createAndIndexBiopaxDb();
 			
 		} else if (args[0].equals(Cmd.INIT.toString())) {
 			
@@ -202,9 +201,6 @@ public final class Admin {
 			}
 
 			runMerge(provider, force);
-		} else if(args[0].equals(Cmd.PERSIST.toString())) {
-			
-			//TODO implement PERSIST command
 			
 		} else if (args[0].equals(Cmd.EXPORT.toString())) {
 			
@@ -392,26 +388,39 @@ public final class Admin {
 
 
 	/**
-     * Builds new cpath2 full-text index.
+     * Builds new cpath2 database and full-text index.
+	 * @throws IOException 
      * 
      * @throws IllegalStateException when not in maintenance mode
      */
-    public static void index() {
+    public static void createAndIndexBiopaxDb() throws IOException {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
-   		// re-build the full-text index
-   		// it gets the main DB name from cpath2.properties (via CPathSettings class)
+
+		LOG.info("Loading the main merged BioPAX model from the archive...");
+		Model allModel = CPathUtils.loadMainBiopaxModel();
 		
+		// re-build the full-text index
+   		// it gets the main DB name from cpath2.properties		
 		String db = cpath.getMainDb(); 
 		File dir = new File(cpath.homeDir() + File.separator + db);
 		LOG.info("Cleaning up the full-text index directory");
 		CPathUtils.cleanupDirectory(dir);
-		
+ 		
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
 				"classpath:META-INF/spring/applicationContext-dao.xml");    	
  		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean("paxtoolsDAO"));
+ 		
+ 		LOG.info("Removing all BioPAX objects from the db...");
+ 		mainDAO.removeAll();
+ 		
+ 		LOG.info("Persisting the main model...");
+ 		mainDAO.merge(allModel);
+ 		
  		mainDAO.index();
- 		context.close(); 
+ 		
+ 		context.close(); 		
+ 		LOG.info("Done.");
  	}
 
     
@@ -574,8 +583,7 @@ public final class Admin {
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:META-INF/spring/applicationContext-dao.xml", 
 // not required in this step           		"classpath:META-INF/spring/applicationContext-jpa.xml",
-            		"classpath:META-INF/spring/applicationContext-validator.xml", 
-					"classpath:META-INF/spring/applicationContext-cvRepository.xml"});
+            		"classpath:META-INF/spring/applicationContext-validator.xml"});
 		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
 		Validator validator = (Validator) context.getBean("validator");
 		// only metadataDAO is required for the Premerge (main/warehouse biopax DAO is not needed)
@@ -671,8 +679,7 @@ public final class Admin {
 		toReturn.append(Cmd.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
 		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + NEWLINE);			
 		toReturn.append(Cmd.MERGE.toString() + " [<metadataId>] [--force]"+ NEWLINE);
-		toReturn.append(Cmd.PERSIST.toString() + " (saves the merged BioPAX Model to the database, using Hibernate)");
-		toReturn.append(Cmd.CREATE_INDEX.toString() + NEWLINE);
+		toReturn.append(Cmd.DBINDEX.toString() + " (to persist and index the BioPAX database)" + NEWLINE);
         toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
         toReturn.append(Cmd.CLEAR_CACHE.toString() + " (removes the cache directory)" + NEWLINE);
         toReturn.append(Cmd.UPDATE_COUNTS.toString() + " (re-calculates pathway, molecule, " +
