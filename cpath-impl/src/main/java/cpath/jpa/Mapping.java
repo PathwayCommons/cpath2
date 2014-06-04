@@ -4,10 +4,11 @@ import javax.persistence.*;
 
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.Index;
 import org.springframework.util.Assert;
 
 /**
- * A simple id-mapping db table.
+ * Id-mapping Entity.
  * 
  * @author rodche
  */
@@ -15,11 +16,19 @@ import org.springframework.util.Assert;
 @DynamicUpdate
 @DynamicInsert
 @Table(name="mapping", uniqueConstraints = @UniqueConstraint(columnNames = {"src", "srcId", "dest", "destId"}))
+@org.hibernate.annotations.Table(appliesTo = "mapping",
+	indexes = {
+		@Index(name="dest_index", columnNames = "dest"),
+		@Index(name="dest_destId_index", columnNames = {"dest", "destId"}),
+		@Index(name="srcId_dest_index", columnNames = {"srcId", "dest"}),
+		@Index(name="src_srcId_dest_index", columnNames = {"src", "srcId", "dest"}),
+	}
+)
 public final class Mapping {
 		
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
-	private Integer id;
+	private Long id;
 	
 	@Column(nullable=false)
 	private String src; 
@@ -52,6 +61,10 @@ public final class Mapping {
     	this.destId = destId;
     }
     
+    
+    Long getId() {
+    	return id;
+    }
     
 
 	public String getSrc() {

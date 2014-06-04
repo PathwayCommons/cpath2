@@ -12,7 +12,7 @@
 
 <bp:ModificationFeature rdf:ID="pid_60396">
  <bp:featureLocation rdf:resource="#pid_23989" />
- <bp:modificationType rdf:resource="http://identifiers.org/obo.psi-mod/MOD:00046" />
+ <bp:modificationType rdf:resource="http://identifiers.org/psimod/MOD:00046" />
 </bp:ModificationFeature>
 
 <bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P10826">
@@ -60,12 +60,12 @@
 
 <bp:ModificationFeature rdf:ID="pid_60772">
  <bp:featureLocation rdf:resource="#pid_32927" />
- <bp:modificationType rdf:resource="http://identifiers.org/obo.psi-mod/MOD:00046" />
+ <bp:modificationType rdf:resource="http://identifiers.org/psimod/MOD:00046" />
 </bp:ModificationFeature>
 
 <bp:ModificationFeature rdf:ID="pid_60773">
  <bp:featureLocation rdf:resource="#pid_60774" />
- <bp:modificationType rdf:resource="http://identifiers.org/obo.psi-mod/MOD:00046" />
+ <bp:modificationType rdf:resource="http://identifiers.org/psimod/MOD:00046" />
 </bp:ModificationFeature>
 
 <bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P13631">
@@ -157,7 +157,7 @@
  <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
 </bp:ProteinReference>
 
-<bp:SequenceModificationVocabulary rdf:about="http://identifiers.org/obo.psi-mod/MOD:00046">
+<bp:SequenceModificationVocabulary rdf:about="http://identifiers.org/psimod/MOD:00046">
  <bp:term rdf:datatype = "xsd:string">O-phospho-L-serine</bp:term>
  <bp:xref rdf:resource="UnificationXref:PROTEIN+MODIFICATION+ONTOLOGY_MOD%3A00046" />
 </bp:SequenceModificationVocabulary>
@@ -227,6 +227,6 @@
 
 <bp:ModificationFeature rdf:ID="pid_60719">
  <bp:featureLocation rdf:resource="#pid_57906" />
- <bp:modificationType rdf:resource="http://identifiers.org/obo.psi-mod/MOD:00046" />
+ <bp:modificationType rdf:resource="http://identifiers.org/psimod/MOD:00046" />
 </bp:ModificationFeature>
 </rdf:RDF>

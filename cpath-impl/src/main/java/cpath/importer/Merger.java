@@ -29,9 +29,10 @@ package cpath.importer;
 
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
-import cpath.dao.MetadataDAO;
-import cpath.jpa.MappingsRepository;
-import cpath.warehouse.beans.*;
+import cpath.importer.PreMerger.RelTypeVocab;
+import cpath.jpa.Content;
+import cpath.jpa.Metadata;
+import cpath.service.CPathService;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Complex;
@@ -51,18 +52,12 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
-import org.biopax.paxtools.util.Filter;
 import org.biopax.paxtools.controller.ModelUtils;
-import org.biopax.paxtools.controller.ObjectPropertyEditor;
-import org.biopax.paxtools.controller.PropertyEditor;
-import org.biopax.paxtools.controller.SimpleEditorMap;
-import org.biopax.paxtools.controller.SimpleMerger;
-import org.biopax.paxtools.controller.Traverser;
-import org.biopax.paxtools.controller.Visitor;
 import org.biopax.paxtools.io.*;
 import org.biopax.validator.utils.Normalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 
 import java.io.*;
 import java.util.*;
@@ -79,59 +74,35 @@ public final class Merger {
 
     private static final Logger log = LoggerFactory.getLogger(Merger.class);
 	
-    private final SimpleMerger simpleMerger;
-    
-    private Model warehouseModel;
-    private Model mainModel;   
-    
-    // cpath2 metadata repositories
-	private final MetadataDAO metadataDAO;
-	private final MappingsRepository mappingsRepository;
-    
     // configuration/flags
-	private final String provider;
 	private final boolean force;	
 	private final String xmlBase;
+
+    private Model warehouseModel;
+    private Model mainModel;      
+	private CPathService service;
 	
 
 	/**
-	 * Constructor (package-private).
-	 *
-	 * This constructor was added to be used in a test context. At least called by
-	 * cpath.importer.internal.CPathInMemoryModelMergerTest.testMerger().
+	 * Constructor.
 	 * 
-	 * @param metadataDAO MetadataDAO
-	 * @param mappingsRepository
-	 * @param provider merge pathway data from this provider only
+	 * @param service
 	 * @param force whether to forcibly merge BioPAX data the validation reported critical about or skip.
 	 * @throws AssertionError when dest is not instanceof {@link Model};
 	 */
-	public Merger(final MetadataDAO metadataDAO, 
-			MappingsRepository mappingsRepository, String provider, boolean force) 
+	public Merger(CPathService service, boolean force) 
 	{
-		this.metadataDAO = metadataDAO;
-		this.mappingsRepository = mappingsRepository;
+		this.service = service;
 		this.xmlBase = CPathSettings.getInstance().getXmlBase();
-		this.provider = provider;
 		this.force = force;		
-		this.simpleMerger = new SimpleMerger(SimpleEditorMap.L3);
 		
-		try {
-			this.warehouseModel = CPathUtils.loadWarehouseBiopaxModel();
-			log.info("Successfully imported the Warehouse BioPAX model from archive...");
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to import the Warehouse model!", e);
-		}	
+		this.warehouseModel = CPathUtils.loadWarehouseBiopaxModel();
+		Assert.notNull(warehouseModel, "No BioPAX Warehouse");
+		log.info("Successfully imported Warehouse BioPAX archive.");	
 		
-		try {	
-			this.mainModel = CPathUtils.loadMainBiopaxModel();
-			log.info("Continue merging into previously used main model...");
-		} catch (IOException e) {
-			log.info("Could not import Main model; so, created a new empty one.", e);			
-			this.mainModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-			this.mainModel.setXmlBase(xmlBase);
-		}		
-		
+		this.mainModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+		this.mainModel.setXmlBase(xmlBase);
+		log.info("Created a new empty main BioPAX model.");
 	}
 
 	
@@ -141,12 +112,8 @@ public final class Merger {
 		// build models and merge from dataFile.premergeData
 		Collection<Metadata> providersMetadata = new ArrayList<Metadata>();
 		
-		if (provider != null) {			
-			providersMetadata.add(metadataDAO.getMetadataByIdentifier(provider));
-		}
-		else {
-			providersMetadata = metadataDAO.getAllMetadata();
-		}
+		for(Metadata metadata : service.metadata().findAll())
+			providersMetadata.add(metadata);
 
 		for (Metadata metadata : providersMetadata) {
 			
@@ -230,13 +197,14 @@ public final class Merger {
 	 */
 	void merge(String description, final Model source) {	
 		
-		final String srcModelInfo = "source: " + description;		
+		final String srcModelInfo = "source: " + description;
+		
 		/* 
-		 * Replace not normalized (during 'premerge') URIs in the source model 
+		 * Replace not normalized so far URIs in the source model 
 		 * with generated new ones (also add a bp:comment about original URIs)
 		 */
 		log.info("Assigning new URIs (xml:base=" + xmlBase + 
-				"*) to not normalized BioPAX elements (" + 
+				"*) to all not normalized BioPAX elements (" + 
 				srcModelInfo + ", xml:base=" + source.getXmlBase() + ")...");
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
 		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
@@ -253,9 +221,76 @@ public final class Merger {
 			// save original URI in comments
 			((Level3Element) bpe).addComment("REPLACED " + currUri);
 		}
+			
+		log.info("Searching for canonical or existing EntityReference objects " +
+				" to replace equivalent original objects ("+srcModelInfo+")...");
+		final Map<EntityReference, EntityReference> replacements = new HashMap<EntityReference, EntityReference>();		
+		// match some UtilityClass objects to existing ones (previously imported, warehouse)
+		for (EntityReference bpe: new HashSet<EntityReference>(source.getObjects(EntityReference.class))) 
+		{
+			EntityReference replacement = null;
+			
+			// Find the best replacement ER in the Warehouse:
+			if (bpe instanceof ProteinReference) {
+				replacement = findOrCreateProteinReference((ProteinReference)bpe);
+			} 
+			else if (bpe instanceof SmallMoleculeReference) {
+				replacement = findOrCreateSmallMoleculeReference((SmallMoleculeReference)bpe);
+			} 
+				
+			if (replacement != null) {
+				EntityReference r = (EntityReference) mainModel.getByID(replacement.getRDFId());
+				if(r != null) // re-use previously merged one
+					replacement = r;
+//				else //merge (including all children)
+//					mainModel.merge(replacement);
+				
+				//save in the map to replace the source bpe later 
+				replacements.put(bpe, replacement);
+				replacement.addComment("REPLACED " + bpe.getRDFId());
+			}
+		}
+		
+		//explicitly remove old (to be replaced) objects from the source model
+		// this is important for the replacement (below) to work, esp. in case 
+		// new URI is the same as original normalized URI...
+		for(EntityReference old : replacements.keySet()) {
+			source.remove(old);
+		}
+		
+		// Replace objects in the source model
+		log.info("Replacing objects ("+srcModelInfo+")...");	
+		ModelUtils.replace(source, replacements);
+
+		// post-fix
+		log.info("Migrate some properties, such as original entityFeature and xref ("+srcModelInfo+")...");
+		for (EntityReference old : replacements.keySet()) {
+			for (EntityFeature ef : new HashSet<EntityFeature>(old.getEntityFeature())) 
+			{
+				// move entity features of the replaced ER to the new one
+				old.removeEntityFeature(ef); //(this is to avoid paxtools warnings)			
+				replacements.get(old).addEntityFeature(ef);
+			}				
+			// move PublicationXrefs and RelationshipXrefs (otherwise we lost some original xrefs)
+			for(Xref x : new HashSet<Xref>(old.getXref())) {
+				if(!(x instanceof UnificationXref)) {
+					((XReferrable) old).removeXref(x);						
+					XReferrable repl = ((XReferrable) replacements.get(old));					
+					Xref mergedX = (Xref) mainModel.getByID(x.getRDFId());						
+					if(!repl.getXref().contains(x) && (mergedX==null || !repl.getXref().contains(mergedX)))
+						repl.addXref(x);
+				}
+			}
+		}
+		
+		// cleaning up dangling objects (including the replaced above ones)
+		log.info("Removing dangling objects ("+srcModelInfo+")...");
+		ModelUtils.removeObjectsIfDangling(source, UtilityClass.class);
+		
 		
 		// The following hack can improve graph queries and full-text search relevance
-		// for generic and poorly defined physical entities (e.g., those lacking entity reference)
+		// for generic and poorly defined physical entities (those lacking entity reference
+		// but having some xrefs)
 		log.info("Adding canonical UniProt/ChEBI " +
 				"relationship xrefs to physical entities using their existing xrefs " +
 				"and id-mapping (" + srcModelInfo + ")...");		
@@ -289,137 +324,12 @@ public final class Merger {
 				addCanonicalRelXrefs(source, pe, "UNIPROT");
 			}
 		}
-			
-		log.info("Searching for canonical or existing utility class objects " +
-				" to replace equivalent original objects ("+srcModelInfo+")...");
-		final Map<UtilityClass, UtilityClass> replacements = new HashMap<UtilityClass, UtilityClass>();		
-		// match some UtilityClass objects to existing ones (previously imported, warehouse)
-		for (UtilityClass bpe: new HashSet<UtilityClass>(source.getObjects(UtilityClass.class))) 
-		{
-			UtilityClass replacement = null;
-			
-			// Find the best replacement ER in the Warehouse:
-			if (bpe instanceof ProteinReference) {
-				replacement = findOrCreateProteinReference((ProteinReference)bpe);
-			} 
-			else if (bpe instanceof SmallMoleculeReference) {
-				replacement = findOrCreateSmallMoleculeReference((SmallMoleculeReference)bpe);
-			} 
-			else { //e.g., BioSource, CV, or Provenance - simply match by URI (no id-mapping or additional checks)
-				replacement = getByUri(bpe.getRDFId());
-			}
-				
-			if (replacement != null) {
-				UtilityClass r = (UtilityClass) mainModel.getByID(replacement.getRDFId());
-				if(r != null) // re-use previously merged one
-					replacement = r;
-				else //merge (including all children)
-					simpleMerger.merge(mainModel, replacement);
-				//save in the map to replace the source bpe later 
-				replacements.put(bpe, replacement);
-				replacement.addComment("REPLACED " + bpe.getRDFId());
-			}
-		}
-
-		// Replace objects in the source model
-		log.info("Replacing objects ("+srcModelInfo+")...");	
-		ModelUtils.replace(source, replacements);
-
-		//in addition, explicitly remove old (replaced) objects from the model
-		for(UtilityClass old : replacements.keySet()) {
-			source.remove(old);
-		}
-		
-		// cleaning up dangling objects
-		log.info("Removing dangling objects ("+srcModelInfo+")...");
-		final Set<BioPAXElement> removed = ModelUtils
-			.removeObjectsIfDangling(source, UtilityClass.class);
-		
-		//important
-		removed.addAll(replacements.keySet());
-		
-		/* the assertion wouldn't hold after removeObjectsIfDangling call
-		 * if not old (replaced) objects were then explicitely removed: 
-		 * since BioPAXElementImpl.equals and hashCode were overridden,
-		 * removeObjectsIfDangling behaves differently... */
-		assert removed.containsAll(replacements.keySet()) 
-			: "not all replaced actually became dangling and were removed";	
-		
-		// post-fix
-		log.info("Migrate some properties, such as original entityFeature and xref ("+srcModelInfo+")...");
-		for (UtilityClass old : replacements.keySet()) {
-			if(old instanceof EntityReference) {
-				for (EntityFeature ef : new HashSet<EntityFeature>(
-						((EntityReference) old).getEntityFeature())) {
-					// move entity features of the replaced ER to the new one
-					((EntityReference) old).removeEntityFeature(ef); //(this is to avoid paxtools warnings)			
-					((EntityReference) replacements.get(old)).addEntityFeature(ef);
-				}
-			}				
-			// move PublicationXrefs and RelationshipXrefs (otherwise we lost some original xrefs)
-			if(old instanceof XReferrable) {
-				for(Xref x : new HashSet<Xref>(((XReferrable) old).getXref())) {
-					if(!(x instanceof UnificationXref)) {
-						((XReferrable) old).removeXref(x);						
-						XReferrable repl = ((XReferrable) replacements.get(old));					
-						if(mainModel.containsID(x.getRDFId())) {
-							Xref mergedX = (Xref) mainModel.getByID(x.getRDFId());						
-							repl.removeXref(x);
-							repl.addXref(mergedX);						
-						} else {
-							repl.addXref(x);
-						}
-						
-					}
-				}
-			}
-		}	
-										
-		// fix dangling inverse properties (some objects there
-		// in the source model might still refer to the removed ones)
-//		fixInverseProperties(removed);	
 		
 		log.info("Merging into the main BioPAX model...");
 		// merge to the target model
 		mainModel.merge(source);
 		
-		log.info("Merge is done ("+srcModelInfo+").");			
-	}
-
-		
-	private UtilityClass getByUri(String uri) {
-		return (UtilityClass) warehouseModel.getByID(uri);
-	}
-
-
-	/*
-	 * Clears all object properties of old (replaced) objects
-	 * before the source and target models are merged, because 
-	 * some of their child objects that are also used by other 
-	 * biopax elements (to stay) in the model can still refer 
-	 * to the old ones via inverse object properties (xrefOf, etc.)
-	 *  
-	 * @param removed
-	 */
-	private void fixInverseProperties(final Set<BioPAXElement> removed) {		
-		@SuppressWarnings({ "unchecked", "rawtypes" })
-		Traverser traverser = new Traverser(SimpleEditorMap.L3, 
-			new Visitor() {			
-				@Override
-				public void visit(BioPAXElement bpe, Object v, Model model, PropertyEditor editor) {
-					editor.removeValueFromBean(v, bpe);
-				}
-			}, 
-			new Filter<PropertyEditor>() {
-				@Override
-				public boolean filter(PropertyEditor object) {
-					return object instanceof ObjectPropertyEditor;
-				}
-			}
-		);
-		
-		for(BioPAXElement element : removed)
-			traverser.traverse(element, null);
+		log.info("Merge ("+srcModelInfo+") is done.");
 	}
 
 
@@ -448,7 +358,7 @@ public final class Merger {
 		addRelXref(src, bpe, db, mappingSet);
 		
 		//map by display and standard names
-		mappingSet = mappingsRepository.map(null, bpe.getDisplayName(), db);
+		mappingSet = service.map(null, bpe.getDisplayName(), db);
 		addRelXref(src, bpe, db, mappingSet);
 	}
 
@@ -471,13 +381,8 @@ public final class Merger {
 		
 		for(String ac : mappingSet) {
 			// find or create
-			String rxUri = Normalizer.uri(xmlBase, db, ac, RelationshipXref.class);
-			RelationshipXref rx = (RelationshipXref) source.getByID(rxUri);	
-			if(rx == null) { 	
-				rx = source.addNew(RelationshipXref.class, rxUri);
-				rx.setDb(db);
-				rx.setId(ac);
-			}
+			RelationshipXref rx = PreMerger
+				.findOrCreateRelationshipXref(RelTypeVocab.ADDITIONAL_INFORMATION, db, ac, source);
 			bpe.addXref(rx);
 		}
 	}
@@ -498,76 +403,45 @@ public final class Merger {
 		
 		final String standardPrefix = "http://identifiers.org/";
 		final String canonicalPrefix = standardPrefix + "uniprot/";
+		final String origUri = orig.getRDFId();
 		
-		String uri = orig.getRDFId();
-		
-		// 1) try to match an existing PR by URI
-		if(uri.startsWith(canonicalPrefix)) {
-			toReturn = (ProteinReference) getByUri(uri);
-			if(toReturn != null)
-				return toReturn;
+		// Try to re-use existing object
+		if(origUri.startsWith(canonicalPrefix)) {
+			toReturn = (ProteinReference) warehouseModel.getByID(origUri);
 		}
  
-		// Otherwise, use id-mapping
-		
-		// if nothing's found in the db by original or normalized URI, 
-		// 2) try id-mapping (to uniprot ac). 
-		if (uri.startsWith(standardPrefix)) {
-			String id = uri.substring(uri.lastIndexOf('/')+1);
-			String db = null;	
-			
+		// If nothing's found by URI right away, 
+		// try id-mapping (of the normalized URI part to chebi primary accession) 
+		if (toReturn == null && origUri.startsWith(standardPrefix)) {
+			String id = origUri.substring(origUri.lastIndexOf('/')+1);	
+			String db = null;				
 			//a hack/shortcut for normalized PRs
 			if(orig instanceof ProteinReference) {
-				if(uri.toLowerCase().contains("uniprot.isoform")) {
+				if(origUri.toLowerCase().contains("uniprot.isoform")) {
 					db = "uniprot isoform";
-				} else if(uri.toLowerCase().contains("uniprot")) {
+				} else if(origUri.toLowerCase().contains("uniprot")) {
 					db = "uniprot";
-				} else if(uri.toLowerCase().contains("refseq")) {
+				} else if(origUri.toLowerCase().contains("refseq")) {
 					db = "refseq";	
-				} else if(uri.toLowerCase().contains("kegg") && id.contains(":")) {
+				} else if(origUri.toLowerCase().contains("kegg") && id.contains(":")) {
 					db = "NCBI Gene"; //KEGG actually uses NCBI Gene (aka Entrez Gene)
 				}
-			}
-			
-			if(db == null) //then detect db by id matching in all xrefs
-				db = dbById(id, orig.getXref());
-			
-			// do id-mapping
-			Set<String> mp = mappingsRepository.map(db, id, "UNIPROT"); 			
-			if(!mp.isEmpty()) {
-				toReturn = (ProteinReference) getByIdsFromModel(orig.getRDFId(), "URI", mp, canonicalPrefix);
-			}
+			}			
+			if(db == null) 
+				db = dbById(id, orig.getXref());	
+
+			Set<String> mp = service.map(db, id, "UNIPROT");
+			toReturn = (ProteinReference) findEntityRefUsingIdMappingResult(origUri, "URI", mp, canonicalPrefix);
 		}
 				
-		// if yet nothing's found, 
-		// 3) try using (already normalized) all Unification Xrefs and id-mapping (to uniprot ac). 
-		if (toReturn == null) {
-			Set<String> mappingSet = idMappingByXrefs(orig, "UNIPROT", UnificationXref.class);
-			if(!mappingSet.isEmpty()) {
-				toReturn = (ProteinReference) getByIdsFromModel(
-						orig.getRDFId(), "Unif. Xrefs", mappingSet, canonicalPrefix);		
-			}
-		}	
+		// if yet ambiguous mapping or nothing, 
+		// try using (already normalized) Xrefs and id-mapping  
+		if (toReturn == null)
+			toReturn = (ProteinReference) mapByXrefs(orig, "UNIPROT", canonicalPrefix);
 		
-		// if nothing's found in the warehouse by URI and unif. xrefs, - 
-		// 4) try relationship xrefs and id-mapping 
-		if (toReturn == null) {
-			Set<String> mappingSet = idMappingByXrefs(orig,"UNIPROT", RelationshipXref.class);
-			if(!mappingSet.isEmpty()) {
-				toReturn = (ProteinReference) getByIdsFromModel(
-						orig.getRDFId(), "Rel. Xrefs", mappingSet, canonicalPrefix);
-			}	
-		}
-				
+		// nothing/ambiguous?..
 		//TODO map by names? (too RISKY, might replace wrong PR, for proteins/genes often share names!)
-//		if (toReturn == null) {
-//			Set<String> mp = mapByName(orig, "UNIPROT");		
-//			if(!mp.isEmpty()) {
-//				toReturn = (ProteinReference) getByIdsFromModel(
-//						orig.getRDFId(), "names", mp, canonicalPrefix);
-//			}
-//		}
-		
+	
 		return toReturn;
 	}
 	
@@ -589,22 +463,21 @@ public final class Merger {
 	{
 		final Set<String> mappedTo = new TreeSet<String>();
 		
-		for (Xref x : orig.getXref()) {
+		for (Xref x : orig.getXref()) {			
+			if(x.getDb() == null || x.getDb().isEmpty()
+					|| x.getId() == null || x.getId().isEmpty()) {
+				log.warn("Ignored bad " + x.getModelInterface().getSimpleName()
+					+ " db: " + x.getDb() + ", id: " + x.getId());
+				continue;
+			}
+						
 			if (xrefType.isInstance(x)) {
-				Set<String> mp = mappingsRepository.map(x.getDb(), x.getId(), mapTo);
-				if (!mp.isEmpty()) {
-					mappedTo.addAll(mp);
-					if(mp.size() > 1) //one xref maps to several primary ACs
-						log.warn("idMappingByXrefs: ambiguous; id: " +
-								x.getId() + " maps to: " + mp);
-				}
+				Set<String> mp = service.map(x.getDb(), x.getId(), mapTo);
+				mappedTo.addAll(mp);
+				if(mp.size() > 1) //one xref maps to several primary ACs
+					log.debug("Ambiguous xref.id: " + x.getId() + " maps to: " + mp);
 			}
 		}
-		
-		if(mappedTo.size() > 1) // xrefs map to different primary ACs
-			log.warn("idMappingByXrefs: ambiguous; " + orig.getRDFId() +
-				" (using its " + xrefType.getSimpleName() + "s) maps to: " 
-					+ mappedTo);
 
 		return mappedTo;
 	}
@@ -645,65 +518,50 @@ public final class Merger {
 		
 		final String standardPrefix = "http://identifiers.org/";
 		final String canonicalPrefix = standardPrefix + "chebi/";
+		final String origUri = orig.getRDFId();
 		
-		String uri = orig.getRDFId();
-		
-		// 1) try to re-use existing object
-		if(uri.startsWith(canonicalPrefix)) {
-			toReturn = (SmallMoleculeReference) getByUri(uri);
-			if(toReturn != null)
-				return toReturn;
+		// Try to re-use existing object
+		if(origUri.startsWith(canonicalPrefix)) {
+			toReturn = (SmallMoleculeReference) warehouseModel.getByID(origUri);
 		}
  
-		// otherwise - try more - with id-mapping
-		
-		/* getting here also means biopax normalization was 
-		 * not quite successful, due to lack of chebi unif. xrefs, 
-		 * having a pubchem/kegg (relationship) xref instead,
-		 * or using a non standard chemical db name.
-		 */
-		
-		// if nothing's found in the db by original or normalized URI, 
-		// 2) try id-mapping (to chebi ac). 
-		if (uri.startsWith(standardPrefix)) {
-			String id = uri.substring(uri.lastIndexOf('/')+1);	
+		// If nothing's found by URI right away, 
+		// try id-mapping (of the normalized URI part to chebi primary accession) 
+		if (toReturn == null && origUri.startsWith(standardPrefix)) {
+			String id = origUri.substring(origUri.lastIndexOf('/')+1);	
 			String db = dbById(id, orig.getXref()); //find by id			
-			Set<String> mp = mappingsRepository.map(db, id, "CHEBI");
-			if(!mp.isEmpty()) {
-				toReturn = (SmallMoleculeReference) getByIdsFromModel(
+			Set<String> mp = service.map(db, id, "CHEBI");
+			toReturn = (SmallMoleculeReference) findEntityRefUsingIdMappingResult(
 						orig.getRDFId(), "URI", mp, canonicalPrefix);
-			}
 		}
 				
-		// if yet nothing's found, 
-		// 3) try using (already normalized) all Unification Xrefs and id-mapping (to primary chebi). 
-		if (toReturn == null) {
-			Set<String> mappingSet = idMappingByXrefs(orig, "CHEBI", UnificationXref.class);
-			if(!mappingSet.isEmpty()) {
-				toReturn = (SmallMoleculeReference) getByIdsFromModel(
-						orig.getRDFId(), "Unif. Xrefs", mappingSet, canonicalPrefix);
-			}	
-		}	
+		// if yet ambiguous mapping or nothing, 
+		// try using (already normalized) Xrefs and id-mapping  
+		if (toReturn == null)
+			toReturn = (SmallMoleculeReference) mapByXrefs(orig, "CHEBI", canonicalPrefix);
 		
-		// if nothing's found in the db by URI or unif. xrefs, - 
-		// 4) try using relationship xrefs and id-mapping. 
-		if (toReturn == null) {
-			Set<String> mappingSet = idMappingByXrefs(orig, "CHEBI", RelationshipXref.class);
-			if(!mappingSet.isEmpty()) {
-				//not needed if we replace the ER
-//				addRelXref(orig, "CHEBI", mappingSet);
-				toReturn = (SmallMoleculeReference) getByIdsFromModel(
-						orig.getRDFId(), "Rel. Xrefs", mappingSet, canonicalPrefix);
-			}	
-		}
-		
-		//5) map by name (e..g, 'ethanol') to ChEBI ID
+		// nothing/ambiguous? - keep trying, map by name (e..g, 'ethanol') to ChEBI ID
 		if (toReturn == null) {		
 			Set<String> mp = mapByName(orig, "CHEBI");
-			if(!mp.isEmpty()) {
-				toReturn = (SmallMoleculeReference) getByIdsFromModel(
-						orig.getRDFId(), "names", mp, canonicalPrefix);
-			}
+			toReturn = (SmallMoleculeReference) findEntityRefUsingIdMappingResult(
+					orig.getRDFId(), "names", mp, canonicalPrefix);
+		}
+		
+		return toReturn;
+	}
+
+
+	private EntityReference mapByXrefs(EntityReference orig,
+			String dest, String canonicalUriPrefix) {
+
+		EntityReference toReturn = null; 
+		
+		Set<String> mappingSet = idMappingByXrefs(orig, dest, UnificationXref.class);
+		toReturn = findEntityRefUsingIdMappingResult(orig.getRDFId(), "UnificationXrefs", mappingSet, canonicalUriPrefix);
+
+		if (toReturn == null) {
+			mappingSet = idMappingByXrefs(orig, dest, RelationshipXref.class);
+			toReturn = findEntityRefUsingIdMappingResult(orig.getRDFId(), "RelationshipXrefs", mappingSet, canonicalUriPrefix);
 		}
 		
 		return toReturn;
@@ -716,12 +574,12 @@ public final class Merger {
 
 		String name = orig.getStandardName();
 		if(name != null)
-			mp.addAll(mappingsRepository.map(null, name.toLowerCase(), toDb));
+			mp.addAll(service.map(null, name.toLowerCase(), toDb));
 
 		if(mp.isEmpty()) {
 			name = orig.getDisplayName();
 			if(name != null)
-				mp.addAll(mappingsRepository.map(null, name.toLowerCase(), toDb));
+				mp.addAll(service.map(null, name.toLowerCase(), toDb));
 		}
 		
 		if(mp.isEmpty() && //and only for PRs and SMRs -
@@ -751,14 +609,16 @@ public final class Merger {
 	}
 
 
-	private EntityReference getByIdsFromModel(String origUri, String mapBy, Set<String> mapsTo, String uriPrefix) 
+	private EntityReference findEntityRefUsingIdMappingResult(String origUri, String mapBy, Set<String> mapsTo, String uriPrefix) 
 	{
-		String uri = uriPrefix + mapsTo.iterator().next();
-		EntityReference toReturn = (EntityReference) getByUri(uri);
-		if(toReturn!= null && mapsTo.size() > 1)
-			log.warn("Merger picked the FIRST " + toReturn.getModelInterface().getSimpleName() 
-				+ " with " + uri + " of " + mapsTo + " (id-mapping by " 
-					+ mapBy + ") to REPLACE " + origUri);
+		EntityReference toReturn = null;
+		
+		if(mapsTo.size() == 1) {		
+			String uri = uriPrefix + mapsTo.iterator().next(); //get the first one
+			toReturn = (EntityReference) warehouseModel.getByID(uri);
+		} else if(mapsTo.size() > 1) {
+			log.warn(origUri + ", using " + mapBy + ", maps to many: " + mapsTo);
+		}
 		
 		return toReturn;
 	}

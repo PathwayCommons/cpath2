@@ -1,4 +1,4 @@
-package cpath.webservice.interceptor;
+package cpath.webservice;
 
 import java.io.File;
 import java.net.URLDecoder;
@@ -10,34 +10,26 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.Assert;
+import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
-import cpath.dao.LogUtils;
 import cpath.jpa.Geoloc;
-import cpath.jpa.LogEntitiesRepository;
 import cpath.jpa.LogEvent;
-import cpath.webservice.BasicController;
+import cpath.service.CPathService;
 
 /**
  * @author rodche
- * 
  */
+@Component
 public final class CPathWebserviceHandlerInterceptor extends
 		HandlerInterceptorAdapter {
 
 	private static final Logger LOG = LoggerFactory
 			.getLogger(CPathWebserviceHandlerInterceptor.class);
 	
-	private LogEntitiesRepository logEntitiesRepository;
-	
 	@Autowired
-	public void setLogEntitiesRepository(
-			LogEntitiesRepository logEntitiesRepository) {
-		Assert.notNull(logEntitiesRepository, "logEntitiesRepository is null");
-		this.logEntitiesRepository = logEntitiesRepository;
-	}
-
+	private CPathService service;
+	
 	@Override
 	public boolean preHandle(HttpServletRequest request,
 			HttpServletResponse response, Object handler) throws Exception {
@@ -60,7 +52,7 @@ public final class CPathWebserviceHandlerInterceptor extends
 			
 			//update counts for: file, format, provider, command (event types)
 			Set<LogEvent> events = LogEvent.fromDownloads(file);
-			LogUtils.log(logEntitiesRepository, events, Geoloc.fromIpAddress(ip));
+			service.log(events, Geoloc.fromIpAddress(ip));
 			
 		}
 

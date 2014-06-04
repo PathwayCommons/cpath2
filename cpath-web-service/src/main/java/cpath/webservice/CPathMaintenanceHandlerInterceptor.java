@@ -1,8 +1,9 @@
-package cpath.webservice.interceptor;
+package cpath.webservice;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
 import cpath.config.CPathSettings;
@@ -11,6 +12,7 @@ import cpath.config.CPathSettings;
  * @author rodche
  *
  */
+@Component
 public final class CPathMaintenanceHandlerInterceptor extends HandlerInterceptorAdapter
 {
 

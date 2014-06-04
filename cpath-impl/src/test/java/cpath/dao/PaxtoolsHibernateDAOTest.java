@@ -35,54 +35,47 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.validator.api.beans.Validation;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.GenericXmlApplicationContext;
 
-import cpath.dao.MetadataDAO;
+import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
-import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.Content;
-import cpath.warehouse.beans.Metadata.METADATA_TYPE;
 
 import java.io.*;
 import java.util.*;
 
 import static org.junit.Assert.*;
 
-/**
- * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
- */
-@Ignore
+
+//@Ignore
 public class PaxtoolsHibernateDAOTest {
 
     static Logger log = LoggerFactory.getLogger(PaxtoolsHibernateDAOTest.class);
     static SimpleIOHandler exporter = new SimpleIOHandler(BioPAXLevel.L3);
     static PaxtoolsDAO dao;
-    static MetadataDAO meta;
     static GenericXmlApplicationContext ctx;
 	
 
     @BeforeClass
 	public static void init() throws FileNotFoundException {
-    	//load application context (test/dev profile)
+    	//load application context ('test' profile)
     	ctx = new GenericXmlApplicationContext();
-    	ctx.getEnvironment().setActiveProfiles("dev");
+    	ctx.getEnvironment().setActiveProfiles("test");
     	ctx.load("classpath:META-INF/spring/applicationContext-dao.xml");
-    	ctx.refresh();
+    	ctx.refresh(); //to apply active profile!
+    	CPathSettings.setDevelop(true);
     	
-    	dao = (PaxtoolsDAO) ctx.getBean("paxtoolsDAO");
+    	dao = ctx.getBean(PaxtoolsDAO.class);
     	// load some data into the test storage
 		log.info("Loading test1 data...");
 		dao.importModel(new File(PaxtoolsHibernateDAOTest.class.getResource("/test.owl").getFile()));
     	//import almost the same file to ensure it does not fail due to "duplicate entry for the key" ex.
 		log.info("Loading test2 data...");
 		dao.importModel(new File(PaxtoolsHibernateDAOTest.class.getResource("/test2.owl").getFile()));
-    	meta = (MetadataDAO) ctx.getBean("metadataDAO");
 	}
 	
     @AfterClass
@@ -289,64 +282,5 @@ public class PaxtoolsHibernateDAOTest {
 		// in fact, the last imported object overwrites the first one:
 		assertEquals("test2", pro.getComment().iterator().next());
 	}    
- 
-	
-	@Test
-	public void testImportContent() throws IOException {
-        // mock metadata and pathway data
-        Metadata md = new Metadata("TEST", "test", "test", "", "",
-        		"", METADATA_TYPE.BIOPAX, null, null, null, "free");        
-        
-        //cleanup previous tests data if any
-        md.cleanupOutputDir();
-        
-        Content content = new Content(md, "test0");
-        md.getContent().add(content);
-        //add the second pd (for the tests at the end of this method)
-        final Content pd = new Content(md, "test1");
-        md.getContent().add(pd);
-               
-        // persist
-        meta.saveMetadata(md);
-        
-        // test pathwaydata content is not accidentally erased
-        Iterator<Content> it = md.getContent().iterator();
-        content = it.next();
-        //we want test0 for following assertions
-        if("test1".equals(content.getFilename()))
-        	content = it.next();
-        assertEquals("test0",content.getFilename());    
-        
-        //even if we update from the db, data must not be empty
-        md = meta.getMetadataByIdentifier(md.getIdentifier());
-        assertNotNull(md);
-        assertEquals("TEST", md.getIdentifier());
-        assertEquals(2, md.getContent().size()); 
-        it = md.getContent().iterator();
-        content = it.next();
-        //we want test0 for following assertions
-        if("test1".equals(content.getFilename()))
-        	content =it.next();
-        assertEquals("test0",content.getFilename());      
 
-        // add validation result());  
-        for(Content o : md.getContent())
-        	o.saveValidationReport(new Validation(null));        
-        // update
-        meta.saveMetadata(md);
-         
-        //read the latest state
-        md = meta.getMetadataByIdentifier("TEST");
-        assertNotNull(md);
-        Set<Content>  lpd = md.getContent();
-        assertFalse(lpd.isEmpty());
-        content = lpd.iterator().next();
-        assertNotNull(content);  
-        
-        //cleanup
-        md = meta.init(md);
-        assertTrue(md.getContent().isEmpty()); 
-        md = meta.getMetadataByIdentifier("TEST");
-        assertTrue(md.getContent().isEmpty());         
-	}
 }

@@ -14,6 +14,6 @@ import org.springframework.data.querydsl.QueryDslPredicateExecutor;
 public interface LogEntitiesRepository extends BaseRepository<LogEntity, Long>, 
 	QueryDslPredicateExecutor<LogEntity>, LogEntitiesRepositoryCustom {
 	
-	LogEntity findByEventNameAndGeolocCountryAndGeolocRegionAndGeolocCityAndDate(String name, String country, String region, String city, String date);
+	LogEntity findByEventNameIgnoreCaseAndGeolocCountryAndGeolocRegionAndGeolocCityAndDate(String name, String country, String region, String city, String date);
 		
 }

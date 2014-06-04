@@ -81,11 +81,8 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 					+ " (store/use_local_file=" + isReuseAndStoreOBOLocally + ")");
 		}
 	}
-	
 
-	/* (non-Javadoc)
-	 * @see cpath.warehouse.CvRepository#getByDbAndId(java.lang.String, java.lang.String, java.lang.Class)
-	 */
+	
 	@Override
 	public <T extends ControlledVocabulary> T getControlledVocabulary(
 			String db, String id, Class<T> cvClass) 
@@ -96,22 +93,40 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 		if(ontology == null) // it may be urn -
 			ontology = getOntologyByUrn(db);
 		
-		if (ontology != null) {
-			term = ontology.getTermForAccession(id);
-		} else { // still null? well, no problem -
-			/*
-			 * surprisingly or by design, "accession" is a unique key (through
-			 * all ontologies) in the ontology manager
-			 */
-			term = findTermByAccession(id);
-		}
+		term = findTerm(ontology, id);
 		
 		if(term != null) {
 			return getControlledVocabulary(term, cvClass);
-		} 
+		}
 		
 		return null;
 	}
+
+	
+	private OntologyTermI findTerm(Ontology ontology, String term) {
+		
+		if(ontology == null) {
+			return findTermByAccession(term); 
+			//done
+		}
+		
+		//otherwise continue with more specific lookup			
+		OntologyTermI ot = ontology.getTermForAccession(term);
+		
+		if(ot == null) {
+			//search again using the parameter as term's name/synonym
+			Set<OntologyTermI> ots = searchTermByName(term, 
+					Collections.singleton(ontology.getName()));		
+			if(ots.size() == 1) //use if unambiguous 
+				ot = ots.iterator().next();
+			else 
+				log.info("ambiguous term: " + term + 
+					" found by searchig in ontology: " + ontology.getName());
+		}
+		
+		return ot;
+	}
+
 
 
 	/* (non-Javadoc)

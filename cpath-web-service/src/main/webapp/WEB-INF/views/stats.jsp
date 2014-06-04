@@ -5,8 +5,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-<jsp:include page="head.jsp" />
 <link href="<c:url value="/resources/css/bootstrap-select.min.css"/>" rel="stylesheet" />
+
+<jsp:include page="head.jsp" />
+
+<script type="text/javascript" src="https://www.google.com/jsapi"></script>
+<script type="text/javascript" src='<c:url value="/resources/scripts/codes2names.js"/>'></script>
+<script type="text/javascript" src='<c:url value="/resources/scripts/stats.js"/>'></script>
+
 <title>cPath2::Log</title>
 </head>
 <body>
@@ -73,9 +79,6 @@
 	<jsp:include page="footer.jsp" />
 
 	<!-- finally, load all page-specific scripts -->
-	<script type="text/javascript" src="https://www.google.com/jsapi"></script>
-	<script type="text/javascript" src='<c:url value="/resources/scripts/codes2names.js"/>'></script>
-	<script type="text/javascript" src='<c:url value="/resources/scripts/stats.js"/>'></script>
 	<script type="text/javascript">
 		google.load('visualization', '1', {
 			'packages' : [ 'corechart', 'geochart', 'annotatedtimeline' ]

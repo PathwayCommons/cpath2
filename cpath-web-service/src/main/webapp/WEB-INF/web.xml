@@ -23,7 +23,6 @@
 		<param-value>
 			classpath:META-INF/spring/applicationContext-dao.xml
 			classpath:META-INF/spring/applicationContext-jpa.xml
-			classpath:META-INF/spring/applicationContext-service.xml
 			classpath:security-config.xml
 		</param-value>
 	</context-param>
@@ -41,21 +40,30 @@
 			<param-value>true</param-value>
 		</init-param>
 	</filter>
+	<filter-mapping>
+		<filter-name>characterEncodingFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
 	
 	<filter>
 		<filter-name>springSecurityFilterChain</filter-name>
 		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
 	</filter>
-
-	<filter-mapping>
-		<filter-name>characterEncodingFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-
 	<filter-mapping>
 		<filter-name>springSecurityFilterChain</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+	
+	<filter>
+		<filter-name>CorsFilter</filter-name>
+		<filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
+<!-- 		<filter-class>cpath.webservice.CpathCorseFilter</filter-class> -->
+	</filter>
+	<filter-mapping>
+		<filter-name>CorsFilter</filter-name>
+<!-- 		<url-pattern>/*</url-pattern> -->
+		<servlet-name>cpath2</servlet-name>
+	</filter-mapping>	
 
 <!-- for debugging/investigations (do not use in production) -->
 <!-- 	<filter> -->

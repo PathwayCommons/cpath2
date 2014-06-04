@@ -13,7 +13,7 @@ import java.util.Map;
  *
  */
 interface LogEntitiesRepositoryCustom {
-		
+	
 	/**
 	 * Aggregates the history (log) of a particular service category,
 	 * {@link LogType}, provided for users by date; the result is a 

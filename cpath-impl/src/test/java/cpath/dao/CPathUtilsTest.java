@@ -1,3 +1,4 @@
+package cpath.dao;
 
 
 import static org.junit.Assert.*;
@@ -18,9 +19,9 @@ import org.junit.*;
 
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
-import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.Content;
-import cpath.warehouse.beans.Metadata.METADATA_TYPE;
+import cpath.jpa.Content;
+import cpath.jpa.Metadata;
+import cpath.jpa.Metadata.METADATA_TYPE;
 
 
 public class CPathUtilsTest {

@@ -3,17 +3,17 @@
 $(function() {	
 	// make code pretty
 	window.prettyPrint && prettyPrint();
+	
+	$(function() {       
+	    $('.hider').on('click', function(){
+	        var $hider = $(this);
+	        var hideeid = $hider.attr('hide-id');
+	        var $hidee = $('#' + hideeid);
+	        $hidee.toggleClass('hidden');
+	        return false; /*prevent following the fake link*/
+	    });    
+	});
 });
-
-
-function switchit(id) {
-	var style = document.getElementById(id).style;
-	if (!style.display || style.display == "none") {
-		style.display = "block";
-	} else {
-		style.display = "none";
-	}
-}
 
 $(window).on('resize load', function() {
     

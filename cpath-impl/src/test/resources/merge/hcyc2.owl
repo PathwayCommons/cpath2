@@ -68,7 +68,7 @@
  <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">PubChem-substance</bp:db>
 </bp:UnificationXref>
 
-<bp:CellularLocationVocabulary rdf:about="http://identifiers.org/obo.go/GO:0005829">
+<bp:CellularLocationVocabulary rdf:about="http://identifiers.org/go/GO:0005829">
  <bp:term rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">cytosol</bp:term>
  <bp:xref rdf:resource="http://purl.org/pc2/UnificationXrefGene+OntologyGO%3A0005829" />
 </bp:CellularLocationVocabulary>
@@ -141,7 +141,7 @@
 <bp:SmallMolecule rdf:ID="SmallMolecule132810">
  <bp:entityReference rdf:resource="#SmallMoleculeReference132807" />
  <bp:dataSource rdf:resource="http://purl.org/pc2/test" />
- <bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005829" />
+ <bp:cellularLocation rdf:resource="http://identifiers.org/go/GO:0005829" />
  <bp:comment rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">The fatty acid moiety typically has 14-24 carbon atoms. The 16- and 18-carbon fatty acids are the most common. This type of fatty acid will not contain any double bonds in the 2, 3, and 4 positions.</bp:comment>
  <bp:standardName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">a 2,3,4-saturated fatty acyl CoA</bp:standardName>
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">a 2,3,4-saturated fatty acyl CoA</bp:displayName>
@@ -152,7 +152,7 @@
  <bp:dataSource rdf:resource="http://purl.org/pc2/test" />
  <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Tetradecanoyl-CoA (n-C14:0CoA)</bp:name>
  <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">tetradecanoyl-CoA</bp:name>
- <bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005829" />
+ <bp:cellularLocation rdf:resource="http://identifiers.org/go/GO:0005829" />
  <bp:standardName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">myristoyl-CoA</bp:standardName>
  <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">myristoyl-CoA</bp:displayName>
 </bp:SmallMolecule>

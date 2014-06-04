@@ -26,8 +26,8 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 	public LogEntitiesRepositoryImpl() {
 		super(LogEntity.class);
 	}
-
-
+	
+	
 	/* (non-Javadoc)
 	 * @see cpath.log.service.LogService#downloadsTimeline(cpath.log.LogType, java.lang.String)
 	 */

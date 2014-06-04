@@ -8,6 +8,8 @@
 <head>
 	<link href="<c:url value="/resources/css/xeditable.css"/>" rel="stylesheet" />
 	<jsp:include page="head.jsp" />
+	<script src="<c:url value="/resources/scripts/xeditable.js"/>"></script>
+	<script src="<c:url value="/resources/scripts/datasources.js"/>"></script>	
 	<title>cPath2::Datasources</title>
 </head>
 <body>
@@ -208,8 +210,6 @@ and there are action buttons (delete,save,upload, etc.), and input validation --
 	</p>
 
 <jsp:include page="footer.jsp"/>
-<%-- <script type="text/javascript" src="<c:url value="/resources/scripts/jquery.ui.widget.js"/>"></script>	 --%>
-<script src="<c:url value="/resources/scripts/xeditable.js"/>"></script>
-<script src="<c:url value="/resources/scripts/datasources.js"/>"></script>
+
 </body>
 </html>

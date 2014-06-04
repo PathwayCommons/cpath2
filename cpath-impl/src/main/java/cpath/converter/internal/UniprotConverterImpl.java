@@ -7,7 +7,6 @@ import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.ModificationFeature;
 import org.biopax.paxtools.model.level3.PositionStatusType;
 import org.biopax.paxtools.model.level3.ProteinReference;
-import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.SequenceInterval;
 import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
@@ -18,6 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cpath.importer.Converter;
+import cpath.importer.PreMerger;
+import cpath.importer.PreMerger.RelTypeVocab;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -90,7 +91,9 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                         for (String symbol : geneNames) {
                         	// also add Gene Names to PR names (can be >1 due to isoforms)
                         	proteinReference.addName(symbol);
-                        	setRelationshipXRef("HGNC SYMBOL", symbol, proteinReference, null, model);
+                        	RelationshipXref rXRef = PreMerger
+                        		.findOrCreateRelationshipXref(RelTypeVocab.MAPPED_IDENTITY, "HGNC SYMBOL", symbol, model);
+                        	proteinReference.addXref(rXRef);
                         }
                     }
                     
@@ -278,21 +281,32 @@ final class UniprotConverterImpl extends BaseConverterImpl {
         	//adding for id in part[1], part[2],..
 			if (db.equals("GENEID") || db.equals("REFSEQ") 
 					|| db.equals("ENSEMBL") || db.equals("HGNC")) {
+				
+				String fixedDb = db;
+				
 				if (db.equals("GENEID"))
-					db = "NCBI GENE"; //- preferred name (synonym: Entrez Gene)
+					fixedDb = "NCBI GENE"; //- preferred name (synonym: Entrez Gene)
+				
 				for (int j = 1; j < parts.length; j++) {
 			        String id = parts[j].trim();
 			    	// extracting RefSeq AC from AC.Version identifier:
-			    	if(db.equals("REFSEQ")) {
+			    	if(fixedDb.equals("REFSEQ")) {
 			    		int idx = id.lastIndexOf('.');
 			    		if(idx > 0)
 			    			id = id.substring(0, idx);
 			    	} 
-			    	else if (db.equals("ENSEMBL") && !id.startsWith("ENS"))
+			    	else if (fixedDb.equals("ENSEMBL") && !id.startsWith("ENS")) {
 						continue;
+			    	} 
+			    	else if(fixedDb.equals("HGNC") && !id.startsWith("HGNC:")) {
+			    		fixedDb = "HGNC SYMBOL";
+			    	}
 					
-			    	// add xref
-					setRelationshipXRef(db, id, proteinReference, null, model);
+			    	// xref can be used for id-mapping, helps to Merger and graph queries
+					RelationshipXref rXRef = PreMerger
+                    	.findOrCreateRelationshipXref(RelTypeVocab.MAPPED_IDENTITY, fixedDb, id, model);
+					
+                    proteinReference.addXref(rXRef);
 				}
 			}
         }
@@ -342,44 +356,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
         }
         return syns;
     }
-    
-    
-    /**
-     * Sets Relationship XRefs.
-	 *
-     * @param dbName must be a MIRIAM preferred name for the data collection
-     * @param id
-     * @param proteinReference
-     * @param relationshipType some term (e.g., "SEQUENCE", "GENE", "MRNA", etc.) or null.
-     * @param model
-     */
-    private void setRelationshipXRef(String dbName, 
-    	String id, ProteinReference proteinReference, String relationshipType, Model model) 
-    {
-        dbName = dbName.trim().toUpperCase();
-    	//generate a URI using only the classname, (normalized) db name, and id (no rel. type)
-		String uri = Normalizer.uri(model.getXmlBase(), dbName, id, RelationshipXref.class);
-		RelationshipXref rXRef = (RelationshipXref) model.getByID(uri);
-		if (rXRef == null) {
-			rXRef = (RelationshipXref) model.addNew(RelationshipXref.class,	uri);
-			rXRef.setDb(dbName);
-			rXRef.setId(id);
-		}
-		
-		//find/create a special relationship CV
-		if (relationshipType != null) {
-			String relCvId = Normalizer.uri(model.getXmlBase(), null,
-					relationshipType.toUpperCase(), RelationshipTypeVocabulary.class);
-			RelationshipTypeVocabulary relCv = (RelationshipTypeVocabulary) model.getByID(relCvId);
-			if (relCv == null) {
-				relCv = model.addNew(RelationshipTypeVocabulary.class, relCvId);
-				relCv.addTerm(relationshipType.toUpperCase());
-			}
-			rXRef.setRelationshipType(relCv);
-		}
-		
-		proteinReference.addXref(rXRef);
-    }
+
 
     /**
      * Sets Unification XRefs.
@@ -498,8 +475,15 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			// split the result by ';' (e.g., it might now look like "Phosphothreonine; by CaMK4") 
 			// to extract the modification type and create the standard PSI-MOD synonym; 
 			String[] terms = what.toString().split(";");
-			final String mod = terms[0];
-			final String modTerm = "MOD_RES " + mod; //PSI-MOD term synonym
+			String mod = terms[0];
+			
+			//remove non-standard comment part from the standard CV term
+			//(fixes for things like "Phosphothreonine (By similarity); bla-bla.") )
+			mod = mod.replaceFirst("\\s*\\(By similarity\\)\\s*","").trim();
+			
+			//official PSI-MOD synonym (see http://www.ebi.ac.uk/ontology-lookup)
+			final String modTerm = "MOD_RES " + mod; 
+			//TODO find MOD ID, or better, make normalized CV with uni.xref (e.g., by biopax-validator's ontology manager)
 			
 			// Create the feature with CV and location -
 			mfIndex++;
@@ -507,8 +491,9 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 					null, pr.getDisplayName() + "_" + mfIndex, ModificationFeature.class);
 			ModificationFeature modificationFeature = model.addNew(ModificationFeature.class, uri);
 			modificationFeature.addComment(ftContent);
-			// get or create a new PSI-MOD SequenceModificationVocabulary, which 
-			// - can be shared by many protein references we create
+			
+			// get/create a new PSI-MOD SequenceModificationVocabulary (can be shared by many PRs)
+			//TODO once MOD ID is found, make identifiers.org/psimod/ URI right away - 
 			uri = Normalizer.uri(model.getXmlBase(), "MOD", mod, SequenceModificationVocabulary.class);
 			// so, let's check if it exists in the temp. or target model:
 			SequenceModificationVocabulary cv = (SequenceModificationVocabulary) model.getByID(uri);

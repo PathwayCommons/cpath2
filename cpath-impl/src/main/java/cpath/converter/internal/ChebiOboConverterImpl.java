@@ -10,6 +10,7 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ChemicalStructure;
+import org.biopax.paxtools.model.level3.PublicationXref;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.StructureFormatType;
@@ -19,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cpath.dao.CPathUtils;
+import cpath.importer.PreMerger;
+import cpath.importer.PreMerger.RelTypeVocab;
 
 
 /**
@@ -47,7 +50,7 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 	
 	public void convert(InputStream is, OutputStream os) {		
         Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
-        model.setXmlBase(xmlBase);
+        model.setXmlBase(xmlBase); //important
         
         try {
         	//read&copy the input stream content to a tmp file 
@@ -210,7 +213,7 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 			}
 		}		
 			
-		// add rel. xrefs
+		// add xrefs (external)
 		if(chebiEntryMap.get(_XREF) != null) {
 			String[] xrefs = chebiEntryMap.get(_XREF).split("\t");
 			for(String xs : xrefs) {
@@ -221,32 +224,26 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 				//ID w/o the "source:" prefix
 				id = matcher.group(1);
 				//remove quotes around the db name
-				String db = matcher.group(2);
-
-// These will be skipped below anyway -
-//				if(db.contains("PubMed"))
-//					db = "PubMed"; //fixes illegal "PubMed citation" name
-//				else if(db.equalsIgnoreCase("PubChem"))
-//					db = "PubChem Compound";//?though ChEBI claims it must be Substance, or even no PubChem xrefs in the OBO at all
-
-				if(db.equalsIgnoreCase("ChEMBL") && !id.startsWith("CHEMBL")) {
-					id = "CHEMBL" + id;
-				} 
-
-				db = db.toUpperCase();
+				String db = matcher.group(2).toUpperCase();
 				
-				//Skip all xrefs but: CAS, KEGG (C* and D*), DRUGBANK, WIKIPEDIA,..  
+				// Skip all xrefs but: CAS, KEGG (C* and D*), DRUGBANK, WIKIPEDIA,
+				// which can be used for id-mapping by Merger and graph queries.
 				if(db.startsWith("CAS") || db.startsWith("KEGG")
 					|| db.startsWith("WIKIPEDIA") || db.equals("DRUGBANK")) 
 				{
-					xuri = Normalizer.uri(xmlBase, db, id, RelationshipXref.class);
-					RelationshipXref rx = (RelationshipXref) model.getByID(xuri);
-					if(rx == null) {
-						rx = model.addNew(RelationshipXref.class, xuri);
-						rx.setDb(db);
-						rx.setId(id);
-					}
+					RelationshipXref rx = PreMerger
+						.findOrCreateRelationshipXref(RelTypeVocab.MAPPED_IDENTITY, db, id, model);
 					smr.addXref(rx);
+				} else if(db.startsWith("PUBMED")) {
+					//add PublicationXref
+					String pxrefUri = _IDENTIFIERS_ORG + "pubmed/"+id; //the Normalizer would return the same
+					PublicationXref pxref = (PublicationXref) model.getByID(pxrefUri);
+					if(pxref == null) {
+						pxref = model.addNew(PublicationXref.class, pxrefUri);
+						pxref.setDb("PUBMED");
+						pxref.setId(id);
+					}
+					smr.addXref(pxref);
 				}
 			}
 		}

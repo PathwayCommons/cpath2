@@ -16,7 +16,11 @@
 
 	<tx:annotation-driven />
 
+	<!-- auto-create and init spring-data repositories -->
 	<jpa:repositories base-package="cpath.jpa" />
+	
+	<!-- auto-create and init spring service beans -->
+	<context:component-scan base-package="cpath.service.internal" />
 
 	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
 		<property name="entityManagerFactory" ref="entityManagerFactory" />
@@ -33,13 +37,16 @@
 		<bean id="hibernateJpaVendorAdapter"
 			class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
 			<property name="database" value="H2" />
-<!-- 				<property name="generateDdl" value="true" /> --> <!-- will use the system property hibernate.hbm2ddl.auto=update instead -->
+<!-- 		
+			<property name="generateDdl" value="true" /> 
+		 	- will use the system property hibernate.hbm2ddl.auto=update instead 
+-->
 		</bean>
 
 		<bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool" destroy-method="dispose">
 		  <constructor-arg>
 			<bean class="org.h2.jdbcx.JdbcDataSource">
-				<property name="URL" value="${cpath2.db.connection}${cpath2.db}" />
+				<property name="URL" value="${cpath2.db.connection}${cpath2.db}_meta;MV_STORE=FALSE;MVCC=FALSE" />
 				<property name="user" value="${cpath2.db.user}" />
 				<property name="password" value="${cpath2.db.password}" />
 			</bean>

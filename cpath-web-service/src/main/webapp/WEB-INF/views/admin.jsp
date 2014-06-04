@@ -5,6 +5,7 @@
 <html>
 <head>
 <jsp:include page="head.jsp" />
+<script type="text/javascript" src="<c:url value="/resources/scripts/admin.js"/>"></script>
 <title>cPath2::Admin</title>
 </head>
 <body data-spy="scroll" data-target=".navbar">
@@ -67,7 +68,6 @@
 	</div>
 	
 	<jsp:include page="footer.jsp" />
-	
-<script type="text/javascript" src="<c:url value="/resources/scripts/admin.js"/>"></script>
+
 </body>
 </html>

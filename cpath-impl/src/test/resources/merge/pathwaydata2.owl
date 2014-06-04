@@ -29,7 +29,7 @@
 		<bp:displayName rdf:datatype="xsd:string">KEGG</bp:displayName>
 	</bp:Provenance>
 
-	<bp:CellularLocationVocabulary rdf:about="http://identifiers.org/obo.go/GO:0005737">
+	<bp:CellularLocationVocabulary rdf:about="http://identifiers.org/go/GO:0005737">
 		<bp:term rdf:datatype="xsd:string">cytoplasm</bp:term>
 		<bp:xref
 			rdf:resource="UnificationXref:GENE+ONTOLOGY_GO%3A0005737" />
@@ -139,7 +139,7 @@
 
 	<bp:SmallMolecule rdf:ID="beta-D-fructose_6-phosphate">
 		<bp:entityReference rdf:resource="http://identifiers.org/chebi/CHEBI:20" />
-		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">b-D-fru-6-p
 		</bp:standardName>
 		<bp:name rdf:datatype="xsd:string">&lt;FONT
@@ -219,7 +219,7 @@
 
 	<bp:SmallMolecule rdf:ID="ADP">
 		<bp:entityReference rdf:resource="http://identifiers.org/pubchem.substance/14438" />
-		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">ADP</bp:standardName>
 		<bp:name rdf:datatype="xsd:string">adenosine diphosphate</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">Adenosine
@@ -229,7 +229,7 @@
 
 	<bp:Protein rdf:ID="Protein_54">
 		<bp:entityReference rdf:resource="http://identifiers.org/uniprot/P27797" />
-		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">GLK</bp:standardName>
 		<bp:name rdf:datatype="xsd:string">GLK_ECOLI</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">glucokinase
@@ -242,7 +242,7 @@
 
 	<bp:Protein rdf:ID="phosphoglucose_isomerase">
 		<bp:entityReference rdf:resource="http://identifiers.org/uniprot/Q16602" />
-		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">PGI</bp:standardName>
 		<bp:name rdf:datatype="xsd:string">GPI</bp:name>
 		<bp:name rdf:datatype="xsd:string">phosphohexose isomerase</bp:name>
@@ -298,7 +298,7 @@
 
 	<bp:SmallMolecule rdf:ID="ATP">
 		<bp:entityReference rdf:resource="http://identifiers.org/pubchem.substance/14439" />
-		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">ATP</bp:standardName>
 		<bp:name rdf:datatype="xsd:string">adenosine triphosphate</bp:name>
 		<bp:displayName rdf:datatype="xsd:string">Adenosine
@@ -307,7 +307,8 @@
 	</bp:SmallMolecule>
 
 	<bp:UnificationXref rdf:about="UnificationXref:PUBCHEM_14438">
-		<bp:db rdf:datatype="xsd:string">PUBCHEM</bp:db>
+		<!-- test: using umbiguous name 'PubChem'; won't map/merge! -->
+		<bp:db rdf:datatype="xsd:string">PubChem</bp:db>
 		<bp:id rdf:datatype="xsd:string">14438</bp:id>
 		<bp:comment rdf:datatype="xsd:string">PMID: 9847135</bp:comment>
 	</bp:UnificationXref>
@@ -332,14 +333,14 @@
 	</bp:Catalysis>
 
 	<bp:UnificationXref rdf:about="UnificationXref:PUBCHEM_14439">
-		<bp:db rdf:datatype="xsd:string">PUBCHEM</bp:db>
+		<bp:db rdf:datatype="xsd:string">PUBCHEM-substance</bp:db>
 		<bp:id rdf:datatype="xsd:string">14439</bp:id>
 		<bp:comment rdf:datatype="xsd:string">PMID: 9847135</bp:comment>
 	</bp:UnificationXref>
 
 	<bp:SmallMolecule rdf:ID="alpha-D-glucose_6-phosphate">
 		<bp:entityReference rdf:resource="http://identifiers.org/chebi/CHEBI:422" />
-		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">a-D-glu-6-p
 		</bp:standardName>
 		<bp:name rdf:datatype="xsd:string">D-glucose-6-P</bp:name>
@@ -361,7 +362,7 @@
 
 	<bp:SmallMolecule rdf:ID="alpha-D-glucose_">
 		<bp:entityReference rdf:resource="http://identifiers.org/chebi/CHEBI:28" />
-		<bp:cellularLocation rdf:resource="http://identifiers.org/obo.go/GO:0005737" />
+		<bp:cellularLocation rdf:resource="http://identifiers.org/go/GO:0005737" />
 		<bp:standardName rdf:datatype="xsd:string">b-D-glu
 		</bp:standardName>
 		<bp:name rdf:datatype="xsd:string">&lt;FONT

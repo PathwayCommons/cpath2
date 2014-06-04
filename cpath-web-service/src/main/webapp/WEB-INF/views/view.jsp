@@ -5,6 +5,7 @@
 <html>
 <head>
 <jsp:include page="head.jsp" />
+<script type="text/javascript" src="<c:url value="/resources/scripts/pw.js"/>"></script>
 <title>cPath2::Client</title>
 </head>
 <body data-spy="scroll" data-target=".navbar">
@@ -73,6 +74,5 @@
 	
 	<jsp:include page="footer.jsp" />
 	
-<script type="text/javascript" src="<c:url value="/resources/scripts/pw.js"/>"></script>
 </body>
 </html>

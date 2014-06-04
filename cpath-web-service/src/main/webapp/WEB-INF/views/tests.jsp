@@ -4,9 +4,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<jsp:include page="head.jsp"/>
-	<title>cPath2::QUnit Tests</title>
   	<link rel="stylesheet" media="screen" href="<c:url value="/resources/css/qunit.css"/>" />	
+	<jsp:include page="head.jsp"/>
+	<script src="<c:url value="/resources/scripts/qunit.js"/>"></script>
+	<script src="<c:url value="/resources/scripts/tests.js"/>"></script>
+	<title>cPath2::QUnit Tests</title>
 </head>
 <body>
 
@@ -22,7 +24,5 @@
 
 <jsp:include page="footer.jsp" />
 
-<script src="<c:url value="/resources/scripts/qunit.js"/>"></script>
-<script src="<c:url value="/resources/scripts/tests.js"/>"></script>
 </body>
 </html>

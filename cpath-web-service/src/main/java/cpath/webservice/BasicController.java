@@ -41,10 +41,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
-import cpath.dao.LogUtils;
 import cpath.jpa.Geoloc;
-import cpath.jpa.LogEntitiesRepository;
 import cpath.jpa.LogEvent;
+import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.Status;
 import cpath.service.jaxb.*;
@@ -64,12 +63,16 @@ import org.springframework.validation.FieldError;
 public abstract class BasicController {
     private static final Logger log = LoggerFactory.getLogger(BasicController.class);
     
-    protected LogEntitiesRepository logEntitiesRepository;  
+    protected CPathService service;  
     
     @Autowired
-    public void setLogRepository(LogEntitiesRepository logEntitiesRepository) {
-    	Assert.notNull(logEntitiesRepository);
-		this.logEntitiesRepository = logEntitiesRepository;
+    public void setLogRepository(CPathService service) {
+    	Assert.notNull(service);
+    	Assert.notNull(service.log());
+    	Assert.notNull(service.metadata());
+    	Assert.notNull(service.biopax());
+    	
+		this.service = service;
 	}
 
     
@@ -95,8 +98,7 @@ public abstract class BasicController {
 		
 		//problems with logging subsystem should not fail the entire service
 		try {
-			LogUtils.log(logEntitiesRepository, 
-				updateCountsFor, Geoloc.fromIpAddress(clientIpAddress(request)));
+			service.log(updateCountsFor, Geoloc.fromIpAddress(clientIpAddress(request)));
 		} catch (Throwable ex) {
 			log.error("LogUtils.log failed", ex);
 		}
@@ -175,8 +177,7 @@ public abstract class BasicController {
 			//log to the db (for analysis and reporting)
 			//problems with logging subsystem should not fail the entire service
 			try {
-				LogUtils.log(logEntitiesRepository, updateCountsFor,
-					Geoloc.fromIpAddress(clientIpAddress(request)));
+				service.log(updateCountsFor, Geoloc.fromIpAddress(clientIpAddress(request)));
 			} catch (Throwable ex) {
 				log.error("LogUtils.log failed", ex);
 			}
