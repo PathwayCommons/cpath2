@@ -32,10 +32,8 @@ import java.io.Writer;
 import java.util.*;
 
 import cpath.config.CPathSettings;
-import cpath.dao.LogUtils;
 import cpath.jpa.Geoloc;
 import cpath.jpa.LogEvent;
-import cpath.service.CPathService;
 import cpath.service.Cmd;
 import cpath.service.ErrorResponse;
 import cpath.service.GraphType;
@@ -56,7 +54,6 @@ import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
@@ -75,13 +72,7 @@ import javax.validation.Valid;
 public class BiopaxModelController extends BasicController {
    	
     private static final String xmlBase = CPathSettings.getInstance().getXmlBase();
-    
-    private CPathService service; // main PC db access
 	
-    @Autowired
-    public BiopaxModelController(CPathService service) {
-		this.service = service;
-	}
     
     /**
 	 * This configures the web request parameters binding, i.e., 
@@ -186,8 +177,7 @@ public class BiopaxModelController extends BasicController {
 			//log to db
 			//TODO ? not sure we have to update provides' counters...
     		events.addAll(LogEvent.fromProviders(results.getProviders()));
-	    	LogUtils.log(logEntitiesRepository, 
-					events, Geoloc.fromIpAddress(clientIpAddress(request)));
+	    	service.log(events, Geoloc.fromIpAddress(clientIpAddress(request)));
 			
 			return results;
 		}
@@ -220,8 +210,7 @@ public class BiopaxModelController extends BasicController {
     		}
     		else {
     			//log to db
-    			LogUtils.log(logEntitiesRepository, 
-    					events, Geoloc.fromIpAddress(clientIpAddress(request)));
+    			service.log(events, Geoloc.fromIpAddress(clientIpAddress(request)));
     			
     			return sr;
 			}
@@ -316,8 +305,7 @@ public class BiopaxModelController extends BasicController {
 	    				((SearchResponse)results).getProviders()
 	    			));
 				//log to db
-		    	LogUtils.log(logEntitiesRepository, 
-						events, Geoloc.fromIpAddress(clientIpAddress(request)));
+		    	service.log(events, Geoloc.fromIpAddress(clientIpAddress(request)));
 				return results;
 			}
 			return null;

@@ -56,6 +56,7 @@ import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.query.dsl.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 import org.springframework.util.Assert;
@@ -107,7 +108,10 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		};
 
 	private static Logger log = LoggerFactory.getLogger(PaxtoolsHibernateDAO.class);
+	
+	@Autowired
 	private SessionFactory sessionFactory;
+	
 	private final Map<String, String> nameSpacePrefixMap;
 	private final BioPAXLevel level;
 	private final BioPAXFactory factory;
@@ -133,11 +137,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		//- seems, - query parser turns search keywords to lower case and expects index field values are also lower case...		
 		this.xmlBase = CPathSettings.getInstance().getXmlBase(); //set default xml:base
 		this.maxHitsPerPage = Integer.parseInt(cpath.property(CPathSettings.PROP_MAX_SEARCH_HITS_PER_PAGE));
-	}
-
-
-	public void setSessionFactory(SessionFactory sessionFactory) {
-		this.sessionFactory = sessionFactory;
 	}
 	
 
@@ -208,9 +207,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	@Override
 	public void merge(final Model model)
 	{
-		//clear all caches
-		evictCaches();
-		
 		// insert all using a stateless session
 		insert(model);	
 		
@@ -772,15 +768,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		fullTextSession.clear();
 		
 		log.info("index(), done.");
-	}
-	
-	
-	@Override
-	@Transactional
-	public void evictCaches() {
-		sessionFactory.getCache().evictEntityRegions();
-		sessionFactory.getCache().evictCollectionRegions();
-		sessionFactory.getCache().evictDefaultQueryRegion();
 	}
 
 

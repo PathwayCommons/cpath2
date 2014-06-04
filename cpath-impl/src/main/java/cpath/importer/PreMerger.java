@@ -29,18 +29,17 @@ package cpath.importer;
 
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
-import cpath.dao.MetadataDAO;
+import cpath.jpa.Content;
 import cpath.jpa.Mapping;
-import cpath.jpa.MappingsRepository;
-import cpath.warehouse.beans.Content;
-import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.Metadata.METADATA_TYPE;
+import cpath.jpa.Metadata;
+import cpath.jpa.Metadata.METADATA_TYPE;
+import cpath.service.CPathService;
 
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.EntityReference;
 import org.biopax.paxtools.model.level3.ProteinReference;
-import org.biopax.paxtools.model.level3.PublicationXref;
+import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.SmallMoleculeReference;
 import org.biopax.paxtools.model.level3.UnificationXref;
@@ -55,8 +54,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.util.Assert;
 
-import org.apache.commons.io.FileUtils;
-
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -70,27 +67,59 @@ import java.io.*;
 public final class PreMerger {
 
     private static Logger log = LoggerFactory.getLogger(PreMerger.class);
-    
-	private final String xmlBase;
 
-    private final MetadataDAO metaDataDAO;
-    private final MappingsRepository mappingsRepository;
+    
+    /**
+     * Values to generate standard BioPAX RelationshipTypeVocabulary objects.
+     */
+    public static enum RelTypeVocab {
+    	MAPPED_IDENTITY("mapped-identity", "http://identifiers.org/psimi/MI:1102", "MI", "MI:1102"),
+    	SECONDARY_ACCESSION_NUMBER("secondary-ac", "http://identifiers.org/psimi/MI:0360", "MI", "MI:0360"),
+    	ADDITIONAL_INFORMATION("see-also", "http://identifiers.org/psimi/MI:0361", "MI", "MI:0361"),
+    	//next should work for rel. xrefs pointing to a protein but attached to a Gene, Dna*, Rna* biopax objects
+    	GENE_PRODUCT("gene product", "http://identifiers.org/psimi/MI:0251", "MI", "MI:0251"),
+    	SET_MEMBER("set member", "http://identifiers.org/psimi/MI:1341", "MI", "MI:1341"),
+    	//next one is probably for chebi "is_a" relationships (when parent is a chemical class/concept rather than compound)
+    	MULTIPLE_PARENT_REFERENCE("multiple parent reference", "http://identifiers.org/psimi/MI:0829", "MI", "MI:0829"),
+    	ISOFORM_PARENT("isoform-parent", "http://identifiers.org/psimi/MI:0243", "MI", "MI:0243"),
+    	;
+
+    	public final String term;
+    	public final String uri;
+    	public final String db;
+    	public final String id;
+
+    	private RelTypeVocab(String term, String uri, String db, String id) {
+    		this.term = term;
+    		this.uri = uri;
+    		this.db = db;
+    		this.id = id;
+    	}
+
+    	@Override
+    	public String toString() {
+    		return term;
+    	}
+    }
+    
+   
+    private CPathService service;
+    
+    private final String xmlBase;
 	private final Validator validator;
+	
 	private String identifier;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param metaDataDAO
-	 * @param mappingsRepository
+	 * @param service
 	 * @param validator Biopax Validator
 	 * @param provider pathway data provider's identifier
 	 */
-	public PreMerger(final MetadataDAO metaDataDAO, final MappingsRepository mappingsRepository, 
-		final Validator validator, String provider) 
+	public PreMerger(CPathService service, Validator validator, String provider) 
 	{
-		this.metaDataDAO = metaDataDAO;
-		this.mappingsRepository = mappingsRepository;
+		this.service = service;
 		this.validator = validator;
 		this.xmlBase = CPathSettings.getInstance().getXmlBase();
 		this.identifier = (provider == null || provider.isEmpty()) 
@@ -103,13 +132,11 @@ public final class PreMerger {
 	 * @see cpath.importer.Premerger#premerge
 	 */
     public void premerge() {
-
 		// grab all metadata (initially, there are no pathway data files yet;
 		// but if premerge was already called, there are can be not empty dataFile 
 		// and result files for the corresp. metadata objects, which will be cleared anyway.)
-		List<Metadata> metadataCollection = metaDataDAO.getAllMetadata();
 		// iterate over all metadata
-		for (Metadata metadata : metadataCollection) {
+		for (Metadata metadata : service.metadata().findAll()) {
 			// use filter if set (identifier and version)
 			if(identifier != null) {
 				if(!metadata.getIdentifier().equals(identifier))
@@ -147,15 +174,12 @@ public final class PreMerger {
 						converter.setXmlBase(xmlBase);
 						
 					} else {
-						
-						log.info("premerge(), no Converter class was specified; continue...");	
-						
-						
+						log.info("premerge(), no Converter class was specified; continue...");		
 					}
 										
 					// clear all existing output files, parse input files, reset counters, save.
 					log.debug("no. pd before init, " + metadata.getIdentifier() + ": " + metadata.getContent().size());
-					metadata = metaDataDAO.init(metadata);
+					metadata = service.init(metadata);
 					
 					//load/re-pack/save orig. data
 					CPathUtils.analyzeAndOrganizeContent(metadata);
@@ -173,7 +197,7 @@ public final class PreMerger {
 					}
 					
 					// save/update validation status
-					metadata = metaDataDAO.saveMetadata(metadata);
+					metadata = service.save(metadata);
 					log.debug("premerge(), for " + metadata.getIdentifier() + 
 						", saved " + metadata.getContent().size() + " files");
 				
@@ -193,11 +217,10 @@ public final class PreMerger {
 	public void buildWarehouse() {
 		
 		Model warehouse = BioPAXLevel.L3.getDefaultFactory().createModel();
+		warehouse.setXmlBase(xmlBase);
 		
-		// grab all metadata
-		Collection<Metadata> metadataCollection = metaDataDAO.getAllMetadata();
 		// iterate over all metadata
-		for (Metadata metadata : metadataCollection) 
+		for (Metadata metadata : service.metadata().findAll()) 
 		{
 			//skip not warehouse data
 			if (metadata.getType() != METADATA_TYPE.WAREHOUSE)
@@ -207,8 +230,9 @@ public final class PreMerger {
 			InputStream inputStream;
 			for(Content content : metadata.getContent()) {
 				try {
-					inputStream = new GZIPInputStream(new FileInputStream(content.convertedFile()));
-					Model m = new SimpleIOHandler(BioPAXLevel.L3).convertFromOWL(inputStream);				
+					inputStream = new GZIPInputStream(new FileInputStream(content.normalizedFile()));
+					Model m = new SimpleIOHandler(BioPAXLevel.L3).convertFromOWL(inputStream);
+					m.setXmlBase(xmlBase);
 					warehouse.merge(m);
 				} catch (IOException e) {
 					log.error("buildWarehouse, skip for " + content.toString() + 
@@ -220,14 +244,14 @@ public final class PreMerger {
 		warehouse.repair();
 		
 		//clear all id-mapping tables
-		mappingsRepository.deleteAll();
+		service.mapping().deleteAll();
 		
 		// Using the Warehouse, generate the id-mapping tables
 		// from that BioPAX model:
 		buildIdMappingFromWarehouse(warehouse);
 			
 		// Next, process all extra MAPPING data files, build, save tables
-		for (Metadata metadata : metadataCollection) 
+		for (Metadata metadata : service.metadata().findAll()) 
 		{
 			//skip not id-mapping data
 			if (metadata.getType() != METADATA_TYPE.MAPPING)
@@ -248,8 +272,14 @@ public final class PreMerger {
 		}
 		
 		// add more relationship xrefs to the warehouse ERs; 
-		// this makes ineding/finding an ER by ID possible
-		addXrefsToEntityReferences(warehouse);
+		// this makes full-text search for ER by some secondary IDs possible
+		log.info("buildWarehouse(), adding more Xrefs to ERs using id-mapping...");
+		for(EntityReference er : new HashSet<EntityReference>(warehouse.getObjects(EntityReference.class))) 
+		{
+			Assert.isTrue(er.getRDFId().contains("/chebi/") || er.getRDFId().contains("/uniprot/"),
+					er + " - warehouse ER is neither PR nor SMR (bug)!");
+			addRelXrefsToWarehouseEntityRef(warehouse, er);
+		}
 		
 		// save to compressed file
 		String whFile  = CPathSettings.getInstance().warehouseModelFile();
@@ -261,57 +291,42 @@ public final class PreMerger {
 			log.error("buildWarehouse(), failed", e);
 		}
 		
-		//Don't persist (yet, do later in Merger or another step)
-//		paxtoolsDAO.merge(warehouse);
+		//Don't persist (do later after Merger)
+		log.info("buildWarehouse(), done.");
 	}
 
 
 	private void saveIgnoringDuplicates(Set<Mapping> mappings) {
 		for(Mapping mapping : mappings) {
 			try {
-				mappingsRepository.save(mapping);
+				service.saveIfUnique(mapping);
 			} catch (DataIntegrityViolationException e) {} //ignore same entries
 		}
 	}
 
 
-	// generate rel. xrefs from the mappings, add to PRs or SMRs in the warehouse model;
-	// this is for warehouse (normalized) EntityReference or CV URIs only -
-	private void addXrefsToEntityReferences(Model warehouse) {
-		for(SmallMoleculeReference smr : new HashSet<SmallMoleculeReference>(
-				warehouse.getObjects(SmallMoleculeReference.class))) 
-		{
-			//extract primary ID; get other DB/IDs that map to it, add xrefs
-			Assert.isTrue(smr.getRDFId().contains("/chebi"));
-			List<Mapping> map = mappingsRepository
-				.findByDestIgnoreCaseAndDestId("CHEBI", CPathUtils.idfromNormalizedUri(smr.getRDFId()));
-			addXrefs(warehouse, smr, map);
-		}
+	private void addRelXrefsToWarehouseEntityRef(Model warehouse, EntityReference er) 
+	{
+		final String primaryDb = (er instanceof ProteinReference) ? "UNIPROT" : "CHEBI"; 
+		final String primaryId = CPathUtils.idfromNormalizedUri(er.getRDFId());
 		
-		for(ProteinReference pr :new HashSet<ProteinReference>(
-				warehouse.getObjects(ProteinReference.class))) 
+		//reverse id-mapping (from the primary db/id to all db/id entries that map to the primary pair)
+		List<Mapping> map = service.mapping().findByDestIgnoreCaseAndDestId(primaryDb, primaryId);		
+		for(Mapping m : map) 
 		{
-			//extract primary ID; get other DB/IDs that map to it, add xrefs
-			Assert.isTrue(pr.getRDFId().contains("/uniprot"));
-			List<Mapping> map = mappingsRepository
-					.findByDestIgnoreCaseAndDestId("UNIPROT", CPathUtils.idfromNormalizedUri(pr.getRDFId()));
-			addXrefs(warehouse, pr, map);
-		}
-	}
+			Assert.isTrue(m.getDest().equals(primaryDb) && m.getDestId().equals(primaryId), 
+				"findByDestIgnoreCaseAndDestId result contains mappings with different primary db/id (bug!)");
+					
+			//find the unif.xref by the normalized URI, if exists
+			final String uxUri = Normalizer.uri(xmlBase, m.getSrc(), m.getSrcId(), UnificationXref.class);
+			UnificationXref ux = (UnificationXref) warehouse.getByID(uxUri);			
+			if(ux != null && er.getXref().contains(ux)) 
+				continue; //skip existing equivalet unif. xref
 
-	
-	private void addXrefs(Model warehouse, EntityReference er, List<Mapping> map) {
-		for(Mapping m : map) {
-			String rxUri = Normalizer.uri(xmlBase, m.getSrc(), m.getSrcId(), RelationshipXref.class);
-			RelationshipXref rx = (RelationshipXref) warehouse.getByID(rxUri);
-			String uxUri = Normalizer.uri(xmlBase, m.getSrc(), m.getSrcId(), UnificationXref.class);
-			UnificationXref ux = (UnificationXref) warehouse.getByID(uxUri);
-			if(rx == null && ux == null) {
-				rx = warehouse.addNew(RelationshipXref.class, rxUri);
-				rx.setDb(m.getSrc());
-				rx.setId(m.getSrcId());
-			}
-			er.addXref(rx);
+			//otherwise - find/make special rel.xref
+			RelationshipXref rx = findOrCreateRelationshipXref(
+					RelTypeVocab.MAPPED_IDENTITY, m.getSrc(), m.getSrcId(), warehouse);			
+			er.addXref(rx); 
 		}
 	}
 
@@ -342,8 +357,8 @@ public final class PreMerger {
 		String line = reader.readLine(); //get the first, title line
 		String head[] = line.split("\t");
 		assert head.length == 2 : "bad header";
-		String from = head[0].trim();
-		String to = head[1].trim();
+		String from = head[0].trim().toUpperCase();
+		String to = head[1].trim().toUpperCase();
 		while ((line = reader.readLine()) != null) {
 			String pair[] = line.split("\t");
 			String srcId = pair[0].trim();
@@ -388,9 +403,25 @@ public final class PreMerger {
 				// By design (warehouse), there are unif. and rel. xrefs added 
 				// by the Uniprot Converter, and we will uses those, 
 				// skipping publication and illegal xrefs:
-				if(!(x instanceof PublicationXref) && x.getDb() != null) {
+				if(x.getDb() != null && x.getId() != null 
+					&& (// any unification xref
+						(x instanceof UnificationXref) || 
+							// or for any typed relationship xref
+							((x instanceof RelationshipXref) && ((RelationshipXref)x).getRelationshipType()!=null
+							&& 
+							(	//use any mapped-identity type relationship xref
+								((RelationshipXref)x).getRelationshipType().getRDFId().endsWith(RelTypeVocab.MAPPED_IDENTITY.id)
+								|| // or any secondary accession type relationship xref
+								((RelationshipXref)x).getRelationshipType().getRDFId().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id))
+							)
+						)
+				) {
 					String id = x.getId();
 					String srcDb = x.getDb();
+					
+					if(srcDb.toUpperCase().startsWith("UNIPROT") || srcDb.toUpperCase().startsWith("SWISSPROT"))
+						srcDb = "UNIPROT"; //consider 'uniprot*' source IDs/names as 'UNIPROT' for simplicity
+					
 					mappings.add(new Mapping(srcDb, id, destDb, ac));
 				}
 			}
@@ -400,11 +431,7 @@ public final class PreMerger {
 				//map some names (display and std.)
 				String name = smr.getDisplayName().toLowerCase();
 				mappings.add(new Mapping("chemical name", name, destDb, ac));	
-				if(smr.getStandardName() != null && 
-						!smr.getStandardName().equalsIgnoreCase(name)) {
-					name = smr.getStandardName().toLowerCase();
-					mappings.add(new Mapping("chemical name", name, destDb, ac));
-				}
+				//skip other names (and standardName) as they can be too long...
 			}
 			
 			if(er instanceof ProteinReference) {
@@ -422,14 +449,12 @@ public final class PreMerger {
 	
 
 	/**
-	 * Pushes given Content through pipeline:
-	 * Updates the Content object adding the 
-	 * normalized data (BioPAX L3) and the validation results 
-	 * (XML report and status)
+	 * Given Content undergoes clean/convert/validate/normalize data pipeline.
 	 * 
-	 * @param metadata
-	 * @param dataFile provider's pathway data (usually from a single data file) to be processed and modified
+	 * @param metadata about the data provider
+	 * @param content provider's pathway data (file) to be processed and modified
 	 * @param cleaner data specific cleaner class (to apply before the validation/normalization)
+	 * @param converter data specific to BioPAX L3 converter class
 	 * @throws IOException 
 	 */
 	private void pipeline(final Metadata metadata, final Content content, 
@@ -448,53 +473,46 @@ public final class PreMerger {
 			dataStream = new GZIPInputStream(new FileInputStream(content.cleanedFile())); 
 		}
 		
-		//Convert data to BioPAX L3 if needed
+		if(metadata.getType() == METADATA_TYPE.MAPPING) {
+			dataStream.close();
+			return; //all done about the id-mappingdata (no need to convert/normalize)
+		}
+		
+		//Convert data to BioPAX L3 if needed (generate the 'converted' output file in any case)
 		if (converter != null) {
 			log.info("pipeline(), converting " + info + " with " + converter.getClass());					
 			OutputStream os = new GZIPOutputStream(new FileOutputStream(content.convertedFile()));
 			converter.convert(dataStream, os);//os must be closed inside
-			if(metadata.isNotPathwayData())	{
-				return; //all done!
-			} 
-			
-			dataStream = new GZIPInputStream(new FileInputStream(content.convertedFile())); 
-			
-		} else if(metadata.getType() == METADATA_TYPE.WAREHOUSE) {
-			log.warn("pipeline(), no BioPAX converter set for warehouse data: " 
-					+ info + "; suppose it's BioPAX");				
-			File src = new File(
-				(cleaner != null) ? content.cleanedFile() : content.originalFile()
-			);			
-			FileUtils.moveFile(src, new File(content.convertedFile()));
-			return; //all done!
+			dataStream = new GZIPInputStream(new FileInputStream(content.convertedFile())); 		
 		}
 		
-		//Validate and normalize cleaned and converted pathway data
-		if(!metadata.isNotPathwayData()) {
-			// process a pathway/interaction data file
-			log.info("pipeline(), validating pathway data "	+ info);		
+		//here, the 'dataStream' will read either from the orig., cleaned, or converted file,
+		//(depending on cleaner/converter availability above)
+		
+		
+		//Go validate and normalize the pathway data
+		log.info("pipeline(), validating pathway data "	+ info);		
 
-			/* Validate, auto-fix, and normalize (incl. convesion to L3): 
-			 * e.g., synonyms in xref.db may be replaced 
-			 * with the primary db name, as in Miriam, etc.
-			 */
-			//use a file instead of String for the RDF/XML data (which can be >2Gb and fail!)
-			Validation v = checkAndNormalize(info, dataStream, metadata, content.normalizedFile());
+		/* Validate, auto-fix, and normalize (incl. convesion to L3): 
+		 * e.g., synonyms in xref.db may be replaced 
+		 * with the primary db name, as in Miriam, etc.
+		 */
+		//use a file instead of String for the RDF/XML data (which can be >2Gb and fail!)
+		Validation v = checkAndNormalize(info, dataStream, metadata, content.normalizedFile());
 
-			//save report data
-			content.saveValidationReport(v);
+		//save report data
+		content.saveValidationReport(v);
 
-			// count critical not fixed error cases (ignore warnings and fixed ones)
-			int noErrors = v.countErrors(null, null, null, null, true, true);
-			log.info("pipeline(), summary for " + info
-					+ ". Critical errors found:" + noErrors + ". " 
-					+ v.getComment().toString() + "; " + v.toString());
+		// count critical not fixed error cases (ignore warnings and fixed ones)
+		int noErrors = v.countErrors(null, null, null, null, true, true);
+		log.info("pipeline(), summary for " + info
+				+ ". Critical errors found:" + noErrors + ". " 
+				+ v.getComment().toString() + "; " + v.toString());
 
-			if(noErrors > 0) 
-				content.setValid(false); 
-			else 
-				content.setValid(true);
-		}
+		if(noErrors > 0) 
+			content.setValid(false); 
+		else 
+			content.setValid(true);
 	}
 
 	
@@ -549,4 +567,54 @@ public final class PreMerger {
 		return validation;
 	}
 
+	
+	/**
+	 * Given relationship type CV 'term' and target biological 'db' and 'id', 
+	 * finds or creates a new relationship xref (and its controlled vocabulary) in the model.
+	 * 
+	 * Note: the corresponding CV does not have a unification xref
+	 * (this method won't validate; so, non-standard CV terms can be used).
+	 * 
+	 * @param vocab
+	 * @param model biopax model (e.g., warehouse)
+	 */
+	public static RelationshipXref findOrCreateRelationshipXref(
+			RelTypeVocab vocab, String db, String id, Model model) 
+	{
+		Assert.notNull(vocab);
+		
+		RelationshipXref toReturn = null;
+
+		String uri = Normalizer.uri(model.getXmlBase(), db, id + vocab.toString(), RelationshipXref.class);
+		if (model.containsID(uri)) {
+			return (RelationshipXref) model.getByID(uri);
+		}
+
+		// made it here, need to create relationship xref
+		toReturn = model.addNew(RelationshipXref.class, uri);
+		toReturn.setDb(db);
+		toReturn.setId(id);
+
+		// create/add the relationship type vocabulary
+		String relTypeCvUri = vocab.uri; //identifiers.org standard URI
+		RelationshipTypeVocabulary rtv = (RelationshipTypeVocabulary) model.getByID(relTypeCvUri);
+		
+		if (rtv == null) {
+			rtv = model.addNew(RelationshipTypeVocabulary.class, relTypeCvUri);
+			rtv.addTerm(vocab.term);
+			//add the unif.xref
+			uri = Normalizer.uri(model.getXmlBase(), vocab.db, vocab.id, UnificationXref.class);
+			UnificationXref rtvux = (UnificationXref) model.getByID(uri);
+			if (rtvux == null) {
+				rtvux = model.addNew(UnificationXref.class, uri);
+				rtvux.setDb(vocab.db);
+				rtvux.setId(vocab.id);
+			}	
+			rtv.addXref(rtvux);
+		}
+		
+		toReturn.setRelationshipType(rtv);
+
+		return toReturn;
+	}
 }

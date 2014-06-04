@@ -5,6 +5,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<style type="text/css">.hidden { display: none; }</style>
 <jsp:include page="head.jsp"/>
 <title>cPath2::Validation Summary</title>
 </head>
@@ -13,10 +14,10 @@
 <h2>Pathway Data Validation Summary</h2>
 <ul id="validations">
   <c:forEach var="result" items="${response.validationResult}" varStatus="rstatus">
-	<li style="text-decoration: underline" title="Click for more details">
-	<a href="javascript:switchit('result${rstatus.index}')">Resource:&nbsp;${result.description};&nbsp;${result.summary}</a>
+	<li style="text-decoration: underline">
+	Resource:&nbsp;${result.description};&nbsp;${result.summary}
 	</li>
-	<ul id="vcomments" style="display: block;">
+	<ul id="vcomments">
 	<li>
 	  <c:forEach var="comment" items="${result.comment}">
 		${comment}&nbsp;
@@ -40,19 +41,14 @@
 		</c:otherwise>
 	  </c:choose>
 	</li>
-<%-- no fixed/normalized biopax ever shows up below (because cpath2 clears it and saves the xml to separate files instead)--%>	
-<%-- 	<c:if test="${result.fix}"> --%>
-<%-- 	  	<li><a href="javascript:switchit('result${rstatus.index}owl')">Modified BioPAX</a>&nbsp;(HTML-escaped BioPAX RDF/XML)</li> --%>
-<%-- 		<ul style="display:none;" id="result${rstatus.index}owl" class="vOwl"> --%>
-<%-- 			<li><div>${result.modelDataHtmlEscaped}</div></li> --%>
-<!-- 		</ul> -->
-<%-- 	</c:if> --%>
+<%-- no normalized biopax ever shows up here because cpath2 clears it and saves the xml to separate files --%>	
   </ul>				
-	<ul style="display:none;" id="result${rstatus.index}">
+	<ul id="result${rstatus.index}">
 	  <c:forEach var="errorType" items="${result.error}" varStatus="estatus">
 		<li title="Click to see the error cases">
-			<a href="javascript:switchit('result${rstatus.index}type${estatus.index}')">
-			${errorType.type}: <em>${errorType.code}</em>,&nbsp;category: <em>${errorType.category}</em>,
+			<a class="hider" hide-id="result${rstatus.index}type${estatus.index}" href="#">
+				${errorType.type}: <em>${errorType.code}</em></a>
+			,&nbsp;category: <em>${errorType.category}</em>,
 			&nbsp;cases: <em>${errorType.totalCases}</em>,&nbsp;
 			<c:choose>
 				<c:when test="${errorType.notFixedCases > 0}">
@@ -62,16 +58,16 @@
 				all fixed!
 				</c:otherwise>
 	  		</c:choose>
-			</a><br/>${errorType.message}
+			<br/>${errorType.message}
 		</li>
-		<ul style="display:none;" id="result${rstatus.index}type${estatus.index}">
-		<c:forEach var="errorCase" items="${errorType.errorCase}">
+		<ul class="hidden" id="result${rstatus.index}type${estatus.index}">
+		  <c:forEach var="errorCase" items="${errorType.errorCase}">
 			<li>
 				<c:if test="${errorCase.fixed}"><b>[FIXED!]</b>&nbsp;</c:if>
 				object:<b>&nbsp;${errorCase.object}</b>
 				<div>${errorCase.message}</div>(found by: <em>${errorCase.reportedBy}</em>)
 			</li>
-		</c:forEach>
+		  </c:forEach>
 		</ul>
 	  </c:forEach>
 	</ul>
@@ -80,15 +76,17 @@
 </ul>
 
 <jsp:include page="footer.jsp" />
+
 <script>
-function switchit(id) {
-	var style = document.getElementById(id).style;
-	if (!style.display || style.display == "none") {
-		style.display = "block";
-	} else {
-		style.display = "none";
-	}
-}
+$(function() {       
+    $('.hider').on('click', function(){
+        var $hider = $(this);
+        var hideeid = $hider.attr('hide-id');
+        var $hidee = $('#' + hideeid);
+        $hidee.toggleClass('hidden');
+        return false; /*prevent following the fake link*/
+    });    
+});
 </script>
 </body>
 </html>

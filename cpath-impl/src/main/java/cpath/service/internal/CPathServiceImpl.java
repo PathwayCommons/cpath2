@@ -32,9 +32,11 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.zip.GZIPInputStream;
 
 import javax.annotation.PostConstruct;
 
+import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.controller.Cloner;
 import org.biopax.paxtools.controller.Completer;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -51,18 +53,32 @@ import org.biopax.paxtools.query.wrapperL3.DataSourceFilter;
 import org.biopax.paxtools.query.wrapperL3.Filter;
 import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
+import org.biopax.validator.api.ValidatorUtils;
+import org.biopax.validator.api.beans.ValidatorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
 import cpath.dao.Analysis;
 import cpath.dao.CPathUtils;
+import cpath.dao.LogUtils;
 import cpath.dao.PaxtoolsDAO;
+import cpath.jpa.Content;
+import cpath.jpa.Geoloc;
+import cpath.jpa.LogEntitiesRepository;
+import cpath.jpa.LogEntity;
+import cpath.jpa.LogEvent;
+import cpath.jpa.LogType;
+import cpath.jpa.Mapping;
 import cpath.jpa.MappingsRepository;
+import cpath.jpa.Metadata;
+import cpath.jpa.MetadataRepository;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
@@ -76,11 +92,8 @@ import static cpath.service.Status.*;
 
 /**
  * Service tier class - to uniformly access 
- * persisted BioPAX model (DAO) from console 
- * and web service controllers. This can be 
- * configured (instantiated) to access any cpath2
- * persistent BioPAX data storage (PaxtoolsDAO), 
- * i.e., - either the "main" cpath2 db or a Warehouse one (proteins or molecules)
+ * persisted BioPAX model and metadata from console 
+ * and web services.
  * 
  * @author rodche
  */
@@ -88,9 +101,17 @@ import static cpath.service.Status.*;
 class CPathServiceImpl implements CPathService {
 	private static final Logger log = LoggerFactory.getLogger(CPathServiceImpl.class);
 	
-	private PaxtoolsDAO mainDAO;
+	@Autowired(required=false)
+	PaxtoolsDAO paxtoolsDAO;
 	
-	private MappingsRepository mappingRepository;
+	@Autowired
+	LogEntitiesRepository logEntitiesRepository;
+	
+	@Autowired
+    MetadataRepository metadataRepository;
+	
+	@Autowired
+    MappingsRepository mappingsRepository;
 	
 	private SimpleIOHandler simpleIO;
 	
@@ -100,39 +121,26 @@ class CPathServiceImpl implements CPathService {
 	private Blacklist blacklist; 
 	
 	//init. on first access when proxy model mode is enabled (so do not use the var. directly!)
-	private Model proxyModel;
+	private Model paxtoolsModel;
 	
 	private final int maxHitsPerPage;
 	
 	/**
-	 * Default Constructor
+	 * Constructor
 	 */
-    // at least required for using with Ehcache
+    // no-arguments constructor is required, e.g., by Ehcache
 	public CPathServiceImpl() {
 		this.maxHitsPerPage = Integer.parseInt(CPathSettings.getInstance().getMaxHitsPerPage());
-	}
-
-	
-    /**
-     * Constructor.
-     */
-	@Autowired
-	public CPathServiceImpl(PaxtoolsDAO paxtoolsDAO, MappingsRepository mappingRepository) 
-	{
-		this();
-		this.mainDAO = paxtoolsDAO;
-		this.mappingRepository = mappingRepository;
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
 		this.cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
 	}
 
-	
 
 	@PostConstruct
 	synchronized void init() {		
 		if(CPathSettings.getInstance().isProxyModelEnabled() 
-				&& proxyModel == null
+				&& paxtoolsModel == null
 				&& !CPathSettings.getInstance().isAdminEnabled()) { 			
 			//fork the model loading (which takes quite a while)
 			ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -140,13 +148,13 @@ class CPathServiceImpl implements CPathService {
 				new Runnable() {
 				@Override
 				public void run() {
-					String archive = CPathSettings.getInstance().mainModelFile(); 
-					Model model = CPathUtils.importFromTheArchive(archive);
-					model.setXmlBase(CPathSettings.getInstance().getXmlBase());
+					Model model = CPathUtils.loadMainBiopaxModel();
 					// set for this service
-					setProxyModel(model);
-					if(model != null)
+					paxtoolsModel = model;
+					if(paxtoolsModel != null) {
+						model.setXmlBase(CPathSettings.getInstance().getXmlBase());
 						log.info("RAM BioPAX Model (proxy) is now ready for queries");
+					}	
 				}
 			});
 			executor.shutdown();
@@ -154,13 +162,6 @@ class CPathServiceImpl implements CPathService {
 		}
 		
 		loadBlacklist();
-	}
-	
-	
-	
-	@Override
-	public void setProxyModel(Model proxyModel) {
-		this.proxyModel = proxyModel;
 	}
 	
 	
@@ -172,7 +173,7 @@ class CPathServiceImpl implements CPathService {
 		
 		try {
 			// do search
-			SearchResponse hits = mainDAO.search(queryStr, page, biopaxClass, dsources, organisms);
+			SearchResponse hits = paxtoolsDAO.search(queryStr, page, biopaxClass, dsources, organisms);
 			
 			if(hits.isEmpty()) {//no hits
 				hits = new SearchResponse();
@@ -254,10 +255,10 @@ class CPathServiceImpl implements CPathService {
 			}
 		};
 		
-		if(proxyModelReady())
-			analysis.execute(proxyModel);
+		if(paxtoolsModelReady())
+			analysis.execute(paxtoolsModel);
 		else
-			mainDAO.runReadOnly(analysis);
+			paxtoolsDAO.runReadOnly(analysis);
 		
 		return callback[0];
     }
@@ -327,10 +328,10 @@ class CPathServiceImpl implements CPathService {
 			}
 		};
 		
-		if(proxyModelReady()) 
-			analysis.execute(proxyModel);
+		if(paxtoolsModelReady()) 
+			analysis.execute(paxtoolsModel);
 		else
-			mainDAO.runReadOnly(analysis);
+			paxtoolsDAO.runReadOnly(analysis);
 		
 		return callback[0];
 	}
@@ -380,10 +381,10 @@ class CPathServiceImpl implements CPathService {
 			}
 		};
 		
-		if(proxyModelReady()) 
-			analysis.execute(proxyModel);
+		if(paxtoolsModelReady()) 
+			analysis.execute(paxtoolsModel);
 		else
-			mainDAO.runReadOnly(analysis);
+			paxtoolsDAO.runReadOnly(analysis);
 		
 		return callback[0];
 	}
@@ -446,10 +447,10 @@ class CPathServiceImpl implements CPathService {
 			}
 		};
 		
-		if(proxyModelReady()) 
-			analysis.execute(proxyModel);
+		if(paxtoolsModelReady()) 
+			analysis.execute(paxtoolsModel);
 		else
-			mainDAO.runReadOnly(analysis);
+			paxtoolsDAO.runReadOnly(analysis);
 		
 		return callback[0];
 	}
@@ -508,10 +509,10 @@ class CPathServiceImpl implements CPathService {
 			}
 		};
 		
-		if(proxyModelReady()) 
-			analysis.execute(proxyModel);
+		if(paxtoolsModelReady()) 
+			analysis.execute(paxtoolsModel);
 		else
-			mainDAO.runReadOnly(analysis);
+			paxtoolsDAO.runReadOnly(analysis);
 		
 		return callback[0];
 	}
@@ -523,6 +524,7 @@ class CPathServiceImpl implements CPathService {
 	 * It does not "understand" RefSeq Versions and UniProt Isoforms 
 	 * (one has to submit canonical identifiers, i.e, ones without "-#" or ".#").
 	 * 
+	 * TODO map to either gene or chemical entities or entity references instead of any xrefs?..
 	 * 
 	 * @param identifiers - a list of genes/protein or molecules as: \
 	 * 		HGNC symbols, UniProt, RefSeq, ENS* and NCBI Gene identifiers; or\
@@ -549,16 +551,16 @@ class CPathServiceImpl implements CPathService {
 				// it must be an existing URI (a user hopes so)
 				uris.add(identifier);
 				
-				if(identifier.startsWith("http://identifier.org/"))
-					//extract the id from URI to map (below) to the primary id/URI
+				if(identifier.startsWith("http://identifier.org/")) {
+					//also extract the id from the URI to map it (below) to the primary id/URI
 					id = CPathUtils.idfromNormalizedUri(identifier);
-				else //no id-mapping required
+				} else //no id-mapping required
 					continue; //go to next identifier
 			} 
 			
 			// do gene/protein/chemical id-mapping;
 			// mapping can be ambiguous, but this is OK for queries (unlike when merging data)
-			Set<String> m = mappingRepository.map(id);
+			Set<String> m = map(id);
 			if (!m.isEmpty()) {
 				for(String ac : m) {
 					// add to the query string; 
@@ -584,14 +586,17 @@ class CPathServiceImpl implements CPathService {
 			final String query = q.toString().trim();
 			log.debug("findUrisByIds, will run: " + query);
 			int page = 0; // will use search pagination
-			SearchResponse resp = mainDAO.search(query, page, Xref.class, null, null);
+			SearchResponse resp = paxtoolsDAO.search(query, page, Xref.class, null, null);
 			log.debug("findUrisByIds, hits: " + resp.getNumHits());
 			while (!resp.isEmpty()) {
 				log.debug("Retrieving xref search results, page #" + page);
-				for (SearchHit h : resp.getSearchHit())
-					uris.add(h.getUri());
+				for (SearchHit h : resp.getSearchHit()) {
+					if("UnificationXref".equalsIgnoreCase(h.getBiopaxClass())
+							|| "RelationshipXref".equalsIgnoreCase(h.getBiopaxClass()))
+						uris.add(h.getUri());
+				}
 				// go next page
-				resp = mainDAO.search(query, ++page, Xref.class, null, null);
+				resp = paxtoolsDAO.search(query, ++page, Xref.class, null, null);
 			}
 		}
 				
@@ -608,10 +613,10 @@ class CPathServiceImpl implements CPathService {
 		try {
 			TraverseAnalysis traverseAnalysis = new TraverseAnalysis(res, sourceUris);
 			
-			if(proxyModelReady()) 
-				traverseAnalysis.execute(proxyModel);
+			if(paxtoolsModelReady()) 
+				traverseAnalysis.execute(paxtoolsModel);
 			else
-				mainDAO.runReadOnly(traverseAnalysis);
+				paxtoolsDAO.runReadOnly(traverseAnalysis);
 			
 			return res;
 			
@@ -627,6 +632,8 @@ class CPathServiceImpl implements CPathService {
 
 	
 	/**
+	 * {@inheritDoc}
+	 * 
 	 * "Top pathway" can mean different things...
 	 * 
 	 * 1) One may want simply collect pathways which are not 
@@ -645,7 +652,7 @@ class CPathServiceImpl implements CPathService {
 		SearchResponse topPathways = new SearchResponse();
 		final List<SearchHit> hits = topPathways.getSearchHit(); //empty list
 		int page = 0; // will use search pagination
-		SearchResponse searchResponse = mainDAO.search("*", page, Pathway.class, datasources, organisms);
+		SearchResponse searchResponse = paxtoolsDAO.search("*", page, Pathway.class, datasources, organisms);
 		//go over all hits, all pages
 		while(!searchResponse.isEmpty()) {
 			log.debug("Retrieving top pathways search results, page #" + page);
@@ -658,7 +665,7 @@ class CPathServiceImpl implements CPathService {
 					hits.add(h); //add to topPathways list
 			}
 			// go next page
-			searchResponse = mainDAO.search("*", ++page, Pathway.class, datasources, organisms);
+			searchResponse = paxtoolsDAO.search("*", ++page, Pathway.class, datasources, organisms);
 		}
 		
 		// final touches...
@@ -684,7 +691,7 @@ class CPathServiceImpl implements CPathService {
 	}
 
 	
-	/*
+	/**
 	 * This utility method prepares the source or target 
 	 * object sets for a graph query.
 	 * 
@@ -730,14 +737,292 @@ class CPathServiceImpl implements CPathService {
 	}
 
 	
-	private boolean proxyModelReady() {
-		if(proxyModel != null && CPathSettings.getInstance().isProxyModelEnabled()) {
-			log.debug("isProxyModel: enabled and ready.");
+	private boolean paxtoolsModelReady() {
+		if(paxtoolsModel != null && CPathSettings.getInstance().isProxyModelEnabled()) {
+			log.debug("Model enabled/ready.");
 			return true;
 		} else {
-			log.debug("isProxyModel: disabled or/and unloaded.");
+			log.debug("Model disabled/unloaded.");
 			return false;
 		}
 	}	
+	
+	
+	@Override
+	public Set<String> map(String fromDb, String fromId, String toDb) {
+    	Assert.hasText(fromId);
+    	Assert.hasText(toDb);
+    	
+    	List<Mapping> maps;    	
+    	if(fromDb == null || fromDb.isEmpty()) {
+    		maps = mappingsRepository.findBySrcIdAndDestIgnoreCase(fromId, toDb);
+    	} else {    	
+    		//if possible, use a "canonical" id instead isoform, version, kegg gene...
+    		// (e.g., uniprot.isoform, P04150-2 pair becomes uniprot, P04150)
+    		String id = fromId;
+    		String db = fromDb;
+    		
+    		//normalize the name
+    		try {
+				String stdDb = MiriamLink.getName(db);
+				if(stdDb != null) // be safe
+					db = stdDb.toUpperCase();
+			} catch (IllegalArgumentException e) {
+			}		
+    		
+    		if(db.equalsIgnoreCase("uniprot isoform") 
+    				|| db.equalsIgnoreCase("uniprot.isoform")) 
+    		{
+    			int idx = id.lastIndexOf('-');
+    			if(idx > 0) {//using corr. UniProt ID instead
+    				id = id.substring(0, idx);
+    				db = "UNIPROT";
+    			}
+    		}
+    		else if(db.toUpperCase().startsWith("UNIPROT")) {
+    			//e.g., 'UNIPROT' instead of 'UniProt Knowledgebase'
+    			db = "UNIPROT";
+    		}
+    		else if(db.toUpperCase().startsWith("SWISSPROT")) {
+    			db = "UNIPROT";
+    		}
+    		else if(db.equalsIgnoreCase("refseq")) {
+    			//strip, e.g., refseq:NP_012345.2 to refseq:NP_012345
+    			int idx = id.lastIndexOf('.');
+    			if(idx > 0)
+    				id = id.substring(0, idx);
+    		} 
+    		else if(db.toLowerCase().startsWith("kegg") && id.matches(":\\d+$")) {
+    			int idx = id.lastIndexOf(':');
+    			if(idx > 0) {
+    				id = id.substring(idx + 1); //it's NCBI Gene ID;
+    				db = "NCBI GENE";
+    			}
+    		}
+    		else if(db.equalsIgnoreCase("GENEID") || db.equalsIgnoreCase("ENTREZ GENE")) {
+    			db = "NCBI GENE";
+    		} else if(db.toUpperCase().contains("PUBCHEM") && 
+    				(db.toUpperCase().contains("SUBSTANCE") || db.toUpperCase().contains("SID"))) {
+    			db = "PUBCHEM-SUBSTANCE";
+    		} else if(db.toUpperCase().contains("PUBCHEM") && 
+    				(db.toUpperCase().contains("COMPOUND") || db.toUpperCase().contains("CID"))) {
+    			db = "PUBCHEM-COMPOUND";
+    		}
+    		
+    		maps = mappingsRepository
+    			.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase(db, id, toDb);
+    	}
+    	
+    	Set<String> results = new TreeSet<String>();   	
+    	for(Mapping m : maps) {
+    		results.add(m.getDestId());
+    	}
+    	
+		return results;
+	}
+
+
+	@Override
+	public Set<String> map(String identifier) {
+		if(identifier.startsWith("http://"))
+			throw new AssertionError("URI is not allowed here; use ID");
+		
+		if(identifier.toUpperCase().startsWith("CHEBI:")) {
+			// chebi -> to primary chebi id
+			return map("CHEBI", identifier, "CHEBI");
+		} else if(identifier.length() == 25 || identifier.length() == 27) {
+			// InChIKey identifier (25 or 27 chars long) -> to primary chebi id
+			return map(null, identifier, "CHEBI"); //null - for looking in InChIKey, names, etc.
+		} else if(identifier.toUpperCase().startsWith("CID:")) {
+			// - a hack to tell PubChem ID from NCBI Gene ID in graph queries
+			return map("PubChem-compound", identifier.substring(4), "CHEBI");
+		} else if(identifier.toUpperCase().startsWith("SID:")) {
+			// - a hack to tell PubChem ID from NCBI Gene ID in graph queries
+			return map("PubChem-substance", identifier.substring(4), "CHEBI");
+		} else if(identifier.toUpperCase().startsWith("PUBCHEM:")) { 
+			// - a hack to tell PubChem ID from NCBI Gene ID in graph queries
+			return map("PubChem-compound", identifier.substring(8), "CHEBI");	
+		} else {
+			// gene/protein name, id, etc. -> to primary uniprot AC
+			Set<String> ret = new TreeSet<String>();
+			ret.addAll(map(null, identifier, "UNIPROT"));
+			if(ret.isEmpty()) //ChEMBL, DrugBank, chem. names, etc to ChEBI
+				ret.addAll(map(null, identifier, "CHEBI"));
+			return ret;
+		}
+	}
+
+
+	@Override
+	public void saveIfUnique(Mapping mapping) {
+		if(!exists(mapping)) {
+			mappingsRepository.save(mapping);
+		} else {
+			//ignore
+		}
+	}
+
+	private boolean exists(Mapping m) {
+		return mappingsRepository
+			.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(
+					m.getSrc(), m.getSrcId(), m.getDest(), m.getDestId()) 
+						!= null;
+	}
+	
+	
+	@Override
+	public void log(Collection<LogEvent> events, Geoloc loc) {
+
+		for(LogEvent event : events) {
+			//'total' should not be here (it auto-counts)
+			Assert.isTrue(event.getType() != LogType.TOTAL); 
+			
+			count(LogUtils.today(), event, loc);
+		}
+		
+		//total counts (is not sum of the above); counts once per request/response
+		count(LogUtils.today(), LogEvent.TOTAL, loc);
+	}
+	
+	
+	@Override
+	public LogEntity count(String date, LogEvent event, Geoloc loc) 
+	{		
+		if(loc == null)
+			loc = new Geoloc();
+		
+		// find or create a record, count+1
+		LogEntity t = null;
+		try {
+			t = (LogEntity) logEntitiesRepository
+				.findByEventNameIgnoreCaseAndGeolocCountryAndGeolocRegionAndGeolocCityAndDate(
+					event.getName(), loc.getCountry(), loc.getRegion(), loc.getCity(), date);
+		} catch (DataAccessException e) {
+			log.error("count(), findByEventNameAndGeolocCountryAndGeolocRegionAndGeolocCityAndDat " +
+				"failed to update for event: " + event.getName() + 
+				", loc: " + loc.toString() + ", date: " + date, e);
+		}
+		
+		if(t == null) {			
+			t = new LogEntity(date, event, loc);
+		}
+		
+		t.setCount(t.getCount() + 1);
+		
+		return logEntitiesRepository.save(t);
+	}
+
+	
+	@Override
+	public ValidatorResponse validationReport(String provider, String file) {
+		ValidatorResponse response = new ValidatorResponse();
+		Metadata metadata = metadataRepository.findByIdentifier(provider);
+		for (Content content : metadata.getContent()) {
+			String current = content.getFilename();			
+			
+			if(file != null && !file.equals(current))
+				continue; 
+			//file==null means all files			
+			
+			try {
+				// unmarshal and add
+				ValidatorResponse resp = (ValidatorResponse) ValidatorUtils.getUnmarshaller()
+					.unmarshal(new GZIPInputStream(new FileInputStream(content.validationXmlFile())));
+				assert resp.getValidationResult().size() == 1;				
+				response.getValidationResult().addAll(resp.getValidationResult());				
+			} catch (Exception e) {
+				log.error("validationReport: failed converting the XML response to objects", e);
+			}
+			
+			if(current.equals(file))
+				break;
+		}
+
+		return response;
+	}
+	
+	
+	@Override
+	public Metadata init(Metadata metadata) { 
+		
+    	metadata.cleanupOutputDir();
+    	metadata.setNumInteractions(null);
+    	metadata.setNumPathways(null);
+    	metadata.setNumPhysicalEntities(null);   	
+    	metadata.getContent().clear();
+    	
+		return save(metadata);
+	}
+		
+	
+	@Override
+	public Metadata save(Metadata metadata) {		
+		log.info("Saving metadata: " + metadata.getIdentifier());
+		
+		if(metadata.getId() != null) { //update
+			metadata = metadataRepository.save(metadata);
+		} else {    		
+			Metadata existing = metadataRepository.findByIdentifier(metadata.getIdentifier());
+			if(existing != null)  {//update (except for the Content list, which should not be touched unless in Premerge)
+				existing.setAvailability(metadata.getAvailability());
+				existing.setCleanerClassname(metadata.getCleanerClassname());
+				existing.setConverterClassname(metadata.getConverterClassname());
+				existing.setDescription(metadata.getDescription());
+				existing.setName(metadata.getName());
+				existing.setIconUrl(metadata.getIconUrl());
+				existing.setNumInteractions(metadata.getNumInteractions());
+				existing.setNumPathways(metadata.getNumPathways());
+				existing.setNumPhysicalEntities(metadata.getNumPhysicalEntities());
+				existing.setPubmedId(metadata.getPubmedId());
+				existing.setType(metadata.getType());
+				existing.setUrlToData(metadata.getUrlToData());
+				existing.setUrlToHomepage(metadata.getUrlToHomepage());
+				metadata = existing;
+				//the jpa managed (persistent) entity will be auto-updated/flashed
+			} else { //insert new
+				metadata = metadataRepository.save(metadata);
+			}
+		}
+		
+		return metadata;
+    }
+
+	@Override
+	public void delete(Metadata metadata) {
+    	metadataRepository.delete(metadata);
+    	metadata.cleanupOutputDir();
+	}
+
+
+	@Override
+	public void addOrUpdateMetadata(String location) {
+    	for (Metadata mdata : CPathUtils.readMetadata(location))
+    		save(mdata);
+ 	}
+	
+	@Override
+	public MappingsRepository mapping() {
+		return mappingsRepository;
+	}
+
+
+	@Override
+	public MetadataRepository metadata() {
+		return metadataRepository;
+	}
+
+
+	@Override
+	public PaxtoolsDAO biopax() {
+		return paxtoolsDAO;
+	}
+
+
+	@Override
+	public LogEntitiesRepository log() {
+		return logEntitiesRepository;
+	}
+	
+	
 }
 

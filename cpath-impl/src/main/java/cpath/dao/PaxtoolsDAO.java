@@ -150,12 +150,6 @@ public interface PaxtoolsDAO  {
     
     
     /**
-     * Clears 2nd level caches.
-     */
-    void evictCaches();
-    
-    
-    /**
      * Delete all BioPAX objects from this database/model.
      */
     void removeAll();

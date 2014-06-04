@@ -14,7 +14,7 @@
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd">
     
     <context:annotation-config/>  
-    
+    <context:component-scan base-package="cpath.webservice" />
 	<context:property-placeholder/>
 
 	<!-- Exceptions handler -->
@@ -36,28 +36,11 @@
 		<property name="prefix" value="/WEB-INF/views/" />
 		<property name="suffix" value=".jsp" />
 	</bean> 	
-        
-	<bean id="helpController" class="cpath.webservice.HelpController"/>     
-
-	<bean id="biopaxModelController" class="cpath.webservice.BiopaxModelController">
-	<!-- autowired Constructor args. -->
-<!-- 		<constructor-arg ref="service"/> -->
-	</bean>  
-	    
-	<bean id="pagesController" class="cpath.webservice.PagesController"/> 
-	
-    <bean id="metadataController" class="cpath.webservice.MetadataController">
-    <!-- autowired Constructor args. -->
-<!-- 		<constructor-arg ref="metadataDAO"/> -->
-<!-- 		<constructor-arg ref="mappingRepository"/> -->
-	</bean> 	
-	
-	<bean id="logStatsController" class="cpath.webservice.LogStatsController"/>
 	
 	<mvc:interceptors>
-		<bean class="cpath.webservice.interceptor.CPathMaintenanceHandlerInterceptor" />
-		<bean class="cpath.webservice.interceptor.CPathWebserviceHandlerInterceptor" />           
-    </mvc:interceptors> 	
+		<bean class="cpath.webservice.CPathMaintenanceHandlerInterceptor" />
+		<bean class="cpath.webservice.CPathWebserviceHandlerInterceptor" />           
+    </mvc:interceptors>
 	    
 	<!-- serve all cpath2 generated data archives (organized by species, data sources, formats) -->	
 	<mvc:resources mapping="/downloads/**" location="file:${CPATH2_HOME}/downloads/" />
@@ -87,5 +70,7 @@
 
 	<!-- mvc:annotation-driven must the last -->
     <mvc:annotation-driven content-negotiation-manager="contentNegotiationManager"/>
+
+<!--     <mvc:default-servlet-handler/> -->
       
 </beans>

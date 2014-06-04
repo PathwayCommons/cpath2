@@ -6,7 +6,6 @@ package cpath.dao;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,8 +38,10 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
-import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.Content;
+import cpath.jpa.Content;
+import cpath.jpa.Metadata;
+
+import static cpath.jpa.Metadata.*;
 
 /**
  * @author rodche
@@ -49,28 +50,6 @@ import cpath.warehouse.beans.Content;
 public final class CPathUtils {
 	// logger
     private static Logger LOGGER = LoggerFactory.getLogger(CPathUtils.class);
-	
-    // some bits for metadata reading
-    private static final int METADATA_IDENTIFIER_INDEX = 0;
-    private static final int METADATA_NAME_INDEX = 1;
-    private static final int METADATA_DESCRIPTION_INDEX = 2;
-    private static final int METADATA_DATA_URL_INDEX = 3;
-    private static final int METADATA_HOMEPAGE_URL_INDEX = 4;
-    private static final int METADATA_ICON_URL_INDEX = 5;
-    private static final int METADATA_TYPE_INDEX = 6;
-	private static final int METADATA_CLEANER_CLASS_NAME_INDEX = 7;
-	private static final int METADATA_CONVERTER_CLASS_NAME_INDEX = 8;
-	private static final int METADATA_PUBMEDID_INDEX = 9;
-	private static final int METADATA_AVAILABILITY_INDEX = 10;
-    private static final int NUMBER_METADATA_ITEMS = 11;
-
-	// used for md5sum display
-	static final byte[] HEX_CHAR_TABLE = {
-		(byte)'0', (byte)'1', (byte)'2', (byte)'3',
-		(byte)'4', (byte)'5', (byte)'6', (byte)'7',
-		(byte)'8', (byte)'9', (byte)'a', (byte)'b',
-		(byte)'c', (byte)'d', (byte)'e', (byte)'f'
-    }; 
     
 	// LOADER can handle file://, ftp://, http://  PROVIDER_URL resources
 	public static final ResourceLoader LOADER = new DefaultResourceLoader();
@@ -215,7 +194,7 @@ public final class CPathUtils {
         return toReturn;
     }
 
-
+	
     /**
      * For the given Metadata, unpacks and reads the corresponding 
      * original zip data archive, creating new {@link Content} objects 
@@ -274,6 +253,7 @@ public final class CPathUtils {
 		else
 			LOGGER.warn("analyzeAndOrganizeContent(), no data found for " + metadata);
     }
+
     
     /**
      * Uncompresses the zip input stream,
@@ -390,12 +370,11 @@ public final class CPathUtils {
 	 * @param archive
 	 * @return big BioPAX model
 	 */
-	public static Model importFromTheArchive(String archive) {
+	static Model importFromTheArchive(String archive) {
 		
 		Model model = null;
 
 		try {
-			//read from e.g. ..All.BIOPAX.owl.gz archive
 			LOGGER.info("Loading the BioPAX Model from " + archive);
 			model = (new SimpleIOHandler(BioPAXLevel.L3))
 					.convertFromOWL(new GZIPInputStream(new FileInputStream(archive)));
@@ -509,16 +488,25 @@ public final class CPathUtils {
 	}
 	
 	
-	public static Model loadMainBiopaxModel() throws IOException {
-		return (new SimpleIOHandler()).convertFromOWL(
-				new GZIPInputStream(new FileInputStream(
-						CPathSettings.getInstance().mainModelFile())));
+	/**
+	 * Makes the main BioPAX Paxtools model from 
+	 * the merged BioPAX data archive.
+	 * 
+	 * @return
+	 */
+	public static Model loadMainBiopaxModel()  {
+		return importFromTheArchive(CPathSettings.getInstance().mainModelFile());
 	}
 	
-	public static Model loadWarehouseBiopaxModel() throws IOException {
-		return (new SimpleIOHandler()).convertFromOWL(
-				new GZIPInputStream(new FileInputStream(
-						CPathSettings.getInstance().warehouseModelFile())));
+	
+	/**
+	 * Builds the BioPAX Paxtools model from 
+	 * the warehouse BioPAX archive.
+	 * 
+	 * @return
+	 */
+	public static Model loadWarehouseBiopaxModel() {
+		return importFromTheArchive(CPathSettings.getInstance().warehouseModelFile());
 	}
-		
+	
 }

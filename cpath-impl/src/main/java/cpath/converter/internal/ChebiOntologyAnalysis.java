@@ -7,11 +7,12 @@ import java.util.regex.Pattern;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.validator.utils.Normalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cpath.dao.Analysis;
+import cpath.importer.PreMerger;
+import cpath.importer.PreMerger.RelTypeVocab;
 
 
 /**
@@ -53,8 +54,7 @@ public final class ChebiOntologyAnalysis implements Analysis
 		// get SMR for entry out of Warehouse
 		Collection<String> childChebiIDs = getValuesByREGEX(entryBuffer, CHEBI_OBO_ID_REGEX);
 		if (childChebiIDs.size() != 1) {
-			log.warn("processOBOEntry(), got none or >1 id in: "
-				+ entryBuffer.toString());
+			log.error("processOBOEntry(), got none or >1 ID in: " + entryBuffer.toString() + "; skipped.");
 			return;
 		}
 		final String thisID = childChebiIDs.iterator().next();
@@ -71,23 +71,27 @@ public final class ChebiOntologyAnalysis implements Analysis
 			SmallMoleculeReference parentSMR = (SmallMoleculeReference) model
 				.getByID("http://identifiers.org/chebi/CHEBI:" + parentChebiID);
 			if (parentSMR == null) {
-				log.debug("processOBOEntry(), " + thisID 
-					+ " IS_A " + parentChebiID + ", which is not in the model "
-					+ " (perhaps, skipped due of lack of InChIKey); adding rel. xref...");
-				RelationshipXref xref = getRelationshipXref("is_a", parentChebiID, model);
+				log.info("processOBOEntry(), CHEBI:" + thisID 
+					+ " 'IS_A' already ignored CHEBI:" + parentChebiID 
+					+ " (generic, no InChIKey); will add xref/comment instead of memberEntityRef.");
+				RelationshipXref xref = PreMerger
+					.findOrCreateRelationshipXref(RelTypeVocab.MULTIPLE_PARENT_REFERENCE, 
+							"CHEBI", "CHEBI:"+parentChebiID, model);
+				thisSMR.addComment("is_a CHEBI:" + parentChebiID);
 				thisSMR.addXref(xref);				
 			} else {
 				parentSMR.addMemberEntityReference(thisSMR);
 			}
 		}
 
-		// also store the relationships between chebi entries
-		Collection<String> relationships = getValuesByREGEX(entryBuffer,
-				CHEBI_OBO_RELATIONSHIP_REGEX);
+		// store horizontal relationships between ChEBI terms (has_part, has_role, is_conjugate_*,..)
+		Collection<String> relationships = getValuesByREGEX(entryBuffer, CHEBI_OBO_RELATIONSHIP_REGEX);
 		for (String relationship : relationships) {
 			String[] parts = relationship.split(_COLON);
-			RelationshipXref xref = getRelationshipXref(parts[0].toLowerCase(),
-					parts[1], model);
+			RelationshipXref xref = PreMerger
+				.findOrCreateRelationshipXref(RelTypeVocab.ADDITIONAL_INFORMATION, 
+						"CHEBI", "CHEBI:"+parts[1], model);		
+			thisSMR.addComment(parts[0].toLowerCase() + " CHEBI:" + parts[1]);
 			thisSMR.addXref(xref);
 		}
 	}
@@ -123,57 +127,6 @@ public final class ChebiOntologyAnalysis implements Analysis
 				toReturn.add(toAdd.substring(0, toAdd.length() - 1));//to remove ending ':'
 			}
 			line = reader.readLine();
-		}
-
-		return toReturn;
-	}
-
-
-	/**
-	 * Given a relationship from a ChEBI OBO file, 
-	 * returns a relationship xref.
-	 * 
-	 * @param relationshipType
-	 * @param chebiID
-	 * @param model warehouse biopax model
-	 */
-	private RelationshipXref getRelationshipXref(String relationshipType,
-			String chebiID, Model model) {
-
-		RelationshipXref toReturn = null;
-
-		// We use the relationship type in the URI of xref since there can be
-		// many to many relation types
-		// bet SM. For example CHEBI:X has_part CHEBI:Y and CHEBI:Z
-		// is_conjugate_acid_of CHEBI:Y
-		// we need distinct rxref to has_part CHEBI:Y and is_conjugate_acid_of
-		// CHEBI:Y
-		String xrefid = (chebiID.startsWith("CHEBI:") ? chebiID : "CHEBI:" + chebiID);
-		
-		String xrefRdfID = Normalizer.uri(model.getXmlBase(), "CHEBI", xrefid + 
-				relationshipType, RelationshipXref.class);
-
-		if (model.containsID(xrefRdfID)) {
-			return (RelationshipXref) model.getByID(xrefRdfID);
-		}
-
-		// made it here, need to create relationship xref
-		toReturn = model.addNew(RelationshipXref.class, xrefRdfID);
-		toReturn.setDb("CHEBI");
-		toReturn.setId(xrefid);
-
-		// set relationship type vocabulary on the relationship xref
-		String relTypeRdfID = Normalizer.uri(model.getXmlBase(), null,
-				relationshipType, RelationshipTypeVocabulary.class);
-
-		RelationshipTypeVocabulary rtv = (RelationshipTypeVocabulary) model
-				.getByID(relTypeRdfID);
-		if (rtv != null) {
-			toReturn.setRelationshipType(rtv);
-		} else {
-			rtv = model.addNew(RelationshipTypeVocabulary.class, relTypeRdfID);
-			rtv.addTerm(relationshipType);
-			toReturn.setRelationshipType(rtv);
 		}
 
 		return toReturn;

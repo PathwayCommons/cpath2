@@ -109,12 +109,12 @@ public class UniprotConverterImplTest {
 		}
 		assertTrue(rel);
 		
-		String uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "NP_619650", RelationshipXref.class);
+		String uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "NP_619650mapped-identity", RelationshipXref.class);
 		assertNotNull(model.getByID(uri));
 		//but the parser should not create xrefs from for the last parts in DR like "...; -.", "; Homo sapiens.\n", etc.
-		uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "-", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "-mapped-identity", RelationshipXref.class);
 		assertNull(model.getByID(uri));	
-		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "Homo sapiens", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "Homo sapiensmapped-identity", RelationshipXref.class);
 		assertNull(model.getByID(uri));	
 	}
 

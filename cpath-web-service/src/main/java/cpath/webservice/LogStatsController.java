@@ -65,7 +65,7 @@ public class LogStatsController extends BasicController {
     	//add all the events in the same category (type); 
     	//but make given type the first element in the list (selected)
     	List<String[]> ret = categories(logType);
-    	for(LogEvent e : logEntitiesRepository.logEvents(logType)) {
+    	for(LogEvent e : service.log().logEvents(logType)) {
     		ret.add(new String[]{e.getType().toString(), e.getName()});
     	}
     	return ret;
@@ -77,7 +77,7 @@ public class LogStatsController extends BasicController {
     	List<String[]> ret = categories(logType);
     	//add all the events in the same category (type); 
     	// but make the one with given type,name the first element in the list
-    	for(LogEvent e : logEntitiesRepository.logEvents(logType)) {
+    	for(LogEvent e : service.log().logEvents(logType)) {
     		if(e.getName().equals(name))
     			ret.add(0, new String[]{e.getType().toString(), e.getName()});
     		else 
@@ -90,68 +90,68 @@ public class LogStatsController extends BasicController {
     
 	@RequestMapping("/{logType}/{name}/timeline")
     public @ResponseBody Map<String,List<Object[]>> timeline(@PathVariable LogType logType, @PathVariable String name) {		
-    	return logEntitiesRepository.downloadsTimeline(logType, name);
+    	return service.log().downloadsTimeline(logType, name);
     }    
     
     @RequestMapping("/{logType}/timeline")
     public @ResponseBody Map<String,List<Object[]>> timeline(@PathVariable LogType logType) {		
-    	return logEntitiesRepository.downloadsTimeline(logType, null);
+    	return service.log().downloadsTimeline(logType, null);
     }
 	
 	@RequestMapping("/timeline")
     public @ResponseBody Map<String,List<Object[]>> timeline() {		
-    	return logEntitiesRepository.downloadsTimeline(LogType.TOTAL, null);
+    	return service.log().downloadsTimeline(LogType.TOTAL, null);
     }
 	
 	//geo
 	
 	@RequestMapping("/geography/world")
     public @ResponseBody List<Object[]> geographyWorld() {		
-    	return logEntitiesRepository.downloadsWorld(null, null);
+    	return service.log().downloadsWorld(null, null);
     }
     
 	@RequestMapping("/{logType}/geography/world")
     public @ResponseBody List<Object[]> geographyWorld(@PathVariable LogType logType) {		
-    	return logEntitiesRepository.downloadsWorld(logType, null);
+    	return service.log().downloadsWorld(logType, null);
     }
     
 	@RequestMapping("/{logType}/{name}/geography/world")
     public @ResponseBody List<Object[]> geographyWorld(@PathVariable LogType logType, @PathVariable String name) {		
-    	return logEntitiesRepository.downloadsWorld(logType, name);
+    	return service.log().downloadsWorld(logType, name);
     }
     
     
 	@RequestMapping("/geography/all")
     public @ResponseBody List<Object[]> geographyAll() {		
-    	return logEntitiesRepository.downloadsGeography(null, null);
+    	return service.log().downloadsGeography(null, null);
     }
     
 	@RequestMapping("/{logType}/geography/all")
     public @ResponseBody List<Object[]> geographyAll(@PathVariable LogType logType) {		
-    	return logEntitiesRepository.downloadsGeography(logType, null);
+    	return service.log().downloadsGeography(logType, null);
     }
     
 	@RequestMapping("/{logType}/{name}/geography/all")
     public @ResponseBody List<Object[]> geographyAll(@PathVariable LogType logType, 
     		@PathVariable String name) {		
-    	return logEntitiesRepository.downloadsGeography(logType, name);
+    	return service.log().downloadsGeography(logType, name);
     }    
     
  
 	@RequestMapping("/geography/country/{code}")
     public @ResponseBody List<Object[]> geographyCountry(@PathVariable String code) {		
-    	return logEntitiesRepository.downloadsCountry(code, null, null);
+    	return service.log().downloadsCountry(code, null, null);
     }
     
 	@RequestMapping("/{logType}/geography/country/{code}")
     public @ResponseBody List<Object[]> geographyCountry(@PathVariable LogType logType,
     		@PathVariable String code) {		
-    	return logEntitiesRepository.downloadsCountry(code, logType, null);
+    	return service.log().downloadsCountry(code, logType, null);
     }
     
 	@RequestMapping("/{logType}/{name}/geography/country/{code}")
     public @ResponseBody List<Object[]> geographyCountry(@PathVariable LogType logType, 
     		@PathVariable String name, @PathVariable String code) {		
-    	return logEntitiesRepository.downloadsCountry(code, logType, name);
+    	return service.log().downloadsCountry(code, logType, name);
     }
 }

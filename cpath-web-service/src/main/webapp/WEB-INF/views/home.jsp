@@ -12,6 +12,7 @@ or the fat JAR with embedded application server was started) -->
 <html>
 <head>
 	<jsp:include page="head.jsp" />
+	<script src="<c:url value="/resources/scripts/help.js"/>"></script>
 	<title>cPath2::Info</title>
 </head>
 <body data-spy="scroll" data-target=".navbar">
@@ -433,11 +434,11 @@ or the fat JAR with embedded application server was started) -->
 	</div>
 	<div class="parameters col-sm-6" id="biopax_types">
 		<h3>BioPAX class ('type'):</h3>
-		<p>	<a href="javascript:switchit('types')">Click here</a> to show/hide the list  
+		<p>	<a href="#" class="hider" hide-id="types">Click here</a> to show/hide the list  
 			(see also: <a href="http://www.biopax.org/webprotege/">BioPAX Classes</a>).
 		</p>
 		<!-- items are to be added here by a javascript -->
-		<ul class="dropdown" id="types" style="display: none;"></ul>
+		<ul class="dropdown hidden" id="types"></ul>
 		<br/>
 	</div>
 	</div>
@@ -449,10 +450,10 @@ or the fat JAR with embedded application server was started) -->
 			For example, <em>XReferrable xref Xref D:ControlledVocabulary=UnificationXref
 			D:Provenance=UnificationXref,PublicationXref</em> means that 
 			values of ControlledVocabulary.xref can only be of <em>UnificationXref</em> type.</p>
-		<p><a href="javascript:switchit('properties')">Click here</a>
+		<p><a href="#" class="hider" hide-id="properties">Click here</a>
 			to show/hide the list of properties</p>
 		<!-- items are to be added here by a javascript -->
-		<ul id="properties" style="display: none;"></ul>
+		<ul id="properties" class="hidden"></ul>
 	</div>
 	<div class="parameters col-sm-6" id="biopax_inverse_properties">
 		<h3>Inverse BioPAX Object Properties (a feature of Paxtools API):</h3>
@@ -464,10 +465,10 @@ or the fat JAR with embedded application server was started) -->
 			RelationshipXref.xrefOf cannot contain neither <em>ControlledVocabulary</em> 
 			(any sub-class) nor <em>Provenance</em> objects 
 			(in other words, vocabularies and provenance may not have any relationship xrefs).</p>
-		<p><a href="javascript:switchit('inverse_properties')">Click here</a>
+		<p><a href="#" class="hider" hide-id="inverse_properties">Click here</a>
 			to show/hide the list of properties</p>
 		<!-- items are to be added here by a javascript -->
-		<ul id="inverse_properties" style="display: none;"></ul>
+		<ul id="inverse_properties" class="hidden"></ul>
 	</div>
 	</div>
 </div>
@@ -483,6 +484,6 @@ or the fat JAR with embedded application server was started) -->
 	</div>
 
 <jsp:include page="footer.jsp"/>
-<script src="<c:url value="/resources/scripts/help.js"/>"></script>
+
 </body>
 </html>

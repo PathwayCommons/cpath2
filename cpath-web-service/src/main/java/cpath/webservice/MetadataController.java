@@ -13,20 +13,16 @@ import javax.validation.Valid;
 
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
-import cpath.dao.LogUtils;
-import cpath.dao.MetadataDAO;
+import cpath.jpa.Content;
 import cpath.jpa.Geoloc;
 import cpath.jpa.LogEvent;
-import cpath.jpa.MappingsRepository;
+import cpath.jpa.Metadata;
 import cpath.service.Status;
-import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.Content;
 import cpath.webservice.args.binding.MetadataTypeEditor;
 
 import org.biopax.validator.api.beans.ValidatorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.util.Assert;
@@ -53,14 +49,6 @@ public class MetadataController extends BasicController {
     
 	private static final Logger log = LoggerFactory.getLogger(MetadataController.class);   
 	
-    private final MetadataDAO metadataDAO;
-    private final MappingsRepository mappingsRepository;
-    
-    @Autowired
-    public MetadataController(MetadataDAO metadataDAO, MappingsRepository mappingsRepository) {
-		this.metadataDAO = metadataDAO;
-		this.mappingsRepository = mappingsRepository;
-	}
     
 	@InitBinder
     public void initBinder(WebDataBinder binder) {
@@ -98,7 +86,7 @@ public class MetadataController extends BasicController {
     		@PathVariable String identifier, Model model, HttpServletRequest request) 
     {
 
-    	ValidatorResponse body = metadataDAO.validationReport(identifier, null);
+    	ValidatorResponse body = service.validationReport(identifier, null);
 		model.addAttribute("response", body);
 		
 		return "validation";
@@ -109,7 +97,7 @@ public class MetadataController extends BasicController {
     		@PathVariable String identifier, @PathVariable String file, 
     		Model model, HttpServletRequest request) 
     {
-    	ValidatorResponse body = metadataDAO.validationReport(identifier, file);
+    	ValidatorResponse body = service.validationReport(identifier, file);
 		model.addAttribute("response", body);
 		
 		return "validation";
@@ -122,7 +110,7 @@ public class MetadataController extends BasicController {
     public @ResponseBody ValidatorResponse queryForValidation(
     		@PathVariable String identifier, HttpServletRequest request) 
     {	
-    	return metadataDAO.validationReport(identifier, null);
+    	return service.validationReport(identifier, null);
     } 
     
     
@@ -132,7 +120,7 @@ public class MetadataController extends BasicController {
     		@PathVariable String identifier, @PathVariable String file,
     		HttpServletRequest request) 
     {	
-    	return metadataDAO.validationReport(identifier, file);
+    	return service.validationReport(identifier, file);
     }
        
     
@@ -140,7 +128,7 @@ public class MetadataController extends BasicController {
     public  @ResponseBody byte[] queryForLogo(@PathVariable String identifier) 
     		throws IOException 
     {	
-    	Metadata ds = metadataDAO.getMetadataByIdentifier(identifier);
+    	Metadata ds = service.metadata().findByIdentifier(identifier);
     	byte[] bytes = null;
     	
     	if(ds != null) {
@@ -164,18 +152,19 @@ public class MetadataController extends BasicController {
     public  @ResponseBody List<Metadata> queryForDatasources() {
 		log.debug("Getting pathway datasources info.");
     	
-		List<Metadata> list = metadataDAO.getAllMetadata();
+		List<Metadata> list = new ArrayList<Metadata>();
 		
-		for(Metadata m : metadataDAO.getAllMetadata()) {
+		for(Metadata m : service.metadata().findAll()) {
 			//set dynamic extra fields
 			if(m.isNotPathwayData()) {
 				m.setUploaded((new File(m.getDataArchiveName()).exists()));
 			} else {		
-				Long accessed = logEntitiesRepository.downloads(m.standardName());
+				Long accessed = service.log().downloads(m.standardName());
 				m.setNumAccessed(accessed);
 				m.setUploaded((new File(m.getDataArchiveName()).exists()));
 				m.setPremerged(!m.getContent().isEmpty());
 			}
+			list.add(m);
 		}
 		
     	return list;
@@ -183,7 +172,7 @@ public class MetadataController extends BasicController {
     
     @RequestMapping("/metadata/datasources/{identifier}")
     public  @ResponseBody Metadata datasource(@PathVariable String identifier) {
-		Metadata m = metadataDAO.getMetadataByIdentifier(identifier);
+		Metadata m = service.metadata().findByIdentifier(identifier);
 		if(m==null)
 			return null;
 		
@@ -191,7 +180,7 @@ public class MetadataController extends BasicController {
 		if(m.isNotPathwayData()) {
 			m.setUploaded((new File(m.getDataArchiveName()).exists()));
 		} else {		
-			Long accessed = logEntitiesRepository.downloads(m.standardName());
+			Long accessed = service.log().downloads(m.standardName());
 			m.setNumAccessed(accessed);
 			m.setUploaded((new File(m.getDataArchiveName()).exists()));
 			m.setPremerged(!m.getContent().isEmpty());
@@ -212,23 +201,9 @@ public class MetadataController extends BasicController {
     			Status.BAD_REQUEST.getErrorMsg() + "; " + errorFromBindingResult(bindingResult));
     	}
     	
-    	Metadata existing = metadataDAO.getMetadataByIdentifier(metadata.identifier);
-    	if(existing == null) {
-    		metadataDAO.saveMetadata(metadata);
-    	} else {
-    		existing.setAvailability(metadata.getAvailability());
-    		existing.setCleanerClassname(metadata.getCleanerClassname());
-    		existing.setConverterClassname(metadata.getConverterClassname());
-    		existing.setDescription(metadata.getDescription());
-    		existing.setIconUrl(metadata.getIconUrl());
-    		existing.setName(metadata.getName());
-    		existing.setPubmedId(metadata.getPubmedId());
-    		existing.setType(metadata.getType());
-    		existing.setUrlToData(metadata.getUrlToData());
-    		existing.setUrlToHomepage(metadata.getUrlToHomepage());   		
-    		metadataDAO.saveMetadata(existing);
-    	}
+   		service.save(metadata);
     }
+
     
     @RequestMapping(value = "/admin/datasources", consumes="application/json", method = RequestMethod.PUT)
     public void put(@RequestBody @Valid Metadata metadata, 
@@ -241,9 +216,9 @@ public class MetadataController extends BasicController {
     			Status.BAD_REQUEST.getErrorMsg() + "; " + errorFromBindingResult(bindingResult));
     	}
     	
-    	Metadata existing = metadataDAO.getMetadataByIdentifier(metadata.identifier);
+    	Metadata existing = service.metadata().findByIdentifier(metadata.identifier);
     	if(existing == null) {
-    		metadataDAO.saveMetadata(metadata);
+    		service.save(metadata);
     	} else {
     		response.sendError(Status.BAD_REQUEST.getErrorCode(), 
                 "PUT failed: Metadata already exists for pk: " + metadata.identifier
@@ -254,9 +229,9 @@ public class MetadataController extends BasicController {
     @RequestMapping(value = "/admin/datasources/{identifier}", method = RequestMethod.DELETE)
     public void delete(@PathVariable String identifier, HttpServletResponse response) throws IOException 
     {	
-    	Metadata existing = metadataDAO.getMetadataByIdentifier(identifier);
+    	Metadata existing = service.metadata().findByIdentifier(identifier);
     	if(existing != null) {
-    		metadataDAO.deleteMetadata(existing);//clear files
+    		service.delete(existing);//clear files
     	} else {
     		response.sendError(Status.NO_RESULTS_FOUND.getErrorCode(), 
             	"DELETE failed: no Metadata record found for pk: " + identifier);
@@ -269,7 +244,7 @@ public class MetadataController extends BasicController {
     public void uploadDataArchive(@PathVariable String identifier, MultipartHttpServletRequest multiRequest, 
     		HttpServletResponse response) throws IOException
     {	    	
-    	Metadata m = metadataDAO.getMetadataByIdentifier(identifier);
+    	Metadata m = service.metadata().findByIdentifier(identifier);
     	if(m==null) {
     		response.sendError(Status.NO_RESULTS_FOUND.getErrorCode(), Status.NO_RESULTS_FOUND.getErrorMsg() + 
         		"; Metadata object with identifier: " + identifier + " not found.");
@@ -311,7 +286,7 @@ public class MetadataController extends BasicController {
     	Map<String, String> res = new TreeMap<String, String>();
 
     	for(String i : id) {							
-    		Set<String> im = mappingsRepository.map(i);
+    		Set<String> im = service.map(i);
     		if(im == null) {
     			res.put(i, null);
     		} else {
@@ -321,8 +296,7 @@ public class MetadataController extends BasicController {
     	}		
 
     	//log to db (for usage reports)
-    	LogUtils.log(logEntitiesRepository, 
-    			events, Geoloc.fromIpAddress(clientIpAddress(request)));
+    	service.log(events, Geoloc.fromIpAddress(clientIpAddress(request)));
 
     	return res;
 	}
@@ -331,7 +305,7 @@ public class MetadataController extends BasicController {
     private List<ValInfo> validationInfo() {
     	final List<ValInfo> list = new ArrayList<ValInfo>();
     	
-		for(Metadata m : metadataDAO.getAllMetadata()) {
+		for(Metadata m : service.metadata().findAll()) {
 			if(m.isNotPathwayData())
 				continue;
 			

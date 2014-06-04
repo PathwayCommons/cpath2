@@ -128,7 +128,7 @@ public class PagesController extends BasicController {
     		if(!name.startsWith(".")) {
     			StringBuilder sb = new StringBuilder();
     			sb.append("size: ").append(FileUtils.byteCountToDisplaySize(size));
-    			List<Object[]> dl = logEntitiesRepository.downloadsWorld(null, name);
+    			List<Object[]> dl = service.log().downloadsWorld(null, name);
     			String topCountry = null;
     			long topCount = 0;
     			long total = 0;

@@ -1,4 +1,4 @@
-package cpath.warehouse.beans;
+package cpath.jpa;
 
 
 import java.io.File;
@@ -13,6 +13,8 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.biopax.validator.api.ValidatorUtils;
 import org.biopax.validator.api.beans.Validation;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -24,6 +26,8 @@ import cpath.config.CPathSettings;
  * Data file. 
  */
 @Entity
+@DynamicUpdate
+@DynamicInsert
 @Table(name="content", uniqueConstraints=@UniqueConstraint(columnNames = {"provider", "filename"}))
 public final class Content {
 	
@@ -31,7 +35,7 @@ public final class Content {
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
-	private Integer id;
+	private Long id;
 	
 	@Column(nullable=false)
     private String filename;
@@ -62,14 +66,6 @@ public final class Content {
     	this.provider = metadata.getIdentifier();
         this.filename = filename.replaceAll("[^a-zA-Z0-9.-]", "_");
     }
-
-	
-	/**
-	 * Gets the internal id (primary key).
-	 * 
-	 * @return
-	 */
-    public Integer getId() { return id ;}
 
 	
 	public void saveValidationReport(Validation v) {		

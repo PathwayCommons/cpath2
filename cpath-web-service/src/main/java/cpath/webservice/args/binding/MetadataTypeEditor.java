@@ -2,7 +2,8 @@ package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
 
-import cpath.warehouse.beans.Metadata;
+import cpath.jpa.Metadata;
+
 
 
 public class MetadataTypeEditor extends PropertyEditorSupport {

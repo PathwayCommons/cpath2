@@ -1,4 +1,4 @@
-package cpath.warehouse.beans;
+package cpath.jpa;
 
 
 import java.io.File;
@@ -14,6 +14,8 @@ import javax.validation.constraints.NotNull;
 import org.apache.commons.lang.StringUtils;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Provenance;
+import org.hibernate.annotations.DynamicInsert;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -24,8 +26,24 @@ import cpath.dao.CPathUtils;
  * Data Provider Metadata.
  */
 @Entity
+@DynamicUpdate
+@DynamicInsert
 @Table(name="metadata")
 public final class Metadata {
+	
+    // for metadata reading from a plain config. file
+    public static final int METADATA_IDENTIFIER_INDEX = 0;
+    public static final int METADATA_NAME_INDEX = 1;
+    public static final int METADATA_DESCRIPTION_INDEX = 2;
+    public static final int METADATA_DATA_URL_INDEX = 3;
+    public static final int METADATA_HOMEPAGE_URL_INDEX = 4;
+    public static final int METADATA_ICON_URL_INDEX = 5;
+    public static final int METADATA_TYPE_INDEX = 6;
+    public static final int METADATA_CLEANER_CLASS_NAME_INDEX = 7;
+    public static final int METADATA_CONVERTER_CLASS_NAME_INDEX = 8;
+    public static final int METADATA_PUBMEDID_INDEX = 9;
+    public static final int METADATA_AVAILABILITY_INDEX = 10;
+    public static final int NUMBER_METADATA_ITEMS = 11;	
 
     private static final Pattern BAD_ID_PATTERN = Pattern.compile("\\s|-");
 	
@@ -52,14 +70,14 @@ public final class Metadata {
 
 	@Id
 	@GeneratedValue(strategy=GenerationType.AUTO)
-    private Integer id;
+    private Long id;
 	
 	@NotBlank
 	@Column(length=40, unique = true, nullable = false)
     public String identifier;
 	
 	@NotEmpty
-	@ElementCollection
+	@ElementCollection(fetch=FetchType.EAGER)
 	@JoinTable(name="metadata_name")
 	@OrderColumn
     private List<String> name;
@@ -83,7 +101,7 @@ public final class Metadata {
     private String cleanerClassname;    
     private String converterClassname;
 
-    @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true)
+    @OneToMany(cascade=CascadeType.ALL, orphanRemoval=true, fetch=FetchType.EAGER)
     @JoinColumn(name="metadata_id")
     private Set<Content> content;
 
@@ -158,20 +176,16 @@ public final class Metadata {
 			pubmedId, availability);
     }
 
-	void setId(Integer id) {
+	//setter is for JPA and tests only:
+	void setId(Long id) {
 		this.id = id;
 	}
-    public Integer getId() { return id; }
+    public Long getId() { return id; }
      
 
     public Set<Content> getContent() {
 		return content;
 	}
-    void setContent(Set<Content> content) {
-		this.content = new HashSet<Content>();
-		this.content.addAll(content);
-	}
-
     
     /**
 	 * Sets the identifier.
@@ -296,7 +310,9 @@ public final class Metadata {
     	return CPathSettings.getInstance()
     		.dataDir() + File.separator + identifier + ".zip";
     }
-    void setDataFile(String filename) {throw new UnsupportedOperationException();}
+    public void setDataArchiveName(String path) {
+    	//a fake bean property (for javascript, JSON)
+	}
     
 
     /**
@@ -427,7 +443,6 @@ public final class Metadata {
 		this.iconUrl = iconUrl;
 	}
 
-	@Transient
 	public Long getNumAccessed() {
 		return numAccessed;
 	}
@@ -435,7 +450,6 @@ public final class Metadata {
 		this.numAccessed = numAccessed;
 	}
 	
-	@Transient
 	public Boolean getUploaded() {
 		return uploaded;
 	}
@@ -443,7 +457,6 @@ public final class Metadata {
 		this.uploaded = uploaded;
 	}
 
-	@Transient
 	public Boolean getPremerged() {
 		return premerged;
 	}
@@ -456,7 +469,7 @@ public final class Metadata {
 		return type.isNotPathwayData();
 	}	
 	public void setNotPathwayData(boolean foo) {
-		//a fake to make it bean property (to use in javascript, JSON)
+		//a fake bean property (for javascript, JSON)
 	}
 			
 	/**

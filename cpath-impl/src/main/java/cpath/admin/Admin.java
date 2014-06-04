@@ -34,12 +34,13 @@ import cpath.config.CPathSettings;
 import cpath.dao.*;
 import cpath.importer.Merger;
 import cpath.importer.PreMerger;
-import cpath.jpa.MappingsRepository;
+import cpath.jpa.Metadata;
+import cpath.jpa.MetadataRepository;
+import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
 import cpath.service.internal.BiopaxConverter;
 import cpath.service.jaxb.*;
-import cpath.warehouse.beans.Metadata;
 
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -86,13 +87,12 @@ public final class Admin {
     // Cmd Enum
     public static enum Cmd {
         // command types
-    	INIT("-init"),
         FETCH_METADATA("-fetch-metadata"),
 		FETCH_DATA("-fetch-data"),
 		PREMERGE("-premerge"),
 		CREATE_WAREHOUSE("-create-warehouse"),			
 		MERGE("-merge"),
-    	DBINDEX("-dbindex"),
+    	CREATE_DBINDEX("-create-dbindex"),
         CREATE_BLACKLIST("-create-blacklist"),
         CREATE_DOWNLOADS("-create-downloads"),
         CLEAR_CACHE("-clear-cache"),
@@ -159,14 +159,10 @@ public final class Admin {
 			dir.mkdir();
 		}
 
-		if (args[0].equals(Cmd.DBINDEX.toString())) {
+		if (args[0].equals(Cmd.CREATE_DBINDEX.toString())) {
 			
-			createAndIndexBiopaxDb();
+			createBiopaxDbAndIndex();
 			
-		} else if (args[0].equals(Cmd.INIT.toString())) {
-			
-				initDb();
-				
 		} else if (args[0].equals(Cmd.FETCH_METADATA.toString())) {
 			
 			if (args.length == 1) {
@@ -189,18 +185,13 @@ public final class Admin {
 			
 		} else if (args[0].equals(Cmd.MERGE.toString())) {
 			boolean force = false;
-			String provider = null;
 			for (int i = 1; i < args.length; i++) {
 				if ("--force".equalsIgnoreCase(args[i])) {
 					force = true;
-				} else {
-					// use only one, the first id, and ignore others
-					if (provider == null)
-						provider = args[i];
 				}
 			}
 
-			runMerge(provider, force);
+			runMerge(force);
 			
 		} else if (args[0].equals(Cmd.EXPORT.toString())) {
 			
@@ -266,31 +257,6 @@ public final class Admin {
     }    
 
     
-    /**
-     * This drops and creates empty cpath2 database tables and 
-     * cache directories.
-     */
-    private static void initDb() {
-    	if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
-    	  	
-		System.setProperty("hibernate.hbm2ddl.auto", "update");
-		System.setProperty("net.sf.ehcache.disabled", "true");
-		ClassPathXmlApplicationContext context =
-            new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:META-INF/spring/applicationContext-dao.xml", 
-            		"classpath:META-INF/spring/applicationContext-jpa.xml"
-            	});
- 				
-		CPathUtils.cleanupDirectory(
-			new File(CPathSettings.getInstance().homeDir() 
-				+ File.separator + CPathSettings.getInstance().getMainDb()));
-		LOG.info("Emptied the index.");
- 		
- 		context.close();
-	}
-    
-    
     public static void executeAnalysis(String analysisClass, boolean readOnly) {
     	if(!(readOnly || cpath.isAdminEnabled()))
 			throw new IllegalStateException("Maintenance mode is not enabled.");
@@ -303,9 +269,11 @@ public final class Admin {
 			throw new RuntimeException(e);
 		}
     	
-    	ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+        //read-only db schema mode
+        System.setProperty("hibernate.hbm2ddl.auto", "validate");
+		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
 				"classpath:META-INF/spring/applicationContext-dao.xml");    	
- 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean("paxtoolsDAO"));
+ 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean(PaxtoolsDAO.class));
  		
  		if(readOnly)
  			mainDAO.runReadOnly(analysis);
@@ -385,7 +353,7 @@ public final class Admin {
         	"Invalid cpath2 command: " +  Arrays.toString(args)
         	+ "; " + details);		
 	}
-
+	
 
 	/**
      * Builds new cpath2 database and full-text index.
@@ -393,39 +361,39 @@ public final class Admin {
      * 
      * @throws IllegalStateException when not in maintenance mode
      */
-    public static void createAndIndexBiopaxDb() throws IOException {
+    public static void createBiopaxDbAndIndex() throws IOException {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
-
+ 		
+		System.setProperty("net.sf.ehcache.disabled", "true");
+		System.setProperty("hibernate.hbm2ddl.auto", "update");
+ 		
 		LOG.info("Loading the main merged BioPAX model from the archive...");
 		Model allModel = CPathUtils.loadMainBiopaxModel();
 		
-		// re-build the full-text index
-   		// it gets the main DB name from cpath2.properties		
-		String db = cpath.getMainDb(); 
-		File dir = new File(cpath.homeDir() + File.separator + db);
-		LOG.info("Cleaning up the full-text index directory");
-		CPathUtils.cleanupDirectory(dir);
- 		
+		//persist
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
 				"classpath:META-INF/spring/applicationContext-dao.xml");    	
- 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean("paxtoolsDAO"));
- 		
- 		LOG.info("Removing all BioPAX objects from the db...");
- 		mainDAO.removeAll();
- 		
+ 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean(PaxtoolsDAO.class));
  		LOG.info("Persisting the main model...");
  		mainDAO.merge(allModel);
  		
+		// re-build the full-text index	 
+		File dir = new File(cpath.homeDir() + File.separator + cpath.getMainDb());
+		LOG.info("Cleaning up the full-text index directory");
+		CPathUtils.cleanupDirectory(dir);
+ 		LOG.info("Indexing...");
  		mainDAO.index();
  		
  		context.close(); 		
  		LOG.info("Done.");
+ 		
+ 		System.setProperty("hibernate.hbm2ddl.auto", "validate");
  	}
 
     
 	/**
-	 * Updates counts of pathways, etc. and saves in the Metadata db.
+	 * Updates counts of pathways, etc. and saves in the Metadata table.
 	 * 
      * This depends on the full-text index, which must have been created already
      * (otherwise, results will be wrong).
@@ -435,16 +403,20 @@ public final class Admin {
     public static void updateCounts() {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
-   		// re-build the full-text index
-   		// it gets the DB name from the environment variables (set in cpath2.properties)
-		ClassPathXmlApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:META-INF/spring/applicationContext-dao.xml");
+
+        // read-only db schema mode
+        System.setProperty("hibernate.hbm2ddl.auto", "validate");
+		
+        ClassPathXmlApplicationContext context = 
+			new ClassPathXmlApplicationContext(new String[] {
+					"classpath:META-INF/spring/applicationContext-dao.xml",
+					"classpath:META-INF/spring/applicationContext-jpa.xml"});
      	
- 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean("paxtoolsDAO"));
-     	
+ 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean(PaxtoolsDAO.class));    	
      	//update counts of pathways, interactions, molecules
-     	MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
-     	for(Metadata md : mdao.getAllMetadata()) {
+     	MetadataRepository metadataRepository = (MetadataRepository) context.getBean(MetadataRepository.class);
+     	
+     	for(Metadata md : metadataRepository.findAll()) {
      		
      		if(md.isNotPathwayData())
      			continue;
@@ -464,7 +436,7 @@ public final class Admin {
      		md.setNumPhysicalEntities(sr.getNumHits());
      		LOG.info(name + ", physical entities: " + md.getNumPathways());
      		
-     		mdao.saveMetadata(md);
+     		metadataRepository.save(md);
      	}
      	
      	context.close(); 
@@ -487,56 +459,36 @@ public final class Admin {
 	/**
      * Generates cpath2 graph query blacklist file
      * (to exclude ubiquitous small molecules, like ATP).
-     * 
-     * Algorithm:
-     * Get all SmallMoleculeReferences
-     * Calculate the degrees (i.e. num of reactions and num of complexes it is associated with)
-     * if it is bigger than the overall threshold and lower than the regulation threshold
-     *     add it (and its members/entities/member entities to the list)
      *     
-     * @throws IOException, IllegalStateException (when not in maintenance mode)
+     * @throws RuntimeException (when I/O errors), 
+     * 			IllegalStateException (when not in maintenance mode)
      */
     public static void createBlacklist() throws IOException {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
-    	
-    	// Extract blacklist values, if can't, then use the default values       
-		ClassPathXmlApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:META-INF/spring/applicationContext-dao.xml");
-        PaxtoolsDAO paxtoolsDAO = ((PaxtoolsDAO)context.getBean("paxtoolsDAO"));
 
-        // os will be used directly inside the runAnalysis call
-        Analysis blacklisting = new Analysis() {     	
-        	@Override
-            public void execute(Model model) 
-            {	
-        		BlacklistGenerator gen = new BlacklistGenerator();
-        		Blacklist blacklist = gen.generateBlacklist(model);
-   		
-        		// Write all the blacklisted ids to the output
-        		try {		
-        			blacklist.write(new FileOutputStream(cpath.blacklistFile()));
-        		} catch (FileNotFoundException e) {
-        			throw new RuntimeException("Failed creating the file: " 
-        					+ cpath.blacklistFile(), e);
-        		} 
-            }
-        };
-        
-        paxtoolsDAO.run(blacklisting);
-        
-        context.close(); 
+		Model model = CPathUtils.loadMainBiopaxModel();
+
+		BlacklistGenerator gen = new BlacklistGenerator();
+		Blacklist blacklist = gen.generateBlacklist(model);
+
+		// Write all the blacklisted ids to the output
+		try {		
+			blacklist.write(new FileOutputStream(cpath.blacklistFile()));
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException("Failed creating the file: " 
+					+ cpath.blacklistFile(), e);
+		} 
     }
 
     
     /**
      * Performs cpath2 Merge stage.
-     * 
-     * @param provider
      * @param force
+     * 
      * @throws IllegalStateException when not maintenance mode
      */
-    public static void runMerge(String provider, boolean force) {
+    public static void runMerge(boolean force) {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
     	
@@ -544,20 +496,17 @@ public final class Admin {
 		// otherwise the merger eventually fails with a weird exception
 		// (this probably depends on the cache config. parameters)
 		System.setProperty("net.sf.ehcache.disabled", "true");
-
+        //read-only db schema mode
+        System.setProperty("hibernate.hbm2ddl.auto", "validate");
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext(new String[] {
-				"classpath:META-INF/spring/applicationContext-dao.xml",
-				"classpath:META-INF/spring/applicationContext-jpa.xml"});
+					"classpath:META-INF/spring/applicationContext-jpa.xml",
+//					"classpath:META-INF/spring/applicationContext-dao.xml",
+			});
 		
-		LOG.info("runMerge: provider=" + provider + "; --force=" + force);
-			
-		MetadataDAO mdao = (MetadataDAO)context.getBean("metadataDAO");		
-		MappingsRepository mappingsRepository = (MappingsRepository) context.getBean("mappingsRepository");
-			
-		String datasource = (provider == null || provider.isEmpty()) ? null : provider;
-				
-		Merger merger = new Merger(mdao, mappingsRepository, datasource, force);		
+		LOG.info("runMerge: --force=" + force);
+		CPathService service = context.getBean(CPathService.class);
+		Merger merger = new Merger(service, force);		
 		merger.merge();
 		
 		context.close();		
@@ -577,17 +526,17 @@ public final class Admin {
 		
         LOG.info("runPremerge: provider=" + provider + " - initializing (DAO, validator, premerger)...");
         
-		System.setProperty("hibernate.hbm2ddl.auto", "update");
-		System.setProperty("net.sf.ehcache.disabled", "true");
+        //set read-only db schema mode
+        System.setProperty("hibernate.hbm2ddl.auto", "validate");
 		ClassPathXmlApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:META-INF/spring/applicationContext-dao.xml", 
-// not required in this step           		"classpath:META-INF/spring/applicationContext-jpa.xml",
-            		"classpath:META-INF/spring/applicationContext-validator.xml"});
-		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
+            		"classpath:META-INF/spring/applicationContext-jpa.xml", 
+//            		"classpath:META-INF/spring/applicationContext-dao.xml", //not required for pre-merge
+            		"classpath:META-INF/spring/applicationContext-validator.xml"
+            		});
+		CPathService service = context.getBean(CPathService.class);
 		Validator validator = (Validator) context.getBean("validator");
-		// only metadataDAO is required for the Premerge (main/warehouse biopax DAO is not needed)
-        PreMerger premerger = new PreMerger(metadataDAO, null, validator, provider);
+        PreMerger premerger = new PreMerger(service, validator, provider);       
         LOG.info("runPremerge: provider=" + provider + " - running...");
         premerger.premerge();
         
@@ -606,15 +555,17 @@ public final class Admin {
 		System.setProperty("hibernate.hbm2ddl.auto", "update");
 		System.setProperty("net.sf.ehcache.disabled", "true");
 		ClassPathXmlApplicationContext context =
-            new ClassPathXmlApplicationContext(new String [] {
-            		"classpath:META-INF/spring/applicationContext-dao.xml",
-            		"classpath:META-INF/spring/applicationContext-jpa.xml"});
-		MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");
-		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
-		MappingsRepository mappingsRepository = (MappingsRepository) context.getBean("mappingsRepository");
-		PreMerger premerger = new PreMerger(metadataDAO, mappingsRepository, null, null);
+            new ClassPathXmlApplicationContext(new String [] { 	
+            		"classpath:META-INF/spring/applicationContext-jpa.xml", 
+//            		"classpath:META-INF/spring/applicationContext-dao.xml", //not required here
+            		});
+		CPathService service = context.getBean(CPathService.class);
+		PreMerger premerger = new PreMerger(service, null, null);
         premerger.buildWarehouse();     
         context.close(); 
+        
+        //back to read-only schema mode (useful when called from the web admin app)
+        System.setProperty("hibernate.hbm2ddl.auto", "validate");
 	}
 
 	
@@ -627,13 +578,14 @@ public final class Admin {
     public static void fetchMetadata(final String location) throws IOException {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
-		
-		System.setProperty("hibernate.hbm2ddl.auto", "update");	
+		System.setProperty("hibernate.hbm2ddl.auto", "update");
 		ClassPathXmlApplicationContext context =
-            new ClassPathXmlApplicationContext("classpath:META-INF/spring/applicationContext-dao.xml");
-        MetadataDAO metadataDAO = (MetadataDAO) context.getBean("metadataDAO");              
+            new ClassPathXmlApplicationContext(new String [] { 	
+            		"classpath:META-INF/spring/applicationContext-jpa.xml", 
+            		});
+		CPathService service = context.getBean(CPathService.class);
         // grab the data
-        metadataDAO.addOrUpdateMetadata(location);
+        service.addOrUpdateMetadata(location);       
         context.close(); 
     }
 
@@ -655,12 +607,14 @@ public final class Admin {
 		if(uris == null) 
 			uris = new String[]{};
 		
+        //read-only db schema mode
+        System.setProperty("hibernate.hbm2ddl.auto", "validate");
 		ClassPathXmlApplicationContext ctx = 
 			new ClassPathXmlApplicationContext("classpath:META-INF/spring/applicationContext-dao.xml");
 							
 		OutputStream os = new FileOutputStream(output);
 		// export a sub-model from the main biopax database
-	    PaxtoolsDAO dao = ((PaxtoolsDAO)ctx.getBean("paxtoolsDAO"));
+	    PaxtoolsDAO dao = ((PaxtoolsDAO)ctx.getBean(PaxtoolsDAO.class));
 	    dao.exportModel(os, uris);
 		ctx.close(); 
 	}	
@@ -674,12 +628,11 @@ public final class Admin {
 				"(- parameters within the square braces are optional.)" + NEWLINE);
 		toReturn.append("commands:" + NEWLINE);
 		// data import (instance creation) pipeline :
-		toReturn.append(Cmd.INIT.toString() + " (creates a new empty database; this destroys all previous data)" + NEWLINE);
 		toReturn.append(Cmd.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(Cmd.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
 		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + NEWLINE);			
-		toReturn.append(Cmd.MERGE.toString() + " [<metadataId>] [--force]"+ NEWLINE);
-		toReturn.append(Cmd.DBINDEX.toString() + " (to persist and index the BioPAX database)" + NEWLINE);
+		toReturn.append(Cmd.MERGE.toString() + " [--force] (merge all pathway data; overwrites the main biopax model archive)"+ NEWLINE);
+		toReturn.append(Cmd.CREATE_DBINDEX.toString() + " (to create and index new BioPAX db from the archive)" + NEWLINE);
         toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
         toReturn.append(Cmd.CLEAR_CACHE.toString() + " (removes the cache directory)" + NEWLINE);
         toReturn.append(Cmd.UPDATE_COUNTS.toString() + " (re-calculates pathway, molecule, " +
@@ -751,11 +704,12 @@ public final class Admin {
 			f.mkdir();
     		
 		ClassPathXmlApplicationContext context = 
-			new ClassPathXmlApplicationContext("classpath:META-INF/spring/applicationContext-dao.xml");
-		MetadataDAO mdao = (MetadataDAO) context.getBean("metadataDAO");
-		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean("paxtoolsDAO");
+			new ClassPathXmlApplicationContext(new String[] {
+					"classpath:META-INF/spring/applicationContext-dao.xml",
+					"classpath:META-INF/spring/applicationContext-jpa.xml"});
+		MetadataRepository mdao = (MetadataRepository) context.getBean(MetadataRepository.class);
+		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean(PaxtoolsDAO.class);
 		
-		final List<Metadata> allMetadata = mdao.getAllMetadata();
 		//0) create an imported data summary file.txt (issue#23)
 		PrintWriter writer = new PrintWriter(cpath.downloadsDir() + File.separator 
 				+ "datasources.txt");
@@ -764,6 +718,8 @@ public final class Admin {
 			"#CPATH2:", getInstance().getName(), "version", getInstance().getVersion(), date), " "));
 		writer.println("#Columns:\t" + StringUtils.join(Arrays.asList(
 			"ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PHYS.ENTITIES"), "\t"));
+		
+		Iterable<Metadata> allMetadata = mdao.findAll();
 		for(Metadata m : allMetadata) {
 			writer.println(StringUtils.join(Arrays.asList(
 				m.getUri(), m.getDescription(), m.getType(), m.getUrlToHomepage(), 
@@ -837,7 +793,7 @@ public final class Admin {
 	}
 	
 	
-	private static List<String> exportBiopax(final PaxtoolsDAO dao, Collection<Metadata> allMetadata) 
+	private static List<String> exportBiopax(final PaxtoolsDAO dao, Iterable<Metadata> allMetadata) 
 			throws IOException 
 	{
 		List<String> files = new ArrayList<String>();
