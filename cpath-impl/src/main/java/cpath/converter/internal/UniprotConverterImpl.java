@@ -291,12 +291,14 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			        String id = parts[j].trim();
 			    	// extracting RefSeq AC from AC.Version identifier:
 			    	if(fixedDb.equals("REFSEQ")) {
-			    		int idx = id.lastIndexOf('.');
-			    		if(idx > 0)
-			    			id = id.substring(0, idx);
+			    		//remove version, such as '.1' from RefSeq IDs
+			    		id=removeDotTail(id);
 			    	} 
-			    	else if (fixedDb.equals("ENSEMBL") && !id.startsWith("ENS")) {
-						continue;
+			    	else if (fixedDb.equals("ENSEMBL")) {
+			    		if(!id.startsWith("ENS")) 
+			    			continue;
+			    		//remove, e.g., '. [Q8TCX1-2] GeneID' from 'ENSG00000138036. [Q8TCX1-2] GeneID' token
+			    		id = removeDotTail(id);
 			    	} 
 			    	else if(fixedDb.equals("HGNC") && !id.startsWith("HGNC:")) {
 			    		fixedDb = "HGNC SYMBOL";
@@ -314,7 +316,14 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     }
 
     
-    /**
+    private String removeDotTail(String id) {
+    	//remove tail, e.g., '. [Q8TCX1-2] GeneID' from 'ENSG00000138036. [Q8TCX1-2] GeneID',
+    	// or the version number '.2' from a RefSeq ID, etc.
+		return id.replaceFirst("\\..*", "");
+	}
+
+
+	/**
      * Gets Official Gene Symbols from UniProt record's GN fields.
      * 
      * @param geneName concatenated UniProt record's GN fields.
