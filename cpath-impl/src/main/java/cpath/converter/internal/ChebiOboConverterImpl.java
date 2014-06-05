@@ -185,13 +185,9 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 			}
 			else if(sy.contains("InChIKey=")) {
 				String inchikey = name.substring(9);//exclude the prefix			
-				xuri = Normalizer.uri(xmlBase, "InChIKey", inchikey, RelationshipXref.class);
-				RelationshipXref rx = (RelationshipXref) model.getByID(xuri);
-				if(rx == null) {
-					rx = model.addNew(RelationshipXref.class, xuri);
-					rx.setDb("InChIKey");
-					rx.setId(inchikey);
-				}
+				//add RX because a InChIKey can map to several CHEBI IDs
+				RelationshipXref rx = PreMerger.findOrCreateRelationshipXref(
+						RelTypeVocab.MAPPED_IDENTITY, "InChIKey", inchikey, model);
 				smr.addXref(rx);				
 			}
 			else if(sy.contains("InChI=")) {
