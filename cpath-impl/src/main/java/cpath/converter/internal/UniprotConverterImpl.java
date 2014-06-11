@@ -146,6 +146,9 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     	if(key.equals("DR"))
                     		data += "\n"; 
                         if (dataElements.containsKey(key)) {
+                        	//remove leading spaces from second and next lines in FT, CC, DE records
+                        	if(data.startsWith(" ")) //i.e, the sixth char on the line is space/blank
+                        		data = data.replaceAll("^\\s+", "");                       	
                         	dataElements.get(key).append(data);
                         } else {
                             dataElements.put(key, new StringBuilder (data));
@@ -161,12 +164,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 		finally {
 			log.debug("convert(), closing reader.");
             if (reader != null) {
-				try {
-					reader.close();
-				}
-				catch (Exception e) {
-					// ignore
-				}
+				try { reader.close(); } catch (Exception e) {} //ignore
             }
         }       
 
@@ -462,9 +460,13 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 
 	
 	/*
-	 * Parses only "FT   MOD_RES   N    M   Term..." lines and creates modification features and sites
-	 * (the "MOD_RES   N    M   Term." part always has no more than 70 chars)
-	 * 
+	 * Parses only "FT   MOD_RES   N    M   Term..." lines data and creates protein modification features and sites;
+	 * original data line cannot exceed 70 chars, but can span multiple lines (usually just one or two),
+	 * and ends with '.'; extra lines were originally like "FT                      end-of-term."
+	 * (dot is used only on the last line), but "FT   " and all the leading spaces up to original position 
+	 * no. 35 in the second etc. lines were already removed from the final 'features' text.
+	 * In other words, here, 'features' string contains concatenated with '.' lines like 
+	 * "MOD_RES   N    M   full-term-name" (and such strings can be longer than 65 chars)
 	 */
 	private void createModResFeatures(final String features, 
 			final ProteinReference pr, Model model) 
@@ -474,20 +476,23 @@ final class UniprotConverterImpl extends BaseConverterImpl {
         Matcher matcher = pattern.matcher(features);
         int mfIndex = 0;
         while(matcher.find()) {
-        	String ftContent = matcher.group();
-			String what = ftContent.substring(29, ftContent.length()-1); //the term without final '.'
+        	String ftContent = matcher.group(); //i.e., not including "FT   ",
+        	//the term starts at 29th char (because "FT   " at the beginning of each lone already's gone)
+			String what = ftContent.substring(29, ftContent.length()-1); 
 			// split the result by ';' (e.g., it might now look like "Phosphothreonine; by CaMK4") 
 			// to extract the modification type and create the standard PSI-MOD synonym; 
 			String[] terms = what.toString().split(";");
 			String mod = terms[0];
 			
-			//remove non-standard comment part from the standard CV term
-			//(fixes for things like "Phosphothreonine (By similarity); bla-bla.") )
-			mod = mod.replaceFirst("\\s*\\(By similarity\\)\\s*","").trim();
+			//remove non-standard comment part from the standard CV term -
+			//fixes things like "Phosphothreonine (By similarity)", 
+			// or "...(Probable)", "...(Potential)", "...(Ser)" -
+			mod = mod.replaceFirst("\\s*\\(.+\\)\\s*","").trim();
 			
 			//official PSI-MOD synonym (see http://www.ebi.ac.uk/ontology-lookup)
 			final String modTerm = "MOD_RES " + mod; 
-			//TODO find MOD ID, or better, make normalized CV with uni.xref (e.g., by biopax-validator's ontology manager)
+			
+			//PSI-MOD ID will be auto-added by the biopax-validator/normalizer
 			
 			// Create the feature with CV and location -
 			mfIndex++;
@@ -497,8 +502,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			modificationFeature.addComment(ftContent);
 			
 			// get/create a new PSI-MOD SequenceModificationVocabulary (can be shared by many PRs)
-			//TODO once MOD ID is found, make identifiers.org/psimod/ URI right away - 
-			uri = Normalizer.uri(model.getXmlBase(), "MOD", mod, SequenceModificationVocabulary.class);
+			uri = Normalizer.uri(model.getXmlBase(), "MOD", modTerm, SequenceModificationVocabulary.class);
 			// so, let's check if it exists in the temp. or target model:
 			SequenceModificationVocabulary cv = (SequenceModificationVocabulary) model.getByID(uri);
 			if(cv == null)
@@ -507,6 +511,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				// create a new SequenceModificationVocabulary
 				cv = model.addNew(SequenceModificationVocabulary.class, uri);
 				cv.addTerm(modTerm);
+				cv.addTerm(mod); //also add w/o MOD_RES, sometimes it's actually the standard one
 			}
 			modificationFeature.setModificationType(cv);
 			
