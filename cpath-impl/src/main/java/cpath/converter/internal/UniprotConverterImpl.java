@@ -60,17 +60,17 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                 if (line.startsWith ("//")) //reached the end of a Uniprot entry
                 {
 					// grab properties from the map and prepare for parsing
-                    String deField = ((StringBuilder) dataElements.get("DE")).toString();
-                    String organismName = ((StringBuilder) dataElements.get("OS")).toString(); //mostly occurs once per entry 
-                    String organismTaxId = ((StringBuilder) dataElements.get("OX")).toString(); //occurs once per entry 
-                    StringBuilder comments = (StringBuilder) dataElements.get("CC");
-                    StringBuilder geneName = (StringBuilder) dataElements.get("GN");
-                    String acNames = ((StringBuilder) dataElements.get("AC")).toString();
-                    StringBuilder xrefs = (StringBuilder) dataElements.get("DR");
-                    String idParts[] = ((StringBuilder) dataElements.get("ID")).toString().split("\\s+");
-                    StringBuilder sq = (StringBuilder) dataElements.get("SQ"); //SEQUENCE SUMMARY
-                    StringBuilder sequence = (StringBuilder) dataElements.get("  "); //SEQUENCE
-                    StringBuilder features = (StringBuilder) dataElements.get("FT"); //strict format in 6-75 char in each FT line
+                    String deField = dataElements.get("DE").toString();
+                    String organismName = dataElements.get("OS").toString(); //mostly occurs once per entry 
+                    String organismTaxId = dataElements.get("OX").toString(); //occurs once per entry 
+                    StringBuilder comments = dataElements.get("CC");
+                    StringBuilder geneName = dataElements.get("GN");
+                    String acNames = dataElements.get("AC").toString();
+                    StringBuilder xrefs = dataElements.get("DR");
+                    String idParts[] = dataElements.get("ID").toString().split("\\s+");
+                    StringBuilder sq = dataElements.get("SQ"); //SEQUENCE SUMMARY
+                    StringBuilder sequence = dataElements.get("  "); //SEQUENCE
+                    StringBuilder features = dataElements.get("FT"); //strict format in 6-75 char in each FT line
                     
                     ProteinReference proteinReference = newUniProtWithXrefs(idParts[0], acNames, model);
                     
@@ -137,24 +137,22 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     String key = line.substring (0, 2);
                     String data = line.substring(5);
                     if (data.startsWith("-------") ||
-                            data.startsWith("Copyrighted") ||
-                            data.startsWith("Distributed")) {
-                        //  do nothing here...
+                    	data.startsWith("Copyrighted") ||
+                        	data.startsWith("Distributed")) 
+                    {
+                        //  do nothing
                     } else {
+                    	//important for correct splitting DR rows
+                    	if(key.equals("DR"))
+                    		data += "\n"; 
                         if (dataElements.containsKey(key)) {
-                            StringBuilder existingData = (StringBuilder) dataElements.get(key);
-                            if("DR".equals(key))
-                            	//EOLs do matter for correct splitting into records; adding back (because bufferedReader.readLine() removed it)
-                            	existingData.append(data).append('\n'); 
-                            else
-                            	existingData.append(data);
-                        }
-						else {
+                        	dataElements.get(key).append(data);
+                        } else {
                             dataElements.put(key, new StringBuilder (data));
-                        }
+						}
                     }
                 }
-                line = bufferedReader.readLine();
+                line = bufferedReader.readLine();//it removes EOLs
             }
         }
 		catch(IOException e) {
@@ -270,57 +268,54 @@ final class UniprotConverterImpl extends BaseConverterImpl {
      * @param model
      */
     private void setXRefsFromDRs (String dbRefs, ProteinReference proteinReference, Model model) {
-        //split the line into like: "DB; ID1; ID2;" lines (also removing ending ".\n" or "-.\n")
-    	final String xrefList[] = dbRefs.split("-?\\.\\s*\n"); 
-        
-        for (int i=0; i<xrefList.length; i++) {
-        	String xref = xrefList[i].trim();
+    	final String lines[] = dbRefs.split("\n"); 
+    	
+        for (String line : lines) {
+        	//remove everything after '.' (e.g., isoform refs, comments)
+        	String xref = line.replaceFirst("\\..*", "").trim();
         	String parts[] = xref.split(";");
         	String db = parts[0].trim().toUpperCase();
-    		
-        	//adding for id in part[1], part[2],..
-			if (db.equals("GENEID") || db.equals("REFSEQ") 
-					|| db.equals("ENSEMBL") || db.equals("HGNC")) {
-				
-				String fixedDb = db;
-				
-				if (db.equals("GENEID"))
-					fixedDb = "NCBI GENE"; //- preferred name (synonym: Entrez Gene)
-				
-				for (int j = 1; j < parts.length; j++) {
-			        String id = parts[j].trim();
-			    	// extracting RefSeq AC from AC.Version identifier:
-			    	if(fixedDb.equals("REFSEQ")) {
-			    		//remove version, such as '.1' from RefSeq IDs
-			    		id=removeDotTail(id);
-			    	} 
-			    	else if (fixedDb.equals("ENSEMBL")) {
-			    		if(!id.startsWith("ENS")) 
-			    			continue;
-			    		//remove, e.g., '. [Q8TCX1-2] GeneID' from 'ENSG00000138036. [Q8TCX1-2] GeneID' token
-			    		id = removeDotTail(id);
-			    	} 
-			    	else if(fixedDb.equals("HGNC") && !id.startsWith("HGNC:")) {
-			    		fixedDb = "HGNC SYMBOL";
-			    	}
-					
-			    	// xref can be used for id-mapping, helps to Merger and graph queries
-					RelationshipXref rXRef = PreMerger
-                    	.findOrCreateRelationshipXref(RelTypeVocab.MAPPED_IDENTITY, fixedDb, id, model);
-					
-                    proteinReference.addXref(rXRef);
+    				
+        	// skip for other, not identity, ID types,
+        	// e.g., refs to pathway databases, ontologies, etc.:
+        	if (!db.equals("GENEID") && !db.equals("REFSEQ") 
+					&& !db.equals("ENSEMBL") && !db.equals("HGNC")) 
+				continue;
+
+			String fixedDb = db;	
+			if (db.equals("GENEID"))
+				fixedDb = "NCBI GENE"; // - preferred name
+			
+			//iterate over the ID tokens of the same DR line, skipping non-ID comments, etc. (ending)
+			for (int j = 1; j < parts.length; j++) {
+				String id = parts[j].trim();
+
+				//at the end of a DR line in some cases (e.g, GeneID or RefSeq)?
+				if(id.equals("-"))
+					break;
+				//no more Ensembl IDs (skip comments)
+				if (db.equals("ENSEMBL") && !id.startsWith("ENS"))
+					break; 
+				//last ID in a HGNC line is in fact gene name
+				if(db.equals("HGNC") && !id.startsWith("HGNC:")) {
+					fixedDb = "HGNC SYMBOL";
 				}
+				//remove .version from RefSeq IDs
+				if (db.equals("REFSEQ")) {
+					// extract only RefSeq AC from AC.Version ID form
+					id = id.replaceFirst("\\.\\d+", "");
+				}
+				
+				//ok to create a new rel. xref with type "mapped-identity"
+				RelationshipXref rXRef = PreMerger
+						.findOrCreateRelationshipXref(RelTypeVocab.MAPPED_IDENTITY, 
+								fixedDb, id, model);					
+				proteinReference.addXref(rXRef);
+				// this xref type is then used for id-mapping in the Merger and queries;
 			}
         }
         	
     }
-
-    
-    private String removeDotTail(String id) {
-    	//remove tail, e.g., '. [Q8TCX1-2] GeneID' from 'ENSG00000138036. [Q8TCX1-2] GeneID',
-    	// or the version number '.2' from a RefSeq ID, etc.
-		return id.replaceFirst("\\..*", "");
-	}
 
 
 	/**
