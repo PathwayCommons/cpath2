@@ -491,7 +491,7 @@ public final class PreMerger {
 		
 		
 		//Go validate and normalize the pathway data
-		log.info("pipeline(), validating pathway data "	+ info);		
+		log.info("pipeline(), validating pathway data "	+ info);
 
 		/* Validate, auto-fix, and normalize (incl. convesion to L3): 
 		 * e.g., synonyms in xref.db may be replaced 
@@ -549,6 +549,7 @@ public final class PreMerger {
 			validator.getResults().remove(validation);
 			
 			// normalize
+			log.info("checkAndNormalize, now normalizing pathway data "	+ title);
 			Model model = (Model) validation.getModel();
 			normalizer.normalize(model);
 			
