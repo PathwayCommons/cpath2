@@ -40,10 +40,12 @@ import java.util.zip.ZipInputStream;
 
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.EntityFeature;
 import org.biopax.paxtools.model.level3.ModificationFeature;
 import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.SequenceLocation;
+import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
 import org.biopax.paxtools.model.level3.SequenceSite;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.validator.utils.Normalizer;
@@ -129,6 +131,21 @@ public class UniprotConverterImplTest {
 		assertEquals(32, pr.getXref().size());
 		
 		assertEquals(8, pr.getEntityFeature().size());
+		
+		//test for the following FT entry (two-line) was correctly parsed/converted:
+		//FT   MOD_RES      45     45       Phosphothreonine; by CaMK4 (By
+		//FT                                similarity).
+		EntityFeature f = null;
+		for(EntityFeature ef : pr.getEntityFeature()) {
+			assertEquals(1, ef.getComment().size());
+			if(ef.getComment().iterator().next().contains("Phosphothreonine; by CaMK4"))
+				f = ef;
+		}
+		assertNotNull(f);
+		assertTrue(f instanceof ModificationFeature);
+		assertTrue(((ModificationFeature)f).getModificationType() instanceof SequenceModificationVocabulary);
+		assertEquals("MOD_RES Phosphothreonine", ((ModificationFeature)f).getModificationType().getTerm().iterator().next());
+		assertTrue(((ModificationFeature)f).getFeatureLocation() instanceof SequenceSite);		
 	}
 
 }

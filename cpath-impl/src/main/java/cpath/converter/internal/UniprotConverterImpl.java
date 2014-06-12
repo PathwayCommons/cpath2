@@ -477,17 +477,17 @@ final class UniprotConverterImpl extends BaseConverterImpl {
         int mfIndex = 0;
         while(matcher.find()) {
         	String ftContent = matcher.group(); //i.e., not including "FT   ",
-        	//the term starts at 29th char (because "FT   " at the beginning of each lone already's gone)
-			String what = ftContent.substring(29, ftContent.length()-1); 
+        	//the term starts at 29th char (because "FT   " at the beginning of each line already's gone)
+			String what = ftContent.substring(29, ftContent.length()-1);//excluding the final dot '.' 
 			// split the result by ';' (e.g., it might now look like "Phosphothreonine; by CaMK4") 
 			// to extract the modification type and create the standard PSI-MOD synonym; 
 			String[] terms = what.toString().split(";");
 			String mod = terms[0];
 			
-			//remove non-standard comment part from the standard CV term -
-			//fixes things like "Phosphothreonine (By similarity)", 
-			// or "...(Probable)", "...(Potential)", "...(Ser)" -
-			mod = mod.replaceFirst("\\s*\\(.+\\)\\s*","").trim();
+			//remove non-standard ending comment from the standard CV term,
+			//right before the final dot, if present; i.e. it removes things like 
+			//"...(By similarity).", or "...(Probable).", "...(Potential)." -
+			mod = mod.replaceFirst("\\(.+?\\)$","").trim(); // ends with ")."
 			
 			//official PSI-MOD synonym (see http://www.ebi.ac.uk/ontology-lookup)
 			final String modTerm = "MOD_RES " + mod; 
@@ -511,7 +511,8 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				// create a new SequenceModificationVocabulary
 				cv = model.addNew(SequenceModificationVocabulary.class, uri);
 				cv.addTerm(modTerm);
-				cv.addTerm(mod); //also add w/o MOD_RES, sometimes it's actually the standard one
+				//add the name without MOD_RES prefix as well (sometimes it is the valid one)
+				cv.addTerm(mod);
 			}
 			modificationFeature.setModificationType(cv);
 			
