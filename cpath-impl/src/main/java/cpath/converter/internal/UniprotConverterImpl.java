@@ -487,7 +487,8 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			//remove non-standard ending comment from the standard CV term,
 			//right before the final dot, if present; i.e. it removes things like 
 			//"...(By similarity).", or "...(Probable).", "...(Potential)." -
-			mod = mod.replaceFirst("\\(.+?\\)$","").trim(); // ends with ")."
+			// but should not be too greedy to left just "N6-" out of "N6-(pyridoxal phosphate)lysine (By similarity)."
+			mod = mod.replaceFirst("\\([^()]+?\\)$","").trim();
 			
 			//official PSI-MOD synonym (see http://www.ebi.ac.uk/ontology-lookup)
 			final String modTerm = "MOD_RES " + mod; 
