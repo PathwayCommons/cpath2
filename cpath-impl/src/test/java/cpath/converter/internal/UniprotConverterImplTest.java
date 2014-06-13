@@ -69,6 +69,10 @@ public class UniprotConverterImplTest {
 	 */
 	@Test
 	public void testConvert() throws IOException {
+		
+		//test the tricky FT pattern first
+		assertEquals("AA-(test test)test", "AA-(test test)test (Bysimilarity)".replaceFirst("\\([^()]+?\\)$","").trim());	
+		
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		CPathUtils.unzip(new ZipInputStream(new FileInputStream(
 				getClass().getResource("/test_uniprot_data.dat.zip").getFile())), bos);
@@ -90,7 +94,9 @@ public class UniprotConverterImplTest {
 		assertTrue(pr.getName().contains("CALM2"));
 		assertTrue(pr.getName().contains("CALM3"));
 		assertNotNull(pr);
-		assertEquals(8, pr.getEntityFeature().size());
+		
+		assertEquals(9, pr.getEntityFeature().size());
+		
 		//check for a feature object by using URI generated the same way as it's in the converter:
 		String mfUri = Normalizer.uri(model.getXmlBase(), null, pr.getDisplayName() + "_1", ModificationFeature.class);
 		ModificationFeature mf = (ModificationFeature) model.getByID(mfUri);
@@ -130,22 +136,32 @@ public class UniprotConverterImplTest {
 		//total xrefs generated for P62158
 		assertEquals(32, pr.getXref().size());
 		
-		assertEquals(8, pr.getEntityFeature().size());
-		
 		//test for the following FT entry (two-line) was correctly parsed/converted:
 		//FT   MOD_RES      45     45       Phosphothreonine; by CaMK4 (By
 		//FT                                similarity).
 		EntityFeature f = null;
+		EntityFeature g = null;
 		for(EntityFeature ef : pr.getEntityFeature()) {
 			assertEquals(1, ef.getComment().size());
 			if(ef.getComment().iterator().next().contains("Phosphothreonine; by CaMK4"))
 				f = ef;
+			if(ef.getComment().iterator().next().contains("AA-(test"))
+				g = ef;
 		}
 		assertNotNull(f);
 		assertTrue(f instanceof ModificationFeature);
 		assertTrue(((ModificationFeature)f).getModificationType() instanceof SequenceModificationVocabulary);
 		assertEquals("MOD_RES Phosphothreonine", ((ModificationFeature)f).getModificationType().getTerm().iterator().next());
-		assertTrue(((ModificationFeature)f).getFeatureLocation() instanceof SequenceSite);		
+		assertTrue(((ModificationFeature)f).getFeatureLocation() instanceof SequenceSite);
+			
+		//another special test for records like this one:
+		//FT   MOD_RES       1      1       AA-(test test)test (By
+		//FT                                similarity).
+		assertNotNull(g);
+		assertTrue(g instanceof ModificationFeature);
+		assertTrue(((ModificationFeature)g).getModificationType() instanceof SequenceModificationVocabulary);
+		assertEquals("MOD_RES AA-(test test)test", ((ModificationFeature)g).getModificationType().getTerm().iterator().next());
+		assertTrue(((ModificationFeature)g).getFeatureLocation() instanceof SequenceSite);
 	}
 
 }
