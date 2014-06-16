@@ -117,20 +117,20 @@ public class UniprotConverterImplTest {
 		}
 		assertTrue(rel);
 		//test if the correct RefSeq xrefs was created from the DR line despite having something ([bla-bla]) after the '.' at the end
-		String uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "NP_001734mapped-identity", RelationshipXref.class);
+		String uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "NP_001734identity", RelationshipXref.class);
 		assertNotNull(model.getByID(uri));
 		//test if the correct Ensembl ENSG* xrefs was created from the DR line despite having something ([bla-bla]) after the '.' at the end
-		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "ENSG00000143933mapped-identity", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "ENSG00000143933identity", RelationshipXref.class);
 		assertNotNull(model.getByID(uri));
-		uri = Normalizer.uri(model.getXmlBase(), "NCBI GENE", "801mapped-identity", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "NCBI GENE", "801identity", RelationshipXref.class);
 		assertNotNull(model.getByID(uri));
 		
-		uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "NP_619650mapped-identity", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "NP_619650identity", RelationshipXref.class);
 		assertNotNull(model.getByID(uri));
 		//but the parser should not create xrefs from for the last parts in DR like "...; -.", "; Homo sapiens.\n", etc.
-		uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "-mapped-identity", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "-identity", RelationshipXref.class);
 		assertNull(model.getByID(uri));	
-		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "Homo sapiensmapped-identity", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "Homo sapiensidentity", RelationshipXref.class);
 		assertNull(model.getByID(uri));	
 		
 		//total xrefs generated for P62158

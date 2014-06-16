@@ -210,7 +210,7 @@ public class DataImportTest {
 		Collection<String> prIds = new HashSet<String>();
 		for(SearchHit e : prs)
 			prIds.add(e.getUri());		
-		String uri = Normalizer.uri(XML_BASE, "REFSEQ", "NP_005099mapped-identity", RelationshipXref.class);				
+		String uri = Normalizer.uri(XML_BASE, "REFSEQ", "NP_005099identity", RelationshipXref.class);				
 		assertTrue(prIds.contains(uri));
 		Xref x = (RelationshipXref) ((Model)service.biopax()).getByID(uri);
 		assertNotNull(x);

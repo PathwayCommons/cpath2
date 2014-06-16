@@ -187,7 +187,7 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 				String inchikey = name.substring(9);//exclude the prefix			
 				//add RX because a InChIKey can map to several CHEBI IDs
 				RelationshipXref rx = PreMerger.findOrCreateRelationshipXref(
-						RelTypeVocab.MAPPED_IDENTITY, "InChIKey", inchikey, model);
+						RelTypeVocab.IDENTITY, "InChIKey", inchikey, model);
 				smr.addXref(rx);				
 			}
 			else if(sy.contains("InChI=")) {
@@ -228,7 +228,7 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 					|| db.startsWith("WIKIPEDIA") || db.equals("DRUGBANK")) 
 				{
 					RelationshipXref rx = PreMerger
-						.findOrCreateRelationshipXref(RelTypeVocab.MAPPED_IDENTITY, db, id, model);
+						.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, db, id, model);
 					smr.addXref(rx);
 				} else if(db.startsWith("PUBMED")) {
 					//add PublicationXref

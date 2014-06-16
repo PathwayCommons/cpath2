@@ -92,7 +92,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                         	// also add Gene Names to PR names (can be >1 due to isoforms)
                         	proteinReference.addName(symbol);
                         	RelationshipXref rXRef = PreMerger
-                        		.findOrCreateRelationshipXref(RelTypeVocab.MAPPED_IDENTITY, "HGNC SYMBOL", symbol, model);
+                        		.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "HGNC SYMBOL", symbol, model);
                         	proteinReference.addXref(rXRef);
                         }
                     }
@@ -304,9 +304,9 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 					id = id.replaceFirst("\\.\\d+", "");
 				}
 				
-				//ok to create a new rel. xref with type "mapped-identity"
+				//ok to create a new rel. xref with type "identity"
 				RelationshipXref rXRef = PreMerger
-						.findOrCreateRelationshipXref(RelTypeVocab.MAPPED_IDENTITY, 
+						.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, 
 								fixedDb, id, model);					
 				proteinReference.addXref(rXRef);
 				// this xref type is then used for id-mapping in the Merger and queries;
