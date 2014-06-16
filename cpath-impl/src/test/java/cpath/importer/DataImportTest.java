@@ -210,7 +210,7 @@ public class DataImportTest {
 		Collection<String> prIds = new HashSet<String>();
 		for(SearchHit e : prs)
 			prIds.add(e.getUri());		
-		String uri = Normalizer.uri(XML_BASE, "REFSEQ", "NP_005099identity", RelationshipXref.class);				
+		String uri = Normalizer.uri(XML_BASE, "REFSEQ", "NP_005099_identity", RelationshipXref.class);				
 		assertTrue(prIds.contains(uri));
 		Xref x = (RelationshipXref) ((Model)service.biopax()).getByID(uri);
 		assertNotNull(x);
@@ -277,8 +277,8 @@ public class DataImportTest {
 		assertEquals(10, pr.getName().size()); //make sure this one is passed (important!)
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
-//		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
-		assertEquals(11, pr.getXref().size()); //11, no equivalent (duplicate) xrefs should be there!
+		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
+		assertEquals(11, pr.getXref().size()); //11, no duplicate xrefs (10 of the warehouse PR, +1 - comes from...)!
 		assertEquals("http://identifiers.org/taxonomy/9606", pr.getOrganism().getRDFId());
 		
 		// test proper merge of small molecule reference

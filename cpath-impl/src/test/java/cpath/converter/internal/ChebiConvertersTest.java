@@ -96,8 +96,8 @@ public class ChebiConvertersTest {
 
         // check new elements (created by the OBO converter) exist in the model;
         // (particularly, these assertions are important to test within the persistent model (DAO) session)
-        assertTrue(model.containsID(Normalizer.uri(model.getXmlBase(), "CHEBI", "CHEBI:20see-also", RelationshipXref.class)));
-        assertTrue(model.containsID(Normalizer.uri(model.getXmlBase(), "CHEBI", "CHEBI:422see-also", RelationshipXref.class)));		
+        assertTrue(model.containsID(Normalizer.uri(model.getXmlBase(), "CHEBI", "CHEBI_20_see-also", RelationshipXref.class)));
+        assertTrue(model.containsID(Normalizer.uri(model.getXmlBase(), "CHEBI", "CHEBI_422_see-also", RelationshipXref.class)));		
 		
 	}
 }

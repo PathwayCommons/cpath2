@@ -49,7 +49,6 @@ import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
 import org.biopax.paxtools.model.level3.SequenceSite;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.validator.utils.Normalizer;
-//import org.junit.Ignore;
 import org.junit.Test;
 
 import cpath.dao.CPathUtils;
@@ -60,7 +59,6 @@ import cpath.importer.ImportFactory;
  * @author rodche
  *
  */
-//@Ignore
 public class UniprotConverterImplTest {
 
 	/**
@@ -88,9 +86,18 @@ public class UniprotConverterImplTest {
 		Set<ProteinReference> proteinReferences = model.getObjects(ProteinReference.class);
 		assertEquals(10, proteinReferences.size());
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
+				
+		//
+		ProteinReference pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/P27797");
+		assertEquals(10, pr.getName().size()); //make sure this one is passed (important!)
+		assertEquals("CALR_HUMAN", pr.getDisplayName());
+		assertEquals("Calreticulin", pr.getStandardName());
+//		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
+		assertEquals(10, pr.getXref().size()); //10, no duplicates
+		assertEquals("http://identifiers.org/taxonomy/9606", pr.getOrganism().getRDFId());		
 		
 		// test MOD_RES features are created
-		ProteinReference pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/P62158");
+		pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/P62158");
 		assertTrue(pr.getName().contains("CALM2"));
 		assertTrue(pr.getName().contains("CALM3"));
 		assertNotNull(pr);
@@ -117,20 +124,20 @@ public class UniprotConverterImplTest {
 		}
 		assertTrue(rel);
 		//test if the correct RefSeq xrefs was created from the DR line despite having something ([bla-bla]) after the '.' at the end
-		String uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "NP_001734identity", RelationshipXref.class);
+		String uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "NP_001734_identity", RelationshipXref.class);
 		assertNotNull(model.getByID(uri));
 		//test if the correct Ensembl ENSG* xrefs was created from the DR line despite having something ([bla-bla]) after the '.' at the end
-		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "ENSG00000143933identity", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "ENSG00000143933_identity", RelationshipXref.class);
 		assertNotNull(model.getByID(uri));
-		uri = Normalizer.uri(model.getXmlBase(), "NCBI GENE", "801identity", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "NCBI GENE", "801_identity", RelationshipXref.class);
 		assertNotNull(model.getByID(uri));
 		
-		uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "NP_619650identity", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "NP_619650_identity", RelationshipXref.class);
 		assertNotNull(model.getByID(uri));
 		//but the parser should not create xrefs from for the last parts in DR like "...; -.", "; Homo sapiens.\n", etc.
-		uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "-identity", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "-_identity", RelationshipXref.class);
 		assertNull(model.getByID(uri));	
-		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "Homo sapiensidentity", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "Homo_sapiens_identity", RelationshipXref.class);
 		assertNull(model.getByID(uri));	
 		
 		//total xrefs generated for P62158
