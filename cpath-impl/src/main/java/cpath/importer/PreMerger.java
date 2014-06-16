@@ -586,7 +586,7 @@ public final class PreMerger {
 		
 		RelationshipXref toReturn = null;
 
-		String uri = Normalizer.uri(model.getXmlBase(), db, id + vocab.toString(), RelationshipXref.class);
+		String uri = Normalizer.uri(model.getXmlBase(), db, id + "_" + vocab.toString(), RelationshipXref.class);
 		if (model.containsID(uri)) {
 			return (RelationshipXref) model.getByID(uri);
 		}
