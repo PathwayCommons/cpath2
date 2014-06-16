@@ -73,7 +73,7 @@ public final class PreMerger {
      * Values to generate standard BioPAX RelationshipTypeVocabulary objects.
      */
     public static enum RelTypeVocab {
-    	MAPPED_IDENTITY("mapped-identity", "http://identifiers.org/psimi/MI:1102", "MI", "MI:1102"),
+    	IDENTITY("identity", "http://identifiers.org/psimi/MI:0356", "MI", "MI:0356"),
     	SECONDARY_ACCESSION_NUMBER("secondary-ac", "http://identifiers.org/psimi/MI:0360", "MI", "MI:0360"),
     	ADDITIONAL_INFORMATION("see-also", "http://identifiers.org/psimi/MI:0361", "MI", "MI:0361"),
     	//next should work for rel. xrefs pointing to a protein but attached to a Gene, Dna*, Rna* biopax objects
@@ -325,7 +325,7 @@ public final class PreMerger {
 
 			//otherwise - find/make special rel.xref
 			RelationshipXref rx = findOrCreateRelationshipXref(
-					RelTypeVocab.MAPPED_IDENTITY, m.getSrc(), m.getSrcId(), warehouse);			
+					RelTypeVocab.IDENTITY, m.getSrc(), m.getSrcId(), warehouse);			
 			er.addXref(rx); 
 		}
 	}
@@ -409,8 +409,8 @@ public final class PreMerger {
 							// or for any typed relationship xref
 							((x instanceof RelationshipXref) && ((RelationshipXref)x).getRelationshipType()!=null
 							&& 
-							(	//use any mapped-identity type relationship xref
-								((RelationshipXref)x).getRelationshipType().getRDFId().endsWith(RelTypeVocab.MAPPED_IDENTITY.id)
+							(	//use any identity type relationship xref
+								((RelationshipXref)x).getRelationshipType().getRDFId().endsWith(RelTypeVocab.IDENTITY.id)
 								|| // or any secondary accession type relationship xref
 								((RelationshipXref)x).getRelationshipType().getRDFId().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id))
 							)
