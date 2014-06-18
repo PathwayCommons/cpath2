@@ -158,7 +158,8 @@ new instance from scratch:
 -premerge 
 -create-warehouse
 -merge --force (unfortunately, --force is usually required...)
--dbindex
+-persist
+-index
 -update-counts
 -create-blacklist
 -create-downloads
