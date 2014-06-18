@@ -92,7 +92,8 @@ public final class Admin {
 		PREMERGE("-premerge"),
 		CREATE_WAREHOUSE("-create-warehouse"),			
 		MERGE("-merge"),
-    	CREATE_DBINDEX("-create-dbindex"),
+    	PERSIST("-persist"),
+    	INDEX("-index"),
         CREATE_BLACKLIST("-create-blacklist"),
         CREATE_DOWNLOADS("-create-downloads"),
         CLEAR_CACHE("-clear-cache"),
@@ -159,9 +160,13 @@ public final class Admin {
 			dir.mkdir();
 		}
 
-		if (args[0].equals(Cmd.CREATE_DBINDEX.toString())) {
+		if (args[0].equals(Cmd.PERSIST.toString())) {
 			
-			createBiopaxDbAndIndex();
+			createBiopaxDb();
+			
+		} else if (args[0].equals(Cmd.INDEX.toString())) {
+			
+			createIndex();
 			
 		} else if (args[0].equals(Cmd.FETCH_METADATA.toString())) {
 			
@@ -361,27 +366,51 @@ public final class Admin {
      * 
      * @throws IllegalStateException when not in maintenance mode
      */
-    public static void createBiopaxDbAndIndex() throws IOException {
+    public static void createBiopaxDb() throws IOException {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
  		
 		System.setProperty("net.sf.ehcache.disabled", "true");
-		System.setProperty("hibernate.hbm2ddl.auto", "update");
+		System.setProperty("hibernate.hbm2ddl.auto", "create");
  		
 		LOG.info("Loading the main merged BioPAX model from the archive...");
 		Model allModel = CPathUtils.loadMainBiopaxModel();
 		
+		//destroy the db if exists, persist the main merged biopax model (makes a new db)
+		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+				"classpath:META-INF/spring/applicationContext-dao.xml");    	
+ 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean(PaxtoolsDAO.class));
+ 		LOG.info("Persisting the main model (takes several hours...)");
+ 		mainDAO.merge(allModel);
+ 		 		
+ 		context.close(); 		
+ 		LOG.info("Done.");
+ 		
+ 		System.setProperty("hibernate.hbm2ddl.auto", "validate");
+ 	}
+    
+	/**
+     * Builds new biopax full-text index.
+	 * @throws IOException 
+     * 
+     * @throws IllegalStateException when not in maintenance mode
+     */
+    public static void createIndex() throws IOException {
+		if(!cpath.isAdminEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+ 		
+		System.setProperty("net.sf.ehcache.disabled", "true");
+		
+		// re-build the full-text index	 
+		File dir = new File(cpath.homeDir() + File.separator + cpath.getMainDb());
+		LOG.info("Cleaning up the full-text index directory");
+		CPathUtils.cleanupDirectory(dir);		
+ 			
 		//persist
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
 				"classpath:META-INF/spring/applicationContext-dao.xml");    	
  		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean(PaxtoolsDAO.class));
- 		LOG.info("Persisting the main model...");
- 		mainDAO.merge(allModel);
  		
-		// re-build the full-text index	 
-		File dir = new File(cpath.homeDir() + File.separator + cpath.getMainDb());
-		LOG.info("Cleaning up the full-text index directory");
-		CPathUtils.cleanupDirectory(dir);
  		LOG.info("Indexing...");
  		mainDAO.index();
  		
@@ -632,7 +661,8 @@ public final class Admin {
 		toReturn.append(Cmd.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
 		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + NEWLINE);			
 		toReturn.append(Cmd.MERGE.toString() + " [--force] (merge all pathway data; overwrites the main biopax model archive)"+ NEWLINE);
-		toReturn.append(Cmd.CREATE_DBINDEX.toString() + " (to create and index new BioPAX db from the archive)" + NEWLINE);
+		toReturn.append(Cmd.PERSIST.toString() + " (to create new BioPAX db from the main merged biopax archive)" + NEWLINE);
+		toReturn.append(Cmd.INDEX.toString() + " (to build new full-text index of the main merged BioPAX db)" + NEWLINE);
         toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
         toReturn.append(Cmd.CLEAR_CACHE.toString() + " (removes the cache directory)" + NEWLINE);
         toReturn.append(Cmd.UPDATE_COUNTS.toString() + " (re-calculates pathway, molecule, " +
