@@ -416,8 +416,6 @@ public final class Admin {
  		
  		context.close(); 		
  		LOG.info("Done.");
- 		
- 		System.setProperty("hibernate.hbm2ddl.auto", "validate");
  	}
 
     
@@ -432,41 +430,39 @@ public final class Admin {
     public static void updateCounts() {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
-
-        // read-only db schema mode
-        System.setProperty("hibernate.hbm2ddl.auto", "validate");
 		
         ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext(new String[] {
 					"classpath:META-INF/spring/applicationContext-dao.xml",
-					"classpath:META-INF/spring/applicationContext-jpa.xml"});
-     	
- 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean(PaxtoolsDAO.class));    	
+					"classpath:META-INF/spring/applicationContext-jpa.xml"
+					});
+     	   	
      	//update counts of pathways, interactions, molecules
-     	MetadataRepository metadataRepository = (MetadataRepository) context.getBean(MetadataRepository.class);
+        CPathService service = (CPathService) context.getBean(CPathService.class);
      	
-     	for(Metadata md : metadataRepository.findAll()) {
-     		
-     		if(md.isNotPathwayData())
-     			continue;
-     		
+     	List<Metadata> pathwayMetadata = new ArrayList<Metadata>();
+        for(Metadata md : service.metadata().findAll())
+        	if(!md.isNotPathwayData())
+        		pathwayMetadata.add(md);
+     	
+        for(Metadata md : pathwayMetadata) {
      		String name = md.standardName();
-     		String[] filterBy = md.getName().toArray(new String[]{});
+     		String[] filterByDatasourceNames = new String[]{md.getUri()};
      		
-     		SearchResponse sr = mainDAO.search("*", 0, Pathway.class, filterBy, null);
+     		SearchResponse sr = service.biopax().search("*", 0, Pathway.class, filterByDatasourceNames, null);
      		md.setNumPathways(sr.getNumHits());
-     		LOG.info(name + ", pathways: " + md.getNumPathways());
+     		LOG.info(name + ", pathways: " + sr.getNumHits());
      		
-     		sr = mainDAO.search("*", 0, Interaction.class, filterBy, null);
+     		sr = service.biopax().search("*", 0, Interaction.class, filterByDatasourceNames, null);
      		md.setNumInteractions(sr.getNumHits());
-     		LOG.info(name + ", interactions: " + md.getNumPathways());
+     		LOG.info(name + ", interactions: " + sr.getNumHits());
      		
-     		sr = mainDAO.search("*", 0, PhysicalEntity.class, filterBy, null);
+     		sr = service.biopax().search("*", 0, PhysicalEntity.class, filterByDatasourceNames, null);
      		md.setNumPhysicalEntities(sr.getNumHits());
-     		LOG.info(name + ", physical entities: " + md.getNumPathways());
-     		
-     		metadataRepository.save(md);
+     		LOG.info(name + ", physical entities: " + sr.getNumHits());
      	}
+     	
+     	service.metadata().save(pathwayMetadata);
      	
      	context.close(); 
 	}
@@ -525,12 +521,9 @@ public final class Admin {
 		// otherwise the merger eventually fails with a weird exception
 		// (this probably depends on the cache config. parameters)
 		System.setProperty("net.sf.ehcache.disabled", "true");
-        //read-only db schema mode
-        System.setProperty("hibernate.hbm2ddl.auto", "validate");
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext(new String[] {
-					"classpath:META-INF/spring/applicationContext-jpa.xml",
-//					"classpath:META-INF/spring/applicationContext-dao.xml",
+					"classpath:META-INF/spring/applicationContext-jpa.xml"
 			});
 		
 		LOG.info("runMerge: --force=" + force);
@@ -555,12 +548,9 @@ public final class Admin {
 		
         LOG.info("runPremerge: provider=" + provider + " - initializing (DAO, validator, premerger)...");
         
-        //set read-only db schema mode
-        System.setProperty("hibernate.hbm2ddl.auto", "validate");
 		ClassPathXmlApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:META-INF/spring/applicationContext-jpa.xml", 
-//            		"classpath:META-INF/spring/applicationContext-dao.xml", //not required for pre-merge
             		"classpath:META-INF/spring/applicationContext-validator.xml"
             		});
 		CPathService service = context.getBean(CPathService.class);
@@ -585,8 +575,7 @@ public final class Admin {
 		System.setProperty("net.sf.ehcache.disabled", "true");
 		ClassPathXmlApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
-            		"classpath:META-INF/spring/applicationContext-jpa.xml", 
-//            		"classpath:META-INF/spring/applicationContext-dao.xml", //not required here
+            		"classpath:META-INF/spring/applicationContext-jpa.xml"
             		});
 		CPathService service = context.getBean(CPathService.class);
 		PreMerger premerger = new PreMerger(service, null, null);
@@ -608,6 +597,7 @@ public final class Admin {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
 		System.setProperty("hibernate.hbm2ddl.auto", "update");
+		
 		ClassPathXmlApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:META-INF/spring/applicationContext-jpa.xml", 
@@ -616,6 +606,9 @@ public final class Admin {
         // grab the data
         service.addOrUpdateMetadata(location);       
         context.close(); 
+        
+        //back to read-only schema mode (useful when called from the web admin app)
+        System.setProperty("hibernate.hbm2ddl.auto", "validate");
     }
 
 
@@ -636,10 +629,10 @@ public final class Admin {
 		if(uris == null) 
 			uris = new String[]{};
 		
-        //read-only db schema mode
-        System.setProperty("hibernate.hbm2ddl.auto", "validate");
+
 		ClassPathXmlApplicationContext ctx = 
-			new ClassPathXmlApplicationContext("classpath:META-INF/spring/applicationContext-dao.xml");
+			new ClassPathXmlApplicationContext(
+				"classpath:META-INF/spring/applicationContext-dao.xml");
 							
 		OutputStream os = new FileOutputStream(output);
 		// export a sub-model from the main biopax database
@@ -737,8 +730,7 @@ public final class Admin {
 			new ClassPathXmlApplicationContext(new String[] {
 					"classpath:META-INF/spring/applicationContext-dao.xml",
 					"classpath:META-INF/spring/applicationContext-jpa.xml"});
-		MetadataRepository mdao = (MetadataRepository) context.getBean(MetadataRepository.class);
-		PaxtoolsDAO dao = (PaxtoolsDAO) context.getBean(PaxtoolsDAO.class);
+		CPathService service = (CPathService) context.getBean(CPathService.class);
 		
 		//0) create an imported data summary file.txt (issue#23)
 		PrintWriter writer = new PrintWriter(cpath.downloadsDir() + File.separator 
@@ -749,7 +741,7 @@ public final class Admin {
 		writer.println("#Columns:\t" + StringUtils.join(Arrays.asList(
 			"ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PHYS.ENTITIES"), "\t"));
 		
-		Iterable<Metadata> allMetadata = mdao.findAll();
+		Iterable<Metadata> allMetadata = service.metadata().findAll();
 		for(Metadata m : allMetadata) {
 			writer.println(StringUtils.join(Arrays.asList(
 				m.getUri(), m.getDescription(), m.getType(), m.getUrlToHomepage(), 
@@ -760,7 +752,7 @@ public final class Admin {
 		LOG.info("create-downloads: successfully generated the datasources summary file.");
 		
 		// generate/find all BioPAX archives:
-		List<String> biopaxArchives = exportBiopax(dao, allMetadata);
+		List<String> biopaxArchives = exportBiopax(service.biopax(), allMetadata);
 		
 		context.close(); //DAO is not needed anymore
 		    	
