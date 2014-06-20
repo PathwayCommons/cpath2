@@ -20,18 +20,18 @@
 	<context:component-scan base-package="cpath.dao.internal" />
 	
     <!-- enable the configuration of transactional behavior based on annotations -->
-    <tx:annotation-driven transaction-manager="pcTransactionManager"/>
+    <tx:annotation-driven transaction-manager="biopaxTransactionManager"/>
  
-    <bean id="pcTransactionManager"
+    <bean id="biopaxTransactionManager"
         class="org.springframework.orm.hibernate4.HibernateTransactionManager">
         <property name="sessionFactory" ref="pcSessionFactory" />
     </bean>
     
-	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
+	<bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor" />
 	
 	<bean id="pcSessionFactory"
 		class="org.springframework.orm.hibernate4.LocalSessionFactoryBean">
-		<property name="dataSource" ref="dataSource" />
+		<property name="dataSource" ref="biopaxDataSource" />
 		<property name="hibernateProperties" ref="hibernateProperties"/>
 		<property name="annotatedClasses">
 			<list>
@@ -46,14 +46,14 @@
 	</bean>		
 
 	<beans profile="prod">
-		<bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool"
+		<bean id="biopaxDataSource" class="org.h2.jdbcx.JdbcConnectionPool"
 			destroy-method="dispose">
 			<constructor-arg>
 				<bean class="org.h2.jdbcx.JdbcDataSource">
 					<!-- using h2 tuning properties (risky, aye, but greatly improves persisting and indexing the merged biopax model once;
 					then, we normally just use in-memory BioPAX Model (from the file archive) instead, 
 					and the db becomes read-only and for search queries only) -->
-					<property name="URL" value="${cpath2.db.connection}${cpath2.db};MV_STORE=FALSE;MVCC=FALSE;LOG=0;CACHE_SIZE=131072" /> <!-- ;LOCK_MODE=0;UNDO_LOG=0 -->
+					<property name="URL" value="${cpath2.db.connection}${cpath2.db};MV_STORE=FALSE;MVCC=FALSE;LOG=0;CACHE_SIZE=131072" />
 					<property name="user" value="${cpath2.db.user}" />
 					<property name="password" value="${cpath2.db.password}" />
 				</bean>
@@ -74,7 +74,7 @@
 	</beans>
 
 	<beans profile="dev">
-		<bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool"
+		<bean id="biopaxDataSource" class="org.h2.jdbcx.JdbcConnectionPool"
 			destroy-method="dispose">
 			<constructor-arg>
 				<bean class="org.h2.jdbcx.JdbcDataSource">
@@ -102,7 +102,7 @@
 	</beans>
 	
 	<beans profile="test">
-		<bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool"
+		<bean id="biopaxDataSource" class="org.h2.jdbcx.JdbcConnectionPool"
 			destroy-method="dispose">
 			<constructor-arg>
 				<bean class="org.h2.jdbcx.JdbcDataSource">

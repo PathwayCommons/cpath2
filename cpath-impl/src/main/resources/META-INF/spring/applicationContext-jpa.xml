@@ -14,7 +14,7 @@
 
 	<context:property-placeholder location="file:${CPATH2_HOME}/cpath2.properties" />
 
-	<tx:annotation-driven />
+	<tx:annotation-driven/>
 
 	<!-- auto-create and init spring-data repositories -->
 	<jpa:repositories base-package="cpath.jpa" />
@@ -28,7 +28,7 @@
 
 	<bean id="entityManagerFactory"
 		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
-		<property name="dataSource" ref="dataSource" />
+		<property name="dataSource" ref="metaDataSource" />
 		<property name="packagesToScan" value="cpath.jpa" />
 		<property name="jpaVendorAdapter" ref="hibernateJpaVendorAdapter" />
 	</bean>
@@ -43,7 +43,7 @@
 -->
 		</bean>
 
-		<bean id="dataSource" class="org.h2.jdbcx.JdbcConnectionPool" destroy-method="dispose">
+		<bean id="metaDataSource" class="org.h2.jdbcx.JdbcConnectionPool" destroy-method="dispose">
 		  <constructor-arg>
 			<bean class="org.h2.jdbcx.JdbcDataSource">
 				<property name="URL" value="${cpath2.db.connection}${cpath2.db}_meta;MV_STORE=FALSE;MVCC=FALSE" />
@@ -62,7 +62,7 @@
 			<property name="generateDdl" value="true" />
 		</bean>
 
-		<jdbc:embedded-database id="dataSource" type="H2" />
+		<jdbc:embedded-database id="metaDataSource" type="H2" />
 
 	</beans>
 	
