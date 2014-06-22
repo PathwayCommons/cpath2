@@ -35,7 +35,6 @@ import cpath.dao.*;
 import cpath.importer.Merger;
 import cpath.importer.PreMerger;
 import cpath.jpa.Metadata;
-import cpath.jpa.MetadataRepository;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
@@ -759,7 +758,15 @@ public final class Admin {
     	// 2) export to all other formats
         for(String biopaxArchive : biopaxArchives) {
         	//load model and convert to other formats
-    		Model m = (new SimpleIOHandler()).convertFromOWL(biopaxStream(biopaxArchive));
+        	InputStream biopaxStream = null;
+        	try {
+        		biopaxStream = biopaxStream(biopaxArchive);
+        	} catch (IOException e) {
+        		LOG.error("Failed to read " + biopaxArchive + 
+        				"; skipped (wasn't created before?)", e );
+        		continue;
+        	}
+    		Model m = (new SimpleIOHandler()).convertFromOWL(biopaxStream);
     		for(OutputFormat format : EXPORT_TO_FORMATS) {
     			int idx = biopaxArchive.indexOf(".BIOPAX");
     			String prefix = biopaxArchive.substring(0, idx);
@@ -844,8 +851,11 @@ public final class Admin {
         		// because we want all data from same DB merge into one file,
         		// e.g., Reactome human, mouse, fungi data together, though might imported them via separate metadata)
         		archiveName = cpath.biopaxExportFileName(md.standardName());
-        		exportBiopax(dao, archiveName,  md.getName().toArray(new String[]{}), null);
-        		files.add(archiveName);
+        		//skip previously done files (this metadata has the same std. name as previously processed one)
+        		if(!files.contains(archiveName)) {
+        			exportBiopax(dao, archiveName,  md.getName().toArray(new String[]{}), null);
+        			files.add(archiveName);
+        		}
         	}
         }	
         
@@ -860,10 +870,11 @@ public final class Admin {
         if(!(new File(biopaxArchive)).exists()) {
         	LOG.info("create-downloads: creating new " + 	biopaxArchive);
         	
-        	//find all pathways and interactions only (all child elements will be then exported too)    	  	
+        	//find all entities (all child elements will be then exported too)    	  	
        		Collection<String> uris = new HashSet<String>();
-           	uris.addAll(findAllUris(dao, Pathway.class, datasources, organisms));
-           	uris.addAll(findAllUris(dao, Interaction.class, datasources, organisms));   	
+           	uris.addAll(findAllUris(dao, Pathway.class, datasources, organisms));  	
+           	uris.addAll(findAllUris(dao, Interaction.class, datasources, organisms));
+           	uris.addAll(findAllUris(dao, Complex.class, datasources, organisms));
         	
     		// export objects found above to a new biopax archive        	
         	if(!uris.isEmpty()) {
@@ -888,7 +899,7 @@ public final class Admin {
 		case BINARY_SIF:
 			return format + ".tsv";
 		case EXTENDED_BINARY_SIF:
-			return format + ".edges.tsv";
+			return format + ".tsv";
 		default://fail - biopax is treated specially, not here
 			throw new IllegalArgumentException(format.toString() + " not allowed.");
 		}

@@ -81,7 +81,7 @@ network is useful for those applications that require pairwise
 interaction input.  SIF format can be easily imported into popular
 network analysis tools, like <a target="_blank" href="http://wiki.cytoscape.org/Cytoscape_User_Manual/Network_Formats">Cytoscape</a>.
 </p><p>
-In this output format, all participants will be specified as URIs.
+In this output format, all participants will be specified as chemical or gene names.
 This format does not contain any cross-species
 interactions and is available for all pathways and interactions within
 this database.
@@ -90,14 +90,15 @@ this database.
 <h3>Extended Simple Interaction Format (EXTENDED_BINARY_SIF)</h3>
 <p>
 Similar to the basic SIF output format, except that this output format is
-specified in two sections.  Each section starts with one row of column
-headings.  Each entry is multi-column, tab-delimited.  The sections
-are separated by one blank line.  The first section is BINARY_SIF as
-describe above, followed by edge attributes.  Current edge attributes
-include the interaction data source and PubMed ID.  The second section
-contains participant URI followed by node attributes.  Current
-node attributes include entity type, entity name, UNIFICATION_XREF
-(one or more UniProt IDs in the case of a protein reference, or a
+specified in two sections. Each section starts with one row of column
+headings.  The two sections are separated by a single blank line. 
+Each entry is multi-column, tab-delimited. The first section is BINARY_SIF as
+describe above, followed by edge attributes (e.g., data source, PMID).  
+Current edge attributes include the interaction data source and PubMed ID.  
+The second section contains participant (molecule or gene) name 
+followed by several node attributes.  
+Current node attributes include entity type, UNIFICATION_XREF
+(e.g., one or more UniProt IDs in the case of a protein reference, or a
 ChEBI ID in the case of a Small Molecule reference), and
 RELATIONSHIP_XREF (including RefSeq, Entrez Gene, and Gene Symbol).
 If an attribute cannot be determined, "NOT_SPECIFIED" will be used.
