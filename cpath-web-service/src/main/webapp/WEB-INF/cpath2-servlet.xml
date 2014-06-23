@@ -17,6 +17,9 @@
     <context:component-scan base-package="cpath.webservice" />
 	<context:property-placeholder/>
 
+	<!-- enable the default servlet serving local static resources, such as css, js, img... -->
+    <mvc:default-servlet-handler/>
+
 	<!-- Exceptions handler -->
 	<bean
 		class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
@@ -44,8 +47,10 @@
 	    
 	<!-- serve all cpath2 generated data archives (organized by species, data sources, formats) -->	
 	<mvc:resources mapping="/downloads/**" location="file:${CPATH2_HOME}/downloads/" />
-	<!-- make internal css, script resources available for the html/jsp pages -->
-	<mvc:resources mapping="/resources/**" location="/resources/" />
+
+	<!-- the following replaced with mvc:default-servlet-handler above-->
+<!-- 	<mvc:resources mapping="/resources/**" location="/resources/" /> -->
+
 	<!-- do not want config. and data files seen at all (even securely, by admin), then disable the following line -->
 	<mvc:resources mapping="/admin/homedir/**" location="file:${CPATH2_HOME}/" />
 
@@ -70,7 +75,5 @@
 
 	<!-- mvc:annotation-driven must the last -->
     <mvc:annotation-driven content-negotiation-manager="contentNegotiationManager"/>
-
-<!--     <mvc:default-servlet-handler/> -->
       
 </beans>

@@ -4,10 +4,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  	<link rel="stylesheet" media="screen" href="<c:url value="/resources/css/qunit.css"/>" />	
+  	<link rel="stylesheet" media="screen" href="/resources/css/qunit.css" />	
 	<jsp:include page="head.jsp"/>
-	<script src="<c:url value="/resources/scripts/qunit.js"/>"></script>
-	<script src="<c:url value="/resources/scripts/tests.js"/>"></script>
+	<script src="/resources/scripts/qunit.js"></script>
+	<script src="/resources/scripts/tests.js"></script>
 	<title>cPath2::QUnit Tests</title>
 </head>
 <body>

@@ -5,10 +5,11 @@
 <html>
 <head>
 <jsp:include page="head.jsp" />
-<script type="text/javascript" src="<c:url value="/resources/scripts/pw.js"/>"></script>
+<script type="text/javascript" src="/resources/scripts/pw.js"></script>
 <title>cPath2::Client</title>
 </head>
-<body data-spy="scroll" data-target=".navbar">
+
+<body data-spy="scroll" data-target=".navbar" ng-app="pcApp" ng-controller="PcController">
 	<jsp:include page="header.jsp" />
 
 	<h2>Client</h2>

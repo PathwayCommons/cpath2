@@ -183,6 +183,12 @@ public class PagesController extends BasicController {
     	return "stats";
     } 
     
+
+    // The Web App (AngularJS, rich HTML5 portal)
+    @RequestMapping("/view")
+    public String view() {
+    	return "view";
+    }
     
     // OTHER resources
     

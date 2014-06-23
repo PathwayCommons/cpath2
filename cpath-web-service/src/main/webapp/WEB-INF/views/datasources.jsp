@@ -6,10 +6,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<link href="<c:url value="/resources/css/xeditable.css"/>" rel="stylesheet" />
+	<link href="/resources/css/xeditable.css" rel="stylesheet" />
 	<jsp:include page="head.jsp" />
-	<script src="<c:url value="/resources/scripts/xeditable.js"/>"></script>
-	<script src="<c:url value="/resources/scripts/datasources.js"/>"></script>	
+	<script src="/resources/scripts/xeditable.js"></script>
+	<script src="/resources/scripts/datasources.js"></script>	
 	<title>cPath2::Datasources</title>
 </head>
 <body>
