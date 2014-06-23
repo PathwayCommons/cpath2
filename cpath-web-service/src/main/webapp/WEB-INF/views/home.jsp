@@ -12,7 +12,7 @@ or the fat JAR with embedded application server was started) -->
 <html>
 <head>
 	<jsp:include page="head.jsp" />
-	<script src="<c:url value="/resources/scripts/help.js"/>"></script>
+	<script src="/resources/scripts/help.js"></script>
 	<title>cPath2::Info</title>
 </head>
 <body data-spy="scroll" data-target=".navbar">
@@ -415,7 +415,7 @@ or the fat JAR with embedded application server was started) -->
 	<div class="parameters col-sm-6" id="output_formats">
 		<h3>Output Format ('format'):</h3>
 		<p>
-			See also <a href="/metadata/formats">output format description.</a>
+			See also <a href="/formats">output format description.</a>
 		</p>
 		<!-- items are to be added here by a javascript -->
 		<ul id="formats"></ul>

@@ -5,13 +5,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-<link href="<c:url value="/resources/css/bootstrap-select.min.css"/>" rel="stylesheet" />
+<link href="/resources/css/bootstrap-select.min.css" rel="stylesheet" />
 
 <jsp:include page="head.jsp" />
 
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-<script type="text/javascript" src='<c:url value="/resources/scripts/codes2names.js"/>'></script>
-<script type="text/javascript" src='<c:url value="/resources/scripts/stats.js"/>'></script>
+<script type="text/javascript" src="/resources/scripts/codes2names.js"></script>
+<script type="text/javascript" src="/resources/scripts/stats.js"></script>
 
 <title>cPath2::Log</title>
 </head>
