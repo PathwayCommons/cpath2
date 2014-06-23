@@ -29,9 +29,9 @@ public class LogStatsController extends BasicController {
 	
 	public LogStatsController() {
     	try {
-			Class.forName("cpath.log.LogUtils");
+			Class.forName("cpath.dao.LogUtils");
 		} catch (ClassNotFoundException e) {
-			log.error("Class.forName(cpath.log.LogUtils) failed");
+			log.error("Class.forName(cpath.dao.LogUtils) failed");
 		}
 	}
 	

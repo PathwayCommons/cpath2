@@ -28,9 +28,6 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 	}
 	
 	
-	/* (non-Javadoc)
-	 * @see cpath.log.service.LogService#downloadsTimeline(cpath.log.LogType, java.lang.String)
-	 */
 	@Override
 	public Map<String, List<Object[]>> downloadsTimeline(LogType logType,
 			String name) {
