@@ -18,7 +18,6 @@
 		<intercept-url pattern="/logbackStatus" access="ROLE_ADMIN" />
 		<intercept-url pattern="/admin" access="ROLE_ADMIN" />
 		<intercept-url pattern="/admin/**" access="ROLE_ADMIN" />
-		<intercept-url pattern="/metadata/*" access="IS_AUTHENTICATED_ANONYMOUSLY" />
 		<intercept-url pattern="/tests" access="ROLE_USER" />
 		<intercept-url pattern="/**" access="IS_AUTHENTICATED_ANONYMOUSLY"/>
 		<logout/>

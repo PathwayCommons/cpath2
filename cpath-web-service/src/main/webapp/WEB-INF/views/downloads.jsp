@@ -19,24 +19,25 @@
 			<code>${cpath.name}.${cpath.version}.&lt;SOURCE&gt;.&lt;FORMAT&gt;.&lt;ext&gt;.gz</code>
 			</blockquote>
 			<em>&lt;SOURCE&gt;</em> is a standard name, taxonomy ID, or 'All';
-			<em>&lt;FORMAT&gt;</em> is one of the <a href="formats">output formats</a>; 
+			<em>&lt;FORMAT&gt;</em> is one of the <a href="formats">Output Formats</a>; 
 			<em>&lt;ext&gt;</em> is the file type.
 		</div>
 	  </div>
 		
 		<h3>Notes</h3>
 		<ul>
-			<li><strong>GSEA format</strong> - we export only UniProt accession
-				numbers (of <em>ProteinReferences</em>) and do not check for whether
-				a pathway and its member entities come from different organisms
-				(which, in fact, happens in pathways from PhosphoSitePlus, HumanCyc,
-				PantherDb). That also means, some ProteinReferences are not there
-				listed (i.e., those not having a UniProt <em>UnificationXref</em>).
-				Hopefully, those missing are "generic" ones (check in the
-				corresponding BioPAX archive, or using 'get?uri=...' query, to make
-				sure).</li>
-			<li><strong>Archives by species and source</strong> - were generated based on the 
+			<li><strong>GSEA output</strong> - we export only UniProt primary IDs
+				(of <em>ProteinReferences</em>) if they are found.</li>
+			<li><strong>Archives by species/source</strong> - were created based on the 
 				full-text search results, using 'organism' and 'datasource' filters, respectively.</li>
+			<li><strong>Blacklisting</strong> 
+				- <a href="http://code.google.com/p/biopax-pattern/wiki/UsingBinaryInteractionFramework#Blacklisting_ubiquitous_small_molecules" 
+				target="_blank">blacklist.txt file description</a></li>
+			<li><strong>Validation</strong> - one can download full <a href='<c:url value="/validations"/>'>
+				BioPAX validation reports (quite simple XML)</a></li>
+			<li><strong>Other data</strong> - one can also get <a href='<c:url value="/datadir"/>'>original and normalized data</a> 
+				(files at various intermediate states, before merged with UniProt, ChEBI and together into our main BioPAX model)</li>
+				
 		</ul>
 		
 		<h3>Files</h3>

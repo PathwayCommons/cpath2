@@ -11,7 +11,7 @@
 <link href="/resources/css/jquery.dataTables.css" rel="stylesheet">
 <jsp:include page="head.jsp" />
 <script src="/resources/scripts/pw.js"></script>
-<title>cPath2::Client</title>
+<title>cPath2::Site</title>
 </head>
 
 <body>
@@ -56,7 +56,7 @@
 				<span ng-show="response.numHits > 0">Total hits: {{response.numHits}} </span>
 				<span ng-show="response.numHits > response.maxHitsPerPage">(top {{response.maxHitsPerPage}} are shown)</span>
 				<table class="table table-striped table-bordered">
-				<thead><tr><th>#</th><th>Pathway Name</th><th>Data Source</th><th>Open/Get</th></tr></thead>
+				<thead><tr><th>#</th><th>Pathway Name</th><th>Provider ID</th><th>Open/Get</th></tr></thead>
 				<tbody>
 				<!-- link rows to PCViz using pathway URIs -->
 				<tr ng-repeat="hit in response.searchHit">

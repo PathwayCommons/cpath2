@@ -5,6 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -50,7 +52,6 @@ public class PagesController extends BasicController {
     public String home() {
     	return "home";
     }	    
-
     
     @RequestMapping("/formats")
     public String getOutputFormatsDescr() 
@@ -98,18 +99,30 @@ public class PagesController extends BasicController {
     	return "error";
     }
 
-	@RequestMapping(value = "/admin/homedir")
+	@RequestMapping("/admin/homedir")
     public String homedir(Model model, HttpServletRequest request) {
 		
     	String path = cpath.homeDir(); 
     	
-    	Map<String,String> files = files(path, null);
+    	//find/list all files/dirs in the homedir, but traverse only into "data" subdir
+    	Map<String,String> files = files(path, null, true, Collections.singleton("data"));
 
     	model.addAttribute("files", files.entrySet());
 		
 		return "homedir";
     }
 
+    @RequestMapping("/datadir")
+    public String data(Model model) {
+    	String path = cpath.dataDir(); 
+    	
+    	//find/list all files in the datadir, but traverse into every provider's subdir.
+    	Map<String,String> files = files(path, null, false, null);
+
+    	model.addAttribute("files", files.entrySet());
+    	
+    	return "datadir";
+    }	
 	
     @RequestMapping("/downloads")
     public String downloads(Model model, HttpServletRequest request) {
@@ -226,13 +239,21 @@ public class PagesController extends BasicController {
     	return "tests";
     }
     
-	/*
+	/**
 	 * Recursively gets the sorted filename->size map
 	 * from the cpath2 home and dir and 'data' sub-directory.
 	 * 
 	 * TODO consider using a Tree object (set of nodes) in the future
-	 */
-	private Map<String, String> files(final String path, final String relativePath) {
+	 * 
+     * @param path
+     * @param relativePath
+     * @param showDirNames
+     * @param goIntoDirs expand (list files in) the specified sub-directories, or all - if null.
+     * @return
+     */
+	private Map<String, String> files(String path, String relativePath, 
+			boolean showDirNames, Collection<String> goIntoDirs) 
+	{
 		Map<String,String> files = new TreeMap<String,String>();
 		
 		String fullPath = (relativePath == null) ? path 
@@ -244,19 +265,21 @@ public class PagesController extends BasicController {
     		String name = f.getName();
     		
     		if(name.startsWith(".")) 
-    			continue; //skip
+    			continue; //skip system/hidden
     		
     		//add curr. rel. path to this filename
     		name = (relativePath == null) ? name 
 					: relativePath + File.separator + name;
     		
-    		if(f.isDirectory() && name.startsWith("data")) { 
+    		if(f.isDirectory() && (goIntoDirs==null || goIntoDirs.contains(name))) { 
     			//deep traverse into the data dir. only
-    			files.putAll(files(path, name));
+    			files.putAll(files(path, name, showDirNames, goIntoDirs));
     		} else {	
     			String size =  (f.isDirectory()) ? "directory"
-    					: FileUtils.byteCountToDisplaySize(f.length());  			
-    			files.put(name, size);
+    					: FileUtils.byteCountToDisplaySize(f.length());
+    			
+    			if(!f.isDirectory() || showDirNames)
+    				files.put(name, size);
     		}
     	}
     	

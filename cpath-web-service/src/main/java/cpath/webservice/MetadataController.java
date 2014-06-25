@@ -69,11 +69,9 @@ public class MetadataController extends BasicController {
     }
 
     
-	@RequestMapping("/metadata/validations")
+	@RequestMapping("/validations")
     public String queryForValidationInfoHtml(Model model) 
     {
-		log.debug("Query for all validations summary (html)");
-    	
 		//get the list of POJOs:
     	model.addAttribute("providers", validationInfo());
     	
@@ -81,38 +79,37 @@ public class MetadataController extends BasicController {
     }
  
     
-    @RequestMapping("/metadata/validations/{identifier}.html") //a JSP view
-    public String queryForValidation(
-    		@PathVariable String identifier, Model model, HttpServletRequest request) 
-    {
-
-    	ValidatorResponse body = service.validationReport(identifier, null);
-		model.addAttribute("response", body);
-		
-		return "validation";
-    }
+//    @RequestMapping("/validations/{identifier}.html") //a JSP view
+//    public String queryForValidation(
+//    		@PathVariable String identifier, Model model, HttpServletRequest request) 
+//    {
+//
+//    	ValidatorResponse body = service.validationReport(identifier, null);
+//		model.addAttribute("response", body);
+//		
+//		return "validation";
+//    }
     
-    @RequestMapping("/metadata/validations/{identifier}/{file}.html") //a JSP view
-    public String queryForValidationByProviderAndFile(
-    		@PathVariable String identifier, @PathVariable String file, 
-    		Model model, HttpServletRequest request) 
-    {
-    	ValidatorResponse body = service.validationReport(identifier, file);
-		model.addAttribute("response", body);
-		
-		return "validation";
-    }    
+//    @RequestMapping("/validations/{identifier}/{file}.html") //a JSP view
+//    public String queryForValidationByProviderAndFile(
+//    		@PathVariable String identifier, @PathVariable String file, 
+//    		Model model, HttpServletRequest request) 
+//    {
+//    	ValidatorResponse body = service.validationReport(identifier, file);
+//		model.addAttribute("response", body);
+//		
+//		return "validation";
+//    }    
 
     
     // REST XML or Json web services
     
-    @RequestMapping("/metadata/validations/{identifier}")
-    public @ResponseBody ValidatorResponse queryForValidation(
-    		@PathVariable String identifier, HttpServletRequest request) 
-    {	
-    	return service.validationReport(identifier, null);
-    } 
-    
+//    @RequestMapping("/metadata/validations/{identifier}")
+//    public @ResponseBody ValidatorResponse queryForValidation(
+//    		@PathVariable String identifier, HttpServletRequest request) 
+//    {	
+//    	return service.validationReport(identifier, null);
+//    }
     
     // returns XML or Json 
     @RequestMapping("/metadata/validations/{identifier}/{file}")
@@ -313,7 +310,7 @@ public class MetadataController extends BasicController {
 			vi.setIdentifier(m.getIdentifier());
 			
 			for(Content pd : m.getContent())
-				vi.getFiles().put(pd.getFilename(), pd + "; " + status(pd));
+				vi.getFiles().put(pd.getFilename(), pd.toString());
 			
 			list.add(vi);
 		}

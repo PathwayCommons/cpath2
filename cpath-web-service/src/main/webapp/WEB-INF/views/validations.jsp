@@ -21,7 +21,8 @@
 			</dt>
 			<dd><ul>
 				<c:forEach var="file" items="${datasource.files}">
-					<li><a href='<c:url value="/metadata/validations/${datasource.identifier}/${file.key}.html"/>'>${file.value}</a></li>
+					<li><a target="_blank" 
+						href='<c:url value="/datadir/${datasource.identifier}/${file.key}.validation.xml.gz"/>'>${file.key} validation XML</a></li>
 				</c:forEach>
 				</ul>
 			</dd>
