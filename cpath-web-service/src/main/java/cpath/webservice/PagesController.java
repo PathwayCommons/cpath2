@@ -164,9 +164,9 @@ public class PagesController extends BasicController {
     // Access Log UI 
     
     @RequestMapping("/log")
-    public String allStats(Model model) {
-    	return "redirect:/log/TOTAL/stats";
-    }	
+    public String allStats() {
+    	return "redirect:log/TOTAL/stats";
+    }
         
     @RequestMapping("/log/{logType}/stats")
     public String statsByType(Model model, @PathVariable LogType logType) {

@@ -1,18 +1,23 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
+<c:set var="xmlBaseLength" value="${fn:length(cpath.xmlBase)}" />
+
 <!DOCTYPE html>
 <html>
 <head>
+<link href="/resources/css/jquery.dataTables.css" rel="stylesheet">
 <jsp:include page="head.jsp" />
-<script type="text/javascript" src="/resources/scripts/pw.js"></script>
+<script src="/resources/scripts/pw.js"></script>
 <title>cPath2::Client</title>
 </head>
 
-<body data-spy="scroll" data-target=".navbar" ng-app="pcApp" ng-controller="PcController">
+<body>
 	<jsp:include page="header.jsp" />
 
-	<h2>Client</h2>
+  <div id="ng-app" ng-app="pcApp" ng-controller="PcController">
 	
 	  Current action/view: <em ng-bind="renderAction">Unknown</em>&nbsp;
 	  Sub-path: <em>{{ renderPath[ 1 ] }}</em>.
@@ -35,43 +40,47 @@
         </div>
 		
 		<div ng-switch-when="pw">
+		
+			<h2>Biological Pathways</h2>
+		
 			<div class="row" id="find-row">
-				<div class="span9 offset3">
-					<form id="find-form">
-						<div class="span8">
-							<input type="text" id="keyword-text" value="" 
-								class="input-large span3"
-								placeholder="Enter a keyword (e.g. MDM2)">
-							<button class="btn btn-large btn-primary" 
-								id="find-button">Find Pathways &raquo;</button>
-						</div>
-					</form>
-				</div>
+				<form id="find-form" class="form-inline col-sm-9">
+					<input type="text" id="keyword-text" value="" class="input-large"
+						placeholder="Enter a keyword (e.g. MDM2)">
+					<button class="btn btn-large btn-primary" 
+						id="find-button"> Find Pathways &raquo;</button>
+				</form>
 			</div>
 			<hr>
 			<div class="row">
-				<div class="span10 offset1 documentation">
-					<!-- a list to be filled by script-->
-					<span ng-show="{{ response.numHits > 0 }}">Total hits: {{response.numHits}}</span>
-					<span ng-show="{{ response.numHits > response.maxHitsPerPage }}">
-						(only top {{response.maxHitsPerPage }} are listed)</span>			
-					<table class="table table-striped table-bordered">
-					<thead><tr><th>Name</th><th>Source</th><th>Organism</th></tr></thead>
-					<tbody>
-					<!-- iterate over hits array -->
-					<tr ng-repeat="hit in hits">
-						<!-- %TODO%  link to PCViz by URI, using http://www.pathwaycommons.org/pcviz/#pathway/encodedURI -->
-						<td>{{hit.name}}</td><td>{{hit.dataSource}}</td><td>{{hit.organism}}</td>
-					</tr>
-					</tbody>
-					</table>
-					<p class="text-center">
-						<a href="#" title="go back to the top" class="top-scroll">^top</a>
-					</p>
-				</div>
+				<span ng-show="response.numHits > 0">Total hits: {{response.numHits}} </span>
+				<span ng-show="response.numHits > response.maxHitsPerPage">(top {{response.maxHitsPerPage}} are shown)</span>
+				<table class="table table-striped table-bordered">
+				<thead><tr><th>#</th><th>Pathway Name</th><th>Data Source</th><th>Open/Get</th></tr></thead>
+				<tbody>
+				<!-- link rows to PCViz using pathway URIs -->
+				<tr ng-repeat="hit in response.searchHit">
+					<td>{{$index}}</td>
+					<td>{{hit.name}}</td><td><code>{{hit.dataSource[0].substring(${xmlBaseLength})}}</code></td>
+					<td>
+						<ul class="list-inline">
+						<li><a target="_blank" href ng-href="http://www.pathwaycommons.org/pcviz/#pathway/{{encode(hit.uri)}}">PCViz (view)</a></li>
+						<li><a target="_blank" href ng-href="{{hit.uri}}">by URI</a></li>
+						<li><a target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}">BioPAX</a></li>
+						<li><a target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=BINARY_SIF">SIF</a></li>
+						<li><a target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=EXTENDED_BINARY_SIF">Ext.SIF</a></li>
+						<li><a target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=SBGN">SBGN</a></li>
+						<li><a target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=GSEA">GSEA(gmt)</a></li>
+						</ul>
+					</td>
+				</tr>
+				</tbody>
+				</table>
 			</div>
 		</div>
 	  </div>
+
+  </div>
 	
 	<jsp:include page="footer.jsp" />
 	

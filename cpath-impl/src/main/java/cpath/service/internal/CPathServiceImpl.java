@@ -139,9 +139,11 @@ class CPathServiceImpl implements CPathService {
 
 	@PostConstruct
 	synchronized void init() {		
-		if(CPathSettings.getInstance().isProxyModelEnabled() 
-				&& paxtoolsModel == null
-				&& !CPathSettings.getInstance().isAdminEnabled()) { 			
+		if(
+//(ignore the flag)			CPathSettings.getInstance().isProxyModelEnabled() && 
+			paxtoolsModel == null
+				&& !CPathSettings.getInstance().isAdminEnabled()) 
+		{ 			
 			//fork the model loading (which takes quite a while)
 			ExecutorService executor = Executors.newSingleThreadExecutor();
 			executor.execute(
@@ -888,7 +890,7 @@ class CPathServiceImpl implements CPathService {
 	@Override
 	public LogEntity count(String date, LogEvent event, Geoloc loc) 
 	{		
-		if(loc == null)
+		if(loc == null) //unable to detect from IP or local IP addr.
 			loc = new Geoloc();
 		
 		// find or create a record, count+1
@@ -898,7 +900,7 @@ class CPathServiceImpl implements CPathService {
 				.findByEventNameIgnoreCaseAndGeolocCountryAndGeolocRegionAndGeolocCityAndDate(
 					event.getName(), loc.getCountry(), loc.getRegion(), loc.getCity(), date);
 		} catch (DataAccessException e) {
-			log.error("count(), findByEventNameAndGeolocCountryAndGeolocRegionAndGeolocCityAndDat " +
+			log.error("count(), findByEventNameIgnoreCaseAndGeolocCountryAndGeolocRegionAndGeolocCityAndDate " +
 				"failed to update for event: " + event.getName() + 
 				", loc: " + loc.toString() + ", date: " + date, e);
 		}

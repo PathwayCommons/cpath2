@@ -2,12 +2,10 @@
 
 $(function(){ // document ready
 
-    $("#find-form").submit(function() {
-    	var keyword = $("#keyword-text").val();
-    	
+    $("#find-button").click(function() {
+    	var keyword = $("#keyword-text").val();   	
     	if(keyword)
-    		window.location = "#/pw/" + encodeURIComponent(keyword);
-    	
+    		window.location = "#/pw/" + encodeURIComponent(keyword);   	
         return false;
     });
     
@@ -53,22 +51,20 @@ pcApp.controller('PcController', function($scope, $route, $routeParams, $http) {
 		$scope.renderPath = renderPath;
 		
 		if(renderPath[0] == "pw") {
-
 			//get the query parameter, if any
 			var kw = ($routeParams.kw || "");
 			$("#keyword-text").val(kw);
 
 			if(kw) {
-				//find pathways by keyword(s)
-				$http.get('/find_pathway/' + 
-						encodeURIComponent(kw)).success(function(data) 
-				{
-					$scope.hits = data;
+				//find pathways (top hits, the first 'page' only) by keyword(s)
+				$http.get('/search.json?type=pathway&q=' + encodeURIComponent(kw))
+					.success(function(data) {
+					$scope.response = data;
 				});	
 			} else {
-				//list top pathways (callback=JSON_CALLBACK is very important!)
-				$http.get('/top_pathways').success(function(data) {
-					$scope.hits = data;
+				//list top pathways
+				$http.get('/top_pathways.json').success(function(data) {
+					$scope.response = data;
 				});	
 			}
 		}
@@ -84,6 +80,11 @@ pcApp.controller('PcController', function($scope, $route, $routeParams, $http) {
             render();
         }
     );
-	
+    
+
+    $scope.encode = function(uri) {
+        return window.encodeURIComponent(uri);
+    };
+	    
 });
 

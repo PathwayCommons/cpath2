@@ -57,7 +57,7 @@
 	<h2>Other</h2>
 	<div id="admin_links" class="row dropdown">	
 		<div class="col-xs-12">
-	    <a href="#fakelink" class="dropdown-toggle" data-toggle="dropdown">Links<b class="caret"></b></a>
+	    <a href="" class="dropdown-toggle" data-toggle="dropdown">Links<b class="caret"></b></a>
         <span class="dropdown-arrow"></span>
 		<ul class="dropdown-menu">
 			<li><a href="admin/homedir.html">View Home Directory (except hidden,tmp,cache)</a></li>

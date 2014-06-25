@@ -27,6 +27,7 @@ public class Geoloc {
 	private String city;
 	
 	public Geoloc() {
+		country = "unknown";
 	}
 	
 	public Geoloc(String country, String region, String city) {

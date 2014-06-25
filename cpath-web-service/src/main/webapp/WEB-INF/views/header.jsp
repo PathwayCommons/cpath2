@@ -30,7 +30,7 @@
                   		 <li><a href="<c:url value="/view/#/pw"/>">Pathways</a></li>	
                     	 <li class="divider"></li>
                     	 <li><a href="<c:url value="/metadata/validations"/>">Validations</a></li>
-                    	 <li><a href="<c:url value="/log"/>">Log</a></li>
+                    	 <li><a href="<c:url value="/log/TOTAL/stats"/>">Log</a></li>
                     	</ul>
                 	</li>									
 					<li class="dropdown">
