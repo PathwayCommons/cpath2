@@ -6,16 +6,16 @@
 <html>
 <head>
 <jsp:include page="head.jsp" />
-<title>cPath2::Home Dir</title>
+<title>cPath2::Data Dir</title>
 </head>
 <body>
 	<jsp:include page="header.jsp" />
-		<h2>Internal Home Directory</h2>
+		<h2>Internal Data Directory</h2>
 		<h3>Files:</h3>
 		<dl>
 			<c:forEach var="f" items="${files}">
 				<dt>
-				<a href='<c:url value="/admin/homedir/${f.key}"/>'>${f.key}</a>
+				<a href='<c:url value="/datadir/${f.key}"/>'>${f.key}</a>
 				</dt><dd>(${f.value})</dd>
 			</c:forEach>
 		</dl>

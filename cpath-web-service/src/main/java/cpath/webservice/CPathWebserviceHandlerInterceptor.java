@@ -37,7 +37,7 @@ public final class CPathWebserviceHandlerInterceptor extends
 		String requestUri = request.getRequestURI();
 
 		// log accessing some of static resources (defined in the spring xml/conf.)
-		if( requestUri.contains("/downloads/") ) 
+		if( requestUri.contains("/downloads/") || requestUri.contains("/data/")) 
 		{
 			String ip = BasicController.clientIpAddress(request);
 			LOG.debug("DOWNLOAD " + ip

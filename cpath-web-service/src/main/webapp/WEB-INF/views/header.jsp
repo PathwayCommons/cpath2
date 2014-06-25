@@ -26,10 +26,7 @@
                   		<a href="#" class="dropdown-toggle" data-toggle="dropdown">Web App<b class="caret"></b></a>
                   		<span class="dropdown-arrow"></span>
                   		<ul class="dropdown-menu">
-                  		 <li><a href="<c:url value="/view"/>">About</a></li>
-                  		 <li><a href="<c:url value="/view/#/pw"/>">Pathways</a></li>	
-                    	 <li class="divider"></li>
-                    	 <li><a href="<c:url value="/metadata/validations"/>">Validations</a></li>
+                  		 <li><a href="<c:url value="/view"/>">Site</a></li>
                     	 <li><a href="<c:url value="/log/TOTAL/stats"/>">Log</a></li>
                     	</ul>
                 	</li>									
