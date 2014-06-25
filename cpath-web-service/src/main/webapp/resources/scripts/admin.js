@@ -4,12 +4,7 @@
 //};
 
 $(function() {		
-    // Disable link clicks to prevent page scrolling
-    $(document).on('click', 'a[href="#fakelink"]', function (e) {
-      e.preventDefault();
-    });
-	    	    
-    // Switch
+	// Switch
     $("[data-toggle='switch']").bootstrapSwitch();
 	    	    	    
 });

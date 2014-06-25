@@ -58,12 +58,12 @@
     </form>
   </div>	
   </security:authorize>	
-	
+
+<!-- for Admin users (detected by security:authorize), 
+all the metadata's attributes are in-place editable, 
+and there are action buttons (delete,save,upload, etc.), and input validation;
+for regular users, - show the compact read-only summary of the data providers -->	
 	<div ng-repeat="ds in datasources">
-
-<!-- for Administrators, all metadata's attributes are in-place editable, 
-and there are action buttons (delete,save,upload, etc.), and input validation -->
-
 		 <security:authorize ifAnyGranted="ROLE_ADMIN">
 		  <div class="col-xs-12">
 			<div class="thumbnail">
@@ -71,14 +71,14 @@ and there are action buttons (delete,save,upload, etc.), and input validation --
         			<h3>
         				<img alt="provider's logo" class="datasource-logo" ng-src="{{ds.iconUrl}}" >&nbsp;{{ds.identifier}}		
     				</h3>
-        			<div ng-class="{ 'has-error' : !ds.description}">
+        			<div ng-class="{ 'has-error' : !ds.description }">
         				<a href="#" editable-text="ds.description" e-required e-placeholder="Enter a description" ng-minlength="15">
         				{{ds.description || 'required (min. 15 symbols)'}}</a>
         				<span ng-show="!ds.description" class="help-block">required</span>
         			</div>
         			<ul>
-        				<li ng-if="!ds.notPathwaydata"><em>URI: </em>{{ds.uri  || 'empty'}}</li>
-        				<li><div ng-class="{ 'has-error' : !ds.name[0]}">
+        				<li ng-hide="ds.notPathwayData"><em>URI: </em>{{ds.uri  || 'empty'}}</li>
+        				<li><div ng-class="{ 'has-error' : !ds.name[0] }">
         					<em>display name: </em>
         					<a href="#" editable-text="ds.name[0]" e-required e-placeholder="Enter a display name" ng-minlength="3">
     						{{(ds.name[0] || 'required')}}</a>
@@ -89,31 +89,31 @@ and there are action buttons (delete,save,upload, etc.), and input validation --
     						{{ds.name[1] || 'empty'}}</a></li>
         				<li><em>synonym: </em> <a href="#" editable-text="ds.name[2]" e-placeholder="Enter a synonym">
     						{{ds.name[2] || 'empty'}}</a></li>
-        				<li><div ng-class="{ 'has-error' : !ds.type}"><em>type: </em>
+        				<li><div ng-class="{ 'has-error' : !ds.type }"><em>type: </em>
         					<a href="#" editable-select="ds.type" e-ng-options="v.value as v.value for v in dtypes" e-required>
         					{{ showType(ds) }}</a><span ng-show="!ds.type" class="help-block">required</span></div></li>
         				<li><em>availability: </em><a href="#" editable-select="ds.availability" e-ng-options="v.value as v.value for v in dlicenses">
         					{{ showAvailability(ds) }}</a></li>
-        				<li><div ng-class="{ 'has-error' : !ds.urlToHomepage}"><em>home URL: </em>
+        				<li><div ng-class="{ 'has-error' : !ds.urlToHomepage }"><em>home URL: </em>
         					<a href="#" editable-url="ds.urlToHomepage" e-placeholder="Enter the homepage URL" e-required>
         					{{ds.urlToHomepage || 'empty'}}</a><span ng-show="!ds.urlToHomepage" class="help-block">required</span></div></li>
         				<li><em>data URL: </em>
         					<a href="#" editable-url="ds.urlToData" e-placeholder="Enter the data location">
         					{{ds.urlToData || 'empty'}}</a></li>
-        				<li><div ng-class="{ 'has-error' : !ds.iconUrl}"><em>icon URL: </em>
+        				<li><div ng-class="{ 'has-error' : !ds.iconUrl }"><em>icon URL: </em>
         					<a href="#" editable-url="ds.iconUrl" e-placeholder="Enter the logo URL" e-required>
         					{{ds.iconUrl || 'empty'}}</a><span ng-show="!ds.iconUrl" class="help-block">required</span></div></li>
-        				<li ng-if="!ds.notPathwaydata"><em>cleaner class: </em>
+        				<li><em>cleaner class: </em>
         					<a href="#" editable-text="ds.cleanerClassname" 
         						e-placeholder="that implements cpath.importer.Cleaner interface" ng-minlength="15">
         					{{ds.cleanerClassname  || 'empty'}}</a>
         				</li>
-        				<li ng-if="!ds.notPathwaydata"><em>converter class: </em>
+        				<li><em>converter class: </em>
         					<a href="#" editable-text="ds.converterClassname" 
         						e-placeholder="that implements cpath.importer.Converter interface" ng-minlength="15">
         					{{ds.converterClassname  || 'empty'}}</a>
         				</li>
-        				<li ng-if="!ds.notPathwaydata"><em>PMID: </em><a href="#" editable-text="ds.pubmedId">{{ds.pubmedId || 'empty'}}</a> 
+        				<li><em>PMID: </em><a href="#" editable-text="ds.pubmedId">{{ds.pubmedId || 'empty'}}</a> 
         				 	<a target="_blank" ng-href="http://identifiers.org/pubmed/{{ds.pubmedId}}">go to publicaion</a>
         				</li>
         				<li><em>data: </em>{{ (ds.uploaded) ? "uploaded as " + ds.dataArchiveName : "not uploaded" }}
@@ -145,8 +145,6 @@ and there are action buttons (delete,save,upload, etc.), and input validation --
 			</div>
 		  </div>
 		 </security:authorize>
-		 
-<!-- for regular users, show the compact read-only summary of the data providers -->
 
 		<security:authorize ifNotGranted="ROLE_ADMIN">
 		  <div class="col-sm-6">
@@ -158,20 +156,20 @@ and there are action buttons (delete,save,upload, etc.), and input validation --
 							<a ng-href='{{ds.urlToHomepage}}'>{{ds.name[1] || ds.name[0]}}</a>
         			</h3>
         			<p>{{ds.description}}</p>
-        			<p ng-if="!ds.notPathwaydata">uri: <a ng-href="{{ds.uri}}">{{ds.uri}}</a></p>
+        			<p ng-hide="ds.notPathwayData">uri: <a ng-href="{{ds.uri}}">{{ds.uri}}</a></p>
         			<ul>
         			    <li><em>type: </em>{{ds.type}}</li>
         			    <li><em>display name: </em>{{(ds.name[0]) | lowercase}}</li>
         				<li><em>standard name: </em>{{ds.name[1]}}</li>
         				<li><em>synonym: </em>{{ds.name[2]}}</li>
         				<li><em>availability: </em>{{ds.availability}}</li>
-        				<li ng-if="!ds.notPathwaydata">
+        				<li ng-hide="ds.notPathwayData">
         					<em>counts: </em><span class="badge">{{ds.numPathways}}</span> pathways, 
         				 	<span class="badge">{{ds.numInteractions}}</span> interactions, 
         				 	<span class="badge">{{ds.numPhysicalEntities}}</span> states
         				</li>
-        				<li ng-if="!ds.notPathwaydata"><em>accessed: </em><span class="badge">{{ds.numAccessed}}</span></li>
-        				<li ng-if="!ds.notPathwaydata">
+        				<li ng-hide="ds.notPathwayData"><em>accessed: </em><span class="badge">{{ds.numAccessed}}</span></li>
+        				<li>
         				  <a target="_blank" ng-href="http://identifiers.org/pubmed/{{ds.pubmedId}}">main publication</a>
         				</li>
         			</ul>
