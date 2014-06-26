@@ -19,8 +19,8 @@
 
   <div id="ng-app" ng-app="pcApp" ng-controller="PcController">
 	
-	  Current action/view: <em ng-bind="renderAction">Unknown</em>&nbsp;
-	  Sub-path: <em>{{ renderPath[ 1 ] }}</em>.
+<!-- 	  Current action/view: <em ng-bind="renderAction">Unknown</em>&nbsp; -->
+<!-- 	  Sub-path: <em>{{ renderPath[ 1 ] }}</em>. -->
 	
 	  <!--
         When the route changes, we're going to be setting up the
@@ -55,6 +55,7 @@
 			<div class="row">
 				<span ng-show="response.numHits > 0">Total hits: {{response.numHits}} </span>
 				<span ng-show="response.numHits > response.maxHitsPerPage">(top {{response.maxHitsPerPage}} are shown)</span>
+				<span ng-show="status != 200" class="text-warning">{{errMsg}}</span>
 				<table class="table table-striped table-bordered">
 				<thead><tr><th>#</th><th>Pathway Name</th><th>Provider ID</th><th>Open/Get</th></tr></thead>
 				<tbody>

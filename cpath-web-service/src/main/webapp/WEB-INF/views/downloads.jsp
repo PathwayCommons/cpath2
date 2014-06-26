@@ -26,7 +26,7 @@
 		
 		<h3>Notes</h3>
 		<ul>
-			<li><strong>GSEA output</strong> - we export only UniProt primary IDs
+			<li><strong>GSEA output</strong> - we export only UniProt IDs
 				(of <em>ProteinReferences</em>) if they are found.</li>
 			<li><strong>Archives by species/source</strong> - were created based on the 
 				full-text search results, using 'organism' and 'datasource' filters, respectively.</li>
