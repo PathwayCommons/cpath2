@@ -58,13 +58,24 @@ pcApp.controller('PcController', function($scope, $route, $routeParams, $http) {
 			if(kw) {
 				//find pathways (top hits, the first 'page' only) by keyword(s)
 				$http.get('/search.json?type=pathway&q=' + encodeURIComponent(kw))
-					.success(function(data) {
+					.success(function(data, status) {
 					$scope.response = data;
+					$scope.status = status;
+				}).error(function(data, status) {
+					$scope.status = status;
+					$scope.errMsg = "Search by '" + kw + "' failed (" + status + ")";
+					$scope.response = {};
 				});	
 			} else {
 				//list top pathways
-				$http.get('/top_pathways.json').success(function(data) {
+				$http.get('/top_pathways.json').success(function(data, status) {
 					$scope.response = data;
+					$scope.status = status;
+				}).error(function(data, status) {
+					$scope.status = status;
+					$scope.errMsg = "Failed to get 'top pathways' (" + status + ")";
+					$scope.response = {};
+					console.log(data);
 				});	
 			}
 		}
