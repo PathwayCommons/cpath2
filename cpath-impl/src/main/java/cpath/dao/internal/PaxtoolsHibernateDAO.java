@@ -131,9 +131,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
 		this.simpleIO.normalizeNameSpaces(false);
-		//use absolute URIs when exporting to RDF/XML
-		this.simpleIO.absoluteUris(Boolean.parseBoolean(
-			(cpath.property(CPathSettings.PROP_ABSOLUTE_URI_ENABLED)))); 
 		//- seems, - query parser turns search keywords to lower case and expects index field values are also lower case...		
 		this.xmlBase = CPathSettings.getInstance().getXmlBase(); //set default xml:base
 		this.maxHitsPerPage = Integer.parseInt(cpath.property(CPathSettings.PROP_MAX_SEARCH_HITS_PER_PAGE));
