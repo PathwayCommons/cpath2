@@ -20,7 +20,7 @@
   <security:authorize ifNotGranted="ROLE_ADMIN">
   <!-- the explanation below is not needed for Administrators -->
   <div class="row">
-	<div class="jumbotron">
+  <div class="jumbotron">
 	<h3>Two categories</h3>
 	<blockquote><p>
 		<em><strong>Warehouse</strong></em> data (canonical molecules, ontologies) are converted 
@@ -31,11 +31,11 @@
 		next and merged into the database as well as original reference molecules are replaced 
 		with the corresponding BioPAX warehouse objects.
 	</p></blockquote>
-	</div>
- </div>
+  </div>
+  </div>
  </security:authorize>
 
-  <div id="pathway_datasources" class="row" ng-app="dsApp" id="ng-app" ng-controller="DatasourcesController">
+  <div id="pathway_datasources" ng-app="dsApp" id="ng-app" ng-controller="DatasourcesController">
 	
   <security:authorize ifAnyGranted="ROLE_ADMIN">
   <div class="row">
@@ -63,64 +63,68 @@
 all the metadata's attributes are in-place editable, 
 and there are action buttons (delete,save,upload, etc.), and input validation;
 for regular users, - show the compact read-only summary of the data providers -->	
-	<div ng-repeat="ds in datasources">
+	<div ng-repeat="ds in datasources" class="row">
 		 <security:authorize ifAnyGranted="ROLE_ADMIN">
-		  <div class="col-xs-12">
 			<div class="thumbnail">
       			<div class="caption">
         			<h3>
         				<img alt="provider's logo" class="datasource-logo" ng-src="{{ds.iconUrl}}" >&nbsp;{{ds.identifier}}		
     				</h3>
         			<div ng-class="{ 'has-error' : !ds.description }">
+        			  <p>
         				<a href="#" editable-text="ds.description" e-required e-placeholder="Enter a description" ng-minlength="15">
         				{{ds.description || 'required (min. 15 symbols)'}}</a>
         				<span ng-show="!ds.description" class="help-block">required</span>
+        			  </p>
         			</div>
-        			<ul>
-        				<li ng-hide="ds.notPathwayData"><em>URI: </em>{{ds.uri  || 'empty'}}</li>
-        				<li><div ng-class="{ 'has-error' : !ds.name[0] }">
-        					<em>display name: </em>
-        					<a href="#" editable-text="ds.name[0]" e-required e-placeholder="Enter a display name" ng-minlength="3">
-    						{{(ds.name[0] || 'required')}}</a>
-    						<span ng-show="!ds.name[0]" class="help-block">required</span>
-    						</div>
-    					</li>
-        				<li><em>standard name: </em> <a href="#" editable-text="ds.name[1]" e-placeholder="Enter the standard name" ng-minlength="3">
-    						{{ds.name[1] || 'empty'}}</a></li>
-        				<li><em>synonym: </em> <a href="#" editable-text="ds.name[2]" e-placeholder="Enter a synonym">
-    						{{ds.name[2] || 'empty'}}</a></li>
-        				<li><div ng-class="{ 'has-error' : !ds.type }"><em>type: </em>
-        					<a href="#" editable-select="ds.type" e-ng-options="v.value as v.value for v in dtypes" e-required>
-        					{{ showType(ds) }}</a><span ng-show="!ds.type" class="help-block">required</span></div></li>
-        				<li><em>availability: </em><a href="#" editable-select="ds.availability" e-ng-options="v.value as v.value for v in dlicenses">
-        					{{ showAvailability(ds) }}</a></li>
-        				<li><div ng-class="{ 'has-error' : !ds.urlToHomepage }"><em>home URL: </em>
-        					<a href="#" editable-url="ds.urlToHomepage" e-placeholder="Enter the homepage URL" e-required>
-        					{{ds.urlToHomepage || 'empty'}}</a><span ng-show="!ds.urlToHomepage" class="help-block">required</span></div></li>
-        				<li><em>data URL: </em>
-        					<a href="#" editable-url="ds.urlToData" e-placeholder="Enter the data location">
-        					{{ds.urlToData || 'empty'}}</a></li>
-        				<li><div ng-class="{ 'has-error' : !ds.iconUrl }"><em>icon URL: </em>
-        					<a href="#" editable-url="ds.iconUrl" e-placeholder="Enter the logo URL" e-required>
-        					{{ds.iconUrl || 'empty'}}</a><span ng-show="!ds.iconUrl" class="help-block">required</span></div></li>
-        				<li><em>cleaner class: </em>
-        					<a href="#" editable-text="ds.cleanerClassname" 
-        						e-placeholder="that implements cpath.importer.Cleaner interface" ng-minlength="15">
-        					{{ds.cleanerClassname  || 'empty'}}</a>
-        				</li>
-        				<li><em>converter class: </em>
-        					<a href="#" editable-text="ds.converterClassname" 
-        						e-placeholder="that implements cpath.importer.Converter interface" ng-minlength="15">
-        					{{ds.converterClassname  || 'empty'}}</a>
-        				</li>
-        				<li><em>PMID: </em><a href="#" editable-text="ds.pubmedId">{{ds.pubmedId || 'empty'}}</a> 
-        				 	<a target="_blank" ng-href="http://identifiers.org/pubmed/{{ds.pubmedId}}">go to publicaion</a>
-        				</li>
-        				<li><em>data: </em>{{ (ds.uploaded) ? "uploaded as " + ds.dataArchiveName : "not uploaded" }}
-        					<a ng-show="ds.uploaded" ng-href="admin/homedir/data/{{ds.identifier}}.zip"> (download), </a>&nbsp;
-        					and {{ (ds.premerged) ? "premerged" : "not premerged yet" }}
-        				</li>
-        			</ul> 
+       				<p ng-hide="ds.notPathwayData"><em>URI: </em>{{ds.uri  || 'empty'}}</p>
+       				<div ng-class="{ 'has-error' : !ds.name[0] }">
+       				  <p>
+       					<em>display name: </em>
+       					<a href="#" editable-text="ds.name[0]" e-required e-placeholder="Enter a display name" ng-minlength="3">
+   						{{(ds.name[0] || 'required')}}</a>
+   						<span ng-show="!ds.name[0]" class="help-block">required</span>
+   					  </p>
+   					</div>
+       				<p><em>standard name: </em> <a href="#" editable-text="ds.name[1]" e-placeholder="Enter the standard name" ng-minlength="3">
+   						{{ds.name[1] || 'empty'}}</a></p>
+       				<p><em>synonym: </em> <a href="#" editable-text="ds.name[2]" e-placeholder="Enter a synonym">
+   						{{ds.name[2] || 'empty'}}</a></p>
+       				<div ng-class="{ 'has-error' : !ds.type }">
+       				  <p>
+       					<em>type: </em>
+       					<a href="#" editable-select="ds.type" e-ng-options="v.value as v.value for v in dtypes" e-required>
+       					{{ showType(ds) }}</a><span ng-show="!ds.type" class="help-block">required</span>
+       				  </p>
+       				</div>
+       				<p><em>availability: </em><a href="#" editable-select="ds.availability" e-ng-options="v.value as v.value for v in dlicenses">
+       					{{ showAvailability(ds) }}</a></p>
+       				<div ng-class="{ 'has-error' : !ds.urlToHomepage }"><p><em>home URL: </em>
+       					<a href="#" editable-url="ds.urlToHomepage" e-placeholder="Enter the homepage URL" e-required>
+       					{{ds.urlToHomepage || 'empty'}}</a><span ng-show="!ds.urlToHomepage" class="help-block">required</span></p></div>
+       				<p><em>data URL: </em>
+       					<a href="#" editable-url="ds.urlToData" e-placeholder="Enter the data location">
+       					{{ds.urlToData || 'empty'}}</a></p>
+       				<div ng-class="{ 'has-error' : !ds.iconUrl }"><p><em>icon URL: </em>
+       					<a href="#" editable-url="ds.iconUrl" e-placeholder="Enter the logo URL" e-required>
+       					{{ds.iconUrl || 'empty'}}</a><span ng-show="!ds.iconUrl" class="help-block">required</span></p></div>
+       				<p><em>cleaner class: </em>
+       					<a href="#" editable-text="ds.cleanerClassname" 
+       						e-placeholder="that implements cpath.importer.Cleaner interface" ng-minlength="15">
+       					{{ds.cleanerClassname  || 'empty'}}</a>
+       				</p>
+       				<p><em>converter class: </em>
+       					<a href="#" editable-text="ds.converterClassname" 
+       						e-placeholder="that implements cpath.importer.Converter interface" ng-minlength="15">
+       					{{ds.converterClassname  || 'empty'}}</a>
+       				</p>
+       				<p><em>PMID: </em><a href="#" editable-text="ds.pubmedId">{{ds.pubmedId || 'empty'}}</a> 
+       				 	<a target="_blank" ng-href="http://identifiers.org/pubmed/{{ds.pubmedId}}">go to publicaion</a>
+       				</p>
+       				<p><em>data: </em>{{ (ds.uploaded) ? "uploaded as " + ds.dataArchiveName : "not uploaded" }}
+       					<a ng-show="ds.uploaded" ng-href="admin/homedir/data/{{ds.identifier}}.zip"> (download), </a>&nbsp;
+       					and {{ (ds.premerged) ? "premerged" : "not premerged yet" }}
+       				</p>
         			 			
         			<div class="btn btn-default btn-file" >
 						<label>
@@ -143,46 +147,45 @@ for regular users, - show the compact read-only summary of the data providers --
         				ng-disabled="! (ds.iconUrl && ds.urlToHomepage && ds.type && ds.name[0] && ds.description && ds.uploaded)">Premerge... </button>							
       			</div>		
 			</div>
-		  </div>
-		 </security:authorize>
+		</security:authorize>
 
 		<security:authorize ifNotGranted="ROLE_ADMIN">
-		  <div class="col-sm-6">
 			<div class="thumbnail">
       			<div class="caption">
         			<h3>
-        				<!--  ng-src="metadata/logo/{{ds.identifier}}" -->
-						<img alt="provider's logo" class="datasource-logo" ng-src="{{ds.iconUrl}}" >&nbsp;
-							<a ng-href='{{ds.urlToHomepage}}'>{{ds.name[1] || ds.name[0]}}</a>
+        			  <!--  ng-src="metadata/logo/{{ds.identifier}}" -->
+					  <img alt="provider's logo" class="datasource-logo" ng-src="{{ds.iconUrl}}">&nbsp;
+        			  <a ng-href='{{ds.urlToHomepage}}'>{{ds.name[1] || ds.name[0]}}</a>
         			</h3>
-        			<p>{{ds.description}}</p>
-        			<p ng-hide="ds.notPathwayData">uri: <a ng-href="{{ds.uri}}">{{ds.uri}}</a></p>
-        			<ul>
-        			    <li><em>type: </em>{{ds.type}}</li>
-        			    <li><em>display name: </em>{{(ds.name[0]) | lowercase}}</li>
-        				<li><em>standard name: </em>{{ds.name[1]}}</li>
-        				<li><em>synonym: </em>{{ds.name[2]}}</li>
-        				<li><em>availability: </em>{{ds.availability}}</li>
-        				<li ng-hide="ds.notPathwayData">
-        					<em>counts: </em><span class="badge">{{ds.numPathways}}</span> pathways, 
-        				 	<span class="badge">{{ds.numInteractions}}</span> interactions, 
-        				 	<span class="badge">{{ds.numPhysicalEntities}}</span> states
-        				</li>
-        				<li ng-hide="ds.notPathwayData"><em>accessed: </em><span class="badge">{{ds.numAccessed}}</span></li>
-        				<li>
-        				  <a target="_blank" ng-href="http://identifiers.org/pubmed/{{ds.pubmedId}}">main publication</a>
-        				</li>
-        			</ul>
+        			<p><strong>{{ds.description}}&nbsp;<em>({{ds.type}})</em></strong></p>
+        			<p ng-hide="ds.notPathwayData"><em>URI: </em><a ng-href="{{ds.uri}}">{{ds.uri}}</a></p>
+       			    <p ng-show="ds.name.length > 1">
+       			    	<em>Names: </em>{{ds.name + "" | lowercase}}</span>
+       			    </p>      			    
+       				<p ng-hide="ds.notPathwayData">
+       					<em>Contains: </em><span class="badge alert-info">{{ds.numPathways}}</span> pathways, 
+       				 	<span class="badge alert-info">{{ds.numInteractions}}</span> interactions, 
+       				 	<span class="badge alert-info">{{ds.numPhysicalEntities}}</span> interactors
+       				</p>
+       				<p ng-hide="ds.notPathwayData">
+       				  <em>Information (sub-network, search hits, files) has been served to web users: </em>
+       				  <a class="badge alert-success" ng-href="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats">
+       				  	{{ds.numAccessed}}</a> times
+       				</p>
+       				<p>
+       				  <a target="_blank" ng-href="http://identifiers.org/pubmed/{{ds.pubmedId}}">Publication (PMID:{{ds.pubmedId}})</a>
+       				</p>
+       				<p><em>Availability: </em>{{ds.availability}}</p>
       			</div>		
 			</div>
-		  </div>
 		  </security:authorize>
 	</div>
 
-  </div> <!-- ng-app -->
-	
+  </div> <!-- ng-app wrapper -->
+
+  <div class="row">	
 	<h3>Remark</h3>
-	<p>The total number of times a cut of provider's data were successfully 
+	<p>The total number of times a portion of provider's data were successfully 
 		served to a user (accessed) is incremented every time when a query 
 		result (before converting from BioPAX to another format if requested) 
 		contains biological entities from that original resource; or, for /search 
@@ -191,10 +194,11 @@ for regular users, - show the compact read-only summary of the data providers --
 		Access counts are not stored for the warehouse data sources, 
 		for merely all users hit canonical proteins, small 
 		molecules, ontology terms and identifiers on a regular basis; 
-		thus the <a href='<c:url value="/log"/>'>total number of all requests</a> 
+		thus the <a href='<c:url value="/log/TOTAL/stats"/>'>total number of requests</a> 
 		minus errors will be fair estimate is this case. 
 	</p>
-
+  </div>
+  <div class="row">
 	<h3>Acknowledgment</h3>
 	<p>
 		${cpath.name} team much appreciate the contribution of 
@@ -206,6 +210,7 @@ for regular users, - show the compact read-only summary of the data providers --
 		integrated BioPAX web service and database feasible. <br/>
 		Thank you people and all supporters.
 	</p>
+  </div>
 
 <jsp:include page="footer.jsp"/>
 

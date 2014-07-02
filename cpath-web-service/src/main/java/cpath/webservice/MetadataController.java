@@ -148,23 +148,29 @@ public class MetadataController extends BasicController {
     @RequestMapping("/metadata/datasources")
     public  @ResponseBody List<Metadata> queryForDatasources() {
 		log.debug("Getting pathway datasources info.");
-    	
-		List<Metadata> list = new ArrayList<Metadata>();
+    	//pathway/interaction data sources
+		List<Metadata> ds = new ArrayList<Metadata>();
+		//warehouse data sources
+		List<Metadata> wh = new ArrayList<Metadata>();
 		
 		for(Metadata m : service.metadata().findAll()) {
 			//set dynamic extra fields
 			if(m.isNotPathwayData()) {
 				m.setUploaded((new File(m.getDataArchiveName()).exists()));
+				wh.add(m);
 			} else {		
 				Long accessed = service.log().downloads(m.standardName());
 				m.setNumAccessed(accessed);
 				m.setUploaded((new File(m.getDataArchiveName()).exists()));
 				m.setPremerged(!m.getContent().isEmpty());
+				ds.add(m);
 			}
-			list.add(m);
 		}
 		
-    	return list;
+		//add warehouse data sources to the end of the list
+		ds.addAll(wh);
+		
+    	return ds;
     }
     
     @RequestMapping("/metadata/datasources/{identifier}")

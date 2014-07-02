@@ -30,12 +30,12 @@
 </head>
 
 <body>
-	<jsp:include page="header.jsp" />
+  <jsp:include page="header.jsp" />
 
   <div id="ng-app" ng-app="pcApp" ng-controller="PcController">
 	
 <!-- 	  Current action/view: <em ng-bind="renderAction">Unknown</em>&nbsp; -->
-<!-- 	  Sub-path: <em>{{ renderPath[ 1 ] }}</em>. -->
+<%-- 	  Sub-path: <em>{{ renderPath[ 1 ] }}</em>. --%>
 	
 	  <!--
         When the route changes, we're going to be setting up the
@@ -43,19 +43,31 @@
         page is going to be rendered. We can use these values to
         conditionally show / load parts of the page.
       -->
-	  <div ng-switch on="renderPath[ 0 ]">			
-					
-		<!-- Home Content (explains other dynamic views/paths) -->
+	  <div ng-switch on="renderPath[ 0 ]">								
+		<!-- Users' Site Home Page -->
         <div ng-switch-when="home">
-       		<h3>Currently available views:</h3> 
-       		<ul>
-       			<li><a href="#/pw">#/pw (top pathways)</a></li>
-       			<li>find pathways by keyword(s), e.g., <a href="#/pw/brca2">#/pw/brca2</a></li>
-       		</ul>
-        </div>
-		
-		<div ng-switch-when="pw">
-		
+       		<h2>For All Users (non-programmers)</h2>
+  			<div class="row"><div class="jumbotron">
+				<blockquote><p>
+			TODO...
+				</p></blockquote>
+  			</div></div>       		
+  		    <div class="col-sm-4">  			
+       		<div class="thumbnail">
+      			<div class="caption">
+        			<h3><a href="#/pw">Pathways</a></h3>
+        			<p>Get the list of <a href="#/pw">top pathways</a>, or 
+       				find pathways using a simple keyword(s), e.g., <a href="#/pw/brca2">brca2</a>,
+       				<a href="#/pw/P51587">P51587</a>, 
+       				or full-text query, such as <a href="#/pw/+response%20+alcohol">+response%20+alcohol</a>
+       				(see also about <a href="/home#search">the search</a> web service command).
+       				</p>
+       			</div>
+       		</div>
+       		</div>
+       		    		
+        </div>		
+		<div ng-switch-when="pw">		
 			<h2>Biological Pathways</h2>
 		
 			<div class="row" id="find-row">
@@ -66,7 +78,9 @@
 						id="find-button"> Find Pathways &raquo;</button>
 				</form>
 			</div>
+			
 			<hr>
+			
 			<div class="row">
 				<span ng-show="response.numHits > 0">Total hits: {{response.numHits}} </span>
 				<span ng-show="response.numHits > response.maxHitsPerPage">(top {{response.maxHitsPerPage}} are shown)</span>

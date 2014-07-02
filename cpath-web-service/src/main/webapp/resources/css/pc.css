@@ -10,11 +10,6 @@
 
 #form_cpath_properties .checkbox {padding-right: 2em;}
 
-#validations ul {
-	display: none;
-	list-style: decimal;
-}
-
 img.datasource-logo {width: 100px; height: 50px;}
 
 .thumbnail li {white-space: nowrap; display: compact;}

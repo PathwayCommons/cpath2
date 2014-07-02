@@ -105,6 +105,7 @@ or the fat JAR with embedded application server was started) -->
 		URIs are case-sensitive and contain no spaces.</p>
 	  </div>
 	</div>
+	<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <hr/>
 <div class="row nav-target" id="search">
 	<h3>SEARCH:</h3>
@@ -182,6 +183,7 @@ or the fat JAR with embedded application server was started) -->
 			interaction objects</a></li>
 	</ol>
 </div>
+<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <hr/>
 <div class="row nav-target" id="get">
 	<h3>GET:</h3> 
@@ -221,6 +223,7 @@ or the fat JAR with embedded application server was started) -->
 			</li>
 	</ol>
 </div>
+<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <hr/>
 <div class="row nav-target" id="graph">
 	<h3>GRAPH:</h3> 
@@ -293,6 +296,7 @@ or the fat JAR with embedded application server was started) -->
 		</li>
 	</ol>
 </div>
+<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <hr/>
 <div class="row nav-target" id="traverse">
 	<h3>TRAVERSE:</h3>
@@ -350,6 +354,7 @@ or the fat JAR with embedded application server was started) -->
 	
 	</ol>
 </div>
+<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <hr/>
 <div class="row nav-target" id="top_pathways">
 	<h3>TOP_PATHWAYS:</h3>
@@ -372,6 +377,7 @@ or the fat JAR with embedded application server was started) -->
 		<li><a href="top_pathways.json"> get top/root pathways in JSON format</a></li>
 	</ol>
 </div>
+<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <hr/>
 <div class="row nav-target" id="idmapping">
 	<h3>IDMAPPING:</h3>
@@ -393,7 +399,7 @@ or the fat JAR with embedded application server was started) -->
 		<li><a rel="example" href="idmapping?id=BRCA2&id=TP53">/idmapping?id=BRCA2&amp;id=TP53</a></li>
 	</ol>
 </div>
-
+<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <div class="row nav-target" id="parameter_values">
 	<h2>Parameter Values</h2>
 	<div class="parameters row" id="organisms">
@@ -472,8 +478,8 @@ or the fat JAR with embedded application server was started) -->
 	</div>
 	</div>
 </div>
-	
-	<div class="row nav-target" id="errors">
+<div class="row"><a href="#content" class="top-scroll">^top</a></div>	
+<div class="row nav-target" id="errors">
 	<h2>Error Response</h2>
 	<p>
 		If an error or no results happens while processing a user's request,
@@ -481,8 +487,8 @@ or the fat JAR with embedded application server was started) -->
 		(then browsers usually display a error page sent by the server; other clients normally
 		check the status before further processing the results.)
 	</p>
-	</div>
-
+</div>
+<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <jsp:include page="footer.jsp"/>
 
 </body>
