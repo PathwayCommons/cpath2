@@ -23,14 +23,6 @@
 					  <li><a href="<c:url value="/admin"/>">Admin</a></li>
 					</security:authorize>
 					<li class="dropdown">
-                  		<a href="#" class="dropdown-toggle" data-toggle="dropdown">Web App<b class="caret"></b></a>
-                  		<span class="dropdown-arrow"></span>
-                  		<ul class="dropdown-menu">
-                  		 <li><a href="<c:url value="/view"/>">Site</a></li>
-                    	 <li><a href="<c:url value="/log/TOTAL/stats"/>">Log</a></li>
-                    	</ul>
-                	</li>									
-					<li class="dropdown">
                   		<a href="#" class="dropdown-toggle" data-toggle="dropdown">Web Service<b class="caret"></b></a>
                   		<span class="dropdown-arrow"></span>
                   		<ul class="dropdown-menu">
@@ -47,11 +39,10 @@
                 	</li>
 					<li><a href="<c:url value="/datasources"/>">Providers</a></li>
 					<li><a href="<c:url value="/downloads"/>">Downloads</a></li>
-					<li><a href="#" class="top-scroll">Top</a></li>
                   </ul>
           	  </div> <!-- collapse -->
       </div> <!-- container -->
  	</nav>
 </header>
 <!-- begin the #content container that will be closed in the footer.jsp-->
-<div id="content" class="container">
+<div id="content" class="container nav-target">

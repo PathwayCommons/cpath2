@@ -43,6 +43,7 @@ import cpath.service.jaxb.*;
 
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.pattern.miner.BlacklistGenerator;
@@ -101,7 +102,7 @@ public final class Admin {
         CONVERT("-convert"),
         EXPORT_LOG("-export-log"),
         IMPORT_LOG("-import-log"),
-        ANALYSIS("-run-analysis"),
+        ANALYSIS("-run-analysis"), //TODO keep or remove (normally, should never be used)?..
 		;
 
         // string ref for readable name
@@ -198,13 +199,24 @@ public final class Admin {
 			runMerge(force);
 			
 		} else if (args[0].equals(Cmd.EXPORT.toString())) {
-			
-			if (args.length < 2)
-				fail(args, "must provide at least one arguments.");
-			else if (args.length == 2)
-				exportData(args[1], new String[] {});
-			else
-				exportData(args[1], args[2].split(","));
+			//(the first args[0] is the command name, the second - must be output file)
+			if (args.length < 2 || args.length > 4)
+				fail(args, "must provide an output file name (the other two parameters, " +
+						"URIs and/or --output-absolute-uris are optional; but no more than three).");
+			else {
+				String[] uris = new String[] {};
+				boolean absoluteUris = false;
+							
+				for(int i=2; i < args.length && i < 4;i++) {
+					if(args[i].equalsIgnoreCase("--output-absolute-uris"))
+						absoluteUris = true;
+					else 
+						uris = args[i].split(",");
+				}
+				
+				exportData(args[1], uris, absoluteUris);
+			}
+
 			
 		} else if (args[0].equals(Cmd.CREATE_BLACKLIST.toString())) {
 			
@@ -261,6 +273,12 @@ public final class Admin {
     }    
 
     
+    /**
+     * Executes a code that uses or edits the main BioPAX model.
+     * 
+     * @param analysisClass a class that implements {@link Analysis} 
+     * @param readOnly
+     */
     public static void executeAnalysis(String analysisClass, boolean readOnly) {
     	if(!(readOnly || cpath.isAdminEnabled()))
 			throw new IllegalStateException("Maintenance mode is not enabled.");
@@ -273,18 +291,32 @@ public final class Admin {
 			throw new RuntimeException(e);
 		}
     	
-        //read-only db schema mode
-        System.setProperty("hibernate.hbm2ddl.auto", "validate");
-		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-				"classpath:META-INF/spring/applicationContext-dao.xml");    	
- 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean(PaxtoolsDAO.class));
+		Model model = CPathUtils.loadMainBiopaxModel();
+ 		analysis.execute(model);
  		
- 		if(readOnly)
- 			mainDAO.runReadOnly(analysis);
- 		else
- 			mainDAO.run(analysis);
+// TODO enable post-merge model changes later, as/if needed...
+// 		if(!readOnly) {
+// 			//replace the main biopax archive
+// 			try {			
+// 				new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model, 
+// 					new GZIPOutputStream(new FileOutputStream(
+// 							CPathSettings.getInstance().mainModelFile())));
+// 			} catch (Exception e) {
+// 				throw new RuntimeException("Failed updating the main BioPAX archive!", e);
+// 			}
+// 			
+// 			//repeat the same analysis withing the persistent model
+// 			ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+// 					"classpath:META-INF/spring/applicationContext-dao.xml");    	
+// 	 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean(PaxtoolsDAO.class));
+// 			mainDAO.run(analysis);
+// 			context.close();
+// 			
+// 			LOG.warn("Main BioPAX model has been modified. Do not forget to " +
+// 					"update entity counts per data source, re-build " +
+// 					"the full-text index, blacklist, and all downloads if needed.");
+// 		}
  		
- 		context.close();
 	}
 
 
@@ -612,32 +644,29 @@ public final class Admin {
 
 
 	/**
-	 * Extracts a cpath2 BioPAX sub-model
-	 * and writes to the specified file.
-	 * @param output
-	 * @param uris
+	 * Exports a cpath2 BioPAX sub-model
+	 * or full model to the specified file.
+	 * 
+	 * @param output - output BioPAX file name (path)
+	 * @param uris - optional, the list of valid (existing) URIs to extract a sub-model
+	 * @param outputAbsoluteUris - if true, all URIs in the BioPAX elements 
+	 * and properties will be absolute (i.e., no local relative URIs, 
+	 * such as rdf:ID="..." or rdf:resource="#...", will be there in the output file.) 
 	 * 
 	 * @throws IOException, IllegalStateException (in maintenance mode)
 	 */
-	public static void exportData(final String output, String[] uris) 
+	public static void exportData(final String output, String[] uris, boolean outputAbsoluteUris) 
 			throws IOException 
 	{	
-		if(cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode.");
-		
 		if(uris == null) 
 			uris = new String[]{};
 		
-
-		ClassPathXmlApplicationContext ctx = 
-			new ClassPathXmlApplicationContext(
-				"classpath:META-INF/spring/applicationContext-dao.xml");
-							
+		Model model = CPathUtils.loadMainBiopaxModel();					
 		OutputStream os = new FileOutputStream(output);
 		// export a sub-model from the main biopax database
-	    PaxtoolsDAO dao = ((PaxtoolsDAO)ctx.getBean(PaxtoolsDAO.class));
-	    dao.exportModel(os, uris);
-		ctx.close(); 
+		SimpleIOHandler sio = new SimpleIOHandler(BioPAXLevel.L3);
+		sio.absoluteUris(outputAbsoluteUris);
+		sio.convertToOWL(model, os, uris);
 	}	
 	
 			
@@ -662,7 +691,8 @@ public final class Admin {
         toReturn.append(Cmd.CREATE_DOWNLOADS.toString() + " (creates cpath2 BioPAX DB archives using several " +
         	"data formats, and also split by data source, organism)"  + NEWLINE);        
         // other useful (utility) commands
-		toReturn.append(Cmd.EXPORT.toString() + " <output> [<uri,uri,..>]" + NEWLINE);
+		toReturn.append(Cmd.EXPORT.toString() + " <output> [<uri,uri,..>] [--output-absolute-uris] " +
+				"(writes the BioPAX model or sub-model to the output; if the optional flag is set, all URIs there will be absolute)" + NEWLINE);
 		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format>" + NEWLINE);
 		toReturn.append(Cmd.EXPORT_LOG.toString() + " [--clear] (export cpath2 assess log to the " +
 				"CSV file in the data directory and, optionally, clear the table)" + NEWLINE);
