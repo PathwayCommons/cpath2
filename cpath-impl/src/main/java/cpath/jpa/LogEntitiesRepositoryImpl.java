@@ -188,22 +188,20 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		return from($).where($.event.name.eq(name), $.addr.isNotNull()).uniqueResult($.addr.countDistinct());
 	}
 	
-	
-	@Override
-	public List<String> listUniqueIps(String name) {
-		Assert.hasLength(name);
-		QLogEntity $ = QLogEntity.logEntity;
-		return from($).distinct().where($.event.name.eq(name), $.addr.isNotNull())
-				.orderBy($.addr.asc()).list($.addr);
-	}
-	
 
 	@Override
-	public List<String> listUniqueIps(LogType logType) {
+	public List<String> listUniqueIps(LogType logType, String name) {
 		Assert.notNull(logType);
+		
 		QLogEntity $ = QLogEntity.logEntity;
-		return from($).distinct().where($.event.type.eq(logType), $.addr.isNotNull())
-				.orderBy($.addr.asc()).list($.addr);
+		
+		if(name == null || name.isEmpty() ) {
+			return from($).distinct().where($.event.type.eq(logType), $.addr.isNotNull())
+					.orderBy($.addr.asc()).list($.addr);
+		} else { //ignore the type
+			return from($).distinct().where($.event.name.eq(name), $.addr.isNotNull())
+					.orderBy($.addr.asc()).list($.addr);
+		}
 	}
 
 
@@ -237,6 +235,51 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 					.list($.date,$.addr.countDistinct())) {
 				val.add(new Object[] {t.get($.date), t.get($.addr.countDistinct())});
 			}		
+		}
+		
+		return timeline;
+	}
+	
+	//TODO do we really need this cumulative no. unique IPs timeline and chart? Might, a simple no. distinct IPs by today would be enough?
+	@Override
+	public Map<String, List<Object[]>> ipsTimelineCum(LogType logType, String name) {
+		Map<String, List<Object[]>> timeline = new TreeMap<String, List<Object[]>>();			
+		
+		QLogEntity $ = QLogEntity.logEntity;
+		
+		//count no. distinct IPs from the first day up to each day...
+		List<String> days = from($).orderBy($.date.asc())
+				.distinct().list($.date);
+		
+		if(name == null || name.isEmpty()) {
+			Assert.notNull(logType);
+			for(String day : days) {
+			  //for each 'events' (name), do count no. unique IPs that occurred so far by each 'day' (inclusive)
+			  for(Tuple t : from($)
+				.where($.event.type.eq(logType), $.addr.isNotNull(), $.date.lt(day).or($.date.eq(day)))
+				.groupBy($.event.name)
+				.list($.event.name,$.addr.countDistinct()))
+			  {				
+				String key = t.get($.event.name);
+				List<Object[]> val = timeline.get(key);
+				if(val == null) {
+					val = new ArrayList<Object[]>();
+					timeline.put(key, val);
+				}
+				val.add(new Object[] {day, t.get($.addr.countDistinct())});			
+			  }
+			}
+		} 
+		else { //name was provided; type does not matter anymore
+			List<Object[]> val = new ArrayList<Object[]>();
+			timeline.put(name, val);	
+					
+			for(String day : days) {				
+				Long l = from($)
+					.where($.event.name.eq(name), $.addr.isNotNull(), $.date.lt(day).or($.date.eq(day)))
+					.uniqueResult($.addr.countDistinct());
+				val.add(new Object[] {day, l});			
+			}			
 		}
 		
 		return timeline;

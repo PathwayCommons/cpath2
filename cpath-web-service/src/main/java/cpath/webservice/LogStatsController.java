@@ -103,7 +103,7 @@ public class LogStatsController extends BasicController {
     	return service.log().downloadsTimeline(LogType.TOTAL, null);
     }
 	
-	//iptimelines (no. unique client IP addresses by request type, date)
+	//iptimelines (no. unique client IP addresses by request type on each day)
 	
 	@RequestMapping("/iptimeline")
     public @ResponseBody Map<String,List<Object[]>> iptimeline() {		
@@ -118,23 +118,40 @@ public class LogStatsController extends BasicController {
     @RequestMapping("/{logType}/iptimeline")
     public @ResponseBody Map<String,List<Object[]>> iptimeline(@PathVariable LogType logType) {		
     	return service.log().ipsTimeline(logType, null);
-    }	
+    }
+    
+    //cumulative iptimeline, -  list of [date, total no. unique IPs from the beginning of time/service to this date]
+	@RequestMapping("/iptimelinecum")
+    public @ResponseBody Map<String,List<Object[]>> iptimelinecum() {		
+    	return service.log().ipsTimelineCum(LogType.TOTAL, null);
+    }
+	
+	@RequestMapping("/{logType}/{name}/iptimelinecum")
+    public @ResponseBody Map<String,List<Object[]>> iptimelinecum(@PathVariable LogType logType, @PathVariable String name) {		
+    	return service.log().ipsTimelineCum(logType, name);
+    }    
+    
+    @RequestMapping("/{logType}/iptimelinecum")
+    public @ResponseBody Map<String,List<Object[]>> iptimelinecum(@PathVariable LogType logType) {		
+    	return service.log().ipsTimelineCum(logType, null);
+    }   
+    
 
     //list of unique client IP addresses by request type
     
 	@RequestMapping("/iplist")
     public @ResponseBody List<String> ips() {		
-    	return service.log().listUniqueIps(LogType.TOTAL);
+    	return service.log().listUniqueIps(LogType.TOTAL, null);
     }
 	
 	@RequestMapping("/{logType}/{name}/iplist")
     public @ResponseBody List<String> ips(@PathVariable LogType logType, @PathVariable String name) {
-		return service.log().listUniqueIps(name);
+		return service.log().listUniqueIps(logType, name);
     }    
     
     @RequestMapping("/{logType}/iplist")
     public @ResponseBody List<String> ips(@PathVariable LogType logType) {		
-    	return service.log().listUniqueIps(logType);
+    	return service.log().listUniqueIps(logType, null);
     }	
 	
 	//geo (no. queries by type, geolocation)

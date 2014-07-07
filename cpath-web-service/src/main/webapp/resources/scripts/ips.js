@@ -79,27 +79,6 @@ var AppIps = (function() {
   // TIMELINE
 
   /*
-   * Takes a DataTable, where the first column has dates and the rest
-   * are numeric. Adds a numeric column called "Total". For each row
-   * in the table, the Total column contains the row's sum.
-   */
-  function addTotalColumn(table) {
-    var numCols = table.getNumberOfColumns();
-    if (numCols <= 2) // don't add a total column if there is only one column containing counts and a date column
-      return;
-    var numRows = table.getNumberOfRows();
-    var totalCol = table.addColumn('number', 'Total');
-    for (var row = 0; row < numRows; row++) {
-      var sum = 0;
-      for (col = 1; col < numCols; col++) {
-        sum += table.getValue(row, col);
-      }
-      table.setValue(row, totalCol, sum);
-    }
-    return totalCol;
-  }
-
-  /*
    * Parses the ISO date string "yyyy-mm-dd" and
    * returns a Date object.
    */
@@ -120,22 +99,6 @@ var AppIps = (function() {
     return date.toISOString().split('T')[0];
   }
 
-  /*
-   * Takes a DataTable containing the timeline data by day and
-   * returns a DataTable containing cumulative timeline data.
-   * The cumulative table has the same format as the by-day table.
-   */
-  function buildTimelineCumulative(timelineByDay) {
-    var timelineCum = timelineByDay.clone();
-    var numCols = timelineCum.getNumberOfColumns();
-    var numRows = timelineCum.getNumberOfRows();
-    for (var row = 1; row < numRows; row++) {
-      for (var col = 1; col < numCols; col++) {
-        timelineCum.setValue(row, col, timelineCum.getValue(row, col) + timelineCum.getValue(row - 1, col));
-      }
-    }
-    return timelineCum;
-  }
 
   /*
    * Takes a JS object containing timeline data and produces a
@@ -206,34 +169,35 @@ var AppIps = (function() {
   }
 
   function setupTimeline() {
+	var timelineChart;
+	var timelineByDay;
     $.getJSON('iptimeline', function(timelineData) {
-      // create by-day and cumulative tables
-      var timelineByDay = buildTimelineByDay(timelineData);
-      var timelineCum = buildTimelineCumulative(timelineByDay);
-//      addTotalColumn(timelineByDay);
-//      addTotalColumn(timelineCum);
-
-      // create timeline visualization
-      var timelineChart = new google.visualization.AnnotatedTimeLine(document.getElementById('timeline-chart'));
-      timelineChart.draw(timelineCum, {});
-
-      // setup buttons that switch between by-day and cumulative timelines
+      // create by-day table
+      timelineByDay = buildTimelineByDay(timelineData);      
+      // create timeline by day (default) visualization
+      timelineChart = new google.visualization.AnnotatedTimeLine(document.getElementById('timeline-chart'));
+      timelineChart.draw(timelineByDay, {});
+      // setup button that switch to by-day table view
       $('#timeline-by-day').click(function() {
         $(this).parent().find('button').removeClass('active');
         $(this).addClass('active');
         timelineChart.draw(timelineByDay, {});
-      });
-      $('#timeline-cumulative').click(function() {
-        $(this).parent().find('button').removeClass('active');
-        $(this).addClass('active');
-        timelineChart.draw(timelineCum, {});
-      });
-
-      // setup "save as csv" button
-      setupTimelineSaveCSV(timelineByDay, timelineCum);
+      }); 
+    }).done(function() {
+    	$.getJSON('iptimelinecum', function(data) {
+    	      // create the cumulative table
+    	      var timelineCum = buildTimelineByDay(data);
+    	      // setup the button that switch to cumulative table view
+    	      $('#timeline-cumulative').click(function() {
+    	          $(this).parent().find('button').removeClass('active');
+    	          $(this).addClass('active');
+    	          timelineChart.draw(timelineCum, {});
+    	      });    	      
+    	      // setup "save as csv" button
+     		 setupTimelineSaveCSV(timelineByDay, timelineCum);
+    	 });
     });
   }
-
 
   function setupSelectpicker() {		
 	  //define onChage event handler before initializing the selectpicker

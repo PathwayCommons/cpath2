@@ -16,7 +16,7 @@ interface LogEntitiesRepositoryCustom {
 	
 	/**
 	 * Aggregates the history (log) of a particular service category,
-	 * {@link LogType}, provided for users by date; the result is a 
+	 * {@link LogType}, provided for users on each day; the result is a 
 	 * list of [date, count] pairs for that category and service name.
 	 * The result also includes the total counts by date for all names 
 	 * in this category altogether (logType is used for the key).
@@ -45,8 +45,8 @@ interface LogEntitiesRepositoryCustom {
 	Map<String, List<Object[]>> downloadsTimeline(LogType logType, String name); 
 
 	/**
-	 * Gets the numbers of unique client IP addresses 
-	 * by date, service request type (or category),
+	 * Gets the daily numbers of unique client IP addresses 
+	 * per service request type (or category),
 	 * {@link LogType}. The result is a list of [date, count] 
 	 * pairs for the category and service name.
 	 * 
@@ -74,8 +74,43 @@ interface LogEntitiesRepositoryCustom {
 	 * }
 	 * </pre> 
 	 */
-	Map<String, List<Object[]>> ipsTimeline(LogType logType, String name); 	
+	Map<String, List<Object[]>> ipsTimeline(LogType logType, String name); 
+	
+	
+	/**
+	 * Gets the numbers of unique client IP addresses 
+	 * collected (from the beginning) by each date per
+	 * service request type (or category),
+	 * {@link LogType}. The result is a list of [date, count] 
+	 * pairs for the category and service name.
+	 * 
+	 * The result also includes the total no. unique IPs per date for all names 
+	 * in the same category (logType is used for the key).
+	 * 
+	 * @param logType	not null
+	 * @param e.g, provider's name, command, format, or filename (depends on the log type)
+	 * @return	name (key) - to array of Object[2] map, 
+	 * 			e.g., if logType eq. COMMANDS, and name were null: 
+	 * <pre>
+	 * {
+	 * 	"All Commands": [["2013-11-13", 123], ["2013-11-14", 456],..], 
+	 *	"search" : [["2013-11-13", 123],..], 
+	 *	"get" : [["2013-11-13", 123],..], 
+	 *	"traverse" : [["2013-11-13", 123],..],..
+	 * }
+	 * </pre>
+	 * 
+	 * If name, e.g. "search", were provided, the result would be: 
+	 * <pre>
+	 * {
+	 * 	"All Commands": [["2013-11-13", 123], ["2013-11-14", 456],..], 
+	 *	"search" : [["2013-11-13", 23], ["2013-11-14", 45],..]
+	 * }
+	 * </pre> 
+	 */
+	Map<String, List<Object[]>> ipsTimelineCum(LogType logType, String name); 	
 		
+	
 	/**
 	 * The number of client requests served, grouped by country code.
 	 * The result is a list of [country, count] optionally filtered 
@@ -184,21 +219,12 @@ interface LogEntitiesRepositoryCustom {
 	
 	/**
 	 * List of unique client IP addresses,
-	 * where the specified service requests came from.
-	 * 
-	 * @param name
-	 * @return
-	 */
-	List<String> listUniqueIps(String name);
-	
-	/**
-	 * List of unique client IP addresses,
 	 * where the requests of the specified category 
-	 * came from.
+	 * and/or name came from.
 	 * 
 	 * @param logType
 	 * @return
 	 */
-	List<String> listUniqueIps(LogType logType);
+	List<String> listUniqueIps(LogType logType, String name);
 	
 }

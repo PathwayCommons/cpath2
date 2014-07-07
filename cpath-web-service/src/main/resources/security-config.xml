@@ -19,6 +19,8 @@
 		<intercept-url pattern="/admin" access="ROLE_ADMIN" />
 		<intercept-url pattern="/admin/**" access="ROLE_ADMIN" />
 		<intercept-url pattern="/tests" access="ROLE_USER" />
+		<intercept-url pattern="/iplist" access="ROLE_ADMIN" />
+		<intercept-url pattern="/**/iplist" access="ROLE_ADMIN" />
 		<intercept-url pattern="/**" access="IS_AUTHENTICATED_ANONYMOUSLY"/>
 		<logout/>
 	</http>
