@@ -177,8 +177,13 @@ public class PagesController extends BasicController {
     // Access Log UI 
     
     @RequestMapping("/log")
+    public String log() {
+    	return allStats();
+    }
+    
+    @RequestMapping("/log/stats")
     public String allStats() {
-    	return "redirect:log/TOTAL/stats";
+    	return "redirect:/log/TOTAL/stats";
     }
         
     @RequestMapping("/log/{logType}/stats")
@@ -195,6 +200,26 @@ public class PagesController extends BasicController {
     	model.addAttribute("current", "/log/"+logType.toString()+"/"+name+"/stats");
     	return "stats";
     } 
+
+    @RequestMapping("/log/ips")
+    public String allIps() {
+    	return "redirect:/log/TOTAL/ips";
+    }
+    
+    @RequestMapping("/log/{logType}/ips")
+    public String ipsByType(Model model, @PathVariable LogType logType) {
+    	model.addAttribute("summary_for", "Category: " + logType);
+    	model.addAttribute("current", "/log/"+logType.toString()+"/ips");
+    	return "ips";
+    }
+    
+    @RequestMapping("/log/{logType}/{name}/ips")
+    public String ipsByType(Model model, @PathVariable LogType logType,
+    		@PathVariable String name) {
+    	model.addAttribute("summary_for", "Category: " + logType + ", name: " + name);
+    	model.addAttribute("current", "/log/"+logType.toString()+"/"+name+"/ips");
+    	return "ips";
+    }    
     
 
     // The Web App (AngularJS, rich HTML5 portal)

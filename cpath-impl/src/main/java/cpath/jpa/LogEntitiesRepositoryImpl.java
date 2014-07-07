@@ -179,5 +179,67 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		QLogEntity $ = QLogEntity.logEntity;
 		return from($).where($.event.name.eq(name)).uniqueResult($.count.sum());
 	}
+
+
+	@Override
+	public Long uniqueIps(String name) {
+		Assert.hasLength(name);
+		QLogEntity $ = QLogEntity.logEntity;
+		return from($).where($.event.name.eq(name), $.addr.isNotNull()).uniqueResult($.addr.countDistinct());
+	}
+	
+	
+	@Override
+	public List<String> listUniqueIps(String name) {
+		Assert.hasLength(name);
+		QLogEntity $ = QLogEntity.logEntity;
+		return from($).distinct().where($.event.name.eq(name), $.addr.isNotNull())
+				.orderBy($.addr.asc()).list($.addr);
+	}
+	
+
+	@Override
+	public List<String> listUniqueIps(LogType logType) {
+		Assert.notNull(logType);
+		QLogEntity $ = QLogEntity.logEntity;
+		return from($).distinct().where($.event.type.eq(logType), $.addr.isNotNull())
+				.orderBy($.addr.asc()).list($.addr);
+	}
+
+
+	@Override
+	public Map<String, List<Object[]>> ipsTimeline(LogType logType, String name) {
+		Map<String, List<Object[]>> timeline = new TreeMap<String, List<Object[]>>();			
+		QLogEntity $ = QLogEntity.logEntity;
+		if(name == null || name.isEmpty()) {
+			Assert.notNull(logType);
+			for(Tuple t : from($)
+					.where($.event.type.eq(logType), $.addr.isNotNull())
+					.groupBy($.event.name,$.date)
+					.orderBy($.event.name.asc(),$.date.desc())
+					.list($.event.name,$.date,$.addr.countDistinct())) 
+			{
+				String key = t.get($.event.name);
+				List<Object[]> val = timeline.get(key);
+				if(val == null) {
+					val = new ArrayList<Object[]>();
+					timeline.put(key, val);
+				}
+				val.add(new Object[] {t.get($.date), t.get($.addr.countDistinct())});
+			}
+		} 
+		else { //name was provided; type does not matter anymore
+			List<Object[]> val = new ArrayList<Object[]>();
+			timeline.put(name, val);			
+			for(Tuple t : from($)
+					.where($.event.name.eq(name), $.addr.isNotNull())
+					.groupBy($.date).orderBy($.date.desc())
+					.list($.date,$.addr.countDistinct())) {
+				val.add(new Object[] {t.get($.date), t.get($.addr.countDistinct())});
+			}		
+		}
+		
+		return timeline;
+	}
 		
 }

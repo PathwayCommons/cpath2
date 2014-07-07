@@ -41,7 +41,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
-import cpath.jpa.Geoloc;
 import cpath.jpa.LogEvent;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
@@ -98,7 +97,7 @@ public abstract class BasicController {
 		
 		//problems with logging subsystem should not fail the entire service
 		try {
-			service.log(updateCountsFor, Geoloc.fromIpAddress(clientIpAddress(request)));
+			service.log(updateCountsFor, clientIpAddress(request));
 		} catch (Throwable ex) {
 			log.error("LogUtils.log failed", ex);
 		}
@@ -177,7 +176,7 @@ public abstract class BasicController {
 			//log to the db (for analysis and reporting)
 			//problems with logging subsystem should not fail the entire service
 			try {
-				service.log(updateCountsFor, Geoloc.fromIpAddress(clientIpAddress(request)));
+				service.log(updateCountsFor, clientIpAddress(request));
 			} catch (Throwable ex) {
 				log.error("LogUtils.log failed", ex);
 			}

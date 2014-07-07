@@ -70,7 +70,6 @@ import cpath.dao.CPathUtils;
 import cpath.dao.LogUtils;
 import cpath.dao.PaxtoolsDAO;
 import cpath.jpa.Content;
-import cpath.jpa.Geoloc;
 import cpath.jpa.LogEntitiesRepository;
 import cpath.jpa.LogEntity;
 import cpath.jpa.LogEvent;
@@ -873,40 +872,36 @@ class CPathServiceImpl implements CPathService {
 	
 	
 	@Override
-	public void log(Collection<LogEvent> events, Geoloc loc) {
+	public void log(Collection<LogEvent> events, String ipAddr) {
 
 		for(LogEvent event : events) {
 			//'total' should not be here (it auto-counts)
 			Assert.isTrue(event.getType() != LogType.TOTAL); 
 			
-			count(LogUtils.today(), event, loc);
+			count(LogUtils.today(), event, ipAddr);
 		}
 		
 		//total counts (is not sum of the above); counts once per request/response
-		count(LogUtils.today(), LogEvent.TOTAL, loc);
+		count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
 	}
 	
 	
 	@Override
-	public LogEntity count(String date, LogEvent event, Geoloc loc) 
+	public LogEntity count(String date, LogEvent event, String ipAddr) 
 	{		
-		if(loc == null) //unable to detect from IP or local IP addr.
-			loc = new Geoloc();
-		
 		// find or create a record, count+1
 		LogEntity t = null;
 		try {
 			t = (LogEntity) logEntitiesRepository
-				.findByEventNameIgnoreCaseAndGeolocCountryAndGeolocRegionAndGeolocCityAndDate(
-					event.getName(), loc.getCountry(), loc.getRegion(), loc.getCity(), date);
+				.findByEventNameIgnoreCaseAndAddrAndDate(event.getName(), ipAddr, date);
 		} catch (DataAccessException e) {
-			log.error("count(), findByEventNameIgnoreCaseAndGeolocCountryAndGeolocRegionAndGeolocCityAndDate " +
+			log.error("count(), findByEventNameIgnoreCaseAndAddrAndDate " +
 				"failed to update for event: " + event.getName() + 
-				", loc: " + loc.toString() + ", date: " + date, e);
+				", IP: " + ipAddr + ", date: " + date, e);
 		}
 		
 		if(t == null) {			
-			t = new LogEntity(date, event, loc);
+			t = new LogEntity(date, event, ipAddr);
 		}
 		
 		t.setCount(t.getCount() + 1);
