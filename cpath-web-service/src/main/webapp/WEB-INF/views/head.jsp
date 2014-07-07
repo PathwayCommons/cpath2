@@ -9,10 +9,10 @@ BioPAX, pathway, network, biological pathways, bioinformatics, computational bio
 pathway commons, baderlab, toronto, mskcc, cbio, graph query, data integration, 
 biologicaal networks, ontology, knowledge, analysis, cancer research, systems biology" />
 	
-<link href="/resources/css/bootstrap-switch.min.css" rel="stylesheet" />
-<link href="/resources/css/bootstrap-select.min.css" rel="stylesheet" />
 <link href="/resources/css/bootstrap.min.css" rel="stylesheet" />
 <!-- <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet"> -->
+<link href="/resources/css/bootstrap-select.min.css" rel="stylesheet" />
+<link href="/resources/css/bootstrap-switch.min.css" rel="stylesheet" />
 <link href="/resources/css/pc.css" rel="stylesheet" />
 
 <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>

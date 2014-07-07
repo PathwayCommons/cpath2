@@ -35,8 +35,8 @@
 	<div class="row">
 		<h3>Timeline</h3>
 		<div class="btn-group" style="display: inline;">
-			<button class="btn btn-small btn-default active" id="timeline-cumulative">Cumulative</button>
-			<button class="btn btn-small btn-default" id="timeline-by-day">By Day</button>&nbsp;
+			<button class="btn btn-small btn-default" id="timeline-cumulative">Cumulative</button>
+			<button class="btn btn-small btn-default active" id="timeline-by-day">By Day</button>&nbsp;
 			<button class="btn btn-small btn-success pull-right" id="timeline-csv">
 				<i class="icon-download-alt"></i>Save as CSV 
 			</button>
