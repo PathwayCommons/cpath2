@@ -13,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
-import cpath.jpa.Geoloc;
 import cpath.jpa.LogEvent;
 import cpath.service.CPathService;
 
@@ -52,7 +51,7 @@ public final class CPathWebserviceHandlerInterceptor extends
 			
 			//update counts for: file, format, provider, command (event types)
 			Set<LogEvent> events = LogEvent.fromDownloads(file);
-			service.log(events, Geoloc.fromIpAddress(ip));
+			service.log(events, ip);
 			
 		}
 

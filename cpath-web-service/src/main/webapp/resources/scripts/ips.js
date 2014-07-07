@@ -1,10 +1,8 @@
 /*
- * WARNING: Google Charts API and codes2names.js must be loaded before using methods in this file.
- *
- * Many of the functions here manipulate DataTable, a class provided by Google Charts.
+ * Functions here manipulate DataTable, a class provided by Google Charts.
  */
 
-var AppStats = (function() {
+var AppIps = (function() {
   /*
    * Takes a DataTable and sets all null cells to the numerical value 0.
    * This assumes that columns with null values have the type 'number'.
@@ -208,7 +206,7 @@ var AppStats = (function() {
   }
 
   function setupTimeline() {
-    $.getJSON('timeline', function(timelineData) {
+    $.getJSON('iptimeline', function(timelineData) {
       // create by-day and cumulative tables
       var timelineByDay = buildTimelineByDay(timelineData);
       var timelineCum = buildTimelineCumulative(timelineByDay);
@@ -236,101 +234,7 @@ var AppStats = (function() {
     });
   }
 
-  // GEOGRAPHY
 
-  /*
-   * Takes a DataTable where the first column contains
-   * two-letter country codes. This adds a new column
-   * with the full country name. This uses the "CountryCodes"
-   * object to do the conversion.
-   */
-  function addCountryNamesColumn(table) {
-    var countryNameCol = table.addColumn('string', 'Country');
-    for (var row = 0; row < table.getNumberOfRows(); row++) {
-      var countryCode = table.getValue(row, 0);
-      if (countryCode in CountryCodes) {
-        var countryName = CountryCodes[countryCode];
-        table.setValue(row, countryNameCol, countryName);
-      }
-    }
-  }
-
-  function setupWorldChart(worldTable) {
-    var worldChart = new google.visualization.GeoChart(document.getElementById('geography-world-chart'));
-    var formatter = new google.visualization.PatternFormat('{1}');
-    formatter.format(worldTable, [0, 2]);
-    var view = new google.visualization.DataView(worldTable);
-    view.setColumns([0, 1]);
-    worldChart.draw(view, {});
-    return worldChart;
-  }
-
-  function showCountry(countryChart, countryCode) {
-    var countryName = CountryCodes[countryCode];
-    $('#geography-country-name').text(countryName);
-    $('#country-loading').show();
-
-    $.getJSON('geography/country/' + countryCode, function(countryData) {
-      var countryTable = google.visualization.arrayToDataTable(countryData);
-      var countryChartOptions = {
-        'displayMode': 'markers',
-        'resolution': 'provinces',
-        'colorAxis': {'colors': ['blue', 'yellow']},
-        'region': countryCode
-      };
-      countryChart.draw(countryTable, countryChartOptions);
-    });
-  }
-
-  function setupCountryChart() {
-    var countryChart = new google.visualization.GeoChart(document.getElementById('geography-country-chart'));
-    google.visualization.events.addListener(countryChart, 'ready', function() {
-      $('#country-loading').hide();
-    });
-    return countryChart;
-  }
-
-  function setupGeographySaveCSV() {
-    $('#geography-csv').click(function() {
-      var btn = $(this);
-      if (btn.hasClass('disabled'))
-        return;
-      btn.addClass('disabled');
-
-      $.getJSON('geography/all', function(geographyData) {
-        var geographyTable = google.visualization.arrayToDataTable(geographyData);
-        downloadCSV(dataTableToCSV(geographyTable));
-        btn.removeClass('disabled');
-      });
-    });
-  }
-
-  function setupGeography() {
-    $.getJSON('geography/world', function(worldData) {
-      // set up the world table
-      var worldTable = google.visualization.arrayToDataTable(worldData);
-      addCountryNamesColumn(worldTable);
-
-      // instantiate the world and country chart objects
-      var worldChart = setupWorldChart(worldTable);
-      var countryChart = setupCountryChart();
-
-      //when the user clicks on a country in the world chart, load that country's city data in the country chart
-      google.visualization.events.addListener(worldChart, 'select', function() {
-        var row = worldChart.getSelection()[0].row;
-        var countryCode = worldTable.getValue(row, 0);
-        showCountry(countryChart, countryCode);
-      });
-
-      //when the world map is loaded, load the default country
-      google.visualization.events.addListener(worldChart, 'ready', function() {
-        showCountry(countryChart, 'US');
-      });
-    });
-
-    setupGeographySaveCSV();
-  }
-  
   function setupSelectpicker() {		
 	  //define onChage event handler before initializing the selectpicker
 	  $('.selectpicker').on('change', function() {
@@ -338,7 +242,7 @@ var AppStats = (function() {
 		  if (url) {
 			  // app's root context path (defined on the JSP page)  
 			  // depends on how this app was actually deployed.  		
-			  //console.log("will go to: " + contextPath + url);
+//			  console.log("will go to: " + contextPath + url);
 			  window.location = contextPath + url;
 		  }
 		  return false;
@@ -350,12 +254,12 @@ var AppStats = (function() {
 			  if(ev[1])
 				  $('.selectpicker')
 				  .append('<option data-subtext="' + ev[0] 
-				  + '" value="/log/' + ev[0] + '/' + ev[1] + '/stats">' 
+				  + '" value="/log/' + ev[0] + '/' + ev[1] + '/ips">' 
 				  + ev[1] + '</option>');
 			  else
 				  $('.selectpicker')
 				  .append('<option data-subtext="(category)" value="/log/'
-						  + ev[0] + '/stats">' + ev[0] + '</option>');
+						  + ev[0] + '/ips">' + ev[0] + '</option>');
 		  });
 		  //init bootstrap-select selectpicker
 		  $('.selectpicker').selectpicker();
@@ -366,7 +270,6 @@ var AppStats = (function() {
   
   return {
     'setupTimeline': setupTimeline,
-    'setupGeography': setupGeography,
     'setupSelectpicker' : setupSelectpicker
   };
 

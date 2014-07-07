@@ -86,7 +86,7 @@ public class LogStatsController extends BasicController {
     	return ret;
     } 
        
-    //timeline
+    //timelines (no. queries by type, date)
     
 	@RequestMapping("/{logType}/{name}/timeline")
     public @ResponseBody Map<String,List<Object[]>> timeline(@PathVariable LogType logType, @PathVariable String name) {		
@@ -103,7 +103,41 @@ public class LogStatsController extends BasicController {
     	return service.log().downloadsTimeline(LogType.TOTAL, null);
     }
 	
-	//geo
+	//iptimelines (no. unique client IP addresses by request type, date)
+	
+	@RequestMapping("/iptimeline")
+    public @ResponseBody Map<String,List<Object[]>> iptimeline() {		
+    	return service.log().ipsTimeline(LogType.TOTAL, null);
+    }
+	
+	@RequestMapping("/{logType}/{name}/iptimeline")
+    public @ResponseBody Map<String,List<Object[]>> iptimeline(@PathVariable LogType logType, @PathVariable String name) {		
+    	return service.log().ipsTimeline(logType, name);
+    }    
+    
+    @RequestMapping("/{logType}/iptimeline")
+    public @ResponseBody Map<String,List<Object[]>> iptimeline(@PathVariable LogType logType) {		
+    	return service.log().ipsTimeline(logType, null);
+    }	
+
+    //list of unique client IP addresses by request type
+    
+	@RequestMapping("/iplist")
+    public @ResponseBody List<String> ips() {		
+    	return service.log().listUniqueIps(LogType.TOTAL);
+    }
+	
+	@RequestMapping("/{logType}/{name}/iplist")
+    public @ResponseBody List<String> ips(@PathVariable LogType logType, @PathVariable String name) {
+		return service.log().listUniqueIps(name);
+    }    
+    
+    @RequestMapping("/{logType}/iplist")
+    public @ResponseBody List<String> ips(@PathVariable LogType logType) {		
+    	return service.log().listUniqueIps(logType);
+    }	
+	
+	//geo (no. queries by type, geolocation)
 	
 	@RequestMapping("/geography/world")
     public @ResponseBody List<Object[]> geographyWorld() {		

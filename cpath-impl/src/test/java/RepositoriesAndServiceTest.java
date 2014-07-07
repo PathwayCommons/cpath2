@@ -76,7 +76,7 @@ public class RepositoriesAndServiceTest {
 		final String ipAddr = "66.249.74.168";
 		//explicitly create and save a new log record
 		LogEntity logEntity = new LogEntity(LogUtils.today(), 
-				LogEvent.from(Status.INTERNAL_ERROR), Geoloc.fromIpAddress(ipAddr)); //"US"
+				LogEvent.from(Status.INTERNAL_ERROR), ipAddr); //country="US"
 		assertNull(logEntity.getId());
 		//save and check that new log entrie's initial count it set to 0
 		logEntity = service.log().save(logEntity);
@@ -93,12 +93,11 @@ public class RepositoriesAndServiceTest {
 	@Test
 	public final void testCount() {	
 		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
-		Geoloc geoloc = Geoloc.fromIpAddress(ipAddr);
 		
 		// count twice
-		LogEntity logEntity = service.count(LogUtils.today(), LogEvent.TOTAL, geoloc);
+		LogEntity logEntity = service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
 		assertEquals(1L, logEntity.getCount().longValue());
-		logEntity = service.count(LogUtils.today(), LogEvent.TOTAL, geoloc);
+		logEntity = service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
 		assertEquals(2L, logEntity.getCount().longValue());
 		
 		// test that there is only one record yet
@@ -110,31 +109,30 @@ public class RepositoriesAndServiceTest {
 	@Test
 	public final void testTimeline() {	
 		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
-		Geoloc geoloc = Geoloc.fromIpAddress(ipAddr);
 		
 		// add some logs (for two days, several categories):
 		// Today
 		String today = LogUtils.today();
-		service.count(today, LogEvent.from(Status.INTERNAL_ERROR), geoloc);
-		service.count(today, LogEvent.TOTAL, geoloc);
-		service.count(today, LogEvent.from(Status.NO_RESULTS_FOUND), geoloc);
-		service.count(today, LogEvent.TOTAL, geoloc);
-		service.count(today, new LogEvent(LogType.PROVIDER, "Reactome"), geoloc);
-		service.count(today, LogEvent.TOTAL, geoloc);
-		service.count(today, new LogEvent(LogType.PROVIDER, "HumanCyc"), geoloc);
-		service.count(today, LogEvent.TOTAL, geoloc);
-		service.count(today, LogEvent.from(Cmd.SEARCH), geoloc);
+		service.count(today, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
+		service.count(today, LogEvent.TOTAL, ipAddr);
+		service.count(today, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
+		service.count(today, LogEvent.TOTAL, ipAddr);
+		service.count(today, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
+		service.count(today, LogEvent.TOTAL, ipAddr);
+		service.count(today, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
+		service.count(today, LogEvent.TOTAL, ipAddr);
+		service.count(today, LogEvent.from(Cmd.SEARCH), ipAddr);
 		// Yesterday
 		String yesterDay = LogUtils.addIsoDate(today, -1);
-		service.count(yesterDay, LogEvent.from(Status.INTERNAL_ERROR), geoloc);
-		service.count(yesterDay, LogEvent.TOTAL, geoloc);
-		service.count(yesterDay, LogEvent.from(Status.NO_RESULTS_FOUND), geoloc);
-		service.count(yesterDay, LogEvent.TOTAL, geoloc);
-		service.count(yesterDay, new LogEvent(LogType.PROVIDER, "Reactome"), geoloc);
-		service.count(yesterDay, LogEvent.TOTAL, geoloc);
-		service.count(yesterDay, new LogEvent(LogType.PROVIDER, "HumanCyc"), geoloc);
-		service.count(yesterDay, LogEvent.TOTAL, geoloc);
-		service.count(yesterDay, LogEvent.from(Cmd.SEARCH), geoloc);
+		service.count(yesterDay, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
+		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
+		service.count(yesterDay, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
+		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
+		service.count(yesterDay, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
+		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
+		service.count(yesterDay, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
+		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
+		service.count(yesterDay, LogEvent.from(Cmd.SEARCH), ipAddr);
 		
 		assertEquals(12, service.log().count());
 		
@@ -182,7 +180,6 @@ public class RepositoriesAndServiceTest {
 	@Test
 	public final void testTimeline2() {	
 		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
-		Geoloc loc = Geoloc.fromIpAddress(ipAddr);
 	
 		// add some logs (for two days, several categories):
 		// Today
@@ -196,7 +193,7 @@ public class RepositoriesAndServiceTest {
 		);
 		
 		//save/count all + total (once)
-		service.log(events, loc);
+		service.log(events, ipAddr);
 
 		assertEquals(5, service.log().count());
 		

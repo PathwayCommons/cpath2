@@ -43,7 +43,38 @@ interface LogEntitiesRepositoryCustom {
 	 * </pre> 
 	 */
 	Map<String, List<Object[]>> downloadsTimeline(LogType logType, String name); 
-	
+
+	/**
+	 * Gets the numbers of unique client IP addresses 
+	 * by date, service request type (or category),
+	 * {@link LogType}. The result is a list of [date, count] 
+	 * pairs for the category and service name.
+	 * 
+	 * The result also includes the total no. unique IPs per date for all names 
+	 * in the same category (logType is used for the key).
+	 * 
+	 * @param logType	not null
+	 * @param e.g, provider's name, command, format, or filename (depends on the log type)
+	 * @return	name (key) - to array of Object[2] map, 
+	 * 			e.g., if logType eq. COMMANDS, and name were null: 
+	 * <pre>
+	 * {
+	 * 	"All Commands": [["2013-11-13", 123], ["2013-11-14", 456],..], 
+	 *	"search" : [["2013-11-13", 123],..], 
+	 *	"get" : [["2013-11-13", 123],..], 
+	 *	"traverse" : [["2013-11-13", 123],..],..
+	 * }
+	 * </pre>
+	 * 
+	 * If name, e.g. "search", were provided, the result would be: 
+	 * <pre>
+	 * {
+	 * 	"All Commands": [["2013-11-13", 123], ["2013-11-14", 456],..], 
+	 *	"search" : [["2013-11-13", 23], ["2013-11-14", 45],..]
+	 * }
+	 * </pre> 
+	 */
+	Map<String, List<Object[]>> ipsTimeline(LogType logType, String name); 	
 		
 	/**
 	 * The number of client requests served, grouped by country code.
@@ -133,11 +164,41 @@ interface LogEntitiesRepositoryCustom {
 	
 	/**
 	 * The total number of client requests served, 
-	 * filtered (optionally) by the service name.
+	 * filtered by the service name.
 	 * 
 	 * @param name log event name (a command, provider name, filename, error name, etc.)
 	 * @return
 	 */
 	Long downloads(String name);
+	
+	
+	/**
+	 * The number of unique client IP addresses, 
+	 * filtered by the service name.
+	 * 
+	 * @param name log event name (a command, provider name, filename, error name, etc.)
+	 * @return
+	 */
+	Long uniqueIps(String name);
+
+	
+	/**
+	 * List of unique client IP addresses,
+	 * where the specified service requests came from.
+	 * 
+	 * @param name
+	 * @return
+	 */
+	List<String> listUniqueIps(String name);
+	
+	/**
+	 * List of unique client IP addresses,
+	 * where the requests of the specified category 
+	 * came from.
+	 * 
+	 * @param logType
+	 * @return
+	 */
+	List<String> listUniqueIps(LogType logType);
 	
 }

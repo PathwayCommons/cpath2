@@ -9,7 +9,7 @@
 </head>
 <body>
 	<jsp:include page="header.jsp" />
-	<h2>Batch download</h2>
+	<h2>Batch Download</h2>
 	
 	  <div class="row">
 		<div class="jumbotron">

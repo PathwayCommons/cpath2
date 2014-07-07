@@ -105,5 +105,5 @@ public final class LogUtils {
 		}
 		return addIsoDate(date, days);
 	}
-	
+
 }

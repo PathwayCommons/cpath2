@@ -23,7 +23,7 @@ import org.springframework.util.Assert;
 @DynamicUpdate
 @DynamicInsert
 //uniqueConstraints: 'type' is not listed because 'name' is enough (should never use same log name with different types)
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"date", "name", "country", "region", "city"}))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"date", "name", "addr"}))
 public class LogEntity extends AbstractEntity {
 		
 	@Embedded
@@ -32,6 +32,9 @@ public class LogEntity extends AbstractEntity {
 	    @AttributeOverride(name="name", column=@Column(name="name"))
 	})
 	private LogEvent event;
+	
+	@Column
+	private String addr;
 	
 	@Embedded
 	@AttributeOverrides({
@@ -54,20 +57,31 @@ public class LogEntity extends AbstractEntity {
 	 * 
 	 * @param date ISO date (yyyy-MM-dd)
 	 * @param event
-	 * @param geoloc
+	 * @param ipAddress
 	 */
-	public LogEntity(String date, LogEvent event, Geoloc geoloc) {
+	public LogEntity(String date, LogEvent event, String ipAddress) {
 		Assert.notNull(event);
 		Assert.notNull(event.getType());
 		Assert.notNull(event.getName());
 		Assert.notNull(date);
-		Assert.notNull(geoloc);
+		Assert.notNull(ipAddress);
+		
 		setEvent(event);
 		setCount(0L);
 		setDate(date);
+			
+		setAddr(ipAddress);
+		geoloc = Geoloc.fromIpAddress(ipAddress);
 		setGeoloc(geoloc);
 	}
 	
+	
+	public String getAddr() {
+		return addr;
+	}
+	public void setAddr(String addr) {
+		this.addr = addr;
+	}	
 	
 	public Long getCount() {
 		return count;

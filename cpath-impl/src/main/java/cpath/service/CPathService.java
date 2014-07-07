@@ -38,7 +38,6 @@ import org.biopax.validator.api.beans.ValidatorResponse;
 
 import cpath.dao.PaxtoolsDAO;
 import cpath.jpa.Content;
-import cpath.jpa.Geoloc;
 import cpath.jpa.LogEntitiesRepository;
 import cpath.jpa.LogEntity;
 import cpath.jpa.LogEvent;
@@ -230,9 +229,9 @@ public interface CPathService {
 	 * to the log db.
 	 * 
 	 * @param events
-	 * @param loc
+	 * @param ipAddr
 	 */
-	void log(Collection<LogEvent> events, Geoloc loc);
+	void log(Collection<LogEvent> events, String ipAddr);
     
 	/**
 	 * Increases the number (counter) 
@@ -245,10 +244,10 @@ public interface CPathService {
 	 * 
 	 * @param date
 	 * @param event
-	 * @param loc only country is there used, and region, city - ignored.
+	 * @param ipAddr
 	 * @return
 	 */
-	LogEntity count(String date, LogEvent event, Geoloc loc);	
+	LogEntity count(String date, LogEvent event, String ipAddr);	
 	
     /**
      * Persists or updates the given metadata object.

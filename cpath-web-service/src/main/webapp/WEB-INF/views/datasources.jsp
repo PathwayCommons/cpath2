@@ -170,7 +170,9 @@ for regular users, - show the compact read-only summary of the data providers --
        				<p ng-hide="ds.notPathwayData">
        				  <em>Information (sub-network, search hits, files) has been served to web users: </em>
        				  <a class="badge alert-success" ng-href="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats">
-       				  	{{ds.numAccessed}}</a> times
+       				  	{{ds.numAccessed}}</a> times, to 
+       				  <a class="badge alert-success" ng-href="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/ips">
+       				  	{{ds.numUniqueIps}}</a> different IP addresses
        				</p>
        				<p>
        				  <a target="_blank" ng-href="http://identifiers.org/pubmed/{{ds.pubmedId}}">Publication (PMID:{{ds.pubmedId}})</a>

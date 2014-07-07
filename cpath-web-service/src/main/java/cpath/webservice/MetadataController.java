@@ -14,7 +14,6 @@ import javax.validation.Valid;
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
 import cpath.jpa.Content;
-import cpath.jpa.Geoloc;
 import cpath.jpa.LogEvent;
 import cpath.jpa.Metadata;
 import cpath.service.Status;
@@ -159,10 +158,10 @@ public class MetadataController extends BasicController {
 				m.setUploaded((new File(m.getDataArchiveName()).exists()));
 				wh.add(m);
 			} else {		
-				Long accessed = service.log().downloads(m.standardName());
-				m.setNumAccessed(accessed);
+				m.setNumAccessed(service.log().downloads(m.standardName()));
 				m.setUploaded((new File(m.getDataArchiveName()).exists()));
 				m.setPremerged(!m.getContent().isEmpty());
+				m.setNumUniqueIps(service.log().uniqueIps(m.standardName()));
 				ds.add(m);
 			}
 		}
@@ -183,10 +182,10 @@ public class MetadataController extends BasicController {
 		if(m.isNotPathwayData()) {
 			m.setUploaded((new File(m.getDataArchiveName()).exists()));
 		} else {		
-			Long accessed = service.log().downloads(m.standardName());
-			m.setNumAccessed(accessed);
+			m.setNumAccessed(service.log().downloads(m.standardName()));
 			m.setUploaded((new File(m.getDataArchiveName()).exists()));
 			m.setPremerged(!m.getContent().isEmpty());
+			m.setNumUniqueIps( service.log().uniqueIps(m.standardName()));
 		}
 		
     	return m;
@@ -299,7 +298,7 @@ public class MetadataController extends BasicController {
     	}		
 
     	//log to db (for usage reports)
-    	service.log(events, Geoloc.fromIpAddress(clientIpAddress(request)));
+    	service.log(events, clientIpAddress(request));
 
     	return res;
 	}

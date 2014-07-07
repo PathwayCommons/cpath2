@@ -118,6 +118,8 @@ public final class Metadata {
     private Boolean uploaded;
     @Transient
     private Boolean premerged;
+    @Transient
+    private Long numUniqueIps;
     
     
 	/**
@@ -463,6 +465,14 @@ public final class Metadata {
 	public void setPremerged(Boolean premerged) {
 		this.premerged = premerged;
 	}
+	
+	public Long getNumUniqueIps() {
+		return numUniqueIps;
+	}
+	public void setNumUniqueIps(Long numUniqueIps) {
+		this.numUniqueIps = numUniqueIps;
+	}
+	
 
 	@Transient
 	public boolean isNotPathwayData() {

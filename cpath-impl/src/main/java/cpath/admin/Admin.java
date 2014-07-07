@@ -332,7 +332,7 @@ public final class Admin {
  		try {
 			Class.forName("org.h2.Driver");
 			conn = DriverManager.getConnection(cpath.property(PROP_DB_CONNECTION) 
-					+ cps.getMainDb(), cpath.property(PROP_DB_USER), cpath.property(PROP_DB_PASSW));
+					+ cps.getMainDb()+"_meta", cpath.property(PROP_DB_USER), cpath.property(PROP_DB_PASSW));
 			new Csv()
 				.write(conn, filename, "select * from logentity", "UTF-8");
 			LOG.info("Saved current access log DB to " + filename);
@@ -360,7 +360,7 @@ public final class Admin {
  		try {
  			Class.forName("org.h2.Driver");
 			conn = DriverManager.getConnection(cpath.property(PROP_DB_CONNECTION) 
-				+ cpath.getMainDb(), cpath.property(PROP_DB_USER), cpath.property(PROP_DB_PASSW));
+				+ cpath.getMainDb() + "_meta", cpath.property(PROP_DB_USER), cpath.property(PROP_DB_PASSW));
 			
 			//backup
 			new Csv()
