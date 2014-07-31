@@ -263,6 +263,10 @@ public final class Merger {
 		}
 		
 		// cleaning up dangling objects (including the replaced above ones)
+		log.info("Repair, i.e., find and add back to the model all child objects ("+srcModelInfo+")...");
+		source.repair();
+		
+		// cleaning up dangling objects (including the replaced above ones)
 		log.info("Removing dangling objects ("+srcModelInfo+")...");
 		ModelUtils.removeObjectsIfDangling(source, UtilityClass.class);
 		
@@ -287,20 +291,20 @@ public final class Merger {
 			if(pe instanceof PhysicalEntity) {
 				if(pe instanceof SimplePhysicalEntity) {
 					if(pe instanceof SmallMolecule) {
-						addCanonicalRelXrefs(source, (SmallMolecule) pe, "CHEBI");
+						addCanonicalRelXrefs(mainModel, (SmallMolecule) pe, "CHEBI");
 					} else {
 						// for Protein, Dna, DnaRegion, Rna*...
-						addCanonicalRelXrefs(source, (PhysicalEntity) pe, "UNIPROT");
+						addCanonicalRelXrefs(mainModel, (PhysicalEntity) pe, "UNIPROT");
 					}						
 				} else if(pe instanceof Complex) {
 					continue; // skip complexes
 				} else {
 					// do for base PEs
-					addCanonicalRelXrefs(source, (PhysicalEntity) pe, "UNIPROT");
-					addCanonicalRelXrefs(source, (PhysicalEntity) pe, "CHEBI");
+					addCanonicalRelXrefs(mainModel, (PhysicalEntity) pe, "UNIPROT");
+					addCanonicalRelXrefs(mainModel, (PhysicalEntity) pe, "CHEBI");
 				}
 			} else if(pe instanceof Gene) {
-				addCanonicalRelXrefs(source, pe, "UNIPROT");
+				addCanonicalRelXrefs(mainModel, pe, "UNIPROT");
 			}
 		}
 		
@@ -342,26 +346,26 @@ public final class Merger {
 	 * id (uniprot or chebi), creates new relationship xrefs,
 	 * and adds them back to the entity.
 	 * 
-	 * @param src source model (where the following element belongs)
+	 * @param m where to add new xrefs (and who's xml:base to apply for new URIs)
 	 * @param bpe a {@link Gene} or {@link PhysicalEntity}
 	 * @param db map identifiers to (e.g., CHEBI, UNIPROT)
 	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity
 	 */
-	private void addCanonicalRelXrefs(Model src, Named bpe, String db) 
+	private void addCanonicalRelXrefs(Model m, Named bpe, String db) 
 	{
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity))
 			throw new AssertionError("Not Gene or PE: " + bpe);
 			
 		// map and generate/add xrefs
 		Set<String> mappingSet = idMappingByXrefs(bpe, db, UnificationXref.class);
-		addRelXref(src, bpe, db, mappingSet);
+		addCanonicalRelXrefs(m, bpe, db, mappingSet);
 		
 		mappingSet = idMappingByXrefs(bpe, db, RelationshipXref.class);
-		addRelXref(src, bpe, db, mappingSet);
+		addCanonicalRelXrefs(m, bpe, db, mappingSet);
 		
 		//map by display and standard names
 		mappingSet = service.map(null, bpe.getDisplayName(), db);
-		addRelXref(src, bpe, db, mappingSet);
+		addCanonicalRelXrefs(m, bpe, db, mappingSet);
 	}
 
 
@@ -376,7 +380,7 @@ public final class Merger {
 	 * @param mappingSet
 	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity nor EntityReference
 	 */
-	private void addRelXref(Model source, XReferrable bpe, String db, Set<String> mappingSet) 
+	private void addCanonicalRelXrefs(Model source, XReferrable bpe, String db, Set<String> mappingSet) 
 	{	
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference))
 			throw new AssertionError("Not Gene or PE: " + bpe);
