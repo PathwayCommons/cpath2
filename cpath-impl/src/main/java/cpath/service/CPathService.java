@@ -301,4 +301,9 @@ public interface CPathService {
     
     LogEntitiesRepository log();
 
+    /**
+     * Loads or re-loads the main BioPAX Model 
+     * and blacklist from archive.
+     */
+	void init();
 }

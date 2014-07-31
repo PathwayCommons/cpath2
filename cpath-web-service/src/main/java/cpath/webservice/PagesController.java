@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import cpath.config.CPathSettings;
 import cpath.jpa.LogType;
+import cpath.service.CPathService;
 
 @Controller
 public class PagesController extends BasicController {
@@ -81,6 +82,9 @@ public class PagesController extends BasicController {
    		cpath.setProxyModelEnabled("on".equals(proxy));
    		cpath.setDebugEnabled("on".equals(debug));
     	
+   		if(cpath.isProxyModelEnabled() && !cpath.isAdminEnabled())
+   			service.init();
+   		
     	return "admin";
     }
     
@@ -159,7 +163,7 @@ public class PagesController extends BasicController {
     			
     			sb.append("; downloads: ").append(total);
     			if(topCount > 0) {
-    				sb.append("; mostly from: ")
+    				sb.append(", mostly from ")
     				.append((topCountry != null && !topCountry.isEmpty()) 
     						? topCountry : "Local/Unknown")
     				.append(" [").append(topCount).append("]");
