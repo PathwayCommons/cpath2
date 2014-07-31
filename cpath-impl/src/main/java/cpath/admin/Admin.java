@@ -29,7 +29,6 @@
 package cpath.admin;
 
 import static cpath.config.CPathSettings.*;
-
 import cpath.config.CPathSettings;
 import cpath.dao.*;
 import cpath.importer.Merger;
@@ -41,6 +40,7 @@ import cpath.service.OutputFormat;
 import cpath.service.internal.BiopaxConverter;
 import cpath.service.jaxb.*;
 
+import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -50,10 +50,8 @@ import org.biopax.paxtools.pattern.miner.BlacklistGenerator;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.validator.api.Validator;
 import org.h2.tools.Csv;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -68,7 +66,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
 
 import static cpath.service.OutputFormat.*;
 
@@ -200,21 +197,28 @@ public final class Admin {
 			
 		} else if (args[0].equals(Cmd.EXPORT.toString())) {
 			//(the first args[0] is the command name, the second - must be output file)
-			if (args.length < 2 || args.length > 4)
-				fail(args, "must provide an output file name (the other two parameters, " +
-						"URIs and/or --output-absolute-uris are optional; but no more than three).");
+			if (args.length < 2)
+				fail(args, "must provide at least an output file name (other parameters are optional).");
 			else {
 				String[] uris = new String[] {};
+				String[] datasources = new String[] {};
+				String[] types = new String[] {};
 				boolean absoluteUris = false;
 							
-				for(int i=2; i < args.length && i < 4;i++) {
+				for(int i=2; i < args.length; i++) {
 					if(args[i].equalsIgnoreCase("--output-absolute-uris"))
 						absoluteUris = true;
+					else if(args[i].toLowerCase().startsWith("--datasources="))
+						datasources = args[i].substring(14).split(",");
+					else if(args[i].toLowerCase().startsWith("--types="))
+						types = args[i].substring(8).split(",");
+					else if(args[i].toLowerCase().startsWith("--uris="))
+						uris = args[i].substring(7).split(",");
 					else 
-						uris = args[i].split(",");
+						LOG.error("Skipped unrecognized argument: " + args[i]);
 				}
 				
-				exportData(args[1], uris, absoluteUris);
+				exportData(args[1], uris, absoluteUris, datasources, types);
 			}
 
 			
@@ -644,24 +648,60 @@ public final class Admin {
 
 
 	/**
-	 * Exports a cpath2 BioPAX sub-model
-	 * or full model to the specified file.
+	 * Exports a cpath2 BioPAX sub-model or full model to the specified file.
 	 * 
 	 * @param output - output BioPAX file name (path)
 	 * @param uris - optional, the list of valid (existing) URIs to extract a sub-model
 	 * @param outputAbsoluteUris - if true, all URIs in the BioPAX elements 
 	 * and properties will be absolute (i.e., no local relative URIs, 
 	 * such as rdf:ID="..." or rdf:resource="#...", will be there in the output file.) 
+	 * @param datasources filter by data source if 'uris' is not empty
+	 * @param types filter by biopax type if 'uris' is not empty
 	 * 
 	 * @throws IOException, IllegalStateException (in maintenance mode)
 	 */
-	public static void exportData(final String output, String[] uris, boolean outputAbsoluteUris) 
-			throws IOException 
+	public static void exportData(final String output, String[] uris, boolean outputAbsoluteUris, 
+			String[] datasources, String[] types) throws IOException 
 	{	
 		if(uris == null) 
 			uris = new String[]{};
+		if(datasources == null) 
+			datasources = new String[]{};
+		if(types == null) 
+			types = new String[]{};
 		
-		Model model = CPathUtils.loadMainBiopaxModel();					
+		if(uris.length == 0 && (datasources.length > 0 || types.length > 0)) {
+			ClassPathXmlApplicationContext context = 
+					new ClassPathXmlApplicationContext(new String[] {
+							"classpath:META-INF/spring/applicationContext-dao.xml",
+							"classpath:META-INF/spring/applicationContext-jpa.xml"
+					});
+
+			CPathService service = (CPathService) context.getBean(CPathService.class);
+			Collection<String> selectedUris = new HashSet<String>();
+			
+			if(types.length>0) {
+				//collect biopax object URIs of the specified types and sub-types, and data sources if specified
+				//(child biopax elements will be auto-included during the export to OWL)
+				for(String bpInterfaceName : types) {
+					selectedUris.addAll(findAllUris(service, 
+							biopaxTypeFromSimpleName(bpInterfaceName), datasources, null)); 
+				}
+			} else {
+				//collect all Entity URIs filtered by the not empty data sources list
+				//(child Gene, PhysicalEntity, UtilityClass biopax elements will be auto-included 
+				// during the export to OWL; we do not want to export dangling Genes, PEs, etc., except for Complexes...)
+				selectedUris.addAll(findAllUris(service, Pathway.class, datasources, null));
+				selectedUris.addAll(findAllUris(service, Interaction.class, datasources, null)); 
+				selectedUris.addAll(findAllUris(service, Complex.class, datasources, null)); 
+			}
+
+			context.close(); 
+			
+			uris = selectedUris.toArray(new String[] {});
+		}
+		
+		Model model = CPathUtils.loadMainBiopaxModel();
 		OutputStream os = new FileOutputStream(output);
 		// export a sub-model from the main biopax database
 		SimpleIOHandler sio = new SimpleIOHandler(BioPAXLevel.L3);
@@ -670,6 +710,21 @@ public final class Admin {
 	}	
 	
 			
+	private static Class<? extends BioPAXElement> biopaxTypeFromSimpleName(String type) 
+	{	
+		// 'type' (a BioPAX L3 interface class name) is case insensitive 
+		for(Class<? extends BioPAXElement> c : SimpleEditorMap.L3
+				.getKnownSubClassesOf(BioPAXElement.class)) 
+		{
+			if(c.getSimpleName().equalsIgnoreCase(type)) {
+				if(c.isInterface() && BioPAXLevel.L3.getDefaultFactory().getImplClass(c) != null)
+					return c; // interface
+			}
+		}
+		throw new IllegalArgumentException("Illegal BioPAX class name '" + type);
+	}
+
+
 	private static String usage() 
 	{
 		final String NEWLINE = System.getProperty ( "line.separator" );
@@ -691,8 +746,11 @@ public final class Admin {
         toReturn.append(Cmd.CREATE_DOWNLOADS.toString() + " (creates cpath2 BioPAX DB archives using several " +
         	"data formats, and also split by data source, organism)"  + NEWLINE);        
         // other useful (utility) commands
-		toReturn.append(Cmd.EXPORT.toString() + " <output> [<uri,uri,..>] [--output-absolute-uris] " +
-				"(writes the BioPAX model or sub-model to the output; if the optional flag is set, all URIs there will be absolute)" + NEWLINE);
+		toReturn.append(Cmd.EXPORT.toString() + " <output> [--uris=<uri,uri,..>] [--output-absolute-uris] [--datasources=<nameOrUri,..>] [--types=<interface,..>]" +
+				"(writes to the output file the main BioPAX model, or a sub-model if the list of URIs or filter option is provided; " +
+				"when --output-absolute-uris flag is present, all URIs there in the output BioPAX will be absolute; " +
+				"when --datasources or/and --types flag is set, and 'uri' list is not, then the result model " +
+				"will contain BioPAX elements that pass the filter by data source and/or type)" + NEWLINE); 
 		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format>" + NEWLINE);
 		toReturn.append(Cmd.EXPORT_LOG.toString() + " [--clear] (export cpath2 assess log to the " +
 				"CSV file in the data directory and, optionally, clear the table)" + NEWLINE);
@@ -781,7 +839,7 @@ public final class Admin {
 		LOG.info("create-downloads: successfully generated the datasources summary file.");
 		
 		// generate/find all BioPAX archives:
-		List<String> biopaxArchives = exportBiopax(service.biopax(), allMetadata);
+		List<String> biopaxArchives = exportBiopax(service, allMetadata);
 		
 		context.close(); //DAO is not needed anymore
 		    	
@@ -807,19 +865,19 @@ public final class Admin {
 	}
 
 
-	private static Collection<String> findAllUris(PaxtoolsDAO db, 
+	private static Collection<String> findAllUris(CPathService service, 
     		Class<? extends BioPAXElement> type, String[] ds, String[] org) 
     {
     	Collection<String> uris = new ArrayList<String>();
     	
-    	// using PaxtoolsDAO (no service-tier cache) instead CPathService here
-    	SearchResponse resp = db.search("*", 0, type, ds, org);
+    	//call PaxtoolsDAO.search (skip service-tier cache) instead CPathService.search
+    	SearchResponse resp = service.biopax().search("*", 0, type, ds, org);
     	int page = 0;
 		while(!resp.isEmpty()) {
 			for(SearchHit h : resp.getSearchHit())
 				uris.add(h.getUri());
 			//next page
-			resp = db.search("*", ++page, type, ds, org);
+			resp = service.biopax().search("*", ++page, type, ds, org);
 		}
     	
     	return uris;
@@ -852,7 +910,7 @@ public final class Admin {
 	}
 	
 	
-	private static List<String> exportBiopax(final PaxtoolsDAO dao, Iterable<Metadata> allMetadata) 
+	private static List<String> exportBiopax(CPathService service, Iterable<Metadata> allMetadata) 
 			throws IOException 
 	{
 		List<String> files = new ArrayList<String>();
@@ -861,13 +919,16 @@ public final class Admin {
 		String archiveName = cpath.mainModelFile();
 		files.add(archiveName); //the archive already there exists (made during Merge step)
 		
+		//load the main model into RAM
+		Model mainModel = CPathUtils.loadMainBiopaxModel();
+		
     	// export by organism
         LOG.info("create-downloads: preparing data 'by organism' archives...");
         for(String org :  cpath.getOrganisms()) {
         	// generate archives for current organism
         	// hack: org.toLowerCase() is to tell by-organism from by-datasource archives (for usage stats...) 
         	archiveName = cpath.biopaxExportFileName(org.toLowerCase());
-        	exportBiopax(dao, archiveName, null, new String[]{org});
+        	exportBiopax(mainModel, service, archiveName, null, new String[]{org});
         	files.add(archiveName);
         }
 		
@@ -883,7 +944,7 @@ public final class Admin {
         		archiveName = cpath.biopaxExportFileName(md.standardName());
         		//skip previously done files (this metadata has the same std. name as previously processed one)
         		if(!files.contains(archiveName)) {
-        			exportBiopax(dao, archiveName,  md.getName().toArray(new String[]{}), null);
+        			exportBiopax(mainModel, service, archiveName,  md.getName().toArray(new String[]{}), null);
         			files.add(archiveName);
         		}
         	}
@@ -893,7 +954,7 @@ public final class Admin {
 	}	
 
 	
-	private static void exportBiopax(PaxtoolsDAO dao, String biopaxArchive,
+	private static void exportBiopax(Model mainModel, CPathService service, String biopaxArchive,
 			String[] datasources, String[] organisms) throws IOException
 	{
         // check file exists
@@ -902,14 +963,18 @@ public final class Admin {
         	
         	//find all entities (all child elements will be then exported too)    	  	
        		Collection<String> uris = new HashSet<String>();
-           	uris.addAll(findAllUris(dao, Pathway.class, datasources, organisms));  	
-           	uris.addAll(findAllUris(dao, Interaction.class, datasources, organisms));
-           	uris.addAll(findAllUris(dao, Complex.class, datasources, organisms));
+           	uris.addAll(findAllUris(service, Pathway.class, datasources, organisms));  	
+           	uris.addAll(findAllUris(service, Interaction.class, datasources, organisms));
+           	uris.addAll(findAllUris(service, Complex.class, datasources, organisms));
         	
     		// export objects found above to a new biopax archive        	
         	if(!uris.isEmpty()) {
-       			dao.exportModel(new GZIPOutputStream(
-               			new FileOutputStream(biopaxArchive)), uris.toArray(new String[]{}));
+//        		service.biopax().exportModel(new GZIPOutputStream(
+//               			new FileOutputStream(biopaxArchive)), uris.toArray(new String[]{}));
+        		OutputStream os = new GZIPOutputStream(new FileOutputStream(biopaxArchive));
+        		SimpleIOHandler sio = new SimpleIOHandler(BioPAXLevel.L3);
+//        		sio.absoluteUris(true);
+        		sio.convertToOWL(mainModel, os, uris.toArray(new String[]{}));	
        			LOG.info("create-downloads: successfully created " + 	biopaxArchive);
         	} else {
         		LOG.info("create-downloads: no pathways/interactions found; skipping " + 	biopaxArchive);

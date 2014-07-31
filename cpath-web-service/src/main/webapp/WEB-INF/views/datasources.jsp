@@ -160,7 +160,7 @@ for regular users, - show the compact read-only summary of the data providers --
         			<p><strong>{{ds.description}}&nbsp;<em>({{ds.type}})</em></strong></p>
         			<p ng-hide="ds.notPathwayData"><em>URI: </em><a ng-href="{{ds.uri}}">{{ds.uri}}</a></p>
        			    <p ng-show="ds.name.length > 1">
-       			    	<em>Names: </em>{{ds.name + "" | lowercase}}</span>
+       			    	<em>Names: </em>{{ds.name + ""}}</span>
        			    </p>      			    
        				<p ng-hide="ds.notPathwayData">
        					<em>Contains: </em><span class="badge alert-info">{{ds.numPathways}}</span> pathways, 

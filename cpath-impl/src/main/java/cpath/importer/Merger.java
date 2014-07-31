@@ -198,29 +198,6 @@ public final class Merger {
 	void merge(String description, final Model source) {	
 		
 		final String srcModelInfo = "source: " + description;
-		
-		/* 
-		 * Replace not normalized so far URIs in the source model 
-		 * with generated new ones (also add a bp:comment about original URIs)
-		 */
-		log.info("Assigning new URIs (xml:base=" + xmlBase + 
-				"*) to all not normalized BioPAX elements (" + 
-				srcModelInfo + ", xml:base=" + source.getXmlBase() + ")...");
-		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
-		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
-			String currUri = bpe.getRDFId();
-			
-			// skip already normalized
-			if(currUri.startsWith(xmlBase) || currUri.startsWith("http://identifiers.org/")) 
-				continue; 
-			
-			// Generate new consistent URI for not generated not previously normalized objects:
-			String newRDFId = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
-			// Replace URI
-			CPathUtils.replaceID(source, bpe, newRDFId);
-			// save original URI in comments
-			((Level3Element) bpe).addComment("REPLACED " + currUri);
-		}
 			
 		log.info("Searching for canonical or existing EntityReference objects " +
 				" to replace equivalent original objects ("+srcModelInfo+")...");
@@ -243,11 +220,13 @@ public final class Merger {
 				if(r != null) // re-use previously merged one
 					replacement = r;
 //				else //merge (including all children)
-//					mainModel.merge(replacement);
+//					mainModel.merge(replacement);	
 				
 				//save in the map to replace the source bpe later 
 				replacements.put(bpe, replacement);
-				replacement.addComment("REPLACED " + bpe.getRDFId());
+				
+				if(!replacement.getRDFId().equals(bpe.getRDFId()))
+					replacement.addComment("REPLACED " + bpe.getRDFId());
 			}
 		}
 		
@@ -324,6 +303,29 @@ public final class Merger {
 				addCanonicalRelXrefs(source, pe, "UNIPROT");
 			}
 		}
+		
+		/* 
+		 * Replace all not normalized so far URIs in the source model 
+		 * with auto-generated new short ones (also add a bp:comment about original URIs)
+		 */
+		log.info("Assigning new URIs (xml:base=" + xmlBase + 
+				"*) to all not normalized BioPAX elements (" + 
+				srcModelInfo + ", xml:base=" + source.getXmlBase() + ")...");
+		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
+		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
+			String currUri = bpe.getRDFId();
+			
+			// skip already normalized
+			if(currUri.startsWith(xmlBase) || currUri.startsWith("http://identifiers.org/")) 
+				continue; 
+			
+			// Generate new consistent URI for not generated not previously normalized objects:
+			String newRDFId = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
+			// Replace URI
+			CPathUtils.replaceID(source, bpe, newRDFId);
+			// save original URI in comments
+			((Level3Element) bpe).addComment("REPLACED " + currUri);
+		}		
 		
 		log.info("Merging into the main BioPAX model...");
 		// merge to the target model

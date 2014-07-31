@@ -44,6 +44,7 @@ import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Interaction;
 import org.biopax.paxtools.model.level3.Pathway;
+import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.QueryExecuter;
@@ -137,32 +138,38 @@ class CPathServiceImpl implements CPathService {
 
 
 	@PostConstruct
-	synchronized void init() {		
+	synchronized public void init() {		
 		if(
-//(ignore the flag)			CPathSettings.getInstance().isProxyModelEnabled() && 
+			//ignore CPathSettings.getInstance().isProxyModelEnabled() here;
+			//load the model into RAM if it's null, and not Admin mode
 			paxtoolsModel == null
 				&& !CPathSettings.getInstance().isAdminEnabled()) 
 		{ 			
-			//fork the model loading (which takes quite a while)
-			ExecutorService executor = Executors.newSingleThreadExecutor();
-			executor.execute(
-				new Runnable() {
-				@Override
-				public void run() {
-					Model model = CPathUtils.loadMainBiopaxModel();
-					// set for this service
-					paxtoolsModel = model;
-					if(paxtoolsModel != null) {
-						model.setXmlBase(CPathSettings.getInstance().getXmlBase());
-						log.info("RAM BioPAX Model (proxy) is now ready for queries");
-					}	
-				}
-			});
-			executor.shutdown();
-			//won't wait (nothing else to do)
+			loadModel();
 		}
 		
 		loadBlacklist();
+	}
+
+	
+	private void loadModel() {		
+		//fork the model loading (which takes quite a while)
+		ExecutorService executor = Executors.newSingleThreadExecutor();
+		executor.execute(
+			new Runnable() {
+			@Override
+			public void run() {
+				Model model = CPathUtils.loadMainBiopaxModel();
+				// set for this service
+				paxtoolsModel = model;
+				if(paxtoolsModel != null) {
+					model.setXmlBase(CPathSettings.getInstance().getXmlBase());
+					log.info("RAM BioPAX Model (proxy) is now ready for queries");
+				}	
+			}
+		});
+		executor.shutdown();
+		//won't wait (nothing else to do)
 	}
 	
 	
@@ -342,9 +349,9 @@ class CPathServiceImpl implements CPathService {
 	public ServiceResponse getPathsBetween(final OutputFormat format, 
 			final String[] sources, final Integer limit, 
 			final String[] organisms, final String[] datasources)
-	{
+	{	
 		final String[] src = findUrisByIds(sources);
-
+		
 		final ServiceResponse[] callback = new ServiceResponse[1];
 		
 		// execute the paxtools graph query in a read-only db transaction
@@ -536,7 +543,7 @@ class CPathServiceImpl implements CPathService {
 	{
 		if (identifiers.length == 0)
 			return identifiers;
-
+		
 		Set<String> uris = new TreeSet<String>();
 
 		// id-mapping: get primary IDs where possible; 
@@ -591,16 +598,36 @@ class CPathServiceImpl implements CPathService {
 			log.debug("findUrisByIds, hits: " + resp.getNumHits());
 			while (!resp.isEmpty()) {
 				log.debug("Retrieving xref search results, page #" + page);
-				for (SearchHit h : resp.getSearchHit()) {
+				for (SearchHit h : resp.getSearchHit()) 
+				{
 					if("UnificationXref".equalsIgnoreCase(h.getBiopaxClass())
-							|| "RelationshipXref".equalsIgnoreCase(h.getBiopaxClass()))
-						uris.add(h.getUri());
+							|| "RelationshipXref".equalsIgnoreCase(h.getBiopaxClass())) {
+						//exclude some RX types if the rel.type is set
+						if("RelationshipXref".equalsIgnoreCase(h.getBiopaxClass())) {
+							RelationshipXref rx = null;
+							if(paxtoolsModelReady()) 
+								rx = (RelationshipXref) paxtoolsModel.getByID(h.getUri());
+							else
+								rx = (RelationshipXref) ((Model)paxtoolsDAO).getByID(h.getUri());
+							
+							//TODO review/decide RX types to keep/exclude...
+							//we created RXs with 'identity', 'see-also', etc. types when building the Warehouse and merging data
+							if(rx.getRelationshipType()==null || 
+									rx.getRelationshipType().getTerm().contains("identity"))
+								uris.add(h.getUri());
+							
+						} else 
+							uris.add(h.getUri());
+					}
 				}
 				// go next page
 				resp = paxtoolsDAO.search(query, ++page, Xref.class, null, null);
 			}
 		}
 				
+		log.info("findUrisByIds, seed Xrefs: " + uris + 
+				" were mapped/found by orig. IDs: " + Arrays.toString(identifiers));
+		
 		return uris.toArray(new String[]{});
 	}
 
