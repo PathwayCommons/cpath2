@@ -72,7 +72,7 @@ or the fat JAR with embedded application server was started) -->
   
 	<div class="row" id="notes">
 	<h3>Notes</h3>
-	  <div class="col-sm-6">
+<!-- 	  <div class="col-sm-6"> -->
 		<h4><a id="about_uris"></a>About URIs</h4>
 	    <p>
 	    Parameters: 'source', 'uri', and 'target' require URIs of existing BioPAX elements, which 
@@ -91,8 +91,8 @@ or the fat JAR with embedded application server was started) -->
 		As a rule of thumb, using full URIs makes a precise query, whereas with identifiers - more exploratory one 
 		(which performs id-mapping to UniProt and search for the Xref's URIs).
 		</p>
-	  </div>
-	  <div class="col-sm-6">
+<!-- 	  </div> -->
+<!-- 	  <div class="col-sm-6"> -->
 		<h4><a id="enco"></a>About Examples</h4>
 	 	<p>Normally, instead of submitting a non-trivial URL query via browser's address line, 
 	 	one should find or develop a convenient bioinformatic application, such as Cytoscape, PCViz, ChIBE,  
@@ -103,7 +103,7 @@ or the fat JAR with embedded application server was started) -->
 		Besides, <strong>consider always using HTTP POST method instead of GET</strong> 
 		(to avoid caching, encoding, too long URL, etc. issues). Finally, 
 		URIs are case-sensitive and contain no spaces.</p>
-	  </div>
+<!-- 	  </div> -->
 	</div>
 	<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <hr/>
@@ -112,7 +112,7 @@ or the fat JAR with embedded application server was started) -->
 	<blockquote><p>
 		A full-text search in the BioPAX database using the <a
 			href="http://lucene.apache.org/core/3_6_2/queryparsersyntax.html"> Lucene query syntax</a>.
-		Index fields (case-sensitive):<em>comment, ecnumber, keyword, name, pathway, term, xrefdb, xrefid, dataSource, organism</em> 
+		Index fields (case-sensitive): <em>comment, ecnumber, keyword, name, pathway, term, xrefdb, xrefid, dataSource, organism</em> 
 		(some of these are BioPAX properties, while others are composite relationships), can be optionally used in a query string.
 		For example, <em>pathway</em> index field helps find pathway participants by keywords that match their parent pathway  
 		names or identifiers; <em>xrefid</em> - find objects by matching its direct or attached to a child element Xrefs;
@@ -190,7 +190,7 @@ or the fat JAR with embedded application server was started) -->
 	<blockquote><p>
 	Retrieves a sub-model for one or several elements, such as pathway,
 	interaction or physical entity, given their URIs. Get commands only retrieves the specified 
-	and all the child BioPAX elements (one can use <a href="#traverse">"traverse </a>query 
+	and all the child BioPAX elements (one can use <a href="#traverse">traverse</a> query 
 	to obtain parent elements).</p></blockquote>
 	<h4>Parameters:</h4>
 	<ul>
@@ -301,7 +301,7 @@ or the fat JAR with embedded application server was started) -->
 <div class="row nav-target" id="traverse">
 	<h3>TRAVERSE:</h3>
 	<blockquote><p>
-	Provides XPath-like access to the BioPAX database. With '/travers', users can
+	Provides XPath-like access to the BioPAX database. With '/traverse', users can
 	explicitly state the paths they would like to access. The format of the path parameter value:
 	<em>[Initial Class]/[property1]:[classRestriction(optional)]/[property2]...</em>
 	A "*" sign after the property instructs path accessor to transitively traverse that property.
@@ -393,7 +393,7 @@ or the fat JAR with embedded application server was started) -->
 	from Swiss-Prot (DR fields) and ChEBI (OBO) data, and custom mapping files (e.g., based on UniChem).
 	</p></blockquote>
 	<h4>Output:</h4> 
-	Simple JSON (serialized Map) format.
+	Simple JSON format.
 	<h4>Examples:</h4> <br/>
 	<ol>
 		<li><a rel="example" href="idmapping?id=BRCA2&id=TP53">/idmapping?id=BRCA2&amp;id=TP53</a></li>
@@ -483,10 +483,16 @@ or the fat JAR with embedded application server was started) -->
 	<h2>Error Response</h2>
 	<p>
 		If an error or no results happens while processing a user's request,
-		the client will receive an error HTTP response with corresponding status code and message
-		(then browsers usually display a error page sent by the server; other clients normally
-		check the status before further processing the results.)
-	</p>
+		the client will receive a standard HTTP error response with corresponding status code 
+		(not 200 OK) and message (browsers usually display an error page; 
+		web clients should normally check the status before processing the results). 
+		The following four important error responses, by design, are:</p>
+	<ul>
+	  <li>452 - Bad Request (illegal or no arguments).</li>		
+	  <li>460 - No Results (e.g., when a search or graph query found no data).</li>
+	  <li>500 - Internal Server Error (usually a java exception).</li>
+	  <li>503 - Server is temporarily unavailable due to regular maintenance.</li>
+	</ul>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <jsp:include page="footer.jsp"/>

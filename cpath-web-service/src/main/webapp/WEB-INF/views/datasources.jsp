@@ -209,8 +209,7 @@ for regular users, - show the compact read-only summary of the data providers --
 		<a href="http://identifiers.org/">Identifiers.org</a> projects, 
 		all the open biological ontologies, and open-source
 		projects and standards, which (who) made creating of this 
-		integrated BioPAX web service and database feasible. <br/>
-		Thank you people and all supporters.
+		integrated BioPAX web service and database feasible.<br/>
 	</p>
   </div>
 

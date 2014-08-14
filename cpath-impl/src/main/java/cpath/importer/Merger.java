@@ -244,20 +244,59 @@ public final class Merger {
 		// post-fix
 		log.info("Migrate some properties, such as original entityFeature and xref ("+srcModelInfo+")...");
 		for (EntityReference old : replacements.keySet()) {
+			
+			final EntityReference repl = replacements.get(old);	
+			
 			for (EntityFeature ef : new HashSet<EntityFeature>(old.getEntityFeature())) 
-			{
-				// move entity features of the replaced ER to the new one
-				old.removeEntityFeature(ef); //(this is to avoid paxtools warnings)			
-				replacements.get(old).addEntityFeature(ef);
+			{ // move entity features of the replaced ER to the new canonical one
+				// remove the ef from the old ER
+				old.removeEntityFeature(ef);
+				// now, this ef should not belong to any other ER (no entityFeature can contain this ef, for all ERs)
+				// (this is in fact what the biopax validator/normalizer must had fixed already)
+				assert ef.getEntityFeatureOf() == null : "ER/EF inconsistency: " + 
+						ef.getRDFId() + " was entityFeature of " + old.getRDFId() 
+						+ ", but not anymore,.. however it also/still has entityFeatureOf=" 
+						+ ef.getEntityFeatureOf().getRDFId(); 
+				// besides, the above test alone is not enough, though it might flag for a biopax model error;
+				//TODO ideally, we'd check for all the ERs in both the original and target models, and none should contain this ef.
+											
+				// If there exist an equivalent, don't add original 'ef', 
+				// but just replace with the equiv. one in all PEs of given old ER
+				EntityFeature equivEf = null;
+				for(EntityFeature f : repl.getEntityFeature()) {
+					if(f.isEquivalent(ef)) {
+						equivEf = f;
+						equivEf.getComment().addAll(ef.getComment());
+						break;
+					}
+				}			
+				if(equivEf == null) //add new EF to the canonical ER
+					repl.addEntityFeature(ef);
+				else { //update PEs' feature and notFeature properties to use the existing equiv. feature
+					for(PhysicalEntity pe : new HashSet<PhysicalEntity>(ef.getFeatureOf())) {
+						pe.removeFeature(ef);
+						pe.addFeature(equivEf);
+					}
+					for(PhysicalEntity pe : new HashSet<PhysicalEntity>(ef.getNotFeatureOf())) {
+						pe.removeNotFeature(ef);
+						pe.addNotFeature(equivEf);
+					}	
+				}
 			}				
-			// move PublicationXrefs and RelationshipXrefs (otherwise we lost some original xrefs)
+			// move new PublicationXrefs and RelationshipXrefs (otherwise we lost some of original xrefs...)
 			for(Xref x : new HashSet<Xref>(old.getXref())) {
 				if(!(x instanceof UnificationXref)) {
-					((XReferrable) old).removeXref(x);						
-					XReferrable repl = ((XReferrable) replacements.get(old));					
-					Xref mergedX = (Xref) mainModel.getByID(x.getRDFId());						
-					if(!repl.getXref().contains(x) && (mergedX==null || !repl.getXref().contains(mergedX)))
-						repl.addXref(x);
+					((XReferrable) old).removeXref(x);				
+					Xref equivX = null;
+					for(Xref y : repl.getXref()) {
+						if(y.isEquivalent(x)) {
+							equivX = y;
+							break;
+						}
+					}
+					//if the repl. ER has neither same-id xrefs nor equivalent ones, add x:
+					if(!repl.getXref().contains(x) && equivX == null)
+							repl.addXref(x);
 				}
 			}
 		}
@@ -374,21 +413,28 @@ public final class Merger {
 	 * using id-mapping results;
 	 * adds them to the object and model.
 	 * 
-	 * @param source of the  following element
-	 * @param bpe a gene, physical entity or entity reference
+	 * @param model a biopax model where to find/create xrefs
+	 * @param bpe a gene, physical entity or entity reference only
 	 * @param db database name for all (primary/canonical) xrefs; 'uniprot' or 'chebi'
 	 * @param mappingSet
 	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity nor EntityReference
 	 */
-	private void addCanonicalRelXrefs(Model source, XReferrable bpe, String db, Set<String> mappingSet) 
+	private void addCanonicalRelXrefs(Model model, XReferrable bpe, String db, Set<String> mappingSet) 
 	{	
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference))
 			throw new AssertionError("Not Gene or PE: " + bpe);
 		
-		for(String ac : mappingSet) {
+		ac: for(String ac : mappingSet) {
 			// find or create
 			RelationshipXref rx = PreMerger
-				.findOrCreateRelationshipXref(RelTypeVocab.ADDITIONAL_INFORMATION, db, ac, source);
+				.findOrCreateRelationshipXref(RelTypeVocab.ADDITIONAL_INFORMATION, db, ac, model);
+			
+			//check if an equivalent rel. xref is already present (skip it then)
+			for(Xref x : bpe.getXref()) {
+				if(x instanceof RelationshipXref && x.isEquivalent(rx))
+					continue ac; //break and go to next ac
+			}
+			
 			bpe.addXref(rx);
 		}
 	}

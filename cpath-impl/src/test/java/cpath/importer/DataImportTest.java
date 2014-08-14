@@ -182,7 +182,7 @@ public class DataImportTest {
 		assertEquals(5, ((Model)service.biopax()).getObjects(Provenance.class).size()); 
 		//still five (should not matter for queries/analyses)
 		// index
-		service.biopax().index();
+		service.index();
 		
 		// Test the persistent model (runs within a transaction)
 		service.biopax().run(new Analysis() {
@@ -200,10 +200,10 @@ public class DataImportTest {
 		// Test full-text search	
 		// search with a secondary (RefSeq) accession number
 		//NP_619650 occurs in the warehouse only, not in the merged model
-		SearchResponse resp =  service.biopax().search("NP_619650", 0, RelationshipXref.class, null, null);
+		SearchResponse resp =  (SearchResponse) service.search("NP_619650", 0, RelationshipXref.class, null, null);
 		assertTrue(resp.getSearchHit().isEmpty());
 		//now find another one in the main model
-		resp =  service.biopax().search("NP_005099", 0, RelationshipXref.class, null, null);
+		resp =  (SearchResponse) service.search("NP_005099", 0, RelationshipXref.class, null, null);
 		Collection<SearchHit> prs = resp.getSearchHit();
 		assertFalse(prs.isEmpty());
 		Collection<String> prIds = new HashSet<String>();
