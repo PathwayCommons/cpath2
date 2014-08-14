@@ -306,4 +306,10 @@ public interface CPathService {
      * and blacklist from archive.
      */
 	void init();
+	
+	/**
+	 * Creates the full-text index of the
+	 * main BioPAX model.
+	 */
+	void index();
 }

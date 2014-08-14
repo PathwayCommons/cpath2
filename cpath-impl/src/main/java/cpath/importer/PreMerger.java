@@ -576,8 +576,8 @@ public final class PreMerger {
 	 * Note: the corresponding CV does not have a unification xref
 	 * (this method won't validate; so, non-standard CV terms can be used).
 	 * 
-	 * @param vocab
-	 * @param model biopax model (e.g., warehouse)
+	 * @param vocab relationship xref type
+	 * @param model a biopax model where to find/add the xref
 	 */
 	public static RelationshipXref findOrCreateRelationshipXref(
 			RelTypeVocab vocab, String db, String id, Model model) 
@@ -591,15 +591,14 @@ public final class PreMerger {
 			return (RelationshipXref) model.getByID(uri);
 		}
 
-		// made it here, need to create relationship xref
+		// create a new relationship xref
 		toReturn = model.addNew(RelationshipXref.class, uri);
 		toReturn.setDb(db);
 		toReturn.setId(id);
 
 		// create/add the relationship type vocabulary
 		String relTypeCvUri = vocab.uri; //identifiers.org standard URI
-		RelationshipTypeVocabulary rtv = (RelationshipTypeVocabulary) model.getByID(relTypeCvUri);
-		
+		RelationshipTypeVocabulary rtv = (RelationshipTypeVocabulary) model.getByID(relTypeCvUri);		
 		if (rtv == null) {
 			rtv = model.addNew(RelationshipTypeVocabulary.class, relTypeCvUri);
 			rtv.addTerm(vocab.term);
@@ -613,7 +612,6 @@ public final class PreMerger {
 			}	
 			rtv.addXref(rtvux);
 		}
-		
 		toReturn.setRelationshipType(rtv);
 
 		return toReturn;

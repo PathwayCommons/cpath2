@@ -426,8 +426,8 @@ public final class Admin {
     
 	/**
      * Builds new biopax full-text index.
-	 * @throws IOException 
      * 
+	 * @throws IOException 
      * @throws IllegalStateException when not in maintenance mode
      */
     public static void createIndex() throws IOException {
@@ -436,18 +436,14 @@ public final class Admin {
  		
 		System.setProperty("net.sf.ehcache.disabled", "true");
 		
-		// re-build the full-text index	 
-		File dir = new File(cpath.homeDir() + File.separator + cpath.getMainDb());
-		LOG.info("Cleaning up the full-text index directory");
-		CPathUtils.cleanupDirectory(dir);		
- 			
-		//persist
-		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-				"classpath:META-INF/spring/applicationContext-dao.xml");    	
- 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean(PaxtoolsDAO.class));
- 		
  		LOG.info("Indexing...");
- 		mainDAO.index();
+		ClassPathXmlApplicationContext context = 
+				new ClassPathXmlApplicationContext(new String[] {
+						"classpath:META-INF/spring/applicationContext-dao.xml",
+						"classpath:META-INF/spring/applicationContext-jpa.xml"
+						});
+	    CPathService service = (CPathService) context.getBean(CPathService.class);	
+	    service.index();
  		
  		context.close(); 		
  		LOG.info("Done.");
@@ -484,15 +480,15 @@ public final class Admin {
      		String name = md.standardName();
      		String[] filterByDatasourceNames = new String[]{md.getUri()};
      		
-     		SearchResponse sr = service.biopax().search("*", 0, Pathway.class, filterByDatasourceNames, null);
+     		SearchResponse sr = (SearchResponse) service.search("*", 0, Pathway.class, filterByDatasourceNames, null);
      		md.setNumPathways(sr.getNumHits());
      		LOG.info(name + ", pathways: " + sr.getNumHits());
      		
-     		sr = service.biopax().search("*", 0, Interaction.class, filterByDatasourceNames, null);
+     		sr = (SearchResponse) service.search("*", 0, Interaction.class, filterByDatasourceNames, null);
      		md.setNumInteractions(sr.getNumHits());
      		LOG.info(name + ", interactions: " + sr.getNumHits());
      		
-     		sr = service.biopax().search("*", 0, PhysicalEntity.class, filterByDatasourceNames, null);
+     		sr = (SearchResponse) service.search("*", 0, PhysicalEntity.class, filterByDatasourceNames, null);
      		md.setNumPhysicalEntities(sr.getNumHits());
      		LOG.info(name + ", physical entities: " + sr.getNumHits());
      	}
@@ -871,13 +867,13 @@ public final class Admin {
     	Collection<String> uris = new ArrayList<String>();
     	
     	//call PaxtoolsDAO.search (skip service-tier cache) instead CPathService.search
-    	SearchResponse resp = service.biopax().search("*", 0, type, ds, org);
+    	SearchResponse resp = (SearchResponse) service.search("*", 0, type, ds, org);
     	int page = 0;
 		while(!resp.isEmpty()) {
 			for(SearchHit h : resp.getSearchHit())
 				uris.add(h.getUri());
 			//next page
-			resp = service.biopax().search("*", ++page, type, ds, org);
+			resp = (SearchResponse) service.search("*", ++page, type, ds, org);
 		}
     	
     	return uris;

@@ -181,6 +181,7 @@ class CPathServiceImpl implements CPathService {
 		
 		try {
 			// do search
+			//TODO get rid of paxtoolsDAO (replace with a new in-memory/filesystem search/index impl.)
 			SearchResponse hits = paxtoolsDAO.search(queryStr, page, biopaxClass, dsources, organisms);
 			
 			if(hits.isEmpty()) {//no hits
@@ -594,7 +595,7 @@ class CPathServiceImpl implements CPathService {
 			final String query = q.toString().trim();
 			log.debug("findUrisByIds, will run: " + query);
 			int page = 0; // will use search pagination
-			SearchResponse resp = paxtoolsDAO.search(query, page, Xref.class, null, null);
+			SearchResponse resp = (SearchResponse) search(query, page, Xref.class, null, null);
 			log.debug("findUrisByIds, hits: " + resp.getNumHits());
 			while (!resp.isEmpty()) {
 				log.debug("Retrieving xref search results, page #" + page);
@@ -621,7 +622,7 @@ class CPathServiceImpl implements CPathService {
 					}
 				}
 				// go next page
-				resp = paxtoolsDAO.search(query, ++page, Xref.class, null, null);
+				resp = (SearchResponse) search(query, ++page, Xref.class, null, null);
 			}
 		}
 				
@@ -649,10 +650,10 @@ class CPathServiceImpl implements CPathService {
 			return res;
 			
 		} catch (IllegalArgumentException e) {
-			log.error("traverse() failed to init path accessor", e);
+			log.error("traverse() failed to init path accessor. " + e);
 			return new ErrorResponse(BAD_REQUEST, e.getMessage());
 		} catch (Exception e) {
-			log.error("traverse() failed", e);
+			log.error("traverse() failed. " + e);
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
 		
@@ -680,7 +681,7 @@ class CPathServiceImpl implements CPathService {
 		SearchResponse topPathways = new SearchResponse();
 		final List<SearchHit> hits = topPathways.getSearchHit(); //empty list
 		int page = 0; // will use search pagination
-		SearchResponse searchResponse = paxtoolsDAO.search("*", page, Pathway.class, datasources, organisms);
+		SearchResponse searchResponse = (SearchResponse) search("*", page, Pathway.class, datasources, organisms);
 		//go over all hits, all pages
 		while(!searchResponse.isEmpty()) {
 			log.debug("Retrieving top pathways search results, page #" + page);
@@ -693,7 +694,7 @@ class CPathServiceImpl implements CPathService {
 					hits.add(h); //add to topPathways list
 			}
 			// go next page
-			searchResponse = paxtoolsDAO.search("*", ++page, Pathway.class, datasources, organisms);
+			searchResponse = (SearchResponse) search("*", ++page, Pathway.class, datasources, organisms);
 		}
 		
 		// final touches...
@@ -1046,7 +1047,21 @@ class CPathServiceImpl implements CPathService {
 	public LogEntitiesRepository log() {
 		return logEntitiesRepository;
 	}
-	
+
+
+	@Override
+	public void index() {
+		//TODO switch to a new search/index way, not using Hibernate and paxtoolsDAO.
+		
+		// cleanup the index directory
+		CPathSettings cpath = CPathSettings.getInstance();
+		File dir = new File(cpath.homeDir() + File.separator + cpath.getMainDb());
+		log.info("Cleaning up the full-text index directory");
+		CPathUtils.cleanupDirectory(dir);	
+		
+		// re-build the full-text index	 
+		paxtoolsDAO.index();
+	}
 	
 }
 
