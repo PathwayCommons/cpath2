@@ -219,8 +219,6 @@ public final class Merger {
 				EntityReference r = (EntityReference) mainModel.getByID(replacement.getRDFId());
 				if(r != null) // re-use previously merged one
 					replacement = r;
-//				else //merge (including all children)
-//					mainModel.merge(replacement);	
 				
 				//save in the map to replace the source bpe later 
 				replacements.put(bpe, replacement);
@@ -301,46 +299,53 @@ public final class Merger {
 			}
 		}
 		
-		// cleaning up dangling objects (including the replaced above ones)
-		log.info("Repair, i.e., find and add back to the model all child objects ("+srcModelInfo+")...");
-		source.repair();
+//		log.info("Repair, i.e., find and add back to the model all child objects ("+srcModelInfo+")...");
+//		source.repair(); //TODO not sure if source.repair() was required here...
 		
 		// cleaning up dangling objects (including the replaced above ones)
 		log.info("Removing dangling objects ("+srcModelInfo+")...");
 		ModelUtils.removeObjectsIfDangling(source, UtilityClass.class);
-		
-		
-		// The following hack can improve graph queries and full-text search relevance
-		// for generic and poorly defined physical entities (those lacking entity reference
-		// but having some xrefs)
-		log.info("Adding canonical UniProt/ChEBI " +
-				"relationship xrefs to physical entities using their existing xrefs " +
-				"and id-mapping (" + srcModelInfo + ")...");		
+				
 		/* 
+		 * The following can improve graph queries and full-text search, 
+		 * for generic and poorly defined physical entities (lacking entity reference)
+		 * can eventually match a query.
+		 * 
 		 * Using existing xrefs and id-mapping, add primary uniprot/chebi RelationshipXref 
-		 * to all simple PE (SM, Protein, Dna, Rna,..) and Gene if possible (skip complexes).
+		 * to all simple PEs (SM, Protein, Dna, Rna,..) and Gene, if possible (skip Complexes).
 		 * This might eventually result in mutually exclusive identifiers, 
-		 * but we'll keep those and just log a warning for future (data) fix;
+		 * but we'll keep those xrefs and just log a warning for future (data) fix;
 		 * - not a big deal as long as we do not merge data based on these new xrefs,
 		 * but just index/search/query (this especially helps 
 		 * when no entity references defined for a molecule).
-		 */		
+		 */	
+		log.info("Adding canonical UniProt/ChEBI RelationshipXrefs to physical"
+			+ " entities by using existing xrefs and id-mapping (" + srcModelInfo + ")");
 		for(Entity pe : new HashSet<Entity>(source.getObjects(Entity.class))) 
 		{
 			if(pe instanceof PhysicalEntity) {
 				if(pe instanceof SimplePhysicalEntity) {
+					// skip for SPE that got its ER just replaced (from Warehouse)
+					EntityReference er = ((SimplePhysicalEntity) pe).getEntityReference();
+					if(er != null && warehouseModel.containsID(er.getRDFId()))
+						continue;
+					
 					if(pe instanceof SmallMolecule) {
-						addCanonicalRelXrefs(mainModel, (SmallMolecule) pe, "CHEBI");
-					} else {
-						// for Protein, Dna, DnaRegion, Rna*...
-						addCanonicalRelXrefs(mainModel, (PhysicalEntity) pe, "UNIPROT");
+						if(er == null)
+							addCanonicalRelXrefs(mainModel, pe, "CHEBI");
+						else
+							addCanonicalRelXrefs(mainModel, er, "CHEBI");
+					} else {//Protein, Dna*, Rna* type
+						if(er == null)
+							addCanonicalRelXrefs(mainModel, pe, "UNIPROT");
+						else 
+							addCanonicalRelXrefs(mainModel, er, "UNIPROT");
 					}						
 				} else if(pe instanceof Complex) {
-					continue; // skip complexes
-				} else {
-					// do for base PEs
-					addCanonicalRelXrefs(mainModel, (PhysicalEntity) pe, "UNIPROT");
-					addCanonicalRelXrefs(mainModel, (PhysicalEntity) pe, "CHEBI");
+					continue; // skip
+				} else { // top PE class, i.e., pe.getModelInterface()==PhysicalEntity.class
+					addCanonicalRelXrefs(mainModel, pe, "UNIPROT");
+					addCanonicalRelXrefs(mainModel, pe, "CHEBI");
 				}
 			} else if(pe instanceof Gene) {
 				addCanonicalRelXrefs(mainModel, pe, "UNIPROT");
@@ -392,7 +397,7 @@ public final class Merger {
 	 */
 	private void addCanonicalRelXrefs(Model m, Named bpe, String db) 
 	{
-		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity))
+		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference))
 			throw new AssertionError("Not Gene or PE: " + bpe);
 			
 		// map and generate/add xrefs
@@ -403,8 +408,10 @@ public final class Merger {
 		addCanonicalRelXrefs(m, bpe, db, mappingSet);
 		
 		//map by display and standard names
-		mappingSet = service.map(null, bpe.getDisplayName(), db);
-		addCanonicalRelXrefs(m, bpe, db, mappingSet);
+		if(bpe.getDisplayName()!=null && !bpe.getDisplayName().isEmpty()) {
+			mappingSet = service.map(null, bpe.getDisplayName(), db);
+			addCanonicalRelXrefs(m, bpe, db, mappingSet);
+		}
 	}
 
 
@@ -519,7 +526,7 @@ public final class Merger {
 			if(x.getDb() == null || x.getDb().isEmpty()
 					|| x.getId() == null || x.getId().isEmpty()) {
 				log.warn("Ignored bad " + x.getModelInterface().getSimpleName()
-					+ " db: " + x.getDb() + ", id: " + x.getId());
+					+ " (" + x.getRDFId() + "), db: " + x.getDb() + ", id: " + x.getId());
 				continue;
 			}
 						
