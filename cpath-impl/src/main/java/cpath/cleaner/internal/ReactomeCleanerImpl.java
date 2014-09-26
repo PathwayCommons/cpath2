@@ -2,7 +2,9 @@ package cpath.cleaner.internal;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.biopax.paxtools.controller.ModelUtils;
@@ -50,6 +52,7 @@ final class ReactomeCleanerImpl implements Cleaner {
 		// Normalize Entity URIs using Reactome stable id, where possible
 		// (not required for utility class objects)
 		Set<Entity> entities = new HashSet<Entity>(model.getObjects(Entity.class));
+		Map<String, Entity> newUriToEntityMap = new HashMap<String, Entity>();
 		for(Entity ent : entities) {
 			Set<UnificationXref> uxrefs = new ClassFilterSet<Xref, UnificationXref>(
 					new HashSet<Xref>(ent.getXref()), UnificationXref.class);			
@@ -58,32 +61,41 @@ final class ReactomeCleanerImpl implements Cleaner {
 					String id = x.getId();
 					if(x.getIdVersion() != null && !x.getId().contains(".")) 
 						id += "." + x.getIdVersion();
+					
 					String uri = "http://identifiers.org/reactome/" + id;
 					
-					if(!model.containsID(uri)) {
-						CPathUtils.replaceID(model, ent, uri);
-					}
-					else { //shared unification xref bug in the data
-						log.error("Fixing for the " + x.getId() + 
+					if(!model.containsID(uri) && !newUriToEntityMap.containsKey(uri)) {
+						newUriToEntityMap.put(uri, ent); //collect to replace URIs later (below)
+					} else { //shared unification xref bug
+						log.warn("Fixing Reactome: " + x.getId() + 
 							" unification xref is shared by several entities: "
-								+ x.getXrefOf());					
-						//fix - replace with equiv. rel. xref (all except the one entity, already 'normalized')
+								+ x.getXrefOf());
+						
 						String rxUri = model.getXmlBase() + RelationshipXref.class.getSimpleName() + id;
 						RelationshipXref rx = (RelationshipXref) model.getByID(rxUri);
 						if(rx == null) {
 							rx = model.addNew(RelationshipXref.class, rxUri);
+							rx.setDb(x.getDb());
+							rx.setId(id);
+							rx.setIdVersion(x.getIdVersion());
+							rx.setDbVersion(x.getDbVersion());
 						}
+						
 						for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
-							if(uri.equals(owner.getRDFId()))
-								continue; //keep the very first one with the URI and unif. xref
-							
+							if(owner.equals(newUriToEntityMap.get(uri)))
+								continue; //keep the entity to be updated unchanged
 							owner.removeXref(x);
 							owner.addXref(rx);
 						}						
 					}
+					break; //skip the rest of xrefs, if any (must not have >1 REACT_* unif. xref for the same entity)
 				}
 			}
-		}		
+		}
+		
+		// set standard URIs for selected entities
+		for(String uri : newUriToEntityMap.keySet())
+			CPathUtils.replaceID(model, newUriToEntityMap.get(uri), uri);
 		
 		// All Conversions in Reactome are LEFT-TO-RIGH, 
 		// unless otherwise was specified (confirmed with Guanming Wu, 2013/12)

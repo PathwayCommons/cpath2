@@ -196,7 +196,12 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                 String parts[] = field.split("=");
                 if (parts.length == 2) {
                     String fieldName = parts[0]; //no trim() required here
+                    
                     String fieldValue = parts[1].trim();
+                    //after 1 Oct 2014, remove evidence (e.g., {type|source} - {ECO:0000269|PubMed10433554}) at the name's end (see http://www.uniprot.org/changes/evidences)
+                    int idx = fieldValue.indexOf(" {");
+                    if(idx>0) fieldValue = fieldValue.substring(0, idx);
+                    
                     if ("RecName: Full".equals(fieldName)) {
 						proteinReference.setStandardName(fieldValue);
                     }
@@ -220,6 +225,11 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     		ProteinReference proteinReference, Model model) {
         String parts[] = organismTaxId.replaceAll(";", "").split("=");
         String taxId = parts[1];
+        //since 1 Oct 2014, have to remove {evidence} after the taxId (after space); see http://www.uniprot.org/changes/evidences
+        int idx = taxId.indexOf(" {");
+        if(idx > 0)
+        	taxId = taxId.substring(0, idx);
+        
         parts = organismName.split("\\("); // - by first occurrence of '('
         String name = parts[0].trim();
 		BioSource bioSource = getBioSource(taxId, name, model);
@@ -330,7 +340,12 @@ final class UniprotConverterImpl extends BaseConverterImpl {
             String subParts[] = parts[i].split("=");
             // can be >1 due to isoforms
             if (subParts[0].trim().equals("Name")) {
-            	symbls.add(subParts[1]);
+            	//remove {evidence}; see http://www.uniprot.org/changes/evidences (GN)
+            	String gn = subParts[1];
+            	int idx = gn.indexOf(" {");
+            	if(idx>0)
+            		gn = gn.substring(0, idx);         	
+            	symbls.add(gn);
             }
         }
         return symbls;
@@ -352,6 +367,10 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                 String synList[] = subParts[1].split(",");
                 for (int j=0; j<synList.length; j++) {
                     String currentSynonym = synList[j].trim();
+                	//remove {evidence}; see http://www.uniprot.org/changes/evidences (GN)
+                	int idx = currentSynonym.indexOf(" {");
+                	if(idx>0)
+                		currentSynonym = currentSynonym.substring(0, idx); 
                     syns.add(currentSynonym);
                 }
             }
