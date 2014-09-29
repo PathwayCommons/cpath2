@@ -402,15 +402,15 @@ public final class Merger {
 			
 		// map and generate/add xrefs
 		Set<String> mappingSet = idMappingByXrefs(bpe, db, UnificationXref.class);
-		addCanonicalRelXrefs(m, bpe, db, mappingSet);
+		addCanonicalRelXrefs(m, bpe, db, mappingSet, RelTypeVocab.IDENTITY);
 		
 		mappingSet = idMappingByXrefs(bpe, db, RelationshipXref.class);
-		addCanonicalRelXrefs(m, bpe, db, mappingSet);
+		addCanonicalRelXrefs(m, bpe, db, mappingSet, RelTypeVocab.ADDITIONAL_INFORMATION);
 		
 		//map by display and standard names
 		if(bpe.getDisplayName()!=null && !bpe.getDisplayName().isEmpty()) {
 			mappingSet = service.map(null, bpe.getDisplayName(), db);
-			addCanonicalRelXrefs(m, bpe, db, mappingSet);
+			addCanonicalRelXrefs(m, bpe, db, mappingSet, RelTypeVocab.ADDITIONAL_INFORMATION);
 		}
 	}
 
@@ -424,9 +424,10 @@ public final class Merger {
 	 * @param bpe a gene, physical entity or entity reference only
 	 * @param db database name for all (primary/canonical) xrefs; 'uniprot' or 'chebi'
 	 * @param mappingSet
+	 * @param relType - term to use with the Xref
 	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity nor EntityReference
 	 */
-	private void addCanonicalRelXrefs(Model model, XReferrable bpe, String db, Set<String> mappingSet) 
+	private void addCanonicalRelXrefs(Model model, XReferrable bpe, String db, Set<String> mappingSet, RelTypeVocab relType)
 	{	
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference))
 			throw new AssertionError("Not Gene or PE: " + bpe);
@@ -434,7 +435,7 @@ public final class Merger {
 		ac: for(String ac : mappingSet) {
 			// find or create
 			RelationshipXref rx = PreMerger
-				.findOrCreateRelationshipXref(RelTypeVocab.ADDITIONAL_INFORMATION, db, ac, model);
+				.findOrCreateRelationshipXref(relType, db, ac, model);
 			
 			//check if an equivalent rel. xref is already present (skip it then)
 			for(Xref x : bpe.getXref()) {
