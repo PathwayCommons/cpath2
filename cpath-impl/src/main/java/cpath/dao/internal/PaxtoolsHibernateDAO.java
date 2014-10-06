@@ -87,7 +87,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	//no. indexed objects before flushing the full-text session
 	private final static int IDX_BATCH_SIZE = 10000;
 	
-	private int maxHitsPerPage;
+	private final int maxHitsPerPage;
 	
 	public final static String[] DEFAULT_SEARCH_FIELDS =
 		{
@@ -97,7 +97,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			FIELD_KEYWORD, //anything, e.g., names, terms, comments, incl. - from child elements 
 			FIELD_NAME, // standardName, displayName, other names
 			FIELD_TERM, // CV terms
-			FIELD_XREFDB, //xref.db
 			FIELD_XREFID, //xref.id (incl. direct child xref's id, if any)
 			FIELD_ECNUMBER,
 			FIELD_SEQUENCE,
@@ -107,7 +106,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			FIELD_PATHWAY, // i.e., helps find an object by a parent pathway name or filter a search results by pathway ;) 
 		};
 
-	private static Logger log = LoggerFactory.getLogger(PaxtoolsHibernateDAO.class);
+	private static final Logger log = LoggerFactory.getLogger(PaxtoolsHibernateDAO.class);
 	
 	@Autowired
 	private SessionFactory sessionFactory;
