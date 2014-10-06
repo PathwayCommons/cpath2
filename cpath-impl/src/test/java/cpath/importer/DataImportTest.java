@@ -182,7 +182,7 @@ public class DataImportTest {
 		assertEquals(5, ((Model)service.biopax()).getObjects(Provenance.class).size()); 
 		//still five (should not matter for queries/analyses)
 		// index
-		service.index();
+		service.biopax().index();
 		
 		// Test the persistent model (runs within a transaction)
 		service.biopax().run(new Analysis() {

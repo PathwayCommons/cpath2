@@ -1047,21 +1047,6 @@ class CPathServiceImpl implements CPathService {
 	public LogEntitiesRepository log() {
 		return logEntitiesRepository;
 	}
-
-
-	@Override
-	public void index() {
-		//TODO switch to a new search/index way, not using Hibernate and paxtoolsDAO.
-		
-		// cleanup the index directory
-		CPathSettings cpath = CPathSettings.getInstance();
-		File dir = new File(cpath.homeDir() + File.separator + cpath.getMainDb());
-		log.info("Cleaning up the full-text index directory");
-		CPathUtils.cleanupDirectory(dir);	
-		
-		// re-build the full-text index	 
-		paxtoolsDAO.index();
-	}
 	
 }
 

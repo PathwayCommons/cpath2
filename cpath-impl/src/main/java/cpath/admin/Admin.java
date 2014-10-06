@@ -139,8 +139,8 @@ public final class Admin {
     			argl.add(a);
     	}
     	final String[] args = argl.toArray(new String[]{});
-//		System.out.println(Arrays.toString(args));
-  			
+  		argl = null;
+    	
     	LOG.debug("Command-line arguments were: " + Arrays.toString(args));
     	
     	// sanity check
@@ -436,6 +436,12 @@ public final class Admin {
  		
 		System.setProperty("net.sf.ehcache.disabled", "true");
 		
+		// cleanup the index directory
+		CPathSettings cpath = CPathSettings.getInstance();
+		File dir = new File(cpath.homeDir() + File.separator + cpath.getMainDb());
+		LOG.info("Cleaning up the full-text index directory");
+		CPathUtils.cleanupDirectory(dir);
+		
  		LOG.info("Indexing...");
 		ClassPathXmlApplicationContext context = 
 				new ClassPathXmlApplicationContext(new String[] {
@@ -443,7 +449,7 @@ public final class Admin {
 						"classpath:META-INF/spring/applicationContext-jpa.xml"
 						});
 	    CPathService service = (CPathService) context.getBean(CPathService.class);	
-	    service.index();
+	    service.biopax().index();
  		
  		context.close(); 		
  		LOG.info("Done.");
@@ -804,7 +810,7 @@ public final class Admin {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
 		
-		// create the TMP dir inside the home dir if it does not exist yet
+		// create downloads directory inside the home dir. if not exist
 		File f = new File(cpath.downloadsDir());
 		if(!f.exists()) 
 			f.mkdir();
