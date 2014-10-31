@@ -12,6 +12,7 @@ import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
 import org.apache.commons.lang.StringUtils;
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.hibernate.annotations.DynamicInsert;
@@ -379,9 +380,12 @@ public final class Metadata {
 		// replace for all entities
 		for (org.biopax.paxtools.model.level3.Entity ent : model.getObjects(org.biopax.paxtools.model.level3.Entity.class)) {
 			for(Provenance ds : new HashSet<Provenance>(ent.getDataSource()))
-				ent.removeDataSource(ds);			
+				ent.removeDataSource(ds);
 			ent.addDataSource(pro);
 		}
+		
+		// remove dangling Provenance from the model
+		ModelUtils.removeObjectsIfDangling(model, Provenance.class);
 	}
 	
 	/**

@@ -19,7 +19,6 @@ import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.validator.api.Validator;
 import org.biopax.validator.utils.Normalizer;
-
 import org.junit.*;
 import org.junit.runner.RunWith;
 
@@ -41,6 +40,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.GZIPOutputStream;
 
 
 /**
@@ -117,8 +117,10 @@ public class DataImportTest {
 		assertFalse(service.map("uniprot isoform", "Q8TD86-1", "UNIPROT").isEmpty());
 		assertEquals("Q8TD86", service.map("uniprot isoform", "Q8TD86-1", "UNIPROT").iterator().next());					
 		// also -
-		assertTrue(service.map(null, "NP_619650.1", "UNIPROT").isEmpty());		
-		// when the last arg. is not null, map(..) calls 'suggest' method to replace NP_619650.1 with NP_619650
+		assertTrue(service.map(null, "NP_619650.1", "UNIPROT").isEmpty());
+		assertFalse(service.map("refseq", "NP_619650", "UNIPROT").isEmpty());
+		// also, with the first arg. is not null, map(..) 
+		// calls 'suggest' method to replace NP_619650.1 with NP_619650
 		// (the id-mapping table only has canonical uniprot IDs, no isoform IDs)
 		assertFalse(service.map("refseq", "NP_619650.1", "UNIPROT").isEmpty());
 		ac = service.map("refseq", "NP_619650", "UNIPROT").iterator().next(); 
@@ -159,32 +161,27 @@ public class DataImportTest {
 		//get the model from the archive and test it
 		Model m = CPathUtils.loadMainBiopaxModel();	
 		//check the model
-		assertMerge(m);	
+		assertMerge(m);
 
 		//pid, reactome,humancyc,.. were there in the test models
 		assertEquals(4, m.getObjects(Provenance.class).size());
 		
-		//additional metadata entry
+		//additional 'test' metadata entry
 		Metadata md = new Metadata("test", "Reactome", "Foo", "", "", 
 				"", METADATA_TYPE.BIOPAX, "", "", null, "free");		
 		service.save(md);	
 		// normally, setProvenanceFor gets called during Premerge stage
 		md.setProvenanceFor(m); 
-		// which EXPLICITELY REMOVEs all other datasources from object properties;
-		// former Provenances normally become DANGLING...
-		// but does not remove dangling objects from the persistent model
-		assertEquals(5, m.getObjects(Provenance.class).size()); 
+		// which EXPLICITELY REMOVEs all other Provenance values from dataSource properties;
+		assertEquals(1, m.getObjects(Provenance.class).size()); 
 		
 		
-		// persist
+		//Test persistent model (PaxtoolsDAO)
+		// Persist (Hibernate)
 		service.biopax().removeAll();
 		service.biopax().merge(m);		
-		assertEquals(5, ((Model)service.biopax()).getObjects(Provenance.class).size()); 
-		//still five (should not matter for queries/analyses)
-		// index
-		service.biopax().index();
-		
-		// Test the persistent model (runs within a transaction)
+		assertEquals(1, ((Model)service.biopax()).getObjects(Provenance.class).size()); 		
+		// Test the persistent model (runs within a db transaction)
 		service.biopax().run(new Analysis() {
 			@Override
 			public void execute(Model model) {
@@ -197,6 +194,20 @@ public class DataImportTest {
 		 * SERVICE-TIER features tests
 		 */
 		
+		//PREPARE...
+		// update the main biopax file (due to changes to dataSource prop. above;
+		// persistent and in-memory models must be in synch)
+		new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(m, 
+			new GZIPOutputStream(new FileOutputStream(
+					CPathSettings.getInstance().mainModelFile())));
+		
+		//update/reload the biopax model in the service object 
+		service.init();
+		//index
+		service.biopax().index();
+		
+		
+		// TEST...
 		// Test full-text search	
 		// search with a secondary (RefSeq) accession number
 		//NP_619650 occurs in the warehouse only, not in the merged model
@@ -249,7 +260,7 @@ public class DataImportTest {
 		res = service.search("*", 0, PhysicalEntity.class, null, null);
 		assertNotNull(res);
 		assertTrue(res instanceof SearchResponse);
-		assertNotNull(((SearchResponse)res).getProviders());
+		assertFalse(res.isEmpty());
 		assertFalse(((SearchResponse)res).getProviders().isEmpty());
 		log.info("Providers found by second search: " + ((SearchResponse)res).getProviders().toString());
 	}
@@ -262,8 +273,9 @@ public class DataImportTest {
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, null, "http://www.biopax.org/examples/myExample#Protein_54", Protein.class)));
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P27797"));
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P27797", UnificationXref.class)));
-		assertTrue(mergedModel.containsID("http://identifiers.org/taxonomy/9606"));
-		assertTrue(mergedModel.containsID("http://identifiers.org/go/GO:0005737"));
+		final String HsUri = Normalizer.uri(XML_BASE, "TAXONOMY", "9606", BioSource.class);
+		assertTrue(mergedModel.containsID(HsUri));
+		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "GO", "GO:0005737", CellularLocationVocabulary.class)));
 		
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P13631"));
 		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P22932"));		
@@ -278,7 +290,7 @@ public class DataImportTest {
 		assertEquals("Calreticulin", pr.getStandardName());
 		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
 		assertEquals(11, pr.getXref().size()); //11, no duplicate xrefs (10 of the warehouse PR, +1 - comes from...)!
-		assertEquals("http://identifiers.org/taxonomy/9606", pr.getOrganism().getRDFId());
+		assertEquals("9606", pr.getOrganism().getXref().iterator().next().getId());
 		
 		// test proper merge of small molecule reference
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, null, "http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate",SmallMolecule.class)));
@@ -327,12 +339,13 @@ public class DataImportTest {
 		assertEquals("(R)-linalool", smr.getDisplayName());
 		assertEquals(5, smr.getEntityReferenceOf().size());
 		
-		BioSource bs = (BioSource) mergedModel.getByID("http://identifiers.org/taxonomy/9606");
+		BioSource bs = (BioSource) mergedModel.getByID(HsUri);
 		assertNotNull(bs);
 		assertEquals(1, bs.getXref().size());
 		UnificationXref x = (UnificationXref) bs.getXref().iterator().next();
 		assertEquals(1, x.getXrefOf().size());
-		assertEquals("http://identifiers.org/taxonomy/9606", x.getXrefOf().iterator().next().getRDFId());
+		assertEquals(HsUri, x.getXrefOf().iterator().next().getRDFId());
+		assertEquals(bs, x.getXrefOf().iterator().next());
 //		System.out.println(x.getRDFId() + " is " + x);
 		UnificationXref ux = (UnificationXref) mergedModel.getByID(Normalizer.uri(XML_BASE, "TAXONOMY", "9606", UnificationXref.class));
 //		System.out.println(ux.getRDFId() + " - " + ux);

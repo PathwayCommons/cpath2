@@ -121,7 +121,6 @@ public final class CPathSettings {
 	public static final String PROP_BLACKLIST_DEGREE_THRESHOLD = "cpath2.blacklist.degree.threshold";   
 	public static final String PROP_BLACKLIST_CONTROL_THRESHOLD = "cpath2.blacklist.control.threshold";
 	public static final String PROP_METADATA_LOCATION = "cpath2.metadata.location";
-	public static final String PROP_PROXY_MODEL_ENABLED="cpath2.proxy.model.enabled";
 	
 	/*
 	 * Following properties can be even updated at runtime (because cpath2.properties resource is read by the webapp periodically)
@@ -162,7 +161,6 @@ public final class CPathSettings {
 		defaults.put(PROP_METADATA_LOCATION, homeDir() + File.separator + METADATA_FILE);
 		defaults.put(PROP_DEBUG_ENABLED, "false");
 		defaults.put(PROP_ADMIN_ENABLED, "false");	
-		defaults.put(PROP_PROXY_MODEL_ENABLED, "false");
 		
 		settings = new Properties(defaults);
 		
@@ -316,23 +314,7 @@ public final class CPathSettings {
 		setCPathProperty(PROP_XML_BASE, xmlBase);
 	}
 	
-	
-	/**
-	 * Flags if cPath2 services are to use the in-memory
-	 * (proxy) Model in front of the persistent biopax model.
-	 * 
-	 * @return
-	 */
-	public boolean isProxyModelEnabled() {
-		return "true".equalsIgnoreCase(property(PROP_PROXY_MODEL_ENABLED));
-	}	
-
-	
-	public void setProxyModelEnabled(boolean enabled) {
-		setCPathProperty(PROP_PROXY_MODEL_ENABLED, Boolean.toString(enabled));
-	}
-	
-	
+		
 	/**
 	 * Gets a cpath2 property value
 	 * by name from:
@@ -441,8 +423,7 @@ public final class CPathSettings {
 		} 
 		else 
 		{	//ok to alter some props in the 'normal' state too
-			if(PROP_PROXY_MODEL_ENABLED.equals(name)
-					|| PROP_DEBUG_ENABLED.equals(name)
+			if(PROP_DEBUG_ENABLED.equals(name)
 					|| PROP_MAX_SEARCH_HITS_PER_PAGE.equals(name)
 			) {
 				System.setProperty(name, value);

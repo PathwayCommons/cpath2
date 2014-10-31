@@ -26,7 +26,8 @@ import org.apache.commons.lang.StringEscapeUtils;
     "dataSource",
     "organism",
     "pathway",
-    "excerpt"
+    "excerpt",
+    "size"
 	}
 )
 public class SearchHit implements Serializable {
@@ -39,6 +40,7 @@ public class SearchHit implements Serializable {
     private List<String> organism;
     private List<String> pathway;
     private String excerpt;
+    private Integer size;
 
     public SearchHit() {
 	}
@@ -57,6 +59,11 @@ public class SearchHit implements Serializable {
 		this.name = name;
 	}
 
+    /**
+     * The BioPAX type (short name),
+     * e.g., "ProteinReference". 
+     * @return
+     */
     public String getBiopaxClass() {
         return biopaxClass;
     }
@@ -65,6 +72,10 @@ public class SearchHit implements Serializable {
         this.biopaxClass = value;
     }
 
+    /**
+     * The list of data source (Provenance) URIs. 
+     * @return
+     */
     public List<String> getDataSource() {
         if (dataSource == null) {
             dataSource = new ArrayList<String>();
@@ -75,7 +86,10 @@ public class SearchHit implements Serializable {
 		this.dataSource = dataSource;
 	}
 
-    
+    /**
+     * The list of organism (BioSource) URIs. 
+     * @return
+     */
     public List<String> getOrganism() {
         if (organism == null) {
             organism = new ArrayList<String>();
@@ -86,6 +100,10 @@ public class SearchHit implements Serializable {
 		this.organism = organism;
 	}
    
+    /**
+     * The list of parent pathwaya' URIs. 
+     * @return
+     */
     public List<String> getPathway() {
         if (pathway == null) {
             pathway = new ArrayList<String>();
@@ -104,6 +122,20 @@ public class SearchHit implements Serializable {
         this.excerpt = value;
     }
 
+    /**
+     * For a BioPAX Interaction or Pathway,
+     * this is a number of associated processes; in other words,
+     * estimated size of the sub-network.
+     * 
+     * @return
+     */
+    public Integer getSize() {
+        return size;
+    }
+    public void setSize(Integer value) {
+        this.size = value;
+    }
+    
     
     @Override
     public String toString() {

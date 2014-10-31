@@ -30,7 +30,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import cpath.config.CPathSettings;
 import cpath.jpa.LogType;
-import cpath.service.CPathService;
 
 @Controller
 public class PagesController extends BasicController {
@@ -79,10 +78,9 @@ public class PagesController extends BasicController {
     		@RequestParam(required=false) String debug) {
 
     	cpath.setAdminEnabled("on".equals(admin));
-   		cpath.setProxyModelEnabled("on".equals(proxy));
    		cpath.setDebugEnabled("on".equals(debug));
     	
-   		if(cpath.isProxyModelEnabled() && !cpath.isAdminEnabled())
+   		if(!cpath.isAdminEnabled())
    			service.init();
    		
     	return "admin";

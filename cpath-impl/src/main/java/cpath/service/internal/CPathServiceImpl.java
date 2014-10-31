@@ -42,7 +42,6 @@ import org.biopax.paxtools.controller.Completer;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.Interaction;
 import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.Xref;
@@ -66,7 +65,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
-import cpath.dao.Analysis;
 import cpath.dao.CPathUtils;
 import cpath.dao.LogUtils;
 import cpath.dao.PaxtoolsDAO;
@@ -82,7 +80,6 @@ import cpath.jpa.MetadataRepository;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
-import cpath.service.jaxb.TraverseEntry;
 import cpath.service.jaxb.TraverseResponse;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
@@ -94,6 +91,8 @@ import static cpath.service.Status.*;
  * Service tier class - to uniformly access 
  * persisted BioPAX model and metadata from console 
  * and web services.
+ * 
+ * TODO Replace PaxtoolsDAO (Hibernate/Search) with a new Lucene search implementation in future versions.
  * 
  * @author rodche
  */
@@ -139,16 +138,10 @@ class CPathServiceImpl implements CPathService {
 
 	@PostConstruct
 	synchronized public void init() {		
-		if(
-			//ignore CPathSettings.getInstance().isProxyModelEnabled() here;
-			//load the model into RAM if it's null, and not Admin mode
-			paxtoolsModel == null
-				&& !CPathSettings.getInstance().isAdminEnabled()) 
-		{ 			
-			loadModel();
+		if(!CPathSettings.getInstance().isAdminEnabled()) {
+			loadModel();	
+			loadBlacklist();
 		}
-		
-		loadBlacklist();
 	}
 
 	
@@ -181,16 +174,13 @@ class CPathServiceImpl implements CPathService {
 		
 		try {
 			// do search
-			//TODO get rid of paxtoolsDAO (replace with a new in-memory/filesystem search/index impl.)
 			SearchResponse hits = paxtoolsDAO.search(queryStr, page, biopaxClass, dsources, organisms);
 			
 			if(hits.isEmpty()) {//no hits
 				hits = new SearchResponse();
 				hits.setMaxHitsPerPage(maxHitsPerPage);
 				hits.setPageNo(page);
-			} else {
-				setProviders(hits);
-			}
+			} 
 			
 			hits.setComment("Search '" + queryStr  + "' in " + 
 				((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName()) 
@@ -207,69 +197,37 @@ class CPathServiceImpl implements CPathService {
 	}
 		
 
-	private void setProviders(SearchResponse hits) {
-		//get providers' standard names from their uris
-		Set<String> uris = hits.provenanceUris();
-		log.debug("setProviders; hits.provenanceUris(): " + uris);
-		String propertyPath = "Provenance/standardName";		
-		TraverseResponse tr = 
-			(TraverseResponse) traverse(propertyPath, uris.toArray(new String[] {}));
-		Set<String> names = new HashSet<String>();
-		for(TraverseEntry te : tr.getTraverseEntry()) {
-			names.addAll(te.getValue());
-		}
-		hits.setProviders(names); 
-	}
-
-
 	@Override
 	public ServiceResponse fetch(final OutputFormat format, final String... uris) {
 		if (uris.length == 0)
 			return new ErrorResponse(NO_RESULTS_FOUND,
 					"No URIs were specified for the query");
 		
-		final String[] mappedUris = findUrisByIds(uris);
+		if(!paxtoolsModelReady()) 
+			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete...");
 		
-		final ServiceResponse[] callback = new ServiceResponse[1];
-		
-		// extract/convert a sub-model within a hibernate read-only transaction 
-		Analysis analysis = new Analysis() {			
-			@Override
-			public void execute(Model model) {
-				try {
-					Set<BioPAXElement> elements = urisToBpes(model, mappedUris);
-					if(elements.isEmpty()) {
-						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
-							"No BioPAX objects found by URI(s): " + Arrays.toString(uris));
-						return;
-					}
-					//auto-complete (add important child elements)	
-					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model); 
-					assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
-					
-					// Add all Controls too
-					log.debug("Auto adding Controls to the model...");
-					for(BioPAXElement e : new HashSet<BioPAXElement>(elements)) {
-						if(e instanceof Interaction)
-							elements.addAll(((Interaction) e).getControlledOf());
-					}
-					
-					Model m = cloner.clone(model, elements);
-					m.setXmlBase(model.getXmlBase());
-					callback[0] = (new BiopaxConverter(getBlacklist()))
-						.convert(m, format, true);
-				} catch (Exception e) {
-					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
-				}
+		// extract/convert a sub-model
+		try {
+			final String[] mappedUris = findUrisByIds(uris);
+			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, mappedUris);
+			
+			if(elements.isEmpty()) {
+				return new ErrorResponse(NO_RESULTS_FOUND,
+						"No BioPAX objects found by URI(s): " + Arrays.toString(uris));
 			}
-		};
-		
-		if(paxtoolsModelReady())
-			analysis.execute(paxtoolsModel);
-		else
-			paxtoolsDAO.runReadOnly(analysis);
-		
-		return callback[0];
+					
+			//auto-complete (add important child/parent elements)	
+			elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel); 
+			assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
+
+			Model m = cloner.clone(paxtoolsModel, elements);
+			m.setXmlBase(paxtoolsModel.getXmlBase());
+			return (new BiopaxConverter(getBlacklist())).convert(m, format, true);
+			
+		} catch (Exception e) {
+			return new ErrorResponse(INTERNAL_ERROR, e);
+		}
+
     }
 
 
@@ -294,55 +252,42 @@ class CPathServiceImpl implements CPathService {
 		final String[] sources, final Integer limit, Direction direction, 
 		final String[] organisms, final String[] datasources)
 	{
+		if(!paxtoolsModelReady()) 
+			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete...");
+		
 		final String[] src = findUrisByIds(sources);
 
 		if(direction == null) {
 			direction = Direction.BOTHSTREAM;	
 		}
 		
-		final ServiceResponse[] callback = new ServiceResponse[1];
-		
-		// execute the paxtools graph query in a read-only db transaction
-		final Direction dir = direction;		
-		Analysis analysis = new Analysis() {			
-			@Override
-			public void execute(Model model) {
-				try {
-					// init source elements
-					Set<BioPAXElement> elements = urisToBpes(model, src);
-					if(elements.isEmpty()) {
-						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
-							"No BioPAX objects found by URI(s): " + Arrays.toString(src));
-						return;
-					}
-					
-					// Execute the query, get result elements
-					elements = QueryExecuter.runNeighborhood(elements, model,
-							limit, dir, createFilters(organisms, datasources));
-					
-					if(elements != null) {
-						// auto-complete (gets a reasonable size sub-model)
-						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
-						Model m = cloner.clone(model, elements);
-						m.setXmlBase(model.getXmlBase());
-						callback[0] = (new BiopaxConverter(getBlacklist())).convert(m, format, true);
-					} else {
-						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
-								"No results found by URI(s): " + Arrays.toString(src));
-						return;
-					}
-				} catch (Exception e) {
-					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
-				}
+		// execute the paxtools graph query
+		try {
+			// init source elements
+			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
+			if(elements.isEmpty()) {
+				return new ErrorResponse(NO_RESULTS_FOUND,
+						"No BioPAX objects found by URI(s): " + Arrays.toString(src));
 			}
-		};
-		
-		if(paxtoolsModelReady()) 
-			analysis.execute(paxtoolsModel);
-		else
-			paxtoolsDAO.runReadOnly(analysis);
-		
-		return callback[0];
+
+			// Execute the query, get result elements
+			elements = QueryExecuter.runNeighborhood(elements, paxtoolsModel,
+					limit, direction, createFilters(organisms, datasources));
+
+			if(elements != null) {
+				// auto-complete (gets a reasonable size sub-model)
+				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+				Model m = cloner.clone(paxtoolsModel, elements);
+				m.setXmlBase(paxtoolsModel.getXmlBase());
+				return (new BiopaxConverter(getBlacklist())).convert(m, format, true);
+			} else {
+				return new ErrorResponse(NO_RESULTS_FOUND,
+						"No results found by URI(s): " + Arrays.toString(src));
+			}
+		} catch (Exception e) {
+			return new ErrorResponse(INTERNAL_ERROR, e);
+		}
+
 	}
 
 	
@@ -351,51 +296,38 @@ class CPathServiceImpl implements CPathService {
 			final String[] sources, final Integer limit, 
 			final String[] organisms, final String[] datasources)
 	{	
+		if(!paxtoolsModelReady()) 
+			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete...");
+		
 		final String[] src = findUrisByIds(sources);
 		
-		final ServiceResponse[] callback = new ServiceResponse[1];
-		
-		// execute the paxtools graph query in a read-only db transaction
-		Analysis analysis = new Analysis() {			
-			@Override
-			public void execute(Model model) {
-				try {
-					// init source elements
-					Set<BioPAXElement> elements = urisToBpes(model, src);
-					if(elements.isEmpty()) {
-						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
-							"No BioPAX objects found by URI(s): " + Arrays.toString(src));
-						return;
-					}
-					
-					// Execute the query, get result elements
-					elements = QueryExecuter.runPathsBetween(elements, model, limit,
-							createFilters(organisms, datasources));
-					
-					// auto-complete (gets a reasonable size sub-model)
-					if(elements != null) {
-						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
-						Model m = cloner.clone(model, elements);
-						m.setXmlBase(model.getXmlBase());
-						callback[0] = (new BiopaxConverter(getBlacklist()))
-							.convert(m, format, true);
-					} else {
-						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
-								"No results found by URI(s): " + Arrays.toString(src));
-						return;
-					}
-				} catch (Exception e) {
-					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
-				}
+		// execute the paxtools graph query
+		try {
+			// init source elements
+			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
+			if(elements.isEmpty()) {
+				return new ErrorResponse(NO_RESULTS_FOUND,
+						"No BioPAX objects found by URI(s): " + Arrays.toString(src));
 			}
-		};
-		
-		if(paxtoolsModelReady()) 
-			analysis.execute(paxtoolsModel);
-		else
-			paxtoolsDAO.runReadOnly(analysis);
-		
-		return callback[0];
+
+			// Execute the query, get result elements
+			elements = QueryExecuter.runPathsBetween(elements, paxtoolsModel, limit,
+					createFilters(organisms, datasources));
+
+			// auto-complete (gets a reasonable size sub-model)
+			if(elements != null) {
+				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+				Model m = cloner.clone(paxtoolsModel, elements);
+				m.setXmlBase(paxtoolsModel.getXmlBase());
+				return (new BiopaxConverter(getBlacklist())).convert(m, format, true);
+			} else {
+				return new ErrorResponse(NO_RESULTS_FOUND,
+						"No results found by URI(s): " + Arrays.toString(src));
+			}
+		} catch (Exception e) {
+			return new ErrorResponse(INTERNAL_ERROR, e);
+		}
+
 	}
 
 	
@@ -404,64 +336,49 @@ class CPathServiceImpl implements CPathService {
 		final String[] sources, final String[] targets, final Integer limit,
 		final String[] organisms, final String[] datasources)
 	{
+		if(!paxtoolsModelReady()) 
+			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete...");
+		
 		final String[] src = findUrisByIds(sources);
 		final String[] tgt = findUrisByIds(targets);
+		
+		// execute the paxtools graph query	
+		try {
+			// init source and target elements
+			Set<BioPAXElement> source = urisToBpes(paxtoolsModel, src);
+			if(source.isEmpty()) {
+				return new ErrorResponse(NO_RESULTS_FOUND,
+						"No source BioPAX objects found by URI(s): " + Arrays.toString(src));
+			}
+			Set<BioPAXElement> target = urisToBpes(paxtoolsModel, tgt);
+			if(target.isEmpty()) {
+				return new ErrorResponse(NO_RESULTS_FOUND,
+						"No target BioPAX objects found by URI(s): " + Arrays.toString(tgt));
+			}
 
-		
-		final ServiceResponse[] callback = new ServiceResponse[1];
-		
-		// execute the paxtools graph query in a read-only db transaction		
-		Analysis analysis = new Analysis() {			
-			@Override
-			public void execute(Model model) {
-				try {
-					// init source and target elements
-					Set<BioPAXElement> source = urisToBpes(model, src);
-					if(source.isEmpty()) {
-						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
-							"No source BioPAX objects found by URI(s): " + Arrays.toString(src));
-						return;
-					}
-					Set<BioPAXElement> target = urisToBpes(model, tgt);
-					if(target.isEmpty()) {
-						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
-							"No target BioPAX objects found by URI(s): " + Arrays.toString(tgt));
-						return;
-					}
-					
-					// Execute the query
-					Set<BioPAXElement> elements = (target==null || target.isEmpty()) 
-						? QueryExecuter.runPathsBetween(source, model, limit,
-								createFilters(organisms, datasources))
-						: QueryExecuter.runPathsFromTo(source, target, 
-							model, LimitType.NORMAL, limit,
-								createFilters(organisms, datasources));
-					
+			// Execute the query
+			Set<BioPAXElement> elements = (target==null || target.isEmpty()) 
+					? QueryExecuter.runPathsBetween(source, paxtoolsModel, limit,
+							createFilters(organisms, datasources))
+							: QueryExecuter.runPathsFromTo(source, target, 
+									paxtoolsModel, LimitType.NORMAL, limit,
+									createFilters(organisms, datasources));
+
 					if(elements != null) {
 						// auto-complete (gets a reasonable size sub-model)
-						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
-						Model m = cloner.clone(model, elements);
-						m.setXmlBase(model.getXmlBase());
-						callback[0] = (new BiopaxConverter(getBlacklist()))
-								.convert(m, format, true);
+						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+						Model m = cloner.clone(paxtoolsModel, elements);
+						m.setXmlBase(paxtoolsModel.getXmlBase());
+						return (new BiopaxConverter(getBlacklist())).convert(m, format, true);
 					} else {
-						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
+						return new ErrorResponse(NO_RESULTS_FOUND,
 								"No results found; source: " + Arrays.toString(src)
 								+  ", target: " + Arrays.toString(tgt));
-						return;
 					}	
-				} catch (Exception e) {
-					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
-				}
-			}
-		};
-		
-		if(paxtoolsModelReady()) 
-			analysis.execute(paxtoolsModel);
-		else
-			paxtoolsDAO.runReadOnly(analysis);
-		
-		return callback[0];
+		} catch (Exception e) {
+			return new ErrorResponse(INTERNAL_ERROR, e);
+		}
+
 	}
 	
 
@@ -470,6 +387,9 @@ class CPathServiceImpl implements CPathService {
 		final String[] sources, final Integer limit, Direction direction,
 		final String[] organisms, final String[] datasources)
 	{
+		if(!paxtoolsModelReady()) 
+			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete...");
+		
 		final String[] src = findUrisByIds(sources);
 
 		if (direction == Direction.BOTHSTREAM) {
@@ -478,52 +398,35 @@ class CPathServiceImpl implements CPathService {
 		} else if(direction == null) {
 			direction = Direction.DOWNSTREAM;	
 		}
-					
-		final ServiceResponse[] callback = new ServiceResponse[1];
 		
-		// execute the paxtools graph query in a read-only db transaction
-		final Direction dir = direction;
-		Analysis analysis = new Analysis() {			
-			@Override
-			public void execute(Model model) {
-				try {
-					// init source elements
-					Set<BioPAXElement> elements = urisToBpes(model, src);
-					if(elements.isEmpty()) {
-						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
-							"No BioPAX objects found by URI(s): " + Arrays.toString(src));
-						return;
-					}
-					
-					// Execute the query, get result elements
-					elements = QueryExecuter
-						.runCommonStreamWithPOI(elements, model, dir, limit,
-							createFilters(organisms, datasources));
-					
-					if(elements != null) {
-						// auto-complete (gets a reasonable size sub-model)
-						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, model);
-						Model m = cloner.clone(model, elements);
-						m.setXmlBase(model.getXmlBase());
-						callback[0] = (new BiopaxConverter(getBlacklist()))
-								.convert(m, format, true);
-					} else {
-						callback[0] = new ErrorResponse(NO_RESULTS_FOUND,
-								"No results found by URI(s): " + Arrays.toString(src));
-						return;
-					}
-				} catch (Exception e) {
-					callback[0] = new ErrorResponse(INTERNAL_ERROR, e);
-				}
+		// execute the paxtools graph query
+		try {
+			// init source elements
+			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
+			if(elements.isEmpty()) {
+				return new ErrorResponse(NO_RESULTS_FOUND,
+						"No BioPAX objects found by URI(s): " + Arrays.toString(src));
 			}
-		};
-		
-		if(paxtoolsModelReady()) 
-			analysis.execute(paxtoolsModel);
-		else
-			paxtoolsDAO.runReadOnly(analysis);
-		
-		return callback[0];
+
+			// Execute the query, get result elements
+			elements = QueryExecuter
+					.runCommonStreamWithPOI(elements, paxtoolsModel, direction, limit,
+							createFilters(organisms, datasources));
+
+			if(elements != null) {
+				// auto-complete (gets a reasonable size sub-model)
+				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+				Model m = cloner.clone(paxtoolsModel, elements);
+				m.setXmlBase(paxtoolsModel.getXmlBase());
+				return (new BiopaxConverter(getBlacklist())).convert(m, format, true);
+			} else {
+				return new ErrorResponse(NO_RESULTS_FOUND,
+						"No results found by URI(s): " + Arrays.toString(src));
+			}
+		} catch (Exception e) {
+			return new ErrorResponse(INTERNAL_ERROR, e);
+		}
+
 	}
 
 	
@@ -642,13 +545,13 @@ class CPathServiceImpl implements CPathService {
 		try {
 			TraverseAnalysis traverseAnalysis = new TraverseAnalysis(res, sourceUris);
 			
-			if(paxtoolsModelReady()) 
+			if(paxtoolsModelReady())
 				traverseAnalysis.execute(paxtoolsModel);
 			else
 				paxtoolsDAO.runReadOnly(traverseAnalysis);
 			
 			return res;
-			
+		
 		} catch (IllegalArgumentException e) {
 			log.error("traverse() failed to init path accessor. " + e);
 			return new ErrorResponse(BAD_REQUEST, e.getMessage());
@@ -704,9 +607,7 @@ class CPathServiceImpl implements CPathService {
 				"other pathways nor controlled of any process)");
 		topPathways.setMaxHitsPerPage(hits.size());
 		topPathways.setPageNo(0);
-		
-		setProviders(topPathways);
-		
+			
 		return topPathways;
 	}
 
@@ -767,13 +668,7 @@ class CPathServiceImpl implements CPathService {
 
 	
 	private boolean paxtoolsModelReady() {
-		if(paxtoolsModel != null && CPathSettings.getInstance().isProxyModelEnabled()) {
-			log.debug("Model enabled/ready.");
-			return true;
-		} else {
-			log.debug("Model disabled/unloaded.");
-			return false;
-		}
+		return paxtoolsModel != null;
 	}	
 	
 	
@@ -1004,9 +899,9 @@ class CPathServiceImpl implements CPathService {
 				existing.setUrlToHomepage(metadata.getUrlToHomepage());
 				metadata = existing;
 				//the jpa managed (persistent) entity will be auto-updated/flashed
-			} else { //insert new
-				metadata = metadataRepository.save(metadata);
-			}
+			} 
+			
+			metadata = metadataRepository.save(metadata);
 		}
 		
 		return metadata;
