@@ -38,10 +38,12 @@ import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
 import org.apache.lucene.util.Version;
 
 import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
+
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.EntityReference;
 import org.biopax.paxtools.model.level3.PathwayStep;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.ObjectPropertyEditor;
@@ -66,6 +68,7 @@ import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
+
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.Modifier;
@@ -390,6 +393,14 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			
 			searchResponse.setSearchHit(searchHits);
 		} 
+		
+		//set unique providers' names
+		if(!searchResponse.isEmpty()) {
+			for(String puri : searchResponse.provenanceUris()) {
+				Provenance p = (Provenance) getByID(puri);
+				searchResponse.getProviders().add((p.getStandardName() != null)?p.getStandardName():p.getDisplayName());
+			}
+		}
 		
 		return searchResponse;
 	}

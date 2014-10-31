@@ -122,7 +122,8 @@ final class SearchHitsTransformer implements ResultTransformer {
 			for(String d : doc.getValues(FIELD_PATHWAY)) {
 				try {
 					if(URI.create(d).isAbsolute()) 
-						uniqueVals.add(d);
+						if(!d.equals(hit.getUri())) //exclude itself
+							uniqueVals.add(d);
 				} catch(IllegalArgumentException e) {/*skip*/}
 			}
 			hit.getPathway().addAll(uniqueVals);

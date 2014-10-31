@@ -296,7 +296,8 @@ public class SearchEngine implements Indexer, Searcher {
 				hit.getPathway().addAll(uniqueVals);
 			}
 			
-//TODO			hit.setSize(doc.get(FIELD_SIZE)); //no. processes in the sub-network
+			//no. processes in the sub-network
+			hit.setSize(Integer.valueOf(doc.get(FIELD_SIZE))); 
 			
 //			if(CPathSettings.getInstance().isDebugEnabled()) {
 //				String excerpt = hit.getExcerpt();
@@ -309,6 +310,15 @@ public class SearchEngine implements Indexer, Searcher {
 			hits.add(hit);
 		}
 				
+		//add the Provenance's standardName(s) to the search response
+		if(!hits.isEmpty()) {
+			for(String puri : response.provenanceUris()) {
+				Provenance p = (Provenance) model.getByID(puri);
+				response.getProviders()
+					.add((p.getStandardName()!=null)?p.getStandardName():p.getDisplayName());
+			}
+		}
+		
 		
 		return response;
 	}
@@ -618,6 +628,7 @@ public class SearchEngine implements Indexer, Searcher {
 		 * (also, the filter fields are not tokenized/analyzed, by design)
 		 */
 		BooleanQuery query = new BooleanQuery();
+		if (datasources != null && datasources.length > 0)
 		for(String fv : datasources) {
 			String term = fv.trim();
 //			query.add(new TermQuery(new Term(FIELD_DATASOURCE, term)),
@@ -626,6 +637,7 @@ public class SearchEngine implements Indexer, Searcher {
 				Occur.SHOULD);
 		}
 		
+		if (organisms != null && organisms.length > 0)
 		for(String fv : organisms) {
 			String term = fv.trim();
 //			query.add(new TermQuery(new Term(FIELD_ORGANISM, term)),
@@ -634,7 +646,8 @@ public class SearchEngine implements Indexer, Searcher {
 				Occur.SHOULD);
 		}
 		
-		if(type != null) {
+		//add biopax class filter if makes sense
+		if(type != null && type != BioPAXElement.class) {
 			query.add(new TermQuery(new Term(FIELD_TYPE, type.getSimpleName().toLowerCase())), Occur.SHOULD);
 			//for each biopax/paxtools subclass (interface) of this one,
 			//add the interface name as filter value
@@ -643,7 +656,10 @@ public class SearchEngine implements Indexer, Searcher {
 			}
 		}
 		
-		return new CachingWrapperFilter( new QueryWrapperFilter(query) ); //TODO why these filter types?
+		if(!query.clauses().isEmpty())
+			return new CachingWrapperFilter( new QueryWrapperFilter(query) ); //TODO why CachingWrapperFilter, QueryWrapperFilter?
+		else 
+			return null;
 	}	
 
 	

@@ -250,12 +250,6 @@ public final class Merger {
 				// remove the ef from the old ER
 				old.removeEntityFeature(ef);
 				// now, this ef should not belong to any other ER (no entityFeature can contain this ef, for all ERs)
-				// (this is in fact what the biopax validator/normalizer must had fixed already)
-				assert ef.getEntityFeatureOf() == null : "ER/EF inconsistency: " + 
-						ef.getRDFId() + " was entityFeature of " + old.getRDFId() 
-						+ ", but not anymore,.. however it also/still has entityFeatureOf=" 
-						+ ef.getEntityFeatureOf().getRDFId(); 
-				// besides, the above test alone is not enough, though it might flag for a biopax model error;
 				//TODO ideally, we'd check for all the ERs in both the original and target models, and none should contain this ef.
 											
 				// If there exist an equivalent, don't add original 'ef', 
@@ -299,13 +293,10 @@ public final class Merger {
 			}
 		}
 		
-//		log.info("Repair, i.e., find and add back to the model all child objects ("+srcModelInfo+")...");
-//		source.repair(); //TODO not sure if source.repair() was required here...
-		
 		// cleaning up dangling objects (including the replaced above ones)
 		log.info("Removing dangling objects ("+srcModelInfo+")...");
 		ModelUtils.removeObjectsIfDangling(source, UtilityClass.class);
-				
+		
 		/* 
 		 * The following can improve graph queries and full-text search, 
 		 * for generic and poorly defined physical entities (lacking entity reference)
@@ -363,20 +354,34 @@ public final class Merger {
 		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
 			String currUri = bpe.getRDFId();
 			
-			// skip already normalized
+			// skip for previously normalized objects (we believe they are right and ready to merge)
 			if(currUri.startsWith(xmlBase) || currUri.startsWith("http://identifiers.org/")) 
 				continue; 
 			
 			// Generate new consistent URI for not generated not previously normalized objects:
 			String newRDFId = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
+			
+			// Avoid same URI - non-equivalent objects case/clash 
+			// (some providers might mistakenly use the same URI 
+			// for several non-equivalent biopax entities in different files):
+			if(mainModel.containsID(newRDFId)) {
+				if(!bpe.isEquivalent(mainModel.getByID(newRDFId))) {
+					newRDFId = Normalizer.uri(xmlBase, null, description+currUri, bpe.getModelInterface());
+					log.warn(description + " has a " + bpe.getModelInterface().getSimpleName() + 
+						", uri: " + currUri + ", which also was the original URI of a " + 
+						"not equivalent, previously merged object; fixed.");
+				}
+			}
+			
 			// Replace URI
 			CPathUtils.replaceID(source, bpe, newRDFId);
+			
 			// save original URI in comments
 			((Level3Element) bpe).addComment("REPLACED " + currUri);
 		}		
 		
 		log.info("Merging into the main BioPAX model...");
-		// merge to the target model
+		// merge all the elements and their children from the source to target model
 		mainModel.merge(source);
 		
 		log.info("Merge ("+srcModelInfo+") is done.");

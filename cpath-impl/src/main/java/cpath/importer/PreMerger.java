@@ -404,17 +404,20 @@ public final class PreMerger {
 				// by the Uniprot Converter, and we will uses those, 
 				// skipping publication and illegal xrefs:
 				if(x.getDb() != null && x.getId() != null 
-					&& (// any unification xref
-						(x instanceof UnificationXref) || 
-							// or for any typed relationship xref
-							((x instanceof RelationshipXref) && ((RelationshipXref)x).getRelationshipType()!=null
-							&& 
-							(	//use any identity type relationship xref
+					&& 
+					(// any unification xref
+						(x instanceof UnificationXref) 
+						|| // or for any typed relationship xref - 
+						( (x instanceof RelationshipXref) 
+							  && ((RelationshipXref)x).getRelationshipType()!=null
+							  && 
+							  (	//use any identity type relationship xref
 								((RelationshipXref)x).getRelationshipType().getRDFId().endsWith(RelTypeVocab.IDENTITY.id)
 								|| // or any secondary accession type relationship xref
-								((RelationshipXref)x).getRelationshipType().getRDFId().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id))
-							)
+								((RelationshipXref)x).getRelationshipType().getRDFId().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id)
+							  )
 						)
+					)
 				) {
 					String id = x.getId();
 					String srcDb = x.getDb();

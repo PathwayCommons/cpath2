@@ -211,7 +211,6 @@
 							-Djava.io.tmpdir=${CPATH2_HOME}/tmp
 							-ea
 							-Dnet.sf.ehcache.disabled=true
-							-Dcpath2.proxy.model.enabled=false
 							-Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider
 							-Dspring.profiles.active=dev
 						</argLine>

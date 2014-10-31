@@ -18,10 +18,10 @@ or the fat JAR with embedded application server was started) -->
 <body data-spy="scroll" data-target=".navbar">
 <jsp:include page="header.jsp"/>
 
-  <h2>Description</h2>
+  <h2>The Web Service API</h2>
 	
   <div class="row nav-target" id="about">
-  	<h3>${cpath.name}</h3>
+  	<h3><a href="${cpath.url}">${cpath.name}</a></h3>
   	<blockquote>
   	<!-- using c:out below to escape all internal html, if any (should not be) -->
 	<p><c:out value="${cpath.description}"/></p>
@@ -30,10 +30,10 @@ or the fat JAR with embedded application server was started) -->
   	
   <div class="row">	
 	<div class="jumbotron">
-	<h3>Commands</h3>
+	<h3>Main web service</h3>
 	<blockquote><p>To query the integrated biological pathway database, 
 	application developers can use the following commands:</p></blockquote>
-	<ul id="commands" title="cPath2 Commands (API)">
+	<ul id="commands" title="Main commands">
 		<li><a href="#search">SEARCH</a></li>
 		<li><a href="#get">GET</a></li>
 		<li><a href="#graph">GRAPH</a></li>
@@ -47,28 +47,26 @@ or the fat JAR with embedded application server was started) -->
   </div>
 	
   <div class="row">	
-	<h3>Other features</h3>
-	<blockquote><p>Software developers who build a service or web site on top of a cPath2 instance 
-	may also use the following queries, which return HTML, text, XML, or JSON metadata. 
-	Fore more information, please contact us, and see the project's  
-	<a href="http://cpath2-site.pathway-commons.googlecode.com/hg/index.html">documentation</a> and 
-	<a href="http://cpath2-site.pathway-commons.googlecode.com/hg/cpath-web-service/xref/index.html">web 
-	controllers' source code</a>:
-	</p></blockquote>
-	<ul>
-		<li><a href="#idmapping">/idmapping</a> - maps some identifiers to primary UniProt or ChEBI IDs;</li>
-		<li><em>/help</em> - returns a tree of Help objects describing the main commands, parameters, 
-		BioPAX types, and properties, etc.; e.g., /help/schema, /help/commands, 
-		/help/types (one can add .json/.xml extention or set 'Accept' HTTP header to request JSON/XML).</li>
-		<li><em>/metadata/*</em> - /metadata/datasources*, /metadata/validations*</li>
-		<li><em>/log*</em> - service access summary, such as /log/PROVIDER/geography/world, /log/timeline)</li>
-	</ul>
-	<p>Everything else, unless it maps to some controller, redirects to
-		<a href="#get">GET</a> (by URI) query, e.g., ${base}pid is equivalent to ${base}get?uri=${cpath.xmlBase}pid  
-		(along with configuring proper HTTP partial redirect for ${cpath.xmlBase}, 
-		this helps making BioPAX URIs resolvable).
+	<h4>Metadata, views, etc.</h4>
+	<p>There are a number of "undocumented" URLs (subject to change without notice)  
+		providing metadata, files, scripts and images for creating and maintaining 
+		this website. Nevertheless, advanced users may find the following examples useful:
 	</p>
-  </div> <!-- about  -->
+	<ul>
+		<li><a href="#idmapping">/idmapping</a> - can map selected biological identifiers 
+		to UniProt or ChEBI primary IDs (one way);</li>
+		<li><em>/help/</em> - returns a tree of Help objects describing the main commands, parameters, 
+		BioPAX types, and properties, e.g., /help/schema, /help/commands, /help/types;</li>
+		<li><em>/log/</em> - service access summary, e.g., /log/TOTAL/geography/world, /log/timeline;</li>
+		<li><em>/[rdf:ID]</em> - every BioPAX object's URI in this resource is a resolvable URL, because  
+		current XML base: ${cpath.xmlBase} redirects to the web service base URL: ${base}, and,  
+		e.g., ${cpath.xmlBase}pid URL is by design equivalent to ${base}get?uri=${cpath.xmlBase}pid  
+		query (gets the BioPAX RDF/XML representation of the Provenance object).
+		</li>
+	</ul>
+	<p>Fore more information, please contact us.
+	</p>
+  </div>
   
 	<div class="row" id="notes">
 	<h3>Notes</h3>
@@ -126,7 +124,8 @@ or the fat JAR with embedded application server was started) -->
 	<p>The specified or first page of the ordered list of BioPAX individuals that match the search criteria
 	(the results page size is configured on the server and returned with every result, as attribute). 
 	The results (hits) are returned as <a href="help/schema">Search Response XML Schema</a> instance (XML document). 
-	JSON format can be requested by using as '/search.json' or setting HTTP 'Accept' header. 
+	JSON format can be requested by using as '/search.json' or using HTTP request header 'Accept: application/json'
+	(how exactly - depends on one's client-side API).
 	</p>
 	<h4 id="search_parameters">Parameters:</h4>
 	<ul>
@@ -214,13 +213,22 @@ or the fat JAR with embedded application server was started) -->
 	<ol>
 		<li><a rel="example" href="get?uri=http://identifiers.org/uniprot/Q06609">
 			This command returns the BioPAX representation of http://identifiers.org/uniprot/Q06609</a> 
-			(<strong>ProteinReference</strong>)</li>
+			(a <strong>ProteinReference</strong> object)
+		</li>
 		<li><a rel="example" href="get?uri=COL5A1">
-			This command returns Xref(s) in BioPAX format found by gene symbol COL5A1</a> 		
-			<strong>Note:</strong> Some other identifiers might work here too 
-			if these or their corresponding primary UniProt accession match at least one existing BioPAX Xref.
-			See also: <a href="#about_uris">about URIs</a> and <a href="#idmapping">id-mapping</a>.
-			</li>
+			Get by HUGO gene symbol COL5A1</a> 	- returns the xrefs in BioPAX format.
+			<strong>Note:</strong> unlike the first example, this is in fact a two-step query, 
+			which internally performs <a href="#idmapping">id-mapping</a>  
+			and then gets the COL5A1 and P20908 xrefs by revealed absolute URIs. A query like this can be
+			a quick test before submitting an ID to a much slower '/graph' query: 
+			if '/get' returns no result, then the ID won't contribute to any graph query result either
+			(despite there might exist BioPAX entities with the ID being part of their names or comments;
+			which can be found by '/search' command).
+		</li>
+		<li><a rel="example" href="get?uri=http://identifiers.org/reactome/REACT_12034.2">
+			Get the Signaling by BMP <strong>Pathway</strong></a> 
+			(REACT_12034.2, format: BioPAX, source: Reactome)
+		</li>
 	</ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
@@ -462,7 +470,7 @@ or the fat JAR with embedded application server was started) -->
 		<ul id="properties" class="hidden"></ul>
 	</div>
 	<div class="parameters col-sm-6" id="biopax_inverse_properties">
-		<h3>Inverse BioPAX Object Properties (a feature of Paxtools API):</h3>
+		<h3>Inverse BioPAX Object Properties (a feature of the <a href="http://biopax.org/paxtools">Paxtools library</a>):</h3>
 		<p>Some of the object BioPAX properties can be traversed in the
 			inverse direction as well, e.g, 'xref' - 'xrefOf'. 
 			Unlike for the standard <em>xref</em> property, e.g., the restriction <em>XReferrable xref

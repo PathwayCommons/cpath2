@@ -741,7 +741,7 @@ public final class Admin {
 		toReturn.append(Cmd.MERGE.toString() + " [--force] (merge all pathway data; overwrites the main biopax model archive)"+ NEWLINE);
 		toReturn.append(Cmd.PERSIST.toString() + " (to create new BioPAX db from the main merged biopax archive)" + NEWLINE);
 		toReturn.append(Cmd.INDEX.toString() + " (to build new full-text index of the main merged BioPAX db)" + NEWLINE);
-        toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the cpath2 home directory)" + NEWLINE);
+        toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the downloads directory)" + NEWLINE);
         toReturn.append(Cmd.CLEAR_CACHE.toString() + " (removes the cache directory)" + NEWLINE);
         toReturn.append(Cmd.UPDATE_COUNTS.toString() + " (re-calculates pathway, molecule, " +
         		"interaction counts per data source)" + NEWLINE);
@@ -971,8 +971,6 @@ public final class Admin {
         	
     		// export objects found above to a new biopax archive        	
         	if(!uris.isEmpty()) {
-//        		service.biopax().exportModel(new GZIPOutputStream(
-//               			new FileOutputStream(biopaxArchive)), uris.toArray(new String[]{}));
         		OutputStream os = new GZIPOutputStream(new FileOutputStream(biopaxArchive));
         		SimpleIOHandler sio = new SimpleIOHandler(BioPAXLevel.L3);
 //        		sio.absoluteUris(true);

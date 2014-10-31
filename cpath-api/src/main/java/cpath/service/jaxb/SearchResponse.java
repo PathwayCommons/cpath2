@@ -109,6 +109,9 @@ public class SearchResponse extends ServiceResponse {
 
 	@XmlTransient
 	public Set<String> getProviders() {
+		if(providers == null)
+			providers = new HashSet<String>();
+		
 		return providers;
 	}
 	public void setProviders(Set<String> providers) {

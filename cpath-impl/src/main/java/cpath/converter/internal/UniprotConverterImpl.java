@@ -525,8 +525,6 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			uri = Normalizer.uri(model.getXmlBase(), "MOD", modTerm, SequenceModificationVocabulary.class);
 			// so, let's check if it exists in the temp. or target model:
 			SequenceModificationVocabulary cv = (SequenceModificationVocabulary) model.getByID(uri);
-			if(cv == null)
-				cv = (SequenceModificationVocabulary) model.getByID(uri);
 			if(cv == null) {
 				// create a new SequenceModificationVocabulary
 				cv = model.addNew(SequenceModificationVocabulary.class, uri);
@@ -553,7 +551,6 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			
 			if(start == end) {
 				modificationFeature.setFeatureLocation(startSite);
-				//TODO set modificationFeature.setFeatureLocationType(regionVocabulary) ?
 			} else {
 				//create the second site (end) and sequence interval -
 				idPart = pr.getDisplayName() + //e.g., CALM_HUMAN - from the ID line
