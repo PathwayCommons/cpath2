@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Pathway;
-import org.biopax.paxtools.model.level3.UnificationXref;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -37,8 +36,8 @@ public class CPathClientTest {
 //		client = CPathClient.newInstance("http://www.pathwaycommons.org/pc2/");
 //		client = CPathClient.newInstance("http://purl.org/pc2/test/");
 //		client = CPathClient.newInstance("http://192.168.81.153:48080/");
-//		client = CPathClient.newInstance("http://webservice.baderlab.org:48080/");
-		client = CPathClient.newInstance("http://localhost:8080/");
+		client = CPathClient.newInstance("http://webservice.baderlab.org:48080/");
+//		client = CPathClient.newInstance("http://localhost:8080/");
 //		client.setName("CPathClientTest");
 	}
 	
@@ -85,7 +84,7 @@ public class CPathClientTest {
         try {
 			resp = client.createTraverseQuery()
 				.propertyPath("Named/name")
-				.sources(new String[]{"http://identifiers.org/taxonomy/9606"})
+				.sources(new String[]{"http://purl.org/pc2/5/BioSource_343022ef4adbf95df362e8b555d61240"})
 				.result();			
 		} catch (CPathException e) {
 			fail(e.toString());
@@ -112,7 +111,7 @@ public class CPathClientTest {
         try {
 			resp = client.createTraverseQuery()
 					.propertyPath("BioSource/participant")
-					.sources(new String[]{"http://identifiers.org/taxonomy/9606"})
+					.sources(new String[]{"http://purl.org/pc2/5/BioSource_343022ef4adbf95df362e8b555d61240"})
 					.result();
 			fail("must throw CPathException and not something else");
 		} catch (CPathException e) {} //ok to ignore
@@ -121,7 +120,7 @@ public class CPathClientTest {
 		try {
 			resp = client.createTraverseQuery()
 				.propertyPath("Pathway/pathwayComponent")
-				.sources(new String[]{"http://purl.org/pc2/4/Pathway_06f2ffa90bac992014a9a777128bc316"})
+				.sources(new String[]{"http://identifiers.org/reactome/REACT_12034.3"})
 				.result();
 		} catch (CPathException e) {
 			fail(e.toString());
@@ -170,10 +169,7 @@ public class CPathClientTest {
 			.sources(new String[]{id})
 			.result();
 		assertFalse(m == null);
-		assertFalse(m.getObjects().isEmpty());
-		assertEquals(1, m.getObjects().size()); //xref
-		assertTrue(m.getObjects().iterator().next() instanceof UnificationXref);
-		
+		assertFalse(m.getObjects().isEmpty());	
 		
 		String res = client.createGetQuery()
 				.sources(new String[]{"JUN", "PTEN"})
@@ -212,7 +208,7 @@ public class CPathClientTest {
 	@Test //this test id data-dependent
 	public final void testGetPathwayByUri() throws CPathException {
 		Model m = client.createGetQuery()
-			.sources(new String[]{"http://purl.org/pc2/4/Pathway_06f2ffa90bac992014a9a777128bc316"})
+			.sources(new String[]{"http://identifiers.org/reactome/REACT_12034.3"})
 			.result();
         assertNotNull(m);
         assertFalse(m.getObjects(Pathway.class).isEmpty());
