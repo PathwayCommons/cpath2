@@ -48,6 +48,9 @@ public final class CPathWebserviceHandlerInterceptor extends
 			//extract file name from the URI
 			String file = requestUri.substring(requestUri.lastIndexOf(File.separator)+1);
 			file = URLDecoder.decode(file);
+			int idx = file.lastIndexOf(";jsession");
+			if(idx>0)
+				file = file.substring(0, idx);
 			
 			//update counts for: file, format, provider, command (event types)
 			Set<LogEvent> events = LogEvent.fromDownloads(file);
