@@ -9,7 +9,7 @@
 <head>
 <jsp:include page="head.jsp" />
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-<script type="text/javascript" src="/resources/scripts/ips.js"></script>
+<script type="text/javascript" src='<c:url value="/resources/scripts/ips.js"/>'></script>
 <title>cPath2::IPs</title>
 </head>
 <body>
@@ -21,7 +21,7 @@
     <div class="row">
     <div class="jumbotron">
 		<p>
-			Charts below show numbers of unique IP addresses the user requests originated from. 
+			Charts below show how many unique IP addresses the user requests originated from. 
 		  	All client applications are equally considered. 
 		  	To switch the view, select another item from the drop-down list.
 		</p>

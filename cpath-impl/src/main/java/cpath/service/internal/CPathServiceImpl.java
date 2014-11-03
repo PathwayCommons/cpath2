@@ -588,12 +588,10 @@ class CPathServiceImpl implements CPathService {
 		//go over all hits, all pages
 		while(!searchResponse.isEmpty()) {
 			log.debug("Retrieving top pathways search results, page #" + page);
-			//remove pathways having 'pathway' index field not empty, 
-			//i.e., keep only pathways where 'pathway' index field
-			// is empty (no controlledOf and pathwayComponentOf values)
+			//keep only pathways where 'pathway' index field
+			//is empty (no controlledOf and pathwayComponentOf values)
 			for(SearchHit h : searchResponse.getSearchHit()) {
-				//contains only itself
-				if(h.getPathway().size() == 1 && h.getPathway().get(0).equals(h.getUri())) 
+				if(h.getPathway().isEmpty()) 
 					hits.add(h); //add to topPathways list
 			}
 			// go next page

@@ -8,8 +8,8 @@ package cpath.service;
  */
 public enum OutputFormat {
     BIOPAX("BioPAX RDF/XML Format"),
-	BINARY_SIF("Simple Binary Interactions Format"),
-    EXTENDED_BINARY_SIF("Extended Simple Binary Interactions Format"),
+	BINARY_SIF("Simple Binary Interaction Format"),
+    EXTENDED_BINARY_SIF("Extended Simple Binary Interaction Format"),
 	GSEA("Gene Set Expression Analysis Format"),
     SBGN("Systems Biology Graphical Notation Format")
 	;
