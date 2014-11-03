@@ -6,10 +6,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<link href="/resources/css/xeditable.css" rel="stylesheet" />
+	<link href='<c:url value="/resources/css/xeditable.css"/>' rel="stylesheet" />
 	<jsp:include page="head.jsp" />
-	<script src="/resources/scripts/xeditable.js"></script>
-	<script src="/resources/scripts/datasources.js"></script>	
+	<script src='<c:url value="/resources/scripts/xeditable.js"/>'></script>
+	<script src='<c:url value="/resources/scripts/datasources.js"/>'></script>	
 	<title>cPath2::Datasources</title>
 </head>
 <body>
@@ -20,19 +20,27 @@
   <security:authorize ifNotGranted="ROLE_ADMIN">
   <!-- the explanation below is not needed for Administrators -->
   <div class="row">
-  <div class="jumbotron">
+   <div class="jumbotron">
 	<h3>Two categories</h3>
 	<blockquote><p>
-		<em><strong>Warehouse</strong></em> data (canonical molecules, ontologies) are converted 
+		<em>Warehouse</em> data (canonical molecules, ontologies) are converted 
 		to BioPAX utility classes, such as <em>EntityReference, ControlledVocabulary, 
 		EntityFeature</em> sub-classes, and saved as the initial BioPAX model, 
 		which forms the foundation for integrating pathway data and for id-mapping.
-		<em><strong>Pathway</strong></em> and binary interaction data (interactions, participants) are normalized  
-		next and merged into the database as well as original reference molecules are replaced 
+		<em>Pathway</em> and binary interaction data (interactions, participants) are normalized  
+		next and merged into the database. Original reference molecules are replaced 
 		with the corresponding BioPAX warehouse objects.
 	</p></blockquote>
+   </div>
+	<h3>Acknowledgment</h3>
+	<p>
+		The ${cpath.name} team much appreciates the fundamental contribution of 
+		all the data providers, authors, <a href="http://identifiers.org/">Identifiers.org</a>, 
+		all the open biological ontologies, the open-source projects and standards, 
+		which made creating of this integrated BioPAX web service and database feasible.<br/>
+	</p>
   </div>
-  </div>
+
  </security:authorize>
 
   <div id="pathway_datasources" ng-app="dsApp" id="ng-app" ng-controller="DatasourcesController">
@@ -169,9 +177,9 @@ for regular users, - show the compact read-only summary of the data providers --
        				</p>
        				<p ng-hide="ds.notPathwayData">
        				  <em>Information (sub-network, search hits, files) has been served to web users: </em>
-       				  <a class="badge alert-success" ng-href="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats">
+       				  <a class="badge alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats"/>'>
        				  	{{ds.numAccessed}}</a> times, to 
-       				  <a class="badge alert-success" ng-href="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/ips">
+       				  <a class="badge alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/ips"/>'>
        				  	{{ds.numUniqueIps}}</a> different IP addresses
        				</p>
        				<p>
@@ -188,28 +196,14 @@ for regular users, - show the compact read-only summary of the data providers --
   <div class="row">	
 	<h3>Remark</h3>
 	<p>The total number of times a portion of provider's data were successfully 
-		served to a user (accessed) is incremented every time when a query 
+		served to a user (accessed) is incremented every time a query 
 		result (before converting from BioPAX to another format if requested) 
-		contains biological entities from that original resource; or, for /search 
-		or /traverse requests, the data source is referred to in the result; 
+		contains biological entities from that original resource; or, for 'search' 
+		and 'traverse' requests, the data source is referred to in the result; 
 		or a particular file <a href='<c:url value="/downloads.html"/>'>is downloaded</a>.
-		Access counts are not stored for the warehouse data sources, 
-		for merely all users hit canonical proteins, small 
-		molecules, ontology terms and identifiers on a regular basis; 
-		thus the <a href='<c:url value="/log/TOTAL/stats"/>'>total number of requests</a> 
-		minus errors will be fair estimate is this case. 
-	</p>
-  </div>
-  <div class="row">
-	<h3>Acknowledgment</h3>
-	<p>
-		${cpath.name} team much appreciate the contribution of 
-		all the data providers, authors, also 
-		<a href="http://www.ebi.ac.uk/miriam/">MIRIAM</a> and 
-		<a href="http://identifiers.org/">Identifiers.org</a> projects, 
-		all the open biological ontologies, and open-source
-		projects and standards, which (who) made creating of this 
-		integrated BioPAX web service and database feasible.<br/>
+		Access counts are not stored for the warehouse data sources, however, 
+		the <a href='<c:url value="/log/TOTAL/stats"/>'>total number of requests</a> 
+		minus errors will be fair estimate is this case.
 	</p>
   </div>
 

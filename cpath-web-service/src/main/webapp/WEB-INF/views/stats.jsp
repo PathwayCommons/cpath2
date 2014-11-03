@@ -9,8 +9,8 @@
 <head>
 <jsp:include page="head.jsp" />
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-<script type="text/javascript" src="/resources/scripts/codes2names.js"></script>
-<script type="text/javascript" src="/resources/scripts/stats.js"></script>
+<script type="text/javascript" src='<c:url value="/resources/scripts/codes2names.js"/>'></script>
+<script type="text/javascript" src='<c:url value="/resources/scripts/stats.js"/>'></script>
 <title>cPath2::Log</title>
 </head>
 <body>
@@ -23,10 +23,10 @@
     <div class="jumbotron">
 		<p>
 			Charts below show how many requests were there and where did they come from. 
-		  	Calls from all client applications are equally treated. 
+		  	Calls from all client applications are treated equally. 
 		  	A single web query increments the total number of 
-		  	requests sent on that date from user's location (city) as well as other counts
-		  	in several categories, such as per original data provider, command, format, file name, etc.
+		  	requests sent on that date from user's location (city) and other counts
+		  	in several categories, such as per original data provider, command, format, file name.
 		  	To switch the view, select another item from the drop-down list.
 		</p>
 		<select class="selectpicker" 

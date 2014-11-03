@@ -45,7 +45,6 @@ import org.biopax.paxtools.pattern.miner.SIFSearcher;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.Resource;
 
 import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ServiceResponse;
@@ -69,30 +68,7 @@ public class BiopaxConverter {
 	private final Blacklist blacklist;
 	
 	private boolean mergeEquivalentInteractions;
-	
-    /**
-     * Constructor.
-     * 
-     * @param blacklistResource a file resource, list of ubiquitous molecules to exclude (in some algorithms)
-     * 
-     * @throws IOException 
-     * @throws  
-     */
-	public BiopaxConverter(Resource blacklistResource) throws IOException 
-	{
-		if(blacklistResource != null && blacklistResource.exists()) {
-			blacklist = new Blacklist(blacklistResource.getInputStream());
-			log.info("Successfully loaded 'blacklist' resource: " 
-					+ blacklistResource.getDescription());
-		} else {
-			this.blacklist = null;
-			log.warn("'blacklist' file is not used (" + 
-				((blacklistResource == null) ? "not provided" 
-					: blacklistResource.getDescription()) + ")");
-		}
-	}
-
-	
+		
 	/**
 	 * Constructor.
 	 * 

@@ -777,7 +777,7 @@ public final class Admin {
 			OutputStream output) throws IOException 
 	{
 		Resource blacklist = new DefaultResourceLoader().getResource("file:" + cpath.blacklistFile());
-		BiopaxConverter converter = new BiopaxConverter(blacklist);
+		BiopaxConverter converter = new BiopaxConverter(new Blacklist(blacklist.getInputStream()));
 		converter.mergeEquivalentInteractions(true);
 		ServiceResponse res = converter.convert(model, outputFormat);
 		if (res instanceof ErrorResponse) {
