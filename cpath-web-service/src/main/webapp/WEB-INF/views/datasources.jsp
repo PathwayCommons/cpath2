@@ -21,17 +21,31 @@
   <!-- the explanation below is not needed for Administrators -->
   <div class="row">
    <div class="jumbotron">
-	<h3>Two categories</h3>
-	<blockquote><p>
-		<em>Warehouse</em> data (canonical molecules, ontologies) are converted 
+	<blockquote>
+		<p><em>Warehouse</em> data (canonical molecules, ontologies) are converted 
 		to BioPAX utility classes, such as <em>EntityReference, ControlledVocabulary, 
 		EntityFeature</em> sub-classes, and saved as the initial BioPAX model, 
-		which forms the foundation for integrating pathway data and for id-mapping.
-		<em>Pathway</em> and binary interaction data (interactions, participants) are normalized  
+		which forms the foundation for integrating pathway data and for id-mapping.</p>
+		<p><em>Pathway</em> and binary interaction data (interactions, participants) are normalized  
 		next and merged into the database. Original reference molecules are replaced 
-		with the corresponding BioPAX warehouse objects.
-	</p></blockquote>
+		with the corresponding BioPAX warehouse objects.</p>
+	</blockquote>
    </div>
+
+	<h3>Note</h3>
+	<p>The total number of times a portion of provider's data were successfully 
+		served to a user is incremented if a query 
+		result contains biological entities from that original resource; or, for 'search' 
+		and 'traverse' requests, if the data source is referred to in the result; 
+		or when a particular file <a href='<c:url value="/downloads.html"/>'>is downloaded</a>.
+		Access counts are not stored for the warehouse data sources, however, 
+		the <a rel="nofollow" href='<c:url value="/log/TOTAL/stats"/>'>total number of requests</a> 
+		minus errors will be fair estimate is this case.
+	</p>
+	<p>The number of unique users (IP addresses) per data source, query type, etc., was not 
+		calculated before November 2014.
+	</p>	
+
 	<h3>Acknowledgment</h3>
 	<p>
 		The ${cpath.name} team much appreciates the fundamental contribution of 
@@ -40,7 +54,6 @@
 		which made creating of this integrated BioPAX web service and database feasible.<br/>
 	</p>
   </div>
-
  </security:authorize>
 
   <div id="pathway_datasources" ng-app="dsApp" id="ng-app" ng-controller="DatasourcesController">
@@ -130,7 +143,7 @@ for regular users, - show the compact read-only summary of the data providers --
        				 	<a target="_blank" ng-href="http://identifiers.org/pubmed/{{ds.pubmedId}}">go to publicaion</a>
        				</p>
        				<p><em>data: </em>{{ (ds.uploaded) ? "uploaded as " + ds.dataArchiveName : "not uploaded" }}
-       					<a ng-show="ds.uploaded" ng-href="admin/homedir/data/{{ds.identifier}}.zip"> (download), </a>&nbsp;
+       					<a rel="nofollow" ng-show="ds.uploaded" ng-href="admin/homedir/data/{{ds.identifier}}.zip"> (download), </a>&nbsp;
        					and {{ (ds.premerged) ? "premerged" : "not premerged yet" }}
        				</p>
         			 			
@@ -171,15 +184,16 @@ for regular users, - show the compact read-only summary of the data providers --
        			    	<em>Names: </em>{{ds.name + ""}}</span>
        			    </p>      			    
        				<p ng-hide="ds.notPathwayData">
-       					<em>Contains: </em><span class="badge alert-info">{{ds.numPathways}}</span> pathways, 
-       				 	<span class="badge alert-info">{{ds.numInteractions}}</span> interactions, 
-       				 	<span class="badge alert-info">{{ds.numPhysicalEntities}}</span> interactors
+       					<em>Contains: </em>
+       					<span ng-show="ds.numPathways > 0"><span class="badge alert-info">{{ds.numPathways}}</span> pathways,</span> 
+       				 	<span ng-show="ds.numInteractions > 0"><span class="badge alert-info">{{ds.numInteractions}}</span> interactions,</span> 
+       				 	<span ng-show="ds.numPhysicalEntities > 0"><span class="badge alert-info">{{ds.numPhysicalEntities}}</span> interactors</span>
        				</p>
        				<p ng-hide="ds.notPathwayData">
        				  <em>Information (sub-network, search hits, files) has been served to web users: </em>
-       				  <a class="badge alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats"/>'>
+       				  <a rel="nofollow" class="badge alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats"/>'>
        				  	{{ds.numAccessed}}</a> times, to 
-       				  <a class="badge alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/ips"/>'>
+       				  <a rel="nofollow" class="badge alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/ips"/>'>
        				  	{{ds.numUniqueIps}}</a> different IP addresses
        				</p>
        				<p>
@@ -192,20 +206,6 @@ for regular users, - show the compact read-only summary of the data providers --
 	</div>
 
   </div> <!-- ng-app wrapper -->
-
-  <div class="row">	
-	<h3>Remark</h3>
-	<p>The total number of times a portion of provider's data were successfully 
-		served to a user (accessed) is incremented every time a query 
-		result (before converting from BioPAX to another format if requested) 
-		contains biological entities from that original resource; or, for 'search' 
-		and 'traverse' requests, the data source is referred to in the result; 
-		or a particular file <a href='<c:url value="/downloads.html"/>'>is downloaded</a>.
-		Access counts are not stored for the warehouse data sources, however, 
-		the <a href='<c:url value="/log/TOTAL/stats"/>'>total number of requests</a> 
-		minus errors will be fair estimate is this case.
-	</p>
-  </div>
 
 <jsp:include page="footer.jsp"/>
 

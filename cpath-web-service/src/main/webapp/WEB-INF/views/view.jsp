@@ -57,9 +57,9 @@
       			<div class="caption">
         			<h3><a href="#/pw">Pathways</a></h3>
         			<p>Get the list of <a href="#/pw">top pathways</a>, or 
-       				find pathways using a simple keyword(s), e.g., <a href="#/pw/brca2">brca2</a>,
-       				<a href="#/pw/P51587">P51587</a>, 
-       				or full-text query, such as <a href="#/pw/+response%20+alcohol">+response%20+alcohol</a>
+       				find pathways using a simple keyword(s), e.g., <a rel="nofollow" href="#/pw/brca2">brca2</a>,
+       				<a rel="nofollow" href="#/pw/P51587">P51587</a>, 
+       				or full-text query, such as <a rel="nofollow" href="#/pw/+response%20+alcohol">+response%20+alcohol</a>
        				(see also about <a href='<c:url value="/home#search"/>'>the search</a> web service command).
        				</p>
        			</div>
@@ -94,13 +94,13 @@
 					<td>{{hit.name}}</td><td><code>{{hit.dataSource[0].substring(${xmlBaseLength})}}</code></td>
 					<td>
 						<ul class="list-inline">
-						<li><a target="_blank" href ng-href="http://www.pathwaycommons.org/pcviz/#pathway/{{encode(hit.uri)}}">PCViz (view)</a></li>
-						<li><a target="_blank" href ng-href="{{hit.uri}}">by URI</a></li>
-						<li><a target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}">BioPAX</a></li>
-						<li><a target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=BINARY_SIF">SIF</a></li>
-						<li><a target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=EXTENDED_BINARY_SIF">Ext.SIF</a></li>
-						<li><a target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=SBGN">SBGN</a></li>
-						<li><a target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=GSEA">GSEA(gmt)</a></li>
+						<li><a rel="nofollow" target="_blank" href ng-href="http://www.pathwaycommons.org/pcviz/#pathway/{{encode(hit.uri)}}">PCViz (view)</a></li>
+						<li><a rel="nofollow" target="_blank" href ng-href="{{hit.uri}}">by URI</a></li>
+						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}">BioPAX</a></li>
+						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=BINARY_SIF">SIF</a></li>
+						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=EXTENDED_BINARY_SIF">Ext.SIF</a></li>
+						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=SBGN">SBGN</a></li>
+						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=GSEA">GSEA(gmt)</a></li>
 						</ul>
 					</td>
 				</tr>

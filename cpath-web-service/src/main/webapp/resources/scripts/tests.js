@@ -13,8 +13,8 @@ $(function() {
 	
 	module("Module: non-public server-side API");
 	
-	var urls = ['favicon.ico','robots.txt'];
-	test('Test if favicon.ico and robots.txt exist', urls.length, function() {
+	var urls = ['favicon.ico','providers','log','ips'];
+	test('Test if paths exist', urls.length, function() {
 	    for (var i = 0; i < urls.length; i++) {
 	        var url = urls[i];
 	        stop();
