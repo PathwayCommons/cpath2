@@ -70,7 +70,6 @@ or the fat JAR with embedded application server was started) -->
   
 	<div class="row" id="notes">
 	<h3>Notes</h3>
-<!-- 	  <div class="col-sm-6"> -->
 		<h4><a id="about_uris"></a>About URIs used by this system</h4>
 	    <p>
 	    Parameters: 'source', 'uri', and 'target' require URIs of existing BioPAX elements, which 
@@ -89,8 +88,7 @@ or the fat JAR with embedded application server was started) -->
 		As a rule of thumb, using full URIs makes a precise query, whereas using identifiers makes a 
 		more exploratory one (which performs identifier mapping to UniProt and subsequent searches for the Xref's URIs).
 		</p>
-<!-- 	  </div> -->
-<!-- 	  <div class="col-sm-6"> -->
+
 		<h4><a id="enco"></a>About example URLs</h4>
 	 	<p>Normally, instead of submitting a typically complex URL query via a browser address line, 
 	 	one should find or develop a convenient bioinformatic application, such as Cytoscape, PCViz, ChIBE,  
@@ -101,7 +99,6 @@ or the fat JAR with embedded application server was started) -->
 		<strong>We also recommend using HTTP POST method instead of GET</strong> 
 		(to avoid errors at the browser or web server layers with e.g. caching, encoding, too long URL). 
 		Finally, URIs are case-sensitive and contain no spaces.</p>
-<!-- 	  </div> -->
 	</div>
 	<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <hr/>
@@ -149,36 +146,36 @@ or the fat JAR with embedded application server was started) -->
 	</ul>
 	<h4>Examples:</h4> <br/>
 	<ol>
-		<li><a rel="example" href="search.xml?q=Q06609">A basic text search. This query returns all entities
+		<li><a rel="nofollow" href="search.xml?q=Q06609">A basic text search. This query returns all entities
 			that contain the "Q06609" keyword in XML</a></li>
-		<li><a rel="example" href="search.json?q=Q06609"> Same query returned in JSON format</a></li>
-		<li><a rel="example" href="search?q=xrefid:Q06609">This query returns entities
+		<li><a rel="nofollow" href="search.json?q=Q06609"> Same query returned in JSON format</a></li>
+		<li><a rel="nofollow" href="search?q=xrefid:Q06609">This query returns entities
 			"Q06609" only in the 'xrefid' index field in XML </a></li>
-		<li><a rel="example" href="search.json?q=Q06609&type=pathway">Search for
+		<li><a rel="nofollow" href="search.json?q=Q06609&type=pathway">Search for
 			Pathways containing "Q06609" (search all fields), return JSON</a></li>
-		<li><a rel="example"
+		<li><a rel="nofollow"
 		       href='search?q=brca2&type=proteinreference&organism=homo%20sapiens&datasource=pid'>Search
 			for ProteinReference entries that contain "brca2" keyword in any indexed field, return only human
 			proteins from NCI Pathway Interaction Database</a></li>
-		<li><a rel="example"
+		<li><a rel="nofollow"
 		       href="search.xml?q=name:'col5a1'&type=proteinreference&organism=9606">Similar to search above,
 			but searches specifically in the "name" field</a></li>
-		<li><a rel="example"
+		<li><a rel="nofollow"
 		       href="search?q=brc*&type=control&organism=9606&datasource=reactome">This query
 			uses wildcard notation to match any Control interactions that has a word that starts with "brc" in any of
 			its indexed fields. The results are restricted to human interactions from the Reactome database.</a></li>
-		<li><a rel="example" href="search?q=a*&page=3">An example use of pagination. This query returns the
+		<li><a rel="nofollow" href="search?q=a*&page=3">An example use of pagination. This query returns the
 			the fourth page (page=3) for all elements that have an indexed word that starts with "a"</a></li>
-		<li><a rel="example"
+		<li><a rel="nofollow"
 		       href="search?q=+binding%20NOT%20transcription*&type=control&page=0">This query finds Control
 			interactions that contain the word "binding" but not "transcription" in their indexed fields, explicitly
 			request the first page.</a></li>
-		<li><a rel="example" href="search?q=pathway:immune*&type=conversion">This query finds all
+		<li><a rel="nofollow" href="search?q=pathway:immune*&type=conversion">This query finds all
 			interactions that directly or indirectly participate in a pathway that has a keyword match for "immune"
 			. </a></li>
-		<li><a rel="example" href="search?q=*&type=pathway&datasource=reactome">This query returns
+		<li><a rel="nofollow" href="search?q=*&type=pathway&datasource=reactome">This query returns
 			all Reactome pathways</a></li>
-		<li><a rel="example" href="search?q=*&type=biosource">This query lists all organisms,
+		<li><a rel="nofollow" href="search?q=*&type=biosource">This query lists all organisms,
 			including secondary organisms such as pathogens or model organisms listed in the evidence or
 			interaction objects</a></li>
 	</ol>
@@ -212,11 +209,11 @@ or the fat JAR with embedded application server was started) -->
 	in the retrieved set.
 	<h4>Examples:</h4>
 	<ol>
-		<li><a rel="example" href="get?uri=http://identifiers.org/uniprot/Q06609">
+		<li><a rel="nofollow" href="get?uri=http://identifiers.org/uniprot/Q06609">
 			This command returns the BioPAX representation of http://identifiers.org/uniprot/Q06609</a> 
 			(a <strong>ProteinReference</strong> object)
 		</li>
-		<li><a rel="example" href="get?uri=COL5A1">
+		<li><a rel="nofollow" href="get?uri=COL5A1">
 			Get by HUGO gene symbol COL5A1</a> 	- returns the xrefs in BioPAX format.
 			<strong>Note:</strong> unlike the first example, this is in fact a two-step query, 
 			which internally performs <a href="#idmapping">id-mapping</a>  
@@ -226,7 +223,7 @@ or the fat JAR with embedded application server was started) -->
 			(despite there might exist BioPAX entities with the ID being part of their names or comments;
 			which can be found by '/search' command).
 		</li>
-		<li><a rel="example" href="get?uri=http://identifiers.org/reactome/REACT_12034.3">
+		<li><a rel="nofollow" href="get?uri=http://identifiers.org/reactome/REACT_12034.3">
 			Get the Signaling by BMP <strong>Pathway</strong></a> 
 			(REACT_12034.2, format: BioPAX, source: Reactome)
 		</li>
@@ -286,14 +283,14 @@ or the fat JAR with embedded application server was started) -->
 	<h4>Examples:</h4> 
 	Neighborhood of COL5A1 (P20908, CO5A1_HUMAN):
 	<ol>
-		<li><a rel="example" href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood&format=EXTENDED_BINARY_SIF">
+		<li><a rel="nofollow" href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood&format=EXTENDED_BINARY_SIF">
 			This query finds the BioPAX nearest neighborhood of the protein reference</a> http://identifiers.org/uniprot/P20908, i.e., 
 			all reactions where the corresponding protein forms participate; returned in the Simple Interaction Format (SIF)</li>	
-		<li><a rel="example" href="graph?source=P20908&kind=neighborhood">
+		<li><a rel="nofollow" href="graph?source=P20908&kind=neighborhood">
 			This query finds the 1 distance neighborhood of P20908</a> - starting from the corresponding Xref, 
 			finds all reactions that its owners (e.g., a protein reference) and their states (protein forms) 
 			participate in, and returns the BioPAX model.</li>		
-		<li><a rel="example" href="graph?source=COL5A1&kind=neighborhood">
+		<li><a rel="nofollow" href="graph?source=COL5A1&kind=neighborhood">
 			A similar query using the gene symbol COL5A1 instead of URI or UniProt ID</a> 
 			(this also implies internal id-mapping to primary UniProt IDs). Compared with above examples, 
 			particularly the first one, a query like this potentially returns a larger subnetwork, as
@@ -344,20 +341,20 @@ or the fat JAR with embedded application server was started) -->
 	Schema</a>&nbsp;(TraverseResponse type; pagination is disabled to return all values at once)<br/>
 	<h4>Examples:</h4>
 	<ol>
-		<li><a rel="example"
+		<li><a rel="nofollow"
 		       href="traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/organism/displayName">
 			This query returns the display name of the organism of the ProteinReference specified by the URI.</a></li>
-		<li><a rel="example"
+		<li><a rel="nofollow"
 		       href="traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://identifiers.org/uniprot/Q06609&path=ProteinReference/organism">
 			This query returns the URI of the organism for each of the Protein References</a></li>
-		<li><a rel="example"
+		<li><a rel="nofollow"
 		       href="traverse?uri=http://identifiers.org/uniprot/Q06609&path=ProteinReference/entityReferenceOf:Protein/name">
 			This query returns the names of all states of RAD51 protein (by its ProteinReference URI, using
 			property path="ProteinReference/entityReferenceOf:Protein/name")</a></li>
-		<li><a rel="example"
+		<li><a rel="nofollow"
 		       href="traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/entityReferenceOf:Protein">
 			This query returns the URIs of states of BRCA1_HUMAN</a></li>
-		<li><a rel="example"
+		<li><a rel="nofollow"
 		       href="traverse?uri=http://identifiers.org/uniprot/P38398&uri=http://identifiers.org/taxonomy/9606&path=Named/name">
 			This query returns the names of several different objects (using abstract type 'Named' from Paxtools
 			API)</a></li>
@@ -383,8 +380,8 @@ or the fat JAR with embedded application server was started) -->
 	Schema</a>&nbsp;(SearchResponse type; pagination is disabled to return all top pathways at once)<br/>
 	<h4>Examples:</h4>
 	<ol>
-		<li><a href="top_pathways"> get top pathways (XML)</a></li>
-		<li><a href="top_pathways.json"> get top pathways in JSON format</a></li>
+		<li><a rel="nofollow" href="top_pathways"> get top pathways (XML)</a></li>
+		<li><a rel="nofollow" href="top_pathways.json"> get top pathways in JSON format</a></li>
 	</ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
@@ -406,7 +403,7 @@ or the fat JAR with embedded application server was started) -->
 	Simple JSON format.
 	<h4>Examples:</h4> <br/>
 	<ol>
-		<li><a rel="example" href="idmapping?id=BRCA2&id=TP53">/idmapping?id=BRCA2&amp;id=TP53</a></li>
+		<li><a rel="nofollow" href="idmapping?id=BRCA2&id=TP53">/idmapping?id=BRCA2&amp;id=TP53</a></li>
 	</ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
@@ -425,7 +422,8 @@ or the fat JAR with embedded application server was started) -->
 			This means that we don’t comprehensively collect information for 
 			unsupported organisms and we have not cleaned or converted 
 			such data due to the high risk of introducing errors and artifacts.
-			All BioSource objects can be found by using <a href="search?q=*&type=biosource">this search query</a>.
+			All BioSource objects can be found by using 
+			<a rel="nofollow" href="search?q=*&type=biosource">this search query</a>.
 		</p>
 	</div>
 	<div class="row">

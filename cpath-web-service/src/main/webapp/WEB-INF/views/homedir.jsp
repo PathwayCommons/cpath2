@@ -7,6 +7,7 @@
 <head>
 <jsp:include page="head.jsp" />
 <title>cPath2::Home Dir</title>
+<meta name="robots" content="noindex,nofollow" />
 </head>
 <body>
 	<jsp:include page="header.jsp" />

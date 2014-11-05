@@ -132,12 +132,11 @@ public class LogEvent {
 			int idx = CPathSettings.getInstance().exportArchivePrefix().length();
 			String s = filename.substring(idx);
 			String[] parts = s.split("\\.");
-			assert parts.length > 1 : "split by '.' failed to produce " +
-			"at least 2 parts from the filename: " + filename;
 			//a hack: in order to skip for by-organism and special archives
 			if(Character.isUpperCase(parts[0].charAt(0)) 
 					&& !"All".equalsIgnoreCase(parts[0])
-					&& !"Warehouse".equalsIgnoreCase(parts[0])) {
+					&& !"Warehouse".equalsIgnoreCase(parts[0])
+					&& !"Detailed_Process_Data".equalsIgnoreCase(parts[0])) {
 				set.add(new LogEvent(LogType.PROVIDER, parts[0]));
 			}
 

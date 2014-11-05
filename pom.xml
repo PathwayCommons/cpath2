@@ -148,7 +148,7 @@
 		<hibernate.version>4.2.12.Final</hibernate.version>
 		<hibernate-search.version>4.4.3.Final</hibernate-search.version>
 		<ehcache-core.version>2.6.9</ehcache-core.version>
-		<paxtools.version>4.3.0-SNAPSHOT</paxtools.version>
+		<paxtools.version>4.3.0</paxtools.version>
 		<biopax-pattern.version>1.1.1-SNAPSHOT</biopax-pattern.version>
 		<validator.version>4.0.0-SNAPSHOT</validator.version>
 		<junit.version>4.11</junit.version>

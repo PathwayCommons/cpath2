@@ -1,6 +1,5 @@
 package cpath.webservice;
 
-import java.io.File;
 import java.net.URLDecoder;
 import java.util.Set;
 
@@ -46,7 +45,7 @@ public final class CPathWebserviceHandlerInterceptor extends
 					);
 			
 			//extract file name from the URI
-			String file = requestUri.substring(requestUri.lastIndexOf(File.separator)+1);
+			String file = requestUri.substring(requestUri.lastIndexOf("/")+1);
 			file = URLDecoder.decode(file);
 			int idx = file.lastIndexOf(";jsession");
 			if(idx>0)

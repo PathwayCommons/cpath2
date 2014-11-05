@@ -20,7 +20,7 @@
               <div class="collapse navbar-collapse pull-right" id="top-navbar-collapse">
                   <ul class="nav navbar-nav">
  		  			<security:authorize ifAnyGranted="ROLE_ADMIN">
-					  <li><a href='<c:url value="/admin"/>'>Admin</a></li>
+					  <li><a rel="nofollow" href='<c:url value="/admin"/>'>Admin</a></li>
 					</security:authorize>
 					<li class="dropdown">
                   		<a href="#" class="dropdown-toggle" data-toggle="dropdown">Web Service<b class="caret"></b></a>

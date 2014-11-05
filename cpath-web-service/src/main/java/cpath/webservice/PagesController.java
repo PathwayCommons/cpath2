@@ -255,11 +255,6 @@ public class PagesController extends BasicController {
 		
         return iconData;
     }
-
-    @RequestMapping("/robots.txt")
-    public String robots() {
-    	return "robots";
-    }
     
     @RequestMapping("/tests")
     public String tests() {

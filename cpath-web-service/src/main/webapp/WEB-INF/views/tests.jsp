@@ -9,6 +9,7 @@
 	<script src='<c:url value="/resources/scripts/qunit.js"/>'></script>
 	<script src='<c:url value="/resources/scripts/tests.js"/>'></script>
 	<title>cPath2::QUnit Tests</title>
+	<meta name="robots" content="noindex,nofollow" />
 </head>
 <body>
 
