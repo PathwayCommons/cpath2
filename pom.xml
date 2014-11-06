@@ -8,7 +8,7 @@
 	<artifactId>parent</artifactId>
 	<packaging>pom</packaging>
 	<name>cPath2 - Parent</name>
-	<version>5.0.0-SNAPSHOT</version>
+	<version>6.0.0-SNAPSHOT</version>
 	<description>CPath2 Multi-mudule project, a server software suite for aggregating, storing, and querying biological pathways based on BioPAX L3 standard.</description>
 	<url>http://cpath2-site.pathway-commons.googlecode.com/hg/index.html</url>
 	<inceptionYear>2009</inceptionYear>
