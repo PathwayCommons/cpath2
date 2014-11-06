@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:mvc="http://www.springframework.org/schema/mvc"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:util="http://www.springframework.org/schema/util"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+        http://www.springframework.org/schema/beans 
+        http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-3.2.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.2.xsd">
+    
+    <context:annotation-config/>  
+    <context:component-scan base-package="cpath.webservice" />
+	<context:property-placeholder/>
+
+	<!-- enable the default servlet serving local static resources, such as css, js, img... -->
+    <mvc:default-servlet-handler/>
+
+	<!-- Exceptions handler -->
+	<bean
+		class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<property name="exceptionMappings">
+			<map>
+				<entry key="Exception" value="error" />
+			</map>
+		</property>
+		<property name="defaultErrorView" value="error" />
+		<property name="defaultStatusCode"><value>500</value></property>
+		<property name="exceptionAttribute"><value>convertedException</value></property>
+	</bean>
+
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.UrlBasedViewResolver">
+		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+		<property name="prefix" value="/WEB-INF/views/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+	
+	<mvc:interceptors>
+		<bean class="cpath.webservice.CPathMaintenanceHandlerInterceptor" />
+		<bean class="cpath.webservice.CPathWebserviceHandlerInterceptor" />           
+    </mvc:interceptors>
+	    
+	<!-- serve all cpath2 generated data archives (organized by species, data sources, formats) -->	
+	<mvc:resources mapping="/downloads/**" location="file:${CPATH2_HOME}/downloads/" />
+	<!-- also serve cpath2 original and premerged data archives and validation reports -->		
+	<mvc:resources mapping="/datadir/**" location="file:${CPATH2_HOME}/data/" />
+	<!-- do not want config. and data files seen at all (even securely, by admin), then disable the following line -->
+	<mvc:resources mapping="/admin/homedir/**" location="file:${CPATH2_HOME}/" />
+
+	<!-- contentNegotiationManager also makes .xml, .json extensions work (to return JSON or XML 
+	content, respectively, when JAXB and Jackson dependencies present at runtime)-->
+	<bean id="contentNegotiationManager" class="org.springframework.web.accept.ContentNegotiationManagerFactoryBean">
+    	<property name="favorPathExtension" value="true" />
+    	<property name="favorParameter" value="true" />
+    	<property name="mediaTypes" >
+        	<value>
+            	json=application/json
+            	xml=application/xml
+        	</value>
+    	</property>
+	</bean>
+
+    <!-- serves the file uploading, using Apache commons-fileuploader -->
+	<bean id="multipartResolver"
+		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<property name="maxUploadSize" value="100000000" /><!-- 100Mb (normally zipped files) -->
+	</bean>
+
+	<!-- mvc:annotation-driven must the last -->
+    <mvc:annotation-driven content-negotiation-manager="contentNegotiationManager"/>
+      
+</beans>
