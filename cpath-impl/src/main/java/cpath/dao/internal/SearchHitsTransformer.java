@@ -108,20 +108,22 @@ final class SearchHitsTransformer implements ResultTransformer {
 		if(doc.getFieldable(FIELD_DATASOURCE) != null) {
 			Set<String> uniqueVals = new TreeSet<String>();
 			for(String d : doc.getValues(FIELD_DATASOURCE)) {
-				if(d.startsWith(CPathSettings.xmlBase())) { 
+				if(d.startsWith(CPathSettings.getInstance().getXmlBase())) { 
 					uniqueVals.add(d);
 				}
 			}
 			hit.getDataSource().addAll(uniqueVals);
 		}	
 		
-		// extract only pathway URIs
+		// extract only pathway URIs 
+		//(because names and IDs were stored in the index field as well)
 		if(doc.getFieldable(FIELD_PATHWAY) != null) {
 			Set<String> uniqueVals = new TreeSet<String>();
 			for(String d : doc.getValues(FIELD_PATHWAY)) {
 				try {
 					if(URI.create(d).isAbsolute()) 
-						uniqueVals.add(d);
+						if(!d.equals(hit.getUri())) //exclude itself
+							uniqueVals.add(d);
 				} catch(IllegalArgumentException e) {/*skip*/}
 			}
 			hit.getPathway().addAll(uniqueVals);
@@ -146,6 +148,15 @@ final class SearchHitsTransformer implements ResultTransformer {
 			if(!frags.isEmpty())
 				hit.setExcerpt(frags.toString());
 		}
+		
+		
+		if(CPathSettings.getInstance().isDebugEnabled() && tuple.length==4) {
+			String excerpt = hit.getExcerpt();
+			if(excerpt == null) excerpt = "";
+			hit.setExcerpt(excerpt + " -SCORE- " + tuple[2] 
+					+ " -EXPLANATION- " + tuple[3]);
+		}
+		
 		
 		return hit;
 	}

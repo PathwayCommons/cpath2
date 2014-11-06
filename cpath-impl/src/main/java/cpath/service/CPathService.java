@@ -28,13 +28,23 @@
 package cpath.service;
 
 
+import java.util.Collection;
+import java.util.Set;
+
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.algorithm.Direction;
+import org.biopax.validator.api.beans.ValidatorResponse;
 
-import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
+import cpath.jpa.Content;
+import cpath.jpa.LogEntitiesRepository;
+import cpath.jpa.LogEntity;
+import cpath.jpa.LogEvent;
+import cpath.jpa.Mapping;
+import cpath.jpa.MappingsRepository;
+import cpath.jpa.Metadata;
+import cpath.jpa.MetadataRepository;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 
@@ -171,19 +181,129 @@ public interface CPathService {
 	 * @return
 	 */
 	SearchResponse topPathways(String[] organisms, String[] datasources);
-
+	
+	
+	/**
+	 * Guess the identifier type (chemical vs gene/protein) 
+	 * and returns other Is it maps to. This method can be wrong
+	 * about mapping, it's weak, designed to use primarily in
+	 * BioPAX graph queries and not for data integration/merging.
+	 * 
+	 * @param identifier
+	 * @return
+	 */
+	Set<String> map(String identifier);
+	
+	
+	/**
+     * Maps an identifier to primary ID(s) of a given type.
+     * 
+     * Normally, the result set contains only one ID.
+     * If the result contains more than one value, which does not
+     * necessarily an error, then it's up to other methods to decide 
+     * how to proceed; e.g., one should not probably merge different 
+     * data objects if the mapping is known to be umbiguous,
+     * but it's usually ok to generate relationship xrefs 
+     * or use the resulting IDs in a BioPAX graph query.
+     * 
+     * @param fromDb data collection name or null (to use all source ID types)
+     * @param fromId the source ID
+     * @param toDb standard (MIRIAM) preferred name of the target ID type (e.g., 'UniProt')
+     * 
+     * @return a set of primary IDs of the type; normally one or none elements
+     */
+    Set<String> map(String fromDb, String fromId, String toDb);
+        
+    /**
+     * Test if this or equivalent record exists
+     * in the id-mapping db and if not, saves the new one.
+     * 
+     * @param mapping
+     * @return
+     */
+    void saveIfUnique(Mapping mapping);
 
 	/**
-	 * Sets an in-memory BioPAX model to use instead of
-	 * the persistent (DAO) model in graph queries, which
-	 * only works if the model is not null and 
-	 * {@link CPathSettings#PROP_PROXY_MODEL_ENABLED} 
-	 * option is set (true). 
+	 * Saves and counts a series of data access events 
+	 * (usually associated with the same web request) 
+	 * to the log db.
 	 * 
-	 * @see CPathSettings#setProxyModelEnabled(boolean)
-	 * 
-	 * @param proxyModel in-memory BioPAX model or null (back to the persistent model)
+	 * @param events
+	 * @param ipAddr
 	 */
-	void setProxyModel(Model proxyModel);
+	void log(Collection<LogEvent> events, String ipAddr);
+    
+	/**
+	 * Increases the number (counter) 
+	 * of today user's requests of some 
+	 * sort and location.
+	 * 
+	 * Right now, only country code there
+	 * matters for location matching 
+	 * (city and region are ignored).
+	 * 
+	 * @param date
+	 * @param event
+	 * @param ipAddr
+	 * @return
+	 */
+	LogEntity count(String date, LogEvent event, String ipAddr);	
 	
+    /**
+     * Persists or updates the given metadata object.
+     *
+     * @param metadata Metadata
+     * @return
+     */
+	Metadata save(Metadata metadata);
+	
+	/**
+	 * Deletes the provider Metadata and data sub-directory.
+	 * 
+	 * @param metadata
+	 */
+	void delete(Metadata metadata);
+	
+	/**
+	 * Imports Metadata from a config file.
+	 * 
+	 * @param location
+	 */
+	void addOrUpdateMetadata(String location);
+	
+    /**
+	 * Removes from the system all entries and 
+	 * previously converted / premerged / validated 
+	 * files accociated with this data provider.
+	 * 
+	 * @param metadata
+	 * @return updated/saved object
+	 */
+	Metadata init(Metadata metadata);		
+    
+	/**
+	 * Generates the BioPAX validation report for a pathway data file.
+	 * 
+	 * @param provider data source (Metadata) identifier, not null
+	 * @param file - base filename as in {@link Content}, or null (for all files)
+	 * @return
+	 */
+	ValidatorResponse validationReport(String provider, String file);
+	
+	
+	//spring-data-jpa repositories
+	
+	MappingsRepository mapping();
+    
+    MetadataRepository metadata();
+    
+    PaxtoolsDAO biopax();
+    
+    LogEntitiesRepository log();
+
+    /**
+     * Loads or re-loads the main BioPAX Model 
+     * and blacklist from archive.
+     */
+	void init();
 }

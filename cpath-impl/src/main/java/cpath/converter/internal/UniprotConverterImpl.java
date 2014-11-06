@@ -1,12 +1,12 @@
 package cpath.converter.internal;
 
+import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.ModificationFeature;
 import org.biopax.paxtools.model.level3.PositionStatusType;
 import org.biopax.paxtools.model.level3.ProteinReference;
-import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.SequenceInterval;
 import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
@@ -17,6 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cpath.importer.Converter;
+import cpath.importer.PreMerger;
+import cpath.importer.PreMerger.RelTypeVocab;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -39,8 +41,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 	UniprotConverterImpl() {}
 
 
-	@Override
-	public Model convert() {
+	public void convert(InputStream is, OutputStream os) {
 		// ref to reader here so
 		// we can close in finally clause
         InputStreamReader reader= null;
@@ -48,7 +49,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
         model.setXmlBase(xmlBase);
         
         try {
-            reader = new InputStreamReader(inputStream, "UTF-8");
+            reader = new InputStreamReader(is, "UTF-8");
             BufferedReader bufferedReader = new BufferedReader(reader);
             String line = bufferedReader.readLine();
             final HashMap<String, StringBuilder> dataElements = new HashMap<String, StringBuilder>();
@@ -59,17 +60,17 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                 if (line.startsWith ("//")) //reached the end of a Uniprot entry
                 {
 					// grab properties from the map and prepare for parsing
-                    String deField = ((StringBuilder) dataElements.get("DE")).toString();
-                    String organismName = ((StringBuilder) dataElements.get("OS")).toString(); //mostly occurs once per entry 
-                    String organismTaxId = ((StringBuilder) dataElements.get("OX")).toString(); //occurs once per entry 
-                    StringBuilder comments = (StringBuilder) dataElements.get("CC");
-                    StringBuilder geneName = (StringBuilder) dataElements.get("GN");
-                    String acNames = ((StringBuilder) dataElements.get("AC")).toString();
-                    StringBuilder xrefs = (StringBuilder) dataElements.get("DR");
-                    String idParts[] = ((StringBuilder) dataElements.get("ID")).toString().split("\\s+");
-                    StringBuilder sq = (StringBuilder) dataElements.get("SQ"); //SEQUENCE SUMMARY
-                    StringBuilder sequence = (StringBuilder) dataElements.get("  "); //SEQUENCE
-                    StringBuilder features = (StringBuilder) dataElements.get("FT"); //strict format in 6-75 char in each FT line
+                    String deField = dataElements.get("DE").toString();
+                    String organismName = dataElements.get("OS").toString(); //mostly occurs once per entry 
+                    String organismTaxId = dataElements.get("OX").toString(); //occurs once per entry 
+                    StringBuilder comments = dataElements.get("CC");
+                    StringBuilder geneName = dataElements.get("GN");
+                    String acNames = dataElements.get("AC").toString();
+                    StringBuilder xrefs = dataElements.get("DR");
+                    String idParts[] = dataElements.get("ID").toString().split("\\s+");
+                    StringBuilder sq = dataElements.get("SQ"); //SEQUENCE SUMMARY
+                    StringBuilder sequence = dataElements.get("  "); //SEQUENCE
+                    StringBuilder features = dataElements.get("FT"); //strict format in 6-75 char in each FT line
                     
                     ProteinReference proteinReference = newUniProtWithXrefs(idParts[0], acNames, model);
                     
@@ -90,7 +91,9 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                         for (String symbol : geneNames) {
                         	// also add Gene Names to PR names (can be >1 due to isoforms)
                         	proteinReference.addName(symbol);
-                        	setRelationshipXRef("HGNC Symbol", symbol, proteinReference, null, model);
+                        	RelationshipXref rXRef = PreMerger
+                        		.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "HGNC SYMBOL", symbol, model);
+                        	proteinReference.addXref(rXRef);
                         }
                     }
                     
@@ -134,44 +137,42 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     String key = line.substring (0, 2);
                     String data = line.substring(5);
                     if (data.startsWith("-------") ||
-                            data.startsWith("Copyrighted") ||
-                            data.startsWith("Distributed")) {
-                        //  do nothing here...
+                    	data.startsWith("Copyrighted") ||
+                        	data.startsWith("Distributed")) 
+                    {
+                        //  do nothing
                     } else {
+                    	//important for correct splitting DR rows
+                    	if(key.equals("DR"))
+                    		data += "\n"; 
                         if (dataElements.containsKey(key)) {
-                            StringBuilder existingData = (StringBuilder) dataElements.get(key);
-                            if("DR".equals(key))
-                            	//EOLs do matter for correct splitting into records; adding back (because bufferedReader.readLine() removed it)
-                            	existingData.append(data).append('\n'); 
-                            else
-                            	existingData.append(data);
-                        }
-						else {
+                        	//remove leading spaces from second and next lines in FT, CC, DE records
+                        	if(data.startsWith(" ")) //i.e, the sixth char on the line is space/blank
+                        		data = data.replaceAll("^\\s+", "");                       	
+                        	dataElements.get(key).append(data);
+                        } else {
                             dataElements.put(key, new StringBuilder (data));
-                        }
+						}
                     }
                 }
-                line = bufferedReader.readLine();
+                line = bufferedReader.readLine();//it removes EOLs
             }
         }
 		catch(IOException e) {
-			log.error("convert: failed", e);
+			throw new RuntimeException("Failed to convert UniProt data to BioPAX", e);
 		}
 		finally {
 			log.debug("convert(), closing reader.");
             if (reader != null) {
-				try {
-					reader.close();
-				}
-				catch (Exception e) {
-					// ignore
-				}
+				try { reader.close(); } catch (Exception e) {} //ignore
             }
         }       
 
-        log.info("convert(), exiting.");
+        log.info("convert(), repairing.");
         model.repair();
-        return model;
+        
+        log.info("convert(), writing.");
+        new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model, os);
     }
 
 	
@@ -195,14 +196,18 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                 String parts[] = field.split("=");
                 if (parts.length == 2) {
                     String fieldName = parts[0]; //no trim() required here
+                    
                     String fieldValue = parts[1].trim();
+                    //after 1 Oct 2014, remove evidence (e.g., {type|source} - {ECO:0000269|PubMed10433554}) at the name's end (see http://www.uniprot.org/changes/evidences)
+                    int idx = fieldValue.indexOf(" {");
+                    if(idx>0) fieldValue = fieldValue.substring(0, idx);
+                    
                     if ("RecName: Full".equals(fieldName)) {
 						proteinReference.setStandardName(fieldValue);
                     }
 					else {
 						proteinReference.addName(fieldValue);
                     }
-                    //TODO ? do we really want to add all names from Contains: and Includes: sections?
                 }
             }
         }
@@ -220,6 +225,11 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     		ProteinReference proteinReference, Model model) {
         String parts[] = organismTaxId.replaceAll(";", "").split("=");
         String taxId = parts[1];
+        //since 1 Oct 2014, have to remove {evidence} after the taxId (after space); see http://www.uniprot.org/changes/evidences
+        int idx = taxId.indexOf(" {");
+        if(idx > 0)
+        	taxId = taxId.substring(0, idx);
+        
         parts = organismName.split("\\("); // - by first occurrence of '('
         String name = parts[0].trim();
 		BioSource bioSource = getBioSource(taxId, name, model);
@@ -266,40 +276,57 @@ final class UniprotConverterImpl extends BaseConverterImpl {
      * @param model
      */
     private void setXRefsFromDRs (String dbRefs, ProteinReference proteinReference, Model model) {
-        //split the line into like: "DB; ID1; ID2;" lines (also removing ending ".\n" or "-.\n")
-    	final String xrefList[] = dbRefs.split("-?\\.\\s*\n"); 
-        
-        for (int i=0; i<xrefList.length; i++) {
-        	String xref = xrefList[i].trim();
+    	final String lines[] = dbRefs.split("\n"); 
+    	
+        for (String line : lines) {
+        	//remove everything after '.' (e.g., isoform refs, comments)
+        	String xref = line.replaceFirst("\\..*", "").trim();
         	String parts[] = xref.split(";");
-        	String db = parts[0].trim();
-    		
-        	//adding for id in part[1], part[2],..
-			if (db.equals("GeneID") || db.equals("RefSeq") 
-					|| db.equals("Ensembl") || db.equals("HGNC")) {
-				if (db.equals("GeneID"))
-					db = "NCBI Gene"; //preferred name (synonym: Entrez Gene)
-				for (int j = 1; j < parts.length; j++) {
-			        String id = parts[j].trim();
-			    	// extracting RefSeq AC from AC.Version identifier:
-			    	if(db.equals("RefSeq")) {
-			    		int idx = id.lastIndexOf('.');
-			    		if(idx > 0)
-			    			id = id.substring(0, idx);
-			    	} 
-			    	else if (db.equals("Ensembl") && !id.startsWith("ENS"))
-						continue;
-					
-			    	// add xref
-					setRelationshipXRef(db, id, proteinReference, null, model);
+        	String db = parts[0].trim().toUpperCase();
+    				
+        	// skip for other, not identity, ID types,
+        	// e.g., refs to pathway databases, ontologies, etc.:
+        	if (!db.equals("GENEID") && !db.equals("REFSEQ") 
+					&& !db.equals("ENSEMBL") && !db.equals("HGNC")) 
+				continue;
+
+			String fixedDb = db;	
+			if (db.equals("GENEID"))
+				fixedDb = "NCBI GENE"; // - preferred name
+			
+			//iterate over the ID tokens of the same DR line, skipping non-ID comments, etc. (ending)
+			for (int j = 1; j < parts.length; j++) {
+				String id = parts[j].trim();
+
+				//at the end of a DR line in some cases (e.g, GeneID or RefSeq)?
+				if(id.equals("-"))
+					break;
+				//no more Ensembl IDs (skip comments)
+				if (db.equals("ENSEMBL") && !id.startsWith("ENS"))
+					break; 
+				//last ID in a HGNC line is in fact gene name
+				if(db.equals("HGNC") && !id.startsWith("HGNC:")) {
+					fixedDb = "HGNC SYMBOL";
 				}
+				//remove .version from RefSeq IDs
+				if (db.equals("REFSEQ")) {
+					// extract only RefSeq AC from AC.Version ID form
+					id = id.replaceFirst("\\.\\d+", "");
+				}
+				
+				//ok to create a new rel. xref with type "identity"
+				RelationshipXref rXRef = PreMerger
+						.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, 
+								fixedDb, id, model);					
+				proteinReference.addXref(rXRef);
+				// this xref type is then used for id-mapping in the Merger and queries;
 			}
         }
         	
     }
 
-    
-    /**
+
+	/**
      * Gets Official Gene Symbols from UniProt record's GN fields.
      * 
      * @param geneName concatenated UniProt record's GN fields.
@@ -313,7 +340,12 @@ final class UniprotConverterImpl extends BaseConverterImpl {
             String subParts[] = parts[i].split("=");
             // can be >1 due to isoforms
             if (subParts[0].trim().equals("Name")) {
-            	symbls.add(subParts[1]);
+            	//remove {evidence}; see http://www.uniprot.org/changes/evidences (GN)
+            	String gn = subParts[1];
+            	int idx = gn.indexOf(" {");
+            	if(idx>0)
+            		gn = gn.substring(0, idx);         	
+            	symbls.add(gn);
             }
         }
         return symbls;
@@ -335,49 +367,17 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                 String synList[] = subParts[1].split(",");
                 for (int j=0; j<synList.length; j++) {
                     String currentSynonym = synList[j].trim();
+                	//remove {evidence}; see http://www.uniprot.org/changes/evidences (GN)
+                	int idx = currentSynonym.indexOf(" {");
+                	if(idx>0)
+                		currentSynonym = currentSynonym.substring(0, idx); 
                     syns.add(currentSynonym);
                 }
             }
         }
         return syns;
     }
-    
-    
-    /**
-     * Sets Relationship XRefs.
-	 *
-     * @param dbName must be a MIRIAM preferred name for the data collection
-     * @param id
-     * @param proteinReference
-     * @param relationshipType some term (e.g., "SEQUENCE", "GENE", "MRNA", etc.) or null.
-     * @param model
-     */
-    private void setRelationshipXRef(String dbName, 
-    	String id, ProteinReference proteinReference, String relationshipType, Model model) 
-    {
-        //generate a URI using only the classname, (normalized) db name, and id (no rel. type)
-		String uri = Normalizer.uri(model.getXmlBase(), dbName, id, RelationshipXref.class);
-		RelationshipXref rXRef = (RelationshipXref) model.getByID(uri);
-		if (rXRef == null) {
-			rXRef = (RelationshipXref) model.addNew(RelationshipXref.class,	uri);
-			rXRef.setDb(dbName);
-			rXRef.setId(id);
-		}
-		
-		//find/create a special relationship CV
-		if (relationshipType != null) {
-			String relCvId = Normalizer.uri(model.getXmlBase(), null,
-					relationshipType.toUpperCase(), RelationshipTypeVocabulary.class);
-			RelationshipTypeVocabulary relCv = (RelationshipTypeVocabulary) model.getByID(relCvId);
-			if (relCv == null) {
-				relCv = model.addNew(RelationshipTypeVocabulary.class, relCvId);
-				relCv.addTerm(relationshipType.toUpperCase());
-			}
-			rXRef.setRelationshipType(relCv);
-		}
-		
-		proteinReference.addXref(rXRef);
-    }
+
 
     /**
      * Sets Unification XRefs.
@@ -389,6 +389,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
      */
     private void setUnificationXRef(String dbName, String id, ProteinReference proteinReference, Model model) {
         id = id.trim();
+        dbName = dbName.trim().toUpperCase();
 		String rdfId = Normalizer.uri(model.getXmlBase(), dbName, id, UnificationXref.class);
 		
 		UnificationXref rXRef = (UnificationXref) model.getByID(rdfId);
@@ -425,7 +426,8 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 		// add all unification xrefs
 		for (String acEntry : acList) {
 			String ac = acEntry.trim();
-			setUnificationXRef("UniProt", ac, proteinReference, model);
+			//use db='UNIPROT' for these xrefs instead of 'UniProt Knowledgebase' (preferred in MIRIAM)
+			setUnificationXRef("UNIPROT", ac, proteinReference, model);
 		}
 		
 		return proteinReference;
@@ -477,9 +479,13 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 
 	
 	/*
-	 * Parses only "FT   MOD_RES   N    M   Term..." lines and creates modification features and sites
-	 * (the "MOD_RES   N    M   Term." part always has no more than 70 chars)
-	 * 
+	 * Parses only "FT   MOD_RES   N    M   Term..." lines data and creates protein modification features and sites;
+	 * original data line cannot exceed 70 chars, but can span multiple lines (usually just one or two),
+	 * and ends with '.'; extra lines were originally like "FT                      end-of-term."
+	 * (dot is used only on the last line), but "FT   " and all the leading spaces up to original position 
+	 * no. 35 in the second etc. lines were already removed from the final 'features' text.
+	 * In other words, here, 'features' string contains concatenated with '.' lines like 
+	 * "MOD_RES   N    M   full-term-name" (and such strings can be longer than 65 chars)
 	 */
 	private void createModResFeatures(final String features, 
 			final ProteinReference pr, Model model) 
@@ -489,13 +495,24 @@ final class UniprotConverterImpl extends BaseConverterImpl {
         Matcher matcher = pattern.matcher(features);
         int mfIndex = 0;
         while(matcher.find()) {
-        	String ftContent = matcher.group();
-			String what = ftContent.substring(29, ftContent.length()-1); //the term without final '.'
+        	String ftContent = matcher.group(); //i.e., not including "FT   ",
+        	//the term starts at 29th char (because "FT   " at the beginning of each line already's gone)
+			String what = ftContent.substring(29, ftContent.length()-1);//excluding the final dot '.' 
 			// split the result by ';' (e.g., it might now look like "Phosphothreonine; by CaMK4") 
 			// to extract the modification type and create the standard PSI-MOD synonym; 
 			String[] terms = what.toString().split(";");
-			final String mod = terms[0];
-			final String modTerm = "MOD_RES " + mod; //PSI-MOD term synonym
+			String mod = terms[0];
+			
+			//remove non-standard ending comment from the standard CV term,
+			//right before the final dot, if present; i.e. it removes things like 
+			//"...(By similarity).", or "...(Probable).", "...(Potential)." -
+			// but should not be too greedy to left just "N6-" out of "N6-(pyridoxal phosphate)lysine (By similarity)."
+			mod = mod.replaceFirst("\\([^()]+?\\)$","").trim();
+			
+			//official PSI-MOD synonym (see http://www.ebi.ac.uk/ontology-lookup)
+			final String modTerm = "MOD_RES " + mod; 
+			
+			//PSI-MOD ID will be auto-added by the biopax-validator/normalizer
 			
 			// Create the feature with CV and location -
 			mfIndex++;
@@ -503,17 +520,17 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 					null, pr.getDisplayName() + "_" + mfIndex, ModificationFeature.class);
 			ModificationFeature modificationFeature = model.addNew(ModificationFeature.class, uri);
 			modificationFeature.addComment(ftContent);
-			// get or create a new PSI-MOD SequenceModificationVocabulary, which 
-			// - can be shared by many protein references we create
-			uri = Normalizer.uri(model.getXmlBase(), "MOD", mod, SequenceModificationVocabulary.class);
+			
+			// get/create a new PSI-MOD SequenceModificationVocabulary (can be shared by many PRs)
+			uri = Normalizer.uri(model.getXmlBase(), "MOD", modTerm, SequenceModificationVocabulary.class);
 			// so, let's check if it exists in the temp. or target model:
 			SequenceModificationVocabulary cv = (SequenceModificationVocabulary) model.getByID(uri);
-			if(cv == null)
-				cv = (SequenceModificationVocabulary) model.getByID(uri);
 			if(cv == null) {
 				// create a new SequenceModificationVocabulary
 				cv = model.addNew(SequenceModificationVocabulary.class, uri);
 				cv.addTerm(modTerm);
+				//add the name without MOD_RES prefix as well (sometimes it is the valid one)
+				cv.addTerm(mod);
 			}
 			modificationFeature.setModificationType(cv);
 			
@@ -534,7 +551,6 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			
 			if(start == end) {
 				modificationFeature.setFeatureLocation(startSite);
-				//TODO ? modificationFeature.setFeatureLocationType(regionVocabulary);
 			} else {
 				//create the second site (end) and sequence interval -
 				idPart = pr.getDisplayName() + //e.g., CALM_HUMAN - from the ID line

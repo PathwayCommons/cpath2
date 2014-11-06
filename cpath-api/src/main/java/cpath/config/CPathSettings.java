@@ -38,6 +38,7 @@ import org.apache.commons.lang.StringUtils;
 /**
  * CPath2 server-side instance-specific 
  * configuration constants and properties.
+ * Singleton.
  * 
  * Some properties can be modified 
  * at runtime, i.e, via the admin tool.
@@ -48,7 +49,10 @@ import org.apache.commons.lang.StringUtils;
  */
 public final class CPathSettings {
 	
-	private static Properties settings;
+	private static CPathSettings instance;
+	private Properties settings;
+	
+	private static boolean _develop = false;
 	
 	/**
 	 * Name for the system environment and/or JVM variable 
@@ -113,13 +117,10 @@ public final class CPathSettings {
 	public static final String PROP_ADMIN_ENABLED = "cpath2.admin.enabled";
 	public static final String PROP_XML_BASE="cpath2.xml.base";	
 	public static final String PROP_MAX_SEARCH_HITS_PER_PAGE = "cpath2.maxSearchHitsPerPage";
-	public static final String PROP_EXPLAIN_ENABLED = "cpath2.explain.enabled";
-	public static final String PROP_DIGEST_URI_ENABLED = "cpath2.md5hex.uri.enabled";
+	public static final String PROP_DEBUG_ENABLED = "cpath2.debug.enabled";
 	public static final String PROP_BLACKLIST_DEGREE_THRESHOLD = "cpath2.blacklist.degree.threshold";   
 	public static final String PROP_BLACKLIST_CONTROL_THRESHOLD = "cpath2.blacklist.control.threshold";
 	public static final String PROP_METADATA_LOCATION = "cpath2.metadata.location";
-	public static final String PROP_ABSOLUTE_URI_ENABLED="cpath2.absolute.uri.enabled"; //when generating biopx archives in "downloads"
-	public static final String PROP_PROXY_MODEL_ENABLED="cpath2.proxy.model.enabled";
 	
 	/*
 	 * Following properties can be even updated at runtime (because cpath2.properties resource is read by the webapp periodically)
@@ -135,14 +136,7 @@ public final class CPathSettings {
 	/**
 	 * Private Constructor
 	 */
-	private CPathSettings(){}
-
-	
-	/**
-	 * Spath2 configuration properties
-	 * static initializer.
-	 */
-	static {
+	private CPathSettings() {
 		// check/init cpath2 home dir JVM property
 		String home = System.getenv(HOME_DIR);		
 		if(home == null || home.isEmpty()) {
@@ -165,19 +159,14 @@ public final class CPathSettings {
 		defaults.put(PROP_BLACKLIST_DEGREE_THRESHOLD, "100");
 		defaults.put(PROP_MAX_SEARCH_HITS_PER_PAGE, "500");
 		defaults.put(PROP_METADATA_LOCATION, homeDir() + File.separator + METADATA_FILE);
-		defaults.put(PROP_EXPLAIN_ENABLED, "false");
-		defaults.put(PROP_ADMIN_ENABLED, "false");
-		defaults.put(PROP_DIGEST_URI_ENABLED, "false");	
-		defaults.put(PROP_ABSOLUTE_URI_ENABLED, "true");
-		defaults.put(PROP_PROXY_MODEL_ENABLED, "false");
+		defaults.put(PROP_DEBUG_ENABLED, "false");
+		defaults.put(PROP_ADMIN_ENABLED, "false");	
 		
 		settings = new Properties(defaults);
 		
 		loadCPathProperties();
 	}
 
-	private static CPathSettings instance;
-	
 	
 	/**
 	 * Gets the cPath2 settings singleton.
@@ -242,12 +231,20 @@ public final class CPathSettings {
 	 * (i.e., the organisms of which data were prepared and 
 	 * intentionally imported in to the system, can be filtered by
 	 * in the web queries, and corresponding data archives
-	 * were made available to download by users)
+	 * were made available to download by users).
+	 * 
+	 * Imported pathway data may also have other BioSource objects,
+	 * and those can be used in a search query as the filter by organism value as well;
+	 * but only these organisms, specified in the cpath2.properties file, are
+	 * considered to generate export data archives and to be shown on web pages.
+	 * 
+	 * Default is {"Homo sapiens"} (when the property is not set)
 	 *  
 	 * @return
 	 */
 	public String[] getOrganisms() {
-		return organisms();
+		String orgs = property(PROVIDER_ORGANISMS);
+		return orgs.split("\\s*,\\s*");
 	}
 
 	public void setOrganisms(String[] organisms) {
@@ -271,7 +268,7 @@ public final class CPathSettings {
 
 
 	public boolean isAdminEnabled() {
-		return isMaintenanceEnabled();
+		return "true".equalsIgnoreCase(property(PROP_ADMIN_ENABLED));
 	}
 	
 	public void setAdminEnabled(boolean enabled) {
@@ -317,12 +314,7 @@ public final class CPathSettings {
 		setCPathProperty(PROP_XML_BASE, xmlBase);
 	}
 	
-	
-	public void setProxyModelEnabled(boolean enabled) {
-		setCPathProperty(PROP_PROXY_MODEL_ENABLED, Boolean.toString(enabled));
-	}
-	
-	
+		
 	/**
 	 * Gets a cpath2 property value
 	 * by name from:
@@ -334,7 +326,7 @@ public final class CPathSettings {
 	 * @param name cpath2 property name
 	 * @return
 	 */
-	public static synchronized String property(String name) {	
+	public synchronized String property(String name) {	
 		String val = System.getProperty(name);
 		
 		if(val == null || val.isEmpty())
@@ -347,7 +339,7 @@ public final class CPathSettings {
 	/**
 	 * Reads cpath2 properties from the file.
 	 */
-	public static void loadCPathProperties() {
+	public void loadCPathProperties() {
 		String file = homeDir() + File.separator + CPATH_PROPERTIES_FILE;		
 		try {
 			settings.load(new FileReader(file));
@@ -364,9 +356,9 @@ public final class CPathSettings {
 	 * 
 	 * @throws IllegalStateException when maintenance mode is disabled
 	 */
-	public static void saveCPathProperties() {
+	public void saveCPathProperties() {
 		
-		if(!isMaintenanceEnabled())
+		if(!isAdminEnabled())
 			throw new IllegalStateException("Not in Maintenance mode.");
 		
 		String file = homeDir() + File.separator + CPATH_PROPERTIES_FILE;		
@@ -388,7 +380,7 @@ public final class CPathSettings {
 	 * 
 	 * @return
 	 */
-	public static String homeDir() {		
+	public String homeDir() {		
 		return property(HOME_DIR);
 	}
 	
@@ -399,8 +391,8 @@ public final class CPathSettings {
 	 * 
 	 * @return
 	 */
-	public static String dataDir() {
-		return homeDir() + File.separator + DATA_SUBDIR;
+	public String dataDir() {
+		return (_develop) ? tmpDir() : homeDir() + File.separator + DATA_SUBDIR;
 	}
 	
 	
@@ -410,23 +402,10 @@ public final class CPathSettings {
 	 * 
 	 * @return
 	 */
-	public static String blacklistFile() {
-		return homeDir() + File.separator + BLACKLIST_FILE;
+	public String blacklistFile() {
+		return downloadsDir() + File.separator + BLACKLIST_FILE;
 	}	
 	
-	
-	
-	/**
-	 * Answers whether cPath2 will also accept  
-	 * digest IDs (i.e., 32-byte MD5 hex, primary key, string) 
-	 * in place of actual URI/RDFId in queries.
-	 * 
-	 * @return
-	 */
-	public static boolean digestUriEnabled() {
-		return "true".equalsIgnoreCase(property(PROP_DIGEST_URI_ENABLED));
-	}
-		
 	
 	/**
 	 * Sets or updates a cpath2 instance property
@@ -436,17 +415,15 @@ public final class CPathSettings {
 	 * @param name
 	 * @param value
 	 */
-	public static synchronized void setCPathProperty(String name, String value) {
-		if(PROP_ADMIN_ENABLED.equals(name) || isMaintenanceEnabled())
+	public synchronized void setCPathProperty(String name, String value) {
+		if(PROP_ADMIN_ENABLED.equals(name) || isAdminEnabled())
 		{
 			System.setProperty(name, value);
 			settings.setProperty(name, value);
 		} 
 		else 
 		{	//ok to alter some props in the 'normal' state too
-			if(PROP_PROXY_MODEL_ENABLED.equals(name)
-					|| PROP_DIGEST_URI_ENABLED.equals(name)
-					|| PROP_EXPLAIN_ENABLED.equals(name)
+			if(PROP_DEBUG_ENABLED.equals(name)
 					|| PROP_MAX_SEARCH_HITS_PER_PAGE.equals(name)
 			) {
 				System.setProperty(name, value);
@@ -462,26 +439,20 @@ public final class CPathSettings {
 	
 	
 	/**
-	 * Flags if cPath2 explain full-text query 
-	 * results mode is enabled. 
+	 * Flags if cPath2 debug mode is enabled.
+	 * This triggers the inclusion of score and explanation
+	 * into search results and use of md5 sum digest (primary key)
+	 * in place of URI in some queries.
 	 * 
 	 * @return
 	 */
-	public static boolean explainEnabled() {
-		return "true".equalsIgnoreCase(property(PROP_EXPLAIN_ENABLED));
+	public boolean isDebugEnabled() {
+		return "true".equalsIgnoreCase(property(PROP_DEBUG_ENABLED));
 	}
 		
-
-	/**
-	 * Flags if cPath2 runs in the maintenance mode,
-	 * (all services except for admin are disabled)
-	 * 
-	 * @return
-	 */
-	public static boolean isMaintenanceEnabled() {
-		return "true".equalsIgnoreCase(property(PROP_ADMIN_ENABLED));
-	}
-	
+	public void setDebugEnabled(boolean enabled) {
+		setCPathProperty(PROP_DEBUG_ENABLED, Boolean.toString(enabled));
+	}	
 	
 	/**
 	 * Gets the full path to the local directory 
@@ -489,9 +460,8 @@ public final class CPathSettings {
 	 * 
 	 * @return
 	 */
-	public static String downloadsDir() {
-		return CPathSettings.homeDir() 
-	    	+ File.separator + DOWNLOADS_SUBDIR;
+	public String downloadsDir() {
+		return (_develop) ? tmpDir() : homeDir() + File.separator + DOWNLOADS_SUBDIR;
 	}
 	
 	
@@ -500,18 +470,8 @@ public final class CPathSettings {
 	 * 
 	 * @return
 	 */
-	public static String tmpDir() {
+	public String tmpDir() {
 		return System.getProperty("java.io.tmpdir");
-	}
-	
-	
-	/**
-	 * Gets the full path to current java TMP directory.
-	 * 
-	 * @return
-	 */
-	public static String xmlBase() {
-		return property(PROP_XML_BASE);
 	}
 	
 	
@@ -520,49 +480,20 @@ public final class CPathSettings {
 	 * 
 	 * @return
 	 */
-	public static String cacheDir() {
+	public String cacheDir() {
 		return homeDir() + File.separator + CACHE_SUBDIR;
 	}
 	
 	
 	/**
-	 * Supported organisms.
-	 * 
-	 * Imported pathway data may also have other BioSource objects,
-	 * and those can be used in a search query as the filter by organism value;
-	 * but only these organisms, specified in the cpath2.properties file, are
-	 * considered to generate export data archives and to be shown on web pages.
-	 * 
-	 * Default is {"Homo sapiens"} (when the property is not set)
-	 * 
-	 * @return
-	 */
-	public static String[] organisms() {
-		String orgs = property(PROVIDER_ORGANISMS);
-		return orgs.split("\\s*,\\s*");
-	}
-	
-	
-	/**
-	 * Flags if cPath2 services are to use the in-memory
-	 * (proxy) Model in front of the persistent biopax model.
-	 * 
-	 * @return
-	 */
-	public static boolean isProxyModelEnabled() {
-		return "true".equalsIgnoreCase(property(PROP_PROXY_MODEL_ENABLED));
-	}
-
-
-	/**
 	 * Full path to the archive file where BioPAX db/model is exported. 
 	 * 
-	 * @param datasource - data source Standard Name or "All", "Backup".
+	 * @param name - a Metadata's Standard Name, or a special archive name, such as "All", "Warehouse".
 	 * @return
 	 */
-	public static String biopaxExportFileName(String datasource) {
+	public String biopaxExportFileName(String name) {
 		return downloadsDir() + File.separator + 
-				exportArchivePrefix() + datasource 
+				exportArchivePrefix() + name 
 					+ ".BIOPAX.owl.gz";
 	}
 	
@@ -575,9 +506,42 @@ public final class CPathSettings {
 	 * 
 	 * @return
 	 */
-	public static String exportArchivePrefix() {
+	public String exportArchivePrefix() {
 		return property(PROVIDER_NAME) + 
 				"." + property(PROVIDER_VERSION) + 
 				".";
 	}
+	
+	
+	/**
+	 * Full path to the large archive where 
+	 * the complete merged BioPAX model is stored. 
+	 * 
+	 * @return
+	 */
+	public String mainModelFile() {
+		return biopaxExportFileName("All");
+	}
+	
+	/**
+	 * Full path to the archive where 
+	 * the Warehouse BioPAX model is stored. 
+	 * 
+	 * @return
+	 */
+	public String warehouseModelFile() {
+		return biopaxExportFileName("Warehouse");
+	}
+	
+	
+	/**
+	 * Configure the system for the development and testing ('true')
+	 * or production (is default, 'false').
+	 * 
+	 * @param develop
+	 */
+	public static void setDevelop(boolean develop) {
+		_develop = develop;
+	}
+	
 }

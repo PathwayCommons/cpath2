@@ -41,10 +41,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
-import cpath.log.LogUtils;
-import cpath.log.jpa.Geoloc;
-import cpath.log.jpa.LogEntitiesRepository;
-import cpath.log.jpa.LogEvent;
+import cpath.jpa.LogEvent;
+import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.Status;
 import cpath.service.jaxb.*;
@@ -64,12 +62,16 @@ import org.springframework.validation.FieldError;
 public abstract class BasicController {
     private static final Logger log = LoggerFactory.getLogger(BasicController.class);
     
-    protected LogEntitiesRepository logEntitiesRepository;  
+    protected CPathService service;  
     
     @Autowired
-    public void setLogRepository(LogEntitiesRepository logEntitiesRepository) {
-    	Assert.notNull(logEntitiesRepository);
-		this.logEntitiesRepository = logEntitiesRepository;
+    public void setLogRepository(CPathService service) {
+    	Assert.notNull(service);
+    	Assert.notNull(service.log());
+    	Assert.notNull(service.metadata());
+    	Assert.notNull(service.biopax());
+    	
+		this.service = service;
 	}
 
     
@@ -93,8 +95,12 @@ public abstract class BasicController {
 		// to count the error (code), also add -
 		updateCountsFor.add(LogEvent.from(status));
 		
-		LogUtils.log(logEntitiesRepository, 
-				updateCountsFor, Geoloc.fromIpAddress(clientIpAddress(request)));
+		//problems with logging subsystem should not fail the entire service
+		try {
+			service.log(updateCountsFor, clientIpAddress(request));
+		} catch (Throwable ex) {
+			log.error("LogUtils.log failed", ex);
+		}
 		
 		response.sendError(status.getErrorCode(), 
 			status.getErrorMsg() + "; " + detailedMsg);
@@ -168,8 +174,12 @@ public abstract class BasicController {
 			updateCountsFor.addAll(LogEvent.fromProviders(providers));
 			
 			//log to the db (for analysis and reporting)
-			LogUtils.log(logEntitiesRepository, updateCountsFor,
-					Geoloc.fromIpAddress(clientIpAddress(request)));
+			//problems with logging subsystem should not fail the entire service
+			try {
+				service.log(updateCountsFor, clientIpAddress(request));
+			} catch (Throwable ex) {
+				log.error("LogUtils.log failed", ex);
+			}
 			
 			writer.write(dresp.getData().toString());
 		}

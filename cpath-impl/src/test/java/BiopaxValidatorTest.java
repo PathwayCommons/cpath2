@@ -65,8 +65,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {
-		"classpath:META-INF/spring/applicationContext-validator.xml",
-		"classpath:META-INF/spring/applicationContext-cvRepository.xml"
+		"classpath:META-INF/spring/applicationContext-validator.xml"
 	})
 public class BiopaxValidatorTest {
 
@@ -113,7 +112,7 @@ public class BiopaxValidatorTest {
     	Rule rule = (Rule) context.getBean("xrefRule");
 		
         UnificationXref x = level3.create(UnificationXref.class, "1");
-        x.setDb("EntrezGene"); //official preferred name: "Entrez Gene"
+        x.setDb("EntrezGene"); //but official preferred name is: "NCBI Gene"
         x.setId("0000000");
         Validation v = new Validation(new IdentifierImpl());
         rule.check(v, x);

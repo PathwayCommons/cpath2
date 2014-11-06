@@ -2,7 +2,7 @@ package cpath.webservice.args.binding;
 
 import java.beans.PropertyEditorSupport;
 
-import cpath.log.LogType;
+import cpath.jpa.LogType;
 
 
 /**

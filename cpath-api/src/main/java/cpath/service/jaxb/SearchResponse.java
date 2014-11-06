@@ -109,6 +109,9 @@ public class SearchResponse extends ServiceResponse {
 
 	@XmlTransient
 	public Set<String> getProviders() {
+		if(providers == null)
+			providers = new HashSet<String>();
+		
 		return providers;
 	}
 	public void setProviders(Set<String> providers) {
@@ -121,7 +124,11 @@ public class SearchResponse extends ServiceResponse {
 		
 		if(searchHit != null) {
 			for(SearchHit hit : searchHit) {
-				provUris.addAll(hit.getDataSource());
+				//for Prov. there are names instead of URIs
+				if(!"Provenance".equalsIgnoreCase(hit.getBiopaxClass()))
+					provUris.addAll(hit.getDataSource());
+				else 
+					provUris.add(hit.getUri());
 			}
 		}
 		

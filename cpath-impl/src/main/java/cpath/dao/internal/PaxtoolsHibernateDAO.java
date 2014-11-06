@@ -38,14 +38,15 @@ import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
 import org.apache.lucene.util.Version;
 
 import static org.biopax.paxtools.impl.BioPAXElementImpl.*;
+
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.EntityReference;
 import org.biopax.paxtools.model.level3.PathwayStep;
+import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.ObjectPropertyEditor;
-import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.impl.level3.L3ElementImpl;
@@ -57,6 +58,7 @@ import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.query.dsl.QueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.*;
 import org.springframework.util.Assert;
@@ -66,8 +68,7 @@ import cpath.dao.Analysis;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
-import cpath.service.jaxb.TraverseEntry;
-import cpath.service.jaxb.TraverseResponse;
+
 import java.util.*;
 import java.io.*;
 import java.lang.reflect.Modifier;
@@ -89,7 +90,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	//no. indexed objects before flushing the full-text session
 	private final static int IDX_BATCH_SIZE = 10000;
 	
-	private int maxHitsPerPage;
+	private final int maxHitsPerPage;
 	
 	public final static String[] DEFAULT_SEARCH_FIELDS =
 		{
@@ -99,28 +100,32 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			FIELD_KEYWORD, //anything, e.g., names, terms, comments, incl. - from child elements 
 			FIELD_NAME, // standardName, displayName, other names
 			FIELD_TERM, // CV terms
-			FIELD_XREFDB, //xref.db
 			FIELD_XREFID, //xref.id (incl. direct child xref's id, if any)
 			FIELD_ECNUMBER,
 			FIELD_SEQUENCE,
-			// plus, filter fields (TODO ? not include these (filter) fields into default search?
+			// plus, filter fields
 			FIELD_ORGANISM,
 			FIELD_DATASOURCE,
 			FIELD_PATHWAY, // i.e., helps find an object by a parent pathway name or filter a search results by pathway ;) 
 		};
 
-	private static Logger log = LoggerFactory.getLogger(PaxtoolsHibernateDAO.class);
+	private static final Logger log = LoggerFactory.getLogger(PaxtoolsHibernateDAO.class);
+	
+	@Autowired
 	private SessionFactory sessionFactory;
+	
 	private final Map<String, String> nameSpacePrefixMap;
 	private final BioPAXLevel level;
 	private final BioPAXFactory factory;
 	private SimpleIOHandler simpleIO;
 	private boolean addDependencies = false;
 	private final String xmlBase;
+	private final CPathSettings cpath;
 
 	
 	protected PaxtoolsHibernateDAO()
 	{
+		this.cpath = CPathSettings.getInstance();
 		this.level = BioPAXLevel.L3;
 		this.factory = level.getDefaultFactory();
 		// no namespace!
@@ -128,17 +133,9 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
 		this.simpleIO.normalizeNameSpaces(false);
-		//use absolute URIs when exporting to RDF/XML
-		this.simpleIO.absoluteUris(Boolean.parseBoolean(
-			(CPathSettings.property(CPathSettings.PROP_ABSOLUTE_URI_ENABLED)))); 
 		//- seems, - query parser turns search keywords to lower case and expects index field values are also lower case...		
-		this.xmlBase = CPathSettings.xmlBase(); //set default xml:base
-		this.maxHitsPerPage = Integer.parseInt(CPathSettings.property(CPathSettings.PROP_MAX_SEARCH_HITS_PER_PAGE));
-	}
-
-
-	public void setSessionFactory(SessionFactory sessionFactory) {
-		this.sessionFactory = sessionFactory;
+		this.xmlBase = CPathSettings.getInstance().getXmlBase(); //set default xml:base
+		this.maxHitsPerPage = Integer.parseInt(cpath.property(CPathSettings.PROP_MAX_SEARCH_HITS_PER_PAGE));
 	}
 	
 
@@ -209,9 +206,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 	@Override
 	public void merge(final Model model)
 	{
-		//clear all caches
-		evictCaches();
-		
 		// insert all using a stateless session
 		insert(model);	
 		
@@ -350,7 +344,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		fullTextQuery.setReadOnly(true);
 
 		// use Projection (allows extracting/highlighting matching text, etc.)
-		if (CPathSettings.explainEnabled())
+		if (cpath.isDebugEnabled())
 			fullTextQuery.setProjection(FullTextQuery.THIS, FullTextQuery.DOCUMENT,
 					FullTextQuery.SCORE, FullTextQuery.EXPLANATION);
 		else
@@ -385,7 +379,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			Highlighter highlighter = null;
 			if(!query.equals("*")) {
 				// create a highlighter (store.YES must be enabled on 'keyword' search field, etc.!)
-				//TODO ? shall we rewrite luceneQuery before executing (shelve for later)?
+				//TODO shall we rewrite luceneQuery before executing?
 				QueryScorer scorer = new QueryScorer(luceneQuery, FIELD_KEYWORD);   
 				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
 				highlighter = new Highlighter(formatter, scorer);
@@ -399,6 +393,14 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 			
 			searchResponse.setSearchHit(searchHits);
 		} 
+		
+		//set unique providers' names
+		if(!searchResponse.isEmpty()) {
+			for(String puri : searchResponse.provenanceUris()) {
+				Provenance p = (Provenance) getByID(puri);
+				searchResponse.getProviders().add((p.getStandardName() != null)?p.getStandardName():p.getDisplayName());
+			}
+		}
 		
 		return searchResponse;
 	}
@@ -477,7 +479,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 
 		Session ses = sessionFactory.getCurrentSession();
 		String pk = 
-			(CPathSettings.digestUriEnabled()) ? id : ModelUtils.md5hex(id);
+			(cpath.isDebugEnabled()) ? id : ModelUtils.md5hex(id);
 		
 		ret = (ses.getNamedQuery("org.biopax.paxtools.impl.BioPAXElementExists")
 				.setString("md5uri", pk).uniqueResult() != null);
@@ -500,7 +502,7 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		
 		// For db debug mode only (when md5hex.uri.enabled=true), try "as is" 
 		// (i.e., if the id is already the precomputed MD5 hex pK value)
-		if(toReturn == null && CPathSettings.digestUriEnabled())
+		if(toReturn == null && cpath.isDebugEnabled())
 			toReturn = (BioPAXElement) ses.get(BioPAXElementImpl.class, id);
 
 		return toReturn; // null means no such element
@@ -714,59 +716,6 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		return xmlBase;
 	}
 
-
-	/**
-	 * It generates results only for those URIs where
-	 * the property path apply, although the values set 
-	 * can be empty.
-	 * 
-	 * @throws 
-	 */
-	@Transactional(readOnly=true)
-	@Override
-	public TraverseResponse traverse(String propertyPath, String... uris) {
-		
-		sessionFactory.getCurrentSession().setDefaultReadOnly(true);
-		
-		TraverseResponse resp = new TraverseResponse();
-		resp.setPropertyPath(propertyPath);
-		
-		PathAccessor pathAccessor = null; 
-		try {
-			pathAccessor = new PathAccessor(propertyPath, getLevel());
-		} catch (Exception e) {
-			throw new IllegalArgumentException("Failed to parse " +
-				"the BioPAX property path: " + propertyPath, e);
-		}
-		
-		for(String uri : uris) {
-			BioPAXElement bpe = getByID(uri);
-			try {
-				Set<?> v = pathAccessor.getValueFromBean(bpe);
-				TraverseEntry entry = new TraverseEntry();
-				entry.setUri(uri);
-				if(!pathAccessor.isUnknown(v)) {
-//					entry.getValue().addAll(v);
-					for(Object o : v) {
-						if(o instanceof BioPAXElement) 
-							entry.getValue().add(((BioPAXElement) o).getRDFId());
-						else
-							entry.getValue().add(String.valueOf(o));
-					}
-				}
-				// add (it might have no values, but the path is correct)
-				resp.getTraverseEntry().add(entry); 
-			} catch (IllegalBioPAXArgumentException e) {
-				// log, ignore if the path does not apply
-				if(log.isDebugEnabled())
-					log.debug("Failed to get values at: " + 
-						propertyPath + " from the element: " + uri, e);
-			}
-		}
-		
-		return resp;
-	}
-
 	
 	/* 
 	 Hibernate MassIndexer sucks. 
@@ -827,14 +776,17 @@ class PaxtoolsHibernateDAO implements Model, PaxtoolsDAO
 		
 		log.info("index(), done.");
 	}
-	
-	
-	@Override
+
+
 	@Transactional
-	public void evictCaches() {
-		sessionFactory.getCache().evictEntityRegions();
-		sessionFactory.getCache().evictCollectionRegions();
-		sessionFactory.getCache().evictDefaultQueryRegion();
+	@Override
+	public void removeAll() {
+		Session session = sessionFactory.getCurrentSession();
+		@SuppressWarnings("unchecked")
+		List<BioPAXElement> all = session.createCriteria(BioPAXElement.class).list();
+		for(BioPAXElement bpe : all) {
+			session.delete(bpe);
+		}
 	}
 
 }

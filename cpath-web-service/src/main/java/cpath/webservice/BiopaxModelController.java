@@ -32,10 +32,7 @@ import java.io.Writer;
 import java.util.*;
 
 import cpath.config.CPathSettings;
-import cpath.log.LogUtils;
-import cpath.log.jpa.Geoloc;
-import cpath.log.jpa.LogEvent;
-import cpath.service.CPathService;
+import cpath.jpa.LogEvent;
 import cpath.service.Cmd;
 import cpath.service.ErrorResponse;
 import cpath.service.GraphType;
@@ -55,8 +52,7 @@ import cpath.webservice.args.binding.OutputFormatEditor;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
@@ -73,15 +69,9 @@ import javax.validation.Valid;
  */
 @Controller
 public class BiopaxModelController extends BasicController {
-	private static final Logger LOG = LoggerFactory.getLogger(BiopaxModelController.class);    
+   	
+    private static final String xmlBase = CPathSettings.getInstance().getXmlBase();
 	
-    private static final String xmlBase = CPathSettings.xmlBase();
-    
-    private CPathService service; // main PC db access
-	
-    public BiopaxModelController(CPathService service) {
-		this.service = service;
-	}
     
     /**
 	 * This configures the web request parameters binding, i.e., 
@@ -186,8 +176,7 @@ public class BiopaxModelController extends BasicController {
 			//log to db
 			//TODO ? not sure we have to update provides' counters...
     		events.addAll(LogEvent.fromProviders(results.getProviders()));
-	    	LogUtils.log(logEntitiesRepository, 
-					events, Geoloc.fromIpAddress(clientIpAddress(request)));
+	    	service.log(events, clientIpAddress(request));
 			
 			return results;
 		}
@@ -220,14 +209,14 @@ public class BiopaxModelController extends BasicController {
     		}
     		else {
     			//log to db
-    			LogUtils.log(logEntitiesRepository, 
-    					events, Geoloc.fromIpAddress(clientIpAddress(request)));
+    			service.log(events, clientIpAddress(request));
     			
     			return sr;
 			}
     	}
     	return null;
     }
+ 
     
 	@RequestMapping("/graph")
 	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, 
@@ -315,8 +304,7 @@ public class BiopaxModelController extends BasicController {
 	    				((SearchResponse)results).getProviders()
 	    			));
 				//log to db
-		    	LogUtils.log(logEntitiesRepository, 
-						events, Geoloc.fromIpAddress(clientIpAddress(request)));
+		    	service.log(events, clientIpAddress(request));
 				return results;
 			}
 			return null;

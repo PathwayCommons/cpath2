@@ -2,26 +2,22 @@ package cpath.webservice;
 
 import java.util.*;
 
-
-import cpath.config.CPathSettings;
-import cpath.log.LogType;
-import cpath.log.jpa.LogEvent;
+import cpath.jpa.LogEvent;
+import cpath.jpa.LogType;
 import cpath.webservice.args.binding.LogTypeEditor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 
 /**
+ * RESTful web controller for the access log pages.
  * 
  * @author rodche
  */
@@ -33,9 +29,9 @@ public class LogStatsController extends BasicController {
 	
 	public LogStatsController() {
     	try {
-			Class.forName("cpath.log.LogUtils");
+			Class.forName("cpath.dao.LogUtils");
 		} catch (ClassNotFoundException e) {
-			log.error("Class.forName(cpath.log.LogUtils) failed");
+			log.error("Class.forName(cpath.dao.LogUtils) failed");
 		}
 	}
 	
@@ -43,45 +39,6 @@ public class LogStatsController extends BasicController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(LogType.class, new LogTypeEditor());
 	}
-    
-    /**
-     * Makes current cpath2 instance properties 
-     * available to all (JSP) views.
-     * @return
-     */
-    @ModelAttribute("cpath")
-    public CPathSettings instance() {
-    	return CPathSettings.getInstance();
-    }
-    
-    // JSP Views
-    
-    // is /log
-    @RequestMapping(method = RequestMethod.GET) 
-    public String log() {
-    	return "redirect:/log/TOTAL/stats";
-    }    
-    
-    @RequestMapping("/")
-    public String allStats(Model model) {
-    	return "redirect:/log/TOTAL/stats";
-    }	
-        
-    @RequestMapping("/{logType}/stats")
-    public String statsByType(Model model, @PathVariable LogType logType) {
-    	model.addAttribute("summary_for", "Category: " + logType);
-    	model.addAttribute("current", "/log/"+logType.toString()+"/stats");
-    	return "stats";
-    }
-    
-    @RequestMapping("/{logType}/{name}/stats")
-    public String statsByType(Model model, @PathVariable LogType logType,
-    		@PathVariable String name) {
-    	model.addAttribute("summary_for", "Category: " + logType + ", name: " + name);
-    	model.addAttribute("current", "/log/"+logType.toString()+"/"+name+"/stats");
-    	return "stats";
-    }
-
     
     // XML/JSON web services (for the stats.jsp view using stats.js, given current context path)
  
@@ -108,7 +65,7 @@ public class LogStatsController extends BasicController {
     	//add all the events in the same category (type); 
     	//but make given type the first element in the list (selected)
     	List<String[]> ret = categories(logType);
-    	for(LogEvent e : logEntitiesRepository.logEvents(logType)) {
+    	for(LogEvent e : service.log().logEvents(logType)) {
     		ret.add(new String[]{e.getType().toString(), e.getName()});
     	}
     	return ret;
@@ -120,7 +77,7 @@ public class LogStatsController extends BasicController {
     	List<String[]> ret = categories(logType);
     	//add all the events in the same category (type); 
     	// but make the one with given type,name the first element in the list
-    	for(LogEvent e : logEntitiesRepository.logEvents(logType)) {
+    	for(LogEvent e : service.log().logEvents(logType)) {
     		if(e.getName().equals(name))
     			ret.add(0, new String[]{e.getType().toString(), e.getName()});
     		else 
@@ -129,72 +86,123 @@ public class LogStatsController extends BasicController {
     	return ret;
     } 
        
-    //timeline
+    //timelines (no. queries by type, date)
     
 	@RequestMapping("/{logType}/{name}/timeline")
     public @ResponseBody Map<String,List<Object[]>> timeline(@PathVariable LogType logType, @PathVariable String name) {		
-    	return logEntitiesRepository.downloadsTimeline(logType, name);
+    	return service.log().downloadsTimeline(logType, name);
     }    
     
     @RequestMapping("/{logType}/timeline")
     public @ResponseBody Map<String,List<Object[]>> timeline(@PathVariable LogType logType) {		
-    	return logEntitiesRepository.downloadsTimeline(logType, null);
+    	return service.log().downloadsTimeline(logType, null);
     }
 	
 	@RequestMapping("/timeline")
     public @ResponseBody Map<String,List<Object[]>> timeline() {		
-    	return logEntitiesRepository.downloadsTimeline(LogType.TOTAL, null);
+    	return service.log().downloadsTimeline(LogType.TOTAL, null);
     }
 	
-	//geo
+	//iptimelines (no. unique client IP addresses by request type on each day)
+	
+	@RequestMapping("/iptimeline")
+    public @ResponseBody Map<String,List<Object[]>> iptimeline() {		
+    	return service.log().ipsTimeline(LogType.TOTAL, null);
+    }
+	
+	@RequestMapping("/{logType}/{name}/iptimeline")
+    public @ResponseBody Map<String,List<Object[]>> iptimeline(@PathVariable LogType logType, @PathVariable String name) {		
+    	return service.log().ipsTimeline(logType, name);
+    }    
+    
+    @RequestMapping("/{logType}/iptimeline")
+    public @ResponseBody Map<String,List<Object[]>> iptimeline(@PathVariable LogType logType) {		
+    	return service.log().ipsTimeline(logType, null);
+    }
+    
+    //cumulative iptimeline, -  list of [date, total no. unique IPs from the beginning of time/service to this date]
+	@RequestMapping("/iptimelinecum")
+    public @ResponseBody Map<String,List<Object[]>> iptimelinecum() {		
+    	return service.log().ipsTimelineCum(LogType.TOTAL, null);
+    }
+	
+	@RequestMapping("/{logType}/{name}/iptimelinecum")
+    public @ResponseBody Map<String,List<Object[]>> iptimelinecum(@PathVariable LogType logType, @PathVariable String name) {		
+    	return service.log().ipsTimelineCum(logType, name);
+    }    
+    
+    @RequestMapping("/{logType}/iptimelinecum")
+    public @ResponseBody Map<String,List<Object[]>> iptimelinecum(@PathVariable LogType logType) {		
+    	return service.log().ipsTimelineCum(logType, null);
+    }   
+    
+
+    //list of unique client IP addresses by request type
+    
+	@RequestMapping("/iplist")
+    public @ResponseBody List<String> ips() {		
+    	return service.log().listUniqueIps(LogType.TOTAL, null);
+    }
+	
+	@RequestMapping("/{logType}/{name}/iplist")
+    public @ResponseBody List<String> ips(@PathVariable LogType logType, @PathVariable String name) {
+		return service.log().listUniqueIps(logType, name);
+    }    
+    
+    @RequestMapping("/{logType}/iplist")
+    public @ResponseBody List<String> ips(@PathVariable LogType logType) {		
+    	return service.log().listUniqueIps(logType, null);
+    }	
+	
+	//geo (no. queries by type, geolocation)
 	
 	@RequestMapping("/geography/world")
     public @ResponseBody List<Object[]> geographyWorld() {		
-    	return logEntitiesRepository.downloadsWorld(null, null);
+    	return service.log().downloadsWorld(null, null);
     }
     
 	@RequestMapping("/{logType}/geography/world")
     public @ResponseBody List<Object[]> geographyWorld(@PathVariable LogType logType) {		
-    	return logEntitiesRepository.downloadsWorld(logType, null);
+    	return service.log().downloadsWorld(logType, null);
     }
     
 	@RequestMapping("/{logType}/{name}/geography/world")
     public @ResponseBody List<Object[]> geographyWorld(@PathVariable LogType logType, @PathVariable String name) {		
-    	return logEntitiesRepository.downloadsWorld(logType, name);
+    	return service.log().downloadsWorld(logType, name);
     }
     
     
 	@RequestMapping("/geography/all")
     public @ResponseBody List<Object[]> geographyAll() {		
-    	return logEntitiesRepository.downloadsGeography(null, null);
+    	return service.log().downloadsGeography(null, null);
     }
     
 	@RequestMapping("/{logType}/geography/all")
     public @ResponseBody List<Object[]> geographyAll(@PathVariable LogType logType) {		
-    	return logEntitiesRepository.downloadsGeography(logType, null);
+    	return service.log().downloadsGeography(logType, null);
     }
     
 	@RequestMapping("/{logType}/{name}/geography/all")
     public @ResponseBody List<Object[]> geographyAll(@PathVariable LogType logType, 
     		@PathVariable String name) {		
-    	return logEntitiesRepository.downloadsGeography(logType, name);
+    	return service.log().downloadsGeography(logType, name);
     }    
     
  
 	@RequestMapping("/geography/country/{code}")
     public @ResponseBody List<Object[]> geographyCountry(@PathVariable String code) {		
-    	return logEntitiesRepository.downloadsCountry(code, null, null);
+    	return service.log().downloadsCountry(code, null, null);
     }
     
 	@RequestMapping("/{logType}/geography/country/{code}")
     public @ResponseBody List<Object[]> geographyCountry(@PathVariable LogType logType,
     		@PathVariable String code) {		
-    	return logEntitiesRepository.downloadsCountry(code, logType, null);
+    	return service.log().downloadsCountry(code, logType, null);
     }
     
 	@RequestMapping("/{logType}/{name}/geography/country/{code}")
     public @ResponseBody List<Object[]> geographyCountry(@PathVariable LogType logType, 
     		@PathVariable String name, @PathVariable String code) {		
-    	return logEntitiesRepository.downloadsCountry(code, logType, name);
+    	return service.log().downloadsCountry(code, logType, name);
     }
 }

@@ -1,0 +1,355 @@
+
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.biopax.validator.api.beans.Validation;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import cpath.config.CPathSettings;
+import cpath.dao.LogUtils;
+import cpath.jpa.Content;
+import cpath.jpa.Geoloc;
+import cpath.jpa.LogEntity;
+import cpath.jpa.LogEvent;
+import cpath.jpa.LogType;
+import cpath.jpa.Mapping;
+import cpath.jpa.Metadata;
+import cpath.jpa.Metadata.METADATA_TYPE;
+import cpath.service.CPathService;
+import cpath.service.Cmd;
+import cpath.service.GraphType;
+import cpath.service.OutputFormat;
+import cpath.service.Status;
+
+import static org.junit.Assert.*;
+
+/**
+ * 
+ * @author rodche
+ */
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration(locations={
+		"classpath:META-INF/spring/applicationContext-jpa.xml"})
+@ActiveProfiles("dev")
+public class RepositoriesAndServiceTest {
+	
+	@Autowired
+	private CPathService service;	
+	
+	@Test
+	public final void testCountryLookup() {
+		Geoloc loc = LogUtils.lookup("66.249.74.168");
+		assertNotNull(loc);
+		assertEquals("US", loc.getCountry());
+		assertEquals("CA", loc.getRegion());
+		
+		// localhost (and also for any LAN IPs, or not IPv4 ones...)
+		loc = LogUtils.lookup("127.0.0.1");
+		assertNull(loc);
+		loc = Geoloc.fromIpAddress("foo");
+		assertNull(loc);
+		
+		//Basel, Switzerland - no reion
+		loc = LogUtils.lookup("5.148.173.100");
+		assertNotNull(loc);
+		assertEquals("CH", loc.getCountry());
+		assertNull(loc.getRegion());
+		assertNull(loc.getCity());
+	}
+
+	
+	@Test
+	@DirtiesContext //other tests might added records too; do cleanup
+	public final void testSave() {
+		final String ipAddr = "66.249.74.168";
+		//explicitly create and save a new log record
+		LogEntity logEntity = new LogEntity(LogUtils.today(), 
+				LogEvent.from(Status.INTERNAL_ERROR), ipAddr); //country="US"
+		assertNull(logEntity.getId());
+		//save and check that new log entrie's initial count it set to 0
+		logEntity = service.log().save(logEntity);
+		assertEquals(0L, logEntity.getCount().longValue());	
+		assertNotNull(logEntity.getId());
+		assertEquals(1, service.log().count());
+	}
+
+	
+	/**
+	 * Test method for {@link org.springframework.data.repository.CrudRepository#save(S)}.
+	 */
+	@DirtiesContext //other tests might added records too; do cleanup
+	@Test
+	public final void testCount() {	
+		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
+		
+		// count twice
+		LogEntity logEntity = service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
+		assertEquals(1L, logEntity.getCount().longValue());
+		logEntity = service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
+		assertEquals(2L, logEntity.getCount().longValue());
+		
+		// test that there is only one record yet
+		assertEquals(1, service.log().count());
+	}
+	
+	
+	@DirtiesContext //other tests might added records too; do cleanup
+	@Test
+	public final void testTimeline() {	
+		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
+		
+		// add some logs (for two days, several categories):
+		// Today
+		String today = LogUtils.today();
+		service.count(today, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
+		service.count(today, LogEvent.TOTAL, ipAddr);
+		service.count(today, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
+		service.count(today, LogEvent.TOTAL, ipAddr);
+		service.count(today, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
+		service.count(today, LogEvent.TOTAL, ipAddr);
+		service.count(today, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
+		service.count(today, LogEvent.TOTAL, ipAddr);
+		service.count(today, LogEvent.from(Cmd.SEARCH), ipAddr);
+		// Yesterday
+		String yesterDay = LogUtils.addIsoDate(today, -1);
+		service.count(yesterDay, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
+		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
+		service.count(yesterDay, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
+		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
+		service.count(yesterDay, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
+		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
+		service.count(yesterDay, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
+		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
+		service.count(yesterDay, LogEvent.from(Cmd.SEARCH), ipAddr);
+		
+		assertEquals(12, service.log().count());
+		
+		//timeline per type
+		Map<String, List<Object[]>>	res = service.log().downloadsTimeline(LogType.TOTAL, null);
+		assertNotNull(res);
+		assertEquals(1, res.size());
+		
+		List<Object[]> tl = res.get(LogType.TOTAL.description);
+		assertNotNull(tl);
+		assertEquals(2, tl.size());
+		// check the first item is [today, 4] - 
+		// because the time line is sorted in reverse order
+		assertEquals(4L, tl.get(0)[1]);
+		assertEquals(today, tl.get(0)[0]);
+		
+		// for one category only
+		res = service.log().downloadsTimeline(LogType.PROVIDER, null);
+		//two entries (reactome and humancyc)
+		assertEquals(2, res.size());
+		tl = res.get(LogType.TOTAL.description);
+		assertNull(tl); //global TOTAL not included
+		tl = res.get("Reactome");
+		assertNotNull(tl);
+		assertEquals(1L, tl.get(0)[1]); //PROVIDER type, today counts
+		assertEquals(today, tl.get(0)[0]);
+		tl = res.get("HumanCyc");
+		assertNotNull(tl);
+		assertEquals(1L, tl.get(1)[1]); //PROVIDER type, yesterday counts
+		assertEquals(yesterDay, tl.get(1)[0]);
+				
+		// for error 500 only
+		res = service.log().downloadsTimeline(LogType.ERROR, "INTERNAL_ERROR");
+		//two map entries: for all downloads, for error 500
+		assertEquals(1, res.size());
+		tl = res.get(LogType.TOTAL.description);
+		assertNull(tl); //global TOTAL not included
+		tl = res.get("INTERNAL_ERROR");
+		assertNotNull(tl);
+		assertEquals(1L, tl.get(0)[1]); //PROVIDER type, today counts
+		assertEquals(today, tl.get(0)[0]);
+	}
+	
+	@DirtiesContext //other tests might added records too; do cleanup
+	@Test
+	public final void testTimeline2() {	
+		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
+	
+		// add some logs (for two days, several categories):
+		// Today
+		Set<LogEvent> events = new HashSet<LogEvent>(
+			Arrays.asList(
+					LogEvent.from(OutputFormat.BIOPAX),
+					new LogEvent(LogType.PROVIDER, "Reactome"),
+					new LogEvent(LogType.PROVIDER, "HumanCyc"),
+					LogEvent.from(GraphType.NEIGHBORHOOD)
+			)
+		);
+		
+		//save/count all + total (once)
+		service.log(events, ipAddr);
+
+		assertEquals(5, service.log().count());
+		
+		//timeline per type (incl. TOTAL)
+		Map<String, List<Object[]>>	res = service.log().downloadsTimeline(LogType.TOTAL, null);
+		assertNotNull(res);
+		assertEquals(1, res.size());
+		
+		List<Object[]> tl = res.get(LogType.TOTAL.description);
+		assertNotNull(tl);
+		assertEquals(1, tl.size());
+		assertEquals(1L, tl.get(0)[1]);
+		assertEquals(LogUtils.today(), tl.get(0)[0]);
+		
+		// for one category only
+		res = service.log().downloadsTimeline(LogType.PROVIDER, null);
+		//two entries: reactome, humancyc
+		assertEquals(2, res.size());
+		tl = res.get(LogType.TOTAL.description);
+		assertNull(tl); //global TOTAL not included
+		tl = res.get("Reactome");
+		assertNotNull(tl);
+		assertEquals(1L, tl.get(0)[1]); //PROVIDER type, today counts
+		tl = res.get("HumanCyc");
+		assertNotNull(tl);
+		assertEquals(1L, tl.get(0)[1]); //PROVIDER type, yesterday counts
+	}
+	
+	@Test
+	public final void testLogEventFromDownloads() {
+		CPathSettings cpath = CPathSettings.getInstance();
+		
+		String file = cpath.exportArchivePrefix() + "Reactome.BIOPAX.owl.gz";
+		Set<LogEvent> events = LogEvent.fromDownloads(file);
+		assertEquals(4, events.size());
+		
+		//'All' 
+		file = cpath.exportArchivePrefix() + "All.BIOPAX.owl.gz";
+		events = LogEvent.fromDownloads(file);
+		assertEquals(3, events.size());
+		
+		file = cpath.exportArchivePrefix() + "Reactome.GSEA.gmt.gz";
+		events = LogEvent.fromDownloads(file);
+		assertEquals(4, events.size());
+		
+		//illegal format - still logged as OTHER
+		file = cpath.exportArchivePrefix() + "Reactome.foo.gmt.gz";
+		events = LogEvent.fromDownloads(file);
+		assertEquals(4, events.size());
+		
+		//other (metadata etc.)
+		file = "blacklist.txt";
+		events = LogEvent.fromDownloads(file);
+		assertEquals(3, events.size());//counted for: file, command (DOWNLOAD), format (OTHER)
+		
+		//when a provider's name does not start from a capital letter, LogType.PROVIDER event won't be there
+		file = cpath.exportArchivePrefix() + "reactome.foo.gmt.gz";
+		events = LogEvent.fromDownloads(file);
+		assertEquals(3, events.size());
+	}
+	
+	
+	@Test
+	@DirtiesContext
+	public void testIdMapping() {		
+        //capitalization is important in 99% of identifier types (we should not ignore it)
+        // we should be able to save it and not get 'duplicate key' exception here
+		service.mapping().save(new Mapping("GeneCards", "ZHX1", "UNIPROT", "P12345"));
+		service.mapping().save(new Mapping("GeneCards", "ZHX1-C8orf76", "UNIPROT", "Q12345"));
+		service.mapping().save(new Mapping("GeneCards", "ZHX1-C8ORF76", "UNIPROT", "Q12345"));
+        
+        //check it's saved
+        assertEquals(1, service.map(null, "ZHX1-C8orf76", "UNIPROT").size());
+        assertEquals(1, service.map(null, "ZHX1-C8ORF76", "UNIPROT").size());
+        assertEquals(1, service.map("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
+        
+        // repeat (should successfully update)- add a Mapping
+        service.saveIfUnique(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
+        assertTrue(service.map(null, "FooBar", "UNIPROT").isEmpty());
+        assertTrue(service.map("TEST", "FooBar", "UNIPROT").isEmpty());
+        Set<String> mapsTo = service.map(null, "FooBar", "CHEBI");
+        assertEquals(1, mapsTo.size());
+        assertEquals("CHEBI:12345", mapsTo.iterator().next());
+        
+        service.saveIfUnique(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "UNIPROT"));
+        assertEquals(1, service.map("uniprot isoform", "A2A2M3-1", "UNIPROT").size());
+        
+        Mapping m = new Mapping("PubChem-substance", "14438", "CHEBI", "CHEBI:20");
+        service.saveIfUnique(m);
+        assertNotNull(service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(
+        		m.getSrc(), m.getSrcId(), m.getDest(), m.getDestId()));
+        assertEquals(1, service.map("PubChem-substance", "14438", "CHEBI").size());
+        assertEquals(1, service.map("Pubchem-Substance", "14438", "CHEBI").size());
+        assertEquals(1, service.map("pubchem substance", "14438", "CHEBI").size());
+        assertEquals(1, service.map("pubchem.substance", "14438", "CHEBI").size());
+        
+	}
+	
+	
+	@Test
+	@DirtiesContext
+	public void testImportContent() throws IOException {
+        // mock metadata and pathway data
+        Metadata md = new Metadata("TEST", "test", "test", "", "",
+        		"", METADATA_TYPE.BIOPAX, null, null, null, "free");        
+        
+        //cleanup previous tests data if any
+        md.cleanupOutputDir();
+        
+        Content content = new Content(md, "test0");
+        md.getContent().add(content);
+        //add the second pd (for the tests at the end of this method)
+        final Content pd = new Content(md, "test1");
+        md.getContent().add(pd);
+               
+        // persist
+        service.save(md);
+        
+        // test pathwaydata content is not accidentally erased
+        Iterator<Content> it = md.getContent().iterator();
+        content = it.next();
+        //we want test0 for following assertions
+        if("test1".equals(content.getFilename()))
+        	content = it.next();
+        assertEquals("test0",content.getFilename());    
+        
+        //even if we update from the db, data must not be empty
+        md = service.metadata().findByIdentifier(md.getIdentifier());
+        assertNotNull(md);
+        assertEquals("TEST", md.getIdentifier());
+        assertEquals(2, md.getContent().size()); 
+        it = md.getContent().iterator();
+        content = it.next();
+        //we want test0 for following assertions
+        if("test1".equals(content.getFilename()))
+        	content =it.next();
+        assertEquals("test0",content.getFilename());      
+
+        // add validation result());  
+        for(Content o : md.getContent())
+        	o.saveValidationReport(new Validation(null));        
+        // update
+        service.save(md);
+         
+        //read the latest state
+        md = service.metadata().findByIdentifier("TEST");
+        assertNotNull(md);
+        Set<Content>  lpd = md.getContent();
+        assertFalse(lpd.isEmpty());
+        content = lpd.iterator().next();
+        assertNotNull(content);  
+        
+        //cleanup
+        md = service.init(md);
+        assertTrue(md.getContent().isEmpty()); 
+        md = service.metadata().findByIdentifier("TEST");
+        assertTrue(md.getContent().isEmpty());         
+	}
+}

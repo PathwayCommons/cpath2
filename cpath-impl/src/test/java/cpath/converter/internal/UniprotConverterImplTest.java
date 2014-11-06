@@ -29,35 +29,36 @@ package cpath.converter.internal;
 
 import static org.junit.Assert.*;
 
-import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Set;
-import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipInputStream;
 
 import org.biopax.paxtools.io.*;
-import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.EntityFeature;
 import org.biopax.paxtools.model.level3.ModificationFeature;
 import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.SequenceLocation;
+import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
 import org.biopax.paxtools.model.level3.SequenceSite;
 import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.validator.utils.Normalizer;
-//import org.junit.Ignore;
 import org.junit.Test;
 
+import cpath.dao.CPathUtils;
 import cpath.importer.Converter;
-import cpath.importer.internal.ImportFactory;
+import cpath.importer.ImportFactory;
 
 /**
  * @author rodche
  *
  */
-//@Ignore
 public class UniprotConverterImplTest {
 
 	/**
@@ -66,35 +67,43 @@ public class UniprotConverterImplTest {
 	 */
 	@Test
 	public void testConvert() throws IOException {
-		InputStream is = getClass().getResourceAsStream("/test_uniprot_data.dat.gz");
-		GZIPInputStream zis = new GZIPInputStream(new BufferedInputStream(is));
-			
-		Converter converter = ImportFactory
-				.newConverter("cpath.converter.internal.UniprotConverterImpl");
-		converter.setInputStream(zis);
-		converter.setXmlBase(null);
-		Model model = converter.convert();
 		
+		//test the tricky FT pattern first
+		assertEquals("AA-(test test)test", "AA-(test test)test (Bysimilarity)".replaceFirst("\\([^()]+?\\)$","").trim());	
+		
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		CPathUtils.unzip(new ZipInputStream(new FileInputStream(
+				getClass().getResource("/test_uniprot_data.dat.zip").getFile())), bos);
+		bos.close();	
+		String outFilename = getClass().getClassLoader().getResource("").getPath() 
+				+ File.separator + "testConvertUniprot.out.owl";
+		Converter converter = ImportFactory.newConverter("cpath.converter.internal.UniprotConverterImpl");
+		converter.setXmlBase(null);
+		converter.convert(new ByteArrayInputStream(bos.toByteArray()), new FileOutputStream(outFilename));
+
+		// read Model
+		Model model = new SimpleIOHandler().convertFromOWL(new FileInputStream(outFilename));
 		Set<ProteinReference> proteinReferences = model.getObjects(ProteinReference.class);
 		assertEquals(10, proteinReferences.size());
 		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
-
-// seq. are not saved anymore	- no test
-		//get by URI and check the sequence (CALL6_HUMAN)
-//		ProteinReference pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/Q8TD86");
-//		assertNotNull(pr);
-//		final String expected = "MGLQQEISLQPWCHHPAESCQTTTDMTERLSAEQIKEYKGVFEMFDEEGNGEVKTGE" +
-//				"LEWLMSLLGINPTKSELASMAKDVDRDNKGFFNCDGFLALMGVYHEKAQNQESELRAAFRVFDKEGKGYIDWN" +
-//				"TLKYVLMNAGEPLNEVEAEQMMKEADKDGDRTIDYEEFVAMMTGESFKLIQ";
-//		assertEquals(expected, pr.getSequence());
-//		assertTrue(pr.getComment().contains("SEQUENCE   181 AA;  20690 MW;  F29C088AFC42BB13 CRC64;"));
+				
+		//
+		ProteinReference pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/P27797");
+		assertEquals(10, pr.getName().size()); //make sure this one is passed (important!)
+		assertEquals("CALR_HUMAN", pr.getDisplayName());
+		assertEquals("Calreticulin", pr.getStandardName());
+//		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
+		assertEquals(10, pr.getXref().size()); //10, no duplicates
+		assertEquals("http://identifiers.org/taxonomy/9606", pr.getOrganism().getRDFId());		
 		
 		// test MOD_RES features are created
-		ProteinReference pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/P62158");
+		pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/P62158");
 		assertTrue(pr.getName().contains("CALM2"));
 		assertTrue(pr.getName().contains("CALM3"));
 		assertNotNull(pr);
-		assertEquals(8, pr.getEntityFeature().size());
+		
+		assertEquals(9, pr.getEntityFeature().size());
+		
 		//check for a feature object by using URI generated the same way as it's in the converter:
 		String mfUri = Normalizer.uri(model.getXmlBase(), null, pr.getDisplayName() + "_1", ModificationFeature.class);
 		ModificationFeature mf = (ModificationFeature) model.getByID(mfUri);
@@ -108,26 +117,58 @@ public class UniprotConverterImplTest {
 		//this is just to test for a bug in the DR text format parser...
 		boolean rel = false;
 		for(Xref x : pr.getXref()) {
-			if("NCBI Gene".equals(x.getDb())) {
+			if("NCBI GENE".equalsIgnoreCase(x.getDb())) {
 				rel = true;
 				break;
 			}
 		}
 		assertTrue(rel);
+		//test if the correct RefSeq xrefs was created from the DR line despite having something ([bla-bla]) after the '.' at the end
+		String uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "NP_001734_identity", RelationshipXref.class);
+		assertNotNull(model.getByID(uri));
+		//test if the correct Ensembl ENSG* xrefs was created from the DR line despite having something ([bla-bla]) after the '.' at the end
+		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "ENSG00000143933_identity", RelationshipXref.class);
+		assertNotNull(model.getByID(uri));
+		uri = Normalizer.uri(model.getXmlBase(), "NCBI GENE", "801_identity", RelationshipXref.class);
+		assertNotNull(model.getByID(uri));
 		
-		String uri = Normalizer.uri(model.getXmlBase(), "RefSeq", "NP_619650", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "NP_619650_identity", RelationshipXref.class);
 		assertNotNull(model.getByID(uri));
 		//but the parser should not create xrefs from for the last parts in DR like "...; -.", "; Homo sapiens.\n", etc.
-		uri = Normalizer.uri(model.getXmlBase(), "RefSeq", "-", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "REFSEQ", "-_identity", RelationshipXref.class);
 		assertNull(model.getByID(uri));	
-		uri = Normalizer.uri(model.getXmlBase(), "Ensembl", "Homo sapiens", RelationshipXref.class);
+		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "Homo_sapiens_identity", RelationshipXref.class);
 		assertNull(model.getByID(uri));	
 		
-		// dump owl for review
-		String outFilename = getClass().getClassLoader().getResource("").getPath() 
-			+ File.separator + "testConvertUniprot.out.owl";
-		(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(model, 
-				new FileOutputStream(outFilename));
+		//total xrefs generated for P62158
+		assertEquals(32, pr.getXref().size());
+		
+		//test for the following FT entry (two-line) was correctly parsed/converted:
+		//FT   MOD_RES      45     45       Phosphothreonine; by CaMK4 (By
+		//FT                                similarity).
+		EntityFeature f = null;
+		EntityFeature g = null;
+		for(EntityFeature ef : pr.getEntityFeature()) {
+			assertEquals(1, ef.getComment().size());
+			if(ef.getComment().iterator().next().contains("Phosphothreonine; by CaMK4"))
+				f = ef;
+			if(ef.getComment().iterator().next().contains("AA-(test"))
+				g = ef;
+		}
+		assertNotNull(f);
+		assertTrue(f instanceof ModificationFeature);
+		assertTrue(((ModificationFeature)f).getModificationType() instanceof SequenceModificationVocabulary);
+		assertEquals("MOD_RES Phosphothreonine", ((ModificationFeature)f).getModificationType().getTerm().iterator().next());
+		assertTrue(((ModificationFeature)f).getFeatureLocation() instanceof SequenceSite);
+			
+		//another special test for records like this one:
+		//FT   MOD_RES       1      1       AA-(test test)test (By
+		//FT                                similarity).
+		assertNotNull(g);
+		assertTrue(g instanceof ModificationFeature);
+		assertTrue(((ModificationFeature)g).getModificationType() instanceof SequenceModificationVocabulary);
+		assertEquals("MOD_RES AA-(test test)test", ((ModificationFeature)g).getModificationType().getTerm().iterator().next());
+		assertTrue(((ModificationFeature)g).getFeatureLocation() instanceof SequenceSite);
 	}
 
 }
