@@ -42,9 +42,7 @@
 		the <a rel="nofollow" href='<c:url value="/log/TOTAL/stats"/>'>total number of requests</a> 
 		minus errors will be fair estimate is this case.
 	</p>
-	<p>The number of unique users (IP addresses) per data source, query type, etc., was not 
-		calculated before November 2014.
-	</p>	
+	<p>Access statistics are computed from January 2014, except unique IP addresses, which are computed from November 2014.</p>	
 
 	<h3>Acknowledgment</h3>
 	<p>
