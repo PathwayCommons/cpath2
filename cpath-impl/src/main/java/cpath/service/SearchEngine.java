@@ -52,6 +52,7 @@ import org.biopax.paxtools.model.level3.BioSource;
 import org.biopax.paxtools.model.level3.Entity;
 import org.biopax.paxtools.model.level3.EntityReference;
 import org.biopax.paxtools.model.level3.Interaction;
+import org.biopax.paxtools.model.level3.Level3Element;
 import org.biopax.paxtools.model.level3.Named;
 import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.PathwayStep;
@@ -65,14 +66,13 @@ import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 
 /**
  * A full-text searcher/indexer for BioPAX L3 models.
- * 
- * TODO get it done (it's not ready and not tested yet).
  * 
  * @author rodche
  */
@@ -90,11 +90,13 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_SEQUENCE = "sequence";
 	public static final String FIELD_PATHWAY = "pathway"; //parent/owner pathways; to be inferred from the whole biopax model
 	public static final String FIELD_SIZE = "size";
+	
 	// Full-text search/filter fields (case sensitive) -
+	//index organism names, cell/tissue type (term), taxonomy id, but only store BioSource URIs	
 	public static final String FIELD_ORGANISM = "organism";
+	//index data source names, but only URIs are stored in the index
 	public static final String FIELD_DATASOURCE = "datasource";
 	public static final String FIELD_TYPE = "type";
-
 	
 	public final static String[] DEFAULT_FIELDS =
 	{
@@ -105,11 +107,12 @@ public class SearchEngine implements Indexer, Searcher {
 			FIELD_XREFID, //xref.id (incl. direct child xref's id, if any)
 			FIELD_ECNUMBER,
 			FIELD_SEQUENCE,
-			FIELD_PATHWAY, // to find or filter by a parent pathway (name or uri)
-			FIELD_ORGANISM, // can be useful in a query for a cell/tissue type (term), in addition to filtering by taxonomy/organism, as normally
-			FIELD_SIZE, // e.g., find entities with a given no. child/associated processes...
-//			FIELD_DATASOURCE, // this one is merely for filtering
-			FIELD_TYPE, //one can filter by all sub-classes and/or query for a particular biopax type only
+			FIELD_PATHWAY, // find by a parent pathway name (only URIs are stored in the index)
+			FIELD_SIZE, // find entities with a given no. child/associated processes...
+// the following fields are for filtering only (thus commented out)
+//			FIELD_ORGANISM,	
+//			FIELD_DATASOURCE, 
+//			FIELD_TYPE,
 	};
 	
 	
@@ -159,29 +162,38 @@ public class SearchEngine implements Indexer, Searcher {
 			IndexSearcher searcher = new IndexSearcher(reader);
 			TopScoreDocCollector collector = TopScoreDocCollector.create(maxHitsPerPage, true);  
 			int startIndex = page * maxHitsPerPage;
-			//TODO try another query parser?
+			
 			QueryParser queryParser = new MultiFieldQueryParser(LUCENE_VERSION, DEFAULT_FIELDS, analyzer);
-			
-			//TODO handle q="*" queries separately
-
-			Query luceneQuery = queryParser.parse(query);
-//			luceneQuery = searcher.rewrite(luceneQuery); //TODO why to rewrite a Lucene query?..
-			Filter filter = createFilter(filterByType, datasources, organisms);
-			searcher.search(luceneQuery, filter, collector);
-			TopDocs topDocs = collector.topDocs(startIndex, maxHitsPerPage);
-			
-			// create/init the highlighter and transformer
-			Highlighter highlighter = null;
-			if(!query.equals("*")) {
-				// a highlighter (store.YES must be enabled for 'keyword' field)
+					
+			//transform top docs to search hits (beans)
+			if(!query.trim().equals("*")) {
+				Query luceneQuery = queryParser.parse(query);
+				luceneQuery = searcher.rewrite(luceneQuery); //TODO rewrite luceneQuery, why?..
+				Filter filter = createFilter(filterByType, datasources, organisms);
+				searcher.search(luceneQuery, filter, collector);
+				TopDocs topDocs = collector.topDocs(startIndex, maxHitsPerPage);				
+				// use a Highlighter (store.YES must be enabled for 'keyword' field)
 				QueryScorer scorer = new QueryScorer(luceneQuery, FIELD_KEYWORD); 
 				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
-				highlighter = new Highlighter(formatter, scorer);
+				Highlighter highlighter = new Highlighter(formatter, scorer);
 				highlighter.setTextFragmenter(new SimpleSpanFragmenter(scorer, 80));
+				response = transform(luceneQuery, searcher, highlighter, topDocs);
+			} else { //find ALL objects of a particular BioPAX class (+ filters by organism, datasource)
+				if(filterByType==null) 
+					filterByType = Level3Element.class;
+
+				//replace q="*" with a search for the class or its sub-class name in the TYPE field
+				BooleanQuery luceneQuery = new BooleanQuery();
+				for(Class<? extends BioPAXElement> subType : SimpleEditorMap.L3.getKnownSubClassesOf(filterByType)) {
+					luceneQuery.add(new TermQuery(new Term(FIELD_TYPE, subType.getSimpleName().toLowerCase())), Occur.SHOULD);
+				}
+				
+				Filter filter = createFilter(null, datasources, organisms);
+				searcher.search(luceneQuery, filter, collector);
+				TopDocs topDocs = collector.topDocs(startIndex, maxHitsPerPage);				
+				response = transform(luceneQuery, searcher, null, topDocs);
 			}
-			
-			response = transform(searcher, highlighter, topDocs);
-			
+						
 			//set total no. hits	
 			response.setNumHits(collector.getTotalHits());		
 			
@@ -196,7 +208,7 @@ public class SearchEngine implements Indexer, Searcher {
 
 	
 	// Highlight, transform Lucene docs to hits (xml/java beans)
-	private SearchResponse transform(IndexSearcher searcher, Highlighter highlighter, TopDocs topDocs) 
+	private SearchResponse transform(Query query, IndexSearcher searcher, Highlighter highlighter, TopDocs topDocs) 
 			throws CorruptIndexException, IOException {
 		
 		SearchResponse response = new SearchResponse();
@@ -295,13 +307,13 @@ public class SearchEngine implements Indexer, Searcher {
 			if(doc.get(FIELD_SIZE)!=null)
 				hit.setSize(Integer.valueOf(doc.get(FIELD_SIZE))); 
 			
-//			if(CPathSettings.getInstance().isDebugEnabled()) {
-//				String excerpt = hit.getExcerpt();
-//				if(excerpt == null) excerpt = "";
-//				hit.setExcerpt(excerpt + " -SCORE- " + scoreDoc.score 
-//						+ " -EXPLANATION- " + searcher.explain(luceneQuery, scoreDoc.doc));
-//			}
-			
+			//if cpath2 debugging, update hit.excerpt - add the Lucene's 'explain' using the query and doc.
+			if(CPathSettings.getInstance().isDebugEnabled()) {
+				String excerpt = hit.getExcerpt();
+				if(excerpt == null) excerpt = "";
+				hit.setExcerpt(excerpt + " -SCORE- " + scoreDoc.score 
+						+ " -EXPLANATION- " + searcher.explain(query, scoreDoc.doc));
+			}
 			
 			hits.add(hit);
 		}
@@ -346,25 +358,13 @@ public class SearchEngine implements Indexer, Searcher {
 			// prepare & index each element in a separate thread
 			exec.execute(new Runnable() {
 				public void run() {					
-					// (hack) infer values from this and child objects' data properties and store in the annotations map:
-					// - add data type property values from up to 3nd-level child elements.
+					// get or infer some important values if possible from this, child or parent objects:
 					bpe.getAnnotations().put(FIELD_KEYWORD, ModelUtils.getKeywords(bpe, 3));
-					// - associate datasources for some utility class objects
-					// (Entity class instances have @Field annotated 'dataSource' 
-					// property and will be indexed without this additional step)
-					if(bpe instanceof EntityReference || bpe instanceof PathwayStep)
-						bpe.getAnnotations().put(FIELD_DATASOURCE, ModelUtils.getDatasources(bpe));
-					// - associate organisms with all Entity and EntityReference objects
-					// (we want to do this for some of biopax types that do not have 
-					// 'organism' property)
-					if(bpe instanceof Entity || bpe instanceof EntityReference)
-						bpe.getAnnotations().put(FIELD_ORGANISM, ModelUtils.getOrganisms(bpe));
-
-					// - infer parent pathways
-					if(bpe instanceof Entity || bpe instanceof EntityReference || bpe instanceof PathwayStep)
-						bpe.getAnnotations().put(FIELD_PATHWAY, ModelUtils.getParentPathways(bpe));
+					bpe.getAnnotations().put(FIELD_DATASOURCE, ModelUtils.getDatasources(bpe));
+					bpe.getAnnotations().put(FIELD_ORGANISM, ModelUtils.getOrganisms(bpe));
+					bpe.getAnnotations().put(FIELD_PATHWAY, ModelUtils.getParentPathways(bpe));
 					
-					// save no. member interactions and pathways
+					// for bio processes, also save the total no. member interactions and pathways:
 					if(bpe instanceof org.biopax.paxtools.model.level3.Process) {
 						int size = new Fetcher(SimpleEditorMap.L3, Fetcher.nextStepFilter)
 						.fetch(bpe, Process.class).size() + 1; //+1 counts itself						
@@ -439,7 +439,7 @@ public class SearchEngine implements Indexer, Searcher {
 		Field field = new Field(FIELD_URI, bpe.getRDFId(), Field.Store.YES, Field.Index.NO);
 		doc.add(field);
 		
-		// save biopax type name
+		// index and store the biopax class:
 		field = new Field(FIELD_TYPE, bpe.getModelInterface().getSimpleName().toLowerCase(), 
 				Field.Store.YES, Field.Index.NOT_ANALYZED);
 		doc.add(field);
@@ -627,8 +627,6 @@ public class SearchEngine implements Indexer, Searcher {
 		if (datasources != null && datasources.length > 0)
 		for(String fv : datasources) {
 			String term = fv.trim();
-//			query.add(new TermQuery(new Term(FIELD_DATASOURCE, term)),
-//					Occur.SHOULD); // SHOULD here means "OR"
 			query.add(new TermQuery(new Term(FIELD_DATASOURCE, term.toLowerCase())),
 				Occur.SHOULD);
 		}
@@ -636,8 +634,6 @@ public class SearchEngine implements Indexer, Searcher {
 		if (organisms != null && organisms.length > 0)
 		for(String fv : organisms) {
 			String term = fv.trim();
-//			query.add(new TermQuery(new Term(FIELD_ORGANISM, term)),
-//					Occur.SHOULD); // SHOULD here means "OR"
 			query.add(new TermQuery(new Term(FIELD_ORGANISM, term.toLowerCase())),
 				Occur.SHOULD);
 		}
@@ -645,8 +641,7 @@ public class SearchEngine implements Indexer, Searcher {
 		//add biopax class filter if makes sense
 		if(type != null && type != BioPAXElement.class) {
 			query.add(new TermQuery(new Term(FIELD_TYPE, type.getSimpleName().toLowerCase())), Occur.SHOULD);
-			//for each biopax/paxtools subclass (interface) of this one,
-			//add the interface name as filter value
+			//for each biopax subclass (interface), add the name to the filter query
 			for(Class<? extends BioPAXElement> subType : SimpleEditorMap.L3.getKnownSubClassesOf(type)) {
 				query.add(new TermQuery(new Term(FIELD_TYPE, subType.getSimpleName().toLowerCase())), Occur.SHOULD);
 			}

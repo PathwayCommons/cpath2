@@ -9,7 +9,6 @@
 </head>
 <body>
 	<jsp:include page="header.jsp" />
-<!-- 	  <div class="row"> -->
 		<div class="jumbotron">
 			<h2>Batch Downloads</h2>
 			<blockquote><p>
@@ -22,7 +21,6 @@
 			<em>&lt;FORMAT&gt;</em> is one of the <a href="formats">Output Formats</a><br/> 
 			<em>&lt;ext&gt;</em> is the file type.
 		</div>
-<!-- 	  </div> -->
 		
 		<h3>Notes</h3>
 		<ul>

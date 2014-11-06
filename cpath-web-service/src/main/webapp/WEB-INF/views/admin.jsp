@@ -15,7 +15,6 @@
 	<h2>Instance Properties</h2>
 	
 	<div class="row">
-	<div class="col-xs-12">
 	<form id="form_cpath_properties" method="POST" class="form-inline" role="form">
 	  <div class="checkbox">
 	  <label>
@@ -30,42 +29,28 @@
 	  <div class="checkbox">
 	  <label>
     	<c:choose>
-    	  <c:when test="${cpath.proxyModelEnabled}">
-    	  <input type="checkbox" name="proxy" value="on" checked="checked" data-toggle="switch" data-on-color="primary" data-off-color="default"/></c:when>
-      	  <c:otherwise><input type="checkbox" name="proxy" value="on" data-toggle="switch" data-on-color="primary" data-off-color="default"/></c:otherwise>
-      	</c:choose>
-      	In-memory BioPAX Model 
-	  </label>
-	  </div>	  
-	  <div class="checkbox">
-	  <label>
-    	<c:choose>
     	  <c:when test="${cpath.debugEnabled}">
     	  <input type="checkbox" name="debug" value="on" checked="checked" data-toggle="switch" data-on-color="warning" data-off-color="default"/></c:when>
       	  <c:otherwise><input type="checkbox" name="debug" value="on" data-toggle="switch" data-on-color="warning" data-off-color="default"/></c:otherwise>
       	</c:choose>
       	Debug Mode 
 	  </label>
-	  </div>  	
-	  
+	  </div>  		  
 	 <button class="btn btn-warning" type="submit">Refresh </button>
 	</form>
-	</div>
-	</div>
-	
-	<hr/>
+	</div>	
 	
 	<h2>Other</h2>
-	<div id="admin_links" class="row dropdown">	
-		<div class="col-xs-12">
-	    <a href="" class="dropdown-toggle" data-toggle="dropdown">Links<b class="caret"></b></a>
+	<div class="row">
+	  <div id="admin_links" class="dropdown">	
+	    <a href class="dropdown-toggle" data-toggle="dropdown">Links<b class="caret"></b></a>
         <span class="dropdown-arrow"></span>
 		<ul class="dropdown-menu">
-			<li><a href="admin/homedir.html">View Home Directory (except hidden,tmp,cache)</a></li>
-			<li><a href="metadata/validations">Get BioPAX Validation Reports</a></li>
-			<li><a href="tests.html">Run QUnit Tests</a></li>
+			<li><a href="admin/homedir">View Home Directory (except hidden,tmp,cache)</a></li>
+			<li><a href="validations">Get BioPAX Validation Reports</a></li>
+			<li><a href="tests">Run QUnit Tests</a></li>
 		</ul>
-		</div>
+	  </div>
 	</div>
 	
 	<jsp:include page="footer.jsp" />

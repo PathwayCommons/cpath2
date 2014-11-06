@@ -74,14 +74,13 @@ public class PagesController extends BasicController {
     @RequestMapping(value="/admin", method=RequestMethod.POST)
     public String adminPageAction(
     		@RequestParam(required=false) String admin, 
-    		@RequestParam(required=false) String proxy,
     		@RequestParam(required=false) String debug) {
 
     	cpath.setAdminEnabled("on".equals(admin));
    		cpath.setDebugEnabled("on".equals(debug));
     	
-   		if(!cpath.isAdminEnabled())
-   			service.init();
+//   		if(!cpath.isAdminEnabled())
+//   			service.init();
    		
     	return "admin";
     }
