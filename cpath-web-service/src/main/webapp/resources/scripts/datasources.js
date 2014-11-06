@@ -1,34 +1,188 @@
-$(document).ready(function() {
-	getDatasources();
+"use strict";
+
+var dsApp = angular.module('dsApp', ['ngRoute','xeditable']);
+
+dsApp.service('MyFileUpload', ['$http', function ($http) {
+    this.uploadFileToUrl = function(file, uploadUrl, ds){
+        var fd = new FormData();
+        fd.append('file', file);
+        $http.post(uploadUrl, fd, {
+            transformRequest: angular.identity, //data 'as is' (no tr. to json)
+            headers: {'Content-Type': undefined} //multipart/form-data will be auto-detected
+        })
+        .success(function(){
+        	alert('File uploaded!');
+        	if(ds && !ds.uploaded) {ds.uploaded = true;}
+        })
+        .error(function(data, status){
+        	console.log(status + ' - ' + data.responseText);
+        });
+    };
+}]);
+
+dsApp.directive('fileModel', ['$parse', function ($parse) {
+    return {
+        restrict: 'A',
+        link: function(scope, element, attrs) {
+            var model = $parse(attrs.fileModel);
+            var modelSetter = model.assign;            
+            element.bind('change', function(){
+                scope.$apply(function(){
+                    modelSetter(scope, element[0].files[0]);
+                });
+            });
+        }
+    };
+}]);
+
+//helps check a new datasource ID is unique while user's typing in the input field
+dsApp.directive('didUnique', ['$filter', function ($filter) {
+	return {
+	    require: 'ngModel',
+	    link: function (scope, elem, attrs, ctrl) {
+	      elem.on('blur', function (evt) {
+	        scope.$apply(function () {
+        		var id = elem.val();
+       			//filter returns a new 'exists' array (looking for lower-case, exact match)
+       			var exists = $filter('filter')(scope.datasources, {identifier: id.toLowerCase()}, true);
+       			if(exists.length) {		
+       				ctrl.$setValidity('didunique', false);
+       			} else {
+       				ctrl.$setValidity('didunique', true);
+       			}
+	        });
+	      });
+	    }
+	};
+}]);
+
+dsApp.run(function(editableOptions, editableThemes) {
+	  // bootstrap3 theme (can be also 'bs2', 'default')
+	  editableOptions.theme = 'bs3'; 
+//	  editableThemes.bs3.inputClass = 'input-sm';
+//	  editableThemes.bs3.buttonsClass = 'btn-sm';
 });
 
-function getDatasources(){
-	// get some var values from jsp page
-    // call the ws and interate over JSON results
-    $.getJSON("metadata/datasources", function(datasources){
-        $('#pathway_datasources').empty();
-        $('#warehouse_datasources').empty();                
-        $.each(datasources, function(idx, ds){
-    		var tdid = ds.identifier;
-    		var displayName = ds.name[0];
-    		var otherNames = (ds.name.length > 1) ? " ("+ds.name.slice(1).join(", ")+")" : "";         	
-        	if (ds.notPathwaydata) {
-        		$('#warehouse_datasources').append('<dt><a href="'+ds.urlToHomepage+'">'
-                    +'<img src="data:image/gif;base64,'+ds.icon+'" title="'+displayName
-                    +' logo"></img></a><strong> '+displayName+otherNames+'</strong></dt>');
-        		$('#warehouse_datasources').append('<dd><p>'+ds.description+'</p></dd>');
-        	}else{               		    		
-        		$('#pathway_datasources').append('<dt><a href="'+ds.urlToHomepage+'">'
-        			+'<img src="data:image/gif;base64,'+ds.icon+'" title="'+displayName
-        			+' logo"></img></a><strong> '+displayName+otherNames
-        			+'</strong>; format: '+ds.type+'; uri: '+ds.uri+ '</dt>');
-        		$('#pathway_datasources').append(
-        			'<dd><p>'+ds.description+'<br/><strong>' 
-           			+ds.counts[0]+' pathways, ' 
-           			+ds.counts[1]+' interactions, ' 
-           			+ds.counts[2]+' physical entities (states)</strong>; accessed '
-           			+ds.counts[3]+' times.</dd></p>');
-        	}
-        });
-    });
-}
+dsApp.controller('DatasourcesController', function($scope, $http, $filter, MyFileUpload) {
+// data for a quick off-line test	
+//	$scope.datasources = [
+//	  {"identifier" : "pid", "iconUrl" : "http://pathway-commons.googlecode.com/files/nci_nature.png", "description" : "NCI_Nature"},
+//	  {"identifier" : "psp", "iconUrl" : "http://pathway-commons.googlecode.com/files/psp.png", "description" : "PhosphoSite"},
+//	  {"identifier" : "chebi", "iconUrl" : "http://pathway-commons.googlecode.com/files/chebi.png", "description" : "ChEBI SDF"},
+//	];	
+	
+	$http.get('metadata/datasources').success(function(datasources) {
+		$scope.datasources = datasources;
+	});	
+	
+	//cPath2 Metadata types and license options
+	$scope.dtypes = [
+	                   {value: 'WAREHOUSE'},
+	                   {value: 'BIOPAX'},
+	                   {value: 'PSI_MI'},
+	                   {value: 'PSI_MITAB'},
+	                   {value: 'MAPPING'}
+	                  ];
+	
+	$scope.dlicenses = [
+	                   {value: 'free'},
+	                   {value: 'academic'},
+	                   {value: 'purchase'}
+	                  ];	
+	
+	$scope.showType = function(ds) {
+	    var selected = $filter('filter')($scope.dtypes, {value: ds.type});
+	    return (ds.type && selected.length) ? selected[0].value : 'Null';
+	};
+	
+	$scope.showAvailability = function(ds) {
+	    var selected = $filter('filter')($scope.dlicenses, {value: ds.availability});
+	    return (ds.availability && selected.length) ? selected[0].value : 'Null';
+	};	
+	
+	$scope.newDatasource = function() {		
+		if($scope.fds.$valid) {
+			var id = $scope.newIdentifier.toLowerCase(); //important!
+			//filter returns a new array (looking for lower-case, exact matches)
+			var exists = $filter('filter')($scope.datasources, {identifier: id}, true); 
+			if(exists.length) {		
+				alert(id + " already exists");
+			} else {			
+				var newds = {identifier: id, name:[id], content: []};
+				$scope.datasources.unshift(newds); //add to the list's top
+			}
+		}
+	};
+		
+	$scope.deleteDatasource = function(i) {
+		//remove the datasource from the scope (datasources)
+		var arr = $scope.datasources.splice(i,1);
+		var ds = arr[0];
+		$http({method: 'DELETE', url: 'admin/datasources/'+ds.identifier})
+			.error(function(data, status) {
+				console.log(status + ' - ' + data.responseText);
+		});
+	};
+			
+	$scope.saveDatasource = function(ds) {
+		var id = ds.identifier.toLowerCase();
+		
+		//build a new object to POST/PUT to the server db
+		//(trying to send 'ds' directly fails with 400, perhaps,
+		// due to it has additional fields generated by Angular model...)
+		var obj = new Object(); 
+		obj.identifier = id;
+		obj.availability= ds.availability;
+		obj.cleanerClassname= ds.cleanerClassname;
+		obj.converterClassname= ds.converterClassname;
+		obj.description= ds.description;
+		obj.iconUrl= ds.iconUrl;
+		obj.name= ds.name;
+		obj.pubmedId= ds.pubmedId;
+		obj.type= ds.type;
+		obj.urlToData= ds.urlToData;
+		obj.urlToHomepage= ds.urlToHomepage;
+		obj.content=[];
+		console.log('Saving: ' + JSON.stringify(obj));
+		
+		// get datasource identifiers from the server to 
+		// to decide whether add, delete, or update
+		$http.get('metadata/datasources').success(function(existing) {	
+			//looking for lower-case, exact id match
+			var exists = $filter('filter')(existing, {identifier: id}, true);
+			if(exists.length) {//old found, update
+				$http.post('admin/datasources', obj)
+					.error(function(data, status) {
+						console.log(status + ' - ' + data);
+				});
+				
+			} else { // create new
+				$http.put('admin/datasources', obj)
+					.error(function(data, status) {
+						console.log(status + ' - ' + data);
+				});
+			}
+		});
+	};
+	
+	$scope.myFile = {}; //hash: datasource index -> file to be uploaded 
+	
+	$scope.uploadDatafile = function(ds) {
+		var id = ds.identifier;
+		var url = 'admin/datasources/'+id +'/file';
+		var file = $scope.myFile[id];
+		if(file) {
+			MyFileUpload.uploadFileToUrl(file, url, ds);
+			delete $scope.myFile[id];
+		} else {
+			alert('No file selected, datasource: ' + id);
+		}
+	};
+	
+	$scope.executePremerge = function(ds) {
+		//TODO
+		alert('Not implemented; otherwise, it would run premerge for ' 
+				+ ds.identifier);
+	};
+	
+});

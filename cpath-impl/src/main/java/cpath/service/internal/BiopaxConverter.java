@@ -35,14 +35,16 @@ import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sbgn.L3ToSBGNPDConverter;
 import org.biopax.paxtools.io.sbgn.ListUbiqueDetector;
-import org.biopax.paxtools.io.sif.InteractionRule;
-import org.biopax.paxtools.io.sif.SimpleInteractionConverter;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Provenance;
+import org.biopax.paxtools.pattern.miner.OldFormatWriter;
+import org.biopax.paxtools.pattern.miner.SIFEnum;
+import org.biopax.paxtools.pattern.miner.SIFInteraction;
+import org.biopax.paxtools.pattern.miner.SIFSearcher;
+import org.biopax.paxtools.pattern.util.Blacklist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.Resource;
 
 import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ServiceResponse;
@@ -63,45 +65,16 @@ import javax.xml.bind.JAXBException;
 public class BiopaxConverter {
 	private static final Logger log = LoggerFactory.getLogger(BiopaxConverter.class);
 	
-	private final Set<String> blacklist;
+	private final Blacklist blacklist;
 	
 	private boolean mergeEquivalentInteractions;
-	
-    /**
-     * Constructor.
-     * 
-     * @param blacklistResource a file resource, list of ubiquitous molecules to exclude (in some algorithms)
-     * 
-     * @throws IOException 
-     * @throws  
-     */
-	public BiopaxConverter(Resource blacklistResource) throws IOException 
-	{
-		if(blacklistResource != null && blacklistResource.exists()) {
-			Scanner scanner = new Scanner(blacklistResource.getFile());
-			blacklist = new HashSet<String>();
-			while(scanner.hasNextLine())
-				blacklist.add(scanner.nextLine().trim());
-			scanner.close();
-			if(log.isInfoEnabled())
-				log.info("Successfully loaded " + blacklist.size()
-				+ " URIs for a (graph queries) 'blacklist' resource: " 
-				+ blacklistResource.getDescription());
-		} else {
-			this.blacklist = null;
-			log.warn("'blacklist' file is not used (" + 
-				((blacklistResource == null) ? "not provided" 
-					: blacklistResource.getDescription()) + ")");
-		}
-	}
-
-	
+		
 	/**
 	 * Constructor.
 	 * 
-	 * @param blacklist set of ubiquitous molecules to exclude (in some algorithms)
+	 * @param blacklist of ubiquitous molecules to exclude (in some algorithms)
 	 */
-	public BiopaxConverter(Set<String> blacklist)
+	public BiopaxConverter(Blacklist blacklist)
 	{
 		this.blacklist = blacklist;
 	}
@@ -185,10 +158,12 @@ public class BiopaxConverter {
      * Converts a BioPAX Model to SBGN format.
      *
      * @param m
+     * @param blackList
+     * @param doLayout
      * @return
      * @throws IOException
      */
-    String convertToSBGN(Model m, Set<String> blackList, boolean doLayout)
+    String convertToSBGN(Model m, Blacklist blackList, boolean doLayout)
 		throws IOException, JAXBException
 	{
 
@@ -196,7 +171,7 @@ public class BiopaxConverter {
 			ModelUtils.mergeEquivalentInteractions(m);
     	
     	L3ToSBGNPDConverter converter = new L3ToSBGNPDConverter(
-			new ListUbiqueDetector(blackList), null, doLayout);
+			new ListUbiqueDetector(blackList.getListed()), null, doLayout);
 
 		OutputStream stream = new ByteArrayOutputStream();
 		converter.writeSBGN(m, stream);
@@ -236,58 +211,23 @@ public class BiopaxConverter {
 	 */
 	String convertToBinarySIF(Model m, boolean extended) throws IOException 
 	{
-		// convert, replace DATA value in the map to return
-		// TODO match 'rules' parameter to rule types (currently, it uses all)
-		SimpleInteractionConverter sic = new SimpleInteractionConverter(
-                new HashMap(), blacklist,
-                SimpleInteractionConverter.getRules(BioPAXLevel.L3).toArray(new InteractionRule[]{})
-			);
-		OutputStream edgeStream = new ByteArrayOutputStream();
-		if (extended) {
-			OutputStream nodeStream = new ByteArrayOutputStream();
-			//no need to mergeEquivalentInteractions before the convertToExtendedBinarySIF call (because it does it)
-			convertToExtendedBinarySIF(m, edgeStream, nodeStream);
-			// join two files together, one after another -
-			return edgeStream + "\n\n" + nodeStream;
-		} else {
-			if(mergeEquivalentInteractions)
-				ModelUtils.mergeEquivalentInteractions(m);
-			sic.writeInteractionsInSIF(m, edgeStream);
-			return edgeStream.toString();
-		}
-	}
-
-	
-    /**
-     * Converts a BioPAX model to the cPath2 Extended Binary SIF format
-     * using two output streams, - edges and nodes.
-     * 
-     * @param model
-     * @param edgeStream
-     * @param nodeStream
-     * @throws IOException
-     */
-	public void convertToExtendedBinarySIF(Model m, OutputStream edgeStream, OutputStream nodeStream) throws IOException 
-	{
-		final String edgeColumns = "PARTICIPANT_A\tINTERACTION_TYPE\tPARTICIPANT_B\tINTERACTION_DATA_SOURCE\tINTERACTION_PUBMED_ID\n";
-		edgeStream.write(edgeColumns.getBytes());
-		final String nodeColumns = "PARTICIPANT\tPARTICIPANT_TYPE\tPARTICIPANT_NAME\tUNIFICATION_XREF\tRELATIONSHIP_XREF\n";	
-		nodeStream.write(nodeColumns.getBytes());
-		
-		SimpleInteractionConverter sic = new SimpleInteractionConverter(
-                new HashMap(), blacklist,
-                SimpleInteractionConverter.getRules(BioPAXLevel.L3).toArray(new InteractionRule[]{})
-		);
-		
 		if(mergeEquivalentInteractions)
 			ModelUtils.mergeEquivalentInteractions(m);
+
+		SIFSearcher searcher = new SIFSearcher(SIFEnum.values());
+		searcher.setBlacklist(blacklist);
+		OutputStream out = new ByteArrayOutputStream();
+				
+		if (extended) {
+			Set<SIFInteraction> binaryInts = searcher.searchSIF(m);
+			OldFormatWriter.write(binaryInts, out);
+		} else {
+			searcher.searchSIF(m, out);
+		}
 		
-		sic.writeInteractionsInSIFNX(
-			m, edgeStream, nodeStream,
-			Arrays.asList("EntityReference/displayName", "EntityReference/xref:UnificationXref", "EntityReference/xref:RelationshipXref"),
-			Arrays.asList("Interaction/dataSource/displayName", "Interaction/xref:PublicationXref"), true);
+		return out.toString();
 	}
-	
+
 	
 	/**
 	 * Sets whether to run {@link ModelUtils#mergeEquivalentInteractions(Model)}

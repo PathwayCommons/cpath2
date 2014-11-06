@@ -1,11 +1,9 @@
 package cpath.converter.internal;
 
-// imports
 import cpath.config.CPathSettings;
-import cpath.dao.Analysis;
-import cpath.dao.PaxtoolsDAO;
+import cpath.dao.CPathUtils;
 import cpath.importer.Converter;
-import cpath.importer.internal.ImportFactory;
+import cpath.importer.ImportFactory;
 
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.Model;
@@ -17,57 +15,45 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
+import java.util.zip.ZipInputStream;
 
 
 /**
- * Test Chebi to BioPAX converter.
+ * Test ChEBI to BioPAX converter.
  *
  */
-public class ChebiConvertersTest {
-
-	@Test
-	public void testConvertToInMemoryModel() throws IOException {
-		// convert test data
-		InputStream is = this.getClass().getClassLoader().getResourceAsStream("test_chebi_data.dat");
-
-		// init and run the SDF converter first
-		Converter converter = ImportFactory.newConverter("cpath.converter.internal.ChebiSdfConverterImpl");
-		converter.setInputStream(is);
-		converter.setXmlBase(CPathSettings.xmlBase());
-		Model model = converter.convert();
-		
-		// second, run the OBO converter
-		is = this.getClass().getClassLoader().getResourceAsStream("chebi.obo");
-		converter = ImportFactory.newConverter("cpath.converter.internal.ChebiOboConverterImpl");
-		assertTrue(converter instanceof Analysis);
-		converter.setInputStream(is);
-//not needed here:		converter.setXmlBase(CPathSettings.xmlBase());
-		((Analysis)converter).execute(model);
-		
-		checkResultModel(model, "testConvertChebiToInMemoryModel.out.owl");
-	}
+public class ChebiConvertersTest {	
 	
-	private void checkResultModel(Model model, String outf) {
+	@Test
+	public void testConvertObo() throws IOException {
+		// convert test data
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		CPathUtils.unzip(new ZipInputStream(new FileInputStream(
+				getClass().getResource("/chebi.obo.zip").getFile())), bos);
+		byte[] data = bos.toByteArray();
+		//run the new OBO converter
+		bos.reset(); //re-use
+		Converter converter = ImportFactory.newConverter("cpath.converter.internal.ChebiOboConverterImpl");
+		converter.setXmlBase(CPathSettings.getInstance().getXmlBase());		
+		converter.convert(new ByteArrayInputStream(data), bos);
+		
+		Model model = new SimpleIOHandler().convertFromOWL(new ByteArrayInputStream(bos.toByteArray()));
+		assertNotNull(model);
+		assertFalse(model.getObjects().isEmpty());
+		
+		bos.close(); data=null;
 		
 		// dump owl for review
 		String outFilename = getClass().getClassLoader().getResource("").getPath() 
-			+ File.separator + outf;
+			+ File.separator + "testConvertChebiObo.out.owl";		
+		(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(model, new FileOutputStream(outFilename));
 		
-		try {
-			if(model instanceof PaxtoolsDAO)
-				((PaxtoolsDAO)model).exportModel(new FileOutputStream(outFilename));
-			else 
-				(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(model, 
-						new FileOutputStream(outFilename));
-		} catch (FileNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-
 		// get all small molecule references out
 		assertEquals(6, model.getObjects(SmallMoleculeReference.class).size());
 
@@ -77,17 +63,21 @@ public class ChebiConvertersTest {
 		SmallMoleculeReference smallMoleculeReference = (SmallMoleculeReference)model.getByID(rdfID);
 
 		// check some props
-		assertTrue(smallMoleculeReference.getDisplayName().equals("(S)-lactic acid"));
-		assertTrue(smallMoleculeReference.getName().size() == 10);
-		assertTrue(smallMoleculeReference.getChemicalFormula().equals("C3H6O3"));
+		assertEquals("(S)-lactic acid", smallMoleculeReference.getDisplayName());
+		assertEquals(11, smallMoleculeReference.getName().size());
+		assertEquals("C3H6O3", smallMoleculeReference.getChemicalFormula());
+		System.out.println("CHEBI:422 xrefs (from OBO): " + smallMoleculeReference.getXref());
 		int relationshipXrefCount = 0;
 		int unificationXrefCount = 0;
+		int publicationXrefCount = 0;
 		for (Xref xref : smallMoleculeReference.getXref()) {
 			if (xref instanceof RelationshipXref) ++relationshipXrefCount;
 			if (xref instanceof UnificationXref) ++ unificationXrefCount;
+			if (xref instanceof PublicationXref) ++ publicationXrefCount;
 		}
-		assertEquals(3, unificationXrefCount);
-		assertEquals(0, relationshipXrefCount); //modified sdf converter skips for most ext. refs (at least for this test data).
+		assertEquals(1, unificationXrefCount); //no secondary ChEBI IDs there (non-chebi are, if any, relationship xrefs)
+		assertEquals(6, relationshipXrefCount); //only chebi, inchikey, cas, kegg, wikipedia are taken there (could be drugbank and chembl if present too)
+		assertEquals(9, publicationXrefCount); //there are nine such xrefs
 		
 		// following checks work in this test only (using in-memory model); with DAO - use getObject...
         assertTrue(model.containsID("http://identifiers.org/chebi/CHEBI:20"));
@@ -106,8 +96,8 @@ public class ChebiConvertersTest {
 
         // check new elements (created by the OBO converter) exist in the model;
         // (particularly, these assertions are important to test within the persistent model (DAO) session)
-        assertTrue(model.containsID(Normalizer.uri(model.getXmlBase(), "CHEBI", "CHEBI:20has_part", RelationshipXref.class)));
-        assertTrue(model.containsID(Normalizer.uri(model.getXmlBase(), "CHEBI", "CHEBI:422is_conjugate_acid_of", RelationshipXref.class)));
+        assertTrue(model.containsID(Normalizer.uri(model.getXmlBase(), "CHEBI", "CHEBI_20_see-also", RelationshipXref.class)));
+        assertTrue(model.containsID(Normalizer.uri(model.getXmlBase(), "CHEBI", "CHEBI_422_see-also", RelationshipXref.class)));		
+		
 	}
-	
 }

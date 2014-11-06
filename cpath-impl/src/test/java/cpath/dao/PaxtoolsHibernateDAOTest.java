@@ -35,50 +35,47 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.validator.api.beans.Validation;
 import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.context.support.GenericXmlApplicationContext;
 
-import cpath.dao.MetadataDAO;
+import cpath.config.CPathSettings;
 import cpath.dao.PaxtoolsDAO;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
-import cpath.warehouse.beans.Mapping;
-import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.PathwayData;
-import cpath.warehouse.beans.Metadata.METADATA_TYPE;
 
 import java.io.*;
 import java.util.*;
 
 import static org.junit.Assert.*;
 
-/**
- * Tests org.mskcc.cpath2.dao.hibernatePaxtoolsHibernateDAO.
- */
-@Ignore
+
+//@Ignore
 public class PaxtoolsHibernateDAOTest {
 
     static Logger log = LoggerFactory.getLogger(PaxtoolsHibernateDAOTest.class);
     static SimpleIOHandler exporter = new SimpleIOHandler(BioPAXLevel.L3);
     static PaxtoolsDAO dao;
-    static MetadataDAO meta;
-    static ClassPathXmlApplicationContext ctx;
+    static GenericXmlApplicationContext ctx;
 	
 
     @BeforeClass
 	public static void init() throws FileNotFoundException {
-    	ctx = new ClassPathXmlApplicationContext("classpath:testContext-1.xml");
-    	dao = (PaxtoolsDAO) ctx.getBean("paxtoolsDAO");
+    	//load application context ('test' profile)
+    	ctx = new GenericXmlApplicationContext();
+    	ctx.getEnvironment().setActiveProfiles("test");
+    	ctx.load("classpath:META-INF/spring/applicationContext-dao.xml");
+    	ctx.refresh(); //to apply active profile!
+    	CPathSettings.setDevelop(true);
+    	
+    	dao = ctx.getBean(PaxtoolsDAO.class);
     	// load some data into the test storage
 		log.info("Loading test1 data...");
 		dao.importModel(new File(PaxtoolsHibernateDAOTest.class.getResource("/test.owl").getFile()));
     	//import almost the same file to ensure it does not fail due to "duplicate entry for the key" ex.
 		log.info("Loading test2 data...");
 		dao.importModel(new File(PaxtoolsHibernateDAOTest.class.getResource("/test2.owl").getFile()));
-    	meta = (MetadataDAO) ctx.getBean("metadataDAO");
 	}
 	
     @AfterClass
@@ -285,112 +282,5 @@ public class PaxtoolsHibernateDAOTest {
 		// in fact, the last imported object overwrites the first one:
 		assertEquals("test2", pro.getComment().iterator().next());
 	}    
- 
-	
-	@Test
-	public void testImportPathwayData() throws IOException {
-        // mock metadata and pathway data
-        Metadata md = new Metadata("TEST", "test", "test", "", "",
-        		new byte[]{}, METADATA_TYPE.BIOPAX, null, null);        
-        byte[] testData = "<rdf>          </rdf>".getBytes(); 
-        
-        //cleanup previous tests data if any
-        md.cleanupOutputDir();
-        
-        PathwayData pathwayData = new PathwayData(md, "test0");
-        pathwayData.setData(testData);
-        pathwayData.setNormalizedData(testData);
-        md.getPathwayData().add(pathwayData);
-        //add the second pd (for the tests at the end of this method)
-        final PathwayData pd = new PathwayData(md, "test1");
-        pd.setData("aaaaaaaaaa".getBytes());
-        md.getPathwayData().add(pd);
-        
-        // test if internal pack/unpach, if any, works well
-        assertTrue(Arrays.equals(testData, pathwayData.getData()));
-        assertTrue(Arrays.equals(testData, pathwayData.getNormalizedData()));
-        
-        // persist
-        meta.saveMetadata(md);
-        
-        // test pathwaydata content is not accidentally erased
-        Iterator<PathwayData> it = md.getPathwayData().iterator();
-        pathwayData = it.next();
-        //we want test0 for following assertions
-        if("test1".equals(pathwayData.getFilename()))
-        	pathwayData = it.next();
-        assertEquals("test0",pathwayData.getFilename());    
-        assertNotNull(pathwayData.getData()); // data is still there
-        byte[] read = pathwayData.getNormalizedData();
-        assertNotNull(read);
-        assertTrue(Arrays.equals(testData, read)); 
-        
-        //even if we update from the db, data must not be empty
-        md = meta.getMetadataByIdentifier(md.getIdentifier());
-        assertNotNull(md);
-        assertEquals("TEST", md.getIdentifier());
-        assertEquals(2, md.getPathwayData().size()); 
-        it = md.getPathwayData().iterator();
-        pathwayData = it.next();
-        //we want test0 for following assertions
-        if("test1".equals(pathwayData.getFilename()))
-        	pathwayData =it.next();
-        assertEquals("test0",pathwayData.getFilename());
-        //data (persisted to file system) survives re-assigning of 'md' variable
-        assertNotNull(pathwayData.getData()); 
-        //preperge data persisted in the file system
-        read = pathwayData.getNormalizedData();        
-        assertNotNull(read);
-        assertTrue(Arrays.equals(testData, read));        
 
-        // add validation result());  
-        for(PathwayData o : md.getPathwayData())
-        	o.setValidationReport(new Validation(null));        
-        // update
-        meta.saveMetadata(md);
-         
-        //read the latest state
-        md = meta.getMetadataByIdentifier("TEST");
-        assertNotNull(md);
-        Set<PathwayData>  lpd = md.getPathwayData();
-        assertFalse(lpd.isEmpty());
-        pathwayData = lpd.iterator().next();
-        assertNotNull(pathwayData);
-        assertNotNull(pathwayData.getValidationReport()); //reads from file if needed
-        assertTrue(pathwayData.getValidationReport().length > 0);    
-        
-        //cleanup
-        md = meta.init(md);
-        assertTrue(md.getPathwayData().isEmpty()); 
-        md = meta.getMetadataByIdentifier("TEST");
-        assertTrue(md.getPathwayData().isEmpty());         
-	}
-
-	
-	@Test
-	public void testImportIdMapping() {		
-        Map<String,String> idMap = new TreeMap<String, String>();
-        Mapping map = new Mapping(Mapping.Type.UNIPROT, "test", idMap);
-        idMap.put("ZHX1", "P12345");
-        idMap.put("ZHX1-C8orf76", "Q12345");  
-        //capitalization is important in 99% of identifier types (we should not ignore it)
-        // we should be able to save it and not get 'duplicate key' exception here
-        idMap.put("ZHX1-C8ORF76", "Q12345"); 
-        meta.saveMapping(map);
-        
-        //check it's saved
-        assertEquals(1, meta.mapIdentifier("ZHX1-C8orf76", Mapping.Type.UNIPROT, null).size());
-        assertEquals(1, meta.mapIdentifier("ZHX1-C8ORF76", Mapping.Type.UNIPROT, null).size());
-        
-        // repeat (should successfully update)
-        idMap = new TreeMap<String, String>();
-        idMap.put("FooBar", "CHEBI:12345");  
-        map = new Mapping(Mapping.Type.CHEBI, "test2", idMap);
-        //add new Mapping entity
-        meta.saveMapping(map);
-        assertTrue(meta.mapIdentifier("FooBar", Mapping.Type.UNIPROT, null).isEmpty());
-        Set<String> mapsTo = meta.mapIdentifier("FooBar", Mapping.Type.CHEBI, null);
-        assertEquals(1, mapsTo.size());
-        assertEquals("CHEBI:12345", mapsTo.iterator().next());
-	}
 }

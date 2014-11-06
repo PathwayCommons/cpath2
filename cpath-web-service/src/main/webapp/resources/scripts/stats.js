@@ -40,7 +40,7 @@ var AppStats = (function() {
     var types = {}; // a dictionary of column indices to their types
 
     // add the headers
-    for (col = 0; col < numCols; col++) {
+    for (var col = 0; col < numCols; col++) {
       csvData += '"' + escapeQuotes(table.getColumnLabel(col)) + '"';
       if (col !== (numCols - 1))
         csvData += ",";
@@ -49,7 +49,7 @@ var AppStats = (function() {
     csvData += "\n";
 
     // put in cell values
-    for (row = 0; row < numRows; row++) {
+    for (var row = 0; row < numRows; row++) {
       for (col = 0; col < numCols; col++) {
         var type = types[col];
         var val = table.getValue(row, col);
@@ -91,7 +91,7 @@ var AppStats = (function() {
       return;
     var numRows = table.getNumberOfRows();
     var totalCol = table.addColumn('number', 'Total');
-    for (row = 0; row < numRows; row++) {
+    for (var row = 0; row < numRows; row++) {
       var sum = 0;
       for (col = 1; col < numCols; col++) {
         sum += table.getValue(row, col);
@@ -131,8 +131,8 @@ var AppStats = (function() {
     var timelineCum = timelineByDay.clone();
     var numCols = timelineCum.getNumberOfColumns();
     var numRows = timelineCum.getNumberOfRows();
-    for (row = 1; row < numRows; row++) {
-      for (col = 1; col < numCols; col++) {
+    for (var row = 1; row < numRows; row++) {
+      for (var col = 1; col < numCols; col++) {
         timelineCum.setValue(row, col, timelineCum.getValue(row, col) + timelineCum.getValue(row - 1, col));
       }
     }
@@ -163,10 +163,10 @@ var AppStats = (function() {
     var timelineByDay = new google.visualization.DataTable();
     var dateCol = timelineByDay.addColumn('date', 'Date');
     var date2Row = {}; // dictionary of dates to row indices
-    for (version in timelineData) {
+    for (var version in timelineData) {
       var col = timelineByDay.addColumn('number', version);
       var dls = timelineData[version];
-      for (i in dls) {
+      for (var i in dls) {
         var dl = dls[i];
         var date = parseISODate(dl[0]);
 
@@ -246,7 +246,7 @@ var AppStats = (function() {
    */
   function addCountryNamesColumn(table) {
     var countryNameCol = table.addColumn('string', 'Country');
-    for (row = 0; row < table.getNumberOfRows(); row++) {
+    for (var row = 0; row < table.getNumberOfRows(); row++) {
       var countryCode = table.getValue(row, 0);
       if (countryCode in CountryCodes) {
         var countryName = CountryCodes[countryCode];
@@ -331,41 +331,43 @@ var AppStats = (function() {
     setupGeographySaveCSV();
   }
   
+  function setupSelectpicker() {		
+	  //define onChage event handler before initializing the selectpicker
+	  $('.selectpicker').on('change', function() {
+		  var url = $('.selectpicker').val();
+		  if (url) {
+			  // app's root context path (defined on the JSP page)  
+			  // depends on how this app was actually deployed.  		
+			  //console.log("will go to: " + contextPath + url);
+			  window.location = contextPath + url;
+		  }
+		  return false;
+	  });	
 
-  function setupSelectEvents() {
-	  $('.cpath-logs').html(''); //clear	  
-	  //init bootstrap-select selectpicker
-	  $('.selectpicker').selectpicker();	  
-  	  $.getJSON('events', function(events) {
-  		$.each(events, function(i, ev){
-  			if(ev[1])
-  			  $('.cpath-logs')
-  				.append('<option data-subtext="' + ev[0] 
-  				  + '" value="/log/' + ev[0] + '/' + ev[1] + '/stats">' 
-  				  + ev[1] + '</option>');
-  			else
-  			  $('.cpath-logs')
-			    .append('<option data-subtext="(category)" value="/log/'
-				  + ev[0] + '/stats">' + ev[0] + '</option>');
-  		});
-  		$('.cpath-logs').selectpicker('refresh');
-  	  });  	  
-  	  //attach the action to button clicked event
- 	  $('.show-cpath-log').click(function() {
-  		  var url = $('.cpath-logs').val();
-  		  if (url) {
-  	 		  // app's root context path (defined on the JSP page)  
-  	 		  // depends on how this app was actually deployed.  			  
-  			  window.location = contextPath + url;
-  		  }
-  		  return false;
-  	  });
-  }  
+	  $.getJSON('events', function(events) {
+		  $('.selectpicker').html(''); //clear	  
+		  $.each(events, function(i, ev){
+			  if(ev[1])
+				  $('.selectpicker')
+				  .append('<option data-subtext="' + ev[0] 
+				  + '" value="/log/' + ev[0] + '/' + ev[1] + '/stats">' 
+				  + ev[1] + '</option>');
+			  else
+				  $('.selectpicker')
+				  .append('<option data-subtext="(category)" value="/log/'
+						  + ev[0] + '/stats">' + ev[0] + '</option>');
+		  });
+		  //init bootstrap-select selectpicker
+		  $('.selectpicker').selectpicker();
+		  $('.selectpicker').selectpicker('refresh');
+	  });
+  };
+  
   
   return {
     'setupTimeline': setupTimeline,
     'setupGeography': setupGeography,
-    'setupSelectEvents': setupSelectEvents
+    'setupSelectpicker' : setupSelectpicker
   };
 
 })();

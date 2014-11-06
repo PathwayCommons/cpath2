@@ -5,7 +5,7 @@
 	<parent>
 		<artifactId>parent</artifactId>
 		<groupId>pathwaycommons.cpath</groupId>
-		<version>4.2.0-SNAPSHOT</version>
+		<version>5.0.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>cpath-web-service</artifactId>
@@ -100,6 +100,12 @@
 						<version>${logback.version}</version>
 						<scope>runtime</scope>
 					</dependency>
+					<dependency>
+						<groupId>org.apache.tomcat</groupId>
+						<artifactId>tomcat-catalina</artifactId>
+						<version>7.0.54</version>
+						<scope>runtime</scope>
+					</dependency>
 				</dependencies>
 			</plugin>
 			<plugin>
@@ -151,6 +157,10 @@
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-validator</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>commons-fileupload</groupId>
+			<artifactId>commons-fileupload</artifactId>
+		</dependency>		
 
 		<!-- Jackson JSON Mapper -->
 		<dependency>
@@ -163,7 +173,7 @@
 			<scope>provided</scope>
 		</dependency>
 
-		<!-- JSP and security -->
+		<!-- servlet, JSP, filters, security -->
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>jstl</artifactId>

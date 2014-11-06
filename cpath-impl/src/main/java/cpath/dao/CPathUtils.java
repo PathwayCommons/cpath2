@@ -3,11 +3,7 @@
  */
 package cpath.dao;
 
-import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -28,8 +24,7 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import javax.imageio.ImageIO;
-
+import org.apache.commons.io.IOUtils;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -40,10 +35,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
-import cpath.warehouse.beans.Metadata;
-import cpath.warehouse.beans.PathwayData;
+import cpath.jpa.Content;
+import cpath.jpa.Metadata;
+
+import static cpath.jpa.Metadata.*;
 
 /**
  * @author rodche
@@ -52,32 +50,9 @@ import cpath.warehouse.beans.PathwayData;
 public final class CPathUtils {
 	// logger
     private static Logger LOGGER = LoggerFactory.getLogger(CPathUtils.class);
-	
-    // some bits for metadata reading
-    private static final int METADATA_IDENTIFIER_INDEX = 0;
-    private static final int METADATA_NAME_INDEX = 1;
-    private static final int METADATA_DESCRIPTION_INDEX = 2;
-    private static final int METADATA_DATA_URL_INDEX = 3;
-    private static final int METADATA_HOMEPAGE_URL_INDEX = 4;
-    private static final int METADATA_ICON_URL_INDEX = 5;
-    private static final int METADATA_TYPE_INDEX = 6;
-	private static final int METADATA_CLEANER_CLASS_NAME_INDEX = 7;
-	private static final int METADATA_CONVERTER_CLASS_NAME_INDEX = 8;
-    private static final int NUMBER_METADATA_ITEMS = 9;
-	
-	// used in unzip method
-	private static final int BUFFER = 2048;
-
-	// used for md5sum display
-	static final byte[] HEX_CHAR_TABLE = {
-		(byte)'0', (byte)'1', (byte)'2', (byte)'3',
-		(byte)'4', (byte)'5', (byte)'6', (byte)'7',
-		(byte)'8', (byte)'9', (byte)'a', (byte)'b',
-		(byte)'c', (byte)'d', (byte)'e', (byte)'f'
-    }; 
     
 	// LOADER can handle file://, ftp://, http://  PROVIDER_URL resources
-	private static final ResourceLoader LOADER = new DefaultResourceLoader();
+	public static final ResourceLoader LOADER = new DefaultResourceLoader();
 		
 	
 	private CPathUtils() {
@@ -150,7 +125,7 @@ public final class CPathUtils {
                 if("".equals(line.trim()))
                 	continue;
                 else if(line.trim().startsWith("#")) {
-					LOGGER.info("readMetadata(), line: " + line);
+					LOGGER.info("readMetadata(), ignored line: " + line);
                 	continue; //ignore/skip parsing
                 }
                 	
@@ -172,34 +147,9 @@ public final class CPathUtils {
                 		"wrong number of columns, " + tokens.length + " instead of "
                 		+ NUMBER_METADATA_ITEMS + ", in the metadata record: " + line;
 
-
 				// get metadata type
 				Metadata.METADATA_TYPE metadataType = Metadata.METADATA_TYPE.valueOf(tokens[METADATA_TYPE_INDEX]);
-
-				// get icon data from service
-				LOGGER.info("readMetadata(): fetching icon data from: " 
-					+ tokens[METADATA_ICON_URL_INDEX]);
-				byte[] iconData = null;
-				try {
-					InputStream stream = LOADER.getResource(tokens[METADATA_ICON_URL_INDEX]).getInputStream();
-					BufferedImage image = ImageIO.read(stream);
-					if(image != null) {
-						ByteArrayOutputStream baos = new ByteArrayOutputStream();
-						ImageIO.write(image, "gif", baos);
-						baos.flush();
-						iconData = baos.toByteArray();
-					}
-				} catch (IOException e) {
-					LOGGER.error("readMetadata(): Cannot load image from " 
-							+  tokens[METADATA_ICON_URL_INDEX] + ". Skipping. " + e);
-				}
-					
-				if (iconData == null) { 
-					LOGGER.info("readMetadata(): missing or unaccessible " +
-						"data (icon) to create Metadata bean: iconData.");
-					iconData = new byte[]{};
-				}
-					
+				
 				LOGGER.debug("readMetadata(): make a Metadata bean.");
 
                 // create a metadata bean
@@ -209,11 +159,12 @@ public final class CPathUtils {
                 		tokens[METADATA_DESCRIPTION_INDEX], 
                 		tokens[METADATA_DATA_URL_INDEX],
                         tokens[METADATA_HOMEPAGE_URL_INDEX], 
-                        iconData, 
+                        tokens[METADATA_ICON_URL_INDEX],
                         metadataType,
 						tokens[METADATA_CLEANER_CLASS_NAME_INDEX],
-						tokens[METADATA_CONVERTER_CLASS_NAME_INDEX]);
-           
+						tokens[METADATA_CONVERTER_CLASS_NAME_INDEX],
+						tokens[METADATA_PUBMEDID_INDEX],		
+                		tokens[METADATA_AVAILABILITY_INDEX]);
                 
 				if (LOGGER.isInfoEnabled()) {
 					LOGGER.info("readMetadata(): adding Metadata: "
@@ -221,191 +172,124 @@ public final class CPathUtils {
 					+ "; name=" + metadata.getName()
 					+ "; date/comment=" + metadata.getDescription()
 					+ "; location=" + metadata.getUrlToData()
-					+ "; icon=" + tokens[METADATA_ICON_URL_INDEX]
+					+ "; icon=" + metadata.getIconUrl()
 					+ "; type=" + metadata.getType()
 					+ "; cleaner=" + metadata.getCleanerClassname() 
-					+ "; converter=" + metadata.getConverterClassname());
+					+ "; converter=" + metadata.getConverterClassname()
+					+ "; pubmedId=" + metadata.getPubmedId() 
+					+ "; availability=" + metadata.getAvailability()
+					);
 				}
 					
 				// add metadata object toc collection we return
 				toReturn.add(metadata);
             } 
-        }
-        catch (java.io.UnsupportedEncodingException e) {
-        }
-        catch (IOException e) {
+        } catch (java.io.UnsupportedEncodingException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-        finally {
+        } finally {
             closeQuietly(reader);
         }
 
         return toReturn;
     }
 
-
+	
     /**
-     *  For the given Metadata, unpacks and reads the corresponding 
-     *  data file(s), creating new {@link PathwayData} objects; adds 
-     *  them to the metadata's pathwayData collection.
+     * For the given Metadata, unpacks and reads the corresponding 
+     * original zip data archive, creating new {@link Content} objects 
+     * in the metadata's dataFile collection.
+     * Skips for system files/directory entries.
      *
+     * @see Metadata#getDataArchiveName()
 	 * @param metadata Metadata
      * @throws RuntimeException if an IO error occurs
      */
-    public static void readPathwayData(final Metadata metadata) 
+    public static void analyzeAndOrganizeContent(final Metadata metadata) 
     {
-		Collection<PathwayData> pathwayDataCollection = new HashSet<PathwayData>();
-		String url = metadata.origDataLocation();
-		
+		Collection<Content> contentCollection = new HashSet<Content>();
+		ZipInputStream zis = null;
 		try {
-		
-		BufferedInputStream bis = new BufferedInputStream(LOADER.getResource(url).getInputStream());
-		
-		// pathway data is either owl, zip (multiple files allowed!) or gz (single data entry only)
-		if(url.toLowerCase().endsWith(".zip")) {
-			LOGGER.info("getProviderPathwayData(): extracting data from zip archive.");
-			pathwayDataCollection = readZipContent(metadata, new ZipInputStream(bis));
-		} else { 
-			// expected content: one-file BioPAX or PSI-MI (compressed or not)
-			InputStream is;
-			if(url.toLowerCase().endsWith(".gz")) {
-				LOGGER.info("getProviderPathwayData(): extracting data from gzip archive.");
-				is = new GZIPInputStream(bis);
-			} else {
-				LOGGER.info("getProviderPathwayData(): returning as is (supposed to be RDF+XML)");
-				is = bis;
-			}
-			
-			byte[] bytes = readContent(is);
-			
-			if(bytes.length > 0) {
-				//create a new base output filename (for future pathway data results)
-				int idx = url.lastIndexOf('/'); //-1 (not found) is no problem
-				String filename = url.substring(idx+1); //removed orig. path
-				if(filename.isEmpty())
-					filename = metadata.getIdentifier();
-				PathwayData pathwayData = new PathwayData(metadata, filename);
-				pathwayData.setData(bytes);
-				pathwayDataCollection.add(pathwayData);
-			}
-		} 
-		
-		} catch (IOException e) {
-			throw new RuntimeException("readPathwayData failed reading from: " 
-					+ metadata.getIdentifier() , e);
-		}
-		
-		if(pathwayDataCollection != null && !pathwayDataCollection.isEmpty())
-			metadata.getPathwayData().addAll(pathwayDataCollection);
-		else
-			LOGGER.warn("readPathwayData: no data found for " + metadata);
-    }
-
-	
-    /*
-     * Reads the input stream content.
-     * 
-     * @param inputStream plain text (uncompressed) data stream
-     * @param useLineSeparator if true, adds back newline symbols
-     * @return
-     * @throws IOException
-     */
-    private static byte[] readContent(final InputStream inputStream, boolean useLineSeparator) 
-    	throws IOException 
-    {
-        BufferedReader reader = null;
-		StringBuilder sbuff = new StringBuilder();
-		final String NEWLINE = System.getProperty ( "line.separator" );
-        try {
-            // we'd like to read lines at a time
-            reader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
-            // are we ready to read?
-            while (reader.ready()) {
-                sbuff.append(reader.readLine());
-                // NEWLINE is critical for the cleaner/converter
-                if(useLineSeparator)
-                	sbuff.append(NEWLINE);
-			}
-        } finally { closeQuietly(reader); }
-
-        String fetchedData = sbuff.toString();
-		
-		return fetchedData.getBytes("UTF-8");
-	}
-
-    
-    private static byte[] readContent(final InputStream inputStream) 
-        	throws IOException 
-    {
-    	return readContent(inputStream, true);
-    }
-        
-    /*
-     * Given a zip stream, unzips it into individual 
-     * files and creates PathwayData objects from each
-     * 
-     * @param metadata
-     * @return
-     * @throws IOException
-     */
-    private static Collection<PathwayData> readZipContent(final Metadata metadata, final ZipInputStream zis) 
-    		throws IOException 
-    {
-    	Collection<PathwayData> toReturn = new HashSet<PathwayData>();
-    	
-        try {
+			zis = new ZipInputStream((metadata.getUrlToData()
+				.startsWith("classpath:")) //a hack for easy junit tests
+					? LOADER.getResource(metadata.getUrlToData()).getInputStream() 
+						: new FileInputStream(metadata.getDataArchiveName()));		
 			// interate over zip entries
 			ZipEntry entry = null;
             while ((entry = zis.getNextEntry()) != null) 
             {
             	String entryName = entry.getName();
-           		LOGGER.info("Processing zip entry: " + entryName);
+           		LOGGER.info("analyzeAndOrganizeContent(), processing zip entry: " + entryName);
 
-				// write file to buffered outputstream
-				int count;
-				byte data[] = new byte[BUFFER];
-				// use string builder to get over heap issue when
-				// converting from byte[] to string in PathwayData constructor
-				// we'll continue using bos to easily get digest 
-				ByteArrayOutputStream bos = new ByteArrayOutputStream();
-				BufferedOutputStream dest = new BufferedOutputStream(bos, BUFFER);
-				while ((count = zis.read(data, 0, data.length)) != -1) {
-					dest.write(data, 0, count);
-				}
-				dest.flush();
-				dest.close();
-
-				String content = bos.toString("UTF-8");
-				// quick fix: skip undesired entries
-				if(entry.isDirectory() 
-						|| !( content.contains("RDF")
-								&& content.contains("biopax.org/release/biopax")
-							)
-					) 
+				//skip some sys/tmp files (that MacOSX creates sometimes)
+				if(entry.isDirectory() || entryName.contains("__MACOSX") 
+						|| entryName.startsWith(".") || entryName.contains("/.") 
+						|| entryName.contains("\\.")) 
 				{
-            		LOGGER.info("Skipping not BioPAX (owl) zip entry: " 
-            			+ entryName);
+            		LOGGER.info("analyzeAndOrganizeContent(), skipped " + entryName);
 					continue;
 				}
 				
 				// create pathway data object
-				LOGGER.info("unzip(), adding pathwaydata entry: " 
+				LOGGER.info("analyzeAndOrganizeContent(), adding new Content: " 
 					+ entryName + " of " + metadata.getIdentifier());
-				PathwayData pathwayData = new PathwayData(metadata, entryName);
-				pathwayData.setData(content.getBytes());
-				
+				Content content = new Content(metadata, entryName);
 				// add object to return collection
-				toReturn.add(pathwayData);
-            }
-        }
-        catch (IOException e) {
-            throw e;
-        }
-        finally {
-            closeQuietly(zis);
-        }
-        
-        return toReturn;
+				contentCollection.add(content);
+				
+				OutputStream gzos = new GZIPOutputStream(new FileOutputStream(content.originalFile()));
+				copy(zis, gzos);
+				gzos.close();
+            }           
+		} catch (IOException e) {
+			throw new RuntimeException("analyzeAndOrganizeContent(), " +
+					"failed reading from: " + metadata.getIdentifier() , e);
+		} finally {
+			closeQuietly(zis);
+		}
+		
+		if(contentCollection != null && !contentCollection.isEmpty())
+			metadata.getContent().addAll(contentCollection);
+		else
+			LOGGER.warn("analyzeAndOrganizeContent(), no data found for " + metadata);
+    }
+
+    
+    /**
+     * Uncompresses the zip input stream,
+     * all entries if it's a multi-entry archive,
+     * and writes to the output stream.
+     * 
+     * Skips for system files/directory entries.
+     * 
+     * Does not close the streams.
+     * 
+     * @param is
+     * @param os
+     */
+    public static void unzip(ZipInputStream zis, OutputStream os) 
+    {
+		try {		
+			// interate over zip entries
+			ZipEntry entry = null;
+            while ((entry = zis.getNextEntry()) != null) 
+            {
+            	String entryName = entry.getName();
+				//skip some sys/tmp files (that MacOSX creates sometimes)
+				if(entry.isDirectory() || entryName.contains("__MACOSX") 
+						|| entryName.startsWith(".") || entryName.contains("/.") 
+						|| entryName.contains("\\.")) 
+				{
+					continue;
+				}
+				
+				copy(zis, os); //does not close os
+            }           
+		} catch (IOException e) {
+			throw new RuntimeException("unzip(), failed", e);
+		} finally {
+			closeQuietly(os);
+		}
     }
 
     
@@ -432,57 +316,27 @@ public final class CPathUtils {
     private static void closeQuietly(final Reader reader) {
     	try{reader.close();}catch(Exception e){LOGGER.warn("reader.close() failed." + e);}
     }
-    
+       
     
     /**
-     * Compresses (gzip) and writes data 
-     * to the file.
-     * 
+     * Writes or overwrites from the array to target file.
+     * @param src
      * @param file
-     * @param bytes
      * @throws RuntimeException when there was an IO problem
      */
-    public static void zwrite(String file, byte[] bytes) {
-    	if(!file.endsWith(".gz"))
-    		LOGGER.warn("zwrite: file ext. is not '.gz'");
-    	
-    	GZIPOutputStream os = null;
+    public static void write(byte[] src, String file) {
+    	FileOutputStream os = null;
     	try {
-    		os = new GZIPOutputStream(new FileOutputStream(file));
-    		os.write(bytes);
+    		os = new FileOutputStream(file);
+    		os.write(src);
     		os.flush();
     	} catch (IOException e) {
-    		throw new RuntimeException("zwrite: failed", e);
-    	} finally { closeQuietly(os); }
-    }
-
-    
-    /**
-     * Reads content of gzip-compressed file.
-     * 
-     * @param file
-     * @return
-     * @throws RuntimeException when there was an IO problem
-     */
-    public static byte[] zread(String file) {
-    	if(!file.endsWith(".gz"))
-    		LOGGER.warn("zread: file ext. is not '.gz'");
-    	
-    	try {  	
-    		return readContent(new GZIPInputStream(new FileInputStream(file)), false);
-    	} catch (IOException e) {
-    		LOGGER.error("zread: failed", e);
-    		return null;
-    	}   	
+    		throw new RuntimeException("write: failed writing byte[] to " 
+    			+ " to " + file, e);
+    	} finally {closeQuietly(os);}
     }
 
 
-	public static void cleanupIndexDir(String db) {
-		cleanupDirectory(new File(CPathSettings.homeDir() + File.separator + db));
-		LOGGER.info("Emptied the index dir:" + db);
-	}
-
-	
 	/**
 	 * Replaces the URI of a BioPAX object
 	 * using java reflection. Normally, one should avoid this;
@@ -513,16 +367,14 @@ public final class CPathUtils {
 	 * Loads the BioPAX model from a Gzip archive 
 	 * previously created by the same cpath2 instance.
 	 * 
+	 * @param archive
 	 * @return big BioPAX model
 	 */
-	public static Model importFromTheArchive() {
-		//TODO ? an option to load other archives (e.g., Reactome only, for testing)
-		final String archive = CPathSettings.biopaxExportFileName("All"); 
+	static Model importFromTheArchive(String archive) {
 		
 		Model model = null;
 
 		try {
-			//read from ..All.BIOPAX.owl.gz archive
 			LOGGER.info("Loading the BioPAX Model from " + archive);
 			model = (new SimpleIOHandler(BioPAXLevel.L3))
 					.convertFromOWL(new GZIPInputStream(new FileInputStream(archive)));
@@ -536,34 +388,37 @@ public final class CPathUtils {
 	
 	
 	/**
-	 * Downloads a file (content) from Internet
+	 * Downloads a file (content) from a URI
 	 * and saves in the cpath2 home directory. The content
 	 * can be anything, but only single-file GZIP archives 
-	 * can be optionally expanded with this method, before saved.
+	 * can be optionally expanded with this method, before saved
+	 * (e.g., this is how we grab GeoIP GeoLiteCity database).
 	 * 
-	 * @param url remote URL
-	 * @param localFileName name or relative path and name
+	 * @param srcUrl remote URL
+	 * @param destFile name or relative path and name
 	 * @param unpack if true, expands the archive
 	 * @param replace
 	 * @return bytes saved or 0 if existed before file weren't replaced
-	 * @throws IOException
+	 * @throws RuntimeException when there was an IOException
 	 */
-	public static long download(String url, String localFileName, 
-			boolean unpack, boolean replace) throws IOException {
+	public static long download(String srcUrl, String destFile, 
+			boolean unpack, boolean replace) {
 		
-		File localFile = new File(CPathSettings.homeDir() 
-				+ File.separator + localFileName);
+		File localFile = new File(destFile);
 		
 		if(localFile.exists() && !replace) {
-			LOGGER.info("Keep existing " + localFileName);
+			LOGGER.info("Keep existing " + destFile);
 			return 0L;
 		}
 		
-		Resource resource = LOADER.getResource(url);
+		Resource resource = LOADER.getResource(srcUrl);
         long size = 0; 
+        
+        try {
+        
         if(resource.isReadable()) {
         	size = resource.contentLength();
-        	LOGGER.info(url + " content length= " + size);
+        	LOGGER.info(srcUrl + " content length= " + size);
         }       
         if(size < 0) 
         	size = 100 * 1024 * 1024 * 1024;
@@ -575,7 +430,7 @@ public final class CPathUtils {
         FileOutputStream dest = new FileOutputStream(tmpf);        
         size = dest.getChannel().transferFrom(source, 0, size);
         dest.close();
-        LOGGER.info(size + " bytes downloaded from " + url);
+        LOGGER.info(size + " bytes downloaded from " + srcUrl);
         
         if(unpack) {
         	GZIPInputStream ginstream = new GZIPInputStream(new FileInputStream(tmpf));
@@ -595,8 +450,63 @@ public final class CPathUtils {
         		throw new RuntimeException("Failed to move " 
         			+ tmpf.getAbsolutePath() + " to " + localFile.getAbsolutePath());
         }
+        
+        } catch(IOException e) {
+        	throw new RuntimeException("download(). failed", e);
+        }
               
         return size;
 	}
-		
+	
+
+	/**
+	 * Reads from the input and writes to the output stream
+	 * 
+	 * @param is
+	 * @param os
+	 * @throws IOException
+	 */
+	public static void copy(InputStream is, OutputStream os) throws IOException {		
+		IOUtils.copy(is, os);
+		os.flush();
+		//do not close streams	(can be re-used outside)
+	}	
+
+	
+	/**
+	 * For a warehouse (normalized) EntityReference's or CV's URI 
+	 * gets the corresponding identifier (e.g., UniProt or ChEBI primary ID).
+	 * (this depends on current biopax normalizer and cpath2 premerge
+	 * that make/consume 'http://identifiers.org/*' URIs for those utility class biopax objects.)
+	 * 
+	 * @param uri
+	 * @return
+	 */
+	public static String idfromNormalizedUri(String uri) {
+		Assert.isTrue(uri.contains("http://identifiers.org/"));
+		return uri.substring(uri.lastIndexOf('/')+1);
+	}
+	
+	
+	/**
+	 * Makes the main BioPAX Paxtools model from 
+	 * the merged BioPAX data archive.
+	 * 
+	 * @return
+	 */
+	public static Model loadMainBiopaxModel()  {
+		return importFromTheArchive(CPathSettings.getInstance().mainModelFile());
+	}
+	
+	
+	/**
+	 * Builds the BioPAX Paxtools model from 
+	 * the warehouse BioPAX archive.
+	 * 
+	 * @return
+	 */
+	public static Model loadWarehouseBiopaxModel() {
+		return importFromTheArchive(CPathSettings.getInstance().warehouseModelFile());
+	}
+	
 }

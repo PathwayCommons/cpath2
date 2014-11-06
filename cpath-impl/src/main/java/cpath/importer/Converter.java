@@ -1,21 +1,25 @@
 package cpath.importer;
 
 import java.io.InputStream;
-
-import org.biopax.paxtools.model.Model;
+import java.io.OutputStream;
 
 /**
- * Converter interface. 
- * Is required for all classes to be used 
- * in order to convert other format to BioPAX L3
- * (to be saved in the cPath2 Warehouse).
+ * Converter interface,  
+ * to convert other format data to BioPAX.
  */
 public interface Converter {
 	
-	void setInputStream(final InputStream is);
-	
+	/**
+	 * Sets the xml:base (URI namespace) for
+	 * the resulting BioPAX model.
+	 * @param xmlBase
+	 */
 	void setXmlBase(String xmlBase);
 	
-	Model convert();
-	
+	/**
+	 * Builds and saves a new BioPAX model from the input data.
+	 * @param is
+	 * @param os  - result; the stream must be closed inside this method.
+	 */
+	void convert(InputStream is, OutputStream os);
 }

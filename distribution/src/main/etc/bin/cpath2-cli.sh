@@ -17,7 +17,7 @@ maindb=`sed '/^\#/d' $CPATH2_HOME/cpath2.properties | grep 'cpath2.db='  | tail 
 echo "$0 $1 $2 $3 $4 $5 using: main.db=$maindb; xml.base=$xmlbase"
 
 
-CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss65536k -Xmx8g -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Dnet.sf.ehcache.skipUpdateCheck=true -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider"
+CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss65536k -Xmx8g -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider -Dspring.profiles.active=prod"
 
 CPATH2_PROFILING_OPTS="-agentpath:/data/local/jprofiler6/bin/linux-x64/libjprofilerti.so=port=48000,wait"
 

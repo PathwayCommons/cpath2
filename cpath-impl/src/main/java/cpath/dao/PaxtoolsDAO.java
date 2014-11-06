@@ -32,7 +32,6 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 
 import cpath.service.jaxb.SearchResponse;
-import cpath.service.jaxb.TraverseResponse;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -143,18 +142,7 @@ public interface PaxtoolsDAO  {
      */
     void runReadOnly(Analysis analysis);
     
-    
-    /**
-     * Accesses and collects BioPAX property values 
-     * at the end of the path (applied to every element in the list)
-     * 
-     * @param propertyPath
-     * @param uris
-     * @return source element uri, path, and corresponding values
-     */
-    TraverseResponse traverse(String propertyPath, String... uris);
- 
-    
+        
     /**
      * Create or re-build the full-text index.
      */
@@ -162,8 +150,8 @@ public interface PaxtoolsDAO  {
     
     
     /**
-     * Clears 2nd level caches.
+     * Delete all BioPAX objects from this database/model.
      */
-    void evictCaches();
+    void removeAll();
     
 }

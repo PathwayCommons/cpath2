@@ -5,14 +5,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8" />
-<meta name="author" content="${cpath.name}" />
+<jsp:include page="head.jsp" />
 <title>cPath2::Login</title>
-<link media="screen" href="<c:url value="/resources/css/cpath2.css"/>"  rel="stylesheet" />
 </head>
 <body>
 	<jsp:include page="header.jsp" />
-	<div id="content">
 	<h2>Login</h2>
 		<c:if test="${not empty param.login_error}">
 			<h3 style="color: red">
@@ -30,7 +27,6 @@
 					<dt><input name="submit" type="submit" value="Login" /></dt>
 			</dl>
 		</form>
-	</div>
 	<jsp:include page="footer.jsp" />
 </body>
 </html>
