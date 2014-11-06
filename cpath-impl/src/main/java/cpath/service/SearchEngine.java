@@ -158,14 +158,14 @@ public class SearchEngine implements Indexer, Searcher {
 			IndexReader reader = IndexReader.open(MMapDirectory.open(indexFile));
 			IndexSearcher searcher = new IndexSearcher(reader);
 			TopScoreDocCollector collector = TopScoreDocCollector.create(maxHitsPerPage, true);  
-			int startIndex = (page - 1) * maxHitsPerPage;  // our page is 1 based - so we need to convert to zero based
+			int startIndex = page * maxHitsPerPage;
 			//TODO try another query parser?
 			QueryParser queryParser = new MultiFieldQueryParser(LUCENE_VERSION, DEFAULT_FIELDS, analyzer);
 			
 			//TODO handle q="*" queries separately
 
 			Query luceneQuery = queryParser.parse(query);
-			luceneQuery = searcher.rewrite(luceneQuery); //TODO why to rewrite a Lucene query?..
+//			luceneQuery = searcher.rewrite(luceneQuery); //TODO why to rewrite a Lucene query?..
 			Filter filter = createFilter(filterByType, datasources, organisms);
 			searcher.search(luceneQuery, filter, collector);
 			TopDocs topDocs = collector.topDocs(startIndex, maxHitsPerPage);
@@ -210,6 +210,8 @@ public class SearchEngine implements Indexer, Searcher {
 			Document doc = searcher.doc(scoreDoc.doc);
 			String uri = doc.get(FIELD_URI);
 			BioPAXElement bpe = model.getByID(uri);
+			
+			LOG.debug("transform: doc:" + scoreDoc.doc + ", uri:" + uri);
 			
 			// use the highlighter (get matching fragments)
 			if (highlighter != null) {
@@ -262,10 +264,8 @@ public class SearchEngine implements Indexer, Searcher {
 			if(doc.getFieldable(FIELD_ORGANISM) != null) {
 				Set<String> uniqueVals = new TreeSet<String>();
 				for(String o : doc.getValues(FIELD_ORGANISM)) {
-					//note: only URIS were stored in the index					
-//					if(o.startsWith("http:")) {
-						uniqueVals.add(o);
-//					}
+					//note: only URIS are stored in the index					
+					uniqueVals.add(o);
 				}
 				hit.getOrganism().addAll(uniqueVals);
 			}
@@ -274,10 +274,8 @@ public class SearchEngine implements Indexer, Searcher {
 			if(doc.getFieldable(FIELD_DATASOURCE) != null) {
 				Set<String> uniqueVals = new TreeSet<String>();
 				for(String d : doc.getValues(FIELD_DATASOURCE)) {
-					//note: only URIS were stored in the index
-//					if(d.startsWith(CPathSettings.getInstance().getXmlBase())) { 
-						uniqueVals.add(d);
-//					}
+					//note: only URIS are stored in the index
+					uniqueVals.add(d);
 				}
 				hit.getDataSource().addAll(uniqueVals);
 			}	
@@ -288,16 +286,14 @@ public class SearchEngine implements Indexer, Searcher {
 				Set<String> uniqueVals = new TreeSet<String>();
 				for(String d : doc.getValues(FIELD_PATHWAY)) {
 					//note: only URIS were stored in the index (though all names/ids were indexed)
-//					try {
-//						if(URI.create(d).isAbsolute()) 
-							uniqueVals.add(d);
-//					} catch(IllegalArgumentException e) {/*skip*/}
+					uniqueVals.add(d);
 				}
 				hit.getPathway().addAll(uniqueVals);
 			}
 			
 			//no. processes in the sub-network
-			hit.setSize(Integer.valueOf(doc.get(FIELD_SIZE))); 
+			if(doc.get(FIELD_SIZE)!=null)
+				hit.setSize(Integer.valueOf(doc.get(FIELD_SIZE))); 
 			
 //			if(CPathSettings.getInstance().isDebugEnabled()) {
 //				String excerpt = hit.getExcerpt();

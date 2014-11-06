@@ -8,6 +8,7 @@ import java.io.IOException;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Interaction;
+import org.biopax.paxtools.model.level3.Pathway;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -16,7 +17,7 @@ import org.springframework.core.io.ResourceLoader;
 import cpath.config.CPathSettings;
 import cpath.service.jaxb.SearchResponse;
 
-@Ignore //TODO fix and test
+//@Ignore //TODO fix and test
 public class SearchEngineTest {
 	
 	static final ResourceLoader resourceLoader = new DefaultResourceLoader();
@@ -36,7 +37,20 @@ public class SearchEngineTest {
 		assertTrue(searchEngine.indexExists(new File(indexLocation)));
 		
 		SearchResponse response = searchEngine.search("ATP", 0, null, null, null);
+		assertNotNull(response);
 		assertFalse(response.isEmpty());
+		assertEquals(7, response.getSearchHit().size());
+		
+		response = searchEngine.search("ATP", 0, Interaction.class, null, null);
+		assertNotNull(response);
+		assertFalse(response.isEmpty());
+		assertEquals(2, response.getSearchHit().size());
+		
+		response = searchEngine.search("ATP", 0, Pathway.class, null, null);
+		assertNotNull(response);
+		assertFalse(response.isEmpty());
+		assertEquals(1, response.getSearchHit().size());
+		assertEquals(5, response.getSearchHit().get(0).getSize().intValue());
 		
 		//TODO add more assertions (find a ER by ID, by keyword, find All, etc...)
 	}
