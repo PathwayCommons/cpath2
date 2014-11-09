@@ -16,14 +16,19 @@ import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.IntField;
+import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
-import org.apache.lucene.queryParser.MultiFieldQueryParser;
-import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.queryParser.QueryParser;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.CachingWrapperFilter;
 import org.apache.lucene.search.Filter;
@@ -121,7 +126,6 @@ public class SearchEngine implements Indexer, Searcher {
 	private final File indexFile;
 	private final Analyzer analyzer;
 
-	public final static Version LUCENE_VERSION = Version.LUCENE_36;
 	public final static int DEFAULT_MAX_HITS_PER_PAGE = 100;
 	
 	/**
@@ -132,7 +136,7 @@ public class SearchEngine implements Indexer, Searcher {
 		this.model = model;
 		this.indexFile = new File(indexLocation);
 		this.maxHitsPerPage = DEFAULT_MAX_HITS_PER_PAGE;
-		this.analyzer = new StandardAnalyzer(LUCENE_VERSION);
+		this.analyzer = new StandardAnalyzer();
 	}
 
 	
@@ -158,12 +162,12 @@ public class SearchEngine implements Indexer, Searcher {
 					+ "), org. in (" + Arrays.toString(organisms) + ")");
 	
 		try {
-			IndexReader reader = IndexReader.open(MMapDirectory.open(indexFile));
+			IndexReader reader = DirectoryReader.open(MMapDirectory.open(indexFile));
 			IndexSearcher searcher = new IndexSearcher(reader);
 			TopScoreDocCollector collector = TopScoreDocCollector.create(maxHitsPerPage, true);  
 			int startIndex = page * maxHitsPerPage;
 			
-			QueryParser queryParser = new MultiFieldQueryParser(LUCENE_VERSION, DEFAULT_FIELDS, analyzer);
+			QueryParser queryParser = new MultiFieldQueryParser(DEFAULT_FIELDS, analyzer);
 					
 			//transform top docs to search hits (beans)
 			if(!query.trim().equals("*")) {
@@ -208,9 +212,10 @@ public class SearchEngine implements Indexer, Searcher {
 
 	
 	// Highlight, transform Lucene docs to hits (xml/java beans)
-	private SearchResponse transform(Query query, IndexSearcher searcher, Highlighter highlighter, TopDocs topDocs) 
-			throws CorruptIndexException, IOException {
-		
+	private SearchResponse transform(Query query, IndexSearcher searcher, 
+			Highlighter highlighter, TopDocs topDocs) 
+			throws CorruptIndexException, IOException 
+	{	
 		SearchResponse response = new SearchResponse();
 		response.setMaxHitsPerPage(maxHitsPerPage);
 		List<SearchHit> hits = response.getSearchHit();//empty list
@@ -229,7 +234,7 @@ public class SearchEngine implements Indexer, Searcher {
 			if (highlighter != null) {
 				final List<String> frags = new ArrayList<String>();
 				try {
-					if (doc.getFieldable(FIELD_KEYWORD) != null) {
+					if (doc.get(FIELD_KEYWORD) != null) {
 						final String text = StringUtils.join(doc.getValues(FIELD_KEYWORD), " ");					
 						for(String fr : highlighter.getBestFragments(analyzer, FIELD_KEYWORD, text, 5)) {
 							frags.add(fr);
@@ -273,7 +278,7 @@ public class SearchEngine implements Indexer, Searcher {
 			}
 						
 			// extract organisms (URI only) 
-			if(doc.getFieldable(FIELD_ORGANISM) != null) {
+			if(doc.get(FIELD_ORGANISM) != null) {
 				Set<String> uniqueVals = new TreeSet<String>();
 				for(String o : doc.getValues(FIELD_ORGANISM)) {
 					//note: only URIS are stored in the index					
@@ -283,7 +288,7 @@ public class SearchEngine implements Indexer, Searcher {
 			}
 			
 			// extract values form the index
-			if(doc.getFieldable(FIELD_DATASOURCE) != null) {
+			if(doc.get(FIELD_DATASOURCE) != null) {
 				Set<String> uniqueVals = new TreeSet<String>();
 				for(String d : doc.getValues(FIELD_DATASOURCE)) {
 					//note: only URIS are stored in the index
@@ -294,7 +299,7 @@ public class SearchEngine implements Indexer, Searcher {
 			
 			// extract only pathway URIs 
 			//(because names and IDs used to be stored in the index field as well)
-			if(doc.getFieldable(FIELD_PATHWAY) != null) {
+			if(doc.get(FIELD_PATHWAY) != null) {
 				Set<String> uniqueVals = new TreeSet<String>();
 				for(String d : doc.getValues(FIELD_PATHWAY)) {
 					//note: only URIS were stored in the index (though all names/ids were indexed)
@@ -337,15 +342,13 @@ public class SearchEngine implements Indexer, Searcher {
 				+ " biopax objects to be indexed.");
 		
 		//drop/cleanup the index if exists
-		if(indexExists(indexFile)) {
-			LOG.info("Erasing the biopax index directory...");
-			CPathUtils.cleanupDirectory(indexFile);
-		}	
+		LOG.info("Erasing the biopax index directory...");
+		CPathUtils.cleanupDirectory(indexFile);
 		
 		IndexWriter iw;		
 		try {
 			Directory directory = FSDirectory.open(indexFile);
-			IndexWriterConfig conf = new IndexWriterConfig(LUCENE_VERSION, analyzer); //default cfg
+			IndexWriterConfig conf = new IndexWriterConfig(Version.LATEST, analyzer);
 			iw = new IndexWriter(directory, conf);
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to create a new IndexWriter.", e);
@@ -367,7 +370,7 @@ public class SearchEngine implements Indexer, Searcher {
 					// for bio processes, also save the total no. member interactions and pathways:
 					if(bpe instanceof org.biopax.paxtools.model.level3.Process) {
 						int size = new Fetcher(SimpleEditorMap.L3, Fetcher.nextStepFilter)
-						.fetch(bpe, Process.class).size() + 1; //+1 counts itself						
+								.fetch(bpe, Process.class).size() + 1; //+1 counts itself						
 						bpe.getAnnotations().put(FIELD_SIZE, Integer.toString(size)); 
 					}
 
@@ -435,13 +438,12 @@ public class SearchEngine implements Indexer, Searcher {
 		// create a new document
 		final Document doc = new Document();
 		
-		// save URI
-		Field field = new Field(FIELD_URI, bpe.getRDFId(), Field.Store.YES, Field.Index.NO);
+		// save URI (not indexed field)
+		Field field = new StoredField(FIELD_URI, bpe.getRDFId());
 		doc.add(field);
 		
-		// index and store the biopax class:
-		field = new Field(FIELD_TYPE, bpe.getModelInterface().getSimpleName().toLowerCase(), 
-				Field.Store.YES, Field.Index.NOT_ANALYZED);
+		// index and store but not analyze/tokenize the biopax class name:
+		field = new StringField(FIELD_TYPE, bpe.getModelInterface().getSimpleName().toLowerCase(), Field.Store.YES);
 		doc.add(field);
 		
 		// make index fields from the annotations map (of pre-calculated/inferred values)
@@ -459,8 +461,9 @@ public class SearchEngine implements Indexer, Searcher {
 				addKeywords((Set<String>)bpe.getAnnotations().get(FIELD_KEYWORD), doc);
 			}
 			if(bpe.getAnnotations().containsKey(FIELD_SIZE)) {
-				field = new Field(FIELD_SIZE, (String)bpe.getAnnotations()
-					.get(FIELD_SIZE), Field.Store.YES, Field.Index.NOT_ANALYZED);
+				field = new IntField(FIELD_SIZE, 
+					Integer.parseInt((String)bpe.getAnnotations()
+					.get(FIELD_SIZE)), Field.Store.YES);
 				doc.add(field);
 			}
 		}
@@ -474,17 +477,17 @@ public class SearchEngine implements Indexer, Searcher {
 		if(bpe instanceof Named) {
 			Named named = (Named) bpe;
 			if(named.getDisplayName() != null) {
-				field = new Field(FIELD_NAME, named.getDisplayName(), Field.Store.NO, Field.Index.ANALYZED);
+				field = new TextField(FIELD_NAME, named.getDisplayName(), Field.Store.NO);
 				field.setBoost(2.5f);
 				doc.add(field);
 			}
 			if(named.getStandardName() != null) {
-				field = new Field(FIELD_NAME, named.getStandardName(), Field.Store.NO, Field.Index.ANALYZED);
+				field = new TextField(FIELD_NAME, named.getStandardName(), Field.Store.NO);
 				field.setBoost(3.0f);
 				doc.add(field);
 			}
 			if(!named.getName().isEmpty()) {
-				field = new Field(FIELD_NAME, StringUtils.join(named.getName(), " "), Field.Store.NO, Field.Index.ANALYZED);
+				field = new TextField(FIELD_NAME, StringUtils.join(named.getName(), " "), Field.Store.NO);
 				field.setBoost(2.0f);
 				doc.add(field);
 			}
@@ -497,8 +500,8 @@ public class SearchEngine implements Indexer, Searcher {
 				if (xref.getId() != null) {
 					//the filed is not_analyzed; so in order to make search case-insensitive 
 					//(when searcher uses standard analyzer), we turn the value to lowercase.
-					field = new Field(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED);
-					field.setBoost(1.5f);
+					field = new StringField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
+//					field.setBoost(1.5f); //cannot do for such field/store type
 					doc.add(field);
 				}
 			}
@@ -508,25 +511,25 @@ public class SearchEngine implements Indexer, Searcher {
 		if(bpe instanceof Xref) {
 			Xref xref = (Xref) bpe;
 			if (xref.getId() != null) {
-				field = new Field(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED);
+				field = new StringField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
 				doc.add(field);
 			}
 			if (xref.getDb() != null) {
-				field = new Field(FIELD_XREFDB, xref.getDb().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED);
+				field = new StringField(FIELD_XREFDB, xref.getDb().toLowerCase(), Field.Store.NO);
 				doc.add(field);
 			}
 		}
 		
 		
 		// boost entire document based on biopax type
-		if(bpe instanceof Pathway)
-			doc.setBoost(1.7f);
-		else if(bpe instanceof Interaction)
-			doc.setBoost(1.5f);
-		else if(bpe instanceof PhysicalEntity)
-			doc.setBoost(1.3f);
-		else if(bpe instanceof Xref)
-			doc.setBoost(1.1f);
+//		if(bpe instanceof Pathway)
+//			doc.setBoost(1.7f);
+//		else if(bpe instanceof Interaction)
+//			doc.setBoost(1.5f);
+//		else if(bpe instanceof PhysicalEntity)
+//			doc.setBoost(1.3f);
+//		else if(bpe instanceof Xref)
+//			doc.setBoost(1.1f);
 		
 		// write
 		try {
@@ -536,47 +539,46 @@ public class SearchEngine implements Indexer, Searcher {
 		}
 	}
 
-	
 	private void addKeywords(Set<String> keywords, Document doc) {
 		for (String keyword : keywords) {
-			doc.add(new Field(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.YES, Field.Index.ANALYZED));
+			doc.add(new TextField(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.YES));
 		}
 	}
 
 	private void addDatasources(Set<Provenance> set, Document doc) {
 		for (Provenance p : set) {
 			// do not do .toLowerCase() for the URI!
-			doc.add(new Field(FIELD_DATASOURCE, p.getRDFId(), Field.Store.YES, Field.Index.NO));
+			doc.add(new StoredField(FIELD_DATASOURCE, p.getRDFId()));
 			// index names as well
 			for (String s : p.getName())
-				doc.add(new Field(FIELD_DATASOURCE, s.toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+				doc.add(new StringField(FIELD_DATASOURCE, s.toLowerCase(), Field.Store.NO));
 		}
 	}
 
 	private void addOrganisms(Set<BioSource> set, Document doc) {	
 		for(BioSource bs : set) {
 			// store URI as is, don't index
-			doc.add(new Field(FIELD_ORGANISM, bs.getRDFId(), Field.Store.YES, Field.Index.NO));
+			doc.add(new StoredField(FIELD_ORGANISM, bs.getRDFId()));
 				
 			// add organism names
 			for(String s : bs.getName()) {
-				doc.add(new Field(FIELD_ORGANISM, s.toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+				doc.add(new StringField(FIELD_ORGANISM, s.toLowerCase(), Field.Store.NO));
 			}
 			// add taxonomy
 			for(UnificationXref x : 
 				new ClassFilterSet<Xref,UnificationXref>(bs.getXref(), UnificationXref.class)) {
 				if(x.getId() != null)
-					doc.add(new Field(FIELD_ORGANISM, x.getId().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+					doc.add(new StringField(FIELD_ORGANISM, x.getId().toLowerCase(), Field.Store.NO));
 			}
 			// include tissue type terms
 			if (bs.getTissue() != null) {
 				for (String s : bs.getTissue().getTerm())
-					doc.add(new Field(FIELD_ORGANISM, s.toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+					doc.add(new StringField(FIELD_ORGANISM, s.toLowerCase(), Field.Store.NO));
 			}
 			// include cell type terms
 			if (bs.getCellType() != null) {
 				for (String s : bs.getCellType().getTerm()) {
-					doc.add(new Field(FIELD_ORGANISM, s.toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+					doc.add(new StringField(FIELD_ORGANISM, s.toLowerCase(), Field.Store.NO));
 				}
 			}
 		}
@@ -585,16 +587,16 @@ public class SearchEngine implements Indexer, Searcher {
 	private void addPathways(Set<Pathway> set, Document doc) {
 		for(Pathway pw : set) {
 			//add URI as is (do not lowercase; do not index; store=yes - required to report hits, e.g., as xml)
-			doc.add(new Field(FIELD_PATHWAY, pw.getRDFId(), Field.Store.YES, Field.Index.NO));
+			doc.add(new StoredField(FIELD_PATHWAY, pw.getRDFId()));
 			// add names to the index as well
 			for (String s : pw.getName()) {
-				doc.add(new Field(FIELD_PATHWAY, s.toLowerCase(), Field.Store.NO, Field.Index.ANALYZED));
+				doc.add(new TextField(FIELD_PATHWAY, s.toLowerCase(), Field.Store.NO));
 			}
 			// add unification xref IDs too
 			for (UnificationXref x : new ClassFilterSet<Xref, UnificationXref>(
 					pw.getXref(), UnificationXref.class)) {
 				if (x.getId() != null)
-					doc.add(new Field(FIELD_PATHWAY, x.getId().toLowerCase(), Field.Store.NO, Field.Index.NOT_ANALYZED));
+					doc.add(new StringField(FIELD_PATHWAY, x.getId().toLowerCase(), Field.Store.NO));
 			}
 		}
 	}
@@ -651,25 +653,6 @@ public class SearchEngine implements Indexer, Searcher {
 			return new CachingWrapperFilter( new QueryWrapperFilter(query) ); //TODO why CachingWrapperFilter, QueryWrapperFilter?
 		else 
 			return null;
-	}	
-
-	
-	/**
-	 * Tests if the full-text index (directory, files) exists.
-	 * @param path
-	 * @return
-	 */
-    boolean indexExists(File path) {
-    	try {
-    		FSDirectory directory = FSDirectory.open(path);
-    		try {
-    			return IndexReader.indexExists(directory);
-    		} finally {
-    			directory.close();
-    		}
-    	} catch (IOException e) {
-    		return false;
-    	}
-    }
+	}
 	
 }

@@ -240,7 +240,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		return timeline;
 	}
 	
-	//TODO do we really need this cumulative no. unique IPs timeline and chart? Might, a simple no. distinct IPs by today would be enough?
+	//cumulative no. unique IPs on each day
 	@Override
 	public Map<String, List<Object[]>> ipsTimelineCum(LogType logType, String name) {
 		Map<String, List<Object[]>> timeline = new TreeMap<String, List<Object[]>>();			

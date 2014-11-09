@@ -68,9 +68,7 @@ public abstract class BasicController {
     public void setLogRepository(CPathService service) {
     	Assert.notNull(service);
     	Assert.notNull(service.log());
-    	Assert.notNull(service.metadata());
-    	Assert.notNull(service.biopax());
-    	
+    	Assert.notNull(service.metadata());   	
 		this.service = service;
 	}
 

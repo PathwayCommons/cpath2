@@ -36,7 +36,9 @@ import cpath.importer.PreMerger;
 import cpath.jpa.Metadata;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
+import cpath.service.Indexer;
 import cpath.service.OutputFormat;
+import cpath.service.SearchEngine;
 import cpath.service.internal.BiopaxConverter;
 import cpath.service.jaxb.*;
 
@@ -89,7 +91,6 @@ public final class Admin {
 		PREMERGE("-premerge"),
 		CREATE_WAREHOUSE("-create-warehouse"),			
 		MERGE("-merge"),
-    	PERSIST("-persist"),
     	INDEX("-index"),
         CREATE_BLACKLIST("-create-blacklist"),
         CREATE_DOWNLOADS("-create-downloads"),
@@ -157,11 +158,7 @@ public final class Admin {
 			dir.mkdir();
 		}
 
-		if (args[0].equals(Cmd.PERSIST.toString())) {
-			
-			createBiopaxDb();
-			
-		} else if (args[0].equals(Cmd.INDEX.toString())) {
+		if (args[0].equals(Cmd.INDEX.toString())) {
 			
 			createIndex();
 			
@@ -284,7 +281,8 @@ public final class Admin {
      * @param readOnly
      */
     public static void executeAnalysis(String analysisClass, boolean readOnly) {
-    	if(!(readOnly || cpath.isAdminEnabled()))
+    	
+    	if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
     	
     	Analysis analysis = null;
@@ -298,29 +296,19 @@ public final class Admin {
 		Model model = CPathUtils.loadMainBiopaxModel();
  		analysis.execute(model);
  		
-// TODO enable post-merge model changes later, as/if needed...
-// 		if(!readOnly) {
-// 			//replace the main biopax archive
-// 			try {			
-// 				new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model, 
-// 					new GZIPOutputStream(new FileOutputStream(
-// 							CPathSettings.getInstance().mainModelFile())));
-// 			} catch (Exception e) {
-// 				throw new RuntimeException("Failed updating the main BioPAX archive!", e);
-// 			}
-// 			
-// 			//repeat the same analysis withing the persistent model
-// 			ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-// 					"classpath:META-INF/spring/applicationContext-dao.xml");    	
-// 	 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean(PaxtoolsDAO.class));
-// 			mainDAO.run(analysis);
-// 			context.close();
-// 			
-// 			LOG.warn("Main BioPAX model has been modified. Do not forget to " +
-// 					"update entity counts per data source, re-build " +
-// 					"the full-text index, blacklist, and all downloads if needed.");
-// 		}
- 		
+ 		if(!readOnly) { //replace the main BioPAX model archive
+ 			try {			
+ 				new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model, 
+ 					new GZIPOutputStream(new FileOutputStream(
+ 							CPathSettings.getInstance().mainModelFile())));
+ 			} catch (Exception e) {
+ 				throw new RuntimeException("Failed updating the main BioPAX archive!", e);
+ 			}
+ 			
+ 			LOG.warn("The main BioPAX model was modified; "
+ 				+ "do not forget to re-index, update counts, re-export other files, etc.");
+ 		}
+ 			
 	}
 
 
@@ -394,35 +382,6 @@ public final class Admin {
         	+ "; " + details);		
 	}
 	
-
-	/**
-     * Builds new cpath2 database and full-text index.
-	 * @throws IOException 
-     * 
-     * @throws IllegalStateException when not in maintenance mode
-     */
-    public static void createBiopaxDb() throws IOException {
-		if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
- 		
-		System.setProperty("net.sf.ehcache.disabled", "true");
-		System.setProperty("hibernate.hbm2ddl.auto", "create");
- 		
-		LOG.info("Loading the main merged BioPAX model from the archive...");
-		Model allModel = CPathUtils.loadMainBiopaxModel();
-		
-		//destroy the db if exists, persist the main merged biopax model (makes a new db)
-		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-				"classpath:META-INF/spring/applicationContext-dao.xml");    	
- 		PaxtoolsDAO mainDAO = ((PaxtoolsDAO)context.getBean(PaxtoolsDAO.class));
- 		LOG.info("Persisting the main model (takes several hours...)");
- 		mainDAO.merge(allModel);
- 		 		
- 		context.close(); 		
- 		LOG.info("Done.");
- 		
- 		System.setProperty("hibernate.hbm2ddl.auto", "validate");
- 	}
     
 	/**
      * Builds new biopax full-text index.
@@ -433,26 +392,18 @@ public final class Admin {
     public static void createIndex() throws IOException {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
- 		
-		System.setProperty("net.sf.ehcache.disabled", "true");
 		
 		// cleanup the index directory
 		CPathSettings cpath = CPathSettings.getInstance();
-		File dir = new File(cpath.homeDir() + File.separator + cpath.getMainDb());
-		LOG.info("Cleaning up the full-text index directory");
+		File dir = new File(cpath.indexDir());
+		LOG.info("createIndex: cleaning up the full-text index directory");
 		CPathUtils.cleanupDirectory(dir);
 		
- 		LOG.info("Indexing...");
-		ClassPathXmlApplicationContext context = 
-				new ClassPathXmlApplicationContext(new String[] {
-						"classpath:META-INF/spring/applicationContext-dao.xml",
-						"classpath:META-INF/spring/applicationContext-jpa.xml"
-						});
-	    CPathService service = (CPathService) context.getBean(CPathService.class);	
-	    service.biopax().index();
- 		
- 		context.close(); 		
- 		LOG.info("Done.");
+		Model model = CPathUtils.loadMainBiopaxModel();
+		Indexer indexer = new SearchEngine(model, cpath.indexDir());
+		indexer.index();
+		
+ 		LOG.info("createIndex: done.");
  	}
 
     
@@ -470,7 +421,6 @@ public final class Admin {
 		
         ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext(new String[] {
-					"classpath:META-INF/spring/applicationContext-dao.xml",
 					"classpath:META-INF/spring/applicationContext-jpa.xml"
 					});
      	   	
@@ -675,7 +625,6 @@ public final class Admin {
 		if(uris.length == 0 && (datasources.length > 0 || types.length > 0)) {
 			ClassPathXmlApplicationContext context = 
 					new ClassPathXmlApplicationContext(new String[] {
-							"classpath:META-INF/spring/applicationContext-dao.xml",
 							"classpath:META-INF/spring/applicationContext-jpa.xml"
 					});
 
@@ -739,7 +688,6 @@ public final class Admin {
 		toReturn.append(Cmd.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
 		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + NEWLINE);			
 		toReturn.append(Cmd.MERGE.toString() + " [--force] (merge all pathway data; overwrites the main biopax model archive)"+ NEWLINE);
-		toReturn.append(Cmd.PERSIST.toString() + " (to create new BioPAX db from the main merged biopax archive)" + NEWLINE);
 		toReturn.append(Cmd.INDEX.toString() + " (to build new full-text index of the main merged BioPAX db)" + NEWLINE);
         toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the downloads directory)" + NEWLINE);
         toReturn.append(Cmd.CLEAR_CACHE.toString() + " (removes the cache directory)" + NEWLINE);
@@ -817,7 +765,6 @@ public final class Admin {
     		
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext(new String[] {
-					"classpath:META-INF/spring/applicationContext-dao.xml",
 					"classpath:META-INF/spring/applicationContext-jpa.xml"});
 		CPathService service = (CPathService) context.getBean(CPathService.class);
 		

@@ -76,9 +76,14 @@ public final class CPathSettings {
 	public static final String DOWNLOADS_SUBDIR = "downloads";
 	
 	/**
-	 * The cache sub-directory (under cpath2 Home dir.)
+	 * The cache sub-directory (under cpath2 home dir.)
 	 */
 	public static final String CACHE_SUBDIR = "cache";
+	
+	/**
+	 * The index sub-directory (under cpath2 home dir.)
+	 */
+	public static final String INDEX_SUBDIR = "index";	
 	
 	/**
 	 * cpath2 internal "blacklist" (of the ubiquitous molecules
@@ -147,6 +152,10 @@ public final class CPathSettings {
 				System.setProperty(HOME_DIR, home);
 			}	
 		}
+		
+		String profile = System.getProperty("spring.profiles.active");
+		if(!"prod".equalsIgnoreCase(profile))
+			_develop = true; //not production
 		
 		// put default values
 		Properties defaults = new Properties();
@@ -392,9 +401,19 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String dataDir() {
-		return (_develop) ? tmpDir() : homeDir() + File.separator + DATA_SUBDIR;
+		return (_develop) ? tmpDir() : homeDir() + 
+				File.separator + DATA_SUBDIR;
 	}
-	
+		
+	/**
+	 * A full path to the default Lucene index.
+	 * 
+	 * @return
+	 */
+	public String indexDir() {
+		return ((_develop) ? tmpDir() : homeDir()) + 
+				File.separator + INDEX_SUBDIR;
+	}
 	
 	/**
 	 * Gets the full path to the cpath2 query/converter
@@ -531,17 +550,6 @@ public final class CPathSettings {
 	 */
 	public String warehouseModelFile() {
 		return biopaxExportFileName("Warehouse");
-	}
-	
-	
-	/**
-	 * Configure the system for the development and testing ('true')
-	 * or production (is default, 'false').
-	 * 
-	 * @param develop
-	 */
-	public static void setDevelop(boolean develop) {
-		_develop = develop;
 	}
 	
 }

@@ -1,14 +1,15 @@
 package cpath.importer;
 
 import cpath.config.CPathSettings;
-import cpath.dao.Analysis;
 import cpath.dao.CPathUtils;
 import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
+import cpath.service.Indexer;
 import cpath.service.OutputFormat;
+import cpath.service.SearchEngine;
 import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
@@ -48,7 +49,6 @@ import java.util.zip.GZIPOutputStream;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations={
-		"classpath:META-INF/spring/applicationContext-dao.xml",
 		"classpath:META-INF/spring/applicationContext-jpa.xml",
 		"classpath:META-INF/spring/appContext-validator.xml"})
 @ActiveProfiles("dev")
@@ -56,12 +56,6 @@ public class DataImportTest {
 	static final Logger log = LoggerFactory.getLogger(DataImportTest.class);
 	static final ResourceLoader resourceLoader = new DefaultResourceLoader();	
 	static final String XML_BASE = CPathSettings.getInstance().getXmlBase();
-	
-	static {
-		//this triggers intermediate and result files' location
-		// (will be under tmp instead of CPATH2_HOME...)
-		CPathSettings.setDevelop(true);
-	}
 		
 	@Autowired
 	CPathService service;
@@ -160,7 +154,8 @@ public class DataImportTest {
 		
 		//get the model from the archive and test it
 		Model m = CPathUtils.loadMainBiopaxModel();	
-		//check the model
+		
+		//check the integrated model
 		assertMerge(m);
 
 		//pid, reactome,humancyc,.. were there in the test models
@@ -173,22 +168,7 @@ public class DataImportTest {
 		// normally, setProvenanceFor gets called during Premerge stage
 		md.setProvenanceFor(m); 
 		// which EXPLICITELY REMOVEs all other Provenance values from dataSource properties;
-		assertEquals(1, m.getObjects(Provenance.class).size()); 
-		
-		
-		//Test persistent model (PaxtoolsDAO)
-		// Persist (Hibernate)
-		service.biopax().removeAll();
-		service.biopax().merge(m);		
-		assertEquals(1, ((Model)service.biopax()).getObjects(Provenance.class).size()); 		
-		// Test the persistent model (runs within a db transaction)
-		service.biopax().run(new Analysis() {
-			@Override
-			public void execute(Model model) {
-				assertMerge(model);
-			}
-		});		
-			
+		assertEquals(1, m.getObjects(Provenance.class).size()); 		
 		
 		/*
 		 * SERVICE-TIER features tests
@@ -201,13 +181,13 @@ public class DataImportTest {
 			new GZIPOutputStream(new FileOutputStream(
 					CPathSettings.getInstance().mainModelFile())));
 		
-		//update/reload the biopax model in the service object 
-		service.init();
 		//index
-		service.biopax().index();
+		Indexer indexer = new SearchEngine(m, CPathSettings.getInstance().indexDir());
+		indexer.index();
 		
-		
-		// TEST...
+		//loads the biopax model, blacklist.txt, opens the index reader
+		service.init();
+	
 		// Test full-text search	
 		// search with a secondary (RefSeq) accession number
 		//NP_619650 occurs in the warehouse only, not in the merged model
@@ -222,12 +202,10 @@ public class DataImportTest {
 			prIds.add(e.getUri());		
 		String uri = Normalizer.uri(XML_BASE, "REFSEQ", "NP_005099_identity", RelationshipXref.class);				
 		assertTrue(prIds.contains(uri));
-		Xref x = (RelationshipXref) ((Model)service.biopax()).getByID(uri);
+		Xref x = (RelationshipXref) m.getByID(uri);
 		assertNotNull(x);
-		service.biopax().initialize(x);
-		service.biopax().initialize(x.getXrefOf());
 		assertFalse(x.getXrefOf().isEmpty());
-		pr = (ProteinReference) ((Model)service.biopax()).getByID("http://identifiers.org/uniprot/O75191");
+		pr = (ProteinReference) m.getByID("http://identifiers.org/uniprot/O75191");
 		assertTrue(x.getXrefOf().contains(pr));
 		
 		// fetch as BIOPAX
