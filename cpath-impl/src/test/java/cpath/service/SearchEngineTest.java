@@ -24,10 +24,8 @@ public class SearchEngineTest {
 	
 	static final ResourceLoader resourceLoader = new DefaultResourceLoader();
 	
-	final String indexLocation = CPathSettings.getInstance()
-			.tmpDir() + File.separator + "index";
-	final String notIndexLocation = CPathSettings.getInstance()
-			.tmpDir() + File.separator + "notindex";
+	final String indexLocation = CPathSettings.getInstance().tmpDir() 
+			+ File.separator + "SearchEngineTest_index";
 
 	@Test
 	public final void testSearch() throws IOException {
@@ -36,7 +34,7 @@ public class SearchEngineTest {
 			.getResource("classpath:merge/pathwaydata1.owl").getInputStream());
 		SearchEngine searchEngine = new SearchEngine(model, indexLocation);
 		searchEngine.index();
-		assertTrue(searchEngine.indexExists(new File(indexLocation)));
+		assertTrue(new File(indexLocation).exists());
 		
 		SearchResponse response = searchEngine.search("ATP", 0, null, null, null);
 		assertNotNull(response);
@@ -89,13 +87,6 @@ public class SearchEngineTest {
 		response = searchEngine.search("pathway:glycolysis", 0, SmallMoleculeReference.class, null, null);
 		assertEquals(5, response.getSearchHit().size());
 		
-	}
-
-
-	@Test
-	public final void testIndexExists() {
-		SearchEngine indexer = new SearchEngine(null, "");
-		assertFalse(indexer.indexExists(new File(notIndexLocation)));
 	}
 
 }

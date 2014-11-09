@@ -36,7 +36,6 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.validator.api.beans.ValidatorResponse;
 
-import cpath.dao.PaxtoolsDAO;
 import cpath.jpa.Content;
 import cpath.jpa.LogEntitiesRepository;
 import cpath.jpa.LogEntity;
@@ -296,8 +295,6 @@ public interface CPathService {
 	MappingsRepository mapping();
     
     MetadataRepository metadata();
-    
-    PaxtoolsDAO biopax();
     
     LogEntitiesRepository log();
 

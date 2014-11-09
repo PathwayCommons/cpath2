@@ -21,7 +21,6 @@
 	<context-param>
 		<param-name>contextConfigLocation</param-name>
 		<param-value>
-			classpath:META-INF/spring/applicationContext-dao.xml
 			classpath:META-INF/spring/applicationContext-jpa.xml
 			classpath:security-config.xml
 		</param-value>

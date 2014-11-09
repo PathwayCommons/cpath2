@@ -67,7 +67,6 @@ import org.springframework.util.Assert;
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
 import cpath.dao.LogUtils;
-import cpath.dao.PaxtoolsDAO;
 import cpath.jpa.Content;
 import cpath.jpa.LogEntitiesRepository;
 import cpath.jpa.LogEntity;
@@ -84,6 +83,8 @@ import cpath.service.jaxb.TraverseResponse;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
+import cpath.service.SearchEngine;
+import cpath.service.Searcher;
 import static cpath.service.Status.*;
 
 
@@ -100,8 +101,7 @@ import static cpath.service.Status.*;
 class CPathServiceImpl implements CPathService {
 	private static final Logger log = LoggerFactory.getLogger(CPathServiceImpl.class);
 	
-	@Autowired(required=false)
-	PaxtoolsDAO paxtoolsDAO;
+	Searcher searcher;
 	
 	@Autowired
 	LogEntitiesRepository logEntitiesRepository;
@@ -141,9 +141,11 @@ class CPathServiceImpl implements CPathService {
 		if(!CPathSettings.getInstance().isAdminEnabled()) {
 			loadModel();	
 			loadBlacklist();
+			this.searcher = new SearchEngine(paxtoolsModel, 
+					CPathSettings.getInstance().indexDir());
 		}
 	}
-
+	
 	
 	private void loadModel() {		
 		//fork the model loading (which takes quite a while)
@@ -170,11 +172,14 @@ class CPathServiceImpl implements CPathService {
 	public ServiceResponse search(String queryStr, 
 			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms) 
 	{
+		if(!paxtoolsModelReady()) 
+			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete...");
+		
 		ServiceResponse serviceResponse;
 		
 		try {
 			// do search
-			SearchResponse hits = paxtoolsDAO.search(queryStr, page, biopaxClass, dsources, organisms);
+			SearchResponse hits = searcher.search(queryStr, page, biopaxClass, dsources, organisms);
 			
 			if(hits.isEmpty()) {//no hits
 				hits = new SearchResponse();
@@ -509,10 +514,7 @@ class CPathServiceImpl implements CPathService {
 						//exclude some RX types if the rel.type is set
 						if("RelationshipXref".equalsIgnoreCase(h.getBiopaxClass())) {
 							RelationshipXref rx = null;
-							if(paxtoolsModelReady()) 
-								rx = (RelationshipXref) paxtoolsModel.getByID(h.getUri());
-							else
-								rx = (RelationshipXref) ((Model)paxtoolsDAO).getByID(h.getUri());
+							rx = (RelationshipXref) paxtoolsModel.getByID(h.getUri());
 							
 							//TODO review/decide RX types to keep/exclude...
 							//we created RXs with 'identity', 'see-also', etc. types when building the Warehouse and merging data
@@ -539,19 +541,16 @@ class CPathServiceImpl implements CPathService {
 	@Override
 	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
 		
+		if(!paxtoolsModelReady()) 
+			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete...");
+		
 		TraverseResponse res = new TraverseResponse();
 		res.setPropertyPath(propertyPath);
 				
 		try {
 			TraverseAnalysis traverseAnalysis = new TraverseAnalysis(res, sourceUris);
-			
-			if(paxtoolsModelReady())
-				traverseAnalysis.execute(paxtoolsModel);
-			else
-				paxtoolsDAO.runReadOnly(traverseAnalysis);
-			
+			traverseAnalysis.execute(paxtoolsModel);
 			return res;
-		
 		} catch (IllegalArgumentException e) {
 			log.error("traverse() failed to init path accessor. " + e);
 			return new ErrorResponse(BAD_REQUEST, e.getMessage());
@@ -581,9 +580,12 @@ class CPathServiceImpl implements CPathService {
 	 */
 	@Override
 	public SearchResponse topPathways(final String[] organisms, final String[] datasources) {
+		
 		SearchResponse topPathways = new SearchResponse();
 		final List<SearchHit> hits = topPathways.getSearchHit(); //empty list
 		int page = 0; // will use search pagination
+		
+		//TODO search can return ErrorResponse, so..
 		SearchResponse searchResponse = (SearchResponse) search("*", page, Pathway.class, datasources, organisms);
 		//go over all hits, all pages
 		while(!searchResponse.isEmpty()) {
@@ -927,12 +929,6 @@ class CPathServiceImpl implements CPathService {
 	@Override
 	public MetadataRepository metadata() {
 		return metadataRepository;
-	}
-
-
-	@Override
-	public PaxtoolsDAO biopax() {
-		return paxtoolsDAO;
 	}
 
 
