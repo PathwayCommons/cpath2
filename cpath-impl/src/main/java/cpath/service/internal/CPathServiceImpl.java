@@ -34,8 +34,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
 
-import javax.annotation.PostConstruct;
-
 import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.controller.Cloner;
 import org.biopax.paxtools.controller.Completer;
@@ -93,8 +91,6 @@ import static cpath.service.Status.*;
  * persisted BioPAX model and metadata from console 
  * and web services.
  * 
- * TODO Replace PaxtoolsDAO (Hibernate/Search) with a new Lucene search implementation in future versions.
- * 
  * @author rodche
  */
 @Service
@@ -127,7 +123,6 @@ class CPathServiceImpl implements CPathService {
 	/**
 	 * Constructor
 	 */
-    // no-arguments constructor is required, e.g., by Ehcache
 	public CPathServiceImpl() {
 		this.maxHitsPerPage = Integer.parseInt(CPathSettings.getInstance().getMaxHitsPerPage());
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
@@ -136,13 +131,16 @@ class CPathServiceImpl implements CPathService {
 	}
 
 
-	@PostConstruct
+	/**
+	 * Loads the main BioPAX model, etc.
+	 * This is not required (useless) during the data import (premerge, merge, etc.)
+	 * This method should be called in the production mode, after the web service is started.
+	 */
 	synchronized public void init() {		
-		if(!CPathSettings.getInstance().isAdminEnabled()) {
-			loadModel();	
-			loadBlacklist();
-		}
+		loadModel();	
+		loadBlacklist();
 	}
+
 	
 	private void loadModel() {		
 		//fork the model loading (which takes quite a while)
@@ -159,6 +157,8 @@ class CPathServiceImpl implements CPathService {
 					log.info("RAM BioPAX Model (proxy) is now ready for queries");
 					searcher = new SearchEngine(paxtoolsModel, 
 							CPathSettings.getInstance().indexDir());
+					((SearchEngine) searcher).setMaxHitsPerPage(
+						Integer.parseInt(CPathSettings.getInstance().getMaxHitsPerPage()));
 				}	
 			}
 		});
@@ -172,7 +172,7 @@ class CPathServiceImpl implements CPathService {
 			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms) 
 	{
 		if(!paxtoolsModelReady() || searcher == null) 
-			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete (try later)...");
+			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 		
 		ServiceResponse serviceResponse;
 		
@@ -208,7 +208,7 @@ class CPathServiceImpl implements CPathService {
 					"No URIs were specified for the query");
 		
 		if(!paxtoolsModelReady()) 
-			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete (try later)...");
+			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 		
 		// extract/convert a sub-model
 		try {
@@ -257,7 +257,7 @@ class CPathServiceImpl implements CPathService {
 		final String[] organisms, final String[] datasources)
 	{
 		if(!paxtoolsModelReady()) 
-			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete (try later)...");
+			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 		
 		final String[] src = findUrisByIds(sources);
 
@@ -301,7 +301,7 @@ class CPathServiceImpl implements CPathService {
 			final String[] organisms, final String[] datasources)
 	{	
 		if(!paxtoolsModelReady()) 
-			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete (try later)...");
+			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 		
 		final String[] src = findUrisByIds(sources);
 		
@@ -341,7 +341,7 @@ class CPathServiceImpl implements CPathService {
 		final String[] organisms, final String[] datasources)
 	{
 		if(!paxtoolsModelReady()) 
-			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete (try later)...");
+			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 		
 		final String[] src = findUrisByIds(sources);
 		final String[] tgt = findUrisByIds(targets);
@@ -392,7 +392,7 @@ class CPathServiceImpl implements CPathService {
 		final String[] organisms, final String[] datasources)
 	{
 		if(!paxtoolsModelReady()) 
-			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete (try later)...");
+			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 		
 		final String[] src = findUrisByIds(sources);
 
@@ -541,7 +541,7 @@ class CPathServiceImpl implements CPathService {
 	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
 		
 		if(!paxtoolsModelReady()) 
-			return new ErrorResponse(INTERNAL_ERROR,"Waiting for the initialization to complete (try later)...");
+			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 		
 		TraverseResponse res = new TraverseResponse();
 		res.setPropertyPath(propertyPath);
@@ -934,6 +934,14 @@ class CPathServiceImpl implements CPathService {
 	@Override
 	public LogEntitiesRepository log() {
 		return logEntitiesRepository;
+	}
+
+
+	public synchronized boolean ready() {
+		return (metadataRepository != null 
+				&& mappingsRepository != null
+				&& searcher != null
+				&& paxtoolsModelReady());
 	}
 	
 }

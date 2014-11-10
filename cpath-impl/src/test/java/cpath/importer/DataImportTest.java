@@ -185,9 +185,20 @@ public class DataImportTest {
 		Indexer indexer = new SearchEngine(m, CPathSettings.getInstance().indexDir());
 		indexer.index();
 		
-		//loads the biopax model, blacklist.txt, opens the index reader
+		//load the main model, blacklist.txt, init the search engine
 		service.init();
-	
+		log.warn("Waiting for the service to fully initialize...");
+		int interval = 1000;
+		for (; !service.ready() && interval < 30000; interval += 5000) {			
+			try {
+				Thread.sleep(interval);
+			} catch (InterruptedException e1) {
+				fail("Failed to initialise the service bean (model and search index)!");
+			}
+		}
+		if(interval>30000)
+			fail("Failed to initialise the service bean (model and search index)!");
+
 		// Test full-text search	
 		// search with a secondary (RefSeq) accession number
 		//NP_619650 occurs in the warehouse only, not in the merged model

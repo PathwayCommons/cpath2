@@ -158,26 +158,34 @@ public class SearchEngine implements Indexer, Searcher {
 					+ "), org. in (" + Arrays.toString(organisms) + ")");
 	
 		try {
-			IndexReader reader = DirectoryReader.open(MMapDirectory.open(indexFile));
-			IndexSearcher searcher = new IndexSearcher(reader);
-			TopScoreDocCollector collector = TopScoreDocCollector.create(maxHitsPerPage, true);  
-			int startIndex = page * maxHitsPerPage;
 			
+			IndexReader reader = DirectoryReader.open(MMapDirectory.open(indexFile));
+			IndexSearcher searcher = new IndexSearcher(reader);			
 			QueryParser queryParser = new MultiFieldQueryParser(DEFAULT_FIELDS, analyzer);
-					
-			//transform top docs to search hits (beans)
+			
+			//find and transform top docs to search hits (beans), considering pagination...
 			if(!query.trim().equals("*")) {
+				//create the query and filter
 				Query luceneQuery = queryParser.parse(query);
-				luceneQuery = searcher.rewrite(luceneQuery); //TODO rewrite luceneQuery, why?..
+				luceneQuery = searcher.rewrite(luceneQuery); //TODO rewrite luceneQuery, why?..		
 				Filter filter = createFilter(filterByType, datasources, organisms);
-				searcher.search(luceneQuery, filter, collector);
-				TopDocs topDocs = collector.topDocs(startIndex, maxHitsPerPage);				
+				
+				//get the first page of top hits
+				TopDocs topDocs = searcher.search(luceneQuery, filter, maxHitsPerPage);
+				//get the required hits page if page>0
+				if(page>0) {
+					TopScoreDocCollector collector = TopScoreDocCollector.create(maxHitsPerPage*(page+1), true);  
+					searcher.search(luceneQuery, filter, collector);
+					topDocs = collector.topDocs(page * maxHitsPerPage, maxHitsPerPage);
+				}
+				
 				// use a Highlighter (store.YES must be enabled for 'keyword' field)
 				QueryScorer scorer = new QueryScorer(luceneQuery, FIELD_KEYWORD); 
 				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
 				Highlighter highlighter = new Highlighter(formatter, scorer);
 				highlighter.setTextFragmenter(new SimpleSpanFragmenter(scorer, 80));
 				response = transform(luceneQuery, searcher, highlighter, topDocs);
+	
 			} else { //find ALL objects of a particular BioPAX class (+ filters by organism, datasource)
 				if(filterByType==null) 
 					filterByType = Level3Element.class;
@@ -187,15 +195,20 @@ public class SearchEngine implements Indexer, Searcher {
 				for(Class<? extends BioPAXElement> subType : SimpleEditorMap.L3.getKnownSubClassesOf(filterByType)) {
 					luceneQuery.add(new TermQuery(new Term(FIELD_TYPE, subType.getSimpleName().toLowerCase())), Occur.SHOULD);
 				}
-				
 				Filter filter = createFilter(null, datasources, organisms);
-				searcher.search(luceneQuery, filter, collector);
-				TopDocs topDocs = collector.topDocs(startIndex, maxHitsPerPage);				
-				response = transform(luceneQuery, searcher, null, topDocs);
+				
+				//get the first page of top hits
+				TopDocs topDocs = searcher.search(luceneQuery, filter, maxHitsPerPage);
+				//get the required hits page if page>0
+				if(page>0) {
+					TopScoreDocCollector collector = TopScoreDocCollector.create(maxHitsPerPage*(page+1), true);  
+					searcher.search(luceneQuery, filter, collector);
+					topDocs = collector.topDocs(page * maxHitsPerPage, maxHitsPerPage);	
+				}
+				
+				//convert
+				response = transform(luceneQuery, searcher, null, topDocs);				
 			}
-						
-			//set total no. hits	
-			response.setNumHits(collector.getTotalHits());		
 			
 		} catch (ParseException e) {
 			throw new RuntimeException("getTopDocs: failed to parse the query string.", e);
@@ -328,6 +341,8 @@ public class SearchEngine implements Indexer, Searcher {
 			}
 		}
 		
+		//set total no. hits	
+		response.setNumHits(topDocs.totalHits);	
 		
 		return response;
 	}
@@ -560,8 +575,10 @@ public class SearchEngine implements Indexer, Searcher {
 
 	private void addOrganisms(Set<BioSource> set, Document doc) {	
 		for(BioSource bs : set) {
-			// store URI as is, don't index
+			// store URI as is (not indexed, untokinized)
 			doc.add(new StoredField(FIELD_ORGANISM, bs.getRDFId()));
+//TODO - to index BioSource URIs may be required; if so, replace the above with below line:
+//			doc.add(new StringField(FIELD_ORGANISM, bs.getRDFId(), Field.Store.YES));
 				
 			// add organism names
 			for(String s : bs.getName()) {
