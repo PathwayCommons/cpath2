@@ -40,6 +40,7 @@ public class SearchEngineTest {
 		assertNotNull(response);
 		assertFalse(response.isEmpty());
 		assertEquals(7, response.getSearchHit().size());
+		assertEquals(7, response.getNumHits().intValue());
 		
 		response = searchEngine.search("ATP", 0, Interaction.class, null, null);
 		assertNotNull(response);

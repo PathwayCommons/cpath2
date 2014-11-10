@@ -34,11 +34,13 @@ import cpath.dao.*;
 import cpath.importer.Merger;
 import cpath.importer.PreMerger;
 import cpath.jpa.Metadata;
+import cpath.jpa.MetadataRepository;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.Indexer;
 import cpath.service.OutputFormat;
 import cpath.service.SearchEngine;
+import cpath.service.Searcher;
 import cpath.service.internal.BiopaxConverter;
 import cpath.service.jaxb.*;
 
@@ -94,7 +96,6 @@ public final class Admin {
     	INDEX("-index"),
         CREATE_BLACKLIST("-create-blacklist"),
         CREATE_DOWNLOADS("-create-downloads"),
-        CLEAR_CACHE("-clear-cache"),
         UPDATE_COUNTS("-update-counts"),
 		EXPORT("-export"),
         CONVERT("-convert"),
@@ -238,10 +239,6 @@ public final class Admin {
 		} else if (args[0].equals(Cmd.UPDATE_COUNTS.toString())) {
 			
 			updateCounts();
-			
-		} else if (args[0].equals(Cmd.CLEAR_CACHE.toString())) {
-			
-			clearCache();
 		
 		} else if (args[0].equals(Cmd.EXPORT_LOG.toString())) {	
 			if (args.length == 2 && "--clear".equalsIgnoreCase(args[1]))
@@ -395,12 +392,15 @@ public final class Admin {
 		
 		// cleanup the index directory
 		CPathSettings cpath = CPathSettings.getInstance();
+		LOG.info("createIndex: cleaning up the index directory: " + cpath.indexDir());
 		File dir = new File(cpath.indexDir());
-		LOG.info("createIndex: cleaning up the full-text index directory");
 		CPathUtils.cleanupDirectory(dir);
 		
+		LOG.info("createIndex: loading the BioPAX model...");
 		Model model = CPathUtils.loadMainBiopaxModel();
 		Indexer indexer = new SearchEngine(model, cpath.indexDir());
+		
+		LOG.info("createIndex: started indexing...");
 		indexer.index();
 		
  		LOG.info("createIndex: done.");
@@ -415,57 +415,53 @@ public final class Admin {
      * 
      * @throws IllegalStateException when not in maintenance mode
      */
-    public static void updateCounts() {
-		if(!cpath.isAdminEnabled())
+	public static void updateCounts() {
+		if (!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
+
+		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+				new String[] { "classpath:META-INF/spring/applicationContext-jpa.xml" });
+
+		MetadataRepository metadataRepo = (MetadataRepository) context.getBean(MetadataRepository.class);
 		
-        ClassPathXmlApplicationContext context = 
-			new ClassPathXmlApplicationContext(new String[] {
-					"classpath:META-INF/spring/applicationContext-jpa.xml"
-					});
-     	   	
-     	//update counts of pathways, interactions, molecules
-        CPathService service = (CPathService) context.getBean(CPathService.class);
-     	
-     	List<Metadata> pathwayMetadata = new ArrayList<Metadata>();
-        for(Metadata md : service.metadata().findAll())
-        	if(!md.isNotPathwayData())
-        		pathwayMetadata.add(md);
-     	
-        for(Metadata md : pathwayMetadata) {
-     		String name = md.standardName();
-     		String[] filterByDatasourceNames = new String[]{md.getUri()};
-     		
-     		SearchResponse sr = (SearchResponse) service.search("*", 0, Pathway.class, filterByDatasourceNames, null);
-     		md.setNumPathways(sr.getNumHits());
-     		LOG.info(name + ", pathways: " + sr.getNumHits());
-     		
-     		sr = (SearchResponse) service.search("*", 0, Interaction.class, filterByDatasourceNames, null);
-     		md.setNumInteractions(sr.getNumHits());
-     		LOG.info(name + ", interactions: " + sr.getNumHits());
-     		
-     		sr = (SearchResponse) service.search("*", 0, PhysicalEntity.class, filterByDatasourceNames, null);
-     		md.setNumPhysicalEntities(sr.getNumHits());
-     		LOG.info(name + ", physical entities: " + sr.getNumHits());
-     	}
-     	
-     	service.metadata().save(pathwayMetadata);
-     	
-     	context.close(); 
+		//load the model
+		Model model = CPathUtils.loadMainBiopaxModel();
+		LOG.info("Loaded the BioPAX Model");
+		
+		// initialize the search engine
+		Searcher searcher = new SearchEngine(model, CPathSettings.getInstance().indexDir());
+
+		// prepare a list of all pathway type metadata to update
+		List<Metadata> pathwayMetadata = new ArrayList<Metadata>();
+		for (Metadata md : metadataRepo.findAll())
+			if (!md.isNotPathwayData())
+				pathwayMetadata.add(md);
+
+		// for each non-warehouse metadata entry, update counts of pathways, etc.
+		for (Metadata md : pathwayMetadata) {
+			String name = md.standardName();
+			String[] filterByDatasourceNames = new String[] { md.getUri() };
+
+			SearchResponse sr = (SearchResponse) searcher.search("*", 0,
+					Pathway.class, filterByDatasourceNames, null);
+			md.setNumPathways(sr.getNumHits());
+			LOG.info(name + ", pathways: " + sr.getNumHits());
+
+			sr = (SearchResponse) searcher.search("*", 0, Interaction.class,
+					filterByDatasourceNames, null);
+			md.setNumInteractions(sr.getNumHits());
+			LOG.info(name + ", interactions: " + sr.getNumHits());
+
+			sr = (SearchResponse) searcher.search("*", 0, PhysicalEntity.class,
+					filterByDatasourceNames, null);
+			md.setNumPhysicalEntities(sr.getNumHits());
+			LOG.info(name + ", physical entities: " + sr.getNumHits());
+		}
+
+		metadataRepo.save(pathwayMetadata);
+
+		context.close();
 	}
-    
- 
-    /**
-     * Purges all cache directories.
-     */
-    public static void clearCache() {
-		if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
-     	//remove the disk cache
-     	File cacheDir = new File(cpath.cacheDir());
-		LOG.info("Removing cache directory : " + cacheDir.getAbsolutePath());
-     	CPathUtils.deleteDirectory(cacheDir);
-    }
     
 	
 	/**
@@ -690,7 +686,6 @@ public final class Admin {
 		toReturn.append(Cmd.MERGE.toString() + " [--force] (merge all pathway data; overwrites the main biopax model archive)"+ NEWLINE);
 		toReturn.append(Cmd.INDEX.toString() + " (to build new full-text index of the main merged BioPAX db)" + NEWLINE);
         toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the downloads directory)" + NEWLINE);
-        toReturn.append(Cmd.CLEAR_CACHE.toString() + " (removes the cache directory)" + NEWLINE);
         toReturn.append(Cmd.UPDATE_COUNTS.toString() + " (re-calculates pathway, molecule, " +
         		"interaction counts per data source)" + NEWLINE);
         toReturn.append(Cmd.CREATE_DOWNLOADS.toString() + " (creates cpath2 BioPAX DB archives using several " +
