@@ -10,6 +10,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
@@ -54,14 +55,9 @@ import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.BioSource;
-import org.biopax.paxtools.model.level3.Entity;
-import org.biopax.paxtools.model.level3.EntityReference;
-import org.biopax.paxtools.model.level3.Interaction;
 import org.biopax.paxtools.model.level3.Level3Element;
 import org.biopax.paxtools.model.level3.Named;
 import org.biopax.paxtools.model.level3.Pathway;
-import org.biopax.paxtools.model.level3.PathwayStep;
-import org.biopax.paxtools.model.level3.PhysicalEntity;
 import org.biopax.paxtools.model.level3.Process;
 import org.biopax.paxtools.model.level3.Provenance;
 import org.biopax.paxtools.model.level3.UnificationXref;
@@ -337,9 +333,9 @@ public class SearchEngine implements Indexer, Searcher {
 	}
 
 
-	public void index() {		
-		LOG.info("index(), there are " + model.getObjects().size() 
-				+ " biopax objects to be indexed.");
+	public void index() {
+		final int numObjects =  model.getObjects().size();
+		LOG.info("index(), there are " + numObjects + " biopax objects to be indexed.");
 		
 		//drop/cleanup the index if exists
 		LOG.info("Erasing the biopax index directory...");
@@ -357,6 +353,7 @@ public class SearchEngine implements Indexer, Searcher {
 		
 		ExecutorService exec = Executors.newFixedThreadPool(30);
 		
+		final AtomicInteger numLeft = new AtomicInteger(numObjects);
 		for(final BioPAXElement bpe : model.getObjects()) {	
 			// prepare & index each element in a separate thread
 			exec.execute(new Runnable() {
@@ -374,9 +371,14 @@ public class SearchEngine implements Indexer, Searcher {
 						bpe.getAnnotations().put(FIELD_SIZE, Integer.toString(size)); 
 					}
 
-					index(bpe, indexWriter); 
+					index(bpe, indexWriter);
+					
+					//count, log a progress message
+					int left = numLeft.decrementAndGet();
+					if(left % 10000 == 0)
+						LOG.info("index(), biopax objects left to index: " + left);
 				}
-			});		    
+			});
 		}
 		
 		exec.shutdown(); //stop accepting new tasks	
@@ -547,8 +549,9 @@ public class SearchEngine implements Indexer, Searcher {
 
 	private void addDatasources(Set<Provenance> set, Document doc) {
 		for (Provenance p : set) {
-			// do not do .toLowerCase() for the URI!
-			doc.add(new StoredField(FIELD_DATASOURCE, p.getRDFId()));
+			// do not do .toLowerCase() for the URI; index and store - 
+			// required to accurately calculate no. entities or to filter by data source (diff. datasources may share same names)
+			doc.add(new StringField(FIELD_DATASOURCE, p.getRDFId(), Field.Store.YES));
 			// index names as well
 			for (String s : p.getName())
 				doc.add(new StringField(FIELD_DATASOURCE, s.toLowerCase(), Field.Store.NO));

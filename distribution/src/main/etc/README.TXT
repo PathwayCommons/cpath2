@@ -15,12 +15,11 @@ contains cpath2 configuration and data files, such as:
 - hibernate.properties; these can be overwritten by the corresponding properties in the Spring (XML) configuration.
 - logback.xml (optional; alternative logging can be enabled by -Dlogback.configurationFile=$CPATH2_HOME/logback.xml JVM option);
 - data/ directory (it is where downloaded original data files are stored);
-- tmp/ dir (where ontology, temporary and some test files are stored), 
-- downloads/ dir (where batch download archives are created),
+- tmp/ (where ontology, temporary and some test files are stored), 
+- index/ (Lucene index directory for the BioPAX model)
+- downloads/ dir (where blacklist.txt and batch download archives are created),
 - cache/ dir (where cache directories and files get created);
 - validation.properties (BioPAX Validator rules tuning);
-- blacklist.txt (optional; BioPAX graph query performance tuning., usually - small  
-  molecules to ignore, like ubiquitous ATP...);
 
   The cpath2 distribution contains example configuration files.
 One can edit cpath2.properties file, e.g., to specify different DB connection URL. 
@@ -158,12 +157,10 @@ new instance from scratch:
 -premerge 
 -create-warehouse
 -merge --force (unfortunately, --force is usually required...)
--persist
 -index
 -update-counts
 -create-blacklist
 -create-downloads
--clear-cache
 -run-analysis (to execute a class that implements cpath.dao.Analysis interface, 
 e.g., to post-fix something in the merged biopax model/db or to produce some output; 
 if it does modify the model though, i.e. not a read-only analysis, 
