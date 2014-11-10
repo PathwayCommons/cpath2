@@ -42,7 +42,8 @@
 
 <links>
 <item name="BioPAX" href="http://www.biopax.org/" />
-<item name="Demo" href="http://purl.org/pc2/test/" />
+<item name="Demo/test 1" href="http://purl.org/pc2/test/" />
+<item name="Demo/test 2" href="http://pathwaycommons.baderlab.org" />
 </links>
 
 <menu ref="modules" />

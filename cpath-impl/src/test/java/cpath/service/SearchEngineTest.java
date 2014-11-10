@@ -88,6 +88,14 @@ public class SearchEngineTest {
 		response = searchEngine.search("pathway:glycolysis", 0, SmallMoleculeReference.class, null, null);
 		assertEquals(5, response.getSearchHit().size());
 		
+		//test search with pagination
+		searchEngine.setMaxHitsPerPage(10);
+		response = searchEngine.search("*", 0, null, null, null);
+		assertEquals(50, response.getNumHits().intValue());
+		assertEquals(10, response.getSearchHit().size());
+		response = searchEngine.search("*", 1, null, null, null);
+		assertEquals(10, response.getSearchHit().size());
+		
 	}
 
 }

@@ -510,9 +510,11 @@ public final class Admin {
 			});
 		
 		LOG.info("runMerge: --force=" + force);
+		
+		//create CPathService bean that provides access to JPA repositories (metadata, mapping)
 		CPathService service = context.getBean(CPathService.class);
 		Merger merger = new Merger(service, force);		
-		merger.merge();
+		merger.merge(); //at the end, it saves the resulting integrated main biopax model to a special file at known location.
 		
 		context.close();		
 	}
@@ -618,37 +620,36 @@ public final class Admin {
 		if(types == null) 
 			types = new String[]{};
 		
-		if(uris.length == 0 && (datasources.length > 0 || types.length > 0)) {
-			ClassPathXmlApplicationContext context = 
-					new ClassPathXmlApplicationContext(new String[] {
-							"classpath:META-INF/spring/applicationContext-jpa.xml"
-					});
+		//load the model
+		Model model = CPathUtils.loadMainBiopaxModel();
+		LOG.info("Loaded the BioPAX Model");
 
-			CPathService service = (CPathService) context.getBean(CPathService.class);
+		if(uris.length == 0 && (datasources.length > 0 || types.length > 0)) {
+					
+			// initialize the search engine
+			Searcher searcher = new SearchEngine(model, CPathSettings.getInstance().indexDir());
+
 			Collection<String> selectedUris = new HashSet<String>();
 			
 			if(types.length>0) {
 				//collect biopax object URIs of the specified types and sub-types, and data sources if specified
 				//(child biopax elements will be auto-included during the export to OWL)
 				for(String bpInterfaceName : types) {
-					selectedUris.addAll(findAllUris(service, 
+					selectedUris.addAll(findAllUris(searcher, 
 							biopaxTypeFromSimpleName(bpInterfaceName), datasources, null)); 
 				}
 			} else {
 				//collect all Entity URIs filtered by the not empty data sources list
 				//(child Gene, PhysicalEntity, UtilityClass biopax elements will be auto-included 
 				// during the export to OWL; we do not want to export dangling Genes, PEs, etc., except for Complexes...)
-				selectedUris.addAll(findAllUris(service, Pathway.class, datasources, null));
-				selectedUris.addAll(findAllUris(service, Interaction.class, datasources, null)); 
-				selectedUris.addAll(findAllUris(service, Complex.class, datasources, null)); 
+				selectedUris.addAll(findAllUris(searcher, Pathway.class, datasources, null));
+				selectedUris.addAll(findAllUris(searcher, Interaction.class, datasources, null)); 
+				selectedUris.addAll(findAllUris(searcher, Complex.class, datasources, null)); 
 			}
-
-			context.close(); 
-			
+		
 			uris = selectedUris.toArray(new String[] {});
 		}
 		
-		Model model = CPathUtils.loadMainBiopaxModel();
 		OutputStream os = new FileOutputStream(output);
 		// export a sub-model from the main biopax database
 		SimpleIOHandler sio = new SimpleIOHandler(BioPAXLevel.L3);
@@ -761,7 +762,8 @@ public final class Admin {
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext(new String[] {
 					"classpath:META-INF/spring/applicationContext-jpa.xml"});
-		CPathService service = (CPathService) context.getBean(CPathService.class);
+		
+		MetadataRepository metadataRepository = (MetadataRepository) context.getBean(MetadataRepository.class);
 		
 		//0) create an imported data summary file.txt (issue#23)
 		PrintWriter writer = new PrintWriter(cpath.downloadsDir() + File.separator 
@@ -772,7 +774,7 @@ public final class Admin {
 		writer.println("#Columns:\t" + StringUtils.join(Arrays.asList(
 			"ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PHYS.ENTITIES"), "\t"));
 		
-		Iterable<Metadata> allMetadata = service.metadata().findAll();
+		Iterable<Metadata> allMetadata = metadataRepository.findAll();
 		for(Metadata m : allMetadata) {
 			writer.println(StringUtils.join(Arrays.asList(
 				m.getUri(), m.getDescription(), m.getType(), m.getUrlToHomepage(), 
@@ -783,9 +785,9 @@ public final class Admin {
 		LOG.info("create-downloads: successfully generated the datasources summary file.");
 		
 		// generate/find all BioPAX archives:
-		List<String> biopaxArchives = exportBiopax(service, allMetadata);
+		List<String> biopaxArchives = exportBiopax(allMetadata);
 		
-		context.close(); //DAO is not needed anymore
+		context.close();
 		    	
     	// 2) export to all other formats
         for(String biopaxArchive : biopaxArchives) {
@@ -809,20 +811,22 @@ public final class Admin {
 	}
 
 
-	private static Collection<String> findAllUris(CPathService service, 
+	private static Collection<String> findAllUris(Searcher searcher, 
     		Class<? extends BioPAXElement> type, String[] ds, String[] org) 
     {
     	Collection<String> uris = new ArrayList<String>();
     	
-    	//call PaxtoolsDAO.search (skip service-tier cache) instead CPathService.search
-    	SearchResponse resp = (SearchResponse) service.search("*", 0, type, ds, org);
+    	SearchResponse resp = (SearchResponse) searcher.search("*", 0, type, ds, org);
     	int page = 0;
-		while(!resp.isEmpty()) {
-			for(SearchHit h : resp.getSearchHit())
-				uris.add(h.getUri());
-			//next page
-			resp = (SearchResponse) service.search("*", ++page, type, ds, org);
-		}
+    	while(!resp.isEmpty()) {
+    		for(SearchHit h : resp.getSearchHit())
+    			uris.add(h.getUri());
+    		//next page
+    		resp = (SearchResponse) searcher.search("*", ++page, type, ds, org);
+    	}
+    	
+    	LOG.info("findAllUris(in "+type.getSimpleName()+", ds: "+Arrays.toString(ds)+", org: "+Arrays.toString(org)+") "
+    			+ "collected " + uris.size() + " URIs (and the last hits page number was " + (page-1));
     	
     	return uris;
     }
@@ -854,7 +858,7 @@ public final class Admin {
 	}
 	
 	
-	private static List<String> exportBiopax(CPathService service, Iterable<Metadata> allMetadata) 
+	private static List<String> exportBiopax(Iterable<Metadata> allMetadata) 
 			throws IOException 
 	{
 		List<String> files = new ArrayList<String>();
@@ -863,16 +867,19 @@ public final class Admin {
 		String archiveName = cpath.mainModelFile();
 		files.add(archiveName); //the archive already there exists (made during Merge step)
 		
-		//load the main model into RAM
+		//load the main model
 		Model mainModel = CPathUtils.loadMainBiopaxModel();
+		LOG.info("Loaded the BioPAX Model");
+		// initialize the search engine
+		Searcher searcher = new SearchEngine(mainModel, CPathSettings.getInstance().indexDir());
 		
-    	// export by organism
+    	// export by organism (name)
         LOG.info("create-downloads: preparing data 'by organism' archives...");
         for(String org :  cpath.getOrganisms()) {
         	// generate archives for current organism
         	// hack: org.toLowerCase() is to tell by-organism from by-datasource archives (for usage stats...) 
         	archiveName = cpath.biopaxExportFileName(org.toLowerCase());
-        	exportBiopax(mainModel, service, archiveName, null, new String[]{org});
+        	exportBiopax(mainModel, searcher, archiveName, null, new String[]{org});
         	files.add(archiveName);
         }
 		
@@ -888,7 +895,7 @@ public final class Admin {
         		archiveName = cpath.biopaxExportFileName(md.standardName());
         		//skip previously done files (this metadata has the same std. name as previously processed one)
         		if(!files.contains(archiveName)) {
-        			exportBiopax(mainModel, service, archiveName,  md.getName().toArray(new String[]{}), null);
+        			exportBiopax(mainModel, searcher, archiveName,  md.getName().toArray(new String[]{}), null);
         			files.add(archiveName);
         		}
         	}
@@ -898,7 +905,7 @@ public final class Admin {
 	}	
 
 	
-	private static void exportBiopax(Model mainModel, CPathService service, String biopaxArchive,
+	private static void exportBiopax(Model mainModel, Searcher searcher, String biopaxArchive,
 			String[] datasources, String[] organisms) throws IOException
 	{
         // check file exists
@@ -907,9 +914,9 @@ public final class Admin {
         	
         	//find all entities (all child elements will be then exported too)    	  	
        		Collection<String> uris = new HashSet<String>();
-           	uris.addAll(findAllUris(service, Pathway.class, datasources, organisms));  	
-           	uris.addAll(findAllUris(service, Interaction.class, datasources, organisms));
-           	uris.addAll(findAllUris(service, Complex.class, datasources, organisms));
+           	uris.addAll(findAllUris(searcher, Pathway.class, datasources, organisms));  	
+           	uris.addAll(findAllUris(searcher, Interaction.class, datasources, organisms));
+           	uris.addAll(findAllUris(searcher, Complex.class, datasources, organisms));
         	
     		// export objects found above to a new biopax archive        	
         	if(!uris.isEmpty()) {

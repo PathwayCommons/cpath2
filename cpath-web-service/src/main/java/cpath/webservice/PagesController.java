@@ -78,10 +78,7 @@ public class PagesController extends BasicController {
 
     	cpath.setAdminEnabled("on".equals(admin));
    		cpath.setDebugEnabled("on".equals(debug));
-    	
-//   		if(!cpath.isAdminEnabled())
-//   			service.init();
-   		
+    	  		
     	return "admin";
     }
     

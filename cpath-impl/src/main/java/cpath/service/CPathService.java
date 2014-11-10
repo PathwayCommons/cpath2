@@ -303,4 +303,13 @@ public interface CPathService {
      * and blacklist from archive.
      */
 	void init();
+	
+	/**
+	 * Checks whether the service object is fully initialized, i.e,
+	 * if all data repositories, in-memory BioPAX model and search
+	 * engine are ready to go.
+	 * 
+	 * @return true if it's fully initialized
+	 */
+	boolean ready();
 }
