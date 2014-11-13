@@ -315,13 +315,11 @@ public final class Admin {
 			throw new IllegalStateException("Maintenance mode is not enabled.");
  		
  		//backup cpath2 access db to a CSV file
- 		CPathSettings cps = getInstance();
  		String filename = cpath.dataDir() + File.separator + "logentity.csv";
  		Connection conn = null;
  		try {
 			Class.forName("org.h2.Driver");
-			conn = DriverManager.getConnection(cpath.property(PROP_DB_CONNECTION) 
-					+ cps.getMainDb()+"_meta", cpath.property(PROP_DB_USER), cpath.property(PROP_DB_PASSW));
+			conn = DriverManager.getConnection("jdbc:h2:"+cpath.homeDir()+"/cpath2", "sa", "");
 			new Csv()
 				.write(conn, filename, "select * from logentity", "UTF-8");
 			LOG.info("Saved current access log DB to " + filename);
@@ -348,12 +346,10 @@ public final class Admin {
  		Connection conn = null;
  		try {
  			Class.forName("org.h2.Driver");
-			conn = DriverManager.getConnection(cpath.property(PROP_DB_CONNECTION) 
-				+ cpath.getMainDb() + "_meta", cpath.property(PROP_DB_USER), cpath.property(PROP_DB_PASSW));
+			conn = DriverManager.getConnection("jdbc:h2:"+cpath.homeDir()+"/cpath2", "sa", "");
 			
 			//backup
-			new Csv()
-				.write(conn, backup, "select * from logentity", "UTF-8");
+			new Csv().write(conn, backup, "select * from logentity", "UTF-8");
 			LOG.info("Saved current access log DB to " + backup);
 			
 			//clear all existing data
@@ -440,20 +436,20 @@ public final class Admin {
 		// for each non-warehouse metadata entry, update counts of pathways, etc.
 		for (Metadata md : pathwayMetadata) {
 			String name = md.standardName();
-			String[] filterByDatasourceNames = new String[] { md.getUri() };
+			String[] dsUrisFilter = new String[] { md.getUri() };
 
 			SearchResponse sr = (SearchResponse) searcher.search("*", 0,
-					Pathway.class, filterByDatasourceNames, null);
+					Pathway.class, dsUrisFilter, null);
 			md.setNumPathways(sr.getNumHits());
 			LOG.info(name + ", pathways: " + sr.getNumHits());
 
 			sr = (SearchResponse) searcher.search("*", 0, Interaction.class,
-					filterByDatasourceNames, null);
+					dsUrisFilter, null);
 			md.setNumInteractions(sr.getNumHits());
 			LOG.info(name + ", interactions: " + sr.getNumHits());
 
 			sr = (SearchResponse) searcher.search("*", 0, PhysicalEntity.class,
-					filterByDatasourceNames, null);
+					dsUrisFilter, null);
 			md.setNumPhysicalEntities(sr.getNumHits());
 			LOG.info(name + ", physical entities: " + sr.getNumHits());
 		}

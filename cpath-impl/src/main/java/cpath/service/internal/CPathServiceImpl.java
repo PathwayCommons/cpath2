@@ -94,7 +94,7 @@ import static cpath.service.Status.*;
  * @author rodche
  */
 @Service
-class CPathServiceImpl implements CPathService {
+public class CPathServiceImpl implements CPathService {
 	private static final Logger log = LoggerFactory.getLogger(CPathServiceImpl.class);
 	
 	Searcher searcher;
@@ -174,8 +174,6 @@ class CPathServiceImpl implements CPathService {
 		if(!paxtoolsModelReady() || searcher == null) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 		
-		ServiceResponse serviceResponse;
-		
 		try {
 			// do search
 			SearchResponse hits = searcher.search(queryStr, page, biopaxClass, dsources, organisms);
@@ -190,14 +188,13 @@ class CPathServiceImpl implements CPathService {
 				((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName()) 
 				+ "; ds: " + Arrays.toString(dsources)+ "; org.: " + Arrays.toString(organisms));
 			
-			serviceResponse = hits;
+			return hits;
 			
 		} catch (Exception e) {
-			serviceResponse = new ErrorResponse(INTERNAL_ERROR, e);
 			log.error("search() failed", e);
+			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
 		
-		return serviceResponse;
 	}
 		
 
@@ -584,17 +581,27 @@ class CPathServiceImpl implements CPathService {
 		final List<SearchHit> hits = topPathways.getSearchHit(); //empty list
 		int page = 0; // will use search pagination
 		
-		//TODO search can return ErrorResponse, so..
-		SearchResponse searchResponse = (SearchResponse) search("*", page, Pathway.class, datasources, organisms);
+		SearchResponse searchResponse = (SearchResponse) search("*", 
+				page, Pathway.class, datasources, organisms);
 		//go over all hits, all pages
+		final int numPathways = searchResponse.getNumHits();
+		int processed = 0;
 		while(!searchResponse.isEmpty()) {
 			log.debug("Retrieving top pathways search results, page #" + page);
 			//keep only pathways where 'pathway' index field
 			//is empty (no controlledOf and pathwayComponentOf values)
 			for(SearchHit h : searchResponse.getSearchHit()) {
-				if(h.getPathway().isEmpty()) 
-					hits.add(h); //add to topPathways list
+				if(h.getPathway().isEmpty() || 
+						(h.getPathway().size()==1 
+							&& h.getPathway().get(0).equalsIgnoreCase(h.getUri())
+						)
+					) hits.add(h); //add to the list
+				processed++;
 			}
+			
+			if(processed >= numPathways)
+				break; //may save us one uselss query
+			
 			// go next page
 			searchResponse = (SearchResponse) search("*", ++page, Pathway.class, datasources, organisms);
 		}

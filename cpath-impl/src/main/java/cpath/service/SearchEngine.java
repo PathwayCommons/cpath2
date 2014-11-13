@@ -2,8 +2,9 @@ package cpath.service;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.StringReader;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -14,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -22,8 +24,6 @@ import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.CorruptIndexException;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.Term;
@@ -34,9 +34,13 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.CachingWrapperFilter;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.MultiTermQuery;
+import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.SearcherFactory;
+import org.apache.lucene.search.SearcherManager;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.TopScoreDocCollector;
@@ -99,18 +103,18 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_DATASOURCE = "datasource";
 	public static final String FIELD_TYPE = "type";
 	
-	public final static String[] DEFAULT_FIELDS =
+	public final static String[] DEFAULT_FIELDS = //to use with the MultiFieldQueryParser
 	{
-			FIELD_KEYWORD, //anything, e.g., names, terms, comments, incl. - from child elements 
+			FIELD_KEYWORD, //includes all data type properties (names, terms, comments), also from  child elements up to given depth (3)
 			FIELD_NAME, // standardName, displayName, other names
 			FIELD_TERM, // CV terms
 			FIELD_XREFDB, //xref.db
-			FIELD_XREFID, //xref.id (incl. direct child xref's id, if any)
+			FIELD_XREFID, //xref.id (also direct child's xref.id, i.e., can find both xref and its owners using a xrefid:<id> query string)
 			FIELD_ECNUMBER,
 			FIELD_SEQUENCE,
-			FIELD_PATHWAY, // find by a parent pathway name (only URIs are stored in the index)
+			FIELD_PATHWAY, // PARENT pathway names (URIs are stored in the index, but not analyzed/indexed)
 			FIELD_SIZE, // find entities with a given no. child/associated processes...
-// the following fields are for filtering only (thus commented out)
+// the following fields are for filtering only (thus excluded):
 //			FIELD_ORGANISM,	
 //			FIELD_DATASOURCE, 
 //			FIELD_TYPE,
@@ -119,18 +123,29 @@ public class SearchEngine implements Indexer, Searcher {
 	
 	private final Model model;
 	private int maxHitsPerPage;
-	private final File indexFile;
 	private final Analyzer analyzer;
+	private final File indexFile;
+	private final SearcherManager searcherManager;
 
 	public final static int DEFAULT_MAX_HITS_PER_PAGE = 100;
 	
 	/**
 	 * Main Constructor.
 	 * @param indexLocation
+	 * @throws IOException 
 	 */
 	public SearchEngine(Model model, String indexLocation) {
 		this.model = model;
 		this.indexFile = new File(indexLocation);
+		
+		//create a new SearcherManager using the default factory and provided index directory:
+		try {
+			this.searcherManager = 
+				new SearcherManager(MMapDirectory.open(indexFile), new SearcherFactory());
+		} catch (IOException e) {
+			throw new RuntimeException("Failed to init the searcherManager.", e);
+		}
+		
 		this.maxHitsPerPage = DEFAULT_MAX_HITS_PER_PAGE;
 		this.analyzer = new StandardAnalyzer();
 	}
@@ -151,23 +166,37 @@ public class SearchEngine implements Indexer, Searcher {
 	{
 		SearchResponse response = null;
 		
-		if (LOG.isDebugEnabled())
-			LOG.debug("search: " + query + ", page: " + page 
-					+ ", filterBy: " + filterByType
-					+ "; extra filters: ds in (" + Arrays.toString(datasources)
-					+ "), org. in (" + Arrays.toString(organisms) + ")");
+		LOG.debug("search: " + query + ", page: " + page 
+			+ ", filterBy: " + filterByType
+			+ "; extra filters: ds in (" + Arrays.toString(datasources)
+			+ "), org. in (" + Arrays.toString(organisms) + ")");
+		
+		IndexSearcher searcher = null;
 	
-		try {
-			
-			IndexReader reader = DirectoryReader.open(MMapDirectory.open(indexFile));
-			IndexSearcher searcher = new IndexSearcher(reader);			
+		try {	
 			QueryParser queryParser = new MultiFieldQueryParser(DEFAULT_FIELDS, analyzer);
+			queryParser.setAllowLeadingWildcard(true);//TODO do we really want leading wildcards (e.g. *sulin)?
+			
+			searcher = searcherManager.acquire();	
 			
 			//find and transform top docs to search hits (beans), considering pagination...
-			if(!query.trim().equals("*")) {
-				//create the query and filter
+			if(!query.trim().equals("*")) { //if not "*" query, which is not supported out-of-the-box, then
+				//create the lucene query
 				Query luceneQuery = queryParser.parse(query);
-				luceneQuery = searcher.rewrite(luceneQuery); //TODO rewrite luceneQuery, why?..		
+//do NOT rewrite luceneQuery (wildcard, scoring won't work; highlighter does rewrite internally anyway)
+//				luceneQuery = searcher.rewrite(luceneQuery); //NO!
+				LOG.debug("parsed lucene query is " + luceneQuery.getClass().getSimpleName());
+				
+// a USELESS hack for scorer/highlighter and specific queries, e.g.: q=pathway:whatwver, q=name:brca*, etc.
+//				if(luceneQuery instanceof PrefixQuery) {
+//					((PrefixQuery)luceneQuery).setRewriteMethod(MultiTermQuery.SCORING_BOOLEAN_QUERY_REWRITE);
+//				} else 	if(luceneQuery instanceof TermQuery) {
+//					BooleanQuery booleanQuery = new BooleanQuery();
+//					booleanQuery.add(luceneQuery, Occur.MUST);
+//					luceneQuery = booleanQuery;
+//				}
+				
+				//create filter: type AND (d OR d...) AND (o OR o...)
 				Filter filter = createFilter(filterByType, datasources, organisms);
 				
 				//get the first page of top hits
@@ -179,12 +208,8 @@ public class SearchEngine implements Indexer, Searcher {
 					topDocs = collector.topDocs(page * maxHitsPerPage, maxHitsPerPage);
 				}
 				
-				// use a Highlighter (store.YES must be enabled for 'keyword' field)
-				QueryScorer scorer = new QueryScorer(luceneQuery, FIELD_KEYWORD); 
-				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
-				Highlighter highlighter = new Highlighter(formatter, scorer);
-				highlighter.setTextFragmenter(new SimpleSpanFragmenter(scorer, 80));
-				response = transform(luceneQuery, searcher, highlighter, topDocs);
+				//transform docs to hits, use a highlighter to get excerpts
+				response = transform(luceneQuery, searcher, true, topDocs);
 	
 			} else { //find ALL objects of a particular BioPAX class (+ filters by organism, datasource)
 				if(filterByType==null) 
@@ -207,22 +232,26 @@ public class SearchEngine implements Indexer, Searcher {
 				}
 				
 				//convert
-				response = transform(luceneQuery, searcher, null, topDocs);				
-			}
+				response = transform(luceneQuery, searcher, false, topDocs);			
+			}	
 			
 		} catch (ParseException e) {
 			throw new RuntimeException("getTopDocs: failed to parse the query string.", e);
 		} catch (IOException e) {
 			throw new RuntimeException("getTopDocs: failed.", e);
+		} finally {
+			try {
+				if(searcher!=null)
+					searcherManager.release(searcher);
+			} catch (IOException e) {}	
 		}
 
 		return response;
 	}
 
 	
-	// Highlight, transform Lucene docs to hits (xml/java beans)
-	private SearchResponse transform(Query query, IndexSearcher searcher, 
-			Highlighter highlighter, TopDocs topDocs) 
+	// Transform Lucene docs to hits (xml/java beans)
+	private SearchResponse transform(Query query, IndexSearcher searcher, boolean highlight, TopDocs topDocs) 
 			throws CorruptIndexException, IOException 
 	{	
 		SearchResponse response = new SearchResponse();
@@ -230,31 +259,40 @@ public class SearchEngine implements Indexer, Searcher {
 		List<SearchHit> hits = response.getSearchHit();//empty list
 		assert hits!=null && hits.isEmpty();
 		
-		for(ScoreDoc scoreDoc : topDocs.scoreDocs) {
-			
+		for(ScoreDoc scoreDoc : topDocs.scoreDocs) {			
 			SearchHit hit = new SearchHit();
 			Document doc = searcher.doc(scoreDoc.doc);
 			String uri = doc.get(FIELD_URI);
-			BioPAXElement bpe = model.getByID(uri);
-			
+			BioPAXElement bpe = model.getByID(uri);			
 			LOG.debug("transform: doc:" + scoreDoc.doc + ", uri:" + uri);
 			
 			// use the highlighter (get matching fragments)
-			if (highlighter != null) {
-				final List<String> frags = new ArrayList<String>();
+			// for this to work, all keywords were stored in the index field
+			if (highlight && doc.get(FIELD_KEYWORD) != null) {				
+				// use a Highlighter (store.YES must be enabled for 'keyword' field)
+				QueryScorer scorer = new QueryScorer(query, FIELD_KEYWORD); 
+				//this fixes scoring/highlighting for all-field wildcard queries like q=insulin* 
+				//but not for term/prefix queries, i.e, q=name:insulin*, q=pathway:brca2. TODO
+				scorer.setExpandMultiTermQuery(true);	
+				
+				//TODO use PostingsHighlighter once it's stable (see http://lucene.apache.org/core/4_10_0/highlighter/org/apache/lucene/search/postingshighlight/PostingsHighlighter.html)				
+				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
+				Highlighter highlighter = new Highlighter(formatter, scorer);
+				highlighter.setTextFragmenter(new SimpleSpanFragmenter(scorer, 80));
+										
+				final String text = StringUtils.join(doc.getValues(FIELD_KEYWORD), " ");
 				try {
-					if (doc.get(FIELD_KEYWORD) != null) {
-						final String text = StringUtils.join(doc.getValues(FIELD_KEYWORD), " ");					
-						for(String fr : highlighter.getBestFragments(analyzer, FIELD_KEYWORD, text, 5)) {
-							frags.add(fr);
-						}
-					}
-				} catch (Exception e) {
-					throw new RuntimeException(e);
-				}
+					TokenStream tokenStream = analyzer.tokenStream("", new StringReader(text));
+					String res = highlighter.getBestFragments(tokenStream, text, 7, "...");
 
-				if(!frags.isEmpty())
-					hit.setExcerpt(frags.toString());
+					if(res != null && !res.isEmpty())
+						hit.setExcerpt(res);
+
+				} catch (Exception e) {throw new RuntimeException(e);}
+
+			} else if(highlight) {
+				LOG.warn("Highlighter skipped, because KEYWORD field was null; hit: " 
+						+ uri + ", " + bpe.getModelInterface().getSimpleName());
 			}
 			
 			hit.setUri(uri);
@@ -311,8 +349,9 @@ public class SearchEngine implements Indexer, Searcher {
 			if(doc.get(FIELD_PATHWAY) != null) {
 				Set<String> uniqueVals = new TreeSet<String>();
 				for(String d : doc.getValues(FIELD_PATHWAY)) {
-					//note: only URIS were stored in the index (though all names/ids were indexed)
-					uniqueVals.add(d);
+					//only URIs were stored (though all names/ids were indexed/analyzed)
+					if(!d.equals(uri)) //exclude itself
+						uniqueVals.add(d);
 				}
 				hit.getPathway().addAll(uniqueVals);
 			}
@@ -374,7 +413,15 @@ public class SearchEngine implements Indexer, Searcher {
 			exec.execute(new Runnable() {
 				public void run() {					
 					// get or infer some important values if possible from this, child or parent objects:
-					bpe.getAnnotations().put(FIELD_KEYWORD, ModelUtils.getKeywords(bpe, 3));
+					Set<String> keywords = ModelUtils.getKeywords(bpe, 3);
+					
+					// a hack to remove special (debugging) biopax comments
+					for(String s : new HashSet<String>(keywords)) {
+						if(s.startsWith("REPLACED "))
+							keywords.remove(s);
+					}
+					
+					bpe.getAnnotations().put(FIELD_KEYWORD, keywords);
 					bpe.getAnnotations().put(FIELD_DATASOURCE, ModelUtils.getDatasources(bpe));
 					bpe.getAnnotations().put(FIELD_ORGANISM, ModelUtils.getOrganisms(bpe));
 					bpe.getAnnotations().put(FIELD_PATHWAY, ModelUtils.getParentPathways(bpe));
@@ -405,8 +452,10 @@ public class SearchEngine implements Indexer, Searcher {
 		
 		try {
 			indexWriter.close();
+			searcherManager.maybeRefresh();
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to close IndexWriter.", e);
+		} finally {
 		}
 	}
 	
@@ -532,13 +581,13 @@ public class SearchEngine implements Indexer, Searcher {
 				doc.add(field);
 			}
 			if (xref.getDb() != null) {
-				field = new StringField(FIELD_XREFDB, xref.getDb().toLowerCase(), Field.Store.NO);
+				field = new TextField(FIELD_XREFDB, xref.getDb().toLowerCase(), Field.Store.NO);
 				doc.add(field);
 			}
 		}
 		
 		
-		// boost entire document based on biopax type
+// Entire document boost does not work in licene 4 !
 //		if(bpe instanceof Pathway)
 //			doc.setBoost(1.7f);
 //		else if(bpe instanceof Interaction)
@@ -564,12 +613,12 @@ public class SearchEngine implements Indexer, Searcher {
 
 	private void addDatasources(Set<Provenance> set, Document doc) {
 		for (Provenance p : set) {
-			// do not do .toLowerCase() for the URI; index and store - 
+			// Index and store URI (untokinized) - 
 			// required to accurately calculate no. entities or to filter by data source (diff. datasources may share same names)
 			doc.add(new StringField(FIELD_DATASOURCE, p.getRDFId(), Field.Store.YES));
 			// index names as well
 			for (String s : p.getName())
-				doc.add(new StringField(FIELD_DATASOURCE, s.toLowerCase(), Field.Store.NO));
+				doc.add(new TextField(FIELD_DATASOURCE, s.toLowerCase(), Field.Store.NO));
 		}
 	}
 
@@ -577,28 +626,26 @@ public class SearchEngine implements Indexer, Searcher {
 		for(BioSource bs : set) {
 			// store URI as is (not indexed, untokinized)
 			doc.add(new StoredField(FIELD_ORGANISM, bs.getRDFId()));
-//TODO - to index BioSource URIs may be required; if so, replace the above with below line:
-//			doc.add(new StringField(FIELD_ORGANISM, bs.getRDFId(), Field.Store.YES));
 				
-			// add organism names
+			// add organism names (untokinized)
 			for(String s : bs.getName()) {
-				doc.add(new StringField(FIELD_ORGANISM, s.toLowerCase(), Field.Store.NO));
+				doc.add(new TextField(FIELD_ORGANISM, s.toLowerCase(), Field.Store.NO));
 			}
 			// add taxonomy
 			for(UnificationXref x : 
 				new ClassFilterSet<Xref,UnificationXref>(bs.getXref(), UnificationXref.class)) {
 				if(x.getId() != null)
-					doc.add(new StringField(FIELD_ORGANISM, x.getId().toLowerCase(), Field.Store.NO));
+					doc.add(new TextField(FIELD_ORGANISM, x.getId().toLowerCase(), Field.Store.NO));
 			}
 			// include tissue type terms
 			if (bs.getTissue() != null) {
 				for (String s : bs.getTissue().getTerm())
-					doc.add(new StringField(FIELD_ORGANISM, s.toLowerCase(), Field.Store.NO));
+					doc.add(new TextField(FIELD_ORGANISM, s.toLowerCase(), Field.Store.NO));
 			}
 			// include cell type terms
 			if (bs.getCellType() != null) {
 				for (String s : bs.getCellType().getTerm()) {
-					doc.add(new StringField(FIELD_ORGANISM, s.toLowerCase(), Field.Store.NO));
+					doc.add(new TextField(FIELD_ORGANISM, s.toLowerCase(), Field.Store.NO));
 				}
 			}
 		}
@@ -608,15 +655,21 @@ public class SearchEngine implements Indexer, Searcher {
 		for(Pathway pw : set) {
 			//add URI as is (do not lowercase; do not index; store=yes - required to report hits, e.g., as xml)
 			doc.add(new StoredField(FIELD_PATHWAY, pw.getRDFId()));
-			// add names to the index as well
+			
+			// add names to the 'pathway' (don't store) and 'keywords' (store) indexes
 			for (String s : pw.getName()) {
 				doc.add(new TextField(FIELD_PATHWAY, s.toLowerCase(), Field.Store.NO));
+				doc.add(new TextField(FIELD_KEYWORD, s.toLowerCase(), Field.Store.YES));
 			}
+			
 			// add unification xref IDs too
 			for (UnificationXref x : new ClassFilterSet<Xref, UnificationXref>(
 					pw.getXref(), UnificationXref.class)) {
-				if (x.getId() != null)
-					doc.add(new StringField(FIELD_PATHWAY, x.getId().toLowerCase(), Field.Store.NO));
+				if (x.getId() != null) {
+					// index in both 'pathway' (don't store) and 'keywords' (store)
+					doc.add(new TextField(FIELD_PATHWAY, x.getId().toLowerCase(), Field.Store.NO));
+					doc.add(new TextField(FIELD_KEYWORD, x.getId().toLowerCase(), Field.Store.YES));
+				}
 			}
 		}
 	}
@@ -638,39 +691,50 @@ public class SearchEngine implements Indexer, Searcher {
 		return id;
 	}
 	
-	
+	/* Creates a search filter like 
+	 * type AND (datasource OR datasource...) 
+	 *      AND (organism OR organism OR...)
+	 * 
+	 * Standard names or URIs should work for filter values 
+	 * (type,datasource,organism index fields are not tokenized)
+	 */	
 	private Filter createFilter(Class<? extends BioPAXElement> type, 
 			String[] datasources, String[] organisms) {
 		
-		/* Only standard names and IDs will work as filter values; other will return no result 
-		 * (also, the filter fields are not tokenized/analyzed, by design)
-		 */
-		BooleanQuery query = new BooleanQuery();
-		if (datasources != null && datasources.length > 0)
-		for(String fv : datasources) {
-			String term = fv.trim();
-			query.add(new TermQuery(new Term(FIELD_DATASOURCE, term.toLowerCase())),
-				Occur.SHOULD);
+		BooleanQuery filterQuery = new BooleanQuery();
+			
+		if (datasources != null && datasources.length > 0) {
+			BooleanQuery query = new BooleanQuery();
+			for(String fv : datasources) {
+				String term = fv.trim();
+				query.add(new TermQuery(new Term(FIELD_DATASOURCE, term.toLowerCase())),
+						Occur.SHOULD);
+			}
+			filterQuery.add(query, Occur.MUST);
 		}
 		
-		if (organisms != null && organisms.length > 0)
-		for(String fv : organisms) {
-			String term = fv.trim();
-			query.add(new TermQuery(new Term(FIELD_ORGANISM, term.toLowerCase())),
-				Occur.SHOULD);
+		if (organisms != null && organisms.length > 0) {
+			BooleanQuery query = new BooleanQuery();
+			for(String fv : organisms) {
+				String term = fv.trim();
+				query.add(new TermQuery(new Term(FIELD_ORGANISM, term.toLowerCase())),
+						Occur.SHOULD);
+			}
+			filterQuery.add(query, Occur.MUST);
 		}
 		
-		//add biopax class filter if makes sense
-		if(type != null && type != BioPAXElement.class) {
+		if(type != null) { //add biopax class filter
+			BooleanQuery query = new BooleanQuery();
 			query.add(new TermQuery(new Term(FIELD_TYPE, type.getSimpleName().toLowerCase())), Occur.SHOULD);
 			//for each biopax subclass (interface), add the name to the filter query
 			for(Class<? extends BioPAXElement> subType : SimpleEditorMap.L3.getKnownSubClassesOf(type)) {
 				query.add(new TermQuery(new Term(FIELD_TYPE, subType.getSimpleName().toLowerCase())), Occur.SHOULD);
 			}
+			filterQuery.add(query, Occur.MUST);
 		}
 		
-		if(!query.clauses().isEmpty())
-			return new CachingWrapperFilter( new QueryWrapperFilter(query) ); //TODO why CachingWrapperFilter, QueryWrapperFilter?
+		if(!filterQuery.clauses().isEmpty())
+			return new CachingWrapperFilter( new QueryWrapperFilter(filterQuery) ); //TODO why CachingWrapperFilter, QueryWrapperFilter?
 		else 
 			return null;
 	}

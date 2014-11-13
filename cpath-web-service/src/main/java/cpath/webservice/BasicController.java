@@ -37,7 +37,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -67,19 +66,9 @@ public abstract class BasicController {
     
     @Autowired
     public void setLogRepository(CPathService service) {
-    	Assert.notNull(service);
-    	Assert.notNull(service.log());
-    	Assert.notNull(service.metadata());   	
+    	Assert.notNull(service);  	
 		this.service = service;
 	}
-
-    
-    @PostConstruct
-    void init() {
-    	//load the BioPAX model, etc. from files; init the search engine
-    	service.init();
-    }
-    
     
     /**
      * Http error response from the error bean.

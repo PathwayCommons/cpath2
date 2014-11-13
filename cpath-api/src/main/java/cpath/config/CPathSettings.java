@@ -103,17 +103,11 @@ public final class CPathSettings {
 
 	
 	/* System / Environment property names used by cPath2
-	 * (loaded by Spring (property placeholder) from the cpath2.properties,
+	 * (loaded by Spring property placeholder from the cpath2.properties,
 	 * but can be also via java -D options too)
 	 */
-	public static final String PROP_DB_USER = "cpath2.db.user";
-	public static final String PROP_DB_PASSW = "cpath2.db.password";
-	public static final String PROP_DB_DRIVER = "cpath2.db.driver";
-	public static final String PROP_DB_CONNECTION = "cpath2.db.connection";
-	public static final String PROP_DB_DIALECT = "cpath2.db.dialect";
 	public static final String PROP_ADMIN_USER = "cpath2.admin.user";
 	public static final String PROP_ADMIN_PASSW = "cpath2.admin.password";
-	public static final String PROP_MAIN_DB = "cpath2.db";
 	
 	/* Unlike the above, following properties are not used by Spring/Hibernate right away;
 	 * normally, cpath2 starts despite these are not provided and will try 
@@ -282,20 +276,6 @@ public final class CPathSettings {
 	
 	public void setAdminEnabled(boolean enabled) {
 		setCPathProperty(PROP_ADMIN_ENABLED, Boolean.toString(enabled));
-	}
-
-
-	/**
-	 * This cPath2 instance's database name.
-	 * 
-	 * @return
-	 */
-	public String getMainDb() {
-		return property(PROP_MAIN_DB);
-	}
-
-	public void setMainDb(String mainDb) {
-		setCPathProperty(PROP_MAIN_DB, mainDb);
 	}
 
 
