@@ -34,8 +34,8 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.CachingWrapperFilter;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.MultiTermQuery;
-import org.apache.lucene.search.PrefixQuery;
+//import org.apache.lucene.search.MultiTermQuery;
+//import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.ScoreDoc;
@@ -49,7 +49,6 @@ import org.apache.lucene.search.highlight.Highlighter;
 import org.apache.lucene.search.highlight.QueryScorer;
 import org.apache.lucene.search.highlight.SimpleHTMLFormatter;
 import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
-import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.Version;
@@ -72,7 +71,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CPathUtils;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 
@@ -125,7 +123,7 @@ public class SearchEngine implements Indexer, Searcher {
 	private int maxHitsPerPage;
 	private final Analyzer analyzer;
 	private final File indexFile;
-	private final SearcherManager searcherManager;
+	private SearcherManager searcherManager;
 
 	public final static int DEFAULT_MAX_HITS_PER_PAGE = 100;
 	
@@ -137,19 +135,22 @@ public class SearchEngine implements Indexer, Searcher {
 	public SearchEngine(Model model, String indexLocation) {
 		this.model = model;
 		this.indexFile = new File(indexLocation);
-		
-		//create a new SearcherManager using the default factory and provided index directory:
-		try {
-			this.searcherManager = 
-				new SearcherManager(MMapDirectory.open(indexFile), new SearcherFactory());
-		} catch (IOException e) {
-			throw new RuntimeException("Failed to init the searcherManager.", e);
-		}
-		
+		initSearcherManager();
 		this.maxHitsPerPage = DEFAULT_MAX_HITS_PER_PAGE;
 		this.analyzer = new StandardAnalyzer();
 	}
 
+	private void initSearcherManager() {
+		try {
+			if(indexFile.exists()) 
+				this.searcherManager = 
+					new SearcherManager(MMapDirectory.open(indexFile), new SearcherFactory());
+			else 
+				LOG.info(indexFile.getPath() + " does not exist.");
+		} catch (IOException e) {
+			LOG.warn("Could not create a searcher: " + e);
+		}
+	}
 	
 	public void setMaxHitsPerPage(int maxHitsPerPage) {
 		this.maxHitsPerPage = maxHitsPerPage;
@@ -186,15 +187,6 @@ public class SearchEngine implements Indexer, Searcher {
 //do NOT rewrite luceneQuery (wildcard, scoring won't work; highlighter does rewrite internally anyway)
 //				luceneQuery = searcher.rewrite(luceneQuery); //NO!
 				LOG.debug("parsed lucene query is " + luceneQuery.getClass().getSimpleName());
-				
-// a USELESS hack for scorer/highlighter and specific queries, e.g.: q=pathway:whatwver, q=name:brca*, etc.
-//				if(luceneQuery instanceof PrefixQuery) {
-//					((PrefixQuery)luceneQuery).setRewriteMethod(MultiTermQuery.SCORING_BOOLEAN_QUERY_REWRITE);
-//				} else 	if(luceneQuery instanceof TermQuery) {
-//					BooleanQuery booleanQuery = new BooleanQuery();
-//					booleanQuery.add(luceneQuery, Occur.MUST);
-//					luceneQuery = booleanQuery;
-//				}
 				
 				//create filter: type AND (d OR d...) AND (o OR o...)
 				Filter filter = createFilter(filterByType, datasources, organisms);
@@ -241,8 +233,10 @@ public class SearchEngine implements Indexer, Searcher {
 			throw new RuntimeException("getTopDocs: failed.", e);
 		} finally {
 			try {
-				if(searcher!=null)
+				if(searcher!=null) {
 					searcherManager.release(searcher);
+					searcher = null;
+				}
 			} catch (IOException e) {}	
 		}
 
@@ -389,22 +383,24 @@ public class SearchEngine implements Indexer, Searcher {
 
 	public void index() {
 		final int numObjects =  model.getObjects().size();
-		LOG.info("index(), there are " + numObjects + " biopax objects to be indexed.");
-		
-		//drop/cleanup the index if exists
-		LOG.info("Erasing the biopax index directory...");
-		CPathUtils.cleanupDirectory(indexFile);
-		
+		LOG.info("index(), there are " + numObjects + " BioPAX objects to be (re-)indexed.");		
 		IndexWriter iw;		
 		try {
-			Directory directory = FSDirectory.open(indexFile);
+			//close the searcher manager if the old index exists
+			if(searcherManager != null) {
+				searcherManager.close();
+				searcherManager = null;
+			}
 			IndexWriterConfig conf = new IndexWriterConfig(Version.LATEST, analyzer);
-			iw = new IndexWriter(directory, conf);
+			iw = new IndexWriter(FSDirectory.open(indexFile), conf);
+			//cleanup
+			iw.deleteAll();
+			iw.commit();
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to create a new IndexWriter.", e);
-		}
+		}		
 		final IndexWriter indexWriter = iw;
-		
+
 		ExecutorService exec = Executors.newFixedThreadPool(30);
 		
 		final AtomicInteger numLeft = new AtomicInteger(numObjects);
@@ -444,19 +440,20 @@ public class SearchEngine implements Indexer, Searcher {
 		}
 		
 		exec.shutdown(); //stop accepting new tasks	
-		try {
+		try { //wait
 			exec.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
 		} catch (InterruptedException e) {
 			throw new RuntimeException("Interrupted!", e);
 		}
 		
 		try {
-			indexWriter.close();
-			searcherManager.maybeRefresh();
+			indexWriter.close(); //wait for pending op., auto-commit, close.
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to close IndexWriter.", e);
-		} finally {
-		}
+		} 
+		
+		//finally, create a new searcher manager
+		initSearcherManager();
 	}
 	
 	
@@ -487,7 +484,8 @@ public class SearchEngine implements Indexer, Searcher {
 	 *  'keyword' - infer from current and its child objects' data properties,
 	 *            such as Score.value, structureData, structureFormat, chemicalFormula, 
 	 *            availability, comment, patoData, author, source, title, url, published, 
-	 *            up to given depth/level, analyze=yes, store=yes;
+	 *            up to given depth/level; and also all 'pathway' field values are included here; 
+	 *            analyze=yes, store=yes;
 	 *  
 	 *  'datasource', 'organism', 'pathway' - infer from current and its child objects up to given depth/level, analyze=no, store=yes;
 	 *  

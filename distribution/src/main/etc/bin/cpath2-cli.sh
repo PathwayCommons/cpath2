@@ -12,9 +12,8 @@ echo "CPATH2_HOME Directory: $CPATH2_HOME"
 
 # get cpath2 properties
 xmlbase=`sed '/^\#/d' $CPATH2_HOME/cpath2.properties | grep 'cpath2.xml.base'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
-maindb=`sed '/^\#/d' $CPATH2_HOME/cpath2.properties | grep 'cpath2.db='  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'`
 
-echo "$0 $1 $2 $3 $4 $5 using: main.db=$maindb; xml.base=$xmlbase"
+echo "$0 $1 $2 $3 $4 $5; xml.base=$xmlbase"
 
 
 CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss65536k -Xmx8g -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider -Dspring.profiles.active=prod"

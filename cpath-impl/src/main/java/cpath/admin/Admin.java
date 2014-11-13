@@ -386,16 +386,9 @@ public final class Admin {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
 		
-		// cleanup the index directory
-		CPathSettings cpath = CPathSettings.getInstance();
-		LOG.info("createIndex: cleaning up the index directory: " + cpath.indexDir());
-		File dir = new File(cpath.indexDir());
-		CPathUtils.cleanupDirectory(dir);
-		
 		LOG.info("createIndex: loading the BioPAX model...");
 		Model model = CPathUtils.loadMainBiopaxModel();
-		Indexer indexer = new SearchEngine(model, cpath.indexDir());
-		
+		Indexer indexer = new SearchEngine(model, CPathSettings.getInstance().indexDir());	
 		LOG.info("createIndex: started indexing...");
 		indexer.index();
 		
