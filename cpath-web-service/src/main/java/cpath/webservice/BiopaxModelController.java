@@ -163,7 +163,6 @@ public class BiopaxModelController extends BasicController {
     		@RequestParam(required=false) String[] datasource, @RequestParam(required=false) String[] organism, 
     		HttpServletRequest request, HttpServletResponse response) throws IOException
     {
-//		log(request, "organisms="+Arrays.toString(organism), "datasource="+Arrays.toString(datasource));
     	Set<LogEvent> events = new HashSet<LogEvent>();
     	events.add(LogEvent.from(Cmd.TOP_PATHWAYS));
     	events.add(LogEvent.FORMAT_OTHER);
@@ -174,7 +173,6 @@ public class BiopaxModelController extends BasicController {
 			errorResponse(Status.NO_RESULTS_FOUND, "no hits", request, response, events);
 		} else {
 			//log to db
-			//TODO ? not sure we have to update provides' counters...
     		events.addAll(LogEvent.fromProviders(results.getProviders()));
 	    	service.log(events, clientIpAddress(request));
 			
@@ -190,7 +188,6 @@ public class BiopaxModelController extends BasicController {
     	BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
     		throws IOException 
     {
-//    	log(request, "path="+query.getPath());
     	Set<LogEvent> events = new HashSet<LogEvent>();
     	events.add(LogEvent.from(Cmd.TRAVERSE));
     	events.add(LogEvent.FORMAT_OTHER);
@@ -291,7 +288,7 @@ public class BiopaxModelController extends BasicController {
 					search.getDatasource(), search.getOrganism());
 
 			if(results instanceof ErrorResponse) {
-				errorResponse(Status.INTERNAL_ERROR, 
+				errorResponse(((ErrorResponse) results).getStatus(), 
 					((ErrorResponse) results).toString(), 
 						request, response, events);
 			} else if(results.isEmpty()) {

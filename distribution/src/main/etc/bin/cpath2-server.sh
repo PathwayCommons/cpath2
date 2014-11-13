@@ -28,7 +28,7 @@ CPATH2_TUNING_OPTS="-Xms2g -Xmn1g -XX:PermSize=128m -XX:MaxPermSize=256m -XX:Sur
 
 CPATH2_PROFILING_OPTS="-agentpath:/data/local/jprofiler6/bin/linux-x64/libjprofilerti.so=port=48000,wait"
 
-JAVA_DEBUG_OPTS="-Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=12345"
+JAVA_DEBUG_OPTS="-Dlogback.configurationFile=$CPATH2_HOME/logback.xml -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=12345"
 
 if [ -z "$1" ]; then 
 	$JAVA_HOME/bin/java -jar cpath2-server.jar --help

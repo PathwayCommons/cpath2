@@ -79,10 +79,19 @@ public class SearchEngineTest {
 		response = searchEngine.search("*", 0, PhysicalEntity.class, null, new String[] {"562"});
 		assertEquals(2, response.getSearchHit().size());
 		
+		response = searchEngine.search("*", 0, PhysicalEntity.class, null, new String[] {"Escherichia"});
+		assertFalse(response.isEmpty());
+		assertEquals(2, response.getSearchHit().size());
+		
 		response = searchEngine.search("*", 0, Provenance.class, null, null);
 		assertEquals(2, response.getSearchHit().size());
 		
 		response = searchEngine.search("*", 0, Provenance.class, new String[] {"kegg"}, null);
+		assertEquals(1, response.getSearchHit().size());
+		
+		//datasource filter using a URI (required for -update-counts console command and datasources.html page to work)
+		response = searchEngine.search("*", 0, Pathway.class, new String[] {"http://identifiers.org/kegg.pathway/"}, null);
+		assertFalse(response.isEmpty());
 		assertEquals(1, response.getSearchHit().size());
 		
 		response = searchEngine.search("pathway:glycolysis", 0, SmallMoleculeReference.class, null, null);
