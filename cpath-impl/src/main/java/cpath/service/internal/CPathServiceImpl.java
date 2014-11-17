@@ -527,7 +527,7 @@ public class CPathServiceImpl implements CPathService {
 			}
 		}
 				
-		log.info("findUrisByIds, seed Xrefs: " + uris + 
+		log.debug("findUrisByIds, seed Xrefs: " + uris + 
 				" were mapped/found by orig. IDs: " + Arrays.toString(identifiers));
 		
 		return uris.toArray(new String[]{});
