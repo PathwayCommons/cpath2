@@ -83,6 +83,10 @@ public class SearchEngineTest {
 		assertFalse(response.isEmpty());
 		assertEquals(2, response.getSearchHit().size());
 		
+		response = searchEngine.search("*", 0, PhysicalEntity.class, null, new String[] {"Escherichia coliü"});
+		assertFalse(response.isEmpty());
+		assertEquals(2, response.getSearchHit().size());
+		
 		response = searchEngine.search("*", 0, Provenance.class, null, null);
 		assertEquals(2, response.getSearchHit().size());
 		
