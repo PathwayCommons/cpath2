@@ -154,7 +154,7 @@ public class CPathServiceImpl implements CPathService {
 				paxtoolsModel = model;
 				if(paxtoolsModel != null) {
 					model.setXmlBase(CPathSettings.getInstance().getXmlBase());
-					log.info("RAM BioPAX Model (proxy) is now ready for queries");
+					log.info("Main BioPAX model (in-memory) is now ready for queries.");
 					searcher = new SearchEngine(paxtoolsModel, 
 							CPathSettings.getInstance().indexDir());
 					((SearchEngine) searcher).setMaxHitsPerPage(
