@@ -25,7 +25,7 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.dao.internal;
+package cpath.dao;
 
 import java.net.URLDecoder;
 import java.util.*;
@@ -43,7 +43,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CvRepository;
 
 /**
  * This is to access OBO Cvs:

@@ -35,13 +35,13 @@ import cpath.importer.Merger;
 import cpath.importer.PreMerger;
 import cpath.jpa.Metadata;
 import cpath.jpa.MetadataRepository;
+import cpath.service.BiopaxConverter;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.Indexer;
 import cpath.service.OutputFormat;
 import cpath.service.SearchEngine;
 import cpath.service.Searcher;
-import cpath.service.internal.BiopaxConverter;
 import cpath.service.jaxb.*;
 
 import org.biopax.paxtools.controller.SimpleEditorMap;

@@ -26,7 +26,7 @@
  **/
 
 
-package cpath.service.internal;
+package cpath.service;
 
 import java.io.*;
 import java.util.*;
