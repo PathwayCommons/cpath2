@@ -22,7 +22,7 @@
 
 	<!-- for the cpath2 service bean, init() is only required once in the web service app 
 	(i.e., not required by tests nor console commands); that's why it's not @PostConstruct. -->
-	<bean id="service" class="cpath.service.internal.CPathServiceImpl" init-method="init" />
+	<bean id="service" class="cpath.service.CPathServiceImpl" init-method="init" />
 
 	<!-- Exceptions handler -->
 	<bean

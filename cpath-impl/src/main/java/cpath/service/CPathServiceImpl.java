@@ -26,7 +26,7 @@
  **/
 
 
-package cpath.service.internal;
+package cpath.service;
 
 import java.io.*;
 import java.util.*;
@@ -78,11 +78,8 @@ import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 import cpath.service.jaxb.TraverseResponse;
-import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
-import cpath.service.SearchEngine;
-import cpath.service.Searcher;
 import static cpath.service.Status.*;
 
 

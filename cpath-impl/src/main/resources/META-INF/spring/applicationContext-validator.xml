@@ -44,7 +44,7 @@
     </bean>
     
 	<!-- info: CvFetcher extends OntologyManager(Adapter) and also implements WarehouseDAO interface -->
-	<bean id="cvFetcher" class="cpath.dao.internal.OntologyManagerCvRepository">
+	<bean id="cvFetcher" class="cpath.dao.OntologyManagerCvRepository">
 		<constructor-arg index="0">
 		 	<util:properties local-override="false" location="classpath:obo.properties"/>
 		</constructor-arg>

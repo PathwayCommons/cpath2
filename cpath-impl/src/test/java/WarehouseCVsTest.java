@@ -38,7 +38,7 @@ import org.biopax.psidev.ontology_manager.OntologyTermI;
 import org.biopax.psidev.ontology_manager.impl.OntologyTermImpl;
 import org.junit.Test;
 
-import cpath.dao.internal.OntologyManagerCvRepository;
+import cpath.dao.OntologyManagerCvRepository;
 
 /**
  * This tests are for CVs only (not using DAO);
@@ -72,7 +72,7 @@ public class WarehouseCVsTest {
 
 	/**
 	 * Test method for
-	 * {@link cpath.dao.internal.OntologyManagerCvRepository#ontologyTermsToUris(java.util.Collection)}
+	 * {@link cpath.dao.OntologyManagerCvRepository#ontologyTermsToUris(java.util.Collection)}
 	 */
 	@Test
 	public final void testOntologyTermsToUris() {
@@ -88,7 +88,7 @@ public class WarehouseCVsTest {
 
 	/**
 	 * Test method for
-	 * {@link cpath.dao.internal.OntologyManagerCvRepository#ontologyTermsToUris(java.util.Collection)}
+	 * {@link cpath.dao.OntologyManagerCvRepository#ontologyTermsToUris(java.util.Collection)}
 	 */
 	@Test
 	public final void testSearchForTermByAccession() {

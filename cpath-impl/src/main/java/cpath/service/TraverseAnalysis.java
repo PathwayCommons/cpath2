@@ -1,4 +1,4 @@
-package cpath.service.internal;
+package cpath.service;
 
 import java.util.Set;
 
