@@ -34,12 +34,14 @@ public class CPathClientTest {
 	
 	static {
 //		client = CPathClient.newInstance("http://www.pathwaycommons.org/pc2/");
-//		client = CPathClient.newInstance("http://purl.org/pc2/test/");
 //		client = CPathClient.newInstance("http://192.168.81.153:48080/");
 		client = CPathClient.newInstance("http://webservice.baderlab.org:48080/");
 //		client = CPathClient.newInstance("http://localhost:8080/");
-//		client.setName("CPathClientTest");
+		client.setName("CPathClientTest");
 	}
+	
+	final String testBioSourceUri="http://purl.org/pc2/7/BioSource_343022ef4adbf95df362e8b555d61240";
+	final String testPathwayUri="http://identifiers.org/reactome/REACT_12034.3";
 	
 	@Test
 	public final void testConnectionEtc() throws CPathException {
@@ -84,7 +86,7 @@ public class CPathClientTest {
         try {
 			resp = client.createTraverseQuery()
 				.propertyPath("Named/name")
-				.sources(new String[]{"http://purl.org/pc2/5/BioSource_343022ef4adbf95df362e8b555d61240"})
+				.sources(new String[]{testBioSourceUri})
 				.result();			
 		} catch (CPathException e) {
 			fail(e.toString());
@@ -111,7 +113,7 @@ public class CPathClientTest {
         try {
 			resp = client.createTraverseQuery()
 					.propertyPath("BioSource/participant")
-					.sources(new String[]{"http://purl.org/pc2/5/BioSource_343022ef4adbf95df362e8b555d61240"})
+					.sources(new String[]{testBioSourceUri})
 					.result();
 			fail("must throw CPathException and not something else");
 		} catch (CPathException e) {} //ok to ignore
@@ -120,7 +122,7 @@ public class CPathClientTest {
 		try {
 			resp = client.createTraverseQuery()
 				.propertyPath("Pathway/pathwayComponent")
-				.sources(new String[]{"http://identifiers.org/reactome/REACT_12034.3"})
+				.sources(new String[]{testPathwayUri})
 				.result();
 		} catch (CPathException e) {
 			fail(e.toString());
@@ -137,14 +139,15 @@ public class CPathClientTest {
 			resp = client.createSearchQuery()
 				.typeFilter(Pathway.class)
 				.queryString("name:\"bmp signaling pathway\"")
+//				.queryString("name:\"Signaling by BMP\"")
 				.result();
 		} catch (CPathException e) {
 			fail(e.toString());
 		}
 		
 		assertTrue(resp instanceof SearchResponse);
-		assertFalse(((SearchResponse)resp).getSearchHit().isEmpty());
-		
+		assertEquals(1, ((SearchResponse)resp).getSearchHit().size());
+		assertEquals(0, ((SearchResponse)resp).getSearchHit().get(0).getSize().intValue());
 		
 		resp = null;
         try {
@@ -208,7 +211,7 @@ public class CPathClientTest {
 	@Test //this test id data-dependent
 	public final void testGetPathwayByUri() throws CPathException {
 		Model m = client.createGetQuery()
-			.sources(new String[]{"http://identifiers.org/reactome/REACT_12034.3"})
+			.sources(new String[]{testPathwayUri})
 			.result();
         assertNotNull(m);
         assertFalse(m.getObjects(Pathway.class).isEmpty());

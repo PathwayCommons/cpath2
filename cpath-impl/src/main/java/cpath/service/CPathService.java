@@ -179,7 +179,7 @@ public interface CPathService {
 	 * @param datasources filter values (URIs, names)
 	 * @return
 	 */
-	SearchResponse topPathways(String[] organisms, String[] datasources);
+	ServiceResponse topPathways(String[] organisms, String[] datasources);
 	
 	
 	/**

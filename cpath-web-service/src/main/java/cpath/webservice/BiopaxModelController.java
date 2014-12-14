@@ -52,7 +52,6 @@ import cpath.webservice.args.binding.OutputFormatEditor;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
@@ -167,16 +166,20 @@ public class BiopaxModelController extends BasicController {
     	events.add(LogEvent.from(Cmd.TOP_PATHWAYS));
     	events.add(LogEvent.FORMAT_OTHER);
 		
-		SearchResponse results = service.topPathways(organism, datasource);
+		ServiceResponse results = service.topPathways(organism, datasource);
 		
-		if(results == null || results.isEmpty()) {
-			errorResponse(Status.NO_RESULTS_FOUND, "no hits", request, response, events);
-		} else {
+		if(results instanceof ErrorResponse) {
+			errorResponse(((ErrorResponse) results).getStatus(), 
+					((ErrorResponse) results).toString(), request, response, events);
+		} else if(results.isEmpty()) {
+			errorResponse(Status.NO_RESULTS_FOUND, 
+					"no hits", request, response, events);
+		} else {//return results
 			//log to db
-    		events.addAll(LogEvent.fromProviders(results.getProviders()));
+			SearchResponse hits = (SearchResponse) results;
+    		events.addAll(LogEvent.fromProviders(hits.getProviders()));
 	    	service.log(events, clientIpAddress(request));
-			
-			return results;
+			return hits;
 		}
 		
 		return null;

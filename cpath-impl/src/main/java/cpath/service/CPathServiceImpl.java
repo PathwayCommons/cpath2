@@ -115,13 +115,10 @@ public class CPathServiceImpl implements CPathService {
 	//init. on first access when proxy model mode is enabled (so do not use the var. directly!)
 	private Model paxtoolsModel;
 	
-	private final int maxHitsPerPage;
-	
 	/**
 	 * Constructor
 	 */
 	public CPathServiceImpl() {
-		this.maxHitsPerPage = Integer.parseInt(CPathSettings.getInstance().getMaxHitsPerPage());
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
 		this.cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
@@ -174,12 +171,6 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			// do search
 			SearchResponse hits = searcher.search(queryStr, page, biopaxClass, dsources, organisms);
-			
-			if(hits.isEmpty()) {//no hits
-				hits = new SearchResponse();
-				hits.setMaxHitsPerPage(maxHitsPerPage);
-				hits.setPageNo(page);
-			} 
 			
 			hits.setComment("Search '" + queryStr  + "' in " + 
 				((biopaxClass == null) ? "all types" : biopaxClass.getSimpleName()) 
@@ -572,22 +563,32 @@ public class CPathServiceImpl implements CPathService {
 	 * Here we follow the second method.
 	 */
 	@Override
-	public SearchResponse topPathways(final String[] organisms, final String[] datasources) {
+	public ServiceResponse topPathways(final String[] organisms, final String[] datasources) {
+		
+		if(!paxtoolsModelReady() || searcher == null) 
+			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 		
 		SearchResponse topPathways = new SearchResponse();
 		final List<SearchHit> hits = topPathways.getSearchHit(); //empty list
 		int page = 0; // will use search pagination
 		
-		SearchResponse searchResponse = (SearchResponse) search("*", 
-				page, Pathway.class, datasources, organisms);
+		SearchResponse r = null;
+		try {
+			r = searcher.search("*", page, Pathway.class, datasources, organisms);
+			
+		} catch(Exception e) {
+			log.error("topPathways() failed", e);
+			return new ErrorResponse(INTERNAL_ERROR, e);
+		}
+		
 		//go over all hits, all pages
-		final int numPathways = searchResponse.getNumHits();
+		final int numPathways = r.getNumHits();
 		int processed = 0;
-		while(!searchResponse.isEmpty()) {
+		while(!r.isEmpty()) {
 			log.debug("Retrieving top pathways search results, page #" + page);
 			//keep only pathways where 'pathway' index field
 			//is empty (no controlledOf and pathwayComponentOf values)
-			for(SearchHit h : searchResponse.getSearchHit()) {
+			for(SearchHit h : r.getSearchHit()) {
 				if(h.getPathway().isEmpty() || 
 						(h.getPathway().size()==1 
 							&& h.getPathway().get(0).equalsIgnoreCase(h.getUri())
@@ -600,7 +601,12 @@ public class CPathServiceImpl implements CPathService {
 				break; //may save us one uselss query
 			
 			// go next page
-			searchResponse = (SearchResponse) search("*", ++page, Pathway.class, datasources, organisms);
+			try {
+				r = searcher.search("*", ++page, Pathway.class, datasources, organisms);
+			} catch(Exception e) {
+				log.error("topPathways() failed", e);
+				return new ErrorResponse(INTERNAL_ERROR, e);
+			}
 		}
 		
 		// final touches...

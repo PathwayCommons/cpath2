@@ -100,12 +100,13 @@ public class SearchEngine implements Indexer, Searcher {
 	
 	public final static String[] DEFAULT_FIELDS = //to use with the MultiFieldQueryParser
 	{
-			FIELD_KEYWORD, //includes all data type properties (names, terms, comments), also from  child elements up to given depth (3)
 			FIELD_NAME, // standardName, displayName, other names
 			FIELD_XREFDB, //xref.db
 			FIELD_XREFID, //xref.id (also direct child's xref.id, i.e., can find both xref and its owners using a xrefid:<id> query string)
 			FIELD_PATHWAY, // PARENT pathway names (URIs are stored in the index, but not analyzed/indexed)
 			FIELD_SIZE, // find entities with a given no. child/associated processes...
+			FIELD_KEYWORD, //includes data type properties (names, terms, comments), 
+						  //also from  child elements up to given depth (3), also stores but not indexes parent pathway uris and names.			
 // the following fields are for filtering only (thus excluded):
 //			FIELD_ORGANISM,	
 //			FIELD_DATASOURCE, 
@@ -232,7 +233,9 @@ public class SearchEngine implements Indexer, Searcher {
 				}
 			} catch (IOException e) {}	
 		}
-
+	
+		response.setPageNo(page);
+		
 		return response;
 	}
 
@@ -241,11 +244,15 @@ public class SearchEngine implements Indexer, Searcher {
 	private SearchResponse transform(Query query, IndexSearcher searcher, boolean highlight, TopDocs topDocs) 
 			throws CorruptIndexException, IOException 
 	{	
+		if(topDocs == null)
+			throw new IllegalArgumentException("topDocs is null");
+		
 		SearchResponse response = new SearchResponse();
 		response.setMaxHitsPerPage(maxHitsPerPage);
+		response.setNumHits(topDocs.totalHits);	
 		List<SearchHit> hits = response.getSearchHit();//empty list
 		assert hits!=null && hits.isEmpty();
-		
+		LOG.debug("transform, no. TopDocs to process:" + topDocs.scoreDocs.length);
 		for(ScoreDoc scoreDoc : topDocs.scoreDocs) {			
 			SearchHit hit = new SearchHit();
 			Document doc = searcher.doc(scoreDoc.doc);
@@ -367,9 +374,6 @@ public class SearchEngine implements Indexer, Searcher {
 			}
 		}
 		
-		//set total no. hits	
-		response.setNumHits(topDocs.totalHits);	
-		
 		return response;
 	}
 
@@ -419,7 +423,7 @@ public class SearchEngine implements Indexer, Searcher {
 					// for bio processes, also save the total no. member interactions and pathways:
 					if(bpe instanceof org.biopax.paxtools.model.level3.Process) {
 						int size = new Fetcher(SimpleEditorMap.L3, Fetcher.nextStepFilter)
-								.fetch(bpe, Process.class).size() + 1; //+1 counts itself						
+								.fetch(bpe, Process.class).size(); //except itself						
 						bpe.getAnnotations().put(FIELD_SIZE, Integer.toString(size)); 
 					}
 
@@ -522,17 +526,17 @@ public class SearchEngine implements Indexer, Searcher {
 			Named named = (Named) bpe;
 			if(named.getDisplayName() != null) {
 				field = new TextField(FIELD_NAME, named.getDisplayName(), Field.Store.NO);
-				field.setBoost(2.5f);
+				field.setBoost(3.0f);
 				doc.add(field);
 			}
 			if(named.getStandardName() != null) {
 				field = new TextField(FIELD_NAME, named.getStandardName(), Field.Store.NO);
-				field.setBoost(3.0f);
+				field.setBoost(3.5f);
 				doc.add(field);
 			}
-			if(!named.getName().isEmpty()) {
-				field = new TextField(FIELD_NAME, StringUtils.join(named.getName(), " "), Field.Store.NO);
-				field.setBoost(2.0f);
+			for(String name : named.getName()) {
+				field = new TextField(FIELD_NAME, name.toLowerCase(), Field.Store.NO);
+				field.setBoost(2.5f);
 				doc.add(field);
 			}
 		}
@@ -545,7 +549,6 @@ public class SearchEngine implements Indexer, Searcher {
 					//the filed is not_analyzed; so in order to make search case-insensitive 
 					//(when searcher uses standard analyzer), we turn the value to lowercase.
 					field = new StringField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
-//					field.setBoost(1.5f); //cannot do for such field/store type
 					doc.add(field);
 				}
 			}
@@ -574,7 +577,9 @@ public class SearchEngine implements Indexer, Searcher {
 
 	private void addKeywords(Set<String> keywords, Document doc) {
 		for (String keyword : keywords) {
-			doc.add(new TextField(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.YES));
+			Field f = new TextField(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.YES);
+//			f.setBoost(0.5f);
+			doc.add(f);
 		}
 	}
 
@@ -626,7 +631,7 @@ public class SearchEngine implements Indexer, Searcher {
 			// add names to the 'pathway' (don't store) and 'keywords' (store) indexes
 			for (String s : pw.getName()) {
 				doc.add(new TextField(FIELD_PATHWAY, s.toLowerCase(), Field.Store.NO));
-				doc.add(new TextField(FIELD_KEYWORD, s.toLowerCase(), Field.Store.YES));
+				doc.add(new StoredField(FIELD_KEYWORD, s.toLowerCase())); //don't index but store for highlighting
 			}
 			
 			// add unification xref IDs too
@@ -635,7 +640,7 @@ public class SearchEngine implements Indexer, Searcher {
 				if (x.getId() != null) {
 					// index in both 'pathway' (don't store) and 'keywords' (store)
 					doc.add(new TextField(FIELD_PATHWAY, x.getId().toLowerCase(), Field.Store.NO));
-					doc.add(new TextField(FIELD_KEYWORD, x.getId().toLowerCase(), Field.Store.YES));
+					doc.add(new StoredField(FIELD_KEYWORD, x.getId().toLowerCase()));//don't index but store for highlighting
 				}
 			}
 		}
