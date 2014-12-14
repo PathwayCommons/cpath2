@@ -42,12 +42,12 @@ public class SearchEngineTest {
 		assertEquals(7, response.getSearchHit().size());
 		assertEquals(7, response.getNumHits().intValue());
 		
+		CPathSettings.getInstance().setDebugEnabled(false);
 		response = searchEngine.search("ATP", 0, Interaction.class, null, null);
 		assertNotNull(response);
 		assertFalse(response.isEmpty());
 		assertEquals(2, response.getSearchHit().size());
 		//if cPath2 debugging is disabled, - no score/explain in the excerpt
-		CPathSettings.getInstance().setDebugEnabled(false);
 		assertFalse(response.getSearchHit().get(0).getExcerpt().contains("-SCORE-"));
 		
 		//enable cPath2 debugging...
@@ -59,8 +59,9 @@ public class SearchEngineTest {
 		assertEquals(1, response.getSearchHit().size());
 		
 		SearchHit hit = response.getSearchHit().get(0);
-		assertEquals(5, hit.getSize().intValue());
+		assertEquals(4, hit.getSize().intValue()); //no. member processes, not counting the hit itself
 		assertTrue(hit.getExcerpt().contains("-SCORE-"));
+		CPathSettings.getInstance().setDebugEnabled(false);
 		
 		//test a special implementation for wildcard queries
 		response = searchEngine.search("*", 0, Pathway.class, null, null);
