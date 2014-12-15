@@ -19,7 +19,7 @@ xmlbase=`sed '/^\#/d' $CPATH2_HOME/cpath2.properties | grep 'cpath2.xml.base'  |
 echo "xml.base=$xmlbase"
 
 #to disable ehcache, add -Dnet.sf.ehcache.disabled=true
-CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss65536k -Xmx10g -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider -Dspring.profiles.active=prod"
+CPATH2_OPTS="-Dfile.encoding=UTF-8 -Xss65536k -Xmx20g -DCPATH2_HOME=$CPATH2_HOME -Djava.io.tmpdir=$CPATH2_HOME/tmp -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider -Dspring.profiles.active=prod"
 
 CPATH2_TUNING_OPTS="-Xms2g -Xmn1g -XX:PermSize=128m -XX:MaxPermSize=256m -XX:SurvivorRatio=16 -Xincgc -Xnoclassgc -XX:CMSTriggerRatio=50 -XX:ParallelGCThreads=2 -XX:NewRatio=5"
 
