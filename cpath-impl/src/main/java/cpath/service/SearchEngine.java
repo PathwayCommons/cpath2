@@ -535,6 +535,8 @@ public class SearchEngine implements Indexer, Searcher {
 				doc.add(field);
 			}
 			for(String name : named.getName()) {
+				if(name.equals(named.getDisplayName()) || name.equals(named.getStandardName()))
+					continue;
 				field = new TextField(FIELD_NAME, name.toLowerCase(), Field.Store.NO);
 				field.setBoost(2.5f);
 				doc.add(field);
