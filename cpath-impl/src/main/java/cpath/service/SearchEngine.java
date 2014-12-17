@@ -89,7 +89,7 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_NAME = "name"; // standardName, displayName, other names
 	public static final String FIELD_XREFDB = "xrefdb"; //xref.db
 	public static final String FIELD_XREFID = "xrefid"; //xref.id
-	public static final String FIELD_PATHWAY = "pathway"; //parent/owner pathways; to be inferred from the whole biopax model
+	public static final String FIELD_PATHWAY = "pathway"; //pathways and parent pathways; to be inferred from the whole biopax model
 	public static final String FIELD_SIZE = "size";	
 	// Full-text search/filter fields (case sensitive) -
 	//index organism names, cell/tissue type (term), taxonomy id, but only store BioSource URIs	
@@ -98,15 +98,17 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_DATASOURCE = "datasource";
 	public static final String FIELD_TYPE = "type";
 	
+	//Default fields to use with the MultiFieldQueryParser;
+	//one can still search in other fields directly, e.g.,
+	//pathway:some_keywords datasource:"pid", etc.
 	public final static String[] DEFAULT_FIELDS = //to use with the MultiFieldQueryParser
 	{
-			FIELD_NAME, // standardName, displayName, other names
-			FIELD_XREFDB, //xref.db
-			FIELD_XREFID, //xref.id (also direct child's xref.id, i.e., can find both xref and its owners using a xrefid:<id> query string)
-			FIELD_PATHWAY, // PARENT pathway names (URIs are stored in the index, but not analyzed/indexed)
+			FIELD_NAME, // standardName, displayName, other names;
+			FIELD_XREFID, //xref.id (also direct child's xref.id, i.e., can find both xref and its owners using a xrefid:<id> query string);
 			FIELD_SIZE, // find entities with a given no. child/associated processes...
 			FIELD_KEYWORD, //includes data type properties (names, terms, comments), 
-						  //also from  child elements up to given depth (3), also stores but not indexes parent pathway uris and names.			
+						  //also from  child elements up to given depth (3), also stores but not indexes parent pathway uris and names;		
+//			FIELD_PATHWAY, // this (if pathway) and PARENT pathway URIs are stored in the index, not analyzed/indexed; whereas names - indexed but not stored;			
 // the following fields are for filtering only (thus excluded):
 //			FIELD_ORGANISM,	
 //			FIELD_DATASOURCE, 
@@ -468,6 +470,8 @@ public class SearchEngine implements Indexer, Searcher {
 	 * 
 	 *  'uri' - biopax object's absolute URI, index=no, analyze=no, store=yes;
 	 * 
+	 *  'name' - names, analyze=yes, store=yes; boosted;
+	 * 
 	 *  'keyword' - infer from this bpe and its child objects' data properties,
 	 *            such as Score.value, structureData, structureFormat, chemicalFormula, 
 	 *            availability, term, comment, patoData, author, source, title, url, published, 
@@ -475,7 +479,7 @@ public class SearchEngine implements Indexer, Searcher {
 	 *            analyze=yes, store=yes;
 	 *  
 	 *  'datasource', 'organism' and 'pathway' - infer from this bpe and its child objects 
-	 *  									  up to given depth/level, analyze=no, store=yes;
+	 *  									  	up to given depth/level, analyze=no, store=yes;
 	 *  
 	 *  'size' - number of child processes, an integer as string; analyze=no, store=yes
 	 * 
@@ -524,21 +528,21 @@ public class SearchEngine implements Indexer, Searcher {
 		// name
 		if(bpe instanceof Named) {
 			Named named = (Named) bpe;
-			if(named.getDisplayName() != null) {
-				field = new TextField(FIELD_NAME, named.getDisplayName(), Field.Store.NO);
+			if(named.getStandardName() != null) {
+				field = new TextField(FIELD_NAME, named.getStandardName(), Field.Store.NO);
 				field.setBoost(3.0f);
 				doc.add(field);
 			}
-			if(named.getStandardName() != null) {
-				field = new TextField(FIELD_NAME, named.getStandardName(), Field.Store.NO);
-				field.setBoost(3.5f);
+			if(named.getDisplayName() != null && !named.getDisplayName().equalsIgnoreCase(named.getStandardName())) {
+				field = new TextField(FIELD_NAME, named.getDisplayName(), Field.Store.NO);
+				field.setBoost(2.5f);
 				doc.add(field);
 			}
 			for(String name : named.getName()) {
-				if(name.equals(named.getDisplayName()) || name.equals(named.getStandardName()))
+				if(name.equalsIgnoreCase(named.getDisplayName()) || name.equalsIgnoreCase(named.getStandardName()))
 					continue;
 				field = new TextField(FIELD_NAME, name.toLowerCase(), Field.Store.NO);
-				field.setBoost(2.5f);
+				field.setBoost(2.0f);
 				doc.add(field);
 			}
 		}
@@ -550,7 +554,7 @@ public class SearchEngine implements Indexer, Searcher {
 				if (xref.getId() != null) {
 					//the filed is not_analyzed; so in order to make search case-insensitive 
 					//(when searcher uses standard analyzer), we turn the value to lowercase.
-					field = new StringField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
+					field = new TextField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
 					doc.add(field);
 				}
 			}
@@ -560,7 +564,7 @@ public class SearchEngine implements Indexer, Searcher {
 		if(bpe instanceof Xref) {
 			Xref xref = (Xref) bpe;
 			if (xref.getId() != null) {
-				field = new StringField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
+				field = new TextField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
 				doc.add(field);
 			}
 			if (xref.getDb() != null) {
@@ -580,7 +584,6 @@ public class SearchEngine implements Indexer, Searcher {
 	private void addKeywords(Set<String> keywords, Document doc) {
 		for (String keyword : keywords) {
 			Field f = new TextField(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.YES);
-//			f.setBoost(0.5f);
 			doc.add(f);
 		}
 	}

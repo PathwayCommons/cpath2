@@ -138,8 +138,8 @@ public class CPathClientTest {
         try {
 			resp = client.createSearchQuery()
 				.typeFilter(Pathway.class)
-				.queryString("name:\"bmp signaling pathway\"")
-//				.queryString("name:\"Signaling by BMP\"")
+//				.queryString("name:\"bmp signaling pathway\"")
+				.queryString("name:\"Signaling by BMP\"")
 				.result();
 		} catch (CPathException e) {
 			fail(e.toString());
@@ -148,6 +148,7 @@ public class CPathClientTest {
 		assertTrue(resp instanceof SearchResponse);
 		assertEquals(1, ((SearchResponse)resp).getSearchHit().size());
 		assertEquals(0, ((SearchResponse)resp).getSearchHit().get(0).getSize().intValue());
+		assertEquals(Integer.valueOf(0), ((SearchResponse)resp).getPageNo());
 		
 		resp = null;
         try {

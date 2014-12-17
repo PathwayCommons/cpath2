@@ -105,11 +105,15 @@ public class SearchEngineTest {
 		//test search with pagination
 		searchEngine.setMaxHitsPerPage(10);
 		response = searchEngine.search("*", 0, null, null, null);
+		assertEquals(0, response.getPageNo().intValue());
+		
 		assertEquals(50, response.getNumHits().intValue());
 		assertEquals(10, response.getSearchHit().size());
 		response = searchEngine.search("*", 1, null, null, null);
 		assertEquals(10, response.getSearchHit().size());
 		
+		assertEquals(1, response.getPageNo().intValue());
+	
 	}
 
 }
