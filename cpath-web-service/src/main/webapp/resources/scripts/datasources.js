@@ -75,6 +75,15 @@ dsApp.controller('DatasourcesController', function($scope, $http, $filter, MyFil
 		$scope.datasources = datasources;
 	});	
 	
+	$http.get('log/totalok').success(function(tot) {
+		$scope.totalok = tot;
+	});
+	
+	$http.get('log/totalip').success(function(tot) {
+		$scope.totalip = tot;
+	});
+	
+	
 	//cPath2 Metadata types and license options
 	$scope.dtypes = [
 	                   {value: 'WAREHOUSE'},
@@ -183,6 +192,18 @@ dsApp.controller('DatasourcesController', function($scope, $http, $filter, MyFil
 		//TODO
 		alert('Not implemented; otherwise, it would run premerge for ' 
 				+ ds.identifier);
+	};
+	
+	//makes a unique set of lower case strings
+	$scope.uniqueStrings = function(strings) {
+		var i, len=strings.length, out=[], h={};
+		for (i=0;i<len;i++) {
+			h[strings[i].toLowerCase()]=0;
+		}
+		for (i in h) {
+			out.push(i);
+		}
+		return out;
 	};
 	
 });

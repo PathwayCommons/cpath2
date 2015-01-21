@@ -15,6 +15,8 @@
 <body>
 <jsp:include page="header.jsp"/>
 
+<div id="pathway_datasources" ng-app="dsApp" id="ng-app" ng-controller="DatasourcesController">
+
   <h2>Data Sources</h2>
   
   <security:authorize ifNotGranted="ROLE_ADMIN">
@@ -40,7 +42,9 @@
 		or when a particular file <a href='<c:url value="/downloads.html"/>'>is downloaded</a>.
 		Access counts are not stored for the warehouse data sources, however, 
 		the <a rel="nofollow" href='<c:url value="/log/TOTAL/stats"/>'>total number of requests</a> 
-		minus errors will be fair estimate is this case.
+		minus <a rel="nofollow" href='<c:url value="/log/ERROR/stats"/>'>errors</a> will be fair estimate; 
+		currently we have got <a rel="nofollow" class="badge alert-success">{{totalok}}</a> successful requests 
+		from <a rel="nofollow" class="badge alert-success">{{totalip}}</a>.
 	</p>
 	<p>Access statistics are computed from January 2014, except unique IP addresses, which are computed from November 2014.</p>	
 
@@ -54,8 +58,6 @@
   </div>
  </security:authorize>
 
-  <div id="pathway_datasources" ng-app="dsApp" id="ng-app" ng-controller="DatasourcesController">
-	
   <security:authorize ifAnyGranted="ROLE_ADMIN">
   <div class="row">
     <form name="fds" class="form-inline" ng-submit="newDatasource()" novalidate>
@@ -178,9 +180,9 @@ for regular users, - show the compact read-only summary of the data providers --
         			</h3>
         			<p><strong>{{ds.description}}&nbsp;<em>({{ds.type}})</em></strong></p>
         			<p ng-hide="ds.notPathwayData"><em>URI: </em><a ng-href="{{ds.uri}}">{{ds.uri}}</a></p>
-       			    <p ng-show="ds.name.length > 1">
-       			    	<em>Names: </em>{{ds.name + ""}}</span>
-       			    </p>      			    
+       			    <p>
+       			    	<em>All names (for data filtering): </em>{{uniqueStrings(ds.name) + ""}}</span>
+       			    </p>		    
        				<p ng-hide="ds.notPathwayData">
        					<em>Contains: </em>
        					<span ng-show="ds.numPathways > 0"><span class="badge alert-info">{{ds.numPathways}}</span> pathways,</span> 

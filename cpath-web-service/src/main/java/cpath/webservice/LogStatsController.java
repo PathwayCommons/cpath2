@@ -135,7 +135,6 @@ public class LogStatsController extends BasicController {
     public @ResponseBody Map<String,List<Object[]>> iptimelinecum(@PathVariable LogType logType) {		
     	return service.log().ipsTimelineCum(logType, null);
     }   
-    
 
     //list of unique client IP addresses by request type
     
@@ -152,7 +151,7 @@ public class LogStatsController extends BasicController {
     @RequestMapping("/{logType}/iplist")
     public @ResponseBody List<String> ips(@PathVariable LogType logType) {		
     	return service.log().listUniqueIps(logType, null);
-    }	
+    }
 	
 	//geo (no. queries by type, geolocation)
 	
@@ -204,5 +203,23 @@ public class LogStatsController extends BasicController {
     public @ResponseBody List<Object[]> geographyCountry(@PathVariable LogType logType, 
     		@PathVariable String name, @PathVariable String code) {		
     	return service.log().downloadsCountry(code, logType, name);
+    }
+    
+	/**
+	 * Total no. requests minus errors.
+	 * @return
+	 */
+	@RequestMapping("/totalok")
+    public @ResponseBody Long totalRequests() {		
+    	return service.log().downloads(LogType.TOTAL.description) - service.log().downloads(LogType.ERROR.description);
+    }
+	
+	/**
+	 * Total no. unique client IPs.
+	 * @return
+	 */
+	@RequestMapping("/totalip")
+    public @ResponseBody Long totalUniqueIps() {		
+    	return service.log().uniqueIps(LogType.TOTAL.description);
     }
 }
