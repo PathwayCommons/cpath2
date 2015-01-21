@@ -211,7 +211,7 @@ public class LogStatsController extends BasicController {
 	 */
 	@RequestMapping("/totalok")
     public @ResponseBody Long totalRequests() {		
-    	return service.log().downloads(LogType.TOTAL.description) - service.log().downloads(LogType.ERROR.description);
+    	return service.log().totalRequests() - service.log().totalErrors();
     }
 	
 	/**
@@ -220,6 +220,6 @@ public class LogStatsController extends BasicController {
 	 */
 	@RequestMapping("/totalip")
     public @ResponseBody Long totalUniqueIps() {		
-    	return service.log().uniqueIps(LogType.TOTAL.description);
+    	return service.log().totalUniqueIps();
     }
 }

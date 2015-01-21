@@ -284,5 +284,23 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		
 		return timeline;
 	}
+
+
+	public Long totalRequests() {
+		QLogEntity $ = QLogEntity.logEntity;
+		return from($).where($.event.type.eq(LogType.TOTAL)).uniqueResult($.count.sum());
+	}
+
+
+	public Long totalErrors() {
+		QLogEntity $ = QLogEntity.logEntity;
+		return from($).where($.event.type.eq(LogType.ERROR)).uniqueResult($.count.sum());
+	}
+
+
+	public Long totalUniqueIps() {
+		QLogEntity $ = QLogEntity.logEntity;
+		return from($).where($.event.type.eq(LogType.TOTAL), $.addr.isNotNull()).uniqueResult($.addr.countDistinct());
+	}
 		
 }

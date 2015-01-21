@@ -226,5 +226,31 @@ interface LogEntitiesRepositoryCustom {
 	 * @return
 	 */
 	List<String> listUniqueIps(LogType logType, String name);
+
+	
+	/**
+	 * The total number of requests. 
+	 * 
+	 * @return
+	 */
+	Long totalRequests();
+
+	
+	/**
+	 * The total number of service/data errors 
+	 * of any sort.
+	 * 
+	 * @return
+	 */
+	Long totalErrors();	
+	
+	
+	/**
+	 * The total number of unique clients 
+	 * (IP addresses).
+	 * 
+	 * @return
+	 */
+	Long totalUniqueIps();
 	
 }
