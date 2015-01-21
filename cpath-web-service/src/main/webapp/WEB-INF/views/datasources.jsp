@@ -43,8 +43,8 @@
 		Access counts are not stored for the warehouse data sources, however, 
 		the <a rel="nofollow" href='<c:url value="/log/TOTAL/stats"/>'>total number of requests</a> 
 		minus <a rel="nofollow" href='<c:url value="/log/ERROR/stats"/>'>errors</a> will be fair estimate; 
-		currently we have got <a rel="nofollow" class="badge alert-success">{{totalok}}</a> successful requests 
-		from <a rel="nofollow" class="badge alert-success">{{totalip}}</a>.
+		currently, we have got <a rel="nofollow" class="badge alert-success">{{totalok}}</a> successful requests 
+		from <a rel="nofollow" class="badge alert-success">{{totalip}}</a> different clients (IP addresses).
 	</p>
 	<p>Access statistics are computed from January 2014, except unique IP addresses, which are computed from November 2014.</p>	
 

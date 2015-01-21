@@ -44,7 +44,6 @@ import cpath.jpa.Mapping;
 import cpath.jpa.MappingsRepository;
 import cpath.jpa.Metadata;
 import cpath.jpa.MetadataRepository;
-import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 
 
