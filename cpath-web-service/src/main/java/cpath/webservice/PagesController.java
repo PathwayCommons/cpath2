@@ -30,6 +30,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import cpath.config.CPathSettings;
 import cpath.jpa.LogType;
+import cpath.jpa.Metadata;
+import cpath.service.Status;
 
 @Controller
 public class PagesController extends BasicController {
