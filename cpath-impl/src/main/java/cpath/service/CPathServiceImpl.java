@@ -908,7 +908,7 @@ public class CPathServiceImpl implements CPathService {
 				existing.setUrlToHomepage(metadata.getUrlToHomepage());
 				metadata = existing;
 				//the jpa managed (persistent) entity will be auto-updated/flashed
-			} 
+			}
 			
 			metadata = metadataRepository.save(metadata);
 		}

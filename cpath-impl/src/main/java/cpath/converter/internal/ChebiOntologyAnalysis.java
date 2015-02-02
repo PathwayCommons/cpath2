@@ -90,7 +90,7 @@ public final class ChebiOntologyAnalysis implements Analysis
 			String[] parts = relationship.split(_COLON);
 			RelationshipXref xref = PreMerger
 				.findOrCreateRelationshipXref(RelTypeVocab.ADDITIONAL_INFORMATION, 
-						"CHEBI", "CHEBI:"+parts[1], model);		
+						"ChEBI", "CHEBI:"+parts[1], model);		
 			thisSMR.addComment(parts[0].toLowerCase() + " CHEBI:" + parts[1]);
 			thisSMR.addXref(xref);
 		}

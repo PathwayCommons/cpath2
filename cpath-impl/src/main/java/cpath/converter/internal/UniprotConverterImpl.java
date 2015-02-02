@@ -92,7 +92,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                         	// also add Gene Names to PR names (can be >1 due to isoforms)
                         	proteinReference.addName(symbol);
                         	RelationshipXref rXRef = PreMerger
-                        		.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "HGNC SYMBOL", symbol, model);
+                        		.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "HGNC Symbol", symbol, model);
                         	proteinReference.addXref(rXRef);
                         }
                     }
@@ -282,17 +282,21 @@ final class UniprotConverterImpl extends BaseConverterImpl {
         	//remove everything after '.' (e.g., isoform refs, comments)
         	String xref = line.replaceFirst("\\..*", "").trim();
         	String parts[] = xref.split(";");
-        	String db = parts[0].trim().toUpperCase();
-    				
+        	
+        	String db = parts[0].trim();
+        	
         	// skip for other, not identity, ID types,
         	// e.g., refs to pathway databases, ontologies, etc.:
-        	if (!db.equals("GENEID") && !db.equals("REFSEQ") 
-					&& !db.equals("ENSEMBL") && !db.equals("HGNC")) 
+        	if (!db.equalsIgnoreCase("GENEID") 
+        			&& !db.equalsIgnoreCase("REFSEQ") 
+        			&& !db.equalsIgnoreCase("ENSEMBL") 
+        			&& !db.equalsIgnoreCase("HGNC")) {
 				continue;
+        	}
 
 			String fixedDb = db;	
-			if (db.equals("GENEID"))
-				fixedDb = "NCBI GENE"; // - preferred name
+			if (db.equalsIgnoreCase("GENEID"))
+				fixedDb = "NCBI Gene"; // - preferred name
 			
 			//iterate over the ID tokens of the same DR line, skipping non-ID comments, etc. (ending)
 			for (int j = 1; j < parts.length; j++) {
@@ -302,15 +306,16 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				if(id.equals("-"))
 					break;
 				//no more Ensembl IDs (skip comments)
-				if (db.equals("ENSEMBL") && !id.startsWith("ENS"))
+				if (db.equalsIgnoreCase("ENSEMBL") && !id.startsWith("ENS"))
 					break; 
 				//last ID in a HGNC line is in fact gene name
-				if(db.equals("HGNC") && !id.startsWith("HGNC:")) {
-					fixedDb = "HGNC SYMBOL";
+				if(db.equalsIgnoreCase("HGNC") && !id.startsWith("HGNC:")) {
+					fixedDb = "HGNC Symbol";
 				}
 				//remove .version from RefSeq IDs
-				if (db.equals("REFSEQ")) {
+				if (db.equalsIgnoreCase("REFSEQ")) {
 					// extract only RefSeq AC from AC.Version ID form
+					fixedDb = "RefSeq";
 					id = id.replaceFirst("\\.\\d+", "");
 				}
 				
@@ -389,7 +394,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
      */
     private void setUnificationXRef(String dbName, String id, ProteinReference proteinReference, Model model) {
         id = id.trim();
-        dbName = dbName.trim().toUpperCase();
+        dbName = dbName.trim();
 		String rdfId = Normalizer.uri(model.getXmlBase(), dbName, id, UnificationXref.class);
 		
 		UnificationXref rXRef = (UnificationXref) model.getByID(rdfId);
@@ -426,8 +431,8 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 		// add all unification xrefs
 		for (String acEntry : acList) {
 			String ac = acEntry.trim();
-			//use db='UNIPROT' for these xrefs instead of 'UniProt Knowledgebase' (preferred in MIRIAM)
-			setUnificationXRef("UNIPROT", ac, proteinReference, model);
+			//use db='UniProt' for these xrefs instead of 'UniProt Knowledgebase' (preferred in MIRIAM)
+			setUnificationXRef("UniProt", ac, proteinReference, model);
 		}
 		
 		return proteinReference;

@@ -183,7 +183,7 @@ public final class Merger {
 	
 	
 	/**
-	 * Integrates the source model into the target using the 
+	 * Integrates the source model into the main one using the 
 	 * reference biopax objects (entity references, etc.) 
 	 * in the target or warehouse models.
 	 * As the result, the source model will (and the warehouse might) be broken 
@@ -198,6 +198,11 @@ public final class Merger {
 	void merge(String description, final Model source) {	
 		
 		final String srcModelInfo = "source: " + description;
+		
+		log.info("Converting all Xref.db values to upper case (" + srcModelInfo + "; "
+				+ "helps when merging xrefs...");
+		for(Xref x : source.getObjects(Xref.class))
+			if(x.getDb()!=null) x.setDb(x.getDb().toUpperCase());
 			
 		log.info("Searching for canonical or existing EntityReference objects " +
 				" to replace equivalent original objects ("+srcModelInfo+")...");

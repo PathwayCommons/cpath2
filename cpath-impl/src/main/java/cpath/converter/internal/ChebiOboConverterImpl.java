@@ -146,7 +146,7 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 		String id = chebiEntryMap.get(_ID);
 		SmallMoleculeReference smr = model
 			.addNew(SmallMoleculeReference.class, _IDENTIFIERS_ORG+"chebi/"+id);
-		String xuri = Normalizer.uri(xmlBase, "CHEBI", id, UnificationXref.class);
+		String xuri = Normalizer.uri(xmlBase, "ChEBI", id, UnificationXref.class);
 		UnificationXref x = model.addNew(UnificationXref.class, xuri);
 		x.setId(id);
 		x.setDb("ChEBI");
@@ -164,7 +164,7 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 			for(String altid : alt) {
 				//unless there is an error in the ontology, when an alt_id belongs 
 				//to different entries, this should not throw "already have such element" exception:
-				xuri = Normalizer.uri(xmlBase, "CHEBI", altid, UnificationXref.class);
+				xuri = Normalizer.uri(xmlBase, "ChEBI", altid, UnificationXref.class);
 				x = model.addNew(UnificationXref.class, xuri);
 				x.setId(altid);
 				x.setDb("ChEBI");
@@ -220,23 +220,23 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 				//ID w/o the "source:" prefix
 				id = matcher.group(1);
 				//remove quotes around the db name
-				String db = matcher.group(2).toUpperCase();
-				
+				String db = matcher.group(2);
+				String DB = db.toUpperCase();
 				// Skip all xrefs but: CAS, KEGG (C* and D*), DRUGBANK, WIKIPEDIA,
 				// which can be used for id-mapping by Merger and graph queries.
-				if(db.startsWith("CAS") || db.startsWith("KEGG")
-					|| db.startsWith("WIKIPEDIA") || db.equals("DRUGBANK")) 
+				if(DB.startsWith("CAS") || DB.startsWith("KEGG")
+					|| DB.startsWith("WIKIPEDIA") || DB.equals("DRUGBANK")) 
 				{
 					RelationshipXref rx = PreMerger
 						.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, db, id, model);
 					smr.addXref(rx);
-				} else if(db.startsWith("PUBMED")) {
+				} else if(DB.startsWith("PUBMED")) {
 					//add PublicationXref
 					String pxrefUri = _IDENTIFIERS_ORG + "pubmed/"+id; //the Normalizer would return the same
 					PublicationXref pxref = (PublicationXref) model.getByID(pxrefUri);
 					if(pxref == null) {
 						pxref = model.addNew(PublicationXref.class, pxrefUri);
-						pxref.setDb("PUBMED");
+						pxref.setDb("PubMed");
 						pxref.setId(id);
 					}
 					smr.addXref(pxref);

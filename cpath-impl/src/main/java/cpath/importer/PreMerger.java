@@ -178,8 +178,9 @@ public final class PreMerger {
 					}
 										
 					// clear all existing output files, parse input files, reset counters, save.
-					log.debug("no. pd before init, " + metadata.getIdentifier() + ": " + metadata.getContent().size());
+					log.debug("num. of data files before init, " + metadata.getIdentifier() + ": " + metadata.getContent().size());
 					metadata = service.init(metadata);
+					metadata.setPremerged(null);
 					
 					//load/re-pack/save orig. data
 					CPathUtils.analyzeAndOrganizeContent(metadata);
@@ -420,9 +421,9 @@ public final class PreMerger {
 					)
 				) {
 					String id = x.getId();
-					String srcDb = x.getDb();
+					String srcDb = x.getDb().toUpperCase();
 					
-					if(srcDb.toUpperCase().startsWith("UNIPROT") || srcDb.toUpperCase().startsWith("SWISSPROT"))
+					if(srcDb.startsWith("UNIPROT") || srcDb.startsWith("SWISSPROT"))
 						srcDb = "UNIPROT"; //consider 'uniprot*' source IDs/names as 'UNIPROT' for simplicity
 					
 					mappings.add(new Mapping(srcDb, id, destDb, ac));
@@ -433,7 +434,7 @@ public final class PreMerger {
 				SmallMoleculeReference smr = (SmallMoleculeReference) er;
 				//map some names (display and std.)
 				String name = smr.getDisplayName().toLowerCase();
-				mappings.add(new Mapping("chemical name", name, destDb, ac));	
+				mappings.add(new Mapping("CHEMICAL NAME", name, destDb, ac));	
 				//skip other names (and standardName) as they can be too long...
 			}
 			

@@ -99,10 +99,7 @@ public class MetadataController extends BasicController {
 //		
 //		return "validation";
 //    }    
-
-    
-    // REST XML or Json web services
-    
+       
 //    @RequestMapping("/metadata/validations/{identifier}")
 //    public @ResponseBody ValidatorResponse queryForValidation(
 //    		@PathVariable String identifier, HttpServletRequest request) 
@@ -192,6 +189,8 @@ public class MetadataController extends BasicController {
     }    
     
     
+    // Requests that begin with '/admin' can be only run by authorized users (see: Spring security-config.xml).
+    
     @RequestMapping(value = "/admin/datasources", consumes="application/json", method = RequestMethod.POST)
     public void update(@RequestBody @Valid Metadata metadata, 
     		BindingResult bindingResult, HttpServletResponse response) throws IOException 
@@ -268,7 +267,7 @@ public class MetadataController extends BasicController {
 					+ origFilename + " as " + m.getDataArchiveName());
 		}
     }
-    
+
     
     @RequestMapping("/idmapping")
     public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id, 
@@ -322,16 +321,6 @@ public class MetadataController extends BasicController {
     		
 		return list;
 	}
-    
-    
-    private String status(Content pd) {
-    	if(pd.getValid() == null)
-    		return "not validated or skipped";
-    	else if(pd.getValid())
-    		return "no critical errors";
-    	else 
-    		return "has critical errors";
-    }
     
     
     /**

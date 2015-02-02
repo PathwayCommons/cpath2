@@ -187,13 +187,7 @@ dsApp.controller('DatasourcesController', function($scope, $http, $filter, MyFil
 			alert('No file selected, datasource: ' + id);
 		}
 	};
-	
-	$scope.executePremerge = function(ds) {
-		//TODO
-		alert('Not implemented; otherwise, it would run premerge for ' 
-				+ ds.identifier);
-	};
-	
+		
 	//makes a unique set of lower case strings
 	$scope.uniqueStrings = function(strings) {
 		var i, len=strings.length, out=[], h={};

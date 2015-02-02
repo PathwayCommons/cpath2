@@ -40,11 +40,13 @@
 		result contains biological entities from that original resource; or, for 'search' 
 		and 'traverse' requests, if the data source is referred to in the result; 
 		or when a particular file <a href='<c:url value="/downloads.html"/>'>is downloaded</a>.
-		Access counts are not stored for the warehouse data sources, however, 
+		Access counts are not reported for the Warehouse data sources, but 
 		the <a rel="nofollow" href='<c:url value="/log/TOTAL/stats"/>'>total number of requests</a> 
-		minus <a rel="nofollow" href='<c:url value="/log/ERROR/stats"/>'>errors</a> will be fair estimate; 
-		currently, we have got <a rel="nofollow" class="badge alert-success">{{totalok}}</a> successful requests 
-		from <a rel="nofollow" class="badge alert-success">{{totalip}}</a> different clients (IP addresses).
+		minus <a rel="nofollow" href='<c:url value="/log/ERROR/stats"/>'>errors</a> will be fair estimate: 
+		there were <a rel="nofollow" class="badge alert-info">{{totalok}}</a> successful requests 
+		(including search queries and file downloads)
+		from <a rel="nofollow" class="badge alert-info" ng-href='<c:url value="/log/TOTAL/ips"/>'>{{totalip}}</a> 
+		different clients (IP addresses).
 	</p>
 	<p>Access statistics are computed from January 2014, except unique IP addresses, which are computed from November 2014.</p>	
 
@@ -164,8 +166,11 @@ for regular users, - show the compact read-only summary of the data providers --
 					<button class="btn btn-warning" ng-click="saveDatasource(ds)" 
 						ng-disabled="! (ds.iconUrl && ds.urlToHomepage && ds.type && ds.name[0] && ds.description)">Save </button>
 						
-        			<button class="btn btn-success" ng-click="executePremerge(ds)" 
-        				ng-disabled="! (ds.iconUrl && ds.urlToHomepage && ds.type && ds.name[0] && ds.description && ds.uploaded)">Premerge... </button>							
+<!-- TODO (way later, but better do from console) to execute and monitor premerge/merge/index, etc. cPath2 admin tasks 
+	from this web app is currently not as straighforward as it might seem due to: a single-user H2 database, Spring web context w/o biopax-validator, 
+	not yet fully designed/implemented service methods for doing this, etc. -->
+<!--         			<button class="btn btn-success" ng-click="executePremerge(ds)"  -->
+<!--         				ng-disabled="! (ds.iconUrl && ds.urlToHomepage && ds.type && ds.name[0] && ds.description && ds.uploaded)">Premerge... </button>							 -->
       			</div>		
 			</div>
 		</security:authorize>
