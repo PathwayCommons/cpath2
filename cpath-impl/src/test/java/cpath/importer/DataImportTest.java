@@ -307,13 +307,13 @@ public class DataImportTest {
 		// but only if ChEBI OBO was also imported (ChebiOntologyAnalysis run)!
 		assertEquals(1, smr.getMemberEntityReference().size());
 //		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
-		assertEquals(19, smr.getXref().size());//1 unif. + 9 rel.  + 9 PubMed xrefs are there!
+		assertEquals(20, smr.getXref().size());//1 unif. + 10 rel.  + 9 PubMed xrefs are there!
 		
 		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:20");
 		assertEquals("(+)-camphene", msmr.getDisplayName());
 		assertEquals("(1R,4S)-2,2-dimethyl-3-methylidenebicyclo[2.2.1]heptane", msmr.getStandardName());
 //		System.out.println("merged chebi:20 xrefs: " + msmr.getXref().toString());
-		assertEquals(9, msmr.getXref().size());
+		assertEquals(10, msmr.getXref().size());
 		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
 		
 		sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, null, 

@@ -76,7 +76,7 @@ public class ChebiConvertersTest {
 			if (xref instanceof PublicationXref) ++ publicationXrefCount;
 		}
 		assertEquals(1, unificationXrefCount); //no secondary ChEBI IDs there (non-chebi are, if any, relationship xrefs)
-		assertEquals(6, relationshipXrefCount); //only chebi, inchikey, cas, kegg, wikipedia are taken there (could be drugbank and chembl if present too)
+		assertEquals(7, relationshipXrefCount); //only chebi, inchikey, cas, kegg, wikipedia are taken there (could be drugbank and chembl if present too)
 		assertEquals(9, publicationXrefCount); //there are nine such xrefs
 		
 		// following checks work in this test only (using in-memory model); with DAO - use getObject...

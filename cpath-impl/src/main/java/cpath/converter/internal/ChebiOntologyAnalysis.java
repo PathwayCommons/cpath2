@@ -70,16 +70,19 @@ public final class ChebiOntologyAnalysis implements Analysis
 		for (String parentChebiID : parentChebiIDs) {
 			SmallMoleculeReference parentSMR = (SmallMoleculeReference) model
 				.getByID("http://identifiers.org/chebi/CHEBI:" + parentChebiID);
-			if (parentSMR == null) {
-				log.info("processOBOEntry(), CHEBI:" + thisID 
+			
+			//always add a rel. xref and is_a comments:
+			log.info("processOBOEntry(), CHEBI:" + thisID 
 					+ " 'IS_A' already ignored CHEBI:" + parentChebiID 
 					+ " (generic, no InChIKey); will add xref/comment instead of memberEntityRef.");
-				RelationshipXref xref = PreMerger
-					.findOrCreateRelationshipXref(RelTypeVocab.MULTIPLE_PARENT_REFERENCE, 
-							"CHEBI", "CHEBI:"+parentChebiID, model);
-				thisSMR.addComment("is_a CHEBI:" + parentChebiID);
-				thisSMR.addXref(xref);				
-			} else {
+			RelationshipXref xref = PreMerger
+				.findOrCreateRelationshipXref(RelTypeVocab.MULTIPLE_PARENT_REFERENCE, 
+						"CHEBI", "CHEBI:"+parentChebiID, model);
+			thisSMR.addComment("is_a CHEBI:" + parentChebiID);
+			thisSMR.addXref(xref);
+			
+			//if the parent SMR exists in the model (has InChIKey) -
+			if (parentSMR != null) {
 				parentSMR.addMemberEntityReference(thisSMR);
 			}
 		}
