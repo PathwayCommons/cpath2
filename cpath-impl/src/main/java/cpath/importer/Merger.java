@@ -501,7 +501,11 @@ public final class Merger {
 				db = dbById(id, orig.getXref());	
 
 			Set<String> mp = service.map(db, id, "UNIPROT");
-			toReturn = (ProteinReference) findEntityRefUsingIdMappingResult(origUri, "URI", mp, canonicalPrefix);
+			Set<EntityReference> ers = findEntityRefUsingIdMappingResult("URI", mp, canonicalPrefix);
+			if(ers.size()>1)
+				log.warn(origUri + " maps to multiple warehouse ERs: " + ers);
+			else if (!ers.isEmpty())
+				toReturn = (ProteinReference) ers.iterator().next();
 		}
 				
 		// if yet ambiguous mapping or nothing, 
@@ -601,8 +605,11 @@ public final class Merger {
 			String id = origUri.substring(origUri.lastIndexOf('/')+1);	
 			String db = dbById(id, orig.getXref()); //find by id			
 			Set<String> mp = service.map(db, id, "CHEBI");
-			toReturn = (SmallMoleculeReference) findEntityRefUsingIdMappingResult(
-						orig.getRDFId(), "URI", mp, canonicalPrefix);
+			Set<EntityReference> ers = findEntityRefUsingIdMappingResult("URI", mp, canonicalPrefix);
+			if(ers.size()>1)
+				log.warn(origUri + " URI maps to multiple canonical ChEBI SMRs: " + ers);
+			else if (!ers.isEmpty())
+				toReturn = (SmallMoleculeReference) ers.iterator().next();
 		}
 				
 		// if yet ambiguous mapping or nothing, 
@@ -613,8 +620,11 @@ public final class Merger {
 		// nothing/ambiguous? - keep trying, map by name (e..g, 'ethanol') to ChEBI ID
 		if (toReturn == null) {		
 			Set<String> mp = mapByName(orig, "CHEBI");
-			toReturn = (SmallMoleculeReference) findEntityRefUsingIdMappingResult(
-					orig.getRDFId(), "names", mp, canonicalPrefix);
+			Set<EntityReference> ers = findEntityRefUsingIdMappingResult("names", mp, canonicalPrefix);
+			if(ers.size()>1)
+				log.warn(origUri + ", its names match multiple canonical ChEBI SMRs: " + ers);
+			else if (!ers.isEmpty())
+				toReturn = (SmallMoleculeReference) ers.iterator().next();
 		}
 		
 		return toReturn;
@@ -627,14 +637,21 @@ public final class Merger {
 		EntityReference toReturn = null; 
 		
 		Set<String> mappingSet = idMappingByXrefs(orig, dest, UnificationXref.class);
-		toReturn = findEntityRefUsingIdMappingResult(orig.getRDFId(), "UnificationXrefs", mappingSet, canonicalUriPrefix);
-
-		if (toReturn == null) {
+		
+		Set<EntityReference> mapsTo = findEntityRefUsingIdMappingResult("UnificationXrefs", mappingSet, canonicalUriPrefix);
+		if(mapsTo.size()>1) {
+			log.warn(orig.getRDFId() + ", UnificationXrefs map to multiple: " + mapsTo);
+		} else if(mapsTo.isEmpty()) {
 			mappingSet = idMappingByXrefs(orig, dest, RelationshipXref.class);
-			toReturn = findEntityRefUsingIdMappingResult(orig.getRDFId(), "RelationshipXrefs", mappingSet, canonicalUriPrefix);
+			mapsTo = findEntityRefUsingIdMappingResult("RelationshipXrefs", mappingSet, canonicalUriPrefix);
+			if(mapsTo.size()>1)
+				log.warn(orig.getRDFId() + ", RelationshipXrefs map to multiple: " + mapsTo);
 		}
 		
-		return toReturn;
+		if(mapsTo.size()==1) 
+			toReturn = mapsTo.iterator().next();
+		
+		return toReturn; //can be null
 	}
 
 
@@ -679,15 +696,15 @@ public final class Merger {
 	}
 
 
-	private EntityReference findEntityRefUsingIdMappingResult(String origUri, String mapBy, Set<String> mapsTo, String uriPrefix) 
+	private Set<EntityReference> findEntityRefUsingIdMappingResult(String mapBy, Set<String> mapsTo, String uriPrefix) 
 	{
-		EntityReference toReturn = null;
+		Set<EntityReference> toReturn = new HashSet<EntityReference>();
 		
-		if(mapsTo.size() == 1) {		
-			String uri = uriPrefix + mapsTo.iterator().next(); //get the first one
-			toReturn = (EntityReference) warehouseModel.getByID(uri);
-		} else if(mapsTo.size() > 1) {
-			log.warn(origUri + ", using " + mapBy + ", maps to many: " + mapsTo);
+		for(String id : mapsTo) {		
+			String uri = uriPrefix + id;
+			EntityReference er = (EntityReference) warehouseModel.getByID(uri);
+			if(er != null)
+				toReturn.add(er);
 		}
 		
 		return toReturn;
