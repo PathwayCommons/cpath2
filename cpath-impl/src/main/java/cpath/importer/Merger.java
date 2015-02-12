@@ -411,10 +411,10 @@ public final class Merger {
 			throw new AssertionError("Not Gene or PE: " + bpe);
 			
 		// map and generate/add xrefs
-		Set<String> mappingSet = idMappingByXrefs(bpe, db, UnificationXref.class);
+		Set<String> mappingSet = idMappingByXrefs(bpe, db, UnificationXref.class, true);
 		addCanonicalRelXrefs(m, bpe, db, mappingSet, RelTypeVocab.IDENTITY);
 		
-		mappingSet = idMappingByXrefs(bpe, db, RelationshipXref.class);
+		mappingSet = idMappingByXrefs(bpe, db, RelationshipXref.class, true);
 		addCanonicalRelXrefs(m, bpe, db, mappingSet, RelTypeVocab.ADDITIONAL_INFORMATION);
 		
 		//map by display and standard names
@@ -518,21 +518,70 @@ public final class Merger {
 	
 		return toReturn;
 	}
-	
-	
+
 	/**
-	 * Using id-mapping and specific type xrefs 
-	 * of the object, finds primary identifier(s);
-	 * normally, only one or none is returned 
-	 * (you decide what to do when there're many;
-	 * this flags error in the biopax model) 
+	 * Using specified class xrefs of given object, 
+	 * finds primary identifiers (can be many).
+	 * 
 	 * 
 	 * @param orig
 	 * @param mapTo
 	 * @param xrefType
+	 * @param isUnion tells to return either union or intersection of each Xref's id-mapping result
 	 * @return
 	 */
 	private Set<String> idMappingByXrefs(final XReferrable orig,
+			String mapTo, final Class<? extends Xref> xrefType, boolean isUnion) 
+	{
+		return (isUnion) ? idMappingByXrefsUnion(orig, mapTo, xrefType)
+				: idMappingByXrefsIntersection(orig, mapTo, xrefType);
+	}
+	
+
+	private Set<String> idMappingByXrefsIntersection(final XReferrable orig,
+			String mapTo, final Class<? extends Xref> xrefType) 
+	{
+		Set<String> xSet = new HashSet<String>();
+		
+		for (Xref x : orig.getXref()) {			
+			if(x.getDb() == null || x.getDb().isEmpty() || x.getId() == null || x.getId().isEmpty()) {
+				log.warn("Ignored bad " + xrefType.getSimpleName()
+					+ " (" + x.getRDFId() + "), db: " + x.getDb() + ", id: " + x.getId());
+				continue;
+			}
+						
+			if (xrefType.isInstance(x)) {
+				Set<String> mp = service.map(x.getDb(), x.getId(), mapTo);
+				if(mp==null || mp.isEmpty()) 
+					continue; //ignore xrefs that don't map to any primary IDs
+				
+				// mp is not empty
+				if(mp.size() > 1) 
+					log.debug("Ambiguous xref.id: " + x.getId() + " maps to: " + mp);
+				
+				if(!xSet.isEmpty()) {//and mp is not empty too -
+					mp.retainAll(xSet);
+					if(mp.isEmpty())
+						break; //quit w/o trying other xrefs due to apparently empty intersection
+				} 
+				
+				xSet = mp; //xSet now contains not empty intersection
+				assert !xSet.isEmpty() : "Impossible: xSet is empty.";
+			}
+		}
+
+		if(xSet.isEmpty())
+			return Collections.EMPTY_SET;
+		else if(xSet.size()>1)
+			return new TreeSet<String>(xSet);
+		else {
+			log.info(orig.getRDFId() + ", using its " + xrefType.getSimpleName() 
+					+ "s, distinctly maps to: " + xSet.iterator().next());
+			return xSet;
+		}
+	}
+
+	private Set<String> idMappingByXrefsUnion(final XReferrable orig,
 			String mapTo, final Class<? extends Xref> xrefType) 
 	{
 		final Set<String> mappedTo = new TreeSet<String>();
@@ -540,7 +589,7 @@ public final class Merger {
 		for (Xref x : orig.getXref()) {			
 			if(x.getDb() == null || x.getDb().isEmpty()
 					|| x.getId() == null || x.getId().isEmpty()) {
-				log.warn("Ignored bad " + x.getModelInterface().getSimpleName()
+				log.warn("Ignored bad " + xrefType.getSimpleName()
 					+ " (" + x.getRDFId() + "), db: " + x.getDb() + ", id: " + x.getId());
 				continue;
 			}
@@ -555,7 +604,7 @@ public final class Merger {
 
 		return mappedTo;
 	}
-
+	
 
 	/**
 	 * Finds a {@link UnificationXref} by id 
@@ -636,13 +685,13 @@ public final class Merger {
 
 		EntityReference toReturn = null; 
 		
-		Set<String> mappingSet = idMappingByXrefs(orig, dest, UnificationXref.class);
+		Set<String> mappingSet = idMappingByXrefs(orig, dest, UnificationXref.class, false);
 		
 		Set<EntityReference> mapsTo = findEntityRefUsingIdMappingResult("UnificationXrefs", mappingSet, canonicalUriPrefix);
 		if(mapsTo.size()>1) {
 			log.warn(orig.getRDFId() + ", UnificationXrefs map to multiple: " + mapsTo);
 		} else if(mapsTo.isEmpty()) {
-			mappingSet = idMappingByXrefs(orig, dest, RelationshipXref.class);
+			mappingSet = idMappingByXrefs(orig, dest, RelationshipXref.class, false);
 			mapsTo = findEntityRefUsingIdMappingResult("RelationshipXrefs", mappingSet, canonicalUriPrefix);
 			if(mapsTo.size()>1)
 				log.warn(orig.getRDFId() + ", RelationshipXrefs map to multiple: " + mapsTo);
