@@ -192,16 +192,17 @@ for regular users, - show the compact read-only summary of the data providers --
        					<em>Contains: </em>
        					<span ng-show="ds.numPathways > 0"><span class="badge alert-info">{{ds.numPathways}}</span> pathways,</span> 
        				 	<span ng-show="ds.numInteractions > 0"><span class="badge alert-info">{{ds.numInteractions}}</span> interactions,</span> 
-       				 	<span ng-show="ds.numPhysicalEntities > 0"><span class="badge alert-info">{{ds.numPhysicalEntities}}</span> interactors</span>
+       				 	<span ng-show="ds.numPhysicalEntities > 0"><span class="badge alert-info">{{ds.numPhysicalEntities}}</span> molecules, complexes and genes</span>
        				</p>
        				<p ng-hide="ds.notPathwayData">
-       				  <em>Information (sub-network, search hits, files) has been served to web users: </em>
+       				  <em>A sub-network, search result, or file have been accessed: </em>
        				  <a rel="nofollow" class="badge alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats"/>'>
-       				  	{{ds.numAccessed}}</a> times, to 
+       				  	{{ds.numAccessed}}</a> times, from 
        				  <a rel="nofollow" class="badge alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/ips"/>'>
        				  	{{ds.numUniqueIps}}</a> different IP addresses
        				</p>
        				<p>
+       				  <em>Publication: </em>{{ds.citation}}<br/>
        				  <a target="_blank" ng-href="http://identifiers.org/pubmed/{{ds.pubmedId}}">Publication (PMID:{{ds.pubmedId}})</a>
        				</p>
        				<p><em>Availability: </em>{{ds.availability}}</p>

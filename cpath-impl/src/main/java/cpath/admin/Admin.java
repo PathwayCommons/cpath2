@@ -434,17 +434,22 @@ public final class Admin {
 			SearchResponse sr = (SearchResponse) searcher.search("*", 0,
 					Pathway.class, dsUrisFilter, null);
 			md.setNumPathways(sr.getNumHits());
-			LOG.info(name + ", pathways: " + sr.getNumHits());
+			LOG.info(name + " - pathways: " + sr.getNumHits());
 
 			sr = (SearchResponse) searcher.search("*", 0, Interaction.class,
 					dsUrisFilter, null);
 			md.setNumInteractions(sr.getNumHits());
-			LOG.info(name + ", interactions: " + sr.getNumHits());
+			LOG.info(name + " - interactions: " + sr.getNumHits());
 
+			Integer count;
 			sr = (SearchResponse) searcher.search("*", 0, PhysicalEntity.class,
 					dsUrisFilter, null);
-			md.setNumPhysicalEntities(sr.getNumHits());
-			LOG.info(name + ", physical entities: " + sr.getNumHits());
+			count = sr.getNumHits();
+			sr = (SearchResponse) searcher.search("*", 0, Gene.class,
+					dsUrisFilter, null);
+			count += sr.getNumHits();		
+			md.setNumPhysicalEntities(count);
+			LOG.info(name + " - molecules, complexes and genes: " + count);
 		}
 
 		metadataRepo.save(pathwayMetadata);
