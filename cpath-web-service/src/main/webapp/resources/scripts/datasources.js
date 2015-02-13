@@ -20,6 +20,32 @@ dsApp.service('MyFileUpload', ['$http', function ($http) {
     };
 }]);
 
+dsApp.service('MyPubmed', ['$http', function ($http) {
+	
+	var euroPmcUrlPrefix = "http://www.ebi.ac.uk/europepmc/webservices/rest/search/query=EXT_ID:";
+	var euroPmcUrlSuffix = "&format=json&callback=JSON_CALLBACK";
+	
+	/* get the publication summary from the Europe PubMed web service 
+	 * by PMID (ds.pubmedId), using JSONP; nicely format the citation data;
+	 * assign the resulting string to a new field in the ds */
+    this.updateCitation = function(ds){
+        $http.jsonp(euroPmcUrlPrefix+ds.pubmedId+euroPmcUrlSuffix)
+        	.success(function(data){
+        		var res = data.resultList.result[0];
+        		var cite = res.authorString + " " +  res.title
+        			+ " " + res.journalTitle + ". " + res.pubYear 
+        			+ ";" + res.journalVolume 
+        			+ "(" + res.issue + "):" + res.pageInfo;
+        		
+//        		console.log(res.pmid + ": " + res.title);      		
+        		ds.citation = cite;
+        	})
+        	.error(function(data, status){
+        		console.log(status + ' - ' + data.responseText);
+        	});
+    };
+}]);
+
 dsApp.directive('fileModel', ['$parse', function ($parse) {
     return {
         restrict: 'A',
@@ -63,7 +89,7 @@ dsApp.run(function(editableOptions, editableThemes) {
 //	  editableThemes.bs3.buttonsClass = 'btn-sm';
 });
 
-dsApp.controller('DatasourcesController', function($scope, $http, $filter, MyFileUpload) {
+dsApp.controller('DatasourcesController', function($scope, $http, $filter, MyFileUpload, MyPubmed) {
 // data for a quick off-line test	
 //	$scope.datasources = [
 //	  {"identifier" : "pid", "iconUrl" : "http://pathway-commons.googlecode.com/files/nci_nature.png", "description" : "NCI_Nature"},
@@ -72,7 +98,14 @@ dsApp.controller('DatasourcesController', function($scope, $http, $filter, MyFil
 //	];	
 	
 	$http.get('metadata/datasources').success(function(datasources) {
+		
 		$scope.datasources = datasources;
+		
+		for(var i=0; i<datasources.length; i++) {
+			//get citation by PMID (ds.pubmedId) using PubMed web service:
+			MyPubmed.updateCitation(datasources[i]);
+		}
+		
 	});	
 	
 	$http.get('log/totalok').success(function(tot) {

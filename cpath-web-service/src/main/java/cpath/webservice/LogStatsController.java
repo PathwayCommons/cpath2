@@ -2,6 +2,7 @@ package cpath.webservice;
 
 import java.util.*;
 
+import cpath.config.CPathSettings;
 import cpath.jpa.LogEvent;
 import cpath.jpa.LogType;
 import cpath.webservice.args.binding.LogTypeEditor;
@@ -221,5 +222,33 @@ public class LogStatsController extends BasicController {
 	@RequestMapping("/totalip")
     public @ResponseBody Long totalUniqueIps() {		
     	return service.log().totalUniqueIps();
+    }
+	
+	/*
+	 * Access log summary - 
+	 * a json object (map) that contains the list of rows ('data'),
+	 * each row is object (map) with three columns (key-val pairs);
+	 * this can be then read by a jQuery DataTable 
+	 * via "ajaxSource" and "columns" parameters
+	 * (this method here is experimental).
+	 * 
+	 * @return object
+	 */
+	@RequestMapping("/totals")
+    public @ResponseBody Map<String, List<?>> totalTable() {	
+		Map<String, List<?>> data = new HashMap<String,List<?>>();
+		List<Object> l = new ArrayList<Object>();
+		data.put("data", l); //there will be only one data entry (the list)
+		
+		// add total requests/IPs counts to the list
+		Map<String, String> m = new HashMap<String, String>();
+		m.put("name", "PC2 v" + CPathSettings.getInstance().getVersion() + " web service");
+		m.put("totalok", totalRequests().toString());
+		m.put("totalip", totalUniqueIps().toString());		
+		l.add(m);
+		
+		//TODO could also add totals for each provider, file, command, etc. the same way ;)
+    	
+		return data;
     }
 }
