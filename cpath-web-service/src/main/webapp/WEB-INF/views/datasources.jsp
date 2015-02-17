@@ -202,8 +202,8 @@ for regular users, - show the compact read-only summary of the data providers --
        				  	{{ds.numUniqueIps}}</a> different IP addresses
        				</p>
        				<p>
-       				  <em>Publication: </em>{{ds.citation}}<br/>
-       				  <a target="_blank" ng-href="http://identifiers.org/pubmed/{{ds.pubmedId}}">Publication (PMID:{{ds.pubmedId}})</a>
+       				  <em>Publication: </em>{{ds.citation}} 
+       				  <a target="_blank" ng-href="http://identifiers.org/pubmed/{{ds.pubmedId}}">(PMID:{{ds.pubmedId}})</a>
        				</p>
        				<p><em>Availability: </em>{{ds.availability}}</p>
       			</div>		
