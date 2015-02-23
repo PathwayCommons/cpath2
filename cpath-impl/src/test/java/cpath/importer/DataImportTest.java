@@ -189,14 +189,14 @@ public class DataImportTest {
 		service.init();
 		log.warn("Waiting for the service to fully initialize...");
 		int interval = 1000;
-		for (; !service.ready() && interval < 30000; interval += 5000) {			
+		for (; !service.ready() && interval < 50000; interval += 5000) {			
 			try {
 				Thread.sleep(interval);
 			} catch (InterruptedException e1) {
 				fail("Failed to initialise the service bean (model and search index)!");
 			}
 		}
-		if(interval>30000)
+		if(interval>50000)
 			fail("Failed to initialise the service bean (model and search index)!");
 
 		// Test full-text search	

@@ -38,6 +38,7 @@ import org.biopax.paxtools.io.sbgn.ListUbiqueDetector;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Provenance;
+import org.biopax.paxtools.pattern.miner.CommonIDFetcher;
 import org.biopax.paxtools.pattern.miner.OldFormatWriter;
 import org.biopax.paxtools.pattern.miner.SIFEnum;
 import org.biopax.paxtools.pattern.miner.SIFInteraction;
@@ -86,12 +87,16 @@ public class BiopaxConverter {
 	 *
 	 * @param biopax
 	 * @param format
+	 * @param idTypeOrLayout - use 'uniprot' or 'hgnc'/'hgnc symbol' for the GSEA and SIF output formats, 
+	 *                          and Boolean.TRUE/FALSE for SBGN; when null, it uses the default options:
+	 *                          'uniprot' for GSEA, 'hgnc' for SIF, and Boolean.FALSE (no auto-layout) for SBGN.
+	 *                          
 	 * @return
 	 */
-    public ServiceResponse convert(InputStream biopax, OutputFormat format) {
+    public ServiceResponse convert(InputStream biopax, OutputFormat format, Object idTypeOrLayout) {
         Model model = (new SimpleIOHandler()).convertFromOWL(biopax);
         if(model != null && !model.getObjects().isEmpty()) {
-            return convert(model, format);
+            return convert(model, format, idTypeOrLayout);
         } else {
         	return new ErrorResponse(NO_RESULTS_FOUND, "Empty BioPAX Model.");
         }
@@ -103,6 +108,7 @@ public class BiopaxConverter {
      * 
      * @param m paxtools model
      * @param format output format
+     * @param args optional format-specific parameters
      * 
      * @return data response with the converted data or {@link ErrorResponse}.
      */
@@ -122,13 +128,22 @@ public class BiopaxConverter {
 				data = baos.toString();
 				break;
 			case BINARY_SIF:
-				data = convertToBinarySIF(m, false);
+				String db = null; //default: will use HGNC (Symbol)
+				if (args != null && args.length > 0 && args[0] instanceof String)
+					db = (String) args[0];
+				data = convertToBinarySIF(m, false, db);
 				break;
 			case EXTENDED_BINARY_SIF:
-				data = convertToBinarySIF(m, true);
+				db = null; //default: will use HGNC (Symbol)
+				if (args != null && args.length > 0 && args[0] instanceof String)
+					db = (String) args[0];
+				data = convertToBinarySIF(m, true, db);
 				break;
 			case GSEA:
-				data = convertToGSEA(m, "uniprot");
+				db = "uniprot"; //default
+				if (args != null && args.length > 0 && args[0] instanceof String)
+					db = (String) args[0];
+				data = convertToGSEA(m, db);
 				break;
             case SBGN:
 				boolean doLayout = true;
@@ -184,12 +199,16 @@ public class BiopaxConverter {
 	 * a not empty BioPAX Model to GSEA format.
 	 * 
      * @param m paxtools model
-	 * @param outputIdType output identifiers type (db name)
+	 * @param outputIdType output identifiers type (db name, is data-specific, the default is UniProt)
+	 * 
 	 * @return
 	 * @throws IOException 
 	 */
 	String convertToGSEA(Model m, String outputIdType) throws IOException 
 	{	
+		if(outputIdType==null || outputIdType.isEmpty())
+			outputIdType = "uniprot";
+		
 		// convert, replace DATA
 		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true);
 		OutputStream stream = new ByteArrayOutputStream();
@@ -206,15 +225,18 @@ public class BiopaxConverter {
 	 * 
      * @param m biopax paxtools to convert
      * @param extended if true, calls SIFNX else - SIF
+	 * @param db - either 'uniprot' or null (then HGNC symbols will be used by default)
 	 * @return
 	 * @throws IOException 
 	 */
-	String convertToBinarySIF(Model m, boolean extended) throws IOException 
+	String convertToBinarySIF(Model m, boolean extended, String db) throws IOException 
 	{
 		if(mergeEquivalentInteractions)
 			ModelUtils.mergeEquivalentInteractions(m);
 
-		SIFSearcher searcher = new SIFSearcher(SIFEnum.values());
+		CommonIDFetcher idFetcher = new CommonIDFetcher();
+		idFetcher.setUseUniprotIDs("uniprot".equalsIgnoreCase(db));	
+		SIFSearcher searcher =  new SIFSearcher(idFetcher, SIFEnum.values());
 		searcher.setBlacklist(blacklist);
 		OutputStream out = new ByteArrayOutputStream();
 				
