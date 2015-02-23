@@ -211,7 +211,7 @@ public class CPathServiceImpl implements CPathService {
 
 			Model m = cloner.clone(paxtoolsModel, elements);
 			m.setXmlBase(paxtoolsModel.getXmlBase());
-			return (new BiopaxConverter(getBlacklist())).convert(m, format, true);
+			return convert(m, format);
 			
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
@@ -268,7 +268,7 @@ public class CPathServiceImpl implements CPathService {
 				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
 				Model m = cloner.clone(paxtoolsModel, elements);
 				m.setXmlBase(paxtoolsModel.getXmlBase());
-				return (new BiopaxConverter(getBlacklist())).convert(m, format, true);
+				return convert(m, format);
 			} else {
 				return new ErrorResponse(NO_RESULTS_FOUND,
 						"No results found by URI(s): " + Arrays.toString(src));
@@ -308,7 +308,7 @@ public class CPathServiceImpl implements CPathService {
 				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
 				Model m = cloner.clone(paxtoolsModel, elements);
 				m.setXmlBase(paxtoolsModel.getXmlBase());
-				return (new BiopaxConverter(getBlacklist())).convert(m, format, true);
+				return convert(m, format);
 			} else {
 				return new ErrorResponse(NO_RESULTS_FOUND,
 						"No results found by URI(s): " + Arrays.toString(src));
@@ -358,7 +358,7 @@ public class CPathServiceImpl implements CPathService {
 						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
 						Model m = cloner.clone(paxtoolsModel, elements);
 						m.setXmlBase(paxtoolsModel.getXmlBase());
-						return (new BiopaxConverter(getBlacklist())).convert(m, format, true);
+						return convert(m, format);
 					} else {
 						return new ErrorResponse(NO_RESULTS_FOUND,
 								"No results found; source: " + Arrays.toString(src)
@@ -370,6 +370,13 @@ public class CPathServiceImpl implements CPathService {
 
 	}
 	
+
+	private ServiceResponse convert(Model m, OutputFormat format) {
+		return (format==OutputFormat.SBGN)
+			? (new BiopaxConverter(getBlacklist())).convert(m, format, true) //apply layout
+				:  (new BiopaxConverter(getBlacklist())).convert(m, format); //default: 'uniprot' for GSEA; 'HGNC' for SIF.
+	}
+
 
 	@Override
 	public ServiceResponse getCommonStream(final OutputFormat format, 
@@ -407,7 +414,7 @@ public class CPathServiceImpl implements CPathService {
 				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
 				Model m = cloner.clone(paxtoolsModel, elements);
 				m.setXmlBase(paxtoolsModel.getXmlBase());
-				return (new BiopaxConverter(getBlacklist())).convert(m, format, true);
+				return convert(m, format);
 			} else {
 				return new ErrorResponse(NO_RESULTS_FOUND,
 						"No results found by URI(s): " + Arrays.toString(src));

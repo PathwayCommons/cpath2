@@ -149,7 +149,7 @@
 		<lucene.version>4.10.2</lucene.version>
 		<ehcache-core.version>2.6.9</ehcache-core.version>
 		<paxtools.version>4.3.1-SNAPSHOT</paxtools.version>
-		<biopax-pattern.version>1.1.1-SNAPSHOT</biopax-pattern.version>
+		<biopax-pattern.version>[2.0.0-SNAPSHOT,3)</biopax-pattern.version>
 		<validator.version>4.0.0-SNAPSHOT</validator.version>
 		<junit.version>4.11</junit.version>
 		<commons-lang.version>2.6</commons-lang.version>
