@@ -143,8 +143,10 @@ final class PantherCleanerImpl implements Cleaner {
 				
 				generic.removeMemberEntityReference(member);				
 				cleanModel.remove(generic);
-			} else { // skip such beasts ()
-				//TODO ? copy properties from member to generic, delete member (which type to keep?)
+			} else { // skip such nonsense
+				log.warn(generic.getModelInterface().getSimpleName() + ", uri:" 
+					+ generic.getRDFId() + ", has a member ER of incompatible type: "
+					+ member.getModelInterface().getSimpleName());
 			}
 		}
 				

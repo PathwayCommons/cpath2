@@ -53,8 +53,6 @@ import cpath.service.ErrorResponse;
 import cpath.service.OutputFormat;
 import static cpath.service.Status.*;
 
-import javax.xml.bind.JAXBException;
-
 /**
  * A utility class to convert a BioPAX 
  * L3 RDF/XML data stream or {@link Model} 
@@ -67,8 +65,6 @@ public class BiopaxConverter {
 	private static final Logger log = LoggerFactory.getLogger(BiopaxConverter.class);
 	
 	private final Blacklist blacklist;
-	
-	private boolean mergeEquivalentInteractions;
 		
 	/**
 	 * Constructor.
@@ -80,37 +76,64 @@ public class BiopaxConverter {
 		this.blacklist = blacklist;
 	}
 
-
-	/**
-	 * For the given BioPAX data stream, converts it to the 
-	 * desired output format.
-	 *
-	 * @param biopax
-	 * @param format
-	 * @param idTypeOrLayout - use 'uniprot' or 'hgnc'/'hgnc symbol' for the GSEA and SIF output formats, 
-	 *                          and Boolean.TRUE/FALSE for SBGN; when null, it uses the default options:
-	 *                          'uniprot' for GSEA, 'hgnc' for SIF, and Boolean.FALSE (no auto-layout) for SBGN.
-	 *                          
-	 * @return
-	 */
-    public ServiceResponse convert(InputStream biopax, OutputFormat format, Object idTypeOrLayout) {
-        Model model = (new SimpleIOHandler()).convertFromOWL(biopax);
-        if(model != null && !model.getObjects().isEmpty()) {
-            return convert(model, format, idTypeOrLayout);
-        } else {
-        	return new ErrorResponse(NO_RESULTS_FOUND, "Empty BioPAX Model.");
-        }
-	}
-
-    
+ 
 	/**
      * Converts the BioPAX data into the other format.
      * 
      * @param m paxtools model
      * @param format output format
+     * @param os
      * @param args optional format-specific parameters
      * 
-     * @return data response with the converted data or {@link ErrorResponse}.
+	 * @throws IOException 
+     */
+    public void convert(Model m, OutputFormat format, OutputStream os, Object... args) 
+    		throws IOException 
+    {
+			switch (format) {
+			case BIOPAX: //to OWL (RDF/XML)
+				new SimpleIOHandler().convertToOWL(m, os);
+				break;
+			case BINARY_SIF:
+				String db = null; //default: will use HGNC (Symbol)
+				if (args != null && args.length > 0 && args[0] instanceof String)
+					db = (String) args[0];
+				convertToBinarySIF(m, os, false, db);
+				break;
+			case EXTENDED_BINARY_SIF:
+				db = null; //default: will use HGNC (Symbol)
+				if (args != null && args.length > 0 && args[0] instanceof String)
+					db = (String) args[0];
+				convertToBinarySIF(m, os, true, db);
+				break;
+			case GSEA:
+				db = "uniprot"; //default
+				if (args != null && args.length > 0 && args[0] instanceof String)
+					db = (String) args[0];
+				convertToGSEA(m, os, db);
+				break;
+            case SBGN:
+				boolean doLayout = true;
+				if (args != null && args.length > 0 && args[0] instanceof Boolean)
+					doLayout = (Boolean) args[0];	
+                convertToSBGN(m, os, blacklist, doLayout);
+                break;
+			default: throw new UnsupportedOperationException(
+					"convert, yet unsupported format: " + format);
+			}
+    }    
+    
+    
+	/**
+     * Converts not too large BioPAX model 
+     * (e.g., a graph query result) to another format.
+     * 
+     * @param m a sub-model (not too large), e.g., a get/graph query result
+     * @param format output format
+     * @param args optional format-specific parameters
+     * 
+     * @return data response with the converted data (up to 1Gb utf-8 string) 
+     * 			or {@link ErrorResponse}.
      */
     public ServiceResponse convert(Model m, OutputFormat format, Object... args) 
     {
@@ -118,49 +141,22 @@ public class BiopaxConverter {
 			return new ErrorResponse(NO_RESULTS_FOUND, "Empty BioPAX Model");
 		}
 
-		// otherwise, do convert (it's a DataResponse)
-    	String data = null;
+    	//TODO perhaps, make it a config. option (cpath2 instance property)
+    	if(format==OutputFormat.BINARY_SIF
+    			|| format==OutputFormat.EXTENDED_BINARY_SIF
+    			|| format==OutputFormat.SBGN) {
+    		ModelUtils.mergeEquivalentInteractions(m);
+    	}
+    	
+		// otherwise, convert, return a new DataResponse
+    	// (can contain up to ~ 1Gb unicode string data)
+    	ByteArrayOutputStream baos = new ByteArrayOutputStream();
     	try {
-			switch (format) {
-			case BIOPAX: //to OWL (RDF/XML)
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				new SimpleIOHandler().convertToOWL(m, baos);
-				data = baos.toString();
-				break;
-			case BINARY_SIF:
-				String db = null; //default: will use HGNC (Symbol)
-				if (args != null && args.length > 0 && args[0] instanceof String)
-					db = (String) args[0];
-				data = convertToBinarySIF(m, false, db);
-				break;
-			case EXTENDED_BINARY_SIF:
-				db = null; //default: will use HGNC (Symbol)
-				if (args != null && args.length > 0 && args[0] instanceof String)
-					db = (String) args[0];
-				data = convertToBinarySIF(m, true, db);
-				break;
-			case GSEA:
-				db = "uniprot"; //default
-				if (args != null && args.length > 0 && args[0] instanceof String)
-					db = (String) args[0];
-				data = convertToGSEA(m, db);
-				break;
-            case SBGN:
-				boolean doLayout = true;
-				if (args != null && args.length > 0 && args[0] instanceof Boolean)
-					doLayout = (Boolean) args[0];
-				
-                data = convertToSBGN(m, blacklist, doLayout);
-                break;
-			default: throw new UnsupportedOperationException(
-					"convert, yet unsupported format: " + format);
-			}
-			
-			DataResponse dataResponse = new DataResponse();
-			dataResponse.setData(data);
-			// extract and save data providers' names
-			dataResponse.setProviders(providers(m));
-			
+    		convert(m, format, baos, args);			
+    		DataResponse dataResponse = new DataResponse();
+			dataResponse.setData(baos.toString());		
+			// extract and save data provider names
+			dataResponse.setProviders(providers(m));			
 			return dataResponse;
 		}
         catch (Exception e) {
@@ -173,24 +169,20 @@ public class BiopaxConverter {
      * Converts a BioPAX Model to SBGN format.
      *
      * @param m
+     * @param stream
      * @param blackList
      * @param doLayout
-     * @return
+     * 
      * @throws IOException
      */
-    String convertToSBGN(Model m, Blacklist blackList, boolean doLayout)
-		throws IOException, JAXBException
+    public void convertToSBGN(Model m, OutputStream stream, Blacklist blackList, boolean doLayout)
+		throws IOException
 	{
-
-		if(mergeEquivalentInteractions)
-			ModelUtils.mergeEquivalentInteractions(m);
     	
     	L3ToSBGNPDConverter converter = new L3ToSBGNPDConverter(
 			new ListUbiqueDetector(blackList.getListed()), null, doLayout);
 
-		OutputStream stream = new ByteArrayOutputStream();
 		converter.writeSBGN(m, stream);
-        return stream.toString();
     }
 
 
@@ -199,21 +191,20 @@ public class BiopaxConverter {
 	 * a not empty BioPAX Model to GSEA format.
 	 * 
      * @param m paxtools model
+     * @param stream
 	 * @param outputIdType output identifiers type (db name, is data-specific, the default is UniProt)
 	 * 
-	 * @return
 	 * @throws IOException 
 	 */
-	String convertToGSEA(Model m, String outputIdType) throws IOException 
+	public void convertToGSEA(Model m, OutputStream stream, String outputIdType) 
+			throws IOException 
 	{	
 		if(outputIdType==null || outputIdType.isEmpty())
 			outputIdType = "uniprot";
 		
 		// convert, replace DATA
 		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true);
-		OutputStream stream = new ByteArrayOutputStream();
 		gseaConverter.writeToGSEA(m, stream);
-		return stream.toString();
 	}
 
 	
@@ -224,21 +215,19 @@ public class BiopaxConverter {
 	 * This method is primarily designed for the web service.
 	 * 
      * @param m biopax paxtools to convert
+     * @param out
      * @param extended if true, calls SIFNX else - SIF
 	 * @param db - either 'uniprot' or null (then HGNC symbols will be used by default)
-	 * @return
+	 * 
 	 * @throws IOException 
 	 */
-	String convertToBinarySIF(Model m, boolean extended, String db) throws IOException 
+	public void convertToBinarySIF(Model m, OutputStream out, boolean extended, String db) 
+			throws IOException 
 	{
-		if(mergeEquivalentInteractions)
-			ModelUtils.mergeEquivalentInteractions(m);
-
 		CommonIDFetcher idFetcher = new CommonIDFetcher();
 		idFetcher.setUseUniprotIDs("uniprot".equalsIgnoreCase(db));	
 		SIFSearcher searcher =  new SIFSearcher(idFetcher, SIFEnum.values());
 		searcher.setBlacklist(blacklist);
-		OutputStream out = new ByteArrayOutputStream();
 				
 		if (extended) {
 			Set<SIFInteraction> binaryInts = searcher.searchSIF(m);
@@ -247,22 +236,7 @@ public class BiopaxConverter {
 			searcher.searchSIF(m, out);
 		}
 		
-		return out.toString();
 	}
-
-	
-	/**
-	 * Sets whether to run {@link ModelUtils#mergeEquivalentInteractions(Model)}
-	 * before converting a biopax model to another format.
-	 * Warn: use with care (or do not use) with the main (persistent) biopax model.
-	 * 
-	 * @param mergeEquivalentInteractions
-	 */
-	public void mergeEquivalentInteractions(
-			boolean mergeEquivalentInteractions) {
-		this.mergeEquivalentInteractions = mergeEquivalentInteractions;
-	}
-
 	
 	/**
 	 * The list of datasources (data providers)
@@ -290,7 +264,6 @@ public class BiopaxConverter {
 							log.warn("No standard|display name found for " + prov);
 					}
 				}
-//				log.info("DATASOURCE " + dsNames.toString());
 			}
 		}
 		

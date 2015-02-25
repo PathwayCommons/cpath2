@@ -48,26 +48,22 @@ GSEA are stored for convenience in the Molecular Signature Database
 (MSigDB) in the Gene Matrix Transposed file format (*.gmt).  This is
 the main tab-delimited file format specified by the 
 <a target="_blank" href="http://www.broad.mit.edu/gsea/msigdb/">Broad Molecular Signature Database</a>.
-</p><p>
-In this output format, all participants in the pathway are specified with
-a UniProt Accession.  All participants for a pathway must come from
-the same species as the pathway.  Therefore some participants from
-cross-species pathways are removed.  Exporting to the MSigDB format
-will enable computational biologists to use pathway commons data
+</p><p>Each gene set is described by a name, a description, and the genes in the gene set: 
+participants in a pathway are specified with one or several HGNC symbols 
+(we can also provide another file using UniProt accession numbers instead).
+All participants (corresponding BioPAX EntityReferences) for a pathway 
+must come from the same species as the pathway. Participants from cross-species pathways, 
+as well as those for which no identifier is found (i.e., when there're no Xrefs of given type), are removed.  
+Exporting to the MSigDB format will enable computational biologists to use pathway commons data
 within gene set enrichment algorithms, such as GSEA. Available for all
 pathways within Pathway Commons (only from pathway database sources,
 not interaction database sources). Full data format details are available at 
-<a target="_blank" href="http://www.broad.mit.edu/cancer/software/gsea/wiki/index.php/Data_formats">Broad GSEA Wiki</a>.
-We used the <strong>normalized and merged</strong> BioPAX L3 data and the 
-<a target="_blank" href="http://www.biopax.org/paxtools/gsea-converter/apidocs/org/biopax/paxtools/io/gsea/GSEAConverter.html">
-simple GSEA converter from the Paxtools library</a> to generate the corresponding GSEA archives.
-It creates one or many GSEA entries (rows) in each output file from ProteinReferences's 
-UniProt Xrefs - one line (UniProt id-list) per pathway per organism, 
-one UniProt accession per ProteinReference. If there are no pathways, then simply - per organism.  
-(Note: the converter does not do any additional id-mapping; thus a protein without
-a UniProt identifier in its URI or Xref will be ignored; also, to effectively enforce cross-species 
-check, BioSources must have a UnificationXref with "taxonomy" database name
-and id, and Pathways, ProteinReferences - not empty 'organism' property value).
+<a target="_blank" href="http://www.broadinstitute.org/cancer/software/gsea/wiki/index.php/Data_formats#GMT:_Gene_Matrix_Transposed_file_format_.28.2A.gmt.29">Broad GSEA Wiki</a>.
+We used the <strong>normalized and merged</strong> BioPAX Level3 model and our 
+simple GSEA converter from the Paxtools library to generate the GSEA (.gmt) archives.
+(Note: to effectively enforce cross-species check, BioSources must have 
+a UnificationXref with "taxonomy" database name and id, and Pathways, 
+ProteinReferences - not empty 'organism' property value).
 </p>
 
 <h3>Simple Interaction Format (SIF)</h3>

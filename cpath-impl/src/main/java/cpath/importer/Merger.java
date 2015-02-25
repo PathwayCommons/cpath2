@@ -160,7 +160,11 @@ public final class Merger {
 			log.info("Done merging " + metadata);
 		}
 	
+		log.info("Merging equivalent interactions...");
+		ModelUtils.mergeEquivalentInteractions(mainModel);
+		
 		//create or replace the main BioPAX archive
+		log.info("Saving or updating the Main BioPAX file...");
 		save();
 		
 		log.info("Complete.");
@@ -172,7 +176,7 @@ public final class Merger {
 	 * directory.
 	 */
 	void save() {
-		try {			
+		try {		
 			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(mainModel, 
 				new GZIPOutputStream(new FileOutputStream(
 						CPathSettings.getInstance().mainModelFile())));

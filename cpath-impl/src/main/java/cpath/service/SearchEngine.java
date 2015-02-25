@@ -266,10 +266,11 @@ public class SearchEngine implements Indexer, Searcher {
 			// for this to work, all keywords were stored in the index field
 			if (highlight && doc.get(FIELD_KEYWORD) != null) {				
 				// use a Highlighter (store.YES must be enabled for 'keyword' field)
-				QueryScorer scorer = new QueryScorer(query, FIELD_KEYWORD); 
-				//this fixes scoring/highlighting for all-field wildcard queries like q=insulin* 
-				//but not for term/prefix queries, i.e, q=name:insulin*, q=pathway:brca2. TODO
-				scorer.setExpandMultiTermQuery(true);	
+				QueryScorer scorer = new QueryScorer(query, FIELD_KEYWORD);
+				
+				//the following fixes scoring/highlighting for all-field wildcard (like q=insulin*)
+				//but not for term/prefix queries (q=name:insulin*, q=pathway:brca2)_.
+				scorer.setExpandMultiTermQuery(true); //TODO	
 				
 				//TODO use PostingsHighlighter once it's stable (see http://lucene.apache.org/core/4_10_0/highlighter/org/apache/lucene/search/postingshighlight/PostingsHighlighter.html)				
 				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
