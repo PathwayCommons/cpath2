@@ -5,6 +5,7 @@ import java.util.*;
 import cpath.config.CPathSettings;
 import cpath.jpa.LogEvent;
 import cpath.jpa.LogType;
+import cpath.jpa.Metadata;
 import cpath.webservice.args.binding.LogTypeEditor;
 
 import org.slf4j.Logger;
@@ -235,20 +236,40 @@ public class LogStatsController extends BasicController {
 	 * @return object
 	 */
 	@RequestMapping("/totals")
-    public @ResponseBody Map<String, List<?>> totalTable() {	
-		Map<String, List<?>> data = new HashMap<String,List<?>>();
-		List<Object> l = new ArrayList<Object>();
+    public @ResponseBody Map<String, List<Map<String,?>>> totalTable() {	
+		Map<String, List<Map<String,?>>> data = new HashMap<String,List<Map<String,?>>>();
+		List<Map<String,?>> l = new ArrayList<Map<String,?>>();
 		data.put("data", l); //there will be only one data entry (the list)
 		
-		// add total requests/IPs counts to the list
-		Map<String, String> m = new HashMap<String, String>();
-		m.put("name", "PC2 v" + CPathSettings.getInstance().getVersion() + " web service");
-		m.put("totalok", totalRequests().toString());
-		m.put("totalip", totalUniqueIps().toString());		
-		l.add(m);
+		Map<String, Object> m;
+		Long totalPathways = 0L;
+		Long totalInteractions = 0L;
 		
-		//TODO could also add totals for each provider, file, command, etc. the same way ;)
-    	
+		//also - for each provider -
+		for(Metadata mtda : service.metadata().findAll()) {
+			m = new HashMap<String, Object>();
+			m.put("identifier", mtda.identifier);
+			m.put("name", mtda.standardName());
+			m.put("totalok", service.log().downloads(mtda.standardName()));//actually, incl. errors
+			m.put("totalip", service.log().uniqueIps(mtda.standardName()));
+			m.put("pathways", mtda.getNumPathways());
+			m.put("interactions", mtda.getNumInteractions());
+			l.add(m);
+			totalPathways += mtda.getNumPathways();
+			totalInteractions += mtda.getNumInteractions();
+		}
+
+		// add total requests/IPs counts to the list
+		m = new HashMap<String, Object>();
+		m.put("identifier", LogType.TOTAL.description); //"All"
+		m.put("name", "PC2 v" + CPathSettings.getInstance().getVersion() + " web service");
+		m.put("datasources", service.metadata().count());
+		m.put("totalok", totalRequests());
+		m.put("totalip", totalUniqueIps());
+		m.put("pathways", totalPathways);
+		m.put("interactions", totalInteractions);
+		l.add(0, m);
+		
 		return data;
     }
 }

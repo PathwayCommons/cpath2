@@ -38,13 +38,13 @@ import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.jpa.MetadataRepository;
 import cpath.service.BiopaxConverter;
 import cpath.service.CPathService;
-import cpath.service.ErrorResponse;
 import cpath.service.Indexer;
 import cpath.service.OutputFormat;
 import cpath.service.SearchEngine;
 import cpath.service.Searcher;
 import cpath.service.jaxb.*;
 
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.BioPAXElement;
@@ -69,10 +69,11 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import static cpath.service.OutputFormat.*;
 
 /**
  * Class which provides cpath2 command line
@@ -100,7 +101,7 @@ public final class Admin {
         CONVERT("-convert"),
         EXPORT_LOG("-export-log"),
         IMPORT_LOG("-import-log"),
-        ANALYSIS("-run-analysis"), //TODO keep or remove (normally, should never be used)?..
+        ANALYSIS("-run-analysis"), //TODO normally, it should never be used
 		;
 
         // string ref for readable name
@@ -228,8 +229,16 @@ public final class Admin {
 				fail(args, "provide at least three arguments.");
 			OutputStream fos = new FileOutputStream(args[2]);
 			OutputFormat outputFormat = OutputFormat.valueOf(args[3]);	
-			Model model = (new SimpleIOHandler()).convertFromOWL(biopaxStream(args[1])); 
+			Model model = (new SimpleIOHandler()).convertFromOWL(biopaxStream(args[1]));
+			
 			String idTypeOrLayout = (args.length >= 5) ? args[4] : null;
+			
+			if(args.length >= 6 && Boolean.parseBoolean(args[5])) {
+				LOG.info("Merging equivalent interactions in the model...");
+				ModelUtils.mergeEquivalentInteractions(model);
+			}
+			
+			LOG.info("Start converting to " + outputFormat);
 			convert(model, outputFormat, fos, idTypeOrLayout);
 			
 		} else if (args[0].equals(Cmd.CREATE_DOWNLOADS.toString())) {
@@ -691,13 +700,15 @@ public final class Admin {
 				"when --output-absolute-uris flag is present, all URIs there in the output BioPAX will be absolute; " +
 				"when --datasources or/and --types flag is set, and 'uri' list is not, then the result model " +
 				"will contain BioPAX elements that pass the filter by data source and/or type)" + NEWLINE); 
-		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format> [format option] "
+		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format> [<option>] [true]"
 				+ "(can convert any of previously generated in the downloads directory BioPAX file "
 				+ "to another cPath2 output format: SBGN, GSEA, BINARY_SIF, EXTENDED_BINARY_SIF "
-				+ "using also generated blacklist.txt; 'format option' is an optional argument: "
-				+ "boolean TRUE or FALSE for the SBGN output to also apply the default layout, and identifiers type for all other formats,"
+				+ "using also generated blacklist.txt; <format option> is optional: "
+				+ "boolean TRUE or FALSE for the SBGN converter to also apply the default layout, and identifiers type for all other formats,"
 				+ "e.g., one can use 'uniprot' with SIF, where the default is HGNC, or 'hgnc' - with GSEA, "
-				+ "where the defaut is to print UniProt accessions)" + NEWLINE);
+				+ "where the defaut is to print UniProt accessions);"
+				+ "finally, optional 'true' (the last parameter) can be used to enable "
+				+ "merging equivalent interactions before the analysis." + NEWLINE);
 		toReturn.append(Cmd.EXPORT_LOG.toString() + " [--clear] (export cpath2 assess log to the " +
 				"CSV file in the data directory and, optionally, clear the table)" + NEWLINE);
 		toReturn.append(Cmd.IMPORT_LOG.toString() + " [filename] (import cpath2 assess log from the specified " +
@@ -723,15 +734,8 @@ public final class Admin {
 	{
 		Resource blacklist = new DefaultResourceLoader().getResource("file:" + cpath.blacklistFile());
 		BiopaxConverter converter = new BiopaxConverter(new Blacklist(blacklist.getInputStream()));
-		converter.mergeEquivalentInteractions(true);
-		ServiceResponse res = converter.convert(model, outputFormat, idTypeOrLayout);
-		if (res instanceof ErrorResponse) {
-			System.err.println(res.toString());
-		} else {
-			String data = (String) ((DataResponse)res).getData();
-			output.write(data.getBytes("UTF-8"));
-			output.flush();
-		}
+		converter.convert(model, outputFormat, output, idTypeOrLayout);
+		output.flush();
 	}
 
 	
@@ -747,10 +751,9 @@ public final class Admin {
      * Create cpath2 downloads 
      * (exports the db to various formats)
      * 
-     * @throws IOException, IllegalStateException (when not in maintenance mode)
+     * @throws IOException, IllegalStateException (when not in maintenance mode), InterruptedException
      */
-	public static void createDownloads() 
-    		throws IOException
+	public static void createDownloads() throws IOException, InterruptedException
     {	
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
@@ -773,7 +776,7 @@ public final class Admin {
 		writer.println(StringUtils.join(Arrays.asList(
 			"#CPATH2:", getInstance().getName(), "version", getInstance().getVersion(), date), " "));
 		writer.println("#Columns:\t" + StringUtils.join(Arrays.asList(
-			"ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "MOLECULES&GENES"), "\t"));
+			"ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PARTICIPANTS"), "\t"));
 		
 		Iterable<Metadata> allMetadata = metadataRepository.findAll();
 		for(Metadata m : allMetadata) {
@@ -788,10 +791,11 @@ public final class Admin {
 		// generate/find all BioPAX archives:
 		List<String> biopaxArchives = exportBiopax(allMetadata);
 		
+		// destroy the Spring context, release some resources
 		context.close();
 		    	
     	// 2) export to all other formats
-        for(String biopaxArchive : biopaxArchives) {
+        for(final String biopaxArchive : biopaxArchives) {
         	//load model and convert to other formats
         	InputStream biopaxStream = null;
         	try {
@@ -802,30 +806,59 @@ public final class Admin {
         		continue;
         	}
         	
-    		Model m = (new SimpleIOHandler()).convertFromOWL(biopaxStream);
-    		String prefix =  biopaxArchive.substring(0, biopaxArchive.indexOf(".BIOPAX"));
-  			
-    		String archiveName = prefix + ".uniprot." + formatAndExt(OutputFormat.GSEA) + ".gz";
-        	convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, null); //default is uniprot
-    		archiveName = prefix + ".hgnc." + formatAndExt(OutputFormat.GSEA) + ".gz";
-        	convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "hgnc symbol");
-
-    		archiveName = prefix + ".hgnc." + formatAndExt(OutputFormat.BINARY_SIF) + ".gz";
-        	convertBiopaxToOtherFormatGzipped(m, OutputFormat.BINARY_SIF, archiveName, null);  //default is HGNC gene symbols
-    		archiveName = prefix + ".uniprot." + formatAndExt(OutputFormat.BINARY_SIF) + ".gz";
-        	convertBiopaxToOtherFormatGzipped(m, OutputFormat.BINARY_SIF, archiveName, "uniprot");
-        			
-    		archiveName = prefix + ".hgnc." + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF) + ".gz";
-        	convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, archiveName, null);  //default is HGNC gene symbols
-    		archiveName = prefix + ".uniprot." + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF) + ".gz";
-        	convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, archiveName, "uniprot");
-        		
-        	//TODO to SBGN?	
+    		//read the given Model (can be vary large!) from archive
+        	LOG.info("Loading the BioPAX model from " + biopaxArchive + "...");
+        	final Model m = (new SimpleIOHandler()).convertFromOWL(biopaxStream);
+        	
+        	LOG.info("Merging equivalent reactions...");
+        	ModelUtils.mergeEquivalentInteractions(m);
+        	
+    		final String prefix =  biopaxArchive.substring(0, biopaxArchive.indexOf(".BIOPAX"));			
+    		
+    		//concurrent conversions (different conversions of the same big Model)
+    		ExecutorService exec = Executors.newFixedThreadPool(4);
+    		
+        	exec.execute(new Runnable() {
+        		public void run() {	
+        			String archiveName = prefix + ".uniprot." + formatAndExt(OutputFormat.GSEA) + ".gz";
+        			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, null); 
+        			//default is to use uniprot accession numbers
+        		}
+        	});	
+        	exec.execute(new Runnable() {
+        		public void run() {	
+        			String archiveName = prefix + ".hgnc." + formatAndExt(OutputFormat.GSEA) + ".gz";
+        			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "hgnc symbol");
+        		}
+        	});
+        	exec.execute(new Runnable() {
+        		public void run() {        	
+        			String archiveName = prefix + ".hgnc." + formatAndExt(OutputFormat.BINARY_SIF) + ".gz";
+        			convertBiopaxToOtherFormatGzipped(m, OutputFormat.BINARY_SIF, archiveName, null);  
+        			//default is to use HGNC gene symbols
+        		}
+        	});        			
+        	
+        	exec.execute(new Runnable() {
+        		public void run() { 
+        			String archiveName = prefix + ".hgnc." + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF) + ".gz";
+        			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, archiveName, null);  
+        			//default is to use HGNC gene symbols
+        		}
+        	});
+ 
+//later can add -
+//			archiveName = prefix + ".uniprot." + formatAndExt(OutputFormat.BINARY_SIF) + ".gz";
+//			convertBiopaxToOtherFormatGzipped(m, OutputFormat.BINARY_SIF, archiveName, "uniprot");        	      	
+//    		archiveName = prefix + ".uniprot." + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF) + ".gz";
+//        	convertBiopaxToOtherFormatGzipped(exec, m, OutputFormat.EXTENDED_BINARY_SIF, archiveName, "uniprot");
 //    		archiveName = prefix + "." + formatAndExt(format) + ".gz";
-//        	convertBiopaxToOtherFormatGzipped(m, format, archiveName, null);
-    			
-    		m = null;
-        } 	
+//        	convertBiopaxToOtherFormatGzipped(exec, m, format, archiveName, null);       	
+
+        	exec.shutdown(); //no more tasks
+        	//wait until it's done or expired
+        	exec.awaitTermination(36, TimeUnit.HOURS);
+        }
 	}
 
 
@@ -850,8 +883,9 @@ public final class Admin {
     }
 
 	
-	private static void convertBiopaxToOtherFormatGzipped(Model m, OutputFormat format, String archiveName, Object param) 
-			throws IOException 
+	private static void convertBiopaxToOtherFormatGzipped( 
+			final Model m, final OutputFormat format, 
+			final String archiveName, final Object param) 
 	{	
 		if(format == OutputFormat.BIOPAX)
 			throw new IllegalArgumentException(format.name() + " is not allowed here.");
@@ -863,46 +897,58 @@ public final class Admin {
 		}
 		
         if(!(new File(archiveName)).exists()) {
-    		LOG.info("create-downloads: generating new " + archiveName);
-    		//note: extended SIF will be one file (edges, nodes)
-   			GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(archiveName));
-   			convert(m, format, zos, param);
-       		IOUtils.closeQuietly(zos);  		
-    		LOG.info("create-downloads: successully created " + archiveName);		
-        } else
+        	LOG.info("create-downloads: generating new " + archiveName);
+        	//note: extended SIF will be one file (edges, nodes)
+        	try {
+        		GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(archiveName));
+        		convert(m, format, zos, param);
+        		zos.flush();
+        		IOUtils.closeQuietly(zos); 
+        		LOG.info("create-downloads: successully created " + archiveName);
+        	} catch (IOException e) {
+        		throw new RuntimeException(e);
+        	} 		
+        } else {
         	LOG.info("create-downloads: skip for existing " + archiveName);
+        }
 	}
 	
 	
-	private static List<String> exportBiopax(Iterable<Metadata> allMetadata) 
-			throws IOException 
+	private static List<String> exportBiopax(Iterable<Metadata> allMetadata) throws InterruptedException 
 	{
-		List<String> files = new ArrayList<String>();
+		final List<String> files = new ArrayList<String>();
 		
 		// generate the complete biopax db export (all processes, no filters)
-		String archiveName = cpath.mainModelFile();
-		files.add(archiveName); //the archive already there exists (made during Merge step)
+		files.add(cpath.mainModelFile()); //the archive already there exists (made during Merge step)
 		
 		//load the main model
-		Model mainModel = CPathUtils.loadMainBiopaxModel();
-		LOG.info("Loaded the BioPAX Model");
+		LOG.info("create-downloads: loading the Main BioPAX Model...");
+		final Model mainModel = CPathUtils.loadMainBiopaxModel();
+		LOG.info("create-downloads: successfully read the Main BioPAX Model");
+		
 		// initialize the search engine
-		Searcher searcher = new SearchEngine(mainModel, CPathSettings.getInstance().indexDir());
+		LOG.info("create-downloads: init the full-text search engine...");
+		final Searcher searcher = new SearchEngine(mainModel, CPathSettings.getInstance().indexDir());
+		
+		//will run concurrently
+		final ExecutorService exec = Executors.newFixedThreadPool(12);
 		
     	// export by organism (name)
         if(cpath.getOrganisms().length>1) {
         	LOG.info("create-downloads: preparing data 'by organism' archives...");
-        	for(String org :  cpath.getOrganisms()) {
+        	for(final String org :  cpath.getOrganisms()) {
         		// generate archives for current organism
         		// hack: org.toLowerCase() is to tell by-organism from by-datasource archives (for usage stats...) 
-        		archiveName = cpath.biopaxExportFileName(org.toLowerCase());
-        		exportBiopax(mainModel, searcher, archiveName, null, new String[]{org});
-        		files.add(archiveName);
+        		String archiveName = cpath.biopaxExportFileName(org.toLowerCase());
+        		if(!files.contains(archiveName)) {
+        			exportBiopax(exec, mainModel, searcher, archiveName, null, new String[]{org});
+        			files.add(archiveName); 
+        		}
         	}
         } else {
         	LOG.info("create-downloads: skipped for 'by organism' archives (there is only one)");
         }
-		
+        
 		// export by datasource
         LOG.info("create-downloads: preparing 'by datasource' archives...");    
         
@@ -916,53 +962,67 @@ public final class Admin {
         		// use standard name and not the metadata ID in the file name, 
         		// because we want all data from same provider merge into one file, e.g.,
         		// all Reactome (species) or IntAct with IntAct Complex, despite having them in separate metadata.
-        		archiveName = cpath.biopaxExportFileName(md.standardName());
+        		String archiveName = cpath.biopaxExportFileName(md.standardName());
         		//skip previously done files (this metadata has the same std. name as previously processed one)
         		if(!files.contains(archiveName)) {
-        			exportBiopax(mainModel, searcher, archiveName,  new String[]{md.standardName()}, null);
-        			files.add(archiveName);
+					exportBiopax(exec, mainModel, searcher, archiveName, new String[]{md.standardName()}, null);
+					files.add(archiveName);
         		}
         		
         		//collect if BioPAX data
         		if(md.getType() == METADATA_TYPE.BIOPAX)
             		pathwayDataSources.add(md.standardName());
         	}
-        }	
+        }
         
         //a separate export - only BioPAX pathway data sources, "Detailed_Pathway_Data":
-        archiveName = cpath.biopaxExportFileName("Detailed_Process_Data");
+        final String archiveName = cpath.biopaxExportFileName("Detailed_Process_Data");
 		if(!files.contains(archiveName)) {
-			exportBiopax(mainModel, searcher, archiveName,  pathwayDataSources.toArray(new String[]{}), null);
+			exportBiopax(exec, mainModel, searcher,  archiveName, pathwayDataSources.toArray(new String[]{}), null);
 			files.add(archiveName);
 		}
         
+        exec.shutdown();
+        exec.awaitTermination(24, TimeUnit.HOURS);	
+        //continue in this thread after the above tasks ended or terminated
+		
         return files;
 	}	
 
 	
-	private static void exportBiopax(Model mainModel, Searcher searcher, String biopaxArchive,
-			String[] datasources, String[] organisms) throws IOException
+	private static void exportBiopax(ExecutorService exec, 
+			final Model mainModel, final Searcher searcher,
+			final String biopaxArchive, final String[] datasources, 
+			final String[] organisms)
 	{
         // check file exists
         if(!(new File(biopaxArchive)).exists()) {
         	LOG.info("create-downloads: creating new " + 	biopaxArchive);
         	
-        	//find all entities (all child elements will be then exported too)    	  	
-       		Collection<String> uris = new HashSet<String>();
-           	uris.addAll(findAllUris(searcher, Pathway.class, datasources, organisms));  	
-           	uris.addAll(findAllUris(searcher, Interaction.class, datasources, organisms));
-           	uris.addAll(findAllUris(searcher, Complex.class, datasources, organisms));
-        	
-    		// export objects found above to a new biopax archive        	
-        	if(!uris.isEmpty()) {
-        		OutputStream os = new GZIPOutputStream(new FileOutputStream(biopaxArchive));
-        		SimpleIOHandler sio = new SimpleIOHandler(BioPAXLevel.L3);
-//        		sio.absoluteUris(true);
-        		sio.convertToOWL(mainModel, os, uris.toArray(new String[]{}));	
-       			LOG.info("create-downloads: successfully created " + 	biopaxArchive);
-        	} else {
-        		LOG.info("create-downloads: no pathways/interactions found; skipping " + 	biopaxArchive);
-        	}
+			exec.execute(new Runnable() {			
+				public void run() {
+					try {
+			        	//find all entities (all child elements will be then exported too)    	  	
+			       		Collection<String> uris = new HashSet<String>();
+			           	uris.addAll(findAllUris(searcher, Pathway.class, datasources, organisms));  	
+			           	uris.addAll(findAllUris(searcher, Interaction.class, datasources, organisms));
+			           	uris.addAll(findAllUris(searcher, Complex.class, datasources, organisms));
+			        	
+			    		// export objects found above to a new biopax archive        	
+			        	if(!uris.isEmpty()) {
+			        		OutputStream os = new GZIPOutputStream(new FileOutputStream(biopaxArchive));
+			        		SimpleIOHandler sio = new SimpleIOHandler(BioPAXLevel.L3);
+//			        		sio.absoluteUris(true);
+			        		sio.convertToOWL(mainModel, os, uris.toArray(new String[]{}));	
+			       			LOG.info("create-downloads: successfully created " + 	biopaxArchive);
+			        	} else {
+			        		LOG.info("create-downloads: no pathways/interactions found; skipping " + 	biopaxArchive);
+			        	}
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}   						
+				}
+			});        	
         } else {
         	LOG.info("create-downloads: found previously generated " + biopaxArchive);
         }   		
