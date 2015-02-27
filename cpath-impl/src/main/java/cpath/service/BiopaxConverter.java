@@ -96,26 +96,29 @@ public class BiopaxConverter {
 				break;
 			case BINARY_SIF:
 				String db = null; //default: will use HGNC (Symbol)
-				if (args != null && args.length > 0 && args[0] instanceof String)
+				if (args.length > 0 && args[0] instanceof String)
 					db = (String) args[0];
 				convertToBinarySIF(m, os, false, db);
 				break;
 			case EXTENDED_BINARY_SIF:
 				db = null; //default: will use HGNC (Symbol)
-				if (args != null && args.length > 0 && args[0] instanceof String)
+				if (args.length > 0 && args[0] instanceof String)
 					db = (String) args[0];
 				convertToBinarySIF(m, os, true, db);
 				break;
 			case GSEA:
 				db = "uniprot"; //default
-				if (args != null && args.length > 0 && args[0] instanceof String)
+				if (args.length > 0 && args[0] instanceof String)
 					db = (String) args[0];
 				convertToGSEA(m, os, db);
 				break;
             case SBGN:
 				boolean doLayout = true;
-				if (args != null && args.length > 0 && args[0] instanceof Boolean)
-					doLayout = (Boolean) args[0];	
+				if (args.length > 0) {
+					doLayout = (args[0] instanceof Boolean)
+							? ((Boolean)args[0]).booleanValue() 
+								: Boolean.parseBoolean(String.valueOf(args[0]));
+				}
                 convertToSBGN(m, os, blacklist, doLayout);
                 break;
 			default: throw new UnsupportedOperationException(

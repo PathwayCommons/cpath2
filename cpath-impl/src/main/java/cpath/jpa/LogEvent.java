@@ -136,7 +136,7 @@ public class LogEvent {
 			if(Character.isUpperCase(parts[0].charAt(0)) 
 					&& !"All".equalsIgnoreCase(parts[0])
 					&& !"Warehouse".equalsIgnoreCase(parts[0])
-					&& !"Detailed_Process_Data".equalsIgnoreCase(parts[0])) {
+					&& !"Detailed".equalsIgnoreCase(parts[0])) {
 				set.add(new LogEvent(LogType.PROVIDER, parts[0]));
 			}
 

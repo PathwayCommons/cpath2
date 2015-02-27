@@ -726,15 +726,15 @@ public final class Admin {
      * @param model
      * @param outputFormat
      * @param output
-     * @param idTypeOrLayout 
+     * @param params optional parameters (depends on the format)
      * @throws IOException
      */
 	private static void convert(Model model, OutputFormat outputFormat, 
-			OutputStream output, Object idTypeOrLayout) throws IOException 
+			OutputStream output, Object... params) throws IOException 
 	{
 		Resource blacklist = new DefaultResourceLoader().getResource("file:" + cpath.blacklistFile());
 		BiopaxConverter converter = new BiopaxConverter(new Blacklist(blacklist.getInputStream()));
-		converter.convert(model, outputFormat, output, idTypeOrLayout);
+		converter.convert(model, outputFormat, output, params);
 		output.flush();
 	}
 
@@ -769,15 +769,14 @@ public final class Admin {
 		
 		MetadataRepository metadataRepository = (MetadataRepository) context.getBean(MetadataRepository.class);
 		
-		//0) create an imported data summary file.txt (issue#23)
+		// 1) create an imported data summary file.txt (issue#23)
 		PrintWriter writer = new PrintWriter(cpath.downloadsDir() + File.separator 
 				+ "datasources.txt");
 		String date = new SimpleDateFormat("d MMM yyyy").format(Calendar.getInstance().getTime());
 		writer.println(StringUtils.join(Arrays.asList(
 			"#CPATH2:", getInstance().getName(), "version", getInstance().getVersion(), date), " "));
 		writer.println("#Columns:\t" + StringUtils.join(Arrays.asList(
-			"ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PARTICIPANTS"), "\t"));
-		
+			"ID", "DESCRIPTION", "TYPE", "HOMEPAGE", "PATHWAYS", "INTERACTIONS", "PARTICIPANTS"), "\t"));		
 		Iterable<Metadata> allMetadata = metadataRepository.findAll();
 		for(Metadata m : allMetadata) {
 			writer.println(StringUtils.join(Arrays.asList(
@@ -785,80 +784,102 @@ public final class Admin {
 				m.getNumPathways(), m.getNumInteractions(), m.getNumPhysicalEntities()), "\t"));
 		}		
 		writer.flush();
-		writer.close();		
-		LOG.info("create-downloads: successfully generated the datasources summary file.");
-		
-		// generate/find all BioPAX archives:
-		List<String> biopaxArchives = exportBiopax(allMetadata);
-		
+		writer.close();	
 		// destroy the Spring context, release some resources
-		context.close();
-		    	
-    	// 2) export to all other formats
-        for(final String biopaxArchive : biopaxArchives) {
-        	//load model and convert to other formats
+		context.close(); context = null;				
+		LOG.info("create-downloads: successfully generated the datasources summary file.");
+			
+		//load the main model
+		LOG.info("create-downloads: loading the Main BioPAX Model...");
+		Model mainModel = CPathUtils.loadMainBiopaxModel();
+		LOG.info("create-downloads: successfully read the Main BioPAX Model");
+		
+		// generate/find all other BioPAX archives (by organism, etc.):
+		List<String> otherBiopaxArchives = createOrFindBiopaxArchives(mainModel, allMetadata);
+    	
+		// 2) create all other format archives from the main model (still in memory)
+		String prefix =  cpath.mainModelFile().substring(0, cpath.mainModelFile().indexOf("BIOPAX."));
+		exportBiopaxToOutputFormats(mainModel, prefix);
+		mainModel = null; //release quite a few Gygabytes
+		
+		// 3) export the rest of biopax archives to all other formats		
+        for(String biopaxArchive : otherBiopaxArchives) {      	
         	InputStream biopaxStream = null;
         	try {
         		biopaxStream = biopaxStream(biopaxArchive);
         	} catch (IOException e) {
-        		LOG.error("Failed to read " + biopaxArchive + 
-        				"; skipped (wasn't created before?)", e );
+        		LOG.error("Failed to read " + biopaxArchive + "; skipped (wasn't created before?)", e );
         		continue;
-        	}
-        	
-    		//read the given Model (can be vary large!) from archive
+        	}       	   		
+        	//read the given Model (can be vary large!) from archive
         	LOG.info("Loading the BioPAX model from " + biopaxArchive + "...");
-        	final Model m = (new SimpleIOHandler()).convertFromOWL(biopaxStream);
-        	
-        	LOG.info("Merging equivalent reactions...");
-        	ModelUtils.mergeEquivalentInteractions(m);
-        	
-    		final String prefix =  biopaxArchive.substring(0, biopaxArchive.indexOf(".BIOPAX"));			
-    		
-    		//concurrent conversions (different conversions of the same big Model)
-    		ExecutorService exec = Executors.newFixedThreadPool(4);
-    		
-        	exec.execute(new Runnable() {
-        		public void run() {	
-        			String archiveName = prefix + ".uniprot." + formatAndExt(OutputFormat.GSEA) + ".gz";
-        			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, null); 
-        			//default is to use uniprot accession numbers
-        		}
-        	});	
-        	exec.execute(new Runnable() {
-        		public void run() {	
-        			String archiveName = prefix + ".hgnc." + formatAndExt(OutputFormat.GSEA) + ".gz";
-        			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "hgnc symbol");
-        		}
-        	});
-        	exec.execute(new Runnable() {
-        		public void run() {        	
-        			String archiveName = prefix + ".hgnc." + formatAndExt(OutputFormat.BINARY_SIF) + ".gz";
-        			convertBiopaxToOtherFormatGzipped(m, OutputFormat.BINARY_SIF, archiveName, null);  
-        			//default is to use HGNC gene symbols
-        		}
-        	});        			
-        	
-        	exec.execute(new Runnable() {
-        		public void run() { 
-        			String archiveName = prefix + ".hgnc." + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF) + ".gz";
-        			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, archiveName, null);  
-        			//default is to use HGNC gene symbols
-        		}
-        	});
- 
-//later can add -
-//			archiveName = prefix + ".uniprot." + formatAndExt(OutputFormat.BINARY_SIF) + ".gz";
-//			convertBiopaxToOtherFormatGzipped(m, OutputFormat.BINARY_SIF, archiveName, "uniprot");        	      	
-//    		archiveName = prefix + ".uniprot." + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF) + ".gz";
-//        	convertBiopaxToOtherFormatGzipped(exec, m, OutputFormat.EXTENDED_BINARY_SIF, archiveName, "uniprot");
-//    		archiveName = prefix + "." + formatAndExt(format) + ".gz";
-//        	convertBiopaxToOtherFormatGzipped(exec, m, format, archiveName, null);       	
-
-        	exec.shutdown(); //no more tasks
-        	//wait until it's done or expired
-        	exec.awaitTermination(36, TimeUnit.HOURS);
+        	Model m = (new SimpleIOHandler()).convertFromOWL(biopaxStream);       	
+        	prefix =  biopaxArchive.substring(0, biopaxArchive.indexOf("BIOPAX."));
+        	exportBiopaxToOutputFormats(m, prefix);
         }
+	}
+
+
+	private static void exportBiopaxToOutputFormats(final Model m, final String prefix) 
+			throws InterruptedException {
+
+    	LOG.info("Merging equivalent reactions...");
+    	ModelUtils.mergeEquivalentInteractions(m);
+		
+		//concurrent conversions (different conversions of the same big Model)
+		ExecutorService exec = Executors.newFixedThreadPool(7);
+		
+    	exec.execute(new Runnable() {
+    		public void run() {	
+    			String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "uniprot") + ".gz";
+    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName); //default to use uniprot AC
+    		}
+    	});	
+    	exec.execute(new Runnable() {
+    		public void run() {	
+    			String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "hgnc") + ".gz";
+    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "hgnc symbol");
+    		}
+    	});
+    	exec.execute(new Runnable() {
+    		public void run() {        	
+    			String archiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "hgnc") + ".gz";
+    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.BINARY_SIF, archiveName); //default to use HGNC symbols
+    		}
+    	});        			
+    	
+    	exec.execute(new Runnable() {
+    		public void run() { 
+    			String archiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "hgnc") + ".gz";
+    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, archiveName); //default to use HGNC symbols
+    		}
+    	});
+
+    	exec.execute(new Runnable() {
+    		public void run() { 
+    			String archiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot") + ".gz";
+    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.BINARY_SIF, archiveName, "uniprot");
+    		}
+    	});
+    	
+    	exec.execute(new Runnable() {
+    		public void run() { 
+    			String archiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "uniprot") + ".gz";
+    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, archiveName, "uniprot");
+    		}
+    	});        	
+    	
+    	//TODO can SBGN   
+//    	exec.execute(new Runnable() {
+//    		public void run() { 
+//    			String archiveName = prefix + formatAndExt(OutputFormat.SBGN, null) + ".gz";
+//            	convertBiopaxToOtherFormatGzipped(m, OutputFormat.SBGN, archiveName); //default: layout==true
+//    		}
+//    	}); 
+
+    	exec.shutdown(); //no more tasks
+    	//wait until it's done or expired
+    	exec.awaitTermination(36, TimeUnit.HOURS);
 	}
 
 
@@ -885,7 +906,7 @@ public final class Admin {
 	
 	private static void convertBiopaxToOtherFormatGzipped( 
 			final Model m, final OutputFormat format, 
-			final String archiveName, final Object param) 
+			final String archiveName, final Object... params) 
 	{	
 		if(format == OutputFormat.BIOPAX)
 			throw new IllegalArgumentException(format.name() + " is not allowed here.");
@@ -901,7 +922,7 @@ public final class Admin {
         	//note: extended SIF will be one file (edges, nodes)
         	try {
         		GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(archiveName));
-        		convert(m, format, zos, param);
+        		convert(m, format, zos, params);
         		zos.flush();
         		IOUtils.closeQuietly(zos); 
         		LOG.info("create-downloads: successully created " + archiveName);
@@ -914,24 +935,17 @@ public final class Admin {
 	}
 	
 	
-	private static List<String> exportBiopax(Iterable<Metadata> allMetadata) throws InterruptedException 
+	private static List<String> createOrFindBiopaxArchives(final Model mainModel, 
+			Iterable<Metadata> allMetadata) throws InterruptedException 
 	{
 		final List<String> files = new ArrayList<String>();
-		
-		// generate the complete biopax db export (all processes, no filters)
-		files.add(cpath.mainModelFile()); //the archive already there exists (made during Merge step)
-		
-		//load the main model
-		LOG.info("create-downloads: loading the Main BioPAX Model...");
-		final Model mainModel = CPathUtils.loadMainBiopaxModel();
-		LOG.info("create-downloads: successfully read the Main BioPAX Model");
-		
+
 		// initialize the search engine
 		LOG.info("create-downloads: init the full-text search engine...");
 		final Searcher searcher = new SearchEngine(mainModel, CPathSettings.getInstance().indexDir());
 		
 		//will run concurrently
-		final ExecutorService exec = Executors.newFixedThreadPool(12);
+		final ExecutorService exec = Executors.newFixedThreadPool(10);
 		
     	// export by organism (name)
         if(cpath.getOrganisms().length>1) {
@@ -950,24 +964,25 @@ public final class Admin {
         }
         
 		// export by datasource
-        LOG.info("create-downloads: preparing 'by datasource' archives...");    
+        LOG.info("create-downloads: skip 'by datasource' archives (this feature is disabled for now)...");         
         
         //collect BioPAX pathway data source names in this set
-        Set<String> pathwayDataSources = new HashSet<String>();
-        
+        Set<String> pathwayDataSources = new HashSet<String>();        
         //generate by provider BioPAX archives
         for(Metadata md : allMetadata) {
         	// generate archives for current pathway datasource;
         	if(!md.isNotPathwayData()) {
-        		// use standard name and not the metadata ID in the file name, 
-        		// because we want all data from same provider merge into one file, e.g.,
-        		// all Reactome (species) or IntAct with IntAct Complex, despite having them in separate metadata.
-        		String archiveName = cpath.biopaxExportFileName(md.standardName());
-        		//skip previously done files (this metadata has the same std. name as previously processed one)
-        		if(!files.contains(archiveName)) {
-					exportBiopax(exec, mainModel, searcher, archiveName, new String[]{md.standardName()}, null);
-					files.add(archiveName);
-        		}
+        		
+// Disabled for now (can be later generated with paxtools by users, or by us on special requests)
+//        		// use standard name and not the metadata ID in the file name, 
+//        		// because we want all data from same provider merge into one file, e.g.,
+//        		// all Reactome (species) or IntAct with IntAct Complex, despite having them in separate metadata.
+//        		String archiveName = cpath.biopaxExportFileName(md.standardName());
+//        		//skip previously done files (this metadata has the same std. name as previously processed one)
+//        		if(!files.contains(archiveName)) {
+//					exportBiopax(exec, mainModel, searcher, archiveName, new String[]{md.standardName()}, null);
+//					files.add(archiveName);
+//        		}
         		
         		//collect if BioPAX data
         		if(md.getType() == METADATA_TYPE.BIOPAX)
@@ -975,8 +990,9 @@ public final class Admin {
         	}
         }
         
-        //a separate export - only BioPAX pathway data sources, "Detailed_Pathway_Data":
-        final String archiveName = cpath.biopaxExportFileName("Detailed_Process_Data");
+        //a separate export - only BioPAX pathway data sources, "Detailed":
+        LOG.info("create-downloads: creating 'Detailed' data archives..."); 
+        final String archiveName = cpath.biopaxExportFileName("Detailed");
 		if(!files.contains(archiveName)) {
 			exportBiopax(exec, mainModel, searcher,  archiveName, pathwayDataSources.toArray(new String[]{}), null);
 			files.add(archiveName);
@@ -1029,16 +1045,20 @@ public final class Admin {
 	}
 
 
-	private static String formatAndExt(OutputFormat format) {
+	private static String formatAndExt(OutputFormat format, String suffix) {
+		
+		suffix = (suffix==null || suffix.isEmpty())
+				? "" : "." + suffix.toLowerCase();
+		
 		switch (format) {
 		case GSEA:
-			return format + ".gmt";
+			return format + suffix + ".gmt";
 		case SBGN:
-			return format + ".xml";
+			return format + suffix + ".xml";
 		case BINARY_SIF:
-			return format + ".tsv";
+			return format + suffix + ".tsv";
 		case EXTENDED_BINARY_SIF:
-			return format + ".tsv";
+			return format + suffix + ".tsv";
 		default://fail - biopax is treated specially, not here
 			throw new IllegalArgumentException(format.toString() + " not allowed.");
 		}
