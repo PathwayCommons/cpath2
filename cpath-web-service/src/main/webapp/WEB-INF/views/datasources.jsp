@@ -192,7 +192,7 @@ for regular users, - show the compact read-only summary of the data providers --
        					<em>Contains: </em>
        					<span ng-show="ds.numPathways > 0"><span class="badge alert-info">{{ds.numPathways}}</span> pathways,</span> 
        				 	<span ng-show="ds.numInteractions > 0"><span class="badge alert-info">{{ds.numInteractions}}</span> interactions,</span> 
-       				 	<span ng-show="ds.numPhysicalEntities > 0"><span class="badge alert-info">{{ds.numPhysicalEntities}}</span> molecules, complexes and genes</span>
+       				 	<span ng-show="ds.numPhysicalEntities > 0"><span class="badge alert-info">{{ds.numPhysicalEntities}}</span> participants</span>
        				</p>
        				<p ng-hide="ds.notPathwayData">
        				  <em>A sub-network, search result, or file have been accessed: </em>

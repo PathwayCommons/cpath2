@@ -70,21 +70,32 @@ ProteinReferences - not empty 'organism' property value).
 <h4>BINARY_SIF</h4>
 <p>
 Many network analysis algorithms require pairwise interaction networks 
-as input.  A BioPAX network often contains more complex relationships
-with multiple participants, such as biochemical reactions.  To make it
+as input. A BioPAX network often contains more complex relationships
+with multiple participants, such as biochemical reactions. To make it
 easier to use all of the pathway information in Pathway Commons with
 typical network analysis tools, we developed a set of rules to reduce
-BioPAX interactions to pairwise (or binary) relationships.  Since SIF interactions
-are always binary it is not possible to fully represent all of BioPAX,
-thus this translation is lossy in general.  Nonetheless, the SIF
-network is useful for those applications that require pairwise
+BioPAX interactions to pairwise (or binary) relationships.  
+Since SIF interactions are always binary it is not possible to fully 
+represent all of BioPAX, thus this translation is lossy in general. 
+Nonetheless, the SIF network is useful for those applications that require pairwise
 interaction input.  SIF format can be easily imported into popular network analysis tools, 
 like <a target="_blank" href="http://wiki.cytoscape.org/Cytoscape_User_Manual/Network_Formats">Cytoscape</a>.
 </p><p>
-In this output format, all participants will be specified as chemical or gene names or IDs.
-This format does not contain any cross-species
+In this output format, all participants are specified as chemical or gene 
+names or identifiers. This format does not contain any cross-species
 interactions and is available for all pathways and interactions within
-this database.
+this database.</p><p>
+A note about identifiers: We uniquely mapped selected protein and gene identifiers, such as
+HGNC symbols, NCBI Gene, UniProt Isoform, Ensembl and RefSeq, 
+to primary UniProt accession numbers, where possible, 
+and then normalized and merged original 
+protein types to canonical UniProt ones, 
+thus building a larger BioPAX network of all pathways, interactions and participants 
+from different data sources. In some cases, mappings between identifiers cannot be made, 
+so it is possible to lost some information in this process. Also, in cases where 
+the SIF format contains a non-UniProt identifier (e.g. HGNC gene symbol), it is possible 
+that more than one identifier maps to a UniProt identifier. In this case, a duplicate SIF 
+interaction is created for each additional non-UniProt identifier.
 </p>
 
 <h4>EXTENDED_BINARY_SIF</h4>
@@ -93,7 +104,8 @@ Similar to the basic SIF output format, except that this output format is
 specified in two sections. Each section starts with one row of column
 headings.  The two sections are separated by a single blank line. 
 Each entry is multi-column, tab-delimited. The first section is BINARY_SIF (edges) 
-as describe above. Current edge attributes include the interaction data source and PubMed ID.  
+as describe above, plus PATHWAYS column. 
+Current edge attributes include the interaction data source and PubMed ID.  
 The second section contains participant (molecule or gene) name followed by several node attributes.  
 Current node attributes include PARTICIPANT_TYPE, PARTICIPANT_NAME(s), UNIFICATION_XREF(s)
 (e.g., one or more UniProt IDs in the case of a protein reference, or a

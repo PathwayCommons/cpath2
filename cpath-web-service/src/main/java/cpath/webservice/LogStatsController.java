@@ -246,7 +246,11 @@ public class LogStatsController extends BasicController {
 		Long totalInteractions = 0L;
 		
 		//also - for each provider -
+		int numProviders = 0; //not warehouse data
 		for(Metadata mtda : service.metadata().findAll()) {
+			if(mtda.isNotPathwayData())
+				continue; //skip warehouse data sources
+			
 			m = new HashMap<String, Object>();
 			m.put("identifier", mtda.identifier);
 			m.put("name", mtda.standardName());
@@ -257,13 +261,15 @@ public class LogStatsController extends BasicController {
 			l.add(m);
 			totalPathways += mtda.getNumPathways();
 			totalInteractions += mtda.getNumInteractions();
+			
+			numProviders++;
 		}
 
 		// add total requests/IPs counts to the list
 		m = new HashMap<String, Object>();
 		m.put("identifier", LogType.TOTAL.description); //"All"
 		m.put("name", "PC2 v" + CPathSettings.getInstance().getVersion() + " web service");
-		m.put("datasources", service.metadata().count());
+		m.put("datasources", numProviders);
 		m.put("totalok", totalRequests());
 		m.put("totalip", totalUniqueIps());
 		m.put("pathways", totalPathways);
