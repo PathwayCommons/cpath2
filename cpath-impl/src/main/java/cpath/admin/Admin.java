@@ -831,48 +831,48 @@ public final class Admin {
 		
     	exec.execute(new Runnable() {
     		public void run() {	
-    			String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "uniprot") + ".gz";
+    			String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "uniprot");
     			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName); //default to use uniprot AC
     		}
     	});	
     	exec.execute(new Runnable() {
     		public void run() {	
-    			String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "hgnc") + ".gz";
+    			String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "hgnc");
     			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "hgnc symbol");
     		}
     	});
     	exec.execute(new Runnable() {
     		public void run() {        	
-    			String archiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "hgnc") + ".gz";
+    			String archiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "hgnc");
     			convertBiopaxToOtherFormatGzipped(m, OutputFormat.BINARY_SIF, archiveName); //default to use HGNC symbols
     		}
     	});        			
     	
     	exec.execute(new Runnable() {
     		public void run() { 
-    			String archiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "hgnc") + ".gz";
+    			String archiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "hgnc");
     			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, archiveName); //default to use HGNC symbols
     		}
     	});
 
-    	exec.execute(new Runnable() {
-    		public void run() { 
-    			String archiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot") + ".gz";
-    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.BINARY_SIF, archiveName, "uniprot");
-    		}
-    	});
-    	
-    	exec.execute(new Runnable() {
-    		public void run() { 
-    			String archiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "uniprot") + ".gz";
-    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, archiveName, "uniprot");
-    		}
-    	});        	
+//    	exec.execute(new Runnable() {
+//    		public void run() { 
+//    			String archiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot");
+//    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.BINARY_SIF, archiveName, "uniprot");
+//    		}
+//    	});
+//    	
+//    	exec.execute(new Runnable() {
+//    		public void run() { 
+//    			String archiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "uniprot");
+//    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, archiveName, "uniprot");
+//    		}
+//    	});        	
     	
     	//TODO can SBGN   
 //    	exec.execute(new Runnable() {
 //    		public void run() { 
-//    			String archiveName = prefix + formatAndExt(OutputFormat.SBGN, null) + ".gz";
+//    			String archiveName = prefix + formatAndExt(OutputFormat.SBGN, null);
 //            	convertBiopaxToOtherFormatGzipped(m, OutputFormat.SBGN, archiveName); //default: layout==true
 //    		}
 //    	}); 
@@ -1052,13 +1052,13 @@ public final class Admin {
 		
 		switch (format) {
 		case GSEA:
-			return format + suffix + ".gmt";
+			return format + suffix + ".gmt.gz";
 		case SBGN:
-			return format + suffix + ".xml";
+			return format + suffix + ".xml.gz";
 		case BINARY_SIF:
-			return format + suffix + ".tsv";
+			return format + suffix + ".sif.gz";
 		case EXTENDED_BINARY_SIF:
-			return format + suffix + ".tsv";
+			return format + suffix + ".sif.gz";
 		default://fail - biopax is treated specially, not here
 			throw new IllegalArgumentException(format.toString() + " not allowed.");
 		}

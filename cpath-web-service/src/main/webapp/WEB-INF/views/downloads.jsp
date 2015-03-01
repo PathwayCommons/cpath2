@@ -16,11 +16,11 @@
 				<code>${cpath.name}.${cpath.version}.&lt;SOURCE&gt;.&lt;FORMAT&gt;.&lt;ext&gt;.gz</code>
 				<p>(Previous versions can be downloaded from the <a href="${cpath.url}/archives">${cpath.name} archive</a>)</p>
 			</blockquote>
-			<em>&lt;SOURCE&gt;</em> - is either 'All' (the integrated BioPAX model loaded into the 
-				<a href='<c:url value="/home"/>'>web service</a>),
-				'Detailed' (excluding all PSI-MI data providers), or other;<br/>
-			<em>&lt;FORMAT&gt;</em> - one of the <a href="formats">Output Formats</a><br/> 
-			<em>&lt;ext&gt;</em> - output id type, sub-type, standard file extension, e.g., "hgnc.gmt.tsv".
+			<em>&lt;SOURCE&gt;</em>: 'All' (main BioPAX model, used by the  
+				<a href='<c:url value="/home"/>'>web service</a>), 'Detailed' (no PSI-MI data sources), 
+				'Warehouse' (only reference and annotation type BioPAX objects), or a data source name.<br/>
+			<em>&lt;FORMAT&gt;</em>: one of the <a href="formats">Output Formats</a>.<br/> 
+			<em>&lt;ext&gt;</em>: output id type and file extension, e.g., "hgnc.gmt".
 		</div>
 		
 		<h3>Notes</h3>
@@ -35,9 +35,9 @@
 				for each pathway or interaction data source in the system can be found 
 				<a rel="nofollow" href='<c:url value="/validations"/>'>here</a>.</li>
 			<li>We can also generate a BioPAX sub-model and convert to the simple formats on your special request: 
-				select sources, add columns (for SIF) or description (for GSEA), select binary interaction types and output ID type); 
-				or one can do it using <a href="http://www.biopax.org/paxtools">Paxtools</a> 
-				and our BioPAX archives as input, and the blacklist.txt (to ignore ubiquitous small molecules).</li>			
+				select sources, add columns (for SIF) or description (for GSEA), select binary interaction types and output ID type. 
+				One can also do it with <a href="http://www.biopax.org/paxtools">Paxtools</a>, 
+				one of the BioPAX files and blacklist.txt (to ignore ubiquitous small molecules).</li>			
 		</ul>
 		
 		<h3>Files</h3>
