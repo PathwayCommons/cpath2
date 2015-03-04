@@ -227,9 +227,15 @@ public class BiopaxConverter {
 	public void convertToBinarySIF(Model m, OutputStream out, boolean extended, String db) 
 			throws IOException 
 	{
-		CommonIDFetcher idFetcher = new CommonIDFetcher();
-		idFetcher.setUseUniprotIDs("uniprot".equalsIgnoreCase(db));	
-		SIFSearcher searcher =  new SIFSearcher(idFetcher, SIFEnum.values());
+		SIFSearcher searcher;
+		if("uniprot".equalsIgnoreCase(db)) {
+			CommonIDFetcher idFetcher = new CommonIDFetcher();
+			idFetcher.setUseUniprotIDs(true);	
+			searcher =  new SIFSearcher(idFetcher, SIFEnum.values());
+		} else { //hgnc
+			searcher =  new SIFSearcher(SIFEnum.values());
+		}
+		
 		searcher.setBlacklist(blacklist);
 				
 		if (extended) {
