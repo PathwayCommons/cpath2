@@ -103,7 +103,7 @@ public class BiopaxModelController extends BasicController {
 	 * 
 	 * @param localId - the part of URI following xml:base
 	 * 
-	 * TODO return a summary (view) instead of plain raw BioPAX content.
+	 * TODO return a summary page (type, name, some numbers and links to get the biopax/sif/gsea data) instead of the BioPAX content.
 	 */
 	@RequestMapping(method=RequestMethod.GET, value="/{localId}")
 	public void cpathIdInfo(@PathVariable String localId, Writer writer, 

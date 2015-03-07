@@ -18,6 +18,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.IntField;
@@ -731,20 +732,38 @@ public class SearchEngine implements Indexer, Searcher {
 	 */
 	private Query subQuery(String[] filterValues, String filterField) {
 		BooleanQuery query = new BooleanQuery();	
-		final Pattern pattern = Pattern.compile("\\s");
-		
+		final Pattern pattern = Pattern.compile("\\s");		
 		for(String v : filterValues) {
+			//if v has whitespace chars (several words), make a "word1 AND word2 AND..." subquery
 			if(pattern.matcher(v).find()) {
 				BooleanQuery bq = new BooleanQuery();
-				for(String w : v.split("\\s+")) {
-					bq.add(new TermQuery(new Term(filterField, w.toLowerCase())), Occur.MUST);
-					LOG.debug("subQuery, add part: " + w.toLowerCase());
+//bug: text with spaces and 'of', 'and', 'for', etc., fails to match anything (fix: use the same analyzer here as when indexing!)
+//				for(String w : v.split("\\s+")) {
+//					bq.add(new TermQuery(new Term(filterField, w.toLowerCase())), Occur.MUST);
+//					LOG.debug("subQuery, add part: " + w.toLowerCase());
+//				}
+				try {
+					//use the same analyser as when indexing
+					TokenStream tokenStream = analyzer.tokenStream(filterField, new StringReader(v));
+					CharTermAttribute chattr = tokenStream.addAttribute(CharTermAttribute.class);
+					tokenStream.reset();
+					while(tokenStream.incrementToken()) {
+						//'of', 'and', 'for',.. never occur as tokens (this is how the analyzer works)
+						String token = chattr.toString();
+						bq.add(new TermQuery(new Term(filterField, token)), Occur.MUST);
+//						LOG.debug("subQuery, add part: " + token);
+					}
+					tokenStream.end(); 
+					tokenStream.close();
+				} catch (IOException e) {
+					//should never happen as we use StringReader
+					throw new RuntimeException("Failed to open a token stream; "
+							+ "field:" + filterField + ", value:" + v,e);
 				}
 				query.add(bq, Occur.SHOULD);
 			} else {
 				query.add(new TermQuery(new Term(filterField, v.toLowerCase())), Occur.SHOULD);
-			}
-			
+			}			
 		}
 		
 		return query;

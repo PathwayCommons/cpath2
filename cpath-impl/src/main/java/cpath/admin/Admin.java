@@ -827,7 +827,7 @@ public final class Admin {
     	ModelUtils.mergeEquivalentInteractions(m);
 		
 		//concurrent conversions (different conversions of the same big Model)
-		ExecutorService exec = Executors.newFixedThreadPool(7);
+		ExecutorService exec = Executors.newCachedThreadPool();
 		
     	exec.execute(new Runnable() {
     		public void run() {	
@@ -964,7 +964,7 @@ public final class Admin {
         }
         
 		// export by datasource
-        LOG.info("create-downloads: skip 'by datasource' archives (this feature is disabled for now)...");         
+        LOG.info("create-downloads: creating 'by datasource' archives...");         
         
         //collect BioPAX pathway data source names in this set
         Set<String> pathwayDataSources = new HashSet<String>();        
@@ -972,17 +972,15 @@ public final class Admin {
         for(Metadata md : allMetadata) {
         	// generate archives for current pathway datasource;
         	if(!md.isNotPathwayData()) {
-        		
-// Disabled for now (can be later generated with paxtools by users, or by us on special requests)
-//        		// use standard name and not the metadata ID in the file name, 
-//        		// because we want all data from same provider merge into one file, e.g.,
-//        		// all Reactome (species) or IntAct with IntAct Complex, despite having them in separate metadata.
-//        		String archiveName = cpath.biopaxExportFileName(md.standardName());
-//        		//skip previously done files (this metadata has the same std. name as previously processed one)
-//        		if(!files.contains(archiveName)) {
-//					exportBiopax(exec, mainModel, searcher, archiveName, new String[]{md.standardName()}, null);
-//					files.add(archiveName);
-//        		}
+        		// use standard name and not the metadata ID in the file name, 
+        		// because we want all data from same provider merge into one file, e.g.,
+        		// all Reactome (species) or IntAct with IntAct Complex, despite having them in separate metadata.
+        		String archiveName = cpath.biopaxExportFileName(md.standardName());
+        		//skip previously done files (this metadata has the same std. name as previously processed one)
+        		if(!files.contains(archiveName)) {
+					exportBiopax(exec, mainModel, searcher, archiveName, new String[]{md.standardName()}, null);
+					files.add(archiveName);
+        		}
         		
         		//collect if BioPAX data
         		if(md.getType() == METADATA_TYPE.BIOPAX)
