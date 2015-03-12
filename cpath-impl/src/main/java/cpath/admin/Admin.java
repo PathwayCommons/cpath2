@@ -36,6 +36,7 @@ import cpath.importer.PreMerger;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.jpa.MetadataRepository;
+import cpath.service.Analysis;
 import cpath.service.BiopaxConverter;
 import cpath.service.CPathService;
 import cpath.service.Indexer;

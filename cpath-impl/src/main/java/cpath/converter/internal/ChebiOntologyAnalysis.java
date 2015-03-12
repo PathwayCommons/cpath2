@@ -10,9 +10,9 @@ import org.biopax.paxtools.model.level3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cpath.dao.Analysis;
 import cpath.importer.PreMerger;
 import cpath.importer.PreMerger.RelTypeVocab;
+import cpath.service.Analysis;
 
 
 /**
@@ -22,7 +22,7 @@ import cpath.importer.PreMerger.RelTypeVocab;
  * This can go after the small molecule warehouse 
  * is built from ChEBI data (or even after cPath2 Merge stage). 
  */
-public final class ChebiOntologyAnalysis implements Analysis
+final class ChebiOntologyAnalysis implements Analysis<Model>
 {
 	private InputStream inputStream; //ChEBI OBO data
 	
@@ -47,7 +47,7 @@ public final class ChebiOntologyAnalysis implements Analysis
 	 * @param model existing biopax Warehouse model
 	 * @throws IOException
 	 */
-	public void processOBOEntry(StringBuilder entryBuffer, Model model) throws IOException {
+	private void processOBOEntry(StringBuilder entryBuffer, Model model) throws IOException {
 		if (log.isDebugEnabled()) {
 			log.debug("calling processOBOEntry()");
 		}

@@ -25,28 +25,20 @@
  ** or find it at http://www.fsf.org/ or http://www.gnu.org.
  **/
 
-package cpath.dao;
-
-import org.biopax.paxtools.model.Model;
+package cpath.service;
 
 /**
  * This is a cPath2 core Analysis plugin interface.
- *   
- * A class using Paxtools API for a BioPAX data analysis 
- * and implementing this interface can be also run by 
- * {@link PaxtoolsDAO} ({@link Model}) within a database transaction 
- * and work within the "global" persistent BioPAX model.
  * 
  * @author rodche
  *
  */
-public interface Analysis {
+public interface Analysis<T> {
 	
 	/**
-	 * Runs an analysis or query algorithm 
-	 * on the BioPAX {@link Model}.
+	 * Runs an algorithm or query, given the object/model.
 	 * 
-	 * @param model persistent BioPAX model to work with (will be injected)
+	 * @param model
 	 */
-	void execute(Model model);
+	void execute(T model);
 }

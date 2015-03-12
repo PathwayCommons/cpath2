@@ -11,7 +11,7 @@ import org.biopax.paxtools.model.level3.ModificationFeature;
 import org.biopax.paxtools.model.level3.PhysicalEntity;
 import org.biopax.paxtools.model.level3.Provenance;
 
-import cpath.dao.Analysis;
+import cpath.service.Analysis;
 
 /**
  * Prints out а summary of the main merged BioPAX model
@@ -28,7 +28,7 @@ import cpath.dao.Analysis;
  * @author rodche
  *
  */
-public final class EntityFeaturesSummary implements Analysis {
+public final class EntityFeaturesSummary implements Analysis<Model> {
 	
 	public static final String JAVA_OPTION_DATASOURCES = "cpath.analysis.filter.metadataids";
 	
