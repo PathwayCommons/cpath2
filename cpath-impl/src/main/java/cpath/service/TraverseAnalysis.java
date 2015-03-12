@@ -7,7 +7,6 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 
-import cpath.dao.Analysis;
 import cpath.service.jaxb.TraverseEntry;
 import cpath.service.jaxb.TraverseResponse;
 
@@ -17,7 +16,7 @@ import cpath.service.jaxb.TraverseResponse;
  * @author rodche
  *
  */
-final class TraverseAnalysis implements Analysis {
+final class TraverseAnalysis implements Analysis<Model> {
 	
 	private final TraverseResponse callback;
 	private final String[] uris;
