@@ -31,7 +31,6 @@ package cpath.service;
 import java.io.*;
 import java.util.*;
 
-import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sbgn.L3ToSBGNPDConverter;
 import org.biopax.paxtools.io.sbgn.ListUbiqueDetector;
@@ -143,13 +142,6 @@ public class BiopaxConverter {
     	if(m == null || m.getObjects().isEmpty()) {
 			return new ErrorResponse(NO_RESULTS_FOUND, "Empty BioPAX Model");
 		}
-
-    	//TODO perhaps, make it a config. option (cpath2 instance property)
-    	if(format==OutputFormat.BINARY_SIF
-    			|| format==OutputFormat.EXTENDED_BINARY_SIF
-    			|| format==OutputFormat.SBGN) {
-    		ModelUtils.mergeEquivalentInteractions(m);
-    	}
     	
 		// otherwise, convert, return a new DataResponse
     	// (can contain up to ~ 1Gb unicode string data)

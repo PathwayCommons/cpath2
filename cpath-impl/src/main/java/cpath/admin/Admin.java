@@ -823,10 +823,7 @@ public final class Admin {
 
 	private static void exportBiopaxToOutputFormats(final Model m, final String prefix) 
 			throws InterruptedException {
-
-    	LOG.info("Merging equivalent reactions...");
-    	ModelUtils.mergeEquivalentInteractions(m);
-		
+	
 		//concurrent conversions (different conversions of the same big Model)
 		ExecutorService exec = Executors.newCachedThreadPool();
 		

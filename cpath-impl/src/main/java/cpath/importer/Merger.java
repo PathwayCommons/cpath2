@@ -159,9 +159,6 @@ public final class Merger {
 			
 			log.info("Done merging " + metadata);
 		}
-	
-		log.info("Merging equivalent interactions...");
-		ModelUtils.mergeEquivalentInteractions(mainModel);
 		
 		//create or replace the main BioPAX archive
 		log.info("Saving or updating the Main BioPAX file...");
