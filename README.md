@@ -33,21 +33,11 @@ Pathway Commons team also develop or actively contribute to the following projec
   * [BioPAX](http://www.biopax.org),  hosted at http://sourceforge.net/projects/biopax/, including -
     * [Paxtools](http://www.biopax.org/paxtools)
     * [The BioPAX Validator](http://www.biopax.org/validator)
-  * [The cBio Cancer Genomics Portal](http://www.cbioportal.org/public-portal/), http://code.google.com/p/cbio-cancer-genomics-portal/
+  * [The cBio Cancer Genomics Portal](http://www.cbioportal.org/public-portal/)
   * [ChIBE](http://www.cs.bilkent.edu.tr/~ivis/chibe.html), http://code.google.com/p/chibe/
   * [BP Prior](https://bitbucket.org/armish/bp_prior)
   * [Factoid](https://github.com/PathwayCommons/factoid)
   * [SBGN](http://www.sbgn.org)
   * [COMBINE](http://co.mbine.org/)
-  * Help, discuss, import/share BioPAX and ontology data with Reactome, PANTHER, NCI\_Nature (PID), PhosphoSitePlus, MIRIAM (EBI), Identifiers.org, Bio2Rdf, and others.
+  * Help, discuss, import/share BioPAX and ontology data with Reactome, PANTHER, NCI PID, PhosphoSitePlus, MIRIAM (EBI), Identifiers.org, Bio2Rdf, and others.
 
-
----
-
-
-### Issue Updates ###
-
-<wiki:gadget url="http://google-code-project-hosting-gadgets.googlecode.com/svn/build/prod/issueupdates/gcIssueUpdates.xml" up\_projectName="pathway-commons" width="500px" height="100px" border="0"/>
-
-
----
