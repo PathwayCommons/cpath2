@@ -19,7 +19,7 @@
 			</security:authorize>
 			  <p class="navbar-text navbar-left">
 				Powered by <a target="_blank" <%-- class="navbar-link"  --%>
-				href="http://code.google.com/p/pathway-commons/">cPath2</a> v${project.version}. 
+				href="https://github.com/PathwayCommons/cpath2">cPath2</a> v${project.version}. 
 				@Copyright 2009-2014 <a href="http://baderlab.org/" target="_blank">University of
 				Toronto</a> and <a href="http://www.cbio.mskcc.org" target="_blank">cBio MSKCC</a>
 			  </p>				

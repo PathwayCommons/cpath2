@@ -34,7 +34,7 @@ Pathway Commons team also develop or actively contribute to the following projec
     * [Paxtools](http://www.biopax.org/paxtools)
     * [The BioPAX Validator](http://www.biopax.org/validator)
   * [The cBio Cancer Genomics Portal](http://www.cbioportal.org/public-portal/)
-  * [ChIBE](http://www.cs.bilkent.edu.tr/~ivis/chibe.html), http://code.google.com/p/chibe/
+  * [ChIBE](http://www.cs.bilkent.edu.tr/~ivis/chibe.html)
   * [BP Prior](https://bitbucket.org/armish/bp_prior)
   * [Factoid](https://github.com/PathwayCommons/factoid)
   * [SBGN](http://www.sbgn.org)

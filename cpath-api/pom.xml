@@ -14,7 +14,7 @@
 	<name>cPath2 - API</name>
 	<description>CPath2 Service API: enumerations, beans (JAXB), XML schema, and utility classes</description>
 
-	<url>http://code.google.com/p/pathway-commons/</url>
+	<url>https://github.com/PathwayCommons/cpath2</url>
 
 	<build>
 		<plugins>
