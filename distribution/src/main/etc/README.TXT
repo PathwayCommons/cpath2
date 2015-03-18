@@ -84,8 +84,8 @@ simply include to the cpath2-cli.sh Java options like: "-cp /path-to/MyDataClean
 ### Prepare warehouse data
 
 Download UniProt, ChEBI, id-mapping tables into $CPATH2_HOME/data/, e.g.:
- - `wget ftp://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/taxonomic_divisions/uniprot_sprot_human.dat.gz`
- - `wget ftp://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi.obo`
+ - `wget ftp://ftp.uniprot.org/...`
+ - `wget ftp://ftp.ebi.ac.uk/pub/databases/chebi/ontology/...`
  - etc...
 
 Re-pack/rename the data, i.e., make uniprot_human.zip, chebi.zip, etc.  
@@ -97,7 +97,7 @@ only ZIP archive (can contain multiple files) is currently supported by cPath2 d
 (note: BioPAX L1, L2 will be auto-converted to BioPAX L3) 
 
 Download and arrange the original BioPAX and PSI-MI/PSI-MITAB data in $CPATH2_HOME/data/ as follows:
- - download (wget) original files or archives from the pathway resource (e.g., `wget http://www.reactome.org/download/current/biopax3.zip`) 
+ - download (wget) original files or archives from the pathway resource (e.g., `wget http://www.reactome.org/download/current/...`) 
  - extract what you need (e.g. some species data only)
  - create a new zip archive using name like "IDENTIFIER.zip" (datasource identifier, e.g., reactome_human.zip).
 
