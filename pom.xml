@@ -148,9 +148,9 @@
 		<hibernate.version>4.2.11.Final</hibernate.version>
 		<lucene.version>4.10.2</lucene.version>
 		<ehcache-core.version>2.6.9</ehcache-core.version>
-		<paxtools.version>4.3.1-SNAPSHOT</paxtools.version>
+		<paxtools.version>[4.3.1-SNAPSHOT,5)</paxtools.version>
 		<biopax-pattern.version>[2.0.0-SNAPSHOT,3)</biopax-pattern.version>
-		<validator.version>4.0.0-SNAPSHOT</validator.version>
+		<validator.version>[4.0.0-SNAPSHOT,5)</validator.version>
 		<junit.version>4.11</junit.version>
 		<commons-lang.version>2.6</commons-lang.version>
 		<collections-generic.version>4.01</collections-generic.version>
@@ -356,7 +356,7 @@
 		<repository>
 			<id>biopax.snapshots</id>
 			<name>BioPAX Snapshots Repository at Sourceforge</name>
-			<url>http://biopax.sourceforge.net/m2repo/snapshots/</url>
+			<url>http://www.biopax.org/m2repo/snapshots/</url>
 			<releases>
 				<enabled>false</enabled>
 			</releases>
@@ -364,28 +364,11 @@
 		<repository>
 			<id>biopax.releases</id>
 			<name>BioPAX Repository at Sourceforge</name>
-			<url>http://biopax.sourceforge.net/m2repo/releases/</url>
+			<url>http://www.biopax.org/m2repo/releases/</url>
 			<snapshots>
 				<enabled>false</enabled>
 			</snapshots>
 		</repository>
-		<repository>
-			<id>ebi-repo</id>
-			<name>The EBI internal repository</name>
-			<url>http://www.ebi.ac.uk/~maven/m2repo</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-        <repository>
-			<id>pattern.repo</id>
-			<name>Repository of BioPAX Pattern Framework</name>
-			<url>http://maven-repo.biopax-pattern.googlecode.com/hg/</url>
-			<!-- TODO: update the URL after migrating to GitHub or OSSRH; or remove to use the BioPAX public repo  -->
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-        </repository>		
 	</repositories>
 
 	<dependencyManagement>
@@ -825,37 +808,46 @@
 		<!-- <name>auto-generated site</name> -->
 		<!-- <url>scm:hg:https://...</url> -->
 		<!-- </site> -->
-
 		<!-- This cfg. works, but please do NOT use mvn site-deploy (due to number 
-			of issues)! Instead, clone the pathwaycommons/cpath2  
-			repository, 'gh-pages' branch to a local dir; then 
-			do site site:stage -DstagingDirectory=<full-path> - path the above dir. 
-			Finally, switch there and do commit and push ... 
-			TODO: try https://github.com/github/maven-plugins -->
+			of issues)! Instead, clone the pathwaycommons/cpath2 repository, 'gh-pages' 
+			branch to a local dir; then do site site:stage -DstagingDirectory=<full-path> 
+			- path the above dir. Finally, switch there and do commit and push ... TODO: 
+			try https://github.com/github/maven-plugins -->
 		<site>
 			<id>cpath2-maven-site</id>
 			<name>cPath2 auto-generated site</name>
-			<url>http://pathwaycommons.github.io/cpath2</url>
+			<url>http://pathwaycommons.github.io/cpath2/</url>
 		</site>
 
+		<snapshotRepository>
+			<id>ossrh.snapshots</id>
+			<name>OSSRH Snapshots Repository</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		</snapshotRepository>
 		<repository>
-			<id>pathway-commons</id>
-			<name>Pathway Commons Maven Repository</name>
-			<url>https://oss.sonatype.org/content/groups/public</url>
+			<id>biopax.releases</id>
+			<name>OSSRH Releases Repository</name>
+			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2</url>
 		</repository>
+
 		<downloadUrl>http://www.pathwaycommons.org/archives/</downloadUrl>
+
 	</distributionManagement>
 
 	<profiles>
 		<profile>
-			<!-- A profile to deploy to a local repo directory 
-				(then have to push/sync manually) -->
+			<!-- A profile to deploy to a local directory (then push/rsync manually) -->
 			<id>local-deploy</id>
 			<distributionManagement>
+				<snapshotRepository>
+					<id>biopax.snapshots</id>
+					<name>BioPAX Snapshots Repository</name>
+					<url>${biopax.snapshot.url}</url>
+				</snapshotRepository>
 				<repository>
-					<id>pathway-commons</id>
-					<name>Pathway Commons Maven Repository</name>
-					<url>${local.pathway-commons.repo}</url>
+					<id>biopax.releases</id>
+					<name>BioPAX Releases Repository</name>
+					<url>${biopax.release.url}</url>
 				</repository>
 			</distributionManagement>
 		</profile>

@@ -35,7 +35,7 @@ import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.psidev.ontology_manager.Ontology;
+import org.biopax.psidev.ontology_manager.OntologyAccess;
 import org.biopax.psidev.ontology_manager.OntologyTermI;
 import org.biopax.validator.utils.BiopaxOntologyManager;
 import org.biopax.validator.utils.Normalizer;
@@ -64,20 +64,17 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 	 * @param ontTmpDir
 	 * @throws Exception
 	 */
-	public OntologyManagerCvRepository(Properties ontologies, 
-			String ontTmpDir, boolean isReuseAndStoreOBOLocally) 
+	public OntologyManagerCvRepository(Properties ontologies) 
 	{
-		super(ontologies, ontTmpDir, isReuseAndStoreOBOLocally);
+		super(ontologies);
 		
 		//Normalize (for safety :)) ontology names using IDs
 		for(String id : getOntologyIDs()) {
 			String officialName = MiriamLink.getName(id);
-			Ontology o = getOntology(id);
+			OntologyAccess o = getOntology(id);
 			o.setName(officialName);
 			
-			if(log.isDebugEnabled())
-				log.debug(id + " (" + officialName + ") from " + ontologies.get(id) 
-					+ " (store/use_local_file=" + isReuseAndStoreOBOLocally + ")");
+			log.debug(id + " (" + officialName + ") from " + ontologies.get(id));
 		}
 	}
 
@@ -88,11 +85,11 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 	{
 		OntologyTermI term = null;
 		
-		Ontology ontology = getOntology(db);
-		if(ontology == null) // it may be urn -
-			ontology = getOntologyByUrn(db);
+		OntologyAccess ontologyAccess = getOntology(db);
+		if(ontologyAccess == null) // it may be urn -
+			ontologyAccess = getOntologyByUrn(db);
 		
-		term = findTerm(ontology, id);
+		term = findTerm(ontologyAccess, id);
 		
 		if(term != null) {
 			return getControlledVocabulary(term, cvClass);
@@ -102,25 +99,25 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 	}
 
 	
-	private OntologyTermI findTerm(Ontology ontology, String term) {
+	private OntologyTermI findTerm(OntologyAccess ontologyAccess, String term) {
 		
-		if(ontology == null) {
+		if(ontologyAccess == null) {
 			return findTermByAccession(term); 
 			//done
 		}
 		
 		//otherwise continue with more specific lookup			
-		OntologyTermI ot = ontology.getTermForAccession(term);
+		OntologyTermI ot = ontologyAccess.getTermForAccession(term);
 		
 		if(ot == null) {
 			//search again using the parameter as term's name/synonym
 			Set<OntologyTermI> ots = searchTermByName(term, 
-					Collections.singleton(ontology.getName()));		
+					Collections.singleton(ontologyAccess.getName()));		
 			if(ots.size() == 1) //use if unambiguous 
 				ot = ots.iterator().next();
 			else 
 				log.info("ambiguous term: " + term + 
-					" found by searchig in ontology: " + ontology.getName());
+					" found by searchig in ontology: " + ontologyAccess.getName());
 		}
 		
 		return ot;
@@ -145,32 +142,32 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 	
 	public Set<String> getDirectChildren(String urn) {
 		OntologyTermI term = getTermByUri(urn);
-		Ontology ontology = getOntology(term.getOntologyId());
-		Collection<OntologyTermI> terms = ontology.getDirectChildren(term);
+		OntologyAccess ontologyAccess = getOntology(term.getOntologyId());
+		Collection<OntologyTermI> terms = ontologyAccess.getDirectChildren(term);
 		return ontologyTermsToUris(terms);
 	}
 
 	
 	public Set<String> getDirectParents(String urn) {
 		OntologyTermI term = getTermByUri(urn);
-		Ontology ontology = getOntology(term.getOntologyId());
-		Collection<OntologyTermI> terms = ontology.getDirectParents(term);
+		OntologyAccess ontologyAccess = getOntology(term.getOntologyId());
+		Collection<OntologyTermI> terms = ontologyAccess.getDirectParents(term);
 		return ontologyTermsToUris(terms);
 	}
 
 	
 	public Set<String> getAllChildren(String urn) {
 		OntologyTermI term = getTermByUri(urn);
-		Ontology ontology = getOntology(term.getOntologyId());
-		Collection<OntologyTermI> terms = ontology.getAllChildren(term);
+		OntologyAccess ontologyAccess = getOntology(term.getOntologyId());
+		Collection<OntologyTermI> terms = ontologyAccess.getAllChildren(term);
 		return ontologyTermsToUris(terms);
 	}
 
 	
 	public Set<String> getAllParents(String urn) {
 		OntologyTermI term = getTermByUri(urn);
-		Ontology ontology = getOntology(term.getOntologyId());
-		Collection<OntologyTermI> terms = ontology.getAllParents(term);
+		OntologyAccess ontologyAccess = getOntology(term.getOntologyId());
+		Collection<OntologyTermI> terms = ontologyAccess.getAllParents(term);
 		return ontologyTermsToUris(terms);
 	}
 	
@@ -246,11 +243,11 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 	
 	
 	/*
-	 * Gets Ontology by (Miriam's) datatype URI
+	 * Gets OntologyAccess by (Miriam's) datatype URI
 	 */
-	Ontology getOntologyByUrn(String dtUrn) {
+	OntologyAccess getOntologyByUrn(String dtUrn) {
 		for (String id : getOntologyIDs()) {
-			Ontology ont = getOntology(id);
+			OntologyAccess ont = getOntology(id);
 			String urn = MiriamLink.getDataTypeURI(id);
 			if(dtUrn.equalsIgnoreCase(urn)) {
 				return ont;
