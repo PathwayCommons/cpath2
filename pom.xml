@@ -188,6 +188,7 @@
 		<spring-data-jpa.version>1.7.1.RELEASE</spring-data-jpa.version>
 		<aspectjrt.version>1.8.4</aspectjrt.version>
 		<querydsl.version>3.5.1</querydsl.version>
+		<github.global.server>github</github.global.server>
 	</properties>
 
 	<build>
@@ -349,6 +350,27 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>com.github.github</groupId>
+				<artifactId>site-maven-plugin</artifactId>
+				<version>0.11</version>
+				<configuration>
+					<message>Creating site for ${project.version}</message>
+                	<repositoryName>cpath2</repositoryName>
+                	<repositoryOwner>PathwayCommons</repositoryOwner>
+                	<server>github</server>
+ 	               <path>${site.path}</path>
+                	<merge>true</merge>					
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>site</goal>
+						</goals>
+						<phase>site</phase>
+					</execution>
+				</executions>
+			</plugin>			
 		</plugins>
 	</build>
 
