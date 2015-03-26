@@ -1,18 +1,16 @@
 <project name="cPath2">
 
-
 <bannerLeft>
     <name>PathwayCommons</name>
     <src>http://www.pathwaycommons.org/pc/jsp/images/pathwaycommons/pc_logo.gif</src>
-    <href>http://code.google.com/p/pathway-commons/</href>
+    <href>http://www.pathwaycommons.org</href>
 </bannerLeft>
 
 <bannerRight>
-	<name>Sourceforge</name>
-    <src>http://sflogo.sourceforge.net/sflogo.php?group_id=102411&amp;type=2</src>
-    <href>http://sourceforge.net</href>
+    <name>cPath2</name>
+    <src>http://www.pathwaycommons.org/pc/jsp/images/pathwaycommons/pc_logo.gif</src>
+    <href>https://github.com/pathwaycommons/cpath2</href>
 </bannerRight>
-
 
 <skin>
 	<groupId>org.apache.maven.skins</groupId>
@@ -36,22 +34,19 @@
 <body>
 
 <breadcrumbs>
-	<item name="Projects" href="../"/>
 	<item name="cPath2 ${project.version}" href="./" />
 </breadcrumbs>
 
 <links>
 <item name="BioPAX" href="http://www.biopax.org/" />
-<item name="Demo/test 1" href="http://purl.org/pc2/test/" />
-<item name="Demo/test 2" href="http://pathwaycommons.baderlab.org" />
+<item name="BioPAX on GitHub" href="https://github.com/BioPAX" />
+<item name="PC on GitHub" href="https://github.com/pathwaycommons" />
 </links>
 
-<menu ref="modules" />
-
+<menu ref="modules" inherit="top"/>
+<menu ref="parent" inherit="top"/>
 <menu ref="reports" inherit="top"/>
 
-
 </body>
-
 
 </project>

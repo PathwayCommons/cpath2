@@ -2,7 +2,7 @@
 
 What is cPath2?
 
-  cPath2 is a next-generation Pathway Commons (PC) Open Source 
+  cPath2 is a Pathway Commons (PC) Open Source 
 server software to validate and aggregate knowledge about biological pathways 
 and interactions from major curated databases that export the data to BioPAX 
 or PSI-MI formats. Users with fair knowledge of BioPAX Level3 can 
