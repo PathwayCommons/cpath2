@@ -166,7 +166,7 @@
 <a class="jxr_linenumber" name="L158" href="#L158">158</a> 
 <a class="jxr_linenumber" name="L159" href="#L159">159</a> 
 <a class="jxr_linenumber" name="L160" href="#L160">160</a> 	@RequestMapping(<span class="jxr_string">"/top_pathways"</span>)
-<a class="jxr_linenumber" name="L161" href="#L161">161</a>     <strong class="jxr_keyword">public</strong> @ResponseBody <a href="../../cpath/service/jaxb/SearchResponse.html">SearchResponse</a> topPathways(
+<a class="jxr_linenumber" name="L161" href="#L161">161</a>     <strong class="jxr_keyword">public</strong> @ResponseBody SearchResponse topPathways(
 <a class="jxr_linenumber" name="L162" href="#L162">162</a>     		@RequestParam(required=false) String[] datasource, @RequestParam(required=false) String[] organism, 
 <a class="jxr_linenumber" name="L163" href="#L163">163</a>     		HttpServletRequest request, HttpServletResponse response) <strong class="jxr_keyword">throws</strong> IOException
 <a class="jxr_linenumber" name="L164" href="#L164">164</a>     {
@@ -176,7 +176,7 @@
 <a class="jxr_linenumber" name="L168" href="#L168">168</a> 		
 <a class="jxr_linenumber" name="L169" href="#L169">169</a> 		ServiceResponse results = service.topPathways(organism, datasource);
 <a class="jxr_linenumber" name="L170" href="#L170">170</a> 		
-<a class="jxr_linenumber" name="L171" href="#L171">171</a> 		<strong class="jxr_keyword">if</strong>(results instanceof <a href="../../cpath/service/ErrorResponse.html">ErrorResponse</a>) {
+<a class="jxr_linenumber" name="L171" href="#L171">171</a> 		<strong class="jxr_keyword">if</strong>(results instanceof ErrorResponse) {
 <a class="jxr_linenumber" name="L172" href="#L172">172</a> 			errorResponse(((ErrorResponse) results).getStatus(), 
 <a class="jxr_linenumber" name="L173" href="#L173">173</a> 					((ErrorResponse) results).toString(), request, response, events);
 <a class="jxr_linenumber" name="L174" href="#L174">174</a> 		} <strong class="jxr_keyword">else</strong> <strong class="jxr_keyword">if</strong>(results.isEmpty()) {
@@ -195,7 +195,7 @@
 <a class="jxr_linenumber" name="L187" href="#L187">187</a>     
 <a class="jxr_linenumber" name="L188" href="#L188">188</a>     
 <a class="jxr_linenumber" name="L189" href="#L189">189</a>     @RequestMapping(<span class="jxr_string">"/traverse"</span>)
-<a class="jxr_linenumber" name="L190" href="#L190">190</a>     <strong class="jxr_keyword">public</strong> @ResponseBody <a href="../../cpath/service/jaxb/ServiceResponse.html">ServiceResponse</a> traverse(@Valid <a href="../../cpath/webservice/args/Traverse.html">Traverse</a> query, 
+<a class="jxr_linenumber" name="L190" href="#L190">190</a>     <strong class="jxr_keyword">public</strong> @ResponseBody ServiceResponse traverse(@Valid <a href="../../cpath/webservice/args/Traverse.html">Traverse</a> query, 
 <a class="jxr_linenumber" name="L191" href="#L191">191</a>     	BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
 <a class="jxr_linenumber" name="L192" href="#L192">192</a>     		<strong class="jxr_keyword">throws</strong> IOException 
 <a class="jxr_linenumber" name="L193" href="#L193">193</a>     {
@@ -208,7 +208,7 @@
 <a class="jxr_linenumber" name="L200" href="#L200">200</a>     				errorFromBindingResult(bindingResult), request, response, events);
 <a class="jxr_linenumber" name="L201" href="#L201">201</a>     	} <strong class="jxr_keyword">else</strong> {
 <a class="jxr_linenumber" name="L202" href="#L202">202</a>     		ServiceResponse sr = service.traverse(query.getPath(), query.getUri());
-<a class="jxr_linenumber" name="L203" href="#L203">203</a>     		<strong class="jxr_keyword">if</strong>(sr instanceof <a href="../../cpath/service/ErrorResponse.html">ErrorResponse</a>) {
+<a class="jxr_linenumber" name="L203" href="#L203">203</a>     		<strong class="jxr_keyword">if</strong>(sr instanceof ErrorResponse) {
 <a class="jxr_linenumber" name="L204" href="#L204">204</a> 				errorResponse(((ErrorResponse) sr).getStatus(), 
 <a class="jxr_linenumber" name="L205" href="#L205">205</a> 						((ErrorResponse) sr).toString(), request, response, events);
 <a class="jxr_linenumber" name="L206" href="#L206">206</a> 			}
@@ -277,7 +277,7 @@
 <a class="jxr_linenumber" name="L269" href="#L269">269</a> 	
 <a class="jxr_linenumber" name="L270" href="#L270">270</a> 	
 <a class="jxr_linenumber" name="L271" href="#L271">271</a>     @RequestMapping(value=<span class="jxr_string">"/search"</span>)
-<a class="jxr_linenumber" name="L272" href="#L272">272</a>     <strong class="jxr_keyword">public</strong> @ResponseBody <a href="../../cpath/service/jaxb/ServiceResponse.html">ServiceResponse</a> search(@Valid <a href="../../cpath/webservice/args/Search.html">Search</a> search, 
+<a class="jxr_linenumber" name="L272" href="#L272">272</a>     <strong class="jxr_keyword">public</strong> @ResponseBody ServiceResponse search(@Valid <a href="../../cpath/webservice/args/Search.html">Search</a> search, 
 <a class="jxr_linenumber" name="L273" href="#L273">273</a>     		BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
 <a class="jxr_linenumber" name="L274" href="#L274">274</a>     			<strong class="jxr_keyword">throws</strong> IOException
 <a class="jxr_linenumber" name="L275" href="#L275">275</a>     {		
@@ -298,7 +298,7 @@
 <a class="jxr_linenumber" name="L290" href="#L290">290</a> 					search.getQ(), search.getPage(), search.getType(),
 <a class="jxr_linenumber" name="L291" href="#L291">291</a> 					search.getDatasource(), search.getOrganism());
 <a class="jxr_linenumber" name="L292" href="#L292">292</a> 
-<a class="jxr_linenumber" name="L293" href="#L293">293</a> 			<strong class="jxr_keyword">if</strong>(results instanceof <a href="../../cpath/service/ErrorResponse.html">ErrorResponse</a>) {
+<a class="jxr_linenumber" name="L293" href="#L293">293</a> 			<strong class="jxr_keyword">if</strong>(results instanceof ErrorResponse) {
 <a class="jxr_linenumber" name="L294" href="#L294">294</a> 				errorResponse(((ErrorResponse) results).getStatus(), 
 <a class="jxr_linenumber" name="L295" href="#L295">295</a> 					((ErrorResponse) results).toString(), 
 <a class="jxr_linenumber" name="L296" href="#L296">296</a> 						request, response, events);

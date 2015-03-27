@@ -9,7 +9,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="Date-Revision-yyyymmdd" content="20150327" />
     <meta http-equiv="Content-Language" content="en" />
-    <title>cPath2 - Implementation &#x2013; Dependency Information</title>
+    <title>cPath2 - Web Service &#x2013; Dependency Information</title>
     <link rel="stylesheet" href="./css/apache-maven-fluido-1.3.1.min.css" />
     <link rel="stylesheet" href="./css/site.css" />
     <link rel="stylesheet" href="./css/print.css" media="print" />
@@ -54,8 +54,8 @@
                     <span class="divider">/</span>
       </li>
                 <li class="">
-                    <a href="./" title="cPath2 - Implementation">
-        cPath2 - Implementation</a>
+                    <a href="./" title="cPath2 - Web Service">
+        cPath2 - Web Service</a>
                     <span class="divider">/</span>
       </li>
         <li class="active ">Dependency Information</li>
@@ -199,37 +199,38 @@
 <div class="source">
 <pre>&lt;dependency&gt;
   &lt;groupId&gt;pathwaycommons.cpath&lt;/groupId&gt;
-  &lt;artifactId&gt;cpath-impl&lt;/artifactId&gt;
+  &lt;artifactId&gt;cpath-web-service&lt;/artifactId&gt;
   &lt;version&gt;6.1.0-SNAPSHOT&lt;/version&gt;
+  &lt;type&gt;war&lt;/type&gt;
 &lt;/dependency&gt;</pre></div></div>
 <div class="section">
 <h3><a name="Apache_Buildr"></a>Apache Buildr</h3><a name="Apache_Buildr"></a>
 <div class="source">
-<pre>'pathwaycommons.cpath:cpath-impl:jar:6.1.0-SNAPSHOT'</pre></div></div>
+<pre>'pathwaycommons.cpath:cpath-web-service:war:6.1.0-SNAPSHOT'</pre></div></div>
 <div class="section">
 <h3><a name="Apache_Ivy"></a>Apache Ivy</h3><a name="Apache_Ivy"></a>
 <div class="source">
-<pre>&lt;dependency org=&quot;pathwaycommons.cpath&quot; name=&quot;cpath-impl&quot; rev=&quot;6.1.0-SNAPSHOT&quot;&gt;
-  &lt;artifact name=&quot;cpath-impl&quot; type=&quot;jar&quot; /&gt;
+<pre>&lt;dependency org=&quot;pathwaycommons.cpath&quot; name=&quot;cpath-web-service&quot; rev=&quot;6.1.0-SNAPSHOT&quot;&gt;
+  &lt;artifact name=&quot;cpath-web-service&quot; type=&quot;war&quot; /&gt;
 &lt;/dependency&gt;</pre></div></div>
 <div class="section">
 <h3><a name="Groovy_Grape"></a>Groovy Grape</h3><a name="Groovy_Grape"></a>
 <div class="source">
 <pre>@Grapes(
-@Grab(group='pathwaycommons.cpath', module='cpath-impl', version='6.1.0-SNAPSHOT')
+@Grab(group='pathwaycommons.cpath', module='cpath-web-service', version='6.1.0-SNAPSHOT')
 )</pre></div></div>
 <div class="section">
 <h3><a name="Grails"></a>Grails</h3><a name="Grails"></a>
 <div class="source">
-<pre>compile 'pathwaycommons.cpath:cpath-impl:6.1.0-SNAPSHOT'</pre></div></div>
+<pre>compile 'pathwaycommons.cpath:cpath-web-service:6.1.0-SNAPSHOT'</pre></div></div>
 <div class="section">
 <h3><a name="Leiningen"></a>Leiningen</h3><a name="Leiningen"></a>
 <div class="source">
-<pre>[pathwaycommons.cpath/cpath-impl &quot;6.1.0-SNAPSHOT&quot;]</pre></div></div>
+<pre>[pathwaycommons.cpath/cpath-web-service &quot;6.1.0-SNAPSHOT&quot;]</pre></div></div>
 <div class="section">
 <h3><a name="SBT"></a>SBT</h3><a name="SBT"></a>
 <div class="source">
-<pre>libraryDependencies += &quot;pathwaycommons.cpath&quot; % &quot;cpath-impl&quot; % &quot;6.1.0-SNAPSHOT&quot;</pre></div></div></div>
+<pre>libraryDependencies += &quot;pathwaycommons.cpath&quot; % &quot;cpath-web-service&quot; % &quot;6.1.0-SNAPSHOT&quot;</pre></div></div></div>
                   </div>
             </div>
           </div>

@@ -70,10 +70,10 @@
 <a class="jxr_linenumber" name="L62" href="#L62">62</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">abstract</strong> <strong class="jxr_keyword">class</strong> <a href="../../cpath/webservice/BasicController.html">BasicController</a> {
 <a class="jxr_linenumber" name="L63" href="#L63">63</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Logger log = LoggerFactory.getLogger(BasicController.<strong class="jxr_keyword">class</strong>);
 <a class="jxr_linenumber" name="L64" href="#L64">64</a>      
-<a class="jxr_linenumber" name="L65" href="#L65">65</a>      <strong class="jxr_keyword">protected</strong> <a href="../../cpath/service/CPathService.html">CPathService</a> service;  
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>      <strong class="jxr_keyword">protected</strong> CPathService service;  
 <a class="jxr_linenumber" name="L66" href="#L66">66</a>      
 <a class="jxr_linenumber" name="L67" href="#L67">67</a>      @Autowired
-<a class="jxr_linenumber" name="L68" href="#L68">68</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> setLogRepository(<a href="../../cpath/service/CPathService.html">CPathService</a> service) {
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> setLogRepository(CPathService service) {
 <a class="jxr_linenumber" name="L69" href="#L69">69</a>      	Assert.notNull(service);  	
 <a class="jxr_linenumber" name="L70" href="#L70">70</a>  		<strong class="jxr_keyword">this</strong>.service = service;
 <a class="jxr_linenumber" name="L71" href="#L71">71</a>  	}
@@ -88,7 +88,7 @@
 <a class="jxr_linenumber" name="L80" href="#L80">80</a>  <em class="jxr_javadoccomment">     * @param updateCountsFor</em>
 <a class="jxr_linenumber" name="L81" href="#L81">81</a>  <em class="jxr_javadoccomment">     * @throws IOException</em>
 <a class="jxr_linenumber" name="L82" href="#L82">82</a>  <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L83" href="#L83">83</a>  	<strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">void</strong> errorResponse(<a href="../../cpath/service/Status.html">Status</a> status, String detailedMsg,
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  	<strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">void</strong> errorResponse(Status status, String detailedMsg,
 <a class="jxr_linenumber" name="L84" href="#L84">84</a>  			HttpServletRequest request, HttpServletResponse response, Set&lt;LogEvent&gt; updateCountsFor) 
 <a class="jxr_linenumber" name="L85" href="#L85">85</a>  					<strong class="jxr_keyword">throws</strong> IOException {
 <a class="jxr_linenumber" name="L86" href="#L86">86</a>  		
@@ -148,11 +148,11 @@
 <a class="jxr_linenumber" name="L140" href="#L140">140</a> <em class="jxr_javadoccomment">	 * @param updateCountsFor</em>
 <a class="jxr_linenumber" name="L141" href="#L141">141</a> <em class="jxr_javadoccomment">	 * @throws IOException</em>
 <a class="jxr_linenumber" name="L142" href="#L142">142</a> <em class="jxr_javadoccomment">	 */</em>
-<a class="jxr_linenumber" name="L143" href="#L143">143</a> 	<strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">void</strong> stringResponse(<a href="../../cpath/service/jaxb/ServiceResponse.html">ServiceResponse</a> resp, 
+<a class="jxr_linenumber" name="L143" href="#L143">143</a> 	<strong class="jxr_keyword">protected</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">void</strong> stringResponse(ServiceResponse resp, 
 <a class="jxr_linenumber" name="L144" href="#L144">144</a> 			Writer writer, HttpServletRequest request, 
 <a class="jxr_linenumber" name="L145" href="#L145">145</a> 			HttpServletResponse response, Set&lt;LogEvent&gt; updateCountsFor) <strong class="jxr_keyword">throws</strong> IOException 
 <a class="jxr_linenumber" name="L146" href="#L146">146</a> 	{
-<a class="jxr_linenumber" name="L147" href="#L147">147</a> 		<strong class="jxr_keyword">if</strong>(resp instanceof <a href="../../cpath/service/ErrorResponse.html">ErrorResponse</a>) {
+<a class="jxr_linenumber" name="L147" href="#L147">147</a> 		<strong class="jxr_keyword">if</strong>(resp instanceof ErrorResponse) {
 <a class="jxr_linenumber" name="L148" href="#L148">148</a> 			
 <a class="jxr_linenumber" name="L149" href="#L149">149</a> 			errorResponse(((ErrorResponse) resp).getStatus(), 
 <a class="jxr_linenumber" name="L150" href="#L150">150</a> 					((ErrorResponse) resp).toString(), request, response, updateCountsFor);

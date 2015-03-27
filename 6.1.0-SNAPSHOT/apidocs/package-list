@@ -1,7 +1,3 @@
-cpath.admin
-cpath.cleaner.internal
-cpath.converter.internal
-cpath.dao
-cpath.importer
-cpath.jpa
-cpath.service
+cpath.webservice
+cpath.webservice.args
+cpath.webservice.args.binding

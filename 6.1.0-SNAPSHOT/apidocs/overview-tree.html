@@ -3,13 +3,13 @@
 <html lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
-<title>Class Hierarchy (cPath2 - Implementation 6.1.0-SNAPSHOT API)</title>
+<title>Class Hierarchy (cPath2 - Web Service 6.1.0-SNAPSHOT API)</title>
 <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">
 </head>
 <body>
 <script type="text/javascript"><!--
     if (location.href.indexOf('is-external=true') == -1) {
-        parent.document.title="Class Hierarchy (cPath2 - Implementation 6.1.0-SNAPSHOT API)";
+        parent.document.title="Class Hierarchy (cPath2 - Web Service 6.1.0-SNAPSHOT API)";
     }
 //-->
 </script>
@@ -65,13 +65,9 @@
 <h1 class="title">Hierarchy For All Packages</h1>
 <span class="strong">Package Hierarchies:</span>
 <ul class="horizontal">
-<li><a href="cpath/admin/package-tree.html">cpath.admin</a>, </li>
-<li><a href="cpath/cleaner/internal/package-tree.html">cpath.cleaner.internal</a>, </li>
-<li><a href="cpath/converter/internal/package-tree.html">cpath.converter.internal</a>, </li>
-<li><a href="cpath/dao/package-tree.html">cpath.dao</a>, </li>
-<li><a href="cpath/importer/package-tree.html">cpath.importer</a>, </li>
-<li><a href="cpath/jpa/package-tree.html">cpath.jpa</a>, </li>
-<li><a href="cpath/service/package-tree.html">cpath.service</a></li>
+<li><a href="cpath/webservice/package-tree.html">cpath.webservice</a>, </li>
+<li><a href="cpath/webservice/args/package-tree.html">cpath.webservice.args</a>, </li>
+<li><a href="cpath/webservice/args/binding/package-tree.html">cpath.webservice.args.binding</a></li>
 </ul>
 </div>
 <div class="contentContainer">
@@ -79,114 +75,41 @@
 <ul>
 <li type="circle">java.lang.<a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang"><span class="strong">Object</span></a>
 <ul>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/AbstractEntity.html" title="class in cpath.jpa"><span class="strong">AbstractEntity</span></a>
+<li type="circle">cpath.webservice.<a href="cpath/webservice/BasicController.html" title="class in cpath.webservice"><span class="strong">BasicController</span></a>
 <ul>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/LogEntity.html" title="class in cpath.jpa"><span class="strong">LogEntity</span></a></li>
+<li type="circle">cpath.webservice.<a href="cpath/webservice/BiopaxModelController.html" title="class in cpath.webservice"><span class="strong">BiopaxModelController</span></a></li>
+<li type="circle">cpath.webservice.<a href="cpath/webservice/HelpController.html" title="class in cpath.webservice"><span class="strong">HelpController</span></a></li>
+<li type="circle">cpath.webservice.<a href="cpath/webservice/LogStatsController.html" title="class in cpath.webservice"><span class="strong">LogStatsController</span></a></li>
+<li type="circle">cpath.webservice.<a href="cpath/webservice/MetadataController.html" title="class in cpath.webservice"><span class="strong">MetadataController</span></a></li>
+<li type="circle">cpath.webservice.<a href="cpath/webservice/PagesController.html" title="class in cpath.webservice"><span class="strong">PagesController</span></a></li>
 </ul>
 </li>
-<li type="circle">cpath.admin.<a href="cpath/admin/Admin.html" title="class in cpath.admin"><span class="strong">Admin</span></a></li>
-<li type="circle">cpath.service.<a href="cpath/service/BiopaxConverter.html" title="class in cpath.service"><span class="strong">BiopaxConverter</span></a></li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/Content.html" title="class in cpath.jpa"><span class="strong">Content</span></a></li>
-<li type="circle">cpath.service.<a href="cpath/service/CPathServiceImpl.html" title="class in cpath.service"><span class="strong">CPathServiceImpl</span></a> (implements cpath.service.<a href="cpath/service/CPathService.html" title="interface in cpath.service">CPathService</a>)</li>
-<li type="circle">cpath.dao.<a href="cpath/dao/CPathUtils.html" title="class in cpath.dao"><span class="strong">CPathUtils</span></a></li>
-<li type="circle">com.mysema.query.types.expr.DslExpression&lt;T&gt; (implements com.mysema.query.types.Expression&lt;T&gt;)
+<li type="circle">cpath.webservice.<a href="cpath/webservice/CpathCorsFilter.html" title="class in cpath.webservice"><span class="strong">CpathCorsFilter</span></a> (implements javax.servlet.Filter)</li>
+<li type="circle">cpath.webservice.args.<a href="cpath/webservice/args/Get.html" title="class in cpath.webservice.args"><span class="strong">Get</span></a></li>
+<li type="circle">cpath.webservice.args.<a href="cpath/webservice/args/Graph.html" title="class in cpath.webservice.args"><span class="strong">Graph</span></a></li>
+<li type="circle">org.springframework.web.servlet.handler.HandlerInterceptorAdapter (implements org.springframework.web.servlet.AsyncHandlerInterceptor)
 <ul>
-<li type="circle">com.mysema.query.types.expr.SimpleExpression&lt;T&gt;
-<ul>
-<li type="circle">com.mysema.query.types.path.BeanPath&lt;T&gt; (implements com.mysema.query.types.Path&lt;T&gt;)
-<ul>
-<li type="circle">com.mysema.query.types.path.EntityPathBase&lt;T&gt; (implements com.mysema.query.types.EntityPath&lt;T&gt;)
-<ul>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/QAbstractEntity.html" title="class in cpath.jpa"><span class="strong">QAbstractEntity</span></a></li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/QContent.html" title="class in cpath.jpa"><span class="strong">QContent</span></a></li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/QLogEntity.html" title="class in cpath.jpa"><span class="strong">QLogEntity</span></a></li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/QMapping.html" title="class in cpath.jpa"><span class="strong">QMapping</span></a></li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/QMetadata.html" title="class in cpath.jpa"><span class="strong">QMetadata</span></a></li>
+<li type="circle">cpath.webservice.<a href="cpath/webservice/CPathMaintenanceHandlerInterceptor.html" title="class in cpath.webservice"><span class="strong">CPathMaintenanceHandlerInterceptor</span></a></li>
+<li type="circle">cpath.webservice.<a href="cpath/webservice/CPathWebserviceHandlerInterceptor.html" title="class in cpath.webservice"><span class="strong">CPathWebserviceHandlerInterceptor</span></a></li>
 </ul>
 </li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/QGeoloc.html" title="class in cpath.jpa"><span class="strong">QGeoloc</span></a></li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/QLogEvent.html" title="class in cpath.jpa"><span class="strong">QLogEvent</span></a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li type="circle">cpath.admin.<a href="cpath/admin/EntityFeaturesSummary.html" title="class in cpath.admin"><span class="strong">EntityFeaturesSummary</span></a> (implements cpath.service.<a href="https://github.com/PathwayCommons/cpath2/apidocs/cpath/service/Analysis.html?is-external=true" title="class or interface in cpath.service">Analysis</a>&lt;T&gt;)</li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/Geoloc.html" title="class in cpath.jpa"><span class="strong">Geoloc</span></a></li>
-<li type="circle">cpath.cleaner.internal.<a href="cpath/cleaner/internal/HumanCycCleanerImpl.html" title="class in cpath.cleaner.internal"><span class="strong">HumanCycCleanerImpl</span></a> (implements cpath.importer.<a href="cpath/importer/Cleaner.html" title="interface in cpath.importer">Cleaner</a>)</li>
-<li type="circle">cpath.importer.<a href="cpath/importer/ImportFactory.html" title="class in cpath.importer"><span class="strong">ImportFactory</span></a></li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/LogEvent.html" title="class in cpath.jpa"><span class="strong">LogEvent</span></a></li>
-<li type="circle">cpath.dao.<a href="cpath/dao/LogUtils.html" title="class in cpath.dao"><span class="strong">LogUtils</span></a></li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/Mapping.html" title="class in cpath.jpa"><span class="strong">Mapping</span></a></li>
-<li type="circle">cpath.importer.<a href="cpath/importer/Merger.html" title="class in cpath.importer"><span class="strong">Merger</span></a></li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/Metadata.html" title="class in cpath.jpa"><span class="strong">Metadata</span></a></li>
-<li type="circle">org.biopax.psidev.ontology_manager.impl.OntologyManagerImpl (implements org.biopax.psidev.ontology_manager.OntologyManager)
+<li type="circle">cpath.webservice.<a href="cpath/webservice/MetadataController.ValInfo.html" title="class in cpath.webservice"><span class="strong">MetadataController.ValInfo</span></a></li>
+<li type="circle">java.beans.<a href="http://download.oracle.com/javase/7/docs/api/java/beans/PropertyEditorSupport.html?is-external=true" title="class or interface in java.beans"><span class="strong">PropertyEditorSupport</span></a> (implements java.beans.<a href="http://download.oracle.com/javase/7/docs/api/java/beans/PropertyEditor.html?is-external=true" title="class or interface in java.beans">PropertyEditor</a>)
 <ul>
-<li type="circle">org.biopax.validator.utils.BiopaxOntologyManager (implements org.biopax.validator.api.CvValidator)
-<ul>
-<li type="circle">cpath.dao.<a href="cpath/dao/OntologyManagerCvRepository.html" title="class in cpath.dao"><span class="strong">OntologyManagerCvRepository</span></a> (implements cpath.dao.<a href="cpath/dao/CvRepository.html" title="interface in cpath.dao">CvRepository</a>)</li>
+<li type="circle">cpath.webservice.args.binding.<a href="cpath/webservice/args/binding/BiopaxTypeEditor.html" title="class in cpath.webservice.args.binding"><span class="strong">BiopaxTypeEditor</span></a></li>
+<li type="circle">cpath.webservice.args.binding.<a href="cpath/webservice/args/binding/CmdArgsEditor.html" title="class in cpath.webservice.args.binding"><span class="strong">CmdArgsEditor</span></a></li>
+<li type="circle">cpath.webservice.args.binding.<a href="cpath/webservice/args/binding/CmdEditor.html" title="class in cpath.webservice.args.binding"><span class="strong">CmdEditor</span></a></li>
+<li type="circle">cpath.webservice.args.binding.<a href="cpath/webservice/args/binding/DirectionEditor.html" title="class in cpath.webservice.args.binding"><span class="strong">DirectionEditor</span></a></li>
+<li type="circle">cpath.webservice.args.binding.<a href="cpath/webservice/args/binding/GraphQueryDirectionEditor.html" title="class in cpath.webservice.args.binding"><span class="strong">GraphQueryDirectionEditor</span></a></li>
+<li type="circle">cpath.webservice.args.binding.<a href="cpath/webservice/args/binding/GraphQueryLimitEditor.html" title="class in cpath.webservice.args.binding"><span class="strong">GraphQueryLimitEditor</span></a></li>
+<li type="circle">cpath.webservice.args.binding.<a href="cpath/webservice/args/binding/GraphTypeEditor.html" title="class in cpath.webservice.args.binding"><span class="strong">GraphTypeEditor</span></a></li>
+<li type="circle">cpath.webservice.args.binding.<a href="cpath/webservice/args/binding/LogTypeEditor.html" title="class in cpath.webservice.args.binding"><span class="strong">LogTypeEditor</span></a></li>
+<li type="circle">cpath.webservice.args.binding.<a href="cpath/webservice/args/binding/MetadataTypeEditor.html" title="class in cpath.webservice.args.binding"><span class="strong">MetadataTypeEditor</span></a></li>
+<li type="circle">cpath.webservice.args.binding.<a href="cpath/webservice/args/binding/OutputFormatEditor.html" title="class in cpath.webservice.args.binding"><span class="strong">OutputFormatEditor</span></a></li>
 </ul>
 </li>
-</ul>
-</li>
-<li type="circle">cpath.importer.<a href="cpath/importer/PreMerger.html" title="class in cpath.importer"><span class="strong">PreMerger</span></a></li>
-<li type="circle">cpath.converter.internal.<a href="cpath/converter/internal/PsimiConverterImpl.html" title="class in cpath.converter.internal"><span class="strong">PsimiConverterImpl</span></a></li>
-<li type="circle">cpath.converter.internal.<a href="cpath/converter/internal/PsimiTabConverterImpl.html" title="class in cpath.converter.internal"><span class="strong">PsimiTabConverterImpl</span></a></li>
-<li type="circle">cpath.converter.internal.<a href="cpath/converter/internal/PsimiToComplexesConverterImpl.html" title="class in cpath.converter.internal"><span class="strong">PsimiToComplexesConverterImpl</span></a></li>
-<li type="circle">cpath.service.<a href="cpath/service/SearchEngine.html" title="class in cpath.service"><span class="strong">SearchEngine</span></a> (implements cpath.service.<a href="cpath/service/Indexer.html" title="interface in cpath.service">Indexer</a>, cpath.service.<a href="cpath/service/Searcher.html" title="interface in cpath.service">Searcher</a>)</li>
-</ul>
-</li>
-</ul>
-<h2 title="Interface Hierarchy">Interface Hierarchy</h2>
-<ul>
-<li type="circle">cpath.importer.<a href="cpath/importer/Cleaner.html" title="interface in cpath.importer"><span class="strong">Cleaner</span></a></li>
-<li type="circle">cpath.importer.<a href="cpath/importer/Converter.html" title="interface in cpath.importer"><span class="strong">Converter</span></a></li>
-<li type="circle">cpath.service.<a href="cpath/service/CPathService.html" title="interface in cpath.service"><span class="strong">CPathService</span></a></li>
-<li type="circle">cpath.dao.<a href="cpath/dao/CvRepository.html" title="interface in cpath.dao"><span class="strong">CvRepository</span></a></li>
-<li type="circle">cpath.service.<a href="cpath/service/Indexer.html" title="interface in cpath.service"><span class="strong">Indexer</span></a></li>
-<li type="circle">cpath.jpa.LogEntitiesRepositoryCustom
-<ul>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/LogEntitiesRepository.html" title="interface in cpath.jpa"><span class="strong">LogEntitiesRepository</span></a> (also extends org.springframework.data.querydsl.QueryDslPredicateExecutor&lt;T&gt;)</li>
-</ul>
-</li>
-<li type="circle">org.springframework.data.querydsl.QueryDslPredicateExecutor&lt;T&gt;
-<ul>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/LogEntitiesRepository.html" title="interface in cpath.jpa"><span class="strong">LogEntitiesRepository</span></a></li>
-</ul>
-</li>
-<li type="circle">org.springframework.data.repository.Repository&lt;T,ID&gt;
-<ul>
-<li type="circle">cpath.jpa.BaseRepository&lt;T,ID&gt;
-<ul>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/LogEntitiesRepository.html" title="interface in cpath.jpa"><span class="strong">LogEntitiesRepository</span></a> (also extends org.springframework.data.querydsl.QueryDslPredicateExecutor&lt;T&gt;)</li>
-</ul>
-</li>
-<li type="circle">org.springframework.data.repository.CrudRepository&lt;T,ID&gt;
-<ul>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/MappingsRepository.html" title="interface in cpath.jpa"><span class="strong">MappingsRepository</span></a></li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/MetadataRepository.html" title="interface in cpath.jpa"><span class="strong">MetadataRepository</span></a></li>
-</ul>
-</li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/LogEntitiesRepository.html" title="interface in cpath.jpa"><span class="strong">LogEntitiesRepository</span></a> (also extends org.springframework.data.querydsl.QueryDslPredicateExecutor&lt;T&gt;)</li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/MappingsRepository.html" title="interface in cpath.jpa"><span class="strong">MappingsRepository</span></a></li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/MetadataRepository.html" title="interface in cpath.jpa"><span class="strong">MetadataRepository</span></a></li>
-</ul>
-</li>
-<li type="circle">cpath.service.<a href="cpath/service/Searcher.html" title="interface in cpath.service"><span class="strong">Searcher</span></a></li>
-</ul>
-<h2 title="Enum Hierarchy">Enum Hierarchy</h2>
-<ul>
-<li type="circle">java.lang.<a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang"><span class="strong">Object</span></a>
-<ul>
-<li type="circle">java.lang.<a href="http://download.oracle.com/javase/7/docs/api/java/lang/Enum.html?is-external=true" title="class or interface in java.lang"><span class="strong">Enum</span></a>&lt;E&gt; (implements java.lang.<a href="http://download.oracle.com/javase/7/docs/api/java/lang/Comparable.html?is-external=true" title="class or interface in java.lang">Comparable</a>&lt;T&gt;, java.io.<a href="http://download.oracle.com/javase/7/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a>)
-<ul>
-<li type="circle">cpath.admin.<a href="cpath/admin/Admin.Cmd.html" title="enum in cpath.admin"><span class="strong">Admin.Cmd</span></a></li>
-<li type="circle">cpath.importer.<a href="cpath/importer/PreMerger.RelTypeVocab.html" title="enum in cpath.importer"><span class="strong">PreMerger.RelTypeVocab</span></a></li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/Metadata.METADATA_TYPE.html" title="enum in cpath.jpa"><span class="strong">Metadata.METADATA_TYPE</span></a></li>
-<li type="circle">cpath.jpa.<a href="cpath/jpa/LogType.html" title="enum in cpath.jpa"><span class="strong">LogType</span></a></li>
-</ul>
-</li>
+<li type="circle">cpath.webservice.args.<a href="cpath/webservice/args/Search.html" title="class in cpath.webservice.args"><span class="strong">Search</span></a></li>
+<li type="circle">cpath.webservice.args.<a href="cpath/webservice/args/Traverse.html" title="class in cpath.webservice.args"><span class="strong">Traverse</span></a></li>
 </ul>
 </li>
 </ul>
