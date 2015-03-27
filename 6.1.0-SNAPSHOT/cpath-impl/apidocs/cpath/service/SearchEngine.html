@@ -1,0 +1,522 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<!-- NewPage -->
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
+<title>SearchEngine (cPath2 - Implementation 6.1.0-SNAPSHOT API)</title>
+<link rel="stylesheet" type="text/css" href="../../stylesheet.css" title="Style">
+</head>
+<body>
+<script type="text/javascript"><!--
+    if (location.href.indexOf('is-external=true') == -1) {
+        parent.document.title="SearchEngine (cPath2 - Implementation 6.1.0-SNAPSHOT API)";
+    }
+//-->
+</script>
+<noscript>
+<div>JavaScript is disabled on your browser.</div>
+</noscript>
+<!-- ========= START OF TOP NAVBAR ======= -->
+<div class="topNav"><a name="navbar_top">
+<!--   -->
+</a><a href="#skip-navbar_top" title="Skip navigation links"></a><a name="navbar_top_firstrow">
+<!--   -->
+</a>
+<ul class="navList" title="Navigation">
+<li><a href="../../overview-summary.html">Overview</a></li>
+<li><a href="package-summary.html">Package</a></li>
+<li class="navBarCell1Rev">Class</li>
+<li><a href="class-use/SearchEngine.html">Use</a></li>
+<li><a href="package-tree.html">Tree</a></li>
+<li><a href="../../deprecated-list.html">Deprecated</a></li>
+<li><a href="../../index-all.html">Index</a></li>
+<li><a href="../../help-doc.html">Help</a></li>
+</ul>
+</div>
+<div class="subNav">
+<ul class="navList">
+<li><a href="../../cpath/service/Indexer.html" title="interface in cpath.service"><span class="strong">Prev Class</span></a></li>
+<li><a href="../../cpath/service/Searcher.html" title="interface in cpath.service"><span class="strong">Next Class</span></a></li>
+</ul>
+<ul class="navList">
+<li><a href="../../index.html?cpath/service/SearchEngine.html" target="_top">Frames</a></li>
+<li><a href="SearchEngine.html" target="_top">No Frames</a></li>
+</ul>
+<ul class="navList" id="allclasses_navbar_top">
+<li><a href="../../allclasses-noframe.html">All Classes</a></li>
+</ul>
+<div>
+<script type="text/javascript"><!--
+  allClassesLink = document.getElementById("allclasses_navbar_top");
+  if(window==top) {
+    allClassesLink.style.display = "block";
+  }
+  else {
+    allClassesLink.style.display = "none";
+  }
+  //-->
+</script>
+</div>
+<div>
+<ul class="subNavList">
+<li>Summary:&nbsp;</li>
+<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#field_summary">Field</a>&nbsp;|&nbsp;</li>
+<li><a href="#constructor_summary">Constr</a>&nbsp;|&nbsp;</li>
+<li><a href="#method_summary">Method</a></li>
+</ul>
+<ul class="subNavList">
+<li>Detail:&nbsp;</li>
+<li><a href="#field_detail">Field</a>&nbsp;|&nbsp;</li>
+<li><a href="#constructor_detail">Constr</a>&nbsp;|&nbsp;</li>
+<li><a href="#method_detail">Method</a></li>
+</ul>
+</div>
+<a name="skip-navbar_top">
+<!--   -->
+</a></div>
+<!-- ========= END OF TOP NAVBAR ========= -->
+<!-- ======== START OF CLASS DATA ======== -->
+<div class="header">
+<div class="subTitle">cpath.service</div>
+<h2 title="Class SearchEngine" class="title">Class SearchEngine</h2>
+</div>
+<div class="contentContainer">
+<ul class="inheritance">
+<li><a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">java.lang.Object</a></li>
+<li>
+<ul class="inheritance">
+<li>cpath.service.SearchEngine</li>
+</ul>
+</li>
+</ul>
+<div class="description">
+<ul class="blockList">
+<li class="blockList">
+<dl>
+<dt>All Implemented Interfaces:</dt>
+<dd><a href="../../cpath/service/Indexer.html" title="interface in cpath.service">Indexer</a>, <a href="../../cpath/service/Searcher.html" title="interface in cpath.service">Searcher</a></dd>
+</dl>
+<hr>
+<br>
+<pre>public class <a href="../../src-html/cpath/service/SearchEngine.html#line.84">SearchEngine</a>
+extends <a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a>
+implements <a href="../../cpath/service/Indexer.html" title="interface in cpath.service">Indexer</a>, <a href="../../cpath/service/Searcher.html" title="interface in cpath.service">Searcher</a></pre>
+<div class="block">A full-text searcher/indexer for BioPAX L3 models.</div>
+<dl><dt><span class="strong">Author:</span></dt>
+  <dd>rodche</dd></dl>
+</li>
+</ul>
+</div>
+<div class="summary">
+<ul class="blockList">
+<li class="blockList">
+<!-- =========== FIELD SUMMARY =========== -->
+<ul class="blockList">
+<li class="blockList"><a name="field_summary">
+<!--   -->
+</a>
+<h3>Field Summary</h3>
+<table class="overviewSummary" border="0" cellpadding="3" cellspacing="0" summary="Field Summary table, listing fields, and an explanation">
+<caption><span>Fields</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Field and Description</th>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]</code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#DEFAULT_FIELDS">DEFAULT_FIELDS</a></strong></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static int</code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#DEFAULT_MAX_HITS_PER_PAGE">DEFAULT_MAX_HITS_PER_PAGE</a></strong></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#FIELD_DATASOURCE">FIELD_DATASOURCE</a></strong></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#FIELD_KEYWORD">FIELD_KEYWORD</a></strong></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#FIELD_NAME">FIELD_NAME</a></strong></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#FIELD_ORGANISM">FIELD_ORGANISM</a></strong></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#FIELD_PATHWAY">FIELD_PATHWAY</a></strong></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#FIELD_SIZE">FIELD_SIZE</a></strong></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#FIELD_TYPE">FIELD_TYPE</a></strong></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#FIELD_URI">FIELD_URI</a></strong></code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>static <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#FIELD_XREFDB">FIELD_XREFDB</a></strong></code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>static <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a></code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#FIELD_XREFID">FIELD_XREFID</a></strong></code>&nbsp;</td>
+</tr>
+</table>
+</li>
+</ul>
+<!-- ======== CONSTRUCTOR SUMMARY ======== -->
+<ul class="blockList">
+<li class="blockList"><a name="constructor_summary">
+<!--   -->
+</a>
+<h3>Constructor Summary</h3>
+<table class="overviewSummary" border="0" cellpadding="3" cellspacing="0" summary="Constructor Summary table, listing constructors, and an explanation">
+<caption><span>Constructors</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colOne" scope="col">Constructor and Description</th>
+</tr>
+<tr class="altColor">
+<td class="colOne"><code><strong><a href="../../cpath/service/SearchEngine.html#SearchEngine(org.biopax.paxtools.model.Model, java.lang.String)">SearchEngine</a></strong>(org.biopax.paxtools.model.Model&nbsp;model,
+                        <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;indexLocation)</code>
+<div class="block">Main Constructor.</div>
+</td>
+</tr>
+</table>
+</li>
+</ul>
+<!-- ========== METHOD SUMMARY =========== -->
+<ul class="blockList">
+<li class="blockList"><a name="method_summary">
+<!--   -->
+</a>
+<h3>Method Summary</h3>
+<table class="overviewSummary" border="0" cellpadding="3" cellspacing="0" summary="Method Summary table, listing methods, and an explanation">
+<caption><span>Methods</span><span class="tabEnd">&nbsp;</span></caption>
+<tr>
+<th class="colFirst" scope="col">Modifier and Type</th>
+<th class="colLast" scope="col">Method and Description</th>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code>int</code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#getMaxHitsPerPage()">getMaxHitsPerPage</a></strong>()</code>&nbsp;</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#index()">index</a></strong>()</code>&nbsp;</td>
+</tr>
+<tr class="altColor">
+<td class="colFirst"><code><a href="https://github.com/PathwayCommons/cpath2/apidocs/cpath/service/jaxb/SearchResponse.html?is-external=true" title="class or interface in cpath.service.jaxb">SearchResponse</a></code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#search(java.lang.String, int, java.lang.Class, java.lang.String[], java.lang.String[])">search</a></strong>(<a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;query,
+            int&nbsp;page,
+            <a href="http://download.oracle.com/javase/7/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;? extends org.biopax.paxtools.model.BioPAXElement&gt;&nbsp;filterByType,
+            <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;datasources,
+            <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;organisms)</code>
+<div class="block">Full-text search for BioPAX elements.</div>
+</td>
+</tr>
+<tr class="rowColor">
+<td class="colFirst"><code>void</code></td>
+<td class="colLast"><code><strong><a href="../../cpath/service/SearchEngine.html#setMaxHitsPerPage(int)">setMaxHitsPerPage</a></strong>(int&nbsp;maxHitsPerPage)</code>&nbsp;</td>
+</tr>
+</table>
+<ul class="blockList">
+<li class="blockList"><a name="methods_inherited_from_class_java.lang.Object">
+<!--   -->
+</a>
+<h3>Methods inherited from class&nbsp;java.lang.<a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang">Object</a></h3>
+<code><a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true#clone()" title="class or interface in java.lang">clone</a>, <a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true#equals(java.lang.Object)" title="class or interface in java.lang">equals</a>, <a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true#finalize()" title="class or interface in java.lang">finalize</a>, <a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true#getClass()" title="class or interface in java.lang">getClass</a>, <a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true#hashCode()" title="class or interface in java.lang">hashCode</a>, <a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true#notify()" title="class or interface in java.lang">notify</a>, <a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true#notifyAll()" title="class or interface in java.lang">notifyAll</a>, <a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true#toString()" title="class or interface in java.lang">toString</a>, <a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true#wait()" title="class or interface in java.lang">wait</a>, <a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true#wait(long)" title="class or interface in java.lang">wait</a>, <a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true#wait(long, int)" title="class or interface in java.lang">wait</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="details">
+<ul class="blockList">
+<li class="blockList">
+<!-- ============ FIELD DETAIL =========== -->
+<ul class="blockList">
+<li class="blockList"><a name="field_detail">
+<!--   -->
+</a>
+<h3>Field Detail</h3>
+<a name="FIELD_URI">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FIELD_URI</h4>
+<pre>public static final&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> <a href="../../src-html/cpath/service/SearchEngine.html#line.88">FIELD_URI</a></pre>
+<dl><dt><span class="strong">See Also:</span></dt><dd><a href="../../constant-values.html#cpath.service.SearchEngine.FIELD_URI">Constant Field Values</a></dd></dl>
+</li>
+</ul>
+<a name="FIELD_KEYWORD">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FIELD_KEYWORD</h4>
+<pre>public static final&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> <a href="../../src-html/cpath/service/SearchEngine.html#line.89">FIELD_KEYWORD</a></pre>
+<dl><dt><span class="strong">See Also:</span></dt><dd><a href="../../constant-values.html#cpath.service.SearchEngine.FIELD_KEYWORD">Constant Field Values</a></dd></dl>
+</li>
+</ul>
+<a name="FIELD_NAME">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FIELD_NAME</h4>
+<pre>public static final&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> <a href="../../src-html/cpath/service/SearchEngine.html#line.90">FIELD_NAME</a></pre>
+<dl><dt><span class="strong">See Also:</span></dt><dd><a href="../../constant-values.html#cpath.service.SearchEngine.FIELD_NAME">Constant Field Values</a></dd></dl>
+</li>
+</ul>
+<a name="FIELD_XREFDB">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FIELD_XREFDB</h4>
+<pre>public static final&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> <a href="../../src-html/cpath/service/SearchEngine.html#line.91">FIELD_XREFDB</a></pre>
+<dl><dt><span class="strong">See Also:</span></dt><dd><a href="../../constant-values.html#cpath.service.SearchEngine.FIELD_XREFDB">Constant Field Values</a></dd></dl>
+</li>
+</ul>
+<a name="FIELD_XREFID">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FIELD_XREFID</h4>
+<pre>public static final&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> <a href="../../src-html/cpath/service/SearchEngine.html#line.92">FIELD_XREFID</a></pre>
+<dl><dt><span class="strong">See Also:</span></dt><dd><a href="../../constant-values.html#cpath.service.SearchEngine.FIELD_XREFID">Constant Field Values</a></dd></dl>
+</li>
+</ul>
+<a name="FIELD_PATHWAY">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FIELD_PATHWAY</h4>
+<pre>public static final&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> <a href="../../src-html/cpath/service/SearchEngine.html#line.93">FIELD_PATHWAY</a></pre>
+<dl><dt><span class="strong">See Also:</span></dt><dd><a href="../../constant-values.html#cpath.service.SearchEngine.FIELD_PATHWAY">Constant Field Values</a></dd></dl>
+</li>
+</ul>
+<a name="FIELD_SIZE">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FIELD_SIZE</h4>
+<pre>public static final&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> <a href="../../src-html/cpath/service/SearchEngine.html#line.94">FIELD_SIZE</a></pre>
+<dl><dt><span class="strong">See Also:</span></dt><dd><a href="../../constant-values.html#cpath.service.SearchEngine.FIELD_SIZE">Constant Field Values</a></dd></dl>
+</li>
+</ul>
+<a name="FIELD_ORGANISM">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FIELD_ORGANISM</h4>
+<pre>public static final&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> <a href="../../src-html/cpath/service/SearchEngine.html#line.97">FIELD_ORGANISM</a></pre>
+<dl><dt><span class="strong">See Also:</span></dt><dd><a href="../../constant-values.html#cpath.service.SearchEngine.FIELD_ORGANISM">Constant Field Values</a></dd></dl>
+</li>
+</ul>
+<a name="FIELD_DATASOURCE">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FIELD_DATASOURCE</h4>
+<pre>public static final&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> <a href="../../src-html/cpath/service/SearchEngine.html#line.99">FIELD_DATASOURCE</a></pre>
+<dl><dt><span class="strong">See Also:</span></dt><dd><a href="../../constant-values.html#cpath.service.SearchEngine.FIELD_DATASOURCE">Constant Field Values</a></dd></dl>
+</li>
+</ul>
+<a name="FIELD_TYPE">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>FIELD_TYPE</h4>
+<pre>public static final&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a> <a href="../../src-html/cpath/service/SearchEngine.html#line.100">FIELD_TYPE</a></pre>
+<dl><dt><span class="strong">See Also:</span></dt><dd><a href="../../constant-values.html#cpath.service.SearchEngine.FIELD_TYPE">Constant Field Values</a></dd></dl>
+</li>
+</ul>
+<a name="DEFAULT_FIELDS">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>DEFAULT_FIELDS</h4>
+<pre>public static final&nbsp;<a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[] <a href="../../src-html/cpath/service/SearchEngine.html#line.105">DEFAULT_FIELDS</a></pre>
+</li>
+</ul>
+<a name="DEFAULT_MAX_HITS_PER_PAGE">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>DEFAULT_MAX_HITS_PER_PAGE</h4>
+<pre>public static final&nbsp;int <a href="../../src-html/cpath/service/SearchEngine.html#line.125">DEFAULT_MAX_HITS_PER_PAGE</a></pre>
+<dl><dt><span class="strong">See Also:</span></dt><dd><a href="../../constant-values.html#cpath.service.SearchEngine.DEFAULT_MAX_HITS_PER_PAGE">Constant Field Values</a></dd></dl>
+</li>
+</ul>
+</li>
+</ul>
+<!-- ========= CONSTRUCTOR DETAIL ======== -->
+<ul class="blockList">
+<li class="blockList"><a name="constructor_detail">
+<!--   -->
+</a>
+<h3>Constructor Detail</h3>
+<a name="SearchEngine(org.biopax.paxtools.model.Model, java.lang.String)">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>SearchEngine</h4>
+<pre>public&nbsp;<a href="../../src-html/cpath/service/SearchEngine.html#line.132">SearchEngine</a>(org.biopax.paxtools.model.Model&nbsp;model,
+            <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;indexLocation)</pre>
+<div class="block">Main Constructor.</div>
+<dl><dt><span class="strong">Parameters:</span></dt><dd><code>indexLocation</code> - </dd>
+<dt><span class="strong">Throws:</span></dt>
+<dd><code><a href="http://download.oracle.com/javase/7/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io">IOException</a></code></dd></dl>
+</li>
+</ul>
+</li>
+</ul>
+<!-- ============ METHOD DETAIL ========== -->
+<ul class="blockList">
+<li class="blockList"><a name="method_detail">
+<!--   -->
+</a>
+<h3>Method Detail</h3>
+<a name="setMaxHitsPerPage(int)">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>setMaxHitsPerPage</h4>
+<pre>public&nbsp;void&nbsp;<a href="../../src-html/cpath/service/SearchEngine.html#line.152">setMaxHitsPerPage</a>(int&nbsp;maxHitsPerPage)</pre>
+</li>
+</ul>
+<a name="getMaxHitsPerPage()">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>getMaxHitsPerPage</h4>
+<pre>public&nbsp;int&nbsp;<a href="../../src-html/cpath/service/SearchEngine.html#line.156">getMaxHitsPerPage</a>()</pre>
+</li>
+</ul>
+<a name="search(java.lang.String, int, java.lang.Class, java.lang.String[], java.lang.String[])">
+<!--   -->
+</a>
+<ul class="blockList">
+<li class="blockList">
+<h4>search</h4>
+<pre>public&nbsp;<a href="https://github.com/PathwayCommons/cpath2/apidocs/cpath/service/jaxb/SearchResponse.html?is-external=true" title="class or interface in cpath.service.jaxb">SearchResponse</a>&nbsp;<a href="../../src-html/cpath/service/SearchEngine.html#line.161">search</a>(<a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>&nbsp;query,
+                    int&nbsp;page,
+                    <a href="http://download.oracle.com/javase/7/docs/api/java/lang/Class.html?is-external=true" title="class or interface in java.lang">Class</a>&lt;? extends org.biopax.paxtools.model.BioPAXElement&gt;&nbsp;filterByType,
+                    <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;datasources,
+                    <a href="http://download.oracle.com/javase/7/docs/api/java/lang/String.html?is-external=true" title="class or interface in java.lang">String</a>[]&nbsp;organisms)</pre>
+<div class="block"><strong>Description copied from interface:&nbsp;<code><a href="../../cpath/service/Searcher.html#search(java.lang.String, int, java.lang.Class, java.lang.String[], java.lang.String[])">Searcher</a></code></strong></div>
+<div class="block">Full-text search for BioPAX elements.</div>
+<dl>
+<dt><strong>Specified by:</strong></dt>
+<dd><code><a href="../../cpath/service/Searcher.html#search(java.lang.String, int, java.lang.Class, java.lang.String[], java.lang.String[])">search</a></code>&nbsp;in interface&nbsp;<code><a href="../../cpath/service/Searcher.html" title="interface in cpath.service">Searcher</a></code></dd>
+<dt><span class="strong">Parameters:</span></dt><dd><code>query</code> - String (keywords or Lucene query string)</dd><dd><code>page</code> - hits page number (when the number of hits exceeds a threshold)</dd><dd><code>filterByType</code> - - class filter</dd><dd><code>datasources</code> - - filter by datasource</dd><dd><code>organisms</code> - - filter by organism</dd>
+<dt><span class="strong">Returns:</span></dt><dd>ordered list of hits (by score)</dd></dl>
+</li>
+</ul>
+<a name="index()">
+<!--   -->
+</a>
+<ul class="blockListLast">
+<li class="blockList">
+<h4>index</h4>
+<pre>public&nbsp;void&nbsp;<a href="../../src-html/cpath/service/SearchEngine.html#line.385">index</a>()</pre>
+<dl>
+<dt><strong>Specified by:</strong></dt>
+<dd><code><a href="../../cpath/service/Indexer.html#index()">index</a></code>&nbsp;in interface&nbsp;<code><a href="../../cpath/service/Indexer.html" title="interface in cpath.service">Indexer</a></code></dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<!-- ========= END OF CLASS DATA ========= -->
+<!-- ======= START OF BOTTOM NAVBAR ====== -->
+<div class="bottomNav"><a name="navbar_bottom">
+<!--   -->
+</a><a href="#skip-navbar_bottom" title="Skip navigation links"></a><a name="navbar_bottom_firstrow">
+<!--   -->
+</a>
+<ul class="navList" title="Navigation">
+<li><a href="../../overview-summary.html">Overview</a></li>
+<li><a href="package-summary.html">Package</a></li>
+<li class="navBarCell1Rev">Class</li>
+<li><a href="class-use/SearchEngine.html">Use</a></li>
+<li><a href="package-tree.html">Tree</a></li>
+<li><a href="../../deprecated-list.html">Deprecated</a></li>
+<li><a href="../../index-all.html">Index</a></li>
+<li><a href="../../help-doc.html">Help</a></li>
+</ul>
+</div>
+<div class="subNav">
+<ul class="navList">
+<li><a href="../../cpath/service/Indexer.html" title="interface in cpath.service"><span class="strong">Prev Class</span></a></li>
+<li><a href="../../cpath/service/Searcher.html" title="interface in cpath.service"><span class="strong">Next Class</span></a></li>
+</ul>
+<ul class="navList">
+<li><a href="../../index.html?cpath/service/SearchEngine.html" target="_top">Frames</a></li>
+<li><a href="SearchEngine.html" target="_top">No Frames</a></li>
+</ul>
+<ul class="navList" id="allclasses_navbar_bottom">
+<li><a href="../../allclasses-noframe.html">All Classes</a></li>
+</ul>
+<div>
+<script type="text/javascript"><!--
+  allClassesLink = document.getElementById("allclasses_navbar_bottom");
+  if(window==top) {
+    allClassesLink.style.display = "block";
+  }
+  else {
+    allClassesLink.style.display = "none";
+  }
+  //-->
+</script>
+</div>
+<div>
+<ul class="subNavList">
+<li>Summary:&nbsp;</li>
+<li>Nested&nbsp;|&nbsp;</li>
+<li><a href="#field_summary">Field</a>&nbsp;|&nbsp;</li>
+<li><a href="#constructor_summary">Constr</a>&nbsp;|&nbsp;</li>
+<li><a href="#method_summary">Method</a></li>
+</ul>
+<ul class="subNavList">
+<li>Detail:&nbsp;</li>
+<li><a href="#field_detail">Field</a>&nbsp;|&nbsp;</li>
+<li><a href="#constructor_detail">Constr</a>&nbsp;|&nbsp;</li>
+<li><a href="#method_detail">Method</a></li>
+</ul>
+</div>
+<a name="skip-navbar_bottom">
+<!--   -->
+</a></div>
+<!-- ======== END OF BOTTOM NAVBAR ======= -->
+<p class="legalCopy"><small>Copyright &#169; 2009&#x2013;2015 <a href="http://www.pathwaycommons.org">Pathway Commons</a>. All rights reserved.</small></p>
+</body>
+</html>
