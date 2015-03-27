@@ -1,0 +1,448 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>DataImportTest xref</title>
+<link type="text/css" rel="stylesheet" href="../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../testapidocs/cpath/importer/DataImportTest.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> cpath.importer;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> cpath.config.CPathSettings;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> cpath.dao.CPathUtils;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> cpath.jpa.Mapping;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> cpath.jpa.Metadata;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> cpath.jpa.Metadata.METADATA_TYPE;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> cpath.service.CPathService;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> cpath.service.ErrorResponse;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> cpath.service.Indexer;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> cpath.service.OutputFormat;
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> cpath.service.SearchEngine;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> cpath.service.jaxb.DataResponse;
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> cpath.service.jaxb.SearchHit;
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> cpath.service.jaxb.SearchResponse;
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">import</strong> cpath.service.jaxb.ServiceResponse;
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.*;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.*;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.io.SimpleIOHandler;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> org.biopax.validator.api.Validator;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <strong class="jxr_keyword">import</strong> org.biopax.validator.utils.Normalizer;
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> org.junit.*;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> org.junit.runner.RunWith;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.junit.Assert.*;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <strong class="jxr_keyword">import</strong> org.slf4j.Logger;
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <strong class="jxr_keyword">import</strong> org.slf4j.LoggerFactory;
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> org.springframework.beans.factory.annotation.Autowired;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <strong class="jxr_keyword">import</strong> org.springframework.core.io.DefaultResourceLoader;
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <strong class="jxr_keyword">import</strong> org.springframework.core.io.ResourceLoader;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.annotation.DirtiesContext;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.ActiveProfiles;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.ContextConfiguration;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <strong class="jxr_keyword">import</strong> org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <strong class="jxr_keyword">import</strong> java.io.*;
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  <strong class="jxr_keyword">import</strong> java.util.ArrayList;
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <strong class="jxr_keyword">import</strong> java.util.Collection;
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <strong class="jxr_keyword">import</strong> java.util.HashSet;
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <strong class="jxr_keyword">import</strong> java.util.List;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  <strong class="jxr_keyword">import</strong> java.util.Set;
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  <strong class="jxr_keyword">import</strong> java.util.zip.GZIPOutputStream;
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  <em class="jxr_javadoccomment"> * @author rodche</em>
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  @RunWith(SpringJUnit4ClassRunner.<strong class="jxr_keyword">class</strong>)
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  @ContextConfiguration(locations={
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  		<span class="jxr_string">"classpath:META-INF/spring/applicationContext-jpa.xml"</span>,
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  		<span class="jxr_string">"classpath:META-INF/spring/appContext-validator.xml"</span>})
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  @ActiveProfiles(<span class="jxr_string">"dev"</span>)
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../cpath/importer/DataImportTest.html">DataImportTest</a> {
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  	<strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Logger log = LoggerFactory.getLogger(DataImportTest.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  	<strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> ResourceLoader resourceLoader = <strong class="jxr_keyword">new</strong> DefaultResourceLoader();	
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  	<strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> String XML_BASE = CPathSettings.getInstance().getXmlBase();
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  		
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>  	@Autowired
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  	CPathService service;
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>  	
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>  	@Autowired
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  	Validator validator;
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>  	
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  	
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>  	@Test
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  	@DirtiesContext
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>  	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testPremergeAndMerge() <strong class="jxr_keyword">throws</strong> IOException {		
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>  		<em class="jxr_comment">//prepare the metadata</em>
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>          <em class="jxr_comment">// load the test metadata and create warehouse</em>
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>  		service.addOrUpdateMetadata(<span class="jxr_string">"classpath:metadata.conf"</span>);	
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>  		Metadata ds = service.metadata().findByIdentifier(<span class="jxr_string">"TEST_UNIPROT"</span>);
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>  		assertNotNull(ds);
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>  		ds = service.metadata().findByIdentifier(<span class="jxr_string">"TEST_CHEBI"</span>);
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>  		assertNotNull(ds);		
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>  		ds = service.metadata().findByIdentifier(<span class="jxr_string">"TEST_MAPPING"</span>);
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>  		assertNotNull(ds);
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  		
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>  		PreMerger premerger = <strong class="jxr_keyword">new</strong> PreMerger(service, validator, <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>  		premerger.premerge();		
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>  		premerger.buildWarehouse(); <em class="jxr_comment">//- also writes Warehouse archive</em>
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  		
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>  		<em class="jxr_comment">//Some assertions about the initial biopax warehouse model (before the merger is run)	</em>
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>  		Model warehouse = CPathUtils.loadWarehouseBiopaxModel();		
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>  		assertFalse(warehouse.getObjects(ProteinReference.<strong class="jxr_keyword">class</strong>).isEmpty());
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>  		assertTrue(warehouse.containsID(<span class="jxr_string">"http://identifiers.org/uniprot/P62158"</span>));
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>  		assertFalse(warehouse.getObjects(SmallMoleculeReference.<strong class="jxr_keyword">class</strong>).isEmpty());
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>  		assertTrue(warehouse.containsID(<span class="jxr_string">"http://identifiers.org/chebi/CHEBI:20"</span>));											
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>  		ProteinReference pr = (ProteinReference) warehouse.getByID(<span class="jxr_string">"http://identifiers.org/uniprot/P62158"</span>);
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>  		assertNotNull(pr);
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>  		assertNotNull(pr.getName());
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>  		assertFalse(pr.getName().isEmpty());
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>  		assertNotNull(pr.getOrganism());
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>  		assertEquals(<span class="jxr_string">"Homo sapiens"</span>, pr.getOrganism().getStandardName());
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>  		assertFalse(pr.getXref().isEmpty());
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>  		
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>  		<em class="jxr_comment">// test some id-mapping using different srcDb names (UniProt synonyms...)</em>
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>  		String ac = service.map(<strong class="jxr_keyword">null</strong>, <span class="jxr_string">"A2A2M3"</span>, <span class="jxr_string">"UNIPROT"</span>).iterator().next(); 
+<a class="jxr_linenumber" name="L100" href="#L100">100</a> 		assertEquals(<span class="jxr_string">"Q8TD86"</span>, ac);
+<a class="jxr_linenumber" name="L101" href="#L101">101</a> 		ac = service.map(<span class="jxr_string">"uniprot knowledgebase"</span>, <span class="jxr_string">"A2A2M3"</span>, <span class="jxr_string">"UNIPROT"</span>).iterator().next(); 
+<a class="jxr_linenumber" name="L102" href="#L102">102</a> 		assertEquals(<span class="jxr_string">"Q8TD86"</span>, ac);
+<a class="jxr_linenumber" name="L103" href="#L103">103</a> 		ac = service.map(<span class="jxr_string">"uniprot"</span>, <span class="jxr_string">"A2A2M3"</span>, <span class="jxr_string">"UNIPROT"</span>).iterator().next(); 
+<a class="jxr_linenumber" name="L104" href="#L104">104</a> 		assertEquals(<span class="jxr_string">"Q8TD86"</span>, ac);
+<a class="jxr_linenumber" name="L105" href="#L105">105</a> 		
+<a class="jxr_linenumber" name="L106" href="#L106">106</a> 		assertTrue(warehouse.containsID(<span class="jxr_string">"http://identifiers.org/uniprot/"</span> + ac));	
+<a class="jxr_linenumber" name="L107" href="#L107">107</a> 		assertTrue(service.map(<strong class="jxr_keyword">null</strong>, <span class="jxr_string">"Q8TD86-1"</span>, <span class="jxr_string">"UNIPROT"</span>).isEmpty());
+<a class="jxr_linenumber" name="L108" href="#L108">108</a> 		assertTrue(service.map(<span class="jxr_string">"uniprot"</span>, <span class="jxr_string">"Q8TD86-1"</span>, <span class="jxr_string">"UNIPROT"</span>).isEmpty());
+<a class="jxr_linenumber" name="L109" href="#L109">109</a> 		assertTrue(service.map(<span class="jxr_string">"uniprot knowledgebase"</span>, <span class="jxr_string">"Q8TD86-1"</span>, <span class="jxr_string">"UNIPROT"</span>).isEmpty());
+<a class="jxr_linenumber" name="L110" href="#L110">110</a> 		<em class="jxr_comment">//infers Q8TD86</em>
+<a class="jxr_linenumber" name="L111" href="#L111">111</a> 		assertFalse(service.map(<span class="jxr_string">"uniprot isoform"</span>, <span class="jxr_string">"Q8TD86-1"</span>, <span class="jxr_string">"UNIPROT"</span>).isEmpty());
+<a class="jxr_linenumber" name="L112" href="#L112">112</a> 		assertEquals(<span class="jxr_string">"Q8TD86"</span>, service.map(<span class="jxr_string">"uniprot isoform"</span>, <span class="jxr_string">"Q8TD86-1"</span>, <span class="jxr_string">"UNIPROT"</span>).iterator().next());					
+<a class="jxr_linenumber" name="L113" href="#L113">113</a> 		<em class="jxr_comment">// also -</em>
+<a class="jxr_linenumber" name="L114" href="#L114">114</a> 		assertTrue(service.map(<strong class="jxr_keyword">null</strong>, <span class="jxr_string">"NP_619650.1"</span>, <span class="jxr_string">"UNIPROT"</span>).isEmpty());
+<a class="jxr_linenumber" name="L115" href="#L115">115</a> 		assertFalse(service.map(<span class="jxr_string">"refseq"</span>, <span class="jxr_string">"NP_619650"</span>, <span class="jxr_string">"UNIPROT"</span>).isEmpty());
+<a class="jxr_linenumber" name="L116" href="#L116">116</a> 		<em class="jxr_comment">// also, with the first arg. is not null, map(..) </em>
+<a class="jxr_linenumber" name="L117" href="#L117">117</a> 		<em class="jxr_comment">// calls 'suggest' method to replace NP_619650.1 with NP_619650</em>
+<a class="jxr_linenumber" name="L118" href="#L118">118</a> 		<em class="jxr_comment">// (the id-mapping table only has canonical uniprot IDs, no isoform IDs)</em>
+<a class="jxr_linenumber" name="L119" href="#L119">119</a> 		assertFalse(service.map(<span class="jxr_string">"refseq"</span>, <span class="jxr_string">"NP_619650.1"</span>, <span class="jxr_string">"UNIPROT"</span>).isEmpty());
+<a class="jxr_linenumber" name="L120" href="#L120">120</a> 		ac = service.map(<span class="jxr_string">"refseq"</span>, <span class="jxr_string">"NP_619650"</span>, <span class="jxr_string">"UNIPROT"</span>).iterator().next(); 
+<a class="jxr_linenumber" name="L121" href="#L121">121</a> 		assertEquals(<span class="jxr_string">"Q8TD86"</span>, ac);
+<a class="jxr_linenumber" name="L122" href="#L122">122</a> 		assertTrue(warehouse.containsID(<span class="jxr_string">"http://identifiers.org/uniprot/"</span> + ac));
+<a class="jxr_linenumber" name="L123" href="#L123">123</a> 		
+<a class="jxr_linenumber" name="L124" href="#L124">124</a> 		Set&lt;String&gt; ids = service.map(<span class="jxr_string">"P01118"</span>);
+<a class="jxr_linenumber" name="L125" href="#L125">125</a> 		assertTrue(ids.size()==1);
+<a class="jxr_linenumber" name="L126" href="#L126">126</a> 		assertTrue(ids.contains(<span class="jxr_string">"P01116"</span>));
+<a class="jxr_linenumber" name="L127" href="#L127">127</a> 		ids = service.map(<span class="jxr_string">"uniprot"</span>, <span class="jxr_string">"P01118"</span>, <span class="jxr_string">"uniprot"</span>);
+<a class="jxr_linenumber" name="L128" href="#L128">128</a> 		assertTrue(ids.size()==1);
+<a class="jxr_linenumber" name="L129" href="#L129">129</a> 		assertTrue(ids.contains(<span class="jxr_string">"P01116"</span>));
+<a class="jxr_linenumber" name="L130" href="#L130">130</a> 		List&lt;Mapping&gt; mps = service.mapping().findByDestIgnoreCaseAndDestId(<span class="jxr_string">"UNIPROT"</span>, <span class="jxr_string">"P01116"</span>);
+<a class="jxr_linenumber" name="L131" href="#L131">131</a> 		assertTrue(mps.size()&gt;2);
+<a class="jxr_linenumber" name="L132" href="#L132">132</a> <em class="jxr_comment">//		System.out.println(mps);</em>
+<a class="jxr_linenumber" name="L133" href="#L133">133</a> 		mps = service.mapping().findBySrcIdAndDestIgnoreCase(<span class="jxr_string">"P01118"</span>, <span class="jxr_string">"UniProt"</span>);
+<a class="jxr_linenumber" name="L134" href="#L134">134</a> 		assertTrue(mps.size()==1);
+<a class="jxr_linenumber" name="L135" href="#L135">135</a> 		assertTrue(<span class="jxr_string">"P01116"</span>.equals(mps.iterator().next().getDestId()));
+<a class="jxr_linenumber" name="L136" href="#L136">136</a> 		mps = service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase(<span class="jxr_string">"UNIPROT"</span>, <span class="jxr_string">"P01118"</span>, <span class="jxr_string">"UNIPROT"</span>);
+<a class="jxr_linenumber" name="L137" href="#L137">137</a> 		assertTrue(mps.size()==1);
+<a class="jxr_linenumber" name="L138" href="#L138">138</a> 		assertTrue(<span class="jxr_string">"P01116"</span>.equals(mps.iterator().next().getDestId()));
+<a class="jxr_linenumber" name="L139" href="#L139">139</a> 		
+<a class="jxr_linenumber" name="L140" href="#L140">140</a> 		
+<a class="jxr_linenumber" name="L141" href="#L141">141</a> 		<em class="jxr_comment">// **** MERGE ***</em>
+<a class="jxr_linenumber" name="L142" href="#L142">142</a> 		
+<a class="jxr_linenumber" name="L143" href="#L143">143</a> 		<em class="jxr_comment">//Load test models from files</em>
+<a class="jxr_linenumber" name="L144" href="#L144">144</a> 		<strong class="jxr_keyword">final</strong> List&lt;Model&gt; pathwayModels = initPathwayModels();
+<a class="jxr_linenumber" name="L145" href="#L145">145</a> 		
+<a class="jxr_linenumber" name="L146" href="#L146">146</a> 		<em class="jxr_comment">// note: in production we'd run it as ImportFactory.newMerger(paxtoolsDAO,...).merge();</em>
+<a class="jxr_linenumber" name="L147" href="#L147">147</a> 		<em class="jxr_comment">// cpath2 metadata contains the warehouse and id-mapping tables</em>
+<a class="jxr_linenumber" name="L148" href="#L148">148</a> 		Merger merger = <strong class="jxr_keyword">new</strong> Merger(service, <strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="L149" href="#L149">149</a> 		<strong class="jxr_keyword">int</strong> i = 0;
+<a class="jxr_linenumber" name="L150" href="#L150">150</a> 		<strong class="jxr_keyword">for</strong>(Model m : pathwayModels) {
+<a class="jxr_linenumber" name="L151" href="#L151">151</a> 			merger.merge(<span class="jxr_string">"model #"</span> + i++, m);
+<a class="jxr_linenumber" name="L152" href="#L152">152</a> 		}
+<a class="jxr_linenumber" name="L153" href="#L153">153</a> 		merger.save(); <em class="jxr_comment">//to the file</em>
+<a class="jxr_linenumber" name="L154" href="#L154">154</a> 		
+<a class="jxr_linenumber" name="L155" href="#L155">155</a> 		<em class="jxr_comment">//get the model from the archive and test it</em>
+<a class="jxr_linenumber" name="L156" href="#L156">156</a> 		Model m = CPathUtils.loadMainBiopaxModel();	
+<a class="jxr_linenumber" name="L157" href="#L157">157</a> 		
+<a class="jxr_linenumber" name="L158" href="#L158">158</a> 		<em class="jxr_comment">//check the integrated model</em>
+<a class="jxr_linenumber" name="L159" href="#L159">159</a> 		assertMerge(m);
+<a class="jxr_linenumber" name="L160" href="#L160">160</a> 
+<a class="jxr_linenumber" name="L161" href="#L161">161</a> 		<em class="jxr_comment">//pid, reactome,humancyc,.. were there in the test models</em>
+<a class="jxr_linenumber" name="L162" href="#L162">162</a> 		assertEquals(4, m.getObjects(Provenance.<strong class="jxr_keyword">class</strong>).size());
+<a class="jxr_linenumber" name="L163" href="#L163">163</a> 		
+<a class="jxr_linenumber" name="L164" href="#L164">164</a> 		<em class="jxr_comment">//additional 'test' metadata entry</em>
+<a class="jxr_linenumber" name="L165" href="#L165">165</a> 		Metadata md = <strong class="jxr_keyword">new</strong> Metadata(<span class="jxr_string">"test"</span>, <span class="jxr_string">"Reactome"</span>, <span class="jxr_string">"Foo"</span>, <span class="jxr_string">""</span>, <span class="jxr_string">""</span>, 
+<a class="jxr_linenumber" name="L166" href="#L166">166</a> 				<span class="jxr_string">""</span>, METADATA_TYPE.BIOPAX, <span class="jxr_string">""</span>, <span class="jxr_string">""</span>, <strong class="jxr_keyword">null</strong>, <span class="jxr_string">"free"</span>);		
+<a class="jxr_linenumber" name="L167" href="#L167">167</a> 		service.save(md);	
+<a class="jxr_linenumber" name="L168" href="#L168">168</a> 		<em class="jxr_comment">// normally, setProvenanceFor gets called during Premerge stage</em>
+<a class="jxr_linenumber" name="L169" href="#L169">169</a> 		md.setProvenanceFor(m); 
+<a class="jxr_linenumber" name="L170" href="#L170">170</a> 		<em class="jxr_comment">// which EXPLICITELY REMOVEs all other Provenance values from dataSource properties;</em>
+<a class="jxr_linenumber" name="L171" href="#L171">171</a> 		assertEquals(1, m.getObjects(Provenance.<strong class="jxr_keyword">class</strong>).size()); 		
+<a class="jxr_linenumber" name="L172" href="#L172">172</a> 		
+<a class="jxr_linenumber" name="L173" href="#L173">173</a> 		<em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="L174" href="#L174">174</a> <em class="jxr_comment">		 * SERVICE-TIER features tests</em>
+<a class="jxr_linenumber" name="L175" href="#L175">175</a> <em class="jxr_comment">		 */</em>
+<a class="jxr_linenumber" name="L176" href="#L176">176</a> 		
+<a class="jxr_linenumber" name="L177" href="#L177">177</a> 		<em class="jxr_comment">//PREPARE...</em>
+<a class="jxr_linenumber" name="L178" href="#L178">178</a> 		<em class="jxr_comment">// update the main biopax file (due to changes to dataSource prop. above;</em>
+<a class="jxr_linenumber" name="L179" href="#L179">179</a> 		<em class="jxr_comment">// persistent and in-memory models must be in synch)</em>
+<a class="jxr_linenumber" name="L180" href="#L180">180</a> 		<strong class="jxr_keyword">new</strong> SimpleIOHandler(BioPAXLevel.L3).convertToOWL(m, 
+<a class="jxr_linenumber" name="L181" href="#L181">181</a> 			<strong class="jxr_keyword">new</strong> GZIPOutputStream(<strong class="jxr_keyword">new</strong> FileOutputStream(
+<a class="jxr_linenumber" name="L182" href="#L182">182</a> 					CPathSettings.getInstance().mainModelFile())));
+<a class="jxr_linenumber" name="L183" href="#L183">183</a> 		
+<a class="jxr_linenumber" name="L184" href="#L184">184</a> 		<em class="jxr_comment">//index</em>
+<a class="jxr_linenumber" name="L185" href="#L185">185</a> 		Indexer indexer = <strong class="jxr_keyword">new</strong> SearchEngine(m, CPathSettings.getInstance().indexDir());
+<a class="jxr_linenumber" name="L186" href="#L186">186</a> 		indexer.index();
+<a class="jxr_linenumber" name="L187" href="#L187">187</a> 		
+<a class="jxr_linenumber" name="L188" href="#L188">188</a> 		<em class="jxr_comment">//load the main model, blacklist.txt, init the search engine</em>
+<a class="jxr_linenumber" name="L189" href="#L189">189</a> 		service.init();
+<a class="jxr_linenumber" name="L190" href="#L190">190</a> 		log.warn(<span class="jxr_string">"Waiting for the service to fully initialize..."</span>);
+<a class="jxr_linenumber" name="L191" href="#L191">191</a> 		<strong class="jxr_keyword">int</strong> interval = 1000;
+<a class="jxr_linenumber" name="L192" href="#L192">192</a> 		<strong class="jxr_keyword">for</strong> (; !service.ready() &amp;&amp; interval &lt; 50000; interval += 5000) {			
+<a class="jxr_linenumber" name="L193" href="#L193">193</a> 			<strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L194" href="#L194">194</a> 				Thread.sleep(interval);
+<a class="jxr_linenumber" name="L195" href="#L195">195</a> 			} <strong class="jxr_keyword">catch</strong> (InterruptedException e1) {
+<a class="jxr_linenumber" name="L196" href="#L196">196</a> 				fail(<span class="jxr_string">"Failed to initialise the service bean (model and search index)!"</span>);
+<a class="jxr_linenumber" name="L197" href="#L197">197</a> 			}
+<a class="jxr_linenumber" name="L198" href="#L198">198</a> 		}
+<a class="jxr_linenumber" name="L199" href="#L199">199</a> 		<strong class="jxr_keyword">if</strong>(interval&gt;50000)
+<a class="jxr_linenumber" name="L200" href="#L200">200</a> 			fail(<span class="jxr_string">"Failed to initialise the service bean (model and search index)!"</span>);
+<a class="jxr_linenumber" name="L201" href="#L201">201</a> 
+<a class="jxr_linenumber" name="L202" href="#L202">202</a> 		<em class="jxr_comment">// Test full-text search	</em>
+<a class="jxr_linenumber" name="L203" href="#L203">203</a> 		<em class="jxr_comment">// search with a secondary (RefSeq) accession number</em>
+<a class="jxr_linenumber" name="L204" href="#L204">204</a> 		<em class="jxr_comment">//NP_619650 occurs in the warehouse only, not in the merged model</em>
+<a class="jxr_linenumber" name="L205" href="#L205">205</a> 		SearchResponse resp =  (SearchResponse) service.search(<span class="jxr_string">"NP_619650"</span>, 0, RelationshipXref.<strong class="jxr_keyword">class</strong>, <strong class="jxr_keyword">null</strong>, <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L206" href="#L206">206</a> 		assertTrue(resp.getSearchHit().isEmpty());
+<a class="jxr_linenumber" name="L207" href="#L207">207</a> 		<em class="jxr_comment">//now find another one in the main model</em>
+<a class="jxr_linenumber" name="L208" href="#L208">208</a> 		resp =  (SearchResponse) service.search(<span class="jxr_string">"NP_005099"</span>, 0, RelationshipXref.<strong class="jxr_keyword">class</strong>, <strong class="jxr_keyword">null</strong>, <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L209" href="#L209">209</a> 		Collection&lt;SearchHit&gt; prs = resp.getSearchHit();
+<a class="jxr_linenumber" name="L210" href="#L210">210</a> 		assertFalse(prs.isEmpty());
+<a class="jxr_linenumber" name="L211" href="#L211">211</a> 		Collection&lt;String&gt; prIds = <strong class="jxr_keyword">new</strong> HashSet&lt;String&gt;();
+<a class="jxr_linenumber" name="L212" href="#L212">212</a> 		<strong class="jxr_keyword">for</strong>(SearchHit e : prs)
+<a class="jxr_linenumber" name="L213" href="#L213">213</a> 			prIds.add(e.getUri());		
+<a class="jxr_linenumber" name="L214" href="#L214">214</a> 		String uri = Normalizer.uri(XML_BASE, <span class="jxr_string">"REFSEQ"</span>, <span class="jxr_string">"NP_005099_identity"</span>, RelationshipXref.<strong class="jxr_keyword">class</strong>);				
+<a class="jxr_linenumber" name="L215" href="#L215">215</a> 		assertTrue(prIds.contains(uri));
+<a class="jxr_linenumber" name="L216" href="#L216">216</a> 		Xref x = (RelationshipXref) m.getByID(uri);
+<a class="jxr_linenumber" name="L217" href="#L217">217</a> 		assertNotNull(x);
+<a class="jxr_linenumber" name="L218" href="#L218">218</a> 		assertFalse(x.getXrefOf().isEmpty());
+<a class="jxr_linenumber" name="L219" href="#L219">219</a> 		pr = (ProteinReference) m.getByID(<span class="jxr_string">"http://identifiers.org/uniprot/O75191"</span>);
+<a class="jxr_linenumber" name="L220" href="#L220">220</a> 		assertTrue(x.getXrefOf().contains(pr));
+<a class="jxr_linenumber" name="L221" href="#L221">221</a> 		
+<a class="jxr_linenumber" name="L222" href="#L222">222</a> 		<em class="jxr_comment">// fetch as BIOPAX</em>
+<a class="jxr_linenumber" name="L223" href="#L223">223</a> 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, <span class="jxr_string">"http://identifiers.org/uniprot/P27797"</span>);
+<a class="jxr_linenumber" name="L224" href="#L224">224</a> 		assertNotNull(res);
+<a class="jxr_linenumber" name="L225" href="#L225">225</a> 		assertFalse(res instanceof ErrorResponse);
+<a class="jxr_linenumber" name="L226" href="#L226">226</a> 		assertTrue(res instanceof DataResponse);
+<a class="jxr_linenumber" name="L227" href="#L227">227</a> 		assertFalse(res.isEmpty());
+<a class="jxr_linenumber" name="L228" href="#L228">228</a> 		assertTrue(((DataResponse)res).getData().toString().length()&gt;0);		
+<a class="jxr_linenumber" name="L229" href="#L229">229</a> 		
+<a class="jxr_linenumber" name="L230" href="#L230">230</a> 		<em class="jxr_comment">// fetch as SIF</em>
+<a class="jxr_linenumber" name="L231" href="#L231">231</a> 		res = service.fetch(OutputFormat.BINARY_SIF, 
+<a class="jxr_linenumber" name="L232" href="#L232">232</a> 			Normalizer.uri(XML_BASE, <strong class="jxr_keyword">null</strong>, 
+<a class="jxr_linenumber" name="L233" href="#L233">233</a> 				<span class="jxr_string">"http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p"</span>, 
+<a class="jxr_linenumber" name="L234" href="#L234">234</a> 					Catalysis.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L235" href="#L235">235</a> 		assertNotNull(res);
+<a class="jxr_linenumber" name="L236" href="#L236">236</a> 		assertTrue(res instanceof DataResponse);
+<a class="jxr_linenumber" name="L237" href="#L237">237</a> 		assertFalse(res.isEmpty());
+<a class="jxr_linenumber" name="L238" href="#L238">238</a> 		String data = (String) ((DataResponse)res).getData();		
+<a class="jxr_linenumber" name="L239" href="#L239">239</a> 		assertNotNull(data);
+<a class="jxr_linenumber" name="L240" href="#L240">240</a> 		assertNotNull(((DataResponse)res).getProviders());
+<a class="jxr_linenumber" name="L241" href="#L241">241</a> 		assertFalse(((DataResponse)res).getProviders().isEmpty());
+<a class="jxr_linenumber" name="L242" href="#L242">242</a> 
+<a class="jxr_linenumber" name="L243" href="#L243">243</a> 		log.info(data);
+<a class="jxr_linenumber" name="L244" href="#L244">244</a> 		assertTrue(data.contains(<span class="jxr_string">"reacts-with"</span>));
+<a class="jxr_linenumber" name="L245" href="#L245">245</a> 		assertTrue(data.contains(<span class="jxr_string">"used-to-produce"</span>));
+<a class="jxr_linenumber" name="L246" href="#L246">246</a> 		assertTrue(data.contains(<span class="jxr_string">"CALR"</span>));
+<a class="jxr_linenumber" name="L247" href="#L247">247</a> 		
+<a class="jxr_linenumber" name="L248" href="#L248">248</a> 		<em class="jxr_comment">// test search res. contains the list of data providers (standard names)</em>
+<a class="jxr_linenumber" name="L249" href="#L249">249</a> 		res = service.search(<span class="jxr_string">"*"</span>, 0, PhysicalEntity.<strong class="jxr_keyword">class</strong>, <strong class="jxr_keyword">null</strong>, <strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L250" href="#L250">250</a> 		assertNotNull(res);
+<a class="jxr_linenumber" name="L251" href="#L251">251</a> 		assertTrue(res instanceof SearchResponse);
+<a class="jxr_linenumber" name="L252" href="#L252">252</a> 		assertFalse(res.isEmpty());
+<a class="jxr_linenumber" name="L253" href="#L253">253</a> 		assertFalse(((SearchResponse)res).getProviders().isEmpty());
+<a class="jxr_linenumber" name="L254" href="#L254">254</a> 		log.info(<span class="jxr_string">"Providers found by second search: "</span> + ((SearchResponse)res).getProviders().toString());
+<a class="jxr_linenumber" name="L255" href="#L255">255</a> 	}
+<a class="jxr_linenumber" name="L256" href="#L256">256</a> 	
+<a class="jxr_linenumber" name="L257" href="#L257">257</a> 	
+<a class="jxr_linenumber" name="L258" href="#L258">258</a> 	<em class="jxr_comment">// test everything</em>
+<a class="jxr_linenumber" name="L259" href="#L259">259</a> 	<em class="jxr_comment">// WARN: CHEBI ID, names, relationships here might be FAKE ones - just for these tests!</em>
+<a class="jxr_linenumber" name="L260" href="#L260">260</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> assertMerge(Model mergedModel) {
+<a class="jxr_linenumber" name="L261" href="#L261">261</a> 		<em class="jxr_comment">// test proper merge of protein reference</em>
+<a class="jxr_linenumber" name="L262" href="#L262">262</a> 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, <strong class="jxr_keyword">null</strong>, <span class="jxr_string">"http://www.biopax.org/examples/myExample#Protein_54"</span>, Protein.<strong class="jxr_keyword">class</strong>)));
+<a class="jxr_linenumber" name="L263" href="#L263">263</a> 		assertTrue(mergedModel.containsID(<span class="jxr_string">"http://identifiers.org/uniprot/P27797"</span>));
+<a class="jxr_linenumber" name="L264" href="#L264">264</a> 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, <span class="jxr_string">"UNIPROT"</span>, <span class="jxr_string">"P27797"</span>, UnificationXref.<strong class="jxr_keyword">class</strong>)));
+<a class="jxr_linenumber" name="L265" href="#L265">265</a> 		<strong class="jxr_keyword">final</strong> String HsUri = Normalizer.uri(XML_BASE, <span class="jxr_string">"TAXONOMY"</span>, <span class="jxr_string">"9606"</span>, BioSource.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L266" href="#L266">266</a> 		assertTrue(mergedModel.containsID(HsUri));
+<a class="jxr_linenumber" name="L267" href="#L267">267</a> 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, <span class="jxr_string">"GO"</span>, <span class="jxr_string">"GO:0005737"</span>, CellularLocationVocabulary.<strong class="jxr_keyword">class</strong>)));
+<a class="jxr_linenumber" name="L268" href="#L268">268</a> 		
+<a class="jxr_linenumber" name="L269" href="#L269">269</a> 		assertTrue(mergedModel.containsID(<span class="jxr_string">"http://identifiers.org/uniprot/P13631"</span>));
+<a class="jxr_linenumber" name="L270" href="#L270">270</a> 		assertFalse(mergedModel.containsID(<span class="jxr_string">"http://identifiers.org/uniprot/P22932"</span>));		
+<a class="jxr_linenumber" name="L271" href="#L271">271</a> 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, <span class="jxr_string">"UNIPROT"</span>, <span class="jxr_string">"P01118"</span>, UnificationXref.<strong class="jxr_keyword">class</strong>)));
+<a class="jxr_linenumber" name="L272" href="#L272">272</a> 		assertFalse(mergedModel.containsID(<span class="jxr_string">"http://identifiers.org/uniprot/P01118"</span>)); //must be replaced with P01116 and gone
+<a class="jxr_linenumber" name="L273" href="#L273">273</a> 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, <span class="jxr_string">"UNIPROT"</span>, <span class="jxr_string">"P01116"</span>, UnificationXref.<strong class="jxr_keyword">class</strong>)));
+<a class="jxr_linenumber" name="L274" href="#L274">274</a> 		assertTrue(mergedModel.containsID(<span class="jxr_string">"http://identifiers.org/uniprot/P01116"</span>));
+<a class="jxr_linenumber" name="L275" href="#L275">275</a> 		
+<a class="jxr_linenumber" name="L276" href="#L276">276</a> 		ProteinReference pr = (ProteinReference)mergedModel.getByID(<span class="jxr_string">"http://identifiers.org/uniprot/P27797"</span>);
+<a class="jxr_linenumber" name="L277" href="#L277">277</a> 		assertEquals(10, pr.getName().size()); <em class="jxr_comment">//make sure this one is passed (important!)</em>
+<a class="jxr_linenumber" name="L278" href="#L278">278</a> 		assertEquals(<span class="jxr_string">"CALR_HUMAN"</span>, pr.getDisplayName());
+<a class="jxr_linenumber" name="L279" href="#L279">279</a> 		assertEquals(<span class="jxr_string">"Calreticulin"</span>, pr.getStandardName());
+<a class="jxr_linenumber" name="L280" href="#L280">280</a> 		System.out.println(<span class="jxr_string">"CALR_HUMAN xrefs: "</span> + pr.getXref().toString());
+<a class="jxr_linenumber" name="L281" href="#L281">281</a> 		assertEquals(11, pr.getXref().size()); <em class="jxr_comment">//11, no duplicate xrefs (10 of the warehouse PR, +1 - comes from...)!</em>
+<a class="jxr_linenumber" name="L282" href="#L282">282</a> 		assertEquals(<span class="jxr_string">"9606"</span>, pr.getOrganism().getXref().iterator().next().getId());
+<a class="jxr_linenumber" name="L283" href="#L283">283</a> 		
+<a class="jxr_linenumber" name="L284" href="#L284">284</a> 		<em class="jxr_comment">// test proper merge of small molecule reference</em>
+<a class="jxr_linenumber" name="L285" href="#L285">285</a> 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, <strong class="jxr_keyword">null</strong>, <span class="jxr_string">"http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate"</span>,SmallMolecule.<strong class="jxr_keyword">class</strong>)));
+<a class="jxr_linenumber" name="L286" href="#L286">286</a> 		assertTrue(mergedModel.containsID(<span class="jxr_string">"http://identifiers.org/chebi/CHEBI:20"</span>));
+<a class="jxr_linenumber" name="L287" href="#L287">287</a> <em class="jxr_comment">//		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "CHEBI", "CHEBI:20", ChemicalStructure.class))); //OLD SDF converter used such URI</em>
+<a class="jxr_linenumber" name="L288" href="#L288">288</a> 		SmallMoleculeReference smr = (SmallMoleculeReference) mergedModel.getByID(<span class="jxr_string">"http://identifiers.org/chebi/CHEBI:20"</span>);
+<a class="jxr_linenumber" name="L289" href="#L289">289</a> 		assertNotNull(smr.getStructure());
+<a class="jxr_linenumber" name="L290" href="#L290">290</a> 		assertTrue(StructureFormatType.InChI == smr.getStructure().getStructureFormat());
+<a class="jxr_linenumber" name="L291" href="#L291">291</a> 		assertNotNull(smr.getStructure().getStructureData());
+<a class="jxr_linenumber" name="L292" href="#L292">292</a> 		
+<a class="jxr_linenumber" name="L293" href="#L293">293</a> 		assertTrue(!mergedModel.containsID(Normalizer.uri(XML_BASE, <strong class="jxr_keyword">null</strong>, <span class="jxr_string">"http://www.biopax.org/examples/myExample#ChemicalStructure_8"</span>,ChemicalStructure.<strong class="jxr_keyword">class</strong>)));
+<a class="jxr_linenumber" name="L294" href="#L294">294</a> 
+<a class="jxr_linenumber" name="L295" href="#L295">295</a> 		<em class="jxr_comment">//a special test id-mapping file (SID, CID to ChEBI) is present.</em>
+<a class="jxr_linenumber" name="L296" href="#L296">296</a> 		<em class="jxr_comment">// The 14438 SMR won't be replaced/merged, because its original xref has 'PubChem' as db name (AMBIGUOUS)</em>
+<a class="jxr_linenumber" name="L297" href="#L297">297</a> 		assertTrue(mergedModel.containsID(<span class="jxr_string">"http://identifiers.org/pubchem.substance/14438"</span>)); //<strong class="jxr_keyword">if</strong> it were 'PubChem-substance' it would map to CHEBI:20
+<a class="jxr_linenumber" name="L298" href="#L298">298</a> 		<em class="jxr_comment">// But 14439 is replaced/merged</em>
+<a class="jxr_linenumber" name="L299" href="#L299">299</a> 		assertFalse(mergedModel.containsID(<span class="jxr_string">"http://identifiers.org/pubchem.substance/14439"</span>)); //maps to CHEBI:28
+<a class="jxr_linenumber" name="L300" href="#L300">300</a> 				
+<a class="jxr_linenumber" name="L301" href="#L301">301</a> 		SmallMolecule sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, <strong class="jxr_keyword">null</strong>, 
+<a class="jxr_linenumber" name="L302" href="#L302">302</a> 				<span class="jxr_string">"http://pathwaycommons.org/test2#alpha-D-glucose_6-phosphate"</span>,SmallMolecule.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L303" href="#L303">303</a> 		smr = (SmallMoleculeReference)sm.getEntityReference();
+<a class="jxr_linenumber" name="L304" href="#L304">304</a> 		assertNotNull(smr);
+<a class="jxr_linenumber" name="L305" href="#L305">305</a> 		assertEquals(<span class="jxr_string">"http://identifiers.org/chebi/CHEBI:422"</span>, smr.getRDFId());
+<a class="jxr_linenumber" name="L306" href="#L306">306</a> 		<em class="jxr_comment">// smr must contain one member SMR</em>
+<a class="jxr_linenumber" name="L307" href="#L307">307</a> 		<em class="jxr_comment">// but only if ChEBI OBO was also imported (ChebiOntologyAnalysis run)!</em>
+<a class="jxr_linenumber" name="L308" href="#L308">308</a> 		assertEquals(1, smr.getMemberEntityReference().size());
+<a class="jxr_linenumber" name="L309" href="#L309">309</a> <em class="jxr_comment">//		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());</em>
+<a class="jxr_linenumber" name="L310" href="#L310">310</a> 		assertEquals(20, smr.getXref().size());<em class="jxr_comment">//1 unif. + 10 rel.  + 9 PubMed xrefs are there!</em>
+<a class="jxr_linenumber" name="L311" href="#L311">311</a> 		
+<a class="jxr_linenumber" name="L312" href="#L312">312</a> 		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID(<span class="jxr_string">"http://identifiers.org/chebi/CHEBI:20"</span>);
+<a class="jxr_linenumber" name="L313" href="#L313">313</a> 		assertEquals(<span class="jxr_string">"(+)-camphene"</span>, msmr.getDisplayName());
+<a class="jxr_linenumber" name="L314" href="#L314">314</a> 		assertEquals(<span class="jxr_string">"(1R,4S)-2,2-dimethyl-3-methylidenebicyclo[2.2.1]heptane"</span>, msmr.getStandardName());
+<a class="jxr_linenumber" name="L315" href="#L315">315</a> <em class="jxr_comment">//		System.out.println("merged chebi:20 xrefs: " + msmr.getXref().toString());</em>
+<a class="jxr_linenumber" name="L316" href="#L316">316</a> 		assertEquals(10, msmr.getXref().size());
+<a class="jxr_linenumber" name="L317" href="#L317">317</a> 		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
+<a class="jxr_linenumber" name="L318" href="#L318">318</a> 		
+<a class="jxr_linenumber" name="L319" href="#L319">319</a> 		sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, <strong class="jxr_keyword">null</strong>, 
+<a class="jxr_linenumber" name="L320" href="#L320">320</a> 				<span class="jxr_string">"http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate"</span>,SmallMolecule.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L321" href="#L321">321</a> 		smr = (SmallMoleculeReference)sm.getEntityReference();
+<a class="jxr_linenumber" name="L322" href="#L322">322</a> 		assertNotNull(smr);
+<a class="jxr_linenumber" name="L323" href="#L323">323</a> 		assertEquals(smr, msmr);<em class="jxr_comment">//CHEBI:20</em>
+<a class="jxr_linenumber" name="L324" href="#L324">324</a> 
+<a class="jxr_linenumber" name="L325" href="#L325">325</a> 		smr = (SmallMoleculeReference) mergedModel.getByID(<span class="jxr_string">"http://identifiers.org/chebi/CHEBI:28"</span>);
+<a class="jxr_linenumber" name="L326" href="#L326">326</a> <em class="jxr_comment">//		System.out.println("merged chebi:28 xrefs: " + smr.getXref().toString());</em>
+<a class="jxr_linenumber" name="L327" href="#L327">327</a> 		assertEquals(12, smr.getXref().size()); <em class="jxr_comment">// relationship xrefs were removed before merging</em>
+<a class="jxr_linenumber" name="L328" href="#L328">328</a> 		assertEquals(<span class="jxr_string">"(R)-linalool"</span>, smr.getDisplayName());
+<a class="jxr_linenumber" name="L329" href="#L329">329</a> 		assertEquals(5, smr.getEntityReferenceOf().size());
+<a class="jxr_linenumber" name="L330" href="#L330">330</a> 		
+<a class="jxr_linenumber" name="L331" href="#L331">331</a> 		BioSource bs = (BioSource) mergedModel.getByID(HsUri);
+<a class="jxr_linenumber" name="L332" href="#L332">332</a> 		assertNotNull(bs);
+<a class="jxr_linenumber" name="L333" href="#L333">333</a> 		assertEquals(1, bs.getXref().size());
+<a class="jxr_linenumber" name="L334" href="#L334">334</a> 		UnificationXref x = (UnificationXref) bs.getXref().iterator().next();
+<a class="jxr_linenumber" name="L335" href="#L335">335</a> 		assertEquals(1, x.getXrefOf().size());
+<a class="jxr_linenumber" name="L336" href="#L336">336</a> 		assertEquals(HsUri, x.getXrefOf().iterator().next().getRDFId());
+<a class="jxr_linenumber" name="L337" href="#L337">337</a> 		assertEquals(bs, x.getXrefOf().iterator().next());
+<a class="jxr_linenumber" name="L338" href="#L338">338</a> <em class="jxr_comment">//		System.out.println(x.getRDFId() + " is " + x);</em>
+<a class="jxr_linenumber" name="L339" href="#L339">339</a> 		UnificationXref ux = (UnificationXref) mergedModel.getByID(Normalizer.uri(XML_BASE, <span class="jxr_string">"TAXONOMY"</span>, <span class="jxr_string">"9606"</span>, UnificationXref.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L340" href="#L340">340</a> <em class="jxr_comment">//		System.out.println(ux.getRDFId() + " - " + ux);</em>
+<a class="jxr_linenumber" name="L341" href="#L341">341</a> 		assertEquals(1, ux.getXrefOf().size());
+<a class="jxr_linenumber" name="L342" href="#L342">342</a> 		
+<a class="jxr_linenumber" name="L343" href="#L343">343</a> 		<em class="jxr_comment">// check features from the warehouse and pathway data were merged properly</em>
+<a class="jxr_linenumber" name="L344" href="#L344">344</a> 		pr = (ProteinReference)mergedModel.getByID(<span class="jxr_string">"http://identifiers.org/uniprot/P01116"</span>);
+<a class="jxr_linenumber" name="L345" href="#L345">345</a> 		assertEquals(5, pr.getEntityFeature().size()); <em class="jxr_comment">// 3 from test uniprot + 2 from test data files</em>
+<a class="jxr_linenumber" name="L346" href="#L346">346</a> 		<strong class="jxr_keyword">for</strong>(EntityFeature ef : pr.getEntityFeature()) {
+<a class="jxr_linenumber" name="L347" href="#L347">347</a> 			assertTrue(pr == ef.getEntityFeatureOf());
+<a class="jxr_linenumber" name="L348" href="#L348">348</a> 		}
+<a class="jxr_linenumber" name="L349" href="#L349">349</a> 		
+<a class="jxr_linenumber" name="L350" href="#L350">350</a> 		<em class="jxr_comment">// inspired by humancyc case ;)</em>
+<a class="jxr_linenumber" name="L351" href="#L351">351</a> 		assertTrue(mergedModel.containsID(<span class="jxr_string">"http://identifiers.org/pubmed/9763671"</span>));
+<a class="jxr_linenumber" name="L352" href="#L352">352</a> 		PublicationXref px = (PublicationXref) mergedModel.getByID(<span class="jxr_string">"http://identifiers.org/pubmed/9763671"</span>);
+<a class="jxr_linenumber" name="L353" href="#L353">353</a> 		assertEquals(2, px.getXrefOf().size()); 
+<a class="jxr_linenumber" name="L354" href="#L354">354</a> 		<em class="jxr_comment">//these are not the two original ProteinReference (got replaced/removed)</em>
+<a class="jxr_linenumber" name="L355" href="#L355">355</a> 		<em class="jxr_comment">//the first owner of the px (PR)</em>
+<a class="jxr_linenumber" name="L356" href="#L356">356</a> 		assertTrue(px.getXrefOf().contains(mergedModel.getByID(<span class="jxr_string">"http://identifiers.org/uniprot/O75191"</span>)));
+<a class="jxr_linenumber" name="L357" href="#L357">357</a> 		<em class="jxr_comment">//the second owner of the px (Protein)</em>
+<a class="jxr_linenumber" name="L358" href="#L358">358</a> 		String pUri = Normalizer.uri(XML_BASE, <strong class="jxr_keyword">null</strong>, <span class="jxr_string">"http://biocyc.org/biopax/biopax-level3Protein155359"</span>, Protein.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L359" href="#L359">359</a> 		System.out.println(<span class="jxr_string">"pUri="</span> + pUri);
+<a class="jxr_linenumber" name="L360" href="#L360">360</a> 		Protein p = (Protein) mergedModel.getByID(pUri);
+<a class="jxr_linenumber" name="L361" href="#L361">361</a> 		assertNotNull(p);
+<a class="jxr_linenumber" name="L362" href="#L362">362</a> 		System.out.println(px + <span class="jxr_string">", xrefOf="</span> + px.getXrefOf());
+<a class="jxr_linenumber" name="L363" href="#L363">363</a> <em class="jxr_comment">//		assertTrue(px.getXrefOf().contains(p));</em>
+<a class="jxr_linenumber" name="L364" href="#L364">364</a> 		<strong class="jxr_keyword">for</strong>(XReferrable r : px.getXrefOf()) {
+<a class="jxr_linenumber" name="L365" href="#L365">365</a> 			<strong class="jxr_keyword">if</strong>(r.getRDFId().equals(pUri))
+<a class="jxr_linenumber" name="L366" href="#L366">366</a> 				assertEquals(p, r);
+<a class="jxr_linenumber" name="L367" href="#L367">367</a> 		}
+<a class="jxr_linenumber" name="L368" href="#L368">368</a> 		
+<a class="jxr_linenumber" name="L369" href="#L369">369</a> 		<em class="jxr_comment">// check a SMR and member SMR</em>
+<a class="jxr_linenumber" name="L370" href="#L370">370</a> 		msmr = (SmallMoleculeReference) mergedModel
+<a class="jxr_linenumber" name="L371" href="#L371">371</a> 			.getByID(Normalizer.uri(XML_BASE, <strong class="jxr_keyword">null</strong>, <span class="jxr_string">"http://biocyc.org/biopax/biopax-level3SmallMoleculeReference171684"</span>,SmallMoleculeReference.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L372" href="#L372">372</a> 		assertNotNull(msmr);
+<a class="jxr_linenumber" name="L373" href="#L373">373</a> 		assertNull(mergedModel.getByID(Normalizer.uri(XML_BASE, <strong class="jxr_keyword">null</strong>, <span class="jxr_string">"http://biocyc.org/biopax/biopax-level3SmallMoleculeReference165390"</span>,SmallMoleculeReference.<strong class="jxr_keyword">class</strong>)));
+<a class="jxr_linenumber" name="L374" href="#L374">374</a> 		smr = (SmallMoleculeReference)mergedModel.getByID(<span class="jxr_string">"http://identifiers.org/chebi/CHEBI:28"</span>); // was matched/replaced the same URI Warehouse SMR
+<a class="jxr_linenumber" name="L375" href="#L375">375</a> 		sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, <strong class="jxr_keyword">null</strong>, <span class="jxr_string">"http://biocyc.org/biopax/biopax-level3SmallMolecule173158"</span>,SmallMolecule.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L376" href="#L376">376</a> 		assertFalse(smr.getXref().isEmpty());
+<a class="jxr_linenumber" name="L377" href="#L377">377</a> 		assertFalse(smr.getMemberEntityReference().isEmpty());	
+<a class="jxr_linenumber" name="L378" href="#L378">378</a> 		assertFalse(smr.getEntityReferenceOf().isEmpty());
+<a class="jxr_linenumber" name="L379" href="#L379">379</a> 		assertTrue(smr.getEntityReferenceOf().contains(sm));
+<a class="jxr_linenumber" name="L380" href="#L380">380</a> 		smr = (SmallMoleculeReference)mergedModel.getByID(<span class="jxr_string">"http://identifiers.org/chebi/CHEBI:36141"</span>); //wasn't replaced (not found in Warehouse!)		
+<a class="jxr_linenumber" name="L381" href="#L381">381</a> 		
+<a class="jxr_linenumber" name="L382" href="#L382">382</a> 		<em class="jxr_comment">// there were 3 member ERs in the orig. file, but, </em>
+<a class="jxr_linenumber" name="L383" href="#L383">383</a> 		<em class="jxr_comment">// e.g., SmallMoleculeReference165390 was removed (became dangling after the replacement of CHEBI:28)</em>
+<a class="jxr_linenumber" name="L384" href="#L384">384</a> 		assertEquals(1, msmr.getMemberEntityReferenceOf().size()); 
+<a class="jxr_linenumber" name="L385" href="#L385">385</a> 		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
+<a class="jxr_linenumber" name="L386" href="#L386">386</a> 		
+<a class="jxr_linenumber" name="L387" href="#L387">387</a> 		<em class="jxr_comment">// the following would be also true if we'd keep old property/inverse prop. relationships, but we do not</em>
+<a class="jxr_linenumber" name="L388" href="#L388">388</a> <em class="jxr_comment">//		assertEquals(2, msmr.getMemberEntityReferenceOf().size());</em>
+<a class="jxr_linenumber" name="L389" href="#L389">389</a> <em class="jxr_comment">//		assertTrue(msmr.getMemberEntityReferenceOf().contains(mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28")));	</em>
+<a class="jxr_linenumber" name="L390" href="#L390">390</a> 	}
+<a class="jxr_linenumber" name="L391" href="#L391">391</a> 		
+<a class="jxr_linenumber" name="L392" href="#L392">392</a> 	
+<a class="jxr_linenumber" name="L393" href="#L393">393</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> List&lt;Model&gt; initPathwayModels() <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L394" href="#L394">394</a> 		<strong class="jxr_keyword">final</strong> List&lt;Model&gt; pathwayModels = <strong class="jxr_keyword">new</strong> ArrayList&lt;Model&gt;();
+<a class="jxr_linenumber" name="L395" href="#L395">395</a> 		
+<a class="jxr_linenumber" name="L396" href="#L396">396</a> 		SimpleIOHandler reader = <strong class="jxr_keyword">new</strong> SimpleIOHandler();
+<a class="jxr_linenumber" name="L397" href="#L397">397</a> 		Normalizer normalizer = <strong class="jxr_keyword">new</strong> Normalizer();
+<a class="jxr_linenumber" name="L398" href="#L398">398</a> 		normalizer.setXmlBase(XML_BASE);
+<a class="jxr_linenumber" name="L399" href="#L399">399</a> 		reader.mergeDuplicates(<strong class="jxr_keyword">true</strong>);
+<a class="jxr_linenumber" name="L400" href="#L400">400</a> 		Model model;
+<a class="jxr_linenumber" name="L401" href="#L401">401</a> 
+<a class="jxr_linenumber" name="L402" href="#L402">402</a> 		model = reader.convertFromOWL(resourceLoader
+<a class="jxr_linenumber" name="L403" href="#L403">403</a> 			.getResource(<span class="jxr_string">"classpath:merge/pathwaydata1.owl"</span>).getInputStream());
+<a class="jxr_linenumber" name="L404" href="#L404">404</a> 		normalizer.normalize(model);
+<a class="jxr_linenumber" name="L405" href="#L405">405</a> 		pathwayModels.add(model);
+<a class="jxr_linenumber" name="L406" href="#L406">406</a> 		
+<a class="jxr_linenumber" name="L407" href="#L407">407</a> 		model = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L408" href="#L408">408</a> 		model = reader.convertFromOWL(resourceLoader
+<a class="jxr_linenumber" name="L409" href="#L409">409</a> 			.getResource(<span class="jxr_string">"classpath:merge/pathwaydata2.owl"</span>).getInputStream());
+<a class="jxr_linenumber" name="L410" href="#L410">410</a> 		normalizer.normalize(model);
+<a class="jxr_linenumber" name="L411" href="#L411">411</a> 		pathwayModels.add(model);
+<a class="jxr_linenumber" name="L412" href="#L412">412</a> 		model = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L413" href="#L413">413</a> 		model = reader.convertFromOWL(resourceLoader
+<a class="jxr_linenumber" name="L414" href="#L414">414</a> 			.getResource(<span class="jxr_string">"classpath:merge/pid_60446.owl"</span>).getInputStream());
+<a class="jxr_linenumber" name="L415" href="#L415">415</a> 		normalizer.normalize(model);
+<a class="jxr_linenumber" name="L416" href="#L416">416</a> 		pathwayModels.add(model); <em class="jxr_comment">//PR P22932 caused the trouble</em>
+<a class="jxr_linenumber" name="L417" href="#L417">417</a> 		model = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L418" href="#L418">418</a> 		model = reader.convertFromOWL(resourceLoader
+<a class="jxr_linenumber" name="L419" href="#L419">419</a> 			.getResource(<span class="jxr_string">"classpath:merge/pid_6349.owl"</span>).getInputStream());
+<a class="jxr_linenumber" name="L420" href="#L420">420</a> 		normalizer.normalize(model);
+<a class="jxr_linenumber" name="L421" href="#L421">421</a> 		pathwayModels.add(model); <em class="jxr_comment">//Xref for P01118 caused the trouble</em>
+<a class="jxr_linenumber" name="L422" href="#L422">422</a> 		model = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L423" href="#L423">423</a> 		model = reader.convertFromOWL(resourceLoader
+<a class="jxr_linenumber" name="L424" href="#L424">424</a> 			.getResource(<span class="jxr_string">"classpath:merge/hcyc.owl"</span>).getInputStream());
+<a class="jxr_linenumber" name="L425" href="#L425">425</a> 		normalizer.normalize(model);
+<a class="jxr_linenumber" name="L426" href="#L426">426</a> 		pathwayModels.add(model);
+<a class="jxr_linenumber" name="L427" href="#L427">427</a> 		model = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L428" href="#L428">428</a> 		model = reader.convertFromOWL(resourceLoader
+<a class="jxr_linenumber" name="L429" href="#L429">429</a> 			.getResource(<span class="jxr_string">"classpath:merge/hcyc2.owl"</span>).getInputStream());
+<a class="jxr_linenumber" name="L430" href="#L430">430</a> <em class="jxr_comment">//		normalizer.normalize(model);</em>
+<a class="jxr_linenumber" name="L431" href="#L431">431</a> 		pathwayModels.add(model);	
+<a class="jxr_linenumber" name="L432" href="#L432">432</a> 		
+<a class="jxr_linenumber" name="L433" href="#L433">433</a> 		<strong class="jxr_keyword">return</strong> pathwayModels;
+<a class="jxr_linenumber" name="L434" href="#L434">434</a> 	}
+<a class="jxr_linenumber" name="L435" href="#L435">435</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2009&#x2013;2015 <a href="http://www.pathwaycommons.org">Pathway Commons</a>. All rights reserved.</div>
+</body>
+</html>

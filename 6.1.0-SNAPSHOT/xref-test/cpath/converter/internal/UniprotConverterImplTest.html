@@ -1,0 +1,187 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>UniprotConverterImplTest xref</title>
+<link type="text/css" rel="stylesheet" href="../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../testapidocs/cpath/converter/internal/UniprotConverterImplTest.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> cpath.converter.internal;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <em class="jxr_javadoccomment"> ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)</em>
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <em class="jxr_javadoccomment"> ** and University of Toronto (UofT).</em>
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <em class="jxr_javadoccomment"> **</em>
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <em class="jxr_javadoccomment"> ** This is free software; you can redistribute it and/or modify it</em>
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <em class="jxr_javadoccomment"> ** under the terms of the GNU Lesser General Public License as published</em>
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <em class="jxr_javadoccomment"> ** by the Free Software Foundation; either version 2.1 of the License, or</em>
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <em class="jxr_javadoccomment"> ** any later version.</em>
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <em class="jxr_javadoccomment"> **</em>
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <em class="jxr_javadoccomment"> ** This library is distributed in the hope that it will be useful, but</em>
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_javadoccomment"> ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_javadoccomment"> ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_javadoccomment"> ** documentation provided hereunder is on an "as is" basis, and</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <em class="jxr_javadoccomment"> ** both UofT and MSKCC have no obligations to provide maintenance, </em>
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <em class="jxr_javadoccomment"> ** support, updates, enhancements or modifications.  In no event shall</em>
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <em class="jxr_javadoccomment"> ** UofT or MSKCC be liable to any party for direct, indirect, special,</em>
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  <em class="jxr_javadoccomment"> ** incidental or consequential damages, including lost profits, arising</em>
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <em class="jxr_javadoccomment"> ** out of the use of this software and its documentation, even if</em>
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <em class="jxr_javadoccomment"> ** UofT or MSKCC have been advised of the possibility of such damage.  </em>
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <em class="jxr_javadoccomment"> ** See the GNU Lesser General Public License for more details.</em>
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  <em class="jxr_javadoccomment"> **</em>
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <em class="jxr_javadoccomment"> ** You should have received a copy of the GNU Lesser General Public License</em>
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <em class="jxr_javadoccomment"> ** along with this software; if not, write to the Free Software Foundation,</em>
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <em class="jxr_javadoccomment"> ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;</em>
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <em class="jxr_javadoccomment"> ** or find it at <a href="http://www.fsf.org/" target="alexandria_uri">http://www.fsf.org/</a> or http://www.gnu.org.</em>
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  <em class="jxr_javadoccomment"> **/</em>
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> org.junit.Assert.*;
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <strong class="jxr_keyword">import</strong> java.io.ByteArrayInputStream;
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <strong class="jxr_keyword">import</strong> java.io.ByteArrayOutputStream;
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">import</strong> java.io.File;
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">import</strong> java.io.FileInputStream;
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>  <strong class="jxr_keyword">import</strong> java.io.FileOutputStream;
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>  <strong class="jxr_keyword">import</strong> java.io.IOException;
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  <strong class="jxr_keyword">import</strong> java.util.Set;
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  <strong class="jxr_keyword">import</strong> java.util.zip.ZipInputStream;
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.io.*;
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.Model;
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.EntityFeature;
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.ModificationFeature;
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.ProteinReference;
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.RelationshipXref;
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.SequenceLocation;
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.SequenceSite;
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.Xref;
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>  <strong class="jxr_keyword">import</strong> org.biopax.validator.utils.Normalizer;
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>  <strong class="jxr_keyword">import</strong> org.junit.Test;
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>  
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>  <strong class="jxr_keyword">import</strong> cpath.dao.CPathUtils;
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>  <strong class="jxr_keyword">import</strong> cpath.importer.Converter;
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>  <strong class="jxr_keyword">import</strong> cpath.importer.ImportFactory;
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>  
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>  <em class="jxr_javadoccomment"> * @author rodche</em>
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>  <em class="jxr_javadoccomment"> *</em>
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../../cpath/converter/internal/UniprotConverterImplTest.html">UniprotConverterImplTest</a> {
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>  
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>  	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>  <em class="jxr_javadoccomment">	 * Test method for {@link cpath.converter.internal.UniprotConverterImpl#convert(java.io.InputStream)}.</em>
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>  <em class="jxr_javadoccomment">	 * @throws IOException </em>
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>  <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>  	@Test
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>  	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> testConvert() <strong class="jxr_keyword">throws</strong> IOException {
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>  		
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>  		<em class="jxr_comment">//test the tricky FT pattern first</em>
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>  		assertEquals(<span class="jxr_string">"AA-(test test)test"</span>, <span class="jxr_string">"AA-(test test)test (Bysimilarity)"</span>.replaceFirst(<span class="jxr_string">"&#92;&#92;([^()]+?&#92;&#92;)$"</span>,<span class="jxr_string">""</span>).trim());	
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>  		
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>  		ByteArrayOutputStream bos = <strong class="jxr_keyword">new</strong> ByteArrayOutputStream();
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>  		CPathUtils.unzip(<strong class="jxr_keyword">new</strong> ZipInputStream(<strong class="jxr_keyword">new</strong> FileInputStream(
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>  				getClass().getResource(<span class="jxr_string">"/test_uniprot_data.dat.zip"</span>).getFile())), bos);
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>  		bos.close();	
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>  		String outFilename = getClass().getClassLoader().getResource(<span class="jxr_string">""</span>).getPath() 
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>  				+ File.separator + <span class="jxr_string">"testConvertUniprot.out.owl"</span>;
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>  		Converter converter = ImportFactory.newConverter(<span class="jxr_string">"cpath.converter.internal.UniprotConverterImpl"</span>);
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>  		converter.setXmlBase(<strong class="jxr_keyword">null</strong>);
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>  		converter.convert(<strong class="jxr_keyword">new</strong> ByteArrayInputStream(bos.toByteArray()), <strong class="jxr_keyword">new</strong> FileOutputStream(outFilename));
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>  
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>  		<em class="jxr_comment">// read Model</em>
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>  		Model model = <strong class="jxr_keyword">new</strong> SimpleIOHandler().convertFromOWL(<strong class="jxr_keyword">new</strong> FileInputStream(outFilename));
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>  		Set&lt;ProteinReference&gt; proteinReferences = model.getObjects(ProteinReference.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>  		assertEquals(10, proteinReferences.size());
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>  		assertTrue(proteinReferences.iterator().next().getXref().iterator().hasNext());
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>  				
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>  		<em class="jxr_comment">//</em>
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>  		ProteinReference pr = (ProteinReference) model.getByID(<span class="jxr_string">"http://identifiers.org/uniprot/P27797"</span>);
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>  		assertEquals(10, pr.getName().size()); <em class="jxr_comment">//make sure this one is passed (important!)</em>
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>  		assertEquals(<span class="jxr_string">"CALR_HUMAN"</span>, pr.getDisplayName());
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>  		assertEquals(<span class="jxr_string">"Calreticulin"</span>, pr.getStandardName());
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>  <em class="jxr_comment">//		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());</em>
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>  		assertEquals(10, pr.getXref().size()); <em class="jxr_comment">//10, no duplicates</em>
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>  		assertEquals(<span class="jxr_string">"http://identifiers.org/taxonomy/9606"</span>, pr.getOrganism().getRDFId());		
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>  		
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>  		<em class="jxr_comment">// test MOD_RES features are created</em>
+<a class="jxr_linenumber" name="L100" href="#L100">100</a> 		pr = (ProteinReference) model.getByID(<span class="jxr_string">"http://identifiers.org/uniprot/P62158"</span>);
+<a class="jxr_linenumber" name="L101" href="#L101">101</a> 		assertTrue(pr.getName().contains(<span class="jxr_string">"CALM2"</span>));
+<a class="jxr_linenumber" name="L102" href="#L102">102</a> 		assertTrue(pr.getName().contains(<span class="jxr_string">"CALM3"</span>));
+<a class="jxr_linenumber" name="L103" href="#L103">103</a> 		assertNotNull(pr);
+<a class="jxr_linenumber" name="L104" href="#L104">104</a> 		
+<a class="jxr_linenumber" name="L105" href="#L105">105</a> 		assertEquals(9, pr.getEntityFeature().size());
+<a class="jxr_linenumber" name="L106" href="#L106">106</a> 		
+<a class="jxr_linenumber" name="L107" href="#L107">107</a> 		<em class="jxr_comment">//check for a feature object by using URI generated the same way as it's in the converter:</em>
+<a class="jxr_linenumber" name="L108" href="#L108">108</a> 		String mfUri = Normalizer.uri(model.getXmlBase(), <strong class="jxr_keyword">null</strong>, pr.getDisplayName() + <span class="jxr_string">"_1"</span>, ModificationFeature.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L109" href="#L109">109</a> 		ModificationFeature mf = (ModificationFeature) model.getByID(mfUri);
+<a class="jxr_linenumber" name="L110" href="#L110">110</a> 		assertNotNull(mf);
+<a class="jxr_linenumber" name="L111" href="#L111">111</a> 		assertTrue(pr.getEntityFeature().contains(mf));
+<a class="jxr_linenumber" name="L112" href="#L112">112</a> 		SequenceLocation sl = mf.getFeatureLocation();
+<a class="jxr_linenumber" name="L113" href="#L113">113</a> 		assertTrue(sl instanceof SequenceSite);
+<a class="jxr_linenumber" name="L114" href="#L114">114</a> 		assertEquals(2, ((SequenceSite)sl).getSequencePosition());
+<a class="jxr_linenumber" name="L115" href="#L115">115</a> 		assertEquals(<span class="jxr_string">"MOD_RES N-acetylalanine"</span>, mf.getModificationType().getTerm().iterator().next());
+<a class="jxr_linenumber" name="L116" href="#L116">116</a> 		
+<a class="jxr_linenumber" name="L117" href="#L117">117</a> 		<em class="jxr_comment">//this is just to test for a bug in the DR text format parser...</em>
+<a class="jxr_linenumber" name="L118" href="#L118">118</a> 		<strong class="jxr_keyword">boolean</strong> rel = false;
+<a class="jxr_linenumber" name="L119" href="#L119">119</a> 		<strong class="jxr_keyword">for</strong>(Xref x : pr.getXref()) {
+<a class="jxr_linenumber" name="L120" href="#L120">120</a> 			<strong class="jxr_keyword">if</strong>(<span class="jxr_string">"NCBI GENE"</span>.equalsIgnoreCase(x.getDb())) {
+<a class="jxr_linenumber" name="L121" href="#L121">121</a> 				rel = <strong class="jxr_keyword">true</strong>;
+<a class="jxr_linenumber" name="L122" href="#L122">122</a> 				<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L123" href="#L123">123</a> 			}
+<a class="jxr_linenumber" name="L124" href="#L124">124</a> 		}
+<a class="jxr_linenumber" name="L125" href="#L125">125</a> 		assertTrue(rel);
+<a class="jxr_linenumber" name="L126" href="#L126">126</a> 		<em class="jxr_comment">//test if the correct RefSeq xrefs was created from the DR line despite having something ([bla-bla]) after the '.' at the end</em>
+<a class="jxr_linenumber" name="L127" href="#L127">127</a> 		String uri = Normalizer.uri(model.getXmlBase(), <span class="jxr_string">"REFSEQ"</span>, <span class="jxr_string">"NP_001734_identity"</span>, RelationshipXref.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L128" href="#L128">128</a> 		assertNotNull(model.getByID(uri));
+<a class="jxr_linenumber" name="L129" href="#L129">129</a> 		<em class="jxr_comment">//test if the correct Ensembl ENSG* xrefs was created from the DR line despite having something ([bla-bla]) after the '.' at the end</em>
+<a class="jxr_linenumber" name="L130" href="#L130">130</a> 		uri = Normalizer.uri(model.getXmlBase(), <span class="jxr_string">"ENSEMBL"</span>, <span class="jxr_string">"ENSG00000143933_identity"</span>, RelationshipXref.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L131" href="#L131">131</a> 		assertNotNull(model.getByID(uri));
+<a class="jxr_linenumber" name="L132" href="#L132">132</a> 		uri = Normalizer.uri(model.getXmlBase(), <span class="jxr_string">"NCBI GENE"</span>, <span class="jxr_string">"801_identity"</span>, RelationshipXref.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L133" href="#L133">133</a> 		assertNotNull(model.getByID(uri));
+<a class="jxr_linenumber" name="L134" href="#L134">134</a> 		
+<a class="jxr_linenumber" name="L135" href="#L135">135</a> 		uri = Normalizer.uri(model.getXmlBase(), <span class="jxr_string">"REFSEQ"</span>, <span class="jxr_string">"NP_619650_identity"</span>, RelationshipXref.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L136" href="#L136">136</a> 		assertNotNull(model.getByID(uri));
+<a class="jxr_linenumber" name="L137" href="#L137">137</a> 		<em class="jxr_comment">//but the parser should not create xrefs from for the last parts in DR like "...; -.", "; Homo sapiens.\n", etc.</em>
+<a class="jxr_linenumber" name="L138" href="#L138">138</a> 		uri = Normalizer.uri(model.getXmlBase(), <span class="jxr_string">"REFSEQ"</span>, <span class="jxr_string">"-_identity"</span>, RelationshipXref.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L139" href="#L139">139</a> 		assertNull(model.getByID(uri));	
+<a class="jxr_linenumber" name="L140" href="#L140">140</a> 		uri = Normalizer.uri(model.getXmlBase(), <span class="jxr_string">"ENSEMBL"</span>, <span class="jxr_string">"Homo_sapiens_identity"</span>, RelationshipXref.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L141" href="#L141">141</a> 		assertNull(model.getByID(uri));	
+<a class="jxr_linenumber" name="L142" href="#L142">142</a> 		
+<a class="jxr_linenumber" name="L143" href="#L143">143</a> 		<em class="jxr_comment">//total xrefs generated for P62158</em>
+<a class="jxr_linenumber" name="L144" href="#L144">144</a> 		assertEquals(32, pr.getXref().size());
+<a class="jxr_linenumber" name="L145" href="#L145">145</a> 		
+<a class="jxr_linenumber" name="L146" href="#L146">146</a> 		<em class="jxr_comment">//test for the following FT entry (two-line) was correctly parsed/converted:</em>
+<a class="jxr_linenumber" name="L147" href="#L147">147</a> 		<em class="jxr_comment">//FT   MOD_RES      45     45       Phosphothreonine; by CaMK4 (By</em>
+<a class="jxr_linenumber" name="L148" href="#L148">148</a> 		<em class="jxr_comment">//FT                                similarity).</em>
+<a class="jxr_linenumber" name="L149" href="#L149">149</a> 		EntityFeature f = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L150" href="#L150">150</a> 		EntityFeature g = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L151" href="#L151">151</a> 		<strong class="jxr_keyword">for</strong>(EntityFeature ef : pr.getEntityFeature()) {
+<a class="jxr_linenumber" name="L152" href="#L152">152</a> 			assertEquals(1, ef.getComment().size());
+<a class="jxr_linenumber" name="L153" href="#L153">153</a> 			<strong class="jxr_keyword">if</strong>(ef.getComment().iterator().next().contains(<span class="jxr_string">"Phosphothreonine; by CaMK4"</span>))
+<a class="jxr_linenumber" name="L154" href="#L154">154</a> 				f = ef;
+<a class="jxr_linenumber" name="L155" href="#L155">155</a> 			<strong class="jxr_keyword">if</strong>(ef.getComment().iterator().next().contains(<span class="jxr_string">"AA-(test"</span>))
+<a class="jxr_linenumber" name="L156" href="#L156">156</a> 				g = ef;
+<a class="jxr_linenumber" name="L157" href="#L157">157</a> 		}
+<a class="jxr_linenumber" name="L158" href="#L158">158</a> 		assertNotNull(f);
+<a class="jxr_linenumber" name="L159" href="#L159">159</a> 		assertTrue(f instanceof ModificationFeature);
+<a class="jxr_linenumber" name="L160" href="#L160">160</a> 		assertTrue(((ModificationFeature)f).getModificationType() instanceof SequenceModificationVocabulary);
+<a class="jxr_linenumber" name="L161" href="#L161">161</a> 		assertEquals(<span class="jxr_string">"MOD_RES Phosphothreonine"</span>, ((ModificationFeature)f).getModificationType().getTerm().iterator().next());
+<a class="jxr_linenumber" name="L162" href="#L162">162</a> 		assertTrue(((ModificationFeature)f).getFeatureLocation() instanceof SequenceSite);
+<a class="jxr_linenumber" name="L163" href="#L163">163</a> 			
+<a class="jxr_linenumber" name="L164" href="#L164">164</a> 		<em class="jxr_comment">//another special test for records like this one:</em>
+<a class="jxr_linenumber" name="L165" href="#L165">165</a> 		<em class="jxr_comment">//FT   MOD_RES       1      1       AA-(test test)test (By</em>
+<a class="jxr_linenumber" name="L166" href="#L166">166</a> 		<em class="jxr_comment">//FT                                similarity).</em>
+<a class="jxr_linenumber" name="L167" href="#L167">167</a> 		assertNotNull(g);
+<a class="jxr_linenumber" name="L168" href="#L168">168</a> 		assertTrue(g instanceof ModificationFeature);
+<a class="jxr_linenumber" name="L169" href="#L169">169</a> 		assertTrue(((ModificationFeature)g).getModificationType() instanceof SequenceModificationVocabulary);
+<a class="jxr_linenumber" name="L170" href="#L170">170</a> 		assertEquals(<span class="jxr_string">"MOD_RES AA-(test test)test"</span>, ((ModificationFeature)g).getModificationType().getTerm().iterator().next());
+<a class="jxr_linenumber" name="L171" href="#L171">171</a> 		assertTrue(((ModificationFeature)g).getFeatureLocation() instanceof SequenceSite);
+<a class="jxr_linenumber" name="L172" href="#L172">172</a> 	}
+<a class="jxr_linenumber" name="L173" href="#L173">173</a> 
+<a class="jxr_linenumber" name="L174" href="#L174">174</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2009&#x2013;2015 <a href="http://www.pathwaycommons.org">Pathway Commons</a>. All rights reserved.</div>
+</body>
+</html>

@@ -94,7 +94,7 @@
 <a class="jxr_linenumber" name="L86" href="#L86">86</a>  <em class="jxr_javadoccomment">     * </em>
 <a class="jxr_linenumber" name="L87" href="#L87">87</a>  <em class="jxr_javadoccomment">	 * @throws IOException </em>
 <a class="jxr_linenumber" name="L88" href="#L88">88</a>  <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L89" href="#L89">89</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> convert(Model m, <a href="../../cpath/service/OutputFormat.html">OutputFormat</a> format, OutputStream os, Object... args) 
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> convert(Model m, OutputFormat format, OutputStream os, Object... args) 
 <a class="jxr_linenumber" name="L90" href="#L90">90</a>      		<strong class="jxr_keyword">throws</strong> IOException 
 <a class="jxr_linenumber" name="L91" href="#L91">91</a>      {
 <a class="jxr_linenumber" name="L92" href="#L92">92</a>  			<strong class="jxr_keyword">switch</strong> (format) {
@@ -145,10 +145,10 @@
 <a class="jxr_linenumber" name="L137" href="#L137">137</a> <em class="jxr_javadoccomment">     * @return data response with the converted data (up to 1Gb utf-8 string) </em>
 <a class="jxr_linenumber" name="L138" href="#L138">138</a> <em class="jxr_javadoccomment">     * 			or {@link ErrorResponse}.</em>
 <a class="jxr_linenumber" name="L139" href="#L139">139</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L140" href="#L140">140</a>     <strong class="jxr_keyword">public</strong> <a href="../../cpath/service/jaxb/ServiceResponse.html">ServiceResponse</a> convert(Model m, <a href="../../cpath/service/OutputFormat.html">OutputFormat</a> format, Object... args) 
+<a class="jxr_linenumber" name="L140" href="#L140">140</a>     <strong class="jxr_keyword">public</strong> ServiceResponse convert(Model m, OutputFormat format, Object... args) 
 <a class="jxr_linenumber" name="L141" href="#L141">141</a>     {
 <a class="jxr_linenumber" name="L142" href="#L142">142</a>     	<strong class="jxr_keyword">if</strong>(m == <strong class="jxr_keyword">null</strong> || m.getObjects().isEmpty()) {
-<a class="jxr_linenumber" name="L143" href="#L143">143</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../cpath/service/ErrorResponse.html">ErrorResponse</a>(NO_RESULTS_FOUND, <span class="jxr_string">"Empty BioPAX Model"</span>);
+<a class="jxr_linenumber" name="L143" href="#L143">143</a> 			<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ErrorResponse(NO_RESULTS_FOUND, <span class="jxr_string">"Empty BioPAX Model"</span>);
 <a class="jxr_linenumber" name="L144" href="#L144">144</a> 		}
 <a class="jxr_linenumber" name="L145" href="#L145">145</a>     	
 <a class="jxr_linenumber" name="L146" href="#L146">146</a> 		<em class="jxr_comment">// otherwise, convert, return a new DataResponse</em>
@@ -156,14 +156,14 @@
 <a class="jxr_linenumber" name="L148" href="#L148">148</a>     	ByteArrayOutputStream baos = <strong class="jxr_keyword">new</strong> ByteArrayOutputStream();
 <a class="jxr_linenumber" name="L149" href="#L149">149</a>     	<strong class="jxr_keyword">try</strong> {
 <a class="jxr_linenumber" name="L150" href="#L150">150</a>     		convert(m, format, baos, args);			
-<a class="jxr_linenumber" name="L151" href="#L151">151</a>     		DataResponse dataResponse = <strong class="jxr_keyword">new</strong> <a href="../../cpath/service/jaxb/DataResponse.html">DataResponse</a>();
+<a class="jxr_linenumber" name="L151" href="#L151">151</a>     		DataResponse dataResponse = <strong class="jxr_keyword">new</strong> DataResponse();
 <a class="jxr_linenumber" name="L152" href="#L152">152</a> 			dataResponse.setData(baos.toString());		
 <a class="jxr_linenumber" name="L153" href="#L153">153</a> 			<em class="jxr_comment">// extract and save data provider names</em>
 <a class="jxr_linenumber" name="L154" href="#L154">154</a> 			dataResponse.setProviders(providers(m));			
 <a class="jxr_linenumber" name="L155" href="#L155">155</a> 			<strong class="jxr_keyword">return</strong> dataResponse;
 <a class="jxr_linenumber" name="L156" href="#L156">156</a> 		}
 <a class="jxr_linenumber" name="L157" href="#L157">157</a>         <strong class="jxr_keyword">catch</strong> (Exception e) {
-<a class="jxr_linenumber" name="L158" href="#L158">158</a>         	<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> <a href="../../cpath/service/ErrorResponse.html">ErrorResponse</a>(INTERNAL_ERROR, e);
+<a class="jxr_linenumber" name="L158" href="#L158">158</a>         	<strong class="jxr_keyword">return</strong> <strong class="jxr_keyword">new</strong> ErrorResponse(INTERNAL_ERROR, e);
 <a class="jxr_linenumber" name="L159" href="#L159">159</a> 		}
 <a class="jxr_linenumber" name="L160" href="#L160">160</a>     }
 <a class="jxr_linenumber" name="L161" href="#L161">161</a> 
