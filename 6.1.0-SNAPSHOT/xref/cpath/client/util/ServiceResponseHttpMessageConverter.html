@@ -57,13 +57,13 @@
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>          <strong class="jxr_keyword">return</strong> Collections.unmodifiableList(mediaList);
 <a class="jxr_linenumber" name="L50" href="#L50">50</a>      }
 <a class="jxr_linenumber" name="L51" href="#L51">51</a>  
-<a class="jxr_linenumber" name="L52" href="#L52">52</a>      <strong class="jxr_keyword">public</strong> <a href="../../../cpath/service/jaxb/ServiceResponse.html">ServiceResponse</a> read(Class&lt;? <strong class="jxr_keyword">extends</strong> ServiceResponse&gt; clazz, HttpInputMessage inputMessage) 
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>      <strong class="jxr_keyword">public</strong> ServiceResponse read(Class&lt;? <strong class="jxr_keyword">extends</strong> ServiceResponse&gt; clazz, HttpInputMessage inputMessage) 
 <a class="jxr_linenumber" name="L53" href="#L53">53</a>      	<strong class="jxr_keyword">throws</strong> IOException, HttpMessageNotReadableException
 <a class="jxr_linenumber" name="L54" href="#L54">54</a>      {
 <a class="jxr_linenumber" name="L55" href="#L55">55</a>          <strong class="jxr_keyword">return</strong> (ServiceResponse) jaxb.unmarshal(<strong class="jxr_keyword">new</strong> StreamSource(inputMessage.getBody()));
 <a class="jxr_linenumber" name="L56" href="#L56">56</a>      }
 <a class="jxr_linenumber" name="L57" href="#L57">57</a>  
-<a class="jxr_linenumber" name="L58" href="#L58">58</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> write(<a href="../../../cpath/service/jaxb/ServiceResponse.html">ServiceResponse</a> model, MediaType contentType, HttpOutputMessage outputMessage) 
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> write(ServiceResponse model, MediaType contentType, HttpOutputMessage outputMessage) 
 <a class="jxr_linenumber" name="L59" href="#L59">59</a>      	<strong class="jxr_keyword">throws</strong> IOException, HttpMessageNotWritableException
 <a class="jxr_linenumber" name="L60" href="#L60">60</a>      {
 <a class="jxr_linenumber" name="L61" href="#L61">61</a>          <strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> UnsupportedOperationException(<span class="jxr_string">"Not supported"</span>);

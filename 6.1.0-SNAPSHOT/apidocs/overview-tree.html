@@ -3,13 +3,13 @@
 <html lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html" charset="UTF-8">
-<title>Class Hierarchy (cPath2 - API 6.1.0-SNAPSHOT API)</title>
+<title>Class Hierarchy (cPath2 - Client 6.1.0-SNAPSHOT API)</title>
 <link rel="stylesheet" type="text/css" href="stylesheet.css" title="Style">
 </head>
 <body>
 <script type="text/javascript"><!--
     if (location.href.indexOf('is-external=true') == -1) {
-        parent.document.title="Class Hierarchy (cPath2 - API 6.1.0-SNAPSHOT API)";
+        parent.document.title="Class Hierarchy (cPath2 - Client 6.1.0-SNAPSHOT API)";
     }
 //-->
 </script>
@@ -65,9 +65,9 @@
 <h1 class="title">Hierarchy For All Packages</h1>
 <span class="strong">Package Hierarchies:</span>
 <ul class="horizontal">
-<li><a href="cpath/config/package-tree.html">cpath.config</a>, </li>
-<li><a href="cpath/service/package-tree.html">cpath.service</a>, </li>
-<li><a href="cpath/service/jaxb/package-tree.html">cpath.service.jaxb</a></li>
+<li><a href="cpath/client/package-tree.html">cpath.client</a>, </li>
+<li><a href="cpath/client/util/package-tree.html">cpath.client.util</a>, </li>
+<li><a href="cpath/query/package-tree.html">cpath.query</a></li>
 </ul>
 </div>
 <div class="contentContainer">
@@ -75,24 +75,34 @@
 <ul>
 <li type="circle">java.lang.<a href="http://download.oracle.com/javase/7/docs/api/java/lang/Object.html?is-external=true" title="class or interface in java.lang"><span class="strong">Object</span></a>
 <ul>
-<li type="circle">cpath.config.<a href="cpath/config/CPathSettings.html" title="class in cpath.config"><span class="strong">CPathSettings</span></a></li>
-<li type="circle">cpath.service.jaxb.<a href="cpath/service/jaxb/SearchHit.html" title="class in cpath.service.jaxb"><span class="strong">SearchHit</span></a> (implements java.io.<a href="http://download.oracle.com/javase/7/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a>)</li>
-<li type="circle">cpath.service.jaxb.<a href="cpath/service/jaxb/ServiceResponse.html" title="class in cpath.service.jaxb"><span class="strong">ServiceResponse</span></a> (implements java.io.<a href="http://download.oracle.com/javase/7/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a>)
+<li type="circle">cpath.client.util.<a href="cpath/client/util/BioPAXHttpMessageConverter.html" title="class in cpath.client.util"><span class="strong">BioPAXHttpMessageConverter</span></a> (implements org.springframework.http.converter.HttpMessageConverter&lt;T&gt;)</li>
+<li type="circle">cpath.client.<a href="cpath/client/CPathClient.html" title="class in cpath.client"><span class="strong">CPathClient</span></a></li>
+<li type="circle">cpath.query.<a href="cpath/query/CPathGetQuery.html" title="class in cpath.query"><span class="strong">CPathGetQuery</span></a> (implements cpath.query.<a href="cpath/query/CPathQuery.html" title="interface in cpath.query">CPathQuery</a>&lt;T&gt;)</li>
+<li type="circle">cpath.query.<a href="cpath/query/CPathGraphQuery.html" title="class in cpath.query"><span class="strong">CPathGraphQuery</span></a> (implements cpath.query.<a href="cpath/query/CPathQuery.html" title="interface in cpath.query">CPathQuery</a>&lt;T&gt;)</li>
+<li type="circle">cpath.query.<a href="cpath/query/CPathSearchQuery.html" title="class in cpath.query"><span class="strong">CPathSearchQuery</span></a> (implements cpath.query.<a href="cpath/query/CPathQuery.html" title="interface in cpath.query">CPathQuery</a>&lt;T&gt;)</li>
+<li type="circle">cpath.query.<a href="cpath/query/CPathTopPathwaysQuery.html" title="class in cpath.query"><span class="strong">CPathTopPathwaysQuery</span></a> (implements cpath.query.<a href="cpath/query/CPathQuery.html" title="interface in cpath.query">CPathQuery</a>&lt;T&gt;)</li>
+<li type="circle">cpath.query.<a href="cpath/query/CPathTraverseQuery.html" title="class in cpath.query"><span class="strong">CPathTraverseQuery</span></a> (implements cpath.query.<a href="cpath/query/CPathQuery.html" title="interface in cpath.query">CPathQuery</a>&lt;T&gt;)</li>
+<li type="circle">cpath.client.<a href="cpath/client/PathwayCommonsIOHandler.html" title="class in cpath.client"><span class="strong">PathwayCommonsIOHandler</span></a></li>
+<li type="circle">cpath.client.util.<a href="cpath/client/util/ServiceResponseHttpMessageConverter.html" title="class in cpath.client.util"><span class="strong">ServiceResponseHttpMessageConverter</span></a> (implements org.springframework.http.converter.HttpMessageConverter&lt;T&gt;)</li>
+<li type="circle">java.lang.<a href="http://download.oracle.com/javase/7/docs/api/java/lang/Throwable.html?is-external=true" title="class or interface in java.lang"><span class="strong">Throwable</span></a> (implements java.io.<a href="http://download.oracle.com/javase/7/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a>)
 <ul>
-<li type="circle">cpath.service.jaxb.<a href="cpath/service/jaxb/DataResponse.html" title="class in cpath.service.jaxb"><span class="strong">DataResponse</span></a></li>
-<li type="circle">cpath.service.<a href="cpath/service/ErrorResponse.html" title="class in cpath.service"><span class="strong">ErrorResponse</span></a></li>
-<li type="circle">cpath.service.jaxb.<a href="cpath/service/jaxb/Help.html" title="class in cpath.service.jaxb"><span class="strong">Help</span></a> (implements java.lang.<a href="http://download.oracle.com/javase/7/docs/api/java/lang/Comparable.html?is-external=true" title="class or interface in java.lang">Comparable</a>&lt;T&gt;)</li>
-<li type="circle">cpath.service.jaxb.<a href="cpath/service/jaxb/SearchResponse.html" title="class in cpath.service.jaxb"><span class="strong">SearchResponse</span></a></li>
-<li type="circle">cpath.service.jaxb.<a href="cpath/service/jaxb/TraverseResponse.html" title="class in cpath.service.jaxb"><span class="strong">TraverseResponse</span></a></li>
+<li type="circle">java.lang.<a href="http://download.oracle.com/javase/7/docs/api/java/lang/Exception.html?is-external=true" title="class or interface in java.lang"><span class="strong">Exception</span></a>
+<ul>
+<li type="circle">java.io.<a href="http://download.oracle.com/javase/7/docs/api/java/io/IOException.html?is-external=true" title="class or interface in java.io"><span class="strong">IOException</span></a>
+<ul>
+<li type="circle">cpath.client.util.<a href="cpath/client/util/CPathException.html" title="class in cpath.client.util"><span class="strong">CPathException</span></a></li>
 </ul>
 </li>
-<li type="circle">cpath.service.jaxb.<a href="cpath/service/jaxb/TraverseEntry.html" title="class in cpath.service.jaxb"><span class="strong">TraverseEntry</span></a> (implements java.io.<a href="http://download.oracle.com/javase/7/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a>)</li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
 <h2 title="Interface Hierarchy">Interface Hierarchy</h2>
 <ul>
-<li type="circle">cpath.service.<a href="cpath/service/Analysis.html" title="interface in cpath.service"><span class="strong">Analysis</span></a>&lt;T&gt;</li>
+<li type="circle">cpath.query.<a href="cpath/query/CPathQuery.html" title="interface in cpath.query"><span class="strong">CPathQuery</span></a>&lt;T&gt;</li>
 </ul>
 <h2 title="Enum Hierarchy">Enum Hierarchy</h2>
 <ul>
@@ -100,11 +110,9 @@
 <ul>
 <li type="circle">java.lang.<a href="http://download.oracle.com/javase/7/docs/api/java/lang/Enum.html?is-external=true" title="class or interface in java.lang"><span class="strong">Enum</span></a>&lt;E&gt; (implements java.lang.<a href="http://download.oracle.com/javase/7/docs/api/java/lang/Comparable.html?is-external=true" title="class or interface in java.lang">Comparable</a>&lt;T&gt;, java.io.<a href="http://download.oracle.com/javase/7/docs/api/java/io/Serializable.html?is-external=true" title="class or interface in java.io">Serializable</a>)
 <ul>
-<li type="circle">cpath.service.<a href="cpath/service/Status.html" title="enum in cpath.service"><span class="strong">Status</span></a></li>
-<li type="circle">cpath.service.<a href="cpath/service/OutputFormat.html" title="enum in cpath.service"><span class="strong">OutputFormat</span></a></li>
-<li type="circle">cpath.service.<a href="cpath/service/GraphType.html" title="enum in cpath.service"><span class="strong">GraphType</span></a></li>
-<li type="circle">cpath.service.<a href="cpath/service/CmdArgs.html" title="enum in cpath.service"><span class="strong">CmdArgs</span></a></li>
-<li type="circle">cpath.service.<a href="cpath/service/Cmd.html" title="enum in cpath.service"><span class="strong">Cmd</span></a></li>
+<li type="circle">cpath.client.<a href="cpath/client/PathwayCommonsIOHandler.ID_TYPE.html" title="enum in cpath.client"><span class="strong">PathwayCommonsIOHandler.ID_TYPE</span></a></li>
+<li type="circle">cpath.client.<a href="cpath/client/PathwayCommonsIOHandler.DATA_SRC.html" title="enum in cpath.client"><span class="strong">PathwayCommonsIOHandler.DATA_SRC</span></a></li>
+<li type="circle">cpath.client.<a href="cpath/client/CPathClient.Direction.html" title="enum in cpath.client"><span class="strong">CPathClient.Direction</span></a></li>
 </ul>
 </li>
 </ul>
