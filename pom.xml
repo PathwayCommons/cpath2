@@ -387,7 +387,7 @@
 				<artifactId>site-maven-plugin</artifactId>
 				<configuration>
 					<message>Creating site for ${project.artifactId}, ${project.version}</message>
-					<path>${project.version}</path>
+					<path>${project.distributionManagement.site.url}</path>
 					<merge>true</merge>
 				</configuration>
 				<executions>
@@ -857,7 +857,10 @@
 			(site-deploy immediately pushes to gh-pages on GitHub)-->
 			<id>github</id>
 			<name>PathwayCommons/cPath2 GitHub Pages</name>
+			<url>${project.version}</url>
+		<!--	change to full URL for site:stage to work
 			<url>http://pathwaycommons.github.io/cpath2/${project.version}</url>
+		-->
 		</site>
         <repository>
             <id>sonatype-nexus-staging</id>
