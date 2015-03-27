@@ -166,7 +166,7 @@
 <a class="jxr_linenumber" name="L158" href="#L158">158</a> 	}
 <a class="jxr_linenumber" name="L159" href="#L159">159</a> 	
 <a class="jxr_linenumber" name="L160" href="#L160">160</a> 
-<a class="jxr_linenumber" name="L161" href="#L161">161</a> 	<strong class="jxr_keyword">public</strong> SearchResponse search(String query, <strong class="jxr_keyword">int</strong> page,
+<a class="jxr_linenumber" name="L161" href="#L161">161</a> 	<strong class="jxr_keyword">public</strong> <a href="../../cpath/service/jaxb/SearchResponse.html">SearchResponse</a> search(String query, <strong class="jxr_keyword">int</strong> page,
 <a class="jxr_linenumber" name="L162" href="#L162">162</a> 			Class&lt;? <strong class="jxr_keyword">extends</strong> BioPAXElement&gt; filterByType, String[] datasources,
 <a class="jxr_linenumber" name="L163" href="#L163">163</a> 			String[] organisms) 
 <a class="jxr_linenumber" name="L164" href="#L164">164</a> 	{
@@ -252,20 +252,20 @@
 <a class="jxr_linenumber" name="L244" href="#L244">244</a> 
 <a class="jxr_linenumber" name="L245" href="#L245">245</a> 	
 <a class="jxr_linenumber" name="L246" href="#L246">246</a> 	<em class="jxr_comment">// Transform Lucene docs to hits (xml/java beans)</em>
-<a class="jxr_linenumber" name="L247" href="#L247">247</a> 	<strong class="jxr_keyword">private</strong> SearchResponse transform(Query query, IndexSearcher searcher, <strong class="jxr_keyword">boolean</strong> highlight, TopDocs topDocs) 
+<a class="jxr_linenumber" name="L247" href="#L247">247</a> 	<strong class="jxr_keyword">private</strong> <a href="../../cpath/service/jaxb/SearchResponse.html">SearchResponse</a> transform(Query query, IndexSearcher searcher, <strong class="jxr_keyword">boolean</strong> highlight, TopDocs topDocs) 
 <a class="jxr_linenumber" name="L248" href="#L248">248</a> 			<strong class="jxr_keyword">throws</strong> CorruptIndexException, IOException 
 <a class="jxr_linenumber" name="L249" href="#L249">249</a> 	{	
 <a class="jxr_linenumber" name="L250" href="#L250">250</a> 		<strong class="jxr_keyword">if</strong>(topDocs == <strong class="jxr_keyword">null</strong>)
 <a class="jxr_linenumber" name="L251" href="#L251">251</a> 			<strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> IllegalArgumentException(<span class="jxr_string">"topDocs is null"</span>);
 <a class="jxr_linenumber" name="L252" href="#L252">252</a> 		
-<a class="jxr_linenumber" name="L253" href="#L253">253</a> 		SearchResponse response = <strong class="jxr_keyword">new</strong> SearchResponse();
+<a class="jxr_linenumber" name="L253" href="#L253">253</a> 		SearchResponse response = <strong class="jxr_keyword">new</strong> <a href="../../cpath/service/jaxb/SearchResponse.html">SearchResponse</a>();
 <a class="jxr_linenumber" name="L254" href="#L254">254</a> 		response.setMaxHitsPerPage(maxHitsPerPage);
 <a class="jxr_linenumber" name="L255" href="#L255">255</a> 		response.setNumHits(topDocs.totalHits);	
 <a class="jxr_linenumber" name="L256" href="#L256">256</a> 		List&lt;SearchHit&gt; hits = response.getSearchHit();<em class="jxr_comment">//empty list</em>
 <a class="jxr_linenumber" name="L257" href="#L257">257</a> 		assert hits!=<strong class="jxr_keyword">null</strong> &amp;&amp; hits.isEmpty();
 <a class="jxr_linenumber" name="L258" href="#L258">258</a> 		LOG.debug(<span class="jxr_string">"transform, no. TopDocs to process:"</span> + topDocs.scoreDocs.length);
 <a class="jxr_linenumber" name="L259" href="#L259">259</a> 		<strong class="jxr_keyword">for</strong>(ScoreDoc scoreDoc : topDocs.scoreDocs) {			
-<a class="jxr_linenumber" name="L260" href="#L260">260</a> 			SearchHit hit = <strong class="jxr_keyword">new</strong> SearchHit();
+<a class="jxr_linenumber" name="L260" href="#L260">260</a> 			SearchHit hit = <strong class="jxr_keyword">new</strong> <a href="../../cpath/service/jaxb/SearchHit.html">SearchHit</a>();
 <a class="jxr_linenumber" name="L261" href="#L261">261</a> 			Document doc = searcher.doc(scoreDoc.doc);
 <a class="jxr_linenumber" name="L262" href="#L262">262</a> 			String uri = doc.get(FIELD_URI);
 <a class="jxr_linenumber" name="L263" href="#L263">263</a> 			BioPAXElement bpe = model.getByID(uri);			

@@ -71,7 +71,7 @@
 <a class="jxr_linenumber" name="L63" href="#L63">63</a>  <em class="jxr_comment">     * @return</em>
 <a class="jxr_linenumber" name="L64" href="#L64">64</a>  <em class="jxr_comment">     */</em>
 <a class="jxr_linenumber" name="L65" href="#L65">65</a>      @ModelAttribute(<span class="jxr_string">"cpath"</span>)
-<a class="jxr_linenumber" name="L66" href="#L66">66</a>      <strong class="jxr_keyword">public</strong> CPathSettings instance() {
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>      <strong class="jxr_keyword">public</strong> <a href="../../cpath/config/CPathSettings.html">CPathSettings</a> instance() {
 <a class="jxr_linenumber" name="L67" href="#L67">67</a>      	<strong class="jxr_keyword">return</strong> CPathSettings.getInstance();
 <a class="jxr_linenumber" name="L68" href="#L68">68</a>      }
 <a class="jxr_linenumber" name="L69" href="#L69">69</a>  
@@ -157,7 +157,7 @@
 <a class="jxr_linenumber" name="L149" href="#L149">149</a> 		<em class="jxr_comment">//warehouse data sources</em>
 <a class="jxr_linenumber" name="L150" href="#L150">150</a> 		List&lt;Metadata&gt; wh = <strong class="jxr_keyword">new</strong> ArrayList&lt;Metadata&gt;();
 <a class="jxr_linenumber" name="L151" href="#L151">151</a> 		
-<a class="jxr_linenumber" name="L152" href="#L152">152</a> 		<strong class="jxr_keyword">for</strong>(Metadata m : service.metadata().findAll()) {
+<a class="jxr_linenumber" name="L152" href="#L152">152</a> 		<strong class="jxr_keyword">for</strong>(<a href="../../cpath/jpa/Metadata.html">Metadata</a> m : service.metadata().findAll()) {
 <a class="jxr_linenumber" name="L153" href="#L153">153</a> 			<em class="jxr_comment">//set dynamic extra fields</em>
 <a class="jxr_linenumber" name="L154" href="#L154">154</a> 			<strong class="jxr_keyword">if</strong>(m.isNotPathwayData()) {
 <a class="jxr_linenumber" name="L155" href="#L155">155</a> 				m.setUploaded((<strong class="jxr_keyword">new</strong> File(m.getDataArchiveName()).exists()));
@@ -200,7 +200,7 @@
 <a class="jxr_linenumber" name="L192" href="#L192">192</a>     <em class="jxr_comment">// Requests that begin with '/admin' can be only run by authorized users (see: Spring security-config.xml).</em>
 <a class="jxr_linenumber" name="L193" href="#L193">193</a>     
 <a class="jxr_linenumber" name="L194" href="#L194">194</a>     @RequestMapping(value = <span class="jxr_string">"/admin/datasources"</span>, consumes=<span class="jxr_string">"application/json"</span>, method = RequestMethod.POST)
-<a class="jxr_linenumber" name="L195" href="#L195">195</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> update(@RequestBody @Valid Metadata metadata, 
+<a class="jxr_linenumber" name="L195" href="#L195">195</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> update(@RequestBody @Valid <a href="../../cpath/jpa/Metadata.html">Metadata</a> metadata, 
 <a class="jxr_linenumber" name="L196" href="#L196">196</a>     		BindingResult bindingResult, HttpServletResponse response) <strong class="jxr_keyword">throws</strong> IOException 
 <a class="jxr_linenumber" name="L197" href="#L197">197</a>     {	
 <a class="jxr_linenumber" name="L198" href="#L198">198</a>     	<strong class="jxr_keyword">if</strong>(bindingResult != <strong class="jxr_keyword">null</strong> &amp;&amp;  bindingResult.hasErrors()) {
@@ -215,7 +215,7 @@
 <a class="jxr_linenumber" name="L207" href="#L207">207</a> 
 <a class="jxr_linenumber" name="L208" href="#L208">208</a>     
 <a class="jxr_linenumber" name="L209" href="#L209">209</a>     @RequestMapping(value = <span class="jxr_string">"/admin/datasources"</span>, consumes=<span class="jxr_string">"application/json"</span>, method = RequestMethod.PUT)
-<a class="jxr_linenumber" name="L210" href="#L210">210</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> put(@RequestBody @Valid Metadata metadata, 
+<a class="jxr_linenumber" name="L210" href="#L210">210</a>     <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> put(@RequestBody @Valid <a href="../../cpath/jpa/Metadata.html">Metadata</a> metadata, 
 <a class="jxr_linenumber" name="L211" href="#L211">211</a>     		BindingResult bindingResult, HttpServletResponse response) <strong class="jxr_keyword">throws</strong> IOException 
 <a class="jxr_linenumber" name="L212" href="#L212">212</a>     {	
 <a class="jxr_linenumber" name="L213" href="#L213">213</a>     	<strong class="jxr_keyword">if</strong>(bindingResult != <strong class="jxr_keyword">null</strong> &amp;&amp;  bindingResult.hasErrors()) {
@@ -314,14 +314,14 @@
 <a class="jxr_linenumber" name="L306" href="#L306">306</a>     <strong class="jxr_keyword">private</strong> List&lt;ValInfo&gt; validationInfo() {
 <a class="jxr_linenumber" name="L307" href="#L307">307</a>     	<strong class="jxr_keyword">final</strong> List&lt;ValInfo&gt; list = <strong class="jxr_keyword">new</strong> ArrayList&lt;ValInfo&gt;();
 <a class="jxr_linenumber" name="L308" href="#L308">308</a>     	
-<a class="jxr_linenumber" name="L309" href="#L309">309</a> 		<strong class="jxr_keyword">for</strong>(Metadata m : service.metadata().findAll()) {
+<a class="jxr_linenumber" name="L309" href="#L309">309</a> 		<strong class="jxr_keyword">for</strong>(<a href="../../cpath/jpa/Metadata.html">Metadata</a> m : service.metadata().findAll()) {
 <a class="jxr_linenumber" name="L310" href="#L310">310</a> 			<strong class="jxr_keyword">if</strong>(m.isNotPathwayData())
 <a class="jxr_linenumber" name="L311" href="#L311">311</a> 				<strong class="jxr_keyword">continue</strong>;
 <a class="jxr_linenumber" name="L312" href="#L312">312</a> 			
 <a class="jxr_linenumber" name="L313" href="#L313">313</a> 			ValInfo vi = <strong class="jxr_keyword">new</strong> <a href="../../cpath/webservice/MetadataController.html">ValInfo</a>();
 <a class="jxr_linenumber" name="L314" href="#L314">314</a> 			vi.setIdentifier(m.getIdentifier());
 <a class="jxr_linenumber" name="L315" href="#L315">315</a> 			
-<a class="jxr_linenumber" name="L316" href="#L316">316</a> 			<strong class="jxr_keyword">for</strong>(Content pd : m.getContent())
+<a class="jxr_linenumber" name="L316" href="#L316">316</a> 			<strong class="jxr_keyword">for</strong>(<a href="../../cpath/jpa/Content.html">Content</a> pd : m.getContent())
 <a class="jxr_linenumber" name="L317" href="#L317">317</a> 				vi.getFiles().put(pd.getFilename(), pd.toString());
 <a class="jxr_linenumber" name="L318" href="#L318">318</a> 			
 <a class="jxr_linenumber" name="L319" href="#L319">319</a> 			list.add(vi);

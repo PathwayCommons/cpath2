@@ -43,7 +43,7 @@
 <a class="jxr_linenumber" name="L35" href="#L35">35</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../cpath/webservice/PagesController.html">PagesController</a> <strong class="jxr_keyword">extends</strong> <a href="../../cpath/webservice/BasicController.html">BasicController</a> {
 <a class="jxr_linenumber" name="L36" href="#L36">36</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Logger log = LoggerFactory.getLogger(PagesController.<strong class="jxr_keyword">class</strong>);
 <a class="jxr_linenumber" name="L37" href="#L37">37</a>  	
-<a class="jxr_linenumber" name="L38" href="#L38">38</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> CPathSettings cpath;
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../cpath/config/CPathSettings.html">CPathSettings</a> cpath;
 <a class="jxr_linenumber" name="L39" href="#L39">39</a>  	
 <a class="jxr_linenumber" name="L40" href="#L40">40</a>  	
 <a class="jxr_linenumber" name="L41" href="#L41">41</a>  	<strong class="jxr_keyword">public</strong> <a href="../../cpath/webservice/PagesController.html">PagesController</a>() {
@@ -52,7 +52,7 @@
 <a class="jxr_linenumber" name="L44" href="#L44">44</a>  	
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>  	
 <a class="jxr_linenumber" name="L46" href="#L46">46</a>      @ModelAttribute(<span class="jxr_string">"cpath"</span>)
-<a class="jxr_linenumber" name="L47" href="#L47">47</a>      <strong class="jxr_keyword">public</strong> CPathSettings instance() {
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>      <strong class="jxr_keyword">public</strong> <a href="../../cpath/config/CPathSettings.html">CPathSettings</a> instance() {
 <a class="jxr_linenumber" name="L48" href="#L48">48</a>      	<strong class="jxr_keyword">return</strong> cpath;
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>      }
 <a class="jxr_linenumber" name="L50" href="#L50">50</a>  
@@ -193,14 +193,14 @@
 <a class="jxr_linenumber" name="L185" href="#L185">185</a>     }
 <a class="jxr_linenumber" name="L186" href="#L186">186</a>         
 <a class="jxr_linenumber" name="L187" href="#L187">187</a>     @RequestMapping(<span class="jxr_string">"/log/{logType}/stats"</span>)
-<a class="jxr_linenumber" name="L188" href="#L188">188</a>     <strong class="jxr_keyword">public</strong> String statsByType(Model model, @PathVariable LogType logType) {
+<a class="jxr_linenumber" name="L188" href="#L188">188</a>     <strong class="jxr_keyword">public</strong> String statsByType(Model model, @PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType) {
 <a class="jxr_linenumber" name="L189" href="#L189">189</a>     	model.addAttribute(<span class="jxr_string">"summary_for"</span>, <span class="jxr_string">"Category: "</span> + logType);
 <a class="jxr_linenumber" name="L190" href="#L190">190</a>     	model.addAttribute(<span class="jxr_string">"current"</span>, <span class="jxr_string">"/log/"</span>+logType.toString()+<span class="jxr_string">"/stats"</span>);
 <a class="jxr_linenumber" name="L191" href="#L191">191</a>     	<strong class="jxr_keyword">return</strong> <span class="jxr_string">"stats"</span>;
 <a class="jxr_linenumber" name="L192" href="#L192">192</a>     }
 <a class="jxr_linenumber" name="L193" href="#L193">193</a>     
 <a class="jxr_linenumber" name="L194" href="#L194">194</a>     @RequestMapping(<span class="jxr_string">"/log/{logType}/{name}/stats"</span>)
-<a class="jxr_linenumber" name="L195" href="#L195">195</a>     <strong class="jxr_keyword">public</strong> String statsByType(Model model, @PathVariable LogType logType,
+<a class="jxr_linenumber" name="L195" href="#L195">195</a>     <strong class="jxr_keyword">public</strong> String statsByType(Model model, @PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType,
 <a class="jxr_linenumber" name="L196" href="#L196">196</a>     		@PathVariable String name) {
 <a class="jxr_linenumber" name="L197" href="#L197">197</a>     	model.addAttribute(<span class="jxr_string">"summary_for"</span>, <span class="jxr_string">"Category: "</span> + logType + <span class="jxr_string">", name: "</span> + name);
 <a class="jxr_linenumber" name="L198" href="#L198">198</a>     	model.addAttribute(<span class="jxr_string">"current"</span>, <span class="jxr_string">"/log/"</span>+logType.toString()+<span class="jxr_string">"/"</span>+name+<span class="jxr_string">"/stats"</span>);
@@ -213,14 +213,14 @@
 <a class="jxr_linenumber" name="L205" href="#L205">205</a>     }
 <a class="jxr_linenumber" name="L206" href="#L206">206</a>     
 <a class="jxr_linenumber" name="L207" href="#L207">207</a>     @RequestMapping(<span class="jxr_string">"/log/{logType}/ips"</span>)
-<a class="jxr_linenumber" name="L208" href="#L208">208</a>     <strong class="jxr_keyword">public</strong> String ipsByType(Model model, @PathVariable LogType logType) {
+<a class="jxr_linenumber" name="L208" href="#L208">208</a>     <strong class="jxr_keyword">public</strong> String ipsByType(Model model, @PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType) {
 <a class="jxr_linenumber" name="L209" href="#L209">209</a>     	model.addAttribute(<span class="jxr_string">"summary_for"</span>, <span class="jxr_string">"Category: "</span> + logType);
 <a class="jxr_linenumber" name="L210" href="#L210">210</a>     	model.addAttribute(<span class="jxr_string">"current"</span>, <span class="jxr_string">"/log/"</span>+logType.toString()+<span class="jxr_string">"/ips"</span>);
 <a class="jxr_linenumber" name="L211" href="#L211">211</a>     	<strong class="jxr_keyword">return</strong> <span class="jxr_string">"ips"</span>;
 <a class="jxr_linenumber" name="L212" href="#L212">212</a>     }
 <a class="jxr_linenumber" name="L213" href="#L213">213</a>     
 <a class="jxr_linenumber" name="L214" href="#L214">214</a>     @RequestMapping(<span class="jxr_string">"/log/{logType}/{name}/ips"</span>)
-<a class="jxr_linenumber" name="L215" href="#L215">215</a>     <strong class="jxr_keyword">public</strong> String ipsByType(Model model, @PathVariable LogType logType,
+<a class="jxr_linenumber" name="L215" href="#L215">215</a>     <strong class="jxr_keyword">public</strong> String ipsByType(Model model, @PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType,
 <a class="jxr_linenumber" name="L216" href="#L216">216</a>     		@PathVariable String name) {
 <a class="jxr_linenumber" name="L217" href="#L217">217</a>     	model.addAttribute(<span class="jxr_string">"summary_for"</span>, <span class="jxr_string">"Category: "</span> + logType + <span class="jxr_string">", name: "</span> + name);
 <a class="jxr_linenumber" name="L218" href="#L218">218</a>     	model.addAttribute(<span class="jxr_string">"current"</span>, <span class="jxr_string">"/log/"</span>+logType.toString()+<span class="jxr_string">"/"</span>+name+<span class="jxr_string">"/ips"</span>);

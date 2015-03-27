@@ -92,10 +92,10 @@
 <a class="jxr_linenumber" name="L84" href="#L84">84</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../cpath/admin/Admin.html">Admin</a> {
 <a class="jxr_linenumber" name="L85" href="#L85">85</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Logger LOG = LoggerFactory.getLogger(Admin.<strong class="jxr_keyword">class</strong>);
 <a class="jxr_linenumber" name="L86" href="#L86">86</a>  	
-<a class="jxr_linenumber" name="L87" href="#L87">87</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> CPathSettings cpath = CPathSettings.getInstance();
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <a href="../../cpath/config/CPathSettings.html">CPathSettings</a> cpath = CPathSettings.getInstance();
 <a class="jxr_linenumber" name="L88" href="#L88">88</a>  
 <a class="jxr_linenumber" name="L89" href="#L89">89</a>      <em class="jxr_comment">// Cmd Enum</em>
-<a class="jxr_linenumber" name="L90" href="#L90">90</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> enum <a href="../../cpath/admin/Admin.html">Cmd</a> {
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> enum <a href="../../cpath/service/Cmd.html">Cmd</a> {
 <a class="jxr_linenumber" name="L91" href="#L91">91</a>          <em class="jxr_comment">// command types</em>
 <a class="jxr_linenumber" name="L92" href="#L92">92</a>          FETCH_METADATA(<span class="jxr_string">"-fetch-metadata"</span>),
 <a class="jxr_linenumber" name="L93" href="#L93">93</a>  		FETCH_DATA(<span class="jxr_string">"-fetch-data"</span>),
@@ -117,7 +117,7 @@
 <a class="jxr_linenumber" name="L109" href="#L109">109</a>         <strong class="jxr_keyword">private</strong> String command;
 <a class="jxr_linenumber" name="L110" href="#L110">110</a>         
 <a class="jxr_linenumber" name="L111" href="#L111">111</a>         <em class="jxr_comment">// contructor</em>
-<a class="jxr_linenumber" name="L112" href="#L112">112</a>         <a href="../../cpath/admin/Admin.html">Cmd</a>(String command) { <strong class="jxr_keyword">this</strong>.command = command; }
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>         <a href="../../cpath/service/Cmd.html">Cmd</a>(String command) { <strong class="jxr_keyword">this</strong>.command = command; }
 <a class="jxr_linenumber" name="L113" href="#L113">113</a> 
 <a class="jxr_linenumber" name="L114" href="#L114">114</a>         <em class="jxr_comment">// method to get enum readable name</em>
 <a class="jxr_linenumber" name="L115" href="#L115">115</a>         @Override
@@ -738,7 +738,7 @@
 <a class="jxr_linenumber" name="L730" href="#L730">730</a> <em class="jxr_javadoccomment">     * @param params optional parameters (depends on the format)</em>
 <a class="jxr_linenumber" name="L731" href="#L731">731</a> <em class="jxr_javadoccomment">     * @throws IOException</em>
 <a class="jxr_linenumber" name="L732" href="#L732">732</a> <em class="jxr_javadoccomment">     */</em>
-<a class="jxr_linenumber" name="L733" href="#L733">733</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> convert(Model model, OutputFormat outputFormat, 
+<a class="jxr_linenumber" name="L733" href="#L733">733</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> convert(Model model, <a href="../../cpath/service/OutputFormat.html">OutputFormat</a> outputFormat, 
 <a class="jxr_linenumber" name="L734" href="#L734">734</a> 			OutputStream output, Object... params) <strong class="jxr_keyword">throws</strong> IOException 
 <a class="jxr_linenumber" name="L735" href="#L735">735</a> 	{
 <a class="jxr_linenumber" name="L736" href="#L736">736</a> 		Resource blacklist = <strong class="jxr_keyword">new</strong> DefaultResourceLoader().getResource(<span class="jxr_string">"file:"</span> + cpath.blacklistFile());
@@ -897,7 +897,7 @@
 <a class="jxr_linenumber" name="L889" href="#L889">889</a>     	SearchResponse resp = (SearchResponse) searcher.search(<span class="jxr_string">"*"</span>, 0, type, ds, org);
 <a class="jxr_linenumber" name="L890" href="#L890">890</a>     	<strong class="jxr_keyword">int</strong> page = 0;
 <a class="jxr_linenumber" name="L891" href="#L891">891</a>     	<strong class="jxr_keyword">while</strong>(!resp.isEmpty()) {
-<a class="jxr_linenumber" name="L892" href="#L892">892</a>     		<strong class="jxr_keyword">for</strong>(SearchHit h : resp.getSearchHit())
+<a class="jxr_linenumber" name="L892" href="#L892">892</a>     		<strong class="jxr_keyword">for</strong>(<a href="../../cpath/service/jaxb/SearchHit.html">SearchHit</a> h : resp.getSearchHit())
 <a class="jxr_linenumber" name="L893" href="#L893">893</a>     			uris.add(h.getUri());
 <a class="jxr_linenumber" name="L894" href="#L894">894</a>     		<em class="jxr_comment">//next page</em>
 <a class="jxr_linenumber" name="L895" href="#L895">895</a>     		resp = (SearchResponse) searcher.search(<span class="jxr_string">"*"</span>, ++page, type, ds, org);
@@ -911,7 +911,7 @@
 <a class="jxr_linenumber" name="L903" href="#L903">903</a> 
 <a class="jxr_linenumber" name="L904" href="#L904">904</a> 	
 <a class="jxr_linenumber" name="L905" href="#L905">905</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">void</strong> convertBiopaxToOtherFormatGzipped( 
-<a class="jxr_linenumber" name="L906" href="#L906">906</a> 			<strong class="jxr_keyword">final</strong> Model m, <strong class="jxr_keyword">final</strong> OutputFormat format, 
+<a class="jxr_linenumber" name="L906" href="#L906">906</a> 			<strong class="jxr_keyword">final</strong> Model m, <strong class="jxr_keyword">final</strong> <a href="../../cpath/service/OutputFormat.html">OutputFormat</a> format, 
 <a class="jxr_linenumber" name="L907" href="#L907">907</a> 			<strong class="jxr_keyword">final</strong> String archiveName, <strong class="jxr_keyword">final</strong> Object... params) 
 <a class="jxr_linenumber" name="L908" href="#L908">908</a> 	{	
 <a class="jxr_linenumber" name="L909" href="#L909">909</a> 		<strong class="jxr_keyword">if</strong>(format == OutputFormat.BIOPAX)
@@ -1049,7 +1049,7 @@
 <a class="jxr_linenumber" name="L1041" href="#L1041">1041</a> 	}
 <a class="jxr_linenumber" name="L1042" href="#L1042">1042</a> 
 <a class="jxr_linenumber" name="L1043" href="#L1043">1043</a> 
-<a class="jxr_linenumber" name="L1044" href="#L1044">1044</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String formatAndExt(OutputFormat format, String suffix) {
+<a class="jxr_linenumber" name="L1044" href="#L1044">1044</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> String formatAndExt(<a href="../../cpath/service/OutputFormat.html">OutputFormat</a> format, String suffix) {
 <a class="jxr_linenumber" name="L1045" href="#L1045">1045</a> 		
 <a class="jxr_linenumber" name="L1046" href="#L1046">1046</a> 		suffix = (suffix==<strong class="jxr_keyword">null</strong> || suffix.isEmpty())
 <a class="jxr_linenumber" name="L1047" href="#L1047">1047</a> 				? <span class="jxr_string">""</span> : <span class="jxr_string">"."</span> + suffix.toLowerCase();

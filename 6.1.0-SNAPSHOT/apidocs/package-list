@@ -1,3 +1,15 @@
+cpath.admin
+cpath.cleaner.internal
+cpath.client
+cpath.client.util
+cpath.config
+cpath.converter.internal
+cpath.dao
+cpath.importer
+cpath.jpa
+cpath.query
+cpath.service
+cpath.service.jaxb
 cpath.webservice
 cpath.webservice.args
 cpath.webservice.args.binding

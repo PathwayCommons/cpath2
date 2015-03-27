@@ -53,9 +53,9 @@
 <a class="jxr_linenumber" name="L45" href="#L45">45</a>      <em class="jxr_comment">// XML/JSON web services (for the stats.jsp view using stats.js, given current context path)</em>
 <a class="jxr_linenumber" name="L46" href="#L46">46</a>   
 <a class="jxr_linenumber" name="L47" href="#L47">47</a>      <em class="jxr_comment">//if arg is not null, then it's the first element in the returned list</em>
-<a class="jxr_linenumber" name="L48" href="#L48">48</a>      <strong class="jxr_keyword">private</strong> List&lt;String[]&gt; categories(LogType logType) {
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>      <strong class="jxr_keyword">private</strong> List&lt;String[]&gt; categories(<a href="../../cpath/jpa/LogType.html">LogType</a> logType) {
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>      	List&lt;String[]&gt; ret = <strong class="jxr_keyword">new</strong> ArrayList&lt;String[]&gt;();
-<a class="jxr_linenumber" name="L50" href="#L50">50</a>      	<strong class="jxr_keyword">for</strong>(LogType t : LogType.values()) {
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>      	<strong class="jxr_keyword">for</strong>(<a href="../../cpath/jpa/LogType.html">LogType</a> t : LogType.values()) {
 <a class="jxr_linenumber" name="L51" href="#L51">51</a>      		String s[] = <strong class="jxr_keyword">new</strong> String[2];
 <a class="jxr_linenumber" name="L52" href="#L52">52</a>      		s[0] = t.toString();
 <a class="jxr_linenumber" name="L53" href="#L53">53</a>      		s[1] = <span class="jxr_string">""</span>;
@@ -71,23 +71,23 @@
 <a class="jxr_linenumber" name="L63" href="#L63">63</a>      } 
 <a class="jxr_linenumber" name="L64" href="#L64">64</a>  
 <a class="jxr_linenumber" name="L65" href="#L65">65</a>      @RequestMapping(<span class="jxr_string">"/{logType}/events"</span>)
-<a class="jxr_linenumber" name="L66" href="#L66">66</a>      <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;String[]&gt; logEvents(@PathVariable LogType logType) {	
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>      <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;String[]&gt; logEvents(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType) {	
 <a class="jxr_linenumber" name="L67" href="#L67">67</a>      	<em class="jxr_comment">//add all the events in the same category (type); </em>
 <a class="jxr_linenumber" name="L68" href="#L68">68</a>      	<em class="jxr_comment">//but make given type the first element in the list (selected)</em>
 <a class="jxr_linenumber" name="L69" href="#L69">69</a>      	List&lt;String[]&gt; ret = categories(logType);
-<a class="jxr_linenumber" name="L70" href="#L70">70</a>      	<strong class="jxr_keyword">for</strong>(LogEvent e : service.log().logEvents(logType)) {
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>      	<strong class="jxr_keyword">for</strong>(<a href="../../cpath/jpa/LogEvent.html">LogEvent</a> e : service.log().logEvents(logType)) {
 <a class="jxr_linenumber" name="L71" href="#L71">71</a>      		ret.add(<strong class="jxr_keyword">new</strong> String[]{e.getType().toString(), e.getName()});
 <a class="jxr_linenumber" name="L72" href="#L72">72</a>      	}
 <a class="jxr_linenumber" name="L73" href="#L73">73</a>      	<strong class="jxr_keyword">return</strong> ret;
 <a class="jxr_linenumber" name="L74" href="#L74">74</a>      }    
 <a class="jxr_linenumber" name="L75" href="#L75">75</a>      
 <a class="jxr_linenumber" name="L76" href="#L76">76</a>      @RequestMapping(<span class="jxr_string">"/{logType}/{name}/events"</span>)
-<a class="jxr_linenumber" name="L77" href="#L77">77</a>      <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;String[]&gt; logEvents(@PathVariable LogType logType, 
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>      <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;String[]&gt; logEvents(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType, 
 <a class="jxr_linenumber" name="L78" href="#L78">78</a>      		@PathVariable String name) {
 <a class="jxr_linenumber" name="L79" href="#L79">79</a>      	List&lt;String[]&gt; ret = categories(logType);
 <a class="jxr_linenumber" name="L80" href="#L80">80</a>      	<em class="jxr_comment">//add all the events in the same category (type); </em>
 <a class="jxr_linenumber" name="L81" href="#L81">81</a>      	<em class="jxr_comment">// but make the one with given type,name the first element in the list</em>
-<a class="jxr_linenumber" name="L82" href="#L82">82</a>      	<strong class="jxr_keyword">for</strong>(LogEvent e : service.log().logEvents(logType)) {
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>      	<strong class="jxr_keyword">for</strong>(<a href="../../cpath/jpa/LogEvent.html">LogEvent</a> e : service.log().logEvents(logType)) {
 <a class="jxr_linenumber" name="L83" href="#L83">83</a>      		<strong class="jxr_keyword">if</strong>(e.getName().equals(name))
 <a class="jxr_linenumber" name="L84" href="#L84">84</a>      			ret.add(0, <strong class="jxr_keyword">new</strong> String[]{e.getType().toString(), e.getName()});
 <a class="jxr_linenumber" name="L85" href="#L85">85</a>      		<strong class="jxr_keyword">else</strong> 
@@ -99,12 +99,12 @@
 <a class="jxr_linenumber" name="L91" href="#L91">91</a>      <em class="jxr_comment">//timelines (no. queries by type, date)</em>
 <a class="jxr_linenumber" name="L92" href="#L92">92</a>      
 <a class="jxr_linenumber" name="L93" href="#L93">93</a>  	@RequestMapping(<span class="jxr_string">"/{logType}/{name}/timeline"</span>)
-<a class="jxr_linenumber" name="L94" href="#L94">94</a>      <strong class="jxr_keyword">public</strong> @ResponseBody Map&lt;String,List&lt;Object[]&gt;&gt; timeline(@PathVariable LogType logType, @PathVariable String name) {		
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>      <strong class="jxr_keyword">public</strong> @ResponseBody Map&lt;String,List&lt;Object[]&gt;&gt; timeline(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType, @PathVariable String name) {		
 <a class="jxr_linenumber" name="L95" href="#L95">95</a>      	<strong class="jxr_keyword">return</strong> service.log().downloadsTimeline(logType, name);
 <a class="jxr_linenumber" name="L96" href="#L96">96</a>      }    
 <a class="jxr_linenumber" name="L97" href="#L97">97</a>      
 <a class="jxr_linenumber" name="L98" href="#L98">98</a>      @RequestMapping(<span class="jxr_string">"/{logType}/timeline"</span>)
-<a class="jxr_linenumber" name="L99" href="#L99">99</a>      <strong class="jxr_keyword">public</strong> @ResponseBody Map&lt;String,List&lt;Object[]&gt;&gt; timeline(@PathVariable LogType logType) {		
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>      <strong class="jxr_keyword">public</strong> @ResponseBody Map&lt;String,List&lt;Object[]&gt;&gt; timeline(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType) {		
 <a class="jxr_linenumber" name="L100" href="#L100">100</a>     	<strong class="jxr_keyword">return</strong> service.log().downloadsTimeline(logType, <strong class="jxr_keyword">null</strong>);
 <a class="jxr_linenumber" name="L101" href="#L101">101</a>     }
 <a class="jxr_linenumber" name="L102" href="#L102">102</a> 	
@@ -121,12 +121,12 @@
 <a class="jxr_linenumber" name="L113" href="#L113">113</a>     }
 <a class="jxr_linenumber" name="L114" href="#L114">114</a> 	
 <a class="jxr_linenumber" name="L115" href="#L115">115</a> 	@RequestMapping(<span class="jxr_string">"/{logType}/{name}/iptimeline"</span>)
-<a class="jxr_linenumber" name="L116" href="#L116">116</a>     <strong class="jxr_keyword">public</strong> @ResponseBody Map&lt;String,List&lt;Object[]&gt;&gt; iptimeline(@PathVariable LogType logType, @PathVariable String name) {		
+<a class="jxr_linenumber" name="L116" href="#L116">116</a>     <strong class="jxr_keyword">public</strong> @ResponseBody Map&lt;String,List&lt;Object[]&gt;&gt; iptimeline(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType, @PathVariable String name) {		
 <a class="jxr_linenumber" name="L117" href="#L117">117</a>     	<strong class="jxr_keyword">return</strong> service.log().ipsTimeline(logType, name);
 <a class="jxr_linenumber" name="L118" href="#L118">118</a>     }    
 <a class="jxr_linenumber" name="L119" href="#L119">119</a>     
 <a class="jxr_linenumber" name="L120" href="#L120">120</a>     @RequestMapping(<span class="jxr_string">"/{logType}/iptimeline"</span>)
-<a class="jxr_linenumber" name="L121" href="#L121">121</a>     <strong class="jxr_keyword">public</strong> @ResponseBody Map&lt;String,List&lt;Object[]&gt;&gt; iptimeline(@PathVariable LogType logType) {		
+<a class="jxr_linenumber" name="L121" href="#L121">121</a>     <strong class="jxr_keyword">public</strong> @ResponseBody Map&lt;String,List&lt;Object[]&gt;&gt; iptimeline(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType) {		
 <a class="jxr_linenumber" name="L122" href="#L122">122</a>     	<strong class="jxr_keyword">return</strong> service.log().ipsTimeline(logType, <strong class="jxr_keyword">null</strong>);
 <a class="jxr_linenumber" name="L123" href="#L123">123</a>     }
 <a class="jxr_linenumber" name="L124" href="#L124">124</a>     
@@ -137,12 +137,12 @@
 <a class="jxr_linenumber" name="L129" href="#L129">129</a>     }
 <a class="jxr_linenumber" name="L130" href="#L130">130</a> 	
 <a class="jxr_linenumber" name="L131" href="#L131">131</a> 	@RequestMapping(<span class="jxr_string">"/{logType}/{name}/iptimelinecum"</span>)
-<a class="jxr_linenumber" name="L132" href="#L132">132</a>     <strong class="jxr_keyword">public</strong> @ResponseBody Map&lt;String,List&lt;Object[]&gt;&gt; iptimelinecum(@PathVariable LogType logType, @PathVariable String name) {		
+<a class="jxr_linenumber" name="L132" href="#L132">132</a>     <strong class="jxr_keyword">public</strong> @ResponseBody Map&lt;String,List&lt;Object[]&gt;&gt; iptimelinecum(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType, @PathVariable String name) {		
 <a class="jxr_linenumber" name="L133" href="#L133">133</a>     	<strong class="jxr_keyword">return</strong> service.log().ipsTimelineCum(logType, name);
 <a class="jxr_linenumber" name="L134" href="#L134">134</a>     }    
 <a class="jxr_linenumber" name="L135" href="#L135">135</a>     
 <a class="jxr_linenumber" name="L136" href="#L136">136</a>     @RequestMapping(<span class="jxr_string">"/{logType}/iptimelinecum"</span>)
-<a class="jxr_linenumber" name="L137" href="#L137">137</a>     <strong class="jxr_keyword">public</strong> @ResponseBody Map&lt;String,List&lt;Object[]&gt;&gt; iptimelinecum(@PathVariable LogType logType) {		
+<a class="jxr_linenumber" name="L137" href="#L137">137</a>     <strong class="jxr_keyword">public</strong> @ResponseBody Map&lt;String,List&lt;Object[]&gt;&gt; iptimelinecum(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType) {		
 <a class="jxr_linenumber" name="L138" href="#L138">138</a>     	<strong class="jxr_keyword">return</strong> service.log().ipsTimelineCum(logType, <strong class="jxr_keyword">null</strong>);
 <a class="jxr_linenumber" name="L139" href="#L139">139</a>     }   
 <a class="jxr_linenumber" name="L140" href="#L140">140</a> 
@@ -154,12 +154,12 @@
 <a class="jxr_linenumber" name="L146" href="#L146">146</a>     }
 <a class="jxr_linenumber" name="L147" href="#L147">147</a> 	
 <a class="jxr_linenumber" name="L148" href="#L148">148</a> 	@RequestMapping(<span class="jxr_string">"/{logType}/{name}/iplist"</span>)
-<a class="jxr_linenumber" name="L149" href="#L149">149</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;String&gt; ips(@PathVariable LogType logType, @PathVariable String name) {
+<a class="jxr_linenumber" name="L149" href="#L149">149</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;String&gt; ips(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType, @PathVariable String name) {
 <a class="jxr_linenumber" name="L150" href="#L150">150</a> 		<strong class="jxr_keyword">return</strong> service.log().listUniqueIps(logType, name);
 <a class="jxr_linenumber" name="L151" href="#L151">151</a>     }    
 <a class="jxr_linenumber" name="L152" href="#L152">152</a>     
 <a class="jxr_linenumber" name="L153" href="#L153">153</a>     @RequestMapping(<span class="jxr_string">"/{logType}/iplist"</span>)
-<a class="jxr_linenumber" name="L154" href="#L154">154</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;String&gt; ips(@PathVariable LogType logType) {		
+<a class="jxr_linenumber" name="L154" href="#L154">154</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;String&gt; ips(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType) {		
 <a class="jxr_linenumber" name="L155" href="#L155">155</a>     	<strong class="jxr_keyword">return</strong> service.log().listUniqueIps(logType, <strong class="jxr_keyword">null</strong>);
 <a class="jxr_linenumber" name="L156" href="#L156">156</a>     }
 <a class="jxr_linenumber" name="L157" href="#L157">157</a> 	
@@ -171,12 +171,12 @@
 <a class="jxr_linenumber" name="L163" href="#L163">163</a>     }
 <a class="jxr_linenumber" name="L164" href="#L164">164</a>     
 <a class="jxr_linenumber" name="L165" href="#L165">165</a> 	@RequestMapping(<span class="jxr_string">"/{logType}/geography/world"</span>)
-<a class="jxr_linenumber" name="L166" href="#L166">166</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;Object[]&gt; geographyWorld(@PathVariable LogType logType) {		
+<a class="jxr_linenumber" name="L166" href="#L166">166</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;Object[]&gt; geographyWorld(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType) {		
 <a class="jxr_linenumber" name="L167" href="#L167">167</a>     	<strong class="jxr_keyword">return</strong> service.log().downloadsWorld(logType, <strong class="jxr_keyword">null</strong>);
 <a class="jxr_linenumber" name="L168" href="#L168">168</a>     }
 <a class="jxr_linenumber" name="L169" href="#L169">169</a>     
 <a class="jxr_linenumber" name="L170" href="#L170">170</a> 	@RequestMapping(<span class="jxr_string">"/{logType}/{name}/geography/world"</span>)
-<a class="jxr_linenumber" name="L171" href="#L171">171</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;Object[]&gt; geographyWorld(@PathVariable LogType logType, @PathVariable String name) {		
+<a class="jxr_linenumber" name="L171" href="#L171">171</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;Object[]&gt; geographyWorld(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType, @PathVariable String name) {		
 <a class="jxr_linenumber" name="L172" href="#L172">172</a>     	<strong class="jxr_keyword">return</strong> service.log().downloadsWorld(logType, name);
 <a class="jxr_linenumber" name="L173" href="#L173">173</a>     }
 <a class="jxr_linenumber" name="L174" href="#L174">174</a>     
@@ -187,12 +187,12 @@
 <a class="jxr_linenumber" name="L179" href="#L179">179</a>     }
 <a class="jxr_linenumber" name="L180" href="#L180">180</a>     
 <a class="jxr_linenumber" name="L181" href="#L181">181</a> 	@RequestMapping(<span class="jxr_string">"/{logType}/geography/all"</span>)
-<a class="jxr_linenumber" name="L182" href="#L182">182</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;Object[]&gt; geographyAll(@PathVariable LogType logType) {		
+<a class="jxr_linenumber" name="L182" href="#L182">182</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;Object[]&gt; geographyAll(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType) {		
 <a class="jxr_linenumber" name="L183" href="#L183">183</a>     	<strong class="jxr_keyword">return</strong> service.log().downloadsGeography(logType, <strong class="jxr_keyword">null</strong>);
 <a class="jxr_linenumber" name="L184" href="#L184">184</a>     }
 <a class="jxr_linenumber" name="L185" href="#L185">185</a>     
 <a class="jxr_linenumber" name="L186" href="#L186">186</a> 	@RequestMapping(<span class="jxr_string">"/{logType}/{name}/geography/all"</span>)
-<a class="jxr_linenumber" name="L187" href="#L187">187</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;Object[]&gt; geographyAll(@PathVariable LogType logType, 
+<a class="jxr_linenumber" name="L187" href="#L187">187</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;Object[]&gt; geographyAll(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType, 
 <a class="jxr_linenumber" name="L188" href="#L188">188</a>     		@PathVariable String name) {		
 <a class="jxr_linenumber" name="L189" href="#L189">189</a>     	<strong class="jxr_keyword">return</strong> service.log().downloadsGeography(logType, name);
 <a class="jxr_linenumber" name="L190" href="#L190">190</a>     }    
@@ -204,13 +204,13 @@
 <a class="jxr_linenumber" name="L196" href="#L196">196</a>     }
 <a class="jxr_linenumber" name="L197" href="#L197">197</a>     
 <a class="jxr_linenumber" name="L198" href="#L198">198</a> 	@RequestMapping(<span class="jxr_string">"/{logType}/geography/country/{code}"</span>)
-<a class="jxr_linenumber" name="L199" href="#L199">199</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;Object[]&gt; geographyCountry(@PathVariable LogType logType,
+<a class="jxr_linenumber" name="L199" href="#L199">199</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;Object[]&gt; geographyCountry(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType,
 <a class="jxr_linenumber" name="L200" href="#L200">200</a>     		@PathVariable String code) {		
 <a class="jxr_linenumber" name="L201" href="#L201">201</a>     	<strong class="jxr_keyword">return</strong> service.log().downloadsCountry(code, logType, <strong class="jxr_keyword">null</strong>);
 <a class="jxr_linenumber" name="L202" href="#L202">202</a>     }
 <a class="jxr_linenumber" name="L203" href="#L203">203</a>     
 <a class="jxr_linenumber" name="L204" href="#L204">204</a> 	@RequestMapping(<span class="jxr_string">"/{logType}/{name}/geography/country/{code}"</span>)
-<a class="jxr_linenumber" name="L205" href="#L205">205</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;Object[]&gt; geographyCountry(@PathVariable LogType logType, 
+<a class="jxr_linenumber" name="L205" href="#L205">205</a>     <strong class="jxr_keyword">public</strong> @ResponseBody List&lt;Object[]&gt; geographyCountry(@PathVariable <a href="../../cpath/jpa/LogType.html">LogType</a> logType, 
 <a class="jxr_linenumber" name="L206" href="#L206">206</a>     		@PathVariable String name, @PathVariable String code) {		
 <a class="jxr_linenumber" name="L207" href="#L207">207</a>     	<strong class="jxr_keyword">return</strong> service.log().downloadsCountry(code, logType, name);
 <a class="jxr_linenumber" name="L208" href="#L208">208</a>     }
@@ -255,7 +255,7 @@
 <a class="jxr_linenumber" name="L247" href="#L247">247</a> 		
 <a class="jxr_linenumber" name="L248" href="#L248">248</a> 		<em class="jxr_comment">//also - for each provider -</em>
 <a class="jxr_linenumber" name="L249" href="#L249">249</a> 		<strong class="jxr_keyword">int</strong> numProviders = 0; <em class="jxr_comment">//not warehouse data</em>
-<a class="jxr_linenumber" name="L250" href="#L250">250</a> 		<strong class="jxr_keyword">for</strong>(Metadata mtda : service.metadata().findAll()) {
+<a class="jxr_linenumber" name="L250" href="#L250">250</a> 		<strong class="jxr_keyword">for</strong>(<a href="../../cpath/jpa/Metadata.html">Metadata</a> mtda : service.metadata().findAll()) {
 <a class="jxr_linenumber" name="L251" href="#L251">251</a> 			<strong class="jxr_keyword">if</strong>(mtda.isNotPathwayData())
 <a class="jxr_linenumber" name="L252" href="#L252">252</a> 				<strong class="jxr_keyword">continue</strong>; <em class="jxr_comment">//skip warehouse data sources</em>
 <a class="jxr_linenumber" name="L253" href="#L253">253</a> 			

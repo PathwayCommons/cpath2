@@ -26,10 +26,10 @@
 <a class="jxr_linenumber" name="L18" href="#L18">18</a>  <em class="jxr_javadoccomment"> */</em>
 <a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../cpath/service/TraverseAnalysis.html">TraverseAnalysis</a> <strong class="jxr_keyword">implements</strong> Analysis&lt;Model&gt; {
 <a class="jxr_linenumber" name="L20" href="#L20">20</a>  	
-<a class="jxr_linenumber" name="L21" href="#L21">21</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> TraverseResponse callback;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> <a href="../../cpath/service/jaxb/TraverseResponse.html">TraverseResponse</a> callback;
 <a class="jxr_linenumber" name="L22" href="#L22">22</a>  	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">final</strong> String[] uris;
 <a class="jxr_linenumber" name="L23" href="#L23">23</a>  	
-<a class="jxr_linenumber" name="L24" href="#L24">24</a>  	<strong class="jxr_keyword">public</strong> <a href="../../cpath/service/TraverseAnalysis.html">TraverseAnalysis</a>(TraverseResponse callback, String... uris) {
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  	<strong class="jxr_keyword">public</strong> <a href="../../cpath/service/TraverseAnalysis.html">TraverseAnalysis</a>(<a href="../../cpath/service/jaxb/TraverseResponse.html">TraverseResponse</a> callback, String... uris) {
 <a class="jxr_linenumber" name="L25" href="#L25">25</a>  		<strong class="jxr_keyword">this</strong>.callback = callback;
 <a class="jxr_linenumber" name="L26" href="#L26">26</a>  		<strong class="jxr_keyword">this</strong>.uris = uris;
 <a class="jxr_linenumber" name="L27" href="#L27">27</a>  	}
@@ -55,7 +55,7 @@
 <a class="jxr_linenumber" name="L47" href="#L47">47</a>  			BioPAXElement bpe = model.getByID(uri);
 <a class="jxr_linenumber" name="L48" href="#L48">48</a>  			<strong class="jxr_keyword">try</strong> {
 <a class="jxr_linenumber" name="L49" href="#L49">49</a>  				Set&lt;?&gt; v = pathAccessor.getValueFromBean(bpe);
-<a class="jxr_linenumber" name="L50" href="#L50">50</a>  				TraverseEntry entry = <strong class="jxr_keyword">new</strong> TraverseEntry();
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>  				TraverseEntry entry = <strong class="jxr_keyword">new</strong> <a href="../../cpath/service/jaxb/TraverseEntry.html">TraverseEntry</a>();
 <a class="jxr_linenumber" name="L51" href="#L51">51</a>  				entry.setUri(uri);
 <a class="jxr_linenumber" name="L52" href="#L52">52</a>  				<strong class="jxr_keyword">if</strong>(!pathAccessor.isUnknown(v)) {
 <a class="jxr_linenumber" name="L53" href="#L53">53</a>  <em class="jxr_comment">//					entry.getValue().addAll(v);</em>
