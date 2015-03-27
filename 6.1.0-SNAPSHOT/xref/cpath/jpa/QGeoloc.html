@@ -1,0 +1,54 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>QGeoloc xref</title>
+<link type="text/css" rel="stylesheet" href="../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../apidocs/cpath/jpa/QGeoloc.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> cpath.jpa;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> <strong class="jxr_keyword">static</strong> com.mysema.query.types.PathMetadataFactory.*;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> com.mysema.query.types.path.*;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> com.mysema.query.types.PathMetadata;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> javax.annotation.Generated;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> com.mysema.query.types.Path;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <em class="jxr_javadoccomment"> * QGeoloc is a Querydsl query type for Geoloc</em>
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  @Generated(<span class="jxr_string">"com.mysema.query.codegen.EmbeddableSerializer"</span>)
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">class</strong> <a href="../../cpath/jpa/QGeoloc.html">QGeoloc</a> <strong class="jxr_keyword">extends</strong> BeanPath&lt;Geoloc&gt; {
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">long</strong> serialVersionUID = 1980264072L;
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> <a href="../../cpath/jpa/QGeoloc.html">QGeoloc</a> geoloc = <strong class="jxr_keyword">new</strong> <a href="../../cpath/jpa/QGeoloc.html">QGeoloc</a>(<span class="jxr_string">"geoloc"</span>);
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> StringPath city = createString(<span class="jxr_string">"city"</span>);
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> StringPath country = createString(<span class="jxr_string">"country"</span>);
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>      <strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">final</strong> StringPath region = createString(<span class="jxr_string">"region"</span>);
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>      <strong class="jxr_keyword">public</strong> <a href="../../cpath/jpa/QGeoloc.html">QGeoloc</a>(String variable) {
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>          <strong class="jxr_keyword">super</strong>(Geoloc.<strong class="jxr_keyword">class</strong>, forVariable(variable));
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>      }
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>      <strong class="jxr_keyword">public</strong> <a href="../../cpath/jpa/QGeoloc.html">QGeoloc</a>(Path&lt;? <strong class="jxr_keyword">extends</strong> Geoloc&gt; path) {
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>          <strong class="jxr_keyword">super</strong>(path.getType(), path.getMetadata());
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>      }
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>      <strong class="jxr_keyword">public</strong> <a href="../../cpath/jpa/QGeoloc.html">QGeoloc</a>(PathMetadata&lt;?&gt; metadata) {
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>          <strong class="jxr_keyword">super</strong>(Geoloc.<strong class="jxr_keyword">class</strong>, metadata);
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>      }
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  }
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2009&#x2013;2015 <a href="http://www.pathwaycommons.org">Pathway Commons</a>. All rights reserved.</div>
+</body>
+</html>

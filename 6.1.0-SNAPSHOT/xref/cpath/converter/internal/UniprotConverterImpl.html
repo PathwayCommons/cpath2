@@ -1,0 +1,602 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head><meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+<title>UniprotConverterImpl xref</title>
+<link type="text/css" rel="stylesheet" href="../../../stylesheet.css" />
+</head>
+<body>
+<div id="overview"><a href="../../../../apidocs/cpath/converter/internal/UniprotConverterImpl.html">View Javadoc</a></div><pre>
+<a class="jxr_linenumber" name="L1" href="#L1">1</a>   <strong class="jxr_keyword">package</strong> cpath.converter.internal;
+<a class="jxr_linenumber" name="L2" href="#L2">2</a>   
+<a class="jxr_linenumber" name="L3" href="#L3">3</a>   <strong class="jxr_keyword">import</strong> org.biopax.paxtools.io.SimpleIOHandler;
+<a class="jxr_linenumber" name="L4" href="#L4">4</a>   <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.BioPAXLevel;
+<a class="jxr_linenumber" name="L5" href="#L5">5</a>   <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.Model;
+<a class="jxr_linenumber" name="L6" href="#L6">6</a>   <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.BioSource;
+<a class="jxr_linenumber" name="L7" href="#L7">7</a>   <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.ModificationFeature;
+<a class="jxr_linenumber" name="L8" href="#L8">8</a>   <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.PositionStatusType;
+<a class="jxr_linenumber" name="L9" href="#L9">9</a>   <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.ProteinReference;
+<a class="jxr_linenumber" name="L10" href="#L10">10</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.RelationshipXref;
+<a class="jxr_linenumber" name="L11" href="#L11">11</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.SequenceInterval;
+<a class="jxr_linenumber" name="L12" href="#L12">12</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
+<a class="jxr_linenumber" name="L13" href="#L13">13</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.SequenceSite;
+<a class="jxr_linenumber" name="L14" href="#L14">14</a>  <strong class="jxr_keyword">import</strong> org.biopax.paxtools.model.level3.UnificationXref;
+<a class="jxr_linenumber" name="L15" href="#L15">15</a>  <strong class="jxr_keyword">import</strong> org.biopax.validator.utils.Normalizer;
+<a class="jxr_linenumber" name="L16" href="#L16">16</a>  <strong class="jxr_keyword">import</strong> org.slf4j.Logger;
+<a class="jxr_linenumber" name="L17" href="#L17">17</a>  <strong class="jxr_keyword">import</strong> org.slf4j.LoggerFactory;
+<a class="jxr_linenumber" name="L18" href="#L18">18</a>  
+<a class="jxr_linenumber" name="L19" href="#L19">19</a>  <strong class="jxr_keyword">import</strong> cpath.importer.Converter;
+<a class="jxr_linenumber" name="L20" href="#L20">20</a>  <strong class="jxr_keyword">import</strong> cpath.importer.PreMerger;
+<a class="jxr_linenumber" name="L21" href="#L21">21</a>  <strong class="jxr_keyword">import</strong> cpath.importer.PreMerger.RelTypeVocab;
+<a class="jxr_linenumber" name="L22" href="#L22">22</a>  
+<a class="jxr_linenumber" name="L23" href="#L23">23</a>  <strong class="jxr_keyword">import</strong> java.util.*;
+<a class="jxr_linenumber" name="L24" href="#L24">24</a>  <strong class="jxr_keyword">import</strong> java.util.regex.Matcher;
+<a class="jxr_linenumber" name="L25" href="#L25">25</a>  <strong class="jxr_keyword">import</strong> java.util.regex.Pattern;
+<a class="jxr_linenumber" name="L26" href="#L26">26</a>  <strong class="jxr_keyword">import</strong> java.io.*;
+<a class="jxr_linenumber" name="L27" href="#L27">27</a>  
+<a class="jxr_linenumber" name="L28" href="#L28">28</a>  <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L29" href="#L29">29</a>  <em class="jxr_javadoccomment"> * Implementation of {@link Converter} interface for UniProt data.</em>
+<a class="jxr_linenumber" name="L30" href="#L30">30</a>  <em class="jxr_javadoccomment"> * </em>
+<a class="jxr_linenumber" name="L31" href="#L31">31</a>  <em class="jxr_javadoccomment"> * @see <a href="http://web.expasy.org/docs/userman.htm" target="alexandria_uri">http://web.expasy.org/docs/userman.htm</a>l</em>
+<a class="jxr_linenumber" name="L32" href="#L32">32</a>  <em class="jxr_javadoccomment"> * @see <a href="http://www.uniprot.org/faq/3" target="alexandria_uri">http://www.uniprot.org/faq/3</a>0</em>
+<a class="jxr_linenumber" name="L33" href="#L33">33</a>  <em class="jxr_javadoccomment"> */</em>
+<a class="jxr_linenumber" name="L34" href="#L34">34</a>  <strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">class</strong> <a href="../../../cpath/converter/internal/UniprotConverterImpl.html">UniprotConverterImpl</a> <strong class="jxr_keyword">extends</strong> <a href="../../../cpath/converter/internal/BaseConverterImpl.html">BaseConverterImpl</a> {
+<a class="jxr_linenumber" name="L35" href="#L35">35</a>  
+<a class="jxr_linenumber" name="L36" href="#L36">36</a>      <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">static</strong> <strong class="jxr_keyword">final</strong> Logger log = LoggerFactory.getLogger(UniprotConverterImpl.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L37" href="#L37">37</a>         
+<a class="jxr_linenumber" name="L38" href="#L38">38</a>      <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L39" href="#L39">39</a>  <em class="jxr_javadoccomment">     * Constructor</em>
+<a class="jxr_linenumber" name="L40" href="#L40">40</a>  <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L41" href="#L41">41</a>  	UniprotConverterImpl() {}
+<a class="jxr_linenumber" name="L42" href="#L42">42</a>  
+<a class="jxr_linenumber" name="L43" href="#L43">43</a>  
+<a class="jxr_linenumber" name="L44" href="#L44">44</a>  	<strong class="jxr_keyword">public</strong> <strong class="jxr_keyword">void</strong> convert(InputStream is, OutputStream os) {
+<a class="jxr_linenumber" name="L45" href="#L45">45</a>  		<em class="jxr_comment">// ref to reader here so</em>
+<a class="jxr_linenumber" name="L46" href="#L46">46</a>  		<em class="jxr_comment">// we can close in finally clause</em>
+<a class="jxr_linenumber" name="L47" href="#L47">47</a>          InputStreamReader reader= <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L48" href="#L48">48</a>          Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
+<a class="jxr_linenumber" name="L49" href="#L49">49</a>          model.setXmlBase(xmlBase);
+<a class="jxr_linenumber" name="L50" href="#L50">50</a>          
+<a class="jxr_linenumber" name="L51" href="#L51">51</a>          <strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L52" href="#L52">52</a>              reader = <strong class="jxr_keyword">new</strong> InputStreamReader(is, <span class="jxr_string">"UTF-8"</span>);
+<a class="jxr_linenumber" name="L53" href="#L53">53</a>              BufferedReader bufferedReader = <strong class="jxr_keyword">new</strong> BufferedReader(reader);
+<a class="jxr_linenumber" name="L54" href="#L54">54</a>              String line = bufferedReader.readLine();
+<a class="jxr_linenumber" name="L55" href="#L55">55</a>              <strong class="jxr_keyword">final</strong> HashMap&lt;String, StringBuilder&gt; dataElements = <strong class="jxr_keyword">new</strong> HashMap&lt;String, StringBuilder&gt;();
+<a class="jxr_linenumber" name="L56" href="#L56">56</a>             	log.info(<span class="jxr_string">"convert(), starting to read data..."</span>);
+<a class="jxr_linenumber" name="L57" href="#L57">57</a>              <strong class="jxr_keyword">long</strong> linesReadSoFar = 0;
+<a class="jxr_linenumber" name="L58" href="#L58">58</a>              <strong class="jxr_keyword">while</strong> (line != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L59" href="#L59">59</a>              	linesReadSoFar++;
+<a class="jxr_linenumber" name="L60" href="#L60">60</a>                  <strong class="jxr_keyword">if</strong> (line.startsWith (<span class="jxr_string">"//"</span>)) //reached the end of a Uniprot entry
+<a class="jxr_linenumber" name="L61" href="#L61">61</a>                  {
+<a class="jxr_linenumber" name="L62" href="#L62">62</a>  					<em class="jxr_comment">// grab properties from the map and prepare for parsing</em>
+<a class="jxr_linenumber" name="L63" href="#L63">63</a>                      String deField = dataElements.get(<span class="jxr_string">"DE"</span>).toString();
+<a class="jxr_linenumber" name="L64" href="#L64">64</a>                      String organismName = dataElements.get(<span class="jxr_string">"OS"</span>).toString(); <em class="jxr_comment">//mostly occurs once per entry </em>
+<a class="jxr_linenumber" name="L65" href="#L65">65</a>                      String organismTaxId = dataElements.get(<span class="jxr_string">"OX"</span>).toString(); <em class="jxr_comment">//occurs once per entry </em>
+<a class="jxr_linenumber" name="L66" href="#L66">66</a>                      StringBuilder comments = dataElements.get(<span class="jxr_string">"CC"</span>);
+<a class="jxr_linenumber" name="L67" href="#L67">67</a>                      StringBuilder geneName = dataElements.get(<span class="jxr_string">"GN"</span>);
+<a class="jxr_linenumber" name="L68" href="#L68">68</a>                      String acNames = dataElements.get(<span class="jxr_string">"AC"</span>).toString();
+<a class="jxr_linenumber" name="L69" href="#L69">69</a>                      StringBuilder xrefs = dataElements.get(<span class="jxr_string">"DR"</span>);
+<a class="jxr_linenumber" name="L70" href="#L70">70</a>                      String idParts[] = dataElements.get(<span class="jxr_string">"ID"</span>).toString().split(<span class="jxr_string">"&#92;&#92;s+"</span>);
+<a class="jxr_linenumber" name="L71" href="#L71">71</a>                      StringBuilder sq = dataElements.get(<span class="jxr_string">"SQ"</span>); <em class="jxr_comment">//SEQUENCE SUMMARY</em>
+<a class="jxr_linenumber" name="L72" href="#L72">72</a>                      StringBuilder sequence = dataElements.get(<span class="jxr_string">"  "</span>); <em class="jxr_comment">//SEQUENCE</em>
+<a class="jxr_linenumber" name="L73" href="#L73">73</a>                      StringBuilder features = dataElements.get(<span class="jxr_string">"FT"</span>); <em class="jxr_comment">//strict format in 6-75 char in each FT line</em>
+<a class="jxr_linenumber" name="L74" href="#L74">74</a>                      
+<a class="jxr_linenumber" name="L75" href="#L75">75</a>                      ProteinReference proteinReference = newUniProtWithXrefs(idParts[0], acNames, model);
+<a class="jxr_linenumber" name="L76" href="#L76">76</a>                      
+<a class="jxr_linenumber" name="L77" href="#L77">77</a>              		<em class="jxr_comment">// add some external xrefs from DR fileds</em>
+<a class="jxr_linenumber" name="L78" href="#L78">78</a>                      <strong class="jxr_keyword">if</strong> (xrefs != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L79" href="#L79">79</a>                          setXRefsFromDRs(xrefs.toString(), proteinReference, model);
+<a class="jxr_linenumber" name="L80" href="#L80">80</a>                      }
+<a class="jxr_linenumber" name="L81" href="#L81">81</a>                            
+<a class="jxr_linenumber" name="L82" href="#L82">82</a>                      setNameAndSynonyms(proteinReference, deField);
+<a class="jxr_linenumber" name="L83" href="#L83">83</a>                      
+<a class="jxr_linenumber" name="L84" href="#L84">84</a>                      setOrganism(organismName, organismTaxId, proteinReference, model);
+<a class="jxr_linenumber" name="L85" href="#L85">85</a>                      
+<a class="jxr_linenumber" name="L86" href="#L86">86</a>                      <em class="jxr_comment">// GN gene symbols - to PR names and rel. xrefs</em>
+<a class="jxr_linenumber" name="L87" href="#L87">87</a>                      <strong class="jxr_keyword">if</strong> (geneName != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L88" href="#L88">88</a>                      	Collection&lt;String&gt; geneNames = getGeneSymbols(geneName.toString(), proteinReference);
+<a class="jxr_linenumber" name="L89" href="#L89">89</a>                          <em class="jxr_comment">// always use "HGNC Symbol" for rel. xrefs, despite it can be from MGI, RGD,.. (these are coordinated by HGNC)</em>
+<a class="jxr_linenumber" name="L90" href="#L90">90</a>                      	<em class="jxr_comment">// (cannot do this in setXRefsFromDRs: no gene synonyms there, and organism specific db names like MGI)</em>
+<a class="jxr_linenumber" name="L91" href="#L91">91</a>                          <strong class="jxr_keyword">for</strong> (String symbol : geneNames) {
+<a class="jxr_linenumber" name="L92" href="#L92">92</a>                          	<em class="jxr_comment">// also add Gene Names to PR names (can be &gt;1 due to isoforms)</em>
+<a class="jxr_linenumber" name="L93" href="#L93">93</a>                          	proteinReference.addName(symbol);
+<a class="jxr_linenumber" name="L94" href="#L94">94</a>                          	RelationshipXref rXRef = <a href="../../../cpath/importer/PreMerger.html">PreMerger</a>
+<a class="jxr_linenumber" name="L95" href="#L95">95</a>                          		.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, <span class="jxr_string">"HGNC Symbol"</span>, symbol, model);
+<a class="jxr_linenumber" name="L96" href="#L96">96</a>                          	proteinReference.addXref(rXRef);
+<a class="jxr_linenumber" name="L97" href="#L97">97</a>                          }
+<a class="jxr_linenumber" name="L98" href="#L98">98</a>                      }
+<a class="jxr_linenumber" name="L99" href="#L99">99</a>                      
+<a class="jxr_linenumber" name="L100" href="#L100">100</a>                     <em class="jxr_comment">//synonyms from GN</em>
+<a class="jxr_linenumber" name="L101" href="#L101">101</a>                     <strong class="jxr_keyword">if</strong> (geneName != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L102" href="#L102">102</a>                     	Collection&lt;String&gt; geneSyns = getGeneSynonyms(geneName.toString(), proteinReference);
+<a class="jxr_linenumber" name="L103" href="#L103">103</a>                         <strong class="jxr_keyword">for</strong> (String symbol : geneSyns) {
+<a class="jxr_linenumber" name="L104" href="#L104">104</a>                         	<em class="jxr_comment">// also add gene synonyms to PR names but do not create xrefs </em>
+<a class="jxr_linenumber" name="L105" href="#L105">105</a>                         	<em class="jxr_comment">// (these are not necessarily official HGNC Symbols and ambiguous)</em>
+<a class="jxr_linenumber" name="L106" href="#L106">106</a>                         	proteinReference.addName(symbol);
+<a class="jxr_linenumber" name="L107" href="#L107">107</a>                         }
+<a class="jxr_linenumber" name="L108" href="#L108">108</a>                     }
+<a class="jxr_linenumber" name="L109" href="#L109">109</a>                                       
+<a class="jxr_linenumber" name="L110" href="#L110">110</a>                     <em class="jxr_comment">// add some info from CC fields to BioPAX comments</em>
+<a class="jxr_linenumber" name="L111" href="#L111">111</a>                     <strong class="jxr_keyword">if</strong> (comments != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L112" href="#L112">112</a>                         setComments (comments.toString(), proteinReference);
+<a class="jxr_linenumber" name="L113" href="#L113">113</a>                     }
+<a class="jxr_linenumber" name="L114" href="#L114">114</a> 
+<a class="jxr_linenumber" name="L115" href="#L115">115</a> <em class="jxr_comment">// won't store canonical sequences (in practice, it does not help and may even mislead: </em>
+<a class="jxr_linenumber" name="L116" href="#L116">116</a> <em class="jxr_comment">// in fact, one usually needs to know an isoform sequence (variant) and its version exactly)</em>
+<a class="jxr_linenumber" name="L117" href="#L117">117</a> <em class="jxr_comment">//                    if(sequence != null) { //set sequence (remove spaces)</em>
+<a class="jxr_linenumber" name="L118" href="#L118">118</a> <em class="jxr_comment">//                    	String seq = sequence.toString().replaceAll("&#92;&#92;s", "");</em>
+<a class="jxr_linenumber" name="L119" href="#L119">119</a> <em class="jxr_comment">//                    	proteinReference.setSequence(seq);</em>
+<a class="jxr_linenumber" name="L120" href="#L120">120</a> <em class="jxr_comment">//                    	proteinReference.addComment(sq.toString()); //sequence summary</em>
+<a class="jxr_linenumber" name="L121" href="#L121">121</a> <em class="jxr_comment">//                    }</em>
+<a class="jxr_linenumber" name="L122" href="#L122">122</a>                     
+<a class="jxr_linenumber" name="L123" href="#L123">123</a>                     <em class="jxr_comment">//create modified residue features</em>
+<a class="jxr_linenumber" name="L124" href="#L124">124</a>                     <strong class="jxr_keyword">if</strong>(features != <strong class="jxr_keyword">null</strong>)
+<a class="jxr_linenumber" name="L125" href="#L125">125</a>                     	createModResFeatures(features.toString(), proteinReference, model);
+<a class="jxr_linenumber" name="L126" href="#L126">126</a>                     
+<a class="jxr_linenumber" name="L127" href="#L127">127</a>                     <em class="jxr_comment">// debug: write the one-protein-reference model</em>
+<a class="jxr_linenumber" name="L128" href="#L128">128</a>                     log.debug(<span class="jxr_string">"convert(). so far line# "</span> + linesReadSoFar);
+<a class="jxr_linenumber" name="L129" href="#L129">129</a>                     
+<a class="jxr_linenumber" name="L130" href="#L130">130</a>                     dataElements.clear();
+<a class="jxr_linenumber" name="L131" href="#L131">131</a>                 }
+<a class="jxr_linenumber" name="L132" href="#L132">132</a> 				<strong class="jxr_keyword">else</strong> { <em class="jxr_comment">//continue read and collect current Uniprot entry lines</em>
+<a class="jxr_linenumber" name="L133" href="#L133">133</a> 					<em class="jxr_comment">/* The two-character line-type code that begins each line is</em>
+<a class="jxr_linenumber" name="L134" href="#L134">134</a> <em class="jxr_comment">					 * always followed by three blanks, so that the actual </em>
+<a class="jxr_linenumber" name="L135" href="#L135">135</a> <em class="jxr_comment">					 * information begins with the sixth character.</em>
+<a class="jxr_linenumber" name="L136" href="#L136">136</a> <em class="jxr_comment">					 */</em>
+<a class="jxr_linenumber" name="L137" href="#L137">137</a>                     String key = line.substring (0, 2);
+<a class="jxr_linenumber" name="L138" href="#L138">138</a>                     String data = line.substring(5);
+<a class="jxr_linenumber" name="L139" href="#L139">139</a>                     <strong class="jxr_keyword">if</strong> (data.startsWith(<span class="jxr_string">"-------"</span>) ||
+<a class="jxr_linenumber" name="L140" href="#L140">140</a>                     	data.startsWith(<span class="jxr_string">"Copyrighted"</span>) ||
+<a class="jxr_linenumber" name="L141" href="#L141">141</a>                         	data.startsWith(<span class="jxr_string">"Distributed"</span>)) 
+<a class="jxr_linenumber" name="L142" href="#L142">142</a>                     {
+<a class="jxr_linenumber" name="L143" href="#L143">143</a>                         <em class="jxr_comment">//  do nothing</em>
+<a class="jxr_linenumber" name="L144" href="#L144">144</a>                     } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L145" href="#L145">145</a>                     	<em class="jxr_comment">//important for correct splitting DR rows</em>
+<a class="jxr_linenumber" name="L146" href="#L146">146</a>                     	<strong class="jxr_keyword">if</strong>(key.equals(<span class="jxr_string">"DR"</span>))
+<a class="jxr_linenumber" name="L147" href="#L147">147</a>                     		data += <span class="jxr_string">"\n"</span>; 
+<a class="jxr_linenumber" name="L148" href="#L148">148</a>                         <strong class="jxr_keyword">if</strong> (dataElements.containsKey(key)) {
+<a class="jxr_linenumber" name="L149" href="#L149">149</a>                         	<em class="jxr_comment">//remove leading spaces from second and next lines in FT, CC, DE records</em>
+<a class="jxr_linenumber" name="L150" href="#L150">150</a>                         	<strong class="jxr_keyword">if</strong>(data.startsWith(<span class="jxr_string">" "</span>)) <em class="jxr_comment">//i.e, the sixth char on the line is space/blank</em>
+<a class="jxr_linenumber" name="L151" href="#L151">151</a>                         		data = data.replaceAll(<span class="jxr_string">"^&#92;&#92;s+"</span>, <span class="jxr_string">""</span>);                       	
+<a class="jxr_linenumber" name="L152" href="#L152">152</a>                         	dataElements.get(key).append(data);
+<a class="jxr_linenumber" name="L153" href="#L153">153</a>                         } <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L154" href="#L154">154</a>                             dataElements.put(key, <strong class="jxr_keyword">new</strong> StringBuilder (data));
+<a class="jxr_linenumber" name="L155" href="#L155">155</a> 						}
+<a class="jxr_linenumber" name="L156" href="#L156">156</a>                     }
+<a class="jxr_linenumber" name="L157" href="#L157">157</a>                 }
+<a class="jxr_linenumber" name="L158" href="#L158">158</a>                 line = bufferedReader.readLine();<em class="jxr_comment">//it removes EOLs</em>
+<a class="jxr_linenumber" name="L159" href="#L159">159</a>             }
+<a class="jxr_linenumber" name="L160" href="#L160">160</a>         }
+<a class="jxr_linenumber" name="L161" href="#L161">161</a> 		<strong class="jxr_keyword">catch</strong>(IOException e) {
+<a class="jxr_linenumber" name="L162" href="#L162">162</a> 			<strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> RuntimeException(<span class="jxr_string">"Failed to convert UniProt data to BioPAX"</span>, e);
+<a class="jxr_linenumber" name="L163" href="#L163">163</a> 		}
+<a class="jxr_linenumber" name="L164" href="#L164">164</a> 		<strong class="jxr_keyword">finally</strong> {
+<a class="jxr_linenumber" name="L165" href="#L165">165</a> 			log.debug(<span class="jxr_string">"convert(), closing reader."</span>);
+<a class="jxr_linenumber" name="L166" href="#L166">166</a>             <strong class="jxr_keyword">if</strong> (reader != <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L167" href="#L167">167</a> 				<strong class="jxr_keyword">try</strong> { reader.close(); } <strong class="jxr_keyword">catch</strong> (Exception e) {} <em class="jxr_comment">//ignore</em>
+<a class="jxr_linenumber" name="L168" href="#L168">168</a>             }
+<a class="jxr_linenumber" name="L169" href="#L169">169</a>         }       
+<a class="jxr_linenumber" name="L170" href="#L170">170</a> 
+<a class="jxr_linenumber" name="L171" href="#L171">171</a>         log.info(<span class="jxr_string">"convert(), repairing."</span>);
+<a class="jxr_linenumber" name="L172" href="#L172">172</a>         model.repair();
+<a class="jxr_linenumber" name="L173" href="#L173">173</a>         
+<a class="jxr_linenumber" name="L174" href="#L174">174</a>         log.info(<span class="jxr_string">"convert(), writing."</span>);
+<a class="jxr_linenumber" name="L175" href="#L175">175</a>         <strong class="jxr_keyword">new</strong> SimpleIOHandler(BioPAXLevel.L3).convertToOWL(model, os);
+<a class="jxr_linenumber" name="L176" href="#L176">176</a>     }
+<a class="jxr_linenumber" name="L177" href="#L177">177</a> 
+<a class="jxr_linenumber" name="L178" href="#L178">178</a> 	
+<a class="jxr_linenumber" name="L179" href="#L179">179</a> 	<em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="L180" href="#L180">180</a> <em class="jxr_comment">	 * Sets name and synonyms on protein reference.</em>
+<a class="jxr_linenumber" name="L181" href="#L181">181</a> <em class="jxr_comment">	 *</em>
+<a class="jxr_linenumber" name="L182" href="#L182">182</a> <em class="jxr_comment">	 * @param proteinReference ProteinReference</em>
+<a class="jxr_linenumber" name="L183" href="#L183">183</a> <em class="jxr_comment">	 * @param deField String</em>
+<a class="jxr_linenumber" name="L184" href="#L184">184</a> <em class="jxr_comment">	 */</em>
+<a class="jxr_linenumber" name="L185" href="#L185">185</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> setNameAndSynonyms (ProteinReference proteinReference, String deField) {
+<a class="jxr_linenumber" name="L186" href="#L186">186</a>         <em class="jxr_comment">//  With the latest UNIPROT Export, the DE Line contains multiple fields.</em>
+<a class="jxr_linenumber" name="L187" href="#L187">187</a>         <em class="jxr_comment">//  For example:</em>
+<a class="jxr_linenumber" name="L188" href="#L188">188</a>         <em class="jxr_comment">//  DE   RecName: Full=14-3-3 protein beta/alpha;</em>
+<a class="jxr_linenumber" name="L189" href="#L189">189</a>         <em class="jxr_comment">//  DE   AltName: Full=Protein kinase C inhibitor protein 1;</em>
+<a class="jxr_linenumber" name="L190" href="#L190">190</a>         <em class="jxr_comment">//  DE            Short=KCIP-1;</em>
+<a class="jxr_linenumber" name="L191" href="#L191">191</a>         <em class="jxr_comment">//  DE   AltName: Full=Protein 1054;</em>
+<a class="jxr_linenumber" name="L192" href="#L192">192</a>         <em class="jxr_comment">//  We only want DE  RecName: Full</em>
+<a class="jxr_linenumber" name="L193" href="#L193">193</a>         <strong class="jxr_keyword">if</strong> (deField != <strong class="jxr_keyword">null</strong> &amp;&amp; deField.length() &gt; 0) {
+<a class="jxr_linenumber" name="L194" href="#L194">194</a>             String fields[] = deField.split(<span class="jxr_string">";"</span>);
+<a class="jxr_linenumber" name="L195" href="#L195">195</a>             <strong class="jxr_keyword">for</strong> (String field: fields) {
+<a class="jxr_linenumber" name="L196" href="#L196">196</a>                 String parts[] = field.split(<span class="jxr_string">"="</span>);
+<a class="jxr_linenumber" name="L197" href="#L197">197</a>                 <strong class="jxr_keyword">if</strong> (parts.length == 2) {
+<a class="jxr_linenumber" name="L198" href="#L198">198</a>                     String fieldName = parts[0]; <em class="jxr_comment">//no trim() required here</em>
+<a class="jxr_linenumber" name="L199" href="#L199">199</a>                     
+<a class="jxr_linenumber" name="L200" href="#L200">200</a>                     String fieldValue = parts[1].trim();
+<a class="jxr_linenumber" name="L201" href="#L201">201</a>                     <em class="jxr_comment">//after 1 Oct 2014, remove evidence (e.g., {type|source} - {ECO:0000269|PubMed10433554}) at the name's end (see http://www.uniprot.org/changes/evidences)</em>
+<a class="jxr_linenumber" name="L202" href="#L202">202</a>                     <strong class="jxr_keyword">int</strong> idx = fieldValue.indexOf(<span class="jxr_string">" {"</span>);
+<a class="jxr_linenumber" name="L203" href="#L203">203</a>                     <strong class="jxr_keyword">if</strong>(idx&gt;0) fieldValue = fieldValue.substring(0, idx);
+<a class="jxr_linenumber" name="L204" href="#L204">204</a>                     
+<a class="jxr_linenumber" name="L205" href="#L205">205</a>                     <strong class="jxr_keyword">if</strong> (<span class="jxr_string">"RecName: Full"</span>.equals(fieldName)) {
+<a class="jxr_linenumber" name="L206" href="#L206">206</a> 						proteinReference.setStandardName(fieldValue);
+<a class="jxr_linenumber" name="L207" href="#L207">207</a>                     }
+<a class="jxr_linenumber" name="L208" href="#L208">208</a> 					<strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L209" href="#L209">209</a> 						proteinReference.addName(fieldValue);
+<a class="jxr_linenumber" name="L210" href="#L210">210</a>                     }
+<a class="jxr_linenumber" name="L211" href="#L211">211</a>                 }
+<a class="jxr_linenumber" name="L212" href="#L212">212</a>             }
+<a class="jxr_linenumber" name="L213" href="#L213">213</a>         }
+<a class="jxr_linenumber" name="L214" href="#L214">214</a>     }
+<a class="jxr_linenumber" name="L215" href="#L215">215</a> 
+<a class="jxr_linenumber" name="L216" href="#L216">216</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L217" href="#L217">217</a> <em class="jxr_javadoccomment">     * Sets the Current Organism Information.</em>
+<a class="jxr_linenumber" name="L218" href="#L218">218</a> <em class="jxr_javadoccomment">	 *</em>
+<a class="jxr_linenumber" name="L219" href="#L219">219</a> <em class="jxr_javadoccomment">	 * @param organismName String</em>
+<a class="jxr_linenumber" name="L220" href="#L220">220</a> <em class="jxr_javadoccomment">     * @param organismTaxId String</em>
+<a class="jxr_linenumber" name="L221" href="#L221">221</a> <em class="jxr_javadoccomment">     * @param proteinReference ProteinReference</em>
+<a class="jxr_linenumber" name="L222" href="#L222">222</a> <em class="jxr_javadoccomment">     * @param model</em>
+<a class="jxr_linenumber" name="L223" href="#L223">223</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L224" href="#L224">224</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> setOrganism(String organismName, String organismTaxId, 
+<a class="jxr_linenumber" name="L225" href="#L225">225</a>     		ProteinReference proteinReference, Model model) {
+<a class="jxr_linenumber" name="L226" href="#L226">226</a>         String parts[] = organismTaxId.replaceAll(<span class="jxr_string">";"</span>, <span class="jxr_string">""</span>).split(<span class="jxr_string">"="</span>);
+<a class="jxr_linenumber" name="L227" href="#L227">227</a>         String taxId = parts[1];
+<a class="jxr_linenumber" name="L228" href="#L228">228</a>         <em class="jxr_comment">//since 1 Oct 2014, have to remove {evidence} after the taxId (after space); see http://www.uniprot.org/changes/evidences</em>
+<a class="jxr_linenumber" name="L229" href="#L229">229</a>         <strong class="jxr_keyword">int</strong> idx = taxId.indexOf(<span class="jxr_string">" {"</span>);
+<a class="jxr_linenumber" name="L230" href="#L230">230</a>         <strong class="jxr_keyword">if</strong>(idx &gt; 0)
+<a class="jxr_linenumber" name="L231" href="#L231">231</a>         	taxId = taxId.substring(0, idx);
+<a class="jxr_linenumber" name="L232" href="#L232">232</a>         
+<a class="jxr_linenumber" name="L233" href="#L233">233</a>         parts = organismName.split(<span class="jxr_string">"&#92;&#92;("</span>); <em class="jxr_comment">// - by first occurrence of '('</em>
+<a class="jxr_linenumber" name="L234" href="#L234">234</a>         String name = parts[0].trim();
+<a class="jxr_linenumber" name="L235" href="#L235">235</a> 		BioSource bioSource = getBioSource(taxId, name, model);
+<a class="jxr_linenumber" name="L236" href="#L236">236</a> 		proteinReference.setOrganism(bioSource);
+<a class="jxr_linenumber" name="L237" href="#L237">237</a>     }
+<a class="jxr_linenumber" name="L238" href="#L238">238</a> 
+<a class="jxr_linenumber" name="L239" href="#L239">239</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L240" href="#L240">240</a> <em class="jxr_javadoccomment">     * Sets some BioPAX comments </em>
+<a class="jxr_linenumber" name="L241" href="#L241">241</a> <em class="jxr_javadoccomment">     * ("INTERACTION" sections of UniProt CC fields, </em>
+<a class="jxr_linenumber" name="L242" href="#L242">242</a> <em class="jxr_javadoccomment">     * gene symbols, and copyright.)</em>
+<a class="jxr_linenumber" name="L243" href="#L243">243</a> <em class="jxr_javadoccomment">	 *</em>
+<a class="jxr_linenumber" name="L244" href="#L244">244</a> <em class="jxr_javadoccomment">	 * @param comments String</em>
+<a class="jxr_linenumber" name="L245" href="#L245">245</a> <em class="jxr_javadoccomment">	 * @param geneSynonyms String</em>
+<a class="jxr_linenumber" name="L246" href="#L246">246</a> <em class="jxr_javadoccomment">	 * @param proteinReference ProteinReference</em>
+<a class="jxr_linenumber" name="L247" href="#L247">247</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L248" href="#L248">248</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> setComments (String comments, ProteinReference proteinReference) 
+<a class="jxr_linenumber" name="L249" href="#L249">249</a>     {
+<a class="jxr_linenumber" name="L250" href="#L250">250</a>         String commentParts[] = comments.split(<span class="jxr_string">"-!- "</span>);
+<a class="jxr_linenumber" name="L251" href="#L251">251</a>         StringBuilder reducedComments = <strong class="jxr_keyword">new</strong> StringBuilder();
+<a class="jxr_linenumber" name="L252" href="#L252">252</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i=0; i&lt;commentParts.length; i++) {
+<a class="jxr_linenumber" name="L253" href="#L253">253</a>             String currentComment = commentParts[i];
+<a class="jxr_linenumber" name="L254" href="#L254">254</a>             <em class="jxr_comment">//  Filter out the Interaction comments.</em>
+<a class="jxr_linenumber" name="L255" href="#L255">255</a>             <em class="jxr_comment">//  We don't want these, as cPath itself will contain the interactions.</em>
+<a class="jxr_linenumber" name="L256" href="#L256">256</a>             <strong class="jxr_keyword">if</strong> (!currentComment.startsWith(<span class="jxr_string">"INTERACTION"</span>)) {
+<a class="jxr_linenumber" name="L257" href="#L257">257</a>                 currentComment = currentComment.replaceAll(<span class="jxr_string">"     "</span>, <span class="jxr_string">" "</span>);
+<a class="jxr_linenumber" name="L258" href="#L258">258</a>                 reducedComments.append (currentComment);
+<a class="jxr_linenumber" name="L259" href="#L259">259</a>             }
+<a class="jxr_linenumber" name="L260" href="#L260">260</a>         }
+<a class="jxr_linenumber" name="L261" href="#L261">261</a>         <strong class="jxr_keyword">if</strong> (reducedComments.length() &gt; 0) {
+<a class="jxr_linenumber" name="L262" href="#L262">262</a>             reducedComments.append (<span class="jxr_string">" COPYRIGHT:  Protein annotation is derived from the "</span>
+<a class="jxr_linenumber" name="L263" href="#L263">263</a>                     + <span class="jxr_string">"UniProt Consortium (http://www.uniprot.org/).  Distributed under "</span>
+<a class="jxr_linenumber" name="L264" href="#L264">264</a>                     + <span class="jxr_string">"the Creative Commons Attribution-NoDerivs License."</span>);
+<a class="jxr_linenumber" name="L265" href="#L265">265</a>         }
+<a class="jxr_linenumber" name="L266" href="#L266">266</a>         
+<a class="jxr_linenumber" name="L267" href="#L267">267</a> 		proteinReference.addComment(reducedComments.toString());
+<a class="jxr_linenumber" name="L268" href="#L268">268</a>     }
+<a class="jxr_linenumber" name="L269" href="#L269">269</a> 
+<a class="jxr_linenumber" name="L270" href="#L270">270</a> 
+<a class="jxr_linenumber" name="L271" href="#L271">271</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L272" href="#L272">272</a> <em class="jxr_javadoccomment">     * Sets Multiple Types of XRefs, e.g. Entrez Gene ID and RefSeq.</em>
+<a class="jxr_linenumber" name="L273" href="#L273">273</a> <em class="jxr_javadoccomment">	 *</em>
+<a class="jxr_linenumber" name="L274" href="#L274">274</a> <em class="jxr_javadoccomment">	 * @param dbRefs String (concatenated 'DR' lines)</em>
+<a class="jxr_linenumber" name="L275" href="#L275">275</a> <em class="jxr_javadoccomment">     * @param proteinReference</em>
+<a class="jxr_linenumber" name="L276" href="#L276">276</a> <em class="jxr_javadoccomment">     * @param model</em>
+<a class="jxr_linenumber" name="L277" href="#L277">277</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L278" href="#L278">278</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> setXRefsFromDRs (String dbRefs, ProteinReference proteinReference, Model model) {
+<a class="jxr_linenumber" name="L279" href="#L279">279</a>     	<strong class="jxr_keyword">final</strong> String lines[] = dbRefs.split(<span class="jxr_string">"\n"</span>); 
+<a class="jxr_linenumber" name="L280" href="#L280">280</a>     	
+<a class="jxr_linenumber" name="L281" href="#L281">281</a>         <strong class="jxr_keyword">for</strong> (String line : lines) {
+<a class="jxr_linenumber" name="L282" href="#L282">282</a>         	<em class="jxr_comment">//remove everything after '.' (e.g., isoform refs, comments)</em>
+<a class="jxr_linenumber" name="L283" href="#L283">283</a>         	String xref = line.replaceFirst(<span class="jxr_string">"&#92;&#92;..*"</span>, <span class="jxr_string">""</span>).trim();
+<a class="jxr_linenumber" name="L284" href="#L284">284</a>         	String parts[] = xref.split(<span class="jxr_string">";"</span>);
+<a class="jxr_linenumber" name="L285" href="#L285">285</a>         	
+<a class="jxr_linenumber" name="L286" href="#L286">286</a>         	String db = parts[0].trim();
+<a class="jxr_linenumber" name="L287" href="#L287">287</a>         	
+<a class="jxr_linenumber" name="L288" href="#L288">288</a>         	<em class="jxr_comment">// skip for other, not identity, ID types,</em>
+<a class="jxr_linenumber" name="L289" href="#L289">289</a>         	<em class="jxr_comment">// e.g., refs to pathway databases, ontologies, etc.:</em>
+<a class="jxr_linenumber" name="L290" href="#L290">290</a>         	<strong class="jxr_keyword">if</strong> (!db.equalsIgnoreCase(<span class="jxr_string">"GENEID"</span>) 
+<a class="jxr_linenumber" name="L291" href="#L291">291</a>         			&amp;&amp; !db.equalsIgnoreCase(<span class="jxr_string">"REFSEQ"</span>) 
+<a class="jxr_linenumber" name="L292" href="#L292">292</a>         			&amp;&amp; !db.equalsIgnoreCase(<span class="jxr_string">"ENSEMBL"</span>) 
+<a class="jxr_linenumber" name="L293" href="#L293">293</a>         			&amp;&amp; !db.equalsIgnoreCase(<span class="jxr_string">"HGNC"</span>)) {
+<a class="jxr_linenumber" name="L294" href="#L294">294</a> 				<strong class="jxr_keyword">continue</strong>;
+<a class="jxr_linenumber" name="L295" href="#L295">295</a>         	}
+<a class="jxr_linenumber" name="L296" href="#L296">296</a> 
+<a class="jxr_linenumber" name="L297" href="#L297">297</a> 			String fixedDb = db;	
+<a class="jxr_linenumber" name="L298" href="#L298">298</a> 			<strong class="jxr_keyword">if</strong> (db.equalsIgnoreCase(<span class="jxr_string">"GENEID"</span>))
+<a class="jxr_linenumber" name="L299" href="#L299">299</a> 				fixedDb = <span class="jxr_string">"NCBI Gene"</span>; <em class="jxr_comment">// - preferred name</em>
+<a class="jxr_linenumber" name="L300" href="#L300">300</a> 			
+<a class="jxr_linenumber" name="L301" href="#L301">301</a> 			<em class="jxr_comment">//iterate over the ID tokens of the same DR line, skipping non-ID comments, etc. (ending)</em>
+<a class="jxr_linenumber" name="L302" href="#L302">302</a> 			<strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> j = 1; j &lt; parts.length; j++) {
+<a class="jxr_linenumber" name="L303" href="#L303">303</a> 				String id = parts[j].trim();
+<a class="jxr_linenumber" name="L304" href="#L304">304</a> 
+<a class="jxr_linenumber" name="L305" href="#L305">305</a> 				<em class="jxr_comment">//at the end of a DR line in some cases (e.g, GeneID or RefSeq)?</em>
+<a class="jxr_linenumber" name="L306" href="#L306">306</a> 				<strong class="jxr_keyword">if</strong>(id.equals(<span class="jxr_string">"-"</span>))
+<a class="jxr_linenumber" name="L307" href="#L307">307</a> 					<strong class="jxr_keyword">break</strong>;
+<a class="jxr_linenumber" name="L308" href="#L308">308</a> 				<em class="jxr_comment">//no more Ensembl IDs (skip comments)</em>
+<a class="jxr_linenumber" name="L309" href="#L309">309</a> 				<strong class="jxr_keyword">if</strong> (db.equalsIgnoreCase(<span class="jxr_string">"ENSEMBL"</span>) &amp;&amp; !id.startsWith(<span class="jxr_string">"ENS"</span>))
+<a class="jxr_linenumber" name="L310" href="#L310">310</a> 					<strong class="jxr_keyword">break</strong>; 
+<a class="jxr_linenumber" name="L311" href="#L311">311</a> 				<em class="jxr_comment">//last ID in a HGNC line is in fact gene name</em>
+<a class="jxr_linenumber" name="L312" href="#L312">312</a> 				<strong class="jxr_keyword">if</strong>(db.equalsIgnoreCase(<span class="jxr_string">"HGNC"</span>) &amp;&amp; !id.startsWith(<span class="jxr_string">"HGNC:"</span>)) {
+<a class="jxr_linenumber" name="L313" href="#L313">313</a> 					fixedDb = <span class="jxr_string">"HGNC Symbol"</span>;
+<a class="jxr_linenumber" name="L314" href="#L314">314</a> 				}
+<a class="jxr_linenumber" name="L315" href="#L315">315</a> 				<em class="jxr_comment">//remove .version from RefSeq IDs</em>
+<a class="jxr_linenumber" name="L316" href="#L316">316</a> 				<strong class="jxr_keyword">if</strong> (db.equalsIgnoreCase(<span class="jxr_string">"REFSEQ"</span>)) {
+<a class="jxr_linenumber" name="L317" href="#L317">317</a> 					<em class="jxr_comment">// extract only RefSeq AC from AC.Version ID form</em>
+<a class="jxr_linenumber" name="L318" href="#L318">318</a> 					fixedDb = <span class="jxr_string">"RefSeq"</span>;
+<a class="jxr_linenumber" name="L319" href="#L319">319</a> 					id = id.replaceFirst(<span class="jxr_string">"&#92;&#92;.&#92;&#92;d+"</span>, <span class="jxr_string">""</span>);
+<a class="jxr_linenumber" name="L320" href="#L320">320</a> 				}
+<a class="jxr_linenumber" name="L321" href="#L321">321</a> 				
+<a class="jxr_linenumber" name="L322" href="#L322">322</a> 				<em class="jxr_comment">//ok to create a new rel. xref with type "identity"</em>
+<a class="jxr_linenumber" name="L323" href="#L323">323</a> 				RelationshipXref rXRef = <a href="../../../cpath/importer/PreMerger.html">PreMerger</a>
+<a class="jxr_linenumber" name="L324" href="#L324">324</a> 						.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, 
+<a class="jxr_linenumber" name="L325" href="#L325">325</a> 								fixedDb, id, model);					
+<a class="jxr_linenumber" name="L326" href="#L326">326</a> 				proteinReference.addXref(rXRef);
+<a class="jxr_linenumber" name="L327" href="#L327">327</a> 				<em class="jxr_comment">// this xref type is then used for id-mapping in the Merger and queries;</em>
+<a class="jxr_linenumber" name="L328" href="#L328">328</a> 			}
+<a class="jxr_linenumber" name="L329" href="#L329">329</a>         }
+<a class="jxr_linenumber" name="L330" href="#L330">330</a>         	
+<a class="jxr_linenumber" name="L331" href="#L331">331</a>     }
+<a class="jxr_linenumber" name="L332" href="#L332">332</a> 
+<a class="jxr_linenumber" name="L333" href="#L333">333</a> 
+<a class="jxr_linenumber" name="L334" href="#L334">334</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L335" href="#L335">335</a> <em class="jxr_javadoccomment">     * Gets Official Gene Symbols from UniProt record's GN fields.</em>
+<a class="jxr_linenumber" name="L336" href="#L336">336</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L337" href="#L337">337</a> <em class="jxr_javadoccomment">     * @param geneName concatenated UniProt record's GN fields.</em>
+<a class="jxr_linenumber" name="L338" href="#L338">338</a> <em class="jxr_javadoccomment">     * @param proteinReference</em>
+<a class="jxr_linenumber" name="L339" href="#L339">339</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L340" href="#L340">340</a>     <strong class="jxr_keyword">private</strong> Collection&lt;String&gt; getGeneSymbols(String geneName, ProteinReference proteinReference) 
+<a class="jxr_linenumber" name="L341" href="#L341">341</a>     {
+<a class="jxr_linenumber" name="L342" href="#L342">342</a>     	Collection&lt;String&gt; symbls = <strong class="jxr_keyword">new</strong> ArrayList&lt;String&gt;();
+<a class="jxr_linenumber" name="L343" href="#L343">343</a>         String parts[] = geneName.split(<span class="jxr_string">";&#92;&#92;s*(and)?"</span>);
+<a class="jxr_linenumber" name="L344" href="#L344">344</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i=0; i&lt;parts.length; i++) {
+<a class="jxr_linenumber" name="L345" href="#L345">345</a>             String subParts[] = parts[i].split(<span class="jxr_string">"="</span>);
+<a class="jxr_linenumber" name="L346" href="#L346">346</a>             <em class="jxr_comment">// can be &gt;1 due to isoforms</em>
+<a class="jxr_linenumber" name="L347" href="#L347">347</a>             <strong class="jxr_keyword">if</strong> (subParts[0].trim().equals(<span class="jxr_string">"Name"</span>)) {
+<a class="jxr_linenumber" name="L348" href="#L348">348</a>             	<em class="jxr_comment">//remove {evidence}; see http://www.uniprot.org/changes/evidences (GN)</em>
+<a class="jxr_linenumber" name="L349" href="#L349">349</a>             	String gn = subParts[1];
+<a class="jxr_linenumber" name="L350" href="#L350">350</a>             	<strong class="jxr_keyword">int</strong> idx = gn.indexOf(<span class="jxr_string">" {"</span>);
+<a class="jxr_linenumber" name="L351" href="#L351">351</a>             	<strong class="jxr_keyword">if</strong>(idx&gt;0)
+<a class="jxr_linenumber" name="L352" href="#L352">352</a>             		gn = gn.substring(0, idx);         	
+<a class="jxr_linenumber" name="L353" href="#L353">353</a>             	symbls.add(gn);
+<a class="jxr_linenumber" name="L354" href="#L354">354</a>             }
+<a class="jxr_linenumber" name="L355" href="#L355">355</a>         }
+<a class="jxr_linenumber" name="L356" href="#L356">356</a>         <strong class="jxr_keyword">return</strong> symbls;
+<a class="jxr_linenumber" name="L357" href="#L357">357</a>     }
+<a class="jxr_linenumber" name="L358" href="#L358">358</a> 
+<a class="jxr_linenumber" name="L359" href="#L359">359</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L360" href="#L360">360</a> <em class="jxr_javadoccomment">     * Gets Gene Synonyms from UniProt record's GN fields.</em>
+<a class="jxr_linenumber" name="L361" href="#L361">361</a> <em class="jxr_javadoccomment">     * </em>
+<a class="jxr_linenumber" name="L362" href="#L362">362</a> <em class="jxr_javadoccomment">     * @param geneName concatenated UniProt record's GN fields </em>
+<a class="jxr_linenumber" name="L363" href="#L363">363</a> <em class="jxr_javadoccomment">     * @param proteinReference</em>
+<a class="jxr_linenumber" name="L364" href="#L364">364</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L365" href="#L365">365</a>     <strong class="jxr_keyword">private</strong> Collection&lt;String&gt; getGeneSynonyms(String geneName, ProteinReference proteinReference) 
+<a class="jxr_linenumber" name="L366" href="#L366">366</a>     {
+<a class="jxr_linenumber" name="L367" href="#L367">367</a>     	Collection&lt;String&gt; syns = <strong class="jxr_keyword">new</strong> ArrayList&lt;String&gt;();
+<a class="jxr_linenumber" name="L368" href="#L368">368</a>         String parts[] = geneName.split(<span class="jxr_string">";&#92;&#92;s*(and)?"</span>);
+<a class="jxr_linenumber" name="L369" href="#L369">369</a>         <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> i=0; i&lt;parts.length; i++) {
+<a class="jxr_linenumber" name="L370" href="#L370">370</a>             String subParts[] = parts[i].split(<span class="jxr_string">"="</span>);
+<a class="jxr_linenumber" name="L371" href="#L371">371</a> 			<strong class="jxr_keyword">if</strong> (subParts[0].trim().equals(<span class="jxr_string">"Synonyms"</span>)) {
+<a class="jxr_linenumber" name="L372" href="#L372">372</a>                 String synList[] = subParts[1].split(<span class="jxr_string">","</span>);
+<a class="jxr_linenumber" name="L373" href="#L373">373</a>                 <strong class="jxr_keyword">for</strong> (<strong class="jxr_keyword">int</strong> j=0; j&lt;synList.length; j++) {
+<a class="jxr_linenumber" name="L374" href="#L374">374</a>                     String currentSynonym = synList[j].trim();
+<a class="jxr_linenumber" name="L375" href="#L375">375</a>                 	<em class="jxr_comment">//remove {evidence}; see http://www.uniprot.org/changes/evidences (GN)</em>
+<a class="jxr_linenumber" name="L376" href="#L376">376</a>                 	<strong class="jxr_keyword">int</strong> idx = currentSynonym.indexOf(<span class="jxr_string">" {"</span>);
+<a class="jxr_linenumber" name="L377" href="#L377">377</a>                 	<strong class="jxr_keyword">if</strong>(idx&gt;0)
+<a class="jxr_linenumber" name="L378" href="#L378">378</a>                 		currentSynonym = currentSynonym.substring(0, idx); 
+<a class="jxr_linenumber" name="L379" href="#L379">379</a>                     syns.add(currentSynonym);
+<a class="jxr_linenumber" name="L380" href="#L380">380</a>                 }
+<a class="jxr_linenumber" name="L381" href="#L381">381</a>             }
+<a class="jxr_linenumber" name="L382" href="#L382">382</a>         }
+<a class="jxr_linenumber" name="L383" href="#L383">383</a>         <strong class="jxr_keyword">return</strong> syns;
+<a class="jxr_linenumber" name="L384" href="#L384">384</a>     }
+<a class="jxr_linenumber" name="L385" href="#L385">385</a> 
+<a class="jxr_linenumber" name="L386" href="#L386">386</a> 
+<a class="jxr_linenumber" name="L387" href="#L387">387</a>     <em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L388" href="#L388">388</a> <em class="jxr_javadoccomment">     * Sets Unification XRefs.</em>
+<a class="jxr_linenumber" name="L389" href="#L389">389</a> <em class="jxr_javadoccomment">	 * </em>
+<a class="jxr_linenumber" name="L390" href="#L390">390</a> <em class="jxr_javadoccomment">	 * @param dbName String</em>
+<a class="jxr_linenumber" name="L391" href="#L391">391</a> <em class="jxr_javadoccomment">     * @param id tring</em>
+<a class="jxr_linenumber" name="L392" href="#L392">392</a> <em class="jxr_javadoccomment">     * @param proteinReference ProteinReference</em>
+<a class="jxr_linenumber" name="L393" href="#L393">393</a> <em class="jxr_javadoccomment">     * @param model</em>
+<a class="jxr_linenumber" name="L394" href="#L394">394</a> <em class="jxr_javadoccomment">     */</em>
+<a class="jxr_linenumber" name="L395" href="#L395">395</a>     <strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> setUnificationXRef(String dbName, String id, ProteinReference proteinReference, Model model) {
+<a class="jxr_linenumber" name="L396" href="#L396">396</a>         id = id.trim();
+<a class="jxr_linenumber" name="L397" href="#L397">397</a>         dbName = dbName.trim();
+<a class="jxr_linenumber" name="L398" href="#L398">398</a> 		String rdfId = Normalizer.uri(model.getXmlBase(), dbName, id, UnificationXref.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L399" href="#L399">399</a> 		
+<a class="jxr_linenumber" name="L400" href="#L400">400</a> 		UnificationXref rXRef = (UnificationXref) model.getByID(rdfId);
+<a class="jxr_linenumber" name="L401" href="#L401">401</a> 		<strong class="jxr_keyword">if</strong> (rXRef == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L402" href="#L402">402</a> 			rXRef = (UnificationXref) model.addNew(UnificationXref.<strong class="jxr_keyword">class</strong>, rdfId);
+<a class="jxr_linenumber" name="L403" href="#L403">403</a> 			rXRef.setDb(dbName);
+<a class="jxr_linenumber" name="L404" href="#L404">404</a> 			rXRef.setId(id);
+<a class="jxr_linenumber" name="L405" href="#L405">405</a> 		}
+<a class="jxr_linenumber" name="L406" href="#L406">406</a> 		
+<a class="jxr_linenumber" name="L407" href="#L407">407</a> 		proteinReference.addXref(rXRef);
+<a class="jxr_linenumber" name="L408" href="#L408">408</a>     }
+<a class="jxr_linenumber" name="L409" href="#L409">409</a> 
+<a class="jxr_linenumber" name="L410" href="#L410">410</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L411" href="#L411">411</a> <em class="jxr_javadoccomment">	 * Generates a new protein reference object (ProteinReference, BioPAX L3)</em>
+<a class="jxr_linenumber" name="L412" href="#L412">412</a> <em class="jxr_javadoccomment">	 * from a pre-processed UniProt record: assigns the standard URI and </em>
+<a class="jxr_linenumber" name="L413" href="#L413">413</a> <em class="jxr_javadoccomment">	 * unification xrefs.</em>
+<a class="jxr_linenumber" name="L414" href="#L414">414</a> <em class="jxr_javadoccomment">	 *</em>
+<a class="jxr_linenumber" name="L415" href="#L415">415</a> <em class="jxr_javadoccomment">	 * @param shortName</em>
+<a class="jxr_linenumber" name="L416" href="#L416">416</a> <em class="jxr_javadoccomment">	 * @param accessions AC field value - from the UniProt text format</em>
+<a class="jxr_linenumber" name="L417" href="#L417">417</a> <em class="jxr_javadoccomment">	 * @param model </em>
+<a class="jxr_linenumber" name="L418" href="#L418">418</a> <em class="jxr_javadoccomment">	 * @return ProteinReference</em>
+<a class="jxr_linenumber" name="L419" href="#L419">419</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L420" href="#L420">420</a> 	<strong class="jxr_keyword">private</strong> ProteinReference newUniProtWithXrefs(String shortName, String accessions, Model model) 
+<a class="jxr_linenumber" name="L421" href="#L421">421</a> 	{	
+<a class="jxr_linenumber" name="L422" href="#L422">422</a> 		<em class="jxr_comment">// accession numbers as array</em>
+<a class="jxr_linenumber" name="L423" href="#L423">423</a> 		<strong class="jxr_keyword">final</strong> String acList[] = accessions.split(<span class="jxr_string">";"</span>);
+<a class="jxr_linenumber" name="L424" href="#L424">424</a> 		<em class="jxr_comment">// the first one, primary id, becomes the RDFId</em>
+<a class="jxr_linenumber" name="L425" href="#L425">425</a> 		<strong class="jxr_keyword">final</strong> String primaryId = acList[0].trim();
+<a class="jxr_linenumber" name="L426" href="#L426">426</a> 		<strong class="jxr_keyword">final</strong> String uri = <span class="jxr_string">"http://identifiers.org/uniprot/"</span> + primaryId;
+<a class="jxr_linenumber" name="L427" href="#L427">427</a> 		<em class="jxr_comment">// create a new PR</em>
+<a class="jxr_linenumber" name="L428" href="#L428">428</a> 		ProteinReference proteinReference = model.addNew(ProteinReference.<strong class="jxr_keyword">class</strong>, uri);
+<a class="jxr_linenumber" name="L429" href="#L429">429</a> 		proteinReference.setDisplayName(shortName);
+<a class="jxr_linenumber" name="L430" href="#L430">430</a> 		
+<a class="jxr_linenumber" name="L431" href="#L431">431</a> 		<em class="jxr_comment">// add all unification xrefs</em>
+<a class="jxr_linenumber" name="L432" href="#L432">432</a> 		<strong class="jxr_keyword">for</strong> (String acEntry : acList) {
+<a class="jxr_linenumber" name="L433" href="#L433">433</a> 			String ac = acEntry.trim();
+<a class="jxr_linenumber" name="L434" href="#L434">434</a> 			<em class="jxr_comment">//use db='UniProt' for these xrefs instead of 'UniProt Knowledgebase' (preferred in MIRIAM)</em>
+<a class="jxr_linenumber" name="L435" href="#L435">435</a> 			setUnificationXRef(<span class="jxr_string">"UniProt"</span>, ac, proteinReference, model);
+<a class="jxr_linenumber" name="L436" href="#L436">436</a> 		}
+<a class="jxr_linenumber" name="L437" href="#L437">437</a> 		
+<a class="jxr_linenumber" name="L438" href="#L438">438</a> 		<strong class="jxr_keyword">return</strong> proteinReference;
+<a class="jxr_linenumber" name="L439" href="#L439">439</a> 	}
+<a class="jxr_linenumber" name="L440" href="#L440">440</a> 
+<a class="jxr_linenumber" name="L441" href="#L441">441</a> 	<em class="jxr_javadoccomment">/**</em>
+<a class="jxr_linenumber" name="L442" href="#L442">442</a> <em class="jxr_javadoccomment">	 * Gets a biosource</em>
+<a class="jxr_linenumber" name="L443" href="#L443">443</a> <em class="jxr_javadoccomment">	 *</em>
+<a class="jxr_linenumber" name="L444" href="#L444">444</a> <em class="jxr_javadoccomment">	 * @param taxId String</em>
+<a class="jxr_linenumber" name="L445" href="#L445">445</a> <em class="jxr_javadoccomment">	 * @param name String</em>
+<a class="jxr_linenumber" name="L446" href="#L446">446</a> <em class="jxr_javadoccomment">	 * @param model</em>
+<a class="jxr_linenumber" name="L447" href="#L447">447</a> <em class="jxr_javadoccomment">	 * @return BioSource</em>
+<a class="jxr_linenumber" name="L448" href="#L448">448</a> <em class="jxr_javadoccomment">	 */</em>
+<a class="jxr_linenumber" name="L449" href="#L449">449</a> 	<strong class="jxr_keyword">private</strong> BioSource getBioSource(String taxId, String name, Model model) 
+<a class="jxr_linenumber" name="L450" href="#L450">450</a> 	{
+<a class="jxr_linenumber" name="L451" href="#L451">451</a> 		<em class="jxr_comment">// check taxonomy ID is integer value</em>
+<a class="jxr_linenumber" name="L452" href="#L452">452</a> 		Integer taxonomy = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L453" href="#L453">453</a> 		<strong class="jxr_keyword">try</strong> {
+<a class="jxr_linenumber" name="L454" href="#L454">454</a> 			taxonomy = Integer.valueOf(taxId);
+<a class="jxr_linenumber" name="L455" href="#L455">455</a> 		} <strong class="jxr_keyword">catch</strong> (NumberFormatException e) {
+<a class="jxr_linenumber" name="L456" href="#L456">456</a> 			<strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> RuntimeException(<span class="jxr_string">"Faild to convert "</span> + taxId
+<a class="jxr_linenumber" name="L457" href="#L457">457</a> 					+ <span class="jxr_string">" into integer taxonomy ID"</span>, e);
+<a class="jxr_linenumber" name="L458" href="#L458">458</a> 		}
+<a class="jxr_linenumber" name="L459" href="#L459">459</a> 
+<a class="jxr_linenumber" name="L460" href="#L460">460</a> 		BioSource toReturn = <strong class="jxr_keyword">null</strong>;
+<a class="jxr_linenumber" name="L461" href="#L461">461</a> 
+<a class="jxr_linenumber" name="L462" href="#L462">462</a> 		<em class="jxr_comment">// check the organism was previously used, re-use it</em>
+<a class="jxr_linenumber" name="L463" href="#L463">463</a> 		<strong class="jxr_keyword">if</strong>(taxonomy==<strong class="jxr_keyword">null</strong> || taxonomy &lt;= 0) {
+<a class="jxr_linenumber" name="L464" href="#L464">464</a> 			<strong class="jxr_keyword">throw</strong> <strong class="jxr_keyword">new</strong> RuntimeException(<span class="jxr_string">"Illegal taxonomy ID: "</span> + taxId);
+<a class="jxr_linenumber" name="L465" href="#L465">465</a> 		} <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L466" href="#L466">466</a> 			String uri = <span class="jxr_string">"http://identifiers.org/taxonomy/"</span> + taxonomy;
+<a class="jxr_linenumber" name="L467" href="#L467">467</a> 			<strong class="jxr_keyword">if</strong> (model.containsID(uri)) {
+<a class="jxr_linenumber" name="L468" href="#L468">468</a> 				toReturn = (BioSource) model.getByID(uri);
+<a class="jxr_linenumber" name="L469" href="#L469">469</a> 			} <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L470" href="#L470">470</a> 				toReturn = (BioSource) model
+<a class="jxr_linenumber" name="L471" href="#L471">471</a> 						.addNew(BioSource.<strong class="jxr_keyword">class</strong>, uri);
+<a class="jxr_linenumber" name="L472" href="#L472">472</a> 				toReturn.setStandardName(name);
+<a class="jxr_linenumber" name="L473" href="#L473">473</a> 				toReturn.setDisplayName(name);
+<a class="jxr_linenumber" name="L474" href="#L474">474</a> 				UnificationXref taxonXref = (UnificationXref) model
+<a class="jxr_linenumber" name="L475" href="#L475">475</a> 					.addNew(UnificationXref.<strong class="jxr_keyword">class</strong>, Normalizer
+<a class="jxr_linenumber" name="L476" href="#L476">476</a> 						.uri(model.getXmlBase(), <span class="jxr_string">"TAXONOMY"</span>, taxId, UnificationXref.<strong class="jxr_keyword">class</strong>));
+<a class="jxr_linenumber" name="L477" href="#L477">477</a> 				taxonXref.setDb(<span class="jxr_string">"taxonomy"</span>);
+<a class="jxr_linenumber" name="L478" href="#L478">478</a> 				taxonXref.setId(taxId);
+<a class="jxr_linenumber" name="L479" href="#L479">479</a> 				toReturn.addXref((UnificationXref) taxonXref);
+<a class="jxr_linenumber" name="L480" href="#L480">480</a> 			}
+<a class="jxr_linenumber" name="L481" href="#L481">481</a> 		}
+<a class="jxr_linenumber" name="L482" href="#L482">482</a> 		<strong class="jxr_keyword">return</strong> toReturn;
+<a class="jxr_linenumber" name="L483" href="#L483">483</a> 	}
+<a class="jxr_linenumber" name="L484" href="#L484">484</a> 
+<a class="jxr_linenumber" name="L485" href="#L485">485</a> 	
+<a class="jxr_linenumber" name="L486" href="#L486">486</a> 	<em class="jxr_comment">/*</em>
+<a class="jxr_linenumber" name="L487" href="#L487">487</a> <em class="jxr_comment">	 * Parses only "FT   MOD_RES   N    M   Term..." lines data and creates protein modification features and sites;</em>
+<a class="jxr_linenumber" name="L488" href="#L488">488</a> <em class="jxr_comment">	 * original data line cannot exceed 70 chars, but can span multiple lines (usually just one or two),</em>
+<a class="jxr_linenumber" name="L489" href="#L489">489</a> <em class="jxr_comment">	 * and ends with '.'; extra lines were originally like "FT                      end-of-term."</em>
+<a class="jxr_linenumber" name="L490" href="#L490">490</a> <em class="jxr_comment">	 * (dot is used only on the last line), but "FT   " and all the leading spaces up to original position </em>
+<a class="jxr_linenumber" name="L491" href="#L491">491</a> <em class="jxr_comment">	 * no. 35 in the second etc. lines were already removed from the final 'features' text.</em>
+<a class="jxr_linenumber" name="L492" href="#L492">492</a> <em class="jxr_comment">	 * In other words, here, 'features' string contains concatenated with '.' lines like </em>
+<a class="jxr_linenumber" name="L493" href="#L493">493</a> <em class="jxr_comment">	 * "MOD_RES   N    M   full-term-name" (and such strings can be longer than 65 chars)</em>
+<a class="jxr_linenumber" name="L494" href="#L494">494</a> <em class="jxr_comment">	 */</em>
+<a class="jxr_linenumber" name="L495" href="#L495">495</a> 	<strong class="jxr_keyword">private</strong> <strong class="jxr_keyword">void</strong> createModResFeatures(<strong class="jxr_keyword">final</strong> String features, 
+<a class="jxr_linenumber" name="L496" href="#L496">496</a> 			<strong class="jxr_keyword">final</strong> ProteinReference pr, Model model) 
+<a class="jxr_linenumber" name="L497" href="#L497">497</a> 	{
+<a class="jxr_linenumber" name="L498" href="#L498">498</a> 		<em class="jxr_comment">// using a special "not greedy" regex!</em>
+<a class="jxr_linenumber" name="L499" href="#L499">499</a>         Pattern pattern = Pattern.compile(<span class="jxr_string">"MOD_RES.+?&#92;&#92;."</span>);
+<a class="jxr_linenumber" name="L500" href="#L500">500</a>         Matcher matcher = pattern.matcher(features);
+<a class="jxr_linenumber" name="L501" href="#L501">501</a>         <strong class="jxr_keyword">int</strong> mfIndex = 0;
+<a class="jxr_linenumber" name="L502" href="#L502">502</a>         <strong class="jxr_keyword">while</strong>(matcher.find()) {
+<a class="jxr_linenumber" name="L503" href="#L503">503</a>         	String ftContent = matcher.group(); <em class="jxr_comment">//i.e., not including "FT   ",</em>
+<a class="jxr_linenumber" name="L504" href="#L504">504</a>         	<em class="jxr_comment">//the term starts at 29th char (because "FT   " at the beginning of each line already's gone)</em>
+<a class="jxr_linenumber" name="L505" href="#L505">505</a> 			String what = ftContent.substring(29, ftContent.length()-1);<em class="jxr_comment">//excluding the final dot '.' </em>
+<a class="jxr_linenumber" name="L506" href="#L506">506</a> 			<em class="jxr_comment">// split the result by ';' (e.g., it might now look like "Phosphothreonine; by CaMK4") </em>
+<a class="jxr_linenumber" name="L507" href="#L507">507</a> 			<em class="jxr_comment">// to extract the modification type and create the standard PSI-MOD synonym; </em>
+<a class="jxr_linenumber" name="L508" href="#L508">508</a> 			String[] terms = what.toString().split(<span class="jxr_string">";"</span>);
+<a class="jxr_linenumber" name="L509" href="#L509">509</a> 			String mod = terms[0];
+<a class="jxr_linenumber" name="L510" href="#L510">510</a> 			
+<a class="jxr_linenumber" name="L511" href="#L511">511</a> 			<em class="jxr_comment">//remove non-standard ending comment from the standard CV term,</em>
+<a class="jxr_linenumber" name="L512" href="#L512">512</a> 			<em class="jxr_comment">//right before the final dot, if present; i.e. it removes things like </em>
+<a class="jxr_linenumber" name="L513" href="#L513">513</a> 			<em class="jxr_comment">//"...(By similarity).", or "...(Probable).", "...(Potential)." -</em>
+<a class="jxr_linenumber" name="L514" href="#L514">514</a> 			<em class="jxr_comment">// but should not be too greedy to left just "N6-" out of "N6-(pyridoxal phosphate)lysine (By similarity)."</em>
+<a class="jxr_linenumber" name="L515" href="#L515">515</a> 			mod = mod.replaceFirst(<span class="jxr_string">"&#92;&#92;([^()]+?&#92;&#92;)$"</span>,<span class="jxr_string">""</span>).trim();
+<a class="jxr_linenumber" name="L516" href="#L516">516</a> 			
+<a class="jxr_linenumber" name="L517" href="#L517">517</a> 			<em class="jxr_comment">//official PSI-MOD synonym (see http://www.ebi.ac.uk/ontology-lookup)</em>
+<a class="jxr_linenumber" name="L518" href="#L518">518</a> 			<strong class="jxr_keyword">final</strong> String modTerm = <span class="jxr_string">"MOD_RES "</span> + mod; 
+<a class="jxr_linenumber" name="L519" href="#L519">519</a> 			
+<a class="jxr_linenumber" name="L520" href="#L520">520</a> 			<em class="jxr_comment">//PSI-MOD ID will be auto-added by the biopax-validator/normalizer</em>
+<a class="jxr_linenumber" name="L521" href="#L521">521</a> 			
+<a class="jxr_linenumber" name="L522" href="#L522">522</a> 			<em class="jxr_comment">// Create the feature with CV and location -</em>
+<a class="jxr_linenumber" name="L523" href="#L523">523</a> 			mfIndex++;
+<a class="jxr_linenumber" name="L524" href="#L524">524</a> 			String uri = Normalizer.uri(model.getXmlBase(), 
+<a class="jxr_linenumber" name="L525" href="#L525">525</a> 					<strong class="jxr_keyword">null</strong>, pr.getDisplayName() + <span class="jxr_string">"_"</span> + mfIndex, ModificationFeature.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L526" href="#L526">526</a> 			ModificationFeature modificationFeature = model.addNew(ModificationFeature.<strong class="jxr_keyword">class</strong>, uri);
+<a class="jxr_linenumber" name="L527" href="#L527">527</a> 			modificationFeature.addComment(ftContent);
+<a class="jxr_linenumber" name="L528" href="#L528">528</a> 			
+<a class="jxr_linenumber" name="L529" href="#L529">529</a> 			<em class="jxr_comment">// get/create a new PSI-MOD SequenceModificationVocabulary (can be shared by many PRs)</em>
+<a class="jxr_linenumber" name="L530" href="#L530">530</a> 			uri = Normalizer.uri(model.getXmlBase(), <span class="jxr_string">"MOD"</span>, modTerm, SequenceModificationVocabulary.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L531" href="#L531">531</a> 			<em class="jxr_comment">// so, let's check if it exists in the temp. or target model:</em>
+<a class="jxr_linenumber" name="L532" href="#L532">532</a> 			SequenceModificationVocabulary cv = (SequenceModificationVocabulary) model.getByID(uri);
+<a class="jxr_linenumber" name="L533" href="#L533">533</a> 			<strong class="jxr_keyword">if</strong>(cv == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L534" href="#L534">534</a> 				<em class="jxr_comment">// create a new SequenceModificationVocabulary</em>
+<a class="jxr_linenumber" name="L535" href="#L535">535</a> 				cv = model.addNew(SequenceModificationVocabulary.<strong class="jxr_keyword">class</strong>, uri);
+<a class="jxr_linenumber" name="L536" href="#L536">536</a> 				cv.addTerm(modTerm);
+<a class="jxr_linenumber" name="L537" href="#L537">537</a> 				<em class="jxr_comment">//add the name without MOD_RES prefix as well (sometimes it is the valid one)</em>
+<a class="jxr_linenumber" name="L538" href="#L538">538</a> 				cv.addTerm(mod);
+<a class="jxr_linenumber" name="L539" href="#L539">539</a> 			}
+<a class="jxr_linenumber" name="L540" href="#L540">540</a> 			modificationFeature.setModificationType(cv);
+<a class="jxr_linenumber" name="L541" href="#L541">541</a> 			
+<a class="jxr_linenumber" name="L542" href="#L542">542</a> 			<em class="jxr_comment">// create feature location (site or interval)</em>
+<a class="jxr_linenumber" name="L543" href="#L543">543</a> 			<strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">int</strong> start = Integer.parseInt(ftContent.substring(9, 15).trim());
+<a class="jxr_linenumber" name="L544" href="#L544">544</a> 			<strong class="jxr_keyword">final</strong> <strong class="jxr_keyword">int</strong> end = Integer.parseInt(ftContent.substring(16, 22).trim());
+<a class="jxr_linenumber" name="L545" href="#L545">545</a> 			<em class="jxr_comment">// so, let's check if the site exists in the temp. model</em>
+<a class="jxr_linenumber" name="L546" href="#L546">546</a> 			String idPart = pr.getDisplayName() + <em class="jxr_comment">//e.g., CALM_HUMAN - from the ID line </em>
+<a class="jxr_linenumber" name="L547" href="#L547">547</a> 								<span class="jxr_string">"_"</span> + start;
+<a class="jxr_linenumber" name="L548" href="#L548">548</a> 			uri = Normalizer.uri(model.getXmlBase(), <strong class="jxr_keyword">null</strong>, idPart, SequenceSite.<strong class="jxr_keyword">class</strong>);			
+<a class="jxr_linenumber" name="L549" href="#L549">549</a> 						
+<a class="jxr_linenumber" name="L550" href="#L550">550</a> 			SequenceSite startSite = (SequenceSite) model.getByID(uri);
+<a class="jxr_linenumber" name="L551" href="#L551">551</a> 			<strong class="jxr_keyword">if</strong>(startSite == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L552" href="#L552">552</a> 				startSite = model.addNew(SequenceSite.<strong class="jxr_keyword">class</strong>, uri);
+<a class="jxr_linenumber" name="L553" href="#L553">553</a> 				startSite.setPositionStatus(PositionStatusType.EQUAL);
+<a class="jxr_linenumber" name="L554" href="#L554">554</a> 				startSite.setSequencePosition(start);
+<a class="jxr_linenumber" name="L555" href="#L555">555</a> 			}
+<a class="jxr_linenumber" name="L556" href="#L556">556</a> 			
+<a class="jxr_linenumber" name="L557" href="#L557">557</a> 			<strong class="jxr_keyword">if</strong>(start == end) {
+<a class="jxr_linenumber" name="L558" href="#L558">558</a> 				modificationFeature.setFeatureLocation(startSite);
+<a class="jxr_linenumber" name="L559" href="#L559">559</a> 			} <strong class="jxr_keyword">else</strong> {
+<a class="jxr_linenumber" name="L560" href="#L560">560</a> 				<em class="jxr_comment">//create the second site (end) and sequence interval -</em>
+<a class="jxr_linenumber" name="L561" href="#L561">561</a> 				idPart = pr.getDisplayName() + <em class="jxr_comment">//e.g., CALM_HUMAN - from the ID line</em>
+<a class="jxr_linenumber" name="L562" href="#L562">562</a> 							<span class="jxr_string">"_"</span> + end;
+<a class="jxr_linenumber" name="L563" href="#L563">563</a> 				uri = Normalizer.uri(model.getXmlBase(), <strong class="jxr_keyword">null</strong>, idPart, SequenceSite.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L564" href="#L564">564</a> 					
+<a class="jxr_linenumber" name="L565" href="#L565">565</a> 				SequenceSite endSite = (SequenceSite) model.getByID(uri);
+<a class="jxr_linenumber" name="L566" href="#L566">566</a> 				<strong class="jxr_keyword">if</strong>(endSite == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L567" href="#L567">567</a> 					endSite = model.addNew(SequenceSite.<strong class="jxr_keyword">class</strong>, uri);
+<a class="jxr_linenumber" name="L568" href="#L568">568</a> 					endSite.setPositionStatus(PositionStatusType.EQUAL);
+<a class="jxr_linenumber" name="L569" href="#L569">569</a> 					endSite.setSequencePosition(end);
+<a class="jxr_linenumber" name="L570" href="#L570">570</a> 				}
+<a class="jxr_linenumber" name="L571" href="#L571">571</a> 				
+<a class="jxr_linenumber" name="L572" href="#L572">572</a> 				idPart = pr.getDisplayName() + 	<span class="jxr_string">"_"</span> + start + <span class="jxr_string">"_"</span> + end;
+<a class="jxr_linenumber" name="L573" href="#L573">573</a> 				uri = Normalizer.uri(model.getXmlBase(), <strong class="jxr_keyword">null</strong>, idPart, SequenceInterval.<strong class="jxr_keyword">class</strong>);
+<a class="jxr_linenumber" name="L574" href="#L574">574</a> 						
+<a class="jxr_linenumber" name="L575" href="#L575">575</a> 				SequenceInterval sequenceInterval = (SequenceInterval) model.getByID(uri);
+<a class="jxr_linenumber" name="L576" href="#L576">576</a> 				<strong class="jxr_keyword">if</strong>(sequenceInterval == <strong class="jxr_keyword">null</strong>) {
+<a class="jxr_linenumber" name="L577" href="#L577">577</a> 					sequenceInterval = model.addNew(SequenceInterval.<strong class="jxr_keyword">class</strong>, uri);
+<a class="jxr_linenumber" name="L578" href="#L578">578</a> 					sequenceInterval.setSequenceIntervalBegin(startSite);
+<a class="jxr_linenumber" name="L579" href="#L579">579</a> 					sequenceInterval.setSequenceIntervalEnd(endSite);
+<a class="jxr_linenumber" name="L580" href="#L580">580</a> 				}
+<a class="jxr_linenumber" name="L581" href="#L581">581</a> 				
+<a class="jxr_linenumber" name="L582" href="#L582">582</a> 				modificationFeature.setFeatureLocation(sequenceInterval);
+<a class="jxr_linenumber" name="L583" href="#L583">583</a> 			}
+<a class="jxr_linenumber" name="L584" href="#L584">584</a> 			
+<a class="jxr_linenumber" name="L585" href="#L585">585</a> 			pr.addEntityFeature(modificationFeature);
+<a class="jxr_linenumber" name="L586" href="#L586">586</a>         }
+<a class="jxr_linenumber" name="L587" href="#L587">587</a> 		
+<a class="jxr_linenumber" name="L588" href="#L588">588</a> 	}
+<a class="jxr_linenumber" name="L589" href="#L589">589</a> }
+</pre>
+<hr/>
+<div id="footer">Copyright &#169; 2009&#x2013;2015 <a href="http://www.pathwaycommons.org">Pathway Commons</a>. All rights reserved.</div>
+</body>
+</html>
