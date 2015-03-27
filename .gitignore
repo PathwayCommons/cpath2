@@ -1,0 +1,14 @@
+.DS_Store
+.classpath
+.project
+.settings
+target
+index
+tmp
+data
+downloads
+*.log
+*.zip
+*.gz
+*.db
+
