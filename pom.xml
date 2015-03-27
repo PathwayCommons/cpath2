@@ -387,7 +387,7 @@
 				<artifactId>site-maven-plugin</artifactId>
 				<configuration>
 					<message>Creating site for ${project.artifactId}, ${project.version}</message>
-					<path>${project.distributionManagement.site.url}</path>
+					<path>${project.version}</path>
 					<merge>true</merge>
 				</configuration>
 				<executions>
