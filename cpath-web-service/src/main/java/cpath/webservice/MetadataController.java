@@ -82,10 +82,8 @@ public class MetadataController extends BasicController {
 //    public String queryForValidation(
 //    		@PathVariable String identifier, Model model, HttpServletRequest request) 
 //    {
-//
 //    	ValidatorResponse body = service.validationReport(identifier, null);
 //		model.addAttribute("response", body);
-//		
 //		return "validation";
 //    }
     
@@ -96,7 +94,6 @@ public class MetadataController extends BasicController {
 //    {
 //    	ValidatorResponse body = service.validationReport(identifier, file);
 //		model.addAttribute("response", body);
-//		
 //		return "validation";
 //    }    
        
@@ -155,10 +152,11 @@ public class MetadataController extends BasicController {
 				m.setUploaded((new File(m.getDataArchiveName()).exists()));
 				wh.add(m);
 			} else {		
-				m.setNumAccessed(service.log().downloads(m.standardName()));
+//don't query for logs (web pages are slow)
+//				m.setNumAccessed(service.log().downloads(m.standardName()));
+//				m.setNumUniqueIps(service.log().uniqueIps(m.standardName()));				
 				m.setUploaded((new File(m.getDataArchiveName()).exists()));
 				m.setPremerged(!m.getContent().isEmpty());
-				m.setNumUniqueIps(service.log().uniqueIps(m.standardName()));
 				ds.add(m);
 			}
 		}
@@ -178,11 +176,12 @@ public class MetadataController extends BasicController {
 		//set dynamic extra fields
 		if(m.isNotPathwayData()) {
 			m.setUploaded((new File(m.getDataArchiveName()).exists()));
-		} else {		
-			m.setNumAccessed(service.log().downloads(m.standardName()));
+		} else {
+			//don't query for logs (web pages are slow)
+//			m.setNumAccessed(service.log().downloads(m.standardName()));
+//			m.setNumUniqueIps( service.log().uniqueIps(m.standardName()));
 			m.setUploaded((new File(m.getDataArchiveName()).exists()));
 			m.setPremerged(!m.getContent().isEmpty());
-			m.setNumUniqueIps( service.log().uniqueIps(m.standardName()));
 		}
 		
     	return m;
@@ -191,6 +190,9 @@ public class MetadataController extends BasicController {
     
     // Requests that begin with '/admin' can be only run by authorized users (see: Spring security-config.xml).
     
+    /*
+     * Update a data source definition (metadata entry)
+     */
     @RequestMapping(value = "/admin/datasources", consumes="application/json", method = RequestMethod.POST)
     public void update(@RequestBody @Valid Metadata metadata, 
     		BindingResult bindingResult, HttpServletResponse response) throws IOException 
@@ -205,7 +207,10 @@ public class MetadataController extends BasicController {
    		service.save(metadata);
     }
 
-    
+    /*
+     * Create a new data source (metadata entry).
+     * If there is another one with the same identifier, then - error.
+     */
     @RequestMapping(value = "/admin/datasources", consumes="application/json", method = RequestMethod.PUT)
     public void put(@RequestBody @Valid Metadata metadata, 
     		BindingResult bindingResult, HttpServletResponse response) throws IOException 
@@ -240,7 +245,7 @@ public class MetadataController extends BasicController {
     }
 
     
-    //Upload a data archive
+    //Upload (and replace if exists) a data archive for the existing data source
     @RequestMapping(value = "/admin/datasources/{identifier}/file", method = RequestMethod.POST)
     public void uploadDataArchive(@PathVariable String identifier, MultipartHttpServletRequest multiRequest, 
     		HttpServletResponse response) throws IOException

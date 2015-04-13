@@ -34,21 +34,12 @@
 	</blockquote>
    </div>
 
-	<h3>Note</h3>
-	<p>The total number of times a portion of provider's data were successfully 
-		served to a user is incremented if a query 
-		result contains biological entities from that original resource; or, for 'search' 
-		and 'traverse' requests, if the data source is referred to in the result; 
-		or when a particular file <a href='<c:url value="/downloads.html"/>'>is downloaded</a>.
-		Access counts are not reported for the Warehouse data sources, but 
+	<h3>Note:</h3>
+	<p> Links to the access summary for Warehouse data sources are not provided below; however,  
 		the <a rel="nofollow" href='<c:url value="/log/TOTAL/stats"/>'>total number of requests</a> 
-		minus <a rel="nofollow" href='<c:url value="/log/ERROR/stats"/>'>errors</a> will be fair estimate: 
-		there were <a rel="nofollow" class="badge alert-info">{{totalok}}</a> successful requests 
-		(including search queries and file downloads)
-		from <a rel="nofollow" class="badge alert-info" ng-href='<c:url value="/log/TOTAL/ips"/>'>{{totalip}}</a> 
-		different clients (IP addresses).
+		minus <a rel="nofollow" href='<c:url value="/log/ERROR/stats"/>'>errors</a> will be fair estimate.
+		Access statistics are computed from January 2014, except unique IP addresses, which are computed from November 2014.
 	</p>
-	<p>Access statistics are computed from January 2014, except unique IP addresses, which are computed from November 2014.</p>	
 
 	<h3>Acknowledgment</h3>
 	<p>
@@ -195,11 +186,11 @@ for regular users, - show the compact read-only summary of the data providers --
        				 	<span ng-show="ds.numPhysicalEntities > 0"><span class="badge alert-info">{{ds.numPhysicalEntities}}</span> participants</span>
        				</p>
        				<p ng-hide="ds.notPathwayData">
-       				  <em>A sub-network, search result, or file have been accessed: </em>
-       				  <a rel="nofollow" class="badge alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats"/>'>
-       				  	{{ds.numAccessed}}</a> times, from 
-       				  <a rel="nofollow" class="badge alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/ips"/>'>
-       				  	{{ds.numUniqueIps}}</a> different IP addresses
+       				  <em>Access summary: </em>
+       				  <a target="_blank" rel="nofollow" class="alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats"/>'>
+       				  no. requests</a> (search, sub-network queries or file downloads);   
+       				  <a target="_blank" rel="nofollow" class="alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/ips"/>'>
+       				  no. unique users</a> (IP addresses).
        				</p>
        				<p>
        				  <em>Publication: </em>{{ds.citation}} 

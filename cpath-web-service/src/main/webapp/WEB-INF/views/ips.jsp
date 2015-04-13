@@ -21,9 +21,10 @@
     <div class="row">
     <div class="jumbotron">
 		<p>
-			Charts below show how many unique IP addresses the user requests originated from. 
+			Charts below show how many unique IP addresses 
+			(since November 2014) the user requests originated from. 
 		  	All client applications are equally considered. 
-		  	To switch the view, select another item from the drop-down list.
+		  	To switch the view, select another item from the drop-down list.	
 		</p>
 		<select class="selectpicker" 
 	  		data-header="Select a category or name to display"

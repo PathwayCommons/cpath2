@@ -7,8 +7,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+//import java.util.Iterator;
+//import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -139,29 +139,29 @@ public class PagesController extends BasicController {
     		if(!name.startsWith(".")) {
     			StringBuilder sb = new StringBuilder();
     			sb.append("size: ").append(FileUtils.byteCountToDisplaySize(size));
-    			List<Object[]> dl = service.log().downloadsWorld(null, name);
-    			String topCountry = null;
-    			long topCount = 0;
-    			long total = 0;
-    			Iterator<Object[]> it = dl.iterator();
-    			it.next(); //skip title line
-    			while(it.hasNext()) {
-    				Object[] a = it.next();
-    				long count = (Long) a[1];
-    				total += count;
-    				if(count > topCount) {
-    					topCount = count;
-    					topCountry = (String) a[0];
-    				}   					
-    			}
-    			
-    			sb.append("; downloads: ").append(total);
-    			if(topCount > 0) {
-    				sb.append(", mostly from ")
-    				.append((topCountry != null && !topCountry.isEmpty()) 
-    						? topCountry : "Local/Unknown")
-    				.append(" [").append(topCount).append("]");
-    			}
+    			  			
+//    			List<Object[]> dl = service.log().downloadsWorld(null, name);
+//    			String topCountry = null;
+//    			long topCount = 0;
+//    			long total = 0;
+//    			Iterator<Object[]> it = dl.iterator();
+//    			it.next(); //skip title line
+//    			while(it.hasNext()) {
+//    				Object[] a = it.next();
+//    				long count = (Long) a[1];
+//    				total += count;
+//    				if(count > topCount) {
+//    					topCount = count;
+//    					topCountry = (String) a[0];
+//    				}   					
+//    			}   			
+//    			sb.append("; downloads: ").append(total);
+//    			if(topCount > 0) {
+//    				sb.append(", mostly from ")
+//    				.append((topCountry != null && !topCountry.isEmpty()) 
+//    						? topCountry : "Local/Unknown")
+//    				.append(" [").append(topCount).append("]");
+//    			}
     			
     			files.put(name, sb.toString());
     		}

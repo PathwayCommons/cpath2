@@ -28,6 +28,7 @@
 		  	requests sent on that date from user's location (city) and other counts
 		  	in several categories, such as per original data provider, command, format, file name.
 		  	To switch the view, select another item from the drop-down list.
+		  	Access statistics are computed from January 2014.	
 		</p>
 		<select class="selectpicker" 
 	  		data-header="Select a category or name to display"

@@ -17,6 +17,7 @@
 	  	<include>*.txt</include>
 	  	<include>*.xml</include>
 	  	<include>*.conf</include>
+	  	<include>*.md</include>
 	  </includes>
 	  <filtered>true</filtered>
     </fileSet>

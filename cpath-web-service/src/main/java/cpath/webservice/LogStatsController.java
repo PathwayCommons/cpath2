@@ -1,6 +1,9 @@
 package cpath.webservice;
 
+import java.io.File;
 import java.util.*;
+
+import javax.servlet.http.HttpServletRequest;
 
 import cpath.config.CPathSettings;
 import cpath.jpa.LogEvent;
@@ -8,9 +11,11 @@ import cpath.jpa.LogType;
 import cpath.jpa.Metadata;
 import cpath.webservice.args.binding.LogTypeEditor;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -230,8 +235,7 @@ public class LogStatsController extends BasicController {
 	 * a json object (map) that contains the list of rows ('data'),
 	 * each row is object (map) with three columns (key-val pairs);
 	 * this can be then read by a jQuery DataTable 
-	 * via "ajaxSource" and "columns" parameters
-	 * (this method here is experimental).
+	 * via "ajaxSource" and "columns" parameters.
 	 * 
 	 * @return object
 	 */
@@ -260,8 +264,7 @@ public class LogStatsController extends BasicController {
 			m.put("interactions", mtda.getNumInteractions());
 			l.add(m);
 			totalPathways += mtda.getNumPathways();
-			totalInteractions += mtda.getNumInteractions();
-			
+			totalInteractions += mtda.getNumInteractions();			
 			numProviders++;
 		}
 
@@ -278,4 +281,63 @@ public class LogStatsController extends BasicController {
 		
 		return data;
     }
+	
+	/*
+	 * Access log summary for files in the downloads - a json object (map) that
+	 * contains the list of rows ('data'), each row is object (map) with three
+	 * columns (key-val pairs); this can be then read by a jQuery DataTable via
+	 * "ajaxSource" and "columns" parameters
+	 * 
+	 * @return object
+	 */
+	@RequestMapping("/downloads")
+	public @ResponseBody Map<String, List<Map<String, ?>>> downloads(
+			Model model, HttpServletRequest request) {
+		Map<String, List<Map<String, ?>>> data = new HashMap<String, List<Map<String, ?>>>();
+		List<Map<String, ?>> l = new ArrayList<Map<String, ?>>();
+		data.put("data", l); // there will be only one data entry (the list)
+
+		Map<String, Object> m;
+
+		// get the sorted list of files to be shared on the web
+		String path = CPathSettings.getInstance().downloadsDir();
+		File[] list = new File(path).listFiles();
+		for (File f : list) {
+			String name = f.getName();
+			if (name.startsWith(".")) 
+				continue; // skip sys files
+
+			String size = FileUtils.byteCountToDisplaySize(f.length());
+			long uips = service.log().uniqueIps(name);
+
+			// find out from which country the file has been mostly requested;
+			// count the top and total no. downloads
+			List<Object[]> dl = service.log().downloadsWorld(null, name);
+			String topc = null;
+			long topdl = 0;
+			long total = 0;
+			Iterator<Object[]> it = dl.iterator();
+			it.next(); // skip title line
+			while (it.hasNext()) {
+				Object[] a = it.next();
+				long count = (Long) a[1];
+				total += count;
+				if (count > topdl) {
+					topdl = count;
+					topc = (String) a[0];
+				}
+			}
+
+			m = new HashMap<String, Object>();
+			m.put("name", name);
+			m.put("size", size);
+			m.put("downloads", total);// service.log().downloads(name));//incl. error requests
+			m.put("uniqueips", uips);
+			m.put("topdownloads", topdl);
+			m.put("topcountry", topc);
+			l.add(m);
+		}
+
+		return data;
+	}
 }

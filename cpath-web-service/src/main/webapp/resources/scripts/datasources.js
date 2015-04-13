@@ -108,13 +108,13 @@ dsApp.controller('DatasourcesController', function($scope, $http, $filter, MyFil
 		
 	});	
 	
-	$http.get('log/totalok').success(function(tot) {
-		$scope.totalok = tot;
-	});
-	
-	$http.get('log/totalip').success(function(tot) {
-		$scope.totalip = tot;
-	});
+//	$http.get('log/totalok').success(function(tot) {
+//		$scope.totalok = tot;
+//	});
+//	
+//	$http.get('log/totalip').success(function(tot) {
+//		$scope.totalip = tot;
+//	});
 	
 	
 	//cPath2 Metadata types and license options

@@ -175,7 +175,7 @@
 		<spring-data-jpa.version>1.7.1.RELEASE</spring-data-jpa.version>
 		<aspectjrt.version>1.8.4</aspectjrt.version>
 		<querydsl.version>3.5.1</querydsl.version>			
-		<maven-compiler-plugin.version>3.2</maven-compiler-plugin.version>
+		<maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
 		<maven-war-plugin.version>2.6</maven-war-plugin.version>
 		<maven-release-plugin.version>2.5.1</maven-release-plugin.version>
 		<maven-surefire-plugin.version>2.18.1</maven-surefire-plugin.version>
