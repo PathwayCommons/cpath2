@@ -848,6 +848,28 @@ public class CPathServiceImpl implements CPathService {
 		return logEntitiesRepository.save(t);
 	}
 
+	@Override
+	public LogEntity update(String date, LogEvent event, String ipAddr, Long newCount) 
+	{		
+		// find or create a record
+		LogEntity t = null;
+		try {
+			t = (LogEntity) logEntitiesRepository
+				.findByEventNameIgnoreCaseAndAddrAndDate(event.getName(), ipAddr, date);
+		} catch (DataAccessException e) {
+			log.error("count(), findByEventNameIgnoreCaseAndAddrAndDate " +
+				"failed to update for event: " + event.getName() + 
+				", IP: " + ipAddr + ", date: " + date, e);
+		}
+		
+		if(t == null) {			
+			t = new LogEntity(date, event, ipAddr);
+		}
+		
+		t.setCount(newCount);
+		
+		return logEntitiesRepository.save(t);
+	}	
 	
 	@Override
 	public ValidatorResponse validationReport(String provider, String file) {

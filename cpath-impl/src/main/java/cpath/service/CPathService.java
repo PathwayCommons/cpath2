@@ -233,8 +233,8 @@ public interface CPathService {
     
 	/**
 	 * Increases the number (counter) 
-	 * of today user's requests of some 
-	 * sort and location.
+	 * of user's requests of some 
+	 * sort and location for given date.
 	 * 
 	 * Right now, only country code there
 	 * matters for location matching 
@@ -245,7 +245,19 @@ public interface CPathService {
 	 * @param ipAddr
 	 * @return
 	 */
-	LogEntity count(String date, LogEvent event, String ipAddr);	
+	LogEntity count(String date, LogEvent event, String ipAddr);
+	
+	/**
+	 * Updates (overwrites) or saves the number 
+	 * of user's requests of some 
+	 * sort and location for given date.
+	 * 
+	 * @param date
+	 * @param event
+	 * @param ipAddr
+	 * @return
+	 */
+	LogEntity update(String date, LogEvent event, String ipAddr, Long newCount);		
 	
     /**
      * Persists or updates the given metadata object.
