@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.support.QueryDslRepositorySupport;
 import org.springframework.util.Assert;
@@ -26,6 +28,8 @@ import cpath.service.CPathService;
  */
 class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport 
 	implements LogEntitiesRepositoryCustom {
+	
+	private final Logger LOG = LoggerFactory.getLogger(LogEntitiesRepositoryImpl.class);
 	
 	public LogEntitiesRepositoryImpl() {
 		super(LogEntity.class);
@@ -324,9 +328,14 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		//first, try using already calculated counts (except for today and yesterday,
 		//for which we are always to re-calculate...)
 		Map<String, Long> cumUniqueIpsPerDay = cumUniqueIpsPerDayforName($, logName); //-this must be quite a fast query
-		Assert.isTrue(!cumUniqueIpsPerDay.containsKey(LogUtils.yesterday()) && !cumUniqueIpsPerDay.containsKey(LogUtils.today()));				
+		Assert.isTrue(!cumUniqueIpsPerDay.containsKey(LogUtils.yesterday()) && !cumUniqueIpsPerDay.containsKey(LogUtils.today()));
 		List<Object[]> val = new ArrayList<Object[]>();
 		timeline.put(logName, val);
+		LOG.debug("addToIpsTimelineCumForName, "
+				+ logType.name() + "/" + logName
+				+ " - updating the cum. unique IP counts for: " 
+				+ (days.size() - cumUniqueIpsPerDay.size())
+				+ " days...");
 		for(String day : days) {
 			//skip for days that the cumulative no. unique IPs was already calculated
 			if(cumUniqueIpsPerDay.containsKey(day)) {
@@ -345,9 +354,6 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 			val.add(new Object[] {day, l});	
 			
 			//save or update the 'count' for the row: {day, name, LogUtils.UNIQUE_IP}
-//			LogEntity logEntity = new LogEntity(day, new LogEvent(logType, logName), LogUtils.UNIQUE_IP);
-//			logEntity.setCount(l);
-//			((LogEntitiesRepository)this).save(logEntity);
 			service.update(day, new LogEvent(logType, logName), LogUtils.UNIQUE_IP, l);
 		}	
 	}

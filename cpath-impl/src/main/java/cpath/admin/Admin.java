@@ -33,6 +33,8 @@ import cpath.config.CPathSettings;
 import cpath.dao.*;
 import cpath.importer.Merger;
 import cpath.importer.PreMerger;
+import cpath.jpa.LogEntitiesRepository;
+import cpath.jpa.LogType;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.jpa.MetadataRepository;
@@ -100,8 +102,7 @@ public final class Admin {
         UPDATE_COUNTS("-update-counts"),
 		EXPORT("-export"),
         CONVERT("-convert"),
-        EXPORT_LOG("-export-log"),
-        IMPORT_LOG("-import-log"),
+        LOG("-log"),
         ANALYSIS("-run-analysis"), //TODO normally, it should never be used
 		;
 
@@ -250,17 +251,40 @@ public final class Admin {
 			
 			updateCounts();
 		
-		} else if (args[0].equals(Cmd.EXPORT_LOG.toString())) {	
-			if (args.length == 2 && "--clear".equalsIgnoreCase(args[1]))
-				exportLog(true);
-			else
-				exportLog(false);	
-		} else if (args[0].equals(Cmd.IMPORT_LOG.toString())) {	
+		} else if (args[0].equals(Cmd.LOG.toString())) {	
+			//options: --export/import filename | --update/merge/delete type:name,type:name,type... 
+			// (names are case-sensitive)
 			
-			if (args.length < 2) 
-				fail(args, "No input file provided.");	
-			else 
-				importLog(args[1]);
+			if (args.length < 2) //fail fast
+				fail(args, "No options provided.");
+			
+			if("--export".equalsIgnoreCase(args[1])) {
+				if (args.length < 3) 
+					fail(args, "No filename provided with --export option.");	
+				else exportLog(args[2]);
+			} else if("--import".equalsIgnoreCase(args[1])) {
+				if (args.length < 3) 
+					fail(args, "No filename provided with --import option.");	
+				else importLog(args[2]);
+			} else if("--update".equalsIgnoreCase(args[1])) {
+				String[] names = new String[] {};
+				if(args.length > 2) {
+					// i.e., comma separated names are present in the command:
+					// -log --update name1,name2... [whatever the rest are to ignore]
+					names = args[2].split(",");
+				}
+				
+				updateCumulativeIpCounts(names);
+				
+			} else if("--merge".equalsIgnoreCase(args[1])) {	
+				fail(args, "Not implemented yet."); 
+				//TODO implement: merge log events (might not worth it - can use H2 Console and SQL instead, or a text editor)
+			} else if("--delete".equalsIgnoreCase(args[1])) {
+				fail(args, "Not implemented yet."); 
+				//TODO implement: delete log events (might not worth it - can use H2 Console and SQL instead, or a text editor)
+			} else {
+				fail(args, "Unknown option: " + args[1]);
+			}
 			
 		} else if (args[0].equals(Cmd.ANALYSIS.toString())) {	
 			
@@ -281,7 +305,41 @@ public final class Admin {
     }    
 
     
-    /**
+    private static void updateCumulativeIpCounts(String... typeAndname) {
+    	if(!cpath.isAdminEnabled())
+			throw new IllegalStateException("Maintenance mode is not enabled.");
+    	
+    	ClassPathXmlApplicationContext context = 
+    			new ClassPathXmlApplicationContext(new String[] {
+    					"classpath:META-INF/spring/applicationContext-jpa.xml"});
+    	LogEntitiesRepository logRepository = context.getBean(LogEntitiesRepository.class);
+    	
+    	if(typeAndname.length == 0) {
+    	// update cum. no. unique IPs for all log events
+    	for(LogType logType : LogType.values()) {
+    		LOG.info("updateCumulativeIpCounts, updating cumulative unique IP counts "
+    				+ "for all events of type: " + logType);
+    		Map res = logRepository.ipsTimelineCum(logType, null);
+    		LOG.info("updateCumulativeIpCounts, "
+    				+ res.size() + " timelines were successfully updated");
+    	}
+    	} else {
+    		for(String tan : typeAndname) {
+    			String[] event = tan.split(":");
+    			LogType logType = LogType.valueOf(event[0]);
+    			String logName = (event.length>1) ? event[1] : null;
+        		LOG.info("updateCumulativeIpCounts, updating cumulative unique IP counts "
+        				+ "for the event(s): " + logType.name() + "/" + ((logName!=null)?logName:"*"));
+        		logRepository.ipsTimelineCum(logType, logName);
+        	}
+    	}
+    	
+    	context.close();
+    	LOG.info("updateCumulativeIpCounts, done.");
+	}
+
+
+	/**
      * Executes a code that uses or edits the main BioPAX model.
      * 
      * @param analysisClass a class that implements {@link Analysis} 
@@ -318,14 +376,10 @@ public final class Admin {
  			
 	}
 
-
-	//clean/update service access counts by location,date in the DB from available .log files
-    public static void exportLog(boolean clear) throws IOException {
+    public static void exportLog(String filename) throws IOException {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
  		
- 		//backup cpath2 access db to a CSV file
- 		String filename = cpath.dataDir() + File.separator + "logentity.csv";
  		Connection conn = null;
  		try {
 			Class.forName("org.h2.Driver");
@@ -333,13 +387,6 @@ public final class Admin {
 			new Csv()
 				.write(conn, filename, "select * from logentity", "UTF-8");
 			LOG.info("Saved current access log DB to " + filename);
-			
-			if(clear) {
-				//purge existing access time and location history
-				conn.createStatement().executeUpdate("delete from logentity;");
-				conn.commit();
-				LOG.info("Cleared access log DB");
-			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		} finally {
@@ -376,7 +423,6 @@ public final class Admin {
 		} finally {
 			try {conn.close();} catch (Exception e) {}
 		}
- 		
 	}
     
 	private static void fail(String[] args, String details) {
@@ -710,10 +756,12 @@ public final class Admin {
 				+ "where the defaut is to print UniProt accessions);"
 				+ "finally, optional 'true' (the last parameter) can be used to enable "
 				+ "merging equivalent interactions before the analysis." + NEWLINE);
-		toReturn.append(Cmd.EXPORT_LOG.toString() + " [--clear] (export cpath2 assess log to the " +
-				"CSV file in the data directory and, optionally, clear the table)" + NEWLINE);
-		toReturn.append(Cmd.IMPORT_LOG.toString() + " [filename] (import cpath2 assess log from the specified " +
-				"CSV file or from the default, if exists, in the data dir.)" + NEWLINE);
+		toReturn.append(Cmd.LOG.toString() + " --export/import <filename> | --update/merge/delete [type1:name1,type2:name2,type3,..] "
+				+ "(Exports/imports the cpath2 internal assess log db to/from the specified " +
+				"CSV file; --import clears and rewrites the log db. Or, --update computes the cumulative "
+				+ "number of unique client IP addresses, from the first log entry time to each day, "
+				+ "given the log event types and names (at least type), or for all log events if type:name were not specified; "
+				+ "but --merge or --delete merges/deletes log db rows only for the specified type:name log events)" + NEWLINE);
 		toReturn.append(Cmd.ANALYSIS.toString() + " <classname> [--update] (execute custom code within the cPath2 BioPAX database; " +
 				"if --update is set, one then should re-index and generate new 'downloads')" + NEWLINE);
 		

@@ -65,10 +65,14 @@ public class Geoloc {
 	 * @return location or null (if IP was a LAN one or not IPv4)
 	 */
 	public static Geoloc fromIpAddress(String ipAddress) {
+		//skip location lookup for the special "IP" (which is to summarize the no. unique IPs)
+		if(LogUtils.UNIQUE_IP.equalsIgnoreCase(ipAddress))
+			return null;
+		
 		Geoloc loc = LogUtils.lookup(ipAddress);
 		
 		if(loc == null)
-			LOG.debug("Unknown geo location, IP: " + ipAddress);
+			LOG.debug("Unknown geo location (or LAN), IP: " + ipAddress);
 		
 		return loc;
 	}
