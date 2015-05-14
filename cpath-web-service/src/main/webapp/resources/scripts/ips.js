@@ -3,22 +3,47 @@
  */
 
 var AppIps = (function() {
-  /*
-   * Takes a DataTable and sets all null cells to the numerical value 0.
-   * This assumes that columns with null values have the type 'number'.
-   * This skips the first column.
-   */
-  function setNullCellsTo0(table) {
-    var numCols = table.getNumberOfColumns();
-    var numRows = table.getNumberOfRows();
-    for (col = 1; col < numCols; col++) {
-      for (row = 0; row < numRows; row++) {
-        if (table.getValue(row, col) === null) {
-          table.setValue(row, col, 0);
-        }
-      }
-    }
-  }
+	
+	/*
+	 * Takes a google.visualization.DataTable and 
+	 * sets all null cells to the numerical value 0.
+	 * This assumes that columns with null values have the type 'number'.
+	 * This skips the first column.
+	 */
+	function setNullCellsTo0(table) {
+		var numCols = table.getNumberOfColumns();
+		var numRows = table.getNumberOfRows();
+		for (col = 1; col < numCols; col++) {
+			for (row = 0; row < numRows; row++) {
+				if (table.getValue(row, col) === null) {
+					table.setValue(row, col, 0);
+				}
+			}
+		}
+	}
+
+	/*
+	 * Takes a google.visualization.DataTable 
+	 * and sets all null cells to the value from earlier date.
+	 * This assumes that columns with null values have the type 'number'.
+	 * This skips the first column.
+	 */	
+	function setNullCellsToPrev(table) {
+		var numCols = table.getNumberOfColumns(); //no. different log events (names)
+		var numRows = table.getNumberOfRows(); //no. days (col=0 contains dates)
+		for (col = 1; col < numCols; col++) {
+			//set 0 in the first row if it was null
+			if (table.getValue(0, col) === null) {
+				table.setValue(0, col, 0);
+			}
+			//rows: for each day, from the second one in the past to present
+			for (row = 1; row < numRows; row++) {
+				if (table.getValue(row, col) === null) {
+					table.setValue(row, col, table.getValue(row-1, col));
+				}
+			}
+		}
+	}
 
   /*
    * Puts in backslashes for all double-quotes.
@@ -101,18 +126,23 @@ var AppIps = (function() {
 
 
   /*
-   * Takes a JS object containing timeline data and produces a
-   * DataTable.
+   * Takes a JSON object containing timeline data 
+   * and returns a google.visualization.DataTable.
    *
    * The timeline data has this format:
    * {
    *   'name1': [
-   *      ['iso-date-1', count], // <-- The number of downloads that occurred on this date for this version
+   *      ['iso-date-1', count],
    *      ['iso-date-2', count],
    *      ...
    *    ],
    *   'name2': ...
    * }
+   * 
+   * I.e., timeline data is a map of timeline entries;
+   * each timeline entry is a key-value pair: 
+   * key is timeline's name, and value is an array 
+   * of [iso-date, integer] data points (arrays of size 2).
    *
    * The DataTable returned has this format:
    *  Date  | name1 | ... | nameN
@@ -124,9 +154,9 @@ var AppIps = (function() {
     var timelineByDay = new google.visualization.DataTable();
     var dateCol = timelineByDay.addColumn('date', 'Date');
     var date2Row = {}; // dictionary of dates to row indices
-    for (var version in timelineData) {
-      var col = timelineByDay.addColumn('number', version);
-      var dls = timelineData[version];
+    for (var timeline in timelineData) {
+      var col = timelineByDay.addColumn('number', timeline);
+      var dls = timelineData[timeline];
       for (var i in dls) {
         var dl = dls[i];
         var date = parseISODate(dl[0]);
@@ -142,7 +172,6 @@ var AppIps = (function() {
         timelineByDay.setValue(row, col, count);
       }
     }
-    setNullCellsTo0(timelineByDay);
     timelineByDay.sort([{'column': dateCol}]); // Charts requires the rows to be ordered by date
     return timelineByDay;
   }
@@ -169,36 +198,41 @@ var AppIps = (function() {
   }
 
   function setupTimeline() {
-	var timelineChart;
+	var timelineChart = new google.visualization.AnnotatedTimeLine(document.getElementById('timeline-chart'));
 	var timelineByDay;
-    $.getJSON('iptimeline', function(timelineData) {
-      // create by-day table
-      timelineByDay = buildTimelineByDay(timelineData);      
-      // create timeline by day (default) visualization
-      timelineChart = new google.visualization.AnnotatedTimeLine(document.getElementById('timeline-chart'));
-      timelineChart.draw(timelineByDay, {});
-      // setup button that switch to by-day table view
-      $('#timeline-by-day').click(function() {
-        $(this).parent().find('button').removeClass('active');
-        $(this).addClass('active');
-        timelineChart.draw(timelineByDay, {});
-      }); 
-    }).done(function() {
-    	$.getJSON('iptimelinecum', function(data) {
-    	      // create the cumulative table
-    	      var timelineCum = buildTimelineByDay(data);
-    	      // setup the button that switch to cumulative table view
-    	      $('#timeline-cumulative').click(function() {
-    	          $(this).parent().find('button').removeClass('active');
-    	          $(this).addClass('active');
-    	          timelineChart.draw(timelineCum, {});
-    	      });    	      
-    	      // setup "save as csv" button
-     		 setupTimelineSaveCSV(timelineByDay, timelineCum);
-    	 });
-    });
+	var timelineCum;
+    
+	//build the cumulative timeline ()
+	$.getJSON('iptimelinecum', function(data) {
+		// create the cumulative table
+		timelineCum = buildTimelineByDay(data);
+	    setNullCellsToPrev(timelineCum);
+		// setup the button that switch to cumulative table view
+		$('#timeline-cumulative').click(function() {
+			$(this).parent().find('button').removeClass('active');
+			$(this).addClass('active');
+			timelineChart.draw(timelineCum, {});
+		});    	      
+	})
+	.done(function() {
+		$.getJSON('iptimeline', function(data) {
+			// create by-day table
+			timelineByDay = buildTimelineByDay(data);
+		    setNullCellsTo0(timelineByDay);
+			// setup button that switch to by-day table view from the other view
+			$('#timeline-by-day').click(function() {
+				$(this).parent().find('button').removeClass('active');
+				$(this).addClass('active');
+				timelineChart.draw(timelineByDay, {});
+			}); 
+		    // setup "save as csv" button
+			setupTimelineSaveCSV(timelineByDay, timelineCum);
+			// display the default (by day) visualization right now
+			timelineChart.draw(timelineByDay, {});
+		});
+	});    
   }
-
+  
   function setupSelectpicker() {		
 	  //define onChage event handler before initializing the selectpicker
 	  $('.selectpicker').on('change', function() {

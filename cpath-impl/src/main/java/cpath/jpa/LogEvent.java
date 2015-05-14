@@ -44,10 +44,6 @@ public class LogEvent {
 	@Column(nullable=false)
 	private String name;
 	
-	/**
-	 * a special constant event type, because there is no DOWNLOAD command in the cpath2 api.
-	 */
-	public static LogEvent DOWNLOAD = new LogEvent(LogType.COMMAND, "DOWNLOAD");
 	
 	/**
 	 * a special constant event type, because there is no IDMAPPING command in the cpath2 api.
@@ -124,7 +120,6 @@ public class LogEvent {
 		Set<LogEvent> set = new HashSet<LogEvent>();
 
 		set.add(new LogEvent(LogType.FILE, filename));
-		set.add(LogEvent.DOWNLOAD);
 		
 		// extract the orig. data source's standard name -
 		// first, remove common prefix (incl. cPath2 instance name and ver.)
@@ -180,6 +175,6 @@ public class LogEvent {
 	
 	@Override
 	public String toString() {
-		return type + " " + name;
+		return String.format("type:%s, name:'%s'", type, name);
 	};
 }

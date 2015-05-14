@@ -236,17 +236,13 @@ public class PagesController extends BasicController {
     	
 		byte[] iconData = null;
 
-		try {
-			BufferedImage image = ImageIO.read(new URL(cpathLogoUrl));
-			if(image != null) {
-				image = scaleImage(image, 16, 16, null);
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				ImageIO.write(image, "gif", baos);
-				baos.flush();
-				iconData = baos.toByteArray();
-			}
-		} catch (IOException e) {
-			log.error("Failed to load icon image from " +  cpathLogoUrl, e);
+		BufferedImage image = ImageIO.read(new URL(cpathLogoUrl));
+		if(image != null) {
+			image = scaleImage(image, 16, 16, null);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+			ImageIO.write(image, "gif", baos);
+			baos.flush();
+			iconData = baos.toByteArray();
 		}
 		
         return iconData;

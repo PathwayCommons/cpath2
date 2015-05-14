@@ -230,31 +230,31 @@ public class RepositoriesAndServiceTest {
 		
 		String file = cpath.exportArchivePrefix() + "Reactome.BIOPAX.owl.gz";
 		Set<LogEvent> events = LogEvent.fromDownloads(file);
-		assertEquals(4, events.size());
+		assertEquals(3, events.size()); //log in types: PROVIDER, FILE, FORMAT (not COMMAND anymore)
 		
 		//'All' 
 		file = cpath.exportArchivePrefix() + "All.BIOPAX.owl.gz";
 		events = LogEvent.fromDownloads(file);
-		assertEquals(3, events.size());
+		assertEquals(2, events.size());
 		
 		file = cpath.exportArchivePrefix() + "Reactome.GSEA.gmt.gz";
 		events = LogEvent.fromDownloads(file);
-		assertEquals(4, events.size());
+		assertEquals(3, events.size());
 		
 		//illegal format - still logged as OTHER
 		file = cpath.exportArchivePrefix() + "Reactome.foo.gmt.gz";
 		events = LogEvent.fromDownloads(file);
-		assertEquals(4, events.size());
+		assertEquals(3, events.size());
 		
 		//other (metadata etc.)
 		file = "blacklist.txt";
 		events = LogEvent.fromDownloads(file);
-		assertEquals(3, events.size());//counted for: file, command (DOWNLOAD), format (OTHER)
+		assertEquals(2, events.size());//counted for: FILE, FORMAT (OTHER)
 		
 		//when a provider's name does not start from a capital letter, LogType.PROVIDER event won't be there
 		file = cpath.exportArchivePrefix() + "reactome.foo.gmt.gz";
 		events = LogEvent.fromDownloads(file);
-		assertEquals(3, events.size());
+		assertEquals(2, events.size());
 	}
 	
 	

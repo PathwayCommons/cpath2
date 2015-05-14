@@ -816,7 +816,6 @@ public class CPathServiceImpl implements CPathService {
 		for(LogEvent event : events) {
 			//'total' should not be here (it auto-counts)
 			Assert.isTrue(event.getType() != LogType.TOTAL); 
-			
 			count(LogUtils.today(), event, ipAddr);
 		}
 		
@@ -844,6 +843,8 @@ public class CPathServiceImpl implements CPathService {
 		}
 		
 		t.setCount(t.getCount() + 1);
+		
+		log.info(t.toString());
 		
 		return logEntitiesRepository.save(t);
 	}

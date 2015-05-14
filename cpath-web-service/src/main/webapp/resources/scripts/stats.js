@@ -6,21 +6,46 @@
 
 var AppStats = (function() {
   /*
-   * Takes a DataTable and sets all null cells to the numerical value 0.
+   * Takes a google.visualization.DataTable 
+   * and sets all null cells to the numerical value 0.
    * This assumes that columns with null values have the type 'number'.
    * This skips the first column.
    */
-  function setNullCellsTo0(table) {
-    var numCols = table.getNumberOfColumns();
-    var numRows = table.getNumberOfRows();
-    for (col = 1; col < numCols; col++) {
-      for (row = 0; row < numRows; row++) {
-        if (table.getValue(row, col) === null) {
-          table.setValue(row, col, 0);
-        }
-      }
-    }
-  }
+	function setNullCellsTo0(table) {
+		var numCols = table.getNumberOfColumns();
+		var numRows = table.getNumberOfRows();
+		for (col = 1; col < numCols; col++) {
+			for (row = 0; row < numRows; row++) {
+				if (table.getValue(row, col) === null) {
+					table.setValue(row, col, 0);
+				}
+			}
+		}
+	}
+  
+	/*
+	 * Takes a google.visualization.DataTable 
+	 * and sets all null cells to the value from earlier date.
+	 * This assumes that columns with null values have the type 'number'.
+	 * This skips the first column.
+	 */	
+	function setNullCellsToPrev(table) {
+		var numCols = table.getNumberOfColumns(); //no. different log events (names)
+		var numRows = table.getNumberOfRows(); //no. days (col=0 contains dates)
+		for (col = 1; col < numCols; col++) {
+			//set 0 in the first row if it was null
+			if (table.getValue(0, col) === null) {
+				table.setValue(0, col, 0);
+			}
+			//rows: for each day, from the second one in the past to present
+			for (row = 1; row < numRows; row++) {
+				if (table.getValue(row, col) === null) {
+					table.setValue(row, col, table.getValue(row-1, col));
+				}
+			}
+		}
+	}
+
 
   /*
    * Puts in backslashes for all double-quotes.
@@ -123,35 +148,23 @@ var AppStats = (function() {
   }
 
   /*
-   * Takes a DataTable containing the timeline data by day and
-   * returns a DataTable containing cumulative timeline data.
-   * The cumulative table has the same format as the by-day table.
-   */
-  function buildTimelineCumulative(timelineByDay) {
-    var timelineCum = timelineByDay.clone();
-    var numCols = timelineCum.getNumberOfColumns();
-    var numRows = timelineCum.getNumberOfRows();
-    for (var row = 1; row < numRows; row++) {
-      for (var col = 1; col < numCols; col++) {
-        timelineCum.setValue(row, col, timelineCum.getValue(row, col) + timelineCum.getValue(row - 1, col));
-      }
-    }
-    return timelineCum;
-  }
-
-  /*
-   * Takes a JS object containing timeline data and produces a
-   * DataTable.
+   * Takes a JS object containing timeline data 
+   * and produces a google.visualization.DataTable.
    *
    * The timeline data has this format:
    * {
    *   'name1': [
-   *      ['iso-date-1', count], // <-- The number of downloads that occurred on this date for this version
+   *      ['iso-date-1', count],
    *      ['iso-date-2', count],
    *      ...
    *    ],
    *   'name2': ...
    * }
+   *
+   * I.e., timeline data is a map of timeline entries;
+   * each timeline entry is a key-value pair: 
+   * key is timeline's name, and value is an array 
+   * of [iso-date, integer] data points (arrays of size 2).
    *
    * The DataTable returned has this format:
    *  Date  | name1 | ... | nameN
@@ -163,13 +176,12 @@ var AppStats = (function() {
     var timelineByDay = new google.visualization.DataTable();
     var dateCol = timelineByDay.addColumn('date', 'Date');
     var date2Row = {}; // dictionary of dates to row indices
-    for (var version in timelineData) {
-      var col = timelineByDay.addColumn('number', version);
-      var dls = timelineData[version];
+    for (var timeline in timelineData) {
+      var col = timelineByDay.addColumn('number', timeline);
+      var dls = timelineData[timeline];
       for (var i in dls) {
         var dl = dls[i];
         var date = parseISODate(dl[0]);
-
         var row = date2Row[date]; // convert the date to a row index
         if (!(date in date2Row)) { // if there's no row for this date, created one
           row = timelineByDay.addRow();
@@ -181,7 +193,6 @@ var AppStats = (function() {
         timelineByDay.setValue(row, col, count);
       }
     }
-    setNullCellsTo0(timelineByDay);
     timelineByDay.sort([{'column': dateCol}]); // Charts requires the rows to be ordered by date
     return timelineByDay;
   }
@@ -207,33 +218,41 @@ var AppStats = (function() {
     });
   }
 
-  function setupTimeline() {
-    $.getJSON('timeline', function(timelineData) {
-      // create by-day and cumulative tables
-      var timelineByDay = buildTimelineByDay(timelineData);
-      var timelineCum = buildTimelineCumulative(timelineByDay);
-//      addTotalColumn(timelineByDay);
-//      addTotalColumn(timelineCum);
-
-      // create timeline visualization
-      var timelineChart = new google.visualization.AnnotatedTimeLine(document.getElementById('timeline-chart'));
-      timelineChart.draw(timelineCum, {});
-
-      // setup buttons that switch between by-day and cumulative timelines
-      $('#timeline-by-day').click(function() {
-        $(this).parent().find('button').removeClass('active');
-        $(this).addClass('active');
-        timelineChart.draw(timelineByDay, {});
-      });
-      $('#timeline-cumulative').click(function() {
-        $(this).parent().find('button').removeClass('active');
-        $(this).addClass('active');
-        timelineChart.draw(timelineCum, {});
-      });
-
-      // setup "save as csv" button
-      setupTimelineSaveCSV(timelineByDay, timelineCum);
-    });
+  function setupTimeline() {	  
+	  var timelineChart = new google.visualization.AnnotatedTimeLine(document.getElementById('timeline-chart'));
+	  var timelineByDay;
+	  var timelineCum;
+	    
+	  //build the cumulative timeline ()
+	  $.getJSON('timelinecum', function(data) {
+		  // create the cumulative table
+		  timelineCum = buildTimelineByDay(data);
+		  setNullCellsToPrev(timelineCum);
+		  // setup the button that switch to cumulative table view
+		  $('#timeline-cumulative').click(function() {
+			  $(this).parent().find('button').removeClass('active');
+			  $(this).addClass('active');
+			  timelineChart.draw(timelineCum, {});
+		  });    	      
+	  })
+	  .done(function() {
+		  $.getJSON('timeline', function(data) {
+			  // create table
+			  timelineByDay = buildTimelineByDay(data);
+			  setNullCellsTo0(timelineByDay);
+//		      addTotalColumn(timelineByDay);
+			  // setup button that switch to by-day table view from the other view
+			  $('#timeline-by-day').click(function() {
+				  $(this).parent().find('button').removeClass('active');
+				  $(this).addClass('active');
+				  timelineChart.draw(timelineByDay, {});
+			  }); 
+			  // setup "save as csv" button
+			  setupTimelineSaveCSV(timelineByDay, timelineCum);
+			  // display the default (by day) visualization right now
+			  timelineChart.draw(timelineByDay, {});
+		  });
+	  });     
   }
 
   // GEOGRAPHY

@@ -110,6 +110,21 @@ public class LogStatsController extends BasicController {
     	return service.log().downloadsTimeline(LogType.TOTAL, null);
     }
 	
+	@RequestMapping("/{logType}/{name}/timelinecum")
+    public @ResponseBody Map<String,List<Object[]>> timelinecum(@PathVariable LogType logType, @PathVariable String name) {		
+    	return service.log().downloadsTimelineCum(logType, name);
+    }    
+    
+    @RequestMapping("/{logType}/timelinecum")
+    public @ResponseBody Map<String,List<Object[]>> timelinecum(@PathVariable LogType logType) {		
+    	return service.log().downloadsTimelineCum(logType, null);
+    }
+	
+	@RequestMapping("/timelinecum")
+    public @ResponseBody Map<String,List<Object[]>> timelinecum() {		
+    	return service.log().downloadsTimelineCum(LogType.TOTAL, null);
+    }	
+	
 	//iptimelines (no. unique client IP addresses by request type on each day)
 	
 	@RequestMapping("/iptimeline")

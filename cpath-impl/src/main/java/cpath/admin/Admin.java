@@ -998,10 +998,11 @@ public final class Admin {
         	LOG.info("create-downloads: preparing data 'by organism' archives...");
         	for(final String org :  cpath.getOrganisms()) {
         		// generate archives for current organism
-        		// hack: org.toLowerCase() is to tell by-organism from by-datasource archives (for usage stats...) 
-        		String archiveName = cpath.biopaxExportFileName(org.toLowerCase());
+        		// hack: org.toLowerCase() is to tell by-organism from by-datasource archives (when analyzing the log db) 
+        		String organism = org.toLowerCase();
+        		String archiveName = cpath.biopaxExportFileName(organism);
         		if(!files.contains(archiveName)) {
-        			exportBiopax(exec, mainModel, searcher, archiveName, null, new String[]{org});
+        			exportBiopax(exec, mainModel, searcher, archiveName, null, new String[]{organism});
         			files.add(archiveName); 
         		}
         	}

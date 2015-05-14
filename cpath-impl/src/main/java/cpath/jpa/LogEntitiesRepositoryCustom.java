@@ -15,19 +15,17 @@ import java.util.Map;
 interface LogEntitiesRepositoryCustom {
 	
 	/**
-	 * Aggregates the history (log) of a particular service category,
-	 * {@link LogType}, provided for users on each day; the result is a 
-	 * list of [date, count] pairs for that category and service name.
-	 * The result also includes the total counts by date for all names 
-	 * in this category altogether (logType is used for the key).
+	 * Analyzes the downloads/access history (log events) and 
+	 * aggregates the access counts in the specified service category,
+	 * {@link LogType}, given event name (or all), on each day; 
+	 * the result is a list of [date, count] pairs for the name(s) in the category.
 	 * 
 	 * @param logType	not null
 	 * @param e.g, provider's name, command, format, or filename (depends on the log type)
 	 * @return	name (key) - to array of Object[2] map, 
-	 * 			e.g., if logType eq. COMMANDS, and name were null: 
+	 * 			e.g., if logType eq. COMMAND, and name were null: 
 	 * <pre>
 	 * {
-	 * 	"All Commands": [["2013-11-13", 123], ["2013-11-14", 456],..], 
 	 *	"search" : [["2013-11-13", 123],..], 
 	 *	"get" : [["2013-11-13", 123],..], 
 	 *	"traverse" : [["2013-11-13", 123],..],..
@@ -37,21 +35,42 @@ interface LogEntitiesRepositoryCustom {
 	 * If name, e.g. "search", were provided, the result would be: 
 	 * <pre>
 	 * {
-	 * 	"All Commands": [["2013-11-13", 123], ["2013-11-14", 456],..], 
 	 *	"search" : [["2013-11-13", 23], ["2013-11-14", 45],..]
 	 * }
 	 * </pre> 
 	 */
 	Map<String, List<Object[]>> downloadsTimeline(LogType logType, String name); 
+	
+	/**
+	 * Aggregates the number of downloads/access (log events) 
+	 * in a particular category, {@link LogType}, from the first day to each day; 
+	 * the result is a list of [date, count] pairs for the name(s) in the category.
+	 * 
+	 * @param logType	not null
+	 * @param e.g, provider's name, command, format, or filename (depends on the log type)
+	 * @return	name (key) - to array of Object[2] map, 
+	 * 			e.g., if logType eq. COMMAND, and name were null: 
+	 * <pre>
+	 * {
+	 *	"search" : [["2013-11-13", 723],..], 
+	 *	"get" : [["2013-11-13", 323],..],...
+	 * }
+	 * </pre>
+	 * 
+	 * If name, e.g. "search", were provided, the result would be: 
+	 * <pre>
+	 * {
+	 *	"search" : [["2013-11-13", 723], ["2013-11-14", 945],..]
+	 * }
+	 * </pre> 
+	 */
+	Map<String, List<Object[]>> downloadsTimelineCum(LogType logType, String name); 	
 
 	/**
 	 * Gets the daily numbers of unique client IP addresses 
 	 * per service request type (or category),
 	 * {@link LogType}. The result is a list of [date, count] 
-	 * pairs for the category and service name.
-	 * 
-	 * The result also includes the total no. unique IPs per date for all names 
-	 * in the same category (logType is used for the key).
+	 * pairs for the name(s) in the category.
 	 * 
 	 * @param logType	not null
 	 * @param e.g, provider's name, command, format, or filename (depends on the log type)
@@ -59,7 +78,6 @@ interface LogEntitiesRepositoryCustom {
 	 * 			e.g., if logType eq. COMMANDS, and name were null: 
 	 * <pre>
 	 * {
-	 * 	"All Commands": [["2013-11-13", 123], ["2013-11-14", 456],..], 
 	 *	"search" : [["2013-11-13", 123],..], 
 	 *	"get" : [["2013-11-13", 123],..], 
 	 *	"traverse" : [["2013-11-13", 123],..],..
@@ -69,7 +87,6 @@ interface LogEntitiesRepositoryCustom {
 	 * If name, e.g. "search", were provided, the result would be: 
 	 * <pre>
 	 * {
-	 * 	"All Commands": [["2013-11-13", 123], ["2013-11-14", 456],..], 
 	 *	"search" : [["2013-11-13", 23], ["2013-11-14", 45],..]
 	 * }
 	 * </pre> 
@@ -79,13 +96,11 @@ interface LogEntitiesRepositoryCustom {
 	
 	/**
 	 * Gets the numbers of unique client IP addresses 
-	 * collected (from the beginning) by each date per
-	 * service request type (or category),
-	 * {@link LogType}. The result is a list of [date, count] 
-	 * pairs for the category and service name.
-	 * 
-	 * The result also includes the total no. unique IPs per date for all names 
-	 * in the same category (logType is used for the key).
+	 * collected from the very first log event to each date, per
+	 * service request type (category),
+	 * {@link LogType} and name (optional). 
+	 * The result is a list of [date, count] 
+	 * pairs for the name(s) in the category.
 	 * 
 	 * @param logType	not null
 	 * @param e.g, provider's name, command, format, or filename (depends on the log type)
@@ -93,7 +108,6 @@ interface LogEntitiesRepositoryCustom {
 	 * 			e.g., if logType eq. COMMANDS, and name were null: 
 	 * <pre>
 	 * {
-	 * 	"All Commands": [["2013-11-13", 123], ["2013-11-14", 456],..], 
 	 *	"search" : [["2013-11-13", 123],..], 
 	 *	"get" : [["2013-11-13", 123],..], 
 	 *	"traverse" : [["2013-11-13", 123],..],..
@@ -103,7 +117,6 @@ interface LogEntitiesRepositoryCustom {
 	 * If name, e.g. "search", were provided, the result would be: 
 	 * <pre>
 	 * {
-	 * 	"All Commands": [["2013-11-13", 123], ["2013-11-14", 456],..], 
 	 *	"search" : [["2013-11-13", 23], ["2013-11-14", 45],..]
 	 * }
 	 * </pre> 

@@ -76,33 +76,6 @@ public class MetadataController extends BasicController {
     	
     	return "validations";
     }
- 
-    
-//    @RequestMapping("/validations/{identifier}.html") //a JSP view
-//    public String queryForValidation(
-//    		@PathVariable String identifier, Model model, HttpServletRequest request) 
-//    {
-//    	ValidatorResponse body = service.validationReport(identifier, null);
-//		model.addAttribute("response", body);
-//		return "validation";
-//    }
-    
-//    @RequestMapping("/validations/{identifier}/{file}.html") //a JSP view
-//    public String queryForValidationByProviderAndFile(
-//    		@PathVariable String identifier, @PathVariable String file, 
-//    		Model model, HttpServletRequest request) 
-//    {
-//    	ValidatorResponse body = service.validationReport(identifier, file);
-//		model.addAttribute("response", body);
-//		return "validation";
-//    }    
-       
-//    @RequestMapping("/metadata/validations/{identifier}")
-//    public @ResponseBody ValidatorResponse queryForValidation(
-//    		@PathVariable String identifier, HttpServletRequest request) 
-//    {	
-//    	return service.validationReport(identifier, null);
-//    }
     
     // returns XML or Json 
     @RequestMapping("/metadata/validations/{identifier}/{file}")

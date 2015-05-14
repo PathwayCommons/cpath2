@@ -111,4 +111,9 @@ public class LogEntity extends AbstractEntity {
 		this.event = event;
 	}
 	
+	@Override
+	public String toString() {
+		return String.format("log ip:%s, %s, location:'%s'", addr, event, geoloc);
+	}
+	
 }

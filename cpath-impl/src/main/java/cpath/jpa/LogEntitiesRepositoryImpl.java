@@ -18,6 +18,7 @@ import org.springframework.util.Assert;
 import com.mysema.query.Tuple;
 import com.mysema.query.jpa.JPQLQuery;
 
+import cpath.config.CPathSettings;
 import cpath.dao.LogUtils;
 import cpath.jpa.QLogEntity;
 import cpath.service.CPathService;
@@ -46,13 +47,19 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		
 		if(name == null || name.isEmpty()) {
 			Assert.notNull(logType);
-			for(Tuple t : from($)
-					.where($.event.type.eq(logType), 
-							//and IP is either null (records before 11/2014) or real IP (not the reserved one)
-							$.addr.isNull().or($.addr.ne(LogUtils.UNIQUE_IP)))
-					.groupBy($.event.name,$.date)
-					.orderBy($.event.name.asc(),$.date.desc())
-					.list($.event.name,$.date,$.count.sum())) 
+			
+			JPQLQuery query = from($)
+				.where($.event.type.eq(logType), 
+						//and IP is either null (records before 11/2014) or real IP (not the reserved one)
+						$.addr.isNull().or($.addr.ne(LogUtils.UNIQUE_IP)))
+				.groupBy($.event.name,$.date)
+				.orderBy($.event.name.asc(),$.date.desc());
+			
+			//if logType==FILE - add filter to get only current cpath2 instance version files!
+			if(logType == LogType.FILE) 
+				query.where($.event.name.startsWith(CPathSettings.getInstance().exportArchivePrefix()));
+			
+			for(Tuple t : query.list($.event.name,$.date,$.count.sum())) 
 			{
 				String key = t.get($.event.name);
 				List<Object[]> val = timeline.get(key);
@@ -79,6 +86,29 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		return timeline;
 	}
 
+	@Override 
+	public Map<String, List<Object[]>> downloadsTimelineCum(LogType logType, String name) 
+	{
+		Map<String, List<Object[]>> timeline = downloadsTimeline(logType, name);					
+		//build the cumulative timeline(s) from the daily counts,
+		//which are additive.
+		for(String key : timeline.keySet()) {
+			List<Object[]> points = timeline.get(key);
+			int len = points.size(); //the no. days in the timeline
+			if(len>1) {
+				//we want to sum up starting from the first day (oldest); so -
+				//will iterate in the reverse order (as points were sorted by date in descending order)
+				//- from the last to the second point:
+				for(int i=len-1; i>0; i--) {
+					Object[] earlierDay = points.get(i);
+					Object[] laterDay = points.get(i-1);
+					laterDay[1] = (Long)(laterDay[1]) + (Long)(earlierDay[1]);
+				}
+			}
+		}
+		// return converted cumulative timeline		
+		return timeline;
+	}	
 	
 	@Override
 	public List<Object[]> downloadsWorld(LogType logType, String name) {
@@ -251,12 +281,18 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		QLogEntity $ = QLogEntity.logEntity;
 		if(name == null || name.isEmpty()) {
 			Assert.notNull(logType);
-			for(Tuple t : from($)
+			
+			JPQLQuery query = from($)
 					.where($.event.type.eq(logType), //and the IP addr is not the special one or null
-							$.addr.isNotNull().and($.addr.ne(LogUtils.UNIQUE_IP)))
+						$.addr.isNotNull().and($.addr.ne(LogUtils.UNIQUE_IP)))
 					.groupBy($.event.name,$.date)
-					.orderBy($.event.name.asc(),$.date.desc())
-					.list($.event.name,$.date,$.addr.countDistinct())) 
+					.orderBy($.event.name.asc(),$.date.desc());
+			
+			//if logType==FILE - add filter to get only current cpath2 instance version files!
+			if(logType == LogType.FILE) 
+				query.where($.event.name.startsWith(CPathSettings.getInstance().exportArchivePrefix()));
+			
+			for(Tuple t : query.list($.event.name,$.date,$.addr.countDistinct())) 
 			{
 				String key = t.get($.event.name);
 				List<Object[]> val = timeline.get(key);
@@ -289,7 +325,8 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		
 		QLogEntity $ = QLogEntity.logEntity;
 		
-		//get all days - from the first log entry to the last one
+		//get all log days - from the first log entry to the last one 
+		//(some dates may be missing - if server was down)
 		final List<String> days = from($).orderBy($.date.asc()).distinct().list($.date);
 		
 		if(name == null || name.isEmpty()) {
@@ -297,11 +334,16 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 			//do for all names in the category (logType)
 			Assert.notNull(logType);
 			
-			//for each name in the logType category:
-			for(String logName : from($)
+			JPQLQuery query = from($)
 					.where($.event.type.eq(logType))
-					.distinct()
-					.list($.event.name))
+					.distinct();
+			
+			//if logType==FILE - add filter to get only current cpath2 instance version files!
+			if(logType == LogType.FILE) 
+				query.where($.event.name.startsWith(CPathSettings.getInstance().exportArchivePrefix()));
+			
+			//for each name in the logType category:
+			for(String logName : query.list($.event.name))
 			{		
 				//add the cum. no. IPs timeline for the logName
 				addToIpsTimelineCumForName($, logType, logName, timeline, days);

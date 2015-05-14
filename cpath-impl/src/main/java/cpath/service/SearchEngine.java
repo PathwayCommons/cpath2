@@ -261,7 +261,7 @@ public class SearchEngine implements Indexer, Searcher {
 			Document doc = searcher.doc(scoreDoc.doc);
 			String uri = doc.get(FIELD_URI);
 			BioPAXElement bpe = model.getByID(uri);			
-			LOG.debug("transform: doc:" + scoreDoc.doc + ", uri:" + uri);
+//			LOG.debug("transform: doc:" + scoreDoc.doc + ", uri:" + uri);
 			
 			// use the highlighter (get matching fragments)
 			// for this to work, all keywords were stored in the index field
