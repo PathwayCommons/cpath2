@@ -5,8 +5,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 //import java.util.Iterator;
 //import java.util.List;
 import java.util.Map;
@@ -19,6 +21,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -29,11 +33,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import cpath.config.CPathSettings;
+import cpath.dao.LogUtils;
 import cpath.jpa.LogType;
 
 @Controller
 public class PagesController extends BasicController {
-	private static final Logger log = LoggerFactory.getLogger(PagesController.class);
+	private static final Logger LOG = LoggerFactory.getLogger(PagesController.class);
 	
 	private final CPathSettings cpath;
 	
@@ -74,10 +79,29 @@ public class PagesController extends BasicController {
     @RequestMapping(value="/admin", method=RequestMethod.POST)
     public String adminPageAction(
     		@RequestParam(required=false) String admin, 
-    		@RequestParam(required=false) String debug) {
+    		@RequestParam(required=false) String debug,
+    		@RequestParam(required=false) @DateTimeFormat(iso=ISO.DATE) Date logStartDate,
+    		@RequestParam(required=false) @DateTimeFormat(iso=ISO.DATE) Date logEndDate)
+    {
 
     	cpath.setAdminEnabled("on".equals(admin));
    		cpath.setDebugEnabled("on".equals(debug));
+
+   		//check
+   		if(logStartDate!=null && logEndDate!=null
+   				&& logStartDate.compareTo(logEndDate) > 0) { 
+   	   		LOG.error("adminPageAction, the log start date cannot be greater than end date (ignored)");
+   	   		//TODO also show this error message on the page
+   		} else { //update
+   			try {
+   				cpath.setLogStart(logStartDate);
+   				cpath.setLogEnd(logEndDate);
+   				LOG.info(String.format("adminPageAction, new default/global log timeline range: %s - %s.", 
+   	   	   				cpath.getLogStart(), cpath.getLogEnd()));
+   			} catch(Throwable e) {
+   				LOG.error("adminPageAction, failed", e);
+   			}
+   		}
     	  		
     	return "admin";
     }
@@ -138,31 +162,7 @@ public class PagesController extends BasicController {
     		
     		if(!name.startsWith(".")) {
     			StringBuilder sb = new StringBuilder();
-    			sb.append("size: ").append(FileUtils.byteCountToDisplaySize(size));
-    			  			
-//    			List<Object[]> dl = service.log().downloadsWorld(null, name);
-//    			String topCountry = null;
-//    			long topCount = 0;
-//    			long total = 0;
-//    			Iterator<Object[]> it = dl.iterator();
-//    			it.next(); //skip title line
-//    			while(it.hasNext()) {
-//    				Object[] a = it.next();
-//    				long count = (Long) a[1];
-//    				total += count;
-//    				if(count > topCount) {
-//    					topCount = count;
-//    					topCountry = (String) a[0];
-//    				}   					
-//    			}   			
-//    			sb.append("; downloads: ").append(total);
-//    			if(topCount > 0) {
-//    				sb.append(", mostly from ")
-//    				.append((topCountry != null && !topCountry.isEmpty()) 
-//    						? topCountry : "Local/Unknown")
-//    				.append(" [").append(topCount).append("]");
-//    			}
-    			
+    			sb.append("size: ").append(FileUtils.byteCountToDisplaySize(size));    			
     			files.put(name, sb.toString());
     		}
     	}
@@ -188,35 +188,18 @@ public class PagesController extends BasicController {
     public String statsByType(Model model, @PathVariable LogType logType) {
     	model.addAttribute("summary_for", "Category: " + logType);
     	model.addAttribute("current", "/log/"+logType.toString()+"/stats");
+    	model.addAttribute("from_to", timelineMaxRange());	
     	return "stats";
     }
-    
-    @RequestMapping("/log/{logType}/{name}/stats")
+
+	@RequestMapping("/log/{logType}/{name}/stats")
     public String statsByType(Model model, @PathVariable LogType logType,
     		@PathVariable String name) {
     	model.addAttribute("summary_for", "Category: " + logType + ", name: " + name);
     	model.addAttribute("current", "/log/"+logType.toString()+"/"+name+"/stats");
+    	model.addAttribute("from_to", timelineMaxRange());
+    	
     	return "stats";
-    } 
-
-    @RequestMapping("/log/ips")
-    public String allIps() {
-    	return "redirect:/log/TOTAL/ips";
-    }
-    
-    @RequestMapping("/log/{logType}/ips")
-    public String ipsByType(Model model, @PathVariable LogType logType) {
-    	model.addAttribute("summary_for", "Category: " + logType);
-    	model.addAttribute("current", "/log/"+logType.toString()+"/ips");
-    	return "ips";
-    }
-    
-    @RequestMapping("/log/{logType}/{name}/ips")
-    public String ipsByType(Model model, @PathVariable LogType logType,
-    		@PathVariable String name) {
-    	model.addAttribute("summary_for", "Category: " + logType + ", name: " + name);
-    	model.addAttribute("current", "/log/"+logType.toString()+"/"+name+"/ips");
-    	return "ips";
     }    
     
 
@@ -300,4 +283,23 @@ public class PagesController extends BasicController {
     	return files;
 	}
 	
+    private String timelineMaxRange() {
+    	StringBuilder range = new StringBuilder();		
+    	
+    	if(cpath.getLogStart() != null)
+    		range.append("from ").append(cpath.getLogStart()).append(" ");
+    	else {
+    		Calendar cal = Calendar.getInstance();
+    		cal.add(Calendar.YEAR, -1);
+    		String yearAgo = LogUtils.ISO_DATE_FORMAT.format(cal.getTime());
+    		range.append("from ").append(yearAgo).append(" ");
+    	}
+    	
+    	if(cpath.getLogEnd()!=null && LogUtils.today().compareTo(cpath.getLogEnd()) > 0)
+    		range.append("to ").append(cpath.getLogEnd()); //in the past
+    	else 
+    		range.append("to ").append(LogUtils.today());
+    	
+		return range.toString();
+	}
 }

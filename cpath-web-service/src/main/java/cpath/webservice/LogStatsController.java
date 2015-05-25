@@ -61,12 +61,14 @@ public class LogStatsController extends BasicController {
     	return ret;
     }     
     
+    //gets context-specific values for the drop-down combo list on the stats and ips html pages
 	@RequestMapping("/events")
     public @ResponseBody List<String[]> logEvents() {
     	List<String[]> ret = categories(null);
     	return ret;
     } 
 
+    //gets context-specific values for the drop-down combo list on the stats and ips html pages
     @RequestMapping("/{logType}/events")
     public @ResponseBody List<String[]> logEvents(@PathVariable LogType logType) {	
     	//add all the events in the same category (type); 
@@ -78,6 +80,7 @@ public class LogStatsController extends BasicController {
     	return ret;
     }    
     
+    //gets context-specific values for the drop-down combo list on the stats and ips html pages
     @RequestMapping("/{logType}/{name}/events")
     public @ResponseBody List<String[]> logEvents(@PathVariable LogType logType, 
     		@PathVariable String name) {
@@ -344,6 +347,8 @@ public class LogStatsController extends BasicController {
 			}
 
 			m = new HashMap<String, Object>();
+// don't add "period" now (downloadsWorld above does ignore the property and still works fast, for now)
+//			m.put("period", CPathSettings.getInstance().getDefaultLogPeriod());
 			m.put("name", name);
 			m.put("size", size);
 			m.put("downloads", total);// service.log().downloads(name));//incl. error requests

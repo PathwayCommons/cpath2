@@ -60,8 +60,6 @@ public class RepositoriesAndServiceTest {
 		assertNull(loc);
 		loc = Geoloc.fromIpAddress("foo");
 		assertNull(loc);
-		loc = Geoloc.fromIpAddress(LogUtils.UNIQUE_IP);
-		assertNull(loc);
 		
 		//Basel, Switzerland - no reion
 		loc = LogUtils.lookup("5.148.173.100");

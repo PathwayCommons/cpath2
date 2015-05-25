@@ -38,7 +38,7 @@ public final class CPathWebserviceHandlerInterceptor extends
 		String requestUri = request.getRequestURI();
 		String ip = BasicController.clientIpAddress(request);
 		
-		if(!requestUri.startsWith("/favicon.ico"))
+		if(!requestUri.startsWith("/favicon.ico") && !requestUri.startsWith("/error."))
 			LOG.info(String.format("%d %s '%s'", response.getStatus(), ip, requestUri));
 		
 		if(response.getStatus() == HttpServletResponse.SC_OK

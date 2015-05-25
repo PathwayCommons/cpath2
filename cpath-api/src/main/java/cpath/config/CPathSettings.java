@@ -30,6 +30,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
@@ -51,7 +55,6 @@ public final class CPathSettings {
 	
 	private static CPathSettings instance;
 	private Properties settings;
-	
 	private static boolean _develop = false;
 	
 	/**
@@ -110,8 +113,8 @@ public final class CPathSettings {
 	public static final String PROP_ADMIN_PASSW = "cpath2.admin.password";
 	
 	/* Unlike the above, following properties are not used by Spring/Hibernate right away;
-	 * normally, cpath2 starts despite these are not provided and will try 
-	 * to use reasonable defaults instead, which are defined here as well.
+	 * normally, cpath2 starts even though these might not be set and will  
+	 * use reasonable defaults, which are defined below.
 	 */
 	public static final String PROP_ADMIN_ENABLED = "cpath2.admin.enabled";
 	public static final String PROP_XML_BASE="cpath2.xml.base";	
@@ -121,9 +124,6 @@ public final class CPathSettings {
 	public static final String PROP_BLACKLIST_CONTROL_THRESHOLD = "cpath2.blacklist.control.threshold";
 	public static final String PROP_METADATA_LOCATION = "cpath2.metadata.location";
 	
-	/*
-	 * Following properties can be even updated at runtime (because cpath2.properties resource is read by the webapp periodically)
-	 */	
 	public static final String PROVIDER_NAME = "cpath2.provider.name";
 	public static final String PROVIDER_DESCRIPTION = "cpath2.provider.description";
     public static final String PROVIDER_VERSION = "cpath2.provider.version";
@@ -131,6 +131,11 @@ public final class CPathSettings {
 	public static final String PROVIDER_LOGO_URL = "cpath2.provider.logo.url";
 	public static final String PROVIDER_ORGANISMS = "cpath2.provider.organisms";
 	
+	//properties to set the default global start/end dates for all the access log timeline queries;
+	//These may be ignored if another range is set via web api (per query)
+	public static final String PROP_LOG_START = "cpath2.log.start"; //e.g., "2015-01-01"
+	public static final String PROP_LOG_END = "cpath2.log.end"; //e.g., "2015-12-31"
+	private static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 	
 	/**
 	 * Private Constructor
@@ -163,7 +168,8 @@ public final class CPathSettings {
 		defaults.put(PROP_MAX_SEARCH_HITS_PER_PAGE, "500");
 		defaults.put(PROP_METADATA_LOCATION, homeDir() + File.separator + METADATA_FILE);
 		defaults.put(PROP_DEBUG_ENABLED, "false");
-		defaults.put(PROP_ADMIN_ENABLED, "false");	
+		defaults.put(PROP_ADMIN_ENABLED, "false");
+		//PROP_LOG_START and PROP_LOG_END are null - queries will use current-year, current dates
 		
 		settings = new Properties(defaults);
 		
@@ -417,16 +423,16 @@ public final class CPathSettings {
 	public synchronized void setCPathProperty(String name, String value) {
 		if(PROP_ADMIN_ENABLED.equals(name) || isAdminEnabled())
 		{
-			System.setProperty(name, value);
-			settings.setProperty(name, value);
+			setProp(name,value);
 		} 
 		else 
 		{	//ok to alter some props in the 'normal' state too
 			if(PROP_DEBUG_ENABLED.equals(name)
-					|| PROP_MAX_SEARCH_HITS_PER_PAGE.equals(name)
+					|| PROP_MAX_SEARCH_HITS_PER_PAGE.equals(name) //always allow
+					|| PROP_LOG_END.equals(name) //always allow
+					|| PROP_LOG_START.equals(name) //always allow
 			) {
-				System.setProperty(name, value);
-				settings.setProperty(name, value);
+				setProp(name, value);
 			} else {
 				// not allowed in this mode (not maintenance)
 				throw new IllegalStateException("Attempt to set property "
@@ -437,6 +443,17 @@ public final class CPathSettings {
 	}
 	
 	
+	private void setProp(String name, String value) {
+		if(value==null) {
+			settings.remove(name);
+			System.getProperties().remove(name);
+		} else {
+			System.setProperty(name, value);
+			settings.setProperty(name, value);
+		}
+	}
+
+
 	/**
 	 * Flags if cPath2 debug mode is enabled.
 	 * This triggers the inclusion of score and explanation
@@ -530,6 +547,61 @@ public final class CPathSettings {
 	 */
 	public String warehouseModelFile() {
 		return biopaxExportFileName("Warehouse");
+	}
+
+	/**
+	 * Global default start date for access log summaries.
+	 * @return
+	 */
+	public String getLogStart() {
+		return property(PROP_LOG_START);
+	}
+	public void setLogStart(String isoDate) {	
+		setCPathProperty(PROP_LOG_START, parse(isoDate)); //can be null
+	}
+	
+	public void setLogStart(Date isoDate) {
+		if(isoDate==null) 
+			setCPathProperty(PROP_LOG_START, null);	
+		else
+			setCPathProperty(PROP_LOG_START, ISO_DATE_FORMAT.format(isoDate));	
+	}
+	
+	/**
+	 * Global default end date for access log summaries.
+	 * @return
+	 */
+	public String getLogEnd() {
+		return property(PROP_LOG_END);
+	}	
+	public void setLogEnd(String isoDate) {
+		setCPathProperty(PROP_LOG_END, parse(isoDate)); //can be null
+	}
+	
+	public void setLogEnd(Date isoDate) {
+		if(isoDate==null) 
+			setCPathProperty(PROP_LOG_END, null);	
+		else
+			setCPathProperty(PROP_LOG_END, ISO_DATE_FORMAT.format(isoDate));	
+	}
+
+
+	private String parse(String isoDate) {
+		if(isoDate!=null) {
+			isoDate = isoDate.trim(); //may throw a NPE (ok)	
+			
+			if(isoDate.isEmpty()) {
+				isoDate = null; 
+			} else {
+				//test parse; update the property if success
+				try {
+					ISO_DATE_FORMAT.parse(isoDate);
+				} catch (ParseException e) {
+					throw new RuntimeException("Not an ISO date (yyyy-MM-dd): " + isoDate, e);
+				}
+			}
+		}
+		return isoDate;
 	}
 	
 }

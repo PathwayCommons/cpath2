@@ -217,6 +217,27 @@ var AppStats = (function() {
       btn.removeClass('disabled');
     });
   }
+  
+  function setupIpTimelineSaveCSV(byDayTable, cumTable) {
+	    $('#iptimeline-csv').click(function() {
+	      // disable the button while saving
+	      var btn = $(this);
+	      if (btn.hasClass('disabled'))
+	        return;
+	      btn.addClass('disabled');
+
+	      var table;
+	      if ($('#timeline-by-day').hasClass('active'))
+	        table = byDayTable;
+	      else
+	        table = cumTable;
+
+	      downloadCSV(dataTableToCSV(table));
+
+	      // re-enable the button after saving is done
+	      btn.removeClass('disabled');
+	    });
+  }
 
   function setupTimeline() {	  
 	  var timelineChart = new google.visualization.AnnotatedTimeLine(document.getElementById('timeline-chart'));
@@ -227,13 +248,7 @@ var AppStats = (function() {
 	  $.getJSON('timelinecum', function(data) {
 		  // create the cumulative table
 		  timelineCum = buildTimelineByDay(data);
-		  setNullCellsToPrev(timelineCum);
-		  // setup the button that switch to cumulative table view
-		  $('#timeline-cumulative').click(function() {
-			  $(this).parent().find('button').removeClass('active');
-			  $(this).addClass('active');
-			  timelineChart.draw(timelineCum, {});
-		  });    	      
+		  setNullCellsToPrev(timelineCum);   	      
 	  })
 	  .done(function() {
 		  $.getJSON('timeline', function(data) {
@@ -241,20 +256,53 @@ var AppStats = (function() {
 			  timelineByDay = buildTimelineByDay(data);
 			  setNullCellsTo0(timelineByDay);
 //		      addTotalColumn(timelineByDay);
-			  // setup button that switch to by-day table view from the other view
-			  $('#timeline-by-day').click(function() {
-				  $(this).parent().find('button').removeClass('active');
-				  $(this).addClass('active');
-				  timelineChart.draw(timelineByDay, {});
-			  }); 
 			  // setup "save as csv" button
 			  setupTimelineSaveCSV(timelineByDay, timelineCum);
 			  // display the default (by day) visualization right now
 			  timelineChart.draw(timelineByDay, {});
 		  });
-	  });     
-  }
+	  });
 
+	  var iptimelineChart = new google.visualization.AnnotatedTimeLine(document.getElementById('iptimeline-chart'));
+	  var iptimelineByDay;
+	  var iptimelineCum;
+
+	  //build the cumulative iptimeline 
+	  $.getJSON('iptimelinecum', function(data) {
+		  // create the cumulative table
+		  iptimelineCum = buildTimelineByDay(data);
+		  setNullCellsToPrev(iptimelineCum);    	      
+	  })
+	  .done(function() {
+		  $.getJSON('iptimeline', function(data) {
+			  // create by-day table
+			  iptimelineByDay = buildTimelineByDay(data);
+			  setNullCellsTo0(iptimelineByDay);
+			  // setup button that switch to by-day table view from the other view 
+			  // setup "save as csv" button
+			  setupIpTimelineSaveCSV(iptimelineByDay, iptimelineCum);
+			  // display the default (by day) visualization right now
+			  iptimelineChart.draw(iptimelineByDay, {});
+		  });
+	  });  
+
+	  // setup the button that switch to cumulative table view
+	  $('#timeline-cumulative').click(function() {
+		  $(this).parent().find('button').removeClass('active');
+		  $(this).addClass('active');
+		  timelineChart.draw(timelineCum, {});
+		  iptimelineChart.draw(iptimelineCum, {});
+	  });
+
+	  // setup button that switch to by-day table view from the other view
+	  $('#timeline-by-day').click(function() {
+		  $(this).parent().find('button').removeClass('active');
+		  $(this).addClass('active');
+		  timelineChart.draw(timelineByDay, {});
+		  iptimelineChart.draw(iptimelineByDay, {});
+	  });
+  }
+  
   // GEOGRAPHY
 
   /*

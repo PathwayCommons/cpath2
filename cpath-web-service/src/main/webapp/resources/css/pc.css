@@ -1,14 +1,9 @@
 /*prevent navbar overlapping with content*/
-/* body { padding-top: 70px; padding-bottom: 70px;} */
 #content {padding-top: 70px; padding-bottom: 70px;}
 
 .navbar strong {color: red;}
 
 .navbar-brand img {width: 33px; height: 33px;}
-
-.nav-target div {padding-top: 50px;}
-
-#form_cpath_properties .checkbox {padding-right: 2em;}
 
 img.datasource-logo {width: 100px; height: 50px;}
 

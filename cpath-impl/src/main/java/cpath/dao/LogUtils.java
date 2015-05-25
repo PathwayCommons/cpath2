@@ -24,11 +24,6 @@ public final class LogUtils {
 	
 	public static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 	
-	/**
-	 * a special "IP address" to count all unique IPs on a date per type and name
-	 */
-	public static final String UNIQUE_IP = "UNIQUE";
-	
 	static {
 		//will be downloaded if not exists already (one can delete the file to auto-update)
 		String localFileName = CPathSettings.getInstance().homeDir() + File.separator + "GeoLiteCity.dat";

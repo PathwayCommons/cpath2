@@ -188,9 +188,7 @@ for regular users, - show the compact read-only summary of the data providers --
        				<p ng-hide="ds.notPathwayData">
        				  <em>Access summary: </em>
        				  <a target="_blank" rel="nofollow" class="alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats"/>'>
-       				  no. requests</a> (search, sub-network queries or file downloads);   
-       				  <a target="_blank" rel="nofollow" class="alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/ips"/>'>
-       				  no. unique users</a> (IP addresses).
+       				  no. requests/users.</a>
        				</p>
        				<p>
        				  <em>Publication: </em>{{ds.citation}} 

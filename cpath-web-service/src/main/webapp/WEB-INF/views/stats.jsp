@@ -17,38 +17,45 @@
 	<jsp:include page="header.jsp" />	
 	
 	<h2>Access Summary</h2>
-	<em>${summary_for}</em>
+	<em>Current ${summary_for}</em>
 
     <div class="row">
-    <div class="jumbotron">
+      <div class="jumbotron">
 		<p>
-			Charts below show how many requests were there and where did they come from. 
-		  	Calls from all client applications are treated equally. 
-		  	A single web query increments the total number of 
-		  	requests sent on that date from user's location (city) and other counts
-		  	in several categories, such as per original data provider, command, format, file name.
-		  	To switch the view, select another item from the drop-down list.
-		  	Access statistics are computed from January 2014.	
+		  	Calls from all applications are treated equally. 
+		  	Each increments the total number of requests sent on that date 
+		  	from user's location and other counts, such as by provider, command.
+			(IP addresses were not analyzed before 2014/11).
 		</p>
 		<select class="selectpicker" 
-	  		data-header="Select a category or name to display"
+	  		data-header="Select a category or name to display (reload page)"
 			data-live-search="true" data-width="33%" data-container="body">
-		</select>	  
+		</select>
+	  </div>
+	  <p>
+		<em>See also:</em> <a rel="nofollow" href='<c:url value="/log/totals"/>'>a quick summary</a>, 
+		<a rel="nofollow" href='<c:url value="/log/totalok"/>'>no. successful requests</a>, 
+		<a rel="nofollow" href='<c:url value="/log/totalip"/>'>no. unique users</a>.	
+	  </p>
 	</div>
-	</div>
-
 	<div class="row">
-		<h3>Timeline</h3>
+		<h2>Timelines by Day</h2>
+		<p><em>${from_to}</em></p>
 		<div class="btn-group" style="display: inline;">
 			<button class="btn btn-small btn-default" id="timeline-cumulative">Cumulative</button>
-			<button class="btn btn-small btn-default active" id="timeline-by-day">By Day</button>&nbsp;
-			<button class="btn btn-small btn-success pull-right" id="timeline-csv">
-				<i class="icon-download-alt"></i>Save as CSV 
-			</button>
-		</div>
-		<div id="timeline-chart" style="width: 100%; height: 540px; margin-top: 2em; margin-bottom: 10em;"></div>
+			<button class="btn btn-small btn-default active" id="timeline-by-day">Simple</button>&nbsp;
+		</div>	
 	</div>
-
+	<div class="row">
+		<h3>Requests</h3>
+		<div id="timeline-chart" style="width: 100%; height: 540px; margin-top: 2em; margin-bottom: 10em;"></div>
+		<button class="btn btn-small btn-success pull-right" id="timeline-csv"><i class="icon-download-alt"></i>Save as CSV</button>
+	</div>	
+	<div class="row">
+		<h3>Unique Users</h3>
+		<div id="iptimeline-chart" style="width: 100%; height: 540px; margin-top: 2em; margin-bottom: 10em;"></div>
+		<button class="btn btn-small btn-success pull-right" id="iptimeline-csv"><i class="icon-download-alt"></i>Save as CSV</button>
+	</div>	
 	<div class="row">
 		<h3>Geography</h3>
 		<button class="btn btn-small btn-success pull-right" id="geography-csv">
@@ -56,15 +63,15 @@
 		</button>
 		<div id="geography-world-chart" style="width: 100%; height: 540px; cursor: pointer;"></div>
 	</div>
-
 	<div class="row">
-		<h4>
+		<h3>
 			<span id="geography-country-name"></span> 
 			<img id="country-loading" src='<c:url value="/resources/img/loading.gif"/>'
 					style="display: none;">
-		</h4>
+		</h3>
 		<div id="geography-country-chart" style="width: 100%; height: 540px;"></div>
 	</div>
+	<br/>
 	
 	<jsp:include page="footer.jsp" />
 
