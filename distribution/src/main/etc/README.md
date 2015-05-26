@@ -6,13 +6,13 @@ cPath2 (cPathSquared) version ${version}
 ## General information
 
 Note: since cpath2 v4, it used H2 database (file, embedded mode) instead of MySQL;
-after v5 and v6, cpath2 does not persist BioPAX model in the H2 database, 
-and does not use HIbernate Search (uses Lucene API directly); so H2/JPA is used
+after v5 and v6, cpath2 does not persist the BioPAX model in the H2 database, 
+and does not use Hibernate Search (but uses Lucene API directly); so H2/JPA is used
 only for the metadata, id-mapping and log statistics.
 
   Before running cPath2 from console or deploying the WAR on a Tomcat,
 SET the System Environment variable 'CPATH2_HOME' - a directory for 
-cpath2 configuration and data files: 
+the cpath2 configuration and data files: 
 - cpath2.properties (to configure modes, physical location, admin credentials, instance name, version, description, etc.);
 - data/ directory (where original and intermediate data are stored);
 - tmp/ (where ontology, temporary and some test files are stored); 
@@ -28,9 +28,11 @@ to execute a series of commands to create a new cpath2 instance (import metadata
 clean/convert/normalize input data, build the warehouse, build the main BioPAX model, Lucene index, and downloads).
 Try the sh cpath2-cli.sh (without arguments) to see what's available.
 
-Try cpath2.md5hex.uri.enabled=true and other debug options in cpath2.properties
-(e.g., all "get" and "graph" queries will, along with RDFId, also accept the Primary Key values,
-i.e., - MD5hex (32-byte) digest string calculated from elements's URIs!) 
+Once a new instance is configured and created, one can also run the service using cpath2-server.sh script that kicks the executable cpath2-server.jar, instead of deploying the cpath2.war on a Tomcat, e.g., as follows:
+
+    nohup sh cpath2-server.sh -httpPort 8080 -ajpPort 8009 2>&1 &
+
+(And then check the nohup.out and cpath2 logs periodically; port numbers are just an example.)
 
 ## Preparing and importing data
 (To do from console until we provide full-featured cPath2 WebAdmin app.) 
@@ -126,7 +128,7 @@ Extras/other steps (optional):
   if it does modify the model though, i.e. not a read-only analysis, 
   you are to run -dbindex and following steps again.)
  - -export (to get a sub-model, using absolute URIs, e.g., to upload to a Virtuoso SPARQL server)
- - -export-log, -import-log
+ - -log --import (or --export)
  - -convert (to other formats, using custom format options)
 
 Highly recommended is to generate the 'blacklist' (soon after the -merge stage)
