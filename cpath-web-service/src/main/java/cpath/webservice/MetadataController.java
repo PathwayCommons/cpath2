@@ -254,7 +254,6 @@ public class MetadataController extends BasicController {
     	//log events: command, format
     	Set<LogEvent> events = new HashSet<LogEvent>();
     	events.add(LogEvent.IDMAPPING);
-    	events.add(LogEvent.FORMAT_OTHER);
 
     	if(id == null || id.length == 0) {
     		errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", 

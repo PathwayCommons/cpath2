@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.handler.HandlerInterceptorAdapter;
 
-import cpath.jpa.LogEvent;
 import cpath.service.CPathService;
 //import cpath.service.Status;
 
@@ -57,7 +56,7 @@ public final class CPathWebserviceHandlerInterceptor extends
 
 					//update counts for: file, format, provider, command (event types)
 					if(!file.isEmpty())
-						service.log(LogEvent.fromDownloads(file), ip);
+						service.log(file, ip);
 				}
 			}
 		} else if(response.getStatus()>=400) { 

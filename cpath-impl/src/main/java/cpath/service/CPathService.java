@@ -230,7 +230,16 @@ public interface CPathService {
 	 * @param ipAddr
 	 */
 	void log(Collection<LogEvent> events, String ipAddr);
-    
+
+	/**
+	 * Creates or updates log db entries for the data file
+	 * downloaded by a user.
+	 * 
+	 * @param fileName
+	 * @param ipAddr
+	 */
+	void log(String fileName, String ipAddr);
+	
 	/**
 	 * Increases the number (counter) 
 	 * of user's requests of some 

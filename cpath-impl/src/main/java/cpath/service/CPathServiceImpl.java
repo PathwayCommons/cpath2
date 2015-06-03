@@ -983,6 +983,58 @@ public class CPathServiceImpl implements CPathService {
 				&& searcher != null
 				&& paxtoolsModelReady());
 	}
+
+
+	public void log(String fileName, String ipAddr) {
+		log(logEventsFromFilename(fileName), ipAddr);
+	}
+	
+	/**
+	 * Creates a list of events to update counts for -
+	 * name, format, provider - from the data file 
+	 * (in the batch downloads or another directory).
+	 * 
+	 * @param filename see {@link CPathSettings#biopaxExportFileName(String)} for how it's created.
+	 * @return
+	 */
+	public Set<LogEvent> logEventsFromFilename(String filename) {
+		Set<LogEvent> set = new HashSet<LogEvent>();
+		final CPathSettings cpath2 = CPathSettings.getInstance();
+		
+		set.add(new LogEvent(LogType.FILE, filename));
+		
+		// extract the data provider's standard name from the filename
+		if(filename.startsWith(cpath2.exportArchivePrefix())) {	
+			String scope = LogUtils.fileSrcOrScope(filename);
+			if(scope != null) {
+				String providerStandardName = null;
+				Metadata md = metadataRepository.findByIdentifier(scope);
+				if(md != null) { //use the standardName for logging
+					providerStandardName = md.standardName();
+				} else if(!metadataRepository.findByNameContainsIgnoreCase(scope).isEmpty()) { // found any (ignoring case)?
+					providerStandardName = scope.toLowerCase(); //it's by design (how archives are created) standardName
+				}
+				
+				if(providerStandardName != null) {
+					set.add(new LogEvent(LogType.PROVIDER, providerStandardName));
+				} else {
+					//that's probably a by-organism or one of special sub-model archives
+					log.debug("'" + scope + "' in " + filename + " does not match any "
+						+ "identifier or standard name of currently used data providers");
+				}
+			} else {
+				log.error("Didn't recognize scope of datafile: " + filename);
+			}
+			
+			// extract the format
+			OutputFormat outputFormat = LogUtils.fileOutputFormat(filename);
+			if(outputFormat!=null)
+				set.add(LogEvent.from(outputFormat));
+
+		}
+		
+		return set;
+	}
 	
 }
 

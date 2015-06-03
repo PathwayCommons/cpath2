@@ -302,8 +302,7 @@ public final class Metadata {
     
     
 	/**
-	 * Full path to the input data file/archive
-	 * in the data directory.
+	 * Full path to the input data archive.
 	 * 
 	 * @see CPathSettings#dataDir()
 	 * @return
@@ -314,10 +313,10 @@ public final class Metadata {
     		.dataDir() + File.separator + identifier + ".zip";
     }
     public void setDataArchiveName(String path) {
-    	//a fake bean property (for javascript, JSON)
+    	//a fake bean property (for js, JSON)
 	}
     
-
+    
     /**
      * Path to the directory where processed data 
      * (converted/normalized and validation)
@@ -507,5 +506,4 @@ public final class Metadata {
 	public int hashCode() {
 		return (getClass().getCanonicalName() + identifier).hashCode();
 	}
-
 }

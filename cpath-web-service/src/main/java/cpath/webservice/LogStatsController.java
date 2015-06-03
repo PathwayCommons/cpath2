@@ -6,9 +6,11 @@ import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 
 import cpath.config.CPathSettings;
+import cpath.dao.LogUtils;
 import cpath.jpa.LogEvent;
 import cpath.jpa.LogType;
 import cpath.jpa.Metadata;
+import cpath.service.OutputFormat;
 import cpath.webservice.args.binding.LogTypeEditor;
 
 import org.apache.commons.io.FileUtils;
@@ -33,7 +35,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class LogStatsController extends BasicController {
 	private static final Logger log = LoggerFactory.getLogger(LogStatsController.class);   
 	
-	
 	public LogStatsController() {
     	try {
 			Class.forName("cpath.dao.LogUtils");
@@ -47,7 +48,7 @@ public class LogStatsController extends BasicController {
         binder.registerCustomEditor(LogType.class, new LogTypeEditor());
 	}
     
-    // XML/JSON web services (for the stats.jsp view using stats.js, given current context path)
+    // XML/JSON endpoints for the stats.jsp, stats.js given current context path
  
     //if arg is not null, then it's the first element in the returned list
     private List<String[]> categories(LogType logType) {
@@ -59,43 +60,99 @@ public class LogStatsController extends BasicController {
     		if(t==logType) ret.add(0, s); else ret.add(s);
     	}   	
     	return ret;
-    }     
+    }
     
-    //gets context-specific values for the drop-down combo list on the stats and ips html pages
+    private String[] listItem(LogEvent e) {
+    	String[] li = null;
+    	
+    	String listItemName = e.getName();
+    	final CPathSettings instance = CPathSettings.getInstance();
+    	
+    	//if type is FILE, truncate the filename to keep only <scope>.<FORMAT> part; 
+    	//scope (turned lowercase) can be: source, organism, 'all', 'detailed', etc.).
+    	if(e.getType() == LogType.FILE 
+    			&& listItemName.toLowerCase().startsWith(instance.getName().toLowerCase())) {
+    		OutputFormat of = LogUtils.fileOutputFormat(listItemName);
+    		String scope = LogUtils.fileSrcOrScope(listItemName);
+    		if(of != null && scope != null) {
+    			listItemName = String.format("%s.%s", scope.toLowerCase(), of);
+    			li = new String[]{e.getType().toString(), listItemName};
+    		} else {
+    			//skip unexpected file in the downloads (errors are logged in the LogUtils)
+    		}
+    	} else {
+    		li = new String[]{e.getType().toString(), listItemName};
+    	}
+    	
+		return li;
+	}
+    
+    //gets context-specific values for the drop-down combo list on the stats.jsp
 	@RequestMapping("/events")
     public @ResponseBody List<String[]> logEvents() {
     	List<String[]> ret = categories(null);
     	return ret;
     } 
 
-    //gets context-specific values for the drop-down combo list on the stats and ips html pages
+    //gets context-specific values for the drop-down combo list on the stats.jsp
     @RequestMapping("/{logType}/events")
     public @ResponseBody List<String[]> logEvents(@PathVariable LogType logType) {	
     	//add all the events in the same category (type); 
     	//but make given type the first element in the list (selected)
     	List<String[]> ret = categories(logType);
+    	
+    	TreeSet<String[]> ts = new TreeSet<String[]>(new Comparator<String[]>() {
+			public int compare(String[] o1, String[] o2) {
+				return Arrays.toString(o1).compareToIgnoreCase(Arrays.toString(o2));
+			}
+		});
     	for(LogEvent e : service.log().logEvents(logType)) {
-    		ret.add(new String[]{e.getType().toString(), e.getName()});
+    		String[] listItem = listItem(e);
+    		if(listItem!=null)
+    			ts.add(listItem);
     	}
+    	
+    	ret.addAll(ts);
+    	
     	return ret;
     }    
-    
-    //gets context-specific values for the drop-down combo list on the stats and ips html pages
+
+	//gets context-specific values for the drop-down combo list on the stats.jsp page
     @RequestMapping("/{logType}/{name}/events")
     public @ResponseBody List<String[]> logEvents(@PathVariable LogType logType, 
     		@PathVariable String name) {
     	List<String[]> ret = categories(logType);
+    	
+    	TreeSet<String[]> ts = new TreeSet<String[]>(new Comparator<String[]>() {
+			public int compare(String[] o1, String[] o2) {
+				return Arrays.toString(o1).compareToIgnoreCase(Arrays.toString(o2));
+			}
+		});
+    	
     	//add all the events in the same category (type); 
     	// but make the one with given type,name the first element in the list
+    	String[] currlistItem = null;
     	for(LogEvent e : service.log().logEvents(logType)) {
-    		if(e.getName().equals(name))
-    			ret.add(0, new String[]{e.getType().toString(), e.getName()});
-    		else 
-    			ret.add(new String[]{e.getType().toString(), e.getName()});
+    		String[] listItem = listItem(e);
+    		if(listItem==null)
+    			continue; //error
+    		
+    		if(name.equals(listItem[1])) {
+    			//this can be multiple times (due to old versions logs), 
+    			//but we only need to keep one such item onthe top
+    			currlistItem = listItem; 
+    		} else 
+    			ts.add(listItem);
     	}
+    	
+    	if(currlistItem!=null)
+    		ret.add(0, currlistItem);
+    	
+    	ret.addAll(ts);
+    	
     	return ret;
     } 
-       
+    
     //timelines (no. queries by type, date)
     
 	@RequestMapping("/{logType}/{name}/timeline")
@@ -182,7 +239,7 @@ public class LogStatsController extends BasicController {
 	
 	@RequestMapping("/geography/world")
     public @ResponseBody List<Object[]> geographyWorld() {		
-    	return service.log().downloadsWorld(null, null);
+    	return service.log().downloadsWorld(LogType.TOTAL, null);
     }
     
 	@RequestMapping("/{logType}/geography/world")
@@ -198,7 +255,7 @@ public class LogStatsController extends BasicController {
     
 	@RequestMapping("/geography/all")
     public @ResponseBody List<Object[]> geographyAll() {		
-    	return service.log().downloadsGeography(null, null);
+    	return service.log().downloadsGeography(LogType.TOTAL, null);
     }
     
 	@RequestMapping("/{logType}/geography/all")
@@ -215,7 +272,7 @@ public class LogStatsController extends BasicController {
  
 	@RequestMapping("/geography/country/{code}")
     public @ResponseBody List<Object[]> geographyCountry(@PathVariable String code) {		
-    	return service.log().downloadsCountry(code, null, null);
+    	return service.log().downloadsCountry(code, LogType.TOTAL, null);
     }
     
 	@RequestMapping("/{logType}/geography/country/{code}")
@@ -330,7 +387,7 @@ public class LogStatsController extends BasicController {
 
 			// find out from which country the file has been mostly requested;
 			// count the top and total no. downloads
-			List<Object[]> dl = service.log().downloadsWorld(null, name);
+			List<Object[]> dl = service.log().downloadsWorld(LogType.TOTAL, name);
 			String topc = null;
 			long topdl = 0;
 			long total = 0;

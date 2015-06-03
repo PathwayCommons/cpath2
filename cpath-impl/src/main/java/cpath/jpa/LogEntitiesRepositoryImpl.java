@@ -21,7 +21,6 @@ import com.mysema.query.types.expr.BooleanExpression;
 import com.mysema.query.types.path.StringPath;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CPathUtils;
 import cpath.dao.LogUtils;
 import cpath.jpa.QLogEntity;
 
@@ -43,43 +42,31 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 	@Override
 	public Map<String, List<Object[]>> downloadsTimeline(LogType logType, String name) 
 	{
+		Assert.notNull(logType);
+		
 		Map<String, List<Object[]>> timeline = new TreeMap<String, List<Object[]>>();			
 		QLogEntity $ = QLogEntity.logEntity;		
 		Predicate inRange = timelineRange($.date, instance.getLogStart(), instance.getLogEnd());
 		
-		if(name == null || name.isEmpty()) {
-			Assert.notNull(logType);
-			
-			JPQLQuery query = from($)
-				.where($.event.type.eq(logType), inRange)
-				.groupBy($.event.name,$.date)
-				.orderBy($.event.name.asc(),$.date.desc());
-			
-			//if logType==FILE - add filter to get only current cpath2 instance version files!
-			if(logType == LogType.FILE) 
-				query.where($.event.name.startsWith(CPathSettings.getInstance().exportArchivePrefix()));
-			
-			for(Tuple t : query.list($.event.name,$.date,$.count.sum())) 
-			{
-				String key = t.get($.event.name);
-				List<Object[]> val = timeline.get(key);
-				if(val == null) {
-					val = new ArrayList<Object[]>();
-					timeline.put(key, val);
-				}
-				val.add(new Object[] {t.get($.date), t.get($.count.sum())});
-			}
-		} 
-		else { //name was provided; type does not matter anymore
-			List<Object[]> val = new ArrayList<Object[]>();
-			timeline.put(name, val);			
-			for(Tuple t : from($)
-					.where($.event.name.eq(name), inRange)
-					.groupBy($.date).orderBy($.date.desc())
-					.list($.date,$.count.sum())) {
-				val.add(new Object[] {t.get($.date), t.get($.count.sum())});
-			}		
+		//if log name is null - do for all events in the logType
+		Predicate typeOrName = null; 
+		if(name != null) { 
+			typeOrName = (logType == LogType.FILE)
+				? $.event.type.eq(logType).and($.event.name.containsIgnoreCase(name)) 
+					: $.event.type.eq(logType).and($.event.name.equalsIgnoreCase(name));		
+		} else {
+			typeOrName = $.event.type.eq(logType);
+			name = logType.description;
 		}
+
+		List<Object[]> val = new ArrayList<Object[]>();
+		timeline.put(name, val);			
+		for(Tuple t : from($)
+				.where(typeOrName, inRange)
+				.groupBy($.date).orderBy($.date.desc())
+				.list($.date,$.count.sum())) {
+			val.add(new Object[] {t.get($.date), t.get($.count.sum())});
+		}		
 		
 		return timeline;
 	}
@@ -87,6 +74,8 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 	@Override 
 	public Map<String, List<Object[]>> downloadsTimelineCum(LogType logType, String name) 
 	{
+		Assert.notNull(logType);
+		
 		Map<String, List<Object[]>> timeline = downloadsTimeline(logType, name);					
 		//build the cumulative timeline(s) from the daily counts,
 		//which are additive.
@@ -110,6 +99,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 	
 	@Override
 	public List<Object[]> downloadsWorld(LogType logType, String name) {
+		Assert.notNull(logType);
 		
 		List<Object[]> list = new ArrayList<Object[]>();		
 		QLogEntity $ = QLogEntity.logEntity;
@@ -119,16 +109,22 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 				.orderBy($.geoloc.country.asc());
 		
 		//neither type nor name -> total counts by country
-		if((logType == null || logType == LogType.TOTAL) && (name == null || name.isEmpty())) {
+		if(logType == LogType.TOTAL && (name == null || name.isEmpty())) {
 			query.where($.event.type.eq(LogType.TOTAL));
-		} else if((logType == null || logType == LogType.TOTAL) && name != null && !name.isEmpty()) {
-			//only name is provided -> counts by country for this name (ignore type)
-			query.where($.event.name.eq(name));
+		} else if(logType == LogType.TOTAL && name != null && !name.isEmpty()) {
+			//only name is provided -> counts by country for this name (ignore this special type)
+			query.where($.event.name.equalsIgnoreCase(name));
 		} else if(name == null || name.isEmpty()) {
 			// type, except TOTAL, but no name -> counts by country for all events of the type
 			query.where($.event.type.eq(logType));
 		} else { // type, except TOTAL, and name -> counts by country for all events of the type, name
-			query.where($.event.type.eq(logType), $.event.name.eq(name));
+			query.where($.event.type.eq(logType)); //not finished yet...
+			//a special case for type:FILE to support partial filenames (e.g., 'reactome.biopax')
+			if(logType == LogType.FILE) {
+				query.where($.event.name.containsIgnoreCase(name));
+			} else {
+				query.where($.event.name.equalsIgnoreCase(name));
+			}
 		}
 		
 		for(Tuple t : query.list($.geoloc.country,$.count.sum())) {
@@ -143,6 +139,8 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 	
 	@Override
 	public List<Object[]> downloadsGeography(LogType logType, String name) {
+		Assert.notNull(logType);
+		
 		List<Object[]> list = new ArrayList<Object[]>();		
 		QLogEntity $ = QLogEntity.logEntity;
 		
@@ -151,16 +149,22 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 				.orderBy($.geoloc.country.asc(),$.geoloc.region.asc(),$.geoloc.city.asc());
 		
 		//neither type nor name -> total counts by country
-		if((logType == null || logType == LogType.TOTAL) && (name == null || name.isEmpty())) {
+		if(logType == LogType.TOTAL && (name == null || name.isEmpty())) {
 			query.where($.event.type.eq(LogType.TOTAL));
-		} else if((logType == null || logType == LogType.TOTAL) && name != null && !name.isEmpty()) {
-			//only name is provided -> counts by country for this name (ignore type)
-			query.where($.event.name.eq(name));
+		} else if(logType == LogType.TOTAL && name != null && !name.isEmpty()) {
+			//only name is provided -> counts by country for this name (ignore special type)
+			query.where($.event.name.equalsIgnoreCase(name));
 		} else if(name == null || name.isEmpty()) {
 			// type, except TOTAL, but no name -> counts by country for all events of the type
 			query.where($.event.type.eq(logType));
 		} else { // type, except TOTAL, and name -> counts by country for all events of the type, name
-			query.where($.event.type.eq(logType).and($.event.name.eq(name)));
+			query.where($.event.type.eq(logType)); //not finished yet...
+			//a special case for type:FILE to support partial filenames (e.g., 'reactome.biopax')
+			if(logType == LogType.FILE) {
+				query.where($.event.name.containsIgnoreCase(name));
+			} else {
+				query.where($.event.name.equalsIgnoreCase(name));
+			}
 		}
 		
 		for(Tuple t : query.list($.geoloc.country,$.geoloc.region,$.geoloc.city,$.count.sum())) 
@@ -177,8 +181,9 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 	}
 
 	@Override
-	public List<Object[]> downloadsCountry(String countryCode, LogType logType,
-			String name) {
+	public List<Object[]> downloadsCountry(String countryCode, LogType logType, String name) 
+	{
+		Assert.notNull(logType);
 		Assert.hasLength(countryCode); //not null/empty
 		
 		List<Object[]> list = new ArrayList<Object[]>();		
@@ -189,16 +194,22 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 				.groupBy($.geoloc.city)
 				.orderBy($.geoloc.city.asc());		
 		//neither type nor name -> total counts by country
-		if((logType == null || logType == LogType.TOTAL) && (name == null || name.isEmpty())) {
+		if(logType == LogType.TOTAL && (name == null || name.isEmpty())) {
 			query.where($.event.type.eq(LogType.TOTAL));
-		} else if((logType == null || logType == LogType.TOTAL) && name != null && !name.isEmpty()) {
+		} else if(logType == LogType.TOTAL && name != null && !name.isEmpty()) {
 			//only name is provided -> counts by country for this name (ignore type)
-			query.where($.event.name.eq(name));
+			query.where($.event.name.equalsIgnoreCase(name));
 		} else if(name == null || name.isEmpty()) {
 			// type, except TOTAL, but no name -> counts by country for all events of the type
 			query.where($.event.type.eq(logType));
 		} else { // type, except TOTAL, and name -> counts by country for all events of the type, name
-			query.where($.event.type.eq(logType).and($.event.name.eq(name)));
+			query.where($.event.type.eq(logType)); //not finished yet...
+			//a special case for type:FILE to support partial filenames (e.g., 'reactome.biopax')
+			if(logType == LogType.FILE) {
+				query.where($.event.name.containsIgnoreCase(name));
+			} else {
+				query.where($.event.name.equalsIgnoreCase(name));
+			}
 		}
 		
 		for(Tuple t : query.list($.geoloc.city,$.count.sum())) {
@@ -228,7 +239,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		Assert.hasLength(name);
 		QLogEntity $ = QLogEntity.logEntity;
 		return from($)
-				.where($.event.name.eq(name))
+				.where($.event.name.equalsIgnoreCase(name))
 				.uniqueResult($.count.sum());
 	}
 
@@ -238,7 +249,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		Assert.hasLength(name);
 		QLogEntity $ = QLogEntity.logEntity;
 		return from($)
-			.where($.event.name.eq(name), $.addr.isNotNull())
+			.where($.event.name.equalsIgnoreCase(name), $.addr.isNotNull())
 			.uniqueResult($.addr.countDistinct());
 	}
 	
@@ -255,59 +266,48 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 				.where($.event.type.eq(logType), $.addr.isNotNull())
 				.orderBy($.addr.asc())
 				.list($.addr);
-		} else { //ignore the type
-			return from($)
-				.distinct()
-				.where($.event.name.eq(name), $.addr.isNotNull())
-				.orderBy($.addr.asc())
-				.list($.addr);
+		} else { 
+			JPQLQuery query = from($).distinct()
+				.where($.event.type.eq(logType), $.addr.isNotNull())
+				.orderBy($.addr.asc());	//query building is not finished yet...		
+			if(logType == LogType.FILE) {
+				//a special case for type:FILE to support partial names (e.g., 'reactome.biopax')
+				query.where($.event.name.containsIgnoreCase(name));
+			} else {
+				query.where($.event.name.equalsIgnoreCase(name));
+			}
+			return query.list($.addr);
 		}
 	}
 
 
 	@Override
 	public Map<String, List<Object[]>> ipsTimeline(LogType logType, String name) {
+		Assert.notNull(logType);
+		
 		Map<String, List<Object[]>> timeline = new TreeMap<String, List<Object[]>>();			
 		QLogEntity $ = QLogEntity.logEntity;
 		Predicate inRange = timelineRange($.date, instance.getLogStart(), instance.getLogEnd());
 		
-		if(name == null || name.isEmpty()) {
-			Assert.notNull(logType);
-			
-			JPQLQuery query = from($)
-					.where($.event.type.eq(logType), //and the IP addr is not null
-							$.addr.isNotNull(), //and limit period
-							inRange)
-					.groupBy($.event.name,$.date)
-					.orderBy($.event.name.asc(),$.date.desc());
-			
-			//if logType==FILE - add filter to get only current cpath2 instance version files!
-			if(logType == LogType.FILE) 
-				query.where($.event.name.startsWith(CPathSettings.getInstance().exportArchivePrefix()));
-			
-			for(Tuple t : query.list($.event.name,$.date,$.addr.countDistinct())) 
-			{
-				String key = t.get($.event.name);
-				List<Object[]> val = timeline.get(key);
-				if(val == null) {
-					val = new ArrayList<Object[]>();
-					timeline.put(key, val);
-				}
-				val.add(new Object[] {t.get($.date), t.get($.addr.countDistinct())});
-			}
-		} 
-		else { //name was provided; type does not matter anymore
-			List<Object[]> val = new ArrayList<Object[]>();
-			timeline.put(name, val);			
-			for(Tuple t : from($)
-					.where($.event.name.eq(name), //and
-							$.addr.isNotNull(), //and limit period
-							inRange)
-					.groupBy($.date).orderBy($.date.desc())
-					.list($.date,$.addr.countDistinct())) {
-				val.add(new Object[] {t.get($.date), t.get($.addr.countDistinct())});
-			}		
+		//if log name is null - do for all events in the logType
+		Predicate typeOrName = null; 
+		if(name != null) { 
+			typeOrName = (logType == LogType.FILE)
+					? $.event.type.eq(logType).and($.event.name.containsIgnoreCase(name)) 
+						: $.event.type.eq(logType).and($.event.name.equalsIgnoreCase(name));
+		} else {
+			typeOrName = $.event.type.eq(logType);
+			name = logType.description;
 		}
+
+		List<Object[]> val = new ArrayList<Object[]>();
+		timeline.put(name, val);			
+		for(Tuple t : from($)
+				.where(typeOrName, $.addr.isNotNull(), inRange) //',' means 'AND'
+				.groupBy($.date).orderBy($.date.desc())
+				.list($.date,$.addr.countDistinct())) {
+			val.add(new Object[] {t.get($.date), t.get($.addr.countDistinct())});
+		}		
 		
 		return timeline;
 	}
@@ -315,16 +315,17 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 	//Gets the cumulative no. unique IPs on each day per log type, name
 	@Override
 	public Map<String, List<Object[]>> ipsTimelineCum(LogType logType, String logName) {
-		Map<String, List<Object[]>> timeline = new TreeMap<String, List<Object[]>>();			
-		
 		Assert.notNull(logType);
 		
+		Map<String, List<Object[]>> timeline = new TreeMap<String, List<Object[]>>();			
 		QLogEntity $ = QLogEntity.logEntity;
 
 		//if logName is null - will do for all events in the logType
 		Predicate typeOrName = null; 
 		if(logName != null) { 
-			typeOrName = $.event.name.eq(logName);
+			typeOrName = (logType == LogType.FILE)
+					? $.event.type.eq(logType).and($.event.name.containsIgnoreCase(logName)) 
+						: $.event.type.eq(logType).and($.event.name.equalsIgnoreCase(logName));
 		} else {
 			typeOrName = $.event.type.eq(logType);
 			logName = logType.description;
@@ -347,7 +348,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 			Long l = from($) //from LogEntity table
 				.where(typeOrName, //, and IP is not null
 					$.addr.isNotNull(), //, and - on that day and earlier days, since given start date
-					$.date.loe(day), sinceStart) //TODO remove the sinceStart predicate?  (shall we account for all days in the past?)
+					$.date.loe(day), sinceStart) //TODO remove the sinceStart? (always account for all days in the past?)
 				.uniqueResult($.addr.countDistinct());
 			
 			if(l==null) 

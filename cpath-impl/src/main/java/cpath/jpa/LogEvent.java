@@ -11,7 +11,6 @@ import javax.persistence.Enumerated;
 
 import org.springframework.util.Assert;
 
-import cpath.config.CPathSettings;
 import cpath.service.Cmd;
 import cpath.service.ErrorResponse;
 import cpath.service.GraphType;
@@ -55,23 +54,20 @@ public class LogEvent {
 	 */
 	public static LogEvent TOTAL = new LogEvent(LogType.TOTAL, LogType.TOTAL.description);
 	
-	/**
-	 * a special constant event type for other formats access counts (e.g., XML, JSON search, id-mapping query results)
-	 */
-	public static LogEvent FORMAT_OTHER = new LogEvent(LogType.FORMAT, "OTHER");
-	
-	
 	public LogEvent() {
 	}
 	
+	/**
+	 * Constructor.
+	 * @param type
+	 * @param name is always turned to lower case
+	 */
 	public LogEvent(LogType type, String name) {
 		Assert.notNull(type);
 		Assert.notNull(name);
-		
-		this.type = type;
-		this.name = name;
+		setName(name);
+		setType(type);
 	}
-	
 	
 	public static LogEvent from(GraphType graphType) {	
 		return new LogEvent(LogType.COMMAND, graphType.toString());
@@ -105,56 +101,6 @@ public class LogEvent {
 			set.add(new LogEvent(LogType.PROVIDER, prov));
 		return set;
 	}
-	
-	
-	/**
-	 * Creates a list of things to update counts for -
-	 * name, format, provider - from the 
-	 * auto-generated data archive file.
-	 * 
-	 * @param filename see {@link CPathSettings#biopaxExportFileName(String)}
-	 * 			for how it's created.
-	 * @return
-	 */
-	public static Set<LogEvent> fromDownloads(String filename) {
-		Set<LogEvent> set = new HashSet<LogEvent>();
-
-		set.add(new LogEvent(LogType.FILE, filename));
-		
-		// extract the orig. data source's standard name -
-		// first, remove common prefix (incl. cPath2 instance name and ver.)
-		if(filename.startsWith(CPathSettings.getInstance().exportArchivePrefix())) {
-			int idx = CPathSettings.getInstance().exportArchivePrefix().length();
-			String s = filename.substring(idx);
-			String[] parts = s.split("\\.");
-			//a hack: in order to skip for by-organism and special archives
-			if(Character.isUpperCase(parts[0].charAt(0)) 
-					&& !"All".equalsIgnoreCase(parts[0])
-					&& !"Warehouse".equalsIgnoreCase(parts[0])
-					&& !"Detailed".equalsIgnoreCase(parts[0])) {
-				set.add(new LogEvent(LogType.PROVIDER, parts[0]));
-			}
-
-			// extract the format
-			OutputFormat format = null; 
-			try { 
-				format = OutputFormat.valueOf(parts[1]);
-			} catch(Exception e) {
-
-			}
-			if(format != null)
-				set.add(LogEvent.from(format));
-			else {
-				set.add(LogEvent.FORMAT_OTHER);
-			}
-		} else {
-			set.add(LogEvent.FORMAT_OTHER);
-		}
-			
-		
-		return set;
-	}
-	
 
 	public LogType getType() {
 		return type;
@@ -169,7 +115,7 @@ public class LogEvent {
 	}
 
 	public void setName(String name) {
-		this.name = name;
+		this.name = name.toLowerCase();
 	}
 	
 	

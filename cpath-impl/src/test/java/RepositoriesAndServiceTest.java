@@ -28,11 +28,11 @@ import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.service.CPathService;
+import cpath.service.CPathServiceImpl;
 import cpath.service.Cmd;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
 import cpath.service.Status;
-
 import static org.junit.Assert.*;
 
 /**
@@ -151,18 +151,16 @@ public class RepositoriesAndServiceTest {
 		
 		// for one category only
 		res = service.log().downloadsTimeline(LogType.PROVIDER, null);
-		//two entries (reactome and humancyc)
-		assertEquals(2, res.size());
+		//one entry ("All providers")
+		assertEquals(1, res.size());
 		tl = res.get(LogType.TOTAL.description);
 		assertNull(tl); //global TOTAL not included
-		tl = res.get("Reactome");
+		tl = res.get(LogType.PROVIDER.description);
 		assertNotNull(tl);
-		assertEquals(1L, tl.get(0)[1]); //PROVIDER type, today counts
+		assertEquals(2L, tl.get(0)[1]); //PROVIDER type, today count=2 (1 reactome + 1 humancyc)
 		assertEquals(today, tl.get(0)[0]);
 		tl = res.get("HumanCyc");
-		assertNotNull(tl);
-		assertEquals(1L, tl.get(1)[1]); //PROVIDER type, yesterday counts
-		assertEquals(yesterDay, tl.get(1)[0]);
+		assertNull(tl);
 				
 		// for error 500 only
 		res = service.log().downloadsTimeline(LogType.ERROR, "INTERNAL_ERROR");
@@ -210,48 +208,60 @@ public class RepositoriesAndServiceTest {
 		
 		// for one category only
 		res = service.log().downloadsTimeline(LogType.PROVIDER, null);
-		//two entries: reactome, humancyc
-		assertEquals(2, res.size());
+		//one entry, sum of counts for reactome, humancyc
+		assertEquals(1, res.size());
 		tl = res.get(LogType.TOTAL.description);
 		assertNull(tl); //global TOTAL not included
-		tl = res.get("Reactome");
+		tl = res.get(LogType.PROVIDER.description);
 		assertNotNull(tl);
-		assertEquals(1L, tl.get(0)[1]); //PROVIDER type, today counts
+		assertEquals(2L, tl.get(0)[1]); //PROVIDER type, today counts
 		tl = res.get("HumanCyc");
-		assertNotNull(tl);
-		assertEquals(1L, tl.get(0)[1]); //PROVIDER type, yesterday counts
+		assertNull(tl);
+		tl = res.get("Reactome");
+		assertNull(tl);	
 	}
 	
 	@Test
 	public final void testLogEventFromDownloads() {
 		CPathSettings cpath = CPathSettings.getInstance();
 		
+		//additional 'test' metadata entry (Reactome); 
+		//without this service.logEventsFromFilename(file) 
+		//won't be able to match provider by name/id and create PROVIDER type log event
+		Metadata md = new Metadata("test", "Reactome", "Foo", "", "", 
+				"", METADATA_TYPE.BIOPAX, "", "", null, "free");		
+		service.save(md);
+		
 		String file = cpath.exportArchivePrefix() + "Reactome.BIOPAX.owl.gz";
-		Set<LogEvent> events = LogEvent.fromDownloads(file);
-		assertEquals(3, events.size()); //log in types: PROVIDER, FILE, FORMAT (not COMMAND anymore)
+		assertEquals(OutputFormat.BIOPAX, LogUtils.fileOutputFormat(file));
+		assertEquals("Reactome", LogUtils.fileSrcOrScope(file));
+		Set<LogEvent> events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		assertEquals(3, events.size()); //log in types: PROVIDER, FILE, FORMAT
 		
 		//'All' 
 		file = cpath.exportArchivePrefix() + "All.BIOPAX.owl.gz";
-		events = LogEvent.fromDownloads(file);
+		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
 		assertEquals(2, events.size());
 		
 		file = cpath.exportArchivePrefix() + "Reactome.GSEA.gmt.gz";
-		events = LogEvent.fromDownloads(file);
+		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
 		assertEquals(3, events.size());
 		
-		//illegal format - still logged as OTHER
+		//illegal format (ignored, i.e., no FORMAT type log event is added)
 		file = cpath.exportArchivePrefix() + "Reactome.foo.gmt.gz";
-		events = LogEvent.fromDownloads(file);
-		assertEquals(3, events.size());
+		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		assertEquals(2, events.size());
 		
 		//other (metadata etc.)
 		file = "blacklist.txt";
-		events = LogEvent.fromDownloads(file);
-		assertEquals(2, events.size());//counted for: FILE, FORMAT (OTHER)
+		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		assertEquals(1, events.size());//counted in FILE log type only
+		assertEquals(LogType.FILE, events.iterator().next().getType());
 		
-		//when a provider's name does not start from a capital letter, LogType.PROVIDER event won't be there
+		//provider name is now matched ignoring case, 
+		//(FORMAT type event is not there as well due to 'foo')
 		file = cpath.exportArchivePrefix() + "reactome.foo.gmt.gz";
-		events = LogEvent.fromDownloads(file);
+		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
 		assertEquals(2, events.size());
 	}
 	

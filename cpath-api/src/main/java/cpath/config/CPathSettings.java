@@ -38,6 +38,8 @@ import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
 
+import cpath.service.Scope;
+
 
 /**
  * CPath2 server-side instance-specific 
@@ -502,9 +504,10 @@ public final class CPathSettings {
 	
 	
 	/**
-	 * Full path to the archive file where BioPAX db/model is exported. 
+	 * Full path to the archive file where a BioPAX sub-model is exported
+	 * (in the batch downloads directory). 
 	 * 
-	 * @param name - a Metadata's Standard Name, or a special archive name, such as "All", "Warehouse".
+	 * @param name - a Metadata's identifier, organism name, or a special name, such as "All", "Warehouse", "Detailed".
 	 * @return
 	 */
 	public String biopaxExportFileName(String name) {
@@ -536,7 +539,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String mainModelFile() {
-		return biopaxExportFileName("All");
+		return biopaxExportFileName(Scope.ALL.toString());
 	}
 	
 	/**
@@ -546,7 +549,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String warehouseModelFile() {
-		return biopaxExportFileName("Warehouse");
+		return biopaxExportFileName(Scope.WAREHOUSE.toString());
 	}
 
 	/**

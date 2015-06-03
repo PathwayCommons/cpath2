@@ -26,8 +26,8 @@
 		<h3>Notes</h3>
 		<ul>				
 			<li>blacklist.txt is used by the BioPAX to SIF and SBGN converters to exclude ubiquitous small molecules from output. 
-				See <a href="http://code.google.com/p/biopax-pattern/wiki/UsingBinaryInteractionFramework#Blacklisting_ubiquitous_small_molecules" 
-				target="_blank">blacklist.txt file description</a> for more information.</li>
+				See also: <a href="https://github.com/BioPAX/pattern/wiki/UsingBinaryInteractionFramework" 
+				target="_blank">Using Binary Interaction Framework</a> for more information (contains blacklist.txt description).</li>
 			<li>datasources.txt provides metadata and some statistics about each data source.</li>				
 			<li>Original and intermediate (after cleaning, conversion, normalization) data archives 
 				<a rel="nofollow" href='<c:url value="/datadir"/>'>are available here</a>.

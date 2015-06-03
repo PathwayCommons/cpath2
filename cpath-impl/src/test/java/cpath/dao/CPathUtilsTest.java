@@ -22,6 +22,7 @@ import cpath.dao.CPathUtils;
 import cpath.jpa.Content;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
+import cpath.service.OutputFormat;
 
 
 public class CPathUtilsTest {
@@ -134,10 +135,68 @@ public class CPathUtilsTest {
 	
 	
 	@Test
-	public void testPatternForChebiOboXrefLines() {
+	public void testChebiOboXrefLinesPattern() {
 		Pattern p = Pattern.compile(".+?:(.+?)\\s+\"(.+?)\"");
 		Matcher m = p.matcher("NIST Chemistry WebBook:22325-47-9 \"CAS Registry Number\"");
 		assertTrue(m.find());		
 		System.out.println("ID="+m.group(1)+"; DB="+m.group(2));		
+	}
+	
+	/*
+	 * Test the pattern that helps extract 
+	 * data provider/organism name and output format 
+	 * from cpath2-generated archives in the batch downloads dir.
+	 */
+	@Test
+	public final void testArchiveScopeAndFormatPattern() {
+		Pattern pattern = LogUtils.ARCHIVE_SRC_AND_FORMAT_PATTERN;
+
+		Matcher matcher = pattern.matcher("blacklist.txt");
+		assertFalse(matcher.matches());
+		
+		//test if it matches the old PC2 version file naming
+		matcher = pattern.matcher("Pathway Commons 2 NCI_Nature.EXTENDED_BINARY_SIF.nodes.tsv.gz");
+		assertTrue(matcher.matches());		
+		assertEquals("NCI_Nature.EXTENDED_BINARY_SIF", matcher.group(1));		
+		matcher = pattern.matcher("Pathway Commons.6.NCI Pathway Interaction Database: Pathway.GSEA.gmt.gz");
+		assertTrue(matcher.matches());
+		assertEquals("NCI Pathway Interaction Database: Pathway.GSEA", matcher.group(1));		
+		matcher = pattern.matcher("Some Provider.01.All.BIOPAX.owl.gz");
+		assertTrue(matcher.matches());
+		assertEquals("All.BIOPAX", matcher.group(1));
+		
+		//extract source only
+		pattern = LogUtils.ARCHIVE_SRC_PATTERN;
+		
+		matcher = pattern.matcher("blacklist.txt");
+		assertFalse(matcher.matches());		
+		//test if it matches the old PC2 version file naming
+		matcher = pattern.matcher("Pathway Commons 2 NCI_Nature.EXTENDED_BINARY_SIF.nodes.tsv.gz");
+		assertTrue(matcher.matches());		
+		assertEquals("NCI_Nature", matcher.group(1));		
+		matcher = pattern.matcher("Pathway Commons.6.NCI Pathway Interaction Database: Pathway.GSEA.gmt.gz");
+		assertTrue(matcher.matches());
+		assertEquals("NCI Pathway Interaction Database: Pathway", matcher.group(1));		
+		matcher = pattern.matcher("Some Provider.01.All.BIOPAX.owl.gz");
+		assertTrue(matcher.matches());
+		assertEquals("All", matcher.group(1));
+	
+		//extract format only
+		pattern = LogUtils.ARCHIVE_FORMAT_PATTERN;		
+		matcher = pattern.matcher("blacklist.txt");
+		assertFalse(matcher.matches());		
+		//test if it matches the old PC2 version file naming
+		matcher = pattern.matcher("Pathway Commons 2 NCI_Nature.EXTENDED_BINARY_SIF.nodes.tsv.gz");
+		assertTrue(matcher.matches());		
+		assertEquals("EXTENDED_BINARY_SIF", matcher.group(1));		
+		matcher = pattern.matcher("Pathway Commons.6.NCI Pathway Interaction Database: Pathway.GSEA.gmt.gz");
+		assertTrue(matcher.matches());
+		assertEquals("GSEA", matcher.group(1));		
+		matcher = pattern.matcher("Some Provider.01.All.BIOPAX.owl.gz");
+		assertTrue(matcher.matches());
+		assertEquals("BIOPAX", matcher.group(1));
+		
+		assertEquals(OutputFormat.BIOPAX, LogUtils.fileOutputFormat("Some Provider.01.All.BIOPAX.owl.gz"));
+		assertEquals("All", LogUtils.fileSrcOrScope("Some Provider.01.All.BIOPAX.owl.gz"));
 	}
 }

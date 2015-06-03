@@ -127,20 +127,17 @@ interface LogEntitiesRepositoryCustom {
 	/**
 	 * The number of client requests served, grouped by country code.
 	 * The result is a list of [country, count] optionally filtered 
-	 * by the service type and name if the arguments were provided, 
+	 * by the service type and name if the name was provided, 
 	 * as follows:
 	 * <ul>
-	 * <li>neither type nor name - total counts;</li>
-	 * <li>only name is provided - counts for this name 
-	 *		(ignoring type, which usually implies one particular type, 
-	 *		because a name cannot belong to different types...);</li>
+	 * <li>type is TOTAL, name is null - total counts;</li>
 	 * <li>type, except TOTAL, and name -> counts for all events of 
 	 * 		the name and type (in fact, it does not depend on the type; hence same as above).</li>
 	 * <li>type, except TOTAL, but no name -> counts for all events of the type;</li>
 	 * </ul>
 	 * 
 	 * 
-	 * @param logType filter by (limit to one) category, e.g., provider, file, command, or total, etc.
+	 * @param logType not null; a filter by log event category, e.g., provider, file, total, etc.
 	 * @param name filter by name (e.g, provider's name, command, format, or filename)
 	 * @return	array of Object[2] items: 
 	 * <pre>
@@ -154,21 +151,17 @@ interface LogEntitiesRepositoryCustom {
 	 * filtered by country.
 	 * 
 	 * The result is a list of [country, count] optionally filtered 
-	 * by the service type and name if the arguments were provided, 
+	 * by the service type and name if the name was provided, 
 	 * as follows:
 	 * <ul>
-	 * <li>neither type nor name - total counts;</li>
-	 * <li>only name is provided - counts for this name 
-	 *		(ignoring type, which usually implies one particular type, 
-	 *		because a name cannot belong to different types...);</li>
+	 * <li>TOTAL as type, null as name - total counts;</li>
 	 * <li>type, except TOTAL, and name -> counts for all events of 
 	 * 		the name and type (in fact, it does not depend on the type; hence same as above).</li>
 	 * <li>type, except TOTAL, but no name -> counts for all events of the type;</li>
 	 * </ul>
 	 * 
-	 *
 	 * @param countryCode not null
-	 * @param logType filter by (limit to one) category, e.g., provider, file, command, or total, etc.
+	 * @param logType not null; a filter by log category, e.g., provider, file, total, etc.
 	 * @param name filter by name (e.g, provider's name, command, format, or filename)
 	 * @return	array of Object[2] items: 
 	 * <pre>
@@ -181,18 +174,15 @@ interface LogEntitiesRepositoryCustom {
 	 * The number of client requests served, grouped by location.
 	 * The result is a list of [country, region, city, count] 
 	 * optionally filtered by the service type and name, 
-	 * if the arguments were provided, as follows:
+	 * if the name was provided, as follows:
 	 * <ul>
-	 * <li>neither type nor name - total counts;</li>
-	 * <li>only name is provided - counts for this name 
-	 *		(ignoring type, which usually implies one particular type, 
-	 *		because a name cannot belong to different types...);</li>
+	 * <li>type is TOTAL, name is null - total counts;</li>
 	 * <li>type, except TOTAL, and name -> counts for all events of 
 	 * 		the name and type (in fact, it does not depend on the type; hence same as above).</li>
 	 * <li>type, except TOTAL, but no name -> counts for all events of the type;</li>
 	 * </ul>
 	 * 
-	 * @param logType
+	 * @param logType not null
 	 * @param name
 	 * @return
 	 * <pre>

@@ -164,7 +164,6 @@ public class BiopaxModelController extends BasicController {
     {
     	Set<LogEvent> events = new HashSet<LogEvent>();
     	events.add(LogEvent.from(Cmd.TOP_PATHWAYS));
-    	events.add(LogEvent.FORMAT_OTHER);
 		
 		ServiceResponse results = service.topPathways(organism, datasource);
 		
@@ -193,7 +192,6 @@ public class BiopaxModelController extends BasicController {
     {
     	Set<LogEvent> events = new HashSet<LogEvent>();
     	events.add(LogEvent.from(Cmd.TRAVERSE));
-    	events.add(LogEvent.FORMAT_OTHER);
     	
     	if(bindingResult.hasErrors()) {
     		errorResponse(Status.BAD_REQUEST, 
@@ -276,7 +274,6 @@ public class BiopaxModelController extends BasicController {
 		//prepare to count following service assess events
     	Set<LogEvent> events = new HashSet<LogEvent>();
     	events.add(LogEvent.from(Cmd.SEARCH));
-    	events.add(LogEvent.FORMAT_OTHER); //XML or JSON (not BioPAX, SIF, etc.)
     	//do NOT add yet for the 'datasource' filter values can be anything (hard to analyze)		
     	   	
     	if(bindingResult.hasErrors()) {
@@ -299,11 +296,10 @@ public class BiopaxModelController extends BasicController {
 						"no hits", request, response, events);
 			} else {
 				//count for all unique provider names from the ServiceResponse
-				//TODO ? not sure we have to count these...
 	    		events.addAll(LogEvent.fromProviders(
 	    				((SearchResponse)results).getProviders()
 	    			));
-				//log to db
+				//save to the log db
 		    	service.log(events, clientIpAddress(request));
 				return results;
 			}

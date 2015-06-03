@@ -1,6 +1,9 @@
 package cpath.jpa;
 
 
+import java.util.List;
+
+//import org.springframework.data.querydsl.QueryDslPredicateExecutor;
 import org.springframework.data.repository.CrudRepository;
 
 
@@ -21,4 +24,12 @@ public interface MetadataRepository extends CrudRepository<Metadata, Long> {
 	 */
 	Metadata findByIdentifier(String identifier);
 	
+	/**
+	 * Find Metadata entities by exact name/synonym - search in all names (case insensitive). 
+	 * (Metadata.name array contains: display name, standard name, synonyms)
+	 * 
+	 * @param name
+	 * @return
+	 */
+	List<Metadata> findByNameContainsIgnoreCase(String name);
 }
