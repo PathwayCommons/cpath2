@@ -63,6 +63,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
+import org.springframework.util.Assert;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -122,8 +123,8 @@ public final class Admin {
      * @param params String[]
      */    
     public static void main(String[] params) throws Exception {
-    	// "CPATH2_HOME" env. var must be set (mostly for logging)
-    	cpath.property(HOME_DIR); //throws IllegalStateEx. is not set.
+    	// "CPATH2_HOME" system option must be set (except for unit testing)!
+    	Assert.hasText(cpath.property(HOME_DIR)); 
 
     	if(!Charset.defaultCharset().equals(Charset.forName("UTF-8")))
     		if(LOG.isWarnEnabled())
@@ -155,9 +156,6 @@ public final class Admin {
 
         // create the data dir. inside the home dir. if it does not exist
 		File dir = new File(cpath.dataDir());
-		if(!dir.exists()) {
-			dir.mkdir();
-		}
 
 		if (args[0].equals(Cmd.INDEX.toString())) {
 			

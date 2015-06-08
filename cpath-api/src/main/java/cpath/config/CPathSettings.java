@@ -37,6 +37,8 @@ import java.util.Date;
 import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import cpath.service.Scope;
 
@@ -54,10 +56,9 @@ import cpath.service.Scope;
  * @author rodche
  */
 public final class CPathSettings {
-	
+	private static final Logger LOG = LoggerFactory.getLogger(CPathSettings.class);
 	private static CPathSettings instance;
 	private Properties settings;
-	private static boolean _develop = false;
 	
 	/**
 	 * Name for the system environment and/or JVM variable 
@@ -143,26 +144,20 @@ public final class CPathSettings {
 	 * Private Constructor
 	 */
 	private CPathSettings() {
-		// check/init cpath2 home dir JVM property
-		String home = System.getenv(HOME_DIR);		
-		if(home == null || home.isEmpty()) {
-			throw new IllegalStateException(HOME_DIR + " environment variable is undefined!");
-		} else {
-			//replace/override the JVM option
-			synchronized (home) {
-				System.setProperty(HOME_DIR, home);
-			}	
-		}
+		// check if cpath2 home directory JVM property is defined
+		String home = System.getProperty(HOME_DIR);
+		if(home==null || home.isEmpty())
+			throw new AssertionError("Java option " + HOME_DIR + " is undefined!");
 		
-		String profile = System.getProperty("spring.profiles.active");
-		if(!"prod".equalsIgnoreCase(profile))
-			_develop = true; //not production
+		File f = new File(home);
+		if(!f.exists()) 
+			f.mkdir();
 		
 		// put default values
 		Properties defaults = new Properties();
 		defaults.put(PROP_XML_BASE, "http://purl.org/pc2/test/");
 		defaults.put(PROVIDER_NAME, "cPath2 Demo");
-		defaults.put(PROVIDER_VERSION, "");
+		defaults.put(PROVIDER_VERSION, "0");
 		defaults.put(PROVIDER_DESCRIPTION, "cPath2 Demo");
 		defaults.put(PROVIDER_ORGANISMS, "homo sapiens");
 		defaults.put(PROP_BLACKLIST_CONTROL_THRESHOLD, "15");
@@ -341,8 +336,8 @@ public final class CPathSettings {
 		try {
 			settings.load(new FileReader(file));
 		} catch (IOException e) {
-			throw new RuntimeException("Failed to load cPath2 properties " +
-					"from " + file, e);
+			LOG.warn("Failed to update cPath2 properties " +
+					"from the " + file + "; will use the defaults", e);
 		}
 	}
 	
@@ -389,8 +384,11 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String dataDir() {
-		return (_develop) ? tmpDir() : homeDir() + 
-				File.separator + DATA_SUBDIR;
+		String path = homeDir() + File.separator + DATA_SUBDIR;
+		File f = new File(path);
+		if(!f.exists()) 
+			f.mkdir();
+		return path;
 	}
 		
 	/**
@@ -399,8 +397,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String indexDir() {
-		return ((_develop) ? tmpDir() : homeDir()) + 
-				File.separator + INDEX_SUBDIR;
+		return homeDir() + File.separator + INDEX_SUBDIR;
 	}
 	
 	/**
@@ -479,23 +476,17 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String downloadsDir() {
-		return (_develop) ? tmpDir() : homeDir() + File.separator + DOWNLOADS_SUBDIR;
-	}
-	
-	
-	/**
-	 * Gets the full path to current java TMP directory.
-	 * 
-	 * @return
-	 */
-	public String tmpDir() {
-		return System.getProperty("java.io.tmpdir");
+		String path = homeDir() + File.separator + DOWNLOADS_SUBDIR;
+		File f = new File(path);
+		if(!f.exists()) 
+			f.mkdir();
+		return path;
 	}
 	
 	
 	/**
 	 * Gets the full path to query cache directory.
-	 * 
+	 * @deprecated
 	 * @return
 	 */
 	public String cacheDir() {

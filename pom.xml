@@ -216,12 +216,7 @@
 					<version>${maven-surefire-plugin.version}</version>
 					<configuration>
 						<argLine>
-							-Xmx2g -Dfile.encoding=UTF-8 -DCPATH2_HOME=${CPATH2_HOME}
-							-Djava.io.tmpdir=${CPATH2_HOME}/tmp
-							-ea
-							-Dnet.sf.ehcache.disabled=true
-							-Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider
-							-Dspring.profiles.active=dev
+							-Xmx2048m -DCPATH2_HOME=${java.io.tmpdir}/cpath2_home -Dfile.encoding=UTF-8 -ea -Dnet.sf.ehcache.disabled=true -Dspring.profiles.active=dev -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider
 						</argLine>
 					</configuration>
 				</plugin>
@@ -286,7 +281,12 @@
 					<groupId>org.sonatype.plugins</groupId>
 					<artifactId>nexus-staging-maven-plugin</artifactId>
 					<version>${nexus-staging-maven-plugin.version}</version>
-				</plugin>				
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>jaxb2-maven-plugin</artifactId>
+					<version>${jaxb2-maven-plugin}</version>
+				</plugin>			
 			</plugins>			
 		</pluginManagement>
 		<extensions>

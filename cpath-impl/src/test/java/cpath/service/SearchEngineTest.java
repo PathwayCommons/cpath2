@@ -24,8 +24,8 @@ public class SearchEngineTest {
 	
 	static final ResourceLoader resourceLoader = new DefaultResourceLoader();
 	
-	final String indexLocation = CPathSettings.getInstance().tmpDir() 
-			+ File.separator + "SearchEngineTest_index";
+	final String indexLocation = 
+		CPathSettings.getInstance().indexDir() + "_se";
 
 	@Test
 	public final void testSearch() throws IOException {
