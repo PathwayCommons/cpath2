@@ -70,9 +70,9 @@ import java.util.zip.GZIPOutputStream;
  * of the normalized original provider's pathway data 
  * into the main persistent Paxtools BioPAX model.
  */
-public final class Merger {
+public final class TheMerger {
 
-    private static final Logger log = LoggerFactory.getLogger(Merger.class);
+    private static final Logger log = LoggerFactory.getLogger(TheMerger.class);
 	
     // configuration/flags
 	private final boolean force;	
@@ -90,7 +90,7 @@ public final class Merger {
 	 * @param force whether to forcibly merge BioPAX data the validation reported critical about or skip.
 	 * @throws AssertionError when dest is not instanceof {@link Model};
 	 */
-	public Merger(CPathService service, boolean force) 
+	public TheMerger(CPathService service, boolean force) 
 	{
 		this.service = service;
 		this.xmlBase = CPathSettings.getInstance().getXmlBase();
@@ -129,9 +129,10 @@ public final class Merger {
 	}
 
 	private void merge(Metadata metadata) {
+		
 		log.info("Start merging " + metadata);
 		
-		for (Content pwdata : metadata.getContent()) {		
+		for (Content pwdata : metadata.getContent()) {
 			final String description = pwdata.toString();
 			if (pwdata.getValid() == null) {
 				log.warn("Skipped " + description + " - haven't gone through the premerge yet");
