@@ -127,37 +127,45 @@ public class CPathServiceImpl implements CPathService {
 
 	/**
 	 * Loads the main BioPAX model, etc.
-	 * This is not required (useless) during the data import (premerge, merge, etc.)
-	 * This method should be called in the production mode, after the web service is started.
+	 * This is not required (useless) during the data import (premerge, merge, etc.);
+	 * it is called after the web service is started.
 	 */
-	synchronized public void init() {		
-		loadModel();	
-		loadBlacklist();
-	}
-
-	
-	private void loadModel() {		
+	synchronized public void init() {
 		//fork the model loading (which takes quite a while)
 		ExecutorService executor = Executors.newSingleThreadExecutor();
 		executor.execute(
 			new Runnable() {
 			@Override
 			public void run() {
-				Model model = CPathUtils.loadMainBiopaxModel();
+				paxtoolsModel = CPathUtils.loadMainBiopaxModel();
 				// set for this service
-				paxtoolsModel = model;
 				if(paxtoolsModel != null) {
-					model.setXmlBase(CPathSettings.getInstance().getXmlBase());
+					paxtoolsModel.setXmlBase(CPathSettings.getInstance().getXmlBase());
 					log.info("Main BioPAX model (in-memory) is now ready for queries.");
 					searcher = new SearchEngine(paxtoolsModel, 
 							CPathSettings.getInstance().indexDir());
 					((SearchEngine) searcher).setMaxHitsPerPage(
 						Integer.parseInt(CPathSettings.getInstance().getMaxHitsPerPage()));
-				}	
+				}
 			}
 		});
 		executor.shutdown();
 		//won't wait (nothing else to do)
+		loadBlacklist();
+	}
+
+	public Model getModel() {
+		return paxtoolsModel;
+	}
+	public void setModel(Model paxtoolsModel) {
+		this.paxtoolsModel = paxtoolsModel;
+	}
+	
+	public Searcher getSearcher() {
+		return searcher;
+	}
+	public void setSearcher(Searcher searcher) {
+		this.searcher = searcher;
 	}
 	
 	

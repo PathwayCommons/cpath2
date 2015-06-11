@@ -81,7 +81,6 @@ public final class Merger {
     private Model warehouseModel;
     private Model mainModel;      
 	private CPathService service;
-	
 
 	/**
 	 * Constructor.
@@ -105,6 +104,14 @@ public final class Merger {
 		log.info("Created a new empty main BioPAX model.");
 	}
 
+	/**
+	 * Gets the main BioPAX model, where all other 
+	 * by-datasource models are to be (or have been already) merged.
+	 * @return
+	 */
+	public Model getMainModel() {
+		return mainModel;
+	}
 	
 	public void merge() {
 		// build models and merge from dataFile.premergeData
@@ -117,8 +124,17 @@ public final class Merger {
 			if(metadata.isNotPathwayData()) {
 				log.info("Skip for warehouse data: " + metadata);
 				continue;
-			}			
-			merge(metadata);
+			}
+			
+			Model datasourceResultModel = merge(metadata);
+			
+			//export to the biopax archive in the batch downloads dir.
+			save(datasourceResultModel, metadata);
+			
+			//merge into the main model
+			log.info("Merging the updated and enriched '" + metadata.getIdentifier() + 
+					"' model into the main all-data BioPAX model...");
+			mainModel.merge(datasourceResultModel);
 		}
 		
 		//create or replace the main BioPAX archive
@@ -128,10 +144,13 @@ public final class Merger {
 		log.info("Complete.");
 	}
 
-	private void merge(Metadata metadata) {
-		log.info("Start merging " + metadata);
+	private Model merge(Metadata metadata) {
+		log.info("Begin merging warehouse data with pathway data from  " + metadata);
 		
-		for (Content pwdata : metadata.getContent()) {		
+		Model targetModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+		targetModel.setXmlBase(xmlBase);
+		
+		for (Content pwdata : metadata.getContent()) {
 			final String description = pwdata.toString();
 			if (pwdata.getValid() == null) {
 				log.warn("Skipped " + description + " - haven't gone through the premerge yet");
@@ -160,10 +179,11 @@ public final class Merger {
 			}
 
 			Model inputModel = (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream);
-			merge(pwdata.toString(), inputModel);
+			merge(pwdata.toString(), inputModel, targetModel);
 		}
 		
 		log.info("Done merging " + metadata);
+		return targetModel;
 	}
 
 
@@ -194,19 +214,20 @@ public final class Merger {
 	}
 	
 	/**
-	 * Integrates the source model into the main one using the 
-	 * reference biopax objects (entity references, etc.) 
-	 * in the target or warehouse models.
+	 * Integrates the source model into the one-datasource target model 
+	 * using the reference biopax objects (entity references, etc.) 
+	 * from the target or warehouse models.
 	 * As the result, the source model will (and the warehouse might) be broken 
 	 * (ok to dispose), and the target - complete, self-integral,
 	 * contain all the entities that were there before and new from the source
 	 * model (where some original utility class objects are replaced with 
 	 * canonical warehouse or previously existing target ones). 
 	 * 
-	 * @param description
+	 * @param description datasource (metadata) description
 	 * @param source
+	 * @param target
 	 */
-	void merge(String description, final Model source) {	
+	void merge(final String description, final Model source, final Model target) {	
 		
 		final String srcModelInfo = "source: " + description;
 		
@@ -232,7 +253,7 @@ public final class Merger {
 			} 
 				
 			if (replacement != null) {
-				EntityReference r = (EntityReference) mainModel.getByID(replacement.getRDFId());
+				EntityReference r = (EntityReference) target.getByID(replacement.getRDFId());
 				if(r != null) // re-use previously merged one
 					replacement = r;
 				
@@ -254,11 +275,109 @@ public final class Merger {
 		// Replace objects in the source model
 		log.info("Replacing objects ("+srcModelInfo+")...");	
 		ModelUtils.replace(source, replacements);
-
-		// post-fix
+		
 		log.info("Migrate some properties, such as original entityFeature and xref ("+srcModelInfo+")...");
-		for (EntityReference old : replacements.keySet()) {
+		copySomeOfPropertyValues(replacements);		
+		
+		// cleaning up dangling objects (including the replaced above ones)
+		log.info("Removing dangling objects ("+srcModelInfo+")...");
+		ModelUtils.removeObjectsIfDangling(source, UtilityClass.class);
+		
+		/* 
+		 * The following can improve graph queries and full-text search, 
+		 * for generic and poorly defined physical entities (lacking entity reference)
+		 * can eventually match a query.
+		 * 
+		 * Using existing xrefs and id-mapping, add primary uniprot/chebi RelationshipXref 
+		 * to all simple PEs (SM, Protein, Dna, Rna,..) and Gene, if possible (skip Complexes).
+		 * This might eventually result in mutually exclusive identifiers, 
+		 * but we'll keep those xrefs and just log a warning for future (data) fix;
+		 * - not a big deal as long as we do not merge data based on these new xrefs,
+		 * but just index/search/query (this especially helps 
+		 * when no entity references defined for a molecule).
+		 */	
+		log.info("Adding canonical UniProt/ChEBI RelationshipXrefs to physical"
+			+ " entities by using existing xrefs and id-mapping (" + srcModelInfo + ")");
+		for(Entity pe : new HashSet<Entity>(source.getObjects(Entity.class))) 
+		{
+			if(pe instanceof PhysicalEntity) {
+				if(pe instanceof SimplePhysicalEntity) {
+					// skip for SPE that got its ER just replaced (from Warehouse)
+					EntityReference er = ((SimplePhysicalEntity) pe).getEntityReference();
+					if(er != null && warehouseModel.containsID(er.getRDFId()))
+						continue;
+					
+					if(pe instanceof SmallMolecule) {
+						if(er == null)
+							addCanonicalRelXrefs(target, pe, "CHEBI");
+						else
+							addCanonicalRelXrefs(target, er, "CHEBI");
+					} else {//Protein, Dna*, Rna* type
+						if(er == null)
+							addCanonicalRelXrefs(target, pe, "UNIPROT");
+						else 
+							addCanonicalRelXrefs(target, er, "UNIPROT");
+					}						
+				} else if(pe instanceof Complex) {
+					continue; // skip
+				} else { // top PE class, i.e., pe.getModelInterface()==PhysicalEntity.class
+					addCanonicalRelXrefs(target, pe, "UNIPROT");
+					addCanonicalRelXrefs(target, pe, "CHEBI");
+				}
+			} else if(pe instanceof Gene) {
+				addCanonicalRelXrefs(target, pe, "UNIPROT");
+			}
+		}
+		
+		/* 
+		 * Replace all not normalized so far URIs in the source model 
+		 * with auto-generated new short ones (also add a bp:comment about original URIs)
+		 */
+		log.info("Assigning new URIs (xml:base=" + xmlBase + 
+				"*) to all not normalized BioPAX elements (" + 
+				srcModelInfo + ", xml:base=" + source.getXmlBase() + ")...");
+		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
+		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
+			String currUri = bpe.getRDFId();
 			
+			// skip for previously normalized objects (we believe they are right and ready to merge)
+			if(currUri.startsWith(xmlBase) || currUri.startsWith("http://identifiers.org/")) 
+				continue; 
+			
+			// Generate new consistent URI for not generated not previously normalized objects:
+			String newRDFId = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
+			
+			// Avoid same URI - non-equivalent objects case/clash 
+			// (some providers might mistakenly use the same URI 
+			// for several non-equivalent biopax entities in different files):
+			if(target.containsID(newRDFId)) {
+				if(!bpe.isEquivalent(target.getByID(newRDFId))) {
+					newRDFId = Normalizer.uri(xmlBase, null, description+currUri, bpe.getModelInterface());
+					log.warn(description + " has a " + bpe.getModelInterface().getSimpleName() + 
+						", uri: " + currUri + ", which also was the original URI of a " + 
+						"not equivalent, previously merged object; fixed.");
+				}
+			}
+			
+			// Replace URI
+			CPathUtils.replaceID(source, bpe, newRDFId);
+			
+			// save original URI in comments
+			((Level3Element) bpe).addComment("REPLACED " + currUri);
+		}		
+		
+		log.info("Merging into the target one-datasource BioPAX model...");
+		// merge all the elements and their children from the source to target model
+		target.merge(source);
+		
+		log.info("Merge ("+srcModelInfo+") is done.");
+	}
+
+
+	private void copySomeOfPropertyValues(
+			Map<EntityReference, EntityReference> replacements) {
+		// post-fix
+		for (EntityReference old : replacements.keySet()) {			
 			final EntityReference repl = replacements.get(old);	
 			
 			for (EntityFeature ef : new HashSet<EntityFeature>(old.getEntityFeature())) 
@@ -308,99 +427,6 @@ public final class Merger {
 				}
 			}
 		}
-		
-		// cleaning up dangling objects (including the replaced above ones)
-		log.info("Removing dangling objects ("+srcModelInfo+")...");
-		ModelUtils.removeObjectsIfDangling(source, UtilityClass.class);
-		
-		/* 
-		 * The following can improve graph queries and full-text search, 
-		 * for generic and poorly defined physical entities (lacking entity reference)
-		 * can eventually match a query.
-		 * 
-		 * Using existing xrefs and id-mapping, add primary uniprot/chebi RelationshipXref 
-		 * to all simple PEs (SM, Protein, Dna, Rna,..) and Gene, if possible (skip Complexes).
-		 * This might eventually result in mutually exclusive identifiers, 
-		 * but we'll keep those xrefs and just log a warning for future (data) fix;
-		 * - not a big deal as long as we do not merge data based on these new xrefs,
-		 * but just index/search/query (this especially helps 
-		 * when no entity references defined for a molecule).
-		 */	
-		log.info("Adding canonical UniProt/ChEBI RelationshipXrefs to physical"
-			+ " entities by using existing xrefs and id-mapping (" + srcModelInfo + ")");
-		for(Entity pe : new HashSet<Entity>(source.getObjects(Entity.class))) 
-		{
-			if(pe instanceof PhysicalEntity) {
-				if(pe instanceof SimplePhysicalEntity) {
-					// skip for SPE that got its ER just replaced (from Warehouse)
-					EntityReference er = ((SimplePhysicalEntity) pe).getEntityReference();
-					if(er != null && warehouseModel.containsID(er.getRDFId()))
-						continue;
-					
-					if(pe instanceof SmallMolecule) {
-						if(er == null)
-							addCanonicalRelXrefs(mainModel, pe, "CHEBI");
-						else
-							addCanonicalRelXrefs(mainModel, er, "CHEBI");
-					} else {//Protein, Dna*, Rna* type
-						if(er == null)
-							addCanonicalRelXrefs(mainModel, pe, "UNIPROT");
-						else 
-							addCanonicalRelXrefs(mainModel, er, "UNIPROT");
-					}						
-				} else if(pe instanceof Complex) {
-					continue; // skip
-				} else { // top PE class, i.e., pe.getModelInterface()==PhysicalEntity.class
-					addCanonicalRelXrefs(mainModel, pe, "UNIPROT");
-					addCanonicalRelXrefs(mainModel, pe, "CHEBI");
-				}
-			} else if(pe instanceof Gene) {
-				addCanonicalRelXrefs(mainModel, pe, "UNIPROT");
-			}
-		}
-		
-		/* 
-		 * Replace all not normalized so far URIs in the source model 
-		 * with auto-generated new short ones (also add a bp:comment about original URIs)
-		 */
-		log.info("Assigning new URIs (xml:base=" + xmlBase + 
-				"*) to all not normalized BioPAX elements (" + 
-				srcModelInfo + ", xml:base=" + source.getXmlBase() + ")...");
-		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
-		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
-			String currUri = bpe.getRDFId();
-			
-			// skip for previously normalized objects (we believe they are right and ready to merge)
-			if(currUri.startsWith(xmlBase) || currUri.startsWith("http://identifiers.org/")) 
-				continue; 
-			
-			// Generate new consistent URI for not generated not previously normalized objects:
-			String newRDFId = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
-			
-			// Avoid same URI - non-equivalent objects case/clash 
-			// (some providers might mistakenly use the same URI 
-			// for several non-equivalent biopax entities in different files):
-			if(mainModel.containsID(newRDFId)) {
-				if(!bpe.isEquivalent(mainModel.getByID(newRDFId))) {
-					newRDFId = Normalizer.uri(xmlBase, null, description+currUri, bpe.getModelInterface());
-					log.warn(description + " has a " + bpe.getModelInterface().getSimpleName() + 
-						", uri: " + currUri + ", which also was the original URI of a " + 
-						"not equivalent, previously merged object; fixed.");
-				}
-			}
-			
-			// Replace URI
-			CPathUtils.replaceID(source, bpe, newRDFId);
-			
-			// save original URI in comments
-			((Level3Element) bpe).addComment("REPLACED " + currUri);
-		}		
-		
-		log.info("Merging into the main BioPAX model...");
-		// merge all the elements and their children from the source to target model
-		mainModel.merge(source);
-		
-		log.info("Merge ("+srcModelInfo+") is done.");
 	}
 
 

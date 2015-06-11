@@ -336,8 +336,9 @@ public final class CPathSettings {
 		try {
 			settings.load(new FileReader(file));
 		} catch (IOException e) {
-			LOG.warn("Failed to update cPath2 properties " +
-					"from the " + file + "; will use the defaults", e);
+			LOG.warn("Couldn't update cPath2 properties " +
+				"from " + file + "; will use defaults. " 
+					+ e.toString());
 		}
 	}
 	

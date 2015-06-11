@@ -10,6 +10,7 @@ import cpath.service.ErrorResponse;
 import cpath.service.Indexer;
 import cpath.service.OutputFormat;
 import cpath.service.SearchEngine;
+import cpath.service.Searcher;
 import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
@@ -137,25 +138,31 @@ public class DataImportTest {
 		assertTrue(mps.size()==1);
 		assertTrue("P01116".equals(mps.iterator().next().getDestId()));
 		
-		
 		// **** MERGE ***
 		
-		//Load test models from files
-		final List<Model> pathwayModels = initPathwayModels();
-		
-		// note: in production we'd run it as ImportFactory.newMerger(paxtoolsDAO,...).merge();
-		// cpath2 metadata contains the warehouse and id-mapping tables
 		Merger merger = new Merger(service, true);
+		
+		/* In this test, for simplicity, we don't use Metadata 
+		 * and thus bypass some of Merger methods 
+		 * (in production, we'd simply run as merger.merge())
+		*/
+		//Load test models from files
+		final List<Model> pathwayModels = initPathwayModels();	
 		int i = 0;
+		Model target = BioPAXLevel.L3.getDefaultFactory().createModel();
 		for(Model m : pathwayModels) {
-			merger.merge("model #" + i++, m);
-		}
-		merger.save(); //to the file
+			merger.merge("test model #" + i++, m, target);
+		}	
+		merger.getMainModel().merge(target);
 		
-		//get the model from the archive and test it
-		Model m = CPathUtils.loadMainBiopaxModel();	
+		//export the main model (for manual check up)
+		//it's vital to save to and then read the model from file,
+		//because doing so repairs inverse properties (e.g. entityReferenceOf)!
+		merger.save(); 
+		//load back the model from archive
+		Model m = CPathUtils.loadMainBiopaxModel();
 		
-		//check the integrated model
+		//Check the all-data integrated model
 		assertMerge(m);
 
 		//pid, reactome,humancyc,.. were there in the test models
@@ -186,19 +193,10 @@ public class DataImportTest {
 		indexer.index();
 		
 		//load the main model, blacklist.txt, init the search engine
-		service.init();
-		log.warn("Waiting for the service to fully initialize...");
-		int interval = 1000;
-		for (; !service.ready() && interval < 50000; interval += 5000) {			
-			try {
-				Thread.sleep(interval);
-			} catch (InterruptedException e1) {
-				fail("Failed to initialise the service bean (model and search index)!");
-			}
-		}
-		if(interval>50000)
-			fail("Failed to initialise the service bean (model and search index)!");
-
+		service.setSearcher((Searcher)indexer);
+		service.setModel(m);
+		assertTrue(service.ready());
+		
 		// Test full-text search	
 		// search with a secondary (RefSeq) accession number
 		//NP_619650 occurs in the warehouse only, not in the merged model

@@ -33,6 +33,7 @@ import java.util.Set;
 
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.validator.api.beans.ValidatorResponse;
 
@@ -60,6 +61,16 @@ import cpath.service.jaxb.ServiceResponse;
  *
  */
 public interface CPathService {
+	
+	public Model getModel();
+	
+	public void setModel(Model paxtoolsModel);
+	
+	public Searcher getSearcher();
+	
+	public void setSearcher(Searcher searcher);
+	
+	
 
 	/**
 	 * Retrieves the BioPAX element(s) by URI or identifier (e.g., gene symbol)
