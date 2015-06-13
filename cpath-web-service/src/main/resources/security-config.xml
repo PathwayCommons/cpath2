@@ -11,8 +11,6 @@
     http://www.springframework.org/schema/context
     http://www.springframework.org/schema/context/spring-context.xsd">
 
-	<context:property-placeholder location="file:${CPATH2_HOME}/cpath2.properties"/>
-
 	<http access-denied-page="/denied" auto-config='true'>
 		<form-login login-page="/login" authentication-failure-url="/login?login_error=t" always-use-default-target="false"/>
 		<intercept-url pattern="/logbackStatus" access="ROLE_ADMIN" />

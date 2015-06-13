@@ -42,9 +42,9 @@ public class PagesController extends BasicController {
 	
 	private final CPathSettings cpath;
 	
-	
 	public PagesController() {
 		cpath = CPathSettings.getInstance();
+		LOG.info("Using CPATH2_HOME=" + cpath.homeDir());
 	}
 	
 	
