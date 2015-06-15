@@ -182,6 +182,8 @@ public final class Merger {
 			merge(pwdata.toString(), inputModel, targetModel);
 		}
 		
+		//TODO fix issue #205 (github.com/pathwaycommons/cpath2/issues) - merge same URI pathways
+			
 		log.info("Done merging " + metadata);
 		return targetModel;
 	}
