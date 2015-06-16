@@ -42,6 +42,7 @@ import org.biopax.paxtools.model.level3.EntityReference;
 import org.biopax.paxtools.model.level3.Gene;
 import org.biopax.paxtools.model.level3.Level3Element;
 import org.biopax.paxtools.model.level3.Named;
+import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.PhysicalEntity;
 import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.RelationshipXref;
@@ -52,7 +53,10 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.util.Filter;
 import org.biopax.paxtools.controller.ModelUtils;
+import org.biopax.paxtools.controller.SimpleEditorMap;
+import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.*;
 import org.biopax.validator.utils.Normalizer;
 import org.slf4j.Logger;
@@ -114,6 +118,13 @@ public final class Merger {
 	}
 	
 	public void merge() {
+		//using a SimpleMerger with Filter (ER) here (to merge ent. features, xrefs, etc.)
+		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, new Filter<BioPAXElement>() {		
+			public boolean filter(BioPAXElement object) {
+				return object instanceof EntityReference;
+			}
+		});
+		
 		// build models and merge from dataFile.premergeData
 		Collection<Metadata> providersMetadata = new ArrayList<Metadata>();
 		
@@ -134,7 +145,8 @@ public final class Merger {
 			//merge into the main model
 			log.info("Merging the updated and enriched '" + metadata.getIdentifier() + 
 					"' model into the main all-data BioPAX model...");
-			mainModel.merge(datasourceResultModel);
+			
+			simpleMerger.merge(mainModel, datasourceResultModel);
 		}
 		
 		//create or replace the main BioPAX archive
@@ -181,8 +193,6 @@ public final class Merger {
 			Model inputModel = (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream);
 			merge(pwdata.toString(), inputModel, targetModel);
 		}
-		
-		//TODO fix issue #205 (github.com/pathwaycommons/cpath2/issues) - merge same URI pathways
 			
 		log.info("Done merging " + metadata);
 		return targetModel;
@@ -338,6 +348,26 @@ public final class Merger {
 		log.info("Assigning new URIs (xml:base=" + xmlBase + 
 				"*) to all not normalized BioPAX elements (" + 
 				srcModelInfo + ", xml:base=" + source.getXmlBase() + ")...");
+		replaceTheRestOfUris(source, description, target);
+		
+		log.info("Merging into the target one-datasource BioPAX model...");
+		// merge all the elements and their children from the source to target model
+		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, new Filter<BioPAXElement>() {		
+			public boolean filter(BioPAXElement object) {
+				return object instanceof EntityReference
+						|| object instanceof Pathway;
+			}
+		});
+		simpleMerger.merge(target, source);
+		
+		log.info("Merge ("+srcModelInfo+") is done.");
+	}
+
+	/* 
+	 * Replace all not normalized so far URIs in the source model 
+	 * with auto-generated new short ones (also add a bp:comment about original URIs)
+	 */
+	private void replaceTheRestOfUris(Model source, String description, Model target) {
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
 		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
 			String currUri = bpe.getRDFId();
@@ -366,15 +396,8 @@ public final class Merger {
 			
 			// save original URI in comments
 			((Level3Element) bpe).addComment("REPLACED " + currUri);
-		}		
-		
-		log.info("Merging into the target one-datasource BioPAX model...");
-		// merge all the elements and their children from the source to target model
-		target.merge(source);
-		
-		log.info("Merge ("+srcModelInfo+") is done.");
+		}
 	}
-
 
 	private void copySomeOfPropertyValues(
 			Map<EntityReference, EntityReference> replacements) {
