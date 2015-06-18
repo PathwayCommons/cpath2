@@ -84,6 +84,12 @@ final class KeggHsaCleanerImpl implements Cleaner {
 					}
 				}
 			}
+			
+			String standardName = ent.getStandardName();
+			if(!(standardName == null || standardName.trim().isEmpty()) ) {
+				//replace shortened/truncated pathway names
+				ent.setDisplayName(standardName);
+			}
 		}
 		
 		// set standard URIs for selected entities

@@ -836,33 +836,36 @@ public final class Admin {
     			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "hgnc symbol");
     		}
     	});
-    	exec.execute(new Runnable() {
-    		public void run() {        	
-    			String archiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "hgnc");
-    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.BINARY_SIF, archiveName); //default to use HGNC symbols
-    		}
-    	});        			
     	
     	exec.execute(new Runnable() {
     		public void run() { 
-    			String archiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "hgnc");
-    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, archiveName); //default to use HGNC symbols
+    			String extSifArchiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "hgnc");
+    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, extSifArchiveName); //default to use HGNC symbols		
+    			//make BINARY_SIF from just generated EXTENDED_BINARY_SIF
+    			String sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "hgnc");
+    			try {
+					convertExtendedSifToSifGzipped(extSifArchiveName, sifArchiveName);
+				} catch (IOException e) {
+					LOG.error("Failed to convert " + extSifArchiveName + 
+						" to " + sifArchiveName + "; skipped", e );
+				}
     		}
     	});
 
-//    	exec.execute(new Runnable() {
-//    		public void run() { 
-//    			String archiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot");
-//    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.BINARY_SIF, archiveName, "uniprot");
-//    		}
-//    	});
-//    	
-//    	exec.execute(new Runnable() {
-//    		public void run() { 
-//    			String archiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "uniprot");
-//    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, archiveName, "uniprot");
-//    		}
-//    	});        	
+    	exec.execute(new Runnable() {
+    		public void run() { 
+    			String extSifArchiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "uniprot");
+    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, extSifArchiveName, "uniprot");
+    			//make BINARY_SIF from just generated EXTENDED_BINARY_SIF
+    			String sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot");
+    			try {
+    				convertExtendedSifToSifGzipped(extSifArchiveName, sifArchiveName);
+    			} catch (IOException e) {
+					LOG.error("Failed to convert " + extSifArchiveName + 
+						" to " + sifArchiveName + "; skipped", e );
+				}
+    		}
+    	});        	
     	
     	//TODO can SBGN   
 //    	exec.execute(new Runnable() {
@@ -877,6 +880,26 @@ public final class Admin {
     	exec.awaitTermination(36, TimeUnit.HOURS);
 	}
 
+	//reads from the extended sif archive up to the blank line and writes the interaction lines (edges) to the sif archive
+	private static void convertExtendedSifToSifGzipped(String extSifArchiveName, String sifArchiveName) throws IOException {
+		if((new File(sifArchiveName)).exists()) {
+			LOG.info("create-downloads: skip for existing " + sifArchiveName);
+			return;
+	    } 
+
+		LOG.info("create-downloads: generating new " + sifArchiveName);
+		BufferedReader reader = new BufferedReader(new InputStreamReader((new GZIPInputStream(new FileInputStream(extSifArchiveName)))));
+		OutputStreamWriter writer = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(sifArchiveName)));		
+		while(reader.ready()) {
+			String line = reader.readLine();
+			//stop at the first blank line (because next come nodes with attributes)
+			if(line.isEmpty()) 
+				break;
+			writer.write(line + '\n');
+		}		
+		reader.close();
+		writer.close();
+	}
 
 	private static Collection<String> findAllUris(Searcher searcher, 
     		Class<? extends BioPAXElement> type, String[] ds, String[] org) 
