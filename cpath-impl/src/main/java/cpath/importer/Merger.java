@@ -45,6 +45,7 @@ import org.biopax.paxtools.model.level3.Named;
 import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.PhysicalEntity;
 import org.biopax.paxtools.model.level3.ProteinReference;
+import org.biopax.paxtools.model.level3.PublicationXref;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
 import org.biopax.paxtools.model.level3.SmallMolecule;
@@ -149,11 +150,25 @@ public final class Merger {
 			simpleMerger.merge(mainModel, datasourceResultModel);
 		}
 		
+		//extra cleanup
+		cleanupXrefs(mainModel);
+		
 		//create or replace the main BioPAX archive
 		log.info("Saving or updating the Main BioPAX file...");
 		save();
 		
 		log.info("Complete.");
+	}
+
+	//remove bad unif. and rel. xrefs
+	private void cleanupXrefs(Model m) {
+		for(Xref x : new HashSet<Xref>(m.getObjects(Xref.class))) {
+			if(x instanceof PublicationXref)
+				continue;
+			if(x.getDb()==null || x.getDb().isEmpty() 
+				|| x.getId()==null || x.getId().isEmpty())
+					m.remove(x);
+		}
 	}
 
 	private Model merge(Metadata metadata) {
@@ -194,6 +209,8 @@ public final class Merger {
 			merge(pwdata.toString(), inputModel, targetModel);
 		}
 			
+		cleanupXrefs(targetModel);
+		
 		log.info("Done merging " + metadata);
 		return targetModel;
 	}
