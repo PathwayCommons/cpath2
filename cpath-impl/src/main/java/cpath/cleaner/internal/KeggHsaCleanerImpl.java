@@ -65,16 +65,7 @@ final class KeggHsaCleanerImpl implements Cleaner {
 							" unification xref is shared by several entities: "
 								+ x.getXrefOf());
 						
-						String rxUri = model.getXmlBase() + RelationshipXref.class.getSimpleName() + x.getId();
-						RelationshipXref rx = (RelationshipXref) model.getByID(rxUri);
-						if(rx == null) {
-							rx = model.addNew(RelationshipXref.class, rxUri);
-							rx.setDb(x.getDb());
-							rx.setId(x.getId());
-							rx.setIdVersion(x.getIdVersion());
-							rx.setDbVersion(x.getDbVersion());
-						}
-						
+						RelationshipXref rx = BaseCleaner.getOrCreateRxByUx(x, model);						
 						for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
 							if(owner.equals(newUriToEntityMap.get(uri)))
 								continue; //keep the entity to be updated unchanged

@@ -78,7 +78,7 @@ final class NetPathCleanerImpl implements Cleaner {
 				}
 				
 				String id = x.getId();
-				String uri = "UnificationXref_" + encode(x.getDb() + "_"+ id);
+				String uri = "UnificationXref_" + BaseCleaner.encode(x.getDb() + "_"+ id);
 				UnificationXref ux = (UnificationXref) model.getByID(uri);
 				if(ux == null) {
 					ux = model.addNew(UnificationXref.class, uri);
@@ -95,7 +95,7 @@ final class NetPathCleanerImpl implements Cleaner {
 		for(UnificationXref x : uxrefs) {
 			if(x.getXrefOf().size() > 1) {
 				//convert to RX, re-associate
-				RelationshipXref rx = getOrCreateRxByUx(x, model);
+				RelationshipXref rx = BaseCleaner.getOrCreateRxByUx(x, model);
 				for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
 					if(owner instanceof ControlledVocabulary)
 						continue; //CVs can use same UX, but that means they are to merge...
@@ -114,23 +114,5 @@ final class NetPathCleanerImpl implements Cleaner {
 		} catch (Exception e) {
 			throw new RuntimeException("clean(), Exception thrown while saving cleaned NetPath data", e);
 		}		
-	}
-    
-	private RelationshipXref getOrCreateRxByUx(UnificationXref x, Model model) {
-		String uri = "RelationshipXref_" + encode(x.getDb() + "_"+ x.getId());
-		RelationshipXref rx = (RelationshipXref) model.getByID(uri);
-		if(rx == null) { //make a new one
-			rx = model.addNew(RelationshipXref.class, uri);
-			rx.setDb(x.getDb());
-			rx.setId(x.getId());
-			rx.setIdVersion(x.getIdVersion());
-			rx.setDbVersion(x.getDbVersion());
-			rx.getComment().addAll(x.getComment());
-		}
-		return rx;
-	}
-
-	private String encode(String id) {
-		return id.replaceAll("[^-\\w]", "_");
 	}
 }

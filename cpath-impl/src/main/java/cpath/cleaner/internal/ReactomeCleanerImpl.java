@@ -34,7 +34,6 @@ import cpath.importer.Cleaner;
  * Can normalize URIs for Reactome Entity class objects 
  * to http://identifiers.org/reactome/REACT_* form
  * if the unification xref with the stable Reactome ID is attached. 
- * TODO add/remove features as needed, as reactome versions change...
  */
 final class ReactomeCleanerImpl implements Cleaner {
 	
@@ -70,17 +69,8 @@ final class ReactomeCleanerImpl implements Cleaner {
 						log.warn("Fixing Reactome: " + x.getId() + 
 							" unification xref is shared by several entities: "
 								+ x.getXrefOf());
-						
-						String rxUri = model.getXmlBase() + RelationshipXref.class.getSimpleName() + id;
-						RelationshipXref rx = (RelationshipXref) model.getByID(rxUri);
-						if(rx == null) {
-							rx = model.addNew(RelationshipXref.class, rxUri);
-							rx.setDb(x.getDb());
-							rx.setId(id);
-							rx.setIdVersion(x.getIdVersion());
-							rx.setDbVersion(x.getDbVersion());
-						}
-						
+							
+						RelationshipXref rx = BaseCleaner.getOrCreateRxByUx(x, model);
 						for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
 							if(owner.equals(newUriToEntityMap.get(uri)))
 								continue; //keep the entity to be updated unchanged
