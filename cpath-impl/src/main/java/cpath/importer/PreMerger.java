@@ -192,8 +192,7 @@ public final class PreMerger {
 							pipeline(metadata, content, cleaner, converter);
 						} catch (Exception e) {
 							metadata.getContent().remove(content);
-							log.warn("premerge(), removed " + content 
-									+ " due to error", e);
+							log.warn("premerge(), removed " + content + " due to error", e);
 						}		
 					}
 					

@@ -10,7 +10,6 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
-import org.biopax.paxtools.model.level3.InteractionVocabulary;
 import org.biopax.paxtools.model.level3.PublicationXref;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
@@ -34,6 +33,11 @@ final class InohCleanerImpl implements Cleaner {
 	{	
 		// create bp model from dataFile
 		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
+		simpleReader.mergeDuplicates(true); //there are objects with same URI in one file 
+		//(e.g., EventRelation_IER_0000004_id1634539774 in signaling_Growth_hormone_signaling.owl; similar issues in -  
+		//signaling_JAK_STAT_pathway_and_regulation.owl, /signaling_CD4_T_cell_receptor_signaling.owl, 
+		//signaling_CD4_T_cell_receptor_signaling-JNK_cascade-.owl, and signaling_CD4_T_cell_receptor_signaling-NFkB_cascade-.owl) 
+		
 		Model model = simpleReader.convertFromOWL(data);
 		log.info("Cleaning INOH data, please be patient...");
 

@@ -13,6 +13,7 @@ public final class PsimiConverterImpl extends BaseConverterImpl {
 			psimiConverter.convert(is, os, false);
 			os.close();
 		} catch (Exception e) {
+			e.printStackTrace(System.err);
 			throw new RuntimeException("Failed to convert PSI-MI to BioPAX", e);
 		}
 	}

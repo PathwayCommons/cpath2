@@ -100,9 +100,10 @@ public class HumanCycCleanerImpl implements Cleaner
 	{
 		for (Xref xr : model.getObjects(Xref.class))
 		{
-			if(xr.getDb() == null)
-				LOG.warn("Xref.db is NULL : " + xr.getRDFId());
-			else if(xr.getDb().equals("Entrez")) 
+			if(xr.getDb() == null) {
+				if(!(xr instanceof PublicationXref)) 
+					LOG.warn(xr.getModelInterface().getSimpleName() + ".db is NULL; " + xr.getRDFId());
+			} else if(xr.getDb().equals("Entrez")) 
 				xr.setDb("Protein GenBank Identifier");
 			else if(xr.getDb().equalsIgnoreCase("NCBI Taxonomy")) 
 				xr.setDb("taxonomy");
