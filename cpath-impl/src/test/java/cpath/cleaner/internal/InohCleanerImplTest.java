@@ -14,6 +14,7 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.Protein;
+import org.biopax.paxtools.model.level3.PublicationXref;
 import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.Xref;
@@ -53,12 +54,17 @@ public class InohCleanerImplTest {
 		
 		for(SimplePhysicalEntity spe : m.getObjects(SimplePhysicalEntity.class)) {		
 			for(Xref x : spe.getXref()) {
-				assertFalse(x.getDb().equalsIgnoreCase("UniProt"));
+				assertFalse("UniProt".equalsIgnoreCase(x.getDb()));
 			}
 		}
 		
 		for(UnificationXref x : m.getObjects(UnificationXref.class)) {
 			assertTrue(x.getXrefOf().size()==1 || x.getXrefOf().toString().contains("Vocabulary"));
+		}
+		
+		//make sure all "UniProt" PXs were gone (converted to RXs)
+		for(PublicationXref x : m.getObjects(PublicationXref.class)) {
+			assertFalse("UniProt".equalsIgnoreCase(x.getDb()));
 		}
 	}
 

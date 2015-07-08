@@ -2,7 +2,7 @@ package cpath.cleaner.internal;
 
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.RelationshipXref;
-import org.biopax.paxtools.model.level3.UnificationXref;
+import org.biopax.paxtools.model.level3.Xref;
 
 final class BaseCleaner {
 	
@@ -10,7 +10,7 @@ final class BaseCleaner {
 		throw new AssertionError("Not instantiable");
 	}
 	
-	static RelationshipXref getOrCreateRxByUx(UnificationXref x, Model model) {
+	static RelationshipXref getOrCreateRx(Xref x, Model model) {
 		final String xmlbase = (model.getXmlBase() != null) ? model.getXmlBase() : "";
 		String id = x.getId();
 		if(x.getIdVersion() != null) id += "." + x.getIdVersion();

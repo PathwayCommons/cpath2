@@ -95,7 +95,7 @@ final class NetPathCleanerImpl implements Cleaner {
 		for(UnificationXref x : uxrefs) {
 			if(x.getXrefOf().size() > 1) {
 				//convert to RX, re-associate
-				RelationshipXref rx = BaseCleaner.getOrCreateRxByUx(x, model);
+				RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);
 				for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
 					if(owner instanceof ControlledVocabulary)
 						continue; //CVs can use same UX, but that means they are to merge...

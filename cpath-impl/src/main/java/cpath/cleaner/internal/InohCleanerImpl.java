@@ -40,6 +40,17 @@ final class InohCleanerImpl implements Cleaner {
 		
 		Model model = simpleReader.convertFromOWL(data);
 		log.info("Cleaning INOH data, please be patient...");
+		
+		//convert "UniProt" PublichationXrefs (usually owned by some Evidence) to Rel.Xrefs.
+		for(PublicationXref x : new HashSet<PublicationXref>(model.getObjects(PublicationXref.class))) {
+			if("UniProt".equalsIgnoreCase(x.getDb())) {
+				RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);
+				for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
+					owner.removeXref(x);
+					owner.addXref(rx);
+				}
+			}
+		}
 
 		// move some of unification xrefs from physical entity to entity reference
 		for(SimplePhysicalEntity spe : new HashSet<SimplePhysicalEntity>(model.getObjects(SimplePhysicalEntity.class))) {			
@@ -61,7 +72,7 @@ final class InohCleanerImpl implements Cleaner {
 				}
 				
 				if(x instanceof UnificationXref) {
-					RelationshipXref rXref = BaseCleaner.getOrCreateRxByUx((UnificationXref)x, model);
+					RelationshipXref rXref = BaseCleaner.getOrCreateRx((UnificationXref)x, model);
 					spe.removeXref(x);
 					spe.addXref(rXref);
 				}
@@ -89,7 +100,7 @@ final class InohCleanerImpl implements Cleaner {
 		for(UnificationXref x : uxrefs) {
 			if(x.getXrefOf().size() > 1) {
 				//convert to RX, re-associate
-				RelationshipXref rx = BaseCleaner.getOrCreateRxByUx(x, model);
+				RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);
 				for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
 					if(owner instanceof ControlledVocabulary)
 						continue; //CVs can use same UX, but that means they are to merge...
