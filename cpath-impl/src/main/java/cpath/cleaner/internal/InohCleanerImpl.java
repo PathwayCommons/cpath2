@@ -10,6 +10,9 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
+import org.biopax.paxtools.model.level3.PhysicalEntity;
+import org.biopax.paxtools.model.level3.Protein;
+import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.PublicationXref;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
@@ -17,6 +20,7 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,35 +52,60 @@ final class InohCleanerImpl implements Cleaner {
 				for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
 					owner.removeXref(x);
 					owner.addXref(rx);
+					log.debug("replaced PX " + x + " with RX " + rx);
 				}
 			}
 		}
 
+		//TODO use PhysicalEntity instead SimplePhysicalEntity below to also fix for Complexes' xrefs!
 		// move some of unification xrefs from physical entity to entity reference
-		for(SimplePhysicalEntity spe : new HashSet<SimplePhysicalEntity>(model.getObjects(SimplePhysicalEntity.class))) {			
-			Set<Xref> xrefs = new HashSet<Xref>(spe.getXref());
-			for(Xref x : xrefs) {
-				if((x instanceof PublicationXref) || "INOH".equalsIgnoreCase(x.getDb()))
-						continue; //leave as/where it is
+		for(PhysicalEntity spe : new HashSet<PhysicalEntity>(model.getObjects(PhysicalEntity.class))) {			
+			Set<UnificationXref> xrefs = new ClassFilterSet<Xref,UnificationXref>(new HashSet<Xref>(spe.getXref()), UnificationXref.class);
+			Set<UnificationXref> proteinUniprotUnifXrefs = new HashSet<UnificationXref>();
+			//first pass (do not move/convert proteins' uniprot unif. xrefs yet)
+			for(UnificationXref x : xrefs) {
+				if("INOH".equalsIgnoreCase(x.getDb())) 
+					continue; //leave as/where it is
 				
 				if(x.getDb()==null || x.getId()==null) { //just in case there are some...
 					spe.removeXref(x);
-					log.info("removed bad xref: " + x + " from " + spe.getRDFId());
+					log.debug("removed bad xref: " + x + " from " + spe.getRDFId());
 					continue;
 				}
 				
-				if("UniProt".equalsIgnoreCase(x.getDb()) && spe.getEntityReference() != null) {
-					spe.removeXref(x);
-					spe.getEntityReference().addXref(x);
+				spe.removeXref(x);
+				
+				if("UniProt".equalsIgnoreCase(x.getDb()) && spe instanceof Protein) {
+					Protein p = (Protein) spe;
+					ProteinReference pr = (ProteinReference) p.getEntityReference();
+					if(pr == null) {
+						pr = model.addNew(ProteinReference.class, p.getRDFId()+"_ref");
+						p.setEntityReference(pr);
+						pr.getName().addAll(spe.getName());
+					}
+					proteinUniprotUnifXrefs.add(x);
 					continue;
 				}
-				
-				if(x instanceof UnificationXref) {
-					RelationshipXref rXref = BaseCleaner.getOrCreateRx((UnificationXref)x, model);
-					spe.removeXref(x);
-					spe.addXref(rXref);
-				}
+
+				RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);
+				spe.addXref(rx);
+				if(spe instanceof SimplePhysicalEntity && ((SimplePhysicalEntity)spe).getEntityReference() != null) {
+					((SimplePhysicalEntity)spe).getEntityReference().addXref(rx);
+				} 
 			}
+			
+			//second pass - process protein's uniprot unif. xrefs
+			//(if proteinUniprotUnifXrefs is not empty, then spe is a Protein that has not null PR;
+			// also, x was removed from the spe; see above)
+			for(UnificationXref x : proteinUniprotUnifXrefs) {
+				Protein p = (Protein) spe;
+				ProteinReference pr = (ProteinReference) p.getEntityReference();
+				if(proteinUniprotUnifXrefs.size() > 1) {
+					addMember(pr, x, model);
+				} else {
+					pr.addXref(x); //it's the only xref out there
+				}
+			}		
 		}
 		
 		//fix CV (InteractionVocabulary) terms that contain one of xref.id in them (e.g., "IEV_0000183:Transcription")
@@ -87,7 +116,7 @@ final class InohCleanerImpl implements Cleaner {
 						cv.removeTerm(term);
 						String newTerm = term.substring(xref.getId().length()+1);
 						cv.addTerm(newTerm);
-						log.info("replaced term '"+term+"' with '"+newTerm+"' in " + cv);
+						log.debug("replaced term '"+term+"' with '"+newTerm+"' in " + cv);
 						continue terms;
 					}
 				}
@@ -107,7 +136,7 @@ final class InohCleanerImpl implements Cleaner {
 					owner.removeXref(x);
 					owner.addXref(rx);
 				}			
-				log.info("replaced UnificationXref " + x + " with RX " + rx);
+				log.debug("replaced UnificationXref " + x + " with RX " + rx);
 			}
 		}
 		
@@ -119,5 +148,24 @@ final class InohCleanerImpl implements Cleaner {
 		} catch (Exception e) {
 			throw new RuntimeException("clean(), Exception thrown while saving cleaned NetPath data", e);
 		}		
+	}
+
+	/*
+	 * Creates or gets a member ProteinReference from the (UniProt) 
+	 * UnificationXref and adds it to the existing ProteinReference.
+	 */
+    private void addMember(ProteinReference pr, UnificationXref x, Model model) {
+    	final String xmlbase = (model.getXmlBase() != null) ? model.getXmlBase() : "";
+		String id = x.getId();
+		if(x.getIdVersion() != null) id += "." + x.getIdVersion();
+		String db = x.getDb();
+		if(x.getDbVersion() != null) db += "." + x.getDbVersion();
+		String uri = xmlbase + "memberPR_" + BaseCleaner.encode(db + "_"+ id);		
+		ProteinReference mpr = (ProteinReference) model.getByID(uri);
+		if(mpr == null) { //make a new one
+			mpr = model.addNew(ProteinReference.class, uri);
+			mpr.addXref(x);
+		}	
+		pr.addMemberEntityReference(mpr);
 	}
 }
