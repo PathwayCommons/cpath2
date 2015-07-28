@@ -8,13 +8,13 @@
 <footer class="footer">
 	<div id="footer_navbar" class="navbar navbar-default navbar-fixed-bottom">
           <div class="container">	
-			<security:authorize ifAnyGranted="ROLE_USER">
+			<security:authorize access="hasAnyRole('ROLE_ADMIN','ROLE_USER')">
 			  <p class="navbar-text navbar-left">Logged as &quot;
 			    <strong>
 			      <security:authentication property="principal.username"/>&quot;
-				  <security:authorize ifAnyGranted="ROLE_ADMIN"> (Administrator) </security:authorize>
+				  <security:authorize access="hasRole('ROLE_ADMIN')"> (Administrator) </security:authorize>
 				</strong>
-				<a href="<c:url value='/j_spring_security_logout' />">Log Out</a>
+				<a href="<c:url value='/logout' />">Log Out</a>
 			  </p>
 			</security:authorize>
 			  <p class="navbar-text navbar-left">

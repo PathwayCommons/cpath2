@@ -37,7 +37,7 @@
 			<li>We can also generate a BioPAX sub-model and convert to the simple formats on your special request: 
 				select sources, add columns (for SIF) or description (for GSEA), select binary interaction types and output ID type. 
 				One can also do it with <a href="http://www.biopax.org/paxtools">Paxtools</a>, 
-				one of the BioPAX files and blacklist.txt (to ignore ubiquitous small molecules).</li>			
+				one of the BioPAX files and blacklist.txt (to ignore ubiquitous small molecules).</li>
 		</ul>
 		
 		<h3>Files</h3>

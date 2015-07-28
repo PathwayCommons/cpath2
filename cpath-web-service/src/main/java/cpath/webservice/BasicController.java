@@ -31,8 +31,11 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -47,6 +50,7 @@ import cpath.service.ErrorResponse;
 import cpath.service.Status;
 import cpath.service.jaxb.*;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -176,7 +180,18 @@ public abstract class BasicController {
 				log.error("LogUtils.log failed", ex);
 			}
 			
-			writer.write(dresp.getData().toString());
+			if(dresp.getData() instanceof Path) {
+				File resultFile = ((Path) dresp.getData()).toFile();//this is some temp. file
+				response.setHeader("Content-Length", String.valueOf(resultFile.length()));
+				FileReader reader = new FileReader(resultFile);
+				IOUtils.copyLarge(reader, writer);
+				response.flushBuffer();
+				reader.close();
+				resultFile.delete();
+			} else {
+				writer.write(dresp.getData().toString());
+				response.flushBuffer();
+			}
 		}
 	}
 

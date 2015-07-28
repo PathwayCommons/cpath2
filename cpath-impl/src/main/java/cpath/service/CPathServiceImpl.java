@@ -107,8 +107,6 @@ public class CPathServiceImpl implements CPathService {
 	
 	private SimpleIOHandler simpleIO;
 	
-	private Cloner cloner;
-	
 	//init. on first access to getBlacklist(); so do not use it directly
 	private Blacklist blacklist; 
 	
@@ -121,7 +119,6 @@ public class CPathServiceImpl implements CPathService {
 	public CPathServiceImpl() {
 		this.simpleIO = new SimpleIOHandler(BioPAXLevel.L3);
 		this.simpleIO.mergeDuplicates(true);
-		this.cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
 	}
 
 
@@ -217,6 +214,7 @@ public class CPathServiceImpl implements CPathService {
 			elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel); 
 			assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
 
+			Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
 			Model m = cloner.clone(paxtoolsModel, elements);
 			m.setXmlBase(paxtoolsModel.getXmlBase());
 			return convert(m, format);
@@ -246,7 +244,7 @@ public class CPathServiceImpl implements CPathService {
 	
 	@Override
 	public ServiceResponse getNeighborhood(final OutputFormat format, 
-		final String[] sources, final Integer limit, Direction direction, 
+		final String[] sources, Integer limit, Direction direction, 
 		final String[] organisms, final String[] datasources)
 	{
 		if(!paxtoolsModelReady()) 
@@ -255,8 +253,15 @@ public class CPathServiceImpl implements CPathService {
 		final String[] src = findUrisByIds(sources);
 
 		if(direction == null) {
-			direction = Direction.UNDIRECTED;	
+			direction = Direction.UNDIRECTED;
 		}
+		
+//		if(direction == Direction.UNDIRECTED) {
+//			// TODO let's restrict to 1 in this case, 
+//			// to avoid huge unmanageable (by the web controller) results, 
+//			//until we find a better solution
+//			limit = 1; 
+//		}
 		
 		// execute the paxtools graph query
 		try {
@@ -271,9 +276,10 @@ public class CPathServiceImpl implements CPathService {
 			elements = QueryExecuter.runNeighborhood(elements, paxtoolsModel,
 					limit, direction, createFilters(organisms, datasources));
 
-			if(elements != null) {
+			if(elements != null && !elements.isEmpty()) {
 				// auto-complete (gets a reasonable size sub-model)
 				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
 				Model m = cloner.clone(paxtoolsModel, elements);
 				m.setXmlBase(paxtoolsModel.getXmlBase());
 				return convert(m, format);
@@ -314,6 +320,7 @@ public class CPathServiceImpl implements CPathService {
 			// auto-complete (gets a reasonable size sub-model)
 			if(elements != null) {
 				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
 				Model m = cloner.clone(paxtoolsModel, elements);
 				m.setXmlBase(paxtoolsModel.getXmlBase());
 				return convert(m, format);
@@ -364,6 +371,7 @@ public class CPathServiceImpl implements CPathService {
 					if(elements != null) {
 						// auto-complete (gets a reasonable size sub-model)
 						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+						Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
 						Model m = cloner.clone(paxtoolsModel, elements);
 						m.setXmlBase(paxtoolsModel.getXmlBase());
 						return convert(m, format);
@@ -420,6 +428,7 @@ public class CPathServiceImpl implements CPathService {
 			if(elements != null) {
 				// auto-complete (gets a reasonable size sub-model)
 				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
 				Model m = cloner.clone(paxtoolsModel, elements);
 				m.setXmlBase(paxtoolsModel.getXmlBase());
 				return convert(m, format);

@@ -19,7 +19,7 @@
 
   <h2>Data Sources</h2>
   
-  <security:authorize ifNotGranted="ROLE_ADMIN">
+  <security:authorize access="!hasAnyRole('ROLE_ADMIN')">
   <!-- the explanation below is not needed for Administrators -->
   <div class="row">
    <div class="jumbotron">
@@ -51,7 +51,7 @@
   </div>
  </security:authorize>
 
-  <security:authorize ifAnyGranted="ROLE_ADMIN">
+  <security:authorize access="hasRole('ROLE_ADMIN')">
   <div class="row">
     <form name="fds" class="form-inline" ng-submit="newDatasource()" novalidate>
      <div class="form-group" ng-class="{ 'has-error' : fds.did.$invalid && fds.did.$dirty }">
@@ -78,7 +78,7 @@ all the metadata's attributes are in-place editable,
 and there are action buttons (delete,save,upload, etc.), and input validation;
 for regular users, - show the compact read-only summary of the data providers -->	
 	<div ng-repeat="ds in datasources" class="row">
-		 <security:authorize ifAnyGranted="ROLE_ADMIN">
+		 <security:authorize access="hasRole('ROLE_ADMIN')">
 			<div class="thumbnail">
       			<div class="caption">
         			<h3>
@@ -166,7 +166,7 @@ for regular users, - show the compact read-only summary of the data providers --
 			</div>
 		</security:authorize>
 
-		<security:authorize ifNotGranted="ROLE_ADMIN">
+		<security:authorize access="!hasAnyRole('ROLE_ADMIN')">
 			<div class="thumbnail">
       			<div class="caption">
         			<h3>

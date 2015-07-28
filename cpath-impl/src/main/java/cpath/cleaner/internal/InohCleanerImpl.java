@@ -9,13 +9,16 @@ import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.model.level3.Control;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
+import org.biopax.paxtools.model.level3.PathwayStep;
 import org.biopax.paxtools.model.level3.PhysicalEntity;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.model.level3.ProteinReference;
 import org.biopax.paxtools.model.level3.PublicationXref;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
+import org.biopax.paxtools.model.level3.TemplateReaction;
 import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.model.level3.XReferrable;
@@ -137,6 +140,19 @@ final class InohCleanerImpl implements Cleaner {
 					owner.addXref(rx);
 				}			
 				log.debug("replaced UnificationXref " + x + " with RX " + rx);
+			}
+		}
+		
+		//remove all TRs where template is null (due to illegal property range, Complex values were ignored by the reader)
+		for(TemplateReaction tr : new HashSet<TemplateReaction>(model.getObjects(TemplateReaction.class))) {
+			if(tr.getTemplate() == null) {
+				model.remove(tr);
+				for(PathwayStep ps : new HashSet<PathwayStep>(tr.getStepProcessOf())) {
+					ps.removeStepProcess(tr);
+				}		
+				for(Control co : new HashSet<Control>(tr.getControlledOf())) {
+					co.removeControlled(tr);
+				}
 			}
 		}
 		

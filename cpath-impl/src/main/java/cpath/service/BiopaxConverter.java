@@ -29,6 +29,8 @@
 package cpath.service;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 import org.biopax.paxtools.io.gsea.GSEAConverter;
@@ -145,16 +147,23 @@ public class BiopaxConverter {
     	
 		// otherwise, convert, return a new DataResponse
     	// (can contain up to ~ 1Gb unicode string data)
-    	ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    	//TODO use a TMP File instead of byte array, set the file path as dataResponse.data value
+    	File tmpFile = null;
     	try {
-    		convert(m, format, baos, args);			
+    		Path tmpFilePath = Files.createTempFile("cpath2", "");
+    		tmpFile = tmpFilePath.toFile();
+    		tmpFile.deleteOnExit();
+        	OutputStream os = new FileOutputStream(tmpFile);
+    		convert(m, format, os, args); //os gets auto-closed there		
     		DataResponse dataResponse = new DataResponse();
-			dataResponse.setData(baos.toString());		
+			dataResponse.setData(tmpFilePath);
 			// extract and save data provider names
 			dataResponse.setProviders(providers(m));			
 			return dataResponse;
 		}
         catch (Exception e) {
+        	if(tmpFile != null)
+        		tmpFile.delete();
         	return new ErrorResponse(INTERNAL_ERROR, e);
 		}
     }

@@ -19,7 +19,7 @@
 			  </div>              
               <div class="collapse navbar-collapse pull-right" id="top-navbar-collapse">
                   <ul class="nav navbar-nav">
- 		  			<security:authorize ifAnyGranted="ROLE_ADMIN">
+ 		  			<security:authorize access="hasRole('ROLE_ADMIN')">
 					  <li><a rel="nofollow" href='<c:url value="/admin"/>'>Admin</a></li>
 					</security:authorize>
 					<li class="dropdown">
