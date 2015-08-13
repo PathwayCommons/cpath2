@@ -1,4 +1,6 @@
-# cPath2 #
+# cPath2
+
+[![Build Status](https://travis-ci.org/PathwayCommons/cpath2.svg?branch=master)](https://travis-ci.org/PathwayCommons/cpath2)
 
 A pathway data integration and query platform for [Pathway Commons](http://www.pathwaycommons.org) (PC). 
 
