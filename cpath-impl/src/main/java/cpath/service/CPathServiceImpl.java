@@ -184,7 +184,7 @@ public class CPathServiceImpl implements CPathService {
 			return hits;
 			
 		} catch (Exception e) {
-			log.error("search() failed", e);
+			log.error("search() failed - " + e);
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
 		

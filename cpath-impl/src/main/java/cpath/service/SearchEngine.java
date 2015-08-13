@@ -225,9 +225,9 @@ public class SearchEngine implements Indexer, Searcher {
 			}	
 			
 		} catch (ParseException e) {
-			throw new RuntimeException("getTopDocs: failed to parse the query string.", e);
+			throw new RuntimeException("getTopDocs: failed to parse the search query: " + e);
 		} catch (IOException e) {
-			throw new RuntimeException("getTopDocs: failed.", e);
+			throw new RuntimeException("getTopDocs: failed: " + e);
 		} finally {
 			try {
 				if(searcher!=null) {

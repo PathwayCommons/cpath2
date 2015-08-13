@@ -165,9 +165,14 @@ public final class Merger {
 		for(Xref x : new HashSet<Xref>(m.getObjects(Xref.class))) {
 			if(x instanceof PublicationXref)
 				continue;
+			//remove from the model
 			if(x.getDb()==null || x.getDb().isEmpty() 
 				|| x.getId()==null || x.getId().isEmpty())
 					m.remove(x);
+			//remove from properties
+			for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
+				owner.removeXref(x);
+			}
 		}
 	}
 
@@ -654,7 +659,8 @@ public final class Merger {
 		else if(xSet.size()>1)
 			return new TreeSet<String>(xSet);
 		else {
-			log.info(orig.getRDFId() + ", using its " + xrefType.getSimpleName() 
+			if(log.isDebugEnabled())
+				log.debug(orig.getRDFId() + ", using its " + xrefType.getSimpleName() 
 					+ "s, distinctly maps to: " + xSet.iterator().next());
 			return xSet;
 		}

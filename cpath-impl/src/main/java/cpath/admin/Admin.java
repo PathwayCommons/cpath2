@@ -828,11 +828,7 @@ public final class Admin {
     		public void run() {	
     			String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "uniprot");
     			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName); //default to use uniprot AC
-    		}
-    	});	
-    	exec.execute(new Runnable() {
-    		public void run() {	
-    			String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "hgnc");
+    			archiveName = prefix + formatAndExt(OutputFormat.GSEA, "hgnc");
     			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "hgnc symbol");
     		}
     	});
@@ -849,15 +845,10 @@ public final class Admin {
 					LOG.error("Failed to convert " + extSifArchiveName + 
 						" to " + sifArchiveName + "; skipped", e );
 				}
-    		}
-    	});
-
-    	exec.execute(new Runnable() {
-    		public void run() { 
-    			String extSifArchiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "uniprot");
+    			extSifArchiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "uniprot");
     			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, extSifArchiveName, "uniprot");
     			//make BINARY_SIF from just generated EXTENDED_BINARY_SIF
-    			String sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot");
+    			sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot");
     			try {
     				convertExtendedSifToSifGzipped(extSifArchiveName, sifArchiveName);
     			} catch (IOException e) {

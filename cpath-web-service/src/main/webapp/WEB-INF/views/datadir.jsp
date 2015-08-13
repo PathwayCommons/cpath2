@@ -16,7 +16,7 @@
 		<dl>
 			<c:forEach var="f" items="${files}">
 				<dt>
-				<a href='<c:url value="/datadir/${f.key}"/>'>${f.key}</a>
+				<a rel="nofollow" href='<c:url value="/datadir/${f.key}"/>'>${f.key}</a>
 				</dt><dd>(${f.value})</dd>
 			</c:forEach>
 		</dl>
