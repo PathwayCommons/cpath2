@@ -819,8 +819,8 @@ public final class Admin {
 
 
 	private static void exportBiopaxToOutputFormats(final Model m, final String prefix) 
-			throws InterruptedException {
-	
+			throws InterruptedException
+	{
 		//concurrent conversions (different conversions of the same big Model)
 		ExecutorService exec = Executors.newCachedThreadPool();
 		
@@ -828,10 +828,15 @@ public final class Admin {
     		public void run() {	
     			String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "uniprot");
     			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName); //default to use uniprot AC
-    			archiveName = prefix + formatAndExt(OutputFormat.GSEA, "hgnc");
-    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "hgnc symbol");
     		}
     	});
+
+		exec.execute(new Runnable() {
+			public void run() {
+				String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "hgnc");
+				convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "hgnc symbol");
+			}
+		});
     	
     	exec.execute(new Runnable() {
     		public void run() { 
@@ -845,30 +850,27 @@ public final class Admin {
 					LOG.error("Failed to convert " + extSifArchiveName + 
 						" to " + sifArchiveName + "; skipped", e );
 				}
-    			extSifArchiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "uniprot");
-    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, extSifArchiveName, "uniprot");
-    			//make BINARY_SIF from just generated EXTENDED_BINARY_SIF
-    			sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot");
-    			try {
-    				convertExtendedSifToSifGzipped(extSifArchiveName, sifArchiveName);
-    			} catch (IOException e) {
-					LOG.error("Failed to convert " + extSifArchiveName + 
-						" to " + sifArchiveName + "; skipped", e );
-				}
     		}
-    	});        	
-    	
-    	//TODO can SBGN   
-//    	exec.execute(new Runnable() {
-//    		public void run() { 
-//    			String archiveName = prefix + formatAndExt(OutputFormat.SBGN, null);
-//            	convertBiopaxToOtherFormatGzipped(m, OutputFormat.SBGN, archiveName); //default: layout==true
-//    		}
-//    	}); 
+    	});
 
-    	exec.shutdown(); //no more tasks
+		exec.execute(new Runnable() {
+			public void run() {
+				String extSifArchiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "uniprot");
+				convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, extSifArchiveName, "uniprot");
+				//make BINARY_SIF from just generated EXTENDED_BINARY_SIF
+				String sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot");
+				try {
+					convertExtendedSifToSifGzipped(extSifArchiveName, sifArchiveName);
+				} catch (IOException e) {
+					LOG.error("Failed to convert " + extSifArchiveName +
+							" to " + sifArchiveName + "; skipped", e );
+				}
+			}
+		});
+
+		exec.shutdown(); //no more tasks
     	//wait until it's done or expired
-    	exec.awaitTermination(36, TimeUnit.HOURS);
+    	exec.awaitTermination(60, TimeUnit.HOURS);
 	}
 
 	//reads from the extended sif archive up to the blank line and writes the interaction lines (edges) to the sif archive

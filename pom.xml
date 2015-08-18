@@ -157,7 +157,6 @@
 		<querydsl.version>3.6.6</querydsl.version>
 		<ehcache-core.version>2.6.11</ehcache-core.version>
 		<paxtools.version>[4.3.1-SNAPSHOT,5)</paxtools.version>
-		<biopax-pattern.version>[2.0.0-SNAPSHOT,3)</biopax-pattern.version>
 		<validator.version>[4.0.0-SNAPSHOT,5)</validator.version>
 		<junit.version>4.11</junit.version>
 		<commons-lang.version>2.6</commons-lang.version>
@@ -407,13 +406,12 @@
 	</build>
 
 	<repositories>
-		<!-- we'd remove repos below if everything were on OSSRH and Maven Central... -->
         <repository>
             <id>ossrh</id>
             <name>OSSRH Repository</name>
             <url>https://oss.sonatype.org/content/groups/public/</url>
         </repository>
-		<repository>
+<!--		<repository>
 			<id>biopax.snapshots</id>
 			<name>BioPAX Snapshots Repository at Sourceforge</name>
 			<url>http://www.biopax.org/m2repo/snapshots/</url>
@@ -421,6 +419,7 @@
 				<enabled>false</enabled>
 			</releases>
 		</repository>
+-->
 	</repositories>
 
 	<dependencyManagement>
@@ -514,7 +513,7 @@
         	<dependency>
                 <groupId>org.biopax.paxtools</groupId>
                 <artifactId>pattern</artifactId>
-                <version>${biopax-pattern.version}</version>
+                <version>${paxtools.version}</version>
                 <exclusions>
 					<exclusion>
 						<groupId>commons-logging</groupId>
