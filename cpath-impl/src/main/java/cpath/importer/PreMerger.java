@@ -540,8 +540,6 @@ public final class PreMerger {
 		normalizer.setXmlBase(xmlBase);
 		// to infer/auto-fix biopax properties
 		normalizer.setFixDisplayName(true); // important
-		normalizer.setInferPropertyDataSource(false); // not important since we started generating Provenance from Metadata
-		normalizer.setInferPropertyOrganism(true); // important (for filtering by organism)
 		normalizer.setDescription(title);
 		
 		// because errors are also reported during the import (e.g., syntax)
