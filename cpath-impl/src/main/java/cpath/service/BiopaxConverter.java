@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 
+import cpath.config.CPathSettings;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
 import org.biopax.paxtools.io.sbgn.L3ToSBGNPDConverter;
 import org.biopax.paxtools.io.sbgn.ListUbiqueDetector;
@@ -205,9 +206,21 @@ public class BiopaxConverter {
 	{	
 		if(outputIdType==null || outputIdType.isEmpty())
 			outputIdType = "uniprot";
-		
+
+		//Using the model and cPath2 instance properties,
+		//prepare a list of Provenance to skip traversing into sub-pathways of:
+		Set<Provenance> skipSubPathwaysOf = new HashSet();
+		for(String mid : CPathSettings.getInstance().getMetadataIdsForGseaSkipSubPathways()) {
+			Provenance pro = (Provenance) m.getByID(CPathSettings.getInstance().getXmlBase()+mid);
+			if(pro != null) skipSubPathwaysOf.add(pro);
+		}
+
+		if(log.isDebugEnabled() && !skipSubPathwaysOf.isEmpty()) {
+			log.debug("GSEAConverter, using skipSubPathwaysOf argument, value: " + skipSubPathwaysOf.toString());
+		}
+
 		// convert, replace DATA
-		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true);
+		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true, skipSubPathwaysOf);
 		gseaConverter.writeToGSEA(m, stream);
 	}
 

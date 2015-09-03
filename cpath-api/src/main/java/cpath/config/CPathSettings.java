@@ -133,11 +133,15 @@ public final class CPathSettings {
     public static final String PROVIDER_URL = "cpath2.provider.url";
 	public static final String PROVIDER_LOGO_URL = "cpath2.provider.logo.url";
 	public static final String PROVIDER_ORGANISMS = "cpath2.provider.organisms";
-	
+	// Metadata identifiers for corresponding pathways
+	// the GSEA converter should not traverse into subpathways
+	public static final String PROP_GSEA_SKIPSUBPATHWAYS = "cpath2.gsea.skipSubPathways";
+
 	//properties to set the default global start/end dates for all the access log timeline queries;
 	//These may be ignored if another range is set via web api (per query)
 	public static final String PROP_LOG_START = "cpath2.log.start"; //e.g., "2015-01-01"
 	public static final String PROP_LOG_END = "cpath2.log.end"; //e.g., "2015-12-31"
+
 	private static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 	
 	/**
@@ -167,7 +171,7 @@ public final class CPathSettings {
 		defaults.put(PROP_DEBUG_ENABLED, "false");
 		defaults.put(PROP_ADMIN_ENABLED, "false");
 		//PROP_LOG_START and PROP_LOG_END are null - queries will use current-year, current dates
-		
+
 		settings = new Properties(defaults);
 		
 		loadCPathProperties();
@@ -257,6 +261,19 @@ public final class CPathSettings {
 		setCPathProperty(PROVIDER_ORGANISMS, StringUtils.join(organisms, ','));
 	}
 
+	/**
+	 *
+	 *
+	 * @return
+	 */
+	public String[] getMetadataIdsForGseaSkipSubPathways() {
+		String metadataIds = property(PROP_GSEA_SKIPSUBPATHWAYS);
+		return metadataIds.split("\\s*,\\s*");
+	}
+
+	public void MetadataIdsForGseaSkipSubPathways(String[] metadataIds) {
+		setCPathProperty(PROP_GSEA_SKIPSUBPATHWAYS, StringUtils.join(metadataIds, ','));
+	}
 	
 	/**
 	 * This cPath2 instance version
