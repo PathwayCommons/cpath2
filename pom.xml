@@ -194,7 +194,7 @@
 		<doxia-integration-tools.version>1.6</doxia-integration-tools.version>
 		<wagon-ssh.version>2.8</wagon-ssh.version>
 		<wagon-scm.version>2.8</wagon-scm.version>
-		<site-maven-plugin.version>0.11</site-maven-plugin.version>
+		<site-maven-plugin.version>0.12</site-maven-plugin.version>
 		<github.global.server>github</github.global.server>	
 	</properties>
 
@@ -410,15 +410,6 @@
             <name>OSSRH Repository</name>
             <url>https://oss.sonatype.org/content/groups/public/</url>
         </repository>
-<!--		<repository>
-			<id>biopax.snapshots</id>
-			<name>BioPAX Snapshots Repository at Sourceforge</name>
-			<url>http://www.biopax.org/m2repo/snapshots/</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</repository>
--->
 	</repositories>
 
 	<dependencyManagement>

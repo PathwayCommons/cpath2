@@ -84,10 +84,9 @@ public class BiopaxConverter {
      * 
      * @param m paxtools model
      * @param format output format
-     * @param os
+     * @param os output stream
      * @param args optional format-specific parameters
-     * 
-	 * @throws IOException 
+	 * @throws IOException when an error occurs while writing to the output stream
      */
     public void convert(Model m, OutputFormat format, OutputStream os, Object... args) 
     		throws IOException 
@@ -97,13 +96,13 @@ public class BiopaxConverter {
 				new SimpleIOHandler().convertToOWL(m, os);
 				break;
 			case BINARY_SIF:
-				String db = null; //default: will use HGNC (Symbol)
+				String db = null; //default: will use HGNC Symbol
 				if (args.length > 0 && args[0] instanceof String)
 					db = (String) args[0];
 				convertToBinarySIF(m, os, false, db);
 				break;
 			case EXTENDED_BINARY_SIF:
-				db = null; //default: will use HGNC (Symbol)
+				db = null; //default: will use HGNC Symbol
 				if (args.length > 0 && args[0] instanceof String)
 					db = (String) args[0];
 				convertToBinarySIF(m, os, true, db);
@@ -173,12 +172,12 @@ public class BiopaxConverter {
     /**
      * Converts a BioPAX Model to SBGN format.
      *
-     * @param m
-     * @param stream
-     * @param blackList
-     * @param doLayout
+     * @param m BioPAX object model to convert
+     * @param stream output stream for the SBGN-ML result
+     * @param blackList skip-list of ubiquitous small molecules
+     * @param doLayout whether to apply the default layout or not
      * 
-     * @throws IOException
+     * @throws IOException when there is an output stream writing error
      */
     public void convertToSBGN(Model m, OutputStream stream, Blacklist blackList, boolean doLayout)
 		throws IOException
@@ -196,10 +195,10 @@ public class BiopaxConverter {
 	 * a not empty BioPAX Model to GSEA format.
 	 * 
      * @param m paxtools model
-     * @param stream
+     * @param stream output stream
 	 * @param outputIdType output identifiers type (db name, is data-specific, the default is UniProt)
 	 * 
-	 * @throws IOException 
+	 * @throws IOException when there is an output stream writing error
 	 */
 	public void convertToGSEA(Model m, OutputStream stream, String outputIdType) 
 			throws IOException 
@@ -232,11 +231,11 @@ public class BiopaxConverter {
 	 * This method is primarily designed for the web service.
 	 * 
      * @param m biopax paxtools to convert
-     * @param out
+     * @param out stream
      * @param extended if true, calls SIFNX else - SIF
 	 * @param db - either 'uniprot' or null (then HGNC symbols will be used by default)
 	 * 
-	 * @throws IOException 
+	 * @throws IOException when there is an output stream writing error
 	 */
 	public void convertToBinarySIF(Model m, OutputStream out, boolean extended, String db) 
 			throws IOException 
@@ -265,7 +264,7 @@ public class BiopaxConverter {
 	 * The list of datasources (data providers)
 	 * the BioPAX model contains.
 	 * 
-	 * @param m
+	 * @param m BioPAX object model
 	 */
 	@SuppressWarnings("unchecked")
 	private Set<String> providers(Model m) {

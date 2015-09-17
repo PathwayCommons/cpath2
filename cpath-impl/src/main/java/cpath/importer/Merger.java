@@ -112,17 +112,18 @@ public final class Merger {
 	/**
 	 * Gets the main BioPAX model, where all other 
 	 * by-datasource models are to be (or have been already) merged.
-	 * @return
+	 * @return the main BioPAX model
 	 */
 	public Model getMainModel() {
 		return mainModel;
 	}
 	
 	public void merge() {
-		//using a SimpleMerger with Filter (ER) here (to merge ent. features, xrefs, etc.)
+		//using a SimpleMerger with Filter (ERs,Pathways) here (to merge ent. features, xrefs, comments, etc.)
 		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, new Filter<BioPAXElement>() {		
 			public boolean filter(BioPAXElement object) {
-				return object instanceof EntityReference;
+				return object instanceof EntityReference || object instanceof Pathway;
+				//though, normally, pathways in different source models have different URIs and never merge/clash...
 			}
 		});
 		
@@ -152,6 +153,7 @@ public final class Merger {
 		
 		//extra cleanup
 		cleanupXrefs(mainModel);
+		ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
 		
 		//create or replace the main BioPAX archive
 		log.info("Saving or updating the Main BioPAX file...");
@@ -163,15 +165,15 @@ public final class Merger {
 	//remove bad unif. and rel. xrefs
 	private void cleanupXrefs(Model m) {
 		for(Xref x : new HashSet<Xref>(m.getObjects(Xref.class))) {
-			if(x instanceof PublicationXref)
-				continue;
-			//remove from the model
-			if(x.getDb()==null || x.getDb().isEmpty() 
-				|| x.getId()==null || x.getId().isEmpty())
+			if(!(x instanceof PublicationXref)) {
+				//remove bad xrefs from the model and properties
+				if (x.getDb() == null || x.getDb().isEmpty() || x.getId() == null || x.getId().isEmpty()) {
 					m.remove(x);
-			//remove from properties
-			for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
-				owner.removeXref(x);
+					//remove from properties
+					for (XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
+						owner.removeXref(x);
+					}
+				}
 			}
 		}
 	}
@@ -215,6 +217,7 @@ public final class Merger {
 		}
 			
 		cleanupXrefs(targetModel);
+		ModelUtils.removeObjectsIfDangling(targetModel, UtilityClass.class);
 		
 		log.info("Done merging " + metadata);
 		return targetModel;
@@ -258,8 +261,8 @@ public final class Merger {
 	 * canonical warehouse or previously existing target ones). 
 	 * 
 	 * @param description datasource (metadata) description
-	 * @param source
-	 * @param target
+	 * @param source input model
+	 * @param target model to merge into
 	 */
 	void merge(final String description, final Model source, final Model target) {	
 		
@@ -272,7 +275,7 @@ public final class Merger {
 			
 		log.info("Searching for canonical or existing EntityReference objects " +
 				" to replace equivalent original objects ("+srcModelInfo+")...");
-		final Map<EntityReference, EntityReference> replacements = new HashMap<EntityReference, EntityReference>();		
+		final Map<EntityReference, EntityReference> replacements = new HashMap<EntityReference, EntityReference>();
 		// match some UtilityClass objects to existing ones (previously imported, warehouse)
 		for (EntityReference bpe: new HashSet<EntityReference>(source.getObjects(EntityReference.class))) 
 		{
@@ -376,13 +379,11 @@ public final class Merger {
 		// merge all the elements and their children from the source to target model
 		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, new Filter<BioPAXElement>() {		
 			public boolean filter(BioPAXElement object) {
-				return object instanceof EntityReference
-						|| object instanceof Pathway;
+				return object instanceof EntityReference || object instanceof Pathway;
 			}
 		});
 		simpleMerger.merge(target, source);
-		
-		log.info("Merge ("+srcModelInfo+") is done.");
+		log.info("Merged '" + srcModelInfo + "' model.");
 	}
 
 	/* 
@@ -715,10 +716,8 @@ public final class Merger {
 	 * to the original one and has standard URI and properties, 
 	 * which allows to simply merge it with other semantically equivalent ones, by ID (URI).
 	 * 
-	 * @param orig
-	 * @param target
-	 * @param type
-	 * @return the replacement object or null if none can found
+	 * @param orig original reference small molecule
+	 * @return the replacement standard object or null if not found/matched
 	 */
 	private SmallMoleculeReference findOrCreateSmallMoleculeReference(final SmallMoleculeReference orig) 
 	{				

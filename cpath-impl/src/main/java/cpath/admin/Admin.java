@@ -846,9 +846,8 @@ public final class Admin {
     			String sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "hgnc");
     			try {
 					convertExtendedSifToSifGzipped(extSifArchiveName, sifArchiveName);
-				} catch (IOException e) {
-					LOG.error("Failed to convert " + extSifArchiveName + 
-						" to " + sifArchiveName + "; skipped", e );
+				} catch (Exception e) {
+					LOG.error("Skipped converting " + extSifArchiveName + " to " + sifArchiveName, e );
 				}
     		}
     	});
@@ -861,9 +860,8 @@ public final class Admin {
 				String sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot");
 				try {
 					convertExtendedSifToSifGzipped(extSifArchiveName, sifArchiveName);
-				} catch (IOException e) {
-					LOG.error("Failed to convert " + extSifArchiveName +
-							" to " + sifArchiveName + "; skipped", e );
+				} catch (Exception e) {
+					LOG.error("Skipped to convert " + extSifArchiveName + " to " + sifArchiveName, e );
 				}
 			}
 		});
@@ -886,7 +884,7 @@ public final class Admin {
 		while(reader.ready()) {
 			String line = reader.readLine();
 			//stop at the first blank line (because next come nodes with attributes)
-			if(line.isEmpty()) 
+			if(line==null || line.isEmpty())
 				break;
 			writer.write(line + '\n');
 		}		
