@@ -11,7 +11,7 @@
 	<packaging>pom</packaging>
 	<name>cPath2 - Distribution</name>
 	<description>cPath2 server distribution (executable jars, war, scripts, etc.)</description>
-	<url>https://github.com/PathwayCommons/cpath2</url>
+	<url>https://pathwaycommons.github.io/cpath2</url>
 
 	<scm>
 		<url>https://github.com/PathwayCommons/cpath2</url>

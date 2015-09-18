@@ -13,7 +13,7 @@
 
 	<name>cPath2 - Client</name>
 	<description>Client library for cPath/cPath2 web services</description>
-	<url>https://github.com/PathwayCommons/cpath2</url>
+	<url>https://pathwaycommons.github.io/cpath2</url>
 
 	<scm>
 		<url>https://github.com/PathwayCommons/cpath2</url>

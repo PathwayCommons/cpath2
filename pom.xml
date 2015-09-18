@@ -10,7 +10,7 @@
 	<name>cPath2 - Parent</name>
 	<version>6.1.0-SNAPSHOT</version>
 	<description>cPath2 parent (multi-mudule) project (biological pathway data integration/querying)</description>
-	<url>https://github.com/PathwayCommons/cpath2</url>
+	<url>https://pathwaycommons.github.io/cpath2</url>
 	<inceptionYear>2009</inceptionYear>
 
 	<issueManagement>
@@ -67,6 +67,7 @@
 			<organization>CBIO MSKCC</organization>
 		</developer>
 	</developers>
+
 	<contributors>
 		<contributor>
 			<name>Ethan Cerami</name>
@@ -194,7 +195,7 @@
 		<doxia-integration-tools.version>1.6</doxia-integration-tools.version>
 		<wagon-ssh.version>2.8</wagon-ssh.version>
 		<wagon-scm.version>2.8</wagon-scm.version>
-		<site-maven-plugin.version>0.12</site-maven-plugin.version>
+		<!--<site-maven-plugin.version>0.12</site-maven-plugin.version>-->
 		<github.global.server>github</github.global.server>	
 	</properties>
 
@@ -272,11 +273,11 @@
 					<artifactId>maven-site-plugin</artifactId>
 					<version>${maven-site-plugin.version}</version>
 				</plugin>
-				<plugin>
+<!--				<plugin>
 					<groupId>com.github.github</groupId>
 					<artifactId>site-maven-plugin</artifactId>
 					<version>${site-maven-plugin.version}</version>
-				</plugin>				
+				</plugin>	-->
 				<plugin>
 					<groupId>org.sonatype.plugins</groupId>
 					<artifactId>nexus-staging-maven-plugin</artifactId>
@@ -383,7 +384,7 @@
 					<skipDeploy>true</skipDeploy>
 				</configuration>
 			</plugin>
-			<plugin>
+<!--			<plugin>
 				<groupId>com.github.github</groupId>
 				<artifactId>site-maven-plugin</artifactId>
 				<configuration>
@@ -400,7 +401,7 @@
 						<phase>site-deploy</phase>
 					</execution>
 				</executions>
-			</plugin>			
+			</plugin>-->
 		</plugins>
 	</build>
 
@@ -843,14 +844,11 @@
 
 	<distributionManagement>
 		<site>
-			<!-- Do mvn site site:stage -DstagingDirectory=/tmp/path first 
-			(site-deploy immediately pushes to gh-pages on GitHub)-->
+			<!-- Do mvn site site:stage -DstagingDirectory=/tmp/path first,
+			 then manually add/push to the gh-pages branch on GitHub)-->
 			<id>github</id>
-			<name>PathwayCommons/cPath2 GitHub Pages</name>
-			<url>${project.version}</url>
-		<!--	change to full URL for site:stage to work
+			<name>PathwayCommons/cpath2 GitHub Pages</name>
 			<url>http://pathwaycommons.github.io/cpath2/${project.version}</url>
-		-->
 		</site>
         <repository>
             <id>ossrh</id>

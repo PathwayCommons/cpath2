@@ -890,6 +890,7 @@ public final class Admin {
 		}		
 		reader.close();
 		writer.close();
+		LOG.info("create-downloads: successfully created " + sifArchiveName);
 	}
 
 	private static Collection<String> findAllUris(Searcher searcher, 
@@ -934,7 +935,7 @@ public final class Admin {
         		convert(m, format, zos, params);
         		zos.flush();
         		IOUtils.closeQuietly(zos); 
-        		LOG.info("create-downloads: successully created " + archiveName);
+        		LOG.info("create-downloads: successfully created " + archiveName);
         	} catch (IOException e) {
         		throw new RuntimeException(e);
         	} 		

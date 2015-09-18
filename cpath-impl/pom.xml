@@ -13,7 +13,7 @@
 
 	<name>cPath2 - Implementation</name>
 	<description>cPath2 - bio pathway data integration, search/index/query, export to other formats</description>
-	<url>https://github.com/PathwayCommons/cpath2</url>
+	<url>https://pathwaycommons.github.io/cpath2</url>
 
 	<scm>
 		<url>https://github.com/PathwayCommons/cpath2</url>
@@ -141,10 +141,6 @@
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-entitymanager</artifactId>
 		</dependency>
-<!-- 		<dependency> -->
-<!-- 			<groupId>org.hibernate</groupId> -->
-<!-- 			<artifactId>hibernate-ehcache</artifactId> -->
-<!-- 		</dependency> -->
 		<dependency>
 			<groupId>org.biopax</groupId>
 			<artifactId>miriam-lib</artifactId>
@@ -243,11 +239,6 @@
 			<groupId>org.biopax.paxtools</groupId>
 			<artifactId>pattern</artifactId>
 		</dependency>		
-<!-- 		<dependency> -->
-<!-- 			<groupId>net.sf.ehcache</groupId> -->
-<!-- 			<artifactId>ehcache-core</artifactId> -->
-<!-- 			<scope>runtime</scope> -->
-<!-- 		</dependency> -->
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
