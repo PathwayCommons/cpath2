@@ -72,7 +72,7 @@ final class InohCleanerImpl implements Cleaner {
 				
 				if(x.getDb()==null || x.getId()==null) { //just in case there are some...
 					spe.removeXref(x);
-					log.debug("removed bad xref: " + x + " from " + spe.getRDFId());
+					log.debug("removed bad xref: " + x + " from " + spe.getUri());
 					continue;
 				}
 				
@@ -82,7 +82,7 @@ final class InohCleanerImpl implements Cleaner {
 					Protein p = (Protein) spe;
 					ProteinReference pr = (ProteinReference) p.getEntityReference();
 					if(pr == null) {
-						pr = model.addNew(ProteinReference.class, p.getRDFId()+"_ref");
+						pr = model.addNew(ProteinReference.class, p.getUri()+"_ref");
 						p.setEntityReference(pr);
 						pr.getName().addAll(spe.getName());
 					}

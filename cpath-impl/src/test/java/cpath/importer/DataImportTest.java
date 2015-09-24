@@ -302,7 +302,7 @@ public class DataImportTest {
 				"http://pathwaycommons.org/test2#alpha-D-glucose_6-phosphate",SmallMolecule.class));
 		smr = (SmallMoleculeReference)sm.getEntityReference();
 		assertNotNull(smr);
-		assertEquals("http://identifiers.org/chebi/CHEBI:422", smr.getRDFId());
+		assertEquals("http://identifiers.org/chebi/CHEBI:422", smr.getUri());
 		// smr must contain one member SMR
 		// but only if ChEBI OBO was also imported (ChebiOntologyAnalysis run)!
 		assertEquals(1, smr.getMemberEntityReference().size());
@@ -333,11 +333,11 @@ public class DataImportTest {
 		assertEquals(1, bs.getXref().size());
 		UnificationXref x = (UnificationXref) bs.getXref().iterator().next();
 		assertEquals(1, x.getXrefOf().size());
-		assertEquals(HsUri, x.getXrefOf().iterator().next().getRDFId());
+		assertEquals(HsUri, x.getXrefOf().iterator().next().getUri());
 		assertEquals(bs, x.getXrefOf().iterator().next());
-//		System.out.println(x.getRDFId() + " is " + x);
+//		System.out.println(x.getUri() + " is " + x);
 		UnificationXref ux = (UnificationXref) mergedModel.getByID(Normalizer.uri(XML_BASE, "TAXONOMY", "9606", UnificationXref.class));
-//		System.out.println(ux.getRDFId() + " - " + ux);
+//		System.out.println(ux.getUri() + " - " + ux);
 		assertEquals(1, ux.getXrefOf().size());
 		
 		// check features from the warehouse and pathway data were merged properly
@@ -362,7 +362,7 @@ public class DataImportTest {
 		System.out.println(px + ", xrefOf=" + px.getXrefOf());
 //		assertTrue(px.getXrefOf().contains(p));
 		for(XReferrable r : px.getXrefOf()) {
-			if(r.getRDFId().equals(pUri))
+			if(r.getUri().equals(pUri))
 				assertEquals(p, r);
 		}
 		

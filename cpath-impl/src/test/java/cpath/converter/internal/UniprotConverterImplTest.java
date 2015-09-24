@@ -94,7 +94,7 @@ public class UniprotConverterImplTest {
 		assertEquals("Calreticulin", pr.getStandardName());
 //		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
 		assertEquals(10, pr.getXref().size()); //10, no duplicates
-		assertEquals("http://identifiers.org/taxonomy/9606", pr.getOrganism().getRDFId());		
+		assertEquals("http://identifiers.org/taxonomy/9606", pr.getOrganism().getUri());
 		
 		// test MOD_RES features are created
 		pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/P62158");

@@ -14,7 +14,10 @@
 			<blockquote><p>
 				Data files listed below are sorted alphabetically and generally named as follows:</p>
 				<code>${cpath.name}.${cpath.version}.&lt;SOURCE&gt;.&lt;FORMAT&gt;.&lt;ext&gt;.gz</code>
-				<p>(Previous versions can be downloaded from the <a href="${cpath.url}/archives">${cpath.name} archive</a>)</p>
+				<br/>
+				<p>Current and old data can be downloaded from our <a href="${cpath.url}/archives">archive site</a>
+					(try from that location also if you could not download a file from here).
+				</p>
 			</blockquote>
 			<em>&lt;SOURCE&gt;</em>: 'All' (main BioPAX model, used by the  
 				<a href='<c:url value="/home"/>'>web service</a>), 'Detailed' (no PSI-MI data sources), 
@@ -24,20 +27,20 @@
 		</div>
 		
 		<h3>Notes</h3>
-		<ul>				
-			<li>blacklist.txt is used by the BioPAX to SIF and SBGN converters to exclude ubiquitous small molecules from output. 
-				See also: <a href="https://github.com/BioPAX/pattern/wiki/UsingBinaryInteractionFramework" 
-				target="_blank">Using Binary Interaction Framework</a> for more information (contains blacklist.txt description).</li>
-			<li>datasources.txt provides metadata and some statistics about each data source.</li>				
-			<li>Original and intermediate (after cleaning, conversion, normalization) data archives 
-				<a rel="nofollow" href='<c:url value="/datadir"/>'>are available here</a>.
-				In addition, <a href="http://www.biopax.org/validator">BioPAX validation</a> reports  
-				for each pathway or interaction data source in the system can be found 
-				<a rel="nofollow" href='<c:url value="/validations"/>'>here</a>.</li>
-			<li>We can also generate a BioPAX sub-model and convert to the simple formats on your special request: 
-				select sources, add columns (for SIF) or description (for GSEA), select binary interaction types and output ID type. 
-				One can also do it with <a href="http://www.biopax.org/paxtools">Paxtools</a>, 
+		<ul>
+			<li>We can generate a BioPAX sub-model and convert to the simple formats on your special request:
+				select sources, add columns (for SIF) or description (for GSEA), select binary interaction types and output ID type.
+				One can also do it with <a href="http://www.biopax.org/paxtools">Paxtools</a>,
 				one of the BioPAX files and blacklist.txt (to ignore ubiquitous small molecules).</li>
+			<li>Original and intermediate (cleaned, converted, normalized) data archives
+				<a rel="nofollow" href='<c:url value="/datadir"/>'>are available here</a>.</li>
+			<li>BioPAX <a href="http://www.biopax.org/validator">validation</a> reports
+				for each pathway/interaction data source in the system can be found
+				<a rel="nofollow" href='<c:url value="/validations"/>'>here</a>.</li>
+			<li>The blacklist.txt is used by the BioPAX to SIF and to SBGN converters to exclude ubiquitous small molecules.
+				See also: <a href="https://github.com/BioPAX/Paxtools/wiki/PatternBinaryInteractionFramework"
+				target="_blank">Using Binary Interaction Framework</a> for more information (contains blacklist.txt description).</li>
+			<li>datasources.txt provides metadata and some statistics about each data source.</li>
 		</ul>
 		
 		<h3>Files</h3>

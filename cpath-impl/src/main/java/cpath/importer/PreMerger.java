@@ -276,7 +276,7 @@ public final class PreMerger {
 		log.info("buildWarehouse(), adding more Xrefs to ERs using id-mapping...");
 		for(EntityReference er : new HashSet<EntityReference>(warehouse.getObjects(EntityReference.class))) 
 		{
-			Assert.isTrue(er.getRDFId().contains("/chebi/") || er.getRDFId().contains("/uniprot/"),
+			Assert.isTrue(er.getUri().contains("/chebi/") || er.getUri().contains("/uniprot/"),
 					er + " - warehouse ER is neither PR nor SMR (bug)!");
 			addRelXrefsToWarehouseEntityRef(warehouse, er);
 		}
@@ -308,7 +308,7 @@ public final class PreMerger {
 	private void addRelXrefsToWarehouseEntityRef(Model warehouse, EntityReference er) 
 	{
 		final String primaryDb = (er instanceof ProteinReference) ? "UNIPROT" : "CHEBI"; 
-		final String primaryId = CPathUtils.idfromNormalizedUri(er.getRDFId());
+		final String primaryId = CPathUtils.idfromNormalizedUri(er.getUri());
 		
 		//reverse id-mapping (from the primary db/id to all db/id entries that map to the primary pair)
 		List<Mapping> map = service.mapping().findByDestIgnoreCaseAndDestId(primaryDb, primaryId);		
@@ -397,7 +397,7 @@ public final class PreMerger {
 				destDb = "CHEBI";
 			
 			//extract the primary id from the standard (identifiers.org) URI
-			final String ac = CPathUtils.idfromNormalizedUri(er.getRDFId());
+			final String ac = CPathUtils.idfromNormalizedUri(er.getUri());
 			
 			for(Xref x : er.getXref()) {
 				// By design (warehouse), there are unif. and rel. xrefs added 
@@ -412,9 +412,9 @@ public final class PreMerger {
 							  && ((RelationshipXref)x).getRelationshipType()!=null
 							  && 
 							  (	//use any identity type relationship xref
-								((RelationshipXref)x).getRelationshipType().getRDFId().endsWith(RelTypeVocab.IDENTITY.id)
+								((RelationshipXref)x).getRelationshipType().getUri().endsWith(RelTypeVocab.IDENTITY.id)
 								|| // or any secondary accession type relationship xref
-								((RelationshipXref)x).getRelationshipType().getRDFId().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id)
+								((RelationshipXref)x).getRelationshipType().getUri().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id)
 							  )
 						)
 					)

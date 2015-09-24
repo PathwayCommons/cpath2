@@ -54,7 +54,7 @@ public final class EntityFeaturesSummary implements Analysis<Model> {
 			for(PhysicalEntity pe : pes) {
 				for(Provenance ds : pe.getDataSource()) {
 					providers.add(ds.getDisplayName());
-					if(providerURIs.contains(ds.getRDFId()))
+					if(providerURIs.contains(ds.getUri()))
 						passedProvidersFilter = true;
 				}
 			}
@@ -64,12 +64,12 @@ public final class EntityFeaturesSummary implements Analysis<Model> {
 			//cannot easily get owner ExperimentalForm objects (no experimentalFeatureOf property exists...)
 			for(ExperimentalForm xf : allExpForms) {
 				if(xf.getExperimentalFeature().contains(ef))
-					eforms.add(xf.getRDFId());
+					eforms.add(xf.getUri());
 			}	
 			
 			//output			
 			System.out.printf("%s\t%s\tpe providers: %s\tlocation: %s ", 
-					ef.getModelInterface().getSimpleName(), ef.getRDFId(),
+					ef.getModelInterface().getSimpleName(), ef.getUri(),
 					providers, ef.getFeatureLocation(), ef.getFeatureLocationType());
 			
 			if(ef.getFeatureLocationType() != null)

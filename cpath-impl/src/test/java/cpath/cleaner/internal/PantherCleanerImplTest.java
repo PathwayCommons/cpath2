@@ -38,7 +38,7 @@ public class PantherCleanerImplTest {
 		Model m = new SimpleIOHandler().convertFromOWL(new FileInputStream(f));
 		Set<BioSource> bioSources = m.getObjects(BioSource.class);
 		assertEquals(1, bioSources.size());
-		assertTrue(bioSources.iterator().next().getRDFId().endsWith("/9606"));
+		assertTrue(bioSources.iterator().next().getUri().endsWith("/9606"));
 	}
 
 }

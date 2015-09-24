@@ -89,7 +89,7 @@ public class InohCleanerImplTest {
 		assertEquals(3, p.getEntityReference().getMemberEntityReference().size());
 		EntityReference mpr = p.getEntityReference().getMemberEntityReference().iterator().next();
 		assertTrue(mpr instanceof ProteinReference);//not null
-		assertTrue(mpr.getRDFId().contains("UniProt"));
+		assertTrue(mpr.getUri().contains("UniProt"));
 		assertTrue(mpr.getXref().iterator().next() instanceof UnificationXref);
 		
 		

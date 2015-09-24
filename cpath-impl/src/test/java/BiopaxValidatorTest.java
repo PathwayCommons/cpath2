@@ -134,8 +134,8 @@ public class BiopaxValidatorTest {
     	Validation v = new Validation(new IdentifierImpl(), "", true, null, 0, null); // auto-fix=true - fixex "no xref" error
    		rule.check(v, mf); 
    		
-   		assertEquals(0, v.countErrors(mf.getRDFId(), null, "illegal.cv.term", null, false, false));
-   		assertEquals(1, v.countErrors(mf.getRDFId(), null, "no.xref.cv.terms", null, false, false)); //- one but fixed though -
+   		assertEquals(0, v.countErrors(mf.getUri(), null, "illegal.cv.term", null, false, false));
+   		assertEquals(1, v.countErrors(mf.getUri(), null, "no.xref.cv.terms", null, false, false)); //- one but fixed though -
    		assertEquals(0, v.countErrors(null, null, null, null, false, true)); //- no unfixed errors
 	}
     

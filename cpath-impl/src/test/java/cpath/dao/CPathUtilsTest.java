@@ -129,7 +129,7 @@ public class CPathUtilsTest {
 		UnificationXref xref = m.addNew(UnificationXref.class, "one");
 		CPathUtils.replaceID(m, xref, "two");
 		
-		assertTrue(xref.getRDFId().equals("two"));
+		assertTrue(xref.getUri().equals("two"));
 		assertTrue(m.containsID("two"));
 	}
 	

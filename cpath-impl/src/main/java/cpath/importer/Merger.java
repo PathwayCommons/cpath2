@@ -290,15 +290,15 @@ public final class Merger {
 			} 
 				
 			if (replacement != null) {
-				EntityReference r = (EntityReference) target.getByID(replacement.getRDFId());
+				EntityReference r = (EntityReference) target.getByID(replacement.getUri());
 				if(r != null) // re-use previously merged one
 					replacement = r;
 				
 				//save in the map to replace the source bpe later 
 				replacements.put(bpe, replacement);
 				
-				if(!replacement.getRDFId().equals(bpe.getRDFId()))
-					replacement.addComment("REPLACED " + bpe.getRDFId());
+				if(!replacement.getUri().equals(bpe.getUri()))
+					replacement.addComment("REPLACED " + bpe.getUri());
 			}
 		}
 		
@@ -341,7 +341,7 @@ public final class Merger {
 				if(pe instanceof SimplePhysicalEntity) {
 					// skip for SPE that got its ER just replaced (from Warehouse)
 					EntityReference er = ((SimplePhysicalEntity) pe).getEntityReference();
-					if(er != null && warehouseModel.containsID(er.getRDFId()))
+					if(er != null && warehouseModel.containsID(er.getUri()))
 						continue;
 					
 					if(pe instanceof SmallMolecule) {
@@ -393,7 +393,7 @@ public final class Merger {
 	private void replaceTheRestOfUris(Model source, String description, Model target) {
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
 		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
-			String currUri = bpe.getRDFId();
+			String currUri = bpe.getUri();
 			
 			// skip for previously normalized objects (we believe they are right and ready to merge)
 			if(currUri.startsWith(xmlBase) || currUri.startsWith("http://identifiers.org/")) 
@@ -558,7 +558,7 @@ public final class Merger {
 		
 		final String standardPrefix = "http://identifiers.org/";
 		final String canonicalPrefix = standardPrefix + "uniprot/";
-		final String origUri = orig.getRDFId();
+		final String origUri = orig.getUri();
 		
 		// Try to re-use existing object
 		if(origUri.startsWith(canonicalPrefix)) {
@@ -631,7 +631,7 @@ public final class Merger {
 		for (Xref x : orig.getXref()) {			
 			if(x.getDb() == null || x.getDb().isEmpty() || x.getId() == null || x.getId().isEmpty()) {
 				log.warn("Ignored bad " + xrefType.getSimpleName()
-					+ " (" + x.getRDFId() + "), db: " + x.getDb() + ", id: " + x.getId());
+					+ " (" + x.getUri() + "), db: " + x.getDb() + ", id: " + x.getId());
 				continue;
 			}
 						
@@ -661,7 +661,7 @@ public final class Merger {
 			return new TreeSet<String>(xSet);
 		else {
 			if(log.isDebugEnabled())
-				log.debug(orig.getRDFId() + ", using its " + xrefType.getSimpleName() 
+				log.debug(orig.getUri() + ", using its " + xrefType.getSimpleName()
 					+ "s, distinctly maps to: " + xSet.iterator().next());
 			return xSet;
 		}
@@ -676,7 +676,7 @@ public final class Merger {
 			if(x.getDb() == null || x.getDb().isEmpty()
 					|| x.getId() == null || x.getId().isEmpty()) {
 				log.warn("Ignored bad " + xrefType.getSimpleName()
-					+ " (" + x.getRDFId() + "), db: " + x.getDb() + ", id: " + x.getId());
+					+ " (" + x.getUri() + "), db: " + x.getDb() + ", id: " + x.getId());
 				continue;
 			}
 						
@@ -725,7 +725,7 @@ public final class Merger {
 		
 		final String standardPrefix = "http://identifiers.org/";
 		final String canonicalPrefix = standardPrefix + "chebi/";
-		final String origUri = orig.getRDFId();
+		final String origUri = orig.getUri();
 		
 		// Try to re-use existing object
 		if(origUri.startsWith(canonicalPrefix)) {
@@ -773,12 +773,12 @@ public final class Merger {
 		
 		Set<EntityReference> mapsTo = findEntityRefUsingIdMappingResult("UnificationXrefs", mappingSet, canonicalUriPrefix);
 		if(mapsTo.size()>1) {
-			log.warn(orig.getRDFId() + ", UnificationXrefs map to multiple: " + mapsTo);
+			log.warn(orig.getUri() + ", UnificationXrefs map to multiple: " + mapsTo);
 		} else if(mapsTo.isEmpty()) {
 			mappingSet = idMappingByXrefs(orig, dest, RelationshipXref.class, false);
 			mapsTo = findEntityRefUsingIdMappingResult("RelationshipXrefs", mappingSet, canonicalUriPrefix);
 			if(mapsTo.size()>1)
-				log.warn(orig.getRDFId() + ", RelationshipXrefs map to multiple: " + mapsTo);
+				log.warn(orig.getUri() + ", RelationshipXrefs map to multiple: " + mapsTo);
 		}
 		
 		if(mapsTo.size()==1) 
@@ -818,7 +818,7 @@ public final class Merger {
 				for(String s : er.getName()) {
 					if(origNames.contains(s.toLowerCase())) {
 						//extract the accession from URI, add
-						mp.add(CPathUtils.idfromNormalizedUri(er.getRDFId()));
+						mp.add(CPathUtils.idfromNormalizedUri(er.getUri()));
 						break;
 					}
 				}

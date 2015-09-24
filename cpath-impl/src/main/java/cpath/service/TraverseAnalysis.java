@@ -53,7 +53,7 @@ final class TraverseAnalysis implements Analysis<Model> {
 //					entry.getValue().addAll(v);
 					for(Object o : v) {
 						if(o instanceof BioPAXElement) 
-							entry.getValue().add(((BioPAXElement) o).getRDFId());
+							entry.getValue().add(((BioPAXElement) o).getUri());
 						else
 							entry.getValue().add(String.valueOf(o));
 					}

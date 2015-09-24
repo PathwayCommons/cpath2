@@ -85,7 +85,7 @@ final class PantherCleanerImpl implements Cleaner {
 			@Override
 			public void run() {
 				for(Pathway p : new ClassFilterSet<BioPAXElement, Pathway>(objects, Pathway.class)) {
-					if(p.getRDFId().startsWith("http://identifiers.org/panther.pathway/")
+					if(p.getUri().startsWith("http://identifiers.org/panther.pathway/")
 							|| !p.getPathwayComponent().isEmpty()
 							|| !p.getPathwayOrder().isEmpty()) { //- seems they don't use pathwayOrder property, anyway
 						p.setOrganism(human);
@@ -130,7 +130,7 @@ final class PantherCleanerImpl implements Cleaner {
 			//PANTHER contains DnaRegionReferences having ProteinRefrence members (wrong BioPAX model)
 			if(generic.getModelInterface().isInstance(member)) { //correct classes, then -
 //				member.getComment().addAll(generic.getComment()); //skip misleading/old comments
-				member.getComment().add("REPLACED generic " + generic.getRDFId());
+				member.getComment().add("REPLACED generic " + generic.getUri());
 				member.getXref().addAll(generic.getXref());
 				member.getName().addAll(generic.getName());
 				if(member.getDisplayName() == null)
@@ -145,7 +145,7 @@ final class PantherCleanerImpl implements Cleaner {
 				cleanModel.remove(generic);
 			} else { // skip such nonsense
 				log.warn(generic.getModelInterface().getSimpleName() + ", uri:" 
-					+ generic.getRDFId() + ", has a member ER of incompatible type: "
+					+ generic.getUri() + ", has a member ER of incompatible type: "
 					+ member.getModelInterface().getSimpleName());
 			}
 		}

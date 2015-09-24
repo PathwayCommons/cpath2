@@ -264,8 +264,8 @@ public final class CPathUtils {
      * 
      * Does not close the streams.
      * 
-     * @param is
-     * @param os
+     * @param zis zip input stream
+     * @param os output stream
      */
     public static void unzip(ZipInputStream zis, OutputStream os) 
     {
@@ -342,19 +342,19 @@ public final class CPathUtils {
 	 * using java reflection. Normally, one should avoid this;
 	 * please use when absolutely necessary and with great care. 
 	 * 
-	 * @param model
-	 * @param el
-	 * @param newRDFId
+	 * @param model model
+	 * @param el biopax object
+	 * @param newUri URI
 	 */
-	public static  void replaceID(Model model, BioPAXElement el, String newRDFId) {
-		if(el.getRDFId().equals(newRDFId))
+	public static  void replaceID(Model model, BioPAXElement el, String newUri) {
+		if(el.getUri().equals(newUri))
 			return; // no action required
 		
 		model.remove(el);
 		try {
-			Method m = BioPAXElementImpl.class.getDeclaredMethod("setRDFId", String.class);
+			Method m = BioPAXElementImpl.class.getDeclaredMethod("setUri", String.class);
 			m.setAccessible(true);
-			m.invoke(el, newRDFId);
+			m.invoke(el, newUri);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new RuntimeException(e);
@@ -479,8 +479,8 @@ public final class CPathUtils {
 	 * (this depends on current biopax normalizer and cpath2 premerge
 	 * that make/consume 'http://identifiers.org/*' URIs for those utility class biopax objects.)
 	 * 
-	 * @param uri
-	 * @return
+	 * @param uri URI
+	 * @return local part URI - ID
 	 */
 	public static String idfromNormalizedUri(String uri) {
 		Assert.isTrue(uri.contains("http://identifiers.org/"));
@@ -492,7 +492,7 @@ public final class CPathUtils {
 	 * Makes the main BioPAX Paxtools model from 
 	 * the merged BioPAX data archive.
 	 * 
-	 * @return
+	 * @return model
 	 */
 	public static Model loadMainBiopaxModel()  {
 		return importFromTheArchive(CPathSettings.getInstance().mainModelFile());
@@ -503,7 +503,7 @@ public final class CPathUtils {
 	 * Builds the BioPAX Paxtools model from 
 	 * the warehouse BioPAX archive.
 	 * 
-	 * @return
+	 * @return model
 	 */
 	public static Model loadWarehouseBiopaxModel() {
 		return importFromTheArchive(CPathSettings.getInstance().warehouseModelFile());

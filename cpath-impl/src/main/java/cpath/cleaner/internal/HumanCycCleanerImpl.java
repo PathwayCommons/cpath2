@@ -102,7 +102,7 @@ public class HumanCycCleanerImpl implements Cleaner
 		{
 			if(xr.getDb() == null) {
 				if(!(xr instanceof PublicationXref)) 
-					LOG.warn(xr.getModelInterface().getSimpleName() + ".db is NULL; " + xr.getRDFId());
+					LOG.warn(xr.getModelInterface().getSimpleName() + ".db is NULL; " + xr.getUri());
 			} else if(xr.getDb().equals("Entrez")) 
 				xr.setDb("Protein GenBank Identifier");
 			else if(xr.getDb().equalsIgnoreCase("NCBI Taxonomy")) 
@@ -185,7 +185,7 @@ public class HumanCycCleanerImpl implements Cleaner
 		// We need only one unification xref. Clear all others. 
 		for (Xref xref : new HashSet<Xref>(nd.getXref()))
 		{
-			if (xref instanceof UnificationXref && !xref.getRDFId().equals("UnificationXref147997"))
+			if (xref instanceof UnificationXref && !xref.getUri().equals("UnificationXref147997"))
 			{
 				nd.removeXref(xref);
 			}
