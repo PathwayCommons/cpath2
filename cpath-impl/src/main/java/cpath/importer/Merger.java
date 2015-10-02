@@ -213,7 +213,7 @@ public final class Merger {
 			}
 
 			Model inputModel = (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream);
-			merge(pwdata.toString(), inputModel, targetModel);
+			merge(description, inputModel, targetModel);
 		}
 			
 		cleanupXrefs(targetModel);
@@ -283,20 +283,15 @@ public final class Merger {
 			
 			// Find the best replacement ER in the Warehouse:
 			if (bpe instanceof ProteinReference) {
-				replacement = findOrCreateProteinReference((ProteinReference)bpe);
+				replacement = findProteinReferenceInWarehouse((ProteinReference) bpe);
 			} 
 			else if (bpe instanceof SmallMoleculeReference) {
-				replacement = findOrCreateSmallMoleculeReference((SmallMoleculeReference)bpe);
+				replacement = findSmallMoleculeReferenceInWarehouse((SmallMoleculeReference) bpe);
 			} 
 				
 			if (replacement != null) {
-				EntityReference r = (EntityReference) target.getByID(replacement.getUri());
-				if(r != null) // re-use previously merged one
-					replacement = r;
-				
 				//save in the map to replace the source bpe later 
 				replacements.put(bpe, replacement);
-				
 				if(!replacement.getUri().equals(bpe.getUri()))
 					replacement.addComment("REPLACED " + bpe.getUri());
 			}
@@ -373,7 +368,7 @@ public final class Merger {
 		log.info("Assigning new URIs (xml:base=" + xmlBase + 
 				"*) to all not normalized BioPAX elements (" + 
 				srcModelInfo + ", xml:base=" + source.getXmlBase() + ")...");
-		replaceTheRestOfUris(source, description, target);
+		replaceOriginalUris(source, description, target);
 		
 		log.info("Merging into the target one-datasource BioPAX model...");
 		// merge all the elements and their children from the source to target model
@@ -390,33 +385,22 @@ public final class Merger {
 	 * Replace all not normalized so far URIs in the source model 
 	 * with auto-generated new short ones (also add a bp:comment about original URIs)
 	 */
-	private void replaceTheRestOfUris(Model source, String description, Model target) {
+	private void replaceOriginalUris(Model source, String description, Model target) {
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
 		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
 			String currUri = bpe.getUri();
 			
-			// skip for previously normalized objects (we believe they are right and ready to merge)
-			if(currUri.startsWith(xmlBase) || currUri.startsWith("http://identifiers.org/")) 
-				continue; 
-			
-			// Generate new consistent URI for not generated not previously normalized objects:
-			String newRDFId = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
-			
-			// Avoid same URI - non-equivalent objects case/clash 
-			// (some providers might mistakenly use the same URI 
-			// for several non-equivalent biopax entities in different files):
-			if(target.containsID(newRDFId)) {
-				if(!bpe.isEquivalent(target.getByID(newRDFId))) {
-					newRDFId = Normalizer.uri(xmlBase, null, description+currUri, bpe.getModelInterface());
-					log.warn(description + " has a " + bpe.getModelInterface().getSimpleName() + 
-						", uri: " + currUri + ", which also was the original URI of a " + 
-						"not equivalent, previously merged object; fixed.");
-				}
+			// skip for previously normalized/generated objects and standard PXs
+			if(currUri.startsWith(xmlBase) ||
+					(bpe instanceof PublicationXref && currUri.startsWith("http://identifiers.org/pubmed")) ) {
+				continue;
 			}
 			
-			// Replace URI
-			CPathUtils.replaceID(source, bpe, newRDFId);
+			// Generate new consistent URI for not generated not previously normalized objects:
+			String newUri = Normalizer.uri(xmlBase, null, description+currUri, bpe.getModelInterface());
 			
+			// Replace URI
+			CPathUtils.replaceID(source, bpe, newUri);
 			// save original URI in comments
 			((Level3Element) bpe).addComment("REPLACED " + currUri);
 		}
@@ -552,7 +536,7 @@ public final class Merger {
 	 * @param orig
 	 * @return the replacement object or null if none can found
 	 */
-	private ProteinReference findOrCreateProteinReference(final ProteinReference orig) 
+	private ProteinReference findProteinReferenceInWarehouse(final ProteinReference orig)
 	{				
 		ProteinReference toReturn = null;	
 		
@@ -571,22 +555,20 @@ public final class Merger {
 			String id = origUri.substring(origUri.lastIndexOf('/')+1);	
 			String db = null;				
 			//a hack/shortcut for normalized PRs
-			if(orig instanceof ProteinReference) {
-				if(origUri.toLowerCase().contains("uniprot.isoform")) {
-					db = "uniprot isoform";
-				} else if(origUri.toLowerCase().contains("uniprot")) {
-					db = "uniprot";
-				} else if(origUri.toLowerCase().contains("refseq")) {
-					db = "refseq";	
-				} else if(origUri.toLowerCase().contains("kegg") && id.contains(":")) {
-					db = "NCBI Gene"; //KEGG actually uses NCBI Gene (aka Entrez Gene)
-				}
-			}			
+			if(origUri.toLowerCase().contains("uniprot.isoform")) {
+				db = "uniprot isoform";
+			} else if(origUri.toLowerCase().contains("uniprot")) {
+				db = "uniprot";
+			} else if(origUri.toLowerCase().contains("refseq")) {
+				db = "refseq";
+			} else if(origUri.toLowerCase().contains("kegg") && id.contains(":")) {
+				db = "NCBI Gene"; //KEGG actually uses NCBI Gene (aka Entrez Gene)
+			}
 			if(db == null) 
 				db = dbById(id, orig.getXref());	
 
 			Set<String> mp = service.map(db, id, "UNIPROT");
-			Set<EntityReference> ers = findEntityRefUsingIdMappingResult("URI", mp, canonicalPrefix);
+			Set<EntityReference> ers = findEntityRefUsingIdMappingResult(mp, canonicalPrefix);
 			if(ers.size()>1)
 				log.warn(origUri + " maps to multiple warehouse ERs: " + ers);
 			else if (!ers.isEmpty())
@@ -719,7 +701,7 @@ public final class Merger {
 	 * @param orig original reference small molecule
 	 * @return the replacement standard object or null if not found/matched
 	 */
-	private SmallMoleculeReference findOrCreateSmallMoleculeReference(final SmallMoleculeReference orig) 
+	private SmallMoleculeReference findSmallMoleculeReferenceInWarehouse(final SmallMoleculeReference orig)
 	{				
 		SmallMoleculeReference toReturn = null;	
 		
@@ -738,7 +720,7 @@ public final class Merger {
 			String id = origUri.substring(origUri.lastIndexOf('/')+1);	
 			String db = dbById(id, orig.getXref()); //find by id			
 			Set<String> mp = service.map(db, id, "CHEBI");
-			Set<EntityReference> ers = findEntityRefUsingIdMappingResult("URI", mp, canonicalPrefix);
+			Set<EntityReference> ers = findEntityRefUsingIdMappingResult(mp, canonicalPrefix);
 			if(ers.size()>1)
 				log.warn(origUri + " URI maps to multiple canonical ChEBI SMRs: " + ers);
 			else if (!ers.isEmpty())
@@ -753,7 +735,7 @@ public final class Merger {
 		// nothing/ambiguous? - keep trying, map by name (e..g, 'ethanol') to ChEBI ID
 		if (toReturn == null) {		
 			Set<String> mp = mapByName(orig, "CHEBI");
-			Set<EntityReference> ers = findEntityRefUsingIdMappingResult("names", mp, canonicalPrefix);
+			Set<EntityReference> ers = findEntityRefUsingIdMappingResult(mp, canonicalPrefix);
 			if(ers.size()>1)
 				log.warn(origUri + ", its names match multiple canonical ChEBI SMRs: " + ers);
 			else if (!ers.isEmpty())
@@ -771,12 +753,12 @@ public final class Merger {
 		
 		Set<String> mappingSet = idMappingByXrefs(orig, dest, UnificationXref.class, false);
 		
-		Set<EntityReference> mapsTo = findEntityRefUsingIdMappingResult("UnificationXrefs", mappingSet, canonicalUriPrefix);
+		Set<EntityReference> mapsTo = findEntityRefUsingIdMappingResult(mappingSet, canonicalUriPrefix);
 		if(mapsTo.size()>1) {
 			log.warn(orig.getUri() + ", UnificationXrefs map to multiple: " + mapsTo);
 		} else if(mapsTo.isEmpty()) {
 			mappingSet = idMappingByXrefs(orig, dest, RelationshipXref.class, false);
-			mapsTo = findEntityRefUsingIdMappingResult("RelationshipXrefs", mappingSet, canonicalUriPrefix);
+			mapsTo = findEntityRefUsingIdMappingResult(mappingSet, canonicalUriPrefix);
 			if(mapsTo.size()>1)
 				log.warn(orig.getUri() + ", RelationshipXrefs map to multiple: " + mapsTo);
 		}
@@ -829,7 +811,7 @@ public final class Merger {
 	}
 
 
-	private Set<EntityReference> findEntityRefUsingIdMappingResult(String mapBy, Set<String> mapsTo, String uriPrefix) 
+	private Set<EntityReference> findEntityRefUsingIdMappingResult(Set<String> mapsTo, String uriPrefix)
 	{
 		Set<EntityReference> toReturn = new HashSet<EntityReference>();
 		
