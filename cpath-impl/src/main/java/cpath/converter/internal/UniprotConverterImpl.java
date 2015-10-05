@@ -27,9 +27,8 @@ import java.io.*;
 
 /**
  * Implementation of {@link Converter} interface for UniProt data.
- * 
- * @see http://web.expasy.org/docs/userman.html
- * @see http://www.uniprot.org/faq/30
+ *
+ * See also: http://web.expasy.org/docs/userman.html and http://www.uniprot.org/faq/30
  */
 final class UniprotConverterImpl extends BaseConverterImpl {
 
@@ -242,7 +241,6 @@ final class UniprotConverterImpl extends BaseConverterImpl {
      * gene symbols, and copyright.)
 	 *
 	 * @param comments String
-	 * @param geneSynonyms String
 	 * @param proteinReference ProteinReference
      */
     private void setComments (String comments, ProteinReference proteinReference) 
