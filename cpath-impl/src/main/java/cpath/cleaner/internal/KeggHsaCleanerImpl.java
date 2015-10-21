@@ -33,7 +33,7 @@ import cpath.importer.Cleaner;
  * Can normalize URIs for KEGG Pathways 
  * to http://identifiers.org/kegg.pathway/hsa* 
  * 
- * TODO add/remove features as needed...
+ * TODO convert generic ERs (unif. xrefs of the same kind might point to diff. proteins)...
  */
 final class KeggHsaCleanerImpl implements Cleaner {
 

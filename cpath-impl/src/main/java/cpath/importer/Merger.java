@@ -442,6 +442,7 @@ public final class Merger {
 					}	
 				}
 			}				
+			//TODO re-consider copying RelationshipXrefs (can be misleading, dirties the canonical ER...)
 			// move new PublicationXrefs and RelationshipXrefs (otherwise we lost some of original xrefs...)
 			for(Xref x : new HashSet<Xref>(old.getXref())) {
 				if(!(x instanceof UnificationXref)) {
@@ -527,14 +528,11 @@ public final class Merger {
 	}
 
 
-	/**
+	/*
 	 * Finds previously created or generates (searching in the db) 
 	 * a new {@link ProteinReference} BioPAX element that is equivalent 
 	 * to the original one and has standard URI and properties, 
 	 * which allows to simply merge it with other semantically equivalent ones, by ID (URI).
-	 * 
-	 * @param orig
-	 * @return the replacement object or null if none can found
 	 */
 	private ProteinReference findProteinReferenceInWarehouse(final ProteinReference orig)
 	{				
@@ -579,23 +577,13 @@ public final class Merger {
 		// try using (already normalized) Xrefs and id-mapping  
 		if (toReturn == null)
 			toReturn = (ProteinReference) mapByXrefs(orig, "UNIPROT", canonicalPrefix);
-		
-		// nothing/ambiguous?..
-		//TODO map by names? (too RISKY, might replace wrong PR, for proteins/genes often share names!)
-	
+
 		return toReturn;
 	}
 
-	/**
+	/*
 	 * Using specified class xrefs of given object, 
 	 * finds primary identifiers (can be many).
-	 * 
-	 * 
-	 * @param orig
-	 * @param mapTo
-	 * @param xrefType
-	 * @param isUnion tells to return either union or intersection of each Xref's id-mapping result
-	 * @return
 	 */
 	private Set<String> idMappingByXrefs(final XReferrable orig,
 			String mapTo, final Class<? extends Xref> xrefType, boolean isUnion) 
@@ -674,13 +662,9 @@ public final class Merger {
 	}
 	
 
-	/**
+	/*
 	 * Finds a {@link UnificationXref} by id 
 	 * and returns its db value or null.
-	 * 
-	 * @param id
-	 * @param xref
-	 * @return
 	 */
 	private String dbById(String id, Set<Xref> xref) {
 		for(Xref x : xref)
@@ -746,27 +730,24 @@ public final class Merger {
 	}
 
 
-	private EntityReference mapByXrefs(EntityReference orig,
-			String dest, String canonicalUriPrefix) {
+	private EntityReference mapByXrefs(EntityReference orig, String dest, String canonicalUriPrefix) {
 
-		EntityReference toReturn = null; 
-		
 		Set<String> mappingSet = idMappingByXrefs(orig, dest, UnificationXref.class, false);
-		
 		Set<EntityReference> mapsTo = findEntityRefUsingIdMappingResult(mappingSet, canonicalUriPrefix);
-		if(mapsTo.size()>1) {
-			log.warn(orig.getUri() + ", UnificationXrefs map to multiple: " + mapsTo);
-		} else if(mapsTo.isEmpty()) {
+
+		if(mapsTo.isEmpty()) {
 			mappingSet = idMappingByXrefs(orig, dest, RelationshipXref.class, false);
 			mapsTo = findEntityRefUsingIdMappingResult(mappingSet, canonicalUriPrefix);
-			if(mapsTo.size()>1)
-				log.warn(orig.getUri() + ", RelationshipXrefs map to multiple: " + mapsTo);
+			if(mapsTo.size()>1) {
+				log.warn("mapByXrefs, " + orig.getUri() + ", RXs map to different canonical ERs: " + mapsTo);
+			}
+		} else if(mapsTo.size() > 1) {
+			log.warn("mapByXrefs, " + orig.getUri() + ", UXs map to different canonical ERs: " + mapsTo);
 		}
-		
-		if(mapsTo.size()==1) 
-			toReturn = mapsTo.iterator().next();
-		
-		return toReturn; //can be null
+
+		if(mapsTo.size()==1) {
+			return mapsTo.iterator().next();
+		} else return null;
 	}
 
 
