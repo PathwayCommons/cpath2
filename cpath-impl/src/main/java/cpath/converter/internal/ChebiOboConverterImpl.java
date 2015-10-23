@@ -102,7 +102,7 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 					}
 				}
 				
-				buildSmallMoleculeReference(model, chebiEntryMap);				
+				buildSmallMoleculeReference(model, chebiEntryMap);
 			}
 
 			reader.close();
@@ -136,7 +136,8 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 		
 		//skip entries w/o InChIKey (e.g., top-level classes, pill/pharma terms)
 		if(chebiEntryMap.get(_SYNONYM) == null 
-				|| !chebiEntryMap.get(_SYNONYM).contains("InChIKey=")) 
+				|| ! (chebiEntryMap.get(_SYNONYM).contains("InChIKey")))
+		//issue #225 fix above: some entries don't have "InChIKey=" prefix, but do have "RELATED InChIKey [ChEBI:]" at the end
 		{
 			log.debug("Skipped " + chebiEntryMap.get(_ID) + " - no InChIKey");
 			return;
@@ -173,21 +174,26 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 		}
 		
 		//use synonyms to create names, structure, formula, and InChIKey rel.xref
-		String[] synonyms = chebiEntryMap.get(_SYNONYM).split("\t");
+		final String entry = chebiEntryMap.get(_SYNONYM);
+		String[] synonyms = entry.split("\t");
 		for(String sy : synonyms) {
 			Matcher matcher = namePattern.matcher(sy);
 			if(!matcher.find())
 				throw new IllegalStateException("Pattern failed to find a quoted text within: " + sy);		
 			
-			String name = matcher.group(1);
+			String name = matcher.group(1); //get the name/value only
+
 			if(sy.contains("IUPAC_NAME")) {
 				smr.setStandardName(name);
 			}
-			else if(sy.contains("InChIKey=")) {
-				String inchikey = name.substring(9);//exclude the prefix			
+			else if(sy.contains("InChIKey")) {
+				if(name.startsWith("InChIKey=")) {
+					//exclude the prefix
+					name = name.substring(9);
+				}
 				//add RX because a InChIKey can map to several CHEBI IDs
 				RelationshipXref rx = PreMerger.findOrCreateRelationshipXref(
-						RelTypeVocab.IDENTITY, "InChIKey", inchikey, model);
+						RelTypeVocab.IDENTITY, "InChIKey", name, model);
 				smr.addXref(rx);				
 			}
 			else if(sy.contains("InChI=")) {
