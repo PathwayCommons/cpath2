@@ -122,9 +122,8 @@ public final class CPathSearchQuery extends BaseCPathQuery<SearchResponse> imple
 	/**
 	 * Set to request all hits (all result pages).
 	 * 
-	 * @param lastPage
 	 * @throws IllegalArgumentException when lastPage <= 0
-	 * @return
+	 * @return query
 	 */
 	public CPathSearchQuery allPages() {
 		multi = true;
