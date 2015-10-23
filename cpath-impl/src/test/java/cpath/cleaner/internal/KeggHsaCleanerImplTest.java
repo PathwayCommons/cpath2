@@ -14,8 +14,7 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.BioSource;
-import org.biopax.paxtools.model.level3.Pathway;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.Filter;
 import org.junit.Test;
 
@@ -38,6 +37,27 @@ public class KeggHsaCleanerImplTest {
 //		assertEquals("Homo sapiens (human)", bioSources.iterator().next().getDisplayName());		
 		//check pathway URIs are http://identifiers.org/kegg.pathway/hsa*
 		assertTrue(m10.containsID(testPathwayUri));
+
+		//test names got fixed; "duplicate" xrefs - unlinked
+		//P or PR
+		Named named = (Named)m10.getByID(m10.getXmlBase()+"hsa5236_hsa55276");
+		assertEquals("PGM", named.getStandardName()); //was "PGM1, GSD14..."
+		assertTrue(named.getXref().isEmpty()); //all were removed as they also belong to the entity ref.
+		named = (Named)m10.getByID(m10.getXmlBase()+"hsa5236_hsa55276.eref");
+		assertEquals("PGM", named.getStandardName()); //was "PGM1, GSD14..."
+		assertFalse(named.getXref().isEmpty());
+		//Pathway
+		named = (Named)m10.getByID("http://identifiers.org/kegg.pathway/hsa00010");
+		assertEquals("Glycolysis / Gluconeogenesis", named.getDisplayName()); //was "Glycolysis / ..."
+		//SM or SMR
+		named = (Named)m10.getByID(m10.getXmlBase()+"cpdC00236");
+		assertEquals("C00236", named.getStandardName());//as is
+		assertEquals("C00236", named.getDisplayName());//was "1,3-Bisphospho-D-gly..."
+		assertTrue(named.getXref().isEmpty()); //all were removed as they also belong to the entity ref.
+		named = (Named)m10.getByID(m10.getXmlBase()+"cpdC00236.eref");
+		assertEquals("C00236", named.getStandardName());//as is
+		assertEquals("C00236", named.getDisplayName());//was "1,3-Bisphospho-D-gly..."
+		assertFalse(named.getXref().isEmpty());
 
 		
 		String f562 = getClass().getClassLoader().getResource("").getPath() 

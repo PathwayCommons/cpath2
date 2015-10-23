@@ -11,12 +11,7 @@ import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.Pathway;
-import org.biopax.paxtools.model.level3.RelationshipXref;
-import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.paxtools.model.level3.UtilityClass;
-import org.biopax.paxtools.model.level3.XReferrable;
-import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,9 +44,9 @@ final class KeggHsaCleanerImpl implements Cleaner {
 		// Normalize Pathway URIs KEGG stable id, where possible
 		Set<Pathway> entities = new HashSet<Pathway>(model.getObjects(Pathway.class));
 		Map<String, Pathway> newUriToEntityMap = new HashMap<String, Pathway>();
-		for(Pathway ent : entities) {
+		for(Pathway pw : entities) {
 			Set<UnificationXref> uxrefs = new ClassFilterSet<Xref, UnificationXref>(
-					new HashSet<Xref>(ent.getXref()), UnificationXref.class);
+					new HashSet<Xref>(pw.getXref()), UnificationXref.class);
 			//normally there is only one such xref
 			if(!uxrefs.isEmpty()) {
 				UnificationXref x = uxrefs.iterator().next();
@@ -59,7 +54,7 @@ final class KeggHsaCleanerImpl implements Cleaner {
 					String uri = "http://identifiers.org/kegg.pathway/" + x.getId();
 					
 					if(!model.containsID(uri) && !newUriToEntityMap.containsKey(uri)) {
-						newUriToEntityMap.put(uri, ent); //collect to replace URIs later (below)
+						newUriToEntityMap.put(uri, pw); //collect to replace URIs later (below)
 					} else { //shared unification xref bug
 						log.warn("Fixing: " + x.getId() + 
 							" unification xref is shared by several entities: "
@@ -76,13 +71,39 @@ final class KeggHsaCleanerImpl implements Cleaner {
 				}
 			}
 			
-			String standardName = ent.getStandardName();
-			if(!(standardName == null || standardName.trim().isEmpty()) ) {
+			//replace shortened ugly displayName with standardName
+			if(pw.getDisplayName() == null || pw.getDisplayName().contains("...")) {
 				//replace shortened/truncated pathway names
-				ent.setDisplayName(standardName);
+				pw.setDisplayName(pw.getStandardName());
 			}
 		}
-		
+
+		//fix weird standardName that contains a comma-separated list of some names and ends with "..."
+		for(Named named : model.getObjects(Named.class)) {
+			if(named instanceof SmallMoleculeReference || named instanceof SmallMolecule) {
+				if(named.getDisplayName()!=null && named.getDisplayName().endsWith("...")) {
+					named.setDisplayName(named.getStandardName()); //ok if null; usually it's a C12345 (KEGG Compound ID)
+				}
+			} else if (named instanceof ProteinReference || named instanceof Protein) {
+				if(named.getStandardName() !=null && named.getStandardName().endsWith("...")) {
+					named.setStandardName(named.getDisplayName()); //ok if null
+				}
+			}
+			//there are no other type of sequence entities nor ERs
+		}
+
+		//unlink from a SimplePhysicalEntity Xrefs that are also belong to the entity reference (if not null)
+		for(SimplePhysicalEntity spe : model.getObjects(SimplePhysicalEntity.class)) {
+			EntityReference er = spe.getEntityReference();
+			if(er != null) {
+				for(Xref x : new HashSet<Xref>(spe.getXref())) {
+					if(er.getXref().contains(x)) {
+						spe.removeXref(x);
+					}
+				}
+			}
+		}
+
 		// set standard URIs for selected entities
 		for(String uri : newUriToEntityMap.keySet())
 			CPathUtils.replaceID(model, newUriToEntityMap.get(uri), uri);
