@@ -54,12 +54,12 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.model.level3.XReferrable;
 import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.normalizer.Normalizer;
 import org.biopax.paxtools.util.Filter;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.controller.SimpleMerger;
 import org.biopax.paxtools.io.*;
-import org.biopax.validator.utils.Normalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
@@ -397,7 +397,7 @@ public final class Merger {
 			}
 			
 			// Generate new consistent URI for not generated not previously normalized objects:
-			String newUri = Normalizer.uri(xmlBase, null, description+currUri, bpe.getModelInterface());
+			String newUri = Normalizer.uri(xmlBase, null, description + currUri, bpe.getModelInterface());
 			
 			// Replace URI
 			CPathUtils.replaceID(source, bpe, newUri);

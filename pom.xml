@@ -186,7 +186,7 @@
 		<maven-javadoc-plugin.version>2.10.2</maven-javadoc-plugin.version>
 		<maven-jxr-plugin.version>2.5</maven-jxr-plugin.version>
 		<maven-project-info-reports-plugin.version>2.8</maven-project-info-reports-plugin.version>
-		<maven-resources-plugin>2.7</maven-resources-plugin>
+		<maven-resources-plugin.version>2.7</maven-resources-plugin.version>
 		<jaxb2-maven-plugin>1.6</jaxb2-maven-plugin>
 		<maven-enforcer-plugin>1.4</maven-enforcer-plugin>
 		<maven.version.range>[3.0,4)</maven.version.range>
@@ -225,6 +225,11 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-source-plugin</artifactId>
 					<version>${maven-source-plugin.version}</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-resources-plugin</artifactId>
+					<version>${maven-resources-plugin.version}</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -516,7 +521,18 @@
 						<groupId>log4j</groupId>
 					</exclusion>					
 				</exclusions>
-        	</dependency>			
+        	</dependency>
+			<dependency>
+				<groupId>org.biopax.paxtools</groupId>
+				<artifactId>normalizer</artifactId>
+				<version>${paxtools.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
 			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
@@ -620,7 +636,7 @@
 						<artifactId>commons-logging</artifactId>
 					</exclusion>
 				</exclusions>
-			</dependency>		
+			</dependency>
 			<dependency>
 				<groupId>commons-collections</groupId>
 				<artifactId>commons-collections</artifactId>
@@ -659,17 +675,6 @@
 				<artifactId>ehcache-core</artifactId>
 				<version>${ehcache-core.version}</version>
 				<scope>runtime</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.biopax</groupId>
-				<artifactId>miriam-lib</artifactId>
-				<version>${validator.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.validator</groupId>

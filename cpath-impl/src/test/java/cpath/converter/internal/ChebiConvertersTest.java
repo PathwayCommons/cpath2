@@ -9,7 +9,7 @@ import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.validator.utils.Normalizer;
+import org.biopax.paxtools.normalizer.Normalizer;
 
 import org.junit.Test;
 

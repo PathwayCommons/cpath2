@@ -48,7 +48,7 @@ import org.biopax.paxtools.model.level3.SequenceLocation;
 import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
 import org.biopax.paxtools.model.level3.SequenceSite;
 import org.biopax.paxtools.model.level3.Xref;
-import org.biopax.validator.utils.Normalizer;
+import org.biopax.paxtools.normalizer.Normalizer;
 import org.junit.Test;
 
 import cpath.dao.CPathUtils;

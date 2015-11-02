@@ -45,7 +45,7 @@ import org.biopax.validator.api.Rule;
 import org.biopax.validator.api.Validator;
 import org.biopax.validator.api.beans.Validation;
 import org.biopax.validator.impl.IdentifierImpl;
-import org.biopax.validator.utils.Normalizer;
+import org.biopax.paxtools.normalizer.Normalizer;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;

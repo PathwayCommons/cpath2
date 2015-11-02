@@ -34,7 +34,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
 
-import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.controller.Cloner;
 import org.biopax.paxtools.controller.Completer;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -43,6 +42,7 @@ import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.Pathway;
 import org.biopax.paxtools.model.level3.RelationshipXref;
 import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.normalizer.MiriamLink;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.QueryExecuter;
 import org.biopax.paxtools.query.algorithm.Direction;

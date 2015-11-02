@@ -37,17 +37,11 @@ import cpath.service.CPathService;
 
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.EntityReference;
-import org.biopax.paxtools.model.level3.ProteinReference;
-import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
-import org.biopax.paxtools.model.level3.RelationshipXref;
-import org.biopax.paxtools.model.level3.SmallMoleculeReference;
-import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.normalizer.Normalizer;
 import org.biopax.validator.api.Validator;
 import org.biopax.validator.api.beans.*;
 import org.biopax.validator.impl.IdentifierImpl;
-import org.biopax.validator.utils.Normalizer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +61,6 @@ import java.io.*;
 public final class PreMerger {
 
     private static Logger log = LoggerFactory.getLogger(PreMerger.class);
-
     
     /**
      * Values to generate standard BioPAX RelationshipTypeVocabulary objects.
@@ -126,16 +119,12 @@ public final class PreMerger {
 				? null : provider;
 	}
 
-	
-    /**
-	 * (non-Javadoc)
-	 * @see cpath.importer.Premerger#premerge
-	 */
     public void premerge() {
-		// grab all metadata (initially, there are no pathway data files yet;
-		// but if premerge was already called, there are can be not empty dataFile 
-		// and result files for the corresp. metadata objects, which will be cleared anyway.)
-		// iterate over all metadata
+		// Initially, there are no pathway data files yet,
+		// but if premerge was already called, then there're not empty dataFile
+		// and result files for the corresp. metadata objects, which will be cleared.
+		//
+		// Iterate over all metadata:
 		for (Metadata metadata : service.metadata().findAll()) {
 			// use filter if set (identifier and version)
 			if(identifier != null) {
@@ -376,7 +365,6 @@ public final class PreMerger {
 	 * from the Warehouse entity references's xrefs to the mapping tables.
 	 * 
 	 * @param warehouse target model
-	 * @param exportAmbiguousMappings whether to file errors or not (ambiguous id mappings)
 	 */
 	private void buildIdMappingFromWarehouse(Model warehouse) {		
 		log.info("buildIdMappingFromWarehouse(), updating id-mapping " +
@@ -525,7 +513,7 @@ public final class PreMerger {
 	 * @param title short description
 	 * @param biopaxStream BioPAX OWL
 	 * @param metadata data provider's metadata
-	 * @param
+	 * @param outFileName a file name/path where to write the normalized BioPAX data
 	 * @return the object explaining the validation/normalization results
 	 */
 	private Validation checkAndNormalize(String title, InputStream biopaxStream, Metadata metadata, String outFileName) 
@@ -548,16 +536,18 @@ public final class PreMerger {
 			validator.validate(validation);
 			// unregister the validation object 
 			validator.getResults().remove(validation);
-			
+
 			// normalize
 			log.info("checkAndNormalize, now normalizing pathway data "	+ title);
 			Model model = (Model) validation.getModel();
+
+			//Normalize (URIs, etc.)
 			normalizer.normalize(model);
 			
 			// (in addition to normalizer's job) find existing or create new Provenance 
 			// from the metadata to add it explicitly to all entities -
 			metadata.setProvenanceFor(model);
-			
+
 			OutputStream out = new GZIPOutputStream(new FileOutputStream(outFileName));
 			(new SimpleIOHandler(model.getLevel())).convertToOWL(model, out);
 			

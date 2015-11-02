@@ -30,15 +30,15 @@ package cpath.dao;
 import java.net.URLDecoder;
 import java.util.*;
 
-import org.biopax.miriam.MiriamLink;
 import org.biopax.paxtools.model.BioPAXFactory;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.level3.ControlledVocabulary;
 import org.biopax.paxtools.model.level3.UnificationXref;
+import org.biopax.paxtools.normalizer.MiriamLink;
+import org.biopax.paxtools.normalizer.Normalizer;
 import org.biopax.psidev.ontology_manager.OntologyAccess;
 import org.biopax.psidev.ontology_manager.OntologyTermI;
 import org.biopax.validator.utils.BiopaxOntologyManager;
-import org.biopax.validator.utils.Normalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,8 +60,6 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 	 * Constructor
 	 * 
 	 * @param ontologies ontology config XML resource (for OntologyManager)
-	 * @param miriam
-	 * @param ontTmpDir
 	 * @throws Exception
 	 */
 	public OntologyManagerCvRepository(Properties ontologies) 

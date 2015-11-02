@@ -12,7 +12,7 @@ import org.biopax.paxtools.model.level3.SequenceInterval;
 import org.biopax.paxtools.model.level3.SequenceModificationVocabulary;
 import org.biopax.paxtools.model.level3.SequenceSite;
 import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.validator.utils.Normalizer;
+import org.biopax.paxtools.normalizer.Normalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

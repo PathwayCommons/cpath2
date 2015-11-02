@@ -142,16 +142,6 @@
 			<artifactId>hibernate-entitymanager</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.biopax</groupId>
-			<artifactId>miriam-lib</artifactId>
-			<exclusions>
-				<exclusion>
-					<artifactId>log4j</artifactId>
-					<groupId>log4j</groupId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
 			<groupId>org.biopax.validator</groupId>
 			<artifactId>biopax-validator</artifactId>
 		</dependency>
@@ -164,6 +154,10 @@
 					<groupId>log4j</groupId>
 				</exclusion>
 			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.biopax.paxtools</groupId>
+			<artifactId>normalizer</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>pathwaycommons.cpath</groupId>

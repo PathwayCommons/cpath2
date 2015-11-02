@@ -20,7 +20,7 @@ import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.validator.api.Validator;
-import org.biopax.validator.utils.Normalizer;
+import org.biopax.paxtools.normalizer.Normalizer;
 import org.junit.*;
 import org.junit.runner.RunWith;
 
