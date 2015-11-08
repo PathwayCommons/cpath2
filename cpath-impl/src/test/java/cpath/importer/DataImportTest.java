@@ -360,17 +360,16 @@ public class DataImportTest {
 		// inspired by humancyc case ;)
 		assertTrue(mergedModel.containsID("http://identifiers.org/pubmed/9763671"));
 		PublicationXref px = (PublicationXref) mergedModel.getByID("http://identifiers.org/pubmed/9763671");
-		assertEquals(2, px.getXrefOf().size()); 
-		//these are not the two original ProteinReference (got replaced/removed)
-		//the first owner of the px (PR)
-		assertTrue(px.getXrefOf().contains(mergedModel.getByID("http://identifiers.org/uniprot/O75191")));
-		//the second owner of the px (Protein)
+		assertEquals(1, px.getXrefOf().size());
+		//these are not the two original ProteinReference (those got replaced/removed)
+		//the xref is not copied from the original PR to the merged (canonical) one anymore -
+		assertFalse(px.getXrefOf().contains(mergedModel.getByID("http://identifiers.org/uniprot/O75191")));
+		//the owner of the px is the Protein
 		String pUri = Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3Protein155359", Protein.class);
 		System.out.println("pUri=" + pUri);
 		Protein p = (Protein) mergedModel.getByID(pUri);
 		assertNotNull(p);
 		System.out.println(px + ", xrefOf=" + px.getXrefOf());
-//		assertTrue(px.getXrefOf().contains(p));
 		for(XReferrable r : px.getXrefOf()) {
 			if(r.getUri().equals(pUri))
 				assertEquals(p, r);

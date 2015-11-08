@@ -276,7 +276,7 @@ public final class Merger {
 		log.info("Searching for canonical or existing EntityReference objects " +
 				" to replace equivalent original objects ("+srcModelInfo+")...");
 		final Map<EntityReference, EntityReference> replacements = new HashMap<EntityReference, EntityReference>();
-		// match some UtilityClass objects to existing ones (previously imported, warehouse)
+		// map EntityReference objects to the canonical ones (in the warehouse) if possible and safe
 		for (EntityReference bpe: new HashSet<EntityReference>(source.getObjects(EntityReference.class))) 
 		{
 			EntityReference replacement = null;
@@ -442,21 +442,15 @@ public final class Merger {
 					}	
 				}
 			}				
-			//TODO re-consider copying RelationshipXrefs (can be misleading, dirties the canonical ER...)
-			// move new PublicationXrefs and RelationshipXrefs (otherwise we lost some of original xrefs...)
+
+			// Copy/Keep PublicationXrefs and RelationshipXrefs to the original PEs
+			// (otherwise we'd lost most of original xrefs...)
 			for(Xref x : new HashSet<Xref>(old.getXref())) {
-				if(!(x instanceof UnificationXref)) {
-					((XReferrable) old).removeXref(x);				
-					Xref equivX = null;
-					for(Xref y : repl.getXref()) {
-						if(y.isEquivalent(x)) {
-							equivX = y;
-							break;
-						}
-					}
-					//if the repl. ER has neither same-id xrefs nor equivalent ones, add x:
-					if(!repl.getXref().contains(x) && equivX == null)
-							repl.addXref(x);
+				if(x instanceof UnificationXref)
+					continue;
+
+				for(SimplePhysicalEntity owner : old.getEntityReferenceOf()) {
+					owner.addXref(x);
 				}
 			}
 		}
