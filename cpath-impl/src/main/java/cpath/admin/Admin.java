@@ -718,14 +718,8 @@ public final class Admin {
 	}
 
 	
-    /**
+    /*
      * Converts a BioPAX file to other formats.
-     *       
-     * @param model
-     * @param outputFormat
-     * @param output
-     * @param params optional parameters (depends on the format)
-     * @throws IOException
      */
 	private static void convert(Model model, OutputFormat outputFormat, 
 			OutputStream output, Object... params) throws IOException 
