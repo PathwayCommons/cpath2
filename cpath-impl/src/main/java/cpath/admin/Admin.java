@@ -701,12 +701,11 @@ public final class Admin {
 		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format> [<option>] [true]"
 				+ "(can convert any of previously generated in the downloads directory BioPAX file "
 				+ "to another cPath2 output format: SBGN, GSEA, BINARY_SIF, EXTENDED_BINARY_SIF "
-				+ "using also generated blacklist.txt; <format option> is optional: "
-				+ "boolean TRUE or FALSE for the SBGN converter to also apply the default layout, and identifiers type for all other formats,"
-				+ "e.g., one can use 'uniprot' with SIF, where the default is HGNC, or 'hgnc' - with GSEA, "
-				+ "where the defaut is to print UniProt accessions);"
+				+ "using also generated blacklist.txt; <option> is optional: "
+				+ "boolean TRUE/FALSE for the SBGN converter - whether to apply the default layout, and - identifiers type for all other formats,"
+				+ "e.g., one can use 'uniprot' with SIF (where the default is HGNC), or - 'hgnc' with GSEA (the defaut is UniProt);"
 				+ "finally, optional 'true' (the last parameter) can be used to enable "
-				+ "merging equivalent interactions before the analysis." + NEWLINE);
+				+ "merging equivalent interactions before the analysis)." + NEWLINE);
 		toReturn.append(Cmd.LOG.toString() + " --export/import <filename> | --merge/delete type1:name1,type2:name2,type3,.. "
 				+ "(Exports/imports the cpath2 internal assess log db to/from the specified CSV file; "
 				+ "--import clears and rewrites the log db; "
@@ -840,8 +839,8 @@ public final class Admin {
     			String sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "hgnc");
     			try {
 					convertExtendedSifToSifGzipped(extSifArchiveName, sifArchiveName);
-				} catch (Exception e) {
-					LOG.error("Skipped converting " + extSifArchiveName + " to " + sifArchiveName, e );
+				} catch (IOException e) {
+					LOG.error("Failed (skipped) converting " + extSifArchiveName + " to " + sifArchiveName, e );
 				}
     		}
     	});
@@ -854,15 +853,15 @@ public final class Admin {
 				String sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot");
 				try {
 					convertExtendedSifToSifGzipped(extSifArchiveName, sifArchiveName);
-				} catch (Exception e) {
-					LOG.error("Skipped to convert " + extSifArchiveName + " to " + sifArchiveName, e );
+				} catch (IOException e) {
+					LOG.error("Failed (skipped) converting " + extSifArchiveName + " to " + sifArchiveName, e );
 				}
 			}
 		});
 
 		exec.shutdown(); //no more tasks
     	//wait until it's done or expired
-    	exec.awaitTermination(60, TimeUnit.HOURS);
+    	exec.awaitTermination(48, TimeUnit.HOURS);
 	}
 
 	//reads from the extended sif archive up to the blank line and writes the interaction lines (edges) to the sif archive
