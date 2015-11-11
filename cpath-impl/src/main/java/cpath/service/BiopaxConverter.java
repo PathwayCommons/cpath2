@@ -240,16 +240,15 @@ public class BiopaxConverter {
 	public void convertToBinarySIF(Model m, OutputStream out, boolean extended, String db) 
 			throws IOException 
 	{
-		SIFSearcher searcher;
-		if("uniprot".equalsIgnoreCase(db)) {
-			CommonIDFetcher idFetcher = new CommonIDFetcher();
-			idFetcher.setUseUniprotIDs(true);	
-			searcher =  new SIFSearcher(idFetcher, SIFEnum.values());
-		} else { //hgnc
-			searcher =  new SIFSearcher(SIFEnum.values());
-		}
-		
+		CommonIDFetcher idFetcher = new CommonIDFetcher();
+		SIFSearcher searcher = new SIFSearcher(new CommonIDFetcher(), SIFEnum.values());
 		searcher.setBlacklist(blacklist);
+
+		if("uniprot".equalsIgnoreCase(db)) {
+			idFetcher.setUseUniprotIDs(true);
+		} else {
+			//hgnc will be the default id type (CommonIDFetcher)
+		}
 				
 		if (extended) {
 			Set<SIFInteraction> binaryInts = searcher.searchSIF(m);
