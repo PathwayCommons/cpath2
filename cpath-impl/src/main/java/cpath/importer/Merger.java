@@ -610,12 +610,14 @@ public final class Merger {
 				
 				if(!xSet.isEmpty()) {//and mp is not empty too -
 					mp.retainAll(xSet);
-					if(mp.isEmpty())
-						break; //quit w/o trying other xrefs due to apparently empty intersection
+					if(mp.isEmpty()) {
+						//quit w/o trying other xrefs due to apparently empty intersection
+						xSet.clear(); //refs issue #224
+						break;
+					}
 				} 
 				
 				xSet = mp; //xSet now contains not empty intersection
-				assert !xSet.isEmpty() : "Impossible: xSet is empty.";
 			}
 		}
 
@@ -623,7 +625,7 @@ public final class Merger {
 			return Collections.EMPTY_SET;
 		else if(xSet.size()>1)
 			return new TreeSet<String>(xSet);
-		else {
+		else {//size == 1
 			if(log.isDebugEnabled())
 				log.debug(orig.getUri() + ", using its " + xrefType.getSimpleName()
 					+ "s, distinctly maps to: " + xSet.iterator().next());
@@ -732,16 +734,16 @@ public final class Merger {
 		if(mapsTo.isEmpty()) {
 			mappingSet = idMappingByXrefs(orig, dest, RelationshipXref.class, false);
 			mapsTo = findEntityRefUsingIdMappingResult(mappingSet, canonicalUriPrefix);
-			if(mapsTo.size()>1) {
-				log.warn("mapByXrefs, " + orig.getUri() + ", RXs map to different canonical ERs: " + mapsTo);
-			}
-		} else if(mapsTo.size() > 1) {
-			log.warn("mapByXrefs, " + orig.getUri() + ", UXs map to different canonical ERs: " + mapsTo);
 		}
 
 		if(mapsTo.size()==1) {
 			return mapsTo.iterator().next();
-		} else return null;
+		} else {
+			if(!mapsTo.isEmpty())
+				log.warn("mapByXrefs, " + orig.getUri() + ", maps to different canonical ERs: " + mapsTo);
+
+			return null;//no match or no anambiguous match can be found
+		}
 	}
 
 
