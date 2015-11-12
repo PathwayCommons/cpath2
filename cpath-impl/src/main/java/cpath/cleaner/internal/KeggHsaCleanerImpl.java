@@ -2,10 +2,7 @@ package cpath.cleaner.internal;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
@@ -78,14 +75,34 @@ final class KeggHsaCleanerImpl implements Cleaner {
 			}
 		}
 
-		//fix weird standardName that contains a comma-separated list of some names and ends with "..."
+		//fix a weird/truncated standardName/displayName that
+		//contains a comma-separated list of names or ends with or contains "..."
 		for(Named named : model.getObjects(Named.class)) {
 			if(named instanceof SmallMoleculeReference || named instanceof SmallMolecule) {
-				if(named.getDisplayName()!=null && named.getDisplayName().endsWith("...")) {
-					named.setDisplayName(named.getStandardName()); //ok if null; usually it's a C12345 (KEGG Compound ID)
+				if(named.getDisplayName() == null || named.getDisplayName().contains("...")) {
+					if(!(named.getStandardName()==null || named.getStandardName().contains("..."))) {
+						named.setDisplayName(named.getStandardName()); //usually it's like "C12345" (KEGG Compound ID)
+					} else {
+						Set<String> sortedByLengthNames = new TreeSet<String>(new Comparator<String>(){
+							@Override
+							public int compare(String o1, String o2) {
+								return o1.length() - o2.length();
+							}
+						});
+						sortedByLengthNames.addAll(named.getName());
+						named.setDisplayName(null);
+						for(String name : sortedByLengthNames) {
+							if(!name.contains("...")) {
+								named.setDisplayName(name);
+								break;
+							}
+						}
+					}
 				}
-			} else if (named instanceof ProteinReference || named instanceof Protein) {
-				if(named.getStandardName() !=null && named.getStandardName().endsWith("...")) {
+			}
+			else if (named instanceof ProteinReference || named instanceof Protein) {
+				//the fix won't be the same as for molecules (much easier and less critical)
+				if(named.getStandardName() != null && named.getStandardName().contains("...")) {
 					named.setStandardName(named.getDisplayName()); //ok if null
 				}
 			}
