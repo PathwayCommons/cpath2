@@ -240,23 +240,25 @@ public class BiopaxConverter {
 	public void convertToBinarySIF(Model m, OutputStream out, boolean extended, String db) 
 			throws IOException 
 	{
+		//TODO use CHEBI IDs instead names for SMRs in the SIF output (use ConfigurableIDFetcher)
+
 		CommonIDFetcher idFetcher = new CommonIDFetcher();
-		SIFSearcher searcher = new SIFSearcher(new CommonIDFetcher(), SIFEnum.values());
-		searcher.setBlacklist(blacklist);
 
 		if("uniprot".equalsIgnoreCase(db)) {
 			idFetcher.setUseUniprotIDs(true);
 		} else {
 			//hgnc will be the default id type (CommonIDFetcher)
 		}
-				
+
+		SIFSearcher searcher = new SIFSearcher(idFetcher, SIFEnum.values());
+		searcher.setBlacklist(blacklist);
+
 		if (extended) {
 			Set<SIFInteraction> binaryInts = searcher.searchSIF(m);
 			OldFormatWriter.write(binaryInts, out);
 		} else {
 			searcher.searchSIF(m, out);
 		}
-		
 	}
 	
 	/**

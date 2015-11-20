@@ -865,7 +865,9 @@ public final class Admin {
 	}
 
 	//reads from the extended sif archive up to the blank line and writes the interaction lines (edges) to the sif archive
-	private static void convertExtendedSifToSifGzipped(String extSifArchiveName, String sifArchiveName) throws IOException {
+	private static void convertExtendedSifToSifGzipped(String extSifArchiveName, String sifArchiveName)
+			throws IOException {
+
 		if((new File(sifArchiveName)).exists()) {
 			LOG.info("create-downloads: skip for existing " + sifArchiveName);
 			return;
@@ -873,16 +875,24 @@ public final class Admin {
 
 		LOG.info("create-downloads: generating new " + sifArchiveName);
 		BufferedReader reader = new BufferedReader(new InputStreamReader((new GZIPInputStream(new FileInputStream(extSifArchiveName)))));
-		OutputStreamWriter writer = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(sifArchiveName)));		
+		OutputStreamWriter writer = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(sifArchiveName)));
+
+		//skip the first line (headers)
+		if(reader.ready()) reader.readLine();
+
 		while(reader.ready()) {
 			String line = reader.readLine();
 			//stop at the first blank line (because next come nodes with attributes)
 			if(line==null || line.isEmpty())
 				break;
-			writer.write(line + '\n');
-		}		
+
+			//keep only the first three columns (otherwise, it's not gonna be SIF format)
+			writer.write(StringUtils.join(Arrays.copyOfRange(line.split("\t", 4), 0, 3), '\t') + '\n');
+		}
+
 		reader.close();
 		writer.close();
+
 		LOG.info("create-downloads: successfully created " + sifArchiveName);
 	}
 
