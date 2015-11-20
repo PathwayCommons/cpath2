@@ -45,47 +45,46 @@ final class ReactomeCleanerImpl implements Cleaner {
 		// create bp model from dataFile
 		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
 		Model model = simpleReader.convertFromOWL(data);
-		log.info("Cleaning Reactome data, this may take some time, please be patient...");
+		log.info("Cleaning Reactome data...");
 
-		// (why the data provider could not always do this?)	
-		// Normalize Entity URIs using Reactome stable id, where possible
-		// (not required for utility class objects)
-		Set<Entity> entities = new HashSet<Entity>(model.getObjects(Entity.class));
-		Map<String, Entity> newUriToEntityMap = new HashMap<String, Entity>();
-		for(Entity ent : entities) {
-			Set<UnificationXref> uxrefs = new ClassFilterSet<Xref, UnificationXref>(
-					new HashSet<Xref>(ent.getXref()), UnificationXref.class);			
-			for(UnificationXref x : uxrefs) {
-				if(x.getId() != null && x.getId().startsWith("REACT_")) {
-					String id = x.getId();
-					if(x.getIdVersion() != null && !x.getId().contains(".")) 
-						id += "." + x.getIdVersion();
-					
-					String uri = "http://identifiers.org/reactome/" + id;
-					
-					if(!model.containsID(uri) && !newUriToEntityMap.containsKey(uri)) {
-						newUriToEntityMap.put(uri, ent); //collect to replace URIs later (below)
-					} else { //shared unification xref bug
-						log.warn("Fixing Reactome: " + x.getId() + 
-							" unification xref is shared by several entities: "
-								+ x.getXrefOf());
-							
-						RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);
-						for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
-							if(owner.equals(newUriToEntityMap.get(uri)))
-								continue; //keep the entity to be updated unchanged
-							owner.removeXref(x);
-							owner.addXref(rx);
-						}						
-					}
-					break; //skip the rest of xrefs, if any (must not have >1 REACT_* unif. xref for the same entity)
-				}
-			}
-		}
-		
-		// set standard URIs for selected entities
-		for(String uri : newUriToEntityMap.keySet())
-			CPathUtils.replaceID(model, newUriToEntityMap.get(uri), uri);
+		// Normalize Entity URIs using Reactome stable id, where possible (not required for UtilityClass objects)
+		//Well, since v54, Reactome stable ID format has been changed smth. like: "R-HSA-123456"
+		// TODO: don't replace Entity URIs; ID format's changed, and, since PC2 v8, our Merger generates new URIs anyway.
+//		Set<Entity> entities = new HashSet<Entity>(model.getObjects(Entity.class));
+//		Map<String, Entity> newUriToEntityMap = new HashMap<String, Entity>();
+//		for(Entity ent : entities) {
+//			Set<UnificationXref> uxrefs = new ClassFilterSet<Xref, UnificationXref>(
+//					new HashSet<Xref>(ent.getXref()), UnificationXref.class);
+//			for(UnificationXref x : uxrefs) {
+//				if(x.getId() != null && x.getId().startsWith("REACT_")) {
+//					String id = x.getId();
+//					if(x.getIdVersion() != null && !x.getId().contains("."))
+//						id += "." + x.getIdVersion();
+//
+//					String uri = "http://identifiers.org/reactome/" + id;
+//
+//					if(!model.containsID(uri) && !newUriToEntityMap.containsKey(uri)) {
+//						newUriToEntityMap.put(uri, ent); //collect to replace URIs later (below)
+//					} else { //shared unification xref bug
+//						log.warn("Fixing Reactome: " + x.getId() +
+//							" unification xref is shared by several entities: "
+//								+ x.getXrefOf());
+//						RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);
+//						for(XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
+//							if(owner.equals(newUriToEntityMap.get(uri)))
+//								continue; //keep the entity to be updated unchanged
+//							owner.removeXref(x);
+//							owner.addXref(rx);
+//						}
+//					}
+//					break; //skip the rest of xrefs, if any (must not have >1 REACT_* unif. xref for the same entity)
+//				}
+//			}
+//		}
+//
+//		// set standard URIs for selected entities;
+//		for(String uri : newUriToEntityMap.keySet())
+//			CPathUtils.replaceID(model, newUriToEntityMap.get(uri), uri);
 		
 		// All Conversions in Reactome are LEFT-TO-RIGH, 
 		// unless otherwise was specified (confirmed with Guanming Wu, 2013/12)
@@ -97,36 +96,37 @@ final class ReactomeCleanerImpl implements Cleaner {
 		
 		// Remove unstable UnificationXrefs like "Reactome Database ID Release XX"
 		// if there is a stable one in the same object
-		Set<Xref> xrefsToRemove = new HashSet<Xref>();
-		for(Xref xref: new HashSet<Xref>(model.getObjects(Xref.class))) {
-			if(xref.getDb() != null && xref.getDb()
-				.toLowerCase().startsWith("reactome database id")) 
-			{
-				//remove the long comment (save some RAM)
-				if(!(xref instanceof PublicationXref))
-					xref.getComment().clear();
-				
-				//proceed with a unification xref only...
-				if(xref instanceof UnificationXref) {
-					for(XReferrable owner :  new HashSet<XReferrable>(xref.getXrefOf())) {
-						for(Xref x : new HashSet<Xref>(owner.getXref())) {
-							if(!(x instanceof UnificationXref) || x.equals(xref)) 
-								continue;
-							//another unif. xref present in the same owner object
-							if(x.getDb() != null && x.getDb().toLowerCase().startsWith("reactome")
-									&& x.getId()!= null && x.getId().startsWith("REACT_")) {
-								//remove the unstable ID ref from the object
-								owner.removeXref(xref); 
-								xrefsToRemove.add(xref);
-								//(it's ok to keep only this stable x)
-							}
-						}
-					}
-				}
-			}
-		}
-		log.info(xrefsToRemove.size() + " unstable unif. xrefs, where a stable one also exists, " +
-			"were removed from the corresponding xref properties.");
+		// Since Reactome v54, stable ID format is different (not like REACT_12345...)
+//		Set<Xref> xrefsToRemove = new HashSet<Xref>();
+//		for(Xref xref: new HashSet<Xref>(model.getObjects(Xref.class))) {
+//			if(xref.getDb() != null && xref.getDb()
+//				.toLowerCase().startsWith("reactome database id"))
+//			{
+//				//remove the long comment (save some RAM)
+//				if(!(xref instanceof PublicationXref))
+//					xref.getComment().clear();
+//
+//				//proceed with a unification xref only...
+//				if(xref instanceof UnificationXref) {
+//					for(XReferrable owner :  new HashSet<XReferrable>(xref.getXrefOf())) {
+//						for(Xref x : new HashSet<Xref>(owner.getXref())) {
+//							if(!(x instanceof UnificationXref) || x.equals(xref))
+//								continue;
+//							//another unif. xref present in the same owner object
+//							if(x.getDb() != null && x.getDb().toLowerCase().startsWith("reactome")
+//									&& x.getId()!= null && x.getId().startsWith("REACT_")) {
+//								//remove the unstable ID ref from the object
+//								owner.removeXref(xref);
+//								xrefsToRemove.add(xref);
+//								//(it's ok to keep only this stable x)
+//							}
+//						}
+//					}
+//				}
+//			}
+//		}
+//		log.info(xrefsToRemove.size() + " unstable unif. xrefs, where a stable one also exists, " +
+//			"were removed from the corresponding xref properties.");
 		
 		ModelUtils.removeObjectsIfDangling(model, UtilityClass.class);
 		
