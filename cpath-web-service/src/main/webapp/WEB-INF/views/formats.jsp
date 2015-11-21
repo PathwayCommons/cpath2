@@ -36,7 +36,7 @@ tools available for processing it, such as
 a Java library for working with BioPAX as object model, or Jena, SPARQL.
 </p>
 
-<h3>Gene Set Enrichment Format (GSEA - MSigDB GMT)</h3>
+<h3 id="gsea">Gene Set Enrichment Format (GSEA - MSigDB GMT)</h3>
 <p>
 Over-representation analysis (ORA) is frequently used to assess the
 statistical enrichment of known gene sets (e.g. pathways) in a
@@ -66,7 +66,7 @@ a UnificationXref with "taxonomy" database name and id, and Pathways,
 ProteinReferences - not empty 'organism' property value).
 </p>
 
-<h3>Simple Interaction Format (SIF)</h3>
+<h3 id="sif">Simple Interaction Format (SIF)</h3>
 <h4>BINARY_SIF</h4>
 <p>
 Many network analysis algorithms require pairwise interaction networks 
@@ -98,7 +98,7 @@ that more than one identifier maps to a UniProt identifier. In this case, a dupl
 interaction is created for each additional non-UniProt identifier.
 </p>
 
-<h4>EXTENDED_BINARY_SIF</h4>
+<h4 id="esif">EXTENDED_BINARY_SIF</h4>
 <p>
 Similar to the basic SIF output format, except that this output format is
 specified in two sections. Each section starts with one row of column
@@ -120,7 +120,7 @@ columns are strings.  This format is available for all pathways and
 interactions within Pathway Commons.
 </p>
 
-<h4>Types of Binary Relations</h4>
+<h4 id="sif_relations">Types of Binary Relations</h4>
 <table class="table table-striped table-bordered">
 <thead>
 <tr>
@@ -220,7 +220,7 @@ interactions within Pathway Commons.
 <p/>
 <table class="table"><tr><td>Legend:</td><td><img src="<c:url value='/resources/img/sif/legend.svg'/>"/></td></tr></table>
 
-<h3>SBGN</h3>
+<h3 id="sbgn">SBGN</h3>
 <p>
 The Systems Biology Graphical Notation (<a target="_blank" href="http://www.sbgn.org">SBGN</a>) 
 is a standard visual notation for network diagrams in biology. 
