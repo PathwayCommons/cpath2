@@ -82,8 +82,8 @@ public final class IdsSummary implements Analysis<Model> {
 			numSmrsNoChebi += n;
 			int t = numSmrs.get(bs).intValue();
 			totalSmrs += t;
-			System.out.println(String.format("\n %s\t%d\t(%3.1f%%)", bs.getUri(), n, n/t*100));
+			System.out.println(String.format("\n %s\t%d\t(%3.1f%%)", bs.getUri(), n, n/t*100f));
 		}
-		System.out.println(String.format("\n Total\t%d\t(%3.1f%%)", numSmrsNoChebi, numSmrsNoChebi/totalSmrs*100));
+		System.out.println(String.format("\n Total\t%d\t(%3.1f%%)", numSmrsNoChebi, numSmrsNoChebi/totalSmrs*100f));
 	}
 }
