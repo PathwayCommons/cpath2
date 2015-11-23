@@ -12,5 +12,7 @@ public class QuickTest {
         //join columns 0, 1, 2 -
         String res = StringUtils.join(Arrays.copyOfRange(cols, 0, 3), '\t');
         assertEquals("A\tB\tC", res);
+
+        //System.out.println(String.format("%3.1f",35.6345f));
     }
 }
