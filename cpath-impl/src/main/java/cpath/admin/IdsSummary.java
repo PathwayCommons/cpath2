@@ -58,6 +58,8 @@ public final class IdsSummary implements Analysis<Model> {
 		Map<Provenance,MutableInt> numSmrsWithoutChebiId = new HashMap<Provenance,MutableInt>();
 		PathAccessor pa = new PathAccessor("EntityReference/entityReferenceOf:SmallMolecule/dataSource", model.getLevel());
 		for(SmallMoleculeReference smr : model.getObjects(SmallMoleculeReference.class)) {
+			if(!smr.getMemberEntityReference().isEmpty())
+				continue;; //skip a generic SMR
 			for(Object element : pa.getValueFromBean(smr)) {
 				if(!smr.getXref().toString().contains("CHEBI:")) {
 					MutableInt n = numSmrsWithoutChebiId.get(element);
@@ -74,7 +76,7 @@ public final class IdsSummary implements Analysis<Model> {
 					tot.increment();
 			}
 		}
-		System.out.println("\nSmallMoleculeReferences without any ChEBI ID, by data source:");
+		System.out.println("\nSmallMoleculeReferences (NOT generics) without any ChEBI ID, by data source:");
 		int totalSmrs = 0;
 		int numSmrsNoChebi = 0;
 		for(Provenance bs : numSmrsWithoutChebiId.keySet()) {
@@ -82,8 +84,8 @@ public final class IdsSummary implements Analysis<Model> {
 			numSmrsNoChebi += n;
 			int t = numSmrs.get(bs).intValue();
 			totalSmrs += t;
-			System.out.println(String.format("\n %s\t%d\t(%3.1f%%)", bs.getUri(), n, n/t*100f));
+			System.out.println(String.format("\n %s\t%d\t(%3.1f%%)", bs.getUri(), n, ((float)n)/t*100));
 		}
-		System.out.println(String.format("\n Total\t%d\t(%3.1f%%)", numSmrsNoChebi, numSmrsNoChebi/totalSmrs*100f));
+		System.out.println(String.format("\n Total\t%d\t(%3.1f%%)", numSmrsNoChebi, ((float)numSmrsNoChebi)/totalSmrs*100));
 	}
 }
