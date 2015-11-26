@@ -551,21 +551,21 @@ public final class Merger {
 	 * which allows to simply merge it with other semantically equivalent ones, by ID (URI).
 	 */
 	private ProteinReference findProteinReferenceInWarehouse(final ProteinReference orig)
-	{				
-		ProteinReference toReturn = null;	
-		
+	{
 		final String standardPrefix = "http://identifiers.org/";
 		final String canonicalPrefix = standardPrefix + "uniprot/";
 		final String origUri = orig.getUri();
 		
 		// Try to re-use existing object
 		if(origUri.startsWith(canonicalPrefix)) {
-			toReturn = (ProteinReference) warehouseModel.getByID(origUri);
+			ProteinReference toReturn = (ProteinReference) warehouseModel.getByID(origUri);
+			if(toReturn != null)
+				return toReturn;
 		}
  
-		// If nothing's found by URI right away, 
-		// try id-mapping (of the normalized URI part to chebi primary accession) 
-		if (toReturn == null && origUri.startsWith(standardPrefix)) {
+		// If nothing's found by URI so far,
+		if (origUri.startsWith(standardPrefix)) {
+			// try id-mapping to UniProt AC using the ID part of the normalized URI
 			String id = origUri.substring(origUri.lastIndexOf('/')+1);	
 			String db = null;				
 			//a hack/shortcut for normalized PRs
@@ -583,18 +583,22 @@ public final class Merger {
 
 			Set<String> mp = service.map(db, id, "UNIPROT");
 			Set<EntityReference> ers = findEntityRefUsingIdMappingResult(mp, canonicalPrefix);
-			if(ers.size()>1)
+			if(ers.size()>1) {
 				log.warn(origUri + " maps to multiple warehouse ERs: " + ers);
-			else if (!ers.isEmpty())
-				toReturn = (ProteinReference) ers.iterator().next();
+				return null;
+			} else if (!ers.isEmpty()) //size == 1
+				return (ProteinReference) ers.iterator().next();
 		}
 				
-		// if yet ambiguous mapping or nothing, 
-		// try using (already normalized) Xrefs and id-mapping  
-		if (toReturn == null)
-			toReturn = (ProteinReference) mapByXrefs(orig, "UNIPROT", canonicalPrefix);
-
-		return toReturn;
+		// if still nothing came out yet, try id-mapping by (already normalized) Xrefs:
+		Set<EntityReference> ers = mapByXrefs(orig, "UNIPROT", canonicalPrefix);
+		if(ers.size()>1) {
+			log.warn(origUri + ", using its Xrefs, maps to multiple warehouse ERs: " + ers);
+			return null;
+		} else if (ers.size()==1)
+			return (ProteinReference) ers.iterator().next();
+		else //ers is empty set
+			return null;
 	}
 
 	/*
@@ -702,66 +706,63 @@ public final class Merger {
 	 */
 	private SmallMoleculeReference findSmallMoleculeReferenceInWarehouse(final SmallMoleculeReference orig)
 	{				
-		SmallMoleculeReference toReturn = null;	
-		
 		final String standardPrefix = "http://identifiers.org/";
 		final String canonicalPrefix = standardPrefix + "chebi/";
 		final String origUri = orig.getUri();
 		
 		// Try to re-use existing object
 		if(origUri.startsWith(canonicalPrefix)) {
-			toReturn = (SmallMoleculeReference) warehouseModel.getByID(origUri);
+			SmallMoleculeReference toReturn = (SmallMoleculeReference) warehouseModel.getByID(origUri);
+			if(toReturn != null)
+				return toReturn;
 		}
  
-		// If nothing's found by URI right away, 
-		// try id-mapping (of the normalized URI part to chebi primary accession) 
-		if (toReturn == null && origUri.startsWith(standardPrefix)) {
-			String id = origUri.substring(origUri.lastIndexOf('/')+1);	
+		// If nothing's found by URI, try id-mapping of the normalized URI part to chebi ID
+		if (origUri.startsWith(standardPrefix)) {
+			String id = origUri.substring(origUri.lastIndexOf('/')+1);
 			String db = dbById(id, orig.getXref()); //find by id			
 			Set<String> mp = service.map(db, id, "CHEBI");
 			Set<EntityReference> ers = findEntityRefUsingIdMappingResult(mp, canonicalPrefix);
 			if(ers.size()>1)
-				log.warn(origUri + " URI maps to multiple canonical ChEBI SMRs: " + ers);
-			else if (!ers.isEmpty())
-				toReturn = (SmallMoleculeReference) ers.iterator().next();
+				log.warn(origUri + ", using canonical URI (ID part), maps to " + ers.size() + " canonical ChEBI SMRs");
+			else if (!ers.isEmpty()) //size==1
+				return (SmallMoleculeReference) ers.iterator().next();
 		}
-				
-		// if yet ambiguous mapping or nothing, 
-		// try using (already normalized) Xrefs and id-mapping  
-		if (toReturn == null)
-			toReturn = (SmallMoleculeReference) mapByXrefs(orig, "CHEBI", canonicalPrefix);
-		
-		// nothing/ambiguous? - keep trying, map by name (e..g, 'ethanol') to ChEBI ID
-		if (toReturn == null) {		
-			Set<String> mp = mapByName(orig, "CHEBI");
-			Set<EntityReference> ers = findEntityRefUsingIdMappingResult(mp, canonicalPrefix);
-			if(ers.size()>1)
-				log.warn(origUri + ", its names match multiple canonical ChEBI SMRs: " + ers);
-			else if (!ers.isEmpty())
-				toReturn = (SmallMoleculeReference) ers.iterator().next();
-		}
-		
-		return toReturn;
+
+		// if so far the mapping there was either ambiguous or got nothing,
+		// try id-mapping by (already normalized) Xrefs:
+		Set<EntityReference> ers = mapByXrefs(orig, "CHEBI", canonicalPrefix);
+		if(ers.size()>1) {
+			log.warn(origUri + ", by its Xrefs, maps to " + ers.size() + " canonical ChEBI SMRs");
+			return null;
+		} else if (ers.size()==1)
+			return (SmallMoleculeReference) ers.iterator().next();
+
+		// nothing? - keep trying, map by name (e..g, 'ethanol') to ChEBI ID
+		Set<String> mp = mapByName(orig, "CHEBI");
+		ers = findEntityRefUsingIdMappingResult(mp, canonicalPrefix);
+		if(ers.size()>1) {
+			log.warn(origUri + ", using names, maps to " + ers.size() + " canonical ChEBI SMRs");
+			return null;
+		} else if (ers.size()==1)
+			return (SmallMoleculeReference) ers.iterator().next();
+		else //ers is empty set
+			return null;
 	}
 
-	private EntityReference mapByXrefs(EntityReference orig, String dest, String canonicalUriPrefix) {
+	private Set<EntityReference> mapByXrefs(EntityReference orig, String dest, String canonicalUriPrefix) {
 
+		//map by unification xrefs
 		Set<String> mappingSet = idMappingByXrefs(orig, dest, UnificationXref.class, false);
 		Set<EntityReference> mapsTo = findEntityRefUsingIdMappingResult(mappingSet, canonicalUriPrefix);
 
 		if(mapsTo.isEmpty()) {
+			//next, try - relationship xrefs
 			mappingSet = idMappingByXrefs(orig, dest, RelationshipXref.class, false);
 			mapsTo = findEntityRefUsingIdMappingResult(mappingSet, canonicalUriPrefix);
 		}
 
-		if(mapsTo.size()==1) {
-			return mapsTo.iterator().next();
-		} else {
-			if(!mapsTo.isEmpty())
-				log.warn("mapByXrefs, " + orig.getUri() + ", maps to different canonical ERs: " + mapsTo);
-
-			return null;//no match or no anambiguous match can be found
-		}
+		return mapsTo;
 	}
 
 	@SuppressWarnings("unchecked")
