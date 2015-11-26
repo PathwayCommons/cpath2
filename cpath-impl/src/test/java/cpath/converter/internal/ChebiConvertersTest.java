@@ -55,7 +55,8 @@ public class ChebiConvertersTest {
 		(new SimpleIOHandler(BioPAXLevel.L3)).convertToOWL(model, new FileOutputStream(outFilename));
 		
 		// get all small molecule references out
-		assertEquals(6, model.getObjects(SmallMoleculeReference.class).size());
+		assertEquals(7, model.getObjects(SmallMoleculeReference.class).size());
+		assertNotNull(model.getByID("http://identifiers.org/chebi/CHEBI:58342")); //the SMR without InChIKey
 
 		// get lactic acid sm
 		String rdfID = "http://identifiers.org/chebi/CHEBI:422";
@@ -87,12 +88,15 @@ public class ChebiConvertersTest {
         assertTrue(model.containsID("http://identifiers.org/chebi/CHEBI:422"));
         EntityReference er422 = (EntityReference) model.getByID("http://identifiers.org/chebi/CHEBI:422");
         
-        // 28 has member - 422 has member - 20
-        assertTrue(er20.getMemberEntityReferenceOf().contains(er422));
-        assertEquals(er20, er422.getMemberEntityReference().iterator().next());
-        
-		assertTrue(er422.getMemberEntityReferenceOf().contains(er28));
-        assertEquals(er422, er28.getMemberEntityReference().iterator().next());
+// member are not generated anymore (only rel. xrefs 'is_a' -> multiple_parent_reference rel. type)
+//        // 28 has member - 422 has member - 20
+//        assertTrue(er20.getMemberEntityReferenceOf().contains(er422));
+//        assertEquals(er20, er422.getMemberEntityReference().iterator().next());
+//		assertTrue(er422.getMemberEntityReferenceOf().contains(er28));
+//        assertEquals(er422, er28.getMemberEntityReference().iterator().next());
+		assertTrue(er20.getMemberEntityReferenceOf().isEmpty());
+		assertTrue(er422.getMemberEntityReferenceOf().isEmpty());
+		assertTrue(model.containsID(Normalizer.uri(model.getXmlBase(), "chebi", "CHEBI_422_multiple_parent_reference", RelationshipXref.class)));
 
         // check new elements (created by the OBO converter) exist in the model;
         // (particularly, these assertions are important to test within the persistent model (DAO) session)

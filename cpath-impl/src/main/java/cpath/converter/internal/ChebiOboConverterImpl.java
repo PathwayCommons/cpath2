@@ -23,7 +23,6 @@ import cpath.dao.CPathUtils;
 import cpath.importer.PreMerger;
 import cpath.importer.PreMerger.RelTypeVocab;
 
-
 /**
  * Implementation of Converter interface for ChEBI OBO data.
  * This converter creates SMRs, xrefs, etc., and also 
@@ -63,7 +62,7 @@ class ChebiOboConverterImpl extends BaseConverterImpl
         	
         	//First pass.
         	//Read each [TERM] data to create SMR with xrefs;
-        	//skipping terms w/o InChI (e.g., pharma categories, pills, etc. generics)
+        	//Do NOT skip any terms, even those without InChIKey (e.g., pharma categories, pills, generics)
         	BufferedReader reader = new BufferedReader(new FileReader(f));						
 			String line;
 			while ((line = reader.readLine()) != null) {
@@ -134,14 +133,15 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 	private void buildSmallMoleculeReference(Model model,
 			Map<String, String> chebiEntryMap) {
 		
-		//skip entries w/o InChIKey (e.g., top-level classes, pill/pharma terms)
-		if(chebiEntryMap.get(_SYNONYM) == null 
-				|| ! (chebiEntryMap.get(_SYNONYM).contains("InChIKey")))
-		//issue #225 fix above: some entries don't have "InChIKey=" prefix, but do have "RELATED InChIKey [ChEBI:]" at the end
-		{
-			log.debug("Skipped " + chebiEntryMap.get(_ID) + " - no InChIKey");
-			return;
-		}		
+// won't skip any entry anymore -
+//		//skip entries w/o InChIKey (e.g., top-level classes, pill/pharma terms)
+//		if(chebiEntryMap.get(_SYNONYM) == null
+//				|| ! (chebiEntryMap.get(_SYNONYM).contains("InChIKey")))
+//		//issue #225 fix above: some entries don't have "InChIKey=" prefix, but do have "RELATED InChIKey [ChEBI:]" at the end
+//		{
+//			log.debug("Skipped " + chebiEntryMap.get(_ID) + " - no InChIKey");
+//			return;
+//		}
 		
 		//create new SMR and URI
 		String id = chebiEntryMap.get(_ID);
@@ -173,47 +173,46 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 			} 
 		}
 		
-		//use synonyms to create names, structure, formula, and InChIKey rel.xref
+		//use synonyms to create names, structure, formula, and InChIKey rel.xref, if the field is present
+		//i.e., if it's not a generic/class type chebi entry
 		final String entry = chebiEntryMap.get(_SYNONYM);
-		String[] synonyms = entry.split("\t");
-		for(String sy : synonyms) {
-			Matcher matcher = namePattern.matcher(sy);
-			if(!matcher.find())
-				throw new IllegalStateException("Pattern failed to find a quoted text within: " + sy);		
-			
-			String name = matcher.group(1); //get the name/value only
+		if(entry != null && !entry.isEmpty()) {
+			String[] synonyms = entry.split("\t");
+			for (String sy : synonyms) {
+				Matcher matcher = namePattern.matcher(sy);
+				if (!matcher.find())
+					throw new IllegalStateException("Pattern failed to find a quoted text within: " + sy);
 
-			if(sy.contains("IUPAC_NAME")) {
-				smr.setStandardName(name);
-			}
-			else if(sy.contains("InChIKey")) {
-				if(name.startsWith("InChIKey=")) {
-					//exclude the prefix
-					name = name.substring(9);
+				String name = matcher.group(1); //get the name/value only
+
+				if (sy.contains("IUPAC_NAME")) {
+					smr.setStandardName(name);
+				} else if (sy.contains("InChIKey")) {
+					if (name.startsWith("InChIKey=")) {
+						//exclude the prefix
+						name = name.substring(9);
+					}
+					//add RX because a InChIKey can map to several CHEBI IDs
+					RelationshipXref rx = PreMerger.findOrCreateRelationshipXref(
+							RelTypeVocab.IDENTITY, "InChIKey", name, model);
+					smr.addXref(rx);
+				} else if (sy.contains("InChI=")) {
+					String structureUri = Normalizer
+							.uri(xmlBase, null, name, ChemicalStructure.class);
+					ChemicalStructure structure = (ChemicalStructure) model.getByID(structureUri);
+					if (structure == null) {
+						structure = model.addNew(ChemicalStructure.class, structureUri);
+						structure.setStructureFormat(StructureFormatType.InChI);
+						structure.setStructureData(name); //contains "InChI=" prefix
+					}
+					smr.setStructure(structure);
+				} else if (sy.contains("FORMULA")) {
+					smr.setChemicalFormula(name);
+				} else {
+					smr.addName(name); //incl. for SMILES
 				}
-				//add RX because a InChIKey can map to several CHEBI IDs
-				RelationshipXref rx = PreMerger.findOrCreateRelationshipXref(
-						RelTypeVocab.IDENTITY, "InChIKey", name, model);
-				smr.addXref(rx);				
 			}
-			else if(sy.contains("InChI=")) {
-				String structureUri = Normalizer
-					.uri(xmlBase, null, name, ChemicalStructure.class);
-				ChemicalStructure structure = (ChemicalStructure) model.getByID(structureUri);
-				if(structure == null) {
-					structure = model.addNew(ChemicalStructure.class, structureUri);
-					structure.setStructureFormat(StructureFormatType.InChI);
-					structure.setStructureData(name); //contains "InChI=" prefix
-				}
-				smr.setStructure(structure);
-			}
-			else if(sy.contains("FORMULA")) {
-				smr.setChemicalFormula(name);
-			}
-			else {
-				smr.addName(name); //incl. for SMILES
-			}
-		}		
+		}
 			
 		// add xrefs (external)
 		if(chebiEntryMap.get(_XREF) != null) {

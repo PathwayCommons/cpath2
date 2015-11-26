@@ -16,11 +16,8 @@ import cpath.service.Analysis;
 
 
 /**
- * Using the ChEBI ontology (OBO),
- * adds intra-ChEBI relationships to the BioPAX model.
- * 
- * This can go after the small molecule warehouse 
- * is built from ChEBI data (or even after cPath2 Merge stage). 
+ * Using the ChEBI ontology (OBO), adds intra-ChEBI ontology relationships to the warehouse BioPAX model.
+ * This should run after the ChEBI OBO data were first converted to the small molecule warehouse BioPAX model.
  */
 final class ChebiOntologyAnalysis implements Analysis<Model>
 {
@@ -40,12 +37,8 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 	
 	
 	/**
-	 * Given a ChEBI - OBO entry, creates memberEntityReference link 
-	 * between the parent and child, and adds ChEBI internal relationship xrefs.
-	 * 
-	 * @param entryBuffer
-	 * @param model existing biopax Warehouse model
-	 * @throws IOException
+	 * Given a ChEBI OBO entry, adds parent-child ('is_a') and other relations,
+	 * such as 'has_part', 'has_role', etc. (creates BioPAX relationship xrefs)
 	 */
 	private void processOBOEntry(StringBuilder entryBuffer, Model model) throws IOException {
 		if (log.isDebugEnabled()) {
@@ -65,26 +58,14 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 			return;
 		}
 
-		// for each parent ChEBI, create a member entity reference to child
+		// link each parent ChEBI to the child
 		Collection<String> parentChebiIDs = getValuesByREGEX(entryBuffer, CHEBI_OBO_ISA_REGEX);
 		for (String parentChebiID : parentChebiIDs) {
-			SmallMoleculeReference parentSMR = (SmallMoleculeReference) model
-				.getByID("http://identifiers.org/chebi/CHEBI:" + parentChebiID);
-			
-			//always add a rel. xref and is_a comments:
-			log.info("processOBOEntry(), CHEBI:" + thisID 
-					+ " 'IS_A' already ignored CHEBI:" + parentChebiID 
-					+ " (generic, no InChIKey); will add xref/comment instead of memberEntityRef.");
 			RelationshipXref xref = PreMerger
-				.findOrCreateRelationshipXref(RelTypeVocab.MULTIPLE_PARENT_REFERENCE, 
-						"CHEBI", "CHEBI:"+parentChebiID, model);
+				.findOrCreateRelationshipXref(RelTypeVocab.MULTIPLE_PARENT_REFERENCE,
+						"chebi", "CHEBI:"+parentChebiID, model);
 			thisSMR.addComment("is_a CHEBI:" + parentChebiID);
 			thisSMR.addXref(xref);
-			
-			//if the parent SMR exists in the model (has InChIKey) -
-			if (parentSMR != null) {
-				parentSMR.addMemberEntityReference(thisSMR);
-			}
 		}
 
 		// store horizontal relationships between ChEBI terms (has_part, has_role, is_conjugate_*,..)
@@ -92,8 +73,8 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 		for (String relationship : relationships) {
 			String[] parts = relationship.split(_COLON);
 			RelationshipXref xref = PreMerger
-				.findOrCreateRelationshipXref(RelTypeVocab.ADDITIONAL_INFORMATION, 
-						"ChEBI", "CHEBI:"+parts[1], model);		
+				.findOrCreateRelationshipXref(RelTypeVocab.ADDITIONAL_INFORMATION,
+						"chebi", "CHEBI:"+parts[1], model);
 			thisSMR.addComment(parts[0].toLowerCase() + " CHEBI:" + parts[1]);
 			thisSMR.addXref(xref);
 		}
@@ -103,11 +84,6 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 	 * Given an OBO entry, returns the values matched by the given regex. If
 	 * regex contains more that one capture group, a ":" will be used to delimit
 	 * them.
-	 * 
-	 * @param entryBuffer
-	 * @param regex
-	 * @return
-	 * @throws IOException
 	 */
 	private Collection<String> getValuesByREGEX(StringBuilder entryBuffer,
 			Pattern regex) throws IOException {

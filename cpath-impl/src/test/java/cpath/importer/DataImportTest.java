@@ -311,19 +311,16 @@ public class DataImportTest {
 		smr = (SmallMoleculeReference)sm.getEntityReference();
 		assertNotNull(smr);
 		assertEquals("http://identifiers.org/chebi/CHEBI:422", smr.getUri());
-		// smr must contain one member SMR
-		// but only if ChEBI OBO was also imported (ChebiOntologyAnalysis run)!
-		assertEquals(1, smr.getMemberEntityReference().size());
+		// smr must not contain any member SMR anymore (changeed on 2015/11/26)
+		// (if ChEBI OBO was previously converted by ChebiOntologyAnalysis)
+		assertEquals(0, smr.getMemberEntityReference().size());
 //		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
 		assertEquals(20, smr.getXref().size());//1 unif. + 10 rel.  + 9 PubMed xrefs are there!
-		
-		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel
-				.getByID("http://identifiers.org/chebi/CHEBI:20");
+		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:20");
 		assertEquals("(+)-camphene", msmr.getDisplayName());
 		assertEquals("(1R,4S)-2,2-dimethyl-3-methylidenebicyclo[2.2.1]heptane", msmr.getStandardName());
-//		System.out.println("merged chebi:20 xrefs: " + msmr.getXref().toString());
 		assertEquals(10, msmr.getXref().size());
-		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
+		assertTrue(msmr.getMemberEntityReferenceOf().isEmpty());
 		
 		sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, null, 
 				"http://www.biopax.org/examples/myExample#beta-D-fructose_6-phosphate",SmallMolecule.class));
@@ -388,20 +385,21 @@ public class DataImportTest {
 		sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, null,
 				"http://biocyc.org/biopax/biopax-level3SmallMolecule173158", SmallMolecule.class));
 		assertFalse(smr.getXref().isEmpty());
-		assertFalse(smr.getMemberEntityReference().isEmpty());	
+		assertTrue(smr.getMemberEntityReference().isEmpty()); //no memberERs after 2015/11/26 change in the converter
 		assertFalse(smr.getEntityReferenceOf().isEmpty());
 		assertTrue(smr.getEntityReferenceOf().contains(sm));
 
-		//the following SMR wasn't replaced (not found in Warehouse!)
-//		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:36141");
+//		//the following SMR wasn't replaced (not found in the test Warehouse model)
 		smr = (SmallMoleculeReference)mergedModel.getByID(Normalizer.uri(XML_BASE, null,
 				"http://identifiers.org/chebi/CHEBI:36141", SmallMoleculeReference.class));
+//		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:36141");
+		assertNotNull(smr);
 
-		// there were 3 member ERs in the orig. file, but, 
-		// e.g., SmallMoleculeReference165390 was removed (became dangling after the replacement of CHEBI:28)
-		assertEquals(1, msmr.getMemberEntityReferenceOf().size()); 
+//		// there were 3 member ERs in the orig. file, but,
+//		// e.g., SmallMoleculeReference165390 was removed (became dangling after the replacement of CHEBI:28)
+		assertEquals(1, msmr.getMemberEntityReferenceOf().size());
 		assertTrue(msmr.getMemberEntityReferenceOf().contains(smr));
-		
+
 		// the following would be also true if we'd keep old property/inverse prop. relationships, but we do not
 //		assertEquals(2, msmr.getMemberEntityReferenceOf().size());
 //		assertTrue(msmr.getMemberEntityReferenceOf().contains(mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28")));	

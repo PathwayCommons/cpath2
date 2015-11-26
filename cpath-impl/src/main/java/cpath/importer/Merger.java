@@ -405,8 +405,7 @@ public final class Merger {
 		}
 	}
 
-	private void copySomeOfPropertyValues(
-			Map<EntityReference, EntityReference> replacements) {
+	private void copySomeOfPropertyValues(Map<EntityReference, EntityReference> replacements) {
 		// post-fix
 		for (EntityReference old : replacements.keySet()) {			
 			final EntityReference repl = replacements.get(old);	
