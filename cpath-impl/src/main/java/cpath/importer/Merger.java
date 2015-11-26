@@ -503,12 +503,12 @@ public final class Merger {
 						.getByID("http://identifiers.org/uniprot/" + ac);
 				if(canonicalPR != null) {
 					for(Xref x : canonicalPR.getXref()) {
-						if(x.getDb().equalsIgnoreCase("HGNC Symbol"))
+						if(x.getDb().equalsIgnoreCase("hgnc symbol"))
 							hgncSymbols.add(x.getId());
 					}
 				}
 			}
-			addCanonicalRelXrefs(m, bpe, "HGNC Symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION);
+			addCanonicalRelXrefs(m, bpe, "hgnc symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION);
 		}
 	}
 
@@ -576,7 +576,7 @@ public final class Merger {
 			} else if(origUri.toLowerCase().contains("refseq")) {
 				db = "refseq";
 			} else if(origUri.toLowerCase().contains("kegg") && id.contains(":")) {
-				db = "NCBI Gene"; //KEGG actually uses NCBI Gene (aka Entrez Gene)
+				db = "ncbi gene"; //KEGG actually uses NCBI Gene (aka Entrez Gene)
 			}
 			if(db == null) 
 				db = dbById(id, orig.getXref());	

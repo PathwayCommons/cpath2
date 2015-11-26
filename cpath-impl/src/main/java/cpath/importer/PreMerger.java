@@ -584,7 +584,7 @@ public final class PreMerger {
 
 		// create a new relationship xref
 		toReturn = model.addNew(RelationshipXref.class, uri);
-		toReturn.setDb(db);
+		toReturn.setDb(db.toLowerCase());
 		toReturn.setId(id);
 
 		// create/add the relationship type vocabulary
@@ -598,7 +598,7 @@ public final class PreMerger {
 			UnificationXref rtvux = (UnificationXref) model.getByID(uri);
 			if (rtvux == null) {
 				rtvux = model.addNew(UnificationXref.class, uri);
-				rtvux.setDb(vocab.db);
+				rtvux.setDb(vocab.db.toLowerCase());
 				rtvux.setId(vocab.id);
 			}	
 			rtv.addXref(rtvux);
