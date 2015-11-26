@@ -113,7 +113,7 @@ public class BiopaxConverter {
     	
 		// otherwise, convert, return a new DataResponse
     	// (can contain up to ~ 1Gb unicode string data)
-    	//TODO use a TMP File instead of byte array, set the file path as dataResponse.data value
+    	// a TMP File is used instead of a byte array; set the file path as dataResponse.data value
     	File tmpFile = null;
     	try {
     		Path tmpFilePath = Files.createTempFile("cpath2", "");

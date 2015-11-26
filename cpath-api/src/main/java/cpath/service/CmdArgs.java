@@ -48,7 +48,7 @@ public enum CmdArgs {
     biopax("a BioPAX OWL to convert"),
     path("a BioPAX property path expression (like xPath)"),
     direction("graph query parameter 'direction'"),
-    //alg("a user-defined BioPAX data analysis (byte code) to run."), //TODO
+    //TODO alg("a user-defined BioPAX data analysis (code) to run."),
 	;
 	
 	private final String info;

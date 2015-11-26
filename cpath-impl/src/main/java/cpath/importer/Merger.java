@@ -90,9 +90,8 @@ public final class Merger {
 	/**
 	 * Constructor.
 	 * 
-	 * @param service
+	 * @param service cpath2 service
 	 * @param force whether to forcibly merge BioPAX data the validation reported critical about or skip.
-	 * @throws AssertionError when dest is not instanceof {@link Model};
 	 */
 	public Merger(CPathService service, boolean force) 
 	{
@@ -222,7 +221,6 @@ public final class Merger {
 		log.info("Done merging " + metadata);
 		return targetModel;
 	}
-
 
 	/**
 	 * Exports the main model to the 'All' BioPAX archive
@@ -382,8 +380,9 @@ public final class Merger {
 	}
 
 	/* 
-	 * Replace all not normalized so far URIs in the source model 
-	 * with auto-generated new short ones (also add a bp:comment about original URIs)
+	 * Replace all not PC2 URIs in the source model
+	 * with new auto-generated ones using the PC2 xml:base
+	 * (also add a bp:comment about previous URIs)
 	 */
 	private void replaceOriginalUris(Model source, String description, Model target) {
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
@@ -456,38 +455,62 @@ public final class Merger {
 		}
 	}
 
-
 	/**
 	 * Performs id-mapping from the  
 	 * unification and relationship xrefs 
 	 * of a physical entity or gene to the primary/canonical
-	 * id (uniprot or chebi), creates new relationship xrefs,
+	 * id (only uniprot or chebi), creates new relationship xrefs,
 	 * and adds them back to the entity.
 	 * 
 	 * @param m where to add new xrefs (and who's xml:base to apply for new URIs)
-	 * @param bpe a {@link Gene} or {@link PhysicalEntity}
-	 * @param db map identifiers to (e.g., CHEBI, UNIPROT)
-	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity
+	 * @param bpe a {@link Gene} or {@link PhysicalEntity} or {@link EntityReference}
+	 * @param db map identifiers to either CHEBI or UNIPROT IDs
+	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity nor EntityReference; or - db is unsupported.
 	 */
 	private void addCanonicalRelXrefs(Model m, Named bpe, String db) 
 	{
-		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference))
-			throw new AssertionError("Not Gene or PE: " + bpe);
-			
+		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference)
+				|| !("UNIPROT".equals(db) || "CHEBI".equals(db))) {
+			throw new AssertionError("Either biopax type: " + bpe.getModelInterface().getSimpleName()
+					+ " or db: " + db + " is not allowed here.");
+		}
+
+		Set<String> uniprots = new HashSet<String>();
+
 		// map and generate/add xrefs
 		Set<String> mappingSet = idMappingByXrefs(bpe, db, UnificationXref.class, true);
+		if(db.equalsIgnoreCase("uniprot"))
+			uniprots.addAll(mappingSet);
 		addCanonicalRelXrefs(m, bpe, db, mappingSet, RelTypeVocab.IDENTITY);
 		
 		mappingSet = idMappingByXrefs(bpe, db, RelationshipXref.class, true);
 		addCanonicalRelXrefs(m, bpe, db, mappingSet, RelTypeVocab.ADDITIONAL_INFORMATION);
-		
+		if(db.equalsIgnoreCase("uniprot"))
+			uniprots.addAll(mappingSet);
+
 		//map by display and standard names
-		if(bpe.getDisplayName()!=null && !bpe.getDisplayName().isEmpty()) {
+		if((bpe instanceof  SmallMolecule || bpe instanceof SmallMoleculeReference)
+				&& bpe.getDisplayName() != null) {
 			mappingSet = service.map(null, bpe.getDisplayName(), db);
 			addCanonicalRelXrefs(m, bpe, db, mappingSet, RelTypeVocab.ADDITIONAL_INFORMATION);
 		}
-	}
 
+		if(!uniprots.isEmpty()) {
+			//add HGNC Symbol xrefs as well if possible
+			Set<String> hgncSymbols = new HashSet<String>();
+			for(String ac : uniprots) {
+				ProteinReference canonicalPR = (ProteinReference) warehouseModel
+						.getByID("http://identifiers.org/uniprot/" + ac);
+				if(canonicalPR != null) {
+					for(Xref x : canonicalPR.getXref()) {
+						if(x.getDb().equalsIgnoreCase("HGNC Symbol"))
+							hgncSymbols.add(x.getId());
+					}
+				}
+			}
+			addCanonicalRelXrefs(m, bpe, "HGNC Symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION);
+		}
+	}
 
 	/**
 	 * Finds or creates relationship xrefs
@@ -520,7 +543,6 @@ public final class Merger {
 			bpe.addXref(rx);
 		}
 	}
-
 
 	/*
 	 * Finds previously created or generates (searching in the db) 
@@ -585,7 +607,6 @@ public final class Merger {
 		return (isUnion) ? idMappingByXrefsUnion(orig, mapTo, xrefType)
 				: idMappingByXrefsIntersection(orig, mapTo, xrefType);
 	}
-	
 
 	private Set<String> idMappingByXrefsIntersection(final XReferrable orig,
 			String mapTo, final Class<? extends Xref> xrefType) 
@@ -656,7 +677,6 @@ public final class Merger {
 
 		return mappedTo;
 	}
-	
 
 	/*
 	 * Finds a {@link UnificationXref} by id 
@@ -670,7 +690,6 @@ public final class Merger {
 		
 		return null;
 	}
-
 
 	/**
 	 * Finds previously created or generates (searching in the data warehouse) 
@@ -725,7 +744,6 @@ public final class Merger {
 		return toReturn;
 	}
 
-
 	private EntityReference mapByXrefs(EntityReference orig, String dest, String canonicalUriPrefix) {
 
 		Set<String> mappingSet = idMappingByXrefs(orig, dest, UnificationXref.class, false);
@@ -745,7 +763,6 @@ public final class Merger {
 			return null;//no match or no anambiguous match can be found
 		}
 	}
-
 
 	@SuppressWarnings("unchecked")
 	private Set<String> mapByName(EntityReference orig, String toDb) {
@@ -787,7 +804,6 @@ public final class Merger {
 		return mp;
 	}
 
-
 	private Set<EntityReference> findEntityRefUsingIdMappingResult(Set<String> mapsTo, String uriPrefix)
 	{
 		Set<EntityReference> toReturn = new HashSet<EntityReference>();
@@ -801,5 +817,4 @@ public final class Merger {
 		
 		return toReturn;
 	}
-		
 }

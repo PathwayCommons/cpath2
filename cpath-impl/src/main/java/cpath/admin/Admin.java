@@ -102,7 +102,7 @@ public final class Admin {
 		EXPORT("-export"),
         CONVERT("-convert"),
         LOG("-log"),
-        ANALYSIS("-run-analysis"), //TODO normally, it should never be used
+        ANALYSIS("-run-analysis"), //e.g., custom post-fix or model summary/statistic
 		;
 
         // string ref for readable name

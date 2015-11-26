@@ -157,7 +157,7 @@ for regular users, - show the compact read-only summary of the data providers --
 					<button class="btn btn-warning" ng-click="saveDatasource(ds)" 
 						ng-disabled="! (ds.iconUrl && ds.urlToHomepage && ds.type && ds.name[0] && ds.description)">Save </button>
 						
-<!-- TODO (way later, but better do from console) to execute and monitor premerge/merge/index, etc. cPath2 admin tasks 
+<!-- TODO (better do from console) execute and monitor premerge/merge/index, etc. cPath2 admin tasks
 	from this web app is currently not as straighforward as it might seem due to: a single-user H2 database, Spring web context w/o biopax-validator, 
 	not yet fully designed/implemented service methods for doing this, etc. -->
 <!--         			<button class="btn btn-success" ng-click="executePremerge(ds)"  -->

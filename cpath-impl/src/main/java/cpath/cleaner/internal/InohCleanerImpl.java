@@ -60,7 +60,7 @@ final class InohCleanerImpl implements Cleaner {
 			}
 		}
 
-		//TODO use PhysicalEntity instead SimplePhysicalEntity below to also fix for Complexes' xrefs!
+		// using PhysicalEntity instead SimplePhysicalEntity below also fixes for Complexes' xrefs;
 		// move some of unification xrefs from physical entity to entity reference
 		for(PhysicalEntity spe : new HashSet<PhysicalEntity>(model.getObjects(PhysicalEntity.class))) {			
 			Set<UnificationXref> xrefs = new ClassFilterSet<Xref,UnificationXref>(new HashSet<Xref>(spe.getXref()), UnificationXref.class);

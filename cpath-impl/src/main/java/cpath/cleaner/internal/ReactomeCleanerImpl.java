@@ -49,7 +49,7 @@ final class ReactomeCleanerImpl implements Cleaner {
 
 		// Normalize Entity URIs using Reactome stable id, where possible (not required for UtilityClass objects)
 		//Well, since v54, Reactome stable ID format has been changed smth. like: "R-HSA-123456"
-		// TODO: don't replace Entity URIs; ID format's changed, and, since PC2 v8, our Merger generates new URIs anyway.
+// Don't replace Entity URIs; ID format's changed, and, since PC2 v8, our Merger generates new URIs anyway.
 //		Set<Entity> entities = new HashSet<Entity>(model.getObjects(Entity.class));
 //		Map<String, Entity> newUriToEntityMap = new HashMap<String, Entity>();
 //		for(Entity ent : entities) {
