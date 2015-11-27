@@ -96,9 +96,7 @@ public final class Admin {
 		CREATE_WAREHOUSE("-create-warehouse"),			
 		MERGE("-merge"),
     	INDEX("-index"),
-        CREATE_BLACKLIST("-create-blacklist"),
         CREATE_DOWNLOADS("-create-downloads"),
-        UPDATE_COUNTS("-update-counts"),
 		EXPORT("-export"),
         CONVERT("-convert"),
         LOG("-log"),
@@ -160,6 +158,8 @@ public final class Admin {
 		if (args[0].equals(Cmd.INDEX.toString())) {
 			
 			createIndex();
+			createBlacklist();
+			updateCounts();
 			
 		} else if (args[0].equals(Cmd.FETCH_METADATA.toString())) {
 			
@@ -216,11 +216,6 @@ public final class Admin {
 				
 				exportData(args[1], uris, absoluteUris, datasources, types);
 			}
-
-			
-		} else if (args[0].equals(Cmd.CREATE_BLACKLIST.toString())) {
-			
-			createBlacklist();
 			
 		} else if (args[0].equals(Cmd.CONVERT.toString())) {
 			if (args.length < 4)
@@ -240,12 +235,8 @@ public final class Admin {
 			convert(model, outputFormat, fos, idTypeOrLayout);
 			
 		} else if (args[0].equals(Cmd.CREATE_DOWNLOADS.toString())) {
-			
+
 			createDownloads();
-			
-		} else if (args[0].equals(Cmd.UPDATE_COUNTS.toString())) {
-			
-			updateCounts();
 		
 		} else if (args[0].equals(Cmd.LOG.toString())) {	
 			//options: --export/import filename | --update/merge/delete type:name,type:name,type... 
@@ -686,10 +677,9 @@ public final class Admin {
 		toReturn.append(Cmd.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
 		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + NEWLINE);			
 		toReturn.append(Cmd.MERGE.toString() + " [--force] (merge all pathway data; overwrites the main biopax model archive)"+ NEWLINE);
-		toReturn.append(Cmd.INDEX.toString() + " (to build new full-text index of the main merged BioPAX db)" + NEWLINE);
-        toReturn.append(Cmd.CREATE_BLACKLIST.toString() + " (creates blacklist.txt in the downloads directory)" + NEWLINE);
-        toReturn.append(Cmd.UPDATE_COUNTS.toString() + " (re-calculates pathway, molecule, " +
-        		"interaction counts per data source)" + NEWLINE);
+		toReturn.append(Cmd.INDEX.toString() + " (build new full-text index of the main merged BioPAX db;" +
+				"create blacklist.txt in the downloads directory; re-calculates the no. pathways, molecules and " +
+        		"interactions per data source)" + NEWLINE);
         toReturn.append(Cmd.CREATE_DOWNLOADS.toString() + " (creates cpath2 BioPAX DB archives using several " +
         	"data formats, and also split by data source, organism)"  + NEWLINE);        
         // other useful (utility) commands
@@ -1028,8 +1018,7 @@ public final class Admin {
 			        	if(!uris.isEmpty()) {
 			        		OutputStream os = new GZIPOutputStream(new FileOutputStream(biopaxArchive));
 			        		SimpleIOHandler sio = new SimpleIOHandler(BioPAXLevel.L3);
-//			        		sio.absoluteUris(true);
-			        		sio.convertToOWL(mainModel, os, uris.toArray(new String[]{}));	
+			        		sio.convertToOWL(mainModel, os, uris.toArray(new String[]{}));
 			       			LOG.info("create-downloads: successfully created " + 	biopaxArchive);
 			        	} else {
 			        		LOG.info("create-downloads: no pathways/interactions found; skipping " + 	biopaxArchive);
@@ -1047,8 +1036,7 @@ public final class Admin {
 
 	private static String formatAndExt(OutputFormat format, String suffix) {
 		
-		suffix = (suffix==null || suffix.isEmpty())
-				? "" : "." + suffix.toLowerCase();
+		suffix = (suffix==null || suffix.isEmpty()) ? "" : "." + suffix.toLowerCase();
 		
 		switch (format) {
 		case GSEA:

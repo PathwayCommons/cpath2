@@ -118,8 +118,6 @@ to create a new cPAth2 instance from scratch:
  - -create-warehouse
  - -merge --force (unfortunately, --force is usually required...)
  - -index
- - -update-counts
- - -create-blacklist
  - -create-downloads
 
 Extras/other steps (optional):
