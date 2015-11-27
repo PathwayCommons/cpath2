@@ -157,9 +157,7 @@ public final class Admin {
 
 		if (args[0].equals(Cmd.INDEX.toString())) {
 			
-			createIndex();
-			createBlacklist();
-			updateCounts();
+			index();
 			
 		} else if (args[0].equals(Cmd.FETCH_METADATA.toString())) {
 			
@@ -375,45 +373,48 @@ public final class Admin {
 	
     
 	/**
-     * Builds new biopax full-text index.
+     * Builds a new BioPAX full-text index,creates the black list or ubiquitous molecules,
+	 * and calculates/updates the total no. of pathways, interactions, physical entities in the main db.
      * 
-	 * @throws IOException 
+	 * @throws IOException
      * @throws IllegalStateException when not in maintenance mode
      */
-    public static void createIndex() throws IOException {
+    public static void index() throws IOException {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
-		
-		LOG.info("createIndex: loading the BioPAX model...");
+
+		LOG.info("index: importing the main BioPAX model from the archive...");
 		Model model = CPathUtils.loadMainBiopaxModel();
-		Indexer indexer = new SearchEngine(model, CPathSettings.getInstance().indexDir());	
-		LOG.info("createIndex: started indexing...");
+		LOG.info("index: the model is ready.");
+
+		Indexer indexer = new SearchEngine(model, CPathSettings.getInstance().indexDir());
+		LOG.info("index: indexing...");
 		indexer.index();
-		
- 		LOG.info("createIndex: done.");
+ 		LOG.info("index: done indexing.");
+
+		LOG.info("index: blacklisting...");
+		createBlacklist(model);
+		LOG.info("index: blacklist done.");
+
+		LOG.info("index: counting the no. pathways, interactions and physical entities...");
+		updateCounts(model);
+
+		LOG.info("index: all done.");
  	}
 
     
-	/**
+	/*
 	 * Updates counts of pathways, etc. and saves in the Metadata table.
 	 * 
      * This depends on the full-text index, which must have been created already
      * (otherwise, results will be wrong).
-     * 
-     * @throws IllegalStateException when not in maintenance mode
      */
-	public static void updateCounts() {
-		if (!cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
+	private static void updateCounts(Model model) {
 
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
 				new String[] { "classpath:META-INF/spring/applicationContext-jpa.xml" });
 
 		MetadataRepository metadataRepo = (MetadataRepository) context.getBean(MetadataRepository.class);
-		
-		//load the model
-		Model model = CPathUtils.loadMainBiopaxModel();
-		LOG.info("Loaded the BioPAX Model");
 		
 		// initialize the search engine
 		Searcher searcher = new SearchEngine(model, CPathSettings.getInstance().indexDir());
@@ -456,18 +457,11 @@ public final class Admin {
 	}
     
 	
-	/**
+	/*
      * Generates cpath2 graph query blacklist file
      * (to exclude ubiquitous small molecules, like ATP).
-     *     
-     * @throws RuntimeException (when I/O errors), 
-     * 			IllegalStateException (when not in maintenance mode)
      */
-    public static void createBlacklist() throws IOException {
-		if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Maintenance mode is not enabled.");
-
-		Model model = CPathUtils.loadMainBiopaxModel();
+    private static void createBlacklist(Model model) throws IOException {
 
 		BlacklistGenerator gen = new BlacklistGenerator();
 		Blacklist blacklist = gen.generateBlacklist(model);

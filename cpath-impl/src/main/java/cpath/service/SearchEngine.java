@@ -461,10 +461,10 @@ public class SearchEngine implements Indexer, Searcher {
 	
 	// internal methods
 	
-	/**
+	/*
 	 * Creates a new Lucene Document that corresponds to a BioPAX object.
 	 * It does not check whether the document exists (should not be there,
-	 * because the {@link #index(Model)} method cleans up the index)
+	 * because the {@link #index()} method cleans up the index)
 	 * 
 	 * Some fields also include biopax data type property values not only from 
 	 * the biopax object but also from its child elements, up to some depth 
@@ -484,9 +484,6 @@ public class SearchEngine implements Indexer, Searcher {
 	 *  									  	up to given depth/level, analyze=no, store=yes;
 	 *  
 	 *  'size' - number of child processes, an integer as string; analyze=no, store=yes
-	 * 
-	 * @param bpe
-	 * @param indexWriter
 	*/
 	void index(BioPAXElement bpe, IndexWriter indexWriter) {		
 		// create a new document
@@ -670,16 +667,12 @@ public class SearchEngine implements Indexer, Searcher {
 		return id;
 	}
 	
-	/** 
+	/*
 	 * Creates a search filter like 
 	 * type AND (datasource OR datasource...) 
 	 *      AND (organism OR organism OR...)
 	 * 
-	 * Both names (partial or full) and URIs should work as filter values. 
-	 * 
-	 * @param type
-	 * @param datasources
-	 * @param organisms
+	 * Both names (partial or full) and URIs should work as filter values.
 	 */	
 	private Filter createFilter(Class<? extends BioPAXElement> type, 
 			String[] datasources, String[] organisms) {
@@ -725,10 +718,6 @@ public class SearchEngine implements Indexer, Searcher {
 	 *  (can be a canonical protein reference; it's is not equivalent to "search?q=*&datasource=intact&datasource=biogrid&...",
 	 *  which means "to occur either in intact, incl. IntAct Complex, or in biogrid or in all these")
 	 * "search?q=*&datasource=intact complex biogrid&..." - won't match anything.
-	 * 
-	 * @param filterValues
-	 * @param filterField
-	 * @return
 	 */
 	private Query subQuery(String[] filterValues, String filterField) {
 		BooleanQuery query = new BooleanQuery();	
