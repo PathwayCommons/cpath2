@@ -74,6 +74,8 @@ import java.util.zip.GZIPOutputStream;
  * This class is responsible for semantic Merging 
  * of the normalized original provider's pathway data 
  * into the main persistent Paxtools BioPAX model.
+ *
+ * @author Igor Rodchenkov
  */
 public final class Merger {
 
@@ -266,10 +268,10 @@ public final class Merger {
 		
 		final String srcModelInfo = "source: " + description;
 		
-		log.info("Converting all Xref.db values to upper case (" + srcModelInfo + "; "
-				+ "helps when merging xrefs...");
+		//Convert all Xref.db values to lower case
+		//...the Normalized must have already done so; anyway...
 		for(Xref x : source.getObjects(Xref.class))
-			if(x.getDb()!=null) x.setDb(x.getDb().toUpperCase());
+			if(x.getDb()!=null) x.setDb(x.getDb().toLowerCase());
 			
 		log.info("Searching for canonical or existing EntityReference objects " +
 				" to replace equivalent original objects ("+srcModelInfo+")...");
