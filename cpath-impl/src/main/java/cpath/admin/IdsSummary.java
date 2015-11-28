@@ -164,7 +164,7 @@ public final class IdsSummary implements Analysis<Model> {
 			totalErs += t;
 			out.println(String.format("%s\t\t%d\t(%3.1f%%)", ds.getUri(), n, ((float)n)/t*100));
 		}
-		out.println(String.format("Total\t\t%d\t(%3.1f%%)", numProblematicErs, ((float)problematicErs)/totalErs*100));
+		out.println(String.format("Total\t\t%d\t(%3.1f%%)", problematicErs, ((float)problematicErs)/totalErs*100));
 
 
 		//Analyse SMRs - ChEBI usage, coverage,..
