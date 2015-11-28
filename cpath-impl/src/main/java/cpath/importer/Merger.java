@@ -587,7 +587,7 @@ public final class Merger {
 			if(ers.size()>1) {
 				log.warn(origUri + " maps to multiple warehouse ERs: " + ers);
 				return null;
-			} else if (!ers.isEmpty()) //size == 1
+			} else if (ers.size()==1)
 				return (ProteinReference) ers.iterator().next();
 		}
 				
