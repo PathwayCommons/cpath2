@@ -11,3 +11,8 @@ This effort builds on the recent emergence of a diverse and active community of 
 ## Funding ##
 
 Pathway Commons: Research Resource for Biological Pathways, PIs: Chris Sander, Gary Bader, 1U41HG006623 (formerly 1 P41 P41HG04118)
+
+### Credits ###
+[![](http://www.jetbrains.com/idea/opensource/img/all/banners/idea125x37_white.gif)](http://www.jetbrains.com/idea)
+
+plus, we thank lots of well-known open source projects, such as Apache, Eclipse, Spring, besides for sure GitHub!
