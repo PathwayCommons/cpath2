@@ -223,9 +223,10 @@ or the fat JAR with embedded application server was started) -->
 			(despite there might exist BioPAX entities with the ID being part of their names or comments;
 			which can be found by '/search' command).
 		</li>
-		<li><a rel="nofollow" href="get?uri=http://identifiers.org/reactome/REACT_12034.3">
+		<%-- TODO: update the example URI below before every release --%>
+		<li><a rel="nofollow" href="get?uri=http://purl.org/pc2/8/Pathway_51d78d02d3ac75a76d8a11ed87b5c496">
 			Get the Signaling by BMP <strong>Pathway</strong></a> 
-			(REACT_12034.2, format: BioPAX, source: Reactome)
+			(R-HSA-201451, format: BioPAX, source: Reactome)
 		</li>
 	</ol>
 </div>
