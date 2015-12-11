@@ -72,7 +72,7 @@ The metadata columns are, in order:
  5. URL to the Data Provider's Homepage (optional, good to have)
  6. IMAGE URL (optional) - can be pointing to a resource logo;
  7. TYPE - one of: BIOPAX, PSI_MI, PSI_MITAB, WAREHOUSE, MAPPING;
- 8. CLEANER_CLASS - leave empty or use a specific cleaner class name (like cpath.cleaner.internal.UniProtCleanerImpl);
+ 8. CLEANER_CLASS - leave empty or use a specific cleaner class name (like cpath.cleaner.internal.SomeCleanerImpl);
  9. CONVERTER_CLASS - leave empty or use a specific converter class, 
  e.g., cpath.converter.internal.UniprotConverterImpl, cpath.converter.internal.PsimiConverterImpl;
  10. PUBMED ID - PubMed record ID (only number) of the main publication

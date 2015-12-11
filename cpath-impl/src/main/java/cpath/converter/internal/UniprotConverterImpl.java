@@ -71,7 +71,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     StringBuilder sequence = dataElements.get("  "); //SEQUENCE
                     StringBuilder features = dataElements.get("FT"); //strict format in 6-75 char in each FT line
                     
-                    ProteinReference proteinReference = newUniProtWithXrefs(idParts[0], acNames, model);
+                    ProteinReference proteinReference = newProteinReferenceWithAccessionXrefs(idParts[0], acNames, model);
                     
             		// add some external xrefs from DR fileds
                     if (xrefs != null) {
@@ -197,7 +197,8 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     String fieldName = parts[0]; //no trim() required here
                     
                     String fieldValue = parts[1].trim();
-                    //after 1 Oct 2014, remove evidence (e.g., {type|source} - {ECO:0000269|PubMed10433554}) at the name's end (see http://www.uniprot.org/changes/evidences)
+                    // after 1 Oct 2014, remove evidence (e.g., {type|source} - {ECO:0000269|PubMed10433554})
+					// at the name's end (see http://www.uniprot.org/changes/evidences)
                     int idx = fieldValue.indexOf(" {");
                     if(idx>0) fieldValue = fieldValue.substring(0, idx);
                     
@@ -283,12 +284,17 @@ final class UniprotConverterImpl extends BaseConverterImpl {
         	
         	String db = parts[0].trim();
         	
-        	// skip for other, not identity, ID types,
+        	// use only some of prot. ref. identity resources
+			// (to make Xrefs and then use them for id-mapping);
+			// skip for other, not identity, ID types,
         	// e.g., refs to pathway databases, ontologies, etc.:
         	if (!db.equalsIgnoreCase("GENEID") 
         			&& !db.equalsIgnoreCase("REFSEQ") 
         			&& !db.equalsIgnoreCase("ENSEMBL") 
-        			&& !db.equalsIgnoreCase("HGNC")) {
+        			&& !db.equalsIgnoreCase("HGNC")
+					&& !db.equalsIgnoreCase("PDB")
+					//TODO also, don't skip for: IPI, PIR, UniGene, EMBL (mRna)..?
+					) {
 				continue;
         	}
 
@@ -303,6 +309,11 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				//at the end of a DR line in some cases (e.g, GeneID or RefSeq)?
 				if(id.equals("-"))
 					break;
+
+				//skip PDB annotations
+				if(db.equalsIgnoreCase("PDB") && !id.matches("^[0-9][A-Za-z0-9]{3}$"))
+					break;
+
 				//no more Ensembl IDs (skip comments)
 				if (db.equalsIgnoreCase("ENSEMBL") && !id.startsWith("ENS"))
 					break; 
@@ -318,9 +329,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				}
 				
 				//ok to create a new rel. xref with type "identity"
-				RelationshipXref rXRef = PreMerger
-						.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, 
-								fixedDb, id, model);					
+				RelationshipXref rXRef = PreMerger.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, fixedDb, id, model);
 				proteinReference.addXref(rXRef);
 				// this xref type is then used for id-mapping in the Merger and queries;
 			}
@@ -395,14 +404,14 @@ final class UniprotConverterImpl extends BaseConverterImpl {
         dbName = dbName.trim();
 		String rdfId = Normalizer.uri(model.getXmlBase(), dbName, id, UnificationXref.class);
 		
-		UnificationXref rXRef = (UnificationXref) model.getByID(rdfId);
-		if (rXRef == null) {
-			rXRef = (UnificationXref) model.addNew(UnificationXref.class, rdfId);
-			rXRef.setDb(dbName);
-			rXRef.setId(id);
+		UnificationXref x = (UnificationXref) model.getByID(rdfId);
+		if (x == null) {
+			x = model.addNew(UnificationXref.class, rdfId);
+			x.setDb(dbName);
+			x.setId(id);
 		}
 		
-		proteinReference.addXref(rXRef);
+		proteinReference.addXref(x);
     }
 
 	/**
@@ -415,22 +424,24 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 	 * @param model 
 	 * @return ProteinReference
 	 */
-	private ProteinReference newUniProtWithXrefs(String shortName, String accessions, Model model) 
+	private ProteinReference newProteinReferenceWithAccessionXrefs(String shortName, String accessions, Model model)
 	{	
 		// accession numbers as array
-		final String acList[] = accessions.split(";");
-		// the first one, primary id, becomes the RDFId
-		final String primaryId = acList[0].trim();
+		final List<String> acList = new ArrayList<String>(Arrays.asList(accessions.split(";")));
+		// Pop the the first item, the primary AC, to generate canonical URI and unif. xref:
+		final String primaryId = acList.remove(0).trim();
 		final String uri = "http://identifiers.org/uniprot/" + primaryId;
-		// create a new PR
+
+		// create a new PR with the name and primary unification xref
 		ProteinReference proteinReference = model.addNew(ProteinReference.class, uri);
 		proteinReference.setDisplayName(shortName);
+		setUnificationXRef("UniProt", primaryId, proteinReference, model);
 		
-		// add all unification xrefs
+		// add 'secondary-ac' type RXs:
 		for (String acEntry : acList) {
-			String ac = acEntry.trim();
-			//use db='UniProt' for these xrefs instead of 'UniProt Knowledgebase' (preferred in MIRIAM)
-			setUnificationXRef("UniProt", ac, proteinReference, model);
+			RelationshipXref rXRef = PreMerger.findOrCreateRelationshipXref(
+					RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "UniProt", acEntry.trim(), model);
+			proteinReference.addXref(rXRef);
 		}
 		
 		return proteinReference;

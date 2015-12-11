@@ -269,7 +269,7 @@ public class DataImportTest {
 		
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P13631"));
 		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P22932"));		
-		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01118", UnificationXref.class)));
+		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01118_secondary-ac", RelationshipXref.class)));
 		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P01118")); //must be replaced with P01116 and gone
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01116", UnificationXref.class)));
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P01116"));
@@ -279,7 +279,7 @@ public class DataImportTest {
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
 		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
-		assertEquals(11, pr.getXref().size()); //11, no duplicate xrefs (10 of the warehouse PR, +1 - comes from...)!
+		assertEquals(15, pr.getXref().size());
 		assertEquals("9606", pr.getOrganism().getXref().iterator().next().getId());
 		
 		// test proper merge of small molecule reference

@@ -414,6 +414,7 @@ public final class PreMerger {
 						srcDb = "UNIPROT"; //consider 'uniprot*' source IDs/names as 'UNIPROT' for simplicity
 					
 					mappings.add(new Mapping(srcDb, id, destDb, ac));
+					//TODO remove the xref unless it's the primary, 'HGNC Symbol' or smth. we wanna keep (can be dozens xrefs)
 				}
 			}
 
