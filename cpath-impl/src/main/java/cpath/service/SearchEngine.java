@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import cpath.jpa.MappingsRepository;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -54,20 +55,14 @@ import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.Version;
+import org.biopax.paxtools.controller.DataPropertyEditor;
 import org.biopax.paxtools.controller.Fetcher;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.BioSource;
-import org.biopax.paxtools.model.level3.Level3Element;
-import org.biopax.paxtools.model.level3.Named;
-import org.biopax.paxtools.model.level3.Pathway;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.level3.Process;
-import org.biopax.paxtools.model.level3.Provenance;
-import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.paxtools.model.level3.XReferrable;
-import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,10 +83,11 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_URI = "uri";
 	public static final String FIELD_KEYWORD = "keyword"; //anything, e.g., names, terms, comments, incl. - from child elements 
 	public static final String FIELD_NAME = "name"; // standardName, displayName, other names
-	public static final String FIELD_XREFDB = "xrefdb"; //xref.db
+	public static final String FIELD_XREFDB = "xrefdb"; //xref.db TODO: remove this field?
 	public static final String FIELD_XREFID = "xrefid"; //xref.id
-	public static final String FIELD_PATHWAY = "pathway"; //pathways and parent pathways; to be inferred from the whole biopax model
-	public static final String FIELD_SIZE = "size";	
+	public static final String FIELD_PATHWAY = "pathway"; //pathways and parent pathways to be inferred from entire biopax model
+	public static final String FIELD_SIZE = "size";
+
 	// Full-text search/filter fields (case sensitive) -
 	//index organism names, cell/tissue type (term), taxonomy id, but only store BioSource URIs	
 	public static final String FIELD_ORGANISM = "organism";
@@ -108,12 +104,7 @@ public class SearchEngine implements Indexer, Searcher {
 			FIELD_XREFID, //xref.id (also direct child's xref.id, i.e., can find both xref and its owners using a xrefid:<id> query string);
 			FIELD_SIZE, // find entities with a given no. child/associated processes...
 			FIELD_KEYWORD, //includes data type properties (names, terms, comments), 
-						  //also from  child elements up to given depth (3), also stores but not indexes parent pathway uris and names;		
-//			FIELD_PATHWAY, // this (if pathway) and PARENT pathway URIs are stored in the index, not analyzed/indexed; whereas names - indexed but not stored;			
-// the following fields are for filtering only (thus excluded):
-//			FIELD_ORGANISM,	
-//			FIELD_DATASOURCE, 
-//			FIELD_TYPE,
+						  //also from  child elements up to given depth (3), also stores but not indexes parent pathway uris and names;
 	};
 		
 	private final Model model;
@@ -121,13 +112,17 @@ public class SearchEngine implements Indexer, Searcher {
 	private final Analyzer analyzer;
 	private final File indexFile;
 	private SearcherManager searcherManager;
+	private final MappingsRepository idMapping;
 
 	public final static int DEFAULT_MAX_HITS_PER_PAGE = 100;
 	
 	/**
-	 * Main Constructor.
-	 * @param indexLocation
-	 * @throws IOException 
+	 * Constructor.
+	 * Use this one if you want to only search the existing index
+	 * or create a new index without using additional id-mapping.
+	 *
+	 * @param indexLocation index directory location
+	 * @throws IOException
 	 */
 	public SearchEngine(Model model, String indexLocation) {
 		this.model = model;
@@ -135,6 +130,26 @@ public class SearchEngine implements Indexer, Searcher {
 		initSearcherManager();
 		this.maxHitsPerPage = DEFAULT_MAX_HITS_PER_PAGE;
 		this.analyzer = new StandardAnalyzer();
+		this.idMapping = null; //not needed
+	}
+
+	/**
+	 * Constructor.
+	 * Use this one when cteating a new {@link Indexer} and  create a new full-text index
+	 * using id-mapping db in addition to BioPAX fields (such as name, Xref/id, etc.)
+	 * Use the other Constructor if you just want to get a new read-only  {@link Searcher}.
+	 *
+	 * @param indexLocation index directory location
+	 * @param mappingsRepository id-mapping repository
+	 * @throws IOException
+	 */
+	public SearchEngine(Model model, String indexLocation, MappingsRepository mappingsRepository) {
+		this.model = model;
+		this.indexFile = new File(indexLocation);
+		initSearcherManager();
+		this.maxHitsPerPage = DEFAULT_MAX_HITS_PER_PAGE;
+		this.analyzer = new StandardAnalyzer();
+		this.idMapping = mappingsRepository;
 	}
 
 	private void initSearcherManager() {
@@ -173,7 +188,7 @@ public class SearchEngine implements Indexer, Searcher {
 	
 		try {	
 			QueryParser queryParser = new MultiFieldQueryParser(DEFAULT_FIELDS, analyzer);
-			queryParser.setAllowLeadingWildcard(true);//TODO do we really want leading wildcards (e.g. *sulin)?
+			queryParser.setAllowLeadingWildcard(true);//we want leading wildcards enabled (e.g. *sulin)
 			
 			searcher = searcherManager.acquire();	
 			
@@ -181,8 +196,8 @@ public class SearchEngine implements Indexer, Searcher {
 			if(!query.trim().equals("*")) { //if not "*" query, which is not supported out-of-the-box, then
 				//create the lucene query
 				Query luceneQuery = queryParser.parse(query);
-//do NOT (Lucene 4.1), or scoring/highlighting won't work for wildcard queries...				
-//luceneQuery = searcher.rewrite(luceneQuery); 
+				//do NOT rewrite (Lucene 4.1), or scoring/highlighting won't work for wildcard queries...
+				//luceneQuery = searcher.rewrite(luceneQuery);
 				LOG.debug("parsed lucene query is " + luceneQuery.getClass().getSimpleName());
 				
 				//create filter: type AND (d OR d...) AND (o OR o...)
@@ -411,7 +426,13 @@ public class SearchEngine implements Indexer, Searcher {
 				public void run() {					
 					// get or infer some important values if possible from this, child or parent objects:
 					Set<String> keywords = ModelUtils.getKeywords(bpe, 3); //TODO use Filter<DataPropertyEditor>... args
-					
+
+					//TODO for Entity or ER, also collect IDs from child UX/RXs (depth=3) and map to other IDs (use idMapping)
+					if(bpe instanceof Entity || bpe instanceof EntityReference) {
+						//Set<String> bioIds = getBioIdentifiers(bpe, 4); //implement it...
+						//bpe.getAnnotations().put(FIELD_XREFID, bioIds);
+					}
+
 					// a hack to remove special (debugging) biopax comments
 					for(String s : new HashSet<String>(keywords)) {
 						//exclude additional comments generated by normalizer, merger, etc.
@@ -512,10 +533,16 @@ public class SearchEngine implements Indexer, Searcher {
 				addKeywords((Set<String>)bpe.getAnnotations().get(FIELD_KEYWORD), doc);
 			}
 			if(bpe.getAnnotations().containsKey(FIELD_SIZE)) {
-				field = new IntField(FIELD_SIZE, 
-					Integer.parseInt((String)bpe.getAnnotations()
-					.get(FIELD_SIZE)), Field.Store.YES);
+				field = new IntField(FIELD_SIZE,
+						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_SIZE)), Field.Store.YES);
 				doc.add(field);
+			}
+			if(bpe.getAnnotations().containsKey(FIELD_XREFID)) {
+				field = new IntField(FIELD_XREFID,
+						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_XREFID)), Field.Store.YES);
+				doc.add(field);
+				//also add them as keywords
+				addKeywords((Set<String>)bpe.getAnnotations().get(FIELD_XREFID), doc);
 			}
 		}
 		bpe.getAnnotations().remove(FIELD_KEYWORD);
@@ -523,6 +550,7 @@ public class SearchEngine implements Indexer, Searcher {
 		bpe.getAnnotations().remove(FIELD_ORGANISM);
 		bpe.getAnnotations().remove(FIELD_PATHWAY);
 		bpe.getAnnotations().remove(FIELD_SIZE);
+		bpe.getAnnotations().remove(FIELD_XREFID);
 			
 		// name
 		if(bpe instanceof Named) {
@@ -554,6 +582,9 @@ public class SearchEngine implements Indexer, Searcher {
 					//the filed is not_analyzed; so in order to make search case-insensitive 
 					//(when searcher uses standard analyzer), we turn the value to lowercase.
 					field = new TextField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
+					if(idMapping != null) {
+					//TODO use id-mapping - add all 'xrefid' values (map to uniprot/chebi and then to all other id types)
+					}
 					doc.add(field);
 				}
 			}

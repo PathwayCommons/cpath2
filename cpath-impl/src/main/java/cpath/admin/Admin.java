@@ -33,6 +33,7 @@ import cpath.config.CPathSettings;
 import cpath.dao.*;
 import cpath.importer.Merger;
 import cpath.importer.PreMerger;
+import cpath.jpa.MappingsRepository;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.jpa.MetadataRepository;
@@ -383,21 +384,32 @@ public final class Admin {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
 
+		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
+				new String[] { "classpath:META-INF/spring/applicationContext-jpa.xml" });
+
+		final MetadataRepository metadataRepo = context.getBean(MetadataRepository.class);
+		final MappingsRepository mappingsRepo = context.getBean(MappingsRepository.class);
+
 		LOG.info("index: importing the main BioPAX model from the archive...");
-		Model model = CPathUtils.loadMainBiopaxModel();
+		final Model model = CPathUtils.loadMainBiopaxModel();
 		LOG.info("index: the model is ready.");
 
-		Indexer indexer = new SearchEngine(model, CPathSettings.getInstance().indexDir());
+		SearchEngine searchEngine = new SearchEngine(model, CPathSettings.getInstance().indexDir(), mappingsRepo);
 		LOG.info("index: indexing...");
-		indexer.index();
+		searchEngine.index();
  		LOG.info("index: done indexing.");
 
-		LOG.info("index: blacklisting...");
-		createBlacklist(model);
-		LOG.info("index: blacklist done.");
-
 		LOG.info("index: counting the no. pathways, interactions and physical entities...");
-		updateCounts(model);
+		updateCounts(model, metadataRepo, searchEngine);
+
+		context.close(); //Spring context is not required any longer
+
+		LOG.info("index: blacklisting...");
+		//Generates cpath2 graph query blacklist file (to exclude ubiquitous small molecules, like ATP)
+		BlacklistGenerator gen = new BlacklistGenerator();
+		Blacklist blacklist = gen.generateBlacklist(model);
+		// Write all the blacklisted ids to the output
+		blacklist.write(new FileOutputStream(cpath.blacklistFile()));
 
 		LOG.info("index: all done.");
  	}
@@ -409,15 +421,7 @@ public final class Admin {
      * This depends on the full-text index, which must have been created already
      * (otherwise, results will be wrong).
      */
-	private static void updateCounts(Model model) {
-
-		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
-				new String[] { "classpath:META-INF/spring/applicationContext-jpa.xml" });
-
-		MetadataRepository metadataRepo = (MetadataRepository) context.getBean(MetadataRepository.class);
-		
-		// initialize the search engine
-		Searcher searcher = new SearchEngine(model, CPathSettings.getInstance().indexDir());
+	private static void updateCounts(Model model, MetadataRepository metadataRepo, Searcher searcher) {
 
 		// prepare a list of all pathway type metadata to update
 		List<Metadata> pathwayMetadata = new ArrayList<Metadata>();
@@ -452,30 +456,9 @@ public final class Admin {
 		}
 
 		metadataRepo.save(pathwayMetadata);
-
-		context.close();
 	}
     
-	
-	/*
-     * Generates cpath2 graph query blacklist file
-     * (to exclude ubiquitous small molecules, like ATP).
-     */
-    private static void createBlacklist(Model model) throws IOException {
 
-		BlacklistGenerator gen = new BlacklistGenerator();
-		Blacklist blacklist = gen.generateBlacklist(model);
-
-		// Write all the blacklisted ids to the output
-		try {		
-			blacklist.write(new FileOutputStream(cpath.blacklistFile()));
-		} catch (FileNotFoundException e) {
-			throw new RuntimeException("Failed creating the file: " 
-					+ cpath.blacklistFile(), e);
-		} 
-    }
-
-    
     /**
      * Performs cpath2 Merge stage.
      * @param force

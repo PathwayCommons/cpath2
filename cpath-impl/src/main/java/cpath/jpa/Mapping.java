@@ -54,10 +54,13 @@ public final class Mapping {
     	Assert.hasText(srcId);
     	Assert.hasText(dest);
     	Assert.hasText(destId);
-    	
-    	this.src = src.toUpperCase();
-    	this.dest = dest.toUpperCase();
-    	this.srcId = srcId;
+
+		this.src = src.toUpperCase();
+		//replace uniprot* db names with simply 'UNIPROT'
+		if(this.src.startsWith("UNIPROT") || this.src.startsWith("SWISSPROT")) this.src = "UNIPROT";
+		this.srcId = srcId;
+
+		this.dest = dest.toUpperCase();
     	this.destId = destId;
     }
     

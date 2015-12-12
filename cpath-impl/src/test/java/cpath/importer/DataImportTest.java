@@ -206,7 +206,7 @@ public class DataImportTest {
 		//now find another one in the main model
 		resp =  (SearchResponse) service.search("NP_005099", 0, RelationshipXref.class, null, null);
 		Collection<SearchHit> prs = resp.getSearchHit();
-		assertFalse(prs.isEmpty());
+		assertFalse(prs.isEmpty()); //TODO once index() is fixed (using id-mapping instead of xrefs), it shouldn't fail.
 		Collection<String> prIds = new HashSet<String>();
 		for(SearchHit e : prs)
 			prIds.add(e.getUri());		
@@ -278,8 +278,8 @@ public class DataImportTest {
 		assertEquals(10, pr.getName().size()); //make sure this one is passed (important!)
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
-		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
-		assertEquals(15, pr.getXref().size());
+//		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
+		assertEquals(5, pr.getXref().size()); // 3 - uniprot; 2 - hgnc, hgnc symbol
 		assertEquals("9606", pr.getOrganism().getXref().iterator().next().getId());
 		
 		// test proper merge of small molecule reference
@@ -314,12 +314,12 @@ public class DataImportTest {
 		// smr must not contain any member SMR anymore (changeed on 2015/11/26)
 		// (if ChEBI OBO was previously converted by ChebiOntologyAnalysis)
 		assertEquals(0, smr.getMemberEntityReference().size());
-//		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
-		assertEquals(20, smr.getXref().size());//1 unif. + 10 rel.  + 9 PubMed xrefs are there!
+		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
+		assertEquals(13, smr.getXref().size());//9 PX, 1 UX and 3 RX (ChEBI) are there!
 		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:20");
 		assertEquals("(+)-camphene", msmr.getDisplayName());
 		assertEquals("(1R,4S)-2,2-dimethyl-3-methylidenebicyclo[2.2.1]heptane", msmr.getStandardName());
-		assertEquals(10, msmr.getXref().size());
+		assertEquals(3, msmr.getXref().size());
 		assertTrue(msmr.getMemberEntityReferenceOf().isEmpty());
 		
 		sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, null, 
@@ -330,7 +330,7 @@ public class DataImportTest {
 
 		smr = (SmallMoleculeReference) mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28");
 //		System.out.println("merged chebi:28 xrefs: " + smr.getXref().toString());
-		assertEquals(12, smr.getXref().size()); // relationship xrefs were removed before merging
+		assertEquals(5, smr.getXref().size()); // relationship xrefs were removed before merging
 		assertEquals("(R)-linalool", smr.getDisplayName());
 		assertEquals(5, smr.getEntityReferenceOf().size());
 		
@@ -363,10 +363,10 @@ public class DataImportTest {
 		assertFalse(px.getXrefOf().contains(mergedModel.getByID("http://identifiers.org/uniprot/O75191")));
 		//the owner of the px is the Protein
 		String pUri = Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3Protein155359", Protein.class);
-		System.out.println("pUri=" + pUri);
+//		System.out.println("pUri=" + pUri);
 		Protein p = (Protein) mergedModel.getByID(pUri);
 		assertNotNull(p);
-		System.out.println(px + ", xrefOf=" + px.getXrefOf());
+//		System.out.println(px + ", xrefOf=" + px.getXrefOf());
 		for(XReferrable r : px.getXrefOf()) {
 			if(r.getUri().equals(pUri))
 				assertEquals(p, r);

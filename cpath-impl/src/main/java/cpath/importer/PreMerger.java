@@ -35,6 +35,7 @@ import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.service.CPathService;
 
+import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
@@ -43,6 +44,7 @@ import org.biopax.validator.api.Validator;
 import org.biopax.validator.api.beans.*;
 import org.biopax.validator.impl.IdentifierImpl;
 
+//import org.hibernate.validator.internal.util.ModUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -106,7 +108,7 @@ public final class PreMerger {
 	/**
 	 * Constructor.
 	 *
-	 * @param service
+	 * @param service cpath2 service (provides data query methods)
 	 * @param validator Biopax Validator
 	 * @param provider pathway data provider's identifier
 	 */
@@ -119,11 +121,13 @@ public final class PreMerger {
 				? null : provider;
 	}
 
-    public void premerge() {
+	/**
+	 * Pre-process (import, clean, normalize) all data from all configured data sources.
+	 */
+	public void premerge() {
 		// Initially, there are no pathway data files yet,
 		// but if premerge was already called, then there're not empty dataFile
 		// and result files for the corresp. metadata objects, which will be cleared.
-		//
 		// Iterate over all metadata:
 		for (Metadata metadata : service.metadata().findAll()) {
 			// use filter if set (identifier and version)
@@ -211,7 +215,7 @@ public final class PreMerger {
 		// iterate over all metadata
 		for (Metadata metadata : service.metadata().findAll()) 
 		{
-			//skip not warehouse data
+			//skip for not warehouse data
 			if (metadata.getType() != METADATA_TYPE.WAREHOUSE)
 				continue; 
 			
@@ -235,11 +239,10 @@ public final class PreMerger {
 		//clear all id-mapping tables
 		service.mapping().deleteAll();
 		
-		// Using the Warehouse, generate the id-mapping tables
-		// from that BioPAX model:
+		// Using the just built Warehouse BioPAX model, generate the id-mapping tables:
 		buildIdMappingFromWarehouse(warehouse);
 			
-		// Next, process all extra MAPPING data files, build, save tables
+		// Next, process all extra MAPPING data files, build, save in the id-mapping db repository.
 		for (Metadata metadata : service.metadata().findAll()) 
 		{
 			//skip not id-mapping data
@@ -259,17 +262,10 @@ public final class PreMerger {
 				}
 			}
 		}
-		
-		// add more relationship xrefs to the warehouse ERs; 
-		// this makes full-text search for ER by some secondary IDs possible
-		log.info("buildWarehouse(), adding more Xrefs to ERs using id-mapping...");
-		for(EntityReference er : new HashSet<EntityReference>(warehouse.getObjects(EntityReference.class))) 
-		{
-			Assert.isTrue(er.getUri().contains("/chebi/") || er.getUri().contains("/uniprot/"),
-					er + " - warehouse ER is neither PR nor SMR (bug)!");
-			addRelXrefsToWarehouseEntityRef(warehouse, er);
-		}
-		
+
+		//remove dangling xrefs (PDB,RefSeq,..) - left after they've been used for creating id-mappings, then unlinked
+		ModelUtils.removeObjectsIfDangling(warehouse, Xref.class);
+
 		// save to compressed file
 		String whFile  = CPathSettings.getInstance().warehouseModelFile();
 		log.info("buildWarehouse(), creating Warehouse BioPAX archive: " + whFile);		
@@ -293,31 +289,42 @@ public final class PreMerger {
 		}
 	}
 
+	// add more RXs to ERs; this enables full-text search with IDs not available in original UniProt or ChEBI files.
+	// (makes sense if additional MAPPING type metadata and data were actually imported);
+	//TODO: instead, do this when creating the index
+//		log.info("buildWarehouse(), adding more Xrefs to ERs using id-mapping...");
+//		for(EntityReference er : new HashSet<EntityReference>(warehouse.getObjects(EntityReference.class)))
+//		{
+//			Assert.isTrue(er.getUri().contains("/chebi/") || er.getUri().contains("/uniprot/"),
+//					er + " - warehouse ER is neither PR nor SMR (bug)!");
+//			addRelXrefsToWarehouseEntityRef(warehouse, er);
+//		}
 
-	private void addRelXrefsToWarehouseEntityRef(Model warehouse, EntityReference er) 
-	{
-		final String primaryDb = (er instanceof ProteinReference) ? "UNIPROT" : "CHEBI"; 
-		final String primaryId = CPathUtils.idfromNormalizedUri(er.getUri());
-		
-		//reverse id-mapping (from the primary db/id to all db/id entries that map to the primary pair)
-		List<Mapping> map = service.mapping().findByDestIgnoreCaseAndDestId(primaryDb, primaryId);		
-		for(Mapping m : map) 
-		{
-			Assert.isTrue(m.getDest().equals(primaryDb) && m.getDestId().equals(primaryId), 
-				"findByDestIgnoreCaseAndDestId result contains mappings with different primary db/id (bug!)");
-					
-			//find the unif.xref by the normalized URI, if exists
-			final String uxUri = Normalizer.uri(xmlBase, m.getSrc(), m.getSrcId(), UnificationXref.class);
-			UnificationXref ux = (UnificationXref) warehouse.getByID(uxUri);			
-			if(ux != null && er.getXref().contains(ux)) 
-				continue; //skip existing equivalet unif. xref
-
-			//otherwise - find/make special rel.xref
-			RelationshipXref rx = findOrCreateRelationshipXref(
-					RelTypeVocab.IDENTITY, m.getSrc(), m.getSrcId(), warehouse);			
-			er.addXref(rx); 
-		}
-	}
+	//TODO: refactor this method and move to where the full-text index is created
+	//so far, this method was useful for warehouse SMRs only (because we only imported extra id-mappings from UniChem)
+//	private void addRelXrefsToWarehouseEntityRef(Model warehouse, EntityReference er)
+//	{
+//		final String primaryDb = (er instanceof SmallMoleculeReference) ? "CHEBI" : "UNIPROT";
+//		final String primaryId = CPathUtils.idfromNormalizedUri(er.getUri());
+//
+//		//reverse id-mapping (from the primary db/id to all other db/id entries that map to the primary)
+//		final List<Mapping> map = service.mapping().findByDestIgnoreCaseAndDestId(primaryDb, primaryId);
+//		for(Mapping m : map)
+//		{
+//			Assert.isTrue(m.getDest().equals(primaryDb) && m.getDestId().equals(primaryId),
+//				"findByDestIgnoreCaseAndDestId result contains mappings with different primary db/id (bug!)");
+//
+//			//find the unif.xref by the normalized URI, if exists
+//			final String uxUri = Normalizer.uri(xmlBase, m.getSrc(), m.getSrcId(), UnificationXref.class);
+//			UnificationXref ux = (UnificationXref) warehouse.getByID(uxUri);
+//			if(ux != null && er.getXref().contains(ux))
+//				continue; //skip existing equivalet unif. xref
+//
+//			//otherwise - find/make special rel.xref
+//			RelationshipXref rx = findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, m.getSrc(), m.getSrcId(), warehouse);
+//			er.addXref(rx);
+//		}
+//	}
 
 
 	/**
@@ -346,8 +353,8 @@ public final class PreMerger {
 		String line = reader.readLine(); //get the first, title line
 		String head[] = line.split("\t");
 		assert head.length == 2 : "bad header";
-		String from = head[0].trim().toUpperCase();
-		String to = head[1].trim().toUpperCase();
+		String from = head[0].trim();
+		String to = head[1].trim();
 		while ((line = reader.readLine()) != null) {
 			String pair[] = line.split("\t");
 			String srcId = pair[0].trim();
@@ -375,7 +382,7 @@ public final class PreMerger {
 		//b. UniProt secondary IDs, RefSeq, NCBI Gene, etc. - to primary UniProt AC.
 		final Set<Mapping> mappings = new HashSet<Mapping>();
 		
-		// for each ER, using xrefs, map other identifiers to the primary accession
+		// for each ER, using its xrefs, map other identifiers to the primary accession
 		for(EntityReference er : warehouse.getObjects(EntityReference.class)) 
 		{	
 			String destDb = null;
@@ -383,11 +390,13 @@ public final class PreMerger {
 				destDb = "UNIPROT";
 			else if(er instanceof SmallMoleculeReference)
 				destDb = "CHEBI";
+			else //there're only PR or SMR types of ER in the warehouse model
+				throw new AssertionError("Unsupported warehouse ER type: " + er.getModelInterface().getSimpleName());
 			
 			//extract the primary id from the standard (identifiers.org) URI
 			final String ac = CPathUtils.idfromNormalizedUri(er.getUri());
 			
-			for(Xref x : er.getXref()) {
+			for(Xref x : new HashSet<Xref>(er.getXref())) {
 				// By design (warehouse), there are unif. and rel. xrefs added 
 				// by the Uniprot Converter, and we will uses those, 
 				// skipping publication and illegal xrefs:
@@ -407,35 +416,37 @@ public final class PreMerger {
 						)
 					)
 				) {
-					String id = x.getId();
-					String srcDb = x.getDb().toUpperCase();
-					
-					if(srcDb.startsWith("UNIPROT") || srcDb.startsWith("SWISSPROT"))
-						srcDb = "UNIPROT"; //consider 'uniprot*' source IDs/names as 'UNIPROT' for simplicity
-					
-					mappings.add(new Mapping(srcDb, id, destDb, ac));
-					//TODO remove the xref unless it's the primary, 'HGNC Symbol' or smth. we wanna keep (can be dozens xrefs)
+					final String src = x.getDb().toUpperCase();
+					mappings.add(new Mapping(src, x.getId(), destDb, ac));
+
+					//remove the xref unless it's the primary, 'HGNC Symbol' or smth. we really wanna keep in the model:
+					//TODO double-check that we're not deleting useful xrefs here (id-mapping/queries do not need them anymore)
+					if(!src.startsWith("UNIPROT") && !src.startsWith("HGNC") && !src.startsWith("NCBI Gene")
+							&& !src.equalsIgnoreCase("CHEBI")) {
+						er.removeXref(x);
+					} else if(x instanceof RelationshipXref && (src.startsWith("UNIPROT") || src.equalsIgnoreCase("CHEBI"))) {
+						//TODO perhaps, remove all secondary ACs xrefs too
+					}
 				}
 			}
 
 			if(er instanceof SmallMoleculeReference) {
 				SmallMoleculeReference smr = (SmallMoleculeReference) er;
 				//map some names (display and std.)
-				String name = smr.getDisplayName().toLowerCase();
-				mappings.add(new Mapping("CHEMICAL NAME", name, destDb, ac));	
+				mappings.add(new Mapping("CHEMICAL NAME", smr.getDisplayName().toLowerCase(), destDb, ac));
 				//skip other names (and standardName) as they can be too long...
 			}
 			
 			if(er instanceof ProteinReference) {
 				ProteinReference pr = (ProteinReference) er;
 				//map unofficial IDs, e.g., CALM_HUMAN, too
-				String name = pr.getDisplayName().toUpperCase();
-				mappings.add(new Mapping("UNIPROT", name, destDb, ac));	
+				mappings.add(new Mapping("UNIPROT", pr.getDisplayName().toUpperCase(), destDb, ac));
 			}
 		}
 
+		//save/update to the id-mapping database
 		saveIgnoringDuplicates(mappings);
-		
+
 		log.info("buildIdMappingFromWarehouse(), exitting...");
 	}
 	
