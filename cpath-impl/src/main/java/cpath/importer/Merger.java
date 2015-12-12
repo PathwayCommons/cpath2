@@ -35,25 +35,7 @@ import cpath.jpa.Metadata;
 import cpath.service.CPathService;
 
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.Complex;
-import org.biopax.paxtools.model.level3.Entity;
-import org.biopax.paxtools.model.level3.EntityFeature;
-import org.biopax.paxtools.model.level3.EntityReference;
-import org.biopax.paxtools.model.level3.Gene;
-import org.biopax.paxtools.model.level3.Level3Element;
-import org.biopax.paxtools.model.level3.Named;
-import org.biopax.paxtools.model.level3.Pathway;
-import org.biopax.paxtools.model.level3.PhysicalEntity;
-import org.biopax.paxtools.model.level3.ProteinReference;
-import org.biopax.paxtools.model.level3.PublicationXref;
-import org.biopax.paxtools.model.level3.RelationshipXref;
-import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
-import org.biopax.paxtools.model.level3.SmallMolecule;
-import org.biopax.paxtools.model.level3.SmallMoleculeReference;
-import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.paxtools.model.level3.UtilityClass;
-import org.biopax.paxtools.model.level3.XReferrable;
-import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.Normalizer;
 import org.biopax.paxtools.util.Filter;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -277,27 +259,37 @@ public final class Merger {
 				" to replace equivalent original objects ("+srcModelInfo+")...");
 		final Map<EntityReference, EntityReference> replacements = new HashMap<EntityReference, EntityReference>();
 		// map EntityReference objects to the canonical ones (in the warehouse) if possible and safe
-		for (EntityReference bpe: new HashSet<EntityReference>(source.getObjects(EntityReference.class))) 
+		for (EntityReference origEr: new HashSet<EntityReference>(source.getObjects(EntityReference.class)))
 		{
 			EntityReference replacement = null;
 			
 			// Find the best replacement ER in the Warehouse:
-			if (bpe instanceof ProteinReference) {
-				replacement = findProteinReferenceInWarehouse((ProteinReference) bpe);
+			if (origEr instanceof ProteinReference) {
+				replacement = findProteinReferenceInWarehouse((ProteinReference) origEr);
 			} 
-			else if (bpe instanceof SmallMoleculeReference) {
-				replacement = findSmallMoleculeReferenceInWarehouse((SmallMoleculeReference) bpe);
+			else if (origEr instanceof SmallMoleculeReference) {
+				replacement = findSmallMoleculeReferenceInWarehouse((SmallMoleculeReference) origEr);
 			} 
 				
 			if (replacement != null) {
 				//save in the map to replace the source bpe later 
-				replacements.put(bpe, replacement);
-				if(!replacement.getUri().equals(bpe.getUri()))
-					replacement.addComment("REPLACED " + bpe.getUri());
+				replacements.put(origEr, replacement);
+				if(!replacement.getUri().equals(origEr.getUri()))
+					replacement.addComment("REPLACED " + origEr.getUri());
+			} else {
+				//i.e., no matching ER found in the Warehouse (the ER is from unwanted organism or unknown/no id).
+				// Remove the PR/Dna*R/Rna*R if entityReferenceOf() is empty (member of a generic ER, or dangling)
+				if(origEr instanceof SequenceEntityReference && origEr.getEntityReferenceOf().isEmpty()) {
+					for(EntityReference genericEr : new HashSet<EntityReference>(origEr.getMemberEntityReferenceOf())) {
+						genericEr.removeMemberEntityReference(origEr);
+					}
+					//remove now dangling member ER from the source model
+					source.remove(origEr);
+				}
 			}
 		}
 		
-		//explicitly remove old (to be replaced) objects from the source model
+		// Explicitly remove old (to be replaced) objects from the source model
 		// this is important for the replacement (below) to work, esp. in case 
 		// new URI is the same as original normalized URI...
 		for(EntityReference old : replacements.keySet()) {
