@@ -128,22 +128,11 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 		sb.append(removePrefix(key, line));
 		map.put(key, sb.toString());
 	}
-	
 
-	private void buildSmallMoleculeReference(Model model,
-			Map<String, String> chebiEntryMap) {
-		
-// won't skip any entry anymore -
-//		//skip entries w/o InChIKey (e.g., top-level classes, pill/pharma terms)
-//		if(chebiEntryMap.get(_SYNONYM) == null
-//				|| ! (chebiEntryMap.get(_SYNONYM).contains("InChIKey")))
-//		//issue #225 fix above: some entries don't have "InChIKey=" prefix, but do have "RELATED InChIKey [ChEBI:]" at the end
-//		{
-//			log.debug("Skipped " + chebiEntryMap.get(_ID) + " - no InChIKey");
-//			return;
-//		}
-		
-		//create new SMR and URI
+
+	//It now generates an SMR for every ChEBI entry, even those without InChIKey (top classes, pill/pharma terms)
+	private void buildSmallMoleculeReference(Model model, Map<String, String> chebiEntryMap) {
+		// create new URI, SMR, and primary xref:
 		String id = chebiEntryMap.get(_ID);
 		SmallMoleculeReference smr = model
 			.addNew(SmallMoleculeReference.class, _IDENTIFIERS_ORG+"chebi/"+id);
@@ -155,21 +144,16 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 		
 		// set displayName
 		smr.setDisplayName(chebiEntryMap.get(_NAME));
-
 		//comment
 		smr.addComment(chebiEntryMap.get(_DEF));
  
-		//add unification xrefs using alt_id (if any present)
+		//add rel. xrefs using alt_id (if any present)
 		if(chebiEntryMap.get(_ALT_ID) != null) {
 			String[] alt = chebiEntryMap.get(_ALT_ID).split("\t");
 			for(String altid : alt) {
-				//unless there is an error in the ontology, when an alt_id belongs 
-				//to different entries, this should not throw "already have such element" exception:
-				xuri = Normalizer.uri(xmlBase, "ChEBI", altid, UnificationXref.class);
-				x = model.addNew(UnificationXref.class, xuri);
-				x.setId(altid);
-				x.setDb("ChEBI");
-				smr.addXref(x);
+				RelationshipXref rx = PreMerger
+						.findOrCreateRelationshipXref(RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "ChEBI", altid, model);
+				smr.addXref(rx);
 			} 
 		}
 		
@@ -193,8 +177,8 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 						name = name.substring(9);
 					}
 					//add RX because a InChIKey can map to several CHEBI IDs
-					RelationshipXref rx = PreMerger.findOrCreateRelationshipXref(
-							RelTypeVocab.IDENTITY, "InChIKey", name, model);
+					RelationshipXref rx = PreMerger
+							.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "InChIKey", name, model);
 					smr.addXref(rx);
 				} else if (sy.contains("InChI=")) {
 					String structureUri = Normalizer

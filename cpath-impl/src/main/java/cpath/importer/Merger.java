@@ -36,6 +36,7 @@ import cpath.service.CPathService;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.model.level3.Process;
 import org.biopax.paxtools.normalizer.Normalizer;
 import org.biopax.paxtools.util.Filter;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -308,17 +309,17 @@ public final class Merger {
 		ModelUtils.removeObjectsIfDangling(source, UtilityClass.class);
 		
 		/* 
-		 * The following can improve graph queries and full-text search, 
+		 * The following can improve graph queries and full-text index/search,
 		 * for generic and poorly defined physical entities (lacking entity reference)
-		 * can eventually match a query.
+		 * can eventually match a known thing.
 		 * 
 		 * Using existing xrefs and id-mapping, add primary uniprot/chebi RelationshipXref 
-		 * to all simple PEs (SM, Protein, Dna, Rna,..) and Gene, if possible (skip Complexes).
+		 * to all simple PEs and Genes (skip for Complexes) where possible.
+		 *
 		 * This might eventually result in mutually exclusive identifiers, 
-		 * but we'll keep those xrefs and just log a warning for future (data) fix;
-		 * - not a big deal as long as we do not merge data based on these new xrefs,
-		 * but just index/search/query (this especially helps 
-		 * when no entity references defined for a molecule).
+		 * which is not a big deal as long as we do not merge things based on these new xrefs,
+		 * but just index/search/query (this especially helps when no entity references defined
+		 * for a molecule or when id-mapping is ambiguous).
 		 */	
 		log.info("Adding canonical UniProt/ChEBI RelationshipXrefs to physical"
 			+ " entities by using existing xrefs and id-mapping (" + srcModelInfo + ")");
@@ -326,7 +327,7 @@ public final class Merger {
 		{
 			if(pe instanceof PhysicalEntity) {
 				if(pe instanceof SimplePhysicalEntity) {
-					// skip for SPE that got its ER just replaced (from Warehouse)
+					// skip for SPE that got its ER just replaced with an ER from the Warehouse
 					EntityReference er = ((SimplePhysicalEntity) pe).getEntityReference();
 					if(er != null && warehouseModel.containsID(er.getUri()))
 						continue;
@@ -384,8 +385,12 @@ public final class Merger {
 			String currUri = bpe.getUri();
 			
 			// skip for previously normalized/generated objects and standard PXs
-			if(currUri.startsWith(xmlBase) ||
-					(bpe instanceof PublicationXref && currUri.startsWith("http://identifiers.org/pubmed")) ) {
+			if(currUri.startsWith(xmlBase)
+					|| (bpe instanceof PublicationXref && currUri.startsWith("http://identifiers.org/pubmed"))
+					|| (bpe instanceof Process && currUri.startsWith("http://identifiers.org/"))
+					|| (bpe instanceof ProteinReference && currUri.startsWith("http://identifiers.org/"))
+					|| (bpe instanceof SmallMoleculeReference && currUri.startsWith("http://identifiers.org/")))
+			{
 				continue;
 			}
 			
@@ -449,11 +454,11 @@ public final class Merger {
 	}
 
 	/**
-	 * Performs id-mapping from the  
-	 * unification and relationship xrefs 
-	 * of a physical entity or gene to the primary/canonical
-	 * id (only uniprot or chebi), creates new relationship xrefs,
-	 * and adds them back to the entity.
+	 * Using the unification and relationship xrefs of a physical entity or gene,
+	 * performs id-mapping to the primary canonical ID (only uniprot or chebi),
+	 * creates new relationship xrefs, and adds them back to the entity.
+	 *
+	 * This is a critical step to do for much improving our full-text index/search and graph queries.
 	 * 
 	 * @param m where to add new xrefs (and who's xml:base to apply for new URIs)
 	 * @param bpe a {@link Gene} or {@link PhysicalEntity} or {@link EntityReference}
@@ -520,7 +525,7 @@ public final class Merger {
 	private void addCanonicalRelXrefs(Model model, XReferrable bpe, String db, Set<String> mappingSet, RelTypeVocab relType)
 	{	
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference))
-			throw new AssertionError("Not Gene or PE: " + bpe);
+			throw new AssertionError("addCanonicalRelXrefs: not a Gene, ER, or PE: " + bpe.getUri());
 		
 		ac: for(String ac : mappingSet) {
 			// find or create

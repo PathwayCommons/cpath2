@@ -39,6 +39,7 @@ public class SearchEngineTest {
 		SearchResponse response = searchEngine.search("ATP", 0, null, null, null);
 		assertNotNull(response);
 		assertFalse(response.isEmpty());
+System.out.println(response.getSearchHit());
 		assertEquals(7, response.getSearchHit().size());
 		assertEquals(7, response.getNumHits().intValue());
 		

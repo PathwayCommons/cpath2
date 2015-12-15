@@ -3,17 +3,14 @@ package cpath.service;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import cpath.jpa.Mapping;
 import cpath.jpa.MappingsRepository;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
@@ -102,6 +99,7 @@ public class SearchEngine implements Indexer, Searcher {
 			FIELD_SIZE, // find entities with a given no. child/associated processes...
 			FIELD_KEYWORD, //includes data type properties (names, terms, comments), 
 						  //also from  child elements up to given depth (3), also stores but not indexes parent pathway uris and names;
+			FIELD_XREFID,
 	};
 		
 	private final Model model;
@@ -112,23 +110,6 @@ public class SearchEngine implements Indexer, Searcher {
 	private final MappingsRepository idMapping;
 
 	public final static int DEFAULT_MAX_HITS_PER_PAGE = 100;
-	
-	/**
-	 * Constructor.
-	 * Use this one if you want to only search the existing index
-	 * or create a new index without using additional id-mapping.
-	 *
-	 * @param indexLocation index directory location
-	 * @throws IOException
-	 */
-	public SearchEngine(Model model, String indexLocation) {
-		this.model = model;
-		this.indexFile = new File(indexLocation);
-		initSearcherManager();
-		this.maxHitsPerPage = DEFAULT_MAX_HITS_PER_PAGE;
-		this.analyzer = new StandardAnalyzer();
-		this.idMapping = null; //not needed
-	}
 
 	/**
 	 * Constructor.
@@ -136,9 +117,9 @@ public class SearchEngine implements Indexer, Searcher {
 	 * using id-mapping db in addition to BioPAX fields (such as name, Xref/id, etc.)
 	 * Use the other Constructor if you just want to get a new read-only  {@link Searcher}.
 	 *
+	 * @param model the BioPAX Model to index or search
 	 * @param indexLocation index directory location
 	 * @param mappingsRepository id-mapping repository
-	 * @throws IOException
 	 */
 	public SearchEngine(Model model, String indexLocation, MappingsRepository mappingsRepository) {
 		this.model = model;
@@ -147,6 +128,17 @@ public class SearchEngine implements Indexer, Searcher {
 		this.maxHitsPerPage = DEFAULT_MAX_HITS_PER_PAGE;
 		this.analyzer = new StandardAnalyzer();
 		this.idMapping = mappingsRepository;
+	}
+
+	/**
+	 * Use this Constructor if you want to only search the existing index
+	 * or to create a new index without using additional id-mapping.
+	 *
+	 * @param model the BioPAX Model to index or search
+	 * @param indexLocation index directory location
+	 */
+	public SearchEngine(Model model, String indexLocation) {
+		this(model, indexLocation, null);
 	}
 
 	private void initSearcherManager() {
@@ -168,7 +160,6 @@ public class SearchEngine implements Indexer, Searcher {
 	public int getMaxHitsPerPage() {
 		return maxHitsPerPage;
 	}
-	
 
 	public SearchResponse search(String query, int page,
 			Class<? extends BioPAXElement> filterByType, String[] datasources,
@@ -284,8 +275,9 @@ public class SearchEngine implements Indexer, Searcher {
 				//the following fixes scoring/highlighting for all-field wildcard (like q=insulin*)
 				//but not for term/prefix queries (q=name:insulin*, q=pathway:brca2)_.
 				scorer.setExpandMultiTermQuery(true); //TODO	
-				
-				//TODO use PostingsHighlighter once it's stable (see http://lucene.apache.org/core/4_10_0/highlighter/org/apache/lucene/search/postingshighlight/PostingsHighlighter.html)				
+
+//TODO use PostingsHighlighter once it's stable;
+//TODO see http://lucene.apache.org/core/4_10_0/highlighter/org/apache/lucene/search/postingshighlight/PostingsHighlighter.html
 				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
 				Highlighter highlighter = new Highlighter(formatter, scorer);
 				highlighter.setTextFragmenter(new SimpleSpanFragmenter(scorer, 80));
@@ -421,7 +413,8 @@ public class SearchEngine implements Indexer, Searcher {
 			@Override
 			public boolean filter(DataPropertyEditor editor) {
 				final String prop = editor.getProperty();
-				//to include in the index, as keywords, only the following properties:
+				//to include in the index, as keywords, only the following properties
+				// (basically, to exclude float type properties, embedded xml, db names, etc.):
 				return (prop.equalsIgnoreCase("author") || prop.equalsIgnoreCase("availability")
 						|| prop.equalsIgnoreCase("chemicalFormula") || prop.equalsIgnoreCase("comment")
 						|| prop.equalsIgnoreCase("controlType") || prop.equalsIgnoreCase("conversionDirection")
@@ -444,9 +437,9 @@ public class SearchEngine implements Indexer, Searcher {
 					// get or infer some important values if possible from this, child or parent objects:
 					Set<String> keywords = ModelUtils.getKeywords(bpe, 4, dataPropertiesToConsider);
 
-					//for Entity or ER, also collect IDs from child UX/RXs (depth=3) and map to other IDs (use idMapping)
-					if(bpe instanceof Entity || bpe instanceof EntityReference) {
-						Set<String> bioIds = getBioIdentifiers((XReferrable) bpe, 4);
+					//for Entity or ER, also collect IDs from child UX/RXs (depth=4) and map to other IDs (use idMapping)
+					if(bpe instanceof Entity || bpe instanceof EntityReference || bpe instanceof PathwayStep) {
+						Set<String> bioIds = getBioIdentifiers(bpe, 4);
 						bpe.getAnnotations().put(FIELD_XREFID, bioIds);
 					}
 
@@ -496,12 +489,22 @@ public class SearchEngine implements Indexer, Searcher {
 		initSearcherManager();
 	}
 
-	//In fact, this method is supposed to be called for an Entity or EntityReference
+	/**
+	 * Collects relevant bio IDs form child elements of types: ER, Gene, PE
+	 * and auto-add other IDs using id-mapping repository.
+	 *
+	 * @param bpe a BioPAX Entity or EntityReference
+	 * @param depth up to that level down the graph to collect child objects
+	 * @throws AssertionError when bpe is not an Entity nor EntityReference
+	 */
 	private Set<String> getBioIdentifiers(BioPAXElement bpe, int depth) {
+		if(!(bpe instanceof Entity || bpe instanceof EntityReference || bpe instanceof PathwayStep))
+			throw new AssertionError("getBioIdentifiers: not an Entity, ER or step: " + bpe.getUri());
+
 		Set<String> ids = new HashSet<String>();
 
 		Set<BioPAXElement> children = new Fetcher(SimpleEditorMap.get(model.getLevel()), Fetcher.nextStepFilter,
-				//exclude CVs, etc.
+				//exclude unwanted child objects, such as CVs and other utility classes
 				new org.biopax.paxtools.util.Filter<PropertyEditor>() {
 					@Override
 					public boolean filter(PropertyEditor ed) {
@@ -511,17 +514,35 @@ public class SearchEngine implements Indexer, Searcher {
 					}
 				}).fetch(bpe, depth);
 
-		//add this object as well
-		children.add(bpe);
+		//include this object as well if it's about a bio macromolecule of chemical/metabolite
+		if (bpe instanceof PhysicalEntity || bpe instanceof EntityReference || bpe instanceof Gene)
+			children.add(bpe);
 
 		for(BioPAXElement child : children) {
-			//as the result of the above fetcher with filters, every element can be safely cast to XReferrable
+			//as the fetcher uses specific filters, every element can be safely cast to XReferrable
 			XReferrable el = (XReferrable) child;
-			for(Xref x : el.getXref())
-				if(!(x instanceof PublicationXref))
-					if(x.getId() != null)
-						ids.add(x.getId());
+			for(Xref x : el.getXref()) {
+				if (!(x instanceof PublicationXref)) {
+					//x.getId()!=null && x.getDb()!=null; - we should've cleaned'em up already (in the premerge)
+					ids.add(x.getId());
 
+					if(idMapping != null) {
+						//add more IDs using "reverse" mapping and canonical uniprot/chebi xrefs (those added by Merger)
+						List<Mapping> mappings = null;
+						if (x.getDb().equalsIgnoreCase("chebi")) {
+							//find other IDs that map to the ChEBI ID
+							mappings = idMapping.findByDestIgnoreCaseAndDestId("CHEBI", x.getId());
+						} else if (x.getDb().equalsIgnoreCase("uniprot knowledgebase")) {
+							//find other IDs that map to the UniProt AC
+							mappings = idMapping.findByDestIgnoreCaseAndDestId("UNIPROT", x.getId());
+						}
+
+						if (mappings != null)
+							for (Mapping mapping : mappings)
+								ids.add(mapping.getSrcId());
+					}
+				}
+			}
 		}
 
 		return ids;
@@ -586,12 +607,10 @@ public class SearchEngine implements Indexer, Searcher {
 				doc.add(field);
 			}
 			if(bpe.getAnnotations().containsKey(FIELD_XREFID)) {
-				field = new IntField(FIELD_XREFID,
-						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_XREFID)), Field.Store.NO);
-				doc.add(field);
-				//also add them as keywords
+				//index biological IDs as keywords
 				addKeywords((Set<String>)bpe.getAnnotations().get(FIELD_XREFID), doc);
-				//TODO addIds
+				//index all IDs using "xrefid" fields
+				addXrefIds((Set<String>)bpe.getAnnotations().get(FIELD_XREFID), doc);
 			}
 		}
 		bpe.getAnnotations().remove(FIELD_KEYWORD);
@@ -623,25 +642,10 @@ public class SearchEngine implements Indexer, Searcher {
 			}
 		}
 		
-		// XReferrable.xref - build 'xrefid' index field from all Xrefs)
-		if(bpe instanceof XReferrable) {
-			XReferrable xr = (XReferrable) bpe;
-			for(Xref xref : xr.getXref()) {
-				if (xref.getId() != null) {
-					//the filed is not_analyzed; so in order to make search case-insensitive 
-					//(when searcher uses standard analyzer), we turn the value to lowercase.
-					field = new TextField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
-					if(idMapping != null) {
-					//TODO use id-mapping - add all 'xrefid' values (map to uniprot/chebi and then to all other id types)
-					}
-					doc.add(field);
-				}
-			}
-		}
-		
 		// Xref db/id (these are for a precise search by standard bio ID)
 		if(bpe instanceof Xref) {
 			Xref xref = (Xref) bpe;
+
 			if (xref.getId() != null) {
 				field = new TextField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
 				doc.add(field);
@@ -650,7 +654,26 @@ public class SearchEngine implements Indexer, Searcher {
 				field = new TextField(FIELD_XREFDB, xref.getDb().toLowerCase(), Field.Store.NO);
 				doc.add(field);
 			}
-			//TODO map to/from - index other IDs?
+
+			//auto-add other bio IDs (at least do for canonical 'chebi', 'uniprot knowledgebase' xrefs)
+			if(idMapping != null && !(bpe instanceof PublicationXref)) {
+				List<Mapping> mappings = null;
+				if ("chebi".equalsIgnoreCase(xref.getDb())) {
+					//find other IDs that map to the ChEBI ID
+					mappings = idMapping.findByDestIgnoreCaseAndDestId("CHEBI", xref.getId());
+				} else if ("uniprot knowledgebase".equalsIgnoreCase(xref.getDb())) {
+					//find other IDs that map to the UniProt AC
+					mappings = idMapping.findByDestIgnoreCaseAndDestId("UNIPROT", xref.getId());
+				}
+				if (mappings != null) {
+					for (Mapping mapping : mappings) {
+						field = new TextField(FIELD_XREFDB, mapping.getSrc().toLowerCase(), Field.Store.NO);
+						doc.add(field);
+						field = new TextField(FIELD_XREFID, mapping.getSrcId().toLowerCase(), Field.Store.NO);
+						doc.add(field);
+					}
+				}
+			}
 		}
 		
 		// write
@@ -664,6 +687,13 @@ public class SearchEngine implements Indexer, Searcher {
 	private void addKeywords(Set<String> keywords, Document doc) {
 		for (String keyword : keywords) {
 			Field f = new TextField(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.YES);
+			doc.add(f);
+		}
+	}
+
+	private void addXrefIds(Set<String> xrefIds, Document doc) {
+		for (String id : xrefIds) {
+			Field f = new TextField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO);
 			doc.add(f);
 		}
 	}
@@ -839,32 +869,4 @@ public class SearchEngine implements Indexer, Searcher {
 		return query;
 	}
 
-
-	//TODO: (moved from premerger) refactor/use where the full-text index is created
-	//so far, this method was useful for warehouse SMRs only (because we only imported extra id-mappings from UniChem)
-//	private void addRelXrefsToWarehouseEntityRef(Model warehouse)
-//	{
-//		for(EntityReference er : new HashSet<EntityReference>(warehouse.getObjects(EntityReference.class)))
-//		{
-// 			final String primaryDb = (er instanceof SmallMoleculeReference) ? "CHEBI" : "UNIPROT";
-//			final String primaryId = CPathUtils.idfromNormalizedUri(er.getUri());
-//			//reverse id-mapping (from the primary db/id to all other db/id entries that map to the primary)
-//			final List<Mapping> map = service.mapping().findByDestIgnoreCaseAndDestId(primaryDb, primaryId);
-//			for(Mapping m : map) {
-//				Assert.isTrue(m.getDest().equals(primaryDb) && m.getDestId().equals(primaryId),
-//				"findByDestIgnoreCaseAndDestId: result contains mappings with different primary db/id (bug!)");
-//
-//				//find the unif.xref by the normalized URI, if exists
-//				final String uxUri = Normalizer.uri(xmlBase, m.getSrc(), m.getSrcId(), UnificationXref.class);
-//				UnificationXref ux = (UnificationXref) warehouse.getByID(uxUri);
-//				if(ux != null && er.getXref().contains(ux))
-//					continue; //skip existing equivalet unif. xref
-//
-//				//otherwise - find/make special rel.xref
-//				RelationshipXref rx = findOrCreateRelationshipXref(
-// 					RelTypeVocab.IDENTITY, m.getSrc(), m.getSrcId(), warehouse);
-//				er.addXref(rx);
-//			}
-//		}
-//	}
 }

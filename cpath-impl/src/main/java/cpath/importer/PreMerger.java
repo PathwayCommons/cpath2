@@ -354,7 +354,7 @@ public final class PreMerger {
 
 					//remove the xref unless it's the primary AC, 'HGNC Symbol' or what's worth keeping in the model:
 					//(id-mapping/queries do not need them anymore)
-					if(!src.startsWith("UNIPROT") && !src.startsWith("HGNC") && !src.startsWith("NCBI Gene")
+					if(!src.startsWith("UNIPROT") && !src.equalsIgnoreCase("HGNC Symbol") && !src.startsWith("NCBI Gene")
 							&& !src.equalsIgnoreCase("CHEBI")) {
 						er.removeXref(x);
 					} else if(x instanceof RelationshipXref && (src.startsWith("UNIPROT") || src.equalsIgnoreCase("CHEBI"))) {

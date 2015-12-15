@@ -201,27 +201,27 @@ public class DataImportTest {
 		// Test full-text search
 		//
 		// search with a secondary (RefSeq) accession number -
-		// NP_619650 occurs in the test UniProt data only, not in the model
+		// NP_619650 (primary AC = Q8TD86) occurs in the test UniProt data only, not in the model
 		SearchResponse resp =  (SearchResponse) service.search("NP_619650", 0, RelationshipXref.class, null, null);
-		assertTrue(resp.getSearchHit().isEmpty()); //no hits - ok
-//		//now find another one in the main model
-//		resp =  (SearchResponse) service.search("NP_005099", 0, RelationshipXref.class, null, null);
-//		assertFalse(resp.getSearchHit().isEmpty());
-//		Collection<String> hitIds = new HashSet<String>();
-//		for(SearchHit e : resp.getSearchHit()) hitIds.add(e.getUri());
-//		String uri = Normalizer.uri(XML_BASE, "REFSEQ", "NP_005099_identity", RelationshipXref.class);
-//		assertTrue(hitIds.contains(uri));
-//		Xref x = (RelationshipXref) m.getByID(uri);
-//		assertNotNull(x);
-//		assertFalse(x.getXrefOf().isEmpty());
-//		pr = (ProteinReference) m.getByID("http://identifiers.org/uniprot/O75191");
-//		assertTrue(x.getXrefOf().contains(pr));
+		assertTrue(resp.getSearchHit().isEmpty()); //no hits - ok (such xrefs were removed from both warehouse and model)
+		resp =  (SearchResponse) service.search("NP_619650", 0, ProteinReference.class, null, null);
+		assertTrue(resp.getSearchHit().isEmpty());
 
-		resp =  (SearchResponse) service.search("NP_005099", 0, RelationshipXref.class, null, null);
-		assertTrue(resp.getSearchHit().isEmpty()); //no hits; RefSeq ID was used for mapping, indexing, and then deleted
-		//should find a PR by secondary ID (though, there's no such xref present)
-		resp =  (SearchResponse) service.search("NP_005099", 0, ProteinReference.class, null, null);
+		//P27797 should be both in the warehouse and merged models (other IDs: NP_004334, 2CLR,..)
+		resp =  (SearchResponse) service.search("NP_004334", 0, RelationshipXref.class, null, null);
+		assertTrue(resp.getSearchHit().isEmpty()); //no hits; the ID was used for mapping, indexing, and then xref deleted
+		//it should definitely find the PR or its primary UX by using its primary AC
+		resp =  (SearchResponse) service.search("P27797", 0, UnificationXref.class, null, null);
 		assertFalse(resp.getSearchHit().isEmpty());
+		resp =  (SearchResponse) service.search("P27797", 0, ProteinReference.class, null, null);
+		assertFalse(resp.getSearchHit().isEmpty());
+		//also, it should find the PR by using its secondary ID (though, there's no such xref physically present)
+		resp =  (SearchResponse) service.search("NP_004334", 0, ProteinReference.class, null, null);
+		assertFalse(resp.getSearchHit().isEmpty());
+		//NEW feature: can sometimes find an xref by other ID that maps to its ID
+		resp =  (SearchResponse) service.search("NP_004334", 0, UnificationXref.class, null, null);
+		assertFalse(resp.getSearchHit().isEmpty());
+		assertTrue(resp.getSearchHit().iterator().next().getUri().endsWith("P27797"));
 		
 		// fetch as BIOPAX
 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P27797");
@@ -244,11 +244,6 @@ public class DataImportTest {
 		assertTrue(respData instanceof Path);
 		assertNotNull(((DataResponse)res).getProviders());
 		assertFalse(((DataResponse)res).getProviders().isEmpty());
-
-//		String data = (String) respData;
-//		assertTrue(data.contains("reacts-with"));
-//		assertTrue(data.contains("used-to-produce"));
-//		assertTrue(data.contains("CALR"));
 		
 		// test search res. contains the list of data providers (standard names)
 		res = service.search("*", 0, PhysicalEntity.class, null, null);
@@ -285,7 +280,7 @@ public class DataImportTest {
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
 //		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
-		assertEquals(3, pr.getXref().size()); // 1 - primary uniprot (sec.ACs were removed); 2 - hgnc, hgnc symbol
+		assertEquals(2, pr.getXref().size()); // 1 - primary uniprot (sec.ACs were removed); 1 - 'hgnc symbol' (no 'hgnc' id)
 		assertEquals("9606", pr.getOrganism().getXref().iterator().next().getId());
 		
 		// test proper merge of small molecule reference
@@ -303,11 +298,8 @@ public class DataImportTest {
 
 		//a special test id-mapping file (SID, CID to ChEBI) is present.
 		// The 14438 SMR won't be replaced by 20, because its original xref has 'PubChem' as db name (AMBIGUOUS);
-		// if it were 'PubChem-substance', then it would map to CHEBI:20...
-		//and thus its URI gets normalized/replaced once again to use XML_BASE (not using Identifiers.org anymore)
-		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, null,
-				"http://identifiers.org/pubchem.substance/14438",SmallMoleculeReference.class)));
-		assertFalse(mergedModel.containsID("http://identifiers.org/pubchem.substance/14438"));
+		// if it were 'PubChem-substance', then it would map to CHEBI:20...;
+		assertTrue(mergedModel.containsID("http://identifiers.org/pubchem.substance/14438"));
 
 		//  14439 gets successfully replaced/merged
 		assertFalse(mergedModel.containsID("http://identifiers.org/pubchem.substance/14439")); //maps to CHEBI:28
@@ -395,10 +387,8 @@ public class DataImportTest {
 		assertFalse(smr.getEntityReferenceOf().isEmpty());
 		assertTrue(smr.getEntityReferenceOf().contains(sm));
 
-//		//the following SMR wasn't replaced (not found in the test Warehouse model)
-		smr = (SmallMoleculeReference)mergedModel.getByID(Normalizer.uri(XML_BASE, null,
-				"http://identifiers.org/chebi/CHEBI:36141", SmallMoleculeReference.class));
-//		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:36141");
+		//now, this SMR is in the warehouse despite having no InChIKey
+		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:36141");
 		assertNotNull(smr);
 
 //		// there were 3 member ERs in the orig. file, but,

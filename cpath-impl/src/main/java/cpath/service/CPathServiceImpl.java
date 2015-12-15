@@ -78,8 +78,6 @@ import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 import cpath.service.jaxb.TraverseResponse;
-import cpath.service.ErrorResponse;
-import cpath.service.OutputFormat;
 import static cpath.service.Status.*;
 
 
@@ -444,13 +442,11 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	/**
-	 * Mapping to Xref URIs.
+	 * Mapping to BioPAX object (currently - Xref only) URIs.
 	 *
 	 * It does not "understand" RefSeq Versions and UniProt Isoforms 
 	 * (one has to submit canonical identifiers, i.e, ones without "-#" or ".#").
-	 * 
-	 * TODO map to either gene or chemical entities or entity references instead of any xrefs?..
-	 * 
+	 *
 	 * @param identifiers - a list of genes/protein or molecules as: \
 	 * 		HGNC symbols, UniProt, RefSeq, ENS* and NCBI Gene identifiers; or\
 	 * 		CHEBI, InChIKey, ChEMBL, DrugBank, CID: (PubChem), SID: (PubChem), KEGG Compound, PharmGKB, or chem. name.
@@ -470,8 +466,7 @@ public class CPathServiceImpl implements CPathService {
 			
 			String id = identifier;
 			
-			if(identifier.toLowerCase().startsWith("http://") 
-					|| identifier.toLowerCase().startsWith("urn:")) 
+			if(identifier.toLowerCase().startsWith("http://"))
 			{
 				// it must be an existing URI (a user hopes so)
 				uris.add(identifier);
@@ -485,13 +480,13 @@ public class CPathServiceImpl implements CPathService {
 			
 			// do gene/protein/chemical id-mapping;
 			// mapping can be ambiguous, but this is OK for queries (unlike when merging data)
-			//TODO the id-mapping step won't be required with new full-text index design (coming soon...)
-			Set<String> m = map(id); //can be empty too
-			for(String ac : m) {
-				// add to the query string; quotation marks around the query id are required
-				q.append("xrefid:\"").append(ac).append("\" ");
-				log.debug("findUrisByIds, mapped " + id + " -> " + ac);
-			}
+			//- the id-mapping step is not required anymore with new full-text index design -
+//			Set<String> m = map(id); //can be empty too
+//			for(String ac : m) {
+//				// add to the query string; quotation marks around the query id are required
+//				q.append("xrefid:\"").append(ac).append("\" ");
+//				log.debug("findUrisByIds, mapped " + id + " -> " + ac);
+//			}
 			
 			// use the original id regardless the mapping results
 			if(!q.toString().contains(id))
@@ -509,6 +504,7 @@ public class CPathServiceImpl implements CPathService {
 			final String query = q.toString().trim();
 			log.debug("findUrisByIds, will run: " + query);
 			int page = 0; // will use search pagination
+			//TODO in future, search directly for ERs/PEs instead (of searching for xrefs)
 			SearchResponse resp = (SearchResponse) search(query, page, Xref.class, null, null);
 			log.debug("findUrisByIds, hits: " + resp.getNumHits());
 			while (!resp.isEmpty()) {
@@ -521,11 +517,11 @@ public class CPathServiceImpl implements CPathService {
 						if("RelationshipXref".equalsIgnoreCase(h.getBiopaxClass())) {
 							RelationshipXref rx = null;
 							rx = (RelationshipXref) paxtoolsModel.getByID(h.getUri());
-							
 							//TODO review/decide RX types to keep/exclude...
 							//we created RXs with 'identity', 'see-also', etc. types when building the Warehouse and merging data
-							if(rx.getRelationshipType()==null || 
-									rx.getRelationshipType().getTerm().contains("identity"))
+							if(rx.getRelationshipType()==null
+									|| rx.getRelationshipType().getTerm().contains("identity")
+									|| rx.getRelationshipType().getTerm().contains("secondary-ac"))
 								uris.add(h.getUri());
 							
 						} else 
@@ -656,7 +652,7 @@ public class CPathServiceImpl implements CPathService {
 	 * This utility method prepares the source or target 
 	 * object sets for a graph query.
 	 * 
-	 * @param main source model
+	 * @param model source model
 	 * @param ids specific source or target set of IDs
 	 * @return related biopax elements
 	 */
