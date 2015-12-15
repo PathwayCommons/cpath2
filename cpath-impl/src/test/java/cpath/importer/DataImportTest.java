@@ -12,7 +12,6 @@ import cpath.service.OutputFormat;
 import cpath.service.SearchEngine;
 import cpath.service.Searcher;
 import cpath.service.jaxb.DataResponse;
-import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 
@@ -39,8 +38,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.io.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.zip.GZIPOutputStream;
@@ -138,6 +135,9 @@ public class DataImportTest {
 		mps = service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase("UNIPROT", "P01118", "UNIPROT");
 		assertTrue(mps.size()==1);
 		assertTrue("P01116".equals(mps.iterator().next().getDestId()));
+		mps = service.mapping().findBySrcIdAndDestIgnoreCase("1J7P", "UNIPROT");//PDB to UniProt
+		assertTrue(mps.size()==1);
+		assertTrue("P62158".equals(mps.iterator().next().getDestId()));
 		
 		// **** MERGE ***
 		
@@ -198,25 +198,30 @@ public class DataImportTest {
 		service.setModel(m);
 		assertTrue(service.ready());
 		
-		// Test full-text search	
-		// search with a secondary (RefSeq) accession number
-		//NP_619650 occurs in the warehouse only, not in the merged model
+		// Test full-text search
+		//
+		// search with a secondary (RefSeq) accession number -
+		// NP_619650 occurs in the test UniProt data only, not in the model
 		SearchResponse resp =  (SearchResponse) service.search("NP_619650", 0, RelationshipXref.class, null, null);
-		assertTrue(resp.getSearchHit().isEmpty());
-		//now find another one in the main model
+		assertTrue(resp.getSearchHit().isEmpty()); //no hits - ok
+//		//now find another one in the main model
+//		resp =  (SearchResponse) service.search("NP_005099", 0, RelationshipXref.class, null, null);
+//		assertFalse(resp.getSearchHit().isEmpty());
+//		Collection<String> hitIds = new HashSet<String>();
+//		for(SearchHit e : resp.getSearchHit()) hitIds.add(e.getUri());
+//		String uri = Normalizer.uri(XML_BASE, "REFSEQ", "NP_005099_identity", RelationshipXref.class);
+//		assertTrue(hitIds.contains(uri));
+//		Xref x = (RelationshipXref) m.getByID(uri);
+//		assertNotNull(x);
+//		assertFalse(x.getXrefOf().isEmpty());
+//		pr = (ProteinReference) m.getByID("http://identifiers.org/uniprot/O75191");
+//		assertTrue(x.getXrefOf().contains(pr));
+
 		resp =  (SearchResponse) service.search("NP_005099", 0, RelationshipXref.class, null, null);
-		Collection<SearchHit> prs = resp.getSearchHit();
-		assertFalse(prs.isEmpty()); //TODO once index() is fixed (using id-mapping instead of xrefs), it shouldn't fail.
-		Collection<String> prIds = new HashSet<String>();
-		for(SearchHit e : prs)
-			prIds.add(e.getUri());		
-		String uri = Normalizer.uri(XML_BASE, "REFSEQ", "NP_005099_identity", RelationshipXref.class);				
-		assertTrue(prIds.contains(uri));
-		Xref x = (RelationshipXref) m.getByID(uri);
-		assertNotNull(x);
-		assertFalse(x.getXrefOf().isEmpty());
-		pr = (ProteinReference) m.getByID("http://identifiers.org/uniprot/O75191");
-		assertTrue(x.getXrefOf().contains(pr));
+		assertTrue(resp.getSearchHit().isEmpty()); //no hits; RefSeq ID was used for mapping, indexing, and then deleted
+		//should find a PR by secondary ID (though, there's no such xref present)
+		resp =  (SearchResponse) service.search("NP_005099", 0, ProteinReference.class, null, null);
+		assertFalse(resp.getSearchHit().isEmpty());
 		
 		// fetch as BIOPAX
 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P27797");
@@ -268,8 +273,9 @@ public class DataImportTest {
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "GO", "GO:0005737", CellularLocationVocabulary.class)));
 		
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P13631"));
-		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P22932"));		
-		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01118_secondary-ac", RelationshipXref.class)));
+		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P22932"));
+		//sec. ACs are not kept anymore (they're used in creating id-mapping and index, and then removed)
+		assertFalse(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01118_secondary-ac", RelationshipXref.class)));
 		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P01118")); //must be replaced with P01116 and gone
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01116", UnificationXref.class)));
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P01116"));
@@ -279,7 +285,7 @@ public class DataImportTest {
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
 //		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
-		assertEquals(5, pr.getXref().size()); // 3 - uniprot; 2 - hgnc, hgnc symbol
+		assertEquals(3, pr.getXref().size()); // 1 - primary uniprot (sec.ACs were removed); 2 - hgnc, hgnc symbol
 		assertEquals("9606", pr.getOrganism().getXref().iterator().next().getId());
 		
 		// test proper merge of small molecule reference

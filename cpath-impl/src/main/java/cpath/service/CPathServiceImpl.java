@@ -187,7 +187,7 @@ public class CPathServiceImpl implements CPathService {
 			log.error("search() failed - " + e);
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
-		
+
 	}
 		
 
@@ -444,7 +444,7 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	/**
-	 * Mapping to BioPAX URIs.
+	 * Mapping to Xref URIs.
 	 *
 	 * It does not "understand" RefSeq Versions and UniProt Isoforms 
 	 * (one has to submit canonical identifiers, i.e, ones without "-#" or ".#").
@@ -454,7 +454,7 @@ public class CPathServiceImpl implements CPathService {
 	 * @param identifiers - a list of genes/protein or molecules as: \
 	 * 		HGNC symbols, UniProt, RefSeq, ENS* and NCBI Gene identifiers; or\
 	 * 		CHEBI, InChIKey, ChEMBL, DrugBank, CID: (PubChem), SID: (PubChem), KEGG Compound, PharmGKB, or chem. name.
-	 * @return URIs
+	 * @return URIs of matching Xrefs
 	 */
 	private String[] findUrisByIds(String[] identifiers)
 	{
@@ -485,14 +485,12 @@ public class CPathServiceImpl implements CPathService {
 			
 			// do gene/protein/chemical id-mapping;
 			// mapping can be ambiguous, but this is OK for queries (unlike when merging data)
-			Set<String> m = map(id);
-			if (!m.isEmpty()) {
-				for(String ac : m) {
-					// add to the query string; 
-					// quotation marks around the query id are required
-					q.append("xrefid:\"").append(ac).append("\" "); 
-					log.debug("findUrisByIds, mapped " + id + " -> " + ac);
-				}
+			//TODO the id-mapping step won't be required with new full-text index design (coming soon...)
+			Set<String> m = map(id); //can be empty too
+			for(String ac : m) {
+				// add to the query string; quotation marks around the query id are required
+				q.append("xrefid:\"").append(ac).append("\" ");
+				log.debug("findUrisByIds, mapped " + id + " -> " + ac);
 			}
 			
 			// use the original id regardless the mapping results

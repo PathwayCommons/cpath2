@@ -55,10 +55,7 @@ import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.Version;
-import org.biopax.paxtools.controller.DataPropertyEditor;
-import org.biopax.paxtools.controller.Fetcher;
-import org.biopax.paxtools.controller.ModelUtils;
-import org.biopax.paxtools.controller.SimpleEditorMap;
+import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
@@ -83,7 +80,7 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_URI = "uri";
 	public static final String FIELD_KEYWORD = "keyword"; //anything, e.g., names, terms, comments, incl. - from child elements 
 	public static final String FIELD_NAME = "name"; // standardName, displayName, other names
-	public static final String FIELD_XREFDB = "xrefdb"; //xref.db TODO: remove this field?
+	public static final String FIELD_XREFDB = "xrefdb"; //xref.db
 	public static final String FIELD_XREFID = "xrefid"; //xref.id
 	public static final String FIELD_PATHWAY = "pathway"; //pathways and parent pathways to be inferred from entire biopax model
 	public static final String FIELD_SIZE = "size";
@@ -418,6 +415,26 @@ public class SearchEngine implements Indexer, Searcher {
 		final IndexWriter indexWriter = iw;
 
 		ExecutorService exec = Executors.newFixedThreadPool(30);
+
+		final org.biopax.paxtools.util.Filter<DataPropertyEditor> dataPropertiesToConsider
+				= new org.biopax.paxtools.util.Filter<DataPropertyEditor>() {
+			@Override
+			public boolean filter(DataPropertyEditor editor) {
+				final String prop = editor.getProperty();
+				//to include in the index, as keywords, only the following properties:
+				return (prop.equalsIgnoreCase("author") || prop.equalsIgnoreCase("availability")
+						|| prop.equalsIgnoreCase("chemicalFormula") || prop.equalsIgnoreCase("comment")
+						|| prop.equalsIgnoreCase("controlType") || prop.equalsIgnoreCase("conversionDirection")
+						|| prop.equalsIgnoreCase("eCNumber") || prop.equalsIgnoreCase("id")
+						|| prop.equalsIgnoreCase("name") || prop.equalsIgnoreCase("displayName")
+						|| prop.equalsIgnoreCase("standardName") || prop.equalsIgnoreCase("sequence")
+						|| prop.equalsIgnoreCase("source") || prop.equalsIgnoreCase("year")
+						|| prop.equalsIgnoreCase("term") || prop.equalsIgnoreCase("stepDirection")
+						|| prop.equalsIgnoreCase("structureData") || prop.equalsIgnoreCase("templateDirection")
+						|| prop.equalsIgnoreCase("title") || prop.equalsIgnoreCase("url")
+				);
+			}
+		};
 		
 		final AtomicInteger numLeft = new AtomicInteger(numObjects);
 		for(final BioPAXElement bpe : model.getObjects()) {	
@@ -425,12 +442,12 @@ public class SearchEngine implements Indexer, Searcher {
 			exec.execute(new Runnable() {
 				public void run() {					
 					// get or infer some important values if possible from this, child or parent objects:
-					Set<String> keywords = ModelUtils.getKeywords(bpe, 3); //TODO use Filter<DataPropertyEditor>... args
+					Set<String> keywords = ModelUtils.getKeywords(bpe, 4, dataPropertiesToConsider);
 
-					//TODO for Entity or ER, also collect IDs from child UX/RXs (depth=3) and map to other IDs (use idMapping)
+					//for Entity or ER, also collect IDs from child UX/RXs (depth=3) and map to other IDs (use idMapping)
 					if(bpe instanceof Entity || bpe instanceof EntityReference) {
-						//Set<String> bioIds = getBioIdentifiers(bpe, 4); //implement it...
-						//bpe.getAnnotations().put(FIELD_XREFID, bioIds);
+						Set<String> bioIds = getBioIdentifiers((XReferrable) bpe, 4);
+						bpe.getAnnotations().put(FIELD_XREFID, bioIds);
 					}
 
 					// a hack to remove special (debugging) biopax comments
@@ -478,8 +495,39 @@ public class SearchEngine implements Indexer, Searcher {
 		//finally, create a new searcher manager
 		initSearcherManager();
 	}
-	
-	
+
+	//In fact, this method is supposed to be called for an Entity or EntityReference
+	private Set<String> getBioIdentifiers(BioPAXElement bpe, int depth) {
+		Set<String> ids = new HashSet<String>();
+
+		Set<BioPAXElement> children = new Fetcher(SimpleEditorMap.get(model.getLevel()), Fetcher.nextStepFilter,
+				//exclude CVs, etc.
+				new org.biopax.paxtools.util.Filter<PropertyEditor>() {
+					@Override
+					public boolean filter(PropertyEditor ed) {
+						return EntityReference.class.isAssignableFrom(ed.getRange())
+							|| Gene.class.isAssignableFrom(ed.getRange())
+								|| PhysicalEntity.class.isAssignableFrom(ed.getRange());
+					}
+				}).fetch(bpe, depth);
+
+		//add this object as well
+		children.add(bpe);
+
+		for(BioPAXElement child : children) {
+			//as the result of the above fetcher with filters, every element can be safely cast to XReferrable
+			XReferrable el = (XReferrable) child;
+			for(Xref x : el.getXref())
+				if(!(x instanceof PublicationXref))
+					if(x.getId() != null)
+						ids.add(x.getId());
+
+		}
+
+		return ids;
+	}
+
+
 	// internal methods
 	
 	/*
@@ -539,10 +587,11 @@ public class SearchEngine implements Indexer, Searcher {
 			}
 			if(bpe.getAnnotations().containsKey(FIELD_XREFID)) {
 				field = new IntField(FIELD_XREFID,
-						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_XREFID)), Field.Store.YES);
+						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_XREFID)), Field.Store.NO);
 				doc.add(field);
 				//also add them as keywords
 				addKeywords((Set<String>)bpe.getAnnotations().get(FIELD_XREFID), doc);
+				//TODO addIds
 			}
 		}
 		bpe.getAnnotations().remove(FIELD_KEYWORD);
@@ -601,6 +650,7 @@ public class SearchEngine implements Indexer, Searcher {
 				field = new TextField(FIELD_XREFDB, xref.getDb().toLowerCase(), Field.Store.NO);
 				doc.add(field);
 			}
+			//TODO map to/from - index other IDs?
 		}
 		
 		// write
@@ -788,5 +838,33 @@ public class SearchEngine implements Indexer, Searcher {
 		
 		return query;
 	}
-	
+
+
+	//TODO: (moved from premerger) refactor/use where the full-text index is created
+	//so far, this method was useful for warehouse SMRs only (because we only imported extra id-mappings from UniChem)
+//	private void addRelXrefsToWarehouseEntityRef(Model warehouse)
+//	{
+//		for(EntityReference er : new HashSet<EntityReference>(warehouse.getObjects(EntityReference.class)))
+//		{
+// 			final String primaryDb = (er instanceof SmallMoleculeReference) ? "CHEBI" : "UNIPROT";
+//			final String primaryId = CPathUtils.idfromNormalizedUri(er.getUri());
+//			//reverse id-mapping (from the primary db/id to all other db/id entries that map to the primary)
+//			final List<Mapping> map = service.mapping().findByDestIgnoreCaseAndDestId(primaryDb, primaryId);
+//			for(Mapping m : map) {
+//				Assert.isTrue(m.getDest().equals(primaryDb) && m.getDestId().equals(primaryId),
+//				"findByDestIgnoreCaseAndDestId: result contains mappings with different primary db/id (bug!)");
+//
+//				//find the unif.xref by the normalized URI, if exists
+//				final String uxUri = Normalizer.uri(xmlBase, m.getSrc(), m.getSrcId(), UnificationXref.class);
+//				UnificationXref ux = (UnificationXref) warehouse.getByID(uxUri);
+//				if(ux != null && er.getXref().contains(ux))
+//					continue; //skip existing equivalet unif. xref
+//
+//				//otherwise - find/make special rel.xref
+//				RelationshipXref rx = findOrCreateRelationshipXref(
+// 					RelTypeVocab.IDENTITY, m.getSrc(), m.getSrcId(), warehouse);
+//				er.addXref(rx);
+//			}
+//		}
+//	}
 }

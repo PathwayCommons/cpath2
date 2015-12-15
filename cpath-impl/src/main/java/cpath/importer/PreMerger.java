@@ -1,29 +1,3 @@
-/**
- ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
- ** and University of Toronto (UofT).
- **
- ** This is free software; you can redistribute it and/or modify it
- ** under the terms of the GNU Lesser General Public License as published
- ** by the Free Software Foundation; either version 2.1 of the License, or
- ** any later version.
- **
- ** This library is distributed in the hope that it will be useful, but
- ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- ** documentation provided hereunder is on an "as is" basis, and
- ** both UofT and MSKCC have no obligations to provide maintenance, 
- ** support, updates, enhancements or modifications.  In no event shall
- ** UofT or MSKCC be liable to any party for direct, indirect, special,
- ** incidental or consequential damages, including lost profits, arising
- ** out of the use of this software and its documentation, even if
- ** UofT or MSKCC have been advised of the possibility of such damage.  
- ** See the GNU Lesser General Public License for more details.
- **
- ** You should have received a copy of the GNU Lesser General Public License
- ** along with this software; if not, write to the Free Software Foundation,
- ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
- ** or find it at http://www.fsf.org/ or http://www.gnu.org.
- **/
 package cpath.importer;
 
 
@@ -44,7 +18,6 @@ import org.biopax.validator.api.Validator;
 import org.biopax.validator.api.beans.*;
 import org.biopax.validator.impl.IdentifierImpl;
 
-//import org.hibernate.validator.internal.util.ModUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -62,62 +35,60 @@ import java.io.*;
  */
 public final class PreMerger {
 
-    private static Logger log = LoggerFactory.getLogger(PreMerger.class);
-    
-    /**
-     * Values to generate standard BioPAX RelationshipTypeVocabulary objects.
-     */
-    public static enum RelTypeVocab {
-    	IDENTITY("identity", "http://identifiers.org/psimi/MI:0356", "MI", "MI:0356"),
-    	SECONDARY_ACCESSION_NUMBER("secondary-ac", "http://identifiers.org/psimi/MI:0360", "MI", "MI:0360"),
-    	ADDITIONAL_INFORMATION("see-also", "http://identifiers.org/psimi/MI:0361", "MI", "MI:0361"),
-    	//next should work for rel. xrefs pointing to a protein but attached to a Gene, Dna*, Rna* biopax objects
-    	GENE_PRODUCT("gene product", "http://identifiers.org/psimi/MI:0251", "MI", "MI:0251"),
-    	SET_MEMBER("set member", "http://identifiers.org/psimi/MI:1341", "MI", "MI:1341"),
-    	//next one is probably for chebi "is_a" relationships (when parent is a chemical class/concept rather than compound)
-    	MULTIPLE_PARENT_REFERENCE("multiple parent reference", "http://identifiers.org/psimi/MI:0829", "MI", "MI:0829"),
-    	ISOFORM_PARENT("isoform-parent", "http://identifiers.org/psimi/MI:0243", "MI", "MI:0243"),
-    	;
+	private static Logger log = LoggerFactory.getLogger(PreMerger.class);
 
-    	public final String term;
-    	public final String uri;
-    	public final String db;
-    	public final String id;
+	/**
+	 * Values to generate standard BioPAX RelationshipTypeVocabulary objects.
+	 */
+	public static enum RelTypeVocab {
+		IDENTITY("identity", "http://identifiers.org/psimi/MI:0356", "MI", "MI:0356"),
+		SECONDARY_ACCESSION_NUMBER("secondary-ac", "http://identifiers.org/psimi/MI:0360", "MI", "MI:0360"),
+		ADDITIONAL_INFORMATION("see-also", "http://identifiers.org/psimi/MI:0361", "MI", "MI:0361"),
+		//next should work for rel. xrefs pointing to a protein but attached to a Gene, Dna*, Rna* biopax objects
+		GENE_PRODUCT("gene product", "http://identifiers.org/psimi/MI:0251", "MI", "MI:0251"),
+		SET_MEMBER("set member", "http://identifiers.org/psimi/MI:1341", "MI", "MI:1341"),
+		//next one is probably for chebi "is_a" relationships (when parent is a chemical class/concept rather than compound)
+		MULTIPLE_PARENT_REFERENCE("multiple parent reference", "http://identifiers.org/psimi/MI:0829", "MI", "MI:0829"),
+		ISOFORM_PARENT("isoform-parent", "http://identifiers.org/psimi/MI:0243", "MI", "MI:0243"),;
 
-    	private RelTypeVocab(String term, String uri, String db, String id) {
-    		this.term = term;
-    		this.uri = uri;
-    		this.db = db;
-    		this.id = id;
-    	}
+		public final String term;
+		public final String uri;
+		public final String db;
+		public final String id;
 
-    	@Override
-    	public String toString() {
-    		return term;
-    	}
-    }
-    
-   
-    private CPathService service;
-    
-    private final String xmlBase;
+		private RelTypeVocab(String term, String uri, String db, String id) {
+			this.term = term;
+			this.uri = uri;
+			this.db = db;
+			this.id = id;
+		}
+
+		@Override
+		public String toString() {
+			return term;
+		}
+	}
+
+
+	private CPathService service;
+
+	private final String xmlBase;
 	private final Validator validator;
-	
+
 	private String identifier;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param service cpath2 service (provides data query methods)
+	 * @param service   cpath2 service (provides data query methods)
 	 * @param validator Biopax Validator
-	 * @param provider pathway data provider's identifier
+	 * @param provider  pathway data provider's identifier
 	 */
-	public PreMerger(CPathService service, Validator validator, String provider) 
-	{
+	public PreMerger(CPathService service, Validator validator, String provider) {
 		this.service = service;
 		this.validator = validator;
 		this.xmlBase = CPathSettings.getInstance().getXmlBase();
-		this.identifier = (provider == null || provider.isEmpty()) 
+		this.identifier = (provider == null || provider.isEmpty())
 				? null : provider;
 	}
 
@@ -131,69 +102,69 @@ public final class PreMerger {
 		// Iterate over all metadata:
 		for (Metadata metadata : service.metadata().findAll()) {
 			// use filter if set (identifier and version)
-			if(identifier != null) {
-				if(!metadata.getIdentifier().equals(identifier))
+			if (identifier != null) {
+				if (!metadata.getIdentifier().equals(identifier))
 					continue;
 			}
-			
-			try {	
-					log.info("premerge(), now processing " + metadata.getIdentifier() );
-					
-					// Try to instantiate the Cleaner now, and exit if it fails!
-					Cleaner cleaner = null; //reset to null!
-					String cl = metadata.getCleanerClassname();
-					if(cl != null && cl.length()>0) {
-						cleaner = ImportFactory.newCleaner(cl);
-						if (cleaner == null) {
-							log.error("premerge(), failed to create the Cleaner: " + cl
+
+			try {
+				log.info("premerge(), now processing " + metadata.getIdentifier());
+
+				// Try to instantiate the Cleaner now, and exit if it fails!
+				Cleaner cleaner = null; //reset to null!
+				String cl = metadata.getCleanerClassname();
+				if (cl != null && cl.length() > 0) {
+					cleaner = ImportFactory.newCleaner(cl);
+					if (cleaner == null) {
+						log.error("premerge(), failed to create the Cleaner: " + cl
 								+ "; skipping for this data source...");
-							return; // skip this data entirely due to the error
-						} 			
-					} else {
-						log.info("premerge(), no Cleaner class was specified; continue...");	
+						return; // skip this data entirely due to the error
 					}
-					
-					Converter converter = null;
-					cl = metadata.getConverterClassname();
-					if(cl != null && cl.length()>0) {
-						converter = ImportFactory.newConverter(cl);
-						if (converter == null) {
-							log.error("premerge(), failed to create the Converter: " + cl
+				} else {
+					log.info("premerge(), no Cleaner class was specified; continue...");
+				}
+
+				Converter converter = null;
+				cl = metadata.getConverterClassname();
+				if (cl != null && cl.length() > 0) {
+					converter = ImportFactory.newConverter(cl);
+					if (converter == null) {
+						log.error("premerge(), failed to create the Converter: " + cl
 								+ "; skipping for this data source...");
-							return; // skip due to the error
-						} 
-						
-						// initialize
-						converter.setXmlBase(xmlBase);
-						
-					} else {
-						log.info("premerge(), no Converter class was specified; continue...");		
+						return; // skip due to the error
 					}
-										
-					// clear all existing output files, parse input files, reset counters, save.
-					log.debug("num. of data files before init, " + metadata.getIdentifier() + ": " + metadata.getContent().size());
-					metadata = service.init(metadata);
-					metadata.setPremerged(null);
-					
-					//load/re-pack/save orig. data
-					CPathUtils.analyzeAndOrganizeContent(metadata);
-					
-					// Premerge for each pathway data: clean, convert, validate, 
-					// and then update premergeData, validationResults db fields.
-					for (Content content : new HashSet<Content>(metadata.getContent())) {
-						try {					
-							pipeline(metadata, content, cleaner, converter);
-						} catch (Exception e) {
-							metadata.getContent().remove(content);
-							log.warn("premerge(), removed " + content + " due to error", e);
-						}		
+
+					// initialize
+					converter.setXmlBase(xmlBase);
+
+				} else {
+					log.info("premerge(), no Converter class was specified; continue...");
+				}
+
+				// clear all existing output files, parse input files, reset counters, save.
+				log.debug("num. of data files before init, " + metadata.getIdentifier() + ": " + metadata.getContent().size());
+				metadata = service.init(metadata);
+				metadata.setPremerged(null);
+
+				//load/re-pack/save orig. data
+				CPathUtils.analyzeAndOrganizeContent(metadata);
+
+				// Premerge for each pathway data: clean, convert, validate,
+				// and then update premergeData, validationResults db fields.
+				for (Content content : new HashSet<Content>(metadata.getContent())) {
+					try {
+						pipeline(metadata, content, cleaner, converter);
+					} catch (Exception e) {
+						metadata.getContent().remove(content);
+						log.warn("premerge(), removed " + content + " due to error", e);
 					}
-					
-					// save/update validation status
-					metadata = service.save(metadata);
-					log.debug("premerge(), for " + metadata.getIdentifier() + 
+				}
+
+				// save/update validation status
+				metadata = service.save(metadata);
+				log.debug("premerge(), for " + metadata.getIdentifier() +
 						", saved " + metadata.getContent().size() + " files");
-				
+
 			} catch (Exception e) {
 				log.error("premerge(): failed", e);
 				e.printStackTrace();
@@ -203,54 +174,52 @@ public final class PreMerger {
 
 	/**
 	 * Builds a BioPAX Warehouse model using all available
-	 * WAREHOUSE type data sources, builds id-mapping tables from 
-	 * MAPPING type data sources, generates extra xrefs, and saves the 
+	 * WAREHOUSE type data sources, builds id-mapping tables from
+	 * MAPPING type data sources, generates extra xrefs, and saves the
 	 * result model.
 	 */
 	public void buildWarehouse() {
-		
+
 		Model warehouse = BioPAXLevel.L3.getDefaultFactory().createModel();
 		warehouse.setXmlBase(xmlBase);
-		
+
 		// iterate over all metadata
-		for (Metadata metadata : service.metadata().findAll()) 
-		{
+		for (Metadata metadata : service.metadata().findAll()) {
 			//skip for not warehouse data
 			if (metadata.getType() != METADATA_TYPE.WAREHOUSE)
-				continue; 
-			
-			log.info("buildWarehouse(), adding data: " + metadata.getUri());			
+				continue;
+
+			log.info("buildWarehouse(), adding data: " + metadata.getUri());
 			InputStream inputStream;
-			for(Content content : metadata.getContent()) {
+			for (Content content : metadata.getContent()) {
 				try {
 					inputStream = new GZIPInputStream(new FileInputStream(content.normalizedFile()));
 					Model m = new SimpleIOHandler(BioPAXLevel.L3).convertFromOWL(inputStream);
 					m.setXmlBase(xmlBase);
 					warehouse.merge(m);
 				} catch (IOException e) {
-					log.error("buildWarehouse, skip for " + content.toString() + 
-						"; failed to read/merge from " + content.convertedFile(), e);
+					log.error("buildWarehouse, skip for " + content.toString() +
+							"; failed to read/merge from " + content.convertedFile(), e);
 					continue;
 				}
 			}
 		}
 		warehouse.repair();
-		
+
 		//clear all id-mapping tables
 		service.mapping().deleteAll();
-		
+
 		// Using the just built Warehouse BioPAX model, generate the id-mapping tables:
 		buildIdMappingFromWarehouse(warehouse);
-			
+
 		// Next, process all extra MAPPING data files, build, save in the id-mapping db repository.
-		for (Metadata metadata : service.metadata().findAll()) 
-		{
+		for (Metadata metadata : service.metadata().findAll()) {
 			//skip not id-mapping data
 			if (metadata.getType() != METADATA_TYPE.MAPPING)
-				continue; 
-			
+				continue;
+
 			log.info("buildWarehouse(), adding id-mapping: " + metadata.getUri());
-			for(Content content : metadata.getContent()) {
+			for (Content content : metadata.getContent()) {
 				try {
 					Set<Mapping> mappings = simpleMapping(content, new GZIPInputStream(
 							new FileInputStream(content.originalFile())));
@@ -267,64 +236,28 @@ public final class PreMerger {
 		ModelUtils.removeObjectsIfDangling(warehouse, Xref.class);
 
 		// save to compressed file
-		String whFile  = CPathSettings.getInstance().warehouseModelFile();
-		log.info("buildWarehouse(), creating Warehouse BioPAX archive: " + whFile);		
+		String whFile = CPathSettings.getInstance().warehouseModelFile();
+		log.info("buildWarehouse(), creating Warehouse BioPAX archive: " + whFile);
 		try {
-			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(warehouse, 
+			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(warehouse,
 					new GZIPOutputStream(new FileOutputStream(whFile)));
 		} catch (IOException e) {
 			log.error("buildWarehouse(), failed", e);
 		}
-		
+
 		//Don't persist (do later after Merger)
 		log.info("buildWarehouse(), done.");
 	}
 
 
 	private void saveIgnoringDuplicates(Set<Mapping> mappings) {
-		for(Mapping mapping : mappings) {
+		for (Mapping mapping : mappings) {
 			try {
 				service.saveIfUnique(mapping);
-			} catch (DataIntegrityViolationException e) {} //ignore same entries
+			} catch (DataIntegrityViolationException e) {
+			} //ignore same entries
 		}
 	}
-
-	// add more RXs to ERs; this enables full-text search with IDs not available in original UniProt or ChEBI files.
-	// (makes sense if additional MAPPING type metadata and data were actually imported);
-	//TODO: instead, do this when creating the index
-//		log.info("buildWarehouse(), adding more Xrefs to ERs using id-mapping...");
-//		for(EntityReference er : new HashSet<EntityReference>(warehouse.getObjects(EntityReference.class)))
-//		{
-//			Assert.isTrue(er.getUri().contains("/chebi/") || er.getUri().contains("/uniprot/"),
-//					er + " - warehouse ER is neither PR nor SMR (bug)!");
-//			addRelXrefsToWarehouseEntityRef(warehouse, er);
-//		}
-
-	//TODO: refactor this method and move to where the full-text index is created
-	//so far, this method was useful for warehouse SMRs only (because we only imported extra id-mappings from UniChem)
-//	private void addRelXrefsToWarehouseEntityRef(Model warehouse, EntityReference er)
-//	{
-//		final String primaryDb = (er instanceof SmallMoleculeReference) ? "CHEBI" : "UNIPROT";
-//		final String primaryId = CPathUtils.idfromNormalizedUri(er.getUri());
-//
-//		//reverse id-mapping (from the primary db/id to all other db/id entries that map to the primary)
-//		final List<Mapping> map = service.mapping().findByDestIgnoreCaseAndDestId(primaryDb, primaryId);
-//		for(Mapping m : map)
-//		{
-//			Assert.isTrue(m.getDest().equals(primaryDb) && m.getDestId().equals(primaryId),
-//				"findByDestIgnoreCaseAndDestId result contains mappings with different primary db/id (bug!)");
-//
-//			//find the unif.xref by the normalized URI, if exists
-//			final String uxUri = Normalizer.uri(xmlBase, m.getSrc(), m.getSrcId(), UnificationXref.class);
-//			UnificationXref ux = (UnificationXref) warehouse.getByID(uxUri);
-//			if(ux != null && er.getXref().contains(ux))
-//				continue; //skip existing equivalet unif. xref
-//
-//			//otherwise - find/make special rel.xref
-//			RelationshipXref rx = findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, m.getSrc(), m.getSrcId(), warehouse);
-//			er.addXref(rx);
-//		}
-//	}
 
 
 	/**
@@ -419,13 +352,14 @@ public final class PreMerger {
 					final String src = x.getDb().toUpperCase();
 					mappings.add(new Mapping(src, x.getId(), destDb, ac));
 
-					//remove the xref unless it's the primary, 'HGNC Symbol' or smth. we really wanna keep in the model:
-					//TODO double-check that we're not deleting useful xrefs here (id-mapping/queries do not need them anymore)
+					//remove the xref unless it's the primary AC, 'HGNC Symbol' or what's worth keeping in the model:
+					//(id-mapping/queries do not need them anymore)
 					if(!src.startsWith("UNIPROT") && !src.startsWith("HGNC") && !src.startsWith("NCBI Gene")
 							&& !src.equalsIgnoreCase("CHEBI")) {
 						er.removeXref(x);
 					} else if(x instanceof RelationshipXref && (src.startsWith("UNIPROT") || src.equalsIgnoreCase("CHEBI"))) {
-						//TODO perhaps, remove all secondary ACs xrefs too
+						//remove all secondary ACs Xrefs too
+						er.removeXref(x);
 					}
 				}
 			}
