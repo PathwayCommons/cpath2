@@ -3,6 +3,7 @@ package cpath.importer;
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
 import cpath.jpa.Mapping;
+import cpath.jpa.MappingsRepository;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.service.CPathService;
@@ -61,7 +62,9 @@ public class DataImportTest {
 	
 	@Autowired
 	Validator validator;
-	
+
+	@Autowired
+	MappingsRepository mappingsRepository;
 	
 	@Test
 	@DirtiesContext
@@ -110,8 +113,10 @@ public class DataImportTest {
 		assertFalse(service.map("uniprot isoform", "Q8TD86-1", "UNIPROT").isEmpty());
 		assertEquals("Q8TD86", service.map("uniprot isoform", "Q8TD86-1", "UNIPROT").iterator().next());					
 		// also -
-		assertTrue(service.map(null, "NP_619650.1", "UNIPROT").isEmpty());
+		assertTrue(service.map(null, "NP_619650.1", "UNIPROT").isEmpty());//built-in 'suggest' method was not used
 		assertFalse(service.map("refseq", "NP_619650", "UNIPROT").isEmpty());
+		assertFalse(service.map("refseq", "NP_619650.1", "UNIPROT").isEmpty());//'suggest' was used to recognize 'NP_619650'
+		assertFalse(service.map(null, "NP_004334", "UNIPROT").isEmpty());
 		// also, with the first arg. is not null, map(..) 
 		// calls 'suggest' method to replace NP_619650.1 with NP_619650
 		// (the id-mapping table only has canonical uniprot IDs, no isoform IDs)
@@ -128,7 +133,6 @@ public class DataImportTest {
 		assertTrue(ids.contains("P01116"));
 		List<Mapping> mps = service.mapping().findByDestIgnoreCaseAndDestId("UNIPROT", "P01116");
 		assertTrue(mps.size()>2);
-//		System.out.println(mps);
 		mps = service.mapping().findBySrcIdAndDestIgnoreCase("P01118", "UniProt");
 		assertTrue(mps.size()==1);
 		assertTrue("P01116".equals(mps.iterator().next().getDestId()));
@@ -189,8 +193,8 @@ public class DataImportTest {
 			new GZIPOutputStream(new FileOutputStream(
 					CPathSettings.getInstance().mainModelFile())));
 		
-		//index
-		Indexer indexer = new SearchEngine(m, CPathSettings.getInstance().indexDir());
+		//index (using additional id-mapping service repository)
+		Indexer indexer = new SearchEngine(m, CPathSettings.getInstance().indexDir(), mappingsRepository);
 		indexer.index();
 		
 		//load the main model, blacklist.txt, init the search engine

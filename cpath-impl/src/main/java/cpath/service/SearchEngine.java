@@ -99,7 +99,6 @@ public class SearchEngine implements Indexer, Searcher {
 			FIELD_SIZE, // find entities with a given no. child/associated processes...
 			FIELD_KEYWORD, //includes data type properties (names, terms, comments), 
 						  //also from  child elements up to given depth (3), also stores but not indexes parent pathway uris and names;
-			FIELD_XREFID,
 	};
 		
 	private final Model model;
@@ -263,8 +262,7 @@ public class SearchEngine implements Indexer, Searcher {
 			SearchHit hit = new SearchHit();
 			Document doc = searcher.doc(scoreDoc.doc);
 			String uri = doc.get(FIELD_URI);
-			BioPAXElement bpe = model.getByID(uri);			
-//			LOG.debug("transform: doc:" + scoreDoc.doc + ", uri:" + uri);
+			BioPAXElement bpe = model.getByID(uri);
 			
 			// use the highlighter (get matching fragments)
 			// for this to work, all keywords were stored in the index field
@@ -532,7 +530,8 @@ public class SearchEngine implements Indexer, Searcher {
 						if (x.getDb().equalsIgnoreCase("chebi")) {
 							//find other IDs that map to the ChEBI ID
 							mappings = idMapping.findByDestIgnoreCaseAndDestId("CHEBI", x.getId());
-						} else if (x.getDb().equalsIgnoreCase("uniprot knowledgebase")) {
+						} else if ("uniprot knowledgebase".equalsIgnoreCase(x.getDb())
+								|| "uniprot".equalsIgnoreCase(x.getDb())) {
 							//find other IDs that map to the UniProt AC
 							mappings = idMapping.findByDestIgnoreCaseAndDestId("UNIPROT", x.getId());
 						}
@@ -661,7 +660,8 @@ public class SearchEngine implements Indexer, Searcher {
 				if ("chebi".equalsIgnoreCase(xref.getDb())) {
 					//find other IDs that map to the ChEBI ID
 					mappings = idMapping.findByDestIgnoreCaseAndDestId("CHEBI", xref.getId());
-				} else if ("uniprot knowledgebase".equalsIgnoreCase(xref.getDb())) {
+				} else if ("uniprot knowledgebase".equalsIgnoreCase(xref.getDb())
+						|| "uniprot".equalsIgnoreCase(xref.getDb())) {
 					//find other IDs that map to the UniProt AC
 					mappings = idMapping.findByDestIgnoreCaseAndDestId("UNIPROT", xref.getId());
 				}

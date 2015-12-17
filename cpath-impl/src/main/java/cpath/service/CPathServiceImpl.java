@@ -78,6 +78,7 @@ import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 import cpath.service.jaxb.TraverseResponse;
+
 import static cpath.service.Status.*;
 
 
@@ -706,8 +707,14 @@ public class CPathServiceImpl implements CPathService {
     	
     	List<Mapping> maps;    	
     	if(fromDb == null || fromDb.isEmpty()) {
-    		maps = mappingsRepository.findBySrcIdAndDestIgnoreCase(fromId, toDb);
-    	} else {    	
+			// map without specifying a src db; avoid no-prefix numerical IDs
+			// (it's risky if no-prefix integer IDs exist, such as pubchem cid, sid;
+			// though, for biopolymers we could expect that only NCBI Gene ID is used for id-mapping...)
+			if(!fromId.matches("^\\d+$"))
+    			maps = mappingsRepository.findBySrcIdAndDestIgnoreCase(fromId, toDb);
+			else
+				return Collections.emptySet();
+    	} else {
     		//if possible, use a "canonical" id instead isoform, version, kegg gene...
     		// (e.g., uniprot.isoform, P04150-2 pair becomes uniprot, P04150)
     		String id = fromId;

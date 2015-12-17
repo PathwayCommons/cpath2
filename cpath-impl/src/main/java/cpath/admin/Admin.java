@@ -53,7 +53,7 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.pattern.miner.BlacklistGenerator;
+import org.biopax.paxtools.pattern.miner.BlacklistGenerator2;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.validator.api.Validator;
 import org.h2.tools.Csv;
@@ -252,12 +252,6 @@ public final class Admin {
 				if (args.length < 3) 
 					fail(args, "No filename provided with --import option.");	
 				else importLog(args[2]);
-			} else if("--merge".equalsIgnoreCase(args[1])) {	
-				fail(args, "Not implemented yet."); 
-				//TODO implement: merge log events (might not worth it - can use H2 Console and SQL instead, or a text editor)
-			} else if("--delete".equalsIgnoreCase(args[1])) {
-				fail(args, "Not implemented yet."); 
-				//TODO implement: delete log events (might not worth it - can use H2 Console and SQL instead, or a text editor)
 			} else {
 				fail(args, "Unknown option: " + args[1]);
 			}
@@ -406,7 +400,7 @@ public final class Admin {
 
 		LOG.info("index: blacklisting...");
 		//Generates cpath2 graph query blacklist file (to exclude ubiquitous small molecules, like ATP)
-		BlacklistGenerator gen = new BlacklistGenerator();
+		BlacklistGenerator2 gen = new BlacklistGenerator2();
 		Blacklist blacklist = gen.generateBlacklist(model);
 		// Write all the blacklisted ids to the output
 		blacklist.write(new FileOutputStream(cpath.blacklistFile()));
@@ -665,7 +659,7 @@ public final class Admin {
 				"when --output-absolute-uris flag is present, all URIs there in the output BioPAX will be absolute; " +
 				"when --datasources or/and --types flag is set, and 'uri' list is not, then the result model " +
 				"will contain BioPAX elements that pass the filter by data source and/or type)" + NEWLINE); 
-		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format> [<option>] [true]"
+		toReturn.append(Cmd.CONVERT.toString() + " <biopax-file(.owl|.gz)> <output-file> <output format> [<option>] [true] "
 				+ "(can convert any of previously generated in the downloads directory BioPAX file "
 				+ "to another cPath2 output format: SBGN, GSEA, BINARY_SIF, EXTENDED_BINARY_SIF "
 				+ "using also generated blacklist.txt; <option> is optional: "
@@ -673,10 +667,9 @@ public final class Admin {
 				+ "e.g., one can use 'uniprot' with SIF (where the default is HGNC), or - 'hgnc' with GSEA (the defaut is UniProt);"
 				+ "finally, optional 'true' (the last parameter) can be used to enable "
 				+ "merging equivalent interactions before the analysis)." + NEWLINE);
-		toReturn.append(Cmd.LOG.toString() + " --export/import <filename> | --merge/delete type1:name1,type2:name2,type3,.. "
+		toReturn.append(Cmd.LOG.toString() + " --export/import <filename> "
 				+ "(Exports/imports the cpath2 internal assess log db to/from the specified CSV file; "
-				+ "--import clears and rewrites the log db; "
-				+ "--merge or --delete merges/deletes log db rows for the specified type:name log events)" + NEWLINE);
+				+ "--import clears and rewrites the log db)" + NEWLINE);
 		toReturn.append(Cmd.ANALYSIS.toString() + " <classname> [--update] (execute custom code within the cPath2 BioPAX database; " +
 				"if --update is set, one then should re-index and generate new 'downloads')" + NEWLINE);
 		

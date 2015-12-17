@@ -288,15 +288,26 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			// (to make Xrefs and then use them for id-mapping);
 			// skip for other, not identity, ID types,
         	// e.g., refs to pathway databases, ontologies, etc.:
-        	if (!db.equalsIgnoreCase("GENEID") 
+        	if ( //TODO which 'DR' ID types do we want for id-mapping?
+					!db.equalsIgnoreCase("GENEID") // NCBI Gene (EntrezGene)
         			&& !db.equalsIgnoreCase("REFSEQ") 
         			&& !db.equalsIgnoreCase("ENSEMBL") 
         			&& !db.equalsIgnoreCase("HGNC")
 					&& !db.equalsIgnoreCase("PDB")
-					//TODO also, don't skip for: IPI, PIR, UniGene, EMBL (mRna)..?
-					) {
-				continue;
-        	}
+					&& !db.equalsIgnoreCase("IPI") //International Protein Index (deprecated; use UniProt)
+//					&& !db.equalsIgnoreCase("INTERPRO")
+					&& !db.equalsIgnoreCase("EMBL") //NCBI GI (genbank identifier)?
+					&& !db.equalsIgnoreCase("PIR") //NCBI Protein
+					&& !db.equalsIgnoreCase("PHARMGKB")
+//					&& !db.equalsIgnoreCase("PANTHER") //PANTHER Family
+// 					&& !db.equalsIgnoreCase("GENECARDS") //ID, not Symbol
+//					&& !db.equalsIgnoreCase("DISPROT")
+//					&& !db.equalsIgnoreCase("EGGNOG")
+//					&& !db.equalsIgnoreCase("PRINTS")
+//					&& !db.equalsIgnoreCase("PIRSF")
+// 					&& !db.equalsIgnoreCase("PROSITE")
+//					&& !db.equalsIgnoreCase("ORTHODB")
+				) continue;
 
 			String fixedDb = db;	
 			if (db.equalsIgnoreCase("GENEID"))
@@ -305,24 +316,26 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			//iterate over the ID tokens of the same DR line, skipping non-ID comments, etc. (ending)
 			for (int j = 1; j < parts.length; j++) {
 				String id = parts[j].trim();
-
 				//at the end of a DR line in some cases (e.g, GeneID or RefSeq)?
-				if(id.equals("-"))
-					break;
+				if(id.equals("-")) break;
 
 				//skip PDB annotations
-				if(db.equalsIgnoreCase("PDB") && !id.matches("^[0-9][A-Za-z0-9]{3}$"))
-					break;
-
+				if(db.equalsIgnoreCase("PDB") && !id.matches("^[0-9][A-Za-z0-9]{3}$")) break;
 				//no more Ensembl IDs (skip comments)
-				if (db.equalsIgnoreCase("ENSEMBL") && !id.startsWith("ENS"))
-					break; 
+				else if (db.equalsIgnoreCase("ENSEMBL") && !id.startsWith("ENS")) break;
+				//no more InterPro IDs (skip comments)
+				else if (db.equalsIgnoreCase("INTERPRO") && !id.startsWith("IPR")) break;
+				else if (db.equalsIgnoreCase("PANTHER") && !id.startsWith("PTHR")) break;
+				else if (db.equalsIgnoreCase("PRINTS") && !id.startsWith("PR")) break;
+				else if (db.equalsIgnoreCase("PHARMGKB") && !id.startsWith("PA")) break;
+				else if (db.equalsIgnoreCase("ORTHODB") && !id.startsWith("EOG")) break;
+
 				//last ID in a HGNC line is in fact gene name
-				if(db.equalsIgnoreCase("HGNC") && !id.startsWith("HGNC:")) {
+				else if(db.equalsIgnoreCase("HGNC") && !id.startsWith("HGNC:")) {
 					fixedDb = "HGNC Symbol";
 				}
 				//remove .version from RefSeq IDs
-				if (db.equalsIgnoreCase("REFSEQ")) {
+				else if (db.equalsIgnoreCase("REFSEQ")) {
 					// extract only RefSeq AC from AC.Version ID form
 					fixedDb = "RefSeq";
 					id = id.replaceFirst("\\.\\d+", "");

@@ -615,7 +615,9 @@ public final class Merger {
 	{
 		Set<String> xSet = new HashSet<String>();
 		
-		for (Xref x : orig.getXref()) {			
+		for (Xref x : orig.getXref()) {
+			if(x instanceof PublicationXref) continue;
+
 			if(x.getDb() == null || x.getDb().isEmpty() || x.getId() == null || x.getId().isEmpty()) {
 				log.warn("Ignored bad " + xrefType.getSimpleName()
 					+ " (" + x.getUri() + "), db: " + x.getDb() + ", id: " + x.getId());
@@ -624,8 +626,12 @@ public final class Merger {
 						
 			if (xrefType.isInstance(x)) {
 				Set<String> mp = service.map(x.getDb(), x.getId(), mapTo);
-				if(mp==null || mp.isEmpty()) 
-					continue; //ignore xrefs that don't map to any primary IDs
+				if(mp.isEmpty()) {
+					//try mapping without using any srcDb name;
+					mp = service.map(null, x.getId(), mapTo);
+				}
+				//ignore xrefs that don't map to any primary IDs
+				if(mp.isEmpty()) continue;
 				
 				// mp is not empty
 				if(mp.size() > 1) 
@@ -661,7 +667,9 @@ public final class Merger {
 	{
 		final Set<String> mappedTo = new TreeSet<String>();
 		
-		for (Xref x : orig.getXref()) {			
+		for (Xref x : orig.getXref()) {
+			if(x instanceof PublicationXref) continue;
+
 			if(x.getDb() == null || x.getDb().isEmpty()
 					|| x.getId() == null || x.getId().isEmpty()) {
 				log.warn("Ignored bad " + xrefType.getSimpleName()
@@ -671,6 +679,10 @@ public final class Merger {
 						
 			if (xrefType.isInstance(x)) {
 				Set<String> mp = service.map(x.getDb(), x.getId(), mapTo);
+				if(mp.isEmpty()  && orig instanceof SequenceEntityReference) {
+					//try mapping without using any srcDb name
+					mp = service.map(null, x.getId(), mapTo);
+				}
 				mappedTo.addAll(mp);
 				if(mp.size() > 1) //one xref maps to several primary ACs
 					log.debug("Ambiguous xref.id: " + x.getId() + " maps to: " + mp);

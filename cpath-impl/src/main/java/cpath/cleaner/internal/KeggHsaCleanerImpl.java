@@ -23,9 +23,7 @@ import cpath.importer.Cleaner;
  * (provided by BioModels, Andreas Draeger).
  * 
  * Can normalize URIs for KEGG Pathways 
- * to http://identifiers.org/kegg.pathway/hsa* 
- * 
- * TODO convert generic ERs (unif. xrefs of the same kind point to diff. proteins)...
+ * to http://identifiers.org/kegg.pathway/hsa*
  */
 final class KeggHsaCleanerImpl implements Cleaner {
 
@@ -39,9 +37,9 @@ final class KeggHsaCleanerImpl implements Cleaner {
 		log.info("Cleaning KEGG biopax data, please wait...");
 
 		// Normalize Pathway URIs KEGG stable id, where possible
-		Set<Pathway> entities = new HashSet<Pathway>(model.getObjects(Pathway.class));
+		Set<Pathway> pathways = new HashSet<Pathway>(model.getObjects(Pathway.class));
 		Map<String, Pathway> newUriToEntityMap = new HashMap<String, Pathway>();
-		for(Pathway pw : entities) {
+		for(Pathway pw : pathways) {
 			Set<UnificationXref> uxrefs = new ClassFilterSet<Xref, UnificationXref>(
 					new HashSet<Xref>(pw.getXref()), UnificationXref.class);
 			//normally there is only one such xref
