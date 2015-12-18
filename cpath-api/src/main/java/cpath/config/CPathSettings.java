@@ -34,7 +34,11 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Properties;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -123,8 +127,6 @@ public final class CPathSettings {
 	public static final String PROP_XML_BASE="cpath2.xml.base";	
 	public static final String PROP_MAX_SEARCH_HITS_PER_PAGE = "cpath2.maxSearchHitsPerPage";
 	public static final String PROP_DEBUG_ENABLED = "cpath2.debug.enabled";
-	public static final String PROP_BLACKLIST_DEGREE_THRESHOLD = "cpath2.blacklist.degree.threshold";   
-	public static final String PROP_BLACKLIST_CONTROL_THRESHOLD = "cpath2.blacklist.control.threshold";
 	public static final String PROP_METADATA_LOCATION = "cpath2.metadata.location";
 	
 	public static final String PROVIDER_NAME = "cpath2.provider.name";
@@ -163,9 +165,7 @@ public final class CPathSettings {
 		defaults.put(PROVIDER_NAME, "cPath2 Demo");
 		defaults.put(PROVIDER_VERSION, "0");
 		defaults.put(PROVIDER_DESCRIPTION, "cPath2 Demo");
-		defaults.put(PROVIDER_ORGANISMS, "homo sapiens");
-		defaults.put(PROP_BLACKLIST_CONTROL_THRESHOLD, "15");
-		defaults.put(PROP_BLACKLIST_DEGREE_THRESHOLD, "100");
+		defaults.put(PROVIDER_ORGANISMS, "Homo sapiens (9606)");
 		defaults.put(PROP_MAX_SEARCH_HITS_PER_PAGE, "500");
 		defaults.put(PROP_METADATA_LOCATION, homeDir() + File.separator + METADATA_FILE);
 		defaults.put(PROP_DEBUG_ENABLED, "false");
@@ -248,9 +248,9 @@ public final class CPathSettings {
 	 * but only these organisms, specified in the cpath2.properties file, are
 	 * considered to generate export data archives and to be shown on web pages.
 	 * 
-	 * Default is {"Homo sapiens"} (when the property is not set)
+	 * Default is {"Homo sapiens (9606)"} (when the property is not set)
 	 *  
-	 * @return
+	 * @return the list of supported organisms (defined as 'name (taxID)')
 	 */
 	public String[] getOrganisms() {
 		String orgs = property(PROVIDER_ORGANISMS);
@@ -262,10 +262,27 @@ public final class CPathSettings {
 	}
 
 	/**
+	 * Taxonomy IDs supported by this cPath2 instance,
+	 * which are extracted from the list returned by #getOrganisms
+	 * method.
 	 *
-	 *
-	 * @return
+	 * @return the list of taxonomy IDs of the organisms
+	 * @throws AssertionError when taxonomy ID cannot be recognised or not found there.
 	 */
+	public Set<String> getOrganismTaxonomyIds() {
+		Set<String> taxids = new HashSet<String>();
+		final Pattern taxIdPattern = Pattern.compile("\\(\\s*(\\d+)\\s*\\)");
+		for(String org : getOrganisms()) {
+			//extract and collect taxIDs
+			Matcher matcher = taxIdPattern.matcher(org);
+			if(matcher.find()) {
+				taxids.add(matcher.group(1));
+			} else
+				throw new AssertionError("getOrganismTaxonomyIds, taxonomy ID not found in: " + org);
+		}
+		return taxids;
+	}
+
 	public String[] getMetadataIdsForGseaSkipSubPathways() {
 		String metadataIds = property(PROP_GSEA_SKIPSUBPATHWAYS);
 		return metadataIds.split("\\s*,\\s*");
@@ -279,7 +296,7 @@ public final class CPathSettings {
 	 * This cPath2 instance version
 	 * (not cpath2 software's but the resource's)
 	 * 
-	 * @return
+	 * @return cPath2 db/instance version
 	 */
 	public String getVersion() {
 		return property(PROVIDER_VERSION);

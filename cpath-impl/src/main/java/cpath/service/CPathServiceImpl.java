@@ -39,9 +39,7 @@ import org.biopax.paxtools.controller.Completer;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.Pathway;
-import org.biopax.paxtools.model.level3.RelationshipXref;
-import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.MiriamLink;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.QueryExecuter;
@@ -186,9 +184,8 @@ public class CPathServiceImpl implements CPathService {
 			log.error("search() failed - " + e);
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
-
 	}
-		
+
 
 	@Override
 	public ServiceResponse fetch(final OutputFormat format, final String... uris) {
@@ -254,14 +251,7 @@ public class CPathServiceImpl implements CPathService {
 		if(direction == null) {
 			direction = Direction.UNDIRECTED;
 		}
-		
-//		if(direction == Direction.UNDIRECTED) {
-//			// TODO let's restrict to 1 in this case, 
-//			// to avoid huge unmanageable (by the web controller) results, 
-//			//until we find a better solution
-//			limit = 1; 
-//		}
-		
+
 		// execute the paxtools graph query
 		try {
 			// init source elements
@@ -399,15 +389,14 @@ public class CPathServiceImpl implements CPathService {
 		final String[] organisms, final String[] datasources)
 	{
 		if(!paxtoolsModelReady()) 
-			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
+			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try again later)...");
 		
 		final String[] src = findUrisByIds(sources);
 
 		if (direction == Direction.BOTHSTREAM) {
-			return new ErrorResponse(BAD_REQUEST, 
-				"Direction cannot be BOTHSTREAM for the COMMONSTREAM query");
+			return new ErrorResponse(BAD_REQUEST, "Direction cannot be BOTHSTREAM for the COMMONSTREAM query");
 		} else if(direction == null) {
-			direction = Direction.DOWNSTREAM;	
+			direction = Direction.DOWNSTREAM;
 		}
 		
 		// execute the paxtools graph query
@@ -415,8 +404,7 @@ public class CPathServiceImpl implements CPathService {
 			// init source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
 			if(elements.isEmpty()) {
-				return new ErrorResponse(NO_RESULTS_FOUND,
-						"No BioPAX objects found by URI(s): " + Arrays.toString(src));
+				return new ErrorResponse(NO_RESULTS_FOUND, "No BioPAX objects found by URIs: " + Arrays.toString(src));
 			}
 
 			// Execute the query, get result elements
@@ -458,88 +446,78 @@ public class CPathServiceImpl implements CPathService {
 		if (identifiers.length == 0)
 			return identifiers;
 		
-		Set<String> uris = new TreeSet<String>();
+		final Set<String> uris = new TreeSet<String>();
 
 		// id-mapping: get primary IDs where possible; 
 		// build a Lucene query string (will be eq. to xrefid:"A" OR xrefid:"B" OR ...)
 		final StringBuilder q = new StringBuilder();
 		for (String identifier : identifiers) {
-			
-			String id = identifier;
-			
 			if(identifier.toLowerCase().startsWith("http://"))
-			{
-				// it must be an existing URI (a user hopes so)
+			{	// then, it must be an existing BioPAX object URI (seems, the user hopes so)
 				uris.add(identifier);
-				
+				//also, if it's a canonical Identifiers.org URI, -
 				if(identifier.startsWith("http://identifier.org/")) {
-					//also extract the id from the URI to map it (below) to the primary id/URI
-					id = CPathUtils.idfromNormalizedUri(identifier);
+					//extract the id from the URI
+					String id = CPathUtils.idfromNormalizedUri(identifier);
+					if(!q.toString().contains(id)) q.append("xrefid:\"").append(id).append("\" ");
 				} else //no id-mapping required
 					continue; //go to next identifier
-			} 
-			
-			// do gene/protein/chemical id-mapping;
-			// mapping can be ambiguous, but this is OK for queries (unlike when merging data)
-			//- the id-mapping step is not required anymore with new full-text index design -
-//			Set<String> m = map(id); //can be empty too
-//			for(String ac : m) {
-//				// add to the query string; quotation marks around the query id are required
-//				q.append("xrefid:\"").append(ac).append("\" ");
-//				log.debug("findUrisByIds, mapped " + id + " -> " + ac);
-//			}
-			
-			// use the original id regardless the mapping results
-			if(!q.toString().contains(id))
-				q.append("xrefid:\"").append(id).append("\" "); 
-
-		}
-		
-		/* 
-		 * find existing Xref URIs by ids using cpath2 full-text search
-		 * and pagination; iterate until all hits/pages are read,
-		 * because our query is very specific - uses field and class -
-		 * we want all hits)
-		*/
-		if (q.length() > 0) {
-			final String query = q.toString().trim();
-			log.debug("findUrisByIds, will run: " + query);
-			int page = 0; // will use search pagination
-			//TODO in future, search directly for ERs/PEs instead (of searching for xrefs)
-			SearchResponse resp = (SearchResponse) search(query, page, Xref.class, null, null);
-			log.debug("findUrisByIds, hits: " + resp.getNumHits());
-			while (!resp.isEmpty()) {
-				log.debug("Retrieving xref search results, page #" + page);
-				for (SearchHit h : resp.getSearchHit()) 
-				{
-					if("UnificationXref".equalsIgnoreCase(h.getBiopaxClass())
-							|| "RelationshipXref".equalsIgnoreCase(h.getBiopaxClass())) {
-						//exclude some RX types if the rel.type is set
-						if("RelationshipXref".equalsIgnoreCase(h.getBiopaxClass())) {
-							RelationshipXref rx = null;
-							rx = (RelationshipXref) paxtoolsModel.getByID(h.getUri());
-							//TODO review/decide RX types to keep/exclude...
-							//we created RXs with 'identity', 'see-also', etc. types when building the Warehouse and merging data
-							if(rx.getRelationshipType()==null
-									|| rx.getRelationshipType().getTerm().contains("identity")
-									|| rx.getRelationshipType().getTerm().contains("secondary-ac"))
-								uris.add(h.getUri());
-							
-						} else 
-							uris.add(h.getUri());
-					}
-				}
-				// go next page
-				resp = (SearchResponse) search(query, ++page, Xref.class, null, null);
 			}
+		 	// id-mapping step is not required anymore (new full-text index links lots of IDs to BioPAX objects)
+		}
+
+		if (q.length() > 0) {
+			//find existing URIs by ids using full-text search (collect all hits, because the query is very specific.
+			final String query = q.toString().trim();
+
+// from 2015/12/17 6.2.0-SNAPSHOT, we do not have to collect (URIs of) Xrefs anymore...
+//			int page = 0; // will use search pagination
+//			SearchResponse resp = (SearchResponse) search(query, page, Xref.class, null, null);
+//			log.debug("findUrisByIds, hits: " + resp.getNumHits());
+//			while (!resp.isEmpty()) {
+//				log.debug("Retrieving xref search results, page #" + page);
+//				for (SearchHit h : resp.getSearchHit()) {
+//					if("UnificationXref".equalsIgnoreCase(h.getBiopaxClass())
+//							|| "RelationshipXref".equalsIgnoreCase(h.getBiopaxClass())) {
+//						//exclude some RX types if the rel.type is set
+//						if("RelationshipXref".equalsIgnoreCase(h.getBiopaxClass())) {
+//							RelationshipXref rx = null;
+//							rx = (RelationshipXref) paxtoolsModel.getByID(h.getUri());
+//							//which RX types to use/keep...
+//							//('identity', etc. RX types were created when building the Warehouse and in the merging)
+//							if(rx.getRelationshipType()==null
+//									|| rx.getRelationshipType().getTerm().contains("identity")
+//									|| rx.getRelationshipType().getTerm().contains("secondary-ac"))
+//								uris.add(h.getUri());
+//
+//						} else
+//							uris.add(h.getUri());
+//					}
+//				}
+//				// go next page
+//				resp = (SearchResponse) search(query, ++page, Xref.class, null, null);
+//			}
+
+			//search for Gene/PEs (instead of, as it used to be in older versions, searching for xrefs)
+			findAllUris(uris, query, PhysicalEntity.class);
+			findAllUris(uris, query, Gene.class);
 		}
 				
-		log.debug("findUrisByIds, seed Xrefs: " + uris + 
-				" were mapped/found by orig. IDs: " + Arrays.toString(identifiers));
+		log.debug("findUrisByIds, seeds: " + uris + " were found by IDs: " + Arrays.toString(identifiers));
 		
 		return uris.toArray(new String[]{});
 	}
 
+	private void findAllUris(Set<String> collectedUris, String query, Class<? extends BioPAXElement> biopaxTypeFilter) {
+		log.debug("findAllUris, search in " + biopaxTypeFilter.getSimpleName() + " using query: " + query);
+		int page = 0; // will use search pagination; collect all hits from all result pages
+		SearchResponse resp = (SearchResponse) search(query, page, biopaxTypeFilter, null, null);
+		while (!resp.isEmpty()) {
+			for (SearchHit h : resp.getSearchHit()) collectedUris.add(h.getUri());
+			// go to next page
+			resp = (SearchResponse) search(query, ++page, biopaxTypeFilter, null, null);
+		}
+	}
 	
 	@Override
 	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
@@ -728,21 +706,12 @@ public class CPathServiceImpl implements CPathService {
 			} catch (IllegalArgumentException e) {
 			}		
     		
-    		if(db.equalsIgnoreCase("uniprot isoform") 
-    				|| db.equalsIgnoreCase("uniprot.isoform")) 
-    		{
-    			int idx = id.lastIndexOf('-');
-    			if(idx > 0) {//using corr. UniProt ID instead
-    				id = id.substring(0, idx);
-    				db = "UNIPROT";
-    			}
-    		}
-    		else if(db.toUpperCase().startsWith("UNIPROT")) {
-    			//e.g., 'UNIPROT' instead of 'UniProt Knowledgebase'
+    		if(db.toUpperCase().startsWith("UNIPROT") || db.equalsIgnoreCase("SWISSPROT")) {
+    			//e.g., 'uniprot isoform', 'UNIPROT', 'UniProt Knowledgebase', or 'SwissProt'
     			db = "UNIPROT";
-    		}
-    		else if(db.toUpperCase().startsWith("SWISSPROT")) {
-    			db = "UNIPROT";
+				//always use UniProt ID instead of the isoform ID for mapping
+				int idx = id.lastIndexOf('-');
+				if(idx > 0)	id = id.substring(0, idx);
     		}
     		else if(db.equalsIgnoreCase("refseq")) {
     			//strip, e.g., refseq:NP_012345.2 to refseq:NP_012345
@@ -767,8 +736,7 @@ public class CPathServiceImpl implements CPathService {
     			db = "PUBCHEM-COMPOUND";
     		}
     		
-    		maps = mappingsRepository
-    			.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase(db, id, toDb);
+    		maps = mappingsRepository.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase(db, id, toDb);
     	}
     	
     	Set<String> results = new TreeSet<String>();   	

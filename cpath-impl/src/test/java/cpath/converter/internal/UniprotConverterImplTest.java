@@ -139,8 +139,10 @@ public class UniprotConverterImplTest {
 		uri = Normalizer.uri(model.getXmlBase(), "ENSEMBL", "Homo_sapiens_identity", RelationshipXref.class);
 		assertNull(model.getByID(uri));	
 		
-		//total xrefs generated for P62158
+		//total xrefs generated for P62158 (the special test '[bla-bla]' id should not be there)
+		assertFalse(pr.getXref().toString().contains("bla-bla"));
 		assertEquals(146, pr.getXref().size()); //uh, so many PDB IDs (56)...
+
 		
 		//test for the following FT entry (two-line) was correctly parsed/converted:
 		//FT   MOD_RES      45     45       Phosphothreonine; by CaMK4 (By

@@ -93,13 +93,10 @@ public interface CPathService {
 	 * @param biopaxClass
 	 * @param dsources URIs of data sources
 	 * @param organisms URIs of organisms
-	 * @return
-	 * 
-	 * @see PaxtoolsDAO#search(String, Class[], String[], String[])
+	 * @return search/error response
 	 */
-	ServiceResponse search(String queryStr, 
+	ServiceResponse search(String queryStr,
 			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms);
-
 	
 	/**
 	 * Runs a neighborhood query using the given parameters

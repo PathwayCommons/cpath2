@@ -58,7 +58,7 @@ final class ChebiOntologyAnalysis implements Analysis<Model>
 			return;
 		}
 
-		// link each parent ChEBI to the child
+		// link each parent ChEBI to the child (i.e., child 'is_a' parent relation)
 		Collection<String> parentChebiIDs = getValuesByREGEX(entryBuffer, CHEBI_OBO_ISA_REGEX);
 		for (String parentChebiID : parentChebiIDs) {
 			RelationshipXref xref = PreMerger

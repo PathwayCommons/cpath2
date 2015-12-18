@@ -34,11 +34,6 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 
     private static final Logger log = LoggerFactory.getLogger(UniprotConverterImpl.class);
        
-    /**
-     * Constructor
-     */
-	UniprotConverterImpl() {}
-
 
 	public void convert(InputStream is, OutputStream os) {
 		// ref to reader here so
@@ -74,12 +69,8 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     ProteinReference proteinReference = newProteinReferenceWithAccessionXrefs(idParts[0], acNames, model);
                     
             		// add some external xrefs from DR fileds
-                    if (xrefs != null) {
-                        setXRefsFromDRs(xrefs.toString(), proteinReference, model);
-                    }
-                          
+                    if (xrefs != null) setXRefsFromDRs(xrefs.toString(), proteinReference, model);
                     setNameAndSynonyms(proteinReference, deField);
-                    
                     setOrganism(organismName, organismTaxId, proteinReference, model);
                     
                     // GN gene symbols - to PR names and rel. xrefs
@@ -278,10 +269,14 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     	final String lines[] = dbRefs.split("\n"); 
     	
         for (String line : lines) {
-        	//remove everything after '.' (e.g., isoform refs, comments)
-        	String xref = line.replaceFirst("\\..*", "").trim();
+        	//remove everything after '.' (e.g., isoform refs, comments, etc.)
+        	String xref = line.trim();
+			//every line ends with '.' or '. [blah-...]' something
+			int lastDotIdx = xref.lastIndexOf(".");
+			xref = xref.substring(0,lastDotIdx);
         	String parts[] = xref.split(";");
-        	
+
+			// get the db name part
         	String db = parts[0].trim();
         	
         	// use only some of prot. ref. identity resources
@@ -296,7 +291,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 					&& !db.equalsIgnoreCase("PDB")
 					&& !db.equalsIgnoreCase("IPI") //International Protein Index (deprecated; use UniProt)
 //					&& !db.equalsIgnoreCase("INTERPRO")
-					&& !db.equalsIgnoreCase("EMBL") //NCBI GI (genbank identifier)?
+					&& !db.equalsIgnoreCase("EMBL") //GenBank, NCBI Protein...
 					&& !db.equalsIgnoreCase("PIR") //NCBI Protein
 					&& !db.equalsIgnoreCase("PHARMGKB")
 //					&& !db.equalsIgnoreCase("PANTHER") //PANTHER Family
@@ -329,6 +324,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				else if (db.equalsIgnoreCase("PRINTS") && !id.startsWith("PR")) break;
 				else if (db.equalsIgnoreCase("PHARMGKB") && !id.startsWith("PA")) break;
 				else if (db.equalsIgnoreCase("ORTHODB") && !id.startsWith("EOG")) break;
+				else if (db.equalsIgnoreCase("EMBL") && !id.matches("^(\\w+\\d+(\\.\\d+)?)|(NP_\\d+)$")) break;
 
 				//last ID in a HGNC line is in fact gene name
 				else if(db.equalsIgnoreCase("HGNC") && !id.startsWith("HGNC:")) {
@@ -407,10 +403,10 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     /**
      * Sets Unification XRefs.
 	 * 
-	 * @param dbName String
-     * @param id tring
-     * @param proteinReference ProteinReference
-     * @param model
+	 * @param dbName value for 'db' property of the xref
+     * @param id value for 'id' property of the xref
+     * @param proteinReference a protein reference to add the xref
+     * @param model the BioPAX model
      */
     private void setUnificationXRef(String dbName, String id, ProteinReference proteinReference, Model model) {
         id = id.trim();
@@ -431,11 +427,6 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 	 * Generates a new protein reference object (ProteinReference, BioPAX L3)
 	 * from a pre-processed UniProt record: assigns the standard URI and 
 	 * unification xrefs.
-	 *
-	 * @param shortName
-	 * @param accessions AC field value - from the UniProt text format
-	 * @param model 
-	 * @return ProteinReference
 	 */
 	private ProteinReference newProteinReferenceWithAccessionXrefs(String shortName, String accessions, Model model)
 	{	
@@ -462,11 +453,6 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 
 	/**
 	 * Gets a biosource
-	 *
-	 * @param taxId String
-	 * @param name String
-	 * @param model
-	 * @return BioSource
 	 */
 	private BioSource getBioSource(String taxId, String name, Model model) 
 	{

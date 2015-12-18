@@ -68,8 +68,12 @@ public class DataImportTest {
 	
 	@Test
 	@DirtiesContext
-	public void testPremergeAndMerge() throws IOException {		
-		//prepare the metadata
+	public void testPremergeAndMerge() throws IOException {
+
+		//should not fail:
+		CPathSettings.getInstance().getOrganismTaxonomyIds();
+
+		// prepare the metadata
         // load the test metadata and create warehouse
 		service.addOrUpdateMetadata("classpath:metadata.conf");	
 		Metadata ds = service.metadata().findByIdentifier("TEST_UNIPROT");
@@ -107,20 +111,19 @@ public class DataImportTest {
 		
 		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/" + ac));	
 		assertTrue(service.map(null, "Q8TD86-1", "UNIPROT").isEmpty());
-		assertTrue(service.map("uniprot", "Q8TD86-1", "UNIPROT").isEmpty());
-		assertTrue(service.map("uniprot knowledgebase", "Q8TD86-1", "UNIPROT").isEmpty());
+		assertFalse(service.map("uniprot", "Q8TD86-1", "UNIPROT").isEmpty());//now can map isoform id to primary ac
+		assertFalse(service.map("uniprot knowledgebase", "Q8TD86-1", "UNIPROT").isEmpty());
 		//infers Q8TD86
 		assertFalse(service.map("uniprot isoform", "Q8TD86-1", "UNIPROT").isEmpty());
 		assertEquals("Q8TD86", service.map("uniprot isoform", "Q8TD86-1", "UNIPROT").iterator().next());					
 		// also -
 		assertTrue(service.map(null, "NP_619650.1", "UNIPROT").isEmpty());//built-in 'suggest' method was not used
 		assertFalse(service.map("refseq", "NP_619650", "UNIPROT").isEmpty());
-		assertFalse(service.map("refseq", "NP_619650.1", "UNIPROT").isEmpty());//'suggest' was used to recognize 'NP_619650'
+		assertFalse(service.map("refseq", "NP_619650.1", "UNIPROT").isEmpty());//recognized as 'NP_619650'
 		assertFalse(service.map(null, "NP_004334", "UNIPROT").isEmpty());
 		// also, with the first arg. is not null, map(..) 
 		// calls 'suggest' method to replace NP_619650.1 with NP_619650
 		// (the id-mapping table only has canonical uniprot IDs, no isoform IDs)
-		assertFalse(service.map("refseq", "NP_619650.1", "UNIPROT").isEmpty());
 		ac = service.map("refseq", "NP_619650", "UNIPROT").iterator().next(); 
 		assertEquals("Q8TD86", ac);
 		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/" + ac));
@@ -338,9 +341,12 @@ public class DataImportTest {
 		
 		BioSource bs = (BioSource) mergedModel.getByID(HsUri);
 		assertNotNull(bs);
+		assertTrue(bs.getUri().endsWith("9606"));
 		assertEquals(1, bs.getXref().size());
+//		System.out.println("Organism: " + bs.getUri() + "; xrefs: " + bs.getXref());
 		UnificationXref x = (UnificationXref) bs.getXref().iterator().next();
-		assertEquals(1, x.getXrefOf().size());
+		System.out.println("Organism: " + bs.getUri() + "; its xrefOf: " + x.getXrefOf());
+		assertEquals(1, x.getXrefOf().size()); //TODO fix...
 		assertEquals(HsUri, x.getXrefOf().iterator().next().getUri());
 		assertEquals(bs, x.getXrefOf().iterator().next());
 //		System.out.println(x.getUri() + " is " + x);
@@ -413,34 +419,27 @@ public class DataImportTest {
 		Normalizer normalizer = new Normalizer();
 		normalizer.setXmlBase(XML_BASE);
 		reader.mergeDuplicates(true);
-		Model model;
 
-		model = reader.convertFromOWL(resourceLoader
+		Model model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/pathwaydata1.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model);
-		
-		model = null;
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/pathwaydata2.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model);
-		model = null;
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/pid_60446.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model); //PR P22932 caused the trouble
-		model = null;
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/pid_6349.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model); //Xref for P01118 caused the trouble
-		model = null;
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/hcyc.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model);
-		model = null;
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/hcyc2.owl").getInputStream());
 //		normalizer.normalize(model);

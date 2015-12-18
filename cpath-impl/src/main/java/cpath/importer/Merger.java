@@ -251,11 +251,11 @@ public final class Merger {
 		
 		final String srcModelInfo = "source: " + description;
 		
-		//Convert all Xref.db values to lower case
+		//First, convert all Xref.db values to lower case
 		//...the Normalized must have already done so; anyway...
 		for(Xref x : source.getObjects(Xref.class))
 			if(x.getDb()!=null) x.setDb(x.getDb().toLowerCase());
-			
+
 		log.info("Searching for canonical or existing EntityReference objects " +
 				" to replace equivalent original objects ("+srcModelInfo+")...");
 		final Map<EntityReference, EntityReference> replacements = new HashMap<EntityReference, EntityReference>();
@@ -302,7 +302,9 @@ public final class Merger {
 		ModelUtils.replace(source, replacements);
 		
 		log.info("Migrate some properties, such as original entityFeature and xref ("+srcModelInfo+")...");
-		copySomeOfPropertyValues(replacements);		
+		copySomeOfPropertyValues(replacements);
+
+		filterOutUnwantedOrganismInteractions(source);
 		
 		// cleaning up dangling objects (including the replaced above ones)
 		log.info("Removing dangling objects ("+srcModelInfo+")...");
@@ -353,7 +355,7 @@ public final class Merger {
 				addCanonicalRelXrefs(target, pe, "UNIPROT");
 			}
 		}
-		
+
 		/* 
 		 * Replace all not normalized so far URIs in the source model 
 		 * with auto-generated new short ones (also add a bp:comment about original URIs)
@@ -372,6 +374,54 @@ public final class Merger {
 		});
 		simpleMerger.merge(target, source);
 		log.info("Merged '" + srcModelInfo + "' model.");
+	}
+
+	private void filterOutUnwantedOrganismInteractions(Model source) {
+		//remove simple MIs where all participants are not from the organisms we want (as set in the properties file)
+		final Set<String> supportedIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
+		miLoop: for(MolecularInteraction mi : new HashSet<MolecularInteraction>(source.getObjects(MolecularInteraction.class))) {
+			//try to find a reason to keep this MI in the model:
+			// - it has a participant having one of allowed taxonomy ID;
+			// - it has a complex or process participant (at this time, we won't bother looking further...);
+			// - it has a simple sequence or gene participant with no organism specified (unknown - keep the MI)
+			for(Entity e : mi.getParticipant()) {
+				if(e instanceof Gene) {
+					BioSource bs = ((Gene) e).getOrganism();
+					if(bs == null) {
+						continue miLoop; //keep this MI untouched; go to the next one
+					} else {
+						for(Xref x : bs.getXref())
+							if(supportedIds.contains(x.getId()))
+								continue miLoop; //found a supported taxnonomy ID; skip the rest - do next MI...
+					}
+				}
+				else if(e instanceof SimplePhysicalEntity && !(e instanceof SmallMolecule)) {
+					SequenceEntityReference er = (SequenceEntityReference)((SimplePhysicalEntity)e).getEntityReference();
+					if (er == null || er.getOrganism() == null)
+						continue miLoop; //keep this MI
+					else {
+						for(Xref x : er.getOrganism().getXref())
+							if(supportedIds.contains(x.getId()))
+								continue miLoop; //found a supported taxnonomy; keep this MI
+					}
+				} else if(e instanceof SmallMolecule) {
+					continue; //next participant
+				} else {
+					//won't touch a MI with a Complex or Process participant...
+					continue miLoop;
+				}
+			}
+
+			//unless jumped to 'miLoop:' label above, remove this MI and participants
+			source.remove(mi);
+			log.info("MI is removed (due to all participants come from unwanted organisms): " + mi.getUri());
+			for(Entity e : new HashSet<Entity>(mi.getParticipant())) {
+				mi.removeParticipant(e);
+				//ok to remove from the model as well, because some may come back after merging
+				//if they are still used by other entities
+				source.remove(e);
+			}
+		}
 	}
 
 	/* 
@@ -413,9 +463,8 @@ public final class Merger {
 			{ // move entity features of the replaced ER to the new canonical one
 				// remove the ef from the old ER
 				old.removeEntityFeature(ef);
-				// now, this ef should not belong to any other ER (no entityFeature can contain this ef, for all ERs)
-				//TODO ideally, we'd check for all the ERs in both the original and target models, and none should contain this ef.
-											
+				// - should not belong to any other ER anymore (no entityFeature prop. can contain this ef)
+
 				// If there exist an equivalent, don't add original 'ef', 
 				// but just replace with the equiv. one in all PEs of given old ER
 				EntityFeature equivEf = null;
@@ -588,7 +637,7 @@ public final class Merger {
 				return (ProteinReference) ers.iterator().next();
 		}
 				
-		// if still nothing came out yet, try id-mapping by (already normalized) Xrefs:
+		// if still nothing came out yet, try id-mapping by `Xrefs:
 		Set<EntityReference> ers = mapByXrefs(orig, "UNIPROT", canonicalPrefix);
 		if(ers.size()>1) {
 			log.warn(origUri + ", using its Xrefs, maps to multiple warehouse ERs: " + ers);

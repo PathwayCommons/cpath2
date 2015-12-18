@@ -53,9 +53,7 @@ or the fat JAR with embedded application server was started) -->
 		this website. Nevertheless, advanced users may find the following examples useful:
 	</p>
 	<ul>
-		<li><a href="#idmapping">/idmapping</a> - can map selected biological identifiers 
-		to UniProt or ChEBI primary IDs (one way);</li>
-		<li><em>/help/</em> - returns a tree of Help objects describing the main commands, parameters, 
+		<li><em>/help/</em> - returns a tree of Help objects describing the main commands, parameters,
 		BioPAX types, and properties, e.g., /help/schema, /help/commands, /help/types;</li>
 		<li><em>/log/</em> - service access summary, e.g., /log/totals, /log/TOTAL/geography/world, /log/timeline;</li>
 		<li><em>/[rdf:ID]</em> - every BioPAX object's URI in this resource is a resolvable URL, because  
@@ -214,9 +212,9 @@ or the fat JAR with embedded application server was started) -->
 			(a <strong>ProteinReference</strong> object)
 		</li>
 		<li><a rel="nofollow" href="get?uri=COL5A1">
-			Get by HUGO gene symbol COL5A1</a> 	- returns the xrefs in BioPAX format.
+			Find/get by HUGO gene symbol COL5A1</a> - returns xrefs in BioPAX format.
 			<strong>Note:</strong> unlike the first example, this is in fact a two-step query, 
-			which internally performs <a href="#idmapping">id-mapping</a>  
+			which internally performs full-text search by 'COL5A1' id-mapping
 			and then gets the COL5A1 and P20908 xrefs by revealed absolute URIs. A query like this can be
 			a quick test before submitting an ID to a much slower '/graph' query: 
 			if '/get' returns no result, then the ID won't contribute to any graph query result either
@@ -300,7 +298,7 @@ or the fat JAR with embedded application server was started) -->
 			One can mix: submit URI along with, e.g., UniProt, RefSeq, NCBI Gene, and Ensemble IDs
 			in a single /graph or /get query; other identifiers may also work, by chance (if present 
 			in the database), but are not generally supported. 
-			See: <a href="#about_uris">about URIs</a> and <a href="#idmapping">id-mapping</a>.
+			See: <a href="#about_uris">about URIs</a>.
 		</li>
 	</ol>
 </div>
@@ -390,17 +388,15 @@ or the fat JAR with embedded application server was started) -->
 <div class="row nav-target" id="idmapping">
 	<h3>IDMAPPING:</h3>
 	<blockquote><p>
-	Maps bioentity identifiers to corresponding primary UniProt or ChEBI accessions. 
-	Currently supported are: HUGO gene symbols, UniProt (SwissProt AC and ID), RefSeq, Ensembl, NCBI Gene 
-	identifiers; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem 
+	Experimental. Can maps some bio identifiers to primary UniProt or ChEBI IDs.
+	Supports: HGNC Symbols, UniProt (SwissProt AC and ID), RefSeq, Ensembl, NCBI Gene
+	identifiers for genomic entities; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem for chemicals
 	(PubChem ID must be prefixed with either 'CID:' or 'SID:' to distinguish from each other and NCBI Gene ID).
-	You can mix different standard ID types in one query.
-	This is NOT an all-purpose id-mapping system. It's to map to canonical reference proteins and small molecules
-	that may exist in this database; it was originally designed to improve BioPAX data 
-	integration and allow graph queries to accept not only URIs but also selected IDs. The mapping table is derived
-	from Swiss-Prot (DR fields) and ChEBI (OBO) data, and custom mapping files (e.g., based on UniChem).
+	One can mix different standard ID types in one query.
+	This is NOT a universal id-mapping; it was designed for internal use. The id-mapping db is derived
+	from Swiss-Prot (AC, DR fields, names) and ChEBI (OBO) data, plus custom mapping files (based on UniChem).
 	</p></blockquote>
-	<h4>Output:</h4> 
+	<h4>Output:</h4>
 	Simple JSON format.
 	<h4>Examples:</h4> <br/>
 	<ol>

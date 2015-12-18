@@ -495,7 +495,12 @@ public final class Admin {
 			throw new IllegalStateException("Maintenance mode is not enabled.");		
 		
         LOG.info("runPremerge: provider=" + provider + " - initializing (DAO, validator, premerger)...");
-        
+
+		//test if organisms are correctly specified (throws a runtime exception otherwise)
+		final Set<String> supportedTaxIDs = CPathSettings.getInstance().getOrganismTaxonomyIds();
+		LOG.info("runPremerge: this PC2 instance imports and supports (in filters, queries) data from: "
+				+ CPathSettings.getInstance().getOrganisms());
+
 		ClassPathXmlApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	
             		"classpath:META-INF/spring/applicationContext-jpa.xml", 
