@@ -436,10 +436,13 @@ public final class Merger {
 			
 			// skip for previously normalized/generated objects and standard PXs
 			if(currUri.startsWith(xmlBase)
-					|| (bpe instanceof PublicationXref && currUri.startsWith("http://identifiers.org/pubmed"))
-					|| (bpe instanceof Process && currUri.startsWith("http://identifiers.org/"))
-					|| (bpe instanceof ProteinReference && currUri.startsWith("http://identifiers.org/"))
-					|| (bpe instanceof SmallMoleculeReference && currUri.startsWith("http://identifiers.org/")))
+				|| (bpe instanceof PublicationXref && currUri.startsWith("http://identifiers.org/pubmed"))
+				|| (bpe instanceof Process
+					// or PR or SMR (but not NucleicAcidReference)
+					|| bpe instanceof ProteinReference || bpe instanceof SmallMoleculeReference
+					//keep prev. normalized BS (should not have any tissue/cellType set)
+					|| (bpe instanceof BioSource && ((BioSource)bpe).getTissue()==null && ((BioSource)bpe).getCellType()==null)
+			) && currUri.startsWith("http://identifiers.org/"))
 			{
 				continue;
 			}

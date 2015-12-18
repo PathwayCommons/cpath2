@@ -346,7 +346,7 @@ public class DataImportTest {
 //		System.out.println("Organism: " + bs.getUri() + "; xrefs: " + bs.getXref());
 		UnificationXref x = (UnificationXref) bs.getXref().iterator().next();
 		System.out.println("Organism: " + bs.getUri() + "; its xrefOf: " + x.getXrefOf());
-		assertEquals(1, x.getXrefOf().size()); //TODO fix...
+		assertEquals(1, x.getXrefOf().size());
 		assertEquals(HsUri, x.getXrefOf().iterator().next().getUri());
 		assertEquals(bs, x.getXrefOf().iterator().next());
 //		System.out.println(x.getUri() + " is " + x);
