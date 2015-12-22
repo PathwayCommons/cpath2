@@ -366,14 +366,16 @@ public final class PreMerger {
 			if(er instanceof SmallMoleculeReference) {
 				SmallMoleculeReference smr = (SmallMoleculeReference) er;
 				//map some names (display and std.)
-				mappings.add(new Mapping("CHEMICAL NAME", smr.getDisplayName().toLowerCase(), destDb, ac));
+				if(smr.getDisplayName() != null && smr.getDisplayName().length() <= 50)
+					mappings.add(new Mapping("CHEMICAL NAME", smr.getDisplayName().toLowerCase(), destDb, ac));
 				//skip other names (and standardName) as they can be too long...
 			}
 			
 			if(er instanceof ProteinReference) {
 				ProteinReference pr = (ProteinReference) er;
 				//map unofficial IDs, e.g., CALM_HUMAN, too
-				mappings.add(new Mapping("UNIPROT", pr.getDisplayName().toUpperCase(), destDb, ac));
+				if(pr.getDisplayName() != null && pr.getDisplayName().length() <= 50)
+					mappings.add(new Mapping("UNIPROT", pr.getDisplayName().toUpperCase(), destDb, ac));
 			}
 		}
 

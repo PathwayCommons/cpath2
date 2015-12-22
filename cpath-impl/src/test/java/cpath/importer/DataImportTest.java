@@ -62,9 +62,6 @@ public class DataImportTest {
 	
 	@Autowired
 	Validator validator;
-
-	@Autowired
-	MappingsRepository mappingsRepository;
 	
 	@Test
 	@DirtiesContext
@@ -197,13 +194,9 @@ public class DataImportTest {
 					CPathSettings.getInstance().mainModelFile())));
 		
 		//index (using additional id-mapping service repository)
-		Indexer indexer = new SearchEngine(m, CPathSettings.getInstance().indexDir(), mappingsRepository);
-		indexer.index();
-		
-		//load the main model, blacklist.txt, init the search engine
-		service.setSearcher((Searcher)indexer);
-		service.setModel(m);
-		assertTrue(service.ready());
+		CPathSettings.getInstance().setAdminEnabled(true);
+		service.index();
+		CPathSettings.getInstance().setAdminEnabled(false);
 		
 		// Test full-text search
 		//

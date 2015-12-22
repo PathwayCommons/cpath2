@@ -135,16 +135,15 @@ public final class Metadata {
      *
      * @param identifier  unique short string, will be used in URIs
      * @param name the not empty list of names: display name (must present), standard name, other names.
-     * @param description
-     * @param urlToData
-     * @param urlToHomepage
-     * @param icon
-     * @param metadata_type
-     * @param cleanerClassname
-     * @param converterClassname
-     * @param pubmedId
-     * @param availability
-     * @throws IllegalArgumentException
+     * @param description description of the data source (details, release date, version, etc.)
+     * @param urlToData URL - where the data can be download (can be part of larger data archive)
+     * @param urlToHomepage provider's home page URL
+     * @param urlToLogo provider's logo image URL
+     * @param metadata_type what kind of data (warehouse, biopax, psi-mi, id-mapping)
+     * @param cleanerClassname canonical name of a java class that implements {@link cpath.importer.Cleaner}
+     * @param converterClassname canonical name of a java class that implements {@link cpath.importer.Converter}
+     * @param pubmedId recommended by the data provider reference publication PMID
+     * @param availability data availability: free, academic, not-free
      */
 	public Metadata(final String identifier, final List<String> name, final String description, 
     		final String urlToData, String urlToHomepage, final String urlToLogo, 
@@ -194,7 +193,7 @@ public final class Metadata {
 	 * Sets the identifier.
 	 * No spaces, dashes, allowed. 
 	 * 
-	 * @param identifier
+	 * @param identifier metadata identifier
 	 * @throws IllegalArgumentException if it's null, empty string, or contains spaces or dashes
 	 */
     void setIdentifier(String identifier) {

@@ -34,13 +34,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPInputStream;
 
-import org.biopax.paxtools.controller.Cloner;
-import org.biopax.paxtools.controller.Completer;
-import org.biopax.paxtools.controller.ModelUtils;
+import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.MiriamLink;
+import org.biopax.paxtools.pattern.miner.BlacklistGenerator2;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.QueryExecuter;
 import org.biopax.paxtools.query.algorithm.Direction;
@@ -1021,6 +1020,139 @@ public class CPathServiceImpl implements CPathService {
 		
 		return set;
 	}
-	
+
+
+	public void index() throws IOException {
+		if(!CPathSettings.getInstance().isAdminEnabled())
+			throw new IllegalStateException("Admin mode must be enabled to run index().");
+
+		if(paxtoolsModel==null)
+			paxtoolsModel = CPathUtils.loadMainBiopaxModel();
+		// set for this service
+
+		log.info("Associating more identifies with BioPAX model objects' using child elements' xrefs and id-mapping...");
+		addOtherIdsAsAnnotations(4);
+
+		//Build the full-text (lucene) index
+		SearchEngine searchEngine = new SearchEngine(getModel(), CPathSettings.getInstance().indexDir());
+		searchEngine.index();
+
+		// Updates counts of pathways, etc. and saves in the Metadata table.
+     	// This depends on the full-text index, which must have been created already (otherwise, results will be wrong).
+		setSearcher(searchEngine);
+		log.info("Updating pathway/interaction/participant counts - per data source...");
+		// Prepare a list of all pathway type metadata to update
+		List<Metadata> pathwayMetadata = new ArrayList<Metadata>();
+		for (Metadata md : metadataRepository.findAll())
+			if (!md.isNotPathwayData())
+				pathwayMetadata.add(md);
+
+		// for each non-warehouse metadata entry, update counts of pathways, etc.
+		for (Metadata md : pathwayMetadata) {
+			String name = md.standardName();
+			String[] dsUrisFilter = new String[] { md.getUri() };
+
+			SearchResponse sr = (SearchResponse) searcher.search("*", 0,
+					Pathway.class, dsUrisFilter, null);
+			md.setNumPathways(sr.getNumHits());
+			log.info(name + " - pathways: " + sr.getNumHits());
+
+			sr = (SearchResponse) searcher.search("*", 0, Interaction.class,
+					dsUrisFilter, null);
+			md.setNumInteractions(sr.getNumHits());
+			log.info(name + " - interactions: " + sr.getNumHits());
+
+			Integer count;
+			sr = (SearchResponse) searcher.search("*", 0, PhysicalEntity.class,
+					dsUrisFilter, null);
+			count = sr.getNumHits();
+			sr = (SearchResponse) searcher.search("*", 0, Gene.class,
+					dsUrisFilter, null);
+			count += sr.getNumHits();
+			md.setNumPhysicalEntities(count);
+			log.info(name + " - molecules, complexes and genes: " + count);
+		}
+
+		metadataRepository.save(pathwayMetadata);
+
+		log.info("Generating the blacklist.txt...");
+		//Generates cpath2 graph query blacklist file (to exclude ubiquitous small molecules, like ATP)
+		BlacklistGenerator2 gen = new BlacklistGenerator2();
+		Blacklist blacklist = gen.generateBlacklist(getModel());
+		// Write all the blacklisted ids to the output
+		if(blacklist != null)
+			blacklist.write(new FileOutputStream(CPathSettings.getInstance().blacklistFile()));
+
+		log.info("index(), all done.");
+	}
+
+	private void addOtherIdsAsAnnotations(int depth) {
+		for(BioPAXElement bpe : getModel().getObjects()) {
+			Set<String> ids = new HashSet<String>();
+
+			//for Entity or ER, also collect IDs from child UX/RXs and map to other IDs (use idMapping)
+			if (bpe instanceof Entity || bpe instanceof EntityReference || bpe instanceof PathwayStep) {
+				// Collect relevant bio IDs from this and child elements of particular type: ER, Gene, PE;
+				// add other IDs via id-mapping.
+				Set<BioPAXElement> children = new Fetcher(
+					SimpleEditorMap.get(paxtoolsModel.getLevel()), Fetcher.nextStepFilter,
+						//exclude unwanted child objects, such as CVs and other utility classes
+						new org.biopax.paxtools.util.Filter<PropertyEditor>() {
+							@Override
+							public boolean filter(PropertyEditor ed) {
+								return EntityReference.class.isAssignableFrom(ed.getRange())
+										|| Gene.class.isAssignableFrom(ed.getRange())
+										|| PhysicalEntity.class.isAssignableFrom(ed.getRange());
+							}
+						}).fetch(bpe, depth);
+
+				//include this object itself if it's about a bio macromolecule of chemical/metabolite
+				if (bpe instanceof PhysicalEntity || bpe instanceof EntityReference || bpe instanceof Gene)
+					children.add(bpe);
+
+				for(BioPAXElement child : children) {
+					//as the fetcher uses specific filters, every element can be safely cast to XReferrable
+					XReferrable el = (XReferrable) child;
+					for(Xref x : el.getXref()) {
+						if (!(x instanceof PublicationXref) && x.getId()!=null && x.getDb()!=null) {
+							//btw, we should've removed or auto-fix up all null db/id xrefs already (in the premerge)
+							ids.add(x.getId());
+
+							//add more IDs using "reverse" mapping and canonical uniprot/chebi xrefs (those added by Merger)
+							List<Mapping> mappings = findAllThatMapTo(x.getDb(), x.getId());
+							if (mappings != null)
+								for (Mapping mapping : mappings)
+									ids.add(mapping.getSrcId());
+						}
+					}
+				}
+			} else if(bpe instanceof UnificationXref || bpe instanceof RelationshipXref) {
+				Xref x = (Xref) bpe;
+				ids.add(x.getId());
+				//add more IDs via mapping
+				List<Mapping> mappings = findAllThatMapTo(x.getDb(), x.getId());
+				if (mappings != null)
+					for (Mapping mapping : mappings)
+						ids.add(mapping.getSrcId());
+
+			}
+
+			if(!ids.isEmpty())
+				bpe.getAnnotations().put(SearchEngine.FIELD_XREFID, ids);
+		}
+	}
+
+	private List<Mapping> findAllThatMapTo(String db, String id) {
+		//add more IDs using "reverse" mapping and canonical uniprot/chebi xrefs (those added by Merger)
+		List<Mapping> mappings = null;
+		if ("chebi".equalsIgnoreCase(db)) {
+			//find other IDs that map to the ChEBI ID
+			mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("CHEBI", id);
+		} else if ("uniprot knowledgebase".equalsIgnoreCase(db)) {
+			//find other IDs that map to the UniProt AC
+			mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("UNIPROT", id);
+		}
+		return mappings;
+	}
 }
 

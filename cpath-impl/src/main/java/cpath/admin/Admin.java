@@ -33,14 +33,12 @@ import cpath.config.CPathSettings;
 import cpath.dao.*;
 import cpath.importer.Merger;
 import cpath.importer.PreMerger;
-import cpath.jpa.MappingsRepository;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.jpa.MetadataRepository;
 import cpath.service.Analysis;
 import cpath.service.BiopaxConverter;
 import cpath.service.CPathService;
-import cpath.service.Indexer;
 import cpath.service.OutputFormat;
 import cpath.service.SearchEngine;
 import cpath.service.Searcher;
@@ -53,7 +51,6 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.pattern.miner.BlacklistGenerator2;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.validator.api.Validator;
 import org.h2.tools.Csv;
@@ -380,78 +377,14 @@ public final class Admin {
 
 		ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(
 				new String[] { "classpath:META-INF/spring/applicationContext-jpa.xml" });
+		final CPathService service = context.getBean(CPathService.class);
 
-		final MetadataRepository metadataRepo = context.getBean(MetadataRepository.class);
-		final MappingsRepository mappingsRepo = context.getBean(MappingsRepository.class);
-
-		LOG.info("index: importing the main BioPAX model from the archive...");
-		final Model model = CPathUtils.loadMainBiopaxModel();
-		LOG.info("index: the model is ready.");
-
-		SearchEngine searchEngine = new SearchEngine(model, CPathSettings.getInstance().indexDir(), mappingsRepo);
 		LOG.info("index: indexing...");
-		searchEngine.index();
- 		LOG.info("index: done indexing.");
+		service.index();
 
-		LOG.info("index: counting the no. pathways, interactions and physical entities...");
-		updateCounts(model, metadataRepo, searchEngine);
-
-		context.close(); //Spring context is not required any longer
-
-		LOG.info("index: blacklisting...");
-		//Generates cpath2 graph query blacklist file (to exclude ubiquitous small molecules, like ATP)
-		BlacklistGenerator2 gen = new BlacklistGenerator2();
-		Blacklist blacklist = gen.generateBlacklist(model);
-		// Write all the blacklisted ids to the output
-		blacklist.write(new FileOutputStream(cpath.blacklistFile()));
-
+		context.close();
 		LOG.info("index: all done.");
  	}
-
-    
-	/*
-	 * Updates counts of pathways, etc. and saves in the Metadata table.
-	 * 
-     * This depends on the full-text index, which must have been created already
-     * (otherwise, results will be wrong).
-     */
-	private static void updateCounts(Model model, MetadataRepository metadataRepo, Searcher searcher) {
-
-		// prepare a list of all pathway type metadata to update
-		List<Metadata> pathwayMetadata = new ArrayList<Metadata>();
-		for (Metadata md : metadataRepo.findAll())
-			if (!md.isNotPathwayData())
-				pathwayMetadata.add(md);
-
-		// for each non-warehouse metadata entry, update counts of pathways, etc.
-		for (Metadata md : pathwayMetadata) {
-			String name = md.standardName();
-			String[] dsUrisFilter = new String[] { md.getUri() };
-
-			SearchResponse sr = (SearchResponse) searcher.search("*", 0,
-					Pathway.class, dsUrisFilter, null);
-			md.setNumPathways(sr.getNumHits());
-			LOG.info(name + " - pathways: " + sr.getNumHits());
-
-			sr = (SearchResponse) searcher.search("*", 0, Interaction.class,
-					dsUrisFilter, null);
-			md.setNumInteractions(sr.getNumHits());
-			LOG.info(name + " - interactions: " + sr.getNumHits());
-
-			Integer count;
-			sr = (SearchResponse) searcher.search("*", 0, PhysicalEntity.class,
-					dsUrisFilter, null);
-			count = sr.getNumHits();
-			sr = (SearchResponse) searcher.search("*", 0, Gene.class,
-					dsUrisFilter, null);
-			count += sr.getNumHits();		
-			md.setNumPhysicalEntities(count);
-			LOG.info(name + " - molecules, complexes and genes: " + count);
-		}
-
-		metadataRepo.save(pathwayMetadata);
-	}
-    
 
     /**
      * Performs cpath2 Merge stage.
@@ -499,7 +432,7 @@ public final class Admin {
 		//test if organisms are correctly specified (throws a runtime exception otherwise)
 		final Set<String> supportedTaxIDs = CPathSettings.getInstance().getOrganismTaxonomyIds();
 		LOG.info("runPremerge: this PC2 instance imports and supports (in filters, queries) data from: "
-				+ CPathSettings.getInstance().getOrganisms());
+				+ Arrays.toString(CPathSettings.getInstance().getOrganisms()));
 
 		ClassPathXmlApplicationContext context =
             new ClassPathXmlApplicationContext(new String [] { 	

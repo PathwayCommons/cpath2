@@ -28,6 +28,7 @@
 package cpath.service;
 
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
@@ -340,4 +341,15 @@ public interface CPathService {
 	 * @return true if it's fully initialized
 	 */
 	boolean ready();
+
+
+	/**
+	 * Creates:
+	 * <ul>
+	 * <li>new BioPAX full-text index;</li>
+	 * <li>the blacklist of ubiquitous small molecules;</li>
+	 * <li>updates counts of different BioPAX entities per data source</li>
+	 * </ul>
+	 */
+	void index() throws IOException;
 }

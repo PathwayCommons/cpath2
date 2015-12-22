@@ -1,6 +1,6 @@
 /**
  ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
- ** and University of Toronto (UofT).
+ ** and University of Toronto (UofT). Pathway Commons.
  **
  ** This is free software; you can redistribute it and/or modify it
  ** under the terms of the GNU Lesser General Public License as published
@@ -11,12 +11,12 @@
  ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
  ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
  ** documentation provided hereunder is on an "as is" basis, and
- ** both UofT and MSKCC have no obligations to provide maintenance, 
+ ** we have no obligations to provide maintenance,
  ** support, updates, enhancements or modifications.  In no event shall
- ** UofT or MSKCC be liable to any party for direct, indirect, special,
+ ** we be liable to any party for direct, indirect, special,
  ** incidental or consequential damages, including lost profits, arising
  ** out of the use of this software and its documentation, even if
- ** UofT or MSKCC have been advised of the possibility of such damage.  
+ ** we have been advised of the possibility of such damage.
  ** See the GNU Lesser General Public License for more details.
  **
  ** You should have received a copy of the GNU Lesser General Public License
@@ -63,14 +63,14 @@ import java.util.zip.GZIPOutputStream;
 public final class Merger {
 
     private static final Logger log = LoggerFactory.getLogger(Merger.class);
-	
-    // configuration/flags
+
 	private final boolean force;	
 	private final String xmlBase;
+	private final CPathService service;
+	private final Set<String> supportedIds;
+    private final Model warehouseModel;
+    private final Model mainModel;
 
-    private Model warehouseModel;
-    private Model mainModel;      
-	private CPathService service;
 
 	/**
 	 * Constructor.
@@ -82,7 +82,8 @@ public final class Merger {
 	{
 		this.service = service;
 		this.xmlBase = CPathSettings.getInstance().getXmlBase();
-		this.force = force;		
+		this.force = force;
+		this.supportedIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
 		
 		this.warehouseModel = CPathUtils.loadWarehouseBiopaxModel();
 		Assert.notNull(warehouseModel, "No BioPAX Warehouse");
@@ -286,6 +287,9 @@ public final class Merger {
 					}
 					//remove now dangling member ER from the source model
 					source.remove(origEr);
+					log.info("Removed a dangling / generic member " + origEr.getModelInterface().getSimpleName()
+						+ " for which no matching warehouse ER was found: " + origEr.getUri() + "; organism: "
+						+ ((SequenceEntityReference) origEr).getOrganism());
 				}
 			}
 		}
@@ -304,7 +308,7 @@ public final class Merger {
 		log.info("Migrate some properties, such as original entityFeature and xref ("+srcModelInfo+")...");
 		copySomeOfPropertyValues(replacements);
 
-		filterOutUnwantedOrganismInteractions(source);
+//TODO 		filterOutUnwantedOrganismInteractions(source); //do this more accurately in the future
 		
 		// cleaning up dangling objects (including the replaced above ones)
 		log.info("Removing dangling objects ("+srcModelInfo+")...");
@@ -329,30 +333,24 @@ public final class Merger {
 		{
 			if(pe instanceof PhysicalEntity) {
 				if(pe instanceof SimplePhysicalEntity) {
-					// skip for SPE that got its ER just replaced with an ER from the Warehouse
+					// Skip for SPE that got its ER just replaced with an ER from the Warehouse
 					EntityReference er = ((SimplePhysicalEntity) pe).getEntityReference();
 					if(er != null && warehouseModel.containsID(er.getUri()))
-						continue;
+						continue; //go to next phys. entity...
 					
 					if(pe instanceof SmallMolecule) {
-						if(er == null)
-							addCanonicalRelXrefs(target, pe, "CHEBI");
-						else
-							addCanonicalRelXrefs(target, er, "CHEBI");
+						addCanonicalXrefs(target, pe, "CHEBI");
 					} else {//Protein, Dna*, Rna* type
-						if(er == null)
-							addCanonicalRelXrefs(target, pe, "UNIPROT");
-						else 
-							addCanonicalRelXrefs(target, er, "UNIPROT");
+						addCanonicalXrefs(target, pe, "UNIPROT");
 					}						
 				} else if(pe instanceof Complex) {
 					continue; // skip
 				} else { // top PE class, i.e., pe.getModelInterface()==PhysicalEntity.class
-					addCanonicalRelXrefs(target, pe, "UNIPROT");
-					addCanonicalRelXrefs(target, pe, "CHEBI");
+					addCanonicalXrefs(target, pe, "UNIPROT");
+					addCanonicalXrefs(target, pe, "CHEBI");
 				}
 			} else if(pe instanceof Gene) {
-				addCanonicalRelXrefs(target, pe, "UNIPROT");
+				addCanonicalXrefs(target, pe, "UNIPROT");
 			}
 		}
 
@@ -376,9 +374,9 @@ public final class Merger {
 		log.info("Merged '" + srcModelInfo + "' model.");
 	}
 
+	//TODO (shelved) filterOutUnwantedOrganismInteractions probably has a bug (e.g. it removes all DIP MIs)
 	private void filterOutUnwantedOrganismInteractions(Model source) {
 		//remove simple MIs where all participants are not from the organisms we want (as set in the properties file)
-		final Set<String> supportedIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
 		miLoop: for(MolecularInteraction mi : new HashSet<MolecularInteraction>(source.getObjects(MolecularInteraction.class))) {
 			//try to find a reason to keep this MI in the model:
 			// - it has a participant having one of allowed taxonomy ID;
@@ -505,50 +503,46 @@ public final class Merger {
 		}
 	}
 
-	/**
+	/*
 	 * Using the unification and relationship xrefs of a physical entity or gene,
-	 * performs id-mapping to the primary canonical ID (only uniprot or chebi),
-	 * creates new relationship xrefs, and adds them back to the entity.
+	 * performs id-mapping to the primary canonical ID (can only be uniprot or chebi),
+	 * creates relationship xrefs and adds them back to the entity.
 	 *
-	 * This is a critical step to do for much improving our full-text index/search and graph queries.
-	 * 
-	 * @param m where to add new xrefs (and who's xml:base to apply for new URIs)
-	 * @param bpe a {@link Gene} or {@link PhysicalEntity} or {@link EntityReference}
-	 * @param db map identifiers to either CHEBI or UNIPROT IDs
-	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity nor EntityReference; or - db is unsupported.
+	 * This step improves our full-text index/search and graph queries.
+	 * This method is called only for original PEs or their ERs that were not mapped/merged
+	 * with a warehouse canonical ERs for various reasons (- no good ID, ambiguous ID, etc...).
 	 */
-	private void addCanonicalRelXrefs(Model m, Named bpe, String db) 
+	private void addCanonicalXrefs(Model m, Named bpe, String db)
 	{
-		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference)
-				|| !("UNIPROT".equals(db) || "CHEBI".equals(db))) {
+		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity) || !("UNIPROT".equals(db) || "CHEBI".equals(db)))
+		{
 			throw new AssertionError("Either biopax type: " + bpe.getModelInterface().getSimpleName()
 					+ " or db: " + db + " is not allowed here.");
 		}
 
-		Set<String> uniprots = new HashSet<String>();
-
-		// map and generate/add xrefs
-		Set<String> mappingSet = idMappingByXrefs(bpe, db, UnificationXref.class, true);
-		if(db.equalsIgnoreCase("uniprot"))
-			uniprots.addAll(mappingSet);
-		addCanonicalRelXrefs(m, bpe, db, mappingSet, RelTypeVocab.IDENTITY);
-		
-		mappingSet = idMappingByXrefs(bpe, db, RelationshipXref.class, true);
-		addCanonicalRelXrefs(m, bpe, db, mappingSet, RelTypeVocab.ADDITIONAL_INFORMATION);
-		if(db.equalsIgnoreCase("uniprot"))
-			uniprots.addAll(mappingSet);
-
-		//map by display and standard names
-		if((bpe instanceof  SmallMolecule || bpe instanceof SmallMoleculeReference)
-				&& bpe.getDisplayName() != null) {
-			mappingSet = service.map(null, bpe.getDisplayName(), db);
-			addCanonicalRelXrefs(m, bpe, db, mappingSet, RelTypeVocab.ADDITIONAL_INFORMATION);
+		// try/prefer to use ER instead of entity -
+		if(bpe instanceof SimplePhysicalEntity) {
+			EntityReference er = ((SimplePhysicalEntity) bpe).getEntityReference();
+			if(er != null && !er.getXref().isEmpty())
+				bpe = er;
 		}
 
-		if(!uniprots.isEmpty()) {
-			//add HGNC Symbol xrefs as well if possible
+		//shortcut
+		if(bpe.getXref().isEmpty() && bpe.getName().isEmpty())
+			return;
+
+		// map other IDs and names to primary IDs of ERs that can be found in the Warehouse model
+		Set<String> accessions = idMappingByXrefs(bpe, db, UnificationXref.class, true);
+		accessions.addAll(idMappingByXrefs(bpe, db, RelationshipXref.class, true));
+		accessions.addAll(mapByExactName(bpe));
+
+		//generate rel. xrefs
+		addRelXrefs(m, bpe, db, accessions, RelTypeVocab.ADDITIONAL_INFORMATION);
+
+		//for biopolymers, also map uniprot IDs to HGNC Symbols (and corresp. xrefs) if possible
+		if(db.equalsIgnoreCase("uniprot") && !accessions.isEmpty()) {
 			Set<String> hgncSymbols = new HashSet<String>();
-			for(String ac : uniprots) {
+			for(String ac : accessions) {
 				ProteinReference canonicalPR = (ProteinReference) warehouseModel
 						.getByID("http://identifiers.org/uniprot/" + ac);
 				if(canonicalPR != null) {
@@ -558,31 +552,28 @@ public final class Merger {
 					}
 				}
 			}
-			addCanonicalRelXrefs(m, bpe, "hgnc symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION);
+			addRelXrefs(m, bpe, "hgnc symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION);
 		}
 	}
 
-	/**
-	 * Finds or creates relationship xrefs
-	 * using id-mapping results;
-	 * adds them to the object and model.
+	/*
+	 * Only for not-merged things, finds or creates canonical relationship xrefs using id-mapping;
 	 * 
 	 * @param model a biopax model where to find/create xrefs
-	 * @param bpe a gene, physical entity or entity reference only
-	 * @param db database name for all (primary/canonical) xrefs; 'uniprot' or 'chebi'
-	 * @param mappingSet
-	 * @param relType - term to use with the Xref
+	 * @param bpe a gene, physical entity or entity reference
+	 * @param db ref. target database name for new xrefs; normally, 'uniprot', 'chebi', 'hgnc symbol'
+	 * @param accessions bio/chem identifiers
+	 * @param relType - vocabulary term to use with the Xref
 	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity nor EntityReference
 	 */
-	private void addCanonicalRelXrefs(Model model, XReferrable bpe, String db, Set<String> mappingSet, RelTypeVocab relType)
+	private void addRelXrefs(Model model, XReferrable bpe, String db, Set<String> accessions, RelTypeVocab relType)
 	{	
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference))
-			throw new AssertionError("addCanonicalRelXrefs: not a Gene, ER, or PE: " + bpe.getUri());
+			throw new AssertionError("addCanonicalXrefs: not a Gene, ER, or PE: " + bpe.getUri());
 		
-		ac: for(String ac : mappingSet) {
+		ac: for(String ac : accessions) {
 			// find or create
-			RelationshipXref rx = PreMerger
-				.findOrCreateRelationshipXref(relType, db, ac, model);
+			RelationshipXref rx = PreMerger.findOrCreateRelationshipXref(relType, db, ac, model);
 			
 			//check if an equivalent rel. xref is already present (skip it then)
 			for(Xref x : bpe.getXref()) {
@@ -647,8 +638,18 @@ public final class Merger {
 			return null;
 		} else if (ers.size()==1)
 			return (ProteinReference) ers.iterator().next();
-		else //ers is empty set
+
+		// nothing? - keep trying, map by name (e..g, 'ethanol') to ChEBI ID
+		Set<String> mp = mapByExactName(orig);
+		ers = findEntityRefUsingIdMappingResult(mp, canonicalPrefix);
+		if(ers.size()>1) {
+			log.warn(origUri + ", using names, maps to " + ers.size() + " canonical UniProt PRs");
 			return null;
+		} else if (ers.size()==1)
+			return (ProteinReference) ers.iterator().next();
+
+		//when nothing found
+		return null;
 	}
 
 	/*
@@ -801,15 +802,16 @@ public final class Merger {
 			return (SmallMoleculeReference) ers.iterator().next();
 
 		// nothing? - keep trying, map by name (e..g, 'ethanol') to ChEBI ID
-		Set<String> mp = mapByName(orig, "CHEBI");
+		Set<String> mp = mapByExactName(orig);
 		ers = findEntityRefUsingIdMappingResult(mp, canonicalPrefix);
 		if(ers.size()>1) {
 			log.warn(origUri + ", using names, maps to " + ers.size() + " canonical ChEBI SMRs");
 			return null;
 		} else if (ers.size()==1)
 			return (SmallMoleculeReference) ers.iterator().next();
-		else //ers is empty set
-			return null;
+
+		//if nothing found
+		return null;
 	}
 
 	private Set<EntityReference> mapByXrefs(EntityReference orig, String dest, String canonicalUriPrefix) {
@@ -827,41 +829,39 @@ public final class Merger {
 		return mapsTo;
 	}
 
-	@SuppressWarnings("unchecked")
-	private Set<String> mapByName(EntityReference orig, String toDb) {
+	private Set<String> mapByExactName(Named el) {
 		Set<String> mp = new TreeSet<String>();
 
-		String name = orig.getStandardName();
-		if(name != null)
-			mp.addAll(service.map(null, name.toLowerCase(), toDb));
+		// save all the names, turning them to lower case, in a different Set:
+		final Set<String> names = new HashSet<String>();
+		for(String n : el.getName())
+			names.add(n.toLowerCase());
 
-		if(mp.isEmpty()) {
-			name = orig.getDisplayName();
-			if(name != null)
-				mp.addAll(service.map(null, name.toLowerCase(), toDb));
-		}
-		
-		if(mp.isEmpty() && //and only for PRs and SMRs -
-				(orig instanceof ProteinReference || orig instanceof SmallMoleculeReference)) 
-		{
-			//To find a warehouse SMR(s) with exactly the same name (case-insensitive).			
-			//first, collect all orig names, lowercase
-			Set<String> origNames = new HashSet<String>();
-			for(String n : orig.getName()) 
-				origNames.add(n.toLowerCase());
-			
-			//search for warehouse ERs of the same as orig's class
-			for(EntityReference er : warehouseModel
-					.getObjects((Class<? extends EntityReference>) orig.getModelInterface())) 
+		if(el instanceof SmallMolecule || el instanceof SmallMoleculeReference) {
+			//find a warehouse SMR(s) with exactly the same name (case-insensitive).
+			for(SmallMoleculeReference er : warehouseModel.getObjects(SmallMoleculeReference.class))
 			{
 				for(String s : er.getName()) {
-					if(origNames.contains(s.toLowerCase())) {
-						//extract the accession from URI, add
+					if(names.contains(s.toLowerCase())) {
+						//extract the ChEBI accession from URI, add
 						mp.add(CPathUtils.idfromNormalizedUri(er.getUri()));
 						break;
 					}
 				}
 			}			
+		} else if(el instanceof Gene || el instanceof SequenceEntityReference
+				|| el instanceof SimplePhysicalEntity || el.getModelInterface().equals(PhysicalEntity.class)) {
+			//consider a bio-polymer, map by names to warehouse sequence ERs (currently, only PRs) to collect uniprot IDs
+			for(SequenceEntityReference er : warehouseModel.getObjects(SequenceEntityReference.class))
+			{
+				for(String s : er.getName()) {
+					if(names.contains(s.toLowerCase())) {
+						//extract the UniProt accession from URI, add
+						mp.add(CPathUtils.idfromNormalizedUri(er.getUri()));
+						break;
+					}
+				}
+			}
 		}
 		
 		return mp;

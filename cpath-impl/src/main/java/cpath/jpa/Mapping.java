@@ -4,24 +4,23 @@ import javax.persistence.*;
 
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
-import org.hibernate.annotations.Index;
 import org.springframework.util.Assert;
 
 /**
  * Id-mapping Entity.
- * 
  * @author rodche
  */
 @Entity
 @DynamicUpdate
 @DynamicInsert
-@Table(name="mapping", uniqueConstraints = @UniqueConstraint(columnNames = {"src", "srcId", "dest", "destId"}))
-@org.hibernate.annotations.Table(appliesTo = "mapping",
+@Table(
+	name="mapping",
+	uniqueConstraints = @UniqueConstraint(columnNames = {"src", "srcId", "dest", "destId"}),
 	indexes = {
-		@Index(name="dest_index", columnNames = "dest"),
-		@Index(name="dest_destId_index", columnNames = {"dest", "destId"}),
-		@Index(name="srcId_dest_index", columnNames = {"srcId", "dest"}),
-		@Index(name="src_srcId_dest_index", columnNames = {"src", "srcId", "dest"}),
+		@Index(name="dest_index", columnList = "dest"),
+		@Index(name="dest_destId_index", columnList = "dest,destId"),
+		@Index(name="srcId_dest_index", columnList = "srcId,dest"),
+		@Index(name="src_srcId_dest_index", columnList = "src,srcId,dest"),
 	}
 )
 public final class Mapping {
@@ -30,16 +29,16 @@ public final class Mapping {
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Long id;
 	
-	@Column(nullable=false)
-	private String src; 
+	@Column(nullable=false, length = 30)
+	private String src;
 	
-	@Column(nullable=false)
+	@Column(nullable=false, length = 10) //now, it can be either 'CHEBI' or 'UNIPROT' only.
 	private String dest;
 		
-	@Column(nullable=false)
+	@Column(nullable=false, length = 50) //InChIKey ~27 sym (longest ID type); won't map names > 50 symbols
 	private String srcId; 
 	
-	@Column(nullable=false)
+	@Column(nullable=false, length = 15)
 	private String destId;
 	
 	/**
