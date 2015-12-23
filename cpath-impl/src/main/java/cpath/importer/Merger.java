@@ -531,10 +531,12 @@ public final class Merger {
 		if(bpe.getXref().isEmpty() && bpe.getName().isEmpty())
 			return;
 
-		// map other IDs and names to primary IDs of ERs that can be found in the Warehouse model
+		//TODO to fix a new bug: this results in lots (hundreds) of secondary uniprot xrefs...
+		// map other IDs and names to all primary IDs of ERs that can be found in the Warehouse model
 		Set<String> accessions = idMappingByXrefs(bpe, db, UnificationXref.class, true);
 		accessions.addAll(idMappingByXrefs(bpe, db, RelationshipXref.class, true));
-		accessions.addAll(mapByExactName(bpe));
+		if(accessions.isEmpty())
+			accessions.addAll(mapByExactName(bpe));
 
 		//generate rel. xrefs
 		addRelXrefs(m, bpe, db, accessions, RelTypeVocab.ADDITIONAL_INFORMATION);
@@ -736,7 +738,9 @@ public final class Merger {
 					//try mapping without using any srcDb name
 					mp = service.map(null, x.getId(), mapTo);
 				}
+
 				mappedTo.addAll(mp);
+
 				if(mp.size() > 1) //one xref maps to several primary ACs
 					log.debug("Ambiguous xref.id: " + x.getId() + " maps to: " + mp);
 			}
@@ -849,8 +853,10 @@ public final class Merger {
 					}
 				}
 			}			
-		} else if(el instanceof Gene || el instanceof SequenceEntityReference
-				|| el instanceof SimplePhysicalEntity || el.getModelInterface().equals(PhysicalEntity.class)) {
+		} else if(el instanceof Gene
+				|| el instanceof SequenceEntityReference
+				|| el instanceof SimplePhysicalEntity //except SmallMolecule (it would satisfy the above 'if')
+				|| el.getModelInterface().equals(PhysicalEntity.class)) {
 			//consider a bio-polymer, map by names to warehouse sequence ERs (currently, only PRs) to collect uniprot IDs
 			for(SequenceEntityReference er : warehouseModel.getObjects(SequenceEntityReference.class))
 			{

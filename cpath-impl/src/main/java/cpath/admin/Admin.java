@@ -51,6 +51,7 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.pattern.miner.BlacklistGenerator2;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.validator.api.Validator;
 import org.h2.tools.Csv;
@@ -383,6 +384,17 @@ public final class Admin {
 		service.index();
 
 		context.close();
+
+		LOG.info("Generating the blacklist.txt, whitelist.txt, etc., in the current directory...");
+		//Generates, if not exist, the blacklist, whitelist, etc. files
+		//to exclude/keep ubiquitous small molecules (e.g. ATP)
+		//from graph query and output format converter results.
+		BlacklistGenerator2 gen = new BlacklistGenerator2();
+		Blacklist blacklist = gen.generateBlacklist(service.getModel());
+		// Write all the blacklisted ids to the output
+		if(blacklist != null)
+			blacklist.write(new FileOutputStream(CPathSettings.getInstance().blacklistFile()));
+
 		LOG.info("index: all done.");
  	}
 

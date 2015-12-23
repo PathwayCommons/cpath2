@@ -1,6 +1,3 @@
-/**
- * 
- */
 package cpath.jpa;
 
 import java.util.ArrayList;
@@ -417,5 +414,5 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		}
 		
 		return range;
-	}	
+	}
 }

@@ -63,6 +63,8 @@ import cpath.service.jaxb.SearchResponse;
 
 /**
  * A full-text searcher/indexer for BioPAX L3 models.
+ *
+ * Only Entity and EntityReference BioPAX types get indexed (since 12/2015).
  * 
  * @author rodche
  */
@@ -407,7 +409,11 @@ public class SearchEngine implements Indexer, Searcher {
 		};
 		
 		final AtomicInteger numLeft = new AtomicInteger(numObjects);
-		for(final BioPAXElement bpe : model.getObjects()) {	
+		for(final BioPAXElement bpe : model.getObjects()) {
+
+			if(!(bpe instanceof Entity || bpe instanceof EntityReference))
+				continue; //skip for UtilityClass but EntityReference
+
 			// prepare & index each element in a separate thread
 			exec.execute(new Runnable() {
 				public void run() {					
@@ -553,29 +559,29 @@ public class SearchEngine implements Indexer, Searcher {
 			}
 		}
 		
-		// Xref db/id (these are for a precise search by standard bio ID)
-		if(bpe instanceof Xref) {
-			Xref xref = (Xref) bpe;
-
-			if (xref.getId() != null) {
-				field = new TextField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
-				doc.add(field);
-			}
-			if (xref.getDb() != null) {
-				field = new TextField(FIELD_XREFDB, xref.getDb().toLowerCase(), Field.Store.NO);
-				doc.add(field);
-			}
-
-			//index other identifiers using optional annotation 'xrefid' if present (e.g., added somewhere via mapping)
-			if(!(bpe instanceof PublicationXref)) {
-				if (xref.getAnnotations().containsKey(FIELD_XREFID)) {
-					for (String otherId : (Set<String>)xref.getAnnotations().get(FIELD_XREFID)) {
-						field = new TextField(FIELD_XREFID, otherId.toLowerCase(), Field.Store.NO);
-						doc.add(field);
-					}
-				}
-			}
-		}
+//		// Xref db/id (these are for a precise search by standard bio ID)
+//		if(bpe instanceof Xref) {
+//			Xref xref = (Xref) bpe;
+//
+//			if (xref.getId() != null) {
+//				field = new TextField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
+//				doc.add(field);
+//			}
+//			if (xref.getDb() != null) {
+//				field = new TextField(FIELD_XREFDB, xref.getDb().toLowerCase(), Field.Store.NO);
+//				doc.add(field);
+//			}
+//
+//			//index other identifiers using optional annotation 'xrefid' if present (e.g., added somewhere via mapping)
+//			if(!(bpe instanceof PublicationXref)) {
+//				if (xref.getAnnotations().containsKey(FIELD_XREFID)) {
+//					for (String otherId : (Set<String>)xref.getAnnotations().get(FIELD_XREFID)) {
+//						field = new TextField(FIELD_XREFID, otherId.toLowerCase(), Field.Store.NO);
+//						doc.add(field);
+//					}
+//				}
+//			}
+//		}
 		
 		// write
 		try {

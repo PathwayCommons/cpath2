@@ -1,6 +1,3 @@
-/**
- * 
- */
 package cpath.jpa;
 
 import java.util.List;
@@ -21,7 +18,7 @@ interface LogEntitiesRepositoryCustom {
 	 * the result is a list of [date, count] pairs for the name(s) in the category.
 	 * 
 	 * @param logType	not null
-	 * @param e.g, provider's name, command, format, or filename (depends on the log type)
+	 * @param name provider's name, command, format, or filename (depends on the log type)
 	 * @return	name (key) - to array of Object[2] map, 
 	 * 			e.g., if logType eq. COMMAND, and name were null: 
 	 * <pre>
@@ -47,7 +44,7 @@ interface LogEntitiesRepositoryCustom {
 	 * the result is a list of [date, count] pairs for the name(s) in the category.
 	 * 
 	 * @param logType	not null
-	 * @param e.g, provider's name, command, format, or filename (depends on the log type)
+	 * @param name, e.g, provider's name, command, format, or filename (depends on the log type)
 	 * @return	name (key) - to array of Object[2] map, 
 	 * 			e.g., if logType eq. COMMAND, and name were null: 
 	 * <pre>
@@ -73,7 +70,7 @@ interface LogEntitiesRepositoryCustom {
 	 * pairs for the name(s) in the category.
 	 * 
 	 * @param logType	not null
-	 * @param e.g, provider's name, command, format, or filename (depends on the log type)
+	 * @param name provider's name, command, format, or filename (depends on the log type)
 	 * @return	name (key) - to array of Object[2] map, 
 	 * 			e.g., if logType eq. COMMANDS, and name were null: 
 	 * <pre>
@@ -103,7 +100,7 @@ interface LogEntitiesRepositoryCustom {
 	 * pairs for the name(s) in the category.
 	 * 
 	 * @param logType	not null
-	 * @param e.g, provider's name, command, format, or filename (depends on the log type)
+	 * @param name provider's name, command, format, or filename (depends on the log type)
 	 * @return	name (key) - to array of Object[2] map, 
 	 * 			e.g., if logType eq. COMMANDS, and name were null: 
 	 * <pre>

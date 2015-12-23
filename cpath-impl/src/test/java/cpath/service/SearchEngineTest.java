@@ -40,8 +40,8 @@ public class SearchEngineTest {
 		assertNotNull(response);
 		assertFalse(response.isEmpty());
 System.out.println(response.getSearchHit());
-		assertEquals(7, response.getSearchHit().size());
-		assertEquals(7, response.getNumHits().intValue());
+		assertEquals(5, response.getSearchHit().size()); //- only Entity and ER types are indexed
+		assertEquals(5, response.getNumHits().intValue());
 		
 		CPathSettings.getInstance().setDebugEnabled(false);
 		response = searchEngine.search("ATP", 0, Interaction.class, null, null);
@@ -73,7 +73,8 @@ System.out.println(response.getSearchHit());
 		//find all objects (this here works with page=0 as long as the 
 		//total no. objects in the test model < max hits per page)
 		response = searchEngine.search("*", 0, null, null, null);
-		assertEquals(50, response.getSearchHit().size());
+//		assertEquals(50, response.getSearchHit().size()); //all objects (before 23/12/2015)
+		assertEquals(21, response.getSearchHit().size()); //only Entity and ER types (since 23/12/2015)
 			
 		response = searchEngine.search("*", 0, PhysicalEntity.class, null, null);
 		assertEquals(8, response.getSearchHit().size());
@@ -88,12 +89,14 @@ System.out.println(response.getSearchHit());
 		response = searchEngine.search("*", 0, PhysicalEntity.class, null, new String[] {"Escherichia coliü"});
 		assertFalse(response.isEmpty());
 		assertEquals(2, response.getSearchHit().size());
-		
+
+// only Entity and ER types are indexed (since 23/12/2015)
 		response = searchEngine.search("*", 0, Provenance.class, null, null);
-		assertEquals(2, response.getSearchHit().size());
-		
-		response = searchEngine.search("*", 0, Provenance.class, new String[] {"kegg"}, null);
-		assertEquals(1, response.getSearchHit().size());
+		assertTrue(response.getSearchHit().isEmpty());
+//		response = searchEngine.search("*", 0, Provenance.class, null, null);
+//		assertEquals(2, response.getSearchHit().size());
+//		response = searchEngine.search("*", 0, Provenance.class, new String[] {"kegg"}, null);
+//		assertEquals(1, response.getSearchHit().size());
 		
 		//datasource filter using a URI (required for -update-counts console command and datasources.html page to work)
 		response = searchEngine.search("*", 0, Pathway.class, new String[] {"http://identifiers.org/kegg.pathway/"}, null);
@@ -107,14 +110,14 @@ System.out.println(response.getSearchHit());
 		searchEngine.setMaxHitsPerPage(10);
 		response = searchEngine.search("*", 0, null, null, null);
 		assertEquals(0, response.getPageNo().intValue());
-		
-		assertEquals(50, response.getNumHits().intValue());
+
+		// only Entity and ER types are indexed (since 23/12/2015)
+//		assertEquals(50, response.getNumHits().intValue());
+		assertEquals(21, response.getNumHits().intValue());
 		assertEquals(10, response.getSearchHit().size());
 		response = searchEngine.search("*", 1, null, null, null);
 		assertEquals(10, response.getSearchHit().size());
-		
 		assertEquals(1, response.getPageNo().intValue());
-	
 	}
 
 }

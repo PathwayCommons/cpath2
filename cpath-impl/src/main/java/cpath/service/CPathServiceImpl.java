@@ -32,7 +32,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+//import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
 import org.biopax.paxtools.controller.*;
@@ -40,7 +40,6 @@ import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.MiriamLink;
-import org.biopax.paxtools.pattern.miner.BlacklistGenerator2;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.QueryExecuter;
 import org.biopax.paxtools.query.algorithm.Direction;
@@ -58,6 +57,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
@@ -677,7 +677,8 @@ public class CPathServiceImpl implements CPathService {
 		return paxtoolsModel != null;
 	}	
 	
-	
+
+	@Transactional(readOnly = true)
 	@Override
 	public Set<String> map(String fromDb, String fromId, String toDb) {
     	Assert.hasText(fromId);
@@ -748,6 +749,7 @@ public class CPathServiceImpl implements CPathService {
 	}
 
 
+	@Transactional(readOnly = true)
 	@Override
 	public Set<String> map(String identifier) {
 		if(identifier.startsWith("http://"))
@@ -779,6 +781,7 @@ public class CPathServiceImpl implements CPathService {
 	}
 
 
+	@Transactional(readOnly = false)
 	@Override
 	public void saveIfUnique(Mapping mapping) {
 		if(!exists(mapping)) {
@@ -788,6 +791,7 @@ public class CPathServiceImpl implements CPathService {
 		}
 	}
 
+	@Transactional(readOnly = true)
 	private boolean exists(Mapping m) {
 		return mappingsRepository
 			.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(
@@ -975,14 +979,8 @@ public class CPathServiceImpl implements CPathService {
 		log(logEventsFromFilename(fileName), ipAddr);
 	}
 	
-	/**
-	 * Creates a list of events to update counts for -
-	 * name, format, provider - from the data file 
-	 * (in the batch downloads or another directory).
-	 * 
-	 * @param filename see {@link CPathSettings#biopaxExportFileName(String)} for how it's created.
-	 * @return
-	 */
+
+	@Transactional(readOnly = true)
 	public Set<LogEvent> logEventsFromFilename(String filename) {
 		Set<LogEvent> set = new HashSet<LogEvent>();
 		final CPathSettings cpath2 = CPathSettings.getInstance();
@@ -1076,31 +1074,28 @@ public class CPathServiceImpl implements CPathService {
 
 		metadataRepository.save(pathwayMetadata);
 
-		log.info("Generating the blacklist.txt...");
-		//Generates cpath2 graph query blacklist file (to exclude ubiquitous small molecules, like ATP)
-		BlacklistGenerator2 gen = new BlacklistGenerator2();
-		Blacklist blacklist = gen.generateBlacklist(getModel());
-		// Write all the blacklisted ids to the output
-		if(blacklist != null)
-			blacklist.write(new FileOutputStream(CPathSettings.getInstance().blacklistFile()));
-
 		log.info("index(), all done.");
 	}
 
 	private void addOtherIdsAsAnnotations(final int depth) {
-		ExecutorService exec = Executors.newFixedThreadPool(10); //more may cause H2 JPA db problems
+// Looks, can't use multiple threads here (spring-data jpa hibernate errors occur in production, when filesystem H2 db is used...)
+//		ExecutorService exec = Executors.newFixedThreadPool(20); //more may cause H2 JPA db problems
 		for(final BioPAXElement bpe : getModel().getObjects()) {
-			// run in a separate thread
-			exec.execute(new Runnable() {
-				@Override
-				public void run() {
+
+			if(!(bpe instanceof Entity || bpe instanceof EntityReference))
+				continue; //skip for UtilityClass but EntityReference
+
+//			// run in a separate thread
+//			exec.execute(new Runnable() {
+//				@Override
+//				public void run() {
 					final Set<String> ids = new HashSet<String>();
 					//for Entity or ER, also collect IDs from child UX/RXs and map to other IDs (use idMapping)
-					if (bpe instanceof Entity || bpe instanceof EntityReference) {
+//					if (bpe instanceof Entity || bpe instanceof EntityReference) {
 						// Collect relevant bio IDs from this and child elements of particular type: ER, Gene, PE;
 						// add other IDs via id-mapping.
-						Set<BioPAXElement> children = new Fetcher(
-								SimpleEditorMap.get(paxtoolsModel.getLevel()), Fetcher.nextStepFilter,
+						Set<BioPAXElement> children =
+							new Fetcher(SimpleEditorMap.get(paxtoolsModel.getLevel()), Fetcher.nextStepFilter,
 								//exclude unwanted child objects, such as CVs and other utility classes
 								new org.biopax.paxtools.util.Filter<PropertyEditor>() {
 									@Override
@@ -1109,9 +1104,9 @@ public class CPathServiceImpl implements CPathService {
 												|| Gene.class.isAssignableFrom(ed.getRange())
 												|| PhysicalEntity.class.isAssignableFrom(ed.getRange());
 									}
-								}).fetch(bpe, depth);
+							}).fetch(bpe, depth);
 
-						//include this object itself if it's about a bio macromolecule of chemical/metabolite
+						//include this object itself if it's about a bio macromolecule of chemical
 						if (bpe instanceof PhysicalEntity || bpe instanceof EntityReference || bpe instanceof Gene)
 							children.add(bpe);
 
@@ -1127,28 +1122,29 @@ public class CPathServiceImpl implements CPathService {
 								}
 							}
 						}
-					} else if(bpe instanceof UnificationXref || bpe instanceof RelationshipXref) {
-						Xref x = (Xref) bpe;
-						ids.add(x.getId());
-						//add more IDs via mapping
-						findAddSupportedIdsThatMapTo(x.getDb(), x.getId(), ids);
-					}
+//					}
+//					else if(bpe instanceof UnificationXref || bpe instanceof RelationshipXref) {
+//						Xref x = (Xref) bpe;
+//						ids.add(x.getId());
+//						//add more IDs via mapping
+//						findAddSupportedIdsThatMapTo(x.getDb(), x.getId(), ids);
+//					}
 
 					if(!ids.isEmpty()) {
 						bpe.getAnnotations().put(SearchEngine.FIELD_XREFID, ids);
-						log.debug("addOtherIdsAsAnnotations, " + bpe.getModelInterface().getSimpleName()
+						log.info("addOtherIdsAsAnnotations, " + bpe.getModelInterface().getSimpleName()
 								+ " (" + bpe.getUri() + ") gets associated with IDs: " + ids);
 					}
-				}
-			});
+//				}
+//			});
 		}
-		//done submitting tasks; wait (max. 7 hours, e.g...)
-		exec.shutdown();
-		try {
-			exec.awaitTermination(7, TimeUnit.HOURS);
-		} catch (InterruptedException e) {
-			throw new RuntimeException("addOtherIdsAsAnnotations - exited due to timeout.", e);
-		}
+//		//done submitting tasks; wait (max. 7 hours, e.g...)
+//		exec.shutdown();
+//		try {
+//			exec.awaitTermination(7, TimeUnit.HOURS);
+//		} catch (InterruptedException e) {
+//			throw new RuntimeException("addOtherIdsAsAnnotations - exited due to timeout.", e);
+//		}
 	}
 
 	/*
@@ -1156,7 +1152,8 @@ public class CPathServiceImpl implements CPathService {
 	 * (the mapping db was built from warehoue data plus extra mapping files during the Premerge stage).
 	 * These are for the BioPAX db full-text index (to associate various model objects with all relevant IDs).
 	 */
-	private void findAddSupportedIdsThatMapTo(String targetDb, String targetId, final Set<String> resultIds) {
+	@Transactional(readOnly = true)
+	void findAddSupportedIdsThatMapTo(String targetDb, String targetId, final Set<String> resultIds) {
 		//add more IDs using "reverse" mapping and canonical uniprot/chebi xrefs (those added by Merger)
 		List<Mapping> mappings = null;
 		if ("chebi".equalsIgnoreCase(targetDb)) {

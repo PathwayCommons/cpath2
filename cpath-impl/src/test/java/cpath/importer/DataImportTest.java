@@ -199,11 +199,13 @@ public class DataImportTest {
 		CPathSettings.getInstance().setAdminEnabled(false);
 		
 		// Test full-text search
+		SearchResponse resp;
 		//
 		// search with a secondary (RefSeq) accession number -
 		// NP_619650 (primary AC = Q8TD86) occurs in the test UniProt data only, not in the model
-		SearchResponse resp =  (SearchResponse) service.search("NP_619650", 0, RelationshipXref.class, null, null);
-		assertTrue(resp.getSearchHit().isEmpty()); //no hits - ok (such xrefs were removed from both warehouse and model)
+//Xrefs are not indexed anymore (only Entity and EntityReference type get indexed now)
+//		resp =  (SearchResponse) service.search("NP_619650", 0, RelationshipXref.class, null, null);
+//		assertTrue(resp.getSearchHit().isEmpty()); //no hits - ok (such xrefs were removed from both warehouse and model)
 		resp =  (SearchResponse) service.search("NP_619650", 0, ProteinReference.class, null, null);
 		assertTrue(resp.getSearchHit().isEmpty());
 
@@ -212,16 +214,18 @@ public class DataImportTest {
 		assertTrue(resp.getSearchHit().isEmpty()); //no hits; the ID was used for mapping, indexing, and then xref deleted
 		//it should definitely find the PR or its primary UX by using its primary AC
 		resp =  (SearchResponse) service.search("P27797", 0, UnificationXref.class, null, null);
-		assertFalse(resp.getSearchHit().isEmpty());
+		assertTrue(resp.getSearchHit().isEmpty()); //Xrefs are not indexed anymore
 		resp =  (SearchResponse) service.search("P27797", 0, ProteinReference.class, null, null);
 		assertFalse(resp.getSearchHit().isEmpty());
 		//also, it should find the PR by using its secondary ID (though, there's no such xref physically present)
 		resp =  (SearchResponse) service.search("NP_004334", 0, ProteinReference.class, null, null);
 		assertFalse(resp.getSearchHit().isEmpty());
-		//NEW feature: can sometimes find an xref by other ID that maps to its ID
+
+		//can sometimes find an xref by other ID that maps to its ID
+		//But (since 12/2015) Xrefs are not indexed anymore
 		resp =  (SearchResponse) service.search("NP_004334", 0, UnificationXref.class, null, null);
-		assertFalse(resp.getSearchHit().isEmpty());
-		assertTrue(resp.getSearchHit().iterator().next().getUri().endsWith("P27797"));
+		assertTrue(resp.getSearchHit().isEmpty());
+//		assertTrue(resp.getSearchHit().iterator().next().getUri().endsWith("P27797"));
 		
 		// fetch as BIOPAX
 		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P27797");

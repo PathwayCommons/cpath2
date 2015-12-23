@@ -87,7 +87,7 @@ public class RepositoriesAndServiceTest {
 
 	
 	/**
-	 * Test method for {@link org.springframework.data.repository.CrudRepository#save(S)}.
+	 * Test method for {@link org.springframework.data.repository.CrudRepository#save(Object)}.
 	 */
 	@DirtiesContext //other tests might added records too; do cleanup
 	@Test
@@ -235,33 +235,33 @@ public class RepositoriesAndServiceTest {
 		String file = cpath.exportArchivePrefix() + "Reactome.BIOPAX.owl.gz";
 		assertEquals(OutputFormat.BIOPAX, LogUtils.fileOutputFormat(file));
 		assertEquals("Reactome", LogUtils.fileSrcOrScope(file));
-		Set<LogEvent> events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		Set<LogEvent> events = service.logEventsFromFilename(file);
 		assertEquals(3, events.size()); //log in types: PROVIDER, FILE, FORMAT
 		
 		//'All' 
 		file = cpath.exportArchivePrefix() + "All.BIOPAX.owl.gz";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		events = service.logEventsFromFilename(file);
 		assertEquals(2, events.size());
 		
 		file = cpath.exportArchivePrefix() + "Reactome.GSEA.gmt.gz";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		events = service.logEventsFromFilename(file);
 		assertEquals(3, events.size());
 		
 		//illegal format (ignored, i.e., no FORMAT type log event is added)
 		file = cpath.exportArchivePrefix() + "Reactome.foo.gmt.gz";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		events = service.logEventsFromFilename(file);
 		assertEquals(2, events.size());
 		
 		//other (metadata etc.)
 		file = "blacklist.txt";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		events = service.logEventsFromFilename(file);
 		assertEquals(1, events.size());//counted in FILE log type only
 		assertEquals(LogType.FILE, events.iterator().next().getType());
 		
 		//provider name is now matched ignoring case, 
 		//(FORMAT type event is not there as well due to 'foo')
 		file = cpath.exportArchivePrefix() + "reactome.foo.gmt.gz";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		events = service.logEventsFromFilename(file);
 		assertEquals(2, events.size());
 	}
 	
