@@ -32,6 +32,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
 import org.biopax.paxtools.controller.*;
@@ -1031,7 +1032,7 @@ public class CPathServiceImpl implements CPathService {
 		// set for this service
 
 		log.info("Associating more identifies with BioPAX model objects' using child elements' xrefs and id-mapping...");
-		addOtherIdsAsAnnotations(4);
+		addOtherIdsAsAnnotations(3);
 
 		//Build the full-text (lucene) index
 		SearchEngine searchEngine = new SearchEngine(getModel(), CPathSettings.getInstance().indexDir());
@@ -1086,73 +1087,108 @@ public class CPathServiceImpl implements CPathService {
 		log.info("index(), all done.");
 	}
 
-	private void addOtherIdsAsAnnotations(int depth) {
-		for(BioPAXElement bpe : getModel().getObjects()) {
-			Set<String> ids = new HashSet<String>();
+	private void addOtherIdsAsAnnotations(final int depth) {
+		ExecutorService exec = Executors.newFixedThreadPool(10); //more may cause H2 JPA db problems
+		for(final BioPAXElement bpe : getModel().getObjects()) {
+			// run in a separate thread
+			exec.execute(new Runnable() {
+				@Override
+				public void run() {
+					final Set<String> ids = new HashSet<String>();
+					//for Entity or ER, also collect IDs from child UX/RXs and map to other IDs (use idMapping)
+					if (bpe instanceof Entity || bpe instanceof EntityReference) {
+						// Collect relevant bio IDs from this and child elements of particular type: ER, Gene, PE;
+						// add other IDs via id-mapping.
+						Set<BioPAXElement> children = new Fetcher(
+								SimpleEditorMap.get(paxtoolsModel.getLevel()), Fetcher.nextStepFilter,
+								//exclude unwanted child objects, such as CVs and other utility classes
+								new org.biopax.paxtools.util.Filter<PropertyEditor>() {
+									@Override
+									public boolean filter(PropertyEditor ed) {
+										return EntityReference.class.isAssignableFrom(ed.getRange())
+												|| Gene.class.isAssignableFrom(ed.getRange())
+												|| PhysicalEntity.class.isAssignableFrom(ed.getRange());
+									}
+								}).fetch(bpe, depth);
 
-			//for Entity or ER, also collect IDs from child UX/RXs and map to other IDs (use idMapping)
-			if (bpe instanceof Entity || bpe instanceof EntityReference || bpe instanceof PathwayStep) {
-				// Collect relevant bio IDs from this and child elements of particular type: ER, Gene, PE;
-				// add other IDs via id-mapping.
-				Set<BioPAXElement> children = new Fetcher(
-					SimpleEditorMap.get(paxtoolsModel.getLevel()), Fetcher.nextStepFilter,
-						//exclude unwanted child objects, such as CVs and other utility classes
-						new org.biopax.paxtools.util.Filter<PropertyEditor>() {
-							@Override
-							public boolean filter(PropertyEditor ed) {
-								return EntityReference.class.isAssignableFrom(ed.getRange())
-										|| Gene.class.isAssignableFrom(ed.getRange())
-										|| PhysicalEntity.class.isAssignableFrom(ed.getRange());
+						//include this object itself if it's about a bio macromolecule of chemical/metabolite
+						if (bpe instanceof PhysicalEntity || bpe instanceof EntityReference || bpe instanceof Gene)
+							children.add(bpe);
+
+						for(BioPAXElement child : children) {
+							//as the fetcher uses specific filters, every element can be safely cast to XReferrable
+							XReferrable el = (XReferrable) child;
+							for(Xref x : el.getXref()) {
+								if (!(x instanceof PublicationXref) && x.getId()!=null && x.getDb()!=null) {
+									//btw, we should've removed or auto-fix up all null db/id xrefs already (in the premerge)
+									ids.add(x.getId());
+									//add more IDs via mapping (using only uniprot/chebi ID)
+									findAddSupportedIdsThatMapTo(x.getDb(), x.getId(), ids);
+								}
 							}
-						}).fetch(bpe, depth);
-
-				//include this object itself if it's about a bio macromolecule of chemical/metabolite
-				if (bpe instanceof PhysicalEntity || bpe instanceof EntityReference || bpe instanceof Gene)
-					children.add(bpe);
-
-				for(BioPAXElement child : children) {
-					//as the fetcher uses specific filters, every element can be safely cast to XReferrable
-					XReferrable el = (XReferrable) child;
-					for(Xref x : el.getXref()) {
-						if (!(x instanceof PublicationXref) && x.getId()!=null && x.getDb()!=null) {
-							//btw, we should've removed or auto-fix up all null db/id xrefs already (in the premerge)
-							ids.add(x.getId());
-
-							//add more IDs using "reverse" mapping and canonical uniprot/chebi xrefs (those added by Merger)
-							List<Mapping> mappings = findAllThatMapTo(x.getDb(), x.getId());
-							if (mappings != null)
-								for (Mapping mapping : mappings)
-									ids.add(mapping.getSrcId());
 						}
+					} else if(bpe instanceof UnificationXref || bpe instanceof RelationshipXref) {
+						Xref x = (Xref) bpe;
+						ids.add(x.getId());
+						//add more IDs via mapping
+						findAddSupportedIdsThatMapTo(x.getDb(), x.getId(), ids);
+					}
+
+					if(!ids.isEmpty()) {
+						bpe.getAnnotations().put(SearchEngine.FIELD_XREFID, ids);
+						log.debug("addOtherIdsAsAnnotations, " + bpe.getModelInterface().getSimpleName()
+								+ " (" + bpe.getUri() + ") gets associated with IDs: " + ids);
 					}
 				}
-			} else if(bpe instanceof UnificationXref || bpe instanceof RelationshipXref) {
-				Xref x = (Xref) bpe;
-				ids.add(x.getId());
-				//add more IDs via mapping
-				List<Mapping> mappings = findAllThatMapTo(x.getDb(), x.getId());
-				if (mappings != null)
-					for (Mapping mapping : mappings)
-						ids.add(mapping.getSrcId());
-
-			}
-
-			if(!ids.isEmpty())
-				bpe.getAnnotations().put(SearchEngine.FIELD_XREFID, ids);
+			});
+		}
+		//done submitting tasks; wait (max. 7 hours, e.g...)
+		exec.shutdown();
+		try {
+			exec.awaitTermination(7, TimeUnit.HOURS);
+		} catch (InterruptedException e) {
+			throw new RuntimeException("addOtherIdsAsAnnotations - exited due to timeout.", e);
 		}
 	}
 
-	private List<Mapping> findAllThatMapTo(String db, String id) {
+	/*
+	 * Find other IDs (decided/supported types only) that map to given uniprot or chebi AC
+	 * (the mapping db was built from warehoue data plus extra mapping files during the Premerge stage).
+	 * These are for the BioPAX db full-text index (to associate various model objects with all relevant IDs).
+	 */
+	private void findAddSupportedIdsThatMapTo(String targetDb, String targetId, final Set<String> resultIds) {
 		//add more IDs using "reverse" mapping and canonical uniprot/chebi xrefs (those added by Merger)
 		List<Mapping> mappings = null;
-		if ("chebi".equalsIgnoreCase(db)) {
+		if ("chebi".equalsIgnoreCase(targetDb)) {
 			//find other IDs that map to the ChEBI ID
-			mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("CHEBI", id);
-		} else if ("uniprot knowledgebase".equalsIgnoreCase(db)) {
+			mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("CHEBI", targetId);
+			if(mappings != null) {
+				//collect (to index later) only supported by graph queries ID types
+				for (Mapping mapping : mappings) {
+					if (mapping.getSrc().equalsIgnoreCase("pubchem compound"))
+						resultIds.add("CID" + mapping.getSrcId());
+					else if (mapping.getSrc().equalsIgnoreCase("pubchem substance"))
+						resultIds.add("SID" + mapping.getSrcId());
+					else if(mapping.getSrc().equalsIgnoreCase("chebi"))
+						resultIds.add(mapping.getSrcId());
+				}
+			}
+		} else if ("uniprot knowledgebase".equalsIgnoreCase(targetDb)) {
 			//find other IDs that map to the UniProt AC
-			mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("UNIPROT", id);
+			mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("UNIPROT", targetId);
+			if(mappings != null) {
+				//collect (to index later) only supported by graph queries ID types
+				for (Mapping mapping : mappings) {
+					if (mapping.getSrc().startsWith("UNIPROT")
+						|| mapping.getSrc().startsWith("HGNC")
+						|| mapping.getSrc().equalsIgnoreCase("NCBI GENE")
+						|| mapping.getSrc().equalsIgnoreCase("REFSEQ")
+//						|| mapping.getSrc().equalsIgnoreCase("PDB")
+					) resultIds.add(mapping.getSrcId());
+				}
+			}
 		}
-		return mappings;
 	}
+//
 }
 

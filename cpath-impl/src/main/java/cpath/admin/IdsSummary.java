@@ -43,7 +43,7 @@ public final class IdsSummary implements Analysis<Model> {
 		PathAccessor pa = new PathAccessor("EntityReference/entityReferenceOf/dataSource", model.getLevel());
 		Set<String> problemErs = new TreeSet<String>();
 		for(EntityReference ser : model.getObjects(EntityReference.class)) {
-			//skip if it's a SMR or generic
+			//skip if it's a SMR or generic bio-polymer
 			if(ser instanceof SmallMoleculeReference || !ser.getMemberEntityReference().isEmpty())
 				continue;
 
@@ -73,9 +73,10 @@ public final class IdsSummary implements Analysis<Model> {
 			if(hgncIds.size()>1 || hgncSymbols.size()>1)
 				haveMultipleHgnc.add((SequenceEntityReference) ser);
 
+			boolean noHgncId = hgncSymbols.isEmpty() && hgncIds.isEmpty();
 			//increment "no hgnc" and "total" counts by data source
 			for(Object provenance : pa.getValueFromBean(ser)) {
-				if (hgncSymbols.isEmpty() && hgncIds.isEmpty()) {
+				if (noHgncId) {
 					if (verbose) {
 						problemErs.add(String.format("%s\t%s\t%s",
 								((Provenance) provenance).getDisplayName(), ser.getDisplayName(), ser.getUri()));
@@ -119,15 +120,31 @@ public final class IdsSummary implements Analysis<Model> {
 		numProblematicErs = new HashMap<Provenance,MutableInt>();
 		pa = new PathAccessor("EntityReference/entityReferenceOf:Protein/dataSource", model.getLevel());
 		problemErs = new TreeSet<String>();
+		Map<String,MutableInt> otherDbNumbers = new HashMap<String,MutableInt>();
 		for(ProteinReference pr : model.getObjects(ProteinReference.class)) {
 			//skip a generic one
 			if(!pr.getMemberEntityReference().isEmpty())
 				continue;
 
-			for(Object provenance : pa.getValueFromBean(pr)) {
-				if(!pr.getUri().startsWith("http://identifiers.org/uniprot")
-						&& !pr.getXref().toString().toLowerCase().contains("uniprot")) {
+			boolean noUniprotId = !pr.getUri().startsWith("http://identifiers.org/uniprot")
+					&& !pr.getXref().toString().toLowerCase().contains("uniprot");
 
+			if(noUniprotId) {
+				//collect/count other db names that occur there in xrefs
+				for(Xref x : pr.getXref()) {
+					if(!(x instanceof PublicationXref)) {
+						String db = x.getDb().toLowerCase();
+						MutableInt n = otherDbNumbers.get(db);
+						if(n == null)
+							otherDbNumbers.put(db, new MutableInt(1));
+						else
+							n.increment();
+					}
+				}
+			}
+
+			for(Object provenance : pa.getValueFromBean(pr)) {
+				if(noUniprotId) {
 					if (verbose) {
 						problemErs.add(String.format("%s\t%s\t%s",
 								((Provenance) provenance).getDisplayName(), pr.getDisplayName(), pr.getUri()));
@@ -165,22 +182,43 @@ public final class IdsSummary implements Analysis<Model> {
 			out.println(String.format("%s\t\t%d\t(%3.1f%%)", ds.getUri(), n, ((float)n)/t*100));
 		}
 		out.println(String.format("Total\t\t%d\t(%3.1f%%)", problematicErs, ((float)problematicErs)/totalErs*100));
-
+		if(!otherDbNumbers.isEmpty()) {
+			out.println("\nPRs (not generic) that have no UniProt AC have got instead the following ID types (xref.db): ");
+			for (String db : otherDbNumbers.keySet()) {
+				out.println(db + "\t" + otherDbNumbers.get(db).toString());
+			}
+		}
 
 		//Analyse SMRs - ChEBI usage, coverage,..
 		numErs = new HashMap<Provenance,MutableInt>();
 		numProblematicErs = new HashMap<Provenance,MutableInt>();
 		pa = new PathAccessor("EntityReference/entityReferenceOf:SmallMolecule/dataSource", model.getLevel());
 		problemErs = new TreeSet<String>();
+		otherDbNumbers.clear();//start over
 		for(SmallMoleculeReference smr : model.getObjects(SmallMoleculeReference.class)) {
 			//skip a generic SMR
 			if(!smr.getMemberEntityReference().isEmpty())
 				continue;
 
-			for(Object provenance : pa.getValueFromBean(smr)) {
-				if(!smr.getUri().startsWith("http://identifiers.org/chebi/CHEBI:")
-					&& !smr.getXref().toString().contains("CHEBI:")) {
+			boolean noChebiId = !smr.getUri().startsWith("http://identifiers.org/chebi/CHEBI:")
+					&& !smr.getXref().toString().contains("CHEBI:");
 
+			if(noChebiId) {
+				//collect/count other db names that occur there in xrefs
+				for(Xref x : smr.getXref()) {
+					if(!(x instanceof PublicationXref)) {
+						String db = x.getDb().toLowerCase();
+						MutableInt n = otherDbNumbers.get(db);
+						if(n == null)
+							otherDbNumbers.put(db, new MutableInt(1));
+						else
+							n.increment();
+					}
+				}
+			}
+
+			for(Object provenance : pa.getValueFromBean(smr)) {
+				if(noChebiId) {
 					if (verbose) {
 						problemErs.add(String.format("%s\t%s\t%s",
 							((Provenance) provenance).getDisplayName(), smr.getDisplayName(), smr.getUri()));
@@ -218,5 +256,11 @@ public final class IdsSummary implements Analysis<Model> {
 			out.println(String.format("%s\t\t%d\t(%3.1f%%)", ds.getUri(), n, ((float)n)/t*100));
 		}
 		out.println(String.format("Total\t\t%d\t(%3.1f%%)", numSmrsNoChebi, ((float)numSmrsNoChebi)/totalSmrs*100));
+		if(!otherDbNumbers.isEmpty()) {
+			out.println("\nSMRs (not generic) that have no ChEBI ID have got instead the following ID types (xref.db): ");
+			for (String db : otherDbNumbers.keySet()) {
+				out.println(db + "\t" + otherDbNumbers.get(db).toString());
+			}
+		}
 	}
 }

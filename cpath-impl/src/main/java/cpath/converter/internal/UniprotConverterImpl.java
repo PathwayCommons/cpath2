@@ -283,7 +283,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			// (to make Xrefs and then use them for id-mapping);
 			// skip for other, not identity, ID types,
         	// e.g., refs to pathway databases, ontologies, etc.:
-        	if ( //TODO which 'DR' ID types do we want for id-mapping?
+        	if ( //TODO which 'DR' ID types do we want for id-mapping? (all are used by Merger; some - in queries)
 					!db.equalsIgnoreCase("GENEID") // NCBI Gene (EntrezGene)
         			&& !db.equalsIgnoreCase("REFSEQ") 
         			&& !db.equalsIgnoreCase("ENSEMBL") 
@@ -302,7 +302,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 //					&& !db.equalsIgnoreCase("PIRSF")
 // 					&& !db.equalsIgnoreCase("PROSITE")
 //					&& !db.equalsIgnoreCase("ORTHODB")
-				) continue;
+			) continue;
 
 			String fixedDb = db;	
 			if (db.equalsIgnoreCase("GENEID"))
