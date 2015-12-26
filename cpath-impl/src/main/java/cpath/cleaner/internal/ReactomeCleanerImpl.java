@@ -50,33 +50,29 @@ final class ReactomeCleanerImpl implements Cleaner {
 			final Set<UnificationXref> uxrefs = new ClassFilterSet<Xref, UnificationXref>(
 					new HashSet<Xref>(proc.getXref()), UnificationXref.class);
 			for (UnificationXref x : uxrefs) {
-				if (x.getDb() != null && x.getDb().equalsIgnoreCase("reactome")) {
+				if (x.getDb() != null && x.getDb().equalsIgnoreCase("Reactome")) {
 					String stableId = x.getId();
 					//remove 'REACTOME:' (length=9) prefix if present (it's optional - according to MIRIAM)
-					if (stableId.startsWith("REACTOME:")) {
+					if (stableId.startsWith("REACTOME:"))
 						stableId = stableId.substring(9);
+					// stableID is like 'R-HSA-123456' (or old REACT_12345) now...
 
-						// (not necessary) include the idVersion (as e.g. '.2')	if not already included
-//						if (x.getIdVersion() != null && !stableId.endsWith("." + x.getIdVersion()))
-//							stableId += "." + x.getIdVersion();
+					final String uri = "http://identifiers.org/reactome/" + stableId;
 
-						final String uri = "http://identifiers.org/reactome/" + stableId;
-
-						if (!model.containsID(uri) && !newUriToEntityMap.containsKey(uri)) {
-							//save it in the map to replace the URI later (see below)
-							newUriToEntityMap.put(uri, proc);
-						} else { //fix the 'shared unification xref' problem right away
-							log.warn("Fixing " + x.getId() + " UX that's shared by several objects: " + x.getXrefOf());
-							RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);
-							for (XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
-								if (owner.equals(newUriToEntityMap.get(uri)))
-									continue; //keep the entity to be updated unchanged
-								owner.removeXref(x);
-								owner.addXref(rx);
-							}
+					if (!model.containsID(uri) && !newUriToEntityMap.containsKey(uri)) {
+						//save it in the map to replace the URI later (see below)
+						newUriToEntityMap.put(uri, proc);
+					} else { //fix the 'shared unification xref' problem right away
+						log.warn("Fixing " + x.getId() + " UX that's shared by several objects: " + x.getXrefOf());
+						RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);
+						for (XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
+							if (owner.equals(newUriToEntityMap.get(uri)))
+								continue; //keep the entity to be updated unchanged
+							owner.removeXref(x);
+							owner.addXref(rx);
 						}
-						break; //skip the rest of xrefs (mustn't have multiple 'Reactome' UXs on the same entity)
 					}
+					break; //skip the rest of xrefs (mustn't have multiple 'Reactome' UXs on the same entity)
 				}
 			}
 		}

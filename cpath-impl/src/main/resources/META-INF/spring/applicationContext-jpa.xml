@@ -46,7 +46,8 @@
 		<bean id="metaDataSource" class="org.h2.jdbcx.JdbcConnectionPool" destroy-method="dispose">
 		  <constructor-arg>
 			<bean class="org.h2.jdbcx.JdbcDataSource">
-				<property name="URL" value="jdbc:h2:${CPATH2_HOME}/cpath2;MV_STORE=FALSE;MVCC=FALSE" />
+				<!--<property name="URL" value="jdbc:h2:${CPATH2_HOME}/cpath2;MV_STORE=FALSE;MVCC=FALSE" />-->
+				<property name="URL" value="jdbc:h2:${CPATH2_HOME}/cpath2" />
 				<property name="user" value="sa" />
 				<property name="password" value="" />
 			</bean>

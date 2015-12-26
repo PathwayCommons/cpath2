@@ -413,11 +413,7 @@ public final class Merger {
 					if(pe instanceof SmallMolecule) {
 						addPrimaryXrefs(target, pe, "CHEBI");
 					} else {//Protein, Dna*, Rna* type
-						if(pe.getUri().contains("05054_identity")) //TODO remove tmp code
-							log.info("HLA DQB1 xrefs (before):" + ((SimplePhysicalEntity) pe).getEntityReference().getXref());
 						addPrimaryXrefs(target, pe, "UNIPROT");
-						if(pe.getUri().contains("05054_identity")) //TODO remove tmp code
-							log.info("HLA DQB1 xrefs (after):" + ((SimplePhysicalEntity) pe).getEntityReference().getXref());
 					}
 				} else if(pe instanceof Complex) {
 					continue; // skip
@@ -543,11 +539,12 @@ public final class Merger {
 		if(bpe.getXref().isEmpty() && bpe.getName().isEmpty())
 			return;
 
-		//TODO a bug? - 'HLA DQB1' (HPRD 05054) gets ~200 secondary uniprot xrefs after merging!
 		// map other IDs and names to all primary IDs of ERs that can be found in the Warehouse model
 		Set<String> accessions = idMappingByXrefs(bpe, db, UnificationXref.class, true);
 		accessions.addAll(idMappingByXrefs(bpe, db, RelationshipXref.class, true));
-		if(accessions.isEmpty())
+		//if none found, and it's a small molecule, then map by names -
+		//(e.g, 'HLA DQB1' (HPRD_05054) protein would have got ~200 uniprot xrefs if mapped by names)
+		if(accessions.isEmpty() && (bpe instanceof SmallMolecule || bpe instanceof SmallMoleculeReference))
 			accessions.addAll(mapByExactName(bpe));
 
 		//generate rel. xrefs
@@ -639,7 +636,7 @@ public final class Merger {
 			Set<String> mp = service.map(db, id, "UNIPROT");
 			Set<EntityReference> ers = findEntityRefUsingIdMappingResult(mp, warehouseUniprotUriPrefix);
 			if(ers.size()>1) {
-				log.warn(origUri + " maps to multiple warehouse ERs: " + ers);
+				log.warn(origUri + ": by URI, maps to " + ers.size() + " warehouse PRs");
 				return null;
 			} else if (ers.size()==1)
 				return (ProteinReference) ers.iterator().next();
@@ -648,16 +645,17 @@ public final class Merger {
 		// if still nothing came out yet, try id-mapping by `Xrefs:
 		Set<EntityReference> ers = mapByXrefs(orig, "UNIPROT", warehouseUniprotUriPrefix);
 		if(ers.size()>1) {
-			log.warn(origUri + ", using its Xrefs, maps to multiple warehouse ERs: " + ers);
+			log.warn(origUri + ": by Xrefs, maps to " + ers.size() + " warehouse PRs");
 			return null;
 		} else if (ers.size()==1)
 			return (ProteinReference) ers.iterator().next();
 
 		// nothing? - keep trying, map by name (e..g, 'ethanol') to ChEBI ID
+		// (but it can map to hundreds PRs in some cases - won't merge anyway if so)
 		Set<String> mp = mapByExactName(orig);
 		ers = findEntityRefUsingIdMappingResult(mp, warehouseUniprotUriPrefix);
 		if(ers.size()>1) {
-			log.warn(origUri + ", using names, maps to " + ers.size() + " canonical UniProt PRs");
+			log.warn(origUri + ": by NAMEs, maps to " + ers.size() + " warehouse PRs");
 			return null;
 		} else if (ers.size()==1)
 			return (ProteinReference) ers.iterator().next();
@@ -790,7 +788,7 @@ public final class Merger {
 			Set<String> mp = service.map(db, id, "CHEBI");
 			Set<EntityReference> ers = findEntityRefUsingIdMappingResult(mp, warehouseChebiUriPrefix);
 			if(ers.size()>1)
-				log.warn(origUri + ", using canonical URI (ID part), maps to " + ers.size() + " canonical ChEBI SMRs");
+				log.warn(origUri + ": by URI (ID part), maps to " + ers.size() + " warehouse SMRs");
 			else if (!ers.isEmpty()) //size==1
 				return (SmallMoleculeReference) ers.iterator().next();
 		}
@@ -799,7 +797,7 @@ public final class Merger {
 		// try id-mapping by (already normalized) Xrefs:
 		Set<EntityReference> ers = mapByXrefs(orig, "CHEBI", warehouseChebiUriPrefix);
 		if(ers.size()>1) {
-			log.warn(origUri + ", by its Xrefs, maps to " + ers.size() + " canonical ChEBI SMRs");
+			log.warn(origUri + ": by Xrefs, maps to " + ers.size() + " warehouse SMRs");
 			return null;
 		} else if (ers.size()==1)
 			return (SmallMoleculeReference) ers.iterator().next();
@@ -808,7 +806,7 @@ public final class Merger {
 		Set<String> mp = mapByExactName(orig);
 		ers = findEntityRefUsingIdMappingResult(mp, warehouseChebiUriPrefix);
 		if(ers.size()>1) {
-			log.warn(origUri + ", using names, maps to " + ers.size() + " canonical ChEBI SMRs");
+			log.warn(origUri + ": by NAMEs, maps to " + ers.size() + " warehouse SMRs");
 			return null;
 		} else if (ers.size()==1)
 			return (SmallMoleculeReference) ers.iterator().next();
