@@ -57,7 +57,6 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
@@ -672,13 +671,12 @@ public class CPathServiceImpl implements CPathService {
 		}
 	}
 
-	
+
 	private boolean paxtoolsModelReady() {
 		return paxtoolsModel != null;
 	}	
-	
 
-	@Transactional(readOnly = true)
+
 	@Override
 	public Set<String> map(String fromDb, String fromId, String toDb) {
     	Assert.hasText(fromId);
@@ -689,7 +687,7 @@ public class CPathServiceImpl implements CPathService {
 			// map without specifying a src db; avoid no-prefix numerical IDs
 			// (it's risky if no-prefix integer IDs exist, such as pubchem cid, sid;
 			// though, for biopolymers we could expect that only NCBI Gene ID is used for id-mapping...)
-			if(!fromId.matches("^\\d+$"))
+			if(!fromId.matches("^\\d+$") || toDb.equalsIgnoreCase("uniprot"))
     			maps = mappingsRepository.findBySrcIdAndDestIgnoreCase(fromId, toDb);
 			else
 				return Collections.emptySet();
@@ -738,9 +736,13 @@ public class CPathServiceImpl implements CPathService {
     		}
     		
     		maps = mappingsRepository.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase(db, id, toDb);
+			if(maps.isEmpty()) {
+				//try mapping without using srcDb name (use null);
+				return map(null, fromId, toDb);
+			}
     	}
     	
-    	Set<String> results = new TreeSet<String>();   	
+    	Set<String> results = new TreeSet<String>();
     	for(Mapping m : maps) {
     		results.add(m.getDestId());
     	}
@@ -748,8 +750,6 @@ public class CPathServiceImpl implements CPathService {
 		return results;
 	}
 
-
-	@Transactional(readOnly = true)
 	@Override
 	public Set<String> map(String identifier) {
 		if(identifier.startsWith("http://"))
@@ -780,8 +780,6 @@ public class CPathServiceImpl implements CPathService {
 		}
 	}
 
-
-	@Transactional(readOnly = false)
 	@Override
 	public void saveIfUnique(Mapping mapping) {
 		if(!exists(mapping)) {
@@ -791,7 +789,6 @@ public class CPathServiceImpl implements CPathService {
 		}
 	}
 
-	@Transactional(readOnly = true)
 	private boolean exists(Mapping m) {
 		return mappingsRepository
 			.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(
@@ -980,7 +977,6 @@ public class CPathServiceImpl implements CPathService {
 	}
 	
 
-	@Transactional(readOnly = true)
 	public Set<LogEvent> logEventsFromFilename(String filename) {
 		Set<LogEvent> set = new HashSet<LogEvent>();
 		final CPathSettings cpath2 = CPathSettings.getInstance();
@@ -1152,13 +1148,11 @@ public class CPathServiceImpl implements CPathService {
 	 * (the mapping db was built from warehoue data plus extra mapping files during the Premerge stage).
 	 * These are for the BioPAX db full-text index (to associate various model objects with all relevant IDs).
 	 */
-	@Transactional(readOnly = true)
 	void findAddSupportedIdsThatMapTo(String targetDb, String targetId, final Set<String> resultIds) {
 		//add more IDs using "reverse" mapping and canonical uniprot/chebi xrefs (those added by Merger)
-		List<Mapping> mappings = null;
 		if ("chebi".equalsIgnoreCase(targetDb)) {
 			//find other IDs that map to the ChEBI ID
-			mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("CHEBI", targetId);
+			List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("CHEBI", targetId);
 			if(mappings != null) {
 				//collect (to index later) only supported by graph queries ID types
 				for (Mapping mapping : mappings) {
@@ -1172,7 +1166,7 @@ public class CPathServiceImpl implements CPathService {
 			}
 		} else if ("uniprot knowledgebase".equalsIgnoreCase(targetDb)) {
 			//find other IDs that map to the UniProt AC
-			mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("UNIPROT", targetId);
+			List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("UNIPROT", targetId);
 			if(mappings != null) {
 				//collect (to index later) only supported by graph queries ID types
 				for (Mapping mapping : mappings) {
@@ -1186,6 +1180,6 @@ public class CPathServiceImpl implements CPathService {
 			}
 		}
 	}
-//
+
 }
 

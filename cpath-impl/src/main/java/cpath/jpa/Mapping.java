@@ -17,7 +17,10 @@ import org.springframework.util.Assert;
 	name="mapping",
 	uniqueConstraints = @UniqueConstraint(columnNames = {"src", "srcId", "dest", "destId"}),
 	indexes = {
+		@Index(name="src_index", columnList = "src"),
+		@Index(name="srcId_index", columnList = "srcId"),
 		@Index(name="dest_index", columnList = "dest"),
+		@Index(name="destId_index", columnList = "destId"),
 		@Index(name="dest_destId_index", columnList = "dest,destId"),
 		@Index(name="srcId_dest_index", columnList = "srcId,dest"),
 		@Index(name="src_srcId_dest_index", columnList = "src,srcId,dest"),

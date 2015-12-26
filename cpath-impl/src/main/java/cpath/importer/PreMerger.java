@@ -221,8 +221,7 @@ public final class PreMerger {
 			log.info("buildWarehouse(), adding id-mapping: " + metadata.getUri());
 			for (Content content : metadata.getContent()) {
 				try {
-					Set<Mapping> mappings = simpleMapping(content, new GZIPInputStream(
-							new FileInputStream(content.originalFile())));
+					Set<Mapping> mappings = loadSimpleMapping(content);
 					saveIgnoringDuplicates(mappings);
 				} catch (Exception e) {
 					log.error("buildWarehouse(), failed to get id-mapping, " +
@@ -273,16 +272,16 @@ public final class PreMerger {
 	 * (not API).
 	 * 
 	 * @param content
-	 * @param inputStream
 	 * @return
 	 * @throws IOException 
 	 */
-	Set<Mapping> simpleMapping(Content content, InputStream inputStream) 
-			throws IOException 
-	{
+	Set<Mapping> loadSimpleMapping(Content content) throws IOException {
+
 		Set<Mapping> mappings = new HashSet<Mapping>();
 		
-		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));				
+		BufferedReader reader = new BufferedReader(
+				new InputStreamReader(new GZIPInputStream(new FileInputStream(content.originalFile()))));
+
 		String line = reader.readLine(); //get the first, title line
 		String head[] = line.split("\t");
 		assert head.length == 2 : "bad header";
@@ -300,11 +299,9 @@ public final class PreMerger {
 	}
 
 
-	/**
+	/*
 	 * Extracts id-mapping information (name/id -> primary id) 
 	 * from the Warehouse entity references's xrefs to the mapping tables.
-	 * 
-	 * @param warehouse target model
 	 */
 	private void buildIdMappingFromWarehouse(Model warehouse) {		
 		log.info("buildIdMappingFromWarehouse(), updating id-mapping " +
@@ -386,7 +383,7 @@ public final class PreMerger {
 	}
 	
 
-	/**
+	/*
 	 * Given Content undergoes clean/convert/validate/normalize data pipeline.
 	 * 
 	 * @param metadata about the data provider
@@ -413,7 +410,7 @@ public final class PreMerger {
 		
 		if(metadata.getType() == METADATA_TYPE.MAPPING) {
 			dataStream.close();
-			return; //all done about the id-mappingdata (no need to convert/normalize)
+			return; //for id-mapping data - no need to convert, normalize
 		}
 		
 		//Convert data to BioPAX L3 if needed (generate the 'converted' output file in any case)
@@ -423,87 +420,86 @@ public final class PreMerger {
 			converter.convert(dataStream, os);//os must be closed inside
 			dataStream = new GZIPInputStream(new FileInputStream(content.convertedFile())); 		
 		}
-		
-		//here, the 'dataStream' will read either from the orig., cleaned, or converted file,
-		//(depending on cleaner/converter availability above)
-		
-		
-		//Go validate and normalize the pathway data
-		log.info("pipeline(), validating pathway data "	+ info);
+		// here 'dataStream' is either orig., cleaned, or converted data file
+		// (depending on cleaner/converter availability above)
 
-		/* Validate, auto-fix, and normalize (incl. convesion to L3): 
+		/* Validate & auto-fix (if needed), and normalize:
 		 * e.g., synonyms in xref.db may be replaced 
 		 * with the primary db name, as in Miriam, etc.
 		 */
-		//use a file instead of String for the RDF/XML data (which can be >2Gb and fail!)
-		Validation v = checkAndNormalize(info, dataStream, metadata, content.normalizedFile());
-
-		//save report data
-		content.saveValidationReport(v);
-
-		// count critical not fixed error cases (ignore warnings and fixed ones)
-		int noErrors = v.countErrors(null, null, null, null, true, true);
-		log.info("pipeline(), summary for " + info
-				+ ". Critical errors found:" + noErrors + ". " 
-				+ v.getComment().toString() + "; " + v.toString());
-
-		if(noErrors > 0) 
-			content.setValid(false); 
-		else 
-			content.setValid(true);
+		checkAndNormalize(info, dataStream, metadata, content);
 	}
 
 	
-	/**
+	/*
 	 * Validates, fixes, and normalizes given pathway data.
 	 *
 	 * @param title short description
-	 * @param biopaxStream BioPAX OWL
+	 * @param biopaxStream BioPAX OWL stream
 	 * @param metadata data provider's metadata
-	 * @param outFileName a file name/path where to write the normalized BioPAX data
-	 * @return the object explaining the validation/normalization results
+	 * @param content current chunk of data from the data source
 	 */
-	private Validation checkAndNormalize(String title, InputStream biopaxStream, Metadata metadata, String outFileName) 
-	{	
-		// create a new empty validation (options: auto-fix=true, report all) and associate with the model
-		Validation validation = new Validation(new IdentifierImpl(), 
-				title, true, Behavior.WARNING, 0, null); // sets the title
-		
-		// configure Normalizer
+	private void checkAndNormalize(String title, InputStream biopaxStream, Metadata metadata, Content content)
+	{
+		// init Normalizer
 		Normalizer normalizer = new Normalizer();
-		// set cpath2 xml:base for the normalizer to use instead of the model's one (important!)
+		//set xml:base to use instead of the original model's one (important!)
 		normalizer.setXmlBase(xmlBase);
-		// to infer/auto-fix biopax properties
 		normalizer.setFixDisplayName(true); // important
 		normalizer.setDescription(title);
-		
-		// because errors are also reported during the import (e.g., syntax)
-		try {
-			validator.importModel(validation, biopaxStream);			
-			validator.validate(validation);
-			// unregister the validation object 
-			validator.getResults().remove(validation);
 
-			// normalize
-			log.info("checkAndNormalize, now normalizing pathway data "	+ title);
-			Model model = (Model) validation.getModel();
+		Model model = null;
+		//validate or just normalize
+		if(metadata.getType() == METADATA_TYPE.MAPPING) {
+			throw new IllegalArgumentException("checkAndNormalize, unsupported Metadata type (MAPPING)");
+		} else if(metadata.isNotPathwayData()) { //that's Warehouse data
+			//get the cleaned/converted model; skip validation
+			model = new SimpleIOHandler(BioPAXLevel.L3).convertFromOWL(biopaxStream);
+//			content.setValid(true);
+		} else { //validate/normalize pathway data (cleaned, converted biopax data)
+			try {
+				log.info("checkAndNormalize, validating "	+ title);
+				// create a new empty validation (options: auto-fix=true, report all) and associate with the model
+				Validation validation = new Validation(new IdentifierImpl(), title, true, Behavior.WARNING, 0, null);
+				// errors are also reported during the data are being read (e.g., syntax errors)
+				validator.importModel(validation, biopaxStream);
+				validator.validate(validation); //check all semantic rules
+				// unregister the validation object
+				validator.getResults().remove(validation);
 
-			//Normalize (URIs, etc.)
-			normalizer.normalize(model);
-			
-			// (in addition to normalizer's job) find existing or create new Provenance 
-			// from the metadata to add it explicitly to all entities -
-			metadata.setProvenanceFor(model);
+				// get the updated model
+				model = (Model) validation.getModel();
+				// update dataSource property (force new Provenance) for all entities
+				metadata.setProvenanceFor(model);
 
-			OutputStream out = new GZIPOutputStream(new FileOutputStream(outFileName));
-			(new SimpleIOHandler(model.getLevel())).convertToOWL(model, out);
-			
-		} catch (Exception e) {
-			throw new RuntimeException("checkAndNormalize(), " +
-				"Failed " + title, e);
+				content.saveValidationReport(validation);
+
+				// count critical not fixed error cases (ignore warnings and fixed ones)
+				int noErrors = validation.countErrors(null, null, null, null, true, true);
+				log.info("pipeline(), summary for " + title + ". Critical errors found:" + noErrors + ". "
+					+ validation.getComment().toString() + "; " + validation.toString());
+
+				if (noErrors > 0)
+					content.setValid(false);
+				else
+					content.setValid(true);
+
+			} catch (Exception e) {
+				throw new RuntimeException("checkAndNormalize(), failed " + title, e);
+			}
 		}
-		
-		return validation;
+
+		//Normalize URIs, etc.
+		log.info("checkAndNormalize, normalizing "	+ title);
+		normalizer.normalize(model);
+
+		// save
+		try {
+			OutputStream out = new GZIPOutputStream(new FileOutputStream(content.normalizedFile()));
+			(new SimpleIOHandler(model.getLevel())).convertToOWL(model, out);
+		} catch (Exception e) {
+			throw new RuntimeException("checkAndNormalize(), failed " + title, e);
+		}
 	}
 
 	
