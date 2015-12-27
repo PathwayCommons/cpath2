@@ -213,11 +213,9 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 				String DB = db.toUpperCase();
 				// Skip all xrefs but: CAS, KEGG (C* and D*), DRUGBANK, WIKIPEDIA,
 				// which can be used for id-mapping by Merger and graph queries.
-				if(DB.startsWith("CAS") || DB.startsWith("KEGG")
-					|| DB.startsWith("WIKIPEDIA") || DB.equals("DRUGBANK")) 
+				if(DB.startsWith("CAS") || DB.startsWith("KEGG") || DB.equals("DRUGBANK"))
 				{
-					RelationshipXref rx = PreMerger
-						.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, db, id, model);
+					RelationshipXref rx = PreMerger.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, db, id, model);
 					smr.addXref(rx);
 				} else if(DB.startsWith("PUBMED")) {
 					//add PublicationXref
@@ -229,6 +227,8 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 						pxref.setId(id);
 					}
 					smr.addXref(pxref);
+				} else if(DB.startsWith("WIKIPEDIA")) {
+					smr.addName(id);
 				}
 			}
 		}

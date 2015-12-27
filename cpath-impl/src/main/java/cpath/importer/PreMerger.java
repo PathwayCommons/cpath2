@@ -334,7 +334,7 @@ public final class PreMerger {
 					final String src = x.getDb().toUpperCase();
 
 					if(x instanceof UnificationXref) {
-						//TODO why map to itself (each warehouse ER has only one UX, the primary AC one)?
+						//map to itself; each warehouse ER has only one UX, the primary AC
 						mappings.add(new Mapping(src, x.getId(), destDb, ac));
 					}
 					else if(x instanceof RelationshipXref) {

@@ -282,7 +282,8 @@ final class UniprotConverterImpl extends BaseConverterImpl {
         	// use only some of prot. ref. identity resources
 			// (to make Xrefs and then use them for id-mapping);
 			// skip for other, not identity, ID types,
-        	// e.g., refs to pathway databases, ontologies, etc.:
+        	// e.g., refs to pathway databases, ontologies, etc.
+			// see also: http://www.uniprot.org/docs/dbxref for the db name abbreviations used in 'DR' lines
         	if ( //TODO which 'DR' ID types do we want for id-mapping? (all are used by Merger; some - in queries)
 					!db.equalsIgnoreCase("GENEID") // NCBI Gene (EntrezGene)
         			&& !db.equalsIgnoreCase("REFSEQ") 
@@ -291,7 +292,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 					&& !db.equalsIgnoreCase("PDB")
 					&& !db.equalsIgnoreCase("IPI") //International Protein Index (deprecated; use UniProt)
 //					&& !db.equalsIgnoreCase("INTERPRO")
-					&& !db.equalsIgnoreCase("EMBL") //GenBank, NCBI Protein...
+					&& !db.equalsIgnoreCase("EMBL") //nucleotide sequence database
 					&& !db.equalsIgnoreCase("PIR") //NCBI Protein
 					&& !db.equalsIgnoreCase("PHARMGKB")
 //					&& !db.equalsIgnoreCase("PANTHER") //PANTHER Family
@@ -324,10 +325,12 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				else if (db.equalsIgnoreCase("PRINTS") && !id.startsWith("PR")) break;
 				else if (db.equalsIgnoreCase("PHARMGKB") && !id.startsWith("PA")) break;
 				else if (db.equalsIgnoreCase("ORTHODB") && !id.startsWith("EOG")) break;
-				else if (db.equalsIgnoreCase("EMBL") && !id.matches("^(\\w+\\d+(\\.\\d+)?)|(NP_\\d+)$")) break;
-
+				else if (db.equalsIgnoreCase("EMBL")) {
+					if(!id.matches("^(\\w+\\d+(\\.\\d+)?)|(NP_\\d+)$"))
+						break;
+					fixedDb = "Nucleotide Sequence Database";
 				//last ID in a HGNC line is in fact gene name
-				else if(db.equalsIgnoreCase("HGNC") && !id.startsWith("HGNC:")) {
+				} else if(db.equalsIgnoreCase("HGNC") && !id.startsWith("HGNC:")) {
 					fixedDb = "HGNC Symbol";
 				}
 				//remove .version from RefSeq IDs
