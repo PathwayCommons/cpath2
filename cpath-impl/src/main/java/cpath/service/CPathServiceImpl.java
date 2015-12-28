@@ -32,7 +32,6 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-//import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
 import org.biopax.paxtools.controller.*;
@@ -57,6 +56,7 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
@@ -433,11 +433,11 @@ public class CPathServiceImpl implements CPathService {
 	 * Mapping to BioPAX object (currently - Xref only) URIs.
 	 *
 	 * It does not "understand" RefSeq Versions and UniProt Isoforms 
-	 * (one has to submit canonical identifiers, i.e, ones without "-#" or ".#").
+	 * (one's better to submit canonical identifiers, i.e, without "-#" or ".#" suffix).
 	 *
 	 * @param identifiers - a list of genes/protein or molecules as: \
-	 * 		HGNC symbols, UniProt, RefSeq, ENS* and NCBI Gene identifiers; or\
-	 * 		CHEBI, InChIKey, ChEMBL, DrugBank, CID: (PubChem), SID: (PubChem), KEGG Compound, PharmGKB, or chem. name.
+	 * 		HGNC symbols, UniProt, RefSeq, ENS* and NCBI Gene identifiers; or \
+	 * 		CHEBI, InChIKey, ChEMBL, DrugBank, PubChem Compound, KEGG Compound, PharmGKB, or chem. name.
 	 * @return URIs of matching Xrefs
 	 */
 	private String[] findUrisByIds(String[] identifiers)
@@ -468,42 +468,13 @@ public class CPathServiceImpl implements CPathService {
 		if (q.length() > 0) {
 			//find existing URIs by ids using full-text search (collect all hits, because the query is very specific.
 			final String query = q.toString().trim();
-
-// from 2015/12/17 6.2.0-SNAPSHOT, we do not have to collect (URIs of) Xrefs anymore...
-//			int page = 0; // will use search pagination
-//			SearchResponse resp = (SearchResponse) search(query, page, Xref.class, null, null);
-//			log.debug("findUrisByIds, hits: " + resp.getNumHits());
-//			while (!resp.isEmpty()) {
-//				log.debug("Retrieving xref search results, page #" + page);
-//				for (SearchHit h : resp.getSearchHit()) {
-//					if("UnificationXref".equalsIgnoreCase(h.getBiopaxClass())
-//							|| "RelationshipXref".equalsIgnoreCase(h.getBiopaxClass())) {
-//						//exclude some RX types if the rel.type is set
-//						if("RelationshipXref".equalsIgnoreCase(h.getBiopaxClass())) {
-//							RelationshipXref rx = null;
-//							rx = (RelationshipXref) paxtoolsModel.getByID(h.getUri());
-//							//which RX types to use/keep...
-//							//('identity', etc. RX types were created when building the Warehouse and in the merging)
-//							if(rx.getRelationshipType()==null
-//									|| rx.getRelationshipType().getTerm().contains("identity")
-//									|| rx.getRelationshipType().getTerm().contains("secondary-ac"))
-//								uris.add(h.getUri());
-//
-//						} else
-//							uris.add(h.getUri());
-//					}
-//				}
-//				// go next page
-//				resp = (SearchResponse) search(query, ++page, Xref.class, null, null);
-//			}
-
 			//search for Gene/PEs (instead of, as it used to be in older versions, searching for xrefs)
 			findAllUris(uris, query, PhysicalEntity.class);
 			findAllUris(uris, query, Gene.class);
 		}
 				
 		log.debug("findUrisByIds, seeds: " + uris + " were found by IDs: " + Arrays.toString(identifiers));
-		
+
 		return uris.toArray(new String[]{});
 	}
 
@@ -977,6 +948,7 @@ public class CPathServiceImpl implements CPathService {
 	}
 	
 
+	@Transactional(readOnly = true)
 	public Set<LogEvent> logEventsFromFilename(String filename) {
 		Set<LogEvent> set = new HashSet<LogEvent>();
 		final CPathSettings cpath2 = CPathSettings.getInstance();
@@ -1074,73 +1046,48 @@ public class CPathServiceImpl implements CPathService {
 	}
 
 	private void addOtherIdsAsAnnotations(final int depth) {
-// Looks, can't use multiple threads here (spring-data jpa hibernate errors occur in production, when filesystem H2 db is used...)
-//		ExecutorService exec = Executors.newFixedThreadPool(20); //more may cause H2 JPA db problems
+//Can't use multiple threads (spring-data-jpa/hibernate errors occur in production, with filesystem H2 db...)
 		for(final BioPAXElement bpe : getModel().getObjects()) {
-
 			if(!(bpe instanceof Entity || bpe instanceof EntityReference))
 				continue; //skip for UtilityClass but EntityReference
-
-//			// run in a separate thread
-//			exec.execute(new Runnable() {
-//				@Override
-//				public void run() {
-					final Set<String> ids = new HashSet<String>();
-					//for Entity or ER, also collect IDs from child UX/RXs and map to other IDs (use idMapping)
-//					if (bpe instanceof Entity || bpe instanceof EntityReference) {
-						// Collect relevant bio IDs from this and child elements of particular type: ER, Gene, PE;
-						// add other IDs via id-mapping.
-						Set<BioPAXElement> children =
-							new Fetcher(SimpleEditorMap.get(paxtoolsModel.getLevel()), Fetcher.nextStepFilter,
-								//exclude unwanted child objects, such as CVs and other utility classes
-								new org.biopax.paxtools.util.Filter<PropertyEditor>() {
-									@Override
-									public boolean filter(PropertyEditor ed) {
-										return EntityReference.class.isAssignableFrom(ed.getRange())
-												|| Gene.class.isAssignableFrom(ed.getRange())
-												|| PhysicalEntity.class.isAssignableFrom(ed.getRange());
-									}
+			final Set<String> ids = new HashSet<String>();
+			//for Entity or ER, also collect IDs from child UX/RXs and map to other IDs (use idMapping)
+			Set<BioPAXElement> children =
+					new Fetcher(SimpleEditorMap.get(paxtoolsModel.getLevel()), Fetcher.nextStepFilter,
+							//exclude unwanted child objects, such as CVs and other utility classes
+							new org.biopax.paxtools.util.Filter<PropertyEditor>() {
+								@Override
+								public boolean filter(PropertyEditor ed) {
+									return EntityReference.class.isAssignableFrom(ed.getRange())
+											|| Gene.class.isAssignableFrom(ed.getRange())
+											|| PhysicalEntity.class.isAssignableFrom(ed.getRange());
+								}
 							}).fetch(bpe, depth);
 
-						//include this object itself if it's about a bio macromolecule of chemical
-						if (bpe instanceof PhysicalEntity || bpe instanceof EntityReference || bpe instanceof Gene)
-							children.add(bpe);
+			//include this object itself if it's about a bio macromolecule of chemical
+			if (bpe instanceof PhysicalEntity || bpe instanceof EntityReference || bpe instanceof Gene)
+				children.add(bpe);
 
-						for(BioPAXElement child : children) {
-							//as the fetcher uses specific filters, every element can be safely cast to XReferrable
-							XReferrable el = (XReferrable) child;
-							for(Xref x : el.getXref()) {
-								if (!(x instanceof PublicationXref) && x.getId()!=null && x.getDb()!=null) {
-									//btw, we should've removed or auto-fix up all null db/id xrefs already (in the premerge)
-									ids.add(x.getId());
-									//add more IDs via mapping (using only uniprot/chebi ID)
-									findAddSupportedIdsThatMapTo(x.getDb(), x.getId(), ids);
-								}
-							}
-						}
-//					}
-//					else if(bpe instanceof UnificationXref || bpe instanceof RelationshipXref) {
-//						Xref x = (Xref) bpe;
-//						ids.add(x.getId());
-//						//add more IDs via mapping
-//						findAddSupportedIdsThatMapTo(x.getDb(), x.getId(), ids);
-//					}
-
-					if(!ids.isEmpty()) {
-						bpe.getAnnotations().put(SearchEngine.FIELD_XREFID, ids);
-						log.info("addOtherIdsAsAnnotations, " + bpe.getModelInterface().getSimpleName()
-								+ " (" + bpe.getUri() + ") gets associated with IDs: " + ids);
+			for(BioPAXElement child : children) {
+				//as the fetcher uses specific filters, every element can be safely cast to XReferrable
+				XReferrable el = (XReferrable) child;
+				for(Xref x : el.getXref()) {
+					if (!(x instanceof PublicationXref) && x.getId()!=null && x.getDb()!=null) {
+						//btw, we should've removed or auto-fix up all null db/id xrefs already (in the premerge)
+						ids.add(x.getId());
+						//add more IDs via mapping (using only uniprot/chebi ID)
+						findAddSupportedIdsThatMapTo(x.getDb(), x.getId(), ids);
 					}
-//				}
-//			});
+				}
+			}
+
+			if(!ids.isEmpty()) {
+				bpe.getAnnotations().put(SearchEngine.FIELD_XREFID, ids);
+				if(log.isDebugEnabled())
+					log.debug("addOtherIdsAsAnnotations, " + bpe.getModelInterface().getSimpleName()
+							+ " (" + bpe.getUri() + ") maps to: " + ids);
+			}
 		}
-//		//done submitting tasks; wait (max. 7 hours, e.g...)
-//		exec.shutdown();
-//		try {
-//			exec.awaitTermination(7, TimeUnit.HOURS);
-//		} catch (InterruptedException e) {
-//			throw new RuntimeException("addOtherIdsAsAnnotations - exited due to timeout.", e);
-//		}
 	}
 
 	/*
@@ -1148,6 +1095,7 @@ public class CPathServiceImpl implements CPathService {
 	 * (the mapping db was built from warehoue data plus extra mapping files during the Premerge stage).
 	 * These are for the BioPAX db full-text index (to associate various model objects with all relevant IDs).
 	 */
+	@Transactional(readOnly = true)
 	void findAddSupportedIdsThatMapTo(String targetDb, String targetId, final Set<String> resultIds) {
 		//add more IDs using "reverse" mapping and canonical uniprot/chebi xrefs (those added by Merger)
 		if ("chebi".equalsIgnoreCase(targetDb)) {
@@ -1157,9 +1105,10 @@ public class CPathServiceImpl implements CPathService {
 				//collect (to index later) only supported by graph queries ID types
 				for (Mapping mapping : mappings) {
 					if (mapping.getSrc().equalsIgnoreCase("pubchem compound"))
-						resultIds.add("CID" + mapping.getSrcId());
-					else if (mapping.getSrc().equalsIgnoreCase("pubchem substance"))
-						resultIds.add("SID" + mapping.getSrcId());
+						resultIds.add("CID:" + mapping.getSrcId()); //use a non-standard prefix to diff. from NCBI Gene ID
+// won't support PubChem Substance (SID) IDs
+//					else if (mapping.getSrc().equalsIgnoreCase("pubchem substance"))
+//						resultIds.add("SID:" + mapping.getSrcId());
 					else if(mapping.getSrc().equalsIgnoreCase("chebi"))
 						resultIds.add(mapping.getSrcId());
 				}

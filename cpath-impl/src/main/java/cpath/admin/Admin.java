@@ -633,8 +633,9 @@ public final class Admin {
 	private static void convert(Model model, OutputFormat outputFormat, 
 			OutputStream output, Object... params) throws IOException 
 	{
-		Resource blacklist = new DefaultResourceLoader().getResource("file:" + cpath.blacklistFile());
-		BiopaxConverter converter = new BiopaxConverter(new Blacklist(blacklist.getInputStream()));
+		Resource blacklistResource = new DefaultResourceLoader().getResource("file:" + cpath.blacklistFile());
+		Blacklist blacklist = new Blacklist(blacklistResource.getInputStream());
+		BiopaxConverter converter = new BiopaxConverter(blacklist);
 		converter.convert(model, outputFormat, output, params);
 		output.flush();
 	}

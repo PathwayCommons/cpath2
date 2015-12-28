@@ -138,8 +138,13 @@ public final class Merger {
 		
 		//extra cleanup
 		cleanupXrefs(mainModel);
+
+		//merge equivalent PEs (new feature! - lots of equiv. proteins from PSI-MI data can be merged)
+		log.info("Merging equivalent physical entities...");
+		ModelUtils.mergeEquivalentPhysicalEntities(mainModel);
+
 		ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
-		
+
 		//create or replace the main BioPAX archive
 		log.info("Saving or updating the Main BioPAX file...");
 		save();

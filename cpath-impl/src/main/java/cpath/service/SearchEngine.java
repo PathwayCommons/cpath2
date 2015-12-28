@@ -366,9 +366,8 @@ public class SearchEngine implements Indexer, Searcher {
 
 
 	public void index() {
-		final int numObjects =  model.getObjects().size();
-		LOG.info("index(), there are " + numObjects + " BioPAX objects to be (re-)indexed.");		
-		IndexWriter iw;		
+
+		IndexWriter iw;
 		try {
 			//close the searcher manager if the old index exists
 			if(searcherManager != null) {
@@ -407,10 +406,13 @@ public class SearchEngine implements Indexer, Searcher {
 				);
 			}
 		};
-		
-		final AtomicInteger numLeft = new AtomicInteger(numObjects);
-		for(final BioPAXElement bpe : model.getObjects()) {
 
+		final int numObjectsToIndex = model.getObjects(Entity.class).size()
+				+ model.getObjects(EntityReference.class).size();
+		LOG.info("index(), there are " + numObjectsToIndex + " Entity or EntityReference objects to index.");
+
+		final AtomicInteger numLeft = new AtomicInteger(numObjectsToIndex);
+		for(final BioPAXElement bpe : model.getObjects()) {
 			if(!(bpe instanceof Entity || bpe instanceof EntityReference))
 				continue; //skip for UtilityClass but EntityReference
 
