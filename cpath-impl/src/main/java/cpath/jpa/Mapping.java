@@ -32,7 +32,7 @@ public final class Mapping {
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Long id;
 	
-	@Column(nullable=false, length = 30)
+	@Column(nullable=false, length = 35)
 	private String src;
 	
 	@Column(nullable=false, length = 10) //now, it can be either 'CHEBI' or 'UNIPROT' only.

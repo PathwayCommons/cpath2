@@ -308,7 +308,7 @@ public final class Merger {
 		log.info("Migrate some properties, such as original entityFeature and xref ("+srcModelInfo+")...");
 		copySomeOfPropertyValues(replacements);
 
-//TODO 		filterOutUnwantedOrganismInteractions(source); //do this more accurately in the future
+		filterOutUnwantedOrganismInteractions(source); //do carefully
 		
 		// cleaning up dangling objects (including the replaced above ones)
 		log.info("Removing dangling objects ("+srcModelInfo+")...");
@@ -335,53 +335,52 @@ public final class Merger {
 		log.info("Merged '" + srcModelInfo + "' model.");
 	}
 
-	//TODO (shelved) filterOutUnwantedOrganismInteractions probably has a bug (e.g. it removes all DIP MIs)
-//	private void filterOutUnwantedOrganismInteractions(Model source) {
-//		//remove simple MIs where all participants are not from the organisms we want (as set in the properties file)
-//		miLoop: for(MolecularInteraction mi : new HashSet<MolecularInteraction>(source.getObjects(MolecularInteraction.class))) {
-//			//try to find a reason to keep this MI in the model:
-//			// - it has a participant having one of allowed taxonomy ID;
-//			// - it has a complex or process participant (at this time, we won't bother looking further...);
-//			// - it has a simple sequence or gene participant with no organism specified (unknown - keep the MI)
-//			for(Entity e : mi.getParticipant()) {
-//				if(e instanceof Gene) {
-//					BioSource bs = ((Gene) e).getOrganism();
-//					if(bs == null) {
-//						continue miLoop; //keep this MI untouched; go to the next one
-//					} else {
-//						for(Xref x : bs.getXref())
-//							if(supportedTaxonomyIds.contains(x.getId()))
-//								continue miLoop; //found a supported taxnonomy ID; skip the rest - do next MI...
-//					}
-//				}
-//				else if(e instanceof SimplePhysicalEntity && !(e instanceof SmallMolecule)) {
-//					SequenceEntityReference er = (SequenceEntityReference)((SimplePhysicalEntity)e).getEntityReference();
-//					if (er == null || er.getOrganism() == null)
-//						continue miLoop; //keep this MI
-//					else {
-//						for(Xref x : er.getOrganism().getXref())
-//							if(supportedTaxonomyIds.contains(x.getId()))
-//								continue miLoop; //found a supported taxnonomy; keep this MI
-//					}
-//				} else if(e instanceof SmallMolecule) {
-//					continue; //next participant
-//				} else {
-//					//won't touch a MI with a Complex or Process participant...
-//					continue miLoop;
-//				}
-//			}
-//
-//			//unless jumped to 'miLoop:' label above, remove this MI and participants
-//			source.remove(mi);
-//			log.info("MI is removed (due to all participants come from unwanted organisms): " + mi.getUri());
-//			for(Entity e : new HashSet<Entity>(mi.getParticipant())) {
-//				mi.removeParticipant(e);
-//				//ok to remove from the model as well, because some may come back after merging
-//				//if they are still used by other entities
-//				source.remove(e);
-//			}
-//		}
-//	}
+	private void filterOutUnwantedOrganismInteractions(Model source) {
+		//remove simple MIs where all participants are not from the organisms we want (as set in the properties file)
+		miLoop: for(MolecularInteraction mi : new HashSet<MolecularInteraction>(source.getObjects(MolecularInteraction.class))) {
+			//try to find a reason to keep this MI in the model:
+			// - it has a participant having one of allowed taxonomy ID;
+			// - it has a complex or process participant (at this time, we won't bother looking further...);
+			// - it has a simple sequence or gene participant with no organism specified (unknown - keep the MI)
+			for(Entity e : mi.getParticipant()) {
+				if(e instanceof Gene) {
+					BioSource bs = ((Gene) e).getOrganism();
+					if(bs == null) {
+						continue miLoop; //keep this MI untouched; go to the next one
+					} else {
+						for(Xref x : bs.getXref())
+							if(supportedTaxonomyIds.contains(x.getId()))
+								continue miLoop; //found a supported taxnonomy ID; skip the rest - do next MI...
+					}
+				}
+				else if(e instanceof SimplePhysicalEntity && !(e instanceof SmallMolecule)) {
+					SequenceEntityReference er = (SequenceEntityReference)((SimplePhysicalEntity)e).getEntityReference();
+					if (er == null || er.getOrganism() == null)
+						continue miLoop; //keep this MI
+					else {
+						for(Xref x : er.getOrganism().getXref())
+							if(supportedTaxonomyIds.contains(x.getId()))
+								continue miLoop; //found a supported taxnonomy; keep this MI
+					}
+				} else if(e instanceof SmallMolecule) {
+					continue; //next participant
+				} else {
+					//won't touch a MI with a Complex or Process participant...
+					continue miLoop;
+				}
+			}
+
+			//unless jumped to 'miLoop:' label above, remove this MI and participants
+			source.remove(mi);
+			log.info("MI is removed (all participants come from unwanted organisms): " + mi.getUri());
+			for(Entity e : new HashSet<Entity>(mi.getParticipant())) {
+				mi.removeParticipant(e);
+				//ok to remove from the model as well, because some may come back after merging
+				//if they are still used by other entities
+				source.remove(e);
+			}
+		}
+	}
 
 
 	/*
@@ -399,8 +398,8 @@ public final class Merger {
 	* for a molecule or when id-mapping is ambiguous).
 	*/
 	private void addPrimaryXrefsByMapping(Model source, String srcModelInfo, Model target) {
-		log.info("Using xrefs and id-mapping, add canonical UniProt/ChEBI xrefs to physical"
-				+ " entities (" + srcModelInfo + ")");
+		log.info("Using original xrefs and id-mapping, add primary UniProt/ChEBI xrefs " +
+				" to not-merged PE/ERs (" + srcModelInfo + ")");
 		for(Entity pe : new HashSet<Entity>(source.getObjects(Entity.class)))
 		{
 			if(pe instanceof PhysicalEntity) {
@@ -636,7 +635,7 @@ public final class Merger {
 			Set<String> mp = service.map(db, id, "UNIPROT");
 			Set<EntityReference> ers = findEntityRefUsingIdMappingResult(mp, warehouseUniprotUriPrefix);
 			if(ers.size()>1) {
-				log.warn(origUri + ": by URI, maps to " + ers.size() + " warehouse PRs");
+				log.debug(origUri + ": by URI, ambiguously maps to " + ers.size() + " warehouse PRs");
 				return null;
 			} else if (ers.size()==1)
 				return (ProteinReference) ers.iterator().next();
@@ -645,20 +644,24 @@ public final class Merger {
 		// if still nothing came out yet, try id-mapping by `Xrefs:
 		Set<EntityReference> ers = mapByXrefs(orig, "UNIPROT", warehouseUniprotUriPrefix);
 		if(ers.size()>1) {
-			log.warn(origUri + ": by Xrefs, maps to " + ers.size() + " warehouse PRs");
+			log.debug(origUri + ": by Xrefs, ambiguously maps to " + ers.size() + " warehouse PRs");
 			return null;
 		} else if (ers.size()==1)
 			return (ProteinReference) ers.iterator().next();
 
-		// nothing? - keep trying, map by name (e..g, 'ethanol') to ChEBI ID
-		// (but it can map to hundreds PRs in some cases - won't merge anyway if so)
-		Set<String> mp = mapByExactName(orig);
-		ers = findEntityRefUsingIdMappingResult(mp, warehouseUniprotUriPrefix);
-		if(ers.size()>1) {
-			log.warn(origUri + ": by NAMEs, maps to " + ers.size() + " warehouse PRs");
-			return null;
-		} else if (ers.size()==1)
-			return (ProteinReference) ers.iterator().next();
+// mapping/merging proteins by name is too risky even when unambiguous (quite unlikely)
+//		// nothing? - keep trying, map by name (e..g, 'TP53')
+//		// but it can map to multiple PRs in some cases - won't merge anyway if so.
+//		Set<String> mp = mapByExactName(orig);
+//		ers = findEntityRefUsingIdMappingResult(mp, warehouseUniprotUriPrefix);
+//		if(ers.size()>1) {
+//			log.debug(origUri + ": by NAMEs, ambiguously maps to " + ers.size() + " warehouse PRs");
+//			return null;
+//		} else if (ers.size()==1) {
+//			ProteinReference pr = (ProteinReference) ers.iterator().next();
+//			log.warn(origUri + " is merged by name(s) to one " + pr.getUri());
+//			return pr;
+//		}
 
 		//when nothing found
 		return null;
@@ -788,7 +791,7 @@ public final class Merger {
 			Set<String> mp = service.map(db, id, "CHEBI");
 			Set<EntityReference> ers = findEntityRefUsingIdMappingResult(mp, warehouseChebiUriPrefix);
 			if(ers.size()>1)
-				log.warn(origUri + ": by URI (ID part), maps to " + ers.size() + " warehouse SMRs");
+				log.debug(origUri + ": by URI (ID part), ambiguously maps to " + ers.size() + " warehouse SMRs");
 			else if (!ers.isEmpty()) //size==1
 				return (SmallMoleculeReference) ers.iterator().next();
 		}
@@ -797,7 +800,7 @@ public final class Merger {
 		// try id-mapping by (already normalized) Xrefs:
 		Set<EntityReference> ers = mapByXrefs(orig, "CHEBI", warehouseChebiUriPrefix);
 		if(ers.size()>1) {
-			log.warn(origUri + ": by Xrefs, maps to " + ers.size() + " warehouse SMRs");
+			log.debug(origUri + ": by Xrefs, ambiguously maps to " + ers.size() + " warehouse SMRs");
 			return null;
 		} else if (ers.size()==1)
 			return (SmallMoleculeReference) ers.iterator().next();
@@ -806,10 +809,13 @@ public final class Merger {
 		Set<String> mp = mapByExactName(orig);
 		ers = findEntityRefUsingIdMappingResult(mp, warehouseChebiUriPrefix);
 		if(ers.size()>1) {
-			log.warn(origUri + ": by NAMEs, maps to " + ers.size() + " warehouse SMRs");
+			log.debug(origUri + ": by NAMEs, ambiguously maps to " + ers.size() + " warehouse SMRs");
 			return null;
-		} else if (ers.size()==1)
-			return (SmallMoleculeReference) ers.iterator().next();
+		} else if (ers.size()==1) {
+			SmallMoleculeReference smr = (SmallMoleculeReference) ers.iterator().next();
+			log.warn(origUri + " is merged by name(s) to one " + smr.getUri());
+			return smr;
+		}
 
 		//if nothing found
 		return null;

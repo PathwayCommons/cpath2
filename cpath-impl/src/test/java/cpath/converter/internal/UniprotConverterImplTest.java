@@ -92,7 +92,7 @@ public class UniprotConverterImplTest {
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
 //		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
-		assertEquals(38, pr.getXref().size()); //no duplicates (UniProt, HGNC, PDB, IPI, EMBL, PIR, etc., xrefs)
+		assertEquals(39, pr.getXref().size()); //no duplicates (UniProt, HGNC, PDB, IPI, EMBL, PIR, DIP, etc., xrefs)
 		assertEquals("http://identifiers.org/taxonomy/9606", pr.getOrganism().getUri());
 		
 		// test MOD_RES features are created
@@ -141,7 +141,7 @@ public class UniprotConverterImplTest {
 		
 		//total xrefs generated for P62158 (the special test '[bla-bla]' id should not be there)
 		assertFalse(pr.getXref().toString().contains("bla-bla"));
-		assertEquals(146, pr.getXref().size()); //uh, so many PDB IDs (56)...
+		assertEquals(147, pr.getXref().size()); //uh, so many PDB IDs...
 
 		
 		//test for the following FT entry (two-line) was correctly parsed/converted:

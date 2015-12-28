@@ -295,6 +295,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 					&& !db.equalsIgnoreCase("EMBL") //nucleotide sequence database
 					&& !db.equalsIgnoreCase("PIR") //NCBI Protein
 					&& !db.equalsIgnoreCase("PHARMGKB")
+					&& !db.equalsIgnoreCase("DIP")
 //					&& !db.equalsIgnoreCase("PANTHER") //PANTHER Family
 // 					&& !db.equalsIgnoreCase("GENECARDS") //ID, not Symbol
 //					&& !db.equalsIgnoreCase("DISPROT")
@@ -325,6 +326,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				else if (db.equalsIgnoreCase("PRINTS") && !id.startsWith("PR")) break;
 				else if (db.equalsIgnoreCase("PHARMGKB") && !id.startsWith("PA")) break;
 				else if (db.equalsIgnoreCase("ORTHODB") && !id.startsWith("EOG")) break;
+				else if (db.equalsIgnoreCase("DIP") && !id.startsWith("DIP-")) break;
 				else if (db.equalsIgnoreCase("EMBL")) {
 					if(!id.matches("^(\\w+\\d+(\\.\\d+)?)|(NP_\\d+)$"))
 						break;
