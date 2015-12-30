@@ -123,25 +123,26 @@ public final class Merger {
 				log.info("Skip for warehouse data: " + metadata);
 				continue;
 			}
-			
-			Model datasourceResultModel = merge(metadata);
+
+			// merge all (normalized BioPAX) data files of the same provider into one-provider model:
+			Model providerModel = merge(metadata);
+
+			//TODO merge equiv. PEs within a data source (e.g., stateless vcam1 P19320 MI participants in hprd, intact, biogrid)
+			log.info("Merging all equivalent physical entity groups (" + metadata.getIdentifier() + ")...");
+			ModelUtils.mergeEquivalentPhysicalEntities(providerModel);
 			
 			//export to the biopax archive in the batch downloads dir.
-			save(datasourceResultModel, metadata);
+			save(providerModel, metadata);
 			
 			//merge into the main model
-			log.info("Merging the updated and enriched '" + metadata.getIdentifier() + 
-					"' model into the main all-data BioPAX model...");
+			log.info("Merging the integrated '" + metadata.getIdentifier() +
+					"' model into the main all-providers BioPAX model...");
 			
-			simpleMerger.merge(mainModel, datasourceResultModel);
+			simpleMerger.merge(mainModel, providerModel);
 		}
 		
 		//extra cleanup
 		cleanupXrefs(mainModel);
-
-		//merge equivalent PEs (new feature! - lots of equiv. proteins from PSI-MI data can be merged)
-		log.info("Merging equivalent physical entities...");
-		ModelUtils.mergeEquivalentPhysicalEntities(mainModel);
 
 		ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
 
@@ -287,14 +288,26 @@ public final class Merger {
 				//i.e., no matching ER found in the Warehouse (the ER is from unwanted organism or unknown/no id).
 				// Remove the PR/Dna*R/Rna*R if entityReferenceOf() is empty (member of a generic ER, or dangling)
 				if(origEr instanceof SequenceEntityReference && origEr.getEntityReferenceOf().isEmpty()) {
-					for(EntityReference genericEr : new HashSet<EntityReference>(origEr.getMemberEntityReferenceOf())) {
-						genericEr.removeMemberEntityReference(origEr);
+					//remove unwanted dangling/member ER from the source model
+					boolean isSupported = false;
+					BioSource org = ((SequenceEntityReference) origEr).getOrganism();
+					if(org != null) {
+						for (Xref x : org.getXref()) {
+							if (supportedTaxonomyIds.contains(x.getId())) {
+								isSupported = true;
+								break;
+							}
+						}
 					}
-					//remove now dangling member ER from the source model
-					source.remove(origEr);
-					log.info("Removed a dangling / generic member " + origEr.getModelInterface().getSimpleName()
-						+ " for which no matching warehouse ER was found: " + origEr.getUri() + "; organism: "
-						+ ((SequenceEntityReference) origEr).getOrganism());
+					if(!isSupported) {
+						for(EntityReference genericEr : new HashSet<EntityReference>(origEr.getMemberEntityReferenceOf())) {
+							genericEr.removeMemberEntityReference(origEr);
+						}
+						source.remove(origEr);
+						log.info("Removed a dangling/member " + origEr.getModelInterface().getSimpleName()
+							+ " for which no warehouse ER was found: " + origEr.getUri() + "; organism: "
+								+ ((SequenceEntityReference) origEr).getOrganism());
+					}
 				}
 			}
 		}
@@ -333,11 +346,14 @@ public final class Merger {
 		// merge all the elements and their children from the source to target model
 		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, new Filter<BioPAXElement>() {		
 			public boolean filter(BioPAXElement object) {
-				return object instanceof EntityReference || object instanceof Pathway;
+				return object instanceof EntityReference
+						|| object instanceof Pathway
+							|| object instanceof SimplePhysicalEntity;
 			}
 		});
 		simpleMerger.merge(target, source);
 		log.info("Merged '" + srcModelInfo + "' model.");
+
 	}
 
 	private void filterOutUnwantedOrganismInteractions(Model source) {
@@ -441,22 +457,20 @@ public final class Merger {
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
 		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
 			String currUri = bpe.getUri();
-			
-			// skip for previously normalized/generated objects and standard PXs
-			if(currUri.startsWith(xmlBase) ||
-					(bpe instanceof PublicationXref && currUri.startsWith("http://identifiers.org/pubmed"))
+
+			// skip for some previously normalized or generated objects
+			if(	currUri.startsWith(xmlBase)
+				|| (bpe instanceof PublicationXref && currUri.startsWith("http://identifiers.org/pubmed"))
 				|| (currUri.startsWith("http://identifiers.org/") &&
-					(bpe instanceof Process // Pathway or Interaction
-					// or PR or SMR (but not NucleicAcidReference)
-					|| bpe instanceof ProteinReference || bpe instanceof SmallMoleculeReference
-					//keep prev. normalized BS (should not have any tissue/cellType set)
-					|| (bpe instanceof BioSource && ((BioSource)bpe).getTissue()==null && ((BioSource)bpe).getCellType()==null)
+					(	bpe instanceof Process
+						|| bpe instanceof ProteinReference
+						|| bpe instanceof SmallMoleculeReference
+						//or BioSource if both tissue and cellType are not defined -
+						|| (bpe instanceof BioSource && ((BioSource)bpe).getTissue()==null && ((BioSource)bpe).getCellType()==null)
 					)
 				)
-			){
-				continue;
-			}
-			
+			){continue;}
+
 			// Generate new consistent URI for not generated not previously normalized objects:
 			String newUri = Normalizer.uri(xmlBase, null, description + currUri, bpe.getModelInterface());
 			

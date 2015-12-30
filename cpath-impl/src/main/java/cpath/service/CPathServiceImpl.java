@@ -650,18 +650,24 @@ public class CPathServiceImpl implements CPathService {
 
 	@Override
 	public Set<String> map(String fromDb, String fromId, String toDb) {
-    	Assert.hasText(fromId);
-    	Assert.hasText(toDb);
-    	
-    	List<Mapping> maps;    	
-    	if(fromDb == null || fromDb.isEmpty()) {
-			// map without specifying a src db; avoid no-prefix numerical IDs
-			// (it's risky if no-prefix integer IDs exist, such as pubchem cid, sid;
-			// though, for biopolymers we could expect that only NCBI Gene ID is used for id-mapping...)
-			if(!fromId.matches("^\\d+$") || toDb.equalsIgnoreCase("uniprot"))
-    			maps = mappingsRepository.findBySrcIdAndDestIgnoreCase(fromId, toDb);
-			else
+		Assert.hasText(fromId);
+		Assert.hasText(toDb);
+		Assert.isTrue("CHEBI".equalsIgnoreCase(toDb) || "UNIPROT".equalsIgnoreCase(toDb));
+
+		List<Mapping> maps;
+		if (fromDb == null || fromDb.isEmpty()) { //- then guess it / map anyway -
+			// without specifying a src db (well, it's risky when a no-prefix
+			// integer ID type is used, such as pubchem cid, sid; but
+			// for bio-polymers, we support and expect only NCBI Gene ID type)
+			if (fromId.matches("^CID:\\d+$") && toDb.equalsIgnoreCase("chebi")) {
+				fromId = fromId.substring(4);
+				maps = mappingsRepository.findBySrcIdAndDestIgnoreCase(fromId, "CHEBI");
+			}
+			else if (!fromId.matches("^\\d+$") || toDb.equalsIgnoreCase("uniprot"))
+				maps = mappingsRepository.findBySrcIdAndDestIgnoreCase(fromId, toDb);
+			else { //in all other cases, when fromDb is null, return no results
 				return Collections.emptySet();
+			}
     	} else {
     		//if possible, use a "canonical" id instead isoform, version, kegg gene...
     		// (e.g., uniprot.isoform, P04150-2 pair becomes uniprot, P04150)
@@ -698,12 +704,19 @@ public class CPathServiceImpl implements CPathService {
     		}
     		else if(db.equalsIgnoreCase("GENEID") || db.equalsIgnoreCase("ENTREZ GENE")) {
     			db = "NCBI GENE";
-    		} else if(db.toUpperCase().contains("PUBCHEM") && 
+    		}
+			//Note: currently (2015/12), there is no mapping data from PubChem Substance (SID)
+			else if(db.toUpperCase().contains("PUBCHEM") &&
     				(db.toUpperCase().contains("SUBSTANCE") || db.toUpperCase().contains("SID"))) {
     			db = "PUBCHEM-SUBSTANCE";
-    		} else if(db.toUpperCase().contains("PUBCHEM") && 
+				//remove prefix if present
+				if(id.matches("^SID:\\d+$")) id = id.substring(4);
+    		}
+			else if(db.toUpperCase().contains("PUBCHEM") &&
     				(db.toUpperCase().contains("COMPOUND") || db.toUpperCase().contains("CID"))) {
     			db = "PUBCHEM-COMPOUND";
+				//remove prefix if present
+				if(id.matches("^CID:\\d+$")) id = id.substring(4);
     		}
     		
     		maps = mappingsRepository.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase(db, id, toDb);
@@ -715,12 +728,14 @@ public class CPathServiceImpl implements CPathService {
     	
     	Set<String> results = new TreeSet<String>();
     	for(Mapping m : maps) {
-    		results.add(m.getDestId());
+			if(toDb.equalsIgnoreCase(m.getDest()))
+    			results.add(m.getDestId());
     	}
     	
 		return results;
 	}
 
+	@Deprecated
 	@Override
 	public Set<String> map(String identifier) {
 		if(identifier.startsWith("http://"))

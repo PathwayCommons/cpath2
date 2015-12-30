@@ -65,7 +65,7 @@ public class ChebiConvertersTest {
 
 		// check some props
 		assertEquals("(S)-lactic acid", smallMoleculeReference.getDisplayName());
-		assertEquals(12, smallMoleculeReference.getName().size()); //now includes Wikipedia name from the xref
+		assertEquals(13, smallMoleculeReference.getName().size()); //now includes Wikipedia, SMILES(CHEBI) names
 		assertEquals("C3H6O3", smallMoleculeReference.getChemicalFormula());
 		System.out.println("CHEBI:422 xrefs (from OBO): " + smallMoleculeReference.getXref());
 		int relationshipXrefCount = 0;
@@ -77,7 +77,7 @@ public class ChebiConvertersTest {
 			if (xref instanceof PublicationXref) ++ publicationXrefCount;
 		}
 		assertEquals(1, unificationXrefCount); //no secondary ChEBI IDs there (non-chebi are, if any, relationship xrefs)
-		assertEquals(6, relationshipXrefCount); //only chebi, inchikey, cas, kegg are taken there (could be drugbank and chembl if present too)
+		assertEquals(7, relationshipXrefCount); //chebi, inchikey, cas, kegg, hmdb
 		assertEquals(9, publicationXrefCount); //there are nine such xrefs
 		
 		// following checks work in this test only (using in-memory model); with DAO - use getObject...

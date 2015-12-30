@@ -192,6 +192,7 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 					smr.setStructure(structure);
 				} else if (sy.contains("FORMULA")) {
 					smr.setChemicalFormula(name);
+					smr.addName(name); //add - possible helps mapping by name
 				} else {
 					smr.addName(name); //incl. for SMILES
 				}
@@ -211,9 +212,8 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 				//remove quotes around the db name
 				String db = matcher.group(2);
 				String DB = db.toUpperCase();
-				// Skip all xrefs but: CAS, KEGG (C* and D*), DRUGBANK, WIKIPEDIA,
-				// which can be used for id-mapping by Merger and graph queries.
-				if(DB.startsWith("CAS") || DB.startsWith("KEGG") || DB.equals("DRUGBANK"))
+				// Skip all xrefs but CAS, KEGG (C*, D*),.. which can be used for id-mapping by Merger and graph queries.
+				if(DB.startsWith("CAS") || DB.startsWith("KEGG") || DB.equals("DRUGBANK") || DB.equals("HMDB"))
 				{
 					RelationshipXref rx = PreMerger.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, db, id, model);
 					smr.addXref(rx);

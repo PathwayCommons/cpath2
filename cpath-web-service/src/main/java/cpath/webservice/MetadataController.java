@@ -246,7 +246,20 @@ public class MetadataController extends BasicController {
 		}
     }
 
-    
+	/*
+	 * Test id-mapping (not public web API).
+	 *
+	 * Specific ID-mapping framework has been used internally
+	 * during the pathway data merge into one BioPAX model and
+	 * then to build the full-text index.
+	 *
+	 * @param id bio/chem identifier (use 'CID:' or 'SID:' prefix with a PubChem integer ID)
+	 * @param request
+	 * @param response
+	 * @return mapping to UniProt or ChEBI primary IDs
+	 * @throws IOException
+     */
+	@Deprecated
     @RequestMapping("/idmapping")
     public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id, 
     		HttpServletRequest request, HttpServletResponse response) throws IOException

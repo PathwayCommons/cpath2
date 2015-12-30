@@ -166,11 +166,12 @@ public interface CPathService {
 	/**
 	 * Guess the identifier type (chemical vs gene/protein) 
 	 * and returns other Is it maps to. This method can be wrong
-	 * about mapping, it's weak, designed to use primarily in
-	 * BioPAX graph queries and not for data integration/merging.
+	 * about mapping, it's weak, designed to be used perhaps in
+	 * some graph queries and not for data integration/merging.
 	 * 
 	 * @param identifier
 	 * @return
+	 * @deprecated
 	 */
 	Set<String> map(String identifier);
 	
@@ -178,13 +179,11 @@ public interface CPathService {
 	/**
      * Maps an identifier to primary ID(s) of a given type.
      * 
-     * Normally, the result set contains only one ID.
-     * If the result contains more than one value, which does not
-     * necessarily an error, then it's up to other methods to decide 
-     * how to proceed; e.g., one should not probably merge different 
-     * data objects if the mapping is known to be umbiguous,
+     * The result set may contain more than one primary ID.
+	 * But we should not probably merge different biopax
+     * data objects if the mapping result is ambiguous;
      * but it's usually ok to generate relationship xrefs 
-     * or use the resulting IDs in a BioPAX graph query.
+     * or use all result IDs in a BioPAX graph query.
      * 
      * @param fromDb data collection name or null (to use all source ID types)
      * @param fromId the source ID
