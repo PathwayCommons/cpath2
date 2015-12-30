@@ -56,7 +56,6 @@ import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
@@ -963,7 +962,6 @@ public class CPathServiceImpl implements CPathService {
 	}
 	
 
-	@Transactional(readOnly = true)
 	public Set<LogEvent> logEventsFromFilename(String filename) {
 		Set<LogEvent> set = new HashSet<LogEvent>();
 		final CPathSettings cpath2 = CPathSettings.getInstance();
@@ -1110,7 +1108,6 @@ public class CPathServiceImpl implements CPathService {
 	 * (the mapping db was built from warehoue data plus extra mapping files during the Premerge stage).
 	 * These are for the BioPAX db full-text index (to associate various model objects with all relevant IDs).
 	 */
-	@Transactional(readOnly = true)
 	void findAddSupportedIdsThatMapTo(String targetDb, String targetId, final Set<String> resultIds) {
 		//add more IDs using "reverse" mapping and canonical uniprot/chebi xrefs (those added by Merger)
 		if ("chebi".equalsIgnoreCase(targetDb)) {
