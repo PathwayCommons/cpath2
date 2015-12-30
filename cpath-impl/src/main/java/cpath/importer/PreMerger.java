@@ -198,15 +198,17 @@ public final class PreMerger {
 					m.setXmlBase(xmlBase);
 					warehouse.merge(m);
 				} catch (IOException e) {
-					log.error("buildWarehouse, skip for " + content.toString() +
+					log.error("buildWarehouse(), skip for " + content.toString() +
 							"; failed to read/merge from " + content.convertedFile(), e);
 					continue;
 				}
 			}
 		}
+		log.error("buildWarehouse(), repairing the model...");
 		warehouse.repair();
 
 		//clear all id-mapping tables
+		log.error("buildWarehouse(), removing all previous id-mapping db entries...");
 		service.mapping().deleteAll();
 
 		// Using the just built Warehouse BioPAX model, generate the id-mapping tables:
