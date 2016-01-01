@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF
+        xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+        xmlns:owl="http://www.w3.org/2002/07/owl#"
+        xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+        xmlns:bp="http://www.biopax.org/release/biopax-level3.owl#"
+        xml:base="http://purl.org/pc2/test/">
+    <owl:Ontology rdf:about="">
+        <owl:imports rdf:resource="http://www.biopax.org/release/biopax-level3.owl#" />
+    </owl:Ontology>
+
+    <bp:Protein rdf:ID="Protein_uniprotkb_P19320_identity_1451511944816">
+        <bp:entityReference rdf:resource="http://identifiers.org/uniprot/P19320" />
+        <bp:dataSource rdf:resource="#intact_human" />
+        <bp:evidence rdf:resource="#Evidence_1451511944817_p1363786" />
+        <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Vascular cell adhesion protein 1</bp:name>
+        <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">vcam1_human</bp:displayName>
+        <bp:comment rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">psi-mi participant</bp:comment>
+    </bp:Protein>
+
+    <bp:Protein rdf:ID="Protein_uniprotkb_P19320_identity_1451511112767">
+        <bp:entityReference rdf:resource="http://identifiers.org/uniprot/P19320" />
+        <bp:dataSource rdf:resource="#intact_human" />
+        <bp:evidence rdf:resource="#Evidence_1451511112768_p1374182" />
+        <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Vascular cell adhesion protein 1</bp:name>
+        <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">vcam1_human</bp:displayName>
+        <bp:comment rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">psi-mi participant</bp:comment>
+    </bp:Protein>
+
+    <bp:Protein rdf:ID="Protein_uniprotkb_P19320_identity_1451511112564">
+        <bp:entityReference rdf:resource="http://identifiers.org/uniprot/P19320" />
+        <bp:dataSource rdf:resource="#intact_human" />
+        <bp:evidence rdf:resource="#Evidence_1451511112565_p1374114" />
+        <bp:name rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Vascular cell adhesion protein 1</bp:name>
+        <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">vcam1_human</bp:displayName>
+        <bp:comment rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">psi-mi participant</bp:comment>
+    </bp:Protein>
+
+    <bp:Provenance rdf:ID="intact_human">
+        <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">IntAct</bp:displayName>
+        <bp:standardName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">IntAct</bp:standardName>
+    </bp:Provenance>
+
+    <bp:ProteinReference rdf:about="http://identifiers.org/uniprot/P19320">
+        <bp:xref rdf:resource="#UnificationXref_uniprot_knowledgebase_P19320" />
+        <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">VCAM1_HUMAN</bp:displayName>
+        <bp:standardName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">Vascular cell adhesion protein 1</bp:standardName>
+        <bp:comment rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">FUNCTION: Important in cell-cell recognition. Appears to functionin leukocyte-endothelial cell adhesion. Interacts with integrinalpha-4/beta-1 (ITGA4/ITGB1) on leukocytes, and mediates bothadhesion and signal transduction. The VCAM1/ITGA4/ITGB1interaction may play a pathophysiologic role both in immuneresponses and in leukocyte emigration to sites of inflammation.SUBUNIT: Binds to ECMV-D capsid proteins and acts as a receptorfor this virus. {ECO:0000250}.SUBCELLULAR LOCATION: Membrane; Single-pass type I membraneprotein.ALTERNATIVE PRODUCTS:Event=Alternative splicing; Named isoforms=3;Comment=Additional isoforms seem to exist.;Name=1; Synonyms=Long, VCAM-7D;IsoId=P19320-1; Sequence=Displayed;Note=Major isoform.;Name=2; Synonyms=Short, VCAM-6D;IsoId=P19320-2; Sequence=VSP_002580;Name=3;IsoId=P19320-3; Sequence=VSP_044636;Note=No experimental confirmation available.;TISSUE SPECIFICITY: Expressed on inflammed vascular endothelium,as well as on macrophage-like and dendritic cell types in bothnormal and inflammed tissue.INDUCTION: By cytokines (e.g. IL-1, TNF-alpha).DOMAIN: Either the first or the fourth Ig-like C2-type domain isrequired for VLA4-dependent cell adhesion.PTM: Sialoglycoprotein.SIMILARITY: Contains 7 Ig-like C2-type (immunoglobulin-like)domains. {ECO:0000305}.WEB RESOURCE: Name=Wikipedia; Note=VCAM1 entry;URL=&quot;https://en.wikipedia.org/wiki/VCAM1&quot;;WEB RESOURCE: Name=SeattleSNPs;URL=&quot;http://pga.gs.washington.edu/data/vcam1/&quot;;WEB RESOURCE: Name=Functional Glycomics Gateway - Glycan Binding;Note=VCAM-1;URL=&quot;http://www.functionalglycomics.org/glycomics/GBPServlet?&amp;operationType=view&amp;cbpId=cbp_hum_Itlect_266&quot;; COPYRIGHT: Protein annotation is derived from the UniProt Consortium (http://www.uniprot.org/). Distributed under the Creative Commons Attribution-NoDerivs License.</bp:comment>
+        <bp:comment rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">REPLACED http://purl.org/pc2/8/ProteinReference_HPRD_01888_identity</bp:comment>
+        <bp:organism rdf:resource="http://identifiers.org/taxonomy/9606" />
+    </bp:ProteinReference>
+
+    <bp:BioSource rdf:about="http://identifiers.org/taxonomy/9606">
+        <bp:xref rdf:resource="#UnificationXref_taxonomy_9606" />
+        <bp:displayName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">human</bp:displayName>
+        <bp:standardName rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">human</bp:standardName>
+    </bp:BioSource>
+
+    <bp:UnificationXref rdf:ID="UnificationXref_uniprot_knowledgebase_P19320">
+        <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">P19320</bp:id>
+        <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">uniprot knowledgebase</bp:db>
+    </bp:UnificationXref>
+
+    <bp:UnificationXref rdf:ID="UnificationXref_taxonomy_9606">
+        <bp:id rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">9606</bp:id>
+        <bp:db rdf:datatype = "http://www.w3.org/2001/XMLSchema#string">taxonomy</bp:db>
+    </bp:UnificationXref>
+
+    <bp:Evidence rdf:ID="Evidence_1451511944817_p1363786">
+    </bp:Evidence>
+    <bp:Evidence rdf:ID="Evidence_1451511112768_p1374182">
+    </bp:Evidence>
+    <bp:Evidence rdf:ID="Evidence_1451511112565_p1374114">
+    </bp:Evidence>
+
+</rdf:RDF>

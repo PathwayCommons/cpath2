@@ -127,10 +127,10 @@ public final class Merger {
 			// merge all (normalized BioPAX) data files of the same provider into one-provider model:
 			Model providerModel = merge(metadata);
 
-			//TODO merge equiv. PEs within a data source (e.g., stateless vcam1 P19320 MI participants in hprd, intact, biogrid)
+			//merge equiv. PEs within a data source (e.g., stateless vcam1 P19320 MI participants in hprd, intact, biogrid)
 			log.info("Merging all equivalent physical entity groups (" + metadata.getIdentifier() + ")...");
 			ModelUtils.mergeEquivalentPhysicalEntities(providerModel);
-			
+
 			//export to the biopax archive in the batch downloads dir.
 			save(providerModel, metadata);
 			
