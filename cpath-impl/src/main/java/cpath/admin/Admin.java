@@ -1,31 +1,3 @@
-// $Id$
-//------------------------------------------------------------------------------
-/** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center.
- **
- ** This library is free software; you can redistribute it and/or modify it
- ** under the terms of the GNU Lesser General Public License as published
- ** by the Free Software Foundation; either version 2.1 of the License, or
- ** any later version.
- **
- ** This library is distributed in the hope that it will be useful, but
- ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- ** documentation provided hereunder is on an "as is" basis, and
- ** Memorial Sloan-Kettering Cancer Center
- ** has no obligations to provide maintenance, support,
- ** updates, enhancements or modifications.  In no event shall
- ** Memorial Sloan-Kettering Cancer Center
- ** be liable to any party for direct, indirect, special,
- ** incidental or consequential damages, including lost profits, arising
- ** out of the use of this software and its documentation, even if
- ** Memorial Sloan-Kettering Cancer Center
- ** has been advised of the possibility of such damage.  See
- ** the GNU Lesser General Public License for more details.
- **
- ** You should have received a copy of the GNU Lesser General Public License
- ** along with this library; if not, write to the Free Software Foundation,
- ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
- **/
 package cpath.admin;
 
 import static cpath.config.CPathSettings.*;
@@ -51,7 +23,6 @@ import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.pattern.miner.BlacklistGenerator2;
 import org.biopax.paxtools.pattern.miner.BlacklistGenerator3;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.validator.api.Validator;
@@ -694,18 +665,17 @@ public final class Admin {
 			
 		//load the main model
 		LOG.info("create-downloads: loading the Main BioPAX Model...");
-		Model mainModel = CPathUtils.loadMainBiopaxModel();
+		Model model = CPathUtils.loadMainBiopaxModel();
 		LOG.info("create-downloads: successfully read the Main BioPAX Model");
-		
+
 		// generate/find all other BioPAX archives (by organism, etc.):
-		List<String> otherBiopaxArchives = createOrFindBiopaxArchives(mainModel, allMetadata);
+		List<String> otherBiopaxArchives = createOrFindBiopaxArchives(model, allMetadata);
     	
-		// 2) create all other format archives from the main model (still in memory)
+		// create all other format archives from the main model (still in memory)
 		String prefix =  cpath.mainModelFile().substring(0, cpath.mainModelFile().indexOf("BIOPAX."));
-		exportBiopaxToOutputFormats(mainModel, prefix);
-		mainModel = null; //release quite a few Gygabytes
+		exportBiopaxToOutputFormats(model, prefix);
 		
-		// 3) export the rest of biopax archives to all other formats		
+		// export the rest of biopax archives to all other formats
         for(String biopaxArchive : otherBiopaxArchives) {      	
         	InputStream biopaxStream = null;
         	try {
@@ -716,9 +686,9 @@ public final class Admin {
         	}       	   		
         	//read the given Model (can be vary large!) from archive
         	LOG.info("Loading the BioPAX model from " + biopaxArchive + "...");
-        	Model m = (new SimpleIOHandler()).convertFromOWL(biopaxStream);       	
+        	model = (new SimpleIOHandler()).convertFromOWL(biopaxStream);
         	prefix =  biopaxArchive.substring(0, biopaxArchive.indexOf("BIOPAX."));
-        	exportBiopaxToOutputFormats(m, prefix);
+        	exportBiopaxToOutputFormats(model, prefix);
         }
 	}
 
@@ -727,24 +697,23 @@ public final class Admin {
 			throws InterruptedException
 	{
 		//concurrent conversions (different conversions of the same big Model)
-		ExecutorService exec = Executors.newCachedThreadPool();
+		ExecutorService exec = Executors.newFixedThreadPool(2);
 		
     	exec.execute(new Runnable() {
     		public void run() {	
     			String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "uniprot");
-    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName); //default to use uniprot AC
-    		}
-    	});
-
-		exec.execute(new Runnable() {
-			public void run() {
-				String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "hgnc");
-				convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "hgnc symbol");
+				//- to GSEA/GMT using UniProt ACs; auto-filter by supported organism(s);
+				// only produce entries for genes that belong to a pathway (ignore those outside any pathway)
+    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "uniprot", true);
+				// - similar but using HGNC symbols instead UniProt -
+				archiveName = prefix + formatAndExt(OutputFormat.GSEA, "hgnc");
+				convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "hgnc symbol", true);
 			}
 		});
     	
     	exec.execute(new Runnable() {
-    		public void run() { 
+    		public void run() {
+				// export using HGNC Symbols
     			String extSifArchiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "hgnc");
     			convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, extSifArchiveName); //default to use HGNC symbols		
     			//make BINARY_SIF from just generated EXTENDED_BINARY_SIF
@@ -754,15 +723,11 @@ public final class Admin {
 				} catch (IOException e) {
 					LOG.error("Failed (skipped) converting " + extSifArchiveName + " to " + sifArchiveName, e );
 				}
-    		}
-    	});
-
-		exec.execute(new Runnable() {
-			public void run() {
-				String extSifArchiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "uniprot");
+				// export using UniProt accessions
+				extSifArchiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "uniprot");
 				convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, extSifArchiveName, "uniprot");
 				//make BINARY_SIF from just generated EXTENDED_BINARY_SIF
-				String sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot");
+				sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot");
 				try {
 					convertExtendedSifToSifGzipped(extSifArchiveName, sifArchiveName);
 				} catch (IOException e) {
@@ -773,7 +738,7 @@ public final class Admin {
 
 		exec.shutdown(); //no more tasks
     	//wait until it's done or expired
-    	exec.awaitTermination(48, TimeUnit.HOURS);
+    	exec.awaitTermination(24, TimeUnit.HOURS);
 	}
 
 	//reads from the extended sif archive up to the blank line and writes the interaction lines (edges) to the sif archive
@@ -837,14 +802,13 @@ public final class Admin {
 			throw new IllegalArgumentException(format.name() + " is not allowed here.");
 
 		if(format == OutputFormat.GSEA && m.getObjects(Pathway.class).isEmpty()) {
-			LOG.info("create-downloads: corresponding BioPAX model has no Pathways; "
-					+ "so I will not create " + archiveName);
+			LOG.info("create-downloads: BioPAX model has no Pathways; "
+					+ " skipped for " + archiveName);
 			return;
 		}
 		
         if(!(new File(archiveName)).exists()) {
         	LOG.info("create-downloads: generating new " + archiveName);
-        	//note: extended SIF will be one file (edges, nodes)
         	try {
         		GZIPOutputStream zos = new GZIPOutputStream(new FileOutputStream(archiveName));
         		convert(m, format, zos, params);

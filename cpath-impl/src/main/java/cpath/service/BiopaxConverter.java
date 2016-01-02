@@ -76,8 +76,15 @@ public class BiopaxConverter {
 			case GSEA:
 				db = "uniprot"; //default
 				if (args.length > 0 && args[0] instanceof String)
-					db = (String) args[0];
-				convertToGSEA(m, os, db);
+					db = ((String) args[0]).trim().toLowerCase();
+
+				boolean skipOutsidePathways = false;
+				if (args.length > 1) {
+					skipOutsidePathways = (args[1] instanceof Boolean)
+						? ((Boolean)args[1]).booleanValue()
+							: Boolean.parseBoolean(String.valueOf(args[1]));
+				}
+				convertToGSEA(m, os, db, skipOutsidePathways);
 				break;
             case SBGN:
 				boolean doLayout = true;
@@ -163,10 +170,10 @@ public class BiopaxConverter {
      * @param m paxtools model
      * @param stream output stream
 	 * @param outputIdType output identifiers type (db name, is data-specific, the default is UniProt)
-	 * 
+	 * @param skipOutsidePathways if true - won't write ID sets that relate to no pathway
 	 * @throws IOException when there is an output stream writing error
 	 */
-	public void convertToGSEA(Model m, OutputStream stream, String outputIdType) 
+	public void convertToGSEA(Model m, OutputStream stream, String outputIdType, boolean skipOutsidePathways)
 			throws IOException 
 	{	
 		if(outputIdType==null || outputIdType.isEmpty())
@@ -180,12 +187,17 @@ public class BiopaxConverter {
 			if(pro != null) skipSubPathwaysOf.add(pro);
 		}
 
+		Set<String> allowedTaxIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
+
 		if(log.isDebugEnabled() && !skipSubPathwaysOf.isEmpty()) {
-			log.debug("GSEAConverter, using skipSubPathwaysOf argument, value: " + skipSubPathwaysOf.toString());
+			log.debug("GSEAConverter, using skipSubPathwaysOf argument, value: " + skipSubPathwaysOf.toString()
+				+ "; allowed Taxonomy IDs: " + allowedTaxIds);
 		}
 
 		// convert, replace DATA
 		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true, skipSubPathwaysOf);
+		gseaConverter.setAllowedOrganisms(allowedTaxIds);
+		gseaConverter.setSkipOutsidePathways(skipOutsidePathways);
 		gseaConverter.writeToGSEA(m, stream);
 	}
 
