@@ -159,7 +159,9 @@ public class UniprotConverterImplTest {
 		assertNotNull(f);
 		assertTrue(f instanceof ModificationFeature);
 		assertTrue(((ModificationFeature)f).getModificationType() instanceof SequenceModificationVocabulary);
-		assertEquals("MOD_RES Phosphothreonine", ((ModificationFeature)f).getModificationType().getTerm().iterator().next());
+		//there are two terms - with and without 'MOD_RES' prefix, and their order vary from system to system
+		Set<String> terms = ((ModificationFeature)f).getModificationType().getTerm();
+		assertTrue(terms.contains("MOD_RES Phosphothreonine") && terms.contains("Phosphothreonine"));
 		assertTrue(((ModificationFeature)f).getFeatureLocation() instanceof SequenceSite);
 			
 		//another special test for records like this one:
@@ -168,7 +170,9 @@ public class UniprotConverterImplTest {
 		assertNotNull(g);
 		assertTrue(g instanceof ModificationFeature);
 		assertTrue(((ModificationFeature)g).getModificationType() instanceof SequenceModificationVocabulary);
-		assertEquals("MOD_RES AA-(test test)test", ((ModificationFeature)g).getModificationType().getTerm().iterator().next());
+		terms = ((ModificationFeature)g).getModificationType().getTerm();
+		//there are two terms - with and without 'MOD_RES' prefix, and their order vary from system to system
+		assertTrue(terms.contains("MOD_RES AA-(test test)test") && terms.contains("AA-(test test)test"));
 		assertTrue(((ModificationFeature)g).getFeatureLocation() instanceof SequenceSite);
 	}
 
