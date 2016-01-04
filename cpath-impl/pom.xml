@@ -148,12 +148,6 @@
 		<dependency>
 			<groupId>org.biopax.validator</groupId>
 			<artifactId>obo-fetcher</artifactId>
-			<exclusions>
-				<exclusion>
-					<artifactId>log4j</artifactId>
-					<groupId>log4j</groupId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.biopax.paxtools</groupId>
@@ -175,59 +169,18 @@
 		<dependency>
 			<groupId>org.biopax.paxtools</groupId>
 			<artifactId>sbgn-converter</artifactId>
-			<exclusions>
-				<exclusion>
-					<artifactId>log4j</artifactId>
-					<groupId>log4j</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>jaxb-impl</artifactId>
-					<groupId>com.sun.xml.bind</groupId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.biopax.paxtools</groupId>
 			<artifactId>gsea-converter</artifactId>
-			<exclusions>
-				<exclusion>
-					<artifactId>log4j</artifactId>
-					<groupId>log4j</groupId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.biopax.paxtools</groupId>
 			<artifactId>paxtools-query</artifactId>
-			<exclusions>
-				<exclusion>
-					<artifactId>log4j</artifactId>
-					<groupId>log4j</groupId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.biopax.paxtools</groupId>
 			<artifactId>psimi-converter</artifactId>
-			<!-- unfortunately, this one comes with very old transitive dependencies -->
-			<exclusions>
-				<exclusion>
-					<artifactId>log4j</artifactId>
-					<groupId>log4j</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>jaxb-impl</artifactId>
-					<groupId>com.sun.xml.bind</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>jaxb-api</artifactId>
-					<groupId>javax.xml.bind</groupId>
-				</exclusion>
-				<exclusion>
-					<artifactId>saxon-xom</artifactId>
-					<groupId>net.sf.saxon</groupId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.biopax.paxtools</groupId>
@@ -292,8 +245,8 @@
 			<artifactId>jul-to-slf4j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-		<dependency> <!-- this is mainly for the org.obo library in the biopax-validator that 
-				directly uses log4j api -->
+		<dependency>
+			<!-- mainly due to org.obo in biopax-validator directly uses log4j api -->
 			<groupId>org.slf4j</groupId>
 			<artifactId>log4j-over-slf4j</artifactId>
 			<scope>runtime</scope>

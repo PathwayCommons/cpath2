@@ -697,17 +697,23 @@ public final class Admin {
 			throws InterruptedException
 	{
 		//concurrent conversions (different conversions of the same big Model)
-		ExecutorService exec = Executors.newFixedThreadPool(2);
+		ExecutorService exec = Executors.newFixedThreadPool(4);
 		
     	exec.execute(new Runnable() {
     		public void run() {	
     			String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "uniprot");
 				//- to GSEA/GMT using UniProt ACs; auto-filter by supported organism(s);
 				// only produce entries for genes that belong to a pathway (ignore those outside any pathway)
-    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "uniprot", true);
-				// - similar but using HGNC symbols instead UniProt -
-				archiveName = prefix + formatAndExt(OutputFormat.GSEA, "hgnc");
-				convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "hgnc symbol", true);
+    			convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "uniprot");
+			}
+		});
+
+		exec.execute(new Runnable() {
+			public void run() {
+				//- to GSEA/GMT using HGNC Symbols; auto-filter by supported organism(s);
+				// only produce entries for genes that belong to a pathway (ignore those outside any pathway)
+				String archiveName = prefix + formatAndExt(OutputFormat.GSEA, "hgnc");
+				convertBiopaxToOtherFormatGzipped(m, OutputFormat.GSEA, archiveName, "hgnc");
 			}
 		});
     	
@@ -723,11 +729,16 @@ public final class Admin {
 				} catch (IOException e) {
 					LOG.error("Failed (skipped) converting " + extSifArchiveName + " to " + sifArchiveName, e );
 				}
+			}
+		});
+
+		exec.execute(new Runnable() {
+			public void run() {
 				// export using UniProt accessions
-				extSifArchiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "uniprot");
+				String extSifArchiveName = prefix + formatAndExt(OutputFormat.EXTENDED_BINARY_SIF, "uniprot");
 				convertBiopaxToOtherFormatGzipped(m, OutputFormat.EXTENDED_BINARY_SIF, extSifArchiveName, "uniprot");
 				//make BINARY_SIF from just generated EXTENDED_BINARY_SIF
-				sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot");
+				String sifArchiveName = prefix + formatAndExt(OutputFormat.BINARY_SIF, "uniprot");
 				try {
 					convertExtendedSifToSifGzipped(extSifArchiveName, sifArchiveName);
 				} catch (IOException e) {

@@ -375,9 +375,15 @@ public class CPathServiceImpl implements CPathService {
 	
 
 	private ServiceResponse convert(Model m, OutputFormat format) {
-		return (format==OutputFormat.SBGN)
-			? (new BiopaxConverter(getBlacklist())).convert(m, format, true) //apply layout
-				:  (new BiopaxConverter(getBlacklist())).convert(m, format); //default: 'uniprot' for GSEA; 'HGNC' for SIF.
+		BiopaxConverter biopaxConverter = new BiopaxConverter(getBlacklist());
+		ServiceResponse toReturn;
+
+		if (format==OutputFormat.GSEA)
+			toReturn = biopaxConverter.convert(m, format, "uniprot", false); //uniprot IDs, pathway entries only, etc.
+		else
+			toReturn = biopaxConverter.convert(m, format); //using default config. (ID type, layout, etc.)
+
+		return toReturn;
 	}
 
 
