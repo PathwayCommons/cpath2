@@ -333,7 +333,7 @@ public final class Merger {
 		ModelUtils.removeObjectsIfDangling(source, UtilityClass.class);
 
 		//This improves our graph queries results and simple format output:
-		addPrimaryXrefsByMapping(source, srcModelInfo, target);
+		addMoreXrefsByMapping(source, srcModelInfo, target);
 
 		// Replace all not normalized so far URIs in the source model
 		// with auto-generated new short ones (also add a bp:comment about original URIs)
@@ -405,22 +405,19 @@ public final class Merger {
 
 
 	/*
-	* The following improves our graph queries results and simple format output:
-	* physical entities that lack entity reference,are generic,
-	* have no primary uniprot/chebi/hgnc or have ambiguous IDs
-	* can still eventually match a query and produce better results.
-	*
-	* Using existing xrefs and id-mapping, add primary uniprot/chebi RelationshipXref
-	* to all simple PEs and Genes (skip for Complexes) where possible.
+	* The following can improve our export to simple text formats:
+	* physical entities that lack entity reference, are generic, or
+	* have no uniprot/chebi/hgnc, or have ambiguous IDs
+	* can in some cases contribute to the results.
 	*
 	* This might eventually result in mutually exclusive identifiers,
 	* which is not a big deal as long as we do not merge things based on these new xrefs,
 	* but just index/search/query the db (this especially helps when no entity references defined
 	* for a molecule or when id-mapping is ambiguous).
 	*/
-	private void addPrimaryXrefsByMapping(Model source, String srcModelInfo, Model target) {
-		log.info("Using original xrefs and id-mapping, add primary UniProt/ChEBI xrefs " +
-				" to not-merged PE/ERs (" + srcModelInfo + ")");
+	private void addMoreXrefsByMapping(Model source, String srcModelInfo, Model target) {
+		log.info("Using original xrefs or names and id-mapping, add UniProt/ChEBI/HGNC xrefs " +
+				" (unless they're too many) to not-merged PE/ERs (" + srcModelInfo + ")");
 		for(Entity pe : new HashSet<Entity>(source.getObjects(Entity.class)))
 		{
 			if(pe instanceof PhysicalEntity) {
@@ -431,18 +428,18 @@ public final class Merger {
 						continue; //skip for just merged, canonical ERs
 
 					if(pe instanceof SmallMolecule) {
-						addPrimaryXrefs(target, pe, "CHEBI");
+						mayAddUniprotHgncOrChebiXrefs(target, pe, "CHEBI");
 					} else {//Protein, Dna*, Rna* type
-						addPrimaryXrefs(target, pe, "UNIPROT");
+						mayAddUniprotHgncOrChebiXrefs(target, pe, "UNIPROT");
 					}
 				} else if(pe instanceof Complex) {
 					continue; // skip
 				} else { // top PE class, i.e., pe.getModelInterface()==PhysicalEntity.class
-					addPrimaryXrefs(target, pe, "UNIPROT");
-					addPrimaryXrefs(target, pe, "CHEBI");
+					mayAddUniprotHgncOrChebiXrefs(target, pe, "UNIPROT");
+					mayAddUniprotHgncOrChebiXrefs(target, pe, "CHEBI");
 				}
 			} else if(pe instanceof Gene) {
-				addPrimaryXrefs(target, pe, "UNIPROT");
+				mayAddUniprotHgncOrChebiXrefs(target, pe, "UNIPROT");
 			}
 		}
 	}
@@ -534,11 +531,16 @@ public final class Merger {
 	 * performs id-mapping to the primary canonical ID (can only be uniprot or chebi),
 	 * creates relationship xrefs and adds them back to the entity.
 	 *
-	 * This step improves our full-text index/search and graph queries.
+	 * This step won't much improve full-text index/search and graph queries
+	 * (where id-mapping is used again anyway), but may help improve export to SIF and GSEA formats.
 	 * This method is called only for original PEs or their ERs that were not mapped/merged
-	 * with a warehouse canonical ERs for various reasons (- no good ID, ambiguous ID, etc...).
+	 * with a warehouse canonical ERs for various known reasons (no match for a ID or no ID, ambiguous ID, etc.)
+	 *
+	 * This method won't add additional xrefs if a UniProt/ChEBI/HGNC one is already present despite it'd map
+	 * to many canonical ERs/IDs (in fact, it'd even map to hundreds (Trembl) IDs, e.g., in cases like 'ND5',
+	 * and cause our export to the SIF, GSEA formats fail...)
 	 */
-	private void addPrimaryXrefs(Model m, Named bpe, String db)
+	private void mayAddUniprotHgncOrChebiXrefs(Model m, Named bpe, String db)
 	{
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity) || !("UNIPROT".equals(db) || "CHEBI".equals(db)))
 		{
@@ -557,32 +559,51 @@ public final class Merger {
 		if(bpe.getXref().isEmpty() && bpe.getName().isEmpty())
 			return;
 
-		// map other IDs and names to all primary IDs of ERs that can be found in the Warehouse model
-		Set<String> accessions = idMappingByXrefs(bpe, db, UnificationXref.class, true);
-		accessions.addAll(idMappingByXrefs(bpe, db, RelationshipXref.class, true));
-		//if none found, and it's a small molecule, then map by names -
-		//(e.g, 'HLA DQB1' (HPRD_05054) protein would have got ~200 uniprot xrefs if mapped by names)
-		if(accessions.isEmpty() && (bpe instanceof SmallMolecule || bpe instanceof SmallMoleculeReference))
-			accessions.addAll(mapByExactName(bpe));
+		if(!xrefsContainDb(bpe, db)) {
+			// map other IDs and names to all primary IDs of ERs that can be found in the Warehouse model
+			Set<String> accessions = idMappingByXrefs(bpe, db, UnificationXref.class, true);
+			if (accessions.isEmpty())
+				accessions.addAll(idMappingByXrefs(bpe, db, RelationshipXref.class, true));
+			// if none found, try (map) by names; but -
+			// e.g, 'HLA DQB1' (HPRD_05054) protein gets >200 uniprot xrefs if mapped by names...
+			if (accessions.isEmpty()
+			//		&& (bpe instanceof SmallMolecule || bpe instanceof SmallMoleculeReference)
+			) { accessions.addAll(mapByExactName(bpe)); }
 
-		//generate rel. xrefs
-		addRelXrefs(m, bpe, db, accessions, RelTypeVocab.ADDITIONAL_INFORMATION);
-
-		//for biopolymers, also map uniprot IDs to HGNC Symbols (and corresp. xrefs) if possible
-		if(db.equalsIgnoreCase("uniprot") && !accessions.isEmpty()) {
-			Set<String> hgncSymbols = new HashSet<String>();
-			for(String ac : accessions) {
-				ProteinReference canonicalPR = (ProteinReference) warehouseModel
-						.getByID("http://identifiers.org/uniprot/" + ac);
-				if(canonicalPR != null) {
-					for(Xref x : canonicalPR.getXref()) {
-						if(x.getDb().equalsIgnoreCase("hgnc symbol"))
-							hgncSymbols.add(x.getId());
+			// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
+			if(accessions.size() < 13) {
+				addRelXrefs(m, bpe, db, accessions, RelTypeVocab.ADDITIONAL_INFORMATION);
+				// for biopolymers, also map uniprot IDs to HGNC Symbols (and corresp. xrefs) if possible
+				if (db.equalsIgnoreCase("uniprot") && !accessions.isEmpty() && !xrefsContainDb(bpe, "hgnc")) {
+					Set<String> hgncSymbols = new HashSet<String>();
+					for (String ac : accessions) {
+						ProteinReference canonicalPR = (ProteinReference) warehouseModel
+								.getByID("http://identifiers.org/uniprot/" + ac);
+						if (canonicalPR != null) {
+							for (Xref x : canonicalPR.getXref()) {
+								if (x.getDb().equalsIgnoreCase("hgnc symbol"))
+									hgncSymbols.add(x.getId());
+							}
+						}
 					}
+					// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
+					if (hgncSymbols.size() < 13)
+						addRelXrefs(m, bpe, "hgnc symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION);
 				}
 			}
-			addRelXrefs(m, bpe, "hgnc symbol", hgncSymbols, RelTypeVocab.ADDITIONAL_INFORMATION);
 		}
+	}
+
+	private boolean xrefsContainDb(XReferrable xr, String db)
+	{
+		for(Xref x : xr.getXref())
+		{
+			if (!(x instanceof PublicationXref) && x.getDb()!=null && x.getId()!=null
+					&& x.getDb().toLowerCase().startsWith(db)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/*

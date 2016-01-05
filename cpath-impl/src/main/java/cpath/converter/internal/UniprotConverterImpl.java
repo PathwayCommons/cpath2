@@ -61,12 +61,12 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     StringBuilder geneName = dataElements.get("GN");
                     String acNames = dataElements.get("AC").toString();
                     StringBuilder xrefs = dataElements.get("DR");
-                    String idParts[] = dataElements.get("ID").toString().split("\\s+");
+                    final String idLine = dataElements.get("ID").toString();
                     StringBuilder sq = dataElements.get("SQ"); //SEQUENCE SUMMARY
                     StringBuilder sequence = dataElements.get("  "); //SEQUENCE
                     StringBuilder features = dataElements.get("FT"); //strict format in 6-75 char in each FT line
                     
-                    ProteinReference proteinReference = newProteinReferenceWithAccessionXrefs(idParts[0], acNames, model);
+                    ProteinReference proteinReference = newProteinReferenceWithAccessionXrefs(idLine, acNames, model);
                     
             		// add some external xrefs from DR fileds
                     if (xrefs != null) setXRefsFromDRs(xrefs.toString(), proteinReference, model);
@@ -210,7 +210,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 	 * @param organismName String
      * @param organismTaxId String
      * @param proteinReference ProteinReference
-     * @param model
+     * @param model target biopax model
      */
     private void setOrganism(String organismName, String organismTaxId, 
     		ProteinReference proteinReference, Model model) {
@@ -249,8 +249,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
             }
         }
         if (reducedComments.length() > 0) {
-            reducedComments.append (" COPYRIGHT:  Protein annotation is derived from the "
-                    + "UniProt Consortium (http://www.uniprot.org/).  Distributed under "
+            reducedComments.append (" COPYRIGHT: UniProt Consortium (www.uniprot.org). Distributed under "
                     + "the Creative Commons Attribution-NoDerivs License.");
         }
         
@@ -291,11 +290,11 @@ final class UniprotConverterImpl extends BaseConverterImpl {
         			&& !db.equalsIgnoreCase("HGNC")
 					&& !db.equalsIgnoreCase("PDB")
 					&& !db.equalsIgnoreCase("IPI") //International Protein Index (deprecated; use UniProt)
-//					&& !db.equalsIgnoreCase("INTERPRO")
 					&& !db.equalsIgnoreCase("EMBL") //nucleotide sequence database
 					&& !db.equalsIgnoreCase("PIR") //NCBI Protein
 					&& !db.equalsIgnoreCase("PHARMGKB")
 					&& !db.equalsIgnoreCase("DIP")
+//					&& !db.equalsIgnoreCase("INTERPRO")
 //					&& !db.equalsIgnoreCase("PANTHER") //PANTHER Family
 // 					&& !db.equalsIgnoreCase("GENECARDS") //ID, not Symbol
 //					&& !db.equalsIgnoreCase("DISPROT")
@@ -321,11 +320,11 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 				//no more Ensembl IDs (skip comments)
 				else if (db.equalsIgnoreCase("ENSEMBL") && !id.startsWith("ENS")) break;
 				//no more InterPro IDs (skip comments)
-				else if (db.equalsIgnoreCase("INTERPRO") && !id.startsWith("IPR")) break;
-				else if (db.equalsIgnoreCase("PANTHER") && !id.startsWith("PTHR")) break;
-				else if (db.equalsIgnoreCase("PRINTS") && !id.startsWith("PR")) break;
+//				else if (db.equalsIgnoreCase("INTERPRO") && !id.startsWith("IPR")) break;
+//				else if (db.equalsIgnoreCase("PANTHER") && !id.startsWith("PTHR")) break;
+//				else if (db.equalsIgnoreCase("PRINTS") && !id.startsWith("PR")) break;
 				else if (db.equalsIgnoreCase("PHARMGKB") && !id.startsWith("PA")) break;
-				else if (db.equalsIgnoreCase("ORTHODB") && !id.startsWith("EOG")) break;
+//				else if (db.equalsIgnoreCase("ORTHODB") && !id.startsWith("EOG")) break;
 				else if (db.equalsIgnoreCase("DIP") && !id.startsWith("DIP-")) break;
 				else if (db.equalsIgnoreCase("EMBL")) {
 					if(!id.matches("^(\\w+\\d+(\\.\\d+)?)|(NP_\\d+)$"))
@@ -433,7 +432,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 	 * from a pre-processed UniProt record: assigns the standard URI and 
 	 * unification xrefs.
 	 */
-	private ProteinReference newProteinReferenceWithAccessionXrefs(String shortName, String accessions, Model model)
+	private ProteinReference newProteinReferenceWithAccessionXrefs(String idLine, String accessions, Model model)
 	{	
 		// accession numbers as array
 		final List<String> acList = new ArrayList<String>(Arrays.asList(accessions.split(";")));
@@ -443,15 +442,15 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 
 		// create a new PR with the name and primary unification xref
 		ProteinReference proteinReference = model.addNew(ProteinReference.class, uri);
-		proteinReference.setDisplayName(shortName);
-		setUnificationXRef("UniProt", primaryId, proteinReference, model);
-		
+		proteinReference.setDisplayName(idLine.split("\\s+")[0]);
+		setUnificationXRef("UniProt Knowledgebase", primaryId, proteinReference, model);
 		// add 'secondary-ac' type RXs:
 		for (String acEntry : acList) {
 			RelationshipXref rXRef = PreMerger.findOrCreateRelationshipXref(
-					RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "UniProt", acEntry.trim(), model);
+					RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "UniProt Knowledgebase", acEntry.trim(), model);
 			proteinReference.addXref(rXRef);
 		}
+		proteinReference.addComment(idLine);
 		
 		return proteinReference;
 	}
