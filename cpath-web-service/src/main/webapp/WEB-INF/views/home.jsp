@@ -385,25 +385,6 @@ or the fat JAR with embedded application server was started) -->
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <hr/>
-<div class="row nav-target" id="idmapping">
-	<h3>IDMAPPING:</h3>
-	<blockquote><p>
-	Experimental. Can maps some bio identifiers to primary UniProt or ChEBI IDs.
-	Supports: HGNC Symbols, UniProt (SwissProt AC and ID), RefSeq, Ensembl, NCBI Gene
-	identifiers for genomic entities; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem for chemicals
-	(PubChem ID must be prefixed with either 'CID:' or 'SID:' to distinguish from each other and NCBI Gene ID).
-	One can mix different standard ID types in one query.
-	This is NOT a universal id-mapping; it was designed for internal use. The id-mapping db is derived
-	from Swiss-Prot (AC, DR fields, names) and ChEBI (OBO) data, plus custom mapping files (based on UniChem).
-	</p></blockquote>
-	<h4>Output:</h4>
-	Simple JSON format.
-	<h4>Examples:</h4> <br/>
-	<ol>
-		<li><a rel="nofollow" href="idmapping?id=BRCA2&id=TP53">/idmapping?id=BRCA2&amp;id=TP53</a></li>
-	</ol>
-</div>
-<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <div class="row nav-target" id="parameter_values">
 	<h2>Parameter Values</h2>
 	<div class="parameters row" id="organisms">

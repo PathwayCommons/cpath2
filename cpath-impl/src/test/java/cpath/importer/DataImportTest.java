@@ -3,7 +3,6 @@ package cpath.importer;
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
 import cpath.jpa.Mapping;
-import cpath.jpa.MappingsRepository;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.service.CPathService;
@@ -39,6 +38,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import java.io.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.zip.GZIPOutputStream;
@@ -99,36 +99,32 @@ public class DataImportTest {
 		assertFalse(pr.getXref().isEmpty());
 		
 		// test some id-mapping using different srcDb names (UniProt synonyms...)
-		String ac = service.map(null, "A2A2M3", "UNIPROT").iterator().next(); 
-		assertEquals("Q8TD86", ac);
-		ac = service.map("uniprot knowledgebase", "A2A2M3", "UNIPROT").iterator().next(); 
-		assertEquals("Q8TD86", ac);
-		ac = service.map("uniprot", "A2A2M3", "UNIPROT").iterator().next(); 
+		String ac = service.map("A2A2M3", "UNIPROT").iterator().next();
 		assertEquals("Q8TD86", ac);
 		
-		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/" + ac));	
-		assertTrue(service.map(null, "Q8TD86-1", "UNIPROT").isEmpty());
-		assertFalse(service.map("uniprot", "Q8TD86-1", "UNIPROT").isEmpty());//now can map isoform id to primary ac
-		assertFalse(service.map("uniprot knowledgebase", "Q8TD86-1", "UNIPROT").isEmpty());
+		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/" + ac));
+		//can map an isoform id to primary AC with or without specifying the source db name (uniprot)
+		Collection<String> ids = service.map("Q8TD86-1", "UNIPROT");
+		assertFalse(ids.isEmpty());
+		assertEquals("Q8TD86", CPathUtils.fixSourceIdForMapping("uniprot knowledgebase", "Q8TD86-1"));
+
 		//infers Q8TD86
-		assertFalse(service.map("uniprot isoform", "Q8TD86-1", "UNIPROT").isEmpty());
-		assertEquals("Q8TD86", service.map("uniprot isoform", "Q8TD86-1", "UNIPROT").iterator().next());					
+		assertEquals("Q8TD86", CPathUtils.fixSourceIdForMapping("uniprot isoform", "Q8TD86-1"));
+		assertEquals("Q8TD86", ids.iterator().next());
 		// also -
-		assertTrue(service.map(null, "NP_619650.1", "UNIPROT").isEmpty());//built-in 'suggest' method was not used
-		assertFalse(service.map("refseq", "NP_619650", "UNIPROT").isEmpty());
-		assertFalse(service.map("refseq", "NP_619650.1", "UNIPROT").isEmpty());//recognized as 'NP_619650'
-		assertFalse(service.map(null, "NP_004334", "UNIPROT").isEmpty());
+		assertTrue(service.map("NP_619650.1", "UNIPROT").isEmpty());//built-in 'suggest' method was not used
+//		assertFalse(service.map("refseq", "NP_619650", "UNIPROT").isEmpty());
+//		assertFalse(service.map("refseq", "NP_619650.1", "UNIPROT").isEmpty());//recognized as 'NP_619650'
+		assertEquals("NP_619650", CPathUtils.fixSourceIdForMapping("refseq", "NP_619650.1"));
+		assertFalse(service.map("NP_004334", "UNIPROT").isEmpty());
 		// also, with the first arg. is not null, map(..) 
 		// calls 'suggest' method to replace NP_619650.1 with NP_619650
 		// (the id-mapping table only has canonical uniprot IDs, no isoform IDs)
-		ac = service.map("refseq", "NP_619650", "UNIPROT").iterator().next(); 
+		ac = service.map("NP_619650", "UNIPROT").iterator().next();
 		assertEquals("Q8TD86", ac);
 		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/" + ac));
 		
-		Set<String> ids = service.map("P01118");
-		assertTrue(ids.size()==1);
-		assertTrue(ids.contains("P01116"));
-		ids = service.map("uniprot", "P01118", "uniprot");
+		ids = service.map("P01118","UNIPROT");
 		assertTrue(ids.size()==1);
 		assertTrue(ids.contains("P01116"));
 		List<Mapping> mps = service.mapping().findByDestIgnoreCaseAndDestId("UNIPROT", "P01116");

@@ -32,6 +32,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import org.biopax.paxtools.controller.*;
@@ -107,6 +108,9 @@ public class CPathServiceImpl implements CPathService {
 	
 	//init. on first access when proxy model mode is enabled (so do not use the var. directly!)
 	private Model paxtoolsModel;
+
+	final private Pattern isoformIdPattern = Pattern
+			.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
 	
 	/**
 	 * Constructor
@@ -650,133 +654,60 @@ public class CPathServiceImpl implements CPathService {
 
 	private boolean paxtoolsModelReady() {
 		return paxtoolsModel != null;
-	}	
+	}
 
 
-	@Override
-	public Set<String> map(String fromDb, String fromId, String toDb) {
-		Assert.hasText(fromId);
+	public Set<String> map(String fromId, final String toDb) {
+		return map(Arrays.asList(fromId), toDb);
+	}
+
+
+	public Set<String> map(Collection<String> fromIds, final String toDb) {
 		Assert.hasText(toDb);
 		Assert.isTrue("CHEBI".equalsIgnoreCase(toDb) || "UNIPROT".equalsIgnoreCase(toDb));
 
-		List<Mapping> maps;
-		if (fromDb == null || fromDb.isEmpty()) { //- then guess it / map anyway -
-			// without specifying a src db (well, it's risky when a no-prefix
-			// integer ID type is used, such as pubchem cid, sid; but
-			// for bio-polymers, we support and expect only NCBI Gene ID type)
-			if (fromId.matches("^CID:\\d+$") && toDb.equalsIgnoreCase("chebi")) {
-				fromId = fromId.substring(4);
-				maps = mappingsRepository.findBySrcIdAndDestIgnoreCase(fromId, "CHEBI");
-			}
-			else if (!fromId.matches("^\\d+$") || toDb.equalsIgnoreCase("uniprot"))
-				maps = mappingsRepository.findBySrcIdAndDestIgnoreCase(fromId, toDb);
-			else { //in all other cases, when fromDb is null, return no results
-				return Collections.emptySet();
-			}
-    	} else {
-    		//if possible, use a "canonical" id instead isoform, version, kegg gene...
-    		// (e.g., uniprot.isoform, P04150-2 pair becomes uniprot, P04150)
-    		String id = fromId;
-    		String db = fromDb;
-    		
-    		//normalize the name
-    		try {
-				String stdDb = MiriamLink.getName(db);
-				if(stdDb != null) // be safe
-					db = stdDb.toUpperCase();
-			} catch (IllegalArgumentException e) {
-			}		
-    		
-    		if(db.toUpperCase().startsWith("UNIPROT") || db.equalsIgnoreCase("SWISSPROT")) {
-    			//e.g., 'uniprot isoform', 'UNIPROT', 'UniProt Knowledgebase', or 'SwissProt'
-    			db = "UNIPROT";
-				//always use UniProt ID instead of the isoform ID for mapping
-				int idx = id.lastIndexOf('-');
-				if(idx > 0)	id = id.substring(0, idx);
-    		}
-    		else if(db.equalsIgnoreCase("refseq")) {
-    			//strip, e.g., refseq:NP_012345.2 to refseq:NP_012345
-    			int idx = id.lastIndexOf('.');
-    			if(idx > 0)
-    				id = id.substring(0, idx);
-    		} 
-    		else if(db.toLowerCase().startsWith("kegg") && id.matches(":\\d+$")) {
-    			int idx = id.lastIndexOf(':');
-    			if(idx > 0) {
-    				id = id.substring(idx + 1); //it's NCBI Gene ID;
-    				db = "NCBI GENE";
-    			}
-    		}
-    		else if(db.equalsIgnoreCase("GENEID") || db.equalsIgnoreCase("ENTREZ GENE")) {
-    			db = "NCBI GENE";
-    		}
-			//Note: currently (2015/12), there is no mapping data from PubChem Substance (SID)
-			else if(db.toUpperCase().contains("PUBCHEM") &&
-    				(db.toUpperCase().contains("SUBSTANCE") || db.toUpperCase().contains("SID"))) {
-    			db = "PUBCHEM-SUBSTANCE";
-				//remove prefix if present
-				if(id.matches("^SID:\\d+$")) id = id.substring(4);
-    		}
-			else if(db.toUpperCase().contains("PUBCHEM") &&
-    				(db.toUpperCase().contains("COMPOUND") || db.toUpperCase().contains("CID"))) {
-    			db = "PUBCHEM-COMPOUND";
-				//remove prefix if present
-				if(id.matches("^CID:\\d+$")) id = id.substring(4);
-    		}
-    		
-    		maps = mappingsRepository.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase(db, id, toDb);
-			if(maps.isEmpty()) {
-				//try mapping without using srcDb name (use null);
-				return map(null, fromId, toDb);
-			}
-    	}
-    	
-    	Set<String> results = new TreeSet<String>();
-    	for(Mapping m : maps) {
-			if(toDb.equalsIgnoreCase(m.getDest()))
-    			results.add(m.getDestId());
-    	}
-    	
-		return results;
-	}
-
-	@Deprecated
-	@Override
-	public Set<String> map(String identifier) {
-		if(identifier.startsWith("http://"))
-			throw new AssertionError("URI is not allowed here; use ID");
-		
-		if(identifier.toUpperCase().startsWith("CHEBI:")) {
-			// chebi -> to primary chebi id
-			return map("CHEBI", identifier, "CHEBI");
-		} else if(identifier.length() == 25 || identifier.length() == 27) {
-			// InChIKey identifier (25 or 27 chars long) -> to primary chebi id
-			return map(null, identifier, "CHEBI"); //null - for looking in InChIKey, names, etc.
-		} else if(identifier.toUpperCase().startsWith("CID:")) {
-			// - a hack to tell PubChem ID from NCBI Gene ID in graph queries
-			return map("PubChem-compound", identifier.substring(4), "CHEBI");
-		} else if(identifier.toUpperCase().startsWith("SID:")) {
-			// - a hack to tell PubChem ID from NCBI Gene ID in graph queries
-			return map("PubChem-substance", identifier.substring(4), "CHEBI");
-		} else if(identifier.toUpperCase().startsWith("PUBCHEM:")) { 
-			// - a hack to tell PubChem ID from NCBI Gene ID in graph queries
-			return map("PubChem-compound", identifier.substring(8), "CHEBI");	
-		} else {
-			// gene/protein name, id, etc. -> to primary uniprot AC
-			Set<String> ret = new TreeSet<String>();
-			ret.addAll(map(null, identifier, "UNIPROT"));
-			if(ret.isEmpty()) //ChEMBL, DrugBank, chem. names, etc to ChEBI
-				ret.addAll(map(null, identifier, "CHEBI"));
-			return ret;
+		if(fromIds.isEmpty()) {
+			log.warn("map(), the argument 'fromIds' is an empty collection.");
+			return Collections.emptySet();
 		}
+
+		List<String> sourceIds = new ArrayList<String>();
+		// let's guess the source db (id type) and take care of isoform ids;
+		// it's risky if a no-prefix integer ID type (pubchem cid, sid) is used and no srcDb is provided;
+		// nevertheless, for bio-polymers, we support the only 'NCBI Gene' (integer) ID type.
+		for(String fromId : fromIds)
+		{
+			if (fromId.matches("^\\d+$") && !toDb.equalsIgnoreCase("UNIPROT")) {
+				//an integer ID is expected to mean geneID and can be mapped only to UNIPROT
+				//so, skip this one (won't map to anything anyway)
+				log.debug("map(), skip integer id:" + fromId + ", for mapping it to " + toDb + " is ambiguous/unsupported.");
+				continue;
+			} else if (toDb.equalsIgnoreCase("UNIPROT") && isoformIdPattern.matcher(fromId).find() && fromId.contains("-")) {
+				//it's certainly a uniprot isoform id; so we replace it with the corresponding accession number
+				fromId = fromId.replaceFirst("-\\d+$", "");
+			} else {
+				;//TODO fix some IDs - remove RefSeq version, replace KEGG gene with gene ID (int), etc.
+			}
+
+			sourceIds.add(fromId); //collect
+		}
+
+		final List<Mapping> mappings = (sourceIds.size()==1)
+			? mappingsRepository.findBySrcIdAndDestIgnoreCase(sourceIds.get(0), toDb)
+				: mappingsRepository.findBySrcIdInAndDestIgnoreCase(sourceIds, toDb);
+
+		final Set<String> results = new TreeSet<String>();
+		for(Mapping m : mappings) {
+			if(toDb.equalsIgnoreCase(m.getDest()))
+				results.add(m.getDestId());
+		}
+		return results;
 	}
 
 	@Override
 	public void saveIfUnique(Mapping mapping) {
 		if(!exists(mapping)) {
 			mappingsRepository.save(mapping);
-		} else {
-			//ignore
 		}
 	}
 
@@ -1065,7 +996,7 @@ public class CPathServiceImpl implements CPathService {
 	}
 
 	private void addOtherIdsAsAnnotations(final int depth) {
-//Can't use multiple threads (spring-data-jpa/hibernate errors occur in production, with filesystem H2 db...)
+	//Can't use multiple threads (spring-data-jpa/hibernate errors occur in production, with filesystem H2 db...)
 		for(final BioPAXElement bpe : getModel().getObjects()) {
 			if(!(bpe instanceof Entity || bpe instanceof EntityReference))
 				continue; //skip for UtilityClass but EntityReference
@@ -1087,18 +1018,29 @@ public class CPathServiceImpl implements CPathService {
 			if (bpe instanceof PhysicalEntity || bpe instanceof EntityReference || bpe instanceof Gene)
 				children.add(bpe);
 
+			final List<String> uniprotIds = new ArrayList<String>();
+			final List<String> chebiIds = new ArrayList<String>();
+
 			for(BioPAXElement child : children) {
 				//as the fetcher uses specific filters, every element can be safely cast to XReferrable
 				XReferrable el = (XReferrable) child;
 				for(Xref x : el.getXref()) {
 					if (!(x instanceof PublicationXref) && x.getId()!=null && x.getDb()!=null) {
-						//btw, we should've removed or auto-fix up all null db/id xrefs already (in the premerge)
 						ids.add(x.getId());
-						//add more IDs via mapping (using only uniprot/chebi ID)
-						findAddSupportedIdsThatMapTo(x.getDb(), x.getId(), ids);
+						if(x.getDb().equalsIgnoreCase("CHEBI")) {
+							if (!chebiIds.contains(x.getId())) chebiIds.add(x.getId());
+						} else if(x.getDb().toUpperCase().startsWith("UNIPROT")) {
+							String id = x.getId();
+							if(id.contains("-")) // then cut the isoform num. suffix
+								id = id.replaceFirst("-\\d+$", "");
+							if(!uniprotIds.contains(x.getId())) uniprotIds.add(id);
+						}
 					}
 				}
 			}
+
+			addSupportedIdsThatMapToChebi(chebiIds, ids);
+			addSupportedIdsThatMapToUniprotId(uniprotIds, ids);
 
 			if(!ids.isEmpty()) {
 				bpe.getAnnotations().put(SearchEngine.FIELD_XREFID, ids);
@@ -1109,41 +1051,33 @@ public class CPathServiceImpl implements CPathService {
 		}
 	}
 
-	/*
-	 * Find other IDs (decided/supported types only) that map to given uniprot or chebi AC
-	 * (the mapping db was built from warehoue data plus extra mapping files during the Premerge stage).
-	 * These are for the BioPAX db full-text index (to associate various model objects with all relevant IDs).
-	 */
-	void findAddSupportedIdsThatMapTo(String targetDb, String targetId, final Set<String> resultIds) {
-		//add more IDs using "reverse" mapping and canonical uniprot/chebi xrefs (those added by Merger)
-		if ("chebi".equalsIgnoreCase(targetDb)) {
-			//find other IDs that map to the ChEBI ID
-			List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("CHEBI", targetId);
-			if(mappings != null) {
-				//collect (to index later) only supported by graph queries ID types
-				for (Mapping mapping : mappings) {
-					if (mapping.getSrc().equalsIgnoreCase("pubchem compound"))
-						resultIds.add("CID:" + mapping.getSrcId()); //use a non-standard prefix to diff. from NCBI Gene ID
-// won't support PubChem Substance (SID) IDs
-//					else if (mapping.getSrc().equalsIgnoreCase("pubchem substance"))
-//						resultIds.add("SID:" + mapping.getSrcId());
-					else if(mapping.getSrc().equalsIgnoreCase("chebi"))
-						resultIds.add(mapping.getSrcId());
-				}
+	void addSupportedIdsThatMapToChebi(List<String> chebiIds, final Set<String> resultIds) {
+		//find other IDs that map to the ChEBI ID
+		List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestIdIn("CHEBI", chebiIds);
+		if(mappings != null) {
+			//collect (to index later) only supported by graph queries ID types
+			for (Mapping mapping : mappings) {
+				if (mapping.getSrc().equals("PUBCHEM-COMPOUND")
+					|| mapping.getSrc().equals("CHEBI") || mapping.getSrc().equals("DRUGBANK")
+					|| mapping.getSrc().startsWith("KEGG")
+					//prefix 'CID:' is already included in pubchem-compound ids
+				) resultIds.add(mapping.getSrcId());
 			}
-		} else if ("uniprot knowledgebase".equalsIgnoreCase(targetDb)) {
-			//find other IDs that map to the UniProt AC
-			List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("UNIPROT", targetId);
-			if(mappings != null) {
-				//collect (to index later) only supported by graph queries ID types
-				for (Mapping mapping : mappings) {
-					if (mapping.getSrc().startsWith("UNIPROT")
-						|| mapping.getSrc().startsWith("HGNC")
-						|| mapping.getSrc().equalsIgnoreCase("NCBI GENE")
-						|| mapping.getSrc().equalsIgnoreCase("REFSEQ")
-//						|| mapping.getSrc().equalsIgnoreCase("PDB")
-					) resultIds.add(mapping.getSrcId());
-				}
+		}
+	}
+
+	void addSupportedIdsThatMapToUniprotId(List<String> uniprotIds, final Set<String> resultIds) {
+		//find other IDs that map to the UniProt AC
+		List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestIdIn("UNIPROT", uniprotIds);
+		if(mappings != null) {
+			//collect (to index later) only supported by graph queries ID types
+			for (Mapping mapping : mappings) {
+				if (mapping.getSrc().startsWith("UNIPROT")
+					|| mapping.getSrc().startsWith("HGNC")
+					|| mapping.getSrc().equalsIgnoreCase("NCBI GENE")
+					|| mapping.getSrc().equalsIgnoreCase("REFSEQ")
+					|| mapping.getSrc().equalsIgnoreCase("IPI")
+				) resultIds.add(mapping.getSrcId());
 			}
 		}
 	}

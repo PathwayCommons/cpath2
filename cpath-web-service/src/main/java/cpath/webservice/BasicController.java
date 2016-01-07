@@ -82,7 +82,7 @@ public abstract class BasicController {
      * @param request
      * @param response
      * @param updateCountsFor
-     * @throws IOException
+     * @throws IOException when writing to HttpServletResponse fails
      */
 	protected final void errorResponse(Status status, String detailedMsg,
 			HttpServletRequest request, HttpServletResponse response, Set<LogEvent> updateCountsFor) 

@@ -43,8 +43,7 @@ public interface CPathService {
 	Searcher getSearcher();
 	
 	void setSearcher(Searcher searcher);
-	
-	
+
 
 	/**
 	 * Retrieves the BioPAX element(s) by URI or identifier (e.g., gene symbol)
@@ -57,7 +56,6 @@ public interface CPathService {
 	 * @return
 	 */
 	ServiceResponse fetch(OutputFormat format, String... uris);
-
 	
 	/**
 	 * Full-text search for the BioPAX elements. 
@@ -118,8 +116,7 @@ public interface CPathService {
 	 */
 	ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
 		String[] targets, Integer limit, String[] organisms, String[] datasources);
-	
-	
+
 	/**
 	 * Runs a common upstream or downstream query
 	 * (returns a sub-model in the specified format, 
@@ -133,8 +130,7 @@ public interface CPathService {
 	 * @param datasources optional filter
 	 * @return common stream
 	 */
-	ServiceResponse getCommonStream(OutputFormat format, 
-		String[] sources, Integer limit, Direction direction, 
+	ServiceResponse getCommonStream(OutputFormat format, String[] sources, Integer limit, Direction direction,
 			String[] organisms, String[] datasources);
 
 	//---------------------------------------------------------------------------------------------|
@@ -151,8 +147,7 @@ public interface CPathService {
 	 * @return
 	 */
 	ServiceResponse traverse(String propertyPath, String... sourceUris);
-	
-	
+
 	/**
 	 * Gets top (root) pathways (URIs, names) in the current BioPAX model.
 	 * 
@@ -161,44 +156,34 @@ public interface CPathService {
 	 * @return
 	 */
 	ServiceResponse topPathways(String[] organisms, String[] datasources);
-	
-	
+
 	/**
-	 * Guess the identifier type (chemical vs gene/protein) 
-	 * and returns other Is it maps to. This method can be wrong
-	 * about mapping, it's weak, designed to be used perhaps in
-	 * some graph queries and not for data integration/merging.
-	 * 
-	 * @param identifier
-	 * @return
-	 * @deprecated
+	 * Maps an identifier to primary ID(s) of a given type.
+	 * Auto-detects the source ID type or tries all types.
+	 * The result set may contain more than one primary ID.
+	 *
+	 * @param fromId the source ID
+	 * @param toDb standard (MIRIAM) preferred name of the target ID type (e.g., 'UniProt')
+	 * @return a set of primary IDs of the type; normally one or none elements
 	 */
-	Set<String> map(String identifier);
-	
-	
+	Set<String> map(String fromId, String toDb);
+
 	/**
-     * Maps an identifier to primary ID(s) of a given type.
-     * 
-     * The result set may contain more than one primary ID.
-	 * But we should not probably merge different biopax
-     * data objects if the mapping result is ambiguous;
-     * but it's usually ok to generate relationship xrefs 
-     * or use all result IDs in a BioPAX graph query.
-     * 
-     * @param fromDb data collection name or null (to use all source ID types)
-     * @param fromId the source ID
-     * @param toDb standard (MIRIAM) preferred name of the target ID type (e.g., 'UniProt')
-     * 
-     * @return a set of primary IDs of the type; normally one or none elements
-     */
-    Set<String> map(String fromDb, String fromId, String toDb);
-        
+	 * Maps multiple identifiers to primary IDs of given type.
+	 * Auto-detects the source ID type or tries all types.
+	 * The result set may contain more than one primary ID.
+	 *
+	 * @param fromIds the source IDs
+	 * @param toDb standard (MIRIAM) preferred name of the target ID type (e.g., 'UniProt')
+	 * @return a set of primary IDs of the type; normally one or none elements
+	 */
+	Set<String> map(Collection<String> fromIds, String toDb);
+
     /**
      * Test if this or equivalent record exists
      * in the id-mapping db and if not, saves the new one.
      * 
      * @param mapping
-     * @return
      */
     void saveIfUnique(Mapping mapping);
 

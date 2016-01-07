@@ -33,7 +33,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -245,53 +244,6 @@ public class MetadataController extends BasicController {
 					+ origFilename + " as " + m.getDataArchiveName());
 		}
     }
-
-	/*
-	 * Test id-mapping (not public web API).
-	 *
-	 * Specific ID-mapping framework has been used internally
-	 * during the pathway data merge into one BioPAX model and
-	 * then to build the full-text index.
-	 *
-	 * @param id bio/chem identifier (use 'CID:' or 'SID:' prefix with a PubChem integer ID)
-	 * @param request
-	 * @param response
-	 * @return mapping to UniProt or ChEBI primary IDs
-	 * @throws IOException
-     */
-	@Deprecated
-    @RequestMapping("/idmapping")
-    public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id, 
-    		HttpServletRequest request, HttpServletResponse response) throws IOException
-    {			
-    	//log events: command, format
-    	Set<LogEvent> events = new HashSet<LogEvent>();
-    	events.add(LogEvent.IDMAPPING);
-
-    	if(id == null || id.length == 0) {
-    		errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", 
-    				request, response, events);
-    		return null;
-    	}
-
-    	Map<String, String> res = new TreeMap<String, String>();
-
-    	for(String i : id) {							
-    		Set<String> im = service.map(i);
-    		if(im == null) {
-    			res.put(i, null);
-    		} else {
-    			for(String ac : im)
-    				res.put(i, ac);
-    		}			
-    	}		
-
-    	//log to db (for usage reports)
-    	service.log(events, clientIpAddress(request));
-
-    	return res;
-	}
- 
     
     private List<ValInfo> validationInfo() {
     	final List<ValInfo> list = new ArrayList<ValInfo>();

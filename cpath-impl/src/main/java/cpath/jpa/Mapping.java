@@ -50,22 +50,37 @@ public final class Mapping {
 	public Mapping() {}
 
  
-    public Mapping(String src, String srcId, String dest, String destId) 
-    {
-    	Assert.hasText(src);
-    	Assert.hasText(srcId);
-    	Assert.hasText(dest);
-    	Assert.hasText(destId);
+    public Mapping(String src, String srcId, String dest, String destId) {
+		Assert.hasText(src);
+		Assert.hasText(srcId);
+		Assert.hasText(dest);
+		Assert.hasText(destId);
 
-		this.src = src.toUpperCase();
-		//replace uniprot* db names with simply 'UNIPROT'
-		if(this.src.startsWith("UNIPROT") || this.src.startsWith("SWISSPROT")) this.src = "UNIPROT";
+		src = src.toUpperCase();
+
+		//replace a uniprot* db name with simply 'UNIPROT'
+		if(src.startsWith("UNIPROT") || src.startsWith("SWISSPROT"))
+			src = "UNIPROT";
+		else if(src.startsWith("PUBCHEM") && (src.contains("COMPOUND") || src.contains("CID"))) {
+			src = "PUBCHEM-COMPOUND";
+			srcId = srcId.toUpperCase();
+			Assert.isTrue(srcId.matches("^(CID:)?\\d+$"));
+			if(!srcId.startsWith("CID:"))
+				srcId = "CID:" + srcId;
+		}
+		else if(src.startsWith("PUBCHEM") && (src.contains("SUBSTANCE") || src.contains("SID"))) {
+			src = "PUBCHEM-SUBSTANCE";
+			srcId = srcId.toUpperCase();
+			Assert.isTrue(srcId.matches("^(SID:)?\\d+$"));
+			if(!srcId.startsWith("SID:"))
+				srcId = "SID:" + srcId;
+		}
+
+		this.src = src;
 		this.srcId = srcId;
-
 		this.dest = dest.toUpperCase();
-    	this.destId = destId;
+		this.destId = destId;
     }
-    
     
     Long getId() {
     	return id;
@@ -106,6 +121,6 @@ public final class Mapping {
 
 	@Override
     public String toString() {
-    	return "Mapping from " + src + ", " + srcId + " to " + dest + ", " + destId;
+    	return src + ":" + srcId + " maps to " + dest + ":" + destId;
     } 
 }

@@ -1,12 +1,7 @@
 
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.biopax.validator.api.beans.Validation;
 import org.junit.Test;
@@ -28,7 +23,6 @@ import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.service.CPathService;
-import cpath.service.CPathServiceImpl;
 import cpath.service.Cmd;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
@@ -276,32 +270,52 @@ public class RepositoriesAndServiceTest {
 		service.mapping().save(new Mapping("GeneCards", "ZHX1-C8ORF76", "UNIPROT", "Q12345"));
         
         //check it's saved
-        assertEquals(1, service.map(null, "ZHX1-C8orf76", "UNIPROT").size());
-        assertEquals(1, service.map(null, "ZHX1-C8ORF76", "UNIPROT").size());
-        assertEquals(1, service.map("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
+        assertEquals(1, service.map("ZHX1-C8orf76", "UNIPROT").size());
+        assertEquals(1, service.map("ZHX1-C8ORF76", "UNIPROT").size());
+//        assertEquals(1, service.map("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
         
         // repeat (should successfully update)- add a Mapping
         service.saveIfUnique(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
-        assertTrue(service.map(null, "FooBar", "UNIPROT").isEmpty());
-        assertTrue(service.map("TEST", "FooBar", "UNIPROT").isEmpty());
-        Set<String> mapsTo = service.map(null, "FooBar", "CHEBI");
+        assertTrue(service.map("FooBar", "UNIPROT").isEmpty());
+//        assertTrue(service.map("TEST", "FooBar", "UNIPROT").isEmpty());
+
+        Set<String> mapsTo = service.map("FooBar", "CHEBI");
         assertEquals(1, mapsTo.size());
         assertEquals("CHEBI:12345", mapsTo.iterator().next());
+		mapsTo = service.map("FooBar", "CHEBI");
+		assertEquals(1, mapsTo.size());
+		assertEquals("CHEBI:12345", mapsTo.iterator().next());
         
-        service.saveIfUnique(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "UNIPROT"));
-        assertEquals(1, service.map("uniprot isoform", "A2A2M3-1", "UNIPROT").size());
+        //test that service.map(..) method can map isoform IDs despite they're not explicitly added to the mapping db
+		service.saveIfUnique(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "A2A2M3"));
+//        assertEquals(1, service.map("uniprot isoform", "A2A2M3-1", "UNIPROT").size());
+		assertEquals(1, service.map("A2A2M3-1", "UNIPROT").size());
+		assertEquals(1, service.map("A2A2M3", "UNIPROT").size());
         
         Mapping m = new Mapping("PubChem-substance", "14438", "CHEBI", "CHEBI:20");
         service.saveIfUnique(m);
+		assertEquals("SID:14438", m.getSrcId());
         assertNotNull(service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(
         		m.getSrc(), m.getSrcId(), m.getDest(), m.getDestId()));
-        assertEquals(1, service.map("PubChem-substance", "14438", "CHEBI").size());
-        assertEquals(1, service.map("Pubchem-Substance", "14438", "CHEBI").size());
-        assertEquals(1, service.map("pubchem substance", "14438", "CHEBI").size());
-        assertEquals(1, service.map("pubchem.substance", "14438", "CHEBI").size());
-        
+//        assertEquals(1, service.map("PubChem-substance", "14438", "CHEBI").size());
+//        assertEquals(1, service.map("Pubchem-Substance", "14438", "CHEBI").size());
+//        assertEquals(1, service.map("pubchem substance", "14438", "CHEBI").size());
+//        assertEquals(1, service.map("pubchem.substance", "14438", "CHEBI").size());
+		assertEquals(1, service.map("SID:14438", "CHEBI").size());
+
+		//map from a list of IDs to target ID type (UNIPROT)
+		List<String> srcIds = new ArrayList<String>();
+		//add IDs - both map to the same uniprot ID ()
+		srcIds.add("ZHX1");
+		srcIds.add("A2A2M3");
+		//currently, mapping().find* methods cannot map uniprot isoform IDs (service.map(..) - can do by removing the suffix)
+		List<Mapping> mappings = service.mapping().findBySrcIdInAndDestIgnoreCase(srcIds, "UNIPROT");
+		assertEquals(2, mappings.size());
+		//test new service.map(null, srcIds, "UNIPROT"), which must also support isoform IDs
+		srcIds.remove("A2A2M3");
+		srcIds.add("A2A2M3-1");
+		assertEquals(2, service.map(srcIds, "UNIPROT").size());
 	}
-	
 	
 	@Test
 	@DirtiesContext

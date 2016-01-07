@@ -347,8 +347,7 @@ public final class PreMerger {
 						  	|| rtv.getUri().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id)
 							|| rtv.getUri().endsWith(RelTypeVocab.MULTIPLE_PARENT_REFERENCE.id) //is_a rel. within ChEBI
 						//other RX types ain't a good idea for id-mapping (see-also in chebi - has_part,has_role,is_conjugate_*)
-							)
-						{
+						) {
 							mappings.add(new Mapping(src, x.getId(), destDb, ac));
 						}
 

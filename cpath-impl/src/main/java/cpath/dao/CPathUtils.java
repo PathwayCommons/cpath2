@@ -508,5 +508,45 @@ public final class CPathUtils {
 	public static Model loadWarehouseBiopaxModel() {
 		return importFromTheArchive(CPathSettings.getInstance().warehouseModelFile());
 	}
+
+	public static String fixSourceIdForMapping(String fromDb, String fromId) {
+		Assert.hasText(fromId);
+		Assert.hasText(fromDb);
+
+		String id = fromId;
+		String db = fromDb.toUpperCase();
+
+		if(db.startsWith("UNIPROT") || db.contains("SWISSPROT") || db.contains("TREMBL")) {
+			//always use UniProt ID instead of the isoform ID for mapping
+			if(id.contains("-"))
+				id = id.replaceFirst("-\\d+$", "");
+		}
+		else if(db.equals("REFSEQ")) {
+			//strip, e.g., refseq:NP_012345.2 to refseq:NP_012345
+			int idx = id.lastIndexOf('.');
+			if(idx > 0)
+				id = id.substring(0, idx);
+		}
+		else if(db.startsWith("KEGG") && id.matches(":\\d+$")) {
+			int idx = id.lastIndexOf(':');
+			if(idx > 0) {
+				id = id.substring(idx + 1); //it's NCBI Gene ID;
+			}
+		}
+		else if(db.contains("PUBCHEM") && (db.contains("SUBSTANCE") || db.contains("SID"))) {
+			id = id.toUpperCase(); //ok for a SID
+			//add prefix if not present
+			if(!id.startsWith("SID:") && id.matches("^\\d+$"))
+				id = "SID:" + id;
+		}
+		else if(db.contains("PUBCHEM") && (db.contains("COMPOUND") || db.contains("CID"))) {
+			id = id.toUpperCase(); //ok for a CID
+			//add prefix if not present
+			if(!id.startsWith("CID:") && id.matches("^\\d+$"))
+				id = "CID:" + id;
+		}
+
+		return id;
+	}
 	
 }

@@ -413,7 +413,8 @@ public class SearchEngine implements Indexer, Searcher {
 
 		final AtomicInteger numLeft = new AtomicInteger(numObjectsToIndex);
 		for(final BioPAXElement bpe : model.getObjects()) {
-			if(!(bpe instanceof Entity || bpe instanceof EntityReference))
+			if(!(bpe instanceof Entity || bpe instanceof EntityReference
+				|| bpe instanceof Provenance || bpe instanceof BioSource))
 				continue; //skip for UtilityClass but EntityReference
 
 			// prepare & index each element in a separate thread

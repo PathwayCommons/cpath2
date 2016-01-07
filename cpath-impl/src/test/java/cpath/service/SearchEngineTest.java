@@ -39,7 +39,7 @@ public class SearchEngineTest {
 		SearchResponse response = searchEngine.search("ATP", 0, null, null, null);
 		assertNotNull(response);
 		assertFalse(response.isEmpty());
-System.out.println(response.getSearchHit());
+// System.out.println(response.getSearchHit());
 		assertEquals(5, response.getSearchHit().size()); //- only Entity and ER types are indexed
 		assertEquals(5, response.getNumHits().intValue());
 		
@@ -74,7 +74,7 @@ System.out.println(response.getSearchHit());
 		//total no. objects in the test model < max hits per page)
 		response = searchEngine.search("*", 0, null, null, null);
 //		assertEquals(50, response.getSearchHit().size()); //all objects (before 23/12/2015)
-		assertEquals(21, response.getSearchHit().size()); //only Entity and ER types (since 23/12/2015)
+		assertEquals(24, response.getSearchHit().size()); //only Entity and ER types (since 23/12/2015)
 			
 		response = searchEngine.search("*", 0, PhysicalEntity.class, null, null);
 		assertEquals(8, response.getSearchHit().size());
@@ -90,13 +90,13 @@ System.out.println(response.getSearchHit());
 		assertFalse(response.isEmpty());
 		assertEquals(2, response.getSearchHit().size());
 
-// only Entity and ER types are indexed (since 23/12/2015)
+		// only Entity, ER, Provenance, BioSource types are indexed (since 06/01/2016)
 		response = searchEngine.search("*", 0, Provenance.class, null, null);
-		assertTrue(response.getSearchHit().isEmpty());
-//		response = searchEngine.search("*", 0, Provenance.class, null, null);
-//		assertEquals(2, response.getSearchHit().size());
-//		response = searchEngine.search("*", 0, Provenance.class, new String[] {"kegg"}, null);
-//		assertEquals(1, response.getSearchHit().size());
+		assertFalse(response.getSearchHit().isEmpty());
+		response = searchEngine.search("*", 0, Provenance.class, null, null);
+		assertEquals(2, response.getSearchHit().size());
+		response = searchEngine.search("*", 0, Provenance.class, new String[] {"kegg"}, null);
+		assertEquals(1, response.getSearchHit().size());
 		
 		//datasource filter using a URI (required for -update-counts console command and datasources.html page to work)
 		response = searchEngine.search("*", 0, Pathway.class, new String[] {"http://identifiers.org/kegg.pathway/"}, null);
@@ -111,9 +111,8 @@ System.out.println(response.getSearchHit());
 		response = searchEngine.search("*", 0, null, null, null);
 		assertEquals(0, response.getPageNo().intValue());
 
-		// only Entity and ER types are indexed (since 23/12/2015)
-//		assertEquals(50, response.getNumHits().intValue());
-		assertEquals(21, response.getNumHits().intValue());
+		// only Entity, ER, Provenance, BioSource types are indexed (since 06/01/2016)
+		assertEquals(24, response.getNumHits().intValue());
 		assertEquals(10, response.getSearchHit().size());
 		response = searchEngine.search("*", 1, null, null, null);
 		assertEquals(10, response.getSearchHit().size());
