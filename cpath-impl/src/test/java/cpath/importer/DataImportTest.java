@@ -296,10 +296,10 @@ public class DataImportTest {
 		assertTrue(!mergedModel.containsID(Normalizer.uri(XML_BASE, null,
 				"http://www.biopax.org/examples/myExample#ChemicalStructure_8",ChemicalStructure.class)));
 
-		//a special test id-mapping file (SID, CID to ChEBI) is present.
-		// The 14438 SMR won't be replaced by 20, because its original xref has 'PubChem' as db name (AMBIGUOUS);
-		// if it were 'PubChem-substance', then it would map to CHEBI:20...;
-		assertTrue(mergedModel.containsID("http://identifiers.org/pubchem.substance/14438"));
+		// A special test id-mapping file (some PubChem SIDs and CIDs to ChEBI) is there present.
+		// The PubChem:14438 SMR would not be replaced by CHEBI:20 if it were not having standard URI
+		// (because the original xref has ambiguous db='PubChem' it wouldn't map to CHEBI:20);
+		assertFalse(mergedModel.containsID("http://identifiers.org/pubchem.substance/14438"));
 
 		//  14439 gets successfully replaced/merged
 		assertFalse(mergedModel.containsID("http://identifiers.org/pubchem.substance/14439")); //maps to CHEBI:28
