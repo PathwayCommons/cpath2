@@ -53,7 +53,6 @@ public class WarehouseCVsTest {
 	
 	static {
 		final Properties cfg = new Properties();
-		cfg.put("SO", "classpath:so.obo");
 		cfg.put("MI", "classpath:mi.obo");
 		cfg.put("MOD", "classpath:mod.obo");
 		cfg.put("GO", "classpath:go.obo");
@@ -65,7 +64,6 @@ public class WarehouseCVsTest {
 		Collection<String> ontologyIDs = cvRepository.getOntologyIDs();
 		assertTrue(ontologyIDs.contains("GO"));
 		assertEquals("gene ontology", cvRepository.getOntology("GO").getName().toLowerCase());
-		assertTrue(ontologyIDs.contains("SO"));
 		assertTrue(ontologyIDs.contains("MI"));
 		assertTrue(ontologyIDs.contains("MOD"));
 	}

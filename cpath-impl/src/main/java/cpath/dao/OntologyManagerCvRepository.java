@@ -71,7 +71,6 @@ public class OntologyManagerCvRepository extends BiopaxOntologyManager
 			String officialName = MiriamLink.getName(id);
 			OntologyAccess o = getOntology(id);
 			o.setName(officialName);
-			
 			log.debug(id + " (" + officialName + ") from " + ontologies.get(id));
 		}
 	}

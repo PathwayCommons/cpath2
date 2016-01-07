@@ -36,20 +36,19 @@
 		</property>
 	</bean>
 
-	<!-- a helper and a proxy to access MIRIAM and MI database citation and regexps 
-   		to validate their corresponding IDs -->
-    <bean id="xrefHelper" class="org.biopax.validator.utils.XrefHelper">
-		<constructor-arg ref="extraDbSynonyms"/>
-        <constructor-arg ref="cvFetcher" />
-    </bean>
-    
 	<!-- info: CvFetcher extends OntologyManager(Adapter) and also implements WarehouseDAO interface -->
-	<bean id="cvFetcher" class="cpath.dao.OntologyManagerCvRepository">
+	<bean id="cvFetcher" class="cpath.dao.OntologyManagerCvRepository" scope="singleton">
 		<constructor-arg index="0">
 		 	<util:properties local-override="false" location="classpath:obo.properties"/>
 		</constructor-arg>
-	</bean>    
-	
+	</bean>
+
+	<!-- a helper and a proxy to access MIRIAM and MI database citation and regexps to check corresponding IDs -->
+	<bean id="xrefHelper" class="org.biopax.validator.utils.XrefHelper" scope="singleton">
+		<constructor-arg ref="extraDbSynonyms"/>
+		<constructor-arg ref="cvFetcher" />
+	</bean>
+
 	<bean id="validator" class="org.biopax.validator.impl.ValidatorImpl"/>
 	
 	<bean id="exceptionsAspect" class="org.biopax.validator.impl.ExceptionsAspect"/>

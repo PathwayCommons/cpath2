@@ -73,8 +73,7 @@ public class SearchEngineTest {
 		//find all objects (this here works with page=0 as long as the 
 		//total no. objects in the test model < max hits per page)
 		response = searchEngine.search("*", 0, null, null, null);
-//		assertEquals(50, response.getSearchHit().size()); //all objects (before 23/12/2015)
-		assertEquals(24, response.getSearchHit().size()); //only Entity and ER types (since 23/12/2015)
+		assertEquals(23, response.getSearchHit().size()); //only Entity and ER types (since 23/12/2015)
 			
 		response = searchEngine.search("*", 0, PhysicalEntity.class, null, null);
 		assertEquals(8, response.getSearchHit().size());
@@ -111,8 +110,8 @@ public class SearchEngineTest {
 		response = searchEngine.search("*", 0, null, null, null);
 		assertEquals(0, response.getPageNo().intValue());
 
-		// only Entity, ER, Provenance, BioSource types are indexed (since 06/01/2016)
-		assertEquals(24, response.getNumHits().intValue());
+		// only Entity, ER, and Provenance types are indexed (since 06/01/2016)
+		assertEquals(23, response.getNumHits().intValue());
 		assertEquals(10, response.getSearchHit().size());
 		response = searchEngine.search("*", 1, null, null, null);
 		assertEquals(10, response.getSearchHit().size());

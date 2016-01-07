@@ -204,11 +204,11 @@ public final class PreMerger {
 				}
 			}
 		}
-		log.error("buildWarehouse(), repairing the model...");
+		log.info("buildWarehouse(), repairing the model...");
 		warehouse.repair();
 
 		//clear all id-mapping tables
-		log.error("buildWarehouse(), removing all previous id-mapping db entries...");
+		log.warn("buildWarehouse(), removing all previous id-mapping db entries...");
 		service.mapping().deleteAll();
 
 		// Using the just built Warehouse BioPAX model, generate the id-mapping tables:
