@@ -439,14 +439,12 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	/**
-	 * Mapping to BioPAX object (currently - Xref only) URIs.
+	 * Mapping IDs to BioPAX entity URIs.
 	 *
-	 * It does not "understand" RefSeq Versions and UniProt Isoforms 
-	 * (one's better to submit canonical identifiers, i.e, without "-#" or ".#" suffix).
 	 *
 	 * @param identifiers - a list of genes/protein or molecules as: \
-	 * 		HGNC symbols, UniProt, RefSeq, ENS* and NCBI Gene identifiers; or \
-	 * 		CHEBI, InChIKey, ChEMBL, DrugBank, PubChem Compound, KEGG Compound, PharmGKB, or chem. name.
+	 * 		HGNC symbols, UniProt, RefSeq and NCBI Gene IDs; or \
+	 * 		CHEBI, InChIKey, ChEMBL, DrugBank, PubChem Compound, KEGG Compound, PharmGKB.
 	 * @return URIs of matching Xrefs
 	 */
 	private String[] findUrisByIds(String[] identifiers)
@@ -460,18 +458,22 @@ public class CPathServiceImpl implements CPathService {
 		// build a Lucene query string (will be eq. to xrefid:"A" OR xrefid:"B" OR ...)
 		final StringBuilder q = new StringBuilder();
 		for (String identifier : identifiers) {
-			if(identifier.toLowerCase().startsWith("http://"))
-			{	// then, it must be an existing BioPAX object URI (seems, the user hopes so)
+			if(identifier.toLowerCase().startsWith("http://")) {
+				// it must be an existing BioPAX object URI (seems, the user hopes so)
 				uris.add(identifier);
 				//also, if it's a canonical Identifiers.org URI, -
 				if(identifier.startsWith("http://identifier.org/")) {
 					//extract the id from the URI
 					String id = CPathUtils.idfromNormalizedUri(identifier);
-					if(!q.toString().contains(id)) q.append("xrefid:\"").append(id).append("\" ");
-				} else //no id-mapping required
-					continue; //go to next identifier
+					if(!q.toString().contains(id))
+						q.append("xrefid:\"").append(id).append("\" ");
+				}
 			}
-		 	// id-mapping step is not required anymore (new full-text index links lots of IDs to BioPAX objects)
+			else {
+				//id-mapping step is not required (new full-text index associates IDs of supported types with BioPAX objects)
+				if (!q.toString().contains(identifier))
+					q.append("xrefid:\"").append(identifier).append("\" ");
+			}
 		}
 
 		if (q.length() > 0) {
@@ -1058,10 +1060,13 @@ public class CPathServiceImpl implements CPathService {
 			//collect (to index later) only supported by graph queries ID types
 			for (Mapping mapping : mappings) {
 				if (mapping.getSrc().equals("PUBCHEM-COMPOUND")
-					|| mapping.getSrc().equals("CHEBI") || mapping.getSrc().equals("DRUGBANK")
+					|| mapping.getSrc().equals("CHEBI")
+					|| mapping.getSrc().equals("DRUGBANK")
 					|| mapping.getSrc().startsWith("KEGG")
-					//prefix 'CID:' is already included in pubchem-compound ids
+					|| mapping.getSrc().startsWith("CHEMBL")
+					|| mapping.getSrc().startsWith("PHARMGKB")
 				) resultIds.add(mapping.getSrcId());
+				//(prefix 'CID:' is included in pubchem-compound ids)
 			}
 		}
 	}
@@ -1077,6 +1082,7 @@ public class CPathServiceImpl implements CPathService {
 					|| mapping.getSrc().equalsIgnoreCase("NCBI GENE")
 					|| mapping.getSrc().equalsIgnoreCase("REFSEQ")
 					|| mapping.getSrc().equalsIgnoreCase("IPI")
+					|| mapping.getSrc().startsWith("ENSEMBL")
 				) resultIds.add(mapping.getSrcId());
 			}
 		}

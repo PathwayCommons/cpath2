@@ -2,6 +2,7 @@ package cpath.jpa;
 
 import javax.persistence.*;
 
+import cpath.dao.CPathUtils;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.util.Assert;
@@ -57,24 +58,17 @@ public final class Mapping {
 		Assert.hasText(destId);
 
 		src = src.toUpperCase();
-
 		//replace a uniprot* db name with simply 'UNIPROT'
 		if(src.startsWith("UNIPROT") || src.startsWith("SWISSPROT"))
 			src = "UNIPROT";
 		else if(src.startsWith("PUBCHEM") && (src.contains("COMPOUND") || src.contains("CID"))) {
 			src = "PUBCHEM-COMPOUND";
-			srcId = srcId.toUpperCase();
-			Assert.isTrue(srcId.matches("^(CID:)?\\d+$"));
-			if(!srcId.startsWith("CID:"))
-				srcId = "CID:" + srcId;
 		}
 		else if(src.startsWith("PUBCHEM") && (src.contains("SUBSTANCE") || src.contains("SID"))) {
 			src = "PUBCHEM-SUBSTANCE";
-			srcId = srcId.toUpperCase();
-			Assert.isTrue(srcId.matches("^(SID:)?\\d+$"));
-			if(!srcId.startsWith("SID:"))
-				srcId = "SID:" + srcId;
 		}
+
+		srcId = CPathUtils.fixSourceIdForMapping(src, srcId);
 
 		this.src = src;
 		this.srcId = srcId;

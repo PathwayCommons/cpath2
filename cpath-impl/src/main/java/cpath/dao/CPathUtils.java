@@ -509,6 +509,16 @@ public final class CPathUtils {
 		return importFromTheArchive(CPathSettings.getInstance().warehouseModelFile());
 	}
 
+	/**
+	 * Auto-fix an ID of particular type before using it
+	 * for id-mapping. This helps mapping e.g., RefSeq versions ID and
+	 * UniProt isoforms to primary UniProt accessions despite our id-mapping db
+	 * does not have such records as e.g. "NP_12345.1 maps to P01234".
+	 *
+	 * @param fromDb type of the identifier (standard resource name, e.g., RefSeq)
+	 * @param fromId identifier
+     * @return "fixed" ID
+     */
 	public static String fixSourceIdForMapping(String fromDb, String fromId) {
 		Assert.hasText(fromId);
 		Assert.hasText(fromDb);
@@ -521,17 +531,12 @@ public final class CPathUtils {
 			if(id.contains("-"))
 				id = id.replaceFirst("-\\d+$", "");
 		}
-		else if(db.equals("REFSEQ")) {
+		else if(db.equals("REFSEQ") && id.contains(".")) {
 			//strip, e.g., refseq:NP_012345.2 to refseq:NP_012345
-			int idx = id.lastIndexOf('.');
-			if(idx > 0)
-				id = id.substring(0, idx);
+			id = id.replaceFirst("\\.\\d+$", "");
 		}
 		else if(db.startsWith("KEGG") && id.matches(":\\d+$")) {
-			int idx = id.lastIndexOf(':');
-			if(idx > 0) {
-				id = id.substring(idx + 1); //it's NCBI Gene ID;
-			}
+			id = id.substring(id.lastIndexOf(':') + 1); //it's NCBI Gene ID;
 		}
 		else if(db.contains("PUBCHEM") && (db.contains("SUBSTANCE") || db.contains("SID"))) {
 			id = id.toUpperCase(); //ok for a SID
