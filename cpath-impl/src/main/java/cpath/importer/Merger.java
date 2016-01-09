@@ -730,14 +730,14 @@ public final class Merger {
 		if(sourceIds.isEmpty()) {
 			String org = (orig instanceof SequenceEntityReference)
 				? "organism="+String.valueOf(((SequenceEntityReference)orig).getOrganism()) : "";
-			log.warn("idMappingByXrefsUnion, no source IDs collected from " +
-					xrefType.getSimpleName() + "xrefs of " + orig.getUri() + "; " + org);
+			if(log.isDebugEnabled())
+				log.debug("idMappingByXrefsUnion, no source IDs collected from " +
+					xrefType.getSimpleName() + "xrefs of " + orig.getModelInterface().getSimpleName() +
+						" (" + orig.getUri() + "); " + org);
 			return Collections.emptySet();
 		}
 
-		final Set<String> primaryIds = service.map(sourceIds, mapTo);
-
-		return primaryIds;
+		return service.map(sourceIds, mapTo);
 	}
 
 
