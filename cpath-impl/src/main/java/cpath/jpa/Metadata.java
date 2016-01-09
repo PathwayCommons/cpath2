@@ -490,6 +490,6 @@ public final class Metadata {
 	
 	@Override
 	public int hashCode() {
-		return (getClass().getCanonicalName() + identifier).hashCode();
+		return identifier.hashCode();
 	}
 }

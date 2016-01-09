@@ -11,6 +11,8 @@ import java.util.zip.GZIPOutputStream;
 import javax.persistence.*;
 import javax.xml.transform.stream.StreamSource;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.biopax.validator.api.ValidatorUtils;
 import org.biopax.validator.api.beans.Validation;
 import org.hibernate.annotations.DynamicInsert;
@@ -23,7 +25,7 @@ import org.springframework.util.Assert;
 import cpath.config.CPathSettings;
 
 /**
- * Data file. 
+ * A bio pathway/network data file from some data provider.
  */
 @Entity
 @DynamicUpdate
@@ -103,7 +105,6 @@ public final class Content {
 		return valid;
 	}
 
-    
     public void setValid(Boolean valid) {
 		this.valid = valid;
 	}
@@ -163,5 +164,21 @@ public final class Content {
     
     public String getFilename() {
 		return filename;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof Content) {
+			final Content that = (Content) obj;
+			return new EqualsBuilder().append(filename, that.getFilename())
+					.append(valid, that.getValid()).append(provider, that.provider).isEquals();
+		}
+		else
+			return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return new HashCodeBuilder().append(filename).append(valid).append(provider).toHashCode();
 	}
 }
