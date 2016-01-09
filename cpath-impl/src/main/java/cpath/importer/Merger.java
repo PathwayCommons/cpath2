@@ -64,7 +64,6 @@ public final class Merger {
 
     private static final Logger log = LoggerFactory.getLogger(Merger.class);
 
-	private final boolean force;	
 	private final String xmlBase;
 	private final CPathService service;
 	private final Set<String> supportedTaxonomyIds;
@@ -76,13 +75,11 @@ public final class Merger {
 	 * Constructor.
 	 * 
 	 * @param service cpath2 service
-	 * @param force whether to forcibly merge BioPAX data the validation reported critical about or skip.
 	 */
-	public Merger(CPathService service, boolean force) 
+	public Merger(CPathService service)
 	{
 		this.service = service;
 		this.xmlBase = CPathSettings.getInstance().getXmlBase();
-		this.force = force;
 		this.supportedTaxonomyIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
 		
 		this.warehouseModel = CPathUtils.loadWarehouseBiopaxModel();
@@ -177,18 +174,9 @@ public final class Merger {
 		
 		for (Content pwdata : metadata.getContent()) {
 			final String description = pwdata.toString();
-			if (pwdata.getValid() == null) {
-				log.warn("Skipped " + description + " - haven't gone through the premerge yet");
+			if (!new File(pwdata.normalizedFile()).exists()) {
+				log.warn("Skipped " + description + " - haven't fully gone through the premerge stage yet");
 				continue;
-			} else if (pwdata.getValid() == false) {
-				// has BioPAX errors
-				log.warn("There were critical BioPAX errors in - " + description);
-				if (!force) {
-					log.warn("Skipped " + description + " (due to BioPAX errors)");
-					continue;
-				} else {
-					log.warn("FORCE merging " + description + " (ignoring BioPAX errors)");
-				}
 			}
 
 			log.info("Merging: " + description);

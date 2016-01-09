@@ -23,7 +23,6 @@ public final class ImportFactory {
 		throw new AssertionError("Non-instantiable static factory class");
 	}
 
-	
 	/**
 	 * For the given converter class name,
 	 * returns an instance of a class which
@@ -42,8 +41,8 @@ public final class ImportFactory {
 	 * returns an instance of a class which
 	 * implements the cleaner interface.
 	 *
-	 * @param converterClassName String
-	 * @return Converter
+	 * @param cleanerClassName canonical java class name for the Cleaner implementation
+	 * @return instance of the class
 	 */
 	public static Cleaner newCleaner(String cleanerClassName) {
 		return (Cleaner) newInstance(cleanerClassName);

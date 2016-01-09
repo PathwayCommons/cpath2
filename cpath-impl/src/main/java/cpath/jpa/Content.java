@@ -41,9 +41,6 @@ public final class Content {
 	
 	@Column(nullable=false)
     private String filename;
-	
-	@Column
-	private Boolean valid; //BioPAX validation status.
 
 	@Column(nullable=false)
 	private String provider;
@@ -97,19 +94,6 @@ public final class Content {
 		}		
 	}
 
-	/**
-	 * Gets BioPAX validation status.
-	 * @return
-	 */
-    public Boolean getValid() {
-		return valid;
-	}
-
-    public void setValid(Boolean valid) {
-		this.valid = valid;
-	}
-
-	
 	@Override
     public String toString() {
 		return provider + "/" + filename;
@@ -170,8 +154,7 @@ public final class Content {
 	public boolean equals(Object obj) {
 		if(obj instanceof Content) {
 			final Content that = (Content) obj;
-			return new EqualsBuilder().append(filename, that.getFilename())
-					.append(valid, that.getValid()).append(provider, that.provider).isEquals();
+			return new EqualsBuilder().append(filename, that.getFilename()).append(provider, that.provider).isEquals();
 		}
 		else
 			return false;
@@ -179,6 +162,6 @@ public final class Content {
 
 	@Override
 	public int hashCode() {
-		return new HashCodeBuilder().append(filename).append(valid).append(provider).toHashCode();
+		return new HashCodeBuilder().append(filename).append(provider).toHashCode();
 	}
 }

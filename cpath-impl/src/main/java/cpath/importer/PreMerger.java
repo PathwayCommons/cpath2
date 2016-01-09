@@ -233,14 +233,16 @@ public final class PreMerger {
 
 			log.info("buildWarehouse(), adding id-mapping: " + metadata.getUri());
 			for (Content content : metadata.getContent()) {
+				Set<Mapping> mappings = null;
 				try {
-					Set<Mapping> mappings = loadSimpleMapping(content);
-					service.mapping().save(mappings);
+					mappings = loadSimpleMapping(content);
 				} catch (Exception e) {
 					log.error("buildWarehouse(), failed to get id-mapping, " +
 							"using: " + content.toString(), e);
 					continue;
 				}
+				if(mappings != null) //i.e., when no exception was thrown above
+					service.mapping().save(mappings);
 			}
 		}
 
@@ -492,11 +494,6 @@ public final class PreMerger {
 				int noErrors = validation.countErrors(null, null, null, null, true, true);
 				log.info("pipeline(), summary for " + title + ". Critical errors found:" + noErrors + ". "
 					+ validation.getComment().toString() + "; " + validation.toString());
-
-				if (noErrors > 0)
-					content.setValid(false);
-				else
-					content.setValid(true);
 
 			} catch (Exception e) {
 				throw new RuntimeException("checkAndNormalize(), failed " + title, e);

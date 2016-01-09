@@ -142,7 +142,7 @@ public class DataImportTest {
 		assertTrue("P62158".equals(mps.iterator().next().getDestId()));
 		
 		// **** MERGE ***
-		Merger merger = new Merger(service, true);
+		Merger merger = new Merger(service);
 		
 		/* In this test, for simplicity, we don't use Metadata 
 		 * and thus bypass some of Merger methods 

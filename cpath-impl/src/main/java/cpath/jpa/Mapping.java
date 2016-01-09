@@ -18,7 +18,6 @@ import org.springframework.util.Assert;
 @DynamicInsert
 @Table(
 	name="mappings",
-	uniqueConstraints = @UniqueConstraint(columnNames = {"src", "srcId", "dest", "destId"}),
 	indexes = {
 		@Index(name="src_index", columnList = "src"),
 		@Index(name="srcId_index", columnList = "srcId"),

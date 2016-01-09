@@ -116,7 +116,7 @@ to create a new cPAth2 instance from scratch:
  - -fetch-metadata (sh cpath2-cli.sh -fetch-metadata)
  - -premerge 
  - -create-warehouse
- - -merge --force (unfortunately, --force is usually required...)
+ - -merge
  - -index
  - -create-downloads
 

@@ -151,15 +151,7 @@ public final class Admin {
 				runPremerge(null);
 			
 		} else if (args[0].equals(Cmd.MERGE.toString())) {
-			boolean force = false;
-			for (int i = 1; i < args.length; i++) {
-				if ("--force".equalsIgnoreCase(args[i])) {
-					force = true;
-				}
-			}
-
-			runMerge(force);
-			
+			runMerge();
 		} else if (args[0].equals(Cmd.EXPORT.toString())) {
 			//(the first args[0] is the command name, the second - must be output file)
 			if (args.length < 2)
@@ -372,11 +364,10 @@ public final class Admin {
 
     /**
      * Performs cpath2 Merge stage.
-     * @param force
      * 
      * @throws IllegalStateException when not maintenance mode
      */
-    public static void runMerge(boolean force) {
+    public static void runMerge() {
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
     	
@@ -388,13 +379,12 @@ public final class Admin {
 			new ClassPathXmlApplicationContext(new String[] {
 					"classpath:META-INF/spring/applicationContext-jpa.xml"
 			});
-		
-		LOG.info("runMerge: --force=" + force);
-		
+
 		//create CPathService bean that provides access to JPA repositories (metadata, mapping)
 		CPathService service = context.getBean(CPathService.class);
-		Merger merger = new Merger(service, force);		
-		merger.merge(); //at the end, it saves the resulting integrated main biopax model to a special file at known location.
+		Merger merger = new Merger(service);
+		merger.merge();
+		//at the end, it saves the resulting integrated main biopax model to a special file at known location.
 		
 		context.close();		
 	}
@@ -568,8 +558,8 @@ public final class Admin {
 		// data import (instance creation) pipeline :
 		toReturn.append(Cmd.FETCH_METADATA.toString() + " <url>" + NEWLINE);
 		toReturn.append(Cmd.PREMERGE.toString() + " [<metadataId>]" + NEWLINE);
-		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + NEWLINE);			
-		toReturn.append(Cmd.MERGE.toString() + " [--force] (merge all pathway data; overwrites the main biopax model archive)"+ NEWLINE);
+		toReturn.append(Cmd.CREATE_WAREHOUSE.toString() + NEWLINE);
+		toReturn.append(Cmd.MERGE.toString() + " (merge all pathway data; overwrites the main biopax model archive)"+ NEWLINE);
 		toReturn.append(Cmd.INDEX.toString() + " (build new full-text index of the main merged BioPAX db;" +
 				"create blacklist.txt in the downloads directory; re-calculates the no. pathways, molecules and " +
         		"interactions per data source)" + NEWLINE);
