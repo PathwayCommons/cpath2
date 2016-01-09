@@ -547,7 +547,7 @@ public final class Merger {
 		if(bpe.getXref().isEmpty() && bpe.getName().isEmpty())
 			return;
 
-		if(!xrefsContainDb(bpe, db)) { //bpe does not have any uniprot id xrefs
+		if(!xrefsContainDb(bpe, db)) { //bpe does not have any uniprot or chebi xrefs
 			// map other IDs and names to the primary IDs of ERs that can be found in the Warehouse
 			Set<String> primaryIds = idMappingByXrefsUnion(bpe, db, UnificationXref.class);
 			if (primaryIds.isEmpty())
@@ -559,11 +559,19 @@ public final class Merger {
 			) { primaryIds.addAll(mapByExactName(bpe)); }
 
 			// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
-			if(primaryIds.size() <= maxNumXrefsToAdd) {
+			if(primaryIds.isEmpty()) {
+				log.info("mayAddUniprotHgncOrChebiXrefs(), no primary " + db +
+						" IDs found using neither xrefs nor names of "+ bpe.getUri() + " and id-mapping...");
+			}
+			else if(primaryIds.size() <= maxNumXrefsToAdd) {
 				addRelXrefs(m, bpe, db, primaryIds, RelTypeVocab.ADDITIONAL_INFORMATION);
 				// for biopolymers, also map uniprot IDs to HGNC Symbols (and corresp. xrefs) if possible
 				if(db.equals("UNIPROT") && !xrefsContainDb(bpe, "hgnc"))
 					mayAddHgncXrefs(m, bpe, primaryIds, maxNumXrefsToAdd);
+			} else {
+				log.info("mayAddUniprotHgncOrChebiXrefs(), " + bpe.getUri() + ", using xrefs/names gets "
+						+ " too many (" + primaryIds.size() + ") primary " + db +
+						" IDs by id-mapping; so, won't add any more rel. xrefs here...");
 			}
 		}
 		else if (db.equals("UNIPROT") && !xrefsContainDb(bpe, "hgnc")) {
@@ -572,7 +580,7 @@ public final class Merger {
 			final Collection<String> uniprotIds = new HashSet<String>();
 			for(Xref x : bpe.getXref()) {
 				if(!(x instanceof PublicationXref)) {
-					if (x.getDb() != null && x.getId() != null && x.getDb().startsWith("uniprot")) {
+					if (x.getDb() != null && x.getId() != null && x.getDb().toLowerCase().startsWith("uniprot")) {
 						//map the uniprot ID (x.getId()) to primary accessions, collect them
 						String id = CPathUtils.fixSourceIdForMapping(x.getDb(), x.getId());
 						uniprotIds.add(id);
@@ -580,6 +588,9 @@ public final class Merger {
 				}
 			}
 			//perform id-mapping to primary uniprot accessions
+			if(uniprotIds.isEmpty())
+				log.warn("idMappingByXrefsUnion, no uniprot accessions collected from " + bpe.getUri());
+
 			final Collection<String> primaryACs = service.map(uniprotIds, "UNIPROT");
 			// map primary ACs to HGNC Symbols and generate RXs if there're not too many...
 			mayAddHgncXrefs(m, bpe, primaryACs, maxNumXrefsToAdd);
@@ -606,6 +617,7 @@ public final class Merger {
 
 	private boolean xrefsContainDb(XReferrable xr, String db)
 	{
+		db = db.toLowerCase();
 		for(Xref x : xr.getXref())
 		{
 			if (!(x instanceof PublicationXref) && x.getDb()!=null && x.getId()!=null
@@ -722,6 +734,12 @@ public final class Merger {
 			}
 		}
 		// do id-mapping at once
+		if(sourceIds.isEmpty()) {
+			log.warn("idMappingByXrefsUnion, no source IDs collected from " +
+					xrefType.getSimpleName() + "xrefs of " + orig.getUri());
+			return Collections.emptySet();
+		}
+
 		final Set<String> primaryIds = service.map(sourceIds, mapTo);
 
 		return primaryIds;

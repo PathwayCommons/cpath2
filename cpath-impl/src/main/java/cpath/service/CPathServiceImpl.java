@@ -669,7 +669,7 @@ public class CPathServiceImpl implements CPathService {
 		Assert.isTrue("CHEBI".equalsIgnoreCase(toDb) || "UNIPROT".equalsIgnoreCase(toDb));
 
 		if(fromIds.isEmpty()) {
-			log.warn("map(), the argument 'fromIds' is an empty collection.");
+			log.debug("map(), the argument 'fromIds' is an empty collection.");
 			return Collections.emptySet();
 		}
 
