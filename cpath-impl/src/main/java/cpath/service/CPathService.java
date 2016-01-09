@@ -179,14 +179,6 @@ public interface CPathService {
 	 */
 	Set<String> map(Collection<String> fromIds, String toDb);
 
-    /**
-     * Test if this or equivalent record exists
-     * in the id-mapping db and if not, saves the new one.
-     * 
-     * @param mapping
-     */
-    void saveIfUnique(Mapping mapping);
-
 	/**
 	 * Saves and counts a series of data access events 
 	 * (usually associated with the same web request) 
@@ -266,17 +258,7 @@ public interface CPathService {
 	 * @param location
 	 */
 	void addOrUpdateMetadata(String location);
-	
-    /**
-	 * Removes from the system all entries and 
-	 * previously converted / premerged / validated 
-	 * files accociated with this data provider.
-	 * 
-	 * @param metadata
-	 * @return updated/saved object
-	 */
-	Metadata init(Metadata metadata);		
-    
+
 	/**
 	 * Generates the BioPAX validation report for a pathway data file.
 	 * 
@@ -299,17 +281,8 @@ public interface CPathService {
      * Loads or re-loads the main BioPAX Model 
      * and blacklist from archive.
      */
-	void init();
+	void clearContent();
 	
-	/**
-	 * Checks whether the service object is fully initialized, i.e,
-	 * if all data repositories, in-memory BioPAX model and search
-	 * engine are ready to go.
-	 * 
-	 * @return true if it's fully initialized
-	 */
-	boolean ready();
-
 
 	/**
 	 * Creates:
@@ -320,4 +293,13 @@ public interface CPathService {
 	 * </ul>
 	 */
 	void index() throws IOException;
+
+	/**
+	 * Clears the metadata object and the db record,
+	 * and also drops/creates the data directory.
+	 *
+	 * @param metadata
+	 * @return
+     */
+	Metadata clear(Metadata metadata);
 }

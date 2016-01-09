@@ -275,7 +275,7 @@ public class RepositoriesAndServiceTest {
 //        assertEquals(1, service.map("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
         
         // repeat (should successfully update)- add a Mapping
-        service.saveIfUnique(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
+        service.mapping().save(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
         assertTrue(service.map("FooBar", "UNIPROT").isEmpty());
 //        assertTrue(service.map("TEST", "FooBar", "UNIPROT").isEmpty());
 
@@ -287,13 +287,13 @@ public class RepositoriesAndServiceTest {
 		assertEquals("CHEBI:12345", mapsTo.iterator().next());
         
         //test that service.map(..) method can map isoform IDs despite they're not explicitly added to the mapping db
-		service.saveIfUnique(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "A2A2M3"));
+		service.mapping().save(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "A2A2M3"));
 //        assertEquals(1, service.map("uniprot isoform", "A2A2M3-1", "UNIPROT").size());
 		assertEquals(1, service.map("A2A2M3-1", "UNIPROT").size());
 		assertEquals(1, service.map("A2A2M3", "UNIPROT").size());
         
         Mapping m = new Mapping("PubChem-substance", "14438", "CHEBI", "CHEBI:20");
-        service.saveIfUnique(m);
+        service.mapping().save(m);
 		assertEquals("SID:14438", m.getSrcId());
         assertNotNull(service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(
         		m.getSrc(), m.getSrcId(), m.getDest(), m.getDestId()));
@@ -325,7 +325,7 @@ public class RepositoriesAndServiceTest {
         		"", METADATA_TYPE.BIOPAX, null, null, null, "free");        
         
         //cleanup previous tests data if any
-        md.cleanupOutputDir();
+        md = service.clear(md);
         
         Content content = new Content(md, "test0");
         md.getContent().add(content);
@@ -371,7 +371,7 @@ public class RepositoriesAndServiceTest {
         assertNotNull(content);  
         
         //cleanup
-        md = service.init(md);
+        md = service.clear(md);
         assertTrue(md.getContent().isEmpty()); 
         md = service.metadata().findByIdentifier("TEST");
         assertTrue(md.getContent().isEmpty());         

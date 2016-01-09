@@ -103,14 +103,14 @@ public class CPathServiceImpl implements CPathService {
 	
 	private SimpleIOHandler simpleIO;
 	
-	//init. on first access to getBlacklist(); so do not use it directly
+	//clearContent. on first access to getBlacklist(); so do not use it directly
 	private Blacklist blacklist; 
 	
-	//init. on first access when proxy model mode is enabled (so do not use the var. directly!)
+	//clearContent. on first access when proxy model mode is enabled (so do not use the var. directly!)
 	private Model paxtoolsModel;
 
-	final private Pattern isoformIdPattern = Pattern
-			.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
+	final private Pattern isoformIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
+	final private Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
 	
 	/**
 	 * Constructor
@@ -126,7 +126,7 @@ public class CPathServiceImpl implements CPathService {
 	 * This is not required (useless) during the data import (premerge, merge, etc.);
 	 * it is called after the web service is started.
 	 */
-	synchronized public void init() {
+	synchronized public void clearContent() {
 		//fork the model loading (which takes quite a while)
 		ExecutorService executor = Executors.newSingleThreadExecutor();
 		executor.execute(
@@ -256,7 +256,7 @@ public class CPathServiceImpl implements CPathService {
 
 		// execute the paxtools graph query
 		try {
-			// init source elements
+			// clearContent source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
 			if(elements.isEmpty()) {
 				return new ErrorResponse(NO_RESULTS_FOUND,
@@ -297,7 +297,7 @@ public class CPathServiceImpl implements CPathService {
 		
 		// execute the paxtools graph query
 		try {
-			// init source elements
+			// clearContent source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
 			if(elements.isEmpty()) {
 				return new ErrorResponse(NO_RESULTS_FOUND,
@@ -339,7 +339,7 @@ public class CPathServiceImpl implements CPathService {
 		
 		// execute the paxtools graph query	
 		try {
-			// init source and target elements
+			// clearContent source and target elements
 			Set<BioPAXElement> source = urisToBpes(paxtoolsModel, src);
 			if(source.isEmpty()) {
 				return new ErrorResponse(NO_RESULTS_FOUND,
@@ -409,7 +409,7 @@ public class CPathServiceImpl implements CPathService {
 		
 		// execute the paxtools graph query
 		try {
-			// init source elements
+			// clearContent source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
 			if(elements.isEmpty()) {
 				return new ErrorResponse(NO_RESULTS_FOUND, "No BioPAX objects found by URIs: " + Arrays.toString(src));
@@ -514,7 +514,7 @@ public class CPathServiceImpl implements CPathService {
 			traverseAnalysis.execute(paxtoolsModel);
 			return res;
 		} catch (IllegalArgumentException e) {
-			log.error("traverse() failed to init path accessor. " + e);
+			log.error("traverse() failed to clearContent path accessor. " + e);
 			return new ErrorResponse(BAD_REQUEST, e.getMessage());
 		} catch (Exception e) {
 			log.error("traverse() failed. " + e);
@@ -680,15 +680,16 @@ public class CPathServiceImpl implements CPathService {
 		for(String fromId : fromIds)
 		{
 			if (fromId.matches("^\\d+$") && !toDb.equalsIgnoreCase("UNIPROT")) {
-				//an integer ID is expected to mean geneID and can be mapped only to UNIPROT
+				//an integer ID is expected to mean NCBI gene ID, and can be mapped only to UNIPROT;
 				//so, skip this one (won't map to anything anyway)
-				log.debug("map(), skip integer id:" + fromId + ", for mapping it to " + toDb + " is ambiguous/unsupported.");
+				log.debug("map(), won't map " + fromId + " to " + toDb + " (ambiguous ID, unknown source)");
 				continue;
 			} else if (toDb.equalsIgnoreCase("UNIPROT") && isoformIdPattern.matcher(fromId).find() && fromId.contains("-")) {
 				//it's certainly a uniprot isoform id; so we replace it with the corresponding accession number
 				fromId = fromId.replaceFirst("-\\d+$", "");
-			} else {
-				;//TODO fix some IDs - remove RefSeq version, replace KEGG gene with gene ID (int), etc.
+			} else if (toDb.equalsIgnoreCase("UNIPROT") && refseqIdPattern.matcher(fromId).find() && fromId.contains(".")) {
+				//remove the version number, such as ".1"
+				fromId = fromId.replaceFirst("\\.\\d+$", "");
 			}
 
 			sourceIds.add(fromId); //collect
@@ -706,20 +707,6 @@ public class CPathServiceImpl implements CPathService {
 		return results;
 	}
 
-	@Override
-	public void saveIfUnique(Mapping mapping) {
-		if(!exists(mapping)) {
-			mappingsRepository.save(mapping);
-		}
-	}
-
-	private boolean exists(Mapping m) {
-		return mappingsRepository
-			.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(
-					m.getSrc(), m.getSrcId(), m.getDest(), m.getDestId()) 
-						!= null;
-	}
-	
 	
 	@Override
 	public void log(Collection<LogEvent> events, String ipAddr) {
@@ -810,20 +797,7 @@ public class CPathServiceImpl implements CPathService {
 
 		return response;
 	}
-	
-	
-	@Override
-	public Metadata init(Metadata metadata) { 
-		
-    	metadata.cleanupOutputDir();
-    	metadata.setNumInteractions(null);
-    	metadata.setNumPathways(null);
-    	metadata.setNumPhysicalEntities(null);   	
-    	metadata.getContent().clear();
-    	
-		return save(metadata);
-	}
-		
+
 	
 	@Override
 	public Metadata save(Metadata metadata) {		
@@ -860,7 +834,10 @@ public class CPathServiceImpl implements CPathService {
 	@Override
 	public void delete(Metadata metadata) {
     	metadataRepository.delete(metadata);
-    	metadata.cleanupOutputDir();
+		File dir = new File(metadata.outputDir());
+		if(dir.exists() && dir.isDirectory()) {
+			dir.delete();
+		}
 	}
 
 
@@ -885,14 +862,6 @@ public class CPathServiceImpl implements CPathService {
 	@Override
 	public LogEntitiesRepository log() {
 		return logEntitiesRepository;
-	}
-
-
-	public synchronized boolean ready() {
-		return (metadataRepository != null 
-				&& mappingsRepository != null
-				&& searcher != null
-				&& paxtoolsModelReady());
 	}
 
 
@@ -997,6 +966,18 @@ public class CPathServiceImpl implements CPathService {
 		log.info("index(), all done.");
 	}
 
+	@Override
+	public synchronized Metadata clear(Metadata metadata) {
+		CPathUtils.cleanupDirectory(new File(metadata.outputDir()));
+		metadata.setNumInteractions(null);
+		metadata.setNumPathways(null);
+		metadata.setNumPhysicalEntities(null);
+		metadata.getContent().clear();
+		metadata.setPremerged(null);
+
+		return save(metadata);
+	}
+
 	private void addOtherIdsAsAnnotations(final int depth) {
 	//Can't use multiple threads (spring-data-jpa/hibernate errors occur in production, with filesystem H2 db...)
 		for(final BioPAXElement bpe : getModel().getObjects()) {
@@ -1057,7 +1038,7 @@ public class CPathServiceImpl implements CPathService {
 		//find other IDs that map to the ChEBI ID
 		List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestIdIn("CHEBI", chebiIds);
 		if(mappings != null) {
-			//collect (to index later) only supported by graph queries ID types
+			//collect (for 'xrefid' full-text index field) only ID types that we want biopax graph queries support
 			for (Mapping mapping : mappings) {
 				if (mapping.getSrc().equals("PUBCHEM-COMPOUND")
 					|| mapping.getSrc().equals("CHEBI")
@@ -1075,7 +1056,7 @@ public class CPathServiceImpl implements CPathService {
 		//find other IDs that map to the UniProt AC
 		List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestIdIn("UNIPROT", uniprotIds);
 		if(mappings != null) {
-			//collect (to index later) only supported by graph queries ID types
+			//collect (for 'xrefid' full-text index field) only ID types that we want graph queries support
 			for (Mapping mapping : mappings) {
 				if (mapping.getSrc().startsWith("UNIPROT")
 					|| mapping.getSrc().startsWith("HGNC")

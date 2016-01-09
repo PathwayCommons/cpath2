@@ -212,7 +212,8 @@ class ChebiOboConverterImpl extends BaseConverterImpl
 				//remove quotes around the db name
 				String db = matcher.group(2);
 				String DB = db.toUpperCase();
-				// Skip all xrefs but CAS, KEGG (C*, D*),.. which can be used for id-mapping by Merger and graph queries.
+				// Skip all xrefs except CAS, KEGG (C*, D*), etc., which can be used for id-mapping, by Merger and
+				// full-text search and biopax graph queries.
 				if(DB.startsWith("CAS") || DB.startsWith("KEGG") || DB.equals("DRUGBANK") || DB.equals("HMDB"))
 				{
 					RelationshipXref rx = PreMerger.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, db, id, model);

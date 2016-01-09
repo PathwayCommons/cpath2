@@ -111,11 +111,10 @@ public class DataImportTest {
 		//infers Q8TD86
 		assertEquals("Q8TD86", CPathUtils.fixSourceIdForMapping("uniprot isoform", "Q8TD86-1"));
 		assertEquals("Q8TD86", ids.iterator().next());
-		// also -
-		assertTrue(service.map("NP_619650.1", "UNIPROT").isEmpty());//built-in 'suggest' method was not used
-//		assertFalse(service.map("refseq", "NP_619650", "UNIPROT").isEmpty());
-//		assertFalse(service.map("refseq", "NP_619650.1", "UNIPROT").isEmpty());//recognized as 'NP_619650'
+
 		assertEquals("NP_619650", CPathUtils.fixSourceIdForMapping("refseq", "NP_619650.1"));
+		//can auto-remove RefSeq version numbers even when the type (refseq) of the ID is not provided!
+		assertFalse(service.map("NP_619650.1", "UNIPROT").isEmpty());
 		assertFalse(service.map("NP_004334", "UNIPROT").isEmpty());
 		// also, with the first arg. is not null, map(..) 
 		// calls 'suggest' method to replace NP_619650.1 with NP_619650
@@ -125,6 +124,9 @@ public class DataImportTest {
 		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/" + ac));
 		
 		ids = service.map("P01118","UNIPROT");
+		assertTrue(ids.size()==1);
+		assertTrue(ids.contains("P01116"));
+		ids = service.map("P01118-2","UNIPROT");//also works when any isoform id is used
 		assertTrue(ids.size()==1);
 		assertTrue(ids.contains("P01116"));
 		List<Mapping> mps = service.mapping().findByDestIgnoreCaseAndDestId("UNIPROT", "P01116");
@@ -140,7 +142,6 @@ public class DataImportTest {
 		assertTrue("P62158".equals(mps.iterator().next().getDestId()));
 		
 		// **** MERGE ***
-		
 		Merger merger = new Merger(service, true);
 		
 		/* In this test, for simplicity, we don't use Metadata 

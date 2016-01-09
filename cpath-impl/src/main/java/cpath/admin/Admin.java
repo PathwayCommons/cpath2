@@ -841,7 +841,7 @@ public final class Admin {
 		final List<String> files = new ArrayList<String>();
 
 		// initialize the search engine
-		LOG.info("create-downloads: init the full-text search engine...");
+		LOG.info("create-downloads: clearContent the full-text search engine...");
 		final Searcher searcher = new SearchEngine(mainModel, CPathSettings.getInstance().indexDir());
 		
         //collect BioPAX pathway data source names in this set

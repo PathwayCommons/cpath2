@@ -18,7 +18,6 @@ import org.biopax.paxtools.model.level3.UnificationXref;
 import org.junit.*;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CPathUtils;
 import cpath.jpa.Content;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
@@ -108,8 +107,8 @@ public class CPathUtilsTest {
 				null,
 				"free"
 				);
-		
-		metadata.cleanupOutputDir();
+		CPathUtils.cleanupDirectory(new File(metadata.outputDir()));
+
 		assertTrue(metadata.getContent().isEmpty());		
 		CPathUtils.analyzeAndOrganizeContent(metadata);
 		

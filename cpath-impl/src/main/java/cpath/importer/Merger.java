@@ -586,7 +586,8 @@ public final class Merger {
 				if(!(x instanceof PublicationXref)) {
 					if (x.getDb() != null && x.getId() != null && x.getDb().startsWith("uniprot")) {
 						//map the uniprot ID (x.getId()) to primary accessions, collect them
-						uniprotIds.add(x.getId());
+						String id = CPathUtils.fixSourceIdForMapping(x.getDb(), x.getId());
+						uniprotIds.add(id);
 					}
 				}
 			}

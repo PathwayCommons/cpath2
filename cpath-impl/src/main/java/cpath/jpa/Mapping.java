@@ -3,6 +3,8 @@ package cpath.jpa;
 import javax.persistence.*;
 
 import cpath.dao.CPathUtils;
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.springframework.util.Assert;
@@ -15,7 +17,7 @@ import org.springframework.util.Assert;
 @DynamicUpdate
 @DynamicInsert
 @Table(
-	name="mapping",
+	name="mappings",
 	uniqueConstraints = @UniqueConstraint(columnNames = {"src", "srcId", "dest", "destId"}),
 	indexes = {
 		@Index(name="src_index", columnList = "src"),
@@ -33,21 +35,18 @@ public final class Mapping {
 	@GeneratedValue(strategy=GenerationType.AUTO)
 	private Long id;
 	
-	@Column(nullable=false, length = 35)
+	@Column(nullable=false, length = 30) //e.g., "nucleotide sequence database",
 	private String src;
 	
-	@Column(nullable=false, length = 10) //now, it can be either 'CHEBI' or 'UNIPROT' only.
+	@Column(nullable=false, length = 15) //now, it can be either 'CHEBI' or 'UNIPROT' only.
 	private String dest;
 		
-	@Column(nullable=false, length = 50) //InChIKey ~27 sym (longest ID type); won't map names > 50 symbols
+	@Column(nullable=false, length = 30) //InChIKey ~27 sym (longest ID type); won't map names > 30 symbols
 	private String srcId; 
 	
 	@Column(nullable=false, length = 15)
 	private String destId;
-	
-	/**
-	 * Default Constructor.
-	 */
+
 	public Mapping() {}
 
  
@@ -56,6 +55,10 @@ public final class Mapping {
 		Assert.hasText(srcId);
 		Assert.hasText(dest);
 		Assert.hasText(destId);
+		Assert.isTrue(srcId.length()<=30);
+		Assert.isTrue(src.length()<=30);
+		Assert.isTrue(destId.length()<=15);
+		Assert.isTrue(dest.length()<=15);
 
 		src = src.toUpperCase();
 		//replace a uniprot* db name with simply 'UNIPROT'
@@ -79,42 +82,46 @@ public final class Mapping {
     Long getId() {
     	return id;
     }
-    
 
 	public String getSrc() {
 		return src;
 	}
-	void setSrc(String src) {
-		this.src = src.toUpperCase();
-	}
-
 
 	public String getDest() {
 		return dest;
 	}
-	void setDest(String dest) {
-		this.dest = dest.toUpperCase();
-	}
-
 
 	public String getSrcId() {
 		return srcId;
 	}
-	void setSrcId(String srcId) {
-		this.srcId = srcId;
-	}
-
 
 	public String getDestId() {
 		return destId;
 	}
-	void setDestId(String destId) {
-		this.destId = destId;
-	}
-
 
 	@Override
     public String toString() {
-    	return src + ":" + srcId + " maps to " + dest + ":" + destId;
-    } 
+    	return src + ":" + srcId + "," + dest + ":" + destId;
+    }
+
+	@Override
+	public boolean equals(Object obj) {
+		if(obj instanceof Mapping) {
+			final Mapping that = (Mapping) obj;
+			return new EqualsBuilder()
+					.append(src, that.getSrc())
+					.append(srcId, that.getSrcId())
+					.append(dest, that.getDest())
+					.append(destId, that.getDestId())
+					.isEquals();
+		}
+		else
+			return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return new HashCodeBuilder()
+				.append(src).append(srcId).append(dest).append(destId).toHashCode();
+	}
 }

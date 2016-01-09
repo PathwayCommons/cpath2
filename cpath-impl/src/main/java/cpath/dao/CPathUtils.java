@@ -58,28 +58,16 @@ public final class CPathUtils {
 	private CPathUtils() {
 		throw new AssertionError("Not instantiable");
 	}
-
-	
-    /**
-     * Deletes a directory and all files there.
-     * 
-     * @param path
-     * @return
-     */
-    public static boolean deleteDirectory(File path) {
-    	cleanupDirectory(path);
-        return( path.delete() );
-    }
  
     
     /**
      * Empties the directory.
      * 
-     * @param path
+     * @param path a directory
      * @return
      */
     public static void cleanupDirectory(File path) {
-        if( path.exists() ) {
+        if( path.exists() && path.isDirectory()) {
           File[] files = path.listFiles();
           for(int i=0; i<files.length; i++) {
              if(files[i].isDirectory()) {
@@ -89,7 +77,9 @@ public final class CPathUtils {
                files[i].delete();
              }
           }
-        }
+        } else {
+			path.mkdir();
+		}
     }
     
     

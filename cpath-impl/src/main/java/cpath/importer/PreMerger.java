@@ -20,7 +20,6 @@ import org.biopax.validator.impl.IdentifierImpl;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.util.Assert;
 
 import java.util.*;
@@ -134,20 +133,31 @@ public final class PreMerger {
 						return; // skip due to the error
 					}
 
-					// initialize
 					converter.setXmlBase(xmlBase);
 
 				} else {
 					log.info("premerge(), no Converter class was specified; continue...");
 				}
 
-				// clear all existing output files, parse input files, reset counters, save.
-				log.debug("num. of data files before init, " + metadata.getIdentifier() + ": " + metadata.getContent().size());
-				metadata = service.init(metadata);
-				metadata.setPremerged(null);
+				log.debug("num. of data files before clearContent, " + metadata.getIdentifier() + ": "
+						+ metadata.getContent().size());
 
-				//load/re-pack/save orig. data
-				CPathUtils.analyzeAndOrganizeContent(metadata);
+				// we want to restart premerge process and continue, instead of starting all over again;
+ 				//Admin can cleanup data sub-directories manually, if wishes re-doing from scratch.
+				File dir = new File(metadata.outputDir());
+				if(dir.exists() && dir.isDirectory() && dir.list().length > 0
+						&& !metadata.getContent().isEmpty())
+				{
+					log.info("premerge(), found " + metadata.outputDir() + " data folder; looks, "
+						+ metadata.getIdentifier() + " has been once attempted to premerge; " +
+							"so, will continue doing the same content from where we left it before...");
+				} else {
+					log.info("premerge(), initializing " + metadata.getIdentifier() + ", expanding data files to "
+							+ metadata.outputDir() + " (for the first time)...");
+					metadata = service.clear(metadata);
+					//load/re-pack/save the orig. data
+					CPathUtils.analyzeAndOrganizeContent(metadata);
+				}
 
 				// Premerge for each pathway data: clean, convert, validate,
 				// and then update premergeData, validationResults db fields.
@@ -162,12 +172,11 @@ public final class PreMerger {
 
 				// save/update validation status
 				metadata = service.save(metadata);
-				log.debug("premerge(), for " + metadata.getIdentifier() +
-						", saved " + metadata.getContent().size() + " files");
+				log.debug("premerge(), " + metadata.getIdentifier() + ": saved "
+						+ metadata.getContent().size() + " files");
 
 			} catch (Exception e) {
-				log.error("premerge(): failed", e);
-				e.printStackTrace();
+				log.error("premerge(), failed to do " + metadata.getIdentifier(), e);
 			}
 		}
 	}
@@ -224,7 +233,7 @@ public final class PreMerger {
 			for (Content content : metadata.getContent()) {
 				try {
 					Set<Mapping> mappings = loadSimpleMapping(content);
-					saveIgnoringDuplicates(mappings);
+					service.mapping().save(mappings);
 				} catch (Exception e) {
 					log.error("buildWarehouse(), failed to get id-mapping, " +
 							"using: " + content.toString(), e);
@@ -248,16 +257,6 @@ public final class PreMerger {
 
 		//Don't persist (do later after Merger)
 		log.info("buildWarehouse(), done.");
-	}
-
-
-	private void saveIgnoringDuplicates(Set<Mapping> mappings) {
-		for (Mapping mapping : mappings) {
-			try {
-				service.saveIfUnique(mapping);
-			} catch (DataIntegrityViolationException e) {
-			} //ignore same entries
-		}
 	}
 
 
@@ -345,7 +344,7 @@ public final class PreMerger {
 						// and URI contain corresponding vocabulary term (unless there's a bug in the converter impl.)
 						if(rtv.getUri().endsWith(RelTypeVocab.IDENTITY.id)
 						  	|| rtv.getUri().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id)
-							|| rtv.getUri().endsWith(RelTypeVocab.MULTIPLE_PARENT_REFERENCE.id) //is_a rel. within ChEBI
+//							|| rtv.getUri().endsWith(RelTypeVocab.MULTIPLE_PARENT_REFERENCE.id) //is_a rel. within ChEBI
 						//other RX types ain't a good idea for id-mapping (see-also in chebi - has_part,has_role,is_conjugate_*)
 						) {
 							mappings.add(new Mapping(src, x.getId(), destDb, ac));
@@ -361,26 +360,29 @@ public final class PreMerger {
 				}
 			}
 
-			if(er instanceof SmallMoleculeReference) {
-				SmallMoleculeReference smr = (SmallMoleculeReference) er;
-				//map some names (display and std.)
-				if(smr.getDisplayName() != null && smr.getDisplayName().length() <= 50)
-					mappings.add(new Mapping("CHEMICAL NAME", smr.getDisplayName().toLowerCase(), destDb, ac));
-				//skip other names (and standardName) as they can be too long...
-			}
-			
-			if(er instanceof ProteinReference) {
-				ProteinReference pr = (ProteinReference) er;
-				//map unofficial IDs, e.g., CALM_HUMAN, too
-				if(pr.getDisplayName() != null && pr.getDisplayName().length() <= 50)
-					mappings.add(new Mapping("UNIPROT", pr.getDisplayName().toUpperCase(), destDb, ac));
-			}
+// Bogus code, which also greatly increases the volume of the cpath2 database.
+// Merger can find ERs by name (if none found by IDs) without using the Mapping db (it uses only Warehouse biopax model);
+// also,names, e.g., "CALM_HUMAN", "CALM1" "insuline", to the mappings db does not increase power of full-tex search
+// and biopax graph queries, because only xrefs and selected ID types are included in 'xrefid' index field (used by graph queries).
+//			if(er instanceof SmallMoleculeReference) {
+//				SmallMoleculeReference smr = (SmallMoleculeReference) er;
+//				//map some names (display and std.)
+//				if(smr.getDisplayName() != null && smr.getDisplayName().length() <= 30)
+//					mappings.add(new Mapping("CHEMICAL NAME", smr.getDisplayName().toLowerCase(), destDb, ac));
+//			} else
+//			if(er instanceof ProteinReference) {
+//				ProteinReference pr = (ProteinReference) er;
+//				//map unofficial IDs, e.g., CALM_HUMAN, too
+//				if(pr.getDisplayName() != null && pr.getDisplayName().length() <= 15) //short names only
+//					mappings.add(new Mapping("UNIPROT", pr.getDisplayName().toUpperCase(), destDb, ac));
+//			}
 		}
 
 		//save/update to the id-mapping database
-		saveIgnoringDuplicates(mappings);
+		log.info("buildIdMappingFromWarehouse(), saving all...");
+		service.mapping().save(mappings);
 
-		log.info("buildIdMappingFromWarehouse(), exitting...");
+		log.info("buildIdMappingFromWarehouse(), done.");
 	}
 	
 
@@ -402,11 +404,15 @@ public final class PreMerger {
 		
 		//Clean the data, i.e., apply data-specific "quick fixes".
 		if(cleaner != null) {
-			log.info("pipeline(), cleaning " + info + " with " + cleaner.getClass());
-			OutputStream os = new GZIPOutputStream(new FileOutputStream(content.cleanedFile()));
-			cleaner.clean(dataStream, os); //os must be closed inside
-			//re-assign the input data stream
-			dataStream = new GZIPInputStream(new FileInputStream(content.cleanedFile())); 
+			if((new File(content.cleanedFile())).exists())
+				log.info("pipeline(), skip existing " + content.cleanedFile());
+			else {
+				log.info("pipeline(), cleaning " + info + " with " + cleaner.getClass());
+				OutputStream os = new GZIPOutputStream(new FileOutputStream(content.cleanedFile()));
+				cleaner.clean(dataStream, os); //os must be closed inside
+			}
+				//re-assign the input data stream
+				dataStream = new GZIPInputStream(new FileInputStream(content.cleanedFile()));
 		}
 		
 		if(metadata.getType() == METADATA_TYPE.MAPPING) {
@@ -416,19 +422,24 @@ public final class PreMerger {
 		
 		//Convert data to BioPAX L3 if needed (generate the 'converted' output file in any case)
 		if (converter != null) {
-			log.info("pipeline(), converting " + info + " with " + converter.getClass());					
-			OutputStream os = new GZIPOutputStream(new FileOutputStream(content.convertedFile()));
-			converter.convert(dataStream, os);//os must be closed inside
+			if((new File(content.convertedFile())).exists())
+				log.info("pipeline(), skip existing " + content.convertedFile());
+			else {
+				log.info("pipeline(), converting " + info + " with " + converter.getClass());
+				OutputStream os = new GZIPOutputStream(new FileOutputStream(content.convertedFile()));
+				converter.convert(dataStream, os);//os must be closed inside
+			}
 			dataStream = new GZIPInputStream(new FileInputStream(content.convertedFile())); 		
 		}
 		// here 'dataStream' is either orig., cleaned, or converted data file
-		// (depending on cleaner/converter availability above)
+		// (depending on cleaner/converter availability above).
 
-		/* Validate & auto-fix (if needed), and normalize:
-		 * e.g., synonyms in xref.db may be replaced 
-		 * with the primary db name, as in Miriam, etc.
-		 */
-		checkAndNormalize(info, dataStream, metadata, content);
+		// Validate & auto-fix and normalize: e.g., synonyms in xref.db may be replaced
+		// with the primary db name, as in Miriam, some URIs get normalized, etc.
+		if((new File(content.normalizedFile())).exists())
+			log.info("pipeline(), skip existing " + content.normalizedFile());
+		else
+			checkAndNormalize(info, dataStream, metadata, content);
 	}
 
 	
@@ -442,7 +453,7 @@ public final class PreMerger {
 	 */
 	private void checkAndNormalize(String title, InputStream biopaxStream, Metadata metadata, Content content)
 	{
-		// init Normalizer
+		// clearContent Normalizer
 		Normalizer normalizer = new Normalizer();
 		//set xml:base to use instead of the original model's one (important!)
 		normalizer.setXmlBase(xmlBase);

@@ -21,7 +21,6 @@ import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CPathUtils;
 
 /**
  * Data Provider Metadata.
@@ -482,18 +481,6 @@ public final class Metadata {
 	}	
 	public void setNotPathwayData(boolean foo) {
 		//a fake bean property (for javascript, JSON)
-	}
-			
-	/**
-	 * Drops all associated output data files - 
-	 * re-creates the output data directory.
-	 */
-	public void cleanupOutputDir() {
-		File dir = new File(outputDir());
-		if(dir.exists()) {
-			CPathUtils.cleanupDirectory(dir);
-		}		
-		dir.mkdir();
 	}
 	
 	@Override
