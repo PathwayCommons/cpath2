@@ -547,6 +547,14 @@ public final class Merger {
 		if(bpe.getXref().isEmpty() && bpe.getName().isEmpty())
 			return;
 
+		String organismRemark = " (organism=";
+		if(bpe instanceof SequenceEntityReference)
+			organismRemark += String.valueOf(((SequenceEntityReference)bpe).getOrganism()) + ")";
+		else if(bpe instanceof Gene)
+			organismRemark += String.valueOf(((Gene)bpe).getOrganism()) + ")";
+		else
+			organismRemark = "";
+
 		if(!xrefsContainDb(bpe, db)) { //bpe does not have any uniprot or chebi xrefs
 			// map other IDs and names to the primary IDs of ERs that can be found in the Warehouse
 			Set<String> primaryIds = idMappingByXrefsUnion(bpe, db, UnificationXref.class);
@@ -559,19 +567,15 @@ public final class Merger {
 			) { primaryIds.addAll(mapByExactName(bpe)); }
 
 			// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
-			if(primaryIds.isEmpty()) {
-				log.info("mayAddUniprotHgncOrChebiXrefs(), no primary " + db +
-						" IDs found using neither xrefs nor names of "+ bpe.getUri() + " and id-mapping...");
-			}
-			else if(primaryIds.size() <= maxNumXrefsToAdd) {
+			else if(!primaryIds.isEmpty() && primaryIds.size() <= maxNumXrefsToAdd) {
 				addRelXrefs(m, bpe, db, primaryIds, RelTypeVocab.ADDITIONAL_INFORMATION);
 				// for biopolymers, also map uniprot IDs to HGNC Symbols (and corresp. xrefs) if possible
 				if(db.equals("UNIPROT") && !xrefsContainDb(bpe, "hgnc"))
 					mayAddHgncXrefs(m, bpe, primaryIds, maxNumXrefsToAdd);
 			} else {
-				log.info("mayAddUniprotHgncOrChebiXrefs(), " + bpe.getUri() + ", using xrefs/names gets "
-						+ " too many (" + primaryIds.size() + ") primary " + db +
-						" IDs by id-mapping; so, won't add any more rel. xrefs here...");
+				log.info("mayAddUniprotHgncOrChebiXrefs(), " + bpe.getUri()  + organismRemark +
+						", using xrefs/names gets too many (" + primaryIds.size() + ") primary " + db +
+					" IDs by id-mapping; so, won't add any more rel. xrefs here...");
 			}
 		}
 		else if (db.equals("UNIPROT") && !xrefsContainDb(bpe, "hgnc")) {
@@ -589,11 +593,12 @@ public final class Merger {
 			}
 			//perform id-mapping to primary uniprot accessions
 			if(uniprotIds.isEmpty())
-				log.warn("idMappingByXrefsUnion, no uniprot accessions collected from " + bpe.getUri());
-
-			final Collection<String> primaryACs = service.map(uniprotIds, "UNIPROT");
-			// map primary ACs to HGNC Symbols and generate RXs if there're not too many...
-			mayAddHgncXrefs(m, bpe, primaryACs, maxNumXrefsToAdd);
+				log.warn("idMappingByXrefsUnion, no uniprot accessions collected from " + bpe.getUri() + organismRemark);
+			else {
+				final Collection<String> primaryACs = service.map(uniprotIds, "UNIPROT");
+				// map primary ACs to HGNC Symbols and generate RXs if there're not too many...
+				mayAddHgncXrefs(m, bpe, primaryACs, maxNumXrefsToAdd);
+			}
 		}
 	}
 
@@ -697,21 +702,9 @@ public final class Merger {
 		} else if (ers.size()==1)
 			return (ProteinReference) ers.iterator().next();
 
-// mapping/merging proteins by name is too risky even when unambiguous (quite unlikely)
-//		// nothing? - keep trying, map by name (e..g, 'TP53')
-//		// but it can map to multiple PRs in some cases - won't merge anyway if so.
-//		Set<String> mp = mapByExactName(orig);
-//		ers = findEntityRefUsingIdMappingResult(mp, warehouseUniprotUriPrefix);
-//		if(ers.size()>1) {
-//			log.debug(origUri + ": by NAMEs, ambiguously maps to " + ers.size() + " warehouse PRs");
-//			return null;
-//		} else if (ers.size()==1) {
-//			ProteinReference pr = (ProteinReference) ers.iterator().next();
-//			log.warn(origUri + " is merged by name(s) to one " + pr.getUri());
-//			return pr;
-//		}
+		// mapping/merging proteins by names is too risky, even when unambiguous (quite unlikely); so we won't do.
 
-		//when nothing found
+		//nothing found
 		return null;
 	}
 
@@ -735,8 +728,10 @@ public final class Merger {
 		}
 		// do id-mapping at once
 		if(sourceIds.isEmpty()) {
+			String org = (orig instanceof SequenceEntityReference)
+				? "organism="+String.valueOf(((SequenceEntityReference)orig).getOrganism()) : "";
 			log.warn("idMappingByXrefsUnion, no source IDs collected from " +
-					xrefType.getSimpleName() + "xrefs of " + orig.getUri());
+					xrefType.getSimpleName() + "xrefs of " + orig.getUri() + "; " + org);
 			return Collections.emptySet();
 		}
 
