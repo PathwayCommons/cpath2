@@ -108,7 +108,6 @@ public final class PreMerger {
 
 			try {
 				log.info("premerge(), now processing " + metadata.getIdentifier());
-
 				// Try to instantiate the Cleaner now, and exit if it fails!
 				Cleaner cleaner = null; //reset to null!
 				String cl = metadata.getCleanerClassname();
@@ -132,9 +131,7 @@ public final class PreMerger {
 								+ "; skipping for this data source...");
 						return; // skip due to the error
 					}
-
 					converter.setXmlBase(xmlBase);
-
 				} else {
 					log.info("premerge(), no Converter class was specified; continue...");
 				}
@@ -145,19 +142,24 @@ public final class PreMerger {
 				// we want to restart premerge process and continue, instead of starting all over again;
  				//Admin can cleanup data sub-directories manually, if wishes re-doing from scratch.
 				File dir = new File(metadata.outputDir());
-				if(dir.exists() && dir.isDirectory() && dir.list().length > 0
-						&& !metadata.getContent().isEmpty())
+				if(dir.exists() && dir.isDirectory() && dir.length()>0)
 				{
-					log.info("premerge(), found " + metadata.outputDir() + " data folder; looks, "
+					log.warn("premerge(), found " + metadata.outputDir() + " data folder; looks, "
 						+ metadata.getIdentifier() + " has been once attempted to premerge; " +
-							"so, will continue doing the same content from where we left it before...");
+							"continue processing HOPEFULLY the same data from where we left it...");
+					//we have to expand and analyze input data archives again
+					//to recover when the cpath2 database file was removed...
+					if(!metadata.getContent().isEmpty())
+						metadata.getContent().clear();
 				} else {
 					log.info("premerge(), initializing " + metadata.getIdentifier() + ", expanding data files to "
 							+ metadata.outputDir() + " (for the first time)...");
 					metadata = service.clear(metadata);
-					//load/re-pack/save the orig. data
-					CPathUtils.analyzeAndOrganizeContent(metadata);
 				}
+
+				//expand/re-pack/save or overwrite the original data files and
+				//create/recover Content db table rows
+				CPathUtils.analyzeAndOrganizeContent(metadata);
 
 				// Premerge for each pathway data: clean, convert, validate,
 				// and then update premergeData, validationResults db fields.
