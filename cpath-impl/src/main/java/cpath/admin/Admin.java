@@ -353,7 +353,7 @@ public final class Admin {
 		//Generates, if not exist, the blacklist.txt -
 		//to exclude/keep ubiquitous small molecules (e.g. ATP)
 		//from graph query and output format converter results.
-		BlacklistGenerator3 gen = new BlacklistGenerator3("blacklist-names.txt");
+		BlacklistGenerator3 gen = new BlacklistGenerator3();
 		Blacklist blacklist = gen.generateBlacklist(service.getModel());
 		// Write all the blacklisted ids to the output
 		if(blacklist != null)
