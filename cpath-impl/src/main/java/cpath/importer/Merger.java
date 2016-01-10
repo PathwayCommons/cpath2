@@ -330,7 +330,7 @@ public final class Merger {
 		log.info("Assigning new URIs (xml:base=" + xmlBase + 
 				"*) to all not normalized BioPAX elements (" + 
 				srcModelInfo + ", xml:base=" + source.getXmlBase() + ")...");
-		replaceOriginalUris(source, description, target);
+		replaceOriginalUris(source, description);
 		
 		log.info("Merging into the target one-datasource BioPAX model...");
 		// merge all the elements and their children from the source to target model
@@ -418,16 +418,16 @@ public final class Merger {
 						continue; //skip for just merged, canonical ERs
 
 					if(pe instanceof SmallMolecule) {
-						mayAddUniprotHgncOrChebiXrefs(target, pe, "CHEBI", 6);
+						addMoreXrefsByMapping(target, pe, "CHEBI", 6);
 					} else {//Protein, Dna*, Rna* type
-						mayAddUniprotHgncOrChebiXrefs(target, pe, "UNIPROT", 12);
+						addMoreXrefsByMapping(target, pe, "UNIPROT", 12);
 					}
 				} else { // top PE class, i.e., pe.getModelInterface()==PhysicalEntity.class
-					mayAddUniprotHgncOrChebiXrefs(target, pe, "UNIPROT", 12);
-					mayAddUniprotHgncOrChebiXrefs(target, pe, "CHEBI", 6);
+					addMoreXrefsByMapping(target, pe, "UNIPROT", 12);
+					addMoreXrefsByMapping(target, pe, "CHEBI", 6);
 				}
 			} else if(pe instanceof Gene || pe instanceof Complex) {
-				mayAddUniprotHgncOrChebiXrefs(target, pe, "UNIPROT", 12);
+				addMoreXrefsByMapping(target, pe, "UNIPROT", 12);
 			}
 		}
 	}
@@ -438,7 +438,7 @@ public final class Merger {
 	 * with new auto-generated ones using the PC2 xml:base
 	 * (also add a bp:comment about previous URIs)
 	 */
-	private void replaceOriginalUris(Model source, String description, Model target) {
+	private void replaceOriginalUris(Model source, String description) {
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
 		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
 			String currUri = bpe.getUri();
@@ -528,7 +528,7 @@ public final class Merger {
 	 * to many canonical ERs/IDs (in fact, it'd even map to hundreds (Trembl) IDs, e.g., in cases like 'ND5',
 	 * and cause our export to the SIF, GSEA formats fail...)
 	 */
-	private void mayAddUniprotHgncOrChebiXrefs(final Model m, Named bpe, final String db, final int maxNumXrefsToAdd)
+	private void addMoreXrefsByMapping(final Model m, Named bpe, final String db, final int maxNumXrefsToAdd)
 	{
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity) || !("UNIPROT".equals(db) || "CHEBI".equals(db)))
 		{
@@ -556,33 +556,29 @@ public final class Merger {
 			return;
 		}
 
-		String organismRemark = " (organism=";
-		if(bpe instanceof SequenceEntityReference)
-			organismRemark += String.valueOf(((SequenceEntityReference)bpe).getOrganism()) + ")";
-		else if(bpe instanceof Gene)
-			organismRemark += String.valueOf(((Gene)bpe).getOrganism()) + ")";
-		else
-			organismRemark = "";
+		final String organismRemark = getOrganism(bpe); //get organism taxID/name if possible
 
 		if(!xrefsContainDb(bpe, db)) { //bpe does not have any uniprot or chebi xrefs
 			// map other IDs and names to the primary IDs of ERs that can be found in the Warehouse
 			Set<String> primaryIds = idMappingByXrefs(bpe, db, UnificationXref.class);
 			if (primaryIds.isEmpty())
-				primaryIds.addAll(idMappingByXrefs(bpe, db, RelationshipXref.class));
+				primaryIds = idMappingByXrefs(bpe, db, RelationshipXref.class);
 			if (primaryIds.isEmpty())
-				primaryIds.addAll(mapSmallMoleculeByExactName(bpe));
+				primaryIds = mapSmallMoleculeByExactName(bpe);
 			//could map biopolymers by name, but e.g, 'HLA DQB1' (HPRD_05054) then gets >200 uniprot xrefs; or 'ND5'...
 
 			// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
-			else if(!primaryIds.isEmpty() && primaryIds.size() <= maxNumXrefsToAdd) {
-				addRelXrefs(m, bpe, db, primaryIds, RelTypeVocab.ADDITIONAL_INFORMATION);
-				// for biopolymers, also map uniprot IDs to HGNC Symbols (and corresp. xrefs) if possible
-				if(db.equals("UNIPROT") && !xrefsContainDb(bpe, "hgnc"))
-					mayAddHgncXrefs(m, bpe, primaryIds, maxNumXrefsToAdd);
-			} else {
-				log.info("mayAddUniprotHgncOrChebiXrefs(), " + bpe.getUri()  + organismRemark +
-						", using xrefs/names gets too many (" + primaryIds.size() + ") primary " + db +
-					" IDs by id-mapping; so, won't add any more rel. xrefs here...");
+			if(!primaryIds.isEmpty()) {
+				if (primaryIds.size() <= maxNumXrefsToAdd) {
+					addRelXrefs(m, bpe, db, primaryIds, RelTypeVocab.ADDITIONAL_INFORMATION);
+					// for biopolymers, also map uniprot IDs to HGNC Symbols (and corresp. xrefs) if possible
+					if (db.equals("UNIPROT") && !xrefsContainDb(bpe, "hgnc"))
+						mayAddHgncXrefs(m, bpe, primaryIds, maxNumXrefsToAdd);
+				} else {
+					log.info("skip " + bpe.getUri() + ", " + organismRemark +
+							", gets too many (" + primaryIds.size() + ") primary " + db +
+							" IDs xrefs via id-mapping...");
+				}
 			}
 		}
 		else if (db.equals("UNIPROT") && !xrefsContainDb(bpe, "hgnc")) {
@@ -722,48 +718,49 @@ public final class Merger {
 		Assert.isTrue(PublicationXref.class != xrefType);
 		Assert.isTrue(
 			(orig instanceof Gene || orig instanceof PhysicalEntity || orig instanceof EntityReference)
-			&&
-			(!(orig instanceof SimplePhysicalEntity) || ((SimplePhysicalEntity)orig).getEntityReference()==null
+			&& (!(orig instanceof SimplePhysicalEntity) || ((SimplePhysicalEntity)orig).getEntityReference()==null
 				|| ((SimplePhysicalEntity)orig).getEntityReference().getXref().isEmpty())
 		);
 
-		Set<T> filteredXrefs = new ClassFilterSet<Xref, T>(orig.getXref(), xrefType);
-		if(filteredXrefs.isEmpty()) {
+		Set<String> result = Collections.emptySet();
+		final Set<T> filteredXrefs = new ClassFilterSet<Xref, T>(orig.getXref(), xrefType);
+		if(filteredXrefs.isEmpty())
+		{
 			log.debug("no " + xrefType.getSimpleName() +
 				" xrefs found for " + orig.getModelInterface().getSimpleName() + " (" + orig.getUri());
-			return Collections.emptySet();
 		}
-
-		final Set<String> sourceIds = new HashSet<String>();
-		for (T x : filteredXrefs) {
-			if(x instanceof PublicationXref)
-				continue;
-			if(x.getDb() == null || x.getDb().isEmpty() || x.getId() == null || x.getId().isEmpty()) {
-				log.warn("skip malformed " + xrefType.getSimpleName() + ";" + x.getUri());
-			} else {
-				sourceIds.add(CPathUtils.fixSourceIdForMapping(x.getDb(), x.getId()));
+		else
+		{
+			final Set<String> sourceIds = new HashSet<String>();
+			for (T x : filteredXrefs) {
+				if (x instanceof PublicationXref)
+					continue;
+				if (x.getDb() == null || x.getDb().isEmpty() || x.getId() == null || x.getId().isEmpty()) {
+					log.warn("skip malformed " + xrefType.getSimpleName() + ";" + x.getUri());
+				} else {
+					sourceIds.add(CPathUtils.fixSourceIdForMapping(x.getDb(), x.getId()));
+				}
+			}
+			if (sourceIds.isEmpty()) {
+				final boolean complexOrGeneric = isComplexOrGeneric(orig);
+				final String msg = "no " + xrefType.getSimpleName() + " IDs found (for mapping) in " +
+						((complexOrGeneric) ? "generic " : "non-generic ") + orig.getModelInterface().getSimpleName() +
+						" (" + orig.getUri() + "); organism: " + getOrganism(orig);
+				//the message can help debug input data (provider must add some gene/chem xrefs then);
+				//usually, no IDs is no surprise for generic/complex entity case...
+				if (!complexOrGeneric && (orig instanceof ProteinReference || orig instanceof SmallMoleculeReference))
+					log.warn(msg);
+				else if (!complexOrGeneric)
+					log.info(msg);
+				else
+					log.debug(msg);
+			}
+			else { // do id-mapping, for all ids at once, and return the result set:
+				result = service.map(sourceIds, mapTo);
 			}
 		}
 
-		if(sourceIds.isEmpty()) {
-			final boolean complexOrGeneric = isComplexOrGeneric(orig);
-			final String msg = "no " + xrefType.getSimpleName() + " IDs found (for mapping) in " +
-				((complexOrGeneric)?"generic ":"non-generic ") + orig.getModelInterface().getSimpleName() +
-					" (" + orig.getUri() + "); organism: " + getOrganism(orig);
-			//the message can help debug input data (provider must add some gene/chem xrefs then);
-			//usually, no IDs is no surprise for generic/complex entity case...
-			if(!complexOrGeneric && (orig instanceof ProteinReference || orig instanceof SmallMoleculeReference))
-				log.warn(msg);
-			else if(!complexOrGeneric)
-				log.info(msg);
-			else
-				log.debug(msg);
-
-			return Collections.emptySet();
-		}
-
-		// do id-mapping, for all ids at once, and return the result set
-		return service.map(sourceIds, mapTo);
+		return result;
 	}
 
 	private boolean isComplexOrGeneric(XReferrable e) {
