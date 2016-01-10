@@ -420,13 +420,11 @@ public final class Merger {
 					} else {//Protein, Dna*, Rna* type
 						mayAddUniprotHgncOrChebiXrefs(target, pe, "UNIPROT", 12);
 					}
-				} else if(pe instanceof Complex) {
-					continue; // skip
 				} else { // top PE class, i.e., pe.getModelInterface()==PhysicalEntity.class
 					mayAddUniprotHgncOrChebiXrefs(target, pe, "UNIPROT", 12);
 					mayAddUniprotHgncOrChebiXrefs(target, pe, "CHEBI", 6);
 				}
-			} else if(pe instanceof Gene) {
+			} else if(pe instanceof Gene || pe instanceof Complex) {
 				mayAddUniprotHgncOrChebiXrefs(target, pe, "UNIPROT", 12);
 			}
 		}
@@ -544,8 +542,19 @@ public final class Merger {
 		}
 
 		//shortcut
-		if(bpe.getXref().isEmpty() && bpe.getName().isEmpty())
+		if(bpe.getXref().isEmpty() && bpe.getName().isEmpty()) {
+			if(bpe instanceof Complex
+				|| (bpe instanceof PhysicalEntity && !((PhysicalEntity)bpe).getMemberPhysicalEntity().isEmpty())
+				|| (bpe instanceof EntityReference && !((EntityReference)bpe).getMemberEntityReference().isEmpty())
+			) //if complex or generic PE or ER -
+				log.debug("mayAddUniprotHgncOrChebiXrefs(): GENERIC " + bpe.getModelInterface().getSimpleName()
+					+ " (" + bpe.getUri() + ") has neither xrefs nor any names.");
+			else
+				log.warn("mayAddUniprotHgncOrChebiXrefs(): NOT generic " + bpe.getModelInterface().getSimpleName()
+						+ " (" + bpe.getUri() + ") has no xrefs/names!");
+
 			return;
+		}
 
 		String organismRemark = " (organism=";
 		if(bpe instanceof SequenceEntityReference)
@@ -557,9 +566,9 @@ public final class Merger {
 
 		if(!xrefsContainDb(bpe, db)) { //bpe does not have any uniprot or chebi xrefs
 			// map other IDs and names to the primary IDs of ERs that can be found in the Warehouse
-			Set<String> primaryIds = idMappingByXrefsUnion(bpe, db, UnificationXref.class);
+			Set<String> primaryIds = idMappingByXrefs(bpe, db, UnificationXref.class);
 			if (primaryIds.isEmpty())
-				primaryIds.addAll(idMappingByXrefsUnion(bpe, db, RelationshipXref.class));
+				primaryIds.addAll(idMappingByXrefs(bpe, db, RelationshipXref.class));
 			// if none found, try (map) by names; but -
 			// e.g, 'HLA DQB1' (HPRD_05054) protein gets >200 uniprot xrefs if mapped by names...
 			if (primaryIds.isEmpty()
@@ -593,7 +602,7 @@ public final class Merger {
 			}
 			//perform id-mapping to primary uniprot accessions
 			if(uniprotIds.isEmpty())
-				log.warn("idMappingByXrefsUnion, no uniprot accessions collected from " + bpe.getUri() + organismRemark);
+				log.warn("idMappingByXrefs, no uniprot accessions collected from " + bpe.getUri() + organismRemark);
 			else {
 				final Collection<String> primaryACs = service.map(uniprotIds, "UNIPROT");
 				// map primary ACs to HGNC Symbols and generate RXs if there're not too many...
@@ -708,17 +717,23 @@ public final class Merger {
 		return null;
 	}
 
-	private Set<String> idMappingByXrefsUnion(XReferrable orig, String mapTo, Class<? extends Xref> xrefType)
+	private Set<String> idMappingByXrefs(XReferrable orig, String mapTo, Class<? extends Xref> xrefType)
 	{
+		//this method is to be called for a Gene, Complex, EntityReference
+		// - or a simple PEs that have no ER or its ER has no xrefs.
+		Assert.isTrue(
+			(orig instanceof Gene || orig instanceof PhysicalEntity || orig instanceof EntityReference)
+			&&
+			(!(orig instanceof SimplePhysicalEntity) || ((SimplePhysicalEntity)orig).getEntityReference()==null
+				|| ((SimplePhysicalEntity)orig).getEntityReference().getXref().isEmpty())
+		);
+
 		final Set<String> sourceIds = new HashSet<String>();
 		for (Xref x : orig.getXref()) {
 			if(x instanceof PublicationXref)
 				continue;
-
-			if(x.getDb() == null || x.getDb().isEmpty()
-					|| x.getId() == null || x.getId().isEmpty()) {
-				log.warn("Ignored bad " + xrefType.getSimpleName()
-					+ " (" + x.getUri() + "), db: " + x.getDb() + ", id: " + x.getId());
+			if(x.getDb() == null || x.getDb().isEmpty() || x.getId() == null || x.getId().isEmpty()) {
+				log.debug("Ignored malformed " + xrefType.getSimpleName() + ";" + x.getUri());
 				continue;
 			}
 			if (xrefType.isInstance(x)) {
@@ -726,17 +741,27 @@ public final class Merger {
 				sourceIds.add(id);
 			}
 		}
-		// do id-mapping at once
+
 		if(sourceIds.isEmpty()) {
-			String org = (orig instanceof SequenceEntityReference)
-				? "organism="+String.valueOf(((SequenceEntityReference)orig).getOrganism()) : "";
-			if(log.isDebugEnabled())
-				log.debug("idMappingByXrefsUnion, no source IDs collected from " +
-					xrefType.getSimpleName() + "xrefs of " + orig.getModelInterface().getSimpleName() +
-						" (" + orig.getUri() + "); " + org);
+			final String org = (orig instanceof SequenceEntityReference)
+				? "organism: " + String.valueOf(((SequenceEntityReference)orig).getOrganism()) : "";
+			final boolean isGeneric = orig instanceof Complex
+				|| (orig instanceof PhysicalEntity && !((PhysicalEntity)orig).getMemberPhysicalEntity().isEmpty())
+				|| (orig instanceof EntityReference && !((EntityReference)orig).getMemberEntityReference().isEmpty());
+
+			final String msg = "idMappingByXrefs, no " + xrefType.getSimpleName() +
+					" xref IDs for mapping: " + ((isGeneric)?"GENERIC ":"") + orig.getModelInterface().getSimpleName() +
+					" (" + orig.getUri() + "); " + org;
+
+			if(isGeneric) //usually, no IDs is no surprise for generic/complex entity case...
+				log.debug(msg);
+			else //warning can help improve input data (provider should have had some gene/chem xrefs there)
+				log.info(msg);
+
 			return Collections.emptySet();
 		}
 
+		// do id-mapping, for all ids at once, and return the result set
 		return service.map(sourceIds, mapTo);
 	}
 
@@ -808,12 +833,12 @@ public final class Merger {
 			EntityReference orig, String dest, String canonicalUriPrefix)
 	{
 		//map by unification xrefs that are equivalent or map to the same, the only, primary ID and warehouse ER
-		Set<String> mappingSet = idMappingByXrefsUnion(orig, dest, UnificationXref.class);
+		Set<String> mappingSet = idMappingByXrefs(orig, dest, UnificationXref.class);
 		Set<EntityReference> mapsTo = findEntityRefUsingIdMappingResult(mappingSet, canonicalUriPrefix);
 
 		if(mapsTo.isEmpty()) {
 			//next, try - relationship xrefs
-			mappingSet = idMappingByXrefsUnion(orig, dest, RelationshipXref.class);
+			mappingSet = idMappingByXrefs(orig, dest, RelationshipXref.class);
 			mapsTo = findEntityRefUsingIdMappingResult(mappingSet, canonicalUriPrefix);
 		}
 
