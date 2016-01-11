@@ -803,23 +803,6 @@ public class CPathServiceImpl implements CPathService {
 
 
 	@Override
-	public void saveIfUnique(Mapping mapping) {
-		if(!exists(mapping)) {
-			mappingsRepository.save(mapping);
-		} else {
-			//ignore
-		}
-	}
-
-	private boolean exists(Mapping m) {
-		return mappingsRepository
-			.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(
-					m.getSrc(), m.getSrcId(), m.getDest(), m.getDestId()) 
-						!= null;
-	}
-	
-	
-	@Override
 	public void log(Collection<LogEvent> events, String ipAddr) {
 
 		for(LogEvent event : events) {

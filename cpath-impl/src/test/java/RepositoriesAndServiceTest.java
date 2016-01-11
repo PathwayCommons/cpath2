@@ -87,7 +87,7 @@ public class RepositoriesAndServiceTest {
 
 	
 	/**
-	 * Test method for {@link org.springframework.data.repository.CrudRepository#save(S)}.
+	 * Test method for {@link org.springframework.data.repository.CrudRepository#save(Object)}.
 	 */
 	@DirtiesContext //other tests might added records too; do cleanup
 	@Test
@@ -281,18 +281,18 @@ public class RepositoriesAndServiceTest {
         assertEquals(1, service.map("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
         
         // repeat (should successfully update)- add a Mapping
-        service.saveIfUnique(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
+        service.mapping().save(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
         assertTrue(service.map(null, "FooBar", "UNIPROT").isEmpty());
         assertTrue(service.map("TEST", "FooBar", "UNIPROT").isEmpty());
         Set<String> mapsTo = service.map(null, "FooBar", "CHEBI");
         assertEquals(1, mapsTo.size());
         assertEquals("CHEBI:12345", mapsTo.iterator().next());
         
-        service.saveIfUnique(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "UNIPROT"));
+        service.mapping().save(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "UNIPROT"));
         assertEquals(1, service.map("uniprot isoform", "A2A2M3-1", "UNIPROT").size());
         
         Mapping m = new Mapping("PubChem-substance", "14438", "CHEBI", "CHEBI:20");
-        service.saveIfUnique(m);
+        service.mapping().save(m);
         assertNotNull(service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(
         		m.getSrc(), m.getSrcId(), m.getDest(), m.getDestId()));
         assertEquals(1, service.map("PubChem-substance", "14438", "CHEBI").size());

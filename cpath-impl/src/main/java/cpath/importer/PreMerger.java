@@ -256,11 +256,7 @@ public final class PreMerger {
 
 
 	private void saveIgnoringDuplicates(Set<Mapping> mappings) {
-		for(Mapping mapping : mappings) {
-			try {
-				service.saveIfUnique(mapping);
-			} catch (DataIntegrityViolationException e) {} //ignore same entries
-		}
+		service.mapping().save(new ArrayList<Mapping>(mappings));
 	}
 
 

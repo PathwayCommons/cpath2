@@ -93,9 +93,7 @@ public interface CPathService {
 	 * @param biopaxClass
 	 * @param dsources URIs of data sources
 	 * @param organisms URIs of organisms
-	 * @return
-	 * 
-	 * @see PaxtoolsDAO#search(String, Class[], String[], String[])
+	 * @return error or result service response
 	 */
 	ServiceResponse search(String queryStr, 
 			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms);
@@ -223,15 +221,6 @@ public interface CPathService {
      */
     Set<String> map(String fromDb, String fromId, String toDb);
         
-    /**
-     * Test if this or equivalent record exists
-     * in the id-mapping db and if not, saves the new one.
-     * 
-     * @param mapping
-     * @return
-     */
-    void saveIfUnique(Mapping mapping);
-
 	/**
 	 * Saves and counts a series of data access events 
 	 * (usually associated with the same web request) 
