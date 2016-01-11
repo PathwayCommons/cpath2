@@ -32,6 +32,7 @@ import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import org.biopax.paxtools.controller.Cloner;
@@ -78,8 +79,7 @@ import cpath.service.jaxb.SearchHit;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 import cpath.service.jaxb.TraverseResponse;
-import cpath.service.ErrorResponse;
-import cpath.service.OutputFormat;
+
 import static cpath.service.Status.*;
 
 
@@ -107,12 +107,15 @@ public class CPathServiceImpl implements CPathService {
 	
 	private SimpleIOHandler simpleIO;
 	
-	//init. on first access to getBlacklist(); so do not use it directly
+	//init on first access to getBlacklist(); so do not use it directly
 	private Blacklist blacklist; 
 	
-	//init. on first access when proxy model mode is enabled (so do not use the var. directly!)
+	//on first access when proxy model mode is enabled (so do not use the var. directly!)
 	private Model paxtoolsModel;
-	
+
+	final private Pattern isoformIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
+	final private Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
+
 	/**
 	 * Constructor
 	 */
@@ -187,9 +190,8 @@ public class CPathServiceImpl implements CPathService {
 			log.error("search() failed - " + e);
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
-		
 	}
-		
+
 
 	@Override
 	public ServiceResponse fetch(final OutputFormat format, final String... uris) {
@@ -255,14 +257,7 @@ public class CPathServiceImpl implements CPathService {
 		if(direction == null) {
 			direction = Direction.UNDIRECTED;
 		}
-		
-//		if(direction == Direction.UNDIRECTED) {
-//			// TODO let's restrict to 1 in this case, 
-//			// to avoid huge unmanageable (by the web controller) results, 
-//			//until we find a better solution
-//			limit = 1; 
-//		}
-		
+
 		// execute the paxtools graph query
 		try {
 			// init source elements
@@ -388,9 +383,15 @@ public class CPathServiceImpl implements CPathService {
 	
 
 	private ServiceResponse convert(Model m, OutputFormat format) {
-		return (format==OutputFormat.SBGN)
-			? (new BiopaxConverter(getBlacklist())).convert(m, format, true) //apply layout
-				:  (new BiopaxConverter(getBlacklist())).convert(m, format); //default: 'uniprot' for GSEA; 'HGNC' for SIF.
+		BiopaxConverter biopaxConverter = new BiopaxConverter(getBlacklist());
+		ServiceResponse toReturn;
+
+		if (format==OutputFormat.GSEA)
+			toReturn = biopaxConverter.convert(m, format, "uniprot", true); //using uniprot IDs, PRs both in and outside pathways, etc.
+		else
+			toReturn = biopaxConverter.convert(m, format); //using default config. (ID type, layout, etc.)
+
+		return toReturn;
 	}
 
 
@@ -405,10 +406,9 @@ public class CPathServiceImpl implements CPathService {
 		final String[] src = findUrisByIds(sources);
 
 		if (direction == Direction.BOTHSTREAM) {
-			return new ErrorResponse(BAD_REQUEST, 
-				"Direction cannot be BOTHSTREAM for the COMMONSTREAM query");
+			return new ErrorResponse(BAD_REQUEST, "Direction cannot be BOTHSTREAM for the COMMONSTREAM query");
 		} else if(direction == null) {
-			direction = Direction.DOWNSTREAM;	
+			direction = Direction.DOWNSTREAM;
 		}
 		
 		// execute the paxtools graph query
@@ -416,8 +416,7 @@ public class CPathServiceImpl implements CPathService {
 			// init source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
 			if(elements.isEmpty()) {
-				return new ErrorResponse(NO_RESULTS_FOUND,
-						"No BioPAX objects found by URI(s): " + Arrays.toString(src));
+				return new ErrorResponse(NO_RESULTS_FOUND, "No BioPAX objects found by URIs: " + Arrays.toString(src));
 			}
 
 			// Execute the query, get result elements
@@ -658,7 +657,7 @@ public class CPathServiceImpl implements CPathService {
 	 * This utility method prepares the source or target 
 	 * object sets for a graph query.
 	 * 
-	 * @param main source model
+	 * @param model source model
 	 * @param ids specific source or target set of IDs
 	 * @return related biopax elements
 	 */
@@ -699,82 +698,75 @@ public class CPathServiceImpl implements CPathService {
 		}
 	}
 
-	
+
 	private boolean paxtoolsModelReady() {
 		return paxtoolsModel != null;
-	}	
-	
-	
+	}
+
+
 	@Override
 	public Set<String> map(String fromDb, String fromId, String toDb) {
-    	Assert.hasText(fromId);
-    	Assert.hasText(toDb);
-    	
-    	List<Mapping> maps;    	
-    	if(fromDb == null || fromDb.isEmpty()) {
-    		maps = mappingsRepository.findBySrcIdAndDestIgnoreCase(fromId, toDb);
-    	} else {    	
-    		//if possible, use a "canonical" id instead isoform, version, kegg gene...
-    		// (e.g., uniprot.isoform, P04150-2 pair becomes uniprot, P04150)
-    		String id = fromId;
-    		String db = fromDb;
-    		
-    		//normalize the name
-    		try {
-				String stdDb = MiriamLink.getName(db);
-				if(stdDb != null) // be safe
-					db = stdDb.toUpperCase();
+		Assert.hasText(fromId);
+		Assert.hasText(toDb);
+
+		//normalize the name and/or id
+		if (fromDb != null) {
+			try {
+				String stdDb = MiriamLink.getName(fromDb);
+				if (stdDb != null) // be safe
+					fromDb = stdDb.toUpperCase();
 			} catch (IllegalArgumentException e) {
-			}		
-    		
-    		if(db.equalsIgnoreCase("uniprot isoform") 
-    				|| db.equalsIgnoreCase("uniprot.isoform")) 
-    		{
-    			int idx = id.lastIndexOf('-');
-    			if(idx > 0) {//using corr. UniProt ID instead
-    				id = id.substring(0, idx);
-    				db = "UNIPROT";
-    			}
-    		}
-    		else if(db.toUpperCase().startsWith("UNIPROT")) {
-    			//e.g., 'UNIPROT' instead of 'UniProt Knowledgebase'
-    			db = "UNIPROT";
-    		}
-    		else if(db.toUpperCase().startsWith("SWISSPROT")) {
-    			db = "UNIPROT";
-    		}
-    		else if(db.equalsIgnoreCase("refseq")) {
-    			//strip, e.g., refseq:NP_012345.2 to refseq:NP_012345
-    			int idx = id.lastIndexOf('.');
-    			if(idx > 0)
-    				id = id.substring(0, idx);
-    		} 
-    		else if(db.toLowerCase().startsWith("kegg") && id.matches(":\\d+$")) {
-    			int idx = id.lastIndexOf(':');
-    			if(idx > 0) {
-    				id = id.substring(idx + 1); //it's NCBI Gene ID;
-    				db = "NCBI GENE";
-    			}
-    		}
-    		else if(db.equalsIgnoreCase("GENEID") || db.equalsIgnoreCase("ENTREZ GENE")) {
-    			db = "NCBI GENE";
-    		} else if(db.toUpperCase().contains("PUBCHEM") && 
-    				(db.toUpperCase().contains("SUBSTANCE") || db.toUpperCase().contains("SID"))) {
-    			db = "PUBCHEM-SUBSTANCE";
-    		} else if(db.toUpperCase().contains("PUBCHEM") && 
-    				(db.toUpperCase().contains("COMPOUND") || db.toUpperCase().contains("CID"))) {
-    			db = "PUBCHEM-COMPOUND";
-    		}
-    		
-    		maps = mappingsRepository
-    			.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase(db, id, toDb);
-    	}
-    	
-    	Set<String> results = new TreeSet<String>();   	
+			}
+
+			if (fromDb.toUpperCase().startsWith("UNIPROT") || fromDb.toUpperCase().startsWith("SWISSPROT")) {
+				//if we got here, the ID does not match the uniprot AC patterns, but it can be ID like CALM_HUMAN
+				fromDb = "UNIPROT";
+				if(isoformIdPattern.matcher(fromId).find() && fromId.contains("-")) {
+					//it's certainly a uniprot isoform id; so we replace it with the corresponding accession number
+					fromId = fromId.replaceFirst("-\\d+$", "");
+				}
+			} else if (fromDb.toLowerCase().startsWith("kegg") && fromId.matches(":\\d+$")) {
+				int idx = fromId.lastIndexOf(':');
+				if (idx > 0) {
+					fromId = fromId.substring(idx + 1); //it's NCBI Gene ID;
+					fromDb = "NCBI GENE";
+				}
+			}
+			else if (fromDb.equalsIgnoreCase("REFSEQ") && fromId.contains(".")) {
+				//remove the version number, such as ".1"
+				fromId = fromId.replaceFirst("\\.\\d+$", "");
+			}
+			else if (fromDb.equalsIgnoreCase("GENEID") || fromDb.equalsIgnoreCase("ENTREZ GENE")) {
+				fromDb = "NCBI GENE";
+			} else if (fromDb.toUpperCase().contains("PUBCHEM") &&
+					(fromDb.toUpperCase().contains("SUBSTANCE") || fromDb.toUpperCase().contains("SID"))) {
+				fromDb = "PUBCHEM-SUBSTANCE";
+			} else if (fromDb.toUpperCase().contains("PUBCHEM") &&
+					(fromDb.toUpperCase().contains("COMPOUND") || fromDb.toUpperCase().contains("CID"))) {
+				fromDb = "PUBCHEM-COMPOUND";
+			}
+		} else {
+			if(isoformIdPattern.matcher(fromId).find() && fromId.contains("-")) {
+				//it's certainly a uniprot isoform id; so we replace it with the corresponding accession number
+				fromId = fromId.replaceFirst("-\\d+$", "");
+				fromDb = "UNIPROT";
+			}
+			else if (refseqIdPattern.matcher(fromId).find() && fromId.contains(".")) {
+				//remove the version number, such as ".1"
+				fromDb = "REFSEQ";
+				fromId = fromId.replaceFirst("\\.\\d+$", "");
+			}
+		}
+
+		List<Mapping> maps = (fromDb!=null)
+			? mappingsRepository.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase(fromDb, fromId, toDb)
+				: mappingsRepository.findBySrcIdAndDestIgnoreCase(fromId, toDb);
+
+    	Set<String> results = new TreeSet<String>();
     	for(Mapping m : maps) {
     		results.add(m.getDestId());
     	}
-    	
+
 		return results;
 	}
 
@@ -1006,14 +998,7 @@ public class CPathServiceImpl implements CPathService {
 		log(logEventsFromFilename(fileName), ipAddr);
 	}
 	
-	/**
-	 * Creates a list of events to update counts for -
-	 * name, format, provider - from the data file 
-	 * (in the batch downloads or another directory).
-	 * 
-	 * @param filename see {@link CPathSettings#biopaxExportFileName(String)} for how it's created.
-	 * @return
-	 */
+
 	public Set<LogEvent> logEventsFromFilename(String filename) {
 		Set<LogEvent> set = new HashSet<LogEvent>();
 		final CPathSettings cpath2 = CPathSettings.getInstance();
@@ -1052,6 +1037,6 @@ public class CPathServiceImpl implements CPathService {
 		
 		return set;
 	}
-	
+
 }
 

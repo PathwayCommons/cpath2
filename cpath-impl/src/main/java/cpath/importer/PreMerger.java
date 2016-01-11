@@ -1,29 +1,3 @@
-/**
- ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
- ** and University of Toronto (UofT).
- **
- ** This is free software; you can redistribute it and/or modify it
- ** under the terms of the GNU Lesser General Public License as published
- ** by the Free Software Foundation; either version 2.1 of the License, or
- ** any later version.
- **
- ** This library is distributed in the hope that it will be useful, but
- ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- ** documentation provided hereunder is on an "as is" basis, and
- ** both UofT and MSKCC have no obligations to provide maintenance, 
- ** support, updates, enhancements or modifications.  In no event shall
- ** UofT or MSKCC be liable to any party for direct, indirect, special,
- ** incidental or consequential damages, including lost profits, arising
- ** out of the use of this software and its documentation, even if
- ** UofT or MSKCC have been advised of the possibility of such damage.  
- ** See the GNU Lesser General Public License for more details.
- **
- ** You should have received a copy of the GNU Lesser General Public License
- ** along with this software; if not, write to the Free Software Foundation,
- ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
- ** or find it at http://www.fsf.org/ or http://www.gnu.org.
- **/
 package cpath.importer;
 
 
@@ -60,88 +34,87 @@ import java.io.*;
  */
 public final class PreMerger {
 
-    private static Logger log = LoggerFactory.getLogger(PreMerger.class);
-    
-    /**
-     * Values to generate standard BioPAX RelationshipTypeVocabulary objects.
-     */
-    public static enum RelTypeVocab {
-    	IDENTITY("identity", "http://identifiers.org/psimi/MI:0356", "MI", "MI:0356"),
-    	SECONDARY_ACCESSION_NUMBER("secondary-ac", "http://identifiers.org/psimi/MI:0360", "MI", "MI:0360"),
-    	ADDITIONAL_INFORMATION("see-also", "http://identifiers.org/psimi/MI:0361", "MI", "MI:0361"),
-    	//next should work for rel. xrefs pointing to a protein but attached to a Gene, Dna*, Rna* biopax objects
-    	GENE_PRODUCT("gene product", "http://identifiers.org/psimi/MI:0251", "MI", "MI:0251"),
-    	SET_MEMBER("set member", "http://identifiers.org/psimi/MI:1341", "MI", "MI:1341"),
-    	//next one is probably for chebi "is_a" relationships (when parent is a chemical class/concept rather than compound)
-    	MULTIPLE_PARENT_REFERENCE("multiple parent reference", "http://identifiers.org/psimi/MI:0829", "MI", "MI:0829"),
-    	ISOFORM_PARENT("isoform-parent", "http://identifiers.org/psimi/MI:0243", "MI", "MI:0243"),
-    	;
+	private static Logger log = LoggerFactory.getLogger(PreMerger.class);
 
-    	public final String term;
-    	public final String uri;
-    	public final String db;
-    	public final String id;
+	/**
+	 * Values to generate standard BioPAX RelationshipTypeVocabulary objects.
+	 */
+	public static enum RelTypeVocab {
+		IDENTITY("identity", "http://identifiers.org/psimi/MI:0356", "MI", "MI:0356"),
+		SECONDARY_ACCESSION_NUMBER("secondary-ac", "http://identifiers.org/psimi/MI:0360", "MI", "MI:0360"),
+		ADDITIONAL_INFORMATION("see-also", "http://identifiers.org/psimi/MI:0361", "MI", "MI:0361"),
+		//next should work for rel. xrefs pointing to a protein but attached to a Gene, Dna*, Rna* biopax objects
+		GENE_PRODUCT("gene product", "http://identifiers.org/psimi/MI:0251", "MI", "MI:0251"),
+		SET_MEMBER("set member", "http://identifiers.org/psimi/MI:1341", "MI", "MI:1341"),
+		//next one is probably for chebi "is_a" relationships (when parent is a chemical class/concept rather than compound)
+		MULTIPLE_PARENT_REFERENCE("multiple parent reference", "http://identifiers.org/psimi/MI:0829", "MI", "MI:0829"),
+		ISOFORM_PARENT("isoform-parent", "http://identifiers.org/psimi/MI:0243", "MI", "MI:0243"),;
 
-    	private RelTypeVocab(String term, String uri, String db, String id) {
-    		this.term = term;
-    		this.uri = uri;
-    		this.db = db;
-    		this.id = id;
-    	}
+		public final String term;
+		public final String uri;
+		public final String db;
+		public final String id;
 
-    	@Override
-    	public String toString() {
-    		return term;
-    	}
-    }
-    
-   
-    private CPathService service;
-    
-    private final String xmlBase;
+		private RelTypeVocab(String term, String uri, String db, String id) {
+			this.term = term;
+			this.uri = uri;
+			this.db = db;
+			this.id = id;
+		}
+
+		@Override
+		public String toString() {
+			return term;
+		}
+	}
+
+
+	private CPathService service;
+
+	private final String xmlBase;
 	private final Validator validator;
-	
+
 	private String identifier;
 
 	/**
 	 * Constructor.
 	 *
-	 * @param service
+	 * @param service   cpath2 service (provides data query methods)
 	 * @param validator Biopax Validator
-	 * @param provider pathway data provider's identifier
+	 * @param provider  pathway data provider's identifier
 	 */
-	public PreMerger(CPathService service, Validator validator, String provider) 
-	{
+	public PreMerger(CPathService service, Validator validator, String provider) {
 		this.service = service;
 		this.validator = validator;
 		this.xmlBase = CPathSettings.getInstance().getXmlBase();
-		this.identifier = (provider == null || provider.isEmpty()) 
+		this.identifier = (provider == null || provider.isEmpty())
 				? null : provider;
 	}
 
-    public void premerge() {
+	/**
+	 * Pre-process (import, clean, normalize) all data from all configured data sources.
+	 */
+	public void premerge() {
 		// Initially, there are no pathway data files yet,
 		// but if premerge was already called, then there're not empty dataFile
 		// and result files for the corresp. metadata objects, which will be cleared.
-		//
 		// Iterate over all metadata:
 		for (Metadata metadata : service.metadata().findAll()) {
 			// use filter if set (identifier and version)
-			if(identifier != null) {
-				if(!metadata.getIdentifier().equals(identifier))
+			if (identifier != null) {
+				if (!metadata.getIdentifier().equals(identifier))
 					continue;
 			}
-			
-			try {	
-					log.info("premerge(), now processing " + metadata.getIdentifier() );
-					
-					// Try to instantiate the Cleaner now, and exit if it fails!
-					Cleaner cleaner = null; //reset to null!
-					String cl = metadata.getCleanerClassname();
-					if(cl != null && cl.length()>0) {
-						cleaner = ImportFactory.newCleaner(cl);
-						if (cleaner == null) {
-							log.error("premerge(), failed to create the Cleaner: " + cl
+
+			try {
+				log.info("premerge(), now processing " + metadata.getIdentifier());
+				// Try to instantiate the Cleaner now, and exit if it fails!
+				Cleaner cleaner = null; //reset to null!
+				String cl = metadata.getCleanerClassname();
+				if (cl != null && cl.length() > 0) {
+					cleaner = ImportFactory.newCleaner(cl);
+					if (cleaner == null) {
+						log.error("premerge(), failed to create the Cleaner: " + cl
 								+ "; skipping for this data source...");
 							return; // skip this data entirely due to the error
 						} 			
@@ -192,30 +165,28 @@ public final class PreMerger {
 				
 			} catch (Exception e) {
 				log.error("premerge(): failed", e);
-				e.printStackTrace();
 			}
 		}
 	}
 
 	/**
 	 * Builds a BioPAX Warehouse model using all available
-	 * WAREHOUSE type data sources, builds id-mapping tables from 
-	 * MAPPING type data sources, generates extra xrefs, and saves the 
+	 * WAREHOUSE type data sources, builds id-mapping tables from
+	 * MAPPING type data sources, generates extra xrefs, and saves the
 	 * result model.
 	 */
 	public void buildWarehouse() {
-		
+
 		Model warehouse = BioPAXLevel.L3.getDefaultFactory().createModel();
 		warehouse.setXmlBase(xmlBase);
-		
+
 		// iterate over all metadata
-		for (Metadata metadata : service.metadata().findAll()) 
-		{
-			//skip not warehouse data
+		for (Metadata metadata : service.metadata().findAll()) {
+			//skip for not warehouse data
 			if (metadata.getType() != METADATA_TYPE.WAREHOUSE)
-				continue; 
-			
-			log.info("buildWarehouse(), adding data: " + metadata.getUri());			
+				continue;
+
+			log.info("buildWarehouse(), adding data: " + metadata.getUri());
 			InputStream inputStream;
 			for(Content content : metadata.getContent()) {
 				try {
@@ -224,33 +195,32 @@ public final class PreMerger {
 					m.setXmlBase(xmlBase);
 					warehouse.merge(m);
 				} catch (IOException e) {
-					log.error("buildWarehouse, skip for " + content.toString() + 
-						"; failed to read/merge from " + content.convertedFile(), e);
+					log.error("buildWarehouse(), skip for " + content.toString() +
+							"; failed to read/merge from " + content.convertedFile(), e);
 					continue;
 				}
 			}
 		}
+		log.info("buildWarehouse(), repairing the model...");
 		warehouse.repair();
-		
+
 		//clear all id-mapping tables
+		log.warn("buildWarehouse(), removing all previous id-mapping db entries...");
 		service.mapping().deleteAll();
-		
-		// Using the Warehouse, generate the id-mapping tables
-		// from that BioPAX model:
+
+		// Using the just built Warehouse BioPAX model, generate the id-mapping tables:
 		buildIdMappingFromWarehouse(warehouse);
-			
-		// Next, process all extra MAPPING data files, build, save tables
-		for (Metadata metadata : service.metadata().findAll()) 
-		{
+
+		// Next, process all extra MAPPING data files, build, save in the id-mapping db repository.
+		for (Metadata metadata : service.metadata().findAll()) {
 			//skip not id-mapping data
 			if (metadata.getType() != METADATA_TYPE.MAPPING)
-				continue; 
-			
+				continue;
+
 			log.info("buildWarehouse(), adding id-mapping: " + metadata.getUri());
 			for(Content content : metadata.getContent()) {
 				try {
-					Set<Mapping> mappings = simpleMapping(content, new GZIPInputStream(
-							new FileInputStream(content.originalFile())));
+					Set<Mapping> mappings = loadSimpleMapping(content);
 					saveIgnoringDuplicates(mappings);
 				} catch (Exception e) {
 					log.error("buildWarehouse(), failed to get id-mapping, " +
@@ -271,15 +241,15 @@ public final class PreMerger {
 		}
 		
 		// save to compressed file
-		String whFile  = CPathSettings.getInstance().warehouseModelFile();
-		log.info("buildWarehouse(), creating Warehouse BioPAX archive: " + whFile);		
+		String whFile = CPathSettings.getInstance().warehouseModelFile();
+		log.info("buildWarehouse(), creating Warehouse BioPAX archive: " + whFile);
 		try {
-			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(warehouse, 
+			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(warehouse,
 					new GZIPOutputStream(new FileOutputStream(whFile)));
 		} catch (IOException e) {
 			log.error("buildWarehouse(), failed", e);
 		}
-		
+
 		//Don't persist (do later after Merger)
 		log.info("buildWarehouse(), done.");
 	}
@@ -333,21 +303,21 @@ public final class PreMerger {
 	 * (not API).
 	 * 
 	 * @param content
-	 * @param inputStream
 	 * @return
 	 * @throws IOException 
 	 */
-	Set<Mapping> simpleMapping(Content content, InputStream inputStream) 
-			throws IOException 
-	{
+	Set<Mapping> loadSimpleMapping(Content content) throws IOException {
+
 		Set<Mapping> mappings = new HashSet<Mapping>();
 		
-		BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));				
+		BufferedReader reader = new BufferedReader(
+				new InputStreamReader(new GZIPInputStream(new FileInputStream(content.originalFile()))));
+
 		String line = reader.readLine(); //get the first, title line
 		String head[] = line.split("\t");
 		assert head.length == 2 : "bad header";
-		String from = head[0].trim().toUpperCase();
-		String to = head[1].trim().toUpperCase();
+		String from = head[0].trim();
+		String to = head[1].trim();
 		while ((line = reader.readLine()) != null) {
 			String pair[] = line.split("\t");
 			String srcId = pair[0].trim();
@@ -360,22 +330,19 @@ public final class PreMerger {
 	}
 
 
-	/**
+	/*
 	 * Extracts id-mapping information (name/id -> primary id) 
 	 * from the Warehouse entity references's xrefs to the mapping tables.
-	 * 
-	 * @param warehouse target model
 	 */
 	private void buildIdMappingFromWarehouse(Model warehouse) {		
-		log.info("buildIdMappingFromWarehouse(), updating id-mapping " +
-				"tables by analyzing the warehouse data...");
+		log.info("buildIdMappingFromWarehouse(), updating id-mapping tables by analyzing the warehouse data...");
 				
 		//Generates Mapping tables (objects) using ERs:
 		//a. ChEBI secondary IDs, PUBCHEM Compound, InChIKey, chem. name - to primary CHEBI AC;
 		//b. UniProt secondary IDs, RefSeq, NCBI Gene, etc. - to primary UniProt AC.
 		final Set<Mapping> mappings = new HashSet<Mapping>();
 		
-		// for each ER, using xrefs, map other identifiers to the primary accession
+		// for each ER, using its xrefs, map other identifiers to the primary accession
 		for(EntityReference er : warehouse.getObjects(EntityReference.class)) 
 		{	
 			String destDb = null;
@@ -383,22 +350,24 @@ public final class PreMerger {
 				destDb = "UNIPROT";
 			else if(er instanceof SmallMoleculeReference)
 				destDb = "CHEBI";
-			
+			else //there're only PR or SMR types of ER in the warehouse model
+				throw new AssertionError("Unsupported warehouse ER type: " + er.getModelInterface().getSimpleName());
+
 			//extract the primary id from the standard (identifiers.org) URI
 			final String ac = CPathUtils.idfromNormalizedUri(er.getUri());
-			
+
 			for(Xref x : er.getXref()) {
-				// By design (warehouse), there are unif. and rel. xrefs added 
-				// by the Uniprot Converter, and we will uses those, 
+				// By design (warehouse), there are unif. and rel. xrefs added
+				// by the Uniprot Converter, and we will uses those,
 				// skipping publication and illegal xrefs:
-				if(x.getDb() != null && x.getId() != null 
-					&& 
+				if(x.getDb() != null && x.getId() != null
+					&&
 					(// any unification xref
-						(x instanceof UnificationXref) 
-						|| // or for any typed relationship xref - 
-						( (x instanceof RelationshipXref) 
+						(x instanceof UnificationXref)
+						|| // or for any typed relationship xref -
+						( (x instanceof RelationshipXref)
 							  && ((RelationshipXref)x).getRelationshipType()!=null
-							  && 
+							  &&
 							  (	//use any identity type relationship xref
 								((RelationshipXref)x).getRelationshipType().getUri().endsWith(RelTypeVocab.IDENTITY.id)
 								|| // or any secondary accession type relationship xref
@@ -407,35 +376,14 @@ public final class PreMerger {
 						)
 					)
 				) {
-					String id = x.getId();
-					String srcDb = x.getDb().toUpperCase();
-					
-					if(srcDb.startsWith("UNIPROT") || srcDb.startsWith("SWISSPROT"))
-						srcDb = "UNIPROT"; //consider 'uniprot*' source IDs/names as 'UNIPROT' for simplicity
-					
-					mappings.add(new Mapping(srcDb, id, destDb, ac));
+					mappings.add(new Mapping(x.getDb(), x.getId(), destDb, ac));
 				}
 			}
 
-			if(er instanceof SmallMoleculeReference) {
-				SmallMoleculeReference smr = (SmallMoleculeReference) er;
-				//map some names (display and std.)
-				String name = smr.getDisplayName().toLowerCase();
-				mappings.add(new Mapping("CHEMICAL NAME", name, destDb, ac));	
-				//skip other names (and standardName) as they can be too long...
-			}
-			
-			if(er instanceof ProteinReference) {
-				ProteinReference pr = (ProteinReference) er;
-				//map unofficial IDs, e.g., CALM_HUMAN, too
-				String name = pr.getDisplayName().toUpperCase();
-				mappings.add(new Mapping("UNIPROT", name, destDb, ac));	
-			}
 		}
 
 		saveIgnoringDuplicates(mappings);
-		
-		log.info("buildIdMappingFromWarehouse(), exitting...");
+		log.info("buildIdMappingFromWarehouse(), done.");
 	}
 	
 
@@ -489,74 +437,76 @@ public final class PreMerger {
 		 * with the primary db name, as in Miriam, etc.
 		 */
 		//use a file instead of String for the RDF/XML data (which can be >2Gb and fail!)
-		Validation v = checkAndNormalize(info, dataStream, metadata, content.normalizedFile());
-
-		//save report data
-		content.saveValidationReport(v);
-
-		// count critical not fixed error cases (ignore warnings and fixed ones)
-		int noErrors = v.countErrors(null, null, null, null, true, true);
-		log.info("pipeline(), summary for " + info
-				+ ". Critical errors found:" + noErrors + ". " 
-				+ v.getComment().toString() + "; " + v.toString());
-
-		if(noErrors > 0) 
-			content.setValid(false); 
-		else 
-			content.setValid(true);
+		checkAndNormalize(info, dataStream, metadata, content);
 	}
 
 	
-	/**
+	/*
 	 * Validates, fixes, and normalizes given pathway data.
 	 *
 	 * @param title short description
-	 * @param biopaxStream BioPAX OWL
+	 * @param biopaxStream BioPAX OWL stream
 	 * @param metadata data provider's metadata
-	 * @param outFileName a file name/path where to write the normalized BioPAX data
-	 * @return the object explaining the validation/normalization results
+	 * @param content current chunk of data from the data source
 	 */
-	private Validation checkAndNormalize(String title, InputStream biopaxStream, Metadata metadata, String outFileName) 
-	{	
-		// create a new empty validation (options: auto-fix=true, report all) and associate with the model
-		Validation validation = new Validation(new IdentifierImpl(), 
-				title, true, Behavior.WARNING, 0, null); // sets the title
-		
-		// configure Normalizer
+	private void checkAndNormalize(String title, InputStream biopaxStream, Metadata metadata, Content content)
+	{
+		// clearContent Normalizer
 		Normalizer normalizer = new Normalizer();
-		// set cpath2 xml:base for the normalizer to use instead of the model's one (important!)
+		//set xml:base to use instead of the original model's one (important!)
 		normalizer.setXmlBase(xmlBase);
-		// to infer/auto-fix biopax properties
 		normalizer.setFixDisplayName(true); // important
 		normalizer.setDescription(title);
-		
-		// because errors are also reported during the import (e.g., syntax)
-		try {
-			validator.importModel(validation, biopaxStream);			
-			validator.validate(validation);
-			// unregister the validation object 
-			validator.getResults().remove(validation);
 
-			// normalize
-			log.info("checkAndNormalize, now normalizing pathway data "	+ title);
-			Model model = (Model) validation.getModel();
+		Model model = null;
+		//validate or just normalize
+		if(metadata.getType() == METADATA_TYPE.MAPPING) {
+			throw new IllegalArgumentException("checkAndNormalize, unsupported Metadata type (MAPPING)");
+		} else if(metadata.isNotPathwayData()) { //that's Warehouse data
+			//get the cleaned/converted model; skip validation
+			model = new SimpleIOHandler(BioPAXLevel.L3).convertFromOWL(biopaxStream);
+//			content.setValid(true);
+		} else { //validate/normalize pathway data (cleaned, converted biopax data)
+			try {
+				log.info("checkAndNormalize, validating "	+ title);
+				// create a new empty validation (options: auto-fix=true, report all) and associate with the model
+				Validation validation = new Validation(new IdentifierImpl(), title, true, Behavior.WARNING, 0, null);
+				// errors are also reported during the data are being read (e.g., syntax errors)
+				validator.importModel(validation, biopaxStream);
+				validator.validate(validation); //check all semantic rules
+				// unregister the validation object
+				validator.getResults().remove(validation);
 
-			//Normalize (URIs, etc.)
-			normalizer.normalize(model);
-			
-			// (in addition to normalizer's job) find existing or create new Provenance 
-			// from the metadata to add it explicitly to all entities -
-			metadata.setProvenanceFor(model);
+				// get the updated model
+				model = (Model) validation.getModel();
+				// update dataSource property (force new Provenance) for all entities
+				metadata.setProvenanceFor(model);
 
-			OutputStream out = new GZIPOutputStream(new FileOutputStream(outFileName));
-			(new SimpleIOHandler(model.getLevel())).convertToOWL(model, out);
-			
-		} catch (Exception e) {
-			throw new RuntimeException("checkAndNormalize(), " +
-				"Failed " + title, e);
+				content.saveValidationReport(validation);
+				// count critical not fixed error cases (ignore warnings and fixed ones)
+				int noErrors = validation.countErrors(null, null, null, null, true, true);
+				log.info("pipeline(), summary for " + title + ". Critical errors found:" + noErrors + ". "
+					+ validation.getComment().toString() + "; " + validation.toString());
+				if(noErrors > 0)
+					content.setValid(false);
+				else
+					content.setValid(true);
+			} catch (Exception e) {
+				throw new RuntimeException("checkAndNormalize(), failed " + title, e);
+			}
 		}
-		
-		return validation;
+
+		//Normalize URIs, etc.
+		log.info("checkAndNormalize, normalizing "	+ title);
+		normalizer.normalize(model);
+
+		// save
+		try {
+			OutputStream out = new GZIPOutputStream(new FileOutputStream(content.normalizedFile()));
+			(new SimpleIOHandler(model.getLevel())).convertToOWL(model, out);
+		} catch (Exception e) {
+			throw new RuntimeException("checkAndNormalize(), failed " + title, e);
+		}
 	}
 
 	

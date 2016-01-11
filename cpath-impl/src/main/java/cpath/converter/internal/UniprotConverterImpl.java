@@ -33,11 +33,6 @@ import java.io.*;
 final class UniprotConverterImpl extends BaseConverterImpl {
 
     private static final Logger log = LoggerFactory.getLogger(UniprotConverterImpl.class);
-       
-    /**
-     * Constructor
-     */
-	UniprotConverterImpl() {}
 
 
 	public void convert(InputStream is, OutputStream os) {
@@ -77,9 +72,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     if (xrefs != null) {
                         setXRefsFromDRs(xrefs.toString(), proteinReference, model);
                     }
-                          
                     setNameAndSynonyms(proteinReference, deField);
-                    
                     setOrganism(organismName, organismTaxId, proteinReference, model);
                     
                     // GN gene symbols - to PR names and rel. xrefs
@@ -197,7 +190,8 @@ final class UniprotConverterImpl extends BaseConverterImpl {
                     String fieldName = parts[0]; //no trim() required here
                     
                     String fieldValue = parts[1].trim();
-                    //after 1 Oct 2014, remove evidence (e.g., {type|source} - {ECO:0000269|PubMed10433554}) at the name's end (see http://www.uniprot.org/changes/evidences)
+                    // after 1 Oct 2014, remove evidence (e.g., {type|source} - {ECO:0000269|PubMed10433554})
+					// at the name's end (see http://www.uniprot.org/changes/evidences)
                     int idx = fieldValue.indexOf(" {");
                     if(idx>0) fieldValue = fieldValue.substring(0, idx);
                     
@@ -218,7 +212,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 	 * @param organismName String
      * @param organismTaxId String
      * @param proteinReference ProteinReference
-     * @param model
+     * @param model target biopax model
      */
     private void setOrganism(String organismName, String organismTaxId, 
     		ProteinReference proteinReference, Model model) {
@@ -257,8 +251,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
             }
         }
         if (reducedComments.length() > 0) {
-            reducedComments.append (" COPYRIGHT:  Protein annotation is derived from the "
-                    + "UniProt Consortium (http://www.uniprot.org/).  Distributed under "
+            reducedComments.append (" COPYRIGHT: UniProt Consortium (www.uniprot.org). Distributed under "
                     + "the Creative Commons Attribution-NoDerivs License.");
         }
         
@@ -266,31 +259,35 @@ final class UniprotConverterImpl extends BaseConverterImpl {
     }
 
 
-    /**
+    /*
      * Sets Multiple Types of XRefs, e.g. Entrez Gene ID and RefSeq.
 	 *
 	 * @param dbRefs String (concatenated 'DR' lines)
-     * @param proteinReference
-     * @param model
      */
     private void setXRefsFromDRs (String dbRefs, ProteinReference proteinReference, Model model) {
     	final String lines[] = dbRefs.split("\n"); 
     	
         for (String line : lines) {
-        	//remove everything after '.' (e.g., isoform refs, comments)
-        	String xref = line.replaceFirst("\\..*", "").trim();
+        	//remove everything after '.' (e.g., isoform refs, comments, etc.)
+        	String xref = line.trim();
+			//every line ends with '.' or '. [blah-...]' something
+			int lastDotIdx = xref.lastIndexOf(".");
+			xref = xref.substring(0,lastDotIdx);
         	String parts[] = xref.split(";");
-        	
+
+			// get the db name part
         	String db = parts[0].trim();
         	
         	// skip for other, not identity, ID types,
         	// e.g., refs to pathway databases, ontologies, etc.:
-        	if (!db.equalsIgnoreCase("GENEID") 
-        			&& !db.equalsIgnoreCase("REFSEQ") 
-        			&& !db.equalsIgnoreCase("ENSEMBL") 
-        			&& !db.equalsIgnoreCase("HGNC")) {
-				continue;
-        	}
+        	if (!(db.equalsIgnoreCase("GENEID")
+        			|| db.equalsIgnoreCase("REFSEQ")
+        			|| db.equalsIgnoreCase("ENSEMBL")
+        			|| db.equalsIgnoreCase("HGNC")
+					|| db.equalsIgnoreCase("IPI")
+//					|| db.equalsIgnoreCase("EMBL") //nucleotide sequence database
+					|| db.equalsIgnoreCase("DIP")
+			    )) { continue; }
 
 			String fixedDb = db;	
 			if (db.equalsIgnoreCase("GENEID"))
@@ -299,28 +296,34 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 			//iterate over the ID tokens of the same DR line, skipping non-ID comments, etc. (ending)
 			for (int j = 1; j < parts.length; j++) {
 				String id = parts[j].trim();
-
 				//at the end of a DR line in some cases (e.g, GeneID or RefSeq)?
-				if(id.equals("-"))
-					break;
-				//no more Ensembl IDs (skip comments)
-				if (db.equalsIgnoreCase("ENSEMBL") && !id.startsWith("ENS"))
-					break; 
-				//last ID in a HGNC line is in fact gene name
-				if(db.equalsIgnoreCase("HGNC") && !id.startsWith("HGNC:")) {
+				if(id.equals("-")) break;
+
+//can't be PDP here (already skipped above)
+//				if(db.equalsIgnoreCase("PDB") && !id.matches("^[0-9][A-Za-z0-9]{3}$")) break;
+//				else
+				if (db.equalsIgnoreCase("ENSEMBL") && !id.startsWith("ENS")) break;
+				else if (db.equalsIgnoreCase("PHARMGKB") && !id.startsWith("PA")) break;
+				else if (db.equalsIgnoreCase("DIP") && !id.startsWith("DIP-")) break;
+// hold on with using EMBL till future release (gonna get tooo many IDs/Xrefs)
+//				else if (db.equalsIgnoreCase("EMBL")) {
+//					if(!id.matches("^(\\w+\\d+(\\.\\d+)?)|(NP_\\d+)$"))
+//						break;
+//					fixedDb = "Nucleotide Sequence Database";
+//				}
+				else if(db.equalsIgnoreCase("HGNC") && !id.startsWith("HGNC:")) {
+					//last ID in a HGNC line is in fact gene name
 					fixedDb = "HGNC Symbol";
 				}
 				//remove .version from RefSeq IDs
-				if (db.equalsIgnoreCase("REFSEQ")) {
+				else if (db.equalsIgnoreCase("REFSEQ")) {
 					// extract only RefSeq AC from AC.Version ID form
 					fixedDb = "RefSeq";
 					id = id.replaceFirst("\\.\\d+", "");
 				}
 				
 				//ok to create a new rel. xref with type "identity"
-				RelationshipXref rXRef = PreMerger
-						.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, 
-								fixedDb, id, model);					
+				RelationshipXref rXRef = PreMerger.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, fixedDb, id, model);
 				proteinReference.addXref(rXRef);
 				// this xref type is then used for id-mapping in the Merger and queries;
 			}
@@ -405,7 +408,7 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 		proteinReference.addXref(rXRef);
     }
 
-	/**
+	/*
 	 * Generates a new protein reference object (ProteinReference, BioPAX L3)
 	 * from a pre-processed UniProt record: assigns the standard URI and 
 	 * unification xrefs.
@@ -425,7 +428,11 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 		// create a new PR
 		ProteinReference proteinReference = model.addNew(ProteinReference.class, uri);
 		proteinReference.setDisplayName(shortName);
-		
+
+		RelationshipXref rXRef = PreMerger
+				.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "UNIPROT", shortName, model);
+		proteinReference.addXref(rXRef);
+
 		// add all unification xrefs
 		for (String acEntry : acList) {
 			String ac = acEntry.trim();
@@ -438,11 +445,6 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 
 	/**
 	 * Gets a biosource
-	 *
-	 * @param taxId String
-	 * @param name String
-	 * @param model
-	 * @return BioSource
 	 */
 	private BioSource getBioSource(String taxId, String name, Model model) 
 	{

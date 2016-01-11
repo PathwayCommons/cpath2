@@ -93,7 +93,8 @@ public class UniprotConverterImplTest {
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
 //		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
-		assertEquals(10, pr.getXref().size()); //10, no duplicates
+		assertEquals(13, pr.getXref().size()); //no duplicates
+		assertTrue(pr.getXref().toString().contains("CALR_HUMAN"));
 		assertEquals("http://identifiers.org/taxonomy/9606", pr.getOrganism().getUri());
 		
 		// test MOD_RES features are created
@@ -141,7 +142,7 @@ public class UniprotConverterImplTest {
 		assertNull(model.getByID(uri));	
 		
 		//total xrefs generated for P62158
-		assertEquals(32, pr.getXref().size());
+		assertEquals(35, pr.getXref().size());
 		
 		//test for the following FT entry (two-line) was correctly parsed/converted:
 		//FT   MOD_RES      45     45       Phosphothreonine; by CaMK4 (By

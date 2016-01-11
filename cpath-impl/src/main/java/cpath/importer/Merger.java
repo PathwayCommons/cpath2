@@ -1,6 +1,6 @@
 /**
  ** Copyright (c) 2009 Memorial Sloan-Kettering Cancer Center (MSKCC)
- ** and University of Toronto (UofT).
+ ** and University of Toronto (UofT). Pathway Commons.
  **
  ** This is free software; you can redistribute it and/or modify it
  ** under the terms of the GNU Lesser General Public License as published
@@ -11,12 +11,12 @@
  ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
  ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
  ** documentation provided hereunder is on an "as is" basis, and
- ** both UofT and MSKCC have no obligations to provide maintenance, 
+ ** we have no obligations to provide maintenance,
  ** support, updates, enhancements or modifications.  In no event shall
- ** UofT or MSKCC be liable to any party for direct, indirect, special,
+ ** we be liable to any party for direct, indirect, special,
  ** incidental or consequential damages, including lost profits, arising
  ** out of the use of this software and its documentation, even if
- ** UofT or MSKCC have been advised of the possibility of such damage.  
+ ** we have been advised of the possibility of such damage.
  ** See the GNU Lesser General Public License for more details.
  **
  ** You should have received a copy of the GNU Lesser General Public License
@@ -36,6 +36,7 @@ import cpath.service.CPathService;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.model.level3.Process;
 import org.biopax.paxtools.normalizer.Normalizer;
 import org.biopax.paxtools.util.Filter;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -62,26 +63,24 @@ import java.util.zip.GZIPOutputStream;
 public final class Merger {
 
     private static final Logger log = LoggerFactory.getLogger(Merger.class);
-	
-    // configuration/flags
-	private final boolean force;	
-	private final String xmlBase;
 
-    private Model warehouseModel;
-    private Model mainModel;      
-	private CPathService service;
+	private final String xmlBase;
+	private final CPathService service;
+	private final Set<String> supportedTaxonomyIds;
+    private final Model warehouseModel;
+    private final Model mainModel;
+
 
 	/**
 	 * Constructor.
 	 * 
 	 * @param service cpath2 service
-	 * @param force whether to forcibly merge BioPAX data the validation reported critical about or skip.
 	 */
-	public Merger(CPathService service, boolean force) 
+	public Merger(CPathService service)
 	{
 		this.service = service;
 		this.xmlBase = CPathSettings.getInstance().getXmlBase();
-		this.force = force;		
+		this.supportedTaxonomyIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
 		
 		this.warehouseModel = CPathUtils.loadWarehouseBiopaxModel();
 		Assert.notNull(warehouseModel, "No BioPAX Warehouse");
@@ -121,23 +120,29 @@ public final class Merger {
 				log.info("Skip for warehouse data: " + metadata);
 				continue;
 			}
-			
-			Model datasourceResultModel = merge(metadata);
-			
+
+			// merge all (normalized BioPAX) data files of the same provider into one-provider model:
+			Model providerModel = merge(metadata);
+
+			//merge equiv. PEs within a data source (e.g., stateless vcam1 P19320 MI participants in hprd, intact, biogrid)
+			log.info("Merging all equivalent physical entity groups (" + metadata.getIdentifier() + ")...");
+			ModelUtils.mergeEquivalentPhysicalEntities(providerModel);
+
 			//export to the biopax archive in the batch downloads dir.
-			save(datasourceResultModel, metadata);
+			save(providerModel, metadata);
 			
 			//merge into the main model
-			log.info("Merging the updated and enriched '" + metadata.getIdentifier() + 
-					"' model into the main all-data BioPAX model...");
+			log.info("Merging the integrated '" + metadata.getIdentifier() +
+					"' model into the main all-providers BioPAX model...");
 			
-			simpleMerger.merge(mainModel, datasourceResultModel);
+			simpleMerger.merge(mainModel, providerModel);
 		}
 		
 		//extra cleanup
 		cleanupXrefs(mainModel);
+
 		ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
-		
+
 		//create or replace the main BioPAX archive
 		log.info("Saving or updating the Main BioPAX file...");
 		save();
@@ -169,18 +174,9 @@ public final class Merger {
 		
 		for (Content pwdata : metadata.getContent()) {
 			final String description = pwdata.toString();
-			if (pwdata.getValid() == null) {
-				log.warn("Skipped " + description + " - haven't gone through the premerge yet");
+			if (!new File(pwdata.normalizedFile()).exists()) {
+				log.warn("Skipped " + description + " - haven't fully gone through the premerge stage yet");
 				continue;
-			} else if (pwdata.getValid() == false) {
-				// has BioPAX errors
-				log.warn("There were critical BioPAX errors in - " + description);
-				if (!force) {
-					log.warn("Skipped " + description + " (due to BioPAX errors)");
-					continue;
-				} else {
-					log.warn("FORCE merging " + description + " (ignoring BioPAX errors)");
-				}
 			}
 
 			log.info("Merging: " + description);
@@ -250,11 +246,11 @@ public final class Merger {
 		
 		final String srcModelInfo = "source: " + description;
 		
-		//Convert all Xref.db values to lower case
+		//First, convert all Xref.db values to lower case
 		//...the Normalized must have already done so; anyway...
 		for(Xref x : source.getObjects(Xref.class))
 			if(x.getDb()!=null) x.setDb(x.getDb().toLowerCase());
-			
+
 		log.info("Searching for canonical or existing EntityReference objects " +
 				" to replace equivalent original objects ("+srcModelInfo+")...");
 		final Map<EntityReference, EntityReference> replacements = new HashMap<EntityReference, EntityReference>();
@@ -280,11 +276,26 @@ public final class Merger {
 				//i.e., no matching ER found in the Warehouse (the ER is from unwanted organism or unknown/no id).
 				// Remove the PR/Dna*R/Rna*R if entityReferenceOf() is empty (member of a generic ER, or dangling)
 				if(origEr instanceof SequenceEntityReference && origEr.getEntityReferenceOf().isEmpty()) {
-					for(EntityReference genericEr : new HashSet<EntityReference>(origEr.getMemberEntityReferenceOf())) {
-						genericEr.removeMemberEntityReference(origEr);
+					//remove unwanted dangling/member ER from the source model
+					boolean isSupported = false;
+					BioSource org = ((SequenceEntityReference) origEr).getOrganism();
+					if(org != null) {
+						for (Xref x : org.getXref()) {
+							if (supportedTaxonomyIds.contains(x.getId())) {
+								isSupported = true;
+								break;
+							}
+						}
 					}
-					//remove now dangling member ER from the source model
-					source.remove(origEr);
+					if(!isSupported) {
+						for(EntityReference genericEr : new HashSet<EntityReference>(origEr.getMemberEntityReferenceOf())) {
+							genericEr.removeMemberEntityReference(origEr);
+						}
+						source.remove(origEr);
+						log.info("Removed a dangling/member " + origEr.getModelInterface().getSimpleName()
+							+ " for which no warehouse ER was found: " + origEr.getUri() + "; organism: "
+								+ ((SequenceEntityReference) origEr).getOrganism());
+					}
 				}
 			}
 		}
@@ -301,8 +312,10 @@ public final class Merger {
 		ModelUtils.replace(source, replacements);
 		
 		log.info("Migrate some properties, such as original entityFeature and xref ("+srcModelInfo+")...");
-		copySomeOfPropertyValues(replacements);		
-		
+		copySomeOfPropertyValues(replacements);
+
+		filterOutUnwantedOrganismInteractions(source); //do carefully
+
 		// cleaning up dangling objects (including the replaced above ones)
 		log.info("Removing dangling objects ("+srcModelInfo+")...");
 		ModelUtils.removeObjectsIfDangling(source, UtilityClass.class);
@@ -329,8 +342,8 @@ public final class Merger {
 					// skip for SPE that got its ER just replaced (from Warehouse)
 					EntityReference er = ((SimplePhysicalEntity) pe).getEntityReference();
 					if(er != null && warehouseModel.containsID(er.getUri()))
-						continue;
-					
+						continue; //skip for just merged, canonical ERs
+
 					if(pe instanceof SmallMolecule) {
 						if(er == null)
 							addCanonicalRelXrefs(target, pe, "CHEBI");
@@ -360,7 +373,7 @@ public final class Merger {
 		log.info("Assigning new URIs (xml:base=" + xmlBase + 
 				"*) to all not normalized BioPAX elements (" + 
 				srcModelInfo + ", xml:base=" + source.getXmlBase() + ")...");
-		replaceOriginalUris(source, description, target);
+		replaceOriginalUris(source, description);
 		
 		log.info("Merging into the target one-datasource BioPAX model...");
 		// merge all the elements and their children from the source to target model
@@ -371,24 +384,80 @@ public final class Merger {
 		});
 		simpleMerger.merge(target, source);
 		log.info("Merged '" + srcModelInfo + "' model.");
+
 	}
+
+	private void filterOutUnwantedOrganismInteractions(Model source) {
+		//remove simple MIs where all participants are not from the organisms we want (as set in the properties file)
+		miLoop: for(MolecularInteraction mi : new HashSet<MolecularInteraction>(source.getObjects(MolecularInteraction.class))) {
+			//try to find a reason to keep this MI in the model:
+			// - it has a participant having one of allowed taxonomy ID;
+			// - it has a complex or process participant (at this time, we won't bother looking further...);
+			// - it has a simple sequence or gene participant with no organism specified (unknown - keep the MI)
+			for(Entity e : mi.getParticipant()) {
+				if(e instanceof Gene) {
+					BioSource bs = ((Gene) e).getOrganism();
+					if(bs == null) {
+						continue miLoop; //keep this MI untouched; go to the next one
+					} else {
+						for(Xref x : bs.getXref())
+							if(supportedTaxonomyIds.contains(x.getId()))
+								continue miLoop; //found a supported taxnonomy ID; skip the rest - do next MI...
+					}
+				}
+				else if(e instanceof SimplePhysicalEntity && !(e instanceof SmallMolecule)) {
+					SequenceEntityReference er = (SequenceEntityReference)((SimplePhysicalEntity)e).getEntityReference();
+					if (er == null || er.getOrganism() == null)
+						continue miLoop; //keep this MI
+					else {
+						for(Xref x : er.getOrganism().getXref())
+							if(supportedTaxonomyIds.contains(x.getId()))
+								continue miLoop; //found a supported taxnonomy; keep this MI
+					}
+				} else if(e instanceof SmallMolecule) {
+					continue; //next participant
+				} else {
+					//won't touch a MI with a Complex or Process participant...
+					continue miLoop;
+				}
+			}
+
+			//unless jumped to 'miLoop:' label above, remove this MI and participants
+			source.remove(mi);
+			log.info("MI is removed (all participants come from unwanted organisms): " + mi.getUri());
+			for(Entity e : new HashSet<Entity>(mi.getParticipant())) {
+				mi.removeParticipant(e);
+				//ok to remove from the model as well, because some may come back after merging
+				//if they are still used by other entities
+				source.remove(e);
+			}
+		}
+	}
+
 
 	/* 
 	 * Replace all not PC2 URIs in the source model
 	 * with new auto-generated ones using the PC2 xml:base
 	 * (also add a bp:comment about previous URIs)
 	 */
-	private void replaceOriginalUris(Model source, String description, Model target) {
+	private void replaceOriginalUris(Model source, String description) {
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
 		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
 			String currUri = bpe.getUri();
-			
-			// skip for previously normalized/generated objects and standard PXs
-			if(currUri.startsWith(xmlBase) ||
-					(bpe instanceof PublicationXref && currUri.startsWith("http://identifiers.org/pubmed")) ) {
-				continue;
-			}
-			
+
+			// skip for some previously normalized or generated objects
+			if(	currUri.startsWith(xmlBase)
+				|| (bpe instanceof PublicationXref && currUri.startsWith("http://identifiers.org/pubmed"))
+				|| (currUri.startsWith("http://identifiers.org/") &&
+					(	bpe instanceof Process
+						|| bpe instanceof ProteinReference
+						|| bpe instanceof SmallMoleculeReference
+						//or BioSource if both tissue and cellType are not defined -
+						|| (bpe instanceof BioSource && ((BioSource)bpe).getTissue()==null && ((BioSource)bpe).getCellType()==null)
+					)
+				)
+			){continue;}
+
 			// Generate new consistent URI for not generated not previously normalized objects:
 			String newUri = Normalizer.uri(xmlBase, null, description + currUri, bpe.getModelInterface());
 			
@@ -408,9 +477,8 @@ public final class Merger {
 			{ // move entity features of the replaced ER to the new canonical one
 				// remove the ef from the old ER
 				old.removeEntityFeature(ef);
-				// now, this ef should not belong to any other ER (no entityFeature can contain this ef, for all ERs)
-				//TODO ideally, we'd check for all the ERs in both the original and target models, and none should contain this ef.
-											
+				// - should not belong to any other ER anymore (no entityFeature prop. can contain this ef)
+
 				// If there exist an equivalent, don't add original 'ef', 
 				// but just replace with the equiv. one in all PEs of given old ER
 				EntityFeature equivEf = null;
@@ -460,7 +528,7 @@ public final class Merger {
 	 * @param db map identifiers to either CHEBI or UNIPROT IDs
 	 * @throws AssertionError when bpe is neither Gene nor PhysicalEntity nor EntityReference; or - db is unsupported.
 	 */
-	private void addCanonicalRelXrefs(Model m, Named bpe, String db) 
+	private void addCanonicalRelXrefs(Model m, Named bpe, String db)
 	{
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference)
 				|| !("UNIPROT".equals(db) || "CHEBI".equals(db))) {
@@ -520,12 +588,11 @@ public final class Merger {
 	private void addCanonicalRelXrefs(Model model, XReferrable bpe, String db, Set<String> mappingSet, RelTypeVocab relType)
 	{	
 		if(!(bpe instanceof Gene || bpe instanceof PhysicalEntity || bpe instanceof EntityReference))
-			throw new AssertionError("Not Gene or PE: " + bpe);
+			throw new AssertionError("addRelXrefs: not a Gene, ER, or PE: " + bpe.getUri());
 		
 		ac: for(String ac : mappingSet) {
 			// find or create
-			RelationshipXref rx = PreMerger
-				.findOrCreateRelationshipXref(relType, db, ac, model);
+			RelationshipXref rx = PreMerger.findOrCreateRelationshipXref(relType, db, ac, model);
 			
 			//check if an equivalent rel. xref is already present (skip it then)
 			for(Xref x : bpe.getXref()) {
@@ -586,18 +653,17 @@ public final class Merger {
 		// if still nothing came out yet, try id-mapping by (already normalized) Xrefs:
 		Set<EntityReference> ers = mapByXrefs(orig, "UNIPROT", canonicalPrefix);
 		if(ers.size()>1) {
-			log.warn(origUri + ", using its Xrefs, maps to multiple warehouse ERs: " + ers);
+			log.debug(origUri + ": by Xrefs, ambiguously maps to " + ers.size() + " warehouse PRs");
 			return null;
 		} else if (ers.size()==1)
 			return (ProteinReference) ers.iterator().next();
-		else //ers is empty set
-			return null;
+
+		// mapping/merging proteins by names is too risky, even when unambiguous (quite unlikely); so we won't do.
+
+		//nothing found
+		return null;
 	}
 
-	/*
-	 * Using specified class xrefs of given object, 
-	 * finds primary identifiers (can be many).
-	 */
 	private Set<String> idMappingByXrefs(final XReferrable orig,
 			String mapTo, final Class<? extends Xref> xrefType, boolean isUnion) 
 	{
@@ -659,8 +725,7 @@ public final class Merger {
 		for (Xref x : orig.getXref()) {			
 			if(x.getDb() == null || x.getDb().isEmpty()
 					|| x.getId() == null || x.getId().isEmpty()) {
-				log.warn("Ignored bad " + xrefType.getSimpleName()
-					+ " (" + x.getUri() + "), db: " + x.getDb() + ", id: " + x.getId());
+				log.warn("Ignored bad " + xrefType.getSimpleName() + ", " + x.getUri());
 				continue;
 			}
 						
@@ -698,7 +763,7 @@ public final class Merger {
 	 * @return the replacement standard object or null if not found/matched
 	 */
 	private SmallMoleculeReference findSmallMoleculeReferenceInWarehouse(final SmallMoleculeReference orig)
-	{				
+	{
 		final String standardPrefix = "http://identifiers.org/";
 		final String canonicalPrefix = standardPrefix + "chebi/";
 		final String origUri = orig.getUri();
@@ -709,7 +774,7 @@ public final class Merger {
 			if(toReturn != null)
 				return toReturn;
 		}
- 
+
 		// If nothing's found by URI, try id-mapping of the normalized URI part to chebi ID
 		if (origUri.startsWith(standardPrefix)) {
 			String id = origUri.substring(origUri.lastIndexOf('/')+1);
@@ -726,21 +791,25 @@ public final class Merger {
 		// try id-mapping by (already normalized) Xrefs:
 		Set<EntityReference> ers = mapByXrefs(orig, "CHEBI", canonicalPrefix);
 		if(ers.size()>1) {
-			log.warn(origUri + ", by its Xrefs, maps to " + ers.size() + " canonical ChEBI SMRs");
+			log.debug(origUri + ": by Xrefs, ambiguously maps to " + ers.size() + " warehouse SMRs");
 			return null;
 		} else if (ers.size()==1)
 			return (SmallMoleculeReference) ers.iterator().next();
 
 		// nothing? - keep trying, map by name (e..g, 'ethanol') to ChEBI ID
-		Set<String> mp = mapByName(orig, "CHEBI");
+		Set<String> mp = mapSmallMoleculeByExactName(orig);
 		ers = findEntityRefUsingIdMappingResult(mp, canonicalPrefix);
 		if(ers.size()>1) {
-			log.warn(origUri + ", using names, maps to " + ers.size() + " canonical ChEBI SMRs");
+			log.debug(origUri + ": by NAMEs, ambiguously maps to " + ers.size() + " warehouse SMRs");
 			return null;
-		} else if (ers.size()==1)
-			return (SmallMoleculeReference) ers.iterator().next();
-		else //ers is empty set
-			return null;
+		} else if (ers.size()==1) {
+			SmallMoleculeReference smr = (SmallMoleculeReference) ers.iterator().next();
+			log.warn(origUri + " is merged by name(s) to one " + smr.getUri());
+			return smr;
+		}
+
+		//if nothing found
+		return null;
 	}
 
 	private Set<EntityReference> mapByXrefs(EntityReference orig, String dest, String canonicalUriPrefix) {
@@ -755,46 +824,31 @@ public final class Merger {
 			mapsTo = findEntityRefUsingIdMappingResult(mappingSet, canonicalUriPrefix);
 		}
 
-		return mapsTo;
+		return mapsTo; //can be more than one, but then we won't merge the original ER
 	}
 
-	@SuppressWarnings("unchecked")
-	private Set<String> mapByName(EntityReference orig, String toDb) {
-		Set<String> mp = new TreeSet<String>();
+	private Set<String> mapSmallMoleculeByExactName(Named el) {
+		Set<String> mp = new HashSet<String>();
 
-		String name = orig.getStandardName();
-		if(name != null)
-			mp.addAll(service.map(null, name.toLowerCase(), toDb));
+		// save all the names in a different Set:
+		final Set<String> names = new HashSet<String>();
+		for(String n : el.getName())
+			names.add(n.toLowerCase()); //LC is vital
 
-		if(mp.isEmpty()) {
-			name = orig.getDisplayName();
-			if(name != null)
-				mp.addAll(service.map(null, name.toLowerCase(), toDb));
-		}
-		
-		if(mp.isEmpty() && //and only for PRs and SMRs -
-				(orig instanceof ProteinReference || orig instanceof SmallMoleculeReference)) 
-		{
-			//To find a warehouse SMR(s) with exactly the same name (case-insensitive).			
-			//first, collect all orig names, lowercase
-			Set<String> origNames = new HashSet<String>();
-			for(String n : orig.getName()) 
-				origNames.add(n.toLowerCase());
-			
-			//search for warehouse ERs of the same as orig's class
-			for(EntityReference er : warehouseModel
-					.getObjects((Class<? extends EntityReference>) orig.getModelInterface())) 
+		if(el instanceof SmallMolecule || el instanceof SmallMoleculeReference) {
+			//find a warehouse SMR(s) with exactly the same name (case-insensitive).
+			for(SmallMoleculeReference er : warehouseModel.getObjects(SmallMoleculeReference.class))
 			{
 				for(String s : er.getName()) {
-					if(origNames.contains(s.toLowerCase())) {
-						//extract the accession from URI, add
+					if(names.contains(s.toLowerCase())) {
+						//extract the ChEBI accession from URI, add
 						mp.add(CPathUtils.idfromNormalizedUri(er.getUri()));
 						break;
 					}
 				}
 			}			
 		}
-		
+
 		return mp;
 	}
 

@@ -64,12 +64,15 @@ public class DataImportTest {
 	
 	@Autowired
 	Validator validator;
-	
-	
+
 	@Test
 	@DirtiesContext
-	public void testPremergeAndMerge() throws IOException {		
-		//prepare the metadata
+	public void testPremergeAndMerge() throws IOException {
+
+		//should not fail:
+		CPathSettings.getInstance().getOrganismTaxonomyIds();
+
+		// prepare the metadata
         // load the test metadata and create warehouse
 		service.addOrUpdateMetadata("classpath:metadata.conf");	
 		Metadata ds = service.metadata().findByIdentifier("TEST_UNIPROT");
@@ -105,19 +108,15 @@ public class DataImportTest {
 		ac = service.map("uniprot", "A2A2M3", "UNIPROT").iterator().next(); 
 		assertEquals("Q8TD86", ac);
 		
-		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/" + ac));	
-		assertTrue(service.map(null, "Q8TD86-1", "UNIPROT").isEmpty());
-		assertTrue(service.map("uniprot", "Q8TD86-1", "UNIPROT").isEmpty());
-		assertTrue(service.map("uniprot knowledgebase", "Q8TD86-1", "UNIPROT").isEmpty());
-		//infers Q8TD86
+		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/" + ac));
+		//isoform ids are auto-converted to accessions
+		assertFalse(service.map(null, "Q8TD86-1", "UNIPROT").isEmpty());
+		assertFalse(service.map("uniprot", "Q8TD86-1", "UNIPROT").isEmpty());
+		assertFalse(service.map("uniprot knowledgebase", "Q8TD86-1", "UNIPROT").isEmpty());
 		assertFalse(service.map("uniprot isoform", "Q8TD86-1", "UNIPROT").isEmpty());
 		assertEquals("Q8TD86", service.map("uniprot isoform", "Q8TD86-1", "UNIPROT").iterator().next());					
-		// also -
-		assertTrue(service.map(null, "NP_619650.1", "UNIPROT").isEmpty());
+		assertFalse(service.map(null, "NP_619650.1", "UNIPROT").isEmpty());
 		assertFalse(service.map("refseq", "NP_619650", "UNIPROT").isEmpty());
-		// also, with the first arg. is not null, map(..) 
-		// calls 'suggest' method to replace NP_619650.1 with NP_619650
-		// (the id-mapping table only has canonical uniprot IDs, no isoform IDs)
 		assertFalse(service.map("refseq", "NP_619650.1", "UNIPROT").isEmpty());
 		ac = service.map("refseq", "NP_619650", "UNIPROT").iterator().next(); 
 		assertEquals("Q8TD86", ac);
@@ -141,7 +140,7 @@ public class DataImportTest {
 		
 		// **** MERGE ***
 		
-		Merger merger = new Merger(service, true);
+		Merger merger = new Merger(service);
 		
 		/* In this test, for simplicity, we don't use Metadata 
 		 * and thus bypass some of Merger methods 
@@ -239,11 +238,6 @@ public class DataImportTest {
 		assertTrue(respData instanceof Path);
 		assertNotNull(((DataResponse)res).getProviders());
 		assertFalse(((DataResponse)res).getProviders().isEmpty());
-
-//		String data = (String) respData;
-//		assertTrue(data.contains("reacts-with"));
-//		assertTrue(data.contains("used-to-produce"));
-//		assertTrue(data.contains("CALR"));
 		
 		// test search res. contains the list of data providers (standard names)
 		res = service.search("*", 0, PhysicalEntity.class, null, null);
@@ -268,7 +262,7 @@ public class DataImportTest {
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "GO", "GO:0005737", CellularLocationVocabulary.class)));
 		
 		assertTrue(mergedModel.containsID("http://identifiers.org/uniprot/P13631"));
-		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P22932"));		
+		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P22932"));
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01118", UnificationXref.class)));
 		assertFalse(mergedModel.containsID("http://identifiers.org/uniprot/P01118")); //must be replaced with P01116 and gone
 		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, "UNIPROT", "P01116", UnificationXref.class)));
@@ -278,8 +272,8 @@ public class DataImportTest {
 		assertEquals(10, pr.getName().size()); //make sure this one is passed (important!)
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
-		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
-		assertEquals(11, pr.getXref().size()); //11, no duplicate xrefs (10 of the warehouse PR, +1 - comes from...)!
+//		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
+		assertEquals(13, pr.getXref().size());
 		assertEquals("9606", pr.getOrganism().getXref().iterator().next().getId());
 		
 		// test proper merge of small molecule reference
@@ -298,13 +292,14 @@ public class DataImportTest {
 		//a special test id-mapping file (SID, CID to ChEBI) is present.
 		// The 14438 SMR won't be replaced by 20, because its original xref has 'PubChem' as db name (AMBIGUOUS);
 		// if it were 'PubChem-substance', then it would map to CHEBI:20...
-		//and thus its URI gets normalized/replaced once again to use XML_BASE (not using Identifiers.org anymore)
-		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, null,
-				"http://identifiers.org/pubchem.substance/14438",SmallMoleculeReference.class)));
-		assertFalse(mergedModel.containsID("http://identifiers.org/pubchem.substance/14438"));
+//		//and thus its URI gets normalized/replaced once again to use XML_BASE (not using Identifiers.org anymore)
+//		assertTrue(mergedModel.containsID(Normalizer.uri(XML_BASE, null,
+//				"http://identifiers.org/pubchem.substance/14438",SmallMoleculeReference.class)));
+//		assertFalse(mergedModel.containsID("http://identifiers.org/pubchem.substance/14438"));
+		assertTrue(mergedModel.containsID("http://identifiers.org/pubchem.substance/14438"));
 
-		//  14439 gets successfully replaced/merged
-		assertFalse(mergedModel.containsID("http://identifiers.org/pubchem.substance/14439")); //maps to CHEBI:28
+		// but 14439 gets successfully replaced/merged
+		assertFalse(mergedModel.containsID("http://identifiers.org/pubchem.substance/14439")); //maps to CHEBI:28 by xrefs
 				
 		SmallMolecule sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, null, 
 				"http://pathwaycommons.org/test2#alpha-D-glucose_6-phosphate",SmallMolecule.class));
@@ -315,11 +310,11 @@ public class DataImportTest {
 		// (if ChEBI OBO was previously converted by ChebiOntologyAnalysis)
 		assertEquals(0, smr.getMemberEntityReference().size());
 //		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
-		assertEquals(20, smr.getXref().size());//1 unif. + 10 rel.  + 9 PubMed xrefs are there!
+		assertEquals(19, smr.getXref().size());//1 unif. + 9 rel.  + 9 PubMed xrefs are there ('chemical name' xref's gone - no need)
 		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:20");
 		assertEquals("(+)-camphene", msmr.getDisplayName());
 		assertEquals("(1R,4S)-2,2-dimethyl-3-methylidenebicyclo[2.2.1]heptane", msmr.getStandardName());
-		assertEquals(10, msmr.getXref().size());
+		assertEquals(9, msmr.getXref().size());
 		assertTrue(msmr.getMemberEntityReferenceOf().isEmpty());
 		
 		sm = (SmallMolecule)mergedModel.getByID(Normalizer.uri(XML_BASE, null, 
@@ -330,7 +325,7 @@ public class DataImportTest {
 
 		smr = (SmallMoleculeReference) mergedModel.getByID("http://identifiers.org/chebi/CHEBI:28");
 //		System.out.println("merged chebi:28 xrefs: " + smr.getXref().toString());
-		assertEquals(12, smr.getXref().size()); // relationship xrefs were removed before merging
+		assertEquals(11, smr.getXref().size());
 		assertEquals("(R)-linalool", smr.getDisplayName());
 		assertEquals(5, smr.getEntityReferenceOf().size());
 		
@@ -363,10 +358,10 @@ public class DataImportTest {
 		assertFalse(px.getXrefOf().contains(mergedModel.getByID("http://identifiers.org/uniprot/O75191")));
 		//the owner of the px is the Protein
 		String pUri = Normalizer.uri(XML_BASE, null, "http://biocyc.org/biopax/biopax-level3Protein155359", Protein.class);
-		System.out.println("pUri=" + pUri);
+//		System.out.println("pUri=" + pUri);
 		Protein p = (Protein) mergedModel.getByID(pUri);
 		assertNotNull(p);
-		System.out.println(px + ", xrefOf=" + px.getXrefOf());
+//		System.out.println(px + ", xrefOf=" + px.getXrefOf());
 		for(XReferrable r : px.getXrefOf()) {
 			if(r.getUri().equals(pUri))
 				assertEquals(p, r);
@@ -389,10 +384,8 @@ public class DataImportTest {
 		assertFalse(smr.getEntityReferenceOf().isEmpty());
 		assertTrue(smr.getEntityReferenceOf().contains(sm));
 
-//		//the following SMR wasn't replaced (not found in the test Warehouse model)
-		smr = (SmallMoleculeReference)mergedModel.getByID(Normalizer.uri(XML_BASE, null,
-				"http://identifiers.org/chebi/CHEBI:36141", SmallMoleculeReference.class));
-//		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:36141");
+		//now, this SMR is in the warehouse despite having no InChIKey
+		smr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:36141");
 		assertNotNull(smr);
 
 //		// there were 3 member ERs in the orig. file, but,
@@ -413,34 +406,27 @@ public class DataImportTest {
 		Normalizer normalizer = new Normalizer();
 		normalizer.setXmlBase(XML_BASE);
 		reader.mergeDuplicates(true);
-		Model model;
 
-		model = reader.convertFromOWL(resourceLoader
+		Model model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/pathwaydata1.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model);
-		
-		model = null;
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/pathwaydata2.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model);
-		model = null;
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/pid_60446.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model); //PR P22932 caused the trouble
-		model = null;
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/pid_6349.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model); //Xref for P01118 caused the trouble
-		model = null;
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/hcyc.owl").getInputStream());
 		normalizer.normalize(model);
 		pathwayModels.add(model);
-		model = null;
 		model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/hcyc2.owl").getInputStream());
 //		normalizer.normalize(model);

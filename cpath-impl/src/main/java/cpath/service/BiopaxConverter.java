@@ -62,13 +62,13 @@ public class BiopaxConverter {
 				new SimpleIOHandler().convertToOWL(m, os);
 				break;
 			case BINARY_SIF:
-				String db = null; //default: will use HGNC Symbol
+				String db = "hgnc symbol"; //default
 				if (args.length > 0 && args[0] instanceof String)
 					db = (String) args[0];
 				convertToBinarySIF(m, os, false, db);
 				break;
 			case EXTENDED_BINARY_SIF:
-				db = null; //default: will use HGNC Symbol
+				db = "hgnc symbol";
 				if (args.length > 0 && args[0] instanceof String)
 					db = (String) args[0];
 				convertToBinarySIF(m, os, true, db);
@@ -76,8 +76,14 @@ public class BiopaxConverter {
 			case GSEA:
 				db = "uniprot"; //default
 				if (args.length > 0 && args[0] instanceof String)
-					db = (String) args[0];
-				convertToGSEA(m, os, db);
+					db = ((String) args[0]).trim().toLowerCase();
+				boolean skipOutsidePathways = true;
+				if (args.length > 1) {
+					skipOutsidePathways = (args[1] instanceof Boolean)
+						? ((Boolean)args[1]).booleanValue()
+							: Boolean.parseBoolean(String.valueOf(args[1]));
+				}
+				convertToGSEA(m, os, db, skipOutsidePathways);
 				break;
             case SBGN:
 				boolean doLayout = true;
@@ -101,9 +107,7 @@ public class BiopaxConverter {
      * @param m a sub-model (not too large), e.g., a get/graph query result
      * @param format output format
      * @param args optional format-specific parameters
-     * 
-     * @return data response with the converted data (up to 1Gb utf-8 string) 
-     * 			or {@link ErrorResponse}.
+     * @return data response with the converted data (up to 1Gb utf-8 string) or {@link ErrorResponse}.
      */
     public ServiceResponse convert(Model m, OutputFormat format, Object... args) 
     {
@@ -163,29 +167,30 @@ public class BiopaxConverter {
      * @param m paxtools model
      * @param stream output stream
 	 * @param outputIdType output identifiers type (db name, is data-specific, the default is UniProt)
-	 * 
+	 * @param skipOutsidePathways if true - won't write ID sets that relate to no pathway
 	 * @throws IOException when there is an output stream writing error
 	 */
-	public void convertToGSEA(Model m, OutputStream stream, String outputIdType) 
+	public void convertToGSEA(Model m, OutputStream stream, String outputIdType, boolean skipOutsidePathways)
 			throws IOException 
 	{	
 		if(outputIdType==null || outputIdType.isEmpty())
 			outputIdType = "uniprot";
 
-		//Using the model and cPath2 instance properties,
-		//prepare a list of Provenance to skip traversing into sub-pathways of:
-		Set<Provenance> skipSubPathwaysOf = new HashSet();
-		for(String mid : CPathSettings.getInstance().getMetadataIdsForGseaSkipSubPathways()) {
-			Provenance pro = (Provenance) m.getByID(CPathSettings.getInstance().getXmlBase()+mid);
-			if(pro != null) skipSubPathwaysOf.add(pro);
-		}
+//		//Using the model and cPath2 instance properties,
+//		//prepare a list of Provenance to skip traversing into sub-pathways of:
+//		Set<Provenance> skipSubPathwaysOf = new HashSet();
+//		for(String mid : CPathSettings.getInstance().getMetadataIdsForGseaSkipSubPathways()) {
+//			Provenance pro = (Provenance) m.getByID(CPathSettings.getInstance().getXmlBase()+mid);
+//			if(pro != null) skipSubPathwaysOf.add(pro);
+//		}
+		// convert
+//		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true, skipSubPathwaysOf);
 
-		if(log.isDebugEnabled() && !skipSubPathwaysOf.isEmpty()) {
-			log.debug("GSEAConverter, using skipSubPathwaysOf argument, value: " + skipSubPathwaysOf.toString());
-		}
-
-		// convert, replace DATA
-		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true, skipSubPathwaysOf);
+		// convert (make per pathway entries; won't traverse into sub-pathways of a pathway; only pre-selected organisms)
+		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true, true);
+		Set<String> allowedTaxIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
+		gseaConverter.setAllowedOrganisms(allowedTaxIds);
+		gseaConverter.setSkipOutsidePathways(skipOutsidePathways);
 		gseaConverter.writeToGSEA(m, stream);
 	}
 
@@ -199,7 +204,7 @@ public class BiopaxConverter {
      * @param m biopax paxtools to convert
      * @param out stream
      * @param extended if true, calls SIFNX else - SIF
-	 * @param db - either 'uniprot' or null (then HGNC symbols will be used by default)
+	 * @param db - either 'uniprot', 'hgnc', etc.; if null - 'HGNC symbol' is the default.
 	 * 
 	 * @throws IOException when there is an output stream writing error
 	 */
@@ -208,10 +213,13 @@ public class BiopaxConverter {
 	{
 		ConfigurableIDFetcher idFetcher = new ConfigurableIDFetcher();
 		idFetcher.chemDbStartsWithOrEquals("chebi");
-		if("uniprot".equalsIgnoreCase(db)) {
+		if(db == null || db.isEmpty() || db.toLowerCase().startsWith("hgnc")) {
+			idFetcher.seqDbStartsWithOrEquals("hgnc");
+		}
+		else if(db.toLowerCase().startsWith("uniprot")) {
 			idFetcher.seqDbStartsWithOrEquals("uniprot");
 		} else {
-			idFetcher.seqDbStartsWithOrEquals("hgnc");
+			idFetcher.seqDbStartsWithOrEquals(db);
 		}
 
 		SIFSearcher searcher = new SIFSearcher(idFetcher, SIFEnum.values());
