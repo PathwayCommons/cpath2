@@ -340,10 +340,10 @@ public final class PreMerger {
 					}
 					else if(x instanceof RelationshipXref) {
 						// each warehouse RX has relationshipType property defined,
-						// and URI contains the vocabulary term (unless there's a bug in the converter impl.)
-						Assert.notNull(((RelationshipXref) x).getRelationshipType());
-						if(x.getUri().endsWith(RelTypeVocab.IDENTITY.id)
-						  	|| x.getUri().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id)
+						// and the normalized CV's URI contains the term's ID
+						RelationshipTypeVocabulary rtv = (((RelationshipXref) x).getRelationshipType());
+						if(rtv.getUri().endsWith(RelTypeVocab.IDENTITY.id)
+						  	|| rtv.getUri().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id)
 						//other RX types ain't a good idea for id-mapping (has_part,has_role,is_conjugate_*)
 						) {
 							mappings.add(new Mapping(src, x.getId(), destDb, ac));
