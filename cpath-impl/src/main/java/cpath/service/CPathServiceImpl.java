@@ -103,10 +103,10 @@ public class CPathServiceImpl implements CPathService {
 	
 	private SimpleIOHandler simpleIO;
 	
-	//clearContent. on first access to getBlacklist(); so do not use it directly
+	//init. on first access to getBlacklist(); so do not use it directly
 	private Blacklist blacklist; 
 	
-	//clearContent. on first access when proxy model mode is enabled (so do not use the var. directly!)
+	//init. on first access when proxy model mode is enabled (so do not use the var. directly!)
 	private Model paxtoolsModel;
 
 	final private Pattern isoformIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
@@ -126,7 +126,7 @@ public class CPathServiceImpl implements CPathService {
 	 * This is not required (useless) during the data import (premerge, merge, etc.);
 	 * it is called after the web service is started.
 	 */
-	synchronized public void clearContent() {
+	synchronized public void init() {
 		//fork the model loading (which takes quite a while)
 		ExecutorService executor = Executors.newSingleThreadExecutor();
 		executor.execute(
@@ -256,7 +256,7 @@ public class CPathServiceImpl implements CPathService {
 
 		// execute the paxtools graph query
 		try {
-			// clearContent source elements
+			// init source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
 			if(elements.isEmpty()) {
 				return new ErrorResponse(NO_RESULTS_FOUND,
@@ -297,7 +297,7 @@ public class CPathServiceImpl implements CPathService {
 		
 		// execute the paxtools graph query
 		try {
-			// clearContent source elements
+			// init source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
 			if(elements.isEmpty()) {
 				return new ErrorResponse(NO_RESULTS_FOUND,
@@ -339,7 +339,7 @@ public class CPathServiceImpl implements CPathService {
 		
 		// execute the paxtools graph query	
 		try {
-			// clearContent source and target elements
+			// init source and target elements
 			Set<BioPAXElement> source = urisToBpes(paxtoolsModel, src);
 			if(source.isEmpty()) {
 				return new ErrorResponse(NO_RESULTS_FOUND,
@@ -409,7 +409,7 @@ public class CPathServiceImpl implements CPathService {
 		
 		// execute the paxtools graph query
 		try {
-			// clearContent source elements
+			// init source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
 			if(elements.isEmpty()) {
 				return new ErrorResponse(NO_RESULTS_FOUND, "No BioPAX objects found by URIs: " + Arrays.toString(src));
@@ -514,7 +514,7 @@ public class CPathServiceImpl implements CPathService {
 			traverseAnalysis.execute(paxtoolsModel);
 			return res;
 		} catch (IllegalArgumentException e) {
-			log.error("traverse() failed to clearContent path accessor. " + e);
+			log.error("traverse() failed to init path accessor. " + e);
 			return new ErrorResponse(BAD_REQUEST, e.getMessage());
 		} catch (Exception e) {
 			log.error("traverse() failed. " + e);
@@ -974,7 +974,6 @@ public class CPathServiceImpl implements CPathService {
 		metadata.setNumPhysicalEntities(null);
 		metadata.getContent().clear();
 		metadata.setPremerged(null);
-
 		return save(metadata);
 	}
 

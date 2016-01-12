@@ -70,16 +70,19 @@ public class DataImportTest {
 		//should not fail:
 		CPathSettings.getInstance().getOrganismTaxonomyIds();
 
-		// prepare the metadata
-        // load the test metadata and create warehouse
+		// prepare the metadata (always cleanup the data output directories FOR TESTS, because of recent updates in PreMerger!)
+		// load the test metadata and create warehouse
 		service.addOrUpdateMetadata("classpath:metadata.conf");	
 		Metadata ds = service.metadata().findByIdentifier("TEST_UNIPROT");
 		assertNotNull(ds);
+		service.clear(ds);
 		ds = service.metadata().findByIdentifier("TEST_CHEBI");
-		assertNotNull(ds);		
+		assertNotNull(ds);
+		service.clear(ds);
 		ds = service.metadata().findByIdentifier("TEST_MAPPING");
 		assertNotNull(ds);
-		
+		service.clear(ds);
+
 		PreMerger premerger = new PreMerger(service, validator, null);
 		premerger.premerge();		
 		premerger.buildWarehouse(); //- also writes Warehouse archive
@@ -94,11 +97,13 @@ public class DataImportTest {
 		assertNotNull(pr);
 		assertNotNull(pr.getName());
 		assertFalse(pr.getName().isEmpty());
+		assertEquals("CALM_HUMAN", pr.getDisplayName());
 		assertNotNull(pr.getOrganism());
 		assertEquals("Homo sapiens", pr.getOrganism().getStandardName());
 		assertFalse(pr.getXref().isEmpty());
 		
 		// test some id-mapping using different srcDb names (UniProt synonyms...)
+		assertFalse(service.map("A2A2M3", "UNIPROT").isEmpty());
 		String ac = service.map("A2A2M3", "UNIPROT").iterator().next();
 		assertEquals("Q8TD86", ac);
 		
@@ -122,23 +127,24 @@ public class DataImportTest {
 		ac = service.map("NP_619650", "UNIPROT").iterator().next();
 		assertEquals("Q8TD86", ac);
 		assertTrue(warehouse.containsID("http://identifiers.org/uniprot/" + ac));
-		
+
 		ids = service.map("P01118","UNIPROT");
-		assertTrue(ids.size()==1);
+		assertEquals(1, ids.size());
 		assertTrue(ids.contains("P01116"));
 		ids = service.map("P01118-2","UNIPROT");//also works when any isoform id is used
-		assertTrue(ids.size()==1);
+		assertEquals(1, ids.size());
 		assertTrue(ids.contains("P01116"));
 		List<Mapping> mps = service.mapping().findByDestIgnoreCaseAndDestId("UNIPROT", "P01116");
 		assertTrue(mps.size()>2);
 		mps = service.mapping().findBySrcIdAndDestIgnoreCase("P01118", "UniProt");
-		assertTrue(mps.size()==1);
+		assertEquals(1, mps.size());
 		assertTrue("P01116".equals(mps.iterator().next().getDestId()));
 		mps = service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase("UNIPROT", "P01118", "UNIPROT");
-		assertTrue(mps.size()==1);
+		assertEquals(1, mps.size());
 		assertTrue("P01116".equals(mps.iterator().next().getDestId()));
 		mps = service.mapping().findBySrcIdAndDestIgnoreCase("1J7P", "UNIPROT");//PDB to UniProt
-		assertTrue(mps.size()==1);
+		assertFalse(mps.isEmpty());
+		assertEquals(1, mps.size());
 		assertTrue("P62158".equals(mps.iterator().next().getDestId()));
 		
 		// **** MERGE ***

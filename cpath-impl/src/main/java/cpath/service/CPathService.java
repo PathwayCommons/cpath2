@@ -281,7 +281,7 @@ public interface CPathService {
      * Loads or re-loads the main BioPAX Model 
      * and blacklist from archive.
      */
-	void clearContent();
+	void init();
 	
 
 	/**

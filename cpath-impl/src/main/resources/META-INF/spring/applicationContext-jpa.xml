@@ -16,10 +16,10 @@
 
 	<tx:annotation-driven/>
 
-	<!-- auto-create and clearContent spring-data repositories -->
+	<!-- auto-create and init spring-data repositories -->
 	<jpa:repositories base-package="cpath.jpa" />
 	
-	<!-- auto-create and clearContent spring service beans -->
+	<!-- auto-create and init spring service beans -->
 	<context:component-scan base-package="cpath.service" />
 
 	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">

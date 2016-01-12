@@ -92,17 +92,18 @@ public class UniprotConverterImplTest {
 		assertEquals("CALR_HUMAN", pr.getDisplayName());
 		assertEquals("Calreticulin", pr.getStandardName());
 //		System.out.println("CALR_HUMAN xrefs: " + pr.getXref().toString());
-		assertEquals(39, pr.getXref().size()); //no duplicates (UniProt, HGNC, PDB, IPI, EMBL, PIR, DIP, etc., xrefs)
+		assertEquals(40, pr.getXref().size()); //no duplicates (UniProt, HGNC, PDB, IPI, EMBL, PIR, DIP, etc., xrefs)
 		assertEquals("http://identifiers.org/taxonomy/9606", pr.getOrganism().getUri());
 		
 		// test MOD_RES features are created
 		pr = (ProteinReference) model.getByID("http://identifiers.org/uniprot/P62158");
+		assertNotNull(pr);
 		assertTrue(pr.getName().contains("CALM2"));
 		assertTrue(pr.getName().contains("CALM3"));
-		assertNotNull(pr);
-		
+		assertEquals("CALM_HUMAN", pr.getDisplayName());
+		assertTrue(pr.getXref().toString().contains("CALM_HUMAN")); //it's in a RX with db='uniprot'
+		assertTrue(pr.getXref().toString().contains("1J7P")); // has that PDB xref too
 		assertEquals(9, pr.getEntityFeature().size());
-		
 		//check for a feature object by using URI generated the same way as it's in the converter:
 		String mfUri = Normalizer.uri(model.getXmlBase(), null, pr.getDisplayName() + "_1", ModificationFeature.class);
 		ModificationFeature mf = (ModificationFeature) model.getByID(mfUri);
@@ -141,7 +142,7 @@ public class UniprotConverterImplTest {
 		
 		//total xrefs generated for P62158 (the special test '[bla-bla]' id should not be there)
 		assertFalse(pr.getXref().toString().contains("bla-bla"));
-		assertEquals(147, pr.getXref().size()); //uh, so many PDB IDs...
+		assertEquals(148, pr.getXref().size()); //uh, so many PDB IDs...
 
 		
 		//test for the following FT entry (two-line) was correctly parsed/converted:

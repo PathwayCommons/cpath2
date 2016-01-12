@@ -136,9 +136,6 @@ public final class PreMerger {
 					log.info("premerge(), no Converter class was specified; continue...");
 				}
 
-				log.debug("num. of data files before clearContent, " + metadata.getIdentifier() + ": "
-						+ metadata.getContent().size());
-
 				// we want to restart premerge process and continue, instead of starting all over again;
  				//Admin can cleanup data sub-directories manually, if wishes re-doing from scratch.
 				File dir = new File(metadata.outputDir());
@@ -337,23 +334,20 @@ public final class PreMerger {
 			for(Xref x : new HashSet<Xref>(er.getXref())) {
 				if(!(x instanceof PublicationXref)) {
 					final String src = x.getDb().toUpperCase();
-
 					if(x instanceof UnificationXref) {
 						//map to itself; each warehouse ER has only one UX, the primary AC
 						mappings.add(new Mapping(src, x.getId(), destDb, ac));
 					}
 					else if(x instanceof RelationshipXref) {
-						RelationshipTypeVocabulary rtv = ((RelationshipXref)x).getRelationshipType();
-						// each warehouse RX has its relationshipType property defined,
-						// and URI contain corresponding vocabulary term (unless there's a bug in the converter impl.)
-						if(rtv.getUri().endsWith(RelTypeVocab.IDENTITY.id)
-						  	|| rtv.getUri().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id)
-//							|| rtv.getUri().endsWith(RelTypeVocab.MULTIPLE_PARENT_REFERENCE.id) //is_a rel. within ChEBI
-						//other RX types ain't a good idea for id-mapping (see-also in chebi - has_part,has_role,is_conjugate_*)
+						// each warehouse RX has relationshipType property defined,
+						// and URI contains the vocabulary term (unless there's a bug in the converter impl.)
+						Assert.notNull(((RelationshipXref) x).getRelationshipType());
+						if(x.getUri().endsWith(RelTypeVocab.IDENTITY.id)
+						  	|| x.getUri().endsWith(RelTypeVocab.SECONDARY_ACCESSION_NUMBER.id)
+						//other RX types ain't a good idea for id-mapping (has_part,has_role,is_conjugate_*)
 						) {
 							mappings.add(new Mapping(src, x.getId(), destDb, ac));
 						}
-
 						// remove the rel. xref unless it's the secondary/parent ChEBI ID, 'HGNC Symbol'
 						// (id-mapping and search/graph queries do not need these xrefs anymore)
 						if(!src.equalsIgnoreCase("HGNC Symbol") && !src.startsWith("NCBI Gene")
@@ -363,23 +357,6 @@ public final class PreMerger {
 					}
 				}
 			}
-
-// Bogus code, which also greatly increases the volume of the cpath2 database.
-// Merger can find ERs by name (if none found by IDs) without using the Mapping db (it uses only Warehouse biopax model);
-// also,names, e.g., "CALM_HUMAN", "CALM1" "insuline", to the mappings db does not increase power of full-tex search
-// and biopax graph queries, because only xrefs and selected ID types are included in 'xrefid' index field (used by graph queries).
-//			if(er instanceof SmallMoleculeReference) {
-//				SmallMoleculeReference smr = (SmallMoleculeReference) er;
-//				//map some names (display and std.)
-//				if(smr.getDisplayName() != null && smr.getDisplayName().length() <= 30)
-//					mappings.add(new Mapping("CHEMICAL NAME", smr.getDisplayName().toLowerCase(), destDb, ac));
-//			} else
-//			if(er instanceof ProteinReference) {
-//				ProteinReference pr = (ProteinReference) er;
-//				//map unofficial IDs, e.g., CALM_HUMAN, too
-//				if(pr.getDisplayName() != null && pr.getDisplayName().length() <= 15) //short names only
-//					mappings.add(new Mapping("UNIPROT", pr.getDisplayName().toUpperCase(), destDb, ac));
-//			}
 		}
 
 		//save/update to the id-mapping database
@@ -457,7 +434,7 @@ public final class PreMerger {
 	 */
 	private void checkAndNormalize(String title, InputStream biopaxStream, Metadata metadata, Content content)
 	{
-		// clearContent Normalizer
+		// init Normalizer
 		Normalizer normalizer = new Normalizer();
 		//set xml:base to use instead of the original model's one (important!)
 		normalizer.setXmlBase(xmlBase);

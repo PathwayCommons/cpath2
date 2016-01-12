@@ -442,12 +442,19 @@ final class UniprotConverterImpl extends BaseConverterImpl {
 
 		// create a new PR with the name and primary unification xref
 		ProteinReference proteinReference = model.addNew(ProteinReference.class, uri);
-		proteinReference.setDisplayName(idLine.split("\\s+")[0]);
+		String entryId = idLine.split("\\s+")[0]; //such as 'CALM_HUMAN'
+		proteinReference.setDisplayName(entryId);
+		//also use the ID (e.g., CALM_HUMAN) for a special RelationshipXref
+		RelationshipXref rXRef = PreMerger.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, "uniprot", entryId, model);
+		proteinReference.addXref(rXRef);
+
+		//add the primary accession number unification xref
 		setUnificationXRef("UniProt Knowledgebase", primaryId, proteinReference, model);
+
 		// add 'secondary-ac' type RXs:
 		for (String acEntry : acList) {
-			RelationshipXref rXRef = PreMerger.findOrCreateRelationshipXref(
-					RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "UniProt Knowledgebase", acEntry.trim(), model);
+			rXRef = PreMerger.findOrCreateRelationshipXref(
+				RelTypeVocab.SECONDARY_ACCESSION_NUMBER, "UniProt Knowledgebase", acEntry.trim(), model);
 			proteinReference.addXref(rXRef);
 		}
 		proteinReference.addComment(idLine);

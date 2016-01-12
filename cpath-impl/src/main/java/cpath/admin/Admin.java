@@ -661,10 +661,10 @@ public final class Admin {
 		// generate/find all other BioPAX archives (by organism, etc.):
 		List<String> otherBiopaxArchives = createOrFindBiopaxArchives(model, allMetadata);
     	
+		//TODO remove the code below; use paxtools.jar and shell scripts to convert each BioPAX file...
 		// create all other format archives from the main model (still in memory)
 		String prefix =  cpath.mainModelFile().substring(0, cpath.mainModelFile().indexOf("BIOPAX."));
 		exportBiopaxToOutputFormats(model, prefix);
-		
 		// export the rest of biopax archives to all other formats
         for(String biopaxArchive : otherBiopaxArchives) {      	
         	InputStream biopaxStream = null;
@@ -831,7 +831,7 @@ public final class Admin {
 		final List<String> files = new ArrayList<String>();
 
 		// initialize the search engine
-		LOG.info("create-downloads: clearContent the full-text search engine...");
+		LOG.info("create-downloads: init the full-text search engine...");
 		final Searcher searcher = new SearchEngine(mainModel, CPathSettings.getInstance().indexDir());
 		
         //collect BioPAX pathway data source names in this set
