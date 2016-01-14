@@ -87,8 +87,11 @@ public final class PreMerger {
 		this.service = service;
 		this.validator = validator;
 		this.xmlBase = CPathSettings.getInstance().getXmlBase();
-		this.identifier = (provider == null || provider.isEmpty())
-				? null : provider;
+		this.identifier = (provider == null || provider.isEmpty()) ? null : provider;
+	}
+
+	public PreMerger(CPathService service, Validator validator) {
+		this(service, validator, null);
 	}
 
 	/**
