@@ -109,8 +109,10 @@ public class CPathServiceImpl implements CPathService {
 	//init. on first access when proxy model mode is enabled (so do not use the var. directly!)
 	private Model paxtoolsModel;
 
-	final private Pattern isoformIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
-	final private Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
+	private final Pattern isoformIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
+	private final Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
+
+	private final static CPathSettings cpath = CPathSettings.getInstance();
 	
 	/**
 	 * Constructor
@@ -136,12 +138,12 @@ public class CPathServiceImpl implements CPathService {
 				paxtoolsModel = CPathUtils.loadMainBiopaxModel();
 				// set for this service
 				if(paxtoolsModel != null) {
-					paxtoolsModel.setXmlBase(CPathSettings.getInstance().getXmlBase());
+					paxtoolsModel.setXmlBase(cpath.getXmlBase());
 					log.info("Main BioPAX model (in-memory) is now ready for queries.");
 					searcher = new SearchEngine(paxtoolsModel, 
-							CPathSettings.getInstance().indexDir());
+							cpath.indexDir());
 					((SearchEngine) searcher).setMaxHitsPerPage(
-						Integer.parseInt(CPathSettings.getInstance().getMaxHitsPerPage()));
+						Integer.parseInt(cpath.getMaxHitsPerPage()));
 				}
 			}
 		});
@@ -636,7 +638,7 @@ public class CPathServiceImpl implements CPathService {
 	private synchronized void loadBlacklist() 
 	{	
 		Resource blacklistResource = new DefaultResourceLoader()
-			.getResource("file:" + CPathSettings.getInstance().blacklistFile());
+			.getResource("file:" + cpath.blacklistFile());
 		
 		if(blacklistResource.exists()) {			
 			try {
@@ -648,7 +650,7 @@ public class CPathServiceImpl implements CPathService {
 					+ blacklistResource.getDescription(), e);
 			}
 		} else {
-			log.warn("loadBlacklist, " + CPathSettings.getInstance().blacklistFile() 
+			log.warn("loadBlacklist, " + cpath.blacklistFile()
 				+ " is not found");
 		}
 	}
@@ -723,53 +725,37 @@ public class CPathServiceImpl implements CPathService {
 	
 	
 	@Override
-	public LogEntity count(String date, LogEvent event, String ipAddr) 
+	public void count(String date, LogEvent event, String ipAddr)
 	{		
+		//SKIP for original data, validation, blacklist and old version file downloads;
+		//by design, this does not affect the total no. events (LogEvent.TOTAL) on that date;
+		//this affects only the total no. in the LogType.FILE category
+		if(event.getType() == LogType.FILE &&
+				!event.getName().startsWith(cpath.exportArchivePrefix()))
+		{
+			return;
+		}
+
 		// find or create a record, count+1
 		LogEntity t = null;
 		try {
-			t = (LogEntity) logEntitiesRepository
-				.findByEventNameIgnoreCaseAndAddrAndDate(event.getName(), ipAddr, date);
+			t = logEntitiesRepository.findByEventNameIgnoreCaseAndAddrAndDate(event.getName(), ipAddr, date);
 		} catch (DataAccessException e) {
 			log.error("count(), findByEventNameIgnoreCaseAndAddrAndDate " +
-				"failed to update for event: " + event.getName() + 
-				", IP: " + ipAddr + ", date: " + date, e);
+				"failed to update event log: " + event.getName() + ", IP: " + ipAddr + ", date: " + date, e);
 		}
-		
+
 		if(t == null) {			
 			t = new LogEntity(date, event, ipAddr);
 		}
 		
 		t.setCount(t.getCount() + 1);
-		
 		log.info(t.toString());
-		
-		return logEntitiesRepository.save(t);
+
+		logEntitiesRepository.save(t);
 	}
 
-	@Override
-	public LogEntity update(String date, LogEvent event, String ipAddr, Long newCount) 
-	{		
-		// find or create a record
-		LogEntity t = null;
-		try {
-			t = (LogEntity) logEntitiesRepository
-				.findByEventNameIgnoreCaseAndAddrAndDate(event.getName(), ipAddr, date);
-		} catch (DataAccessException e) {
-			log.error("count(), findByEventNameIgnoreCaseAndAddrAndDate " +
-				"failed to update for event: " + event.getName() + 
-				", IP: " + ipAddr + ", date: " + date, e);
-		}
-		
-		if(t == null) {			
-			t = new LogEntity(date, event, ipAddr);
-		}
-		
-		t.setCount(newCount);
-		
-		return logEntitiesRepository.save(t);
-	}	
-	
+
 	@Override
 	public ValidatorResponse validationReport(String provider, String file) {
 		ValidatorResponse response = new ValidatorResponse();
@@ -872,12 +858,12 @@ public class CPathServiceImpl implements CPathService {
 
 	public Set<LogEvent> logEventsFromFilename(String filename) {
 		Set<LogEvent> set = new HashSet<LogEvent>();
-		final CPathSettings cpath2 = CPathSettings.getInstance();
-		
+		final CPathSettings cpath2 = cpath;
+
 		set.add(new LogEvent(LogType.FILE, filename));
 		
 		// extract the data provider's standard name from the filename
-		if(filename.startsWith(cpath2.exportArchivePrefix())) {	
+		if(filename.startsWith(cpath2.exportArchivePrefix())) {
 			String scope = LogUtils.fileSrcOrScope(filename);
 			if(scope != null) {
 				String providerStandardName = null;
@@ -911,7 +897,7 @@ public class CPathServiceImpl implements CPathService {
 
 
 	public void index() throws IOException {
-		if(!CPathSettings.getInstance().isAdminEnabled())
+		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Admin mode must be enabled to run index().");
 
 		if(paxtoolsModel==null)
@@ -922,7 +908,7 @@ public class CPathServiceImpl implements CPathService {
 		addOtherIdsAsAnnotations(3);
 
 		//Build the full-text (lucene) index
-		SearchEngine searchEngine = new SearchEngine(getModel(), CPathSettings.getInstance().indexDir());
+		SearchEngine searchEngine = new SearchEngine(getModel(), cpath.indexDir());
 		searchEngine.index();
 
 		// Updates counts of pathways, etc. and saves in the Metadata table.

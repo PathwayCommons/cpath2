@@ -87,13 +87,18 @@ public class RepositoriesAndServiceTest {
 	@Test
 	public final void testCount() {	
 		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
-		
+
 		// count twice
-		LogEntity logEntity = service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
+		service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
+		LogEntity logEntity = service.log()
+			.findByEventNameIgnoreCaseAndAddrAndDate(LogEvent.TOTAL.getName(), ipAddr, LogUtils.today());
 		assertEquals(1L, logEntity.getCount().longValue());
-		logEntity = service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
+
+		service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
+		logEntity = service.log()
+			.findByEventNameIgnoreCaseAndAddrAndDate(LogEvent.TOTAL.getName(), ipAddr, LogUtils.today());
 		assertEquals(2L, logEntity.getCount().longValue());
-		
+
 		// test that there is only one record yet
 		assertEquals(1, service.log().count());
 	}
@@ -268,16 +273,16 @@ public class RepositoriesAndServiceTest {
 		service.mapping().save(new Mapping("GeneCards", "ZHX1", "UNIPROT", "P12345"));
 		service.mapping().save(new Mapping("GeneCards", "ZHX1-C8orf76", "UNIPROT", "Q12345"));
 		service.mapping().save(new Mapping("GeneCards", "ZHX1-C8ORF76", "UNIPROT", "Q12345"));
+		assertEquals(1, service.mapping()
+			.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
         
         //check it's saved
         assertEquals(1, service.map("ZHX1-C8orf76", "UNIPROT").size());
         assertEquals(1, service.map("ZHX1-C8ORF76", "UNIPROT").size());
-//        assertEquals(1, service.map("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
         
         // repeat (should successfully update)- add a Mapping
         service.mapping().save(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
         assertTrue(service.map("FooBar", "UNIPROT").isEmpty());
-//        assertTrue(service.map("TEST", "FooBar", "UNIPROT").isEmpty());
 
         Set<String> mapsTo = service.map("FooBar", "CHEBI");
         assertEquals(1, mapsTo.size());
@@ -288,7 +293,6 @@ public class RepositoriesAndServiceTest {
         
         //test that service.map(..) method can map isoform IDs despite they're not explicitly added to the mapping db
 		service.mapping().save(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "A2A2M3"));
-//        assertEquals(1, service.map("uniprot isoform", "A2A2M3-1", "UNIPROT").size());
 		assertEquals(1, service.map("A2A2M3-1", "UNIPROT").size());
 		assertEquals(1, service.map("A2A2M3", "UNIPROT").size());
         
@@ -297,10 +301,6 @@ public class RepositoriesAndServiceTest {
 		assertEquals("SID:14438", m.getSrcId());
         assertNotNull(service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(
         		m.getSrc(), m.getSrcId(), m.getDest(), m.getDestId()));
-//        assertEquals(1, service.map("PubChem-substance", "14438", "CHEBI").size());
-//        assertEquals(1, service.map("Pubchem-Substance", "14438", "CHEBI").size());
-//        assertEquals(1, service.map("pubchem substance", "14438", "CHEBI").size());
-//        assertEquals(1, service.map("pubchem.substance", "14438", "CHEBI").size());
 		assertEquals(1, service.map("SID:14438", "CHEBI").size());
 
 		//map from a list of IDs to target ID type (UNIPROT)

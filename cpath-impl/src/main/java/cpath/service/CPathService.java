@@ -210,21 +210,8 @@ public interface CPathService {
 	 * @param date
 	 * @param event
 	 * @param ipAddr
-	 * @return
 	 */
-	LogEntity count(String date, LogEvent event, String ipAddr);
-	
-	/**
-	 * Updates (overwrites) or saves the number 
-	 * of user's requests of some 
-	 * sort and location for given date.
-	 * 
-	 * @param date
-	 * @param event
-	 * @param ipAddr
-	 * @return
-	 */
-	LogEntity update(String date, LogEvent event, String ipAddr, Long newCount);
+	void count(String date, LogEvent event, String ipAddr);
 
 	/**
 	 * Creates a list of new log events to update counts for -

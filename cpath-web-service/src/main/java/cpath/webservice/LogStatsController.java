@@ -64,14 +64,18 @@ public class LogStatsController extends BasicController {
     
     private String[] listItem(LogEvent e) {
     	String[] li = null;
-    	
     	String listItemName = e.getName();
     	final CPathSettings instance = CPathSettings.getInstance();
     	
     	//if type is FILE, truncate the filename to keep only <scope>.<FORMAT> part; 
     	//scope (turned lowercase) can be: source, organism, 'all', 'detailed', etc.).
-    	if(e.getType() == LogType.FILE 
-    			&& listItemName.toLowerCase().startsWith(instance.getName().toLowerCase())) {
+    	if(e.getType() == LogType.FILE &&
+			(
+				listItemName.startsWith(instance.exportArchivePrefix())
+				//or - also include old version files -
+				|| listItemName.toLowerCase().startsWith(instance.getName().toLowerCase())
+			)
+		){
     		OutputFormat of = LogUtils.fileOutputFormat(listItemName);
     		String scope = LogUtils.fileSrcOrScope(listItemName);
     		if(of != null && scope != null) {
@@ -80,9 +84,11 @@ public class LogStatsController extends BasicController {
     		} else {
     			//skip unexpected file in the downloads (errors are logged in the LogUtils)
     		}
-    	} else {
-    		li = new String[]{e.getType().toString(), listItemName};
     	}
+//		//don't display other files (e.g., original, normalized, blacklist, etc.)
+//		else {
+//    		li = new String[]{e.getType().toString(), listItemName};
+//    	}
     	
 		return li;
 	}
