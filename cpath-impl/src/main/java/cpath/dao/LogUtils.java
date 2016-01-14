@@ -46,10 +46,10 @@ public final class LogUtils {
 			throw new RuntimeException("Fauled initializing GeoLite LookupService", e);
 		}
 	}
-	
-	final public static Pattern ARCHIVE_SRC_AND_FORMAT_PATTERN = Pattern.compile(".+?[\\s.]\\d+[\\s.](.+?\\..+?)\\..+\\.gz");
-	final public static Pattern ARCHIVE_SRC_PATTERN = Pattern.compile(".+?[\\s.]\\d+[\\s.](.+?)\\..+\\.gz");
-	final public static Pattern ARCHIVE_FORMAT_PATTERN = Pattern.compile(".+?[\\s.]\\d+[\\s.].+?\\.(.+?)\\..+\\.gz");
+
+	//these regexp are to match current cpath2 version archives names only
+	final public static Pattern ARCHIVE_SRC_PATTERN = Pattern.compile("^\\S+?\\.(.+?)\\..+\\.gz$");
+	final public static Pattern ARCHIVE_FORMAT_PATTERN = Pattern.compile("^\\S+?\\..+?\\.(.+?)\\..+\\.gz$");
 	
 	protected LogUtils() {
 		throw new AssertionError("Not instantiable");
@@ -109,7 +109,7 @@ public final class LogUtils {
 	 * subtracting (if days < 0) the number 
 	 * of days to/from specified date.
 	 * 
-	 * @param date
+	 * @param isoDate
 	 * @param days
 	 * @return
 	 */
@@ -151,8 +151,7 @@ public final class LogUtils {
 	 * - datasource identifier or standard name (older cpath2 versions);
 	 * - organism name;
 	 * - or special sub-model name, such as 'All', 'Detailed', 'Warehouse'
-	 * 
-	 * @see Scope
+	 *
 	 * @param archiveFilename
 	 * @return name or null if the filename did not match the archive naming pattern.
 	 */

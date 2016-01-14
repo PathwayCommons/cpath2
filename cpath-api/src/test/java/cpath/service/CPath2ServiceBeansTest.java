@@ -8,6 +8,9 @@ import java.util.List;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
+import cpath.config.CPathSettings;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.WordUtils;
 import org.junit.Test;
 
 import cpath.service.Status;
@@ -21,21 +24,22 @@ public class CPath2ServiceBeansTest {
 	public final void testGetAllStatusCodes() {
 		List<String> list = Status.getAllStatusCodes();
 		assertEquals(4, list.size());
+
+//		//a quick unrelate test
+		assertEquals("PathwayCommonsDemo0.", CPathSettings.getInstance().exportArchivePrefix());
 	}
 
 	@Test
 	public final void testMarshalServiceResponse() throws Exception {
 		JAXBContext jaxbContext = JAXBContext.newInstance(
 			SearchResponse.class, TraverseResponse.class, TraverseEntry.class);
-		
-		StringWriter writer = new StringWriter();
+
 		Marshaller ma = jaxbContext.createMarshaller();
 		ma.setProperty("jaxb.formatted.output", true);
-		
-		
+
 		SearchResponse sr = new SearchResponse();
 		sr.setPageNo(0);
-		writer = new StringWriter();
+		StringWriter writer = new StringWriter();
 		ma.marshal(sr, writer);
 		String out = writer.toString();
 		assertTrue(out.length()>0);
