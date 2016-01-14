@@ -570,6 +570,7 @@ public final class Admin {
 		//generate export.sh script here
 		writer.println("#!/bin/sh");
 		writer.println("echo \"CPATH2_HOME Directory: $CPATH2_HOME\"");
+		writer.println("cp downloads/blacklist.txt .");
 		for(String bpFilename : biopaxDownloads) {
 			final String prefix = bpFilename.substring(0, bpFilename.indexOf(".BIOPAX"));
 			writer.println(String.format("%s %s %s %s %s %s 2>&1 &", javaRunPaxtools, "toGSEA",
@@ -686,7 +687,7 @@ public final class Admin {
         	}
         } else {
         	LOG.info("create-downloads: won't generate 'by organism' archives because only " +
-				cpath.getOrganisms() + " is listed in the cpath2.properties.");
+				Arrays.toString(cpath.getOrganisms()) + " is listed in the cpath2.properties.");
         }
         
         //a separate export - only BioPAX pathway data sources, "Detailed":
