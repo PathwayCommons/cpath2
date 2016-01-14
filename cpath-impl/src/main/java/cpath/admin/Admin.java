@@ -582,10 +582,10 @@ public final class Admin {
 					"uniprot organisms=9606"));
 			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
 					bpFilename, prefix, fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"hgnc"),
-					"seqDb=hgnc -andSif"));
+					"seqDb=hgnc -andSif mediator"));
 			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
 					bpFilename, prefix, fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"uniprot"),
-					"seqDb=uniprot -andSif"));
+					"seqDb=uniprot -andSif mediator"));
 		}
 		writer.close();
 
