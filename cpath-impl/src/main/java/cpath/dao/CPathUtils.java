@@ -1,6 +1,3 @@
-/**
- * 
- */
 package cpath.dao;
 
 import java.io.BufferedReader;
@@ -479,15 +476,14 @@ public final class CPathUtils {
 	
 	
 	/**
-	 * Makes the main BioPAX Paxtools model from 
-	 * the merged BioPAX data archive.
+	 * Imports the Main BioPAX Model from the merged all-in-one BioPAX archive.
 	 * 
 	 * @return model
 	 */
 	public static Model loadMainBiopaxModel()  {
 		return importFromTheArchive(CPathSettings.getInstance().mainModelFile());
 	}
-	
+
 	
 	/**
 	 * Builds the BioPAX Paxtools model from 
@@ -498,6 +494,24 @@ public final class CPathUtils {
 	public static Model loadWarehouseBiopaxModel() {
 		return importFromTheArchive(CPathSettings.getInstance().warehouseModelFile());
 	}
+
+
+	/**
+	 * Imports the specified data source BioPAX model from the corresponding merged BioPAX archive.
+	 *
+	 * @return model
+	 */
+	public static Model loadBiopaxModelByDatasource(Metadata datasource) {
+		File in = new File(CPathSettings.getInstance().biopaxExportFileName(datasource.getIdentifier()));
+		if (in.exists()) {
+			return importFromTheArchive(in.getPath());
+		} else {
+			LOGGER.debug("loadBiopaxModelByDatasource, file not found: " + in.getPath()
+					+ " (not merged yet, or file was deleted)");
+			return null;
+		}
+	}
+
 
 	/**
 	 * Auto-fix an ID of particular type before using it

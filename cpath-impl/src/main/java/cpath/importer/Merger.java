@@ -123,20 +123,25 @@ public final class Merger {
 				continue;
 			}
 
-			// merge all (normalized BioPAX) data files of the same provider into one-provider model:
-			Model providerModel = merge(metadata);
+			Model providerModel = CPathUtils.loadBiopaxModelByDatasource(metadata);
+			if(providerModel == null) {
+				// merge all (normalized BioPAX) data files of the same provider into one-provider model:
+				providerModel = merge(metadata);
 
-			//merge equiv. PEs within a data source (e.g., stateless vcam1 P19320 MI participants in hprd, intact, biogrid)
-			log.info("Merging all equivalent physical entity groups (" + metadata.getIdentifier() + ")...");
-			ModelUtils.mergeEquivalentPhysicalEntities(providerModel);
+				//merge equiv. PEs within a data source (e.g., stateless vcam1 P19320 MI participants in hprd, intact, biogrid)
+				log.info("Merging all equivalent physical entity groups (" + metadata.getIdentifier() + ")...");
+				ModelUtils.mergeEquivalentPhysicalEntities(providerModel);
 
-			//export to the biopax archive in the batch downloads dir.
-			save(providerModel, metadata);
-			
+				//export to the biopax archive in the batch downloads dir.
+				save(providerModel, metadata);
+			} else {
+				log.warn("merge(), loaded previously created " + metadata.getIdentifier() +
+						" BioPAX model (delete it if you want to start over).");
+			}
+
 			//merge into the main model
 			log.info("Merging the integrated '" + metadata.getIdentifier() +
 					"' model into the main all-providers BioPAX model...");
-			
 			simpleMerger.merge(mainModel, providerModel);
 		}
 		

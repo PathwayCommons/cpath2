@@ -37,10 +37,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -525,13 +521,11 @@ public final class Admin {
      * @throws IOException, IllegalStateException (when not in maintenance mode), InterruptedException
      */
 	public static void createDownloads() throws IOException, InterruptedException
-    {	
+    {
+		LOG.info("createDownloads(), started...");
 		if(!cpath.isAdminEnabled())
 			throw new IllegalStateException("Maintenance mode is not enabled.");
-		
-		// the $CPATH_HOME/downloads sub-directory already exists at this point (after the create-warehouse stage)
-		File f = new File(cpath.downloadsDir());
-    		
+
 		ClassPathXmlApplicationContext context = 
 			new ClassPathXmlApplicationContext(new String[] {
 					"classpath:META-INF/spring/applicationContext-jpa.xml"});
@@ -554,17 +548,17 @@ public final class Admin {
 		writer.close();	
 		// destroy the Spring context, release some resources
 		context.close();
-		LOG.info("createDownloads: successfully generated the datasources summary file.");
+		LOG.info("successfully generated the datasources summary file.");
 			
 		//load the main model
-		LOG.info("createDownloads: loading the Main BioPAX Model...");
+		LOG.info("loading the Main BioPAX Model...");
 		Model model = CPathUtils.loadMainBiopaxModel();
-		LOG.info("createDownloads: successfully read the Main BioPAX Model");
+		LOG.info("successfully read the Main BioPAX Model");
 
 		// generate/find all other BioPAX .gz archives (by organism, etc.):
 		final List<String> biopaxDownloads = createOrFindBiopaxArchives(model, allMetadata);
 
-		LOG.info("createDownloads: writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN archives...");
+		LOG.info("writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN archives...");
 		String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx16g -jar paxtools.jar";
 		writer = new PrintWriter(cpath.exportScriptFile());
 		//generate export.sh script here
@@ -580,16 +574,20 @@ public final class Admin {
 			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toGSEA",
 					bpFilename, prefix, fileExtension(OutputFormat.GSEA,"uniprot"),
 					"uniprot organisms=9606"));
+			writer.println("wait");
 			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
 					bpFilename, prefix, fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"hgnc"),
 					"seqDb=hgnc -andSif mediator"));
 			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
 					bpFilename, prefix, fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"uniprot"),
 					"seqDb=uniprot -andSif mediator"));
+			writer.println("wait");
+			writer.println("echo \"Done converting "+prefix+" BioPAX to other formats.\"");
 		}
+		writer.println("echo \"All done!\"");
 		writer.close();
 
-		LOG.info("createDownloads: generating dsSummary.txt...");
+		LOG.info("generating dsSummary.txt...");
 		Analysis<Model> summarize = new IdsSummary();
 //		System.setProperty(IdsSummary.JAVA_OPTION_VERBOSE,"true");
 		System.setProperty(IdsSummary.JAVA_OPTION_OUTPUT,cpath.homeDir() + File.separator + "idsSummary.txt");
@@ -597,53 +595,22 @@ public final class Admin {
 		LOG.info("createDownloads: done.");
 	}
 
-	//reads from the extended sif archive up to the blank line and writes the interaction lines (edges) to the sif archive
-	private static void convertExtendedSifToSifGzipped(String extSifArchiveName, String sifArchiveName)
-			throws IOException {
-
-		if((new File(sifArchiveName)).exists()) {
-			LOG.info("create-downloads: skip for existing " + sifArchiveName);
-			return;
-	    } 
-
-		LOG.info("create-downloads: generating new " + sifArchiveName);
-		BufferedReader reader = new BufferedReader(new InputStreamReader((new GZIPInputStream(new FileInputStream(extSifArchiveName)))));
-		OutputStreamWriter writer = new OutputStreamWriter(new GZIPOutputStream(new FileOutputStream(sifArchiveName)));
-
-		//skip the first line (headers)
-		if(reader.ready()) reader.readLine();
-
-		while(reader.ready()) {
-			String line = reader.readLine();
-			//stop at the first blank line (because next come nodes with attributes)
-			if(line==null || line.isEmpty())
-				break;
-			//keep only the first three columns (otherwise, it's not gonna be SIF format)
-			writer.write(StringUtils.join(Arrays.copyOfRange(line.split("\t", 4), 0, 3), '\t') + '\n');
-		}
-
-		reader.close();
-		writer.close();
-
-		LOG.info("create-downloads: successfully created " + sifArchiveName);
-	}
-
 	private static Collection<String> findAllUris(Searcher searcher, 
     		Class<? extends BioPAXElement> type, String[] ds, String[] org) 
     {
     	Collection<String> uris = new ArrayList<String>();
     	
-    	SearchResponse resp = (SearchResponse) searcher.search("*", 0, type, ds, org);
+    	SearchResponse resp = searcher.search("*", 0, type, ds, org);
     	int page = 0;
     	while(!resp.isEmpty()) {
     		for(SearchHit h : resp.getSearchHit())
     			uris.add(h.getUri());
     		//next page
-    		resp = (SearchResponse) searcher.search("*", ++page, type, ds, org);
+    		resp = searcher.search("*", ++page, type, ds, org);
     	}
     	
     	LOG.info("findAllUris(in "+type.getSimpleName()+", ds: "+Arrays.toString(ds)+", org: "+Arrays.toString(org)+") "
-    			+ "collected " + uris.size() + " URIs (and the last hits page number was " + (page-1));
+    			+ "collected " + uris.size());
     	
     	return uris;
     }
@@ -666,42 +633,43 @@ public final class Admin {
             		pathwayDataSources.add(md.standardName());
         	}
         }
-		
-		//run concurrently
-		final ExecutorService exec = Executors.newCachedThreadPool();
 
     	// export by organism (name)
 		// initialize the search engine
-		LOG.info("create-downloads: init the full-text search engine...");
+		LOG.info("init the full-text search engine...");
 		final Searcher searcher = new SearchEngine(mainModel, cpath.indexDir());
         if(cpath.getOrganisms().length>1) {
-        	LOG.info("create-downloads: preparing data 'by organism' archives...");
+        	LOG.info("preparing data 'by organism' archives...");
         	for(final String org :  cpath.getOrganisms()) {
         		// generate archives for current organism
         		// hack: org.toLowerCase() is to tell by-organism from by-datasource archives (when analyzing the log db) 
         		String organism = org.toLowerCase();
         		String archiveName = cpath.biopaxExportFileName(organism);
         		if(!files.contains(archiveName)) {
-        			exportBiopax(exec, mainModel, searcher, archiveName, null, new String[]{organism});
+					if(!(new File(archiveName)).exists()) {
+						exportBiopax(mainModel, searcher, archiveName, null, new String[]{organism});
+					} else {
+						LOG.warn("skip existing "+archiveName+" data archive...");
+					}
         			files.add(archiveName); 
         		}
         	}
         } else {
-        	LOG.info("create-downloads: won't generate 'by organism' archives because only " +
+        	LOG.info("won't generate any 'by organism' archives, for only one " +
 				Arrays.toString(cpath.getOrganisms()) + " is listed in the cpath2.properties.");
         }
         
         //a separate export - only BioPAX pathway data sources, "Detailed":
-        LOG.info("create-downloads: creating 'Detailed' pathway data archive...");
         final String archiveName = cpath.biopaxExportFileName("Detailed");
 		if(!files.contains(archiveName)) {
-			exportBiopax(exec, mainModel, searcher,  archiveName, pathwayDataSources.toArray(new String[]{}), null);
+			if(!(new File(archiveName)).exists()) {
+				exportBiopax(mainModel, searcher, archiveName, pathwayDataSources.toArray(new String[]{}), null);
+			} else {
+				LOG.warn("skip existing 'Detailed' pathway data archive...");
+			}
+
 			files.add(archiveName);
 		}
-        
-        exec.shutdown();
-        exec.awaitTermination(12, TimeUnit.HOURS);
-        //continue in this thread after the above tasks ended/terminated
 
 		//finally, add the main BioPAX model archive (full path, as it's for all other items)
 		files.add(cpath.mainModelFile());
@@ -710,40 +678,31 @@ public final class Admin {
 	}	
 
 	
-	private static void exportBiopax(ExecutorService exec, 
-			final Model mainModel, final Searcher searcher,
-			final String biopaxArchive, final String[] datasources, 
-			final String[] organisms)
-	{
+	private static void exportBiopax(final Model mainModel, final Searcher searcher,
+									 final String biopaxArchive, final String[] datasources, final String[] organisms){
         // check file exists
         if(!(new File(biopaxArchive)).exists()) {
-        	LOG.info("create-downloads: creating new " + 	biopaxArchive);
-        	
-			exec.execute(new Runnable() {			
-				public void run() {
-					try {
-			        	//find all entities (all child elements will be then exported too)    	  	
-			       		Collection<String> uris = new HashSet<String>();
-			           	uris.addAll(findAllUris(searcher, Pathway.class, datasources, organisms));  	
-			           	uris.addAll(findAllUris(searcher, Interaction.class, datasources, organisms));
-			           	uris.addAll(findAllUris(searcher, Complex.class, datasources, organisms));
-			        	
-			    		// export objects found above to a new biopax archive        	
-			        	if(!uris.isEmpty()) {
-			        		OutputStream os = new GZIPOutputStream(new FileOutputStream(biopaxArchive));
-			        		SimpleIOHandler sio = new SimpleIOHandler(BioPAXLevel.L3);
-			        		sio.convertToOWL(mainModel, os, uris.toArray(new String[]{}));
-			       			LOG.info("create-downloads: successfully created " + 	biopaxArchive);
-			        	} else {
-			        		LOG.info("create-downloads: no pathways/interactions found; skipping " + 	biopaxArchive);
-			        	}
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}   						
+        	LOG.info("creating new " + 	biopaxArchive);
+			try {
+				//find all entities (all child elements will be then exported too)
+				Collection<String> uris = new HashSet<String>();
+				uris.addAll(findAllUris(searcher, Pathway.class, datasources, organisms));
+				uris.addAll(findAllUris(searcher, Interaction.class, datasources, organisms));
+				uris.addAll(findAllUris(searcher, Complex.class, datasources, organisms));
+				// export objects found above to a new biopax archive
+				if(!uris.isEmpty()) {
+					OutputStream os = new GZIPOutputStream(new FileOutputStream(biopaxArchive));
+					SimpleIOHandler sio = new SimpleIOHandler(BioPAXLevel.L3);
+					sio.convertToOWL(mainModel, os, uris.toArray(new String[]{}));
+					LOG.info("successfully created " + 	biopaxArchive);
+				} else {
+					LOG.info("no pathways/interactions found; skipping " + 	biopaxArchive);
 				}
-			});        	
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
         } else {
-        	LOG.info("create-downloads: found previously generated " + biopaxArchive);
+        	LOG.info("skipped due to that file exists: " + biopaxArchive);
         }   		
 	}
 
