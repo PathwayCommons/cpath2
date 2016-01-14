@@ -572,17 +572,18 @@ public final class Admin {
 		writer.println("echo \"CPATH2_HOME Directory: $CPATH2_HOME\"");
 		writer.println("cp downloads/blacklist.txt .");
 		for(String bpFilename : biopaxDownloads) {
-			final String prefix = bpFilename.substring(0, bpFilename.indexOf(".BIOPAX"));
-			writer.println(String.format("%s %s %s %s %s %s 2>&1 &", javaRunPaxtools, "toGSEA",
+			//extract the filename prefix (that's before 'BIOPAX', including datasource name and tailing '.')
+			final String prefix = bpFilename.substring(0, bpFilename.indexOf("BIOPAX."));
+			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toGSEA",
 					bpFilename, prefix, fileExtension(OutputFormat.GSEA,"hgnc"),
 					"hgnc organisms=9606"));
-			writer.println(String.format("%s %s %s %s %s %s 2>&1 &", javaRunPaxtools, "toGSEA",
+			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toGSEA",
 					bpFilename, prefix, fileExtension(OutputFormat.GSEA,"uniprot"),
 					"uniprot organisms=9606"));
-			writer.println(String.format("%s %s %s %s %s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
+			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
 					bpFilename, prefix, fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"hgnc"),
 					"seqDb=hgnc -andSif"));
-			writer.println(String.format("%s %s %s %s %s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
+			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
 					bpFilename, prefix, fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"uniprot"),
 					"seqDb=uniprot -andSif"));
 		}
