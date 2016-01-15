@@ -502,7 +502,7 @@ public final class CPathUtils {
 	 * @return model
 	 */
 	public static Model loadBiopaxModelByDatasource(Metadata datasource) {
-		File in = new File(CPathSettings.getInstance().biopaxExportFileName(datasource.getIdentifier()));
+		File in = new File(CPathSettings.getInstance().biopaxFileNameFull(datasource.getIdentifier()));
 		if (in.exists()) {
 			return importFromTheArchive(in.getPath());
 		} else {

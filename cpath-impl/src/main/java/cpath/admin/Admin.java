@@ -567,20 +567,28 @@ public final class Admin {
 		LOG.info("writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN...");
 		writer = new PrintWriter(cpath.exportScriptFile());
 		writer.println("#!/bin/sh");
+		writer.println("# An auto-generated script for converting the BioPAX data archives");
+		writer.println("# in the CPATH2_HOME/downloads directory to other formats.");
+		writer.println("# There must be blacklist.txt file already.");
+		writer.println("# Run as: sh export.sh &");
 		writer.println("echo \"CPATH2_HOME Directory: $CPATH2_HOME\"");
-		writer.println("cp downloads/blacklist.txt .");
+		writer.println("cd downloads");
 		for(Metadata md : allMetadata) {
-			if(md.isNotPathwayData())
-				continue; //skip warehouse metadata
-			String bpFilename = cpath.biopaxExportFileName(md.getIdentifier());
-			writeScriptCommands(bpFilename, writer, md.getNumPathways()>0);
+			if(!md.isNotPathwayData()) //skip warehouse metadata
+				writeScriptCommands(cpath.biopaxFileName(md.getIdentifier()), writer, md.getNumPathways()>0);
 		}
 		//write commands to the script file for 'All'(main) and 'Detailed' BioPAX input files:
-		writeScriptCommands(cpath.biopaxExportFileName("Detailed"), writer, true);
-		writeScriptCommands(cpath.biopaxExportFileName("All"), writer, true);
+		writeScriptCommands(cpath.biopaxFileName("Detailed"), writer, true);
+		writeScriptCommands(cpath.biopaxFileName("All"), writer, true);
+		//rename properly those SIF files that were cut from corresp.extended SIF
+		writer.println("rename 's/EXTENDED_BINARY/BINARY/' *.txt.sif");
+		writer.println("rename 's/txt.sif/sif/' *.txt.sif");
+		writer.println("gzip *.txt *.sif *.gmt *.xml");
 		writer.println("echo \"All done!\"");
+		writer.println("cd ..");
 		writer.close();
 
+		//also, quickly generate a summary of the BioPAX model
 		LOG.info("generating dsSummary.txt...");
 		Analysis<Model> summarize = new IdsSummary();
 //		System.setProperty(IdsSummary.JAVA_OPTION_VERBOSE,"true");
@@ -591,6 +599,7 @@ public final class Admin {
 
 	private static void writeScriptCommands(String bpFilename, PrintWriter writer, boolean exportToGSEA) {
 		final String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx32g -jar paxtools.jar";
+		//make output file name prefix that includes datasource and ends with '.':
 		final String prefix = bpFilename.substring(0, bpFilename.indexOf("BIOPAX."));
 		final String commaSepTaxonomyIds = StringUtils.join(cpath.getOrganismTaxonomyIds(),',');
 
@@ -611,11 +620,7 @@ public final class Admin {
 				bpFilename, prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"uniprot"),
 				"seqDb=uniprot -andSif mediator"));
 		writer.println("wait"); //important
-		//rename properly those SIF files that were cut from corresp.extended SIF
-		writer.println("rename 's/EXTENDED_BINARY/BINARY/' *.txt.sif");
-		writer.println("rename 's/txt.sif/sif/' *.txt.sif");
-		writer.println("gzip *.txt *.sif *.gmt *.xml");
-		writer.println("echo \"Done converting "+prefix+" BioPAX to other formats.\"");
+		writer.println("echo \"Done converting "+bpFilename+" to other formats.\"");
 	}
 
 
@@ -647,7 +652,7 @@ public final class Admin {
 			if (md.getType() == METADATA_TYPE.BIOPAX)
 				pathwayDataSources.add(md.standardName());
 		}
-		final String archiveName = cpath.biopaxExportFileName("Detailed");
+		final String archiveName = cpath.biopaxFileNameFull("Detailed");
 		exportBiopax(mainModel, searcher, archiveName, pathwayDataSources.toArray(new String[]{}), null);
 	}
 
@@ -657,7 +662,7 @@ public final class Admin {
         if(organisms.size()>1) {
         	LOG.info("splitting the main BioPAX model by organism, into " + organisms.size() + " BioPAX files...");
         	for(String organism :  organisms) {
-        		String archiveName = cpath.biopaxExportFileName(organism);
+        		String archiveName = cpath.biopaxFileNameFull(organism);
 				exportBiopax(mainModel, searcher, archiveName, null, new String[]{organism});
         	}
         } else {

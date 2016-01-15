@@ -14,9 +14,7 @@ import org.biopax.validator.api.beans.ValidatorResponse;
 
 import cpath.jpa.Content;
 import cpath.jpa.LogEntitiesRepository;
-import cpath.jpa.LogEntity;
 import cpath.jpa.LogEvent;
-import cpath.jpa.Mapping;
 import cpath.jpa.MappingsRepository;
 import cpath.jpa.Metadata;
 import cpath.jpa.MetadataRepository;
@@ -219,7 +217,7 @@ public interface CPathService {
 	 * (in the batch downloads or another directory),
 	 * but does not save these events in the log database yet.
 	 *
-	 * @param filename see {@link CPathSettings#biopaxExportFileName(String)} for how it's created.
+	 * @param filename see {@link CPathSettings#biopaxFileNameFull(String)} for how it's created.
 	 * @return
 	 */
 	Set<LogEvent> logEventsFromFilename(String filename);

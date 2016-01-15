@@ -228,7 +228,7 @@ public final class Merger {
 		try {		
 			new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(datasourceModel, 
 				new GZIPOutputStream(new FileOutputStream(
-						CPathSettings.getInstance().biopaxExportFileName(datasource.getIdentifier()))));
+						CPathSettings.getInstance().biopaxFileNameFull(datasource.getIdentifier()))));
 		} catch (Exception e) {
 			throw new RuntimeException("Failed updating the " + 
 					datasource.getIdentifier() + " BioPAX archive.", e);

@@ -542,17 +542,27 @@ public final class CPathSettings {
 	
 	
 	/**
-	 * Full path to the archive file where a BioPAX sub-model is exported
-	 * (in the batch downloads directory). 
+	 * Full path to the archive file where a BioPAX sub-model is exported.
 	 * 
 	 * @param name - a Metadata's identifier, organism name, or a special name, such as "All", "Warehouse", "Detailed".
 	 * @return
+	 * @see #downloadsDir()
 	 */
-	public String biopaxExportFileName(String name) {
-		return downloadsDir() + File.separator + exportArchivePrefix() + name + ".BIOPAX.owl.gz";
+	public String biopaxFileNameFull(String name) {
+		return downloadsDir() + File.separator + biopaxFileName(name);
 	}
-	
-	
+
+	/**
+	 * Local name of the BioPAX sub-model file (in the batch downloads directory).
+	 *
+	 * @param name - a Metadata's identifier, organism name, or a special name, such as "All", "Warehouse", "Detailed".
+	 * @return
+	 * @see #downloadsDir()
+	 */
+	public String biopaxFileName(String name) {
+		return exportArchivePrefix() + name + ".BIOPAX.owl.gz";
+	}
+
 	/**
 	 * Gets the common file name prefix (includes instance's provider
 	 * name and version, i.e., that comes after the directory path 
@@ -574,7 +584,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String mainModelFile() {
-		return biopaxExportFileName(Scope.ALL.toString());
+		return biopaxFileNameFull(Scope.ALL.toString());
 	}
 	
 	/**
@@ -584,7 +594,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String warehouseModelFile() {
-		return biopaxExportFileName(Scope.WAREHOUSE.toString());
+		return biopaxFileNameFull(Scope.WAREHOUSE.toString());
 	}
 
 	/**
