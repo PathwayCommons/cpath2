@@ -227,7 +227,7 @@ public class BiopaxConverter {
 
 		if (extended) {
 			Set<SIFInteraction> binaryInts = searcher.searchSIF(m);
-			OldFormatWriter.write(binaryInts, out);
+			ExtendedSIFWriter.write(binaryInts, out);
 		} else {
 			searcher.searchSIF(m, out);
 		}

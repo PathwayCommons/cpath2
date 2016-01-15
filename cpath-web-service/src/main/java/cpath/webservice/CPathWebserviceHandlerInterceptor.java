@@ -43,13 +43,14 @@ public final class CPathWebserviceHandlerInterceptor extends
 		if(response.getStatus() == HttpServletResponse.SC_OK
 				|| response.getStatus() == HttpServletResponse.SC_NOT_MODIFIED) {
 			// log accessing some of static resources (defined in the spring xml/conf.)
-			if( requestUri.contains("/downloads/") || requestUri.contains("/datadir/") 
-					|| requestUri.contains("/validations/")) 
+			if( requestUri.contains("/downloads/")
+				|| requestUri.contains("/datadir/")
+				|| requestUri.contains("/validations/"))
 			{
 				//extract file name from the URI
-				String file = requestUri.substring(requestUri.lastIndexOf("/")+1);
+				String file = requestUri.substring(requestUri.lastIndexOf("/") + 1);
 				if(!file.isEmpty()) {
-					file = URLDecoder.decode(file);
+					file = URLDecoder.decode(file, "UTF-8");
 					int idx = file.lastIndexOf(";jsession");
 					if(idx>0)
 						file = file.substring(0, idx);

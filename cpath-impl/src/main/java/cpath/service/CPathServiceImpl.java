@@ -35,14 +35,10 @@ import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import org.biopax.paxtools.controller.Cloner;
-import org.biopax.paxtools.controller.Completer;
-import org.biopax.paxtools.controller.ModelUtils;
+import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
-import org.biopax.paxtools.model.level3.Pathway;
-import org.biopax.paxtools.model.level3.RelationshipXref;
-import org.biopax.paxtools.model.level3.Xref;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.MiriamLink;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.QueryExecuter;
@@ -113,8 +109,10 @@ public class CPathServiceImpl implements CPathService {
 	//on first access when proxy model mode is enabled (so do not use the var. directly!)
 	private Model paxtoolsModel;
 
-	final private Pattern isoformIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
-	final private Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
+	private final Pattern isoformIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
+	private final Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
+
+	private final static CPathSettings cpath = CPathSettings.getInstance();
 
 	/**
 	 * Constructor
@@ -140,12 +138,12 @@ public class CPathServiceImpl implements CPathService {
 				paxtoolsModel = CPathUtils.loadMainBiopaxModel();
 				// set for this service
 				if(paxtoolsModel != null) {
-					paxtoolsModel.setXmlBase(CPathSettings.getInstance().getXmlBase());
+					paxtoolsModel.setXmlBase(cpath.getXmlBase());
 					log.info("Main BioPAX model (in-memory) is now ready for queries.");
 					searcher = new SearchEngine(paxtoolsModel, 
-							CPathSettings.getInstance().indexDir());
+							cpath.indexDir());
 					((SearchEngine) searcher).setMaxHitsPerPage(
-						Integer.parseInt(CPathSettings.getInstance().getMaxHitsPerPage()));
+						Integer.parseInt(cpath.getMaxHitsPerPage()));
 				}
 			}
 		});
@@ -387,7 +385,7 @@ public class CPathServiceImpl implements CPathService {
 		ServiceResponse toReturn;
 
 		if (format==OutputFormat.GSEA)
-			toReturn = biopaxConverter.convert(m, format, "uniprot", true); //using uniprot IDs, PRs both in and outside pathways, etc.
+			toReturn = biopaxConverter.convert(m, format, "uniprot", false); //uniprot IDs, pathway entries only, etc.
 		else
 			toReturn = biopaxConverter.convert(m, format); //using default config. (ID type, layout, etc.)
 
@@ -401,7 +399,7 @@ public class CPathServiceImpl implements CPathService {
 		final String[] organisms, final String[] datasources)
 	{
 		if(!paxtoolsModelReady()) 
-			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
+			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try again later)...");
 		
 		final String[] src = findUrisByIds(sources);
 
@@ -681,7 +679,7 @@ public class CPathServiceImpl implements CPathService {
 	private synchronized void loadBlacklist() 
 	{	
 		Resource blacklistResource = new DefaultResourceLoader()
-			.getResource("file:" + CPathSettings.getInstance().blacklistFile());
+			.getResource("file:" + cpath.blacklistFile());
 		
 		if(blacklistResource.exists()) {			
 			try {
@@ -693,7 +691,7 @@ public class CPathServiceImpl implements CPathService {
 					+ blacklistResource.getDescription(), e);
 			}
 		} else {
-			log.warn("loadBlacklist, " + CPathSettings.getInstance().blacklistFile() 
+			log.warn("loadBlacklist, " + cpath.blacklistFile()
 				+ " is not found");
 		}
 	}
@@ -841,29 +839,6 @@ public class CPathServiceImpl implements CPathService {
 		return logEntitiesRepository.save(t);
 	}
 
-	@Override
-	public LogEntity update(String date, LogEvent event, String ipAddr, Long newCount) 
-	{		
-		// find or create a record
-		LogEntity t = null;
-		try {
-			t = (LogEntity) logEntitiesRepository
-				.findByEventNameIgnoreCaseAndAddrAndDate(event.getName(), ipAddr, date);
-		} catch (DataAccessException e) {
-			log.error("count(), findByEventNameIgnoreCaseAndAddrAndDate " +
-				"failed to update for event: " + event.getName() + 
-				", IP: " + ipAddr + ", date: " + date, e);
-		}
-		
-		if(t == null) {			
-			t = new LogEntity(date, event, ipAddr);
-		}
-		
-		t.setCount(newCount);
-		
-		return logEntitiesRepository.save(t);
-	}	
-	
 	@Override
 	public ValidatorResponse validationReport(String provider, String file) {
 		ValidatorResponse response = new ValidatorResponse();
