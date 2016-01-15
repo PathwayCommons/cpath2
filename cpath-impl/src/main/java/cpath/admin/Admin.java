@@ -590,7 +590,7 @@ public final class Admin {
 	}
 
 	private static void writeScriptCommands(String bpFilename, PrintWriter writer, boolean exportToGSEA) {
-		final String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx16g -jar paxtools.jar";
+		final String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx32g -jar paxtools.jar";
 		final String prefix = bpFilename.substring(0, bpFilename.indexOf("BIOPAX."));
 		final String commaSepTaxonomyIds = StringUtils.join(cpath.getOrganismTaxonomyIds(),',');
 
@@ -602,8 +602,6 @@ public final class Admin {
 					bpFilename, prefix+fileExtension(OutputFormat.GSEA, "uniprot"),
 					"'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
 			writer.println("wait"); //important
-			writer.println("gzip " + prefix+fileExtension(OutputFormat.GSEA, "hgnc"));
-			writer.println("gzip " + prefix+fileExtension(OutputFormat.GSEA, "uniprot"));
 		}
 
 		writer.println(String.format("%s %s %s %s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
@@ -613,10 +611,10 @@ public final class Admin {
 				bpFilename, prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"uniprot"),
 				"seqDb=uniprot -andSif mediator"));
 		writer.println("wait"); //important
-		writer.println("gzip " + prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"hgnc"));
-		writer.println("gzip " + prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"uniprot"));
-		writer.println("rename 's/EXTENDED_BINARY/BINARY/' *.txt.sif.gz");
-		writer.println("rename 's/txt.sif/sif/' *.sif.gz");
+		//rename properly those SIF files that were cut from corresp.extended SIF
+		writer.println("rename 's/EXTENDED_BINARY/BINARY/' *.txt.sif");
+		writer.println("rename 's/txt.sif/sif/' *.txt.sif");
+		writer.println("gzip *.txt *.sif *.gmt *.xml");
 		writer.println("echo \"Done converting "+prefix+" BioPAX to other formats.\"");
 	}
 
