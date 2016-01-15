@@ -565,14 +565,15 @@ public final class Admin {
 
 		//auto-generate export.sh script (to run Paxtools commands for exporting BioPAX to other formats)
 		LOG.info("writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN...");
+		final String commonPrefix = cpath.exportArchivePrefix(); //e.g., PathwayCommons8.
 		writer = new PrintWriter(cpath.exportScriptFile());
 		writer.println("#!/bin/sh");
 		writer.println("# An auto-generated script for converting the BioPAX data archives");
 		writer.println("# in the CPATH2_HOME/downloads directory to other formats.");
-		writer.println("# There must be blacklist.txt file already.");
-		writer.println("# Run as: sh export.sh &");
-		writer.println("echo \"CPATH2_HOME Directory: $CPATH2_HOME\"");
-		writer.println("cd downloads");
+		writer.println("# There must be blacklist.txt and paxtools.jar files already.");
+		writer.println("# Change to the downloads/ and run as:");
+		writer.println("# sh export.sh &");
+		writer.println("nohup echo \"Started.\"");
 		for(Metadata md : allMetadata) {
 			if(!md.isNotPathwayData()) //skip warehouse metadata
 				writeScriptCommands(cpath.biopaxFileName(md.getIdentifier()), writer, md.getNumPathways()>0);
@@ -581,11 +582,12 @@ public final class Admin {
 		writeScriptCommands(cpath.biopaxFileName("Detailed"), writer, true);
 		writeScriptCommands(cpath.biopaxFileName("All"), writer, true);
 		//rename properly those SIF files that were cut from corresp.extended SIF
-		writer.println("rename 's/EXTENDED_BINARY/BINARY/' *.txt.sif");
+		writer.println("rename 's/EXTENDED_BINARY/BINARY/' *.sif");
 		writer.println("rename 's/txt.sif/sif/' *.txt.sif");
-		writer.println("gzip *.txt *.sif *.gmt *.xml");
-		writer.println("echo \"All done!\"");
-		writer.println("cd ..");
+		writer.println(String.format("gzip %s*.txt %s*.sif %s*.gmt %s*.xml",
+				commonPrefix, commonPrefix, commonPrefix, commonPrefix));
+		writer.println("nohup echo \"All done (also moved nohup.txt to the parent folder).\"");
+		writer.println("mv nohup.txt ..");
 		writer.close();
 
 		//also, quickly generate a summary of the BioPAX model
@@ -604,25 +606,25 @@ public final class Admin {
 		final String commaSepTaxonomyIds = StringUtils.join(cpath.getOrganismTaxonomyIds(),',');
 
 		if(exportToGSEA) {
-			writer.println(String.format("%s %s %s %s %s 2>&1 &", javaRunPaxtools, "toGSEA",
+			writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA",
 					bpFilename, prefix+fileExtension(OutputFormat.GSEA, "hgnc"),
 					"'hgnc symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc symbol' (not 'hgnc')- important!
-			writer.println(String.format("%s %s %s %s %s 2>&1 &", javaRunPaxtools, "toGSEA",
+			writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA",
 					bpFilename, prefix+fileExtension(OutputFormat.GSEA, "uniprot"),
 					"'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
 			writer.println("wait"); //important
+			writer.println("nohup echo \"Done converting "+bpFilename+" to GSEA.\"");
 		}
 
-		writer.println(String.format("%s %s %s %s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
+		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIFnx",
 				bpFilename, prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"hgnc"),
 				"seqDb=hgnc -andSif mediator")); //'hgnc symbol' or 'hgnc' here does not matter
-		writer.println(String.format("%s %s %s %s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
+		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIFnx",
 				bpFilename, prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"uniprot"),
 				"seqDb=uniprot -andSif mediator"));
 		writer.println("wait"); //important
-		writer.println("echo \"Done converting "+bpFilename+" to other formats.\"");
+		writer.println("nohup echo \"Done converting "+bpFilename+" to SIF.\"");
 	}
-
 
 	private static Collection<String> findAllUris(Searcher searcher, 
     		Class<? extends BioPAXElement> type, String[] ds, String[] org) 

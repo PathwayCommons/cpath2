@@ -450,12 +450,12 @@ public final class CPathSettings {
 
 
 	/**
-	 * Gets the full path to the auto-generated export data script.
+	 * Gets the full path to the to-be-generated script.
 	 *
 	 * @return
 	 */
 	public String exportScriptFile() {
-		return homeDir() + File.separator + EXPORT_SCRIPT_FILE;
+		return downloadsDir() + File.separator + EXPORT_SCRIPT_FILE;
 	}
 
 	/**
