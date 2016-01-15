@@ -75,7 +75,7 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_URI = "uri";
 	public static final String FIELD_KEYWORD = "keyword"; //anything, e.g., names, terms, comments, incl. - from child elements 
 	public static final String FIELD_NAME = "name"; // standardName, displayName, other names
-	public static final String FIELD_XREFDB = "xrefdb"; //xref.db
+//	public static final String FIELD_XREFDB = "xrefdb"; //xref.db
 	public static final String FIELD_XREFID = "xrefid"; //xref.id
 	public static final String FIELD_PATHWAY = "pathway"; //pathways and parent pathways to be inferred from entire biopax model
 	public static final String FIELD_SIZE = "size";

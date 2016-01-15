@@ -548,42 +548,36 @@ public final class Admin {
 		writer.close();	
 		// destroy the Spring context, release some resources
 		context.close();
-		LOG.info("successfully generated the datasources summary file.");
+		LOG.info("successfully generated the datasources.txt file.");
 			
 		//load the main model
 		LOG.info("loading the Main BioPAX Model...");
 		Model model = CPathUtils.loadMainBiopaxModel();
 		LOG.info("successfully read the Main BioPAX Model");
 
-		// generate/find all other BioPAX .gz archives (by organism, etc.):
-		final List<String> biopaxDownloads = createOrFindBiopaxArchives(model, allMetadata);
+		LOG.info("init the full-text search engine...");
+		final Searcher searcher = new SearchEngine(model, cpath.indexDir());
+		// generate/find special BioPAX archives:
+		// by-organism (if many),
+ 		createBySpeciesBiopax(model, searcher);
+		// and - detailed pathway data (exclude all PSI-MI sources):
+		createDetailedBiopax(model, searcher, allMetadata);
 
-		LOG.info("writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN archives...");
-		String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx16g -jar paxtools.jar";
+		//auto-generate export.sh script (to run Paxtools commands for exporting BioPAX to other formats)
+		LOG.info("writing 'export.sh' script to convert the BioPAX models to SIF, GSEA, SBGN...");
 		writer = new PrintWriter(cpath.exportScriptFile());
-		//generate export.sh script here
 		writer.println("#!/bin/sh");
 		writer.println("echo \"CPATH2_HOME Directory: $CPATH2_HOME\"");
 		writer.println("cp downloads/blacklist.txt .");
-		for(String bpFilename : biopaxDownloads) {
-			//extract the filename prefix (that's before 'BIOPAX', including datasource name and tailing '.')
-			final String prefix = bpFilename.substring(0, bpFilename.indexOf("BIOPAX."));
-			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toGSEA",
-					bpFilename, prefix, fileExtension(OutputFormat.GSEA,"hgnc"),
-					"'hgnc symbol' organisms=9606"));
-			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toGSEA",
-					bpFilename, prefix, fileExtension(OutputFormat.GSEA,"uniprot"),
-					"uniprot organisms=9606"));
-			writer.println("wait");
-			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
-					bpFilename, prefix, fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"hgnc"),
-					"seqDb=hgnc -andSif mediator"));
-			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
-					bpFilename, prefix, fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"uniprot"),
-					"seqDb=uniprot -andSif mediator"));
-			writer.println("wait");
-			writer.println("echo \"Done converting "+prefix+" BioPAX to other formats.\"");
+		for(Metadata md : allMetadata) {
+			if(md.isNotPathwayData())
+				continue; //skip warehouse metadata
+			String bpFilename = cpath.biopaxExportFileName(md.getIdentifier());
+			writeScriptCommands(bpFilename, writer, md.getNumPathways()>0);
 		}
+		//write commands to the script file for 'All'(main) and 'Detailed' BioPAX input files:
+		writeScriptCommands(cpath.biopaxExportFileName("Detailed"), writer, true);
+		writeScriptCommands(cpath.biopaxExportFileName("All"), writer, true);
 		writer.println("echo \"All done!\"");
 		writer.close();
 
@@ -594,6 +588,38 @@ public final class Admin {
 		summarize.execute(model);
 		LOG.info("createDownloads: done.");
 	}
+
+	private static void writeScriptCommands(String bpFilename, PrintWriter writer, boolean exportToGSEA) {
+		final String javaRunPaxtools = "nohup $JAVA_HOME/bin/java -Xmx16g -jar paxtools.jar";
+		final String prefix = bpFilename.substring(0, bpFilename.indexOf("BIOPAX."));
+		final String commaSepTaxonomyIds = StringUtils.join(cpath.getOrganismTaxonomyIds(),',');
+
+		if(exportToGSEA) {
+			writer.println(String.format("%s %s %s %s %s 2>&1 &", javaRunPaxtools, "toGSEA",
+					bpFilename, prefix+fileExtension(OutputFormat.GSEA, "hgnc"),
+					"'hgnc symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc symbol' (not 'hgnc')- important!
+			writer.println(String.format("%s %s %s %s %s 2>&1 &", javaRunPaxtools, "toGSEA",
+					bpFilename, prefix+fileExtension(OutputFormat.GSEA, "uniprot"),
+					"'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
+			writer.println("wait"); //important
+			writer.println("gzip " + prefix+fileExtension(OutputFormat.GSEA, "hgnc"));
+			writer.println("gzip " + prefix+fileExtension(OutputFormat.GSEA, "uniprot"));
+		}
+
+		writer.println(String.format("%s %s %s %s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
+				bpFilename, prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"hgnc"),
+				"seqDb=hgnc -andSif mediator")); //'hgnc symbol' or 'hgnc' here does not matter
+		writer.println(String.format("%s %s %s %s %s 2>&1 &", javaRunPaxtools, "toSIFnx",
+				bpFilename, prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"uniprot"),
+				"seqDb=uniprot -andSif mediator"));
+		writer.println("wait"); //important
+		writer.println("gzip " + prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"hgnc"));
+		writer.println("gzip " + prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"uniprot"));
+		writer.println("rename 's/EXTENDED_BINARY/BINARY/' *.txt.sif.gz");
+		writer.println("rename 's/txt.sif/sif/' *.sif.gz");
+		writer.println("echo \"Done converting "+prefix+" BioPAX to other formats.\"");
+	}
+
 
 	private static Collection<String> findAllUris(Searcher searcher, 
     		Class<? extends BioPAXElement> type, String[] ds, String[] org) 
@@ -615,67 +641,32 @@ public final class Admin {
     	return uris;
     }
 
-	
-	private static List<String> createOrFindBiopaxArchives(final Model mainModel, 
-			Iterable<Metadata> allMetadata) throws InterruptedException 
+	private static void createDetailedBiopax(final Model mainModel, Searcher searcher, Iterable<Metadata> allMetadata)
 	{
-		final List<String> files = new ArrayList<String>();
-		
-        //collect BioPAX pathway data source names in this set
-        Set<String> pathwayDataSources = new HashSet<String>();        
-        for(Metadata md : allMetadata) {
-        	// collect final biopax archives (skip for warehouse data);
-        	if(!md.isNotPathwayData()) {
-        		//this BioPAX file already exists (was generated by Merger)
-        		files.add(cpath.biopaxExportFileName(md.getIdentifier()));      		
-        		//collect if BioPAX data
-        		if(md.getType() == METADATA_TYPE.BIOPAX)
-            		pathwayDataSources.add(md.standardName());
-        	}
-        }
+		//collect BioPAX pathway data source names
+		final Set<String> pathwayDataSources = new HashSet<String>();
+		for(Metadata md : allMetadata) {
+			if (md.getType() == METADATA_TYPE.BIOPAX)
+				pathwayDataSources.add(md.standardName());
+		}
+		final String archiveName = cpath.biopaxExportFileName("Detailed");
+		exportBiopax(mainModel, searcher, archiveName, pathwayDataSources.toArray(new String[]{}), null);
+	}
 
+	private static void createBySpeciesBiopax(final Model mainModel, Searcher searcher) {
     	// export by organism (name)
-		// initialize the search engine
-		LOG.info("init the full-text search engine...");
-		final Searcher searcher = new SearchEngine(mainModel, cpath.indexDir());
-        if(cpath.getOrganisms().length>1) {
-        	LOG.info("preparing data 'by organism' archives...");
-        	for(final String org :  cpath.getOrganisms()) {
-        		// generate archives for current organism
-        		// hack: org.toLowerCase() is to tell by-organism from by-datasource archives (when analyzing the log db) 
-        		String organism = org.toLowerCase();
+		Set<String> organisms = cpath.getOrganismTaxonomyIds();
+        if(organisms.size()>1) {
+        	LOG.info("splitting the main BioPAX model by organism, into " + organisms.size() + " BioPAX files...");
+        	for(String organism :  organisms) {
         		String archiveName = cpath.biopaxExportFileName(organism);
-        		if(!files.contains(archiveName)) {
-					if(!(new File(archiveName)).exists()) {
-						exportBiopax(mainModel, searcher, archiveName, null, new String[]{organism});
-					} else {
-						LOG.warn("skip existing "+archiveName+" data archive...");
-					}
-        			files.add(archiveName); 
-        		}
+				exportBiopax(mainModel, searcher, archiveName, null, new String[]{organism});
         	}
         } else {
         	LOG.info("won't generate any 'by organism' archives, for only one " +
-				Arrays.toString(cpath.getOrganisms()) + " is listed in the cpath2.properties.");
+				Arrays.toString(cpath.getOrganisms()) + " is listed in the cpath2.properties");
         }
-        
-        //a separate export - only BioPAX pathway data sources, "Detailed":
-        final String archiveName = cpath.biopaxExportFileName("Detailed");
-		if(!files.contains(archiveName)) {
-			if(!(new File(archiveName)).exists()) {
-				exportBiopax(mainModel, searcher, archiveName, pathwayDataSources.toArray(new String[]{}), null);
-			} else {
-				LOG.warn("skip existing 'Detailed' pathway data archive...");
-			}
-
-			files.add(archiveName);
-		}
-
-		//finally, add the main BioPAX model archive (full path, as it's for all other items)
-		files.add(cpath.mainModelFile());
-
-        return files;
-	}	
+	}
 
 	
 	private static void exportBiopax(final Model mainModel, final Searcher searcher,
@@ -702,7 +693,7 @@ public final class Admin {
 				throw new RuntimeException(e);
 			}
         } else {
-        	LOG.info("skipped due to that file exists: " + biopaxArchive);
+        	LOG.info("skipped due to file already exists: " + biopaxArchive);
         }   		
 	}
 
