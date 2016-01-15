@@ -570,7 +570,7 @@ public final class Admin {
 			final String prefix = bpFilename.substring(0, bpFilename.indexOf("BIOPAX."));
 			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toGSEA",
 					bpFilename, prefix, fileExtension(OutputFormat.GSEA,"hgnc"),
-					"hgnc organisms=9606"));
+					"'hgnc symbol' organisms=9606"));
 			writer.println(String.format("%s %s %s %s%s %s 2>&1 &", javaRunPaxtools, "toGSEA",
 					bpFilename, prefix, fileExtension(OutputFormat.GSEA,"uniprot"),
 					"uniprot organisms=9606"));
