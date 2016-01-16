@@ -822,6 +822,7 @@ public class CPathServiceImpl implements CPathService {
     	metadataRepository.delete(metadata);
 		File dir = new File(metadata.outputDir());
 		if(dir.exists() && dir.isDirectory()) {
+			CPathUtils.cleanupDirectory(dir);
 			dir.delete();
 		}
 	}
