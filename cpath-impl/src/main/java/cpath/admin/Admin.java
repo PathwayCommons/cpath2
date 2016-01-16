@@ -618,10 +618,10 @@ public final class Admin {
 
 		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIFnx",
 				bpFilename, prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"hgnc"),
-				"seqDb=hgnc -andSif mediator")); //'hgnc symbol' or 'hgnc' here does not matter
+				"seqDb=hgnc -andSif")); //'hgnc symbol' or 'hgnc' here does not matter
 		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIFnx",
 				bpFilename, prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"uniprot"),
-				"seqDb=uniprot -andSif mediator"));
+				"seqDb=uniprot -andSif"));
 		writer.println("wait"); //important
 		writer.println("nohup echo \"Done converting "+bpFilename+" to SIF.\"");
 	}
