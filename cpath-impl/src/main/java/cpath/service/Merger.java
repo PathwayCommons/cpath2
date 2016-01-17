@@ -495,10 +495,10 @@ public final class Merger {
 	 */
 	 void chemXrefByMapping(final Model m, Named bpe, final int maxNumXrefsToAdd)
 	{
-		if(!(bpe.getModelInterface()== PhysicalEntity.class || bpe instanceof SmallMolecule)) {
-			throw new AssertionError(bpe.getModelInterface().getSimpleName() + " is not allowed here.");
-		}
+		Assert.isTrue(bpe.getModelInterface()== PhysicalEntity.class
+				|| bpe instanceof SmallMolecule || bpe instanceof Complex);
 		// try/prefer to use ER instead of entity -
+
 		if(bpe instanceof SimplePhysicalEntity) {
 			EntityReference er = ((SimplePhysicalEntity) bpe).getEntityReference();
 			if(er != null && !er.getXref().isEmpty())
@@ -544,7 +544,7 @@ public final class Merger {
      */
 	void genomicXrefByMapping(final Model m, Named bpe, final int maxNumXrefsToAdd)
 	{
-		Assert.isTrue(bpe instanceof Gene || bpe instanceof SequenceEntity);
+		Assert.isTrue(bpe instanceof Gene || bpe instanceof SequenceEntity || bpe instanceof Complex);
 		// try/prefer to use ER instead of entity -
 		if(bpe instanceof SimplePhysicalEntity) {
 			EntityReference er = ((SimplePhysicalEntity) bpe).getEntityReference();
