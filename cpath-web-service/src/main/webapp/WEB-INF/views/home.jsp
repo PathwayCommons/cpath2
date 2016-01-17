@@ -53,9 +53,7 @@ or the fat JAR with embedded application server was started) -->
 		this website. Nevertheless, advanced users may find the following examples useful:
 	</p>
 	<ul>
-		<li><a href="#idmapping">/idmapping</a> - can map selected biological identifiers 
-		to UniProt or ChEBI primary IDs (one way);</li>
-		<li><em>/help/</em> - returns a tree of Help objects describing the main commands, parameters, 
+		<li><em>/help/</em> - returns a tree of Help objects describing the main commands, parameters,
 		BioPAX types, and properties, e.g., /help/schema, /help/commands, /help/types;</li>
 		<li><em>/log/</em> - service access summary, e.g., /log/totals, /log/TOTAL/geography/world, /log/timeline;</li>
 		<li><em>/[rdf:ID]</em> - every BioPAX object's URI in this resource is a resolvable URL, because  
@@ -70,7 +68,7 @@ or the fat JAR with embedded application server was started) -->
   
 	<div class="row" id="notes">
 	<h3>Notes</h3>
-		<h4><a id="about_uris"></a>About URIs used by this system</h4>
+		<h4><a id="about_uris"></a>About URIs and IDs in this system</h4>
 	    <p>
 	    Parameters: 'source', 'uri', and 'target' require URIs of existing BioPAX elements, which 
 		are either standard <a href="http://identifiers.org" target="_blank">Identifiers.org</a>
@@ -86,7 +84,7 @@ or the fat JAR with embedded application server was started) -->
 		(ID must be prefixed with 'CID:' or 'SID:' to distinguish from each other and NCBI Gene), 
 		are also acceptable in place of full URIs</strong> in <em>get</em> and <em>graph</em> queries.
 		As a rule of thumb, using full URIs makes a precise query, whereas using identifiers makes a 
-		more exploratory one (which performs identifier mapping to UniProt and subsequent searches for the Xref's URIs).
+		more exploratory one, which depends on full-text search, which (index) in turn depends on id-mapping.
 		</p>
 
 		<h4><a id="enco"></a>About example URLs</h4>
@@ -196,7 +194,7 @@ or the fat JAR with embedded application server was started) -->
 			refereneces and controlled vocabularies, it is usually an 
 			Identifiers.org URL. Multiple identifierss are allowed per query, for
 			example, 'uri=http://identifiers.org/uniprot/Q06609&amp;uri=http://identifiers.org/uniprot/Q549Z0'
-			<a href="#about_uris">See also</a> note about Identifiers.org.
+			<a href="#about_uris">See also</a> note about URIs and IDs.
 		</li>
 		<li><em>format=</em> [Optional] output format (<a
 				href="#output_formats">values</a>)
@@ -210,23 +208,16 @@ or the fat JAR with embedded application server was started) -->
 	<h4>Examples:</h4>
 	<ol>
 		<li><a rel="nofollow" href="get?uri=http://identifiers.org/uniprot/Q06609">
-			This command returns the BioPAX representation of http://identifiers.org/uniprot/Q06609</a> 
-			(a <strong>ProteinReference</strong> object)
+			This command returns the BioPAX representation of Q06609</a> (a <strong>ProteinReference</strong> object).
 		</li>
-		<li><a rel="nofollow" href="get?uri=COL5A1">
-			Get by HUGO gene symbol COL5A1</a> 	- returns the xrefs in BioPAX format.
-			<strong>Note:</strong> unlike the first example, this is in fact a two-step query, 
-			which internally performs <a href="#idmapping">id-mapping</a>  
-			and then gets the COL5A1 and P20908 xrefs by revealed absolute URIs. A query like this can be
-			a quick test before submitting an ID to a much slower '/graph' query: 
-			if '/get' returns no result, then the ID won't contribute to any graph query result either
-			(despite there might exist BioPAX entities with the ID being part of their names or comments;
-			which can be found by '/search' command).
+		<li><a rel="nofollow" href="get?uri=COL5A1">Find/get by HUGO gene symbol COL5A1</a> - returns BioPAX entities.
+			<strong>Note:</strong> unlike the first example, it first performs a full-text search for physical entities
+			and genes by using 'xrefid:COL5A1' query, and then gets the COL5A1 (P20908) related BioPAX entities.
 		</li>
-		<%-- TODO: update the example URI below before every release --%>
-		<li><a rel="nofollow" href="get?uri=http://purl.org/pc2/8/Pathway_51d78d02d3ac75a76d8a11ed87b5c496">
+		<li><a rel="nofollow" href="get?uri=http://identifiers.org/reactome/R-HSA-201451">
 			Get the Signaling by BMP <strong>Pathway</strong></a> 
-			(R-HSA-201451, format: BioPAX, source: Reactome)
+			(<a rel="nofollow" href="http://identifiers.org/reactome/R-HSA-201451">R-HSA-201451</a>,
+			format: BioPAX, source: Reactome).
 		</li>
 	</ol>
 </div>
@@ -255,12 +246,12 @@ or the fat JAR with embedded application server was started) -->
 		</li>
 		<li><em>source=</em> [Required] source object's URI/ID. Multiple source URIs/IDs are allowed per query, for example
 			'source=http://identifiers.org/uniprot/Q06609&amp;source=http://identifiers.org/uniprot/Q549Z0'.
-			See <a href="#about_uris">note about URIs</a>.
+			See <a href="#about_uris">note about URIs and IDs</a>.
 		</li>
 		<li><em>target=</em> [Required for PATHSFROMTO graph query]
 			target URI/ID. Multiple target URIs are allowed per query; for
 			example 'target=http://identifiers.org/uniprot/Q06609&amp;target=http://identifiers.org/uniprot/Q549Z0'.
-			See <a href="#about_uris">note about URIs</a>.
+			See <a href="#about_uris">note about URIs and IDs</a>.
 		</li>
 		<li><em>direction=</em> [Optional, for NEIGHBORHOOD and COMMONSTREAM algorithms] - graph search direction (<a
 				href="#graph_directions">values</a>).
@@ -293,14 +284,12 @@ or the fat JAR with embedded application server was started) -->
 			participate in, and returns the BioPAX model.</li>		
 		<li><a rel="nofollow" href="graph?source=COL5A1&kind=neighborhood">
 			A similar query using the gene symbol COL5A1 instead of URI or UniProt ID</a> 
-			(this also implies internal id-mapping to primary UniProt IDs). Compared with above examples, 
-			particularly the first one, a query like this potentially returns a larger subnetwork, as
-			it possibly starts its graph traversing from several unification and relationship Xrefs 
-			rather than from the specified single ProteinReference (http://identifiers.org/uniprot/P20908).
-			One can mix: submit URI along with, e.g., UniProt, RefSeq, NCBI Gene, and Ensemble IDs
-			in a single /graph or /get query; other identifiers may also work, by chance (if present 
-			in the database), but are not generally supported. 
-			See: <a href="#about_uris">about URIs</a> and <a href="#idmapping">id-mapping</a>.
+			(this performs internal full-text search / id-mapping). Compared with above examples,
+			particularly the first one, a query like this potentially returns a larger sub-network, as
+			it possibly starts graph traversing from multiple matching entities (seeds)
+			rather than from a single ProteinReference (http://identifiers.org/uniprot/P20908).
+			One can mix: e.g., submit URIs along with UniProt, NCBI Gene, ChEBI IDs in a single /graph or /get query;
+			other identifier types may also work. See: <a href="#about_uris">about URIs and IDs</a>.
 		</li>
 	</ol>
 </div>
@@ -387,27 +376,6 @@ or the fat JAR with embedded application server was started) -->
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <hr/>
-<div class="row nav-target" id="idmapping">
-	<h3>IDMAPPING:</h3>
-	<blockquote><p>
-	Maps bioentity identifiers to corresponding primary UniProt or ChEBI accessions. 
-	Currently supported are: HUGO gene symbols, UniProt (SwissProt AC and ID), RefSeq, Ensembl, NCBI Gene 
-	identifiers; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem 
-	(PubChem ID must be prefixed with either 'CID:' or 'SID:' to distinguish from each other and NCBI Gene ID).
-	You can mix different standard ID types in one query.
-	This is NOT an all-purpose id-mapping system. It's to map to canonical reference proteins and small molecules
-	that may exist in this database; it was originally designed to improve BioPAX data 
-	integration and allow graph queries to accept not only URIs but also selected IDs. The mapping table is derived
-	from Swiss-Prot (DR fields) and ChEBI (OBO) data, and custom mapping files (e.g., based on UniChem).
-	</p></blockquote>
-	<h4>Output:</h4> 
-	Simple JSON format.
-	<h4>Examples:</h4> <br/>
-	<ol>
-		<li><a rel="nofollow" href="idmapping?id=BRCA2&id=TP53">/idmapping?id=BRCA2&amp;id=TP53</a></li>
-	</ol>
-</div>
-<div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <div class="row nav-target" id="parameter_values">
 	<h2>Parameter Values</h2>
 	<div class="parameters row" id="organisms">

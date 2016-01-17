@@ -137,9 +137,6 @@ public final class Merger {
 			
 			simpleMerger.merge(mainModel, providerModel);
 		}
-		
-		//extra cleanup
-		cleanupXrefs(mainModel);
 
 		ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
 
@@ -161,6 +158,8 @@ public final class Merger {
 					for (XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
 						owner.removeXref(x);
 					}
+				} else {
+					x.setDb(x.getDb().toLowerCase());
 				}
 			}
 		}
@@ -194,8 +193,7 @@ public final class Merger {
 			Model inputModel = (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream);
 			merge(description, inputModel, targetModel);
 		}
-			
-		cleanupXrefs(targetModel);
+
 		ModelUtils.removeObjectsIfDangling(targetModel, UtilityClass.class);
 		
 		log.info("Done merging " + metadata);
@@ -245,11 +243,9 @@ public final class Merger {
 	void merge(final String description, final Model source, final Model target) {	
 		
 		final String srcModelInfo = "source: " + description;
-		
-		//First, convert all Xref.db values to lower case
-		//...the Normalized must have already done so; anyway...
-		for(Xref x : source.getObjects(Xref.class))
-			if(x.getDb()!=null) x.setDb(x.getDb().toLowerCase());
+
+		//extra cleanup
+		cleanupXrefs(mainModel);
 
 		log.info("Searching for canonical or existing EntityReference objects " +
 				" to replace equivalent original objects ("+srcModelInfo+")...");

@@ -213,6 +213,7 @@ public class BiopaxConverter {
 	{
 		ConfigurableIDFetcher idFetcher = new ConfigurableIDFetcher();
 		idFetcher.chemDbStartsWithOrEquals("chebi");
+
 		if(db == null || db.isEmpty() || db.toLowerCase().startsWith("hgnc")) {
 			idFetcher.seqDbStartsWithOrEquals("hgnc");
 		}
@@ -225,7 +226,7 @@ public class BiopaxConverter {
 		SIFSearcher searcher = new SIFSearcher(idFetcher, SIFEnum.values());
 		searcher.setBlacklist(blacklist);
 
-		if (extended) {
+		if(extended) {
 			Set<SIFInteraction> binaryInts = searcher.searchSIF(m);
 			ExtendedSIFWriter.write(binaryInts, out);
 		} else {

@@ -116,18 +116,18 @@ to create a new cPAth2 instance from scratch:
  - -fetch-metadata (sh cpath2-cli.sh -fetch-metadata)
  - -premerge 
  - -create-warehouse
- - -merge --force (unfortunately, --force is usually required...)
+ - -merge
  - -index
- - -create-downloads
+ - -export
 
 Extras/other steps (optional):
  - -run-analysis (to execute a class that implements cpath.dao.Analysis interface, 
   e.g., to post-fix something in the merged biopax model/db or to produce some output; 
   if it does modify the model though, i.e. not a read-only analysis, 
   you are to run -dbindex and following steps again.)
- - -export (to get a sub-model, using absolute URIs, e.g., to upload to a Virtuoso SPARQL server)
+ - -export (if parameters are provided, gets a sub-model, using absolute URIs, e.g.,
+  to upload to a Virtuoso SPARQL server)
  - -log --import (or --export)
- - -convert (to other formats, using custom format options)
 
 Highly recommended is to generate the 'blacklist' (soon after the -merge stage)
 The graph queries and format converter algorithms will not
