@@ -12,9 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CPathUtils;
+import cpath.service.CPathUtils;
 import cpath.jpa.Content;
-import cpath.jpa.LogEvent;
 import cpath.jpa.Metadata;
 import cpath.service.Status;
 import cpath.webservice.args.binding.MetadataTypeEditor;

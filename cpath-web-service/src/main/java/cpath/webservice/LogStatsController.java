@@ -6,7 +6,7 @@ import java.util.*;
 import javax.servlet.http.HttpServletRequest;
 
 import cpath.config.CPathSettings;
-import cpath.dao.LogUtils;
+import cpath.service.LogUtils;
 import cpath.jpa.LogEvent;
 import cpath.jpa.LogType;
 import cpath.jpa.Metadata;
@@ -37,9 +37,9 @@ public class LogStatsController extends BasicController {
 	
 	public LogStatsController() {
     	try {
-			Class.forName("cpath.dao.LogUtils");
+			Class.forName("cpath.service.LogUtils");
 		} catch (ClassNotFoundException e) {
-			log.error("Class.forName(cpath.dao.LogUtils) failed");
+			log.error("Class.forName(cpath.service.LogUtils) failed");
 		}
 	}
 	

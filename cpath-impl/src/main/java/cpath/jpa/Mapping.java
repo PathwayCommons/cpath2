@@ -2,7 +2,7 @@ package cpath.jpa;
 
 import javax.persistence.*;
 
-import cpath.dao.CPathUtils;
+import cpath.service.CPathUtils;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.hibernate.annotations.DynamicInsert;

@@ -33,7 +33,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import cpath.config.CPathSettings;
-import cpath.dao.LogUtils;
+import cpath.service.LogUtils;
 import cpath.jpa.LogType;
 
 @Controller

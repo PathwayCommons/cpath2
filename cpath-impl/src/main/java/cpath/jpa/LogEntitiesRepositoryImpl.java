@@ -18,8 +18,7 @@ import com.mysema.query.types.expr.BooleanExpression;
 import com.mysema.query.types.path.StringPath;
 
 import cpath.config.CPathSettings;
-import cpath.dao.LogUtils;
-import cpath.jpa.QLogEntity;
+import cpath.service.LogUtils;
 
 /**
  * @author rodche

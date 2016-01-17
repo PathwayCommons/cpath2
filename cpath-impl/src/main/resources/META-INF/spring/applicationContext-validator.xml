@@ -37,7 +37,7 @@
 	</bean>
 
 	<!-- info: CvFetcher extends OntologyManager(Adapter) and also implements WarehouseDAO interface -->
-	<bean id="cvFetcher" class="cpath.dao.OntologyManagerCvRepository" scope="singleton">
+	<bean id="ontologyManager" class="cpath.service.OntologyManagerCvRepository" scope="singleton">
 		<constructor-arg index="0">
 		 	<util:properties local-override="false" location="classpath:obo.properties"/>
 		</constructor-arg>
@@ -46,7 +46,7 @@
 	<!-- a helper and a proxy to access MIRIAM and MI database citation and regexps to check corresponding IDs -->
 	<bean id="xrefHelper" class="org.biopax.validator.utils.XrefHelper" scope="singleton">
 		<constructor-arg ref="extraDbSynonyms"/>
-		<constructor-arg ref="cvFetcher" />
+		<constructor-arg ref="ontologyManager" />
 	</bean>
 
 	<bean id="validator" class="org.biopax.validator.impl.ValidatorImpl"/>

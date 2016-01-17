@@ -60,8 +60,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CPathUtils;
-import cpath.dao.LogUtils;
 import cpath.jpa.Content;
 import cpath.jpa.LogEntitiesRepository;
 import cpath.jpa.LogEntity;
@@ -899,7 +897,7 @@ public class CPathServiceImpl implements CPathService {
 
 	public void index() throws IOException {
 		if(!cpath.isAdminEnabled())
-			throw new IllegalStateException("Admin mode must be enabled to run index().");
+			throw new IllegalStateException("Admin mode is not enabled");
 
 		if(paxtoolsModel==null)
 			paxtoolsModel = CPathUtils.loadMainBiopaxModel();

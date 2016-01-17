@@ -72,9 +72,8 @@ The metadata columns are, in order:
  5. URL to the Data Provider's Homepage (optional, good to have)
  6. IMAGE URL (optional) - can be pointing to a resource logo;
  7. TYPE - one of: BIOPAX, PSI_MI, PSI_MITAB, WAREHOUSE, MAPPING;
- 8. CLEANER_CLASS - leave empty or use a specific cleaner class name (like cpath.cleaner.internal.SomeCleanerImpl);
- 9. CONVERTER_CLASS - leave empty or use a specific converter class, 
- e.g., cpath.converter.internal.UniprotConverterImpl, cpath.converter.internal.PsimiConverterImpl;
+ 8. CLEANER_CLASS - leave empty or use a specific cleaner class name (like cpath.cleaner.SomeCleaner);
+ 9. CONVERTER_CLASS - leave empty or use a specific converter class, e.g., cpath.converter.UniprotConverter, PsimiConverter;
  10. PUBMED ID - PubMed record ID (only number) of the main publication
  11. AVAILABILITY - values: 'free', 'academic', 'purchase'
 
@@ -113,21 +112,20 @@ Run cpath2-cli.sh without arguments to see about the commands and parameters.
 
 The following sequence of cpath2 commands is normally required 
 to create a new cPAth2 instance from scratch: 
- - -fetch-metadata (sh cpath2-cli.sh -fetch-metadata)
+ - -metadata (sh cpath2-cli.sh -fetch-metadata)
  - -premerge 
  - -create-warehouse
  - -merge
  - -index
- - -create-downloads
+ - -export
 
 Extras/other steps (optional):
  - -run-analysis (to execute a class that implements cpath.dao.Analysis interface, 
   e.g., to post-fix something in the merged biopax model/db or to produce some output; 
   if it does modify the model though, i.e. not a read-only analysis, 
   you are to run -dbindex and following steps again.)
- - -export (to get a sub-model, using absolute URIs, e.g., to upload to a Virtuoso SPARQL server)
+ - -export (if used with parameters, gets a sub-model, using absolute URIs, e.g., to upload to a Virtuoso SPARQL server)
  - -log --import (or --export)
- - -convert (to other formats, using custom format options)
 
 Highly recommended is to generate the 'blacklist' (soon after the -merge stage)
 The graph queries and format converter algorithms will not

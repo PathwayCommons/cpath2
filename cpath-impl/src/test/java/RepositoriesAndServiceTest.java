@@ -13,7 +13,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import cpath.config.CPathSettings;
-import cpath.dao.LogUtils;
+import cpath.service.LogUtils;
 import cpath.jpa.Content;
 import cpath.jpa.Geoloc;
 import cpath.jpa.LogEntity;

@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
+import cpath.service.*;
 import org.apache.commons.lang.StringUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.model.Model;
@@ -139,8 +140,8 @@ public final class Metadata {
      * @param urlToHomepage provider's home page URL
      * @param urlToLogo provider's logo image URL
      * @param metadata_type what kind of data (warehouse, biopax, psi-mi, id-mapping)
-     * @param cleanerClassname canonical name of a java class that implements {@link cpath.importer.Cleaner}
-     * @param converterClassname canonical name of a java class that implements {@link cpath.importer.Converter}
+     * @param cleanerClassname canonical name of a java class that implements {@link Cleaner}
+     * @param converterClassname canonical name of a java class that implements {@link cpath.service.Converter}
      * @param pubmedId recommended by the data provider reference publication PMID
      * @param availability data availability: free, academic, not-free
      */

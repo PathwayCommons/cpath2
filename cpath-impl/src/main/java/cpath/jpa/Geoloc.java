@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 
-import cpath.dao.LogUtils;
+import cpath.service.LogUtils;
 
 
 /**
