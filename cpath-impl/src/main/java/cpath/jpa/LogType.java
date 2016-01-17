@@ -5,7 +5,7 @@ package cpath.jpa;
 
 /**
  * Categories of the data download/access events. 
- * <p/>
+ *
  * In fact, these are not mutually
  * exclusive types, for a web request/response usually
  * counts more than once: once, for sure, in the "total" 

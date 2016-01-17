@@ -1,9 +1,11 @@
 package cpath.service;
 
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
+import cpath.config.CPathSettings;
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
@@ -12,7 +14,6 @@ import org.biopax.validator.api.beans.ValidatorResponse;
 
 import cpath.jpa.Content;
 import cpath.jpa.LogEntitiesRepository;
-import cpath.jpa.LogEntity;
 import cpath.jpa.LogEvent;
 import cpath.jpa.MappingsRepository;
 import cpath.jpa.Metadata;
@@ -33,15 +34,14 @@ import cpath.service.jaxb.ServiceResponse;
  */
 public interface CPathService {
 	
-	public Model getModel();
+	Model getModel();
 	
-	public void setModel(Model paxtoolsModel);
+	void setModel(Model paxtoolsModel);
 	
-	public Searcher getSearcher();
+	Searcher getSearcher();
 	
-	public void setSearcher(Searcher searcher);
-	
-	
+	void setSearcher(Searcher searcher);
+
 
 	/**
 	 * Retrieves the BioPAX element(s) by URI or identifier (e.g., gene symbol)
@@ -54,7 +54,6 @@ public interface CPathService {
 	 * @return
 	 */
 	ServiceResponse fetch(OutputFormat format, String... uris);
-
 	
 	/**
 	 * Full-text search for the BioPAX elements. 
@@ -66,9 +65,8 @@ public interface CPathService {
 	 * @param organisms URIs of organisms
 	 * @return search/error response
 	 */
-	ServiceResponse search(String queryStr, 
+	ServiceResponse search(String queryStr,
 			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms);
-
 	
 	/**
 	 * Runs a neighborhood query using the given parameters
@@ -116,8 +114,7 @@ public interface CPathService {
 	 */
 	ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
 		String[] targets, Integer limit, String[] organisms, String[] datasources);
-	
-	
+
 	/**
 	 * Runs a common upstream or downstream query
 	 * (returns a sub-model in the specified format, 
@@ -131,8 +128,7 @@ public interface CPathService {
 	 * @param datasources optional filter
 	 * @return common stream
 	 */
-	ServiceResponse getCommonStream(OutputFormat format, 
-		String[] sources, Integer limit, Direction direction, 
+	ServiceResponse getCommonStream(OutputFormat format, String[] sources, Integer limit, Direction direction,
 			String[] organisms, String[] datasources);
 
 	//---------------------------------------------------------------------------------------------|
@@ -149,8 +145,7 @@ public interface CPathService {
 	 * @return
 	 */
 	ServiceResponse traverse(String propertyPath, String... sourceUris);
-	
-	
+
 	/**
 	 * Gets top (root) pathways (URIs, names) in the current BioPAX model.
 	 * 
@@ -159,39 +154,29 @@ public interface CPathService {
 	 * @return
 	 */
 	ServiceResponse topPathways(String[] organisms, String[] datasources);
-	
-	
+
 	/**
-	 * Guess the identifier type (chemical vs gene/protein) 
-	 * and returns other Is it maps to. This method can be wrong
-	 * about mapping, it's weak, designed to use primarily in
-	 * BioPAX graph queries and not for data integration/merging.
-	 * 
-	 * @param identifier
-	 * @return
+	 * Maps an identifier to primary ID(s) of a given type.
+	 * Auto-detects the source ID type or tries all types.
+	 * The result set may contain more than one primary ID.
+	 *
+	 * @param fromId the source ID
+	 * @param toDb standard (MIRIAM) preferred name of the target ID type (e.g., 'UniProt')
+	 * @return a set of primary IDs of the type; normally one or none elements
 	 */
-	Set<String> map(String identifier);
-	
-	
+	Set<String> map(String fromId, String toDb);
+
 	/**
-     * Maps an identifier to primary ID(s) of a given type.
-     * 
-     * Normally, the result set contains only one ID.
-     * If the result contains more than one value, which does not
-     * necessarily an error, then it's up to other methods to decide 
-     * how to proceed; e.g., one should not probably merge different 
-     * data objects if the mapping is known to be umbiguous,
-     * but it's usually ok to generate relationship xrefs 
-     * or use the resulting IDs in a BioPAX graph query.
-     * 
-     * @param fromDb data collection name or null (to use all source ID types)
-     * @param fromId the source ID
-     * @param toDb standard (MIRIAM) preferred name of the target ID type (e.g., 'UniProt')
-     * 
-     * @return a set of primary IDs of the type; normally one or none elements
-     */
-    Set<String> map(String fromDb, String fromId, String toDb);
-        
+	 * Maps multiple identifiers to primary IDs of given type.
+	 * Auto-detects the source ID type or tries all types.
+	 * The result set may contain more than one primary ID.
+	 *
+	 * @param fromIds the source IDs
+	 * @param toDb standard (MIRIAM) preferred name of the target ID type (e.g., 'UniProt')
+	 * @return a set of primary IDs of the type; normally one or none elements
+	 */
+	Set<String> map(Collection<String> fromIds, String toDb);
+
 	/**
 	 * Saves and counts a series of data access events 
 	 * (usually associated with the same web request) 
@@ -223,9 +208,19 @@ public interface CPathService {
 	 * @param date
 	 * @param event
 	 * @param ipAddr
+	 */
+	void count(String date, LogEvent event, String ipAddr);
+
+	/**
+	 * Creates a list of new log events to update counts for -
+	 * name, format, provider - from the data archive/file name
+	 * (in the batch downloads or another directory),
+	 * but does not save these events in the log database yet.
+	 *
+	 * @param filename see {@link CPathSettings#biopaxFileNameFull(String)} for how it's created.
 	 * @return
 	 */
-	LogEntity count(String date, LogEvent event, String ipAddr);
+	Set<LogEvent> logEventsFromFilename(String filename);
 	
     /**
      * Persists or updates the given metadata object.
@@ -248,17 +243,7 @@ public interface CPathService {
 	 * @param location
 	 */
 	void addOrUpdateMetadata(String location);
-	
-    /**
-	 * Removes from the system all entries and 
-	 * previously converted / premerged / validated 
-	 * files accociated with this data provider.
-	 * 
-	 * @param metadata
-	 * @return updated/saved object
-	 */
-	Metadata init(Metadata metadata);		
-    
+
 	/**
 	 * Generates the BioPAX validation report for a pathway data file.
 	 * 
@@ -283,12 +268,23 @@ public interface CPathService {
      */
 	void init();
 	
+
 	/**
-	 * Checks whether the service object is fully initialized, i.e,
-	 * if all data repositories, in-memory BioPAX model and search
-	 * engine are ready to go.
-	 * 
-	 * @return true if it's fully initialized
+	 * Creates:
+	 * <ul>
+	 * <li>new BioPAX full-text index;</li>
+	 * <li>the blacklist of ubiquitous small molecules;</li>
+	 * <li>updates counts of different BioPAX entities per data source</li>
+	 * </ul>
 	 */
-	boolean ready();
+	void index() throws IOException;
+
+	/**
+	 * Clears the metadata object and the db record,
+	 * and also drops/creates the data directory.
+	 *
+	 * @param metadata
+	 * @return
+     */
+	Metadata clear(Metadata metadata);
 }

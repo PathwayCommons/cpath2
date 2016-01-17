@@ -56,6 +56,7 @@
 			<li><a href="admin/homedir">View Home Directory (except hidden, tmp, cache)</a></li>
 			<li><a href="validations">Get BioPAX Validation Reports</a></li>
 			<li><a href="tests">Run QUnit Tests</a></li>
+			<li><a href="logbackStatus">Logback Status</a></li>
 		</ul>
 	  </div>
 	</div>

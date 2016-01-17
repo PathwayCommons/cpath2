@@ -39,8 +39,9 @@ public class SearchEngineTest {
 		SearchResponse response = searchEngine.search("ATP", 0, null, null, null);
 		assertNotNull(response);
 		assertFalse(response.isEmpty());
-		assertEquals(7, response.getSearchHit().size());
-		assertEquals(7, response.getNumHits().intValue());
+// System.out.println(response.getSearchHit());
+		assertEquals(5, response.getSearchHit().size()); //- only Entity and ER types are indexed
+		assertEquals(5, response.getNumHits().intValue());
 		
 		CPathSettings.getInstance().setDebugEnabled(false);
 		response = searchEngine.search("ATP", 0, Interaction.class, null, null);
@@ -72,7 +73,7 @@ public class SearchEngineTest {
 		//find all objects (this here works with page=0 as long as the 
 		//total no. objects in the test model < max hits per page)
 		response = searchEngine.search("*", 0, null, null, null);
-		assertEquals(50, response.getSearchHit().size());
+		assertEquals(23, response.getSearchHit().size()); //only Entity and ER types (since 23/12/2015)
 			
 		response = searchEngine.search("*", 0, PhysicalEntity.class, null, null);
 		assertEquals(8, response.getSearchHit().size());
@@ -87,10 +88,12 @@ public class SearchEngineTest {
 		response = searchEngine.search("*", 0, PhysicalEntity.class, null, new String[] {"Escherichia coliü"});
 		assertFalse(response.isEmpty());
 		assertEquals(2, response.getSearchHit().size());
-		
+
+		// only Entity, ER, Provenance, BioSource types are indexed (since 06/01/2016)
+		response = searchEngine.search("*", 0, Provenance.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
 		response = searchEngine.search("*", 0, Provenance.class, null, null);
 		assertEquals(2, response.getSearchHit().size());
-		
 		response = searchEngine.search("*", 0, Provenance.class, new String[] {"kegg"}, null);
 		assertEquals(1, response.getSearchHit().size());
 		
@@ -106,14 +109,13 @@ public class SearchEngineTest {
 		searchEngine.setMaxHitsPerPage(10);
 		response = searchEngine.search("*", 0, null, null, null);
 		assertEquals(0, response.getPageNo().intValue());
-		
-		assertEquals(50, response.getNumHits().intValue());
+
+		// only Entity, ER, and Provenance types are indexed (since 06/01/2016)
+		assertEquals(23, response.getNumHits().intValue());
 		assertEquals(10, response.getSearchHit().size());
 		response = searchEngine.search("*", 1, null, null, null);
 		assertEquals(10, response.getSearchHit().size());
-		
 		assertEquals(1, response.getPageNo().intValue());
-	
 	}
 
 }

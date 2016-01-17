@@ -12,9 +12,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CPathUtils;
+import cpath.service.CPathUtils;
 import cpath.jpa.Content;
-import cpath.jpa.LogEvent;
 import cpath.jpa.Metadata;
 import cpath.service.Status;
 import cpath.webservice.args.binding.MetadataTypeEditor;
@@ -33,7 +32,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -245,40 +243,6 @@ public class MetadataController extends BasicController {
 					+ origFilename + " as " + m.getDataArchiveName());
 		}
     }
-
-    
-    @RequestMapping("/idmapping")
-    public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id, 
-    		HttpServletRequest request, HttpServletResponse response) throws IOException
-    {			
-    	//log events: command, format
-    	Set<LogEvent> events = new HashSet<LogEvent>();
-    	events.add(LogEvent.IDMAPPING);
-
-    	if(id == null || id.length == 0) {
-    		errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", 
-    				request, response, events);
-    		return null;
-    	}
-
-    	Map<String, String> res = new TreeMap<String, String>();
-
-    	for(String i : id) {							
-    		Set<String> im = service.map(i);
-    		if(im == null) {
-    			res.put(i, null);
-    		} else {
-    			for(String ac : im)
-    				res.put(i, ac);
-    		}			
-    	}		
-
-    	//log to db (for usage reports)
-    	service.log(events, clientIpAddress(request));
-
-    	return res;
-	}
- 
     
     private List<ValInfo> validationInfo() {
     	final List<ValInfo> list = new ArrayList<ValInfo>();

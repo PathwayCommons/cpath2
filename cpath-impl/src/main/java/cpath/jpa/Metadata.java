@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
+import cpath.service.*;
 import org.apache.commons.lang.StringUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.model.Model;
@@ -21,7 +22,6 @@ import org.hibernate.validator.constraints.NotBlank;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import cpath.config.CPathSettings;
-import cpath.dao.CPathUtils;
 
 /**
  * Data Provider Metadata.
@@ -135,16 +135,15 @@ public final class Metadata {
      *
      * @param identifier  unique short string, will be used in URIs
      * @param name the not empty list of names: display name (must present), standard name, other names.
-     * @param description
-     * @param urlToData
-     * @param urlToHomepage
-     * @param icon
-     * @param metadata_type
-     * @param cleanerClassname
-     * @param converterClassname
-     * @param pubmedId
-     * @param availability
-     * @throws IllegalArgumentException
+     * @param description description of the data source (details, release date, version, etc.)
+     * @param urlToData URL - where the data can be download (can be part of larger data archive)
+     * @param urlToHomepage provider's home page URL
+     * @param urlToLogo provider's logo image URL
+     * @param metadata_type what kind of data (warehouse, biopax, psi-mi, id-mapping)
+     * @param cleanerClassname canonical name of a java class that implements {@link Cleaner}
+     * @param converterClassname canonical name of a java class that implements {@link cpath.service.Converter}
+     * @param pubmedId recommended by the data provider reference publication PMID
+     * @param availability data availability: free, academic, not-free
      */
 	public Metadata(final String identifier, final List<String> name, final String description, 
     		final String urlToData, String urlToHomepage, final String urlToLogo, 
@@ -194,7 +193,7 @@ public final class Metadata {
 	 * Sets the identifier.
 	 * No spaces, dashes, allowed. 
 	 * 
-	 * @param identifier
+	 * @param identifier metadata identifier
 	 * @throws IllegalArgumentException if it's null, empty string, or contains spaces or dashes
 	 */
     void setIdentifier(String identifier) {
@@ -484,18 +483,6 @@ public final class Metadata {
 	public void setNotPathwayData(boolean foo) {
 		//a fake bean property (for javascript, JSON)
 	}
-			
-	/**
-	 * Drops all associated output data files - 
-	 * re-creates the output data directory.
-	 */
-	public void cleanupOutputDir() {
-		File dir = new File(outputDir());
-		if(dir.exists()) {
-			CPathUtils.cleanupDirectory(dir);
-		}		
-		dir.mkdir();
-	}
 	
 	@Override
 	public boolean equals(Object o) {
@@ -504,6 +491,6 @@ public final class Metadata {
 	
 	@Override
 	public int hashCode() {
-		return (getClass().getCanonicalName() + identifier).hashCode();
+		return identifier.hashCode();
 	}
 }

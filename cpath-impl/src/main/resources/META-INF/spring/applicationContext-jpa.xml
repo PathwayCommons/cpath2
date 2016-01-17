@@ -47,6 +47,8 @@
 		  <constructor-arg>
 			<bean class="org.h2.jdbcx.JdbcDataSource">
 				<property name="URL" value="jdbc:h2:${CPATH2_HOME}/cpath2;MV_STORE=FALSE;MVCC=FALSE" />
+				<!-- Oh no, using MVStore (default for h2 1.4x) uses 10-100 times more disk space! -->
+				<!--<property name="URL" value="jdbc:h2:${CPATH2_HOME}/cpath2" />-->
 				<property name="user" value="sa" />
 				<property name="password" value="" />
 			</bean>

@@ -7,7 +7,7 @@
 	<parent>
 		<artifactId>parent</artifactId>
 		<groupId>pathwaycommons.cpath</groupId>
-		<version>6.1.0-SNAPSHOT</version>
+		<version>7.0.0-SNAPSHOT</version>
 	</parent>
 
 	<name>cPath2 - API</name>
@@ -72,4 +72,5 @@
 			<artifactId>commons-lang</artifactId>
 		</dependency>
 	</dependencies>
+	
 </project>

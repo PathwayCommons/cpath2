@@ -1,12 +1,7 @@
 
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.biopax.validator.api.beans.Validation;
 import org.junit.Test;
@@ -18,7 +13,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import cpath.config.CPathSettings;
-import cpath.dao.LogUtils;
+import cpath.service.LogUtils;
 import cpath.jpa.Content;
 import cpath.jpa.Geoloc;
 import cpath.jpa.LogEntity;
@@ -28,7 +23,6 @@ import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.service.CPathService;
-import cpath.service.CPathServiceImpl;
 import cpath.service.Cmd;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
@@ -93,13 +87,18 @@ public class RepositoriesAndServiceTest {
 	@Test
 	public final void testCount() {	
 		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
-		
+
 		// count twice
-		LogEntity logEntity = service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
+		service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
+		LogEntity logEntity = service.log()
+			.findByEventNameIgnoreCaseAndAddrAndDate(LogEvent.TOTAL.getName(), ipAddr, LogUtils.today());
 		assertEquals(1L, logEntity.getCount().longValue());
-		logEntity = service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
+
+		service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
+		logEntity = service.log()
+			.findByEventNameIgnoreCaseAndAddrAndDate(LogEvent.TOTAL.getName(), ipAddr, LogUtils.today());
 		assertEquals(2L, logEntity.getCount().longValue());
-		
+
 		// test that there is only one record yet
 		assertEquals(1, service.log().count());
 	}
@@ -235,33 +234,33 @@ public class RepositoriesAndServiceTest {
 		String file = cpath.exportArchivePrefix() + "Reactome.BIOPAX.owl.gz";
 		assertEquals(OutputFormat.BIOPAX, LogUtils.fileOutputFormat(file));
 		assertEquals("Reactome", LogUtils.fileSrcOrScope(file));
-		Set<LogEvent> events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		Set<LogEvent> events = service.logEventsFromFilename(file);
 		assertEquals(3, events.size()); //log in types: PROVIDER, FILE, FORMAT
 		
 		//'All' 
 		file = cpath.exportArchivePrefix() + "All.BIOPAX.owl.gz";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		events = service.logEventsFromFilename(file);
 		assertEquals(2, events.size());
 		
 		file = cpath.exportArchivePrefix() + "Reactome.GSEA.gmt.gz";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		events = service.logEventsFromFilename(file);
 		assertEquals(3, events.size());
 		
 		//illegal format (ignored, i.e., no FORMAT type log event is added)
 		file = cpath.exportArchivePrefix() + "Reactome.foo.gmt.gz";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		events = service.logEventsFromFilename(file);
 		assertEquals(2, events.size());
 		
 		//other (metadata etc.)
 		file = "blacklist.txt";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		events = service.logEventsFromFilename(file);
 		assertEquals(1, events.size());//counted in FILE log type only
 		assertEquals(LogType.FILE, events.iterator().next().getType());
 		
 		//provider name is now matched ignoring case, 
 		//(FORMAT type event is not there as well due to 'foo')
 		file = cpath.exportArchivePrefix() + "reactome.foo.gmt.gz";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		events = service.logEventsFromFilename(file);
 		assertEquals(2, events.size());
 	}
 	
@@ -274,34 +273,49 @@ public class RepositoriesAndServiceTest {
 		service.mapping().save(new Mapping("GeneCards", "ZHX1", "UNIPROT", "P12345"));
 		service.mapping().save(new Mapping("GeneCards", "ZHX1-C8orf76", "UNIPROT", "Q12345"));
 		service.mapping().save(new Mapping("GeneCards", "ZHX1-C8ORF76", "UNIPROT", "Q12345"));
+		assertEquals(1, service.mapping()
+			.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
         
         //check it's saved
-        assertEquals(1, service.map(null, "ZHX1-C8orf76", "UNIPROT").size());
-        assertEquals(1, service.map(null, "ZHX1-C8ORF76", "UNIPROT").size());
-        assertEquals(1, service.map("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
+        assertEquals(1, service.map("ZHX1-C8orf76", "UNIPROT").size());
+        assertEquals(1, service.map("ZHX1-C8ORF76", "UNIPROT").size());
         
         // repeat (should successfully update)- add a Mapping
         service.mapping().save(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
-        assertTrue(service.map(null, "FooBar", "UNIPROT").isEmpty());
-        assertTrue(service.map("TEST", "FooBar", "UNIPROT").isEmpty());
-        Set<String> mapsTo = service.map(null, "FooBar", "CHEBI");
+        assertTrue(service.map("FooBar", "UNIPROT").isEmpty());
+
+        Set<String> mapsTo = service.map("FooBar", "CHEBI");
         assertEquals(1, mapsTo.size());
         assertEquals("CHEBI:12345", mapsTo.iterator().next());
+		mapsTo = service.map("FooBar", "CHEBI");
+		assertEquals(1, mapsTo.size());
+		assertEquals("CHEBI:12345", mapsTo.iterator().next());
         
-        service.mapping().save(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "UNIPROT"));
-        assertEquals(1, service.map("uniprot isoform", "A2A2M3-1", "UNIPROT").size());
+        //test that service.map(..) method can map isoform IDs despite they're not explicitly added to the mapping db
+		service.mapping().save(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "A2A2M3"));
+		assertEquals(1, service.map("A2A2M3-1", "UNIPROT").size());
+		assertEquals(1, service.map("A2A2M3", "UNIPROT").size());
         
         Mapping m = new Mapping("PubChem-substance", "14438", "CHEBI", "CHEBI:20");
         service.mapping().save(m);
+		assertEquals("SID:14438", m.getSrcId());
         assertNotNull(service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(
         		m.getSrc(), m.getSrcId(), m.getDest(), m.getDestId()));
-        assertEquals(1, service.map("PubChem-substance", "14438", "CHEBI").size());
-        assertEquals(1, service.map("Pubchem-Substance", "14438", "CHEBI").size());
-        assertEquals(1, service.map("pubchem substance", "14438", "CHEBI").size());
-        assertEquals(1, service.map("pubchem.substance", "14438", "CHEBI").size());
-        
+		assertEquals(1, service.map("SID:14438", "CHEBI").size());
+
+		//map from a list of IDs to target ID type (UNIPROT)
+		List<String> srcIds = new ArrayList<String>();
+		//add IDs - both map to the same uniprot ID ()
+		srcIds.add("ZHX1");
+		srcIds.add("A2A2M3");
+		//currently, mapping().find* methods cannot map uniprot isoform IDs (service.map(..) - can do by removing the suffix)
+		List<Mapping> mappings = service.mapping().findBySrcIdInAndDestIgnoreCase(srcIds, "UNIPROT");
+		assertEquals(2, mappings.size());
+		//test new service.map(null, srcIds, "UNIPROT"), which must also support isoform IDs
+		srcIds.remove("A2A2M3");
+		srcIds.add("A2A2M3-1");
+		assertEquals(2, service.map(srcIds, "UNIPROT").size());
 	}
-	
 	
 	@Test
 	@DirtiesContext
@@ -311,7 +325,7 @@ public class RepositoriesAndServiceTest {
         		"", METADATA_TYPE.BIOPAX, null, null, null, "free");        
         
         //cleanup previous tests data if any
-        md.cleanupOutputDir();
+        md = service.clear(md);
         
         Content content = new Content(md, "test0");
         md.getContent().add(content);
@@ -357,7 +371,7 @@ public class RepositoriesAndServiceTest {
         assertNotNull(content);  
         
         //cleanup
-        md = service.init(md);
+        md = service.clear(md);
         assertTrue(md.getContent().isEmpty()); 
         md = service.metadata().findByIdentifier("TEST");
         assertTrue(md.getContent().isEmpty());         

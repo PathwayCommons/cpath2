@@ -3,11 +3,7 @@ package cpath.service;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -36,8 +32,6 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.CachingWrapperFilter;
 import org.apache.lucene.search.Filter;
 import org.apache.lucene.search.IndexSearcher;
-//import org.apache.lucene.search.MultiTermQuery;
-//import org.apache.lucene.search.PrefixQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.QueryWrapperFilter;
 import org.apache.lucene.search.ScoreDoc;
@@ -54,20 +48,11 @@ import org.apache.lucene.search.highlight.SimpleSpanFragmenter;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.Version;
-import org.biopax.paxtools.controller.Fetcher;
-import org.biopax.paxtools.controller.ModelUtils;
-import org.biopax.paxtools.controller.SimpleEditorMap;
+import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.BioSource;
-import org.biopax.paxtools.model.level3.Level3Element;
-import org.biopax.paxtools.model.level3.Named;
-import org.biopax.paxtools.model.level3.Pathway;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.level3.Process;
-import org.biopax.paxtools.model.level3.Provenance;
-import org.biopax.paxtools.model.level3.UnificationXref;
-import org.biopax.paxtools.model.level3.XReferrable;
-import org.biopax.paxtools.model.level3.Xref;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,6 +63,8 @@ import cpath.service.jaxb.SearchResponse;
 
 /**
  * A full-text searcher/indexer for BioPAX L3 models.
+ *
+ * Only Entity and EntityReference BioPAX types get indexed (since 12/2015).
  * 
  * @author rodche
  */
@@ -88,10 +75,11 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_URI = "uri";
 	public static final String FIELD_KEYWORD = "keyword"; //anything, e.g., names, terms, comments, incl. - from child elements 
 	public static final String FIELD_NAME = "name"; // standardName, displayName, other names
-	public static final String FIELD_XREFDB = "xrefdb"; //xref.db
+//	public static final String FIELD_XREFDB = "xrefdb"; //xref.db
 	public static final String FIELD_XREFID = "xrefid"; //xref.id
-	public static final String FIELD_PATHWAY = "pathway"; //pathways and parent pathways; to be inferred from the whole biopax model
-	public static final String FIELD_SIZE = "size";	
+	public static final String FIELD_PATHWAY = "pathway"; //pathways and parent pathways to be inferred from entire biopax model
+	public static final String FIELD_SIZE = "size";
+
 	// Full-text search/filter fields (case sensitive) -
 	//index organism names, cell/tissue type (term), taxonomy id, but only store BioSource URIs	
 	public static final String FIELD_ORGANISM = "organism";
@@ -108,12 +96,7 @@ public class SearchEngine implements Indexer, Searcher {
 			FIELD_XREFID, //xref.id (also direct child's xref.id, i.e., can find both xref and its owners using a xrefid:<id> query string);
 			FIELD_SIZE, // find entities with a given no. child/associated processes...
 			FIELD_KEYWORD, //includes data type properties (names, terms, comments), 
-						  //also from  child elements up to given depth (3), also stores but not indexes parent pathway uris and names;		
-//			FIELD_PATHWAY, // this (if pathway) and PARENT pathway URIs are stored in the index, not analyzed/indexed; whereas names - indexed but not stored;			
-// the following fields are for filtering only (thus excluded):
-//			FIELD_ORGANISM,	
-//			FIELD_DATASOURCE, 
-//			FIELD_TYPE,
+						  //also from  child elements up to given depth (3), also stores but not indexes parent pathway uris and names;
 	};
 		
 	private final Model model;
@@ -123,11 +106,12 @@ public class SearchEngine implements Indexer, Searcher {
 	private SearcherManager searcherManager;
 
 	public final static int DEFAULT_MAX_HITS_PER_PAGE = 100;
-	
+
 	/**
-	 * Main Constructor.
-	 * @param indexLocation
-	 * @throws IOException 
+	 * Constructor.
+	 *
+	 * @param model the BioPAX Model to index or search
+	 * @param indexLocation index directory location
 	 */
 	public SearchEngine(Model model, String indexLocation) {
 		this.model = model;
@@ -156,7 +140,6 @@ public class SearchEngine implements Indexer, Searcher {
 	public int getMaxHitsPerPage() {
 		return maxHitsPerPage;
 	}
-	
 
 	public SearchResponse search(String query, int page,
 			Class<? extends BioPAXElement> filterByType, String[] datasources,
@@ -173,7 +156,7 @@ public class SearchEngine implements Indexer, Searcher {
 	
 		try {	
 			QueryParser queryParser = new MultiFieldQueryParser(DEFAULT_FIELDS, analyzer);
-			queryParser.setAllowLeadingWildcard(true);//TODO do we really want leading wildcards (e.g. *sulin)?
+			queryParser.setAllowLeadingWildcard(true);//we want leading wildcards enabled (e.g. *sulin)
 			
 			searcher = searcherManager.acquire();	
 			
@@ -181,8 +164,8 @@ public class SearchEngine implements Indexer, Searcher {
 			if(!query.trim().equals("*")) { //if not "*" query, which is not supported out-of-the-box, then
 				//create the lucene query
 				Query luceneQuery = queryParser.parse(query);
-//do NOT (Lucene 4.1), or scoring/highlighting won't work for wildcard queries...				
-//luceneQuery = searcher.rewrite(luceneQuery); 
+				//do NOT rewrite (Lucene 4.1), or scoring/highlighting won't work for wildcard queries...
+				//luceneQuery = searcher.rewrite(luceneQuery);
 				LOG.debug("parsed lucene query is " + luceneQuery.getClass().getSimpleName());
 				
 				//create filter: type AND (d OR d...) AND (o OR o...)
@@ -260,8 +243,7 @@ public class SearchEngine implements Indexer, Searcher {
 			SearchHit hit = new SearchHit();
 			Document doc = searcher.doc(scoreDoc.doc);
 			String uri = doc.get(FIELD_URI);
-			BioPAXElement bpe = model.getByID(uri);			
-//			LOG.debug("transform: doc:" + scoreDoc.doc + ", uri:" + uri);
+			BioPAXElement bpe = model.getByID(uri);
 			
 			// use the highlighter (get matching fragments)
 			// for this to work, all keywords were stored in the index field
@@ -272,8 +254,9 @@ public class SearchEngine implements Indexer, Searcher {
 				//the following fixes scoring/highlighting for all-field wildcard (like q=insulin*)
 				//but not for term/prefix queries (q=name:insulin*, q=pathway:brca2)_.
 				scorer.setExpandMultiTermQuery(true); //TODO	
-				
-				//TODO use PostingsHighlighter once it's stable (see http://lucene.apache.org/core/4_10_0/highlighter/org/apache/lucene/search/postingshighlight/PostingsHighlighter.html)				
+
+//TODO use PostingsHighlighter once it's stable;
+//TODO see http://lucene.apache.org/core/4_10_0/highlighter/org/apache/lucene/search/postingshighlight/PostingsHighlighter.html
 				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
 				Highlighter highlighter = new Highlighter(formatter, scorer);
 				highlighter.setTextFragmenter(new SimpleSpanFragmenter(scorer, 80));
@@ -383,9 +366,8 @@ public class SearchEngine implements Indexer, Searcher {
 
 
 	public void index() {
-		final int numObjects =  model.getObjects().size();
-		LOG.info("index(), there are " + numObjects + " BioPAX objects to be (re-)indexed.");		
-		IndexWriter iw;		
+
+		IndexWriter iw;
 		try {
 			//close the searcher manager if the old index exists
 			if(searcherManager != null) {
@@ -403,15 +385,43 @@ public class SearchEngine implements Indexer, Searcher {
 		final IndexWriter indexWriter = iw;
 
 		ExecutorService exec = Executors.newFixedThreadPool(30);
-		
-		final AtomicInteger numLeft = new AtomicInteger(numObjects);
-		for(final BioPAXElement bpe : model.getObjects()) {	
+
+		final org.biopax.paxtools.util.Filter<DataPropertyEditor> dataPropertiesToConsider
+				= new org.biopax.paxtools.util.Filter<DataPropertyEditor>() {
+			@Override
+			public boolean filter(DataPropertyEditor editor) {
+				final String prop = editor.getProperty();
+				//to include in the index, as keywords, only the following properties
+				// (basically, to exclude float type properties, embedded xml, db names, etc.):
+				return (prop.equalsIgnoreCase("author") || prop.equalsIgnoreCase("availability")
+						|| prop.equalsIgnoreCase("chemicalFormula") || prop.equalsIgnoreCase("comment")
+						|| prop.equalsIgnoreCase("controlType") || prop.equalsIgnoreCase("conversionDirection")
+						|| prop.equalsIgnoreCase("eCNumber") || prop.equalsIgnoreCase("id")
+						|| prop.equalsIgnoreCase("name") || prop.equalsIgnoreCase("displayName")
+						|| prop.equalsIgnoreCase("standardName") || prop.equalsIgnoreCase("sequence")
+						|| prop.equalsIgnoreCase("source") || prop.equalsIgnoreCase("year")
+						|| prop.equalsIgnoreCase("term") || prop.equalsIgnoreCase("stepDirection")
+						|| prop.equalsIgnoreCase("structureData") || prop.equalsIgnoreCase("templateDirection")
+						|| prop.equalsIgnoreCase("title") || prop.equalsIgnoreCase("url")
+				);
+			}
+		};
+
+		final int numObjectsToIndex = model.getObjects(Entity.class).size()
+				+ model.getObjects(EntityReference.class).size();
+		LOG.info("index(), there are " + numObjectsToIndex + " Entity or EntityReference objects to index.");
+
+		final AtomicInteger numLeft = new AtomicInteger(numObjectsToIndex);
+		for(final BioPAXElement bpe : model.getObjects()) {
+			if(!(bpe instanceof Entity || bpe instanceof EntityReference || bpe instanceof Provenance))
+				continue; //skip for UtilityClass but EntityReference, Provenance
+
 			// prepare & index each element in a separate thread
 			exec.execute(new Runnable() {
 				public void run() {					
 					// get or infer some important values if possible from this, child or parent objects:
-					Set<String> keywords = ModelUtils.getKeywords(bpe, 3); //TODO use Filter<DataPropertyEditor>... args
-					
+					Set<String> keywords = ModelUtils.getKeywords(bpe, 4, dataPropertiesToConsider);
+
 					// a hack to remove special (debugging) biopax comments
 					for(String s : new HashSet<String>(keywords)) {
 						//exclude additional comments generated by normalizer, merger, etc.
@@ -457,8 +467,7 @@ public class SearchEngine implements Indexer, Searcher {
 		//finally, create a new searcher manager
 		initSearcherManager();
 	}
-	
-	
+
 	// internal methods
 	
 	/*
@@ -512,10 +521,15 @@ public class SearchEngine implements Indexer, Searcher {
 				addKeywords((Set<String>)bpe.getAnnotations().get(FIELD_KEYWORD), doc);
 			}
 			if(bpe.getAnnotations().containsKey(FIELD_SIZE)) {
-				field = new IntField(FIELD_SIZE, 
-					Integer.parseInt((String)bpe.getAnnotations()
-					.get(FIELD_SIZE)), Field.Store.YES);
+				field = new IntField(FIELD_SIZE,
+						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_SIZE)), Field.Store.YES);
 				doc.add(field);
+			}
+			if(bpe.getAnnotations().containsKey(FIELD_XREFID)) {
+				//index biological IDs as keywords
+				addKeywords((Set<String>)bpe.getAnnotations().get(FIELD_XREFID), doc);
+				//index all IDs using "xrefid" fields
+				addXrefIds((Set<String>)bpe.getAnnotations().get(FIELD_XREFID), doc);
 			}
 		}
 		bpe.getAnnotations().remove(FIELD_KEYWORD);
@@ -523,6 +537,7 @@ public class SearchEngine implements Indexer, Searcher {
 		bpe.getAnnotations().remove(FIELD_ORGANISM);
 		bpe.getAnnotations().remove(FIELD_PATHWAY);
 		bpe.getAnnotations().remove(FIELD_SIZE);
+		bpe.getAnnotations().remove(FIELD_XREFID);
 			
 		// name
 		if(bpe instanceof Named) {
@@ -546,31 +561,29 @@ public class SearchEngine implements Indexer, Searcher {
 			}
 		}
 		
-		// XReferrable.xref - build 'xrefid' index field from all Xrefs)
-		if(bpe instanceof XReferrable) {
-			XReferrable xr = (XReferrable) bpe;
-			for(Xref xref : xr.getXref()) {
-				if (xref.getId() != null) {
-					//the filed is not_analyzed; so in order to make search case-insensitive 
-					//(when searcher uses standard analyzer), we turn the value to lowercase.
-					field = new TextField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
-					doc.add(field);
-				}
-			}
-		}
-		
-		// Xref db/id (these are for a precise search by standard bio ID)
-		if(bpe instanceof Xref) {
-			Xref xref = (Xref) bpe;
-			if (xref.getId() != null) {
-				field = new TextField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
-				doc.add(field);
-			}
-			if (xref.getDb() != null) {
-				field = new TextField(FIELD_XREFDB, xref.getDb().toLowerCase(), Field.Store.NO);
-				doc.add(field);
-			}
-		}
+//		// Xref db/id (these are for a precise search by standard bio ID)
+//		if(bpe instanceof Xref) {
+//			Xref xref = (Xref) bpe;
+//
+//			if (xref.getId() != null) {
+//				field = new TextField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
+//				doc.add(field);
+//			}
+//			if (xref.getDb() != null) {
+//				field = new TextField(FIELD_XREFDB, xref.getDb().toLowerCase(), Field.Store.NO);
+//				doc.add(field);
+//			}
+//
+//			//index other identifiers using optional annotation 'xrefid' if present (e.g., added somewhere via mapping)
+//			if(!(bpe instanceof PublicationXref)) {
+//				if (xref.getAnnotations().containsKey(FIELD_XREFID)) {
+//					for (String otherId : (Set<String>)xref.getAnnotations().get(FIELD_XREFID)) {
+//						field = new TextField(FIELD_XREFID, otherId.toLowerCase(), Field.Store.NO);
+//						doc.add(field);
+//					}
+//				}
+//			}
+//		}
 		
 		// write
 		try {
@@ -583,6 +596,13 @@ public class SearchEngine implements Indexer, Searcher {
 	private void addKeywords(Set<String> keywords, Document doc) {
 		for (String keyword : keywords) {
 			Field f = new TextField(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.YES);
+			doc.add(f);
+		}
+	}
+
+	private void addXrefIds(Set<String> xrefIds, Document doc) {
+		for (String id : xrefIds) {
+			Field f = new TextField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO);
 			doc.add(f);
 		}
 	}
@@ -757,5 +777,5 @@ public class SearchEngine implements Indexer, Searcher {
 		
 		return query;
 	}
-	
+
 }
