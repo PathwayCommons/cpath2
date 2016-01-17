@@ -485,8 +485,7 @@ public final class Merger {
 	}
 
 	/*
-	 * Using xrefs of a physical entity / small molecule, performs id-mapping to the primary ChEBI ID,
-	 * adds relationship xrefs to the entity.
+	 * id-mapping by xrefs - to primary ChEBI IDs; adds new relationship xrefs to the entity.
 	 * This won't improve our full-text index/search and graph queries (where id-mapping is used again anyway),
 	 * but may help improve export to SIF and GSEA formats.
 	 * This method is called only for those PEs/ERs that were not merged into warehouse canonical ERs,
@@ -495,10 +494,8 @@ public final class Merger {
 	 */
 	 void chemXrefByMapping(final Model m, Named bpe, final int maxNumXrefsToAdd)
 	{
-		Assert.isTrue(bpe.getModelInterface()== PhysicalEntity.class
-				|| bpe instanceof SmallMolecule || bpe instanceof Complex);
+		Assert.isTrue(!(bpe instanceof Process));
 		// try/prefer to use ER instead of entity -
-
 		if(bpe instanceof SimplePhysicalEntity) {
 			EntityReference er = ((SimplePhysicalEntity) bpe).getEntityReference();
 			if(er != null && !er.getXref().isEmpty())
@@ -544,7 +541,8 @@ public final class Merger {
      */
 	void genomicXrefByMapping(final Model m, Named bpe, final int maxNumXrefsToAdd)
 	{
-		Assert.isTrue(bpe instanceof Gene || bpe instanceof SequenceEntity || bpe instanceof Complex);
+		Assert.isTrue(!(bpe instanceof SmallMolecule  || bpe instanceof Process)); //but normally it's a seq. entity or gene
+
 		// try/prefer to use ER instead of entity -
 		if(bpe instanceof SimplePhysicalEntity) {
 			EntityReference er = ((SimplePhysicalEntity) bpe).getEntityReference();
