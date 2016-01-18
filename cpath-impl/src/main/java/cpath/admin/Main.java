@@ -614,13 +614,12 @@ public final class Main {
 			writer.println("nohup echo \"Done converting "+bpFilename+" to GSEA.\"");
 		}
 
-		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIFnx",
+		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIF",
 				bpFilename, prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"hgnc"),
-				"seqDb=hgnc -andSif")); //'hgnc symbol' or 'hgnc' here does not matter
-// UniProt ID based extended SIF can be too huge...
-//		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIFnx",
-//				bpFilename, prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"uniprot"),
-//				"seqDb=uniprot -andSif"));
+				"seqDb=hgnc -extended -andSif exclude=neighbor_of")); //'hgnc symbol' or 'hgnc' here does not matter
+
+		// But UniProt ID based extended SIF can be too huge and takes too long to generate... won't make it now...
+
 		writer.println("wait"); //important
 		writer.println("nohup echo \"Done converting "+bpFilename+" to SIF.\"");
 	}
