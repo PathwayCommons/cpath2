@@ -687,7 +687,9 @@ public final class Admin {
 		// generate/find all other BioPAX archives (by organism, etc.):
 		createOrFindBiopaxArchives(model, allMetadata);
 
+		LOG.info("create-downloads: analysing the main model (IDs summary)...");
 		new IdsSummary().execute(model);
+		LOG.info("create-downloads: done.");
 	}
 
 	private static Collection<String> findAllUris(Searcher searcher, 

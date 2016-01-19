@@ -237,6 +237,13 @@ public class RepositoriesAndServiceTest {
 		assertEquals("Reactome", LogUtils.fileSrcOrScope(file));
 		Set<LogEvent> events = ((CPathServiceImpl)service).logEventsFromFilename(file);
 		assertEquals(3, events.size()); //log in types: PROVIDER, FILE, FORMAT
+
+		//same/other cPath2 provider's older version files are recognized and get logged as well (just in case...)
+		file = "cPath2 Demo.7.Reactome.BIOPAX.owl.gz";
+		assertEquals(OutputFormat.BIOPAX, LogUtils.fileOutputFormat(file));
+		assertEquals("Reactome", LogUtils.fileSrcOrScope(file));
+		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
+		assertEquals(3, events.size());
 		
 		//'All' 
 		file = cpath.exportArchivePrefix() + "All.BIOPAX.owl.gz";

@@ -41,6 +41,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.WordUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -552,9 +553,8 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String exportArchivePrefix() {
-		return property(PROVIDER_NAME) + 
-				"." + property(PROVIDER_VERSION) + 
-				".";
+		return WordUtils.capitalize(property(PROVIDER_NAME)).replaceAll("\\W+","") +
+				"." + property(PROVIDER_VERSION) + ".";
 	}
 	
 	

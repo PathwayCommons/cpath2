@@ -13,13 +13,13 @@
 			<h2>Batch Downloads</h2>
 			<blockquote><p>
 				Data files listed below are sorted alphabetically and generally named as follows:</p>
-				<code>${cpath.name}.${cpath.version}.&lt;SOURCE&gt;.&lt;FORMAT&gt;.&lt;ext&gt;.gz</code>
+				<code>&lt;prefix&gt;.&lt;source&gt;.&lt;FORMAT&gt;.&lt;ext&gt;.gz</code>
 				<br/>
 				<p>Current and old data can be downloaded from our <a href="${cpath.url}/archives">archive site</a>
 					(try from that location also if you could not download a file from here).
 				</p>
 			</blockquote>
-			<em>&lt;SOURCE&gt;</em>: 'All' (main BioPAX model, used by the  
+			<em>&lt;source&gt;</em>: 'All' (main BioPAX model, used by the
 				<a href='<c:url value="/home"/>'>web service</a>), 'Detailed' (no PSI-MI data sources), 
 				'Warehouse' (only reference and annotation type BioPAX objects), or a data source name.<br/>
 			<em>&lt;FORMAT&gt;</em>: one of the <a href="formats">Output Formats</a>.<br/> 

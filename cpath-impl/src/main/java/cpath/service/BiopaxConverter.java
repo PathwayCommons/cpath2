@@ -223,7 +223,9 @@ public class BiopaxConverter {
 			idFetcher.seqDbStartsWithOrEquals(db);
 		}
 
-		SIFSearcher searcher = new SIFSearcher(idFetcher, SIFEnum.values());
+		Collection<SIFType> sifTypes = new HashSet<SIFType>(Arrays.asList(SIFEnum.values()));
+//		sifTypes.remove(SIFEnum.NEIGHBOR_OF); //TODO exclude NEIGHBOR_OF?
+		SIFSearcher searcher = new SIFSearcher(idFetcher, sifTypes.toArray(new SIFType[sifTypes.size()]));
 		searcher.setBlacklist(blacklist);
 
 		if(extended) {

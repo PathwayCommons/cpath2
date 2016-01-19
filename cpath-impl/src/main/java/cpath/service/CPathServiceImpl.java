@@ -959,12 +959,12 @@ public class CPathServiceImpl implements CPathService {
 
 	public Set<LogEvent> logEventsFromFilename(String filename) {
 		Set<LogEvent> set = new HashSet<LogEvent>();
-		final CPathSettings cpath2 = CPathSettings.getInstance();
-		
+
 		set.add(new LogEvent(LogType.FILE, filename));
-		
-		// extract the data provider's standard name from the filename
-		if(filename.startsWith(cpath2.exportArchivePrefix())) {	
+
+		// extract provider (Metadata) ID and OutputFormat from the filename
+//		if(filename.startsWith(cpath.exportArchivePrefix()))
+//		{
 			String scope = LogUtils.fileSrcOrScope(filename);
 			if(scope != null) {
 				String providerStandardName = null;
@@ -991,7 +991,7 @@ public class CPathServiceImpl implements CPathService {
 			if(outputFormat!=null)
 				set.add(LogEvent.from(outputFormat));
 
-		}
+//		}
 		
 		return set;
 	}

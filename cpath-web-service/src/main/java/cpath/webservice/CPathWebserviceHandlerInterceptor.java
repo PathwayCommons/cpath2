@@ -37,7 +37,10 @@ public final class CPathWebserviceHandlerInterceptor extends
 		String requestUri = request.getRequestURI();
 		String ip = BasicController.clientIpAddress(request);
 		
-		if(!requestUri.startsWith("/favicon.ico") && !requestUri.startsWith("/error."))
+		if(requestUri.contains("/favicon.ico") || requestUri.contains("/error.") || requestUri.contains("/resources")
+				|| requestUri.contains("/log") || requestUri.contains("/metadata") || requestUri.contains("/admin"))
+			LOG.debug(String.format("%d %s '%s'", response.getStatus(), ip, requestUri));
+		else
 			LOG.info(String.format("%d %s '%s'", response.getStatus(), ip, requestUri));
 		
 		if(response.getStatus() == HttpServletResponse.SC_OK
@@ -60,13 +63,6 @@ public final class CPathWebserviceHandlerInterceptor extends
 						service.log(file, ip);
 				}
 			}
-		} else if(response.getStatus()>=400) { 
-			//if it's an error and not other stuff...
-			//- must have been already counted/logged
-//			Status cpathStatus = Status.fromCode(response.getStatus());
-//			if(cpathStatus==null) 
-//				cpathStatus=Status.BAD_REQUEST;
-//			service.log(Collections.singleton(LogEvent.from(cpathStatus)), ip);
 		}
 		
 		super.postHandle(request, response, handler, modelAndView);

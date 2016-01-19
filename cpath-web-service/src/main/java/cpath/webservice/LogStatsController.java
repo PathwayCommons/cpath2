@@ -82,13 +82,14 @@ public class LogStatsController extends BasicController {
     			listItemName = String.format("%s.%s", scope.toLowerCase(), of);
     			li = new String[]{e.getType().toString(), listItemName};
     		} else {
-    			//skip unexpected file in the downloads (errors are logged in the LogUtils)
+    			//skip unexpected/unwanted file
     		}
     	}
-//		//don't display other files (e.g., original, normalized, blacklist, etc.)
-//		else {
-//    		li = new String[]{e.getType().toString(), listItemName};
-//    	}
+		//don't display other files (e.g., original, normalized, blacklist, etc.)
+		else if(e.getType() != LogType.FILE)
+		{
+    		li = new String[]{e.getType().toString(), listItemName};
+    	}
 
 		return li;
 	}

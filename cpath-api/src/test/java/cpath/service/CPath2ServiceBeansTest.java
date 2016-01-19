@@ -8,6 +8,7 @@ import java.util.List;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
+import cpath.config.CPathSettings;
 import org.junit.Test;
 
 import cpath.service.Status;
@@ -21,6 +22,9 @@ public class CPath2ServiceBeansTest {
 	public final void testGetAllStatusCodes() {
 		List<String> list = Status.getAllStatusCodes();
 		assertEquals(4, list.size());
+
+//		//a quick unrelate test
+		assertEquals("CPath2Demo.0.", CPathSettings.getInstance().exportArchivePrefix());
 	}
 
 	@Test
