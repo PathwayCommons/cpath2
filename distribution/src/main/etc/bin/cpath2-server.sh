@@ -30,5 +30,5 @@ CPATH2_DEBUG_OPTS="-Dlogback.configurationFile=$CPATH2_HOME/logback.xml -Xdebug 
 if [ -z "$1" ]; then 
 	$JAVA_HOME/bin/java -jar cpath2-server.jar --help
 else
-	$JAVA_HOME/bin/java  $CPATH2_TUNING_OPTS $CPATH2_OPTS -jar cpath2-server.jar $1 $2 $3 $4 $5 $6
+	$JAVA_HOME/bin/java  -server $CPATH2_TUNING_OPTS $CPATH2_OPTS -jar cpath2-server.jar $1 $2 $3 $4 $5 $6
 fi
