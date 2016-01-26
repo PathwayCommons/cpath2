@@ -748,7 +748,11 @@ public class CPathServiceImpl implements CPathService {
 		}
 		
 		t.setCount(t.getCount() + 1);
-		log.info(t.toString());
+
+		//also log for e.g., Logstash (Elasticsearch) to record this event for analysis and visualization
+		//(in addition to recording standard apache/tomcat access logs)
+		if(event != LogEvent.TOTAL)
+			log.info(t.toString());
 
 		logEntitiesRepository.save(t);
 	}
@@ -759,22 +763,22 @@ public class CPathServiceImpl implements CPathService {
 		ValidatorResponse response = new ValidatorResponse();
 		Metadata metadata = metadataRepository.findByIdentifier(provider);
 		for (Content content : metadata.getContent()) {
-			String current = content.getFilename();			
-			
+			String current = content.getFilename();
+
 			if(file != null && !file.equals(current))
-				continue; 
-			//file==null means all files			
-			
+				continue;
+			//file==null means all files
+
 			try {
 				// unmarshal and add
 				ValidatorResponse resp = (ValidatorResponse) ValidatorUtils.getUnmarshaller()
 					.unmarshal(new GZIPInputStream(new FileInputStream(content.validationXmlFile())));
-				assert resp.getValidationResult().size() == 1;				
-				response.getValidationResult().addAll(resp.getValidationResult());				
+				assert resp.getValidationResult().size() == 1;
+				response.getValidationResult().addAll(resp.getValidationResult());
 			} catch (Exception e) {
 				log.error("validationReport: failed converting the XML response to objects", e);
 			}
-			
+
 			if(current.equals(file))
 				break;
 		}
@@ -782,14 +786,14 @@ public class CPathServiceImpl implements CPathService {
 		return response;
 	}
 
-	
+
 	@Override
-	public Metadata save(Metadata metadata) {		
+	public Metadata save(Metadata metadata) {
 		log.info("Saving metadata: " + metadata.getIdentifier());
-		
+
 		if(metadata.getId() != null) { //update
 			metadata = metadataRepository.save(metadata);
-		} else {    		
+		} else {
 			Metadata existing = metadataRepository.findByIdentifier(metadata.getIdentifier());
 			if(existing != null)  {//update (except for the Content list, which should not be touched unless in Premerge)
 				existing.setAvailability(metadata.getAvailability());
@@ -808,10 +812,10 @@ public class CPathServiceImpl implements CPathService {
 				metadata = existing;
 				//the jpa managed (persistent) entity will be auto-updated/flashed
 			}
-			
+
 			metadata = metadataRepository.save(metadata);
 		}
-		
+
 		return metadata;
     }
 
@@ -831,7 +835,7 @@ public class CPathServiceImpl implements CPathService {
     	for (Metadata mdata : CPathUtils.readMetadata(location))
     		save(mdata);
  	}
-	
+
 	@Override
 	public MappingsRepository mapping() {
 		return mappingsRepository;
@@ -853,14 +857,14 @@ public class CPathServiceImpl implements CPathService {
 	public void log(String fileName, String ipAddr) {
 		log(logEventsFromFilename(fileName), ipAddr);
 	}
-	
+
 
 	public Set<LogEvent> logEventsFromFilename(String filename) {
 		Set<LogEvent> set = new HashSet<LogEvent>();
 		final CPathSettings cpath2 = cpath;
 
 		set.add(new LogEvent(LogType.FILE, filename));
-		
+
 		// extract the data provider's standard name from the filename
 		if(filename.startsWith(cpath2.exportArchivePrefix())) {
 			String scope = LogUtils.fileSrcOrScope(filename);
@@ -872,7 +876,7 @@ public class CPathServiceImpl implements CPathService {
 				} else if(!metadataRepository.findByNameContainsIgnoreCase(scope).isEmpty()) { // found any (ignoring case)?
 					providerStandardName = scope.toLowerCase(); //it's by design (how archives are created) standardName
 				}
-				
+
 				if(providerStandardName != null) {
 					set.add(new LogEvent(LogType.PROVIDER, providerStandardName));
 				} else {
@@ -881,16 +885,16 @@ public class CPathServiceImpl implements CPathService {
 						+ "identifier or standard name of currently used data providers");
 				}
 			} else {
-				log.error("Didn't recognize scope of datafile: " + filename);
+				log.debug("Couldn't recognize the 'scope' of the datafile: " + filename);
 			}
-			
+
 			// extract the format
 			OutputFormat outputFormat = LogUtils.fileOutputFormat(filename);
 			if(outputFormat!=null)
 				set.add(LogEvent.from(outputFormat));
 
 		}
-		
+
 		return set;
 	}
 
