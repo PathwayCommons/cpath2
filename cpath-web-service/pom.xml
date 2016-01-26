@@ -57,7 +57,9 @@
 							<enableNaming>false</enableNaming>
 							<attachArtifactClassifier>exec-war</attachArtifactClassifier>
 							<attachArtifactClassifierType>jar</attachArtifactClassifierType>
-							<accessLogValveFormat>%a %l %u %t %r %q %s %b %I %D</accessLogValveFormat>
+							<!-- An HTTP access log pattern ('combined', modified just to get actual client IP)
+							to match the Logstash 2.1x built-in %{COMBINEDAPACHELOG} Grok pattern -->
+							<accessLogValveFormat>%{X-Forwarded-For}i %l %u %t "%r" %s %b "%{Referer}i" "%{User-Agent}i"</accessLogValveFormat>
 						</configuration>
 					</execution>
 				</executions>

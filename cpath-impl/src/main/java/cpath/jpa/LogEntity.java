@@ -113,7 +113,7 @@ public class LogEntity extends AbstractEntity {
 	
 	@Override
 	public String toString() {
-		return String.format("log ip:%s, %s, location:'%s'", addr, event, geoloc);
+		return String.format("log ip:%s, %s", addr, event);
 	}
 	
 }

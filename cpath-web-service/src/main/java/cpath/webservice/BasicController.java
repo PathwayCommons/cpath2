@@ -75,7 +75,7 @@ public abstract class BasicController {
 	}
     
     /**
-     * Http error response from the error bean.
+     * Http error response with more details and specific access log events.
      * 
      * @param status
      * @param detailedMsg
@@ -85,8 +85,7 @@ public abstract class BasicController {
      * @throws IOException when writing to HttpServletResponse fails
      */
 	protected final void errorResponse(Status status, String detailedMsg,
-			HttpServletRequest request, HttpServletResponse response, Set<LogEvent> updateCountsFor) 
-					throws IOException {
+			HttpServletRequest request, HttpServletResponse response, Set<LogEvent> updateCountsFor) {
 		
 		if(updateCountsFor == null)
 			updateCountsFor = new HashSet<LogEvent>();
@@ -98,13 +97,28 @@ public abstract class BasicController {
 		try {
 			service.log(updateCountsFor, clientIpAddress(request));
 		} catch (Throwable ex) {
-			log.error("LogUtils.log failed", ex);
+			log.error("LogUtils.log failed" + ex);
 		}
-		
-		response.sendError(status.getErrorCode(), 
-			status.getErrorMsg() + "; " + detailedMsg);
+
+		errorResponse(status, status.getErrorMsg() + "; " + detailedMsg, response);
 	}
-	
+
+	/**
+	 * Simple http error response.
+	 *
+	 * @param status
+	 * @param detailedMsg
+	 * @param response
+	 */
+	protected final void errorResponse(Status status, String detailedMsg, HttpServletResponse response) {
+		try {
+			log.warn(status.getErrorCode() + "; " + status.getErrorMsg() + "; " + detailedMsg);
+			response.sendError(status.getErrorCode(), status.getErrorMsg() + "; " + detailedMsg);
+		} catch (Exception e) {
+			log.error("errorResponse: response.sendError failed" + e);
+		}
+	}
+
 	
 	/**
 	 * Builds an error message from  
