@@ -820,8 +820,7 @@ public class CPathServiceImpl implements CPathService {
 		// find or create a record, count+1
 		LogEntity t = null;
 		try {
-			t = (LogEntity) logEntitiesRepository
-				.findByEventNameIgnoreCaseAndAddrAndDate(event.getName(), ipAddr, date);
+			t = logEntitiesRepository.findByEventNameIgnoreCaseAndAddrAndDate(event.getName(), ipAddr, date);
 		} catch (DataAccessException e) {
 			log.error("count(), findByEventNameIgnoreCaseAndAddrAndDate " +
 				"failed to update for event: " + event.getName() + 
@@ -833,8 +832,11 @@ public class CPathServiceImpl implements CPathService {
 		}
 		
 		t.setCount(t.getCount() + 1);
-		
-		log.info(t.toString());
+
+		//also log for e.g., Logstash (Elasticsearch) to record this event for analysis and visualization
+		//(in addition to recording standard apache/tomcat access logs)
+		if(event != LogEvent.TOTAL)
+			log.info(t.toString());
 		
 		return logEntitiesRepository.save(t);
 	}
@@ -983,7 +985,7 @@ public class CPathServiceImpl implements CPathService {
 						+ "identifier or standard name of currently used data providers");
 				}
 			} else {
-				log.error("Didn't recognize scope of datafile: " + filename);
+				log.debug("Couldn't recognize the 'scope' of the datafile: " + filename);
 			}
 			
 			// extract the format

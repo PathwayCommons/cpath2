@@ -88,8 +88,7 @@ public class MetadataController extends BasicController {
        
     
     @RequestMapping("/metadata/logo/{identifier}")
-    public  @ResponseBody byte[] queryForLogo(@PathVariable String identifier) 
-    		throws IOException 
+    public  @ResponseBody byte[] queryForLogo(@PathVariable String identifier) throws IOException
     {	
     	Metadata ds = service.metadata().findByIdentifier(identifier);
     	byte[] bytes = null;
@@ -167,14 +166,11 @@ public class MetadataController extends BasicController {
      * Update a data source definition (metadata entry)
      */
     @RequestMapping(value = "/admin/datasources", consumes="application/json", method = RequestMethod.POST)
-    public void update(@RequestBody @Valid Metadata metadata, 
-    		BindingResult bindingResult, HttpServletResponse response) throws IOException 
+    public void update(@RequestBody @Valid Metadata metadata, BindingResult bindingResult, HttpServletResponse response)
     {	
     	if(bindingResult != null &&  bindingResult.hasErrors()) {
-    		log.error(Status.BAD_REQUEST.getErrorCode() + "; " +  
-        			Status.BAD_REQUEST.getErrorMsg() + "; " + errorFromBindingResult(bindingResult));
-    		response.sendError(Status.BAD_REQUEST.getErrorCode(), 
-    			Status.BAD_REQUEST.getErrorMsg() + "; " + errorFromBindingResult(bindingResult));
+    		errorResponse(Status.BAD_REQUEST, Status.BAD_REQUEST.getErrorMsg() + "; "
+					+ errorFromBindingResult(bindingResult), response);
     	}
     	
    		service.save(metadata);
@@ -185,39 +181,34 @@ public class MetadataController extends BasicController {
      * If there is another one with the same identifier, then - error.
      */
     @RequestMapping(value = "/admin/datasources", consumes="application/json", method = RequestMethod.PUT)
-    public void put(@RequestBody @Valid Metadata metadata, 
-    		BindingResult bindingResult, HttpServletResponse response) throws IOException 
+    public void put(@RequestBody @Valid Metadata metadata, BindingResult bindingResult, HttpServletResponse response)
     {	
     	if(bindingResult != null &&  bindingResult.hasErrors()) {
-    		log.error(Status.BAD_REQUEST.getErrorCode() + "; " +  
-        			Status.BAD_REQUEST.getErrorMsg() + "; " + errorFromBindingResult(bindingResult));
-    		response.sendError(Status.BAD_REQUEST.getErrorCode(), 
-    			Status.BAD_REQUEST.getErrorMsg() + "; " + errorFromBindingResult(bindingResult));
+    		errorResponse(Status.BAD_REQUEST,
+    			Status.BAD_REQUEST.getErrorMsg() + "; " + errorFromBindingResult(bindingResult), response);
     	}
     	
     	Metadata existing = service.metadata().findByIdentifier(metadata.identifier);
     	if(existing == null) {
     		service.save(metadata);
     	} else {
-    		response.sendError(Status.BAD_REQUEST.getErrorCode(), 
-                "PUT failed: Metadata already exists for pk: " + metadata.identifier
-                	+ " (use POST to update instead)");
+    		errorResponse(Status.BAD_REQUEST, "PUT failed: Metadata already exists for pk: " + metadata.identifier
+                	+ " (use POST to update instead)", response);
     	}
     }
     
     @RequestMapping(value = "/admin/datasources/{identifier}", method = RequestMethod.DELETE)
-    public void delete(@PathVariable String identifier, HttpServletResponse response) throws IOException 
+    public void delete(@PathVariable String identifier, HttpServletResponse response)
     {	
     	Metadata existing = service.metadata().findByIdentifier(identifier);
     	if(existing != null) {
     		service.delete(existing);//clear files
     	} else {
-    		response.sendError(Status.NO_RESULTS_FOUND.getErrorCode(), 
-            	"DELETE failed: no Metadata record found for pk: " + identifier);
+    		errorResponse(Status.NO_RESULTS_FOUND, "DELETE failed: no Metadata record found for pk: "
+					+ identifier, response);
     	}
     }
 
-    
     //Upload (and replace if exists) a data archive for the existing data source
     @RequestMapping(value = "/admin/datasources/{identifier}/file", method = RequestMethod.POST)
     public void uploadDataArchive(@PathVariable String identifier, MultipartHttpServletRequest multiRequest, 
@@ -225,8 +216,8 @@ public class MetadataController extends BasicController {
     {	    	
     	Metadata m = service.metadata().findByIdentifier(identifier);
     	if(m==null) {
-    		response.sendError(Status.NO_RESULTS_FOUND.getErrorCode(), Status.NO_RESULTS_FOUND.getErrorMsg() + 
-        		"; Metadata object with identifier: " + identifier + " not found.");
+    		errorResponse(Status.NO_RESULTS_FOUND, Status.NO_RESULTS_FOUND.getErrorMsg() +
+        		"; Metadata object with identifier: " + identifier + " not found.", response);
     	}
     	
 		Map<String, MultipartFile> files = multiRequest.getFileMap();
@@ -235,9 +226,7 @@ public class MetadataController extends BasicController {
 		MultipartFile file = files.get(filename);
 		String origFilename = file.getOriginalFilename();			
 		if(file.getBytes().length==0 || filename==null || "".equals(filename) || !origFilename.endsWith(".zip")) {
-			log.error("uploadDataArchive(), empty data file or null: " + origFilename);
-			response.sendError(Status.BAD_REQUEST.getErrorCode(), 
-	            	"File (" + origFilename + ") UPLOAD failed; id:" + identifier);
+			errorResponse(Status.BAD_REQUEST, "File (" + origFilename + ") UPLOAD failed; id:" + identifier, response);
 		} else {
 			//create or update the input source data file (must be ZIP archive!)
 			CPathUtils.write(file.getBytes(), m.getDataArchiveName());
@@ -249,15 +238,14 @@ public class MetadataController extends BasicController {
     
     @RequestMapping("/idmapping")
     public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id, 
-    		HttpServletRequest request, HttpServletResponse response) throws IOException
+    		HttpServletRequest request, HttpServletResponse response)
     {			
     	//log events: command, format
     	Set<LogEvent> events = new HashSet<LogEvent>();
     	events.add(LogEvent.IDMAPPING);
 
     	if(id == null || id.length == 0) {
-    		errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", 
-    				request, response, events);
+    		errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", request, response, events);
     		return null;
     	}
 

@@ -23,8 +23,7 @@ import cpath.service.CPathService;
 public final class CPathWebserviceHandlerInterceptor extends
 		HandlerInterceptorAdapter {
 
-	private static final Logger LOG = LoggerFactory
-			.getLogger(CPathWebserviceHandlerInterceptor.class);
+	private static final Logger LOG = LoggerFactory.getLogger(CPathWebserviceHandlerInterceptor.class);
 	
 	@Autowired
 	private CPathService service;
@@ -35,15 +34,10 @@ public final class CPathWebserviceHandlerInterceptor extends
 			ModelAndView modelAndView) throws Exception 
 	{	
 		String requestUri = request.getRequestURI();
+		if(requestUri.contains(";jsessionid"))
+			requestUri = requestUri.substring(0, requestUri.indexOf(";jsessionid"));
 		String ip = BasicController.clientIpAddress(request);
-		
-		if(requestUri.contains("/favicon.ico") || requestUri.contains("/error.") || requestUri.contains("/resources")
-				|| requestUri.contains("/log") || requestUri.contains("/metadata") || requestUri.contains("/admin")
-				|| requestUri.contains("/help"))
-			LOG.debug(String.format("%d %s '%s'", response.getStatus(), ip, requestUri));
-		else
-			LOG.info(String.format("%d %s '%s'", response.getStatus(), ip, requestUri));
-		
+
 		if(response.getStatus() == HttpServletResponse.SC_OK
 				|| response.getStatus() == HttpServletResponse.SC_NOT_MODIFIED) {
 			// log accessing some of static resources (defined in the spring xml/conf.)
@@ -55,10 +49,6 @@ public final class CPathWebserviceHandlerInterceptor extends
 				String file = requestUri.substring(requestUri.lastIndexOf("/") + 1);
 				if(!file.isEmpty()) {
 					file = URLDecoder.decode(file, "UTF-8");
-					int idx = file.lastIndexOf(";jsession");
-					if(idx>0)
-						file = file.substring(0, idx);
-
 					//update counts for: file, format, provider, command (event types)
 					if(!file.isEmpty())
 						service.log(file, ip);
