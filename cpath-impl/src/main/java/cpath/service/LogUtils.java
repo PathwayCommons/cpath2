@@ -1,7 +1,5 @@
 package cpath.service;
 
-import java.io.File;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -13,12 +11,6 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.maxmind.geoip.Location;
-import com.maxmind.geoip.LookupService;
-
-import cpath.config.CPathSettings;
-import cpath.jpa.Geoloc;
-
 /**
  * @author rodche
  *
@@ -26,25 +18,7 @@ import cpath.jpa.Geoloc;
 public final class LogUtils {
 	private static final Logger LOGGER = LoggerFactory.getLogger(LogUtils.class);
 	
-	static LookupService geolite; 
-	
 	public static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-	
-	static {
-		//will be downloaded if not exists already (one can delete the file to auto-update)
-		String localFileName = CPathSettings.getInstance().homeDir() + File.separator + "GeoLiteCity.dat";
-		try {
-			CPathUtils.download(
-				"http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz", 
-					localFileName, true, false); // - also gunzip			
-			geolite = new LookupService(
-				localFileName,
-				LookupService.GEOIP_MEMORY_CACHE
-			);
-		} catch (IOException e) {
-			throw new RuntimeException("Fauled initializing GeoLite LookupService", e);
-		}
-	}
 
 	//these regexp are to match current cpath2 version archives names only
 	final public static Pattern ARCHIVE_SRC_PATTERN = Pattern.compile("^\\S+?\\.(.+?)\\..+\\.gz$");
@@ -53,22 +27,6 @@ public final class LogUtils {
 	protected LogUtils() {
 		throw new AssertionError("Not instantiable");
 	}
-	
-	
-	/**
-	 * Gets a geographical location by IP address
-	 * using the GeoLite database.
-	 * 
-	 * @param ipAddress
-	 * @return location or null (when it cannot be found; e.g., if it's local IP)
-	 */
-	public static Geoloc lookup(String ipAddress) {
-		Location geoloc = geolite.getLocation(ipAddress);
-		return (geoloc != null) 
-			? new Geoloc(geoloc.countryCode, geoloc.region, geoloc.city) 
-				: null;
-	}
-	
 
 	public static String yesterday() {
 		Calendar cal = Calendar.getInstance();
@@ -138,7 +96,7 @@ public final class LogUtils {
 			} catch(IllegalArgumentException e) {
 				LOGGER.error("Unknown FORMAT value '" + m.group(1) 
 						+ "' in auto-generated " + archiveFilename + " (ignore if it's a test)");
-			}//ignore -> of==null
+			}
 		}
 		return of;
 	}

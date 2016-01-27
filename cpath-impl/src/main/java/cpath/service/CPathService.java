@@ -13,7 +13,6 @@ import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.validator.api.beans.ValidatorResponse;
 
 import cpath.jpa.Content;
-import cpath.jpa.LogEntitiesRepository;
 import cpath.jpa.LogEvent;
 import cpath.jpa.MappingsRepository;
 import cpath.jpa.Metadata;
@@ -197,19 +196,12 @@ public interface CPathService {
 	void log(String fileName, String ipAddr);
 	
 	/**
-	 * Increases the number (counter) 
-	 * of user's requests of some 
-	 * sort and location for given date.
-	 * 
-	 * Right now, only country code there
-	 * matters for location matching 
-	 * (city and region are ignored).
-	 * 
-	 * @param date
+	 * Counts/logs a service access event.
+	 *
 	 * @param event
 	 * @param ipAddr
 	 */
-	void count(String date, LogEvent event, String ipAddr);
+	void log(LogEvent event, String ipAddr);
 
 	/**
 	 * Creates a list of new log events to update counts for -
@@ -260,8 +252,6 @@ public interface CPathService {
     
     MetadataRepository metadata();
     
-    LogEntitiesRepository log();
-
     /**
      * Loads or re-loads the main BioPAX Model 
      * and blacklist from archive.

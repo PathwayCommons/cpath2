@@ -34,13 +34,6 @@
 	</blockquote>
    </div>
 
-	<h3>Note:</h3>
-	<p> Links to the access summary for Warehouse data sources are not provided below; however,  
-		the <a rel="nofollow" href='<c:url value="/log/TOTAL/stats"/>'>total number of requests</a> 
-		minus <a rel="nofollow" href='<c:url value="/log/ERROR/stats"/>'>errors</a> will be fair estimate.
-		Access statistics are computed from January 2014, except unique IP addresses, which are computed from November 2014.
-	</p>
-
 	<h3>Acknowledgment</h3>
 	<p>
 		The ${cpath.name} team much appreciates the fundamental contribution of 
@@ -78,9 +71,6 @@ all the metadata's attributes are in-place editable,
 and there are action buttons (delete,save,upload, etc.), and input validation;
 for regular users, - show the compact read-only summary of the data providers -->	
 	<div ng-repeat="ds in datasources" class="row">
-		 <security:authorize access="hasRole('ROLE_ADMIN')">
-		 </security:authorize>
-
 		<security:authorize access="!hasAnyRole('ROLE_ADMIN')">
 			<div class="thumbnail">
       			<div class="caption">
@@ -99,11 +89,6 @@ for regular users, - show the compact read-only summary of the data providers --
        					<span ng-show="ds.numPathways > 0"><span class="badge alert-info">{{ds.numPathways}}</span> pathways,</span> 
        				 	<span ng-show="ds.numInteractions > 0"><span class="badge alert-info">{{ds.numInteractions}}</span> interactions,</span> 
        				 	<span ng-show="ds.numPhysicalEntities > 0"><span class="badge alert-info">{{ds.numPhysicalEntities}}</span> participants</span>
-       				</p>
-       				<p ng-hide="ds.notPathwayData">
-       				  <em>Access summary: </em>
-       				  <a target="_blank" rel="nofollow" class="alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats"/>'>
-       				  no. requests/users.</a>
        				</p>
        				<p>
        				  <em>Publication: </em>{{ds.citation}} 

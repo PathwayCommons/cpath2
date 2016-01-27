@@ -48,7 +48,7 @@ public final class CPathMaintenanceHandlerInterceptor extends HandlerInterceptor
 				response.sendError(503, CPathSettings.getInstance().property(CPathSettings.PROVIDER_NAME)
 						+ " service maintenance.");
 			} catch (Exception e) {
-				LOG.error("preHandle: response.sendError failed" + e);
+				LOG.error("preHandle: request URI: " + requestUri + "; response.sendError failed" + e);
 			}
 
 			return false;

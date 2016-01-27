@@ -1,5 +1,4 @@
 
-
 import java.io.IOException;
 import java.util.*;
 
@@ -15,7 +14,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import cpath.config.CPathSettings;
 import cpath.service.LogUtils;
 import cpath.jpa.Content;
-import cpath.jpa.Geoloc;
 import cpath.jpa.LogEntity;
 import cpath.jpa.LogEvent;
 import cpath.jpa.LogType;
@@ -40,29 +38,7 @@ import static org.junit.Assert.*;
 public class RepositoriesAndServiceTest {
 	
 	@Autowired
-	private CPathService service;	
-	
-	@Test
-	public final void testCountryLookup() {
-		Geoloc loc = LogUtils.lookup("66.249.74.168");
-		assertNotNull(loc);
-		assertEquals("US", loc.getCountry());
-		assertEquals("CA", loc.getRegion());
-		
-		// localhost (and also for any LAN IPs, or not IPv4 ones...)
-		loc = LogUtils.lookup("127.0.0.1");
-		assertNull(loc);
-		loc = Geoloc.fromIpAddress("foo");
-		assertNull(loc);
-		
-		//Basel, Switzerland - no reion
-		loc = LogUtils.lookup("5.148.173.100");
-		assertNotNull(loc);
-		assertEquals("CH", loc.getCountry());
-		assertNull(loc.getRegion());
-		assertNull(loc.getCity());
-	}
-
+	private CPathService service;
 	
 	@Test
 	@DirtiesContext //other tests might added records too; do cleanup
@@ -72,112 +48,25 @@ public class RepositoriesAndServiceTest {
 		LogEntity logEntity = new LogEntity(LogUtils.today(), 
 				LogEvent.from(Status.INTERNAL_ERROR), ipAddr); //country="US"
 		assertNull(logEntity.getId());
-		//save and check that new log entrie's initial count it set to 0
-		logEntity = service.log().save(logEntity);
-		assertEquals(0L, logEntity.getCount().longValue());	
-		assertNotNull(logEntity.getId());
-		assertEquals(1, service.log().count());
+		assertEquals(0L, logEntity.getCount().longValue());
 	}
 
-	
-	/**
-	 * Test method for {@link org.springframework.data.repository.CrudRepository#save(Object)}.
-	 */
-	@DirtiesContext //other tests might added records too; do cleanup
-	@Test
-	public final void testCount() {	
-		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
-
-		// count twice
-		service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
-		LogEntity logEntity = service.log()
-			.findByEventNameIgnoreCaseAndAddrAndDate(LogEvent.TOTAL.getName(), ipAddr, LogUtils.today());
-		assertEquals(1L, logEntity.getCount().longValue());
-
-		service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
-		logEntity = service.log()
-			.findByEventNameIgnoreCaseAndAddrAndDate(LogEvent.TOTAL.getName(), ipAddr, LogUtils.today());
-		assertEquals(2L, logEntity.getCount().longValue());
-
-		// test that there is only one record yet
-		assertEquals(1, service.log().count());
-	}
-	
 	
 	@DirtiesContext //other tests might added records too; do cleanup
 	@Test
 	public final void testTimeline() {	
 		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
 		
-		// add some logs (for two days, several categories):
-		// Today
-		String today = LogUtils.today();
-		service.count(today, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
-		service.count(today, LogEvent.TOTAL, ipAddr);
-		service.count(today, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
-		service.count(today, LogEvent.TOTAL, ipAddr);
-		service.count(today, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
-		service.count(today, LogEvent.TOTAL, ipAddr);
-		service.count(today, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
-		service.count(today, LogEvent.TOTAL, ipAddr);
-		service.count(today, LogEvent.from(Cmd.SEARCH), ipAddr);
-		// Yesterday
-		String yesterDay = LogUtils.addIsoDate(today, -1);
-		service.count(yesterDay, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
-		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
-		service.count(yesterDay, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
-		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
-		service.count(yesterDay, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
-		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
-		service.count(yesterDay, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
-		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
-		service.count(yesterDay, LogEvent.from(Cmd.SEARCH), ipAddr);
-		
-		assertEquals(12, service.log().count());
-		
-		//timeline per type
-		Map<String, List<Object[]>>	res = service.log().downloadsTimeline(LogType.TOTAL, null);
-		assertNotNull(res);
-		assertEquals(1, res.size());
-		
-		List<Object[]> tl = res.get(LogType.TOTAL.description);
-		assertNotNull(tl);
-		assertEquals(2, tl.size());
-		// check the first item is [today, 4] - 
-		// because the time line is sorted in reverse order
-		assertEquals(4L, tl.get(0)[1]);
-		assertEquals(today, tl.get(0)[0]);
-		
-		// for one category only
-		res = service.log().downloadsTimeline(LogType.PROVIDER, null);
-		//one entry ("All providers")
-		assertEquals(1, res.size());
-		tl = res.get(LogType.TOTAL.description);
-		assertNull(tl); //global TOTAL not included
-		tl = res.get(LogType.PROVIDER.description);
-		assertNotNull(tl);
-		assertEquals(2L, tl.get(0)[1]); //PROVIDER type, today count=2 (1 reactome + 1 humancyc)
-		assertEquals(today, tl.get(0)[0]);
-		tl = res.get("HumanCyc");
-		assertNull(tl);
-				
-		// for error 500 only
-		res = service.log().downloadsTimeline(LogType.ERROR, "INTERNAL_ERROR");
-		//two map entries: for all downloads, for error 500
-		assertEquals(1, res.size());
-		tl = res.get(LogType.TOTAL.description);
-		assertNull(tl); //global TOTAL not included
-		tl = res.get("INTERNAL_ERROR");
-		assertNotNull(tl);
-		assertEquals(1L, tl.get(0)[1]); //PROVIDER type, today counts
-		assertEquals(today, tl.get(0)[0]);
-	}
-	
-	@DirtiesContext //other tests might added records too; do cleanup
-	@Test
-	public final void testTimeline2() {	
-		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
-	
+		service.log(LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
+		service.log(LogEvent.TOTAL, ipAddr);
+		service.log(LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
+		service.log(LogEvent.TOTAL, ipAddr);
+		service.log(new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
+		service.log(LogEvent.TOTAL, ipAddr);
+		service.log(new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
+		service.log(LogEvent.TOTAL, ipAddr);
+		service.log(LogEvent.from(Cmd.SEARCH), ipAddr);
+
 		// add some logs (for two days, several categories):
 		// Today
 		Set<LogEvent> events = new HashSet<LogEvent>(
@@ -188,36 +77,8 @@ public class RepositoriesAndServiceTest {
 					LogEvent.from(GraphType.NEIGHBORHOOD)
 			)
 		);
-		
-		//save/count all + total (once)
-		service.log(events, ipAddr);
 
-		assertEquals(5, service.log().count());
-		
-		//timeline per type (incl. TOTAL)
-		Map<String, List<Object[]>>	res = service.log().downloadsTimeline(LogType.TOTAL, null);
-		assertNotNull(res);
-		assertEquals(1, res.size());
-		
-		List<Object[]> tl = res.get(LogType.TOTAL.description);
-		assertNotNull(tl);
-		assertEquals(1, tl.size());
-		assertEquals(1L, tl.get(0)[1]);
-		assertEquals(LogUtils.today(), tl.get(0)[0]);
-		
-		// for one category only
-		res = service.log().downloadsTimeline(LogType.PROVIDER, null);
-		//one entry, sum of counts for reactome, humancyc
-		assertEquals(1, res.size());
-		tl = res.get(LogType.TOTAL.description);
-		assertNull(tl); //global TOTAL not included
-		tl = res.get(LogType.PROVIDER.description);
-		assertNotNull(tl);
-		assertEquals(2L, tl.get(0)[1]); //PROVIDER type, today counts
-		tl = res.get("HumanCyc");
-		assertNull(tl);
-		tl = res.get("Reactome");
-		assertNull(tl);	
+		service.log(events, ipAddr);
 	}
 	
 	@Test

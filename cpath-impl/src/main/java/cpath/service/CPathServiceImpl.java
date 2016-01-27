@@ -1,31 +1,3 @@
-/**
- ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
- ** and University of Toronto (UofT).
- **
- ** This is free software; you can redistribute it and/or modify it
- ** under the terms of the GNU Lesser General Public License as published
- ** by the Free Software Foundation; either version 2.1 of the License, or
- ** any later version.
- **
- ** This library is distributed in the hope that it will be useful, but
- ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- ** documentation provided hereunder is on an "as is" basis, and
- ** both UofT and MSKCC have no obligations to provide maintenance, 
- ** support, updates, enhancements or modifications.  In no event shall
- ** UofT or MSKCC be liable to any party for direct, indirect, special,
- ** incidental or consequential damages, including lost profits, arising
- ** out of the use of this software and its documentation, even if
- ** UofT or MSKCC have been advised of the possibility of such damage.  
- ** See the GNU Lesser General Public License for more details.
- **
- ** You should have received a copy of the GNU Lesser General Public License
- ** along with this software; if not, write to the Free Software Foundation,
- ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
- ** or find it at http://www.fsf.org/ or http://www.gnu.org.
- **/
-
-
 package cpath.service;
 
 import java.io.*;
@@ -55,13 +27,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
-import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
 import cpath.jpa.Content;
-import cpath.jpa.LogEntitiesRepository;
 import cpath.jpa.LogEntity;
 import cpath.jpa.LogEvent;
 import cpath.jpa.LogType;
@@ -89,10 +59,7 @@ public class CPathServiceImpl implements CPathService {
 	private static final Logger log = LoggerFactory.getLogger(CPathServiceImpl.class);
 	
 	Searcher searcher;
-	
-	@Autowired
-	LogEntitiesRepository logEntitiesRepository;
-	
+
 	@Autowired
     MetadataRepository metadataRepository;
 	
@@ -714,47 +681,21 @@ public class CPathServiceImpl implements CPathService {
 		for(LogEvent event : events) {
 			//'total' should not be here (it auto-counts)
 			Assert.isTrue(event.getType() != LogType.TOTAL); 
-			count(LogUtils.today(), event, ipAddr);
+			log(event, ipAddr);
 		}
-		
-		//total counts (is not sum of the above); counts once per request/response
-		count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
+		//total (once per web query)
+//		log(LogEvent.TOTAL, ipAddr);
 	}
 	
 	
 	@Override
-	public void count(String date, LogEvent event, String ipAddr)
+	public void log(LogEvent event, String ipAddr)
 	{		
-		//SKIP for original data, validation, blacklist and old version file downloads;
-		//by design, this does not affect the total no. events (LogEvent.TOTAL) on that date;
-		//this affects only the total no. in the LogType.FILE category
-		if(event.getType() == LogType.FILE &&
-				!event.getName().startsWith(cpath.exportArchivePrefix()))
-		{
-			return;
-		}
-
-		// find or create a record, count+1
-		LogEntity t = null;
-		try {
-			t = logEntitiesRepository.findByEventNameIgnoreCaseAndAddrAndDate(event.getName(), ipAddr, date);
-		} catch (DataAccessException e) {
-			log.error("count(), findByEventNameIgnoreCaseAndAddrAndDate " +
-				"failed to update event log: " + event.getName() + ", IP: " + ipAddr + ", date: " + date, e);
-		}
-
-		if(t == null) {			
-			t = new LogEntity(date, event, ipAddr);
-		}
-		
-		t.setCount(t.getCount() + 1);
-
-		//also log for e.g., Logstash (Elasticsearch) to record this event for analysis and visualization
-		//(in addition to recording standard apache/tomcat access logs)
-		if(event != LogEvent.TOTAL)
+		if(event != LogEvent.TOTAL) {
+			LogEntity t = new LogEntity(LogUtils.today(), event, ipAddr);
+			t.setCount(t.getCount() + 1);
 			log.info(t.toString());
-
-		logEntitiesRepository.save(t);
+		}
 	}
 
 
@@ -845,12 +786,6 @@ public class CPathServiceImpl implements CPathService {
 	@Override
 	public MetadataRepository metadata() {
 		return metadataRepository;
-	}
-
-
-	@Override
-	public LogEntitiesRepository log() {
-		return logEntitiesRepository;
 	}
 
 

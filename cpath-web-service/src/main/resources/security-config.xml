@@ -19,8 +19,6 @@
 		<intercept-url pattern="/admin" access="hasRole('ROLE_ADMIN')" />
 		<intercept-url pattern="/admin/**" access="hasRole('ROLE_ADMIN')" />
 		<intercept-url pattern="/tests" access="hasRole('ROLE_ADMIN')" />
-		<intercept-url pattern="/iplist" access="hasRole('ROLE_ADMIN')" />
-		<intercept-url pattern="/**/iplist" access="hasRole('ROLE_ADMIN')" />
 		<intercept-url pattern="/**" access="permitAll"/>
 		<logout/>
 <!-- uncomment if troubles (will make this cfg equiv. to old v3):		

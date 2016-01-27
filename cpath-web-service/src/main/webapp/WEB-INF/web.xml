@@ -61,21 +61,7 @@
 		<filter-name>CorsFilter</filter-name>
 <!-- 		<url-pattern>/*</url-pattern> -->
 		<servlet-name>cpath2</servlet-name>
-	</filter-mapping>	
-
-<!-- for debugging/investigations (do not use in production) -->
- 	<!--<filter>-->
-     	<!--<filter-name>TeeFilter</filter-name>-->
-     	<!--<filter-class>ch.qos.logback.access.servlet.TeeFilter</filter-class>-->
-		<!--<init-param>-->
-			<!--<param-name>includes</param-name>-->
-			<!--<param-value>ubuntu</param-value>-->
-		<!--</init-param>-->
- 	<!--</filter>-->
- 	<!--<filter-mapping> -->
-     	<!--<filter-name>TeeFilter</filter-name> -->
-     	<!--<url-pattern>/*</url-pattern> -->
- 	<!--</filter-mapping> -->
+	</filter-mapping>
 
 	<servlet>
 		<servlet-name>cpath2</servlet-name>

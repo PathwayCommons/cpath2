@@ -4,11 +4,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-
 import org.springframework.util.Assert;
 
 import cpath.service.Cmd;
@@ -33,29 +28,15 @@ import cpath.service.Status;
  * @author rodche
  *
  */
-@Embeddable
 public class LogEvent {
-	
-	@Column(nullable=false)
-	@Enumerated(EnumType.STRING)
-	private LogType type;
 
-	@Column(nullable=false)
+	private LogType type;
 	private String name;
-	
-	
-	/**
-	 * a special constant event type, because there is no IDMAPPING command in the cpath2 api.
-	 */
-	public static LogEvent IDMAPPING = new LogEvent(LogType.COMMAND, "IDMAPPING");
 	
 	/**
 	 * a special constant event type for total access counts
 	 */
 	public static LogEvent TOTAL = new LogEvent(LogType.TOTAL, LogType.TOTAL.description);
-	
-	public LogEvent() {
-	}
 	
 	/**
 	 * Constructor.

@@ -1,6 +1,3 @@
-/**
- * 
- */
 package cpath.jpa;
 
 /**
@@ -25,7 +22,7 @@ public enum LogType {
 	
 	public final String description;
 	
-	private LogType(String description) {
+	LogType(String description) {
 		this.description = description;
 	}
 }
