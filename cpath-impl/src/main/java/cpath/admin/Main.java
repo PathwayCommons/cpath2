@@ -52,7 +52,6 @@ public final class Main {
 		MERGE("-merge"),
     	INDEX("-index"),
 		EXPORT("-export"),
-        LOG("-log"),
         ANALYSIS("-run-analysis"),
 		;
         //name to use as the application's command line argument
@@ -144,24 +143,6 @@ public final class Main {
 						LOG.error("Skipped unrecognized argument: " + args[i]);
 				}
 				exportData(args[1], uris, absoluteUris, datasources, types);
-			}
-		}
-		else if (args[0].equals(Cmd.LOG.toString())) {
-			//options: --export/import filename | --update/merge/delete type:name,type:name,type... 
-			// (names are case-sensitive)
-			if (args.length < 2) //fail fast
-				fail(args, "No options provided.");
-			
-			if("--export".equalsIgnoreCase(args[1])) {
-				if (args.length < 3) 
-					fail(args, "No filename provided with --export option.");	
-				else exportLog(args[2]);
-			} else if("--import".equalsIgnoreCase(args[1])) {
-				if (args.length < 3) 
-					fail(args, "No filename provided with --import option.");	
-				else importLog(args[2]);
-			} else {
-				fail(args, "Unknown option: " + args[1]);
 			}
 		}
 		else if (args[0].equals(Cmd.ANALYSIS.toString())) {
@@ -503,9 +484,6 @@ public final class Main {
 				"when --output-absolute-uris flag is present, all URIs there in the output BioPAX will be absolute; " +
 				"when --datasources or/and --types flag is set, and 'uri' list is not, then the result model " +
 				"will contain BioPAX elements that pass the filter by data source and/or type)" + NEWLINE);
-		toReturn.append(Cmd.LOG.toString() + " --export/import <filename> "
-				+ "(Exports/imports the cpath2 internal assess log db to/from the specified CSV file; "
-				+ "--import clears and rewrites the log db)" + NEWLINE);
 		toReturn.append(Cmd.ANALYSIS.toString() + " <classname> [--update] (execute custom code within the cPath2 BioPAX database; " +
 				"if --update is set, one then should re-index and generate new 'downloads')" + NEWLINE);
 		return toReturn.toString();
