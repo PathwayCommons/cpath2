@@ -206,6 +206,13 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!--an experimental feature tool (@Robot annotations, alt. to /robots.txt) -->
+		<dependency>
+			<groupId>org.stuartgunter</groupId>
+			<artifactId>spring-rep</artifactId>
+			<version>0.1</version>
+		</dependency>
+
 		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>

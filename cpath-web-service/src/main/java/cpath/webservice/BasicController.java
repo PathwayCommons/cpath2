@@ -17,7 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
-import cpath.jpa.LogEvent;
+import cpath.service.LogEvent;
 import cpath.service.CPathService;
 import cpath.service.ErrorResponse;
 import cpath.service.Status;

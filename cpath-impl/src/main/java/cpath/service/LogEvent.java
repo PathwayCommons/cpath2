@@ -1,4 +1,4 @@
-package cpath.jpa;
+package cpath.service;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -6,37 +6,18 @@ import java.util.Set;
 
 import org.springframework.util.Assert;
 
-import cpath.service.Cmd;
-import cpath.service.ErrorResponse;
-import cpath.service.GraphType;
-import cpath.service.OutputFormat;
-import cpath.service.Status;
-
 /**
- * A pair of type and name that describes log entry.
- * 
- * A convenience bean for logging
- * a server access event from different 
- * perspectives. A list of such value 
- * pairs can be associated with a request IP address
- * and date and used to increment corresponding access counts 
- * all at once, e.g., to simultaneously log which data sources
- * were used, format, command, filename, etc., from one web request.
- * 
- * @see LogEntity
+ * A pair of type and name that describes a service access/use event.
+ * A list of such events may be associated with a client IP address
+ * and date, and used to record (log), e.g., which api command,
+ * data format, data sources, filename, etc., were accessed in one's web request.
  * 
  * @author rodche
- *
  */
 public class LogEvent {
 
 	private LogType type;
 	private String name;
-	
-	/**
-	 * a special constant event type for total access counts
-	 */
-	public static LogEvent TOTAL = new LogEvent(LogType.TOTAL, LogType.TOTAL.description);
 	
 	/**
 	 * Constructor.
@@ -60,12 +41,6 @@ public class LogEvent {
 	
 	public static LogEvent from(OutputFormat outputFormat) {
 		return new LogEvent(LogType.FORMAT, outputFormat.toString());
-	}
-	
-	
-	/*for tests*/
-	static LogEvent fromStatusCode(int statusCode) {
-		return new LogEvent(LogType.ERROR, String.valueOf(statusCode));
 	}
 		
 	public static LogEvent from(Status status) {
@@ -98,10 +73,37 @@ public class LogEvent {
 	public void setName(String name) {
 		this.name = name.toLowerCase();
 	}
-	
-	
+
+
 	@Override
 	public String toString() {
 		return String.format("type:%s, name:'%s'", type, name);
-	};
+	}
+
+	/**
+     * Categories of the data download/access events.
+     *
+     * In fact, these are not mutually
+     * exclusive types, for a web request/response usually
+     * counts more than once: once, for sure, in the "total"
+     * category but might also - in "providers", "commands",
+     * "formats", or "errors" at the same time.
+     *
+     * @author rodche
+     *
+     */
+    public static enum LogType {
+        PROVIDER("All Providers"),
+        COMMAND("All Web Commands"),
+        FORMAT("All Output Formats"),
+        FILE("All Files"),
+        ERROR("All Errors"),
+		;
+
+        public final String description;
+
+        LogType(String description) {
+            this.description = description;
+        }
+    }
 }

@@ -175,8 +175,7 @@ public class PagesController extends BasicController {
     // OTHER resources
     
     @RequestMapping("/favicon.ico")
-    public  @ResponseBody byte[] icon(HttpServletResponse response) 
-    		throws IOException {
+    public  @ResponseBody byte[] icon() throws IOException {
     	
     	String cpathLogoUrl = CPathSettings.getInstance().getLogoUrl();
     	

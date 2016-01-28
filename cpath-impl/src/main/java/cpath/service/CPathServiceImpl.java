@@ -32,9 +32,6 @@ import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
 import cpath.jpa.Content;
-import cpath.jpa.LogEntity;
-import cpath.jpa.LogEvent;
-import cpath.jpa.LogType;
 import cpath.jpa.Mapping;
 import cpath.jpa.MappingsRepository;
 import cpath.jpa.Metadata;
@@ -677,24 +674,8 @@ public class CPathServiceImpl implements CPathService {
 	
 	@Override
 	public void log(Collection<LogEvent> events, String ipAddr) {
-
 		for(LogEvent event : events) {
-			//'total' should not be here (it auto-counts)
-			Assert.isTrue(event.getType() != LogType.TOTAL); 
-			log(event, ipAddr);
-		}
-		//total (once per web query)
-//		log(LogEvent.TOTAL, ipAddr);
-	}
-	
-	
-	@Override
-	public void log(LogEvent event, String ipAddr)
-	{		
-		if(event != LogEvent.TOTAL) {
-			LogEntity t = new LogEntity(LogUtils.today(), event, ipAddr);
-			t.setCount(t.getCount() + 1);
-			log.info(t.toString());
+			log.info(String.format("%s, %s, %s", ipAddr, event.getType(), event.getName()));
 		}
 	}
 
@@ -798,7 +779,7 @@ public class CPathServiceImpl implements CPathService {
 		Set<LogEvent> set = new HashSet<LogEvent>();
 		final CPathSettings cpath2 = cpath;
 
-		set.add(new LogEvent(LogType.FILE, filename));
+		set.add(new LogEvent(LogEvent.LogType.FILE, filename));
 
 		// extract the data provider's standard name from the filename
 		if(filename.startsWith(cpath2.exportArchivePrefix())) {
@@ -813,7 +794,7 @@ public class CPathServiceImpl implements CPathService {
 				}
 
 				if(providerStandardName != null) {
-					set.add(new LogEvent(LogType.PROVIDER, providerStandardName));
+					set.add(new LogEvent(LogEvent.LogType.PROVIDER, providerStandardName));
 				} else {
 					//that's probably a by-organism or one of special sub-model archives
 					log.debug("'" + scope + "' in " + filename + " does not match any "

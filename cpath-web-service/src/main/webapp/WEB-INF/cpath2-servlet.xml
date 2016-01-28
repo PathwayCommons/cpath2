@@ -46,9 +46,16 @@
 	
 	<mvc:interceptors>
 		<bean class="cpath.webservice.CPathMaintenanceHandlerInterceptor" />
-		<bean class="cpath.webservice.CPathWebserviceHandlerInterceptor" />           
+		<bean class="cpath.webservice.CPathWebserviceHandlerInterceptor" />
+		<!--<bean class="org.stuartgunter.rep.interceptor.RepInterceptor">-->
+			<!--<property name="combinatorStrategy">-->
+				<!--<bean class="org.stuartgunter.rep.interceptor.RobotMergeCombinator"/>-->
+			<!--</property>-->
+		<!--</bean>-->
     </mvc:interceptors>
-	    
+
+	<mvc:resources mapping="/robots.txt" location="/robots.txt" order="0" />
+
 	<!-- serve all cpath2 generated data archives (organized by species, data sources, formats) -->	
 	<mvc:resources mapping="/downloads/**" location="file:${CPATH2_HOME}/downloads/" />
 	<!-- also serve cpath2 original and premerged data archives and validation reports -->		

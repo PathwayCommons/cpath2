@@ -13,7 +13,6 @@ import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.validator.api.beans.ValidatorResponse;
 
 import cpath.jpa.Content;
-import cpath.jpa.LogEvent;
 import cpath.jpa.MappingsRepository;
 import cpath.jpa.Metadata;
 import cpath.jpa.MetadataRepository;
@@ -194,14 +193,7 @@ public interface CPathService {
 	 * @param ipAddr
 	 */
 	void log(String fileName, String ipAddr);
-	
-	/**
-	 * Counts/logs a service access event.
-	 *
-	 * @param event
-	 * @param ipAddr
-	 */
-	void log(LogEvent event, String ipAddr);
+
 
 	/**
 	 * Creates a list of new log events to update counts for -

@@ -14,9 +14,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import cpath.config.CPathSettings;
 import cpath.service.LogUtils;
 import cpath.jpa.Content;
-import cpath.jpa.LogEntity;
-import cpath.jpa.LogEvent;
-import cpath.jpa.LogType;
+import cpath.service.LogEvent;
 import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
@@ -39,42 +37,24 @@ public class RepositoriesAndServiceTest {
 	
 	@Autowired
 	private CPathService service;
-	
-	@Test
-	@DirtiesContext //other tests might added records too; do cleanup
-	public final void testSave() {
-		final String ipAddr = "66.249.74.168";
-		//explicitly create and save a new log record
-		LogEntity logEntity = new LogEntity(LogUtils.today(), 
-				LogEvent.from(Status.INTERNAL_ERROR), ipAddr); //country="US"
-		assertNull(logEntity.getId());
-		assertEquals(0L, logEntity.getCount().longValue());
-	}
 
 	
-	@DirtiesContext //other tests might added records too; do cleanup
+	@DirtiesContext
 	@Test
 	public final void testTimeline() {	
 		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
-		
-		service.log(LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
-		service.log(LogEvent.TOTAL, ipAddr);
-		service.log(LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
-		service.log(LogEvent.TOTAL, ipAddr);
-		service.log(new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
-		service.log(LogEvent.TOTAL, ipAddr);
-		service.log(new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
-		service.log(LogEvent.TOTAL, ipAddr);
-		service.log(LogEvent.from(Cmd.SEARCH), ipAddr);
-
 		// add some logs (for two days, several categories):
-		// Today
 		Set<LogEvent> events = new HashSet<LogEvent>(
 			Arrays.asList(
 					LogEvent.from(OutputFormat.BIOPAX),
-					new LogEvent(LogType.PROVIDER, "Reactome"),
-					new LogEvent(LogType.PROVIDER, "HumanCyc"),
-					LogEvent.from(GraphType.NEIGHBORHOOD)
+					new LogEvent(LogEvent.LogType.PROVIDER, "Reactome"),
+					new LogEvent(LogEvent.LogType.PROVIDER, "HumanCyc"),
+					LogEvent.from(GraphType.NEIGHBORHOOD),
+					LogEvent.from(Status.INTERNAL_ERROR),
+					LogEvent.from(Status.NO_RESULTS_FOUND),
+					new LogEvent(LogEvent.LogType.PROVIDER, "Reactome"),
+					new LogEvent(LogEvent.LogType.PROVIDER, "HumanCyc"),
+					LogEvent.from(Cmd.SEARCH)
 			)
 		);
 
@@ -116,7 +96,7 @@ public class RepositoriesAndServiceTest {
 		file = "blacklist.txt";
 		events = service.logEventsFromFilename(file);
 		assertEquals(1, events.size());//counted in FILE log type only
-		assertEquals(LogType.FILE, events.iterator().next().getType());
+		assertEquals(LogEvent.LogType.FILE, events.iterator().next().getType());
 		
 		//provider name is now matched ignoring case, 
 		//(FORMAT type event is not there as well due to 'foo')

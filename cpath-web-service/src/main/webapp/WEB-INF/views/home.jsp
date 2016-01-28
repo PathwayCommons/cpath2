@@ -55,10 +55,9 @@ or the fat JAR with embedded application server was started) -->
 	<ul>
 		<li><em>/help/</em> - returns a tree of Help objects describing the main commands, parameters,
 		BioPAX types, and properties, e.g., /help/schema, /help/commands, /help/types;</li>
-		<li><em>/log/</em> - service access summary, e.g., /log/totals, /log/TOTAL/geography/world, /log/timeline;</li>
-		<li><em>/[rdf:ID]</em> - every BioPAX object's URI in this resource is a resolvable URL, because  
-		current XML base: ${cpath.xmlBase} redirects to the web service base URL: ${base}, and,  
-		e.g., ${cpath.xmlBase}pid URL is by design equivalent to ${base}get?uri=${cpath.xmlBase}pid  
+		<li><em>/*</em> - every BioPAX object's URI in this resource is a resolvable URL;
+		the XML base: ${cpath.xmlBase} redirects to the web service base URL: ${base}; so,
+		e.g., ${cpath.xmlBase}pid URL is equivalent to ${base}get?uri=${cpath.xmlBase}pid
 		query (gets the BioPAX RDF/XML representation of the Provenance object).
 		</li>
 	</ul>

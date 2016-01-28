@@ -369,7 +369,7 @@ public final class CPathUtils {
 					.convertFromOWL(new GZIPInputStream(new FileInputStream(archive)));
 		} 
 		catch (IOException e) {
-			LOGGER.error("Failed to import model from " + archive, e);
+			LOGGER.error("Failed to import model from '" + archive + "' - " + e);
 		}
 
 		return model;
