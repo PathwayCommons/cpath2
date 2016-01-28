@@ -93,44 +93,47 @@ public class BiopaxModelController extends BasicController {
 	
 	
 	/**
-	 * This is a convenience method is to make cpath2 data 
-	 * more suitable for LinkedData / Semantic Web, by 
-	 * resolving cpath2-generated URIs (created in the data 
-	 * warehouse and during validation and normalization). 
-	 * Ideally, all URIs are to be resolvable URLs.
+	 * This is to make cPath2 data more LinkedData compatible by making all the BioPAX object URIs resolvable.
 	 * 
-	 * Normally, one should use #elementById(Get, BindingResult, Writer, HttpServletRequest, HttpServletResponse).
+	 * Normally, one should use #elementById(Get, BindingResult, Writer, HttpServletRequest, HttpServletResponse)
+	 * query instead of posting a PC2 BioPAX URI like 'http://purl.org/pc2/8/psp' in a browser's address line directly.
+	 * Nevertheless, all such URIs must be resolved, and this method does it, if possible.
 	 * 
 	 * @param localId - the part of URI following xml:base
 	 * 
-	 * TODO return a summary page (type, name, some numbers and links to get the biopax/sif/gsea data) instead of the BioPAX content.
+	 * TODO return a summary page (type,name, some stats, links to biopax/sif/gsea data) instead of raw BioPAX.
 	 */
 	@RequestMapping(method=RequestMethod.GET, value="/{localId}")
 	public void cpathIdInfo(@PathVariable String localId, Writer writer, 
-			HttpServletRequest request, HttpServletResponse response) 
-					throws Exception 
+			HttpServletRequest request, HttpServletResponse response) throws Exception
 	{
-			/* A hack (specific to our normalizer and also 
-			 * might not work for all client links/browsers...
-			 * a better solution would be never generate tricky URIs,
-			 * containing encoded sharps, colons, spaces, etc.): 
-			 * the 'localId' parameter is usually un-encoded by the frameworks;
-			 * so we need to encode ":","#"," " back to 
-			 * %3A, %23, and "+" respectively, to get the original URI
-			 * (otherwise, if we simply combine localId and xml:base, the 
-			 * the resulting "URI" will be non-existing or wrong one)
-			 */
-			if(localId.startsWith("#"))
-				localId = localId.substring(1);
-				
-			if(localId.contains(":") || localId.contains("#") || localId.contains(" "))
-				localId = localId
-						.replaceAll(":", "%3A")
-							.replaceAll("#", "%23")
-								.replaceAll(" ", "+");
-			Get get = new Get();			
-			get.setUri(new String[]{xmlBase + localId});
-			elementById(get, null, writer, request, response);			
+		/* A hack (specific to our normalizer and also
+		 * might not work for all client links/browsers...
+		 * a better solution would be never generate tricky URIs,
+		 * containing encoded sharps, colons, spaces, etc.):
+		 * the 'localId' parameter is usually un-encoded by the frameworks;
+		 * so we need to encode ":","#"," " back to
+		 * %3A, %23, and "+" respectively, to get the original URI
+		 * (otherwise, if we simply combine localId and xml:base, the
+		 * the resulting "URI" will be non-existing or wrong one)
+		 */
+		if(localId.startsWith("#"))
+			localId = localId.substring(1);
+
+		if(localId.contains(":") || localId.contains("#") || localId.contains(" "))
+			localId = localId.replaceAll(":", "%3A").replaceAll("#", "%23").replaceAll(" ", "+");
+		String maybeUri = xmlBase + localId;
+
+		if(service.getModel().containsID(maybeUri)) {
+			Get get = new Get();
+			get.setUri(new String[]{maybeUri});
+			// delegate this task to "/get" (by URI/ID) command
+			elementById(get, null, writer, request, response);
+		} else {
+			//no other access log events are recorded in this case
+			//(i.e,, when neither URI/object nor page/controller exist)
+			errorResponse(Status.NO_RESULTS_FOUND, "", response);
+		}
 	}
 	
 	
