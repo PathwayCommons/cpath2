@@ -9,10 +9,8 @@ import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.jpa.MetadataRepository;
 import cpath.service.Analysis;
-import cpath.service.BiopaxConverter;
 import cpath.service.CPathService;
 import cpath.service.Indexer;
-import cpath.service.OutputFormat;
 import cpath.service.SearchEngine;
 import cpath.service.Searcher;
 import cpath.service.jaxb.*;
@@ -31,8 +29,6 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.core.io.DefaultResourceLoader;
-import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 
 import java.io.*;
@@ -44,7 +40,6 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -620,29 +615,6 @@ public final class Admin {
 		return toReturn.toString();
 	}
 
-	
-    /*
-     * Converts a BioPAX file to other formats.
-     */
-	private static void convert(Model model, OutputFormat outputFormat, 
-			OutputStream output, Object... params) throws IOException 
-	{
-		Resource blacklistResource = new DefaultResourceLoader().getResource("file:" + cpath.blacklistFile());
-		Blacklist blacklist = new Blacklist(blacklistResource.getInputStream());
-		BiopaxConverter converter = new BiopaxConverter(blacklist);
-		converter.convert(model, outputFormat, output, params);
-		output.flush();
-	}
-
-	
-    @SuppressWarnings("resource")
-	private static InputStream biopaxStream(String biopaxFile) throws IOException {
-		return (biopaxFile.endsWith(".gz"))
-			? new GZIPInputStream(new FileInputStream(biopaxFile)) 
-			: new FileInputStream(biopaxFile);
-	}
-
-    
     /**
      * Create cpath2 downloads 
      * (we then may export BioPAX to various formats with paxtools.jar, from console)
