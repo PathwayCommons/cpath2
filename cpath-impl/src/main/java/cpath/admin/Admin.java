@@ -630,7 +630,7 @@ public final class Admin {
 			new ClassPathXmlApplicationContext(new String[] {
 					"classpath:META-INF/spring/applicationContext-jpa.xml"});
 		
-		MetadataRepository metadataRepository = (MetadataRepository) context.getBean(MetadataRepository.class);
+		MetadataRepository metadataRepository = context.getBean(MetadataRepository.class);
 		
 		// 1) create an imported data summary file.txt (issue#23)
 		PrintWriter writer = new PrintWriter(cpath.downloadsDir() + File.separator 
@@ -716,12 +716,11 @@ public final class Admin {
         	LOG.info("create-downloads: skipped for 'by organism' archives (there is only one)");
         }
         //a separate export - only BioPAX pathway data sources, "Detailed":
-        LOG.info("create-downloads: creating 'Detailed' data archives..."); 
         final String archiveName = cpath.biopaxExportFileName("Detailed");
 		exportBiopax(exec, mainModel, searcher,  archiveName, pathwayDataSources.toArray(new String[]{}), null);
         
         exec.shutdown();
-        exec.awaitTermination(36, TimeUnit.HOURS);
+        exec.awaitTermination(24, TimeUnit.HOURS);
 	}	
 
 	
@@ -731,8 +730,8 @@ public final class Admin {
         // check file exists
         if(!(new File(biopaxArchive)).exists()) {
         	LOG.info("create-downloads: creating new " + 	biopaxArchive);
-        	
-			exec.execute(new Runnable() {			
+
+			exec.execute(new Runnable() {
 				public void run() {
 					try {
 			        	//find all entities (all child elements will be then exported too)    	  	
