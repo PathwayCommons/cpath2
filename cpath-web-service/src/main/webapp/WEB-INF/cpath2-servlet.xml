@@ -54,9 +54,7 @@
 		<!--</bean>-->
     </mvc:interceptors>
 
-	<mvc:resources mapping="/robots.txt" location="/robots.txt" order="0" />
-
-	<!-- serve all cpath2 generated data archives (organized by species, data sources, formats) -->	
+	<!-- serve all cpath2 generated data archives (organized by species, data sources, formats) -->
 	<mvc:resources mapping="/downloads/**" location="file:${CPATH2_HOME}/downloads/" />
 	<!-- also serve cpath2 original and premerged data archives and validation reports -->		
 	<mvc:resources mapping="/datadir/**" location="file:${CPATH2_HOME}/data/" />
