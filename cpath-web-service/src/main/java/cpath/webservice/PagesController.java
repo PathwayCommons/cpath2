@@ -239,6 +239,8 @@ public class PagesController extends BasicController {
 
 	@RequestMapping("/robots.txt")
 	public @ResponseBody String robots() {
+		// block access to admin, logs, web service commands and data files,
+		// but don't disallow any page resources (css, js, images)
 		return "User-agent: *\n" +
 				"Disallow: /get\n" +
 				"Disallow: /search\n" +
@@ -246,7 +248,7 @@ public class PagesController extends BasicController {
 				"Disallow: /top_pathways\n" +
 				"Disallow: /traverse\n" +
 				"Disallow: /archives\n" +
-				"Disallow: /downloads/*\n" +
+				"Disallow: /downloads/\n" +
 				"Disallow: /datadir\n" +
 				"Disallow: /admin\n" +
 				"Disallow: /log\n" +
