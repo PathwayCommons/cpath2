@@ -212,7 +212,7 @@ public class PagesController extends BasicController {
     // OTHER resources
     
     @RequestMapping("/favicon.ico")
-    public  @ResponseBody byte[] icon(HttpServletResponse response) 
+    public  @ResponseBody byte[] icon()
     		throws IOException {
     	
     	String cpathLogoUrl = CPathSettings.getInstance().getLogoUrl();
@@ -235,7 +235,27 @@ public class PagesController extends BasicController {
     public String tests() {
     	return "tests";
     }
-    
+
+
+	@RequestMapping("/robots.txt")
+	public @ResponseBody String robots() {
+		return "User-agent: *\n" +
+				"Disallow: /get\n" +
+				"Disallow: /search\n" +
+				"Disallow: /graph\n" +
+				"Disallow: /top_pathways\n" +
+				"Disallow: /traverse\n" +
+				"Disallow: /archives\n" +
+				"Disallow: /downloads/*\n" +
+				"Disallow: /datadir\n" +
+				"Disallow: /admin\n" +
+				"Disallow: /log\n" +
+				"Disallow: /archives\n" +
+				"Disallow: /help\n" +
+				"Disallow: /metadata\n";
+	}
+
+
 	/**
 	 * Recursively gets the sorted filename->size map
 	 * from the cpath2 home and dir and 'data' sub-directory.
