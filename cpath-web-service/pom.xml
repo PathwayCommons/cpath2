@@ -15,10 +15,6 @@
 	<description>cPath2 web service, information and system pages</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
 
-	<scm>
-		<url>https://github.com/PathwayCommons/cpath2</url>
-	</scm>
-
 	<build>
 		<plugins>
 			<plugin>

@@ -32,7 +32,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/PathwayCommons/cpath2.git</connection>
 		<developerConnection>scm:git:git@github.com:PathwayCommons/cpath2.git</developerConnection>
-		<url>https://github.com/PathwayCommons/cpath2</url>
+		<url>https://github.com/PathwayCommons/cpath2/tree/master/</url>
 	</scm>
 
 	<developers>

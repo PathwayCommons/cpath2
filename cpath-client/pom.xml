@@ -15,10 +15,6 @@
 	<description>Client library for cPath/cPath2 web services</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
 
-	<scm>
-		<url>https://github.com/PathwayCommons/cpath2</url>
-	</scm>
-
 	<dependencies>
 		<dependency>
 			<groupId>org.biopax.paxtools</groupId>

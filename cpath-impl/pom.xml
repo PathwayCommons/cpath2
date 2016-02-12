@@ -15,10 +15,6 @@
 	<description>cPath2 - bio pathway data integration, search/index/query, export to other formats</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
 
-	<scm>
-		<url>https://github.com/PathwayCommons/cpath2</url>
-	</scm>
-
 	<build>
 		<plugins>
 			<plugin>

@@ -13,10 +13,6 @@
 	<description>cPath2 server distribution (executable jars, war, scripts, etc.)</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
 
-	<scm>
-		<url>https://github.com/PathwayCommons/cpath2</url>
-	</scm>
-
 	<build>
 		<plugins>
 			<plugin>
