@@ -2,6 +2,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <!-- get the root/base URL (e.g., depends on whether the WAR was deployed on a Tomcat 
 or the fat JAR with embedded application server was started) -->
 <c:set var="req" value="${pageContext.request}" />
@@ -12,7 +13,7 @@ or the fat JAR with embedded application server was started) -->
 <html>
 <head>
 	<jsp:include page="head.jsp" />
-	<script src='<c:url value="/resources/scripts/help.js"/>'></script>
+	<script src="<spring:url value='/resources/scripts/help.js'/>"></script>
 	<title>cPath2::Info</title>
 </head>
 <body data-spy="scroll" data-target=".navbar">
@@ -275,7 +276,7 @@ or the fat JAR with embedded application server was started) -->
 	<h4>Examples:</h4> 
 	Neighborhood of COL5A1 (P20908, CO5A1_HUMAN):
 	<ol>
-		<li><a rel="nofollow" href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood&format=EXTENDED_BINARY_SIF">
+		<li><a rel="nofollow" href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood&format=BINARY_SIF">
 			This query finds the BioPAX nearest neighborhood of the protein reference</a> http://identifiers.org/uniprot/P20908, i.e., 
 			all reactions where the corresponding protein forms participate; returned in the Simple Interaction Format (SIF)</li>	
 		<li><a rel="nofollow" href="graph?source=P20908&kind=neighborhood">

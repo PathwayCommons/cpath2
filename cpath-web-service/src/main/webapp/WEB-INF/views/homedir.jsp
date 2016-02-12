@@ -1,6 +1,7 @@
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@page language="java" contentType="text/html; charset=UTF-8"%>
 <%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 
 <!DOCTYPE html>
 <html>
@@ -16,7 +17,7 @@
 		<dl>
 			<c:forEach var="f" items="${files}">
 				<dt>
-				<a href='<c:url value="/admin/homedir/${f.key}"/>'>${f.key}</a>
+				<a href="<spring:url value='/admin/homedir'/>/${f.key}">${f.key}</a>
 				</dt><dd>(${f.value})</dd>
 			</c:forEach>
 		</dl>

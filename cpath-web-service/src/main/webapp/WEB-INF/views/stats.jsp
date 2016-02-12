@@ -2,15 +2,17 @@
 <%@page language="java" contentType="text/html; charset=UTF-8"%>
 <%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <c:set var="contextPath" value="${pageContext.request.contextPath}" />
 
 <!DOCTYPE html>
 <html>
 <head>
 <jsp:include page="head.jsp" />
+<spring:url value="/resources" var="resources" />
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-<script type="text/javascript" src='<c:url value="/resources/scripts/codes2names.js"/>'></script>
-<script type="text/javascript" src='<c:url value="/resources/scripts/stats.js"/>'></script>
+<script type="text/javascript" src="${resources}/scripts/codes2names.js"></script>
+<script type="text/javascript" src="${resources}/scripts/stats.js"></script>
 <title>cPath2::Log</title>
 </head>
 <body>
@@ -33,9 +35,10 @@
 		</select>
 	  </div>
 	  <p>
-		<em>See also:</em> <a rel="nofollow" href='<c:url value="/log/totals"/>'>a quick summary</a>, 
-		<a rel="nofollow" href='<c:url value="/log/totalok"/>'>no. successful requests</a>, 
-		<a rel="nofollow" href='<c:url value="/log/totalip"/>'>no. unique users</a>.	
+		<spring:url value="/log" var="log"/>
+		<em>See also:</em> <a rel="nofollow" href="${log}/totals">a quick summary</a>,
+		<a rel="nofollow" href="${log}/totalok">no. successful requests</a>,
+		<a rel="nofollow" href="${log}/totalip">no. unique users</a>.
 	  </p>
 	</div>
 	<div class="row">
@@ -66,7 +69,7 @@
 	<div class="row">
 		<h3>
 			<span id="geography-country-name"></span> 
-			<img id="country-loading" src='<c:url value="/resources/img/loading.gif"/>'
+			<img id="country-loading" src="${resources}/img/loading.gif"
 					style="display: none;">
 		</h3>
 		<div id="geography-country-chart" style="width: 100%; height: 540px;"></div>

@@ -1,15 +1,18 @@
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page language="java" contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib prefix="security" uri="http://www.springframework.org/security/tags" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
+
+<spring:url value="/resources" var="resourcesUrl" />
+<spring:url value="/log" var="logUrl" />
 
 <!DOCTYPE html>
 <html>
 <head>
-	<link href='<c:url value="/resources/css/xeditable.css"/>' rel="stylesheet" />
+	<link href="${resourcesUrl}/css/xeditable.css" rel="stylesheet" />
 	<jsp:include page="head.jsp" />
-	<script src='<c:url value="/resources/scripts/xeditable.js"/>'></script>
-	<script src='<c:url value="/resources/scripts/datasources.js"/>'></script>	
+	<script src="${resourcesUrl}/scripts/xeditable.js"></script>
+	<script src="${resourcesUrl}/scripts/datasources.js"></script>
 	<title>cPath2::Datasources</title>
 </head>
 <body>
@@ -36,8 +39,8 @@
 
 	<h3>Note:</h3>
 	<p> Links to the access summary for Warehouse data sources are not provided below; however,  
-		the <a rel="nofollow" href='<c:url value="/log/TOTAL/stats"/>'>total number of requests</a> 
-		minus <a rel="nofollow" href='<c:url value="/log/ERROR/stats"/>'>errors</a> will be fair estimate.
+		the <a rel="nofollow" href="${logUrl}/TOTAL/stats">total number of requests</a>
+		minus <a rel="nofollow" href="${logUrl}/ERROR/stats">errors</a> will be fair estimate.
 		Access statistics are computed from January 2014, except unique IP addresses, which are computed from November 2014.
 	</p>
 
@@ -187,7 +190,7 @@ for regular users, - show the compact read-only summary of the data providers --
        				</p>
        				<p ng-hide="ds.notPathwayData">
        				  <em>Access summary: </em>
-       				  <a target="_blank" rel="nofollow" class="alert-success" ng-href='<c:url value="/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats"/>'>
+       				  <a target="_blank" rel="nofollow" class="alert-success" ng-href="${logUrl}/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats">
        				  no. requests/users.</a>
        				</p>
        				<p>

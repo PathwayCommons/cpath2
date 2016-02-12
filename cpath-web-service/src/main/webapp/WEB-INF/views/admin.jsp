@@ -1,11 +1,13 @@
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <!DOCTYPE html>
 <html>
+<spring:url value="/resources" var="resourcesUrl" />
 <head>
 <jsp:include page="head.jsp" />
-<script type="text/javascript" src='<c:url value="/resources/scripts/admin.js"/>'></script>
+<script type="text/javascript" src="${resourcesUrl}/scripts/admin.js"></script>
 <title>cPath2::Admin</title>
 <meta name="robots" content="noindex,nofollow" />
 </head>
