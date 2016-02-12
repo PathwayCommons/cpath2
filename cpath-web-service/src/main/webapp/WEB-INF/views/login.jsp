@@ -20,7 +20,7 @@
 			</c:if>
 		</c:if>
 		
-		<form action="<c:url value='/login'/>" method="post">
+		<form action="<spring:url value='/login'/>" method="post">
 			<dl>
 					<dt>User:</dt>
 					<dd><input type="text" name="username" id="username"/></dd>

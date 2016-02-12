@@ -1,6 +1,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <header class="header">
 	<nav id="header_navbar" class="navbar navbar-default navbar-fixed-top" role="navigation">
         <div class="container">
@@ -20,25 +21,26 @@
               <div class="collapse navbar-collapse pull-right" id="top-navbar-collapse">
                   <ul class="nav navbar-nav">
  		  			<security:authorize access="hasRole('ROLE_ADMIN')">
-					  <li><a rel="nofollow" href='<c:url value="/admin"/>'>Admin</a></li>
+					  <li><a rel="nofollow" href="<spring:url value='/admin'/>">Admin</a></li>
 					</security:authorize>
 					<li class="dropdown">
                   		<a href="#" class="dropdown-toggle" data-toggle="dropdown">Web Service<b class="caret"></b></a>
                   		<span class="dropdown-arrow"></span>
                   		<ul class="dropdown-menu">
-                  		 <li><a href='<c:url value="/home"/>' class="smooth-scroll">About</a></li>
+						<spring:url value="/home" var="home" />
+                  		 <li><a href="${home}" class="smooth-scroll">About</a></li>
                   		 <li class="divider"></li>
-               			 <li><a href='<c:url value="/home#search"/>' class="smooth-scroll">Search</a></li>
-               			 <li><a href='<c:url value="/home#get"/>' class="smooth-scroll">Get</a></li>
-               			 <li><a href='<c:url value="/home#traverse"/>' class="smooth-scroll">Traverse</a></li>
-               			 <li><a href='<c:url value="/home#graph"/>' class="smooth-scroll">Graph</a></li>
-               			 <li><a href='<c:url value="/home#top_pathways"/>' class="smooth-scroll">Top pathways</a></li>
+               			 <li><a href="${home}#search" class="smooth-scroll">Search</a></li>
+               			 <li><a href="${home}#get" class="smooth-scroll">Get</a></li>
+               			 <li><a href="${home}#traverse" class="smooth-scroll">Traverse</a></li>
+               			 <li><a href="${home}#graph" class="smooth-scroll">Graph</a></li>
+               			 <li><a href="${home}#top_pathways" class="smooth-scroll">Top pathways</a></li>
                     	 <li class="divider"></li>
-                    	 <li><a href='<c:url value="/home#parameter_values"/>' class="smooth-scroll">Values</a></li>
+                    	 <li><a href="${home}#parameter_values" class="smooth-scroll">Values</a></li>
                     	</ul>
                 	</li>
-					<li><a href='<c:url value="/datasources"/>'>Providers</a></li>
-					<li><a href='<c:url value="/downloads"/>'>Downloads</a></li>
+					<li><a href="<spring:url value='/datasources'/>">Providers</a></li>
+					<li><a href="<spring:url value='/downloads'/>">Downloads</a></li>
                   </ul>
           	  </div> <!-- collapse -->
       </div> <!-- container -->

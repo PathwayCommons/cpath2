@@ -2,15 +2,17 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 
 <c:set var="xmlBaseLength" value="${fn:length(cpath.xmlBase)}" />
 
 <!DOCTYPE html>
 <html>
 <head>
-<link href='<c:url value="/resources/css/jquery.dataTables.css"/>' rel="stylesheet">
+<spring:url value="/resources" var="resources"/>
+<link href="${resources}/css/jquery.dataTables.css" rel="stylesheet">
 <jsp:include page="head.jsp" />
-<script src='<c:url value="/resources/scripts/pw.js"/>'></script>
+<script src="${resources}/scripts/pw.js"></script>
 <script>
 	(function(i, s, o, g, r, a, m) {
 		i['GoogleAnalyticsObject'] = r;
@@ -60,7 +62,7 @@
        				find pathways using a simple keyword(s), e.g., <a rel="nofollow" href="#/pw/brca2">brca2</a>,
        				<a rel="nofollow" href="#/pw/P51587">P51587</a>, 
        				or full-text query, such as <a rel="nofollow" href="#/pw/+response%20+alcohol">+response%20+alcohol</a>
-       				(see also about <a href='<c:url value="/home#search"/>'>the search</a> web service command).
+       				(see also about <a href="<spring:url value='/home#search'/>">the search</a> web service command).
        				</p>
        			</div>
        		</div>
