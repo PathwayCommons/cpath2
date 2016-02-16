@@ -17,8 +17,9 @@
     <context:component-scan base-package="cpath.webservice" />
 	<context:property-placeholder/>
 
+	<!-- this is not required (is the last resort) if mvc:resources are enabled (see at the very end of this file)-->
 	<!-- enable the default servlet serving local static resources, such as css, js, img... -->
-    <mvc:default-servlet-handler/>
+    <!--<mvc:default-servlet-handler/>-->
 
 	<!-- for the cpath2 service bean, init() is only required once in the web service app
 	(i.e., not required by tests nor console commands); that's why it's not @PostConstruct. -->
@@ -79,6 +80,8 @@
 		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
 		<property name="maxUploadSize" value="100000000" /><!-- 100Mb (normally zipped files) -->
 	</bean>
+
+	<mvc:resources mapping="/resources/**" location="/resources/" />
 
 	<!-- mvc:annotation-driven must the last -->
     <mvc:annotation-driven content-negotiation-manager="contentNegotiationManager"/>

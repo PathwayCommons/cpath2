@@ -3,16 +3,13 @@
 <%@ taglib prefix="security" uri="http://www.springframework.org/security/tags" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 
-<spring:url value="/resources" var="resourcesUrl" />
-<spring:url value="/log" var="logUrl" />
-
 <!DOCTYPE html>
 <html>
 <head>
-	<link href="${resourcesUrl}/css/xeditable.css" rel="stylesheet" />
+	<link href="<spring:url value='/resources/css/xeditable.css'/>" rel="stylesheet" />
 	<jsp:include page="head.jsp" />
-	<script src="${resourcesUrl}/scripts/xeditable.js"></script>
-	<script src="${resourcesUrl}/scripts/datasources.js"></script>
+	<script src="<spring:url value='/resources/scripts/xeditable.js'/>"></script>
+	<script src="<spring:url value='/resources/scripts/datasources.js'/>"></script>
 	<title>cPath2::Datasources</title>
 </head>
 <body>

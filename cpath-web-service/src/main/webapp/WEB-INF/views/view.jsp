@@ -9,10 +9,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-<spring:url value="/resources" var="resources"/>
-<link href="${resources}/css/jquery.dataTables.css" rel="stylesheet">
+<link href="<spring:url value='/resources/css/jquery.dataTables.css'/>" rel="stylesheet">
 <jsp:include page="head.jsp" />
-<script src="${resources}/scripts/pw.js"></script>
+<script src="<spring:url value='/resources/scripts/pw.js'/>"></script>
 <script>
 	(function(i, s, o, g, r, a, m) {
 		i['GoogleAnalyticsObject'] = r;
@@ -36,16 +35,15 @@
 
   <div id="ng-app" ng-app="pcApp" ng-controller="PcController">
 	
-<!-- 	  Current action/view: <em ng-bind="renderAction">Unknown</em>&nbsp; -->
-<%-- 	  Sub-path: <em>{{ renderPath[ 1 ] }}</em>. --%>
-	
-	  <!--
+<%--	Current action/view: <em ng-bind="renderAction">Unknown</em>&nbsp;
+		Sub-path: <em>{{ renderPath[ 1 ] }}</em>.
+
         When the route changes, we're going to be setting up the
         renderPath - an array of values that help define how the
         page is going to be rendered. We can use these values to
         conditionally show / load parts of the page.
-      -->
-	  <div ng-switch on="renderPath[ 0 ]">								
+--%>
+	  <div ng-switch on="renderPath[ 0 ]">
 		<!-- Users' Site Home Page -->
         <div ng-switch-when="home">
        		<h2>For All Users (non-programmers)</h2>
