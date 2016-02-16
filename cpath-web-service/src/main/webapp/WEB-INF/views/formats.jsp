@@ -135,92 +135,91 @@ interactions within Pathway Commons.
 <tr>
 <td><b>controls-state-change-of</b></td>
 <td>First protein controls a reaction that changes the state of the second protein.</td>
-    <spring:url value="/resources" var="resources" />
-<td><img src="${resources}/img/sif/controls-state-change-of-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/B-to-A.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/controls-state-change-of-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/B-to-A.svg'/>"/></td>
 </tr>
 <tr>
 <td><b>controls-transport-of</b></td> 
 <td>First protein controls a reaction that changes the cellular location of the second protein.</td>
-<td><img src="${resources}/img/sif/controls-transport-of-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/B-to-A.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/controls-transport-of-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/B-to-A.svg'/>"/></td>
 </tr>
 <tr>
 <td><b>controls-phosphorylation-of</b></td> 
 <td>First protein controls a reaction that changes the phosphorylation status of the second protein.</td>
-<td><img src="${resources}/img/sif/controls-phosphorylation-of-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/B-to-A.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/controls-phosphorylation-of-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/B-to-A.svg'/>"/></td>
 </tr>
 <tr>
 <td><b>controls-expression-of</b></td> 
 <td>First protein controls a conversion or a template reaction that changes expression of the second protein.</td>
-<td><img src="${resources}/img/sif/controls-expression-of-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/B-to-A.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/controls-expression-of-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/B-to-A.svg'/>"/></td>
 </tr>
 <tr>
 <td><b>catalysis-precedes</b></td>
 <td>First protein controls a reaction whose output molecule is input to another reaction controled by the second protein.</td>
-<td><img src="${resources}/img/sif/catalysis-precedes-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/A-to-B.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/catalysis-precedes-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/A-to-B.svg'/>"/></td>
 </tr>
 <tr>
 <td><b>in-complex-with</b></td> 
 <td>Proteins are members of the same complex.</td>
-<td><img src="${resources}/img/sif/in-complex-with-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/triangle.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/in-complex-with-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/triangle.svg'/>"/></td>
 </tr>
 <tr>
 <td><b>interacts-with</b></td> 
 <td>Proteins are participants of the same MolecularInteraction.</td>
-<td><img src="${resources}/img/sif/interacts-with-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/interacts-with-sif.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/interacts-with-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/interacts-with-sif.svg'/>"/></td>
 </tr>
 <tr>
 <td><b>neighbor-of</b></td> 
 <td>Proteins are participants or controlers of the same interaction.</td>
-<td><img src="${resources}/img/sif/neighbor-of-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/neighbor-of-sif.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/neighbor-of-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/neighbor-of-sif.svg'/>"/></td>
 </tr>
 <tr>
 <td><b>consumption-controled-by</b></td>
 <td>The small molecule is consumed by a reaction that is controled by a protein</td>
-<td><img src="${resources}/img/sif/metabolic1-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/X-to-A.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/metabolic1-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/X-to-A.svg'/>"/></td>
 </tr>
 <tr>
 <td><b>controls-production-of</b></td>
 <td>The protein controls a reaction of which the small molecule is an output.</td>
-<td><img src="${resources}/img/sif/metabolic1-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/controls-production-of-sif.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/metabolic1-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/controls-production-of-sif.svg'/>"/></td>
 </tr>
 <tr>
 <td><b>controls-transport-of-chemical</b></td>
 <td>The protein controls a reaction that changes cellular location of the small molecule.</td>
-<td><img src="${resources}/img/sif/controls-transport-of-chemical-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/controls-transport-of-chemical-sif.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/controls-transport-of-chemical-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/controls-transport-of-chemical-sif.svg'/>"/></td>
 </tr>
 <tr>
 <td><b>chemical-affects</b></td>
 <td>A small molecule has an effect on the protein state.</td>
-<td><img src="${resources}/img/sif/chemical-affects-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/X-to-A.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/chemical-affects-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/X-to-A.svg'/>"/></td>
 </tr>
 <tr>
 <td><b>reacts-with</b></td>
 <td>Small molecules are input to a biochemical reaction.</td>
-<td><img src="${resources}/img/sif/metabolic2-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/reacts-with-sif.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/metabolic2-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/reacts-with-sif.svg'/>"/></td>
 </tr>
 <tr>
 <td><b>used-to-produce</b></td>
 <td>A reaction consumes a small molecule to produce another small molecule.</td>
-<td><img src="${resources}/img/sif/metabolic2-biopax.svg"/></td>
-<td><img src="${resources}/img/sif/used-to-produce-sif.svg"/></td>
+<td><img src="<spring:url value='/resources/img/sif/metabolic2-biopax.svg'/>"/></td>
+<td><img src="<spring:url value='/resources/img/sif/used-to-produce-sif.svg'/>"/></td>
 </tr>
 </tbody>
 </table>
-<p/>
-<table class="table"><tr><td>Legend:</td><td><img src="${resources}/img/sif/legend.svg"/></td></tr></table>
+<p></p>
+<table class="table"><tr><td>Legend:</td><td><img src="<spring:url value='/resources/img/sif/legend.svg'/>"/></td></tr></table>
 
 <h3 id="sbgn">SBGN</h3>
 <p>
