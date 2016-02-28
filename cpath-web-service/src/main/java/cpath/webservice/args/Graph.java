@@ -9,6 +9,9 @@ import org.hibernate.validator.constraints.NotEmpty;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class Graph {
 	@NotNull(message="Parameter 'kind' is required.")
 	private GraphType kind; //required!
@@ -57,7 +60,17 @@ public class Graph {
 	}
 
 	public void setSource(String[] source) {
-		this.source = source;
+		Set<String> uris = new HashSet<String>(source.length);
+		for(String item : source) {
+			if(item.contains(",")) {
+				//split by ',' ignoring spaces and empty values (between ,,)
+				for(String id : item.split("\\s*,\\s*", -1))
+					uris.add(id);
+			} else {
+				uris.add(item);
+			}
+		}
+		this.source = uris.toArray(new String[uris.size()]);
 	}
 
 	public String[] getTarget() {
@@ -65,7 +78,17 @@ public class Graph {
 	}
 
 	public void setTarget(String[] target) {
-		this.target = target;
+		Set<String> uris = new HashSet<String>(target.length);
+		for(String item : target) {
+			if(item.contains(",")) {
+				//split by ',' ignoring spaces and empty values (between ,,)
+				for(String id : item.split("\\s*,\\s*", -1))
+					uris.add(id);
+			} else {
+				uris.add(item);
+			}
+		}
+		this.target = uris.toArray(new String[uris.size()]);
 	}
 
 	public Integer getLimit() {

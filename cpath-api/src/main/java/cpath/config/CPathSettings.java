@@ -138,9 +138,6 @@ public final class CPathSettings {
     public static final String PROVIDER_URL = "cpath2.provider.url";
 	public static final String PROVIDER_LOGO_URL = "cpath2.provider.logo.url";
 	public static final String PROVIDER_ORGANISMS = "cpath2.provider.organisms";
-	// Metadata identifiers for corresponding pathways
-	// the GSEA converter should not traverse into subpathways
-	public static final String PROP_GSEA_SKIPSUBPATHWAYS = "cpath2.gsea.skipSubPathways";
 
 	//properties to set the default global start/end dates for all the access log timeline queries;
 	//These may be ignored if another range is set via web api (per query)
@@ -284,15 +281,6 @@ public final class CPathSettings {
 				throw new AssertionError("getOrganismTaxonomyIds, taxonomy ID not found in: " + org);
 		}
 		return taxids;
-	}
-
-	public String[] getMetadataIdsForGseaSkipSubPathways() {
-		String metadataIds = property(PROP_GSEA_SKIPSUBPATHWAYS);
-		return metadataIds.split("\\s*,\\s*");
-	}
-
-	public void MetadataIdsForGseaSkipSubPathways(String[] metadataIds) {
-		setCPathProperty(PROP_GSEA_SKIPSUBPATHWAYS, StringUtils.join(metadataIds, ','));
 	}
 	
 	/**

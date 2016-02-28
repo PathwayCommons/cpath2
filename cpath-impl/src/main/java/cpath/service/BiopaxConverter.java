@@ -176,16 +176,6 @@ public class BiopaxConverter {
 		if(outputIdType==null || outputIdType.isEmpty())
 			outputIdType = "uniprot";
 
-//		//Using the model and cPath2 instance properties,
-//		//prepare a list of Provenance to skip traversing into sub-pathways of:
-//		Set<Provenance> skipSubPathwaysOf = new HashSet();
-//		for(String mid : CPathSettings.getInstance().getMetadataIdsForGseaSkipSubPathways()) {
-//			Provenance pro = (Provenance) m.getByID(CPathSettings.getInstance().getXmlBase()+mid);
-//			if(pro != null) skipSubPathwaysOf.add(pro);
-//		}
-		// convert
-//		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true, skipSubPathwaysOf);
-
 		// convert (make per pathway entries; won't traverse into sub-pathways of a pathway; only pre-selected organisms)
 		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true, true);
 		Set<String> allowedTaxIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
