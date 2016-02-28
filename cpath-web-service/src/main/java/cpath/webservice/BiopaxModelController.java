@@ -132,7 +132,8 @@ public class BiopaxModelController extends BasicController {
 		} else {
 			//no other access log events are recorded in this case
 			//(i.e,, when neither URI/object nor page/controller exist)
-			errorResponse(Status.NO_RESULTS_FOUND, "", response);
+			//errorResponse(Status.NO_RESULTS_FOUND, "", response);
+			response.sendError(404); //no resource available
 		}
 	}
 	

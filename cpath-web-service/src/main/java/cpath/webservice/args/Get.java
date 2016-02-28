@@ -3,9 +3,13 @@ package cpath.webservice.args;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import org.apache.commons.lang.ArrayUtils;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import cpath.service.OutputFormat;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class Get {
 	@NotNull(message="Illegal Output Format") 
@@ -32,6 +36,16 @@ public class Get {
 	}
 
 	public void setUri(String[] uri) {
-		this.uri = uri;
+		Set<String> uris = new HashSet<String>(uri.length);
+		for(String item : uris) {
+			if(item.contains(",")) {
+				//split by ',' ignoring spaces and empty values (between ,,)
+				for(String id : item.split("\\s*,\\s*", -1))
+					uris.add(id);
+			} else {
+				uris.add(item);
+			}
+		}
+		this.uri = uris.toArray(new String[uris.size()]);
 	}
 }
