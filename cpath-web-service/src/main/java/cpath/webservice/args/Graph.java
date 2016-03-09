@@ -85,7 +85,7 @@ public class Graph {
 				for(String id : item.split("\\s*,\\s*", -1))
 					uris.add(id);
 			} else {
-				uris.add(item);
+				uris.add(item.trim());
 			}
 		}
 		this.target = uris.toArray(new String[uris.size()]);
