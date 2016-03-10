@@ -345,6 +345,7 @@
 										<exclude>net.sf.saxon:*</exclude>
 										<exclude>com.sun.xml.bind:*</exclude>
 										<exclude>c3p0:c3p0</exclude> <!-- com.mchange:c3p0 is the new one -->
+										<exclude>commons-collections:3.2.1</exclude>
 									</excludes>
 								</bannedDependencies>
 								<requireMavenVersion>
