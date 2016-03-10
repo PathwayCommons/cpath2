@@ -37,7 +37,7 @@ public class Get {
 
 	public void setUri(String[] uri) {
 		Set<String> uris = new HashSet<String>(uri.length);
-		for(String item : uris) {
+		for(String item : uri) {
 			if(item.contains(",")) {
 				//split by ',' ignoring spaces and empty values (between ,,)
 				for(String id : item.split("\\s*,\\s*", -1))
