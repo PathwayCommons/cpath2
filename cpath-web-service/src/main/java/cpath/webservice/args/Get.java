@@ -37,13 +37,13 @@ public class Get {
 
 	public void setUri(String[] uri) {
 		Set<String> uris = new HashSet<String>(uri.length);
-		for(String item : uris) {
+		for(String item : uri) {
 			if(item.contains(",")) {
 				//split by ',' ignoring spaces and empty values (between ,,)
 				for(String id : item.split("\\s*,\\s*", -1))
 					uris.add(id);
 			} else {
-				uris.add(item);
+				uris.add(item.trim());
 			}
 		}
 		this.uri = uris.toArray(new String[uris.size()]);

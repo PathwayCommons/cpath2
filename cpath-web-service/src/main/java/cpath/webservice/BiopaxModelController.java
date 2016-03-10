@@ -148,7 +148,7 @@ public class BiopaxModelController extends BasicController {
     	Set<LogEvent> events = new HashSet<LogEvent>();
     	events.add(LogEvent.from(Cmd.GET));
     	
-    	if(bindingResult != null &&  bindingResult.hasErrors()) {
+    	if(bindingResult.hasErrors()) {
     		errorResponse(Status.BAD_REQUEST, 
     				errorFromBindingResult(bindingResult), request, response, events);
     	} else {

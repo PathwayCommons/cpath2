@@ -20,7 +20,7 @@
 			  <p class="navbar-text navbar-left">
 				Powered by <a target="_blank" <%-- class="navbar-link"  --%>
 				href="https://pathwaycommons.github.io/cpath2/">cPath2</a> v${project.version}. <%-- project.version is a Maven var. --%>
-				@Copyright 2009-2014 <a href="http://baderlab.org/" target="_blank">University of
+				@Copyright 2009-2016 <a href="http://baderlab.org/" target="_blank">University of
 				Toronto</a> and <a href="http://www.cbio.mskcc.org" target="_blank">cBio MSKCC</a>
 			  </p>				
 		 </div>
