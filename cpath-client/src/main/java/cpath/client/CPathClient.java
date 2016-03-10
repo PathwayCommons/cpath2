@@ -44,7 +44,7 @@ public class CPathClient
 
 	public static enum Direction
     {
-		UPSTREAM, DOWNSTREAM, BOTHSTREAM;
+		UPSTREAM, DOWNSTREAM, BOTHSTREAM, UNDIRECTED;
     }
 	
 	// suppress using constructors in favor of static factories
@@ -120,7 +120,7 @@ public class CPathClient
 	/**
 	 * Sends a HTTP GET request to the cpath2 server.
 	 * 
-	 * Note: using {@link #post(String, Object, Class)} is the preferred 
+	 * Note: using {@link #post(String, MultiValueMap, Class)} is the preferred
 	 * and more reliable method, especially with complex queries that use URIs or
 	 * Lucene syntax.
 	 * 
@@ -222,7 +222,7 @@ public class CPathClient
      * 
      * @see #getEndPointURL()
      * @see #getActualEndPointURL()
-     * @param endPointURL a cPath2 web service URL
+     * @param url a cPath2 web service URL
      */
     public void setEndPointUrlAndRedirect(final String url) {
         endPointURL = url;
