@@ -27,6 +27,10 @@ import java.util.Map.Entry;
 /**
  * New stateless cPath2 client with create* 
  * methods to conveniently build and run queries.
+ *
+ * Not quite thread-safe (due to using SimpleIOHandler),
+ * especially if (BioPAX) Model is the response type
+ * in #post or #get method calls.
  */
 public class CPathClient
 {
@@ -35,22 +39,19 @@ public class CPathClient
 	// one can set the JVM property: -DcPath2Url="http://some_URL"
 	public static final String JVM_PROPERTY_ENDPOINT_URL = "cPath2Url";	
 	public static final String DEFAULT_ENDPOINT_URL = "http://www.pathwaycommons.org/pc2/";
-		
-	private final RestTemplate restTemplate;
-	
-	private String endPointURL; //original or official url
+
 	private String actualEndPointURL; // actual location (after 301/302/303 redirects)
+	private RestTemplate restTemplate;
+	private String endPointURL; //official external public cpath2 web service url
 	private String name;
 
 	public static enum Direction
     {
 		UPSTREAM, DOWNSTREAM, BOTHSTREAM, UNDIRECTED;
     }
-	
+
 	// suppress using constructors in favor of static factories
     private CPathClient() {
-     	// create a new REST template
-     	restTemplate = new RestTemplate(); //custom message converters will be added there
     }
     
     
@@ -68,19 +69,22 @@ public class CPathClient
      * @param url cpath2 web service endpoint URL or null (to use defaults)
      */
     public static CPathClient newInstance(String url) {
-    	CPathClient client = new CPathClient(); 
-    	
+    	CPathClient client = new CPathClient();
+		// create a new REST template
+		client.restTemplate = new RestTemplate();
      	// add custom cPath2 XML message converter as the first one (accepts 'application/xml' content type)
     	// because one of existing/default msg converters, XML root element based jaxb2, does not work for ServiceResponce types...
     	client.restTemplate.getMessageConverters().add(0, new ServiceResponseHttpMessageConverter());
     	// add BioPAX http message converter
+		// (SimpleIOHandler is not thread-safe; so we cannot share the thread-safe restTemplate)
         client.restTemplate.getMessageConverters().add(1, new BioPAXHttpMessageConverter(new SimpleIOHandler()));
-    	
         // set the cpath2 server URL (or default one or from the java option)
     	if(url == null || url.isEmpty())
-    		url = System.getProperty(JVM_PROPERTY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);  
+			client.endPointURL = System.getProperty(JVM_PROPERTY_ENDPOINT_URL, DEFAULT_ENDPOINT_URL);
+		else
+			client.endPointURL = url;
     	
-    	client.setEndPointUrlAndRedirect(url);
+    	client.updateActualEndPointURL();
 
     	return client;
     }
@@ -223,23 +227,28 @@ public class CPathClient
      * @see #getEndPointURL()
      * @see #getActualEndPointURL()
      * @param url a cPath2 web service URL
+	 * @deprecated - will be made private or removed soon; please use #newInstance.
      */
     public void setEndPointUrlAndRedirect(final String url) {
-        endPointURL = url;
-        actualEndPointURL = endPointURL; //initially the same
-    	// discover actual resource location from the initial one (also, trying to avoid going in circles):
-        int i=0;
-        for(URI loc = URI.create(endPointURL); loc != null && i<5; i++ ) 
-        { 				
-        	loc = restTemplate.postForLocation(loc, null);
-        	
-        	if(loc != null)
-        		actualEndPointURL = loc.toString();
-        	
-   			LOGGER.info("Location: " + loc);
-    	}
+        this.endPointURL = url;
+        updateActualEndPointURL();
     }
-	
+
+	// this (using actualEndPointURL) is required for POST queries to work through proxy/redirects on the way...
+	private void updateActualEndPointURL() {
+		actualEndPointURL = endPointURL; //initially, it's the same
+		// query for the location using previous/initial one until both are the same:
+		int i=0;
+		for(URI loc = URI.create(endPointURL); loc != null && i<5; i++ )
+		{
+			loc = restTemplate.postForLocation(loc, null);
+
+			if(loc != null)
+				actualEndPointURL = loc.toString();
+
+			LOGGER.info("Location: " + loc);
+		}
+	}
 	
 	/**
 	 * Creates a new full-text search query object
