@@ -47,7 +47,12 @@ public class PagesController extends BasicController {
     	return cpath;
     }
 
-    @RequestMapping("/home")
+	@RequestMapping("/")
+	public String contextRoot() {
+		return "home";
+	}
+
+	@RequestMapping("/home")
     public String home() {
     	return "home";
     }	    

@@ -31,7 +31,6 @@ biologicaal networks, ontology, knowledge, analysis, cancer research, systems bi
 <script src="<spring:url value='/resources/scripts/angular.js'/>"></script>
 <%-- <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.2.15/angular-route.min.js"></script> --%>
 <script src="<spring:url value='/resources/scripts/angular-route.js'/>"></script>
-<script src="<spring:url value='/resources/scripts/pc.js'/>"></script>
 
 <!--[if lt IE 8]>
       <script src="<spring:url value='/resources/scripts/icon-font-ie7.js'/>"></script>
@@ -41,3 +40,5 @@ biologicaal networks, ontology, knowledge, analysis, cancer research, systems bi
 <!--[if lt IE 9]>
 	<script src="<spring:url value='/resources/scripts/html5shiv.js'/>"></script>
 <![endif]-->
+
+<script src="<spring:url value='/resources/scripts/pc.js'/>"></script>

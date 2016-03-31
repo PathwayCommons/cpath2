@@ -138,6 +138,7 @@ public final class CPathSettings {
     public static final String PROVIDER_URL = "cpath2.provider.url";
 	public static final String PROVIDER_LOGO_URL = "cpath2.provider.logo.url";
 	public static final String PROVIDER_ORGANISMS = "cpath2.provider.organisms";
+	public static final String PROVIDER_DOWNLOADS_URL = "cpath2.provider.downloads.url";
 
 	//properties to set the default global start/end dates for all the access log timeline queries;
 	//These may be ignored if another range is set via web api (per query)
@@ -235,6 +236,14 @@ public final class CPathSettings {
 		setCPathProperty(PROVIDER_URL, url);
 	}
 
+
+	public String getDownloadsUrl() {
+		return property(PROVIDER_DOWNLOADS_URL);
+	}
+
+	public void setDownloadsUrl(String url) {
+		setCPathProperty(PROVIDER_DOWNLOADS_URL, url);
+	}
 
 	/**
 	 * Species supported by this cPath2 instance 

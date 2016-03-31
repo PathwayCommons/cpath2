@@ -25,6 +25,8 @@ import cpath.webservice.args.binding.OutputFormatEditor;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.WebDataBinder;
@@ -41,7 +43,8 @@ import javax.validation.Valid;
  */
 @Controller
 public class BiopaxModelController extends BasicController {
-   	
+
+	private static final Logger log = LoggerFactory.getLogger(BiopaxModelController.class);
     private static final String xmlBase = CPathSettings.getInstance().getXmlBase();
 	
     
@@ -96,8 +99,9 @@ public class BiopaxModelController extends BasicController {
 		if(localId.contains(":") || localId.contains("#") || localId.contains(" "))
 			localId = localId.replaceAll(":", "%3A").replaceAll("#", "%23").replaceAll(" ", "+");
 		String maybeUri = xmlBase + localId;
-
-		if(service.getModel().containsID(maybeUri)) {
+		log.debug("trying /get?uri=" + maybeUri);
+		if(service.getModel() != null //can be debug mode
+				&& service.getModel().containsID(maybeUri)) {
 			Get get = new Get();
 			get.setUri(new String[]{maybeUri});
 			// delegate this task to "/get" (by URI/ID) command
