@@ -35,40 +35,12 @@
 	<nav id="header_navbar" class="navbar navbar-default navbar-fixed-top" role="navigation">
 		<div class="container">
 			<div class="navbar-header">
-				<%--<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#top-navbar-collapse">--%>
-					<%--<span class="sr-only">Toggle navigation</span>--%>
-					<%--<span class="icon-bar"></span>--%>
-					<%--<span class="icon-bar"></span>--%>
-					<%--<span class="icon-bar"></span>--%>
-				<%--</button>--%>
 				<a class="navbar-brand" href="${cpath.url}">
 					<img alt="Project Team Logo" src="${cpath.logoUrl}" id="team-logo"/>&nbsp;
 					<c:out value="${cpath.name} Web Service v${cpath.version}"/>&nbsp;
 					<c:if test="${cpath.adminEnabled}"><strong>(Maintenance mode)</strong></c:if>
 				</a>
 			</div>
-			<%--<div class="collapse navbar-collapse pull-right" id="top-navbar-collapse">--%>
-				<%--<ul class="nav navbar-nav">--%>
-					<%--<li class="dropdown">--%>
-						<%--<a href="#" class="dropdown-toggle" data-toggle="dropdown">Web Service<b class="caret"></b></a>--%>
-						<%--<span class="dropdown-arrow"></span>--%>
-						<%--<ul class="dropdown-menu">--%>
-							<%--<spring:url value="/home" var="home" />--%>
-							<%--<li><a href="${home}" class="smooth-scroll">About</a></li>--%>
-							<%--<li class="divider"></li>--%>
-							<%--<li><a href="${home}#search" class="smooth-scroll">Search</a></li>--%>
-							<%--<li><a href="${home}#get" class="smooth-scroll">Get</a></li>--%>
-							<%--<li><a href="${home}#traverse" class="smooth-scroll">Traverse</a></li>--%>
-							<%--<li><a href="${home}#graph" class="smooth-scroll">Graph</a></li>--%>
-							<%--<li><a href="${home}#top_pathways" class="smooth-scroll">Top pathways</a></li>--%>
-							<%--<li class="divider"></li>--%>
-							<%--<li><a href="${home}#parameter_values" class="smooth-scroll">Values</a></li>--%>
-						<%--</ul>--%>
-					<%--</li>--%>
-					<%--<li><a href="<spring:url value='/datasources'/>">Providers</a></li>--%>
-					<%--<li><a href="<spring:url value='/downloads'/>">Downloads</a></li>--%>
-				<%--</ul>--%>
-			<%--</div> <!-- collapse -->--%>
 		</div> <!-- container -->
 	</nav>
 </header>
@@ -85,12 +57,11 @@
 <footer class="footer">
 	<div id="footer_navbar" class="navbar navbar-default navbar-fixed-bottom">
 		<div class="container">
-			<p class="navbar-text navbar-left">
-				Powered by <a target="_blank" <%-- class="navbar-link"  --%>
-							  href="https://pathwaycommons.github.io/cpath2/">cPath2</a> v${project.version}.
-				<%-- project.version is a Maven var. --%>
-				@Copyright 2009-2016 <a href="http://baderlab.org/" target="_blank">University of
-				Toronto</a> and <a href="http://www.cbio.mskcc.org" target="_blank">cBio MSKCC</a>
+			<p class="navbar-text navbar-left"> <%--project.version is a Maven var.--%>
+				<small><a target="_blank" href="https://pathwaycommons.github.io/cpath2/">cPath2</a> v${project.version}.
+				 &copy; 2006-2016 <a href="http://baderlab.org/" target="_blank">Bader Lab</a> (UofT),
+				<a href="http://www.sanderlab.org" target="_blank">cBio</a> (MSKCC; DFCI, HMS) and Demir Lab (OHSU).
+				</small>
 			</p>
 		</div>
 	</div>

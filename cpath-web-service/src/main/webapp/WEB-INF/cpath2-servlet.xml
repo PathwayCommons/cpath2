@@ -38,6 +38,8 @@
 		<property name="exceptionAttribute"><value>convertedException</value></property>
 	</bean>
 
+	<!--<mvc:view-controller path="/" view-name="home" />-->
+
 	<bean id="viewResolver"
 		class="org.springframework.web.servlet.view.UrlBasedViewResolver">
 		<property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
@@ -49,13 +51,6 @@
 		<bean class="cpath.webservice.CPathMaintenanceHandlerInterceptor" />
 		<bean class="cpath.webservice.CPathWebserviceHandlerInterceptor" />           
     </mvc:interceptors>
-	    
-	<!-- serve all cpath2 generated data archives (organized by species, data sources, formats) -->	
-	<mvc:resources mapping="/downloads/**" location="file:${CPATH2_HOME}/downloads/" />
-	<!-- also serve cpath2 original and premerged data archives and validation reports -->		
-	<mvc:resources mapping="/datadir/**" location="file:${CPATH2_HOME}/data/" />
-	<!-- do not want config. and data files seen at all (even securely, by admin), then disable the following line -->
-	<mvc:resources mapping="/admin/homedir/**" location="file:${CPATH2_HOME}/" />
 
 	<!-- contentNegotiationManager also makes .xml, .json extensions work (to return JSON or XML 
 	content, respectively, when JAXB and Jackson dependencies present at runtime)-->
@@ -75,6 +70,12 @@
 		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
 		<property name="maxUploadSize" value="100000000" /><!-- 100Mb (normally zipped files) -->
 	</bean>
+
+	<!--<mvc:resources mapping="/downloads/**" location="file:${CPATH2_HOME}/downloads/" />-->
+	<!-- also serve cpath2 original and premerged data archives and validation reports -->
+	<mvc:resources mapping="/datadir/**" location="file:${CPATH2_HOME}/data/" />
+	<!-- do not want config. and data files seen at all (even securely, by admin), then disable the following line -->
+	<mvc:resources mapping="/admin/homedir/**" location="file:${CPATH2_HOME}/" />
 
 	<mvc:resources mapping="/resources/**" location="/resources/" />
 
