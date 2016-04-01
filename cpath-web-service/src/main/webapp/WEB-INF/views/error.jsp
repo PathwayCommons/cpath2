@@ -11,7 +11,7 @@
 	<meta name="author" content="${cpath.name}" />
 	<meta name="description" content="${cpath.name} web services, version ${cpath.version},
 	powered by cPath2 software, version ${project.version}" />
-	<link href="<spring:url value='/resources/css/bootstrap.min.css" rel="stylesheet'/>" />
+	<link href="<spring:url value='/resources/css/bootstrap.min.css'/>" rel="stylesheet" />
 	<%-- <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet"> --%>
 	<link href="<spring:url value='/resources/css/pc.css'/>" rel="stylesheet" />
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
