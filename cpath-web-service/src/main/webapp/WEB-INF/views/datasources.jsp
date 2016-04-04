@@ -186,9 +186,8 @@ for regular users, - show the compact read-only summary of the data providers --
        				 	<span ng-show="ds.numPhysicalEntities > 0"><span class="badge alert-info">{{ds.numPhysicalEntities}}</span> participants</span>
        				</p>
        				<p ng-hide="ds.notPathwayData">
-       				  <em>Access summary: </em>
-       				  <a target="_blank" rel="nofollow" class="alert-success" ng-href="<spring:url value='/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats'/>">
-       				  no. requests/users.</a>
+       				  <em><a target="_blank" rel="nofollow" class="alert-success" ng-href="<spring:url
+       				  value='/log/PROVIDER/{{ds.name[1] || ds.name[0]}}/stats'/>">Access summary</a></em>
        				</p>
        				<p>
        				  <em>Publication: </em>{{ds.citation}} 
