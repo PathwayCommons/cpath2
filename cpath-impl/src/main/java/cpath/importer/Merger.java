@@ -166,37 +166,40 @@ public final class Merger {
 	}
 
 	private Model merge(Metadata metadata) {
-		log.info("Begin merging warehouse data with pathway data from  " + metadata);
-		
-		Model targetModel = BioPAXLevel.L3.getDefaultFactory().createModel();
-		targetModel.setXmlBase(xmlBase);
-		
-		for (Content pwdata : metadata.getContent()) {
-			final String description = pwdata.toString();
-			if (!new File(pwdata.normalizedFile()).exists()) {
-				log.warn("Skipped " + description + " - haven't fully gone through the premerge stage yet");
-				continue;
+		Model targetModel = CPathUtils.loadBiopaxModelByDatasource(metadata);
+		if(targetModel == null) {
+			targetModel = BioPAXLevel.L3.getDefaultFactory().createModel();
+			targetModel.setXmlBase(xmlBase);
+
+			for (Content pwdata : metadata.getContent()) {
+				final String description = pwdata.toString();
+				if (!new File(pwdata.normalizedFile()).exists()) {
+					log.warn("Skipped " + description + " - haven't fully gone through the premerge stage yet");
+					continue;
+				}
+
+				log.info("Merging: " + description);
+
+				// import the BioPAX L3 pathway data into the in-memory paxtools model
+				InputStream inputStream;
+				try {
+					inputStream = new GZIPInputStream(new FileInputStream(pwdata.normalizedFile()));
+				} catch (IOException e) {
+					log.error("Skipped " + description + " - " +
+							"failed to read from " + pwdata.normalizedFile());
+					continue;
+				}
+
+				Model inputModel = (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream);
+				merge(description, inputModel, targetModel);
 			}
 
-			log.info("Merging: " + description);
-			
-			// import the BioPAX L3 pathway data into the in-memory paxtools model
-			InputStream inputStream;
-			try {
-				inputStream = new GZIPInputStream(new FileInputStream(pwdata.normalizedFile()));
-			} catch (IOException e) {
-				log.error("Skipped " + description + " - " +
-					"failed to read from " + pwdata.normalizedFile());
-				continue;
-			}
-
-			Model inputModel = (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream);
-			merge(description, inputModel, targetModel);
+			ModelUtils.removeObjectsIfDangling(targetModel, UtilityClass.class);
+			log.info("Done merging " + metadata);
+		} else {
+			log.info("merge(), loaded previously created " + metadata.getIdentifier() + " BioPAX model.");
 		}
 
-		ModelUtils.removeObjectsIfDangling(targetModel, UtilityClass.class);
-		
-		log.info("Done merging " + metadata);
 		return targetModel;
 	}
 
