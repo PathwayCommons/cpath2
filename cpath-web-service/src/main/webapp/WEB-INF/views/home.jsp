@@ -5,9 +5,6 @@
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <!-- get the root/base URL (e.g., depends on whether the WAR was deployed on a Tomcat 
 or the fat JAR with embedded application server was started) -->
-<c:set var="req" value="${pageContext.request}" />
-<c:set var="uri" value="${req.requestURI}" />
-<c:set var="base" value="${fn:replace(req.requestURL, fn:substring(uri, 1, fn:length(uri)), req.contextPath)}" />
 
 <!DOCTYPE html>
 <html>
@@ -58,8 +55,8 @@ or the fat JAR with embedded application server was started) -->
 		BioPAX types, and properties, e.g., /help/schema, /help/commands, /help/types;</li>
 		<li><em>/log/</em> - service access summary, e.g., /log/totals, /log/TOTAL/geography/world, /log/timeline;</li>
 		<li><em>/[rdf:ID]</em> - every BioPAX object's URI in this resource is a resolvable URL, because  
-		current XML base: ${cpath.xmlBase} redirects to the web service base URL: ${base}, and,  
-		e.g., ${cpath.xmlBase}pid URL is by design equivalent to ${base}get?uri=${cpath.xmlBase}pid  
+		current XML base: ${cpath.xmlBase} redirects to the web service base URL, and,
+		e.g., ${cpath.xmlBase}pid URL is by design equivalent to /get?uri=${cpath.xmlBase}pid
 		query (gets the BioPAX RDF/XML representation of the Provenance object).
 		</li>
 	</ul>
@@ -75,17 +72,17 @@ or the fat JAR with embedded application server was started) -->
 		are either standard <a href="http://identifiers.org" target="_blank">Identifiers.org</a>
 		URLs (for most canonical biological entities and controlled vocabularies), or ${cpath.name} 
 		generated ${cpath.xmlBase}<em>&lt;localID&gt;</em> URLs (for most BioPAX Entities and Xrefs).
-		BioPAX object URIs used by this service are not easy to guess, thus should be discovered using 
-		web service commands, such as search, top_pathways, and other queries (i.e., get some objects of interest first). 
-		For example, despite knowing current URI namespace ${cpath.xmlBase} and actual service location ${base}, 
-		one should not normally hit ${base}foo, ${cpath.xmlBase}foo, or ${base}get?uri=${cpath.xmlBase}foo 
-		unless the corresponding BioPAX individual exists.
+		BioPAX object URIs used by this service are not easy to guess; thus, they should be discovered using
+		web service commands, such as search, top_pathways, or from our archive files.
+		For example, despite knowing current URI namespace ${cpath.xmlBase} and the service location,
+		one should not guess /foo, ${cpath.xmlBase}foo, or get?uri=${cpath.xmlBase}foo
+		unless the BioPAX individual actually there exists (find existing object URIs of interest first).
 		However, HUGO gene symbols, SwissProt, RefSeq, Ensembl, and NCBI Gene (positive integer) 
 		<strong>ID; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem Compound or Substance 
 		(ID must be prefixed with 'CID:' or 'SID:' to distinguish from each other and NCBI Gene), 
 		are also acceptable in place of full URIs</strong> in <em>get</em> and <em>graph</em> queries.
-		As a rule of thumb, using full URIs makes a precise query, whereas using identifiers makes a 
-		more exploratory one, which depends on full-text search, which (index) in turn depends on id-mapping.
+		As a rule of thumb, using full URIs makes a precise query, whereas using the identifiers makes a
+		more exploratory one, which depends on full-text search (index) and id-mapping.
 		</p>
 
 		<h4><a id="enco"></a>About example URLs</h4>
