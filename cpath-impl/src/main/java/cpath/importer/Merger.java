@@ -430,35 +430,27 @@ public final class Merger {
 
 
 	/* 
-	 * Replace all not PC2 URIs in the source model
-	 * with new auto-generated ones using the PC2 xml:base
-	 * (also add a bp:comment about previous URIs)
+	 * Replaces conflicting URIs in the source model
+	 * by auto-generated ones (using the xml:base)
+	 * and add the original URIs to bp:comment property.
 	 */
 	private void replaceOriginalUris(Model source, String description) {
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
 		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
 			String currUri = bpe.getUri();
-
-			// skip for some previously normalized or generated objects
-			if(	currUri.startsWith(xmlBase)
-				|| (bpe instanceof PublicationXref && currUri.startsWith("http://identifiers.org/pubmed"))
-				|| (currUri.startsWith("http://identifiers.org/") &&
-					(	bpe instanceof Process
-						|| bpe instanceof ProteinReference
-						|| bpe instanceof SmallMoleculeReference
-						//or BioSource if both tissue and cellType are not defined -
-						|| (bpe instanceof BioSource && ((BioSource)bpe).getTissue()==null && ((BioSource)bpe).getCellType()==null)
-					)
-				)
-			){continue;}
-
-			// Generate new consistent URI for not generated not previously normalized objects:
-			String newUri = Normalizer.uri(xmlBase, null, description + currUri, bpe.getModelInterface());
-			
-			// Replace URI
-			CPathUtils.replaceID(source, bpe, newUri);
-			// save original URI in comments
-			((Level3Element) bpe).addComment("REPLACED " + currUri);
+			BioPAXElement target = mainModel.getByID(currUri);
+			// skip for some new URIs, or for already normalized or generated objects
+			if( target != null && bpe.getModelInterface() != target.getModelInterface())
+			{
+				log.info(String.format("replaceOriginalUris: main model has %s with the URI '%s', " +
+					"which also belongs to %s in the source (%s) model.", description));
+				// Generate new consistent URI for not generated not previously normalized objects:
+				String newUri = Normalizer.uri(xmlBase, null, description + currUri, bpe.getModelInterface());
+				// Replace URI
+				CPathUtils.replaceID(source, bpe, newUri);
+				// save original URI in comments
+				((Level3Element) bpe).addComment("REPLACED " + currUri);
+			}
 		}
 	}
 

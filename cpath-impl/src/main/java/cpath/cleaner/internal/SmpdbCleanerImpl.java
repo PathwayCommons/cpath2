@@ -60,10 +60,7 @@ final class SmpdbCleanerImpl implements Cleaner {
 				}
 			}
 			//replace shortened ugly displayName with standardName
-			if(pw.getDisplayName() == null || pw.getDisplayName().contains("...")) {
-				//replace shortened/truncated pathway names
-				pw.setDisplayName(pw.getStandardName());
-			}
+			pw.removeName("SubPathway");
 		}
 
 		//unlink from a SimplePhysicalEntity Xrefs that also belong to the entity reference (if not null)
