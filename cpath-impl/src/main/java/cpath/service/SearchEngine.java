@@ -553,7 +553,7 @@ public class SearchEngine implements Indexer, Searcher {
 				if (xref.getId() != null) {
 					//the filed is not_analyzed; so in order to make search case-insensitive 
 					//(when searcher uses standard analyzer), we turn the value to lowercase.
-					field = new TextField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
+					field = new StringField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
 					doc.add(field);
 				}
 			}
@@ -563,7 +563,7 @@ public class SearchEngine implements Indexer, Searcher {
 		if(bpe instanceof Xref) {
 			Xref xref = (Xref) bpe;
 			if (xref.getId() != null) {
-				field = new TextField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
+				field = new StringField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
 				doc.add(field);
 			}
 			if (xref.getDb() != null) {
