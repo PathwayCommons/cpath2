@@ -104,8 +104,7 @@ public final class Merger {
 		//using a SimpleMerger with Filter (ERs,Pathways) here (to merge ent. features, xrefs, comments, etc.)
 		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, new Filter<BioPAXElement>() {		
 			public boolean filter(BioPAXElement object) {
-				return object instanceof EntityReference || object instanceof Pathway;
-				//though, normally, pathways in different source models have different URIs and never merge/clash...
+				return true; //to copy mul. cardinality obj. props of matching by uri elements
 			}
 		});
 		
@@ -123,10 +122,6 @@ public final class Merger {
 
 			// merge all (normalized BioPAX) data files of the same provider into one-provider model:
 			Model providerModel = merge(metadata);
-
-			//merge equiv. PEs within a data source (e.g., stateless vcam1 P19320 MI participants in hprd, intact, biogrid)
-			log.info("Merging all equivalent physical entity groups (" + metadata.getIdentifier() + ")...");
-			ModelUtils.mergeEquivalentPhysicalEntities(providerModel);
 
 			//export to the biopax archive in the batch downloads dir.
 			save(providerModel, metadata);
@@ -195,6 +190,15 @@ public final class Merger {
 			}
 
 			ModelUtils.removeObjectsIfDangling(targetModel, UtilityClass.class);
+
+			//merge equiv. PEs within a data source (e.g., stateless vcam1 P19320 MI participants in hprd, intact, biogrid)
+			log.info("Merging all equivalent physical entity groups (" + metadata.getIdentifier() + ")...");
+			ModelUtils.mergeEquivalentPhysicalEntities(targetModel);
+
+			// Replace not normalized so far URIs with generated ours; add a bp:comment about original URIs
+			log.info("Assigning new URIs (" + xmlBase + "*) to all not yet normalized BioPAX elements...");
+			replaceOriginalUris(targetModel, metadata.getIdentifier());
+
 			log.info("Done merging " + metadata);
 		} else {
 			log.info("merge(), loaded previously created " + metadata.getIdentifier() + " BioPAX model.");
@@ -365,20 +369,11 @@ public final class Merger {
 			}
 		}
 		
-		/* 
-		 * Replace all not normalized so far URIs in the source model 
-		 * with auto-generated new short ones (also add a bp:comment about original URIs)
-		 */
-		log.info("Assigning new URIs (xml:base=" + xmlBase + 
-				"*) to all not normalized BioPAX elements (" + 
-				srcModelInfo + ", xml:base=" + source.getXmlBase() + ")...");
-		replaceOriginalUris(source, description);
-		
 		log.info("Merging into the target one-datasource BioPAX model...");
 		// merge all the elements and their children from the source to target model
 		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, new Filter<BioPAXElement>() {		
 			public boolean filter(BioPAXElement object) {
-				return object instanceof EntityReference || object instanceof Pathway;
+				return true; //to copy mul.card. prop. from source to target obj. having same URI
 			}
 		});
 		simpleMerger.merge(target, source);

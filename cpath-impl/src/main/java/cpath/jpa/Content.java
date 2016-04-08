@@ -56,7 +56,7 @@ public final class Content {
     /**
      * Create a Content domain object (value object).
      * 
-     * @param provider must be output provider for normalized data and validation reports
+     * @param metadata must be output provider for normalized data and validation reports
      * @param filename file name base (prefix for the normalized data and validation report file names)
      */
     public Content(Metadata metadata, String filename) 
