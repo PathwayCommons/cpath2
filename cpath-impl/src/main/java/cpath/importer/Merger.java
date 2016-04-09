@@ -196,12 +196,12 @@ public final class Merger {
 			ModelUtils.mergeEquivalentPhysicalEntities(targetModel);
 
 			// Replace not normalized so far URIs with generated ours; add a bp:comment about original URIs
-			log.info("Assigning new URIs (" + xmlBase + "*) to all not yet normalized BioPAX elements...");
+			log.info("Replacing some original URIs with " + xmlBase + "* as needed...");
 			replaceOriginalUris(targetModel, metadata.getIdentifier());
 
 			log.info("Done merging " + metadata);
 		} else {
-			log.info("merge(), loaded previously created " + metadata.getIdentifier() + " BioPAX model.");
+			log.info("Loaded previously created " + metadata.getIdentifier() + " BioPAX model.");
 		}
 
 		return targetModel;
@@ -442,8 +442,9 @@ public final class Merger {
 			// skip for some new URIs, or for already normalized or generated objects
 			if( target != null && bpe.getModelInterface() != target.getModelInterface())
 			{
-				log.info(String.format("replaceOriginalUris: main model has %s with the URI '%s', " +
-					"which also belongs to %s in the source (%s) model.", description));
+				log.info(String.format("replaceOriginalUris: main model has %s having uri=%s, " +
+					"which also belongs to %s in the source (%s).",
+						target.getModelInterface(), currUri, bpe.getModelInterface(), description));
 				// Generate new consistent URI for not generated not previously normalized objects:
 				String newUri = Normalizer.uri(xmlBase, null, description + currUri, bpe.getModelInterface());
 				// Replace URI
