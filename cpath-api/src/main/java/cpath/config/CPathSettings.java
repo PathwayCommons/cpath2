@@ -53,9 +53,6 @@ import cpath.service.Scope;
  * configuration constants and properties.
  * Singleton.
  * 
- * Some properties can be modified 
- * at runtime, i.e, via the admin tool.
- * 
  * But this is not for cpath2 clients to care.
  * 
  * @author rodche
@@ -117,8 +114,6 @@ public final class CPathSettings {
 	 * (loaded by Spring property placeholder from the cpath2.properties,
 	 * but can be also via java -D options too)
 	 */
-	public static final String PROP_ADMIN_USER = "cpath2.admin.user";
-	public static final String PROP_ADMIN_PASSW = "cpath2.admin.password";
 	
 	/* Unlike the above, following properties are not used by Spring/Hibernate right away;
 	 * normally, cpath2 starts even though these might not be set and will  

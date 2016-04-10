@@ -151,7 +151,6 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring.version>4.1.7.RELEASE</spring.version>
-		<spring-security.version>4.0.1.RELEASE</spring-security.version>
 		<hibernate.version>4.3.10.Final</hibernate.version>
 		<lucene.version>4.10.4</lucene.version>
 		<h2.version>1.4.187</h2.version>
@@ -611,21 +610,6 @@
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-aspects</artifactId>
 				<version>${spring.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.security</groupId>
-				<artifactId>spring-security-core</artifactId>
-				<version>${spring-security.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.security</groupId>
-				<artifactId>spring-security-taglibs</artifactId>
-				<version>${spring-security.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.security</groupId>
-				<artifactId>spring-security-config</artifactId>
-				<version>${spring-security.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.validator</groupId>

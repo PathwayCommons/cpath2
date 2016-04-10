@@ -22,7 +22,6 @@
 		<param-name>contextConfigLocation</param-name>
 		<param-value>
 			classpath:META-INF/spring/applicationContext-jpa.xml
-			classpath:security-config.xml
 		</param-value>
 	</context-param>
 
@@ -45,15 +44,6 @@
 	</filter-mapping>
 	
 	<filter>
-		<filter-name>springSecurityFilterChain</filter-name>
-		<filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
-	</filter>
-	<filter-mapping>
-		<filter-name>springSecurityFilterChain</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-	
-	<filter>
 		<filter-name>CorsFilter</filter-name>
 		<filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
 	</filter>
@@ -61,17 +51,7 @@
 		<filter-name>CorsFilter</filter-name>
 <!-- 		<url-pattern>/*</url-pattern> -->
 		<servlet-name>cpath2</servlet-name>
-	</filter-mapping>	
-
-<!-- for debugging/investigations (do not use in production) -->
-<!-- 	<filter> -->
-<!--     	<filter-name>TeeFilter</filter-name> -->
-<!--     	<filter-class>ch.qos.logback.access.servlet.TeeFilter</filter-class> -->
-<!-- 	</filter>  -->
-<!-- 	<filter-mapping> -->
-<!--     	<filter-name>TeeFilter</filter-name> -->
-<!--     	<url-pattern>/*</url-pattern> -->
-<!-- 	</filter-mapping> -->
+	</filter-mapping>
 
 	<servlet>
 		<servlet-name>cpath2</servlet-name>

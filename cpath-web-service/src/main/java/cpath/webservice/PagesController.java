@@ -7,29 +7,20 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-//import java.util.Iterator;
-//import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import cpath.config.CPathSettings;
@@ -73,70 +64,11 @@ public class PagesController extends BasicController {
     @RequestMapping("/datasources")
     public String datasources() {
     	return "datasources";
-    }     
-    
-    
-    @RequestMapping(value="/admin", method=RequestMethod.GET)
-    public String adminPage() {
-    	return "admin";
-    }
-    
-    @RequestMapping(value="/admin", method=RequestMethod.POST)
-    public String adminPageAction(
-    		@RequestParam(required=false) String admin, 
-    		@RequestParam(required=false) String debug,
-    		@RequestParam(required=false) @DateTimeFormat(iso=ISO.DATE) Date logStartDate,
-    		@RequestParam(required=false) @DateTimeFormat(iso=ISO.DATE) Date logEndDate)
-    {
-
-    	cpath.setAdminEnabled("on".equals(admin));
-   		cpath.setDebugEnabled("on".equals(debug));
-
-   		//check
-   		if(logStartDate!=null && logEndDate!=null
-   				&& logStartDate.compareTo(logEndDate) > 0) { 
-   	   		LOG.error("adminPageAction, the log start date cannot be greater than end date (ignored)");
-   	   		//TODO also show this error message on the page
-   		} else { //update
-   			try {
-   				cpath.setLogStart(logStartDate);
-   				cpath.setLogEnd(logEndDate);
-   				LOG.info(String.format("adminPageAction, new default/global log timeline range: %s - %s.", 
-   	   	   				cpath.getLogStart(), cpath.getLogEnd()));
-   			} catch(Throwable e) {
-   				LOG.error("adminPageAction, failed", e);
-   			}
-   		}
-    	  		
-    	return "admin";
-    }
-    
-    @RequestMapping("/login")
-    public String login() {
-    	return "login";
-    }
-    
-    @RequestMapping("/denied")
-    public String denied() {
-    	return "denied";
     }
        
     @RequestMapping("/error")
     public String error() {
     	return "error";
-    }
-
-	@RequestMapping("/admin/homedir")
-    public String homedir(Model model, HttpServletRequest request) {
-		
-    	String path = cpath.homeDir(); 
-    	
-    	//find/list all files/dirs in the homedir, but traverse only into "data" subdir
-    	Map<String,String> files = files(path, null, true, Collections.singleton("data"));
-
-    	model.addAttribute("files", files.entrySet());
-		
-		return "homedir";
     }
 
     @RequestMapping("/datadir")
@@ -244,8 +176,8 @@ public class PagesController extends BasicController {
 
 	@RequestMapping("/robots.txt")
 	public @ResponseBody String robots() {
-		// block access to admin, logs, web service commands and data files,
-		// but don't disallow any page resources (css, js, images)
+		// deny robots access to logs, web services and data files,
+		// but allow - to web page resources (css, js, images)
 		return "User-agent: *\n" +
 				"Disallow: /get\n" +
 				"Disallow: /search\n" +
@@ -255,7 +187,6 @@ public class PagesController extends BasicController {
 				"Disallow: /archives\n" +
 				"Disallow: /downloads/\n" +
 				"Disallow: /datadir\n" +
-				"Disallow: /admin\n" +
 				"Disallow: /log\n" +
 				"Disallow: /archives\n" +
 				"Disallow: /help\n" +
