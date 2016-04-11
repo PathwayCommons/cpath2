@@ -59,8 +59,6 @@ final class SmpdbCleanerImpl implements Cleaner {
 
 		ModelUtils.replace(model, replacements);
 		ModelUtils.removeObjectsIfDangling(model, UtilityClass.class);
-		ModelUtils.mergeEquivalentPhysicalEntities(model);
-		ModelUtils.mergeEquivalentInteractions(model);
 		
 		// convert model back to OutputStream for return
 		try {
