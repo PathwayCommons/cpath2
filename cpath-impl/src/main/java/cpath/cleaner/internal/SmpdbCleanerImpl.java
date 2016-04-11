@@ -48,6 +48,7 @@ final class SmpdbCleanerImpl implements Cleaner {
 					} else {
 						//collect to replace the duplicate with equivalent, normalized URI pathway
 						replacements.put(pw, (Pathway) model.getByID(uri));
+						model.remove(pw);
 					}
 					break;
 				}
@@ -57,8 +58,9 @@ final class SmpdbCleanerImpl implements Cleaner {
 		}
 
 		ModelUtils.replace(model, replacements);
-		ModelUtils.removeObjectsIfDangling(model, Pathway.class);
 		ModelUtils.removeObjectsIfDangling(model, UtilityClass.class);
+		ModelUtils.mergeEquivalentPhysicalEntities(model);
+		ModelUtils.mergeEquivalentInteractions(model);
 		
 		// convert model back to OutputStream for return
 		try {
