@@ -31,11 +31,11 @@ final class SmpdbCleanerImpl implements Cleaner {
 		// create bp model from dataFile
 		SimpleIOHandler simpleReader = new SimpleIOHandler(BioPAXLevel.L3);
 		Model model = simpleReader.convertFromOWL(data);
-		log.info("Cleaning SMPDB biopax data, please wait...");
+		log.info("Cleaning SMPDB biopax file...");
 
 		// Normalize Pathway URIs KEGG stable id, where possible
 		Set<Pathway> pathways = new HashSet<Pathway>(model.getObjects(Pathway.class));
-		Map<String, Pathway> newUriToEntityMap = new HashMap<String, Pathway>();
+		final Map<Pathway, Pathway> replacements = new HashMap<Pathway, Pathway>();
 		for(Pathway pw : pathways) {
 			Set<UnificationXref> uxrefs = new ClassFilterSet<Xref, UnificationXref>(
 					new HashSet<Xref>(pw.getXref()), UnificationXref.class);
@@ -43,18 +43,11 @@ final class SmpdbCleanerImpl implements Cleaner {
 			for(UnificationXref x : uxrefs) {
 				if (x.getId() != null && x.getId().startsWith("SMP")) {
 					String uri = "http://identifiers.org/smpdb/" + x.getId();
-					if (!model.containsID(uri) && !newUriToEntityMap.containsKey(uri)) {
-						newUriToEntityMap.put(uri, pw); //collect to replace URIs later (below)
-					} else { //shared unification xref bug
-						log.warn("Fixing: " + x.getId() +
-								" unification xref is shared by several entities: " + x.getXrefOf());
-						RelationshipXref rx = BaseCleaner.getOrCreateRx(x, model);
-						for (XReferrable owner : new HashSet<XReferrable>(x.getXrefOf())) {
-							if (owner.equals(newUriToEntityMap.get(uri)))
-								continue; //keep the entity to be updated unchanged
-							owner.removeXref(x);
-							owner.addXref(rx);
-						}
+					if (!model.containsID(uri)) {
+						CPathUtils.replaceID(model, pw, uri);
+					} else {
+						//collect to replace the duplicate with equivalent, normalized URI pathway
+						replacements.put(pw, (Pathway) model.getByID(uri));
 					}
 					break;
 				}
@@ -63,22 +56,8 @@ final class SmpdbCleanerImpl implements Cleaner {
 			pw.removeName("SubPathway");
 		}
 
-		//unlink from a SimplePhysicalEntity Xrefs that also belong to the entity reference (if not null)
-		for(SimplePhysicalEntity spe : model.getObjects(SimplePhysicalEntity.class)) {
-			EntityReference er = spe.getEntityReference();
-			if(er != null) {
-				for(Xref x : new HashSet<Xref>(spe.getXref())) {
-					if(er.getXref().contains(x)) {
-						spe.removeXref(x);
-					}
-				}
-			}
-		}
-
-		// set standard URIs for selected entities
-		for(String uri : newUriToEntityMap.keySet())
-			CPathUtils.replaceID(model, newUriToEntityMap.get(uri), uri);
-			
+		ModelUtils.replace(model, replacements);
+		ModelUtils.removeObjectsIfDangling(model, Pathway.class);
 		ModelUtils.removeObjectsIfDangling(model, UtilityClass.class);
 		
 		// convert model back to OutputStream for return

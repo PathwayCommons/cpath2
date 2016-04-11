@@ -452,6 +452,10 @@ public final class Merger {
 				// save original URI in comments
 				((Level3Element) bpe).addComment("REPLACED " + currUri);
 			}
+			else if(target == null && currUri.contains("+")) {
+				((Level3Element) bpe).addComment("REPLACED " + currUri);
+				CPathUtils.replaceID(source, bpe, currUri.replaceAll("\\+","_"));
+			}
 		}
 	}
 
