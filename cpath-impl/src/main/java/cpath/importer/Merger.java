@@ -36,7 +36,6 @@ import cpath.service.CPathService;
 
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
-import org.biopax.paxtools.model.level3.Process;
 import org.biopax.paxtools.normalizer.Normalizer;
 import org.biopax.paxtools.util.Filter;
 import org.biopax.paxtools.controller.ModelUtils;
@@ -114,7 +113,8 @@ public final class Merger {
 		for(Metadata metadata : service.metadata().findAll())
 			providersMetadata.add(metadata);
 
-		for (Metadata metadata : providersMetadata) {			
+		for (Metadata metadata : providersMetadata)
+		{
 			if(metadata.isNotPathwayData()) {
 				log.info("Skip for warehouse data: " + metadata);
 				continue;
@@ -124,24 +124,23 @@ public final class Merger {
 			Model providerModel = merge(metadata);
 
 			// Replace not normalized so far URIs with generated ours; add a bp:comment about original URIs
-			log.info("Replacing original URIs with " + xmlBase + "* as needed...");
+			log.info("Replacing original URIs with " + xmlBase + " based URIs...");
 			replaceConflictingUris(providerModel, mainModel);
 			replaceOriginalUris(providerModel, metadata.getIdentifier());
 
-			//export to the biopax archive in the batch downloads dir.
+			// export to the biopax archive
 			save(providerModel, metadata);
 			
-			//merge into the main model
+			// merge into the main model
 			log.info("Merging the integrated '" + metadata.getIdentifier() +
 					"' model into the main all-providers BioPAX model...");
-			
 			simpleMerger.merge(mainModel, providerModel);
 		}
 
 		ModelUtils.removeObjectsIfDangling(mainModel, UtilityClass.class);
 
 		//create or replace the main BioPAX archive
-		log.info("Saving or updating the Main BioPAX file...");
+		log.info("Creating the main ('All') BioPAX archive...");
 		save();
 		
 		log.info("Complete.");
@@ -167,7 +166,8 @@ public final class Merger {
 
 	private Model merge(Metadata metadata) {
 		Model providerModel = CPathUtils.loadBiopaxModelByDatasource(metadata);
-		if(providerModel == null) {
+		if(providerModel == null)
+		{
 			providerModel = BioPAXLevel.L3.getDefaultFactory().createModel();
 			providerModel.setXmlBase(xmlBase);
 
@@ -190,8 +190,7 @@ public final class Merger {
 					continue;
 				}
 
-				Model inputModel = (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream);
-				merge(description, inputModel, providerModel);
+				merge(description, (new SimpleIOHandler(BioPAXLevel.L3)).convertFromOWL(inputStream), providerModel);
 			}
 
 			ModelUtils.removeObjectsIfDangling(providerModel, UtilityClass.class);
@@ -373,7 +372,7 @@ public final class Merger {
 		log.info("Replacing conflicting URIs, if any (" + srcModelInfo + ")");
 		replaceConflictingUris(source, target);
 
-		log.info("Merging into the target one-datasource BioPAX model...");
+		log.info(String.format("Merging %s into the same-datasource model...", srcModelInfo));
 		// merge all the elements and their children from the source to target model
 		SimpleMerger simpleMerger = new SimpleMerger(SimpleEditorMap.L3, new Filter<BioPAXElement>() {		
 			public boolean filter(BioPAXElement object) {
@@ -381,7 +380,7 @@ public final class Merger {
 			}
 		});
 		simpleMerger.merge(target, source);
-		log.info("Merged '" + srcModelInfo + "' model.");
+		log.info("Merged '" + srcModelInfo + "'.");
 
 	}
 
@@ -434,26 +433,35 @@ public final class Merger {
 
 	private void replaceConflictingUris(Model source, Model target) {
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
-		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
+		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects()))
+		{
 			String currUri = bpe.getUri();
-			BioPAXElement targetBpe = target.getByID(currUri);
-			if(targetBpe != null && bpe.getModelInterface() != targetBpe.getModelInterface())
+			if( !(bpe instanceof ProteinReference) && currUri.startsWith("http://identifiers.org/uniprot/")
+				|| !(bpe instanceof SmallMoleculeReference) && currUri.startsWith("http://identifiers.org/chebi/"))
 			{
-				// Generate new consistent URI for not generated not previously normalized objects:
-				String newUri = Normalizer.uri(xmlBase, null,  currUri, bpe.getModelInterface());
-				// Replace URI
+				String newUri = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
 				CPathUtils.replaceID(source, bpe, newUri);
-				// save original URI in comments
 				((Level3Element) bpe).addComment("REPLACED " + currUri);
-				log.info(String.format("Target model has %s, uri=%s, " +
-					"which was also URI of %s in the source model (replaced with %s).",
-						targetBpe.getModelInterface(), currUri, bpe.getModelInterface(), newUri));
+				log.info(String.format("Replaced URI %s of %s with %s due to potential type collision",
+					currUri, bpe.getModelInterface().getSimpleName(), newUri));
+			}
+			else
+			{
+				BioPAXElement targetBpe = target.getByID(currUri);
+				if (targetBpe != null && bpe.getModelInterface() != targetBpe.getModelInterface()) {
+					String newUri = Normalizer.uri(xmlBase, null, currUri, bpe.getModelInterface());
+					CPathUtils.replaceID(source, bpe, newUri);
+					((Level3Element) bpe).addComment("REPLACED " + currUri);
+					log.info(String.format("Replaced URI %s of %s with %s due to type collision: " +
+						"%s in the target model has the same URI", currUri, bpe.getModelInterface().getSimpleName(),
+							newUri, targetBpe.getModelInterface().getSimpleName()));
+				}
 			}
 		}
 	}
 
 	/* 
-	 * Replaces most (not normalized/standard) original URIs
+	 * Replaces not normalized original URIs
 	 * in the one-datasource (merged) source model
 	 * with auto-generated new ones (using the xml:base);
 	 * adds the original URIs to bp:comment property.
@@ -462,28 +470,14 @@ public final class Merger {
 		//wrap source.getObjects() in a new set to avoid concurrent modif. excep.
 		for(BioPAXElement bpe : new HashSet<BioPAXElement>(source.getObjects())) {
 			String currUri = bpe.getUri();
-
-			if(currUri.startsWith(xmlBase)) {
-				continue; //previously normalized/generated URI has to be good to go (unless there's a bug somewhere)
+			if( !(currUri.startsWith(xmlBase) || currUri.startsWith("http://identifiers.org/")) ) {
+				// Generate a new URI (using Md5hex);
+				// we use metadataId part here to avoid merging/messing up Evidence, SequenceSite, Stoichiometry,
+				// etc. (usually not equivalent) annotation class things from different data providers...
+				String newUri = Normalizer.uri(xmlBase, null, metadataId + currUri, bpe.getModelInterface());
+				CPathUtils.replaceID(source, bpe, newUri);
+				((Level3Element) bpe).addComment("REPLACED " + currUri);
 			}
-			else if (bpe instanceof PublicationXref && currUri.startsWith("http://identifiers.org/pubmed")) {
-				continue;
-			}
-			else if( currUri.startsWith("http://identifiers.org/") &&
-				(bpe instanceof Process || bpe instanceof ProteinReference || bpe instanceof SmallMoleculeReference
-					//or BioSource if both tissue and cellType are not defined -
-					|| (bpe instanceof BioSource && ((BioSource)bpe).getTissue()==null && ((BioSource)bpe).getCellType()==null)
-				)
-			) {
-				continue;
-			}
-
-			// Generate a new unique URI (using MD5hex string hash)
-			String newUri = Normalizer.uri(xmlBase, null, metadataId + currUri, bpe.getModelInterface());
-			// Replace URI
-			CPathUtils.replaceID(source, bpe, newUri);
-			// save original URI in comments
-			((Level3Element) bpe).addComment("REPLACED " + currUri);
 		}
 	}
 

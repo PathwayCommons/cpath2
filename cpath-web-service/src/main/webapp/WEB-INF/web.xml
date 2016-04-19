@@ -49,8 +49,8 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>CorsFilter</filter-name>
-<!-- 		<url-pattern>/*</url-pattern> -->
-		<servlet-name>cpath2</servlet-name>
+ 		<url-pattern>/*</url-pattern>
+		<!--<servlet-name>cpath2</servlet-name>-->
 	</filter-mapping>
 
 	<servlet>
