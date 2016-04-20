@@ -33,10 +33,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -284,7 +281,25 @@ public final class CPathSettings {
 		}
 		return taxids;
 	}
-	
+
+	/**
+	 * A map of supported taxonomy id, name,
+	 * @return the map of taxId,name that this service supports
+	 * @throws AssertionError when taxonomy ID cannot be recognised or not found there.
+	 */
+	public Map<String,String> getOrganismsAsTaxonomyToNameMap() {
+		Map<String,String> m = new HashMap<String,String>();
+		final Pattern taxIdPattern = Pattern.compile("([a-zA-Z0-9\\. ]+)\\s*\\(\\s*(\\d+)\\s*\\)");
+		for(String org : getOrganisms()) {
+			Matcher matcher = taxIdPattern.matcher(org);
+			if(matcher.find()) {
+				m.put(matcher.group(2), matcher.group(1).trim());
+			} else
+				throw new AssertionError("getOrganismTaxonomyIds, taxonomy ID not found in: " + org);
+		}
+		return m;
+	}
+
 	/**
 	 * This cPath2 instance version
 	 * (not cpath2 software's but the resource's)

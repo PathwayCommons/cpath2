@@ -72,6 +72,9 @@ public class DataImportTest {
 		//should not fail:
 		CPathSettings.getInstance().getOrganismTaxonomyIds();
 
+		assertTrue(CPathSettings.getInstance().getOrganismsAsTaxonomyToNameMap().containsKey("9606"));
+		assertEquals("Homo sapiens", CPathSettings.getInstance().getOrganismsAsTaxonomyToNameMap().get("9606"));
+
 		// prepare the metadata
         // load the test metadata and create warehouse
 		service.addOrUpdateMetadata("classpath:metadata.conf");	

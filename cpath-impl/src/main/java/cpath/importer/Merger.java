@@ -204,6 +204,21 @@ public final class Merger {
 			log.info("Loaded previously created " + metadata.getIdentifier() + " BioPAX model.");
 		}
 
+		//quick-fix BioSource : set name if not set
+		Map<String,String> orgMap = CPathSettings.getInstance().getOrganismsAsTaxonomyToNameMap();
+		for(BioSource org : providerModel.getObjects(BioSource.class)) {
+			for (String tax : orgMap.keySet()) {
+				// BioSource URIs are already normalized and contain identifiers.org/taxonomy
+				// (if it was possible to do) but may also contain a suffix after "_" (cell type, tissue terms)
+				if(org.getUri().startsWith("http://identifiers.org/taxonomy/" + tax + "_")) {
+					String name = orgMap.get(tax);
+					if(!org.getName().contains(name)) {
+						org.addName(name);
+					}
+				}
+			}
+		}
+
 		return providerModel;
 	}
 
