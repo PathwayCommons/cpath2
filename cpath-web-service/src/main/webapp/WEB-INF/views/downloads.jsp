@@ -30,11 +30,7 @@
 					select data sources, add extra columns (extended SIF format) or description (GSEA/GMT),
 					implement new or filter existing binary interaction types (SIF inference rules) and output ID type.
 				</li>
-				<li>Also, original and intermediate (cleaned, converted, normalized) data archives
-					<a rel="nofollow" href="datadir">are available here</a>.</li>
-				<li>BioPAX <a href="http://www.biopax.org/validator">Validator</a> reports
-					for each pathway/interaction data source in the system can be found
-					<a rel="nofollow" href="validations">here</a>.</li>
+				<li>Original and intermediate data (cleaned, converted, normalized) and validation reports.</li>
 				<li>blacklist.txt is used by the BioPAX to SIF and to SBGN converters to exclude ubiquitous small molecules.
 					See also: <a href="https://github.com/BioPAX/Paxtools/wiki/PatternBinaryInteractionFramework"
 					target="_blank">Using Binary Interaction Framework</a> for more information (contains blacklist.txt description).</li>

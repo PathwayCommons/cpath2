@@ -71,18 +71,7 @@ public class PagesController extends BasicController {
     	return "error";
     }
 
-    @RequestMapping("/datadir")
-    public String data(Model model) {
-    	String path = cpath.dataDir(); 
-    	
-    	//find/list all files in the datadir, but traverse into every provider's subdir.
-    	Map<String,String> files = files(path, null, false, null);
 
-    	model.addAttribute("files", files.entrySet());
-    	
-    	return "datadir";
-    }	
-	
     @RequestMapping("/downloads")
     public String downloads(Model model, HttpServletRequest request) {
 

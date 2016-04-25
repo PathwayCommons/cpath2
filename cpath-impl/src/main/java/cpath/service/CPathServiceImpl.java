@@ -33,7 +33,6 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
 
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
@@ -48,8 +47,7 @@ import org.biopax.paxtools.query.wrapperL3.DataSourceFilter;
 import org.biopax.paxtools.query.wrapperL3.Filter;
 import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
-import org.biopax.validator.api.ValidatorUtils;
-import org.biopax.validator.api.beans.ValidatorResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,7 +60,6 @@ import org.springframework.util.Assert;
 import cpath.config.CPathSettings;
 import cpath.dao.CPathUtils;
 import cpath.dao.LogUtils;
-import cpath.jpa.Content;
 import cpath.jpa.LogEntitiesRepository;
 import cpath.jpa.LogEntity;
 import cpath.jpa.LogEvent;
@@ -815,60 +812,36 @@ public class CPathServiceImpl implements CPathService {
 	
 	
 	@Override
-	public LogEntity count(String date, LogEvent event, String ipAddr) 
-	{		
+	public LogEntity count(String date, LogEvent event, String ipAddr)
+	{
 		// find or create a record, count+1
 		LogEntity t = null;
-		try {
-			t = logEntitiesRepository.findByEventNameIgnoreCaseAndAddrAndDate(event.getName(), ipAddr, date);
-		} catch (DataAccessException e) {
-			log.error("count(), findByEventNameIgnoreCaseAndAddrAndDate " +
-				"failed to update for event: " + event.getName() + 
-				", IP: " + ipAddr + ", date: " + date, e);
-		}
-		
-		if(t == null) {			
-			t = new LogEntity(date, event, ipAddr);
-		}
-		
-		t.setCount(t.getCount() + 1);
 
-		//also log for e.g., Logstash (Elasticsearch) to record this event for analysis and visualization
-		//(in addition to recording standard apache/tomcat access logs)
-		if(event != LogEvent.TOTAL)
-			log.info(t.toString());
-		
-		return logEntitiesRepository.save(t);
-	}
-
-	@Override
-	public ValidatorResponse validationReport(String provider, String file) {
-		ValidatorResponse response = new ValidatorResponse();
-		Metadata metadata = metadataRepository.findByIdentifier(provider);
-		for (Content content : metadata.getContent()) {
-			String current = content.getFilename();			
-			
-			if(file != null && !file.equals(current))
-				continue; 
-			//file==null means all files			
-			
+		synchronized (logEntitiesRepository) {
 			try {
-				// unmarshal and add
-				ValidatorResponse resp = (ValidatorResponse) ValidatorUtils.getUnmarshaller()
-					.unmarshal(new GZIPInputStream(new FileInputStream(content.validationXmlFile())));
-				assert resp.getValidationResult().size() == 1;				
-				response.getValidationResult().addAll(resp.getValidationResult());				
-			} catch (Exception e) {
-				log.error("validationReport: failed converting the XML response to objects", e);
+				t = logEntitiesRepository.findByEventNameIgnoreCaseAndAddrAndDate(event.getName(), ipAddr, date);
+			} catch (DataAccessException e) {
+				log.error("count(), findByEventNameIgnoreCaseAndAddrAndDate " +
+						"failed to update for event: " + event.getName() +
+						", IP: " + ipAddr + ", date: " + date, e);
 			}
-			
-			if(current.equals(file))
-				break;
-		}
 
-		return response;
+			if (t == null) {
+				t = new LogEntity(date, event, ipAddr);
+			}
+
+			t.setCount(t.getCount() + 1);
+			t = logEntitiesRepository.save(t);
+
+			//also log for e.g., Logstash (Elasticsearch) to record this event for analysis and visualization
+			//(in addition to recording standard apache/tomcat access logs)
+			if (event != LogEvent.TOTAL)
+				log.info(t.toString());
+		}
+		
+		return t;
 	}
-	
+
 	
 	@Override
 	public Metadata init(Metadata metadata) { 

@@ -71,12 +71,6 @@
 		<property name="maxUploadSize" value="100000000" /><!-- 100Mb (normally zipped files) -->
 	</bean>
 
-	<!--<mvc:resources mapping="/downloads/**" location="file:${CPATH2_HOME}/downloads/" />-->
-	<!-- also serve cpath2 original and premerged data archives and validation reports -->
-	<mvc:resources mapping="/datadir/**" location="file:${CPATH2_HOME}/data/" />
-	<!-- do not want config. and data files seen at all (even securely, by admin), then disable the following line -->
-	<mvc:resources mapping="/admin/homedir/**" location="file:${CPATH2_HOME}/" />
-
 	<mvc:resources mapping="/resources/**" location="/resources/" />
 
 	<!-- mvc:annotation-driven must the last -->

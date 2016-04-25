@@ -59,26 +59,7 @@ public class MetadataController extends BasicController {
     	return CPathSettings.getInstance();
     }
 
-    
-	@RequestMapping("/validations")
-    public String queryForValidationInfoHtml(Model model) 
-    {
-		//get the list of POJOs:
-    	model.addAttribute("providers", validationInfo());
-    	
-    	return "validations";
-    }
-    
-    // returns XML or Json 
-    @RequestMapping("/metadata/validations/{identifier}/{file}")
-    public @ResponseBody ValidatorResponse queryForValidation(
-    		@PathVariable String identifier, @PathVariable String file,
-    		HttpServletRequest request) 
-    {	
-    	return service.validationReport(identifier, file);
-    }
-       
-    
+
     @RequestMapping("/metadata/logo/{identifier}")
     public  @ResponseBody byte[] queryForLogo(@PathVariable String identifier) throws IOException
     {	

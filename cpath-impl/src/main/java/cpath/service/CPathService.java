@@ -8,9 +8,7 @@ import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.biopax.validator.api.beans.ValidatorResponse;
 
-import cpath.jpa.Content;
 import cpath.jpa.LogEntitiesRepository;
 import cpath.jpa.LogEntity;
 import cpath.jpa.LogEvent;
@@ -259,16 +257,6 @@ public interface CPathService {
 	 */
 	Metadata init(Metadata metadata);		
     
-	/**
-	 * Generates the BioPAX validation report for a pathway data file.
-	 * 
-	 * @param provider data source (Metadata) identifier, not null
-	 * @param file - base filename as in {@link Content}, or null (for all files)
-	 * @return
-	 */
-	ValidatorResponse validationReport(String provider, String file);
-	
-	
 	//spring-data-jpa repositories
 	
 	MappingsRepository mapping();
