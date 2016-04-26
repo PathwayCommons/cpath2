@@ -33,11 +33,7 @@ import java.util.*;
 
 import cpath.config.CPathSettings;
 import cpath.jpa.LogEvent;
-import cpath.service.Cmd;
-import cpath.service.ErrorResponse;
-import cpath.service.GraphType;
-import cpath.service.OutputFormat;
-import cpath.service.Status;
+import cpath.service.*;
 import cpath.service.jaxb.*;
 import cpath.webservice.args.Get;
 import cpath.webservice.args.Graph;
@@ -49,6 +45,9 @@ import cpath.webservice.args.binding.GraphQueryLimitEditor;
 import cpath.webservice.args.binding.GraphTypeEditor;
 import cpath.webservice.args.binding.OutputFormatEditor;
 
+import org.biopax.paxtools.model.BioPAXElement;
+import org.biopax.paxtools.model.BioPAXLevel;
+import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Protein;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
@@ -93,22 +92,20 @@ public class BiopaxModelController extends BasicController {
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
-	
-	
+
+
 	/**
-	 * This is to make cPath2 data more LinkedData compatible by making all the BioPAX object URIs resolvable.
-	 * 
-	 * Normally, one should use #elementById(Get, BindingResult, Writer, HttpServletRequest, HttpServletResponse)
-	 * query instead of posting a PC2 BioPAX URI like 'http://purl.org/pc2/8/psp' in a browser's address line directly.
-	 * Nevertheless, all such URIs must be resolved, and this method does it, if possible.
-	 * 
+	 * A very simple description of a BioPAX object identified by the cPath2-generated URI.
+	 * TODO: make a human-readable rich description page with links and images...
+	 *
 	 * @param localId - the part of URI following xml:base
-	 * 
-	 * TODO return a summary page (type,name, some stats, links to biopax/sif/gsea data) instead of raw BioPAX.
+	 * @param writer output writer
+	 * @param request web request
+	 * @param response web response
 	 */
-	@RequestMapping(method=RequestMethod.GET, value="/{localId}")
-	public void cpathIdInfo(@PathVariable String localId, Writer writer, 
-			HttpServletRequest request, HttpServletResponse response) throws Exception
+	@RequestMapping(method= RequestMethod.GET, value="/{localId}")
+	public @ResponseBody String cpathIdInfo(@PathVariable String localId, Writer writer,
+							HttpServletRequest request, HttpServletResponse response) throws Exception
 	{
 		/* A hack (specific to our normalizer and also
 		 * might not work for all client links/browsers...
@@ -125,23 +122,36 @@ public class BiopaxModelController extends BasicController {
 
 		if(localId.contains(":") || localId.contains("#") || localId.contains(" "))
 			localId = localId.replaceAll(":", "%3A").replaceAll("#", "%23").replaceAll(" ", "+");
+
 		String maybeUri = xmlBase + localId;
 		log.debug("trying /get?uri=" + maybeUri);
-		if(service.getModel() != null //can be debug mode
-				&& service.getModel().containsID(maybeUri)) {
-			Get get = new Get();
-			get.setUri(new String[]{maybeUri});
-			// delegate this task to "/get" (by URI/ID) command
-			elementById(get, null, writer, request, response);
-		} else {
-			//no other access log events are recorded in this case
-			//(i.e,, when neither URI/object nor page/controller exist)
-			//errorResponse(Status.NO_RESULTS_FOUND, "", response);
-			response.sendError(404); //no resource available
+
+		Model model = service.getModel();
+		if(service.getModel() != null)
+		{
+			BioPAXElement bpe = model.getByID(maybeUri);
+			if (bpe != null) {
+				//convert a single object (incomplete) to JSON-LD (unlike '/get', which extracts a sub-model)
+//		return String.format("%s %s %s", bpe.getUri(), bpe.getModelInterface().getSimpleName(), bpe.toString());
+				Model m = BioPAXLevel.L3.getDefaultFactory().createModel();
+				m.setXmlBase(xmlBase);
+				m.add(bpe);
+				//TODO auto-complete (does it makes sense)?
+				ServiceResponse sr = new BiopaxConverter(null).convert(m, OutputFormat.JSONLD);
+				Set<LogEvent> events = new HashSet<LogEvent>();
+				events.add(LogEvent.from(OutputFormat.JSONLD));
+				stringResponse(sr, writer, request, response, events); //also deletes the tmp data file
+			} else {
+				response.sendError(404, "No BioPAX element found; URI: " + maybeUri); //no resource available
+			}
 		}
+		else { //looks like - debug mode
+			response.sendError(503, "Please try again later"); //unavailable (starting.. or maintenance mode)
+		}
+
+		return null;
 	}
-	
-	
+
 	// Get by ID (URI) command
     @RequestMapping("/get")
     public void elementById(@Valid Get get, BindingResult bindingResult, 

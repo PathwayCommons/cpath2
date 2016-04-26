@@ -157,6 +157,7 @@
 		<querydsl.version>3.6.6</querydsl.version>
 		<ehcache-core.version>2.6.11</ehcache-core.version>
 		<paxtools.version>[5.0.0-SNAPSHOT,6)</paxtools.version>
+		<apache-jena-libs.version>2.11.2</apache-jena-libs.version>
 		<validator.version>[4.0.0-SNAPSHOT,5)</validator.version>
 		<junit.version>4.11</junit.version>
 		<commons-lang.version>2.6</commons-lang.version>
@@ -525,6 +526,17 @@
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>normalizer</artifactId>
+				<version>${paxtools.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.biopax.paxtools</groupId>
+				<artifactId>json-converter</artifactId>
 				<version>${paxtools.version}</version>
 				<exclusions>
 					<exclusion>

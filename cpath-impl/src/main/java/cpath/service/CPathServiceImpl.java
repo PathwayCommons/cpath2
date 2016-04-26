@@ -926,50 +926,5 @@ public class CPathServiceImpl implements CPathService {
 				&& paxtoolsModelReady());
 	}
 
-
-	public void log(String fileName, String ipAddr) {
-		log(logEventsFromFilename(fileName), ipAddr);
-	}
-	
-
-	public Set<LogEvent> logEventsFromFilename(String filename) {
-		Set<LogEvent> set = new HashSet<LogEvent>();
-
-		set.add(new LogEvent(LogType.FILE, filename));
-
-		// extract provider (Metadata) ID and OutputFormat from the filename
-//		if(filename.startsWith(cpath.exportArchivePrefix()))
-//		{
-			String scope = LogUtils.fileSrcOrScope(filename);
-			if(scope != null) {
-				String providerStandardName = null;
-				Metadata md = metadataRepository.findByIdentifier(scope);
-				if(md != null) { //use the standardName for logging
-					providerStandardName = md.standardName();
-				} else if(!metadataRepository.findByNameContainsIgnoreCase(scope).isEmpty()) { // found any (ignoring case)?
-					providerStandardName = scope.toLowerCase(); //it's by design (how archives are created) standardName
-				}
-				
-				if(providerStandardName != null) {
-					set.add(new LogEvent(LogType.PROVIDER, providerStandardName));
-				} else {
-					//that's probably a by-organism or one of special sub-model archives
-					log.debug("'" + scope + "' in " + filename + " does not match any "
-						+ "identifier or standard name of currently used data providers");
-				}
-			} else {
-				log.debug("Couldn't recognize the 'scope' of the datafile: " + filename);
-			}
-			
-			// extract the format
-			OutputFormat outputFormat = LogUtils.fileOutputFormat(filename);
-			if(outputFormat!=null)
-				set.add(LogEvent.from(outputFormat));
-
-//		}
-		
-		return set;
-	}
-
 }
 

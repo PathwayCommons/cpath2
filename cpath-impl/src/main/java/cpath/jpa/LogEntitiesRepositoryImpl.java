@@ -1,6 +1,3 @@
-/**
- * 
- */
 package cpath.jpa;
 
 import java.util.ArrayList;
@@ -22,7 +19,6 @@ import com.mysema.query.types.path.StringPath;
 
 import cpath.config.CPathSettings;
 import cpath.dao.LogUtils;
-import cpath.jpa.QLogEntity;
 
 /**
  * @author rodche
@@ -51,9 +47,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		//if log name is null - do for all events in the logType
 		Predicate typeOrName = null; 
 		if(name != null) { 
-			typeOrName = (logType == LogType.FILE)
-				? $.event.type.eq(logType).and($.event.name.containsIgnoreCase(name)) 
-					: $.event.type.eq(logType).and($.event.name.equalsIgnoreCase(name));		
+			typeOrName = $.event.type.eq(logType).and($.event.name.equalsIgnoreCase(name));
 		} else {
 			typeOrName = $.event.type.eq(logType);
 			name = logType.description;
@@ -119,12 +113,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 			query.where($.event.type.eq(logType));
 		} else { // type, except TOTAL, and name -> counts by country for all events of the type, name
 			query.where($.event.type.eq(logType)); //not finished yet...
-			//a special case for type:FILE to support partial filenames (e.g., 'reactome.biopax')
-			if(logType == LogType.FILE) {
-				query.where($.event.name.containsIgnoreCase(name));
-			} else {
-				query.where($.event.name.equalsIgnoreCase(name));
-			}
+			query.where($.event.name.equalsIgnoreCase(name));
 		}
 		
 		for(Tuple t : query.list($.geoloc.country,$.count.sum())) {
@@ -159,12 +148,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 			query.where($.event.type.eq(logType));
 		} else { // type, except TOTAL, and name -> counts by country for all events of the type, name
 			query.where($.event.type.eq(logType)); //not finished yet...
-			//a special case for type:FILE to support partial filenames (e.g., 'reactome.biopax')
-			if(logType == LogType.FILE) {
-				query.where($.event.name.containsIgnoreCase(name));
-			} else {
-				query.where($.event.name.equalsIgnoreCase(name));
-			}
+			query.where($.event.name.equalsIgnoreCase(name));
 		}
 		
 		for(Tuple t : query.list($.geoloc.country,$.geoloc.region,$.geoloc.city,$.count.sum())) 
@@ -204,12 +188,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 			query.where($.event.type.eq(logType));
 		} else { // type, except TOTAL, and name -> counts by country for all events of the type, name
 			query.where($.event.type.eq(logType)); //not finished yet...
-			//a special case for type:FILE to support partial filenames (e.g., 'reactome.biopax')
-			if(logType == LogType.FILE) {
-				query.where($.event.name.containsIgnoreCase(name));
-			} else {
-				query.where($.event.name.equalsIgnoreCase(name));
-			}
+			query.where($.event.name.equalsIgnoreCase(name));
 		}
 		
 		for(Tuple t : query.list($.geoloc.city,$.count.sum())) {
@@ -270,12 +249,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 			JPQLQuery query = from($).distinct()
 				.where($.event.type.eq(logType), $.addr.isNotNull())
 				.orderBy($.addr.asc());	//query building is not finished yet...		
-			if(logType == LogType.FILE) {
-				//a special case for type:FILE to support partial names (e.g., 'reactome.biopax')
-				query.where($.event.name.containsIgnoreCase(name));
-			} else {
-				query.where($.event.name.equalsIgnoreCase(name));
-			}
+			query.where($.event.name.equalsIgnoreCase(name));
 			return query.list($.addr);
 		}
 	}
@@ -292,9 +266,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		//if log name is null - do for all events in the logType
 		Predicate typeOrName = null; 
 		if(name != null) { 
-			typeOrName = (logType == LogType.FILE)
-					? $.event.type.eq(logType).and($.event.name.containsIgnoreCase(name)) 
-						: $.event.type.eq(logType).and($.event.name.equalsIgnoreCase(name));
+			typeOrName = $.event.type.eq(logType).and($.event.name.equalsIgnoreCase(name));
 		} else {
 			typeOrName = $.event.type.eq(logType);
 			name = logType.description;
@@ -323,9 +295,7 @@ class LogEntitiesRepositoryImpl extends QueryDslRepositorySupport
 		//if logName is null - will do for all events in the logType
 		Predicate typeOrName = null; 
 		if(logName != null) { 
-			typeOrName = (logType == LogType.FILE)
-					? $.event.type.eq(logType).and($.event.name.containsIgnoreCase(logName)) 
-						: $.event.type.eq(logType).and($.event.name.equalsIgnoreCase(logName));
+			typeOrName = $.event.type.eq(logType).and($.event.name.equalsIgnoreCase(logName));
 		} else {
 			typeOrName = $.event.type.eq(logType);
 			logName = logType.description;

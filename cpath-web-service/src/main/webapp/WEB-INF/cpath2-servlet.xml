@@ -49,7 +49,6 @@
 	
 	<mvc:interceptors>
 		<bean class="cpath.webservice.CPathMaintenanceHandlerInterceptor" />
-		<bean class="cpath.webservice.CPathWebserviceHandlerInterceptor" />           
     </mvc:interceptors>
 
 	<!-- contentNegotiationManager also makes .xml, .json extensions work (to return JSON or XML 

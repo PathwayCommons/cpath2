@@ -66,31 +66,7 @@ public class LogStatsController extends BasicController {
     	String[] li = null;
     	String listItemName = e.getName();
     	final CPathSettings instance = CPathSettings.getInstance();
-    	
-    	//if type is FILE, truncate the filename to keep only <scope>.<FORMAT> part; 
-    	//scope (turned lowercase) can be: source, organism, 'all', 'detailed', etc.).
-    	if(e.getType() == LogType.FILE &&
-			(
-				listItemName.startsWith(instance.exportArchivePrefix())
-				//or - also include old version files -
-				|| listItemName.toLowerCase().startsWith(instance.getName().toLowerCase())
-			)
-		){
-    		OutputFormat of = LogUtils.fileOutputFormat(listItemName);
-    		String scope = LogUtils.fileSrcOrScope(listItemName);
-    		if(of != null && scope != null) {
-    			listItemName = String.format("%s.%s", scope.toLowerCase(), of);
-    			li = new String[]{e.getType().toString(), listItemName};
-    		} else {
-    			//skip unexpected/unwanted file
-    		}
-    	}
-		//don't display other files (e.g., original, normalized, blacklist, etc.)
-		else if(e.getType() != LogType.FILE)
-		{
-    		li = new String[]{e.getType().toString(), listItemName};
-    	}
-
+   		li = new String[]{e.getType().toString(), listItemName};
 		return li;
 	}
     
@@ -363,65 +339,4 @@ public class LogStatsController extends BasicController {
 		
 		return data;
     }
-	
-	/*
-	 * Access log summary for files in the downloads - a json object (map) that
-	 * contains the list of rows ('data'), each row is object (map) with three
-	 * columns (key-val pairs); this can be then read by a jQuery DataTable via
-	 * "ajaxSource" and "columns" parameters
-	 * 
-	 * @return object
-	 */
-	@RequestMapping("/downloads")
-	public @ResponseBody Map<String, List<Map<String, ?>>> downloads(
-			Model model, HttpServletRequest request) {
-		Map<String, List<Map<String, ?>>> data = new HashMap<String, List<Map<String, ?>>>();
-		List<Map<String, ?>> l = new ArrayList<Map<String, ?>>();
-		data.put("data", l); // there will be only one data entry (the list)
-
-		Map<String, Object> m;
-
-		// get the sorted list of files to be shared on the web
-		String path = CPathSettings.getInstance().downloadsDir();
-		File[] list = new File(path).listFiles();
-		for (File f : list) {
-			String name = f.getName();
-			if (name.startsWith(".")) 
-				continue; // skip sys files
-
-			String size = FileUtils.byteCountToDisplaySize(f.length());
-			long uips = service.log().uniqueIps(name);
-
-			// find out from which country the file has been mostly requested;
-			// count the top and total no. downloads
-			List<Object[]> dl = service.log().downloadsWorld(LogType.TOTAL, name);
-			String topc = null;
-			long topdl = 0;
-			long total = 0;
-			Iterator<Object[]> it = dl.iterator();
-			it.next(); // skip title line
-			while (it.hasNext()) {
-				Object[] a = it.next();
-				long count = (Long) a[1];
-				total += count;
-				if (count > topdl) {
-					topdl = count;
-					topc = (String) a[0];
-				}
-			}
-
-			m = new HashMap<String, Object>();
-// don't add "period" now (downloadsWorld above does ignore the property and still works fast, for now)
-//			m.put("period", CPathSettings.getInstance().getDefaultLogPeriod());
-			m.put("name", name);
-			m.put("size", size);
-			m.put("downloads", total);// service.log().downloads(name));//incl. error requests
-			m.put("uniqueips", uips);
-			m.put("topdownloads", topdl);
-			m.put("topcountry", topc);
-			l.add(m);
-		}
-
-		return data;
-	}
 }

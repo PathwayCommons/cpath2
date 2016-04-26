@@ -196,7 +196,7 @@ public abstract class BasicController {
 				IOUtils.copyLarge(reader, writer);
 				response.flushBuffer();
 				reader.close();
-				resultFile.delete();
+				resultFile.delete(); //important; otherwise, tmp files would be deleted only after the JVM exits
 			} else { //it's probably a re-factoring bug -
 				errorResponse(INTERNAL_ERROR, String.format("BUG: no file Path in the DataResponse; got %s, %s instead.",
 					dresp.getData().getClass().getSimpleName(), dresp.toString()), request, response, updateCountsFor);

@@ -19,7 +19,6 @@ public enum LogType {
 	PROVIDER("All Providers"),
 	COMMAND("All Web Commands"),
 	FORMAT("All Output Formats"),
-	FILE("All Files"),
 	ERROR("All Errors"),
 	TOTAL("All");
 	

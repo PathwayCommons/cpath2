@@ -7,6 +7,8 @@ import java.util.*;
 
 import cpath.config.CPathSettings;
 import org.biopax.paxtools.io.gsea.GSEAConverter;
+import org.biopax.paxtools.io.jsonld.JsonldBiopaxConverter;
+import org.biopax.paxtools.io.jsonld.JsonldConverter;
 import org.biopax.paxtools.io.sbgn.L3ToSBGNPDConverter;
 import org.biopax.paxtools.io.sbgn.ListUbiqueDetector;
 import org.biopax.paxtools.io.*;
@@ -54,7 +56,7 @@ public class BiopaxConverter {
      * @param args optional format-specific parameters
 	 * @throws IOException when an error occurs while writing to the output stream
      */
-    public void convert(Model m, OutputFormat format, OutputStream os, Object... args) 
+    private void convert(Model m, OutputFormat format, OutputStream os, Object... args)
     		throws IOException 
     {
 			switch (format) {
@@ -94,12 +96,23 @@ public class BiopaxConverter {
 				}
                 convertToSBGN(m, os, blacklist, doLayout);
                 break;
+			case JSONLD:
+				convertToJsonLd(m, os);
+				break;
 			default: throw new UnsupportedOperationException(
 					"convert, yet unsupported format: " + format);
 			}
-    }    
-    
-    
+    }
+
+	private void convertToJsonLd(Model m, OutputStream os) throws IOException {
+		DataResponse dr = (DataResponse) convert(m, OutputFormat.BIOPAX);
+		JsonldConverter converter = new JsonldBiopaxConverter();
+		Path inp = (Path) dr.getData();
+		converter.convertToJsonld(new FileInputStream(inp.toFile()), os);
+		inp.toFile().delete();
+	}
+
+
 	/**
      * Converts not too large BioPAX model 
      * (e.g., a graph query result) to another format.
@@ -109,7 +122,7 @@ public class BiopaxConverter {
      * @param args optional format-specific parameters
      * @return data response with the converted data (up to 1Gb utf-8 string) or {@link ErrorResponse}.
      */
-    public ServiceResponse convert(Model m, OutputFormat format, Object... args) 
+    public ServiceResponse convert(Model m, OutputFormat format, Object... args)
     {
     	if(m == null || m.getObjects().isEmpty()) {
 			return new ErrorResponse(NO_RESULTS_FOUND, "Empty BioPAX Model");
@@ -150,7 +163,7 @@ public class BiopaxConverter {
      * 
      * @throws IOException when there is an output stream writing error
      */
-    public void convertToSBGN(Model m, OutputStream stream, Blacklist blackList, boolean doLayout)
+    private void convertToSBGN(Model m, OutputStream stream, Blacklist blackList, boolean doLayout)
 		throws IOException
 	{
     	
@@ -171,7 +184,7 @@ public class BiopaxConverter {
 	 * @param skipOutsidePathways if true - won't write ID sets that relate to no pathway
 	 * @throws IOException when there is an output stream writing error
 	 */
-	public void convertToGSEA(Model m, OutputStream stream, String outputIdType, boolean skipOutsidePathways)
+	private void convertToGSEA(Model m, OutputStream stream, String outputIdType, boolean skipOutsidePathways)
 			throws IOException 
 	{	
 		if(outputIdType==null || outputIdType.isEmpty())
@@ -199,7 +212,7 @@ public class BiopaxConverter {
 	 * 
 	 * @throws IOException when there is an output stream writing error
 	 */
-	public void convertToBinarySIF(Model m, OutputStream out, boolean extended, String db) 
+	private void convertToBinarySIF(Model m, OutputStream out, boolean extended, String db)
 			throws IOException 
 	{
 		ConfigurableIDFetcher idFetcher = new ConfigurableIDFetcher();

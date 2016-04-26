@@ -7,6 +7,7 @@ import java.util.Set;
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.algorithm.Direction;
 
 import cpath.jpa.LogEntitiesRepository;
@@ -31,15 +32,15 @@ import cpath.service.jaxb.ServiceResponse;
  */
 public interface CPathService {
 	
-	public Model getModel();
+	Model getModel();
 	
-	public void setModel(Model paxtoolsModel);
+	void setModel(Model paxtoolsModel);
 	
-	public Searcher getSearcher();
+	Searcher getSearcher();
 	
-	public void setSearcher(Searcher searcher);
-	
-	
+	void setSearcher(Searcher searcher);
+
+	Blacklist getBlacklist();
 
 	/**
 	 * Retrieves the BioPAX element(s) by URI or identifier (e.g., gene symbol)
@@ -200,15 +201,6 @@ public interface CPathService {
 	 */
 	void log(Collection<LogEvent> events, String ipAddr);
 
-	/**
-	 * Creates or updates log db entries for the data file
-	 * downloaded by a user.
-	 * 
-	 * @param fileName
-	 * @param ipAddr
-	 */
-	void log(String fileName, String ipAddr);
-	
 	/**
 	 * Increases the number (counter) 
 	 * of user's requests of some 

@@ -1,5 +1,4 @@
 
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -17,7 +16,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import cpath.config.CPathSettings;
 import cpath.dao.LogUtils;
 import cpath.jpa.Content;
 import cpath.jpa.Geoloc;
@@ -28,7 +26,6 @@ import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
 import cpath.service.CPathService;
-import cpath.service.CPathServiceImpl;
 import cpath.service.Cmd;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
@@ -220,59 +217,7 @@ public class RepositoriesAndServiceTest {
 		tl = res.get("Reactome");
 		assertNull(tl);	
 	}
-	
-	@Test
-	public final void testLogEventFromDownloads() {
-		CPathSettings cpath = CPathSettings.getInstance();
-		
-		//additional 'test' metadata entry (Reactome); 
-		//without this service.logEventsFromFilename(file) 
-		//won't be able to match provider by name/id and create PROVIDER type log event
-		Metadata md = new Metadata("test", "Reactome", "Foo", "", "", 
-				"", METADATA_TYPE.BIOPAX, "", "", null, "free");		
-		service.save(md);
-		
-		String file = cpath.exportArchivePrefix() + "Reactome.BIOPAX.owl.gz";
-		assertEquals(OutputFormat.BIOPAX, LogUtils.fileOutputFormat(file));
-		assertEquals("Reactome", LogUtils.fileSrcOrScope(file));
-		Set<LogEvent> events = ((CPathServiceImpl)service).logEventsFromFilename(file);
-		assertEquals(3, events.size()); //log in types: PROVIDER, FILE, FORMAT
 
-		//same/other cPath2 provider's older version files are recognized and get logged as well (just in case...)
-		file = "cPath2 Demo.7.Reactome.BIOPAX.owl.gz";
-		assertEquals(OutputFormat.BIOPAX, LogUtils.fileOutputFormat(file));
-		assertEquals("Reactome", LogUtils.fileSrcOrScope(file));
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
-		assertEquals(3, events.size());
-		
-		//'All' 
-		file = cpath.exportArchivePrefix() + "All.BIOPAX.owl.gz";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
-		assertEquals(2, events.size());
-		
-		file = cpath.exportArchivePrefix() + "Reactome.GSEA.gmt.gz";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
-		assertEquals(3, events.size());
-		
-		//illegal format (ignored, i.e., no FORMAT type log event is added)
-		file = cpath.exportArchivePrefix() + "Reactome.foo.gmt.gz";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
-		assertEquals(2, events.size());
-		
-		//other (metadata etc.)
-		file = "blacklist.txt";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
-		assertEquals(1, events.size());//counted in FILE log type only
-		assertEquals(LogType.FILE, events.iterator().next().getType());
-		
-		//provider name is now matched ignoring case, 
-		//(FORMAT type event is not there as well due to 'foo')
-		file = cpath.exportArchivePrefix() + "reactome.foo.gmt.gz";
-		events = ((CPathServiceImpl)service).logEventsFromFilename(file);
-		assertEquals(2, events.size());
-	}
-	
-	
 	@Test
 	@DirtiesContext
 	public void testIdMapping() {		
