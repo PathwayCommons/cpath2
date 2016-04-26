@@ -35,12 +35,12 @@ public class CPathClientTest {
 	
 	static {
 //		client = CPathClient.newInstance("http://www.pathwaycommons.org/pc2/");
-		client = CPathClient.newInstance("http://beta.pathwaycommons.org/pc2/");
+//		client = CPathClient.newInstance("http://beta.pathwaycommons.org/pc2/");
 		client.setName("CPathClientTest");
 	}
 	
 	final String testBioSourceUri="http://identifiers.org/taxonomy/9606";
-	final String testPathwayUri="http://identifiers.org/reactome/REACT_12034.3";
+	final String testPathwayUri="http://identifiers.org/reactome/R-HSA-201451";
 
 
 	@Test
@@ -73,10 +73,6 @@ public class CPathClientTest {
 	@Test
 	public final void testGetTopPathways() throws CPathException {		
 		SearchResponse result = null;
-		result = client.createTopPathwaysQuery().result();
-		assertNotNull(result);
-		assertFalse(result.getSearchHit().isEmpty());
-		
 		result = client.createTopPathwaysQuery()
 			.datasourceFilter(new String[]{"reactome"}).result();		
 		assertNotNull(result);
@@ -147,7 +143,6 @@ public class CPathClientTest {
         try {
 			resp = client.createSearchQuery()
 				.typeFilter(Pathway.class)
-//				.queryString("name:\"bmp signaling pathway\"")
 				.queryString("name:\"Signaling by BMP\"")
 				.result();
 		} catch (CPathException e) {
@@ -155,8 +150,7 @@ public class CPathClientTest {
 		}
 		
 		assertTrue(resp instanceof SearchResponse);
-		assertEquals(1, ((SearchResponse)resp).getSearchHit().size());
-		assertEquals(0, ((SearchResponse)resp).getSearchHit().get(0).getSize().intValue());
+		assertFalse(((SearchResponse)resp).getSearchHit().isEmpty());
 		assertEquals(Integer.valueOf(0), ((SearchResponse)resp).getPageNo());
 		
 		resp = null;
@@ -171,7 +165,6 @@ public class CPathClientTest {
 		
 		assertTrue(resp instanceof SearchResponse);
 		assertFalse(((SearchResponse)resp).getSearchHit().isEmpty());
-		
 	}
 	
 	
