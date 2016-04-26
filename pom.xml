@@ -157,7 +157,7 @@
 		<querydsl.version>3.6.6</querydsl.version>
 		<ehcache-core.version>2.6.11</ehcache-core.version>
 		<paxtools.version>[5.0.0-SNAPSHOT,6)</paxtools.version>
-		<apache-jena-libs.version>2.11.2</apache-jena-libs.version>
+		<apache-jena-libs.version>3.0.1</apache-jena-libs.version>
 		<validator.version>[4.0.0-SNAPSHOT,5)</validator.version>
 		<junit.version>4.11</junit.version>
 		<commons-lang.version>2.6</commons-lang.version>
@@ -544,7 +544,24 @@
 						<artifactId>commons-logging</artifactId>
 					</exclusion>
 				</exclusions>
+				<classifier>jar-with-dependencies</classifier>
 			</dependency>
+			<!--<dependency>-->
+				<!--<groupId>org.apache.jena</groupId>-->
+				<!--<artifactId>apache-jena-libs</artifactId>-->
+				<!--<version>${apache-jena-libs.version}</version>-->
+				<!--<scope>runtime</scope>-->
+				<!--<exclusions>-->
+					<!--<exclusion>-->
+						<!--<groupId>log4j</groupId>-->
+						<!--<artifactId>log4j</artifactId>-->
+					<!--</exclusion>-->
+					<!--<exclusion>-->
+						<!--<groupId>org.slf4j</groupId>-->
+						<!--<artifactId>slf4j-log4j12</artifactId>-->
+					<!--</exclusion>-->
+				<!--</exclusions>-->
+			<!--</dependency>-->
 			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
