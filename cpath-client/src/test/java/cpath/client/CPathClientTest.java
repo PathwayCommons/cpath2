@@ -18,10 +18,11 @@ import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 import cpath.service.jaxb.TraverseEntry;
 import cpath.service.jaxb.TraverseResponse;
+import org.springframework.http.MediaType;
 
 /**
  * INFO: when "cPath2Url" Java property is not set,
- * (e.g., -DcPath2Url="http://localhost:8080/cpath-web-service/")
+ * (e.g., -DcPath2Url="http://localhost:8080/pc2/")
  * the default cpath2 endpoint URL is {@link CPathClient#DEFAULT_ENDPOINT_URL}
  * So, it is possible that the default (official) service still provides 
  * an older cpath2 API than this PC2 client expects.
@@ -34,14 +35,22 @@ public class CPathClientTest {
 	
 	static {
 //		client = CPathClient.newInstance("http://www.pathwaycommons.org/pc2/");
-//		client = CPathClient.newInstance("http://192.168.81.153:48080/");
-		client = CPathClient.newInstance("http://webservice.baderlab.org:48080/");
-//		client = CPathClient.newInstance("http://localhost:8080/");
+		client = CPathClient.newInstance("http://beta.pathwaycommons.org/pc2/");
 		client.setName("CPathClientTest");
 	}
 	
-	final String testBioSourceUri="http://purl.org/pc2/7/BioSource_343022ef4adbf95df362e8b555d61240";
+	final String testBioSourceUri="http://identifiers.org/taxonomy/9606";
 	final String testPathwayUri="http://identifiers.org/reactome/REACT_12034.3";
+
+
+	@Test
+	public final void testBiopaxMediaType() {
+		String biopaxContentType = "application/vnd.biopax.rdf+xml";
+//		MimeTypeUtils.parseMimeType("application/vnd.biopax.rdf+xml");
+		MediaType mediaType = MediaType.parseMediaType(biopaxContentType);
+		assertNotNull(mediaType);
+		assertEquals(biopaxContentType, mediaType.toString());
+	}
 	
 	@Test
 	public final void testConnectionEtc() throws CPathException {

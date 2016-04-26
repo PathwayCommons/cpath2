@@ -163,22 +163,17 @@ public abstract class BasicController {
 			HttpServletResponse response, Set<LogEvent> updateCountsFor) throws IOException 
 	{
 		if(resp instanceof ErrorResponse) {
-			
-			errorResponse(((ErrorResponse) resp).getStatus(), 
-					((ErrorResponse) resp).toString(), request, response, updateCountsFor);
-			
+			errorResponse(((ErrorResponse)resp).getStatus(), resp.toString(), request, response, updateCountsFor);
 		} 
 		else if(resp.isEmpty()) {
 			log.warn("stringResponse: I got an empty ServiceResponce " +
 				"(must be already converted to the ErrorResponse)");
-			
 			errorResponse(NO_RESULTS_FOUND, "no results found", 
 					request, response, updateCountsFor);
-			
 		} 
-		else {
-			response.setContentType("text/plain");
+		else if (resp instanceof DataResponse) {
 			DataResponse dresp = (DataResponse) resp;
+			response.setContentType(dresp.getFormat().getMediaType());
 
 			log.debug("QUERY RETURNED " + dresp.getData().toString().length() + " chars");
 			
@@ -202,10 +197,13 @@ public abstract class BasicController {
 				response.flushBuffer();
 				reader.close();
 				resultFile.delete();
-			} else {
-				writer.write(dresp.getData().toString());
-				response.flushBuffer();
+			} else { //it's probably a re-factoring bug -
+				errorResponse(INTERNAL_ERROR, String.format("BUG: no file Path in the DataResponse; got %s, %s instead.",
+					dresp.getData().getClass().getSimpleName(), dresp.toString()), request, response, updateCountsFor);
 			}
+		} else { //it's a bug -
+			errorResponse(INTERNAL_ERROR, String.format("BUG: Unknown ServiceResponse: %s, %s ",
+				resp.getClass().getSimpleName(), resp.toString()), request, response, updateCountsFor);
 		}
 	}
 

@@ -119,13 +119,14 @@ public class BiopaxConverter {
     	// (can contain up to ~ 1Gb unicode string data)
     	// a TMP File is used instead of a byte array; set the file path as dataResponse.data value
     	File tmpFile = null;
-    	try {
-    		Path tmpFilePath = Files.createTempFile("cpath2", "");
+		try {
+    		Path tmpFilePath = Files.createTempFile("cpath2", format.getExt());
     		tmpFile = tmpFilePath.toFile();
     		tmpFile.deleteOnExit();
         	OutputStream os = new FileOutputStream(tmpFile);
     		convert(m, format, os, args); //os gets auto-closed there		
     		DataResponse dataResponse = new DataResponse();
+			dataResponse.setFormat(format);
 			dataResponse.setData(tmpFilePath);
 			// extract and save data provider names
 			dataResponse.setProviders(providers(m));			

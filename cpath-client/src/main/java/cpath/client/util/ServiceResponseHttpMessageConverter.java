@@ -29,7 +29,6 @@ public class ServiceResponseHttpMessageConverter
     static {
     	mediaList = new ArrayList<MediaType>();
         mediaList.add(MediaType.APPLICATION_XML);
-//        mediaList.add(MediaType.TEXT_XML);
         jaxb = new Jaxb2Marshaller();
         jaxb.setClassesToBeBound(Help.class,
         		SearchResponse.class, SearchHit.class,

@@ -40,7 +40,6 @@ public class CPathClient
 	public static final String JVM_PROPERTY_ENDPOINT_URL = "cPath2Url";	
 	public static final String DEFAULT_ENDPOINT_URL = "http://www.pathwaycommons.org/pc2/";
 
-	private String actualEndPointURL; // actual location (after 301/302/303 redirects)
 	private RestTemplate restTemplate;
 	private String endPointURL; //official external public cpath2 web service url
 	private String name;
@@ -84,7 +83,7 @@ public class CPathClient
 		else
 			client.endPointURL = url;
     	
-    	client.updateActualEndPointURL();
+//    	client.updateActualEndPointURL();
 
     	return client;
     }
@@ -103,7 +102,7 @@ public class CPathClient
 	public <T> T post(String requestPath, MultiValueMap<String, String> requestParams, Class<T> responseType)
 		throws CPathException 
 	{
-		final String url = actualEndPointURL + requestPath;
+		final String url = endPointURL + requestPath;
 		
 		if(name != null && requestParams != null)
 			requestParams.put("client", Collections.singletonList(name));
@@ -137,7 +136,7 @@ public class CPathClient
 	public <T> T get(String requestPath, MultiValueMap<String, String> requestParams, Class<T> responseType)
 		throws CPathException 
 	{	
-		StringBuilder sb = new StringBuilder(actualEndPointURL);
+		StringBuilder sb = new StringBuilder(endPointURL);
 		sb.append(requestPath);
 		
 		if(requestParams != null) {
@@ -213,9 +212,10 @@ public class CPathClient
      * following HTTP (302, 301) redirects.
      * 
      * @return the resolved cpath2 end point URL
+	 * @deprecated actual url is the same (it won't try to resolve through 30x redirects anymore...)
      */
     public String getActualEndPointURL() {
-        return actualEndPointURL;
+        return endPointURL;
     }
 
     
@@ -231,24 +231,24 @@ public class CPathClient
      */
     public void setEndPointUrlAndRedirect(final String url) {
         this.endPointURL = url;
-        updateActualEndPointURL();
+//        updateActualEndPointURL();
     }
 
-	// this (using actualEndPointURL) is required for POST queries to work through proxy/redirects on the way...
-	private void updateActualEndPointURL() {
-		actualEndPointURL = endPointURL; //initially, it's the same
-		// query for the location using previous/initial one until both are the same:
-		int i=0;
-		for(URI loc = URI.create(endPointURL); loc != null && i<5; i++ )
-		{
-			loc = restTemplate.postForLocation(loc, null);
-
-			if(loc != null)
-				actualEndPointURL = loc.toString();
-
-			LOGGER.info("Location: " + loc);
-		}
-	}
+//	// this (using actualEndPointURL) is required for POST queries to work through proxy/redirects on the way...
+//	private void updateActualEndPointURL() {
+//		actualEndPointURL = endPointURL; //initially, it's the same
+//		// query for the location using previous/initial one until both are the same:
+//		int i=0;
+//		for(URI loc = URI.create(endPointURL); loc != null && i<5; i++ )
+//		{
+//			loc = restTemplate.postForLocation(loc, null);
+//
+//			if(loc != null)
+//				actualEndPointURL = loc.toString();
+//
+//			LOGGER.info("Location: " + loc);
+//		}
+//	}
 	
 	/**
 	 * Creates a new full-text search query object
