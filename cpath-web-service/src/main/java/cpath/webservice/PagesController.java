@@ -94,6 +94,7 @@ public class PagesController extends BasicController {
     	}
     	
     	model.addAttribute("files", files.entrySet());
+		model.addAttribute("prefix", cpath.exportArchivePrefix());
 		
 		return "downloads";
     }	

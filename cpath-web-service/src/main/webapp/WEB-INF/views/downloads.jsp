@@ -20,7 +20,7 @@
 			<h3>What you find there</h3>
 			<ul>
 				<li>Data archives there have names like
-					<code>${cpath.name}.${cpath.version}.&lt;source&gt;.&lt;FORMAT&gt;.&lt;ext&gt;.gz</code>
+					<code>${prefix}.&lt;source&gt;.&lt;FORMAT&gt;.&lt;ext&gt;.gz</code>
 					, where &lt;source&gt; is either identifier (part of the provenance URI) or
 					'All' (all the data merged), or 'Detailed' (pathway data only; PSI-MI data were removed),
 					or 'Warehouse' (only entity reference objects, xrefs, vocabularies; no pathways/interactions).

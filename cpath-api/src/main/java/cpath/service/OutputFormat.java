@@ -12,7 +12,7 @@ public enum OutputFormat {
     EXTENDED_BINARY_SIF("Extended Simple Binary Interaction Format",".txt","text/plain"),
 	GSEA("Gene Set Expression Analysis Format",".gmt","text/plain"),
     SBGN("Systems Biology Graphical Notation Format",".sbgn.xml","application/xml"),
-	JSONLD("JSONLD", ".json", "application/ld+json");
+	JSONLD("JSON-LD format", ".json", "application/ld+json")
 	;
     
     private final String info;

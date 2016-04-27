@@ -16,8 +16,6 @@ or the fat JAR with embedded application server was started) -->
 <body data-spy="scroll" data-target=".navbar">
 <jsp:include page="header.jsp"/>
 
-  <h2>The Web Service API</h2>
-	
   <div class="row nav-target" id="about">
   	<h3><a href="${cpath.url}">${cpath.name}</a></h3>
   	<blockquote>
@@ -25,10 +23,14 @@ or the fat JAR with embedded application server was started) -->
 	<p><c:out value="${cpath.description}"/></p>
 	</blockquote>
   </div>
-  	
+
+  <h2>The Web API</h2>
+
   <div class="row">	
 	<div class="jumbotron">
-	<h3>Main web service</h3>
+	<h3>Web service commands</h3>
+	<p><small>(unique clients: <span class="badge alert-info pc2_tip"></span>;&nbsp;
+		successful queries: <span class="badge alert-info pc2_tok"></span>)</small></p>
 	<blockquote><p>To query the integrated biological pathway database, 
 	application developers can use the following commands:</p></blockquote>
 	<ul id="commands" title="Main commands">
@@ -45,7 +47,7 @@ or the fat JAR with embedded application server was started) -->
   </div>
 	
   <div class="row">	
-	<h4>Metadata, views, etc.</h4>
+	<h4>Metadata, etc.</h4>
 	<p>There are a number of "undocumented" URLs (subject to change without notice)  
 		providing metadata, files, scripts and images for creating and maintaining 
 		this website. Nevertheless, advanced users may find the following examples useful:
@@ -54,10 +56,9 @@ or the fat JAR with embedded application server was started) -->
 		<li><em>/help/</em> - returns a tree of Help objects describing the main commands, parameters,
 		BioPAX types, and properties, e.g., /help/schema, /help/commands, /help/types;</li>
 		<li><em>/log/</em> - service access summary, e.g., /log/totals, /log/TOTAL/geography/world, /log/timeline;</li>
-		<li><em>/[rdf:ID]</em> - every BioPAX object's URI in this resource is a resolvable URL, because  
-		current XML base: ${cpath.xmlBase} redirects to the web service base URL, and,
-		e.g., ${cpath.xmlBase}pid URL is by design equivalent to /get?uri=${cpath.xmlBase}pid
-		query (gets the BioPAX RDF/XML representation of the Provenance object).
+		<li><em>/[rdf:ID]</em> - every BioPAX object's URI here is a resolvable URL, because it is either a standard
+		URI, based no Identifiers.org, or it starts with the XML base: ${cpath.xmlBase}, which redirects to
+		a description page (it's still work in progress), e.g., ${cpath.xmlBase}pid.
 		</li>
 	</ul>
 	<p>Fore more information, please contact us.
@@ -66,7 +67,7 @@ or the fat JAR with embedded application server was started) -->
   
 	<div class="row" id="notes">
 	<h3>Notes</h3>
-		<h4><a id="about_uris"></a>About URIs and IDs in this system</h4>
+		<h4><a id="about_uris"></a>About URIs and IDs</h4>
 	    <p>
 	    Parameters: 'source', 'uri', and 'target' require URIs of existing BioPAX elements, which 
 		are either standard <a href="http://identifiers.org" target="_blank">Identifiers.org</a>
@@ -206,7 +207,10 @@ or the fat JAR with embedded application server was started) -->
 	<h4>Examples:</h4>
 	<ol>
 		<li><a rel="nofollow" href="get?uri=http://identifiers.org/uniprot/Q06609">
-			This command returns the BioPAX representation of Q06609</a> (a <strong>ProteinReference</strong> object).
+			This command returns the BioPAX representation of Q06609</a> (a <strong>ProteinReference</strong>'s sub-model).
+		</li>
+		<li><a rel="nofollow" href="get?uri=http://identifiers.org/uniprot/Q06609&format=JSONLD">
+			Gets the JSON-LD representation of Q06609</a> of the ProteinReference.
 		</li>
 		<li><a rel="nofollow" href="get?uri=COL5A1">Find/get by HUGO gene symbol COL5A1</a> - returns BioPAX entities.
 			<strong>Note:</strong> unlike the first example, it first performs a full-text search for physical entities
@@ -473,5 +477,11 @@ or the fat JAR with embedded application server was started) -->
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <jsp:include page="footer.jsp"/>
 
+<script>
+	// update the number of successful requests (excluding errors);
+	$.getJSON('log/totalok', function(tok) {$('.pc2_tok').text(tok);}).error(function() {$('.pc2_tok').text(0);});
+	// update the number of unique client IPs;
+	$.getJSON('log/totalip', function(tip) {$('.pc2_tip').text(tip);}).error(function() {$('.pc2_tip').text(0);});
+</script>
 </body>
 </html>
