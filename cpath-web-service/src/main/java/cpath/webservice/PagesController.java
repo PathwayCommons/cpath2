@@ -102,13 +102,13 @@ public class PagesController extends BasicController {
     // Access Log UI 
     
     @RequestMapping("/log")
-    public String log() {
-    	return allStats();
+    public String log(Model model) {
+    	return allStats(model);
     }
     
     @RequestMapping("/log/stats")
-    public String allStats() {
-    	return "redirect:/log/TOTAL/stats";
+    public String allStats(Model model) {
+    	return statsByType(model, LogType.TOTAL);
     }
         
     @RequestMapping("/log/{logType}/stats")
