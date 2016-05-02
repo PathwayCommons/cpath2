@@ -35,7 +35,7 @@ public class CPathClientTest {
 	
 	static {
 //		client = CPathClient.newInstance("http://www.pathwaycommons.org/pc2/");
-//		client = CPathClient.newInstance("http://beta.pathwaycommons.org/pc2/");
+		client = CPathClient.newInstance("http://beta.pathwaycommons.org/pc2/");
 		client.setName("CPathClientTest");
 	}
 	
@@ -73,13 +73,19 @@ public class CPathClientTest {
 	@Test
 	public final void testGetTopPathways() throws CPathException {		
 		SearchResponse result = null;
-		result = client.createTopPathwaysQuery()
-			.datasourceFilter(new String[]{"reactome"}).result();		
+		result = client.createTopPathwaysQuery().datasourceFilter(new String[]{"reactome"}).result();
 		assertNotNull(result);
 		assertFalse(result.getSearchHit().isEmpty());
-		
-		result = client.createTopPathwaysQuery()
-			.datasourceFilter(new String[]{"foo"}).result();		
+
+		//not a valid assertion after client has been modified -
+		//to always throw an exception if response code is not OK
+//		result = client.createTopPathwaysQuery().datasourceFilter(new String[]{"foo"}).result();
+//		assertNull(result);
+
+		result = null;
+		try {
+			result = client.createTopPathwaysQuery().datasourceFilter(new String[]{"foo"}).result();
+		} catch (CPathException e) {}
 		assertNull(result);
 	}
 
@@ -104,13 +110,14 @@ public class CPathClientTest {
 		assertTrue(entry.getValue().contains("Homo sapiens")); //case matters!
 		
 		// non-exisitng uri in not error, but the corresp. list of values must be empty
+		resp = null;
 		try {
 			resp = client.createTraverseQuery()
 					.propertyPath("Named/name")
 					.sources(new String[]{"bla-bla"})
 					.result();
-		} catch (CPathException e1) {
-			fail(e1.toString()); //should not throw e1
+			fail("must throw CPathException now, for all error responses: 460, 452, 500...");
+		} catch (CPathException e) {
 		}
 		assertNull(resp); //empty response
         

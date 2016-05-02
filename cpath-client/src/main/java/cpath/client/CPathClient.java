@@ -109,11 +109,11 @@ public class CPathClient
 		
 		try {
 			return restTemplate.postForObject(url, requestParams, responseType);
-		} catch (UnknownHttpStatusCodeException e) {
-			if (e.getRawStatusCode() == 460) {
-				return null; //empty result
-			} else
-				throw new CPathException(url + " and " + requestParams, e);
+//		} catch (UnknownHttpStatusCodeException e) {
+//			if (e.getRawStatusCode() == 460) {
+//				return null; //empty result
+//			} else
+//				throw new CPathException(url + " and " + requestParams, e);
 		} catch (RestClientException e) {
 			throw new CPathException(url + " and " + requestParams, e);
 		}
