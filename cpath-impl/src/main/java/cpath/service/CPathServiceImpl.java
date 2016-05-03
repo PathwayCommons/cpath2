@@ -226,8 +226,10 @@ public class CPathServiceImpl implements CPathService {
 	private Filter[] createFilters(String[] organisms, String[] datasources) {
 		ArrayList<Filter> filters = new ArrayList<Filter>();
 		
-		if(getBlacklist() != null)
-			filters.add(new UbiqueFilter(getBlacklist().getListed()));
+		if(blacklist != null)
+			filters.add(new UbiqueFilter(blacklist.getListed()));
+		else
+			log.warn("createFilters: blacklist is NULL, why..."); //normally, it's not null here
 		
 		if(organisms != null && organisms.length > 0)
 			filters.add(new OrganismFilter(organisms));
@@ -378,7 +380,7 @@ public class CPathServiceImpl implements CPathService {
 	
 
 	private ServiceResponse convert(Model m, OutputFormat format) {
-		BiopaxConverter biopaxConverter = new BiopaxConverter(getBlacklist());
+		BiopaxConverter biopaxConverter = new BiopaxConverter(blacklist);
 		ServiceResponse toReturn;
 
 		if (format==OutputFormat.GSEA)
@@ -681,15 +683,14 @@ public class CPathServiceImpl implements CPathService {
 		if(blacklistResource.exists()) {			
 			try {
 				this.blacklist = new Blacklist(blacklistResource.getInputStream());
-				log.info("loadBlacklist, loaded: " 
-						+ blacklistResource.getDescription());
+				log.info("loadBlacklist, loaded: " + blacklistResource.getDescription());
+				Assert.notEmpty(blacklist.getListed());
 			} catch (IOException e) {
 				log.error("loadBlacklist, failed using: " 
 					+ blacklistResource.getDescription(), e);
 			}
 		} else {
-			log.warn("loadBlacklist, " + cpath.blacklistFile()
-				+ " is not found");
+			log.warn("loadBlacklist, " + cpath.blacklistFile() + " is not found");
 		}
 	}
 
