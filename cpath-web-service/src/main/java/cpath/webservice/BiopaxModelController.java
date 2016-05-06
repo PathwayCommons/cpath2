@@ -176,21 +176,20 @@ public class BiopaxModelController extends BasicController {
 
 
 	@RequestMapping("/top_pathways")
-    public @ResponseBody SearchResponse topPathways(
+    public @ResponseBody SearchResponse topPathways(@RequestParam(required=false) String q,
     		@RequestParam(required=false) String[] datasource, @RequestParam(required=false) String[] organism, 
     		HttpServletRequest request, HttpServletResponse response) throws IOException
     {
     	Set<LogEvent> events = new HashSet<LogEvent>();
     	events.add(LogEvent.from(Cmd.TOP_PATHWAYS));
 		
-		ServiceResponse results = service.topPathways(organism, datasource);
+		ServiceResponse results = service.topPathways(q, organism, datasource);
 		
 		if(results instanceof ErrorResponse) {
 			errorResponse(((ErrorResponse) results).getStatus(), 
 					((ErrorResponse) results).toString(), request, response, events);
 		} else if(results.isEmpty()) {
-			errorResponse(Status.NO_RESULTS_FOUND, 
-					"no hits", request, response, events);
+			errorResponse(Status.NO_RESULTS_FOUND, "no hits", request, response, events);
 		} else {//return results
 			//log to db
 			SearchResponse hits = (SearchResponse) results;

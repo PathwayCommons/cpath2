@@ -153,11 +153,13 @@ public interface CPathService {
 	/**
 	 * Gets top (root) pathways (URIs, names) in the current BioPAX model.
 	 * 
+	 *
+	 * @param q query string (keywords or Lucene syntax query string)
 	 * @param organisms filter values (URIs, names, or taxonomy IDs)
 	 * @param datasources filter values (URIs, names)
 	 * @return
 	 */
-	ServiceResponse topPathways(String[] organisms, String[] datasources);
+	ServiceResponse topPathways(String q, String[] organisms, String[] datasources);
 	
 	
 	/**

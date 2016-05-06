@@ -583,19 +583,20 @@ public class CPathServiceImpl implements CPathService {
 	 * Here we follow the second method.
 	 */
 	@Override
-	public ServiceResponse topPathways(final String[] organisms, final String[] datasources) {
+	public ServiceResponse topPathways(String q, final String[] organisms, final String[] datasources) {
 		
 		if(!paxtoolsModelReady() || searcher == null) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
-		
+
+		if(q==null || q.isEmpty()) q = "*"; //for backward compatibility
+
 		SearchResponse topPathways = new SearchResponse();
 		final List<SearchHit> hits = topPathways.getSearchHit(); //empty list
 		int page = 0; // will use search pagination
 		
 		SearchResponse r = null;
 		try {
-			r = searcher.search("*", page, Pathway.class, datasources, organisms);
-			
+			r = searcher.search(q, page, Pathway.class, datasources, organisms);
 		} catch(Exception e) {
 			log.error("topPathways() failed", e);
 			return new ErrorResponse(INTERNAL_ERROR, e);
@@ -622,7 +623,7 @@ public class CPathServiceImpl implements CPathService {
 			
 			// go next page
 			try {
-				r = searcher.search("*", ++page, Pathway.class, datasources, organisms);
+				r = searcher.search(q, ++page, Pathway.class, datasources, organisms);
 			} catch(Exception e) {
 				log.error("topPathways() failed", e);
 				return new ErrorResponse(INTERNAL_ERROR, e);

@@ -362,6 +362,8 @@ or the fat JAR with embedded application server was started) -->
 	'controlled' nor a 'pathwayComponent' of another biological process.</p></blockquote>
 	<h4>Parameters:</h4>
 	<ul>
+		<li><em>q=</em> [Optional] a keyword, name, external identifier, or a Lucene query string,
+		like in <a href="#search_parameters">'search'</a>, but the default is '*' (match all).</li>
 		<li><em>datasource=</em> [Optional] filter by data source (same as for <a href="#search_parameters">'search'</a>).
 		</li>
 		<li><em>organism=</em> [Optional] organism filter (same as for <a href="#search_parameters">'search'</a>).
@@ -374,6 +376,8 @@ or the fat JAR with embedded application server was started) -->
 	<ol>
 		<li><a rel="nofollow" href="top_pathways"> get top pathways (XML)</a></li>
 		<li><a rel="nofollow" href="top_pathways.json"> get top pathways in JSON format</a></li>
+		<li><a rel="nofollow" href="top_pathways.json?q=insulin&datasource=reactome">
+			get top pathways from Reactome, matching 'insulin'; return JSON format</a></li>
 	</ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
