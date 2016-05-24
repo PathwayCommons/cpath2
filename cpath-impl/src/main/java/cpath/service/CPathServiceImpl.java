@@ -38,6 +38,7 @@ import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.model.level3.Process;
 import org.biopax.paxtools.normalizer.MiriamLink;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.QueryExecuter;
@@ -581,6 +582,8 @@ public class CPathServiceImpl implements CPathService {
 	 * properties, such as controlledOf, pathwayComponentOf and stepProcessOf, are empty.
 	 * 
 	 * Here we follow the second method.
+	 *
+	 * Also, let's exclude "pathways" having two or less components, none of which is a non-empty pathway.
 	 */
 	@Override
 	public ServiceResponse topPathways(String q, final String[] organisms, final String[] datasources) {
@@ -610,11 +613,25 @@ public class CPathServiceImpl implements CPathService {
 			//keep only pathways where 'pathway' index field
 			//is empty (no controlledOf and pathwayComponentOf values)
 			for(SearchHit h : r.getSearchHit()) {
-				if(h.getPathway().isEmpty() || 
-						(h.getPathway().size()==1 
-							&& h.getPathway().get(0).equalsIgnoreCase(h.getUri())
-						)
-					) hits.add(h); //add to the list
+				if( h.getPathway().isEmpty() ||
+					(h.getPathway().size()==1
+						&& h.getPathway().get(0).equalsIgnoreCase(h.getUri())
+					)
+				){
+					if(h.getSize()>2) //skip e.g. CTD "pathways" that contain one-two interactions
+						hits.add(h); //add to the list
+					else { //add only if it has a child non-empty pathway
+						Pathway hp = (Pathway) getModel().getByID(h.getUri());
+						for(Process component : hp.getPathwayComponent()) {
+							if(component instanceof Pathway
+								&& !((Pathway)component).getPathwayComponent().isEmpty())
+							{
+								hits.add(h);
+								break;
+							}
+						}
+					}
+				}
 				processed++;
 			}
 			

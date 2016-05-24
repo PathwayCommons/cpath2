@@ -359,7 +359,8 @@ or the fat JAR with embedded application server was started) -->
 	<h3>TOP_PATHWAYS:</h3>
 	<blockquote><p>
 	Returns all "top" pathways - pathways that are neither
-	'controlled' nor a 'pathwayComponent' of another biological process.</p></blockquote>
+	'controlled' nor a 'pathwayComponent' of another biological process, excluding "pathways" having
+	less than three components, none of which being a non-empty sub-pathway.</p></blockquote>
 	<h4>Parameters:</h4>
 	<ul>
 		<li><em>q=</em> [Optional] a keyword, name, external identifier, or a Lucene query string,
