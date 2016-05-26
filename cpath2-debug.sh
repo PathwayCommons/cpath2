@@ -11,7 +11,8 @@
 #
 ##
 
-export CPATH2_HOME=/Users/rodche/cpath2_home
+# set CPATH2_HOME first!
+export CPATH2_HOME=
 
 echo "CPATH2_HOME Directory: $CPATH2_HOME"
 
