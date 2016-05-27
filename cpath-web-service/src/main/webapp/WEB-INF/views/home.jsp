@@ -3,7 +3,7 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
-<!-- get the root/base URL (e.g., depends on whether the WAR was deployed on a Tomcat 
+<!-- get the root/base URL (e.g., depends on whether the WAR was deployed on a Tomcat
 or the fat JAR with embedded application server was started) -->
 
 <!DOCTYPE html>
@@ -55,7 +55,6 @@ or the fat JAR with embedded application server was started) -->
 	<ul>
 		<li><em>/help/</em> - returns a tree of Help objects describing the main commands, parameters,
 		BioPAX types, and properties, e.g., /help/schema, /help/commands, /help/types;</li>
-		<li><em>/log/</em> - service access summary, e.g., /log/totals, /log/TOTAL/geography/world, /log/timeline;</li>
 		<li><em>/[rdf:ID]</em> - every BioPAX object's URI here is a resolvable URL, because it is either a standard
 		URI, based no Identifiers.org, or it starts with the XML base: ${cpath.xmlBase}, which redirects to
 		a description page (it's still work in progress), e.g., ${cpath.xmlBase}pid.
@@ -78,9 +77,9 @@ or the fat JAR with embedded application server was started) -->
 		For example, despite knowing current URI namespace ${cpath.xmlBase} and the service location,
 		one should not guess /foo, ${cpath.xmlBase}foo, or get?uri=${cpath.xmlBase}foo
 		unless the BioPAX individual actually there exists (find existing object URIs of interest first).
-		However, HUGO gene symbols, SwissProt, RefSeq, Ensembl, and NCBI Gene (positive integer) 
-		<strong>ID; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem Compound or Substance 
-		(ID must be prefixed with 'CID:' or 'SID:' to distinguish from each other and NCBI Gene), 
+		However, HUGO gene symbols, SwissProt, RefSeq, Ensembl, and NCBI Gene (positive integer)
+		<strong>ID; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem Compound or Substance
+		(ID must be prefixed with 'CID:' or 'SID:' to distinguish from each other and NCBI Gene),
 		are also acceptable in place of full URIs</strong> in <em>get</em> and <em>graph</em> queries.
 		As a rule of thumb, using full URIs makes a precise query, whereas using the identifiers makes a
 		more exploratory one, which depends on full-text search (index) and id-mapping.

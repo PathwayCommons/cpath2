@@ -9,7 +9,7 @@
 
 	<name>cPath2 - Parent</name>
 	<groupId>pathwaycommons.cpath</groupId>
-	<version>6.1.0-SNAPSHOT</version>
+	<version>7.0.0-SNAPSHOT</version>
 	<description>cPath2 parent (multi-mudule) project (biological pathway data integration/querying)</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
 	<inceptionYear>2009</inceptionYear>
@@ -32,7 +32,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/PathwayCommons/cpath2.git</connection>
 		<developerConnection>scm:git:git@github.com:PathwayCommons/cpath2.git</developerConnection>
-		<url>https://github.com/PathwayCommons/cpath2</url>
+		<url>https://github.com/PathwayCommons/cpath2/tree/master/</url>
 	</scm>
 
 	<developers>
@@ -146,14 +146,14 @@
 	</modules>
 
 	<properties>
-		<java.version>1.7</java.version>	
+		<java.version>1.7</java.version>
 		<license.licenseName>lgpl_v3</license.licenseName>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring.version>4.1.7.RELEASE</spring.version>
 		<hibernate.version>4.3.10.Final</hibernate.version>
 		<lucene.version>4.10.4</lucene.version>
-		<h2.version>1.4.187</h2.version>
+		<h2.version>1.4.190</h2.version>
 		<querydsl.version>3.6.6</querydsl.version>
 		<ehcache-core.version>2.6.11</ehcache-core.version>
 		<paxtools.version>[5.0.0-SNAPSHOT,6)</paxtools.version>
@@ -173,7 +173,6 @@
 		<jackson.version>2.4.3</jackson.version>
 		<slf4j.version>1.7.7</slf4j.version>
 		<logback.version>1.1.2</logback.version>
-		<geoip-api.version>1.2.13</geoip-api.version>
 		<spring-data-jpa.version>1.7.1.RELEASE</spring-data-jpa.version>
 		<aspectjrt.version>1.8.4</aspectjrt.version>
 		<maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
@@ -217,7 +216,7 @@
 					<version>${maven-surefire-plugin.version}</version>
 					<configuration>
 						<argLine>
-							-Xmx2048m -DCPATH2_HOME=${java.io.tmpdir}/cpath2_home -Dfile.encoding=UTF-8 -ea -Dnet.sf.ehcache.disabled=true -Dspring.profiles.active=dev -Dpaxtools.CollectionProvider=org.biopax.paxtools.trove.TProvider
+						-Xmx2048m -DCPATH2_HOME=${java.io.tmpdir}/cpath2_home -Dfile.encoding=UTF-8 -ea -Dspring.profiles.active=dev
 						</argLine>
 					</configuration>
 				</plugin>
@@ -340,10 +339,10 @@
 										<exclude>aspectj:aspectj*</exclude> <!-- org.aspectj is the new one -->
 										<exclude>hsqldb:hsqldb</exclude> <!-- org.hsqldb is the new one -->
 										<exclude>log4j:log4j</exclude>
-										<exclude>org.slf4j:1.5*</exclude>
 										<exclude>org.springframework:2.*</exclude>
-										<exclude>org.springframework:3.0.*</exclude>
-										<exclude>jaxax.xml.bind:*</exclude>
+										<exclude>org.springframework:3.*</exclude>
+										<exclude>javax.xml.bind:*</exclude>
+										<exclude>net.sf.saxon:*</exclude>
 										<exclude>com.sun.xml.bind:*</exclude>
 										<exclude>c3p0:c3p0</exclude> <!-- com.mchange:c3p0 is the new one -->
 										<exclude>commons-collections:3.2.1</exclude>
@@ -426,142 +425,64 @@
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>paxtools-core</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-					<exclusion>
-						<artifactId>log4j</artifactId>
-						<groupId>log4j</groupId>
-					</exclusion>					
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>paxtools-trove</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-					<exclusion>
-						<artifactId>log4j</artifactId>
-						<groupId>log4j</groupId>
-					</exclusion>						
-				</exclusions>
 				<scope>runtime</scope>
 			</dependency>			
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>sif-converter</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>psimi-converter</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>sbgn-converter</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>gsea-converter</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>paxtools-query</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
         	<dependency>
                 <groupId>org.biopax.paxtools</groupId>
                 <artifactId>pattern</artifactId>
                 <version>${paxtools.version}</version>
-                <exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-					<exclusion>
-						<artifactId>log4j</artifactId>
-						<groupId>log4j</groupId>
-					</exclusion>					
-				</exclusions>
         	</dependency>
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>normalizer</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.biopax.validator</groupId>
+				<artifactId>biopax-validator</artifactId>
+				<version>${validator.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.biopax.validator</groupId>
+				<artifactId>obo-fetcher</artifactId>
+				<version>${validator.version}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>json-converter</artifactId>
 				<version>${paxtools.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 				<classifier>jar-with-dependencies</classifier>
 			</dependency>
-			<!--<dependency>-->
-				<!--<groupId>org.apache.jena</groupId>-->
-				<!--<artifactId>apache-jena-libs</artifactId>-->
-				<!--<version>${apache-jena-libs.version}</version>-->
-				<!--<scope>runtime</scope>-->
-				<!--<exclusions>-->
-					<!--<exclusion>-->
-						<!--<groupId>log4j</groupId>-->
-						<!--<artifactId>log4j</artifactId>-->
-					<!--</exclusion>-->
-					<!--<exclusion>-->
-						<!--<groupId>org.slf4j</groupId>-->
-						<!--<artifactId>slf4j-log4j12</artifactId>-->
-					<!--</exclusion>-->
-				<!--</exclusions>-->
-			<!--</dependency>-->
 			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
@@ -572,6 +493,12 @@
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-test</artifactId>
 				<version>${spring.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
 				<scope>test</scope>
 			</dependency>
 			<dependency>
@@ -641,17 +568,6 @@
 				<version>${spring.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.biopax.validator</groupId>
-				<artifactId>biopax-validator</artifactId>
-				<version>${validator.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
 				<groupId>commons-collections</groupId>
 				<artifactId>commons-collections</artifactId>
 				<version>${commons-collections.version}</version>
@@ -689,17 +605,6 @@
 				<artifactId>ehcache-core</artifactId>
 				<version>${ehcache-core.version}</version>
 				<scope>runtime</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.biopax.validator</groupId>
-				<artifactId>obo-fetcher</artifactId>
-				<version>${validator.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>
@@ -787,21 +692,11 @@
 				<artifactId>logback-classic</artifactId>
 				<version>${logback.version}</version>
 			</dependency>
-			<dependency>
-				<groupId>ch.qos.logback</groupId>
-				<artifactId>logback-core</artifactId>
-				<version>${logback.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>ch.qos.logback</groupId>
-				<artifactId>logback-access</artifactId>
-				<version>${logback.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.maxmind.geoip</groupId>
-				<artifactId>geoip-api</artifactId>
-				<version>${geoip-api.version}</version>
-			</dependency>
+			<!--<dependency>-->
+				<!--<groupId>ch.qos.logback</groupId>-->
+				<!--<artifactId>logback-access</artifactId>-->
+				<!--<version>${logback.version}</version>-->
+			<!--</dependency>-->
 			<dependency>
 				<groupId>org.springframework.data</groupId>
 				<artifactId>spring-data-jpa</artifactId>
@@ -859,7 +754,12 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-test</artifactId>
 			<scope>test</scope>
-		</dependency>	
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<distributionManagement>

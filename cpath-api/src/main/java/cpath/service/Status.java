@@ -31,6 +31,7 @@ import java.util.ArrayList;
 
 
 public enum Status {
+
     /**
      * Status Code:  Bad Request, Missing Arguments.
      */

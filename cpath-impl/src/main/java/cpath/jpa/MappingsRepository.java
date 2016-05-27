@@ -14,14 +14,6 @@ import org.springframework.data.repository.CrudRepository;
  * @author rodche
  */
 public interface MappingsRepository extends CrudRepository<Mapping, Long> {
-
-	/**
-	 * All Mappings 'To' the given type of ID.
-	 * 
-	 * @param dest
-	 * @return
-	 */
-	List<Mapping> findByDestIgnoreCase(String dest);
 	
 	/**
 	 * Mappings 'To' the given identifier.
@@ -31,8 +23,17 @@ public interface MappingsRepository extends CrudRepository<Mapping, Long> {
 	 * @return
 	 */
 	List<Mapping> findByDestIgnoreCaseAndDestId(String dest, String destId);
-	
-	
+
+
+	/**
+	 * Mappings 'To' any of given identifiers of the same type.
+	 *
+	 * @param dest
+	 * @param destIds
+	 * @return
+	 */
+	List<Mapping> findByDestIgnoreCaseAndDestIdIn(String dest, List<String> destIds);
+
 	/**
 	 * Mappings 'From' the given id (any kind) 'To' the target type of ID.
 	 * 
@@ -41,8 +42,18 @@ public interface MappingsRepository extends CrudRepository<Mapping, Long> {
 	 * @return
 	 */
 	List<Mapping> findBySrcIdAndDestIgnoreCase(String srcId, String dest);
-	
-	
+
+
+	/**
+	 * Mappings 'From' any of given ids (any kind) 'To' the target type of ID.
+	 *
+	 * @param srcIds
+	 * @param dest
+     * @return
+     */
+	List<Mapping> findBySrcIdInAndDestIgnoreCase(List<String> srcIds, String dest);
+
+
 	/**
 	 * Mappings 'From' the given source db/id 'To' the target type of ID.
 	 * 

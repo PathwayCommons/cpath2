@@ -7,16 +7,12 @@
 	<parent>
 		<artifactId>parent</artifactId>
 		<groupId>pathwaycommons.cpath</groupId>
-		<version>6.1.0-SNAPSHOT</version>
+		<version>7.0.0-SNAPSHOT</version>
 	</parent>
 
 	<name>cPath2 - API</name>
 	<description>cPath2 API: enums, beans (JAXB), schema, etc.</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
-
-	<scm>
-		<url>https://github.com/PathwayCommons/cpath2</url>
-	</scm>
 
 	<build>
 		<plugins>
@@ -72,4 +68,5 @@
 			<artifactId>commons-lang</artifactId>
 		</dependency>
 	</dependencies>
+	
 </project>

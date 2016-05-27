@@ -1,11 +1,6 @@
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.biopax.validator.api.beans.Validation;
 import org.junit.Test;
@@ -16,12 +11,10 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import cpath.dao.LogUtils;
+import cpath.config.CPathSettings;
+import cpath.service.LogUtils;
 import cpath.jpa.Content;
-import cpath.jpa.Geoloc;
-import cpath.jpa.LogEntity;
-import cpath.jpa.LogEvent;
-import cpath.jpa.LogType;
+import cpath.service.LogEvent;
 import cpath.jpa.Mapping;
 import cpath.jpa.Metadata;
 import cpath.jpa.Metadata.METADATA_TYPE;
@@ -43,179 +36,29 @@ import static org.junit.Assert.*;
 public class RepositoriesAndServiceTest {
 	
 	@Autowired
-	private CPathService service;	
-	
-	@Test
-	public final void testCountryLookup() {
-		Geoloc loc = LogUtils.lookup("66.249.74.168");
-		assertNotNull(loc);
-		assertEquals("US", loc.getCountry());
-		assertEquals("CA", loc.getRegion());
-		
-		// localhost (and also for any LAN IPs, or not IPv4 ones...)
-		loc = LogUtils.lookup("127.0.0.1");
-		assertNull(loc);
-		loc = Geoloc.fromIpAddress("foo");
-		assertNull(loc);
-		
-		//Basel, Switzerland - no reion
-		loc = LogUtils.lookup("5.148.173.100");
-		assertNotNull(loc);
-		assertEquals("CH", loc.getCountry());
-		assertNull(loc.getRegion());
-		assertNull(loc.getCity());
-	}
+	private CPathService service;
 
-	
-	@Test
-	@DirtiesContext //other tests might added records too; do cleanup
-	public final void testSave() {
-		final String ipAddr = "66.249.74.168";
-		//explicitly create and save a new log record
-		LogEntity logEntity = new LogEntity(LogUtils.today(), 
-				LogEvent.from(Status.INTERNAL_ERROR), ipAddr); //country="US"
-		assertNull(logEntity.getId());
-		//save and check that new log entrie's initial count it set to 0
-		logEntity = service.log().save(logEntity);
-		assertEquals(0L, logEntity.getCount().longValue());	
-		assertNotNull(logEntity.getId());
-		assertEquals(1, service.log().count());
-	}
 
-	
-	/**
-	 * Test method for {@link org.springframework.data.repository.CrudRepository#save(Object)}.
-	 */
-	@DirtiesContext //other tests might added records too; do cleanup
-	@Test
-	public final void testCount() {	
-		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
-		
-		// count twice
-		LogEntity logEntity = service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
-		assertEquals(1L, logEntity.getCount().longValue());
-		logEntity = service.count(LogUtils.today(), LogEvent.TOTAL, ipAddr);
-		assertEquals(2L, logEntity.getCount().longValue());
-		
-		// test that there is only one record yet
-		assertEquals(1, service.log().count());
-	}
-	
-	
-	@DirtiesContext //other tests might added records too; do cleanup
+	@DirtiesContext
 	@Test
 	public final void testTimeline() {	
 		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
-		
 		// add some logs (for two days, several categories):
-		// Today
-		String today = LogUtils.today();
-		service.count(today, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
-		service.count(today, LogEvent.TOTAL, ipAddr);
-		service.count(today, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
-		service.count(today, LogEvent.TOTAL, ipAddr);
-		service.count(today, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
-		service.count(today, LogEvent.TOTAL, ipAddr);
-		service.count(today, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
-		service.count(today, LogEvent.TOTAL, ipAddr);
-		service.count(today, LogEvent.from(Cmd.SEARCH), ipAddr);
-		// Yesterday
-		String yesterDay = LogUtils.addIsoDate(today, -1);
-		service.count(yesterDay, LogEvent.from(Status.INTERNAL_ERROR), ipAddr);
-		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
-		service.count(yesterDay, LogEvent.from(Status.NO_RESULTS_FOUND), ipAddr);
-		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
-		service.count(yesterDay, new LogEvent(LogType.PROVIDER, "Reactome"), ipAddr);
-		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
-		service.count(yesterDay, new LogEvent(LogType.PROVIDER, "HumanCyc"), ipAddr);
-		service.count(yesterDay, LogEvent.TOTAL, ipAddr);
-		service.count(yesterDay, LogEvent.from(Cmd.SEARCH), ipAddr);
-		
-		assertEquals(12, service.log().count());
-		
-		//timeline per type
-		Map<String, List<Object[]>>	res = service.log().downloadsTimeline(LogType.TOTAL, null);
-		assertNotNull(res);
-		assertEquals(1, res.size());
-		
-		List<Object[]> tl = res.get(LogType.TOTAL.description);
-		assertNotNull(tl);
-		assertEquals(2, tl.size());
-		// check the first item is [today, 4] - 
-		// because the time line is sorted in reverse order
-		assertEquals(4L, tl.get(0)[1]);
-		assertEquals(today, tl.get(0)[0]);
-		
-		// for one category only
-		res = service.log().downloadsTimeline(LogType.PROVIDER, null);
-		//one entry ("All providers")
-		assertEquals(1, res.size());
-		tl = res.get(LogType.TOTAL.description);
-		assertNull(tl); //global TOTAL not included
-		tl = res.get(LogType.PROVIDER.description);
-		assertNotNull(tl);
-		assertEquals(2L, tl.get(0)[1]); //PROVIDER type, today count=2 (1 reactome + 1 humancyc)
-		assertEquals(today, tl.get(0)[0]);
-		tl = res.get("HumanCyc");
-		assertNull(tl);
-				
-		// for error 500 only
-		res = service.log().downloadsTimeline(LogType.ERROR, "INTERNAL_ERROR");
-		//two map entries: for all downloads, for error 500
-		assertEquals(1, res.size());
-		tl = res.get(LogType.TOTAL.description);
-		assertNull(tl); //global TOTAL not included
-		tl = res.get("INTERNAL_ERROR");
-		assertNotNull(tl);
-		assertEquals(1L, tl.get(0)[1]); //PROVIDER type, today counts
-		assertEquals(today, tl.get(0)[0]);
-	}
-	
-	@DirtiesContext //other tests might added records too; do cleanup
-	@Test
-	public final void testTimeline2() {	
-		final String ipAddr = "66.249.74.168"; //some IP (perhaps it's Google's)
-	
-		// add some logs (for two days, several categories):
-		// Today
 		Set<LogEvent> events = new HashSet<LogEvent>(
 			Arrays.asList(
 					LogEvent.from(OutputFormat.BIOPAX),
-					new LogEvent(LogType.PROVIDER, "Reactome"),
-					new LogEvent(LogType.PROVIDER, "HumanCyc"),
-					LogEvent.from(GraphType.NEIGHBORHOOD)
+					new LogEvent(LogEvent.LogType.PROVIDER, "Reactome"),
+					new LogEvent(LogEvent.LogType.PROVIDER, "HumanCyc"),
+					LogEvent.from(GraphType.NEIGHBORHOOD),
+					LogEvent.from(Status.INTERNAL_ERROR),
+					LogEvent.from(Status.NO_RESULTS_FOUND),
+					new LogEvent(LogEvent.LogType.PROVIDER, "Reactome"),
+					new LogEvent(LogEvent.LogType.PROVIDER, "HumanCyc"),
+					LogEvent.from(Cmd.SEARCH)
 			)
 		);
-		
-		//save/count all + total (once)
-		service.log(events, ipAddr);
 
-		assertEquals(5, service.log().count());
-		
-		//timeline per type (incl. TOTAL)
-		Map<String, List<Object[]>>	res = service.log().downloadsTimeline(LogType.TOTAL, null);
-		assertNotNull(res);
-		assertEquals(1, res.size());
-		
-		List<Object[]> tl = res.get(LogType.TOTAL.description);
-		assertNotNull(tl);
-		assertEquals(1, tl.size());
-		assertEquals(1L, tl.get(0)[1]);
-		assertEquals(LogUtils.today(), tl.get(0)[0]);
-		
-		// for one category only
-		res = service.log().downloadsTimeline(LogType.PROVIDER, null);
-		//one entry, sum of counts for reactome, humancyc
-		assertEquals(1, res.size());
-		tl = res.get(LogType.TOTAL.description);
-		assertNull(tl); //global TOTAL not included
-		tl = res.get(LogType.PROVIDER.description);
-		assertNotNull(tl);
-		assertEquals(2L, tl.get(0)[1]); //PROVIDER type, today counts
-		tl = res.get("HumanCyc");
-		assertNull(tl);
-		tl = res.get("Reactome");
-		assertNull(tl);	
+		service.log(events, ipAddr);
 	}
 
 	@Test
@@ -226,34 +69,49 @@ public class RepositoriesAndServiceTest {
 		service.mapping().save(new Mapping("GeneCards", "ZHX1", "UNIPROT", "P12345"));
 		service.mapping().save(new Mapping("GeneCards", "ZHX1-C8orf76", "UNIPROT", "Q12345"));
 		service.mapping().save(new Mapping("GeneCards", "ZHX1-C8ORF76", "UNIPROT", "Q12345"));
-        
+		assertEquals(1, service.mapping()
+			.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
+
         //check it's saved
-        assertEquals(1, service.map(null, "ZHX1-C8orf76", "UNIPROT").size());
-        assertEquals(1, service.map(null, "ZHX1-C8ORF76", "UNIPROT").size());
-        assertEquals(1, service.map("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
+        assertEquals(1, service.map("ZHX1-C8orf76", "UNIPROT").size());
+        assertEquals(1, service.map("ZHX1-C8ORF76", "UNIPROT").size());
         
         // repeat (should successfully update)- add a Mapping
         service.mapping().save(new Mapping("TEST", "FooBar", "CHEBI", "CHEBI:12345"));
-        assertTrue(service.map(null, "FooBar", "UNIPROT").isEmpty());
-        assertTrue(service.map("TEST", "FooBar", "UNIPROT").isEmpty());
-        Set<String> mapsTo = service.map(null, "FooBar", "CHEBI");
+        assertTrue(service.map("FooBar", "UNIPROT").isEmpty());
+
+        Set<String> mapsTo = service.map("FooBar", "CHEBI");
         assertEquals(1, mapsTo.size());
         assertEquals("CHEBI:12345", mapsTo.iterator().next());
-        
-        service.mapping().save(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "UNIPROT"));
-        assertEquals(1, service.map("uniprot isoform", "A2A2M3-1", "UNIPROT").size());
+		mapsTo = service.map("FooBar", "CHEBI");
+		assertEquals(1, mapsTo.size());
+		assertEquals("CHEBI:12345", mapsTo.iterator().next());
+
+        //test that service.map(..) method can map isoform IDs despite they're not explicitly added to the mapping db
+		service.mapping().save(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "A2A2M3"));
+		assertEquals(1, service.map("A2A2M3-1", "UNIPROT").size());
+		assertEquals(1, service.map("A2A2M3", "UNIPROT").size());
         
         Mapping m = new Mapping("PubChem-substance", "14438", "CHEBI", "CHEBI:20");
         service.mapping().save(m);
+		assertEquals("SID:14438", m.getSrcId());
         assertNotNull(service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(
         		m.getSrc(), m.getSrcId(), m.getDest(), m.getDestId()));
-        assertEquals(1, service.map("PubChem-substance", "14438", "CHEBI").size());
-        assertEquals(1, service.map("Pubchem-Substance", "14438", "CHEBI").size());
-        assertEquals(1, service.map("pubchem substance", "14438", "CHEBI").size());
-        assertEquals(1, service.map("pubchem.substance", "14438", "CHEBI").size());
-        
+		assertEquals(1, service.map("SID:14438", "CHEBI").size());
+
+		//map from a list of IDs to target ID type (UNIPROT)
+		List<String> srcIds = new ArrayList<String>();
+		//add IDs - both map to the same uniprot ID ()
+		srcIds.add("ZHX1");
+		srcIds.add("A2A2M3");
+		//currently, mapping().find* methods cannot map uniprot isoform IDs (service.map(..) - can do by removing the suffix)
+		List<Mapping> mappings = service.mapping().findBySrcIdInAndDestIgnoreCase(srcIds, "UNIPROT");
+		assertEquals(2, mappings.size());
+		//test new service.map(null, srcIds, "UNIPROT"), which must also support isoform IDs
+		srcIds.remove("A2A2M3");
+		srcIds.add("A2A2M3-1");
+		assertEquals(2, service.map(srcIds, "UNIPROT").size());
 	}
-	
 	
 	@Test
 	@DirtiesContext
@@ -263,7 +121,7 @@ public class RepositoriesAndServiceTest {
         		"", METADATA_TYPE.BIOPAX, null, null, null, "free");        
         
         //cleanup previous tests data if any
-        md.cleanupOutputDir();
+        md = service.clear(md);
         
         Content content = new Content(md, "test0");
         md.getContent().add(content);
@@ -309,7 +167,7 @@ public class RepositoriesAndServiceTest {
         assertNotNull(content);  
         
         //cleanup
-        md = service.init(md);
+        md = service.clear(md);
         assertTrue(md.getContent().isEmpty()); 
         md = service.metadata().findByIdentifier("TEST");
         assertTrue(md.getContent().isEmpty());         

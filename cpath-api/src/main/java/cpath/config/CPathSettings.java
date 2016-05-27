@@ -49,7 +49,7 @@ import cpath.service.Scope;
  * CPath2 server-side instance-specific 
  * configuration constants and properties.
  * Singleton.
- * 
+ *
  * But this is not for cpath2 clients to care.
  * 
  * @author rodche
@@ -92,10 +92,12 @@ public final class CPathSettings {
 	
 	/**
 	 * cpath2 internal "blacklist" (of the ubiquitous molecules
-	 * to be excluded by some queries and format converters).
+	 * to be excluded by graph queries and data converters/exporters).
 	 */
 	public static final String BLACKLIST_FILE = "blacklist.txt";
-	
+
+	public static final String EXPORT_SCRIPT_FILE ="export.sh";
+
 	/**
 	 * cpath2 Metadata configuration default file name.
 	 */
@@ -153,9 +155,9 @@ public final class CPathSettings {
 		// put default values
 		Properties defaults = new Properties();
 		defaults.put(PROP_XML_BASE, "http://purl.org/pc2/test/");
-		defaults.put(PROVIDER_NAME, "cPath2 Demo");
+		defaults.put(PROVIDER_NAME, "Pathway Commons demo");
 		defaults.put(PROVIDER_VERSION, "0");
-		defaults.put(PROVIDER_DESCRIPTION, "cPath2 Demo");
+		defaults.put(PROVIDER_DESCRIPTION, "Pathway Commons Team");
 		defaults.put(PROVIDER_ORGANISMS, "Homo sapiens (9606)");
 		defaults.put(PROP_MAX_SEARCH_HITS_PER_PAGE, "500");
 		defaults.put(PROP_METADATA_LOCATION, homeDir() + File.separator + METADATA_FILE);
@@ -451,9 +453,18 @@ public final class CPathSettings {
 	 */
 	public String blacklistFile() {
 		return downloadsDir() + File.separator + BLACKLIST_FILE;
-	}	
-	
-	
+	}
+
+
+	/**
+	 * Gets the full path to the to-be-generated script.
+	 *
+	 * @return
+	 */
+	public String exportScriptFile() {
+		return downloadsDir() + File.separator + EXPORT_SCRIPT_FILE;
+	}
+
 	/**
 	 * Sets or updates a cpath2 instance property
 	 * but only if Admin mode is enabled; Admin mode
@@ -538,19 +549,27 @@ public final class CPathSettings {
 	
 	
 	/**
-	 * Full path to the archive file where a BioPAX sub-model is exported
-	 * (in the batch downloads directory). 
+	 * Full path to the archive file where a BioPAX sub-model is exported.
 	 * 
 	 * @param name - a Metadata's identifier, organism name, or a special name, such as "All", "Warehouse", "Detailed".
 	 * @return
+	 * @see #downloadsDir()
 	 */
-	public String biopaxExportFileName(String name) {
-		return downloadsDir() + File.separator + 
-				exportArchivePrefix() + name 
-					+ ".BIOPAX.owl.gz";
+	public String biopaxFileNameFull(String name) {
+		return downloadsDir() + File.separator + biopaxFileName(name);
 	}
-	
-	
+
+	/**
+	 * Local name of the BioPAX sub-model file (in the batch downloads directory).
+	 *
+	 * @param name - a Metadata's identifier, organism name, or a special name, such as "All", "Warehouse", "Detailed".
+	 * @return
+	 * @see #downloadsDir()
+	 */
+	public String biopaxFileName(String name) {
+		return exportArchivePrefix() + name + ".BIOPAX.owl.gz";
+	}
+
 	/**
 	 * Gets the common file name prefix (includes instance's provider
 	 * name and version, i.e., that comes after the directory path 
@@ -560,8 +579,8 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String exportArchivePrefix() {
-		return WordUtils.capitalize(property(PROVIDER_NAME)).replaceAll("\\W+","") +
-				"." + property(PROVIDER_VERSION) + ".";
+		return WordUtils.capitalize(property(PROVIDER_NAME) + property(PROVIDER_VERSION))
+				.replaceAll("\\W+","") + ".";
 	}
 	
 	
@@ -572,7 +591,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String mainModelFile() {
-		return biopaxExportFileName(Scope.ALL.toString());
+		return biopaxFileNameFull(Scope.ALL.toString());
 	}
 	
 	/**
@@ -582,7 +601,7 @@ public final class CPathSettings {
 	 * @return
 	 */
 	public String warehouseModelFile() {
-		return biopaxExportFileName(Scope.WAREHOUSE.toString());
+		return biopaxFileNameFull(Scope.WAREHOUSE.toString());
 	}
 
 	/**

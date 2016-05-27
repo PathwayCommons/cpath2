@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Map;
 import java.util.TreeMap;
@@ -19,13 +18,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import cpath.config.CPathSettings;
-import cpath.dao.LogUtils;
-import cpath.jpa.LogType;
 
 @Controller
 public class PagesController extends BasicController {
@@ -95,40 +91,9 @@ public class PagesController extends BasicController {
     	
     	model.addAttribute("files", files.entrySet());
 		model.addAttribute("prefix", cpath.exportArchivePrefix());
-		
+
 		return "downloads";
-    }	
-	
-    // Access Log UI 
-    
-    @RequestMapping("/log")
-    public String log() {
-    	return "redirect:log/TOTAL/stats";
     }
-
-    @RequestMapping("/log/stats")
-    public String allStats() {
-    	return "redirect:log/TOTAL/stats";
-    }
-        
-    @RequestMapping("/log/{logType}/stats")
-    public String statsByType(Model model, @PathVariable LogType logType) {
-    	model.addAttribute("summary_for", "Category: " + logType);
-    	model.addAttribute("current", "/log/"+logType.toString()+"/stats");
-    	model.addAttribute("from_to", timelineMaxRange());	
-    	return "stats";
-    }
-
-	@RequestMapping("/log/{logType}/{name}/stats")
-    public String statsByType(Model model, @PathVariable LogType logType,
-    		@PathVariable String name) {
-    	model.addAttribute("summary_for", "Category: " + logType + ", name: " + name);
-    	model.addAttribute("current", "/log/"+logType.toString()+"/"+name+"/stats");
-    	model.addAttribute("from_to", timelineMaxRange());
-    	
-    	return "stats";
-    }    
-    
 
     // The Web App (AngularJS, rich HTML5 portal)
     @RequestMapping("/view")
@@ -139,8 +104,7 @@ public class PagesController extends BasicController {
     // OTHER resources
     
     @RequestMapping("/favicon.ico")
-    public  @ResponseBody byte[] icon()
-    		throws IOException {
+    public  @ResponseBody byte[] icon() throws IOException {
     	
     	String cpathLogoUrl = CPathSettings.getInstance().getLogoUrl();
     	
@@ -226,25 +190,5 @@ public class PagesController extends BasicController {
     	}
     	
     	return files;
-	}
-	
-    private String timelineMaxRange() {
-    	StringBuilder range = new StringBuilder();		
-    	
-    	if(cpath.getLogStart() != null)
-    		range.append("from ").append(cpath.getLogStart()).append(" ");
-    	else {
-    		Calendar cal = Calendar.getInstance();
-    		cal.add(Calendar.YEAR, -1);
-    		String yearAgo = LogUtils.ISO_DATE_FORMAT.format(cal.getTime());
-    		range.append("from ").append(yearAgo).append(" ");
-    	}
-    	
-    	if(cpath.getLogEnd()!=null && LogUtils.today().compareTo(cpath.getLogEnd()) > 0)
-    		range.append("to ").append(cpath.getLogEnd()); //in the past
-    	else 
-    		range.append("to ").append(LogUtils.today());
-    	
-		return range.toString();
 	}
 }

@@ -31,21 +31,14 @@
 			</blockquote>
 		</div>
 
-		<h3>Note:</h3>
-		<p> Links to the access summary for Warehouse data sources are not provided below; however,
-			the <a rel="nofollow" href="<spring:url value='/log/TOTAL/stats'/>">total number of requests</a>
-			minus <a rel="nofollow" href="<spring:url value='/resources/ERROR/stats'/>">errors</a> will be fair estimate.
-			Access statistics are computed from January 2014, except unique IP addresses, which are computed from November 2014.
-		</p>
-
-		<h3>Acknowledgment</h3>
-		<p>
-			The ${cpath.name} team much appreciates the fundamental contribution of
-			all the data providers, authors, <a href="http://identifiers.org/">Identifiers.org</a>,
-			all the open biological ontologies, the open-source projects and standards,
-			which made creating of this integrated BioPAX web service and database feasible.<br/>
-		</p>
-	</div>
+	<h3>Acknowledgment</h3>
+	<p>
+		The ${cpath.name} team much appreciates the fundamental contribution of
+		all the data providers, authors, <a href="http://identifiers.org/">Identifiers.org</a>,
+		all the open biological ontologies, the open-source projects and standards,
+		which made creating of this integrated BioPAX web service and database feasible.<br/>
+	</p>
+  </div>
 
 	<div ng-repeat="ds in datasources" class="row">
 		<div class="thumbnail">

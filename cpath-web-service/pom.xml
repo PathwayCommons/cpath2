@@ -5,7 +5,7 @@
 	<parent>
 		<artifactId>parent</artifactId>
 		<groupId>pathwaycommons.cpath</groupId>
-		<version>6.1.0-SNAPSHOT</version>
+		<version>7.0.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>cpath-web-service</artifactId>
@@ -14,10 +14,6 @@
 	<name>cPath2 - Web Service</name>
 	<description>cPath2 web service, information and system pages</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
-
-	<scm>
-		<url>https://github.com/PathwayCommons/cpath2</url>
-	</scm>
 
 	<build>
 		<plugins>
@@ -198,6 +194,13 @@
 			<scope>provided</scope>
 		</dependency>
 
+		<!--an experimental feature tool (@Robot annotations, alt. to /robots.txt) -->
+		<dependency>
+			<groupId>org.stuartgunter</groupId>
+			<artifactId>spring-rep</artifactId>
+			<version>0.1</version>
+		</dependency>
+
 		<!-- Logging -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -214,21 +217,22 @@
 			<artifactId>log4j-over-slf4j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-core</artifactId>
-			<scope>runtime</scope>
-		</dependency>
+		<!--<dependency>-->
+			<!--<groupId>ch.qos.logback</groupId>-->
+			<!--<artifactId>logback-core</artifactId>-->
+			<!--<scope>runtime</scope>-->
+		<!--</dependency>-->
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-access</artifactId>
-			<scope>runtime</scope>
-		</dependency>
+		<!-- logback-access is for web devel./test env., using TeeFilter (slow...)-->
+		<!--<dependency>-->
+			<!--<groupId>ch.qos.logback</groupId>-->
+			<!--<artifactId>logback-access</artifactId>-->
+			<!--<scope>runtime</scope>-->
+		<!--</dependency>-->
 		<dependency>
 			<groupId>pathwaycommons.cpath</groupId>
 			<artifactId>cpath-impl</artifactId>

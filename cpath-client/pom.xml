@@ -5,7 +5,7 @@
 	<parent>
 		<artifactId>parent</artifactId>
 		<groupId>pathwaycommons.cpath</groupId>
-		<version>6.1.0-SNAPSHOT</version>
+		<version>7.0.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>cpath-client</artifactId>
@@ -14,10 +14,6 @@
 	<name>cPath2 - Client</name>
 	<description>Client library for cPath/cPath2 web services</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
-
-	<scm>
-		<url>https://github.com/PathwayCommons/cpath2</url>
-	</scm>
 
 	<dependencies>
 		<dependency>
@@ -36,15 +32,16 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-oxm</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jcl-over-slf4j</artifactId>
-			<scope>test</scope>
 		</dependency>
 	</dependencies>
 	
