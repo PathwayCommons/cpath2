@@ -1,7 +1,7 @@
-package cpath.cleaner.internal;
+package cpath.cleaner;
 
-import cpath.dao.CPathUtils;
-import cpath.importer.Cleaner;
+import cpath.service.CPathUtils;
+import cpath.service.Cleaner;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
@@ -22,9 +22,9 @@ import java.util.*;
  * Can normalize pathway URIs to, e.g., http://identifiers.org/smpdb/SMP00016
  * (this allows to then merge same pathways from different input files)
  */
-final class SmpdbCleanerImpl implements Cleaner {
+final class SmpdbCleaner implements Cleaner {
 
-    private static Logger log = LoggerFactory.getLogger(SmpdbCleanerImpl.class);
+    private static Logger log = LoggerFactory.getLogger(SmpdbCleaner.class);
 
     public void clean(InputStream data, OutputStream cleanedData)
 	{	

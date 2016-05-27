@@ -163,7 +163,7 @@
 		<commons-lang.version>2.6</commons-lang.version>
 		<collections-generic.version>4.01</collections-generic.version>
 		<commons-collections.version>3.2.2</commons-collections.version>
-		<commons-fileupload.version>1.3.1</commons-fileupload.version>		
+		<!--<commons-fileupload.version>1.3.1</commons-fileupload.version>		-->
 		<httpclient.version>4.5</httpclient.version>
 		<javax.servlet-api.version>3.1.0</javax.servlet-api.version>
 		<jstl.version>1.2</jstl.version>
@@ -471,18 +471,56 @@
 				<groupId>org.biopax.validator</groupId>
 				<artifactId>biopax-validator</artifactId>
 				<version>${validator.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.validator</groupId>
 				<artifactId>obo-fetcher</artifactId>
 				<version>${validator.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>log4j</groupId>
+						<artifactId>log4j</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.biopax.paxtools</groupId>
 				<artifactId>json-converter</artifactId>
 				<version>${paxtools.version}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>commons-logging</groupId>
+						<artifactId>commons-logging</artifactId>
+					</exclusion>
+				</exclusions>
 				<classifier>jar-with-dependencies</classifier>
 			</dependency>
+			<!--<dependency>-->
+				<!--<groupId>org.apache.jena</groupId>-->
+				<!--<artifactId>apache-jena-libs</artifactId>-->
+				<!--<version>${apache-jena-libs.version}</version>-->
+				<!--<scope>runtime</scope>-->
+				<!--<exclusions>-->
+					<!--<exclusion>-->
+						<!--<groupId>log4j</groupId>-->
+						<!--<artifactId>log4j</artifactId>-->
+					<!--</exclusion>-->
+					<!--<exclusion>-->
+						<!--<groupId>org.slf4j</groupId>-->
+						<!--<artifactId>slf4j-log4j12</artifactId>-->
+					<!--</exclusion>-->
+				<!--</exclusions>-->
+			<!--</dependency>-->
 			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
@@ -493,12 +531,6 @@
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-test</artifactId>
 				<version>${spring.version}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 				<scope>test</scope>
 			</dependency>
 			<dependency>
@@ -572,11 +604,11 @@
 				<artifactId>commons-collections</artifactId>
 				<version>${commons-collections.version}</version>
 			</dependency>
-			<dependency>
-				<groupId>commons-fileupload</groupId>
-				<artifactId>commons-fileupload</artifactId>
-				<version>${commons-fileupload.version}</version>
-			</dependency>	
+			<!--<dependency>-->
+				<!--<groupId>commons-fileupload</groupId>-->
+				<!--<artifactId>commons-fileupload</artifactId>-->
+				<!--<version>${commons-fileupload.version}</version>-->
+			<!--</dependency>	-->
 			<dependency>
 				<groupId>org.hibernate</groupId>
 				<artifactId>hibernate-core</artifactId>

@@ -30,15 +30,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import cpath.config.CPathSettings;
-import cpath.jpa.Content;
-import cpath.jpa.Mapping;
-import cpath.jpa.MappingsRepository;
-import cpath.jpa.Metadata;
-import cpath.jpa.MetadataRepository;
-import cpath.service.jaxb.SearchHit;
-import cpath.service.jaxb.SearchResponse;
-import cpath.service.jaxb.ServiceResponse;
-import cpath.service.jaxb.TraverseResponse;
+import cpath.jpa.*;
+import cpath.service.jaxb.*;
 
 import static cpath.service.Status.*;
 
@@ -786,22 +779,18 @@ public class CPathServiceImpl implements CPathService {
 			String name = md.standardName();
 			String[] dsUrisFilter = new String[] { md.getUri() };
 
-			SearchResponse sr = (SearchResponse) searcher.search("*", 0,
-					Pathway.class, dsUrisFilter, null);
+			SearchResponse sr = searcher.search("*", 0, Pathway.class, dsUrisFilter, null);
 			md.setNumPathways(sr.getNumHits());
 			log.info(name + " - pathways: " + sr.getNumHits());
 
-			sr = (SearchResponse) searcher.search("*", 0, Interaction.class,
-					dsUrisFilter, null);
+			sr = searcher.search("*", 0, Interaction.class, dsUrisFilter, null);
 			md.setNumInteractions(sr.getNumHits());
 			log.info(name + " - interactions: " + sr.getNumHits());
 
 			Integer count;
-			sr = (SearchResponse) searcher.search("*", 0, PhysicalEntity.class,
-					dsUrisFilter, null);
+			sr = searcher.search("*", 0, PhysicalEntity.class, dsUrisFilter, null);
 			count = sr.getNumHits();
-			sr = (SearchResponse) searcher.search("*", 0, Gene.class,
-					dsUrisFilter, null);
+			sr = searcher.search("*", 0, Gene.class, dsUrisFilter, null);
 			count += sr.getNumHits();
 			md.setNumPhysicalEntities(count);
 			log.info(name + " - molecules, complexes and genes: " + count);

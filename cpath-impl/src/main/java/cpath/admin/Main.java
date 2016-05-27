@@ -2,7 +2,6 @@ package cpath.admin;
 
 import static cpath.config.CPathSettings.*;
 
-import cpath.analysis.IdsSummary;
 import cpath.config.CPathSettings;
 import cpath.service.Merger;
 import cpath.service.PreMerger;
@@ -549,7 +548,6 @@ public final class Main {
 		writer.println("# There must be blacklist.txt and paxtools.jar files already.");
 		writer.println("# Change to the downloads/ and run as:");
 		writer.println("# sh export.sh &");
-		writer.println("nohup echo \"Started.\"");
 		for(Metadata md : allMetadata) {
 			if(!md.isNotPathwayData()) //skip warehouse metadata
 				writeScriptCommands(cpath.biopaxFileName(md.getIdentifier()), writer, md.getNumPathways()>0);
@@ -562,16 +560,10 @@ public final class Main {
 		writer.println("rename 's/txt\\.sif/sif/' *.txt.sif");
 		writer.println(String.format("gzip %s*.txt %s*.sif %s*.gmt %s*.xml",
 				commonPrefix, commonPrefix, commonPrefix, commonPrefix));
-		writer.println("nohup echo \"All done (also moved nohup.txt to the parent folder).\"");
+		writer.println("echo \"All done (also moved nohup.txt to the parent folder).\"");
 		writer.println("mv nohup.txt ..");
 		writer.close();
 
-		//also, quickly generate a summary of the BioPAX model
-		LOG.info("generating dsSummary.txt...");
-		Analysis<Model> summarize = new IdsSummary();
-//		System.setProperty(IdsSummary.JAVA_OPTION_VERBOSE,"true");
-		System.setProperty(IdsSummary.JAVA_OPTION_OUTPUT,cpath.homeDir() + File.separator + "idsSummary.txt");
-		summarize.execute(model);
 		LOG.info("createDownloads: done.");
 	}
 
@@ -589,7 +581,7 @@ public final class Main {
 					bpFilename, prefix+fileExtension(OutputFormat.GSEA, "uniprot"),
 					"'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
 			writer.println("wait"); //important
-			writer.println("nohup echo \"Done converting "+bpFilename+" to GSEA.\"");
+			writer.println("echo \"Done converting "+bpFilename+" to GSEA.\"");
 		}
 
 		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIF",
@@ -599,7 +591,7 @@ public final class Main {
 		// But UniProt ID based extended SIF can be too huge and takes too long to generate... won't make it now...
 
 		writer.println("wait"); //important
-		writer.println("nohup echo \"Done converting "+bpFilename+" to SIF.\"");
+		writer.println("echo \"Done converting "+bpFilename+" to SIF.\"");
 	}
 
 	private static Collection<String> findAllUris(Searcher searcher, 

@@ -5,14 +5,12 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
-import cpath.config.CPathSettings;
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.algorithm.Direction;
 
-import cpath.jpa.Content;
 import cpath.jpa.MappingsRepository;
 import cpath.jpa.Metadata;
 import cpath.jpa.MetadataRepository;
@@ -38,8 +36,6 @@ public interface CPathService {
 	
 	Searcher getSearcher();
 	
-	void setSearcher(Searcher searcher);
-
 	void setSearcher(Searcher searcher);
 
 	Blacklist getBlacklist();
@@ -190,16 +186,6 @@ public interface CPathService {
 	 */
 	void log(Collection<LogEvent> events, String ipAddr);
 
-	/**
-	 * Creates a list of new log events to update counts for -
-	 * name, format, provider - from the data archive/file name
-	 * (in the batch downloads or another directory),
-	 * but does not save these events in the log database yet.
-	 *
-	 * @param filename see {@link CPathSettings#biopaxFileNameFull(String)} for how it's created.
-	 * @return
-	 */
-	Set<LogEvent> logEventsFromFilename(String filename);
 	
     /**
      * Persists or updates the given metadata object.
