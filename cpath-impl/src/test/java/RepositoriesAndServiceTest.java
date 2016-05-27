@@ -38,7 +38,7 @@ public class RepositoriesAndServiceTest {
 	@Autowired
 	private CPathService service;
 
-	
+
 	@DirtiesContext
 	@Test
 	public final void testTimeline() {	
@@ -60,52 +60,7 @@ public class RepositoriesAndServiceTest {
 
 		service.log(events, ipAddr);
 	}
-	
-	@Test
-	public final void testLogEventFromDownloads() {
-		CPathSettings cpath = CPathSettings.getInstance();
-		
-		//additional 'test' metadata entry (Reactome); 
-		//without this service.logEventsFromFilename(file) 
-		//won't be able to match provider by name/id and create PROVIDER type log event
-		Metadata md = new Metadata("test", "Reactome", "Foo", "", "", 
-				"", METADATA_TYPE.BIOPAX, "", "", null, "free");		
-		service.save(md);
-		
-		String file = cpath.exportArchivePrefix() + "Reactome.BIOPAX.owl.gz";
-		assertEquals(OutputFormat.BIOPAX, LogUtils.fileOutputFormat(file));
-		assertEquals("Reactome", LogUtils.fileSrcOrScope(file));
-		Set<LogEvent> events = service.logEventsFromFilename(file);
-		assertEquals(3, events.size()); //log in types: PROVIDER, FILE, FORMAT
-		
-		//'All' 
-		file = cpath.exportArchivePrefix() + "All.BIOPAX.owl.gz";
-		events = service.logEventsFromFilename(file);
-		assertEquals(2, events.size());
-		
-		file = cpath.exportArchivePrefix() + "Reactome.GSEA.gmt.gz";
-		events = service.logEventsFromFilename(file);
-		assertEquals(3, events.size());
-		
-		//illegal format (ignored, i.e., no FORMAT type log event is added)
-		file = cpath.exportArchivePrefix() + "Reactome.foo.gmt.gz";
-		events = service.logEventsFromFilename(file);
-		assertEquals(2, events.size());
-		
-		//other (metadata etc.)
-		file = "blacklist.txt";
-		events = service.logEventsFromFilename(file);
-		assertEquals(1, events.size());//counted in FILE log type only
-		assertEquals(LogEvent.LogType.FILE, events.iterator().next().getType());
-		
-		//provider name is now matched ignoring case, 
-		//(FORMAT type event is not there as well due to 'foo')
-		file = cpath.exportArchivePrefix() + "reactome.foo.gmt.gz";
-		events = service.logEventsFromFilename(file);
-		assertEquals(2, events.size());
-	}
-	
-	
+
 	@Test
 	@DirtiesContext
 	public void testIdMapping() {		
@@ -116,7 +71,7 @@ public class RepositoriesAndServiceTest {
 		service.mapping().save(new Mapping("GeneCards", "ZHX1-C8ORF76", "UNIPROT", "Q12345"));
 		assertEquals(1, service.mapping()
 			.findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase("GeneCards", "ZHX1-C8ORF76", "UNIPROT").size());
-        
+
         //check it's saved
         assertEquals(1, service.map("ZHX1-C8orf76", "UNIPROT").size());
         assertEquals(1, service.map("ZHX1-C8ORF76", "UNIPROT").size());
@@ -131,7 +86,7 @@ public class RepositoriesAndServiceTest {
 		mapsTo = service.map("FooBar", "CHEBI");
 		assertEquals(1, mapsTo.size());
 		assertEquals("CHEBI:12345", mapsTo.iterator().next());
-        
+
         //test that service.map(..) method can map isoform IDs despite they're not explicitly added to the mapping db
 		service.mapping().save(new Mapping("UNIPROT", "A2A2M3", "UNIPROT", "A2A2M3"));
 		assertEquals(1, service.map("A2A2M3-1", "UNIPROT").size());

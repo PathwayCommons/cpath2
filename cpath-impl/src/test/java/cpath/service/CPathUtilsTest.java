@@ -139,44 +139,5 @@ public class CPathUtilsTest {
 		assertTrue(m.find());		
 		System.out.println("ID="+m.group(1)+"; DB="+m.group(2));		
 	}
-	
-	/*
-	 * Test the pattern that helps extract 
-	 * data provider/organism name and output format 
-	 * from cpath2-generated archives in the batch downloads dir.
-	 */
-	@Test
-	public final void testArchiveScopeAndFormatPattern() {
-		//test the data source pattern
-		Pattern pattern = LogUtils.ARCHIVE_SRC_PATTERN;
-		Matcher matcher = pattern.matcher("blacklist.txt");
-		assertFalse(matcher.matches());
 
-		matcher = pattern.matcher(cpath.exportArchivePrefix()+"Warehouse.BIOPAX.owl.gz");
-		assertTrue(matcher.find());
-		assertEquals("Warehouse", matcher.group(1));
-		matcher = pattern.matcher(cpath.exportArchivePrefix()+"All.BIOPAX.owl.gz");
-		assertTrue(matcher.find());
-		assertEquals("All", matcher.group(1));
-		matcher = pattern.matcher(cpath.exportArchivePrefix()+"Detailed.EXTENDED_BINARY_SIF.hgnc.tsv.gz");
-		assertTrue(matcher.matches());
-		assertEquals("Detailed", matcher.group(1));
-
-		//test the output format pattern
-		pattern = LogUtils.ARCHIVE_FORMAT_PATTERN;		
-		matcher = pattern.matcher("blacklist.txt");
-		assertFalse(matcher.matches());
-
-		matcher = pattern.matcher(cpath.exportArchivePrefix()+"NCI_Nature.EXTENDED_BINARY_SIF.hgnc.tsv.gz");
-		assertTrue(matcher.matches());
-		assertEquals("EXTENDED_BINARY_SIF", matcher.group(1));		
-		matcher = pattern.matcher(cpath.exportArchivePrefix()+"NCI Pathway Interaction Database: Pathway.GSEA.gmt.gz");
-		assertTrue(matcher.matches());
-		assertEquals("GSEA", matcher.group(1));		
-		matcher = pattern.matcher(cpath.exportArchivePrefix()+"All.BIOPAX.owl.gz");
-		assertTrue(matcher.find());
-		assertEquals("BIOPAX", matcher.group(1));
-		assertEquals(OutputFormat.BIOPAX, LogUtils.fileOutputFormat(cpath.exportArchivePrefix()+"All.BIOPAX.owl.gz"));
-		assertEquals("All", LogUtils.fileSrcOrScope(cpath.exportArchivePrefix()+"All.BIOPAX.owl.gz"));
-	}
 }

@@ -47,12 +47,6 @@
 	
 	<mvc:interceptors>
 		<bean class="cpath.webservice.CPathMaintenanceHandlerInterceptor" />
-		<bean class="cpath.webservice.CPathWebserviceHandlerInterceptor" />
-		<!--<bean class="org.stuartgunter.rep.interceptor.RepInterceptor">-->
-			<!--<property name="combinatorStrategy">-->
-				<!--<bean class="org.stuartgunter.rep.interceptor.RobotMergeCombinator"/>-->
-			<!--</property>-->
-		<!--</bean>-->
     </mvc:interceptors>
 
 	<!-- contentNegotiationManager also makes .xml, .json extensions work (to return JSON or XML 
@@ -67,18 +61,6 @@
         	</value>
     	</property>
 	</bean>
-
-    <!-- serves the file uploading, using Apache commons-fileuploader -->
-	<bean id="multipartResolver"
-		class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
-		<property name="maxUploadSize" value="100000000" /><!-- 100Mb (normally zipped files) -->
-	</bean>
-
-	<!--<mvc:resources mapping="/downloads/**" location="file:${CPATH2_HOME}/downloads/" />-->
-	<!-- also serve cpath2 original and premerged data archives and validation reports -->
-	<mvc:resources mapping="/datadir/**" location="file:${CPATH2_HOME}/data/" />
-	<!-- do not want config. and data files seen at all (even securely, by admin), then disable the following line -->
-	<mvc:resources mapping="/admin/homedir/**" location="file:${CPATH2_HOME}/" />
 
 	<mvc:resources mapping="/resources/**" location="/resources/" />
 

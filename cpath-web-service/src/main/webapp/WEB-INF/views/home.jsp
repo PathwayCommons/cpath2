@@ -3,11 +3,8 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
-<!-- get the root/base URL (e.g., depends on whether the WAR was deployed on a Tomcat 
+<!-- get the root/base URL (e.g., depends on whether the WAR was deployed on a Tomcat
 or the fat JAR with embedded application server was started) -->
-<c:set var="req" value="${pageContext.request}" />
-<c:set var="uri" value="${req.requestURI}" />
-<c:set var="base" value="${fn:replace(req.requestURL, fn:substring(uri, 1, fn:length(uri)), req.contextPath)}" />
 
 <!DOCTYPE html>
 <html>
@@ -19,8 +16,6 @@ or the fat JAR with embedded application server was started) -->
 <body data-spy="scroll" data-target=".navbar">
 <jsp:include page="header.jsp"/>
 
-  <h2>The Web Service API</h2>
-	
   <div class="row nav-target" id="about">
   	<h3><a href="${cpath.url}">${cpath.name}</a></h3>
   	<blockquote>
@@ -28,10 +23,14 @@ or the fat JAR with embedded application server was started) -->
 	<p><c:out value="${cpath.description}"/></p>
 	</blockquote>
   </div>
-  	
+
+  <h2>The Web API</h2>
+
   <div class="row">	
 	<div class="jumbotron">
-	<h3>Main web service</h3>
+	<h3>Web service commands</h3>
+	<p><small>(unique clients: <span class="badge alert-info pc2_tip"></span>;&nbsp;
+		successful queries: <span class="badge alert-info pc2_tok"></span>)</small></p>
 	<blockquote><p>To query the integrated biological pathway database, 
 	application developers can use the following commands:</p></blockquote>
 	<ul id="commands" title="Main commands">
@@ -48,7 +47,7 @@ or the fat JAR with embedded application server was started) -->
   </div>
 	
   <div class="row">	
-	<h4>Metadata, views, etc.</h4>
+	<h4>Metadata, etc.</h4>
 	<p>There are a number of "undocumented" URLs (subject to change without notice)  
 		providing metadata, files, scripts and images for creating and maintaining 
 		this website. Nevertheless, advanced users may find the following examples useful:
@@ -56,10 +55,9 @@ or the fat JAR with embedded application server was started) -->
 	<ul>
 		<li><em>/help/</em> - returns a tree of Help objects describing the main commands, parameters,
 		BioPAX types, and properties, e.g., /help/schema, /help/commands, /help/types;</li>
-		<li><em>/*</em> - every BioPAX object's URI in this resource is a resolvable URL;
-		the XML base: ${cpath.xmlBase} redirects to the web service base URL: ${base}; so,
-		e.g., ${cpath.xmlBase}pid URL is equivalent to ${base}get?uri=${cpath.xmlBase}pid
-		query (gets the BioPAX RDF/XML representation of the Provenance object).
+		<li><em>/[rdf:ID]</em> - every BioPAX object's URI here is a resolvable URL, because it is either a standard
+		URI, based no Identifiers.org, or it starts with the XML base: ${cpath.xmlBase}, which redirects to
+		a description page (it's still work in progress), e.g., ${cpath.xmlBase}pid.
 		</li>
 	</ul>
 	<p>Fore more information, please contact us.
@@ -68,23 +66,23 @@ or the fat JAR with embedded application server was started) -->
   
 	<div class="row" id="notes">
 	<h3>Notes</h3>
-		<h4><a id="about_uris"></a>About URIs and IDs in this system</h4>
+		<h4><a id="about_uris"></a>About URIs and IDs</h4>
 	    <p>
 	    Parameters: 'source', 'uri', and 'target' require URIs of existing BioPAX elements, which 
 		are either standard <a href="http://identifiers.org" target="_blank">Identifiers.org</a>
 		URLs (for most canonical biological entities and controlled vocabularies), or ${cpath.name} 
 		generated ${cpath.xmlBase}<em>&lt;localID&gt;</em> URLs (for most BioPAX Entities and Xrefs).
-		BioPAX object URIs used by this service are not easy to guess, thus should be discovered using 
-		web service commands, such as search, top_pathways, and other queries (i.e., get some objects of interest first). 
-		For example, despite knowing current URI namespace ${cpath.xmlBase} and actual service location ${base}, 
-		one should not normally hit ${base}foo, ${cpath.xmlBase}foo, or ${base}get?uri=${cpath.xmlBase}foo 
-		unless the corresponding BioPAX individual exists. However, HGNC Symbol (HUGO),
-		UniProtKB (without isoform or version part), RefSeq (without versions), Ensembl, IPI, and NCBI Gene (integer)
-		<strong>ID; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem Compound
-		(must be prefixed with 'CID:' to tell it from SID and gene ID), are supported and
-		can be also used in place of URIs</strong> in <em>get</em> and <em>graph</em> queries.
-		As a rule of thumb, using full URIs makes a precise query, whereas using identifiers makes a 
-		more exploratory one, which depends on full-text search, which (index) in turn depends on id-mapping.
+		BioPAX object URIs used by this service are not easy to guess; thus, they should be discovered using
+		web service commands, such as search, top_pathways, or from our archive files.
+		For example, despite knowing current URI namespace ${cpath.xmlBase} and the service location,
+		one should not guess /foo, ${cpath.xmlBase}foo, or get?uri=${cpath.xmlBase}foo
+		unless the BioPAX individual actually there exists (find existing object URIs of interest first).
+		However, HUGO gene symbols, SwissProt, RefSeq, Ensembl, and NCBI Gene (positive integer)
+		<strong>ID; and ChEBI, ChEMBL, KEGG Compound, DrugBank, PharmGKB Drug, PubChem Compound or Substance
+		(ID must be prefixed with 'CID:' or 'SID:' to distinguish from each other and NCBI Gene),
+		are also acceptable in place of full URIs</strong> in <em>get</em> and <em>graph</em> queries.
+		As a rule of thumb, using full URIs makes a precise query, whereas using the identifiers makes a
+		more exploratory one, which depends on full-text search (index) and id-mapping.
 		</p>
 
 		<h4><a id="enco"></a>About example URLs</h4>
@@ -208,7 +206,10 @@ or the fat JAR with embedded application server was started) -->
 	<h4>Examples:</h4>
 	<ol>
 		<li><a rel="nofollow" href="get?uri=http://identifiers.org/uniprot/Q06609">
-			This command returns the BioPAX representation of Q06609</a> (a <strong>ProteinReference</strong> object).
+			This command returns the BioPAX representation of Q06609</a> (a <strong>ProteinReference</strong>'s sub-model).
+		</li>
+		<li><a rel="nofollow" href="get?uri=http://identifiers.org/uniprot/Q06609&format=JSONLD">
+			Gets the JSON-LD representation of Q06609</a> of the ProteinReference.
 		</li>
 		<li><a rel="nofollow" href="get?uri=COL5A1">Find/get by HUGO gene symbol COL5A1</a> - returns BioPAX entities.
 			<strong>Note:</strong> unlike the first example, it first performs a full-text search for physical entities
@@ -357,9 +358,12 @@ or the fat JAR with embedded application server was started) -->
 	<h3>TOP_PATHWAYS:</h3>
 	<blockquote><p>
 	Returns all "top" pathways - pathways that are neither
-	'controlled' nor a 'pathwayComponent' of another biological process.</p></blockquote>
+	'controlled' nor a 'pathwayComponent' of another biological process, excluding "pathways" having
+	less than three components, none of which being a non-empty sub-pathway.</p></blockquote>
 	<h4>Parameters:</h4>
 	<ul>
+		<li><em>q=</em> [Optional] a keyword, name, external identifier, or a Lucene query string,
+		like in <a href="#search_parameters">'search'</a>, but the default is '*' (match all).</li>
 		<li><em>datasource=</em> [Optional] filter by data source (same as for <a href="#search_parameters">'search'</a>).
 		</li>
 		<li><em>organism=</em> [Optional] organism filter (same as for <a href="#search_parameters">'search'</a>).
@@ -372,6 +376,8 @@ or the fat JAR with embedded application server was started) -->
 	<ol>
 		<li><a rel="nofollow" href="top_pathways"> get top pathways (XML)</a></li>
 		<li><a rel="nofollow" href="top_pathways.json"> get top pathways in JSON format</a></li>
+		<li><a rel="nofollow" href="top_pathways.json?q=insulin&datasource=reactome">
+			get top pathways from Reactome, matching 'insulin'; return JSON format</a></li>
 	</ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
@@ -475,5 +481,11 @@ or the fat JAR with embedded application server was started) -->
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <jsp:include page="footer.jsp"/>
 
+<script>
+	// update the number of successful requests (excluding errors);
+	$.getJSON('log/totalok', function(tok) {$('.pc2_tok').text(tok);}).error(function() {$('.pc2_tok').text(0);});
+	// update the number of unique client IPs;
+	$.getJSON('log/totalip', function(tip) {$('.pc2_tip').text(tip);}).error(function() {$('.pc2_tip').text(0);});
+</script>
 </body>
 </html>

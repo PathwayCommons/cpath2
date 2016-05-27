@@ -27,9 +27,15 @@ public final class CPathTopPathwaysQuery extends BaseCPathQuery<SearchResponse> 
 
 	private String[] organism; // filter by
 	private String[] datasource; // filter by
+	private String queryString;
 	
 	protected MultiValueMap<String, String> getRequestParams() {
 		MultiValueMap<String, String> request = new LinkedMultiValueMap<String, String>();
+
+		if(queryString != null && !queryString.isEmpty())
+			request.add(CmdArgs.q.name(), queryString);
+		// - otherwise it won't set optional parameter 'q', which is equivelent to q="*" for this query type
+
 		if(organism != null)
 			request.put(CmdArgs.organism.name(), Arrays.asList(organism));
 		if(datasource != null)
@@ -45,6 +51,17 @@ public final class CPathTopPathwaysQuery extends BaseCPathQuery<SearchResponse> 
 	public CPathTopPathwaysQuery(CPathClient client) {
 		this.client = client;
 		this.command = Cmd.TOP_PATHWAYS.toString();
+	}
+
+	/**
+	 * Sets the keyword(s) to match; one can also use Lucene query syntax.
+	 *
+	 * @param queryString
+	 * @return
+	 */
+	public CPathTopPathwaysQuery queryString(String queryString) {
+		this.queryString = queryString;
+		return this;
 	}
 
 	/**

@@ -33,10 +33,7 @@ import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -52,10 +49,7 @@ import cpath.service.Scope;
  * CPath2 server-side instance-specific 
  * configuration constants and properties.
  * Singleton.
- * 
- * Some properties can be modified 
- * at runtime, i.e, via the admin tool.
- * 
+ *
  * But this is not for cpath2 clients to care.
  * 
  * @author rodche
@@ -103,7 +97,7 @@ public final class CPathSettings {
 	public static final String BLACKLIST_FILE = "blacklist.txt";
 
 	public static final String EXPORT_SCRIPT_FILE ="export.sh";
-	
+
 	/**
 	 * cpath2 Metadata configuration default file name.
 	 */
@@ -119,8 +113,6 @@ public final class CPathSettings {
 	 * (loaded by Spring property placeholder from the cpath2.properties,
 	 * but can be also via java -D options too)
 	 */
-	public static final String PROP_ADMIN_USER = "cpath2.admin.user";
-	public static final String PROP_ADMIN_PASSW = "cpath2.admin.password";
 	
 	/* Unlike the above, following properties are not used by Spring/Hibernate right away;
 	 * normally, cpath2 starts even though these might not be set and will  
@@ -291,7 +283,25 @@ public final class CPathSettings {
 		}
 		return taxids;
 	}
-	
+
+	/**
+	 * A map of supported taxonomy id, name,
+	 * @return the map of taxId,name that this service supports
+	 * @throws AssertionError when taxonomy ID cannot be recognised or not found there.
+	 */
+	public Map<String,String> getOrganismsAsTaxonomyToNameMap() {
+		Map<String,String> m = new HashMap<String,String>();
+		final Pattern taxIdPattern = Pattern.compile("([a-zA-Z0-9\\. ]+)\\s*\\(\\s*(\\d+)\\s*\\)");
+		for(String org : getOrganisms()) {
+			Matcher matcher = taxIdPattern.matcher(org);
+			if(matcher.find()) {
+				m.put(matcher.group(2), matcher.group(1).trim());
+			} else
+				throw new AssertionError("getOrganismTaxonomyIds, taxonomy ID not found in: " + org);
+		}
+		return m;
+	}
+
 	/**
 	 * This cPath2 instance version
 	 * (not cpath2 software's but the resource's)

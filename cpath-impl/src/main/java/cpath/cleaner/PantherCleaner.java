@@ -15,14 +15,8 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.BioSource;
-import org.biopax.paxtools.model.level3.Control;
-import org.biopax.paxtools.model.level3.EntityReference;
-import org.biopax.paxtools.model.level3.Pathway;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.model.level3.Process;
-import org.biopax.paxtools.model.level3.SequenceEntityReference;
-import org.biopax.paxtools.model.level3.SimplePhysicalEntity;
-import org.biopax.paxtools.model.level3.UtilityClass;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -143,8 +137,12 @@ final class PantherCleaner implements Cleaner {
 				
 				generic.removeMemberEntityReference(member);				
 				cleanModel.remove(generic);
-			} else { // skip such nonsense
-				log.warn(generic.getModelInterface().getSimpleName() + ", uri:" 
+			} else if(generic instanceof DnaReference || generic instanceof RnaReference
+					|| generic instanceof SmallMoleculeReference || generic instanceof ProteinReference)
+			{// it's in fact allowed, except for these constraints:
+			// R:RnaReference=RnaReference R:SmallMoleculeReference=SmallMoleculeReference
+			// R:DnaReference=DnaReference R:ProteinReference=ProteinReference
+				log.error(generic.getModelInterface().getSimpleName() + ", uri:"
 					+ generic.getUri() + ", has a member ER of incompatible type: "
 					+ member.getModelInterface().getSimpleName());
 			}

@@ -65,7 +65,7 @@ import cpath.service.jaxb.SearchResponse;
  * A full-text searcher/indexer for BioPAX L3 models.
  *
  * Only Entity and EntityReference BioPAX types get indexed (since 12/2015).
- * 
+ *
  * @author rodche
  */
 public class SearchEngine implements Indexer, Searcher {
@@ -538,7 +538,7 @@ public class SearchEngine implements Indexer, Searcher {
 		bpe.getAnnotations().remove(FIELD_PATHWAY);
 		bpe.getAnnotations().remove(FIELD_SIZE);
 		bpe.getAnnotations().remove(FIELD_XREFID);
-			
+
 		// name
 		if(bpe instanceof Named) {
 			Named named = (Named) bpe;
@@ -566,7 +566,7 @@ public class SearchEngine implements Indexer, Searcher {
 //			Xref xref = (Xref) bpe;
 //
 //			if (xref.getId() != null) {
-//				field = new TextField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
+//				field = new StringField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
 //				doc.add(field);
 //			}
 //			if (xref.getDb() != null) {
@@ -578,7 +578,7 @@ public class SearchEngine implements Indexer, Searcher {
 //			if(!(bpe instanceof PublicationXref)) {
 //				if (xref.getAnnotations().containsKey(FIELD_XREFID)) {
 //					for (String otherId : (Set<String>)xref.getAnnotations().get(FIELD_XREFID)) {
-//						field = new TextField(FIELD_XREFID, otherId.toLowerCase(), Field.Store.NO);
+//						field = new StringField(FIELD_XREFID, otherId.toLowerCase(), Field.Store.NO);
 //						doc.add(field);
 //					}
 //				}
@@ -602,7 +602,7 @@ public class SearchEngine implements Indexer, Searcher {
 
 	private void addXrefIds(Set<String> xrefIds, Document doc) {
 		for (String id : xrefIds) {
-			Field f = new TextField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO);
+			Field f = new StringField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO);
 			doc.add(f);
 		}
 	}

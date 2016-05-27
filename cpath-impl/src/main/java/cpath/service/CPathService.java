@@ -9,8 +9,8 @@ import cpath.config.CPathSettings;
 import org.biopax.paxtools.controller.PathAccessor;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.Model;
+import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.algorithm.Direction;
-import org.biopax.validator.api.beans.ValidatorResponse;
 
 import cpath.jpa.Content;
 import cpath.jpa.MappingsRepository;
@@ -40,6 +40,9 @@ public interface CPathService {
 	
 	void setSearcher(Searcher searcher);
 
+	void setSearcher(Searcher searcher);
+
+	Blacklist getBlacklist();
 
 	/**
 	 * Retrieves the BioPAX element(s) by URI or identifier (e.g., gene symbol)
@@ -147,12 +150,14 @@ public interface CPathService {
 	/**
 	 * Gets top (root) pathways (URIs, names) in the current BioPAX model.
 	 * 
+	 *
+	 * @param q query string (keywords or Lucene syntax query string)
 	 * @param organisms filter values (URIs, names, or taxonomy IDs)
 	 * @param datasources filter values (URIs, names)
 	 * @return
 	 */
-	ServiceResponse topPathways(String[] organisms, String[] datasources);
-
+	ServiceResponse topPathways(String q, String[] organisms, String[] datasources);
+	
 	/**
 	 * Maps an identifier to primary ID(s) of a given type.
 	 * Auto-detects the source ID type or tries all types.
@@ -186,16 +191,6 @@ public interface CPathService {
 	void log(Collection<LogEvent> events, String ipAddr);
 
 	/**
-	 * Creates or updates log db entries for the data file
-	 * downloaded by a user.
-	 * 
-	 * @param fileName
-	 * @param ipAddr
-	 */
-	void log(String fileName, String ipAddr);
-
-
-	/**
 	 * Creates a list of new log events to update counts for -
 	 * name, format, provider - from the data archive/file name
 	 * (in the batch downloads or another directory),
@@ -227,23 +222,13 @@ public interface CPathService {
 	 * @param location
 	 */
 	void addOrUpdateMetadata(String location);
-
-	/**
-	 * Generates the BioPAX validation report for a pathway data file.
-	 * 
-	 * @param provider data source (Metadata) identifier, not null
-	 * @param file - base filename as in {@link Content}, or null (for all files)
-	 * @return
-	 */
-	ValidatorResponse validationReport(String provider, String file);
-	
 	
 	//spring-data-jpa repositories
 	
 	MappingsRepository mapping();
     
     MetadataRepository metadata();
-    
+
     /**
      * Loads or re-loads the main BioPAX Model 
      * and blacklist from archive.

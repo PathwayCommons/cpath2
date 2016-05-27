@@ -63,8 +63,8 @@ public class LogEvent {
 	}
 
 	public String getName() {//return copy
-		return name;
-	}
+		return name.toLowerCase();
+	} //toLowerCase will fix for old names in the h2.db
 
 	public void setType(LogType type) {
 		this.type = type;

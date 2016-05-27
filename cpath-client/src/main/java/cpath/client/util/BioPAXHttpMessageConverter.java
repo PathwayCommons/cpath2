@@ -22,7 +22,8 @@ public class BioPAXHttpMessageConverter implements HttpMessageConverter<Model> {
     
     static {
     	mediaList = new ArrayList<MediaType>();
-        mediaList.add(MediaType.TEXT_PLAIN);       
+        mediaList.add(MediaType.TEXT_PLAIN);
+        mediaList.add(MediaType.parseMediaType("application/vnd.biopax.rdf+xml"));
     }
 
     public BioPAXHttpMessageConverter(BioPAXIOHandler bioPAXIOHandler) {

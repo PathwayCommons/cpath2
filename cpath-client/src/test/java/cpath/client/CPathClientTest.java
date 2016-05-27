@@ -18,10 +18,11 @@ import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 import cpath.service.jaxb.TraverseEntry;
 import cpath.service.jaxb.TraverseResponse;
+import org.springframework.http.MediaType;
 
 /**
  * INFO: when "cPath2Url" Java property is not set,
- * (e.g., -DcPath2Url="http://localhost:8080/cpath-web-service/")
+ * (e.g., -DcPath2Url="http://localhost:8080/pc2/")
  * the default cpath2 endpoint URL is {@link CPathClient#DEFAULT_ENDPOINT_URL}
  * So, it is possible that the default (official) service still provides 
  * an older cpath2 API than this PC2 client expects.
@@ -34,14 +35,22 @@ public class CPathClientTest {
 	
 	static {
 //		client = CPathClient.newInstance("http://www.pathwaycommons.org/pc2/");
-//		client = CPathClient.newInstance("http://192.168.81.153:48080/");
-		client = CPathClient.newInstance("http://webservice.baderlab.org:48080/");
-//		client = CPathClient.newInstance("http://localhost:8080/");
+		client = CPathClient.newInstance("http://beta.pathwaycommons.org/pc2/");
 		client.setName("CPathClientTest");
 	}
 	
-	final String testBioSourceUri="http://purl.org/pc2/7/BioSource_343022ef4adbf95df362e8b555d61240";
-	final String testPathwayUri="http://identifiers.org/reactome/REACT_12034.3";
+	final String testBioSourceUri="http://identifiers.org/taxonomy/9606";
+	final String testPathwayUri="http://identifiers.org/reactome/R-HSA-201451";
+
+
+	@Test
+	public final void testBiopaxMediaType() {
+		String biopaxContentType = "application/vnd.biopax.rdf+xml";
+//		MimeTypeUtils.parseMimeType("application/vnd.biopax.rdf+xml");
+		MediaType mediaType = MediaType.parseMediaType(biopaxContentType);
+		assertNotNull(mediaType);
+		assertEquals(biopaxContentType, mediaType.toString());
+	}
 	
 	@Test
 	public final void testConnectionEtc() throws CPathException {
@@ -64,17 +73,19 @@ public class CPathClientTest {
 	@Test
 	public final void testGetTopPathways() throws CPathException {		
 		SearchResponse result = null;
-		result = client.createTopPathwaysQuery().result();
+		result = client.createTopPathwaysQuery().datasourceFilter(new String[]{"reactome"}).result();
 		assertNotNull(result);
 		assertFalse(result.getSearchHit().isEmpty());
-		
-		result = client.createTopPathwaysQuery()
-			.datasourceFilter(new String[]{"reactome"}).result();		
-		assertNotNull(result);
-		assertFalse(result.getSearchHit().isEmpty());
-		
-		result = client.createTopPathwaysQuery()
-			.datasourceFilter(new String[]{"foo"}).result();		
+
+		//not a valid assertion after client has been modified -
+		//to always throw an exception if response code is not OK
+//		result = client.createTopPathwaysQuery().datasourceFilter(new String[]{"foo"}).result();
+//		assertNull(result);
+
+		result = null;
+		try {
+			result = client.createTopPathwaysQuery().datasourceFilter(new String[]{"foo"}).result();
+		} catch (CPathException e) {}
 		assertNull(result);
 	}
 
@@ -99,13 +110,14 @@ public class CPathClientTest {
 		assertTrue(entry.getValue().contains("Homo sapiens")); //case matters!
 		
 		// non-exisitng uri in not error, but the corresp. list of values must be empty
+		resp = null;
 		try {
 			resp = client.createTraverseQuery()
 					.propertyPath("Named/name")
 					.sources(new String[]{"bla-bla"})
 					.result();
-		} catch (CPathException e1) {
-			fail(e1.toString()); //should not throw e1
+			fail("must throw CPathException now, for all error responses: 460, 452, 500...");
+		} catch (CPathException e) {
 		}
 		assertNull(resp); //empty response
         
@@ -138,7 +150,6 @@ public class CPathClientTest {
         try {
 			resp = client.createSearchQuery()
 				.typeFilter(Pathway.class)
-//				.queryString("name:\"bmp signaling pathway\"")
 				.queryString("name:\"Signaling by BMP\"")
 				.result();
 		} catch (CPathException e) {
@@ -146,8 +157,7 @@ public class CPathClientTest {
 		}
 		
 		assertTrue(resp instanceof SearchResponse);
-		assertEquals(1, ((SearchResponse)resp).getSearchHit().size());
-		assertEquals(0, ((SearchResponse)resp).getSearchHit().get(0).getSize().intValue());
+		assertFalse(((SearchResponse)resp).getSearchHit().isEmpty());
 		assertEquals(Integer.valueOf(0), ((SearchResponse)resp).getPageNo());
 		
 		resp = null;
@@ -162,7 +172,6 @@ public class CPathClientTest {
 		
 		assertTrue(resp instanceof SearchResponse);
 		assertFalse(((SearchResponse)resp).getSearchHit().isEmpty());
-		
 	}
 	
 	

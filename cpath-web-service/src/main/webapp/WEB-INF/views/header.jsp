@@ -1,7 +1,6 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
-<%@ taglib prefix="security" uri="http://www.springframework.org/security/tags"%>
 <%@ taglib prefix="spring" uri="http://www.springframework.org/tags" %>
 <header class="header">
 	<nav id="header_navbar" class="navbar navbar-default navbar-fixed-top" role="navigation">
@@ -21,9 +20,6 @@
 			  </div>              
               <div class="collapse navbar-collapse pull-right" id="top-navbar-collapse">
                   <ul class="nav navbar-nav">
- 		  			<security:authorize access="hasRole('ROLE_ADMIN')">
-					  <li><a rel="nofollow" href="<spring:url value='/admin'/>">Admin</a></li>
-					</security:authorize>
 					<li class="dropdown">
                   		<a href="#" class="dropdown-toggle" data-toggle="dropdown">Web Service<b class="caret"></b></a>
                   		<span class="dropdown-arrow"></span>

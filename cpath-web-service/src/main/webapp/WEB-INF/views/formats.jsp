@@ -37,6 +37,16 @@ tools available for processing it, such as
 a Java library for working with BioPAX as object model, or Jena, SPARQL.
 </p>
 
+<h3 id="jsonld">JSON-LD</h3>
+<p>
+    <a target="_blank" href="http://json-ld.org/">JSON-LD</a> is a lightweight Linked Data format.
+    It is easy for humans to read and write. It is based on the already successful JSON format and provides a way
+    to help JSON data interoperate at Web-scale. JSON-LD is an ideal data format for programming environments,
+    REST Web services, and unstructured databases such as CouchDB and MongoDB.
+    Paxtools' json-converter module, based on the Apache Jena libraries, helps convert a BioPAX model or element
+    to JSON-LD format.
+</p>
+
 <h3 id="gsea">Gene Set Enrichment Format (GSEA - MSigDB GMT)</h3>
 <p>
 Over-representation analysis (ORA) is frequently used to assess the
@@ -94,7 +104,7 @@ protein types to canonical UniProt ones,
 thus building a larger BioPAX network of all pathways, interactions and participants 
 from different data sources. In some cases, mappings between identifiers cannot be made, 
 so it is possible to lost some information in this process. Also, in cases where 
-the SIF format contains a non-UniProt identifier (e.g. HGNC gene symbol), it is possible 
+the SIF format contains a non-UniProt identifier (e.g. HGNC Symbol), it is possible
 that more than one identifier maps to a UniProt identifier. In this case, a duplicate SIF 
 interaction is created for each additional non-UniProt identifier.
 </p>

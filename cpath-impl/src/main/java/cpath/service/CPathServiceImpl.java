@@ -5,12 +5,12 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
 
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.model.level3.Process;
 import org.biopax.paxtools.normalizer.MiriamLink;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.paxtools.query.QueryExecuter;
@@ -20,8 +20,7 @@ import org.biopax.paxtools.query.wrapperL3.DataSourceFilter;
 import org.biopax.paxtools.query.wrapperL3.Filter;
 import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
-import org.biopax.validator.api.ValidatorUtils;
-import org.biopax.validator.api.beans.ValidatorResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,7 +74,7 @@ public class CPathServiceImpl implements CPathService {
 	private final Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
 
 	private final static CPathSettings cpath = CPathSettings.getInstance();
-	
+
 	/**
 	 * Constructor
 	 */
@@ -191,8 +190,10 @@ public class CPathServiceImpl implements CPathService {
 	private Filter[] createFilters(String[] organisms, String[] datasources) {
 		ArrayList<Filter> filters = new ArrayList<Filter>();
 		
-		if(getBlacklist() != null)
-			filters.add(new UbiqueFilter(getBlacklist().getListed()));
+		if(blacklist != null)
+			filters.add(new UbiqueFilter(blacklist.getListed()));
+		else
+			log.warn("createFilters: blacklist is NULL, why..."); //normally, it's not null here
 		
 		if(organisms != null && organisms.length > 0)
 			filters.add(new OrganismFilter(organisms));
@@ -343,7 +344,7 @@ public class CPathServiceImpl implements CPathService {
 	
 
 	private ServiceResponse convert(Model m, OutputFormat format) {
-		BiopaxConverter biopaxConverter = new BiopaxConverter(getBlacklist());
+		BiopaxConverter biopaxConverter = new BiopaxConverter(blacklist);
 		ServiceResponse toReturn;
 
 		if (format==OutputFormat.GSEA)
@@ -463,7 +464,7 @@ public class CPathServiceImpl implements CPathService {
 			resp = (SearchResponse) search(query, ++page, biopaxTypeFilter, null, null);
 		}
 	}
-	
+
 	@Override
 	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
 		
@@ -503,21 +504,24 @@ public class CPathServiceImpl implements CPathService {
 	 * properties, such as controlledOf, pathwayComponentOf and stepProcessOf, are empty.
 	 * 
 	 * Here we follow the second method.
+	 *
+	 * Also, let's exclude "pathways" having two or less components, none of which is a non-empty pathway.
 	 */
 	@Override
-	public ServiceResponse topPathways(final String[] organisms, final String[] datasources) {
+	public ServiceResponse topPathways(String q, final String[] organisms, final String[] datasources) {
 		
 		if(!paxtoolsModelReady() || searcher == null) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
-		
+
+		if(q==null || q.isEmpty()) q = "*"; //for backward compatibility
+
 		SearchResponse topPathways = new SearchResponse();
 		final List<SearchHit> hits = topPathways.getSearchHit(); //empty list
 		int page = 0; // will use search pagination
 		
 		SearchResponse r = null;
 		try {
-			r = searcher.search("*", page, Pathway.class, datasources, organisms);
-			
+			r = searcher.search(q, page, Pathway.class, datasources, organisms);
 		} catch(Exception e) {
 			log.error("topPathways() failed", e);
 			return new ErrorResponse(INTERNAL_ERROR, e);
@@ -531,11 +535,25 @@ public class CPathServiceImpl implements CPathService {
 			//keep only pathways where 'pathway' index field
 			//is empty (no controlledOf and pathwayComponentOf values)
 			for(SearchHit h : r.getSearchHit()) {
-				if(h.getPathway().isEmpty() || 
-						(h.getPathway().size()==1 
-							&& h.getPathway().get(0).equalsIgnoreCase(h.getUri())
-						)
-					) hits.add(h); //add to the list
+				if( h.getPathway().isEmpty() ||
+					(h.getPathway().size()==1
+						&& h.getPathway().get(0).equalsIgnoreCase(h.getUri())
+					)
+				){
+					if(h.getSize()>2) //skip e.g. CTD "pathways" that contain one-two interactions
+						hits.add(h); //add to the list
+					else { //add only if it has a child non-empty pathway
+						Pathway hp = (Pathway) getModel().getByID(h.getUri());
+						for(Process component : hp.getPathwayComponent()) {
+							if(component instanceof Pathway
+								&& !((Pathway)component).getPathwayComponent().isEmpty())
+							{
+								hits.add(h);
+								break;
+							}
+						}
+					}
+				}
 				processed++;
 			}
 			
@@ -544,7 +562,7 @@ public class CPathServiceImpl implements CPathService {
 			
 			// go next page
 			try {
-				r = searcher.search("*", ++page, Pathway.class, datasources, organisms);
+				r = searcher.search(q, ++page, Pathway.class, datasources, organisms);
 			} catch(Exception e) {
 				log.error("topPathways() failed", e);
 				return new ErrorResponse(INTERNAL_ERROR, e);
@@ -605,15 +623,14 @@ public class CPathServiceImpl implements CPathService {
 		if(blacklistResource.exists()) {			
 			try {
 				this.blacklist = new Blacklist(blacklistResource.getInputStream());
-				log.info("loadBlacklist, loaded: " 
-						+ blacklistResource.getDescription());
+				log.info("loadBlacklist, loaded: " + blacklistResource.getDescription());
+				Assert.notEmpty(blacklist.getListed());
 			} catch (IOException e) {
 				log.error("loadBlacklist, failed using: " 
 					+ blacklistResource.getDescription(), e);
 			}
 		} else {
-			log.warn("loadBlacklist, " + cpath.blacklistFile()
-				+ " is not found");
+			log.warn("loadBlacklist, " + cpath.blacklistFile() + " is not found");
 		}
 	}
 
@@ -671,43 +688,13 @@ public class CPathServiceImpl implements CPathService {
 		return results;
 	}
 
-	
+
 	@Override
 	public void log(Collection<LogEvent> events, String ipAddr) {
 		for(LogEvent event : events) {
 			log.info(String.format("%s, %s, %s", ipAddr, event.getType(), event.getName()));
 		}
 	}
-
-
-	@Override
-	public ValidatorResponse validationReport(String provider, String file) {
-		ValidatorResponse response = new ValidatorResponse();
-		Metadata metadata = metadataRepository.findByIdentifier(provider);
-		for (Content content : metadata.getContent()) {
-			String current = content.getFilename();
-
-			if(file != null && !file.equals(current))
-				continue;
-			//file==null means all files
-
-			try {
-				// unmarshal and add
-				ValidatorResponse resp = (ValidatorResponse) ValidatorUtils.getUnmarshaller()
-					.unmarshal(new GZIPInputStream(new FileInputStream(content.validationXmlFile())));
-				assert resp.getValidationResult().size() == 1;
-				response.getValidationResult().addAll(resp.getValidationResult());
-			} catch (Exception e) {
-				log.error("validationReport: failed converting the XML response to objects", e);
-			}
-
-			if(current.equals(file))
-				break;
-		}
-
-		return response;
-	}
-
 
 	@Override
 	public Metadata save(Metadata metadata) {
@@ -768,52 +755,6 @@ public class CPathServiceImpl implements CPathService {
 	public MetadataRepository metadata() {
 		return metadataRepository;
 	}
-
-
-	public void log(String fileName, String ipAddr) {
-		log(logEventsFromFilename(fileName), ipAddr);
-	}
-
-
-	public Set<LogEvent> logEventsFromFilename(String filename) {
-		Set<LogEvent> set = new HashSet<LogEvent>();
-		final CPathSettings cpath2 = cpath;
-
-		set.add(new LogEvent(LogEvent.LogType.FILE, filename));
-
-		// extract the data provider's standard name from the filename
-		if(filename.startsWith(cpath2.exportArchivePrefix())) {
-			String scope = LogUtils.fileSrcOrScope(filename);
-			if(scope != null) {
-				String providerStandardName = null;
-				Metadata md = metadataRepository.findByIdentifier(scope);
-				if(md != null) { //use the standardName for logging
-					providerStandardName = md.standardName();
-				} else if(!metadataRepository.findByNameContainsIgnoreCase(scope).isEmpty()) { // found any (ignoring case)?
-					providerStandardName = scope.toLowerCase(); //it's by design (how archives are created) standardName
-				}
-
-				if(providerStandardName != null) {
-					set.add(new LogEvent(LogEvent.LogType.PROVIDER, providerStandardName));
-				} else {
-					//that's probably a by-organism or one of special sub-model archives
-					log.debug("'" + scope + "' in " + filename + " does not match any "
-						+ "identifier or standard name of currently used data providers");
-				}
-			} else {
-				log.debug("Couldn't recognize the 'scope' of the datafile: " + filename);
-			}
-
-			// extract the format
-			OutputFormat outputFormat = LogUtils.fileOutputFormat(filename);
-			if(outputFormat!=null)
-				set.add(LogEvent.from(outputFormat));
-
-		}
-
-		return set;
-	}
-
 
 	public void index() throws IOException {
 		if(!cpath.isAdminEnabled())
