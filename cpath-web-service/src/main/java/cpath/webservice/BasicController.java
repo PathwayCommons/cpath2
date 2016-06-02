@@ -160,7 +160,7 @@ public abstract class BasicController {
 	 */
 	protected final void stringResponse(ServiceResponse resp, 
 			Writer writer, HttpServletRequest request, 
-			HttpServletResponse response, Set<LogEvent> updateCountsFor) throws IOException 
+			HttpServletResponse response, Set<LogEvent> updateCountsFor)
 	{
 		if(resp instanceof ErrorResponse) {
 			errorResponse(((ErrorResponse)resp).getStatus(), resp.toString(), request, response, updateCountsFor);
@@ -192,11 +192,17 @@ public abstract class BasicController {
 			if(dresp.getData() instanceof Path) {
 				File resultFile = ((Path) dresp.getData()).toFile();//this is some temp. file
 				response.setHeader("Content-Length", String.valueOf(resultFile.length()));
-				FileReader reader = new FileReader(resultFile);
-				IOUtils.copyLarge(reader, writer);
-				response.flushBuffer();
-				reader.close();
-				resultFile.delete(); //important; otherwise, tmp files would be deleted only after the JVM exits
+				try {
+					FileReader reader = new FileReader(resultFile);
+					IOUtils.copyLarge(reader, writer);
+					response.flushBuffer();
+					reader.close();
+				} catch (IOException e) {
+					errorResponse(INTERNAL_ERROR, String.format("Failed to process the (temporary) result file %s; %s.",
+						resultFile.getPath(), e.toString()), request, response, updateCountsFor);
+				} finally {
+					resultFile.delete();
+				}
 			} else { //it's probably a re-factoring bug -
 				errorResponse(INTERNAL_ERROR, String.format("BUG: no file Path in the DataResponse; got %s, %s instead.",
 					dresp.getData().getClass().getSimpleName(), dresp.toString()), request, response, updateCountsFor);

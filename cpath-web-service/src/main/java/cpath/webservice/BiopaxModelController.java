@@ -105,7 +105,7 @@ public class BiopaxModelController extends BasicController {
 	 */
 	@RequestMapping(method= RequestMethod.GET, value="/{localId}")
 	public @ResponseBody String cpathIdInfo(@PathVariable String localId, Writer writer,
-							HttpServletRequest request, HttpServletResponse response) throws Exception
+							HttpServletRequest request, HttpServletResponse response) throws IOException
 	{
 		/* A hack (specific to our normalizer and also
 		 * might not work for all client links/browsers...
@@ -156,7 +156,6 @@ public class BiopaxModelController extends BasicController {
     @RequestMapping("/get")
     public void elementById(@Valid Get get, BindingResult bindingResult, 
     	Writer writer, HttpServletRequest request, HttpServletResponse response) 
-    		throws IOException
     {
 		//log events: command, format
     	Set<LogEvent> events = new HashSet<LogEvent>();
@@ -178,7 +177,7 @@ public class BiopaxModelController extends BasicController {
 	@RequestMapping("/top_pathways")
     public @ResponseBody SearchResponse topPathways(@RequestParam(required=false) String q,
     		@RequestParam(required=false) String[] datasource, @RequestParam(required=false) String[] organism, 
-    		HttpServletRequest request, HttpServletResponse response) throws IOException
+    		HttpServletRequest request, HttpServletResponse response)
     {
     	Set<LogEvent> events = new HashSet<LogEvent>();
     	events.add(LogEvent.from(Cmd.TOP_PATHWAYS));
@@ -235,7 +234,7 @@ public class BiopaxModelController extends BasicController {
     
 	@RequestMapping("/graph")
 	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, 
-			Writer writer, HttpServletRequest request, HttpServletResponse response) throws IOException
+			Writer writer, HttpServletRequest request, HttpServletResponse response)
     {
 
     	Set<LogEvent> events = new HashSet<LogEvent>();
