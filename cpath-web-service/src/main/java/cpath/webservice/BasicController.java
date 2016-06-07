@@ -123,34 +123,30 @@ public abstract class BasicController {
 	 * Writes the query results to the HTTP response
 	 * output stream.
 	 * 
-	 * @param resp
-	 * @param writer
+	 * @param serviceResp
 	 * @param request
 	 * @param response
 	 * @param updateCountsFor
 	 * @throws IOException
 	 */
-	protected final void stringResponse(ServiceResponse resp, 
-			Writer writer, HttpServletRequest request, 
-			HttpServletResponse response, Set<LogEvent> updateCountsFor) throws IOException 
+	protected final void stringResponse(ServiceResponse serviceResp, HttpServletRequest request,
+										HttpServletResponse response, Set<LogEvent> updateCountsFor)
 	{
-		if(resp instanceof ErrorResponse) {
-			errorResponse(((ErrorResponse)resp).getStatus(), resp.toString(), request, response, updateCountsFor);
+		if(serviceResp instanceof ErrorResponse) {
+			errorResponse(((ErrorResponse) serviceResp).getStatus(), serviceResp.toString(), request, response,
+					updateCountsFor);
 		} 
-		else if(resp.isEmpty()) {
+		else if(serviceResp.isEmpty()) {
 			log.warn("stringResponse: I got an empty ServiceResponce " +
 				"(must be already converted to the ErrorResponse)");
 			errorResponse(NO_RESULTS_FOUND, "no results found", 
 					request, response, updateCountsFor);
 		} 
-		else if (resp instanceof DataResponse) {
-			DataResponse dresp = (DataResponse) resp;
-			response.setContentType(dresp.getFormat().getMediaType());
+		else if (serviceResp instanceof DataResponse) {
+			final DataResponse dataResponse = (DataResponse) serviceResp;
 
-			log.debug("QUERY RETURNED " + dresp.getData().toString().length() + " chars");
-			
 			// take care to count provider's data accessed events
-			Set<String> providers = dresp.getProviders();
+			Set<String> providers = dataResponse.getProviders();
 			updateCountsFor.addAll(LogEvent.fromProviders(providers));
 			
 			//log to the db (for analysis and reporting)
@@ -161,21 +157,31 @@ public abstract class BasicController {
 				log.error("LogUtils.log failed", ex);
 			}
 			
-			if(dresp.getData() instanceof Path) {
-				File resultFile = ((Path) dresp.getData()).toFile();//this is some temp. file
+			if(dataResponse.getData() instanceof Path) {
+				File resultFile = ((Path) dataResponse.getData()).toFile();//this is some temp. file
 				response.setHeader("Content-Length", String.valueOf(resultFile.length()));
-				FileReader reader = new FileReader(resultFile);
-				IOUtils.copyLarge(reader, writer);
-				response.flushBuffer();
-				reader.close();
-				resultFile.delete(); //important; otherwise, tmp files would be deleted only after the JVM exits
+				response.setContentType(dataResponse.getFormat().getMediaType());
+				log.debug("QUERY RETURNED " + dataResponse.getData().toString().length() + " chars");
+				try {
+					FileReader reader = new FileReader(resultFile);
+					Writer writer = response.getWriter();
+					IOUtils.copyLarge(reader, writer);
+					writer.flush();
+					reader.close();
+				} catch (IOException e) {
+					errorResponse(INTERNAL_ERROR, String.format("Failed to process the (temporary) result file %s; %s.",
+						resultFile.getPath(), e.toString()), request, response, updateCountsFor);
+				} finally {
+					resultFile.delete();
+				}
 			} else { //it's probably a re-factoring bug -
 				errorResponse(INTERNAL_ERROR, String.format("BUG: no file Path in the DataResponse; got %s, %s instead.",
-					dresp.getData().getClass().getSimpleName(), dresp.toString()), request, response, updateCountsFor);
+					dataResponse.getData().getClass().getSimpleName(), dataResponse.toString()), request, response,
+						updateCountsFor);
 			}
 		} else { //it's a bug -
 			errorResponse(INTERNAL_ERROR, String.format("BUG: Unknown ServiceResponse: %s, %s ",
-				resp.getClass().getSimpleName(), resp.toString()), request, response, updateCountsFor);
+				serviceResp.getClass().getSimpleName(), serviceResp.toString()), request, response, updateCountsFor);
 		}
 	}
 

@@ -6,7 +6,7 @@
 <html>
 <head>
 <jsp:include page="head.jsp" />
-<title>Downloads</title>
+<title>cPath2::Downloads (${cpath.name})</title>
 </head>
 <body>
 	<jsp:include page="header.jsp" />

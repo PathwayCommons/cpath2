@@ -9,7 +9,7 @@
 	<jsp:include page="head.jsp"/>
 	<script src="<spring:url value='/resources/scripts/qunit.js'/>"></script>
 	<script src="<spring:url value='/resources/scripts/tests.js'/>"></script>
-	<title>cPath2::QUnit Tests</title>
+	<title>cPath2::QUnit Tests  (${cpath.name})</title>
 	<meta name="robots" content="noindex,nofollow" />
 </head>
 <body>

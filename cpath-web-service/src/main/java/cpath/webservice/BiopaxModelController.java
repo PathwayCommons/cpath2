@@ -71,13 +71,12 @@ public class BiopaxModelController extends BasicController {
 	 * TODO: make a human-readable rich description page with links and images...
 	 *
 	 * @param localId - the part of URI following xml:base
-	 * @param writer output writer
 	 * @param request web request
 	 * @param response web response
 	 */
 	@RequestMapping(method= RequestMethod.GET, value="/{localId}")
-	public @ResponseBody String cpathIdInfo(@PathVariable String localId, Writer writer,
-							HttpServletRequest request, HttpServletResponse response) throws Exception
+	public void cpathIdInfo(@PathVariable String localId, HttpServletRequest request, HttpServletResponse response)
+			throws IOException
 	{
 		/* A hack (specific to our normalizer and also
 		 * might not work for all client links/browsers...
@@ -112,7 +111,7 @@ public class BiopaxModelController extends BasicController {
 				ServiceResponse sr = new BiopaxConverter(null).convert(m, OutputFormat.JSONLD);
 				Set<LogEvent> events = new HashSet<LogEvent>();
 				events.add(LogEvent.from(OutputFormat.JSONLD));
-				stringResponse(sr, writer, request, response, events); //also deletes the tmp data file
+				stringResponse(sr, request, response, events); //also deletes the tmp data file
 			} else {
 				response.sendError(404, "No BioPAX element found; URI: " + maybeUri); //no resource available
 			}
@@ -120,14 +119,12 @@ public class BiopaxModelController extends BasicController {
 		else { //looks like - debug mode
 			response.sendError(503, "Please try again later"); //unavailable (starting.. or maintenance mode)
 		}
-
-		return null;
 	}
 
 	// Get by ID (URI) command
     @RequestMapping("/get")
     public void elementById(@Valid Get get, BindingResult bindingResult, 
-    	Writer writer, HttpServletRequest request, HttpServletResponse response) throws IOException
+    	HttpServletRequest request, HttpServletResponse response)
     {
 		//log events: command, format
     	Set<LogEvent> events = new HashSet<LogEvent>();
@@ -141,7 +138,7 @@ public class BiopaxModelController extends BasicController {
 			String[] uri = get.getUri();
 			ServiceResponse result = service.fetch(format, uri);
 			events.add(LogEvent.from(format));
-			stringResponse(result, writer, request, response, events);
+			stringResponse(result, request, response, events);
 		}
     }  
 
@@ -149,7 +146,7 @@ public class BiopaxModelController extends BasicController {
 	@RequestMapping("/top_pathways")
     public @ResponseBody SearchResponse topPathways(@RequestParam(required=false) String q,
     		@RequestParam(required=false) String[] datasource, @RequestParam(required=false) String[] organism, 
-    		HttpServletRequest request, HttpServletResponse response) throws IOException
+    		HttpServletRequest request, HttpServletResponse response)
     {
     	Set<LogEvent> events = new HashSet<LogEvent>();
     	events.add(LogEvent.from(Cmd.TOP_PATHWAYS));
@@ -174,9 +171,8 @@ public class BiopaxModelController extends BasicController {
     
     
     @RequestMapping("/traverse")
-    public @ResponseBody ServiceResponse traverse(@Valid Traverse query, 
-    	BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
-    		throws IOException 
+    public @ResponseBody TraverseResponse traverse(@Valid Traverse query,
+    	BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response)
     {
     	Set<LogEvent> events = new HashSet<LogEvent>();
     	events.add(LogEvent.from(Cmd.TRAVERSE));
@@ -194,10 +190,9 @@ public class BiopaxModelController extends BasicController {
     			errorResponse(Status.NO_RESULTS_FOUND, "no results found", request, response, events);
     		}
     		else {
-    			//log to db
+    			//log to db and return the xml object
     			service.log(events, clientIpAddress(request));
-    			
-    			return sr;
+    			return (TraverseResponse) sr;
 			}
     	}
     	return null;
@@ -206,7 +201,7 @@ public class BiopaxModelController extends BasicController {
     
 	@RequestMapping("/graph")
 	public void graphQuery(@Valid Graph graph, BindingResult bindingResult, 
-			Writer writer, HttpServletRequest request, HttpServletResponse response) throws IOException
+			Writer writer, HttpServletRequest request, HttpServletResponse response)
     {
 
     	Set<LogEvent> events = new HashSet<LogEvent>();
@@ -250,14 +245,13 @@ public class BiopaxModelController extends BasicController {
 			return;
 		}
 		
-		stringResponse(result, writer, request, response, events);
+		stringResponse(result, request, response, events);
     }
 	
 	
     @RequestMapping(value="/search")
-    public @ResponseBody ServiceResponse search(@Valid Search search, 
-    		BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
-    			throws IOException
+    public @ResponseBody SearchResponse search(@Valid Search search,
+    		BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response)
     {		
 		//prepare to count following service assess events
     	Set<LogEvent> events = new HashSet<LogEvent>();
@@ -276,12 +270,9 @@ public class BiopaxModelController extends BasicController {
 					search.getDatasource(), search.getOrganism());
 
 			if(results instanceof ErrorResponse) {
-				errorResponse(((ErrorResponse) results).getStatus(), 
-					((ErrorResponse) results).toString(), 
-						request, response, events);
+				errorResponse(((ErrorResponse) results).getStatus(), results.toString(), request, response, events);
 			} else if(results.isEmpty()) {
-				errorResponse(Status.NO_RESULTS_FOUND, 
-						"no hits", request, response, events);
+				errorResponse(Status.NO_RESULTS_FOUND, "no hits", request, response, events);
 			} else {
 				//count for all unique provider names from the ServiceResponse
 	    		events.addAll(LogEvent.fromProviders(
@@ -289,7 +280,7 @@ public class BiopaxModelController extends BasicController {
 	    			));
 				//save to the log db
 		    	service.log(events, clientIpAddress(request));
-				return results;
+				return (SearchResponse) results;
 			}
 			return null;
 		}
