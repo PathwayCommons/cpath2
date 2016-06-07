@@ -201,7 +201,6 @@ public class BiopaxModelController extends BasicController {
     @RequestMapping("/traverse")
     public @ResponseBody TraverseResponse traverse(@Valid Traverse query,
     	BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
-    		throws IOException 
     {
     	Set<LogEvent> events = new HashSet<LogEvent>();
     	events.add(LogEvent.from(Cmd.TRAVERSE));
@@ -280,8 +279,7 @@ public class BiopaxModelController extends BasicController {
 	
     @RequestMapping(value="/search")
     public @ResponseBody SearchResponse search(@Valid Search search,
-    		BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response) 
-    			throws IOException
+    		BindingResult bindingResult, HttpServletRequest request, HttpServletResponse response)
     {		
 		//prepare to count following service assess events
     	Set<LogEvent> events = new HashSet<LogEvent>();
