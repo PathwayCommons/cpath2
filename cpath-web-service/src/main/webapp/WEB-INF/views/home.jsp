@@ -11,7 +11,7 @@ or the fat JAR with embedded application server was started) -->
 <head>
 	<jsp:include page="head.jsp" />
 	<script src="<spring:url value='/resources/scripts/help.js'/>"></script>
-	<title>cPath2::Info</title>
+	<title>cPath2::Info (${cpath.name})</title>
 </head>
 <body data-spy="scroll" data-target=".navbar">
 <jsp:include page="header.jsp"/>

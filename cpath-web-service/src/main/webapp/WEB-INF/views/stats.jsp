@@ -12,7 +12,7 @@
 <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 <script type="text/javascript" src="<spring:url value='/resources/scripts/codes2names.js'/>"></script>
 <script type="text/javascript" src="<spring:url value='/resources/scripts/stats.js'/>"></script>
-<title>cPath2::Log</title>
+<title>cPath2::Log (${cpath.name})</title>
 </head>
 <body>
 	<jsp:include page="header.jsp" />	

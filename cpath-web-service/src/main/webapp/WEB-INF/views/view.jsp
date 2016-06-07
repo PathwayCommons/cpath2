@@ -27,7 +27,7 @@
 	ga('send', 'pageview');
 	window.ga = ga;
 </script>
-<title>cPath2::Site</title>
+<title>cPath2::View  (${cpath.name})</title>
 </head>
 
 <body>

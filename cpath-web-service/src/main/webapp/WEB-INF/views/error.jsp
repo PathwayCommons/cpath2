@@ -28,7 +28,7 @@
 	<!--[if lt IE 9]>
 	<script src="<spring:url value='/resources/scripts/html5shiv.js'/>"></script>
 	<![endif]-->
-	<title>cPath2::Error Page</title>
+	<title>cPath2::Error (${cpath.name})</title>
 </head>
 <body>
 <header class="header">
