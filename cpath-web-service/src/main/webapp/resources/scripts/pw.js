@@ -57,7 +57,7 @@ pcApp.controller('PcController', function($scope, $route, $routeParams, $http) {
 
 			if(kw) {
 				//find pathways (top hits, the first 'page' only) by keyword(s)
-				$http.get('/search.json?type=pathway&q=' + encodeURIComponent(kw))
+				$http.get('search.json?type=pathway&q=' + encodeURIComponent(kw))
 					.success(function(data, status) {
 					$scope.response = data;
 					$scope.status = status;
@@ -68,7 +68,7 @@ pcApp.controller('PcController', function($scope, $route, $routeParams, $http) {
 				});	
 			} else {
 				//list top pathways
-				$http.get('/top_pathways.json').success(function(data, status) {
+				$http.get('top_pathways.json').success(function(data, status) {
 					$scope.response = data;
 					$scope.status = status;
 				}).error(function(data, status) {
