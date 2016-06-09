@@ -140,4 +140,11 @@ public class CPathUtilsTest {
 		System.out.println("ID="+m.group(1)+"; DB="+m.group(2));		
 	}
 
+
+	@Test
+	public void testFixSourceIdForMapping() {
+		assertEquals("Q8TD86", CPathUtils.fixSourceIdForMapping("uniprot knowledgebase", "Q8TD86-1"));
+		assertEquals("Q8TD86", CPathUtils.fixSourceIdForMapping("uniprot isoform", "Q8TD86-1"));
+		assertEquals("NP_619650", CPathUtils.fixSourceIdForMapping("refseq", "NP_619650.1"));
+	}
 }

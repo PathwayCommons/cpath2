@@ -105,13 +105,10 @@ public class DataImportTest {
 		//can map an isoform id to primary AC with or without specifying the source db name (uniprot)
 		Collection<String> ids = service.map("Q8TD86-1", "UNIPROT");
 		assertFalse(ids.isEmpty());
-		assertEquals("Q8TD86", CPathUtils.fixSourceIdForMapping("uniprot knowledgebase", "Q8TD86-1"));
 
 		//infers Q8TD86
-		assertEquals("Q8TD86", CPathUtils.fixSourceIdForMapping("uniprot isoform", "Q8TD86-1"));
 		assertEquals("Q8TD86", ids.iterator().next());
 
-		assertEquals("NP_619650", CPathUtils.fixSourceIdForMapping("refseq", "NP_619650.1"));
 		//can auto-remove RefSeq version numbers even when the type (refseq) of the ID is not provided!
 		assertFalse(service.map("NP_619650.1", "UNIPROT").isEmpty());
 		assertFalse(service.map("NP_004334", "UNIPROT").isEmpty());

@@ -778,13 +778,16 @@ public final class Merger {
 		{
 			final Set<String> sourceIds = new HashSet<String>();
 			for (T x : filteredXrefs) {
-				if (!(x instanceof PublicationXref) &&
-					(dbStartsWithIgnoringcase.length==0
-						|| CPathUtils.startsWithAnyIgnoreCase(x.getDb(), dbStartsWithIgnoringcase))
-				) {
+				if ( !(x instanceof PublicationXref) && !CPathUtils.startsWithAnyIgnoreCase(x.getDb(), "PANTHER")
+					//- hack: skip "PANTHER PATHWAY COMPONENT" IDs which are similar to UniProt accessions,
+					// such as "P02814", but not the same thing (avoid messing them up altogether)!
+					&&	(dbStartsWithIgnoringcase.length == 0
+							|| CPathUtils.startsWithAnyIgnoreCase(x.getDb(), dbStartsWithIgnoringcase))
+				){
 					sourceIds.add(CPathUtils.fixSourceIdForMapping(x.getDb(), x.getId()));
 				}
 			}
+
 			if (sourceIds.isEmpty()) {
 				final boolean complexOrGeneric = isComplexOrGeneric(element);
 				final String msg = "no " + xrefClassForMapping.getSimpleName() + " IDs found (for mapping) in " +
