@@ -4,7 +4,6 @@ package cpath.service;
  * Enumeration of cPath service output formats
  * 
  * @author rodche
- *
  */
 public enum OutputFormat {
     BIOPAX("BioPAX RDF/XML Format",".owl","application/vnd.biopax.rdf+xml"),
@@ -31,7 +30,7 @@ public enum OutputFormat {
 		return mediaType;
 	}
     
-    private OutputFormat(String info, String ext, String mediaType) {
+	OutputFormat(String info, String ext, String mediaType) {
 		this.info = info;
 		this.ext = ext;
 		this.mediaType = mediaType;
