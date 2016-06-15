@@ -62,7 +62,7 @@ public enum Cmd {
     TOP_PATHWAYS("Gets Top Pathways. This command accepts optional filter by organism and by datasource values", 
     	"/top_pathways",
         "Search Response - XML (JSON, when called as '/top_pathways.json?') contains the list of all top pathways.", 
-        new CmdArgs[]{organism, datasource}),   
+        new CmdArgs[]{organism, datasource, q}),
     TRAVERSE("Gets data property values (or elements's URIs) " +
     	"at the end of the property path.  This command has two parameters.",
     	"/traverse?uri=http://identifiers.org/uniprot/P38398&path=ProteinReference/organism/displayName",
