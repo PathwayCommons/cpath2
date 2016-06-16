@@ -131,6 +131,7 @@ public final class CPathSettings {
 	public static final String PROVIDER_LOGO_URL = "cpath2.provider.logo.url";
 	public static final String PROVIDER_ORGANISMS = "cpath2.provider.organisms";
 	public static final String PROVIDER_DOWNLOADS_URL = "cpath2.provider.downloads.url";
+	public static final String PROVIDER_GA = "cpath2.provider.ga"; //Google Analytics code
 
 	//properties to set the default global start/end dates for all the access log timeline queries;
 	//These may be ignored if another range is set via web api (per query)
@@ -237,6 +238,14 @@ public final class CPathSettings {
 		setCPathProperty(PROVIDER_DOWNLOADS_URL, url);
 	}
 
+
+	public String getGa() {
+		return property(PROVIDER_GA);
+	}
+
+	public void setGa(String ga) {
+		setCPathProperty(PROVIDER_GA, ga);
+	}
 	/**
 	 * Species supported by this cPath2 instance 
 	 * (i.e., the organisms of which data were prepared and 
