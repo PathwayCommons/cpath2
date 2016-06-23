@@ -9,14 +9,10 @@ import java.io.Writer;
 import javax.servlet.http.HttpServletResponse;
 
 import cpath.service.jaxb.*;
-//import cpath.service.CPathService;
-import cpath.service.Cmd;
-import cpath.service.CmdArgs;
 import cpath.service.GraphType;
 import cpath.service.OutputFormat;
 import cpath.webservice.args.binding.*;
 
-//import org.apache.commons.lang.StringUtils;
 import org.biopax.paxtools.controller.EditorMap;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.controller.SimpleEditorMap;
@@ -54,35 +50,11 @@ public class HelpController extends BasicController {
     public void initBinder(WebDataBinder binder) {
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
         binder.registerCustomEditor(GraphType.class, new GraphTypeEditor());
-        binder.registerCustomEditor(Cmd.class, new CmdEditor());
-        binder.registerCustomEditor(CmdArgs.class, new CmdArgsEditor());
         binder.registerCustomEditor(Direction.class, new DirectionEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
     
-    
-	/*
-     * Using @Response with returning a bean
-     * makes it auto-generate xml or json, 
-     * depending on the client's http request
-     * (no extra coding required!)
-     */
-    @RequestMapping("/help")
-    public @ResponseBody Help getHelp() {
-    	Help help = new Help();
-    	help.setId("help");
-    	help.setTitle("Help");
-    	help.setInfo("Welcome to cPath2 Webservice Help");
-    	help.setExample("help/commands");
-    	// Help tree's five main branches:
-    	help.addMember(getCommands()); // sub-tree for commands and their args info
-    	help.addMember(getFormats());
-    	help.addMember(getGraphTypes());
-    	help.addMember(getBiopaxTypes());
-    	return help;
-    }
 
-    
     /**
      * Prints the XML schema.
      * 
@@ -106,41 +78,7 @@ public class HelpController extends BasicController {
     		writer.write(line + newLine);
     	}
     }    
-    
-    
-    @RequestMapping("/help/commands")
-    public @ResponseBody Help getCommands() {
-    	Help help = new Help();
-    	for(Cmd c : Cmd.values()) {
-    		help.addMember(getCommand(c));
-    	}
-    	help.setId("commands");
-    	help.setInfo("cPath2 BioPAX L3 web service supports "
-    		+ Cmd.values().length + " commands");
-    	help.setTitle("cPath2 Webservice Commands");
-    	help.setExample("search?q=brca*&type=protein");
-    	return help;
-    }    
- 
-    
-    @RequestMapping("/help/commands/{cmd}")
-    public @ResponseBody Help getCommand(@PathVariable Cmd cmd) {
-    	if(cmd == null) return getCommands();
-    	Help help = new Help();
-    	help.setId(cmd.name());
-		help.setTitle(cmd.name());
-		help.setInfo(cmd.getInfo());
-        help.setExample(cmd.getExample());
-        help.setOutput(cmd.getOutput());
-		for(CmdArgs a: cmd.getArgs()) {
-			Help ah = new Help(a.name());
-			ah.setTitle(a.name());
-			ah.setInfo(a.getInfo());
-			help.addMember(ah);
-		}
-    	return help;
-    }
-    
+
     
 	/*
 	 * List of formats that web methods return

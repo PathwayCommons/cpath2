@@ -53,8 +53,7 @@ or the fat JAR with embedded application server was started) -->
 		this website. Nevertheless, advanced users may find the following examples useful:
 	</p>
 	<ul>
-		<li><em>/help/</em> - returns a tree of Help objects describing the main commands, parameters,
-		BioPAX types, and properties, e.g., /help/schema, /help/commands, /help/types;</li>
+		<li>XML schema, BioPAX types and properties, e.g., /help/schema, /help/types;</li>
 		<li><em>/[rdf:ID]</em> - every BioPAX object's URI here is a resolvable URL, because it is either a standard
 		URI, based no Identifiers.org, or it starts with the XML base: ${cpath.xmlBase}, which redirects to
 		a description page (it's still work in progress), e.g., ${cpath.xmlBase}pid.

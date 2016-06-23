@@ -7,7 +7,7 @@ package cpath.service;
  *
  */
 public enum CmdArgs {
-	uri("an identifier, usually a BioPAX element URI (default); multiple values per query are supported"),
+	uri("an identifier, usually a BioPAX element URI (default); multiple values per query are supported (array)"),
     q("query string (full-text search)"),
     page("search results page number (>=0)"),
 	type("a BioPAX class name"),
@@ -21,9 +21,11 @@ public enum CmdArgs {
     biopax("a BioPAX OWL to convert"),
     path("a BioPAX property path expression (like xPath)"),
     direction("graph query parameter 'direction'"),
-	pattern("pattern - simple interaction type or inference rule name"),
-	user("e.g., client name, email, or app name to use in the access log")
-    //TODO alg("a user-defined BioPAX data analysis (code) to run."),
+	//optional parameters for sub-model extraction and conversion, etc. algorithms
+	pattern("when format is SIF or TXT - SIF type (pattern) name(s) to apply (can be array)"),
+	user("client's name, email, or app (for the service access log and usage reporting)"),
+	subpw("true (default) or false; for the 'get by URI' queries only; " +
+			"- whether to skip sub-pathways when exporting a BioPAX sub-model to another format"),//TODO
 	;
 	
 	private final String info;

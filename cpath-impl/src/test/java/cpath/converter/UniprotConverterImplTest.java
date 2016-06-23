@@ -67,7 +67,7 @@ public class UniprotConverterImplTest {
 	@Test
 	public void testConvert() throws IOException {
 		
-		//test the tricky FT pattern first
+		//test the tricky FT prop first
 		assertEquals("AA-(test test)test", "AA-(test test)test (Bysimilarity)".replaceFirst("\\([^()]+?\\)$","").trim());	
 		
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();

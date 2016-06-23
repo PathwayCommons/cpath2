@@ -64,12 +64,14 @@ public class BiopaxConverter {
 				new SimpleIOHandler().convertToOWL(m, os);
 				break;
 			case BINARY_SIF:
+			case SIF:
 				String db = "hgnc symbol"; //default
 				if (args.length > 0 && args[0] instanceof String)
 					db = (String) args[0];
 				convertToBinarySIF(m, os, false, db);
 				break;
 			case EXTENDED_BINARY_SIF:
+			case TXT:
 				db = "hgnc symbol";
 				if (args.length > 0 && args[0] instanceof String)
 					db = (String) args[0];
@@ -99,6 +101,7 @@ public class BiopaxConverter {
 			case JSONLD:
 				convertToJsonLd(m, os);
 				break;
+			case JSON: //TODO implement
 			default: throw new UnsupportedOperationException(
 					"convert, yet unsupported format: " + format);
 			}

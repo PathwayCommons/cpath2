@@ -585,7 +585,7 @@ public final class Main {
 		}
 
 		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIF",
-				bpFilename, prefix+fileExtension(OutputFormat.EXTENDED_BINARY_SIF,"hgnc"),
+				bpFilename, prefix+fileExtension(OutputFormat.SIF,"hgnc"),
 				"seqDb=hgnc -extended -andSif exclude=neighbor_of")); //'hgnc symbol' or 'hgnc' here does not matter
 
 		// But UniProt ID based extended SIF can be too huge and takes too long to generate... won't make it now...
@@ -681,7 +681,10 @@ public final class Main {
 				return format + suffix + ".xml";
 			case BINARY_SIF:
 				return format + suffix + ".sif";
+			case SIF:
+				return format + suffix + ".sif";
 			case EXTENDED_BINARY_SIF:
+			case TXT:
 			default:
 				return format + suffix + ".txt";
 		}
