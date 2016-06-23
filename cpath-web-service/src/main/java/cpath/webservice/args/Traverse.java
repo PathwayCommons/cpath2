@@ -6,7 +6,7 @@ import org.hibernate.validator.constraints.NotEmpty;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Traverse {
+public class Traverse extends Base {
 	@NotBlank(message="Property Path is blank (not specified).")
 	private String path;
 	// required at least one value

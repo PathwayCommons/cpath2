@@ -24,37 +24,46 @@ public class LogEvent {
 	 * @param type
 	 * @param name is always turned to lower case
 	 */
-	public LogEvent(LogType type, String name) {
+	private LogEvent(LogType type, String name) {
 		Assert.notNull(type);
 		Assert.notNull(name);
 		setName(name);
 		setType(type);
 	}
 	
-	public static LogEvent from(GraphType graphType) {	
+	public static LogEvent kind(GraphType graphType) {
 		return new LogEvent(LogType.COMMAND, graphType.toString());
 	}
 	
-	public static LogEvent from(Cmd command) {	
+	public static LogEvent command(Cmd command) {
 		return new LogEvent(LogType.COMMAND, command.toString());
 	}
 	
-	public static LogEvent from(OutputFormat outputFormat) {
+	public static LogEvent format(OutputFormat outputFormat) {
 		return new LogEvent(LogType.FORMAT, outputFormat.toString());
 	}
 		
-	public static LogEvent from(Status status) {
+	public static LogEvent error(Status status) {
 		return new LogEvent(LogType.ERROR, status.name());
 	}
 	
-	public static LogEvent from(ErrorResponse errorResponse) {
-		return from(errorResponse.getStatus());
+	public static LogEvent error(ErrorResponse errorResponse) {
+		return error(errorResponse.getStatus());
 	}
-	
-	public static Set<LogEvent> fromProviders(Collection<String> providers) {
+
+	public static LogEvent client(String client) {
+		return new LogEvent(LogType.CLIENT, client.toLowerCase());
+	}
+
+	public static LogEvent provider(String datasource) {
+		return new LogEvent(LogType.PROVIDER, datasource.toLowerCase());
+	}
+
+	public static Set<LogEvent> providers(Collection<String> providers) {
 		Set<LogEvent> set = new HashSet<LogEvent>();
-		for(String prov : providers)
-			set.add(new LogEvent(LogType.PROVIDER, prov));
+		for(String prov : providers) {
+			set.add(LogEvent.provider(prov));
+		}
 		return set;
 	}
 
@@ -96,8 +105,8 @@ public class LogEvent {
         PROVIDER("All Providers"),
         COMMAND("All Web Commands"),
         FORMAT("All Output Formats"),
-        FILE("All Files"),
         ERROR("All Errors"),
+		CLIENT("All Clients"),
 		;
 
         public final String description;

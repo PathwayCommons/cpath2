@@ -11,8 +11,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import cpath.config.CPathSettings;
-import cpath.service.LogUtils;
 import cpath.jpa.Content;
 import cpath.service.LogEvent;
 import cpath.jpa.Mapping;
@@ -46,15 +44,15 @@ public class RepositoriesAndServiceTest {
 		// add some logs (for two days, several categories):
 		Set<LogEvent> events = new HashSet<LogEvent>(
 			Arrays.asList(
-					LogEvent.from(OutputFormat.BIOPAX),
-					new LogEvent(LogEvent.LogType.PROVIDER, "Reactome"),
-					new LogEvent(LogEvent.LogType.PROVIDER, "HumanCyc"),
-					LogEvent.from(GraphType.NEIGHBORHOOD),
-					LogEvent.from(Status.INTERNAL_ERROR),
-					LogEvent.from(Status.NO_RESULTS_FOUND),
-					new LogEvent(LogEvent.LogType.PROVIDER, "Reactome"),
-					new LogEvent(LogEvent.LogType.PROVIDER, "HumanCyc"),
-					LogEvent.from(Cmd.SEARCH)
+					LogEvent.format(OutputFormat.BIOPAX),
+					LogEvent.provider("Reactome"),
+					LogEvent.provider("HumanCyc"),
+					LogEvent.kind(GraphType.NEIGHBORHOOD),
+					LogEvent.error(Status.INTERNAL_ERROR),
+					LogEvent.error(Status.NO_RESULTS_FOUND),
+					LogEvent.provider("Reactome"),
+					LogEvent.provider("HumanCyc"),
+					LogEvent.command(Cmd.SEARCH)
 			)
 		);
 

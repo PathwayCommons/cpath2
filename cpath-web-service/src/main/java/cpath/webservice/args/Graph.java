@@ -12,7 +12,7 @@ import cpath.service.OutputFormat;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Graph {
+public class Graph extends Base {
 	@NotNull(message="Parameter 'kind' is required.")
 	private GraphType kind; //required!
 	
@@ -32,8 +32,9 @@ public class Graph {
 	private String[] organism;
 	
 	private String[] datasource;
-	
-	
+
+	private String[] pattern;
+
 	public Graph() {
 		format = OutputFormat.BIOPAX; // default
 		limit = 1;
@@ -122,5 +123,13 @@ public class Graph {
 	public void setDatasource(String[] datasource) {
 		this.datasource = datasource;
 	}
-	
+
+	//SIF Types
+	public String[] getPattern() {
+		return pattern;
+	}
+
+	public void setPattern(String[] pattern) {
+		this.pattern = pattern;
+	}
 }

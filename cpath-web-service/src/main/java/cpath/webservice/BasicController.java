@@ -54,20 +54,20 @@ public abstract class BasicController {
      * @param detailedMsg
      * @param request
      * @param response
-     * @param updateCountsFor
+     * @param logEvents
      */
 	protected final void errorResponse(Status status, String detailedMsg,
-			HttpServletRequest request, HttpServletResponse response, Set<LogEvent> updateCountsFor) {
+			HttpServletRequest request, HttpServletResponse response, Set<LogEvent> logEvents) {
 		
-		if(updateCountsFor == null)
-			updateCountsFor = new HashSet<LogEvent>();
+		if(logEvents == null)
+			logEvents = new HashSet<LogEvent>();
 		
 		// to count the error (code), also add -
-		updateCountsFor.add(LogEvent.from(status));
+		logEvents.add(LogEvent.error(status));
 		
 		//problems with logging subsystem should not fail the entire service
 		try {
-			service.log(updateCountsFor, clientIpAddress(request));
+			service.log(logEvents, clientIpAddress(request));
 		} catch (Throwable ex) {
 			log.error("LogUtils.log failed" + ex);
 		}
@@ -82,7 +82,7 @@ public abstract class BasicController {
 	 * @param detailedMsg
 	 * @param response
 	 */
-	protected final void errorResponse(Status status, String detailedMsg, HttpServletResponse response) {
+	private final void errorResponse(Status status, String detailedMsg, HttpServletResponse response) {
 		try {
 			log.warn(status.getErrorCode() + "; " + status.getErrorMsg() + "; " + detailedMsg);
 			response.sendError(status.getErrorCode(), status.getErrorMsg() + "; " + detailedMsg);
@@ -126,33 +126,32 @@ public abstract class BasicController {
 	 * @param serviceResp
 	 * @param request
 	 * @param response
-	 * @param updateCountsFor
-	 * @throws IOException
+	 * @param logEvents
 	 */
 	protected final void stringResponse(ServiceResponse serviceResp, HttpServletRequest request,
-										HttpServletResponse response, Set<LogEvent> updateCountsFor)
+										HttpServletResponse response, Set<LogEvent> logEvents)
 	{
 		if(serviceResp instanceof ErrorResponse) {
 			errorResponse(((ErrorResponse) serviceResp).getStatus(), serviceResp.toString(), request, response,
-					updateCountsFor);
+					logEvents);
 		} 
 		else if(serviceResp.isEmpty()) {
 			log.warn("stringResponse: I got an empty ServiceResponce " +
 				"(must be already converted to the ErrorResponse)");
 			errorResponse(NO_RESULTS_FOUND, "no results found", 
-					request, response, updateCountsFor);
+					request, response, logEvents);
 		} 
 		else if (serviceResp instanceof DataResponse) {
 			final DataResponse dataResponse = (DataResponse) serviceResp;
 
 			// take care to count provider's data accessed events
 			Set<String> providers = dataResponse.getProviders();
-			updateCountsFor.addAll(LogEvent.fromProviders(providers));
+			logEvents.addAll(LogEvent.providers(providers));
 			
 			//log to the db (for analysis and reporting)
 			//problems with logging subsystem should not fail the entire service
 			try {
-				service.log(updateCountsFor, clientIpAddress(request));
+				service.log(logEvents, clientIpAddress(request));
 			} catch (Throwable ex) {
 				log.error("LogUtils.log failed", ex);
 			}
@@ -170,18 +169,18 @@ public abstract class BasicController {
 					reader.close();
 				} catch (IOException e) {
 					errorResponse(INTERNAL_ERROR, String.format("Failed to process the (temporary) result file %s; %s.",
-						resultFile.getPath(), e.toString()), request, response, updateCountsFor);
+						resultFile.getPath(), e.toString()), request, response, logEvents);
 				} finally {
 					resultFile.delete();
 				}
 			} else { //it's probably a re-factoring bug -
 				errorResponse(INTERNAL_ERROR, String.format("BUG: no file Path in the DataResponse; got %s, %s instead.",
 					dataResponse.getData().getClass().getSimpleName(), dataResponse.toString()), request, response,
-						updateCountsFor);
+						logEvents);
 			}
 		} else { //it's a bug -
 			errorResponse(INTERNAL_ERROR, String.format("BUG: Unknown ServiceResponse: %s, %s ",
-				serviceResp.getClass().getSimpleName(), serviceResp.toString()), request, response, updateCountsFor);
+				serviceResp.getClass().getSimpleName(), serviceResp.toString()), request, response, logEvents);
 		}
 	}
 
