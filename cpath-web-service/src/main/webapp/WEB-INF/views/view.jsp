@@ -79,19 +79,26 @@
 					<td>{{hit.name}}</td><td><code>{{hit.dataSource[0].substring(${xmlBaseLength})}}</code></td>
 					<td>
 						<ul class="list-inline">
-						<li><a rel="nofollow" target="_blank" href ng-href="http://www.pathwaycommons.org/pcviz/#pathway/{{encode(hit.uri)}}">PCViz (view)</a></li>
-						<li><a rel="nofollow" target="_blank" href ng-href="{{hit.uri}}">by URI</a></li>
+						<li><a rel="nofollow" target="_blank" href ng-href="#/sif/{{encode(hit.uri)}}">SIF view</a></li><%--TODO--%>
+						<li><a rel="nofollow" target="_blank" href ng-href="#/sbgn/{{encode(hit.uri)}}">SBGN view</a></li><%--TODO--%>
+						<li><a rel="nofollow" target="_blank" href ng-href="{{hit.uri}}">resolve URI</a></li>
 						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}">BioPAX</a></li>
-						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=BINARY_SIF">SIF</a></li>
-						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=EXTENDED_BINARY_SIF">Ext.SIF</a></li>
-						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=SBGN">SBGN</a></li>
-						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=GSEA">GSEA(gmt)</a></li>
+						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=SIF">to SIF</a></li>
+						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=TXT">to TXT (ext. SIF)</a></li>
+						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=SBGN">to SBGN</a></li>
+						<li><a rel="nofollow" target="_blank" href ng-href="${cpath.xmlBase}get?uri={{encode(hit.uri)}}&format=GSEA">to GSEA</a></li>
 						</ul>
 					</td>
 				</tr>
 				</tbody>
 				</table>
 			</div>
+		</div>
+		<div ng-switch-when="sif">
+			  <h2>SIF view</h2>
+			  <div class="row">
+				<%--TODO embed CytoscapeJs here--%>
+			  </div>
 		</div>
 	  </div>
 

@@ -32,6 +32,10 @@ pcApp.config(function( $routeProvider )
 			"/pw/:kw",
 			{ action: "pw.find" }
 		)
+		.when(
+			"/sif",
+			{ action: "sif.default" }
+		)
 		.otherwise(
 			{ redirectTo: "/home" }
 		);
@@ -47,7 +51,7 @@ pcApp.controller('PcController', function($scope, $route, $routeParams, $http) {
 		
 		$scope.renderAction = renderAction;	
 		
-		var renderPath = renderAction.split( "." );
+		var renderPath = renderAction.split( "." ); //array
 		$scope.renderPath = renderPath;
 		
 		if(renderPath[0] == "pw") {
@@ -57,7 +61,7 @@ pcApp.controller('PcController', function($scope, $route, $routeParams, $http) {
 
 			if(kw) {
 				//find pathways (top hits, the first 'page' only) by keyword(s)
-				$http.get('search.json?type=pathway&q=' + encodeURIComponent(kw))
+				$http.get('/pc2/search.json?type=pathway&q=' + encodeURIComponent(kw))
 					.success(function(data, status) {
 					$scope.response = data;
 					$scope.status = status;
@@ -68,7 +72,7 @@ pcApp.controller('PcController', function($scope, $route, $routeParams, $http) {
 				});	
 			} else {
 				//list top pathways
-				$http.get('top_pathways.json').success(function(data, status) {
+				$http.get('/pc2/top_pathways.json').success(function(data, status) {
 					$scope.response = data;
 					$scope.status = status;
 				}).error(function(data, status) {
@@ -78,6 +82,8 @@ pcApp.controller('PcController', function($scope, $route, $routeParams, $http) {
 					console.log(data);
 				});	
 			}
+		} else if (renderPath[0] == "sif") {
+			//TODO
 		}
 		
 	};

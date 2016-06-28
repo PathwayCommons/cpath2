@@ -7,7 +7,6 @@
 <head>
 	<link href="<spring:url value='/resources/css/xeditable.css'/>" rel="stylesheet" />
 	<jsp:include page="head.jsp" />
-	<script src="<spring:url value='/resources/scripts/xeditable.js'/>"></script>
 	<script src="<spring:url value='/resources/scripts/datasources.js'/>"></script>
 	<title>cPath2::Datasources (${cpath.name})</title>
 </head>

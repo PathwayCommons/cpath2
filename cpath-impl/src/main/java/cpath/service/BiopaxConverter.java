@@ -68,14 +68,14 @@ public class BiopaxConverter {
 				String db = "hgnc symbol"; //default
 				if (args.length > 0 && args[0] instanceof String)
 					db = (String) args[0];
-				convertToBinarySIF(m, os, false, db);
+				convertToSIF(m, os, false, db);
 				break;
 			case EXTENDED_BINARY_SIF:
 			case TXT:
 				db = "hgnc symbol";
 				if (args.length > 0 && args[0] instanceof String)
 					db = (String) args[0];
-				convertToBinarySIF(m, os, true, db);
+				convertToSIF(m, os, true, db);
 				break;
 			case GSEA:
 				db = "uniprot"; //default
@@ -101,11 +101,17 @@ public class BiopaxConverter {
 			case JSONLD:
 				convertToJsonLd(m, os);
 				break;
-			case JSON: //TODO implement
+			case JSON:
+				convertToCyJson(m, os);
+				break;
 			default: throw new UnsupportedOperationException(
 					"convert, yet unsupported format: " + format);
 			}
     }
+
+	private void convertToCyJson(Model m, OutputStream os) {
+		//TODO implement
+	}
 
 	private void convertToJsonLd(Model m, OutputStream os) throws IOException {
 		DataResponse dr = (DataResponse) convert(m, OutputFormat.BIOPAX);
@@ -215,7 +221,7 @@ public class BiopaxConverter {
 	 * 
 	 * @throws IOException when there is an output stream writing error
 	 */
-	private void convertToBinarySIF(Model m, OutputStream out, boolean extended, String db)
+	private void convertToSIF(Model m, OutputStream out, boolean extended, String db)
 			throws IOException 
 	{
 		ConfigurableIDFetcher idFetcher = new ConfigurableIDFetcher();
