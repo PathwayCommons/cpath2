@@ -29,32 +29,8 @@
         conditionally show / load parts of the page.
 --%>
 	  <div ng-switch on="renderPath[ 0 ]">
-		<!-- Users' Site Home Page -->
-        <div ng-switch-when="home">
-       		<h2>For All Users (non-programmers)</h2>
-  			<div class="row"><div class="jumbotron">
-				<blockquote><p>
-			TODO...
-				</p></blockquote>
-  			</div></div>       		
-  		    <div class="col-sm-4">  			
-       		<div class="thumbnail">
-      			<div class="caption">
-        			<h3><a href="#/pw">Pathways</a></h3>
-        			<p>Get the list of <a href="#/pw">top pathways</a>, or 
-       				find pathways using a simple keyword(s), e.g., <a rel="nofollow" href="#/pw/brca2">brca2</a>,
-       				<a rel="nofollow" href="#/pw/P51587">P51587</a>, 
-       				or full-text query, such as <a rel="nofollow" href="#/pw/+response%20+alcohol">+response%20+alcohol</a>
-       				(see also about <a href="<spring:url value='/home#search'/>">the search</a> web service command).
-       				</p>
-       			</div>
-       		</div>
-       		</div>
-       		    		
-        </div>		
 		<div ng-switch-when="pw">		
-			<h2>Biological Pathways</h2>
-		
+			<h2>Find Pathways</h2>
 			<div class="row" id="find-row">
 				<form id="find-form" class="form-inline col-sm-9">
 					<input type="text" id="keyword-text" value="" class="input-large"
@@ -63,9 +39,7 @@
 						id="find-button"> Find Pathways &raquo;</button>
 				</form>
 			</div>
-			
 			<hr>
-			
 			<div class="row">
 				<span ng-show="response.numHits > 0">Total hits: {{response.numHits}} </span>
 				<span ng-show="response.numHits > response.maxHitsPerPage">(top {{response.maxHitsPerPage}} are shown)</span>

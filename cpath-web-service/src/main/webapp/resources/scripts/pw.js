@@ -21,10 +21,6 @@ pcApp.config(function( $routeProvider )
 {
 	$routeProvider
 		.when(
-			"/home",
-			{ action: "home.default" }
-		)
-		.when(
 			"/pw",
 			{ action: "pw.default" }
 		)
@@ -37,7 +33,7 @@ pcApp.config(function( $routeProvider )
 			{ action: "sif.default" }
 		)
 		.otherwise(
-			{ redirectTo: "/home" }
+			{ redirectTo: "/pw" }
 		);
 });
 
@@ -85,7 +81,6 @@ pcApp.controller('PcController', function($scope, $route, $routeParams, $http) {
 		} else if (renderPath[0] == "sif") {
 			//TODO
 		}
-		
 	};
     
     // Listen for changes to the Route. When the route
