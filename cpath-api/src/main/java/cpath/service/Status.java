@@ -33,26 +33,19 @@ import java.util.ArrayList;
 public enum Status {
 
     /**
-     * Status Code:  Bad Request, Missing Arguments.
+     * Status Code:  Bad Request, e.g., missing or illegal arguments.
      */
-    BAD_REQUEST(452, "Bad Request (illegal or no arguments)"),
-
-    /**
-     * Status Code:  No Results Found.
-     */
-    NO_RESULTS_FOUND(460, "No Results Found"),
-
+    BAD_REQUEST(400, "Bad Request (e.g., missing or illegal arguments)"),
 
     /**
      * Status Code:  Internal Server Error.
      */
     INTERNAL_ERROR(500, "Internal Server Error"),
 
-    
     /**
      * Status Code:  Internal Server Error.
      */
-    MAINTENANCE(503, "Server is temporarily unavailable due to regular maintenance");
+    MAINTENANCE(503, "Server is temporarily unavailable");
 
     private final Integer errorCode;
     private final String errorMsg;

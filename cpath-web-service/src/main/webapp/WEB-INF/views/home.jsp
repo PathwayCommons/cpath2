@@ -29,9 +29,7 @@ or the fat JAR with embedded application server was started) -->
   <div class="row">	
 	<div class="jumbotron">
 	<h3>Web service commands</h3>
-	<p><small>(unique clients: <span class="badge alert-info pc2_tip"></span>;&nbsp;
-		successful queries: <span class="badge alert-info pc2_tok"></span>)</small></p>
-	<blockquote><p>To query the integrated biological pathway database, 
+	<blockquote><p>To query the integrated biological pathway database,
 	application developers can use the following commands:</p></blockquote>
 	<ul id="commands" title="Main commands">
 		<li><a href="#search">SEARCH</a></li>
@@ -464,27 +462,18 @@ or the fat JAR with embedded application server was started) -->
 <div class="row nav-target" id="errors">
 	<h2>Error Response</h2>
 	<p>
-		If an error or no results happens while processing a user's request,
-		the client will receive a standard HTTP error response with а corresponding status code 
-		(not 200 OK) and message (browsers usually display an error page; 
-		web clients should normally check the status before processing the results). 
-		In addition to general use of standard HTTP errors, the following four 
-		important error responses, by design, are:</p>
+		If an error occurs while processing a user's request,
+		the client will receive an HTTP error response, which status code
+		is not 200 (OK), and a message (browsers usually display an error page; other
+		web clients should normally check the status code before processing the results).
+		Specifically, the following HTTP errors can be sent by this service:</p>
 	<ul>
-	  <li>452 - Bad Request (illegal or no arguments).</li>		
-	  <li>460 - No Results (e.g., when a search or graph query found no data).</li>
-	  <li>500 - Internal Server Error (usually a java exception).</li>
-	  <li>503 - Server is temporarily unavailable due to regular maintenance.</li>
+	  <li>400 - Bad Request (missing or illegal query arguments).</li>
+	  <li>500 - Internal Server Error (usually, a java exception).</li>
+	  <li>503 - Server is temporarily unavailable (due to maintenance or when re-starting).</li>
 	</ul>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
 <jsp:include page="footer.jsp"/>
-
-<script>
-	// update the number of successful requests (excluding errors);
-	$.getJSON('log/totalok', function(tok) {$('.pc2_tok').text(tok);}).error(function() {$('.pc2_tok').text(0);});
-	// update the number of unique client IPs;
-	$.getJSON('log/totalip', function(tip) {$('.pc2_tip').text(tip);}).error(function() {$('.pc2_tip').text(0);});
-</script>
 </body>
 </html>

@@ -162,17 +162,14 @@ public class BiopaxModelController extends BasicController {
 		if(results instanceof ErrorResponse) {
 			errorResponse(((ErrorResponse) results).getStatus(), 
 					((ErrorResponse) results).toString(), request, response, events);
-		} else if(results.isEmpty()) {
-			errorResponse(Status.NO_RESULTS_FOUND, "no hits", request, response, events);
-		} else {//return results
-			//log to db
+			return null;
+		} else {
+			//log
 			SearchResponse hits = (SearchResponse) results;
     		events.addAll(LogEvent.providers(hits.getProviders()));
 	    	service.log(events, clientIpAddress(request));
 			return hits;
 		}
-		
-		return null;
     }
     
     
@@ -191,15 +188,11 @@ public class BiopaxModelController extends BasicController {
     	} else {
     		ServiceResponse sr = service.traverse(args.getPath(), args.getUri());
     		if(sr instanceof ErrorResponse) {
-				errorResponse(((ErrorResponse) sr).getStatus(), 
-						((ErrorResponse) sr).toString(), request, response, events);
-			}
-    		else if(sr == null || sr.isEmpty()) {
-    			errorResponse(Status.NO_RESULTS_FOUND, "no results found", request, response, events);
-    		}
-    		else {
+				errorResponse(((ErrorResponse) sr).getStatus(), sr.toString(), request, response, events);
+			} else {
     			//log to db and return the xml object
     			service.log(events, clientIpAddress(request));
+				//TODO: (how) log provider names with each traverse query result?..
     			return (TraverseResponse) sr;
 			}
     	}
@@ -277,24 +270,23 @@ public class BiopaxModelController extends BasicController {
 			return null;
 		} else {
 			// get results from the service
-			ServiceResponse results = service.search(
-					args.getQ(), args.getPage(), args.getType(),
+			ServiceResponse results = service.search(args.getQ(), args.getPage(), args.getType(),
 					args.getDatasource(), args.getOrganism());
 
 			if(results instanceof ErrorResponse) {
 				errorResponse(((ErrorResponse) results).getStatus(), results.toString(), request, response, events);
-			} else if(results.isEmpty()) {
-				errorResponse(Status.NO_RESULTS_FOUND, "no hits", request, response, events);
+				return null;
 			} else {
-				//count for all unique provider names from the ServiceResponse
-	    		events.addAll(LogEvent.providers(
-	    				((SearchResponse)results).getProviders()
-	    			));
+				if(!results.isEmpty()) {
+					//count for all unique provider names from the ServiceResponse
+					events.addAll(LogEvent.providers(
+							((SearchResponse) results).getProviders()
+					));
+				}
 				//save to the log db
 		    	service.log(events, clientIpAddress(request));
 				return (SearchResponse) results;
 			}
-			return null;
 		}
 	}
     

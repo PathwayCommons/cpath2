@@ -79,7 +79,7 @@ pcApp.controller('PcController', function($scope, $route, $routeParams, $http) {
 				});	
 			}
 		} else if (renderPath[0] == "sif") {
-			//TODO
+			//TODO display a pathway in a pathway viewer (sbgnviz)...
 		}
 	};
     

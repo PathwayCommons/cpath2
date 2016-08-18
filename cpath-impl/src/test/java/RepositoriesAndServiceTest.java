@@ -49,7 +49,6 @@ public class RepositoriesAndServiceTest {
 					LogEvent.provider("HumanCyc"),
 					LogEvent.kind(GraphType.NEIGHBORHOOD),
 					LogEvent.error(Status.INTERNAL_ERROR),
-					LogEvent.error(Status.NO_RESULTS_FOUND),
 					LogEvent.provider("Reactome"),
 					LogEvent.provider("HumanCyc"),
 					LogEvent.command(Cmd.SEARCH)

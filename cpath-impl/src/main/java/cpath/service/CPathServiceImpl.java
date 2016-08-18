@@ -146,11 +146,8 @@ public class CPathServiceImpl implements CPathService {
 
 
 	@Override
-	public ServiceResponse fetch(final OutputFormat format, final String... uris) {
-		if (uris.length == 0)
-			return new ErrorResponse(NO_RESULTS_FOUND,
-					"No URIs were specified for the query");
-		
+	public ServiceResponse fetch(final OutputFormat format, final String... uris)
+	{
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 		
@@ -158,21 +155,16 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			final String[] mappedUris = findUrisByIds(uris);
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, mappedUris);
-			
-			if(elements.isEmpty()) {
-				return new ErrorResponse(NO_RESULTS_FOUND,
-						"No BioPAX objects found by URI(s): " + Arrays.toString(uris));
+			Model m = null;
+			if(!elements.isEmpty()) {
+				//auto-complete (add important child/parent elements)
+				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+				assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
+				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
+				m = cloner.clone(paxtoolsModel, elements);
+				m.setXmlBase(paxtoolsModel.getXmlBase());
 			}
-					
-			//auto-complete (add important child/parent elements)	
-			elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel); 
-			assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
-
-			Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-			Model m = cloner.clone(paxtoolsModel, elements);
-			m.setXmlBase(paxtoolsModel.getXmlBase());
 			return convert(m, format);
-			
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
@@ -216,30 +208,23 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			// init source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
-			if(elements.isEmpty()) {
-				return new ErrorResponse(NO_RESULTS_FOUND,
-						"No BioPAX objects found by URI(s): " + Arrays.toString(src));
+			Model m = null;
+			if(!elements.isEmpty()) {
+				// Execute the query, get result elements
+				elements = QueryExecuter.runNeighborhood(elements, paxtoolsModel,
+						limit, direction, createFilters(organisms, datasources));
+				if (elements != null && !elements.isEmpty()) {
+					// auto-complete (gets a reasonable size sub-model)
+					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
+					m = cloner.clone(paxtoolsModel, elements);
+					m.setXmlBase(paxtoolsModel.getXmlBase());
+				}
 			}
-
-			// Execute the query, get result elements
-			elements = QueryExecuter.runNeighborhood(elements, paxtoolsModel,
-					limit, direction, createFilters(organisms, datasources));
-
-			if(elements != null && !elements.isEmpty()) {
-				// auto-complete (gets a reasonable size sub-model)
-				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
-				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-				Model m = cloner.clone(paxtoolsModel, elements);
-				m.setXmlBase(paxtoolsModel.getXmlBase());
-				return convert(m, format);
-			} else {
-				return new ErrorResponse(NO_RESULTS_FOUND,
-						"No results found by URI(s): " + Arrays.toString(src));
-			}
+			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
-
 	}
 
 	
@@ -257,30 +242,23 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			// init source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
-			if(elements.isEmpty()) {
-				return new ErrorResponse(NO_RESULTS_FOUND,
-						"No BioPAX objects found by URI(s): " + Arrays.toString(src));
+			Model m = null;
+			if(!elements.isEmpty()) {
+				// Execute the query, get result elements
+				elements = QueryExecuter.runPathsBetween(elements, paxtoolsModel, limit,
+						createFilters(organisms, datasources));
+				// auto-complete (gets a reasonable size sub-model)
+				if (elements != null) {
+					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
+					m = cloner.clone(paxtoolsModel, elements);
+					m.setXmlBase(paxtoolsModel.getXmlBase());
+				}
 			}
-
-			// Execute the query, get result elements
-			elements = QueryExecuter.runPathsBetween(elements, paxtoolsModel, limit,
-					createFilters(organisms, datasources));
-
-			// auto-complete (gets a reasonable size sub-model)
-			if(elements != null) {
-				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
-				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-				Model m = cloner.clone(paxtoolsModel, elements);
-				m.setXmlBase(paxtoolsModel.getXmlBase());
-				return convert(m, format);
-			} else {
-				return new ErrorResponse(NO_RESULTS_FOUND,
-						"No results found by URI(s): " + Arrays.toString(src));
-			}
+			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
-
 	}
 
 	
@@ -299,36 +277,23 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			// init source and target elements
 			Set<BioPAXElement> source = urisToBpes(paxtoolsModel, src);
-			if(source.isEmpty()) {
-				return new ErrorResponse(NO_RESULTS_FOUND,
-						"No source BioPAX objects found by URI(s): " + Arrays.toString(src));
-			}
 			Set<BioPAXElement> target = urisToBpes(paxtoolsModel, tgt);
-			if(target.isEmpty()) {
-				return new ErrorResponse(NO_RESULTS_FOUND,
-						"No target BioPAX objects found by URI(s): " + Arrays.toString(tgt));
+			Model m = null;
+			if(!source.isEmpty() && !target.isEmpty()) {
+				// Execute the query
+				Set<BioPAXElement> elements = (target == null || target.isEmpty())
+					? QueryExecuter.runPathsBetween(source, paxtoolsModel, limit, createFilters(organisms, datasources))
+					: QueryExecuter.runPathsFromTo(source, target,
+							paxtoolsModel, LimitType.NORMAL, limit, createFilters(organisms, datasources));
+				if (elements != null) {
+					// auto-complete (gets a reasonable size sub-model)
+					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
+					m = cloner.clone(paxtoolsModel, elements);
+					m.setXmlBase(paxtoolsModel.getXmlBase());
+				}
 			}
-
-			// Execute the query
-			Set<BioPAXElement> elements = (target==null || target.isEmpty()) 
-					? QueryExecuter.runPathsBetween(source, paxtoolsModel, limit,
-							createFilters(organisms, datasources))
-							: QueryExecuter.runPathsFromTo(source, target, 
-									paxtoolsModel, LimitType.NORMAL, limit,
-									createFilters(organisms, datasources));
-
-					if(elements != null) {
-						// auto-complete (gets a reasonable size sub-model)
-						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
-						Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-						Model m = cloner.clone(paxtoolsModel, elements);
-						m.setXmlBase(paxtoolsModel.getXmlBase());
-						return convert(m, format);
-					} else {
-						return new ErrorResponse(NO_RESULTS_FOUND,
-								"No results found; source: " + Arrays.toString(src)
-								+  ", target: " + Arrays.toString(tgt));
-					}	
+			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
@@ -369,30 +334,24 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			// init source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
-			if(elements.isEmpty()) {
-				return new ErrorResponse(NO_RESULTS_FOUND, "No BioPAX objects found by URIs: " + Arrays.toString(src));
+			Model m = null;
+			if(!elements.isEmpty()) {
+				// Execute the query, get result elements
+				elements = QueryExecuter
+						.runCommonStreamWithPOI(elements, paxtoolsModel, direction, limit,
+								createFilters(organisms, datasources));
+				if (elements != null) {
+					// auto-complete (gets a reasonable size sub-model)
+					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
+					m = cloner.clone(paxtoolsModel, elements);
+					m.setXmlBase(paxtoolsModel.getXmlBase());
+				}
 			}
-
-			// Execute the query, get result elements
-			elements = QueryExecuter
-					.runCommonStreamWithPOI(elements, paxtoolsModel, direction, limit,
-							createFilters(organisms, datasources));
-
-			if(elements != null) {
-				// auto-complete (gets a reasonable size sub-model)
-				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
-				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-				Model m = cloner.clone(paxtoolsModel, elements);
-				m.setXmlBase(paxtoolsModel.getXmlBase());
-				return convert(m, format);
-			} else {
-				return new ErrorResponse(NO_RESULTS_FOUND,
-						"No results found by URI(s): " + Arrays.toString(src));
-			}
+			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
-
 	}
 
 	
@@ -408,7 +367,7 @@ public class CPathServiceImpl implements CPathService {
 	private String[] findUrisByIds(String[] identifiers)
 	{
 		if (identifiers.length == 0)
-			return identifiers;
+			return identifiers; //empty array
 		
 		final Set<String> uris = new TreeSet<String>();
 

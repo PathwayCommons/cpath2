@@ -17,13 +17,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static cpath.service.Status.*;
-import cpath.service.LogEvent;
-import cpath.service.CPathService;
-import cpath.service.ErrorResponse;
-import cpath.service.Status;
+
+import cpath.service.*;
 import cpath.service.jaxb.*;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.biopax.paxtools.io.SimpleIOHandler;
+import org.biopax.paxtools.model.BioPAXLevel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -135,12 +136,6 @@ public abstract class BasicController {
 			errorResponse(((ErrorResponse) serviceResp).getStatus(), serviceResp.toString(), request, response,
 					logEvents);
 		} 
-		else if(serviceResp.isEmpty()) {
-			log.warn("stringResponse: I got an empty ServiceResponce " +
-				"(must be already converted to the ErrorResponse)");
-			errorResponse(NO_RESULTS_FOUND, "no results found", 
-					request, response, logEvents);
-		} 
 		else if (serviceResp instanceof DataResponse) {
 			final DataResponse dataResponse = (DataResponse) serviceResp;
 
@@ -155,12 +150,11 @@ public abstract class BasicController {
 			} catch (Throwable ex) {
 				log.error("LogUtils.log failed", ex);
 			}
-			
+
 			if(dataResponse.getData() instanceof Path) {
 				File resultFile = ((Path) dataResponse.getData()).toFile();//this is some temp. file
 				response.setHeader("Content-Length", String.valueOf(resultFile.length()));
 				response.setContentType(dataResponse.getFormat().getMediaType());
-				log.debug("QUERY RETURNED " + dataResponse.getData().toString().length() + " chars");
 				try {
 					FileReader reader = new FileReader(resultFile);
 					Writer writer = response.getWriter();
@@ -173,10 +167,30 @@ public abstract class BasicController {
 				} finally {
 					resultFile.delete();
 				}
-			} else { //it's probably a re-factoring bug -
-				errorResponse(INTERNAL_ERROR, String.format("BUG: no file Path in the DataResponse; got %s, %s instead.",
-					dataResponse.getData().getClass().getSimpleName(), dataResponse.toString()), request, response,
-						logEvents);
+			}
+			else if(dataResponse.isEmpty()) {
+				//return empty result (a trivial biopax rdf/xml or empty string)
+				response.setContentType(dataResponse.getFormat().getMediaType());
+				try {
+					if(dataResponse.getFormat() == OutputFormat.BIOPAX) {
+						//output an empty BioPAX model as RDF+XML
+						ByteArrayOutputStream bos = new ByteArrayOutputStream();
+						new SimpleIOHandler().convertToOWL(BioPAXLevel.L3.getDefaultFactory().createModel(), bos);
+						response.getWriter().print(bos.toString("UTF-8"));
+					} else {
+						//TODO print a comment, e.g., "# query returned no data"; though SIF, GSEA do not support it..?
+						response.getWriter().print("");
+					}
+				} catch (IOException e) {
+					errorResponse(INTERNAL_ERROR, String.format("Failed writing a 'no data found' response content: %s.",
+							e.toString()), request, response, logEvents);
+				}
+			}
+			else { //it's probably a bug -
+				errorResponse(INTERNAL_ERROR, String.format(
+					"BUG: DataResponse.data has value: %s, %s instead of a Path or null.",
+					dataResponse.getData().getClass().getSimpleName(), dataResponse.toString()),
+						request, response, logEvents);
 			}
 		} else { //it's a bug -
 			errorResponse(INTERNAL_ERROR, String.format("BUG: Unknown ServiceResponse: %s, %s ",

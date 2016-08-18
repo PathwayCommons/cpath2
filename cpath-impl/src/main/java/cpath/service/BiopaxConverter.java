@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.ServiceResponse;
+import org.springframework.util.Assert;
+
 import static cpath.service.Status.*;
 
 /**
@@ -50,7 +52,7 @@ public class BiopaxConverter {
 	/**
      * Converts the BioPAX data into the other format.
      * 
-     * @param m paxtools model
+     * @param m paxtools model (not null)
      * @param format output format
      * @param os output stream
      * @param args optional format-specific parameters
@@ -59,7 +61,8 @@ public class BiopaxConverter {
     private void convert(Model m, OutputFormat format, OutputStream os, Object... args)
     		throws IOException 
     {
-			switch (format) {
+		Assert.notNull(m);
+    	switch (format) {
 			case BIOPAX: //to OWL (RDF/XML)
 				new SimpleIOHandler().convertToOWL(m, os);
 				break;
@@ -110,7 +113,7 @@ public class BiopaxConverter {
     }
 
 	private void convertToCyJson(Model m, OutputStream os) {
-		//TODO implement
+		//TODO implement to Cy JSON converter (e.g., borrow code from PCViz)
 	}
 
 	private void convertToJsonLd(Model m, OutputStream os) throws IOException {
@@ -134,7 +137,10 @@ public class BiopaxConverter {
     public ServiceResponse convert(Model m, OutputFormat format, Object... args)
     {
     	if(m == null || m.getObjects().isEmpty()) {
-			return new ErrorResponse(NO_RESULTS_FOUND, "Empty BioPAX Model");
+			DataResponse r = new DataResponse();
+			r.setFormat(format);
+			r.setData(null); //so r.isEmpty() is true.
+			return r;
 		}
     	
 		// otherwise, convert, return a new DataResponse
