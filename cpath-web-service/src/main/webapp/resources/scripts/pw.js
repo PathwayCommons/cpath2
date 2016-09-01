@@ -28,10 +28,6 @@ pcApp.config(function( $routeProvider )
 			"/pw/:kw",
 			{ action: "pw.find" }
 		)
-		.when(
-			"/sif",
-			{ action: "sif.default" }
-		)
 		.otherwise(
 			{ redirectTo: "/pw" }
 		);
@@ -78,8 +74,6 @@ pcApp.controller('PcController', function($scope, $route, $routeParams, $http) {
 					console.log(data);
 				});	
 			}
-		} else if (renderPath[0] == "sif") {
-			//TODO display a pathway in a pathway viewer (sbgnviz)...
 		}
 	};
     

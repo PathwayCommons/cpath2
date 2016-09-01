@@ -492,6 +492,7 @@ public class CPathServiceImpl implements CPathService {
 						&& h.getPathway().get(0).equalsIgnoreCase(h.getUri())
 					)
 				){
+					//TODO: replace with h.getNumProcesses()
 					if(h.getSize()>2) //skip e.g. CTD "pathways" that contain one-two interactions
 						hits.add(h); //add to the list
 					else { //add only if it has a child non-empty pathway

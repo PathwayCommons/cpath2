@@ -435,6 +435,7 @@ public class SearchEngine implements Indexer, Searcher {
 					bpe.getAnnotations().put(FIELD_PATHWAY, ModelUtils.getParentPathways(bpe));
 					
 					// for bio processes, also save the total no. member interactions and pathways:
+					//TODO: set <numInteractors> (PE and Gene participants) and <numProcesses> fields; also - for Complexes
 					if(bpe instanceof org.biopax.paxtools.model.level3.Process) {
 						int size = new Fetcher(SimpleEditorMap.L3, Fetcher.nextStepFilter)
 								.fetch(bpe, Process.class).size(); //except itself						

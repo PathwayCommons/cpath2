@@ -68,17 +68,11 @@
 				</table>
 			</div>
 		</div>
-		<div ng-switch-when="sif">
-			  <h2>SIF view</h2>
-			  <div class="row">
-				<%--TODO embed CytoscapeJs here--%>
-			  </div>
-		</div>
 	  </div>
 
   </div>
 	
-	<jsp:include page="footer.jsp" />
+  <jsp:include page="footer.jsp" />
 	
 </body>
 </html>

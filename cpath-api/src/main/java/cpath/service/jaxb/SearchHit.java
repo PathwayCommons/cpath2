@@ -28,6 +28,7 @@ import org.apache.commons.lang.StringEscapeUtils;
     "pathway",
     "excerpt",
     "size"
+     //TODO: add "numParticipants" (PEs and Genes) and "numProcesses" (deprecate "size") fields
 	}
 )
 public class SearchHit implements Serializable {
