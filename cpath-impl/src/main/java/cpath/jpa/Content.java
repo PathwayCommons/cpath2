@@ -11,8 +11,8 @@ import java.util.zip.GZIPOutputStream;
 import javax.persistence.*;
 import javax.xml.transform.stream.StreamSource;
 
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.biopax.validator.api.ValidatorUtils;
 import org.biopax.validator.api.beans.Validation;
 import org.hibernate.annotations.DynamicInsert;

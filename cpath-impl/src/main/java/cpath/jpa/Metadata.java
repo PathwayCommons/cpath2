@@ -12,7 +12,7 @@ import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 
 import cpath.service.*;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Provenance;

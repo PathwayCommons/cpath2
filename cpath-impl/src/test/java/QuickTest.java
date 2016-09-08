@@ -1,4 +1,4 @@
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;

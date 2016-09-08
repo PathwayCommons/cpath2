@@ -8,7 +8,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
  * Search hit java bean.
@@ -140,6 +140,6 @@ public class SearchHit implements Serializable {
     
     @Override
     public String toString() {
-    	return (name != null) ? StringEscapeUtils.unescapeHtml(name) : uri;
+    	return (name != null) ? StringEscapeUtils.unescapeHtml4(name) : uri;
     }
 }

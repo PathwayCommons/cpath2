@@ -6,7 +6,7 @@ package cpath.query;
 import java.util.Arrays;
 import java.util.Collection;
 
-import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;

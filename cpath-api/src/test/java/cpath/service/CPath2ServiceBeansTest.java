@@ -9,8 +9,8 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Marshaller;
 
 import cpath.config.CPathSettings;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.WordUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.text.WordUtils;
 import org.junit.Test;
 
 import cpath.service.Status;

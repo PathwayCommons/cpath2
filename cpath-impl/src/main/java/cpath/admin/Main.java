@@ -21,7 +21,7 @@ import org.biopax.paxtools.pattern.miner.BlacklistGenerator3;
 import org.biopax.paxtools.pattern.util.Blacklist;
 import org.biopax.validator.api.Validator;
 import org.h2.tools.Csv;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;

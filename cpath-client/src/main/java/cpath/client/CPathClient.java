@@ -10,7 +10,7 @@ import cpath.query.CPathTopPathwaysQuery;
 import cpath.query.CPathTraverseQuery;
 import cpath.service.jaxb.*;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
