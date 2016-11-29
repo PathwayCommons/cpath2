@@ -265,11 +265,6 @@
 		</dependency>
 		<dependency>
 			<groupId>pathwaycommons</groupId>
-			<artifactId>msigdb-to-biopax</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>pathwaycommons</groupId>
 			<artifactId>reconx-to-biopax</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 			<exclusions>
