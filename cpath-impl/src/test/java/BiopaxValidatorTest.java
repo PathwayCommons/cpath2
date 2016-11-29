@@ -85,7 +85,7 @@ public class BiopaxValidatorTest {
 	 * 
 	 */
 	@Test //controlType
-	public final void testValidateModel() {		
+	public void testValidateModel() {
 		Catalysis ca = level3.create(Catalysis.class, "catalysis1"); 
 		ca.setControlType(ControlType.INHIBITION);
 		ca.addComment("error: illegal controlType");	
@@ -141,7 +141,7 @@ public class BiopaxValidatorTest {
     
     
 	@Test
-	public final void testNormalizeTestFile() throws IOException {
+	public void testNormalizeTestFile() throws IOException {
 		SimpleIOHandler simpleReader = new SimpleIOHandler();
 		simpleReader.mergeDuplicates(true);
 		

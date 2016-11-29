@@ -272,6 +272,12 @@
 			<groupId>pathwaycommons</groupId>
 			<artifactId>reconx-to-biopax</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
+			<exclusions>
+				<exclusion>
+					<groupId>junit</groupId>
+					<artifactId>junit</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 
