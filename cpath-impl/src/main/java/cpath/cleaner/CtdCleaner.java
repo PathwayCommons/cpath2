@@ -1,6 +1,6 @@
-package cpath.cleaner.internal;
+package cpath.cleaner;
 
-import cpath.importer.Cleaner;
+import cpath.service.Cleaner;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
@@ -19,9 +19,9 @@ import java.util.HashSet;
  * This is mainly to remove "pathways", such as '#taxon_pathway_9606',
  * which are nor really useful and even bad for, e.g., SIF and GSEA converters.
  */
-final class CtdCleanerImpl implements Cleaner {
+final class CtdCleaner implements Cleaner {
 
-    private static Logger log = LoggerFactory.getLogger(CtdCleanerImpl.class);
+    private static Logger log = LoggerFactory.getLogger(CtdCleaner.class);
 
     public void clean(InputStream data, OutputStream cleanedData)
 	{	
