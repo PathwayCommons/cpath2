@@ -14,7 +14,8 @@ import java.util.HashSet;
 
 /**
  * Implementation of Cleaner interface for the CTD BioPAX L3 model,
- * which is generated with pathwaycommons:ctd-to-biopax converter tool.
+ * which is generated with pathwaycommons:ctd-to-biopax converter tool
+ * (java console app, run separately).
  * 
  * This is mainly to remove "pathways", such as '#taxon_pathway_9606',
  * which are nor really useful and even bad for, e.g., SIF and GSEA converters.

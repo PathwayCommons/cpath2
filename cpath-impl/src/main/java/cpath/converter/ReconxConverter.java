@@ -22,6 +22,7 @@ public class ReconxConverter extends BaseConverter {
         try {
             SBMLDocument sbmlDocument = SBMLReader.read(is);
             SbmlToBiopaxConverter sbmlToBiopaxConverter = new SbmlToBiopaxConverter();
+            sbmlToBiopaxConverter.setMakePathway(false); //won't generate that all-interactions root model pathway
             bpModel = sbmlToBiopaxConverter.convert(sbmlDocument);
         } catch (XMLStreamException e) {
             throw new RuntimeException("Failed to convert Recon2 SBML to BioPAX.", e);
