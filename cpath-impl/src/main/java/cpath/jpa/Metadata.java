@@ -16,6 +16,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.controller.ModelUtils;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.Provenance;
+import org.biopax.paxtools.model.level3.Score;
 import org.hibernate.annotations.DynamicInsert;
 import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.validator.constraints.NotBlank;
@@ -381,7 +382,11 @@ public final class Metadata {
 				ent.removeDataSource(ds);
 			ent.addDataSource(pro);
 		}
-		
+
+		for (Score score : model.getObjects(Score.class))
+			if(score.getScoreSource() == null)
+				score.setScoreSource(pro);
+
 		// remove dangling Provenance from the model
 		ModelUtils.removeObjectsIfDangling(model, Provenance.class);
 	}
