@@ -70,7 +70,7 @@ public abstract class BasicController {
 		try {
 			service.log(logEvents, clientIpAddress(request));
 		} catch (Throwable ex) {
-			log.error("LogUtils.log failed" + ex);
+			log.error("service.log failed" + ex);
 		}
 
 		errorResponse(status, status.getErrorMsg() + "; " + detailedMsg, response);
@@ -148,7 +148,7 @@ public abstract class BasicController {
 			try {
 				service.log(logEvents, clientIpAddress(request));
 			} catch (Throwable ex) {
-				log.error("LogUtils.log failed", ex);
+				log.error("service.log failed", ex);
 			}
 
 			if(dataResponse.getData() instanceof Path) {
