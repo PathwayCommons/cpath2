@@ -95,12 +95,6 @@ public class PagesController extends BasicController {
 		return "downloads";
     }
 
-    // The Web App (AngularJS, rich HTML5 portal)
-    @RequestMapping("/view")
-    public String view() {
-    	return "view";
-    }
-    
     // OTHER resources
     
     @RequestMapping("/favicon.ico")
