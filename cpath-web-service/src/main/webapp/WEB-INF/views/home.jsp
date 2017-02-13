@@ -99,8 +99,9 @@ or the fat JAR with embedded application server was started) -->
 	<h3>SEARCH:</h3>
 	<blockquote><p>
 		A full-text search in this BioPAX database using the <a
-			href="http://lucene.apache.org/core/3_6_2/queryparsersyntax.html"> Lucene query syntax</a>.
-		Index fields (case-sensitive): <em>comment, ecnumber, keyword, name, pathway, term, xrefdb, xrefid, dataSource, organism</em> 
+		href="http://lucene.apache.org/core/4_10_4/queryparser/org/apache/lucene/queryparser/classic/package-summary.html#package_description">
+		Lucene query syntax</a>.
+		Index fields (case-sensitive): <em>comment, ecnumber, keyword, name, pathway, term, xrefid, datasource, organism</em>
 		(some of these are BioPAX properties, while others are composite relationships), can be optionally used in a query string.
 		For example, the <em>pathway</em> index field helps find pathway participants by keywords that match their parent pathway  
 		names or identifiers; <em>xrefid</em> finds objects by matching its direct or 'attached to a child element' Xrefs;
@@ -119,7 +120,7 @@ or the fat JAR with embedded application server was started) -->
 	</p>
 	<h4 id="search_parameters">Parameters:</h4>
 	<ul>
-		<li><em>q=</em> [Required] a keyword, name, external identifier, or a Lucene query string.</li>
+		<li><em>q=</em> [Required] a keyword, name, external identifier, or a Lucene query string. </li>
 		<li><em>page=N</em> [Optional] (N&gt;=0, default is 0). Search results are paginated to avoid 
 		overloading the search response. This sets the search result page number.
 		</li>
@@ -171,6 +172,10 @@ or the fat JAR with embedded application server was started) -->
 		<li><a rel="nofollow" href="search?q=*&type=biosource">This query lists all organisms,
 			including secondary organisms such as pathogens or model organisms listed in the evidence or
 			interaction objects</a></li>
+		<li><a rel="nofollow" href='search?q=xrefid\:"CHEBI:16236"&type=pathway'>This specific query returns
+			all pathways that somewhere has an Xref pointing to the ethanol definition in ChEBI db (&quot;CHEBI:16236&quot;
+			;also works without 'xrefid\:' prefix; without quotes it would fail due to 'CHEBI' being translated as an index field name,
+			which does not exist - but using as 'CHEBI?16236' works again.)</a></li>
 	</ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>

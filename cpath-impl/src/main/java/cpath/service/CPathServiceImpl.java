@@ -378,18 +378,19 @@ public class CPathServiceImpl implements CPathService {
 			if(identifier.toLowerCase().startsWith("http://")) {
 				// it must be an existing BioPAX object URI (seems, the user hopes so)
 				uris.add(identifier);
-				//also, if it's a canonical Identifiers.org URI, -
+				// if it's a Identifiers.org URI, lets' also extract the id from the URI:
 				if(identifier.startsWith("http://identifier.org/")) {
-					//extract the id from the URI
-					String id = CPathUtils.idfromNormalizedUri(identifier);
-					if(!q.toString().contains(id))
-						q.append("xrefid:\"").append(id).append("\" ");
+					identifier = CPathUtils.idfromNormalizedUri(identifier).replaceAll(":","?");
+					if (!q.toString().contains(identifier)) {
+						q.append("xrefid:").append(identifier).append(" ");
+					}
 				}
-			}
-			else {
-				//id-mapping step is not required (new full-text index associates IDs of supported types with BioPAX objects)
-				if (!q.toString().contains(identifier))
-					q.append("xrefid:\"").append(identifier).append("\" ");
+			} else {
+				// replace ':' with "?" for this to match (due to use of Lucene StandardAnalyzer, not-analyzed 'xrefid' field and multi-field query parser)
+				identifier = identifier.replaceAll(":","?");
+				if (!q.toString().contains(identifier)) {
+					q.append("xrefid:").append(identifier).append(" ");
+				}
 			}
 		}
 
@@ -406,7 +407,7 @@ public class CPathServiceImpl implements CPathService {
 		return uris.toArray(new String[]{});
 	}
 
-	private void findAllUris(Set<String> collectedUris, String query, Class<? extends BioPAXElement> biopaxTypeFilter) {
+	void findAllUris(Set<String> collectedUris, String query, Class<? extends BioPAXElement> biopaxTypeFilter) {
 		log.debug("findAllUris, search in " + biopaxTypeFilter.getSimpleName() + " using query: " + query);
 		int page = 0; // will use search pagination; collect all hits from all result pages
 		SearchResponse resp = (SearchResponse) search(query, page, biopaxTypeFilter, null, null);
@@ -551,7 +552,7 @@ public class CPathServiceImpl implements CPathService {
 	 * @param ids specific source or target set of IDs
 	 * @return related biopax elements
 	 */
-	private Set<BioPAXElement> urisToBpes(Model model, String[] ids)
+	private static Set<BioPAXElement> urisToBpes(Model model, String[] ids)
 	{
 		Set<BioPAXElement> elements = new HashSet<BioPAXElement>();
 

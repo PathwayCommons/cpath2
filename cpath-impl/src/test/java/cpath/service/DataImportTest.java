@@ -37,6 +37,8 @@ import java.util.zip.GZIPOutputStream;
 
 
 /**
+ * CPath2 Integration Tests (using test metadata, data, index).
+ *
  * @author rodche
  */
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -168,32 +170,30 @@ public class DataImportTest {
 		assertEquals(4, m.getObjects(Provenance.class).size());
 		
 		//additional 'test' metadata entry
-		Metadata md = new Metadata("test", "Reactome", "Foo", "", "", "", METADATA_TYPE.BIOPAX, "", "", null, "free");
+		Metadata md = new Metadata("test", "Reactome", "Foo", "", "",
+				"", METADATA_TYPE.BIOPAX, "", "", null, "free");
 		service.save(md);	
 		// normally, setProvenanceFor gets called during Premerge stage
 		md.setProvenanceFor(m); 
 		// which EXPLICITELY REMOVEs all other Provenance values from dataSource properties;
 		assertEquals(1, m.getObjects(Provenance.class).size()); 		
-		
-		/*
-		 * SERVICE-TIER features tests
-		 */
-		
-		//PREPARE...
-		// update the main biopax file (due to changes to dataSource prop. above;
-		// persistent and in-memory models must be in synch)
+
+
+		// SERVICE-TIER features tests
+
+		// Before the tests -
+		// update the main file due to changes to dataSource prop. above (persistent and in-memory models must be the same)
 		new SimpleIOHandler(BioPAXLevel.L3).convertToOWL(m, 
 			new GZIPOutputStream(new FileOutputStream(
 					CPathSettings.getInstance().mainModelFile())));
-		
 		//index (using additional id-mapping service repository)
 		CPathSettings.getInstance().setAdminEnabled(true);
 		service.index();
 		CPathSettings.getInstance().setAdminEnabled(false);
-		
-		// Test full-text search
+
+		// Test FULL-TEXT SEARCH
 		SearchResponse resp;
-		//
+
 		// search with a secondary (RefSeq) accession number -
 		// NP_619650 (primary AC = Q8TD86) occurs in the test UniProt data only, not in the model
 //Xrefs are not indexed anymore (only Entity and EntityReference type get indexed now)
@@ -214,16 +214,31 @@ public class DataImportTest {
 		resp =  (SearchResponse) service.search("NP_004334", 0, ProteinReference.class, null, null);
 		assertFalse(resp.getSearchHit().isEmpty());
 
-		//can sometimes find an xref by other ID that maps to its ID
-		//But (since 12/2015) Xrefs are not indexed anymore
+		//test that service.search works (as expected) for IDs that contain ':', such as ChEBI IDs
+		resp =  (SearchResponse) service.search("CHEBI?20", 0, SmallMoleculeReference.class, null, null);
+		assertFalse(resp.getSearchHit().isEmpty());
+		resp =  (SearchResponse) service.search("CHEBI:20", 0, SmallMoleculeReference.class, null, null);
+		assertTrue(resp.getSearchHit().isEmpty()); //no result due to using StandardAnalyzer and Lucene string query / MultiFieldQueryParser...
+
+		//also, it could previously find an Xref by some other ID that maps to its 'id' value; since 12/2015, Xrefs are not indexed anymore
 		resp =  (SearchResponse) service.search("NP_004334", 0, UnificationXref.class, null, null);
-		assertTrue(resp.getSearchHit().isEmpty());
-//		assertTrue(resp.getSearchHit().iterator().next().getUri().endsWith("P27797"));
-		
-		// fetch as BIOPAX
-		ServiceResponse res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P27797");
+		assertTrue(resp.getSearchHit().isEmpty()); //so - no result is normal here
+//		assertTrue(resp.getSearchHit().iterator().next().getUri().endsWith("P27797")); //was valid assertion until 12/2015
+
+		// test search res. contains the list of data providers (standard names)
+		ServiceResponse res = service.search("*", 0, PhysicalEntity.class, null, null);
 		assertNotNull(res);
-		assertFalse(res instanceof ErrorResponse);
+		assertTrue(res instanceof SearchResponse);
+		assertFalse(res.isEmpty());
+		assertFalse(((SearchResponse)res).getProviders().isEmpty());
+		log.info("Providers found by second search: " + ((SearchResponse)res).getProviders().toString());
+
+
+		// Test FETCH (get an object or subnetwork by URI or ID service)
+
+		// fetch as BIOPAX
+		res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P27797");
+		assertNotNull(res);
 		assertTrue(res instanceof DataResponse);
 		assertFalse(res.isEmpty());
 		assertTrue(((DataResponse)res).getData().toString().length()>0);		
@@ -231,7 +246,6 @@ public class DataImportTest {
 		// fetch as SIF
 		res = service.fetch(OutputFormat.BINARY_SIF, 
 			"http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p");
-		assertNotNull(res);
 		assertTrue(res instanceof DataResponse);
 		assertFalse(res.isEmpty());
 		Object respData = ((DataResponse)res).getData();
@@ -239,14 +253,15 @@ public class DataImportTest {
 		assertTrue(respData instanceof Path);
 		assertNotNull(((DataResponse)res).getProviders());
 		assertFalse(((DataResponse)res).getProviders().isEmpty());
-		
-		// test search res. contains the list of data providers (standard names)
-		res = service.search("*", 0, PhysicalEntity.class, null, null);
+
+		// fetch a small molecule by URI
+		res = (DataResponse) service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/chebi/CHEBI:20");
 		assertNotNull(res);
-		assertTrue(res instanceof SearchResponse);
 		assertFalse(res.isEmpty());
-		assertFalse(((SearchResponse)res).getProviders().isEmpty());
-		log.info("Providers found by second search: " + ((SearchResponse)res).getProviders().toString());
+		// fetch the same small molecule by ID (ChEBI, contains ":" in it...)
+		res = service.fetch(OutputFormat.BIOPAX, "CHEBI:20");
+		assertTrue(res instanceof DataResponse);
+		assertFalse(res.isEmpty());
 	}
 	
 	

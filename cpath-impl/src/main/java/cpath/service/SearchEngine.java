@@ -75,7 +75,6 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_URI = "uri";
 	public static final String FIELD_KEYWORD = "keyword"; //anything, e.g., names, terms, comments, incl. - from child elements 
 	public static final String FIELD_NAME = "name"; // standardName, displayName, other names
-//	public static final String FIELD_XREFDB = "xrefdb"; //xref.db
 	public static final String FIELD_XREFID = "xrefid"; //xref.id
 	public static final String FIELD_PATHWAY = "pathway"; //pathways and parent pathways to be inferred from entire biopax model
 	public static final String FIELD_SIZE = "size";
@@ -561,31 +560,7 @@ public class SearchEngine implements Indexer, Searcher {
 				doc.add(field);
 			}
 		}
-		
-//		// Xref db/id (these are for a precise search by standard bio ID)
-//		if(bpe instanceof Xref) {
-//			Xref xref = (Xref) bpe;
-//
-//			if (xref.getId() != null) {
-//				field = new StringField(FIELD_XREFID, xref.getId().toLowerCase(), Field.Store.NO);
-//				doc.add(field);
-//			}
-//			if (xref.getDb() != null) {
-//				field = new TextField(FIELD_XREFDB, xref.getDb().toLowerCase(), Field.Store.NO);
-//				doc.add(field);
-//			}
-//
-//			//index other identifiers using optional annotation 'xrefid' if present (e.g., added somewhere via mapping)
-//			if(!(bpe instanceof PublicationXref)) {
-//				if (xref.getAnnotations().containsKey(FIELD_XREFID)) {
-//					for (String otherId : (Set<String>)xref.getAnnotations().get(FIELD_XREFID)) {
-//						field = new StringField(FIELD_XREFID, otherId.toLowerCase(), Field.Store.NO);
-//						doc.add(field);
-//					}
-//				}
-//			}
-//		}
-		
+
 		// write
 		try {
 			indexWriter.addDocument(doc);
