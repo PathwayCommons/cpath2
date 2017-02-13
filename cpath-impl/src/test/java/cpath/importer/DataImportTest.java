@@ -246,6 +246,21 @@ public class DataImportTest {
 		assertFalse(res.isEmpty());
 		assertFalse(((SearchResponse)res).getProviders().isEmpty());
 		log.info("Providers found by second search: " + ((SearchResponse)res).getProviders().toString());
+
+		//test that service.search works (as expected) for IDs that contain ':', such as ChEBI IDs
+		resp =  (SearchResponse) service.search("CHEBI?20", 0, SmallMoleculeReference.class, null, null);
+		assertFalse(resp.getSearchHit().isEmpty());
+		resp =  (SearchResponse) service.search("CHEBI:20", 0, SmallMoleculeReference.class, null, null);
+		assertTrue(resp.getSearchHit().isEmpty()); //no result due to using StandardAnalyzer and Lucene string query / MultiFieldQueryParser...
+
+		// fetch a small molecule by URI
+		res = (DataResponse) service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/chebi/CHEBI:20");
+		assertNotNull(res);
+		assertFalse(res.isEmpty());
+		// fetch the same small molecule by ID (ChEBI, contains ":" in it...)
+		res = service.fetch(OutputFormat.BIOPAX, "CHEBI:20");
+		assertTrue(res instanceof DataResponse);
+		assertFalse(res.isEmpty());
 	}
 	
 	

@@ -453,49 +453,40 @@ public class CPathServiceImpl implements CPathService {
 	 * 		CHEBI, InChIKey, ChEMBL, DrugBank, CID: (PubChem), SID: (PubChem), KEGG Compound, PharmGKB, or chem. name.
 	 * @return URIs
 	 */
-	private String[] findUrisByIds(String[] identifiers)
-	{
+	private String[] findUrisByIds(String[] identifiers) {
 		if (identifiers.length == 0)
 			return identifiers;
 		
 		Set<String> uris = new TreeSet<String>();
 
 		// id-mapping: get primary IDs where possible; 
-		// build a Lucene query string (will be eq. to xrefid:"A" OR xrefid:"B" OR ...)
+		// build a Lucene query string (will be eq. to xrefid:A OR xrefid:B OR ...)
 		final StringBuilder q = new StringBuilder();
 		for (String identifier : identifiers) {
-			
-			String id = identifier;
-			
-			if(identifier.toLowerCase().startsWith("http://") 
-					|| identifier.toLowerCase().startsWith("urn:")) 
-			{
+			if(identifier.toLowerCase().startsWith("http://")) {
 				// it must be an existing URI (a user hopes so)
 				uris.add(identifier);
-				
-				if(identifier.startsWith("http://identifier.org/")) {
+				if(identifier.startsWith("http://identifiers.org/")) {
 					//also extract the id from the URI to map it (below) to the primary id/URI
-					id = CPathUtils.idfromNormalizedUri(identifier);
-				} else //no id-mapping required
+					identifier = CPathUtils.idfromNormalizedUri(identifier);
+				} else { //no id-mapping required
 					continue; //go to next identifier
+				}
 			} 
-			
+
 			// do gene/protein/chemical id-mapping;
 			// mapping can be ambiguous, but this is OK for queries (unlike when merging data)
-			Set<String> m = map(id);
-			if (!m.isEmpty()) {
-				for(String ac : m) {
-					// add to the query string; 
-					// quotation marks around the query id are required
-					q.append("xrefid:\"").append(ac).append("\" "); 
-					log.debug("findUrisByIds, mapped " + id + " -> " + ac);
-				}
+			Set<String> m = map(identifier);
+			for(String ac : m) {// add to the query string;
+				ac = ac.replaceFirst(":","?"); //see issue #259
+				if(!q.toString().contains(ac))
+					q.append("xrefid:").append(ac).append(" ");
 			}
-			
-			// use the original id regardless the mapping results
-			if(!q.toString().contains(id))
-				q.append("xrefid:\"").append(id).append("\" "); 
-
+			// also add the original identifier
+			identifier = identifier.replaceFirst(":","?");
+			if(!q.toString().contains(identifier)) {
+				q.append("xrefid:").append(identifier).append(" ");
+			}
 		}
 		
 		/* 
@@ -509,36 +500,29 @@ public class CPathServiceImpl implements CPathService {
 			log.debug("findUrisByIds, will run: " + query);
 			int page = 0; // will use search pagination
 			SearchResponse resp = (SearchResponse) search(query, page, Xref.class, null, null);
-			log.debug("findUrisByIds, hits: " + resp.getNumHits());
 			while (!resp.isEmpty()) {
-				log.debug("Retrieving xref search results, page #" + page);
-				for (SearchHit h : resp.getSearchHit()) 
-				{
+				for (SearchHit h : resp.getSearchHit()) {
 					if("UnificationXref".equalsIgnoreCase(h.getBiopaxClass())
 							|| "RelationshipXref".equalsIgnoreCase(h.getBiopaxClass())) {
 						//exclude some RX types if the rel.type is set
 						if("RelationshipXref".equalsIgnoreCase(h.getBiopaxClass())) {
 							RelationshipXref rx = null;
 							rx = (RelationshipXref) paxtoolsModel.getByID(h.getUri());
-							
 							//TODO review/decide RX types to keep/exclude...
 							//we created RXs with 'identity', 'see-also', etc. types when building the Warehouse and merging data
 							if(rx.getRelationshipType()==null || 
 									rx.getRelationshipType().getTerm().contains("identity"))
 								uris.add(h.getUri());
-							
-						} else 
+						} else {
 							uris.add(h.getUri());
+						}
 					}
 				}
 				// go next page
 				resp = (SearchResponse) search(query, ++page, Xref.class, null, null);
 			}
 		}
-				
-		log.debug("findUrisByIds, seed Xrefs: " + uris + 
-				" were mapped/found by orig. IDs: " + Arrays.toString(identifiers));
-		
+
 		return uris.toArray(new String[]{});
 	}
 
