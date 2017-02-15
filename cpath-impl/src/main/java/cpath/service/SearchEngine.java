@@ -77,7 +77,9 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_NAME = "name"; // standardName, displayName, other names
 	public static final String FIELD_XREFID = "xrefid"; //xref.id
 	public static final String FIELD_PATHWAY = "pathway"; //pathways and parent pathways to be inferred from entire biopax model
-	public static final String FIELD_SIZE = "size";
+	public static final String FIELD_SIZE = "size"; //since cPath2 v7.., size == numparticipants + numprocesses
+	public static final String FIELD_N_PARTICIPANTS = "numparticipants"; // num. of PEs or Genes in a process or Complex
+	public static final String FIELD_N_PROCESSES = "numprocesses"; // is same as 'size' used to be before cPath2 v7
 
 	// Full-text search/filter fields (case sensitive) -
 	//index organism names, cell/tissue type (term), taxonomy id, but only store BioSource URIs	
@@ -336,10 +338,14 @@ public class SearchEngine implements Indexer, Searcher {
 				hit.getPathway().addAll(uniqueVals);
 			}
 			
-			//no. processes in the sub-network
+			//no. processes, participants in the sub-network
 			if(doc.get(FIELD_SIZE)!=null)
-				hit.setSize(Integer.valueOf(doc.get(FIELD_SIZE))); 
-			
+				hit.setSize(Integer.valueOf(doc.get(FIELD_SIZE)));
+			if(doc.get(FIELD_N_PROCESSES)!=null)
+				hit.setNumProcesses(Integer.valueOf(doc.get(FIELD_N_PROCESSES)));
+			if(doc.get(FIELD_N_PARTICIPANTS)!=null)
+				hit.setNumParticipants(Integer.valueOf(doc.get(FIELD_N_PARTICIPANTS)));
+
 			//if cpath2 debugging, update hit.excerpt - add the Lucene's 'explain' using the query and doc.
 			if(CPathSettings.getInstance().isDebugEnabled()) {
 				String excerpt = hit.getExcerpt();
@@ -411,6 +417,8 @@ public class SearchEngine implements Indexer, Searcher {
 		LOG.info("index(), there are " + numObjectsToIndex + " Entity or EntityReference objects to index.");
 
 		final AtomicInteger numLeft = new AtomicInteger(numObjectsToIndex);
+		final Fetcher fetcher = new Fetcher(SimpleEditorMap.L3, Fetcher.nextStepFilter);
+
 		for(final BioPAXElement bpe : model.getObjects()) {
 			if(!(bpe instanceof Entity || bpe instanceof EntityReference || bpe instanceof Provenance))
 				continue; //skip for UtilityClass but EntityReference, Provenance
@@ -419,7 +427,7 @@ public class SearchEngine implements Indexer, Searcher {
 			exec.execute(new Runnable() {
 				public void run() {					
 					// get or infer some important values if possible from this, child or parent objects:
-					Set<String> keywords = ModelUtils.getKeywords(bpe, 4, dataPropertiesToConsider);
+					Set<String> keywords = ModelUtils.getKeywords(bpe, 5, dataPropertiesToConsider);
 
 					// a hack to remove special (debugging) biopax comments
 					for(String s : new HashSet<String>(keywords)) {
@@ -433,12 +441,18 @@ public class SearchEngine implements Indexer, Searcher {
 					bpe.getAnnotations().put(FIELD_ORGANISM, ModelUtils.getOrganisms(bpe));
 					bpe.getAnnotations().put(FIELD_PATHWAY, ModelUtils.getParentPathways(bpe));
 					
-					// for bio processes, also save the total no. member interactions and pathways:
-					//TODO: set <numInteractors> (PE and Gene participants) and <numProcesses> fields; also - for Complexes
+					//set <numparticipants> (PEs/Genes), <numprocesses> (interactions/pathways), <size> index fields:
 					if(bpe instanceof org.biopax.paxtools.model.level3.Process) {
-						int size = new Fetcher(SimpleEditorMap.L3, Fetcher.nextStepFilter)
-								.fetch(bpe, Process.class).size(); //except itself						
-						bpe.getAnnotations().put(FIELD_SIZE, Integer.toString(size)); 
+						int numProc = fetcher.fetch(bpe, Process.class).size(); //except itself
+						int numPeAndG = fetcher.fetch(bpe, PhysicalEntity.class).size()
+								+ fetcher.fetch(bpe, Gene.class).size();
+						bpe.getAnnotations().put(FIELD_SIZE, Integer.toString(numProc + numPeAndG));
+						bpe.getAnnotations().put(FIELD_N_PARTICIPANTS, Integer.toString(numPeAndG));
+						bpe.getAnnotations().put(FIELD_N_PROCESSES, Integer.toString(numProc));
+					} else if(bpe instanceof Complex) {
+						int numPEs = fetcher.fetch(bpe, PhysicalEntity.class).size();
+						bpe.getAnnotations().put(FIELD_SIZE, Integer.toString(numPEs));
+						bpe.getAnnotations().put(FIELD_N_PARTICIPANTS, Integer.toString(numPEs));
 					}
 
 					index(bpe, indexWriter);
@@ -492,7 +506,8 @@ public class SearchEngine implements Indexer, Searcher {
 	 *  'datasource', 'organism' and 'pathway' - infer from this bpe and its child objects 
 	 *  									  	up to given depth/level, analyze=no, store=yes;
 	 *  
-	 *  'size' - number of child processes, an integer as string; analyze=no, store=yes
+	 *  'size', 'numprocesses', 'numparticipants' - number of child processes,
+	 *  											participants; integer values as string; analyze=no, store=yes.
 	*/
 	void index(BioPAXElement bpe, IndexWriter indexWriter) {		
 		// create a new document
@@ -525,6 +540,16 @@ public class SearchEngine implements Indexer, Searcher {
 						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_SIZE)), Field.Store.YES);
 				doc.add(field);
 			}
+			if(bpe.getAnnotations().containsKey(FIELD_N_PARTICIPANTS)) {
+				field = new IntField(FIELD_N_PARTICIPANTS,
+						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PARTICIPANTS)), Field.Store.YES);
+				doc.add(field);
+			}
+			if(bpe.getAnnotations().containsKey(FIELD_N_PROCESSES)) {
+				field = new IntField(FIELD_N_PROCESSES,
+						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PROCESSES)), Field.Store.YES);
+				doc.add(field);
+			}
 			if(bpe.getAnnotations().containsKey(FIELD_XREFID)) {
 				//index biological IDs as keywords
 				addKeywords((Set<String>)bpe.getAnnotations().get(FIELD_XREFID), doc);
@@ -537,6 +562,8 @@ public class SearchEngine implements Indexer, Searcher {
 		bpe.getAnnotations().remove(FIELD_ORGANISM);
 		bpe.getAnnotations().remove(FIELD_PATHWAY);
 		bpe.getAnnotations().remove(FIELD_SIZE);
+		bpe.getAnnotations().remove(FIELD_N_PARTICIPANTS);
+		bpe.getAnnotations().remove(FIELD_N_PROCESSES);
 		bpe.getAnnotations().remove(FIELD_XREFID);
 
 		// name

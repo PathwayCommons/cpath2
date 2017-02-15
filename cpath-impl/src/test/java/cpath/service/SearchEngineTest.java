@@ -60,7 +60,9 @@ public class SearchEngineTest {
 		assertEquals(1, response.getSearchHit().size());
 		
 		SearchHit hit = response.getSearchHit().get(0);
-		assertEquals(4, hit.getSize().intValue()); //no. member processes, not counting the hit itself
+		assertEquals(11, hit.getSize().intValue()); //member processes and participants, not counting the hit itself
+		assertEquals(4, hit.getNumProcesses().intValue());
+		assertEquals(7, hit.getNumParticipants().intValue());
 		assertTrue(hit.getExcerpt().contains("-SCORE-"));
 		CPathSettings.getInstance().setDebugEnabled(false);
 		

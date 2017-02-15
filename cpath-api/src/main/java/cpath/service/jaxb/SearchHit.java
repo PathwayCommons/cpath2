@@ -18,18 +18,19 @@ import org.apache.commons.lang3.StringEscapeUtils;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(
-	name = "SearchHit", 
-	propOrder = {
-    "uri",
-    "biopaxClass",
-    "name",
-    "dataSource",
-    "organism",
-    "pathway",
-    "excerpt",
-    "size"
-     //TODO: add "numParticipants" (PEs and Genes) and "numProcesses" (deprecate "size") fields
-	}
+        name = "SearchHit",
+        propOrder = {
+                "uri",
+                "biopaxClass",
+                "name",
+                "dataSource",
+                "organism",
+                "pathway",
+                "excerpt",
+                "numParticipants",
+                "numProcesses",
+                "size"
+        }
 )
 public class SearchHit implements Serializable {
     @XmlElement(required = true)
@@ -42,6 +43,8 @@ public class SearchHit implements Serializable {
     private List<String> pathway;
     private String excerpt;
     private Integer size;
+    private Integer numParticipants;
+    private Integer numProcesses;
 
     public SearchHit() {
 	}
@@ -124,20 +127,47 @@ public class SearchHit implements Serializable {
     }
 
     /**
-     * For a BioPAX Interaction or Pathway,
-     * this is a number of associated processes; in other words,
-     * estimated size of the sub-network.
+     * For a BioPAX Interaction, Complex or Pathway,
+     * this is a number of associated sub-processes and participants;
+     * in other words - estimated size of the sub-network.
      * 
      * @return
+     * @deprecated use getNumParticipants, getNumProcesses instead (and the corresponding setters)
      */
     public Integer getSize() {
         return size;
     }
+    /** @deprecated use setNumParticipants, setNumProcesses instead (and the corresponding getters) */
     public void setSize(Integer value) {
         this.size = value;
     }
-    
-    
+
+    /**
+     * For a BioPAX Interaction, Pathway, or Complex,
+     * this is a number of physical entity or gene participants or components.
+     *
+     * @return
+     */
+    public Integer getNumParticipants() {
+        return numParticipants;
+    }
+    public void setNumParticipants(Integer value) {
+        this.numParticipants = value;
+    }
+
+    /**
+     * For a BioPAX process (Interaction or Pathway),
+     * this is a number of sub-processes.
+     *
+     * @return
+     */
+    public Integer getNumProcesses() {
+        return numProcesses;
+    }
+    public void setNumProcesses(Integer value) {
+        this.numProcesses = value;
+    }
+
     @Override
     public String toString() {
     	return (name != null) ? StringEscapeUtils.unescapeHtml4(name) : uri;
