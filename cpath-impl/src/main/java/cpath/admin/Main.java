@@ -619,7 +619,7 @@ public final class Main {
 		//collect BioPAX pathway data source names
 		final Set<String> pathwayDataSources = new HashSet<String>();
 		for(Metadata md : allMetadata) {
-			if (md.getType() == METADATA_TYPE.BIOPAX)
+			if (md.getType() == METADATA_TYPE.BIOPAX)  //TODO: consider 'SBML' type as well
 				pathwayDataSources.add(md.standardName());
 		}
 		final String archiveName = cpath.biopaxFileNameFull("Detailed");
