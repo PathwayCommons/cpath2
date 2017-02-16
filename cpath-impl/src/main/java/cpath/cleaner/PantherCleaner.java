@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 import cpath.service.Cleaner;
 
 /**
- * Cleaner for PANTHER Pathway 3.3. 
+ * Cleaner for the PANTHER Pathway 3.4.1 BioPAX model
  * 
  * Remove non-human entity references. Add "dangling" Controls to Pathways.
  */
@@ -40,7 +40,8 @@ final class PantherCleaner implements Cleaner {
 		Model originalModel = simpleReader.convertFromOWL(data);
 		
 		//find "human" (BioSource); it's already there normalized - uses Identifiers.org URI
-		final BioSource human = (BioSource) originalModel.getByID("http://identifiers.org/taxonomy/9606");
+		final BioSource human = (BioSource) originalModel.getByID("NCBITaxon:9606");
+		// - new version PANTHER pathway data contain URIS and xrefs like that, unfortunately...
 		if(human == null) //fail shortly (importer must skip this dataFile)
 			throw new RuntimeException("http://identifiers.org/taxonomy/9606 (human) BioSource not found");
 		

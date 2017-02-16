@@ -78,7 +78,7 @@ public class ChebiConvertersTest {
 		}
 		assertEquals(1, unificationXrefCount); //no secondary ChEBI IDs there (non-chebi are, if any, relationship xrefs)
 		assertEquals(7, relationshipXrefCount); //chebi, inchikey, cas, kegg, hmdb
-		assertEquals(9, publicationXrefCount); //there are nine such xrefs
+		assertEquals(0, publicationXrefCount); //there are no such xrefs anymore
 		
 		// following checks work in this test only (using in-memory model); with DAO - use getObject...
         assertTrue(model.containsID("http://identifiers.org/chebi/CHEBI:20"));

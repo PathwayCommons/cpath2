@@ -44,7 +44,8 @@ class ChebiOboConverter extends BaseConverter
 	//to extract a text value between quotation marks from 'def:' and 'synonym:' lines:
 	private final Pattern namePattern = Pattern.compile("\"(.+?)\"");
 	//to extract ID, DB values from 'xref:' lines:
-	private final Pattern xrefPattern = Pattern.compile(".+?:(.+?)\\s+\"(.+?)\"");
+	//(since ChEBI OBO format has been slightly changed in 2017, pattern was updated)
+	private final Pattern xrefPattern = Pattern.compile("(.+?):(\\S+)");
 	
 	public void convert(InputStream is, OutputStream os) {		
         Model model = BioPAXLevel.L3.getDefaultFactory().createModel();
@@ -203,32 +204,28 @@ class ChebiOboConverter extends BaseConverter
 			String[] xrefs = chebiEntryMap.get(_XREF).split("\t");
 			for(String xs : xrefs) {
 				Matcher matcher = xrefPattern.matcher(xs);
-				if(!matcher.find())
+				if(matcher.find()) {
+					String xid = matcher.group(2);
+					String xdb = matcher.group(1);
+					String DB = xdb.toUpperCase();
+					// Skip all xrefs except CAS, KEGG (C*, D*), etc.,
+					// which are used for id-mapping, merging, full-text search, and graph queries.
+					if (DB.equals("CAS") || DB.equals("DRUGBANK") || DB.equals("HMDB")) {
+						RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, xdb, xid, model);
+						smr.addXref(rx);
+					} else if (DB.startsWith("WIKIPEDIA")) {
+						smr.addName(id);
+					} else if (DB.equals("KEGG")) {
+						if(xid.startsWith("C"))
+							xdb += " Compound";
+						else if(xid.startsWith("D"))
+							xdb += " Drug";
+						RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, xdb, xid, model);
+						smr.addXref(rx);
+					}
+				} else {
 					throw new IllegalStateException("Pattern failed " +
 							"to match xref id and db within " + xs);
-				//ID w/o the "source:" prefix
-				id = matcher.group(1);
-				//remove quotes around the db name
-				String db = matcher.group(2);
-				String DB = db.toUpperCase();
-				// Skip all xrefs except CAS, KEGG (C*, D*), etc., which can be used for id-mapping, by Merger and
-				// full-text search and biopax graph queries.
-				if(DB.startsWith("CAS") || DB.startsWith("KEGG") || DB.equals("DRUGBANK") || DB.equals("HMDB"))
-				{
-					RelationshipXref rx = CPathUtils.findOrCreateRelationshipXref(RelTypeVocab.IDENTITY, db, id, model);
-					smr.addXref(rx);
-				} else if(DB.startsWith("PUBMED")) {
-					//add PublicationXref
-					String pxrefUri = _IDENTIFIERS_ORG + "pubmed/"+id; //the Normalizer would return the same
-					PublicationXref pxref = (PublicationXref) model.getByID(pxrefUri);
-					if(pxref == null) {
-						pxref = model.addNew(PublicationXref.class, pxrefUri);
-						pxref.setDb("PubMed");
-						pxref.setId(id);
-					}
-					smr.addXref(pxref);
-				} else if(DB.startsWith("WIKIPEDIA")) {
-					smr.addName(id);
 				}
 			}
 		}

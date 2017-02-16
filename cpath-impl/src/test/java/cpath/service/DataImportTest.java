@@ -319,7 +319,7 @@ public class DataImportTest {
 		// (if ChEBI OBO was previously converted by ChebiOntologyAnalysis)
 		assertEquals(0, smr.getMemberEntityReference().size());
 		System.out.println("merged chebi:422 xrefs: " + smr.getXref().toString());
-		assertEquals(13, smr.getXref().size());//9 PX, 1 UX and 3 RX (ChEBI) are there!
+		assertEquals(4, smr.getXref().size());//0 PX, 1 UX and 3 RX (ChEBI) are there!
 		SmallMoleculeReference msmr = (SmallMoleculeReference)mergedModel.getByID("http://identifiers.org/chebi/CHEBI:20");
 		assertEquals("(+)-camphene", msmr.getDisplayName());
 		assertEquals("(1R,4S)-2,2-dimethyl-3-methylidenebicyclo[2.2.1]heptane", msmr.getStandardName());
