@@ -54,14 +54,28 @@ public final class PreMerger {
 	 * Pre-process (import, clean, normalize) all data from all configured data sources.
 	 */
 	public void premerge() {
-		// if premerge was already called, there're some output files
-		// in the corresp. metadata's data folder, which will be used.
+		// If premerge was previously run, there're some output files
+		// in the corresponding data sub-folder, which will stay untouched ( if there was a problem with a data source,
+		// we'd like to re-run to continue premerging instead of doing all over and over again for all data;
+		// you can cleanup a sub-directory under /data manually if re-doing is required due to previous errors/failure).
 
 		// Iterate over all metadata:
 		for (Metadata metadata : service.metadata().findAll())
 		{
+			final File dir = new File(metadata.outputDir());
+			if(dir.isDirectory() && dir.listFiles(new FileFilter() {
+				@Override
+				public boolean accept(File pathname) {
+					return pathname.getName().endsWith("original");
+				}
+			}).length>0) {
+				log.warn("premerge(), found " + metadata.outputDir() + " folder; skip previously premerged "
+						+ metadata.getIdentifier());
+				continue; //skip
+			}
+
 			try {
-				log.info("premerge(), now processing " + metadata.getIdentifier());
+				log.info("premerge(), processing " + metadata.getIdentifier());
 				// Try to instantiate the Cleaner now, and exit if it fails!
 				Cleaner cleaner = null; //reset to null!
 				String cl = metadata.getCleanerClassname();
@@ -90,26 +104,11 @@ public final class PreMerger {
 					log.info("premerge(), no Converter class was specified; continue...");
 				}
 
-				// we want to restart premerge process and continue, instead of starting all over again;
- 				//Main can cleanup data sub-directories manually, if wishes re-doing from scratch.
-				File dir = new File(metadata.outputDir());
-				if(dir.exists() && dir.isDirectory() && dir.length()>0)
-				{
-					log.warn("premerge(), found " + metadata.outputDir() + " data folder; looks, "
-						+ metadata.getIdentifier() + " has been once attempted to premerge; " +
-							"continue processing HOPEFULLY the same data from where we left it...");
-					//we have to expand and analyze input data archives again
-					//to recover when the cpath2 database file was removed...
-					if(!metadata.getContent().isEmpty())
-						metadata.getContent().clear();
-				} else {
-					log.info("premerge(), initializing " + metadata.getIdentifier() + ", expanding data files to "
-							+ metadata.outputDir() + " (for the first time)...");
-					metadata = service.clear(metadata);
-				}
+				// clear
+				metadata = service.clear(metadata);
 
-				//expand/re-pack/save or overwrite the original data files and
-				//create/recover Content db table rows
+				//expand/re-pack/save or overwrite the original data files and create/recover Content db table rows
+				log.info("premerge(), " + metadata.getIdentifier() + ", expanding data files to " + metadata.outputDir());
 				CPathUtils.analyzeAndOrganizeContent(metadata);
 
 				// Premerge for each pathway data: clean, convert, validate,
