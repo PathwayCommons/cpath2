@@ -43,7 +43,7 @@ final class PantherCleaner implements Cleaner {
 		final BioSource human = (BioSource) originalModel.getByID("NCBITaxon:9606");
 		// - new version PANTHER pathway data contain URIS and xrefs like that, unfortunately...
 		if(human == null) //fail shortly (importer must skip this dataFile)
-			throw new RuntimeException("http://identifiers.org/taxonomy/9606 (human) BioSource not found");
+			throw new RuntimeException("Human data (e.g. BioSource) not found.");
 		
 		//Remove/replace non-human BioSources, SequenceEntityReferences 
 		//Pathways all have organism=null; let's set 'human' for all
