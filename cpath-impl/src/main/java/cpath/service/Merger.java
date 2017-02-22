@@ -98,10 +98,10 @@ public final class Merger {
 				// merge all (normalized BioPAX) data files of the same provider into one-provider model:
 				providerModel = merge(metadata);
 
-			// Replace not normalized so far URIs with generated ours; add a bp:comment about original URIs
-			log.info("Replacing original URIs with " + xmlBase + " based URIs...");
-			replaceConflictingUris(providerModel, mainModel);
-			replaceOriginalUris(providerModel, metadata.getIdentifier());
+				// Replace not normalized so far URIs with generated ours; add a bp:comment about original URIs
+				log.info("Replacing original URIs with " + xmlBase + " based URIs...");
+				replaceConflictingUris(providerModel, mainModel);
+				replaceOriginalUris(providerModel, metadata.getIdentifier());
 
 				//export to the biopax archive in the batch downloads dir.
 				save(providerModel, metadata);
@@ -153,7 +153,7 @@ public final class Merger {
 			for (Content pwdata : metadata.getContent()) {
 				final String description = pwdata.toString();
 				if (!new File(pwdata.normalizedFile()).exists()) {
-					log.warn("Skipped " + description + " - haven't fully gone through the premerge stage yet");
+					log.warn("Skip '" + description + "' - no normalized data found (failed premerge)");
 					continue;
 				}
 

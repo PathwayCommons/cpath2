@@ -114,12 +114,12 @@ public final class PreMerger {
 				// Premerge for each pathway data: clean, convert, validate,
 				// and then update premergeData, validationResults db fields.
 				for (Content content : new HashSet<Content>(metadata.getContent())) {
-					try {
+//					try {
 						pipeline(metadata, content, cleaner, converter);
-					} catch (Exception e) {
-						metadata.getContent().remove(content);
-						log.warn("premerge(), removed " + content + " due to error", e);
-					}
+//					} catch (Exception e) {
+//						metadata.getContent().remove(content);
+//						log.warn("premerge(), removed " + content + " due to error: " + e);
+//					}
 				}
 
 				// save/update validation status
@@ -330,50 +330,63 @@ public final class PreMerger {
 	 * @throws IOException 
 	 */
 	private void pipeline(final Metadata metadata, final Content content, 
-			Cleaner cleaner, Converter converter) throws IOException 
-	{	
+			Cleaner cleaner, Converter converter) throws IOException
+	{
+		// shortcut
+		if((new File(content.normalizedFile())).exists()) {
+			log.info("pipeline(), skip - return existing " + content.normalizedFile());
+			return;
+		}
+
 		final String info = content.toString();
-		
-		InputStream dataStream = new GZIPInputStream(new FileInputStream(content.originalFile()));
-		
+		File inputFile = new File(content.originalFile());
+		log.info("pipeline(), do " + inputFile.getPath());
+
 		//Clean the data, i.e., apply data-specific "quick fixes".
 		if(cleaner != null) {
-			if((new File(content.cleanedFile())).exists())
-				log.info("pipeline(), skip existing " + content.cleanedFile());
-			else {
-				log.info("pipeline(), cleaning " + info + " with " + cleaner.getClass());
-				OutputStream os = new GZIPOutputStream(new FileOutputStream(content.cleanedFile()));
-				cleaner.clean(dataStream, os); //os must be closed inside
+			String cleanerClassName = cleaner.getClass().getSimpleName();
+			File outputFile = new File(content.cleanedFile());
+			if(outputFile.exists()) {
+				log.info("pipeline(), re-use " + outputFile.getName());
+			} else {
+				try {
+					cleaner.clean(new GZIPInputStream(new FileInputStream(inputFile)),
+							new GZIPOutputStream(new FileOutputStream(outputFile))); //os must be closed inside the method
+				} catch (Exception e) {
+					log.warn("pipeline(), fail " + info + " due to " + cleanerClassName + " failed: " + e);
+					return;
+				}
+				log.info("pipeline(), " + cleanerClassName + " produced " + outputFile.getName());
 			}
-				//re-assign the input data stream
-				dataStream = new GZIPInputStream(new FileInputStream(content.cleanedFile()));
+			inputFile = outputFile;
 		}
 		
 		if(metadata.getType() == METADATA_TYPE.MAPPING) {
-			dataStream.close();
 			return; //for id-mapping data - no need to convert, normalize
 		}
 		
 		//Convert data to BioPAX L3 if needed (generate the 'converted' output file in any case)
 		if (converter != null) {
-			if((new File(content.convertedFile())).exists())
-				log.info("pipeline(), skip existing " + content.convertedFile());
-			else {
-				log.info("pipeline(), converting " + info + " with " + converter.getClass());
-				OutputStream os = new GZIPOutputStream(new FileOutputStream(content.convertedFile()));
-				converter.convert(dataStream, os);//os must be closed inside
+			String converterClassName = converter.getClass().getSimpleName();
+			File outputFile = new File(content.convertedFile());
+			if(outputFile.exists()) {
+				log.info("pipeline(), re-use " + outputFile.getName());
+			} else {
+				try {
+					converter.convert(new GZIPInputStream(new FileInputStream(inputFile)),
+							new GZIPOutputStream(new FileOutputStream(outputFile)));//must be closed inside
+				} catch (Exception e) {
+					log.warn("pipeline(), fail " + info + " due to " + converterClassName + " failed: " + e);
+					return;
+				}
+				log.info("pipeline(), " + converterClassName + " produced " + outputFile.getName());
 			}
-			dataStream = new GZIPInputStream(new FileInputStream(content.convertedFile())); 		
+			inputFile = outputFile;
 		}
-		// here 'dataStream' is either orig., cleaned, or converted data file
-		// (depending on cleaner/converter availability above).
 
 		// Validate & auto-fix and normalize: e.g., synonyms in xref.db may be replaced
 		// with the primary db name, as in Miriam, some URIs get normalized, etc.
-		if((new File(content.normalizedFile())).exists())
-			log.info("pipeline(), skip existing " + content.normalizedFile());
-		else
-			checkAndNormalize(info, dataStream, metadata, content);
+		checkAndNormalize(info, new GZIPInputStream(new FileInputStream(inputFile)), metadata, content);
 	}
 
 	
