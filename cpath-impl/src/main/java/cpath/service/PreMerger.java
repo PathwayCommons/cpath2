@@ -63,15 +63,10 @@ public final class PreMerger {
 		for (Metadata metadata : service.metadata().findAll())
 		{
 			final File dir = new File(metadata.outputDir());
-			if(dir.isDirectory() && dir.listFiles(new FileFilter() {
-				@Override
-				public boolean accept(File pathname) {
-					return pathname.getName().endsWith("original");
-				}
-			}).length>0) {
-				log.warn("premerge(), found " + metadata.outputDir() + " folder; skip previously premerged "
-						+ metadata.getIdentifier());
-				continue; //skip
+			if(dir.isDirectory() && dir.list().length>0) {
+				log.warn("premerge(), skipped non-empty data directory: " + metadata.outputDir() +
+					" (clean-up and restart if you want to premerge again)");
+				continue;
 			}
 
 			try {
@@ -332,12 +327,6 @@ public final class PreMerger {
 	private void pipeline(final Metadata metadata, final Content content, 
 			Cleaner cleaner, Converter converter) throws IOException
 	{
-		// shortcut
-		if((new File(content.normalizedFile())).exists()) {
-			log.info("pipeline(), skip - return existing " + content.normalizedFile());
-			return;
-		}
-
 		final String info = content.toString();
 		File inputFile = new File(content.originalFile());
 		log.info("pipeline(), do " + inputFile.getPath());
