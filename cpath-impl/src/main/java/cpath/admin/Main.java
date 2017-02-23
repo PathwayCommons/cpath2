@@ -466,7 +466,7 @@ public final class Main {
 		toReturn.append("commands:" + NEWLINE);
 		toReturn.append(Cmd.METADATA.toString() + " <url> (fetch Metadata configuration (default: " +
 				"use metadata.conf file in current directory))" + NEWLINE);
-		toReturn.append(Cmd.PREMERGE.toString() + " [--createWarehouse] " +
+		toReturn.append(Cmd.PREMERGE.toString() + " [--buildWarehouse] " +
 				"(organize, clean, convert, normalize input data;" +
 				" create metadata db and create or rebuild the BioPAX utility type objects Warehouse)" + NEWLINE);
 		toReturn.append(Cmd.MERGE.toString() + " (merge all pathway data; overwrites the main biopax model archive)"+ NEWLINE);
