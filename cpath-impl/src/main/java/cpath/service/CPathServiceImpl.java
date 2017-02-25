@@ -717,8 +717,8 @@ public class CPathServiceImpl implements CPathService {
 			paxtoolsModel = CPathUtils.loadMainBiopaxModel();
 		// set for this service
 
-		log.info("Associating more identifies with BioPAX model objects' using child elements' xrefs and id-mapping...");
-		addOtherIdsAsAnnotations(7);
+		log.info("Associating more biological IDs with BioPAX objects using nested Xrefs and id-mapping...");
+		addOtherIdsAsAnnotations();
 
 		//Build the full-text (lucene) index
 		SearchEngine searchEngine = new SearchEngine(getModel(), cpath.indexDir());
@@ -772,7 +772,7 @@ public class CPathServiceImpl implements CPathService {
 		return save(metadata);
 	}
 
-	private void addOtherIdsAsAnnotations(final int depth) {
+	private void addOtherIdsAsAnnotations() {
 	//Can't use multiple threads (spring-data-jpa/hibernate errors occur in production, with filesystem H2 db...)
 		for(final BioPAXElement bpe : getModel().getObjects()) {
 			if(!(bpe instanceof Entity || bpe instanceof EntityReference))
@@ -790,6 +790,9 @@ public class CPathServiceImpl implements CPathService {
 						}
 					});
 			fetcher.setSkipSubPathways(true);
+
+			//define the depth/level of traversing into child elements to get xref.id property values
+			final int depth = 7; // TODO consider smth. like:  depth=(bpe instanceof Process) ? 7 : 4;
 			Set<BioPAXElement> children = fetcher.fetch(bpe, depth);
 
 			//include this object itself if it's about a bio macromolecule of chemical
