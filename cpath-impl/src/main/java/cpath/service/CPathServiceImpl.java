@@ -779,17 +779,18 @@ public class CPathServiceImpl implements CPathService {
 				continue; //skip for UtilityClass but EntityReference
 			final Set<String> ids = new HashSet<String>();
 			//for Entity or ER, also collect IDs from child UX/RXs and map to other IDs (use idMapping)
-			Set<BioPAXElement> children =
-					new Fetcher(SimpleEditorMap.get(paxtoolsModel.getLevel()), Fetcher.nextStepFilter,
-							//exclude unwanted child objects, such as CVs and other utility classes
-							new org.biopax.paxtools.util.Filter<PropertyEditor>() {
-								@Override
-								public boolean filter(PropertyEditor ed) {
-									return EntityReference.class.isAssignableFrom(ed.getRange())
-											|| Gene.class.isAssignableFrom(ed.getRange())
-											|| PhysicalEntity.class.isAssignableFrom(ed.getRange());
-								}
-							}).fetch(bpe, depth);
+			final Fetcher fetcher = new Fetcher(SimpleEditorMap.get(paxtoolsModel.getLevel()), Fetcher.nextStepFilter,
+					//exclude unwanted child objects, such as CVs and other utility classes
+					new org.biopax.paxtools.util.Filter<PropertyEditor>() {
+						@Override
+						public boolean filter(PropertyEditor ed) {
+							return EntityReference.class.isAssignableFrom(ed.getRange())
+									|| Gene.class.isAssignableFrom(ed.getRange())
+									|| PhysicalEntity.class.isAssignableFrom(ed.getRange());
+						}
+					});
+			fetcher.setSkipSubPathways(true);
+			Set<BioPAXElement> children = fetcher.fetch(bpe, depth);
 
 			//include this object itself if it's about a bio macromolecule of chemical
 			if (bpe instanceof PhysicalEntity || bpe instanceof EntityReference || bpe instanceof Gene)
@@ -830,35 +831,39 @@ public class CPathServiceImpl implements CPathService {
 
 	void addSupportedIdsThatMapToChebi(List<String> chebiIds, final Set<String> resultIds) {
 		//find other IDs that map to the ChEBI ID
-		List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestIdIn("CHEBI", chebiIds);
-		if(mappings != null) {
-			//collect (for 'xrefid' full-text index field) only ID types that we want biopax graph queries support
-			for (Mapping mapping : mappings) {
-				if (mapping.getSrc().equals("PUBCHEM-COMPOUND")
-					|| mapping.getSrc().equals("CHEBI")
-					|| mapping.getSrc().equals("DRUGBANK")
-					|| mapping.getSrc().startsWith("KEGG")
-					|| mapping.getSrc().startsWith("CHEMBL")
-					|| mapping.getSrc().startsWith("PHARMGKB")
-				) resultIds.add(mapping.getSrcId());
-				//(prefix 'CID:' is included in pubchem-compound ids)
+		for(String id: chebiIds) {
+			List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("CHEBI", id);
+			if (mappings != null) {
+				//collect (for 'xrefid' full-text index field) only ID types that we want biopax graph queries support
+				for (Mapping mapping : mappings) {
+					if (mapping.getSrc().equals("PUBCHEM-COMPOUND")
+							|| mapping.getSrc().equals("CHEBI")
+							|| mapping.getSrc().equals("DRUGBANK")
+							|| mapping.getSrc().startsWith("KEGG")
+							|| mapping.getSrc().startsWith("CHEMBL")
+							|| mapping.getSrc().startsWith("PHARMGKB")
+							) resultIds.add(mapping.getSrcId());
+					//(prefix 'CID:' is included in pubchem-compound ids)
+				}
 			}
 		}
 	}
 
 	void addSupportedIdsThatMapToUniprotId(List<String> uniprotIds, final Set<String> resultIds) {
 		//find other IDs that map to the UniProt AC
-		List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestIdIn("UNIPROT", uniprotIds);
-		if(mappings != null) {
-			//collect (for 'xrefid' full-text index field) only ID types that we want graph queries support
-			for (Mapping mapping : mappings) {
-				if (mapping.getSrc().startsWith("UNIPROT")
-					|| mapping.getSrc().startsWith("HGNC")
-					|| mapping.getSrc().equalsIgnoreCase("NCBI GENE")
-					|| mapping.getSrc().equalsIgnoreCase("REFSEQ")
-					|| mapping.getSrc().equalsIgnoreCase("IPI")
-					|| mapping.getSrc().startsWith("ENSEMBL")
-				) resultIds.add(mapping.getSrcId());
+		for(String id: uniprotIds) {
+			List<Mapping> mappings = mappingsRepository.findByDestIgnoreCaseAndDestId("UNIPROT", id);
+			if (mappings != null) {
+				//collect (for 'xrefid' full-text index field) only ID types that we want graph queries support
+				for (Mapping mapping : mappings) {
+					if (mapping.getSrc().startsWith("UNIPROT")
+							|| mapping.getSrc().startsWith("HGNC")
+							|| mapping.getSrc().equalsIgnoreCase("NCBI GENE")
+							|| mapping.getSrc().equalsIgnoreCase("REFSEQ")
+							|| mapping.getSrc().equalsIgnoreCase("IPI")
+							|| mapping.getSrc().startsWith("ENSEMBL")
+							) resultIds.add(mapping.getSrcId());
+				}
 			}
 		}
 	}

@@ -28,6 +28,7 @@ public interface MappingsRepository extends CrudRepository<Mapping, Long> {
 	/**
 	 * Mappings 'To' any of given identifiers of the same type.
 	 *
+	 * @deprecated see issue #260
 	 * @param dest
 	 * @param destIds
 	 * @return
