@@ -554,9 +554,10 @@ public final class Merger {
 			// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
 			if (!primaryIds.isEmpty() && primaryIds.size() <= maxNumXrefsToAdd) {
 				addRelXrefs(m, bpe, "CHEBI", primaryIds, RelTypeVocab.ADDITIONAL_INFORMATION);
-			} else {
-				log.info("skip " + bpe.getUri() + " that maps to none/tons (" + primaryIds.size() + ") CHEBI IDs");
 			}
+//			else {
+//				log.debug("skip " + bpe.getUri() + " that maps to none/tons (" + primaryIds.size() + ") CHEBI IDs");
+//			}
 		}
 	}
 
@@ -602,11 +603,13 @@ public final class Merger {
 // would result in hundreds unique uniprot/trembl IDs; so we don't do this!
 
 			// add rel. xrefs if there are not too many (there's risk to make nonsense SIF/GSEA export...)
-			if (!primaryACs.isEmpty() && primaryACs.size() <= maxNumXrefsToAdd)
+			if (!primaryACs.isEmpty() && primaryACs.size() <= maxNumXrefsToAdd) {
 				addRelXrefs(m, bpe, "UNIPROT", primaryACs, RelTypeVocab.ADDITIONAL_INFORMATION);
-			else
-				log.info("skip " + bpe.getUri() + ", " + organismRemark +
-						", that maps to none or too many (" + primaryACs.size() + ") UNIPROT IDs");
+			}
+//			else {
+//				log.debug("skip " + bpe.getUri() + ", " + organismRemark +
+//						", that maps to none/tons (" + primaryACs.size() + ") UNIPROT IDs");
+//			}
 		}
 		else { //bpe has got some UniProt Xrefs (ok if secondary/isoform/trembl ID);
 			// let's map those to primary accessions, then - to HGNC Symbols, and ignore other xref/ids
