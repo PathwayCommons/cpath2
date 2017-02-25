@@ -89,15 +89,14 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_TYPE = "type";
 	
 	//Default fields to use with the MultiFieldQueryParser;
-	//one can still search in other fields directly, e.g.,
-	//pathway:some_keywords datasource:"pid", etc.
+	//one can still search in other fields directly, like - pathway:some_keywords datasource:"pid"
 	public final static String[] DEFAULT_FIELDS = //to use with the MultiFieldQueryParser
 	{
-			FIELD_NAME, // standardName, displayName, other names;
-			FIELD_XREFID, //xref.id (also direct child's xref.id, i.e., can find both xref and its owners using a xrefid:<id> query string);
-			FIELD_SIZE, // find entities with a given no. child/associated processes...
-			FIELD_KEYWORD, //includes data type properties (names, terms, comments), 
-						  //also from  child elements up to given depth (3), also stores but not indexes parent pathway uris and names;
+			FIELD_NAME, // - standardName, displayName, name properties;
+			FIELD_XREFID, //child elements' Xref's id; e.g., one
+						// can find a biopax entity or process by xrefid:<id> query string);
+			FIELD_KEYWORD, //includes data type properties (name, term, comment) of this and child elements
+						// (up to some depth) also stores but not indexes parent pathway uris and names;
 	};
 		
 	private final Model model;
@@ -417,7 +416,10 @@ public class SearchEngine implements Indexer, Searcher {
 		LOG.info("index(), there are " + numObjectsToIndex + " Entity or EntityReference objects to index.");
 
 		final AtomicInteger numLeft = new AtomicInteger(numObjectsToIndex);
+
 		final Fetcher fetcher = new Fetcher(SimpleEditorMap.L3, Fetcher.nextStepFilter);
+		//disable traversing into sub-pathways when searching for child elements (worth doing for e.g., KEGG model)!
+		fetcher.setSkipSubPathways(true);
 
 		for(final BioPAXElement bpe : model.getObjects()) {
 			if(!(bpe instanceof Entity || bpe instanceof EntityReference || bpe instanceof Provenance))
@@ -427,7 +429,7 @@ public class SearchEngine implements Indexer, Searcher {
 			exec.execute(new Runnable() {
 				public void run() {					
 					// get or infer some important values if possible from this, child or parent objects:
-					Set<String> keywords = ModelUtils.getKeywords(bpe, 5, dataPropertiesToConsider);
+					Set<String> keywords = ModelUtils.getKeywords(bpe, 3, dataPropertiesToConsider);
 
 					// a hack to remove special (debugging) biopax comments
 					for(String s : new HashSet<String>(keywords)) {
@@ -571,19 +573,19 @@ public class SearchEngine implements Indexer, Searcher {
 			Named named = (Named) bpe;
 			if(named.getStandardName() != null) {
 				field = new TextField(FIELD_NAME, named.getStandardName(), Field.Store.NO);
-				field.setBoost(3.0f);
+				field.setBoost(3.5f);
 				doc.add(field);
 			}
 			if(named.getDisplayName() != null && !named.getDisplayName().equalsIgnoreCase(named.getStandardName())) {
 				field = new TextField(FIELD_NAME, named.getDisplayName(), Field.Store.NO);
-				field.setBoost(2.5f);
+				field.setBoost(3.0f);
 				doc.add(field);
 			}
 			for(String name : named.getName()) {
 				if(name.equalsIgnoreCase(named.getDisplayName()) || name.equalsIgnoreCase(named.getStandardName()))
 					continue;
 				field = new TextField(FIELD_NAME, name.toLowerCase(), Field.Store.NO);
-				field.setBoost(2.0f);
+				field.setBoost(2.5f);
 				doc.add(field);
 			}
 		}
@@ -656,6 +658,7 @@ public class SearchEngine implements Indexer, Searcher {
 			doc.add(new StoredField(FIELD_PATHWAY, pw.getUri()));
 			
 			// add names to the 'pathway' (don't store) and 'keywords' (store) indexes
+			// (this allows to find a biopax element, e.g., potein, by a parent pathway name: pathway:<query_str>)
 			for (String s : pw.getName()) {
 				doc.add(new TextField(FIELD_PATHWAY, s.toLowerCase(), Field.Store.NO));
 				doc.add(new StoredField(FIELD_KEYWORD, s.toLowerCase())); //don't index but store for highlighting

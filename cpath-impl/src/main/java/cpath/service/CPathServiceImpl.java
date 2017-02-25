@@ -718,7 +718,7 @@ public class CPathServiceImpl implements CPathService {
 		// set for this service
 
 		log.info("Associating more identifies with BioPAX model objects' using child elements' xrefs and id-mapping...");
-		addOtherIdsAsAnnotations(3);
+		addOtherIdsAsAnnotations(7);
 
 		//Build the full-text (lucene) index
 		SearchEngine searchEngine = new SearchEngine(getModel(), cpath.indexDir());
@@ -821,8 +821,8 @@ public class CPathServiceImpl implements CPathService {
 
 			if(!ids.isEmpty()) {
 				bpe.getAnnotations().put(SearchEngine.FIELD_XREFID, ids);
-				if(log.isDebugEnabled())
-					log.debug("addOtherIdsAsAnnotations, " + bpe.getModelInterface().getSimpleName()
+				if(log.isTraceEnabled())
+					log.trace("addOtherIdsAsAnnotations, " + bpe.getModelInterface().getSimpleName()
 							+ " (" + bpe.getUri() + ") maps to: " + ids);
 			}
 		}
