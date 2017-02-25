@@ -792,16 +792,13 @@ public final class Merger {
 			}
 
 			if (sourceIds.isEmpty()) {
-				final boolean complexOrGeneric = isComplexOrGeneric(element);
-				final String msg = "no " + xrefClassForMapping.getSimpleName() + " IDs found (for mapping) in " +
-						((complexOrGeneric) ? "generic " : "non-generic ") + element.getModelInterface().getSimpleName() +
-						" (" + element.getUri() + "); organism: " + getOrganism(element);
 				//the message can help debug input data (provider must add some gene/chem xrefs then);
 				//usually, no IDs is no surprise for generic/complex entity case...
-				if (!complexOrGeneric && (element instanceof ProteinReference || element instanceof SmallMoleculeReference))
-					log.warn(msg);
-				else if (!complexOrGeneric)
-					log.info(msg);
+				if (!isComplexOrGeneric(element)) {
+					log.info("idMappingByXrefs(), no " + xrefClassForMapping.getSimpleName() +
+							" IDs found in non-generic " + element.getModelInterface().getSimpleName() +
+							" (" + element.getUri() + "); organism: " + getOrganism(element));
+				}
 			}
 			else { // do id-mapping, for all ids at once, and return the result set:
 				result = service.map(sourceIds, toDb);
