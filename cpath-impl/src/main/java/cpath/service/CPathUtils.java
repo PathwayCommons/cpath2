@@ -380,8 +380,7 @@ public final class CPathUtils {
 	 * Downloads a file (content) from a URI
 	 * and saves in the cpath2 home directory. The content
 	 * can be anything, but only single-file GZIP archives 
-	 * can be optionally expanded with this method, before saved
-	 * (e.g., this is how we grab GeoIP GeoLiteCity database).
+	 * can be optionally expanded with this method, before saved.
 	 * 
 	 * @param srcUrl remote URL
 	 * @param destFile name or relative path and name
