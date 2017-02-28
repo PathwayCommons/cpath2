@@ -555,8 +555,7 @@ public final class Main {
 		//write commands to the script file for 'All'(main) and 'Detailed' BioPAX input files:
 		writeScriptCommands(cpath.biopaxFileName("Detailed"), writer, true);
 		writeScriptCommands(cpath.biopaxFileName("All"), writer, true);
-		//rename properly those SIF files that were cut from corresp.extended SIF
-		writer.println("rename 's/EXTENDED_//' *.txt.sif");
+		//rename properly those SIF files that were cut from corresponding extended SIF (.txt) ones
 		writer.println("rename 's/txt\\.sif/sif/' *.txt.sif");
 		writer.println(String.format("gzip %s*.txt %s*.sif %s*.gmt %s*.xml",
 				commonPrefix, commonPrefix, commonPrefix, commonPrefix));
@@ -574,24 +573,21 @@ public final class Main {
 		final String commaSepTaxonomyIds = StringUtils.join(cpath.getOrganismTaxonomyIds(),',');
 
 		if(exportToGSEA) {
-			writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA",
-					bpFilename, prefix+fileExtension(OutputFormat.GSEA, "hgnc"),
-					"'hgnc symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc symbol' (not 'hgnc')- important!
-			writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA",
-					bpFilename, prefix+fileExtension(OutputFormat.GSEA, "uniprot"),
-					"'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
+			writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
+				prefix + ".hgnc.gmt", "'hgnc symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc symbol' - important
+			writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
+				prefix + ".uniprot.gmt", "'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
 			writer.println("wait"); //important
 			writer.println("echo \"Done converting "+bpFilename+" to GSEA.\"");
 		}
 
-		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIF",
-				bpFilename, prefix+fileExtension(OutputFormat.SIF,"hgnc"),
-				"seqDb=hgnc -extended -andSif exclude=neighbor_of")); //'hgnc symbol' or 'hgnc' here does not matter
+		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIF", bpFilename,
+			prefix + ".hgnc.txt", "seqDb=hgnc -extended -andSif exclude=neighbor_of"));//'hgnc symbol' or 'hgnc' does not matter
 
-		// But UniProt ID based extended SIF can be too huge and takes too long to generate... won't make it now...
+		//TODO: UniProt based extended SIF can be huge and takes too long to generate... won't make it now
 
 		writer.println("wait"); //important
-		writer.println("echo \"Done converting "+bpFilename+" to SIF.\"");
+		writer.println("echo \"Done converting " + bpFilename + " to SIF.\"");
 	}
 
 	private static Collection<String> findAllUris(Searcher searcher, 
@@ -668,26 +664,6 @@ public final class Main {
         } else {
         	LOG.info("skipped due to file already exists: " + biopaxArchive);
         }   		
-	}
-
-	// 'suffix' normally is the ID type used in the output file, e.g., 'hgnc', 'uniprot',
-	// but also can be anything else...
-	private static String fileExtension(OutputFormat format, String suffix) {
-		suffix = (suffix==null || suffix.isEmpty()) ? "" : "." + suffix.toLowerCase();
-		switch (format) {
-			case GSEA:
-				return format + suffix + ".gmt";
-			case SBGN:
-				return format + suffix + ".xml";
-			case BINARY_SIF:
-				return format + suffix + ".sif";
-			case SIF:
-				return format + suffix + ".sif";
-			case EXTENDED_BINARY_SIF:
-			case TXT:
-			default:
-				return format + suffix + ".txt";
-		}
 	}
 
 }
