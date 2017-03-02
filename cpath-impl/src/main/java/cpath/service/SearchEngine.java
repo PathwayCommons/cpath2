@@ -256,7 +256,7 @@ public class SearchEngine implements Indexer, Searcher {
 				scorer.setExpandMultiTermQuery(true); //TODO	
 
 //TODO use PostingsHighlighter once it's stable;
-//TODO see http://lucene.apache.org/core/4_10_0/highlighter/org/apache/lucene/search/postingshighlight/PostingsHighlighter.html
+//TODO see http://lucene.apache.org/core/6_4_1/highlighter/org/apache/lucene/search/postingshighlight/PostingsHighlighter.html
 				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
 				Highlighter highlighter = new Highlighter(formatter, scorer);
 				highlighter.setTextFragmenter(new SimpleSpanFragmenter(scorer, 80));
