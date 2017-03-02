@@ -169,13 +169,9 @@ or the fat JAR with embedded application server was started) -->
 			. </a></li>
 		<li><a rel="nofollow" href="search?q=*&type=pathway&datasource=reactome">This query returns
 			all Reactome pathways</a></li>
-		<li><a rel="nofollow" href="search?q=*&type=biosource">This query lists all organisms,
-			including secondary organisms such as pathogens or model organisms listed in the evidence or
-			interaction objects</a></li>
-		<li><a rel="nofollow" href='search?q=xrefid\:"CHEBI:16236"&type=pathway'>This specific query returns
-			all pathways that somewhere has an Xref pointing to the ethanol definition in ChEBI db (&quot;CHEBI:16236&quot;
-			;also works without 'xrefid\:' prefix; without quotes it would fail due to 'CHEBI' being translated as an index field name,
-			which does not exist - but using as 'CHEBI?16236' works again.)</a></li>
+		<li>A search query using &type=biosource (and many other BioPAX Utility classes, e.g., Score, Evidence)
+		do not result in any hits anymore (since PC9 release); better search for Entities, such as Pathway, Control,
+			Protein, or EntityReferences, such as ProteinReference, etc.</li>
 	</ol>
 </div>
 <div class="row"><a href="#content" class="top-scroll">^top</a></div>
