@@ -777,35 +777,30 @@ public class CPathServiceImpl implements CPathService {
 		for(final BioPAXElement bpe : getModel().getObjects()) {
 			if(!(bpe instanceof Entity || bpe instanceof EntityReference))
 				continue; //skip for UtilityClass but EntityReference
+
 			final Set<String> ids = new HashSet<String>();
 			//for Entity or ER, also collect IDs from child UX/RXs and map to other IDs (use idMapping)
-			final Fetcher fetcher = new Fetcher(SimpleEditorMap.get(paxtoolsModel.getLevel()), Fetcher.nextStepFilter,
-					//exclude unwanted child objects, such as CVs and other utility classes
-					new org.biopax.paxtools.util.Filter<PropertyEditor>() {
-						@Override
-						public boolean filter(PropertyEditor ed) {
-							return EntityReference.class.isAssignableFrom(ed.getRange())
-									|| Gene.class.isAssignableFrom(ed.getRange())
-									|| PhysicalEntity.class.isAssignableFrom(ed.getRange());
-						}
-					});
+			final Fetcher fetcher = new Fetcher(SimpleEditorMap.L3, Fetcher.nextStepFilter);
 			fetcher.setSkipSubPathways(true);
 
-			//define the depth/level of traversing into child elements to get xref.id property values
-			final int depth = 7; // TODO consider smth. like:  depth=(bpe instanceof Process) ? 7 : 4;
-			Set<BioPAXElement> children = fetcher.fetch(bpe, depth);
-
-			//include this object itself if it's about a bio macromolecule of chemical
-			if (bpe instanceof PhysicalEntity || bpe instanceof EntityReference || bpe instanceof Gene)
-				children.add(bpe);
+			//fetch all children of (implicit) type XReferrable, which means - either
+			//BioSource or ControlledVocabulary or Evidence or Provenance or Entity or EntityReference
+			//(we actually want only the latter two types and their sub-types; will skip the rest later on):
+			Set<XReferrable> children = fetcher.fetch(bpe, XReferrable.class);
+			//include itself (- for fetcher only gets child elements)
+			children.add((XReferrable) bpe);
 
 			final List<String> uniprotIds = new ArrayList<String>();
 			final List<String> chebiIds = new ArrayList<String>();
 
-			for(BioPAXElement child : children) {
-				//as the fetcher uses specific filters, every element can be safely cast to XReferrable
-				XReferrable el = (XReferrable) child;
-				for(Xref x : el.getXref()) {
+			for(XReferrable child : children) {
+				//skip for unwanted types
+				//TODO: shall we add xref.id from Evidence, CV, Provenance to 'xrefid' index or another (those get included into 'keyword' field anyway)...
+				if(!(child instanceof Entity || child instanceof EntityReference))
+					continue;
+
+				// collect standard bio IDs (skip publications); try/use id-mapping to associate more IDs:
+				for(Xref x : child.getXref()) {
 					if (!(x instanceof PublicationXref) && x.getId()!=null && x.getDb()!=null) {
 						ids.add(x.getId());
 						if(x.getDb().equalsIgnoreCase("CHEBI")) {
@@ -821,14 +816,14 @@ public class CPathServiceImpl implements CPathService {
 			}
 
 			addSupportedIdsThatMapToChebi(chebiIds, ids);
+
 			addSupportedIdsThatMapToUniprotId(uniprotIds, ids);
 
 			if(!ids.isEmpty()) {
 				bpe.getAnnotations().put(SearchEngine.FIELD_XREFID, ids);
-				if(log.isTraceEnabled())
-					log.trace("addOtherIdsAsAnnotations, " + bpe.getModelInterface().getSimpleName()
-							+ " (" + bpe.getUri() + ") maps to: " + ids);
 			}
+
+			//TODO: also generate a text file: pathway uri, name(s), source, list of id
 		}
 	}
 

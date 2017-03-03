@@ -92,13 +92,12 @@ public class SearchEngine implements Indexer, Searcher {
 	//one can still search in other fields directly, like - pathway:some_keywords datasource:"pid"
 	public final static String[] DEFAULT_FIELDS = //to use with the MultiFieldQueryParser
 	{
-			FIELD_NAME, // - standardName, displayName, name properties;
-			FIELD_XREFID, //child elements' Xref's id; e.g., one
-						// can find a biopax entity or process by xrefid:<id> query string);
-			FIELD_KEYWORD, //includes data type properties (name, term, comment) of this and child elements
+			FIELD_NAME, //- standardName, displayName, name properties;
+			FIELD_XREFID, //- also includes child elements' Xref ids; one can find a biopax entity by xrefid:<id> query);
+			FIELD_KEYWORD, //- includes data type properties (name, term, comment) of this and child elements
 						// (up to some depth) also stores but not indexes parent pathway uris and names;
 	};
-		
+
 	private final Model model;
 	private int maxHitsPerPage;
 	private final Analyzer analyzer;
@@ -421,9 +420,11 @@ public class SearchEngine implements Indexer, Searcher {
 		//disable traversing into sub-pathways when searching for child elements (worth doing for e.g., KEGG model)!
 		fetcher.setSkipSubPathways(true);
 
-		for(final BioPAXElement bpe : model.getObjects()) {
+		for(final BioPAXElement bpe : model.getObjects())
+		{
+			//Skip for UtilityClass but EntityReference and Provenance -
 			if(!(bpe instanceof Entity || bpe instanceof EntityReference || bpe instanceof Provenance))
-				continue; //skip for UtilityClass but EntityReference, Provenance
+				continue;
 
 			// prepare & index each element in a separate thread
 			exec.execute(new Runnable() {
@@ -504,6 +505,9 @@ public class SearchEngine implements Indexer, Searcher {
 	 *            availability, term, comment, patoData, author, source, title, url, published, 
 	 *            up to given depth/level; and also all 'pathway' field values are included here; 
 	 *            analyze=yes, store=yes;
+	 *
+	 *  'xrefid'  - Xref.id values - standard biological IDs - from a biopax object and some its child objects;
+	 *  			analyze=no, store=no;
 	 *  
 	 *  'datasource', 'organism' and 'pathway' - infer from this bpe and its child objects 
 	 *  									  	up to given depth/level, analyze=no, store=yes;
@@ -555,8 +559,12 @@ public class SearchEngine implements Indexer, Searcher {
 			if(bpe.getAnnotations().containsKey(FIELD_XREFID)) {
 				//index biological IDs as keywords
 				addKeywords((Set<String>)bpe.getAnnotations().get(FIELD_XREFID), doc);
+
 				//index all IDs using "xrefid" fields
-				addXrefIds((Set<String>)bpe.getAnnotations().get(FIELD_XREFID), doc);
+				for (String id : (Set<String>)bpe.getAnnotations().get(FIELD_XREFID)) {
+					Field f = new StringField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO);
+					doc.add(f);
+				}
 			}
 		}
 		bpe.getAnnotations().remove(FIELD_KEYWORD);
@@ -601,13 +609,6 @@ public class SearchEngine implements Indexer, Searcher {
 	private void addKeywords(Set<String> keywords, Document doc) {
 		for (String keyword : keywords) {
 			Field f = new TextField(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.YES);
-			doc.add(f);
-		}
-	}
-
-	private void addXrefIds(Set<String> xrefIds, Document doc) {
-		for (String id : xrefIds) {
-			Field f = new StringField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO);
 			doc.add(f);
 		}
 	}
