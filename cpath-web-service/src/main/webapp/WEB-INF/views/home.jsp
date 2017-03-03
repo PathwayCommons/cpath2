@@ -147,6 +147,10 @@ or the fat JAR with embedded application server was started) -->
 			"Q06609" only in the 'xrefid' index field in XML </a></li>
 		<li><a rel="nofollow" href="search.json?q=Q06609&type=pathway">Search for
 			Pathways containing "Q06609" (search all fields), return JSON</a></li>
+		<li><a rel="nofollow" href='search?q=xrefid:"BMP2"&type=pathway&datasource=reactome'>Search for
+			Reactome pathways containing a participant with xref.id="BMP2" (search 'xrefid' index field only)</a></li>
+		<li><a rel="nofollow" href="search?q=xrefid:CHEBI?16236&type=pathway">Search for
+			Pathways associated with "CHEBI:16236" participant (search specifically in 'xrefid' index)</a></li>
 		<li><a rel="nofollow"
 		       href='search?q=brca2&type=proteinreference&organism=homo%20sapiens&datasource=pid'>Search
 			for ProteinReference entries that contain "brca2" keyword in any indexed field, return only human
@@ -169,8 +173,8 @@ or the fat JAR with embedded application server was started) -->
 			. </a></li>
 		<li><a rel="nofollow" href="search?q=*&type=pathway&datasource=reactome">This query returns
 			all Reactome pathways</a></li>
-		<li>A search query using &type=biosource (and many other BioPAX Utility classes, e.g., Score, Evidence)
-		do not result in any hits anymore (since PC9 release); better search for Entities, such as Pathway, Control,
+		<li>A search query using &type=biosource (and other BioPAX Utility classes, e.g., Score, Evidence)
+		do not result in any hits anymore; do search for Entities, such as Pathway, Control,
 			Protein, or EntityReferences, such as ProteinReference, etc.</li>
 	</ol>
 </div>
