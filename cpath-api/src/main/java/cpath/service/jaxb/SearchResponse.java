@@ -25,6 +25,9 @@ public class SearchResponse extends ServiceResponse {
 
     @XmlAttribute
     private String comment;
+
+	@XmlAttribute
+	private String version;
     
     @XmlTransient
     private Set<String> providers; //pathway data provider standard names (for logging/stats)
@@ -39,8 +42,16 @@ public class SearchResponse extends ServiceResponse {
 	public void setComment(String comment) {
 		this.comment = comment;
 	}
-    
-    public List<SearchHit> getSearchHit() {
+
+	public String getVersion() {
+		return version;
+	}
+
+	public void setVersion(String version) {
+		this.version = version;
+	}
+
+	public List<SearchHit> getSearchHit() {
         if (searchHit == null) {
             searchHit = new ArrayList<SearchHit>();
         }

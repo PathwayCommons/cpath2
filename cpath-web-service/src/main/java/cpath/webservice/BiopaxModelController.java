@@ -166,6 +166,7 @@ public class BiopaxModelController extends BasicController {
 		} else {
 			//log
 			SearchResponse hits = (SearchResponse) results;
+			hits.setVersion(CPathSettings.getInstance().getVersion());
     		events.addAll(LogEvent.providers(hits.getProviders()));
 	    	service.log(events, clientIpAddress(request));
 			return hits;
@@ -193,7 +194,9 @@ public class BiopaxModelController extends BasicController {
     			//log to db and return the xml object
     			service.log(events, clientIpAddress(request));
 				//TODO: (how) log provider names with each traverse query result?..
-    			return (TraverseResponse) sr;
+				TraverseResponse traverseResponse = (TraverseResponse) sr;
+				traverseResponse.setVersion(CPathSettings.getInstance().getVersion());
+    			return traverseResponse;
 			}
     	}
     	return null;
@@ -285,7 +288,10 @@ public class BiopaxModelController extends BasicController {
 				}
 				//save to the log db
 		    	service.log(events, clientIpAddress(request));
-				return (SearchResponse) results;
+				SearchResponse searchResponse = (SearchResponse) results;
+				searchResponse.setVersion(CPathSettings.getInstance().getVersion());
+
+				return searchResponse;
 			}
 		}
 	}
