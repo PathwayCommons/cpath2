@@ -161,7 +161,7 @@ public class CPathServiceImpl implements CPathService {
 				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
 				assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
 				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-				m = cloner.clone(paxtoolsModel, elements);
+				m = cloner.clone(null, elements); //'source' (model) arg. is useless (not used inside the Cloner)
 				m.setXmlBase(paxtoolsModel.getXmlBase());
 			}
 			return convert(m, format);
@@ -217,7 +217,7 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
 					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-					m = cloner.clone(paxtoolsModel, elements);
+					m = cloner.clone(null, elements);
 					m.setXmlBase(paxtoolsModel.getXmlBase());
 				}
 			}
@@ -251,7 +251,7 @@ public class CPathServiceImpl implements CPathService {
 				if (elements != null) {
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
 					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-					m = cloner.clone(paxtoolsModel, elements);
+					m = cloner.clone(null, elements);
 					m.setXmlBase(paxtoolsModel.getXmlBase());
 				}
 			}
@@ -289,7 +289,7 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
 					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-					m = cloner.clone(paxtoolsModel, elements);
+					m = cloner.clone(null, elements);
 					m.setXmlBase(paxtoolsModel.getXmlBase());
 				}
 			}
@@ -344,7 +344,7 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
 					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-					m = cloner.clone(paxtoolsModel, elements);
+					m = cloner.clone(null, elements);
 					m.setXmlBase(paxtoolsModel.getXmlBase());
 				}
 			}
