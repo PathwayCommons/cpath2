@@ -158,7 +158,9 @@ public class CPathServiceImpl implements CPathService {
 			Model m = null;
 			if(!elements.isEmpty()) {
 				//auto-complete (add important child/parent elements)
-				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+				Completer completer = new Completer(simpleIO.getEditorMap());
+				completer.setSkipSubPathways(true);
+				elements = completer.complete(elements, paxtoolsModel);
 				assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
 				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
 				m = cloner.clone(null, elements); //'source' (model) arg. is useless (not used inside the Cloner)
@@ -215,7 +217,9 @@ public class CPathServiceImpl implements CPathService {
 						limit, direction, createFilters(organisms, datasources));
 				if (elements != null && !elements.isEmpty()) {
 					// auto-complete (gets a reasonable size sub-model)
-					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+					Completer completer = new Completer(simpleIO.getEditorMap());
+					completer.setSkipSubPathways(true);
+					elements = completer.complete(elements, paxtoolsModel);
 					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
 					m = cloner.clone(null, elements);
 					m.setXmlBase(paxtoolsModel.getXmlBase());
@@ -249,7 +253,9 @@ public class CPathServiceImpl implements CPathService {
 						createFilters(organisms, datasources));
 				// auto-complete (gets a reasonable size sub-model)
 				if (elements != null) {
-					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+					Completer completer = new Completer(simpleIO.getEditorMap());
+					completer.setSkipSubPathways(true);
+					elements = completer.complete(elements, paxtoolsModel);
 					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
 					m = cloner.clone(null, elements);
 					m.setXmlBase(paxtoolsModel.getXmlBase());
@@ -287,7 +293,9 @@ public class CPathServiceImpl implements CPathService {
 							paxtoolsModel, LimitType.NORMAL, limit, createFilters(organisms, datasources));
 				if (elements != null) {
 					// auto-complete (gets a reasonable size sub-model)
-					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+					Completer completer = new Completer(simpleIO.getEditorMap());
+					completer.setSkipSubPathways(true);
+					elements = completer.complete(elements, paxtoolsModel);
 					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
 					m = cloner.clone(null, elements);
 					m.setXmlBase(paxtoolsModel.getXmlBase());
@@ -342,7 +350,9 @@ public class CPathServiceImpl implements CPathService {
 								createFilters(organisms, datasources));
 				if (elements != null) {
 					// auto-complete (gets a reasonable size sub-model)
-					elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
+					Completer completer = new Completer(simpleIO.getEditorMap());
+					completer.setSkipSubPathways(true);
+					elements = completer.complete(elements, paxtoolsModel);
 					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
 					m = cloner.clone(null, elements);
 					m.setXmlBase(paxtoolsModel.getXmlBase());
