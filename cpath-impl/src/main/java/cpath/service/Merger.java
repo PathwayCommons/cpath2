@@ -213,6 +213,10 @@ public final class Merger {
 			currentPathway.removePathwayComponent(rootPathway);
 		}
 
+		if(currentPathway.getPathwayComponent().contains(currentPathway)) {
+			currentPathway.removePathwayComponent(currentPathway);
+		}
+
 		for(Process proc : currentPathway.getPathwayComponent())
 			if(proc instanceof Pathway)
 				breakPathwayComponentCycle(rootPathway, (Pathway) proc);

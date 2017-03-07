@@ -30,17 +30,6 @@ final class KeggHsaCleaner implements Cleaner {
 
     private static Logger log = LoggerFactory.getLogger(KeggHsaCleaner.class);
 
-	//break all cyclic pathway inclusions via pathwayComponent property
-    private void breakPathwayComponentCycle(final Pathway rootPathway, final Pathway currentPathway) {
-		if(currentPathway.getPathwayComponent().contains(rootPathway)) {
-			currentPathway.removePathwayComponent(rootPathway);
-		}
-
-		for(Process proc : currentPathway.getPathwayComponent())
-			if(proc instanceof Pathway)
-				breakPathwayComponentCycle(rootPathway, (Pathway) proc);
-	}
-
     public void clean(InputStream data, OutputStream cleanedData)
 	{	
 		// create bp model from dataFile
@@ -83,11 +72,6 @@ final class KeggHsaCleaner implements Cleaner {
 				//replace shortened/truncated pathway names
 				pw.setDisplayName(pw.getStandardName());
 			}
-
-			//break all pathwayComponent cyclic pathway inclusions...
-			//this might not quite work as expected here due to applied to a single data file, not all at once
-			//(let's move this to Merger)
-			breakPathwayComponentCycle(pw, pw);
 		}
 
 		//fix a weird/truncated standardName/displayName that
