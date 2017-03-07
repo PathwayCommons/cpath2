@@ -9,6 +9,7 @@ import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.model.level3.Process;
 import org.biopax.paxtools.util.ClassFilterSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,17 @@ import cpath.service.Cleaner;
 final class KeggHsaCleaner implements Cleaner {
 
     private static Logger log = LoggerFactory.getLogger(KeggHsaCleaner.class);
+
+	//break all cyclic pathway inclusions via pathwayComponent property
+    private void breakPathwayComponentCycle(final Pathway rootPathway, final Pathway currentPathway) {
+		if(currentPathway.getPathwayComponent().contains(rootPathway)) {
+			currentPathway.removePathwayComponent(rootPathway);
+		}
+
+		for(Process proc : currentPathway.getPathwayComponent())
+			if(proc instanceof Pathway)
+				breakPathwayComponentCycle(rootPathway, (Pathway) proc);
+	}
 
     public void clean(InputStream data, OutputStream cleanedData)
 	{	
@@ -71,6 +83,9 @@ final class KeggHsaCleaner implements Cleaner {
 				//replace shortened/truncated pathway names
 				pw.setDisplayName(pw.getStandardName());
 			}
+
+			//break all pathwayComponent cyclic pathway inclusions
+			breakPathwayComponentCycle(pw, pw);
 		}
 
 		//fix a weird/truncated standardName/displayName that
