@@ -28,43 +28,8 @@ dsApp.service('MyPubmed', ['$http', function ($http) {
     };
 }]);
 
-dsApp.directive('fileModel', ['$parse', function ($parse) {
-    return {
-        restrict: 'A',
-        link: function(scope, element, attrs) {
-            var model = $parse(attrs.fileModel);
-            var modelSetter = model.assign;            
-            element.bind('change', function(){
-                scope.$apply(function(){
-                    modelSetter(scope, element[0].files[0]);
-                });
-            });
-        }
-    };
-}]);
 
-//(obsolete, example) check a new datasource ID is unique while user's typing in the (xeditable) input field
-// dsApp.directive('didUnique', ['$filter', function ($filter) {
-// 	return {
-// 	    require: 'ngModel',
-// 	    link: function (scope, elem, attrs, ctrl) {
-// 	      elem.on('blur', function (evt) {
-// 	        scope.$apply(function () {
-//         		var id = elem.val();
-//        			//filter returns a new 'exists' array (looking for lower-case, exact match)
-//        			var exists = $filter('filter')(scope.datasources, {identifier: id.toLowerCase()}, true);
-//        			if(exists.length) {
-//        				ctrl.$setValidity('didunique', false);
-//        			} else {
-//        				ctrl.$setValidity('didunique', true);
-//        			}
-// 	        });
-// 	      });
-// 	    }
-// 	};
-// }]);
-
-dsApp.controller('DatasourcesController', function($scope, $http, $filter, MyFileUpload, MyPubmed) {
+dsApp.controller('DatasourcesController', function($scope, $http, $filter, MyPubmed) {
 // data for a quick off-line test	
 //	$scope.datasources = [
 //	  {"identifier" : "pid", "iconUrl" : "http://pathwaycommons.github.io/cpath2/logos/nci_nature.png", "description" : "NCI_Nature"},
