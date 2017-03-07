@@ -160,17 +160,16 @@ public class CPathServiceImpl implements CPathService {
 				//auto-complete (add important child/parent elements)
 				Completer completer = new Completer(simpleIO.getEditorMap());
 				completer.setSkipSubPathways(true);
-				elements = completer.complete(elements, paxtoolsModel);
+				elements = completer.complete(elements);
 				assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
 				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-				m = cloner.clone(null, elements); //'source' (model) arg. is useless (not used inside the Cloner)
+				m = cloner.clone(elements);
 				m.setXmlBase(paxtoolsModel.getXmlBase());
 			}
 			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
-
     }
 
 
@@ -219,9 +218,9 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					Completer completer = new Completer(simpleIO.getEditorMap());
 					completer.setSkipSubPathways(true);
-					elements = completer.complete(elements, paxtoolsModel);
+					elements = completer.complete(elements);
 					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-					m = cloner.clone(null, elements);
+					m = cloner.clone(elements);
 					m.setXmlBase(paxtoolsModel.getXmlBase());
 				}
 			}
@@ -255,9 +254,9 @@ public class CPathServiceImpl implements CPathService {
 				if (elements != null) {
 					Completer completer = new Completer(simpleIO.getEditorMap());
 					completer.setSkipSubPathways(true);
-					elements = completer.complete(elements, paxtoolsModel);
+					elements = completer.complete(elements);
 					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-					m = cloner.clone(null, elements);
+					m = cloner.clone(elements);
 					m.setXmlBase(paxtoolsModel.getXmlBase());
 				}
 			}
@@ -295,9 +294,9 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					Completer completer = new Completer(simpleIO.getEditorMap());
 					completer.setSkipSubPathways(true);
-					elements = completer.complete(elements, paxtoolsModel);
+					elements = completer.complete(elements);
 					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-					m = cloner.clone(null, elements);
+					m = cloner.clone(elements);
 					m.setXmlBase(paxtoolsModel.getXmlBase());
 				}
 			}
@@ -352,9 +351,9 @@ public class CPathServiceImpl implements CPathService {
 					// auto-complete (gets a reasonable size sub-model)
 					Completer completer = new Completer(simpleIO.getEditorMap());
 					completer.setSkipSubPathways(true);
-					elements = completer.complete(elements, paxtoolsModel);
+					elements = completer.complete(elements);
 					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-					m = cloner.clone(null, elements);
+					m = cloner.clone(elements);
 					m.setXmlBase(paxtoolsModel.getXmlBase());
 				}
 			}
