@@ -39,9 +39,11 @@ final class SmpdbCleaner implements Cleaner {
 		for(Pathway pw : pathways) {
 			Set<UnificationXref> uxrefs = new ClassFilterSet<Xref, UnificationXref>(
 					new HashSet<Xref>(pw.getXref()), UnificationXref.class);
-			//normally there are two unif. xrefs, e.g., SMP00016 and PW000149
+			//normally there are two unif. xrefs, e.g., SMP00016 and PW000149, per pathway
 			for(UnificationXref x : uxrefs) {
-				if (x.getId() != null && x.getId().startsWith("SMP")) { //TODO: fix/update due to issue #263 (new data - bad ids)
+				if(x.getId() == null)
+					continue;;
+				if (x.getId().startsWith("SMP")) { // SMPDB 07-Jul-2015
 					String uri = "http://identifiers.org/smpdb/" + x.getId();
 					if (!model.containsID(uri)) {
 						CPathUtils.replaceID(model, pw, uri);
@@ -51,6 +53,18 @@ final class SmpdbCleaner implements Cleaner {
 						model.remove(pw);
 					}
 					break;
+				} else if (x.getId().startsWith("http://identifiers.org/smpdb/")) { //SMPDB 05-Jun-2016
+					String uri = x.getId();
+					if (!model.containsID(uri)) {
+						CPathUtils.replaceID(model, pw, uri);
+					} else {
+						//collect to replace the duplicate with equivalent, normalized URI pathway
+						replacements.put(pw, (Pathway) model.getByID(uri));
+						model.remove(pw);
+					}
+					String id = uri.replaceFirst("http://identifiers.org/smpdb/","");
+					x.setId(id);
+					break; //there must be only one such xref
 				}
 			}
 			//replace shortened ugly displayName with standardName
