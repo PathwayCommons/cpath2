@@ -41,7 +41,7 @@ final class SmpdbCleaner implements Cleaner {
 					new HashSet<Xref>(pw.getXref()), UnificationXref.class);
 			//normally there are two unif. xrefs, e.g., SMP00016 and PW000149
 			for(UnificationXref x : uxrefs) {
-				if (x.getId() != null && x.getId().startsWith("SMP")) {
+				if (x.getId() != null && x.getId().startsWith("SMP")) { //TODO: fix/update due to issue #263 (new data - bad ids)
 					String uri = "http://identifiers.org/smpdb/" + x.getId();
 					if (!model.containsID(uri)) {
 						CPathUtils.replaceID(model, pw, uri);
