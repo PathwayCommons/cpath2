@@ -4,6 +4,7 @@ import cpath.config.CPathSettings;
 import cpath.jpa.Content;
 import cpath.jpa.Metadata;
 
+import javafx.scene.shape.Path;
 import org.biopax.paxtools.controller.PropertyEditor;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
@@ -103,6 +104,11 @@ public final class Merger {
 				replaceConflictingUris(providerModel, mainModel);
 				replaceOriginalUris(providerModel, metadata.getIdentifier());
 
+				//break all cyclic pathway inclusions via pathwayComponent property
+				for(Pathway pathway : providerModel.getObjects(Pathway.class)) {
+					breakPathwayComponentCycle(pathway, pathway);
+				}
+
 				//export to the biopax archive in the batch downloads dir.
 				save(providerModel, metadata);
 			} else {
@@ -199,6 +205,17 @@ public final class Merger {
 		}
 
 		return providerModel;
+	}
+
+	//break all cyclic pathway inclusions via pathwayComponent property
+	private void breakPathwayComponentCycle(final Pathway rootPathway, final Pathway currentPathway) {
+		if(currentPathway.getPathwayComponent().contains(rootPathway)) {
+			currentPathway.removePathwayComponent(rootPathway);
+		}
+
+		for(Process proc : currentPathway.getPathwayComponent())
+			if(proc instanceof Pathway)
+				breakPathwayComponentCycle(rootPathway, (Pathway) proc);
 	}
 
 	/**

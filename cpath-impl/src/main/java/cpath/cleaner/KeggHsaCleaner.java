@@ -84,7 +84,9 @@ final class KeggHsaCleaner implements Cleaner {
 				pw.setDisplayName(pw.getStandardName());
 			}
 
-			//break all pathwayComponent cyclic pathway inclusions
+			//break all pathwayComponent cyclic pathway inclusions...
+			//this might not quite work as expected here due to applied to a single data file, not all at once
+			//(let's move this to Merger)
 			breakPathwayComponentCycle(pw, pw);
 		}
 
