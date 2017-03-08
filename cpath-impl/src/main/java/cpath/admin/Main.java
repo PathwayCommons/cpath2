@@ -559,8 +559,7 @@ public final class Main {
 		writer.println("rename 's/txt\\.sif/sif/' *.txt.sif");
 		writer.println(String.format("gzip %s*.txt %s*.sif %s*.gmt %s*.xml",
 				commonPrefix, commonPrefix, commonPrefix, commonPrefix));
-		writer.println("echo \"All done (also moved nohup.txt to the parent folder).\"");
-		writer.println("mv nohup.txt ..");
+		writer.println("echo \"All done.\"");
 		writer.close();
 
 		LOG.info("createDownloads: done.");
@@ -574,15 +573,15 @@ public final class Main {
 
 		if(exportToGSEA) {
 			writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
-				prefix + ".hgnc.gmt", "'hgnc symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc symbol' - important
+				prefix + "hgnc.gmt", "'hgnc symbol' 'organisms=" + commaSepTaxonomyIds + "'"));//'hgnc symbol' - important
 			writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toGSEA", bpFilename,
-				prefix + ".uniprot.gmt", "'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
+				prefix + "uniprot.gmt", "'uniprot' 'organisms=" + commaSepTaxonomyIds + "'"));
 			writer.println("wait"); //important
 			writer.println("echo \"Done converting "+bpFilename+" to GSEA.\"");
 		}
 
 		writer.println(String.format("%s %s '%s' '%s' %s 2>&1 &", javaRunPaxtools, "toSIF", bpFilename,
-			prefix + ".hgnc.txt", "seqDb=hgnc -extended -andSif exclude=neighbor_of"));//'hgnc symbol' or 'hgnc' does not matter
+			prefix + "hgnc.txt", "seqDb=hgnc -extended -andSif exclude=neighbor_of"));//'hgnc symbol' or 'hgnc' does not matter
 
 		//TODO: UniProt based extended SIF can be huge and takes too long to generate... won't make it now
 
