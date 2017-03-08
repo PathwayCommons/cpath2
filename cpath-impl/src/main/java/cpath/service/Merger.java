@@ -106,7 +106,7 @@ public final class Merger {
 
 				//break all cyclic pathway inclusions via pathwayComponent property
 				for(Pathway pathway : providerModel.getObjects(Pathway.class)) {
-					breakPathwayComponentCycle(pathway, pathway);
+					breakPathwayComponentCycle(pathway);
 				}
 
 				//export to the biopax archive in the batch downloads dir.
@@ -207,19 +207,27 @@ public final class Merger {
 		return providerModel;
 	}
 
+
 	//break all cyclic pathway inclusions via pathwayComponent property
-	private void breakPathwayComponentCycle(final Pathway rootPathway, final Pathway currentPathway) {
+	public void breakPathwayComponentCycle(final Pathway pathway) {
+		//run recursively, though, avoiding infinite loops (KEGG pathways can cause it)
+		breakPathwayComponentCycle(new HashSet<Pathway>(), pathway, pathway);
+	}
+
+	private void breakPathwayComponentCycle(final Set<Pathway> visited,
+											final Pathway rootPathway,
+											final Pathway currentPathway)
+	{
+		if(!visited.add(currentPathway))
+			return; // already processed
+
 		if(currentPathway.getPathwayComponent().contains(rootPathway)) {
 			currentPathway.removePathwayComponent(rootPathway);
 		}
 
-		if(currentPathway.getPathwayComponent().contains(currentPathway)) {
-			currentPathway.removePathwayComponent(currentPathway);
-		}
-
 		for(Process proc : currentPathway.getPathwayComponent())
 			if(proc instanceof Pathway)
-				breakPathwayComponentCycle(rootPathway, (Pathway) proc);
+				breakPathwayComponentCycle(visited, rootPathway, (Pathway) proc);
 	}
 
 	/**
