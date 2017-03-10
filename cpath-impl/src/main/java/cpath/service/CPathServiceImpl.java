@@ -146,7 +146,7 @@ public class CPathServiceImpl implements CPathService {
 
 
 	@Override
-	public ServiceResponse fetch(final OutputFormat format, final String... uris)
+	public ServiceResponse fetch(final OutputFormat format, boolean subPathways, final String... uris)
 	{
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
@@ -154,18 +154,10 @@ public class CPathServiceImpl implements CPathService {
 		// extract/convert a sub-model
 		try {
 			final String[] mappedUris = findUrisByIds(uris);
+
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, mappedUris);
-			Model m = null;
-			if(!elements.isEmpty()) {
-				//auto-complete (add important child/parent elements)
-				Completer completer = new Completer(simpleIO.getEditorMap());
-				completer.setSkipSubPathways(true);
-				elements = completer.complete(elements);
-				assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
-				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-				m = cloner.clone(elements);
-				m.setXmlBase(paxtoolsModel.getXmlBase());
-			}
+			Model m = autoCompleteAndClone(elements, subPathways);
+
 			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
@@ -190,11 +182,23 @@ public class CPathServiceImpl implements CPathService {
 		return filters.toArray(new Filter[]{});
 	}
 
+
+	// auto-complete and clone - makes a reasonable size detached (copy) sub-model
+	private Model autoCompleteAndClone(final Set<BioPAXElement> elements, final boolean includeSubPathways) {
+		Completer completer = new Completer(simpleIO.getEditorMap());
+		Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
+
+		completer.setSkipSubPathways(!includeSubPathways); //mind NOT (!) here
+		Model m = cloner.clone(completer.complete(elements));
+		m.setXmlBase(paxtoolsModel.getXmlBase());
+
+		return m;
+	}
 	
 	@Override
-	public ServiceResponse getNeighborhood(final OutputFormat format, 
-		final String[] sources, Integer limit, Direction direction, 
-		final String[] organisms, final String[] datasources)
+	public ServiceResponse getNeighborhood(final OutputFormat format,
+										   final String[] sources, Integer limit, Direction direction,
+										   final String[] organisms, final String[] datasources, boolean subPathways)
 	{
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
@@ -209,21 +213,12 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			// init source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
-			Model m = null;
-			if(!elements.isEmpty()) {
-				// Execute the query, get result elements
-				elements = QueryExecuter.runNeighborhood(elements, paxtoolsModel,
-						limit, direction, createFilters(organisms, datasources));
-				if (elements != null && !elements.isEmpty()) {
-					// auto-complete (gets a reasonable size sub-model)
-					Completer completer = new Completer(simpleIO.getEditorMap());
-					completer.setSkipSubPathways(true);
-					elements = completer.complete(elements);
-					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-					m = cloner.clone(elements);
-					m.setXmlBase(paxtoolsModel.getXmlBase());
-				}
-			}
+
+			// Execute the query, get result elements
+			elements = QueryExecuter.runNeighborhood(elements, paxtoolsModel,
+					limit, direction, createFilters(organisms, datasources));
+			Model m = autoCompleteAndClone(elements,subPathways);
+
 			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
@@ -232,9 +227,9 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
-	public ServiceResponse getPathsBetween(final OutputFormat format, 
-			final String[] sources, final Integer limit, 
-			final String[] organisms, final String[] datasources)
+	public ServiceResponse getPathsBetween(final OutputFormat format,
+										   final String[] sources, final Integer limit,
+										   final String[] organisms, final String[] datasources, boolean subPathways)
 	{	
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
@@ -245,21 +240,12 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			// init source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
-			Model m = null;
-			if(!elements.isEmpty()) {
-				// Execute the query, get result elements
-				elements = QueryExecuter.runPathsBetween(elements, paxtoolsModel, limit,
-						createFilters(organisms, datasources));
-				// auto-complete (gets a reasonable size sub-model)
-				if (elements != null) {
-					Completer completer = new Completer(simpleIO.getEditorMap());
-					completer.setSkipSubPathways(true);
-					elements = completer.complete(elements);
-					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-					m = cloner.clone(elements);
-					m.setXmlBase(paxtoolsModel.getXmlBase());
-				}
-			}
+
+			// Execute the query, get result elements
+			elements = QueryExecuter.runPathsBetween(elements, paxtoolsModel, limit,
+					createFilters(organisms, datasources));
+			Model m = autoCompleteAndClone(elements,subPathways);
+
 			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
@@ -268,9 +254,9 @@ public class CPathServiceImpl implements CPathService {
 
 	
 	@Override
-	public ServiceResponse getPathsFromTo(final OutputFormat format, 
-		final String[] sources, final String[] targets, final Integer limit,
-		final String[] organisms, final String[] datasources)
+	public ServiceResponse getPathsFromTo(final OutputFormat format,
+										  final String[] sources, final String[] targets, final Integer limit,
+										  final String[] organisms, final String[] datasources, boolean subPathways)
 	{
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
@@ -283,23 +269,19 @@ public class CPathServiceImpl implements CPathService {
 			// init source and target elements
 			Set<BioPAXElement> source = urisToBpes(paxtoolsModel, src);
 			Set<BioPAXElement> target = urisToBpes(paxtoolsModel, tgt);
+
 			Model m = null;
-			if(!source.isEmpty() && !target.isEmpty()) {
+			if(!source.isEmpty() && !target.isEmpty())
+			{
 				// Execute the query
 				Set<BioPAXElement> elements = (target == null || target.isEmpty())
 					? QueryExecuter.runPathsBetween(source, paxtoolsModel, limit, createFilters(organisms, datasources))
 					: QueryExecuter.runPathsFromTo(source, target,
 							paxtoolsModel, LimitType.NORMAL, limit, createFilters(organisms, datasources));
-				if (elements != null) {
-					// auto-complete (gets a reasonable size sub-model)
-					Completer completer = new Completer(simpleIO.getEditorMap());
-					completer.setSkipSubPathways(true);
-					elements = completer.complete(elements);
-					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-					m = cloner.clone(elements);
-					m.setXmlBase(paxtoolsModel.getXmlBase());
-				}
+
+				m = autoCompleteAndClone(elements,subPathways);
 			}
+
 			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
@@ -313,18 +295,18 @@ public class CPathServiceImpl implements CPathService {
 		ServiceResponse toReturn;
 
 		if (format==OutputFormat.GSEA)
-			toReturn = biopaxConverter.convert(m, format, "uniprot", false); //uniprot IDs, pathway entries only, etc.
+			toReturn = biopaxConverter.convert(m, format, "uniprot", false); //uniprot; outside pathway entities
 		else
-			toReturn = biopaxConverter.convert(m, format); //using default config. (ID type, layout, etc.)
+			toReturn = biopaxConverter.convert(m, format); //default ID type, layout, etc.
 
 		return toReturn;
 	}
 
 
 	@Override
-	public ServiceResponse getCommonStream(final OutputFormat format, 
-		final String[] sources, final Integer limit, Direction direction,
-		final String[] organisms, final String[] datasources)
+	public ServiceResponse getCommonStream(final OutputFormat format,
+										   final String[] sources, final Integer limit, Direction direction,
+										   final String[] organisms, final String[] datasources, boolean subPathways)
 	{
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try again later)...");
@@ -341,22 +323,13 @@ public class CPathServiceImpl implements CPathService {
 		try {
 			// init source elements
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, src);
-			Model m = null;
-			if(!elements.isEmpty()) {
-				// Execute the query, get result elements
-				elements = QueryExecuter
-						.runCommonStreamWithPOI(elements, paxtoolsModel, direction, limit,
-								createFilters(organisms, datasources));
-				if (elements != null) {
-					// auto-complete (gets a reasonable size sub-model)
-					Completer completer = new Completer(simpleIO.getEditorMap());
-					completer.setSkipSubPathways(true);
-					elements = completer.complete(elements);
-					Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-					m = cloner.clone(elements);
-					m.setXmlBase(paxtoolsModel.getXmlBase());
-				}
-			}
+
+			// Execute the query, get result elements
+			elements = QueryExecuter
+					.runCommonStreamWithPOI(elements, paxtoolsModel, direction, limit,
+							createFilters(organisms, datasources));
+			Model m = autoCompleteAndClone(elements,subPathways);
+
 			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);

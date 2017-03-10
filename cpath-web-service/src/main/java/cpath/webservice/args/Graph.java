@@ -35,9 +35,12 @@ public class Graph extends Base {
 
 	private String[] pattern;
 
+	private boolean subpw;
+
 	public Graph() {
 		format = OutputFormat.BIOPAX; // default
 		limit = 1;
+		subpw = false;
 	}
 
 	public OutputFormat getFormat() {
@@ -131,5 +134,13 @@ public class Graph extends Base {
 
 	public void setPattern(String[] pattern) {
 		this.pattern = pattern;
+	}
+
+	public boolean getSubpw() {
+		return subpw;
+	}
+
+	public void setSubpw(boolean subpw) {
+		this.subpw = subpw;
 	}
 }

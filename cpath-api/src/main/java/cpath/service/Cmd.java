@@ -25,7 +25,7 @@ public enum Cmd {
         "Returns a sub-model as the result. This command can have the following parameters.",
         "/graph?kind=neighborhood&source=URI1&source=URI2&...",
         "BioPAX by default, other formats as specified by the format parameter.",
-        new CmdArgs[]{kind, source, target, format, limit, direction, organism, datasource, user, pattern}),
+        new CmdArgs[]{kind, source, target, format, limit, direction, organism, datasource, user, pattern, subpw}),
     TOP_PATHWAYS("Gets Top Pathways. This command accepts optional filter by organism and by datasource values",
     	"/top_pathways",
         "Search Response - XML (JSON, when called as '/top_pathways.json?') contains the list of all top pathways.", 

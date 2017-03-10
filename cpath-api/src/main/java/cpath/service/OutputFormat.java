@@ -36,11 +36,7 @@ public enum OutputFormat {
 
 	JSONLD("JSON-LD format", ".json", "application/ld+json"),
 
-	/**
-	 * Depending on extra properties/parameters this can be any kind of JSON data,
-	 * but the default will be CytoscapeJs JSON network format.
-	 */
-	JSON("JSON format", ".json", "application/json")
+	CYTOSCAPEJS("Cytoscape JSON format", ".json", "application/json")
 	;
 
 

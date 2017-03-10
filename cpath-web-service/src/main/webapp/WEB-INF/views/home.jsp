@@ -199,6 +199,10 @@ or the fat JAR with embedded application server was started) -->
 		<li><em>format=</em> [Optional] output format (<a
 				href="#output_formats">values</a>)
 		</li>
+		<li>
+			<em>subpw=</em> [Optional] 'true' or 'false' (default) - whether to include or skip sub-pathways when we
+			auto-complete and clone the requested BioPAX element(s) into a reasonable sub-model.
+		</li>
 	</ul>
 	<h4>Output:</h4> BioPAX (default) representation for the record(s) pointed to by the given URI(s) is returned. 
 	Other output formats are produced on demand by converting from the BioPAX and can be specified using the optional format parameter. 
@@ -267,6 +271,11 @@ or the fat JAR with embedded application server was started) -->
 		<li><em>datasource=</em> [Optional] datasource filter (same as for <a href="#search_parameters">'search'</a>).
 		</li>
 		<li><em>organism=</em> [Optional] organism filter (same as for <a href="#search_parameters">'search'</a>).
+		</li>
+		<li>
+			<em>subpw=</em> [Optional] 'true' or 'false' (default) - whether to include or skip sub-pathways;
+			it does not affect the graph search algorithm, but - only how we auto-complete and clone BioPAX elements
+			to make a reasonable sub-model from the result set.
 		</li>
 	</ul>
 	<h4>Output:</h4> 

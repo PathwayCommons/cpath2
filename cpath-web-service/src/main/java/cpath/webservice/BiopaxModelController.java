@@ -16,6 +16,9 @@ import cpath.webservice.args.binding.GraphQueryLimitEditor;
 import cpath.webservice.args.binding.GraphTypeEditor;
 import cpath.webservice.args.binding.OutputFormatEditor;
 
+import org.biopax.paxtools.controller.Cloner;
+import org.biopax.paxtools.controller.Completer;
+import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
@@ -102,11 +105,17 @@ public class BiopaxModelController extends BasicController {
 			BioPAXElement bpe = model.getByID(maybeUri);
 			if (bpe != null) {
 				//convert a single object (incomplete) to JSON-LD (unlike '/get', which extracts a sub-model)
-//		return String.format("%s %s %s", bpe.getUri(), bpe.getModelInterface().getSimpleName(), bpe.toString());
-				Model m = BioPAXLevel.L3.getDefaultFactory().createModel();
+
+//				Model m = BioPAXLevel.L3.getDefaultFactory().createModel();
+//				m.setXmlBase(xmlBase);
+//				m.add(bpe);
+				//auto-complete and clone to get some more information
+				Completer completer = new Completer(SimpleEditorMap.L3);
+				Cloner cloner = new Cloner(SimpleEditorMap.L3, BioPAXLevel.L3.getDefaultFactory());
+				completer.setSkipSubPathways(true);
+				Model m = cloner.clone(completer.complete(Collections.singleton(bpe)));
 				m.setXmlBase(xmlBase);
-				m.add(bpe);
-				//TODO auto-complete (does it makes sense)?
+
 				ServiceResponse sr = new BiopaxConverter(null).convert(m, OutputFormat.JSONLD);
 				Set<LogEvent> events = new HashSet<LogEvent>();
 				events.add(LogEvent.format(OutputFormat.JSONLD));
@@ -137,7 +146,7 @@ public class BiopaxModelController extends BasicController {
     	} else {
 			OutputFormat format = args.getFormat();
 			String[] uri = args.getUri();
-			ServiceResponse result = service.fetch(format, uri);
+			ServiceResponse result = service.fetch(format, args.getSubpw(), uri);
 			events.add(LogEvent.format(format));
 			stringResponse(result, request, response, events);
 		}
@@ -229,19 +238,19 @@ public class BiopaxModelController extends BasicController {
 		switch (args.getKind()) {
 		case NEIGHBORHOOD:
 			result = service.getNeighborhood(args.getFormat(), args.getSource(),
-				args.getLimit(), args.getDirection(), args.getOrganism(), args.getDatasource());
+				args.getLimit(), args.getDirection(), args.getOrganism(), args.getDatasource(), args.getSubpw());
 			break;
 		case PATHSBETWEEN:
 			result = service.getPathsBetween(args.getFormat(), args.getSource(),
-				args.getLimit(), args.getOrganism(), args.getDatasource());
+				args.getLimit(), args.getOrganism(), args.getDatasource(), args.getSubpw());
 			break;
 		case PATHSFROMTO:
 			result = service.getPathsFromTo(args.getFormat(), args.getSource(),
-				args.getTarget(), args.getLimit(), args.getOrganism(), args.getDatasource());
+				args.getTarget(), args.getLimit(), args.getOrganism(), args.getDatasource(), args.getSubpw());
 			break;
 		case COMMONSTREAM:
 			result = service.getCommonStream(args.getFormat(), args.getSource(),
-				args.getLimit(), args.getDirection(), args.getOrganism(), args.getDatasource());
+				args.getLimit(), args.getDirection(), args.getOrganism(), args.getDatasource(), args.getSubpw());
 			break;
 		default:
 			// impossible (should have failed earlier)

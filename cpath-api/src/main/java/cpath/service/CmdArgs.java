@@ -7,25 +7,26 @@ package cpath.service;
  *
  */
 public enum CmdArgs {
-	uri("an identifier, usually a BioPAX element URI (default); multiple values per query are supported (array)"),
-    q("query string (full-text search)"),
-    page("search results page number (>=0)"),
+	uri("known BioPAX entity URI or standard identifier (e.g., gene symbol); multiple values are supported (array)"),
+    q("query string (full-text search supports Lucene query syntax)"),
+    page("full-text search query results page number (>=0)"),
 	type("a BioPAX class name"),
 	kind("graph query type"),
 	format("output format name"),
-	organism("filter by organism (e.g., taxonomy ID)"),
-	datasource("filter by data source"),
-	source("graph query source URI"),
-	target("graph query destination URI"),
+	organism("filter by organism, e.g., taxonomy ID (recommended) or nane; array"),
+	datasource("filter by data source (name, id or uri; array)"),
+	source("graph query source URI(s); array"),
+	target("graph query destination URI(s); array"),
     limit("graph query search distance limit"),
-    biopax("a BioPAX OWL to convert"),
-    path("a BioPAX property path expression (like xPath)"),
+    path("string expression, like 'Entity/xref:PublicationXref/id' - connected by '/' and ':' " +
+			"BioPAX types and properties - a path to reach specific model elements through given ones"),
     direction("graph query parameter 'direction'"),
-	//optional parameters for sub-model extraction and conversion, etc. algorithms
+
+	//optional parameters for sub-model extraction and conversion to other format algorithms -
 	pattern("when format is SIF or TXT - SIF type (pattern) name(s) to apply (can be array)"),
 	user("client's name, email, or app (for the service access log and usage reporting)"),
-	subpw("true (default) or false; for the 'get by URI' queries only; " +
-			"- whether to skip sub-pathways when exporting a BioPAX sub-model to another format"),//TODO
+	subpw("'true' or 'false' (default); for the 'get' and 'graph' queries; " +
+			" whether to skip traversing into sub-pathways of pathways in the result sub-model"),
 	;
 	
 	private final String info;

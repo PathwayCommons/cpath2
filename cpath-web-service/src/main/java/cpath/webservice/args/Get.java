@@ -19,9 +19,12 @@ public class Get extends Base {
 	private String[] uri;
 
 	private String[] pattern;
+
+	private boolean subpw;
 	
 	public Get() {
 		format = OutputFormat.BIOPAX; // default
+		subpw = false;
 	}
 
 	public OutputFormat getFormat() {
@@ -57,5 +60,13 @@ public class Get extends Base {
 
 	public void setPattern(String[] pattern) {
 		this.pattern = pattern;
+	}
+
+	public boolean getSubpw() {
+		return subpw;
+	}
+
+	public void setSubpw(boolean subpw) {
+		this.subpw = subpw;
 	}
 }

@@ -90,7 +90,12 @@ public class BiopaxConverter {
 						? ((Boolean)args[1]).booleanValue()
 							: Boolean.parseBoolean(String.valueOf(args[1]));
 				}
-				convertToGSEA(m, os, db, skipOutsidePathways);
+				// GSEA/GMT converter's skipSubPathways option is a different beast from the web api's 'subpw'!
+				// Given a sub-model, no matter how it's cut from the main model, there is still choice:
+				// to include gene IDs from sub-pathways into parent pathway's record or not; i.e.,
+				// whether to recursively collect participants (IDs) via traversing pathway component
+				// and order/step interactions, not going into any sub-pathways, or not...
+				convertToGSEA(m, os, db, skipOutsidePathways, true); //TODO: GSEA skipSubPathways=true always? (makes sense for now)
 				break;
             case SBGN:
 				boolean doLayout = true;
@@ -104,7 +109,7 @@ public class BiopaxConverter {
 			case JSONLD:
 				convertToJsonLd(m, os);
 				break;
-			case JSON:
+			case CYTOSCAPEJS:
 				convertToCyJson(m, os);
 				break;
 			default: throw new UnsupportedOperationException(
@@ -114,6 +119,7 @@ public class BiopaxConverter {
 
 	private void convertToCyJson(Model m, OutputStream os) {
 		//TODO implement to Cy JSON converter (e.g., borrow code from PCViz)
+		throw new UnsupportedOperationException("ToDo: CYTOSCAPEJS converter is not implemented.");
 	}
 
 	private void convertToJsonLd(Model m, OutputStream os) throws IOException {
@@ -199,14 +205,15 @@ public class BiopaxConverter {
 	 * @param skipOutsidePathways if true - won't write ID sets that relate to no pathway
 	 * @throws IOException when there is an output stream writing error
 	 */
-	private void convertToGSEA(Model m, OutputStream stream, String outputIdType, boolean skipOutsidePathways)
+	private void convertToGSEA(Model m, OutputStream stream, String outputIdType,
+							   boolean skipOutsidePathways, boolean skipSubPathways)
 			throws IOException 
 	{	
 		if(outputIdType==null || outputIdType.isEmpty())
 			outputIdType = "uniprot";
 
 		// convert (make per pathway entries; won't traverse into sub-pathways of a pathway; only pre-selected organisms)
-		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true, true);
+		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true, skipSubPathways);
 		Set<String> allowedTaxIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
 		gseaConverter.setAllowedOrganisms(allowedTaxIds);
 		gseaConverter.setSkipOutsidePathways(skipOutsidePathways);

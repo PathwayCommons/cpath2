@@ -237,15 +237,15 @@ public class DataImportTest {
 		// Test FETCH (get an object or subnetwork by URI or ID service)
 
 		// fetch as BIOPAX
-		res = service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/uniprot/P27797");
+		res = service.fetch(OutputFormat.BIOPAX, false, "http://identifiers.org/uniprot/P27797");
 		assertNotNull(res);
 		assertTrue(res instanceof DataResponse);
 		assertFalse(res.isEmpty());
 		assertTrue(((DataResponse)res).getData().toString().length()>0);		
 		
 		// fetch as SIF
-		res = service.fetch(OutputFormat.BINARY_SIF, 
-			"http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p");
+		res = service.fetch(OutputFormat.BINARY_SIF,
+                false, "http://pathwaycommons.org/test2#glucokinase_converts_alpha-D-glu_to_alpha-D-glu-6-p");
 		assertTrue(res instanceof DataResponse);
 		assertFalse(res.isEmpty());
 		Object respData = ((DataResponse)res).getData();
@@ -255,11 +255,11 @@ public class DataImportTest {
 		assertFalse(((DataResponse)res).getProviders().isEmpty());
 
 		// fetch a small molecule by URI
-		res = (DataResponse) service.fetch(OutputFormat.BIOPAX, "http://identifiers.org/chebi/CHEBI:20");
+		res = (DataResponse) service.fetch(OutputFormat.BIOPAX, false, "http://identifiers.org/chebi/CHEBI:20");
 		assertNotNull(res);
 		assertFalse(res.isEmpty());
 		// fetch the same small molecule by ID (ChEBI, contains ":" in it...)
-		res = service.fetch(OutputFormat.BIOPAX, "CHEBI:20");
+		res = service.fetch(OutputFormat.BIOPAX, false, "CHEBI:20");
 		assertTrue(res instanceof DataResponse);
 		assertFalse(res.isEmpty());
 	}
