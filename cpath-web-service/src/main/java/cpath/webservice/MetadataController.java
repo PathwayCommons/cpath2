@@ -132,36 +132,36 @@ public class MetadataController extends BasicController {
     	return m;
     }
     
-    @RequestMapping("/idmapping")
-    public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id, 
-    		HttpServletRequest request, HttpServletResponse response)
-    {			
-    	//log events: command, format
-    	Set<LogEvent> events = new HashSet<LogEvent>();
-    	events.add(LogEvent.IDMAPPING);
-
-    	if(id == null || id.length == 0) {
-    		errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", request, response, events);
-    		return null;
-    	}
-
-    	Map<String, String> res = new TreeMap<String, String>();
-
-    	for(String i : id) {							
-    		Set<String> im = service.map(i);
-    		if(im == null) {
-    			res.put(i, null);
-    		} else {
-    			for(String ac : im)
-    				res.put(i, ac);
-    		}			
-    	}		
-
-    	//log to db (for usage reports)
-    	service.log(events, clientIpAddress(request));
-
-    	return res;
-	}
+//    @RequestMapping("/idmapping")
+//    public @ResponseBody Map<String, String> idMapping(@RequestParam String[] id,
+//    		HttpServletRequest request, HttpServletResponse response)
+//    {
+//    	//log events: command, format
+//    	Set<LogEvent> events = new HashSet<LogEvent>();
+//    	events.add(LogEvent.IDMAPPING);
+//
+//    	if(id == null || id.length == 0) {
+//    		errorResponse(Status.NO_RESULTS_FOUND, "No ID(s) specified.", request, response, events);
+//    		return null;
+//    	}
+//
+//    	Map<String, String> res = new TreeMap<String, String>();
+//
+//    	for(String i : id) {
+//    		Set<String> im = service.map(i);
+//    		if(im == null) {
+//    			res.put(i, null);
+//    		} else {
+//    			for(String ac : im)
+//    				res.put(i, ac);
+//    		}
+//    	}
+//
+//    	//log to db (for usage reports)
+//    	service.log(events, clientIpAddress(request));
+//
+//    	return res;
+//	}
  
     
     private List<ValInfo> validationInfo() {
