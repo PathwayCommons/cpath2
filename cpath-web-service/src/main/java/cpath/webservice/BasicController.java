@@ -141,7 +141,8 @@ public abstract class BasicController {
 
 			// take care to count provider's data accessed events
 			Set<String> providers = dataResponse.getProviders();
-			logEvents.addAll(LogEvent.providers(providers));
+			if(!providers.isEmpty())
+				logEvents.addAll(LogEvent.providers(providers));
 			
 			//log to the db (for analysis and reporting)
 			//problems with logging subsystem should not fail the entire service
@@ -178,7 +179,7 @@ public abstract class BasicController {
 						new SimpleIOHandler().convertToOWL(BioPAXLevel.L3.getDefaultFactory().createModel(), bos);
 						response.getWriter().print(bos.toString("UTF-8"));
 					} else {
-						//TODO print a comment, e.g., "# query returned no data"; though SIF, GSEA do not support it..?
+						//cannot write a comment, e.g., "# no data" as SIF, GSEA do not support comment lines
 						response.getWriter().print("");
 					}
 				} catch (IOException e) {

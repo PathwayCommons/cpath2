@@ -2,6 +2,7 @@ package cpath.service.jaxb;
 
 import cpath.service.OutputFormat;
 
+import java.util.Collections;
 import java.util.Set;
 
 import javax.xml.bind.annotation.*;
@@ -23,6 +24,7 @@ public class DataResponse extends ServiceResponse {
 	private OutputFormat format;
 	
 	public DataResponse() {
+		providers = Collections.emptySet();
 	}
 
 	@XmlTransient

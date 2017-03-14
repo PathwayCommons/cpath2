@@ -61,8 +61,10 @@ public class LogEvent {
 
 	public static Set<LogEvent> providers(Collection<String> providers) {
 		Set<LogEvent> set = new HashSet<LogEvent>();
-		for(String prov : providers) {
-			set.add(LogEvent.provider(prov));
+		if(providers != null) {
+			for(String prov : providers) {
+				set.add(LogEvent.provider(prov));
+			}
 		}
 		return set;
 	}

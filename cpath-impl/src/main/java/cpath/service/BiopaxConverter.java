@@ -143,9 +143,9 @@ public class BiopaxConverter {
     public ServiceResponse convert(Model m, OutputFormat format, Object... args)
     {
     	if(m == null || m.getObjects().isEmpty()) {
+    		//build an empty data response
 			DataResponse r = new DataResponse();
 			r.setFormat(format);
-			r.setData(null); //so r.isEmpty() is true.
 			return r;
 		}
     	

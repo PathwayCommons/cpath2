@@ -221,7 +221,7 @@ public class CPathServiceImpl implements CPathService {
 			// Execute the query, get result elements
 			elements = QueryExecuter.runNeighborhood(elements, paxtoolsModel,
 					limit, direction, createFilters(organisms, datasources));
-			Model m = autoCompleteAndClone(elements,subPathways);
+			Model m = autoCompleteAndClone(elements, subPathways);
 
 			return convert(m, format);
 		} catch (Exception e) {
