@@ -184,7 +184,11 @@ public class CPathServiceImpl implements CPathService {
 
 
 	// auto-complete and clone - makes a reasonable size detached (copy) sub-model
-	private Model autoCompleteAndClone(final Set<BioPAXElement> elements, final boolean includeSubPathways) {
+	private Model autoCompleteAndClone(final Set<BioPAXElement> elements, final boolean includeSubPathways)
+	{
+		if(elements == null || elements.isEmpty())
+			return null;
+
 		Completer completer = new Completer(simpleIO.getEditorMap());
 		Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
 
