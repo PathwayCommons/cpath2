@@ -98,7 +98,7 @@ public class BiopaxConverter {
 				convertToGSEA(m, os, db, skipOutsidePathways, true); //TODO: GSEA skipSubPathways=true always? (makes sense for now)
 				break;
             case SBGN:
-				boolean doLayout = true;
+				boolean doLayout = false; //don't
 				if (args.length > 0) {
 					doLayout = (args[0] instanceof Boolean)
 							? ((Boolean)args[0]).booleanValue() 
