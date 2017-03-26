@@ -34,9 +34,7 @@ public enum OutputFormat {
 
 	SBGN("Systems Biology Graphical Notation Format",".sbgn.xml","application/xml"),
 
-	JSONLD("JSON-LD format", ".json", "application/ld+json"),
-
-	CYTOSCAPEJS("Cytoscape JSON format", ".json", "application/json")
+	JSONLD("JSON-LD format", ".json", "application/ld+json")
 	;
 
 

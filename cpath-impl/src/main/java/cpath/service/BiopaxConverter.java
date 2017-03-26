@@ -109,18 +109,10 @@ public class BiopaxConverter {
 			case JSONLD:
 				convertToJsonLd(m, os);
 				break;
-			case CYTOSCAPEJS:
-				convertToCyJson(m, os);
-				break;
 			default: throw new UnsupportedOperationException(
 					"convert, yet unsupported format: " + format);
 			}
     }
-
-	private void convertToCyJson(Model m, OutputStream os) {
-		//TODO implement to Cy JSON converter (e.g., borrow code from PCViz)
-		throw new UnsupportedOperationException("ToDo: CYTOSCAPEJS converter is not implemented.");
-	}
 
 	private void convertToJsonLd(Model m, OutputStream os) throws IOException {
 		DataResponse dr = (DataResponse) convert(m, OutputFormat.BIOPAX);
