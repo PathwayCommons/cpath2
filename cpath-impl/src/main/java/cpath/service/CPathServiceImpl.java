@@ -301,7 +301,7 @@ public class CPathServiceImpl implements CPathService {
 		if (format==OutputFormat.GSEA)
 			toReturn = biopaxConverter.convert(m, format, "uniprot", false); //uniprot; outside pathway entities
 		else
-			toReturn = biopaxConverter.convert(m, format); //default ID type, (no )layout, etc.
+			toReturn = biopaxConverter.convert(m, format); //default ID type, layout, etc.
 
 		return toReturn;
 	}
