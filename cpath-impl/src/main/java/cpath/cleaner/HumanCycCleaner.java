@@ -2,10 +2,13 @@ package cpath.cleaner;
 
 import cpath.service.Cleaner;
 
+import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.SimpleIOHandler;
+import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
 import org.biopax.paxtools.model.level3.*;
+import org.biopax.paxtools.util.Filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +32,7 @@ public class HumanCycCleaner implements Cleaner
 			removeUnificationXrefInPhysicalEntities(model);
 			cleanXrefIDs(model);
 			cleanXrefDBName(model);
-			cleanHtmlInDisplayNames(model);
+			deleteHtmlFromNames(model);
 //			fix_RDH14_NT5C1B_fusion(model); //the problem is not present in 17.1 HymanCyc biopax
 			cleanMultipleUnificationXrefs(model);
 			// set organism to all pathways, where it's null
@@ -124,36 +127,49 @@ public class HumanCycCleaner implements Cleaner
 		}
 	}
 	
-	protected void cleanHtmlInDisplayNames(Model model)
+	protected void deleteHtmlFromNames(Model model)
 	{
+		Traverser traverser = new Traverser(SimpleEditorMap.L3, new Visitor() {
+			@Override
+			public void visit(BioPAXElement domain, Object range, Model model, PropertyEditor editor) {
+				String name = deleteHtmlFromName((String)range);
+				if(!name.equals(range)) {
+					if (editor.isMultipleCardinality()) {
+						editor.removeValueFromBean(range, domain);
+					}
+					editor.setValueToBean(name, domain);
+				}
+			}
+		}, new Filter<PropertyEditor>() {
+			@Override
+			public boolean filter(PropertyEditor e) {
+				//only name, displayName, standardName should pass
+				return e instanceof DataPropertyEditor && e.getProperty().toLowerCase().endsWith("name");
+			}
+		});
+
 		for (Named named : model.getObjects(Named.class))
-		{
-			String s = named.getDisplayName();
-			if (s != null)
-			{
-				s = removeHTML(s);
-				named.setDisplayName(s);
-			}
-			
-			s = named.getStandardName();
-			if (s != null)
-			{
-				s = removeHTML(s);
-				named.setStandardName(s);
-			}
-		}
+			traverser.traverse(named,model);
 	}
 
-	/*no need to use this with the 17.1 BioCyc biopax release*/
-	private String removeHTML(String s)
+	/**
+	 * BioPAX files are valid UTF-8 RDF/XML data files.
+	 * BioPAX String data type properties, such as 'name' (all except 'comment'),
+	 * should not contain any HTML markup (xml-escaped of course),
+	 * but may contain Greek symbols, umlaut, etc. if properly utf-8 encoded
+	 * (not xml/html-ish way like '&amp;alpha;').
+	 */
+	protected String deleteHtmlFromName(String s)
 	{
-		s = s.replaceAll("</i>", "").replaceAll("<i>","");
-		s = s.replaceAll("</I>", "").replaceAll("<I>","");
-		s = s.replaceAll("</SUB>", "").replaceAll("<SUB>","");
-		s = s.replaceAll("</sub>", "").replaceAll("<sub>","");
-		s = s.replaceAll("</sup>", "").replaceAll("<sup>","");
-		s = s.replaceAll("</SUP>", "").replaceAll("<SUP>","");
-		return s;
+		String ret =
+				s.replaceAll("(?i)</i>", "").replaceAll("(?i)<i>","").replaceAll("(?i)</sub>", "")
+				.replaceAll("(?i)<sub>","").replaceAll("(?i)</sup>", "").replaceAll("(?i)<sup>","")
+				.replaceAll("(?i)&amp;alpha;", "alpha").replaceAll("(?i)&amp;beta;", "beta")
+				.replaceAll("(?i)&amp;gamma;", "gamma").replaceAll("(?i)&amp;epsilon;", "epsilon")
+				.replaceAll("(?i)&amp;delta;", "delta").replaceAll("(?i)&delta;", "delta")
+				.replaceAll("(?i)&alpha;", "alpha").replaceAll("(?i)&beta;", "beta")
+				.replaceAll("(?i)&gamma;", "gamma").replaceAll("(?i)&epsilon;", "epsilon");
+		return ret;
 	}
 
 	/**
