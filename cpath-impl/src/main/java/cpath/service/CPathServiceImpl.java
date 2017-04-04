@@ -361,16 +361,9 @@ public class CPathServiceImpl implements CPathService {
 		// build a Lucene query string (will be eq. to xrefid:"A" OR xrefid:"B" OR ...)
 		final StringBuilder q = new StringBuilder();
 		for (String identifier : identifiers) {
-			if(identifier.toLowerCase().startsWith("http://")) {
-				// it must be an existing BioPAX object URI (seems, the user hopes so)
+			if(identifier.startsWith("http://")) {
+				// must be valid URI of some existing BioPAX object in our model
 				uris.add(identifier);
-				// if it's a Identifiers.org URI, lets' also extract the id from the URI:
-				if(identifier.startsWith("http://identifier.org/")) {
-					identifier = CPathUtils.idfromNormalizedUri(identifier).replaceAll(":","?");
-					if (!q.toString().contains(identifier)) {
-						q.append("xrefid:").append(identifier).append(" ");
-					}
-				}
 			} else {
 				// replace ':' with "?" for this to match (due to use of Lucene StandardAnalyzer, not-analyzed 'xrefid' field and multi-field query parser)
 				identifier = identifier.replaceAll(":","?");
@@ -386,9 +379,8 @@ public class CPathServiceImpl implements CPathService {
 			//search for Gene/PEs (instead of, as it used to be in older versions, searching for xrefs)
 			findAllUris(uris, query, PhysicalEntity.class);
 			findAllUris(uris, query, Gene.class);
+			log.debug("findUrisByIds, seeds: " + uris + " were found by IDs: " + Arrays.toString(identifiers));
 		}
-				
-		log.debug("findUrisByIds, seeds: " + uris + " were found by IDs: " + Arrays.toString(identifiers));
 
 		return uris.toArray(new String[]{});
 	}
