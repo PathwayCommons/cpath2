@@ -360,7 +360,8 @@ public class CPathServiceImpl implements CPathService {
 		// id-mapping: get primary IDs where possible; 
 		// build a Lucene query string (will be eq. to xrefid:"A" OR xrefid:"B" OR ...)
 		final StringBuilder q = new StringBuilder();
-		for (String identifier : identifiers) {
+		for (String identifier : identifiers)
+		{
 			if(identifier.startsWith("http://")) {
 				// must be valid URI of some existing BioPAX object in our model
 				uris.add(identifier);

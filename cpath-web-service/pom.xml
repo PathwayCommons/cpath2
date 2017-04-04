@@ -15,9 +15,19 @@
 	<description>cPath2 web service, information and system pages</description>
 	<url>https://pathwaycommons.github.io/cpath2</url>
 
+	<pluginRepositories>
+		<pluginRepository>
+			<id>apache-snapshots</id>
+			<name>Apache snapshots</name>
+			<url>https://repository.apache.org/content/repositories/snapshots/</url>
+			<snapshots><enabled>true</enabled></snapshots>
+		</pluginRepository>
+	</pluginRepositories>
+
 	<build>
 		<plugins>
 			<plugin>
+				<!-- resource filtering - inject project variables into JSP pages -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-war-plugin</artifactId>
 				<configuration>
@@ -40,7 +50,7 @@
 					-Djava.io.tmpdir=$CPATH2_HOME/tmp -jar target/cpath-web-service-<VERSION>-exec-war.jar -->
 				<groupId>org.apache.tomcat.maven</groupId>
 				<artifactId>tomcat7-maven-plugin</artifactId>
-				<version>2.1</version>
+				<version>2.3-SNAPSHOT</version>
 				<configuration>
 					<path>/pc2</path>
 					<accessLogValveFormat>%{X-Forwarded-For}i %l %u %t "%r" %s %b "%{Referer}i" "%{User-Agent}i"</accessLogValveFormat>
@@ -64,54 +74,54 @@
 					</execution>
 				</executions>
 				<dependencies>
-					<dependency>
-						<groupId>org.slf4j</groupId>
-						<artifactId>slf4j-api</artifactId>
-						<version>${slf4j.version}</version>
-						<scope>runtime</scope>
-					</dependency>
-					<dependency>
-						<groupId>org.slf4j</groupId>
-						<artifactId>jcl-over-slf4j</artifactId>
-						<version>${slf4j.version}</version>
-						<scope>runtime</scope>
-					</dependency>
-					<dependency>
-						<groupId>org.slf4j</groupId>
-						<artifactId>jul-to-slf4j</artifactId>
-						<version>${slf4j.version}</version>
-						<scope>runtime</scope>
-					</dependency>
-					<dependency>
-						<groupId>org.slf4j</groupId>
-						<artifactId>log4j-over-slf4j</artifactId>
-						<version>${slf4j.version}</version>
-						<scope>runtime</scope>
-					</dependency>
-					<dependency>
-						<groupId>ch.qos.logback</groupId>
-						<artifactId>logback-core</artifactId>
-						<version>${logback.version}</version>
-						<scope>runtime</scope>
-					</dependency>
-					<dependency>
-						<groupId>ch.qos.logback</groupId>
-						<artifactId>logback-classic</artifactId>
-						<version>${logback.version}</version>
-						<scope>runtime</scope>
-					</dependency>
-					<dependency>
-						<groupId>ch.qos.logback</groupId>
-						<artifactId>logback-access</artifactId>
-						<version>${logback.version}</version>
-						<scope>runtime</scope>
-					</dependency>
-					<dependency>
-						<groupId>org.apache.tomcat</groupId>
-						<artifactId>tomcat-catalina</artifactId>
-						<version>8.0.24</version>
-						<scope>runtime</scope>
-					</dependency>
+					<!--<dependency>-->
+						<!--<groupId>org.slf4j</groupId>-->
+						<!--<artifactId>slf4j-api</artifactId>-->
+						<!--<version>${slf4j.version}</version>-->
+						<!--<scope>runtime</scope>-->
+					<!--</dependency>-->
+					<!--<dependency>-->
+						<!--<groupId>org.slf4j</groupId>-->
+						<!--<artifactId>jcl-over-slf4j</artifactId>-->
+						<!--<version>${slf4j.version}</version>-->
+						<!--<scope>runtime</scope>-->
+					<!--</dependency>-->
+					<!--<dependency>-->
+						<!--<groupId>org.slf4j</groupId>-->
+						<!--<artifactId>jul-to-slf4j</artifactId>-->
+						<!--<version>${slf4j.version}</version>-->
+						<!--<scope>runtime</scope>-->
+					<!--</dependency>-->
+					<!--<dependency>-->
+						<!--<groupId>org.slf4j</groupId>-->
+						<!--<artifactId>log4j-over-slf4j</artifactId>-->
+						<!--<version>${slf4j.version}</version>-->
+						<!--<scope>runtime</scope>-->
+					<!--</dependency>-->
+					<!--<dependency>-->
+						<!--<groupId>ch.qos.logback</groupId>-->
+						<!--<artifactId>logback-core</artifactId>-->
+						<!--<version>${logback.version}</version>-->
+						<!--<scope>runtime</scope>-->
+					<!--</dependency>-->
+					<!--<dependency>-->
+						<!--<groupId>ch.qos.logback</groupId>-->
+						<!--<artifactId>logback-classic</artifactId>-->
+						<!--<version>${logback.version}</version>-->
+						<!--<scope>runtime</scope>-->
+					<!--</dependency>-->
+					<!--<dependency>-->
+						<!--<groupId>ch.qos.logback</groupId>-->
+						<!--<artifactId>logback-access</artifactId>-->
+						<!--<version>${logback.version}</version>-->
+						<!--<scope>runtime</scope>-->
+					<!--</dependency>-->
+					<!--<dependency>-->
+						<!--<groupId>org.apache.tomcat</groupId>-->
+						<!--<artifactId>tomcat-catalina</artifactId>-->
+						<!--<version>8.0.43</version>-->
+						<!--<scope>runtime</scope>-->
+					<!--</dependency>-->
 				</dependencies>
 			</plugin>
 			<plugin>
@@ -170,29 +180,33 @@
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>javax.servlet-api</artifactId>
-			<scope>provided</scope>
-		</dependency>
 
 		<!-- servlet, JSP, filters -->
 		<dependency>
-			<groupId>javax.servlet</groupId>
-			<artifactId>jstl</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-		<dependency>
 			<groupId>taglibs</groupId>
 			<artifactId>standard</artifactId>
+			<version>${taglibs.standard.version}</version>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.tomcat</groupId>
-			<artifactId>tomcat-catalina</artifactId>
-			<version>8.0.24</version>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>${javax.servlet-api.version}</version>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>jstl</artifactId>
+			<version>${jstl.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!--<dependency>-->
+			<!--<groupId>org.apache.tomcat</groupId>-->
+			<!--<artifactId>tomcat-catalina</artifactId>-->
+			<!--<version>8.0.43</version>-->
+			<!--<scope>provided</scope>-->
+		<!--</dependency>-->
 
 		<!--an experimental feature tool (@Robot annotations, alt. to /robots.txt) -->
 		<dependency>

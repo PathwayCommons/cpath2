@@ -146,7 +146,7 @@
 	</modules>
 
 	<properties>
-		<java.version>1.8</java.version>
+		<java.version>1.7</java.version>
 		<license.licenseName>lgpl_v3</license.licenseName>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -500,22 +500,6 @@
 				</exclusions>
 				<classifier>jar-with-dependencies</classifier>
 			</dependency>
-			<!--<dependency>-->
-				<!--<groupId>org.apache.jena</groupId>-->
-				<!--<artifactId>apache-jena-libs</artifactId>-->
-				<!--<version>${apache-jena-libs.version}</version>-->
-				<!--<scope>runtime</scope>-->
-				<!--<exclusions>-->
-					<!--<exclusion>-->
-						<!--<groupId>log4j</groupId>-->
-						<!--<artifactId>log4j</artifactId>-->
-					<!--</exclusion>-->
-					<!--<exclusion>-->
-						<!--<groupId>org.slf4j</groupId>-->
-						<!--<artifactId>slf4j-log4j12</artifactId>-->
-					<!--</exclusion>-->
-				<!--</exclusions>-->
-			<!--</dependency>-->
 			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
@@ -648,24 +632,6 @@
 				<groupId>org.apache.commons</groupId>
 				<artifactId>commons-lang3</artifactId>
 				<version>${commons-lang.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>taglibs</groupId>
-				<artifactId>standard</artifactId>
-				<version>${taglibs.standard.version}</version>
-				<scope>runtime</scope>
-			</dependency>
-			<dependency>
-				<groupId>javax.servlet</groupId>
-				<artifactId>javax.servlet-api</artifactId>
-				<version>${javax.servlet-api.version}</version>
-				<scope>provided</scope>
-			</dependency>
-			<dependency>
-				<groupId>javax.servlet</groupId>
-				<artifactId>jstl</artifactId>
-				<version>${jstl.version}</version>
-				<scope>runtime</scope>
 			</dependency>
 			<dependency>
 				<groupId>javax.validation</groupId>

@@ -116,14 +116,10 @@ public final class Metadata {
     
     //extra (jpa transient) fields
     @Transient
-    private Long numAccessed;
-    @Transient
     private Boolean uploaded;
     @Transient
     private Boolean premerged;
-    @Transient
-    private Long numUniqueIps;
-    
+
     
 	/**
 	 * Default Constructor.
@@ -453,13 +449,6 @@ public final class Metadata {
 		this.iconUrl = iconUrl;
 	}
 
-	public Long getNumAccessed() {
-		return numAccessed;
-	}
-	public void setNumAccessed(Long numAccessed) {
-		this.numAccessed = numAccessed;
-	}
-	
 	public Boolean getUploaded() {
 		return uploaded;
 	}
@@ -472,13 +461,6 @@ public final class Metadata {
 	}
 	public void setPremerged(Boolean premerged) {
 		this.premerged = premerged;
-	}
-	
-	public Long getNumUniqueIps() {
-		return numUniqueIps;
-	}
-	public void setNumUniqueIps(Long numUniqueIps) {
-		this.numUniqueIps = numUniqueIps;
 	}
 	
 
