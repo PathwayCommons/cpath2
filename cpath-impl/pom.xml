@@ -195,7 +195,15 @@
 		<dependency>
 			<groupId>org.biopax.paxtools</groupId>
 			<artifactId>json-converter</artifactId>
-			<classifier>jar-with-dependencies</classifier>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.jena</groupId>
+			<artifactId>apache-jena-libs</artifactId>
+			<type>pom</type>
+		</dependency>
+		<dependency>
+		    <groupId>com.hp.hpl.jena</groupId>
+			<artifactId>jena</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework</groupId>
