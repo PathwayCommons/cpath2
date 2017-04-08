@@ -26,16 +26,6 @@ public interface MappingsRepository extends CrudRepository<Mapping, Long> {
 
 
 	/**
-	 * Mappings 'To' any of given identifiers of the same type.
-	 *
-	 * @deprecated see issue #260
-	 * @param dest
-	 * @param destIds
-	 * @return
-	 */
-	List<Mapping> findByDestIgnoreCaseAndDestIdIn(String dest, List<String> destIds);
-
-	/**
 	 * Mappings 'From' the given id (any kind) 'To' the target type of ID.
 	 * 
 	 * @param srcId
@@ -64,18 +54,5 @@ public interface MappingsRepository extends CrudRepository<Mapping, Long> {
 	 * @return
 	 */
 	List<Mapping> findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCase(String src, String srcId, String dest);
-		
-	
-	/**
-	 * This is to find a unique mapping entry,
-	 * e.g. to check if it exists before saving.
-	 * 
-	 * @param src
-	 * @param srcId
-	 * @param dest
-	 * @param destId
-	 * @return
-	 */
-	Mapping findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(String src, String srcId, String dest, String destId);
-	
+
 }

@@ -92,8 +92,6 @@ public class RepositoriesAndServiceTest {
         Mapping m = new Mapping("PubChem-substance", "14438", "CHEBI", "CHEBI:20");
         service.mapping().save(m);
 		assertEquals("SID:14438", m.getSrcId());
-        assertNotNull(service.mapping().findBySrcIgnoreCaseAndSrcIdAndDestIgnoreCaseAndDestId(
-        		m.getSrc(), m.getSrcId(), m.getDest(), m.getDestId()));
 		assertEquals(1, service.map("SID:14438", "CHEBI").size());
 
 		//map from a list of IDs to target ID type (UNIPROT)

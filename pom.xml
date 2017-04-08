@@ -150,31 +150,27 @@
 		<license.licenseName>lgpl_v3</license.licenseName>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<spring.version>4.1.7.RELEASE</spring.version>
-		<hibernate.version>4.3.11.Final</hibernate.version>
-		<lucene.version>4.10.4</lucene.version>
-		<h2.version>1.4.190</h2.version>
-		<querydsl.version>3.6.6</querydsl.version>
+		<spring.version>4.3.7.RELEASE</spring.version>
+		<hibernate.version>5.2.9.Final</hibernate.version>
+		<lucene.version>6.5.0</lucene.version>
+		<h2.version>1.4.194</h2.version>
+		<querydsl.version>4.1.4</querydsl.version>
 		<ehcache-core.version>2.6.11</ehcache-core.version>
-		<paxtools.version>[5.0.0-SNAPSHOT,6)</paxtools.version>
+		<paxtools.version>5.0.0-SNAPSHOT</paxtools.version>
 		<apache-jena-libs.version>3.0.1</apache-jena-libs.version>
-		<validator.version>[4.0.0-SNAPSHOT,5)</validator.version>
-		<junit.version>4.11</junit.version>
+		<validator.version>4.0.0-SNAPSHOT</validator.version>
+		<junit.version>4.12</junit.version>
 		<commons-lang.version>3.4</commons-lang.version>
 		<collections-generic.version>4.01</collections-generic.version>
 		<commons-collections.version>3.2.2</commons-collections.version>
-		<!--<commons-fileupload.version>1.3.1</commons-fileupload.version>		-->
-		<httpclient.version>4.5</httpclient.version>
-		<javax.servlet-api.version>3.1.0</javax.servlet-api.version>
-		<jstl.version>1.2</jstl.version>
-		<taglibs.standard.version>1.1.2</taglibs.standard.version>
+		<httpclient.version>4.5.3</httpclient.version>
 		<javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
-		<hibernate-validator.version>5.4.0.Final</hibernate-validator.version>
-		<jackson.version>2.4.3</jackson.version>
-		<slf4j.version>1.7.7</slf4j.version>
-		<logback.version>1.1.2</logback.version>
-		<spring-data-jpa.version>1.7.1.RELEASE</spring-data-jpa.version>
-		<aspectjrt.version>1.8.4</aspectjrt.version>
+		<hibernate-validator.version>5.4.1.Final</hibernate-validator.version>
+		<jackson.version>2.8.8</jackson.version>
+		<slf4j.version>1.7.25</slf4j.version>
+		<logback.version>1.2.2</logback.version>
+		<spring-data-jpa.version>1.11.1.RELEASE</spring-data-jpa.version>
+		<aspectjrt.version>1.8.10</aspectjrt.version>
 		<maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
 		<maven-war-plugin.version>2.6</maven-war-plugin.version>
 		<maven-release-plugin.version>2.5.1</maven-release-plugin.version>
@@ -613,11 +609,6 @@
 				<artifactId>commons-collections</artifactId>
 				<version>${commons-collections.version}</version>
 			</dependency>
-			<!--<dependency>-->
-				<!--<groupId>commons-fileupload</groupId>-->
-				<!--<artifactId>commons-fileupload</artifactId>-->
-				<!--<version>${commons-fileupload.version}</version>-->
-			<!--</dependency>	-->
 			<dependency>
 				<groupId>org.hibernate</groupId>
 				<artifactId>hibernate-core</artifactId>
@@ -715,11 +706,11 @@
 				<artifactId>logback-classic</artifactId>
 				<version>${logback.version}</version>
 			</dependency>
-			<!--<dependency>-->
-				<!--<groupId>ch.qos.logback</groupId>-->
-				<!--<artifactId>logback-access</artifactId>-->
-				<!--<version>${logback.version}</version>-->
-			<!--</dependency>-->
+			<dependency>
+				<groupId>ch.qos.logback</groupId>
+				<artifactId>logback-access</artifactId>
+				<version>${logback.version}</version>
+			</dependency>
 			<dependency>
 				<groupId>org.springframework.data</groupId>
 				<artifactId>spring-data-jpa</artifactId>
@@ -731,7 +722,7 @@
 				<version>${aspectjrt.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>com.mysema.querydsl</groupId>
+				<groupId>com.querydsl</groupId>
 				<artifactId>querydsl-jpa</artifactId>
 				<version>${querydsl.version}</version>
 			</dependency>
