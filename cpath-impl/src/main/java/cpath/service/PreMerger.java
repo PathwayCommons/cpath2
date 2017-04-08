@@ -109,12 +109,7 @@ public final class PreMerger {
 				// Premerge for each pathway data: clean, convert, validate,
 				// and then update premergeData, validationResults db fields.
 				for (Content content : new HashSet<Content>(metadata.getContent())) {
-//					try {
-						pipeline(metadata, content, cleaner, converter);
-//					} catch (Exception e) {
-//						metadata.getContent().remove(content);
-//						log.warn("premerge(), removed " + content + " due to error: " + e);
-//					}
+					pipeline(metadata, content, cleaner, converter);
 				}
 
 				// save/update validation status

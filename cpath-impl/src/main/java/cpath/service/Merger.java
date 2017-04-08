@@ -180,10 +180,14 @@ public final class Merger {
 
 			ModelUtils.removeObjectsIfDangling(providerModel, UtilityClass.class);
 
+			log.info("Normalizing generics (" + metadata.getIdentifier() + ")...");
+			ModelUtils.normalizeGenerics(providerModel);
+
 			//merge equiv. PEs within a data source (e.g., stateless vcam1 P19320 MI participants in hprd, intact, biogrid)
-			log.info("Merging all equivalent physical entity groups (" + metadata.getIdentifier() + ")...");
+			log.info("Merging equivalent entity groups...");
 			ModelUtils.mergeEquivalentPhysicalEntities(providerModel);
 			ModelUtils.mergeEquivalentInteractions(providerModel);
+
 			log.info("Done merging " + metadata);
 		} else {
 			log.info("Loaded previously created " + metadata.getIdentifier() + " BioPAX model.");
