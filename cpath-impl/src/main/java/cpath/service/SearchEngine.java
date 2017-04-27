@@ -1,6 +1,5 @@
 package cpath.service;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.io.IOException;
@@ -556,6 +555,7 @@ public class SearchEngine implements Indexer, Searcher {
 			if(bpe.getAnnotations().containsKey(FIELD_N_PROCESSES)) {
 				field = new IntPoint(FIELD_N,
 						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PROCESSES)));
+				doc.add(field);
 				field = new StoredField(FIELD_N_PROCESSES,
 						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PROCESSES)));
 				doc.add(field);
