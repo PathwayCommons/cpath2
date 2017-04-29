@@ -156,7 +156,7 @@
 		<h2.version>1.4.187</h2.version>
 		<querydsl.version>3.6.6</querydsl.version>
 		<ehcache-core.version>2.6.11</ehcache-core.version>
-		<paxtools.version>[5.0.0-SNAPSHOT,6)</paxtools.version>
+		<paxtools.version>[5.0.1-SNAPSHOT,6)</paxtools.version>
 		<apache-jena-libs.version>3.0.1</apache-jena-libs.version>
 		<validator.version>[4.0.0-SNAPSHOT,5)</validator.version>
 		<junit.version>4.11</junit.version>
