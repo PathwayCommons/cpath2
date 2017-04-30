@@ -39,7 +39,6 @@ public class SearchEngineTest {
 		SearchResponse response = searchEngine.search("ATP", 0, null, null, null);
 		assertNotNull(response);
 		assertFalse(response.isEmpty());
-// System.out.println(response.getSearchHit());
 		assertEquals(5, response.getSearchHit().size()); //- only Entity and ER types are indexed
 		assertEquals(5, response.getNumHits().intValue());
 		
@@ -48,21 +47,19 @@ public class SearchEngineTest {
 		assertNotNull(response);
 		assertFalse(response.isEmpty());
 		assertEquals(2, response.getSearchHit().size());
-		//if cPath2 debugging is disabled, - no score/explain in the excerpt
-		assertFalse(response.getSearchHit().get(0).getExcerpt().contains("-SCORE-"));
-		
+		//if cPath2 debugging is disabled, - no excerpt field in hits
+		assertNull(response.getSearchHit().get(0).getExcerpt());
 		//enable cPath2 debugging...
 		CPathSettings.getInstance().setDebugEnabled(true);
-		
 		response = searchEngine.search("ATP", 0, Pathway.class, null, null);
 		assertNotNull(response);
 		assertFalse(response.isEmpty());
 		assertEquals(1, response.getSearchHit().size());
-		
 		SearchHit hit = response.getSearchHit().get(0);
 		assertEquals(11, hit.getSize().intValue()); //member processes and participants, not counting the hit itself
 		assertEquals(4, hit.getNumProcesses().intValue());
 		assertEquals(7, hit.getNumParticipants().intValue());
+		assertNotNull(response.getSearchHit().get(0).getExcerpt());
 		assertTrue(hit.getExcerpt().contains("-SCORE-"));
 		CPathSettings.getInstance().setDebugEnabled(false);
 		

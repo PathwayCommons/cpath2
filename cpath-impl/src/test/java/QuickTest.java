@@ -31,6 +31,11 @@ public class QuickTest {
         assertTrue(matcher.find());
         assertEquals(2, matcher.groupCount());
 //        System.out.println(String.format("%s - %s",matcher.group(1),matcher.group(2)));
+
+        //test poorly documented use or $ ref in the replacement string in String.replaceAll... (works!)
+        String symbolPattern = ".* (\\w+): .*";
+        String symbol = ("...for TCF3: transcription factor (...)").replaceAll(symbolPattern, "$1");
+        assertEquals("TCF3",symbol);
     }
 
     //Having Evidence prevents otherwise equivalent proteins from merging

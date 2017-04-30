@@ -18,10 +18,7 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.*;
-import org.apache.lucene.index.CorruptIndexException;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.index.Term;
+import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
@@ -86,10 +83,9 @@ public class SearchEngine implements Indexer, Searcher {
 	//one can still search in other fields directly, like - pathway:some_keywords datasource:"pid"
 	public final static String[] DEFAULT_FIELDS = //to use with the MultiFieldQueryParser
 	{
-			FIELD_NAME, //- standardName, displayName, name properties;
-			FIELD_XREFID, //- also includes child elements' Xref ids; one can find a biopax entity by xrefid:<id> query);
-			FIELD_KEYWORD, //- includes data type properties (name, term, comment) of this and child elements
-						// (up to some depth) also stores but not indexes parent pathway uris and names;
+			FIELD_KEYWORD, //data type properties (name, id, term, comment) of this and child elements;
+			FIELD_XREFID,
+			FIELD_NAME,
 	};
 
 	private final Model model;
@@ -175,8 +171,8 @@ public class SearchEngine implements Indexer, Searcher {
 					topDocs = collector.topDocs(page * maxHitsPerPage, maxHitsPerPage);
 				}
 				
-				//transform docs to hits, use a highlighter to get excerpts
-				response = transform(userQuery, searcher, true, topDocs);
+				//transform docs to hits (optionally use a highlighter, e.g., if debugging...)
+				response = transform(userQuery, searcher, topDocs);
 	
 			} else { //find ALL objects of a particular BioPAX class (+ filters by organism, datasource)
 				if(filterByType==null) 
@@ -202,7 +198,7 @@ public class SearchEngine implements Indexer, Searcher {
 				}
 				
 				//convert
-				response = transform(q, searcher, false, topDocs);
+				response = transform(q, searcher, topDocs);
 			}
 		} catch (ParseException e) {
 			throw new RuntimeException("getTopDocs: failed to parse the search query: " + e);
@@ -212,7 +208,6 @@ public class SearchEngine implements Indexer, Searcher {
 			try {
 				if(searcher!=null) {
 					searcherManager.release(searcher);
-					searcher = null;
 				}
 			} catch (IOException e) {}	
 		}
@@ -224,7 +219,7 @@ public class SearchEngine implements Indexer, Searcher {
 
 	
 	// Transform Lucene docs to hits (xml/java beans)
-	private SearchResponse transform(Query query, IndexSearcher searcher, boolean highlight, TopDocs topDocs) 
+	private SearchResponse transform(Query query, IndexSearcher searcher, TopDocs topDocs)
 			throws CorruptIndexException, IOException 
 	{	
 		if(topDocs == null)
@@ -242,35 +237,32 @@ public class SearchEngine implements Indexer, Searcher {
 			String uri = doc.get(FIELD_URI);
 			BioPAXElement bpe = model.getByID(uri);
 			
-			// use the highlighter (get matching fragments)
-			// for this to work, all keywords were stored in the index field
-			if (highlight && doc.get(FIELD_KEYWORD) != null) {				
-				// use a Highlighter (store.YES must be enabled for 'keyword' field)
+			// use a highlighter (get matching fragments)
+			if (CPathSettings.getInstance().isDebugEnabled() && doc.get(FIELD_KEYWORD) != null) {
+				// to use a Highlighter, store.YES must be enabled for 'keyword' field
 				QueryScorer scorer = new QueryScorer(query, FIELD_KEYWORD);
-				
 				//the following fixes scoring/highlighting for all-field wildcard (like q=insulin*)
 				//but not for term/prefix queries (q=name:insulin*, q=pathway:brca2)_.
-				scorer.setExpandMultiTermQuery(true); //TODO	
-
+				scorer.setExpandMultiTermQuery(true);
 //TODO use PostingsHighlighter once it's stable;
 //TODO see http://lucene.apache.org/core/6_4_1/highlighter/org/apache/lucene/search/postingshighlight/PostingsHighlighter.html
 				SimpleHTMLFormatter formatter = new SimpleHTMLFormatter("<span class='hitHL'>", "</span>");
 				Highlighter highlighter = new Highlighter(formatter, scorer);
 				highlighter.setTextFragmenter(new SimpleSpanFragmenter(scorer, 80));
-										
 				final String text = StringUtils.join(doc.getValues(FIELD_KEYWORD), " ");
 				try {
 					TokenStream tokenStream = analyzer.tokenStream("", new StringReader(text));
 					String res = highlighter.getBestFragments(tokenStream, text, 7, "...");
-
 					if(res != null && !res.isEmpty())
 						hit.setExcerpt(res);
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
 
-				} catch (Exception e) {throw new RuntimeException(e);}
-
-			} else if(highlight) {
-				LOG.warn("Highlighter skipped, because KEYWORD field was null; hit: " 
-						+ uri + ", " + bpe.getModelInterface().getSimpleName());
+				String excerpt = hit.getExcerpt();
+				if(excerpt == null) {excerpt = "";}
+				hit.setExcerpt(excerpt + " -SCORE- " + scoreDoc.score +
+						" -EXPLANATION- " + searcher.explain(query, scoreDoc.doc));
 			}
 			
 			hit.setUri(uri);
@@ -342,14 +334,6 @@ public class SearchEngine implements Indexer, Searcher {
 			if(doc.get(FIELD_N_PARTICIPANTS)!=null)
 				hit.setNumParticipants(Integer.valueOf(doc.get(FIELD_N_PARTICIPANTS)));
 
-			//if cpath2 debugging, update hit.excerpt - add the Lucene's 'explain' using the query and doc.
-			if(CPathSettings.getInstance().isDebugEnabled()) {
-				String excerpt = hit.getExcerpt();
-				if(excerpt == null) excerpt = "";
-				hit.setExcerpt(excerpt + " -SCORE- " + scoreDoc.score 
-						+ " -EXPLANATION- " + searcher.explain(query, scoreDoc.doc));
-			}
-			
 			hits.add(hit);
 		}
 				
@@ -519,7 +503,7 @@ public class SearchEngine implements Indexer, Searcher {
 	void index(BioPAXElement bpe, IndexWriter indexWriter) {		
 		// create a new document
 		final Document doc = new Document();
-		
+
 		// save URI (not indexed, not analyzed)
 		Field field = new StoredField(FIELD_URI, bpe.getUri());
 		doc.add(field);
@@ -540,7 +524,10 @@ public class SearchEngine implements Indexer, Searcher {
 				addDatasources((Set<Provenance>)bpe.getAnnotations().get(FIELD_DATASOURCE), doc);
 			}
 			if(bpe.getAnnotations().containsKey(FIELD_KEYWORD)) {
-				addKeywords((Set<String>)bpe.getAnnotations().get(FIELD_KEYWORD), doc);
+				for (String keyword : (Set<String>)bpe.getAnnotations().get(FIELD_KEYWORD)) {
+					Field f = new TextField(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.YES);
+					doc.add(f);
+				}
 			}
 			if(bpe.getAnnotations().containsKey(FIELD_SIZE)) {
 				field = new StoredField(FIELD_SIZE,
@@ -561,16 +548,19 @@ public class SearchEngine implements Indexer, Searcher {
 				doc.add(field);
 			}
 			if(bpe.getAnnotations().containsKey(FIELD_XREFID)) {
+				Set<String> ids = (Set<String>)bpe.getAnnotations().get(FIELD_XREFID);
 				//index biological IDs as keywords
-				addKeywords((Set<String>)bpe.getAnnotations().get(FIELD_XREFID), doc);
-
-				//index all IDs using "xrefid" fields
-				for (String id : (Set<String>)bpe.getAnnotations().get(FIELD_XREFID)) {
-					Field f = new StringField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO);
+				for (String id : ids) {
+					Field f = new TextField(FIELD_KEYWORD, id.toLowerCase(), Field.Store.YES);
+					f.setBoost(1.5f); //TODO: deprecated; go the other way in the future (see apidocs)
+					doc.add(f);
+					//index not analyzed/tokenized ID in "xrefid" field
+					f = new StringField(FIELD_XREFID, id, Field.Store.NO);
 					doc.add(f);
 				}
 			}
 		}
+
 		bpe.getAnnotations().remove(FIELD_KEYWORD);
 		bpe.getAnnotations().remove(FIELD_DATASOURCE);
 		bpe.getAnnotations().remove(FIELD_ORGANISM);
@@ -584,19 +574,25 @@ public class SearchEngine implements Indexer, Searcher {
 		if(bpe instanceof Named) {
 			Named named = (Named) bpe;
 			if(named.getStandardName() != null) {
-				field = new TextField(FIELD_NAME, named.getStandardName(), Field.Store.NO);
-				field.setBoost(3.5f);
+				field = new StringField(FIELD_NAME, named.getStandardName(), Field.Store.NO);
+//				field.setBoost(3.5f);
 				doc.add(field);
 			}
 			if(named.getDisplayName() != null && !named.getDisplayName().equalsIgnoreCase(named.getStandardName())) {
-				field = new TextField(FIELD_NAME, named.getDisplayName(), Field.Store.NO);
-				field.setBoost(3.0f);
+				field = new StringField(FIELD_NAME, named.getDisplayName(), Field.Store.NO);
+//				field.setBoost(3.0f);
 				doc.add(field);
 			}
 			for(String name : named.getName()) {
-				if(name.equalsIgnoreCase(named.getDisplayName()) || name.equalsIgnoreCase(named.getStandardName()))
-					continue;
-				field = new TextField(FIELD_NAME, name.toLowerCase(), Field.Store.NO);
+				if(!name.equalsIgnoreCase(named.getDisplayName()) && !name.equalsIgnoreCase(named.getStandardName())) {
+					field = new StringField(FIELD_NAME, name.toLowerCase(), Field.Store.NO);
+//					field.setBoost(2.5f);
+					doc.add(field);
+				}
+				field = new TextField(FIELD_KEYWORD, name.toLowerCase(), Field.Store.YES);
+				//TODO: since Lucene 6 or so (setBoost) is deprecated -
+				// (apidocs:) Index-time boosts are deprecated, please index index-time scoring factors
+				// into a doc value field and combine them with the score at query time using eg. FunctionScoreQuery.
 				field.setBoost(2.5f);
 				doc.add(field);
 			}
@@ -607,13 +603,6 @@ public class SearchEngine implements Indexer, Searcher {
 			indexWriter.addDocument(doc);
 		} catch (IOException e) {
 			throw new RuntimeException("Failed to index; " + bpe.getUri(), e);
-		}
-	}
-
-	private void addKeywords(Set<String> keywords, Document doc) {
-		for (String keyword : keywords) {
-			Field f = new TextField(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.YES);
-			doc.add(f);
 		}
 	}
 
@@ -666,7 +655,6 @@ public class SearchEngine implements Indexer, Searcher {
 			// (this allows to find a biopax element, e.g., potein, by a parent pathway name: pathway:<query_str>)
 			for (String s : pw.getName()) {
 				doc.add(new TextField(FIELD_PATHWAY, s.toLowerCase(), Field.Store.NO));
-				doc.add(new StoredField(FIELD_KEYWORD, s.toLowerCase())); //don't index but store for highlighting
 			}
 			
 			// add unification xref IDs too
@@ -675,7 +663,6 @@ public class SearchEngine implements Indexer, Searcher {
 				if (x.getId() != null) {
 					// index in both 'pathway' (don't store) and 'keywords' (store)
 					doc.add(new TextField(FIELD_PATHWAY, x.getId().toLowerCase(), Field.Store.NO));
-					doc.add(new StoredField(FIELD_KEYWORD, x.getId().toLowerCase()));//don't index but store for highlighting
 				}
 			}
 		}

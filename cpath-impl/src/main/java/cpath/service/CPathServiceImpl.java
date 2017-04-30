@@ -697,7 +697,7 @@ public class CPathServiceImpl implements CPathService {
 		// set for this service
 
 		log.info("Associating more biological IDs with BioPAX objects using nested Xrefs and id-mapping...");
-		addOtherIdsAsAnnotations();
+		addIdsAsBiopaxAnnotations();
 
 		//Build the full-text (lucene) index
 		SearchEngine searchEngine = new SearchEngine(getModel(), cpath.indexDir());
@@ -751,7 +751,7 @@ public class CPathServiceImpl implements CPathService {
 		return save(metadata);
 	}
 
-	private void addOtherIdsAsAnnotations() {
+	private void addIdsAsBiopaxAnnotations() {
 	//Can't use multiple threads (spring-data-jpa/hibernate errors occur in production, with filesystem H2 db...)
 		for(final BioPAXElement bpe : getModel().getObjects()) {
 			if(!(bpe instanceof Entity || bpe instanceof EntityReference))
@@ -800,9 +800,8 @@ public class CPathServiceImpl implements CPathService {
 
 			if(!ids.isEmpty()) {
 				bpe.getAnnotations().put(SearchEngine.FIELD_XREFID, ids);
+				//TODO: also generate a text file: pathway uri, name(s), source, list of id
 			}
-
-			//TODO: also generate a text file: pathway uri, name(s), source, list of id
 		}
 	}
 
