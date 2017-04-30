@@ -214,12 +214,6 @@ public class DataImportTest {
 		resp =  (SearchResponse) service.search("NP_004334", 0, ProteinReference.class, null, null);
 		assertFalse(resp.getSearchHit().isEmpty());
 
-		//test that service.search works (as expected) for IDs that contain ':', such as ChEBI IDs
-		resp =  (SearchResponse) service.search("CHEBI?20", 0, SmallMoleculeReference.class, null, null);
-		assertFalse(resp.getSearchHit().isEmpty());
-		resp =  (SearchResponse) service.search("CHEBI:20", 0, SmallMoleculeReference.class, null, null);
-		assertTrue(resp.getSearchHit().isEmpty()); //no result due to using StandardAnalyzer and Lucene string query / MultiFieldQueryParser...
-
 		//also, it could previously find an Xref by some other ID that maps to its 'id' value; since 12/2015, Xrefs are not indexed anymore
 		resp =  (SearchResponse) service.search("NP_004334", 0, UnificationXref.class, null, null);
 		assertTrue(resp.getSearchHit().isEmpty()); //so - no result is normal here

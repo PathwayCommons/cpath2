@@ -20,14 +20,14 @@ import java.util.zip.ZipInputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.biopax.paxtools.controller.Fetcher;
+import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.impl.BioPAXElementImpl;
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.RelationshipTypeVocabulary;
-import org.biopax.paxtools.model.level3.RelationshipXref;
-import org.biopax.paxtools.model.level3.UnificationXref;
+import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.normalizer.Normalizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -630,5 +630,37 @@ public final class CPathUtils {
 		toReturn.setRelationshipType(rtv);
 
 		return toReturn;
+	}
+
+	public static Set<String> getXrefIds(BioPAXElement bpe)
+	{
+		final Set<String> ids = new HashSet<String>();
+
+		//Can't use multiple threads (spring-data-jpa/hibernate errors occur in production, with filesystem H2 db...)
+		//for Entity or ER, also collect IDs from child UX/RXs and map to other IDs (use idMapping)
+		final Fetcher fetcher = new Fetcher(SimpleEditorMap.L3, Fetcher.nextStepFilter);
+		fetcher.setSkipSubPathways(true);
+		//fetch all children of (implicit) type XReferrable, which means - either
+		//BioSource or ControlledVocabulary or Evidence or Provenance or Entity or EntityReference
+		//(we actually want only the latter two types and their sub-types; will skip the rest later on):
+		Set<XReferrable> children = fetcher.fetch(bpe, XReferrable.class);
+		//include itself (- for fetcher only gets child elements)
+		if(bpe instanceof XReferrable)
+			children.add((XReferrable) bpe);
+
+		for(XReferrable child : children) {
+			//skip for unwanted types
+			//TODO: shall we add xref.id from Evidence,CV,Provenance (these're included to 'keyword' anyway)
+			if (!(child instanceof Entity || child instanceof EntityReference))
+				continue;
+			// collect standard bio IDs (skip publications); try/use id-mapping to associate more IDs:
+			for (Xref x : child.getXref()) {
+				if (!(x instanceof PublicationXref) && x.getId() != null && x.getDb() != null) {
+					ids.add(x.getId());
+				}
+			}
+		}
+
+		return ids;
 	}
 }

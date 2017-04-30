@@ -7,11 +7,7 @@ import java.io.IOException;
 
 import org.biopax.paxtools.io.SimpleIOHandler;
 import org.biopax.paxtools.model.Model;
-import org.biopax.paxtools.model.level3.Interaction;
-import org.biopax.paxtools.model.level3.Pathway;
-import org.biopax.paxtools.model.level3.PhysicalEntity;
-import org.biopax.paxtools.model.level3.Provenance;
-import org.biopax.paxtools.model.level3.SmallMoleculeReference;
+import org.biopax.paxtools.model.level3.*;
 import org.junit.Test;
 import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.ResourceLoader;
@@ -32,6 +28,7 @@ public class SearchEngineTest {
 		SimpleIOHandler reader = new SimpleIOHandler();
 		Model model = reader.convertFromOWL(resourceLoader
 			.getResource("classpath:merge/pathwaydata1.owl").getInputStream());
+
 		SearchEngine searchEngine = new SearchEngine(model, indexLocation);
 		searchEngine.index();
 		assertTrue(new File(indexLocation).exists());
@@ -115,6 +112,16 @@ public class SearchEngineTest {
 		response = searchEngine.search("*", 1, null, null, null);
 		assertEquals(10, response.getSearchHit().size());
 		assertEquals(1, response.getPageNo().intValue());
+
+
+		//test that service.search works (as expected) for IDs that contain ':', such as ChEBI IDs
+		response =  searchEngine.search("CHEBI?20", 0, SmallMoleculeReference.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		response =  searchEngine.search("xrefid:CHEBI?20", 0, SmallMolecule.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		response =  searchEngine.search("CHEBI:20", 0, SmallMoleculeReference.class, null, null);
+		//NO result due to using StandardAnalyzer and Lucene string query / MultiFieldQueryParser...
+		assertTrue(response.getSearchHit().isEmpty());
 	}
 
 }

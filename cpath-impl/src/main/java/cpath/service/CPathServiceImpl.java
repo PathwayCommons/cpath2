@@ -65,6 +65,7 @@ public class CPathServiceImpl implements CPathService {
 
 	private final Pattern isoformIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
 	private final Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
+	private final Pattern uniprotIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot knowledgebase").getPattern());
 
 	private final static CPathSettings cpath = CPathSettings.getInstance();
 
@@ -751,57 +752,34 @@ public class CPathServiceImpl implements CPathService {
 		return save(metadata);
 	}
 
-	private void addIdsAsBiopaxAnnotations() {
-	//Can't use multiple threads (spring-data-jpa/hibernate errors occur in production, with filesystem H2 db...)
+	private void addIdsAsBiopaxAnnotations()
+	{
 		for(final BioPAXElement bpe : getModel().getObjects()) {
 			if(!(bpe instanceof Entity || bpe instanceof EntityReference))
 				continue; //skip for UtilityClass but EntityReference
 
-			final Set<String> ids = new HashSet<String>();
-			//for Entity or ER, also collect IDs from child UX/RXs and map to other IDs (use idMapping)
-			final Fetcher fetcher = new Fetcher(SimpleEditorMap.L3, Fetcher.nextStepFilter);
-			fetcher.setSkipSubPathways(true);
+			final Set<String> ids = CPathUtils.getXrefIds(bpe);
 
-			//fetch all children of (implicit) type XReferrable, which means - either
-			//BioSource or ControlledVocabulary or Evidence or Provenance or Entity or EntityReference
-			//(we actually want only the latter two types and their sub-types; will skip the rest later on):
-			Set<XReferrable> children = fetcher.fetch(bpe, XReferrable.class);
-			//include itself (- for fetcher only gets child elements)
-			children.add((XReferrable) bpe);
-
+			// in addition, collect ChEBI and UniProt IDs and then
+			// use id-mapping to associate the bpe with more IDs:
 			final List<String> uniprotIds = new ArrayList<String>();
 			final List<String> chebiIds = new ArrayList<String>();
-
-			for(XReferrable child : children) {
-				//skip for unwanted types
-				//TODO: shall we add xref.id from Evidence, CV, Provenance to 'xrefid' index or another (those get included into 'keyword' field anyway)...
-				if(!(child instanceof Entity || child instanceof EntityReference))
-					continue;
-
-				// collect standard bio IDs (skip publications); try/use id-mapping to associate more IDs:
-				for(Xref x : child.getXref()) {
-					if (!(x instanceof PublicationXref) && x.getId()!=null && x.getDb()!=null) {
-						ids.add(x.getId());
-						if(x.getDb().equalsIgnoreCase("CHEBI")) {
-							if (!chebiIds.contains(x.getId())) chebiIds.add(x.getId());
-						} else if(x.getDb().toUpperCase().startsWith("UNIPROT")) {
-							String id = x.getId();
-							if(id.contains("-")) // then cut the isoform num. suffix
-								id = id.replaceFirst("-\\d+$", "");
-							if(!uniprotIds.contains(x.getId())) uniprotIds.add(id);
-						}
-					}
+			for(String id : ids)
+			{
+				if(id.startsWith("CHEBI:")) {
+					chebiIds.add(id);
+				} else if(isoformIdPattern.matcher(id).find()) {
+					//cut the isoform num. suffix
+					id = id.replaceFirst("-\\d+$", "");
+					uniprotIds.add(id);
+				} else if(uniprotIdPattern.matcher(id).find()) {
+					uniprotIds.add(id);
 				}
 			}
-
 			addSupportedIdsThatMapToChebi(chebiIds, ids);
-
 			addSupportedIdsThatMapToUniprotId(uniprotIds, ids);
 
-			if(!ids.isEmpty()) {
-				bpe.getAnnotations().put(SearchEngine.FIELD_XREFID, ids);
-				//TODO: also generate a text file: pathway uri, name(s), source, list of id
-			}
+			bpe.getAnnotations().put(SearchEngine.FIELD_XREFID, ids);
 		}
 	}
 

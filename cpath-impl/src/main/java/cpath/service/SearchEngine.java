@@ -70,7 +70,6 @@ public class SearchEngine implements Indexer, Searcher {
 	public static final String FIELD_SIZE = "size"; //since cPath2 v7.., size == numparticipants + numprocesses
 	public static final String FIELD_N_PARTICIPANTS = "participants"; // num. of PEs or Genes in a process or Complex
 	public static final String FIELD_N_PROCESSES = "processes"; // is same as 'size' used to be before cPath2 v7
-	public static final String FIELD_N = "n"; // also num. of processes, but indexed to use in range queries, e.g., n:>3
 
 	// Full-text search/filter fields (case sensitive) -
 	//index organism names, cell/tissue type (term), taxonomy id, but only store BioSource URIs	
@@ -513,51 +512,55 @@ public class SearchEngine implements Indexer, Searcher {
 		doc.add(field);
 		
 		// make index fields from the annotations map (of pre-calculated/inferred values)
-		if(!bpe.getAnnotations().isEmpty()) {
+		if(!bpe.getAnnotations().isEmpty())
+		{
 			if(bpe.getAnnotations().containsKey(FIELD_PATHWAY)) {
 				addPathways((Set<Pathway>)bpe.getAnnotations().get(FIELD_PATHWAY), doc);
 			}
+
 			if(bpe.getAnnotations().containsKey(FIELD_ORGANISM)) {
 				addOrganisms((Set<BioSource>)bpe.getAnnotations().get(FIELD_ORGANISM), doc);
 			}
+
 			if(bpe.getAnnotations().containsKey(FIELD_DATASOURCE)) {
 				addDatasources((Set<Provenance>)bpe.getAnnotations().get(FIELD_DATASOURCE), doc);
 			}
+
 			if(bpe.getAnnotations().containsKey(FIELD_KEYWORD)) {
 				for (String keyword : (Set<String>)bpe.getAnnotations().get(FIELD_KEYWORD)) {
 					Field f = new TextField(FIELD_KEYWORD, keyword.toLowerCase(), Field.Store.YES);
 					doc.add(f);
 				}
 			}
+
 			if(bpe.getAnnotations().containsKey(FIELD_SIZE)) {
 				field = new StoredField(FIELD_SIZE,
 						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_SIZE)));
 				doc.add(field);
 			}
+
 			if(bpe.getAnnotations().containsKey(FIELD_N_PARTICIPANTS)) {
 				field = new StoredField(FIELD_N_PARTICIPANTS,
 						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PARTICIPANTS)));
 				doc.add(field);
 			}
+
 			if(bpe.getAnnotations().containsKey(FIELD_N_PROCESSES)) {
-				field = new IntPoint(FIELD_N,
-						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PROCESSES)));
-				doc.add(field);
 				field = new StoredField(FIELD_N_PROCESSES,
 						Integer.parseInt((String)bpe.getAnnotations().get(FIELD_N_PROCESSES)));
 				doc.add(field);
 			}
-			if(bpe.getAnnotations().containsKey(FIELD_XREFID)) {
-				Set<String> ids = (Set<String>)bpe.getAnnotations().get(FIELD_XREFID);
-				//index biological IDs as keywords
-				for (String id : ids) {
-					Field f = new TextField(FIELD_KEYWORD, id.toLowerCase(), Field.Store.YES);
-					f.setBoost(1.5f); //TODO: deprecated; go the other way in the future (see apidocs)
-					doc.add(f);
-					//index not analyzed/tokenized ID in "xrefid" field
-					f = new StringField(FIELD_XREFID, id, Field.Store.NO);
-					doc.add(f);
-				}
+
+			//add relevant xref IDs to the index
+			Set<String> ids = (bpe.getAnnotations().containsKey(FIELD_XREFID))
+				? (Set<String>)bpe.getAnnotations().get(FIELD_XREFID) :CPathUtils.getXrefIds(bpe);
+			for (String id : ids) {
+				field = new TextField(FIELD_KEYWORD, id.toLowerCase(), Field.Store.YES);
+				field.setBoost(2.0f); //TODO: deprecated; go the other way in the future (see apidocs)
+				doc.add(field);
+				//index not analyzed/tokenized ID in "xrefid" field
+				field = new StringField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO);
+				doc.add(field);
 			}
 		}
 
@@ -574,12 +577,12 @@ public class SearchEngine implements Indexer, Searcher {
 		if(bpe instanceof Named) {
 			Named named = (Named) bpe;
 			if(named.getStandardName() != null) {
-				field = new StringField(FIELD_NAME, named.getStandardName(), Field.Store.NO);
+				field = new StringField(FIELD_NAME, named.getStandardName().toLowerCase(), Field.Store.NO);
 //				field.setBoost(3.5f);
 				doc.add(field);
 			}
 			if(named.getDisplayName() != null && !named.getDisplayName().equalsIgnoreCase(named.getStandardName())) {
-				field = new StringField(FIELD_NAME, named.getDisplayName(), Field.Store.NO);
+				field = new StringField(FIELD_NAME, named.getDisplayName().toLowerCase(), Field.Store.NO);
 //				field.setBoost(3.0f);
 				doc.add(field);
 			}
@@ -608,8 +611,9 @@ public class SearchEngine implements Indexer, Searcher {
 
 	private void addDatasources(Set<Provenance> set, Document doc) {
 		for (Provenance p : set) {
-			// Index and store URI (untokinized) - 
-			// required to accurately calculate no. entities or to filter by data source (diff. datasources may share same names)
+			// Index and store URI (untokenized) -
+			// required to accurately calculate no. entities or to filter by data source
+			// (different data sources might share same names)
 			doc.add(new StringField(FIELD_DATASOURCE, p.getUri(), Field.Store.YES));
 			// index names as well
 			for (String s : p.getName())
@@ -771,5 +775,4 @@ public class SearchEngine implements Indexer, Searcher {
 		
 		return query.build();
 	}
-
 }
