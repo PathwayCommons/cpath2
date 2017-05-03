@@ -1,0 +1,3 @@
+resources/*.zip linguist-vendored
+resources/*.owl linguist-vendored
+resources/*.png linguist-vendored
