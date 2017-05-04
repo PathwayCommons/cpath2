@@ -110,7 +110,7 @@ public class WarehouseCVsTest {
 	}
 
 	@Test
-	public void testGetDirectAllChildren() {
+	public void testGetAllChildren() {
 		Set<String> dc = cvRepository.getAllChildren("http://identifiers.org/obo.go/GO:0005654");
 		assertFalse(dc.isEmpty());
 		assertTrue(dc.contains("http://identifiers.org/go/GO:0044451"));
