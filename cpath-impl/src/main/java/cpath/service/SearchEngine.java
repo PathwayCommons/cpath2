@@ -12,9 +12,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.*;
@@ -106,7 +109,12 @@ public class SearchEngine implements Indexer, Searcher {
 		this.indexFile = Paths.get(indexLocation);
 		initSearcherManager();
 		this.maxHitsPerPage = DEFAULT_MAX_HITS_PER_PAGE;
-		this.analyzer = new StandardAnalyzer();
+
+		//refs issue #269
+		Map<String,Analyzer> analyzersPerField = new HashedMap();
+		analyzersPerField.put(FIELD_NAME, new KeywordAnalyzer());
+		analyzersPerField.put(FIELD_XREFID, new KeywordAnalyzer());
+		this.analyzer = new PerFieldAnalyzerWrapper(new StandardAnalyzer(), analyzersPerField);
 	}
 
 	private void initSearcherManager() {
@@ -135,7 +143,7 @@ public class SearchEngine implements Indexer, Searcher {
 	{
 		SearchResponse response = null;
 		
-		LOG.debug("search: " + query + ", page: " + page 
+		LOG.debug("search: '" + query + "', page: " + page
 			+ ", filterBy: " + filterByType
 			+ "; extra filters: ds in (" + Arrays.toString(datasources)
 			+ "), org. in (" + Arrays.toString(organisms) + ")");
@@ -145,7 +153,8 @@ public class SearchEngine implements Indexer, Searcher {
 		try {	
 			QueryParser queryParser = new MultiFieldQueryParser(DEFAULT_FIELDS, analyzer);
 			queryParser.setAllowLeadingWildcard(true);//we want leading wildcards enabled (e.g. *sulin)
-			searcher = searcherManager.acquire();	
+//			queryParser.setAutoGeneratePhraseQueries(false); //TODO: try it
+			searcher = searcherManager.acquire();
 			
 			//find and transform top docs to search hits (beans), considering pagination...
 			if(!query.trim().equals("*")) { //if not "*" query, which is not supported out-of-the-box, then
@@ -414,7 +423,7 @@ public class SearchEngine implements Indexer, Searcher {
 			exec.execute(new Runnable() {
 				public void run() {					
 					// get or infer some important values if possible from this, child or parent objects:
-					Set<String> keywords = ModelUtils.getKeywords(bpe, 3, dataPropertiesToConsider);
+					Set<String> keywords = ModelUtils.getKeywords(bpe, 2, dataPropertiesToConsider);
 
 					// a hack to remove special (debugging) biopax comments
 					for(String s : new HashSet<String>(keywords)) {
@@ -555,11 +564,10 @@ public class SearchEngine implements Indexer, Searcher {
 			Set<String> ids = (bpe.getAnnotations().containsKey(FIELD_XREFID))
 				? (Set<String>)bpe.getAnnotations().get(FIELD_XREFID) :CPathUtils.getXrefIds(bpe);
 			for (String id : ids) {
-				field = new TextField(FIELD_KEYWORD, id.toLowerCase(), Field.Store.YES);
-				field.setBoost(2.0f); //TODO: deprecated; go the other way in the future (see apidocs)
-				doc.add(field);
-				//index not analyzed/tokenized ID in "xrefid" field
+				//index as not analyzed, not tokenized
 				field = new StringField(FIELD_XREFID, id.toLowerCase(), Field.Store.NO);
+				doc.add(field);
+				field = new StringField(FIELD_XREFID, id, Field.Store.NO);
 				doc.add(field);
 			}
 		}
@@ -578,25 +586,25 @@ public class SearchEngine implements Indexer, Searcher {
 			Named named = (Named) bpe;
 			if(named.getStandardName() != null) {
 				field = new StringField(FIELD_NAME, named.getStandardName().toLowerCase(), Field.Store.NO);
-//				field.setBoost(3.5f);
+				doc.add(field);
+				field = new StringField(FIELD_NAME, named.getStandardName(), Field.Store.NO);
 				doc.add(field);
 			}
 			if(named.getDisplayName() != null && !named.getDisplayName().equalsIgnoreCase(named.getStandardName())) {
 				field = new StringField(FIELD_NAME, named.getDisplayName().toLowerCase(), Field.Store.NO);
-//				field.setBoost(3.0f);
+				doc.add(field);
+				field = new StringField(FIELD_NAME, named.getDisplayName(), Field.Store.NO);
 				doc.add(field);
 			}
 			for(String name : named.getName()) {
 				if(!name.equalsIgnoreCase(named.getDisplayName()) && !name.equalsIgnoreCase(named.getStandardName())) {
 					field = new StringField(FIELD_NAME, name.toLowerCase(), Field.Store.NO);
-//					field.setBoost(2.5f);
+					doc.add(field);
+					field = new StringField(FIELD_NAME, name, Field.Store.NO);
 					doc.add(field);
 				}
 				field = new TextField(FIELD_KEYWORD, name.toLowerCase(), Field.Store.YES);
-				//TODO: since Lucene 6 or so (setBoost) is deprecated -
-				// (apidocs:) Index-time boosts are deprecated, please index index-time scoring factors
-				// into a doc value field and combine them with the score at query time using eg. FunctionScoreQuery.
-				field.setBoost(2.5f);
+				field.setBoost(2.0f);
 				doc.add(field);
 			}
 		}
@@ -611,11 +619,21 @@ public class SearchEngine implements Indexer, Searcher {
 
 	private void addDatasources(Set<Provenance> set, Document doc) {
 		for (Provenance p : set) {
-			// Index and store URI (untokenized) -
+			// Index (!) and store URI (untokenized) -
 			// required to accurately calculate no. entities or to filter by data source
 			// (different data sources might share same names)
-			doc.add(new StringField(FIELD_DATASOURCE, p.getUri(), Field.Store.YES));
-			// index names as well
+			String u = p.getUri();
+			doc.add(new StringField(FIELD_DATASOURCE, u, Field.Store.YES));
+
+			if(u.startsWith("http://")) {
+				//index the identifier
+				if (u.endsWith("/"))
+					u = u.substring(0, u.length() - 1);
+				u = u.replaceAll(".*/", "");
+				doc.add(new StringField(FIELD_DATASOURCE, u.toLowerCase(), Field.Store.NO));
+			}
+
+			// index names
 			for (String s : p.getName())
 				doc.add(new TextField(FIELD_DATASOURCE, s.toLowerCase(), Field.Store.NO));
 		}
@@ -623,7 +641,7 @@ public class SearchEngine implements Indexer, Searcher {
 
 	private void addOrganisms(Set<BioSource> set, Document doc) {	
 		for(BioSource bs : set) {
-			// store URI as is (not indexed, untokinized)
+			// store URI as is (not indexed, not tokinized)
 			doc.add(new StoredField(FIELD_ORGANISM, bs.getUri()));
 				
 			// add organism names
@@ -656,7 +674,7 @@ public class SearchEngine implements Indexer, Searcher {
 			doc.add(new StoredField(FIELD_PATHWAY, pw.getUri()));
 			
 			// add names to the 'pathway' (don't store) and 'keywords' (store) indexes
-			// (this allows to find a biopax element, e.g., potein, by a parent pathway name: pathway:<query_str>)
+			// (this allows to find a biopax element, e.g., protein, by a parent pathway name: pathway:<query_str>)
 			for (String s : pw.getName()) {
 				doc.add(new TextField(FIELD_PATHWAY, s.toLowerCase(), Field.Store.NO));
 			}

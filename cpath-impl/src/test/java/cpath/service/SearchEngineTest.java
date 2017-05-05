@@ -97,6 +97,10 @@ public class SearchEngineTest {
 		response = searchEngine.search("*", 0, Pathway.class, new String[] {"http://identifiers.org/kegg.pathway/"}, null);
 		assertFalse(response.isEmpty());
 		assertEquals(1, response.getSearchHit().size());
+		//using metadata identifier
+		response = searchEngine.search("*", 0, Pathway.class, new String[] {"kegg.pathway"}, null);
+		assertFalse(response.isEmpty());
+		assertEquals(1, response.getSearchHit().size());
 		
 		response = searchEngine.search("pathway:glycolysis", 0, SmallMoleculeReference.class, null, null);
 		assertEquals(5, response.getSearchHit().size());
@@ -119,9 +123,71 @@ public class SearchEngineTest {
 		assertFalse(response.getSearchHit().isEmpty());
 		response =  searchEngine.search("xrefid:CHEBI?20", 0, SmallMolecule.class, null, null);
 		assertFalse(response.getSearchHit().isEmpty());
+
+		//NO result as the MultiFieldQueryParser there ignores (or splits by, analyzes...) colons, etc.
 		response =  searchEngine.search("CHEBI:20", 0, SmallMoleculeReference.class, null, null);
-		//NO result due to using StandardAnalyzer and Lucene string query / MultiFieldQueryParser...
 		assertTrue(response.getSearchHit().isEmpty());
+
+		//if excaped - '\:' - then it works (now, after recent changes in the indexer)
+		response =  searchEngine.search("CHEBI\\:20", 0, SmallMoleculeReference.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		response =  searchEngine.search("xrefid:CHEBI\\:20", 0, SmallMoleculeReference.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		response =  searchEngine.search("xrefid:\"CHEBI\\:20\"", 0, SmallMoleculeReference.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		response =  searchEngine.search("xrefid:chebi\\:20", 0, SmallMoleculeReference.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		response =  searchEngine.search("xrefid:\"chebi\\:20\"", 0, SmallMoleculeReference.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+
+		//find by name: beta-D-fructose-6-phosphate
+		response =  searchEngine.search("beta-d-fructose-6-phosphate", 0, SmallMoleculeReference.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		assertEquals(3, response.getSearchHit().size());
+		assertEquals("b-D-fru-6-p", response.getSearchHit().iterator().next().getName()); //gets top hit's standardName
+		//- because dashes work like spaces here (StandardAnalyzer, field: keyword); and 'phosphate' matches in 3 times there...
+
+		response =  searchEngine.search("\"beta-D-fructose-6-phosphate\"", 0, SmallMoleculeReference.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		assertEquals(1, response.getSearchHit().size());
+
+		response =  searchEngine.search("name:\"b-D-fru-6-p\"", 0, SmallMolecule.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		assertEquals(1, response.getSearchHit().size());
+
+		response =  searchEngine.search("name:b?D?fru?6?p", 0, SmallMolecule.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		assertEquals(1, response.getSearchHit().size());
+
+		// (hardly useful in practice) wildcards inside a quoted phrase - does not match -
+		response =  searchEngine.search("name:\"b?D?fru?6?p\"", 0, SmallMolecule.class, null, null);
+		assertTrue(response.getSearchHit().isEmpty());
+
+		response =  searchEngine.search("name:b\\-D\\-fru\\-6\\-p", 0, SmallMolecule.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		assertEquals(1, response.getSearchHit().size());
+
+		response =  searchEngine.search("name:b-D-fru-6-p", 0, SmallMolecule.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		assertEquals(1, response.getSearchHit().size());
+
+		response =  searchEngine.search("fructose", 0, SmallMolecule.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		assertEquals(1, response.getSearchHit().size());
+
+		//"name:*fructose*" matches "beta-D-fructose-6-phosphate" in the name field (StringField, using KeywordAnalyzer)
+		response =  searchEngine.search("name:*fructose*", 0, SmallMolecule.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		assertEquals(1, response.getSearchHit().size());
+
+		//TODO: "name:fructose" does not match "beta-D-fructose-6-phosphate" name (and there is no "fructose" name exactly)
+		response =  searchEngine.search("name:fructose", 0, SmallMolecule.class, null, null);
+		assertTrue(response.getSearchHit().isEmpty());
+
+		//matches because there is a name="fructose" exactly!
+		response =  searchEngine.search("name:fructose", 0, SmallMoleculeReference.class, null, null);
+		assertFalse(response.getSearchHit().isEmpty());
+		assertEquals(1, response.getSearchHit().size());
 	}
 
 }
