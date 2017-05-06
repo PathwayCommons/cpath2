@@ -89,12 +89,14 @@ public class HelpController extends BasicController {
     public @ResponseBody Help getFormats() {
     	Help help = new Help();
     	for(OutputFormat f : OutputFormat.values()) {
-    		help.addMember(getFormat(f));
+    		//skip obsolete ones
+    		if(!(f==OutputFormat.BINARY_SIF || f==OutputFormat.EXTENDED_BINARY_SIF))
+    			help.addMember(getFormat(f));
     	}
     	help.setId("formats");
     	help.setTitle("Output Formats");
     	help.setInfo("cPath2 can convert BioPAX to several text formats");
-    	help.setExample("help/formats/binary_sif");
+    	help.setExample("help/formats/sif");
     	return help;
     }
 

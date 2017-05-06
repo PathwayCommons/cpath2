@@ -35,7 +35,6 @@ public final class CPathMaintenanceHandlerInterceptor extends HandlerInterceptor
 				|| requestUri.contains("/metadata/")
 				|| requestUri.contains("/favicon")
 				|| requestUri.contains("/logback")
-				|| requestUri.contains("/log")
 				|| requestUri.contains("/formats")
 				|| requestUri.contains("/downloads")
 				|| requestUri.contains("/robots")

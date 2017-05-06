@@ -13,7 +13,7 @@ public enum OutputFormat {
 	 * Same as SIF, for backward compatibility with cPath2 v6 clients.
 	 * @deprecated use SIF
 	 */
-	BINARY_SIF("Simple Binary Interaction Format",".sif","text/plain"),
+	BINARY_SIF("Obsolete; same as SIF",".sif","text/plain"),
 
 	SIF("Simple Binary Interaction Format",".sif","text/plain"),
 
@@ -21,7 +21,7 @@ public enum OutputFormat {
 	 * Same as TXT, for backward compatibility with cPath2 v6 clients.
 	 * @deprecated use TXT
 	 */
-    EXTENDED_BINARY_SIF("Extended SIF",".txt","text/plain"), //for backward compatibility
+    EXTENDED_BINARY_SIF("Obsolete: same as TXT",".txt","text/plain"), //for backward compatibility
 
 	/**
 	 * Depending on extra properties/parameters this can be anything,

@@ -133,7 +133,6 @@ public class PagesController extends BasicController {
 				"Disallow: /top_pathways\n" +
 				"Disallow: /traverse\n" +
 				"Disallow: /archives\n" +
-				"Disallow: /log\n" +
 				"Disallow: /help\n" +
 				"Disallow: /metadata\n";
 	}
