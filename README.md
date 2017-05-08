@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/PathwayCommons/cpath2.svg?branch=master)](https://travis-ci.org/PathwayCommons/cpath2)
 
+[![codebeat badge](https://codebeat.co/badges/cb01acef-739d-4926-a98e-9d5b46e2e252)](https://codebeat.co/projects/github-com-pathwaycommons-cpath2-master)
+
 A pathway data integration and query platform for [Pathway Commons](http://www.pathwaycommons.org) (PC). 
 
 The long-term vision is to achieve a complete computable map of the cell across all species and conditions. We aim to provide for the efficient exchange of pathway data; aggregation and integration of pathways from major available sources into a shared public information store; distribution in a value-added, standardized form; availability to the end-user via advanced internet web service technology; and dissemination of the technology of biological knowledge representation and pathway analysis by collaboration and training.
