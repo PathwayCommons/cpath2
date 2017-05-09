@@ -98,13 +98,7 @@ public class BiopaxConverter {
 				convertToGSEA(m, os, db, skipOutsidePathways, true); //TODO: GSEA skipSubPathways=true always? (makes sense for now)
 				break;
             case SBGN:
-				boolean doLayout = true; //TODO: make no layout the default mode?
-				if (args.length > 0) {
-					doLayout = (args[0] instanceof Boolean)
-							? ((Boolean)args[0]).booleanValue() 
-								: Boolean.parseBoolean(String.valueOf(args[0]));
-				}
-                convertToSBGN(m, os, blacklist, doLayout);
+                convertToSBGN(m, os, blacklist, CPathSettings.getInstance().isSbgnLayoutEnabled());
                 break;
 			case JSONLD:
 				convertToJsonLd(m, os);

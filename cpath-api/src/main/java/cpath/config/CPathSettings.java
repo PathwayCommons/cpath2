@@ -1,29 +1,3 @@
-/**
- ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
- ** and University of Toronto (UofT).
- **
- ** This is free software; you can redistribute it and/or modify it
- ** under the terms of the GNU Lesser General Public License as published
- ** by the Free Software Foundation; either version 2.1 of the License, or
- ** any later version.
- **
- ** This library is distributed in the hope that it will be useful, but
- ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- ** documentation provided hereunder is on an "as is" basis, and
- ** both UofT and MSKCC have no obligations to provide maintenance, 
- ** support, updates, enhancements or modifications.  In no event shall
- ** UofT or MSKCC be liable to any party for direct, indirect, special,
- ** incidental or consequential damages, including lost profits, arising
- ** out of the use of this software and its documentation, even if
- ** UofT or MSKCC have been advised of the possibility of such damage.  
- ** See the GNU Lesser General Public License for more details.
- **
- ** You should have received a copy of the GNU Lesser General Public License
- ** along with this software; if not, write to the Free Software Foundation,
- ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
- ** or find it at http://www.fsf.org/ or http://www.gnu.org.
- **/
 package cpath.config;
 
 import java.io.File;
@@ -31,7 +5,6 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -123,6 +96,7 @@ public final class CPathSettings {
 	public static final String PROP_MAX_SEARCH_HITS_PER_PAGE = "cpath2.maxSearchHitsPerPage";
 	public static final String PROP_DEBUG_ENABLED = "cpath2.debug.enabled";
 	public static final String PROP_METADATA_LOCATION = "cpath2.metadata.location";
+	public static final String PROP_SBGN_LAYOUT_ENABLED = "cpath2.sbgn.layout.enabled";
 	
 	public static final String PROVIDER_NAME = "cpath2.provider.name";
 	public static final String PROVIDER_DESCRIPTION = "cpath2.provider.description";
@@ -132,11 +106,6 @@ public final class CPathSettings {
 	public static final String PROVIDER_ORGANISMS = "cpath2.provider.organisms";
 	public static final String PROVIDER_DOWNLOADS_URL = "cpath2.provider.downloads.url";
 	public static final String PROVIDER_GA = "cpath2.provider.ga"; //Google Analytics code
-
-	//properties to set the default global start/end dates for all the access log timeline queries;
-	//These may be ignored if another range is set via web api (per query)
-	public static final String PROP_LOG_START = "cpath2.log.start"; //e.g., "2015-01-01"
-	public static final String PROP_LOG_END = "cpath2.log.end"; //e.g., "2015-12-31"
 
 	private static final DateFormat ISO_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 	
@@ -164,7 +133,7 @@ public final class CPathSettings {
 		defaults.put(PROP_METADATA_LOCATION, homeDir() + File.separator + METADATA_FILE);
 		defaults.put(PROP_DEBUG_ENABLED, "false");
 		defaults.put(PROP_ADMIN_ENABLED, "false");
-		//PROP_LOG_START and PROP_LOG_END are null - queries will use current-year, current dates
+		defaults.putIfAbsent(PROP_SBGN_LAYOUT_ENABLED,"false");
 
 		settings = new Properties(defaults);
 		
@@ -491,8 +460,6 @@ public final class CPathSettings {
 		{	//ok to alter some props in the 'normal' state too
 			if(PROP_DEBUG_ENABLED.equals(name)
 					|| PROP_MAX_SEARCH_HITS_PER_PAGE.equals(name) //always allow
-					|| PROP_LOG_END.equals(name) //always allow
-					|| PROP_LOG_START.equals(name) //always allow
 			) {
 				setProp(name, value);
 			} else {
@@ -613,59 +580,13 @@ public final class CPathSettings {
 		return biopaxFileNameFull(Scope.WAREHOUSE.toString());
 	}
 
-	/**
-	 * Global default start date for access log summaries.
-	 * @return
-	 */
-	public String getLogStart() {
-		return property(PROP_LOG_START);
-	}
-	public void setLogStart(String isoDate) {	
-		setCPathProperty(PROP_LOG_START, parse(isoDate)); //can be null
-	}
-	
-	public void setLogStart(Date isoDate) {
-		if(isoDate==null) 
-			setCPathProperty(PROP_LOG_START, null);	
-		else
-			setCPathProperty(PROP_LOG_START, ISO_DATE_FORMAT.format(isoDate));	
-	}
-	
-	/**
-	 * Global default end date for access log summaries.
-	 * @return
-	 */
-	public String getLogEnd() {
-		return property(PROP_LOG_END);
-	}	
-	public void setLogEnd(String isoDate) {
-		setCPathProperty(PROP_LOG_END, parse(isoDate)); //can be null
-	}
-	
-	public void setLogEnd(Date isoDate) {
-		if(isoDate==null) 
-			setCPathProperty(PROP_LOG_END, null);	
-		else
-			setCPathProperty(PROP_LOG_END, ISO_DATE_FORMAT.format(isoDate));	
+
+	public boolean isSbgnLayoutEnabled() {
+		return "true".equalsIgnoreCase(property(PROP_SBGN_LAYOUT_ENABLED));
 	}
 
-
-	private String parse(String isoDate) {
-		if(isoDate!=null) {
-			isoDate = isoDate.trim(); //may throw a NPE (ok)	
-			
-			if(isoDate.isEmpty()) {
-				isoDate = null; 
-			} else {
-				//test parse; update the property if success
-				try {
-					ISO_DATE_FORMAT.parse(isoDate);
-				} catch (ParseException e) {
-					throw new RuntimeException("Not an ISO date (yyyy-MM-dd): " + isoDate, e);
-				}
-			}
-		}
-		return isoDate;
+	public void setSbgnLayoutEnabled(boolean enabled) {
+		setCPathProperty(PROP_SBGN_LAYOUT_ENABLED, Boolean.toString(enabled));
 	}
-	
+
 }
