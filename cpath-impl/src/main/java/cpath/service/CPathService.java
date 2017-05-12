@@ -49,11 +49,10 @@ public interface CPathService {
 	 * (if applicable), such as BioPAX (RDF/XML), SIF, GSEA (.gmt).
 	 * 
 	 * @param format
-	 * @param uris the list of URIs to fetch
-	 * @return
+	 * @param subPathways optional, include/skip (default) sub-pathways
+	 * @param uris the list of URIs to fetch  @return
 	 */
-	ServiceResponse fetch(OutputFormat format, String... uris);
-
+	ServiceResponse fetch(OutputFormat format, boolean subPathways, String... uris);
 	
 	/**
 	 * Full-text search for the BioPAX elements. 
@@ -65,9 +64,8 @@ public interface CPathService {
 	 * @param organisms URIs of organisms
 	 * @return search/error response
 	 */
-	ServiceResponse search(String queryStr, 
+	ServiceResponse search(String queryStr,
 			int page, Class<? extends BioPAXElement> biopaxClass, String[] dsources, String[] organisms);
-
 	
 	/**
 	 * Runs a neighborhood query using the given parameters
@@ -77,14 +75,16 @@ public interface CPathService {
 	 * @param format output format
 	 * @param sources IDs of seed of neighborhood
 	 * @param limit search limit (integer value)
-	 * @param direction flag 
+	 * @param direction flag
 	 * @param organisms optional filter
 	 * @param datasources optional filter
+	 * @param subPathways  optional, include/skip sub-pathways; it does not affect the graph search algorithm,
+	 *                     but - only how we auto-complete and clone to make a reasonable sub-model from the result set
 	 * @return the neighborhood
 	 */
-	ServiceResponse getNeighborhood(OutputFormat format, 
-		String[] sources, Integer limit, Direction direction,
-			String[] organisms, String[] datasources);
+	ServiceResponse getNeighborhood(OutputFormat format,
+									String[] sources, Integer limit, Direction direction,
+									String[] organisms, String[] datasources, boolean subPathways);
 
 	/**
 	 * Runs a paths-between query for the given sources	
@@ -96,10 +96,12 @@ public interface CPathService {
 	 * @param limit search limit (integer value)
 	 * @param organisms optional filter
 	 * @param datasources optional filter
+	 * @param subPathways optional, include/skip sub-pathways; it does not affect the graph search algorithm,
+	 *                     but - only how we auto-complete and clone to make a reasonable sub-model from the result set
 	 * @return paths between
 	 */
-	ServiceResponse getPathsBetween(OutputFormat format, String[] sources, 
-		Integer limit, String[] organisms, String[] datasources);
+	ServiceResponse getPathsBetween(OutputFormat format, String[] sources,
+									Integer limit, String[] organisms, String[] datasources, boolean subPathways);
 
 	/**
 	 * Runs a POI query from the given sources to the given targets
@@ -111,12 +113,13 @@ public interface CPathService {
 	 * @param limit search limit (integer value)
 	 * @param organisms optional filter
 	 * @param datasources optional filter
+	 * @param subPathways optional, include/skip sub-pathways; it does not affect the graph search algorithm,
+	 *                     but - only how we auto-complete and clone to make a reasonable sub-model from the result set
 	 * @return paths between
 	 */
 	ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
-		String[] targets, Integer limit, String[] organisms, String[] datasources);
-	
-	
+		   		String[] targets, Integer limit, String[] organisms, String[] datasources, boolean subPathways);
+
 	/**
 	 * Runs a common upstream or downstream query
 	 * (returns a sub-model in the specified format, 
@@ -128,11 +131,12 @@ public interface CPathService {
 	 * @param direction - can be {@link Direction#DOWNSTREAM} or {@link Direction#UPSTREAM}
 	 * @param organisms optional filter
 	 * @param datasources optional filter
+	 * @param subPathways optional, include/skip sub-pathways; it does not affect the graph search algorithm,
+	 *                     but - only how we auto-complete and clone to make a reasonable sub-model from the result set
 	 * @return common stream
 	 */
-	ServiceResponse getCommonStream(OutputFormat format, 
-		String[] sources, Integer limit, Direction direction, 
-			String[] organisms, String[] datasources);
+	ServiceResponse getCommonStream(OutputFormat format, String[] sources, Integer limit, Direction direction,
+									String[] organisms, String[] datasources, boolean subPathways);
 
 	//---------------------------------------------------------------------------------------------|
 
@@ -148,8 +152,7 @@ public interface CPathService {
 	 * @return
 	 */
 	ServiceResponse traverse(String propertyPath, String... sourceUris);
-	
-	
+
 	/**
 	 * Gets top (root) pathways (URIs, names) in the current BioPAX model.
 	 * 

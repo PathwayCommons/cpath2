@@ -1,31 +1,3 @@
-/**
- ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
- ** and University of Toronto (UofT).
- **
- ** This is free software; you can redistribute it and/or modify it
- ** under the terms of the GNU Lesser General Public License as published
- ** by the Free Software Foundation; either version 2.1 of the License, or
- ** any later version.
- **
- ** This library is distributed in the hope that it will be useful, but
- ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- ** documentation provided hereunder is on an "as is" basis, and
- ** both UofT and MSKCC have no obligations to provide maintenance, 
- ** support, updates, enhancements or modifications.  In no event shall
- ** UofT or MSKCC be liable to any party for direct, indirect, special,
- ** incidental or consequential damages, including lost profits, arising
- ** out of the use of this software and its documentation, even if
- ** UofT or MSKCC have been advised of the possibility of such damage.  
- ** See the GNU Lesser General Public License for more details.
- **
- ** You should have received a copy of the GNU Lesser General Public License
- ** along with this software; if not, write to the Free Software Foundation,
- ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
- ** or find it at http://www.fsf.org/ or http://www.gnu.org.
- **/
-
-
 package cpath.service;
 
 import java.io.*;
@@ -34,6 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
@@ -109,6 +82,7 @@ public class CPathServiceImpl implements CPathService {
 
 	private final Pattern isoformIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot isoform").getPattern());
 	private final Pattern refseqIdPattern = Pattern.compile(MiriamLink.getDatatype("refseq").getPattern());
+	private final Pattern uniprotIdPattern = Pattern.compile(MiriamLink.getDatatype("uniprot knowledgebase").getPattern());
 
 	private final static CPathSettings cpath = CPathSettings.getInstance();
 
@@ -190,7 +164,7 @@ public class CPathServiceImpl implements CPathService {
 
 
 	@Override
-	public ServiceResponse fetch(final OutputFormat format, final String... uris) {
+	public ServiceResponse fetch(final OutputFormat format, boolean subPathways, final String... uris) {
 		if (uris.length == 0)
 			return new ErrorResponse(NO_RESULTS_FOUND,
 					"No URIs were specified for the query");
@@ -201,26 +175,37 @@ public class CPathServiceImpl implements CPathService {
 		// extract/convert a sub-model
 		try {
 			final String[] mappedUris = findUrisByIds(uris);
+
 			Set<BioPAXElement> elements = urisToBpes(paxtoolsModel, mappedUris);
-			
 			if(elements.isEmpty()) {
 				return new ErrorResponse(NO_RESULTS_FOUND,
 						"No BioPAX objects found by URI(s): " + Arrays.toString(uris));
 			}
-					
-			//auto-complete (add important child/parent elements)	
-			elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel); 
-			assert !elements.isEmpty() : "Completer.complete() produced empty set from not empty";
 
-			Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-			Model m = cloner.clone(paxtoolsModel, elements);
-			m.setXmlBase(paxtoolsModel.getXmlBase());
+			Model m = autoCompleteAndClone(elements, subPathways);
+
+			//name the sub-model - can be useful when converted to GSEA, etc...
+			if(!m.getObjects().isEmpty()) {
+				if(mappedUris.length==1) {
+					String uri = mappedUris[0];
+					m.setUri(uri);
+					BioPAXElement b = m.getByID(uri);
+					if(b instanceof Named) {
+						m.setName(((Named) b).getDisplayName() + " " + ArrayUtils.toString(uris));
+					} else {
+						m.setName(ArrayUtils.toString(uris));
+					}
+				} else {
+					String desc = ArrayUtils.toString(uris);
+					m.setUri("PC_get_" + desc.hashCode());
+					m.setName(desc);
+				}
+			}
+
 			return convert(m, format);
-			
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
-
     }
 
 
@@ -241,11 +226,27 @@ public class CPathServiceImpl implements CPathService {
 		return filters.toArray(new Filter[]{});
 	}
 
-	
+
+	// auto-complete and clone - makes a reasonable size detached (copy) sub-model
+	private Model autoCompleteAndClone(final Set<BioPAXElement> elements, final boolean includeSubPathways)
+	{
+		if(elements == null || elements.isEmpty())
+			return null;
+
+		Completer completer = new Completer(simpleIO.getEditorMap());
+		Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
+
+		completer.setSkipSubPathways(!includeSubPathways); //mind NOT (!) here
+		Model m = cloner.clone(completer.complete(elements));
+		m.setXmlBase(paxtoolsModel.getXmlBase());
+
+		return m;
+	}
+
 	@Override
 	public ServiceResponse getNeighborhood(final OutputFormat format, 
 		final String[] sources, Integer limit, Direction direction, 
-		final String[] organisms, final String[] datasources)
+		final String[] organisms, final String[] datasources, boolean subPathways)
 	{
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
@@ -268,29 +269,22 @@ public class CPathServiceImpl implements CPathService {
 			// Execute the query, get result elements
 			elements = QueryExecuter.runNeighborhood(elements, paxtoolsModel,
 					limit, direction, createFilters(organisms, datasources));
+			Model m = autoCompleteAndClone(elements, subPathways);
+			String desc = ArrayUtils.toString(sources);
+			m.setUri("PC_graph_neighborhood_"+desc.hashCode());
+			m.setName(desc);
 
-			if(elements != null && !elements.isEmpty()) {
-				// auto-complete (gets a reasonable size sub-model)
-				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
-				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-				Model m = cloner.clone(paxtoolsModel, elements);
-				m.setXmlBase(paxtoolsModel.getXmlBase());
-				return convert(m, format);
-			} else {
-				return new ErrorResponse(NO_RESULTS_FOUND,
-						"No results found by URI(s): " + Arrays.toString(src));
-			}
+			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
-
 	}
 
 	
 	@Override
 	public ServiceResponse getPathsBetween(final OutputFormat format, 
 			final String[] sources, final Integer limit, 
-			final String[] organisms, final String[] datasources)
+			final String[] organisms, final String[] datasources, boolean subPathways)
 	{	
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
@@ -309,29 +303,22 @@ public class CPathServiceImpl implements CPathService {
 			// Execute the query, get result elements
 			elements = QueryExecuter.runPathsBetween(elements, paxtoolsModel, limit,
 					createFilters(organisms, datasources));
+			Model m = autoCompleteAndClone(elements,subPathways);
+			String desc = ArrayUtils.toString(sources);
+			m.setUri("PC_graph_pathsbetween_"+desc.hashCode());
+			m.setName(desc);
 
-			// auto-complete (gets a reasonable size sub-model)
-			if(elements != null) {
-				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
-				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-				Model m = cloner.clone(paxtoolsModel, elements);
-				m.setXmlBase(paxtoolsModel.getXmlBase());
-				return convert(m, format);
-			} else {
-				return new ErrorResponse(NO_RESULTS_FOUND,
-						"No results found by URI(s): " + Arrays.toString(src));
-			}
+			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
-
 	}
 
 	
 	@Override
 	public ServiceResponse getPathsFromTo(final OutputFormat format, 
 		final String[] sources, final String[] targets, final Integer limit,
-		final String[] organisms, final String[] datasources)
+		final String[] organisms, final String[] datasources, boolean subPathways)
 	{
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
@@ -354,25 +341,15 @@ public class CPathServiceImpl implements CPathService {
 			}
 
 			// Execute the query
-			Set<BioPAXElement> elements = (target==null || target.isEmpty()) 
-					? QueryExecuter.runPathsBetween(source, paxtoolsModel, limit,
-							createFilters(organisms, datasources))
-							: QueryExecuter.runPathsFromTo(source, target, 
-									paxtoolsModel, LimitType.NORMAL, limit,
-									createFilters(organisms, datasources));
+			Set<BioPAXElement> elements = QueryExecuter.runPathsFromTo(source, target,
+					paxtoolsModel, LimitType.NORMAL, limit, createFilters(organisms, datasources));
 
-					if(elements != null) {
-						// auto-complete (gets a reasonable size sub-model)
-						elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
-						Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-						Model m = cloner.clone(paxtoolsModel, elements);
-						m.setXmlBase(paxtoolsModel.getXmlBase());
-						return convert(m, format);
-					} else {
-						return new ErrorResponse(NO_RESULTS_FOUND,
-								"No results found; source: " + Arrays.toString(src)
-								+  ", target: " + Arrays.toString(tgt));
-					}	
+			Model m = autoCompleteAndClone(elements,subPathways);
+			String desc = ArrayUtils.toString(sources) + "-to-" + ArrayUtils.toString(targets);
+			m.setUri("PC_graph_pathsfromto_"+desc.hashCode());
+			m.setName(desc);
+
+			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
@@ -384,10 +361,19 @@ public class CPathServiceImpl implements CPathService {
 		BiopaxConverter biopaxConverter = new BiopaxConverter(blacklist);
 		ServiceResponse toReturn;
 
-		if (format==OutputFormat.GSEA)
-			toReturn = biopaxConverter.convert(m, format, "uniprot", false); //uniprot IDs, pathway entries only, etc.
-		else
-			toReturn = biopaxConverter.convert(m, format); //using default config. (ID type, layout, etc.)
+		if(format != OutputFormat.BIOPAX) {
+			// remove all Pathway objects (these, esp. sub-pathways, are incomplete due to detaching from PC
+			// and ain't really useful for converting to text formats)
+			for(Pathway p : new HashSet<Pathway>(m.getObjects(Pathway.class))) {
+				m.remove(p);
+			}
+		}
+
+		if (format==OutputFormat.GSEA) {
+			toReturn = biopaxConverter.convert(m, format, "uniprot", false); //uniprot; outside pathway entities
+		} else {
+			toReturn = biopaxConverter.convert(m, format); //default ID type, layout, etc.
+		}
 
 		return toReturn;
 	}
@@ -396,7 +382,7 @@ public class CPathServiceImpl implements CPathService {
 	@Override
 	public ServiceResponse getCommonStream(final OutputFormat format, 
 		final String[] sources, final Integer limit, Direction direction,
-		final String[] organisms, final String[] datasources)
+		final String[] organisms, final String[] datasources, boolean subPathways)
 	{
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try again later)...");
@@ -421,22 +407,15 @@ public class CPathServiceImpl implements CPathService {
 			elements = QueryExecuter
 					.runCommonStreamWithPOI(elements, paxtoolsModel, direction, limit,
 							createFilters(organisms, datasources));
+			Model m = autoCompleteAndClone(elements,subPathways);
+			String desc = ArrayUtils.toString(sources);
+			m.setUri("PC_graph_commonstream_"+desc.hashCode());
+			m.setName(desc);
 
-			if(elements != null) {
-				// auto-complete (gets a reasonable size sub-model)
-				elements = (new Completer(simpleIO.getEditorMap())).complete(elements, paxtoolsModel);
-				Cloner cloner = new Cloner(this.simpleIO.getEditorMap(), this.simpleIO.getFactory());
-				Model m = cloner.clone(paxtoolsModel, elements);
-				m.setXmlBase(paxtoolsModel.getXmlBase());
-				return convert(m, format);
-			} else {
-				return new ErrorResponse(NO_RESULTS_FOUND,
-						"No results found by URI(s): " + Arrays.toString(src));
-			}
+			return convert(m, format);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
-
 	}
 
 	
@@ -462,17 +441,13 @@ public class CPathServiceImpl implements CPathService {
 		// id-mapping: get primary IDs where possible; 
 		// build a Lucene query string (will be eq. to xrefid:A OR xrefid:B OR ...)
 		final StringBuilder q = new StringBuilder();
-		for (String identifier : identifiers) {
-			if(identifier.toLowerCase().startsWith("http://")) {
+		for (String identifier : identifiers)
+		{
+			if(identifier.startsWith("http://")) {
 				// it must be an existing URI (a user hopes so)
 				uris.add(identifier);
-				if(identifier.startsWith("http://identifiers.org/")) {
-					//also extract the id from the URI to map it (below) to the primary id/URI
-					identifier = CPathUtils.idfromNormalizedUri(identifier);
-				} else { //no id-mapping required
-					continue; //go to next identifier
-				}
-			} 
+				continue; //go to next identifier
+			}
 
 			// do gene/protein/chemical id-mapping;
 			// mapping can be ambiguous, but this is OK for queries (unlike when merging data)
@@ -526,7 +501,6 @@ public class CPathServiceImpl implements CPathService {
 		return uris.toArray(new String[]{});
 	}
 
-	
 	@Override
 	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
 		
@@ -660,7 +634,7 @@ public class CPathServiceImpl implements CPathService {
 	 * @param ids specific source or target set of IDs
 	 * @return related biopax elements
 	 */
-	private Set<BioPAXElement> urisToBpes(Model model, String[] ids)
+	private static Set<BioPAXElement> urisToBpes(Model model, String[] ids)
 	{
 		Set<BioPAXElement> elements = new HashSet<BioPAXElement>();
 

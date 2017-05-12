@@ -85,16 +85,16 @@ public class BiopaxConverter {
 						? ((Boolean)args[1]).booleanValue()
 							: Boolean.parseBoolean(String.valueOf(args[1]));
 				}
-				convertToGSEA(m, os, db, skipOutsidePathways);
+				// GSEA/GMT converter's skipSubPathways option is a different beast from the web api's 'subpw'!
+				// Given a sub-model, no matter how it's cut from the main model, there is still choice:
+				// to include gene IDs from sub-pathways into parent pathway's record or not; i.e.,
+				// whether to recursively collect participants (IDs) via traversing pathway component
+				// and order/step interactions, not going into any sub-pathways, or not...
+				convertToGSEA(m, os, db, skipOutsidePathways, true);
+				//TODO: GSEA skipSubPathways=true always? (makes sense for now)
 				break;
             case SBGN:
-				boolean doLayout = true;
-				if (args.length > 0) {
-					doLayout = (args[0] instanceof Boolean)
-							? ((Boolean)args[0]).booleanValue() 
-								: Boolean.parseBoolean(String.valueOf(args[0]));
-				}
-                convertToSBGN(m, os, blacklist, doLayout);
+                convertToSBGN(m, os, blacklist, true);
                 break;
 			case JSONLD:
 				convertToJsonLd(m, os);
@@ -184,14 +184,15 @@ public class BiopaxConverter {
 	 * @param skipOutsidePathways if true - won't write ID sets that relate to no pathway
 	 * @throws IOException when there is an output stream writing error
 	 */
-	private void convertToGSEA(Model m, OutputStream stream, String outputIdType, boolean skipOutsidePathways)
+	private void convertToGSEA(Model m, OutputStream stream, String outputIdType,
+							   boolean skipOutsidePathways, boolean skipSubPathways)
 			throws IOException 
 	{	
 		if(outputIdType==null || outputIdType.isEmpty())
 			outputIdType = "uniprot";
 
 		// convert (make per pathway entries; won't traverse into sub-pathways of a pathway; only pre-selected organisms)
-		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true, true);
+		GSEAConverter gseaConverter = new GSEAConverter(outputIdType, true, skipSubPathways);
 		Set<String> allowedTaxIds = CPathSettings.getInstance().getOrganismTaxonomyIds();
 		gseaConverter.setAllowedOrganisms(allowedTaxIds);
 		gseaConverter.setSkipOutsidePathways(skipOutsidePathways);
@@ -227,7 +228,7 @@ public class BiopaxConverter {
 			idFetcher.seqDbStartsWithOrEquals(db);
 		}
 
-		Collection<SIFType> sifTypes = new HashSet<SIFType>(Arrays.asList(SIFEnum.values()));
+		final Collection<SIFType> sifTypes = new HashSet<SIFType>(Arrays.asList(SIFEnum.values()));
 		sifTypes.remove(SIFEnum.NEIGHBOR_OF); //exclude NEIGHBOR_OF
 		SIFSearcher searcher = new SIFSearcher(idFetcher, sifTypes.toArray(new SIFType[sifTypes.size()]));
 		searcher.setBlacklist(blacklist);

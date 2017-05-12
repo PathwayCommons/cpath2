@@ -1,30 +1,3 @@
-/**
- ** Copyright (c) 2010 Memorial Sloan-Kettering Cancer Center (MSKCC)
- ** and University of Toronto (UofT).
- **
- ** This is free software; you can redistribute it and/or modify it
- ** under the terms of the GNU Lesser General Public License as published
- ** by the Free Software Foundation; either version 2.1 of the License, or
- ** any later version.
- **
- ** This library is distributed in the hope that it will be useful, but
- ** WITHOUT ANY WARRANTY, WITHOUT EVEN THE IMPLIED WARRANTY OF
- ** MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.  The software and
- ** documentation provided hereunder is on an "as is" basis, and
- ** both UofT and MSKCC have no obligations to provide maintenance, 
- ** support, updates, enhancements or modifications.  In no event shall
- ** UofT or MSKCC be liable to any party for direct, indirect, special,
- ** incidental or consequential damages, including lost profits, arising
- ** out of the use of this software and its documentation, even if
- ** UofT or MSKCC have been advised of the possibility of such damage.  
- ** See the GNU Lesser General Public License for more details.
- **
- ** You should have received a copy of the GNU Lesser General Public License
- ** along with this software; if not, write to the Free Software Foundation,
- ** Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA;
- ** or find it at http://www.fsf.org/ or http://www.gnu.org.
- **/
-
 package cpath.webservice;
 
 import java.io.IOException;
@@ -45,6 +18,9 @@ import cpath.webservice.args.binding.GraphQueryLimitEditor;
 import cpath.webservice.args.binding.GraphTypeEditor;
 import cpath.webservice.args.binding.OutputFormatEditor;
 
+import org.biopax.paxtools.controller.Cloner;
+import org.biopax.paxtools.controller.Completer;
+import org.biopax.paxtools.controller.SimpleEditorMap;
 import org.biopax.paxtools.model.BioPAXElement;
 import org.biopax.paxtools.model.BioPAXLevel;
 import org.biopax.paxtools.model.Model;
@@ -131,11 +107,17 @@ public class BiopaxModelController extends BasicController {
 			BioPAXElement bpe = model.getByID(maybeUri);
 			if (bpe != null) {
 				//convert a single object (incomplete) to JSON-LD (unlike '/get', which extracts a sub-model)
-//		return String.format("%s %s %s", bpe.getUri(), bpe.getModelInterface().getSimpleName(), bpe.toString());
-				Model m = BioPAXLevel.L3.getDefaultFactory().createModel();
+
+//				Model m = BioPAXLevel.L3.getDefaultFactory().createModel();
+//				m.setXmlBase(xmlBase);
+//				m.add(bpe);
+				//auto-complete and clone to get some more information
+				Completer completer = new Completer(SimpleEditorMap.L3);
+				Cloner cloner = new Cloner(SimpleEditorMap.L3, BioPAXLevel.L3.getDefaultFactory());
+				completer.setSkipSubPathways(true);
+				Model m = cloner.clone(completer.complete(Collections.singleton(bpe)));
 				m.setXmlBase(xmlBase);
-				m.add(bpe);
-				//TODO auto-complete (does it makes sense)?
+
 				ServiceResponse sr = new BiopaxConverter(null).convert(m, OutputFormat.JSONLD);
 				Set<LogEvent> events = new HashSet<LogEvent>();
 				events.add(LogEvent.from(OutputFormat.JSONLD));
@@ -151,8 +133,8 @@ public class BiopaxModelController extends BasicController {
 
 	// Get by ID (URI) command
     @RequestMapping("/get")
-    public void elementById(@Valid Get get, BindingResult bindingResult, 
-    	Writer writer, HttpServletRequest request, HttpServletResponse response) 
+    public void elementById(@Valid Get get, BindingResult bindingResult,
+							HttpServletRequest request, HttpServletResponse response)
     {
 		//log events: command, format
     	Set<LogEvent> events = new HashSet<LogEvent>();
@@ -164,7 +146,7 @@ public class BiopaxModelController extends BasicController {
     	} else {
 			OutputFormat format = get.getFormat();
 			String[] uri = get.getUri();
-			ServiceResponse result = service.fetch(format, uri);
+			ServiceResponse result = service.fetch(format, false, uri);
 			events.add(LogEvent.from(format));
 			stringResponse(result, request, response, events);
 		}
@@ -193,7 +175,7 @@ public class BiopaxModelController extends BasicController {
 	    	service.log(events, clientIpAddress(request));
 			return hits;
 		}
-		
+
 		return null;
     }
     
@@ -251,25 +233,25 @@ public class BiopaxModelController extends BasicController {
 		switch (graph.getKind()) {
 		case NEIGHBORHOOD:
 			result = service.getNeighborhood(graph.getFormat(), graph.getSource(), 
-				graph.getLimit(), graph.getDirection(), graph.getOrganism(), graph.getDatasource());
+				graph.getLimit(), graph.getDirection(), graph.getOrganism(), graph.getDatasource(), false);
 			break;
 		case PATHSBETWEEN:
 			result = service.getPathsBetween(graph.getFormat(), graph.getSource(), 
-				graph.getLimit(), graph.getOrganism(), graph.getDatasource());
+				graph.getLimit(), graph.getOrganism(), graph.getDatasource(), false);
 			break;
 		case PATHSFROMTO:
 			result = service.getPathsFromTo(graph.getFormat(), graph.getSource(), 
-				graph.getTarget(), graph.getLimit(), graph.getOrganism(), graph.getDatasource());
+				graph.getTarget(), graph.getLimit(), graph.getOrganism(), graph.getDatasource(), false);
 			break;
 		case COMMONSTREAM:
 			result = service.getCommonStream(graph.getFormat(), graph.getSource(), 
-				graph.getLimit(), graph.getDirection(), graph.getOrganism(), graph.getDatasource());
+				graph.getLimit(), graph.getDirection(), graph.getOrganism(), graph.getDatasource(), false);
 			break;
 		default:
 			// impossible (should have failed earlier)
 			errorResponse(Status.INTERNAL_ERROR, 
 				getClass().getCanonicalName() + " does not support " 
-					+ graph.getKind(), request, response, events);			
+					+ graph.getKind(), request, response, events);
 			return;
 		}
 		

@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import cpath.dao.CPathUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
@@ -392,6 +393,9 @@ public class SearchEngine implements Indexer, Searcher {
 				searcherManager.close();
 				searcherManager = null;
 			}
+
+			CPathUtils.cleanupDirectory(indexFile);
+
 			IndexWriterConfig conf = new IndexWriterConfig(Version.LATEST, analyzer);
 			iw = new IndexWriter(FSDirectory.open(indexFile), conf);
 			//cleanup
@@ -457,8 +461,7 @@ public class SearchEngine implements Indexer, Searcher {
 		//finally, create a new searcher manager
 		initSearcherManager();
 	}
-	
-	
+
 	// internal methods
 	
 	/*
