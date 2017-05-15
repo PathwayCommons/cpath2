@@ -7,7 +7,6 @@ import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.lucene.util.ArrayUtil;
 import org.biopax.paxtools.controller.*;
 import org.biopax.paxtools.io.*;
 import org.biopax.paxtools.model.*;
@@ -162,7 +161,7 @@ public class CPathServiceImpl implements CPathService {
 			Model m = autoCompleteAndClone(elements, subPathways);
 
 			//name the sub-model - can be useful when converted to GSEA, etc...
-			if(!m.getObjects().isEmpty()) {
+			if(m!= null && !m.getObjects().isEmpty()) {
 				if(mappedUris.length==1) {
 					String uri = mappedUris[0];
 					m.setUri(uri);
@@ -215,7 +214,9 @@ public class CPathServiceImpl implements CPathService {
 
 		completer.setSkipSubPathways(!includeSubPathways); //mind NOT (!) here
 		Model m = cloner.clone(completer.complete(elements));
-		m.setXmlBase(paxtoolsModel.getXmlBase());
+		if(m != null) {
+			m.setXmlBase(paxtoolsModel.getXmlBase());
+		}
 
 		return m;
 	}
@@ -243,11 +244,12 @@ public class CPathServiceImpl implements CPathService {
 			elements = QueryExecuter.runNeighborhood(elements, paxtoolsModel,
 					limit, direction, createFilters(organisms, datasources));
 			Model m = autoCompleteAndClone(elements, subPathways);
-			String desc = ArrayUtils.toString(sources);
-			m.setUri("PC_graph_neighborhood_"+desc.hashCode());
-			m.setName(desc);
-
-			return convert(m, format);
+			if( m != null) {
+				String desc = ArrayUtils.toString(sources);
+				m.setUri("PC_graph_neighborhood_" + desc.hashCode());
+				m.setName(desc);
+			}
+			return convert(m, format); //m==null is ok
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
@@ -273,9 +275,11 @@ public class CPathServiceImpl implements CPathService {
 			elements = QueryExecuter.runPathsBetween(elements, paxtoolsModel, limit,
 					createFilters(organisms, datasources));
 			Model m = autoCompleteAndClone(elements,subPathways);
-			String desc = ArrayUtils.toString(sources);
-			m.setUri("PC_graph_pathsbetween_"+desc.hashCode());
-			m.setName(desc);
+			if(m != null) {
+				String desc = ArrayUtils.toString(sources);
+				m.setUri("PC_graph_pathsbetween_" + desc.hashCode());
+				m.setName(desc);
+			}
 
 			return convert(m, format);
 		} catch (Exception e) {
@@ -311,12 +315,14 @@ public class CPathServiceImpl implements CPathService {
 							paxtoolsModel, LimitType.NORMAL, limit, createFilters(organisms, datasources));
 
 				m = autoCompleteAndClone(elements,subPathways);
-				String desc = ArrayUtils.toString(sources) + "-to-" + ArrayUtils.toString(targets);
-				m.setUri("PC_graph_pathsfromto_"+desc.hashCode());
-				m.setName(desc);
+				if(m != null) {
+					String desc = ArrayUtils.toString(sources) + "-to-" + ArrayUtils.toString(targets);
+					m.setUri("PC_graph_pathsfromto_" + desc.hashCode());
+					m.setName(desc);
+				}
 			}
 
-			return convert(m, format);
+			return convert(m, format); //m==null is ok too
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
@@ -328,7 +334,7 @@ public class CPathServiceImpl implements CPathService {
 		BiopaxConverter biopaxConverter = new BiopaxConverter(blacklist);
 		ServiceResponse toReturn;
 
-		if(format != OutputFormat.BIOPAX) {
+		if(format != OutputFormat.BIOPAX && m != null) {
 			// remove all Pathway objects (these, esp. sub-pathways, are incomplete due to detaching from PC
 			// and ain't really useful for converting to text formats)
 			for(Pathway p : new HashSet<Pathway>(m.getObjects(Pathway.class))) {
@@ -372,9 +378,11 @@ public class CPathServiceImpl implements CPathService {
 					.runCommonStreamWithPOI(elements, paxtoolsModel, direction, limit,
 							createFilters(organisms, datasources));
 			Model m = autoCompleteAndClone(elements,subPathways);
-			String desc = ArrayUtils.toString(sources);
-			m.setUri("PC_graph_commonstream_"+desc.hashCode());
-			m.setName(desc);
+			if(m != null) {
+				String desc = ArrayUtils.toString(sources);
+				m.setUri("PC_graph_commonstream_" + desc.hashCode());
+				m.setName(desc);
+			}
 
 			return convert(m, format);
 		} catch (Exception e) {
