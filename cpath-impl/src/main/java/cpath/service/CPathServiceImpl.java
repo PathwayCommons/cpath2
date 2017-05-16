@@ -398,9 +398,10 @@ public class CPathServiceImpl implements CPathService {
 	 * @param identifiers - a list of genes/protein or molecules as: \
 	 * 		HGNC symbols, UniProt, RefSeq and NCBI Gene IDs; or \
 	 * 		CHEBI, InChIKey, ChEMBL, DrugBank, PubChem Compound, KEGG Compound, PharmGKB.
+	 * @param types filter search to get back URIs of given biopax types and sub-types
 	 * @return URIs of matching Xrefs
 	 */
-	private String[] findUrisByIds(String[] identifiers)
+	private String[] findUrisByIds(String[] identifiers, Class<? extends BioPAXElement>... types)
 	{
 		if (identifiers.length == 0)
 			return identifiers; //empty array
@@ -427,9 +428,12 @@ public class CPathServiceImpl implements CPathService {
 		if (q.length() > 0) {
 			//find existing URIs by ids using full-text search (collect all hits, because the query is very specific.
 			final String query = q.toString().trim();
-			//search for Gene/PEs (instead of, as it used to be in older versions, searching for xrefs)
-			findAllUris(uris, query, PhysicalEntity.class);
-			findAllUris(uris, query, Gene.class);
+			//find URIs of giving BioPAX classes
+			if(types.length==0)
+				types = new Class[]{PhysicalEntity.class, Gene.class};
+			for(Class type : types) {
+				findAllUris(uris, query, type);
+			}
 			log.debug("findUrisByIds, seeds: " + uris + " were found by IDs: " + Arrays.toString(identifiers));
 		}
 
@@ -448,17 +452,23 @@ public class CPathServiceImpl implements CPathService {
 	}
 
 	@Override
-	public ServiceResponse traverse(String propertyPath, String... sourceUris) {
+	public ServiceResponse traverse(String propertyPath, String... uris) {
 		
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
 		
 		TraverseResponse res = new TraverseResponse();
 		res.setPropertyPath(propertyPath);
-				
+
 		try {
+			//both IDs (will apply id-mapping to get URIs) and absolute URIs now work!
+			Class<? extends BioPAXElement> type = BioPAXLevel.L3
+					.getInterfaceForName(propertyPath.substring(0, propertyPath.indexOf('/')));
+			String[] sourceUris =  findUrisByIds(uris, type);
+
 			TraverseAnalysis traverseAnalysis = new TraverseAnalysis(res, sourceUris);
 			traverseAnalysis.execute(paxtoolsModel);
+
 			return res;
 		} catch (IllegalArgumentException e) {
 			log.error("traverse() failed to init path accessor. " + e);

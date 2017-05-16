@@ -8,6 +8,7 @@ import cpath.service.jaxb.DataResponse;
 import cpath.service.jaxb.SearchResponse;
 import cpath.service.jaxb.ServiceResponse;
 
+import cpath.service.jaxb.TraverseResponse;
 import org.biopax.paxtools.model.*;
 import org.biopax.paxtools.model.level3.*;
 import org.biopax.paxtools.io.SimpleIOHandler;
@@ -256,6 +257,28 @@ public class DataImportTest {
 		res = service.fetch(OutputFormat.BIOPAX, false, "CHEBI:20");
 		assertTrue(res instanceof DataResponse);
 		assertFalse(res.isEmpty());
+
+		//test traverse using path and URI
+		res = service.traverse("ProteinReference/displayName",
+				"http://identifiers.org/uniprot/P27797");
+		assertTrue(res instanceof TraverseResponse);
+		assertFalse(res.isEmpty());
+		List<String> vals = ((TraverseResponse)res).getTraverseEntry().get(0).getValue();
+		assertFalse(vals.isEmpty());
+		assertEquals("CALR_HUMAN",vals.get(0));
+		// test - using ID instead of URI
+		res = service.traverse("EntityReference/comment", "P27797");
+		assertTrue(res instanceof TraverseResponse);
+		assertFalse(res.isEmpty());
+		vals = ((TraverseResponse)res).getTraverseEntry().get(0).getValue();
+		assertEquals(2, vals.size());
+		// can now e.g. find pathways by participant IDs and list pathway names using one query
+		res = service.traverse("Pathway/name", "P27797");
+		assertTrue(res instanceof TraverseResponse);
+		assertFalse(res.isEmpty());
+		assertEquals(1, ((TraverseResponse) res).getTraverseEntry().size());
+		vals = ((TraverseResponse)res).getTraverseEntry().get(0).getValue();
+		assertEquals(4, vals.size());
 	}
 	
 	

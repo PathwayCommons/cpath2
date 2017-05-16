@@ -69,7 +69,11 @@ public class BiopaxModelController extends BasicController {
 
 
 	/**
-	 * A very simple description of a BioPAX object identified by the cPath2-generated URI.
+	 * A very simple description of a BioPAX object;
+	 * works only for those BioPAX objects that have URIs
+	 * based on xml:base (namespace) which is the URL (or proxy)
+	 * for this web service endpoint.
+	 *
 	 * TODO: make a human-readable rich description page with links and images...
 	 *
 	 * @param localId - the part of URI following xml:base
@@ -80,15 +84,16 @@ public class BiopaxModelController extends BasicController {
 	public void cpathIdInfo(@PathVariable String localId, HttpServletRequest request, HttpServletResponse response)
 			throws IOException
 	{
-		/* A hack (specific to our normalizer and also
-		 * might not work for all client links/browsers...
-		 * a better solution would be never generate tricky URIs,
-		 * containing encoded sharps, colons, spaces, etc.):
-		 * the 'localId' parameter is usually un-encoded by the frameworks;
-		 * so we need to encode ":","#"," " back to
-		 * %3A, %23, and "+" respectively, to get the original URI
-		 * (otherwise, if we simply combine localId and xml:base, the
-		 * the resulting "URI" will be non-existing or wrong one)
+		/* A hack
+		 * (works for some clients/browsers;
+		 * a better solution would be to never generate biopax URIs
+		 * that contain url-encoded sharps, colons, spaces, etc.)
+		 *
+		 * The localId value gets here url-un-encoded;
+		 * so, we have to url-encode ":","#"," " back - replace with
+		 * '%3A', '%23', "+" respectively - to recover the original PC URI
+		 * (were we simply concatenate xml:base + localId, the
+		 * result would be not the original URI in some cases).
 		 */
 		if(localId.startsWith("#"))
 			localId = localId.substring(1);
@@ -99,34 +104,35 @@ public class BiopaxModelController extends BasicController {
 		String maybeUri = xmlBase + localId;
 		log.debug("trying /get?uri=" + maybeUri);
 
-		Model model = service.getModel();
-		if(service.getModel() != null)
-		{
-			BioPAXElement bpe = model.getByID(maybeUri);
-			if (bpe != null) {
-				//convert a single object (incomplete) to JSON-LD (unlike '/get', which extracts a sub-model)
+		ServiceResponse result = service.fetch(OutputFormat.JSONLD, false, maybeUri);
+		Set<LogEvent> events = new HashSet<LogEvent>();
+		events.add(LogEvent.format(OutputFormat.JSONLD));
+		events.add(LogEvent.command(Cmd.GET));
+		stringResponse(result, request, response, events);
 
-//				Model m = BioPAXLevel.L3.getDefaultFactory().createModel();
+//		Model model = service.getModel();
+//		if(service.getModel() != null)
+//		{
+//			BioPAXElement bpe = model.getByID(maybeUri);
+//			if (bpe != null) {
+//				//complete (just like '/get' does, extract a sub-model)
+//				Completer completer = new Completer(SimpleEditorMap.L3);
+//				Cloner cloner = new Cloner(SimpleEditorMap.L3, BioPAXLevel.L3.getDefaultFactory());
+//				completer.setSkipSubPathways(true);
+//				Model m = cloner.clone(completer.complete(Collections.singleton(bpe)));
 //				m.setXmlBase(xmlBase);
-//				m.add(bpe);
-				//auto-complete and clone to get some more information
-				Completer completer = new Completer(SimpleEditorMap.L3);
-				Cloner cloner = new Cloner(SimpleEditorMap.L3, BioPAXLevel.L3.getDefaultFactory());
-				completer.setSkipSubPathways(true);
-				Model m = cloner.clone(completer.complete(Collections.singleton(bpe)));
-				m.setXmlBase(xmlBase);
-
-				ServiceResponse sr = new BiopaxConverter(null).convert(m, OutputFormat.JSONLD);
-				Set<LogEvent> events = new HashSet<LogEvent>();
-				events.add(LogEvent.format(OutputFormat.JSONLD));
-				stringResponse(sr, request, response, events); //also deletes the tmp data file
-			} else {
-				response.sendError(404, "No BioPAX element found; URI: " + maybeUri); //no resource available
-			}
-		}
-		else { //looks like - debug mode
-			response.sendError(503, "Please try again later"); //unavailable (starting.. or maintenance mode)
-		}
+//				//convert to JSON-LD
+//				ServiceResponse sr = new BiopaxConverter(null).convert(m, OutputFormat.JSONLD);
+//				Set<LogEvent> events = new HashSet<LogEvent>();
+//				events.add(LogEvent.format(OutputFormat.JSONLD));
+//				stringResponse(sr, request, response, events); //also deletes the tmp data file
+//			} else {
+//				response.sendError(404, "No BioPAX element found; URI: " + maybeUri); //no resource available
+//			}
+//		}
+//		else { //looks like - debug mode
+//			response.sendError(503, "Please try again later"); //unavailable (starting.. or maintenance mode)
+//		}
 	}
 
 	// Get by ID (URI) command
