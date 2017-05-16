@@ -367,7 +367,7 @@ public class CPathServiceImpl implements CPathService {
 		BiopaxConverter biopaxConverter = new BiopaxConverter(blacklist);
 		ServiceResponse toReturn;
 
-		if(format != OutputFormat.BIOPAX) {
+		if(m != null && format != OutputFormat.BIOPAX) {
 			// remove all Pathway objects (these, esp. sub-pathways, are incomplete due to detaching from PC
 			// and ain't really useful for converting to text formats)
 			for(Pathway p : new HashSet<Pathway>(m.getObjects(Pathway.class))) {
