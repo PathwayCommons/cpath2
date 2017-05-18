@@ -189,15 +189,18 @@ or the fat JAR with embedded application server was started) -->
 	to obtain parent elements).</p></blockquote>
 	<h4>Parameters:</h4>
 	<ul>
-		<li><em>uri=</em> [Required] valid/existing BioPAX element's URI 
-			(RDF ID; for utility classes that were "normalized", such as entity
-			refereneces and controlled vocabularies, it is usually an 
-			Identifiers.org URL. Multiple identifierss are allowed per query, for
+		<li><em>uri=</em> [Required] valid/existing BioPAX element's absolute URI
+			(for utility classes that were "normalized", such as entity
+			references and controlled vocabularies, it is usually an
+			Identifiers.org URL. Multiple identifiers are allowed per query, for
 			example, 'uri=http://identifiers.org/uniprot/Q06609&amp;uri=http://identifiers.org/uniprot/Q549Z0'
 			<a href="#about_uris">See also</a> note about URIs and IDs.
 		</li>
 		<li><em>format=</em> [Optional] output format (<a
 				href="#output_formats">values</a>)
+		</li>
+		<li><em>pattern=</em> [Optional] one or array of built-in BioPAX patterns (inference rules / SIF type names) to apply;
+			naes can be found at the end of <a href="formats#sif_relations">format description</a> page.
 		</li>
 		<li>
 			<em>subpw=</em> [Optional] 'true' or 'false' (default) - whether to include or skip sub-pathways when we
@@ -268,6 +271,9 @@ or the fat JAR with embedded application server was started) -->
 		<li><em>format=</em> [Optional] output format (<a
 				href="#graph_formats">values</a>)
 		</li>
+		<li><em>pattern=</em> [Optional] one or array of built-in BioPAX patterns (inference rules / SIF type names) to apply;
+			naes can be found at the end of <a href="formats#sif_relations">format description</a> page.
+		</li>
 		<li><em>datasource=</em> [Optional] datasource filter (same as for <a href="#search_parameters">'search'</a>).
 		</li>
 		<li><em>organism=</em> [Optional] organism filter (same as for <a href="#search_parameters">'search'</a>).
@@ -287,7 +293,7 @@ or the fat JAR with embedded application server was started) -->
 	<h4>Examples:</h4> 
 	Neighborhood of COL5A1 (P20908, CO5A1_HUMAN):
 	<ol>
-		<li><a rel="nofollow" href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood&format=BINARY_SIF">
+		<li><a rel="nofollow" href="graph?source=http://identifiers.org/uniprot/P20908&kind=neighborhood&format=SIF">
 			This query finds the BioPAX nearest neighborhood of the protein reference</a> http://identifiers.org/uniprot/P20908, i.e., 
 			all reactions where the corresponding protein forms participate; returned in the Simple Interaction Format (SIF)</li>	
 		<li><a rel="nofollow" href="graph?source=P20908&kind=neighborhood">
@@ -327,15 +333,17 @@ or the fat JAR with embedded application server was started) -->
 	</p></blockquote>
 	<h4>Parameters:</h4>
 	<ul>
-		<li><em>uri=</em> [Required] a BioPAX element URI - specified similarly to the
-			<a href="#get">'GET' command above</a>). Multiple IDs are
-			allowed (uri=...&amp;uri=...&amp;uri=...).
-		</li>
 		<li><em>path=</em> [Required] a BioPAX property path in the form of
-			property1[:type1]/property2[:type2];  see <a href="#biopax_properties">properties</a>,
+			type0/property1[:type1]/property2[:type2];  see <a href="#biopax_properties">properties</a>,
 			<a href="#biopax_inverse_properties">inverse properties</a>, <a href="http://www.biopax.org/paxtools">Paxtools</a>,
 			<a href="http://www.biopax.org/paxtools/apidocs/org/biopax/paxtools/controller/PathAccessor.html">
 			org.biopax.paxtools.controller.PathAccessor</a>.
+		</li>
+		<li><em>uri=</em> [Required] a BioPAX element URI - specified similarly to the
+			<a href="#get">'GET' command above</a>). Multiple URIs are
+			allowed (uri=...&amp;uri=...&amp;uri=...). Standard gene/chemical IDs can now be used along with absolute URIs,
+			which makes such request equivalent to two queries combined: 1) <i>search</i> for the specified biopax type objects
+			by IDs in the 'xrefid' index field; 2) <i>traverse</i> - using URIs of objects found in the first step and the path.
 		</li>
 	</ul>
 	<h4>Output:</h4>

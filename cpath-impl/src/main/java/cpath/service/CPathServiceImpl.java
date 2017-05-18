@@ -22,6 +22,7 @@ import org.biopax.paxtools.query.wrapperL3.Filter;
 import org.biopax.paxtools.query.wrapperL3.OrganismFilter;
 import org.biopax.paxtools.query.wrapperL3.UbiqueFilter;
 
+import org.biopax.paxtools.util.IllegalBioPAXArgumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -454,16 +455,18 @@ public class CPathServiceImpl implements CPathService {
 		res.setPropertyPath(propertyPath);
 
 		try {
-			//both IDs (will apply id-mapping to get URIs) and absolute URIs now work!
-			Class<? extends BioPAXElement> type = BioPAXLevel.L3
-					.getInterfaceForName(propertyPath.substring(0, propertyPath.indexOf('/')));
-			String[] sourceUris =  findUrisByIds(uris, type);
-
+			//both IDs and absolute URIs now work!
+			int idx = propertyPath.indexOf('/');
+			if(idx <= 0){
+				throw new IllegalBioPAXArgumentException("Path does not start from a BioPAX type name.");
+			}
+			//BioPAX type at the beginning of the path -
+			Class<? extends BioPAXElement> type = BioPAXLevel.L3.getInterfaceForName(propertyPath.substring(0, idx));
+			String[] sourceUris =  findUrisByIds(uris, type); // apply id-mapping to get URIs if necessary
 			TraverseAnalysis traverseAnalysis = new TraverseAnalysis(res, sourceUris);
 			traverseAnalysis.execute(paxtoolsModel);
-
 			return res;
-		} catch (IllegalArgumentException e) {
+		} catch (IllegalArgumentException e) { //- catches IllegalBioPAXArgumentException too
 			log.error("traverse() failed to init path accessor. " + e);
 			return new ErrorResponse(BAD_REQUEST, e.getMessage());
 		} catch (Exception e) {
