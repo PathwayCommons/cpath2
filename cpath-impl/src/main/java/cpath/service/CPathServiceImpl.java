@@ -225,8 +225,13 @@ public class CPathServiceImpl implements CPathService {
 	
 	@Override
 	public ServiceResponse getNeighborhood(final OutputFormat format,
-										   Map<String, String> formatOptions, final String[] sources, Integer limit, Direction direction,
-										   final String[] organisms, final String[] datasources, boolean subPathways)
+										   Map<String, String> formatOptions,
+										   final String[] sources,
+										   Integer limit,
+										   Direction direction,
+										   final String[] organisms,
+										   final String[] datasources,
+										   boolean subPathways)
 	{
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");

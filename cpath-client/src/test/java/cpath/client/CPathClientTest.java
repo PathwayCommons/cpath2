@@ -61,7 +61,8 @@ public class CPathClientTest {
 		
 		//GET usually works ok with different kind of redirects...
     	String res = client.get("help", null, String.class);
-    	assertTrue(res.startsWith("<?xml version="));
+//    	assertTrue(res.startsWith("<?xml version=")); //not valid assertion, since beta pc9
+		assertNull(res);
 
     	//POST
     	res = client.post("help/types", null, String.class);
@@ -86,7 +87,8 @@ public class CPathClientTest {
 		try {
 			result = client.createTopPathwaysQuery().datasourceFilter(new String[]{"foo"}).result();
 		} catch (CPathException e) {}
-		assertNull(result);
+//		assertNull(result); //it does not error anymore, since pc9 beta; it sends "empty" data result...
+		assertTrue(result.isEmpty());
 	}
 
 	
@@ -116,10 +118,12 @@ public class CPathClientTest {
 					.propertyPath("Named/name")
 					.sources(new String[]{"bla-bla"})
 					.result();
-			fail("must throw CPathException now, for all error responses: 460, 452, 500...");
+			//it does not anymore sends error response; it returns "empty" result
+			// fail("must throw CPathException now, for all error responses: 460, 452, 500...");
 		} catch (CPathException e) {
 		}
-		assertNull(resp); //empty response
+		//assertNull(resp); //empty response
+		assertTrue(resp.isEmpty());
         
 		//intentionally wrong path -> failure (error 452)
         try {

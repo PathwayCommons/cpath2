@@ -8,6 +8,7 @@ import cpath.query.CPathGraphQuery;
 import cpath.query.CPathSearchQuery;
 import cpath.query.CPathTopPathwaysQuery;
 import cpath.query.CPathTraverseQuery;
+import cpath.service.CmdArgs;
 import cpath.service.jaxb.*;
 
 import org.apache.commons.lang3.StringUtils;
@@ -105,7 +106,7 @@ public class CPathClient
 		final String url = endPointURL + requestPath;
 		
 		if(name != null && requestParams != null)
-			requestParams.put("client", Collections.singletonList(name));
+			requestParams.put(CmdArgs.user.name(), Collections.singletonList(name));
 		
 		try {
 			return restTemplate.postForObject(url, requestParams, responseType);
@@ -146,7 +147,7 @@ public class CPathClient
 				sb.append(params).append("&");
 			}
 			if(name!=null)
-				sb.append("client=").append(name);
+				sb.append(CmdArgs.user.name()).append("=").append(name);
 		}
 		
 		String url = sb.toString();
