@@ -3,6 +3,7 @@ package cpath.webservice.args;
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
+import org.biopax.paxtools.pattern.miner.SIFType;
 import org.hibernate.validator.constraints.NotEmpty;
 
 import cpath.service.OutputFormat;
@@ -18,7 +19,7 @@ public class Get extends Base {
 	@NotEmpty(message="Provide at least one URI.")
 	private String[] uri;
 
-	private String[] pattern;
+	private SIFType[] pattern;
 
 	private boolean subpw;
 	
@@ -54,11 +55,11 @@ public class Get extends Base {
 	}
 
 	//SIF Types
-	public String[] getPattern() {
+	public SIFType[] getPattern() {
 		return pattern;
 	}
 
-	public void setPattern(String[] pattern) {
+	public void setPattern(SIFType[] pattern) {
 		this.pattern = pattern;
 	}
 

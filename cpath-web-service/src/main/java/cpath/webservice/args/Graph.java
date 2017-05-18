@@ -3,6 +3,7 @@ package cpath.webservice.args;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
+import org.biopax.paxtools.pattern.miner.SIFType;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.hibernate.validator.constraints.NotEmpty;
 
@@ -33,7 +34,7 @@ public class Graph extends Base {
 	
 	private String[] datasource;
 
-	private String[] pattern;
+	private SIFType[] pattern;
 
 	private boolean subpw;
 
@@ -128,11 +129,11 @@ public class Graph extends Base {
 	}
 
 	//SIF Types
-	public String[] getPattern() {
+	public SIFType[] getPattern() {
 		return pattern;
 	}
 
-	public void setPattern(String[] pattern) {
+	public void setPattern(SIFType[] pattern) {
 		this.pattern = pattern;
 	}
 

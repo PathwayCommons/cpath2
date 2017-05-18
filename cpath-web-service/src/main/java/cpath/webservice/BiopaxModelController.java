@@ -10,19 +10,11 @@ import cpath.webservice.args.Get;
 import cpath.webservice.args.Graph;
 import cpath.webservice.args.Search;
 import cpath.webservice.args.Traverse;
-import cpath.webservice.args.binding.BiopaxTypeEditor;
-import cpath.webservice.args.binding.GraphQueryDirectionEditor;
-import cpath.webservice.args.binding.GraphQueryLimitEditor;
-import cpath.webservice.args.binding.GraphTypeEditor;
-import cpath.webservice.args.binding.OutputFormatEditor;
+import cpath.webservice.args.binding.*;
 
-import org.biopax.paxtools.controller.Cloner;
-import org.biopax.paxtools.controller.Completer;
-import org.biopax.paxtools.controller.SimpleEditorMap;
-import org.biopax.paxtools.model.BioPAXElement;
-import org.biopax.paxtools.model.BioPAXLevel;
-import org.biopax.paxtools.model.Model;
+import org.apache.commons.lang3.StringUtils;
 import org.biopax.paxtools.model.level3.Protein;
+import org.biopax.paxtools.pattern.miner.SIFType;
 import org.biopax.paxtools.query.algorithm.Direction;
 import org.biopax.paxtools.query.algorithm.LimitType;
 import org.slf4j.Logger;
@@ -64,6 +56,7 @@ public class BiopaxModelController extends BasicController {
         binder.registerCustomEditor(Direction.class, new GraphQueryDirectionEditor());
         binder.registerCustomEditor(LimitType.class, new GraphQueryLimitEditor());
         binder.registerCustomEditor(OutputFormat.class, new OutputFormatEditor());
+		binder.registerCustomEditor(SIFType.class, new SIFTypeEditor());
         binder.registerCustomEditor(Class.class, new BiopaxTypeEditor());
     }
 
@@ -104,35 +97,11 @@ public class BiopaxModelController extends BasicController {
 		String maybeUri = xmlBase + localId;
 		log.debug("trying /get?uri=" + maybeUri);
 
-		ServiceResponse result = service.fetch(OutputFormat.JSONLD, false, maybeUri);
+		ServiceResponse result = service.fetch(OutputFormat.JSONLD, null, false, maybeUri);
 		Set<LogEvent> events = new HashSet<LogEvent>();
 		events.add(LogEvent.format(OutputFormat.JSONLD));
 		events.add(LogEvent.command(Cmd.GET));
 		stringResponse(result, request, response, events);
-
-//		Model model = service.getModel();
-//		if(service.getModel() != null)
-//		{
-//			BioPAXElement bpe = model.getByID(maybeUri);
-//			if (bpe != null) {
-//				//complete (just like '/get' does, extract a sub-model)
-//				Completer completer = new Completer(SimpleEditorMap.L3);
-//				Cloner cloner = new Cloner(SimpleEditorMap.L3, BioPAXLevel.L3.getDefaultFactory());
-//				completer.setSkipSubPathways(true);
-//				Model m = cloner.clone(completer.complete(Collections.singleton(bpe)));
-//				m.setXmlBase(xmlBase);
-//				//convert to JSON-LD
-//				ServiceResponse sr = new BiopaxConverter(null).convert(m, OutputFormat.JSONLD);
-//				Set<LogEvent> events = new HashSet<LogEvent>();
-//				events.add(LogEvent.format(OutputFormat.JSONLD));
-//				stringResponse(sr, request, response, events); //also deletes the tmp data file
-//			} else {
-//				response.sendError(404, "No BioPAX element found; URI: " + maybeUri); //no resource available
-//			}
-//		}
-//		else { //looks like - debug mode
-//			response.sendError(503, "Please try again later"); //unavailable (starting.. or maintenance mode)
-//		}
 	}
 
 	// Get by ID (URI) command
@@ -151,8 +120,13 @@ public class BiopaxModelController extends BasicController {
     				errorFromBindingResult(bindingResult), request, response, events);
     	} else {
 			OutputFormat format = args.getFormat();
-			String[] uri = args.getUri();
-			ServiceResponse result = service.fetch(format, args.getSubpw(), uri);
+			String[] uris = args.getUri();
+
+			Map<String,String> options = new HashMap<String,String>();
+			if(args.getPattern()!=null && args.getPattern().length>0)
+				options.put("pattern", StringUtils.join(args.getPattern(),","));
+
+			ServiceResponse result = service.fetch(format, options, args.getSubpw(), uris);
 			events.add(LogEvent.format(format));
 			stringResponse(result, request, response, events);
 		}
@@ -240,22 +214,26 @@ public class BiopaxModelController extends BasicController {
     	events.add(LogEvent.format(args.getFormat()));
 		
 		ServiceResponse result;
+
+		Map<String,String> formatOptions = new HashMap<String,String>();
+		if(args.getPattern()!=null && args.getPattern().length>0)
+			formatOptions.put("pattern", StringUtils.join(args.getPattern(),","));
 		
 		switch (args.getKind()) {
 		case NEIGHBORHOOD:
-			result = service.getNeighborhood(args.getFormat(), args.getSource(),
+			result = service.getNeighborhood(args.getFormat(), formatOptions, args.getSource(),
 				args.getLimit(), args.getDirection(), args.getOrganism(), args.getDatasource(), args.getSubpw());
 			break;
 		case PATHSBETWEEN:
-			result = service.getPathsBetween(args.getFormat(), args.getSource(),
+			result = service.getPathsBetween(args.getFormat(), formatOptions, args.getSource(),
 				args.getLimit(), args.getOrganism(), args.getDatasource(), args.getSubpw());
 			break;
 		case PATHSFROMTO:
-			result = service.getPathsFromTo(args.getFormat(), args.getSource(),
+			result = service.getPathsFromTo(args.getFormat(), formatOptions, args.getSource(),
 				args.getTarget(), args.getLimit(), args.getOrganism(), args.getDatasource(), args.getSubpw());
 			break;
 		case COMMONSTREAM:
-			result = service.getCommonStream(args.getFormat(), args.getSource(),
+			result = service.getCommonStream(args.getFormat(), formatOptions, args.getSource(),
 				args.getLimit(), args.getDirection(), args.getOrganism(), args.getDatasource(), args.getSubpw());
 			break;
 		default:

@@ -1,6 +1,3 @@
-/**
- * 
- */
 package cpath.query;
 
 import java.util.Arrays;
@@ -27,6 +24,7 @@ public final class CPathGetQuery extends BaseCPathQuery<Model> implements CPathQ
 	
 	private boolean mergeEquivalentInteractions = false;
 	private String[] source;
+	private String[] pattern; //sif rules
 	
 	
 	/**
@@ -34,10 +32,15 @@ public final class CPathGetQuery extends BaseCPathQuery<Model> implements CPathQ
 	 */
 	protected MultiValueMap<String, String> getRequestParams() {
 		MultiValueMap<String, String> request = new LinkedMultiValueMap<String, String>();
+
 		if(source == null || source.length == 0)
 			throw new IllegalArgumentException("Required list of URIs/IDs " +
 					"cannot be null or empty");
 		request.put(CmdArgs.uri.name(), Arrays.asList(source));
+
+		if(pattern!=null)
+			request.put(CmdArgs.pattern.name(), Arrays.asList(pattern));
+
 		return request;
 	}
 
@@ -65,15 +68,40 @@ public final class CPathGetQuery extends BaseCPathQuery<Model> implements CPathQ
 	 * A collection of URIs (of biopax elements) 
 	 * or IDs (e.g., gene symbols).
 	 * 
-	 * @param sources
-	 * @return
+	 * @param sources URIs
+	 * @return this
 	 */
 	public CPathGetQuery sources(Collection<String> sources) {
 		this.source = sources.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
 		return this;
-	}	
+	}
 
-	
+	/**
+	 * A collection of interaction type names (Paxtools pre-defined SIF patterns)
+	 * to apply when the requested output format is SIF or extended SIF.
+	 * If not set, then all the inference rules will run, except for 'neighbor-of'.
+	 *
+	 * @param sifTypes SIF rule/pattern names, such as 'reacts_with' (or 'reacts-with')
+	 * @return this
+	 */
+	public CPathGetQuery patterns(Collection<String> sifTypes) {
+		this.pattern = sifTypes.toArray(ArrayUtils.EMPTY_STRING_ARRAY);
+		return this;
+	}
+
+	/**
+	 * A collection of interaction type names (Paxtools pre-defined SIF patterns)
+	 * to apply when the requested output format is SIF or extended SIF.
+	 * If not set, then all the inference rules will run, except for 'neighbor-of'.
+	 *
+	 * @param sifTypes SIF rule/pattern names, such as 'reacts_with' (or 'reacts-with')
+	 * @return this
+	 */
+	public CPathGetQuery patterns(String[] sifTypes) {
+		this.pattern = sifTypes;
+		return this;
+	}
+
 	/**
 	 * Sets the option to merge equivalent interactions in the result model.
 	 * @param mergeEquivalentInteractions

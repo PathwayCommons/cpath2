@@ -3,6 +3,7 @@ package cpath.service;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 import org.biopax.paxtools.controller.PathAccessor;
@@ -45,12 +46,13 @@ public interface CPathService {
 	 * - a complete BioPAX sub-model with all available child elements and 
 	 * properties - and then converts it to the specified output format 
 	 * (if applicable), such as BioPAX (RDF/XML), SIF, GSEA (.gmt).
-	 * 
-	 * @param format
+	 * @param format output format type
+	 * @param formatOptions format parameters
 	 * @param subPathways optional, include/skip (default) sub-pathways
-	 *@param uris the list of URIs to fetch  @return
+	 * @param uris the list of URIs to fetch  @return
 	 */
-	ServiceResponse fetch(OutputFormat format, boolean subPathways, String... uris);
+	ServiceResponse fetch(OutputFormat format, Map<String, String> formatOptions,
+						  boolean subPathways, String... uris);
 	
 	/**
 	 * Full-text search for the BioPAX elements. 
@@ -69,18 +71,17 @@ public interface CPathService {
 	 * Runs a neighborhood query using the given parameters
 	 * (returns a sub-model in the specified format, 
 	 * wrapped as service object). 
-	 *
-	 * @param format output format
+	 *  @param format output format type
+	 * @param formatOptions format options
 	 * @param sources IDs of seed of neighborhood
 	 * @param limit search limit (integer value)
 	 * @param direction flag
 	 * @param organisms optional filter
 	 * @param datasources optional filter
 	 * @param subPathways  optional, include/skip sub-pathways; it does not affect the graph search algorithm,
-	 *                     but - only how we auto-complete and clone to make a reasonable sub-model from the result set
-	 * @return the neighborhood
 	 */
 	ServiceResponse getNeighborhood(OutputFormat format,
+									Map<String, String> formatOptions,
 									String[] sources, Integer limit, Direction direction,
 									String[] organisms, String[] datasources, boolean subPathways);
 
@@ -88,52 +89,49 @@ public interface CPathService {
 	 * Runs a paths-between query for the given sources	
 	 * (returns a sub-model in the specified format, 
 	 * wrapped as service object). 
-	 *
-	 * @param format output format
+	 *  @param format output format type
+	 * @param formatOptions format options
 	 * @param sources IDs of source molecules
 	 * @param limit search limit (integer value)
 	 * @param organisms optional filter
 	 * @param datasources optional filter
 	 * @param subPathways optional, include/skip sub-pathways; it does not affect the graph search algorithm,
-	 *                     but - only how we auto-complete and clone to make a reasonable sub-model from the result set
-	 * @return paths between
 	 */
-	ServiceResponse getPathsBetween(OutputFormat format, String[] sources,
-									Integer limit, String[] organisms, String[] datasources, boolean subPathways);
+	ServiceResponse getPathsBetween(OutputFormat format, Map<String, String> formatOptions,
+									String[] sources, Integer limit, String[] organisms,
+									String[] datasources, boolean subPathways);
 
 	/**
 	 * Runs a POI query from the given sources to the given targets
 	 * (returns a sub-model in the specified format, wrapped as service object). 
-	 *
-	 * @param format output format
+	 *  @param format output format
+	 * @param formatOptions format options
 	 * @param sources IDs of source molecules
 	 * @param targets IDs of target molecules
 	 * @param limit search limit (integer value)
 	 * @param organisms optional filter
 	 * @param datasources optional filter
 	 * @param subPathways optional, include/skip sub-pathways; it does not affect the graph search algorithm,
-	 *                     but - only how we auto-complete and clone to make a reasonable sub-model from the result set
-	 * @return paths between
 	 */
-	ServiceResponse getPathsFromTo(OutputFormat format, String[] sources,
-		   		String[] targets, Integer limit, String[] organisms, String[] datasources, boolean subPathways);
+	ServiceResponse getPathsFromTo(OutputFormat format, Map<String, String> formatOptions,
+								   String[] sources, String[] targets, Integer limit, String[] organisms,
+								   String[] datasources, boolean subPathways);
 
 	/**
 	 * Runs a common upstream or downstream query
 	 * (returns a sub-model in the specified format, 
 	 * wrapped as service object). 
-	 *
-	 * @param format output format
+	 *  @param format output format
+	 * @param formatOptions format options
 	 * @param sources IDs of query seed
 	 * @param limit search limit
 	 * @param direction - can be {@link Direction#DOWNSTREAM} or {@link Direction#UPSTREAM}
 	 * @param organisms optional filter
 	 * @param datasources optional filter
 	 * @param subPathways optional, include/skip sub-pathways; it does not affect the graph search algorithm,
-	 *                     but - only how we auto-complete and clone to make a reasonable sub-model from the result set
-	 * @return common stream
 	 */
-	ServiceResponse getCommonStream(OutputFormat format, String[] sources, Integer limit, Direction direction,
+	ServiceResponse getCommonStream(OutputFormat format, Map<String, String> formatOptions,
+									String[] sources, Integer limit, Direction direction,
 									String[] organisms, String[] datasources, boolean subPathways);
 
 	//---------------------------------------------------------------------------------------------|

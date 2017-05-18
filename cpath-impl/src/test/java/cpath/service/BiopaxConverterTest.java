@@ -28,13 +28,10 @@ public class BiopaxConverterTest {
         Pathway bpe = m.addNew(Pathway.class, "http://pathwaycommons.org/pc2/Pathway_test-URI");
         bpe.setDisplayName("My test pathway");
         bpe.addComment("Hello JSON-LD!");
-        ServiceResponse sr = new BiopaxConverter(null).convert(m, OutputFormat.JSONLD);
+        ServiceResponse sr = new BiopaxConverter(null).convert(m, OutputFormat.JSONLD, null);
         assertTrue(sr instanceof DataResponse);
         assertFalse(sr.isEmpty());
         DataResponse dr = (DataResponse) sr;
-//        System.out.println(dr.getData());
-//        File f = ((Path) dr.getData()).toFile();
-//        IOUtils.copyLarge(new FileInputStream(f), System.out); //works!
     }
 
 }

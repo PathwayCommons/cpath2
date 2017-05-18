@@ -148,7 +148,8 @@ public class CPathServiceImpl implements CPathService {
 
 
 	@Override
-	public ServiceResponse fetch(final OutputFormat format, boolean subPathways, final String... uris)
+	public ServiceResponse fetch(final OutputFormat format, Map<String, String> formatOptions,
+								 boolean subPathways, final String... uris)
 	{
 		if(!paxtoolsModelReady()) 
 			return new ErrorResponse(MAINTENANCE,"Waiting for the initialization to complete (try later)...");
@@ -178,7 +179,7 @@ public class CPathServiceImpl implements CPathService {
 				}
 			}
 
-			return convert(m, format);
+			return convert(m, format, formatOptions);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
@@ -223,7 +224,7 @@ public class CPathServiceImpl implements CPathService {
 	
 	@Override
 	public ServiceResponse getNeighborhood(final OutputFormat format,
-										   final String[] sources, Integer limit, Direction direction,
+										   Map<String, String> formatOptions, final String[] sources, Integer limit, Direction direction,
 										   final String[] organisms, final String[] datasources, boolean subPathways)
 	{
 		if(!paxtoolsModelReady()) 
@@ -249,7 +250,7 @@ public class CPathServiceImpl implements CPathService {
 				m.setUri("PC_graph_neighborhood_" + desc.hashCode());
 				m.setName(desc);
 			}
-			return convert(m, format); //m==null is ok
+			return convert(m, format, formatOptions); //m==null is ok
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
@@ -258,7 +259,7 @@ public class CPathServiceImpl implements CPathService {
 	
 	@Override
 	public ServiceResponse getPathsBetween(final OutputFormat format,
-										   final String[] sources, final Integer limit,
+										   Map<String, String> formatOptions, final String[] sources, final Integer limit,
 										   final String[] organisms, final String[] datasources, boolean subPathways)
 	{	
 		if(!paxtoolsModelReady()) 
@@ -281,7 +282,7 @@ public class CPathServiceImpl implements CPathService {
 				m.setName(desc);
 			}
 
-			return convert(m, format);
+			return convert(m, format, formatOptions);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
@@ -290,7 +291,7 @@ public class CPathServiceImpl implements CPathService {
 	
 	@Override
 	public ServiceResponse getPathsFromTo(final OutputFormat format,
-										  final String[] sources, final String[] targets, final Integer limit,
+										  Map<String, String> formatOptions, final String[] sources, final String[] targets, final Integer limit,
 										  final String[] organisms, final String[] datasources, boolean subPathways)
 	{
 		if(!paxtoolsModelReady()) 
@@ -322,17 +323,15 @@ public class CPathServiceImpl implements CPathService {
 				}
 			}
 
-			return convert(m, format); //m==null is ok too
+			return convert(m, format, formatOptions); //m==null is ok too
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
 
 	}
-	
 
-	private ServiceResponse convert(Model m, OutputFormat format) {
+	private ServiceResponse convert(Model m, OutputFormat format, Map<String, String> options) {
 		BiopaxConverter biopaxConverter = new BiopaxConverter(blacklist);
-		ServiceResponse toReturn;
 
 		if(format != OutputFormat.BIOPAX && m != null) {
 			// remove all Pathway objects (these, esp. sub-pathways, are incomplete due to detaching from PC
@@ -342,19 +341,13 @@ public class CPathServiceImpl implements CPathService {
 			}
 		}
 
-		if (format==OutputFormat.GSEA) {
-			toReturn = biopaxConverter.convert(m, format, "uniprot", false); //uniprot; outside pathway entities
-		} else {
-			toReturn = biopaxConverter.convert(m, format); //default ID type, layout, etc.
-		}
-
-		return toReturn;
+		return biopaxConverter.convert(m, format, (options!=null)?options:Collections.emptyMap());
 	}
 
 
 	@Override
 	public ServiceResponse getCommonStream(final OutputFormat format,
-										   final String[] sources, final Integer limit, Direction direction,
+										   Map<String, String> formatOptions, final String[] sources, final Integer limit, Direction direction,
 										   final String[] organisms, final String[] datasources, boolean subPathways)
 	{
 		if(!paxtoolsModelReady()) 
@@ -384,7 +377,7 @@ public class CPathServiceImpl implements CPathService {
 				m.setName(desc);
 			}
 
-			return convert(m, format);
+			return convert(m, format, null);
 		} catch (Exception e) {
 			return new ErrorResponse(INTERNAL_ERROR, e);
 		}
