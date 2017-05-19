@@ -199,8 +199,9 @@ or the fat JAR with embedded application server was started) -->
 		<li><em>format=</em> [Optional] output format (<a
 				href="#output_formats">values</a>)
 		</li>
-		<li><em>pattern=</em> [Optional] one or array of built-in BioPAX patterns (inference rules / SIF type names) to apply;
-			naes can be found at the end of <a href="formats#sif_relations">format description</a> page.
+		<li><em>pattern=</em> [Optional] array of built-in BioPAX patterns to apply (SIF types - inference rule names;
+			see <a href="formats#sif_relations">output format description</a>) when format=SIF or TXT is used;
+			by default, all the pre-defined patterns but <i>neighbor-of</i> apply.
 		</li>
 		<li>
 			<em>subpw=</em> [Optional] 'true' or 'false' (default) - whether to include or skip sub-pathways when we
@@ -271,8 +272,9 @@ or the fat JAR with embedded application server was started) -->
 		<li><em>format=</em> [Optional] output format (<a
 				href="#graph_formats">values</a>)
 		</li>
-		<li><em>pattern=</em> [Optional] one or array of built-in BioPAX patterns (inference rules / SIF type names) to apply;
-			naes can be found at the end of <a href="formats#sif_relations">format description</a> page.
+		<li><em>pattern=</em> [Optional] array of built-in BioPAX patterns to apply (SIF types - inference rule names;
+			see <a href="formats#sif_relations">output format description</a>) when format=SIF or TXT is used;
+			by default, all the pre-defined patterns but <i>neighbor-of</i> apply.
 		</li>
 		<li><em>datasource=</em> [Optional] datasource filter (same as for <a href="#search_parameters">'search'</a>).
 		</li>
